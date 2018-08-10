@@ -1,7 +1,7 @@
-ETHTOOL_OPTS="wol umgs sopass 00:00:00:11:22:33"
 TYPE=Ethernet
 PROXY_METHOD=none
 BROWSER_ONLY=no
+ETHTOOL_OPTS="wol umgs sopass 00:00:00:11:22:33"
 BOOTPROTO=dhcp
 DEFROUTE=yes
 IPV4_FAILURE_FATAL=no

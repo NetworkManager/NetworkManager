@@ -2713,6 +2713,102 @@ test_sysctl_netns_switch (void)
 
 /*****************************************************************************/
 
+static void
+ethtool_features_dump (const NMEthtoolFeatureStates *features)
+{
+	guint i, j;
+
+	g_assert (features);
+
+	_LOGT (">>> %u features (%u ss-features)", features->n_states, features->n_ss_features);
+
+	for (i = 0; i < features->n_states; i++) {
+		const NMEthtoolFeatureState *s = &features->states_list[i];
+
+		_LOGT (">>> feature-list[%3u]: %3d = %-32s (%3u) | %s %s %s %s",
+		       i,
+		       (int) s->info->ethtool_id,
+		       s->info->kernel_names[s->idx_kernel_name],
+		       s->idx_ss_features,
+		       s->active ? "ACT" : "act",
+		       s->available ? "AVA" : "ava",
+		       s->never_changed ? "NCH" : "nch",
+		       s->requested ? "REQ" : "req");
+	}
+	for (i = 0; i < _NM_ETHTOOL_ID_FEATURE_NUM; i++) {
+		_LOGT (">>> feature-idx [%3u]: %-32s = %u features",
+		       i + (guint) _NM_ETHTOOL_ID_FEATURE_FIRST,
+		       nm_ethtool_data[i + _NM_ETHTOOL_ID_FEATURE_FIRST]->optname,
+		       (guint) NM_PTRARRAY_LEN (features->states_indexed[i]));
+		for (j = 0; features->states_indexed[i] && features->states_indexed[i][j]; j++) {
+			const NMEthtoolFeatureState *s = features->states_indexed[i][j];
+
+			_LOGT (">>>  %3u: %-32s | %s %s %s %s",
+			       j,
+			       s->info->kernel_names[s->idx_kernel_name],
+			       s->active ? "ACT" : "act",
+			       s->available ? "AVA" : "ava",
+			       s->never_changed ? "NCH" : "nch",
+			       s->requested ? "REQ" : "req");
+		}
+	}
+}
+
+static void
+test_ethtool_features_get (void)
+{
+	gs_unref_ptrarray GPtrArray *gfree_keeper = g_ptr_array_new_with_free_func (g_free);
+	const int IFINDEX = 1;
+	guint i;
+	guint i_run;
+
+	for (i_run = 0; i_run < 5; i_run++) {
+		NMEthtoolFeatureStates *features;
+		NMTernary *requested;
+		gboolean do_set = TRUE;
+
+		requested = g_new (NMTernary, _NM_ETHTOOL_ID_FEATURE_NUM);
+		for (i = 0; i < _NM_ETHTOOL_ID_FEATURE_NUM; i++)
+			requested[i] = NM_TERNARY_DEFAULT;
+		g_ptr_array_add (gfree_keeper, requested);
+
+		if (i_run == 0) {
+			requested[NM_ETHTOOL_ID_FEATURE_RX]                    = NM_TERNARY_FALSE;
+			requested[NM_ETHTOOL_ID_FEATURE_TSO]                   = NM_TERNARY_FALSE;
+			requested[NM_ETHTOOL_ID_FEATURE_TX_TCP6_SEGMENTATION]  = NM_TERNARY_FALSE;
+		} else if (i_run == 1)
+			do_set = FALSE;
+		else if (i_run == 2) {
+			requested[NM_ETHTOOL_ID_FEATURE_TSO]                   = NM_TERNARY_FALSE;
+			requested[NM_ETHTOOL_ID_FEATURE_TX_TCP6_SEGMENTATION]  = NM_TERNARY_TRUE;
+		} else if (i_run == 3)
+			do_set = FALSE;
+
+		_LOGT (">>> ethtool-features-get RUN %u (do-set=%s", i_run, do_set ? "set" : "reset");
+
+		features = nmp_utils_ethtool_get_features (IFINDEX);
+		g_ptr_array_add (gfree_keeper, features);
+
+		ethtool_features_dump (features);
+
+		if (_LOGT_ENABLED ()) {
+			int ignore;
+
+			ignore = system ("ethtool -k lo");
+			(void) ignore;
+		}
+
+		if (!do_set) {
+			requested = gfree_keeper->pdata[i_run * 2 - 2];
+			features = gfree_keeper->pdata[i_run * 2 - 1];
+		}
+
+		nmp_utils_ethtool_set_features (IFINDEX, features, requested, do_set);
+	}
+}
+
+/*****************************************************************************/
+
 NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;
 
 void
@@ -2774,5 +2870,7 @@ _nmtstp_setup_tests (void)
 
 		g_test_add_func ("/general/sysctl/rename", test_sysctl_rename);
 		g_test_add_func ("/general/sysctl/netns-switch", test_sysctl_netns_switch);
+
+		g_test_add_func ("/link/ethtool/features/get", test_ethtool_features_get);
 	}
 }

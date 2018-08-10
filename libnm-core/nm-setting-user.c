@@ -63,8 +63,7 @@ struct _NMSettingUserClass {
 	NMSettingClass parent;
 };
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingUser, nm_setting_user, NM_TYPE_SETTING,
-                         _nm_register_setting (USER, NM_SETTING_PRIORITY_USER))
+G_DEFINE_TYPE (NMSettingUser, nm_setting_user, NM_TYPE_SETTING)
 
 #define NM_SETTING_USER_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMSettingUser, NM_IS_SETTING_USER)
 
@@ -397,29 +396,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static gboolean
-hash_table_equal (GHashTable *a, GHashTable *b)
-{
-	guint n;
-	GHashTableIter iter;
-	const char *key, *value, *valu2;
-
-	n = a ? g_hash_table_size (a) : 0;
-	if (n != (b ? g_hash_table_size (b) : 0))
-		return FALSE;
-	if (n > 0) {
-		g_hash_table_iter_init (&iter, a);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
-			if (!g_hash_table_lookup_extended (b, key, NULL, (gpointer *) &valu2))
-				return FALSE;
-			if (!nm_streq (value, valu2))
-				return FALSE;
-		}
-	}
-	return TRUE;
-
-}
-
-static gboolean
 compare_property (NMSetting *setting,
                   NMSetting *other,
                   const GParamSpec *prop_spec,
@@ -436,10 +412,10 @@ compare_property (NMSetting *setting,
 	priv = NM_SETTING_USER_GET_PRIVATE (NM_SETTING_USER (setting));
 	pri2 = NM_SETTING_USER_GET_PRIVATE (NM_SETTING_USER (other));
 
-	if (!hash_table_equal (priv->data, pri2->data))
+	if (!nm_utils_hash_table_equal (priv->data, pri2->data, TRUE, g_str_equal))
 		return FALSE;
 
-	if (!hash_table_equal (priv->data_invalid, pri2->data_invalid))
+	if (!nm_utils_hash_table_equal (priv->data_invalid, pri2->data_invalid, TRUE, g_str_equal))
 		return FALSE;
 
 	return TRUE;
@@ -571,12 +547,14 @@ nm_setting_user_class_init (NMSettingUserClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
+
 	setting_class->compare_property = compare_property;
-	setting_class->verify = verify;
+	setting_class->verify           = verify;
 
 	/**
 	 * NMSettingUser:data: (type GHashTable(utf8,utf8))
@@ -607,8 +585,13 @@ nm_setting_user_class_init (NMSettingUserClass *klass)
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-	_nm_setting_class_transform_property (setting_class, NM_SETTING_USER_DATA,
-	                                      G_VARIANT_TYPE ("a{ss}"),
-	                                      _nm_utils_strdict_to_dbus,
-	                                      _nm_utils_strdict_from_dbus);
+	_properties_override_add_transform (properties_override,
+	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                  NM_SETTING_USER_DATA),
+	                                    G_VARIANT_TYPE ("a{ss}"),
+	                                    _nm_utils_strdict_to_dbus,
+	                                    _nm_utils_strdict_from_dbus);
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_USER,
+	                               NULL, properties_override);
 }

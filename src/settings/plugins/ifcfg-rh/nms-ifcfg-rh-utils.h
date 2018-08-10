@@ -22,6 +22,7 @@
 #define _UTILS_H_
 
 #include "nm-connection.h"
+#include "nm-ethtool-utils.h"
 
 #include "shvar.h"
 
@@ -79,5 +80,21 @@ _nms_ifcfg_rh_utils_numbered_tag (char *buf, gsize buf_len, const char *tag_name
 		G_STATIC_ASSERT (G_N_ELEMENTS (buf) == sizeof (buf) && sizeof (buf) != sizeof (char *) && sizeof (buf) < G_MAXINT); \
 		_nms_ifcfg_rh_utils_numbered_tag (buf, sizeof (buf), ""tag_name"", (which)); \
 	})
+
+/*****************************************************************************/
+
+extern const char *const _nm_ethtool_ifcfg_names[_NM_ETHTOOL_ID_FEATURE_NUM];
+
+static inline const char *
+nms_ifcfg_rh_utils_get_ethtool_name (NMEthtoolID ethtool_id)
+{
+	nm_assert (ethtool_id >= _NM_ETHTOOL_ID_FEATURE_FIRST && ethtool_id <= _NM_ETHTOOL_ID_FEATURE_LAST);
+	nm_assert ((ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST) < G_N_ELEMENTS (_nm_ethtool_ifcfg_names));
+	nm_assert (_nm_ethtool_ifcfg_names[ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST]);
+
+	return _nm_ethtool_ifcfg_names[ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST];
+}
+
+const NMEthtoolData *nms_ifcfg_rh_utils_get_ethtool_by_name (const char *name);
 
 #endif  /* _UTILS_H_ */

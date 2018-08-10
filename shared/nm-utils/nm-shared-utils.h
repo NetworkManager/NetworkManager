@@ -555,6 +555,35 @@ nm_utils_strv_make_deep_copied_nonnull (const char **strv)
 	return nm_utils_strv_make_deep_copied (strv) ?: g_new0 (char *, 1);
 }
 
+/*****************************************************************************/
+
+gssize nm_utils_ptrarray_find_binary_search (gconstpointer *list,
+                                             gsize len,
+                                             gconstpointer needle,
+                                             GCompareDataFunc cmpfcn,
+                                             gpointer user_data,
+                                             gssize *out_idx_first,
+                                             gssize *out_idx_last);
+
+gssize nm_utils_array_find_binary_search (gconstpointer list,
+                                          gsize elem_size,
+                                          gsize len,
+                                          gconstpointer needle,
+                                          GCompareDataFunc cmpfcn,
+                                          gpointer user_data);
+
+/*****************************************************************************/
+
+typedef gboolean (*NMUtilsHashTableEqualFunc) (gconstpointer a,
+                                               gconstpointer b);
+
+gboolean nm_utils_hash_table_equal (const GHashTable *a,
+                                    const GHashTable *b,
+                                    gboolean treat_null_as_empty,
+                                    NMUtilsHashTableEqualFunc equal_func);
+
+/*****************************************************************************/
+
 void _nm_utils_strv_sort (const char **strv, gssize len);
 #define nm_utils_strv_sort(strv, len) _nm_utils_strv_sort (NM_CAST_STRV_MC (strv), len)
 

@@ -2621,7 +2621,7 @@ compare_property (NMSetting *setting,
                   NMSettingCompareFlags flags)
 {
 	NMSettingIPConfigPrivate *a_priv, *b_priv;
-	NMSettingClass *parent_class;
+	NMSettingClass *setting_class;
 	guint i;
 
 	if (nm_streq (prop_spec->name, NM_SETTING_IP_CONFIG_ADDRESSES)) {
@@ -2650,9 +2650,8 @@ compare_property (NMSetting *setting,
 		return TRUE;
 	}
 
-	/* Otherwise chain up to parent to handle generic compare */
-	parent_class = NM_SETTING_CLASS (nm_setting_ip_config_parent_class);
-	return parent_class->compare_property (setting, other, prop_spec, flags);
+	setting_class = NM_SETTING_CLASS (nm_setting_ip_config_parent_class);
+	return setting_class->compare_property (setting, other, prop_spec, flags);
 }
 
 /*****************************************************************************/
@@ -2879,22 +2878,37 @@ ip_gateway_set (NMSetting  *setting,
 	return TRUE;
 }
 
-static void
-nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
+GArray *
+_nm_sett_info_property_override_create_array_ip_config (void)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	nm_auto_unref_gtypeclass NMSettingClass *setting_class = g_type_class_ref (NM_TYPE_SETTING_IP_CONFIG);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingIPConfigPrivate));
+	_properties_override_add_override (properties_override,
+	                                   g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                 NM_SETTING_IP_CONFIG_GATEWAY),
+	                                   G_VARIANT_TYPE_STRING,
+	                                   NULL,
+	                                   ip_gateway_set,
+	                                   NULL);
 
-	/* virtual methods */
+	return properties_override;
+}
+
+static void
+nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+
+	g_type_class_add_private (klass, sizeof (NMSettingIPConfigPrivate));
+
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
-	parent_class->compare_property = compare_property;
 
-	/* Properties */
+	setting_class->verify           = verify;
+	setting_class->compare_property = compare_property;
 
 	/**
 	 * NMSettingIPConfig:method:
@@ -3043,13 +3057,6 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
-
-	_nm_setting_class_override_property (parent_class,
-	                                     NM_SETTING_IP_CONFIG_GATEWAY,
-	                                     G_VARIANT_TYPE_STRING,
-	                                     NULL,
-	                                     ip_gateway_set,
-	                                     NULL);
 
 	/**
 	 * NMSettingIPConfig:routes: (type GPtrArray(NMIPRoute))

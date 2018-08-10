@@ -1350,6 +1350,209 @@ nm_utils_strv_make_deep_copied (const char **strv)
 
 /*****************************************************************************/
 
+gssize
+nm_utils_ptrarray_find_binary_search (gconstpointer *list,
+                                      gsize len,
+                                      gconstpointer needle,
+                                      GCompareDataFunc cmpfcn,
+                                      gpointer user_data,
+                                      gssize *out_idx_first,
+                                      gssize *out_idx_last)
+{
+	gssize imin, imax, imid, i2min, i2max, i2mid;
+	int cmp;
+
+	g_return_val_if_fail (list || !len, ~((gssize) 0));
+	g_return_val_if_fail (cmpfcn, ~((gssize) 0));
+
+	imin = 0;
+	if (len > 0) {
+		imax = len - 1;
+
+		while (imin <= imax) {
+			imid = imin + (imax - imin) / 2;
+
+			cmp = cmpfcn (list[imid], needle, user_data);
+			if (cmp == 0) {
+				/* we found a matching entry at index imid.
+				 *
+				 * Does the caller request the first/last index as well (in case that
+				 * there are multiple entries which compare equal). */
+
+				if (out_idx_first) {
+					i2min = imin;
+					i2max = imid + 1;
+					while (i2min <= i2max) {
+						i2mid = i2min + (i2max - i2min) / 2;
+
+						cmp = cmpfcn (list[i2mid], needle, user_data);
+						if (cmp == 0)
+							i2max = i2mid -1;
+						else {
+							nm_assert (cmp < 0);
+							i2min = i2mid + 1;
+						}
+					}
+					*out_idx_first = i2min;
+				}
+				if (out_idx_last) {
+					i2min = imid + 1;
+					i2max = imax;
+					while (i2min <= i2max) {
+						i2mid = i2min + (i2max - i2min) / 2;
+
+						cmp = cmpfcn (list[i2mid], needle, user_data);
+						if (cmp == 0)
+							i2min = i2mid + 1;
+						else {
+							nm_assert (cmp > 0);
+							i2max = i2mid - 1;
+						}
+					}
+					*out_idx_last = i2min - 1;
+				}
+				return imid;
+			}
+
+			if (cmp < 0)
+				imin = imid + 1;
+			else
+				imax = imid - 1;
+		}
+	}
+
+	/* return the inverse of @imin. This is a negative number, but
+	 * also is ~imin the position where the value should be inserted. */
+	imin = ~imin;
+	NM_SET_OUT (out_idx_first, imin);
+	NM_SET_OUT (out_idx_last, imin);
+	return imin;
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_utils_array_find_binary_search:
+ * @list: the list to search. It must be sorted according to @cmpfcn ordering.
+ * @elem_size: the size in bytes of each element in the list
+ * @len: the number of elements in @list
+ * @needle: the value that is searched
+ * @cmpfcn: the compare function. The elements @list are passed as first
+ *   argument to @cmpfcn, while @needle is passed as second. Usually, the
+ *   needle is the same data type as inside the list, however, that is
+ *   not necessary, as long as @cmpfcn takes care to cast the two arguments
+ *   accordingly.
+ * @user_data: optional argument passed to @cmpfcn
+ *
+ * Performs binary search for @needle in @list. On success, returns the
+ * (non-negative) index where the compare function found the searched element.
+ * On success, it returns a negative value. Note that the return negative value
+ * is the bitwise inverse of the position where the element should be inserted.
+ *
+ * If the list contains multiple matching elements, an arbitrary index is
+ * returned.
+ *
+ * Returns: the index to the element in the list, or the (negative, bitwise inverted)
+ *   position where it should be.
+ */
+gssize
+nm_utils_array_find_binary_search (gconstpointer list,
+                                   gsize elem_size,
+                                   gsize len,
+                                   gconstpointer needle,
+                                   GCompareDataFunc cmpfcn,
+                                   gpointer user_data)
+{
+	gssize imin, imax, imid;
+	int cmp;
+
+	g_return_val_if_fail (list || !len, ~((gssize) 0));
+	g_return_val_if_fail (cmpfcn, ~((gssize) 0));
+	g_return_val_if_fail (elem_size > 0, ~((gssize) 0));
+
+	imin = 0;
+	if (len == 0)
+		return ~imin;
+
+	imax = len - 1;
+
+	while (imin <= imax) {
+		imid = imin + (imax - imin) / 2;
+
+		cmp = cmpfcn (&((const char *) list)[elem_size * imid], needle, user_data);
+		if (cmp == 0)
+			return imid;
+
+		if (cmp < 0)
+			imin = imid + 1;
+		else
+			imax = imid - 1;
+	}
+
+	/* return the inverse of @imin. This is a negative number, but
+	 * also is ~imin the position where the value should be inserted. */
+	return ~imin;
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_utils_hash_table_equal:
+ * @a: one #GHashTable
+ * @b: other #GHashTable
+ * @treat_null_as_empty: if %TRUE, when either @a or @b is %NULL, it is
+ *   treated like an empty hash. It means, a %NULL hash will compare equal
+ *   to an empty hash.
+ * @equal_func: the equality function, for comparing the values.
+ *   If %NULL, the values are not compared. In that case, the function
+ *   only checks, if both dictionaries have the same keys -- according
+ *   to @b's key equality function.
+ *   Note that the values of @a will be passed as first argument
+ *   to @equal_func.
+ *
+ * Compares two hash tables, whether they have equal content.
+ * This only makes sense, if @a and @b have the same key types and
+ * the same key compare-function.
+ *
+ * Returns: %TRUE, if both dictionaries have the same content.
+ */
+gboolean
+nm_utils_hash_table_equal (const GHashTable *a,
+                           const GHashTable *b,
+                           gboolean treat_null_as_empty,
+                           NMUtilsHashTableEqualFunc equal_func)
+{
+	guint n;
+	GHashTableIter iter;
+	gconstpointer key, v_a, v_b;
+
+	if (a == b)
+		return TRUE;
+	if (!treat_null_as_empty) {
+		if (!a || !b)
+			return FALSE;
+	}
+
+	n = a ? g_hash_table_size ((GHashTable *) a) : 0;
+	if (n != (b ? g_hash_table_size ((GHashTable *) b) : 0))
+		return FALSE;
+
+	if (n > 0) {
+		g_hash_table_iter_init (&iter, (GHashTable *) a);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &v_a)) {
+			if (!g_hash_table_lookup_extended ((GHashTable *) b, key, NULL, (gpointer *) &v_b))
+				return FALSE;
+			if (   equal_func
+			    && !equal_func (v_a, v_b))
+				return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_utils_get_start_time_for_pid:
  * @pid: the process identifier

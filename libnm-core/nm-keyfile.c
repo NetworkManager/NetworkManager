@@ -2096,18 +2096,16 @@ typedef struct {
 	})
 
 typedef struct {
-	const char *setting_name;
 	const ParseInfoProperty*const*properties;
 } ParseInfoSetting;
 
-#define PARSE_INFO_SETTING(_setting_name, ...) \
-	{ \
-		.setting_name = _setting_name, \
+#define PARSE_INFO_SETTING(setting_type, ...) \
+	[setting_type] = (&((const ParseInfoSetting) { \
 		__VA_ARGS__ \
-	}
+	}))
 
-static const ParseInfoSetting parse_infos[] = {
-	PARSE_INFO_SETTING (NM_SETTING_WIRELESS_SETTING_NAME,
+static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_WIRELESS,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_WIRELESS_BSSID,
 				.parser        = mac_address_parser_ETHER,
@@ -2124,7 +2122,7 @@ static const ParseInfoSetting parse_infos[] = {
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_802_1X_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_802_1X,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_802_1X_CA_CERT,
 				.parser        = cert_parser,
@@ -2156,7 +2154,7 @@ static const ParseInfoSetting parse_infos[] = {
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_WIRED_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_WIRED,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
 				.parser        = mac_address_parser_ETHER_cloned,
@@ -2166,28 +2164,28 @@ static const ParseInfoSetting parse_infos[] = {
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_BLUETOOTH_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_BLUETOOTH,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_BLUETOOTH_BDADDR,
 				.parser        = mac_address_parser_ETHER,
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_BOND_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_BOND,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_BOND_OPTIONS,
 				.parser_no_check_key = TRUE,
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_BRIDGE_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_BRIDGE,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_BRIDGE_MAC_ADDRESS,
 				.parser        = mac_address_parser_ETHER,
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_CONNECTION_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_CONNECTION,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_CONNECTION_READ_ONLY,
 				.parser_skip   = TRUE,
@@ -2199,14 +2197,14 @@ static const ParseInfoSetting parse_infos[] = {
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_INFINIBAND_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_INFINIBAND,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_INFINIBAND_MAC_ADDRESS,
 				.parser        = mac_address_parser_INFINIBAND,
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_IP4_CONFIG,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_ADDRESSES,
 				.parser_no_check_key = TRUE,
@@ -2228,7 +2226,7 @@ static const ParseInfoSetting parse_infos[] = {
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_IP6_CONFIG,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
 				.parser_no_check_key = TRUE,
@@ -2256,14 +2254,14 @@ static const ParseInfoSetting parse_infos[] = {
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_SERIAL_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_SERIAL,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_SERIAL_PARITY,
 				.parser        = parity_parser,
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_SRIOV_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_SRIOV,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_SRIOV_VFS,
 				.parser_no_check_key = TRUE,
@@ -2272,7 +2270,7 @@ static const ParseInfoSetting parse_infos[] = {
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_TC_CONFIG_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_TC_CONFIG,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_TC_CONFIG_QDISCS,
 				.parser_no_check_key = TRUE,
@@ -2286,7 +2284,7 @@ static const ParseInfoSetting parse_infos[] = {
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_TEAM_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_TEAM,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_CONFIG,
 				.parser        = team_config_parser,
@@ -2353,7 +2351,7 @@ static const ParseInfoSetting parse_infos[] = {
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_TEAM_PORT_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_TEAM_PORT,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_CONFIG,
 				.parser        = team_config_parser,
@@ -2384,21 +2382,21 @@ static const ParseInfoSetting parse_infos[] = {
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_USER_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_USER,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_USER_DATA,
 				.parser_no_check_key = TRUE,
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_VLAN_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_VLAN,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_VLAN_FLAGS,
 				.writer_persist_default = TRUE,
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_VPN_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_VPN,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_VPN_DATA,
 				.parser_no_check_key = TRUE,
@@ -2420,7 +2418,7 @@ static const ParseInfoSetting parse_infos[] = {
 			),
 		),
 	),
-	PARSE_INFO_SETTING (NM_SETTING_WIMAX_SETTING_NAME,
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_WIMAX,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_WIMAX_MAC_ADDRESS,
 				.parser        = mac_address_parser_ETHER,
@@ -2430,21 +2428,24 @@ static const ParseInfoSetting parse_infos[] = {
 };
 
 static const ParseInfoProperty *
-_parse_info_find (const char *setting_name, const char *property_name)
+_parse_info_find (NMSetting *setting,
+                  const char *property_name,
+                  const char **out_setting_name)
 {
+	const NMMetaSettingInfo *setting_info;
+	const ParseInfoSetting *pis;
 	gssize idx;
 
-#if NM_MORE_ASSERTS > 5
+#if NM_MORE_ASSERTS > 10
 	{
 		guint i, j;
 
 		for (i = 0; i < G_N_ELEMENTS (parse_infos); i++) {
-			const ParseInfoSetting *pis = &parse_infos[i];
+			pis = parse_infos[i];
 
-			g_assert (pis->setting_name);
-			if (   i > 0
-			    && strcmp (pis[-1].setting_name, pis->setting_name) >= 0)
-				g_error ("Wrong order at index #%d: \"%s\" before \"%s\"", i - 1, pis[-1].setting_name, pis->setting_name);
+			if (!pis)
+				continue;
+
 			g_assert (pis->properties);
 			g_assert (pis->properties[0]);
 			for (j = 0; pis->properties[j]; j++) {
@@ -2454,32 +2455,35 @@ _parse_info_find (const char *setting_name, const char *property_name)
 				g_assert (pip->property_name);
 				if (   j > 0
 				    && (pip0 = pis->properties[j - 1])
-				    && strcmp (pip0->property_name, pip->property_name) >= 0)
-					g_error ("Wrong order at index #%d.%d: \"%s.%s\" before \"%s.%s\"", i, j - 1, pis->setting_name, pip0->property_name, pis->setting_name, pip->property_name);
+				    && strcmp (pip0->property_name, pip->property_name) >= 0) {
+					g_error ("Wrong order at index #%d.%d: \"%s.%s\" before \"%s.%s\"",
+					         i, j - 1,
+					         nm_meta_setting_infos[i].setting_name, pip0->property_name,
+					         nm_meta_setting_infos[i].setting_name, pip->property_name);
+				}
 			}
 		}
 	}
 #endif
 
-	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (ParseInfoSetting, setting_name) == 0);
-	idx = _nm_utils_array_find_binary_search (parse_infos,
-	                                          sizeof (ParseInfoSetting),
-	                                          G_N_ELEMENTS (parse_infos),
-	                                          &setting_name,
-	                                          nm_strcmp_p_with_data,
-	                                          NULL);
-	if (idx >= 0) {
-		const ParseInfoSetting *pis = &parse_infos[idx];
+	if (   !NM_IS_SETTING (setting)
+	    || !(setting_info = NM_SETTING_GET_CLASS (setting)->setting_info)) {
+		/* handle invalid setting objects gracefully. */
+		*out_setting_name = NULL;
+		return NULL;
+	}
 
+	*out_setting_name = setting_info->setting_name;
+
+	if ((pis = parse_infos[setting_info->meta_type])) {
 		G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (ParseInfoProperty, property_name) == 0);
-		nm_assert (nm_streq (pis->setting_name, setting_name));
-		idx = _nm_utils_ptrarray_find_binary_search ((gconstpointer *) pis->properties,
-		                                             NM_PTRARRAY_LEN (pis->properties),
-		                                             &property_name,
-		                                             nm_strcmp_p_with_data,
-		                                             NULL,
-		                                             NULL,
-		                                             NULL);
+		idx = nm_utils_ptrarray_find_binary_search ((gconstpointer *) pis->properties,
+		                                            NM_PTRARRAY_LEN (pis->properties),
+		                                            &property_name,
+		                                            nm_strcmp_p_with_data,
+		                                            NULL,
+		                                            NULL,
+		                                            NULL);
 		if (idx >= 0)
 			return pis->properties[idx];
 	}
@@ -2510,9 +2514,9 @@ read_one_setting_value (NMSetting *setting,
 	if (!(flags & G_PARAM_WRITABLE))
 		return;
 
-	setting_name = nm_setting_get_name (setting);
+	pip = _parse_info_find (setting, key, &setting_name);
 
-	pip = _parse_info_find (setting_name, key);
+	nm_assert (setting_name);
 
 	if (   !pip
 	    && nm_streq (key, NM_SETTING_NAME))
@@ -2680,6 +2684,8 @@ read_one_setting_value (NMSetting *setting,
 static NMSetting *
 read_setting (KeyfileReaderInfo *info)
 {
+	const NMSettInfoSetting *sett_info;
+	gs_unref_object NMSetting *setting = NULL;
 	const char *alias;
 	GType type;
 
@@ -2688,22 +2694,92 @@ read_setting (KeyfileReaderInfo *info)
 		alias = info->group;
 
 	type = nm_setting_lookup_type (alias);
-	if (type) {
-		NMSetting *setting = g_object_new (type, NULL);
-
-		info->setting = setting;
-		nm_setting_enumerate_values (setting, read_one_setting_value, info);
-		info->setting = NULL;
-		if (!info->error)
-			return setting;
-
-		g_object_unref (setting);
-	} else {
+	if (!type) {
 		handle_warn (info, NULL, NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("invalid setting name '%s'"), info->group);
+		return NULL;
 	}
 
-	return NULL;
+	setting = g_object_new (type, NULL);
+
+	info->setting = setting;
+
+	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+
+	if (sett_info->detail.gendata_info) {
+		gs_free char **keys = NULL;
+		gsize i, n_keys;
+
+		keys = g_key_file_get_keys (info->keyfile, info->group, &n_keys, NULL);
+		if (n_keys > 0) {
+			GHashTable *h = _nm_setting_gendata_hash (setting, TRUE);
+
+			nm_utils_strv_sort (keys, n_keys);
+			for (i = 0; i < n_keys; i++) {
+				gs_free char *key = keys[i];
+				gs_free_error GError *local = NULL;
+				const GVariantType *variant_type;
+				GVariant *variant;
+
+				/* a GKeyfile can return duplicate keys, there is just no API to make sense
+				 * of them. Skip them. */
+				if (   i + 1 < n_keys
+				    && nm_streq (key, keys[i + 1]))
+					continue;
+
+				/* currently, the API is very simple. The setting class just returns
+				 * the desired variant type, and keyfile reader will try to parse
+				 * it accordingly. Note, that this does currently not allow, that
+				 * a particular key can contain different variant types, nor is it
+				 * very flexible in general.
+				 *
+				 * We add flexibility when we need it. Keep it simple for now. */
+				variant_type = sett_info->detail.gendata_info->get_variant_type (sett_info,
+				                                                                 key,
+				                                                                 &local);
+				if (!variant_type) {
+					if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+					                  _("invalid key '%s.%s'"),
+					                  info->group, key))
+						break;
+					continue;
+				}
+
+				if (g_variant_type_equal (variant_type, G_VARIANT_TYPE_BOOLEAN)) {
+					gboolean v;
+
+					v = g_key_file_get_boolean (info->keyfile,
+					                            info->group,
+					                            key,
+					                            &local);
+					if (local) {
+						if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+						                  _("key '%s.%s' is not boolean"),
+						                  info->group, key))
+							break;
+						continue;
+					}
+					variant = g_variant_new_boolean (v);
+				} else {
+					nm_assert_not_reached ();
+					continue;
+				}
+
+				g_hash_table_insert (h,
+				                     g_steal_pointer (&key),
+				                     g_variant_take_ref (variant));
+			}
+			for (; i < n_keys; i++)
+				g_free (keys[i]);
+		}
+	} else
+		nm_setting_enumerate_values (setting, read_one_setting_value, info);
+
+	info->setting = NULL;
+
+	if (info->error)
+		return NULL;
+	return g_steal_pointer (&setting);
 }
 
 static void
@@ -2778,7 +2854,7 @@ nm_keyfile_read (GKeyFile *keyfile,
 			base_dir = base_dir_free = g_get_current_dir ();
 		}
 	} else
-		g_return_val_if_fail ("/", NULL);
+		g_return_val_if_fail (base_dir[0] == '/', NULL);
 
 	connection = nm_simple_connection_new ();
 
@@ -2884,12 +2960,22 @@ write_setting_value (NMSetting *setting,
 	if (info->error)
 		return;
 
-	setting_name = nm_setting_get_name (setting);
-
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), key);
 	nm_assert (pspec);
 
-	pip = _parse_info_find (setting_name, key);
+	pip = _parse_info_find (setting, key, &setting_name);
+
+	if (!setting_name) {
+		/* the setting type is unknown. That is highly unexpected
+		 * (and as this is currently only called from NetworkManager
+		 * daemon, not possible).
+		 *
+		 * Still, handle it gracefully, because later keyfile writer will become
+		 * public API of libnm, where @setting is (untrusted) user input.
+		 *
+		 * Gracefully here just means: ignore the setting. */
+		return;
+	}
 
 	if (   !pip
 	    && nm_streq (key, NM_SETTING_NAME))
@@ -2984,6 +3070,8 @@ nm_keyfile_write (NMConnection *connection,
                   GError **error)
 {
 	KeyfileWriterInfo info = { 0 };
+	gs_free NMSetting **settings = NULL;
+	guint i, length = 0;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
@@ -2996,12 +3084,59 @@ nm_keyfile_write (NMConnection *connection,
 	info.error = NULL;
 	info.handler = handler;
 	info.user_data = user_data;
-	nm_connection_for_each_setting_value (connection, write_setting_value, &info);
+
+	settings = nm_connection_get_settings (connection, &length);
+	for (i = 0; i < length; i++) {
+		const NMSettInfoSetting *sett_info;
+		NMSetting *setting = settings[i];
+
+		sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+
+		if (sett_info->detail.gendata_info) {
+			guint k, n_keys;
+			const char *const*keys;
+
+			nm_assert (!nm_keyfile_plugin_get_alias_for_setting_name (sett_info->setting_class->setting_info->setting_name));
+
+			n_keys = _nm_setting_gendata_get_all (setting, &keys, NULL);
+
+			if (n_keys > 0) {
+				const char *setting_name = sett_info->setting_class->setting_info->setting_name;
+				GHashTable *h = _nm_setting_gendata_hash (setting, FALSE);
+
+				for (k = 0; k < n_keys; k++) {
+					const char *key = keys[k];
+					GVariant *v;
+
+					v = g_hash_table_lookup (h, key);
+
+					if (g_variant_is_of_type (v, G_VARIANT_TYPE_BOOLEAN)) {
+						g_key_file_set_boolean (info.keyfile,
+						                        setting_name,
+						                        key,
+						                        g_variant_get_boolean (v));
+					} else {
+						/* BUG: The variant type is not implemented. Since the connection
+						 * verifies, this can only mean we either wrongly didn't reject
+						 * the connection as invalid, or we didn't properly implement the
+						 * variant type. */
+						nm_assert_not_reached ();
+						continue;
+					}
+				}
+			}
+		} else
+			nm_setting_enumerate_values (setting, write_setting_value, &info);
+
+		if (info.error)
+			break;
+	}
 
 	if (info.error) {
 		g_propagate_error (error, info.error);
 		g_key_file_unref (info.keyfile);
 		return NULL;
 	}
+
 	return info.keyfile;
 }

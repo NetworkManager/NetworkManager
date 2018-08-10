@@ -3213,6 +3213,32 @@ NM_UTILS_LOOKUP_STR_DEFINE (nm_platform_link_duplex_type_to_string, NMPlatformLi
 
 /*****************************************************************************/
 
+NMEthtoolFeatureStates *
+nm_platform_ethtool_get_link_features (NMPlatform *self, int ifindex)
+{
+	_CHECK_SELF_NETNS (self, klass, netns, NULL);
+
+	g_return_val_if_fail (ifindex > 0, NULL);
+
+	return nmp_utils_ethtool_get_features (ifindex);
+}
+
+gboolean
+nm_platform_ethtool_set_features (NMPlatform *self,
+                                  int ifindex,
+                                  const NMEthtoolFeatureStates *features,
+                                  const NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
+                                  gboolean do_set /* or reset */)
+{
+	_CHECK_SELF_NETNS (self, klass, netns, FALSE);
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return nmp_utils_ethtool_set_features (ifindex, features, requested, do_set);
+}
+
+/*****************************************************************************/
+
 const NMDedupMultiHeadEntry *
 nm_platform_lookup_all (NMPlatform *platform,
                         NMPCacheIdType cache_id_type,

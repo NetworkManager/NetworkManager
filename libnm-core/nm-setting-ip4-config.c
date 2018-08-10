@@ -50,8 +50,7 @@
  * connection.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingIP4Config, nm_setting_ip4_config, NM_TYPE_SETTING_IP_CONFIG,
-                         _nm_register_setting (IP4_CONFIG, NM_SETTING_PRIORITY_IP))
+G_DEFINE_TYPE (NMSettingIP4Config, nm_setting_ip4_config, NM_TYPE_SETTING_IP_CONFIG)
 
 #define NM_SETTING_IP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_IP4_CONFIG, NMSettingIP4ConfigPrivate))
 
@@ -524,20 +523,19 @@ ip4_route_data_set (NMSetting  *setting,
 }
 
 static void
-nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
+nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 {
-	NMSettingClass *setting_class = NM_SETTING_CLASS (ip4_class);
-	GObjectClass *object_class = G_OBJECT_CLASS (ip4_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array_ip_config ();
 
 	g_type_class_add_private (setting_class, sizeof (NMSettingIP4ConfigPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	setting_class->verify = verify;
 
-	/* properties */
+	setting_class->verify = verify;
 
 	/* ---ifcfg-rh---
 	 * property: method
@@ -797,11 +795,12 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	 *   integers)
 	 * ---end---
 	 */
-	_nm_setting_class_transform_property (setting_class,
-	                                      NM_SETTING_IP_CONFIG_DNS,
-	                                      G_VARIANT_TYPE ("au"),
-	                                      ip4_dns_to_dbus,
-	                                      ip4_dns_from_dbus);
+	_properties_override_add_transform (properties_override,
+	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                  NM_SETTING_IP_CONFIG_DNS),
+	                                    G_VARIANT_TYPE ("au"),
+	                                    ip4_dns_to_dbus,
+	                                    ip4_dns_from_dbus);
 
 	/* ---dbus---
 	 * property: addresses
@@ -818,18 +817,19 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	 *   for that subnet.
 	 * ---end---
 	 */
-	_nm_setting_class_override_property (setting_class,
-	                                     NM_SETTING_IP_CONFIG_ADDRESSES,
-	                                     G_VARIANT_TYPE ("aau"),
-	                                     ip4_addresses_get,
-	                                     ip4_addresses_set,
-	                                     NULL);
+	_properties_override_add_override (properties_override,
+	                                   g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                 NM_SETTING_IP_CONFIG_ADDRESSES),
+	                                   G_VARIANT_TYPE ("aau"),
+	                                   ip4_addresses_get,
+	                                   ip4_addresses_set,
+	                                   NULL);
 
-	_nm_setting_class_add_dbus_only_property (setting_class,
-	                                          "address-labels",
-	                                          G_VARIANT_TYPE_STRING_ARRAY,
-	                                          ip4_address_labels_get,
-	                                          NULL);
+	_properties_override_add_dbus_only (properties_override,
+	                                    "address-labels",
+	                                    G_VARIANT_TYPE_STRING_ARRAY,
+	                                    ip4_address_labels_get,
+	                                    NULL);
 
 	/* ---dbus---
 	 * property: address-data
@@ -840,11 +840,11 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	 *   also exist on some addresses.
 	 * ---end---
 	 */
-	_nm_setting_class_add_dbus_only_property (setting_class,
-	                                          "address-data",
-	                                          G_VARIANT_TYPE ("aa{sv}"),
-	                                          ip4_address_data_get,
-	                                          ip4_address_data_set);
+	_properties_override_add_dbus_only (properties_override,
+	                                    "address-data",
+	                                    G_VARIANT_TYPE ("aa{sv}"),
+	                                    ip4_address_data_get,
+	                                    ip4_address_data_set);
 
 	/* ---dbus---
 	 * property: routes
@@ -863,12 +863,13 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	 *   property.)
 	 * ---end---
 	 */
-	_nm_setting_class_override_property (setting_class,
-	                                     NM_SETTING_IP_CONFIG_ROUTES,
-	                                     G_VARIANT_TYPE ("aau"),
-	                                     ip4_routes_get,
-	                                     ip4_routes_set,
-	                                     NULL);
+	_properties_override_add_override (properties_override,
+	                                   g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                 NM_SETTING_IP_CONFIG_ROUTES),
+	                                   G_VARIANT_TYPE ("aau"),
+	                                   ip4_routes_get,
+	                                   ip4_routes_set,
+	                                   NULL);
 
 	/* ---dbus---
 	 * property: route-data
@@ -883,10 +884,12 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	 *   also exist on some routes.
 	 * ---end---
 	 */
-	_nm_setting_class_add_dbus_only_property (setting_class,
-	                                          "route-data",
-	                                          G_VARIANT_TYPE ("aa{sv}"),
-	                                          ip4_route_data_get,
-	                                          ip4_route_data_set);
+	_properties_override_add_dbus_only (properties_override,
+	                                    "route-data",
+	                                    G_VARIANT_TYPE ("aa{sv}"),
+	                                    ip4_route_data_get,
+	                                    ip4_route_data_set);
 
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_IP4_CONFIG,
+	                               NULL, properties_override);
 }

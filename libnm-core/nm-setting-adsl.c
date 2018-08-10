@@ -37,8 +37,7 @@
  * properties of ADSL connections.
  */
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingAdsl, nm_setting_adsl, NM_TYPE_SETTING,
-                         _nm_register_setting (ADSL, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingAdsl, nm_setting_adsl, NM_TYPE_SETTING)
 
 #define NM_SETTING_ADSL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_ADSL, NMSettingAdslPrivate))
 
@@ -345,22 +344,20 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
+nm_setting_adsl_class_init (NMSettingAdslClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingAdslPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingAdslPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
-	parent_class->verify_secrets = verify_secrets;
-	parent_class->need_secrets = need_secrets;
 
-	/* Properties */
+	setting_class->verify         = verify;
+	setting_class->verify_secrets = verify_secrets;
+	setting_class->need_secrets   = need_secrets;
 
 	/**
 	 * NMSettingAdsl:username:
@@ -447,4 +444,6 @@ nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
 		                    0, 65536, 0,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_ADSL);
 }

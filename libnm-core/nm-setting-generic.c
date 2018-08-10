@@ -36,8 +36,7 @@
  * the "connection type" setting on #NMConnections for generic devices.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingGeneric, nm_setting_generic, NM_TYPE_SETTING,
-                         _nm_register_setting (GENERIC, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingGeneric, nm_setting_generic, NM_TYPE_SETTING)
 
 #define NM_SETTING_GENERIC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_GENERIC, NMSettingGenericPrivate))
 
@@ -66,7 +65,11 @@ nm_setting_generic_init (NMSettingGeneric *setting)
 }
 
 static void
-nm_setting_generic_class_init (NMSettingGenericClass *setting_class)
+nm_setting_generic_class_init (NMSettingGenericClass *klass)
 {
-	g_type_class_add_private (setting_class, sizeof (NMSettingGenericPrivate));
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+
+	g_type_class_add_private (klass, sizeof (NMSettingGenericPrivate));
+
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_GENERIC);
 }

@@ -1,7 +1,7 @@
 TYPE=Ethernet
 PROXY_METHOD=none
 BROWSER_ONLY=no
-ETHTOOL_OPTS="autoneg off speed 10 duplex half"
+ETHTOOL_OPTS="autoneg on ; -K net0 rxvlan off tx on"
 BOOTPROTO=dhcp
 DEFROUTE=yes
 IPV4_FAILURE_FATAL=no

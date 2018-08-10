@@ -60,8 +60,7 @@
  *       ISBN: 978-1587051548
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING,
-                         _nm_register_setting (802_1X, NM_SETTING_PRIORITY_HW_AUX))
+G_DEFINE_TYPE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING)
 
 #define NM_SETTING_802_1X_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_802_1X, NMSetting8021xPrivate))
 
@@ -3761,22 +3760,19 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
+nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (setting_class, sizeof (NMSetting8021xPrivate));
+	g_type_class_add_private (klass, sizeof (NMSetting8021xPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	parent_class->verify         = verify;
-	parent_class->need_secrets   = need_secrets;
-
-	/* Properties */
+	setting_class->verify       = verify;
+	setting_class->need_secrets = need_secrets;
 
 	/**
 	 * NMSetting8021x:eap:
@@ -4806,4 +4802,6 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                   G_PARAM_READWRITE |
 		                   NM_SETTING_PARAM_FUZZY_IGNORE |
 		                   G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_802_1X);
 }

@@ -65,8 +65,7 @@ struct _NMSettingWpanClass {
  * necessary for configuring IEEE 802.15.4 (WPAN) MAC layer devices.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingWpan, nm_setting_wpan, NM_TYPE_SETTING,
-                         _nm_register_setting (WPAN, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingWpan, nm_setting_wpan, NM_TYPE_SETTING)
 
 #define NM_SETTING_WPAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WPAN, NMSettingWpanPrivate))
 
@@ -214,17 +213,18 @@ finalize (GObject *object)
 }
 
 static void
-nm_setting_wpan_class_init (NMSettingWpanClass *setting_wpan_class)
+nm_setting_wpan_class_init (NMSettingWpanClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_wpan_class);
-	NMSettingClass *setting_class = NM_SETTING_CLASS (setting_wpan_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
 	g_type_class_add_private (setting_class, sizeof (NMSettingWpanPrivate));
 
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-	object_class->finalize	   = finalize;
-	setting_class->verify      = verify;
+	object_class->finalize     = finalize;
+
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingWpan:mac-address:
@@ -269,4 +269,6 @@ nm_setting_wpan_class_init (NMSettingWpanClass *setting_wpan_class)
 	                            0, G_MAXUINT16, G_MAXUINT16,
 	                            G_PARAM_READWRITE |
 	                            G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_WPAN);
 }

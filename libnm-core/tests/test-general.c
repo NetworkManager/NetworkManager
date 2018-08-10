@@ -43,6 +43,7 @@
 #include "nm-setting-bridge-port.h"
 #include "nm-setting-cdma.h"
 #include "nm-setting-connection.h"
+#include "nm-setting-ethtool.h"
 #include "nm-setting-generic.h"
 #include "nm-setting-gsm.h"
 #include "nm-setting-infiniband.h"
@@ -65,6 +66,7 @@
 #include "nm-simple-connection.h"
 #include "nm-keyfile-internal.h"
 #include "nm-utils/nm-dedup-multi.h"
+#include "nm-ethtool-utils.h"
 
 #include "test-general-enums.h"
 
@@ -6126,7 +6128,7 @@ _test_find_binary_search_do (const int *array, gsize len)
 
 	expected_result = _nm_utils_ptrarray_find_first (parray, len, pneedle);
 
-	idx = _nm_utils_ptrarray_find_binary_search (parray, len, pneedle, _test_find_binary_search_cmp, NULL, &idx_first, &idx_last);
+	idx = nm_utils_ptrarray_find_binary_search (parray, len, pneedle, _test_find_binary_search_cmp, NULL, &idx_first, &idx_last);
 	if (expected_result >= 0) {
 		g_assert_cmpint (expected_result, ==, idx);
 	} else {
@@ -6188,12 +6190,12 @@ _test_find_binary_search_do_uint32 (const int *int_array, gsize len)
 			expected_result = idx;
 	}
 
-	idx = _nm_utils_array_find_binary_search (array,
-	                                          sizeof (guint32),
-	                                          len,
-	                                          &NEEDLE,
-	                                          nm_cmp_uint32_p_with_data,
-	                                          NULL);
+	idx = nm_utils_array_find_binary_search (array,
+	                                         sizeof (guint32),
+	                                         len,
+	                                         &NEEDLE,
+	                                         nm_cmp_uint32_p_with_data,
+	                                         NULL);
 	if (expected_result >= 0)
 		g_assert_cmpint (expected_result, ==, idx);
 	else {
@@ -6293,11 +6295,11 @@ test_nm_utils_ptrarray_find_binary_search_with_duplicates (void)
 			for (i = 0; i < i_len + BIN_SEARCH_W_DUPS_JITTER; i++) {
 				gconstpointer p = GINT_TO_POINTER (i);
 
-				idx = _nm_utils_ptrarray_find_binary_search (arr, i_len, p, _test_bin_search2_cmp, NULL, &idx_first, &idx_last);
+				idx = nm_utils_ptrarray_find_binary_search (arr, i_len, p, _test_bin_search2_cmp, NULL, &idx_first, &idx_last);
 
 				idx_first2 = _nm_utils_ptrarray_find_first (arr, i_len, p);
 
-				idx2 = _nm_utils_array_find_binary_search (arr, sizeof (gpointer), i_len, &p, _test_bin_search2_cmp_p, NULL);
+				idx2 = nm_utils_array_find_binary_search (arr, sizeof (gpointer), i_len, &p, _test_bin_search2_cmp_p, NULL);
 				g_assert_cmpint (idx, ==, idx2);
 
 				if (idx_first2 < 0) {
@@ -7058,6 +7060,22 @@ test_nm_va_args_macros (void)
 
 /*****************************************************************************/
 
+static void
+test_ethtool_offload (void)
+{
+	const NMEthtoolData *d;
+
+	g_assert_cmpint (nm_ethtool_id_get_by_name ("invalid"),    ==, NM_ETHTOOL_ID_UNKNOWN);
+	g_assert_cmpint (nm_ethtool_id_get_by_name ("feature-rx"), ==, NM_ETHTOOL_ID_FEATURE_RX);
+
+	d = nm_ethtool_data_get_by_optname (NM_ETHTOOL_OPTNAME_FEATURE_RXHASH);
+	g_assert (d);
+	g_assert_cmpint (d->id, ==, NM_ETHTOOL_ID_FEATURE_RXHASH);
+	g_assert_cmpstr (d->optname, ==, NM_ETHTOOL_OPTNAME_FEATURE_RXHASH);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -7197,8 +7215,8 @@ int main (int argc, char **argv)
 
 	g_test_add_func ("/core/general/_nm_utils_ascii_str_to_int64", test_nm_utils_ascii_str_to_int64);
 	g_test_add_func ("/core/general/nm_utils_is_power_of_two", test_nm_utils_is_power_of_two);
-	g_test_add_func ("/core/general/_nm_utils_ptrarray_find_binary_search", test_nm_utils_ptrarray_find_binary_search);
-	g_test_add_func ("/core/general/_nm_utils_ptrarray_find_binary_search_with_duplicates", test_nm_utils_ptrarray_find_binary_search_with_duplicates);
+	g_test_add_func ("/core/general/nm_utils_ptrarray_find_binary_search", test_nm_utils_ptrarray_find_binary_search);
+	g_test_add_func ("/core/general/nm_utils_ptrarray_find_binary_search_with_duplicates", test_nm_utils_ptrarray_find_binary_search_with_duplicates);
 	g_test_add_func ("/core/general/_nm_utils_strstrdictkey", test_nm_utils_strstrdictkey);
 	g_test_add_func ("/core/general/nm_ptrarray_len", test_nm_ptrarray_len);
 
@@ -7212,8 +7230,8 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/route_attributes/format", test_route_attributes_format);
 
 	g_test_add_func ("/core/general/get_start_time_for_pid", test_get_start_time_for_pid);
-
 	g_test_add_func ("/core/general/test_nm_va_args_macros", test_nm_va_args_macros);
+	g_test_add_func ("/core/general/test_ethtool_offload", test_ethtool_offload);
 
 	return g_test_run ();
 }

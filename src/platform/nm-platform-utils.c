@@ -36,12 +36,15 @@
 
 #include "nm-utils.h"
 #include "nm-setting-wired.h"
+#include "nm-ethtool-utils.h"
 
 #include "nm-core-utils.h"
 
-/******************************************************************
+#define ONOFF(bool_val) ((bool_val) ? "on" : "off")
+
+/******************************************************************************
  * utils
- ******************************************************************/
+ *****************************************************************************/
 
 extern char *if_indextoname (unsigned __ifindex, char *__ifname);
 unsigned if_nametoindex (const char *__ifname);
@@ -63,9 +66,45 @@ nmp_utils_if_nametoindex (const char *ifname)
 	return if_nametoindex (ifname);
 }
 
-/******************************************************************
+/*****************************************************************************/
+
+typedef struct {
+	int fd;
+	int ifindex;
+	char ifname[IFNAMSIZ];
+} SocketHandle;
+
+static int
+socket_handle_init (SocketHandle *shandle, int ifindex)
+{
+	if (!nmp_utils_if_indextoname (ifindex, shandle->ifname)) {
+		shandle->ifindex = 0;
+		return -ENODEV;
+	}
+
+	shandle->fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
+	if (shandle->fd < 0) {
+		shandle->ifindex = 0;
+		return -errno;
+	}
+
+	shandle->ifindex = ifindex;
+	return 0;
+}
+
+static void
+socket_handle_destroy (SocketHandle *shandle)
+{
+	if (shandle->ifindex) {
+		shandle->ifindex = 0;
+		nm_close (shandle->fd);
+	}
+}
+#define nm_auto_socket_handle nm_auto(socket_handle_destroy)
+
+/******************************************************************************
  * ethtool
- ******************************************************************/
+ *****************************************************************************/
 
 NM_UTILS_ENUM2STR_DEFINE_STATIC (_ethtool_cmd_to_string, guint32,
 	NM_UTILS_ENUM2STR (ETHTOOL_GDRVINFO,   "ETHTOOL_GDRVINFO"),
@@ -77,6 +116,7 @@ NM_UTILS_ENUM2STR_DEFINE_STATIC (_ethtool_cmd_to_string, guint32,
 	NM_UTILS_ENUM2STR (ETHTOOL_GSTATS,     "ETHTOOL_GSTATS"),
 	NM_UTILS_ENUM2STR (ETHTOOL_GSTRINGS,   "ETHTOOL_GSTRINGS"),
 	NM_UTILS_ENUM2STR (ETHTOOL_GWOL,       "ETHTOOL_GWOL"),
+	NM_UTILS_ENUM2STR (ETHTOOL_SFEATURES,  "ETHTOOL_SFEATURES"),
 	NM_UTILS_ENUM2STR (ETHTOOL_SSET,       "ETHTOOL_SSET"),
 	NM_UTILS_ENUM2STR (ETHTOOL_SWOL,       "ETHTOOL_SWOL"),
 );
@@ -87,6 +127,8 @@ _ethtool_data_to_string (gconstpointer edata, char *buf, gsize len)
 	return _ethtool_cmd_to_string (*((guint32 *) edata), buf, len);
 }
 
+/*****************************************************************************/
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 #define ethtool_cmd_speed(pedata) ((pedata)->speed)
 
@@ -94,117 +136,553 @@ _ethtool_data_to_string (gconstpointer edata, char *buf, gsize len)
 	G_STMT_START { (pedata)->speed = (guint16) (speed); } G_STMT_END
 #endif
 
-static gboolean
-ethtool_get (int ifindex, gpointer edata)
+static int
+ethtool_call_handle (SocketHandle *shandle, gpointer edata)
 {
-	char ifname[IFNAMSIZ];
+	struct ifreq ifr = {
+		.ifr_data = edata,
+	};
 	char sbuf[50];
+	int errsv;
 
-	nm_assert (ifindex > 0);
+	nm_assert (shandle);
+	nm_assert (shandle->ifindex);
+	nm_assert (shandle->ifname[0]);
+	nm_assert (strlen (shandle->ifname) < IFNAMSIZ);
+	nm_assert (edata);
 
-	/* ethtool ioctl API uses the ifname to refer to an interface. That is racy
-	 * as interfaces can be renamed *sigh*.
-	 *
-	 * Note that we anyway have to verify whether the interface exists, before
-	 * calling ioctl for a non-existing ifname. This is to prevent autoloading
-	 * of kernel modules *sigh*.
-	 * Thus, as we anyway verify the existence of ifname before doing the call,
-	 * go one step further and lookup the ifname everytime anew.
-	 *
-	 * This does not solve the renaming race, but it minimizes the time for
-	 * the race to happen as much as possible. */
-
-	if (!nmp_utils_if_indextoname (ifindex, ifname)) {
-		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: request fails resolving ifindex: %s",
-		              ifindex,
+	memcpy (ifr.ifr_name, shandle->ifname, IFNAMSIZ);
+	if (ioctl (shandle->fd, SIOCETHTOOL, &ifr) < 0) {
+		errsv = errno;
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s, %s: failed: %s",
+		              shandle->ifindex,
 		              _ethtool_data_to_string (edata, sbuf, sizeof (sbuf)),
-		              g_strerror (errno));
-		return FALSE;
+		              shandle->ifname,
+		              strerror (errsv));
+		return -errsv;
 	}
 
-	{
-		nm_auto_close int fd = -1;
-		struct ifreq ifr = {
-			.ifr_data = edata,
-		};
-
-		memcpy (ifr.ifr_name, ifname, sizeof (ifname));
-
-		fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
-		if (fd < 0) {
-			nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s, %s: failed creating socket for ioctl: %s",
-			              ifindex,
-			              _ethtool_data_to_string (edata, sbuf, sizeof (sbuf)),
-			              ifname,
-			              g_strerror (errno));
-			return FALSE;
-		}
-
-		if (ioctl (fd, SIOCETHTOOL, &ifr) < 0) {
-			nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s, %s: failed: %s",
-			              ifindex,
-			              _ethtool_data_to_string (edata, sbuf, sizeof (sbuf)),
-			              ifname,
-			              strerror (errno));
-			return FALSE;
-		}
-
-		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s, %s: success",
-		              ifindex,
-		              _ethtool_data_to_string (edata, sbuf, sizeof (sbuf)),
-		              ifname);
-		return TRUE;
-	}
+	nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s, %s: success",
+	              shandle->ifindex,
+	              _ethtool_data_to_string (edata, sbuf, sizeof (sbuf)),
+	              shandle->ifname);
+	return 0;
 }
 
 static int
-ethtool_get_stringset_index (int ifindex, int stringset_id, const char *string)
+ethtool_call_ifindex (int ifindex, gpointer edata)
 {
-	gs_free struct ethtool_sset_info *info = NULL;
-	gs_free struct ethtool_gstrings *strings = NULL;
-	guint32 len, i;
+	nm_auto_socket_handle SocketHandle shandle = { };
+	int r;
+	char sbuf[50];
 
-	g_return_val_if_fail (ifindex > 0, -1);
+	nm_assert (edata);
 
-	info = g_malloc0 (sizeof (*info) + sizeof (guint32));
-	info->cmd = ETHTOOL_GSSET_INFO;
-	info->reserved = 0;
-	info->sset_mask = 1ULL << stringset_id;
-
-	if (!ethtool_get (ifindex, info))
-		return -1;
-	if (!info->sset_mask)
-		return -1;
-
-	len = info->data[0];
-
-	strings = g_malloc0 (sizeof (*strings) + len * ETH_GSTRING_LEN);
-	strings->cmd = ETHTOOL_GSTRINGS;
-	strings->string_set = stringset_id;
-	strings->len = len;
-	if (!ethtool_get (ifindex, strings))
-		return -1;
-
-	for (i = 0; i < len; i++) {
-		if (!strcmp ((char *) &strings->data[i * ETH_GSTRING_LEN], string))
-			return i;
+	if ((r = socket_handle_init (&shandle, ifindex)) < 0) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failed creating ethtool socket: %s",
+		              ifindex,
+		              _ethtool_data_to_string (edata, sbuf, sizeof (sbuf)),
+		              g_strerror (-r));
+		return r;
 	}
 
+	return ethtool_call_handle (&shandle, edata);
+}
+
+/*****************************************************************************/
+
+static struct ethtool_gstrings *
+ethtool_get_stringset (SocketHandle *shandle, int stringset_id)
+{
+	struct {
+		struct ethtool_sset_info info;
+		guint32 sentinel;
+	} sset_info = { };
+	gs_free struct ethtool_gstrings *gstrings = NULL;
+	guint32 i, len;
+
+	sset_info.info.cmd = ETHTOOL_GSSET_INFO;
+	sset_info.info.reserved = 0;
+	sset_info.info.sset_mask = (1ULL << stringset_id);
+
+	if (ethtool_call_handle (shandle, &sset_info) < 0)
+		return NULL;
+	if (!sset_info.info.sset_mask)
+		return NULL;
+
+	len = sset_info.info.data[0];
+
+	gstrings = g_malloc0 (sizeof (*gstrings) + (len * ETH_GSTRING_LEN));
+	gstrings->cmd = ETHTOOL_GSTRINGS;
+	gstrings->string_set = stringset_id;
+	gstrings->len = len;
+	if (gstrings->len > 0) {
+		if (ethtool_call_handle (shandle, gstrings) < 0)
+			return NULL;
+		for (i = 0; i < gstrings->len; i++) {
+			/* ensure NUL terminated */
+			gstrings->data[i * ETH_GSTRING_LEN + (ETH_GSTRING_LEN - 1)] = '\0';
+		}
+	}
+
+	return g_steal_pointer (&gstrings);
+}
+
+static int
+ethtool_gstrings_find (const struct ethtool_gstrings *gstrings, const char *needle)
+{
+	guint32 i;
+
+	/* ethtool_get_stringset() always ensures NUL terminated strings at ETH_GSTRING_LEN.
+	 * that means, we cannot possibly request longer names. */
+	nm_assert (needle && strlen (needle) < ETH_GSTRING_LEN);
+
+	for (i = 0; i < gstrings->len; i++) {
+		if (nm_streq ((char *) &gstrings->data[i * ETH_GSTRING_LEN], needle))
+			return i;
+	}
 	return -1;
 }
+
+static int
+ethtool_get_stringset_index (SocketHandle *shandle, int stringset_id, const char *needle)
+{
+	gs_free struct ethtool_gstrings *gstrings = NULL;
+
+	/* ethtool_get_stringset() always ensures NUL terminated strings at ETH_GSTRING_LEN.
+	 * that means, we cannot possibly request longer names. */
+	nm_assert (needle && strlen (needle) < ETH_GSTRING_LEN);
+
+	gstrings = ethtool_get_stringset (shandle, stringset_id);
+	if (gstrings)
+		return ethtool_gstrings_find (gstrings, needle);
+	return -1;
+}
+
+/*****************************************************************************/
+
+static const NMEthtoolFeatureInfo _ethtool_feature_infos[_NM_ETHTOOL_ID_FEATURE_NUM] = {
+#define ETHT_FEAT(eid, ...) \
+	{ \
+		.ethtool_id = eid, \
+		.n_kernel_names = NM_NARG (__VA_ARGS__), \
+		.kernel_names = ((const char *const[]) { __VA_ARGS__ }), \
+	}
+
+	/* the order does only matter for one thing: if it happens that more than one NMEthtoolID
+	 * reference the same kernel-name, then the one that is mentioned *later* will win in
+	 * case these NMEthtoolIDs are set. That mostly only makes sense for ethtool-ids which
+	 * refer to multiple features ("feature-tso"), while also having more specific ids
+	 * ("feature-tx-tcp-segmentation"). */
+
+	/* names from ethtool utility, which are aliases for multiple features. */
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_SG,                           "tx-scatter-gather",
+	                                                               "tx-scatter-gather-fraglist"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TSO,                          "tx-tcp-segmentation",
+	                                                               "tx-tcp-ecn-segmentation",
+	                                                               "tx-tcp-mangleid-segmentation",
+	                                                               "tx-tcp6-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX,                           "tx-checksum-ipv4",
+	                                                               "tx-checksum-ip-generic",
+	                                                               "tx-checksum-ipv6",
+	                                                               "tx-checksum-fcoe-crc",
+	                                                               "tx-checksum-sctp"),
+
+	/* names from ethtool utility, which are aliases for one feature. */
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_GRO,                          "rx-gro"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_GSO,                          "tx-generic-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_LRO,                          "rx-lro"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_NTUPLE,                       "rx-ntuple-filter"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_RX,                           "rx-checksum"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_RXHASH,                       "rx-hashing"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_RXVLAN,                       "rx-vlan-hw-parse"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TXVLAN,                       "tx-vlan-hw-insert"),
+
+	/* names of features, as known by kernel. */
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_ESP_HW_OFFLOAD,               "esp-hw-offload"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_ESP_TX_CSUM_HW_OFFLOAD,       "esp-tx-csum-hw-offload"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_FCOE_MTU,                     "fcoe-mtu"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_HIGHDMA,                      "highdma"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_HW_TC_OFFLOAD,                "hw-tc-offload"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_L2_FWD_OFFLOAD,               "l2-fwd-offload"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_LOOPBACK,                     "loopback"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_RX_ALL,                       "rx-all"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_RX_FCS,                       "rx-fcs"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_RX_GRO_HW,                    "rx-gro-hw"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_RX_UDP_TUNNEL_PORT_OFFLOAD,   "rx-udp_tunnel-port-offload"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_RX_VLAN_FILTER,               "rx-vlan-filter"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_RX_VLAN_STAG_FILTER,          "rx-vlan-stag-filter"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_RX_VLAN_STAG_HW_PARSE,        "rx-vlan-stag-hw-parse"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TLS_HW_RECORD,                "tls-hw-record"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TLS_HW_TX_OFFLOAD,            "tls-hw-tx-offload"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_FCOE_CRC,         "tx-checksum-fcoe-crc"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_IPV4,             "tx-checksum-ipv4"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_IPV6,             "tx-checksum-ipv6"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_IP_GENERIC,       "tx-checksum-ip-generic"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_SCTP,             "tx-checksum-sctp"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_ESP_SEGMENTATION,          "tx-esp-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_FCOE_SEGMENTATION,         "tx-fcoe-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_GRE_CSUM_SEGMENTATION,     "tx-gre-csum-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_GRE_SEGMENTATION,          "tx-gre-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_GSO_PARTIAL,               "tx-gso-partial"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_GSO_ROBUST,                "tx-gso-robust"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_IPXIP4_SEGMENTATION,       "tx-ipxip4-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_IPXIP6_SEGMENTATION,       "tx-ipxip6-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_NOCACHE_COPY,              "tx-nocache-copy"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_SCATTER_GATHER,            "tx-scatter-gather"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_SCATTER_GATHER_FRAGLIST,   "tx-scatter-gather-fraglist"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_SCTP_SEGMENTATION,         "tx-sctp-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_TCP6_SEGMENTATION,         "tx-tcp6-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_TCP_ECN_SEGMENTATION,      "tx-tcp-ecn-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_TCP_MANGLEID_SEGMENTATION, "tx-tcp-mangleid-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_TCP_SEGMENTATION,          "tx-tcp-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_UDP_SEGMENTATION,          "tx-udp-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_UDP_TNL_CSUM_SEGMENTATION, "tx-udp_tnl-csum-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_UDP_TNL_SEGMENTATION,      "tx-udp_tnl-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_VLAN_STAG_HW_INSERT,       "tx-vlan-stag-hw-insert"),
+};
+
+/* the number of kernel features that we handle. It essentially is the sum of all
+ * kernel_names. So, all ethtool-ids that reference exactly one kernel-name
+ * (_NM_ETHTOOL_ID_FEATURE_NUM) + some extra, for ethtool-ids that are aliases
+ * for multiple kernel-names. */
+#define N_ETHTOOL_KERNEL_FEATURES (((guint) _NM_ETHTOOL_ID_FEATURE_NUM) + 8u)
+
+static void
+_ASSERT_ethtool_feature_infos (void)
+{
+#if NM_MORE_ASSERTS > 10
+	guint i, k, n;
+	bool found[_NM_ETHTOOL_ID_FEATURE_NUM] = { };
+
+	G_STATIC_ASSERT_EXPR (G_N_ELEMENTS (_ethtool_feature_infos) == _NM_ETHTOOL_ID_FEATURE_NUM);
+
+	n = 0;
+	for (i = 0; i < G_N_ELEMENTS (_ethtool_feature_infos); i++) {
+		NMEthtoolFeatureState kstate;
+		const NMEthtoolFeatureInfo *inf = &_ethtool_feature_infos[i];
+
+		g_assert (inf->ethtool_id >= _NM_ETHTOOL_ID_FEATURE_FIRST);
+		g_assert (inf->ethtool_id <= _NM_ETHTOOL_ID_FEATURE_LAST);
+		g_assert (inf->n_kernel_names > 0);
+
+		for (k = 0; k < i; k++)
+			g_assert (inf->ethtool_id != _ethtool_feature_infos[k].ethtool_id);
+
+		g_assert (!found[inf->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST]);
+		found[inf->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST] = TRUE;
+
+		kstate.idx_kernel_name = inf->n_kernel_names - 1;
+		g_assert ((guint) kstate.idx_kernel_name == (guint) (inf->n_kernel_names - 1));
+
+		n += inf->n_kernel_names;
+		for (k = 0; k < inf->n_kernel_names; k++) {
+			g_assert (nm_utils_strv_find_first ((char **) inf->kernel_names,
+			                                    k,
+			                                    inf->kernel_names[k]) < 0);
+		}
+	}
+
+	for (i = 0; i < _NM_ETHTOOL_ID_FEATURE_NUM; i++)
+		g_assert (found[i]);
+
+	g_assert (n == N_ETHTOOL_KERNEL_FEATURES);
+#endif
+}
+
+static NMEthtoolFeatureStates *
+ethtool_get_features (SocketHandle *shandle)
+{
+	gs_free NMEthtoolFeatureStates *states = NULL;
+	gs_free struct ethtool_gstrings *ss_features = NULL;
+
+	_ASSERT_ethtool_feature_infos ();
+
+	ss_features = ethtool_get_stringset (shandle, ETH_SS_FEATURES);
+	if (!ss_features)
+		return NULL;
+
+	if (ss_features->len > 0) {
+		gs_free struct ethtool_gfeatures *gfeatures = NULL;
+		guint idx;
+		const NMEthtoolFeatureState *states_list0 = NULL;
+		const NMEthtoolFeatureState *const*states_plist0 = NULL;
+		guint states_plist_n = 0;
+
+		gfeatures = g_malloc0 (  sizeof (struct ethtool_gfeatures)
+		                       + (NM_DIV_ROUND_UP (ss_features->len, 32u) * sizeof(gfeatures->features[0])));
+
+		gfeatures->cmd = ETHTOOL_GFEATURES;
+		gfeatures->size = NM_DIV_ROUND_UP (ss_features->len, 32u);
+		if (ethtool_call_handle (shandle, gfeatures) < 0)
+			return NULL;
+
+		for (idx = 0; idx < G_N_ELEMENTS (_ethtool_feature_infos); idx++) {
+			const NMEthtoolFeatureInfo *info = &_ethtool_feature_infos[idx];
+			guint idx_kernel_name;
+
+			for (idx_kernel_name = 0; idx_kernel_name < info->n_kernel_names; idx_kernel_name++) {
+				NMEthtoolFeatureState *kstate;
+				const char *kernel_name = info->kernel_names[idx_kernel_name];
+				int i_feature;
+				guint i_block;
+				guint32 i_flag;
+
+				i_feature = ethtool_gstrings_find (ss_features, kernel_name);
+				if (i_feature < 0)
+					continue;
+
+				i_block = ((guint) i_feature) / 32u;
+				i_flag = (guint32) (1u << (((guint) i_feature) % 32u));
+
+				if (!states) {
+					states = g_malloc0 (sizeof (NMEthtoolFeatureStates)
+					                    + (N_ETHTOOL_KERNEL_FEATURES * sizeof (NMEthtoolFeatureState))
+					                    + ((N_ETHTOOL_KERNEL_FEATURES + G_N_ELEMENTS (_ethtool_feature_infos)) * sizeof (NMEthtoolFeatureState *)));
+					states_list0 = &states->states_list[0];
+					states_plist0 = (gpointer) &states_list0[N_ETHTOOL_KERNEL_FEATURES];
+					states->n_ss_features = ss_features->len;
+				}
+
+				nm_assert (states->n_states < N_ETHTOOL_KERNEL_FEATURES);
+				kstate = (NMEthtoolFeatureState *) &states_list0[states->n_states];
+				states->n_states++;
+
+				kstate->info = info;
+				kstate->idx_ss_features = i_feature;
+				kstate->idx_kernel_name = idx_kernel_name;
+				kstate->available     = !!(gfeatures->features[i_block].available     & i_flag);
+				kstate->requested     = !!(gfeatures->features[i_block].requested     & i_flag);
+				kstate->active        = !!(gfeatures->features[i_block].active        & i_flag);
+				kstate->never_changed = !!(gfeatures->features[i_block].never_changed & i_flag);
+
+				nm_assert (states_plist_n < N_ETHTOOL_KERNEL_FEATURES + G_N_ELEMENTS (_ethtool_feature_infos));
+
+				if (!states->states_indexed[info->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST])
+					states->states_indexed[info->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST] = &states_plist0[states_plist_n];
+				((const NMEthtoolFeatureState **) states_plist0)[states_plist_n] = kstate;
+				states_plist_n++;
+			}
+
+			if (states && states->states_indexed[info->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST]) {
+				nm_assert (states_plist_n < N_ETHTOOL_KERNEL_FEATURES + G_N_ELEMENTS (_ethtool_feature_infos));
+				nm_assert (!states_plist0[states_plist_n]);
+				states_plist_n++;
+			}
+		}
+	}
+
+	return g_steal_pointer (&states);
+}
+
+NMEthtoolFeatureStates *
+nmp_utils_ethtool_get_features (int ifindex)
+{
+	nm_auto_socket_handle SocketHandle shandle = { };
+	NMEthtoolFeatureStates *features;
+	int r;
+
+	g_return_val_if_fail (ifindex > 0, 0);
+
+	if ((r = socket_handle_init (&shandle, ifindex)) < 0) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failed creating ethtool socket: %s",
+		              ifindex,
+		              "get-features",
+		              g_strerror (-r));
+		return FALSE;
+	}
+
+	features = ethtool_get_features (&shandle);
+
+	if (!features) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failure getting features",
+		              ifindex,
+		              "get-features");
+		return NULL;
+	}
+
+	nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: retrieved kernel features",
+	              ifindex,
+	              "get-features");
+	return features;
+}
+
+static const char *
+_ethtool_feature_state_to_string (char *buf, gsize buf_size, const NMEthtoolFeatureState *s, const char *prefix)
+{
+	int l;
+
+	l = g_snprintf (buf, buf_size,
+	                "%s %s%s",
+	                prefix ?: "",
+	                ONOFF (s->active),
+	                (!s->available || s->never_changed)
+	                  ? ", [fixed]"
+	                  : ((s->requested != s->active)
+	                       ? (s->requested ? ", [requested on]" : ", [requested off]")
+	                       : ""));
+	nm_assert (l < buf_size);
+	return buf;
+}
+
+gboolean
+nmp_utils_ethtool_set_features (int ifindex,
+                                const NMEthtoolFeatureStates *features,
+                                const NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
+                                gboolean do_set /* or reset */)
+{
+	nm_auto_socket_handle SocketHandle shandle = { };
+	gs_free struct ethtool_sfeatures *sfeatures = NULL;
+	int r;
+	guint i, j;
+	struct {
+		const NMEthtoolFeatureState *f_state;
+		NMTernary requested;
+	} set_states[N_ETHTOOL_KERNEL_FEATURES];
+	guint set_states_n = 0;
+	gboolean success = TRUE;
+
+	g_return_val_if_fail (ifindex > 0, 0);
+	g_return_val_if_fail (features, 0);
+	g_return_val_if_fail (requested, 0);
+
+	nm_assert (features->n_states <= N_ETHTOOL_KERNEL_FEATURES);
+
+	for (i = 0; i < _NM_ETHTOOL_ID_FEATURE_NUM; i++) {
+		const NMEthtoolFeatureState *const*states_indexed;
+
+		if (requested[i] == NM_TERNARY_DEFAULT)
+			continue;
+
+		if (!(states_indexed = features->states_indexed[i])) {
+			if (do_set) {
+				nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: set feature %s: skip (not found)",
+				              ifindex,
+				              "set-features",
+				              nm_ethtool_data[i + _NM_ETHTOOL_ID_FEATURE_FIRST]->optname);
+				success = FALSE;
+			}
+			continue;
+		}
+
+		for (j = 0; states_indexed[j]; j++) {
+			const NMEthtoolFeatureState *s = states_indexed[j];
+			char sbuf[255];
+
+			if (set_states_n >= G_N_ELEMENTS (set_states))
+				g_return_val_if_reached (FALSE);
+
+			if (s->never_changed) {
+				nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: %s feature %s (%s): %s, %s (skip feature marked as never changed)",
+				              ifindex,
+				              "set-features",
+				              do_set ? "set" : "reset",
+				              nm_ethtool_data[i + _NM_ETHTOOL_ID_FEATURE_FIRST]->optname,
+				              s->info->kernel_names[s->idx_kernel_name],
+				              ONOFF (do_set ? requested[i] == NM_TERNARY_TRUE : s->active),
+				              _ethtool_feature_state_to_string (sbuf, sizeof (sbuf), s, do_set ? " currently:" : " before:"));
+				continue;
+			}
+
+			nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: %s feature %s (%s): %s, %s",
+			              ifindex,
+			              "set-features",
+			              do_set ? "set" : "reset",
+			              nm_ethtool_data[i + _NM_ETHTOOL_ID_FEATURE_FIRST]->optname,
+			              s->info->kernel_names[s->idx_kernel_name],
+			              ONOFF (do_set ? requested[i] == NM_TERNARY_TRUE : s->active),
+			              _ethtool_feature_state_to_string (sbuf, sizeof (sbuf), s, do_set ? " currently:" : " before:"));
+
+			if (   do_set
+			    && (!s->available || s->never_changed)
+			    && (s->active != (requested[i] == NM_TERNARY_TRUE))) {
+				/* we request to change a flag which kernel reported as fixed.
+				 * While the ethtool operation will silently succeed, mark the request
+				 * as failure. */
+				success = FALSE;
+			}
+
+			set_states[set_states_n].f_state = s;
+			set_states[set_states_n].requested = requested[i];
+			set_states_n++;
+		}
+	}
+
+	if (set_states_n == 0) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: no feature requested",
+		              ifindex,
+		              "set-features");
+		return TRUE;
+	}
+
+	if ((r = socket_handle_init (&shandle, ifindex)) < 0) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failed creating ethtool socket: %s",
+		              ifindex,
+		              "set-features",
+		              g_strerror (-r));
+		return FALSE;
+	}
+
+	sfeatures = g_malloc0 (sizeof (struct ethtool_sfeatures)
+	                       + (NM_DIV_ROUND_UP (features->n_ss_features, 32U) * sizeof(sfeatures->features[0])));
+	sfeatures->cmd = ETHTOOL_SFEATURES;
+	sfeatures->size = NM_DIV_ROUND_UP (features->n_ss_features, 32U);
+
+	for (i = 0; i < set_states_n; i++) {
+		const NMEthtoolFeatureState *s = set_states[i].f_state;
+		guint i_block;
+		guint32 i_flag;
+		gboolean is_requested;
+
+		i_block = s->idx_ss_features / 32u;
+		i_flag = (guint32) (1u << (s->idx_ss_features % 32u));
+
+		sfeatures->features[i_block].valid |= i_flag;
+
+		if (do_set)
+			is_requested = (set_states[i].requested == NM_TERNARY_TRUE);
+		else
+			is_requested = s->active;
+
+		if (is_requested)
+			sfeatures->features[i_block].requested |= i_flag;
+		else
+			sfeatures->features[i_block].requested &= ~i_flag;
+	}
+
+	if ((r = ethtool_call_handle (&shandle, sfeatures)) < 0) {
+		success = FALSE;
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failure setting features (%s)",
+		              ifindex,
+		              "set-features",
+		              g_strerror (-r));
+		return FALSE;
+	}
+
+	nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: %s",
+	              ifindex,
+	              "set-features",
+	              success
+	                ? "successfully setting features"
+	                : "at least some of the features were not successfuly set");
+	return success;
+}
+
+/*****************************************************************************/
 
 gboolean
 nmp_utils_ethtool_get_driver_info (int ifindex,
                                    NMPUtilsEthtoolDriverInfo *data)
 {
 	struct ethtool_drvinfo *drvinfo;
-	G_STATIC_ASSERT (sizeof (*data) == sizeof (*drvinfo));
-	G_STATIC_ASSERT (offsetof (NMPUtilsEthtoolDriverInfo, driver)     == offsetof (struct ethtool_drvinfo, driver));
-	G_STATIC_ASSERT (offsetof (NMPUtilsEthtoolDriverInfo, version)    == offsetof (struct ethtool_drvinfo, version));
-	G_STATIC_ASSERT (offsetof (NMPUtilsEthtoolDriverInfo, fw_version) == offsetof (struct ethtool_drvinfo, fw_version));
-	G_STATIC_ASSERT (sizeof (data->driver)     == sizeof (drvinfo->driver));
-	G_STATIC_ASSERT (sizeof (data->version)    == sizeof (drvinfo->version));
-	G_STATIC_ASSERT (sizeof (data->fw_version) == sizeof (drvinfo->fw_version));
+
+	G_STATIC_ASSERT_EXPR (sizeof (*data) == sizeof (*drvinfo));
+	G_STATIC_ASSERT_EXPR (offsetof (NMPUtilsEthtoolDriverInfo, driver)     == offsetof (struct ethtool_drvinfo, driver));
+	G_STATIC_ASSERT_EXPR (offsetof (NMPUtilsEthtoolDriverInfo, version)    == offsetof (struct ethtool_drvinfo, version));
+	G_STATIC_ASSERT_EXPR (offsetof (NMPUtilsEthtoolDriverInfo, fw_version) == offsetof (struct ethtool_drvinfo, fw_version));
+	G_STATIC_ASSERT_EXPR (sizeof (data->driver)     == sizeof (drvinfo->driver));
+	G_STATIC_ASSERT_EXPR (sizeof (data->version)    == sizeof (drvinfo->version));
+	G_STATIC_ASSERT_EXPR (sizeof (data->fw_version) == sizeof (drvinfo->fw_version));
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (data, FALSE);
@@ -213,7 +691,7 @@ nmp_utils_ethtool_get_driver_info (int ifindex,
 
 	memset (drvinfo, 0, sizeof (*drvinfo));
 	drvinfo->cmd = ETHTOOL_GDRVINFO;
-	return ethtool_get (ifindex, drvinfo);
+	return ethtool_call_ifindex (ifindex, drvinfo) >= 0;
 }
 
 gboolean
@@ -233,7 +711,7 @@ nmp_utils_ethtool_get_permanent_address (int ifindex,
 	edata.e.cmd = ETHTOOL_GPERMADDR;
 	edata.e.size = NM_UTILS_HWADDR_LEN_MAX;
 
-	if (!ethtool_get (ifindex, &edata.e))
+	if (ethtool_call_ifindex (ifindex, &edata.e) < 0)
 		return FALSE;
 
 	if (edata.e.size > NM_UTILS_HWADDR_LEN_MAX)
@@ -252,8 +730,8 @@ nmp_utils_ethtool_get_permanent_address (int ifindex,
 		}
 		return FALSE;
 	}
-not_all_0or1:
 
+not_all_0or1:
 	memcpy (buf, edata.e.data, edata.e.size);
 	*length = edata.e.size;
 	return TRUE;
@@ -270,20 +748,30 @@ nmp_utils_ethtool_supports_carrier_detect (int ifindex)
 	 * assume the device supports carrier-detect, otherwise we assume it
 	 * doesn't.
 	 */
-	return ethtool_get (ifindex, &edata);
+	return ethtool_call_ifindex (ifindex, &edata) >= 0;
 }
 
 gboolean
 nmp_utils_ethtool_supports_vlans (int ifindex)
 {
+	nm_auto_socket_handle SocketHandle shandle = { };
+	int r;
 	gs_free struct ethtool_gfeatures *features = NULL;
 	int idx, block, bit, size;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	idx = ethtool_get_stringset_index (ifindex, ETH_SS_FEATURES, "vlan-challenged");
-	if (idx == -1) {
-		nm_log_dbg (LOGD_PLATFORM, "ethtool: vlan-challenged ethtool feature does not exist for %d?", ifindex);
+	if ((r = socket_handle_init (&shandle, ifindex)) < 0) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failed creating ethtool socket: %s",
+		              ifindex,
+		              "support-vlans",
+		              g_strerror (-r));
+		return FALSE;
+	}
+
+	idx = ethtool_get_stringset_index (&shandle, ETH_SS_FEATURES, "vlan-challenged");
+	if (idx < 0) {
+		nm_log_dbg (LOGD_PLATFORM, "ethtool[%d]: vlan-challenged ethtool feature does not exist?", ifindex);
 		return FALSE;
 	}
 
@@ -295,7 +783,7 @@ nmp_utils_ethtool_supports_vlans (int ifindex)
 	features->cmd = ETHTOOL_GFEATURES;
 	features->size = size;
 
-	if (!ethtool_get (ifindex, features))
+	if (ethtool_call_handle (&shandle, features) < 0)
 		return FALSE;
 
 	return !(features->features[block].active & (1 << bit));
@@ -304,21 +792,32 @@ nmp_utils_ethtool_supports_vlans (int ifindex)
 int
 nmp_utils_ethtool_get_peer_ifindex (int ifindex)
 {
+	nm_auto_socket_handle SocketHandle shandle = { };
+	int r;
+
 	gs_free struct ethtool_stats *stats = NULL;
 	int peer_ifindex_stat;
 
 	g_return_val_if_fail (ifindex > 0, 0);
 
-	peer_ifindex_stat = ethtool_get_stringset_index (ifindex, ETH_SS_STATS, "peer_ifindex");
-	if (peer_ifindex_stat == -1) {
-		nm_log_dbg (LOGD_PLATFORM, "ethtool: peer_ifindex stat for %d does not exist?", ifindex);
+	if ((r = socket_handle_init (&shandle, ifindex)) < 0) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failed creating ethtool socket: %s",
+		              ifindex,
+		              "get-peer-ifindex",
+		              g_strerror (-r));
+		return FALSE;
+	}
+
+	peer_ifindex_stat = ethtool_get_stringset_index (&shandle, ETH_SS_STATS, "peer_ifindex");
+	if (peer_ifindex_stat < 0) {
+		nm_log_dbg (LOGD_PLATFORM, "ethtool[%d]: peer_ifindex stat does not exist?", ifindex);
 		return FALSE;
 	}
 
 	stats = g_malloc0 (sizeof (*stats) + (peer_ifindex_stat + 1) * sizeof (guint64));
 	stats->cmd = ETHTOOL_GSTATS;
 	stats->n_stats = peer_ifindex_stat + 1;
-	if (!ethtool_get (ifindex, stats))
+	if (ethtool_call_ifindex (ifindex, stats) < 0)
 		return 0;
 
 	return stats->data[peer_ifindex_stat];
@@ -333,7 +832,7 @@ nmp_utils_ethtool_get_wake_on_lan (int ifindex)
 
 	memset (&wol, 0, sizeof (wol));
 	wol.cmd = ETHTOOL_GWOL;
-	if (!ethtool_get (ifindex, &wol))
+	if (ethtool_call_ifindex (ifindex, &wol) < 0)
 		return FALSE;
 
 	return wol.wolopts != 0;
@@ -351,7 +850,7 @@ nmp_utils_ethtool_get_link_settings (int ifindex,
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	if (!ethtool_get (ifindex, &edata))
+	if (ethtool_call_ifindex (ifindex, &edata) < 0)
 		return FALSE;
 
 	if (out_autoneg)
@@ -433,7 +932,7 @@ nmp_utils_ethtool_set_link_settings (int ifindex,
 	                      || (!speed && duplex == NM_PLATFORM_LINK_DUPLEX_UNKNOWN), FALSE);
 
 	/* retrieve first current settings */
-	if (!ethtool_get (ifindex, &edata))
+	if (ethtool_call_ifindex (ifindex, &edata) < 0)
 		return FALSE;
 
 	/* then change the needed ones */
@@ -485,7 +984,7 @@ nmp_utils_ethtool_set_link_settings (int ifindex,
 		}
 	}
 
-	return ethtool_get (ifindex, &edata);
+	return ethtool_call_ifindex (ifindex, &edata) >= 0;
 }
 
 gboolean
@@ -500,8 +999,8 @@ nmp_utils_ethtool_set_wake_on_lan (int ifindex,
 	if (wol == NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE)
 		return TRUE;
 
-	nm_log_dbg (LOGD_PLATFORM, "setting Wake-on-LAN options 0x%x, password '%s'",
-	            (unsigned) wol, wol_password);
+	nm_log_dbg (LOGD_PLATFORM, "ethtool[%d]: setting Wake-on-LAN options 0x%x, password '%s'",
+	            ifindex, (unsigned) wol, wol_password);
 
 	wol_info.cmd = ETHTOOL_SWOL;
 	wol_info.wolopts = 0;
@@ -521,45 +1020,41 @@ nmp_utils_ethtool_set_wake_on_lan (int ifindex,
 
 	if (wol_password) {
 		if (!nm_utils_hwaddr_aton (wol_password, wol_info.sopass, ETH_ALEN)) {
-			nm_log_dbg (LOGD_PLATFORM, "couldn't parse Wake-on-LAN password '%s'", wol_password);
+			nm_log_dbg (LOGD_PLATFORM, "ethtool[%d]: couldn't parse Wake-on-LAN password '%s'", ifindex, wol_password);
 			return FALSE;
 		}
 		wol_info.wolopts |= WAKE_MAGICSECURE;
 	}
 
-	return ethtool_get (ifindex, &wol_info);
+	return ethtool_call_ifindex (ifindex, &wol_info) >= 0;
 }
 
-/******************************************************************
+/******************************************************************************
  * mii
- ******************************************************************/
+ *****************************************************************************/
 
 gboolean
 nmp_utils_mii_supports_carrier_detect (int ifindex)
 {
-	char ifname[IFNAMSIZ];
-	nm_auto_close int fd = -1;
+	nm_auto_socket_handle SocketHandle shandle = { };
+	int r;
 	struct ifreq ifr;
 	struct mii_ioctl_data *mii;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	if (!nmp_utils_if_indextoname (ifindex, ifname)) {
-		nm_log_trace (LOGD_PLATFORM, "mii[%d]: carrier-detect no: request fails resolving ifindex: %s", ifindex, g_strerror (errno));
-		return FALSE;
-	}
-
-	fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
-	if (fd < 0) {
-		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: couldn't open control socket: %s", ifindex, ifname, g_strerror (errno));
+	if ((r = socket_handle_init (&shandle, ifindex)) < 0) {
+		nm_log_trace (LOGD_PLATFORM, "mii[%d]: carrier-detect no: failed creating ethtool socket: %s",
+		              ifindex,
+		              g_strerror (-r));
 		return FALSE;
 	}
 
 	memset (&ifr, 0, sizeof (struct ifreq));
-	memcpy (ifr.ifr_name, ifname, IFNAMSIZ);
+	memcpy (ifr.ifr_name, shandle.ifname, IFNAMSIZ);
 
-	if (ioctl (fd, SIOCGMIIPHY, &ifr) < 0) {
-		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIPHY failed: %s", ifindex, ifname, strerror (errno));
+	if (ioctl (shandle.fd, SIOCGMIIPHY, &ifr) < 0) {
+		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIPHY failed: %s", ifindex, shandle.ifname, strerror (errno));
 		return FALSE;
 	}
 
@@ -567,18 +1062,18 @@ nmp_utils_mii_supports_carrier_detect (int ifindex)
 	mii = (struct mii_ioctl_data *) &ifr.ifr_ifru;
 	mii->reg_num = MII_BMSR;
 
-	if (ioctl (fd, SIOCGMIIREG, &ifr) != 0) {
-		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIREG failed: %s", ifindex, ifname, strerror (errno));
+	if (ioctl (shandle.fd, SIOCGMIIREG, &ifr) != 0) {
+		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIREG failed: %s", ifindex, shandle.ifname, strerror (errno));
 		return FALSE;
 	}
 
-	nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect yes: SIOCGMIIREG result 0x%X", ifindex, ifname, mii->val_out);
+	nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect yes: SIOCGMIIREG result 0x%X", ifindex, shandle.ifname, mii->val_out);
 	return TRUE;
 }
 
-/******************************************************************
+/******************************************************************************
  * udev
- ******************************************************************/
+ *****************************************************************************/
 
 const char *
 nmp_utils_udev_get_driver (struct udev_device *udevice)

@@ -662,25 +662,19 @@ nmc_setting_remove_property_option (NMSetting *setting,
 char **
 nmc_setting_get_valid_properties (NMSetting *setting)
 {
-	char **valid_props = NULL;
-	GParamSpec **props, **iter;
-	guint num;
-	int i;
+	const NMMetaSettingInfoEditor *setting_info;
+	char **valid_props;
+	guint i, num;
 
-	/* Iterate through properties */
-	i = 0;
-	props = g_object_class_list_properties (G_OBJECT_GET_CLASS (G_OBJECT (setting)), &num);
-	valid_props = g_malloc0 (sizeof (char*) * (num + 1));
-	for (iter = props; iter && *iter; iter++) {
-		const char *key_name = g_param_spec_get_name (*iter);
+	setting_info = nm_meta_setting_info_editor_find_by_setting (setting);
 
-		/* Add all properties except for "name" that is non-editable */
-		if (g_strcmp0 (key_name, "name") != 0)
-			valid_props[i++] = g_strdup (key_name);
-	}
-	valid_props[i] = NULL;
-	g_free (props);
+	num = setting_info ? setting_info->properties_num : 0;
 
+	valid_props = g_new (char *, num + 1);
+	for (i = 0; i < num; i++)
+		valid_props[i] = g_strdup (setting_info->properties[i]->property_name);
+
+	valid_props[num] = NULL;
 	return valid_props;
 }
 

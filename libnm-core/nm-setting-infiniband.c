@@ -37,8 +37,7 @@
  * necessary for connection to IP-over-InfiniBand networks.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING,
-                         _nm_register_setting (INFINIBAND, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING)
 
 #define NM_SETTING_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_INFINIBAND, NMSettingInfinibandPrivate))
 
@@ -377,21 +376,20 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
+nm_setting_infiniband_class_init (NMSettingInfinibandClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingInfinibandPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingInfinibandPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	parent_class->verify       = verify;
+	setting_class->verify = verify;
 
-	/* Properties */
 	/**
 	 * NMSettingInfiniband:mac-address:
 	 *
@@ -424,10 +422,13 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_INFINIBAND_MAC_ADDRESS,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_hwaddr_to_dbus,
-	                                      _nm_utils_hwaddr_from_dbus);
+
+	_properties_override_add_transform (properties_override,
+	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                  NM_SETTING_INFINIBAND_MAC_ADDRESS),
+	                                    G_VARIANT_TYPE_BYTESTRING,
+	                                    _nm_utils_hwaddr_to_dbus,
+	                                    _nm_utils_hwaddr_from_dbus);
 
 	/**
 	 * NMSettingInfiniband:mtu:
@@ -525,4 +526,6 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_INFINIBAND,
+	                               NULL, properties_override);
 }

@@ -202,6 +202,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-cdma.xml"/>
     <xi:include href="xml/nm-setting-dcb.xml"/>
     <xi:include href="xml/nm-setting-dummy.xml"/>
+    <xi:include href="xml/nm-setting-ethtool.xml"/>
     <xi:include href="xml/nm-setting-generic.xml"/>
     <xi:include href="xml/nm-setting-gsm.xml"/>
     <xi:include href="xml/nm-setting-infiniband.xml"/>

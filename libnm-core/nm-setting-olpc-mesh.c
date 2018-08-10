@@ -39,8 +39,7 @@
 
 static void nm_setting_olpc_mesh_init (NMSettingOlpcMesh *setting);
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingOlpcMesh, nm_setting_olpc_mesh, NM_TYPE_SETTING,
-                         _nm_register_setting (OLPC_MESH, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingOlpcMesh, nm_setting_olpc_mesh, NM_TYPE_SETTING)
 
 #define NM_SETTING_OLPC_MESH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_OLPC_MESH, NMSettingOlpcMeshPrivate))
 
@@ -213,20 +212,20 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
+nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingOlpcMeshPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingOlpcMeshPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
 
-	/* Properties */
+	setting_class->verify = verify;
+
 	/**
 	 * NMSettingOlpcMesh:ssid:
 	 *
@@ -267,8 +266,14 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
 		                      NULL,
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_hwaddr_to_dbus,
-	                                      _nm_utils_hwaddr_from_dbus);
+
+	_properties_override_add_transform (properties_override,
+	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                  NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS),
+	                                    G_VARIANT_TYPE_BYTESTRING,
+	                                    _nm_utils_hwaddr_to_dbus,
+	                                    _nm_utils_hwaddr_from_dbus);
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_OLPC_MESH,
+	                               NULL, properties_override);
 }

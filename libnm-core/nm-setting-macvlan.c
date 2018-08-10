@@ -39,8 +39,7 @@
  * necessary for connection to macvlan interfaces.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingMacvlan, nm_setting_macvlan, NM_TYPE_SETTING,
-                         _nm_register_setting (MACVLAN, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingMacvlan, nm_setting_macvlan, NM_TYPE_SETTING)
 
 #define NM_SETTING_MACVLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_MACVLAN, NMSettingMacvlanPrivate))
 
@@ -259,20 +258,18 @@ finalize (GObject *object)
 }
 
 static void
-nm_setting_macvlan_class_init (NMSettingMacvlanClass *setting_class)
+nm_setting_macvlan_class_init (NMSettingMacvlanClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingMacvlanPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingMacvlanPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
 
-	/* Properties */
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingMacvlan:parent:
@@ -341,4 +338,6 @@ nm_setting_macvlan_class_init (NMSettingMacvlanClass *setting_class)
 		                       G_PARAM_CONSTRUCT |
 		                       NM_SETTING_PARAM_INFERRABLE |
 		                       G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_MACVLAN);
 }

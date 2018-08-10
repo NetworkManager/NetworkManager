@@ -43,12 +43,14 @@
 #include "nm-setting-pppoe.h"
 #include "nm-setting-ppp.h"
 #include "nm-setting-vpn.h"
+#include "nm-setting-ethtool.h"
 #include "nm-setting-gsm.h"
 #include "nm-setting-cdma.h"
 #include "nm-setting-serial.h"
 #include "nm-setting-vlan.h"
 #include "nm-setting-dcb.h"
 #include "nm-core-internal.h"
+#include "nm-ethtool-utils.h"
 
 #include "NetworkManagerUtils.h"
 
@@ -185,7 +187,8 @@ _assert_expected_content (NMConnection *connection, const char *filename, const 
 
 	if (   len_expectd != len_written
 	    || memcmp (content_expectd, content_written, len_expectd) != 0) {
-		if (g_getenv ("NMTST_IFCFG_RH_UPDATE_EXPECTED")) {
+		if (   g_getenv ("NMTST_IFCFG_RH_UPDATE_EXPECTED")
+		    || nm_streq0 (g_getenv ("NM_TEST_REGENERATE"), "1")) {
 			if (uuid) {
 				gs_free char *search = g_strdup_printf ("UUID=%s\n", uuid);
 				const char *s;
@@ -3725,6 +3728,7 @@ test_write_wired_auto_negotiate_on (void)
 	gs_unref_object NMConnection *connection = NULL;
 	gs_unref_object NMConnection *reread = NULL;
 	NMSettingWired *s_wired;
+	NMSettingEthtool *s_ethtool;
 	char *val;
 	shvarFile *f;
 
@@ -3734,8 +3738,14 @@ test_write_wired_auto_negotiate_on (void)
 	              NM_SETTING_WIRED_AUTO_NEGOTIATE, TRUE,
 	              NULL);
 
-	_writer_new_connection (connection,
+	s_ethtool = NM_SETTING_ETHTOOL (nm_setting_ethtool_new ());
+	nm_setting_ethtool_set_feature (s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_TX, NM_TERNARY_TRUE);
+	nm_setting_ethtool_set_feature (s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_RXVLAN, NM_TERNARY_FALSE);
+	nm_connection_add_setting (connection, NM_SETTING (s_ethtool));
+
+	_writer_new_connec_exp (connection,
 	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-test_write_wired_auto_negotiate_on.cexpected",
 	                        &testfile);
 
 	f = _svOpenFile (testfile);
@@ -3749,7 +3759,15 @@ test_write_wired_auto_negotiate_on (void)
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 
+	nmtst_assert_connection_verifies_without_normalization (reread);
+
 	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
+
+	s_ethtool = NM_SETTING_ETHTOOL (nm_connection_get_setting (reread, NM_TYPE_SETTING_ETHTOOL));
+	g_assert (s_ethtool);
+	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_TX), ==, NM_TERNARY_TRUE);
+	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_RXVLAN), ==, NM_TERNARY_FALSE);
+	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_TXVLAN), ==, NM_TERNARY_DEFAULT);
 }
 
 static void

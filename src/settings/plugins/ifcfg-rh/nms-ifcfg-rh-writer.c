@@ -37,6 +37,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
+#include "nm-setting-ethtool.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-proxy.h"
 #include "nm-setting-ip4-config.h"
@@ -50,6 +51,7 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-meta-setting.h"
+#include "nm-ethtool-utils.h"
 
 #include "nms-ifcfg-rh-common.h"
 #include "nms-ifcfg-rh-reader.h"
@@ -809,7 +811,7 @@ write_wireless_setting (NMConnection *connection,
 	const char *device_mac, *cloned_mac;
 	guint32 mtu, chan, i;
 	gboolean adhoc = FALSE, hex_ssid = FALSE;
-	const char * const *macaddr_blacklist;
+	const char *const*macaddr_blacklist;
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	if (!s_wireless) {
@@ -1041,16 +1043,9 @@ static gboolean
 write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingWired *s_wired;
-	const char *device_mac, *cloned_mac;
-	char *tmp;
-	const char *nettype, *portname, *ctcprot, *s390_key, *s390_val, *duplex;
-	guint32 mtu, num_opts, speed, i;
-	const char *const *s390_subchannels;
-	GString *str = NULL;
-	const char * const *macaddr_blacklist;
-	gboolean auto_negotiate;
-	NMSettingWiredWakeOnLan wol;
-	const char *wol_password;
+	const char *const*s390_subchannels;
+	guint32 mtu, num_opts, i;
+	const char *const*macaddr_blacklist;
 
 	s_wired = nm_connection_get_setting_wired (connection);
 	if (!s_wired) {
@@ -1059,144 +1054,211 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		return FALSE;
 	}
 
-	device_mac = nm_setting_wired_get_mac_address (s_wired);
-	svSetValueStr (ifcfg, "HWADDR", device_mac);
+	svSetValueStr (ifcfg, "HWADDR",
+	               nm_setting_wired_get_mac_address (s_wired));
 
-	cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-	svSetValueStr (ifcfg, "MACADDR", cloned_mac);
+	svSetValueStr (ifcfg, "MACADDR",
+	               nm_setting_wired_get_cloned_mac_address (s_wired));
 
 	svSetValueStr (ifcfg, "GENERATE_MAC_ADDRESS_MASK",
 	               nm_setting_wired_get_generate_mac_address_mask (s_wired));
 
-	svUnsetValue (ifcfg, "HWADDR_BLACKLIST");
 	macaddr_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
 	if (macaddr_blacklist[0]) {
-		char *blacklist_str;
+		gs_free char *blacklist_str = NULL;
 
 		blacklist_str = g_strjoinv (" ", (char **) macaddr_blacklist);
 		svSetValueStr (ifcfg, "HWADDR_BLACKLIST", blacklist_str);
-		g_free (blacklist_str);
-	}
+	} else
+		svUnsetValue (ifcfg, "HWADDR_BLACKLIST");
 
 	mtu = nm_setting_wired_get_mtu (s_wired);
 	svSetValueInt64_cond (ifcfg, "MTU", mtu != 0, mtu);
 
-	svUnsetValue (ifcfg, "SUBCHANNELS");
 	s390_subchannels = nm_setting_wired_get_s390_subchannels (s_wired);
-	if (s390_subchannels) {
-		int len = g_strv_length ((char **)s390_subchannels);
 
-		tmp = NULL;
+	{
+		gs_free char *tmp = NULL;
+		gsize len = NM_PTRARRAY_LEN (s390_subchannels);
+
 		if (len == 2) {
-			tmp = g_strdup_printf ("%s,%s", s390_subchannels[0], s390_subchannels[1]);
+			tmp = g_strdup_printf ("%s,%s",
+			                       s390_subchannels[0],
+			                       s390_subchannels[1]);
 		} else if (len == 3) {
-			tmp = g_strdup_printf ("%s,%s,%s", s390_subchannels[0], s390_subchannels[1],
+			tmp = g_strdup_printf ("%s,%s,%s",
+			                       s390_subchannels[0],
+			                       s390_subchannels[1],
 			                       s390_subchannels[2]);
 		}
+
 		svSetValueStr (ifcfg, "SUBCHANNELS", tmp);
-		g_free (tmp);
 	}
 
-	svUnsetValue (ifcfg, "NETTYPE");
-	nettype = nm_setting_wired_get_s390_nettype (s_wired);
-	if (nettype)
-		svSetValueStr (ifcfg, "NETTYPE", nettype);
+	svSetValueStr (ifcfg, "NETTYPE",
+	               nm_setting_wired_get_s390_nettype (s_wired));
 
-	svUnsetValue (ifcfg, "PORTNAME");
-	portname = nm_setting_wired_get_s390_option_by_key (s_wired, "portname");
-	if (portname)
-		svSetValueStr (ifcfg, "PORTNAME", portname);
+	svSetValueStr (ifcfg, "PORTNAME",
+	               nm_setting_wired_get_s390_option_by_key (s_wired, "portname"));
 
-	svUnsetValue (ifcfg, "CTCPROT");
-	ctcprot = nm_setting_wired_get_s390_option_by_key (s_wired, "ctcprot");
-	if (ctcprot)
-		svSetValueStr (ifcfg, "CTCPROT", ctcprot);
+	svSetValueStr (ifcfg, "CTCPROT",
+	               nm_setting_wired_get_s390_option_by_key (s_wired, "ctcprot"));
 
 	svUnsetValue (ifcfg, "OPTIONS");
 	num_opts = nm_setting_wired_get_num_s390_options (s_wired);
 	if (s390_subchannels && num_opts) {
-		str = g_string_sized_new (30);
+		nm_auto_free_gstring GString *tmp = NULL;
+
 		for (i = 0; i < num_opts; i++) {
+			const char *s390_key, *s390_val;
+
 			nm_setting_wired_get_s390_option (s_wired, i, &s390_key, &s390_val);
 
 			/* portname is handled separately */
 			if (!strcmp (s390_key, "portname") || !strcmp (s390_key, "ctcprot"))
 				continue;
 
-			if (str->len)
-				g_string_append_c (str, ' ');
-			g_string_append_printf (str, "%s=%s", s390_key, s390_val);
+			if (!tmp)
+				tmp = g_string_sized_new (30);
+			else
+				g_string_append_c (tmp, ' ');
+			g_string_append_printf (tmp, "%s=%s", s390_key, s390_val);
 		}
-		if (str->len)
-			svSetValueStr (ifcfg, "OPTIONS", str->str);
-		g_string_free (str, TRUE);
+		if (tmp)
+			svSetValueStr (ifcfg, "OPTIONS", tmp->str);
 	}
 
-	/* Stuff ETHTOOL_OPT with required options */
-	str = NULL;
-	auto_negotiate = nm_setting_wired_get_auto_negotiate (s_wired);
-	speed = nm_setting_wired_get_speed (s_wired);
-	duplex = nm_setting_wired_get_duplex (s_wired);
+	svSetValueStr (ifcfg, "TYPE", TYPE_ETHERNET);
 
-	/* autoneg off + speed 0 + duplex NULL, means we want NM
-	 * to skip link configuration which is default. So write
-	 * down link config only if we have auto-negotiate true or
-	 * a valid value for one among speed and duplex.
-	 */
-	if (auto_negotiate) {
-		str = g_string_sized_new (64);
-		g_string_printf (str, "autoneg on");
-	} else if (speed || duplex) {
-		str = g_string_sized_new (64);
-		g_string_printf (str, "autoneg off");
+	return TRUE;
+}
+
+static gboolean
+write_ethtool_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+	NMSettingWired *s_wired;
+	NMSettingEthtool *s_ethtool;
+	const char *duplex;
+	guint32 speed;
+	GString *str = NULL;
+	gboolean auto_negotiate;
+	NMSettingWiredWakeOnLan wol;
+	const char *wol_password;
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	s_ethtool = NM_SETTING_ETHTOOL (nm_connection_get_setting (connection, NM_TYPE_SETTING_ETHTOOL));
+
+	if (!s_wired && !s_ethtool) {
+		svUnsetValue (ifcfg, "ETHTOOL_WAKE_ON_LAN");
+		svUnsetValue (ifcfg, "ETHTOOL_OPTS");
+		return TRUE;
 	}
-	if (speed)
-		g_string_append_printf (str, " speed %u", speed);
-	if (duplex)
-		g_string_append_printf (str, " duplex %s", duplex);
 
-	wol = nm_setting_wired_get_wake_on_lan (s_wired);
-	wol_password = nm_setting_wired_get_wake_on_lan_password (s_wired);
+	if (s_wired) {
+		auto_negotiate = nm_setting_wired_get_auto_negotiate (s_wired);
+		speed = nm_setting_wired_get_speed (s_wired);
+		duplex = nm_setting_wired_get_duplex (s_wired);
 
-	if (wol == NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE)
-		svSetValue (ifcfg, "ETHTOOL_WAKE_ON_LAN", "ignore");
-	else if (wol == NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT) {
-		if (!str)
-			svUnsetValue (ifcfg, "ETHTOOL_OPTS");
-	} else {
+		/* autoneg off + speed 0 + duplex NULL, means we want NM
+		 * to skip link configuration which is default. So write
+		 * down link config only if we have auto-negotiate true or
+		 * a valid value for one among speed and duplex.
+		 */
+		if (auto_negotiate) {
+			str = g_string_sized_new (64);
+			g_string_printf (str, "autoneg on");
+		} else if (speed || duplex) {
+			str = g_string_sized_new (64);
+			g_string_printf (str, "autoneg off");
+		}
+		if (speed)
+			g_string_append_printf (str, " speed %u", speed);
+		if (duplex)
+			g_string_append_printf (str, " duplex %s", duplex);
+
+		wol = nm_setting_wired_get_wake_on_lan (s_wired);
+		wol_password = nm_setting_wired_get_wake_on_lan_password (s_wired);
+
+		svSetValue (ifcfg, "ETHTOOL_WAKE_ON_LAN",
+		              wol == NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE
+		            ? "ignore"
+		            : NULL);
+		if (!NM_IN_SET (wol, NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE,
+		                     NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT)) {
+			if (!str)
+				str = g_string_sized_new (30);
+			else
+				g_string_append (str, " ");
+
+			g_string_append (str, "wol ");
+
+			if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_PHY))
+				g_string_append (str, "p");
+			if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST))
+				g_string_append (str, "u");
+			if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST))
+				g_string_append (str, "m");
+			if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST))
+				g_string_append (str, "b");
+			if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_ARP))
+				g_string_append (str, "a");
+			if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
+				g_string_append (str, "g");
+
+			if (!NM_FLAGS_ANY (wol, NM_SETTING_WIRED_WAKE_ON_LAN_ALL))
+				g_string_append (str, "d");
+
+			if (wol_password && NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
+				g_string_append_printf (str, "s sopass %s", wol_password);
+		}
+	} else
+		svUnsetValue (ifcfg, "ETHTOOL_WAKE_ON_LAN");
+
+	if (s_ethtool) {
+		NMEthtoolID ethtool_id;
+		NMSettingConnection *s_con;
+		const char *iface = NULL;
+
+		s_con = nm_connection_get_setting_connection (connection);
+		if (s_con) {
+			iface = nm_setting_connection_get_interface_name (s_con);
+			if (   iface
+			    && (   !iface[0]
+			        || !NM_STRCHAR_ALL (iface, ch,    (ch >= 'a' && ch <= 'z')
+			                                       || (ch >= 'A' && ch <= 'Z')
+			                                       || (ch >= '0' && ch <= '9')
+			                                       || NM_IN_SET (ch, '_'))))
+				iface = NULL;
+		}
+
 		if (!str)
 			str = g_string_sized_new (30);
 		else
-			g_string_append (str, " ");
+			g_string_append (str, " ; ");
+		g_string_append (str, "-K ");
+		g_string_append (str, iface ?: "net0");
 
-		g_string_append (str, "wol ");
+		for (ethtool_id = _NM_ETHTOOL_ID_FEATURE_FIRST; ethtool_id <= _NM_ETHTOOL_ID_FEATURE_LAST; ethtool_id++) {
+			const NMEthtoolData *ed = nm_ethtool_data[ethtool_id];
+			NMTernary val;
 
-		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_PHY))
-			g_string_append (str, "p");
-		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST))
-			g_string_append (str, "u");
-		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST))
-			g_string_append (str, "m");
-		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST))
-			g_string_append (str, "b");
-		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_ARP))
-			g_string_append (str, "a");
-		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
-			g_string_append (str, "g");
+			nm_assert (nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
 
-		if (!NM_FLAGS_ANY (wol, NM_SETTING_WIRED_WAKE_ON_LAN_ALL))
-			g_string_append (str, "d");
+			val = nm_setting_ethtool_get_feature (s_ethtool, ed->optname);
+			if (val == NM_TERNARY_DEFAULT)
+				continue;
 
-		if (wol_password && NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
-			g_string_append_printf (str, "s sopass %s", wol_password);
+			g_string_append_c (str, ' ');
+			g_string_append (str, nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
+			g_string_append (str, val == NM_TERNARY_TRUE ? " on" : " off");
+		}
 	}
+
 	if (str) {
 		svSetValueStr (ifcfg, "ETHTOOL_OPTS", str->str);
 		g_string_free (str, TRUE);
-	}
-	/* End ETHTOOL_OPT stuffing */
-
-	svSetValueStr (ifcfg, "TYPE", TYPE_ETHERNET);
+	} else
+		svUnsetValue (ifcfg, "ETHTOOL_OPTS");
 
 	return TRUE;
 }
@@ -2960,6 +3022,9 @@ do_write_construct (NMConnection *connection,
 		return FALSE;
 
 	if (!write_proxy_setting (connection, ifcfg, error))
+		return FALSE;
+
+	if (!write_ethtool_setting (connection, ifcfg, error))
 		return FALSE;
 
 	if (!write_user_setting (connection, ifcfg, error))

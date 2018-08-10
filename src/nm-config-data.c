@@ -655,12 +655,12 @@ nm_config_data_log (const NMConfigData *self,
 			const char *group = default_values[g].group;
 			gssize idx;
 
-			idx = _nm_utils_array_find_binary_search ((gconstpointer *) groups_full->pdata,
-			                                          sizeof (char *),
-			                                          groups_full->len,
-			                                          &group,
-			                                          (GCompareDataFunc) _nm_config_data_log_sort,
-			                                          NULL);
+			idx = nm_utils_array_find_binary_search ((gconstpointer *) groups_full->pdata,
+			                                         sizeof (char *),
+			                                         groups_full->len,
+			                                         &group,
+			                                         (GCompareDataFunc) _nm_config_data_log_sort,
+			                                         NULL);
 			if (idx < 0)
 				g_ptr_array_insert (groups_full, (~idx), (gpointer) group);
 		}

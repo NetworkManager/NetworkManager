@@ -470,3 +470,104 @@ nms_ifcfg_rh_utils_user_key_decode (const char *name, GString *str_buffer)
 
 	return TRUE;
 }
+
+/*****************************************************************************/
+
+const char *const _nm_ethtool_ifcfg_names[] = {
+#define ETHT_NAME(eid, ename) \
+[eid - _NM_ETHTOOL_ID_FEATURE_FIRST] = ""ename""
+	/* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_ESP_HW_OFFLOAD,               "esp-hw-offload"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_ESP_TX_CSUM_HW_OFFLOAD,       "esp-tx-csum-hw-offload"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_FCOE_MTU,                     "fcoe-mtu"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_GRO,                          "gro"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_GSO,                          "gso"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_HIGHDMA,                      "highdma"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_HW_TC_OFFLOAD,                "hw-tc-offload"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_L2_FWD_OFFLOAD,               "l2-fwd-offload"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_LOOPBACK,                     "loopback"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_LRO,                          "lro"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_NTUPLE,                       "ntuple"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RX,                           "rx"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RXHASH,                       "rxhash"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RXVLAN,                       "rxvlan"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RX_ALL,                       "rx-all"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RX_FCS,                       "rx-fcs"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RX_GRO_HW,                    "rx-gro-hw"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RX_UDP_TUNNEL_PORT_OFFLOAD,   "rx-udp_tunnel-port-offload"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RX_VLAN_FILTER,               "rx-vlan-filter"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RX_VLAN_STAG_FILTER,          "rx-vlan-stag-filter"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RX_VLAN_STAG_HW_PARSE,        "rx-vlan-stag-hw-parse"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_SG,                           "sg"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TLS_HW_RECORD,                "tls-hw-record"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TLS_HW_TX_OFFLOAD,            "tls-hw-tx-offload"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TSO,                          "tso"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX,                           "tx"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TXVLAN,                       "txvlan"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_FCOE_CRC,         "tx-checksum-fcoe-crc"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_IPV4,             "tx-checksum-ipv4"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_IPV6,             "tx-checksum-ipv6"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_IP_GENERIC,       "tx-checksum-ip-generic"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_SCTP,             "tx-checksum-sctp"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_ESP_SEGMENTATION,          "tx-esp-segmentation"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_FCOE_SEGMENTATION,         "tx-fcoe-segmentation"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_GRE_CSUM_SEGMENTATION,     "tx-gre-csum-segmentation"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_GRE_SEGMENTATION,          "tx-gre-segmentation"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_GSO_PARTIAL,               "tx-gso-partial"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_GSO_ROBUST,                "tx-gso-robust"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_IPXIP4_SEGMENTATION,       "tx-ipxip4-segmentation"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_IPXIP6_SEGMENTATION,       "tx-ipxip6-segmentation"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_NOCACHE_COPY,              "tx-nocache-copy"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_SCATTER_GATHER,            "tx-scatter-gather"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_SCATTER_GATHER_FRAGLIST,   "tx-scatter-gather-fraglist"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_SCTP_SEGMENTATION,         "tx-sctp-segmentation"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_TCP6_SEGMENTATION,         "tx-tcp6-segmentation"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_TCP_ECN_SEGMENTATION,      "tx-tcp-ecn-segmentation"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_TCP_MANGLEID_SEGMENTATION, "tx-tcp-mangleid-segmentation"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_TCP_SEGMENTATION,          "tx-tcp-segmentation"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_UDP_SEGMENTATION,          "tx-udp-segmentation"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_UDP_TNL_CSUM_SEGMENTATION, "tx-udp_tnl-csum-segmentation"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_UDP_TNL_SEGMENTATION,      "tx-udp_tnl-segmentation"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_VLAN_STAG_HW_INSERT,       "tx-vlan-stag-hw-insert"),
+};
+
+const NMEthtoolData *
+nms_ifcfg_rh_utils_get_ethtool_by_name (const char *name)
+{
+	static const struct {
+		NMEthtoolID ethtool_id;
+		const char *kernel_name;
+	} kernel_names[] = {
+		{ NM_ETHTOOL_ID_FEATURE_GRO,    "rx-gro" },
+		{ NM_ETHTOOL_ID_FEATURE_GSO,    "tx-generic-segmentation" },
+		{ NM_ETHTOOL_ID_FEATURE_LRO,    "rx-lro" },
+		{ NM_ETHTOOL_ID_FEATURE_NTUPLE, "rx-ntuple-filter" },
+		{ NM_ETHTOOL_ID_FEATURE_RX,     "rx-checksum" },
+		{ NM_ETHTOOL_ID_FEATURE_RXHASH, "rx-hashing" },
+		{ NM_ETHTOOL_ID_FEATURE_RXVLAN, "rx-vlan-hw-parse" },
+		{ NM_ETHTOOL_ID_FEATURE_TXVLAN, "tx-vlan-hw-insert" },
+	};
+	guint i;
+
+	for (i = 0; i < G_N_ELEMENTS (_nm_ethtool_ifcfg_names); i++) {
+		if (nm_streq (name, _nm_ethtool_ifcfg_names[i]))
+			return nm_ethtool_data[i];
+	}
+
+	/* Option not found. Note that ethtool utility has built-in features and
+	 * NetworkManager's API follows the naming of these built-in features, whenever
+	 * they exist.
+	 * For example, NM's "ethtool.feature-ntuple" corresponds to ethtool utility's "ntuple"
+	 * feature. However the underlying kernel feature is called "rx-ntuple-filter" (as reported
+	 * for ETH_SS_FEATURES).
+	 *
+	 * With ethtool utility, whose command line we attempt to parse here, the user can also
+	 * specify the name of the underlying kernel feature directly. So, check whether that is
+	 * the case and if yes, map them to the corresponding NetworkManager's features. */
+	for (i = 0; i < G_N_ELEMENTS (kernel_names); i++) {
+		if (nm_streq (name, kernel_names[i].kernel_name))
+			return nm_ethtool_data[kernel_names[i].ethtool_id];
+	}
+
+	return NULL;
+}
