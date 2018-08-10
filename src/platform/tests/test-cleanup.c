@@ -60,7 +60,7 @@ test_cleanup_internal (void)
 	g_assert (ifindex > 0);
 
 	/* wait for kernel to add the IPv6 link local address... it takes a bit. */
-	NMTST_WAIT_ASSERT (100, {
+	NMTST_WAIT_ASSERT (300, {
 		gs_unref_array GArray *addrs = NULL;
 		const NMPlatformIP6Address *a;
 
