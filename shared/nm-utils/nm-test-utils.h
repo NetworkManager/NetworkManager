@@ -573,8 +573,9 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 #endif
 	} else {
 		/* We were called not to set logging levels. This means, that the user
-		 * expects to assert against (all) messages. Any uncought message is fatal. */
-		g_log_set_always_fatal (G_LOG_LEVEL_MASK);
+		 * expects to assert against (all) messages.
+		 * Any uncaught message on >debug level is fatal. */
+		g_log_set_always_fatal (G_LOG_LEVEL_MASK & ~G_LOG_LEVEL_DEBUG);
 	}
 
 	if ((!__nmtst_internal.assert_logging || (__nmtst_internal.assert_logging && __nmtst_internal.no_expect_message)) &&
