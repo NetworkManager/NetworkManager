@@ -958,11 +958,12 @@ get_autoconnect_allowed (NMDevice *device)
 
 static gboolean
 can_auto_connect (NMDevice *device,
-                  NMConnection *connection,
+                  NMSettingsConnection *sett_conn,
                   char **specific_object)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	NMWifiAP *ap;
 	const char *method, *mode;
@@ -970,8 +971,10 @@ can_auto_connect (NMDevice *device,
 
 	nm_assert (!specific_object || !*specific_object);
 
-	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->can_auto_connect (device, connection, NULL))
+	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->can_auto_connect (device, sett_conn, NULL))
 		return FALSE;
+
+	connection = nm_settings_connection_get_connection (sett_conn);
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wifi, FALSE);
@@ -979,17 +982,17 @@ can_auto_connect (NMDevice *device,
 	/* Always allow autoconnect for AP and non-autoconf Ad-Hoc */
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
 	mode = nm_setting_wireless_get_mode (s_wifi);
-	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_AP) == 0)
+	if (nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_AP))
 		return TRUE;
-	else if (   g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC) == 0
-	         && g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) != 0)
+	else if (   nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC)
+	         && !nm_streq0 (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
 		return TRUE;
 
 	/* Don't autoconnect to networks that have been tried at least once
 	 * but haven't been successful, since these are often accidental choices
 	 * from the menu and the user may not know the password.
 	 */
-	if (nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (connection), &timestamp)) {
+	if (nm_settings_connection_get_timestamp (sett_conn, &timestamp)) {
 		if (timestamp == 0)
 			return FALSE;
 	}
@@ -1264,14 +1267,15 @@ check_scanning_prohibited (NMDeviceWifi *self, gboolean periodic)
 
 static gboolean
 hidden_filter_func (NMSettings *settings,
-                    NMSettingsConnection *connection,
+                    NMSettingsConnection *set_con,
                     gpointer user_data)
 {
+	NMConnection *connection = nm_settings_connection_get_connection (set_con);
 	NMSettingWireless *s_wifi;
 
-	if (!nm_connection_is_type (NM_CONNECTION (connection), NM_SETTING_WIRELESS_SETTING_NAME))
+	if (!nm_connection_is_type (connection, NM_SETTING_WIRELESS_SETTING_NAME))
 		return FALSE;
-	s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (connection));
+	s_wifi = nm_connection_get_setting_wireless (connection);
 	if (!s_wifi)
 		return FALSE;
 	if (nm_streq0 (nm_setting_wireless_get_mode (s_wifi), NM_SETTING_WIRELESS_MODE_AP))
@@ -1316,7 +1320,7 @@ build_hidden_probe_list (NMDeviceWifi *self)
 		if (i >= max_scan_ssids - 1)
 			break;
 
-		s_wifi = (NMSettingWireless *) nm_connection_get_setting_wireless (NM_CONNECTION (connections[i]));
+		s_wifi = (NMSettingWireless *) nm_connection_get_setting_wireless (nm_settings_connection_get_connection (connections[i]));
 		ssid = nm_setting_wireless_get_ssid (s_wifi);
 		g_ptr_array_add (ssids, g_bytes_ref (ssid));
 	}
@@ -1509,12 +1513,12 @@ try_fill_ssid_for_hidden_ap (NMDeviceWifi *self,
 	 * and if a match is found, copy over the SSID */
 	connections = nm_settings_get_connections (nm_device_get_settings ((NMDevice *) self), NULL);
 	for (i = 0; connections[i]; i++) {
-		NMConnection *connection = (NMConnection *) connections[i];
+		NMSettingsConnection *sett_conn = connections[i];
 		NMSettingWireless *s_wifi;
 
-		s_wifi = nm_connection_get_setting_wireless (connection);
+		s_wifi = nm_connection_get_setting_wireless (nm_settings_connection_get_connection (sett_conn));
 		if (s_wifi) {
-			if (nm_settings_connection_has_seen_bssid (NM_SETTINGS_CONNECTION (connection), bssid)) {
+			if (nm_settings_connection_has_seen_bssid (sett_conn, bssid)) {
 				nm_wifi_ap_set_ssid (ap, nm_setting_wireless_get_ssid (s_wifi));
 				break;
 			}

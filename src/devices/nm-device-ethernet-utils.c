@@ -18,31 +18,23 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
-#include "nm-connection.h"
-
 #include "nm-device-ethernet-utils.h"
 
+#include "settings/nm-settings-connection.h"
+
 char *
-nm_device_ethernet_utils_get_default_wired_name (NMConnection *const *connections)
+nm_device_ethernet_utils_get_default_wired_name (GHashTable *existing_ids)
 {
 	char *temp;
-	guint j;
 	int i;
 
 	/* Find the next available unique connection name */
 	for (i = 1; i <= G_MAXINT; i++) {
 		temp = g_strdup_printf (_("Wired connection %d"), i);
-		for (j = 0; connections[j]; j++) {
-			if (nm_streq0 (nm_connection_get_id (connections[j]), temp)) {
-				g_free (temp);
-				goto next;
-			}
-		}
-		return temp;
-next:
-		;
+		if (   !existing_ids
+		    || !g_hash_table_contains (existing_ids, temp))
+			return temp;
+		g_free (temp);
 	}
 	return NULL;
 }

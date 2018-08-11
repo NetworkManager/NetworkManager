@@ -805,8 +805,10 @@ nm_utils_match_connection (NMConnection *const*connections,
 		return NULL;
 
 	for (; *connections; connections++) {
-		NMConnection *candidate = NM_CONNECTION (*connections);
+		NMConnection *candidate = *connections;
 		GHashTable *diffs = NULL;
+
+		nm_assert (NM_IS_CONNECTION (candidate));
 
 		if (match_filter_func) {
 			if (!match_filter_func (candidate, match_filter_data))

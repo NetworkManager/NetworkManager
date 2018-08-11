@@ -265,8 +265,8 @@ nm_checkpoint_manager_lookup_by_path (NMCheckpointManager *self, const char *pat
 
 	g_return_val_if_fail (self, NULL);
 
-	checkpoint = (NMCheckpoint *) nm_dbus_manager_lookup_object (nm_dbus_object_get_manager (NM_DBUS_OBJECT (GET_MANAGER (self))),
-	                                                             path);
+	checkpoint = nm_dbus_manager_lookup_object (nm_dbus_object_get_manager (NM_DBUS_OBJECT (GET_MANAGER (self))),
+	                                            path);
 	if (   !checkpoint
 	    || !NM_IS_CHECKPOINT (checkpoint)) {
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INVALID_ARGUMENTS,

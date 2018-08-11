@@ -142,7 +142,7 @@ nms_keyfile_connection_new (NMConnection *source,
 		if (!tmp)
 			return NULL;
 
-		uuid = nm_connection_get_uuid (NM_CONNECTION (tmp));
+		uuid = nm_connection_get_uuid (tmp);
 		if (!uuid) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Connection in file %s had no UUID", full_path);
@@ -154,9 +154,9 @@ nms_keyfile_connection_new (NMConnection *source,
 		update_unsaved = FALSE;
 	}
 
-	object = (GObject *) g_object_new (NMS_TYPE_KEYFILE_CONNECTION,
-	                                   NM_SETTINGS_CONNECTION_FILENAME, full_path,
-	                                   NULL);
+	object = g_object_new (NMS_TYPE_KEYFILE_CONNECTION,
+	                       NM_SETTINGS_CONNECTION_FILENAME, full_path,
+	                       NULL);
 
 	/* Update our settings with what was read from the file */
 	if (!nm_settings_connection_update (NM_SETTINGS_CONNECTION (object),

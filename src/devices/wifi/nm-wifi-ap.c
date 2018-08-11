@@ -1544,8 +1544,8 @@ nm_wifi_ap_lookup_for_device (NMDevice *device, const char *exported_path)
 
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	ap = (NMWifiAP *) nm_dbus_manager_lookup_object (nm_dbus_object_get_manager (NM_DBUS_OBJECT (device)),
-	                                                 exported_path);
+	ap = nm_dbus_manager_lookup_object (nm_dbus_object_get_manager (NM_DBUS_OBJECT (device)),
+	                                    exported_path);
 	if (   !ap
 	    || !NM_IS_WIFI_AP (ap)
 	    || ap->wifi_device != device)
