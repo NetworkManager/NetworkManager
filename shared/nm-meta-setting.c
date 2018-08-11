@@ -44,6 +44,7 @@
 #include "nm-setting-ip-tunnel.h"
 #include "nm-setting-macsec.h"
 #include "nm-setting-macvlan.h"
+#include "nm-setting-match.h"
 #include "nm-setting-olpc-mesh.h"
 #include "nm-setting-ovs-bridge.h"
 #include "nm-setting-ovs-interface.h"
@@ -267,6 +268,12 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
 		.setting_priority =         NM_SETTING_PRIORITY_HW_BASE,
 		.setting_name =             NM_SETTING_MACVLAN_SETTING_NAME,
 		.get_setting_gtype =        nm_setting_macvlan_get_type,
+	},
+	[NM_META_SETTING_TYPE_MATCH] = {
+		.meta_type =                NM_META_SETTING_TYPE_MATCH,
+		.setting_priority =         NM_SETTING_PRIORITY_AUX,
+		.setting_name =             NM_SETTING_MATCH_SETTING_NAME,
+		.get_setting_gtype =        nm_setting_match_get_type,
 	},
 	[NM_META_SETTING_TYPE_OLPC_MESH] = {
 		.meta_type =                NM_META_SETTING_TYPE_OLPC_MESH,

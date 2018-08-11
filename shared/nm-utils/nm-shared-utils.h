@@ -208,7 +208,7 @@ int nm_utils_dbus_path_cmp (const char *dbus_path_a, const char *dbus_path_b);
 
 /*****************************************************************************/
 
-const char **nm_utils_strsplit_set (const char *str, const char *delimiters);
+const char **nm_utils_strsplit_set (const char *str, const char *delimiters, gboolean allow_escaping);
 
 gssize nm_utils_strv_find_first (char **list, gssize len, const char *needle);
 
@@ -717,5 +717,8 @@ void _nm_utils_user_data_unpack (gpointer user_data, int nargs, ...);
 	_nm_utils_user_data_unpack(user_data, NM_NARG (__VA_ARGS__), __VA_ARGS__)
 
 /*****************************************************************************/
+
+const char *_nm_utils_escape_spaces (const char *str, char **to_free);
+char *_nm_utils_unescape_spaces (char *str);
 
 #endif /* __NM_SHARED_UTILS_H__ */

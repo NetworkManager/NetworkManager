@@ -463,6 +463,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-ip6-config.h \
 	libnm-core/nm-setting-macsec.h \
 	libnm-core/nm-setting-macvlan.h \
+	libnm-core/nm-setting-match.h \
 	libnm-core/nm-setting-olpc-mesh.h \
 	libnm-core/nm-setting-ovs-bridge.h \
 	libnm-core/nm-setting-ovs-interface.h \
@@ -536,6 +537,7 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-ip6-config.c \
 	libnm-core/nm-setting-macsec.c \
 	libnm-core/nm-setting-macvlan.c \
+	libnm-core/nm-setting-match.c \
 	libnm-core/nm-setting-olpc-mesh.c \
 	libnm-core/nm-setting-ovs-bridge.c \
 	libnm-core/nm-setting-ovs-interface.c \
@@ -2252,6 +2254,7 @@ EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wired_Auto-Negotiate.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wired_Static_Routes.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wired_Wake-on-LAN.cexpected \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wired_match.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Vlan_test-vlan-interface.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-dcb-test.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-netmask-1 \

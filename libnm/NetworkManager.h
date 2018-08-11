@@ -82,6 +82,7 @@
 #include "nm-setting-ip-tunnel.h"
 #include "nm-setting-macsec.h"
 #include "nm-setting-macvlan.h"
+#include "nm-setting-match.h"
 #include "nm-setting-olpc-mesh.h"
 #include "nm-setting-ovs-bridge.h"
 #include "nm-setting-ovs-interface.h"

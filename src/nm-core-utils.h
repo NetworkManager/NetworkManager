@@ -215,6 +215,10 @@ NMMatchSpecMatchType nm_match_spec_config (const GSList *specs,
 GSList *nm_match_spec_split (const char *value);
 char *nm_match_spec_join (GSList *specs);
 
+gboolean nm_wildcard_match_check (const char *str,
+                                  const char *const *patterns,
+                                  guint num_patterns);
+
 /*****************************************************************************/
 
 const char *nm_utils_get_ip_config_method (NMConnection *connection,
