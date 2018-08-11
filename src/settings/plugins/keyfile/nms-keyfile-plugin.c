@@ -85,10 +85,10 @@ G_DEFINE_TYPE_EXTENDED (NMSKeyfilePlugin, nms_keyfile_plugin, G_TYPE_OBJECT, 0,
 /*****************************************************************************/
 
 static void
-connection_removed_cb (NMSettingsConnection *obj, gpointer user_data)
+connection_removed_cb (NMSettingsConnection *sett_conn, NMSKeyfilePlugin *self)
 {
-	g_hash_table_remove (NMS_KEYFILE_PLUGIN_GET_PRIVATE ((NMSKeyfilePlugin *) user_data)->connections,
-	                     nm_connection_get_uuid (NM_CONNECTION (obj)));
+	g_hash_table_remove (NMS_KEYFILE_PLUGIN_GET_PRIVATE (self)->connections,
+	                     nm_settings_connection_get_uuid (sett_conn));
 }
 
 /* Monitoring */
@@ -106,7 +106,7 @@ remove_connection (NMSKeyfilePlugin *self, NMSKeyfileConnection *connection)
 	g_object_ref (connection);
 	g_signal_handlers_disconnect_by_func (connection, connection_removed_cb, self);
 	removed = g_hash_table_remove (NMS_KEYFILE_PLUGIN_GET_PRIVATE (self)->connections,
-	                               nm_connection_get_uuid (NM_CONNECTION (connection)));
+	                               nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (connection)));
 	nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (connection));
 	g_object_unref (connection);
 
@@ -197,7 +197,7 @@ update_connection (NMSKeyfilePlugin *self,
 		return NULL;
 	}
 
-	uuid = nm_connection_get_uuid (NM_CONNECTION (connection_new));
+	uuid = nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (connection_new));
 	connection_by_uuid = g_hash_table_lookup (priv->connections, uuid);
 
 	if (   connection

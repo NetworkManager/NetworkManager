@@ -64,26 +64,29 @@ nm_ifupdown_connection_init (NMIfupdownConnection *connection)
 {
 }
 
-NMIfupdownConnection*
+NMIfupdownConnection *
 nm_ifupdown_connection_new (if_block *block)
 {
-	GObject *object;
+	NMIfupdownConnection *connection;
 	GError *error = NULL;
 
 	g_return_val_if_fail (block != NULL, NULL);
 
-	object = g_object_new (NM_TYPE_IFUPDOWN_CONNECTION, NULL);
+	connection = g_object_new (NM_TYPE_IFUPDOWN_CONNECTION, NULL);
 
-	if (!ifupdown_update_connection_from_if_block (NM_CONNECTION (object), block, &error)) {
+	/* FIXME(copy-on-write-connection): avoid modifying NMConnection instances and share them via copy-on-write. */
+	if (!ifupdown_update_connection_from_if_block (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection)),
+	                                               block,
+	                                               &error)) {
 		nm_log_warn (LOGD_SETTINGS, "%s.%d - invalid connection read from /etc/network/interfaces: %s",
 		             __FILE__,
 		             __LINE__,
 		             error->message);
-		g_object_unref (object);
+		g_object_unref (connection);
 		return NULL;
 	}
 
-	return (NMIfupdownConnection *) object;
+	return connection;
 }
 
 static void

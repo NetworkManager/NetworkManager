@@ -85,7 +85,7 @@ void nm_settings_add_connection_dbus (NMSettings *self,
                                       NMSettingsAddCallback callback,
                                       gpointer user_data);
 
-NMSettingsConnection *const* nm_settings_get_connections (NMSettings *settings, guint *out_len);
+NMSettingsConnection *const*nm_settings_get_connections (NMSettings *settings, guint *out_len);
 
 NMSettingsConnection **nm_settings_get_connections_clone (NMSettings *self,
                                                           guint *out_len,

@@ -126,8 +126,8 @@ bind_device_to_connection (SettingsPluginIfupdown *self,
 		return;
 	}
 
-	s_wired = nm_connection_get_setting_wired (NM_CONNECTION (exported));
-	s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (exported));
+	s_wired = nm_connection_get_setting_wired (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (exported)));
+	s_wifi = nm_connection_get_setting_wireless (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (exported)));
 	if (s_wired) {
 		nm_log_info (LOGD_SETTINGS, "locking wired connection setting");
 		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, address, NULL);
@@ -415,7 +415,8 @@ init (NMSettingsPlugin *config)
 		NMSettingConnection *setting;
 
 		if (g_hash_table_lookup (auto_ifaces, block_name)) {
-			setting = nm_connection_get_setting_connection (NM_CONNECTION (connection));
+			/* FIXME(copy-on-write-connection): avoid modifying NMConnection instances and share them via copy-on-write. */
+			setting = nm_connection_get_setting_connection (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection)));
 			g_object_set (setting, NM_SETTING_CONNECTION_AUTOCONNECT, TRUE, NULL);
 			nm_log_info (LOGD_SETTINGS, "autoconnect");
 		}

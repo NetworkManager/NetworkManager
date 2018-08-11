@@ -1443,12 +1443,14 @@ new_default_connection (NMDevice *self)
 	NMConnection *connection;
 	NMSettingsConnection *const*connections;
 	NMSetting *setting;
+	gs_unref_hashtable GHashTable *existing_ids = NULL;
 	struct udev_device *dev;
 	const char *perm_hw_addr;
 	const char *uprop = "0";
 	gs_free char *defname = NULL;
 	gs_free char *uuid = NULL;
 	gs_free char *machine_id = NULL;
+	guint i, n_connections;
 
 	if (nm_config_get_no_auto_default_for_device (nm_config_get (), self))
 		return NULL;
@@ -1461,8 +1463,13 @@ new_default_connection (NMDevice *self)
 	setting = nm_setting_connection_new ();
 	nm_connection_add_setting (connection, setting);
 
-	connections = nm_settings_get_connections (nm_device_get_settings (self), NULL);
-	defname = nm_device_ethernet_utils_get_default_wired_name ((NMConnection *const*) connections);
+	connections = nm_settings_get_connections (nm_device_get_settings (self), &n_connections);
+	if (n_connections > 0) {
+		existing_ids = g_hash_table_new (nm_str_hash, g_str_equal);
+		for (i = 0; i < n_connections; i++)
+			g_hash_table_add (existing_ids, (char *) nm_settings_connection_get_id (connections[i]));
+	}
+	defname = nm_device_ethernet_utils_get_default_wired_name (existing_ids);
 	if (!defname)
 		return NULL;
 

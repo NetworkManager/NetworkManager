@@ -1084,7 +1084,7 @@ _obj_unregister (NMDBusManager *self,
 	                               NULL);
 }
 
-NMDBusObject *
+gpointer
 nm_dbus_manager_lookup_object (NMDBusManager *self, const char *path)
 {
 	NMDBusManagerPrivate *priv;

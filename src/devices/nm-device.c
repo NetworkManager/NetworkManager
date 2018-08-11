@@ -1736,7 +1736,7 @@ nm_device_parent_find_for_connection (NMDevice *self,
 		                                                        current_setting_parent);
 		if (   parent_connection
 		    && nm_device_check_connection_compatible (parent_device,
-		                                              NM_CONNECTION (parent_connection),
+		                                              nm_settings_connection_get_connection (parent_connection),
 		                                              NULL))
 			return current_setting_parent;
 	}
@@ -2343,6 +2343,22 @@ nm_device_get_settings_connection (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	return priv->act_request.obj ? nm_act_request_get_settings_connection (priv->act_request.obj) : NULL;
+}
+
+NMConnection *
+nm_device_get_settings_connection_get_connection (NMDevice *self)
+{
+	NMSettingsConnection *sett_con;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (!priv->act_request.obj)
+		return NULL;
+
+	sett_con = nm_act_request_get_settings_connection (priv->act_request.obj);
+	if (!sett_con)
+		return NULL;
+
+	return nm_settings_connection_get_connection (sett_con);
 }
 
 NMConnection *
@@ -5193,7 +5209,7 @@ nm_device_autoconnect_allowed (NMDevice *self)
 
 static gboolean
 can_auto_connect (NMDevice *self,
-                  NMConnection *connection,
+                  NMSettingsConnection *sett_conn,
                   char **specific_object)
 {
 	nm_assert (!specific_object || !*specific_object);
@@ -5203,27 +5219,27 @@ can_auto_connect (NMDevice *self,
 /**
  * nm_device_can_auto_connect:
  * @self: an #NMDevice
- * @connection: a #NMConnection
+ * @sett_conn: a #NMSettingsConnection
  * @specific_object: (out) (transfer full): on output, the path of an
  *   object associated with the returned connection, to be passed to
  *   nm_manager_activate_connection(), or %NULL.
  *
- * Checks if @connection can be auto-activated on @self right now.
+ * Checks if @sett_conn can be auto-activated on @self right now.
  * This requires, at a minimum, that the connection be compatible with
  * @self, and that it have the #NMSettingConnection:autoconnect property
  * set, and that the device allow auto connections. Some devices impose
  * additional requirements. (Eg, a Wi-Fi connection can only be activated
  * if its SSID was seen in the last scan.)
  *
- * Returns: %TRUE, if the @connection can be auto-activated.
+ * Returns: %TRUE, if the @sett_conn can be auto-activated.
  **/
 gboolean
 nm_device_can_auto_connect (NMDevice *self,
-                            NMConnection *connection,
+                            NMSettingsConnection *sett_conn,
                             char **specific_object)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (sett_conn), FALSE);
 	g_return_val_if_fail (!specific_object || !*specific_object, FALSE);
 
 	/* the caller must ensure that nm_device_autoconnect_allowed() returns
@@ -5235,10 +5251,14 @@ nm_device_can_auto_connect (NMDevice *self,
 	 * over and over again. The caller is supposed to do that. */
 	nm_assert (nm_device_autoconnect_allowed (self));
 
-	if (!nm_device_check_connection_available (self, connection, NM_DEVICE_CHECK_CON_AVAILABLE_NONE, NULL, NULL))
+	if (!nm_device_check_connection_available (self,
+	                                           nm_settings_connection_get_connection (sett_conn),
+	                                           NM_DEVICE_CHECK_CON_AVAILABLE_NONE,
+	                                           NULL,
+	                                           NULL))
 		return FALSE;
 
-	if (!NM_DEVICE_GET_CLASS (self)->can_auto_connect (self, connection, specific_object))
+	if (!NM_DEVICE_GET_CLASS (self)->can_auto_connect (self, sett_conn, specific_object))
 		return FALSE;
 
 	return TRUE;
@@ -11095,7 +11115,7 @@ reapply_cb (NMDevice *self,
 		nm_device_sys_iface_state_set (self, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
 
 	if (!check_and_reapply_connection (self,
-	                                   connection ?: (NMConnection *) nm_device_get_settings_connection (self),
+	                                   connection ?: nm_device_get_settings_connection_get_connection (self),
 	                                   version_id,
 	                                   &audit_args,
 	                                   &local)) {
@@ -11883,7 +11903,8 @@ nm_device_set_ip_config (NMDevice *self,
 		                     NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED)
 		    && nm_active_connection_get_activation_type (NM_ACTIVE_CONNECTION (priv->act_request.obj)) == NM_ACTIVATION_TYPE_EXTERNAL) {
 			g_object_freeze_notify (G_OBJECT (settings_connection));
-			nm_connection_add_setting (NM_CONNECTION (settings_connection),
+			/* FIXME(copy-on-write-connection): avoid modifying NMConnection instances and share them via copy-on-write. */
+			nm_connection_add_setting (nm_settings_connection_get_connection (settings_connection),
 			                           IS_IPv4
 			                             ? nm_ip4_config_create_setting (priv->ip_config_4)
 			                             : nm_ip6_config_create_setting (priv->ip_config_6));
@@ -13342,7 +13363,7 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 	                                                               NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY))
 		return;
 
-	s_con_settings = nm_connection_get_setting_connection ((NMConnection *) settings_connection);
+	s_con_settings = nm_connection_get_setting_connection (nm_settings_connection_get_connection (settings_connection));
 	s_con_applied = nm_connection_get_setting_connection (applied_connection);
 
 	if (g_strcmp0 ((zone = nm_setting_connection_get_zone (s_con_settings)),
@@ -13603,15 +13624,15 @@ available_connections_del_all (NMDevice *self)
 }
 
 static gboolean
-available_connections_add (NMDevice *self, NMConnection *connection)
+available_connections_add (NMDevice *self, NMSettingsConnection *sett_conn)
 {
-	return g_hash_table_add (self->_priv->available_connections, g_object_ref (connection));
+	return g_hash_table_add (self->_priv->available_connections, g_object_ref (sett_conn));
 }
 
 static gboolean
-available_connections_del (NMDevice *self, NMConnection *connection)
+available_connections_del (NMDevice *self, NMSettingsConnection *sett_conn)
 {
-	return g_hash_table_remove (self->_priv->available_connections, connection);
+	return g_hash_table_remove (self->_priv->available_connections, sett_conn);
 }
 
 static gboolean
@@ -13657,7 +13678,7 @@ nm_device_recheck_available_connections (NMDevice *self)
 	NMSettingsConnection *const*connections;
 	gboolean changed = FALSE;
 	GHashTableIter h_iter;
-	NMConnection *connection;
+	NMSettingsConnection *sett_conn;
 	guint i;
 	gs_unref_hashtable GHashTable *prune_list = NULL;
 
@@ -13668,30 +13689,30 @@ nm_device_recheck_available_connections (NMDevice *self)
 	if (g_hash_table_size (priv->available_connections) > 0) {
 		prune_list = g_hash_table_new (nm_direct_hash, NULL);
 		g_hash_table_iter_init (&h_iter, priv->available_connections);
-		while (g_hash_table_iter_next (&h_iter, (gpointer *) &connection, NULL))
-			g_hash_table_add (prune_list, connection);
+		while (g_hash_table_iter_next (&h_iter, (gpointer *) &sett_conn, NULL))
+			g_hash_table_add (prune_list, sett_conn);
 	}
 
 	connections = nm_settings_get_connections (priv->settings, NULL);
 	for (i = 0; connections[i]; i++) {
-		connection = (NMConnection *) connections[i];
+		sett_conn = connections[i];
 
 		if (nm_device_check_connection_available (self,
-		                                          connection,
+		                                          nm_settings_connection_get_connection (sett_conn),
 		                                          NM_DEVICE_CHECK_CON_AVAILABLE_NONE,
 		                                          NULL,
 		                                          NULL)) {
-			if (available_connections_add (self, connection))
+			if (available_connections_add (self, sett_conn))
 				changed = TRUE;
 			if (prune_list)
-				g_hash_table_remove (prune_list, connection);
+				g_hash_table_remove (prune_list, sett_conn);
 		}
 	}
 
 	if (prune_list) {
 		g_hash_table_iter_init (&h_iter, prune_list);
-		while (g_hash_table_iter_next (&h_iter, (gpointer *) &connection, NULL)) {
-			if (available_connections_del (self, connection))
+		while (g_hash_table_iter_next (&h_iter, (gpointer *) &sett_conn, NULL)) {
+			if (available_connections_del (self, sett_conn))
 				changed = TRUE;
 		}
 	}
@@ -13718,7 +13739,7 @@ nm_device_get_best_connection (NMDevice *self,
                                GError **error)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMSettingsConnection *connection = NULL;
+	NMSettingsConnection *sett_conn = NULL;
 	NMSettingsConnection *candidate;
 	guint64 best_timestamp = 0;
 	GHashTableIter iter;
@@ -13732,44 +13753,44 @@ nm_device_get_best_connection (NMDevice *self,
 		 */
 		if (    specific_object /* << Optimization: we know that the connection is available without @specific_object.  */
 		    && !nm_device_check_connection_available (self,
-		                                              NM_CONNECTION (candidate),
+		                                              nm_settings_connection_get_connection (candidate),
 		                                              _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST,
 		                                              specific_object,
 		                                              NULL))
 			continue;
 
 		nm_settings_connection_get_timestamp (candidate, &candidate_timestamp);
-		if (!connection || (candidate_timestamp > best_timestamp)) {
-			connection = candidate;
+		if (!sett_conn || (candidate_timestamp > best_timestamp)) {
+			sett_conn = candidate;
 			best_timestamp = candidate_timestamp;
 		}
 	}
 
-	if (!connection) {
+	if (!sett_conn) {
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
 		             "The device '%s' has no connections available for activation.",
 		              nm_device_get_iface (self));
 	}
 
-	return connection;
+	return sett_conn;
 }
 
 static void
-cp_connection_added_or_updated (NMDevice *self, NMConnection *connection)
+cp_connection_added_or_updated (NMDevice *self, NMSettingsConnection *sett_conn)
 {
 	gboolean changed;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
-	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
+	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (sett_conn));
 
 	if (nm_device_check_connection_available (self,
-	                                          connection,
+	                                          nm_settings_connection_get_connection (sett_conn),
 	                                          _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST,
 	                                          NULL,
 	                                          NULL))
-		changed = available_connections_add (self, connection);
+		changed = available_connections_add (self, sett_conn);
 	else
-		changed = available_connections_del (self, connection);
+		changed = available_connections_del (self, sett_conn);
 
 	if (changed) {
 		_notify (self, PROP_AVAILABLE_CONNECTIONS);
@@ -13778,25 +13799,25 @@ cp_connection_added_or_updated (NMDevice *self, NMConnection *connection)
 }
 
 static void
-cp_connection_added (NMSettings *settings, NMConnection *connection, gpointer user_data)
+cp_connection_added (NMSettings *settings, NMSettingsConnection *sett_conn, gpointer user_data)
 {
-	cp_connection_added_or_updated (user_data, connection);
+	cp_connection_added_or_updated (user_data, sett_conn);
 }
 
 static void
-cp_connection_updated (NMSettings *settings, NMConnection *connection, gboolean by_user, gpointer user_data)
+cp_connection_updated (NMSettings *settings, NMSettingsConnection *sett_conn, gboolean by_user, gpointer user_data)
 {
-	cp_connection_added_or_updated (user_data, connection);
+	cp_connection_added_or_updated (user_data, sett_conn);
 }
 
 static void
-cp_connection_removed (NMSettings *settings, NMConnection *connection, gpointer user_data)
+cp_connection_removed (NMSettings *settings, NMSettingsConnection *sett_conn, gpointer user_data)
 {
 	NMDevice *self = user_data;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	if (available_connections_del (self, connection)) {
+	if (available_connections_del (self, sett_conn)) {
 		_notify (self, PROP_AVAILABLE_CONNECTIONS);
 		available_connections_check_delete_unrealized (self);
 	}
@@ -14436,7 +14457,7 @@ _set_state_full (NMDevice *self,
 	NMDeviceState old_state;
 	NMActRequest *req;
 	gboolean no_firmware = FALSE;
-	NMSettingsConnection *connection;
+	NMSettingsConnection *sett_conn;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -14695,10 +14716,10 @@ _set_state_full (NMDevice *self,
 			break;
 		}
 
-		connection = nm_device_get_settings_connection (self);
+		sett_conn = nm_device_get_settings_connection (self);
 		_LOGW (LOGD_DEVICE | LOGD_WIFI,
 		       "Activation: failed for connection '%s'",
-		       connection ? nm_settings_connection_get_id (connection) : "<unknown>");
+		       sett_conn ? nm_settings_connection_get_id (sett_conn) : "<unknown>");
 
 		/* Notify any slaves of the unexpected failure */
 		nm_device_master_release_slaves (self);
@@ -14708,8 +14729,8 @@ _set_state_full (NMDevice *self,
 		 * failed (zero timestamp), connections that succeeded (non-zero timestamp),
 		 * and those we haven't tried yet (no timestamp).
 		 */
-		if (connection && !nm_settings_connection_get_timestamp (connection, NULL))
-			nm_settings_connection_update_timestamp (connection, (guint64) 0, TRUE);
+		if (sett_conn && !nm_settings_connection_get_timestamp (sett_conn, NULL))
+			nm_settings_connection_update_timestamp (sett_conn, (guint64) 0, TRUE);
 
 		/* Schedule the transition to DISCONNECTED.  The device can't transition
 		 * immediately because we can't change states again from the state

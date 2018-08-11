@@ -36,6 +36,7 @@
 #include "nm-setting-serial.h"
 #include "nm-setting-ppp.h"
 #include "NetworkManagerUtils.h"
+#include "settings/nm-settings-connection.h"
 #include "nm-utils.h"
 #include "nm-bt-error.h"
 #include "platform/nm-platform.h"
@@ -137,7 +138,7 @@ get_generic_capabilities (NMDevice *device)
 
 static gboolean
 can_auto_connect (NMDevice *device,
-                  NMConnection *connection,
+                  NMSettingsConnection *sett_conn,
                   char **specific_object)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) device);
@@ -145,11 +146,11 @@ can_auto_connect (NMDevice *device,
 
 	nm_assert (!specific_object || !*specific_object);
 
-	if (!NM_DEVICE_CLASS (nm_device_bt_parent_class)->can_auto_connect (device, connection, NULL))
+	if (!NM_DEVICE_CLASS (nm_device_bt_parent_class)->can_auto_connect (device, sett_conn, NULL))
 		return FALSE;
 
 	/* Can't auto-activate a DUN connection without ModemManager */
-	bt_type = get_connection_bt_type (connection);
+	bt_type = get_connection_bt_type (nm_settings_connection_get_connection (sett_conn));
 	if (bt_type == NM_BT_CAPABILITY_DUN && priv->mm_running == FALSE)
 		return FALSE;
 
