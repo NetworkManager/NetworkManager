@@ -321,7 +321,7 @@ nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
 
 	hash = g_hash_table_new_full (g_str_hash, g_str_equal,
-	                              (GDestroyNotify) g_free, destroy_gvalue);
+	                              g_free, destroy_gvalue);
 
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];

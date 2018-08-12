@@ -5654,7 +5654,7 @@ _nm_utils_team_config_get (const char *conf,
 				g_ptr_array_free (data, TRUE);
 
 		} else if (json_is_array (json_element)) {
-			GPtrArray *data = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
+			GPtrArray *data = g_ptr_array_new_with_free_func (g_free);
 			json_t *str_element;
 			int index;
 
