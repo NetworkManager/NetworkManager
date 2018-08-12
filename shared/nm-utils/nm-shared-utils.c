@@ -1106,6 +1106,231 @@ _str_append_escape (GString *s, char ch)
 	g_string_append_c (s, '0' + ( ((guchar) ch)       & 07));
 }
 
+gconstpointer
+nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_free)
+{
+	GString *gstr;
+	gsize len;
+	const char *s;
+
+	g_return_val_if_fail (to_free, NULL);
+	g_return_val_if_fail (out_len, NULL);
+
+	if (!str) {
+		*out_len = 0;
+		*to_free = NULL;
+		return NULL;
+	}
+
+	len = strlen (str);
+
+	s = memchr (str, '\\', len);
+	if (!s) {
+		*out_len = len;
+		*to_free = NULL;
+		return str;
+	}
+
+	gstr = g_string_new_len (NULL, len);
+
+	g_string_append_len (gstr, str, s - str);
+	str = s;
+
+	for (;;) {
+		char ch;
+		guint v;
+
+		nm_assert (str[0] == '\\');
+
+		ch = (++str)[0];
+
+		if (ch == '\0') {
+			// error. Trailing '\\'
+			break;
+		}
+
+		if (ch >= '0' && ch <= '9') {
+			v = ch - '0';
+			ch = (++str)[0];
+			if (ch >= '0' && ch <= '7') {
+				v = v * 8 + (ch - '0');
+				ch = (++str)[0];
+				if (ch >= '0' && ch <= '7') {
+					v = v * 8 + (ch - '0');
+					ch = (++str)[0];
+				}
+			}
+			ch = v;
+		} else {
+			switch (ch) {
+			case 'b': ch = '\b'; break;
+			case 'f': ch = '\f'; break;
+			case 'n': ch = '\n'; break;
+			case 'r': ch = '\r'; break;
+			case 't': ch = '\t'; break;
+			case 'v': ch = '\v'; break;
+			default:
+				/* Here we handle "\\\\", but all other unexpected escape sequences are really a bug.
+				 * Take them literally, after removing the escape character */
+				break;
+			}
+			str++;
+		}
+
+		g_string_append_c (gstr, ch);
+
+		s = strchr (str, '\\');
+		if (!s) {
+			g_string_append (gstr, str);
+			break;
+		}
+
+		g_string_append_len (gstr, str, s - str);
+		str = s;
+	}
+
+	*out_len = gstr->len;
+	*to_free = gstr->str;
+	return g_string_free (gstr, FALSE);
+}
+
+/**
+ * nm_utils_buf_utf8safe_escape:
+ * @buf: byte array, possibly in utf-8 encoding, may have NUL characters.
+ * @buflen: the length of @buf in bytes, or -1 if @buf is a NUL terminated
+ *   string.
+ * @flags: #NMUtilsStrUtf8SafeFlags flags
+ * @to_free: (out): return the pointer location of the string
+ *   if a copying was necessary.
+ *
+ * Based on the assumption, that @buf contains UTF-8 encoded bytes,
+ * this will return valid UTF-8 sequence, and invalid sequences
+ * will be escaped with backslash (C escaping, like g_strescape()).
+ * This is sanitize non UTF-8 characters. The result is valid
+ * UTF-8.
+ *
+ * The operation can be reverted with nm_utils_buf_utf8safe_unescape().
+ * Note that if, and only if @buf contains no NUL bytes, the operation
+ * can also be reverted with g_strcompress().
+ *
+ * Depending on @flags, valid UTF-8 characters are not escaped at all
+ * (except the escape character '\\'). This is the difference to g_strescape(),
+ * which escapes all non-ASCII characters. This allows to pass on
+ * valid UTF-8 characters as-is and can be directly shown to the user
+ * as UTF-8 -- with exception of the backslash escape character,
+ * invalid UTF-8 sequences, and other (depending on @flags).
+ *
+ * Returns: the escaped input buffer, as valid UTF-8. If no escaping
+ *   is necessary, it returns the input @buf. Otherwise, an allocated
+ *   string @to_free is returned which must be freed by the caller
+ *   with g_free. The escaping can be reverted by g_strcompress().
+ **/
+const char *
+nm_utils_buf_utf8safe_escape (gconstpointer buf, gssize buflen, NMUtilsStrUtf8SafeFlags flags, char **to_free)
+{
+	const char *const str = buf;
+	const char *p = NULL;
+	const char *s;
+	gboolean nul_terminated = FALSE;
+	GString *gstr;
+
+	g_return_val_if_fail (to_free, NULL);
+
+	*to_free = NULL;
+
+	if (buflen == 0)
+		return NULL;
+
+	if (buflen < 0) {
+		if (!str)
+			return NULL;
+		buflen = strlen (str);
+		if (buflen == 0)
+			return str;
+		nul_terminated = TRUE;
+	}
+
+	if (   g_utf8_validate (str, buflen, &p)
+	    && nul_terminated) {
+		/* note that g_utf8_validate() does not allow NUL character inside @str. Good.
+		 * We can treat @str like a NUL terminated string. */
+		if (!NM_STRCHAR_ANY (str, ch,
+		                        (   ch == '\\' \
+		                         || (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL) \
+		                             && ch < ' ') \
+		                         || (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII) \
+		                             && ((guchar) ch) >= 127))))
+			return str;
+	}
+
+	gstr = g_string_sized_new (buflen + 5);
+
+	s = str;
+	do {
+		buflen -= p - s;
+		nm_assert (buflen >= 0);
+
+		for (; s < p; s++) {
+			char ch = s[0];
+
+			if (ch == '\\')
+				g_string_append (gstr, "\\\\");
+			else if (   (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL) \
+			             && ch < ' ') \
+			         || (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII) \
+			             && ((guchar) ch) >= 127))
+				_str_append_escape (gstr, ch);
+			else
+				g_string_append_c (gstr, ch);
+		}
+
+		if (buflen <= 0)
+			break;
+
+		_str_append_escape (gstr, p[0]);
+
+		buflen--;
+		if (buflen == 0)
+			break;
+
+		s = &p[1];
+		g_utf8_validate (s, buflen, &p);
+	} while (TRUE);
+
+	*to_free = g_string_free (gstr, FALSE);
+	return *to_free;
+}
+
+const char *
+nm_utils_buf_utf8safe_escape_bytes (GBytes *bytes, NMUtilsStrUtf8SafeFlags flags, char **to_free)
+{
+	gconstpointer p;
+	gsize l;
+
+	if (bytes)
+		p = g_bytes_get_data (bytes, &l);
+	else {
+		p = NULL;
+		l = 0;
+	}
+
+	return nm_utils_buf_utf8safe_escape (p, l, flags, to_free);
+}
+
+/*****************************************************************************/
+
+const char *
+nm_utils_str_utf8safe_unescape (const char *str, char **to_free)
+{
+	g_return_val_if_fail (to_free, NULL);
+
+	if (!str || !strchr (str, '\\')) {
+		*to_free = NULL;
+		return str;
+	}
+	return (*to_free = g_strcompress (str));
+}
+
 /**
  * nm_utils_str_utf8safe_escape:
  * @str: NUL terminated input string, possibly in utf-8 encoding
@@ -1136,63 +1361,7 @@ _str_append_escape (GString *s, char ch)
 const char *
 nm_utils_str_utf8safe_escape (const char *str, NMUtilsStrUtf8SafeFlags flags, char **to_free)
 {
-	const char *p = NULL;
-	GString *s;
-
-	g_return_val_if_fail (to_free, NULL);
-
-	*to_free = NULL;
-	if (!str || !str[0])
-		return str;
-
-	if (   g_utf8_validate (str, -1, &p)
-	    && !NM_STRCHAR_ANY (str, ch,
-	                        (   ch == '\\' \
-	                         || (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL) \
-	                             && ch < ' ') \
-	                         || (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII) \
-	                             && ((guchar) ch) >= 127))))
-		return str;
-
-	s = g_string_sized_new ((p - str) + strlen (p) + 5);
-
-	do {
-		for (; str < p; str++) {
-			char ch = str[0];
-
-			if (ch == '\\')
-				g_string_append (s, "\\\\");
-			else if (   (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL) \
-			             && ch < ' ') \
-			         || (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII) \
-			             && ((guchar) ch) >= 127))
-				_str_append_escape (s, ch);
-			else
-				g_string_append_c (s, ch);
-		}
-
-		if (p[0] == '\0')
-			break;
-		_str_append_escape (s, p[0]);
-
-		str = &p[1];
-		g_utf8_validate (str, -1, &p);
-	} while (TRUE);
-
-	*to_free = g_string_free (s, FALSE);
-	return *to_free;
-}
-
-const char *
-nm_utils_str_utf8safe_unescape (const char *str, char **to_free)
-{
-	g_return_val_if_fail (to_free, NULL);
-
-	if (!str || !strchr (str, '\\')) {
-		*to_free = NULL;
-		return str;
-	}
-	return (*to_free = g_strcompress (str));
+	return nm_utils_buf_utf8safe_escape (str, -1, flags, to_free);
 }
 
 /**

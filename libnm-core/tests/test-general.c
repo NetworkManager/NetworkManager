@@ -6559,74 +6559,161 @@ test_nm_utils_enum (void)
 /*****************************************************************************/
 
 static void
-do_test_utils_str_utf8safe (const char *str, const char *expected, NMUtilsStrUtf8SafeFlags flags)
+_do_test_utils_str_utf8safe_unescape (const char *str, const char *expected, gsize expected_len)
 {
-	const char *str_safe, *s;
-	gs_free char *str2 = NULL;
-	gs_free char *str3 = NULL;
+	gsize l;
+	const char *s;
+	gs_free gpointer buf_free_1 = NULL;
+	gs_free char *str_free_1 = NULL;
 
-	str_safe = nm_utils_str_utf8safe_escape (str, flags, &str2);
+	s = nm_utils_buf_utf8safe_unescape (str, &l, &buf_free_1);
+	g_assert_cmpint (expected_len, ==, l);
+	g_assert_cmpstr (s, ==, expected);
 
-	str3 = nm_utils_str_utf8safe_escape_cp (str, flags);
-	g_assert_cmpstr (str3, ==, str_safe);
-	g_assert ((!str && !str3) || (str != str3));
-	g_clear_pointer (&str3, g_free);
+	if (str == NULL) {
+		g_assert (!s);
+		g_assert (!buf_free_1);
+		g_assert_cmpint (l, ==, 0);
+	} else {
+		g_assert (s);
+		if (!strchr (str, '\\')) {
+			g_assert (!buf_free_1);
+			g_assert (s == str);
+			g_assert_cmpint (l, ==, strlen (str));
+		} else {
+			g_assert (buf_free_1);
+			g_assert (s == buf_free_1);
+			g_assert (memcmp (s, expected, expected_len) == 0);
+		}
+	}
+
+	if (   expected
+	    && l == strlen (expected)) {
+		/* there are no embeeded NULs. Check that nm_utils_str_utf8safe_unescape() yields the same result. */
+		s = nm_utils_str_utf8safe_unescape (str, &str_free_1);
+		g_assert_cmpstr (s, ==, expected);
+		if (strchr (str, '\\')) {
+			g_assert (str_free_1 != str);
+			g_assert (s == str_free_1);
+		} else
+			g_assert (s == str);
+	}
+}
+
+#define do_test_utils_str_utf8safe_unescape(str, expected) \
+	_do_test_utils_str_utf8safe_unescape (""str"", expected, NM_STRLEN (expected))
+
+static void
+_do_test_utils_str_utf8safe (const char *str, gsize str_len, const char *expected, NMUtilsStrUtf8SafeFlags flags)
+{
+	const char *str_safe;
+	const char *buf_safe;
+	const char *s;
+	gs_free gpointer buf_free_1 = NULL;
+	gs_free char *str_free_1 = NULL;
+	gs_free char *str_free_2 = NULL;
+	gs_free char *str_free_3 = NULL;
+	gs_free char *str_free_4 = NULL;
+	gs_free char *str_free_5 = NULL;
+	gs_free char *str_free_6 = NULL;
+	gs_free char *str_free_7 = NULL;
+	gs_free char *str_free_8 = NULL;
+	gboolean str_has_nul = FALSE;
+
+	buf_safe = nm_utils_buf_utf8safe_escape (str, str_len, flags, &str_free_1);
+
+	str_safe = nm_utils_str_utf8safe_escape (str, flags, &str_free_2);
+
+	if (str_len == 0) {
+		g_assert (buf_safe == NULL);
+		g_assert (str_free_1 == NULL);
+		g_assert (str_safe == str);
+		g_assert (str == NULL || str[0] == '\0');
+		g_assert (str_free_2 == NULL);
+	} else if (str_len == strlen (str)) {
+		g_assert (buf_safe);
+		g_assert_cmpstr (buf_safe, ==, str_safe);
+
+		/* nm_utils_buf_utf8safe_escape() can only return a pointer equal to the input string,
+		 * if and only if str_len is negative. Otherwise, the input str won't be NUL terminated
+		 * and cannot be returned. */
+		g_assert (buf_safe != str);
+		g_assert (buf_safe == str_free_1);
+	} else
+		str_has_nul = TRUE;
+
+	str_free_3 = nm_utils_str_utf8safe_escape_cp (str, flags);
+	g_assert_cmpstr (str_free_3, ==, str_safe);
+	g_assert ((!str && !str_free_3) || (str != str_free_3));
+
+	if (str_len > 0)
+		_do_test_utils_str_utf8safe_unescape (buf_safe, str, str_len);
 
 	if (expected == NULL) {
+		g_assert (!str_has_nul);
+
 		g_assert (str_safe == str);
-		g_assert (!str2);
+		g_assert (!str_free_2);
 		if (str) {
 			g_assert (!strchr (str, '\\'));
 			g_assert (g_utf8_validate (str, -1, NULL));
 		}
 
-		g_assert (str == nm_utils_str_utf8safe_unescape (str_safe, &str3));
-		g_assert (!str3);
+		g_assert (str == nm_utils_str_utf8safe_unescape (str_safe, &str_free_4));
+		g_assert (!str_free_4);
 
-		str3 = nm_utils_str_utf8safe_unescape_cp (str_safe);
+		str_free_5 = nm_utils_str_utf8safe_unescape_cp (str_safe);
 		if (str) {
-			g_assert (str3 != str);
-			g_assert_cmpstr (str3, ==, str);
+			g_assert (str_free_5 != str);
+			g_assert_cmpstr (str_free_5, ==, str);
 		} else
-			g_assert (!str3);
-		g_clear_pointer (&str3, g_free);
+			g_assert (!str_free_5);
 		return;
 	}
 
-	g_assert (str);
-	g_assert (str_safe != str);
-	g_assert (str_safe == str2);
-	g_assert (   strchr (str, '\\')
-	          || !g_utf8_validate (str, -1, NULL)
-	          || (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
-	              && NM_STRCHAR_ANY (str, ch, (guchar) ch >= 127))
-	          || (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL)
-	              && NM_STRCHAR_ANY (str, ch, (guchar) ch < ' ')));
-	g_assert (g_utf8_validate (str_safe, -1, NULL));
+	if (!str_has_nul) {
+		g_assert (str);
+		g_assert (str_safe != str);
+		g_assert (str_safe == str_free_2);
+		g_assert (   strchr (str, '\\')
+		          || !g_utf8_validate (str, -1, NULL)
+		          || (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
+		              && NM_STRCHAR_ANY (str, ch, (guchar) ch >= 127))
+		          || (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL)
+		              && NM_STRCHAR_ANY (str, ch, (guchar) ch < ' ')));
+		g_assert (g_utf8_validate (str_safe, -1, NULL));
 
-	str3 = g_strcompress (str_safe);
-	g_assert_cmpstr (str, ==, str3);
-	g_clear_pointer (&str3, g_free);
+		str_free_6 = g_strcompress (str_safe);
+		g_assert_cmpstr (str, ==, str_free_6);
 
-	str3 = nm_utils_str_utf8safe_unescape_cp (str_safe);
-	g_assert (str3 != str);
-	g_assert_cmpstr (str3, ==, str);
-	g_clear_pointer (&str3, g_free);
+		str_free_7 = nm_utils_str_utf8safe_unescape_cp (str_safe);
+		g_assert (str_free_7 != str);
+		g_assert_cmpstr (str_free_7, ==, str);
 
-	s = nm_utils_str_utf8safe_unescape (str_safe, &str3);
-	g_assert (str3 != str);
-	g_assert (s == str3);
-	g_assert_cmpstr (str3, ==, str);
-	g_clear_pointer (&str3, g_free);
+		s = nm_utils_str_utf8safe_unescape (str_safe, &str_free_8);
+		g_assert (str_free_8 != str);
+		g_assert (s == str_free_8);
+		g_assert_cmpstr (str_free_8, ==, str);
 
-	g_assert_cmpstr (str_safe, ==, expected);
+		g_assert_cmpstr (str_safe, ==, expected);
+
+		return;
+	}
+
+	g_assert_cmpstr (buf_safe, ==, expected);
+
 }
+#define do_test_utils_str_utf8safe(str, expected, flags) \
+	_do_test_utils_str_utf8safe (""str"", NM_STRLEN (str), expected, flags)
 
 static void
 test_utils_str_utf8safe (void)
 {
-	do_test_utils_str_utf8safe (NULL, NULL,                                       NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	_do_test_utils_str_utf8safe (NULL, 0, NULL,                                   NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+
 	do_test_utils_str_utf8safe ("", NULL,                                         NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("\\", "\\\\",                                     NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("\\a", "\\\\a",                                   NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
 	do_test_utils_str_utf8safe ("\314", "\\314",                                  NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
 	do_test_utils_str_utf8safe ("\314\315x\315\315x", "\\314\\315x\\315\\315x",   NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
 	do_test_utils_str_utf8safe ("\314\315xx", "\\314\\315xx",                     NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
@@ -6648,6 +6735,18 @@ test_utils_str_utf8safe (void)
 	do_test_utils_str_utf8safe ("㈞abä㈞b", NULL,                                 NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
 	do_test_utils_str_utf8safe ("abäb", "ab\\303\\244b",                          NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII);
 	do_test_utils_str_utf8safe ("ab\ab", "ab\\007b",                              NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL);
+
+	do_test_utils_str_utf8safe ("\0", "\\000",                                    NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("\0a\0", "\\000a\\000",                           NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("\\\0", "\\\\\\000",                              NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("\n\0", "\n\\000",                                NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("\n\0", "\\012\\000",                             NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL);
+
+	do_test_utils_str_utf8safe_unescape ("\n\\0", "\n\0");
+	do_test_utils_str_utf8safe_unescape ("\n\\01", "\n\01");
+	do_test_utils_str_utf8safe_unescape ("\n\\012", "\n\012");
+	do_test_utils_str_utf8safe_unescape ("\n\\.", "\n.");
+	do_test_utils_str_utf8safe_unescape ("\\n\\.3\\r", "\n.3\r");
 }
 
 /*****************************************************************************/
