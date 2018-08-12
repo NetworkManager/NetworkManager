@@ -89,12 +89,6 @@ config_option_free (ConfigOption *opt)
 }
 
 static void
-blob_free (GByteArray *array)
-{
-	g_byte_array_free (array, TRUE);
-}
-
-static void
 nm_supplicant_config_init (NMSupplicantConfig * self)
 {
 	NMSupplicantConfigPrivate *priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
@@ -105,7 +99,7 @@ nm_supplicant_config_init (NMSupplicantConfig * self)
 
 	priv->blobs = g_hash_table_new_full (nm_str_hash, g_str_equal,
 	                                     (GDestroyNotify) g_free,
-	                                     (GDestroyNotify) blob_free);
+	                                     (GDestroyNotify) g_bytes_unref);
 
 	priv->ap_scan = 1;
 	priv->dispose_has_run = FALSE;
@@ -198,7 +192,6 @@ nm_supplicant_config_add_blob (NMSupplicantConfig *self,
 	ConfigOption *old_opt;
 	ConfigOption *opt;
 	OptType type;
-	GByteArray *blob;
 	const guint8 *data;
 	gsize data_len;
 
@@ -226,9 +219,6 @@ nm_supplicant_config_add_blob (NMSupplicantConfig *self,
 		return FALSE;
 	}
 
-	blob = g_byte_array_sized_new (data_len);
-	g_byte_array_append (blob, data, data_len);
-
 	opt = g_slice_new0 (ConfigOption);
 	opt->value = g_strdup_printf ("blob://%s", blobid);
 	opt->len = strlen (opt->value);
@@ -237,7 +227,9 @@ nm_supplicant_config_add_blob (NMSupplicantConfig *self,
 	nm_log_info (LOGD_SUPPLICANT, "Config: added '%s' value '%s'", key, opt->value);
 
 	g_hash_table_insert (priv->config, g_strdup (key), opt);
-	g_hash_table_insert (priv->blobs, g_strdup (blobid), blob);
+	g_hash_table_insert (priv->blobs,
+	                     g_strdup (blobid),
+	                     g_bytes_ref (value));
 
 	return TRUE;
 }

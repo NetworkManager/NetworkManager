@@ -1579,7 +1579,7 @@ assoc_add_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 	GHashTable *blobs;
 	GHashTableIter iter;
 	const char *blob_name;
-	GByteArray *blob_data;
+	GBytes *blob_data;
 
 	assoc_data = add_network_data->assoc_data;
 	if (assoc_data)
@@ -1637,8 +1637,7 @@ assoc_add_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 			                   "AddBlob",
 			                   g_variant_new ("(s@ay)",
 			                                  blob_name,
-			                                  g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-			                                                             blob_data->data, blob_data->len, 1)),
+			                                  nm_utils_gbytes_to_variant_ay (blob_data)),
 			                   G_DBUS_CALL_FLAGS_NONE,
 			                   -1,
 			                   priv->assoc_data->cancellable,
