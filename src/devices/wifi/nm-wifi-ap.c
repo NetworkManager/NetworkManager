@@ -104,32 +104,66 @@ nm_wifi_ap_get_ssid (const NMWifiAP *ap)
 }
 
 gboolean
-nm_wifi_ap_set_ssid (NMWifiAP *ap, const guint8 *ssid, gsize len)
+nm_wifi_ap_set_ssid_arr (NMWifiAP *ap,
+                         const guint8 *ssid,
+                         gsize ssid_len)
 {
 	NMWifiAPPrivate *priv;
+	const guint8 *my_data;
+	gsize my_len;
 
 	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
-	g_return_val_if_fail (ssid == NULL || len > 0, FALSE);
+
+	if (ssid_len > 32)
+		g_return_val_if_reached (FALSE);
 
 	priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
-	/* same SSID */
-	if (priv->ssid) {
-		const guint8 *p;
-		gsize l;
-
-		p = g_bytes_get_data (priv->ssid, &l);
-		if (   l == len
-		    && !memcmp (p, ssid, len))
-			return FALSE;
-	} else {
-		if (len == 0)
-			return FALSE;
+	if (priv->ssid)
+		my_data = g_bytes_get_data (priv->ssid, &my_len);
+	else {
+		my_data = NULL;
+		my_len = 0;
 	}
 
+	if (   my_len == ssid_len
+	    && memcmp (ssid, my_data, ssid_len) == 0)
+		return FALSE;
+
 	nm_clear_pointer (&priv->ssid, g_bytes_unref);
-	if (len > 0)
-		priv->ssid = g_bytes_new (ssid, len);
+	if (ssid_len > 0)
+		priv->ssid = g_bytes_new (ssid, ssid_len);
+
+	_notify (ap, PROP_SSID);
+	return TRUE;
+}
+
+gboolean
+nm_wifi_ap_set_ssid (NMWifiAP *ap, GBytes *ssid)
+{
+	NMWifiAPPrivate *priv;
+	gsize l;
+
+	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
+
+	if (ssid) {
+		l = g_bytes_get_size (ssid);
+		if (l == 0 || l > 32)
+			g_return_val_if_reached (FALSE);
+	}
+
+	priv = NM_WIFI_AP_GET_PRIVATE (ap);
+
+	if (ssid == priv->ssid)
+		return FALSE;
+	if (   ssid
+	    && priv->ssid
+	    && g_bytes_equal (ssid, priv->ssid))
+		return FALSE;
+
+	nm_clear_pointer (&priv->ssid, g_bytes_unref);
+	if (ssid)
+		priv->ssid = g_bytes_ref (ssid);
 
 	_notify (ap, PROP_SSID);
 	return TRUE;
@@ -804,10 +838,16 @@ nm_wifi_ap_update_from_properties (NMWifiAP *ap,
 		len = MIN (32, len);
 
 		/* Stupid ieee80211 layer uses <hidden> */
-		if (   bytes && len
-		    && !(((len == 8) || (len == 9)) && !memcmp (bytes, "<hidden>", 8))
-		    && !nm_utils_is_empty_ssid (bytes, len))
-			changed |= nm_wifi_ap_set_ssid (ap, bytes, len);
+		if (   bytes
+		    && len
+		    && !(   NM_IN_SET (len, 8, 9)
+		         && memcmp (bytes, "<hidden>", len) == 0)
+		    && !nm_utils_is_empty_ssid (bytes, len)) {
+			/* good */
+		} else
+			len = 0;
+
+		changed |= nm_wifi_ap_set_ssid_arr (ap, bytes, len);
 
 		g_variant_unref (v);
 	}
@@ -1189,7 +1229,6 @@ nm_wifi_ap_new_fake_from_connection (NMConnection *connection)
 	NMWifiAPPrivate *priv;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
-	GBytes *ssid;
 	const char *mode, *band, *key_mgmt;
 	guint32 channel;
 	NM80211ApSecurityFlags flags;
@@ -1200,14 +1239,12 @@ nm_wifi_ap_new_fake_from_connection (NMConnection *connection)
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wireless != NULL, NULL);
 
-	ssid = nm_setting_wireless_get_ssid (s_wireless);
-	g_return_val_if_fail (ssid != NULL, NULL);
-	g_return_val_if_fail (g_bytes_get_size (ssid) > 0, NULL);
-
 	ap = (NMWifiAP *) g_object_new (NM_TYPE_WIFI_AP, NULL);
 	priv = NM_WIFI_AP_GET_PRIVATE (ap);
 	priv->fake = TRUE;
-	nm_wifi_ap_set_ssid (ap, g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid));
+
+	nm_wifi_ap_set_ssid (ap,
+	                     nm_setting_wireless_get_ssid (s_wireless));
 
 	// FIXME: bssid too?
 

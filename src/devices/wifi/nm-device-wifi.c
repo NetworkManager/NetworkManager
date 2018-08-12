@@ -1515,11 +1515,7 @@ try_fill_ssid_for_hidden_ap (NMDeviceWifi *self,
 		s_wifi = nm_connection_get_setting_wireless (connection);
 		if (s_wifi) {
 			if (nm_settings_connection_has_seen_bssid (NM_SETTINGS_CONNECTION (connection), bssid)) {
-				GBytes *ssid = nm_setting_wireless_get_ssid (s_wifi);
-
-				nm_wifi_ap_set_ssid (ap,
-				                     g_bytes_get_data (ssid, NULL),
-				                     g_bytes_get_size (ssid));
+				nm_wifi_ap_set_ssid (ap, nm_setting_wireless_get_ssid (s_wifi));
 				break;
 			}
 		}
