@@ -58,7 +58,7 @@ struct _NMWifiAPPrivate {
 	char *supplicant_path;   /* D-Bus object path of this AP from wpa_supplicant */
 
 	/* Scanned or cached values */
-	GByteArray *       ssid;
+	GBytes *           ssid;
 	char *             address;
 	NM80211Mode        mode;
 	guint8             strength;
@@ -95,24 +95,12 @@ nm_wifi_ap_get_supplicant_path (NMWifiAP *ap)
 	return NM_WIFI_AP_GET_PRIVATE (ap)->supplicant_path;
 }
 
-const GByteArray *
+GBytes *
 nm_wifi_ap_get_ssid (const NMWifiAP *ap)
 {
 	g_return_val_if_fail (NM_IS_WIFI_AP (ap), NULL);
 
 	return NM_WIFI_AP_GET_PRIVATE (ap)->ssid;
-}
-
-static GVariant *
-nm_wifi_ap_get_ssid_as_variant (const NMWifiAP *self)
-{
-	const NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE (self);
-
-	if (priv->ssid) {
-		return g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-		                                  priv->ssid->data, priv->ssid->len, 1);
-	} else
-		return g_variant_new_array (G_VARIANT_TYPE_BYTE, NULL, 0);
 }
 
 gboolean
@@ -126,20 +114,22 @@ nm_wifi_ap_set_ssid (NMWifiAP *ap, const guint8 *ssid, gsize len)
 	priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
 	/* same SSID */
-	if ((ssid && priv->ssid) && (len == priv->ssid->len)) {
-		if (!memcmp (ssid, priv->ssid->data, len))
+	if (priv->ssid) {
+		const guint8 *p;
+		gsize l;
+
+		p = g_bytes_get_data (priv->ssid, &l);
+		if (   l == len
+		    && !memcmp (p, ssid, len))
+			return FALSE;
+	} else {
+		if (len == 0)
 			return FALSE;
 	}
 
-	if (priv->ssid) {
-		g_byte_array_free (priv->ssid, TRUE);
-		priv->ssid = NULL;
-	}
-
-	if (ssid) {
-		priv->ssid = g_byte_array_new ();
-		g_byte_array_append (priv->ssid, ssid, len);
-	}
+	nm_clear_pointer (&priv->ssid, g_bytes_unref);
+	if (len > 0)
+		priv->ssid = g_bytes_new (ssid, len);
 
 	_notify (ap, PROP_SSID);
 	return TRUE;
@@ -961,7 +951,7 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 	const char *supplicant_id = "-";
 	const char *export_path;
 	guint32 chan;
-	char b1[200];
+	gs_free char *ssid_to_free = NULL;
 
 	g_return_val_if_fail (NM_IS_WIFI_AP (self), NULL);
 
@@ -977,10 +967,9 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 		export_path = "/";
 
 	g_snprintf (str_buf, buf_len,
-	            "%17s %-32s [ %c %3u %3u%% %c W:%04X R:%04X ] %3us sup:%s [nm:%s]",
+	            "%17s %-35s [ %c %3u %3u%% %c W:%04X R:%04X ] %3us sup:%s [nm:%s]",
 	            priv->address ?: "(none)",
-	            nm_sprintf_buf (b1, "%s%s%s",
-	                            NM_PRINT_FMT_QUOTED (priv->ssid, "\"", nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len), "\"", "(none)")),
+	            (ssid_to_free = _nm_utils_ssid_to_string (priv->ssid)),
 	            (priv->mode == NM_802_11_MODE_ADHOC
 	                 ? '*'
 	                 : (priv->hotspot
@@ -1032,15 +1021,12 @@ nm_wifi_ap_check_compatible (NMWifiAP *self,
 		return FALSE;
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
-	if (   (ssid && !priv->ssid)
-	    || (priv->ssid && !ssid))
-		return FALSE;
-
-	if (   ssid && priv->ssid &&
-	    !nm_utils_same_ssid (g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid),
-	                         priv->ssid->data, priv->ssid->len,
-	                         FALSE))
-		return FALSE;
+	if (ssid != priv->ssid) {
+		if (!ssid || !priv->ssid)
+			return FALSE;
+		if (!g_bytes_equal (ssid, priv->ssid))
+			return FALSE;
+	}
 
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
 	if (bssid && (!priv->address || !nm_utils_hwaddr_matches (bssid, -1, priv->address, -1)))
@@ -1126,7 +1112,8 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->rsn_flags);
 		break;
 	case PROP_SSID:
-		g_value_take_variant (value, nm_wifi_ap_get_ssid_as_variant (self));
+		g_value_take_variant (value,
+		                      nm_utils_gbytes_to_variant_ay (priv->ssid));
 		break;
 	case PROP_FREQUENCY:
 		g_value_set_uint (value, priv->freq);
@@ -1334,7 +1321,7 @@ finalize (GObject *object)
 
 	g_free (priv->supplicant_path);
 	if (priv->ssid)
-		g_byte_array_free (priv->ssid, TRUE);
+		g_bytes_unref (priv->ssid);
 	g_free (priv->address);
 
 	G_OBJECT_CLASS (nm_wifi_ap_parent_class)->finalize (object);

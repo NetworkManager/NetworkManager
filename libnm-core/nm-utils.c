@@ -336,6 +336,18 @@ nm_utils_ssid_to_utf8 (const guint8 *ssid, gsize len)
 	return converted;
 }
 
+char *
+_nm_utils_ssid_to_utf8 (GBytes *ssid)
+{
+	const guint8 *p;
+	gsize l;
+
+	g_return_val_if_fail (ssid, NULL);
+
+	p = g_bytes_get_data (ssid, &l);
+	return nm_utils_ssid_to_utf8 (p, l);
+}
+
 /* Shamelessly ripped from the Linux kernel ieee80211 stack */
 /**
  * nm_utils_is_empty_ssid:
@@ -361,6 +373,18 @@ nm_utils_is_empty_ssid (const guint8 *ssid, gsize len)
 			return FALSE;
 	}
 	return TRUE;
+}
+
+gboolean
+_nm_utils_is_empty_ssid (GBytes *ssid)
+{
+	const guint8 *p;
+	gsize l;
+
+	g_return_val_if_fail (ssid, FALSE);
+
+	p = g_bytes_get_data (ssid, &l);
+	return nm_utils_is_empty_ssid (p, l);
 }
 
 #define ESSID_MAX_SIZE 32
@@ -402,6 +426,37 @@ nm_utils_escape_ssid (const guint8 *ssid, gsize len)
 	}
 	*d = '\0';
 	return escaped;
+}
+
+char *
+_nm_utils_ssid_to_string_arr (const guint8 *ssid, gsize len)
+{
+	char *s_copy;
+	const char *s_cnst;
+
+	if (len == 0)
+		return g_strdup ("(empty)");
+
+	s_cnst = nm_utils_buf_utf8safe_escape (ssid, len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL, &s_copy);
+	nm_assert (s_cnst);
+
+	if (nm_utils_is_empty_ssid (ssid, len))
+		return g_strdup_printf ("\"%s\" (hidden)", s_cnst);
+
+	return g_strdup_printf ("\"%s\"", s_cnst);
+}
+
+char *
+_nm_utils_ssid_to_string (GBytes *ssid)
+{
+	gconstpointer p;
+	gsize l;
+
+	if (!ssid)
+		return g_strdup ("(none)");
+
+	p = g_bytes_get_data (ssid, &l);
+	return _nm_utils_ssid_to_string_arr (p, l);
 }
 
 /**
