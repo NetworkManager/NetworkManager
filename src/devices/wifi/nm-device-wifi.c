@@ -1083,7 +1083,6 @@ static GPtrArray *
 ssids_options_to_ptrarray (GVariant *value, GError **error)
 {
 	GPtrArray *ssids = NULL;
-	GByteArray *ssid_array;
 	GVariant *v;
 	const guint8 *bytes;
 	gsize len;
@@ -1099,7 +1098,7 @@ ssids_options_to_ptrarray (GVariant *value, GError **error)
 	}
 
 	if (num_ssids) {
-		ssids = g_ptr_array_new_full (num_ssids, (GDestroyNotify) g_byte_array_unref);
+		ssids = g_ptr_array_new_full (num_ssids, (GDestroyNotify) g_bytes_unref);
 		for (i = 0; i < num_ssids; i++) {
 			v = g_variant_get_child_value (value, i);
 			bytes = g_variant_get_fixed_array (v, &len, sizeof (guint8));
@@ -1112,9 +1111,7 @@ ssids_options_to_ptrarray (GVariant *value, GError **error)
 				return NULL;
 			}
 
-			ssid_array = g_byte_array_new ();
-			g_byte_array_append (ssid_array, bytes, len);
-			g_ptr_array_add (ssids, ssid_array);
+			g_ptr_array_add (ssids, g_bytes_new (bytes, len));
 		}
 	}
 	return ssids;
@@ -1305,7 +1302,7 @@ build_hidden_probe_list (NMDeviceWifi *self)
 	gs_free NMSettingsConnection **connections = NULL;
 	guint i, len;
 	GPtrArray *ssids = NULL;
-	static GByteArray *nullssid = NULL;
+	static GBytes *nullssid = NULL;
 
 	/* Need at least two: wildcard SSID and one or more hidden SSIDs */
 	if (max_scan_ssids < 2)
@@ -1320,30 +1317,23 @@ build_hidden_probe_list (NMDeviceWifi *self)
 
 	g_qsort_with_data (connections, len, sizeof (NMSettingsConnection *), nm_settings_connection_cmp_timestamp_p_with_data, NULL);
 
-	ssids = g_ptr_array_new_full (max_scan_ssids, (GDestroyNotify) g_byte_array_unref);
+	ssids = g_ptr_array_new_full (max_scan_ssids, (GDestroyNotify) g_bytes_unref);
 
 	/* Add wildcard SSID using a static wildcard SSID used for every scan */
 	if (G_UNLIKELY (nullssid == NULL))
-		nullssid = g_byte_array_new ();
-	g_ptr_array_add (ssids, g_byte_array_ref (nullssid));
+		nullssid = g_bytes_new_static ("", 0);
+	g_ptr_array_add (ssids, g_bytes_ref (nullssid));
 
 	for (i = 0; connections[i]; i++) {
 		NMSettingWireless *s_wifi;
 		GBytes *ssid;
-		GByteArray *ssid_array;
 
 		if (i >= max_scan_ssids - 1)
 			break;
 
 		s_wifi = (NMSettingWireless *) nm_connection_get_setting_wireless (NM_CONNECTION (connections[i]));
-		g_assert (s_wifi);
 		ssid = nm_setting_wireless_get_ssid (s_wifi);
-		g_assert (ssid);
-		ssid_array = g_byte_array_new ();
-		g_byte_array_append (ssid_array,
-		                     g_bytes_get_data (ssid, NULL),
-		                     g_bytes_get_size (ssid));
-		g_ptr_array_add (ssids, ssid_array);
+		g_ptr_array_add (ssids, g_bytes_ref (ssid));
 	}
 
 	return ssids;
@@ -1370,24 +1360,22 @@ request_wireless_scan (NMDeviceWifi *self,
 
 		_LOGD (LOGD_WIFI, "wifi-scan: scanning requested");
 
-		if (!ssids) {
+		if (!ssids)
 			ssids = hidden_ssids = build_hidden_probe_list (self);
-		}
 
 		if (_LOGD_ENABLED (LOGD_WIFI)) {
 			if (ssids) {
-				const GByteArray *ssid;
 				guint i;
-				char *foo;
 
 				for (i = 0; i < ssids->len; i++) {
-					ssid = g_ptr_array_index (ssids, i);
-					foo = ssid->len > 0
-					      ? nm_utils_ssid_to_utf8 (ssid->data, ssid->len)
-					      : NULL;
+					gs_free char *foo = NULL;
+					const guint8 *p;
+					gsize l;
+
+					p = g_bytes_get_data (ssids->pdata[i], &l);
+					foo = l > 0 ? nm_utils_ssid_to_utf8 (p, l) : NULL;
 					_LOGD (LOGD_WIFI, "wifi-scan: (%u) probe scanning SSID %s%s%s",
 					       i, NM_PRINT_FMT_QUOTED (foo, "\"", foo, "\"", "*any*"));
-					g_free (foo);
 				}
 			} else
 				_LOGD (LOGD_WIFI, "wifi-scan: no SSIDs to probe scan");
@@ -1395,7 +1383,9 @@ request_wireless_scan (NMDeviceWifi *self,
 
 		_hw_addr_set_scanning (self, FALSE);
 
-		nm_supplicant_interface_request_scan (priv->sup_iface, ssids);
+		nm_supplicant_interface_request_scan (priv->sup_iface,
+		                                      ssids ? (GBytes *const*) ssids->pdata : NULL,
+		                                      ssids ? ssids->len : 0u);
 		request_started = TRUE;
 	} else
 		_LOGD (LOGD_WIFI, "wifi-scan: scanning requested but not allowed at this time");

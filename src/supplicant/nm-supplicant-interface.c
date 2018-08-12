@@ -1789,7 +1789,9 @@ scan_request_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 }
 
 void
-nm_supplicant_interface_request_scan (NMSupplicantInterface *self, const GPtrArray *ssids)
+nm_supplicant_interface_request_scan (NMSupplicantInterface *self,
+                                      GBytes *const*ssids,
+                                      guint ssids_len)
 {
 	NMSupplicantInterfacePrivate *priv;
 	GVariantBuilder builder;
@@ -1803,15 +1805,14 @@ nm_supplicant_interface_request_scan (NMSupplicantInterface *self, const GPtrArr
 	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_add (&builder, "{sv}", "Type", g_variant_new_string ("active"));
 	g_variant_builder_add (&builder, "{sv}", "AllowRoam", g_variant_new_boolean (FALSE));
-	if (ssids) {
+	if (ssids_len > 0) {
 		GVariantBuilder ssids_builder;
 
 		g_variant_builder_init (&ssids_builder, G_VARIANT_TYPE_BYTESTRING_ARRAY);
-		for (i = 0; i < ssids->len; i++) {
-			GByteArray *ssid = g_ptr_array_index (ssids, i);
+		for (i = 0; i < ssids_len; i++) {
+			nm_assert (ssids[i]);
 			g_variant_builder_add (&ssids_builder, "@ay",
-			                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-			                                                  ssid->data, ssid->len, 1));
+			                       nm_utils_gbytes_to_variant_ay (ssids[i]));
 		}
 		g_variant_builder_add (&builder, "{sv}", "SSIDs", g_variant_builder_end (&ssids_builder));
 	}
