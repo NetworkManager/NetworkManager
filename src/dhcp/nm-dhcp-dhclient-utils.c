@@ -530,6 +530,10 @@ nm_dhcp_dhclient_unescape_duid (const char *duid)
 	guint i, len;
 	guint8 octal;
 
+	/* FIXME: it's wrong to have an "unescape-duid" function. dhclient
+	 * defines a file format with escaping. So we need a general unescape
+	 * function that can handle dhclient syntax. */
+
 	len = strlen (duid);
 	unescaped = g_byte_array_sized_new (len);
 	for (i = 0; i < len; i++) {
@@ -543,6 +547,9 @@ nm_dhcp_dhclient_unescape_duid (const char *duid)
 				g_byte_array_append (unescaped, &octal, 1);
 				i += 2;
 			} else {
+				/* FIXME: don't warn on untrusted data. Either signal an error, or accept
+				 * it silently. */
+
 				/* One of ", ', $, `, \, |, or & */
 				g_warn_if_fail (p[i] == '"' || p[i] == '\'' || p[i] == '$' ||
 				                p[i] == '`' || p[i] == '\\' || p[i] == '|' ||
