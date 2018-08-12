@@ -4013,7 +4013,7 @@ wireless_connection_from_ifcfg (const char *file,
 	NMSetting8021x *s_8021x = NULL;
 	GBytes *ssid;
 	NMSetting *security_setting = NULL;
-	char *printable_ssid = NULL;
+	gs_free char *ssid_utf8 = NULL;
 	const char *mode;
 	gboolean adhoc = FALSE;
 	GError *local = NULL;
@@ -4033,12 +4033,6 @@ wireless_connection_from_ifcfg (const char *file,
 	nm_connection_add_setting (connection, wireless_setting);
 
 	ssid = nm_setting_wireless_get_ssid (NM_SETTING_WIRELESS (wireless_setting));
-	if (ssid) {
-		printable_ssid = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
-		                                        g_bytes_get_size (ssid));
-	} else
-		printable_ssid = g_strdup ("unmanaged");
-
 	mode = nm_setting_wireless_get_mode (NM_SETTING_WIRELESS (wireless_setting));
 	if (mode && !strcmp (mode, "adhoc"))
 		adhoc = TRUE;
@@ -4046,7 +4040,6 @@ wireless_connection_from_ifcfg (const char *file,
 	/* Wireless security */
 	security_setting = make_wireless_security_setting (ifcfg, file, ssid, adhoc, &s_8021x, &local);
 	if (local) {
-		g_free (printable_ssid);
 		g_object_unref (connection);
 		g_propagate_error (error, local);
 		return NULL;
@@ -4057,11 +4050,16 @@ wireless_connection_from_ifcfg (const char *file,
 			nm_connection_add_setting (connection, NM_SETTING (s_8021x));
 	}
 
+	if (ssid)
+		ssid_utf8 = _nm_utils_ssid_to_utf8 (ssid);
+
 	/* Connection */
-	con_setting = make_connection_setting (file, ifcfg,
+	con_setting = make_connection_setting (file,
+	                                       ifcfg,
 	                                       NM_SETTING_WIRELESS_SETTING_NAME,
-	                                       printable_ssid, NULL);
-	g_free (printable_ssid);
+	                                       nm_str_not_empty (ssid_utf8) ?: "unmanaged",
+	                                       NULL);
+
 	if (!con_setting) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Failed to create connection setting.");

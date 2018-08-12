@@ -74,8 +74,7 @@ complete_connection (const char *ssid,
                      NMConnection *src,
                      GError **error)
 {
-	GByteArray *tmp;
-	gboolean success;
+	gs_unref_bytes GBytes *ssid_b = NULL;
 	NMSettingWireless *s_wifi;
 
 	/* Add a wifi setting if one doesn't exist */
@@ -85,20 +84,17 @@ complete_connection (const char *ssid,
 		nm_connection_add_setting (src, NM_SETTING (s_wifi));
 	}
 
-	tmp = g_byte_array_sized_new (strlen (ssid));
-	g_byte_array_append (tmp, (const guint8 *) ssid, strlen (ssid));
+	ssid_b = g_bytes_new (ssid, strlen (ssid));
 
-	success = nm_wifi_utils_complete_connection (tmp,
-	                                             bssid,
-	                                             mode,
-	                                             flags,
-	                                             wpa_flags,
-	                                             rsn_flags,
-	                                             src,
-	                                             lock_bssid,
-	                                             error);
-	g_byte_array_free (tmp, TRUE);
-	return success;
+	return nm_wifi_utils_complete_connection (ssid_b,
+	                                          bssid,
+	                                          mode,
+	                                          flags,
+	                                          wpa_flags,
+	                                          rsn_flags,
+	                                          src,
+	                                          lock_bssid,
+	                                          error);
 }
 
 typedef struct {
