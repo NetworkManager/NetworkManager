@@ -472,6 +472,10 @@ typedef enum {
 	NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII    = 0x0002,
 } NMUtilsStrUtf8SafeFlags;
 
+const char *nm_utils_buf_utf8safe_escape (gconstpointer buf, gssize buflen, NMUtilsStrUtf8SafeFlags flags, char **to_free);
+const char *nm_utils_buf_utf8safe_escape_bytes (GBytes *bytes, NMUtilsStrUtf8SafeFlags flags, char **to_free);
+gconstpointer nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_free);
+
 const char *nm_utils_str_utf8safe_escape   (const char *str, NMUtilsStrUtf8SafeFlags flags, char **to_free);
 const char *nm_utils_str_utf8safe_unescape (const char *str, char **to_free);
 
