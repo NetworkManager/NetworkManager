@@ -95,7 +95,6 @@ complete_connection (NMDevice *device,
                      GError **error)
 {
 	NMSettingOlpcMesh *s_mesh;
-	GByteArray *tmp;
 
 	s_mesh = nm_connection_get_setting_olpc_mesh (connection);
 	if (!s_mesh) {
@@ -104,10 +103,10 @@ complete_connection (NMDevice *device,
 	}
 
 	if (!nm_setting_olpc_mesh_get_ssid (s_mesh)) {
-		tmp = g_byte_array_sized_new (strlen (DEFAULT_SSID));
-		g_byte_array_append (tmp, (const guint8 *) DEFAULT_SSID, strlen (DEFAULT_SSID));
-		g_object_set (G_OBJECT (s_mesh), NM_SETTING_OLPC_MESH_SSID, tmp, NULL);
-		g_byte_array_free (tmp, TRUE);
+		gs_unref_bytes GBytes *ssid = NULL;
+
+		ssid = g_bytes_new_static (DEFAULT_SSID, NM_STRLEN (DEFAULT_SSID));
+		g_object_set (G_OBJECT (s_mesh), NM_SETTING_OLPC_MESH_SSID, ssid, NULL);
 	}
 
 	if (!nm_setting_olpc_mesh_get_dhcp_anycast_address (s_mesh)) {
