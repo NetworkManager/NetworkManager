@@ -296,8 +296,11 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 		props = g_variant_new ("a{sv}", &builder);
 
 		ap = nm_wifi_ap_new_from_properties (path, props);
-		if (name[0] != '\0')
-			nm_wifi_ap_set_ssid (ap, (const guint8 *) name, strlen (name));
+
+		nm_wifi_ap_set_ssid_arr (ap,
+		                         (const guint8 *) name,
+		                         NM_MIN (32, strlen (name)));
+
 		nm_wifi_ap_set_strength (ap, nm_wifi_utils_level_to_quality (signal / 100));
 		nm_wifi_ap_set_freq (ap, 2417);
 		nm_wifi_ap_set_max_bitrate (ap, 65000);
