@@ -1039,7 +1039,7 @@ nm_wifi_ap_check_compatible (NMWifiAP *self,
 	if (   ssid && priv->ssid &&
 	    !nm_utils_same_ssid (g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid),
 	                         priv->ssid->data, priv->ssid->len,
-	                         TRUE))
+	                         FALSE))
 		return FALSE;
 
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
