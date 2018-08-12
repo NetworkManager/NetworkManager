@@ -118,6 +118,37 @@ nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...)
 /*****************************************************************************/
 
 /**
+ * nm_utils_gbytes_equals:
+ * @bytes: (allow-none): a #GBytes array to compare. Note that
+ *   %NULL is treated like an #GBytes array of length zero.
+ * @arr: the data pointer with @arr_len bytes
+ * @arr_len: the length of the data pointer
+ *
+ * Returns: %TRUE if @bytes contains the same data as @arr. As a
+ *   special case, a %NULL @bytes is treated like an empty array.
+ */
+gboolean
+nm_utils_gbytes_equals (GBytes *bytes,
+                        gconstpointer arr,
+                        gsize arr_len)
+{
+	gconstpointer p;
+	gsize l;
+
+	if (!bytes) {
+		/* as a special case, let %NULL GBytes compare idential
+		 * to an empty array. */
+		return (arr_len == 0);
+	}
+
+	p = g_bytes_get_data (bytes, &l);
+	return    l == arr_len
+	       && memcmp (p, arr, arr_len) == 0;
+}
+
+/*****************************************************************************/
+
+/**
  * nm_strquote:
  * @buf: the output buffer of where to write the quoted @str argument.
  * @buf_len: the size of @buf.
