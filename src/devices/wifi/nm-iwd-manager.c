@@ -527,22 +527,6 @@ nm_iwd_manager_is_known_network (NMIwdManager *self, const char *name,
 	return false;
 }
 
-void
-nm_iwd_manager_network_connected (NMIwdManager *self, const char *name,
-                                  NMIwdNetworkSecurity security)
-{
-	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
-	KnownNetworkData *network_data;
-
-	if (nm_iwd_manager_is_known_network (self, name, security))
-		return;
-
-	network_data = g_new (KnownNetworkData, 1);
-	network_data->name = g_strdup (name);
-	network_data->security = security;
-	priv->known_networks = g_slist_append (priv->known_networks, network_data);
-}
-
 /*****************************************************************************/
 
 NM_DEFINE_SINGLETON_GETTER (NMIwdManager, nm_iwd_manager_get,

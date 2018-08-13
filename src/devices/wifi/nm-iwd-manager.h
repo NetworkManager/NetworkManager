@@ -59,7 +59,5 @@ NMIwdManager *nm_iwd_manager_get (void);
 
 gboolean nm_iwd_manager_is_known_network (NMIwdManager *self, const char *name,
                                           NMIwdNetworkSecurity security);
-void nm_iwd_manager_network_connected (NMIwdManager *self, const char *name,
-                                       NMIwdNetworkSecurity security);
 
 #endif /* __NETWORKMANAGER_IWD_MANAGER_H__ */
