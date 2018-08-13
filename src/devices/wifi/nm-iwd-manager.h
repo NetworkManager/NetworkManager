@@ -33,7 +33,7 @@
 #define NM_IWD_AGENT_INTERFACE          "net.connman.iwd.Agent"
 #define NM_IWD_WSC_INTERFACE            \
 	"net.connman.iwd.WiFiSimpleConfiguration"
-#define NM_IWD_KNOWN_NETWORKS_INTERFACE "net.connman.iwd.KnownNetworks"
+#define NM_IWD_KNOWN_NETWORK_INTERFACE  "net.connman.iwd.KnownNetwork"
 #define NM_IWD_SIGNAL_AGENT_INTERFACE   "net.connman.iwd.SignalLevelAgent"
 
 typedef enum {

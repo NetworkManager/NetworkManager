@@ -278,6 +278,20 @@ register_agent (NMIwdManager *self)
 
 /*****************************************************************************/
 
+static KnownNetworkId *
+known_network_id_new (const char *name, NMIwdNetworkSecurity security)
+{
+	KnownNetworkId *id;
+	size_t strsize = strlen (name) + 1;
+
+	id = g_malloc (sizeof (KnownNetworkId) + strsize);
+	id->name = id->buf;
+	id->security = security;
+	memcpy (id->buf, name, strsize);
+
+	return id;
+}
+
 static guint
 known_network_id_hash (KnownNetworkId *id)
 {
@@ -303,25 +317,13 @@ known_network_data_free (KnownNetworkData *network)
 /*****************************************************************************/
 
 static void
-set_device_dbus_object (NMIwdManager *self, GDBusInterface *interface,
+set_device_dbus_object (NMIwdManager *self, GDBusProxy *proxy,
                         GDBusObject *object)
 {
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
-	GDBusProxy *proxy;
 	const char *ifname;
 	int ifindex;
 	NMDevice *device;
-
-	if (!priv->running)
-		return;
-
-	g_return_if_fail (G_IS_DBUS_PROXY (interface));
-
-	proxy = G_DBUS_PROXY (interface);
-
-	if (strcmp (g_dbus_proxy_get_interface_name (proxy),
-	            NM_IWD_DEVICE_INTERFACE))
-		return;
 
 	ifname = get_property_string_or_null (proxy, "Name");
 	if (!ifname) {
@@ -352,8 +354,50 @@ interface_added (GDBusObjectManager *object_manager, GDBusObject *object,
                  GDBusInterface *interface, gpointer user_data)
 {
 	NMIwdManager *self = user_data;
+	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
+	GDBusProxy *proxy;
+	const char *iface_name;
 
-	set_device_dbus_object (self, interface, object);
+	if (!priv->running)
+		return;
+
+	g_return_if_fail (G_IS_DBUS_PROXY (interface));
+
+	proxy = G_DBUS_PROXY (interface);
+	iface_name = g_dbus_proxy_get_interface_name (proxy);
+
+	if (nm_streq (iface_name, NM_IWD_DEVICE_INTERFACE)) {
+		set_device_dbus_object (self, proxy, object);
+		return;
+	}
+
+	if (nm_streq (iface_name, NM_IWD_KNOWN_NETWORK_INTERFACE)) {
+		KnownNetworkId *id;
+		KnownNetworkData *data;
+		NMIwdNetworkSecurity security;
+		const char *type_str, *name;
+
+		type_str = get_property_string_or_null (proxy, "Type");
+		name = get_property_string_or_null (proxy, "Name");
+		if (!type_str || !name)
+			return;
+
+		if (nm_streq (type_str, "open"))
+			security = NM_IWD_NETWORK_SECURITY_NONE;
+		else if (nm_streq (type_str, "psk"))
+			security = NM_IWD_NETWORK_SECURITY_PSK;
+		else if (nm_streq (type_str, "8021x"))
+			security = NM_IWD_NETWORK_SECURITY_8021X;
+		else
+			return;
+
+		id = known_network_id_new (name, security);
+
+		data = g_slice_new (KnownNetworkData);
+		data->known_network = (GDBusProxy *) g_object_ref (proxy);
+		g_hash_table_insert (priv->known_networks, id, data);
+		return;
+	}
 }
 
 static void
@@ -361,15 +405,41 @@ interface_removed (GDBusObjectManager *object_manager, GDBusObject *object,
                    GDBusInterface *interface, gpointer user_data)
 {
 	NMIwdManager *self = user_data;
+	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
+	GDBusProxy *proxy;
+	const char *iface_name;
 
-	/*
-	 * TODO: we may need to save the GDBusInterface or GDBusObject
-	 * pointer in the hash table because we may be no longer able to
-	 * access the Name property or map the name to ifindex with
-	 * if_nametoindex at this point.
-	 */
+	g_return_if_fail (G_IS_DBUS_PROXY (interface));
 
-	set_device_dbus_object (self, interface, NULL);
+	proxy = G_DBUS_PROXY (interface);
+	iface_name = g_dbus_proxy_get_interface_name (proxy);
+
+	if (nm_streq (iface_name, NM_IWD_DEVICE_INTERFACE)) {
+		set_device_dbus_object (self, proxy, NULL);
+		return;
+	}
+
+	if (nm_streq (iface_name, NM_IWD_KNOWN_NETWORK_INTERFACE)) {
+		KnownNetworkId id;
+		const char *type_str;
+
+		type_str = get_property_string_or_null (proxy, "Type");
+		id.name = get_property_string_or_null (proxy, "Name");
+		if (!type_str || !id.name)
+			return;
+
+		if (nm_streq (type_str, "open"))
+			id.security = NM_IWD_NETWORK_SECURITY_NONE;
+		else if (nm_streq (type_str, "psk"))
+			id.security = NM_IWD_NETWORK_SECURITY_PSK;
+		else if (nm_streq (type_str, "8021x"))
+			id.security = NM_IWD_NETWORK_SECURITY_8021X;
+		else
+			return;
+
+		g_hash_table_remove (priv->known_networks, &id);
+		return;
+	}
 }
 
 static gboolean
@@ -389,10 +459,11 @@ object_added (NMIwdManager *self, GDBusObject *object)
 	GList *interfaces, *iter;
 
 	interfaces = g_dbus_object_get_interfaces (object);
+
 	for (iter = interfaces; iter; iter = iter->next) {
 		GDBusInterface *interface = G_DBUS_INTERFACE (iter->data);
 
-		set_device_dbus_object (self, interface, object);
+		interface_added (NULL, object, interface, self);
 	}
 
 	g_list_free_full (interfaces, g_object_unref);
@@ -507,6 +578,8 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 		                  G_CALLBACK (interface_added), self);
 		g_signal_connect (priv->object_manager, "interface-removed",
 		                  G_CALLBACK (interface_removed), self);
+
+		g_hash_table_remove_all (priv->known_networks);
 
 		objects = g_dbus_object_manager_get_objects (object_manager);
 		for (iter = objects; iter; iter = iter->next)
