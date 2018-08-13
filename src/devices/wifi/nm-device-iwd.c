@@ -1331,9 +1331,6 @@ network_connect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	       ssid_utf8);
 	nm_device_activate_schedule_stage3_ip_config_start (device);
 
-	nm_iwd_manager_network_connected (nm_iwd_manager_get (), ssid_utf8,
-	                                  get_connection_iwd_security (connection));
-
 	return;
 
 failed:
