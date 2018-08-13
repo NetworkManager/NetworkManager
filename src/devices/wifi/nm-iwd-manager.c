@@ -34,8 +34,13 @@
 /*****************************************************************************/
 
 typedef struct {
-	char *name;
+	const char *name;
 	NMIwdNetworkSecurity security;
+	char buf[0];
+} KnownNetworkId;
+
+typedef struct {
+	GDBusProxy *known_network;
 } KnownNetworkData;
 
 typedef struct {
@@ -45,7 +50,7 @@ typedef struct {
 	GDBusObjectManager *object_manager;
 	guint agent_id;
 	char *agent_path;
-	GSList *known_networks;
+	GHashTable *known_networks;
 } NMIwdManagerPrivate;
 
 struct _NMIwdManager {
@@ -273,6 +278,30 @@ register_agent (NMIwdManager *self)
 
 /*****************************************************************************/
 
+static guint
+known_network_id_hash (KnownNetworkId *id)
+{
+	return g_str_hash (id->name) + id->security;
+}
+
+static gboolean
+known_network_id_equal (KnownNetworkId *a, KnownNetworkId *b)
+{
+	return g_str_equal (a->name, b->name) && a->security == b->security;
+}
+
+static void
+known_network_data_free (KnownNetworkData *network)
+{
+	if (!network)
+		return;
+
+	g_object_unref (network->known_network);
+	g_slice_free (KnownNetworkData, network);
+}
+
+/*****************************************************************************/
+
 static void
 set_device_dbus_object (NMIwdManager *self, GDBusInterface *interface,
                         GDBusObject *object)
@@ -367,13 +396,6 @@ object_added (NMIwdManager *self, GDBusObject *object)
 	}
 
 	g_list_free_full (interfaces, g_object_unref);
-}
-
-static void
-known_network_free (KnownNetworkData *network)
-{
-	g_free (network->name);
-	g_free (network);
 }
 
 static void prepare_object_manager (NMIwdManager *self);
@@ -515,16 +537,9 @@ nm_iwd_manager_is_known_network (NMIwdManager *self, const char *name,
                                  NMIwdNetworkSecurity security)
 {
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
-	const GSList *iter;
+	KnownNetworkId kn_id = { name, security };
 
-	for (iter = priv->known_networks; iter; iter = g_slist_next (iter)) {
-		const KnownNetworkData *network = iter->data;
-
-		if (!strcmp (network->name, name) && network->security == security)
-			return true;
-	}
-
-	return false;
+	return g_hash_table_contains (priv->known_networks, &kn_id);
 }
 
 /*****************************************************************************/
@@ -542,6 +557,10 @@ nm_iwd_manager_init (NMIwdManager *self)
 	                  G_CALLBACK (device_added), self);
 
 	priv->cancellable = g_cancellable_new ();
+
+	priv->known_networks = g_hash_table_new_full ((GHashFunc) known_network_id_hash,
+	                                              (GEqualFunc) known_network_id_equal, g_free,
+	                                              (GDestroyNotify) known_network_data_free);
 
 	prepare_object_manager (self);
 }
@@ -574,7 +593,8 @@ dispose (GObject *object)
 
 	nm_clear_g_cancellable (&priv->cancellable);
 
-	g_slist_free_full (priv->known_networks, (GDestroyNotify) known_network_free);
+	if (priv->known_networks)
+		g_hash_table_unref (priv->known_networks);
 	priv->known_networks = NULL;
 
 	if (priv->manager) {
