@@ -121,6 +121,7 @@ static const ReqOption dhcp4_requests[] = {
 	{ SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE,         REQPREFIX "rfc3442_classless_static_routes", TRUE },
 	{ SD_DHCP_OPTION_PRIVATE_CLASSLESS_STATIC_ROUTE, REQPREFIX "ms_classless_static_routes",      TRUE },
 	{ SD_DHCP_OPTION_PRIVATE_PROXY_AUTODISCOVERY,    REQPREFIX "wpad",                            TRUE },
+	{ SD_DHCP_OPTION_ROOT_PATH,                      REQPREFIX "root_path",                       TRUE },
 
 	/* Internal values */
 	{ SD_DHCP_OPTION_IP_ADDRESS_LEASE_TIME,          REQPREFIX "expiry",                          FALSE },
@@ -430,6 +431,13 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 			g_string_append_printf (str, "%s%s", str->len ? " " : "", s);
 		}
 		add_option (options, dhcp4_requests, SD_DHCP_OPTION_NTP_SERVER, str->str);
+	}
+
+	/* Root path */
+	r = sd_dhcp_lease_get_root_path (lease, &s);
+	if (r >= 0) {
+		LOG_LEASE (LOGD_DHCP4, "root path '%s'", s);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROOT_PATH, s);
 	}
 
 	r = sd_dhcp_lease_get_vendor_specific (lease, &data, &data_len);

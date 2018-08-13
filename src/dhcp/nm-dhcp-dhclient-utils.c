@@ -444,6 +444,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		add_request (reqs, "static-routes");
 		add_request (reqs, "wpad");
 		add_request (reqs, "ntp-servers");
+		add_request (reqs, "root-path");
 	} else {
 		add_hostname6 (new_contents, hostname);
 		add_request (reqs, "dhcp6.name-servers");
