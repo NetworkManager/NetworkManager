@@ -647,23 +647,6 @@ _nm_utils_ptrarray_find_first (gconstpointer *list, gssize len, gconstpointer ne
 	return -1;
 }
 
-GVariant *
-_nm_utils_bytes_to_dbus (const GValue *prop_value)
-{
-	GBytes *bytes = g_value_get_boxed (prop_value);
-
-	if (bytes) {
-		return g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-		                                  g_bytes_get_data (bytes, NULL),
-		                                  g_bytes_get_size (bytes),
-		                                  1);
-	} else {
-		return g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-		                                  NULL, 0,
-		                                  1);
-	}
-}
-
 void
 _nm_utils_bytes_from_dbus (GVariant *dbus_value,
                            GValue *prop_value)
