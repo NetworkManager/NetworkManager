@@ -117,6 +117,23 @@ nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...)
 
 /*****************************************************************************/
 
+GVariant *
+nm_utils_gbytes_to_variant_ay (GBytes *bytes)
+{
+	const guint8 *p;
+	gsize l;
+
+	if (!bytes) {
+		/* for convenience, accept NULL to return an empty variant */
+		return g_variant_new_array (G_VARIANT_TYPE_BYTE, NULL, 0);
+	}
+
+	p = g_bytes_get_data (bytes, &l);
+	return g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, p, l, 1);
+}
+
+/*****************************************************************************/
+
 /**
  * nm_strquote:
  * @buf: the output buffer of where to write the quoted @str argument.

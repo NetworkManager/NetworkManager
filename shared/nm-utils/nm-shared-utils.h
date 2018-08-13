@@ -202,6 +202,10 @@ nm_utils_is_separator (const char c)
 
 /*****************************************************************************/
 
+GVariant *nm_utils_gbytes_to_variant_ay (GBytes *bytes);
+
+/*****************************************************************************/
+
 const char *nm_utils_dbus_path_get_last_component (const char *dbus_path);
 
 int nm_utils_dbus_path_cmp (const char *dbus_path_a, const char *dbus_path_b);
