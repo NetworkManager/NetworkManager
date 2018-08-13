@@ -206,6 +206,8 @@ gboolean nm_utils_gbytes_equals (GBytes *bytes,
                                  gconstpointer arr,
                                  gsize arr_len);
 
+GVariant *nm_utils_gbytes_to_variant_ay (GBytes *bytes);
+
 /*****************************************************************************/
 
 const char *nm_utils_dbus_path_get_last_component (const char *dbus_path);
