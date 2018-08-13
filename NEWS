@@ -11,6 +11,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Added support for IEEE 802.15.4 and 6LowPAN devices.
 * Support activating profile multiple times via connection.multi-connect
   setting.
+* Add match setting to restrict a profile to devices based on
+  a list of interface names with globbing supported.
+* Add support for ethtool offload features.
 
 The following changes were backported to 1.12.x releases between 1.12.0
 and 1.12.2 are also present in NetworkManager-1.14:
