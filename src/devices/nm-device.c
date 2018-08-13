@@ -464,6 +464,7 @@ typedef struct _NMDevicePrivate {
 		gulong          state_sigid;
 		NMDhcp4Config * config;
 		char *          pac_url;
+		char *          root_path;
 		bool            was_active;
 		guint           grace_id;
 	} dhcp4;
@@ -6971,6 +6972,7 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 
 	nm_clear_g_source (&priv->dhcp4.grace_id);
 	g_clear_pointer (&priv->dhcp4.pac_url, g_free);
+	g_clear_pointer (&priv->dhcp4.root_path, g_free);
 
 	if (priv->dhcp4.client) {
 		/* Stop any ongoing DHCP transaction on this device */
@@ -7343,6 +7345,9 @@ dhcp4_state_changed (NMDhcpClient *client,
 		g_free (priv->dhcp4.pac_url);
 		priv->dhcp4.pac_url = g_strdup (g_hash_table_lookup (options, "wpad"));
 		nm_device_set_proxy_config (self, priv->dhcp4.pac_url);
+
+		g_free (priv->dhcp4.root_path);
+		priv->dhcp4.root_path = g_strdup (g_hash_table_lookup (options, "root_path"));
 
 		nm_dhcp4_config_set_options (priv->dhcp4.config, options);
 		_notify (self, PROP_DHCP4_CONFIG);

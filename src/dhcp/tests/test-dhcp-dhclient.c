@@ -104,6 +104,7 @@ static const char *orig_missing_expected = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n";
 
 static void
@@ -132,6 +133,7 @@ static const char *override_client_id_expected = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n";
 
 static void
@@ -161,6 +163,7 @@ static const char *quote_client_id_expected = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n";
 
 static void
@@ -190,6 +193,7 @@ static const char *quote_client_id_expected_2 = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n";
 
 static void
@@ -219,6 +223,7 @@ static const char *hex_zero_client_id_expected = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n";
 
 static void
@@ -248,6 +253,7 @@ static const char *ascii_client_id_expected = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n";
 
 static void
@@ -277,6 +283,7 @@ static const char *hex_single_client_id_expected = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n";
 
 static void
@@ -310,6 +317,7 @@ static const char *existing_hex_client_id_expected = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n";
 
 static void
@@ -347,6 +355,7 @@ static const char *existing_escaped_client_id_expected = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n";
 
 static void
@@ -385,6 +394,7 @@ static const char *existing_ascii_client_id_expected = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n";
 
 static void
@@ -419,7 +429,8 @@ static const char *fqdn_expected = \
 	"also request ms-classless-static-routes;\n"
 	"also request static-routes;\n"
 	"also request wpad;\n"
-	"also request ntp-servers;\n\n";
+	"also request ntp-servers;\n"
+	"also request root-path;\n\n";
 
 static void
 test_fqdn (void)
@@ -455,6 +466,7 @@ static const char *fqdn_options_override_expected = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n"
 	"# FQDN options from /path/to/dhclient.conf\n"
 	"send fqdn.encoded off;\n"
@@ -492,6 +504,7 @@ static const char *override_hostname_expected = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n";
 
 static void
@@ -580,6 +593,7 @@ static const char *existing_alsoreq_expected = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n";
 
 static void
@@ -618,6 +632,7 @@ static const char *existing_req_expected = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n";
 
 static void
@@ -657,6 +672,7 @@ static const char *existing_multiline_alsoreq_expected = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n";
 
 static void
@@ -890,6 +906,7 @@ static const char *interface1_expected = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n";
 
 static void
@@ -935,6 +952,7 @@ static const char *interface2_expected = \
 	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
+	"also request root-path;\n"
 	"\n";
 
 static void
@@ -1030,6 +1048,7 @@ test_structured (void)
 		"also request static-routes;\n"
 		"also request wpad;\n"
 		"also request ntp-servers;\n"
+		"also request root-path;\n"
 		"\n";
 
 	new_client_id = g_bytes_new (bytes, sizeof (bytes) - 1);
@@ -1085,6 +1104,7 @@ test_config_req_intf (void)
 		"also request ms-classless-static-routes;\n"
 		"also request static-routes;\n"
 		"also request wpad;\n"
+		"also request root-path;\n"
 		"\n";
 
 	test_config (orig, expected,
