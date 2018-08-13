@@ -376,92 +376,6 @@ known_network_free (KnownNetworkData *network)
 	g_free (network);
 }
 
-static void
-list_known_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
-{
-	NMIwdManager *self = user_data;
-	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
-	gs_free_error GError *error = NULL;
-	gs_unref_variant GVariant *variant = NULL;
-	GVariantIter *networks, *props;
-
-	variant = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (source), res,
-	                                      G_VARIANT_TYPE ("(aa{sv})"),
-	                                      &error);
-	if (!variant) {
-		_LOGE ("ListKnownNetworks() failed: %s", error->message);
-		return;
-	}
-
-	g_slist_free_full (priv->known_networks, (GDestroyNotify) known_network_free);
-	priv->known_networks = NULL;
-
-	g_variant_get (variant, "(aa{sv})", &networks);
-
-	while (g_variant_iter_next (networks, "a{sv}", &props)) {
-		const char *key;
-		const char *name = NULL;
-		const char *type = NULL;
-		GVariant *val;
-		KnownNetworkData *network_data;
-
-		while (g_variant_iter_next (props, "{&sv}", &key, &val)) {
-			if (!strcmp (key, "Name"))
-				name = get_variant_string_or_null (val);
-
-			if (!strcmp (key, "Type"))
-				type = get_variant_string_or_null (val);
-
-			g_variant_unref (val);
-		}
-
-		if (!name || !type)
-			goto next;
-
-		network_data = g_new (KnownNetworkData, 1);
-		network_data->name = g_strdup (name);
-		if (!strcmp (type, "open"))
-			network_data->security = NM_IWD_NETWORK_SECURITY_NONE;
-		else if (!strcmp (type, "psk"))
-			network_data->security = NM_IWD_NETWORK_SECURITY_PSK;
-		else if (!strcmp (type, "8021x"))
-			network_data->security = NM_IWD_NETWORK_SECURITY_8021X;
-
-		priv->known_networks = g_slist_append (priv->known_networks,
-		                                       network_data);
-
-next:
-		g_variant_iter_free (props);
-	}
-
-	g_variant_iter_free (networks);
-
-	/* For completness we may want to call nm_device_emit_recheck_auto_activate
-	 * and nm_device_recheck_available_connections for all affected devices
-	 * now but the ListKnownNetworks call should have been really fast,
-	 * faster than any scan on any newly created devices could have happened.
-	 */
-}
-
-static void
-update_known_networks (NMIwdManager *self)
-{
-	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
-	GDBusInterface *known_networks_if;
-
-	known_networks_if = g_dbus_object_manager_get_interface (priv->object_manager,
-	                                                         "/",
-	                                                         NM_IWD_KNOWN_NETWORKS_INTERFACE);
-
-	g_dbus_proxy_call (G_DBUS_PROXY (known_networks_if),
-	                   "ListKnownNetworks",
-	                   g_variant_new ("()"),
-	                   G_DBUS_CALL_FLAGS_NONE, -1,
-	                   priv->cancellable, list_known_networks_cb, self);
-
-	g_object_unref (known_networks_if);
-}
-
 static void prepare_object_manager (NMIwdManager *self);
 
 static void
@@ -580,8 +494,6 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 
 		if (priv->agent_id)
 			register_agent (self);
-
-		update_known_networks (self);
 	}
 }
 
