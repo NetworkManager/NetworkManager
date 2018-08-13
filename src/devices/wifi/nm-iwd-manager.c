@@ -83,6 +83,32 @@ G_DEFINE_TYPE (NMIwdManager, nm_iwd_manager, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+static const char *
+get_variant_string_or_null (GVariant *v)
+{
+	if (!v)
+		return NULL;
+
+	if (   !g_variant_is_of_type (v, G_VARIANT_TYPE_STRING)
+	    && !g_variant_is_of_type (v, G_VARIANT_TYPE_OBJECT_PATH))
+		return NULL;
+
+	return g_variant_get_string (v, NULL);
+}
+
+static const char *
+get_property_string_or_null (GDBusProxy *proxy, const char *property)
+{
+	gs_unref_variant GVariant *value = NULL;
+
+	if (!proxy || !property)
+		return NULL;
+
+	value = g_dbus_proxy_get_cached_property (proxy, property);
+
+	return get_variant_string_or_null (value);
+}
+
 static void
 agent_dbus_method_cb (GDBusConnection *connection,
                       const char *sender, const char *object_path,
@@ -95,7 +121,6 @@ agent_dbus_method_cb (GDBusConnection *connection,
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
 	const char *network_path, *device_path, *ifname;
 	gs_unref_object GDBusInterface *network = NULL, *device_obj = NULL;
-	gs_unref_variant GVariant *value = NULL;
 	int ifindex;
 	NMDevice *device;
 	gs_free char *name_owner = NULL;
@@ -113,9 +138,8 @@ agent_dbus_method_cb (GDBusConnection *connection,
 	network = g_dbus_object_manager_get_interface (priv->object_manager,
 	                                               network_path,
 	                                               NM_IWD_NETWORK_INTERFACE);
-	value = g_dbus_proxy_get_cached_property (G_DBUS_PROXY (network), "Device");
-	device_path = g_variant_get_string (value, NULL);
 
+	device_path = get_property_string_or_null (G_DBUS_PROXY (network), "Device");
 	if (!device_path) {
 		_LOGD ("agent-request: device not cached for network %s in IWD Agent request",
 		       network_path);
@@ -125,10 +149,8 @@ agent_dbus_method_cb (GDBusConnection *connection,
 	device_obj = g_dbus_object_manager_get_interface (priv->object_manager,
 	                                                  device_path,
 	                                                  NM_IWD_DEVICE_INTERFACE);
-	g_variant_unref (value);
-	value = g_dbus_proxy_get_cached_property (G_DBUS_PROXY (device_obj), "Name");
-	ifname = g_variant_get_string (value, NULL);
 
+	ifname = get_property_string_or_null (G_DBUS_PROXY (device_obj), "Name");
 	if (!ifname) {
 		_LOGD ("agent-request: name not cached for device %s in IWD Agent request",
 		       device_path);
@@ -257,7 +279,6 @@ set_device_dbus_object (NMIwdManager *self, GDBusInterface *interface,
 {
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
 	GDBusProxy *proxy;
-	GVariant *value;
 	const char *ifname;
 	int ifindex;
 	NMDevice *device;
@@ -273,16 +294,14 @@ set_device_dbus_object (NMIwdManager *self, GDBusInterface *interface,
 	            NM_IWD_DEVICE_INTERFACE))
 		return;
 
-	value = g_dbus_proxy_get_cached_property (proxy, "Name");
-	if (!value) {
+	ifname = get_property_string_or_null (proxy, "Name");
+	if (!ifname) {
 		_LOGE ("Name not cached for Device at %s",
 		       g_dbus_proxy_get_object_path (proxy));
 		return;
 	}
 
-	ifname = g_variant_get_string (value, NULL);
 	ifindex = if_nametoindex (ifname);
-	g_variant_unref (value);
 
 	if (!ifindex) {
 		_LOGE ("if_nametoindex failed for Name %s for Device at %s: %i",
@@ -388,10 +407,10 @@ list_known_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 
 		while (g_variant_iter_next (props, "{&sv}", &key, &val)) {
 			if (!strcmp (key, "Name"))
-				name = g_variant_get_string (val, NULL);
+				name = get_variant_string_or_null (val);
 
 			if (!strcmp (key, "Type"))
-				type = g_variant_get_string (val, NULL);
+				type = get_variant_string_or_null (val);
 
 			g_variant_unref (val);
 		}
@@ -492,28 +511,14 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 	objects = g_dbus_object_manager_get_objects (priv->object_manager);
 	for (iter = objects; iter; iter = iter->next) {
 		GDBusObject *object = G_DBUS_OBJECT (iter->data);
-		GDBusInterface *interface;
-		GDBusProxy *proxy;
-		GVariant *value;
+		gs_unref_object GDBusInterface *interface = NULL;
 		const char *obj_ifname;
 
 		interface = g_dbus_object_get_interface (object,
 		                                         NM_IWD_DEVICE_INTERFACE);
-		if (!interface)
-			continue;
+		obj_ifname = get_property_string_or_null ((GDBusProxy *) interface, "Name");
 
-		proxy = G_DBUS_PROXY (interface);
-		value = g_dbus_proxy_get_cached_property (proxy, "Name");
-		if (!value) {
-			g_object_unref (interface);
-			continue;
-		}
-
-		obj_ifname = g_variant_get_string (value, NULL);
-		g_variant_unref (value);
-		g_object_unref (interface);
-
-		if (strcmp (nm_device_get_iface (device), obj_ifname))
+		if (!obj_ifname || strcmp (nm_device_get_iface (device), obj_ifname))
 			continue;
 
 		nm_device_iwd_set_dbus_object (NM_DEVICE_IWD (device), object);

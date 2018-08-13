@@ -773,6 +773,32 @@ complete_connection (NMDevice *device,
 }
 
 static gboolean
+get_variant_boolean (GVariant *v, const char *property)
+{
+	if (!v || !g_variant_is_of_type (v, G_VARIANT_TYPE_BOOLEAN)) {
+		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
+		             "Property %s not cached or not boolean type", property);
+
+		return FALSE;
+	}
+
+	return g_variant_get_boolean (v);
+}
+
+static const char *
+get_variant_state (GVariant *v)
+{
+	if (!v || !g_variant_is_of_type (v, G_VARIANT_TYPE_STRING)) {
+		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
+		             "State property not cached or not a string");
+
+		return "unknown";
+	}
+
+	return g_variant_get_string (v, NULL);
+}
+
+static gboolean
 is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceIwd *self = NM_DEVICE_IWD (device);
@@ -783,7 +809,7 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 		return FALSE;
 
 	value = g_dbus_proxy_get_cached_property (priv->dbus_proxy, "Powered");
-	return g_variant_get_boolean (value);
+	return get_variant_boolean (value, "Powered");
 }
 
 static gboolean
@@ -1756,7 +1782,8 @@ state_changed (NMDeviceIwd *self, const char *new_state)
 	                                 NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 
 		return;
-	}
+	} else if (nm_streq (new_state, "unknown"))
+		return;
 
 	_LOGE (LOGD_WIFI, "State %s unknown", new_state);
 }
@@ -1802,13 +1829,13 @@ properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
 	g_variant_get (changed_properties, "a{sv}", &iter);
 	while (g_variant_iter_next (iter, "{&sv}", &key, &value)) {
 		if (!strcmp (key, "State"))
-			state_changed (self, g_variant_get_string (value, NULL));
+			state_changed (self, get_variant_state (value));
 
 		if (!strcmp (key, "Scanning"))
-			scanning_changed (self, g_variant_get_boolean (value));
+			scanning_changed (self, get_variant_boolean (value, "Scanning"));
 
 		if (!strcmp (key, "Powered"))
-			powered_changed (self, g_variant_get_boolean (value));
+			powered_changed (self, get_variant_boolean (value, "Powered"));
 
 		g_variant_unref (value);
 	}
@@ -1849,12 +1876,12 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 	priv->dbus_proxy = G_DBUS_PROXY (interface);
 
 	value = g_dbus_proxy_get_cached_property (priv->dbus_proxy, "Scanning");
-	priv->scanning = g_variant_get_boolean (value);
+	priv->scanning = get_variant_boolean (value, "Scanning");
 	g_variant_unref (value);
 	priv->scan_requested = FALSE;
 
 	value = g_dbus_proxy_get_cached_property (priv->dbus_proxy, "State");
-	state_changed (self, g_variant_get_string (value, NULL));
+	state_changed (self, get_variant_state (value));
 	g_variant_unref (value);
 
 	g_signal_connect (priv->dbus_proxy, "g-properties-changed",
