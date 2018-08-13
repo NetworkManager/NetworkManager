@@ -5060,11 +5060,15 @@ nm_device_removed (NMDevice *self, gboolean unconfigure_ip_config)
 		nm_device_master_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 	}
 
-	if (!unconfigure_ip_config)
-		return;
-
-	nm_device_set_ip_config (self, AF_INET, NULL, FALSE, NULL);
-	nm_device_set_ip_config (self, AF_INET6, NULL, FALSE, NULL);
+	if (unconfigure_ip_config) {
+		nm_device_set_ip_config (self, AF_INET, NULL, FALSE, NULL);
+		nm_device_set_ip_config (self, AF_INET6, NULL, FALSE, NULL);
+	} else {
+		if (priv->dhcp4.client)
+			nm_dhcp_client_stop (priv->dhcp4.client, FALSE);
+		if (priv->dhcp6.client)
+			nm_dhcp_client_stop (priv->dhcp6.client, FALSE);
+	}
 }
 
 static gboolean
