@@ -2341,7 +2341,11 @@ nm_config_reload (NMConfig *self, NMConfigChangeFlags reload_flags)
 		                     (const char *const*) priv->atomic_section_prefixes, NULL);
 	}
 
-	new_data = nm_config_data_new (config_main_file, config_description, (const char *const*) no_auto_default, keyfile, keyfile_intern);
+	new_data = nm_config_data_new (config_main_file,
+	                               config_description,
+	                               (const char *const*) no_auto_default,
+	                               keyfile,
+	                               keyfile_intern);
 	g_free (config_main_file);
 	g_free (config_description);
 	g_key_file_unref (keyfile);
@@ -2550,7 +2554,11 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		                     (const char *const*) priv->atomic_section_prefixes, NULL);
 	}
 
-	priv->config_data_orig = nm_config_data_new (config_main_file, config_description, (const char *const*) no_auto_default, keyfile, keyfile_intern);
+	priv->config_data_orig = nm_config_data_new (config_main_file,
+	                                             config_description,
+	                                             (const char *const*) no_auto_default,
+	                                             keyfile,
+	                                             keyfile_intern);
 
 	priv->config_data = g_object_ref (priv->config_data_orig);
 
