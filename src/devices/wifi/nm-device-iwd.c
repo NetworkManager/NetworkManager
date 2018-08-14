@@ -510,7 +510,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection, GError 
 	if (perm_hw_addr) {
 		if (mac && !nm_utils_hwaddr_matches (mac, -1, perm_hw_addr, -1)) {
 			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-			                            "mac address mispatches");
+			                            "device MAC address does not match the profile");
 			return FALSE;
 		}
 
@@ -521,13 +521,13 @@ check_connection_compatible (NMDevice *device, NMConnection *connection, GError 
 
 			if (nm_utils_hwaddr_matches (mac_blacklist[i], -1, perm_hw_addr, -1)) {
 				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-				                            "mac address blacklisted");
+				                            "MAC address blacklisted");
 				return FALSE;
 			}
 		}
 	} else if (mac) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-		                            "device has no valid mac address as required by profile");
+		                            "device has no valid MAC address as required by profile");
 		return FALSE;
 	}
 
