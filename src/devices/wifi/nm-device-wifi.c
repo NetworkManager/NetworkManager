@@ -623,8 +623,11 @@ check_connection_compatible (NMDevice *device, NMConnection *connection, GError 
 	perm_hw_addr = nm_device_get_permanent_hw_address (device);
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
 	if (perm_hw_addr) {
-		if (mac && !nm_utils_hwaddr_matches (mac, -1, perm_hw_addr, -1))
+		if (mac && !nm_utils_hwaddr_matches (mac, -1, perm_hw_addr, -1)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "device MAC address does not match the profile");
 			return FALSE;
+		}
 
 		/* Check for MAC address blacklist */
 		mac_blacklist = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
@@ -634,27 +637,45 @@ check_connection_compatible (NMDevice *device, NMConnection *connection, GError 
 				return FALSE;
 			}
 
-			if (nm_utils_hwaddr_matches (mac_blacklist[i], -1, perm_hw_addr, -1))
+			if (nm_utils_hwaddr_matches (mac_blacklist[i], -1, perm_hw_addr, -1)) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                            "MAC address blacklisted");
 				return FALSE;
+			}
 		}
-	} else if (mac)
+	} else if (mac) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "device has no valid MAC address as required by profile");
 		return FALSE;
+	}
 
-	if (is_adhoc_wpa (connection))
+	if (is_adhoc_wpa (connection)) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "Ad-Hoc WPA networks are not supported");
 		return FALSE;
+	}
 
 	/* Early exit if supplicant or device doesn't support requested mode */
 	mode = nm_setting_wireless_get_mode (s_wireless);
 	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC) == 0) {
-		if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_ADHOC))
+		if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_ADHOC)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "the device does not support Ad-Hoc networks");
 			return FALSE;
+		}
 	} else if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_AP) == 0) {
-		if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_AP))
+		if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_AP)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "the device does not support Access Point mode");
 			return FALSE;
+		}
 
 		if (priv->sup_iface) {
-			if (nm_supplicant_interface_get_ap_support (priv->sup_iface) == NM_SUPPLICANT_FEATURE_NO)
+			if (nm_supplicant_interface_get_ap_support (priv->sup_iface) == NM_SUPPLICANT_FEATURE_NO) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                            "wpa_supplicant does not support Access Point mode");
 				return FALSE;
+			}
 		}
 	}
 
