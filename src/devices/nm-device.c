@@ -13432,6 +13432,7 @@ _nm_device_check_connection_available (NMDevice *self,
 			if (!nm_device_check_connection_compatible (self, connection,
 			                                            error ? &local : NULL)) {
 				if (error) {
+					g_return_val_if_fail (local, FALSE);
 					nm_utils_error_set (error,
 					                    local->domain == NM_UTILS_ERROR
 					                      ? local->code
