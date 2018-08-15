@@ -9345,7 +9345,8 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 		_LOGD (LOGD_IP6, "will %s userland IPv6LL", detail);
 		plerr = nm_platform_link_set_user_ipv6ll_enabled (nm_device_get_platform (self), ifindex, enable);
 		if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
-			_NMLOG (plerr == NM_PLATFORM_ERROR_NOT_FOUND ? LOGL_DEBUG : LOGL_WARN,
+			_NMLOG ((   plerr == NM_PLATFORM_ERROR_NOT_FOUND
+			         || plerr == NM_PLATFORM_ERROR_OPNOTSUPP) ? LOGL_DEBUG : LOGL_WARN,
 			        LOGD_IP6,
 			        "failed to %s userspace IPv6LL address handling (%s)",
 			        detail,

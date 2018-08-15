@@ -5195,6 +5195,9 @@ retry:
 	} else if (NM_IN_SET (-((int) seq_result), ENODEV)) {
 		log_level = LOGL_DEBUG;
 		result = NM_PLATFORM_ERROR_NOT_FOUND;
+	} else if (-((int) seq_result) == EAFNOSUPPORT) {
+		log_level = LOGL_DEBUG;
+		result = NM_PLATFORM_ERROR_OPNOTSUPP;
 	} else {
 		log_level = LOGL_WARN;
 		result = NM_PLATFORM_ERROR_UNSPECIFIED;
