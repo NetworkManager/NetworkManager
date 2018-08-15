@@ -1065,7 +1065,7 @@ msgstr "Connexion « %s » (%s) supprimée.\n"
 #: ../clients/cli/connections.c:2561
 #, c-format
 msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
-msgstr "Connexion « %s » activée (chemin D-Bus actif : %s)\n"
+msgstr "Connexion « %s » désactivée (chemin D-Bus actif : %s)\n"
 
 #: ../clients/cli/connections.c:2642 ../clients/cli/connections.c:8164
 #: ../clients/cli/connections.c:8196 ../clients/cli/connections.c:8353
