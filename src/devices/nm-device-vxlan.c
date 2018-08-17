@@ -386,9 +386,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE ((NMDeviceVxlan *) device);
 	NMSettingVxlan *s_vxlan = nm_connection_get_setting_vxlan (connection);
-	NMDevice *parent_device;
-	const char *setting_parent;
-	const char *new_parent = NULL;
 
 	if (!s_vxlan) {
 		s_vxlan = (NMSettingVxlan *) nm_setting_vxlan_new ();
@@ -398,23 +395,11 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (priv->props.id != nm_setting_vxlan_get_id (s_vxlan))
 		g_object_set (G_OBJECT (s_vxlan), NM_SETTING_VXLAN_ID, priv->props.id, NULL);
 
-	parent_device = nm_device_parent_get_device (device);
-
-	/* Update parent in the connection; default to parent's interface name */
-	if (parent_device) {
-		new_parent = nm_device_get_iface (parent_device);
-		setting_parent = nm_setting_vxlan_get_parent (s_vxlan);
-		if (setting_parent && nm_utils_is_uuid (setting_parent)) {
-			NMConnection *parent_connection;
-
-			/* Don't change a parent specified by UUID if it's still valid */
-			parent_connection = (NMConnection *) nm_settings_get_connection_by_uuid (nm_device_get_settings (device),
-			                                                                         setting_parent);
-			if (parent_connection && nm_device_check_connection_compatible (parent_device, parent_connection, NULL))
-				new_parent = NULL;
-		}
-	}
-	g_object_set (s_vxlan, NM_SETTING_VXLAN_PARENT, new_parent, NULL);
+	g_object_set (s_vxlan,
+	              NM_SETTING_VXLAN_PARENT,
+	              nm_device_parent_find_for_connection (device,
+	                                                    nm_setting_vxlan_get_parent (s_vxlan)),
+	              NULL);
 
 	if (!address_matches (nm_setting_vxlan_get_remote (s_vxlan), priv->props.group, &priv->props.group6)) {
 		if (priv->props.group) {

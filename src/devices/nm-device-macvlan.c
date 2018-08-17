@@ -391,8 +391,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE ((NMDeviceMacvlan *) device);
 	NMSettingMacvlan *s_macvlan = nm_connection_get_setting_macvlan (connection);
-	NMDevice *parent_device;
-	const char *setting_parent, *new_parent;
 	int new_mode;
 
 	if (!s_macvlan) {
@@ -410,24 +408,11 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (priv->props.tap != nm_setting_macvlan_get_tap (s_macvlan))
 		g_object_set (s_macvlan, NM_SETTING_MACVLAN_TAP, !!priv->props.tap, NULL);
 
-	/* Update parent in the connection; default to parent's interface name */
-	parent_device = nm_device_parent_get_device (device);
-	if (parent_device) {
-		new_parent = nm_device_get_iface (parent_device);
-		setting_parent = nm_setting_macvlan_get_parent (s_macvlan);
-		if (setting_parent && nm_utils_is_uuid (setting_parent)) {
-			NMConnection *parent_connection;
-
-			/* Don't change a parent specified by UUID if it's still valid */
-			parent_connection = (NMConnection *) nm_settings_get_connection_by_uuid (nm_device_get_settings (device), setting_parent);
-			if (parent_connection && nm_device_check_connection_compatible (parent_device, parent_connection, NULL))
-				new_parent = NULL;
-		}
-		if (new_parent)
-			g_object_set (s_macvlan, NM_SETTING_MACVLAN_PARENT, new_parent, NULL);
-	} else
-		g_object_set (s_macvlan, NM_SETTING_MACVLAN_PARENT, NULL, NULL);
-
+	g_object_set (s_macvlan,
+	              NM_SETTING_MACVLAN_PARENT,
+	              nm_device_parent_find_for_connection (device,
+	                                                    nm_setting_macvlan_get_parent (s_macvlan)),
+	              NULL);
 }
 
 static NMActStageReturn
