@@ -501,6 +501,9 @@ gboolean        nm_device_parent_notify_changed (NMDevice *self,
                                                  NMDevice *change_candidate,
                                                  gboolean device_removed);
 
+const char     *nm_device_parent_find_for_connection (NMDevice *self,
+                                                      const char *current_setting_parent);
+
 /* Master */
 gboolean        nm_device_is_master             (NMDevice *dev);
 

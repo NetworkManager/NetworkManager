@@ -1711,6 +1711,41 @@ nm_device_parent_notify_changed (NMDevice *self,
 
 /*****************************************************************************/
 
+const char *
+nm_device_parent_find_for_connection (NMDevice *self,
+                                      const char *current_setting_parent)
+{
+	const char *new_parent;
+	NMDevice *parent_device;
+
+	parent_device = nm_device_parent_get_device (self);
+	if (!parent_device)
+		return NULL;
+
+	new_parent = nm_device_get_iface (parent_device);
+	if (!new_parent)
+		return NULL;
+
+	if (   current_setting_parent
+	    && !nm_streq (current_setting_parent, new_parent)
+	    && nm_utils_is_uuid (current_setting_parent)) {
+		NMSettingsConnection *parent_connection;
+
+		/* Don't change a parent specified by UUID if it's still valid */
+		parent_connection = nm_settings_get_connection_by_uuid (nm_device_get_settings (self),
+		                                                        current_setting_parent);
+		if (   parent_connection
+		    && nm_device_check_connection_compatible (parent_device,
+		                                              NM_CONNECTION (parent_connection),
+		                                              NULL))
+			return current_setting_parent;
+	}
+
+	return new_parent;
+}
+
+/*****************************************************************************/
+
 static void
 _stats_update_counters (NMDevice *self,
                         guint64 tx_bytes,

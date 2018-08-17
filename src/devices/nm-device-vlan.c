@@ -427,10 +427,8 @@ update_connection (NMDevice *device, NMConnection *connection)
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 	NMSettingVlan *s_vlan = nm_connection_get_setting_vlan (connection);
 	int ifindex = nm_device_get_ifindex (device);
-	const char *setting_parent, *new_parent;
 	const NMPlatformLink *plink;
 	const NMPObject *polnk;
-	NMDevice *parent_device;
 	guint vlan_id;
 	guint vlan_flags;
 
@@ -448,26 +446,11 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (vlan_id != nm_setting_vlan_get_id (s_vlan))
 		g_object_set (s_vlan, NM_SETTING_VLAN_ID, vlan_id, NULL);
 
-	/* Update parent in the connection; default to parent's interface name */
-	parent_device = nm_device_parent_get_device (device);
-	if (   parent_device
-	    && polnk
-	    && plink->parent > 0
-	    && nm_device_get_ifindex (parent_device) == plink->parent) {
-		new_parent = nm_device_get_iface (parent_device);
-		setting_parent = nm_setting_vlan_get_parent (s_vlan);
-		if (setting_parent && nm_utils_is_uuid (setting_parent)) {
-			NMConnection *parent_connection;
-
-			/* Don't change a parent specified by UUID if it's still valid */
-			parent_connection = (NMConnection *) nm_settings_get_connection_by_uuid (nm_device_get_settings (device), setting_parent);
-			if (parent_connection && nm_device_check_connection_compatible (parent_device, parent_connection, NULL))
-				new_parent = NULL;
-		}
-		if (new_parent)
-			g_object_set (s_vlan, NM_SETTING_VLAN_PARENT, new_parent, NULL);
-	} else
-		g_object_set (s_vlan, NM_SETTING_VLAN_PARENT, NULL, NULL);
+	g_object_set (s_vlan,
+	              NM_SETTING_VLAN_PARENT,
+	              nm_device_parent_find_for_connection (device,
+	                                                    nm_setting_vlan_get_parent (s_vlan)),
+	              NULL);
 
 	if (polnk)
 		vlan_flags = polnk->lnk_vlan.flags;

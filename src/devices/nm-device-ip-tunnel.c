@@ -435,8 +435,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 	NMDeviceIPTunnel *self = NM_DEVICE_IP_TUNNEL (device);
 	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (self);
 	NMSettingIPTunnel *s_ip_tunnel = nm_connection_get_setting_ip_tunnel (connection);
-	NMDevice *parent = NULL;
-	const char *setting_parent, *new_parent;
 
 	if (!s_ip_tunnel) {
 		s_ip_tunnel = (NMSettingIPTunnel *) nm_setting_ip_tunnel_new ();
@@ -446,25 +444,11 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (nm_setting_ip_tunnel_get_mode (s_ip_tunnel) != priv->mode)
 		g_object_set (G_OBJECT (s_ip_tunnel), NM_SETTING_IP_TUNNEL_MODE, priv->mode, NULL);
 
-	parent = nm_device_parent_get_device (device);
-
-	/* Update parent in the connection; default to parent's interface name */
-	if (parent) {
-		new_parent = nm_device_get_iface (parent);
-		setting_parent = nm_setting_ip_tunnel_get_parent (s_ip_tunnel);
-		if (setting_parent && nm_utils_is_uuid (setting_parent)) {
-			NMConnection *parent_connection;
-
-			/* Don't change a parent specified by UUID if it's still valid */
-			parent_connection = (NMConnection *) nm_settings_get_connection_by_uuid (nm_device_get_settings (device),
-			                                                                         setting_parent);
-			if (parent_connection && nm_device_check_connection_compatible (parent, parent_connection, NULL))
-				new_parent = NULL;
-		}
-		if (new_parent)
-			g_object_set (s_ip_tunnel, NM_SETTING_IP_TUNNEL_PARENT, new_parent, NULL);
-	} else
-		g_object_set (s_ip_tunnel, NM_SETTING_IP_TUNNEL_PARENT, NULL, NULL);
+	g_object_set (s_ip_tunnel,
+	              NM_SETTING_IP_TUNNEL_PARENT,
+	              nm_device_parent_find_for_connection (device,
+	                                                    nm_setting_ip_tunnel_get_parent (s_ip_tunnel)),
+	              NULL);
 
 	if (!address_equal_pp (priv->addr_family,
 	                       nm_setting_ip_tunnel_get_local (s_ip_tunnel),
