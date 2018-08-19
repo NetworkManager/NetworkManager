@@ -718,7 +718,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 	 *
 	 * The special values "mac" and "perm-mac" are supported, which use the
 	 * current or permanent MAC address of the device to generate a client identifier
-	 * with type ethernet type (01). Currently, these options only work for ethernet
+	 * with type ethernet (01). Currently, these options only work for ethernet
 	 * type of links.
 	 *
 	 * The special value "stable" is supported to generate a type 0 client identifier based
