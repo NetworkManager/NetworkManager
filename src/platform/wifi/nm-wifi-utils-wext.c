@@ -41,6 +41,7 @@
 #include "nm-wifi-utils-private.h"
 #include "nm-utils.h"
 #include "platform/nm-platform-utils.h"
+#include "nm-core-internal.h"
 
 typedef struct {
 	NMWifiUtils parent;
@@ -506,11 +507,13 @@ wifi_wext_set_mesh_ssid (NMWifiUtils *data, const guint8 *ssid, gsize len)
 		return TRUE;
 
 	if (errno != ENODEV) {
+		gs_free char *ssid_str = NULL;
+
 		errsv = errno;
 		_LOGE (LOGD_PLATFORM | LOGD_WIFI | LOGD_OLPC,
 		       "(%s): error setting SSID to '%s': %s",
 		       ifname,
-		       ssid ? nm_utils_escape_ssid (ssid, len) : "(null)",
+		       (ssid_str = _nm_utils_ssid_to_string_arr (ssid, len)),
 		       strerror (errsv));
 	}
 

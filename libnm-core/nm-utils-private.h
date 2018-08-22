@@ -74,7 +74,6 @@ GVariant *  _nm_utils_strdict_to_dbus   (const GValue *prop_value);
 void        _nm_utils_strdict_from_dbus (GVariant *dbus_value,
                                          GValue *prop_value);
 
-GVariant *  _nm_utils_bytes_to_dbus     (const GValue *prop_value);
 void        _nm_utils_bytes_from_dbus   (GVariant *dbus_value,
                                          GValue *prop_value);
 

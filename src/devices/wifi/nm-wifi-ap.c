@@ -58,7 +58,7 @@ struct _NMWifiAPPrivate {
 	char *supplicant_path;   /* D-Bus object path of this AP from wpa_supplicant */
 
 	/* Scanned or cached values */
-	GByteArray *       ssid;
+	GBytes *           ssid;
 	char *             address;
 	NM80211Mode        mode;
 	guint8             strength;
@@ -95,7 +95,7 @@ nm_wifi_ap_get_supplicant_path (NMWifiAP *ap)
 	return NM_WIFI_AP_GET_PRIVATE (ap)->supplicant_path;
 }
 
-const GByteArray *
+GBytes *
 nm_wifi_ap_get_ssid (const NMWifiAP *ap)
 {
 	g_return_val_if_fail (NM_IS_WIFI_AP (ap), NULL);
@@ -103,43 +103,67 @@ nm_wifi_ap_get_ssid (const NMWifiAP *ap)
 	return NM_WIFI_AP_GET_PRIVATE (ap)->ssid;
 }
 
-static GVariant *
-nm_wifi_ap_get_ssid_as_variant (const NMWifiAP *self)
-{
-	const NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE (self);
-
-	if (priv->ssid) {
-		return g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-		                                  priv->ssid->data, priv->ssid->len, 1);
-	} else
-		return g_variant_new_array (G_VARIANT_TYPE_BYTE, NULL, 0);
-}
-
 gboolean
-nm_wifi_ap_set_ssid (NMWifiAP *ap, const guint8 *ssid, gsize len)
+nm_wifi_ap_set_ssid_arr (NMWifiAP *ap,
+                         const guint8 *ssid,
+                         gsize ssid_len)
 {
 	NMWifiAPPrivate *priv;
+	const guint8 *my_data;
+	gsize my_len;
 
 	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
-	g_return_val_if_fail (ssid == NULL || len > 0, FALSE);
+
+	if (ssid_len > 32)
+		g_return_val_if_reached (FALSE);
 
 	priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
-	/* same SSID */
-	if ((ssid && priv->ssid) && (len == priv->ssid->len)) {
-		if (!memcmp (ssid, priv->ssid->data, len))
-			return FALSE;
+	if (priv->ssid)
+		my_data = g_bytes_get_data (priv->ssid, &my_len);
+	else {
+		my_data = NULL;
+		my_len = 0;
 	}
 
-	if (priv->ssid) {
-		g_byte_array_free (priv->ssid, TRUE);
-		priv->ssid = NULL;
-	}
+	if (   my_len == ssid_len
+	    && memcmp (ssid, my_data, ssid_len) == 0)
+		return FALSE;
+
+	nm_clear_pointer (&priv->ssid, g_bytes_unref);
+	if (ssid_len > 0)
+		priv->ssid = g_bytes_new (ssid, ssid_len);
+
+	_notify (ap, PROP_SSID);
+	return TRUE;
+}
+
+gboolean
+nm_wifi_ap_set_ssid (NMWifiAP *ap, GBytes *ssid)
+{
+	NMWifiAPPrivate *priv;
+	gsize l;
+
+	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
 
 	if (ssid) {
-		priv->ssid = g_byte_array_new ();
-		g_byte_array_append (priv->ssid, ssid, len);
+		l = g_bytes_get_size (ssid);
+		if (l == 0 || l > 32)
+			g_return_val_if_reached (FALSE);
 	}
+
+	priv = NM_WIFI_AP_GET_PRIVATE (ap);
+
+	if (ssid == priv->ssid)
+		return FALSE;
+	if (   ssid
+	    && priv->ssid
+	    && g_bytes_equal (ssid, priv->ssid))
+		return FALSE;
+
+	nm_clear_pointer (&priv->ssid, g_bytes_unref);
+	if (ssid)
+		priv->ssid = g_bytes_ref (ssid);
 
 	_notify (ap, PROP_SSID);
 	return TRUE;
@@ -814,10 +838,16 @@ nm_wifi_ap_update_from_properties (NMWifiAP *ap,
 		len = MIN (32, len);
 
 		/* Stupid ieee80211 layer uses <hidden> */
-		if (   bytes && len
-		    && !(((len == 8) || (len == 9)) && !memcmp (bytes, "<hidden>", 8))
-		    && !nm_utils_is_empty_ssid (bytes, len))
-			changed |= nm_wifi_ap_set_ssid (ap, bytes, len);
+		if (   bytes
+		    && len
+		    && !(   NM_IN_SET (len, 8, 9)
+		         && memcmp (bytes, "<hidden>", len) == 0)
+		    && !nm_utils_is_empty_ssid (bytes, len)) {
+			/* good */
+		} else
+			len = 0;
+
+		changed |= nm_wifi_ap_set_ssid_arr (ap, bytes, len);
 
 		g_variant_unref (v);
 	}
@@ -961,7 +991,7 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 	const char *supplicant_id = "-";
 	const char *export_path;
 	guint32 chan;
-	char b1[200];
+	gs_free char *ssid_to_free = NULL;
 
 	g_return_val_if_fail (NM_IS_WIFI_AP (self), NULL);
 
@@ -977,10 +1007,9 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 		export_path = "/";
 
 	g_snprintf (str_buf, buf_len,
-	            "%17s %-32s [ %c %3u %3u%% %c W:%04X R:%04X ] %3us sup:%s [nm:%s]",
+	            "%17s %-35s [ %c %3u %3u%% %c W:%04X R:%04X ] %3us sup:%s [nm:%s]",
 	            priv->address ?: "(none)",
-	            nm_sprintf_buf (b1, "%s%s%s",
-	                            NM_PRINT_FMT_QUOTED (priv->ssid, "\"", nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len), "\"", "(none)")),
+	            (ssid_to_free = _nm_utils_ssid_to_string (priv->ssid)),
 	            (priv->mode == NM_802_11_MODE_ADHOC
 	                 ? '*'
 	                 : (priv->hotspot
@@ -1032,15 +1061,12 @@ nm_wifi_ap_check_compatible (NMWifiAP *self,
 		return FALSE;
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
-	if (   (ssid && !priv->ssid)
-	    || (priv->ssid && !ssid))
-		return FALSE;
-
-	if (   ssid && priv->ssid &&
-	    !nm_utils_same_ssid (g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid),
-	                         priv->ssid->data, priv->ssid->len,
-	                         TRUE))
-		return FALSE;
+	if (ssid != priv->ssid) {
+		if (!ssid || !priv->ssid)
+			return FALSE;
+		if (!g_bytes_equal (ssid, priv->ssid))
+			return FALSE;
+	}
 
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
 	if (bssid && (!priv->address || !nm_utils_hwaddr_matches (bssid, -1, priv->address, -1)))
@@ -1126,7 +1152,8 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->rsn_flags);
 		break;
 	case PROP_SSID:
-		g_value_take_variant (value, nm_wifi_ap_get_ssid_as_variant (self));
+		g_value_take_variant (value,
+		                      nm_utils_gbytes_to_variant_ay (priv->ssid));
 		break;
 	case PROP_FREQUENCY:
 		g_value_set_uint (value, priv->freq);
@@ -1202,7 +1229,6 @@ nm_wifi_ap_new_fake_from_connection (NMConnection *connection)
 	NMWifiAPPrivate *priv;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
-	GBytes *ssid;
 	const char *mode, *band, *key_mgmt;
 	guint32 channel;
 	NM80211ApSecurityFlags flags;
@@ -1213,14 +1239,12 @@ nm_wifi_ap_new_fake_from_connection (NMConnection *connection)
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wireless != NULL, NULL);
 
-	ssid = nm_setting_wireless_get_ssid (s_wireless);
-	g_return_val_if_fail (ssid != NULL, NULL);
-	g_return_val_if_fail (g_bytes_get_size (ssid) > 0, NULL);
-
 	ap = (NMWifiAP *) g_object_new (NM_TYPE_WIFI_AP, NULL);
 	priv = NM_WIFI_AP_GET_PRIVATE (ap);
 	priv->fake = TRUE;
-	nm_wifi_ap_set_ssid (ap, g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid));
+
+	nm_wifi_ap_set_ssid (ap,
+	                     nm_setting_wireless_get_ssid (s_wireless));
 
 	// FIXME: bssid too?
 
@@ -1334,7 +1358,7 @@ finalize (GObject *object)
 
 	g_free (priv->supplicant_path);
 	if (priv->ssid)
-		g_byte_array_free (priv->ssid, TRUE);
+		g_bytes_unref (priv->ssid);
 	g_free (priv->address);
 
 	G_OBJECT_CLASS (nm_wifi_ap_parent_class)->finalize (object);

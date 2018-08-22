@@ -491,7 +491,7 @@ nm_utils_gvalue_hash_dup (GHashTable *hash)
 	g_return_val_if_fail (hash != NULL, NULL);
 
 	table = g_hash_table_new_full (g_str_hash, g_str_equal,
-	                               (GDestroyNotify) g_free,
+	                               g_free,
 	                               value_destroy);
 
 	g_hash_table_foreach (hash, value_dup, table);

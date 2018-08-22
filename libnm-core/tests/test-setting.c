@@ -1002,7 +1002,7 @@ test_runner_loadbalance_sync_from_config (void)
 {
 	gs_unref_ptrarray GPtrArray *tx_hash = NULL;
 
-	tx_hash = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
+	tx_hash = g_ptr_array_new_with_free_func (g_free);
 	g_ptr_array_add (tx_hash, g_strdup ("eth"));
 	g_ptr_array_add (tx_hash, g_strdup ("ipv4"));
 	g_ptr_array_add (tx_hash, g_strdup ("ipv6"));
@@ -1039,7 +1039,7 @@ test_runner_lacp_sync_from_config (void)
 {
 	gs_unref_ptrarray GPtrArray *tx_hash = NULL;
 
-	tx_hash = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
+	tx_hash = g_ptr_array_new_with_free_func (g_free);
 	g_ptr_array_add (tx_hash, g_strdup ("eth"));
 	g_ptr_array_add (tx_hash, g_strdup ("ipv4"));
 	g_ptr_array_add (tx_hash, g_strdup ("ipv6"));

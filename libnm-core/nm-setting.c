@@ -573,7 +573,7 @@ get_property_for_dbus (NMSetting *setting,
 	else if (g_type_is_a (prop_value.g_type, G_TYPE_FLAGS))
 		dbus_value = g_variant_new_uint32 (g_value_get_flags (&prop_value));
 	else if (prop_value.g_type == G_TYPE_BYTES)
-		dbus_value = _nm_utils_bytes_to_dbus (&prop_value);
+		dbus_value = nm_utils_gbytes_to_variant_ay (g_value_get_boxed (&prop_value));
 	else
 		dbus_value = g_dbus_gvalue_to_gvariant (&prop_value, variant_type_for_gtype (prop_value.g_type));
 	g_value_unset (&prop_value);

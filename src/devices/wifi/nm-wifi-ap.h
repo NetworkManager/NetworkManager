@@ -72,10 +72,12 @@ gboolean          nm_wifi_ap_complete_connection      (NMWifiAP *self,
                                                        GError **error);
 
 const char *      nm_wifi_ap_get_supplicant_path      (NMWifiAP *ap);
-const GByteArray *nm_wifi_ap_get_ssid                 (const NMWifiAP *ap);
-gboolean          nm_wifi_ap_set_ssid                 (NMWifiAP *ap,
+GBytes           *nm_wifi_ap_get_ssid                 (const NMWifiAP *ap);
+gboolean          nm_wifi_ap_set_ssid_arr             (NMWifiAP *ap,
                                                        const guint8 *ssid,
-                                                       gsize len);
+                                                       gsize ssid_len);
+gboolean          nm_wifi_ap_set_ssid                 (NMWifiAP *ap,
+                                                       GBytes *ssid);
 const char *      nm_wifi_ap_get_address              (const NMWifiAP *ap);
 gboolean          nm_wifi_ap_set_address              (NMWifiAP *ap,
                                                        const char *addr);
