@@ -844,16 +844,12 @@ demarshal_generic (NMObject *object,
 			g_free (newval);
 	} else if (pspec->value_type == G_TYPE_BYTES) {
 		GBytes **param = (GBytes **)field;
-		gconstpointer val, old_val = NULL;
-		gsize length, old_length = 0;
+		gconstpointer val;
+		gsize length = 0;
 
 		val = g_variant_get_fixed_array (value, &length, 1);
 
-		if (*param)
-			old_val = g_bytes_get_data (*param, &old_length);
-		different =    old_length != length
-		            || (   length > 0
-		                && memcmp (old_val, val, length) != 0);
+		different = !nm_utils_gbytes_equal_mem (*param, val, length);
 		if (different) {
 			if (*param)
 				g_bytes_unref (*param);

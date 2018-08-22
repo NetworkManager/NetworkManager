@@ -5345,13 +5345,12 @@ test_hexstr2bin (void)
 
 	for (i = 0; i < G_N_ELEMENTS (items); i++) {
 		b = nm_utils_hexstr2bin (items[i].str);
-		if (items[i].expected_len) {
+		if (items[i].expected_len)
 			g_assert (b);
-			g_assert_cmpint (g_bytes_get_size (b), ==, items[i].expected_len);
-			g_assert (memcmp (g_bytes_get_data (b, NULL), items[i].expected, g_bytes_get_size (b)) == 0);
-			g_bytes_unref (b);
-		} else
-			g_assert (b == NULL);
+		else
+			g_assert (!b);
+		g_assert (nm_utils_gbytes_equal_mem (b, items[i].expected, items[i].expected_len));
+		g_bytes_unref (b);
 	}
 }
 

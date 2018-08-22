@@ -3120,8 +3120,7 @@ test_read_wifi_wpa_psk_hex (void)
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
 	g_assert (ssid);
-	g_assert_cmpint (g_bytes_get_size (ssid), ==, strlen (expected_ssid));
-	g_assert (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)) == 0);
+	g_assert (nm_utils_gbytes_equal_mem (ssid, expected_ssid, strlen (expected_ssid)));
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 

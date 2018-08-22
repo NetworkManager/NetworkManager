@@ -677,15 +677,10 @@ test_one_duid (const char *escaped, const guint8 *unescaped, guint len)
 {
 	GBytes *t;
 	char *w;
-	gsize t_len;
-	gconstpointer t_arr;
 
 	t = nm_dhcp_dhclient_unescape_duid (escaped);
 	g_assert (t);
-	t_arr = g_bytes_get_data (t, &t_len);
-	g_assert (t_arr);
-	g_assert_cmpint (t_len, ==, len);
-	g_assert_cmpint (memcmp (t_arr, unescaped, len), ==, 0);
+	g_assert (nm_utils_gbytes_equal_mem (t, unescaped, len));
 	g_bytes_unref (t);
 
 	t = g_bytes_new_static (unescaped, len);
@@ -735,15 +730,11 @@ test_read_duid_from_leasefile (void)
 	                            0x13, 0x60, 0x67, 0x20, 0xec, 0x4c, 0x70 };
 	gs_unref_bytes GBytes *duid = NULL;
 	GError *error = NULL;
-	gconstpointer duid_arr;
-	gsize duid_len;
 
 	duid = nm_dhcp_dhclient_read_duid (TEST_DIR"/test-dhclient-duid.leases", &error);
 	g_assert_no_error (error);
 	g_assert (duid);
-	duid_arr = g_bytes_get_data (duid, &duid_len);
-	g_assert_cmpint (duid_len, ==, sizeof (expected));
-	g_assert_cmpint (memcmp (duid_arr, expected, duid_len), ==, 0);
+	g_assert (nm_utils_gbytes_equal_mem (duid, expected, G_N_ELEMENTS (expected)));
 }
 
 static void
