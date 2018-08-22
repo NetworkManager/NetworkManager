@@ -385,6 +385,10 @@ nm_vpn_service_plugin_set_config (NMVpnServicePlugin *plugin,
 	g_signal_emit (plugin, signals[CONFIG], 0, config);
 	if (priv->dbus_vpn_service_plugin)
 		nmdbus_vpn_plugin_emit_config (priv->dbus_vpn_service_plugin, config);
+
+	if (   priv->has_ip4 == priv->got_ip4
+	    && priv->has_ip6 == priv->got_ip6)
+		nm_vpn_service_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STARTED);
 }
 
 void
