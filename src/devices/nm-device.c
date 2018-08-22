@@ -8065,35 +8065,35 @@ static GBytes *
 generate_duid_llt (const guint8 *hwaddr /* ETH_ALEN bytes */,
                    gint64 time)
 {
-	GByteArray *duid_arr;
+	guint8 *arr;
 	const guint16 duid_type = htons (1);
 	const guint16 hw_type = htons (ARPHRD_ETHER);
 	const guint32 duid_time = htonl (NM_MAX (0, time - EPOCH_DATETIME_200001010000));
 
-	duid_arr = g_byte_array_sized_new (2 + 4 + 2 + ETH_ALEN);
+	arr = g_new (guint8, 2 + 2 + 4 + ETH_ALEN);
 
-	g_byte_array_append (duid_arr, (const guint8 *) &duid_type, 2);
-	g_byte_array_append (duid_arr, (const guint8 *) &hw_type, 2);
-	g_byte_array_append (duid_arr, (const guint8 *) &duid_time, 4);
-	g_byte_array_append (duid_arr, hwaddr, ETH_ALEN);
+	memcpy (&arr[0], &duid_type, 2);
+	memcpy (&arr[2], &hw_type, 2);
+	memcpy (&arr[4], &duid_time, 4);
+	memcpy (&arr[8], hwaddr, ETH_ALEN);
 
-	return g_byte_array_free_to_bytes (duid_arr);
+	return g_bytes_new_take (arr, 2 + 2 + 4 + ETH_ALEN);
 }
 
 static GBytes *
 generate_duid_ll (const guint8 *hwaddr /* ETH_ALEN bytes */)
 {
-	GByteArray *duid_arr;
+	guint8 *arr;
 	const guint16 duid_type = htons (3);
 	const guint16 hw_type = htons (ARPHRD_ETHER);
 
-	duid_arr = g_byte_array_sized_new (2 + 2 + ETH_ALEN);
+	arr = g_new (guint8, 2 + 2 + ETH_ALEN);
 
-	g_byte_array_append (duid_arr, (const guint8 *) &duid_type, 2);
-	g_byte_array_append (duid_arr, (const guint8 *) &hw_type, 2);
-	g_byte_array_append (duid_arr, hwaddr, ETH_ALEN);
+	memcpy (&arr[0], &duid_type, 2);
+	memcpy (&arr[2], &hw_type, 2);
+	memcpy (&arr[4], hwaddr, ETH_ALEN);
 
-	return g_byte_array_free_to_bytes (duid_arr);
+	return g_bytes_new_take (arr, 2 + 2 + ETH_ALEN);
 }
 
 static GBytes *

@@ -27,7 +27,7 @@
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
 
-gboolean nm_wifi_utils_complete_connection (const GByteArray *ssid,
+gboolean nm_wifi_utils_complete_connection (GBytes *ssid,
                                             const char *bssid,
                                             NM80211Mode mode,
                                             guint32 flags,
@@ -39,6 +39,6 @@ gboolean nm_wifi_utils_complete_connection (const GByteArray *ssid,
 
 guint32 nm_wifi_utils_level_to_quality (int val);
 
-gboolean nm_wifi_utils_is_manf_default_ssid (const GByteArray *ssid);
+gboolean nm_wifi_utils_is_manf_default_ssid (GBytes *ssid);
 
 #endif  /* __NM_WIFI_UTILS_H__ */

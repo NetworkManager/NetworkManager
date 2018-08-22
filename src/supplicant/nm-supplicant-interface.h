@@ -100,7 +100,9 @@ void nm_supplicant_interface_disconnect (NMSupplicantInterface * iface);
 
 const char *nm_supplicant_interface_get_object_path (NMSupplicantInterface * iface);
 
-void nm_supplicant_interface_request_scan (NMSupplicantInterface * self, const GPtrArray *ssids);
+void nm_supplicant_interface_request_scan (NMSupplicantInterface *self,
+                                           GBytes *const*ssids,
+                                           guint ssids_len);
 
 NMSupplicantInterfaceState nm_supplicant_interface_get_state (NMSupplicantInterface * self);
 

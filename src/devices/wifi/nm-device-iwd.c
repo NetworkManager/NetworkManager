@@ -296,8 +296,11 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 		props = g_variant_new ("a{sv}", &builder);
 
 		ap = nm_wifi_ap_new_from_properties (path, props);
-		if (name[0] != '\0')
-			nm_wifi_ap_set_ssid (ap, (const guint8 *) name, strlen (name));
+
+		nm_wifi_ap_set_ssid_arr (ap,
+		                         (const guint8 *) name,
+		                         NM_MIN (32, strlen (name)));
+
 		nm_wifi_ap_set_strength (ap, nm_wifi_utils_level_to_quality (signal / 100));
 		nm_wifi_ap_set_freq (ap, 2417);
 		nm_wifi_ap_set_max_bitrate (ap, 65000);
@@ -473,7 +476,7 @@ is_connection_known_network (NMConnection *connection)
 {
 	NMSettingWireless *s_wireless;
 	GBytes *ssid;
-	gs_free char *str_ssid = NULL;
+	gs_free char *ssid_utf8 = NULL;
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	if (!s_wireless)
@@ -483,11 +486,9 @@ is_connection_known_network (NMConnection *connection)
 	if (!ssid)
 		return FALSE;
 
-	str_ssid = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
-	                                  g_bytes_get_size (ssid));
-
+	ssid_utf8 = _nm_utils_ssid_to_utf8 (ssid);
 	return nm_iwd_manager_is_known_network (nm_iwd_manager_get (),
-	                                        str_ssid,
+	                                        ssid_utf8,
 	                                        get_connection_iwd_security (connection));
 }
 
@@ -637,10 +638,9 @@ complete_connection (NMDevice *device,
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMSettingWireless *s_wifi;
 	const char *setting_mac;
-	char *str_ssid = NULL;
+	gs_free char *ssid_utf8 = NULL;
 	NMWifiAP *ap;
-	const GByteArray *ssid = NULL;
-	GByteArray *tmp_ssid = NULL;
+	GBytes *ssid;
 	GBytes *setting_ssid = NULL;
 	const char *perm_hw_addr;
 	const char *mode;
@@ -704,8 +704,7 @@ complete_connection (NMDevice *device,
 	}
 
 	ssid = nm_wifi_ap_get_ssid (ap);
-
-	if (ssid == NULL) {
+	if (!ssid) {
 		g_set_error_literal (error,
 		                     NM_DEVICE_ERROR,
 		                     NM_DEVICE_ERROR_INVALID_CONNECTION,
@@ -716,25 +715,18 @@ complete_connection (NMDevice *device,
 	if (!nm_wifi_ap_complete_connection (ap,
 	                                     connection,
 	                                     nm_wifi_utils_is_manf_default_ssid (ssid),
-	                                     error)) {
-		if (tmp_ssid)
-			g_byte_array_unref (tmp_ssid);
+	                                     error))
 		return FALSE;
-	}
 
-	str_ssid = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
-
+	ssid_utf8 = _nm_utils_ssid_to_utf8 (ssid);
 	nm_utils_complete_generic (nm_device_get_platform (device),
 	                           connection,
 	                           NM_SETTING_WIRELESS_SETTING_NAME,
 	                           existing_connections,
-	                           str_ssid,
-	                           str_ssid,
+	                           ssid_utf8,
+	                           ssid_utf8,
 	                           NULL,
 	                           TRUE);
-	g_free (str_ssid);
-	if (tmp_ssid)
-		g_byte_array_unref (tmp_ssid);
 
 	/* 8021x networks can only be used if they've been provisioned on the IWD side and
 	 * thus are Known Networks.
@@ -1251,7 +1243,7 @@ network_connect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	GBytes *ssid;
-	gs_free char *str_ssid = NULL;
+	gs_free char *ssid_utf8 = NULL;
 
 	if (!_nm_dbus_proxy_call_finish (G_DBUS_PROXY (source), res,
 	                                 G_VARIANT_TYPE ("()"),
@@ -1303,15 +1295,14 @@ network_connect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	if (!ssid)
 		goto failed;
 
-	str_ssid = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
-	                                  g_bytes_get_size (ssid));
+	ssid_utf8 = _nm_utils_ssid_to_utf8 (ssid);
 
 	_LOGI (LOGD_DEVICE | LOGD_WIFI,
 	       "Activation: (wifi) Stage 2 of 5 (Device Configure) successful.  Connected to '%s'.",
-	       str_ssid);
+	       ssid_utf8);
 	nm_device_activate_schedule_stage3_ip_config_start (device);
 
-	nm_iwd_manager_network_connected (nm_iwd_manager_get (), str_ssid,
+	nm_iwd_manager_network_connected (nm_iwd_manager_get (), ssid_utf8,
 	                                  get_connection_iwd_security (connection));
 
 	return;
