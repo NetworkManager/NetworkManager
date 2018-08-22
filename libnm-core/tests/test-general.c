@@ -5340,17 +5340,17 @@ test_hexstr2bin (void)
 		{ "aab:ccc:ddd" },
 		{ "aab::ccc:ddd" },
 	};
-	GBytes *b;
 	guint i;
 
 	for (i = 0; i < G_N_ELEMENTS (items); i++) {
+		gs_unref_bytes GBytes *b = NULL;
+
 		b = nm_utils_hexstr2bin (items[i].str);
 		if (items[i].expected_len)
 			g_assert (b);
 		else
 			g_assert (!b);
 		g_assert (nm_utils_gbytes_equal_mem (b, items[i].expected, items[i].expected_len));
-		g_bytes_unref (b);
 	}
 }
 

@@ -675,22 +675,18 @@ test_existing_multiline_alsoreq (void)
 static void
 test_one_duid (const char *escaped, const guint8 *unescaped, guint len)
 {
-	GBytes *t;
-	char *w;
+	gs_unref_bytes GBytes *t1 = NULL;
+	gs_unref_bytes GBytes *t2 = NULL;
+	gs_free char *w = NULL;
 
-	t = nm_dhcp_dhclient_unescape_duid (escaped);
-	g_assert (t);
-	g_assert (nm_utils_gbytes_equal_mem (t, unescaped, len));
-	g_bytes_unref (t);
+	t1 = nm_dhcp_dhclient_unescape_duid (escaped);
+	g_assert (t1);
+	g_assert (nm_utils_gbytes_equal_mem (t1, unescaped, len));
 
-	t = g_bytes_new_static (unescaped, len);
-	w = nm_dhcp_dhclient_escape_duid (t);
+	t2 = g_bytes_new (unescaped, len);
+	w = nm_dhcp_dhclient_escape_duid (t2);
 	g_assert (w);
-	g_assert_cmpint (strlen (escaped), ==, strlen (w));
 	g_assert_cmpstr (escaped, ==, w);
-
-	g_bytes_unref (t);
-	g_free (w);
 }
 
 static void
@@ -732,8 +728,8 @@ test_read_duid_from_leasefile (void)
 	GError *error = NULL;
 
 	duid = nm_dhcp_dhclient_read_duid (TEST_DIR"/test-dhclient-duid.leases", &error);
-	g_assert_no_error (error);
-	g_assert (duid);
+	nmtst_assert_success (duid, error);
+
 	g_assert (nm_utils_gbytes_equal_mem (duid, expected, G_N_ELEMENTS (expected)));
 }
 

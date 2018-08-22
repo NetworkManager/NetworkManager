@@ -275,8 +275,9 @@ _keyfile_convert (NMConnection **con,
 
 				b1 = nm_setting_802_1x_get_ca_cert_blob (s1);
 				b2 = nm_setting_802_1x_get_ca_cert_blob (s2);
-				g_assert_cmpint (g_bytes_get_size (b1), ==, g_bytes_get_size (b2));
-				g_assert (memcmp (g_bytes_get_data (b1, NULL), g_bytes_get_data (b2, NULL), g_bytes_get_size (b1)) == 0);
+				g_assert (b1);
+				g_assert (b2);
+				g_assert (g_bytes_equal (b1, b2));
 				break;
 			}
 			default:

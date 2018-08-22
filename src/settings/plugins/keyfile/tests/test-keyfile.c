@@ -1021,14 +1021,11 @@ test_read_intlike_ssid (void)
 	const char *expected_ssid = "101";
 
 	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Intlike_SSID", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
+	nmtst_assert_success (connection, error);
 
 	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_success (success, error);
 
-	/* SSID */
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
@@ -1048,14 +1045,11 @@ test_read_intlike_ssid_2 (void)
 	const char *expected_ssid = "11;12;13;";
 
 	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Intlike_SSID_2", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
+	nmtst_assert_success (connection, error);
 
 	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_success (success, error);
 
-	/* SSID */
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
@@ -2231,13 +2225,11 @@ test_read_new_wireless_group_names (void)
 	gboolean success;
 
 	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR"/Test_New_Wireless_Group_Names", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_success (connection, error);
 
-	/* Wifi setting */
+	success = nm_connection_verify (connection, &error);
+	nmtst_assert_success (success, error);
+
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
@@ -2247,7 +2239,6 @@ test_read_new_wireless_group_names (void)
 
 	g_assert_cmpstr (nm_setting_wireless_get_mode (s_wifi), ==, NM_SETTING_WIRELESS_MODE_INFRA);
 
-	/* Wifi security setting */
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
 	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "wpa-psk");

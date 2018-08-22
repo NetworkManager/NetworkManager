@@ -50,7 +50,7 @@ compare_blob_data (const char *test,
                    const char *key_path,
                    GBytes *key)
 {
-	char *contents = NULL;
+	gs_free char *contents = NULL;
 	gsize len = 0;
 	GError *error = NULL;
 	gboolean success;
@@ -61,8 +61,6 @@ compare_blob_data (const char *test,
 	nmtst_assert_success (success, error);
 
 	g_assert_cmpmem (contents, len, g_bytes_get_data (key, NULL), g_bytes_get_size (key));
-
-	g_free (contents);
 }
 
 static void
