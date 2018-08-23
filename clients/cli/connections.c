@@ -801,6 +801,7 @@ typedef struct {
 	NMConnection *connection;
 	NMSetting *setting;
 	const char *property;
+	char **words;
 } TabCompletionInfo;
 
 static TabCompletionInfo nmc_tab_completion;
@@ -3677,6 +3678,18 @@ _meta_abstract_complete (const NMMetaAbstractInfo *abstract_info, const char *te
 	return NULL;
 }
 
+static char *
+_meta_abstract_generator (const char *text, int state)
+{
+	if (nmc_tab_completion.words) {
+		return nmc_rl_gen_func_basic (text,
+		                              state,
+		                              (const char *const *) nmc_tab_completion.words);
+	}
+
+	return NULL;
+}
+
 static void
 _meta_abstract_get (const NMMetaAbstractInfo *abstract_info,
                     const NMMetaSettingInfoEditor **out_setting_info,
@@ -4744,6 +4757,7 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 	rl_compentry_func_t *generator_func = NULL;
 	gs_free char *no = g_strdup_printf ("[%s]: ", _("no"));
 	gs_free char *yes = g_strdup_printf ("[%s]: ", _("yes"));
+	const NMMetaAbstractInfo *info;
 
 	/* Disable readline's default filename completion */
 	rl_attempted_completion_over = 1;
@@ -4778,12 +4792,13 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 			} else {
 				if (   property_info->prompt
 				    && g_str_has_prefix (rl_prompt, property_info->prompt)) {
-					char **values;
-
-					values = _meta_abstract_complete ((const NMMetaAbstractInfo *) property_info, text);
-					if (values)
-						return values;
-					goto next;
+					info = (const NMMetaAbstractInfo *) property_info;
+					nmc_tab_completion.words = _meta_abstract_complete (info, text);
+					if (nmc_tab_completion.words) {
+						match_array = rl_completion_matches (text, _meta_abstract_generator);
+						nm_clear_pointer (&nmc_tab_completion.words, g_strfreev);
+					}
+					return match_array;
 				}
 			}
 		}
@@ -8931,6 +8946,7 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 {
 	char **match_array = NULL;
 	rl_compentry_func_t *generator_func = NULL;
+	const NMMetaAbstractInfo *info;
 
 	/* Disable readline's default filename completion */
 	rl_attempted_completion_over = 1;
@@ -8948,7 +8964,9 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 	} else if (g_strcmp0 (rl_prompt, PROMPT_ACTIVE_CONNECTIONS) == 0) {
 		generator_func = gen_func_active_connection_names;
 	} else if (g_strcmp0 (rl_prompt, NM_META_TEXT_PROMPT_VPN_TYPE) == 0) {
-		return _meta_abstract_complete ((const NMMetaAbstractInfo *) nm_meta_property_info_vpn_service_type, text);
+		info = (const NMMetaAbstractInfo *) nm_meta_property_info_vpn_service_type;
+		nmc_tab_completion.words = _meta_abstract_complete (info, text);
+		generator_func = _meta_abstract_generator;
 	} else if (g_strcmp0 (rl_prompt, PROMPT_IMPORT_FILE) == 0) {
 		rl_attempted_completion_over = 0;
 		rl_complete_with_tilde_expansion = 1;
@@ -8959,6 +8977,7 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 	if (generator_func)
 		match_array = rl_completion_matches (text, generator_func);
 
+	g_clear_pointer (&nmc_tab_completion.words, g_strfreev);
 	return match_array;
 }
 
