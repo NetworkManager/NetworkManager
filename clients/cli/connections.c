@@ -67,10 +67,10 @@ struct _OptionInfo {
 
 /* define some other prompts */
 
-#define PROMPT_CONNECTION  _("Connection (name, UUID, or path)")
-#define PROMPT_VPN_CONNECTION  _("VPN connection (name, UUID, or path)")
-#define PROMPT_CONNECTIONS _("Connection(s) (name, UUID, or path)")
-#define PROMPT_ACTIVE_CONNECTIONS _("Connection(s) (name, UUID, path or apath)")
+#define PROMPT_CONNECTION  _("Connection (name, UUID, or path): ")
+#define PROMPT_VPN_CONNECTION  _("VPN connection (name, UUID, or path): ")
+#define PROMPT_CONNECTIONS _("Connection(s) (name, UUID, or path): ")
+#define PROMPT_ACTIVE_CONNECTIONS _("Connection(s) (name, UUID, path or apath): ")
 
 #define BASE_PROMPT "nmcli> "
 
@@ -2723,7 +2723,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		/* nmc_do_cmd() should not call this with argc=0. */
 		g_assert (!nmc->complete);
 
-		line = nmc_readline ("%s: ", PROMPT_CONNECTION);
+		line = nmc_readline (PROMPT_CONNECTION);
 		nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
 		g_free (line);
 		argv_ptr = &arg_arr;
@@ -8320,7 +8320,7 @@ do_connection_clone (NmCli *nmc, int argc, char **argv)
 		/* nmc_do_cmd() should not call this with argc=0. */
 		g_assert (!nmc->complete);
 
-		line = nmc_readline ("%s: ", PROMPT_CONNECTION);
+		line = nmc_readline (PROMPT_CONNECTION);
 		nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
 		g_free (line);
 		argv_ptr = &arg_arr;
@@ -8430,7 +8430,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 			/* nmc_do_cmd() should not call this with argc=0. */
 			g_assert (!nmc->complete);
 
-			line = nmc_readline ("%s: ", PROMPT_CONNECTIONS);
+			line = nmc_readline (PROMPT_CONNECTIONS);
 			nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
 			g_free (line);
 			arg_ptr = arg_arr;
@@ -8681,7 +8681,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 		g_assert (!nmc->complete);
 
 		if (nmc->ask) {
-			type_ask = nmc_readline (gettext (NM_META_TEXT_PROMPT_VPN_TYPE));
+			type_ask = nmc_readline ("%s: ", gettext (NM_META_TEXT_PROMPT_VPN_TYPE));
 			filename_ask = nmc_readline (gettext (PROMPT_IMPORT_FILE));
 			type = type_ask = type_ask ? g_strstrip (type_ask) : NULL;
 			filename = filename_ask = filename_ask ? g_strstrip (filename_ask) : NULL;
@@ -8806,7 +8806,7 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 		/* nmc_do_cmd() should not call this with argc=0. */
 		g_assert (!nmc->complete);
 
-		line = nmc_readline ("%s: ", PROMPT_VPN_CONNECTION);
+		line = nmc_readline (PROMPT_VPN_CONNECTION);
 		nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
 		g_free (line);
 		argv_ptr = &arg_arr;
@@ -8963,7 +8963,7 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 		generator_func = gen_func_connection_names;
 	} else if (g_strcmp0 (rl_prompt, PROMPT_ACTIVE_CONNECTIONS) == 0) {
 		generator_func = gen_func_active_connection_names;
-	} else if (g_strcmp0 (rl_prompt, NM_META_TEXT_PROMPT_VPN_TYPE) == 0) {
+	} else if (rl_prompt && g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_VPN_TYPE)) {
 		info = (const NMMetaAbstractInfo *) nm_meta_property_info_vpn_service_type;
 		nmc_tab_completion.words = _meta_abstract_complete (info, text);
 		generator_func = _meta_abstract_generator;
