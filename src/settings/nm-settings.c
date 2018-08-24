@@ -526,28 +526,6 @@ nm_settings_get_unmanaged_specs (NMSettings *self)
 	return priv->unmanaged_specs;
 }
 
-static NMSettingsPlugin *
-get_plugin (NMSettings *self, gboolean has_add_connection)
-{
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GSList *iter;
-
-	g_return_val_if_fail (self != NULL, NULL);
-
-	/* Do any of the plugins support the given capability? */
-	for (iter = priv->plugins; iter; iter = iter->next) {
-		NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
-
-		if (!has_add_connection)
-			return plugin;
-
-		if (NM_SETTINGS_PLUGIN_GET_INTERFACE (iter->data)->add_connection != NULL)
-			return plugin;
-	}
-
-	return NULL;
-}
-
 static gboolean
 find_spec (GSList *spec_list, const char *spec)
 {
@@ -1297,14 +1275,6 @@ nm_settings_add_connection_dbus (NMSettings *self,
 		goto done;
 	}
 
-	/* Do any of the plugins support adding? */
-	if (!get_plugin (self, TRUE)) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_NOT_SUPPORTED,
-		                             "None of the registered plugins support add.");
-		goto done;
-	}
-
 	if (!nm_auth_is_subject_in_acl_set_error (connection,
 	                                          subject,
 	                                          NM_SETTINGS_ERROR,
@@ -1884,7 +1854,7 @@ get_property (GObject *object, guint prop_id,
 		                      : NULL);
 		break;
 	case PROP_CAN_MODIFY:
-		g_value_set_boolean (value, !!get_plugin (self, TRUE));
+		g_value_set_boolean (value, TRUE);
 		break;
 	case PROP_CONNECTIONS:
 		if (priv->connections_loaded) {
