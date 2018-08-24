@@ -44,7 +44,7 @@ typedef struct {
 	GTypeInterface g_iface;
 
 	/* Called when the plugin is loaded to initialize it */
-	void     (*init) (NMSettingsPlugin *config);
+	void (*initialize) (NMSettingsPlugin *config);
 
 	/* Returns a GSList of NMSettingsConnection objects that represent
 	 * connections the plugin knows about.  The returned list is freed by the
@@ -113,7 +113,7 @@ typedef struct {
 
 GType nm_settings_plugin_get_type (void);
 
-void nm_settings_plugin_init (NMSettingsPlugin *config);
+void nm_settings_plugin_initialize (NMSettingsPlugin *config);
 
 GSList *nm_settings_plugin_get_connections (NMSettingsPlugin *config);
 

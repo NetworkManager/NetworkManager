@@ -65,12 +65,12 @@ nm_settings_plugin_default_init (NMSettingsPluginInterface *g_iface)
 }
 
 void
-nm_settings_plugin_init (NMSettingsPlugin *config)
+nm_settings_plugin_initialize (NMSettingsPlugin *config)
 {
 	g_return_if_fail (config != NULL);
 
-	if (NM_SETTINGS_PLUGIN_GET_INTERFACE (config)->init)
-		NM_SETTINGS_PLUGIN_GET_INTERFACE (config)->init (config);
+	if (NM_SETTINGS_PLUGIN_GET_INTERFACE (config)->initialize)
+		NM_SETTINGS_PLUGIN_GET_INTERFACE (config)->initialize (config);
 }
 
 GSList *
