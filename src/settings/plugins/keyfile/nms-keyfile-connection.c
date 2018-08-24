@@ -75,9 +75,7 @@ commit_changes (NMSettingsConnection *connection,
 	                                    error))
 		return FALSE;
 
-	/* Update the filename if it changed */
-	if (   path
-	    && g_strcmp0 (path, nm_settings_connection_get_filename (connection)) != 0) {
+	if (!nm_streq0 (path, nm_settings_connection_get_filename (connection))) {
 		gs_free char *old_path = g_strdup (nm_settings_connection_get_filename (connection));
 
 		nm_settings_connection_set_filename (connection, path);

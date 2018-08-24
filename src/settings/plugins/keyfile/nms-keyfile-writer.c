@@ -299,11 +299,6 @@ _internal_write_connection (NMConnection *connection,
 		return FALSE;
 	}
 
-	if (out_path && g_strcmp0 (existing_path, path)) {
-		*out_path = path;  /* pass path out to caller */
-		path = NULL;
-	}
-
 	if (out_reread || out_reread_same)
 	{
 		gs_unref_object NMConnection *reread = NULL;
@@ -334,6 +329,8 @@ _internal_write_connection (NMConnection *connection,
 		NM_SET_OUT (out_reread, g_steal_pointer (&reread));
 		NM_SET_OUT (out_reread_same, reread_same);
 	}
+
+	NM_SET_OUT (out_path, g_steal_pointer (&path));
 
 	return TRUE;
 }
