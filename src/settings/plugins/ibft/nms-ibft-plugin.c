@@ -121,11 +121,6 @@ get_connections (NMSettingsPlugin *config)
 /*****************************************************************************/
 
 static void
-init (NMSettingsPlugin *config)
-{
-}
-
-static void
 nms_ibft_plugin_init (NMSIbftPlugin *self)
 {
 	NMSIbftPluginPrivate *priv = NMS_IBFT_PLUGIN_GET_PRIVATE (self);
@@ -159,7 +154,6 @@ static void
 settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 {
 	plugin_iface->get_connections = get_connections;
-	plugin_iface->init = init;
 }
 
 /*****************************************************************************/

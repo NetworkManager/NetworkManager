@@ -1002,11 +1002,6 @@ config_changed_cb (NMConfig *config,
 /*****************************************************************************/
 
 static void
-init (NMSettingsPlugin *config)
-{
-}
-
-static void
 settings_plugin_ifcfg_init (SettingsPluginIfcfg *plugin)
 {
 	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE ((SettingsPluginIfcfg *) plugin);
@@ -1080,7 +1075,6 @@ settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 	plugin_iface->reload_connections = reload_connections;
 	plugin_iface->get_unmanaged_specs = get_unmanaged_specs;
 	plugin_iface->get_unrecognized_specs = get_unrecognized_specs;
-	plugin_iface->init = init;
 }
 
 /*****************************************************************************/
