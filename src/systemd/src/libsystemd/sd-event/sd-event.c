@@ -1,6 +1,4 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
-/***
-***/
 
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
@@ -92,7 +90,7 @@ struct sd_event_source {
         char *description;
 
         EventSourceType type:5;
-        int enabled:3;
+        signed int enabled:3;
         bool pending:1;
         bool dispatching:1;
         bool floating:1;
