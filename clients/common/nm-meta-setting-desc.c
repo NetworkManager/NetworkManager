@@ -2485,11 +2485,9 @@ _complete_fcn_connection_type (ARGS_COMPLETE_FCN)
 			if (!text || strncmp (text, v, text_len) == 0)
 				result[j++] = g_strdup (v);
 		}
-		if (!text || !*text || !v) {
-			v = setting_info->general->setting_name;
-			if (!text || strncmp (text, v, text_len) == 0)
-				result[j++] = g_strdup (v);
-		}
+		v = setting_info->general->setting_name;
+		if (!text || strncmp (text, v, text_len) == 0)
+			result[j++] = g_strdup (v);
 	}
 	if (j)
 		result[j++] = NULL;
