@@ -76,19 +76,15 @@ typedef struct {
 } SettingsPluginIfupdownPrivate;
 
 struct _SettingsPluginIfupdown {
-	GObject parent;
+	NMSettingsPlugin parent;
 	SettingsPluginIfupdownPrivate _priv;
 };
 
 struct _SettingsPluginIfupdownClass {
-	GObjectClass parent;
+	NMSettingsPluginClass parent;
 };
 
-static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
-
-G_DEFINE_TYPE_EXTENDED (SettingsPluginIfupdown, settings_plugin_ifupdown, G_TYPE_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
-                                               settings_plugin_interface_init))
+G_DEFINE_TYPE (SettingsPluginIfupdown, settings_plugin_ifupdown, NM_TYPE_SETTINGS_PLUGIN)
 
 #define SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, SettingsPluginIfupdown, SETTINGS_IS_PLUGIN_IFUPDOWN)
 
@@ -174,7 +170,7 @@ udev_device_added (SettingsPluginIfupdown *self, struct udev_device *device)
 		bind_device_to_connection (self, device, exported);
 
 	if (ALWAYS_UNMANAGE || priv->unmanage_well_known)
-		g_signal_emit_by_name (G_OBJECT (self), NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED);
+		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
 }
 
 static void
@@ -194,7 +190,7 @@ udev_device_removed (SettingsPluginIfupdown *self, struct udev_device *device)
 		return;
 
 	if (ALWAYS_UNMANAGE || priv->unmanage_well_known)
-		g_signal_emit_by_name (G_OBJECT (self), NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED);
+		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
 }
 
 static void
@@ -214,7 +210,7 @@ udev_device_changed (SettingsPluginIfupdown *self, struct udev_device *device)
 		return;
 
 	if (ALWAYS_UNMANAGE || priv->unmanage_well_known)
-		g_signal_emit_by_name (G_OBJECT (self), NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED);
+		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
 }
 
 static void
@@ -455,9 +451,8 @@ initialize (NMSettingsPlugin *config)
 		GList *cl_iter;
 
 		for (cl_iter = con_list; cl_iter; cl_iter = g_list_next (cl_iter)) {
-			g_signal_emit_by_name (self,
-			                       NM_SETTINGS_PLUGIN_CONNECTION_ADDED,
-			                       NM_SETTINGS_CONNECTION (cl_iter->data));
+			_nm_settings_plugin_emit_signal_connection_added (NM_SETTINGS_PLUGIN (self),
+			                                                  NM_SETTINGS_CONNECTION (cl_iter->data));
 		}
 		g_list_free (con_list);
 	}
@@ -487,26 +482,22 @@ dispose (GObject *object)
 }
 
 static void
-settings_plugin_ifupdown_class_init (SettingsPluginIfupdownClass *req_class)
+settings_plugin_ifupdown_class_init (SettingsPluginIfupdownClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingsPluginClass *plugin_class = NM_SETTINGS_PLUGIN_CLASS (klass);
 
 	object_class->dispose = dispose;
-}
 
-static void
-settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
-{
-	plugin_iface->initialize          = initialize;
-	plugin_iface->get_connections     = get_connections;
-	plugin_iface->get_unmanaged_specs = get_unmanaged_specs;
+	plugin_class->initialize          = initialize;
+	plugin_class->get_connections     = get_connections;
+	plugin_class->get_unmanaged_specs = get_unmanaged_specs;
 }
 
 /*****************************************************************************/
 
-G_MODULE_EXPORT GObject *
+G_MODULE_EXPORT NMSettingsPlugin *
 nm_settings_plugin_factory (void)
 {
-	return G_OBJECT (g_object_ref (settings_plugin_ifupdown_get ()));
+	return NM_SETTINGS_PLUGIN (g_object_ref (settings_plugin_ifupdown_get ()));
 }
-

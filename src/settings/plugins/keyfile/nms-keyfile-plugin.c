@@ -56,19 +56,15 @@ typedef struct {
 } NMSKeyfilePluginPrivate;
 
 struct _NMSKeyfilePlugin {
-	GObject parent;
+	NMSettingsPlugin parent;
 	NMSKeyfilePluginPrivate _priv;
 };
 
 struct _NMSKeyfilePluginClass {
-	GObjectClass parent;
+	NMSettingsPluginClass parent;
 };
 
-static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
-
-G_DEFINE_TYPE_EXTENDED (NMSKeyfilePlugin, nms_keyfile_plugin, G_TYPE_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
-                                               settings_plugin_interface_init))
+G_DEFINE_TYPE (NMSKeyfilePlugin, nms_keyfile_plugin, NM_TYPE_SETTINGS_PLUGIN)
 
 #define NMS_KEYFILE_PLUGIN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMSKeyfilePlugin, NMS_IS_KEYFILE_PLUGIN)
 
@@ -287,8 +283,10 @@ update_connection (NMSKeyfilePlugin *self,
 		if (!source) {
 			/* Only raise the signal if we were called without source, i.e. if we read the connection from file.
 			 * Otherwise, we were called by add_connection() which does not expect the signal. */
-			g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_CONNECTION_ADDED, connection_new);
+			_nm_settings_plugin_emit_signal_connection_added (NM_SETTINGS_PLUGIN (self),
+			                                                  NM_SETTINGS_CONNECTION (connection_new));
 		}
+
 		return connection_new;
 	}
 }
@@ -341,13 +339,14 @@ config_changed_cb (NMConfig *config,
                    NMConfigData *old_data,
                    NMSKeyfilePlugin *self)
 {
-	gs_free char *old_value = NULL, *new_value = NULL;
+	gs_free char *old_value = NULL;
+	gs_free char *new_value = NULL;
 
 	old_value = nm_config_data_get_value (old_data, NM_CONFIG_KEYFILE_GROUP_KEYFILE, NM_CONFIG_KEYFILE_KEY_KEYFILE_UNMANAGED_DEVICES, NM_CONFIG_GET_VALUE_TYPE_SPEC);
 	new_value = nm_config_data_get_value (config_data, NM_CONFIG_KEYFILE_GROUP_KEYFILE, NM_CONFIG_KEYFILE_KEY_KEYFILE_UNMANAGED_DEVICES, NM_CONFIG_GET_VALUE_TYPE_SPEC);
 
-	if (g_strcmp0 (old_value, new_value) != 0)
-		g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED);
+	if (!nm_streq0 (old_value, new_value))
+		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
 }
 
 static void
@@ -616,20 +615,17 @@ dispose (GObject *object)
 }
 
 static void
-nms_keyfile_plugin_class_init (NMSKeyfilePluginClass *req_class)
+nms_keyfile_plugin_class_init (NMSKeyfilePluginClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingsPluginClass *plugin_class = NM_SETTINGS_PLUGIN_CLASS (klass);
 
 	object_class->constructed = constructed;
-	object_class->dispose = dispose;
-}
+	object_class->dispose     = dispose;
 
-static void
-settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
-{
-	plugin_iface->get_connections = get_connections;
-	plugin_iface->load_connection = load_connection;
-	plugin_iface->reload_connections = reload_connections;
-	plugin_iface->add_connection = add_connection;
-	plugin_iface->get_unmanaged_specs = get_unmanaged_specs;
+	plugin_class->get_connections     = get_connections;
+	plugin_class->load_connection     = load_connection;
+	plugin_class->reload_connections  = reload_connections;
+	plugin_class->add_connection      = add_connection;
+	plugin_class->get_unmanaged_specs = get_unmanaged_specs;
 }
