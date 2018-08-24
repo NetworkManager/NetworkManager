@@ -625,8 +625,8 @@ add_plugin (NMSettings *self, NMSettingsPlugin *plugin)
 	}
 
 	priv->plugins = g_slist_append (priv->plugins, g_object_ref (plugin));
-	nm_settings_plugin_init (plugin);
 
+	nm_settings_plugin_initialize (plugin);
 
 	path = g_object_get_qdata (G_OBJECT (plugin), plugin_module_path_quark ());
 

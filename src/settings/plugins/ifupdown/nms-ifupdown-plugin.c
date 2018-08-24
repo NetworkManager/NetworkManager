@@ -306,7 +306,7 @@ _udev_device_unref (gpointer ptr)
 }
 
 static void
-init (NMSettingsPlugin *config)
+initialize (NMSettingsPlugin *config)
 {
 	SettingsPluginIfupdown *self = SETTINGS_PLUGIN_IFUPDOWN (config);
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
@@ -497,8 +497,8 @@ settings_plugin_ifupdown_class_init (SettingsPluginIfupdownClass *req_class)
 static void
 settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 {
-	plugin_iface->init = init;
-	plugin_iface->get_connections = get_connections;
+	plugin_iface->initialize          = initialize;
+	plugin_iface->get_connections     = get_connections;
 	plugin_iface->get_unmanaged_specs = get_unmanaged_specs;
 }
 
