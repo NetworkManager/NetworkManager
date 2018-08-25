@@ -42,10 +42,15 @@ static void
 add_block (if_parser *parser, const char *type, const char* name)
 {
 	if_block *ifb;
+	gsize l_type, l_name;
 
-	ifb = g_slice_new (if_block);
-	ifb->name = g_strdup (name);
-	ifb->type = g_strdup (type);
+	l_type = strlen (type) + 1;
+	l_name = strlen (name) + 1;
+
+	ifb = g_malloc (sizeof (if_block) + l_type + l_name);
+	memcpy ((char *) ifb->name, name, l_name);
+	ifb->type = &ifb->name[l_name];
+	memcpy ((char *) ifb->type, type, l_type);
 	c_list_init (&ifb->data_lst_head);
 	c_list_link_tail (&parser->block_lst_head, &ifb->block_lst);
 }
@@ -56,6 +61,7 @@ add_data (if_parser *parser, const char *key, const char *data)
 	if_block *last_block;
 	if_data *ifd;
 	char *idx;
+	gsize l_key, l_data;
 
 	last_block = c_list_last_entry (&parser->block_lst_head, if_block, block_lst);
 
@@ -63,13 +69,17 @@ add_data (if_parser *parser, const char *key, const char *data)
 	if (!last_block)
 		return;
 
-	ifd = g_slice_new (if_data);
-	ifd->key = g_strdup (key);
-	ifd->data = g_strdup (data);
+	l_key = strlen (key) + 1;
+	l_data = strlen (data) + 1;
+
+	ifd = g_malloc (sizeof (if_data) + l_key + l_data);
+	memcpy ((char *) ifd->key, key, l_key);
+	ifd->data = &ifd->key[l_key];
+	memcpy ((char *) ifd->data, data, l_data);
 
 	/* Normalize keys. Convert '_' to '-', as ifupdown accepts both variants.
 	 * When querying keys via ifparser_getkey(), use '-'. */
-	idx = ifd->key;
+	idx = (char *) ifd->key;
 	while ((idx = strchr (idx, '_')))
 		*(idx++) = '-';
 
@@ -307,9 +317,7 @@ static void
 _destroy_data (if_data *ifd)
 {
 	c_list_unlink_stale (&ifd->data_lst);
-	g_free (ifd->key);
-	g_free (ifd->data);
-	g_slice_free (if_data, ifd);
+	g_free (ifd);
 }
 
 static void
@@ -320,9 +328,7 @@ _destroy_block (if_block* ifb)
 	while ((ifd = c_list_first_entry (&ifb->data_lst_head, if_data, data_lst)))
 		_destroy_data (ifd);
 	c_list_unlink_stale (&ifb->block_lst);
-	g_free (ifb->name);
-	g_free (ifb->type);
-	g_slice_free (if_block, ifb);
+	g_free (ifb);
 }
 
 void
