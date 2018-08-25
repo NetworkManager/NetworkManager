@@ -152,14 +152,15 @@ initialize (NMSettingsPlugin *plugin)
 	SettingsPluginIfupdown *self = SETTINGS_PLUGIN_IFUPDOWN (plugin);
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
 	gs_unref_hashtable GHashTable *auto_ifaces = NULL;
-	if_block *block = NULL;
+	nm_auto_ifparser if_parser *parser = NULL;
+	if_block *block;
 	GHashTableIter con_iter;
 	const char *block_name;
 	NMIfupdownConnection *conn;
 
 	/* Read in all the interfaces */
-	ifparser_init (ENI_INTERFACES_FILE, 0);
-	for (block = ifparser_getfirst (); block; block = block->next) {
+	parser = ifparser_parse (ENI_INTERFACES_FILE, 0);
+	for (block = ifparser_getfirst (parser); block; block = block->next) {
 
 		if (NM_IN_STRSET (block->type, "auto", "allow-hotplug")) {
 			if (!auto_ifaces)
