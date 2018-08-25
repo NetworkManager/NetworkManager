@@ -67,7 +67,7 @@ typedef struct {
 	/* Stores any network interfaces the kernel knows about */
 	GHashTable *kernel_ifaces;
 
-	gboolean unmanage_well_known;
+	bool ifupdown_managed;
 } SettingsPluginIfupdownPrivate;
 
 struct _SettingsPluginIfupdown {
@@ -175,7 +175,7 @@ udev_device_added (SettingsPluginIfupdown *self, struct udev_device *device)
 	if (exported)
 		bind_device_to_connection (self, device, exported);
 
-	if (priv->unmanage_well_known)
+	if (!priv->ifupdown_managed)
 		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
 }
 
@@ -195,7 +195,7 @@ udev_device_removed (SettingsPluginIfupdown *self, struct udev_device *device)
 	if (!g_hash_table_remove (priv->kernel_ifaces, iface))
 		return;
 
-	if (priv->unmanage_well_known)
+	if (!priv->ifupdown_managed)
 		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
 }
 
@@ -215,7 +215,7 @@ udev_device_changed (SettingsPluginIfupdown *self, struct udev_device *device)
 	if (!g_hash_table_lookup (priv->kernel_ifaces, iface))
 		return;
 
-	if (priv->unmanage_well_known)
+	if (!priv->ifupdown_managed)
 		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
 }
 
@@ -253,7 +253,7 @@ get_connections (NMSettingsPlugin *plugin)
 	SettingsPluginIfupdown *self = SETTINGS_PLUGIN_IFUPDOWN (plugin);
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
 
-	if(priv->unmanage_well_known) {
+	if (!priv->ifupdown_managed) {
 		_LOGD ("get_connections: not connections due to managed=false");
 		return NULL;
 	}
@@ -277,7 +277,7 @@ get_unmanaged_specs (NMSettingsPlugin *plugin)
 	struct udev_device *device;
 	const char *iface;
 
-	if (!priv->unmanage_well_known)
+	if (priv->ifupdown_managed)
 		return NULL;
 
 	_LOGD ("unmanaged-specs: unmanaged devices count %u",
@@ -421,11 +421,11 @@ initialize (NMSettingsPlugin *plugin)
 	}
 
 	/* Check the config file to find out whether to manage interfaces */
-	priv->unmanage_well_known = !nm_config_data_get_value_boolean (NM_CONFIG_GET_DATA_ORIG,
-	                                                               NM_CONFIG_KEYFILE_GROUP_IFUPDOWN,
-	                                                               NM_CONFIG_KEYFILE_KEY_IFUPDOWN_MANAGED,
-	                                                               !IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT);
-	_LOGI ("management mode: %s", priv->unmanage_well_known ? "unmanaged" : "managed");
+	priv->ifupdown_managed = nm_config_data_get_value_boolean (NM_CONFIG_GET_DATA_ORIG,
+	                                                           NM_CONFIG_KEYFILE_GROUP_IFUPDOWN,
+	                                                           NM_CONFIG_KEYFILE_KEY_IFUPDOWN_MANAGED,
+	                                                           !IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT);
+	_LOGI ("management mode: %s", priv->ifupdown_managed ? "managed" : "unmanaged");
 
 	/* Add well-known interfaces */
 	enumerate = nm_udev_client_enumerate_new (priv->udev_client);
@@ -444,7 +444,7 @@ initialize (NMSettingsPlugin *plugin)
 	udev_enumerate_unref (enumerate);
 
 	/* Now if we're running in managed mode, let NM know there are new connections */
-	if (!priv->unmanage_well_known) {
+	if (priv->ifupdown_managed) {
 		GList *con_list = g_hash_table_get_values (priv->connections);
 		GList *cl_iter;
 
