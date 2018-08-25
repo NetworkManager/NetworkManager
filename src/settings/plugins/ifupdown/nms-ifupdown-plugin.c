@@ -322,13 +322,16 @@ initialize (NMSettingsPlugin *config)
 
 	/* Read in all the interfaces */
 	ifparser_init (ENI_INTERFACES_FILE, 0);
-	block = ifparser_getfirst ();
-	while (block) {
+	for (block = ifparser_getfirst (); block; block = block->next) {
+
 		if (NM_IN_STRSET (block->type, "auto", "allow-hotplug")) {
 			if (!auto_ifaces)
 				auto_ifaces = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
 			g_hash_table_add (auto_ifaces, g_strdup (block->name));
-		} else if (nm_streq (block->type, "iface")) {
+			continue;
+		}
+
+		if (nm_streq (block->type, "iface")) {
 			NMIfupdownConnection *exported;
 
 			/* Bridge configuration */
@@ -367,12 +370,12 @@ initialize (NMSettingsPlugin *config)
 					}
 					g_strfreev (port_ifaces);
 				}
-				goto next;
+				continue;
 			}
 
 			/* Skip loopback configuration */
 			if (nm_streq (block->name, "lo"))
-				goto next;
+				continue;
 
 			/* Remove any connection for this block that was previously found */
 			exported = g_hash_table_lookup (priv->connections, block->name);
@@ -390,12 +393,16 @@ initialize (NMSettingsPlugin *config)
 			}
 			nm_log_info (LOGD_SETTINGS, "adding iface %s to eni_ifaces", block->name);
 			g_hash_table_add (priv->eni_ifaces, g_strdup (block->name));
-		} else if (nm_streq (block->type, "mapping")) {
+			continue;
+		}
+
+		if (nm_streq (block->type, "mapping")) {
 			g_hash_table_add (priv->eni_ifaces, g_strdup (block->name));
 			nm_log_info (LOGD_SETTINGS, "adding mapping %s to eni_ifaces", block->name);
+			continue;
 		}
-	next:
-		block = block->next;
+
+		/* unhandled. */
 	}
 
 	/* Make 'auto' interfaces autoconnect=TRUE */
