@@ -36,7 +36,7 @@ if_block* first;
 if_block* last;
 if_data* last_data;
 
-void
+static void
 add_block (const char *type, const char* name)
 {
 	if_block *ret = g_slice_new0 (struct _if_block);
@@ -51,7 +51,7 @@ add_block (const char *type, const char* name)
 	last_data = NULL;
 }
 
-void
+static void
 add_data (const char *key, const char *data)
 {
 	if_data *ret;
@@ -305,7 +305,7 @@ ifparser_init (const char *eni_file, int quiet)
 	_recursive_ifparser (eni_file, quiet);
 }
 
-void
+static void
 _destroy_data (if_data *ifd)
 {
 	if (ifd == NULL)
@@ -317,7 +317,7 @@ _destroy_data (if_data *ifd)
 	return;
 }
 
-void
+static void
 _destroy_block (if_block* ifb)
 {
 	if (ifb == NULL)
