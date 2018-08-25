@@ -231,11 +231,11 @@ handle_uevent (NMUdevClient *client,
 	subsys = udev_device_get_subsystem (device);
 	g_return_if_fail (nm_streq0 (subsys, "net"));
 
-	if (!strcmp (action, "add"))
+	if (nm_streq (action, "add"))
 		udev_device_added (self, device);
-	else if (!strcmp (action, "remove"))
+	else if (nm_streq (action, "remove"))
 		udev_device_removed (self, device);
-	else if (!strcmp (action, "change"))
+	else if (nm_streq (action, "change"))
 		udev_device_changed (self, device);
 }
 
@@ -250,7 +250,7 @@ get_connections (NMSettingsPlugin *config)
 
 	nm_log_info (LOGD_SETTINGS, "(%d) ... get_connections.", GPOINTER_TO_UINT(config));
 
-	if(priv->unmanage_well_known) {
+	if (priv->unmanage_well_known) {
 		nm_log_info (LOGD_SETTINGS, "(%d) ... get_connections (managed=false): return empty list.", GPOINTER_TO_UINT(config));
 		return NULL;
 	}
@@ -324,15 +324,15 @@ initialize (NMSettingsPlugin *config)
 	ifparser_init (ENI_INTERFACES_FILE, 0);
 	block = ifparser_getfirst ();
 	while (block) {
-		if(!strcmp ("auto", block->type) || !strcmp ("allow-hotplug", block->type)) {
+		if (NM_IN_STRSET (block->type, "auto", "allow-hotplug")) {
 			if (!auto_ifaces)
 				auto_ifaces = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
 			g_hash_table_add (auto_ifaces, g_strdup (block->name));
-		} else if (!strcmp ("iface", block->type)) {
+		} else if (nm_streq (block->type, "iface")) {
 			NMIfupdownConnection *exported;
 
 			/* Bridge configuration */
-			if(!strncmp ("br", block->name, 2)) {
+			if (g_str_has_prefix (block_name, "br")) {
 				/* Try to find bridge ports */
 				const char *ports = ifparser_getkey (block, "bridge-ports");
 				if (ports) {
@@ -346,21 +346,20 @@ initialize (NMSettingsPlugin *config)
 					for (i = 0; i < g_strv_length (port_ifaces); i++) {
 						char *token = port_ifaces[i];
 						/* Skip crazy stuff like regex or all */
-						if (!strcmp ("all", token)) {
+						if (nm_streq (token, "all")) {
 							continue;
 						}
 						/* Small SM to skip everything inside regex */
-						if (!strcmp ("regex", token)) {
+						if (nm_streq (token, "regex")) {
 							state++;
 							continue;
 						}
-						if (!strcmp ("noregex", token)) {
+						if (nm_streq (token, "noregex")) {
 							state--;
 							continue;
 						}
-						if (!strcmp ("none", token)) {
+						if (nm_streq (token, "none"))
 							continue;
-						}
 						if (state == 0 && strlen (token) > 0) {
 							nm_log_info (LOGD_SETTINGS, "adding bridge port %s to eni_ifaces", token);
 							g_hash_table_add (priv->eni_ifaces, g_strdup (token));
@@ -372,9 +371,8 @@ initialize (NMSettingsPlugin *config)
 			}
 
 			/* Skip loopback configuration */
-			if(!strcmp ("lo", block->name)) {
+			if (nm_streq (block->name, "lo"))
 				goto next;
-			}
 
 			/* Remove any connection for this block that was previously found */
 			exported = g_hash_table_lookup (priv->connections, block->name);
@@ -392,7 +390,7 @@ initialize (NMSettingsPlugin *config)
 			}
 			nm_log_info (LOGD_SETTINGS, "adding iface %s to eni_ifaces", block->name);
 			g_hash_table_add (priv->eni_ifaces, g_strdup (block->name));
-		} else if (!strcmp ("mapping", block->type)) {
+		} else if (nm_streq (block->type, "mapping")) {
 			g_hash_table_add (priv->eni_ifaces, g_strdup (block->name));
 			nm_log_info (LOGD_SETTINGS, "adding mapping %s to eni_ifaces", block->name);
 		}
