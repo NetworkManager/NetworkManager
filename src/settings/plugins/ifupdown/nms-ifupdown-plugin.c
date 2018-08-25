@@ -243,22 +243,18 @@ handle_uevent (NMUdevClient *client,
  * list is freed by the system settings service.
  */
 static GSList*
-get_connections (NMSettingsPlugin *config)
+get_connections (NMSettingsPlugin *plugin)
 {
-	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE ((SettingsPluginIfupdown *) config);
-	GSList *connections;
+	SettingsPluginIfupdown *self = SETTINGS_PLUGIN_IFUPDOWN (plugin);
+	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
 
-	nm_log_info (LOGD_SETTINGS, "(%d) ... get_connections.", GPOINTER_TO_UINT(config));
-
-	if (priv->unmanage_well_known) {
-		nm_log_info (LOGD_SETTINGS, "(%d) ... get_connections (managed=false): return empty list.", GPOINTER_TO_UINT(config));
+	if(priv->unmanage_well_known) {
+		nm_log_info (LOGD_SETTINGS, "(%d) get_connections: return empty list due to managed=false", GPOINTER_TO_UINT (self));
 		return NULL;
 	}
 
-	connections = _nm_utils_hash_values_to_slist (priv->connections);
-
-	nm_log_info (LOGD_SETTINGS, "(%d) connections count: %d", GPOINTER_TO_UINT(config), g_slist_length(connections));
-	return connections;
+	nm_log_info (LOGD_SETTINGS, "(%d) get_connections: connections count: %u", GPOINTER_TO_UINT (self), g_hash_table_size (priv->connections));
+	return _nm_utils_hash_values_to_slist (priv->connections);
 }
 
 /*
