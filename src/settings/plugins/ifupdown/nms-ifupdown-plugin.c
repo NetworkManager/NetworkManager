@@ -338,20 +338,22 @@ initialize (NMSettingsPlugin *config)
 			if (g_str_has_prefix (block_name, "br")) {
 				/* Try to find bridge ports */
 				const char *ports = ifparser_getkey (block, "bridge-ports");
+
 				if (ports) {
-					int i;
+					guint i;
 					int state = 0;
-					char **port_ifaces;
+					gs_strfreev char **port_ifaces = NULL;
 
 					nm_log_info (LOGD_SETTINGS, "found bridge ports %s for %s", ports, block->name);
 
 					port_ifaces = g_strsplit_set (ports, " \t", -1);
-					for (i = 0; i < g_strv_length (port_ifaces); i++) {
-						char *token = port_ifaces[i];
+					for (i = 0; port_ifaces[i]; i++) {
+						const char *token = port_ifaces[i];
+
 						/* Skip crazy stuff like regex or all */
-						if (nm_streq (token, "all")) {
+						if (nm_streq (token, "all"))
 							continue;
-						}
+
 						/* Small SM to skip everything inside regex */
 						if (nm_streq (token, "regex")) {
 							state++;
@@ -368,7 +370,6 @@ initialize (NMSettingsPlugin *config)
 							g_hash_table_add (priv->eni_ifaces, g_strdup (token));
 						}
 					}
-					g_strfreev (port_ifaces);
 				}
 				continue;
 			}
