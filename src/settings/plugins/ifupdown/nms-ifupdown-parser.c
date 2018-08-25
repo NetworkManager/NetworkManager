@@ -37,6 +37,15 @@
 #include "nms-ifupdown-plugin.h"
 #include "nms-ifupdown-parser.h"
 
+#define _str_has_prefix(val, prefix, require_suffix) \
+	({ \
+		const char *_val = (val); \
+		\
+		   (strncmp (_val, ""prefix"", NM_STRLEN (prefix)) == 0) \
+		&& (   !(require_suffix) \
+		    || _val[NM_STRLEN (prefix)] != '\0'); \
+	})
+
 static const char*
 _ifupdownplugin_guess_connection_type (if_block *block)
 {
@@ -48,8 +57,8 @@ _ifupdownplugin_guess_connection_type (if_block *block)
 		ret_type = NM_SETTING_PPP_SETTING_NAME;
 
 	while (!ret_type && curr) {
-		if (!strncmp ("wireless-", curr->key, strlen ("wireless-")) ||
-		    !strncmp ("wpa-", curr->key, strlen ("wpa-"))) {
+		if (   _str_has_prefix (curr->key, "wireless-", FALSE)
+		    || _str_has_prefix (curr->key, "wpa-", FALSE)) {
 			ret_type = NM_SETTING_WIRELESS_SETTING_NAME;
 		}
 		curr = curr->next;
@@ -84,9 +93,6 @@ static void
 update_wireless_setting_from_if_block (NMConnection *connection,
                                        if_block *block)
 {
-	int wpa_l= strlen ("wpa-");
-	int wireless_l= strlen ("wireless-");
-
 	if_data *curr = block->info;
 	const char* value = ifparser_getkey (block, "inet");
 	struct _Mapping mapping[] = {
@@ -105,9 +111,9 @@ update_wireless_setting_from_if_block (NMConnection *connection,
 	wireless_setting = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
 
 	while (curr) {
-		if (strlen (curr->key) > wireless_l &&
-		   !strncmp ("wireless-", curr->key, wireless_l)) {
-			const char* newkey = map_by_mapping (mapping, curr->key+wireless_l);
+		if (_str_has_prefix (curr->key, "wireless-", TRUE)) {
+			const char* newkey = map_by_mapping (mapping, curr->key + NM_STRLEN ("wireless-"));
+
 			nm_log_info (LOGD_SETTINGS, "wireless setting key: %s='%s'", newkey, curr->data);
 			if (nm_streq0 (newkey, "ssid")) {
 				GBytes *ssid;
@@ -131,9 +137,8 @@ update_wireless_setting_from_if_block (NMConnection *connection,
 				              newkey, curr->data,
 				              NULL);
 			}
-		} else if (   strlen (curr->key) > wpa_l
-		           && !strncmp ("wpa-", curr->key, wpa_l)) {
-			const char* newkey = map_by_mapping (mapping, curr->key+wpa_l);
+		} else if (_str_has_prefix (curr->key, "wpa-", TRUE)) {
+			const char* newkey = map_by_mapping (mapping, curr->key + NM_STRLEN ("wpa-"));
 
 			if (nm_streq0 (newkey, "ssid")) {
 				GBytes *ssid;
@@ -243,8 +248,6 @@ static void
 update_wireless_security_setting_from_if_block (NMConnection *connection,
                                                 if_block *block)
 {
-	int wpa_l= strlen ("wpa-");
-	int wireless_l= strlen ("wireless-");
 	if_data *curr = block->info;
 	const char* value = ifparser_getkey (block, "inet");
 	struct _Mapping mapping[] = {
@@ -312,15 +315,14 @@ update_wireless_security_setting_from_if_block (NMConnection *connection,
 	wireless_security_setting = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 
 	while (curr) {
-		if (   strlen (curr->key) > wireless_l
-		    && !strncmp ("wireless-", curr->key, wireless_l)) {
-
+		if (_str_has_prefix (curr->key, "wireless-", TRUE)) {
+			const char *key = curr->key + NM_STRLEN ("wireless-");
 			char *property_value = NULL;
 			gpointer typed_property_value = NULL;
-			const char* newkey = map_by_mapping (mapping, curr->key+wireless_l);
-			IfupdownStrDupeFunc dupe_func = map_by_mapping (dupe_mapping, curr->key+wireless_l);
-			IfupdownStrToTypeFunc type_map_func = map_by_mapping (type_mapping, curr->key+wireless_l);
-			GFreeFunc free_func = map_by_mapping (free_type_mapping, curr->key+wireless_l);
+			const char* newkey = map_by_mapping (mapping, key);
+			IfupdownStrDupeFunc dupe_func = map_by_mapping (dupe_mapping, key);
+			IfupdownStrToTypeFunc type_map_func = map_by_mapping (type_mapping, key);
+			GFreeFunc free_func = map_by_mapping (free_type_mapping, key);
 			if (!newkey || !dupe_func)
 				goto next;
 
@@ -345,15 +347,14 @@ wireless_next:
 			if (typed_property_value && free_func)
 				(*free_func) (typed_property_value);
 
-		} else if (   strlen (curr->key) > wpa_l
-		           && !strncmp ("wpa-", curr->key, wpa_l)) {
-
+		} else if (_str_has_prefix (curr->key, "wpa-", TRUE)) {
+			const char *key = curr->key + NM_STRLEN ("wpa-");
 			char *property_value = NULL;
 			gpointer typed_property_value = NULL;
-			const char* newkey = map_by_mapping (mapping, curr->key+wpa_l);
-			IfupdownStrDupeFunc dupe_func = map_by_mapping (dupe_mapping, curr->key+wpa_l);
-			IfupdownStrToTypeFunc type_map_func = map_by_mapping (type_mapping, curr->key+wpa_l);
-			GFreeFunc free_func = map_by_mapping (free_type_mapping, curr->key+wpa_l);
+			const char* newkey = map_by_mapping (mapping, key);
+			IfupdownStrDupeFunc dupe_func = map_by_mapping (dupe_mapping, key);
+			IfupdownStrToTypeFunc type_map_func = map_by_mapping (type_mapping, key);
+			GFreeFunc free_func = map_by_mapping (free_type_mapping, key);
 			if (!newkey || !dupe_func)
 				goto next;
 
