@@ -158,7 +158,8 @@ udev_device_added (SettingsPluginIfupdown *self, struct udev_device *device)
 	 * we want to either unmanage the device or lock it
 	 */
 	exported = g_hash_table_lookup (priv->connections, iface);
-	if (!exported && !g_hash_table_lookup (priv->eni_ifaces, iface)) {
+	if (   !exported
+	    && !g_hash_table_contains (priv->eni_ifaces, iface)) {
 		nm_log_info (LOGD_SETTINGS, "device added (path: %s, iface: %s): no ifupdown configuration found.",
 		             path, iface);
 		return;
@@ -316,15 +317,6 @@ initialize (NMSettingsPlugin *config)
 
 	auto_ifaces = g_hash_table_new (nm_str_hash, g_str_equal);
 
-	if(!priv->connections)
-		priv->connections = g_hash_table_new (nm_str_hash, g_str_equal);
-
-	if(!priv->kernel_ifaces)
-		priv->kernel_ifaces = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, _udev_device_unref);
-
-	if(!priv->eni_ifaces)
-		priv->eni_ifaces = g_hash_table_new (nm_str_hash, g_str_equal);
-
 	nm_log_info (LOGD_SETTINGS, "init!");
 
 	priv->udev_client = nm_udev_client_new ((const char *[]) { "net", NULL },
@@ -371,7 +363,7 @@ initialize (NMSettingsPlugin *config)
 						}
 						if (state == 0 && strlen (token) > 0) {
 							nm_log_info (LOGD_SETTINGS, "adding bridge port %s to eni_ifaces", token);
-							g_hash_table_insert (priv->eni_ifaces, g_strdup (token), "known");
+							g_hash_table_add (priv->eni_ifaces, g_strdup (token));
 						}
 					}
 					g_strfreev (port_ifaces);
@@ -396,12 +388,12 @@ initialize (NMSettingsPlugin *config)
 			exported = nm_ifupdown_connection_new (block);
 			if (exported) {
 				nm_log_info (LOGD_SETTINGS, "adding %s to connections", block->name);
-				g_hash_table_insert (priv->connections, block->name, exported);
+				g_hash_table_insert (priv->connections, g_strdup (block->name), exported);
 			}
 			nm_log_info (LOGD_SETTINGS, "adding iface %s to eni_ifaces", block->name);
-			g_hash_table_insert (priv->eni_ifaces, block->name, "known");
+			g_hash_table_add (priv->eni_ifaces, g_strdup (block->name));
 		} else if (!strcmp ("mapping", block->type)) {
-			g_hash_table_insert (priv->eni_ifaces, block->name, "known");
+			g_hash_table_add (priv->eni_ifaces, g_strdup (block->name));
 			nm_log_info (LOGD_SETTINGS, "adding mapping %s to eni_ifaces", block->name);
 		}
 	next:
@@ -463,8 +455,13 @@ initialize (NMSettingsPlugin *config)
 /*****************************************************************************/
 
 static void
-settings_plugin_ifupdown_init (SettingsPluginIfupdown *plugin)
+settings_plugin_ifupdown_init (SettingsPluginIfupdown *self)
 {
+	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
+
+	priv->connections = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
+	priv->kernel_ifaces = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, _udev_device_unref);
+	priv->eni_ifaces = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
 }
 
 static void
@@ -473,6 +470,7 @@ dispose (GObject *object)
 	SettingsPluginIfupdown *plugin = SETTINGS_PLUGIN_IFUPDOWN (object);
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (plugin);
 
+	g_clear_pointer (&priv->connections, g_hash_table_destroy);
 	g_clear_pointer (&priv->kernel_ifaces, g_hash_table_destroy);
 	g_clear_pointer (&priv->eni_ifaces, g_hash_table_destroy);
 
