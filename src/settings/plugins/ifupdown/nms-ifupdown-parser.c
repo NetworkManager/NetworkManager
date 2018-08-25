@@ -43,13 +43,13 @@ _ifupdownplugin_guess_connection_type (if_block *block)
 	if_data *curr = block->info;
 	const char* ret_type = NULL;
 	const char* value = ifparser_getkey (block, "inet");
-	if (value && !strcmp ("ppp", value)) {
+
+	if (nm_streq0 (value, "ppp"))
 		ret_type = NM_SETTING_PPP_SETTING_NAME;
-	}
 
 	while (!ret_type && curr) {
 		if (!strncmp ("wireless-", curr->key, strlen ("wireless-")) ||
-		   !strncmp ("wpa-", curr->key, strlen ("wpa-"))) {
+		    !strncmp ("wpa-", curr->key, strlen ("wpa-"))) {
 			ret_type = NM_SETTING_WIRELESS_SETTING_NAME;
 		}
 		curr = curr->next;
@@ -71,8 +71,9 @@ static gpointer
 map_by_mapping (struct _Mapping *mapping, const char *key)
 {
 	struct _Mapping *curr = mapping;
+
 	while (curr->domain) {
-		if (!strcmp (curr->domain, key))
+		if (nm_streq (curr->domain, key))
 			return curr->target;
 		curr++;
 	}
@@ -97,9 +98,8 @@ update_wireless_setting_from_if_block (NMConnection *connection,
 
 	NMSettingWireless *wireless_setting = NULL;
 
-	if (value && !strcmp ("ppp", value)) {
+	if (nm_streq0 (value, "ppp"))
 		return;
-	}
 
 	nm_log_info (LOGD_SETTINGS, "update wireless settings (%s).", block->name);
 	wireless_setting = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
@@ -109,7 +109,7 @@ update_wireless_setting_from_if_block (NMConnection *connection,
 		   !strncmp ("wireless-", curr->key, wireless_l)) {
 			const char* newkey = map_by_mapping (mapping, curr->key+wireless_l);
 			nm_log_info (LOGD_SETTINGS, "wireless setting key: %s='%s'", newkey, curr->data);
-			if (newkey && !strcmp ("ssid", newkey)) {
+			if (nm_streq0 (newkey, "ssid")) {
 				GBytes *ssid;
 				int len = strlen (curr->data);
 
@@ -117,7 +117,7 @@ update_wireless_setting_from_if_block (NMConnection *connection,
 				g_object_set (wireless_setting, NM_SETTING_WIRELESS_SSID, ssid, NULL);
 				g_bytes_unref (ssid);
 				nm_log_info (LOGD_SETTINGS, "setting wireless ssid = %d", len);
-			} else if (newkey && !strcmp ("mode", newkey)) {
+			} else if (nm_streq0 (newkey, "mode")) {
 				if (!g_ascii_strcasecmp (curr->data, "Managed") || !g_ascii_strcasecmp (curr->data, "Auto"))
 					g_object_set (wireless_setting, NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA, NULL);
 				else if (!g_ascii_strcasecmp (curr->data, "Ad-Hoc"))
@@ -135,7 +135,7 @@ update_wireless_setting_from_if_block (NMConnection *connection,
 		           && !strncmp ("wpa-", curr->key, wpa_l)) {
 			const char* newkey = map_by_mapping (mapping, curr->key+wpa_l);
 
-			if (newkey && !strcmp ("ssid", newkey)) {
+			if (nm_streq0 (newkey, "ssid")) {
 				GBytes *ssid;
 				int len = strlen (curr->data);
 
@@ -302,9 +302,8 @@ update_wireless_security_setting_from_if_block (NMConnection *connection,
 	NMSettingWireless *s_wireless;
 	gboolean security = FALSE;
 
-	if (value && !strcmp ("ppp", value)) {
+	if (nm_streq0 (value, "ppp"))
 		return;
-	}
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_return_if_fail (s_wireless);
@@ -361,20 +360,16 @@ wireless_next:
 			property_value = (*dupe_func) (curr->data, connection);
 			nm_log_info (LOGD_SETTINGS, "setting wpa security key: %s=%s",
 			             newkey,
-#ifdef DEBUG_SECRETS
-			             property_value
-#else /* DEBUG_SECRETS */
-			             !strcmp ("key", newkey) ||
-			             !strcmp ("leap-password", newkey) ||
-			             !strcmp ("pin", newkey) ||
-			             !strcmp ("psk", newkey) ||
-			             !strcmp ("wep-key0", newkey) ||
-			             !strcmp ("wep-key1", newkey) ||
-			             !strcmp ("wep-key2", newkey) ||
-			             !strcmp ("wep-key3", newkey) ||
-			             NULL ?
-			             "<omitted>" : property_value
-#endif /* DEBUG_SECRETS */
+			             NM_IN_STRSET (newkey, "key",
+			                                   "leap-password",
+			                                   "pin",
+			                                   "psk",
+			                                   "wep-key0",
+			                                   "wep-key1",
+			                                   "wep-key2",
+			                                   "wep-key3")
+			               ? "<omitted>"
+			               : property_value
 			             );
 
 			if (type_map_func) {
@@ -385,8 +380,8 @@ wireless_next:
 			}
 
 			g_object_set (wireless_security_setting,
-					   newkey, typed_property_value ?: property_value,
-					   NULL);
+			              newkey, typed_property_value ?: property_value,
+			              NULL);
 			security = TRUE;
 
 		wpa_next:
@@ -444,10 +439,12 @@ update_ip4_setting_from_if_block (NMConnection *connection,
 
 	NMSettingIPConfig *s_ip4 = NM_SETTING_IP_CONFIG (nm_setting_ip4_config_new ());
 	const char *type = ifparser_getkey (block, "inet");
-	gboolean is_static = type && !strcmp ("static", type);
 
-	if (!is_static) {
-		g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	if (!nm_streq0 (type, "static")) {
+		g_object_set (s_ip4,
+		              NM_SETTING_IP_CONFIG_METHOD,
+		              NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+		              NULL);
 	} else {
 		guint32 tmp_mask;
 		NMIPAddress *addr;
@@ -573,12 +570,12 @@ update_ip6_setting_from_if_block (NMConnection *connection,
 {
 	NMSettingIPConfig *s_ip6 = NM_SETTING_IP_CONFIG (nm_setting_ip6_config_new ());
 	const char *type = ifparser_getkey (block, "inet6");
-	gboolean is_static = type
-	                     && (   !strcmp ("static", type)
-	                         || !strcmp ("v4tunnel", type));
 
-	if (!is_static) {
-		g_object_set (s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
+	if (!NM_IN_STRSET (type, "static", "v4tunnel")) {
+		g_object_set (s_ip6,
+		              NM_SETTING_IP_CONFIG_METHOD,
+		              NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+		              NULL);
 	} else {
 		NMIPAddress *addr;
 		const char *address_v;
@@ -701,9 +698,9 @@ ifupdown_update_connection_from_if_block (NMConnection *connection,
 	nm_log_info (LOGD_SETTINGS, "update_connection_setting_from_if_block: name:%s, type:%s, id:%s, uuid: %s",
 	             block->name, type, idstr, nm_setting_connection_get_uuid (s_con));
 
-	if (!strcmp (NM_SETTING_WIRED_SETTING_NAME, type))
+	if (nm_streq (type, NM_SETTING_WIRED_SETTING_NAME))
 		update_wired_setting_from_if_block (connection, block);
-	else if (!strcmp (NM_SETTING_WIRELESS_SETTING_NAME, type)) {
+	else if (nm_streq (type, NM_SETTING_WIRELESS_SETTING_NAME)) {
 		update_wireless_setting_from_if_block (connection, block);
 		update_wireless_security_setting_from_if_block (connection, block);
 	}
