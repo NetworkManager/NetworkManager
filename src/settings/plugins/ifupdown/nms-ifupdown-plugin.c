@@ -29,7 +29,6 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <gmodule.h>
-#include <libudev.h>
 
 #include "nm-setting-connection.h"
 #include "nm-dbus-interface.h"
@@ -42,7 +41,6 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-config.h"
-#include "nm-utils/nm-udev-utils.h"
 
 #include "nms-ifupdown-interface-parser.h"
 #include "nms-ifupdown-connection.h"
@@ -55,15 +53,10 @@
 /*****************************************************************************/
 
 typedef struct {
-	NMUdevClient *udev_client;
-
 	/* Stores an entry for blocks/interfaces read from /e/n/i and (if exists)
 	 * the NMIfupdownConnection associated with the block.
 	 */
 	GHashTable *eni_ifaces;
-
-	/* Stores any network interfaces the kernel knows about */
-	GHashTable *kernel_ifaces;
 
 	bool ifupdown_managed;
 } SettingsPluginIfupdownPrivate;
@@ -97,148 +90,6 @@ NM_DEFINE_SINGLETON_GETTER (SettingsPluginIfupdown, settings_plugin_ifupdown_get
             _NM_UTILS_MACRO_REST (__VA_ARGS__))
 
 /*****************************************************************************/
-
-static void
-bind_device_to_connection (SettingsPluginIfupdown *self,
-                           struct udev_device *device,
-                           NMIfupdownConnection *conn)
-{
-	NMSettingWired *s_wired;
-	NMSettingWireless *s_wifi;
-	const char *iface, *address;
-
-	iface = udev_device_get_sysname (device);
-	if (!iface) {
-		_LOGD ("bind-to-connection: failed to get ifname for device.");
-		return;
-	}
-
-	address = udev_device_get_sysattr_value (device, "address");
-	if (!address || !address[0]) {
-		_LOGD ("bind-to-connection: failed to get MAC address for %s", iface);
-		return;
-	}
-
-	if (!nm_utils_hwaddr_valid (address, ETH_ALEN)) {
-		_LOGD ("bind-to-connection: failed to parse MAC address '%s' for %s",
-		       address, iface);
-		return;
-	}
-
-	s_wired = nm_connection_get_setting_wired (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (conn)));
-	s_wifi = nm_connection_get_setting_wireless (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (conn)));
-	if (s_wired) {
-		_LOGD ("bind-to-connection: locking wired connection setting");
-		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, address, NULL);
-	} else if (s_wifi) {
-		_LOGD ("bind-to-connection: locking wireless connection setting");
-		g_object_set (s_wifi, NM_SETTING_WIRELESS_MAC_ADDRESS, address, NULL);
-	}
-
-	nm_settings_connection_update (NM_SETTINGS_CONNECTION (conn),
-	                               NULL,
-	                               NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
-	                               NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
-	                               "ifupdown-new",
-	                               NULL);
-}
-
-static void
-udev_device_added (SettingsPluginIfupdown *self, struct udev_device *device)
-{
-	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
-	const char *iface, *path;
-	NMIfupdownConnection *conn;
-
-	iface = udev_device_get_sysname (device);
-	path = udev_device_get_syspath (device);
-	if (!iface || !path)
-		return;
-
-	_LOGD ("udev: devices added (path: %s, iface: %s)", path, iface);
-
-	/* if we have a configured connection for this particular iface
-	 * we want to either unmanage the device or lock it
-	 */
-	if (!g_hash_table_lookup_extended (priv->eni_ifaces, iface, NULL, (gpointer *) &conn)) {
-		_LOGD ("udev: device added (path: %s, iface: %s): no ifupdown configuration found.",
-		       path, iface);
-		return;
-	}
-
-	g_hash_table_insert (priv->kernel_ifaces, g_strdup (iface), udev_device_ref (device));
-
-	if (conn)
-		bind_device_to_connection (self, device, conn);
-
-	if (!priv->ifupdown_managed)
-		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
-}
-
-static void
-udev_device_removed (SettingsPluginIfupdown *self, struct udev_device *device)
-{
-	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
-	const char *iface, *path;
-
-	iface = udev_device_get_sysname (device);
-	path = udev_device_get_syspath (device);
-	if (!iface || !path)
-		return;
-
-	_LOGD ("udev: devices removed (path: %s, iface: %s)", path, iface);
-
-	if (!g_hash_table_remove (priv->kernel_ifaces, iface))
-		return;
-
-	if (!priv->ifupdown_managed)
-		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
-}
-
-static void
-udev_device_changed (SettingsPluginIfupdown *self, struct udev_device *device)
-{
-	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
-	const char *iface, *path;
-
-	iface = udev_device_get_sysname (device);
-	path = udev_device_get_syspath (device);
-	if (!iface || !path)
-		return;
-
-	_LOGD ("udev: device changed (path: %s, iface: %s)", path, iface);
-
-	if (!g_hash_table_lookup (priv->kernel_ifaces, iface))
-		return;
-
-	if (!priv->ifupdown_managed)
-		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
-}
-
-static void
-handle_uevent (NMUdevClient *client,
-               struct udev_device *device,
-               gpointer user_data)
-{
-	SettingsPluginIfupdown *self = SETTINGS_PLUGIN_IFUPDOWN (user_data);
-	const char *subsys;
-	const char *action;
-
-	action = udev_device_get_action (device);
-
-	g_return_if_fail (action != NULL);
-
-	/* A bit paranoid */
-	subsys = udev_device_get_subsystem (device);
-	g_return_if_fail (nm_streq0 (subsys, "net"));
-
-	if (nm_streq (action, "add"))
-		udev_device_added (self, device);
-	else if (nm_streq (action, "remove"))
-		udev_device_removed (self, device);
-	else if (nm_streq (action, "change"))
-		udev_device_changed (self, device);
-}
 
 /* Returns the plugins currently known list of connections.  The returned
  * list is freed by the system settings service.
@@ -279,35 +130,21 @@ get_unmanaged_specs (NMSettingsPlugin *plugin)
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
 	GSList *specs = NULL;
 	GHashTableIter iter;
-	struct udev_device *device;
 	const char *iface;
 
 	if (priv->ifupdown_managed)
 		return NULL;
 
 	_LOGD ("unmanaged-specs: unmanaged devices count %u",
-	       g_hash_table_size (priv->kernel_ifaces));
+	       g_hash_table_size (priv->eni_ifaces));
 
-	g_hash_table_iter_init (&iter, priv->kernel_ifaces);
-	while (g_hash_table_iter_next (&iter, (gpointer) &iface, (gpointer) &device)) {
-		const char *address;
-
-		address = udev_device_get_sysattr_value (device, "address");
-		if (address)
-			specs = g_slist_append (specs, g_strdup_printf ("mac:%s", address));
-		else
-			specs = g_slist_append (specs, g_strdup_printf ("interface-name:%s", iface));
-	}
+	g_hash_table_iter_init (&iter, priv->eni_ifaces);
+	while (g_hash_table_iter_next (&iter, (gpointer) &iface, NULL))
+		specs = g_slist_append (specs, g_strdup_printf ("interface-name:=%s", iface));
 	return specs;
 }
 
 /*****************************************************************************/
-
-static void
-_udev_device_unref (gpointer ptr)
-{
-	udev_device_unref (ptr);
-}
 
 static void
 initialize (NMSettingsPlugin *plugin)
@@ -316,14 +153,9 @@ initialize (NMSettingsPlugin *plugin)
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
 	gs_unref_hashtable GHashTable *auto_ifaces = NULL;
 	if_block *block = NULL;
-	struct udev_enumerate *enumerate;
-	struct udev_list_entry *keys;
 	GHashTableIter con_iter;
 	const char *block_name;
 	NMIfupdownConnection *conn;
-
-	priv->udev_client = nm_udev_client_new ((const char *[]) { "net", NULL },
-	                                        handle_uevent, self);
 
 	/* Read in all the interfaces */
 	ifparser_init (ENI_INTERFACES_FILE, 0);
@@ -443,22 +275,6 @@ initialize (NMSettingsPlugin *plugin)
 	                                                           !IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT);
 	_LOGI ("management mode: %s", priv->ifupdown_managed ? "managed" : "unmanaged");
 
-	/* Add well-known interfaces */
-	enumerate = nm_udev_client_enumerate_new (priv->udev_client);
-	udev_enumerate_scan_devices (enumerate);
-	keys = udev_enumerate_get_list_entry (enumerate);
-	for (; keys; keys = udev_list_entry_get_next (keys)) {
-		struct udev_device *udevice;
-
-		udevice = udev_device_new_from_syspath (udev_enumerate_get_udev (enumerate),
-		                                        udev_list_entry_get_name (keys));
-		if (udevice) {
-			udev_device_added (self, udevice);
-			udev_device_unref (udevice);
-		}
-	}
-	udev_enumerate_unref (enumerate);
-
 	/* Now if we're running in managed mode, let NM know there are new connections */
 	if (priv->ifupdown_managed) {
 		GHashTableIter iter;
@@ -479,7 +295,6 @@ settings_plugin_ifupdown_init (SettingsPluginIfupdown *self)
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
 
 	priv->eni_ifaces = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
-	priv->kernel_ifaces = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, _udev_device_unref);
 }
 
 static void
@@ -488,10 +303,7 @@ dispose (GObject *object)
 	SettingsPluginIfupdown *plugin = SETTINGS_PLUGIN_IFUPDOWN (object);
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (plugin);
 
-	g_clear_pointer (&priv->kernel_ifaces, g_hash_table_destroy);
 	g_clear_pointer (&priv->eni_ifaces, g_hash_table_destroy);
-
-	priv->udev_client = nm_udev_client_unref (priv->udev_client);
 
 	G_OBJECT_CLASS (settings_plugin_ifupdown_parent_class)->dispose (object);
 }
