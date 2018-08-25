@@ -27,15 +27,15 @@
 
 typedef struct {
 	CList data_lst;
-	char *key;
-	char *data;
+	const char *data;
+	const char key[];
 } if_data;
 
 typedef struct {
 	CList block_lst;
 	CList data_lst_head;
-	char *type;
-	char *name;
+	const char *type;
+	const char name[];
 } if_block;
 
 typedef struct {

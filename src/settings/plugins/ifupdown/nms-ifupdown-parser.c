@@ -160,7 +160,7 @@ update_wireless_setting_from_if_block (NMConnection *connection,
 	nm_connection_add_setting (connection, (NMSetting*) wireless_setting);
 }
 
-typedef char* (*IfupdownStrDupeFunc) (gpointer value, gpointer data);
+typedef char* (*IfupdownStrDupeFunc) (gconstpointer value, gpointer data);
 typedef gpointer (*IfupdownStrToTypeFunc) (const char* value);
 
 static char*
