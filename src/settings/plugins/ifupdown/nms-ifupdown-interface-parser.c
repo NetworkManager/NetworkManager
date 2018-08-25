@@ -190,7 +190,7 @@ _recursive_ifparser (const char *eni_file, int quiet)
 		 * Create a block for each of them except source and source-directory.  */
 
 		/* iface stanza takes at least 3 parameters */
-		if (strcmp (token[0], "iface") == 0) {
+		if (nm_streq (token[0], "iface")) {
 			if (toknum < 4) {
 				if (!quiet) {
 					nm_log_warn (LOGD_SETTINGS, "Can't parse iface line '%s'\n",
@@ -204,33 +204,33 @@ _recursive_ifparser (const char *eni_file, int quiet)
 		}
 		/* auto and allow-auto stanzas are equivalent,
 		 * both can take multiple interfaces as parameters: add one block for each */
-		else if (strcmp (token[0], "auto") == 0 ||
-			 strcmp (token[0], "allow-auto") == 0) {
+		else if (NM_IN_STRSET (token[0], "auto", "allow-auto")) {
 			int i;
+
 			for (i = 1; i < toknum; i++)
 				add_block ("auto", token[i]);
 			skip_to_block = 0;
 		}
-		else if (strcmp (token[0], "mapping") == 0) {
+		else if (nm_streq (token[0], "mapping")) {
 			add_block (token[0], join_values_with_spaces (value, token + 1));
 			skip_to_block = 0;
 		}
 		/* allow-* can take multiple interfaces as parameters: add one block for each */
-		else if (strncmp (token[0],"allow-",6) == 0) {
+		else if (g_str_has_prefix (token[0], "allow-")) {
 			int i;
 			for (i = 1; i < toknum; i++)
 				add_block (token[0], token[i]);
 			skip_to_block = 0;
 		}
 		/* source and source-directory stanzas take one or more paths as parameters */
-		else if (strcmp (token[0], "source") == 0 || strcmp (token[0], "source-directory") == 0) {
+		else if (NM_IN_STRSET (token[0], "source", "source-directory")) {
 			int i;
 			char *en_dir;
 
 			skip_to_block = 0;
 			en_dir = g_path_get_dirname (eni_file);
 			for (i = 1; i < toknum; ++i) {
-				if (strcmp (token[0], "source-directory") == 0)
+				if (nm_streq (token[0], "source-directory"))
 					_ifparser_source (token[i], en_dir, quiet, TRUE);
 				else
 					_ifparser_source (token[i], en_dir, quiet, FALSE);
@@ -359,7 +359,8 @@ ifparser_getif (const char* iface)
 {
 	if_block *curr = first;
 	while (curr != NULL) {
-		if (strcmp (curr->type,"iface")==0 && strcmp (curr->name,iface)==0)
+		if (   nm_streq (curr->type, "iface")
+		    && nm_streq (curr->name, iface))
 			return curr;
 		curr = curr->next;
 	}
@@ -371,7 +372,7 @@ ifparser_getkey (if_block* iface, const char *key)
 {
 	if_data *curr = iface->info;
 	while (curr != NULL) {
-		if (strcmp (curr->key,key)==0)
+		if (nm_streq (curr->key, key))
 			return curr->data;
 		curr = curr->next;
 	}
@@ -384,7 +385,7 @@ ifparser_haskey (if_block* iface, const char *key)
 	if_data *curr = iface->info;
 
 	while (curr != NULL) {
-		if (strcmp (curr->key, key) == 0)
+		if (nm_streq (curr->key, key))
 			return TRUE;
 		curr = curr->next;
 	}
