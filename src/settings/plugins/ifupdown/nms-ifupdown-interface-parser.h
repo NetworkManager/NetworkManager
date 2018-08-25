@@ -23,33 +23,32 @@
 #ifndef _INTERFACE_PARSER_H
 #define _INTERFACE_PARSER_H
 
-typedef struct _if_data
-{
+typedef struct _if_data {
 	char *key;
 	char *data;
 	struct _if_data *next;
 } if_data;
 
-typedef struct _if_block
-{
+typedef struct _if_block {
 	char *type;
 	char *name;
 	if_data *info;
 	struct _if_block *next;
 } if_block;
 
-void ifparser_init(const char *eni_file, int quiet);
-void ifparser_destroy(void);
+void ifparser_init (const char *eni_file, int quiet);
+void ifparser_destroy (void);
 
-if_block *ifparser_getif(const char* iface);
-if_block *ifparser_getfirst(void);
-const char *ifparser_getkey(if_block* iface, const char *key);
-gboolean ifparser_haskey(if_block* iface, const char *key);
-int ifparser_get_num_blocks(void);
-int ifparser_get_num_info(if_block* iface);
+if_block *ifparser_getif (const char* iface);
+if_block *ifparser_getfirst (void);
+const char *ifparser_getkey (if_block* iface, const char *key);
+gboolean ifparser_haskey (if_block* iface, const char *key);
+int ifparser_get_num_blocks (void);
+int ifparser_get_num_info (if_block* iface);
 
-void add_block(const char *type, const char* name);
-void add_data(const char *key,const char *data);
-void _destroy_data(if_data *ifd);
-void _destroy_block(if_block* ifb);
+void add_block (const char *type, const char* name);
+void add_data (const char *key,const char *data);
+void _destroy_data (if_data *ifd);
+void _destroy_block (if_block* ifb);
+
 #endif
