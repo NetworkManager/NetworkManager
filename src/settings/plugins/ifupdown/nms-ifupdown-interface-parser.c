@@ -32,12 +32,6 @@
 
 #include "nm-utils.h"
 
-struct _if_parser {
-	if_block* first;
-	if_block* last;
-	if_data* last_data;
-};
-
 /*****************************************************************************/
 
 static void _ifparser_source (if_parser *parser, const char *path, const char *en_dir, int quiet, int dir);
@@ -47,45 +41,39 @@ static void _ifparser_source (if_parser *parser, const char *path, const char *e
 static void
 add_block (if_parser *parser, const char *type, const char* name)
 {
-	if_block *ret = g_slice_new0 (struct _if_block);
-	ret->name = g_strdup (name);
-	ret->type = g_strdup (type);
-	if (parser->first == NULL)
-		parser->first = parser->last = ret;
-	else {
-		parser->last->next = ret;
-		parser->last = ret;
-	}
-	parser->last_data = NULL;
+	if_block *ifb;
+
+	ifb = g_slice_new (if_block);
+	ifb->name = g_strdup (name);
+	ifb->type = g_strdup (type);
+	c_list_init (&ifb->data_lst_head);
+	c_list_link_tail (&parser->block_lst_head, &ifb->block_lst);
 }
 
 static void
 add_data (if_parser *parser, const char *key, const char *data)
 {
-	if_data *ret;
+	if_block *last_block;
+	if_data *ifd;
 	char *idx;
 
+	last_block = c_list_last_entry (&parser->block_lst_head, if_block, block_lst);
+
 	/* Check if there is a block where we can attach our data */
-	if (parser->first == NULL)
+	if (!last_block)
 		return;
 
-	ret = g_slice_new0 (struct _if_data);
-	ret->key = g_strdup (key);
+	ifd = g_slice_new (if_data);
+	ifd->key = g_strdup (key);
+	ifd->data = g_strdup (data);
 
 	/* Normalize keys. Convert '_' to '-', as ifupdown accepts both variants.
 	 * When querying keys via ifparser_getkey(), use '-'. */
-	while ((idx = strrchr (ret->key, '_'))) {
-		*idx = '-';
-	}
-	ret->data = g_strdup (data);
+	idx = ifd->key;
+	while ((idx = strchr (idx, '_')))
+		*(idx++) = '-';
 
-	if (parser->last->info == NULL) {
-		parser->last->info = ret;
-		parser->last_data = ret;
-	} else {
-		parser->last_data->next = ret;
-		parser->last_data = parser->last_data->next;
-	}
+	c_list_link_tail (&last_block->data_lst_head, &ifd->data_lst);
 }
 
 /* join values in src with spaces into dst;  dst needs to be large enough */
@@ -309,7 +297,8 @@ ifparser_parse (const char *eni_file, int quiet)
 {
 	if_parser *parser;
 
-	parser = g_slice_new0 (if_parser);
+	parser = g_slice_new (if_parser);
+	c_list_init (&parser->block_lst_head);
 	_recursive_ifparser (parser, eni_file, quiet);
 	return parser;
 }
@@ -317,61 +306,68 @@ ifparser_parse (const char *eni_file, int quiet)
 static void
 _destroy_data (if_data *ifd)
 {
-	if (ifd == NULL)
-		return;
-	_destroy_data (ifd->next);
+	c_list_unlink_stale (&ifd->data_lst);
 	g_free (ifd->key);
 	g_free (ifd->data);
-	g_slice_free (struct _if_data, ifd);
-	return;
+	g_slice_free (if_data, ifd);
 }
 
 static void
 _destroy_block (if_block* ifb)
 {
-	if (ifb == NULL)
-		return;
-	_destroy_block (ifb->next);
-	_destroy_data (ifb->info);
+	if_data *ifd;
+
+	while ((ifd = c_list_first_entry (&ifb->data_lst_head, if_data, data_lst)))
+		_destroy_data (ifd);
+	c_list_unlink_stale (&ifb->block_lst);
 	g_free (ifb->name);
 	g_free (ifb->type);
-	g_slice_free (struct _if_block, ifb);
-	return;
+	g_slice_free (if_block, ifb);
 }
 
 void
 ifparser_destroy (if_parser *parser)
 {
-	_destroy_block (parser->first);
+	if_block *ifb;
+
+	while ((ifb = c_list_first_entry (&parser->block_lst_head, if_block, block_lst)))
+		_destroy_block (ifb);
 	g_slice_free (if_parser, parser);
 }
 
-if_block *ifparser_getfirst (if_parser *parser)
+if_block *
+ifparser_getfirst (if_parser *parser)
 {
-	return parser->first;
+	return c_list_first_entry (&parser->block_lst_head, if_block, block_lst);
 }
 
-int ifparser_get_num_blocks (if_parser *parser)
+guint
+ifparser_get_num_blocks (if_parser *parser)
 {
-	int i = 0;
-	if_block *iter = parser->first;
-
-	while (iter) {
-		i++;
-		iter = iter->next;
-	}
-	return i;
+	return c_list_length (&parser->block_lst_head);
 }
 
 if_block *
 ifparser_getif (if_parser *parser, const char* iface)
 {
-	if_block *curr = parser->first;
-	while (curr != NULL) {
-		if (   nm_streq (curr->type, "iface")
-		    && nm_streq (curr->name, iface))
-			return curr;
-		curr = curr->next;
+	if_block *ifb;
+
+	c_list_for_each_entry (ifb, &parser->block_lst_head, block_lst) {
+		if (   nm_streq (ifb->type, "iface")
+		    && nm_streq (ifb->name, iface))
+			return ifb;
+	}
+	return NULL;
+}
+
+static if_data *
+ifparser_findkey (if_block* iface, const char *key)
+{
+	if_data *ifd;
+
+	c_list_for_each_entry (ifd, &iface->data_lst_head, data_lst) {
+		if (nm_streq (ifd->key, key))
+			return ifd;
 	}
 	return NULL;
 }
@@ -379,37 +375,20 @@ ifparser_getif (if_parser *parser, const char* iface)
 const char *
 ifparser_getkey (if_block* iface, const char *key)
 {
-	if_data *curr = iface->info;
-	while (curr != NULL) {
-		if (nm_streq (curr->key, key))
-			return curr->data;
-		curr = curr->next;
-	}
-	return NULL;
+	if_data *ifd;
+
+	ifd = ifparser_findkey (iface, key);
+	return ifd ? ifd->data : NULL;
 }
 
 gboolean
 ifparser_haskey (if_block* iface, const char *key)
 {
-	if_data *curr = iface->info;
-
-	while (curr != NULL) {
-		if (nm_streq (curr->key, key))
-			return TRUE;
-		curr = curr->next;
-	}
-	return FALSE;
+	return !!ifparser_findkey (iface, key);
 }
 
-int
+guint
 ifparser_get_num_info (if_block* iface)
 {
-	int i = 0;
-	if_data *iter = iface->info;
-
-	while (iter) {
-		i++;
-		iter = iter->next;
-	}
-	return i;
+	return c_list_length (&iface->data_lst_head);
 }

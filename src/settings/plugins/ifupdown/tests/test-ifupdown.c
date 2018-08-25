@@ -137,9 +137,8 @@ compare_expected_to_ifparser (if_parser *parser, Expected *e)
 
 	g_assert_cmpint (g_slist_length (e->blocks), ==, ifparser_get_num_blocks (parser));
 
-	for (n = ifparser_getfirst (parser), biter = e->blocks;
-	     n && biter;
-	     n = n->next, biter = g_slist_next (biter)) {
+	biter = e->blocks;
+	c_list_for_each_entry (n, &parser->block_lst_head, block_lst) {
 		if_data *m;
 		ExpectedBlock *b = biter->data;
 
@@ -150,17 +149,22 @@ compare_expected_to_ifparser (if_parser *parser, Expected *e)
 
 		g_assert_cmpint (g_slist_length (b->keys), ==, ifparser_get_num_info (n));
 
-		for (m = n->info, kiter = b->keys;
-		     m && kiter;
-		     m = m->next, kiter = g_slist_next (kiter)) {
+		kiter = b->keys;
+		c_list_for_each_entry (m, &n->data_lst_head, data_lst) {
 			ExpectedKey *k = kiter->data;
 
 			g_assert (k->key && m->key);
 			g_assert_cmpstr (k->key, ==, m->key);
 			g_assert (k->data && m->data);
 			g_assert_cmpstr (k->data, ==, m->data);
+
+			kiter = g_slist_next (kiter);
 		}
+		g_assert (!kiter);
+
+		biter = g_slist_next (biter);
 	}
+	g_assert (!biter);
 }
 
 static void
@@ -169,7 +173,7 @@ dump_blocks (if_parser *parser)
 	if_block *n;
 
 	g_message ("\n***************************************************");
-	for (n = ifparser_getfirst (parser); n != NULL; n = n->next) {
+	c_list_for_each_entry (n, &parser->block_lst_head, block_lst) {
 		if_data *m;
 
 		// each block start with its type & name
@@ -178,8 +182,8 @@ dump_blocks (if_parser *parser)
 
 		// each key-value pair within a block is indented & separated by a tab
 		// (single quotes used to show typ & name baoundaries)
-		for (m = n->info; m != NULL; m = m->next)
-			   g_print("\t'%s'\t'%s'\n", m->key, m->data);
+		c_list_for_each_entry (m, &n->data_lst_head, data_lst)
+			g_print("\t'%s'\t'%s'\n", m->key, m->data);
 
 		// blocks are separated by an empty line
 		g_print("\n");
@@ -465,7 +469,7 @@ test17_read_static_ipv4 (void)
 	connection = nm_simple_connection_new();
 	g_assert (connection);
 
-	ifupdown_update_connection_from_if_block(connection, block, &error);
+	ifupdown_update_connection_from_if_block (connection, block, &error);
 	g_assert_no_error (error);
 
 	success = nm_connection_verify (connection, &error);
@@ -519,7 +523,7 @@ test18_read_static_ipv6 (void)
 	block = ifparser_getfirst (parser);
 	connection = nm_simple_connection_new();
 	g_assert (connection);
-	ifupdown_update_connection_from_if_block(connection, block, &error);
+	ifupdown_update_connection_from_if_block (connection, block, &error);
 	g_assert_no_error (error);
 
 	success = nm_connection_verify (connection, &error);
@@ -571,7 +575,7 @@ test19_read_static_ipv4_plen (void)
 	block = ifparser_getfirst (parser);
 	connection = nm_simple_connection_new();
 	g_assert (connection);
-	ifupdown_update_connection_from_if_block(connection, block, &error);
+	ifupdown_update_connection_from_if_block (connection, block, &error);
 	g_assert_no_error (error);
 
 	success = nm_connection_verify (connection, &error);

@@ -23,20 +23,24 @@
 #ifndef _INTERFACE_PARSER_H
 #define _INTERFACE_PARSER_H
 
-typedef struct _if_data {
+#include "c-list/src/c-list.h"
+
+typedef struct {
+	CList data_lst;
 	char *key;
 	char *data;
-	struct _if_data *next;
 } if_data;
 
-typedef struct _if_block {
+typedef struct {
+	CList block_lst;
+	CList data_lst_head;
 	char *type;
 	char *name;
-	if_data *info;
-	struct _if_block *next;
 } if_block;
 
-typedef struct _if_parser if_parser;
+typedef struct {
+	CList block_lst_head;
+} if_parser;
 
 if_parser *ifparser_parse (const char *eni_file, int quiet);
 
@@ -48,7 +52,8 @@ if_block *ifparser_getif (if_parser *parser, const char* iface);
 if_block *ifparser_getfirst (if_parser *parser);
 const char *ifparser_getkey (if_block* iface, const char *key);
 gboolean ifparser_haskey (if_block* iface, const char *key);
-int ifparser_get_num_blocks (if_parser *parser);
-int ifparser_get_num_info (if_block* iface);
+
+guint ifparser_get_num_blocks (if_parser *parser);
+guint ifparser_get_num_info (if_block* iface);
 
 #endif
