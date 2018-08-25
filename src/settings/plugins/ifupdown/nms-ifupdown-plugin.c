@@ -57,10 +57,8 @@
 typedef struct {
 	NMUdevClient *udev_client;
 
-	GHashTable *connections;  /* /e/n/i block name :: NMIfupdownConnection */
-
-	/* Stores all blocks/interfaces read from /e/n/i regardless of whether
-	 * there is an NMIfupdownConnection for block.
+	/* Stores an entry for blocks/interfaces read from /e/n/i and (if exists)
+	 * the NMIfupdownConnection associated with the block.
 	 */
 	GHashTable *eni_ifaces;
 
@@ -103,7 +101,7 @@ NM_DEFINE_SINGLETON_GETTER (SettingsPluginIfupdown, settings_plugin_ifupdown_get
 static void
 bind_device_to_connection (SettingsPluginIfupdown *self,
                            struct udev_device *device,
-                           NMIfupdownConnection *exported)
+                           NMIfupdownConnection *conn)
 {
 	NMSettingWired *s_wired;
 	NMSettingWireless *s_wifi;
@@ -127,8 +125,8 @@ bind_device_to_connection (SettingsPluginIfupdown *self,
 		return;
 	}
 
-	s_wired = nm_connection_get_setting_wired (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (exported)));
-	s_wifi = nm_connection_get_setting_wireless (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (exported)));
+	s_wired = nm_connection_get_setting_wired (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (conn)));
+	s_wifi = nm_connection_get_setting_wireless (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (conn)));
 	if (s_wired) {
 		_LOGD ("bind-to-connection: locking wired connection setting");
 		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, address, NULL);
@@ -137,7 +135,7 @@ bind_device_to_connection (SettingsPluginIfupdown *self,
 		g_object_set (s_wifi, NM_SETTING_WIRELESS_MAC_ADDRESS, address, NULL);
 	}
 
-	nm_settings_connection_update (NM_SETTINGS_CONNECTION (exported),
+	nm_settings_connection_update (NM_SETTINGS_CONNECTION (conn),
 	                               NULL,
 	                               NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
 	                               NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
@@ -150,7 +148,7 @@ udev_device_added (SettingsPluginIfupdown *self, struct udev_device *device)
 {
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
 	const char *iface, *path;
-	NMIfupdownConnection *exported;
+	NMIfupdownConnection *conn;
 
 	iface = udev_device_get_sysname (device);
 	path = udev_device_get_syspath (device);
@@ -162,9 +160,7 @@ udev_device_added (SettingsPluginIfupdown *self, struct udev_device *device)
 	/* if we have a configured connection for this particular iface
 	 * we want to either unmanage the device or lock it
 	 */
-	exported = g_hash_table_lookup (priv->connections, iface);
-	if (   !exported
-	    && !g_hash_table_contains (priv->eni_ifaces, iface)) {
+	if (!g_hash_table_lookup_extended (priv->eni_ifaces, iface, NULL, (gpointer *) &conn)) {
 		_LOGD ("udev: device added (path: %s, iface: %s): no ifupdown configuration found.",
 		       path, iface);
 		return;
@@ -172,8 +168,8 @@ udev_device_added (SettingsPluginIfupdown *self, struct udev_device *device)
 
 	g_hash_table_insert (priv->kernel_ifaces, g_strdup (iface), udev_device_ref (device));
 
-	if (exported)
-		bind_device_to_connection (self, device, exported);
+	if (conn)
+		bind_device_to_connection (self, device, conn);
 
 	if (!priv->ifupdown_managed)
 		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
@@ -252,14 +248,23 @@ get_connections (NMSettingsPlugin *plugin)
 {
 	SettingsPluginIfupdown *self = SETTINGS_PLUGIN_IFUPDOWN (plugin);
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
+	GSList *list = NULL;
+	GHashTableIter iter;
+	void *value;
 
 	if (!priv->ifupdown_managed) {
 		_LOGD ("get_connections: not connections due to managed=false");
 		return NULL;
 	}
 
-	_LOGD ("get_connections: %u connections", g_hash_table_size (priv->connections));
-	return _nm_utils_hash_values_to_slist (priv->connections);
+	g_hash_table_iter_init (&iter, priv->eni_ifaces);
+	while (g_hash_table_iter_next (&iter, NULL, &value)) {
+		if (value)
+			list = g_slist_prepend (list, value);
+	}
+
+	_LOGD ("get_connections: %u connections", g_slist_length (list));
+	return list;
 }
 
 /*
@@ -315,7 +320,7 @@ initialize (NMSettingsPlugin *plugin)
 	struct udev_list_entry *keys;
 	GHashTableIter con_iter;
 	const char *block_name;
-	NMIfupdownConnection *connection;
+	NMIfupdownConnection *conn;
 
 	priv->udev_client = nm_udev_client_new ((const char *[]) { "net", NULL },
 	                                        handle_uevent, self);
@@ -332,8 +337,6 @@ initialize (NMSettingsPlugin *plugin)
 		}
 
 		if (nm_streq (block->type, "iface")) {
-			NMIfupdownConnection *exported;
-
 			/* Bridge configuration */
 			if (g_str_has_prefix (block_name, "br")) {
 				/* Try to find bridge ports */
@@ -344,7 +347,7 @@ initialize (NMSettingsPlugin *plugin)
 					int state = 0;
 					gs_strfreev char **port_ifaces = NULL;
 
-					_LOGD ("found bridge ports %s for %s", ports, block->name);
+					_LOGD ("parse: found bridge ports %s for %s", ports, block->name);
 
 					port_ifaces = g_strsplit_set (ports, " \t", -1);
 					for (i = 0; port_ifaces[i]; i++) {
@@ -366,8 +369,14 @@ initialize (NMSettingsPlugin *plugin)
 						if (nm_streq (token, "none"))
 							continue;
 						if (state == 0 && strlen (token) > 0) {
-							_LOGD ("adding bridge port %s to eni_ifaces", token);
-							g_hash_table_add (priv->eni_ifaces, g_strdup (token));
+							conn = g_hash_table_lookup (priv->eni_ifaces, block->name);
+							if (!conn) {
+								_LOGD ("parse: adding bridge port \"%s\"", token);
+								g_hash_table_insert (priv->eni_ifaces, g_strdup (token), NULL);
+							} else {
+								_LOGD ("parse: adding bridge port \"%s\" (have connection %s)", token,
+								       nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (conn)));
+							}
 						}
 					}
 				}
@@ -379,44 +388,51 @@ initialize (NMSettingsPlugin *plugin)
 				continue;
 
 			/* Remove any connection for this block that was previously found */
-			exported = g_hash_table_lookup (priv->connections, block->name);
-			if (exported) {
-				_LOGD ("deleting %s from connections", block->name);
-				nm_settings_connection_delete (NM_SETTINGS_CONNECTION (exported), NULL);
-				g_hash_table_remove (priv->connections, block->name);
+			conn = g_hash_table_lookup (priv->eni_ifaces, block->name);
+			if (conn) {
+				_LOGD ("parse: replace connection \"%s\" (%s)",
+				       block->name,
+				       nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (conn)));
+				nm_settings_connection_delete (NM_SETTINGS_CONNECTION (conn), NULL);
+				g_hash_table_remove (priv->eni_ifaces, block->name);
 			}
 
 			/* add the new connection */
-			exported = nm_ifupdown_connection_new (block);
-			if (exported) {
-				_LOGD ("adding %s to connections", block->name);
-				g_hash_table_insert (priv->connections, g_strdup (block->name), exported);
-			}
-			_LOGD ("adding iface %s to eni_ifaces", block->name);
-			g_hash_table_add (priv->eni_ifaces, g_strdup (block->name));
+			conn = nm_ifupdown_connection_new (block);
+			if (conn) {
+				_LOGD ("parse: adding connection \"%s\" (%s)", block->name,
+				       nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (conn)));
+			} else
+				_LOGD ("parse: adding place holder for connection \"%s\"", block->name);
+			g_hash_table_insert (priv->eni_ifaces, g_strdup (block->name), conn);
 			continue;
 		}
 
 		if (nm_streq (block->type, "mapping")) {
-			g_hash_table_add (priv->eni_ifaces, g_strdup (block->name));
-			_LOGD ("adding mapping %s to eni_ifaces", block->name);
+			conn = g_hash_table_lookup (priv->eni_ifaces, block->name);
+			if (!conn) {
+				_LOGD ("parse: adding mapping \"%s\"", block->name);
+				g_hash_table_insert (priv->eni_ifaces, g_strdup (block->name), NULL);
+			} else {
+				_LOGD ("parse: adding mapping \"%s\" (have connection %s)", block->name,
+				       nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (conn)));
+			}
 			continue;
 		}
-
-		/* unhandled. */
 	}
 
 	/* Make 'auto' interfaces autoconnect=TRUE */
-	g_hash_table_iter_init (&con_iter, priv->connections);
-	while (g_hash_table_iter_next (&con_iter, (gpointer) &block_name, (gpointer) &connection)) {
+	g_hash_table_iter_init (&con_iter, priv->eni_ifaces);
+	while (g_hash_table_iter_next (&con_iter, (gpointer) &block_name, (gpointer) &conn)) {
 		NMSettingConnection *setting;
 
-		if (   !auto_ifaces
+		if (   !conn
+		    || !auto_ifaces
 		    || !g_hash_table_contains (auto_ifaces, block_name))
 			continue;
 
 		/* FIXME(copy-on-write-connection): avoid modifying NMConnection instances and share them via copy-on-write. */
-		setting = nm_connection_get_setting_connection (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection)));
+		setting = nm_connection_get_setting_connection (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (conn)));
 		g_object_set (setting, NM_SETTING_CONNECTION_AUTOCONNECT, TRUE, NULL);
 	}
 
@@ -445,14 +461,13 @@ initialize (NMSettingsPlugin *plugin)
 
 	/* Now if we're running in managed mode, let NM know there are new connections */
 	if (priv->ifupdown_managed) {
-		GList *con_list = g_hash_table_get_values (priv->connections);
-		GList *cl_iter;
+		GHashTableIter iter;
 
-		for (cl_iter = con_list; cl_iter; cl_iter = g_list_next (cl_iter)) {
+		g_hash_table_iter_init (&iter, priv->eni_ifaces);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) conn)) {
 			_nm_settings_plugin_emit_signal_connection_added (NM_SETTINGS_PLUGIN (self),
-			                                                  NM_SETTINGS_CONNECTION (cl_iter->data));
+			                                                  NM_SETTINGS_CONNECTION (conn));
 		}
-		g_list_free (con_list);
 	}
 }
 
@@ -463,9 +478,8 @@ settings_plugin_ifupdown_init (SettingsPluginIfupdown *self)
 {
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
 
-	priv->connections = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
+	priv->eni_ifaces = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
 	priv->kernel_ifaces = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, _udev_device_unref);
-	priv->eni_ifaces = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
 }
 
 static void
@@ -474,7 +488,6 @@ dispose (GObject *object)
 	SettingsPluginIfupdown *plugin = SETTINGS_PLUGIN_IFUPDOWN (object);
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (plugin);
 
-	g_clear_pointer (&priv->connections, g_hash_table_destroy);
 	g_clear_pointer (&priv->kernel_ifaces, g_hash_table_destroy);
 	g_clear_pointer (&priv->eni_ifaces, g_hash_table_destroy);
 
