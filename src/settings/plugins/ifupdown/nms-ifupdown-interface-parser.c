@@ -34,25 +34,25 @@
 
 if_block* first;
 if_block* last;
-
 if_data* last_data;
 
-void add_block(const char *type, const char* name)
+void
+add_block (const char *type, const char* name)
 {
 	if_block *ret = g_slice_new0 (struct _if_block);
-	ret->name = g_strdup(name);
-	ret->type = g_strdup(type);
+	ret->name = g_strdup (name);
+	ret->type = g_strdup (type);
 	if (first == NULL)
 		first = last = ret;
-	else
-	{
+	else {
 		last->next = ret;
 		last = ret;
 	}
 	last_data = NULL;
 }
 
-void add_data(const char *key,const char *data)
+void
+add_data (const char *key, const char *data)
 {
 	if_data *ret;
 	char *idx;
@@ -62,42 +62,40 @@ void add_data(const char *key,const char *data)
 		return;
 
 	ret = g_slice_new0 (struct _if_data);
-	ret->key = g_strdup(key);
+	ret->key = g_strdup (key);
 
 	/* Normalize keys. Convert '_' to '-', as ifupdown accepts both variants.
 	 * When querying keys via ifparser_getkey(), use '-'. */
-	while ((idx = strrchr(ret->key, '_'))) {
+	while ((idx = strrchr (ret->key, '_'))) {
 		*idx = '-';
 	}
-	ret->data = g_strdup(data);
+	ret->data = g_strdup (data);
 
-	if (last->info == NULL)
-	{
+	if (last->info == NULL) {
 		last->info = ret;
 		last_data = ret;
-	}
-	else
-	{
+	} else {
 		last_data->next = ret;
 		last_data = last_data->next;
 	}
 }
 
 /* join values in src with spaces into dst;  dst needs to be large enough */
-static char *join_values_with_spaces(char *dst, char **src)
+static char *
+join_values_with_spaces (char *dst, char **src)
 {
 	if (dst != NULL) {
 		*dst = '\0';
 		if (src != NULL && *src != NULL) {
-			strcat(dst, *src);
+			strcat (dst, *src);
 
 			for (src++; *src != NULL; src++) {
-				strcat(dst, " ");
-				strcat(dst, *src);
+				strcat (dst, " ");
+				strcat (dst, *src);
 			}
 		}
 	}
-	return(dst);
+	return (dst);
 }
 
 static void _ifparser_source (const char *path, const char *en_dir, int quiet, int dir);
@@ -126,21 +124,20 @@ _recursive_ifparser (const char *eni_file, int quiet)
 	if (!quiet)
 		nm_log_info (LOGD_SETTINGS, "      interface-parser: parsing file %s\n", eni_file);
 
-	while (!feof(inp))
-	{
+	while (!feof (inp)) {
 		char *token[128]; /* 255 chars can only be split into 127 tokens */
 		char value[255];  /* large enough to join previously split tokens */
 		char *safeptr;
 		int toknum;
 		int len = 0;
 
-		char *ptr = fgets(line+offs, 255-offs, inp);
+		char *ptr = fgets (line+offs, 255-offs, inp);
 		if (ptr == NULL)
 			break;
 
-		len = strlen(line);
+		len = strlen (line);
 		/* skip over-long lines */
-		if (!feof(inp) && len > 0 &&  line[len-1] != '\n') {
+		if (!feof (inp) && len > 0 &&  line[len-1] != '\n') {
 			if (!skip_long_line) {
 				if (!quiet)
 					nm_log_warn (LOGD_SETTINGS, "Skipping over-long-line '%s...'\n", line);
@@ -170,9 +167,9 @@ _recursive_ifparser (const char *eni_file, int quiet)
 
 #define SPACES " \t"
 		/* tokenize input; */
-		for (toknum = 0, token[toknum] = strtok_r(line, SPACES, &safeptr);
+		for (toknum = 0, token[toknum] = strtok_r (line, SPACES, &safeptr);
 		     token[toknum] != NULL;
-		     toknum++, token[toknum] = strtok_r(NULL, SPACES, &safeptr))
+		     toknum++, token[toknum] = strtok_r (NULL, SPACES, &safeptr))
 			;
 
 		/* ignore comments and empty lines */
@@ -182,7 +179,7 @@ _recursive_ifparser (const char *eni_file, int quiet)
 		if (toknum < 2) {
 			if (!quiet) {
 				nm_log_warn (LOGD_SETTINGS, "Can't parse interface line '%s'\n",
-				             join_values_with_spaces(value, token));
+				             join_values_with_spaces (value, token));
 			}
 			skip_to_block = 1;
 			continue;
@@ -193,36 +190,36 @@ _recursive_ifparser (const char *eni_file, int quiet)
 		 * Create a block for each of them except source and source-directory.  */
 
 		/* iface stanza takes at least 3 parameters */
-		if (strcmp(token[0], "iface") == 0) {
+		if (strcmp (token[0], "iface") == 0) {
 			if (toknum < 4) {
 				if (!quiet) {
 					nm_log_warn (LOGD_SETTINGS, "Can't parse iface line '%s'\n",
-					             join_values_with_spaces(value, token));
+					             join_values_with_spaces (value, token));
 				}
 				continue;
 			}
-			add_block(token[0], token[1]);
+			add_block (token[0], token[1]);
 			skip_to_block = 0;
-			add_data(token[2], join_values_with_spaces(value, token + 3));
+			add_data (token[2], join_values_with_spaces (value, token + 3));
 		}
 		/* auto and allow-auto stanzas are equivalent,
 		 * both can take multiple interfaces as parameters: add one block for each */
-		else if (strcmp(token[0], "auto") == 0 ||
-			 strcmp(token[0], "allow-auto") == 0) {
+		else if (strcmp (token[0], "auto") == 0 ||
+			 strcmp (token[0], "allow-auto") == 0) {
 			int i;
 			for (i = 1; i < toknum; i++)
-				add_block("auto", token[i]);
+				add_block ("auto", token[i]);
 			skip_to_block = 0;
 		}
-		else if (strcmp(token[0], "mapping") == 0) {
-			add_block(token[0], join_values_with_spaces(value, token + 1));
+		else if (strcmp (token[0], "mapping") == 0) {
+			add_block (token[0], join_values_with_spaces (value, token + 1));
 			skip_to_block = 0;
 		}
 		/* allow-* can take multiple interfaces as parameters: add one block for each */
-		else if (strncmp(token[0],"allow-",6) == 0) {
+		else if (strncmp (token[0],"allow-",6) == 0) {
 			int i;
 			for (i = 1; i < toknum; i++)
-				add_block(token[0], token[i]);
+				add_block (token[0], token[i]);
 			skip_to_block = 0;
 		}
 		/* source and source-directory stanzas take one or more paths as parameters */
@@ -244,13 +241,13 @@ _recursive_ifparser (const char *eni_file, int quiet)
 			if (skip_to_block) {
 				if (!quiet) {
 					nm_log_warn (LOGD_SETTINGS, "ignoring out-of-block data '%s'\n",
-					             join_values_with_spaces(value, token));
+					             join_values_with_spaces (value, token));
 				}
 			} else
-				add_data(token[0], join_values_with_spaces(value, token + 1));
+				add_data (token[0], join_values_with_spaces (value, token + 1));
 		}
 	}
-	fclose(inp);
+	fclose (inp);
 
 	if (!quiet)
 		nm_log_info (LOGD_SETTINGS, "      interface-parser: finished parsing file %s\n", eni_file);
@@ -301,47 +298,51 @@ _ifparser_source (const char *path, const char *en_dir, int quiet, int dir)
 	g_free (abs_path);
 }
 
-void ifparser_init (const char *eni_file, int quiet)
+void
+ifparser_init (const char *eni_file, int quiet)
 {
 	first = last = NULL;
 	_recursive_ifparser (eni_file, quiet);
 }
 
-void _destroy_data(if_data *ifd)
+void
+_destroy_data (if_data *ifd)
 {
 	if (ifd == NULL)
 		return;
-	_destroy_data(ifd->next);
-	g_free(ifd->key);
-	g_free(ifd->data);
-	g_slice_free(struct _if_data, ifd);
+	_destroy_data (ifd->next);
+	g_free (ifd->key);
+	g_free (ifd->data);
+	g_slice_free (struct _if_data, ifd);
 	return;
 }
 
-void _destroy_block(if_block* ifb)
+void
+_destroy_block (if_block* ifb)
 {
 	if (ifb == NULL)
 		return;
-	_destroy_block(ifb->next);
-	_destroy_data(ifb->info);
-	g_free(ifb->name);
-	g_free(ifb->type);
-	g_slice_free(struct _if_block, ifb);
+	_destroy_block (ifb->next);
+	_destroy_data (ifb->info);
+	g_free (ifb->name);
+	g_free (ifb->type);
+	g_slice_free (struct _if_block, ifb);
 	return;
 }
 
-void ifparser_destroy(void)
+void
+ifparser_destroy (void)
 {
-	_destroy_block(first);
+	_destroy_block (first);
 	first = last = NULL;
 }
 
-if_block *ifparser_getfirst(void)
+if_block *ifparser_getfirst (void)
 {
 	return first;
 }
 
-int ifparser_get_num_blocks(void)
+int ifparser_get_num_blocks (void)
 {
 	int i = 0;
 	if_block *iter = first;
@@ -353,24 +354,24 @@ int ifparser_get_num_blocks(void)
 	return i;
 }
 
-if_block *ifparser_getif(const char* iface)
+if_block *
+ifparser_getif (const char* iface)
 {
 	if_block *curr = first;
-	while(curr!=NULL)
-	{
-		if (strcmp(curr->type,"iface")==0 && strcmp(curr->name,iface)==0)
+	while (curr != NULL) {
+		if (strcmp (curr->type,"iface")==0 && strcmp (curr->name,iface)==0)
 			return curr;
 		curr = curr->next;
 	}
 	return NULL;
 }
 
-const char *ifparser_getkey(if_block* iface, const char *key)
+const char *
+ifparser_getkey (if_block* iface, const char *key)
 {
 	if_data *curr = iface->info;
-	while(curr!=NULL)
-	{
-		if (strcmp(curr->key,key)==0)
+	while (curr != NULL) {
+		if (strcmp (curr->key,key)==0)
 			return curr->data;
 		curr = curr->next;
 	}
@@ -378,7 +379,7 @@ const char *ifparser_getkey(if_block* iface, const char *key)
 }
 
 gboolean
-ifparser_haskey(if_block* iface, const char *key)
+ifparser_haskey (if_block* iface, const char *key)
 {
 	if_data *curr = iface->info;
 
@@ -390,7 +391,8 @@ ifparser_haskey(if_block* iface, const char *key)
 	return FALSE;
 }
 
-int ifparser_get_num_info(if_block* iface)
+int
+ifparser_get_num_info (if_block* iface)
 {
 	int i = 0;
 	if_data *iter = iface->info;
