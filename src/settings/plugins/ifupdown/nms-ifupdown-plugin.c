@@ -307,15 +307,13 @@ initialize (NMSettingsPlugin *config)
 {
 	SettingsPluginIfupdown *self = SETTINGS_PLUGIN_IFUPDOWN (config);
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
-	GHashTable *auto_ifaces;
+	gs_unref_hashtable GHashTable *auto_ifaces = NULL;
 	if_block *block = NULL;
 	struct udev_enumerate *enumerate;
 	struct udev_list_entry *keys;
 	GHashTableIter con_iter;
 	const char *block_name;
 	NMIfupdownConnection *connection;
-
-	auto_ifaces = g_hash_table_new (nm_str_hash, g_str_equal);
 
 	nm_log_info (LOGD_SETTINGS, "init!");
 
@@ -326,9 +324,11 @@ initialize (NMSettingsPlugin *config)
 	ifparser_init (ENI_INTERFACES_FILE, 0);
 	block = ifparser_getfirst ();
 	while (block) {
-		if(!strcmp ("auto", block->type) || !strcmp ("allow-hotplug", block->type))
-			g_hash_table_insert (auto_ifaces, block->name, GUINT_TO_POINTER (1));
-		else if (!strcmp ("iface", block->type)) {
+		if(!strcmp ("auto", block->type) || !strcmp ("allow-hotplug", block->type)) {
+			if (!auto_ifaces)
+				auto_ifaces = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
+			g_hash_table_add (auto_ifaces, g_strdup (block->name));
+		} else if (!strcmp ("iface", block->type)) {
 			NMIfupdownConnection *exported;
 
 			/* Bridge configuration */
@@ -405,14 +405,15 @@ initialize (NMSettingsPlugin *config)
 	while (g_hash_table_iter_next (&con_iter, (gpointer) &block_name, (gpointer) &connection)) {
 		NMSettingConnection *setting;
 
-		if (g_hash_table_lookup (auto_ifaces, block_name)) {
-			/* FIXME(copy-on-write-connection): avoid modifying NMConnection instances and share them via copy-on-write. */
-			setting = nm_connection_get_setting_connection (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection)));
-			g_object_set (setting, NM_SETTING_CONNECTION_AUTOCONNECT, TRUE, NULL);
-			nm_log_info (LOGD_SETTINGS, "autoconnect");
-		}
+		if (   !auto_ifaces
+		    || !g_hash_table_contains (auto_ifaces, block_name))
+			continue;
+
+		/* FIXME(copy-on-write-connection): avoid modifying NMConnection instances and share them via copy-on-write. */
+		setting = nm_connection_get_setting_connection (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection)));
+		g_object_set (setting, NM_SETTING_CONNECTION_AUTOCONNECT, TRUE, NULL);
+		nm_log_info (LOGD_SETTINGS, "autoconnect");
 	}
-	g_hash_table_destroy (auto_ifaces);
 
 	/* Check the config file to find out whether to manage interfaces */
 	priv->unmanage_well_known = !nm_config_data_get_value_boolean (NM_CONFIG_GET_DATA_ORIG,
