@@ -36,14 +36,19 @@ typedef struct _if_block {
 	struct _if_block *next;
 } if_block;
 
-void ifparser_init (const char *eni_file, int quiet);
-void ifparser_destroy (void);
+typedef struct _if_parser if_parser;
 
-if_block *ifparser_getif (const char* iface);
-if_block *ifparser_getfirst (void);
+if_parser *ifparser_parse (const char *eni_file, int quiet);
+
+void ifparser_destroy (if_parser *parser);
+NM_AUTO_DEFINE_FCN0 (if_parser *, _nm_auto_ifparser, ifparser_destroy);
+#define nm_auto_ifparser nm_auto(_nm_auto_ifparser)
+
+if_block *ifparser_getif (if_parser *parser, const char* iface);
+if_block *ifparser_getfirst (if_parser *parser);
 const char *ifparser_getkey (if_block* iface, const char *key);
 gboolean ifparser_haskey (if_block* iface, const char *key);
-int ifparser_get_num_blocks (void);
+int ifparser_get_num_blocks (if_parser *parser);
 int ifparser_get_num_info (if_block* iface);
 
 #endif
