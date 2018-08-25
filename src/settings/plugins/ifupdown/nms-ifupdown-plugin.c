@@ -52,11 +52,6 @@
 
 #define IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT TRUE
 
-/* #define ALWAYS_UNMANAGE TRUE */
-#ifndef ALWAYS_UNMANAGE
-#define ALWAYS_UNMANAGE FALSE
-#endif
-
 /*****************************************************************************/
 
 typedef struct {
@@ -180,7 +175,7 @@ udev_device_added (SettingsPluginIfupdown *self, struct udev_device *device)
 	if (exported)
 		bind_device_to_connection (self, device, exported);
 
-	if (ALWAYS_UNMANAGE || priv->unmanage_well_known)
+	if (priv->unmanage_well_known)
 		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
 }
 
@@ -200,7 +195,7 @@ udev_device_removed (SettingsPluginIfupdown *self, struct udev_device *device)
 	if (!g_hash_table_remove (priv->kernel_ifaces, iface))
 		return;
 
-	if (ALWAYS_UNMANAGE || priv->unmanage_well_known)
+	if (priv->unmanage_well_known)
 		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
 }
 
@@ -220,7 +215,7 @@ udev_device_changed (SettingsPluginIfupdown *self, struct udev_device *device)
 	if (!g_hash_table_lookup (priv->kernel_ifaces, iface))
 		return;
 
-	if (ALWAYS_UNMANAGE || priv->unmanage_well_known)
+	if (priv->unmanage_well_known)
 		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
 }
 
@@ -282,7 +277,7 @@ get_unmanaged_specs (NMSettingsPlugin *plugin)
 	struct udev_device *device;
 	const char *iface;
 
-	if (!ALWAYS_UNMANAGE && !priv->unmanage_well_known)
+	if (!priv->unmanage_well_known)
 		return NULL;
 
 	_LOGD ("unmanaged-specs: unmanaged devices count %u",
