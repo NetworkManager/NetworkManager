@@ -158,9 +158,9 @@ initialize (NMSettingsPlugin *plugin)
 	const char *block_name;
 	NMIfupdownConnection *conn;
 
-	/* Read in all the interfaces */
 	parser = ifparser_parse (ENI_INTERFACES_FILE, 0);
-	for (block = ifparser_getfirst (parser); block; block = block->next) {
+
+	c_list_for_each_entry (block, &parser->block_lst_head, block_lst) {
 
 		if (NM_IN_STRSET (block->type, "auto", "allow-hotplug")) {
 			if (!auto_ifaces)

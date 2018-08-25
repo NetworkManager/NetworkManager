@@ -49,23 +49,23 @@
 static const char*
 _ifupdownplugin_guess_connection_type (if_block *block)
 {
-	if_data *curr = block->info;
-	const char* ret_type = NULL;
-	const char* value = ifparser_getkey (block, "inet");
+	const char *ret_type = NULL;
 
-	if (nm_streq0 (value, "ppp"))
+	if(nm_streq0 (ifparser_getkey (block, "inet"), "ppp"))
 		ret_type = NM_SETTING_PPP_SETTING_NAME;
+	else {
+		if_data *ifb;
 
-	while (!ret_type && curr) {
-		if (   _str_has_prefix (curr->key, "wireless-", FALSE)
-		    || _str_has_prefix (curr->key, "wpa-", FALSE)) {
-			ret_type = NM_SETTING_WIRELESS_SETTING_NAME;
+		c_list_for_each_entry (ifb, &block->data_lst_head, data_lst) {
+			if (   _str_has_prefix (ifb->key, "wireless-", FALSE)
+			    || _str_has_prefix (ifb->key, "wpa-", FALSE)) {
+				ret_type = NM_SETTING_WIRELESS_SETTING_NAME;
+				break;
+			}
 		}
-		curr = curr->next;
+		if(!ret_type)
+			ret_type = NM_SETTING_WIRED_SETTING_NAME;
 	}
-
-	if (!ret_type)
-		ret_type = NM_SETTING_WIRED_SETTING_NAME;
 
 	nm_log_info (LOGD_SETTINGS, "guessed connection type (%s) = %s", block->name, ret_type);
 	return ret_type;
@@ -93,8 +93,8 @@ static void
 update_wireless_setting_from_if_block (NMConnection *connection,
                                        if_block *block)
 {
-	if_data *curr = block->info;
-	const char* value = ifparser_getkey (block, "inet");
+	if_data *curr;
+	const char *value = ifparser_getkey (block, "inet");
 	struct _Mapping mapping[] = {
 		{"ssid", "ssid"},
 		{"essid", "ssid"},
@@ -110,7 +110,7 @@ update_wireless_setting_from_if_block (NMConnection *connection,
 	nm_log_info (LOGD_SETTINGS, "update wireless settings (%s).", block->name);
 	wireless_setting = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
 
-	while (curr) {
+	c_list_for_each_entry (curr, &block->data_lst_head, data_lst) {
 		if (_str_has_prefix (curr->key, "wireless-", TRUE)) {
 			const char* newkey = map_by_mapping (mapping, curr->key + NM_STRLEN ("wireless-"));
 
@@ -156,7 +156,6 @@ update_wireless_setting_from_if_block (NMConnection *connection,
 				nm_log_info (LOGD_SETTINGS, "setting wpa newkey(%s)=data(%s)", newkey, curr->data);
 			}
 		}
-		curr = curr->next;
 	}
 	nm_connection_add_setting (connection, (NMSetting*) wireless_setting);
 }
@@ -248,7 +247,7 @@ static void
 update_wireless_security_setting_from_if_block (NMConnection *connection,
                                                 if_block *block)
 {
-	if_data *curr = block->info;
+	if_data *curr;
 	const char* value = ifparser_getkey (block, "inet");
 	struct _Mapping mapping[] = {
 		{"psk", "psk"},
@@ -314,7 +313,7 @@ update_wireless_security_setting_from_if_block (NMConnection *connection,
 	nm_log_info (LOGD_SETTINGS, "update wireless security settings (%s).", block->name);
 	wireless_security_setting = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 
-	while (curr) {
+	c_list_for_each_entry (curr, &block->data_lst_head, data_lst) {
 		if (_str_has_prefix (curr->key, "wireless-", TRUE)) {
 			const char *key = curr->key + NM_STRLEN ("wireless-");
 			char *property_value = NULL;
@@ -391,7 +390,7 @@ wireless_next:
 				(*free_func) (typed_property_value);
 		}
 	next:
-		curr = curr->next;
+		;
 	}
 
 	if (security)
