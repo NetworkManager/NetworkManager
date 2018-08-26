@@ -49,10 +49,20 @@ G_DEFINE_TYPE (NMIfupdownConnection, nm_ifupdown_connection, NM_TYPE_SETTINGS_CO
 
 /*****************************************************************************/
 
+#define _NMLOG_PREFIX_NAME      "ifupdown"
+#define _NMLOG_DOMAIN           LOGD_SETTINGS
+#define _NMLOG(level, ...) \
+    nm_log ((level), _NMLOG_DOMAIN, NULL, NULL, \
+            "%s" _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+            _NMLOG_PREFIX_NAME": " \
+            _NM_UTILS_MACRO_REST (__VA_ARGS__))
+
+/*****************************************************************************/
+
 static gboolean
 supports_secrets (NMSettingsConnection *connection, const char *setting_name)
 {
-	nm_log_info (LOGD_SETTINGS, "supports_secrets() for setting_name: '%s'", setting_name);
+	_LOGI ("supports_secrets() for setting_name: '%s'", setting_name);
 
 	return (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0);
 }
@@ -78,10 +88,8 @@ nm_ifupdown_connection_new (if_block *block)
 	if (!ifupdown_update_connection_from_if_block (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection)),
 	                                               block,
 	                                               &error)) {
-		nm_log_warn (LOGD_SETTINGS, "%s.%d - invalid connection read from /etc/network/interfaces: %s",
-		             __FILE__,
-		             __LINE__,
-		             error->message);
+		_LOGW ("invalid connection read from /etc/network/interfaces: %s",
+		       error->message);
 		g_object_unref (connection);
 		return NULL;
 	}

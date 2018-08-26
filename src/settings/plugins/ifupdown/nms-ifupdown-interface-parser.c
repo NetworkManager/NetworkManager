@@ -38,6 +38,16 @@ static void _ifparser_source (if_parser *parser, const char *path, const char *e
 
 /*****************************************************************************/
 
+#define _NMLOG_PREFIX_NAME      "ifupdown"
+#define _NMLOG_DOMAIN           LOGD_SETTINGS
+#define _NMLOG(level, ...) \
+    nm_log ((level), _NMLOG_DOMAIN, NULL, NULL, \
+            "%s" _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+            _NMLOG_PREFIX_NAME": " \
+            _NM_UTILS_MACRO_REST (__VA_ARGS__))
+
+/*****************************************************************************/
+
 static void
 add_block (if_parser *parser, const char *type, const char* name)
 {
@@ -116,17 +126,17 @@ _recursive_ifparser (if_parser *parser, const char *eni_file, int quiet)
 	/* Check if interfaces file exists and open it */
 	if (!g_file_test (eni_file, G_FILE_TEST_EXISTS)) {
 		if (!quiet)
-			nm_log_warn (LOGD_SETTINGS, "interfaces file %s doesn't exist\n", eni_file);
+			_LOGW ("interfaces file %s doesn't exist\n", eni_file);
 		return;
 	}
 	inp = fopen (eni_file, "re");
 	if (inp == NULL) {
 		if (!quiet)
-			nm_log_warn (LOGD_SETTINGS, "Can't open %s\n", eni_file);
+			_LOGW ("Can't open %s\n", eni_file);
 		return;
 	}
 	if (!quiet)
-		nm_log_info (LOGD_SETTINGS, "      interface-parser: parsing file %s\n", eni_file);
+		_LOGI ("      interface-parser: parsing file %s\n", eni_file);
 
 	while (!feof (inp)) {
 		char *token[128]; /* 255 chars can only be split into 127 tokens */
@@ -144,7 +154,7 @@ _recursive_ifparser (if_parser *parser, const char *eni_file, int quiet)
 		if (!feof (inp) && len > 0 &&  line[len-1] != '\n') {
 			if (!skip_long_line) {
 				if (!quiet)
-					nm_log_warn (LOGD_SETTINGS, "Skipping over-long-line '%s...'\n", line);
+					_LOGW ("Skipping over-long-line '%s...'\n", line);
 			}
 			skip_long_line = 1;
 			continue;
@@ -182,8 +192,8 @@ _recursive_ifparser (if_parser *parser, const char *eni_file, int quiet)
 
 		if (toknum < 2) {
 			if (!quiet) {
-				nm_log_warn (LOGD_SETTINGS, "Can't parse interface line '%s'\n",
-				             join_values_with_spaces (value, token));
+				_LOGW ("Can't parse interface line '%s'\n",
+				       join_values_with_spaces (value, token));
 			}
 			skip_to_block = 1;
 			continue;
@@ -197,8 +207,8 @@ _recursive_ifparser (if_parser *parser, const char *eni_file, int quiet)
 		if (nm_streq (token[0], "iface")) {
 			if (toknum < 4) {
 				if (!quiet) {
-					nm_log_warn (LOGD_SETTINGS, "Can't parse iface line '%s'\n",
-					             join_values_with_spaces (value, token));
+					_LOGW ("Can't parse iface line '%s'\n",
+					       join_values_with_spaces (value, token));
 				}
 				continue;
 			}
@@ -244,8 +254,8 @@ _recursive_ifparser (if_parser *parser, const char *eni_file, int quiet)
 		else {
 			if (skip_to_block) {
 				if (!quiet) {
-					nm_log_warn (LOGD_SETTINGS, "ignoring out-of-block data '%s'\n",
-					             join_values_with_spaces (value, token));
+					_LOGW ("ignoring out-of-block data '%s'\n",
+					       join_values_with_spaces (value, token));
 				}
 			} else
 				add_data (parser, token[0], join_values_with_spaces (value, token + 1));
@@ -254,7 +264,7 @@ _recursive_ifparser (if_parser *parser, const char *eni_file, int quiet)
 	fclose (inp);
 
 	if (!quiet)
-		nm_log_info (LOGD_SETTINGS, "      interface-parser: finished parsing file %s\n", eni_file);
+		_LOGI ("      interface-parser: finished parsing file %s\n", eni_file);
 }
 
 static void
@@ -273,20 +283,20 @@ _ifparser_source (if_parser *parser, const char *path, const char *en_dir, int q
 		abs_path = g_build_filename (en_dir, path, NULL);
 
 	if (!quiet)
-		nm_log_info (LOGD_SETTINGS, "      interface-parser: source line includes interfaces file(s) %s\n", abs_path);
+		_LOGI ("      interface-parser: source line includes interfaces file(s) %s\n", abs_path);
 
 	/* ifupdown uses WRDE_NOCMD for wordexp. */
 	if (wordexp (abs_path, &we, WRDE_NOCMD)) {
 		if (!quiet)
-			nm_log_warn (LOGD_SETTINGS, "word expansion for %s failed\n", abs_path);
+			_LOGW ("word expansion for %s failed\n", abs_path);
 	} else {
 		for (i = 0; i < we.we_wordc; i++) {
 			if (dir) {
 				source_dir = g_dir_open (we.we_wordv[i], 0, &error);
 				if (!source_dir) {
 					if (!quiet) {
-						nm_log_warn (LOGD_SETTINGS, "Failed to open directory %s: %s",
-						             we.we_wordv[i], error->message);
+						_LOGW ("Failed to open directory %s: %s",
+						       we.we_wordv[i], error->message);
 					}
 					g_clear_error (&error);
 				} else {
