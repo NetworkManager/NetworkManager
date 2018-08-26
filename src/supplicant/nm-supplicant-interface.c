@@ -111,7 +111,7 @@ typedef struct {
 	NMSupplicantInterfaceState state;
 	int            disconnect_reason;
 
-	gboolean       scanning:1;
+	bool           scanning:1;
 
 	bool           scan_done_pending:1;
 	bool           scan_done_success:1;
