@@ -1235,8 +1235,12 @@ int tempfn_xxxxxx(const char *p, const char *extra, char **ret) {
         const char *fn;
         char *t;
 
-        assert(p);
         assert(ret);
+
+        if (isempty(p))
+                return -EINVAL;
+        if (path_equal(p, "/"))
+                return -EINVAL;
 
         /*
          * Turns this:
@@ -1269,8 +1273,12 @@ int tempfn_random(const char *p, const char *extra, char **ret) {
         uint64_t u;
         unsigned i;
 
-        assert(p);
         assert(ret);
+
+        if (isempty(p))
+                return -EINVAL;
+        if (path_equal(p, "/"))
+                return -EINVAL;
 
         /*
          * Turns this:
@@ -1330,7 +1338,10 @@ int tempfn_random_child(const char *p, const char *extra, char **ret) {
         if (!t)
                 return -ENOMEM;
 
-        x = stpcpy(stpcpy(stpcpy(t, p), "/.#"), extra);
+        if (isempty(p))
+                x = stpcpy(stpcpy(t, ".#"), extra);
+        else
+                x = stpcpy(stpcpy(stpcpy(t, p), "/.#"), extra);
 
         u = random_u64();
         for (i = 0; i < 16; i++) {
@@ -1417,7 +1428,8 @@ int open_tmpfile_unlinkable(const char *directory, int flags) {
                 r = tmp_dir(&directory);
                 if (r < 0)
                         return r;
-        }
+        } else if (isempty(directory))
+                return -EINVAL;
 
         /* Returns an unlinked temporary file that cannot be linked into the file system anymore */
 
@@ -1452,21 +1464,13 @@ int open_tmpfile_linkable(const char *target, int flags, char **ret_path) {
          * which case "ret_path" will be returned as NULL. If not possible a the tempoary path name used is returned in
          * "ret_path". Use link_tmpfile() below to rename the result after writing the file in full. */
 
-        {
-                _cleanup_free_ char *dn = NULL;
-
-                dn = dirname_malloc(target);
-                if (!dn)
-                        return -ENOMEM;
-
-                fd = open(dn, O_TMPFILE|flags, 0640);
-                if (fd >= 0) {
-                        *ret_path = NULL;
-                        return fd;
-                }
-
-                log_debug_errno(errno, "Failed to use O_TMPFILE on %s: %m", dn);
+        fd = open_parent(target, O_TMPFILE|flags, 0640);
+        if (fd >= 0) {
+                *ret_path = NULL;
+                return fd;
         }
+
+        log_debug_errno(fd, "Failed to use O_TMPFILE for %s: %m", target);
 
         r = tempfn_random(target, NULL, &tmp);
         if (r < 0)

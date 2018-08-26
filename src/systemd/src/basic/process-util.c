@@ -1115,12 +1115,7 @@ int pid_compare_func(const void *a, const void *b) {
         const pid_t *p = a, *q = b;
 
         /* Suitable for usage in qsort() */
-
-        if (*p < *q)
-                return -1;
-        if (*p > *q)
-                return 1;
-        return 0;
+        return CMP(*p, *q);
 }
 
 int ioprio_parse_priority(const char *s, int *ret) {
@@ -1161,7 +1156,7 @@ void reset_cached_pid(void) {
 /* We use glibc __register_atfork() + __dso_handle directly here, as they are not included in the glibc
  * headers. __register_atfork() is mostly equivalent to pthread_atfork(), but doesn't require us to link against
  * libpthread, as it is part of glibc anyway. */
-extern int __register_atfork(void (*prepare) (void), void (*parent) (void), void (*child) (void), void * __dso_handle);
+extern int __register_atfork(void (*prepare) (void), void (*parent) (void), void (*child) (void), void *dso_handle);
 extern void* __dso_handle __attribute__ ((__weak__));
 
 pid_t getpid_cached(void) {

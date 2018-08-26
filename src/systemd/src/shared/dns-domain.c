@@ -1,6 +1,4 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
-/***
- ***/
 
 #include "nm-sd-adapt.h"
 
@@ -514,7 +512,7 @@ int dns_name_compare_func(const void *a, const void *b) {
                 r = dns_label_unescape_suffix(a, &x, la, sizeof(la));
                 q = dns_label_unescape_suffix(b, &y, lb, sizeof(lb));
                 if (r < 0 || q < 0)
-                        return r - q;
+                        return CMP(r, q);
 
                 r = ascii_strcasecmp_nn(la, r, lb, q);
                 if (r != 0)

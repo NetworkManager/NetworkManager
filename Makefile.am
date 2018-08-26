@@ -1374,14 +1374,12 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/sd-adapt/def.h \
 	src/systemd/sd-adapt/device-nodes.h \
 	src/systemd/sd-adapt/dirent-util.h \
-	src/systemd/sd-adapt/env-util.h \
 	src/systemd/sd-adapt/errno-list.h \
 	src/systemd/sd-adapt/format-util.h \
 	src/systemd/sd-adapt/glob-util.h \
 	src/systemd/sd-adapt/gunicode.h \
 	src/systemd/sd-adapt/ioprio.h \
 	src/systemd/sd-adapt/khash.h \
-	src/systemd/sd-adapt/libudev.h \
 	src/systemd/sd-adapt/locale-util.h \
 	src/systemd/sd-adapt/memfd-util.h \
 	src/systemd/sd-adapt/missing.h \
@@ -1389,16 +1387,17 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/sd-adapt/procfs-util.h \
 	src/systemd/sd-adapt/raw-clone.h \
 	src/systemd/sd-adapt/sd-daemon.h \
+	src/systemd/sd-adapt/sd-device.h \
 	src/systemd/sd-adapt/stat-util.h \
 	src/systemd/sd-adapt/terminal-util.h \
-	src/systemd/sd-adapt/udev-util.h \
-	src/systemd/sd-adapt/udev.h \
 	src/systemd/sd-adapt/unaligned.h \
 	src/systemd/sd-adapt/user-util.h \
 	src/systemd/sd-adapt/virt.h \
 	src/systemd/src/basic/alloc-util.c \
 	src/systemd/src/basic/alloc-util.h \
 	src/systemd/src/basic/async.h \
+	src/systemd/src/basic/env-util.c \
+	src/systemd/src/basic/env-util.h \
 	src/systemd/src/basic/escape.c \
 	src/systemd/src/basic/escape.h \
 	src/systemd/src/basic/ether-addr-util.c \

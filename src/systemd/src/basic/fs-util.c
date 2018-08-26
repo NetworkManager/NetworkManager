@@ -442,6 +442,31 @@ int mkfifo_atomic(const char *path, mode_t mode) {
         return 0;
 }
 
+int mkfifoat_atomic(int dirfd, const char *path, mode_t mode) {
+        _cleanup_free_ char *t = NULL;
+        int r;
+
+        assert(path);
+
+        if (path_is_absolute(path))
+                return mkfifo_atomic(path, mode);
+
+        /* We're only interested in the (random) filename.  */
+        r = tempfn_random_child("", NULL, &t);
+        if (r < 0)
+                return r;
+
+        if (mkfifoat(dirfd, t, mode) < 0)
+                return -errno;
+
+        if (renameat(dirfd, t, dirfd, path) < 0) {
+                unlink_noerrno(t);
+                return -errno;
+        }
+
+        return 0;
+}
+
 int get_files_in_directory(const char *path, char ***list) {
         _cleanup_closedir_ DIR *d = NULL;
         struct dirent *de;
@@ -679,7 +704,7 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
         if (!original_root && !ret && (flags & (CHASE_NONEXISTENT|CHASE_NO_AUTOFS|CHASE_SAFE|CHASE_OPEN|CHASE_STEP)) == CHASE_OPEN) {
                 /* Shortcut the CHASE_OPEN case if the caller isn't interested in the actual path and has no root set
                  * and doesn't care about any of the other special features we provide either. */
-                r = open(path, O_PATH|O_CLOEXEC);
+                r = open(path, O_PATH|O_CLOEXEC|((flags & CHASE_NOFOLLOW) ? O_NOFOLLOW : 0));
                 if (r < 0)
                         return -errno;
 
@@ -834,7 +859,7 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
                     fd_is_fs_type(child, AUTOFS_SUPER_MAGIC) > 0)
                         return -EREMOTE;
 
-                if (S_ISLNK(st.st_mode)) {
+                if (S_ISLNK(st.st_mode) && !((flags & CHASE_NOFOLLOW) && isempty(todo))) {
                         char *joined;
 
                         _cleanup_free_ char *destination = NULL;
@@ -1165,7 +1190,7 @@ int unlinkat_deallocate(int fd, const char *name, int flags) {
 }
 
 int fsync_directory_of_file(int fd) {
-        _cleanup_free_ char *path = NULL, *dn = NULL;
+        _cleanup_free_ char *path = NULL;
         _cleanup_close_ int dfd = -1;
         int r;
 
@@ -1191,17 +1216,41 @@ int fsync_directory_of_file(int fd) {
         if (!path_is_absolute(path))
                 return -EINVAL;
 
-        dn = dirname_malloc(path);
-        if (!dn)
-                return -ENOMEM;
-
-        dfd = open(dn, O_RDONLY|O_CLOEXEC|O_DIRECTORY);
+        dfd = open_parent(path, O_CLOEXEC, 0);
         if (dfd < 0)
-                return -errno;
+                return dfd;
 
         if (fsync(dfd) < 0)
                 return -errno;
 
         return 0;
+}
+
+int open_parent(const char *path, int flags, mode_t mode) {
+        _cleanup_free_ char *parent = NULL;
+        int fd;
+
+        if (isempty(path))
+                return -EINVAL;
+        if (path_equal(path, "/")) /* requesting the parent of the root dir is fishy, let's prohibit that */
+                return -EINVAL;
+
+        parent = dirname_malloc(path);
+        if (!parent)
+                return -ENOMEM;
+
+        /* Let's insist on O_DIRECTORY since the parent of a file or directory is a directory. Except if we open an
+         * O_TMPFILE file, because in that case we are actually create a regular file below the parent directory. */
+
+        if ((flags & O_PATH) == O_PATH)
+                flags |= O_DIRECTORY;
+        else if ((flags & O_TMPFILE) != O_TMPFILE)
+                flags |= O_DIRECTORY|O_RDONLY;
+
+        fd = open(parent, flags, mode);
+        if (fd < 0)
+                return -errno;
+
+        return fd;
 }
 #endif /* NM_IGNORED */
