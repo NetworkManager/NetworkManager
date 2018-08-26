@@ -2,6 +2,7 @@ sources = files(
   'sd-adapt/nm-sd-adapt.c',
   'src/basic/alloc-util.c',
   'src/basic/escape.c',
+  'src/basic/env-util.c',
   'src/basic/ether-addr-util.c',
   'src/basic/extract-word.c',
   'src/basic/fd-util.c',
