@@ -210,6 +210,8 @@ if jansson_dep.found()
 endif
 
 libsystemd_dep = dependency('libsystemd', version: '>= 209', required: false)
+libsystemd_login_deb = dependency('libsystemd-login', version: '>= 183', required: false)
+
 config_h.set10('HAVE_LIBSYSTEMD', libsystemd_dep.found())
 
 systemd_dep = dependency('systemd', required: false)
@@ -378,31 +380,39 @@ config_h.set('HOSTNAME_PERSIST_SUSE', (hostname_persist == 'suse'))
 config_h.set('HOSTNAME_PERSIST_GENTOO', (hostname_persist == 'gentoo'))
 config_h.set('HOSTNAME_PERSIST_SLACKWARE', (hostname_persist == 'slackware'))
 
-enable_suspend_resume = get_option('suspend_resume')
-suspend_resume = ''
+suspend_resume = get_option('suspend_resume')
 
-if enable_suspend_resume
+if suspend_resume == 'auto'
+  if libsystemd_dep.found() or libsystemd_login_deb.found()
+    suspend_resume = 'systemd'
+  elif libelogind_dep.found()
+    suspend_resume = 'elogind'
+  elif session_tracking_consolekit
+    suspend_resume = 'consolekit'
+  else
+    suspend_resume = 'upower'
+  endif
+endif
+
+if suspend_resume == 'systemd'
   if libsystemd_dep.found()
     system_inhibit_dep = libsystemd_dep
-    suspend_resume = 'systemd'
-    config_h.set('SUSPEND_RESUME_SYSTEMD', true)
+  elif libsystemd_login_deb.found()
+    system_inhibit_dep = libsystemd_login_deb
   else
-    system_inhibit_dep = dependency('libsystemd-login', version: '>= 183', required: false)
-    if system_inhibit_dep.found()
-      suspend_resume = 'systemd'
-      config_h.set('SUSPEND_RESUME_SYSTEMD', true)
-    elif libelogind_dep.found()
-      system_inhibit_dep = libelogind_dep
-      suspend_resume = 'elogind'
-      config_h.set('SUSPEND_RESUME_ELOGIND', true)
-    elif session_tracking_consolekit
-      suspend_resume = 'consolekit'
-      config_h.set('SUSPEND_RESUME_CONSOLEKIT', true)
-    else
-      suspend_resume = 'upower'
-      config_h.set('SUSPEND_RESUME_UPOWER', true)
-    endif
+    error('Need libsystemd for suspend_resume=systemd')
   endif
+  config_h.set('SUSPEND_RESUME_SYSTEMD', true)
+elif suspend_resume == 'elogind'
+  assert(libelogind_dep.found(), 'Need libelogind for suspend_resume=elogind')
+  system_inhibit_dep = libelogind_dep
+  config_h.set('SUSPEND_RESUME_ELOGIND', true)
+elif suspend_resume == 'consolekit'
+  config_h.set('SUSPEND_RESUME_CONSOLEKIT', true)
+elif suspend_resume == 'upower'
+  config_h.set('SUSPEND_RESUME_UPOWER', true)
+else
+  error('bug')
 endif
 
 # SELinux support
