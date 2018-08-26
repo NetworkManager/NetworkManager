@@ -139,7 +139,7 @@ typedef struct {
 static void
 _call_trace (const char *comment, OvsdbMethodCall *call, json_t *msg)
 {
-#ifdef NM_MORE_LOGGING
+#if NM_MORE_LOGGING
 	char *str = NULL;
 
 	if (msg)

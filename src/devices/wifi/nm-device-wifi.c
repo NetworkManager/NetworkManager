@@ -438,7 +438,7 @@ periodic_update (NMDeviceWifi *self)
 		percent = nm_platform_wifi_get_quality (nm_device_get_platform (NM_DEVICE (self)), ifindex);
 		if (percent >= 0 || ++priv->invalid_strength_counter > 3) {
 			if (nm_wifi_ap_set_strength (priv->current_ap, (gint8) percent)) {
-#ifdef NM_MORE_LOGGING
+#if NM_MORE_LOGGING
 				_ap_dump (self, LOGL_TRACE, priv->current_ap, "updated", 0);
 #endif
 			}

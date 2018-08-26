@@ -1111,6 +1111,8 @@ if test "${enable_more_logging}" = ""; then
 fi
 if test "${enable_more_logging}" = "yes"; then
 	AC_DEFINE(NM_MORE_LOGGING, [1], [Define if more debug logging is enabled])
+else
+	AC_DEFINE(NM_MORE_LOGGING, [0], [Define if more debug logging is enabled])
 fi
 
 NM_LTO

@@ -3413,7 +3413,7 @@ typedef struct {
 
 	struct nl_sock *nlh;
 	guint32 nlh_seq_next;
-#ifdef NM_MORE_LOGGING
+#if NM_MORE_LOGGING
 	guint32 nlh_seq_last_handled;
 #endif
 	guint32 nlh_seq_last_seen;
@@ -4772,7 +4772,7 @@ event_seq_check (NMPlatform *platform, guint32 seq_number, WaitForNlResponseResu
 		}
 	}
 
-#ifdef NM_MORE_LOGGING
+#if NM_MORE_LOGGING
 	if (seq_number != priv->nlh_seq_last_handled)
 		_LOGt ("netlink: recvmsg: unwaited sequence number %u", seq_number);
 	priv->nlh_seq_last_handled = seq_number;
