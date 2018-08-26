@@ -28,23 +28,25 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#if defined (SESSION_TRACKING_SYSTEMD) && defined (SESSION_TRACKING_ELOGIND)
+#if SESSION_TRACKING_SYSTEMD && SESSION_TRACKING_ELOGIND
 #error Cannot build both systemd-logind and elogind support
 #endif
 
-#ifdef SESSION_TRACKING_SYSTEMD
+#if SESSION_TRACKING_SYSTEMD
 #include <systemd/sd-login.h>
 #define LOGIND_NAME "systemd-logind"
 #endif
 
-#ifdef SESSION_TRACKING_ELOGIND
+#if SESSION_TRACKING_ELOGIND
 #include <elogind/sd-login.h>
 #define LOGIND_NAME "elogind"
-/* Re-Use SESSION_TRACKING_SYSTEMD as elogind substitutes systemd-login */
-#define SESSION_TRACKING_SYSTEMD 1
 #endif
 
 #include "NetworkManagerUtils.h"
+
+#define SESSION_TRACKING_XLOGIND (SESSION_TRACKING_SYSTEMD || SESSION_TRACKING_ELOGIND)
+
+#define CKDB_PATH "/var/run/ConsoleKit/database"
 
 /*****************************************************************************/
 
@@ -58,14 +60,14 @@ static guint signals[LAST_SIGNAL] = { 0 };
 struct _NMSessionMonitor {
 	GObject parent;
 
-#ifdef SESSION_TRACKING_SYSTEMD
+#if SESSION_TRACKING_XLOGIND
 	struct {
 		sd_login_monitor *monitor;
 		guint watch;
 	} sd;
 #endif
 
-#ifdef SESSION_TRACKING_CONSOLEKIT
+#if SESSION_TRACKING_CONSOLEKIT
 	struct {
 		GFileMonitor *monitor;
 		GHashTable *cache;
@@ -85,7 +87,7 @@ G_DEFINE_TYPE (NMSessionMonitor, nm_session_monitor, G_TYPE_OBJECT);
 
 /*****************************************************************************/
 
-#ifdef SESSION_TRACKING_SYSTEMD
+#if SESSION_TRACKING_XLOGIND
 static gboolean
 st_sd_session_exists (NMSessionMonitor *monitor, uid_t uid, gboolean active)
 {
@@ -143,11 +145,11 @@ st_sd_finalize (NMSessionMonitor *monitor)
 	}
 	nm_clear_g_source (&monitor->sd.watch);
 }
-#endif /* SESSION_TRACKING_SYSTEMD */
+#endif /* SESSION_TRACKING_XLOGIND */
 
 /*****************************************************************************/
 
-#ifdef SESSION_TRACKING_CONSOLEKIT
+#if SESSION_TRACKING_CONSOLEKIT
 typedef struct {
 	gboolean active;
 } CkSession;
@@ -352,12 +354,12 @@ nm_session_monitor_session_exists (NMSessionMonitor *self,
 {
 	g_return_val_if_fail (NM_IS_SESSION_MONITOR (self), FALSE);
 
-#ifdef SESSION_TRACKING_SYSTEMD
+#if SESSION_TRACKING_XLOGIND
 	if (st_sd_session_exists (self, uid, active))
 		return TRUE;
 #endif
 
-#ifdef SESSION_TRACKING_CONSOLEKIT
+#if SESSION_TRACKING_CONSOLEKIT
 	if (ck_session_exists (self, uid, active))
 		return TRUE;
 #endif
@@ -370,12 +372,12 @@ nm_session_monitor_session_exists (NMSessionMonitor *self,
 static void
 nm_session_monitor_init (NMSessionMonitor *monitor)
 {
-#ifdef SESSION_TRACKING_SYSTEMD
+#if SESSION_TRACKING_XLOGIND
 	st_sd_init (monitor);
 	_LOGD ("using "LOGIND_NAME" session tracking");
 #endif
 
-#ifdef SESSION_TRACKING_CONSOLEKIT
+#if SESSION_TRACKING_CONSOLEKIT
 	ck_init (monitor);
 	_LOGD ("using ConsoleKit session tracking");
 #endif
@@ -384,11 +386,11 @@ nm_session_monitor_init (NMSessionMonitor *monitor)
 static void
 finalize (GObject *object)
 {
-#ifdef SESSION_TRACKING_SYSTEMD
+#if SESSION_TRACKING_XLOGIND
 	st_sd_finalize (NM_SESSION_MONITOR (object));
 #endif
 
-#ifdef SESSION_TRACKING_CONSOLEKIT
+#if SESSION_TRACKING_CONSOLEKIT
 	ck_finalize (NM_SESSION_MONITOR (object));
 #endif
 
