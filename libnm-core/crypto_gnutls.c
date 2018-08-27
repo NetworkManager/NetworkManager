@@ -82,8 +82,14 @@ crypto_decrypt (const char *cipher,
 	} else if (!strcmp (cipher, CIPHER_DES_CBC)) {
 		cipher_mech = GNUTLS_CIPHER_DES_CBC;
 		real_iv_len = SALT_LEN;
-	} else if (!strcmp (cipher, CIPHER_AES_CBC)) {
+	} else if (!strcmp (cipher, CIPHER_AES_128_CBC)) {
 		cipher_mech = GNUTLS_CIPHER_AES_128_CBC;
+		real_iv_len = 16;
+	} else if (!strcmp (cipher, CIPHER_AES_192_CBC)) {
+		cipher_mech = GNUTLS_CIPHER_AES_192_CBC;
+		real_iv_len = 16;
+	} else if (!strcmp (cipher, CIPHER_AES_256_CBC)) {
+		cipher_mech = GNUTLS_CIPHER_AES_256_CBC;
 		real_iv_len = 16;
 	} else {
 		g_set_error (error, NM_CRYPTO_ERROR,
@@ -189,8 +195,12 @@ crypto_encrypt (const char *cipher,
 
 	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC))
 		cipher_mech = GNUTLS_CIPHER_3DES_CBC;
-	else if (!strcmp (cipher, CIPHER_AES_CBC))
+	else if (!strcmp (cipher, CIPHER_AES_128_CBC))
 		cipher_mech = GNUTLS_CIPHER_AES_128_CBC;
+	else if (!strcmp (cipher, CIPHER_AES_192_CBC))
+		cipher_mech = GNUTLS_CIPHER_AES_192_CBC;
+	else if (!strcmp (cipher, CIPHER_AES_256_CBC))
+		cipher_mech = GNUTLS_CIPHER_AES_256_CBC;
 	else {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_UNKNOWN_CIPHER,
