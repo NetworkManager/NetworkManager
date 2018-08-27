@@ -210,6 +210,8 @@ if jansson_dep.found()
 endif
 
 libsystemd_dep = dependency('libsystemd', version: '>= 209', required: false)
+libsystemd_login_dep = dependency('libsystemd-login', version: '>= 183', required: false)
+
 config_h.set10('HAVE_LIBSYSTEMD', libsystemd_dep.found())
 
 systemd_dep = dependency('systemd', required: false)
@@ -347,63 +349,70 @@ config_h.set_quoted('NM_CONFIG_DEFAULT_LOGGING_BACKEND', config_logging_backend_
 
 session_tracking = get_option('session_tracking')
 session_trackers = []
-enable_session_tracking = (session_tracking != 'no')
 
-enable_consolekit = get_option('consolekit')
-
-if enable_session_tracking
-  if session_tracking == 'systemd'
-    logind_dep = libsystemd_dep
-    if not logind_dep.found()
-      logind_dep = dependency('libsystemd-login', required: false)
-      assert(logind_dep.found(), 'You must have libsystemd or libsystemd-login installed to build with systemd-logind support')
-    endif
-    session_trackers += 'systemd-logind'
-    config_h.set('SESSION_TRACKING_SYSTEMD', true)
-  else
-    logind_dep = libelogind_dep
-    assert(logind_dep.found() and libelogind_dep.version().version_compare('>= 229'), 'You must have libelogind installed to build with elogind support.')
-    session_trackers += 'elogind'
-    config_h.set('SESSION_TRACKING_ELOGIND', true)
+if session_tracking == 'systemd'
+  logind_dep = libsystemd_dep
+  if not logind_dep.found()
+    logind_dep = dependency('libsystemd-login', required: false)
+    assert(logind_dep.found(), 'You must have libsystemd or libsystemd-login installed to build with systemd-logind support')
   endif
-
-  if enable_consolekit
-    session_trackers += 'consolekit'
-    config_h.set_quoted('CKDB_PATH', '/var/run/ConsoleKit/database')
-    config_h.set('SESSION_TRACKING_CONSOLEKIT', enable_consolekit)
-  endif
+  session_trackers += 'systemd-logind'
+  config_h.set10('SESSION_TRACKING_SYSTEMD', true)
+  config_h.set10('SESSION_TRACKING_ELOGIND', false)
+elif session_tracking == 'elogind'
+  logind_dep = libelogind_dep
+  assert(logind_dep.found() and libelogind_dep.version().version_compare('>= 229'), 'You must have libelogind installed to build with elogind support.')
+  session_trackers += 'elogind'
+  config_h.set10('SESSION_TRACKING_SYSTEMD', false)
+  config_h.set10('SESSION_TRACKING_ELOGIND', true)
+else
+  logind_dep = dependency('', required:false)
 endif
+
+session_tracking_consolekit = get_option('session_tracking_consolekit')
+if session_tracking_consolekit
+  session_trackers += 'consolekit'
+endif
+config_h.set10('SESSION_TRACKING_CONSOLEKIT', session_tracking_consolekit)
 
 hostname_persist = get_option('hostname_persist')
 config_h.set('HOSTNAME_PERSIST_SUSE', (hostname_persist == 'suse'))
 config_h.set('HOSTNAME_PERSIST_GENTOO', (hostname_persist == 'gentoo'))
 config_h.set('HOSTNAME_PERSIST_SLACKWARE', (hostname_persist == 'slackware'))
 
-enable_suspend_resume = get_option('suspend_resume')
-suspend_resume = ''
+suspend_resume = get_option('suspend_resume')
 
-if enable_suspend_resume
+if suspend_resume == 'auto'
+  if libsystemd_dep.found() or libsystemd_login_dep.found()
+    suspend_resume = 'systemd'
+  elif libelogind_dep.found()
+    suspend_resume = 'elogind'
+  elif session_tracking_consolekit
+    suspend_resume = 'consolekit'
+  else
+    suspend_resume = 'upower'
+  endif
+endif
+
+if suspend_resume == 'systemd'
   if libsystemd_dep.found()
     system_inhibit_dep = libsystemd_dep
-    suspend_resume = 'systemd'
-    config_h.set('SUSPEND_RESUME_SYSTEMD', true)
+  elif libsystemd_login_dep.found()
+    system_inhibit_dep = libsystemd_login_dep
   else
-    system_inhibit_dep = dependency('libsystemd-login', version: '>= 183', required: false)
-    if system_inhibit_dep.found()
-      suspend_resume = 'systemd'
-      config_h.set('SUSPEND_RESUME_SYSTEMD', true)
-    elif libelogind_dep.found()
-      system_inhibit_dep = libelogind_dep
-      suspend_resume = 'elogind'
-      config_h.set('SUSPEND_RESUME_ELOGIND', true)
-    elif enable_consolekit
-      suspend_resume = 'consolekit'
-      config_h.set('SUSPEND_RESUME_CONSOLEKIT', true)
-    else
-      suspend_resume = 'upower'
-      config_h.set('SUSPEND_RESUME_UPOWER', true)
-    endif
+    error('Need libsystemd for suspend_resume=systemd')
   endif
+  config_h.set('SUSPEND_RESUME_SYSTEMD', true)
+elif suspend_resume == 'elogind'
+  assert(libelogind_dep.found(), 'Need libelogind for suspend_resume=elogind')
+  system_inhibit_dep = libelogind_dep
+  config_h.set('SUSPEND_RESUME_ELOGIND', true)
+elif suspend_resume == 'consolekit'
+  config_h.set('SUSPEND_RESUME_CONSOLEKIT', true)
+elif suspend_resume == 'upower'
+  config_h.set('SUSPEND_RESUME_UPOWER', true)
+else
+  error('bug')
 endif
 
 # SELinux support

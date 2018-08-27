@@ -444,6 +444,8 @@ fi
 if test "$have_systemd_logind" = "yes"; then
 	AC_DEFINE([SESSION_TRACKING_SYSTEMD], 1, [Define to 1 if libsystemd-login is available])
 	session_tracking="$session_tracking, systemd-logind"
+else
+	AC_DEFINE([SESSION_TRACKING_SYSTEMD], 0, [Define to 1 if libsystemd-login is available])
 fi
 
 if test "$use_elogind" = "yes" -a "$have_systemd_logind" = "yes"; then
@@ -460,12 +462,15 @@ fi
 if test "$have_elogind" = "yes"; then
 	AC_DEFINE([SESSION_TRACKING_ELOGIND], 1, [Define to 1 if libelogin is available])
 	session_tracking="$session_tracking, elogind"
+else
+	AC_DEFINE([SESSION_TRACKING_ELOGIND], 0, [Define to 1 if libelogin is available])
 fi
 
 if test "$use_consolekit" = "yes"; then
 	AC_DEFINE([SESSION_TRACKING_CONSOLEKIT], 1, [Define to 1 if ConsoleKit is available])
-	AC_DEFINE([CKDB_PATH], "/var/run/ConsoleKit/database", [Path to ConsoleKit database])
 	session_tracking="$session_tracking, consolekit"
+else
+	AC_DEFINE([SESSION_TRACKING_CONSOLEKIT], 0, [Define to 1 if ConsoleKit is available])
 fi
 session_tracking="$(printf '%s' "${session_tracking}" | sed 's/^, //')"
 
@@ -1111,6 +1116,8 @@ if test "${enable_more_logging}" = ""; then
 fi
 if test "${enable_more_logging}" = "yes"; then
 	AC_DEFINE(NM_MORE_LOGGING, [1], [Define if more debug logging is enabled])
+else
+	AC_DEFINE(NM_MORE_LOGGING, [0], [Define if more debug logging is enabled])
 fi
 
 NM_LTO

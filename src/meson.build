@@ -146,12 +146,10 @@ sources = files(
 deps = [
   dl_dep,
   libndp_dep,
-  # FIXME: Some files use introspection/dbus* headers, so
-  #        this dependency might be needed
-  #libnmdbus_dep,
   libudev_dep,
   nm_core_dep,
-  shared_n_acd_dep
+  shared_n_acd_dep,
+  logind_dep,
 ]
 
 if enable_concheck
@@ -168,10 +166,6 @@ endif
 
 if enable_selinux
   deps += selinux_dep
-endif
-
-if enable_session_tracking
-  deps += logind_dep
 endif
 
 libnetwork_manager = static_library(
