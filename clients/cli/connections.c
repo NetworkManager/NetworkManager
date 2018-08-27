@@ -67,10 +67,10 @@ struct _OptionInfo {
 
 /* define some other prompts */
 
-#define PROMPT_CONNECTION  _("Connection (name, UUID, or path)")
-#define PROMPT_VPN_CONNECTION  _("VPN connection (name, UUID, or path)")
-#define PROMPT_CONNECTIONS _("Connection(s) (name, UUID, or path)")
-#define PROMPT_ACTIVE_CONNECTIONS _("Connection(s) (name, UUID, path or apath)")
+#define PROMPT_CONNECTION  _("Connection (name, UUID, or path): ")
+#define PROMPT_VPN_CONNECTION  _("VPN connection (name, UUID, or path): ")
+#define PROMPT_CONNECTIONS _("Connection(s) (name, UUID, or path): ")
+#define PROMPT_ACTIVE_CONNECTIONS _("Connection(s) (name, UUID, path or apath): ")
 
 #define BASE_PROMPT "nmcli> "
 
@@ -801,6 +801,7 @@ typedef struct {
 	NMConnection *connection;
 	NMSetting *setting;
 	const char *property;
+	char **words;
 } TabCompletionInfo;
 
 static TabCompletionInfo nmc_tab_completion;
@@ -2722,7 +2723,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		/* nmc_do_cmd() should not call this with argc=0. */
 		g_assert (!nmc->complete);
 
-		line = nmc_readline ("%s: ", PROMPT_CONNECTION);
+		line = nmc_readline (PROMPT_CONNECTION);
 		nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
 		g_free (line);
 		argv_ptr = &arg_arr;
@@ -3674,6 +3675,18 @@ _meta_abstract_complete (const NMMetaAbstractInfo *abstract_info, const char *te
 	                                         &values_to_free);
 	if (values)
 		return values_to_free ?: g_strdupv ((char **) values);
+	return NULL;
+}
+
+static char *
+_meta_abstract_generator (const char *text, int state)
+{
+	if (nmc_tab_completion.words) {
+		return nmc_rl_gen_func_basic (text,
+		                              state,
+		                              (const char *const *) nmc_tab_completion.words);
+	}
+
 	return NULL;
 }
 
@@ -4744,6 +4757,7 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 	rl_compentry_func_t *generator_func = NULL;
 	gs_free char *no = g_strdup_printf ("[%s]: ", _("no"));
 	gs_free char *yes = g_strdup_printf ("[%s]: ", _("yes"));
+	const NMMetaAbstractInfo *info;
 
 	/* Disable readline's default filename completion */
 	rl_attempted_completion_over = 1;
@@ -4778,12 +4792,13 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 			} else {
 				if (   property_info->prompt
 				    && g_str_has_prefix (rl_prompt, property_info->prompt)) {
-					char **values;
-
-					values = _meta_abstract_complete ((const NMMetaAbstractInfo *) property_info, text);
-					if (values)
-						return values;
-					goto next;
+					info = (const NMMetaAbstractInfo *) property_info;
+					nmc_tab_completion.words = _meta_abstract_complete (info, text);
+					if (nmc_tab_completion.words) {
+						match_array = rl_completion_matches (text, _meta_abstract_generator);
+						nm_clear_pointer (&nmc_tab_completion.words, g_strfreev);
+					}
+					return match_array;
 				}
 			}
 		}
@@ -8305,7 +8320,7 @@ do_connection_clone (NmCli *nmc, int argc, char **argv)
 		/* nmc_do_cmd() should not call this with argc=0. */
 		g_assert (!nmc->complete);
 
-		line = nmc_readline ("%s: ", PROMPT_CONNECTION);
+		line = nmc_readline (PROMPT_CONNECTION);
 		nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
 		g_free (line);
 		argv_ptr = &arg_arr;
@@ -8415,7 +8430,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 			/* nmc_do_cmd() should not call this with argc=0. */
 			g_assert (!nmc->complete);
 
-			line = nmc_readline ("%s: ", PROMPT_CONNECTIONS);
+			line = nmc_readline (PROMPT_CONNECTIONS);
 			nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
 			g_free (line);
 			arg_ptr = arg_arr;
@@ -8666,7 +8681,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 		g_assert (!nmc->complete);
 
 		if (nmc->ask) {
-			type_ask = nmc_readline (gettext (NM_META_TEXT_PROMPT_VPN_TYPE));
+			type_ask = nmc_readline ("%s: ", gettext (NM_META_TEXT_PROMPT_VPN_TYPE));
 			filename_ask = nmc_readline (gettext (PROMPT_IMPORT_FILE));
 			type = type_ask = type_ask ? g_strstrip (type_ask) : NULL;
 			filename = filename_ask = filename_ask ? g_strstrip (filename_ask) : NULL;
@@ -8791,7 +8806,7 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 		/* nmc_do_cmd() should not call this with argc=0. */
 		g_assert (!nmc->complete);
 
-		line = nmc_readline ("%s: ", PROMPT_VPN_CONNECTION);
+		line = nmc_readline (PROMPT_VPN_CONNECTION);
 		nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
 		g_free (line);
 		argv_ptr = &arg_arr;
@@ -8931,6 +8946,7 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 {
 	char **match_array = NULL;
 	rl_compentry_func_t *generator_func = NULL;
+	const NMMetaAbstractInfo *info;
 
 	/* Disable readline's default filename completion */
 	rl_attempted_completion_over = 1;
@@ -8947,8 +8963,10 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 		generator_func = gen_func_connection_names;
 	} else if (g_strcmp0 (rl_prompt, PROMPT_ACTIVE_CONNECTIONS) == 0) {
 		generator_func = gen_func_active_connection_names;
-	} else if (g_strcmp0 (rl_prompt, NM_META_TEXT_PROMPT_VPN_TYPE) == 0) {
-		return _meta_abstract_complete ((const NMMetaAbstractInfo *) nm_meta_property_info_vpn_service_type, text);
+	} else if (rl_prompt && g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_VPN_TYPE)) {
+		info = (const NMMetaAbstractInfo *) nm_meta_property_info_vpn_service_type;
+		nmc_tab_completion.words = _meta_abstract_complete (info, text);
+		generator_func = _meta_abstract_generator;
 	} else if (g_strcmp0 (rl_prompt, PROMPT_IMPORT_FILE) == 0) {
 		rl_attempted_completion_over = 0;
 		rl_complete_with_tilde_expansion = 1;
@@ -8959,6 +8977,7 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 	if (generator_func)
 		match_array = rl_completion_matches (text, generator_func);
 
+	g_clear_pointer (&nmc_tab_completion.words, g_strfreev);
 	return match_array;
 }
 
