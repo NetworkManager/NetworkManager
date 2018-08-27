@@ -271,7 +271,7 @@ gboolean nm_logging_syslog_enabled (void);
 
 /* _LOGT() and _LOGt() both log with level TRACE, but the latter is disabled by default,
  * unless building with --with-more-logging. */
-#ifdef NM_MORE_LOGGING
+#if NM_MORE_LOGGING
 #define _LOGt_ENABLED(...)    _NMLOG_ENABLED (LOGL_TRACE, ##__VA_ARGS__)
 #define _LOGt(...)            _NMLOG (LOGL_TRACE, __VA_ARGS__)
 #define _LOGt_err(errsv, ...) _NMLOG_err (errsv, LOGL_TRACE, __VA_ARGS__)
@@ -311,7 +311,7 @@ gboolean nm_logging_syslog_enabled (void);
 #define _LOG2W_err(errsv, ...) _NMLOG2_err (errsv, LOGL_WARN , __VA_ARGS__)
 #define _LOG2E_err(errsv, ...) _NMLOG2_err (errsv, LOGL_ERR  , __VA_ARGS__)
 
-#ifdef NM_MORE_LOGGING
+#if NM_MORE_LOGGING
 #define _LOG2t_ENABLED(...)    _NMLOG2_ENABLED (LOGL_TRACE, ##__VA_ARGS__)
 #define _LOG2t(...)            _NMLOG2 (LOGL_TRACE, __VA_ARGS__)
 #define _LOG2t_err(errsv, ...) _NMLOG2_err (errsv, LOGL_TRACE, __VA_ARGS__)
@@ -342,7 +342,7 @@ gboolean nm_logging_syslog_enabled (void);
 #define _LOG3W_err(errsv, ...) _NMLOG3_err (errsv, LOGL_WARN , __VA_ARGS__)
 #define _LOG3E_err(errsv, ...) _NMLOG3_err (errsv, LOGL_ERR  , __VA_ARGS__)
 
-#ifdef NM_MORE_LOGGING
+#if NM_MORE_LOGGING
 #define _LOG3t_ENABLED(...)    _NMLOG3_ENABLED (LOGL_TRACE, ##__VA_ARGS__)
 #define _LOG3t(...)            _NMLOG3 (LOGL_TRACE, __VA_ARGS__)
 #define _LOG3t_err(errsv, ...) _NMLOG3_err (errsv, LOGL_TRACE, __VA_ARGS__)
