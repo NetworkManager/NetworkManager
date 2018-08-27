@@ -32,7 +32,7 @@ nm_device_ethernet_utils_get_default_wired_name (NMConnection *const *connection
 	int i;
 
 	/* Find the next available unique connection name */
-	for (i = 1; i <= 10000; i++) {
+	for (i = 1; i <= G_MAXINT; i++) {
 		temp = g_strdup_printf (_("Wired connection %d"), i);
 		for (j = 0; connections[j]; j++) {
 			if (nm_streq0 (nm_connection_get_id (connections[j]), temp)) {
@@ -44,7 +44,6 @@ nm_device_ethernet_utils_get_default_wired_name (NMConnection *const *connection
 next:
 		;
 	}
-
 	return NULL;
 }
 
