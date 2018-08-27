@@ -103,7 +103,9 @@ crypto_decrypt (const char *cipher,
 	} else if (!strcmp (cipher, CIPHER_DES_CBC)) {
 		cipher_mech = CKM_DES_CBC_PAD;
 		real_iv_len = 8;
-	} else if (!strcmp (cipher, CIPHER_AES_CBC)) {
+	} else if (NM_IN_STRSET (cipher, CIPHER_AES_128_CBC,
+	                                 CIPHER_AES_192_CBC,
+	                                 CIPHER_AES_256_CBC)) {
 		cipher_mech = CKM_AES_CBC_PAD;
 		real_iv_len = 16;
 	} else {
@@ -269,7 +271,10 @@ crypto_encrypt (const char *cipher,
 
 	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC))
 		cipher_mech = CKM_DES3_CBC_PAD;
-	else if (!strcmp (cipher, CIPHER_AES_CBC))
+	else if (NM_IN_STRSET (cipher,
+	                       CIPHER_AES_128_CBC,
+	                       CIPHER_AES_192_CBC,
+	                       CIPHER_AES_256_CBC))
 		cipher_mech = CKM_AES_CBC_PAD;
 	else {
 		g_set_error (error, NM_CRYPTO_ERROR,

@@ -158,7 +158,13 @@ parse_old_openssl_key_file (const guint8 *data,
 				goto parse_error;
 			}
 		} else if (!strncmp (p, DEK_INFO_TAG, strlen (DEK_INFO_TAG))) {
+			static const char *const known_ciphers[] = { CIPHER_DES_EDE3_CBC,
+			                                             CIPHER_DES_CBC,
+			                                             CIPHER_AES_128_CBC,
+			                                             CIPHER_AES_192_CBC,
+			                                             CIPHER_AES_256_CBC };
 			char *comma;
+			guint i;
 
 			if (enc_tags++ != 1 || str->len != 0) {
 				g_set_error (error, NM_CRYPTO_ERROR,
@@ -187,13 +193,13 @@ parse_old_openssl_key_file (const guint8 *data,
 			iv = g_strdup (comma);
 
 			/* Get the private key cipher */
-			if (!strcasecmp (p, "DES-EDE3-CBC")) {
-				cipher = g_strdup (p);
-			} else if (!strcasecmp (p, "DES-CBC")) {
-				cipher = g_strdup (p);
-			} else if (!strcasecmp (p, "AES-128-CBC")) {
-				cipher = g_strdup (p);
-			} else {
+			for (i = 0; i < G_N_ELEMENTS (known_ciphers); i++) {
+				if (!g_ascii_strcasecmp (p, known_ciphers[i])) {
+					cipher = g_strdup (known_ciphers[i]);
+					break;
+				}
+			}
+			if (i == G_N_ELEMENTS (known_ciphers)) {
 				g_set_error (error, NM_CRYPTO_ERROR,
 				             NM_CRYPTO_ERROR_INVALID_DATA,
 				             _("Malformed PEM file: unknown private key cipher '%s'."),
@@ -383,12 +389,16 @@ crypto_make_des_aes_key (const char *cipher,
 	g_return_val_if_fail (password != NULL, NULL);
 	g_return_val_if_fail (out_len != NULL, NULL);
 
-	if (!strcmp (cipher, "DES-EDE3-CBC"))
+	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC))
 		digest_len = 24;
-	else if (!strcmp (cipher, "DES-CBC"))
+	else if (!strcmp (cipher, CIPHER_DES_CBC))
 		digest_len = 8;
-	else if (!strcmp (cipher, "AES-128-CBC"))
+	else if (!strcmp (cipher, CIPHER_AES_128_CBC))
 		digest_len = 16;
+	else if (!strcmp (cipher, CIPHER_AES_192_CBC))
+		digest_len = 24;
+	else if (!strcmp (cipher, CIPHER_AES_256_CBC))
+		digest_len = 32;
 	else {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_UNKNOWN_CIPHER,

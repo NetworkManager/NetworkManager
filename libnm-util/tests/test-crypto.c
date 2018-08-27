@@ -383,8 +383,8 @@ main (int argc, char **argv)
 	g_test_add_data_func ("/libnm/crypto/key/padding-8",
 	                      "test2_key_and_cert.pem, 12345testing",
 	                      test_key);
-	g_test_add_data_func ("/libnm/crypto/key/aes",
-	                      "test-aes-key.pem, test-aes-password",
+	g_test_add_data_func ("/libnm/crypto/key/aes-128",
+	                      "test-aes-128-key.pem, test-aes-password",
 	                      test_key);
 
 	g_test_add_data_func ("/libnm/crypto/PKCS#12/1",
