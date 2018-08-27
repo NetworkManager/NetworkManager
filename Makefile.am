@@ -749,7 +749,8 @@ EXTRA_DIST += \
 	libnm-core/tests/certs/test2_ca_cert.pem \
 	libnm-core/tests/certs/test2-cert.p12 \
 	libnm-core/tests/certs/test2_key_and_cert.pem \
-	libnm-core/tests/certs/test-aes-key.pem \
+	libnm-core/tests/certs/test-aes-128-key.pem \
+	libnm-core/tests/certs/test-aes-256-key.pem \
 	libnm-core/tests/certs/test_ca_cert.der \
 	libnm-core/tests/certs/test_ca_cert.pem \
 	libnm-core/tests/certs/test-ca-cert.pem \
