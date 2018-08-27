@@ -623,39 +623,6 @@ _nm_utils_copy_strdict (GHashTable *strdict)
 }
 
 GPtrArray *
-_nm_utils_copy_slist_to_array (const GSList *list,
-                               NMUtilsCopyFunc copy_func,
-                               GDestroyNotify unref_func)
-{
-	const GSList *iter;
-	GPtrArray *array;
-
-	array = g_ptr_array_new_with_free_func (unref_func);
-	for (iter = list; iter; iter = iter->next)
-		g_ptr_array_add (array, copy_func ? copy_func (iter->data) : iter->data);
-	return array;
-}
-
-GSList *
-_nm_utils_copy_array_to_slist (const GPtrArray *array,
-                               NMUtilsCopyFunc copy_func)
-{
-	GSList *slist = NULL;
-	gpointer item;
-	int i;
-
-	if (!array)
-		return NULL;
-
-	for (i = 0; i < array->len; i++) {
-		item = array->pdata[i];
-		slist = g_slist_prepend (slist, copy_func (item));
-	}
-
-	return g_slist_reverse (slist);
-}
-
-GPtrArray *
 _nm_utils_copy_array (const GPtrArray *array,
                       NMUtilsCopyFunc copy_func,
                       GDestroyNotify free_func)

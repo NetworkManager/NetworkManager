@@ -238,12 +238,6 @@ _nm_auto_ip_route_unref (NMIPRoute **v)
 }
 #define nm_auto_ip_route_unref nm_auto (_nm_auto_ip_route_unref)
 
-GPtrArray *_nm_utils_copy_slist_to_array (const GSList *list,
-                                          NMUtilsCopyFunc copy_func,
-                                          GDestroyNotify unref_func);
-GSList    *_nm_utils_copy_array_to_slist (const GPtrArray *array,
-                                          NMUtilsCopyFunc copy_func);
-
 GPtrArray *_nm_utils_copy_array (const GPtrArray *array,
                                  NMUtilsCopyFunc copy_func,
                                  GDestroyNotify free_func);
