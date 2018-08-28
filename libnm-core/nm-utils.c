@@ -4333,6 +4333,8 @@ nm_utils_is_uuid (const char *str)
 	const char *p = str;
 	int num_dashes = 0;
 
+	g_return_val_if_fail (str, FALSE);
+
 	while (*p) {
 		if (*p == '-')
 			num_dashes++;
