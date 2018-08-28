@@ -139,7 +139,7 @@ static void
 connection_removed_cb (NMSettingsConnection *obj, gpointer user_data)
 {
 	g_hash_table_remove (SETTINGS_PLUGIN_IFCFG_GET_PRIVATE ((SettingsPluginIfcfg *) user_data)->connections,
-	                     nm_connection_get_uuid (NM_CONNECTION (obj)));
+	                     nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (obj)));
 }
 
 static void
@@ -157,7 +157,7 @@ remove_connection (SettingsPluginIfcfg *self, NMIfcfgConnection *connection)
 	unrecognized = !!nm_ifcfg_connection_get_unrecognized_spec (connection);
 
 	g_object_ref (connection);
-	g_hash_table_remove (priv->connections, nm_connection_get_uuid (NM_CONNECTION (connection)));
+	g_hash_table_remove (priv->connections, nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (connection)));
 	if (!unmanaged && !unrecognized)
 		nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (connection));
 	g_object_unref (connection);
@@ -228,7 +228,7 @@ update_connection (SettingsPluginIfcfg *self,
 		return NULL;
 	}
 
-	uuid = nm_connection_get_uuid (NM_CONNECTION (connection_new));
+	uuid = nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (connection_new));
 	connection_by_uuid = g_hash_table_lookup (priv->connections, uuid);
 
 	if (   connection
@@ -285,12 +285,16 @@ update_connection (SettingsPluginIfcfg *self,
 
 		if (   !unmanaged_changed
 		    && !unrecognized_changed
-		    && nm_connection_compare (NM_CONNECTION (connection_by_uuid),
-		                              NM_CONNECTION (connection_new),
+		    && nm_connection_compare (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection_by_uuid)),
+		                              nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection_new)),
 		                              NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
 		                              NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
-			if (old_path && g_strcmp0 (old_path, full_path) != 0)
-				_LOGI ("rename \"%s\" to "NM_IFCFG_CONNECTION_LOG_FMT" without other changes", nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection_by_uuid)), NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
+			if (   old_path
+			    && !nm_streq0 (old_path, full_path)) {
+				_LOGI ("rename \"%s\" to "NM_IFCFG_CONNECTION_LOG_FMT" without other changes",
+				       nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection_by_uuid)),
+				       NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
+			}
 		} else {
 
 			/*******************************************************
@@ -299,7 +303,7 @@ update_connection (SettingsPluginIfcfg *self,
 
 			if (source)
 				_LOGI ("update "NM_IFCFG_CONNECTION_LOG_FMT" from %s", NM_IFCFG_CONNECTION_LOG_ARG (connection_new), NM_IFCFG_CONNECTION_LOG_PATH (old_path));
-			else if (!g_strcmp0 (old_path, nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection_new))))
+			else if (nm_streq0 (old_path, nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection_new))))
 				_LOGI ("update "NM_IFCFG_CONNECTION_LOG_FMT, NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
 			else if (old_path)
 				_LOGI ("rename \"%s\" to "NM_IFCFG_CONNECTION_LOG_FMT, old_path, NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
@@ -312,7 +316,7 @@ update_connection (SettingsPluginIfcfg *self,
 			              NULL);
 
 			if (!nm_settings_connection_update (NM_SETTINGS_CONNECTION (connection_by_uuid),
-			                                    NM_CONNECTION (connection_new),
+			                                    nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection_new)),
 			                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP_SAVED,
 			                                    NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 			                                    "ifcfg-update",
@@ -338,7 +342,7 @@ update_connection (SettingsPluginIfcfg *self,
 					 * so add it back now.
 					 */
 					g_hash_table_insert (priv->connections,
-					                     g_strdup (nm_connection_get_uuid (NM_CONNECTION (connection_by_uuid))),
+					                     g_strdup (nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (connection_by_uuid))),
 					                     connection_by_uuid /* we took reference above and pass it on */);
 				}
 			} else {
@@ -731,7 +735,7 @@ impl_ifcfgrh_get_ifcfg_details (SettingsPluginIfcfg *plugin,
 		return;
 	}
 
-	s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
+	s_con = nm_connection_get_setting_connection (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection)));
 	if (!s_con) {
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_SETTINGS_ERROR,

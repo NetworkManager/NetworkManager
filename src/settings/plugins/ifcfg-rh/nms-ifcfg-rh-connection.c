@@ -143,7 +143,7 @@ devtimeout_expired (gpointer user_data)
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (self);
 
 	nm_log_info (LOGD_SETTINGS, "Device for connection '%s' did not appear before timeout",
-	             nm_connection_get_id (NM_CONNECTION (self)));
+	             nm_settings_connection_get_id (NM_SETTINGS_CONNECTION (self)));
 
 	g_signal_handler_disconnect (NM_PLATFORM_GET, priv->devtimeout_link_changed_handler);
 	priv->devtimeout_link_changed_handler = 0;
@@ -163,7 +163,7 @@ nm_ifcfg_connection_check_devtimeout (NMIfcfgConnection *self)
 	guint devtimeout;
 	const NMPlatformLink *pllink;
 
-	s_con = nm_connection_get_setting_connection (NM_CONNECTION (self));
+	s_con = nm_connection_get_setting_connection (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (self)));
 
 	if (!nm_setting_connection_get_autoconnect (s_con))
 		return;
@@ -186,7 +186,7 @@ nm_ifcfg_connection_check_devtimeout (NMIfcfgConnection *self)
 	nm_settings_connection_set_ready (NM_SETTINGS_CONNECTION (self), FALSE);
 
 	nm_log_info (LOGD_SETTINGS, "Waiting %u seconds for %s to appear for connection '%s'",
-	             devtimeout, ifname, nm_connection_get_id (NM_CONNECTION (self)));
+	             devtimeout, ifname, nm_settings_connection_get_id (NM_SETTINGS_CONNECTION (self)));
 
 	priv->devtimeout_link_changed_handler =
 	    g_signal_connect (NM_PLATFORM_GET, NM_PLATFORM_SIGNAL_LINK_CHANGED,

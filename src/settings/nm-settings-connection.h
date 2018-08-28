@@ -139,6 +139,8 @@ struct _NMSettingsConnectionClass {
 
 GType nm_settings_connection_get_type (void);
 
+NMConnection *nm_settings_connection_get_connection (NMSettingsConnection *self);
+
 guint64 nm_settings_connection_get_last_secret_agent_version_id (NMSettingsConnection *self);
 
 gboolean nm_settings_connection_has_unmodified_applied_connection (NMSettingsConnection *self,
@@ -268,7 +270,13 @@ void        nm_settings_connection_set_filename (NMSettingsConnection *self,
                                                  const char *filename);
 const char *nm_settings_connection_get_filename (NMSettingsConnection *self);
 
-const char *nm_settings_connection_get_id   (NMSettingsConnection *connection);
-const char *nm_settings_connection_get_uuid (NMSettingsConnection *connection);
+const char *nm_settings_connection_get_id              (NMSettingsConnection *connection);
+const char *nm_settings_connection_get_uuid            (NMSettingsConnection *connection);
+const char *nm_settings_connection_get_connection_type (NMSettingsConnection *connection);
+
+/*****************************************************************************/
+
+NMConnection **nm_settings_connections_array_to_connections (NMSettingsConnection *const*connections,
+                                                             gssize n_connections);
 
 #endif /* __NETWORKMANAGER_SETTINGS_CONNECTION_H__ */

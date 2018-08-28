@@ -84,9 +84,9 @@ read_connections (NMSIbftPlugin *self)
 		connection = nms_ibft_connection_new (iter->data, &error);
 		if (connection) {
 			nm_log_info (LOGD_SETTINGS, "ibft: read connection '%s'",
-			             nm_connection_get_id (NM_CONNECTION (connection)));
+			             nm_settings_connection_get_id (NM_SETTINGS_CONNECTION (connection)));
 			g_hash_table_insert (priv->connections,
-			                     g_strdup (nm_connection_get_uuid (NM_CONNECTION (connection))),
+			                     g_strdup (nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (connection))),
 			                     connection);
 		} else {
 			nm_log_warn (LOGD_SETTINGS, "ibft: failed to read iscsiadm record: %s", error->message);

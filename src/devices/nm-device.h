@@ -297,7 +297,7 @@ typedef struct _NMDeviceClass {
 	gboolean    (* get_autoconnect_allowed) (NMDevice *self);
 
 	gboolean    (* can_auto_connect) (NMDevice *self,
-	                                  NMConnection *connection,
+	                                  NMSettingsConnection *sett_conn,
 	                                  char **specific_object);
 
 	guint32     (*get_configured_mtu) (NMDevice *self, NMDeviceMtuSource *out_source);
@@ -501,6 +501,9 @@ gboolean        nm_device_parent_notify_changed (NMDevice *self,
                                                  NMDevice *change_candidate,
                                                  gboolean device_removed);
 
+const char     *nm_device_parent_find_for_connection (NMDevice *self,
+                                                      const char *current_setting_parent);
+
 /* Master */
 gboolean        nm_device_is_master             (NMDevice *dev);
 
@@ -509,6 +512,7 @@ NMDevice *      nm_device_get_master            (NMDevice *dev);
 
 NMActRequest *  nm_device_get_act_request       (NMDevice *dev);
 NMSettingsConnection *nm_device_get_settings_connection (NMDevice *dev);
+NMConnection *  nm_device_get_settings_connection_get_connection (NMDevice *self);
 NMConnection *  nm_device_get_applied_connection (NMDevice *dev);
 gboolean        nm_device_has_unmodified_applied_connection (NMDevice *self,
                                                              NMSettingCompareFlags compare_flags);
@@ -532,7 +536,7 @@ gboolean nm_device_master_update_slave_connection (NMDevice *master,
                                                    GError **error);
 
 gboolean nm_device_can_auto_connect (NMDevice *self,
-                                     NMConnection *connection,
+                                     NMSettingsConnection *sett_conn,
                                      char **specific_object);
 
 gboolean nm_device_complete_connection (NMDevice *device,

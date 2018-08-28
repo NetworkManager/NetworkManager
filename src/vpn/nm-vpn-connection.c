@@ -193,7 +193,7 @@ static void _set_vpn_state (NMVpnConnection *self,
 #define __NMLOG_prefix_buf_len 128
 
 static const char *
-__LOG_create_prefix (char *buf, NMVpnConnection *self, NMConnection *con)
+__LOG_create_prefix (char *buf, NMVpnConnection *self, NMSettingsConnection *con)
 {
 	NMVpnConnectionPrivate *priv;
 	const char *id;
@@ -202,7 +202,7 @@ __LOG_create_prefix (char *buf, NMVpnConnection *self, NMConnection *con)
 		return _NMLOG_PREFIX_NAME;
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
-	id = con ? nm_connection_get_id (con) : NULL;
+	id = con ? nm_settings_connection_get_id (con) : NULL;
 
 	g_snprintf (buf, __NMLOG_prefix_buf_len,
 	            "%s["
@@ -214,7 +214,7 @@ __LOG_create_prefix (char *buf, NMVpnConnection *self, NMConnection *con)
 	            "]",
 	            _NMLOG_PREFIX_NAME,
 	            self,
-	            con ? "," : "--", con ? (nm_connection_get_uuid (con) ?: "??") : "",
+	            con ? "," : "--", con ? (nm_settings_connection_get_uuid (con) ?: "??") : "",
 	            con ? "," : "", NM_PRINT_FMT_QUOTED (id, "\"", id, "\"", con ? "??" : ""),
 	            priv->ip_ifindex,
 	            NM_PRINT_FMT_QUOTED (priv->ip_iface, ":(", priv->ip_iface, ")", "")
@@ -225,17 +225,17 @@ __LOG_create_prefix (char *buf, NMVpnConnection *self, NMConnection *con)
 
 #define _NMLOG(level, ...) \
     G_STMT_START { \
-        const NMLogLevel __level = (level); \
-        NMConnection *__con = (self) ? (NMConnection *) _get_settings_connection (self, TRUE) : NULL; \
+        const NMLogLevel _level = (level); \
+        NMSettingsConnection *_con = (self) ? _get_settings_connection (self, TRUE) : NULL; \
         \
-        if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
+        if (nm_logging_enabled (_level, _NMLOG_DOMAIN)) { \
             char __prefix[__NMLOG_prefix_buf_len]; \
             \
-            _nm_log (__level, _NMLOG_DOMAIN, 0, \
+            _nm_log (_level, _NMLOG_DOMAIN, 0, \
                      (self) ? NM_VPN_CONNECTION_GET_PRIVATE (self)->ip_iface : NULL, \
-                     (__con) ? nm_connection_get_uuid (__con) : NULL, \
+                     (_con) ? nm_settings_connection_get_uuid (_con) : NULL, \
                      "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                     __LOG_create_prefix (__prefix, (self), __con) \
+                     __LOG_create_prefix (__prefix, (self), _con) \
                      _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END

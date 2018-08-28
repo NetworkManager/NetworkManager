@@ -44,15 +44,14 @@ _new_connection (const char *id)
 static char *
 _get_default_wired_name (GSList *list)
 {
-	gs_free NMConnection **v = NULL;
-	guint l, i;
+	gs_unref_hashtable GHashTable *existing_ids = NULL;
 
-	l = g_slist_length (list);
-	v = g_new0 (NMConnection *, l + 1);
-	for (i = 0; list; list = list->next, i++)
-		v[i] = NM_CONNECTION (list->data);
-	g_assert (i == l);
-	return nm_device_ethernet_utils_get_default_wired_name (v);
+	if (list) {
+		existing_ids = g_hash_table_new (nm_str_hash, g_str_equal);
+		for (; list; list = list->next)
+			g_hash_table_add (existing_ids, (char *) nm_connection_get_id (list->data));
+	}
+	return nm_device_ethernet_utils_get_default_wired_name (existing_ids);
 }
 
 /*****************************************************************************/

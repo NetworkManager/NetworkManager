@@ -797,11 +797,12 @@ get_autoconnect_allowed (NMDevice *device)
 
 static gboolean
 can_auto_connect (NMDevice *device,
-                  NMConnection *connection,
+                  NMSettingsConnection *sett_conn,
                   char **specific_object)
 {
 	NMDeviceIwd *self = NM_DEVICE_IWD (device);
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	NMWifiAP *ap;
 	const char *mode;
@@ -809,8 +810,10 @@ can_auto_connect (NMDevice *device,
 
 	nm_assert (!specific_object || !*specific_object);
 
-	if (!NM_DEVICE_CLASS (nm_device_iwd_parent_class)->can_auto_connect (device, connection, NULL))
+	if (!NM_DEVICE_CLASS (nm_device_iwd_parent_class)->can_auto_connect (device, sett_conn, NULL))
 		return FALSE;
+
+	connection = nm_settings_connection_get_connection (sett_conn);
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wifi, FALSE);
@@ -824,7 +827,7 @@ can_auto_connect (NMDevice *device,
 	 * but haven't been successful, since these are often accidental choices
 	 * from the menu and the user may not know the password.
 	 */
-	if (nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (connection), &timestamp)) {
+	if (nm_settings_connection_get_timestamp (sett_conn, &timestamp)) {
 		if (timestamp == 0)
 			return FALSE;
 	}
