@@ -260,6 +260,9 @@ NM_AUTO_DEFINE_FCN_STRUCT (GValue, _nm_auto_unset_gvalue, g_value_unset)
 NM_AUTO_DEFINE_FCN_VOID0 (void *, _nm_auto_unref_gtypeclass, g_type_class_unref)
 #define nm_auto_unref_gtypeclass nm_auto(_nm_auto_unref_gtypeclass)
 
+NM_AUTO_DEFINE_FCN0 (GByteArray *, _nm_auto_unref_bytearray, g_byte_array_unref)
+#define nm_auto_unref_bytearray nm_auto(_nm_auto_unref_bytearray)
+
 static inline void
 _nm_auto_free_gstring (GString **str)
 {
