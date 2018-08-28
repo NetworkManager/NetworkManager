@@ -1918,6 +1918,7 @@ finalize (GObject *object)
 {
 	NMSettings *self = NM_SETTINGS (object);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GSList *iter;
 
 	_clear_connections_cached_list (priv);
 
@@ -1926,7 +1927,12 @@ finalize (GObject *object)
 	g_slist_free_full (priv->unmanaged_specs, g_free);
 	g_slist_free_full (priv->unrecognized_specs, g_free);
 
-	g_slist_free_full (priv->plugins, g_object_unref);
+	while ((iter = priv->plugins)) {
+		gs_unref_object NMSettingsPlugin *plugin = iter->data;
+
+		priv->plugins = g_slist_delete_link (priv->plugins, iter);
+		g_signal_handlers_disconnect_by_data (plugin, self);
+	}
 
 	g_clear_object (&priv->agent_mgr);
 
