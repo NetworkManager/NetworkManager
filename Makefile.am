@@ -501,6 +501,7 @@ libnm_core_lib_h_priv = \
 	shared/nm-utils/nm-dedup-multi.h \
 	shared/nm-utils/nm-enum-utils.h \
 	shared/nm-utils/nm-hash-utils.h \
+	shared/nm-utils/nm-secret-utils.h \
 	shared/nm-utils/nm-shared-utils.h \
 	shared/nm-utils/nm-random-utils.h \
 	shared/nm-utils/nm-udev-utils.h \
@@ -567,6 +568,7 @@ libnm_core_lib_c_real = \
 	shared/nm-utils/nm-dedup-multi.c \
 	shared/nm-utils/nm-enum-utils.c \
 	shared/nm-utils/nm-hash-utils.c \
+	shared/nm-utils/nm-secret-utils.c \
 	shared/nm-utils/nm-shared-utils.c \
 	shared/nm-utils/nm-random-utils.c \
 	shared/nm-utils/nm-udev-utils.c \
@@ -4736,6 +4738,8 @@ EXTRA_DIST += \
 	shared/nm-utils/nm-jansson.h \
 	shared/nm-utils/nm-obj.h \
 	shared/nm-utils/nm-macros-internal.h \
+	shared/nm-utils/nm-secret-utils.c \
+	shared/nm-utils/nm-secret-utils.h \
 	shared/nm-utils/nm-shared-utils.c \
 	shared/nm-utils/nm-shared-utils.h \
 	shared/nm-utils/nm-test-utils.h \

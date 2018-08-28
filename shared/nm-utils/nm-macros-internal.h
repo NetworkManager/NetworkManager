@@ -207,7 +207,6 @@ NM_AUTO_DEFINE_FCN0 (GKeyFile *, gs_local_keyfile_unref, g_key_file_unref)
 /*****************************************************************************/
 
 static inline int nm_close (int fd);
-static inline void nm_free_secret (char *secret);
 
 /**
  * nm_auto_free:
@@ -237,16 +236,6 @@ NM_AUTO_DEFINE_FCN (GList *, _nm_auto_free_list, g_list_free)
 
 NM_AUTO_DEFINE_FCN0 (GChecksum *, _nm_auto_checksum_free, g_checksum_free)
 #define nm_auto_free_checksum nm_auto(_nm_auto_checksum_free)
-
-NM_AUTO_DEFINE_FCN (char *, _nm_auto_free_secret, nm_free_secret)
-/**
- * nm_auto_free_secret:
- *
- * Call g_free() on a variable location when it goes out of scope.
- * Also, previously, calls memset(loc, 0, strlen(loc)) to clear out
- * the secret.
- */
-#define nm_auto_free_secret nm_auto(_nm_auto_free_secret)
 
 #define nm_auto_unset_gvalue nm_auto(g_value_unset)
 
@@ -829,15 +818,6 @@ fcn (void) \
 #define nm_streq0(s1, s2) (g_strcmp0 (s1, s2) == 0)
 
 /*****************************************************************************/
-
-static inline void
-nm_free_secret (char *secret)
-{
-	if (secret) {
-		memset (secret, 0, strlen (secret));
-		g_free (secret);
-	}
-}
 
 static inline GString *
 nm_gstring_prepare (GString **l)
