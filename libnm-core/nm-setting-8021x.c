@@ -27,7 +27,7 @@
 #include <string.h>
 
 #include "nm-utils.h"
-#include "crypto.h"
+#include "nm-crypto.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 #include "nm-core-enum-types.h"

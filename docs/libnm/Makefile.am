@@ -32,7 +32,7 @@ CFILE_GLOB=$(top_srcdir)/libnm-core/*.c $(top_srcdir)/libnm/*.c
 # Header files to ignore when scanning.
 IGNORE_HFILES= \
 	common.h \
-	crypto.h \
+	nm-crypto.h \
 	nm-dbus-helpers.h \
 	nm-core-internal.h \
 	nm-core-types-internal.h \

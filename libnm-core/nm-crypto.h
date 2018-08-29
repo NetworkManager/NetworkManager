@@ -21,8 +21,8 @@
  * Copyright 2007 - 2014 Red Hat, Inc.
  */
 
-#ifndef __CRYPTO_H__
-#define __CRYPTO_H__
+#ifndef __NM_CRYPTO_H__
+#define __NM_CRYPTO_H__
 
 #if !((NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE_PRIVATE)
 #error Cannot use this header.
@@ -134,4 +134,4 @@ gboolean crypto_verify_pkcs8 (const guint8 *data,
                               const char *password,
                               GError **error);
 
-#endif  /* __CRYPTO_H__ */
+#endif  /* __NM_CRYPTO_H__ */

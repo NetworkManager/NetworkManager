@@ -508,7 +508,7 @@ libnm_core_lib_h_priv = \
 	shared/nm-utils/nm-udev-utils.h \
 	shared/nm-ethtool-utils.h \
 	shared/nm-meta-setting.h \
-	libnm-core/crypto.h \
+	libnm-core/nm-crypto.h \
 	libnm-core/nm-connection-private.h \
 	libnm-core/nm-core-internal.h \
 	libnm-core/nm-core-types-internal.h \
@@ -576,7 +576,7 @@ libnm_core_lib_c_real = \
 	shared/nm-utils/nm-udev-utils.c \
 	shared/nm-ethtool-utils.c \
 	shared/nm-meta-setting.c \
-	libnm-core/crypto.c \
+	libnm-core/nm-crypto.c \
 	libnm-core/nm-connection.c \
 	libnm-core/nm-dbus-utils.c \
 	libnm-core/nm-errors.c \
@@ -683,18 +683,18 @@ libnm_core_libnm_core_la_LDFLAGS = \
 	$(SANITIZER_LIB_LDFLAGS)
 
 if WITH_GNUTLS
-libnm_core_lib_c_real += libnm-core/crypto_gnutls.c
+libnm_core_lib_c_real += libnm-core/nm-crypto-gnutls.c
 libnm_core_libnm_core_la_LIBADD += $(GNUTLS_LIBS)
 endif
 
 if WITH_NSS
-libnm_core_lib_c_real += libnm-core/crypto_nss.c
+libnm_core_lib_c_real += libnm-core/nm-crypto-nss.c
 libnm_core_libnm_core_la_LIBADD += $(NSS_LIBS)
 endif
 
 EXTRA_DIST += \
-	libnm-core/crypto_gnutls.c \
-	libnm-core/crypto_nss.c \
+	libnm-core/nm-crypto-gnutls.c \
+	libnm-core/nm-crypto-nss.c \
 	libnm-core/nm-core-enum-types.c.template \
 	libnm-core/nm-core-enum-types.h.template \
 	libnm-core/meson.build

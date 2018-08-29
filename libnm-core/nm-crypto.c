@@ -23,7 +23,7 @@
 
 #include "nm-default.h"
 
-#include "crypto.h"
+#include "nm-crypto.h"
 
 #include <string.h>
 #include <strings.h>
