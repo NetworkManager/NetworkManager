@@ -82,11 +82,11 @@ NMCryptoFileFormat crypto_verify_private_key (const char *file,
 
 /* Internal utils API bits for crypto providers */
 
-void crypto_md5_hash (const char *salt,
-                      gssize salt_len,
-                      const char *password,
-                      gssize password_len,
-                      char *buffer,
+void crypto_md5_hash (const guint8 *salt,
+                      gsize salt_len,
+                      const guint8 *password,
+                      gsize password_len,
+                      guint8 *buffer,
                       gsize buflen);
 
 char *crypto_make_des_aes_key (const char *cipher,

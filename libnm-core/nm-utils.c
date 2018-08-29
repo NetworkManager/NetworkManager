@@ -2838,9 +2838,17 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 	g_return_val_if_fail (uuid_type == NM_UTILS_UUID_TYPE_LEGACY || uuid_type == NM_UTILS_UUID_TYPE_VARIANT3, NULL);
 	g_return_val_if_fail (!type_args || uuid_type == NM_UTILS_UUID_TYPE_VARIANT3, NULL);
 
+	if (slen < 0)
+		slen = s ? strlen (s) : 0;
+
 	switch (uuid_type) {
 	case NM_UTILS_UUID_TYPE_LEGACY:
-		crypto_md5_hash (NULL, 0, s, slen, (char *) uuid, sizeof (uuid));
+		crypto_md5_hash (NULL,
+		                 0,
+		                 (guint8 *) s,
+		                 slen,
+		                 (guint8 *) uuid,
+		                 sizeof (uuid));
 		break;
 	case NM_UTILS_UUID_TYPE_VARIANT3: {
 		uuid_t ns_uuid = { 0 };
@@ -2851,7 +2859,12 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 				g_return_val_if_reached (NULL);
 		}
 
-		crypto_md5_hash (s, slen, (char *) ns_uuid, sizeof (ns_uuid), (char *) uuid, sizeof (uuid));
+		crypto_md5_hash ((guint8 *) s,
+		                 slen,
+		                 (guint8 *) ns_uuid,
+		                 sizeof (ns_uuid),
+		                 (guint8 *) uuid,
+		                 sizeof (uuid));
 
 		uuid[6] = (uuid[6] & 0x0F) | 0x30;
 		uuid[8] = (uuid[8] & 0x3F) | 0x80;
