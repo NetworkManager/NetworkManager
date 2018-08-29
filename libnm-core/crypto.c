@@ -49,6 +49,21 @@
 #define PEM_PKCS8_DEC_KEY_BEGIN "-----BEGIN PRIVATE KEY-----"
 #define PEM_PKCS8_DEC_KEY_END   "-----END PRIVATE KEY-----"
 
+/*****************************************************************************/
+
+static GByteArray *
+to_gbyte_array_mem (gconstpointer mem, gsize len)
+{
+	GByteArray *arr;
+
+	arr = g_byte_array_sized_new (len);
+	if (len > 0)
+		g_byte_array_append (arr, mem, len);
+	return arr;
+}
+
+/*****************************************************************************/
+
 static gboolean
 find_tag (const char *tag,
           const guint8 *data,
@@ -295,19 +310,16 @@ parse_pkcs8_key_file (const guint8 *data,
 	return key;
 }
 
-static GByteArray *
-file_to_g_byte_array (const char *filename, GError **error)
+static gboolean
+file_read_contents (const char *filename,
+                    NMSecretPtr *out_contents,
+                    GError **error)
 {
-	gs_free char *contents = NULL;
-	GByteArray *array = NULL;
-	gsize length = 0;
+	nm_assert (out_contents);
+	nm_assert (out_contents->len == 0);
+	nm_assert (!out_contents->str);
 
-	if (!g_file_get_contents (filename, &contents, &length, error))
-		return NULL;
-
-	array = g_byte_array_sized_new (length);
-	g_byte_array_append (array, (guint8 *) contents, length);
-	return array;
+	return g_file_get_contents (filename, &out_contents->str, &out_contents->len, error);
 }
 
 /*
@@ -520,61 +532,66 @@ nmtst_crypto_decrypt_openssl_private_key (const char *file,
                                           NMCryptoKeyType *out_key_type,
                                           GError **error)
 {
-	nm_auto_unref_bytearray GByteArray *contents = NULL;
+	nm_auto_clear_secret_ptr NMSecretPtr contents = { 0 };
 
 	if (!crypto_init (error))
 		return NULL;
 
-	contents = file_to_g_byte_array (file, error);
-	if (!contents)
+	if (!file_read_contents (file, &contents, error))
 		return NULL;
 
-	return nmtst_crypto_decrypt_openssl_private_key_data (contents->data, contents->len,
-	                                                      password, out_key_type, error);
+	return nmtst_crypto_decrypt_openssl_private_key_data (contents.bin,
+	                                                      contents.len,
+	                                                      password,
+	                                                      out_key_type,
+	                                                      error);
 }
 
-static GByteArray *
-extract_pem_cert_data (GByteArray *contents, GError **error)
+static gboolean
+extract_pem_cert_data (const guint8 *contents,
+                       gsize contents_len,
+                       NMSecretPtr *out_cert,
+                       GError **error)
 {
-	GByteArray *cert = NULL;
-	gsize start = 0, end = 0;
-	gs_free unsigned char *der = NULL;
-	guint8 save_end;
-	gsize length = 0;
+	gsize start = 0;
+	gsize end = 0;
+	nm_auto_free_secret char *der_base64 = NULL;
 
-	if (!find_tag (PEM_CERT_BEGIN, contents->data, contents->len, 0, &start)) {
+	nm_assert (contents);
+	nm_assert (out_cert);
+	nm_assert (out_cert->len == 0);
+	nm_assert (!out_cert->ptr);
+
+	if (!find_tag (PEM_CERT_BEGIN, contents, contents_len, 0, &start)) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("PEM certificate had no start tag '%s'."),
 		             PEM_CERT_BEGIN);
-		return NULL;
+		return FALSE;
 	}
 
 	start += strlen (PEM_CERT_BEGIN);
-	if (!find_tag (PEM_CERT_END, contents->data, contents->len, start, &end)) {
+	if (!find_tag (PEM_CERT_END, contents, contents_len, start, &end)) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("PEM certificate had no end tag '%s'."),
 		             PEM_CERT_END);
-		return NULL;
+		return FALSE;
 	}
 
 	/* g_base64_decode() wants a NULL-terminated string */
-	save_end = contents->data[end];
-	contents->data[end] = '\0';
-	der = g_base64_decode ((const char *) (contents->data + start), &length);
-	contents->data[end] = save_end;
+	der_base64 = g_strndup ((const char *) &contents[start], end - start);
 
-	if (!der || !length) {
+	out_cert->bin = (guint8 *) g_base64_decode (der_base64, &out_cert->len);
+	if (!out_cert->bin || !out_cert->len) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("Failed to decode certificate."));
-		return NULL;
+		nm_secret_ptr_clear (out_cert);
+		return FALSE;
 	}
 
-	cert = g_byte_array_sized_new (length);
-	g_byte_array_append (cert, der, length);
-	return cert;
+	return TRUE;
 }
 
 GByteArray *
@@ -582,42 +599,41 @@ crypto_load_and_verify_certificate (const char *file,
                                     NMCryptoFileFormat *out_file_format,
                                     GError **error)
 {
-	nm_auto_unref_bytearray GByteArray *contents = NULL;
+	nm_auto_clear_secret_ptr NMSecretPtr contents = { 0 };
 
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (out_file_format != NULL, NULL);
-	g_return_val_if_fail (*out_file_format == NM_CRYPTO_FILE_FORMAT_UNKNOWN, NULL);
+
+	*out_file_format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
 	if (!crypto_init (error))
 		return NULL;
 
-	contents = file_to_g_byte_array (file, error);
-	if (!contents)
+	if (!file_read_contents (file, &contents, error))
 		return NULL;
 
 	/* Check for PKCS#12 */
-	if (crypto_is_pkcs12_data (contents->data, contents->len, NULL)) {
+	if (crypto_is_pkcs12_data (contents.bin, contents.len, NULL)) {
 		*out_file_format = NM_CRYPTO_FILE_FORMAT_PKCS12;
-		return g_steal_pointer (&contents);
+		return to_gbyte_array_mem (contents.bin, contents.len);
 	}
 
 	/* Check for plain DER format */
-	if (contents->len > 2 && contents->data[0] == 0x30 && contents->data[1] == 0x82) {
-		*out_file_format = crypto_verify_cert (contents->data, contents->len, error);
+	if (contents.len > 2 && contents.bin[0] == 0x30 && contents.bin[1] == 0x82) {
+		*out_file_format = crypto_verify_cert (contents.bin, contents.len, error);
 	} else {
-		nm_auto_unref_bytearray GByteArray *array = NULL;
+		nm_auto_clear_secret_ptr NMSecretPtr pem_cert = { 0 };
 
-		array = extract_pem_cert_data (contents, error);
-		if (!array)
+		if (!extract_pem_cert_data (contents.bin, contents.len, &pem_cert, error))
 			return NULL;
 
-		*out_file_format = crypto_verify_cert (array->data, array->len, error);
+		*out_file_format = crypto_verify_cert (pem_cert.bin, pem_cert.len, error);
 	}
 
 	if (*out_file_format != NM_CRYPTO_FILE_FORMAT_X509)
 		return NULL;
 
-	return g_steal_pointer (&contents);
+	return to_gbyte_array_mem (contents.bin, contents.len);
 }
 
 gboolean
@@ -653,18 +669,17 @@ crypto_is_pkcs12_data (const guint8 *data,
 gboolean
 crypto_is_pkcs12_file (const char *file, GError **error)
 {
-	nm_auto_unref_bytearray GByteArray *contents = NULL;
+	nm_auto_clear_secret_ptr NMSecretPtr contents = { 0 };
 
 	g_return_val_if_fail (file != NULL, FALSE);
 
 	if (!crypto_init (error))
 		return FALSE;
 
-	contents = file_to_g_byte_array (file, error);
-	if (!contents)
+	if (!file_read_contents (file, &contents, error))
 		return FALSE;
 
-	return crypto_is_pkcs12_data (contents->data, contents->len, error);
+	return crypto_is_pkcs12_data (contents.bin, contents.len, error);
 }
 
 /* Verifies that a private key can be read, and if a password is given, that
@@ -730,18 +745,17 @@ crypto_verify_private_key (const char *filename,
                            gboolean *out_is_encrypted,
                            GError **error)
 {
-	nm_auto_unref_bytearray GByteArray *contents = NULL;
+	nm_auto_clear_secret_ptr NMSecretPtr contents = { 0 };
 
 	g_return_val_if_fail (filename != NULL, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
 
 	if (!crypto_init (error))
 		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
-	contents = file_to_g_byte_array (filename, error);
-	if (!contents)
+	if (!file_read_contents (filename, &contents, error))
 		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
-	return crypto_verify_private_key_data (contents->data, contents->len, password, out_is_encrypted, error);
+	return crypto_verify_private_key_data (contents.bin, contents.len, password, out_is_encrypted, error);
 }
 
 void
