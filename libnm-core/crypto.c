@@ -292,19 +292,23 @@ parse_old_openssl_key_file (const guint8 *data,
 	return TRUE;
 }
 
-static GByteArray *
+static gboolean
 parse_pkcs8_key_file (const guint8 *data,
                       gsize data_len,
+                      NMSecretPtr *parsed,
                       gboolean *out_encrypted,
                       GError **error)
 {
-	GByteArray *key;
 	gsize start = 0, end = 0;
 	gs_free guchar *der = NULL;
-	guint8 save_end;
-	gsize length = 0;
 	const char *start_tag = NULL, *end_tag = NULL;
 	gboolean encrypted = FALSE;
+	nm_auto_free_secret char *der_base64 = NULL;
+
+	nm_assert (parsed);
+	nm_assert (!parsed->bin);
+	nm_assert (parsed->len == 0);
+	nm_assert (out_encrypted);
 
 	/* Try encrypted first, decrypted next */
 	if (find_tag (PEM_PKCS8_ENC_KEY_BEGIN, data, data_len, 0, &start)) {
@@ -319,7 +323,7 @@ parse_pkcs8_key_file (const guint8 *data,
 		g_set_error_literal (error, NM_CRYPTO_ERROR,
 		                     NM_CRYPTO_ERROR_INVALID_DATA,
 		                     _("Failed to find expected PKCS#8 start tag."));
-		return NULL;
+		return FALSE;
 	}
 
 	start += strlen (start_tag);
@@ -328,26 +332,23 @@ parse_pkcs8_key_file (const guint8 *data,
 		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("Failed to find expected PKCS#8 end tag '%s'."),
 		             end_tag);
-		return NULL;
+		return FALSE;
 	}
 
 	/* g_base64_decode() wants a NULL-terminated string */
-	save_end = data[end];
-	((guint8 *)data)[end] = '\0';
-	der = g_base64_decode ((const char *) (data + start), &length);
-	((guint8 *)data)[end] = save_end;
+	der_base64 = g_strndup ((char *) &data[start], end - start);
 
-	if (!der || !length) {
+	parsed->bin = (guint8 *) g_base64_decode (der_base64, &parsed->len);
+	if (!parsed->bin || parsed->len == 0) {
 		g_set_error_literal (error, NM_CRYPTO_ERROR,
 		                     NM_CRYPTO_ERROR_INVALID_DATA,
 		                     _("Failed to decode PKCS#8 private key."));
-		return NULL;
+		nm_secret_ptr_clear (parsed);
+		return FALSE;
 	}
 
-	key = g_byte_array_sized_new (length);
-	g_byte_array_append (key, der, length);
 	*out_encrypted = encrypted;
-	return key;
+	return TRUE;
 }
 
 static gboolean
@@ -746,12 +747,12 @@ crypto_verify_private_key_data (const guint8 *data,
 		if (!password || crypto_verify_pkcs12 (data, data_len, password, error))
 			format = NM_CRYPTO_FILE_FORMAT_PKCS12;
 	} else {
-		nm_auto_unref_bytearray GByteArray *tmp = NULL;
+		nm_auto_clear_secret_ptr NMSecretPtr parsed = { 0 };
 
 		/* Maybe it's PKCS#8 */
-		tmp = parse_pkcs8_key_file (data, data_len, &is_encrypted, NULL);
-		if (tmp) {
-			if (!password || crypto_verify_pkcs8 (tmp->data, tmp->len, is_encrypted, password, error))
+		if (parse_pkcs8_key_file (data, data_len, &parsed, &is_encrypted, NULL)) {
+			if (   !password
+			    || crypto_verify_pkcs8 (parsed.bin, parsed.len, is_encrypted, password, error))
 				format = NM_CRYPTO_FILE_FORMAT_RAW_KEY;
 		} else {
 			const char *cipher;
@@ -762,11 +763,6 @@ crypto_verify_private_key_data (const guint8 *data,
 				format = NM_CRYPTO_FILE_FORMAT_RAW_KEY;
 				is_encrypted = (cipher && iv);
 			}
-		}
-
-		if (tmp) {
-			/* Don't leave key data around */
-			memset (tmp->data, 0, tmp->len);
 		}
 	}
 
