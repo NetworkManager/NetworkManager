@@ -462,57 +462,60 @@ crypto_make_des_aes_key (const char *cipher,
 	return key;
 }
 
-static GByteArray *
+static gboolean
 decrypt_key (const char *cipher,
              int key_type,
              const guint8 *data,
              gsize data_len,
              const char *iv,
              const char *password,
+             NMSecretPtr *parsed,
              GError **error)
 {
 	nm_auto_clear_secret_ptr NMSecretPtr bin_iv = { 0 };
 	nm_auto_clear_secret_ptr NMSecretPtr key = { 0 };
 	gs_free char *output = NULL;
-	gsize decrypted_len = 0;
-	GByteArray *decrypted = NULL;
 
-	g_return_val_if_fail (password != NULL, NULL);
-	g_return_val_if_fail (iv, NULL);
+	nm_assert (password);
+	nm_assert (cipher);
+	nm_assert (iv);
+	nm_assert (parsed);
+	nm_assert (!parsed->bin);
+	nm_assert (parsed->len == 0);
 
 	bin_iv.bin = convert_iv (iv, &bin_iv.len, error);
 	if (!bin_iv.bin)
-		return NULL;
+		return FALSE;
 
 	if (bin_iv.len < 8) {
 		g_set_error (error,
 		             NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("IV must contain at least 8 characters"));
-		return NULL;
+		return FALSE;
 	}
 
 	/* Convert the password and IV into a DES or AES key */
 	key.str = crypto_make_des_aes_key (cipher, bin_iv.str, bin_iv.len, password, &key.len, error);
 	if (!key.str || !key.len)
-		return NULL;
+		return FALSE;
 
-	output = crypto_decrypt (cipher,
-	                         key_type,
-	                         data,
-	                         data_len,
-	                         bin_iv.str,
-	                         bin_iv.len,
-	                         key.str,
-	                         key.len,
-	                         &decrypted_len,
-	                         error);
-	if (output && decrypted_len) {
-		decrypted = g_byte_array_sized_new (decrypted_len);
-		g_byte_array_append (decrypted, (guint8 *) output, decrypted_len);
+	parsed->str = crypto_decrypt (cipher,
+	                              key_type,
+	                              data,
+	                              data_len,
+	                              bin_iv.str,
+	                              bin_iv.len,
+	                              key.str,
+	                              key.len,
+	                              &parsed->len,
+	                              error);
+	if (!parsed->str || parsed->len == 0) {
+		nm_secret_ptr_clear (parsed);
+		return FALSE;
 	}
 
-	return decrypted;
+	return TRUE;
 }
 
 GByteArray *
@@ -544,6 +547,8 @@ nmtst_crypto_decrypt_openssl_private_key_data (const guint8 *data,
 	NM_SET_OUT (out_key_type, key_type);
 
 	if (password) {
+		nm_auto_clear_secret_ptr NMSecretPtr parsed2 = { 0 };
+
 		if (!cipher || !iv) {
 			g_set_error (error, NM_CRYPTO_ERROR,
 			             NM_CRYPTO_ERROR_INVALID_PASSWORD,
@@ -551,13 +556,17 @@ nmtst_crypto_decrypt_openssl_private_key_data (const guint8 *data,
 			return NULL;
 		}
 
-		return decrypt_key (cipher,
-		                    key_type,
-		                    parsed.bin,
-		                    parsed.len,
-		                    iv,
-		                    password,
-		                    error);
+		if (!decrypt_key (cipher,
+		                  key_type,
+		                  parsed.bin,
+		                  parsed.len,
+		                  iv,
+		                  password,
+		                  &parsed2,
+		                  error))
+			return NULL;
+
+		return to_gbyte_array_mem (parsed2.bin, parsed2.len);
 	}
 
 	if (cipher || iv)
