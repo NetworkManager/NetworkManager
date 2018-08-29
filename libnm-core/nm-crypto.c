@@ -32,6 +32,7 @@
 
 #include "nm-utils/nm-secret-utils.h"
 
+#include "nm-crypto-impl.h"
 #include "nm-errors.h"
 
 #define PEM_RSA_KEY_BEGIN "-----BEGIN RSA PRIVATE KEY-----"

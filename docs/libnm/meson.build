@@ -3,6 +3,7 @@ doc_module = libnm_name
 private_headers = [
   'common.h',
   'nm-crypto.h',
+  'nm-crypto-impl.h',
   'nm-dbus-helpers.h',
   'nm-core-internal.h',
   'nm-core-types-internal.h',

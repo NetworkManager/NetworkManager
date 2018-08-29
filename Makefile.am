@@ -509,6 +509,7 @@ libnm_core_lib_h_priv = \
 	shared/nm-ethtool-utils.h \
 	shared/nm-meta-setting.h \
 	libnm-core/nm-crypto.h \
+	libnm-core/nm-crypto-impl.h \
 	libnm-core/nm-connection-private.h \
 	libnm-core/nm-core-internal.h \
 	libnm-core/nm-core-types-internal.h \
