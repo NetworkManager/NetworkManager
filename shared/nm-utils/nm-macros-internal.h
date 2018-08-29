@@ -91,12 +91,6 @@ static inline void name (Type *v) \
 		func (*v); \
 }
 
-#define NM_AUTO_DEFINE_FCN_STRUCT(Type, name, func) \
-static inline void name (Type *v) \
-{ \
-	func (v); \
-}
-
 /*****************************************************************************/
 
 /**
@@ -254,8 +248,7 @@ NM_AUTO_DEFINE_FCN (char *, _nm_auto_free_secret, nm_free_secret)
  */
 #define nm_auto_free_secret nm_auto(_nm_auto_free_secret)
 
-NM_AUTO_DEFINE_FCN_STRUCT (GValue, _nm_auto_unset_gvalue, g_value_unset)
-#define nm_auto_unset_gvalue nm_auto(_nm_auto_unset_gvalue)
+#define nm_auto_unset_gvalue nm_auto(g_value_unset)
 
 NM_AUTO_DEFINE_FCN_VOID0 (void *, _nm_auto_unref_gtypeclass, g_type_class_unref)
 #define nm_auto_unref_gtypeclass nm_auto(_nm_auto_unref_gtypeclass)
