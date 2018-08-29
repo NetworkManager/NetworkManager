@@ -23,6 +23,8 @@
 
 #include "nm-default.h"
 
+#include "nm-crypto.h"
+
 #include <prinit.h>
 #include <nss.h>
 #include <pk11pub.h>
@@ -33,7 +35,6 @@
 #include <ciferfam.h>
 #include <p12plcy.h>
 
-#include "crypto.h"
 #include "nm-errors.h"
 
 static gboolean initialized = FALSE;

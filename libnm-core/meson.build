@@ -107,8 +107,8 @@ libnm_core_settings_sources = files(
 )
 
 libnm_core_sources = libnm_core_settings_sources + files(
-  'crypto.c',
-  'crypto_' + crypto + '.c',
+  'nm-crypto.c',
+  'nm-crypto-' + crypto + '.c',
   'nm-connection.c',
   'nm-dbus-utils.c',
   'nm-errors.c',

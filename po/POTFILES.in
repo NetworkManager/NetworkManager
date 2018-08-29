@@ -51,9 +51,9 @@ clients/tui/nmtui-connect.c
 clients/tui/nmtui-edit.c
 clients/tui/nmtui-hostname.c
 clients/tui/nmtui.c
-libnm-core/crypto.c
-libnm-core/crypto_gnutls.c
-libnm-core/crypto_nss.c
+libnm-core/nm-crypto.c
+libnm-core/nm-crypto-gnutls.c
+libnm-core/nm-crypto-nss.c
 libnm-core/nm-connection.c
 libnm-core/nm-dbus-utils.c
 libnm-core/nm-keyfile.c

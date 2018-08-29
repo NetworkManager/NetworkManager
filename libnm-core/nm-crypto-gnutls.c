@@ -23,12 +23,13 @@
 
 #include "nm-default.h"
 
+#include "nm-crypto.h"
+
 #include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>
 #include <gnutls/x509.h>
 #include <gnutls/pkcs12.h>
 
-#include "crypto.h"
 #include "nm-errors.h"
 
 #define SALT_LEN 8

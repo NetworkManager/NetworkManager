@@ -43,7 +43,7 @@
 #include "nm-common-macros.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
-#include "crypto.h"
+#include "nm-crypto.h"
 #include "nm-setting-bond.h"
 #include "nm-setting-bridge.h"
 #include "nm-setting-infiniband.h"
