@@ -313,20 +313,20 @@ file_to_g_byte_array (const char *filename, GError **error)
 /*
  * Convert a hex string into bytes.
  */
-static char *
+static guint8 *
 convert_iv (const char *src,
             gsize *out_len,
             GError **error)
 {
-	int num;
-	int i;
-	char conv[3];
-	gs_free char *c = NULL;
+	gsize i, num;
+	gs_free guint8 *c = NULL;
+	int c0, c1;
 
-	g_return_val_if_fail (src != NULL, NULL);
+	nm_assert (src);
 
 	num = strlen (src);
-	if (num % 2) {
+	if (   num == 0
+	    || (num % 2) != 0) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("IV must be an even number of bytes in length."));
@@ -334,20 +334,23 @@ convert_iv (const char *src,
 	}
 
 	num /= 2;
-	c = g_malloc0 (num + 1);
+	c = g_malloc (num + 1);
 
-	conv[2] = '\0';
+	/* defensively add trailing NUL. This function returns binary data,
+	 * do not assume it's NUL terminated. */
+	c[num] = '\0';
+
 	for (i = 0; i < num; i++) {
-		conv[0] = src[(i * 2)];
-		conv[1] = src[(i * 2) + 1];
-		if (!g_ascii_isxdigit (conv[0]) || !g_ascii_isxdigit (conv[1])) {
+		if (   ((c0 = nm_utils_hexchar_to_int (*(src++))) < 0)
+		    || ((c1 = nm_utils_hexchar_to_int (*(src++))) < 0)) {
 			g_set_error (error, NM_CRYPTO_ERROR,
 			             NM_CRYPTO_ERROR_INVALID_DATA,
 			             _("IV contains non-hexadecimal digits."));
+			nm_explicit_bzero (c, i);
 			return FALSE;
 		}
 
-		c[i] = strtol(conv, NULL, 16);
+		c[i] = (c0 << 4) + c1;
 	}
 	*out_len = num;
 	return g_steal_pointer (&c);
@@ -415,28 +418,40 @@ decrypt_key (const char *cipher,
              const char *password,
              GError **error)
 {
-	gs_free char *bin_iv = NULL;
-	gsize bin_iv_len = 0;
+	nm_auto_clear_secret_ptr NMSecretPtr bin_iv = { 0 };
 	nm_auto_clear_secret_ptr NMSecretPtr key = { 0 };
 	gs_free char *output = NULL;
 	gsize decrypted_len = 0;
 	GByteArray *decrypted = NULL;
 
 	g_return_val_if_fail (password != NULL, NULL);
+	g_return_val_if_fail (iv, NULL);
 
-	bin_iv = convert_iv (iv, &bin_iv_len, error);
-	if (!bin_iv)
+	bin_iv.bin = convert_iv (iv, &bin_iv.len, error);
+	if (!bin_iv.bin)
 		return NULL;
 
+	if (bin_iv.len < 8) {
+		g_set_error (error,
+		             NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERROR_INVALID_DATA,
+		             _("IV must contain at least 8 characters"));
+		return NULL;
+	}
+
 	/* Convert the password and IV into a DES or AES key */
-	key.str = crypto_make_des_aes_key (cipher, bin_iv, bin_iv_len, password, &key.len, error);
+	key.str = crypto_make_des_aes_key (cipher, bin_iv.str, bin_iv.len, password, &key.len, error);
 	if (!key.str || !key.len)
 		return NULL;
 
-	output = crypto_decrypt (cipher, key_type,
-	                         data, data_len,
-	                         bin_iv, bin_iv_len,
-	                         key.str, key.len,
+	output = crypto_decrypt (cipher,
+	                         key_type,
+	                         data,
+	                         data_len,
+	                         bin_iv.str,
+	                         bin_iv.len,
+	                         key.str,
+	                         key.len,
 	                         &decrypted_len,
 	                         error);
 	if (output && decrypted_len) {
