@@ -60,49 +60,49 @@ GByteArray *nmtst_crypto_decrypt_openssl_private_key (const char *file,
                                                       NMCryptoKeyType *out_key_type,
                                                       GError **error);
 
-GByteArray *crypto_load_and_verify_certificate (const char *file,
-                                                NMCryptoFileFormat *out_file_format,
-                                                GError **error);
-
-gboolean crypto_is_pkcs12_file (const char *file, GError **error);
-
-gboolean crypto_is_pkcs12_data (const guint8 *data, gsize len, GError **error);
-
-NMCryptoFileFormat crypto_verify_private_key_data (const guint8 *data,
-                                                   gsize data_len,
-                                                   const char *password,
-                                                   gboolean *out_is_encrypted,
+GByteArray *nm_crypto_load_and_verify_certificate (const char *file,
+                                                   NMCryptoFileFormat *out_file_format,
                                                    GError **error);
 
-NMCryptoFileFormat crypto_verify_private_key (const char *file,
-                                              const char *password,
-                                              gboolean *out_is_encrypted,
-                                              GError **error);
+gboolean nm_crypto_is_pkcs12_file (const char *file, GError **error);
 
-void crypto_md5_hash (const guint8 *salt,
-                      gsize salt_len,
-                      const guint8 *password,
-                      gsize password_len,
-                      guint8 *buffer,
-                      gsize buflen);
+gboolean nm_crypto_is_pkcs12_data (const guint8 *data, gsize len, GError **error);
 
-char *crypto_make_des_aes_key (const char *cipher,
-                               const char *salt,
-                               const gsize salt_len,
-                               const char *password,
-                               gsize *out_len,
-                               GError **error);
+NMCryptoFileFormat nm_crypto_verify_private_key_data (const guint8 *data,
+                                                      gsize data_len,
+                                                      const char *password,
+                                                      gboolean *out_is_encrypted,
+                                                      GError **error);
 
-char * crypto_encrypt (const char *cipher,
-                       const guint8 *data,
-                       gsize data_len,
-                       const char *iv,
-                       gsize iv_len,
-                       const char *key,
-                       gsize key_len,
-                       gsize *out_len,
-                       GError **error);
+NMCryptoFileFormat nm_crypto_verify_private_key (const char *file,
+                                                 const char *password,
+                                                 gboolean *out_is_encrypted,
+                                                 GError **error);
 
-gboolean crypto_randomize (void *buffer, gsize buffer_len, GError **error);
+void nm_crypto_md5_hash (const guint8 *salt,
+                         gsize salt_len,
+                         const guint8 *password,
+                         gsize password_len,
+                         guint8 *buffer,
+                         gsize buflen);
+
+char *nm_crypto_make_des_aes_key (const char *cipher,
+                                  const char *salt,
+                                  const gsize salt_len,
+                                  const char *password,
+                                  gsize *out_len,
+                                  GError **error);
+
+char * nm_crypto_encrypt (const char *cipher,
+                          const guint8 *data,
+                          gsize data_len,
+                          const char *iv,
+                          gsize iv_len,
+                          const char *key,
+                          gsize key_len,
+                          gsize *out_len,
+                          GError **error);
+
+gboolean nm_crypto_randomize (void *buffer, gsize buffer_len, GError **error);
 
 #endif  /* __NM_CRYPTO_H__ */

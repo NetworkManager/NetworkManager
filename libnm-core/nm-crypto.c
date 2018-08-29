@@ -411,12 +411,12 @@ convert_iv (const char *src,
 }
 
 char *
-crypto_make_des_aes_key (const char *cipher,
-                         const char *salt,
-                         const gsize salt_len,
-                         const char *password,
-                         gsize *out_len,
-                         GError **error)
+nm_crypto_make_des_aes_key (const char *cipher,
+                            const char *salt,
+                            const gsize salt_len,
+                            const char *password,
+                            gsize *out_len,
+                            GError **error)
 {
 	char *key;
 	guint32 digest_len;
@@ -452,12 +452,12 @@ crypto_make_des_aes_key (const char *cipher,
 
 	key = g_malloc0 (digest_len + 1);
 
-	crypto_md5_hash ((guint8 *) salt,
-	                 8,
-	                 (guint8 *) password,
-	                 strlen (password),
-	                 (guint8 *) key,
-	                 digest_len);
+	nm_crypto_md5_hash ((guint8 *) salt,
+	                    8,
+	                    (guint8 *) password,
+	                    strlen (password),
+	                    (guint8 *) key,
+	                    digest_len);
 
 	*out_len = digest_len;
 	return key;
@@ -497,20 +497,20 @@ decrypt_key (const char *cipher,
 	}
 
 	/* Convert the password and IV into a DES or AES key */
-	key.str = crypto_make_des_aes_key (cipher, bin_iv.str, bin_iv.len, password, &key.len, error);
+	key.str = nm_crypto_make_des_aes_key (cipher, bin_iv.str, bin_iv.len, password, &key.len, error);
 	if (!key.str || !key.len)
 		return FALSE;
 
-	parsed->str = crypto_decrypt (cipher,
-	                              key_type,
-	                              data,
-	                              data_len,
-	                              bin_iv.str,
-	                              bin_iv.len,
-	                              key.str,
-	                              key.len,
-	                              &parsed->len,
-	                              error);
+	parsed->str = _nm_crypto_decrypt (cipher,
+	                                  key_type,
+	                                  data,
+	                                  data_len,
+	                                  bin_iv.str,
+	                                  bin_iv.len,
+	                                  key.str,
+	                                  key.len,
+	                                  &parsed->len,
+	                                  error);
 	if (!parsed->str || parsed->len == 0) {
 		nm_secret_ptr_clear (parsed);
 		return FALSE;
@@ -535,7 +535,7 @@ nmtst_crypto_decrypt_openssl_private_key_data (const guint8 *data,
 
 	NM_SET_OUT (out_key_type, NM_CRYPTO_KEY_TYPE_UNKNOWN);
 
-	if (!crypto_init (error))
+	if (!_nm_crypto_init (error))
 		return NULL;
 
 	if (!parse_old_openssl_key_file (data, data_len, &parsed, &key_type, &cipher, &iv, NULL)) {
@@ -584,7 +584,7 @@ nmtst_crypto_decrypt_openssl_private_key (const char *file,
 {
 	nm_auto_clear_secret_ptr NMSecretPtr contents = { 0 };
 
-	if (!crypto_init (error))
+	if (!_nm_crypto_init (error))
 		return NULL;
 
 	if (!file_read_contents (file, &contents, error))
@@ -645,9 +645,9 @@ extract_pem_cert_data (const guint8 *contents,
 }
 
 GByteArray *
-crypto_load_and_verify_certificate (const char *file,
-                                    NMCryptoFileFormat *out_file_format,
-                                    GError **error)
+nm_crypto_load_and_verify_certificate (const char *file,
+                                       NMCryptoFileFormat *out_file_format,
+                                       GError **error)
 {
 	nm_auto_clear_secret_ptr NMSecretPtr contents = { 0 };
 
@@ -656,28 +656,28 @@ crypto_load_and_verify_certificate (const char *file,
 
 	*out_file_format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
-	if (!crypto_init (error))
+	if (!_nm_crypto_init (error))
 		return NULL;
 
 	if (!file_read_contents (file, &contents, error))
 		return NULL;
 
 	/* Check for PKCS#12 */
-	if (crypto_is_pkcs12_data (contents.bin, contents.len, NULL)) {
+	if (nm_crypto_is_pkcs12_data (contents.bin, contents.len, NULL)) {
 		*out_file_format = NM_CRYPTO_FILE_FORMAT_PKCS12;
 		return to_gbyte_array_mem (contents.bin, contents.len);
 	}
 
 	/* Check for plain DER format */
 	if (contents.len > 2 && contents.bin[0] == 0x30 && contents.bin[1] == 0x82) {
-		*out_file_format = crypto_verify_cert (contents.bin, contents.len, error);
+		*out_file_format = _nm_crypto_verify_cert (contents.bin, contents.len, error);
 	} else {
 		nm_auto_clear_secret_ptr NMSecretPtr pem_cert = { 0 };
 
 		if (!extract_pem_cert_data (contents.bin, contents.len, &pem_cert, error))
 			return NULL;
 
-		*out_file_format = crypto_verify_cert (pem_cert.bin, pem_cert.len, error);
+		*out_file_format = _nm_crypto_verify_cert (pem_cert.bin, pem_cert.len, error);
 	}
 
 	if (*out_file_format != NM_CRYPTO_FILE_FORMAT_X509)
@@ -687,9 +687,9 @@ crypto_load_and_verify_certificate (const char *file,
 }
 
 gboolean
-crypto_is_pkcs12_data (const guint8 *data,
-                       gsize data_len,
-                       GError **error)
+nm_crypto_is_pkcs12_data (const guint8 *data,
+                          gsize data_len,
+                          GError **error)
 {
 	GError *local = NULL;
 	gboolean success;
@@ -699,10 +699,10 @@ crypto_is_pkcs12_data (const guint8 *data,
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	if (!crypto_init (error))
+	if (!_nm_crypto_init (error))
 		return FALSE;
 
-	success = crypto_verify_pkcs12 (data, data_len, NULL, &local);
+	success = _nm_crypto_verify_pkcs12 (data, data_len, NULL, &local);
 	if (success == FALSE) {
 		/* If the error was just a decryption error, then it's pkcs#12 */
 		if (local) {
@@ -717,30 +717,30 @@ crypto_is_pkcs12_data (const guint8 *data,
 }
 
 gboolean
-crypto_is_pkcs12_file (const char *file, GError **error)
+nm_crypto_is_pkcs12_file (const char *file, GError **error)
 {
 	nm_auto_clear_secret_ptr NMSecretPtr contents = { 0 };
 
 	g_return_val_if_fail (file != NULL, FALSE);
 
-	if (!crypto_init (error))
+	if (!_nm_crypto_init (error))
 		return FALSE;
 
 	if (!file_read_contents (file, &contents, error))
 		return FALSE;
 
-	return crypto_is_pkcs12_data (contents.bin, contents.len, error);
+	return nm_crypto_is_pkcs12_data (contents.bin, contents.len, error);
 }
 
 /* Verifies that a private key can be read, and if a password is given, that
  * the private key can be decrypted with that password.
  */
 NMCryptoFileFormat
-crypto_verify_private_key_data (const guint8 *data,
-                                gsize data_len,
-                                const char *password,
-                                gboolean *out_is_encrypted,
-                                GError **error)
+nm_crypto_verify_private_key_data (const guint8 *data,
+                                   gsize data_len,
+                                   const char *password,
+                                   gboolean *out_is_encrypted,
+                                   GError **error)
 {
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	gboolean is_encrypted = FALSE;
@@ -748,13 +748,14 @@ crypto_verify_private_key_data (const guint8 *data,
 	g_return_val_if_fail (data != NULL, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
 	g_return_val_if_fail (out_is_encrypted == NULL || *out_is_encrypted == FALSE, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
 
-	if (!crypto_init (error))
+	if (!_nm_crypto_init (error))
 		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
 	/* Check for PKCS#12 first */
-	if (crypto_is_pkcs12_data (data, data_len, NULL)) {
+	if (nm_crypto_is_pkcs12_data (data, data_len, NULL)) {
 		is_encrypted = TRUE;
-		if (!password || crypto_verify_pkcs12 (data, data_len, password, error))
+		if (   !password
+		    || _nm_crypto_verify_pkcs12 (data, data_len, password, error))
 			format = NM_CRYPTO_FILE_FORMAT_PKCS12;
 	} else {
 		nm_auto_clear_secret_ptr NMSecretPtr parsed = { 0 };
@@ -762,7 +763,7 @@ crypto_verify_private_key_data (const guint8 *data,
 		/* Maybe it's PKCS#8 */
 		if (parse_pkcs8_key_file (data, data_len, &parsed, &is_encrypted, NULL)) {
 			if (   !password
-			    || crypto_verify_pkcs8 (parsed.bin, parsed.len, is_encrypted, password, error))
+			    || _nm_crypto_verify_pkcs8 (parsed.bin, parsed.len, is_encrypted, password, error))
 				format = NM_CRYPTO_FILE_FORMAT_RAW_KEY;
 		} else {
 			const char *cipher;
@@ -782,31 +783,31 @@ crypto_verify_private_key_data (const guint8 *data,
 }
 
 NMCryptoFileFormat
-crypto_verify_private_key (const char *filename,
-                           const char *password,
-                           gboolean *out_is_encrypted,
-                           GError **error)
+nm_crypto_verify_private_key (const char *filename,
+                              const char *password,
+                              gboolean *out_is_encrypted,
+                              GError **error)
 {
 	nm_auto_clear_secret_ptr NMSecretPtr contents = { 0 };
 
 	g_return_val_if_fail (filename != NULL, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
 
-	if (!crypto_init (error))
+	if (!_nm_crypto_init (error))
 		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
 	if (!file_read_contents (filename, &contents, error))
 		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
-	return crypto_verify_private_key_data (contents.bin, contents.len, password, out_is_encrypted, error);
+	return nm_crypto_verify_private_key_data (contents.bin, contents.len, password, out_is_encrypted, error);
 }
 
 void
-crypto_md5_hash (const guint8 *salt,
-                 gsize salt_len,
-                 const guint8 *password,
-                 gsize password_len,
-                 guint8 *buffer,
-                 gsize buflen)
+nm_crypto_md5_hash (const guint8 *salt,
+                    gsize salt_len,
+                    const guint8 *password,
+                    gsize password_len,
+                    guint8 *buffer,
+                    gsize buflen)
 {
 	nm_auto_free_checksum GChecksum *ctx = NULL;
 #define MD5_DIGEST_LEN 16
@@ -844,4 +845,24 @@ crypto_md5_hash (const guint8 *salt,
 		g_checksum_reset (ctx);
 		g_checksum_update (ctx, digest.ptr, MD5_DIGEST_LEN);
 	}
+}
+
+char *
+nm_crypto_encrypt (const char *cipher,
+                   const guint8 *data,
+                   gsize data_len,
+                   const char *iv,
+                   gsize iv_len,
+                   const char *key,
+                   gsize key_len,
+                   gsize *out_len,
+                   GError **error)
+{
+	return _nm_crypto_encrypt (cipher, data, data_len, iv, iv_len, key, key_len, out_len, error);
+}
+
+gboolean
+nm_crypto_randomize (void *buffer, gsize buffer_len, GError **error)
+{
+	return _nm_crypto_randomize (buffer, buffer_len, error);
 }
