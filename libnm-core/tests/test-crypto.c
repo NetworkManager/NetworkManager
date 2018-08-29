@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "nm-crypto.h"
+#include "nm-crypto-impl.h"
 #include "nm-utils.h"
 #include "nm-errors.h"
 #include "nm-core-internal.h"

@@ -23,7 +23,7 @@
 
 #include "nm-default.h"
 
-#include "nm-crypto.h"
+#include "nm-crypto-impl.h"
 
 #include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>

@@ -29,6 +29,7 @@
 #endif
 
 #define MD5_HASH_LEN 20
+
 #define CIPHER_DES_EDE3_CBC "DES-EDE3-CBC"
 #define CIPHER_DES_CBC      "DES-CBC"
 #define CIPHER_AES_128_CBC  "AES-128-CBC"
@@ -47,8 +48,6 @@ typedef enum {
 	NM_CRYPTO_FILE_FORMAT_RAW_KEY,
 	NM_CRYPTO_FILE_FORMAT_PKCS12
 } NMCryptoFileFormat;
-
-gboolean crypto_init (GError **error);
 
 GByteArray *nmtst_crypto_decrypt_openssl_private_key_data (const guint8 *data,
                                                            gsize data_len,
@@ -80,8 +79,6 @@ NMCryptoFileFormat crypto_verify_private_key (const char *file,
                                               gboolean *out_is_encrypted,
                                               GError **error);
 
-/* Internal utils API bits for crypto providers */
-
 void crypto_md5_hash (const guint8 *salt,
                       gsize salt_len,
                       const guint8 *password,
@@ -96,17 +93,6 @@ char *crypto_make_des_aes_key (const char *cipher,
                                gsize *out_len,
                                GError **error);
 
-char * crypto_decrypt (const char *cipher,
-                       int key_type,
-                       const guint8 *data,
-                       gsize data_len,
-                       const char *iv,
-                       const gsize iv_len,
-                       const char *key,
-                       const gsize key_len,
-                       gsize *out_len,
-                       GError **error);
-
 char * crypto_encrypt (const char *cipher,
                        const guint8 *data,
                        gsize data_len,
@@ -118,20 +104,5 @@ char * crypto_encrypt (const char *cipher,
                        GError **error);
 
 gboolean crypto_randomize (void *buffer, gsize buffer_len, GError **error);
-
-NMCryptoFileFormat crypto_verify_cert (const guint8 *data,
-                                       gsize len,
-                                       GError **error);
-
-gboolean crypto_verify_pkcs12 (const guint8 *data,
-                               gsize data_len,
-                               const char *password,
-                               GError **error);
-
-gboolean crypto_verify_pkcs8 (const guint8 *data,
-                              gsize data_len,
-                              gboolean is_encrypted,
-                              const char *password,
-                              GError **error);
 
 #endif  /* __NM_CRYPTO_H__ */

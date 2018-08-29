@@ -23,7 +23,7 @@
 
 #include "nm-default.h"
 
-#include "nm-crypto.h"
+#include "nm-crypto-impl.h"
 
 #include <prinit.h>
 #include <nss.h>
