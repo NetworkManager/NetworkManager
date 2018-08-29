@@ -463,11 +463,11 @@ decrypt_key (const char *cipher,
 }
 
 GByteArray *
-crypto_decrypt_openssl_private_key_data (const guint8 *data,
-                                         gsize data_len,
-                                         const char *password,
-                                         NMCryptoKeyType *out_key_type,
-                                         GError **error)
+nmtst_crypto_decrypt_openssl_private_key_data (const guint8 *data,
+                                               gsize data_len,
+                                               const char *password,
+                                               NMCryptoKeyType *out_key_type,
+                                               GError **error)
 {
 	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
 	nm_auto_unref_bytearray GByteArray *parsed = NULL;
@@ -515,10 +515,10 @@ crypto_decrypt_openssl_private_key_data (const guint8 *data,
 }
 
 GByteArray *
-crypto_decrypt_openssl_private_key (const char *file,
-                                    const char *password,
-                                    NMCryptoKeyType *out_key_type,
-                                    GError **error)
+nmtst_crypto_decrypt_openssl_private_key (const char *file,
+                                          const char *password,
+                                          NMCryptoKeyType *out_key_type,
+                                          GError **error)
 {
 	nm_auto_unref_bytearray GByteArray *contents = NULL;
 
@@ -529,8 +529,8 @@ crypto_decrypt_openssl_private_key (const char *file,
 	if (!contents)
 		return NULL;
 
-	return crypto_decrypt_openssl_private_key_data (contents->data, contents->len,
-	                                                password, out_key_type, error);
+	return nmtst_crypto_decrypt_openssl_private_key_data (contents->data, contents->len,
+	                                                      password, out_key_type, error);
 }
 
 static GByteArray *
