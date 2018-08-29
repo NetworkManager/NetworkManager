@@ -105,7 +105,7 @@ test_cert (gconstpointer test_data)
 
 	path = g_build_filename (TEST_CERT_DIR, (const char *) test_data, NULL);
 
-	array = crypto_load_and_verify_certificate (path, &format, &error);
+	array = nm_crypto_load_and_verify_certificate (path, &format, &error);
 	g_assert_no_error (error);
 	g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_X509);
 
@@ -187,7 +187,7 @@ test_load_pkcs12 (const char *path,
 
 	g_assert (nm_utils_file_is_private_key (path, NULL));
 
-	format = crypto_verify_private_key (path, password, &is_encrypted, &error);
+	format = nm_crypto_verify_private_key (path, password, &is_encrypted, &error);
 	if (expected_error != -1) {
 		g_assert_error (error, NM_CRYPTO_ERROR, expected_error);
 		g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
@@ -209,7 +209,7 @@ test_load_pkcs12_no_password (const char *path)
 	g_assert (nm_utils_file_is_private_key (path, NULL));
 
 	/* We should still get a valid returned crypto file format */
-	format = crypto_verify_private_key (path, NULL, &is_encrypted, &error);
+	format = nm_crypto_verify_private_key (path, NULL, &is_encrypted, &error);
 	g_assert_no_error (error);
 	g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_PKCS12);
 	g_assert (is_encrypted);
@@ -221,7 +221,7 @@ test_is_pkcs12 (const char *path, gboolean expect_fail)
 	gboolean is_pkcs12;
 	GError *error = NULL;
 
-	is_pkcs12 = crypto_is_pkcs12_file (path, &error);
+	is_pkcs12 = nm_crypto_is_pkcs12_file (path, &error);
 
 	if (expect_fail) {
 		g_assert_error (error, NM_CRYPTO_ERROR, NM_CRYPTO_ERROR_INVALID_DATA);
@@ -244,7 +244,7 @@ test_load_pkcs8 (const char *path,
 
 	g_assert (nm_utils_file_is_private_key (path, NULL));
 
-	format = crypto_verify_private_key (path, password, &is_encrypted, &error);
+	format = nm_crypto_verify_private_key (path, password, &is_encrypted, &error);
 	if (expected_error != -1) {
 		g_assert_error (error, NM_CRYPTO_ERROR, expected_error);
 		g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
@@ -417,16 +417,16 @@ test_md5 (void)
 
 	for (i = 0; i < G_N_ELEMENTS (md5_tests); i++) {
 		memset (digest, 0, sizeof (digest));
-		crypto_md5_hash ((const guint8 *) md5_tests[i].salt,
-		                 /* crypto_md5_hash() used to clamp salt_len to 8.  It
-		                  * doesn't any more, so we need to do it here now to
-		                  * get output that matches md5_tests[i].result.
-		                  */
-		                 md5_tests[i].salt ? 8 : 0,
-		                 (const guint8 *) md5_tests[i].password,
-		                 strlen (md5_tests[i].password),
-		                 (guint8 *) digest,
-		                 md5_tests[i].digest_size);
+		nm_crypto_md5_hash ((const guint8 *) md5_tests[i].salt,
+		                    /* nm_crypto_md5_hash() used to clamp salt_len to 8.  It
+		                     * doesn't any more, so we need to do it here now to
+		                     * get output that matches md5_tests[i].result.
+		                     */
+		                    md5_tests[i].salt ? 8 : 0,
+		                    (const guint8 *) md5_tests[i].password,
+		                    strlen (md5_tests[i].password),
+		                    (guint8 *) digest,
+		                    md5_tests[i].digest_size);
 
 		hex = nm_utils_bin2hexstr (digest, md5_tests[i].digest_size, -1);
 		g_assert_cmpstr (hex, ==, md5_tests[i].result);
@@ -445,7 +445,7 @@ main (int argc, char **argv)
 
 	nmtst_init (&argc, &argv, TRUE);
 
-	success = crypto_init (&error);
+	success = _nm_crypto_init (&error);
 	g_assert_no_error (error);
 	g_assert (success);
 

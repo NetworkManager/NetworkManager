@@ -2843,12 +2843,12 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 
 	switch (uuid_type) {
 	case NM_UTILS_UUID_TYPE_LEGACY:
-		crypto_md5_hash (NULL,
-		                 0,
-		                 (guint8 *) s,
-		                 slen,
-		                 (guint8 *) uuid,
-		                 sizeof (uuid));
+		nm_crypto_md5_hash (NULL,
+		                    0,
+		                    (guint8 *) s,
+		                    slen,
+		                    (guint8 *) uuid,
+		                    sizeof (uuid));
 		break;
 	case NM_UTILS_UUID_TYPE_VARIANT3: {
 		uuid_t ns_uuid = { 0 };
@@ -2859,12 +2859,12 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 				g_return_val_if_reached (NULL);
 		}
 
-		crypto_md5_hash ((guint8 *) s,
-		                 slen,
-		                 (guint8 *) ns_uuid,
-		                 sizeof (ns_uuid),
-		                 (guint8 *) uuid,
-		                 sizeof (uuid));
+		nm_crypto_md5_hash ((guint8 *) s,
+		                    slen,
+		                    (guint8 *) ns_uuid,
+		                    sizeof (ns_uuid),
+		                    (guint8 *) uuid,
+		                    sizeof (uuid));
 
 		uuid[6] = (uuid[6] & 0x0F) | 0x30;
 		uuid[8] = (uuid[8] & 0x3F) | 0x80;
@@ -2964,20 +2964,20 @@ nm_utils_rsa_key_encrypt (const guint8 *data,
 
 	/* Make the password if needed */
 	if (!in_password) {
-		if (!crypto_randomize (pw_buf, sizeof (pw_buf), error))
+		if (!nm_crypto_randomize (pw_buf, sizeof (pw_buf), error))
 			return NULL;
 		in_password = tmp_password = nm_utils_bin2hexstr (pw_buf, sizeof (pw_buf), -1);
 	}
 
 	salt_len = 8;
-	if (!crypto_randomize (salt, salt_len, error))
+	if (!nm_crypto_randomize (salt, salt_len, error))
 		goto out;
 
-	key = crypto_make_des_aes_key (CIPHER_DES_EDE3_CBC, &salt[0], salt_len, in_password, &key_len, NULL);
+	key = nm_crypto_make_des_aes_key (CIPHER_DES_EDE3_CBC, &salt[0], salt_len, in_password, &key_len, NULL);
 	if (!key)
 		g_return_val_if_reached (NULL);
 
-	enc = crypto_encrypt (CIPHER_DES_EDE3_CBC, data, len, salt, salt_len, key, key_len, &enc_len, error);
+	enc = nm_crypto_encrypt (CIPHER_DES_EDE3_CBC, data, len, salt, salt_len, key, key_len, &enc_len, error);
 	if (!enc)
 		goto out;
 
@@ -3068,7 +3068,7 @@ nm_utils_file_is_certificate (const char *filename)
 	if (!file_has_extension (filename, extensions))
 		return FALSE;
 
-	cert = crypto_load_and_verify_certificate (filename, &file_format, NULL);
+	cert = nm_crypto_load_and_verify_certificate (filename, &file_format, NULL);
 	if (cert)
 		g_byte_array_unref (cert);
 
@@ -3097,7 +3097,7 @@ nm_utils_file_is_private_key (const char *filename, gboolean *out_encrypted)
 	if (!file_has_extension (filename, extensions))
 		return FALSE;
 
-	return crypto_verify_private_key (filename, NULL, out_encrypted, NULL) != NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	return nm_crypto_verify_private_key (filename, NULL, out_encrypted, NULL) != NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 }
 
 /**
@@ -3113,7 +3113,7 @@ nm_utils_file_is_pkcs12 (const char *filename)
 {
 	g_return_val_if_fail (filename != NULL, FALSE);
 
-	return crypto_is_pkcs12_file (filename, NULL);
+	return nm_crypto_is_pkcs12_file (filename, NULL);
 }
 
 /*****************************************************************************/

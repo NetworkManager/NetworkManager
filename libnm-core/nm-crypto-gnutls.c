@@ -37,7 +37,7 @@
 static gboolean initialized = FALSE;
 
 gboolean
-crypto_init (GError **error)
+_nm_crypto_init (GError **error)
 {
 	if (initialized)
 		return TRUE;
@@ -55,16 +55,16 @@ crypto_init (GError **error)
 }
 
 char *
-crypto_decrypt (const char *cipher,
-                int key_type,
-                const guint8 *data,
-                gsize data_len,
-                const char *iv,
-                const gsize iv_len,
-                const char *key,
-                const gsize key_len,
-                gsize *out_len,
-                GError **error)
+_nm_crypto_decrypt (const char *cipher,
+                    int key_type,
+                    const guint8 *data,
+                    gsize data_len,
+                    const char *iv,
+                    const gsize iv_len,
+                    const char *key,
+                    const gsize key_len,
+                    gsize *out_len,
+                    GError **error)
 {
 	gnutls_cipher_hd_t ctx;
 	gnutls_datum_t key_dt, iv_dt;
@@ -74,7 +74,7 @@ crypto_decrypt (const char *cipher,
 	gboolean success = FALSE;
 	gsize pad_len, real_iv_len;
 
-	if (!crypto_init (error))
+	if (!_nm_crypto_init (error))
 		return NULL;
 
 	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC)) {
@@ -171,15 +171,15 @@ out:
 }
 
 char *
-crypto_encrypt (const char *cipher,
-                const guint8 *data,
-                gsize data_len,
-                const char *iv,
-                const gsize iv_len,
-                const char *key,
-                gsize key_len,
-                gsize *out_len,
-                GError **error)
+_nm_crypto_encrypt (const char *cipher,
+                    const guint8 *data,
+                    gsize data_len,
+                    const char *iv,
+                    const gsize iv_len,
+                    const char *key,
+                    gsize key_len,
+                    gsize *out_len,
+                    GError **error)
 {
 	gnutls_cipher_hd_t ctx;
 	gnutls_datum_t key_dt, iv_dt;
@@ -191,7 +191,7 @@ crypto_encrypt (const char *cipher,
 	char *padded_buf = NULL;
 	guint32 i;
 
-	if (!crypto_init (error))
+	if (!_nm_crypto_init (error))
 		return NULL;
 
 	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC))
@@ -269,15 +269,15 @@ out:
 }
 
 NMCryptoFileFormat
-crypto_verify_cert (const unsigned char *data,
-                    gsize len,
-                    GError **error)
+_nm_crypto_verify_cert (const unsigned char *data,
+                        gsize len,
+                        GError **error)
 {
 	gnutls_x509_crt_t der;
 	gnutls_datum_t dt;
 	int err;
 
-	if (!crypto_init (error))
+	if (!_nm_crypto_init (error))
 		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
 	err = gnutls_x509_crt_init (&der);
@@ -312,10 +312,10 @@ crypto_verify_cert (const unsigned char *data,
 }
 
 gboolean
-crypto_verify_pkcs12 (const guint8 *data,
-                      gsize data_len,
-                      const char *password,
-                      GError **error)
+_nm_crypto_verify_pkcs12 (const guint8 *data,
+                          gsize data_len,
+                          const char *password,
+                          GError **error)
 {
 	gnutls_pkcs12_t p12;
 	gnutls_datum_t dt;
@@ -324,7 +324,7 @@ crypto_verify_pkcs12 (const guint8 *data,
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	if (!crypto_init (error))
+	if (!_nm_crypto_init (error))
 		return FALSE;
 
 	dt.data = (unsigned char *) data;
@@ -369,11 +369,11 @@ out:
 }
 
 gboolean
-crypto_verify_pkcs8 (const guint8 *data,
-                     gsize data_len,
-                     gboolean is_encrypted,
-                     const char *password,
-                     GError **error)
+_nm_crypto_verify_pkcs8 (const guint8 *data,
+                         gsize data_len,
+                         gboolean is_encrypted,
+                         const char *password,
+                         GError **error)
 {
 	gnutls_x509_privkey_t p8;
 	gnutls_datum_t dt;
@@ -381,7 +381,7 @@ crypto_verify_pkcs8 (const guint8 *data,
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	if (!crypto_init (error))
+	if (!_nm_crypto_init (error))
 		return FALSE;
 
 	dt.data = (unsigned char *) data;
@@ -424,9 +424,9 @@ crypto_verify_pkcs8 (const guint8 *data,
 }
 
 gboolean
-crypto_randomize (void *buffer, gsize buffer_len, GError **error)
+_nm_crypto_randomize (void *buffer, gsize buffer_len, GError **error)
 {
-	if (!crypto_init (error))
+	if (!_nm_crypto_init (error))
 		return FALSE;
 
 	gnutls_rnd (GNUTLS_RND_RANDOM, buffer, buffer_len);
