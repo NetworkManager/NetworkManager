@@ -417,15 +417,16 @@ test_md5 (void)
 
 	for (i = 0; i < G_N_ELEMENTS (md5_tests); i++) {
 		memset (digest, 0, sizeof (digest));
-		crypto_md5_hash (md5_tests[i].salt,
+		crypto_md5_hash ((const guint8 *) md5_tests[i].salt,
 		                 /* crypto_md5_hash() used to clamp salt_len to 8.  It
 		                  * doesn't any more, so we need to do it here now to
 		                  * get output that matches md5_tests[i].result.
 		                  */
 		                 md5_tests[i].salt ? 8 : 0,
-		                 md5_tests[i].password,
+		                 (const guint8 *) md5_tests[i].password,
 		                 strlen (md5_tests[i].password),
-		                 digest, md5_tests[i].digest_size);
+		                 (guint8 *) digest,
+		                 md5_tests[i].digest_size);
 
 		hex = nm_utils_bin2hexstr (digest, md5_tests[i].digest_size, -1);
 		g_assert_cmpstr (hex, ==, md5_tests[i].result);
