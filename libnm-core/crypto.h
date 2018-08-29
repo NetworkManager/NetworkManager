@@ -50,16 +50,16 @@ typedef enum {
 
 gboolean crypto_init (GError **error);
 
-GByteArray *crypto_decrypt_openssl_private_key_data (const guint8 *data,
-                                                     gsize data_len,
-                                                     const char *password,
-                                                     NMCryptoKeyType *out_key_type,
-                                                     GError **error);
+GByteArray *nmtst_crypto_decrypt_openssl_private_key_data (const guint8 *data,
+                                                           gsize data_len,
+                                                           const char *password,
+                                                           NMCryptoKeyType *out_key_type,
+                                                           GError **error);
 
-GByteArray *crypto_decrypt_openssl_private_key (const char *file,
-                                                const char *password,
-                                                NMCryptoKeyType *out_key_type,
-                                                GError **error);
+GByteArray *nmtst_crypto_decrypt_openssl_private_key (const char *file,
+                                                      const char *password,
+                                                      NMCryptoKeyType *out_key_type,
+                                                      GError **error);
 
 GByteArray *crypto_load_and_verify_certificate (const char *file,
                                                 NMCryptoFileFormat *out_file_format,

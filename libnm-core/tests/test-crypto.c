@@ -144,7 +144,7 @@ test_load_private_key (const char *path,
 	g_assert (nm_utils_file_is_private_key (path, &is_encrypted));
 	g_assert (is_encrypted);
 
-	array = crypto_decrypt_openssl_private_key (path, password, &key_type, &error);
+	array = nmtst_crypto_decrypt_openssl_private_key (path, password, &key_type, &error);
 	/* Even if the password is wrong, we should determine the key type */
 	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
 
@@ -264,7 +264,7 @@ test_encrypt_private_key (const char *path,
 	GByteArray *array, *encrypted, *re_decrypted;
 	GError *error = NULL;
 
-	array = crypto_decrypt_openssl_private_key (path, password, &key_type, &error);
+	array = nmtst_crypto_decrypt_openssl_private_key (path, password, &key_type, &error);
 	g_assert_no_error (error);
 	g_assert (array != NULL);
 	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
@@ -276,8 +276,8 @@ test_encrypt_private_key (const char *path,
 
 	/* Then re-decrypt the private key */
 	key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-	re_decrypted = crypto_decrypt_openssl_private_key_data (encrypted->data, encrypted->len,
-	                                                        password, &key_type, &error);
+	re_decrypted = nmtst_crypto_decrypt_openssl_private_key_data (encrypted->data, encrypted->len,
+	                                                              password, &key_type, &error);
 	g_assert_no_error (error);
 	g_assert (re_decrypted != NULL);
 	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
