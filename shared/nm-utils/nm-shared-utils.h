@@ -210,6 +210,27 @@ GVariant *nm_utils_gbytes_to_variant_ay (GBytes *bytes);
 
 /*****************************************************************************/
 
+static inline int
+nm_utils_hexchar_to_int (char ch)
+{
+	G_STATIC_ASSERT_EXPR ('0' < 'A');
+	G_STATIC_ASSERT_EXPR ('A' < 'a');
+
+	if (ch >= '0') {
+		if (ch <= '9')
+			return ch - '0';
+		if (ch >= 'A') {
+			if (ch <= 'F')
+				return ((int) ch) + (10 - (int) 'A');
+			if (ch >= 'a' && ch <= 'f')
+				return ((int) ch) + (10 - (int) 'a');
+		}
+	}
+	return -1;
+}
+
+/*****************************************************************************/
+
 const char *nm_utils_dbus_path_get_last_component (const char *dbus_path);
 
 int nm_utils_dbus_path_cmp (const char *dbus_path_a, const char *dbus_path_b);
