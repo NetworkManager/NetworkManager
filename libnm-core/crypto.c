@@ -487,23 +487,21 @@ crypto_decrypt_openssl_private_key_data (const guint8 *data,
 	char *cipher = NULL;
 
 	g_return_val_if_fail (data != NULL, NULL);
-	if (out_key_type)
-		g_return_val_if_fail (*out_key_type == NM_CRYPTO_KEY_TYPE_UNKNOWN, NULL);
+
+	NM_SET_OUT (out_key_type, NM_CRYPTO_KEY_TYPE_UNKNOWN);
 
 	if (!crypto_init (error))
 		return NULL;
 
 	parsed = parse_old_openssl_key_file (data, data_len, &key_type, &cipher, &iv, NULL);
-	/* return the key type even if decryption failed */
-	if (out_key_type)
-		*out_key_type = key_type;
-
 	if (!parsed) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("Unable to determine private key type."));
 		return NULL;
 	}
+
+	NM_SET_OUT (out_key_type, key_type);
 
 	if (password) {
 		if (!cipher || !iv) {
