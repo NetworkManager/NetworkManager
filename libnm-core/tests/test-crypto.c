@@ -243,7 +243,7 @@ test_encrypt_private_key (const char *path,
 {
 	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
 	gs_unref_bytes GBytes *array = NULL;
-	nm_auto_unref_bytearray GByteArray *encrypted = NULL;
+	gs_unref_bytes GBytes *encrypted = NULL;
 	gs_unref_bytes GBytes *re_decrypted = NULL;
 	GError *error = NULL;
 
@@ -261,8 +261,8 @@ test_encrypt_private_key (const char *path,
 
 	/* Then re-decrypt the private key */
 	key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-	re_decrypted = nmtst_crypto_decrypt_openssl_private_key_data (encrypted->data,
-	                                                              encrypted->len,
+	re_decrypted = nmtst_crypto_decrypt_openssl_private_key_data (g_bytes_get_data (encrypted, NULL),
+	                                                              g_bytes_get_size (encrypted),
 	                                                              password,
 	                                                              &key_type,
 	                                                              &error);

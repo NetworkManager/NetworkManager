@@ -897,90 +897,93 @@ nm_crypto_randomize (void *buffer, gsize buffer_len, GError **error)
  * Returns: (transfer full): on success, PEM-formatted data suitable for writing
  * to a PEM-formatted certificate/private key file.
  **/
-GByteArray *
+GBytes *
 nmtst_crypto_rsa_key_encrypt (const guint8 *data,
                               gsize len,
                               const char *in_password,
                               char **out_password,
                               GError **error)
 {
-	char salt[16];
-	int salt_len;
-	char *key = NULL, *enc = NULL, *pw_buf[32];
-	gsize key_len = 0, enc_len = 0;
-	GString *pem = NULL;
-	char *tmp, *tmp_password = NULL;
-	int left;
+	char salt[8];
+	nm_auto_clear_secret_ptr NMSecretPtr key = { 0 };
+	nm_auto_clear_secret_ptr NMSecretPtr enc = { 0 };
+	gs_unref_ptrarray GPtrArray *pem = NULL;
+	nm_auto_free_secret char *tmp_password = NULL;
+	nm_auto_free_secret char *enc_base64 = NULL;
+	gsize enc_base64_len;
 	const char *p;
-	GByteArray *ret = NULL;
+	gsize ret_len, ret_idx;
+	guint i;
+	NMSecretBuf *ret;
 
-	g_return_val_if_fail (data != NULL, NULL);
+	g_return_val_if_fail (data, NULL);
 	g_return_val_if_fail (len > 0, NULL);
-	if (out_password)
-		g_return_val_if_fail (*out_password == NULL, NULL);
+	g_return_val_if_fail (!out_password || !*out_password, NULL);
 
 	/* Make the password if needed */
 	if (!in_password) {
-		if (!nm_crypto_randomize (pw_buf, sizeof (pw_buf), error))
+		nm_auto_clear_static_secret_ptr NMSecretPtr pw_buf = NM_SECRET_PTR_STATIC (32);
+
+		if (!nm_crypto_randomize (pw_buf.bin, pw_buf.len, error))
 			return NULL;
-		in_password = tmp_password = nm_utils_bin2hexstr (pw_buf, sizeof (pw_buf), -1);
+		tmp_password = nm_utils_bin2hexstr (pw_buf.bin, pw_buf.len, -1);
+		in_password = tmp_password;
 	}
 
-	salt_len = 8;
-	if (!nm_crypto_randomize (salt, salt_len, error))
-		goto out;
+	if (!nm_crypto_randomize (salt, sizeof (salt), error))
+		return NULL;
 
-	key = nm_crypto_make_des_aes_key (CIPHER_DES_EDE3_CBC, &salt[0], salt_len, in_password, &key_len, NULL);
-	if (!key)
+	key.str = nm_crypto_make_des_aes_key (CIPHER_DES_EDE3_CBC, &salt[0], sizeof (salt), in_password, &key.len, NULL);
+	if (!key.str)
 		g_return_val_if_reached (NULL);
 
-	enc = nm_crypto_encrypt (CIPHER_DES_EDE3_CBC, data, len, salt, salt_len, key, key_len, &enc_len, error);
-	if (!enc)
-		goto out;
+	enc.str = nm_crypto_encrypt (CIPHER_DES_EDE3_CBC, data, len, salt, sizeof (salt), key.str, key.len, &enc.len, error);
+	if (!enc.str)
+		return NULL;
 
-	pem = g_string_sized_new (enc_len * 2 + 100);
-	g_string_append (pem, "-----BEGIN RSA PRIVATE KEY-----\n");
-	g_string_append (pem, "Proc-Type: 4,ENCRYPTED\n");
+	/* What follows is not the most efficient way to construct the pem
+	 * file line-by-line. At least, it makes sure, that the data will be cleared
+	 * again and not left around in memory.
+	 *
+	 * If this would not be test code, we should improve the implementation
+	 * to avoid some of the copying. */
+	pem = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_free_secret);
+
+	g_ptr_array_add (pem, g_strdup ("-----BEGIN RSA PRIVATE KEY-----\n"));
+	g_ptr_array_add (pem, g_strdup ("Proc-Type: 4,ENCRYPTED\n"));
 
 	/* Convert the salt to a hex string */
-	tmp = nm_utils_bin2hexstr (salt, salt_len, salt_len * 2);
-	g_string_append_printf (pem, "DEK-Info: %s,%s\n\n", CIPHER_DES_EDE3_CBC, tmp);
-	g_free (tmp);
+	g_ptr_array_add (pem, g_strdup ("DEK-Info: "CIPHER_DES_EDE3_CBC","));
+	g_ptr_array_add (pem, nm_utils_bin2hexstr (salt, sizeof (salt), sizeof (salt) * 2));
+	g_ptr_array_add (pem, g_strdup ("\n\n"));
 
 	/* Convert the encrypted key to a base64 string */
-	p = tmp = g_base64_encode ((const guchar *) enc, enc_len);
-	left = strlen (tmp);
-	while (left > 0) {
-		g_string_append_len (pem, p, (left < 64) ? left : 64);
-		g_string_append_c (pem, '\n');
-		left -= 64;
-		p += 64;
-	}
-	g_free (tmp);
-
-	g_string_append (pem, "-----END RSA PRIVATE KEY-----\n");
-
-	ret = g_byte_array_sized_new (pem->len);
-	g_byte_array_append (ret, (const unsigned char *) pem->str, pem->len);
-	if (tmp_password && out_password)
-		*out_password = g_strdup (tmp_password);
-
-out:
-	if (key) {
-		memset (key, 0, key_len);
-		g_free (key);
-	}
-	if (enc) {
-		memset (enc, 0, enc_len);
-		g_free (enc);
-	}
-	if (pem)
-		g_string_free (pem, TRUE);
-
-	if (tmp_password) {
-		memset (tmp_password, 0, strlen (tmp_password));
-		g_free (tmp_password);
+	enc_base64 = g_base64_encode ((const guchar *) enc.str, enc.len);
+	enc_base64_len = strlen (enc_base64);
+	for (p = enc_base64; (p - enc_base64) < (ptrdiff_t) enc_base64_len; p += 64) {
+		g_ptr_array_add (pem, g_strndup (p, 64));
+		g_ptr_array_add (pem, g_strdup ("\n"));
 	}
 
-	return ret;
+	g_ptr_array_add (pem, g_strdup ("-----END RSA PRIVATE KEY-----\n"));
+
+	ret_len = 0;
+	for (i = 0; i < pem->len; i++)
+		ret_len += strlen (pem->pdata[i]);
+
+	ret = nm_secret_buf_new (ret_len + 1);
+	ret_idx = 0;
+	for (i = 0; i < pem->len; i++) {
+		const char *line = pem->pdata[i];
+		gsize line_l = strlen (line);
+
+		memcpy (&ret->bin[ret_idx], line, line_l);
+		ret_idx += line_l;
+		nm_assert (ret_idx <= ret_len);
+	}
+	nm_assert (ret_idx == ret_len);
+	ret->bin[ret_len] = '\0';
+
+	NM_SET_OUT (out_password, g_strdup (tmp_password));
+	return nm_secret_buf_to_gbytes_take (ret, ret_len);
 }
