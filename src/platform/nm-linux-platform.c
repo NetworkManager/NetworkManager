@@ -853,7 +853,9 @@ _linktype_read_devtype (int dirfd)
 
 	nm_assert (dirfd >= 0);
 
-	if (nm_utils_file_get_contents (dirfd, "uevent", 1*1024*1024, &contents, NULL, NULL) < 0)
+	if (nm_utils_file_get_contents (dirfd, "uevent", 1*1024*1024,
+	                                NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
+	                                &contents, NULL, NULL) < 0)
 		return NULL;
 	for (cont = contents; cont; cont = end) {
 		end = strpbrk (cont, "\r\n");
@@ -3515,7 +3517,9 @@ _log_dbg_sysctl_set_impl (NMPlatform *platform, const char *pathid, int dirfd, c
 	char *contents;
 	gs_free char *value_escaped = g_strescape (value, NULL);
 
-	if (nm_utils_file_get_contents (dirfd, path, 1*1024*1024, &contents, NULL, &error) < 0) {
+	if (nm_utils_file_get_contents (dirfd, path, 1*1024*1024,
+	                                NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
+	                                &contents, NULL, &error) < 0) {
 		_LOGD ("sysctl: setting '%s' to '%s' (current value cannot be read: %s)", pathid, value_escaped, error->message);
 		g_clear_error (&error);
 		return;
@@ -3732,7 +3736,9 @@ sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 		pathid = path;
 	}
 
-	if (nm_utils_file_get_contents (dirfd, path, 1*1024*1024, &contents, NULL, &error) < 0) {
+	if (nm_utils_file_get_contents (dirfd, path, 1*1024*1024,
+	                                NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
+	                                &contents, NULL, &error) < 0) {
 		/* We assume FAILED means EOPNOTSUP */
 		if (   g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)
 		    || g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NODEV)

@@ -821,6 +821,7 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 	if (nm_utils_fd_get_contents (closefd ? nm_steal_fd (&fd) : fd,
 	                              closefd,
 	                              10 * 1024 * 1024,
+	                              NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
 	                              &arena,
 	                              NULL,
 	                              &local) < 0) {
