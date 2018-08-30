@@ -55,9 +55,9 @@ char *_nm_crypto_decrypt (const char *cipher,
                           gsize *out_len,
                           GError **error);
 
-NMCryptoFileFormat _nm_crypto_verify_cert (const guint8 *data,
-                                           gsize len,
-                                           GError **error);
+gboolean _nm_crypto_verify_x509 (const guint8 *data,
+                                 gsize len,
+                                 GError **error);
 
 gboolean _nm_crypto_verify_pkcs12 (const guint8 *data,
                                    gsize data_len,
