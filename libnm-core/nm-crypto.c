@@ -52,19 +52,6 @@
 
 /*****************************************************************************/
 
-static GByteArray *
-to_gbyte_array_mem (gconstpointer mem, gsize len)
-{
-	GByteArray *arr;
-
-	arr = g_byte_array_sized_new (len);
-	if (len > 0)
-		g_byte_array_append (arr, mem, len);
-	return arr;
-}
-
-/*****************************************************************************/
-
 static gboolean
 find_tag (const char *tag,
           const guint8 *data,
@@ -519,7 +506,7 @@ decrypt_key (const char *cipher,
 	return TRUE;
 }
 
-GByteArray *
+GBytes *
 nmtst_crypto_decrypt_openssl_private_key_data (const guint8 *data,
                                                gsize data_len,
                                                const char *password,
@@ -567,16 +554,16 @@ nmtst_crypto_decrypt_openssl_private_key_data (const guint8 *data,
 		                  error))
 			return NULL;
 
-		return to_gbyte_array_mem (parsed2.bin, parsed2.len);
+		return nm_secret_copy_to_gbytes (parsed2.bin, parsed2.len);
 	}
 
 	if (cipher || iv)
 		return NULL;
 
-	return to_gbyte_array_mem (parsed.bin, parsed.len);
+	return nm_secret_copy_to_gbytes (parsed.bin, parsed.len);
 }
 
-GByteArray *
+GBytes *
 nmtst_crypto_decrypt_openssl_private_key (const char *file,
                                           const char *password,
                                           NMCryptoKeyType *out_key_type,

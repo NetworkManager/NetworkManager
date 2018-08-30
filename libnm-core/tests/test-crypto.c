@@ -113,22 +113,6 @@ test_cert (gconstpointer test_data)
 	g_assert (nm_utils_file_is_certificate (path));
 }
 
-static GByteArray *
-file_to_byte_array (const char *filename)
-{
-	char *contents;
-	GByteArray *array = NULL;
-	gsize length = 0;
-
-	if (g_file_get_contents (filename, &contents, &length, NULL)) {
-		array = g_byte_array_sized_new (length);
-		g_byte_array_append (array, (guint8 *) contents, length);
-		g_assert (array->len == length);
-		g_free (contents);
-	}
-	return array;
-}
-
 static void
 test_load_private_key (const char *path,
                        const char *password,
@@ -137,7 +121,7 @@ test_load_private_key (const char *path,
 {
 	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
 	gboolean is_encrypted = FALSE;
-	GByteArray *array, *decrypted;
+	gs_unref_bytes GBytes *array = NULL;
 	GError *error = NULL;
 
 	g_assert (nm_utils_file_is_private_key (path, &is_encrypted));
@@ -163,16 +147,14 @@ test_load_private_key (const char *path,
 	g_assert (array != NULL);
 
 	if (decrypted_path) {
+		gs_free char *contents = NULL;
+		gsize length;
+
 		/* Compare the crypto decrypted key against a known-good decryption */
-		decrypted = file_to_byte_array (decrypted_path);
-		g_assert (decrypted != NULL);
-		g_assert (decrypted->len == array->len);
-		g_assert (memcmp (decrypted->data, array->data, array->len) == 0);
-
-		g_byte_array_free (decrypted, TRUE);
+		if (!g_file_get_contents (decrypted_path, &contents, &length, NULL))
+			g_assert_not_reached ();
+		g_assert (nm_utils_gbytes_equal_mem (array, contents, length));
 	}
-
-	g_byte_array_free (array, TRUE);
 }
 
 static void
@@ -260,34 +242,35 @@ test_encrypt_private_key (const char *path,
                           const char *password)
 {
 	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-	GByteArray *array, *encrypted, *re_decrypted;
+	gs_unref_bytes GBytes *array = NULL;
+	nm_auto_unref_bytearray GByteArray *encrypted = NULL;
+	gs_unref_bytes GBytes *re_decrypted = NULL;
 	GError *error = NULL;
 
 	array = nmtst_crypto_decrypt_openssl_private_key (path, password, &key_type, &error);
-	g_assert_no_error (error);
-	g_assert (array != NULL);
+	nmtst_assert_success (array, error);
 	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
 
 	/* Now re-encrypt the private key */
-	encrypted = nm_utils_rsa_key_encrypt (array->data, array->len, password, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (encrypted != NULL);
+	encrypted = nm_utils_rsa_key_encrypt (g_bytes_get_data (array, NULL),
+	                                      g_bytes_get_size (array),
+	                                      password,
+	                                      NULL,
+	                                      &error);
+	nmtst_assert_success (encrypted, error);
 
 	/* Then re-decrypt the private key */
 	key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-	re_decrypted = nmtst_crypto_decrypt_openssl_private_key_data (encrypted->data, encrypted->len,
-	                                                              password, &key_type, &error);
-	g_assert_no_error (error);
-	g_assert (re_decrypted != NULL);
+	re_decrypted = nmtst_crypto_decrypt_openssl_private_key_data (encrypted->data,
+	                                                              encrypted->len,
+	                                                              password,
+	                                                              &key_type,
+	                                                              &error);
+	nmtst_assert_success (re_decrypted, error);
 	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
 
 	/* Compare the original decrypted key with the re-decrypted key */
-	g_assert_cmpint (array->len, ==, re_decrypted->len);
-	g_assert (!memcmp (array->data, re_decrypted->data, array->len));
-
-	g_byte_array_free (re_decrypted, TRUE);
-	g_byte_array_free (encrypted, TRUE);
-	g_byte_array_free (array, TRUE);
+	g_assert (g_bytes_equal (array, re_decrypted));
 }
 
 static void
