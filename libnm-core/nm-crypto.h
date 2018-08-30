@@ -49,16 +49,16 @@ typedef enum {
 	NM_CRYPTO_FILE_FORMAT_PKCS12
 } NMCryptoFileFormat;
 
-GByteArray *nmtst_crypto_decrypt_openssl_private_key_data (const guint8 *data,
-                                                           gsize data_len,
-                                                           const char *password,
-                                                           NMCryptoKeyType *out_key_type,
-                                                           GError **error);
+GBytes *nmtst_crypto_decrypt_openssl_private_key_data (const guint8 *data,
+                                                       gsize data_len,
+                                                       const char *password,
+                                                       NMCryptoKeyType *out_key_type,
+                                                       GError **error);
 
-GByteArray *nmtst_crypto_decrypt_openssl_private_key (const char *file,
-                                                      const char *password,
-                                                      NMCryptoKeyType *out_key_type,
-                                                      GError **error);
+GBytes *nmtst_crypto_decrypt_openssl_private_key (const char *file,
+                                                  const char *password,
+                                                  NMCryptoKeyType *out_key_type,
+                                                  GError **error);
 
 gboolean nm_crypto_load_and_verify_certificate (const char *file,
                                                 NMCryptoFileFormat *out_file_format,
