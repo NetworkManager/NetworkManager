@@ -27,7 +27,6 @@ sources = files(
 )
 
 deps = [
-  crypto_dep,
   nm_dep
 ]
 
