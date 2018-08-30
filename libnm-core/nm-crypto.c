@@ -31,6 +31,7 @@
 #include <stdlib.h>
 
 #include "nm-utils/nm-secret-utils.h"
+#include "nm-utils/nm-io-utils.h"
 
 #include "nm-crypto-impl.h"
 #include "nm-utils.h"
@@ -349,7 +350,13 @@ file_read_contents (const char *filename,
 	nm_assert (out_contents->len == 0);
 	nm_assert (!out_contents->str);
 
-	return g_file_get_contents (filename, &out_contents->str, &out_contents->len, error);
+	return nm_utils_file_get_contents (-1,
+	                                   filename,
+	                                   100*1024*1024,
+	                                   NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET,
+	                                   &out_contents->str,
+	                                   &out_contents->len,
+	                                   error) >= 0;
 }
 
 /*
