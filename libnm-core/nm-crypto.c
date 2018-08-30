@@ -644,15 +644,16 @@ extract_pem_cert_data (const guint8 *contents,
 	return TRUE;
 }
 
-GByteArray *
+gboolean
 nm_crypto_load_and_verify_certificate (const char *file,
                                        NMCryptoFileFormat *out_file_format,
+                                       GBytes **out_certificate,
                                        GError **error)
 {
 	nm_auto_clear_secret_ptr NMSecretPtr contents = { 0 };
 
-	g_return_val_if_fail (file != NULL, NULL);
-	g_return_val_if_fail (out_file_format != NULL, NULL);
+	g_return_val_if_fail (file, FALSE);
+	nm_assert (!error || !*error);
 
 	if (!_nm_crypto_init (error))
 		goto out;
@@ -670,23 +671,26 @@ nm_crypto_load_and_verify_certificate (const char *file,
 
 	/* Check for PKCS#12 */
 	if (nm_crypto_is_pkcs12_data (contents.bin, contents.len, NULL)) {
-		*out_file_format = NM_CRYPTO_FILE_FORMAT_PKCS12;
-		return to_gbyte_array_mem (contents.bin, contents.len);
+		NM_SET_OUT (out_file_format, NM_CRYPTO_FILE_FORMAT_PKCS12);
+		NM_SET_OUT (out_certificate, nm_secret_copy_to_gbytes (contents.bin, contents.len));
+		return TRUE;
 	}
 
 	/* Check for plain DER format */
 	if (contents.len > 2 && contents.bin[0] == 0x30 && contents.bin[1] == 0x82) {
 		if (_nm_crypto_verify_x509 (contents.bin, contents.len, NULL)) {
-			*out_file_format = NM_CRYPTO_FILE_FORMAT_X509;
-			return to_gbyte_array_mem (contents.bin, contents.len);
+			NM_SET_OUT (out_file_format, NM_CRYPTO_FILE_FORMAT_X509);
+			NM_SET_OUT (out_certificate, nm_secret_copy_to_gbytes (contents.bin, contents.len));
+			return TRUE;
 		}
 	} else {
 		nm_auto_clear_secret_ptr NMSecretPtr pem_cert = { 0 };
 
 		if (extract_pem_cert_data (contents.bin, contents.len, &pem_cert, NULL)) {
 			if (_nm_crypto_verify_x509 (pem_cert.bin, pem_cert.len, NULL)) {
-				*out_file_format = NM_CRYPTO_FILE_FORMAT_X509;
-				return to_gbyte_array_mem (contents.bin, contents.len);
+				NM_SET_OUT (out_file_format, NM_CRYPTO_FILE_FORMAT_X509);
+				NM_SET_OUT (out_certificate, nm_secret_copy_to_gbytes (contents.bin, contents.len));
+				return TRUE;
 			}
 		}
 	}
@@ -697,8 +701,9 @@ nm_crypto_load_and_verify_certificate (const char *file,
 	             _("Failed to recognize certificate"));
 
 out:
-	*out_file_format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	return NULL;
+	NM_SET_OUT (out_file_format, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
+	NM_SET_OUT (out_certificate, NULL);
+	return FALSE;
 }
 
 gboolean

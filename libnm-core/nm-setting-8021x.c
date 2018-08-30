@@ -520,33 +520,41 @@ nm_setting_802_1x_check_cert_scheme (gconstpointer pdata, gsize length, GError *
 	return scheme;
 }
 
-static GByteArray *
+static GBytes *
 load_and_verify_certificate (const char *cert_path,
                              NMSetting8021xCKScheme scheme,
                              NMCryptoFileFormat *out_file_format,
                              GError **error)
 {
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	GByteArray *array;
+	gs_unref_bytes GBytes *cert = NULL;
 
-	array = nm_crypto_load_and_verify_certificate (cert_path, &format, error);
+	if (!nm_crypto_load_and_verify_certificate (cert_path, &format, &cert, error)) {
+		NM_SET_OUT (out_file_format, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
+		return NULL;
+	}
 
-	if (!array || !array->len || format == NM_CRYPTO_FILE_FORMAT_UNKNOWN) {
-		/* the array is empty or the format is already unknown. */
-		format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+	nm_assert (format != NM_CRYPTO_FILE_FORMAT_UNKNOWN);
+	nm_assert (cert);
+
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+		const guint8 *bin;
+		gsize len;
+
+		bin = g_bytes_get_data (cert, &len);
 		/* If we load the file as blob, we must ensure that the binary data does not
 		 * start with file://. NMSetting8021x cannot represent blobs that start with
 		 * file://.
 		 * If that's the case, coerce the format to UNKNOWN. The callers will take care
 		 * of that and not set the blob. */
-		if (nm_setting_802_1x_check_cert_scheme (array->data, array->len, NULL) != NM_SETTING_802_1X_CK_SCHEME_BLOB)
-			format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+		if (nm_setting_802_1x_check_cert_scheme (bin, len, NULL) != NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+			NM_SET_OUT (out_file_format, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
+			return NULL;
+		}
 	}
 
-	if (out_file_format)
-		*out_file_format = format;
-	return array;
+	NM_SET_OUT (out_file_format, format);
+	return g_steal_pointer (&cert);
 }
 
 /**
@@ -700,7 +708,7 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *setting,
 {
 	NMSetting8021xPrivate *priv;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	GByteArray *data;
+	gs_unref_bytes GBytes *cert = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
 
@@ -730,17 +738,16 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *setting,
 		return TRUE;
 	}
 
-	data = load_and_verify_certificate (value, scheme, &format, error);
-	if (data) {
+	cert = load_and_verify_certificate (value, scheme, &format, error);
+	if (cert) {
 		/* wpa_supplicant can only use raw x509 CA certs */
 		if (format == NM_CRYPTO_FILE_FORMAT_X509) {
 			if (out_format)
 				*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
 
-			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-				priv->ca_cert = g_byte_array_free_to_bytes (data);
-				data = NULL;
-			} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+				priv->ca_cert = g_bytes_ref (cert);
+			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 				priv->ca_cert = path_to_scheme_value (value);
 			else
 				g_assert_not_reached ();
@@ -751,8 +758,6 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *setting,
 			             _("CA certificate must be in X.509 format"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_CA_CERT);
 		}
-		if (data)
-			g_byte_array_unref (data);
 	}
 
 	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_CA_CERT);
@@ -1104,7 +1109,7 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *setting,
 {
 	NMSetting8021xPrivate *priv;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	GByteArray *data;
+	gs_unref_bytes GBytes *cert = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
 
@@ -1134,8 +1139,8 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *setting,
 		return TRUE;
 	}
 
-	data = load_and_verify_certificate (value, scheme, &format, error);
-	if (data) {
+	cert = load_and_verify_certificate (value, scheme, &format, error);
+	if (cert) {
 		gboolean valid = FALSE;
 
 		switch (format) {
@@ -1159,16 +1164,13 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *setting,
 		}
 
 		if (valid) {
-			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-				priv->client_cert = g_byte_array_free_to_bytes (data);
-				data = NULL;
-			} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+				priv->client_cert = g_bytes_ref (cert);
+			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 				priv->client_cert = path_to_scheme_value (value);
 			else
 				g_assert_not_reached ();
 		}
-		if (data)
-			g_byte_array_unref (data);
 	}
 
 	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_CLIENT_CERT);
@@ -1459,7 +1461,7 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *setting,
 {
 	NMSetting8021xPrivate *priv;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	GByteArray *data;
+	gs_unref_bytes GBytes *cert = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
 
@@ -1489,17 +1491,16 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *setting,
 		return TRUE;
 	}
 
-	data = load_and_verify_certificate (value, scheme, &format, error);
-	if (data) {
+	cert = load_and_verify_certificate (value, scheme, &format, error);
+	if (cert) {
 		/* wpa_supplicant can only use raw x509 CA certs */
 		if (format == NM_CRYPTO_FILE_FORMAT_X509) {
 			if (out_format)
 				*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
 
-			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-				priv->phase2_ca_cert = g_byte_array_free_to_bytes (data);
-				data = NULL;
-			} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+				priv->phase2_ca_cert = g_bytes_ref (cert);
+			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 				priv->phase2_ca_cert = path_to_scheme_value (value);
 			else
 				g_assert_not_reached ();
@@ -1510,8 +1511,6 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *setting,
 			                     _("invalid certificate format"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE2_CA_CERT);
 		}
-		if (data)
-			g_byte_array_unref (data);
 	}
 
 	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_CA_CERT);
@@ -1867,7 +1866,7 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *setting,
 {
 	NMSetting8021xPrivate *priv;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	GByteArray *data;
+	gs_unref_bytes GBytes *cert = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
 
@@ -1897,8 +1896,8 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *setting,
 		return TRUE;
 	}
 
-	data = load_and_verify_certificate (value, scheme, &format, error);
-	if (data) {
+	cert = load_and_verify_certificate (value, scheme, &format, error);
+	if (cert) {
 		gboolean valid = FALSE;
 
 		/* wpa_supplicant can only use raw x509 CA certs */
@@ -1923,16 +1922,13 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *setting,
 		}
 
 		if (valid) {
-			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-				priv->phase2_client_cert = g_byte_array_free_to_bytes (data);
-				data = NULL;
-			} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+				priv->phase2_client_cert = g_bytes_ref (cert);
+			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 				priv->phase2_client_cert = path_to_scheme_value (value);
 			else
 				g_assert_not_reached ();
 		}
-		if (data)
-			g_byte_array_unref (data);
 	}
 
 	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_CLIENT_CERT);

@@ -60,9 +60,10 @@ GByteArray *nmtst_crypto_decrypt_openssl_private_key (const char *file,
                                                       NMCryptoKeyType *out_key_type,
                                                       GError **error);
 
-GByteArray *nm_crypto_load_and_verify_certificate (const char *file,
-                                                   NMCryptoFileFormat *out_file_format,
-                                                   GError **error);
+gboolean nm_crypto_load_and_verify_certificate (const char *file,
+                                                NMCryptoFileFormat *out_file_format,
+                                                GBytes **out_certificat,
+                                                GError **error);
 
 gboolean nm_crypto_is_pkcs12_file (const char *file, GError **error);
 

@@ -3060,18 +3060,15 @@ gboolean
 nm_utils_file_is_certificate (const char *filename)
 {
 	const char *extensions[] = { ".der", ".pem", ".crt", ".cer", NULL };
-	NMCryptoFileFormat file_format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	GByteArray *cert;
+	NMCryptoFileFormat file_format;
 
 	g_return_val_if_fail (filename != NULL, FALSE);
 
 	if (!file_has_extension (filename, extensions))
 		return FALSE;
 
-	cert = nm_crypto_load_and_verify_certificate (filename, &file_format, NULL);
-	if (cert)
-		g_byte_array_unref (cert);
-
+	if (!nm_crypto_load_and_verify_certificate (filename, &file_format, NULL, NULL))
+		return FALSE;
 	return file_format = NM_CRYPTO_FILE_FORMAT_X509;
 }
 

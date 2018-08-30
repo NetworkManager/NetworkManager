@@ -99,17 +99,16 @@ static void
 test_cert (gconstpointer test_data)
 {
 	gs_free char *path = NULL;
-	GByteArray *array;
+	gs_unref_bytes GBytes *cert = NULL;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	GError *error = NULL;
+	gboolean success;
 
 	path = g_build_filename (TEST_CERT_DIR, (const char *) test_data, NULL);
 
-	array = nm_crypto_load_and_verify_certificate (path, &format, &error);
-	g_assert_no_error (error);
+	success = nm_crypto_load_and_verify_certificate (path, &format, &cert, &error);
+	nmtst_assert_success (success, error);
 	g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_X509);
-
-	g_byte_array_free (array, TRUE);
 
 	g_assert (nm_utils_file_is_certificate (path));
 }
