@@ -2165,32 +2165,6 @@ nm_setting_802_1x_get_private_key_uri (NMSetting8021x *setting)
 	return (const char *)data;
 }
 
-static void
-free_secure_bytes (gpointer data)
-{
-	GByteArray *array = data;
-
-	memset (array->data, 0, array->len);
-	g_byte_array_unref (array);
-}
-
-static GBytes *
-file_to_secure_bytes (const char *filename)
-{
-	char *contents;
-	GByteArray *array = NULL;
-	gsize length = 0;
-
-	if (g_file_get_contents (filename, &contents, &length, NULL)) {
-		array = g_byte_array_sized_new (length);
-		g_byte_array_append (array, (guint8 *) contents, length);
-		memset (contents, 0, length);
-		g_free (contents);
-		return g_bytes_new_with_free_func (array->data, array->len, free_secure_bytes, array);
-	}
-	return NULL;
-}
-
 /**
  * nm_setting_802_1x_set_private_key:
  * @setting: the #NMSetting8021x
@@ -2295,7 +2269,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 		/* FIXME: potential race after verifying the private key above */
 		/* FIXME: ensure blob doesn't start with file:// */
-		priv->private_key = file_to_secure_bytes (value);
+		priv->private_key = nm_crypto_read_file (value, NULL);
 		nm_assert (priv->private_key);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		priv->private_key = path_to_scheme_value (value);
@@ -2637,7 +2611,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 		/* FIXME: potential race after verifying the private key above */
 		/* FIXME: ensure blob doesn't start with file:// */
-		priv->phase2_private_key = file_to_secure_bytes (value);
+		priv->phase2_private_key = nm_crypto_read_file (value, NULL);
 		nm_assert (priv->phase2_private_key);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		priv->phase2_private_key = path_to_scheme_value (value);

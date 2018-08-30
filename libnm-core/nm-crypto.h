@@ -51,6 +51,9 @@ typedef enum {
 
 /*****************************************************************************/
 
+GBytes *nm_crypto_read_file (const char *filename,
+                             GError **error);
+
 gboolean nm_crypto_load_and_verify_certificate (const char *file,
                                                 NMCryptoFileFormat *out_file_format,
                                                 GBytes **out_certificat,

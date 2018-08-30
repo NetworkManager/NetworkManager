@@ -359,6 +359,19 @@ file_read_contents (const char *filename,
 	                                   error) >= 0;
 }
 
+GBytes *
+nm_crypto_read_file (const char *filename,
+                     GError **error)
+{
+	nm_auto_clear_secret_ptr NMSecretPtr contents = { 0 };
+
+	g_return_val_if_fail (filename, NULL);
+
+	if (!file_read_contents (filename, &contents, error))
+		return NULL;
+	return nm_secret_copy_to_gbytes (contents.bin, contents.len);
+}
+
 /*
  * Convert a hex string into bytes.
  */
