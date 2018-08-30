@@ -264,40 +264,6 @@ gboolean nm_utils_sysctl_ip_conf_is_path (int addr_family, const char *path, con
 
 gboolean nm_utils_is_specific_hostname (const char *name);
 
-/**
- * NMUtilsFileGetContentsFlags:
- * @NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE: no flag
- * @NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET: if present, ensure that no
- *   data is left in memory. Essentially, it means to call explicity_bzero()
- *   to not leave key material on the heap (when reading secrets).
- */
-typedef enum {
-	NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE   = 0,
-	NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET = (1 << 0),
-} NMUtilsFileGetContentsFlags;
-
-int nm_utils_fd_get_contents (int fd,
-                              gboolean close_fd,
-                              gsize max_length,
-                              NMUtilsFileGetContentsFlags flags,
-                              char **contents,
-                              gsize *length,
-                              GError **error);
-
-int nm_utils_file_get_contents (int dirfd,
-                                const char *filename,
-                                gsize max_length,
-                                NMUtilsFileGetContentsFlags flags,
-                                char **contents,
-                                gsize *length,
-                                GError **error);
-
-gboolean nm_utils_file_set_contents (const char *filename,
-                                     const char *contents,
-                                     gssize length,
-                                     mode_t mode,
-                                     GError **error);
-
 char *nm_utils_machine_id_read (void);
 gboolean nm_utils_machine_id_parse (const char *id_str, /*uuid_t*/ guchar *out_uuid);
 

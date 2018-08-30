@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <linux/if_tun.h>
 
+#include "nm-utils/nm-io-utils.h"
 #include "platform/nmp-object.h"
 #include "platform/nmp-netns.h"
 #include "platform/nm-platform-utils.h"

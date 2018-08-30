@@ -39,6 +39,7 @@
 #include "nm-core-internal.h"
 #include "nm-core-utils.h"
 #include "nm-utils/nm-enum-utils.h"
+#include "nm-utils/nm-io-utils.h"
 #include "c-list/src/c-list.h"
 
 /*****************************************************************************/
