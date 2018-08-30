@@ -448,33 +448,12 @@ deactivate_async (NMDevice *device,
 	                   G_DBUS_CALL_FLAGS_NONE, -1, cancellable, disconnect_cb, ctx);
 }
 
-static NMIwdNetworkSecurity
-get_connection_iwd_security (NMConnection *connection)
-{
-	NMSettingWirelessSecurity *s_wireless_sec;
-	const char *key_mgmt = NULL;
-
-	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
-	if (!s_wireless_sec)
-		return NM_IWD_NETWORK_SECURITY_NONE;
-
-	key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wireless_sec);
-	nm_assert (key_mgmt);
-
-	if (!strcmp (key_mgmt, "none") || !strcmp (key_mgmt, "ieee8021x"))
-		return NM_IWD_NETWORK_SECURITY_WEP;
-
-	if (!strcmp (key_mgmt, "wpa-psk"))
-		return NM_IWD_NETWORK_SECURITY_PSK;
-
-	nm_assert (!strcmp (key_mgmt, "wpa-eap"));
-	return NM_IWD_NETWORK_SECURITY_8021X;
-}
-
 static gboolean
 is_connection_known_network (NMConnection *connection)
 {
 	NMSettingWireless *s_wireless;
+	NMIwdNetworkSecurity security;
+	gboolean security_ok;
 	GBytes *ssid;
 	gs_free char *ssid_utf8 = NULL;
 
@@ -487,9 +466,13 @@ is_connection_known_network (NMConnection *connection)
 		return FALSE;
 
 	ssid_utf8 = _nm_utils_ssid_to_utf8 (ssid);
+
+	security = nm_wifi_connection_get_iwd_security (connection, &security_ok);
+	if (!security_ok)
+		return FALSE;
+
 	return nm_iwd_manager_is_known_network (nm_iwd_manager_get (),
-	                                        ssid_utf8,
-	                                        get_connection_iwd_security (connection));
+	                                        ssid_utf8, security);
 }
 
 static gboolean
@@ -543,7 +526,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection, GError 
 	/* 8021x networks can only be used if they've been provisioned on the IWD side and
 	 * thus are Known Networks.
 	 */
-	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X) {
+	if (nm_wifi_connection_get_iwd_security (connection, NULL) == NM_IWD_NETWORK_SECURITY_8021X) {
 		if (!is_connection_known_network (connection)) {
 			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 			                            "802.1x profile is not a known network");
@@ -587,7 +570,7 @@ check_connection_available (NMDevice *device,
 	/* 8021x networks can only be used if they've been provisioned on the IWD side and
 	 * thus are Known Networks.
 	 */
-	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X) {
+	if (nm_wifi_connection_get_iwd_security (connection, NULL) == NM_IWD_NETWORK_SECURITY_8021X) {
 		if (!is_connection_known_network (connection)) {
 			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 			                            "network is not known to iwd");
@@ -731,7 +714,7 @@ complete_connection (NMDevice *device,
 	/* 8021x networks can only be used if they've been provisioned on the IWD side and
 	 * thus are Known Networks.
 	 */
-	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X) {
+	if (nm_wifi_connection_get_iwd_security (connection, NULL) == NM_IWD_NETWORK_SECURITY_8021X) {
 		if (!is_connection_known_network (connection)) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
@@ -773,6 +756,32 @@ complete_connection (NMDevice *device,
 }
 
 static gboolean
+get_variant_boolean (GVariant *v, const char *property)
+{
+	if (!v || !g_variant_is_of_type (v, G_VARIANT_TYPE_BOOLEAN)) {
+		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
+		             "Property %s not cached or not boolean type", property);
+
+		return FALSE;
+	}
+
+	return g_variant_get_boolean (v);
+}
+
+static const char *
+get_variant_state (GVariant *v)
+{
+	if (!v || !g_variant_is_of_type (v, G_VARIANT_TYPE_STRING)) {
+		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
+		             "State property not cached or not a string");
+
+		return "unknown";
+	}
+
+	return g_variant_get_string (v, NULL);
+}
+
+static gboolean
 is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceIwd *self = NM_DEVICE_IWD (device);
@@ -783,7 +792,7 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 		return FALSE;
 
 	value = g_dbus_proxy_get_cached_property (priv->dbus_proxy, "Powered");
-	return g_variant_get_boolean (value);
+	return get_variant_boolean (value, "Powered");
 }
 
 static gboolean
@@ -835,7 +844,7 @@ can_auto_connect (NMDevice *device,
 	/* 8021x networks can only be used if they've been provisioned on the IWD side and
 	 * thus are Known Networks.
 	 */
-	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X) {
+	if (nm_wifi_connection_get_iwd_security (connection, NULL) == NM_IWD_NETWORK_SECURITY_8021X) {
 		if (!is_connection_known_network (connection))
 			return FALSE;
 	}
@@ -1305,9 +1314,6 @@ network_connect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	       ssid_utf8);
 	nm_device_activate_schedule_stage3_ip_config_start (device);
 
-	nm_iwd_manager_network_connected (nm_iwd_manager_get (), ssid_utf8,
-	                                  get_connection_iwd_security (connection));
-
 	return;
 
 failed:
@@ -1756,7 +1762,8 @@ state_changed (NMDeviceIwd *self, const char *new_state)
 	                                 NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 
 		return;
-	}
+	} else if (nm_streq (new_state, "unknown"))
+		return;
 
 	_LOGE (LOGD_WIFI, "State %s unknown", new_state);
 }
@@ -1802,13 +1809,13 @@ properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
 	g_variant_get (changed_properties, "a{sv}", &iter);
 	while (g_variant_iter_next (iter, "{&sv}", &key, &value)) {
 		if (!strcmp (key, "State"))
-			state_changed (self, g_variant_get_string (value, NULL));
+			state_changed (self, get_variant_state (value));
 
 		if (!strcmp (key, "Scanning"))
-			scanning_changed (self, g_variant_get_boolean (value));
+			scanning_changed (self, get_variant_boolean (value, "Scanning"));
 
 		if (!strcmp (key, "Powered"))
-			powered_changed (self, g_variant_get_boolean (value));
+			powered_changed (self, get_variant_boolean (value, "Powered"));
 
 		g_variant_unref (value);
 	}
@@ -1849,12 +1856,12 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 	priv->dbus_proxy = G_DBUS_PROXY (interface);
 
 	value = g_dbus_proxy_get_cached_property (priv->dbus_proxy, "Scanning");
-	priv->scanning = g_variant_get_boolean (value);
+	priv->scanning = get_variant_boolean (value, "Scanning");
 	g_variant_unref (value);
 	priv->scan_requested = FALSE;
 
 	value = g_dbus_proxy_get_cached_property (priv->dbus_proxy, "State");
-	state_changed (self, g_variant_get_string (value, NULL));
+	state_changed (self, get_variant_state (value));
 	g_variant_unref (value);
 
 	g_signal_connect (priv->dbus_proxy, "g-properties-changed",

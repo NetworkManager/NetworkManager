@@ -29,13 +29,21 @@
 #include "nm-core-internal.h"
 #include "nm-manager.h"
 #include "nm-device-iwd.h"
+#include "nm-wifi-utils.h"
 #include "nm-utils/nm-random-utils.h"
+#include "settings/nm-settings.h"
 
 /*****************************************************************************/
 
 typedef struct {
-	char *name;
+	const char *name;
 	NMIwdNetworkSecurity security;
+	char buf[0];
+} KnownNetworkId;
+
+typedef struct {
+	GDBusProxy *known_network;
+	NMSettingsConnection *mirror_connection;
 } KnownNetworkData;
 
 typedef struct {
@@ -45,7 +53,7 @@ typedef struct {
 	GDBusObjectManager *object_manager;
 	guint agent_id;
 	char *agent_path;
-	GSList *known_networks;
+	GHashTable *known_networks;
 } NMIwdManagerPrivate;
 
 struct _NMIwdManager {
@@ -83,6 +91,32 @@ G_DEFINE_TYPE (NMIwdManager, nm_iwd_manager, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+static const char *
+get_variant_string_or_null (GVariant *v)
+{
+	if (!v)
+		return NULL;
+
+	if (   !g_variant_is_of_type (v, G_VARIANT_TYPE_STRING)
+	    && !g_variant_is_of_type (v, G_VARIANT_TYPE_OBJECT_PATH))
+		return NULL;
+
+	return g_variant_get_string (v, NULL);
+}
+
+static const char *
+get_property_string_or_null (GDBusProxy *proxy, const char *property)
+{
+	gs_unref_variant GVariant *value = NULL;
+
+	if (!proxy || !property)
+		return NULL;
+
+	value = g_dbus_proxy_get_cached_property (proxy, property);
+
+	return get_variant_string_or_null (value);
+}
+
 static void
 agent_dbus_method_cb (GDBusConnection *connection,
                       const char *sender, const char *object_path,
@@ -95,7 +129,6 @@ agent_dbus_method_cb (GDBusConnection *connection,
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
 	const char *network_path, *device_path, *ifname;
 	gs_unref_object GDBusInterface *network = NULL, *device_obj = NULL;
-	gs_unref_variant GVariant *value = NULL;
 	int ifindex;
 	NMDevice *device;
 	gs_free char *name_owner = NULL;
@@ -113,9 +146,8 @@ agent_dbus_method_cb (GDBusConnection *connection,
 	network = g_dbus_object_manager_get_interface (priv->object_manager,
 	                                               network_path,
 	                                               NM_IWD_NETWORK_INTERFACE);
-	value = g_dbus_proxy_get_cached_property (G_DBUS_PROXY (network), "Device");
-	device_path = g_variant_get_string (value, NULL);
 
+	device_path = get_property_string_or_null (G_DBUS_PROXY (network), "Device");
 	if (!device_path) {
 		_LOGD ("agent-request: device not cached for network %s in IWD Agent request",
 		       network_path);
@@ -125,10 +157,8 @@ agent_dbus_method_cb (GDBusConnection *connection,
 	device_obj = g_dbus_object_manager_get_interface (priv->object_manager,
 	                                                  device_path,
 	                                                  NM_IWD_DEVICE_INTERFACE);
-	g_variant_unref (value);
-	value = g_dbus_proxy_get_cached_property (G_DBUS_PROXY (device_obj), "Name");
-	ifname = g_variant_get_string (value, NULL);
 
+	ifname = get_property_string_or_null (G_DBUS_PROXY (device_obj), "Name");
 	if (!ifname) {
 		_LOGD ("agent-request: name not cached for device %s in IWD Agent request",
 		       device_path);
@@ -251,38 +281,63 @@ register_agent (NMIwdManager *self)
 
 /*****************************************************************************/
 
+static KnownNetworkId *
+known_network_id_new (const char *name, NMIwdNetworkSecurity security)
+{
+	KnownNetworkId *id;
+	size_t strsize = strlen (name) + 1;
+
+	id = g_malloc (sizeof (KnownNetworkId) + strsize);
+	id->name = id->buf;
+	id->security = security;
+	memcpy (id->buf, name, strsize);
+
+	return id;
+}
+
+static guint
+known_network_id_hash (KnownNetworkId *id)
+{
+	return g_str_hash (id->name) + id->security;
+}
+
+static gboolean
+known_network_id_equal (KnownNetworkId *a, KnownNetworkId *b)
+{
+	return g_str_equal (a->name, b->name) && a->security == b->security;
+}
+
 static void
-set_device_dbus_object (NMIwdManager *self, GDBusInterface *interface,
+known_network_data_free (KnownNetworkData *network)
+{
+	if (!network)
+		return;
+
+	g_object_unref (network->known_network);
+	if (network->mirror_connection)
+		g_object_unref (network->mirror_connection);
+	g_slice_free (KnownNetworkData, network);
+}
+
+/*****************************************************************************/
+
+static void
+set_device_dbus_object (NMIwdManager *self, GDBusProxy *proxy,
                         GDBusObject *object)
 {
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
-	GDBusProxy *proxy;
-	GVariant *value;
 	const char *ifname;
 	int ifindex;
 	NMDevice *device;
 
-	if (!priv->running)
-		return;
-
-	g_return_if_fail (G_IS_DBUS_PROXY (interface));
-
-	proxy = G_DBUS_PROXY (interface);
-
-	if (strcmp (g_dbus_proxy_get_interface_name (proxy),
-	            NM_IWD_DEVICE_INTERFACE))
-		return;
-
-	value = g_dbus_proxy_get_cached_property (proxy, "Name");
-	if (!value) {
+	ifname = get_property_string_or_null (proxy, "Name");
+	if (!ifname) {
 		_LOGE ("Name not cached for Device at %s",
 		       g_dbus_proxy_get_object_path (proxy));
 		return;
 	}
 
-	ifname = g_variant_get_string (value, NULL);
 	ifindex = if_nametoindex (ifname);
-	g_variant_unref (value);
 
 	if (!ifindex) {
 		_LOGE ("if_nametoindex failed for Name %s for Device at %s: %i",
@@ -299,13 +354,153 @@ set_device_dbus_object (NMIwdManager *self, GDBusInterface *interface,
 	nm_device_iwd_set_dbus_object (NM_DEVICE_IWD (device), object);
 }
 
+/* Create an in-memory NMConnection for a WPA2-Enterprise network that
+ * has been preprovisioned with an IWD config file so that NM autoconnect
+ * mechanism and the clients know this networks needs no additional EAP
+ * configuration from the user.  Only do this if no existing connection
+ * SSID and security type match that network yet.
+ */
+static void
+mirror_8021x_connection (NMIwdManager *self, KnownNetworkId *id,
+                         KnownNetworkData *data)
+{
+	NMSettings *settings = NM_SETTINGS_GET;
+	NMSettingsConnection *const *iter;
+	NMConnection *connection;
+	NMSettingsConnection *settings_connection;
+	char uuid[37];
+	NMSetting *setting;
+	GBytes *ssid;
+	GError *error = NULL;
+
+	for (iter = nm_settings_get_connections (settings, NULL); *iter; iter++) {
+		const NMSettingsConnection *conn = *iter;
+		NMIwdNetworkSecurity security;
+		gs_free char *name = NULL;
+		NMSettingWireless *s_wifi;
+
+		security = nm_wifi_connection_get_iwd_security (NM_CONNECTION (conn), NULL);
+		if (security != NM_IWD_NETWORK_SECURITY_8021X)
+			continue;
+
+		s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (conn));
+		if (!s_wifi)
+			continue;
+
+		ssid = nm_setting_wireless_get_ssid (s_wifi);
+		if (!ssid)
+			continue;
+
+		name = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
+		                              g_bytes_get_size (ssid));
+
+		/* We already have an NMSettingsConnection matching this
+		 * KnownNetwork, whether it's saved or an in-memory connection
+		 * potentially created by ourselves.  Nothing to do here.
+		 */
+		if (!strcmp (name, id->name))
+			return;
+	}
+
+	connection = nm_simple_connection_new ();
+
+	setting = NM_SETTING (g_object_new (NM_TYPE_SETTING_CONNECTION,
+	                                    NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	                                    NM_SETTING_CONNECTION_ID, id->name,
+	                                    NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_buf (uuid),
+	                                    NM_SETTING_CONNECTION_READ_ONLY, TRUE,
+	                                    NULL));
+	nm_connection_add_setting (connection, setting);
+
+	ssid = g_bytes_new (id->name, strlen (id->name));
+	setting = NM_SETTING (g_object_new (NM_TYPE_SETTING_WIRELESS,
+	                                    NM_SETTING_WIRELESS_SSID, ssid,
+	                                    NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
+	                                    NULL));
+	nm_connection_add_setting (connection, setting);
+
+	setting = NM_SETTING (g_object_new (NM_TYPE_SETTING_WIRELESS_SECURITY,
+	                                    NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open",
+	                                    NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-eap",
+	                                    NULL));
+	nm_connection_add_setting (connection, setting);
+
+	setting = NM_SETTING (g_object_new (NM_TYPE_SETTING_802_1X, NULL));
+	nm_setting_802_1x_add_eap_method (NM_SETTING_802_1X (setting), "external");
+	nm_connection_add_setting (connection, setting);
+
+	settings_connection = nm_settings_add_connection (settings, connection,
+	                                                  FALSE, &error);
+	g_object_unref (connection);
+
+	if (!settings_connection) {
+		_LOGW ("failed to add a mirror NMConnection for IWD's Known Network '%s': %s",
+		       id->name, NM_G_ERROR_MSG (error));
+		g_clear_error (&error);
+		return;
+	}
+
+	nm_settings_connection_set_flags (settings_connection,
+	                                  NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED |
+	                                  NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED,
+	                                  TRUE);
+
+	data->mirror_connection = g_object_ref (settings_connection);
+}
+
 static void
 interface_added (GDBusObjectManager *object_manager, GDBusObject *object,
                  GDBusInterface *interface, gpointer user_data)
 {
 	NMIwdManager *self = user_data;
+	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
+	GDBusProxy *proxy;
+	const char *iface_name;
 
-	set_device_dbus_object (self, interface, object);
+	if (!priv->running)
+		return;
+
+	g_return_if_fail (G_IS_DBUS_PROXY (interface));
+
+	proxy = G_DBUS_PROXY (interface);
+	iface_name = g_dbus_proxy_get_interface_name (proxy);
+
+	if (nm_streq (iface_name, NM_IWD_DEVICE_INTERFACE)) {
+		set_device_dbus_object (self, proxy, object);
+		return;
+	}
+
+	if (nm_streq (iface_name, NM_IWD_KNOWN_NETWORK_INTERFACE)) {
+		KnownNetworkId *id;
+		KnownNetworkData *data;
+		NMIwdNetworkSecurity security;
+		const char *type_str, *name;
+
+		type_str = get_property_string_or_null (proxy, "Type");
+		name = get_property_string_or_null (proxy, "Name");
+		if (!type_str || !name)
+			return;
+
+		if (nm_streq (type_str, "open"))
+			security = NM_IWD_NETWORK_SECURITY_NONE;
+		else if (nm_streq (type_str, "psk"))
+			security = NM_IWD_NETWORK_SECURITY_PSK;
+		else if (nm_streq (type_str, "8021x"))
+			security = NM_IWD_NETWORK_SECURITY_8021X;
+		else
+			return;
+
+		id = known_network_id_new (name, security);
+
+		data = g_slice_new0 (KnownNetworkData);
+		data->known_network = (GDBusProxy *) g_object_ref (proxy);
+		g_hash_table_insert (priv->known_networks, id, data);
+
+		if (security == NM_IWD_NETWORK_SECURITY_8021X)
+			mirror_8021x_connection (self, id, data);
+
+		return;
+	}
 }
 
 static void
@@ -313,15 +508,63 @@ interface_removed (GDBusObjectManager *object_manager, GDBusObject *object,
                    GDBusInterface *interface, gpointer user_data)
 {
 	NMIwdManager *self = user_data;
+	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
+	GDBusProxy *proxy;
+	const char *iface_name;
 
-	/*
-	 * TODO: we may need to save the GDBusInterface or GDBusObject
-	 * pointer in the hash table because we may be no longer able to
-	 * access the Name property or map the name to ifindex with
-	 * if_nametoindex at this point.
-	 */
+	g_return_if_fail (G_IS_DBUS_PROXY (interface));
 
-	set_device_dbus_object (self, interface, NULL);
+	proxy = G_DBUS_PROXY (interface);
+	iface_name = g_dbus_proxy_get_interface_name (proxy);
+
+	if (nm_streq (iface_name, NM_IWD_DEVICE_INTERFACE)) {
+		set_device_dbus_object (self, proxy, NULL);
+		return;
+	}
+
+	if (nm_streq (iface_name, NM_IWD_KNOWN_NETWORK_INTERFACE)) {
+		KnownNetworkId id;
+		KnownNetworkData *data;
+		const char *type_str;
+
+		type_str = get_property_string_or_null (proxy, "Type");
+		id.name = get_property_string_or_null (proxy, "Name");
+		if (!type_str || !id.name)
+			return;
+
+		if (nm_streq (type_str, "open"))
+			id.security = NM_IWD_NETWORK_SECURITY_NONE;
+		else if (nm_streq (type_str, "psk"))
+			id.security = NM_IWD_NETWORK_SECURITY_PSK;
+		else if (nm_streq (type_str, "8021x"))
+			id.security = NM_IWD_NETWORK_SECURITY_8021X;
+		else
+			return;
+
+		data = g_hash_table_lookup (priv->known_networks, &id);
+		if (!data)
+			return;
+
+		if (data->mirror_connection) {
+			NMSettingsConnectionIntFlags flags;
+			NMSettingsConnection *mirror_connection = data->mirror_connection;
+
+			flags = nm_settings_connection_get_flags (mirror_connection);
+
+			/* If connection has not been saved since we created it
+			 * in interface_added it too can be removed now. */
+			if (flags & NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED) {
+				data->mirror_connection = NULL;
+
+				nm_settings_connection_delete (mirror_connection, NULL);
+
+				g_object_unref (mirror_connection);
+			}
+		}
+
+		g_hash_table_remove (priv->known_networks, &id);
+		return;
+	}
 }
 
 static gboolean
@@ -341,106 +584,14 @@ object_added (NMIwdManager *self, GDBusObject *object)
 	GList *interfaces, *iter;
 
 	interfaces = g_dbus_object_get_interfaces (object);
+
 	for (iter = interfaces; iter; iter = iter->next) {
 		GDBusInterface *interface = G_DBUS_INTERFACE (iter->data);
 
-		set_device_dbus_object (self, interface, object);
+		interface_added (NULL, object, interface, self);
 	}
 
 	g_list_free_full (interfaces, g_object_unref);
-}
-
-static void
-known_network_free (KnownNetworkData *network)
-{
-	g_free (network->name);
-	g_free (network);
-}
-
-static void
-list_known_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
-{
-	NMIwdManager *self = user_data;
-	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
-	gs_free_error GError *error = NULL;
-	gs_unref_variant GVariant *variant = NULL;
-	GVariantIter *networks, *props;
-
-	variant = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (source), res,
-	                                      G_VARIANT_TYPE ("(aa{sv})"),
-	                                      &error);
-	if (!variant) {
-		_LOGE ("ListKnownNetworks() failed: %s", error->message);
-		return;
-	}
-
-	g_slist_free_full (priv->known_networks, (GDestroyNotify) known_network_free);
-	priv->known_networks = NULL;
-
-	g_variant_get (variant, "(aa{sv})", &networks);
-
-	while (g_variant_iter_next (networks, "a{sv}", &props)) {
-		const char *key;
-		const char *name = NULL;
-		const char *type = NULL;
-		GVariant *val;
-		KnownNetworkData *network_data;
-
-		while (g_variant_iter_next (props, "{&sv}", &key, &val)) {
-			if (!strcmp (key, "Name"))
-				name = g_variant_get_string (val, NULL);
-
-			if (!strcmp (key, "Type"))
-				type = g_variant_get_string (val, NULL);
-
-			g_variant_unref (val);
-		}
-
-		if (!name || !type)
-			goto next;
-
-		network_data = g_new (KnownNetworkData, 1);
-		network_data->name = g_strdup (name);
-		if (!strcmp (type, "open"))
-			network_data->security = NM_IWD_NETWORK_SECURITY_NONE;
-		else if (!strcmp (type, "psk"))
-			network_data->security = NM_IWD_NETWORK_SECURITY_PSK;
-		else if (!strcmp (type, "8021x"))
-			network_data->security = NM_IWD_NETWORK_SECURITY_8021X;
-
-		priv->known_networks = g_slist_append (priv->known_networks,
-		                                       network_data);
-
-next:
-		g_variant_iter_free (props);
-	}
-
-	g_variant_iter_free (networks);
-
-	/* For completness we may want to call nm_device_emit_recheck_auto_activate
-	 * and nm_device_recheck_available_connections for all affected devices
-	 * now but the ListKnownNetworks call should have been really fast,
-	 * faster than any scan on any newly created devices could have happened.
-	 */
-}
-
-static void
-update_known_networks (NMIwdManager *self)
-{
-	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
-	GDBusInterface *known_networks_if;
-
-	known_networks_if = g_dbus_object_manager_get_interface (priv->object_manager,
-	                                                         "/",
-	                                                         NM_IWD_KNOWN_NETWORKS_INTERFACE);
-
-	g_dbus_proxy_call (G_DBUS_PROXY (known_networks_if),
-	                   "ListKnownNetworks",
-	                   g_variant_new ("()"),
-	                   G_DBUS_CALL_FLAGS_NONE, -1,
-	                   priv->cancellable, list_known_networks_cb, self);
-
-	g_object_unref (known_networks_if);
 }
 
 static void prepare_object_manager (NMIwdManager *self);
@@ -492,28 +643,14 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 	objects = g_dbus_object_manager_get_objects (priv->object_manager);
 	for (iter = objects; iter; iter = iter->next) {
 		GDBusObject *object = G_DBUS_OBJECT (iter->data);
-		GDBusInterface *interface;
-		GDBusProxy *proxy;
-		GVariant *value;
+		gs_unref_object GDBusInterface *interface;
 		const char *obj_ifname;
 
 		interface = g_dbus_object_get_interface (object,
 		                                         NM_IWD_DEVICE_INTERFACE);
-		if (!interface)
-			continue;
+		obj_ifname = get_property_string_or_null ((GDBusProxy *) interface, "Name");
 
-		proxy = G_DBUS_PROXY (interface);
-		value = g_dbus_proxy_get_cached_property (proxy, "Name");
-		if (!value) {
-			g_object_unref (interface);
-			continue;
-		}
-
-		obj_ifname = g_variant_get_string (value, NULL);
-		g_variant_unref (value);
-		g_object_unref (interface);
-
-		if (strcmp (nm_device_get_iface (device), obj_ifname))
+		if (!obj_ifname || strcmp (nm_device_get_iface (device), obj_ifname))
 			continue;
 
 		nm_device_iwd_set_dbus_object (NM_DEVICE_IWD (device), object);
@@ -567,6 +704,8 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 		g_signal_connect (priv->object_manager, "interface-removed",
 		                  G_CALLBACK (interface_removed), self);
 
+		g_hash_table_remove_all (priv->known_networks);
+
 		objects = g_dbus_object_manager_get_objects (object_manager);
 		for (iter = objects; iter; iter = iter->next)
 			object_added (self, G_DBUS_OBJECT (iter->data));
@@ -575,8 +714,6 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 
 		if (priv->agent_id)
 			register_agent (self);
-
-		update_known_networks (self);
 	}
 }
 
@@ -598,32 +735,9 @@ nm_iwd_manager_is_known_network (NMIwdManager *self, const char *name,
                                  NMIwdNetworkSecurity security)
 {
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
-	const GSList *iter;
+	KnownNetworkId kn_id = { name, security };
 
-	for (iter = priv->known_networks; iter; iter = g_slist_next (iter)) {
-		const KnownNetworkData *network = iter->data;
-
-		if (!strcmp (network->name, name) && network->security == security)
-			return true;
-	}
-
-	return false;
-}
-
-void
-nm_iwd_manager_network_connected (NMIwdManager *self, const char *name,
-                                  NMIwdNetworkSecurity security)
-{
-	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
-	KnownNetworkData *network_data;
-
-	if (nm_iwd_manager_is_known_network (self, name, security))
-		return;
-
-	network_data = g_new (KnownNetworkData, 1);
-	network_data->name = g_strdup (name);
-	network_data->security = security;
-	priv->known_networks = g_slist_append (priv->known_networks, network_data);
+	return g_hash_table_contains (priv->known_networks, &kn_id);
 }
 
 /*****************************************************************************/
@@ -641,6 +755,10 @@ nm_iwd_manager_init (NMIwdManager *self)
 	                  G_CALLBACK (device_added), self);
 
 	priv->cancellable = g_cancellable_new ();
+
+	priv->known_networks = g_hash_table_new_full ((GHashFunc) known_network_id_hash,
+	                                              (GEqualFunc) known_network_id_equal, g_free,
+	                                              (GDestroyNotify) known_network_data_free);
 
 	prepare_object_manager (self);
 }
@@ -673,7 +791,8 @@ dispose (GObject *object)
 
 	nm_clear_g_cancellable (&priv->cancellable);
 
-	g_slist_free_full (priv->known_networks, (GDestroyNotify) known_network_free);
+	if (priv->known_networks)
+		g_hash_table_unref (priv->known_networks);
 	priv->known_networks = NULL;
 
 	if (priv->manager) {
