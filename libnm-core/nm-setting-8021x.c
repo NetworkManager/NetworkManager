@@ -664,20 +664,19 @@ nm_setting_802_1x_get_ca_cert_uri (NMSetting8021x *setting)
 static GBytes *
 path_to_scheme_value (const char *path)
 {
-	GByteArray *array;
-	gsize len;
+	guint8 *mem;
+	gsize len, total_len;
 
 	g_return_val_if_fail (path != NULL && path[0], NULL);
 
 	len = strlen (path);
+	total_len = (NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH) + 1) + len;
 
 	/* Add the path scheme tag to the front, then the filename */
-	array = g_byte_array_sized_new (len + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH) + 1);
-	g_byte_array_append (array, (const guint8 *) NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH));
-	g_byte_array_append (array, (const guint8 *) path, len);
-	g_byte_array_append (array, (const guint8 *) "\0", 1);
-
-	return g_byte_array_free_to_bytes (array);
+	mem = g_new (guint8, total_len);
+	memcpy (mem, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH));
+	memcpy (&mem[NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)], path, len + 1);
+	return g_bytes_new_take (mem, total_len);
 }
 
 /**
