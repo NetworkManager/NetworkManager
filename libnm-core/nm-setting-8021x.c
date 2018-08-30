@@ -26,6 +26,7 @@
 
 #include <string.h>
 
+#include "nm-utils/nm-secret-utils.h"
 #include "nm-utils.h"
 #include "nm-crypto.h"
 #include "nm-utils-private.h"
@@ -2252,14 +2253,14 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 			g_clear_pointer (&priv->private_key, g_bytes_unref);
 			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PRIVATE_KEY);
 		}
-		if (nm_clear_g_free (&priv->private_key_password))
+		if (nm_clear_pointer (&priv->private_key_password, nm_free_secret))
 			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
 		return TRUE;
 	}
 
 	/* this makes password self-assignment safe. */
 	if (!nm_streq0 (priv->private_key_password, password)) {
-		g_free (priv->private_key_password);
+		nm_free_secret (priv->private_key_password);
 		priv->private_key_password = g_strdup (password);
 		password_changed = TRUE;
 	}
@@ -2594,14 +2595,14 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 			g_clear_pointer (&priv->phase2_private_key, g_bytes_unref);
 			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
 		}
-		if (nm_clear_g_free (&priv->phase2_private_key_password))
+		if (nm_clear_pointer (&priv->phase2_private_key_password, nm_free_secret))
 			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
 		return TRUE;
 	}
 
 	/* this makes password self-assignment safe. */
 	if (!nm_streq0 (priv->phase2_private_key_password, password)) {
-		g_free (priv->phase2_private_key_password);
+		nm_free_secret (priv->phase2_private_key_password);
 		priv->phase2_private_key_password = g_strdup (password);
 		password_changed = TRUE;
 	}
@@ -3342,7 +3343,7 @@ finalize (GObject *object)
 	g_free (priv->client_cert_password);
 	if (priv->private_key)
 		g_bytes_unref (priv->private_key);
-	g_free (priv->private_key_password);
+	nm_free_secret (priv->private_key_password);
 	if (priv->phase2_ca_cert)
 		g_bytes_unref (priv->phase2_ca_cert);
 	g_free (priv->phase2_ca_cert_password);
@@ -3351,7 +3352,7 @@ finalize (GObject *object)
 	g_free (priv->phase2_client_cert_password);
 	if (priv->phase2_private_key)
 		g_bytes_unref (priv->phase2_private_key);
-	g_free (priv->phase2_private_key_password);
+	nm_free_secret (priv->phase2_private_key_password);
 
 	G_OBJECT_CLASS (nm_setting_802_1x_parent_class)->finalize (object);
 }
@@ -3542,7 +3543,7 @@ set_property (GObject *object, guint prop_id,
 		}
 		break;
 	case PROP_PRIVATE_KEY_PASSWORD:
-		g_free (priv->private_key_password);
+		nm_free_secret (priv->private_key_password);
 		priv->private_key_password = g_value_dup_string (value);
 		break;
 	case PROP_PRIVATE_KEY_PASSWORD_FLAGS:
@@ -3558,7 +3559,7 @@ set_property (GObject *object, guint prop_id,
 		}
 		break;
 	case PROP_PHASE2_PRIVATE_KEY_PASSWORD:
-		g_free (priv->phase2_private_key_password);
+		nm_free_secret (priv->phase2_private_key_password);
 		priv->phase2_private_key_password = g_value_dup_string (value);
 		break;
 	case PROP_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS:
