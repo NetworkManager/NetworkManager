@@ -35,6 +35,7 @@
 #include <ciferfam.h>
 #include <p12plcy.h>
 
+#include "nm-utils/nm-secret-utils.h"
 #include "nm-errors.h"
 
 static gboolean initialized = FALSE;
@@ -233,8 +234,7 @@ out:
 
 	if (!success) {
 		if (output) {
-			/* Don't expose key material */
-			memset (output, 0, data_len);
+			nm_explicit_bzero (output, data_len);
 			g_free (output);
 			output = NULL;
 		}
@@ -359,11 +359,11 @@ out:
 	if (slot)
 		PK11_FreeSlot (slot);
 
-	memset (padded_buf, 0, padded_buf_len);
+	nm_explicit_bzero (padded_buf, padded_buf_len);
 	g_free (padded_buf);
 
 	if (!success) {
-		memset (output, 0, output_len);
+		nm_explicit_bzero (output, output_len);
 		g_free (output);
 		output = NULL;
 	}
@@ -435,7 +435,7 @@ _nm_crypto_verify_pkcs12 (const guint8 *data,
 		memcpy (pw.data, ucs2_password, ucs2_chars);
 		pw.len = ucs2_chars + 2;  /* include terminating NULL */
 
-		memset (ucs2_password, 0, ucs2_chars);
+		nm_explicit_bzero (ucs2_password, ucs2_chars);
 		g_free (ucs2_password);
 
 #ifndef WORDS_BIGENDIAN

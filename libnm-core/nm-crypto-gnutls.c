@@ -30,6 +30,7 @@
 #include <gnutls/x509.h>
 #include <gnutls/pkcs12.h>
 
+#include "nm-utils/nm-secret-utils.h"
 #include "nm-errors.h"
 
 #define SALT_LEN 8
@@ -160,8 +161,7 @@ _nm_crypto_decrypt (const char *cipher,
 out:
 	if (!success) {
 		if (output) {
-			/* Don't expose key material */
-			memset (output, 0, data_len);
+			nm_explicit_bzero (output, data_len);
 			g_free (output);
 			output = NULL;
 		}
@@ -251,15 +251,14 @@ _nm_crypto_encrypt (const char *cipher,
 
 out:
 	if (padded_buf) {
-		memset (padded_buf, 0, padded_buf_len);
+		nm_explicit_bzero (padded_buf, padded_buf_len);
 		g_free (padded_buf);
 		padded_buf = NULL;
 	}
 
 	if (!success) {
 		if (output) {
-			/* Don't expose key material */
-			memset (output, 0, output_len);
+			nm_explicit_bzero (output, output_len);
 			g_free (output);
 			output = NULL;
 		}
