@@ -511,9 +511,9 @@ nm_setting_802_1x_check_cert_scheme (gconstpointer pdata, gsize length, GError *
 
 		if (!g_utf8_validate (data + prefix_length, length - prefix_length, NULL)) {
 			g_set_error_literal (error,
-					     NM_CONNECTION_ERROR,
-					     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-					     _("URI is not valid UTF-8"));
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("URI is not valid UTF-8"));
 			return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
 		}
 	}
@@ -2214,8 +2214,10 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 {
 	NMSetting8021xPrivate *priv;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	gs_unref_bytes GBytes *file_content = NULL;
+	gs_unref_bytes GBytes *private_key_new = NULL;
+	gboolean private_key_changed = FALSE;
 	gboolean password_changed = FALSE;
-	GError *local_err = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
 
@@ -2227,14 +2229,32 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 		                      FALSE);
 	}
 
-	if (out_format)
-		g_return_val_if_fail (*out_format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN, FALSE);
+	NM_SET_OUT (out_format, NM_SETTING_802_1X_CK_FORMAT_UNKNOWN);
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+
+	if (!value) {
+		if (nm_clear_pointer (&priv->private_key, g_bytes_unref))
+			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PRIVATE_KEY);
+		if (nm_clear_pointer (&priv->private_key_password, nm_free_secret))
+			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
+		return TRUE;
+	}
 
 	/* Ensure the private key is a recognized format and if the password was
 	 * given, that it decrypts the private key.
 	 */
-	if (value && scheme != NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-		format = nm_crypto_verify_private_key (value, password, NULL, &local_err);
+	if (scheme != NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
+		GError *local_err = NULL;
+
+		file_content = nm_crypto_read_file (value, &local_err);
+		if (file_content) {
+			format = nm_crypto_verify_private_key_data (g_bytes_get_data (file_content, NULL),
+			                                            g_bytes_get_size (file_content),
+			                                            password,
+			                                            NULL,
+			                                            &local_err);
+		}
 		if (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
@@ -2246,54 +2266,58 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 		}
 	}
 
-	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
-
-	if (value == NULL) {
-		if (priv->private_key) {
-			g_clear_pointer (&priv->private_key, g_bytes_unref);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PRIVATE_KEY);
-		}
-		if (nm_clear_pointer (&priv->private_key_password, nm_free_secret))
-			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
-		return TRUE;
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+		private_key_new = file_content
+		                  ? g_steal_pointer (&file_content)
+		                  : nm_crypto_read_file (value, NULL);
+	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		private_key_new = path_to_scheme_value (value);
+	else {
+		nm_assert (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11);
+		private_key_new = g_bytes_new (value, strlen (value) + 1);
 	}
 
-	/* this makes password self-assignment safe. */
+	if (   !private_key_new
+	    || nm_setting_802_1x_check_cert_scheme (g_bytes_get_data (private_key_new, NULL),
+	                                            g_bytes_get_size (private_key_new),
+	                                            NULL) != scheme) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("invalid private key"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+		return FALSE;
+	}
+
+	if (   !priv->private_key
+	    || !g_bytes_equal (priv->private_key, private_key_new)) {
+		g_bytes_unref (priv->private_key);
+		priv->private_key = g_steal_pointer (&private_key_new);
+		private_key_changed = TRUE;
+	}
+
 	if (!nm_streq0 (priv->private_key_password, password)) {
 		nm_free_secret (priv->private_key_password);
 		priv->private_key_password = g_strdup (password);
 		password_changed = TRUE;
 	}
 
-	g_bytes_unref (priv->private_key);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		/* FIXME: potential race after verifying the private key above */
-		/* FIXME: ensure blob doesn't start with file:// */
-		priv->private_key = nm_crypto_read_file (value, NULL);
-		nm_assert (priv->private_key);
-	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-		priv->private_key = path_to_scheme_value (value);
-	else {
-		nm_assert (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11);
-		priv->private_key = g_bytes_new (value, strlen (value) + 1);
-	}
-
 	/* As required by NM and wpa_supplicant, set the client-cert
 	 * property to the same PKCS#12 data.
 	 */
 	if (format == NM_CRYPTO_FILE_FORMAT_PKCS12) {
-		if (priv->client_cert)
-			g_bytes_unref (priv->client_cert);
+		g_bytes_unref (priv->client_cert);
 		priv->client_cert = g_bytes_ref (priv->private_key);
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_CLIENT_CERT);
 	}
 
-	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PRIVATE_KEY);
+	if (private_key_changed)
+		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PRIVATE_KEY);
 	if (password_changed)
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
 
 	NM_SET_OUT (out_format, (NMSetting8021xCKFormat) format);
-	return priv->private_key != NULL;
+	return TRUE;
 }
 
 /**
@@ -2556,8 +2580,10 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 {
 	NMSetting8021xPrivate *priv;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	gs_unref_bytes GBytes *file_content = NULL;
+	gs_unref_bytes GBytes *private_key_new = NULL;
+	gboolean private_key_changed = FALSE;
 	gboolean password_changed = FALSE;
-	GError *local_err = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
 
@@ -2569,14 +2595,33 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 		                      FALSE);
 	}
 
-	if (out_format)
-		g_return_val_if_fail (*out_format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN, FALSE);
+	NM_SET_OUT (out_format, NM_SETTING_802_1X_CK_FORMAT_UNKNOWN);
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+
+	if (!value) {
+		if (nm_clear_pointer (&priv->phase2_private_key, g_bytes_unref))
+			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+		if (nm_clear_pointer (&priv->phase2_private_key_password, nm_free_secret))
+			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
+		return TRUE;
+	}
 
 	/* Ensure the private key is a recognized format and if the password was
 	 * given, that it decrypts the private key.
 	 */
-	if (value && scheme != NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-		format = nm_crypto_verify_private_key (value, password, NULL, &local_err);
+	if (scheme != NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
+		GError *local_err = NULL;
+
+		file_content = nm_crypto_read_file (value, &local_err);
+		if (file_content) {
+			format = nm_crypto_verify_private_key_data (g_bytes_get_data (file_content, NULL),
+			                                            g_bytes_get_size (file_content),
+			                                            password,
+			                                            NULL,
+			                                            &local_err);
+		}
+
 		if (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
@@ -2588,55 +2633,60 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 		}
 	}
 
-	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
-
-	if (value == NULL) {
-		if (priv->phase2_private_key) {
-			g_clear_pointer (&priv->phase2_private_key, g_bytes_unref);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
-		}
-		if (nm_clear_pointer (&priv->phase2_private_key_password, nm_free_secret))
-			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
-		return TRUE;
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+		private_key_new = file_content
+		                  ? g_steal_pointer (&file_content)
+		                  : nm_crypto_read_file (value, NULL);
+	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		private_key_new = path_to_scheme_value (value);
+	else {
+		nm_assert (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11);
+		private_key_new = g_bytes_new (value, strlen (value) + 1);
 	}
 
-	/* this makes password self-assignment safe. */
+	if (   !private_key_new
+	    || nm_setting_802_1x_check_cert_scheme (g_bytes_get_data (private_key_new, NULL),
+	                                            g_bytes_get_size (private_key_new),
+	                                            NULL) != scheme) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("invalid phase2 private key"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+		return FALSE;
+	}
+
+	if (   !priv->phase2_private_key
+	    || !g_bytes_equal (priv->phase2_private_key, private_key_new)) {
+		g_bytes_unref (priv->phase2_private_key);
+		priv->phase2_private_key = g_steal_pointer (&private_key_new);
+		private_key_changed = TRUE;
+	}
+
 	if (!nm_streq0 (priv->phase2_private_key_password, password)) {
 		nm_free_secret (priv->phase2_private_key_password);
 		priv->phase2_private_key_password = g_strdup (password);
 		password_changed = TRUE;
 	}
 
-	g_bytes_unref (priv->phase2_private_key);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		/* FIXME: potential race after verifying the private key above */
-		/* FIXME: ensure blob doesn't start with file:// */
-		priv->phase2_private_key = nm_crypto_read_file (value, NULL);
-		nm_assert (priv->phase2_private_key);
-	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-		priv->phase2_private_key = path_to_scheme_value (value);
-	else {
-		nm_assert (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11);
-		priv->phase2_private_key = g_bytes_new (value, strlen (value) + 1);
-	}
-
 	/* As required by NM and wpa_supplicant, set the client-cert
 	 * property to the same PKCS#12 data.
 	 */
-	if (format == NM_CRYPTO_FILE_FORMAT_PKCS12) {
-		if (priv->phase2_client_cert)
-			g_bytes_unref (priv->phase2_client_cert);
-
+	if (   format == NM_CRYPTO_FILE_FORMAT_PKCS12
+	    && (  !priv->phase2_client_cert
+	        || g_bytes_equal (priv->phase2_client_cert, priv->phase2_private_key))) {
+		g_bytes_unref (priv->phase2_client_cert);
 		priv->phase2_client_cert = g_bytes_ref (priv->phase2_private_key);
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 	}
 
-	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+	if (private_key_changed)
+		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
 	if (password_changed)
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
 
 	NM_SET_OUT (out_format, (NMSetting8021xCKFormat) format);
-	return priv->phase2_private_key != NULL;
+	return TRUE;
 }
 
 /**
