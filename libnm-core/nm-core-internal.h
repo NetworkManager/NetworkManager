@@ -287,12 +287,6 @@ void _nm_dbus_errors_init (void);
 
 extern gboolean _nm_utils_is_manager_process;
 
-GByteArray *nm_utils_rsa_key_encrypt (const guint8 *data,
-                                      gsize len,
-                                      const char *in_password,
-                                      char **out_password,
-                                      GError **error);
-
 gulong _nm_dbus_signal_connect_data (GDBusProxy *proxy,
                                      const char *signal_name,
                                      const GVariantType *signature,

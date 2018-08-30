@@ -110,6 +110,12 @@ GBytes *nmtst_crypto_decrypt_openssl_private_key (const char *file,
                                                   NMCryptoKeyType *out_key_type,
                                                   GError **error);
 
+GByteArray *nmtst_crypto_rsa_key_encrypt (const guint8 *data,
+                                          gsize len,
+                                          const char *in_password,
+                                          char **out_password,
+                                          GError **error);
+
 /*****************************************************************************/
 
 #endif  /* __NM_CRYPTO_H__ */

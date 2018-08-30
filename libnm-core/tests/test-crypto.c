@@ -252,11 +252,11 @@ test_encrypt_private_key (const char *path,
 	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
 
 	/* Now re-encrypt the private key */
-	encrypted = nm_utils_rsa_key_encrypt (g_bytes_get_data (array, NULL),
-	                                      g_bytes_get_size (array),
-	                                      password,
-	                                      NULL,
-	                                      &error);
+	encrypted = nmtst_crypto_rsa_key_encrypt (g_bytes_get_data (array, NULL),
+	                                          g_bytes_get_size (array),
+	                                          password,
+	                                          NULL,
+	                                          &error);
 	nmtst_assert_success (encrypted, error);
 
 	/* Then re-decrypt the private key */
