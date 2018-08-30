@@ -2639,6 +2639,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 		password_changed = TRUE;
 	}
 
+	g_bytes_unref (priv->phase2_private_key);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 		/* FIXME: potential race after verifying the private key above */
 		/* FIXME: ensure blob doesn't start with file:// */
