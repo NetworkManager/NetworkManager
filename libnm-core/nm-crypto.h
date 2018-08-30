@@ -88,16 +88,6 @@ char *nm_crypto_make_des_aes_key (const char *cipher,
                                   gsize *out_len,
                                   GError **error);
 
-char * nm_crypto_encrypt (const char *cipher,
-                          const guint8 *data,
-                          gsize data_len,
-                          const char *iv,
-                          gsize iv_len,
-                          const char *key,
-                          gsize key_len,
-                          gsize *out_len,
-                          GError **error);
-
 gboolean nm_crypto_randomize (void *buffer, gsize buffer_len, GError **error);
 
 /*****************************************************************************/

@@ -472,14 +472,14 @@ nm_crypto_make_des_aes_key (const char *cipher,
 }
 
 static gboolean
-_nmtst_crypto_decrypt_key (const char *cipher,
-                           int key_type,
-                           const guint8 *data,
-                           gsize data_len,
-                           const char *iv,
-                           const char *password,
-                           NMSecretPtr *parsed,
-                           GError **error)
+_nmtst_decrypt_key (const char *cipher,
+                    int key_type,
+                    const guint8 *data,
+                    gsize data_len,
+                    const char *iv,
+                    const char *password,
+                    NMSecretPtr *parsed,
+                    GError **error)
 {
 	nm_auto_clear_secret_ptr NMSecretPtr bin_iv = { 0 };
 	nm_auto_clear_secret_ptr NMSecretPtr key = { 0 };
@@ -509,16 +509,16 @@ _nmtst_crypto_decrypt_key (const char *cipher,
 	if (!key.str || !key.len)
 		return FALSE;
 
-	parsed->str = _nm_crypto_decrypt (cipher,
-	                                  key_type,
-	                                  data,
-	                                  data_len,
-	                                  bin_iv.str,
-	                                  bin_iv.len,
-	                                  key.str,
-	                                  key.len,
-	                                  &parsed->len,
-	                                  error);
+	parsed->str = _nmtst_crypto_decrypt (cipher,
+	                                     key_type,
+	                                     data,
+	                                     data_len,
+	                                     bin_iv.str,
+	                                     bin_iv.len,
+	                                     key.str,
+	                                     key.len,
+	                                     &parsed->len,
+	                                     error);
 	if (!parsed->str || parsed->len == 0) {
 		nm_secret_ptr_clear (parsed);
 		return FALSE;
@@ -565,14 +565,14 @@ nmtst_crypto_decrypt_openssl_private_key_data (const guint8 *data,
 			return NULL;
 		}
 
-		if (!_nmtst_crypto_decrypt_key (cipher,
-		                                key_type,
-		                                parsed.bin,
-		                                parsed.len,
-		                                iv,
-		                                password,
-		                                &parsed2,
-		                                error))
+		if (!_nmtst_decrypt_key (cipher,
+		                         key_type,
+		                         parsed.bin,
+		                         parsed.len,
+		                         iv,
+		                         password,
+		                         &parsed2,
+		                         error))
 			return NULL;
 
 		return nm_secret_copy_to_gbytes (parsed2.bin, parsed2.len);
@@ -880,20 +880,6 @@ nm_crypto_md5_hash (const guint8 *salt,
 	}
 }
 
-char *
-nm_crypto_encrypt (const char *cipher,
-                   const guint8 *data,
-                   gsize data_len,
-                   const char *iv,
-                   gsize iv_len,
-                   const char *key,
-                   gsize key_len,
-                   gsize *out_len,
-                   GError **error)
-{
-	return _nm_crypto_encrypt (cipher, data, data_len, iv, iv_len, key, key_len, out_len, error);
-}
-
 gboolean
 nm_crypto_randomize (void *buffer, gsize buffer_len, GError **error)
 {
@@ -957,7 +943,7 @@ nmtst_crypto_rsa_key_encrypt (const guint8 *data,
 	if (!key.str)
 		g_return_val_if_reached (NULL);
 
-	enc.str = nm_crypto_encrypt (CIPHER_DES_EDE3_CBC, data, len, salt, sizeof (salt), key.str, key.len, &enc.len, error);
+	enc.str = _nmtst_crypto_encrypt (CIPHER_DES_EDE3_CBC, data, len, salt, sizeof (salt), key.str, key.len, &enc.len, error);
 	if (!enc.str)
 		return NULL;
 

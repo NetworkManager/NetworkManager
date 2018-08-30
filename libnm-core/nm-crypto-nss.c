@@ -72,16 +72,16 @@ _nm_crypto_init (GError **error)
 }
 
 char *
-_nm_crypto_decrypt (const char *cipher,
-                    int key_type,
-                    const guint8 *data,
-                    gsize data_len,
-                    const char *iv,
-                    const gsize iv_len,
-                    const char *key,
-                    const gsize key_len,
-                    gsize *out_len,
-                    GError **error)
+_nmtst_crypto_decrypt (const char *cipher,
+                       int key_type,
+                       const guint8 *data,
+                       gsize data_len,
+                       const char *iv,
+                       const gsize iv_len,
+                       const char *key,
+                       const gsize key_len,
+                       gsize *out_len,
+                       GError **error)
 {
 	char *output = NULL;
 	int decrypted_len = 0;
@@ -243,15 +243,15 @@ out:
 }
 
 char *
-_nm_crypto_encrypt (const char *cipher,
-                    const guint8 *data,
-                    gsize data_len,
-                    const char *iv,
-                    gsize iv_len,
-                    const char *key,
-                    gsize key_len,
-                    gsize *out_len,
-                    GError **error)
+_nmtst_crypto_encrypt (const char *cipher,
+                       const guint8 *data,
+                       gsize data_len,
+                       const char *iv,
+                       gsize iv_len,
+                       const char *key,
+                       gsize key_len,
+                       gsize *out_len,
+                       GError **error)
 {
 	SECStatus ret;
 	CK_MECHANISM_TYPE cipher_mech = CKM_DES3_CBC_PAD;
