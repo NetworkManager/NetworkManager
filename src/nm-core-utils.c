@@ -38,6 +38,7 @@
 #include <net/ethernet.h>
 
 #include "nm-utils/nm-random-utils.h"
+#include "nm-utils/nm-secret-utils.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-setting-connection.h"
@@ -2586,6 +2587,32 @@ _get_contents_error (GError **error, int errsv, const char *format, ...)
 	return -errsv;
 }
 
+static char *
+_mem_realloc (char *old, gboolean do_bzero_mem, gsize cur_len, gsize new_len)
+{
+	char *new;
+
+	/* re-allocating to zero bytes is an odd case. We don't need it
+	 * and it's not supported. */
+	nm_assert (new_len > 0);
+
+	/* regardless of success/failure, @old will always be freed/consumed. */
+
+	if (do_bzero_mem && cur_len > 0) {
+		new = g_try_malloc (new_len);
+		if (new)
+			memcpy (new, old, NM_MIN (cur_len, new_len));
+		nm_explicit_bzero (old, cur_len);
+		g_free (old);
+	} else {
+		new = g_try_realloc (old, new_len);
+		if (!new)
+			g_free (old);
+	}
+
+	return new;
+}
+
 /**
  * nm_utils_fd_get_contents:
  * @fd: open file descriptor to read. The fd will not be closed,
@@ -2604,6 +2631,7 @@ _get_contents_error (GError **error, int errsv, const char *format, ...)
  *   If you set it to 1K, read will fail because fstat() claims the
  *   file is larger.
  *
+ * @flags: %NMUtilsFileGetContentsFlags for reading the file.
  * @contents: the output buffer with the file read. It is always
  *   NUL terminated. The buffer is at most @max_length long, including
  *  the NUL byte. That is, it reads only files up to a length of
@@ -2621,6 +2649,7 @@ int
 nm_utils_fd_get_contents (int fd,
                           gboolean close_fd,
                           gsize max_length,
+                          NMUtilsFileGetContentsFlags flags,
                           char **contents,
                           gsize *length,
                           GError **error)
@@ -2628,6 +2657,7 @@ nm_utils_fd_get_contents (int fd,
 	nm_auto_close int fd_keeper = close_fd ? fd : -1;
 	struct stat stat_buf;
 	gs_free char *str = NULL;
+	const bool do_bzero_mem = NM_FLAGS_HAS (flags, NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET);
 
 	g_return_val_if_fail (fd >= 0, -EINVAL);
 	g_return_val_if_fail (contents, -EINVAL);
@@ -2654,17 +2684,16 @@ nm_utils_fd_get_contents (int fd,
 			return _get_contents_error (error, ENOMEM, "failure to allocate buffer of %zu+1 bytes", n_stat);
 
 		n_read = nm_utils_fd_read_loop (fd, str, n_stat, TRUE);
-		if (n_read < 0)
+		if (n_read < 0) {
+			if (do_bzero_mem)
+				nm_explicit_bzero (str, n_stat);
 			return _get_contents_error (error, n_read, "error reading %zu bytes from file descriptor", n_stat);
+		}
 		str[n_read] = '\0';
 
 		if (n_read < n_stat) {
-			char *tmp;
-
-			tmp = g_try_realloc (str, n_read + 1);
-			if (!tmp)
+			if (!(str = _mem_realloc (str, do_bzero_mem, n_stat + 1, n_read + 1)))
 				return _get_contents_error (error, ENOMEM, "failure to reallocate buffer with %zu bytes", n_read + 1);
-			str = tmp;
 		}
 		NM_SET_OUT (length, n_read);
 	} else {
@@ -2695,48 +2724,56 @@ nm_utils_fd_get_contents (int fd,
 
 			n_read = fread (buf, 1, sizeof (buf), f);
 			errsv = errno;
-			if (ferror (f))
+			if (ferror (f)) {
+				if (do_bzero_mem)
+					nm_explicit_bzero (buf, sizeof (buf));
 				return _get_contents_error (error, errsv, "error during fread");
+			}
 
 			if (   n_have > G_MAXSIZE - 1 - n_read
 			    || n_have + n_read + 1 > max_length) {
+				if (do_bzero_mem)
+					nm_explicit_bzero (buf, sizeof (buf));
 				return _get_contents_error (error, EMSGSIZE, "file stream too large (%zu+1 bytes with maximum %zu bytes)",
 				                            (n_have > G_MAXSIZE - 1 - n_read) ? G_MAXSIZE : n_have + n_read,
 				                            max_length);
 			}
 
 			if (n_have + n_read + 1 >= n_alloc) {
-				char *tmp;
+				gsize old_n_alloc = n_alloc;
 
-				if (str) {
+				if (n_alloc != 0) {
+					nm_assert (str);
 					if (n_alloc >= max_length / 2)
 						n_alloc = max_length;
 					else
 						n_alloc *= 2;
-				} else
+				} else {
+					nm_assert (!str);
 					n_alloc = NM_MIN (n_read + 1, sizeof (buf));
+				}
 
-				tmp = g_try_realloc (str, n_alloc);
-				if (!tmp)
+				if (!(str = _mem_realloc (str, do_bzero_mem, old_n_alloc, n_alloc))) {
+					if (do_bzero_mem)
+						nm_explicit_bzero (buf, sizeof (buf));
 					return _get_contents_error (error, ENOMEM, "failure to allocate buffer of %zu bytes", n_alloc);
-				str = tmp;
+				}
 			}
 
 			memcpy (str + n_have, buf, n_read);
 			n_have += n_read;
 		}
 
+		if (do_bzero_mem)
+			nm_explicit_bzero (buf, sizeof (buf));
+
 		if (n_alloc == 0)
 			str = g_new0 (char, 1);
 		else {
 			str[n_have] = '\0';
 			if (n_have + 1 < n_alloc) {
-				char *tmp;
-
-				tmp = g_try_realloc (str, n_have + 1);
-				if (!tmp)
+				if (!(str = _mem_realloc (str, do_bzero_mem, n_alloc, n_have + 1)))
 					return _get_contents_error (error, ENOMEM, "failure to truncate buffer to %zu bytes", n_have + 1);
-				str = tmp;
 			}
 		}
 
@@ -2753,6 +2790,7 @@ nm_utils_fd_get_contents (int fd,
  * @filename: the filename to open. Possibly relative to @dirfd.
  * @max_length: allocate at most @max_length bytes.
  *   WARNING: see nm_utils_fd_get_contents() hint about @max_length.
+ * @flags: %NMUtilsFileGetContentsFlags for reading the file.
  * @contents: the output buffer with the file read. It is always
  *   NUL terminated. The buffer is at most @max_length long, including
  *  the NUL byte. That is, it reads only files up to a length of
@@ -2770,6 +2808,7 @@ int
 nm_utils_file_get_contents (int dirfd,
                             const char *filename,
                             gsize max_length,
+                            NMUtilsFileGetContentsFlags flags,
                             char **contents,
                             gsize *length,
                             GError **error)
@@ -2809,6 +2848,7 @@ nm_utils_file_get_contents (int dirfd,
 	return nm_utils_fd_get_contents (fd,
 	                                 TRUE,
 	                                 max_length,
+	                                 flags,
 	                                 contents,
 	                                 length,
 	                                 error);
@@ -2942,6 +2982,7 @@ nm_utils_get_boot_id (void)
 		gs_free char *contents = NULL;
 
 		nm_utils_file_get_contents (-1, "/proc/sys/kernel/random/boot_id", 0,
+		                            NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
 		                            &contents, NULL, NULL);
 		if (contents) {
 			g_strstrip (contents);
