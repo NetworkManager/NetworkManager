@@ -268,8 +268,8 @@ out:
 	return output;
 }
 
-NMCryptoFileFormat
-_nm_crypto_verify_cert (const unsigned char *data,
+gboolean
+_nm_crypto_verify_x509 (const unsigned char *data,
                         gsize len,
                         GError **error)
 {
@@ -278,7 +278,7 @@ _nm_crypto_verify_cert (const unsigned char *data,
 	int err;
 
 	if (!_nm_crypto_init (error))
-		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+		return FALSE;
 
 	err = gnutls_x509_crt_init (&der);
 	if (err < 0) {
@@ -286,7 +286,7 @@ _nm_crypto_verify_cert (const unsigned char *data,
 		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("Error initializing certificate data: %s"),
 		             gnutls_strerror (err));
-		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+		return FALSE;
 	}
 
 	/* Try DER first */
@@ -295,20 +295,20 @@ _nm_crypto_verify_cert (const unsigned char *data,
 	err = gnutls_x509_crt_import (der, &dt, GNUTLS_X509_FMT_DER);
 	if (err == GNUTLS_E_SUCCESS) {
 		gnutls_x509_crt_deinit (der);
-		return NM_CRYPTO_FILE_FORMAT_X509;
+		return TRUE;
 	}
 
 	/* And PEM next */
 	err = gnutls_x509_crt_import (der, &dt, GNUTLS_X509_FMT_PEM);
 	gnutls_x509_crt_deinit (der);
 	if (err == GNUTLS_E_SUCCESS)
-		return NM_CRYPTO_FILE_FORMAT_X509;
+		return TRUE;
 
 	g_set_error (error, NM_CRYPTO_ERROR,
 	             NM_CRYPTO_ERROR_INVALID_DATA,
 	             _("Couldn't decode certificate: %s"),
 	             gnutls_strerror (err));
-	return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	return FALSE;
 }
 
 gboolean

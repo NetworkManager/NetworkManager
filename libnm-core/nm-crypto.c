@@ -654,13 +654,19 @@ nm_crypto_load_and_verify_certificate (const char *file,
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (out_file_format != NULL, NULL);
 
-	*out_file_format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-
 	if (!_nm_crypto_init (error))
-		return NULL;
+		goto out;
 
 	if (!file_read_contents (file, &contents, error))
-		return NULL;
+		goto out;
+
+	if (contents.len == 0) {
+		g_set_error (error,
+		             NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERROR_INVALID_DATA,
+		             _("Certificate file is empty"));
+		goto out;
+	}
 
 	/* Check for PKCS#12 */
 	if (nm_crypto_is_pkcs12_data (contents.bin, contents.len, NULL)) {
@@ -670,20 +676,29 @@ nm_crypto_load_and_verify_certificate (const char *file,
 
 	/* Check for plain DER format */
 	if (contents.len > 2 && contents.bin[0] == 0x30 && contents.bin[1] == 0x82) {
-		*out_file_format = _nm_crypto_verify_cert (contents.bin, contents.len, error);
+		if (_nm_crypto_verify_x509 (contents.bin, contents.len, NULL)) {
+			*out_file_format = NM_CRYPTO_FILE_FORMAT_X509;
+			return to_gbyte_array_mem (contents.bin, contents.len);
+		}
 	} else {
 		nm_auto_clear_secret_ptr NMSecretPtr pem_cert = { 0 };
 
-		if (!extract_pem_cert_data (contents.bin, contents.len, &pem_cert, error))
-			return NULL;
-
-		*out_file_format = _nm_crypto_verify_cert (pem_cert.bin, pem_cert.len, error);
+		if (extract_pem_cert_data (contents.bin, contents.len, &pem_cert, NULL)) {
+			if (_nm_crypto_verify_x509 (pem_cert.bin, pem_cert.len, NULL)) {
+				*out_file_format = NM_CRYPTO_FILE_FORMAT_X509;
+				return to_gbyte_array_mem (contents.bin, contents.len);
+			}
+		}
 	}
 
-	if (*out_file_format != NM_CRYPTO_FILE_FORMAT_X509)
-		return NULL;
+	g_set_error (error,
+	             NM_CRYPTO_ERROR,
+	             NM_CRYPTO_ERROR_INVALID_DATA,
+	             _("Failed to recognize certificate"));
 
-	return to_gbyte_array_mem (contents.bin, contents.len);
+out:
+	*out_file_format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	return NULL;
 }
 
 gboolean
@@ -694,8 +709,13 @@ nm_crypto_is_pkcs12_data (const guint8 *data,
 	GError *local = NULL;
 	gboolean success;
 
-	if (!data_len)
+	if (!data_len) {
+		g_set_error (error,
+		             NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERROR_INVALID_DATA,
+		             _("Certificate file is empty"));
 		return FALSE;
+	}
 
 	g_return_val_if_fail (data != NULL, FALSE);
 

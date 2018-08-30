@@ -370,15 +370,15 @@ out:
 	return (char *) output;
 }
 
-NMCryptoFileFormat
-_nm_crypto_verify_cert (const unsigned char *data,
+gboolean
+_nm_crypto_verify_x509 (const unsigned char *data,
                         gsize len,
                         GError **error)
 {
 	CERTCertificate *cert;
 
 	if (!_nm_crypto_init (error))
-		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+		return FALSE;
 
 	/* Try DER/PEM first */
 	cert = CERT_DecodeCertFromPackage ((char *) data, len);
@@ -387,11 +387,11 @@ _nm_crypto_verify_cert (const unsigned char *data,
 		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("Couldn't decode certificate: %d"),
 		             PORT_GetError());
-		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+		return FALSE;
 	}
 
 	CERT_DestroyCertificate (cert);
-	return NM_CRYPTO_FILE_FORMAT_X509;
+	return TRUE;
 }
 
 gboolean
