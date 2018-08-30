@@ -56,16 +56,16 @@ _nm_crypto_init (GError **error)
 }
 
 char *
-_nm_crypto_decrypt (const char *cipher,
-                    int key_type,
-                    const guint8 *data,
-                    gsize data_len,
-                    const char *iv,
-                    const gsize iv_len,
-                    const char *key,
-                    const gsize key_len,
-                    gsize *out_len,
-                    GError **error)
+_nmtst_crypto_decrypt (const char *cipher,
+                       int key_type,
+                       const guint8 *data,
+                       gsize data_len,
+                       const char *iv,
+                       const gsize iv_len,
+                       const char *key,
+                       const gsize key_len,
+                       gsize *out_len,
+                       GError **error)
 {
 	gnutls_cipher_hd_t ctx;
 	gnutls_datum_t key_dt, iv_dt;
@@ -171,15 +171,15 @@ out:
 }
 
 char *
-_nm_crypto_encrypt (const char *cipher,
-                    const guint8 *data,
-                    gsize data_len,
-                    const char *iv,
-                    const gsize iv_len,
-                    const char *key,
-                    gsize key_len,
-                    gsize *out_len,
-                    GError **error)
+_nmtst_crypto_encrypt (const char *cipher,
+                       const guint8 *data,
+                       gsize data_len,
+                       const char *iv,
+                       const gsize iv_len,
+                       const char *key,
+                       gsize key_len,
+                       gsize *out_len,
+                       GError **error)
 {
 	gnutls_cipher_hd_t ctx;
 	gnutls_datum_t key_dt, iv_dt;

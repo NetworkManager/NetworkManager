@@ -34,27 +34,6 @@ gboolean _nm_crypto_init (GError **error);
 
 gboolean _nm_crypto_randomize (void *buffer, gsize buffer_len, GError **error);
 
-char *_nm_crypto_encrypt (const char *cipher,
-                          const guint8 *data,
-                          gsize data_len,
-                          const char *iv,
-                          gsize iv_len,
-                          const char *key,
-                          gsize key_len,
-                          gsize *out_len,
-                          GError **error);
-
-char *_nm_crypto_decrypt (const char *cipher,
-                          int key_type,
-                          const guint8 *data,
-                          gsize data_len,
-                          const char *iv,
-                          const gsize iv_len,
-                          const char *key,
-                          const gsize key_len,
-                          gsize *out_len,
-                          GError **error);
-
 gboolean _nm_crypto_verify_x509 (const guint8 *data,
                                  gsize len,
                                  GError **error);
@@ -69,5 +48,28 @@ gboolean _nm_crypto_verify_pkcs8 (const guint8 *data,
                                   gboolean is_encrypted,
                                   const char *password,
                                   GError **error);
+
+/*****************************************************************************/
+
+char *_nmtst_crypto_encrypt (const char *cipher,
+                             const guint8 *data,
+                             gsize data_len,
+                             const char *iv,
+                             gsize iv_len,
+                             const char *key,
+                             gsize key_len,
+                             gsize *out_len,
+                             GError **error);
+
+char *_nmtst_crypto_decrypt (const char *cipher,
+                             int key_type,
+                             const guint8 *data,
+                             gsize data_len,
+                             const char *iv,
+                             const gsize iv_len,
+                             const char *key,
+                             const gsize key_len,
+                             gsize *out_len,
+                             GError **error);
 
 #endif  /* __NM_CRYPTO_IMPL_H__ */
