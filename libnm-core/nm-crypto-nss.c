@@ -65,17 +65,16 @@ _get_cipher_info (NMCryptoCipherType cipher,
 
 /*****************************************************************************/
 
-static gboolean initialized = FALSE;
-
 gboolean
 _nm_crypto_init (GError **error)
 {
+	static gboolean initialized = FALSE;
 	SECStatus ret;
 
 	if (initialized)
 		return TRUE;
 
-	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 1);
+	PR_Init (PR_USER_THREAD, PR_PRIORITY_NORMAL, 1);
 	ret = NSS_NoDB_Init (NULL);
 	if (ret != SECSuccess) {
 		g_set_error (error, NM_CRYPTO_ERROR,
@@ -86,13 +85,13 @@ _nm_crypto_init (GError **error)
 		return FALSE;
 	}
 
-	SEC_PKCS12EnableCipher(PKCS12_RC4_40, 1);
-	SEC_PKCS12EnableCipher(PKCS12_RC4_128, 1);
-	SEC_PKCS12EnableCipher(PKCS12_RC2_CBC_40, 1);
-	SEC_PKCS12EnableCipher(PKCS12_RC2_CBC_128, 1);
-	SEC_PKCS12EnableCipher(PKCS12_DES_56, 1);
-	SEC_PKCS12EnableCipher(PKCS12_DES_EDE3_168, 1);
-	SEC_PKCS12SetPreferredCipher(PKCS12_DES_EDE3_168, 1);
+	SEC_PKCS12EnableCipher (PKCS12_RC4_40, 1);
+	SEC_PKCS12EnableCipher (PKCS12_RC4_128, 1);
+	SEC_PKCS12EnableCipher (PKCS12_RC2_CBC_40, 1);
+	SEC_PKCS12EnableCipher (PKCS12_RC2_CBC_128, 1);
+	SEC_PKCS12EnableCipher (PKCS12_DES_56, 1);
+	SEC_PKCS12EnableCipher (PKCS12_DES_EDE3_168, 1);
+	SEC_PKCS12SetPreferredCipher (PKCS12_DES_EDE3_168, 1);
 
 	initialized = TRUE;
 	return TRUE;
@@ -109,17 +108,18 @@ _nmtst_crypto_decrypt (NMCryptoCipherType cipher,
                        gsize *out_len,
                        GError **error)
 {
-	char *output = NULL;
-	int decrypted_len = 0;
 	CK_MECHANISM_TYPE cipher_mech;
 	PK11SlotInfo *slot = NULL;
 	SECItem key_item;
 	PK11SymKey *sym_key = NULL;
 	SECItem *sec_param = NULL;
 	PK11Context *ctx = NULL;
+	nm_auto_clear_secret_ptr NMSecretPtr output = { 0 };
 	SECStatus s;
 	gboolean success = FALSE;
-	unsigned pad_len = 0, extra = 0;
+	int decrypted_len = 0;
+	unsigned extra = 0;
+	unsigned pad_len = 0;
 	guint32 i;
 	guint8 real_iv_len;
 
@@ -130,9 +130,6 @@ _nmtst_crypto_decrypt (NMCryptoCipherType cipher,
 		return NULL;
 	}
 
-	if (!_nm_crypto_init (error))
-		return NULL;
-
 	if (iv_len < real_iv_len) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_INVALID_DATA,
@@ -141,7 +138,8 @@ _nmtst_crypto_decrypt (NMCryptoCipherType cipher,
 		return NULL;
 	}
 
-	output = g_malloc0 (data_len);
+	if (!_nm_crypto_init (error))
+		return NULL;
 
 	slot = PK11_GetBestSlot (cipher_mech, NULL);
 	if (!slot) {
@@ -179,10 +177,13 @@ _nmtst_crypto_decrypt (NMCryptoCipherType cipher,
 		goto out;
 	}
 
+	output.len = data_len;
+	output.bin = g_malloc (data_len);
+
 	s = PK11_CipherOp (ctx,
-	                   (unsigned char *) output,
+	                   (unsigned char *) output.bin,
 	                   &decrypted_len,
-	                   data_len,
+	                   output.len,
 	                   data,
 	                   data_len);
 	if (s != SECSuccess) {
@@ -201,7 +202,7 @@ _nmtst_crypto_decrypt (NMCryptoCipherType cipher,
 	}
 
 	s = PK11_DigestFinal (ctx,
-	                      (unsigned char *) (output + decrypted_len),
+	                      (unsigned char *) &output.bin[decrypted_len],
 	                      &extra,
 	                      data_len - decrypted_len);
 	if (s != SECSuccess) {
@@ -211,6 +212,7 @@ _nmtst_crypto_decrypt (NMCryptoCipherType cipher,
 		             PORT_GetError ());
 		goto out;
 	}
+
 	decrypted_len += extra;
 	pad_len = data_len - decrypted_len;
 
@@ -226,7 +228,7 @@ _nmtst_crypto_decrypt (NMCryptoCipherType cipher,
 	 * should contain the padding size.
 	 */
 	for (i = pad_len; i > 0; i--) {
-		if (output[data_len - i] != pad_len) {
+		if (output.bin[data_len - i] != pad_len) {
 			g_set_error (error, NM_CRYPTO_ERROR,
 			             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 			             _("Failed to decrypt the private key."));
@@ -234,7 +236,6 @@ _nmtst_crypto_decrypt (NMCryptoCipherType cipher,
 		}
 	}
 
-	*out_len = decrypted_len;
 	success = TRUE;
 
 out:
@@ -247,14 +248,13 @@ out:
 	if (slot)
 		PK11_FreeSlot (slot);
 
-	if (!success) {
-		if (output) {
-			nm_explicit_bzero (output, data_len);
-			g_free (output);
-			output = NULL;
-		}
-	}
-	return (guint8 *) output;
+	if (!success)
+		return NULL;
+
+	if (decrypted_len < output.len)
+		nm_explicit_bzero (&output.bin[decrypted_len], output.len - decrypted_len);
+	*out_len = decrypted_len;
+	return g_steal_pointer (&output.bin);
 }
 
 guint8 *
@@ -276,14 +276,11 @@ _nmtst_crypto_encrypt (NMCryptoCipherType cipher,
 	PK11SymKey *sym_key = NULL;
 	SECItem *sec_param = NULL;
 	PK11Context *ctx = NULL;
-	unsigned char *output, *padded_buf;
-	gsize output_len;
+	nm_auto_clear_secret_ptr NMSecretPtr padded_buf = { 0 };
+	nm_auto_clear_secret_ptr NMSecretPtr output = { 0 };
 	int encrypted_len = 0, i;
 	gboolean success = FALSE;
-	gsize padded_buf_len, pad_len;
-
-	if (!_nm_crypto_init (error))
-		return NULL;
+	gsize pad_len;
 
 	if (   cipher == NM_CRYPTO_CIPHER_DES_CBC
 	    || !_get_cipher_info (cipher, &cipher_mech, NULL)) {
@@ -293,25 +290,15 @@ _nmtst_crypto_encrypt (NMCryptoCipherType cipher,
 		return NULL;
 	}
 
-	/* If data->len % ivlen == 0, then we add another complete block
-	 * onto the end so that the decrypter knows there's padding.
-	 */
-	pad_len = iv_len - (data_len % iv_len);
-	output_len = padded_buf_len = data_len + pad_len;
-	padded_buf = g_malloc0 (padded_buf_len);
-
-	memcpy (padded_buf, data, data_len);
-	for (i = 0; i < pad_len; i++)
-		padded_buf[data_len + i] = (guint8) (pad_len & 0xFF);
-
-	output = g_malloc0 (output_len);
+	if (!_nm_crypto_init (error))
+		return NULL;
 
 	slot = PK11_GetBestSlot (cipher_mech, NULL);
 	if (!slot) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_FAILED,
 		             _("Failed to initialize the encryption cipher slot."));
-		goto out;
+		return NULL;
 	}
 
 	sym_key = PK11_ImportSymKey (slot, cipher_mech, PK11_OriginUnwrap, CKA_ENCRYPT, &key_item, NULL);
@@ -338,7 +325,22 @@ _nmtst_crypto_encrypt (NMCryptoCipherType cipher,
 		goto out;
 	}
 
-	ret = PK11_CipherOp (ctx, output, &encrypted_len, output_len, padded_buf, padded_buf_len);
+	/* If data->len % ivlen == 0, then we add another complete block
+	 * onto the end so that the decrypter knows there's padding.
+	 */
+	pad_len = iv_len - (data_len % iv_len);
+
+	padded_buf.len = data_len + pad_len;
+	padded_buf.bin = g_malloc (padded_buf.len);
+
+	memcpy (padded_buf.bin, data, data_len);
+	for (i = 0; i < pad_len; i++)
+		padded_buf.bin[data_len + i] = (guint8) (pad_len & 0xFF);
+
+	output.len = padded_buf.len;
+	output.bin = g_malloc (output.len);
+
+	ret = PK11_CipherOp (ctx, output.bin, &encrypted_len, output.len, padded_buf.bin, padded_buf.len);
 	if (ret != SECSuccess) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
@@ -347,35 +349,30 @@ _nmtst_crypto_encrypt (NMCryptoCipherType cipher,
 		goto out;
 	}
 
-	if (encrypted_len != output_len) {
+	if (encrypted_len != output.len) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
 		             _("Unexpected amount of data after encrypting."));
 		goto out;
 	}
 
-	*out_len = encrypted_len;
 	success = TRUE;
 
 out:
 	if (ctx)
 		PK11_DestroyContext (ctx, PR_TRUE);
-	if (sym_key)
-		PK11_FreeSymKey (sym_key);
 	if (sec_param)
 		SECITEM_FreeItem (sec_param, PR_TRUE);
+	if (sym_key)
+		PK11_FreeSymKey (sym_key);
 	if (slot)
 		PK11_FreeSlot (slot);
 
-	nm_explicit_bzero (padded_buf, padded_buf_len);
-	g_free (padded_buf);
+	if (!success)
+		return NULL;
 
-	if (!success) {
-		nm_explicit_bzero (output, output_len);
-		g_free (output);
-		output = NULL;
-	}
-	return (guint8 *) output;
+	*out_len = output.len;
+	return g_steal_pointer (&output.bin);
 }
 
 gboolean
@@ -394,7 +391,7 @@ _nm_crypto_verify_x509 (const guint8 *data,
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("Couldn't decode certificate: %d"),
-		             PORT_GetError());
+		             PORT_GetError ());
 		return FALSE;
 	}
 
@@ -412,11 +409,9 @@ _nm_crypto_verify_pkcs12 (const guint8 *data,
 	SECItem pw = { 0 };
 	PK11SlotInfo *slot = NULL;
 	SECStatus s;
-	gunichar2 *ucs2_password;
-	long ucs2_chars = 0;
+	gboolean success = FALSE;
 
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
 
 	if (!_nm_crypto_init (error))
 		return FALSE;
@@ -425,46 +420,56 @@ _nm_crypto_verify_pkcs12 (const guint8 *data,
 	 * any conversions for us.
 	 */
 	if (password && *password) {
-		if (!g_utf8_validate (password, -1, NULL)) {
+		nm_auto_clear_secret_ptr NMSecretPtr ucs2_password = { 0 };
+
+		if (g_utf8_validate (password, -1, NULL)) {
+			long ucs2_chars;
+
+			ucs2_password.bin = (guint8 *) g_utf8_to_utf16 (password, strlen (password), NULL, &ucs2_chars, NULL);
+
+			/* cannot fail, because password is valid UTF-8*/
+			nm_assert (ucs2_password.bin && ucs2_chars > 0);
+
+			ucs2_password.len = ucs2_chars * 2;
+		}
+
+		if (!ucs2_password.bin || ucs2_password.len == 0) {
 			g_set_error (error, NM_CRYPTO_ERROR,
 			             NM_CRYPTO_ERROR_INVALID_PASSWORD,
 			             _("Password must be UTF-8"));
 			return FALSE;
 		}
-		ucs2_password = g_utf8_to_utf16 (password, strlen (password), NULL, &ucs2_chars, NULL);
-		/* Can't fail if g_utf8_validate() succeeded */
-		g_return_val_if_fail (ucs2_password != NULL && ucs2_chars != 0, FALSE);
 
-		ucs2_chars *= 2;  /* convert # UCS2 characters -> bytes */
-		pw.data = PORT_ZAlloc(ucs2_chars + 2);
-		memcpy (pw.data, ucs2_password, ucs2_chars);
-		pw.len = ucs2_chars + 2;  /* include terminating NULL */
-
-		nm_explicit_bzero (ucs2_password, ucs2_chars);
-		g_free (ucs2_password);
+		pw.data = PORT_ZAlloc (ucs2_password.len + 2);
+		memcpy (pw.data, ucs2_password.bin, ucs2_password.len);
+		pw.len = ucs2_password.len + 2;
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 		{
-			guint16 *p;
+			guint16 *p, *p_end;
 
-			for (p = (guint16 *) pw.data; p < (guint16 *) (pw.data + pw.len); p++)
+			p_end = (guint16 *) &(((guint8 *) pw.data)[ucs2_password.len]);
+			for (p = (guint16 *) pw.data; p < p_end; p++)
 				*p = GUINT16_SWAP_LE_BE (*p);
 		}
 #endif
-	} else {
-		/* NULL password */
-		pw.data = NULL;
-		pw.len = 0;
 	}
 
-	slot = PK11_GetInternalKeySlot();
+	slot = PK11_GetInternalKeySlot ();
+	if (!slot) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERROR_FAILED,
+		             _("Couldn't initialize slot"));
+		goto out;
+	}
+
 	p12ctx = SEC_PKCS12DecoderStart (&pw, slot, NULL, NULL, NULL, NULL, NULL, NULL);
 	if (!p12ctx) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_FAILED,
 		             _("Couldn't initialize PKCS#12 decoder: %d"),
-		             PORT_GetError());
-		goto error;
+		             PORT_GetError ());
+		goto out;
 	}
 
 	s = SEC_PKCS12DecoderUpdate (p12ctx, (guint8 *)data, data_len);
@@ -472,8 +477,8 @@ _nm_crypto_verify_pkcs12 (const guint8 *data,
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("Couldn't decode PKCS#12 file: %d"),
-		             PORT_GetError());
-		goto error;
+		             PORT_GetError ());
+		goto out;
 	}
 
 	s = SEC_PKCS12DecoderVerify (p12ctx);
@@ -481,23 +486,22 @@ _nm_crypto_verify_pkcs12 (const guint8 *data,
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Couldn't verify PKCS#12 file: %d"),
-		             PORT_GetError());
-		goto error;
+		             PORT_GetError ());
+		goto out;
 	}
 
-	SEC_PKCS12DecoderFinish (p12ctx);
-	SECITEM_ZfreeItem (&pw, PR_FALSE);
-	return TRUE;
+	success = TRUE;
 
-error:
+out:
 	if (p12ctx)
 		SEC_PKCS12DecoderFinish (p12ctx);
-
 	if (slot)
-		PK11_FreeSlot(slot);
+		PK11_FreeSlot (slot);
 
-	SECITEM_ZfreeItem (&pw, PR_FALSE);
-	return FALSE;
+	if (pw.data)
+		SECITEM_ZfreeItem (&pw, PR_FALSE);
+
+	return success;
 }
 
 gboolean
