@@ -1147,8 +1147,9 @@ nm_keyfile_detect_unqualified_path_scheme (const char *base_dir,
 	const char *data = pdata;
 	gboolean exists = FALSE;
 	gsize validate_len;
+	gsize path_len, pathuri_len;
 	gs_free char *path = NULL;
-	GByteArray *tmp;
+	gs_free char *pathuri = NULL;
 
 	g_return_val_if_fail (base_dir && base_dir[0] == '/', NULL);
 
@@ -1191,18 +1192,16 @@ nm_keyfile_detect_unqualified_path_scheme (const char *base_dir,
 	 * When returning TRUE, we must also be sure that @data_len does not look like
 	 * the deprecated format of list of integers. With this implementation that is the
 	 * case, as long as @consider_exists is FALSE. */
-	tmp = g_byte_array_sized_new (strlen (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH) + strlen (path) + 1);
-	g_byte_array_append (tmp, (const guint8 *) NM_KEYFILE_CERT_SCHEME_PREFIX_PATH, strlen (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH));
-	g_byte_array_append (tmp, (const guint8 *) path, strlen (path) + 1);
-	if (nm_setting_802_1x_check_cert_scheme (tmp->data, tmp->len, NULL) != NM_SETTING_802_1X_CK_SCHEME_PATH) {
-		g_byte_array_unref (tmp);
+	path_len = strlen (path);
+	pathuri_len = (NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH) + 1) + path_len;
+	pathuri = g_new (char, pathuri_len);
+	memcpy (pathuri, NM_KEYFILE_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH));
+	memcpy (&pathuri[NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)], path, path_len + 1);
+	if (nm_setting_802_1x_check_cert_scheme (pathuri, pathuri_len, NULL) != NM_SETTING_802_1X_CK_SCHEME_PATH)
 		return NULL;
-	}
-	g_free (path);
-	path = (char *) g_byte_array_free (tmp, FALSE);
 
 	NM_SET_OUT (out_exists, exists);
-	return g_steal_pointer (&path);
+	return g_steal_pointer (&pathuri);
 }
 
 #define HAS_SCHEME_PREFIX(bin, bin_len, scheme) \
