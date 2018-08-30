@@ -61,14 +61,28 @@
  *       ISBN: 978-1587051548
  **/
 
+/*****************************************************************************/
+
+static NMSetting8021xCKFormat
+_crypto_format_to_ck (NMCryptoFileFormat format)
+{
+	G_STATIC_ASSERT ( (NM_SETTING_802_1X_CK_FORMAT_UNKNOWN == (NMSetting8021xCKFormat) NM_CRYPTO_FILE_FORMAT_UNKNOWN) );
+	G_STATIC_ASSERT ( (NM_SETTING_802_1X_CK_FORMAT_X509    == (NMSetting8021xCKFormat) NM_CRYPTO_FILE_FORMAT_X509) );
+	G_STATIC_ASSERT ( (NM_SETTING_802_1X_CK_FORMAT_RAW_KEY == (NMSetting8021xCKFormat) NM_CRYPTO_FILE_FORMAT_RAW_KEY) );
+	G_STATIC_ASSERT ( (NM_SETTING_802_1X_CK_FORMAT_PKCS12  == (NMSetting8021xCKFormat) NM_CRYPTO_FILE_FORMAT_PKCS12) );
+
+	nm_assert (NM_IN_SET (format, NM_CRYPTO_FILE_FORMAT_UNKNOWN,
+	                              NM_CRYPTO_FILE_FORMAT_X509,
+	                              NM_CRYPTO_FILE_FORMAT_RAW_KEY,
+	                              NM_CRYPTO_FILE_FORMAT_PKCS12));
+	return (NMSetting8021xCKFormat) format;
+}
+
+/*****************************************************************************/
+
 G_DEFINE_TYPE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING)
 
 #define NM_SETTING_802_1X_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_802_1X, NMSetting8021xPrivate))
-
-G_STATIC_ASSERT ( (NM_SETTING_802_1X_CK_FORMAT_UNKNOWN == (NMSetting8021xCKFormat) NM_CRYPTO_FILE_FORMAT_UNKNOWN) );
-G_STATIC_ASSERT ( (NM_SETTING_802_1X_CK_FORMAT_X509    == (NMSetting8021xCKFormat) NM_CRYPTO_FILE_FORMAT_X509) );
-G_STATIC_ASSERT ( (NM_SETTING_802_1X_CK_FORMAT_RAW_KEY == (NMSetting8021xCKFormat) NM_CRYPTO_FILE_FORMAT_RAW_KEY) );
-G_STATIC_ASSERT ( (NM_SETTING_802_1X_CK_FORMAT_PKCS12  == (NMSetting8021xCKFormat) NM_CRYPTO_FILE_FORMAT_PKCS12) );
 
 typedef struct {
 	GSList *eap; /* GSList of strings */
@@ -2316,7 +2330,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 	if (password_changed)
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
 
-	NM_SET_OUT (out_format, (NMSetting8021xCKFormat) format);
+	NM_SET_OUT (out_format, _crypto_format_to_ck (format));
 	return TRUE;
 }
 
@@ -2685,7 +2699,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 	if (password_changed)
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
 
-	NM_SET_OUT (out_format, (NMSetting8021xCKFormat) format);
+	NM_SET_OUT (out_format, _crypto_format_to_ck (format));
 	return TRUE;
 }
 
