@@ -620,14 +620,6 @@ dflt_cppflags_libnm_core = \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
 
-if WITH_GNUTLS
-dflt_cppflags_libnm_core += $(GNUTLS_CFLAGS)
-endif
-
-if WITH_NSS
-dflt_cppflags_libnm_core += $(NSS_CFLAGS)
-endif
-
 noinst_LTLIBRARIES += libnm-core/libnm-core.la
 
 GLIB_GENERATED += \
@@ -673,7 +665,6 @@ nodist_libnm_core_libnm_core_la_SOURCES = \
 	$(libnm_core_lib_c_mkenums)
 
 libnm_core_libnm_core_la_LIBADD = \
-	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(UUID_LIBS) \
 	$(LIBUDEV_LIBS) \
@@ -682,16 +673,6 @@ libnm_core_libnm_core_la_LIBADD = \
 libnm_core_libnm_core_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_LIB_LDFLAGS)
-
-if WITH_GNUTLS
-libnm_core_lib_c_real += libnm-core/nm-crypto-gnutls.c
-libnm_core_libnm_core_la_LIBADD += $(GNUTLS_LIBS)
-endif
-
-if WITH_NSS
-libnm_core_lib_c_real += libnm-core/nm-crypto-nss.c
-libnm_core_libnm_core_la_LIBADD += $(NSS_LIBS)
-endif
 
 EXTRA_DIST += \
 	libnm-core/nm-crypto-gnutls.c \
@@ -715,6 +696,46 @@ BUILT_SOURCES += \
 dist_dependencies += \
 	libnm-core/nm-vpn-dbus-types.xml \
 	libnm-core/nm-dbus-types.xml
+
+###############################################################################
+
+if HAVE_CRYPTO_GNUTLS
+if WITH_GNUTLS
+libnm_crypto_lib = libnm-core/libnm-crypto-gnutls.la
+else
+check_ltlibraries += libnm-core/libnm-crypto-gnutls.la
+endif
+
+libnm_core_libnm_crypto_gnutls_la_SOURCES = libnm-core/nm-crypto-gnutls.c
+libnm_core_libnm_crypto_gnutls_la_CPPFLAGS = \
+	$(libnm_core_libnm_core_la_CPPFLAGS) \
+	$(GNUTLS_CFLAGS)
+libnm_core_libnm_crypto_gnutls_la_LDFLAGS = \
+	$(libnm_core_libnm_core_la_LDFLAGS)
+libnm_core_libnm_crypto_gnutls_la_LIBADD = \
+	$(libnm_core_libnm_core_la_LIBADD) \
+	$(GNUTLS_LIBS)
+endif
+
+if HAVE_CRYPTO_NSS
+if WITH_NSS
+libnm_crypto_lib = libnm-core/libnm-crypto-nss.la
+else
+check_ltlibraries += libnm-core/libnm-crypto-nss.la
+endif
+
+libnm_core_libnm_crypto_nss_la_SOURCES = libnm-core/nm-crypto-nss.c
+libnm_core_libnm_crypto_nss_la_CPPFLAGS = \
+	$(libnm_core_libnm_core_la_CPPFLAGS) \
+	$(NSS_CFLAGS)
+libnm_core_libnm_crypto_nss_la_LDFLAGS = \
+	$(libnm_core_libnm_core_la_LDFLAGS)
+libnm_core_libnm_crypto_nss_la_LIBADD = \
+	$(libnm_core_libnm_core_la_LIBADD) \
+	$(NSS_LIBS)
+endif
+
+noinst_LTLIBRARIES += $(libnm_crypto_lib)
 
 ###############################################################################
 
@@ -764,6 +785,8 @@ nodist_libnm_core_tests_test_general_SOURCES = \
 
 libnm_core_tests_ldadd = \
 	libnm-core/libnm-core.la \
+	shared/libcsiphash.la \
+	$(libnm_crypto_lib) \
 	$(GLIB_LIBS)
 
 libnm_core_tests_ldflags = \
@@ -968,6 +991,8 @@ libnm_libnm_utils_la_SOURCES = \
 
 libnm_libnm_utils_la_LIBADD = \
 	libnm-core/libnm-core.la \
+	shared/libcsiphash.la \
+	$(libnm_crypto_lib) \
 	introspection/libnmdbus.la \
 	$(GLIB_LIBS)
 
@@ -1593,6 +1618,8 @@ endif
 
 src_libNetworkManagerBase_la_LIBADD = \
 	libnm-core/libnm-core.la \
+	shared/libcsiphash.la \
+	$(libnm_crypto_lib) \
 	$(GLIB_LIBS) \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(LIBUDEV_LIBS) \

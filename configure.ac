@@ -668,21 +668,41 @@ else
 fi
 AC_SUBST(NM_MODIFY_SYSTEM_POLICY)
 
+PKG_CHECK_MODULES(GNUTLS, [gnutls >= 2.12], [have_crypto_gnutls=yes], [have_crypto_gnutls=no])
+PKG_CHECK_MODULES(NSS, [nss], [have_crypto_nss=yes], [have_crypto_nss=yes])
+if test "${have_crypto_nss}" = "yes"; then
+	# Work around a pkg-config bug (fdo #29801) where exists != usable
+	FOO=`$PKG_CONFIG --cflags --libs nss`
+	if test x"$?" != "x0"; then
+		have_crypto_nss=no
+	fi
+fi
+AM_CONDITIONAL(HAVE_CRYPTO_GNUTLS, test "${have_crypto_gnutls}" = 'yes')
+AM_CONDITIONAL(HAVE_CRYPTO_NSS, test "${have_crypto_nss}" = 'yes')
+if test "${have_crypto_gnutls}" = 'yes'; then
+	AC_DEFINE(HAVE_CRYPTO_GNUTLS, 1, [Define if you have gnutls support])
+else
+	AC_DEFINE(HAVE_CRYPTO_GNUTLS, 0, [Define if you have gnutls support])
+fi
+if test "${have_crypto_nss}" = 'yes'; then
+	AC_DEFINE(HAVE_CRYPTO_NSS, 1, [Define if you have nss support])
+else
+	AC_DEFINE(HAVE_CRYPTO_NSS, 0, [Define if you have nss support])
+fi
+
 AC_ARG_WITH(crypto,
             AS_HELP_STRING([--with-crypto=nss|gnutls],
                            [Cryptography library to use for certificate and key operations]),
             with_crypto=$withval,
             with_crypto=nss)
 if test "$with_crypto" = 'nss'; then
-	PKG_CHECK_MODULES(NSS, [nss])
-
-	# Work around a pkg-config bug (fdo #29801) where exists != usable
-	FOO=`$PKG_CONFIG --cflags --libs nss`
-	if test x"$?" != "x0"; then
-		AC_MSG_ERROR([No usable NSS found])
+	if test "${have_crypto_nss}" != "yes"; then
+		AC_MSG_ERROR([No usable NSS found for --with-crypto=nss])
 	fi
 elif test "$with_crypto" = 'gnutls'; then
-	PKG_CHECK_MODULES(GNUTLS, [gnutls >= 2.12])
+	if test "${have_crypto_gnutls}" != "yes"; then
+		AC_MSG_ERROR([No usable gnutls found for --with-crypto=gnutls])
+	fi
 else
 	AC_MSG_ERROR([Please choose either 'nss' or 'gnutls' for certificate and crypto operations])
 fi
@@ -1385,7 +1405,7 @@ echo "  code coverage: $enable_code_coverage"
 echo "  LTO: $enable_lto"
 echo "  linker garbage collection: $enable_ld_gc"
 echo "  JSON validation for libnm: $enable_json_validation"
-echo "  crypto: $with_crypto"
+echo "  crypto: $with_crypto (have-gnutls: $have_crypto_gnutls, have-nss: $have_crypto_nss)"
 echo "  sanitizers: $sanitizers"
 echo "  Mozilla Public Suffix List: $with_libpsl"
 echo

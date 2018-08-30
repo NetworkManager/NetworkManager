@@ -108,7 +108,6 @@ libnm_core_settings_sources = files(
 
 libnm_core_sources = libnm_core_settings_sources + files(
   'nm-crypto.c',
-  'nm-crypto-' + crypto + '.c',
   'nm-connection.c',
   'nm-dbus-utils.c',
   'nm-errors.c',
@@ -136,7 +135,6 @@ libnm_core_enum = gnome.mkenums(
 )
 
 deps = [
-  crypto_dep,
   dl_dep,
   libudev_dep,
   shared_dep,
@@ -154,6 +152,32 @@ if enable_json_validation
   deps += jansson_dep
 endif
 
+if (crypto_gnutls_dep.found())
+  libnm_crypto_gnutls = static_library(
+    'nm-crypto-gnutls',
+    sources: [ 'nm-crypto-gnutls.c' ],
+    dependencies: deps + [ crypto_gnutls_dep ],
+    c_args: cflags
+  )
+endif
+
+if (crypto_nss_dep.found())
+  libnm_crypto_nss = static_library(
+    'nm-crypto-nss',
+    sources: [ 'nm-crypto-nss.c' ],
+    dependencies: deps + [ crypto_nss_dep ],
+    c_args: cflags
+  )
+endif
+
+if crypto == 'gnutls'
+  libnm_crypto = libnm_crypto_gnutls
+elif crypto == 'nss'
+  libnm_crypto = libnm_crypto_nss
+else
+  error('bug')
+endif
+
 libnm_core_sources_all =  libnm_core_sources
 libnm_core_sources_all += libnm_core_enum
 libnm_core_sources_all += shared_nm_meta_setting_c
@@ -165,6 +189,7 @@ libnm_core = static_library(
   'nm-core',
   sources: libnm_core_sources_all,
   dependencies: deps,
+  link_with: libnm_crypto,
   c_args: cflags
 )
 
