@@ -1018,27 +1018,20 @@ test_read_intlike_ssid (void)
 	gs_free_error GError *error = NULL;
 	gboolean success;
 	GBytes *ssid;
-	const guint8 *ssid_data;
-	gsize ssid_len;
 	const char *expected_ssid = "101";
 
 	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Intlike_SSID", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
+	nmtst_assert_success (connection, error);
 
 	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_success (success, error);
 
-	/* SSID */
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
 	ssid = nm_setting_wireless_get_ssid (s_wifi);
-	g_assert (ssid != NULL);
-	ssid_data = g_bytes_get_data (ssid, &ssid_len);
-	g_assert_cmpint (ssid_len, ==, strlen (expected_ssid));
-	g_assert_cmpint (memcmp (ssid_data, expected_ssid, strlen (expected_ssid)), ==, 0);
+	g_assert (ssid);
+	g_assert (nm_utils_gbytes_equal_mem (ssid, expected_ssid, strlen (expected_ssid)));
 }
 
 static void
@@ -1049,27 +1042,20 @@ test_read_intlike_ssid_2 (void)
 	gs_free_error GError *error = NULL;
 	gboolean success;
 	GBytes *ssid;
-	const guint8 *ssid_data;
-	gsize ssid_len;
 	const char *expected_ssid = "11;12;13;";
 
 	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Intlike_SSID_2", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
+	nmtst_assert_success (connection, error);
 
 	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_success (success, error);
 
-	/* SSID */
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
 	ssid = nm_setting_wireless_get_ssid (s_wifi);
-	g_assert (ssid != NULL);
-	ssid_data = g_bytes_get_data (ssid, &ssid_len);
-	g_assert_cmpint (ssid_len, ==, strlen (expected_ssid));
-	g_assert_cmpint (memcmp (ssid_data, expected_ssid, strlen (expected_ssid)), ==, 0);
+	g_assert (ssid);
+	g_assert (nm_utils_gbytes_equal_mem (ssid, expected_ssid, strlen (expected_ssid)));
 }
 
 static void
@@ -1787,7 +1773,8 @@ test_write_wired_8021x_tls_connection_blob (void)
 	const char *uuid;
 	gboolean reread_same = FALSE;
 	gs_free_error GError *error = NULL;
-	GBytes *password_raw = NULL;
+	GBytes *password_raw;
+
 #define PASSWORD_RAW "password-raw\0test"
 
 	connection = create_wired_tls_connection (NM_SETTING_802_1X_CK_SCHEME_BLOB);
@@ -1846,8 +1833,7 @@ test_write_wired_8021x_tls_connection_blob (void)
 
 	password_raw = nm_setting_802_1x_get_password_raw (s_8021x);
 	g_assert (password_raw);
-	g_assert (g_bytes_get_size (password_raw) == NM_STRLEN (PASSWORD_RAW));
-	g_assert (!memcmp (g_bytes_get_data (password_raw, NULL), PASSWORD_RAW, NM_STRLEN (PASSWORD_RAW)));
+	g_assert (nm_utils_gbytes_equal_mem (password_raw, PASSWORD_RAW, NM_STRLEN (PASSWORD_RAW)));
 
 	unlink (testfile);
 
@@ -2234,32 +2220,25 @@ test_read_new_wireless_group_names (void)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	GBytes *ssid;
-	const guint8 *ssid_data;
-	gsize ssid_len;
 	const char *expected_ssid = "foobar";
 	gs_free_error GError *error = NULL;
 	gboolean success;
 
 	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR"/Test_New_Wireless_Group_Names", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_success (connection, error);
 
-	/* Wifi setting */
+	success = nm_connection_verify (connection, &error);
+	nmtst_assert_success (success, error);
+
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
 	ssid = nm_setting_wireless_get_ssid (s_wifi);
 	g_assert (ssid);
-	ssid_data = g_bytes_get_data (ssid, &ssid_len);
-	g_assert_cmpint (ssid_len, ==, strlen (expected_ssid));
-	g_assert_cmpint (memcmp (ssid_data, expected_ssid, ssid_len), ==, 0);
+	g_assert (nm_utils_gbytes_equal_mem (ssid, expected_ssid, strlen (expected_ssid)));
 
 	g_assert_cmpstr (nm_setting_wireless_get_mode (s_wifi), ==, NM_SETTING_WIRELESS_MODE_INFRA);
 
-	/* Wifi security setting */
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
 	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "wpa-psk");

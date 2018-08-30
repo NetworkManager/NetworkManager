@@ -117,6 +117,36 @@ nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...)
 
 /*****************************************************************************/
 
+/**
+ * nm_utils_gbytes_equals:
+ * @bytes: (allow-none): a #GBytes array to compare. Note that
+ *   %NULL is treated like an #GBytes array of length zero.
+ * @mem_data: the data pointer with @mem_len bytes
+ * @mem_len: the length of the data pointer
+ *
+ * Returns: %TRUE if @bytes contains the same data as @mem_data. As a
+ *   special case, a %NULL @bytes is treated like an empty array.
+ */
+gboolean
+nm_utils_gbytes_equal_mem (GBytes *bytes,
+                           gconstpointer mem_data,
+                           gsize mem_len)
+{
+	gconstpointer p;
+	gsize l;
+
+	if (!bytes) {
+		/* as a special case, let %NULL GBytes compare idential
+		 * to an empty array. */
+		return (mem_len == 0);
+	}
+
+	p = g_bytes_get_data (bytes, &l);
+	return    l == mem_len
+	       && (   mem_len == 0 /* allow @mem_data to be %NULL */
+	           || memcmp (p, mem_data, mem_len) == 0);
+}
+
 GVariant *
 nm_utils_gbytes_to_variant_ay (GBytes *bytes)
 {

@@ -202,6 +202,10 @@ nm_utils_is_separator (const char c)
 
 /*****************************************************************************/
 
+gboolean nm_utils_gbytes_equal_mem (GBytes *bytes,
+                                    gconstpointer mem_data,
+                                    gsize mem_len);
+
 GVariant *nm_utils_gbytes_to_variant_ay (GBytes *bytes);
 
 /*****************************************************************************/

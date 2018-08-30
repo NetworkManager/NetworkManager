@@ -109,8 +109,6 @@ nm_wifi_ap_set_ssid_arr (NMWifiAP *ap,
                          gsize ssid_len)
 {
 	NMWifiAPPrivate *priv;
-	const guint8 *my_data;
-	gsize my_len;
 
 	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
 
@@ -119,15 +117,7 @@ nm_wifi_ap_set_ssid_arr (NMWifiAP *ap,
 
 	priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
-	if (priv->ssid)
-		my_data = g_bytes_get_data (priv->ssid, &my_len);
-	else {
-		my_data = NULL;
-		my_len = 0;
-	}
-
-	if (   my_len == ssid_len
-	    && memcmp (ssid, my_data, ssid_len) == 0)
+	if (nm_utils_gbytes_equal_mem (priv->ssid, ssid, ssid_len))
 		return FALSE;
 
 	nm_clear_pointer (&priv->ssid, g_bytes_unref);

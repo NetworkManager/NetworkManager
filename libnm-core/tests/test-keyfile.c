@@ -127,10 +127,8 @@ _assert_gbytes (GBytes *bytes, gconstpointer data, gssize len)
 
 	if (!len)
 		g_assert (!bytes);
-	else {
-		g_assert_cmpint (g_bytes_get_size (bytes), ==, len);
-		g_assert (memcmp (g_bytes_get_data (bytes, NULL), data, len) == 0);
-	}
+
+	g_assert (nm_utils_gbytes_equal_mem (bytes, data, len));
 }
 
 static GKeyFile *
@@ -277,8 +275,9 @@ _keyfile_convert (NMConnection **con,
 
 				b1 = nm_setting_802_1x_get_ca_cert_blob (s1);
 				b2 = nm_setting_802_1x_get_ca_cert_blob (s2);
-				g_assert_cmpint (g_bytes_get_size (b1), ==, g_bytes_get_size (b2));
-				g_assert (memcmp (g_bytes_get_data (b1, NULL), g_bytes_get_data (b2, NULL), g_bytes_get_size (b1)) == 0);
+				g_assert (b1);
+				g_assert (b2);
+				g_assert (g_bytes_equal (b1, b2));
 				break;
 			}
 			default:
@@ -344,8 +343,7 @@ _test_8021x_cert_check (NMConnection *con,
 		}
 
 		g_assert (blob);
-		g_assert_cmpint (g_bytes_get_size (blob), ==, val_len);
-		g_assert (!memcmp (g_bytes_get_data (blob, NULL), value, val_len));
+		g_assert (nm_utils_gbytes_equal_mem (blob, value, val_len));
 
 		kval = g_key_file_get_string (keyfile, "802-1x", "ca-cert", NULL);
 		g_assert (kval);
