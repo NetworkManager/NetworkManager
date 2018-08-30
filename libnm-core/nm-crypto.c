@@ -355,9 +355,9 @@ file_read_contents (const char *filename,
  * Convert a hex string into bytes.
  */
 static guint8 *
-convert_iv (const char *src,
-            gsize *out_len,
-            GError **error)
+_nmtst_convert_iv (const char *src,
+                   gsize *out_len,
+                   GError **error)
 {
 	gsize i, num;
 	gs_free guint8 *c = NULL;
@@ -451,14 +451,14 @@ nm_crypto_make_des_aes_key (const char *cipher,
 }
 
 static gboolean
-decrypt_key (const char *cipher,
-             int key_type,
-             const guint8 *data,
-             gsize data_len,
-             const char *iv,
-             const char *password,
-             NMSecretPtr *parsed,
-             GError **error)
+_nmtst_crypto_decrypt_key (const char *cipher,
+                           int key_type,
+                           const guint8 *data,
+                           gsize data_len,
+                           const char *iv,
+                           const char *password,
+                           NMSecretPtr *parsed,
+                           GError **error)
 {
 	nm_auto_clear_secret_ptr NMSecretPtr bin_iv = { 0 };
 	nm_auto_clear_secret_ptr NMSecretPtr key = { 0 };
@@ -471,7 +471,7 @@ decrypt_key (const char *cipher,
 	nm_assert (!parsed->bin);
 	nm_assert (parsed->len == 0);
 
-	bin_iv.bin = convert_iv (iv, &bin_iv.len, error);
+	bin_iv.bin = _nmtst_convert_iv (iv, &bin_iv.len, error);
 	if (!bin_iv.bin)
 		return FALSE;
 
@@ -544,14 +544,14 @@ nmtst_crypto_decrypt_openssl_private_key_data (const guint8 *data,
 			return NULL;
 		}
 
-		if (!decrypt_key (cipher,
-		                  key_type,
-		                  parsed.bin,
-		                  parsed.len,
-		                  iv,
-		                  password,
-		                  &parsed2,
-		                  error))
+		if (!_nmtst_crypto_decrypt_key (cipher,
+		                                key_type,
+		                                parsed.bin,
+		                                parsed.len,
+		                                iv,
+		                                password,
+		                                &parsed2,
+		                                error))
 			return NULL;
 
 		return nm_secret_copy_to_gbytes (parsed2.bin, parsed2.len);
