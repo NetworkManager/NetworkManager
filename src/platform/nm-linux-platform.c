@@ -54,6 +54,7 @@
 #include "wifi/nm-wifi-utils-wext.h"
 #include "wpan/nm-wpan-utils.h"
 #include "nm-utils/unaligned.h"
+#include "nm-utils/nm-io-utils.h"
 #include "nm-utils/nm-udev-utils.h"
 
 /*****************************************************************************/
