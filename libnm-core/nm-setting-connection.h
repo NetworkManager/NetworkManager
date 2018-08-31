@@ -66,6 +66,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_CONNECTION_LLDP           "lldp"
 #define NM_SETTING_CONNECTION_AUTH_RETRIES   "auth-retries"
 #define NM_SETTING_CONNECTION_MDNS           "mdns"
+#define NM_SETTING_CONNECTION_LLMNR          "llmnr"
 
 /* Types for property values */
 /**
@@ -116,6 +117,24 @@ typedef enum {
 	NM_SETTING_CONNECTION_MDNS_RESOLVE      = 1,
 	NM_SETTING_CONNECTION_MDNS_YES          = 2,
 } NMSettingConnectionMdns;
+
+/**
+ * NMSettingConnectionLlmnr:
+ * @NM_SETTING_CONNECTION_LLMNR_DEFAULT: default value
+ * @NM_SETTING_CONNECTION_LLMNR_NO: disable LLMNR
+ * @NM_SETTING_CONNECTION_LLMNR_RESOLVE: support only resolving, do not register hostname
+ * @NM_SETTING_CONNECTION_LLMNR_YES: enable LLMNR
+ *
+ * #NMSettingConnectionLlmnr values indicate whether LLMNR should be enabled.
+ *
+ * Since: 1.14
+ */
+typedef enum {
+	NM_SETTING_CONNECTION_LLMNR_DEFAULT      = -1,
+	NM_SETTING_CONNECTION_LLMNR_NO           = 0,
+	NM_SETTING_CONNECTION_LLMNR_RESOLVE      = 1,
+	NM_SETTING_CONNECTION_LLMNR_YES          = 2,
+} NMSettingConnectionLlmnr;
 
 /**
  * NMSettingConnection:
@@ -194,6 +213,9 @@ int         nm_setting_connection_get_auth_retries     (NMSettingConnection *set
 
 NM_AVAILABLE_IN_1_12
 NMSettingConnectionMdns   nm_setting_connection_get_mdns (NMSettingConnection *setting);
+NM_AVAILABLE_IN_1_14
+NMSettingConnectionLlmnr  nm_setting_connection_get_llmnr (NMSettingConnection *setting);
+
 G_END_DECLS
 
 #endif /* __NM_SETTING_CONNECTION_H__ */
