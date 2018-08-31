@@ -458,7 +458,7 @@ nm_crypto_make_des_aes_key (const char *cipher,
 	if (password[0] == '\0')
 		return NULL;
 
-	key = g_malloc0 (digest_len + 1);
+	key = g_malloc (digest_len);
 
 	nm_crypto_md5_hash (salt,
 	                    8,
