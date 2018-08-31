@@ -280,7 +280,7 @@ nm_setting_802_1x_check_cert_scheme (gconstpointer pdata, gsize length, GError *
 }
 
 static NMSetting8021xCKScheme
-get_cert_scheme (GBytes *bytes, GError **error)
+_cert_get_scheme (GBytes *bytes, GError **error)
 {
 	const char *data;
 	gsize length;
@@ -296,6 +296,73 @@ get_cert_scheme (GBytes *bytes, GError **error)
 	data = g_bytes_get_data (bytes, &length);
 	return nm_setting_802_1x_check_cert_scheme (data, length, error);
 }
+
+#define _cert_assert_scheme(cert, check_scheme, ret_val) \
+	G_STMT_START { \
+		NMSetting8021xCKScheme scheme; \
+		\
+		scheme = _cert_get_scheme ((cert), NULL); \
+		if (scheme != check_scheme) { \
+			g_return_val_if_fail (scheme == check_scheme, ret_val); \
+			return ret_val; \
+		} \
+	} G_STMT_END
+
+#define _cert_impl_get_scheme(setting, cert_field) \
+	G_STMT_START { \
+		NMSetting8021x *const _setting = (setting); \
+		GBytes *_cert; \
+		\
+		g_return_val_if_fail (NM_IS_SETTING_802_1X (_setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN); \
+		\
+		_cert = NM_SETTING_802_1X_GET_PRIVATE (_setting)->cert_field; \
+		\
+		return _cert_get_scheme (_cert, NULL); \
+	} G_STMT_END
+
+#define _cert_impl_get_blob(setting, cert_field) \
+	G_STMT_START { \
+		NMSetting8021x *const _setting = (setting); \
+		GBytes *_cert; \
+		\
+		g_return_val_if_fail (NM_IS_SETTING_802_1X (_setting), NULL); \
+		\
+		_cert = NM_SETTING_802_1X_GET_PRIVATE (_setting)->cert_field; \
+		\
+		_cert_assert_scheme (_cert, NM_SETTING_802_1X_CK_SCHEME_BLOB, NULL); \
+		\
+		return _cert; \
+	} G_STMT_END
+
+#define _cert_impl_get_path(setting, cert_field) \
+	G_STMT_START { \
+		NMSetting8021x *const _setting = (setting); \
+		GBytes *_cert; \
+		const char *_data; \
+		\
+		g_return_val_if_fail (NM_IS_SETTING_802_1X (_setting), NULL); \
+		\
+		_cert = NM_SETTING_802_1X_GET_PRIVATE (_setting)->cert_field; \
+		\
+		_cert_assert_scheme (_cert, NM_SETTING_802_1X_CK_SCHEME_PATH, NULL); \
+		\
+		_data = g_bytes_get_data (_cert, NULL); \
+		return &_data[NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)]; \
+	} G_STMT_END
+
+#define _cert_impl_get_uri(setting, cert_field) \
+	G_STMT_START { \
+		NMSetting8021x *const _setting = (setting); \
+		GBytes *_cert; \
+		\
+		g_return_val_if_fail (NM_IS_SETTING_802_1X (_setting), NULL); \
+		\
+		_cert = NM_SETTING_802_1X_GET_PRIVATE (_setting)->cert_field; \
+		\
+		_cert_assert_scheme (_cert, NM_SETTING_802_1X_CK_SCHEME_PKCS11, NULL); \
+		\
+		return g_bytes_get_data (_cert, NULL); \
+	} G_STMT_END
 
 static GBytes *
 load_and_verify_certificate (const char *cert_path,
@@ -359,11 +426,10 @@ verify_cert (GBytes *bytes, const char *prop_name,
 	GError *local = NULL;
 	NMSetting8021xCKScheme scheme;
 
-	if (bytes)
-		scheme = get_cert_scheme (bytes, &local);
-	else
+	if (!bytes)
 		return TRUE;
 
+	scheme = _cert_get_scheme (bytes, &local);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_UNKNOWN) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
@@ -642,9 +708,7 @@ nm_setting_802_1x_get_system_ca_certs (NMSetting8021x *setting)
 NMSetting8021xCKScheme
 nm_setting_802_1x_get_ca_cert_scheme (NMSetting8021x *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
-
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->ca_cert, NULL);
+	_cert_impl_get_scheme (setting, ca_cert);
 }
 
 /**
@@ -663,14 +727,7 @@ nm_setting_802_1x_get_ca_cert_scheme (NMSetting8021x *setting)
 GBytes *
 nm_setting_802_1x_get_ca_cert_blob (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_ca_cert_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB, NULL);
-
-	return NM_SETTING_802_1X_GET_PRIVATE (setting)->ca_cert;
+	_cert_impl_get_blob (setting, ca_cert);
 }
 
 /**
@@ -689,16 +746,7 @@ nm_setting_802_1x_get_ca_cert_blob (NMSetting8021x *setting)
 const char *
 nm_setting_802_1x_get_ca_cert_path (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-	gconstpointer data;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_ca_cert_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
-
-	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->ca_cert, NULL);
-	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
+	_cert_impl_get_path (setting, ca_cert);
 }
 
 /**
@@ -720,16 +768,7 @@ nm_setting_802_1x_get_ca_cert_path (NMSetting8021x *setting)
 const char *
 nm_setting_802_1x_get_ca_cert_uri (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-	gconstpointer data;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_ca_cert_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11, NULL);
-
-	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->ca_cert, NULL);
-	return (const char *)data;
+	_cert_impl_get_uri (setting, ca_cert);
 }
 
 /**
@@ -1045,9 +1084,7 @@ nm_setting_802_1x_get_domain_suffix_match (NMSetting8021x *setting)
 NMSetting8021xCKScheme
 nm_setting_802_1x_get_client_cert_scheme (NMSetting8021x *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
-
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->client_cert, NULL);
+	_cert_impl_get_scheme (setting, client_cert);
 }
 
 /**
@@ -1063,14 +1100,7 @@ nm_setting_802_1x_get_client_cert_scheme (NMSetting8021x *setting)
 GBytes *
 nm_setting_802_1x_get_client_cert_blob (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_client_cert_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB, NULL);
-
-	return NM_SETTING_802_1X_GET_PRIVATE (setting)->client_cert;
+	_cert_impl_get_blob (setting, client_cert);
 }
 
 /**
@@ -1086,16 +1116,7 @@ nm_setting_802_1x_get_client_cert_blob (NMSetting8021x *setting)
 const char *
 nm_setting_802_1x_get_client_cert_path (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-	gconstpointer data;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_client_cert_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
-
-	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->client_cert, NULL);
-	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
+	_cert_impl_get_path (setting, client_cert);
 }
 
 /**
@@ -1117,16 +1138,7 @@ nm_setting_802_1x_get_client_cert_path (NMSetting8021x *setting)
 const char *
 nm_setting_802_1x_get_client_cert_uri (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-	gconstpointer data;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_client_cert_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11, NULL);
-
-	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->client_cert, NULL);
-	return (const char *)data;
+	_cert_impl_get_uri (setting, client_cert);
 }
 
 /**
@@ -1395,9 +1407,7 @@ nm_setting_802_1x_get_phase2_ca_path (NMSetting8021x *setting)
 NMSetting8021xCKScheme
 nm_setting_802_1x_get_phase2_ca_cert_scheme (NMSetting8021x *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
-
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_ca_cert, NULL);
+	_cert_impl_get_scheme (setting, phase2_ca_cert);
 }
 
 /**
@@ -1416,14 +1426,7 @@ nm_setting_802_1x_get_phase2_ca_cert_scheme (NMSetting8021x *setting)
 GBytes *
 nm_setting_802_1x_get_phase2_ca_cert_blob (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_phase2_ca_cert_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB, NULL);
-
-	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_ca_cert;
+	_cert_impl_get_blob (setting, phase2_ca_cert);
 }
 
 /**
@@ -1442,16 +1445,7 @@ nm_setting_802_1x_get_phase2_ca_cert_blob (NMSetting8021x *setting)
 const char *
 nm_setting_802_1x_get_phase2_ca_cert_path (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-	gconstpointer data;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_phase2_ca_cert_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
-
-	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_ca_cert, NULL);
-	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
+	_cert_impl_get_path (setting, phase2_ca_cert);
 }
 
 /**
@@ -1473,16 +1467,7 @@ nm_setting_802_1x_get_phase2_ca_cert_path (NMSetting8021x *setting)
 const char *
 nm_setting_802_1x_get_phase2_ca_cert_uri (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-	gconstpointer data;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_phase2_ca_cert_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11, NULL);
-
-	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_ca_cert, NULL);
-	return (const char *)data;
+	_cert_impl_get_uri (setting, phase2_ca_cert);
 }
 
 /**
@@ -1802,9 +1787,7 @@ nm_setting_802_1x_clear_phase2_altsubject_matches (NMSetting8021x *setting)
 NMSetting8021xCKScheme
 nm_setting_802_1x_get_phase2_client_cert_scheme (NMSetting8021x *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
-
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_client_cert, NULL);
+	_cert_impl_get_scheme (setting, phase2_client_cert);
 }
 
 /**
@@ -1820,14 +1803,7 @@ nm_setting_802_1x_get_phase2_client_cert_scheme (NMSetting8021x *setting)
 GBytes *
 nm_setting_802_1x_get_phase2_client_cert_blob (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_phase2_client_cert_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB, NULL);
-
-	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_client_cert;
+	_cert_impl_get_blob (setting, phase2_client_cert);
 }
 
 /**
@@ -1843,16 +1819,7 @@ nm_setting_802_1x_get_phase2_client_cert_blob (NMSetting8021x *setting)
 const char *
 nm_setting_802_1x_get_phase2_client_cert_path (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-	gconstpointer data;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_phase2_client_cert_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
-
-	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_client_cert, NULL);
-	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
+	_cert_impl_get_path (setting, phase2_client_cert);
 }
 
 /**
@@ -1874,16 +1841,7 @@ nm_setting_802_1x_get_phase2_client_cert_path (NMSetting8021x *setting)
 const char *
 nm_setting_802_1x_get_phase2_client_cert_uri (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-	gconstpointer data;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_phase2_client_cert_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11, NULL);
-
-	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_client_cert, NULL);
-	return (const char *)data;
+	_cert_impl_get_uri (setting, phase2_client_cert);
 }
 
 /**
@@ -2129,9 +2087,7 @@ nm_setting_802_1x_get_pin_flags (NMSetting8021x *setting)
 NMSetting8021xCKScheme
 nm_setting_802_1x_get_private_key_scheme (NMSetting8021x *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
-
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key, NULL);
+	_cert_impl_get_scheme (setting, private_key);
 }
 
 /**
@@ -2151,14 +2107,7 @@ nm_setting_802_1x_get_private_key_scheme (NMSetting8021x *setting)
 GBytes *
 nm_setting_802_1x_get_private_key_blob (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_private_key_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB, NULL);
-
-	return NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key;
+	_cert_impl_get_blob (setting, private_key);
 }
 
 /**
@@ -2174,16 +2123,7 @@ nm_setting_802_1x_get_private_key_blob (NMSetting8021x *setting)
 const char *
 nm_setting_802_1x_get_private_key_path (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-	gconstpointer data;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_private_key_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
-
-	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key, NULL);
-	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
+	_cert_impl_get_path (setting, private_key);
 }
 
 /**
@@ -2205,16 +2145,7 @@ nm_setting_802_1x_get_private_key_path (NMSetting8021x *setting)
 const char *
 nm_setting_802_1x_get_private_key_uri (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-	gconstpointer data;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_private_key_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11, NULL);
-
-	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key, NULL);
-	return (const char *)data;
+	_cert_impl_get_uri (setting, private_key);
 }
 
 /**
@@ -2495,9 +2426,7 @@ nm_setting_802_1x_get_phase2_private_key_password_flags (NMSetting8021x *setting
 NMSetting8021xCKScheme
 nm_setting_802_1x_get_phase2_private_key_scheme (NMSetting8021x *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
-
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key, NULL);
+	_cert_impl_get_scheme (setting, phase2_private_key);
 }
 
 /**
@@ -2517,14 +2446,7 @@ nm_setting_802_1x_get_phase2_private_key_scheme (NMSetting8021x *setting)
 GBytes *
 nm_setting_802_1x_get_phase2_private_key_blob (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_phase2_private_key_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB, NULL);
-
-	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key;
+	_cert_impl_get_blob (setting, phase2_private_key);
 }
 
 /**
@@ -2540,16 +2462,7 @@ nm_setting_802_1x_get_phase2_private_key_blob (NMSetting8021x *setting)
 const char *
 nm_setting_802_1x_get_phase2_private_key_path (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-	gconstpointer data;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_phase2_private_key_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
-
-	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key, NULL);
-	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
+	_cert_impl_get_path (setting, phase2_private_key);
 }
 
 /**
@@ -2571,16 +2484,7 @@ nm_setting_802_1x_get_phase2_private_key_path (NMSetting8021x *setting)
 const char *
 nm_setting_802_1x_get_phase2_private_key_uri (NMSetting8021x *setting)
 {
-	NMSetting8021xCKScheme scheme;
-	gconstpointer data;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	scheme = nm_setting_802_1x_get_phase2_private_key_scheme (setting);
-	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11, NULL);
-
-	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key, NULL);
-	return (const char *)data;
+	_cert_impl_get_uri (setting, phase2_private_key);
 }
 
 /**
