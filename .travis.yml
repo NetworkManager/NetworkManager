@@ -79,6 +79,11 @@ before_install:
 script:
     - |
       if test "$BUILD_TYPE" == 'meson'; then
+          if [ "$CC" == gcc ]; then
+              CRYPTO=nss
+          else
+              CRYPTO=gnutls
+          fi &&
           meson build \
               \
               -D ld_gc=false \
@@ -91,6 +96,7 @@ script:
               -D vapi=false \
               -D introspection=false \
               -D qt=false \
+              -D crypto=$CRYPTO \
               \
               -D docs=true \
               \
@@ -103,11 +109,16 @@ script:
       fi
     - |
       if test "$BUILD_TYPE" == 'autotools'; then
+          if [ "$CC" == gcc ]; then
+              CRYPTO=gnutls
+          else
+              CRYPTO=nss
+          fi &&
           git clean -fdx &&
           NOCONFIGURE=1 ./autogen.sh &&
           mkdir ./build &&
           pushd ./build &&
-          ../configure --prefix="$PWD/INST" --with-systemd-logind=no --enable-more-warnings=no --enable-ifcfg-rh --enable-config-plugin-ibft --enable-ifupdown --enable-tests &&
+          ../configure --prefix="$PWD/INST" --with-systemd-logind=no --enable-more-warnings=no --enable-ifcfg-rh --enable-config-plugin-ibft --enable-ifupdown --enable-tests --with-crypto=$CRYPTO &&
           make -j4 &&
           if [ "$CC" == gcc ]; then
               sudo locale-gen pl_PL.UTF-8 &&
