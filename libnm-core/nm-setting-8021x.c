@@ -420,8 +420,11 @@ path_to_scheme_value (const char *path)
 }
 
 static gboolean
-verify_cert (GBytes *bytes, const char *prop_name,
-             const char *password, const char *password_prop_name, GError **error)
+_cert_verify_property (GBytes *bytes,
+                       const char *prop_name,
+                       const char *password,
+                       const char *password_prop_name,
+                       GError **error)
 {
 	GError *local = NULL;
 	NMSetting8021xCKScheme scheme;
@@ -3088,11 +3091,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	NMSetting8021x *self = NM_SETTING_802_1X (setting);
 	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd", NULL };
-	const char *valid_phase1_peapver[] = { "0", "1", NULL };
-	const char *valid_phase1_peaplabel[] = { "0", "1", NULL };
-	const char *valid_phase1_fast_pac[] = { "0", "1", "2", "3", NULL };
-	const char *valid_phase2_auth[] = { "pap", "chap", "mschap", "mschapv2", "gtc", "otp", "md5", "tls", NULL };
-	const char *valid_phase2_autheap[] = { "md5", "mschapv2", "otp", "gtc", "tls", NULL };
 	GSList *iter;
 
 	if (error)
@@ -3132,7 +3130,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	if (priv->phase1_peapver && !g_strv_contains (valid_phase1_peapver, priv->phase1_peapver)) {
+	if (!NM_IN_STRSET (priv->phase1_peapver, NULL,
+	                                         "0",
+	                                         "1")) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -3142,7 +3142,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->phase1_peaplabel && !g_strv_contains (valid_phase1_peaplabel, priv->phase1_peaplabel)) {
+	if (!NM_IN_STRSET (priv->phase1_peaplabel, NULL,
+	                                           "0",
+	                                           "1")) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -3152,7 +3154,11 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->phase1_fast_provisioning && !g_strv_contains (valid_phase1_fast_pac, priv->phase1_fast_provisioning)) {
+	if (!NM_IN_STRSET (priv->phase1_fast_provisioning, NULL,
+	                                                   "0",
+	                                                   "1",
+	                                                   "2",
+	                                                   "3")) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -3171,7 +3177,15 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->phase2_auth && !g_strv_contains (valid_phase2_auth, priv->phase2_auth)) {
+	if (!NM_IN_STRSET (priv->phase2_auth, NULL,
+	                                      "pap",
+	                                      "chap",
+	                                      "mschap",
+	                                      "mschapv2",
+	                                      "gtc",
+	                                      "otp",
+	                                      "md5",
+	                                      "tls")) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -3181,7 +3195,12 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->phase2_autheap && !g_strv_contains (valid_phase2_autheap, priv->phase2_autheap)) {
+	if (!NM_IN_STRSET (priv->phase2_autheap, NULL,
+	                                         "md5",
+	                                         "mschapv2",
+	                                         "otp",
+	                                         "gtc",
+	                                         "tls")) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -3191,26 +3210,44 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (!verify_cert (priv->ca_cert, NM_SETTING_802_1X_CA_CERT,
-	                  priv->ca_cert_password, NM_SETTING_802_1X_CA_CERT_PASSWORD, error))
+	if (!_cert_verify_property (priv->ca_cert,
+	                            NM_SETTING_802_1X_CA_CERT,
+	                            priv->ca_cert_password,
+	                            NM_SETTING_802_1X_CA_CERT_PASSWORD,
+	                            error))
 		return FALSE;
-	if (!verify_cert (priv->phase2_ca_cert, NM_SETTING_802_1X_PHASE2_CA_CERT,
-	                  priv->phase2_ca_cert_password, NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD, error))
-		return FALSE;
-
-	if (!verify_cert (priv->client_cert, NM_SETTING_802_1X_CLIENT_CERT,
-	                  priv->client_cert_password, NM_SETTING_802_1X_CLIENT_CERT_PASSWORD, error))
-		return FALSE;
-	if (!verify_cert (priv->phase2_client_cert, NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
-	                  priv->phase2_client_cert_password, NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD, error))
-		return FALSE;
-
-	if (!verify_cert (priv->private_key, NM_SETTING_802_1X_PRIVATE_KEY, NULL, NULL, error))
-		return FALSE;
-	if (!verify_cert (priv->phase2_private_key, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, NULL, NULL, error))
+	if (!_cert_verify_property (priv->phase2_ca_cert,
+	                            NM_SETTING_802_1X_PHASE2_CA_CERT,
+	                            priv->phase2_ca_cert_password,
+	                            NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD,
+	                            error))
 		return FALSE;
 
-	/* FIXME: finish */
+	if (!_cert_verify_property (priv->client_cert,
+	                            NM_SETTING_802_1X_CLIENT_CERT,
+	                            priv->client_cert_password,
+	                            NM_SETTING_802_1X_CLIENT_CERT_PASSWORD,
+	                            error))
+		return FALSE;
+	if (!_cert_verify_property (priv->phase2_client_cert,
+	                            NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
+	                            priv->phase2_client_cert_password,
+	                            NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD,
+	                            error))
+		return FALSE;
+
+	if (!_cert_verify_property (priv->private_key,
+	                            NM_SETTING_802_1X_PRIVATE_KEY,
+	                            NULL,
+	                            NULL,
+	                            error))
+		return FALSE;
+	if (!_cert_verify_property (priv->phase2_private_key,
+	                            NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
+	                            NULL,
+	                            NULL,
+	                            error))
+		return FALSE;
 
 	return TRUE;
 }
@@ -3251,7 +3288,7 @@ need_secrets (NMSetting *setting)
 
 	if (secrets->len == 0) {
 		g_ptr_array_free (secrets, TRUE);
-		secrets = NULL;
+		return NULL;
 	}
 
 	return secrets;
