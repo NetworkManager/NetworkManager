@@ -26,6 +26,25 @@
 
 /*****************************************************************************/
 
+static inline gboolean
+_NM_INT_NOT_NEGATIVE (gssize val)
+{
+	/* whether an enum (without negative values) is a signed int, depends on compiler options
+	 * and compiler implementation.
+	 *
+	 * When using such an enum for accessing an array, one naturally wants to check
+	 * that the enum is not negative. However, the compiler doesn't like a plain
+	 * comparisong "enum_val >= 0", because (if the enum is unsigned), it will warn
+	 * that the expression is always true *duh*. Not even a cast to a signed
+	 * type helps to avoid the compiler warning in any case.
+	 *
+	 * The sole purpose of this function is to avoid a compiler warning, when checking
+	 * that an enum is not negative. */
+	return val >= 0;
+}
+
+/*****************************************************************************/
+
 static inline char
 nm_utils_addr_family_to_char (int addr_family)
 {
