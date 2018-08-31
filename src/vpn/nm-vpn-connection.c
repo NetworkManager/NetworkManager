@@ -1619,6 +1619,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	nm_ip4_config_merge_setting (config,
 	                             s_ip,
 	                             nm_setting_connection_get_mdns (s_con),
+	                             nm_setting_connection_get_llmnr (s_con),
 	                             route_table,
 	                             route_metric);
 

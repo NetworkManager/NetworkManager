@@ -175,6 +175,7 @@ gboolean nm_ip4_config_commit (const NMIP4Config *self,
 void nm_ip4_config_merge_setting (NMIP4Config *self,
                                   NMSettingIPConfig *setting,
                                   NMSettingConnectionMdns mdns,
+                                  NMSettingConnectionLlmnr llmnr,
                                   guint32 route_table,
                                   guint32 route_metric);
 NMSetting *nm_ip4_config_create_setting (const NMIP4Config *self);
@@ -203,6 +204,9 @@ in_addr_t nmtst_ip4_config_get_gateway (NMIP4Config *config);
 NMSettingConnectionMdns nm_ip4_config_mdns_get (const NMIP4Config *self);
 void                    nm_ip4_config_mdns_set (NMIP4Config *self,
                                                 NMSettingConnectionMdns mdns);
+NMSettingConnectionLlmnr nm_ip4_config_llmnr_get (const NMIP4Config *self);
+void                     nm_ip4_config_llmnr_set (NMIP4Config *self,
+                                                  NMSettingConnectionLlmnr llmnr);
 
 const NMDedupMultiHeadEntry *nm_ip4_config_lookup_addresses (const NMIP4Config *self);
 void nm_ip4_config_reset_addresses (NMIP4Config *self);
