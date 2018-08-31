@@ -3545,8 +3545,7 @@ set_property (GObject *object, guint prop_id,
 		priv->pac_file = g_value_dup_string (value);
 		break;
 	case PROP_CA_CERT:
-		if (priv->ca_cert)
-			g_bytes_unref (priv->ca_cert);
+		g_bytes_unref (priv->ca_cert);
 		priv->ca_cert = set_cert_prop_helper (value, NM_SETTING_802_1X_CA_CERT, &error);
 		if (error) {
 			g_warning ("Error setting certificate (invalid data): %s", error->message);
@@ -3577,8 +3576,7 @@ set_property (GObject *object, guint prop_id,
 		priv->domain_suffix_match = nm_strdup_not_empty (g_value_get_string (value));
 		break;
 	case PROP_CLIENT_CERT:
-		if (priv->client_cert)
-			g_bytes_unref (priv->client_cert);
+		g_bytes_unref (priv->client_cert);
 		priv->client_cert = set_cert_prop_helper (value, NM_SETTING_802_1X_CLIENT_CERT, &error);
 		if (error) {
 			g_warning ("Error setting certificate (invalid data): %s", error->message);
@@ -3616,8 +3614,7 @@ set_property (GObject *object, guint prop_id,
 		priv->phase2_autheap = g_value_dup_string (value);
 		break;
 	case PROP_PHASE2_CA_CERT:
-		if (priv->phase2_ca_cert)
-			g_bytes_unref (priv->phase2_ca_cert);
+		g_bytes_unref (priv->phase2_ca_cert);
 		priv->phase2_ca_cert = set_cert_prop_helper (value, NM_SETTING_802_1X_PHASE2_CA_CERT, &error);
 		if (error) {
 			g_warning ("Error setting certificate (invalid data): %s", error->message);
@@ -3648,9 +3645,7 @@ set_property (GObject *object, guint prop_id,
 		priv->phase2_domain_suffix_match = nm_strdup_not_empty (g_value_get_string (value));
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
-
-		if (priv->phase2_client_cert)
-			g_bytes_unref (priv->phase2_client_cert);
+		g_bytes_unref (priv->phase2_client_cert);
 		priv->phase2_client_cert = set_cert_prop_helper (value, NM_SETTING_802_1X_PHASE2_CLIENT_CERT, &error);
 		if (error) {
 			g_warning ("Error setting certificate (invalid data): %s", error->message);
@@ -3672,16 +3667,14 @@ set_property (GObject *object, guint prop_id,
 		priv->password_flags = g_value_get_flags (value);
 		break;
 	case PROP_PASSWORD_RAW:
-		if (priv->password_raw)
-			g_bytes_unref (priv->password_raw);
+		g_bytes_unref (priv->password_raw);
 		priv->password_raw = g_value_dup_boxed (value);
 		break;
 	case PROP_PASSWORD_RAW_FLAGS:
 		priv->password_raw_flags = g_value_get_flags (value);
 		break;
 	case PROP_PRIVATE_KEY:
-		if (priv->private_key)
-			g_bytes_unref (priv->private_key);
+		g_bytes_unref (priv->private_key);
 		priv->private_key = set_cert_prop_helper (value, NM_SETTING_802_1X_PRIVATE_KEY, &error);
 		if (error) {
 			g_warning ("Error setting private key (invalid data): %s", error->message);
@@ -3696,8 +3689,7 @@ set_property (GObject *object, guint prop_id,
 		priv->private_key_password_flags = g_value_get_flags (value);
 		break;
 	case PROP_PHASE2_PRIVATE_KEY:
-		if (priv->phase2_private_key)
-			g_bytes_unref (priv->phase2_private_key);
+		g_bytes_unref (priv->phase2_private_key);
 		priv->phase2_private_key = set_cert_prop_helper (value, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, &error);
 		if (error) {
 			g_warning ("Error setting private key (invalid data): %s", error->message);
@@ -3772,31 +3764,24 @@ finalize (GObject *object)
 	g_free (priv->phase2_subject_match);
 	g_free (priv->phase2_domain_suffix_match);
 	g_free (priv->password);
-	if (priv->password_raw)
-		g_bytes_unref (priv->password_raw);
+	g_bytes_unref (priv->password_raw);
 	g_free (priv->pin);
 
 	g_slist_free_full (priv->eap, g_free);
 	g_slist_free_full (priv->altsubject_matches, g_free);
 	g_slist_free_full (priv->phase2_altsubject_matches, g_free);
 
-	if (priv->ca_cert)
-		g_bytes_unref (priv->ca_cert);
+	g_bytes_unref (priv->ca_cert);
 	g_free (priv->ca_cert_password);
-	if (priv->client_cert)
-		g_bytes_unref (priv->client_cert);
+	g_bytes_unref (priv->client_cert);
 	g_free (priv->client_cert_password);
-	if (priv->private_key)
-		g_bytes_unref (priv->private_key);
+	g_bytes_unref (priv->private_key);
 	nm_free_secret (priv->private_key_password);
-	if (priv->phase2_ca_cert)
-		g_bytes_unref (priv->phase2_ca_cert);
+	g_bytes_unref (priv->phase2_ca_cert);
 	g_free (priv->phase2_ca_cert_password);
-	if (priv->phase2_client_cert)
-		g_bytes_unref (priv->phase2_client_cert);
+	g_bytes_unref (priv->phase2_client_cert);
 	g_free (priv->phase2_client_cert_password);
-	if (priv->phase2_private_key)
-		g_bytes_unref (priv->phase2_private_key);
+	g_bytes_unref (priv->phase2_private_key);
 	nm_free_secret (priv->phase2_private_key_password);
 
 	G_OBJECT_CLASS (nm_setting_802_1x_parent_class)->finalize (object);
