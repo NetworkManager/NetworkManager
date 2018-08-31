@@ -10879,7 +10879,9 @@ can_reapply_change (NMDevice *self, const char *setting_name,
 		                                          NM_SETTING_CONNECTION_AUTOCONNECT,
 		                                          NM_SETTING_CONNECTION_ZONE,
 		                                          NM_SETTING_CONNECTION_METERED,
-		                                          NM_SETTING_CONNECTION_LLDP);
+		                                          NM_SETTING_CONNECTION_LLDP,
+		                                          NM_SETTING_CONNECTION_MDNS,
+		                                          NM_SETTING_CONNECTION_LLMNR);
 	} else if (NM_IN_STRSET (setting_name,
 	                         NM_SETTING_PROXY_SETTING_NAME)) {
 		return TRUE;
