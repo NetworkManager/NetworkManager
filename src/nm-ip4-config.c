@@ -1885,8 +1885,15 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 		has_relevant_changes = TRUE;
 	}
 
-	dst_priv->mdns = src_priv->mdns;
-	dst_priv->llmnr = src_priv->llmnr;
+	if (src_priv->mdns != dst_priv->mdns) {
+		dst_priv->mdns = src_priv->mdns;
+		has_relevant_changes = TRUE;
+	}
+
+	if (src_priv->llmnr != dst_priv->llmnr) {
+		dst_priv->llmnr = src_priv->llmnr;
+		has_relevant_changes = TRUE;
+	}
 
 	/* DNS priority */
 	if (src_priv->dns_priority != dst_priv->dns_priority) {
@@ -2877,6 +2884,7 @@ nm_ip4_config_hash (const NMIP4Config *self, GChecksum *sum, gboolean dns_only)
 	NMDedupMultiIter ipconf_iter;
 	const NMPlatformIP4Address *address;
 	const NMPlatformIP4Route *route;
+	int val;
 
 	g_return_if_fail (self);
 	g_return_if_fail (sum);
@@ -2923,6 +2931,25 @@ nm_ip4_config_hash (const NMIP4Config *self, GChecksum *sum, gboolean dns_only)
 		s = nm_ip4_config_get_dns_option (self, i);
 		g_checksum_update (sum, (const guint8 *) s, strlen (s));
 	}
+
+	val = nm_ip4_config_mdns_get (self);
+	if (val != NM_SETTING_CONNECTION_MDNS_DEFAULT)
+		g_checksum_update (sum, (const guint8 *) &val, sizeof (val));
+
+	val = nm_ip4_config_llmnr_get (self);
+	if (val != NM_SETTING_CONNECTION_LLMNR_DEFAULT)
+		g_checksum_update (sum, (const guint8 *) &val, sizeof (val));
+
+	/* FIXME(ip-config-checksum): the DNS priority should be considered relevant
+	 * and added into the checksum as well, but this can't be done right now
+	 * because in the DNS manager we rely on the fact that an empty
+	 * configuration (i.e. just created) has a zero checksum. This is needed to
+	 * avoid rewriting resolv.conf when there is no change.
+	 *
+	 * The DNS priority initial value depends on the connection type (VPN or
+	 * not), so it's a bit difficult to add it to checksum maintaining the
+	 * assumption of checksum(empty)=0
+	 */
 }
 
 /**

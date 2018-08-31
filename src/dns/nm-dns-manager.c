@@ -970,6 +970,8 @@ compute_hash (NMDnsManager *self, const NMGlobalDnsConfig *global, guint8 buffer
 	else {
 		const CList *head;
 
+		/* FIXME(ip-config-checksum): this relies on the fact that an IP
+		 * configuration without DNS parameters gives a zero checksum. */
 		head = _ip_config_lst_head (self);
 		c_list_for_each_entry (ip_data, head, ip_config_lst)
 			nm_ip_config_hash (ip_data->ip_config, sum, TRUE);
