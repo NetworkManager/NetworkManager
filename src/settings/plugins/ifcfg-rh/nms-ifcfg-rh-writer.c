@@ -1790,6 +1790,7 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	const char *master, *master_iface = NULL, *type;
 	int vint;
 	NMSettingConnectionMdns mdns;
+	NMSettingConnectionLlmnr llmnr;
 	guint32 vuint32;
 	const char *tmp;
 
@@ -1960,6 +1961,13 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 		                mdns);
 	} else
 		svUnsetValue (ifcfg, "MDNS");
+
+	llmnr = nm_setting_connection_get_llmnr (s_con);
+	if (llmnr != NM_SETTING_CONNECTION_LLMNR_DEFAULT) {
+		svSetValueEnum (ifcfg, "LLMNR", nm_setting_connection_llmnr_get_type (),
+		                llmnr);
+	} else
+		svUnsetValue (ifcfg, "LLMNR");
 }
 
 static char *

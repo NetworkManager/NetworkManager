@@ -2181,6 +2181,15 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 *
 	 * Since: 1.14
 	 **/
+	/* ---ifcfg-rh---
+	 * property: llmnr
+	 * variable: LLMNR(+)
+	 * values: yes,no,resolve
+	 * default: missing variable means global default
+	 * description: Whether or not LLMNR is enabled for the connection
+	 * example: LLMNR=yes
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_LLMNR,
 		 g_param_spec_int (NM_SETTING_CONNECTION_LLMNR, "", "",
