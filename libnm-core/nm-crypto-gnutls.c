@@ -33,7 +33,32 @@
 #include "nm-utils/nm-secret-utils.h"
 #include "nm-errors.h"
 
-#define SALT_LEN 8
+/*****************************************************************************/
+
+static gboolean
+_get_cipher_info (NMCryptoCipherType cipher,
+                  int *out_cipher_mech,
+                  guint8 *out_real_iv_len)
+{
+	static const int cipher_mechs[] = {
+		[NM_CRYPTO_CIPHER_DES_EDE3_CBC] = GNUTLS_CIPHER_3DES_CBC,
+		[NM_CRYPTO_CIPHER_DES_CBC]      = GNUTLS_CIPHER_DES_CBC,
+		[NM_CRYPTO_CIPHER_AES_128_CBC]  = GNUTLS_CIPHER_AES_128_CBC,
+		[NM_CRYPTO_CIPHER_AES_192_CBC]  = GNUTLS_CIPHER_AES_192_CBC,
+		[NM_CRYPTO_CIPHER_AES_256_CBC]  = GNUTLS_CIPHER_AES_256_CBC,
+	};
+
+	g_return_val_if_fail (_NM_INT_NOT_NEGATIVE (cipher) && (gsize) cipher < G_N_ELEMENTS (cipher_mechs), FALSE);
+
+	if (cipher_mechs[cipher] == 0)
+		return FALSE;
+
+	NM_SET_OUT (out_cipher_mech, cipher_mechs[cipher]);
+	NM_SET_OUT (out_real_iv_len, nm_crypto_cipher_get_info (cipher)->real_iv_len);
+	return TRUE;
+}
+
+/*****************************************************************************/
 
 static gboolean initialized = FALSE;
 
@@ -56,7 +81,7 @@ _nm_crypto_init (GError **error)
 }
 
 guint8 *
-_nmtst_crypto_decrypt (const char *cipher,
+_nmtst_crypto_decrypt (NMCryptoCipherType cipher,
                        const guint8 *data,
                        gsize data_len,
                        const guint8 *iv,
@@ -72,39 +97,24 @@ _nmtst_crypto_decrypt (const char *cipher,
 	int cipher_mech, i;
 	char *output = NULL;
 	gboolean success = FALSE;
-	gsize pad_len, real_iv_len;
+	gsize pad_len;
+	guint8 real_iv_len;
+
+	if (!_get_cipher_info (cipher, &cipher_mech, &real_iv_len)) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERROR_UNKNOWN_CIPHER,
+		             _("Unsupported key cipher for decryption"));
+		return NULL;
+	}
 
 	if (!_nm_crypto_init (error))
 		return NULL;
 
-	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC)) {
-		cipher_mech = GNUTLS_CIPHER_3DES_CBC;
-		real_iv_len = SALT_LEN;
-	} else if (!strcmp (cipher, CIPHER_DES_CBC)) {
-		cipher_mech = GNUTLS_CIPHER_DES_CBC;
-		real_iv_len = SALT_LEN;
-	} else if (!strcmp (cipher, CIPHER_AES_128_CBC)) {
-		cipher_mech = GNUTLS_CIPHER_AES_128_CBC;
-		real_iv_len = 16;
-	} else if (!strcmp (cipher, CIPHER_AES_192_CBC)) {
-		cipher_mech = GNUTLS_CIPHER_AES_192_CBC;
-		real_iv_len = 16;
-	} else if (!strcmp (cipher, CIPHER_AES_256_CBC)) {
-		cipher_mech = GNUTLS_CIPHER_AES_256_CBC;
-		real_iv_len = 16;
-	} else {
-		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERROR_UNKNOWN_CIPHER,
-		             _("Private key cipher '%s' was unknown."),
-		             cipher);
-		return NULL;
-	}
-
 	if (iv_len < real_iv_len) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_INVALID_DATA,
-		             _("Invalid IV length (must be at least %zd)."),
-		             real_iv_len);
+		             _("Invalid IV length (must be at least %u)."),
+		             (guint) real_iv_len);
 		return NULL;
 	}
 
@@ -170,7 +180,7 @@ out:
 }
 
 guint8 *
-_nmtst_crypto_encrypt (const char *cipher,
+_nmtst_crypto_encrypt (NMCryptoCipherType cipher,
                        const guint8 *data,
                        gsize data_len,
                        const guint8 *iv,
@@ -190,24 +200,16 @@ _nmtst_crypto_encrypt (const char *cipher,
 	char *padded_buf = NULL;
 	guint32 i;
 
-	if (!_nm_crypto_init (error))
-		return NULL;
-
-	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC))
-		cipher_mech = GNUTLS_CIPHER_3DES_CBC;
-	else if (!strcmp (cipher, CIPHER_AES_128_CBC))
-		cipher_mech = GNUTLS_CIPHER_AES_128_CBC;
-	else if (!strcmp (cipher, CIPHER_AES_192_CBC))
-		cipher_mech = GNUTLS_CIPHER_AES_192_CBC;
-	else if (!strcmp (cipher, CIPHER_AES_256_CBC))
-		cipher_mech = GNUTLS_CIPHER_AES_256_CBC;
-	else {
+	if (   cipher == NM_CRYPTO_CIPHER_DES_CBC
+	    || !_get_cipher_info (cipher, &cipher_mech, NULL)) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_UNKNOWN_CIPHER,
-		             _("Private key cipher '%s' was unknown."),
-		             cipher);
+		             _("Unsupported key cipher for encryption"));
 		return NULL;
 	}
+
+	if (!_nm_crypto_init (error))
+		return NULL;
 
 	/* If data_len % ivlen == 0, then we add another complete block
 	 * onto the end so that the decrypter knows there's padding.

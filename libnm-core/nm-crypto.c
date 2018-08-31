@@ -54,6 +54,64 @@
 
 /*****************************************************************************/
 
+static const NMCryptoCipherInfo cipher_infos[] = {
+#define _CI(_cipher, _name, _digest_len, _real_iv_len) \
+	[(_cipher) - 1] = { .cipher = _cipher, .name = ""_name"", .digest_len = _digest_len, .real_iv_len = _real_iv_len }
+	_CI (NM_CRYPTO_CIPHER_DES_EDE3_CBC, "DES-EDE3-CBC", 24,  8),
+	_CI (NM_CRYPTO_CIPHER_DES_CBC,      "DES-CBC",       8,  8),
+	_CI (NM_CRYPTO_CIPHER_AES_128_CBC,  "AES-128-CBC",  16, 16),
+	_CI (NM_CRYPTO_CIPHER_AES_192_CBC,  "AES-192-CBC",  24, 16),
+	_CI (NM_CRYPTO_CIPHER_AES_256_CBC,  "AES-256-CBC",  32, 16),
+};
+
+const NMCryptoCipherInfo *
+nm_crypto_cipher_get_info (NMCryptoCipherType cipher)
+{
+	g_return_val_if_fail (cipher > NM_CRYPTO_CIPHER_UNKNOWN && (gsize) cipher < G_N_ELEMENTS (cipher_infos) + 1, NULL);
+
+#if NM_MORE_ASSERTS > 10
+	{
+		int i, j;
+
+		for (i = 0; i < (int) G_N_ELEMENTS (cipher_infos); i++) {
+			const NMCryptoCipherInfo *info = &cipher_infos[i];
+
+			nm_assert (info->cipher == (NMCryptoCipherType) (i + 1));
+			nm_assert (info->name && info->name[0]);
+			for (j = 0; j < i; j++)
+				nm_assert (g_ascii_strcasecmp (info->name, cipher_infos[j].name) != 0);
+		}
+	}
+#endif
+
+	return &cipher_infos[cipher - 1];
+}
+
+const NMCryptoCipherInfo *
+nm_crypto_cipher_get_info_by_name (const char *cipher_name, gssize p_len)
+{
+	int i;
+
+	nm_assert (nm_crypto_cipher_get_info (NM_CRYPTO_CIPHER_DES_CBC)->cipher == NM_CRYPTO_CIPHER_DES_CBC);
+
+	if (p_len < 0) {
+		if (!cipher_name)
+			return FALSE;
+		p_len = strlen (cipher_name);
+	}
+
+	for (i = 0; i < (int) G_N_ELEMENTS (cipher_infos); i++) {
+		const NMCryptoCipherInfo *info = &cipher_infos[i];
+
+		if (   (gsize) p_len == strlen (info->name)
+		    && g_ascii_strncasecmp (info->name, cipher_name, p_len) == 0)
+			return info;
+	}
+	return NULL;
+}
+
+/*****************************************************************************/
+
 static gboolean
 find_tag (const char *tag,
           const guint8 *data,
@@ -119,7 +177,7 @@ parse_old_openssl_key_file (const guint8 *data,
                             gsize data_len,
                             NMSecretPtr *out_parsed,
                             NMCryptoKeyType *out_key_type,
-                            const char **out_cipher,
+                            NMCryptoCipherType *out_cipher,
                             char **out_iv,
                             GError **error)
 {
@@ -132,7 +190,7 @@ parse_old_openssl_key_file (const guint8 *data,
 	nm_auto_clear_secret_ptr NMSecretPtr parsed = { 0 };
 	nm_auto_clear_secret_ptr NMSecretPtr data_content = { 0 };
 	nm_auto_free_secret char *iv = NULL;
-	const char *cipher = NULL;
+	NMCryptoCipherType cipher = NM_CRYPTO_CIPHER_UNKNOWN;
 	const char *start_tag;
 	const char *end_tag;
 	const guint8 *data_start, *data_end;
@@ -141,7 +199,7 @@ parse_old_openssl_key_file (const guint8 *data,
 	nm_assert (!out_iv || !*out_iv);
 
 	NM_SET_OUT (out_key_type, NM_CRYPTO_KEY_TYPE_UNKNOWN);
-	*out_cipher = NULL;
+	NM_SET_OUT (out_cipher, NM_CRYPTO_CIPHER_UNKNOWN);
 
 	if (find_tag (PEM_RSA_KEY_BEGIN, data, data_len, 0, &start)) {
 		key_type = NM_CRYPTO_KEY_TYPE_RSA;
@@ -202,14 +260,9 @@ parse_old_openssl_key_file (const guint8 *data,
 				return FALSE;
 			}
 		} else if (!strncmp (p, DEK_INFO_TAG, strlen (DEK_INFO_TAG))) {
-			static const char *const known_ciphers[] = { CIPHER_DES_EDE3_CBC,
-			                                             CIPHER_DES_CBC,
-			                                             CIPHER_AES_128_CBC,
-			                                             CIPHER_AES_192_CBC,
-			                                             CIPHER_AES_256_CBC };
+			const NMCryptoCipherInfo *cipher_info;
 			char *comma;
 			gsize p_len;
-			guint i;
 
 			if (enc_tags++ != 1 || str_p != str) {
 				g_set_error (error, NM_CRYPTO_ERROR,
@@ -240,20 +293,15 @@ parse_old_openssl_key_file (const guint8 *data,
 			iv = g_strdup (comma);
 
 			/* Get the private key cipher */
-			for (i = 0; i < G_N_ELEMENTS (known_ciphers); i++) {
-				if (   strlen (known_ciphers[i]) == p_len
-				    && !g_ascii_strncasecmp (p, known_ciphers[i], p_len)) {
-					cipher = known_ciphers[i];
-					break;
-				}
-			}
-			if (!cipher) {
+			cipher_info = nm_crypto_cipher_get_info_by_name (p, p_len);
+			if (!cipher_info) {
 				g_set_error (error, NM_CRYPTO_ERROR,
 				             NM_CRYPTO_ERROR_INVALID_DATA,
 				             _("Malformed PEM file: unknown private key cipher '%s'."),
 				             p);
 				return FALSE;
 			}
+			cipher = cipher_info->cipher;
 		} else {
 			if (enc_tags == 1) {
 				g_set_error (error, NM_CRYPTO_ERROR,
@@ -277,7 +325,7 @@ parse_old_openssl_key_file (const guint8 *data,
 
 	NM_SET_OUT (out_key_type, key_type);
 	NM_SET_OUT (out_iv, g_steal_pointer (&iv));
-	*out_cipher = cipher;
+	NM_SET_OUT (out_cipher, cipher);
 	nm_secret_ptr_move (out_parsed, &parsed);
 	return TRUE;
 }
@@ -419,7 +467,7 @@ _nmtst_convert_iv (const char *src,
 }
 
 guint8 *
-nm_crypto_make_des_aes_key (const char *cipher,
+nm_crypto_make_des_aes_key (NMCryptoCipherType cipher,
                             const guint8 *salt,
                             gsize salt_len,
                             const char *password,
@@ -427,9 +475,8 @@ nm_crypto_make_des_aes_key (const char *cipher,
                             GError **error)
 {
 	guint8 *key;
-	gsize digest_len;
+	const NMCryptoCipherInfo *cipher_info;
 
-	g_return_val_if_fail (cipher != NULL, NULL);
 	g_return_val_if_fail (salt != NULL, NULL);
 	g_return_val_if_fail (salt_len >= 8, NULL);
 	g_return_val_if_fail (password != NULL, NULL);
@@ -437,42 +484,28 @@ nm_crypto_make_des_aes_key (const char *cipher,
 
 	*out_len = 0;
 
-	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC))
-		digest_len = 24;
-	else if (!strcmp (cipher, CIPHER_DES_CBC))
-		digest_len = 8;
-	else if (!strcmp (cipher, CIPHER_AES_128_CBC))
-		digest_len = 16;
-	else if (!strcmp (cipher, CIPHER_AES_192_CBC))
-		digest_len = 24;
-	else if (!strcmp (cipher, CIPHER_AES_256_CBC))
-		digest_len = 32;
-	else {
-		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERROR_UNKNOWN_CIPHER,
-		             _("Private key cipher '%s' was unknown."),
-		             cipher);
-		return NULL;
-	}
+	cipher_info = nm_crypto_cipher_get_info (cipher);
+
+	g_return_val_if_fail (cipher_info, NULL);
 
 	if (password[0] == '\0')
 		return NULL;
 
-	key = g_malloc (digest_len);
+	key = g_malloc (cipher_info->digest_len);
 
 	nm_crypto_md5_hash (salt,
 	                    8,
 	                    (guint8 *) password,
 	                    strlen (password),
 	                    key,
-	                    digest_len);
+	                    cipher_info->digest_len);
 
-	*out_len = digest_len;
+	*out_len = cipher_info->digest_len;
 	return key;
 }
 
 static gboolean
-_nmtst_decrypt_key (const char *cipher,
+_nmtst_decrypt_key (NMCryptoCipherType cipher,
                     const guint8 *data,
                     gsize data_len,
                     const char *iv,
@@ -485,7 +518,7 @@ _nmtst_decrypt_key (const char *cipher,
 	gs_free char *output = NULL;
 
 	nm_assert (password);
-	nm_assert (cipher);
+	nm_assert (cipher != NM_CRYPTO_CIPHER_UNKNOWN);
 	nm_assert (iv);
 	nm_assert (parsed);
 	nm_assert (!parsed->bin);
@@ -535,7 +568,7 @@ nmtst_crypto_decrypt_openssl_private_key_data (const guint8 *data,
 	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
 	nm_auto_clear_secret_ptr NMSecretPtr parsed = { 0 };
 	nm_auto_free_secret char *iv = NULL;
-	const char *cipher = NULL;
+	NMCryptoCipherType cipher = NM_CRYPTO_CIPHER_UNKNOWN;
 
 	g_return_val_if_fail (data != NULL, NULL);
 
@@ -556,7 +589,7 @@ nmtst_crypto_decrypt_openssl_private_key_data (const guint8 *data,
 	if (password) {
 		nm_auto_clear_secret_ptr NMSecretPtr parsed2 = { 0 };
 
-		if (!cipher || !iv) {
+		if (cipher == NM_CRYPTO_CIPHER_UNKNOWN || !iv) {
 			g_set_error (error, NM_CRYPTO_ERROR,
 			             NM_CRYPTO_ERROR_INVALID_PASSWORD,
 			             _("Password provided, but key was not encrypted."));
@@ -575,7 +608,7 @@ nmtst_crypto_decrypt_openssl_private_key_data (const guint8 *data,
 		return nm_secret_copy_to_gbytes (parsed2.bin, parsed2.len);
 	}
 
-	if (cipher || iv)
+	if (cipher != NM_CRYPTO_CIPHER_UNKNOWN || iv)
 		return NULL;
 
 	return nm_secret_copy_to_gbytes (parsed.bin, parsed.len);
@@ -796,13 +829,13 @@ nm_crypto_verify_private_key_data (const guint8 *data,
 			    || _nm_crypto_verify_pkcs8 (parsed.bin, parsed.len, is_encrypted, password, error))
 				format = NM_CRYPTO_FILE_FORMAT_RAW_KEY;
 		} else {
-			const char *cipher;
+			NMCryptoCipherType cipher;
 			nm_auto_free_secret char *iv = NULL;
 
 			/* Or it's old-style OpenSSL */
 			if (parse_old_openssl_key_file (data, data_len, NULL, NULL, &cipher, &iv, NULL)) {
 				format = NM_CRYPTO_FILE_FORMAT_RAW_KEY;
-				is_encrypted = (cipher && iv);
+				is_encrypted = (cipher != NM_CRYPTO_CIPHER_UNKNOWN && iv);
 			}
 		}
 	}
@@ -936,11 +969,11 @@ nmtst_crypto_rsa_key_encrypt (const guint8 *data,
 	if (!nm_crypto_randomize (salt, sizeof (salt), error))
 		return NULL;
 
-	key.bin = nm_crypto_make_des_aes_key (CIPHER_DES_EDE3_CBC, salt, sizeof (salt), in_password, &key.len, NULL);
+	key.bin = nm_crypto_make_des_aes_key (NM_CRYPTO_CIPHER_DES_EDE3_CBC, salt, sizeof (salt), in_password, &key.len, NULL);
 	if (!key.bin)
 		g_return_val_if_reached (NULL);
 
-	enc.bin = _nmtst_crypto_encrypt (CIPHER_DES_EDE3_CBC, data, len, salt, sizeof (salt), key.bin, key.len, &enc.len, error);
+	enc.bin = _nmtst_crypto_encrypt (NM_CRYPTO_CIPHER_DES_EDE3_CBC, data, len, salt, sizeof (salt), key.bin, key.len, &enc.len, error);
 	if (!enc.bin)
 		return NULL;
 
@@ -956,7 +989,8 @@ nmtst_crypto_rsa_key_encrypt (const guint8 *data,
 	g_ptr_array_add (pem, g_strdup ("Proc-Type: 4,ENCRYPTED\n"));
 
 	/* Convert the salt to a hex string */
-	g_ptr_array_add (pem, g_strdup ("DEK-Info: "CIPHER_DES_EDE3_CBC","));
+	g_ptr_array_add (pem, g_strdup_printf ("DEK-Info: %s,",
+	                                       nm_crypto_cipher_get_info (NM_CRYPTO_CIPHER_DES_EDE3_CBC)->name));
 	g_ptr_array_add (pem, nm_utils_bin2hexstr (salt, sizeof (salt), sizeof (salt) * 2));
 	g_ptr_array_add (pem, g_strdup ("\n\n"));
 

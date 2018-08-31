@@ -28,13 +28,24 @@
 #error Cannot use this header.
 #endif
 
-#define MD5_HASH_LEN 20
+typedef enum {
+	NM_CRYPTO_CIPHER_UNKNOWN,
+	NM_CRYPTO_CIPHER_DES_EDE3_CBC,
+	NM_CRYPTO_CIPHER_DES_CBC,
+	NM_CRYPTO_CIPHER_AES_128_CBC,
+	NM_CRYPTO_CIPHER_AES_192_CBC,
+	NM_CRYPTO_CIPHER_AES_256_CBC,
+} NMCryptoCipherType;
 
-#define CIPHER_DES_EDE3_CBC "DES-EDE3-CBC"
-#define CIPHER_DES_CBC      "DES-CBC"
-#define CIPHER_AES_128_CBC  "AES-128-CBC"
-#define CIPHER_AES_192_CBC  "AES-192-CBC"
-#define CIPHER_AES_256_CBC  "AES-256-CBC"
+typedef struct {
+	const char *name;
+	NMCryptoCipherType cipher;
+	guint8 digest_len;
+	guint8 real_iv_len;
+} NMCryptoCipherInfo;
+
+const NMCryptoCipherInfo *nm_crypto_cipher_get_info (NMCryptoCipherType cipher);
+const NMCryptoCipherInfo *nm_crypto_cipher_get_info_by_name (const char *cipher_name, gssize p_len);
 
 typedef enum {
 	NM_CRYPTO_KEY_TYPE_UNKNOWN = 0,
@@ -81,7 +92,7 @@ void nm_crypto_md5_hash (const guint8 *salt,
                          guint8 *buffer,
                          gsize buflen);
 
-guint8 *nm_crypto_make_des_aes_key (const char *cipher,
+guint8 *nm_crypto_make_des_aes_key (NMCryptoCipherType cipher,
                                     const guint8 *salt,
                                     gsize salt_len,
                                     const char *password,

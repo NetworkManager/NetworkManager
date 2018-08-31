@@ -51,7 +51,7 @@ gboolean _nm_crypto_verify_pkcs8 (const guint8 *data,
 
 /*****************************************************************************/
 
-guint8 *_nmtst_crypto_encrypt (const char *cipher,
+guint8 *_nmtst_crypto_encrypt (NMCryptoCipherType cipher,
                                const guint8 *data,
                                gsize data_len,
                                const guint8 *iv,
@@ -61,7 +61,7 @@ guint8 *_nmtst_crypto_encrypt (const char *cipher,
                                gsize *out_len,
                                GError **error);
 
-guint8 *_nmtst_crypto_decrypt (const char *cipher,
+guint8 *_nmtst_crypto_decrypt (NMCryptoCipherType cipher,
                                const guint8 *data,
                                gsize data_len,
                                const guint8 *iv,
