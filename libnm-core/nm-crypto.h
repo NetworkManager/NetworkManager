@@ -81,12 +81,12 @@ void nm_crypto_md5_hash (const guint8 *salt,
                          guint8 *buffer,
                          gsize buflen);
 
-char *nm_crypto_make_des_aes_key (const char *cipher,
-                                  const char *salt,
-                                  const gsize salt_len,
-                                  const char *password,
-                                  gsize *out_len,
-                                  GError **error);
+guint8 *nm_crypto_make_des_aes_key (const char *cipher,
+                                    const guint8 *salt,
+                                    gsize salt_len,
+                                    const char *password,
+                                    gsize *out_len,
+                                    GError **error);
 
 gboolean nm_crypto_randomize (void *buffer, gsize buffer_len, GError **error);
 

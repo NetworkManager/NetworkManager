@@ -71,15 +71,15 @@ _nm_crypto_init (GError **error)
 	return TRUE;
 }
 
-char *
+guint8 *
 _nmtst_crypto_decrypt (const char *cipher,
                        int key_type,
                        const guint8 *data,
                        gsize data_len,
-                       const char *iv,
-                       const gsize iv_len,
-                       const char *key,
-                       const gsize key_len,
+                       const guint8 *iv,
+                       gsize iv_len,
+                       const guint8 *key,
+                       gsize key_len,
                        gsize *out_len,
                        GError **error)
 {
@@ -239,16 +239,16 @@ out:
 			output = NULL;
 		}
 	}
-	return output;
+	return (guint8 *) output;
 }
 
-char *
+guint8 *
 _nmtst_crypto_encrypt (const char *cipher,
                        const guint8 *data,
                        gsize data_len,
-                       const char *iv,
+                       const guint8 *iv,
                        gsize iv_len,
-                       const char *key,
+                       const guint8 *key,
                        gsize key_len,
                        gsize *out_len,
                        GError **error)
@@ -367,11 +367,11 @@ out:
 		g_free (output);
 		output = NULL;
 	}
-	return (char *) output;
+	return (guint8 *) output;
 }
 
 gboolean
-_nm_crypto_verify_x509 (const unsigned char *data,
+_nm_crypto_verify_x509 (const guint8 *data,
                         gsize len,
                         GError **error)
 {
