@@ -414,9 +414,6 @@ _nm_crypto_verify_pkcs12 (const guint8 *data,
 	SECStatus s;
 	gunichar2 *ucs2_password;
 	long ucs2_chars = 0;
-#ifndef WORDS_BIGENDIAN
-	guint16 *p;
-#endif /* WORDS_BIGENDIAN */
 
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
@@ -446,10 +443,14 @@ _nm_crypto_verify_pkcs12 (const guint8 *data,
 		nm_explicit_bzero (ucs2_password, ucs2_chars);
 		g_free (ucs2_password);
 
-#ifndef WORDS_BIGENDIAN
-		for (p = (guint16 *) pw.data; p < (guint16 *) (pw.data + pw.len); p++)
-			*p = GUINT16_SWAP_LE_BE (*p);
-#endif /* WORDS_BIGENDIAN */
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+		{
+			guint16 *p;
+
+			for (p = (guint16 *) pw.data; p < (guint16 *) (pw.data + pw.len); p++)
+				*p = GUINT16_SWAP_LE_BE (*p);
+		}
+#endif
 	} else {
 		/* NULL password */
 		pw.data = NULL;
