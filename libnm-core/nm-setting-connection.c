@@ -2044,8 +2044,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * The permitted values are: yes: register hostname and resolving
 	 * for the connection, no: disable mDNS for the interface, resolve:
 	 * do not register hostname but allow resolving of mDNS host names.
-	 * When updating this property on a currently activated connection,
-	 * the change takes effect immediately.
 	 *
 	 * This feature requires a plugin which supports mDNS. One such
 	 * plugin is dns-systemd-resolved.
@@ -2054,11 +2052,11 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: mdns
-	 * variable: CONNECTION_MDNS(+)
+	 * variable: MDNS(+)
 	 * values: yes,no,resolve
 	 * default: missing variable means global default
 	 * description: Whether or not mDNS is enabled for the connection
-	 * example: CONNECTION_MDNS=yes
+	 * example: MDNS=yes
 	 * ---end---
 	 */
 	g_object_class_install_property
