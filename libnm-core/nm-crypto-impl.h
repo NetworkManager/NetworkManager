@@ -62,7 +62,6 @@ guint8 *_nmtst_crypto_encrypt (const char *cipher,
                                GError **error);
 
 guint8 *_nmtst_crypto_decrypt (const char *cipher,
-                               int key_type,
                                const guint8 *data,
                                gsize data_len,
                                const guint8 *iv,
