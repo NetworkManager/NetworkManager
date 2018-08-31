@@ -473,7 +473,6 @@ nm_crypto_make_des_aes_key (const char *cipher,
 
 static gboolean
 _nmtst_decrypt_key (const char *cipher,
-                    int key_type,
                     const guint8 *data,
                     gsize data_len,
                     const char *iv,
@@ -510,7 +509,6 @@ _nmtst_decrypt_key (const char *cipher,
 		return FALSE;
 
 	parsed->bin = _nmtst_crypto_decrypt (cipher,
-	                                     key_type,
 	                                     data,
 	                                     data_len,
 	                                     bin_iv.bin,
@@ -566,7 +564,6 @@ nmtst_crypto_decrypt_openssl_private_key_data (const guint8 *data,
 		}
 
 		if (!_nmtst_decrypt_key (cipher,
-		                         key_type,
 		                         parsed.bin,
 		                         parsed.len,
 		                         iv,
