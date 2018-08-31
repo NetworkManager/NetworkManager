@@ -80,56 +80,23 @@ _crypto_format_to_ck (NMCryptoFileFormat format)
 
 /*****************************************************************************/
 
-G_DEFINE_TYPE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING)
+typedef void (*EAPMethodNeedSecretsFunc) (NMSetting8021x *self,
+                                          GPtrArray *secrets,
+                                          gboolean phase2);
 
-#define NM_SETTING_802_1X_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_802_1X, NMSetting8021xPrivate))
+typedef gboolean (*EAPMethodValidateFunc)(NMSetting8021x *self,
+                                          gboolean phase2,
+                                          GError **error);
 
 typedef struct {
-	GSList *eap; /* GSList of strings */
-	char *identity;
-	char *anonymous_identity;
-	char *pac_file;
-	GBytes *ca_cert;
-	char *ca_cert_password;
-	NMSettingSecretFlags ca_cert_password_flags;
-	char *ca_path;
-	char *subject_match;
-	GSList *altsubject_matches;
-	char *domain_suffix_match;
-	GBytes *client_cert;
-	char *client_cert_password;
-	NMSettingSecretFlags client_cert_password_flags;
-	char *phase1_peapver;
-	char *phase1_peaplabel;
-	char *phase1_fast_provisioning;
-	NMSetting8021xAuthFlags phase1_auth_flags;
-	char *phase2_auth;
-	char *phase2_autheap;
-	GBytes *phase2_ca_cert;
-	char *phase2_ca_cert_password;
-	NMSettingSecretFlags phase2_ca_cert_password_flags;
-	char *phase2_ca_path;
-	char *phase2_subject_match;
-	GSList *phase2_altsubject_matches;
-	char *phase2_domain_suffix_match;
-	GBytes *phase2_client_cert;
-	char *phase2_client_cert_password;
-	NMSettingSecretFlags phase2_client_cert_password_flags;
-	char *password;
-	NMSettingSecretFlags password_flags;
-	GBytes *password_raw;
-	NMSettingSecretFlags password_raw_flags;
-	char *pin;
-	NMSettingSecretFlags pin_flags;
-	GBytes *private_key;
-	char *private_key_password;
-	NMSettingSecretFlags private_key_password_flags;
-	GBytes *phase2_private_key;
-	char *phase2_private_key_password;
-	NMSettingSecretFlags phase2_private_key_password_flags;
-	gboolean system_ca_certs;
-	int auth_timeout;
-} NMSetting8021xPrivate;
+	const char *method;
+	EAPMethodNeedSecretsFunc ns_func;
+	EAPMethodValidateFunc v_func;
+} EAPMethodsTable;
+
+static EAPMethodsTable eap_methods_table[];
+
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMSetting8021x,
 	PROP_EAP,
@@ -178,19 +145,245 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSetting8021x,
 	PROP_AUTH_TIMEOUT,
 );
 
+typedef struct {
+	GSList *eap; /* GSList of strings */
+	char *identity;
+	char *anonymous_identity;
+	char *pac_file;
+	GBytes *ca_cert;
+	char *ca_cert_password;
+	NMSettingSecretFlags ca_cert_password_flags;
+	char *ca_path;
+	char *subject_match;
+	GSList *altsubject_matches;
+	char *domain_suffix_match;
+	GBytes *client_cert;
+	char *client_cert_password;
+	NMSettingSecretFlags client_cert_password_flags;
+	char *phase1_peapver;
+	char *phase1_peaplabel;
+	char *phase1_fast_provisioning;
+	NMSetting8021xAuthFlags phase1_auth_flags;
+	char *phase2_auth;
+	char *phase2_autheap;
+	GBytes *phase2_ca_cert;
+	char *phase2_ca_cert_password;
+	NMSettingSecretFlags phase2_ca_cert_password_flags;
+	char *phase2_ca_path;
+	char *phase2_subject_match;
+	GSList *phase2_altsubject_matches;
+	char *phase2_domain_suffix_match;
+	GBytes *phase2_client_cert;
+	char *phase2_client_cert_password;
+	NMSettingSecretFlags phase2_client_cert_password_flags;
+	char *password;
+	NMSettingSecretFlags password_flags;
+	GBytes *password_raw;
+	NMSettingSecretFlags password_raw_flags;
+	char *pin;
+	NMSettingSecretFlags pin_flags;
+	GBytes *private_key;
+	char *private_key_password;
+	NMSettingSecretFlags private_key_password_flags;
+	GBytes *phase2_private_key;
+	char *phase2_private_key_password;
+	NMSettingSecretFlags phase2_private_key_password_flags;
+	gboolean system_ca_certs;
+	int auth_timeout;
+} NMSetting8021xPrivate;
+
+G_DEFINE_TYPE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING)
+
+#define NM_SETTING_802_1X_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_802_1X, NMSetting8021xPrivate))
+
 /*****************************************************************************/
 
 /**
- * nm_setting_802_1x_new:
+ * nm_setting_802_1x_check_cert_scheme:
+ * @pdata: (allow-none): the data pointer
+ * @length: the length of the data
+ * @error: (allow-none): (out): validation reason
  *
- * Creates a new #NMSetting8021x object with default values.
+ * Determines and verifies the blob type.
+ * When setting certificate properties of NMSetting8021x
+ * the blob must be not UNKNOWN (or NULL).
  *
- * Returns: the new empty #NMSetting8021x object
+ * Returns: the scheme of the blob or %NM_SETTING_802_1X_CK_SCHEME_UNKNOWN.
+ * For NULL it also returns NM_SETTING_802_1X_CK_SCHEME_UNKNOWN.
+ *
+ * Since: 1.2
  **/
-NMSetting *
-nm_setting_802_1x_new (void)
+NMSetting8021xCKScheme
+nm_setting_802_1x_check_cert_scheme (gconstpointer pdata, gsize length, GError **error)
 {
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_802_1X, NULL);
+	const char *data = pdata;
+	NMSetting8021xCKScheme scheme;
+	gsize prefix_length;
+
+	g_return_val_if_fail (!length || data, NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
+
+	if (!length || !data) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("binary data missing"));
+		return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+	}
+
+	if (   length >= NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)
+	    && !memcmp (data, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH))) {
+		scheme = NM_SETTING_802_1X_CK_SCHEME_PATH;
+		prefix_length = NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
+	} else if (   length >= NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11)
+	           && !memcmp (data, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11))) {
+		scheme = NM_SETTING_802_1X_CK_SCHEME_PKCS11;
+		prefix_length = NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11);
+	} else {
+		scheme = NM_SETTING_802_1X_CK_SCHEME_BLOB;
+		prefix_length = 0;
+	}
+
+	if (scheme != NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+		/* An actual URI must be NUL terminated, contain at least
+		 * one non-NUL character, and contain only one trailing NUL
+		 * chracter.
+		 * And ensure it's UTF-8 valid too so we can pass it through
+		 * D-Bus and stuff like that. */
+
+		if (data[length - 1] != '\0') {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("URI not NUL terminated"));
+			return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+		}
+		length--;
+
+		if (length <= prefix_length) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("URI is empty"));
+			return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+		}
+
+		if (!g_utf8_validate (data + prefix_length, length - prefix_length, NULL)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("URI is not valid UTF-8"));
+			return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+		}
+	}
+
+	return scheme;
+}
+
+static NMSetting8021xCKScheme
+get_cert_scheme (GBytes *bytes, GError **error)
+{
+	const char *data;
+	gsize length;
+
+	if (!bytes) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("data missing"));
+		return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+	}
+
+	data = g_bytes_get_data (bytes, &length);
+	return nm_setting_802_1x_check_cert_scheme (data, length, error);
+}
+
+static GBytes *
+load_and_verify_certificate (const char *cert_path,
+                             NMSetting8021xCKScheme scheme,
+                             NMCryptoFileFormat *out_file_format,
+                             GError **error)
+{
+	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	gs_unref_bytes GBytes *cert = NULL;
+
+	if (!nm_crypto_load_and_verify_certificate (cert_path, &format, &cert, error)) {
+		NM_SET_OUT (out_file_format, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
+		return NULL;
+	}
+
+	nm_assert (format != NM_CRYPTO_FILE_FORMAT_UNKNOWN);
+	nm_assert (cert);
+
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+		const guint8 *bin;
+		gsize len;
+
+		bin = g_bytes_get_data (cert, &len);
+		/* If we load the file as blob, we must ensure that the binary data does not
+		 * start with file://. NMSetting8021x cannot represent blobs that start with
+		 * file://.
+		 * If that's the case, coerce the format to UNKNOWN. The callers will take care
+		 * of that and not set the blob. */
+		if (nm_setting_802_1x_check_cert_scheme (bin, len, NULL) != NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+			NM_SET_OUT (out_file_format, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
+			return NULL;
+		}
+	}
+
+	NM_SET_OUT (out_file_format, format);
+	return g_steal_pointer (&cert);
+}
+
+static GBytes *
+path_to_scheme_value (const char *path)
+{
+	guint8 *mem;
+	gsize len, total_len;
+
+	g_return_val_if_fail (path != NULL && path[0], NULL);
+
+	len = strlen (path);
+	total_len = (NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH) + 1) + len;
+
+	/* Add the path scheme tag to the front, then the filename */
+	mem = g_new (guint8, total_len);
+	memcpy (mem, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH));
+	memcpy (&mem[NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)], path, len + 1);
+	return g_bytes_new_take (mem, total_len);
+}
+
+static gboolean
+verify_cert (GBytes *bytes, const char *prop_name,
+             const char *password, const char *password_prop_name, GError **error)
+{
+	GError *local = NULL;
+	NMSetting8021xCKScheme scheme;
+
+	if (bytes)
+		scheme = get_cert_scheme (bytes, &local);
+	else
+		return TRUE;
+
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_UNKNOWN) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("certificate is invalid: %s"), local->message);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, prop_name);
+		g_error_free (local);
+		return FALSE;
+	}
+
+	if (password && (scheme != NM_SETTING_802_1X_CK_SCHEME_PKCS11)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("password is not supported when certificate is not on a PKCS#11 token"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, password_prop_name);
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 /*****************************************************************************/
@@ -435,142 +628,6 @@ nm_setting_802_1x_get_system_ca_certs (NMSetting8021x *setting)
 	return NM_SETTING_802_1X_GET_PRIVATE (setting)->system_ca_certs;
 }
 
-static NMSetting8021xCKScheme
-get_cert_scheme (GBytes *bytes, GError **error)
-{
-	const char *data;
-	gsize length;
-
-	if (!bytes) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("data missing"));
-		return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
-	}
-
-	data = g_bytes_get_data (bytes, &length);
-	return nm_setting_802_1x_check_cert_scheme (data, length, error);
-}
-
-/**
- * nm_setting_802_1x_check_cert_scheme:
- * @pdata: (allow-none): the data pointer
- * @length: the length of the data
- * @error: (allow-none): (out): validation reason
- *
- * Determines and verifies the blob type.
- * When setting certificate properties of NMSetting8021x
- * the blob must be not UNKNOWN (or NULL).
- *
- * Returns: the scheme of the blob or %NM_SETTING_802_1X_CK_SCHEME_UNKNOWN.
- * For NULL it also returns NM_SETTING_802_1X_CK_SCHEME_UNKNOWN.
- *
- * Since: 1.2
- **/
-NMSetting8021xCKScheme
-nm_setting_802_1x_check_cert_scheme (gconstpointer pdata, gsize length, GError **error)
-{
-	const char *data = pdata;
-	NMSetting8021xCKScheme scheme;
-	gsize prefix_length;
-
-	g_return_val_if_fail (!length || data, NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
-
-	if (!length || !data) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("binary data missing"));
-		return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
-	}
-
-	if (   length >= NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)
-	    && !memcmp (data, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH))) {
-		scheme = NM_SETTING_802_1X_CK_SCHEME_PATH;
-		prefix_length = NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
-	} else if (   length >= NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11)
-	           && !memcmp (data, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11))) {
-		scheme = NM_SETTING_802_1X_CK_SCHEME_PKCS11;
-		prefix_length = NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11);
-	} else {
-		scheme = NM_SETTING_802_1X_CK_SCHEME_BLOB;
-		prefix_length = 0;
-	}
-
-	if (scheme != NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		/* An actual URI must be NUL terminated, contain at least
-		 * one non-NUL character, and contain only one trailing NUL
-		 * chracter.
-		 * And ensure it's UTF-8 valid too so we can pass it through
-		 * D-Bus and stuff like that. */
-
-		if (data[length - 1] != '\0') {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("URI not NUL terminated"));
-			return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
-		}
-		length--;
-
-		if (length <= prefix_length) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("URI is empty"));
-			return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
-		}
-
-		if (!g_utf8_validate (data + prefix_length, length - prefix_length, NULL)) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("URI is not valid UTF-8"));
-			return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
-		}
-	}
-
-	return scheme;
-}
-
-static GBytes *
-load_and_verify_certificate (const char *cert_path,
-                             NMSetting8021xCKScheme scheme,
-                             NMCryptoFileFormat *out_file_format,
-                             GError **error)
-{
-	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	gs_unref_bytes GBytes *cert = NULL;
-
-	if (!nm_crypto_load_and_verify_certificate (cert_path, &format, &cert, error)) {
-		NM_SET_OUT (out_file_format, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
-		return NULL;
-	}
-
-	nm_assert (format != NM_CRYPTO_FILE_FORMAT_UNKNOWN);
-	nm_assert (cert);
-
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		const guint8 *bin;
-		gsize len;
-
-		bin = g_bytes_get_data (cert, &len);
-		/* If we load the file as blob, we must ensure that the binary data does not
-		 * start with file://. NMSetting8021x cannot represent blobs that start with
-		 * file://.
-		 * If that's the case, coerce the format to UNKNOWN. The callers will take care
-		 * of that and not set the blob. */
-		if (nm_setting_802_1x_check_cert_scheme (bin, len, NULL) != NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-			NM_SET_OUT (out_file_format, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
-			return NULL;
-		}
-	}
-
-	NM_SET_OUT (out_file_format, format);
-	return g_steal_pointer (&cert);
-}
-
 /**
  * nm_setting_802_1x_get_ca_cert_scheme:
  * @setting: the #NMSetting8021x
@@ -673,24 +730,6 @@ nm_setting_802_1x_get_ca_cert_uri (NMSetting8021x *setting)
 
 	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->ca_cert, NULL);
 	return (const char *)data;
-}
-
-static GBytes *
-path_to_scheme_value (const char *path)
-{
-	guint8 *mem;
-	gsize len, total_len;
-
-	g_return_val_if_fail (path != NULL && path[0], NULL);
-
-	len = strlen (path);
-	total_len = (NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH) + 1) + len;
-
-	/* Add the path scheme tag to the front, then the filename */
-	mem = g_new (guint8, total_len);
-	memcpy (mem, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH));
-	memcpy (&mem[NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)], path, len + 1);
-	return g_bytes_new_take (mem, total_len);
 }
 
 /**
@@ -2765,6 +2804,8 @@ nm_setting_802_1x_get_auth_timeout (NMSetting8021x *setting)
 	return NM_SETTING_802_1X_GET_PRIVATE (setting)->auth_timeout;
 }
 
+/*****************************************************************************/
+
 static void
 need_secrets_password (NMSetting8021x *self,
                        GPtrArray *secrets,
@@ -3086,43 +3127,6 @@ verify_identity (NMSetting8021x *self, gboolean phase2, GError **error)
 	return TRUE;
 }
 
-/* Implemented below... */
-static void need_secrets_phase2 (NMSetting8021x *self,
-                                 GPtrArray *secrets,
-                                 gboolean phase2);
-
-typedef void (*EAPMethodNeedSecretsFunc) (NMSetting8021x *self,
-                                          GPtrArray *secrets,
-                                          gboolean phase2);
-
-typedef gboolean (*EAPMethodValidateFunc)(NMSetting8021x *self,
-                                          gboolean phase2,
-                                          GError **error);
-
-typedef struct {
-	const char *method;
-	EAPMethodNeedSecretsFunc ns_func;
-	EAPMethodValidateFunc v_func;
-} EAPMethodsTable;
-
-static EAPMethodsTable eap_methods_table[] = {
-	{ "leap", need_secrets_password, verify_identity },
-	{ "pwd", need_secrets_password, verify_identity },
-	{ "md5", need_secrets_password, verify_identity },
-	{ "pap", need_secrets_password, verify_identity },
-	{ "chap", need_secrets_password, verify_identity },
-	{ "mschap", need_secrets_password, verify_identity },
-	{ "mschapv2", need_secrets_password, verify_identity },
-	{ "fast", need_secrets_password, verify_identity },
-	{ "tls", need_secrets_tls, verify_tls },
-	{ "peap", need_secrets_phase2, verify_ttls },
-	{ "ttls", need_secrets_phase2, verify_ttls },
-	{ "sim", need_secrets_sim, NULL },
-	{ "gtc", need_secrets_password, verify_identity },
-	{ "otp", NULL, NULL },  // FIXME: implement
-	{ NULL, NULL, NULL }
-};
-
 static void
 need_secrets_phase2 (NMSetting8021x *self,
                      GPtrArray *secrets,
@@ -3156,79 +3160,23 @@ need_secrets_phase2 (NMSetting8021x *self,
 	}
 }
 
-static GPtrArray *
-need_secrets (NMSetting *setting)
-{
-	NMSetting8021x *self = NM_SETTING_802_1X (setting);
-	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
-	GSList *iter;
-	GPtrArray *secrets;
-	gboolean eap_method_found = FALSE;
-
-	secrets = g_ptr_array_sized_new (4);
-
-	/* Ask each configured EAP method if it needs secrets */
-	for (iter = priv->eap; iter && !eap_method_found; iter = g_slist_next (iter)) {
-		const char *method = (const char *) iter->data;
-		int i;
-
-		for (i = 0; eap_methods_table[i].method; i++) {
-			if (eap_methods_table[i].ns_func == NULL)
-				continue;
-			if (!strcmp (eap_methods_table[i].method, method)) {
-				(*eap_methods_table[i].ns_func) (self, secrets, FALSE);
-
-				/* Only break out of the outer loop if this EAP method
-				 * needed secrets.
-				 */
-				if (secrets->len > 0)
-					eap_method_found = TRUE;
-				break;
-			}
-		}
-	}
-
-	if (secrets->len == 0) {
-		g_ptr_array_free (secrets, TRUE);
-		secrets = NULL;
-	}
-
-	return secrets;
-}
-
-static gboolean
-verify_cert (GBytes *bytes, const char *prop_name,
-             const char *password, const char *password_prop_name, GError **error)
-{
-	GError *local = NULL;
-	NMSetting8021xCKScheme scheme;
-
-	if (bytes)
-		scheme = get_cert_scheme (bytes, &local);
-	else
-		return TRUE;
-
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_UNKNOWN) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("certificate is invalid: %s"), local->message);
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, prop_name);
-		g_error_free (local);
-		return FALSE;
-	}
-
-	if (password && (scheme != NM_SETTING_802_1X_CK_SCHEME_PKCS11)) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("password is not supported when certificate is not on a PKCS#11 token"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, password_prop_name);
-		return FALSE;
-	}
-
-	return TRUE;
-}
+static EAPMethodsTable eap_methods_table[] = {
+	{ "leap", need_secrets_password, verify_identity },
+	{ "pwd", need_secrets_password, verify_identity },
+	{ "md5", need_secrets_password, verify_identity },
+	{ "pap", need_secrets_password, verify_identity },
+	{ "chap", need_secrets_password, verify_identity },
+	{ "mschap", need_secrets_password, verify_identity },
+	{ "mschapv2", need_secrets_password, verify_identity },
+	{ "fast", need_secrets_password, verify_identity },
+	{ "tls", need_secrets_tls, verify_tls },
+	{ "peap", need_secrets_phase2, verify_ttls },
+	{ "ttls", need_secrets_phase2, verify_ttls },
+	{ "sim", need_secrets_sim, NULL },
+	{ "gtc", need_secrets_password, verify_identity },
+	{ "otp", NULL, NULL },  // FIXME: implement
+	{ NULL, NULL, NULL }
+};
 
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
@@ -3363,62 +3311,49 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-static void
-nm_setting_802_1x_init (NMSetting8021x *setting)
-{
-}
+/*****************************************************************************/
 
-static void
-finalize (GObject *object)
+static GPtrArray *
+need_secrets (NMSetting *setting)
 {
-	NMSetting8021x *self = NM_SETTING_802_1X (object);
+	NMSetting8021x *self = NM_SETTING_802_1X (setting);
 	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+	GSList *iter;
+	GPtrArray *secrets;
+	gboolean eap_method_found = FALSE;
 
-	/* Strings first. g_free() already checks for NULLs so we don't have to */
+	secrets = g_ptr_array_sized_new (4);
 
-	g_free (priv->identity);
-	g_free (priv->anonymous_identity);
-	g_free (priv->ca_path);
-	g_free (priv->subject_match);
-	g_free (priv->domain_suffix_match);
-	g_free (priv->phase1_peapver);
-	g_free (priv->phase1_peaplabel);
-	g_free (priv->phase1_fast_provisioning);
-	g_free (priv->phase2_auth);
-	g_free (priv->phase2_autheap);
-	g_free (priv->phase2_ca_path);
-	g_free (priv->phase2_subject_match);
-	g_free (priv->phase2_domain_suffix_match);
-	g_free (priv->password);
-	if (priv->password_raw)
-		g_bytes_unref (priv->password_raw);
-	g_free (priv->pin);
+	/* Ask each configured EAP method if it needs secrets */
+	for (iter = priv->eap; iter && !eap_method_found; iter = g_slist_next (iter)) {
+		const char *method = (const char *) iter->data;
+		int i;
 
-	g_slist_free_full (priv->eap, g_free);
-	g_slist_free_full (priv->altsubject_matches, g_free);
-	g_slist_free_full (priv->phase2_altsubject_matches, g_free);
+		for (i = 0; eap_methods_table[i].method; i++) {
+			if (eap_methods_table[i].ns_func == NULL)
+				continue;
+			if (!strcmp (eap_methods_table[i].method, method)) {
+				(*eap_methods_table[i].ns_func) (self, secrets, FALSE);
 
-	if (priv->ca_cert)
-		g_bytes_unref (priv->ca_cert);
-	g_free (priv->ca_cert_password);
-	if (priv->client_cert)
-		g_bytes_unref (priv->client_cert);
-	g_free (priv->client_cert_password);
-	if (priv->private_key)
-		g_bytes_unref (priv->private_key);
-	nm_free_secret (priv->private_key_password);
-	if (priv->phase2_ca_cert)
-		g_bytes_unref (priv->phase2_ca_cert);
-	g_free (priv->phase2_ca_cert_password);
-	if (priv->phase2_client_cert)
-		g_bytes_unref (priv->phase2_client_cert);
-	g_free (priv->phase2_client_cert_password);
-	if (priv->phase2_private_key)
-		g_bytes_unref (priv->phase2_private_key);
-	nm_free_secret (priv->phase2_private_key_password);
+				/* Only break out of the outer loop if this EAP method
+				 * needed secrets.
+				 */
+				if (secrets->len > 0)
+					eap_method_found = TRUE;
+				break;
+			}
+		}
+	}
 
-	G_OBJECT_CLASS (nm_setting_802_1x_parent_class)->finalize (object);
+	if (secrets->len == 0) {
+		g_ptr_array_free (secrets, TRUE);
+		secrets = NULL;
+	}
+
+	return secrets;
 }
+
+/*****************************************************************************/
 
 static GBytes *
 set_cert_prop_helper (const GValue *value, const char *prop_name, GError **error)
@@ -3434,6 +3369,154 @@ set_cert_prop_helper (const GValue *value, const char *prop_name, GError **error
 			g_clear_pointer (&bytes, g_bytes_unref);
 	}
 	return bytes;
+}
+
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMSetting8021x *setting = NM_SETTING_802_1X (object);
+	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+
+	switch (prop_id) {
+	case PROP_EAP:
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->eap, TRUE));
+		break;
+	case PROP_IDENTITY:
+		g_value_set_string (value, priv->identity);
+		break;
+	case PROP_ANONYMOUS_IDENTITY:
+		g_value_set_string (value, priv->anonymous_identity);
+		break;
+	case PROP_PAC_FILE:
+		g_value_set_string (value, priv->pac_file);
+		break;
+	case PROP_CA_CERT:
+		g_value_set_boxed (value, priv->ca_cert);
+		break;
+	case PROP_CA_CERT_PASSWORD:
+		g_value_set_string (value, priv->ca_cert_password);
+		break;
+	case PROP_CA_CERT_PASSWORD_FLAGS:
+		g_value_set_flags (value, priv->ca_cert_password_flags);
+		break;
+	case PROP_CA_PATH:
+		g_value_set_string (value, priv->ca_path);
+		break;
+	case PROP_SUBJECT_MATCH:
+		g_value_set_string (value, priv->subject_match);
+		break;
+	case PROP_ALTSUBJECT_MATCHES:
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->altsubject_matches, TRUE));
+		break;
+	case PROP_DOMAIN_SUFFIX_MATCH:
+		g_value_set_string (value, priv->domain_suffix_match);
+		break;
+	case PROP_CLIENT_CERT:
+		g_value_set_boxed (value, priv->client_cert);
+		break;
+	case PROP_CLIENT_CERT_PASSWORD:
+		g_value_set_string (value, priv->client_cert_password);
+		break;
+	case PROP_CLIENT_CERT_PASSWORD_FLAGS:
+		g_value_set_flags (value, priv->client_cert_password_flags);
+		break;
+	case PROP_PHASE1_PEAPVER:
+		g_value_set_string (value, priv->phase1_peapver);
+		break;
+	case PROP_PHASE1_PEAPLABEL:
+		g_value_set_string (value, priv->phase1_peaplabel);
+		break;
+	case PROP_PHASE1_FAST_PROVISIONING:
+		g_value_set_string (value, priv->phase1_fast_provisioning);
+		break;
+	case PROP_PHASE1_AUTH_FLAGS:
+		g_value_set_uint (value, priv->phase1_auth_flags);
+		break;
+	case PROP_PHASE2_AUTH:
+		g_value_set_string (value, priv->phase2_auth);
+		break;
+	case PROP_PHASE2_AUTHEAP:
+		g_value_set_string (value, priv->phase2_autheap);
+		break;
+	case PROP_PHASE2_CA_CERT:
+		g_value_set_boxed (value, priv->phase2_ca_cert);
+		break;
+	case PROP_PHASE2_CA_CERT_PASSWORD:
+		g_value_set_string (value, priv->phase2_ca_cert_password);
+		break;
+	case PROP_PHASE2_CA_CERT_PASSWORD_FLAGS:
+		g_value_set_flags (value, priv->phase2_ca_cert_password_flags);
+		break;
+	case PROP_PHASE2_CA_PATH:
+		g_value_set_string (value, priv->phase2_ca_path);
+		break;
+	case PROP_PHASE2_SUBJECT_MATCH:
+		g_value_set_string (value, priv->phase2_subject_match);
+		break;
+	case PROP_PHASE2_ALTSUBJECT_MATCHES:
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->phase2_altsubject_matches, TRUE));
+		break;
+	case PROP_PHASE2_DOMAIN_SUFFIX_MATCH:
+		g_value_set_string (value, priv->phase2_domain_suffix_match);
+		break;
+	case PROP_PHASE2_CLIENT_CERT:
+		g_value_set_boxed (value, priv->phase2_client_cert);
+		break;
+	case PROP_PHASE2_CLIENT_CERT_PASSWORD:
+		g_value_set_string (value, priv->phase2_client_cert_password);
+		break;
+	case PROP_PHASE2_CLIENT_CERT_PASSWORD_FLAGS:
+		g_value_set_flags (value, priv->phase2_client_cert_password_flags);
+		break;
+	case PROP_PASSWORD:
+		g_value_set_string (value, priv->password);
+		break;
+	case PROP_PASSWORD_FLAGS:
+		g_value_set_flags (value, priv->password_flags);
+		break;
+	case PROP_PASSWORD_RAW:
+		g_value_set_boxed (value, priv->password_raw);
+		break;
+	case PROP_PASSWORD_RAW_FLAGS:
+		g_value_set_flags (value, priv->password_raw_flags);
+		break;
+	case PROP_PRIVATE_KEY:
+		g_value_set_boxed (value, priv->private_key);
+		break;
+	case PROP_PRIVATE_KEY_PASSWORD:
+		g_value_set_string (value, priv->private_key_password);
+		break;
+	case PROP_PRIVATE_KEY_PASSWORD_FLAGS:
+		g_value_set_flags (value, priv->private_key_password_flags);
+		break;
+	case PROP_PHASE2_PRIVATE_KEY:
+		g_value_set_boxed (value, priv->phase2_private_key);
+		break;
+	case PROP_PHASE2_PRIVATE_KEY_PASSWORD:
+		g_value_set_string (value, priv->phase2_private_key_password);
+		break;
+	case PROP_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS:
+		g_value_set_flags (value, priv->phase2_private_key_password_flags);
+		break;
+	case PROP_PIN:
+		g_value_set_string (value, priv->pin);
+		break;
+	case PROP_PIN_FLAGS:
+		g_value_set_flags (value, priv->pin_flags);
+		break;
+	case PROP_SYSTEM_CA_CERTS:
+		g_value_set_boolean (value, priv->system_ca_certs);
+		break;
+	case PROP_AUTH_TIMEOUT:
+		g_value_set_int (value, priv->auth_timeout);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -3647,150 +3730,76 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSetting8021x *setting = NM_SETTING_802_1X (object);
-	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_EAP:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->eap, TRUE));
-		break;
-	case PROP_IDENTITY:
-		g_value_set_string (value, priv->identity);
-		break;
-	case PROP_ANONYMOUS_IDENTITY:
-		g_value_set_string (value, priv->anonymous_identity);
-		break;
-	case PROP_PAC_FILE:
-		g_value_set_string (value, priv->pac_file);
-		break;
-	case PROP_CA_CERT:
-		g_value_set_boxed (value, priv->ca_cert);
-		break;
-	case PROP_CA_CERT_PASSWORD:
-		g_value_set_string (value, priv->ca_cert_password);
-		break;
-	case PROP_CA_CERT_PASSWORD_FLAGS:
-		g_value_set_flags (value, priv->ca_cert_password_flags);
-		break;
-	case PROP_CA_PATH:
-		g_value_set_string (value, priv->ca_path);
-		break;
-	case PROP_SUBJECT_MATCH:
-		g_value_set_string (value, priv->subject_match);
-		break;
-	case PROP_ALTSUBJECT_MATCHES:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->altsubject_matches, TRUE));
-		break;
-	case PROP_DOMAIN_SUFFIX_MATCH:
-		g_value_set_string (value, priv->domain_suffix_match);
-		break;
-	case PROP_CLIENT_CERT:
-		g_value_set_boxed (value, priv->client_cert);
-		break;
-	case PROP_CLIENT_CERT_PASSWORD:
-		g_value_set_string (value, priv->client_cert_password);
-		break;
-	case PROP_CLIENT_CERT_PASSWORD_FLAGS:
-		g_value_set_flags (value, priv->client_cert_password_flags);
-		break;
-	case PROP_PHASE1_PEAPVER:
-		g_value_set_string (value, priv->phase1_peapver);
-		break;
-	case PROP_PHASE1_PEAPLABEL:
-		g_value_set_string (value, priv->phase1_peaplabel);
-		break;
-	case PROP_PHASE1_FAST_PROVISIONING:
-		g_value_set_string (value, priv->phase1_fast_provisioning);
-		break;
-	case PROP_PHASE1_AUTH_FLAGS:
-		g_value_set_uint (value, priv->phase1_auth_flags);
-		break;
-	case PROP_PHASE2_AUTH:
-		g_value_set_string (value, priv->phase2_auth);
-		break;
-	case PROP_PHASE2_AUTHEAP:
-		g_value_set_string (value, priv->phase2_autheap);
-		break;
-	case PROP_PHASE2_CA_CERT:
-		g_value_set_boxed (value, priv->phase2_ca_cert);
-		break;
-	case PROP_PHASE2_CA_CERT_PASSWORD:
-		g_value_set_string (value, priv->phase2_ca_cert_password);
-		break;
-	case PROP_PHASE2_CA_CERT_PASSWORD_FLAGS:
-		g_value_set_flags (value, priv->phase2_ca_cert_password_flags);
-		break;
-	case PROP_PHASE2_CA_PATH:
-		g_value_set_string (value, priv->phase2_ca_path);
-		break;
-	case PROP_PHASE2_SUBJECT_MATCH:
-		g_value_set_string (value, priv->phase2_subject_match);
-		break;
-	case PROP_PHASE2_ALTSUBJECT_MATCHES:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->phase2_altsubject_matches, TRUE));
-		break;
-	case PROP_PHASE2_DOMAIN_SUFFIX_MATCH:
-		g_value_set_string (value, priv->phase2_domain_suffix_match);
-		break;
-	case PROP_PHASE2_CLIENT_CERT:
-		g_value_set_boxed (value, priv->phase2_client_cert);
-		break;
-	case PROP_PHASE2_CLIENT_CERT_PASSWORD:
-		g_value_set_string (value, priv->phase2_client_cert_password);
-		break;
-	case PROP_PHASE2_CLIENT_CERT_PASSWORD_FLAGS:
-		g_value_set_flags (value, priv->phase2_client_cert_password_flags);
-		break;
-	case PROP_PASSWORD:
-		g_value_set_string (value, priv->password);
-		break;
-	case PROP_PASSWORD_FLAGS:
-		g_value_set_flags (value, priv->password_flags);
-		break;
-	case PROP_PASSWORD_RAW:
-		g_value_set_boxed (value, priv->password_raw);
-		break;
-	case PROP_PASSWORD_RAW_FLAGS:
-		g_value_set_flags (value, priv->password_raw_flags);
-		break;
-	case PROP_PRIVATE_KEY:
-		g_value_set_boxed (value, priv->private_key);
-		break;
-	case PROP_PRIVATE_KEY_PASSWORD:
-		g_value_set_string (value, priv->private_key_password);
-		break;
-	case PROP_PRIVATE_KEY_PASSWORD_FLAGS:
-		g_value_set_flags (value, priv->private_key_password_flags);
-		break;
-	case PROP_PHASE2_PRIVATE_KEY:
-		g_value_set_boxed (value, priv->phase2_private_key);
-		break;
-	case PROP_PHASE2_PRIVATE_KEY_PASSWORD:
-		g_value_set_string (value, priv->phase2_private_key_password);
-		break;
-	case PROP_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS:
-		g_value_set_flags (value, priv->phase2_private_key_password_flags);
-		break;
-	case PROP_PIN:
-		g_value_set_string (value, priv->pin);
-		break;
-	case PROP_PIN_FLAGS:
-		g_value_set_flags (value, priv->pin_flags);
-		break;
-	case PROP_SYSTEM_CA_CERTS:
-		g_value_set_boolean (value, priv->system_ca_certs);
-		break;
-	case PROP_AUTH_TIMEOUT:
-		g_value_set_int (value, priv->auth_timeout);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_802_1x_init (NMSetting8021x *setting)
+{
+}
+
+/**
+ * nm_setting_802_1x_new:
+ *
+ * Creates a new #NMSetting8021x object with default values.
+ *
+ * Returns: the new empty #NMSetting8021x object
+ **/
+NMSetting *
+nm_setting_802_1x_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_802_1X, NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSetting8021x *self = NM_SETTING_802_1X (object);
+	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+
+	/* Strings first. g_free() already checks for NULLs so we don't have to */
+
+	g_free (priv->identity);
+	g_free (priv->anonymous_identity);
+	g_free (priv->ca_path);
+	g_free (priv->subject_match);
+	g_free (priv->domain_suffix_match);
+	g_free (priv->phase1_peapver);
+	g_free (priv->phase1_peaplabel);
+	g_free (priv->phase1_fast_provisioning);
+	g_free (priv->phase2_auth);
+	g_free (priv->phase2_autheap);
+	g_free (priv->phase2_ca_path);
+	g_free (priv->phase2_subject_match);
+	g_free (priv->phase2_domain_suffix_match);
+	g_free (priv->password);
+	if (priv->password_raw)
+		g_bytes_unref (priv->password_raw);
+	g_free (priv->pin);
+
+	g_slist_free_full (priv->eap, g_free);
+	g_slist_free_full (priv->altsubject_matches, g_free);
+	g_slist_free_full (priv->phase2_altsubject_matches, g_free);
+
+	if (priv->ca_cert)
+		g_bytes_unref (priv->ca_cert);
+	g_free (priv->ca_cert_password);
+	if (priv->client_cert)
+		g_bytes_unref (priv->client_cert);
+	g_free (priv->client_cert_password);
+	if (priv->private_key)
+		g_bytes_unref (priv->private_key);
+	nm_free_secret (priv->private_key_password);
+	if (priv->phase2_ca_cert)
+		g_bytes_unref (priv->phase2_ca_cert);
+	g_free (priv->phase2_ca_cert_password);
+	if (priv->phase2_client_cert)
+		g_bytes_unref (priv->phase2_client_cert);
+	g_free (priv->phase2_client_cert_password);
+	if (priv->phase2_private_key)
+		g_bytes_unref (priv->phase2_private_key);
+	nm_free_secret (priv->phase2_private_key_password);
+
+	G_OBJECT_CLASS (nm_setting_802_1x_parent_class)->finalize (object);
 }
 
 static void
