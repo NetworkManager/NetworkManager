@@ -3259,24 +3259,6 @@ need_secrets (NMSetting *setting)
 
 /*****************************************************************************/
 
-static GBytes *
-set_cert_prop_helper (const GValue *value, const char *prop_name, GError **error)
-{
-	gboolean valid;
-	GBytes *bytes = NULL;
-
-	bytes = g_value_dup_boxed (value);
-	/* Verify the new data */
-	if (bytes) {
-		valid = verify_cert (bytes, prop_name, NULL, NULL, error);
-		if (!valid)
-			g_clear_pointer (&bytes, g_bytes_unref);
-	}
-	return bytes;
-}
-
-/*****************************************************************************/
-
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
@@ -3429,7 +3411,6 @@ set_property (GObject *object, guint prop_id,
 {
 	NMSetting8021x *setting = NM_SETTING_802_1X (object);
 	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
-	GError *error = NULL;
 
 	switch (prop_id) {
 	case PROP_EAP:
@@ -3450,11 +3431,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_CA_CERT:
 		g_bytes_unref (priv->ca_cert);
-		priv->ca_cert = set_cert_prop_helper (value, NM_SETTING_802_1X_CA_CERT, &error);
-		if (error) {
-			g_warning ("Error setting certificate (invalid data): %s", error->message);
-			g_error_free (error);
-		}
+		priv->ca_cert = g_value_dup_boxed (value);
 		break;
 	case PROP_CA_CERT_PASSWORD:
 		g_free (priv->ca_cert_password);
@@ -3481,11 +3458,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_CLIENT_CERT:
 		g_bytes_unref (priv->client_cert);
-		priv->client_cert = set_cert_prop_helper (value, NM_SETTING_802_1X_CLIENT_CERT, &error);
-		if (error) {
-			g_warning ("Error setting certificate (invalid data): %s", error->message);
-			g_error_free (error);
-		}
+		priv->client_cert = g_value_dup_boxed (value);
 		break;
 	case PROP_CLIENT_CERT_PASSWORD:
 		g_free (priv->client_cert_password);
@@ -3519,11 +3492,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE2_CA_CERT:
 		g_bytes_unref (priv->phase2_ca_cert);
-		priv->phase2_ca_cert = set_cert_prop_helper (value, NM_SETTING_802_1X_PHASE2_CA_CERT, &error);
-		if (error) {
-			g_warning ("Error setting certificate (invalid data): %s", error->message);
-			g_error_free (error);
-		}
+		priv->phase2_ca_cert = g_value_dup_boxed (value);
 		break;
 	case PROP_PHASE2_CA_CERT_PASSWORD:
 		g_free (priv->phase2_ca_cert_password);
@@ -3550,11 +3519,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
 		g_bytes_unref (priv->phase2_client_cert);
-		priv->phase2_client_cert = set_cert_prop_helper (value, NM_SETTING_802_1X_PHASE2_CLIENT_CERT, &error);
-		if (error) {
-			g_warning ("Error setting certificate (invalid data): %s", error->message);
-			g_error_free (error);
-		}
+		priv->phase2_client_cert = g_value_dup_boxed (value);
 		break;
 	case PROP_PHASE2_CLIENT_CERT_PASSWORD:
 		g_free (priv->phase2_client_cert_password);
@@ -3579,11 +3544,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PRIVATE_KEY:
 		g_bytes_unref (priv->private_key);
-		priv->private_key = set_cert_prop_helper (value, NM_SETTING_802_1X_PRIVATE_KEY, &error);
-		if (error) {
-			g_warning ("Error setting private key (invalid data): %s", error->message);
-			g_error_free (error);
-		}
+		priv->private_key = g_value_dup_boxed (value);
 		break;
 	case PROP_PRIVATE_KEY_PASSWORD:
 		nm_free_secret (priv->private_key_password);
@@ -3594,11 +3555,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE2_PRIVATE_KEY:
 		g_bytes_unref (priv->phase2_private_key);
-		priv->phase2_private_key = set_cert_prop_helper (value, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, &error);
-		if (error) {
-			g_warning ("Error setting private key (invalid data): %s", error->message);
-			g_error_free (error);
-		}
+		priv->phase2_private_key = g_value_dup_boxed (value);
 		break;
 	case PROP_PHASE2_PRIVATE_KEY_PASSWORD:
 		nm_free_secret (priv->phase2_private_key_password);
