@@ -418,16 +418,16 @@ _nmtst_convert_iv (const char *src,
 	return g_steal_pointer (&c);
 }
 
-char *
+guint8 *
 nm_crypto_make_des_aes_key (const char *cipher,
-                            const char *salt,
-                            const gsize salt_len,
+                            const guint8 *salt,
+                            gsize salt_len,
                             const char *password,
                             gsize *out_len,
                             GError **error)
 {
-	char *key;
-	guint32 digest_len;
+	guint8 *key;
+	gsize digest_len;
 
 	g_return_val_if_fail (cipher != NULL, NULL);
 	g_return_val_if_fail (salt != NULL, NULL);
@@ -460,11 +460,11 @@ nm_crypto_make_des_aes_key (const char *cipher,
 
 	key = g_malloc0 (digest_len + 1);
 
-	nm_crypto_md5_hash ((guint8 *) salt,
+	nm_crypto_md5_hash (salt,
 	                    8,
 	                    (guint8 *) password,
 	                    strlen (password),
-	                    (guint8 *) key,
+	                    key,
 	                    digest_len);
 
 	*out_len = digest_len;
@@ -505,21 +505,21 @@ _nmtst_decrypt_key (const char *cipher,
 	}
 
 	/* Convert the password and IV into a DES or AES key */
-	key.str = nm_crypto_make_des_aes_key (cipher, bin_iv.str, bin_iv.len, password, &key.len, error);
-	if (!key.str || !key.len)
+	key.bin = nm_crypto_make_des_aes_key (cipher, bin_iv.bin, bin_iv.len, password, &key.len, error);
+	if (!key.bin || !key.len)
 		return FALSE;
 
-	parsed->str = _nmtst_crypto_decrypt (cipher,
+	parsed->bin = _nmtst_crypto_decrypt (cipher,
 	                                     key_type,
 	                                     data,
 	                                     data_len,
-	                                     bin_iv.str,
+	                                     bin_iv.bin,
 	                                     bin_iv.len,
-	                                     key.str,
+	                                     key.bin,
 	                                     key.len,
 	                                     &parsed->len,
 	                                     error);
-	if (!parsed->str || parsed->len == 0) {
+	if (!parsed->bin || parsed->len == 0) {
 		nm_secret_ptr_clear (parsed);
 		return FALSE;
 	}
@@ -910,7 +910,7 @@ nmtst_crypto_rsa_key_encrypt (const guint8 *data,
                               char **out_password,
                               GError **error)
 {
-	char salt[8];
+	guint8 salt[8];
 	nm_auto_clear_secret_ptr NMSecretPtr key = { 0 };
 	nm_auto_clear_secret_ptr NMSecretPtr enc = { 0 };
 	gs_unref_ptrarray GPtrArray *pem = NULL;
@@ -939,12 +939,12 @@ nmtst_crypto_rsa_key_encrypt (const guint8 *data,
 	if (!nm_crypto_randomize (salt, sizeof (salt), error))
 		return NULL;
 
-	key.str = nm_crypto_make_des_aes_key (CIPHER_DES_EDE3_CBC, &salt[0], sizeof (salt), in_password, &key.len, NULL);
-	if (!key.str)
+	key.bin = nm_crypto_make_des_aes_key (CIPHER_DES_EDE3_CBC, salt, sizeof (salt), in_password, &key.len, NULL);
+	if (!key.bin)
 		g_return_val_if_reached (NULL);
 
-	enc.str = _nmtst_crypto_encrypt (CIPHER_DES_EDE3_CBC, data, len, salt, sizeof (salt), key.str, key.len, &enc.len, error);
-	if (!enc.str)
+	enc.bin = _nmtst_crypto_encrypt (CIPHER_DES_EDE3_CBC, data, len, salt, sizeof (salt), key.bin, key.len, &enc.len, error);
+	if (!enc.bin)
 		return NULL;
 
 	/* What follows is not the most efficient way to construct the pem
@@ -964,7 +964,7 @@ nmtst_crypto_rsa_key_encrypt (const guint8 *data,
 	g_ptr_array_add (pem, g_strdup ("\n\n"));
 
 	/* Convert the encrypted key to a base64 string */
-	enc_base64 = g_base64_encode ((const guchar *) enc.str, enc.len);
+	enc_base64 = g_base64_encode ((const guchar *) enc.bin, enc.len);
 	enc_base64_len = strlen (enc_base64);
 	for (p = enc_base64; (p - enc_base64) < (ptrdiff_t) enc_base64_len; p += 64) {
 		g_ptr_array_add (pem, g_strndup (p, 64));
