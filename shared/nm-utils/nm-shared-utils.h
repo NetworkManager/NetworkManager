@@ -221,6 +221,12 @@ nm_utils_is_separator (const char c)
 
 /*****************************************************************************/
 
+static inline gboolean
+nm_gbytes_equal0 (GBytes *a, GBytes *b)
+{
+	return a == b || (a && b && g_bytes_equal (a, b));
+}
+
 gboolean nm_utils_gbytes_equal_mem (GBytes *bytes,
                                     gconstpointer mem_data,
                                     gsize mem_len);
