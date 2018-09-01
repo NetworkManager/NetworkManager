@@ -297,6 +297,76 @@ _cert_get_scheme (GBytes *bytes, GError **error)
 	return nm_setting_802_1x_check_cert_scheme (data, length, error);
 }
 
+static gboolean
+_cert_verify_scheme (NMSetting8021xCKScheme scheme,
+                     GBytes *bytes,
+                     GError **error)
+{
+	GError *local = NULL;
+	NMSetting8021xCKScheme scheme_detected;
+
+	nm_assert (bytes);
+
+	scheme_detected = _cert_get_scheme (bytes, &local);
+	if (scheme_detected == NM_SETTING_802_1X_CK_SCHEME_UNKNOWN) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("certificate is invalid: %s"), local->message);
+		return FALSE;
+	}
+
+	if (scheme_detected != scheme) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("certificate detected as invalid scheme"));
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static GBytes *
+_cert_value_to_bytes (NMSetting8021xCKScheme scheme,
+                      const guint8 *val_bin,
+                      gssize val_len,
+                      GError **error)
+{
+	gs_unref_bytes GBytes *bytes = NULL;
+	guint8 *mem;
+	gsize total_len;
+
+	nm_assert (val_bin);
+
+	switch (scheme) {
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		if (val_len < 0)
+			val_len = strlen ((char *) val_bin) + 1;
+
+		bytes = g_bytes_new (val_bin, val_len);
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PATH:
+		if (val_len < 0)
+			val_len = strlen ((char *) val_bin) + 1;
+
+		total_len = NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH) + ((gsize) val_len);
+
+		mem = g_new (guint8, total_len);
+		memcpy (mem, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH));
+		memcpy (&mem[NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)], val_bin, val_len);
+		bytes = g_bytes_new_take (mem, total_len);
+		break;
+	default:
+		g_return_val_if_reached (NULL);
+	}
+
+	if (!_cert_verify_scheme (scheme, bytes, error))
+		return NULL;
+
+	return g_steal_pointer (&bytes);
+}
+
 #define _cert_assert_scheme(cert, check_scheme, ret_val) \
 	G_STMT_START { \
 		NMSetting8021xCKScheme scheme; \
@@ -364,59 +434,173 @@ _cert_get_scheme (GBytes *bytes, GError **error)
 		return g_bytes_get_data (_cert, NULL); \
 	} G_STMT_END
 
-static GBytes *
-load_and_verify_certificate (const char *cert_path,
-                             NMSetting8021xCKScheme scheme,
-                             NMCryptoFileFormat *out_file_format,
-                             GError **error)
+static gboolean
+_cert_impl_set (NMSetting8021x *setting,
+                _PropertyEnums property,
+                const char *value,
+                const char *password,
+                NMSetting8021xCKScheme scheme,
+                NMSetting8021xCKFormat *out_format,
+                GError **error)
 {
+	NMSetting8021xPrivate *priv;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	gs_unref_bytes GBytes *cert = NULL;
+	GBytes **p_cert = NULL;
+	GBytes **p_client_cert = NULL;
+	char **p_password = NULL;
+	_PropertyEnums notify_cert = property;
+	_PropertyEnums notify_password = PROP_0;
+	_PropertyEnums notify_client_cert = PROP_0;
 
-	if (!nm_crypto_load_and_verify_certificate (cert_path, &format, &cert, error)) {
-		NM_SET_OUT (out_file_format, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
-		return NULL;
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+	if (value) {
+		g_return_val_if_fail (g_utf8_validate (value, -1, NULL), FALSE);
+		g_return_val_if_fail (NM_IN_SET (scheme, NM_SETTING_802_1X_CK_SCHEME_BLOB,
+		                                         NM_SETTING_802_1X_CK_SCHEME_PATH,
+		                                         NM_SETTING_802_1X_CK_SCHEME_PKCS11), FALSE);
 	}
 
-	nm_assert (format != NM_CRYPTO_FILE_FORMAT_UNKNOWN);
-	nm_assert (cert);
+	if (!value) {
+		/* coerce password to %NULL. It should be already. */
+		password = NULL;
+	}
 
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		const guint8 *bin;
-		gsize len;
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
 
-		bin = g_bytes_get_data (cert, &len);
-		/* If we load the file as blob, we must ensure that the binary data does not
-		 * start with file://. NMSetting8021x cannot represent blobs that start with
-		 * file://.
-		 * If that's the case, coerce the format to UNKNOWN. The callers will take care
-		 * of that and not set the blob. */
-		if (nm_setting_802_1x_check_cert_scheme (bin, len, NULL) != NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-			NM_SET_OUT (out_file_format, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
-			return NULL;
+	if (!value) {
+		/* pass. */
+	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
+		cert = _cert_value_to_bytes (scheme, (guint8 *) value, -1, error);
+		if (!cert)
+			goto err;
+	} else {
+		gs_unref_bytes GBytes *file = NULL;
+
+		if (NM_IN_SET (property, PROP_PRIVATE_KEY,
+		                         PROP_PHASE2_PRIVATE_KEY)) {
+			file = nm_crypto_read_file (value, error);
+			if (!file)
+				goto err;
+			format = nm_crypto_verify_private_key_data (g_bytes_get_data (file, NULL),
+			                                            g_bytes_get_size (file),
+			                                            password,
+			                                            NULL,
+			                                            error);
+			if (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN)
+				goto err;
+		} else {
+			if (!nm_crypto_load_and_verify_certificate (value, &format, &file, error))
+				goto err;
+		}
+
+		nm_assert (format != NM_CRYPTO_FILE_FORMAT_UNKNOWN);
+		nm_assert (file);
+
+		if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+			cert = g_steal_pointer (&file);
+			if (!_cert_verify_scheme (scheme, cert, error))
+				goto err;
+		} else {
+			cert = _cert_value_to_bytes (scheme, (guint8 *) value, -1, error);
+			if (!cert)
+				goto err;
 		}
 	}
 
-	NM_SET_OUT (out_file_format, format);
-	return g_steal_pointer (&cert);
-}
+	switch (property) {
+	case PROP_CA_CERT:
+	case PROP_PHASE2_CA_CERT:
+		if (   value
+		    && scheme != NM_SETTING_802_1X_CK_SCHEME_PKCS11
+		    && format != NM_CRYPTO_FILE_FORMAT_X509) {
+			/* wpa_supplicant can only use raw x509 CA certs */
+			g_set_error_literal (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("CA certificate must be in X.509 format"));
+			goto err;
+		}
+		p_cert = (property == PROP_CA_CERT)
+		         ? &priv->ca_cert
+		         : &priv->phase2_ca_cert;
+		break;
+	case PROP_CLIENT_CERT:
+	case PROP_PHASE2_CLIENT_CERT:
+		if (   value
+		    && scheme != NM_SETTING_802_1X_CK_SCHEME_PKCS11
+		    && !NM_IN_SET (format, NM_CRYPTO_FILE_FORMAT_X509,
+		                           NM_CRYPTO_FILE_FORMAT_PKCS12)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("invalid certificate format"));
+			goto err;
+		}
+		p_cert = (property == PROP_CLIENT_CERT)
+		         ? &priv->client_cert
+		         : &priv->phase2_client_cert;
+		break;
+	case PROP_PRIVATE_KEY:
+		p_cert = &priv->private_key;
+		p_password = &priv->private_key_password;
+		p_client_cert = &priv->client_cert;
+		notify_password = PROP_PRIVATE_KEY_PASSWORD;
+		notify_client_cert = PROP_CLIENT_CERT;
+		break;
+	case PROP_PHASE2_PRIVATE_KEY:
+		p_cert = &priv->phase2_private_key;
+		p_password = &priv->phase2_private_key_password;
+		p_client_cert = &priv->phase2_client_cert;
+		notify_password = PROP_PHASE2_PRIVATE_KEY_PASSWORD;
+		notify_client_cert = PROP_PHASE2_CLIENT_CERT;
+		break;
+	default:
+		nm_assert_not_reached ();
+		break;
+	}
 
-static GBytes *
-path_to_scheme_value (const char *path)
-{
-	guint8 *mem;
-	gsize len, total_len;
+	/* As required by NM and wpa_supplicant, set the client-cert
+	 * property to the same PKCS#12 data.
+	 */
+	if (   cert
+	    && p_client_cert
+	    && format == NM_CRYPTO_FILE_FORMAT_PKCS12
+	    && !nm_gbytes_equal0 (cert, *p_client_cert)) {
+		g_bytes_unref (*p_client_cert);
+		*p_client_cert = g_bytes_ref (cert);
+	} else
+		notify_client_cert = PROP_0;
 
-	g_return_val_if_fail (path != NULL && path[0], NULL);
+	if (   p_cert
+	    && !nm_gbytes_equal0 (cert, *p_cert)) {
+		g_bytes_unref (*p_cert);
+		*p_cert = g_steal_pointer (&cert);
+	} else
+		notify_cert = PROP_0;
 
-	len = strlen (path);
-	total_len = (NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH) + 1) + len;
+	if (   p_password
+	    && !nm_streq0 (password, *p_password)) {
+		nm_free_secret (*p_password);
+		*p_password = g_strdup (password);
+	} else
+		notify_password = PROP_0;
 
-	/* Add the path scheme tag to the front, then the filename */
-	mem = g_new (guint8, total_len);
-	memcpy (mem, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH));
-	memcpy (&mem[NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)], path, len + 1);
-	return g_bytes_new_take (mem, total_len);
+	nm_gobject_notify_together (setting, notify_cert,
+	                                     notify_password,
+	                                     notify_client_cert);
+
+	NM_SET_OUT (out_format, _crypto_format_to_ck (format));
+	return TRUE;
+
+err:
+	g_prefix_error (error,
+	                "%s.%s: ",
+	                NM_SETTING_802_1X_SETTING_NAME,
+	                obj_properties[property]->name);
+	NM_SET_OUT (out_format, NM_SETTING_802_1X_CK_FORMAT_UNKNOWN);
+	return FALSE;
 }
 
 static gboolean
@@ -800,62 +984,7 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *setting,
                                NMSetting8021xCKFormat *out_format,
                                GError **error)
 {
-	NMSetting8021xPrivate *priv;
-	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	gs_unref_bytes GBytes *cert = NULL;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
-
-	if (value) {
-		g_return_val_if_fail (g_utf8_validate (value, -1, NULL), FALSE);
-		g_return_val_if_fail (   scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB
-		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PATH
-		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11,
-		                      FALSE);
-	}
-
-	if (out_format)
-		g_return_val_if_fail (*out_format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN, FALSE);
-
-	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
-
-	g_clear_pointer (&priv->ca_cert, g_bytes_unref);
-
-	if (!value) {
-		_notify (setting, PROP_CA_CERT);
-		return TRUE;
-	}
-
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-		priv->ca_cert = g_bytes_new (value, strlen (value) + 1);
-		_notify (setting, PROP_CA_CERT);
-		return TRUE;
-	}
-
-	cert = load_and_verify_certificate (value, scheme, &format, error);
-	if (cert) {
-		/* wpa_supplicant can only use raw x509 CA certs */
-		if (format == NM_CRYPTO_FILE_FORMAT_X509) {
-			if (out_format)
-				*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
-
-			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-				priv->ca_cert = g_bytes_ref (cert);
-			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-				priv->ca_cert = path_to_scheme_value (value);
-			else
-				g_assert_not_reached ();
-		} else {
-			g_set_error_literal (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("CA certificate must be in X.509 format"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_CA_CERT);
-		}
-	}
-
-	_notify (setting, PROP_CA_CERT);
-	return priv->ca_cert != NULL;
+	return _cert_impl_set (setting, PROP_CA_CERT, value, NULL, scheme, out_format, error);
 }
 
 /**
@@ -1174,74 +1303,7 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *setting,
                                    NMSetting8021xCKFormat *out_format,
                                    GError **error)
 {
-	NMSetting8021xPrivate *priv;
-	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	gs_unref_bytes GBytes *cert = NULL;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
-
-	if (value) {
-		g_return_val_if_fail (g_utf8_validate (value, -1, NULL), FALSE);
-		g_return_val_if_fail (   scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB
-		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PATH
-		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11,
-		                      FALSE);
-	}
-
-	if (out_format)
-		g_return_val_if_fail (*out_format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN, FALSE);
-
-	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
-
-	g_clear_pointer (&priv->client_cert, g_bytes_unref);
-
-	if (!value) {
-		_notify (setting, PROP_CLIENT_CERT);
-		return TRUE;
-	}
-
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-		priv->client_cert = g_bytes_new (value, strlen (value) + 1);
-		_notify (setting, PROP_CLIENT_CERT);
-		return TRUE;
-	}
-
-	cert = load_and_verify_certificate (value, scheme, &format, error);
-	if (cert) {
-		gboolean valid = FALSE;
-
-		switch (format) {
-		case NM_CRYPTO_FILE_FORMAT_X509:
-			if (out_format)
-				*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
-			valid = TRUE;
-			break;
-		case NM_CRYPTO_FILE_FORMAT_PKCS12:
-			if (out_format)
-				*out_format = NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-			valid = TRUE;
-			break;
-		default:
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("invalid certificate format"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_CLIENT_CERT);
-			break;
-		}
-
-		if (valid) {
-			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-				priv->client_cert = g_bytes_ref (cert);
-			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-				priv->client_cert = path_to_scheme_value (value);
-			else
-				g_assert_not_reached ();
-		}
-	}
-
-	_notify (setting, PROP_CLIENT_CERT);
-	return priv->client_cert != NULL;
+	return _cert_impl_set (setting, PROP_CLIENT_CERT, value, NULL, scheme, out_format, error);
 }
 
 /**
@@ -1499,62 +1561,7 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *setting,
                                       NMSetting8021xCKFormat *out_format,
                                       GError **error)
 {
-	NMSetting8021xPrivate *priv;
-	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	gs_unref_bytes GBytes *cert = NULL;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
-
-	if (value) {
-		g_return_val_if_fail (g_utf8_validate (value, -1, NULL), FALSE);
-		g_return_val_if_fail (   scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB
-		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PATH
-		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11,
-		                      FALSE);
-	}
-
-	if (out_format)
-		g_return_val_if_fail (*out_format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN, FALSE);
-
-	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
-
-	g_clear_pointer (&priv->phase2_ca_cert, g_bytes_unref);
-
-	if (!value) {
-		_notify (setting, PROP_PHASE2_CA_CERT);
-		return TRUE;
-	}
-
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-		priv->phase2_ca_cert = g_bytes_new (value, strlen (value) + 1);
-		_notify (setting, PROP_PHASE2_CA_CERT);
-		return TRUE;
-	}
-
-	cert = load_and_verify_certificate (value, scheme, &format, error);
-	if (cert) {
-		/* wpa_supplicant can only use raw x509 CA certs */
-		if (format == NM_CRYPTO_FILE_FORMAT_X509) {
-			if (out_format)
-				*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
-
-			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-				priv->phase2_ca_cert = g_bytes_ref (cert);
-			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-				priv->phase2_ca_cert = path_to_scheme_value (value);
-			else
-				g_assert_not_reached ();
-		} else {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("invalid certificate format"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE2_CA_CERT);
-		}
-	}
-
-	_notify (setting, PROP_PHASE2_CA_CERT);
-	return priv->phase2_ca_cert != NULL;
+	return _cert_impl_set (setting, PROP_PHASE2_CA_CERT, value, NULL, scheme, out_format, error);
 }
 
 /**
@@ -1877,75 +1884,7 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *setting,
                                           NMSetting8021xCKFormat *out_format,
                                           GError **error)
 {
-	NMSetting8021xPrivate *priv;
-	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	gs_unref_bytes GBytes *cert = NULL;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
-
-	if (value) {
-		g_return_val_if_fail (g_utf8_validate (value, -1, NULL), FALSE);
-		g_return_val_if_fail (   scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB
-		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PATH
-		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11,
-		                      FALSE);
-	}
-
-	if (out_format)
-		g_return_val_if_fail (*out_format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN, FALSE);
-
-	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
-
-	g_clear_pointer (&priv->phase2_client_cert, g_bytes_unref);
-
-	if (!value) {
-		_notify (setting, PROP_PHASE2_CLIENT_CERT);
-		return TRUE;
-	}
-
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-		priv->phase2_client_cert = g_bytes_new (value, strlen (value) + 1);
-		_notify (setting, PROP_PHASE2_CLIENT_CERT);
-		return TRUE;
-	}
-
-	cert = load_and_verify_certificate (value, scheme, &format, error);
-	if (cert) {
-		gboolean valid = FALSE;
-
-		/* wpa_supplicant can only use raw x509 CA certs */
-		switch (format) {
-		case NM_CRYPTO_FILE_FORMAT_X509:
-			if (out_format)
-				*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
-			valid = TRUE;
-			break;
-		case NM_CRYPTO_FILE_FORMAT_PKCS12:
-			if (out_format)
-				*out_format = NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-			valid = TRUE;
-			break;
-		default:
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("invalid certificate format"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
-			break;
-		}
-
-		if (valid) {
-			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-				priv->phase2_client_cert = g_bytes_ref (cert);
-			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-				priv->phase2_client_cert = path_to_scheme_value (value);
-			else
-				g_assert_not_reached ();
-		}
-	}
-
-	_notify (setting, PROP_PHASE2_CLIENT_CERT);
-	return priv->phase2_client_cert != NULL;
+	return _cert_impl_set (setting, PROP_PHASE2_CLIENT_CERT, value, NULL, scheme, out_format, error);
 }
 
 /**
@@ -2198,112 +2137,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
                                    NMSetting8021xCKFormat *out_format,
                                    GError **error)
 {
-	NMSetting8021xPrivate *priv;
-	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	gs_unref_bytes GBytes *file_content = NULL;
-	gs_unref_bytes GBytes *private_key_new = NULL;
-	gboolean private_key_changed = FALSE;
-	gboolean password_changed = FALSE;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
-
-	if (value) {
-		g_return_val_if_fail (g_utf8_validate (value, -1, NULL), FALSE);
-		g_return_val_if_fail (   scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB
-		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PATH
-		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11,
-		                      FALSE);
-	}
-
-	NM_SET_OUT (out_format, NM_SETTING_802_1X_CK_FORMAT_UNKNOWN);
-
-	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
-
-	if (!value) {
-		if (nm_clear_pointer (&priv->private_key, g_bytes_unref))
-			_notify (setting, PROP_PRIVATE_KEY);
-		if (nm_clear_pointer (&priv->private_key_password, nm_free_secret))
-			_notify (setting, PROP_PRIVATE_KEY_PASSWORD);
-		return TRUE;
-	}
-
-	/* Ensure the private key is a recognized format and if the password was
-	 * given, that it decrypts the private key.
-	 */
-	if (scheme != NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-		GError *local_err = NULL;
-
-		file_content = nm_crypto_read_file (value, &local_err);
-		if (file_content) {
-			format = nm_crypto_verify_private_key_data (g_bytes_get_data (file_content, NULL),
-			                                            g_bytes_get_size (file_content),
-			                                            password,
-			                                            NULL,
-			                                            &local_err);
-		}
-		if (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     local_err ? local_err->message : _("invalid private key"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PRIVATE_KEY);
-			g_clear_error (&local_err);
-			return FALSE;
-		}
-	}
-
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		private_key_new = file_content
-		                  ? g_steal_pointer (&file_content)
-		                  : nm_crypto_read_file (value, NULL);
-	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-		private_key_new = path_to_scheme_value (value);
-	else {
-		nm_assert (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11);
-		private_key_new = g_bytes_new (value, strlen (value) + 1);
-	}
-
-	if (   !private_key_new
-	    || nm_setting_802_1x_check_cert_scheme (g_bytes_get_data (private_key_new, NULL),
-	                                            g_bytes_get_size (private_key_new),
-	                                            NULL) != scheme) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("invalid private key"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
-		return FALSE;
-	}
-
-	if (   !priv->private_key
-	    || !g_bytes_equal (priv->private_key, private_key_new)) {
-		g_bytes_unref (priv->private_key);
-		priv->private_key = g_steal_pointer (&private_key_new);
-		private_key_changed = TRUE;
-	}
-
-	if (!nm_streq0 (priv->private_key_password, password)) {
-		nm_free_secret (priv->private_key_password);
-		priv->private_key_password = g_strdup (password);
-		password_changed = TRUE;
-	}
-
-	/* As required by NM and wpa_supplicant, set the client-cert
-	 * property to the same PKCS#12 data.
-	 */
-	if (format == NM_CRYPTO_FILE_FORMAT_PKCS12) {
-		g_bytes_unref (priv->client_cert);
-		priv->client_cert = g_bytes_ref (priv->private_key);
-		_notify (setting, PROP_CLIENT_CERT);
-	}
-
-	if (private_key_changed)
-		_notify (setting, PROP_PRIVATE_KEY);
-	if (password_changed)
-		_notify (setting, PROP_PRIVATE_KEY_PASSWORD);
-
-	NM_SET_OUT (out_format, _crypto_format_to_ck (format));
-	return TRUE;
+	return _cert_impl_set (setting, PROP_PRIVATE_KEY, value, password, scheme, out_format, error);
 }
 
 /**
@@ -2537,115 +2371,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
                                           NMSetting8021xCKFormat *out_format,
                                           GError **error)
 {
-	NMSetting8021xPrivate *priv;
-	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	gs_unref_bytes GBytes *file_content = NULL;
-	gs_unref_bytes GBytes *private_key_new = NULL;
-	gboolean private_key_changed = FALSE;
-	gboolean password_changed = FALSE;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
-
-	if (value) {
-		g_return_val_if_fail (g_utf8_validate (value, -1, NULL), FALSE);
-		g_return_val_if_fail (   scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB
-		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PATH
-		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11,
-		                      FALSE);
-	}
-
-	NM_SET_OUT (out_format, NM_SETTING_802_1X_CK_FORMAT_UNKNOWN);
-
-	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
-
-	if (!value) {
-		if (nm_clear_pointer (&priv->phase2_private_key, g_bytes_unref))
-			_notify (setting, PROP_PHASE2_PRIVATE_KEY);
-		if (nm_clear_pointer (&priv->phase2_private_key_password, nm_free_secret))
-			_notify (setting, PROP_PHASE2_PRIVATE_KEY_PASSWORD);
-		return TRUE;
-	}
-
-	/* Ensure the private key is a recognized format and if the password was
-	 * given, that it decrypts the private key.
-	 */
-	if (scheme != NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-		GError *local_err = NULL;
-
-		file_content = nm_crypto_read_file (value, &local_err);
-		if (file_content) {
-			format = nm_crypto_verify_private_key_data (g_bytes_get_data (file_content, NULL),
-			                                            g_bytes_get_size (file_content),
-			                                            password,
-			                                            NULL,
-			                                            &local_err);
-		}
-
-		if (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     local_err ? local_err->message : _("invalid phase2 private key"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
-			g_clear_error (&local_err);
-			return FALSE;
-		}
-	}
-
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		private_key_new = file_content
-		                  ? g_steal_pointer (&file_content)
-		                  : nm_crypto_read_file (value, NULL);
-	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-		private_key_new = path_to_scheme_value (value);
-	else {
-		nm_assert (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11);
-		private_key_new = g_bytes_new (value, strlen (value) + 1);
-	}
-
-	if (   !private_key_new
-	    || nm_setting_802_1x_check_cert_scheme (g_bytes_get_data (private_key_new, NULL),
-	                                            g_bytes_get_size (private_key_new),
-	                                            NULL) != scheme) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("invalid phase2 private key"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
-		return FALSE;
-	}
-
-	if (   !priv->phase2_private_key
-	    || !g_bytes_equal (priv->phase2_private_key, private_key_new)) {
-		g_bytes_unref (priv->phase2_private_key);
-		priv->phase2_private_key = g_steal_pointer (&private_key_new);
-		private_key_changed = TRUE;
-	}
-
-	if (!nm_streq0 (priv->phase2_private_key_password, password)) {
-		nm_free_secret (priv->phase2_private_key_password);
-		priv->phase2_private_key_password = g_strdup (password);
-		password_changed = TRUE;
-	}
-
-	/* As required by NM and wpa_supplicant, set the client-cert
-	 * property to the same PKCS#12 data.
-	 */
-	if (   format == NM_CRYPTO_FILE_FORMAT_PKCS12
-	    && (  !priv->phase2_client_cert
-	        || g_bytes_equal (priv->phase2_client_cert, priv->phase2_private_key))) {
-		g_bytes_unref (priv->phase2_client_cert);
-		priv->phase2_client_cert = g_bytes_ref (priv->phase2_private_key);
-		_notify (setting, PROP_PHASE2_CLIENT_CERT);
-	}
-
-	if (private_key_changed)
-		_notify (setting, PROP_PHASE2_PRIVATE_KEY);
-	if (password_changed)
-		_notify (setting, PROP_PHASE2_PRIVATE_KEY_PASSWORD);
-
-	NM_SET_OUT (out_format, _crypto_format_to_ck (format));
-	return TRUE;
+	return _cert_impl_set (setting, PROP_PHASE2_PRIVATE_KEY, value, password, scheme, out_format, error);
 }
 
 /**
