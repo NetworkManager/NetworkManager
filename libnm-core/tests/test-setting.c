@@ -67,10 +67,12 @@ static void
 check_scheme_path (GBytes *value, const char *path)
 {
 	const guint8 *p;
+	gsize l;
 
 	g_assert (value);
 
-	p = g_bytes_get_data (value, NULL);
+	p = g_bytes_get_data (value, &l);
+	g_assert_cmpint (l, ==, strlen (path) + NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH) + 1);
 	g_assert (memcmp (p, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0);
 	p += strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
 	g_assert (memcmp (p, path, strlen (path)) == 0);

@@ -840,6 +840,15 @@ nm_crypto_verify_private_key_data (const guint8 *data,
 		}
 	}
 
+	if (   format == NM_CRYPTO_FILE_FORMAT_UNKNOWN
+	    && error
+	    && !*error) {
+		g_set_error (error,
+		             NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERROR_INVALID_DATA,
+		             _("not a valid private key"));
+	}
+
 	if (out_is_encrypted)
 		*out_is_encrypted = is_encrypted;
 	return format;
