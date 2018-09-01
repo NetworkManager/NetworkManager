@@ -900,7 +900,7 @@ nm_str_realloc (char *str)
 
 #define NM_GOBJECT_PROPERTIES_DEFINE_BASE(...) \
 typedef enum { \
-	_PROPERTY_ENUMS_0, \
+	PROP_0, \
 	__VA_ARGS__ \
 	_PROPERTY_ENUMS_LAST, \
 } _PropertyEnums; \
@@ -921,8 +921,11 @@ _nm_gobject_notify_together_impl (obj_type *obj, guint n, const _PropertyEnums *
 	while (n-- > 0) { \
 		const _PropertyEnums prop = *props++; \
 		\
-		nm_assert ((gsize) prop < G_N_ELEMENTS (obj_properties)); \
-		g_object_notify_by_pspec ((GObject *) obj, obj_properties[prop]); \
+		if (prop != PROP_0) { \
+			nm_assert ((gsize) prop < G_N_ELEMENTS (obj_properties)); \
+			nm_assert (obj_properties[prop]); \
+			g_object_notify_by_pspec ((GObject *) obj, obj_properties[prop]); \
+		} \
 	} \
 	if (freeze_thaw) \
 		g_object_thaw_notify ((GObject *) obj); \
