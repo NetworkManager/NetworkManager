@@ -926,7 +926,7 @@ get_bytes (KeyfileReaderInfo *info,
 		 * byte-array. The reason is that zero_terminate is there to terminate
 		 * *valid* strings. It's not there to terminated invalid (empty) strings.
 		 */
-		return g_bytes_new_take (tmp_string, 0);
+		return g_bytes_new_static ("", 0);
 	}
 
 	for (length = 0; tmp_string[length]; length++) {
