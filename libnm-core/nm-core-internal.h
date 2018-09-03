@@ -215,6 +215,13 @@ const char *nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboole
 char *_nm_utils_bin2str (gconstpointer addr, gsize length, gboolean upper_case);
 void _nm_utils_bin2str_full (gconstpointer addr, gsize length, const char delimiter, gboolean upper_case, char *out);
 
+guint8 *_nm_utils_str2bin_full (const char *asc,
+                                gboolean delimiter_required,
+                                const char *delimiter_candidates,
+                                guint8 *buffer,
+                                gsize buffer_length,
+                                gsize *out_len);
+
 GSList *    _nm_utils_hash_values_to_slist (GHashTable *hash);
 
 GHashTable *_nm_utils_copy_strdict (GHashTable *strdict);
