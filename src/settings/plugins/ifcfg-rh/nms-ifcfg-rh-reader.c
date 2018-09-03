@@ -2882,7 +2882,7 @@ read_8021x_password (shvarFile *ifcfg, shvarFile *keys_ifcfg, const char *name,
 static gboolean
 eap_simple_reader (const char *eap_method,
                    shvarFile *ifcfg,
-                   shvarFile *keys,
+                   shvarFile *keys_ifcfg,
                    NMSetting8021x *s_8021x,
                    gboolean phase2,
                    GError **error)
@@ -2901,14 +2901,14 @@ eap_simple_reader (const char *eap_method,
 	g_object_set (s_8021x, NM_SETTING_802_1X_IDENTITY, value, NULL);
 	nm_clear_g_free (&value);
 
-	read_8021x_password (ifcfg, keys, "IEEE_8021X_PASSWORD", &value, &flags);
+	read_8021x_password (ifcfg, keys_ifcfg, "IEEE_8021X_PASSWORD", &value, &flags);
 	g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD_FLAGS, flags, NULL);
 	if (value) {
 		g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD, value, NULL);
 		nm_clear_g_free (&value);
 	}
 
-	read_8021x_password (ifcfg, keys, "IEEE_8021X_PASSWORD_RAW", &value, &flags);
+	read_8021x_password (ifcfg, keys_ifcfg, "IEEE_8021X_PASSWORD_RAW", &value, &flags);
 	g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD_RAW_FLAGS, flags, NULL);
 	if (value) {
 		bytes = nm_utils_hexstr2bin (value);
@@ -2965,7 +2965,7 @@ get_cert_value (const char *ifcfg_path, const char *value,
 static gboolean
 eap_tls_reader (const char *eap_method,
                 shvarFile *ifcfg,
-                shvarFile *keys,
+                shvarFile *keys_ifcfg,
                 NMSetting8021x *s_8021x,
                 gboolean phase2,
                 GError **error)
@@ -3035,9 +3035,9 @@ eap_tls_reader (const char *eap_method,
 	if (flags == NM_SETTING_SECRET_FLAG_NONE) {
 		/* Private key password */
 		privkey_password = svGetValueStr_cp (ifcfg, pk_pw_key);
-		if (!privkey_password && keys) {
+		if (!privkey_password && keys_ifcfg) {
 			/* Try the lookaside keys file */
-			privkey_password = svGetValueStr_cp (keys, pk_pw_key);
+			privkey_password = svGetValueStr_cp (keys_ifcfg, pk_pw_key);
 		}
 	}
 
@@ -3118,7 +3118,7 @@ eap_tls_reader (const char *eap_method,
 static gboolean
 eap_peap_reader (const char *eap_method,
                  shvarFile *ifcfg,
-                 shvarFile *keys,
+                 shvarFile *keys_ifcfg,
                  NMSetting8021x *s_8021x,
                  gboolean phase2,
                  GError **error)
@@ -3179,10 +3179,10 @@ eap_peap_reader (const char *eap_method,
 		if (NM_IN_STRSET (*iter, "MSCHAPV2",
 		                         "MD5",
 		                         "GTC")) {
-			if (!eap_simple_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
+			if (!eap_simple_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
 				return FALSE;
 		} else if (nm_streq (*iter, "TLS")) {
-			if (!eap_tls_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
+			if (!eap_tls_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
 				return FALSE;
 		} else {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -3211,7 +3211,7 @@ eap_peap_reader (const char *eap_method,
 static gboolean
 eap_ttls_reader (const char *eap_method,
                  shvarFile *ifcfg,
-                 shvarFile *keys,
+                 shvarFile *keys_ifcfg,
                  NMSetting8021x *s_8021x,
                  gboolean phase2,
                  GError **error)
@@ -3258,17 +3258,17 @@ eap_ttls_reader (const char *eap_method,
 		                         "mschap",
 		                         "pap",
 		                         "chap")) {
-			if (!eap_simple_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
+			if (!eap_simple_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
 				return FALSE;
 			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, *iter, NULL);
 		} else if (nm_streq (*iter, "eap-tls")) {
-			if (!eap_tls_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
+			if (!eap_tls_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
 				return FALSE;
 			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, "tls", NULL);
 		} else if (NM_IN_STRSET (*iter, "eap-mschapv2",
 		                                "eap-md5",
 		                                "eap-gtc")) {
-			if (!eap_simple_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
+			if (!eap_simple_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
 				return FALSE;
 			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, (*iter + NM_STRLEN ("eap-")), NULL);
 		} else {
@@ -3285,7 +3285,7 @@ eap_ttls_reader (const char *eap_method,
 static gboolean
 eap_fast_reader (const char *eap_method,
                  shvarFile *ifcfg,
-                 shvarFile *keys,
+                 shvarFile *keys_ifcfg,
                  NMSetting8021x *s_8021x,
                  gboolean phase2,
                  GError **error)
@@ -3351,7 +3351,7 @@ eap_fast_reader (const char *eap_method,
 	if (iter) {
 		if (   !strcmp (*iter, "MSCHAPV2")
 		    || !strcmp (*iter, "GTC")) {
-			if (!eap_simple_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
+			if (!eap_simple_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
 				goto done;
 		} else {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -3386,7 +3386,7 @@ typedef struct {
 	const char *method;
 	gboolean (*reader) (const char *eap_method,
 	                    shvarFile *ifcfg,
-	                    shvarFile *keys,
+	                    shvarFile *keys_ifcfg,
 	                    NMSetting8021x *s_8021x,
 	                    gboolean phase2,
 	                    GError **error);
@@ -3438,7 +3438,7 @@ fill_8021x (shvarFile *ifcfg,
             gboolean wifi,
             GError **error)
 {
-	nm_auto_shvar_file_close shvarFile *keys = NULL;
+	nm_auto_shvar_file_close shvarFile *keys_ifcfg = NULL;
 	gs_unref_object NMSetting8021x *s_8021x = NULL;
 	gs_free char *value = NULL;
 	const char *v;
@@ -3459,8 +3459,8 @@ fill_8021x (shvarFile *ifcfg,
 
 	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
 
-	/* Read in the lookaside keys file, if present */
-	keys = utils_get_keys_ifcfg (file, FALSE);
+	/* Read in the lookaside keys_ifcfg file, if present */
+	keys_ifcfg = utils_get_keys_ifcfg (file, FALSE);
 
 	/* Validate and handle each EAP method */
 	for (iter = list; iter && *iter; iter++) {
@@ -3484,7 +3484,7 @@ fill_8021x (shvarFile *ifcfg,
 			}
 
 			/* Parse EAP method specific options */
-			if (!(*eap->reader)(lower, ifcfg, keys, s_8021x, FALSE, error))
+			if (!(*eap->reader)(lower, ifcfg, keys_ifcfg, s_8021x, FALSE, error))
 				return NULL;
 
 			nm_setting_802_1x_add_eap_method (s_8021x, lower);
@@ -5459,7 +5459,7 @@ connection_from_file_full (const char *filename,
                            GError **error,
                            gboolean *out_ignore_error)
 {
-	nm_auto_shvar_file_close shvarFile *parsed = NULL;
+	nm_auto_shvar_file_close shvarFile *main_ifcfg = NULL;
 	nm_auto_shvar_file_close shvarFile *network_ifcfg = NULL;
 	gs_unref_object NMConnection *connection = NULL;
 	gs_free char *type = NULL;
@@ -5487,14 +5487,14 @@ connection_from_file_full (const char *filename,
 		return NULL;
 	}
 
-	parsed = svOpenFile (filename, error);
-	if (!parsed)
+	main_ifcfg = svOpenFile (filename, error);
+	if (!main_ifcfg)
 		return NULL;
 
 	network_ifcfg = svOpenFile (network_file, NULL);
 
-	if (!svGetValueBoolean (parsed, "NM_CONTROLLED", TRUE)) {
-		connection = create_unhandled_connection (filename, parsed, "unmanaged", out_unhandled);
+	if (!svGetValueBoolean (main_ifcfg, "NM_CONTROLLED", TRUE)) {
+		connection = create_unhandled_connection (filename, main_ifcfg, "unmanaged", out_unhandled);
 		if (!connection) {
 			NM_SET_OUT (out_ignore_error, TRUE);
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
@@ -5504,7 +5504,7 @@ connection_from_file_full (const char *filename,
 	}
 
 	/* iBFT is handled by the iBFT settings plugin */
-	bootproto = svGetValueStr_cp (parsed, "BOOTPROTO");
+	bootproto = svGetValueStr_cp (main_ifcfg, "BOOTPROTO");
 	if (bootproto && !g_ascii_strcasecmp (bootproto, "ibft")) {
 		NM_SET_OUT (out_ignore_error, TRUE);
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -5514,19 +5514,19 @@ connection_from_file_full (const char *filename,
 	}
 	g_free (bootproto);
 
-	devtype = svGetValueStr_cp (parsed, "DEVICETYPE");
+	devtype = svGetValueStr_cp (main_ifcfg, "DEVICETYPE");
 	if (devtype) {
 		if (!strcasecmp (devtype, TYPE_TEAM))
 			type = g_strdup (TYPE_TEAM);
 		else if (!strcasecmp (devtype, TYPE_TEAM_PORT)) {
 			gs_free char *device = NULL;
 
-			type = svGetValueStr_cp (parsed, "TYPE");
-			device = svGetValueStr_cp (parsed, "DEVICE");
+			type = svGetValueStr_cp (main_ifcfg, "TYPE");
+			device = svGetValueStr_cp (main_ifcfg, "DEVICE");
 
 			if (type) {
 				/* nothing to do */
-			} else if (device && is_vlan_device (device, parsed))
+			} else if (device && is_vlan_device (device, main_ifcfg))
 				type = g_strdup (TYPE_VLAN);
 			else
 				type = g_strdup (TYPE_ETHERNET);
@@ -5539,26 +5539,26 @@ connection_from_file_full (const char *filename,
 		/* Team and TeamPort types are also accepted by the mere
 		 * presence of TEAM_CONFIG/TEAM_MASTER. They don't require
 		 * DEVICETYPE. */
-		t = svGetValueStr_cp (parsed, "TEAM_CONFIG");
+		t = svGetValueStr_cp (main_ifcfg, "TEAM_CONFIG");
 		if (t)
 			type = g_strdup (TYPE_TEAM);
 	}
 
 	if (!type)
-		type = svGetValueStr_cp (parsed, "TYPE");
+		type = svGetValueStr_cp (main_ifcfg, "TYPE");
 
 	if (!type) {
 		gs_free char *tmp = NULL;
 		char *device;
 
-		if ((tmp = svGetValueStr_cp (parsed, "IPV6TUNNELIPV4"))) {
+		if ((tmp = svGetValueStr_cp (main_ifcfg, "IPV6TUNNELIPV4"))) {
 			NM_SET_OUT (out_ignore_error, TRUE);
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Ignoring unsupported connection due to IPV6TUNNELIPV4");
 			return NULL;
 		}
 
-		device = svGetValueStr_cp (parsed, "DEVICE");
+		device = svGetValueStr_cp (main_ifcfg, "DEVICE");
 		if (!device) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "File '%s' had neither TYPE nor DEVICE keys.", filename);
@@ -5574,11 +5574,11 @@ connection_from_file_full (const char *filename,
 		}
 
 		if (!test_type) {
-			if (is_bond_device (device, parsed))
+			if (is_bond_device (device, main_ifcfg))
 				type = g_strdup (TYPE_BOND);
-			else if (is_vlan_device (device, parsed))
+			else if (is_vlan_device (device, main_ifcfg))
 				type = g_strdup (TYPE_VLAN);
-			else if (is_wifi_device (device, parsed))
+			else if (is_wifi_device (device, main_ifcfg))
 				type = g_strdup (TYPE_WIRELESS);
 			else {
 				gs_free char *p_path = NULL;
@@ -5644,14 +5644,14 @@ connection_from_file_full (const char *filename,
 	if (nm_streq0 (type, TYPE_ETHERNET)) {
 		gs_free char *bond_options = NULL;
 
-		if (svGetValueStr (parsed, "BONDING_OPTS", &bond_options)) {
+		if (svGetValueStr (main_ifcfg, "BONDING_OPTS", &bond_options)) {
 			/* initscripts consider these as bond masters */
 			g_free (type);
 			type = g_strdup (TYPE_BOND);
 		}
 	}
 
-	if (svGetValueBoolean (parsed, "BONDING_MASTER", FALSE) &&
+	if (svGetValueBoolean (main_ifcfg, "BONDING_MASTER", FALSE) &&
 	    strcasecmp (type, TYPE_BOND)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "BONDING_MASTER=yes key only allowed in TYPE=bond connections");
@@ -5660,21 +5660,21 @@ connection_from_file_full (const char *filename,
 
 	/* Construct the connection */
 	if (!strcasecmp (type, TYPE_ETHERNET))
-		connection = wired_connection_from_ifcfg (filename, parsed, error);
+		connection = wired_connection_from_ifcfg (filename, main_ifcfg, error);
 	else if (!strcasecmp (type, TYPE_WIRELESS))
-		connection = wireless_connection_from_ifcfg (filename, parsed, error);
+		connection = wireless_connection_from_ifcfg (filename, main_ifcfg, error);
 	else if (!strcasecmp (type, TYPE_INFINIBAND))
-		connection = infiniband_connection_from_ifcfg (filename, parsed, error);
+		connection = infiniband_connection_from_ifcfg (filename, main_ifcfg, error);
 	else if (!strcasecmp (type, TYPE_BOND))
-		connection = bond_connection_from_ifcfg (filename, parsed, error);
+		connection = bond_connection_from_ifcfg (filename, main_ifcfg, error);
 	else if (!strcasecmp (type, TYPE_TEAM))
-		connection = team_connection_from_ifcfg (filename, parsed, error);
+		connection = team_connection_from_ifcfg (filename, main_ifcfg, error);
 	else if (!strcasecmp (type, TYPE_VLAN))
-		connection = vlan_connection_from_ifcfg (filename, parsed, error);
+		connection = vlan_connection_from_ifcfg (filename, main_ifcfg, error);
 	else if (!strcasecmp (type, TYPE_BRIDGE))
-		connection = bridge_connection_from_ifcfg (filename, parsed, error);
+		connection = bridge_connection_from_ifcfg (filename, main_ifcfg, error);
 	else {
-		connection = create_unhandled_connection (filename, parsed, "unrecognized", out_unhandled);
+		connection = create_unhandled_connection (filename, main_ifcfg, "unrecognized", out_unhandled);
 		if (!connection) {
 			PARSE_WARNING ("connection type was unrecognized but device was not uniquely identified; device may be managed");
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -5686,7 +5686,7 @@ connection_from_file_full (const char *filename,
 	if (!connection)
 		return NULL;
 
-	parse_ethtool_options (parsed, connection);
+	parse_ethtool_options (main_ifcfg, connection);
 
 	has_complex_routes_v4 = utils_has_complex_routes (filename, AF_INET);
 	has_complex_routes_v6 = utils_has_complex_routes (filename, AF_INET6);
@@ -5700,7 +5700,7 @@ connection_from_file_full (const char *filename,
 			PARSE_WARNING ("'rule-' and 'rule6-' files are present; you will need to use a dispatcher script to apply these routes");
 	}
 
-	s_ip6 = make_ip6_setting (parsed,
+	s_ip6 = make_ip6_setting (main_ifcfg,
 	                          network_ifcfg,
 	                          !has_complex_routes_v4 && !has_complex_routes_v6,
 	                          error);
@@ -5709,7 +5709,7 @@ connection_from_file_full (const char *filename,
 	else
 		nm_connection_add_setting (connection, s_ip6);
 
-	s_ip4 = make_ip4_setting (parsed,
+	s_ip4 = make_ip4_setting (main_ifcfg,
 	                          network_ifcfg,
 	                          !has_complex_routes_v4 && !has_complex_routes_v6,
 	                          &has_ip4_defroute,
@@ -5723,11 +5723,11 @@ connection_from_file_full (const char *filename,
 		nm_connection_add_setting (connection, s_ip4);
 	}
 
-	s_sriov = make_sriov_setting (parsed);
+	s_sriov = make_sriov_setting (main_ifcfg);
 	if (s_sriov)
 		nm_connection_add_setting (connection, s_sriov);
 
-	s_tc = make_tc_setting (parsed);
+	s_tc = make_tc_setting (main_ifcfg);
 	if (s_tc)
 		nm_connection_add_setting (connection, s_tc);
 
@@ -5735,31 +5735,31 @@ connection_from_file_full (const char *filename,
 	 * config fails for some reason, we read DOMAIN and put the
 	 * values into IPv6 config instead of IPv4.
 	 */
-	check_dns_search_domains (parsed, s_ip4, s_ip6);
+	check_dns_search_domains (main_ifcfg, s_ip4, s_ip6);
 
-	s_proxy = make_proxy_setting (parsed);
+	s_proxy = make_proxy_setting (main_ifcfg);
 	if (s_proxy)
 		nm_connection_add_setting (connection, s_proxy);
 
-	s_user = make_user_setting (parsed);
+	s_user = make_user_setting (main_ifcfg);
 	if (s_user)
 		nm_connection_add_setting (connection, s_user);
 
-	s_match = make_match_setting (parsed);
+	s_match = make_match_setting (main_ifcfg);
 	if (s_match)
 		nm_connection_add_setting (connection, s_match);
 
 	/* Bridge port? */
-	s_port = make_bridge_port_setting (parsed);
+	s_port = make_bridge_port_setting (main_ifcfg);
 	if (s_port)
 		nm_connection_add_setting (connection, s_port);
 
 	/* Team port? */
-	s_port = make_team_port_setting (parsed);
+	s_port = make_team_port_setting (main_ifcfg);
 	if (s_port)
 		nm_connection_add_setting (connection, s_port);
 
-	if (!make_dcb_setting (parsed, &s_dcb, error))
+	if (!make_dcb_setting (main_ifcfg, &s_dcb, error))
 		return NULL;
 	if (s_dcb)
 		nm_connection_add_setting (connection, s_dcb);
