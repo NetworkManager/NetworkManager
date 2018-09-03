@@ -101,6 +101,12 @@
 %global with_modem_manager_1 0
 %endif
 
+%if 0%{fedora} || 0%{?rhel} <= 7
+%global dhcp_default dhclient
+%else
+%global dhcp_default internal
+%endif
+
 ###############################################################################
 
 Name: NetworkManager
@@ -464,7 +470,7 @@ intltoolize --automake --copy --force
 	--with-dhclient=yes \
 	--with-dhcpcd=no \
 	--with-dhcpcanon=no \
-	--with-config-dhcp-default=dhclient \
+	--with-config-dhcp-default=%{dhcp_default} \
 %if %{with crypto_gnutls}
 	--with-crypto=gnutls \
 %else
