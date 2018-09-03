@@ -467,12 +467,12 @@ _nmtst_convert_iv (const char *src,
 }
 
 guint8 *
-nm_crypto_make_des_aes_key (NMCryptoCipherType cipher,
-                            const guint8 *salt,
-                            gsize salt_len,
-                            const char *password,
-                            gsize *out_len,
-                            GError **error)
+nmtst_crypto_make_des_aes_key (NMCryptoCipherType cipher,
+                               const guint8 *salt,
+                               gsize salt_len,
+                               const char *password,
+                               gsize *out_len,
+                               GError **error)
 {
 	guint8 *key;
 	const NMCryptoCipherInfo *cipher_info;
@@ -537,7 +537,7 @@ _nmtst_decrypt_key (NMCryptoCipherType cipher,
 	}
 
 	/* Convert the password and IV into a DES or AES key */
-	key.bin = nm_crypto_make_des_aes_key (cipher, bin_iv.bin, bin_iv.len, password, &key.len, error);
+	key.bin = nmtst_crypto_make_des_aes_key (cipher, bin_iv.bin, bin_iv.len, password, &key.len, error);
 	if (!key.bin || !key.len)
 		return FALSE;
 
@@ -969,7 +969,7 @@ nmtst_crypto_rsa_key_encrypt (const guint8 *data,
 	if (!nm_crypto_randomize (salt, sizeof (salt), error))
 		return NULL;
 
-	key.bin = nm_crypto_make_des_aes_key (NM_CRYPTO_CIPHER_DES_EDE3_CBC, salt, sizeof (salt), in_password, &key.len, NULL);
+	key.bin = nmtst_crypto_make_des_aes_key (NM_CRYPTO_CIPHER_DES_EDE3_CBC, salt, sizeof (salt), in_password, &key.len, NULL);
 	if (!key.bin)
 		g_return_val_if_reached (NULL);
 
