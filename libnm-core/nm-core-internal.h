@@ -588,4 +588,13 @@ const NMSettInfoProperty *_nm_sett_info_property_get (NMSettingClass *setting_cl
 
 /*****************************************************************************/
 
+NMSetting8021xCKScheme _nm_setting_802_1x_cert_get_scheme (GBytes *bytes, GError **error);
+
+GBytes *_nm_setting_802_1x_cert_value_to_bytes (NMSetting8021xCKScheme scheme,
+                                                const guint8 *val_bin,
+                                                gssize val_len,
+                                                GError **error);
+
+/*****************************************************************************/
+
 #endif

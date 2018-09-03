@@ -279,8 +279,8 @@ nm_setting_802_1x_check_cert_scheme (gconstpointer pdata, gsize length, GError *
 	return scheme;
 }
 
-static NMSetting8021xCKScheme
-_cert_get_scheme (GBytes *bytes, GError **error)
+NMSetting8021xCKScheme
+_nm_setting_802_1x_cert_get_scheme (GBytes *bytes, GError **error)
 {
 	const char *data;
 	gsize length;
@@ -307,7 +307,7 @@ _cert_verify_scheme (NMSetting8021xCKScheme scheme,
 
 	nm_assert (bytes);
 
-	scheme_detected = _cert_get_scheme (bytes, &local);
+	scheme_detected = _nm_setting_802_1x_cert_get_scheme (bytes, &local);
 	if (scheme_detected == NM_SETTING_802_1X_CK_SCHEME_UNKNOWN) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
@@ -327,11 +327,11 @@ _cert_verify_scheme (NMSetting8021xCKScheme scheme,
 	return TRUE;
 }
 
-static GBytes *
-_cert_value_to_bytes (NMSetting8021xCKScheme scheme,
-                      const guint8 *val_bin,
-                      gssize val_len,
-                      GError **error)
+GBytes *
+_nm_setting_802_1x_cert_value_to_bytes (NMSetting8021xCKScheme scheme,
+                                        const guint8 *val_bin,
+                                        gssize val_len,
+                                        GError **error)
 {
 	gs_unref_bytes GBytes *bytes = NULL;
 	guint8 *mem;
@@ -388,7 +388,7 @@ _cert_get_path (GBytes *bytes)
 	G_STMT_START { \
 		NMSetting8021xCKScheme scheme; \
 		\
-		scheme = _cert_get_scheme ((cert), NULL); \
+		scheme = _nm_setting_802_1x_cert_get_scheme ((cert), NULL); \
 		if (scheme != check_scheme) { \
 			g_return_val_if_fail (scheme == check_scheme, ret_val); \
 			return ret_val; \
@@ -404,7 +404,7 @@ _cert_get_path (GBytes *bytes)
 		\
 		_cert = NM_SETTING_802_1X_GET_PRIVATE (_setting)->cert_field; \
 		\
-		return _cert_get_scheme (_cert, NULL); \
+		return _nm_setting_802_1x_cert_get_scheme (_cert, NULL); \
 	} G_STMT_END
 
 #define _cert_impl_get_blob(setting, cert_field) \
@@ -487,7 +487,7 @@ _cert_impl_set (NMSetting8021x *setting,
 	if (!value) {
 		/* pass. */
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-		cert = _cert_value_to_bytes (scheme, (guint8 *) value, -1, error);
+		cert = _nm_setting_802_1x_cert_value_to_bytes (scheme, (guint8 *) value, -1, error);
 		if (!cert)
 			goto err;
 	} else {
@@ -518,7 +518,7 @@ _cert_impl_set (NMSetting8021x *setting,
 			if (!_cert_verify_scheme (scheme, cert, error))
 				goto err;
 		} else {
-			cert = _cert_value_to_bytes (scheme, (guint8 *) value, -1, error);
+			cert = _nm_setting_802_1x_cert_value_to_bytes (scheme, (guint8 *) value, -1, error);
 			if (!cert)
 				goto err;
 		}
@@ -627,7 +627,7 @@ _cert_impl_get_key_format_from_bytes (GBytes *private_key)
 	if (!private_key)
 		return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 
-	switch (_cert_get_scheme (private_key, NULL)) {
+	switch (_nm_setting_802_1x_cert_get_scheme (private_key, NULL)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (nm_crypto_is_pkcs12_data (g_bytes_get_data (private_key, NULL),
 		                              g_bytes_get_size (private_key),
@@ -674,7 +674,7 @@ _cert_verify_property (GBytes *bytes,
 	if (!bytes)
 		return TRUE;
 
-	scheme = _cert_get_scheme (bytes, &local);
+	scheme = _nm_setting_802_1x_cert_get_scheme (bytes, &local);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_UNKNOWN) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,

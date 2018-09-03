@@ -80,6 +80,30 @@
 
 /*****************************************************************************/
 
+static char *
+get_full_file_path (const char *ifcfg_path, const char *file_path)
+{
+	const char *base = file_path;
+	char *p, *ret, *dirname;
+
+	g_return_val_if_fail (ifcfg_path != NULL, NULL);
+	g_return_val_if_fail (file_path != NULL, NULL);
+
+	if (file_path[0] == '/')
+		return g_strdup (file_path);
+
+	p = strrchr (file_path, '/');
+	if (p)
+		base = p + 1;
+
+	dirname = g_path_get_dirname (ifcfg_path);
+	ret = g_build_path ("/", dirname, base, NULL);
+	g_free (dirname);
+	return ret;
+}
+
+/*****************************************************************************/
+
 static NMSettingSecretFlags
 _secret_read_ifcfg_flags (shvarFile *ifcfg, const char *flags_key)
 {
@@ -173,6 +197,88 @@ _secret_password_raw_to_bytes (const char *ifcfg_key,
 	}
 
 	NM_SET_OUT (out_bytes, nm_secret_buf_to_gbytes_take (g_steal_pointer (&secret), len));
+	return TRUE;
+}
+
+/*****************************************************************************/
+
+static GBytes *
+_cert_get_cert_bytes (const char *ifcfg_path,
+                      const char *value,
+                      GError **error)
+{
+	gs_free char *path = NULL;
+
+	if (g_str_has_prefix (value, "pkcs11:"))
+		return _nm_setting_802_1x_cert_value_to_bytes (NM_SETTING_802_1X_CK_SCHEME_PKCS11, (guint8 *) value, -1, error);
+
+	path = get_full_file_path (ifcfg_path, value);
+	return _nm_setting_802_1x_cert_value_to_bytes (NM_SETTING_802_1X_CK_SCHEME_PATH, (guint8 *) path, -1, error);
+}
+
+static gboolean
+_cert_get_cert (shvarFile *ifcfg,
+                const char *ifcfg_key,
+                GBytes **out_cert,
+                NMSetting8021xCKScheme *out_scheme,
+                GError **error)
+{
+	nm_auto_free_secret char *val_free = NULL;
+	const char *val;
+	gs_unref_bytes GBytes *cert = NULL;
+	GError *local = NULL;
+	NMSetting8021xCKScheme scheme;
+
+	val = svGetValueStr (ifcfg, ifcfg_key, &val_free);
+	if (!val) {
+		NM_SET_OUT (out_cert, NULL);
+		NM_SET_OUT (out_scheme, NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
+		return TRUE;
+	}
+
+	cert = _cert_get_cert_bytes (svFileGetName (ifcfg), val, &local);
+	if (!cert)
+		goto err;
+
+	scheme = _nm_setting_802_1x_cert_get_scheme (cert, &local);
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_UNKNOWN)
+		goto err;
+
+	NM_SET_OUT (out_cert, g_steal_pointer (&cert));
+	NM_SET_OUT (out_scheme, scheme);
+	return TRUE;
+
+err:
+	g_set_error (error,
+	             NM_SETTINGS_ERROR,
+	             NM_SETTINGS_ERROR_INVALID_CONNECTION,
+	             "invalid certificate %s: %s",
+	             ifcfg_key,
+	             local->message);
+	g_error_free (local);
+	return FALSE;
+}
+
+static gboolean
+_cert_set_from_ifcfg (gpointer setting,
+                      shvarFile *ifcfg,
+                      const char *ifcfg_key,
+                      const char *property_name,
+                      GBytes **out_cert,
+                      GError **error)
+{
+	gs_unref_bytes GBytes *cert = NULL;
+
+	if (!_cert_get_cert (ifcfg,
+	                     ifcfg_key,
+	                     &cert,
+	                     NULL,
+	                     error))
+		return FALSE;
+
+	g_object_set (setting, property_name, cert, NULL);
+
+	NM_SET_OUT (out_cert, g_steal_pointer (&cert));
 	return TRUE;
 }
 
@@ -2978,41 +3084,6 @@ eap_simple_reader (const char *eap_method,
 	return TRUE;
 }
 
-static char *
-get_full_file_path (const char *ifcfg_path, const char *file_path)
-{
-	const char *base = file_path;
-	char *p, *ret, *dirname;
-
-	g_return_val_if_fail (ifcfg_path != NULL, NULL);
-	g_return_val_if_fail (file_path != NULL, NULL);
-
-	if (file_path[0] == '/')
-		return g_strdup (file_path);
-
-	p = strrchr (file_path, '/');
-	if (p)
-		base = p + 1;
-
-	dirname = g_path_get_dirname (ifcfg_path);
-	ret = g_build_path ("/", dirname, base, NULL);
-	g_free (dirname);
-	return ret;
-}
-
-static char *
-get_cert_value (const char *ifcfg_path, const char *value,
-                NMSetting8021xCKScheme *out_scheme)
-{
-	if (strncmp (value, "pkcs11:", 7) == 0) {
-		*out_scheme = NM_SETTING_802_1X_CK_SCHEME_PKCS11;
-		return g_strdup (value);
-	}
-
-	*out_scheme = NM_SETTING_802_1X_CK_SCHEME_PATH;
-	return get_full_file_path (ifcfg_path, value);
-}
-
 static gboolean
 eap_tls_reader (const char *eap_method,
                 shvarFile *ifcfg,
@@ -3021,146 +3092,69 @@ eap_tls_reader (const char *eap_method,
                 gboolean phase2,
                 GError **error)
 {
-	gs_free char *ca_cert = NULL;
-	gs_free char *privkey = NULL;
-	gs_free char *privkey_password = NULL;
-	char *value;
-	char *ca_cert_password = NULL;
-	char *client_cert_password = NULL;
-	NMSetting8021xCKFormat privkey_format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
-	const char *ca_cert_key = phase2 ? "IEEE_8021X_INNER_CA_CERT" : "IEEE_8021X_CA_CERT";
-	const char *ca_cert_pw_key = phase2 ? "IEEE_8021X_INNER_CA_CERT_PASSWORD" : "IEEE_8021X_CA_CERT_PASSWORD";
-	const char *ca_cert_pw_prop = phase2 ? NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD : NM_SETTING_802_1X_CA_CERT_PASSWORD;
-	const char *ca_cert_pw_flags_key = phase2 ? "IEEE_8021X_INNER_CA_CERT_PASSWORD_FLAGS" : "IEEE_8021X_CA_CERT_PASSWORD_FLAGS";
-	const char *ca_cert_pw_flags_prop = phase2 ? NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD_FLAGS : NM_SETTING_802_1X_CA_CERT_PASSWORD_FLAGS;
-	const char *cli_cert_key = phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" : "IEEE_8021X_CLIENT_CERT";
-	const char *cli_cert_pw_key = phase2 ? "IEEE_8021X_INNER_CLIENT_CERT_PASSWORD" : "IEEE_8021X_CLIENT_CERT_PASSWORD";
-	const char *cli_cert_pw_prop = phase2 ? NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD : NM_SETTING_802_1X_CLIENT_CERT_PASSWORD;
-	const char *cli_cert_pw_flags_key = phase2 ? "IEEE_8021X_INNER_CLIENT_CERT_PASSWORD_FLAGS" : "IEEE_8021X_CLIENT_CERT_PASSWORD_FLAGS";
-	const char *cli_cert_pw_flags_prop = phase2 ? NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD_FLAGS : NM_SETTING_802_1X_CLIENT_CERT_PASSWORD_FLAGS;
-	const char *pk_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" : "IEEE_8021X_PRIVATE_KEY";
-	const char *pk_pw_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD": "IEEE_8021X_PRIVATE_KEY_PASSWORD";
-	const char *pk_pw_flags_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD_FLAGS" : "IEEE_8021X_PRIVATE_KEY_PASSWORD_FLAGS";
-	const char *pk_pw_flags_prop = phase2 ? NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS : NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS;
-	NMSettingSecretFlags flags;
-	NMSetting8021xCKScheme scheme;
+	gs_unref_bytes GBytes *privkey = NULL;
+	gs_unref_bytes GBytes *client_cert = NULL;
+	gs_free char *identity_free = NULL;
 
-	value = svGetValueStr_cp (ifcfg, "IEEE_8021X_IDENTITY");
-	if (value) {
-		g_object_set (s_8021x, NM_SETTING_802_1X_IDENTITY, value, NULL);
-		g_free (value);
-	}
+	g_object_set (s_8021x,
+	              NM_SETTING_802_1X_IDENTITY,
+	              svGetValueStr (ifcfg, "IEEE_8021X_IDENTITY", &identity_free),
+	              NULL);
 
-	ca_cert = svGetValueStr_cp (ifcfg, ca_cert_key);
-	if (ca_cert) {
-		gs_free char *real_cert_value = NULL;
+	if (!_cert_set_from_ifcfg (s_8021x,
+	                           ifcfg,
+	                           phase2 ? "IEEE_8021X_INNER_CA_CERT" : "IEEE_8021X_CA_CERT",
+	                           phase2 ? NM_SETTING_802_1X_PHASE2_CA_CERT : NM_SETTING_802_1X_CA_CERT,
+	                           NULL,
+	                           error))
+		return FALSE;
+	_secret_set_from_ifcfg (s_8021x,
+	                        ifcfg,
+	                        keys_ifcfg,
+	                        phase2 ? "IEEE_8021X_INNER_CA_CERT_PASSWORD" : "IEEE_8021X_CA_CERT_PASSWORD",
+	                        phase2 ? NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD : NM_SETTING_802_1X_CA_CERT_PASSWORD);
 
-		real_cert_value = get_cert_value (svFileGetName (ifcfg), ca_cert, &scheme);
-		if (phase2) {
-			if (!nm_setting_802_1x_set_phase2_ca_cert (s_8021x, real_cert_value, scheme, NULL, error))
-				return FALSE;
-		} else {
-			if (!nm_setting_802_1x_set_ca_cert (s_8021x, real_cert_value, scheme, NULL, error))
-				return FALSE;
-		}
-
-		if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-			flags = _secret_read_ifcfg_flags (ifcfg, ca_cert_pw_flags_key);
-			g_object_set (s_8021x, ca_cert_pw_flags_prop, flags, NULL);
-
-			if (flags == NM_SETTING_SECRET_FLAG_NONE) {
-				ca_cert_password = svGetValueStr_cp (ifcfg, ca_cert_pw_key);
-				g_object_set (s_8021x, ca_cert_pw_prop, ca_cert_password, NULL);
-			}
-		}
-	} else {
-		PARSE_WARNING ("missing %s for EAP method '%s'; this is insecure!",
-		               ca_cert_key, eap_method);
-	}
-
-	/* Read and set private key password flags */
-	flags = _secret_read_ifcfg_flags (ifcfg, pk_pw_flags_key);
-	g_object_set (s_8021x, pk_pw_flags_prop, flags, NULL);
-
-	/* Read the private key password if it's system-owned */
-	if (flags == NM_SETTING_SECRET_FLAG_NONE) {
-		/* Private key password */
-		privkey_password = svGetValueStr_cp (ifcfg, pk_pw_key);
-		if (!privkey_password && keys_ifcfg) {
-			/* Try the lookaside keys file */
-			privkey_password = svGetValueStr_cp (keys_ifcfg, pk_pw_key);
-		}
-	}
-
-	/* The private key itself */
-	privkey = svGetValueStr_cp (ifcfg, pk_key);
+	if (!_cert_set_from_ifcfg (s_8021x,
+	                           ifcfg,
+	                           phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" : "IEEE_8021X_PRIVATE_KEY",
+	                           phase2 ? NM_SETTING_802_1X_PHASE2_PRIVATE_KEY : NM_SETTING_802_1X_PRIVATE_KEY,
+	                           &privkey,
+	                           error))
+		return FALSE;
+	_secret_set_from_ifcfg (s_8021x,
+	                        ifcfg,
+	                        keys_ifcfg,
+	                        phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD" : "IEEE_8021X_PRIVATE_KEY_PASSWORD",
+	                        phase2 ? NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD : NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
 	if (!privkey) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Missing %s for EAP method '%s'.",
-		             pk_key,
+		             phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" : "IEEE_8021X_PRIVATE_KEY",
 		             eap_method);
 		return FALSE;
 	}
 
-	{
-		gs_free char *real_cert_value = NULL;
-
-		real_cert_value = get_cert_value (svFileGetName (ifcfg), privkey, &scheme);
-		if (phase2) {
-			if (!nm_setting_802_1x_set_phase2_private_key (s_8021x,
-			                                               real_cert_value,
-			                                               privkey_password,
-			                                               scheme,
-			                                               &privkey_format,
-			                                               error))
-				return FALSE;
-		} else {
-			if (!nm_setting_802_1x_set_private_key (s_8021x,
-			                                        real_cert_value,
-			                                        privkey_password,
-			                                        scheme,
-			                                        &privkey_format,
-			                                        error))
-				return FALSE;
-		}
-	}
-
-	/* Only set the client certificate if the private key is not PKCS#12 format,
-	 * as NM (due to supplicant restrictions) requires.  If the key was PKCS#12,
-	 * then nm_setting_802_1x_set_private_key() already set the client certificate
-	 * to the same value as the private key.
-	 */
-	if (privkey_format != NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
-		gs_free char *real_cert_value = NULL;
-		gs_free char *client_cert = NULL;
-
-		client_cert = svGetValueStr_cp (ifcfg, cli_cert_key);
-		if (!client_cert) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Missing %s for EAP method '%s'.",
-			             cli_cert_key,
-			             eap_method);
-			return FALSE;
-		}
-
-		real_cert_value = get_cert_value (svFileGetName (ifcfg), client_cert, &scheme);
-		if (phase2) {
-			if (!nm_setting_802_1x_set_phase2_client_cert (s_8021x, real_cert_value, scheme, NULL, error))
-				return FALSE;
-		} else {
-			if (!nm_setting_802_1x_set_client_cert (s_8021x, real_cert_value, scheme, NULL, error))
-				return FALSE;
-		}
-
-		if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-			flags = _secret_read_ifcfg_flags (ifcfg, cli_cert_pw_flags_key);
-			g_object_set (s_8021x, cli_cert_pw_flags_prop, flags, NULL);
-
-			if (flags == NM_SETTING_SECRET_FLAG_NONE) {
-				client_cert_password = svGetValueStr_cp (ifcfg, cli_cert_pw_key);
-				g_object_set (s_8021x, cli_cert_pw_prop, client_cert_password, NULL);
-			}
-		}
+	if (!_cert_set_from_ifcfg (s_8021x,
+	                           ifcfg,
+	                           phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" : "IEEE_8021X_CLIENT_CERT",
+	                           phase2 ? NM_SETTING_802_1X_PHASE2_CLIENT_CERT : NM_SETTING_802_1X_CLIENT_CERT,
+	                           &client_cert,
+	                           error))
+		return FALSE;
+	/* FIXME: writer does not actually write IEEE_8021X_CLIENT_CERT_PASSWORD and other
+	 * certificate related passwords. It should, because otherwise persisting such profiles
+	 * to ifcfg looses information. As this currently only matters for PKCS11 URIs, it seems
+	 * a seldomly used feature so that it is not fixed yet. */
+	_secret_set_from_ifcfg (s_8021x,
+	                        ifcfg,
+	                        keys_ifcfg,
+	                        phase2 ? "IEEE_8021X_INNER_CLIENT_CERT_PASSWORD" : "IEEE_8021X_CLIENT_CERT_PASSWORD",
+	                        phase2 ? NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD : NM_SETTING_802_1X_CLIENT_CERT_PASSWORD);
+	if (!client_cert) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "Missing certificate for EAP method '%s'.",
+		             eap_method);
+		return FALSE;
 	}
 
 	return TRUE;
@@ -3178,19 +3172,19 @@ eap_peap_reader (const char *eap_method,
 	const char *v;
 	gs_free const char **list = NULL;
 	const char *const *iter;
-	NMSetting8021xCKScheme scheme;
 
-	v = svGetValueStr (ifcfg, "IEEE_8021X_CA_CERT", &value);
-	if (v) {
-		gs_free char *real_cert_value = NULL;
-
-		real_cert_value = get_cert_value (svFileGetName (ifcfg), v, &scheme);
-		if (!nm_setting_802_1x_set_ca_cert (s_8021x, real_cert_value, scheme, NULL, error))
-			return FALSE;
-	} else {
-		PARSE_WARNING ("missing IEEE_8021X_CA_CERT for EAP method '%s'; this is insecure!",
-		               eap_method);
-	}
+	if (!_cert_set_from_ifcfg (s_8021x,
+	                           ifcfg,
+	                           "IEEE_8021X_CA_CERT",
+	                           NM_SETTING_802_1X_CA_CERT,
+	                           NULL,
+	                           error))
+		return FALSE;
+	_secret_set_from_ifcfg (s_8021x,
+	                        ifcfg,
+	                        keys_ifcfg,
+	                        "IEEE_8021X_CA_CERT_PASSWORD",
+	                        NM_SETTING_802_1X_CA_CERT_PASSWORD);
 
 	nm_clear_g_free (&value);
 	v = svGetValueStr (ifcfg, "IEEE_8021X_PEAP_VERSION", &value);
@@ -3272,19 +3266,19 @@ eap_ttls_reader (const char *eap_method,
 	const char *v;
 	gs_free const char **list = NULL;
 	const char *const *iter;
-	NMSetting8021xCKScheme scheme;
 
-	v = svGetValueStr (ifcfg, "IEEE_8021X_CA_CERT", &value);
-	if (v) {
-		gs_free char *real_cert_value = NULL;
-
-		real_cert_value = get_cert_value (svFileGetName (ifcfg), v, &scheme);
-		if (!nm_setting_802_1x_set_ca_cert (s_8021x, real_cert_value, scheme, NULL, error))
-			return FALSE;
-	} else {
-		PARSE_WARNING ("missing IEEE_8021X_CA_CERT for EAP method '%s'; this is insecure!",
-		               eap_method);
-	}
+	if (!_cert_set_from_ifcfg (s_8021x,
+	                           ifcfg,
+	                           "IEEE_8021X_CA_CERT",
+	                           NM_SETTING_802_1X_CA_CERT,
+	                           NULL,
+	                           error))
+		return FALSE;
+	_secret_set_from_ifcfg (s_8021x,
+	                        ifcfg,
+	                        keys_ifcfg,
+	                        "IEEE_8021X_CA_CERT_PASSWORD",
+	                        NM_SETTING_802_1X_CA_CERT_PASSWORD);
 
 	nm_clear_g_free (&value);
 	v = svGetValueStr (ifcfg, "IEEE_8021X_ANON_IDENTITY", &value);
