@@ -3526,13 +3526,13 @@ nm_utils_hwaddr_len (int type)
 	g_return_val_if_reached (0);
 }
 
-static guint8 *
-_str2bin (const char *asc,
-          gboolean delimiter_required,
-          const char *delimiter_candidates,
-          guint8 *buffer,
-          gsize buffer_length,
-          gsize *out_len)
+guint8 *
+_nm_utils_str2bin_full (const char *asc,
+                        gboolean delimiter_required,
+                        const char *delimiter_candidates,
+                        guint8 *buffer,
+                        gsize buffer_length,
+                        gsize *out_len)
 {
 	const char *in = asc;
 	guint8 *out = buffer;
@@ -3602,7 +3602,7 @@ _str2bin (const char *asc,
 	return buffer;
 }
 
-#define hwaddr_aton(asc, buffer, buffer_length, out_len) _str2bin ((asc), TRUE, ":-", (buffer), (buffer_length), (out_len))
+#define hwaddr_aton(asc, buffer, buffer_length, out_len) _nm_utils_str2bin_full ((asc), TRUE, ":-", (buffer), (buffer_length), (out_len))
 
 /**
  * nm_utils_hexstr2bin:
@@ -3628,7 +3628,7 @@ nm_utils_hexstr2bin (const char *hex)
 
 	buffer_length = strlen (hex) / 2 + 3;
 	buffer = g_malloc (buffer_length);
-	if (!_str2bin (hex, FALSE, ":", buffer, buffer_length, &len)) {
+	if (!_nm_utils_str2bin_full (hex, FALSE, ":", buffer, buffer_length, &len)) {
 		g_free (buffer);
 		return NULL;
 	}
@@ -4508,7 +4508,7 @@ _nm_utils_dhcp_duid_valid (const char *duid, GBytes **out_duid_bin)
 		return TRUE;
 	}
 
-	if (_str2bin (duid, FALSE, ":", duid_arr, sizeof (duid_arr), &duid_len)) {
+	if (_nm_utils_str2bin_full (duid, FALSE, ":", duid_arr, sizeof (duid_arr), &duid_len)) {
 		/* MAX DUID length is 128 octects + the type code (2 octects). */
 		if (   duid_len > 2
 		    && duid_len <= (128 + 2)) {
