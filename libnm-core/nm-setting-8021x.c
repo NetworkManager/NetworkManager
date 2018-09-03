@@ -367,6 +367,23 @@ _cert_value_to_bytes (NMSetting8021xCKScheme scheme,
 	return g_steal_pointer (&bytes);
 }
 
+static const char *
+_cert_get_path (GBytes *bytes)
+{
+	const guint8 *bin;
+
+	nm_assert (bytes);
+	nm_assert (g_bytes_get_size (bytes) >= NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH));
+
+	bin = g_bytes_get_data (bytes, NULL);
+
+	nm_assert (bin);
+	nm_assert (bin[g_bytes_get_size (bytes) - 1] == '\0');
+	nm_assert (g_str_has_prefix ((const char *) bin, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH));
+
+	return (const char *) &bin[NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)];
+}
+
 #define _cert_assert_scheme(cert, check_scheme, ret_val) \
 	G_STMT_START { \
 		NMSetting8021xCKScheme scheme; \
@@ -408,7 +425,6 @@ _cert_value_to_bytes (NMSetting8021xCKScheme scheme,
 	G_STMT_START { \
 		NMSetting8021x *const _setting = (setting); \
 		GBytes *_cert; \
-		const char *_data; \
 		\
 		g_return_val_if_fail (NM_IS_SETTING_802_1X (_setting), NULL); \
 		\
@@ -416,8 +432,7 @@ _cert_value_to_bytes (NMSetting8021xCKScheme scheme,
 		\
 		_cert_assert_scheme (_cert, NM_SETTING_802_1X_CK_SCHEME_PATH, NULL); \
 		\
-		_data = g_bytes_get_data (_cert, NULL); \
-		return &_data[NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)]; \
+		return _cert_get_path (_cert); \
 	} G_STMT_END
 
 #define _cert_impl_get_uri(setting, cert_field) \
@@ -602,6 +617,49 @@ err:
 	NM_SET_OUT (out_format, NM_SETTING_802_1X_CK_FORMAT_UNKNOWN);
 	return FALSE;
 }
+
+static NMSetting8021xCKFormat
+_cert_impl_get_key_format_from_bytes (GBytes *private_key)
+{
+	const char *path;
+	GError *error = NULL;
+
+	if (!private_key)
+		return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+
+	switch (_cert_get_scheme (private_key, NULL)) {
+	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
+		if (nm_crypto_is_pkcs12_data (g_bytes_get_data (private_key, NULL),
+		                              g_bytes_get_size (private_key),
+		                              NULL))
+			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
+		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
+	case NM_SETTING_802_1X_CK_SCHEME_PATH:
+		path = _cert_get_path (private_key);
+		if (nm_crypto_is_pkcs12_file (path, &error))
+			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
+		if (error && error->domain == G_FILE_ERROR) {
+			g_error_free (error);
+			return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+		}
+		g_error_free (error);
+		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
+	default:
+		break;
+	}
+
+	return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+}
+#define _cert_impl_get_key_format(setting, private_key_field) \
+	({ \
+		NMSetting8021x *_setting = (setting); \
+		NMSetting8021xPrivate *_priv; \
+		\
+		g_return_val_if_fail (NM_IS_SETTING_802_1X (_setting), NM_SETTING_802_1X_CK_FORMAT_UNKNOWN); \
+		\
+		_priv = NM_SETTING_802_1X_GET_PRIVATE (_setting); \
+		_cert_impl_get_key_format_from_bytes (_priv->private_key_field); \
+	})
 
 static gboolean
 _cert_verify_property (GBytes *bytes,
@@ -2181,38 +2239,7 @@ nm_setting_802_1x_get_private_key_password_flags (NMSetting8021x *setting)
 NMSetting8021xCKFormat
 nm_setting_802_1x_get_private_key_format (NMSetting8021x *setting)
 {
-	NMSetting8021xPrivate *priv;
-	const char *path;
-	GError *error = NULL;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_FORMAT_UNKNOWN);
-	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
-
-	if (!priv->private_key)
-		return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
-
-	switch (nm_setting_802_1x_get_private_key_scheme (setting)) {
-	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		if (nm_crypto_is_pkcs12_data (g_bytes_get_data (priv->private_key, NULL),
-		                              g_bytes_get_size (priv->private_key),
-		                              NULL))
-			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
-	case NM_SETTING_802_1X_CK_SCHEME_PATH:
-		path = nm_setting_802_1x_get_private_key_path (setting);
-		if (nm_crypto_is_pkcs12_file (path, &error))
-			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-		if (error && error->domain == G_FILE_ERROR) {
-			g_error_free (error);
-			return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
-		}
-		g_error_free (error);
-		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
-	default:
-		break;
-	}
-
-	return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+	return _cert_impl_get_key_format (setting, private_key);
 }
 
 /**
@@ -2384,38 +2411,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 NMSetting8021xCKFormat
 nm_setting_802_1x_get_phase2_private_key_format (NMSetting8021x *setting)
 {
-	NMSetting8021xPrivate *priv;
-	const char *path;
-	GError *error = NULL;
-
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_FORMAT_UNKNOWN);
-	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
-
-	if (!priv->phase2_private_key)
-		return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
-
-	switch (nm_setting_802_1x_get_phase2_private_key_scheme (setting)) {
-	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		if (nm_crypto_is_pkcs12_data (g_bytes_get_data (priv->phase2_private_key, NULL),
-		                              g_bytes_get_size (priv->phase2_private_key),
-		                              NULL))
-			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
-	case NM_SETTING_802_1X_CK_SCHEME_PATH:
-		path = nm_setting_802_1x_get_phase2_private_key_path (setting);
-		if (nm_crypto_is_pkcs12_file (path, &error))
-			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-		if (error && error->domain == G_FILE_ERROR) {
-			g_error_free (error);
-			return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
-		}
-		g_error_free (error);
-		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
-	default:
-		break;
-	}
-
-	return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+	return _cert_impl_get_key_format (setting, phase2_private_key);
 }
 
 /**
