@@ -1901,10 +1901,8 @@ test_read_write_802_1X_subj_matches (void)
 	gs_unref_object NMConnection *reread = NULL;
 	NMSetting8021x *s_8021x;
 
-	NMTST_EXPECT_NM_WARN ("*missing IEEE_8021X_CA_CERT*peap*");
 	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-802-1X-subj-matches",
 	                                    NULL, TYPE_ETHERNET, NULL);
-	g_test_assert_expected_messages ();
 
 	/* ===== 802.1x SETTING ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
@@ -1922,16 +1920,12 @@ test_read_write_802_1X_subj_matches (void)
 	g_assert_cmpstr (nm_setting_802_1x_get_phase2_altsubject_match (s_8021x, 0), ==, "x.yourdomain.tld");
 	g_assert_cmpstr (nm_setting_802_1x_get_phase2_altsubject_match (s_8021x, 1), ==, "y.yourdomain.tld");
 
-	NMTST_EXPECT_NM_WARN ("*missing IEEE_8021X_CA_CERT for EAP method 'peap'; this is insecure!");
 	_writer_new_connec_exp (connection,
 	                        TEST_SCRATCH_DIR,
 	                        TEST_IFCFG_DIR"/ifcfg-System_test-wired-802-1X-subj-matches.cexpected",
 	                        &testfile);
-	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_NM_WARN ("*missing IEEE_8021X_CA_CERT for EAP method 'peap'; this is insecure!");
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
-	g_test_assert_expected_messages ();
 
 	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
