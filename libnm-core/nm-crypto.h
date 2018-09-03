@@ -92,13 +92,6 @@ void nm_crypto_md5_hash (const guint8 *salt,
                          guint8 *buffer,
                          gsize buflen);
 
-guint8 *nm_crypto_make_des_aes_key (NMCryptoCipherType cipher,
-                                    const guint8 *salt,
-                                    gsize salt_len,
-                                    const char *password,
-                                    gsize *out_len,
-                                    GError **error);
-
 gboolean nm_crypto_randomize (void *buffer, gsize buffer_len, GError **error);
 
 /*****************************************************************************/
@@ -119,6 +112,13 @@ GBytes *nmtst_crypto_rsa_key_encrypt (const guint8 *data,
                                       const char *in_password,
                                       char **out_password,
                                       GError **error);
+
+guint8 *nmtst_crypto_make_des_aes_key (NMCryptoCipherType cipher,
+                                       const guint8 *salt,
+                                       gsize salt_len,
+                                       const char *password,
+                                       gsize *out_len,
+                                       GError **error);
 
 /*****************************************************************************/
 
