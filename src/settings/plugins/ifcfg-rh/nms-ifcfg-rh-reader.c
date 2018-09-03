@@ -33,6 +33,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+#include "nm-utils/nm-secret-utils.h"
 #include "nm-connection.h"
 #include "nm-dbus-interface.h"
 #include "nm-setting-connection.h"
@@ -76,6 +77,104 @@
     } G_STMT_END
 
 #define PARSE_WARNING(...) _LOGW ("%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), "    " _NM_UTILS_MACRO_REST(__VA_ARGS__))
+
+/*****************************************************************************/
+
+static NMSettingSecretFlags
+_secret_read_ifcfg_flags (shvarFile *ifcfg, const char *flags_key)
+{
+	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+	gs_free char *val_free = NULL;
+	const char *val;
+
+	nm_assert (flags_key);
+	nm_assert (g_str_has_suffix (flags_key, "_FLAGS"));
+
+	val = svGetValueStr (ifcfg, flags_key, &val_free);
+	if (val) {
+		if (strstr (val, SECRET_FLAG_AGENT))
+			flags |= NM_SETTING_SECRET_FLAG_AGENT_OWNED;
+		if (strstr (val, SECRET_FLAG_NOT_SAVED))
+			flags |= NM_SETTING_SECRET_FLAG_NOT_SAVED;
+		if (strstr (val, SECRET_FLAG_NOT_REQUIRED))
+			flags |= NM_SETTING_SECRET_FLAG_NOT_REQUIRED;
+	}
+	return flags;
+}
+
+static void
+_secret_read_ifcfg (shvarFile *ifcfg,
+                    shvarFile *keys_ifcfg,
+                    const char *name,
+                    char **value,
+                    NMSettingSecretFlags *flags)
+{
+	char flags_key[250];
+
+	nm_sprintf_buf (flags_key, "%s_FLAGS", name);
+
+	*flags = _secret_read_ifcfg_flags (ifcfg, flags_key);
+
+	if (*flags != NM_SETTING_SECRET_FLAG_NONE)
+		*value = NULL;
+	else {
+		*value = svGetValue_cp (ifcfg, name);
+		if (!*value && keys_ifcfg)
+			*value = svGetValue_cp (keys_ifcfg, name);
+	}
+}
+
+static void
+_secret_set_from_ifcfg (gpointer setting,
+                        shvarFile *ifcfg,
+                        shvarFile *keys_ifcfg,
+                        const char *ifcfg_key,
+                        const char *property_name)
+{
+	nm_auto_free_secret char *secret = NULL;
+	NMSettingSecretFlags flags;
+	char flags_key[250];
+
+	nm_assert (NM_IS_SETTING (setting));
+
+	_secret_read_ifcfg (ifcfg, keys_ifcfg, ifcfg_key, &secret, &flags);
+
+	g_object_set (setting,
+	              property_name,
+	              secret,
+	              nm_sprintf_buf (flags_key, "%s-flags", property_name),
+	              flags,
+	              NULL);
+}
+
+static gboolean
+_secret_password_raw_to_bytes (const char *ifcfg_key,
+                               const char *password_raw,
+                               GBytes **out_bytes,
+                               GError **error)
+{
+	nm_auto_free_secret_buf NMSecretBuf *secret = NULL;
+	gsize len;
+
+	if (!password_raw) {
+		NM_SET_OUT (out_bytes, NULL);
+		return TRUE;
+	}
+
+	if (password_raw[0] == '0' && password_raw[1] == 'x')
+		password_raw += 2;
+
+	secret = nm_secret_buf_new (strlen (password_raw) / 2 + 3);
+	if (!_nm_utils_str2bin_full (password_raw, FALSE, ":", secret->bin, secret->len, &len)) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "Invalid hex password in %s",
+		             ifcfg_key);
+		return FALSE;
+	}
+
+	NM_SET_OUT (out_bytes, nm_secret_buf_to_gbytes_take (g_steal_pointer (&secret), len));
+	return TRUE;
+}
 
 /*****************************************************************************/
 
@@ -2608,30 +2707,6 @@ read_wep_keys (shvarFile *ifcfg,
 	return TRUE;
 }
 
-static NMSettingSecretFlags
-read_secret_flags (shvarFile *ifcfg, const char *flags_key)
-{
-	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
-	char *val;
-
-	g_return_val_if_fail (flags_key != NULL, NM_SETTING_SECRET_FLAG_NONE);
-	g_return_val_if_fail (flags_key[0] != '\0', NM_SETTING_SECRET_FLAG_NONE);
-	g_return_val_if_fail (g_str_has_suffix (flags_key, "_FLAGS"), NM_SETTING_SECRET_FLAG_NONE);
-
-	val = svGetValueStr_cp (ifcfg, flags_key);
-	if (val) {
-		if (strstr (val, SECRET_FLAG_AGENT))
-			flags |= NM_SETTING_SECRET_FLAG_AGENT_OWNED;
-		if (strstr (val, SECRET_FLAG_NOT_SAVED))
-			flags |= NM_SETTING_SECRET_FLAG_NOT_SAVED;
-		if (strstr (val, SECRET_FLAG_NOT_REQUIRED))
-			flags |= NM_SETTING_SECRET_FLAG_NOT_REQUIRED;
-
-		g_free (val);
-	}
-	return flags;
-}
-
 static NMSetting *
 make_wep_setting (shvarFile *ifcfg,
                   const char *file,
@@ -2663,7 +2738,7 @@ make_wep_setting (shvarFile *ifcfg,
 	}
 
 	/* Read WEP key flags */
-	key_flags = read_secret_flags (ifcfg, "WEP_KEY_FLAGS");
+	key_flags = _secret_read_ifcfg_flags (ifcfg, "WEP_KEY_FLAGS");
 	g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS, key_flags, NULL);
 
 	/* Read keys in the ifcfg file if they are system-owned */
@@ -2862,23 +2937,6 @@ parse_wpa_psk (shvarFile *ifcfg,
 	return g_steal_pointer (&psk);
 }
 
-static void
-read_8021x_password (shvarFile *ifcfg, shvarFile *keys_ifcfg, const char *name,
-                     char **value, NMSettingSecretFlags *flags)
-{
-	gs_free char *flags_key = NULL;
-
-	*value = NULL;
-	flags_key = g_strdup_printf ("%s_FLAGS", name);
-	*flags = read_secret_flags (ifcfg, flags_key);
-
-	if (*flags == NM_SETTING_SECRET_FLAG_NONE) {
-		*value = svGetValueStr_cp (ifcfg, name);
-		if (!*value && keys_ifcfg)
-			*value = svGetValueStr_cp (keys_ifcfg, name);
-	}
-}
-
 static gboolean
 eap_simple_reader (const char *eap_method,
                    shvarFile *ifcfg,
@@ -2888,41 +2946,34 @@ eap_simple_reader (const char *eap_method,
                    GError **error)
 {
 	NMSettingSecretFlags flags;
-	GBytes *bytes;
-	char *value;
+	gs_free char *identity_free = NULL;
+	nm_auto_free_secret char *password_raw_str = NULL;
+	gs_unref_bytes GBytes *password_raw_bytes = NULL;
 
-	value = svGetValueStr_cp (ifcfg, "IEEE_8021X_IDENTITY");
-	if (!value) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Missing IEEE_8021X_IDENTITY for EAP method '%s'.",
-		             eap_method);
+	g_object_set (s_8021x,
+	              NM_SETTING_802_1X_IDENTITY,
+	              svGetValueStr (ifcfg, "IEEE_8021X_IDENTITY", &identity_free),
+	              NULL);
+
+	_secret_set_from_ifcfg (s_8021x,
+	                        ifcfg,
+	                        keys_ifcfg,
+	                        "IEEE_8021X_PASSWORD",
+	                        NM_SETTING_802_1X_PASSWORD);
+
+	_secret_read_ifcfg (ifcfg, keys_ifcfg, "IEEE_8021X_PASSWORD_RAW", &password_raw_str, &flags);
+	if (!_secret_password_raw_to_bytes ("IEEE_8021X_PASSWORD_RAW",
+	                                    password_raw_str,
+	                                    &password_raw_bytes,
+	                                    error))
 		return FALSE;
-	}
-	g_object_set (s_8021x, NM_SETTING_802_1X_IDENTITY, value, NULL);
-	nm_clear_g_free (&value);
 
-	read_8021x_password (ifcfg, keys_ifcfg, "IEEE_8021X_PASSWORD", &value, &flags);
-	g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD_FLAGS, flags, NULL);
-	if (value) {
-		g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD, value, NULL);
-		nm_clear_g_free (&value);
-	}
-
-	read_8021x_password (ifcfg, keys_ifcfg, "IEEE_8021X_PASSWORD_RAW", &value, &flags);
-	g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD_RAW_FLAGS, flags, NULL);
-	if (value) {
-		bytes = nm_utils_hexstr2bin (value);
-		if (!bytes) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Invalid hex string '%s' in IEEE_8021X_PASSWORD_RAW.",
-			             value);
-			g_free (value);
-			return FALSE;
-		}
-		g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD_RAW, bytes, NULL);
-		g_bytes_unref (bytes);
-		nm_clear_g_free (&value);
-	}
+	g_object_set (s_8021x,
+	              NM_SETTING_802_1X_PASSWORD_RAW_FLAGS,
+	              flags,
+	              NM_SETTING_802_1X_PASSWORD_RAW,
+	              password_raw_bytes,
+	              NULL);
 
 	return TRUE;
 }
@@ -3014,7 +3065,7 @@ eap_tls_reader (const char *eap_method,
 		}
 
 		if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-			flags = read_secret_flags (ifcfg, ca_cert_pw_flags_key);
+			flags = _secret_read_ifcfg_flags (ifcfg, ca_cert_pw_flags_key);
 			g_object_set (s_8021x, ca_cert_pw_flags_prop, flags, NULL);
 
 			if (flags == NM_SETTING_SECRET_FLAG_NONE) {
@@ -3028,7 +3079,7 @@ eap_tls_reader (const char *eap_method,
 	}
 
 	/* Read and set private key password flags */
-	flags = read_secret_flags (ifcfg, pk_pw_flags_key);
+	flags = _secret_read_ifcfg_flags (ifcfg, pk_pw_flags_key);
 	g_object_set (s_8021x, pk_pw_flags_prop, flags, NULL);
 
 	/* Read the private key password if it's system-owned */
@@ -3102,7 +3153,7 @@ eap_tls_reader (const char *eap_method,
 		}
 
 		if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-			flags = read_secret_flags (ifcfg, cli_cert_pw_flags_key);
+			flags = _secret_read_ifcfg_flags (ifcfg, cli_cert_pw_flags_key);
 			g_object_set (s_8021x, cli_cert_pw_flags_prop, flags, NULL);
 
 			if (flags == NM_SETTING_SECRET_FLAG_NONE) {
@@ -3600,7 +3651,7 @@ make_wpa_setting (shvarFile *ifcfg,
 	if (wpa_psk) {
 		NMSettingSecretFlags psk_flags;
 
-		psk_flags = read_secret_flags (ifcfg, "WPA_PSK_FLAGS");
+		psk_flags = _secret_read_ifcfg_flags (ifcfg, "WPA_PSK_FLAGS");
 		g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS, psk_flags, NULL);
 
 		/* Read PSK if it's system-owned */
@@ -3687,7 +3738,7 @@ make_leap_setting (shvarFile *ifcfg,
 		return NULL; /* Not LEAP */
 	nm_clear_g_free (&value);
 
-	flags = read_secret_flags (ifcfg, "IEEE_8021X_PASSWORD_FLAGS");
+	flags = _secret_read_ifcfg_flags (ifcfg, "IEEE_8021X_PASSWORD_FLAGS");
 	g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS, flags, NULL);
 
 	/* Read LEAP password if it's system-owned */
