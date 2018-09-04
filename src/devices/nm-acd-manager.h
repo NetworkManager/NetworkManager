@@ -32,7 +32,7 @@ typedef struct _NMAcdManagerClass NMAcdManagerClass;
 
 GType nm_acd_manager_get_type (void);
 
-NMAcdManager *nm_acd_manager_new (int ifindex, const guint8 *hwaddr, size_t hwaddr_len);
+NMAcdManager *nm_acd_manager_new (int ifindex, const guint8 *hwaddr, guint hwaddr_len);
 void nm_acd_manager_destroy (NMAcdManager *self);
 gboolean nm_acd_manager_add_address (NMAcdManager *self, in_addr_t address);
 gboolean nm_acd_manager_start_probe (NMAcdManager *self, guint timeout);

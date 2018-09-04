@@ -25,12 +25,28 @@ shared_c_rbtree_dep = declare_dependency(
 
 shared_n_acd = static_library(
     'n-acd',
-    sources: 'n-acd/src/n-acd.c',
+    sources: files('n-acd/src/n-acd.c',
+                   'n-acd/src/n-acd.h',
+                   'n-acd/src/n-acd-bpf.c',
+                   'n-acd/src/n-acd-private.h',
+                   'n-acd/src/n-acd-probe.c',
+                   'n-acd/src/util/timer.c',
+                   'n-acd/src/util/timer.h'),
+    c_args: [
+        '-D_GNU_SOURCE',
+        '-std=c11',
+        '-Wno-pointer-arith',
+        '-Wno-vla',
+    ],
     include_directories: [
         include_directories('c-siphash/src'),
         include_directories('c-list/src'),
+        include_directories('c-rbtree/src'),
     ],
-    dependencies: shared_c_siphash_dep,
+    dependencies: [
+        shared_c_siphash_dep,
+        shared_c_rbtree_dep
+    ],
 )
 
 shared_n_acd_dep = declare_dependency(

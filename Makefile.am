@@ -1365,18 +1365,26 @@ shared_libcrbtree_la_SOURCES = \
 
 noinst_LTLIBRARIES += shared/libnacd.la
 
-shared_libnacd_la_CFLAGS = -std=gnu99
+shared_libnacd_la_CFLAGS = $(AM_CFLAGS) -std=c11 -Wno-pointer-arith -Wno-vla
+shared_libnacd_la_LIBADD = shared/libcrbtree.la
 
 shared_libnacd_la_CPPFLAGS = \
+	-D_GNU_SOURCE \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	-I$(srcdir)/shared/c-list/src \
 	-I$(srcdir)/shared/c-siphash/src \
+	-I$(srcdir)/shared/c-rbtree/src \
 	$(NULL)
 
 shared_libnacd_la_SOURCES = \
 	shared/n-acd/src/n-acd.c \
-	shared/n-acd/src/n-acd.h
+	shared/n-acd/src/n-acd.h \
+	shared/n-acd/src/n-acd-bpf.c \
+	shared/n-acd/src/n-acd-private.h \
+	shared/n-acd/src/n-acd-probe.c \
+	shared/n-acd/src/util/timer.c \
+	shared/n-acd/src/util/timer.h
 
 EXTRA_DIST += shared/c-list/src/c-list.h
 
