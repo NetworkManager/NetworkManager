@@ -101,7 +101,7 @@
 %global with_modem_manager_1 0
 %endif
 
-%if 0%{fedora} || 0%{?rhel} <= 7
+%if 0%{?fedora} || 0%{?rhel} <= 7
 %global dhcp_default dhclient
 %else
 %global dhcp_default internal
