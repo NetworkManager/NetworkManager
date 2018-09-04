@@ -10,6 +10,19 @@ shared_c_siphash_dep = declare_dependency(
     link_with: shared_c_siphash,
 )
 
+shared_c_rbtree = static_library(
+    'c-rbtree',
+    c_args: '-std=c11',
+    sources: files('c-rbtree/src/c-rbtree.c',
+                   'c-rbtree/src/c-rbtree.h',
+                   'c-rbtree/src/c-rbtree-private.h'),
+)
+
+shared_c_rbtree_dep = declare_dependency(
+    include_directories: shared_inc,
+    link_with: shared_c_rbtree,
+)
+
 shared_n_acd = static_library(
     'n-acd',
     sources: 'n-acd/src/n-acd.c',

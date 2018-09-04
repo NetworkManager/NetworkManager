@@ -1347,6 +1347,22 @@ shared_libcsiphash_la_SOURCES = \
 
 ###############################################################################
 
+noinst_LTLIBRARIES += shared/libcrbtree.la
+
+shared_libcrbtree_la_CFLAGS = $(AM_CFLAGS) -std=c11
+
+shared_libcrbtree_la_CPPFLAGS = \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	$(NULL)
+
+shared_libcrbtree_la_SOURCES = \
+	shared/c-rbtree/src/c-rbtree.c \
+	shared/c-rbtree/src/c-rbtree.h \
+	shared/c-rbtree/src/c-rbtree-private.h
+
+###############################################################################
+
 noinst_LTLIBRARIES += shared/libnacd.la
 
 shared_libnacd_la_CFLAGS = -std=gnu99
