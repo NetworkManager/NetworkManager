@@ -1043,7 +1043,7 @@ else
 	more_logging_default=no
 fi
 
-NM_COMPILER_WARNINGS(CFLAGS, ${more_warnings_default})
+NM_COMPILER_WARNINGS(AM_CFLAGS, ${more_warnings_default})
 
 NM_COMPILER_FLAG(LIBSYSTEMD_NM_CFLAGS, "-Wno-gnu-variable-sized-type-not-at-end")
 AC_SUBST(LIBSYSTEMD_NM_CFLAGS)
@@ -1051,7 +1051,7 @@ AC_SUBST(LIBSYSTEMD_NM_CFLAGS)
 CC_CHECK_FLAGS_APPEND([with_cflags], [CFLAGS], [\
 	-fno-strict-aliasing \
 ])
-CFLAGS="$CFLAGS $with_cflags"
+AM_CFLAGS="$AM_CFLAGS $with_cflags"
 
 AC_ARG_ENABLE(more-asserts,
               AS_HELP_STRING([--enable-more-asserts],
@@ -1248,6 +1248,7 @@ fi
 
 AM_CONDITIONAL(BUILD_DOCS, test "$build_docs" = "yes")
 AM_CONDITIONAL(HAVE_DOCS, test "$build_docs" = "yes" -o "$use_pregen_docs" = "yes")
+AC_SUBST(AM_CFLAGS)
 
 AC_CONFIG_FILES([
 Makefile
