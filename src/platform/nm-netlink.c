@@ -791,7 +791,7 @@ int
 genl_ctrl_resolve (struct nl_sock *sk, const char *name)
 {
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
-	int result = -ENOMEM;
+	int nlerr;
 	gint32 response_data = -1;
 	const struct nl_cb cb = {
 		.valid_cb = _genl_parse_getfamily,
@@ -802,31 +802,29 @@ genl_ctrl_resolve (struct nl_sock *sk, const char *name)
 
 	if (!genlmsg_put (msg, NL_AUTO_PORT, NL_AUTO_SEQ, GENL_ID_CTRL,
 	                  0, 0, CTRL_CMD_GETFAMILY, 1))
-		goto out;
+		return -ENOMEM;
 
-	if (nla_put_string (msg, CTRL_ATTR_FAMILY_NAME, name) < 0)
-		goto out;
+	nlerr = nla_put_string (msg, CTRL_ATTR_FAMILY_NAME, name);
+	if (nlerr < 0)
+		return nlerr;
 
-	result = nl_send_auto (sk, msg);
-	if (result < 0)
-		goto out;
+	nlerr = nl_send_auto (sk, msg);
+	if (nlerr < 0)
+		return nlerr;
 
-	result = nl_recvmsgs (sk, &cb);
-	if (result < 0)
-		goto out;
+	nlerr = nl_recvmsgs (sk, &cb);
+	if (nlerr < 0)
+		return nlerr;
 
 	/* If search was successful, request may be ACKed after data */
-	result = nl_wait_for_ack (sk, NULL);
-	if (result < 0)
-		goto out;
+	nlerr = nl_wait_for_ack (sk, NULL);
+	if (nlerr < 0)
+		return nlerr;
 
-	if (response_data > 0)
-		result = response_data;
-	else
-		result = -ENOENT;
+	if (response_data < 0)
+		return -NLE_UNSPEC;
 
-out:
-	return result;
+	return response_data;
 }
 
 /*****************************************************************************/
@@ -1312,7 +1310,7 @@ nl_send_iovec (struct nl_sock *sk, struct nl_msg *msg, struct iovec *iov, unsign
 		memcpy(CMSG_DATA(cmsg), creds, sizeof (struct ucred));
 	}
 
-	return nl_sendmsg(sk, msg, &hdr);
+	return nl_sendmsg (sk, msg, &hdr);
 }
 
 void
@@ -1349,9 +1347,9 @@ nl_send (struct nl_sock *sk, struct nl_msg *msg)
 
 int nl_send_auto(struct nl_sock *sk, struct nl_msg *msg)
 {
-	nl_complete_msg(sk, msg);
+	nl_complete_msg (sk, msg);
 
-	return nl_send(sk, msg);
+	return nl_send (sk, msg);
 }
 
 int
