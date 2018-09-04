@@ -929,7 +929,7 @@ nm_wifi_utils_nl80211_class_init (NMWifiUtilsNl80211Class *klass)
 NMWifiUtils *
 nm_wifi_utils_nl80211_new (int ifindex, struct nl_sock *genl)
 {
-	NMWifiUtilsNl80211 *nl80211;
+	gs_unref_object NMWifiUtilsNl80211 *nl80211 = NULL;
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	struct nl80211_device_info device_info = {};
 	char ifname[IFNAMSIZ];
@@ -951,7 +951,7 @@ nm_wifi_utils_nl80211_new (int ifindex, struct nl_sock *genl)
 	nl80211->id = genl_ctrl_resolve (nl80211->nl_sock, "nl80211");
 	if (nl80211->id < 0) {
 		_LOGD (LOGD_WIFI, "genl_ctrl_resolve: failed to resolve \"nl80211\"");
-		goto error;
+		return NULL;
 	}
 
 	nl80211->phy = -1;
@@ -963,42 +963,42 @@ nm_wifi_utils_nl80211_new (int ifindex, struct nl_sock *genl)
 		_LOGD (LOGD_PLATFORM | LOGD_WIFI,
 		       "(%s): NL80211_CMD_GET_WIPHY request failed",
 		       ifname);
-		goto error;
+		return NULL;
 	}
 
 	if (!device_info.success) {
 		_LOGD (LOGD_PLATFORM | LOGD_WIFI,
 		       "(%s): NL80211_CMD_GET_WIPHY request indicated failure",
 		       ifname);
-		goto error;
+		return NULL;
 	}
 
 	if (!device_info.supported) {
 		_LOGD (LOGD_PLATFORM | LOGD_WIFI,
 		       "(%s): driver does not fully support nl80211, falling back to WEXT",
 		       ifname);
-		goto error;
+		return NULL;
 	}
 
 	if (!device_info.can_scan_ssid) {
 		_LOGE (LOGD_PLATFORM | LOGD_WIFI,
 		       "(%s): driver does not support SSID scans",
 		       ifname);
-		goto error;
+		return NULL;
 	}
 
 	if (device_info.num_freqs == 0 || device_info.freqs == NULL) {
 		nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
 		            "(%s): driver reports no supported frequencies",
 		            ifname);
-		goto error;
+		return NULL;
 	}
 
 	if (device_info.caps == 0) {
 		_LOGE (LOGD_PLATFORM | LOGD_WIFI,
 		       "(%s): driver doesn't report support of any encryption",
 		       ifname);
-		goto error;
+		return NULL;
 	}
 
 	nl80211->phy = device_info.phy;
@@ -1010,9 +1010,5 @@ nm_wifi_utils_nl80211_new (int ifindex, struct nl_sock *genl)
 	_LOGI (LOGD_PLATFORM | LOGD_WIFI,
 	       "(%s): using nl80211 for WiFi device control",
 	       ifname);
-	return (NMWifiUtils *) nl80211;
-
-error:
-	g_object_unref (nl80211);
-	return NULL;
+	return (NMWifiUtils *) g_steal_pointer (&nl80211);
 }
