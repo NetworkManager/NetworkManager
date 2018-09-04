@@ -91,12 +91,6 @@ static inline void name (Type *v) \
 		func (*v); \
 }
 
-#define NM_AUTO_DEFINE_FCN_STRUCT(Type, name, func) \
-static inline void name (Type *v) \
-{ \
-	func (v); \
-}
-
 /*****************************************************************************/
 
 /**
@@ -213,7 +207,6 @@ NM_AUTO_DEFINE_FCN0 (GKeyFile *, gs_local_keyfile_unref, g_key_file_unref)
 /*****************************************************************************/
 
 static inline int nm_close (int fd);
-static inline void nm_free_secret (char *secret);
 
 /**
  * nm_auto_free:
@@ -244,21 +237,13 @@ NM_AUTO_DEFINE_FCN (GList *, _nm_auto_free_list, g_list_free)
 NM_AUTO_DEFINE_FCN0 (GChecksum *, _nm_auto_checksum_free, g_checksum_free)
 #define nm_auto_free_checksum nm_auto(_nm_auto_checksum_free)
 
-NM_AUTO_DEFINE_FCN (char *, _nm_auto_free_secret, nm_free_secret)
-/**
- * nm_auto_free_secret:
- *
- * Call g_free() on a variable location when it goes out of scope.
- * Also, previously, calls memset(loc, 0, strlen(loc)) to clear out
- * the secret.
- */
-#define nm_auto_free_secret nm_auto(_nm_auto_free_secret)
-
-NM_AUTO_DEFINE_FCN_STRUCT (GValue, _nm_auto_unset_gvalue, g_value_unset)
-#define nm_auto_unset_gvalue nm_auto(_nm_auto_unset_gvalue)
+#define nm_auto_unset_gvalue nm_auto(g_value_unset)
 
 NM_AUTO_DEFINE_FCN_VOID0 (void *, _nm_auto_unref_gtypeclass, g_type_class_unref)
 #define nm_auto_unref_gtypeclass nm_auto(_nm_auto_unref_gtypeclass)
+
+NM_AUTO_DEFINE_FCN0 (GByteArray *, _nm_auto_unref_bytearray, g_byte_array_unref)
+#define nm_auto_unref_bytearray nm_auto(_nm_auto_unref_bytearray)
 
 static inline void
 _nm_auto_free_gstring (GString **str)
@@ -834,15 +819,6 @@ fcn (void) \
 
 /*****************************************************************************/
 
-static inline void
-nm_free_secret (char *secret)
-{
-	if (secret) {
-		memset (secret, 0, strlen (secret));
-		g_free (secret);
-	}
-}
-
 static inline GString *
 nm_gstring_prepare (GString **l)
 {
@@ -924,7 +900,7 @@ nm_str_realloc (char *str)
 
 #define NM_GOBJECT_PROPERTIES_DEFINE_BASE(...) \
 typedef enum { \
-	_PROPERTY_ENUMS_0, \
+	PROP_0, \
 	__VA_ARGS__ \
 	_PROPERTY_ENUMS_LAST, \
 } _PropertyEnums; \
@@ -945,8 +921,11 @@ _nm_gobject_notify_together_impl (obj_type *obj, guint n, const _PropertyEnums *
 	while (n-- > 0) { \
 		const _PropertyEnums prop = *props++; \
 		\
-		nm_assert ((gsize) prop < G_N_ELEMENTS (obj_properties)); \
-		g_object_notify_by_pspec ((GObject *) obj, obj_properties[prop]); \
+		if (prop != PROP_0) { \
+			nm_assert ((gsize) prop < G_N_ELEMENTS (obj_properties)); \
+			nm_assert (obj_properties[prop]); \
+			g_object_notify_by_pspec ((GObject *) obj, obj_properties[prop]); \
+		} \
 	} \
 	if (freeze_thaw) \
 		g_object_thaw_notify ((GObject *) obj); \

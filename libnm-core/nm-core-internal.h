@@ -215,6 +215,13 @@ const char *nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboole
 char *_nm_utils_bin2str (gconstpointer addr, gsize length, gboolean upper_case);
 void _nm_utils_bin2str_full (gconstpointer addr, gsize length, const char delimiter, gboolean upper_case, char *out);
 
+guint8 *_nm_utils_str2bin_full (const char *asc,
+                                gboolean delimiter_required,
+                                const char *delimiter_candidates,
+                                guint8 *buffer,
+                                gsize buffer_length,
+                                gsize *out_len);
+
 GSList *    _nm_utils_hash_values_to_slist (GHashTable *hash);
 
 GHashTable *_nm_utils_copy_strdict (GHashTable *strdict);
@@ -286,12 +293,6 @@ char *nm_utils_uuid_generate_buf_ (char *buf);
 void _nm_dbus_errors_init (void);
 
 extern gboolean _nm_utils_is_manager_process;
-
-GByteArray *nm_utils_rsa_key_encrypt (const guint8 *data,
-                                      gsize len,
-                                      const char *in_password,
-                                      char **out_password,
-                                      GError **error);
 
 gulong _nm_dbus_signal_connect_data (GDBusProxy *proxy,
                                      const char *signal_name,
@@ -584,6 +585,15 @@ const NMSettInfoSetting *_nm_sett_info_setting_get (NMSettingClass *setting_clas
 
 const NMSettInfoProperty *_nm_sett_info_property_get (NMSettingClass *setting_class,
                                                       const char *property_name);
+
+/*****************************************************************************/
+
+NMSetting8021xCKScheme _nm_setting_802_1x_cert_get_scheme (GBytes *bytes, GError **error);
+
+GBytes *_nm_setting_802_1x_cert_value_to_bytes (NMSetting8021xCKScheme scheme,
+                                                const guint8 *val_bin,
+                                                gssize val_len,
+                                                GError **error);
 
 /*****************************************************************************/
 

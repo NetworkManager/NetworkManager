@@ -23,26 +23,53 @@
 
 #include "nm-default.h"
 
+#include "nm-crypto-impl.h"
+
 #include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>
 #include <gnutls/x509.h>
 #include <gnutls/pkcs12.h>
 
-#include "crypto.h"
+#include "nm-utils/nm-secret-utils.h"
 #include "nm-errors.h"
 
-#define SALT_LEN 8
+/*****************************************************************************/
 
-static gboolean initialized = FALSE;
+static gboolean
+_get_cipher_info (NMCryptoCipherType cipher,
+                  int *out_cipher_mech,
+                  guint8 *out_real_iv_len)
+{
+	static const int cipher_mechs[] = {
+		[NM_CRYPTO_CIPHER_DES_EDE3_CBC] = GNUTLS_CIPHER_3DES_CBC,
+		[NM_CRYPTO_CIPHER_DES_CBC]      = GNUTLS_CIPHER_DES_CBC,
+		[NM_CRYPTO_CIPHER_AES_128_CBC]  = GNUTLS_CIPHER_AES_128_CBC,
+		[NM_CRYPTO_CIPHER_AES_192_CBC]  = GNUTLS_CIPHER_AES_192_CBC,
+		[NM_CRYPTO_CIPHER_AES_256_CBC]  = GNUTLS_CIPHER_AES_256_CBC,
+	};
+
+	g_return_val_if_fail (_NM_INT_NOT_NEGATIVE (cipher) && (gsize) cipher < G_N_ELEMENTS (cipher_mechs), FALSE);
+
+	if (cipher_mechs[cipher] == 0)
+		return FALSE;
+
+	NM_SET_OUT (out_cipher_mech, cipher_mechs[cipher]);
+	NM_SET_OUT (out_real_iv_len, nm_crypto_cipher_get_info (cipher)->real_iv_len);
+	return TRUE;
+}
+
+/*****************************************************************************/
 
 gboolean
-crypto_init (GError **error)
+_nm_crypto_init (GError **error)
 {
+	static gboolean initialized = FALSE;
+
 	if (initialized)
 		return TRUE;
 
-	if (gnutls_global_init() != 0) {
-		gnutls_global_deinit();
+	if (gnutls_global_init () != 0) {
+		gnutls_global_deinit ();
 		g_set_error_literal (error, NM_CRYPTO_ERROR,
 		                     NM_CRYPTO_ERROR_FAILED,
 		                     _("Failed to initialize the crypto engine."));
@@ -53,61 +80,47 @@ crypto_init (GError **error)
 	return TRUE;
 }
 
-char *
-crypto_decrypt (const char *cipher,
-                int key_type,
-                const guint8 *data,
-                gsize data_len,
-                const char *iv,
-                const gsize iv_len,
-                const char *key,
-                const gsize key_len,
-                gsize *out_len,
-                GError **error)
+/*****************************************************************************/
+
+guint8 *
+_nmtst_crypto_decrypt (NMCryptoCipherType cipher,
+                       const guint8 *data,
+                       gsize data_len,
+                       const guint8 *iv,
+                       gsize iv_len,
+                       const guint8 *key,
+                       gsize key_len,
+                       gsize *out_len,
+                       GError **error)
 {
 	gnutls_cipher_hd_t ctx;
 	gnutls_datum_t key_dt, iv_dt;
 	int err;
-	int cipher_mech, i;
-	char *output = NULL;
-	gboolean success = FALSE;
-	gsize pad_len, real_iv_len;
+	int cipher_mech;
+	nm_auto_clear_secret_ptr NMSecretPtr output = { 0 };
+	guint8 pad_i, pad_len;
+	guint8 real_iv_len;
 
-	if (!crypto_init (error))
-		return NULL;
-
-	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC)) {
-		cipher_mech = GNUTLS_CIPHER_3DES_CBC;
-		real_iv_len = SALT_LEN;
-	} else if (!strcmp (cipher, CIPHER_DES_CBC)) {
-		cipher_mech = GNUTLS_CIPHER_DES_CBC;
-		real_iv_len = SALT_LEN;
-	} else if (!strcmp (cipher, CIPHER_AES_128_CBC)) {
-		cipher_mech = GNUTLS_CIPHER_AES_128_CBC;
-		real_iv_len = 16;
-	} else if (!strcmp (cipher, CIPHER_AES_192_CBC)) {
-		cipher_mech = GNUTLS_CIPHER_AES_192_CBC;
-		real_iv_len = 16;
-	} else if (!strcmp (cipher, CIPHER_AES_256_CBC)) {
-		cipher_mech = GNUTLS_CIPHER_AES_256_CBC;
-		real_iv_len = 16;
-	} else {
+	if (!_get_cipher_info (cipher, &cipher_mech, &real_iv_len)) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_UNKNOWN_CIPHER,
-		             _("Private key cipher '%s' was unknown."),
-		             cipher);
+		             _("Unsupported key cipher for decryption"));
 		return NULL;
 	}
+
+	if (!_nm_crypto_init (error))
+		return NULL;
 
 	if (iv_len < real_iv_len) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_INVALID_DATA,
-		             _("Invalid IV length (must be at least %zd)."),
-		             real_iv_len);
+		             _("Invalid IV length (must be at least %u)."),
+		             (guint) real_iv_len);
 		return NULL;
 	}
 
-	output = g_malloc0 (data_len);
+	output.len = data_len;
+	output.bin = g_malloc (data_len);
 
 	key_dt.data = (unsigned char *) key;
 	key_dt.size = key_len;
@@ -120,107 +133,81 @@ crypto_decrypt (const char *cipher,
 		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Failed to initialize the decryption cipher context: %s (%s)"),
 		             gnutls_strerror_name (err), gnutls_strerror (err));
-		goto out;
+		return NULL;
 	}
 
-	err = gnutls_cipher_decrypt2 (ctx, data, data_len, output, data_len);
+	err = gnutls_cipher_decrypt2 (ctx, data, data_len, output.bin, output.len);
+
+	gnutls_cipher_deinit (ctx);
+
 	if (err < 0) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Failed to decrypt the private key: %s (%s)"),
 		             gnutls_strerror_name (err), gnutls_strerror (err));
-		goto out;
+		return NULL;
 	}
-	pad_len = output[data_len - 1];
+
+	pad_len = output.len > 0
+	          ? output.bin[output.len - 1]
+	          : 0;
 
 	/* Check if the padding at the end of the decrypted data is valid */
-	if (pad_len == 0 || pad_len > real_iv_len) {
+	if (   pad_len == 0
+	    || pad_len > real_iv_len) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Failed to decrypt the private key: unexpected padding length."));
-		goto out;
+		return NULL;
 	}
 
 	/* Validate tail padding; last byte is the padding size, and all pad bytes
 	 * should contain the padding size.
 	 */
-	for (i = 1; i <= pad_len; ++i) {
-		if (output[data_len - i] != pad_len) {
+	for (pad_i = 1; pad_i <= pad_len; ++pad_i) {
+		if (output.bin[data_len - pad_i] != pad_len) {
 			g_set_error (error, NM_CRYPTO_ERROR,
 			             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 			             _("Failed to decrypt the private key."));
-			goto out;
+			return NULL;
 		}
 	}
 
-	*out_len = data_len - pad_len;
-	success = TRUE;
-
-out:
-	if (!success) {
-		if (output) {
-			/* Don't expose key material */
-			memset (output, 0, data_len);
-			g_free (output);
-			output = NULL;
-		}
-	}
-	gnutls_cipher_deinit (ctx);
-	return output;
+	*out_len = output.len - pad_len;
+	return g_steal_pointer (&output.bin);
 }
 
-char *
-crypto_encrypt (const char *cipher,
-                const guint8 *data,
-                gsize data_len,
-                const char *iv,
-                const gsize iv_len,
-                const char *key,
-                gsize key_len,
-                gsize *out_len,
-                GError **error)
+guint8 *
+_nmtst_crypto_encrypt (NMCryptoCipherType cipher,
+                       const guint8 *data,
+                       gsize data_len,
+                       const guint8 *iv,
+                       gsize iv_len,
+                       const guint8 *key,
+                       gsize key_len,
+                       gsize *out_len,
+                       GError **error)
 {
 	gnutls_cipher_hd_t ctx;
 	gnutls_datum_t key_dt, iv_dt;
 	int err;
 	int cipher_mech;
-	char *output = NULL;
-	gboolean success = FALSE;
-	gsize padded_buf_len, pad_len, output_len;
-	char *padded_buf = NULL;
-	guint32 i;
+	nm_auto_clear_secret_ptr NMSecretPtr output = { 0 };
+	nm_auto_clear_secret_ptr NMSecretPtr padded_buf = { 0 };
+	gsize i, pad_len;
 
-	if (!crypto_init (error))
-		return NULL;
+	nm_assert (iv_len);
 
-	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC))
-		cipher_mech = GNUTLS_CIPHER_3DES_CBC;
-	else if (!strcmp (cipher, CIPHER_AES_128_CBC))
-		cipher_mech = GNUTLS_CIPHER_AES_128_CBC;
-	else if (!strcmp (cipher, CIPHER_AES_192_CBC))
-		cipher_mech = GNUTLS_CIPHER_AES_192_CBC;
-	else if (!strcmp (cipher, CIPHER_AES_256_CBC))
-		cipher_mech = GNUTLS_CIPHER_AES_256_CBC;
-	else {
+	if (   cipher == NM_CRYPTO_CIPHER_DES_CBC
+	    || !_get_cipher_info (cipher, &cipher_mech, NULL)) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_UNKNOWN_CIPHER,
-		             _("Private key cipher '%s' was unknown."),
-		             cipher);
+		             _("Unsupported key cipher for encryption"));
 		return NULL;
 	}
 
-	/* If data_len % ivlen == 0, then we add another complete block
-	 * onto the end so that the decrypter knows there's padding.
-	 */
-	pad_len = iv_len - (data_len % iv_len);
-	output_len = padded_buf_len = data_len + pad_len;
-	padded_buf = g_malloc0 (padded_buf_len);
-
-	memcpy (padded_buf, data, data_len);
-	for (i = 0; i < pad_len; i++)
-		padded_buf[data_len + i] = (guint8) (pad_len & 0xFF);
-
-	output = g_malloc0 (output_len);
+	if (!_nm_crypto_init (error))
+		return NULL;
 
 	key_dt.data = (unsigned char *) key;
 	key_dt.size = key_len;
@@ -233,51 +220,50 @@ crypto_encrypt (const char *cipher,
 		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
 		             _("Failed to initialize the encryption cipher context: %s (%s)"),
 		             gnutls_strerror_name (err), gnutls_strerror (err));
-		goto out;
+		return NULL;
 	}
 
-	err = gnutls_cipher_encrypt2 (ctx, padded_buf, padded_buf_len, output, output_len);
+	/* If data_len % ivlen == 0, then we add another complete block
+	 * onto the end so that the decrypter knows there's padding.
+	 */
+	pad_len = iv_len - (data_len % iv_len);
+
+	padded_buf.len = data_len + pad_len;
+	padded_buf.bin = g_malloc (padded_buf.len);
+	memcpy (padded_buf.bin, data, data_len);
+	for (i = 0; i < pad_len; i++)
+		padded_buf.bin[data_len + i] = (guint8) (pad_len & 0xFF);
+
+	output.len = padded_buf.len;
+	output.bin = g_malloc (output.len);
+
+	err = gnutls_cipher_encrypt2 (ctx, padded_buf.bin, padded_buf.len, output.bin, output.len);
+
+	gnutls_cipher_deinit (ctx);
+
 	if (err < 0) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
 		             _("Failed to encrypt the data: %s (%s)"),
 		             gnutls_strerror_name (err), gnutls_strerror (err));
-		goto out;
+		return NULL;
 	}
 
-	*out_len = output_len;
-	success = TRUE;
-
-out:
-	if (padded_buf) {
-		memset (padded_buf, 0, padded_buf_len);
-		g_free (padded_buf);
-		padded_buf = NULL;
-	}
-
-	if (!success) {
-		if (output) {
-			/* Don't expose key material */
-			memset (output, 0, output_len);
-			g_free (output);
-			output = NULL;
-		}
-	}
-	gnutls_cipher_deinit (ctx);
-	return output;
+	*out_len = output.len;
+	return g_steal_pointer (&output.bin);
 }
 
-NMCryptoFileFormat
-crypto_verify_cert (const unsigned char *data,
-                    gsize len,
-                    GError **error)
+gboolean
+_nm_crypto_verify_x509 (const guint8 *data,
+                        gsize len,
+                        GError **error)
 {
 	gnutls_x509_crt_t der;
 	gnutls_datum_t dt;
 	int err;
 
-	if (!crypto_init (error))
-		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	if (!_nm_crypto_init (error))
+		return FALSE;
 
 	err = gnutls_x509_crt_init (&der);
 	if (err < 0) {
@@ -285,7 +271,7 @@ crypto_verify_cert (const unsigned char *data,
 		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("Error initializing certificate data: %s"),
 		             gnutls_strerror (err));
-		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+		return FALSE;
 	}
 
 	/* Try DER first */
@@ -294,36 +280,35 @@ crypto_verify_cert (const unsigned char *data,
 	err = gnutls_x509_crt_import (der, &dt, GNUTLS_X509_FMT_DER);
 	if (err == GNUTLS_E_SUCCESS) {
 		gnutls_x509_crt_deinit (der);
-		return NM_CRYPTO_FILE_FORMAT_X509;
+		return TRUE;
 	}
 
 	/* And PEM next */
 	err = gnutls_x509_crt_import (der, &dt, GNUTLS_X509_FMT_PEM);
 	gnutls_x509_crt_deinit (der);
 	if (err == GNUTLS_E_SUCCESS)
-		return NM_CRYPTO_FILE_FORMAT_X509;
+		return TRUE;
 
 	g_set_error (error, NM_CRYPTO_ERROR,
 	             NM_CRYPTO_ERROR_INVALID_DATA,
 	             _("Couldn't decode certificate: %s"),
 	             gnutls_strerror (err));
-	return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	return FALSE;
 }
 
 gboolean
-crypto_verify_pkcs12 (const guint8 *data,
-                      gsize data_len,
-                      const char *password,
-                      GError **error)
+_nm_crypto_verify_pkcs12 (const guint8 *data,
+                          gsize data_len,
+                          const char *password,
+                          GError **error)
 {
 	gnutls_pkcs12_t p12;
 	gnutls_datum_t dt;
-	gboolean success = FALSE;
 	int err;
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	if (!crypto_init (error))
+	if (!_nm_crypto_init (error))
 		return FALSE;
 
 	dt.data = (unsigned char *) data;
@@ -348,31 +333,32 @@ crypto_verify_pkcs12 (const guint8 *data,
 			             NM_CRYPTO_ERROR_INVALID_DATA,
 			             _("Couldn't decode PKCS#12 file: %s"),
 			             gnutls_strerror (err));
-			goto out;
+			gnutls_pkcs12_deinit (p12);
+			return FALSE;
 		}
 	}
 
 	err = gnutls_pkcs12_verify_mac (p12, password);
-	if (err == GNUTLS_E_SUCCESS)
-		success = TRUE;
-	else {
+
+	gnutls_pkcs12_deinit (p12);
+
+	if (err != GNUTLS_E_SUCCESS) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Couldn't verify PKCS#12 file: %s"),
 		             gnutls_strerror (err));
+		return FALSE;
 	}
 
-out:
-	gnutls_pkcs12_deinit (p12);
-	return success;
+	return TRUE;
 }
 
 gboolean
-crypto_verify_pkcs8 (const guint8 *data,
-                     gsize data_len,
-                     gboolean is_encrypted,
-                     const char *password,
-                     GError **error)
+_nm_crypto_verify_pkcs8 (const guint8 *data,
+                         gsize data_len,
+                         gboolean is_encrypted,
+                         const char *password,
+                         GError **error)
 {
 	gnutls_x509_privkey_t p8;
 	gnutls_datum_t dt;
@@ -380,11 +366,8 @@ crypto_verify_pkcs8 (const guint8 *data,
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	if (!crypto_init (error))
+	if (!_nm_crypto_init (error))
 		return FALSE;
-
-	dt.data = (unsigned char *) data;
-	dt.size = data_len;
 
 	err = gnutls_x509_privkey_init (&p8);
 	if (err < 0) {
@@ -395,11 +378,15 @@ crypto_verify_pkcs8 (const guint8 *data,
 		return FALSE;
 	}
 
+	dt.data = (unsigned char *) data;
+	dt.size = data_len;
+
 	err = gnutls_x509_privkey_import_pkcs8 (p8,
 	                                        &dt,
 	                                        GNUTLS_X509_FMT_DER,
 	                                        is_encrypted ? password : NULL,
 	                                        is_encrypted ? 0 : GNUTLS_PKCS_PLAIN);
+
 	gnutls_x509_privkey_deinit (p8);
 
 	if (err < 0) {
@@ -423,9 +410,9 @@ crypto_verify_pkcs8 (const guint8 *data,
 }
 
 gboolean
-crypto_randomize (void *buffer, gsize buffer_len, GError **error)
+_nm_crypto_randomize (void *buffer, gsize buffer_len, GError **error)
 {
-	if (!crypto_init (error))
+	if (!_nm_crypto_init (error))
 		return FALSE;
 
 	gnutls_rnd (GNUTLS_RND_RANDOM, buffer, buffer_len);

@@ -33,6 +33,7 @@
 #include <string.h>
 #include <linux/pkt_sched.h>
 
+#include "nm-utils/nm-secret-utils.h"
 #include "nm-common-macros.h"
 #include "nm-core-internal.h"
 #include "nm-keyfile-utils.h"
@@ -939,7 +940,7 @@ unescape_semicolons (char *str)
 			i++;
 		str[j++] = str[i++];;
 	}
-	str[j] = '\0';
+	nm_explicit_bzero (&str[j], i - j);
 	return j;
 }
 
@@ -950,9 +951,10 @@ get_bytes (KeyfileReaderInfo *info,
            gboolean zero_terminate,
            gboolean unescape_semicolon)
 {
-	gs_free char *tmp_string = NULL;
+	nm_auto_free_secret char *tmp_string = NULL;
 	gboolean may_be_int_list = TRUE;
 	gsize length;
+	GBytes *result;
 
 	/* New format: just a string
 	 * Old format: integer list; e.g. 11;25;38;
@@ -969,7 +971,7 @@ get_bytes (KeyfileReaderInfo *info,
 		 * byte-array. The reason is that zero_terminate is there to terminate
 		 * *valid* strings. It's not there to terminated invalid (empty) strings.
 		 */
-		return g_bytes_new_take (tmp_string, 0);
+		return g_bytes_new_static ("", 0);
 	}
 
 	for (length = 0; tmp_string[length]; length++) {
@@ -986,12 +988,11 @@ get_bytes (KeyfileReaderInfo *info,
 
 	/* Try to parse the string as a integer list. */
 	if (may_be_int_list && length > 0) {
-		gs_free guint8 *bin_data = NULL;
+		nm_auto_free_secret_buf NMSecretBuf *bin = NULL;
 		const char *const s = tmp_string;
 		gsize i, d;
-		const gsize BIN_DATA_LEN = (length / 2 + 3);
 
-		bin_data = g_malloc (BIN_DATA_LEN);
+		bin = nm_secret_buf_new (length / 2 + 3);
 
 #define DIGIT(c) ((c) - '0')
 		i = 0;
@@ -1024,8 +1025,8 @@ get_bytes (KeyfileReaderInfo *info,
 				break;
 			}
 
-			bin_data[d++] = n;
-			nm_assert (d < BIN_DATA_LEN);
+			nm_assert (d < bin->len);
+			bin->bin[d++] = n;
 
 			/* allow whitespace after the digit. */
 			while (g_ascii_isspace (s[i]))
@@ -1043,16 +1044,23 @@ get_bytes (KeyfileReaderInfo *info,
 		 * string format before. We expect that this conversion cannot fail. */
 		if (d > 0) {
 			/* note that @zero_terminate does not add a terminating '\0' to
-			 * binary data as an integer list.
+			 * binary data as an integer list. If the bytes are expressed as
+			 * an integer list, all potential NUL characters are supposed to
+			 * be included there explicitly.
 			 *
-			 * But we add a '\0' to the bin_data pointer, just to avoid somebody
-			 * (erronously!) reading the binary data as C-string.
-			 *
-			 * @d itself does not entail the '\0'. */
-			nm_assert (d + 1 <= BIN_DATA_LEN);
-			bin_data = g_realloc (bin_data, d + 1);
-			bin_data[d] = '\0';
-			return g_bytes_new_take (g_steal_pointer (&bin_data), d);
+			 * However, in the spirit of defensive programming, we do append a
+			 * NUL character to the buffer, although this character is hidden
+			 * and only a mitigation for bugs. */
+
+			if (d + 10 < bin->len) {
+				/* hm, too much unused memory. Copy the memory to a suitable
+				 * sized buffer. */
+				return nm_secret_copy_to_gbytes (bin->bin, d);
+			}
+
+			nm_assert (d < bin->len);
+			bin->bin[d] = '\0';
+			return nm_secret_buf_to_gbytes_take (g_steal_pointer (&bin), d);
 		}
 	}
 
@@ -1063,8 +1071,13 @@ get_bytes (KeyfileReaderInfo *info,
 		length++;
 	if (length == 0)
 		return NULL;
-	tmp_string = g_realloc (tmp_string, length + (zero_terminate ? 0 : 1));
-	return g_bytes_new_take (g_steal_pointer (&tmp_string), length);
+
+	result = g_bytes_new_with_free_func (tmp_string,
+	                                     length,
+	                                     (GDestroyNotify) nm_free_secret,
+	                                     tmp_string);
+	tmp_string = NULL;
+	return result;
 }
 
 static void
@@ -1108,12 +1121,12 @@ get_cert_path (const char *base_dir, const guint8 *cert_path, gsize cert_path_le
 	g_return_val_if_fail (base_dir != NULL, NULL);
 	g_return_val_if_fail (cert_path != NULL, NULL);
 
-	base = path = g_malloc0 (cert_path_len + 1);
-	memcpy (path, cert_path, cert_path_len);
+	path = g_strndup ((char *) cert_path, cert_path_len);
 
 	if (path[0] == '/')
 		return path;
 
+	base = path;
 	p = strrchr (path, '/');
 	if (p)
 		base = p + 1;
@@ -1147,8 +1160,9 @@ nm_keyfile_detect_unqualified_path_scheme (const char *base_dir,
 	const char *data = pdata;
 	gboolean exists = FALSE;
 	gsize validate_len;
+	gsize path_len, pathuri_len;
 	gs_free char *path = NULL;
-	GByteArray *tmp;
+	gs_free char *pathuri = NULL;
 
 	g_return_val_if_fail (base_dir && base_dir[0] == '/', NULL);
 
@@ -1191,18 +1205,16 @@ nm_keyfile_detect_unqualified_path_scheme (const char *base_dir,
 	 * When returning TRUE, we must also be sure that @data_len does not look like
 	 * the deprecated format of list of integers. With this implementation that is the
 	 * case, as long as @consider_exists is FALSE. */
-	tmp = g_byte_array_sized_new (strlen (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH) + strlen (path) + 1);
-	g_byte_array_append (tmp, (const guint8 *) NM_KEYFILE_CERT_SCHEME_PREFIX_PATH, strlen (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH));
-	g_byte_array_append (tmp, (const guint8 *) path, strlen (path) + 1);
-	if (nm_setting_802_1x_check_cert_scheme (tmp->data, tmp->len, NULL) != NM_SETTING_802_1X_CK_SCHEME_PATH) {
-		g_byte_array_unref (tmp);
+	path_len = strlen (path);
+	pathuri_len = (NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH) + 1) + path_len;
+	pathuri = g_new (char, pathuri_len);
+	memcpy (pathuri, NM_KEYFILE_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH));
+	memcpy (&pathuri[NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)], path, path_len + 1);
+	if (nm_setting_802_1x_check_cert_scheme (pathuri, pathuri_len, NULL) != NM_SETTING_802_1X_CK_SCHEME_PATH)
 		return NULL;
-	}
-	g_free (path);
-	path = (char *) g_byte_array_free (tmp, FALSE);
 
 	NM_SET_OUT (out_exists, exists);
-	return g_steal_pointer (&path);
+	return g_steal_pointer (&pathuri);
 }
 
 #define HAS_SCHEME_PREFIX(bin, bin_len, scheme) \

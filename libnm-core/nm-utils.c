@@ -43,7 +43,7 @@
 #include "nm-common-macros.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
-#include "crypto.h"
+#include "nm-crypto.h"
 #include "nm-setting-bond.h"
 #include "nm-setting-bridge.h"
 #include "nm-setting-infiniband.h"
@@ -2838,9 +2838,17 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 	g_return_val_if_fail (uuid_type == NM_UTILS_UUID_TYPE_LEGACY || uuid_type == NM_UTILS_UUID_TYPE_VARIANT3, NULL);
 	g_return_val_if_fail (!type_args || uuid_type == NM_UTILS_UUID_TYPE_VARIANT3, NULL);
 
+	if (slen < 0)
+		slen = s ? strlen (s) : 0;
+
 	switch (uuid_type) {
 	case NM_UTILS_UUID_TYPE_LEGACY:
-		crypto_md5_hash (NULL, 0, s, slen, (char *) uuid, sizeof (uuid));
+		nm_crypto_md5_hash (NULL,
+		                    0,
+		                    (guint8 *) s,
+		                    slen,
+		                    (guint8 *) uuid,
+		                    sizeof (uuid));
 		break;
 	case NM_UTILS_UUID_TYPE_VARIANT3: {
 		uuid_t ns_uuid = { 0 };
@@ -2851,7 +2859,12 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 				g_return_val_if_reached (NULL);
 		}
 
-		crypto_md5_hash (s, slen, (char *) ns_uuid, sizeof (ns_uuid), (char *) uuid, sizeof (uuid));
+		nm_crypto_md5_hash ((guint8 *) s,
+		                    slen,
+		                    (guint8 *) ns_uuid,
+		                    sizeof (ns_uuid),
+		                    (guint8 *) uuid,
+		                    sizeof (uuid));
 
 		uuid[6] = (uuid[6] & 0x0F) | 0x30;
 		uuid[8] = (uuid[8] & 0x3F) | 0x80;
@@ -2911,110 +2924,6 @@ _nm_utils_uuid_generate_from_strings (const char *string1, ...)
 
 /*****************************************************************************/
 
-/**
- * nm_utils_rsa_key_encrypt:
- * @data: (array length=len): RSA private key data to be encrypted
- * @len: length of @data
- * @in_password: (allow-none): existing password to use, if any
- * @out_password: (out) (allow-none): if @in_password was %NULL, a random
- *  password will be generated and returned in this argument
- * @error: detailed error information on return, if an error occurred
- *
- * Encrypts the given RSA private key data with the given password (or generates
- * a password if no password was given) and converts the data to PEM format
- * suitable for writing to a file. It uses Triple DES cipher for the encryption.
- *
- * Returns: (transfer full): on success, PEM-formatted data suitable for writing
- * to a PEM-formatted certificate/private key file.
- **/
-GByteArray *
-nm_utils_rsa_key_encrypt (const guint8 *data,
-                          gsize len,
-                          const char *in_password,
-                          char **out_password,
-                          GError **error)
-{
-	char salt[16];
-	int salt_len;
-	char *key = NULL, *enc = NULL, *pw_buf[32];
-	gsize key_len = 0, enc_len = 0;
-	GString *pem = NULL;
-	char *tmp, *tmp_password = NULL;
-	int left;
-	const char *p;
-	GByteArray *ret = NULL;
-
-	g_return_val_if_fail (data != NULL, NULL);
-	g_return_val_if_fail (len > 0, NULL);
-	if (out_password)
-		g_return_val_if_fail (*out_password == NULL, NULL);
-
-	/* Make the password if needed */
-	if (!in_password) {
-		if (!crypto_randomize (pw_buf, sizeof (pw_buf), error))
-			return NULL;
-		in_password = tmp_password = nm_utils_bin2hexstr (pw_buf, sizeof (pw_buf), -1);
-	}
-
-	salt_len = 8;
-	if (!crypto_randomize (salt, salt_len, error))
-		goto out;
-
-	key = crypto_make_des_aes_key (CIPHER_DES_EDE3_CBC, &salt[0], salt_len, in_password, &key_len, NULL);
-	if (!key)
-		g_return_val_if_reached (NULL);
-
-	enc = crypto_encrypt (CIPHER_DES_EDE3_CBC, data, len, salt, salt_len, key, key_len, &enc_len, error);
-	if (!enc)
-		goto out;
-
-	pem = g_string_sized_new (enc_len * 2 + 100);
-	g_string_append (pem, "-----BEGIN RSA PRIVATE KEY-----\n");
-	g_string_append (pem, "Proc-Type: 4,ENCRYPTED\n");
-
-	/* Convert the salt to a hex string */
-	tmp = nm_utils_bin2hexstr (salt, salt_len, salt_len * 2);
-	g_string_append_printf (pem, "DEK-Info: %s,%s\n\n", CIPHER_DES_EDE3_CBC, tmp);
-	g_free (tmp);
-
-	/* Convert the encrypted key to a base64 string */
-	p = tmp = g_base64_encode ((const guchar *) enc, enc_len);
-	left = strlen (tmp);
-	while (left > 0) {
-		g_string_append_len (pem, p, (left < 64) ? left : 64);
-		g_string_append_c (pem, '\n');
-		left -= 64;
-		p += 64;
-	}
-	g_free (tmp);
-
-	g_string_append (pem, "-----END RSA PRIVATE KEY-----\n");
-
-	ret = g_byte_array_sized_new (pem->len);
-	g_byte_array_append (ret, (const unsigned char *) pem->str, pem->len);
-	if (tmp_password && out_password)
-		*out_password = g_strdup (tmp_password);
-
-out:
-	if (key) {
-		memset (key, 0, key_len);
-		g_free (key);
-	}
-	if (enc) {
-		memset (enc, 0, enc_len);
-		g_free (enc);
-	}
-	if (pem)
-		g_string_free (pem, TRUE);
-
-	if (tmp_password) {
-		memset (tmp_password, 0, strlen (tmp_password));
-		g_free (tmp_password);
-	}
-
-	return ret;
-}
-
 static gboolean
 file_has_extension (const char *filename, const char *extensions[])
 {
@@ -3047,18 +2956,15 @@ gboolean
 nm_utils_file_is_certificate (const char *filename)
 {
 	const char *extensions[] = { ".der", ".pem", ".crt", ".cer", NULL };
-	NMCryptoFileFormat file_format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	GByteArray *cert;
+	NMCryptoFileFormat file_format;
 
 	g_return_val_if_fail (filename != NULL, FALSE);
 
 	if (!file_has_extension (filename, extensions))
 		return FALSE;
 
-	cert = crypto_load_and_verify_certificate (filename, &file_format, NULL);
-	if (cert)
-		g_byte_array_unref (cert);
-
+	if (!nm_crypto_load_and_verify_certificate (filename, &file_format, NULL, NULL))
+		return FALSE;
 	return file_format = NM_CRYPTO_FILE_FORMAT_X509;
 }
 
@@ -3084,7 +2990,7 @@ nm_utils_file_is_private_key (const char *filename, gboolean *out_encrypted)
 	if (!file_has_extension (filename, extensions))
 		return FALSE;
 
-	return crypto_verify_private_key (filename, NULL, out_encrypted, NULL) != NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	return nm_crypto_verify_private_key (filename, NULL, out_encrypted, NULL) != NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 }
 
 /**
@@ -3100,7 +3006,7 @@ nm_utils_file_is_pkcs12 (const char *filename)
 {
 	g_return_val_if_fail (filename != NULL, FALSE);
 
-	return crypto_is_pkcs12_file (filename, NULL);
+	return nm_crypto_is_pkcs12_file (filename, NULL);
 }
 
 /*****************************************************************************/
@@ -3620,13 +3526,13 @@ nm_utils_hwaddr_len (int type)
 	g_return_val_if_reached (0);
 }
 
-static guint8 *
-_str2bin (const char *asc,
-          gboolean delimiter_required,
-          const char *delimiter_candidates,
-          guint8 *buffer,
-          gsize buffer_length,
-          gsize *out_len)
+guint8 *
+_nm_utils_str2bin_full (const char *asc,
+                        gboolean delimiter_required,
+                        const char *delimiter_candidates,
+                        guint8 *buffer,
+                        gsize buffer_length,
+                        gsize *out_len)
 {
 	const char *in = asc;
 	guint8 *out = buffer;
@@ -3696,7 +3602,7 @@ _str2bin (const char *asc,
 	return buffer;
 }
 
-#define hwaddr_aton(asc, buffer, buffer_length, out_len) _str2bin ((asc), TRUE, ":-", (buffer), (buffer_length), (out_len))
+#define hwaddr_aton(asc, buffer, buffer_length, out_len) _nm_utils_str2bin_full ((asc), TRUE, ":-", (buffer), (buffer_length), (out_len))
 
 /**
  * nm_utils_hexstr2bin:
@@ -3722,7 +3628,7 @@ nm_utils_hexstr2bin (const char *hex)
 
 	buffer_length = strlen (hex) / 2 + 3;
 	buffer = g_malloc (buffer_length);
-	if (!_str2bin (hex, FALSE, ":", buffer, buffer_length, &len)) {
+	if (!_nm_utils_str2bin_full (hex, FALSE, ":", buffer, buffer_length, &len)) {
 		g_free (buffer);
 		return NULL;
 	}
@@ -4602,7 +4508,7 @@ _nm_utils_dhcp_duid_valid (const char *duid, GBytes **out_duid_bin)
 		return TRUE;
 	}
 
-	if (_str2bin (duid, FALSE, ":", duid_arr, sizeof (duid_arr), &duid_len)) {
+	if (_nm_utils_str2bin_full (duid, FALSE, ":", duid_arr, sizeof (duid_arr), &duid_len)) {
 		/* MAX DUID length is 128 octects + the type code (2 octects). */
 		if (   duid_len > 2
 		    && duid_len <= (128 + 2)) {

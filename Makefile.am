@@ -501,12 +501,15 @@ libnm_core_lib_h_priv = \
 	shared/nm-utils/nm-dedup-multi.h \
 	shared/nm-utils/nm-enum-utils.h \
 	shared/nm-utils/nm-hash-utils.h \
+	shared/nm-utils/nm-io-utils.h \
+	shared/nm-utils/nm-secret-utils.h \
 	shared/nm-utils/nm-shared-utils.h \
 	shared/nm-utils/nm-random-utils.h \
 	shared/nm-utils/nm-udev-utils.h \
 	shared/nm-ethtool-utils.h \
 	shared/nm-meta-setting.h \
-	libnm-core/crypto.h \
+	libnm-core/nm-crypto.h \
+	libnm-core/nm-crypto-impl.h \
 	libnm-core/nm-connection-private.h \
 	libnm-core/nm-core-internal.h \
 	libnm-core/nm-core-types-internal.h \
@@ -567,12 +570,14 @@ libnm_core_lib_c_real = \
 	shared/nm-utils/nm-dedup-multi.c \
 	shared/nm-utils/nm-enum-utils.c \
 	shared/nm-utils/nm-hash-utils.c \
+	shared/nm-utils/nm-io-utils.c \
+	shared/nm-utils/nm-secret-utils.c \
 	shared/nm-utils/nm-shared-utils.c \
 	shared/nm-utils/nm-random-utils.c \
 	shared/nm-utils/nm-udev-utils.c \
 	shared/nm-ethtool-utils.c \
 	shared/nm-meta-setting.c \
-	libnm-core/crypto.c \
+	libnm-core/nm-crypto.c \
 	libnm-core/nm-connection.c \
 	libnm-core/nm-dbus-utils.c \
 	libnm-core/nm-errors.c \
@@ -614,14 +619,6 @@ dflt_cppflags_libnm_core = \
 	$(LIBUDEV_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
-
-if WITH_GNUTLS
-dflt_cppflags_libnm_core += $(GNUTLS_CFLAGS)
-endif
-
-if WITH_NSS
-dflt_cppflags_libnm_core += $(NSS_CFLAGS)
-endif
 
 noinst_LTLIBRARIES += libnm-core/libnm-core.la
 
@@ -668,7 +665,6 @@ nodist_libnm_core_libnm_core_la_SOURCES = \
 	$(libnm_core_lib_c_mkenums)
 
 libnm_core_libnm_core_la_LIBADD = \
-	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(UUID_LIBS) \
 	$(LIBUDEV_LIBS) \
@@ -678,19 +674,9 @@ libnm_core_libnm_core_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_LIB_LDFLAGS)
 
-if WITH_GNUTLS
-libnm_core_lib_c_real += libnm-core/crypto_gnutls.c
-libnm_core_libnm_core_la_LIBADD += $(GNUTLS_LIBS)
-endif
-
-if WITH_NSS
-libnm_core_lib_c_real += libnm-core/crypto_nss.c
-libnm_core_libnm_core_la_LIBADD += $(NSS_LIBS)
-endif
-
 EXTRA_DIST += \
-	libnm-core/crypto_gnutls.c \
-	libnm-core/crypto_nss.c \
+	libnm-core/nm-crypto-gnutls.c \
+	libnm-core/nm-crypto-nss.c \
 	libnm-core/nm-core-enum-types.c.template \
 	libnm-core/nm-core-enum-types.h.template \
 	libnm-core/meson.build
@@ -710,6 +696,46 @@ BUILT_SOURCES += \
 dist_dependencies += \
 	libnm-core/nm-vpn-dbus-types.xml \
 	libnm-core/nm-dbus-types.xml
+
+###############################################################################
+
+if HAVE_CRYPTO_GNUTLS
+if WITH_GNUTLS
+libnm_crypto_lib = libnm-core/libnm-crypto-gnutls.la
+else
+check_ltlibraries += libnm-core/libnm-crypto-gnutls.la
+endif
+
+libnm_core_libnm_crypto_gnutls_la_SOURCES = libnm-core/nm-crypto-gnutls.c
+libnm_core_libnm_crypto_gnutls_la_CPPFLAGS = \
+	$(libnm_core_libnm_core_la_CPPFLAGS) \
+	$(GNUTLS_CFLAGS)
+libnm_core_libnm_crypto_gnutls_la_LDFLAGS = \
+	$(libnm_core_libnm_core_la_LDFLAGS)
+libnm_core_libnm_crypto_gnutls_la_LIBADD = \
+	$(libnm_core_libnm_core_la_LIBADD) \
+	$(GNUTLS_LIBS)
+endif
+
+if HAVE_CRYPTO_NSS
+if WITH_NSS
+libnm_crypto_lib = libnm-core/libnm-crypto-nss.la
+else
+check_ltlibraries += libnm-core/libnm-crypto-nss.la
+endif
+
+libnm_core_libnm_crypto_nss_la_SOURCES = libnm-core/nm-crypto-nss.c
+libnm_core_libnm_crypto_nss_la_CPPFLAGS = \
+	$(libnm_core_libnm_core_la_CPPFLAGS) \
+	$(NSS_CFLAGS)
+libnm_core_libnm_crypto_nss_la_LDFLAGS = \
+	$(libnm_core_libnm_core_la_LDFLAGS)
+libnm_core_libnm_crypto_nss_la_LIBADD = \
+	$(libnm_core_libnm_core_la_LIBADD) \
+	$(NSS_LIBS)
+endif
+
+noinst_LTLIBRARIES += $(libnm_crypto_lib)
 
 ###############################################################################
 
@@ -759,6 +785,8 @@ nodist_libnm_core_tests_test_general_SOURCES = \
 
 libnm_core_tests_ldadd = \
 	libnm-core/libnm-core.la \
+	shared/libcsiphash.la \
+	$(libnm_crypto_lib) \
 	$(GLIB_LIBS)
 
 libnm_core_tests_ldflags = \
@@ -963,6 +991,8 @@ libnm_libnm_utils_la_SOURCES = \
 
 libnm_libnm_utils_la_LIBADD = \
 	libnm-core/libnm-core.la \
+	shared/libcsiphash.la \
+	$(libnm_crypto_lib) \
 	introspection/libnmdbus.la \
 	$(GLIB_LIBS)
 
@@ -1588,6 +1618,8 @@ endif
 
 src_libNetworkManagerBase_la_LIBADD = \
 	libnm-core/libnm-core.la \
+	shared/libcsiphash.la \
+	$(libnm_crypto_lib) \
 	$(GLIB_LIBS) \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(LIBUDEV_LIBS) \
@@ -4733,9 +4765,13 @@ EXTRA_DIST += \
 	shared/nm-utils/nm-compat.c \
 	shared/nm-utils/nm-compat.h \
 	shared/nm-utils/nm-glib.h \
+	shared/nm-utils/nm-io-utils.c \
+	shared/nm-utils/nm-io-utils.h \
 	shared/nm-utils/nm-jansson.h \
 	shared/nm-utils/nm-obj.h \
 	shared/nm-utils/nm-macros-internal.h \
+	shared/nm-utils/nm-secret-utils.c \
+	shared/nm-utils/nm-secret-utils.h \
 	shared/nm-utils/nm-shared-utils.c \
 	shared/nm-utils/nm-shared-utils.h \
 	shared/nm-utils/nm-test-utils.h \

@@ -26,6 +26,25 @@
 
 /*****************************************************************************/
 
+static inline gboolean
+_NM_INT_NOT_NEGATIVE (gssize val)
+{
+	/* whether an enum (without negative values) is a signed int, depends on compiler options
+	 * and compiler implementation.
+	 *
+	 * When using such an enum for accessing an array, one naturally wants to check
+	 * that the enum is not negative. However, the compiler doesn't like a plain
+	 * comparisong "enum_val >= 0", because (if the enum is unsigned), it will warn
+	 * that the expression is always true *duh*. Not even a cast to a signed
+	 * type helps to avoid the compiler warning in any case.
+	 *
+	 * The sole purpose of this function is to avoid a compiler warning, when checking
+	 * that an enum is not negative. */
+	return val >= 0;
+}
+
+/*****************************************************************************/
+
 static inline char
 nm_utils_addr_family_to_char (int addr_family)
 {
@@ -202,11 +221,38 @@ nm_utils_is_separator (const char c)
 
 /*****************************************************************************/
 
+static inline gboolean
+nm_gbytes_equal0 (GBytes *a, GBytes *b)
+{
+	return a == b || (a && b && g_bytes_equal (a, b));
+}
+
 gboolean nm_utils_gbytes_equal_mem (GBytes *bytes,
                                     gconstpointer mem_data,
                                     gsize mem_len);
 
 GVariant *nm_utils_gbytes_to_variant_ay (GBytes *bytes);
+
+/*****************************************************************************/
+
+static inline int
+nm_utils_hexchar_to_int (char ch)
+{
+	G_STATIC_ASSERT_EXPR ('0' < 'A');
+	G_STATIC_ASSERT_EXPR ('A' < 'a');
+
+	if (ch >= '0') {
+		if (ch <= '9')
+			return ch - '0';
+		if (ch >= 'A') {
+			if (ch <= 'F')
+				return ((int) ch) + (10 - (int) 'A');
+			if (ch >= 'a' && ch <= 'f')
+				return ((int) ch) + (10 - (int) 'a');
+		}
+	}
+	return -1;
+}
 
 /*****************************************************************************/
 

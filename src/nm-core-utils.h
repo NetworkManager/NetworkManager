@@ -264,26 +264,6 @@ gboolean nm_utils_sysctl_ip_conf_is_path (int addr_family, const char *path, con
 
 gboolean nm_utils_is_specific_hostname (const char *name);
 
-int nm_utils_fd_get_contents (int fd,
-                              gboolean close_fd,
-                              gsize max_length,
-                              char **contents,
-                              gsize *length,
-                              GError **error);
-
-int nm_utils_file_get_contents (int dirfd,
-                                const char *filename,
-                                gsize max_length,
-                                char **contents,
-                                gsize *length,
-                                GError **error);
-
-gboolean nm_utils_file_set_contents (const char *filename,
-                                     const char *contents,
-                                     gssize length,
-                                     mode_t mode,
-                                     GError **error);
-
 char *nm_utils_machine_id_read (void);
 gboolean nm_utils_machine_id_parse (const char *id_str, /*uuid_t*/ guchar *out_uuid);
 

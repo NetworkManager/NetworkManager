@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "crypto.h"
+#include "nm-crypto-impl.h"
 #include "nm-utils.h"
 #include "nm-errors.h"
 #include "nm-core-internal.h"
@@ -99,35 +99,18 @@ static void
 test_cert (gconstpointer test_data)
 {
 	gs_free char *path = NULL;
-	GByteArray *array;
+	gs_unref_bytes GBytes *cert = NULL;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	GError *error = NULL;
+	gboolean success;
 
 	path = g_build_filename (TEST_CERT_DIR, (const char *) test_data, NULL);
 
-	array = crypto_load_and_verify_certificate (path, &format, &error);
-	g_assert_no_error (error);
+	success = nm_crypto_load_and_verify_certificate (path, &format, &cert, &error);
+	nmtst_assert_success (success, error);
 	g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_X509);
 
-	g_byte_array_free (array, TRUE);
-
 	g_assert (nm_utils_file_is_certificate (path));
-}
-
-static GByteArray *
-file_to_byte_array (const char *filename)
-{
-	char *contents;
-	GByteArray *array = NULL;
-	gsize length = 0;
-
-	if (g_file_get_contents (filename, &contents, &length, NULL)) {
-		array = g_byte_array_sized_new (length);
-		g_byte_array_append (array, (guint8 *) contents, length);
-		g_assert (array->len == length);
-		g_free (contents);
-	}
-	return array;
 }
 
 static void
@@ -138,13 +121,13 @@ test_load_private_key (const char *path,
 {
 	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
 	gboolean is_encrypted = FALSE;
-	GByteArray *array, *decrypted;
+	gs_unref_bytes GBytes *array = NULL;
 	GError *error = NULL;
 
 	g_assert (nm_utils_file_is_private_key (path, &is_encrypted));
 	g_assert (is_encrypted);
 
-	array = crypto_decrypt_openssl_private_key (path, password, &key_type, &error);
+	array = nmtst_crypto_decrypt_openssl_private_key (path, password, &key_type, &error);
 	/* Even if the password is wrong, we should determine the key type */
 	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
 
@@ -164,16 +147,14 @@ test_load_private_key (const char *path,
 	g_assert (array != NULL);
 
 	if (decrypted_path) {
+		gs_free char *contents = NULL;
+		gsize length;
+
 		/* Compare the crypto decrypted key against a known-good decryption */
-		decrypted = file_to_byte_array (decrypted_path);
-		g_assert (decrypted != NULL);
-		g_assert (decrypted->len == array->len);
-		g_assert (memcmp (decrypted->data, array->data, array->len) == 0);
-
-		g_byte_array_free (decrypted, TRUE);
+		if (!g_file_get_contents (decrypted_path, &contents, &length, NULL))
+			g_assert_not_reached ();
+		g_assert (nm_utils_gbytes_equal_mem (array, contents, length));
 	}
-
-	g_byte_array_free (array, TRUE);
 }
 
 static void
@@ -187,7 +168,7 @@ test_load_pkcs12 (const char *path,
 
 	g_assert (nm_utils_file_is_private_key (path, NULL));
 
-	format = crypto_verify_private_key (path, password, &is_encrypted, &error);
+	format = nm_crypto_verify_private_key (path, password, &is_encrypted, &error);
 	if (expected_error != -1) {
 		g_assert_error (error, NM_CRYPTO_ERROR, expected_error);
 		g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
@@ -209,7 +190,7 @@ test_load_pkcs12_no_password (const char *path)
 	g_assert (nm_utils_file_is_private_key (path, NULL));
 
 	/* We should still get a valid returned crypto file format */
-	format = crypto_verify_private_key (path, NULL, &is_encrypted, &error);
+	format = nm_crypto_verify_private_key (path, NULL, &is_encrypted, &error);
 	g_assert_no_error (error);
 	g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_PKCS12);
 	g_assert (is_encrypted);
@@ -221,7 +202,7 @@ test_is_pkcs12 (const char *path, gboolean expect_fail)
 	gboolean is_pkcs12;
 	GError *error = NULL;
 
-	is_pkcs12 = crypto_is_pkcs12_file (path, &error);
+	is_pkcs12 = nm_crypto_is_pkcs12_file (path, &error);
 
 	if (expect_fail) {
 		g_assert_error (error, NM_CRYPTO_ERROR, NM_CRYPTO_ERROR_INVALID_DATA);
@@ -244,7 +225,7 @@ test_load_pkcs8 (const char *path,
 
 	g_assert (nm_utils_file_is_private_key (path, NULL));
 
-	format = crypto_verify_private_key (path, password, &is_encrypted, &error);
+	format = nm_crypto_verify_private_key (path, password, &is_encrypted, &error);
 	if (expected_error != -1) {
 		g_assert_error (error, NM_CRYPTO_ERROR, expected_error);
 		g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
@@ -261,34 +242,35 @@ test_encrypt_private_key (const char *path,
                           const char *password)
 {
 	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-	GByteArray *array, *encrypted, *re_decrypted;
+	gs_unref_bytes GBytes *array = NULL;
+	gs_unref_bytes GBytes *encrypted = NULL;
+	gs_unref_bytes GBytes *re_decrypted = NULL;
 	GError *error = NULL;
 
-	array = crypto_decrypt_openssl_private_key (path, password, &key_type, &error);
-	g_assert_no_error (error);
-	g_assert (array != NULL);
+	array = nmtst_crypto_decrypt_openssl_private_key (path, password, &key_type, &error);
+	nmtst_assert_success (array, error);
 	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
 
 	/* Now re-encrypt the private key */
-	encrypted = nm_utils_rsa_key_encrypt (array->data, array->len, password, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (encrypted != NULL);
+	encrypted = nmtst_crypto_rsa_key_encrypt (g_bytes_get_data (array, NULL),
+	                                          g_bytes_get_size (array),
+	                                          password,
+	                                          NULL,
+	                                          &error);
+	nmtst_assert_success (encrypted, error);
 
 	/* Then re-decrypt the private key */
 	key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-	re_decrypted = crypto_decrypt_openssl_private_key_data (encrypted->data, encrypted->len,
-	                                                        password, &key_type, &error);
-	g_assert_no_error (error);
-	g_assert (re_decrypted != NULL);
+	re_decrypted = nmtst_crypto_decrypt_openssl_private_key_data (g_bytes_get_data (encrypted, NULL),
+	                                                              g_bytes_get_size (encrypted),
+	                                                              password,
+	                                                              &key_type,
+	                                                              &error);
+	nmtst_assert_success (re_decrypted, error);
 	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
 
 	/* Compare the original decrypted key with the re-decrypted key */
-	g_assert_cmpint (array->len, ==, re_decrypted->len);
-	g_assert (!memcmp (array->data, re_decrypted->data, array->len));
-
-	g_byte_array_free (re_decrypted, TRUE);
-	g_byte_array_free (encrypted, TRUE);
-	g_byte_array_free (array, TRUE);
+	g_assert (g_bytes_equal (array, re_decrypted));
 }
 
 static void
@@ -417,15 +399,16 @@ test_md5 (void)
 
 	for (i = 0; i < G_N_ELEMENTS (md5_tests); i++) {
 		memset (digest, 0, sizeof (digest));
-		crypto_md5_hash (md5_tests[i].salt,
-		                 /* crypto_md5_hash() used to clamp salt_len to 8.  It
-		                  * doesn't any more, so we need to do it here now to
-		                  * get output that matches md5_tests[i].result.
-		                  */
-		                 md5_tests[i].salt ? 8 : 0,
-		                 md5_tests[i].password,
-		                 strlen (md5_tests[i].password),
-		                 digest, md5_tests[i].digest_size);
+		nm_crypto_md5_hash ((const guint8 *) md5_tests[i].salt,
+		                    /* nm_crypto_md5_hash() used to clamp salt_len to 8.  It
+		                     * doesn't any more, so we need to do it here now to
+		                     * get output that matches md5_tests[i].result.
+		                     */
+		                    md5_tests[i].salt ? 8 : 0,
+		                    (const guint8 *) md5_tests[i].password,
+		                    strlen (md5_tests[i].password),
+		                    (guint8 *) digest,
+		                    md5_tests[i].digest_size);
 
 		hex = nm_utils_bin2hexstr (digest, md5_tests[i].digest_size, -1);
 		g_assert_cmpstr (hex, ==, md5_tests[i].result);
@@ -444,7 +427,7 @@ main (int argc, char **argv)
 
 	nmtst_init (&argc, &argv, TRUE);
 
-	success = crypto_init (&error);
+	success = _nm_crypto_init (&error);
 	g_assert_no_error (error);
 	g_assert (success);
 
