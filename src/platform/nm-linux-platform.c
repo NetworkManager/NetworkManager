@@ -256,62 +256,6 @@ struct _ifla_vf_vlan_info {
 
 /*****************************************************************************/
 
-#define _NMLOG_PREFIX_NAME                "platform-linux"
-#define _NMLOG_DOMAIN                     LOGD_PLATFORM
-#define _NMLOG2_DOMAIN                    LOGD_PLATFORM
-#define _NMLOG(level, ...)                _LOG     (       level, _NMLOG_DOMAIN,  platform, __VA_ARGS__)
-#define _NMLOG_err(errsv, level, ...)     _LOG_err (errsv, level, _NMLOG_DOMAIN,  platform, __VA_ARGS__)
-#define _NMLOG2(level, ...)               _LOG     (       level, _NMLOG2_DOMAIN, NULL,     __VA_ARGS__)
-#define _NMLOG2_err(errsv, level, ...)    _LOG_err (errsv, level, _NMLOG2_DOMAIN, NULL,     __VA_ARGS__)
-
-#define _LOG_print(__level, __domain, __errsv, self, ...) \
-    G_STMT_START { \
-        char __prefix[32]; \
-        const char *__p_prefix = _NMLOG_PREFIX_NAME; \
-        NMPlatform *const __self = (self); \
-        \
-        if (__self && nm_platform_get_log_with_ptr (__self)) { \
-            g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
-            __p_prefix = __prefix; \
-        } \
-        _nm_log (__level, __domain, __errsv, NULL, NULL, \
-                 "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                 __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
-    } G_STMT_END
-
-#define _LOG(level, domain, self, ...) \
-    G_STMT_START { \
-        const NMLogLevel __level = (level); \
-        const NMLogDomain __domain = (domain); \
-        \
-        if (nm_logging_enabled (__level, __domain)) { \
-            _LOG_print (__level, __domain, 0, self, __VA_ARGS__); \
-        } \
-    } G_STMT_END
-
-#define _LOG_err(errsv, level, domain, self, ...) \
-    G_STMT_START { \
-        const NMLogLevel __level = (level); \
-        const NMLogDomain __domain = (domain); \
-        \
-        if (nm_logging_enabled (__level, __domain)) { \
-            int __errsv = (errsv); \
-            \
-            /* The %m format specifier (GNU extension) would alread allow you to specify the error
-             * message conveniently (and nm_log would get that right too). But we don't want to depend
-             * on that, so instead append the message at the end.
-             * Currently users are expected not to use %m in the format string. */ \
-            _LOG_print (__level, __domain, __errsv, self, \
-                        _NM_UTILS_MACRO_FIRST (__VA_ARGS__) ": %s (%d)" \
-                        _NM_UTILS_MACRO_REST (__VA_ARGS__), \
-                        g_strerror (__errsv), __errsv); \
-        } \
-    } G_STMT_END
-
-/******************************************************************
- * Forward declarations and enums
- ******************************************************************/
-
 typedef enum {
 	INFINIBAND_ACTION_CREATE_CHILD,
 	INFINIBAND_ACTION_DELETE_CHILD,
@@ -387,6 +331,133 @@ typedef enum {
 	WAIT_FOR_NL_RESPONSE_RESULT_FAILED_DISPOSING,
 	WAIT_FOR_NL_RESPONSE_RESULT_FAILED_SETNS,
 } WaitForNlResponseResult;
+
+typedef enum {
+	DELAYED_ACTION_RESPONSE_TYPE_VOID                       = 0,
+	DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS    = 1,
+	DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET                  = 2,
+} DelayedActionWaitForNlResponseType;
+
+typedef struct {
+	guint32 seq_number;
+	WaitForNlResponseResult seq_result;
+	DelayedActionWaitForNlResponseType response_type;
+	gint64 timeout_abs_ns;
+	WaitForNlResponseResult *out_seq_result;
+	char **out_errmsg;
+	union {
+		int *out_refresh_all_in_progress;
+		NMPObject **out_route_get;
+		gpointer out_data;
+	} response;
+} DelayedActionWaitForNlResponseData;
+
+/*****************************************************************************/
+
+typedef struct {
+	struct nl_sock *genl;
+
+	struct nl_sock *nlh;
+	guint32 nlh_seq_next;
+#if NM_MORE_LOGGING
+	guint32 nlh_seq_last_handled;
+#endif
+	guint32 nlh_seq_last_seen;
+	GIOChannel *event_channel;
+	guint event_id;
+
+	bool pruning[_DELAYED_ACTION_IDX_REFRESH_ALL_NUM];
+
+	bool sysctl_get_warned;
+	GHashTable *sysctl_get_prev_values;
+
+	NMUdevClient *udev_client;
+
+	struct {
+		/* which delayed actions are scheduled, as marked in @flags.
+		 * Some types have additional arguments in the fields below. */
+		DelayedActionType flags;
+
+		/* counter that a refresh all action is in progress, separated
+		 * by type. */
+		int refresh_all_in_progress[_DELAYED_ACTION_IDX_REFRESH_ALL_NUM];
+
+		GPtrArray *list_master_connected;
+		GPtrArray *list_refresh_link;
+		GArray *list_wait_for_nl_response;
+
+		int is_handling;
+	} delayed_action;
+} NMLinuxPlatformPrivate;
+
+struct _NMLinuxPlatform {
+	NMPlatform parent;
+	NMLinuxPlatformPrivate _priv;
+};
+
+struct _NMLinuxPlatformClass {
+	NMPlatformClass parent;
+};
+
+G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
+
+#define NM_LINUX_PLATFORM_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMLinuxPlatform, NM_IS_LINUX_PLATFORM, NMPlatform)
+
+/*****************************************************************************/
+
+#define _NMLOG_PREFIX_NAME                "platform-linux"
+#define _NMLOG_DOMAIN                     LOGD_PLATFORM
+#define _NMLOG2_DOMAIN                    LOGD_PLATFORM
+#define _NMLOG(level, ...)                _LOG     (       level, _NMLOG_DOMAIN,  platform, __VA_ARGS__)
+#define _NMLOG_err(errsv, level, ...)     _LOG_err (errsv, level, _NMLOG_DOMAIN,  platform, __VA_ARGS__)
+#define _NMLOG2(level, ...)               _LOG     (       level, _NMLOG2_DOMAIN, NULL,     __VA_ARGS__)
+#define _NMLOG2_err(errsv, level, ...)    _LOG_err (errsv, level, _NMLOG2_DOMAIN, NULL,     __VA_ARGS__)
+
+#define _LOG_print(__level, __domain, __errsv, self, ...) \
+    G_STMT_START { \
+        char __prefix[32]; \
+        const char *__p_prefix = _NMLOG_PREFIX_NAME; \
+        NMPlatform *const __self = (self); \
+        \
+        if (__self && nm_platform_get_log_with_ptr (__self)) { \
+            g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
+            __p_prefix = __prefix; \
+        } \
+        _nm_log (__level, __domain, __errsv, NULL, NULL, \
+                 "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                 __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+    } G_STMT_END
+
+#define _LOG(level, domain, self, ...) \
+    G_STMT_START { \
+        const NMLogLevel __level = (level); \
+        const NMLogDomain __domain = (domain); \
+        \
+        if (nm_logging_enabled (__level, __domain)) { \
+            _LOG_print (__level, __domain, 0, self, __VA_ARGS__); \
+        } \
+    } G_STMT_END
+
+#define _LOG_err(errsv, level, domain, self, ...) \
+    G_STMT_START { \
+        const NMLogLevel __level = (level); \
+        const NMLogDomain __domain = (domain); \
+        \
+        if (nm_logging_enabled (__level, __domain)) { \
+            int __errsv = (errsv); \
+            \
+            /* The %m format specifier (GNU extension) would alread allow you to specify the error
+             * message conveniently (and nm_log would get that right too). But we don't want to depend
+             * on that, so instead append the message at the end.
+             * Currently users are expected not to use %m in the format string. */ \
+            _LOG_print (__level, __domain, __errsv, self, \
+                        _NM_UTILS_MACRO_FIRST (__VA_ARGS__) ": %s (%d)" \
+                        _NM_UTILS_MACRO_REST (__VA_ARGS__), \
+                        g_strerror (__errsv), __errsv); \
+        } \
+    } G_STMT_END
+
+/*****************************************************************************/
 
 static void delayed_action_schedule (NMPlatform *platform, DelayedActionType action_type, gpointer user_data);
 static gboolean delayed_action_handle_all (NMPlatform *platform, gboolean read_netlink);
@@ -2009,7 +2080,64 @@ _wireguard_get_device_cb (struct nl_msg *msg, void *arg)
 	return NL_OK;
 }
 
-static gboolean _wireguard_get_link_properties (NMPlatform *platform, const NMPlatformLink *link, NMPObject *obj);
+static gboolean
+_wireguard_get_link_properties (NMPlatform *platform, const NMPlatformLink *link, NMPObject *obj)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
+	struct _wireguard_device_buf buf = {
+		.obj = obj,
+		.peers = g_array_new (FALSE, FALSE, sizeof (NMWireGuardPeer)),
+		.allowedips = g_array_new (FALSE, FALSE, sizeof (NMWireGuardAllowedIP)),
+	};
+	struct nl_cb cb = {
+		.valid_cb = _wireguard_get_device_cb,
+		.valid_arg = &buf,
+	};
+	guint i, j;
+	int wireguard_family_id;
+
+	wireguard_family_id = genl_ctrl_resolve (priv->genl, "wireguard");
+	if (wireguard_family_id < 0) {
+		_LOGD ("wireguard: kernel support not available for wireguard link %s", link->name);
+		goto err;
+	}
+
+	msg = nlmsg_alloc ();
+
+	if (!genlmsg_put (msg, NL_AUTO_PORT, NL_AUTO_SEQ, wireguard_family_id,
+	                  0, NLM_F_DUMP, WG_CMD_GET_DEVICE, 1))
+		goto err;
+
+	NLA_PUT_U32 (msg, WGDEVICE_A_IFINDEX, link->ifindex);
+
+	if (nl_send_auto (priv->genl, msg) < 0)
+		goto err;
+
+	if (nl_recvmsgs (priv->genl, &cb) < 0)
+		goto err;
+
+	/* have each peer point to its own chunk of the allowedips buffer */
+	for (i = 0, j = 0; i < buf.peers->len; i++) {
+		NMWireGuardPeer *p = &g_array_index (buf.peers, NMWireGuardPeer, i);
+
+		p->allowedips = &g_array_index (buf.allowedips, NMWireGuardAllowedIP, j);
+		j += p->allowedips_len;
+	}
+	/* drop the wrapper (but also the buffer if no peer points to it) */
+	g_array_free (buf.allowedips, buf.peers->len ? FALSE : TRUE);
+
+	obj->_lnk_wireguard.peers_len = buf.peers->len;
+	obj->_lnk_wireguard.peers = (NMWireGuardPeer *) g_array_free (buf.peers, FALSE);
+
+	return TRUE;
+
+err:
+nla_put_failure:
+	g_array_free (buf.peers, TRUE);
+	g_array_free (buf.allowedips, TRUE);
+	return FALSE;
+}
 
 /*****************************************************************************/
 
@@ -3345,101 +3473,6 @@ _nl_msg_new_tfilter (int nlmsg_type,
 nla_put_failure:
 	nlmsg_free (msg);
 	g_return_val_if_reached (NULL);
-}
-
-/******************************************************************
- * NMPlatform types and functions
- ******************************************************************/
-
-typedef enum {
-	DELAYED_ACTION_RESPONSE_TYPE_VOID                       = 0,
-	DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS    = 1,
-	DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET                  = 2,
-} DelayedActionWaitForNlResponseType;
-
-typedef struct {
-	guint32 seq_number;
-	WaitForNlResponseResult seq_result;
-	DelayedActionWaitForNlResponseType response_type;
-	gint64 timeout_abs_ns;
-	WaitForNlResponseResult *out_seq_result;
-	char **out_errmsg;
-	union {
-		int *out_refresh_all_in_progress;
-		NMPObject **out_route_get;
-		gpointer out_data;
-	} response;
-} DelayedActionWaitForNlResponseData;
-
-typedef struct {
-	struct nl_sock *genl;
-
-	struct nl_sock *nlh;
-	guint32 nlh_seq_next;
-#if NM_MORE_LOGGING
-	guint32 nlh_seq_last_handled;
-#endif
-	guint32 nlh_seq_last_seen;
-	GIOChannel *event_channel;
-	guint event_id;
-
-	bool pruning[_DELAYED_ACTION_IDX_REFRESH_ALL_NUM];
-
-	bool sysctl_get_warned;
-	GHashTable *sysctl_get_prev_values;
-
-	NMUdevClient *udev_client;
-
-	struct {
-		/* which delayed actions are scheduled, as marked in @flags.
-		 * Some types have additional arguments in the fields below. */
-		DelayedActionType flags;
-
-		/* counter that a refresh all action is in progress, separated
-		 * by type. */
-		int refresh_all_in_progress[_DELAYED_ACTION_IDX_REFRESH_ALL_NUM];
-
-		GPtrArray *list_master_connected;
-		GPtrArray *list_refresh_link;
-		GArray *list_wait_for_nl_response;
-
-		int is_handling;
-	} delayed_action;
-} NMLinuxPlatformPrivate;
-
-struct _NMLinuxPlatform {
-	NMPlatform parent;
-	NMLinuxPlatformPrivate _priv;
-};
-
-struct _NMLinuxPlatformClass {
-	NMPlatformClass parent;
-};
-
-G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
-
-#define NM_LINUX_PLATFORM_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMLinuxPlatform, NM_IS_LINUX_PLATFORM, NMPlatform)
-
-NMPlatform *
-nm_linux_platform_new (gboolean log_with_ptr, gboolean netns_support)
-{
-	gboolean use_udev = FALSE;
-
-	if (   nmp_netns_is_initial ()
-	    && access ("/sys", W_OK) == 0)
-		use_udev = TRUE;
-
-	return g_object_new (NM_TYPE_LINUX_PLATFORM,
-	                     NM_PLATFORM_LOG_WITH_PTR, log_with_ptr,
-	                     NM_PLATFORM_USE_UDEV, use_udev,
-	                     NM_PLATFORM_NETNS_SUPPORT, netns_support,
-	                     NULL);
-}
-
-void
-nm_linux_platform_setup (void)
-{
-	nm_platform_setup (nm_linux_platform_new (FALSE, FALSE));
 }
 
 /*****************************************************************************/
@@ -6477,67 +6510,6 @@ link_release (NMPlatform *platform, int master, int slave)
 /*****************************************************************************/
 
 static gboolean
-_wireguard_get_link_properties (NMPlatform *platform, const NMPlatformLink *link, NMPObject *obj)
-{
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	nm_auto_nlmsg struct nl_msg *msg = NULL;
-	struct _wireguard_device_buf buf = {
-		.obj = obj,
-		.peers = g_array_new (FALSE, FALSE, sizeof (NMWireGuardPeer)),
-		.allowedips = g_array_new (FALSE, FALSE, sizeof (NMWireGuardAllowedIP)),
-	};
-	struct nl_cb cb = {
-		.valid_cb = _wireguard_get_device_cb,
-		.valid_arg = &buf,
-	};
-	guint i, j;
-	int wireguard_family_id;
-
-	wireguard_family_id = genl_ctrl_resolve (priv->genl, "wireguard");
-	if (wireguard_family_id < 0) {
-		_LOGD ("wireguard: kernel support not available for wireguard link %s", link->name);
-		goto err;
-	}
-
-	msg = nlmsg_alloc ();
-
-	if (!genlmsg_put (msg, NL_AUTO_PORT, NL_AUTO_SEQ, wireguard_family_id,
-	                  0, NLM_F_DUMP, WG_CMD_GET_DEVICE, 1))
-		goto err;
-
-	NLA_PUT_U32 (msg, WGDEVICE_A_IFINDEX, link->ifindex);
-
-	if (nl_send_auto (priv->genl, msg) < 0)
-		goto err;
-
-	if (nl_recvmsgs (priv->genl, &cb) < 0)
-		goto err;
-
-	/* have each peer point to its own chunk of the allowedips buffer */
-	for (i = 0, j = 0; i < buf.peers->len; i++) {
-		NMWireGuardPeer *p = &g_array_index (buf.peers, NMWireGuardPeer, i);
-
-		p->allowedips = &g_array_index (buf.allowedips, NMWireGuardAllowedIP, j);
-		j += p->allowedips_len;
-	}
-	/* drop the wrapper (but also the buffer if no peer points to it) */
-	g_array_free (buf.allowedips, buf.peers->len ? FALSE : TRUE);
-
-	obj->_lnk_wireguard.peers_len = buf.peers->len;
-	obj->_lnk_wireguard.peers = (NMWireGuardPeer *) g_array_free (buf.peers, FALSE);
-
-	return TRUE;
-
-err:
-nla_put_failure:
-	g_array_free (buf.peers, TRUE);
-	g_array_free (buf.allowedips, TRUE);
-	return FALSE;
-}
-
-/*****************************************************************************/
-
-static gboolean
 _infiniband_partition_action (NMPlatform *platform,
                               InfinibandAction action,
                               int parent,
@@ -7643,6 +7615,14 @@ handle_udev_event (NMUdevClient *udev_client,
 
 /*****************************************************************************/
 
+void
+nm_linux_platform_setup (void)
+{
+	nm_platform_setup (nm_linux_platform_new (FALSE, FALSE));
+}
+
+/*****************************************************************************/
+
 static void
 nm_linux_platform_init (NMLinuxPlatform *self)
 {
@@ -7781,6 +7761,22 @@ constructed (GObject *_object)
 
 		udev_enumerate_unref (enumerator);
 	}
+}
+
+NMPlatform *
+nm_linux_platform_new (gboolean log_with_ptr, gboolean netns_support)
+{
+	gboolean use_udev = FALSE;
+
+	if (   nmp_netns_is_initial ()
+	    && access ("/sys", W_OK) == 0)
+		use_udev = TRUE;
+
+	return g_object_new (NM_TYPE_LINUX_PLATFORM,
+	                     NM_PLATFORM_LOG_WITH_PTR, log_with_ptr,
+	                     NM_PLATFORM_USE_UDEV, use_udev,
+	                     NM_PLATFORM_NETNS_SUPPORT, netns_support,
+	                     NULL);
 }
 
 static void
