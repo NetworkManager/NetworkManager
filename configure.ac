@@ -518,6 +518,15 @@ case $with_suspend_resume in
 		;;
 esac
 
+# eBPF support
+AC_ARG_WITH(ebpf,
+            AS_HELP_STRING([--with-ebpf=yes|no], [Build with eBPF support (default: yes)]),
+            [], [with_ebpf=yes])
+if test "$with_ebpf" != "yes" -a "$with_ebpf" != "no"; then
+	AC_MSG_ERROR(--with-ebpf must be one of [yes, no])
+fi
+AM_CONDITIONAL(WITH_EBPF, test "${with_ebpf}" = "yes")
+
 # SELinux support
 AC_ARG_WITH(selinux,
             AS_HELP_STRING([--with-selinux=yes|no|auto], [Build with SELinux (default: auto)]),
@@ -1353,4 +1362,5 @@ echo "  JSON validation for libnm: $enable_json_validation"
 echo "  crypto: $with_crypto (have-gnutls: $have_crypto_gnutls, have-nss: $have_crypto_nss)"
 echo "  sanitizers: $sanitizers"
 echo "  Mozilla Public Suffix List: $with_libpsl"
+echo "  eBPF: $with_ebpf"
 echo

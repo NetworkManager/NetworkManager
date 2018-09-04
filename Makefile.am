@@ -1370,6 +1370,7 @@ shared_libnacd_la_LIBADD = shared/libcrbtree.la
 
 shared_libnacd_la_CPPFLAGS = \
 	-D_GNU_SOURCE \
+	-DSO_ATTACH_BPF=50 \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	-I$(srcdir)/shared/c-list/src \
@@ -1380,11 +1381,16 @@ shared_libnacd_la_CPPFLAGS = \
 shared_libnacd_la_SOURCES = \
 	shared/n-acd/src/n-acd.c \
 	shared/n-acd/src/n-acd.h \
-	shared/n-acd/src/n-acd-bpf.c \
 	shared/n-acd/src/n-acd-private.h \
 	shared/n-acd/src/n-acd-probe.c \
 	shared/n-acd/src/util/timer.c \
 	shared/n-acd/src/util/timer.h
+
+if WITH_EBPF
+shared_libnacd_la_SOURCES += shared/n-acd/src/n-acd-bpf.c
+else
+shared_libnacd_la_SOURCES += shared/n-acd/src/n-acd-bpf-fallback.c
+endif
 
 EXTRA_DIST += shared/c-list/src/c-list.h
 

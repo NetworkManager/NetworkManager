@@ -23,17 +23,25 @@ shared_c_rbtree_dep = declare_dependency(
     link_with: shared_c_rbtree,
 )
 
+
+if get_option('ebpf')
+    shared_n_acd_bpf_files = files('n-acd/src/n-acd-bpf.c')
+else
+    shared_n_acd_bpf_files = files('n-acd/src/n-acd-bpf-fallback.c')
+endif
+
 shared_n_acd = static_library(
     'n-acd',
     sources: files('n-acd/src/n-acd.c',
                    'n-acd/src/n-acd.h',
-                   'n-acd/src/n-acd-bpf.c',
                    'n-acd/src/n-acd-private.h',
                    'n-acd/src/n-acd-probe.c',
                    'n-acd/src/util/timer.c',
-                   'n-acd/src/util/timer.h'),
+                   'n-acd/src/util/timer.h')
+             + shared_n_acd_bpf_files,
     c_args: [
         '-D_GNU_SOURCE',
+        '-DSO_ATTACH_BPF=50',
         '-std=c11',
         '-Wno-pointer-arith',
         '-Wno-vla',
