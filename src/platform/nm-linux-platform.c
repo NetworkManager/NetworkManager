@@ -812,19 +812,21 @@ _addrtime_get_lifetimes (guint32 timestamp,
 /*****************************************************************************/
 
 static const NMPObject *
-_lookup_cached_link (const NMPCache *cache, int ifindex, gboolean *completed_from_cache, const NMPObject **link_cached)
+_lookup_cached_link (const NMPCache *cache,
+                     int ifindex,
+                     gboolean *completed_from_cache,
+                     const NMPObject **link_cached)
 {
 	const NMPObject *obj;
 
 	nm_assert (completed_from_cache && link_cached);
 
 	if (!*completed_from_cache) {
-		obj = ifindex > 0 && cache ? nmp_cache_lookup_link (cache, ifindex) : NULL;
+		obj = ifindex > 0 && cache
+		      ? nmp_cache_lookup_link (cache, ifindex)
+		      : NULL;
 
-		if (obj && obj->_link.netlink.is_in_netlink)
-			*link_cached = obj;
-		else
-			*link_cached = NULL;
+		*link_cached = obj;
 		*completed_from_cache = TRUE;
 	}
 	return *link_cached;
@@ -895,6 +897,7 @@ _linktype_get_type (NMPlatform *platform,
 		 * when moving interfce to other netns). Thus here there is a tiny potential
 		 * of messing stuff up. */
 		if (   obj
+		    && obj->_link.netlink.is_in_netlink
 		    && !NM_IN_SET (obj->link.type, NM_LINK_TYPE_UNKNOWN, NM_LINK_TYPE_NONE)
 		    && nm_streq (ifname, obj->link.name)
 		    && (   !kind
@@ -2240,7 +2243,8 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	        || !af_inet6_addr_gen_mode_valid
 	        || !tb[IFLA_STATS64])) {
 		_lookup_cached_link (cache, obj->link.ifindex, completed_from_cache, &link_cached);
-		if (link_cached) {
+		if (   link_cached
+		    && link_cached->_link.netlink.is_in_netlink) {
 			if (   lnk_data_complete_from_cache
 			    && link_cached->link.type == obj->link.type
 			    && link_cached->_link.netlink.lnk
