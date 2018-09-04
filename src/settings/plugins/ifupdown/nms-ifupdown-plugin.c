@@ -370,6 +370,9 @@ init (NMSettingsPlugin *config)
 							state--;
 							continue;
 						}
+						if (!strcmp ("none", token)) {
+							continue;
+						}
 						if (state == 0 && strlen (token) > 0) {
 							nm_log_info (LOGD_SETTINGS, "adding bridge port %s to eni_ifaces", token);
 							g_hash_table_insert (priv->eni_ifaces, g_strdup (token), "known");
