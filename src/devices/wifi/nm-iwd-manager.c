@@ -91,6 +91,10 @@ G_DEFINE_TYPE (NMIwdManager, nm_iwd_manager, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+static void mirror_8021x_connection_take_and_delete (NMSettingsConnection *sett_conn);
+
+/*****************************************************************************/
+
 static const char *
 get_variant_string_or_null (GVariant *v)
 {
@@ -320,7 +324,7 @@ known_network_data_free (KnownNetworkData *network)
 		return;
 
 	g_object_unref (network->known_network);
-	nm_g_object_unref (network->mirror_connection);
+	mirror_8021x_connection_take_and_delete (network->mirror_connection);
 	g_slice_free (KnownNetworkData, network);
 }
 
@@ -365,62 +369,57 @@ set_device_dbus_object (NMIwdManager *self, GDBusProxy *proxy,
  * configuration from the user.  Only do this if no existing connection
  * SSID and security type match that network yet.
  */
-static void
+static NMSettingsConnection *
 mirror_8021x_connection (NMIwdManager *self,
-                         KnownNetworkId *id,
-                         KnownNetworkData *data)
+                         const char *name)
 {
 	NMSettings *settings = NM_SETTINGS_GET;
-	NMSettingsConnection *const *iter;
-	NMConnection *connection;
+	NMSettingsConnection *const*iter;
+	gs_unref_object NMConnection *connection = NULL;
 	NMSettingsConnection *settings_connection;
 	char uuid[37];
 	NMSetting *setting;
-	GBytes *ssid;
 	GError *error = NULL;
+	gs_unref_bytes GBytes *new_ssid = NULL;
 
 	for (iter = nm_settings_get_connections (settings, NULL); *iter; iter++) {
-		const NMSettingsConnection *conn = *iter;
+		NMSettingsConnection *sett_conn = *iter;
+		NMConnection *conn = nm_settings_connection_get_connection (sett_conn);
 		NMIwdNetworkSecurity security;
-		gs_free char *name = NULL;
+		gs_free char *ssid_name = NULL;
 		NMSettingWireless *s_wifi;
 
-		security = nm_wifi_connection_get_iwd_security (NM_CONNECTION (conn), NULL);
+		security = nm_wifi_connection_get_iwd_security (conn, NULL);
 		if (security != NM_IWD_NETWORK_SECURITY_8021X)
 			continue;
 
-		s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (conn));
+		s_wifi = nm_connection_get_setting_wireless (conn);
 		if (!s_wifi)
 			continue;
 
-		ssid = nm_setting_wireless_get_ssid (s_wifi);
-		if (!ssid)
-			continue;
-
-		name = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
-		                              g_bytes_get_size (ssid));
+		ssid_name = _nm_utils_ssid_to_utf8 (nm_setting_wireless_get_ssid (s_wifi));
 
 		/* We already have an NMSettingsConnection matching this
 		 * KnownNetwork, whether it's saved or an in-memory connection
 		 * potentially created by ourselves.  Nothing to do here.
 		 */
-		if (!strcmp (name, id->name))
-			return;
+		if (nm_streq (ssid_name, name))
+			return NULL;
 	}
 
 	connection = nm_simple_connection_new ();
 
 	setting = NM_SETTING (g_object_new (NM_TYPE_SETTING_CONNECTION,
 	                                    NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
-	                                    NM_SETTING_CONNECTION_ID, id->name,
+	                                    NM_SETTING_CONNECTION_ID, name,
 	                                    NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_buf (uuid),
 	                                    NM_SETTING_CONNECTION_READ_ONLY, TRUE,
 	                                    NULL));
 	nm_connection_add_setting (connection, setting);
 
-	ssid = g_bytes_new (id->name, strlen (id->name));
+	new_ssid = g_bytes_new (name, strlen (name));
 	setting = NM_SETTING (g_object_new (NM_TYPE_SETTING_WIRELESS,
-	                                    NM_SETTING_WIRELESS_SSID, ssid,
+	                                    NM_SETTING_WIRELESS_SSID, new_ssid,
 	                                    NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
 	                                    NULL));
 	nm_connection_add_setting (connection, setting);
@@ -435,23 +434,41 @@ mirror_8021x_connection (NMIwdManager *self,
 	nm_setting_802_1x_add_eap_method (NM_SETTING_802_1X (setting), "external");
 	nm_connection_add_setting (connection, setting);
 
+	if (!nm_connection_normalize (connection, NULL, NULL, NULL))
+		return NULL;
+
 	settings_connection = nm_settings_add_connection (settings, connection,
 	                                                  FALSE, &error);
-	g_object_unref (connection);
-
 	if (!settings_connection) {
 		_LOGW ("failed to add a mirror NMConnection for IWD's Known Network '%s': %s",
-		       id->name, NM_G_ERROR_MSG (error));
-		g_clear_error (&error);
-		return;
+		       name, error->message);
+		g_error_free (error);
+		return NULL;
 	}
 
 	nm_settings_connection_set_flags (settings_connection,
 	                                  NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED |
 	                                  NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED,
 	                                  TRUE);
+	return settings_connection;
+}
 
-	data->mirror_connection = g_object_ref (settings_connection);
+static void
+mirror_8021x_connection_take_and_delete (NMSettingsConnection *sett_conn)
+{
+	NMSettingsConnectionIntFlags flags;
+
+	if (!sett_conn)
+		return;
+
+	flags = nm_settings_connection_get_flags (sett_conn);
+
+	/* If connection has not been saved since we created it
+	 * in interface_added it too can be removed now. */
+	if (NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED))
+		nm_settings_connection_delete (sett_conn, NULL);
+
+	g_object_unref (sett_conn);
 }
 
 static void
@@ -481,6 +498,7 @@ interface_added (GDBusObjectManager *object_manager, GDBusObject *object,
 		KnownNetworkData *data;
 		NMIwdNetworkSecurity security;
 		const char *type_str, *name;
+		NMSettingsConnection *sett_conn = NULL;
 
 		type_str = get_property_string_or_null (proxy, "Type");
 		name = get_property_string_or_null (proxy, "Name");
@@ -498,12 +516,27 @@ interface_added (GDBusObjectManager *object_manager, GDBusObject *object,
 
 		id = known_network_id_new (name, security);
 
-		data = g_slice_new0 (KnownNetworkData);
-		data->known_network = (GDBusProxy *) g_object_ref (proxy);
-		g_hash_table_replace (priv->known_networks, id, data);
+		data = g_hash_table_lookup (priv->known_networks, id);
+		if (data)
+			g_free (id);
+		else {
+			data = g_slice_new0 (KnownNetworkData);
+			data->known_network = g_object_ref (proxy);
+			g_hash_table_insert (priv->known_networks, id, data);
+		}
 
-		if (security == NM_IWD_NETWORK_SECURITY_8021X)
-			mirror_8021x_connection (self, id, data);
+		if (security == NM_IWD_NETWORK_SECURITY_8021X) {
+			sett_conn = mirror_8021x_connection (self, name);
+
+			if (   sett_conn
+			    && sett_conn != data->mirror_connection) {
+				NMSettingsConnection *sett_conn_old = data->mirror_connection;
+
+				data->mirror_connection = nm_g_object_ref (sett_conn);
+				mirror_8021x_connection_take_and_delete (sett_conn_old);
+			}
+		} else
+			mirror_8021x_connection_take_and_delete (g_steal_pointer (&data->mirror_connection));
 
 		return;
 	}
@@ -530,7 +563,6 @@ interface_removed (GDBusObjectManager *object_manager, GDBusObject *object,
 
 	if (nm_streq (iface_name, NM_IWD_KNOWN_NETWORK_INTERFACE)) {
 		KnownNetworkId id;
-		KnownNetworkData *data;
 		const char *type_str;
 
 		type_str = get_property_string_or_null (proxy, "Type");
@@ -546,27 +578,6 @@ interface_removed (GDBusObjectManager *object_manager, GDBusObject *object,
 			id.security = NM_IWD_NETWORK_SECURITY_8021X;
 		else
 			return;
-
-		data = g_hash_table_lookup (priv->known_networks, &id);
-		if (!data)
-			return;
-
-		if (data->mirror_connection) {
-			NMSettingsConnectionIntFlags flags;
-			NMSettingsConnection *mirror_connection = data->mirror_connection;
-
-			flags = nm_settings_connection_get_flags (mirror_connection);
-
-			/* If connection has not been saved since we created it
-			 * in interface_added it too can be removed now. */
-			if (flags & NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED) {
-				data->mirror_connection = NULL;
-
-				nm_settings_connection_delete (mirror_connection, NULL);
-
-				g_object_unref (mirror_connection);
-			}
-		}
 
 		g_hash_table_remove (priv->known_networks, &id);
 		return;
