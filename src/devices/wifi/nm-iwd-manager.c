@@ -298,7 +298,12 @@ known_network_id_new (const char *name, NMIwdNetworkSecurity security)
 static guint
 known_network_id_hash (KnownNetworkId *id)
 {
-	return g_str_hash (id->name) + id->security;
+	NMHashState h;
+
+	nm_hash_init (&h, 1947951703u);
+	nm_hash_update_val (&h, id->security);
+	nm_hash_update_str (&h, id->name);
+	return nm_hash_complete (&h);
 }
 
 static gboolean
