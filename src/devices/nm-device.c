@@ -4407,6 +4407,9 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 		}
 	}
 
+	nm_clear_g_source (&priv->queued_ip_config_id_4);
+	nm_clear_g_source (&priv->queued_ip_config_id_6);
+
 	g_object_freeze_notify (G_OBJECT (self));
 	NM_DEVICE_GET_CLASS (self)->unrealize_notify (self);
 

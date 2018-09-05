@@ -3405,7 +3405,7 @@ typedef struct {
 	WaitForNlResponseResult *out_seq_result;
 	char **out_errmsg;
 	union {
-		int *out_refresh_all_in_progess;
+		int *out_refresh_all_in_progress;
 		NMPObject **out_route_get;
 		gpointer out_data;
 	} response;
@@ -3437,7 +3437,7 @@ typedef struct {
 
 		/* counter that a refresh all action is in progress, separated
 		 * by type. */
-		int refresh_all_in_progess[_DELAYED_ACTION_IDX_REFRESH_ALL_NUM];
+		int refresh_all_in_progress[_DELAYED_ACTION_IDX_REFRESH_ALL_NUM];
 
 		GPtrArray *list_master_connected;
 		GPtrArray *list_refresh_link;
@@ -3910,7 +3910,7 @@ delayed_action_refresh_all_in_progress (NMPlatform *platform, DelayedActionType 
 	if (NM_FLAGS_ANY (priv->delayed_action.flags, action_type))
 		return TRUE;
 
-	if (priv->delayed_action.refresh_all_in_progess[delayed_action_refresh_all_to_idx (action_type)] > 0)
+	if (priv->delayed_action.refresh_all_in_progress[delayed_action_refresh_all_to_idx (action_type)] > 0)
 		return TRUE;
 
 	return FALSE;
@@ -3940,10 +3940,10 @@ delayed_action_wait_for_nl_response_complete (NMPlatform *platform,
 	case DELAYED_ACTION_RESPONSE_TYPE_VOID:
 		break;
 	case DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS:
-		if (data->response.out_refresh_all_in_progess) {
-			nm_assert (*data->response.out_refresh_all_in_progess > 0);
-			*data->response.out_refresh_all_in_progess -= 1;
-			data->response.out_refresh_all_in_progess = NULL;
+		if (data->response.out_refresh_all_in_progress) {
+			nm_assert (*data->response.out_refresh_all_in_progress > 0);
+			*data->response.out_refresh_all_in_progress -= 1;
+			data->response.out_refresh_all_in_progress = NULL;
 		}
 		break;
 	case DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET:
@@ -4666,11 +4666,11 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 		const NMPClass *klass = nmp_class_from_type (obj_type);
 		nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 		int nle;
-		int *out_refresh_all_in_progess;
+		int *out_refresh_all_in_progress;
 
-		out_refresh_all_in_progess = &priv->delayed_action.refresh_all_in_progess[delayed_action_refresh_all_to_idx (iflags)];
-		nm_assert (*out_refresh_all_in_progess >= 0);
-		*out_refresh_all_in_progess += 1;
+		out_refresh_all_in_progress = &priv->delayed_action.refresh_all_in_progress[delayed_action_refresh_all_to_idx (iflags)];
+		nm_assert (*out_refresh_all_in_progress >= 0);
+		*out_refresh_all_in_progress += 1;
 
 		/* clear any delayed action that request a refresh of this object type. */
 		priv->delayed_action.flags &= ~iflags;
@@ -4704,9 +4704,9 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 		if (nle < 0)
 			continue;
 
-		if (_nl_send_nlmsg (platform, nlmsg, NULL, NULL, DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS, out_refresh_all_in_progess) < 0) {
-			nm_assert (*out_refresh_all_in_progess > 0);
-			*out_refresh_all_in_progess -= 1;
+		if (_nl_send_nlmsg (platform, nlmsg, NULL, NULL, DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS, out_refresh_all_in_progress) < 0) {
+			nm_assert (*out_refresh_all_in_progress > 0);
+			*out_refresh_all_in_progress -= 1;
 		}
 	}
 }
@@ -4735,10 +4735,10 @@ event_seq_check_refresh_all (NMPlatform *platform, guint32 seq_number)
 			data = &g_array_index (priv->delayed_action.list_wait_for_nl_response, DelayedActionWaitForNlResponseData, i);
 
 			if (   data->response_type == DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS
-			    && data->response.out_refresh_all_in_progess
+			    && data->response.out_refresh_all_in_progress
 			    && data->seq_number == priv->nlh_seq_last_seen) {
-				*data->response.out_refresh_all_in_progess -= 1;
-				data->response.out_refresh_all_in_progess = NULL;
+				*data->response.out_refresh_all_in_progress -= 1;
+				data->response.out_refresh_all_in_progress = NULL;
 				break;
 			}
 		}
