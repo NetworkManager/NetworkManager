@@ -188,7 +188,7 @@ ck_load_cache (GHashTable *cache)
 		if (error)
 			goto out;
 
-		g_hash_table_insert (cache, GUINT_TO_POINTER (uid), g_memdup (&session, sizeof session));
+		g_hash_table_insert (cache, GUINT_TO_POINTER (uid), nm_memdup (&session, sizeof session));
 	}
 
 	finished = TRUE;

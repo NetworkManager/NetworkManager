@@ -340,7 +340,7 @@ _vlan_xgress_qos_mappings_cpy (guint *dst_n_map,
 		g_clear_pointer (dst_map, g_free);
 		*dst_n_map = src_n_map;
 		if (src_n_map > 0)
-			*dst_map = g_memdup (src_map, sizeof (*src_map) * src_n_map);
+			*dst_map = nm_memdup (src_map, sizeof (*src_map) * src_n_map);
 	}
 }
 
@@ -452,9 +452,9 @@ _wireguard_peers_cpy (gsize *dst_n_peers,
 		g_clear_pointer (dst_peers, g_free);
 		*dst_n_peers = src_n_peers;
 		if (src_n_peers > 0)
-			*dst_peers = g_memdup (src_peers, sizeof (*src_peers) * src_n_peers);
+			*dst_peers = nm_memdup (src_peers, sizeof (*src_peers) * src_n_peers);
 		for (i = 0; i < src_n_peers; i++) {
-			dst_peers[i]->allowedips = g_memdup (src_peers[i].allowedips, sizeof (src_peers[i].allowedips) * src_peers[i].allowedips_len);
+			dst_peers[i]->allowedips = nm_memdup (src_peers[i].allowedips, sizeof (src_peers[i].allowedips) * src_peers[i].allowedips_len);
 			dst_peers[i]->allowedips_len = src_peers[i].allowedips_len;
 		}
 	}
