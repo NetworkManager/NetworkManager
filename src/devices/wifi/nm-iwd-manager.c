@@ -285,7 +285,7 @@ static KnownNetworkId *
 known_network_id_new (const char *name, NMIwdNetworkSecurity security)
 {
 	KnownNetworkId *id;
-	size_t strsize = strlen (name) + 1;
+	gsize strsize = strlen (name) + 1;
 
 	id = g_malloc (sizeof (KnownNetworkId) + strsize);
 	id->name = id->buf;
@@ -309,7 +309,8 @@ known_network_id_hash (KnownNetworkId *id)
 static gboolean
 known_network_id_equal (KnownNetworkId *a, KnownNetworkId *b)
 {
-	return g_str_equal (a->name, b->name) && a->security == b->security;
+	return    a->security == b->security
+	       && nm_streq (a->name, b->name);
 }
 
 static void
@@ -319,8 +320,7 @@ known_network_data_free (KnownNetworkData *network)
 		return;
 
 	g_object_unref (network->known_network);
-	if (network->mirror_connection)
-		g_object_unref (network->mirror_connection);
+	nm_g_object_unref (network->mirror_connection);
 	g_slice_free (KnownNetworkData, network);
 }
 
@@ -366,7 +366,8 @@ set_device_dbus_object (NMIwdManager *self, GDBusProxy *proxy,
  * SSID and security type match that network yet.
  */
 static void
-mirror_8021x_connection (NMIwdManager *self, KnownNetworkId *id,
+mirror_8021x_connection (NMIwdManager *self,
+                         KnownNetworkId *id,
                          KnownNetworkData *data)
 {
 	NMSettings *settings = NM_SETTINGS_GET;
@@ -677,7 +678,7 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 	object_manager = g_dbus_object_manager_client_new_for_bus_finish (result, &error);
 	if (object_manager == NULL) {
 		_LOGE ("failed to acquire IWD Object Manager: Wi-Fi will not be available (%s)",
-		       NM_G_ERROR_MSG (error));
+		       error->message);
 		g_clear_error (&error);
 		return;
 	}
@@ -691,11 +692,13 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	connection = g_dbus_object_manager_client_get_connection (G_DBUS_OBJECT_MANAGER_CLIENT (object_manager));
 
-	priv->agent_id = iwd_agent_export (connection, self,
-	                                   &priv->agent_path, &error);
+	priv->agent_id = iwd_agent_export (connection,
+	                                   self,
+	                                   &priv->agent_path,
+	                                   &error);
 	if (!priv->agent_id) {
 		_LOGE ("failed to export the IWD Agent: PSK/8021x WiFi networks will not work: %s",
-		       NM_G_ERROR_MSG (error));
+		       error->message);
 		g_clear_error (&error);
 	}
 
@@ -762,7 +765,8 @@ nm_iwd_manager_init (NMIwdManager *self)
 	priv->cancellable = g_cancellable_new ();
 
 	priv->known_networks = g_hash_table_new_full ((GHashFunc) known_network_id_hash,
-	                                              (GEqualFunc) known_network_id_equal, g_free,
+	                                              (GEqualFunc) known_network_id_equal,
+	                                              g_free,
 	                                              (GDestroyNotify) known_network_data_free);
 
 	prepare_object_manager (self);
@@ -796,9 +800,7 @@ dispose (GObject *object)
 
 	nm_clear_g_cancellable (&priv->cancellable);
 
-	if (priv->known_networks)
-		g_hash_table_unref (priv->known_networks);
-	priv->known_networks = NULL;
+	nm_clear_pointer (&priv->known_networks, g_hash_table_destroy);
 
 	if (priv->manager) {
 		g_signal_handlers_disconnect_by_data (priv->manager, self);

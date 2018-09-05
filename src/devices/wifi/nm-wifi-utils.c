@@ -826,8 +826,7 @@ nm_wifi_connection_get_iwd_security (NMConnection *connection,
 	if (!nm_connection_get_setting_wireless (connection))
 		goto error;
 
-	if (mapped)
-		*mapped = TRUE;
+	NM_SET_OUT (mapped, TRUE);
 
 	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
 	if (!s_wireless_sec)
@@ -846,8 +845,6 @@ nm_wifi_connection_get_iwd_security (NMConnection *connection,
 		return NM_IWD_NETWORK_SECURITY_8021X;
 
 error:
-	if (mapped)
-		*mapped = FALSE;
-
+	NM_SET_OUT (mapped, FALSE);
 	return NM_IWD_NETWORK_SECURITY_NONE;
 }
