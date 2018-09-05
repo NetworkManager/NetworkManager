@@ -1045,10 +1045,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	for (i = 0; i < num_eap; i++) {
 		const char *method = nm_setting_802_1x_get_eap_method (setting, i);
 
-		if (!method)
-			continue;
-
-		if (strcasecmp (method, "fast") == 0) {
+		if (nm_streq (method, "fast")) {
 			fast = TRUE;
 			priv->fast_required = TRUE;
 		}
@@ -1057,7 +1054,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			if (num_eap == 1) {
 				g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
 				             "Connection settings managed externally to NM, connection"
-					     " cannot be used with wpa_supplicant");
+				             " cannot be used with wpa_supplicant");
 				return FALSE;
 			}
 			continue;
@@ -1069,7 +1066,8 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	}
 
 	g_string_ascii_up (eap_str);
-	if (eap_str->len && !nm_supplicant_config_add_option (self, "eap", eap_str->str, -1, NULL, error))
+	if (   eap_str->len
+	    && !nm_supplicant_config_add_option (self, "eap", eap_str->str, -1, NULL, error))
 		return FALSE;
 
 	/* Adjust the fragment size according to MTU, but do not set it higher than 1280-14
