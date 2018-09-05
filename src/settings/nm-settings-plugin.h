@@ -100,6 +100,8 @@ typedef struct {
 
 GType nm_settings_plugin_get_type (void);
 
+typedef NMSettingsPlugin *(*NMSettingsPluginFactoryFunc) (void);
+
 /* Plugin's factory function that returns a #NMSettingsPlugin */
 NMSettingsPlugin *nm_settings_plugin_factory (void);
 
