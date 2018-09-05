@@ -240,8 +240,8 @@ update_connection (NMSKeyfilePlugin *self,
 
 		old_path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection_by_uuid));
 
-		if (nm_connection_compare (NM_CONNECTION (connection_by_uuid),
-		                           NM_CONNECTION (connection_new),
+		if (nm_connection_compare (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection_by_uuid)),
+		                           nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection_new)),
 		                           NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
 		                           NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
 			/* Nothing to do... except updating the path. */
@@ -259,7 +259,7 @@ update_connection (NMSKeyfilePlugin *self,
 				_LOGI ("update and persist "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
 
 			if (!nm_settings_connection_update (NM_SETTINGS_CONNECTION (connection_by_uuid),
-			                                    NM_CONNECTION (connection_new),
+			                                    nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection_new)),
 			                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP_SAVED,
 			                                    NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 			                                    "keyfile-update",
