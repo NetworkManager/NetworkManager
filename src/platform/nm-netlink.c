@@ -1470,7 +1470,7 @@ retry:
 				continue;
 			if (cmsg->cmsg_type != SCM_CREDENTIALS)
 				continue;
-			tmpcreds = g_memdup (CMSG_DATA(cmsg), sizeof (*tmpcreds));
+			tmpcreds = nm_memdup (CMSG_DATA(cmsg), sizeof (*tmpcreds));
 			break;
 		}
 	}

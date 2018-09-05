@@ -60,7 +60,8 @@ _get_keys (NMSettingVpn *setting,
 	if (len) {
 		g_ptr_array_sort (a, nm_strcmp_p);
 		g_ptr_array_add (a, NULL);
-		keys = g_memdup (a->pdata, a->len * sizeof (gpointer));
+		keys = g_malloc (a->len * sizeof (gpointer));
+		memcpy (keys, a->pdata, a->len * sizeof (gpointer));
 
 		/* we need to cache the keys *somewhere*. */
 		g_object_set_qdata_full (G_OBJECT (setting),
