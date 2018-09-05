@@ -51,7 +51,7 @@ get_symbols_missing() {
               ./src/devices/*/.libs/ \
               ./src/ppp/.libs/ -name '*.so'); do
         call_nm "$f" |
-            sed -n 's/^\([U]\) \(\(nm_\|nmp_\|_nm\|NM\|_NM\).*\)$/\2/p'
+            sed -n 's/^\([U]\) \(\(nm_\|nmp_\|_nm\|NM\|_NM\|c_siphash_\).*\)$/\2/p'
     done) |
         _sort |
         grep -Fx -f <(get_symbols_explict) -v |
