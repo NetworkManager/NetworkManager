@@ -1371,6 +1371,20 @@ nm_config_data_get_connection_default (const NMConfigData *self,
 	return value;
 }
 
+gint64
+nm_config_data_get_connection_default_int64 (const NMConfigData *self,
+                                             const char *property,
+                                             NMDevice *device,
+                                             gint64 min,
+                                             gint64 max,
+                                             gint64 fallback)
+{
+	gs_free char *value = NULL;
+
+	value = nm_config_data_get_connection_default (self, property, device);
+	return _nm_utils_ascii_str_to_int64 (value, 10, min, max, fallback);
+}
+
 static void
 _get_connection_info_init (MatchSectionInfo *connection_info, GKeyFile *keyfile, char *group)
 {

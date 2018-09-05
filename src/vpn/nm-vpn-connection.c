@@ -1876,13 +1876,10 @@ connect_success (NMVpnConnection *self)
 	 * It is a configured value or 60 seconds */
 	timeout = nm_setting_vpn_get_timeout (s_vpn);
 	if (timeout == 0) {
-		char *value;
-
-		value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-		                                              "vpn.timeout", NULL);
-		timeout = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, 60);
-		timeout = timeout == 0 ? 60 : timeout;
-		g_free (value);
+		timeout = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+		                                                       "vpn.timeout",
+		                                                       NULL,
+		                                                       1, G_MAXUINT32, 60);
 	}
 	priv->connect_timeout = g_timeout_add_seconds (timeout, connect_timeout_cb, self);
 

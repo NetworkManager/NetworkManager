@@ -1101,15 +1101,19 @@ nm_device_assume_state_reset (NMDevice *self)
 static void
 init_ip_config_dns_priority (NMDevice *self, NMIPConfig *config)
 {
-	gs_free char *value = NULL;
+	const char *property;
 	int priority;
 
-	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-	                                               (nm_ip_config_get_addr_family (config) == AF_INET)
-	                                                 ? "ipv4.dns-priority"
-	                                                 : "ipv6.dns-priority",
-	                                               self);
-	priority = _nm_utils_ascii_str_to_int64 (value, 10, G_MININT, G_MAXINT, 0);
+	property = (nm_ip_config_get_addr_family (config) == AF_INET)
+	             ? "ipv4.dns-priority"
+	             : "ipv6.dns-priority";
+
+	priority = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                        property,
+	                                                        self,
+	                                                        G_MININT,
+	                                                        G_MAXINT,
+	                                                        0);
 	nm_ip_config_set_dns_priority (config, priority ?: NM_DNS_PRIORITY_DEFAULT_NORMAL);
 }
 
@@ -2108,10 +2112,10 @@ guint32
 nm_device_get_route_metric (NMDevice *self,
                             int addr_family)
 {
-	char *value;
 	gint64 route_metric;
 	NMSettingIPConfig *s_ip;
 	NMConnection *connection;
+	const char *property;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), G_MAXUINT32);
 	g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), G_MAXUINT32);
@@ -2136,15 +2140,13 @@ nm_device_get_route_metric (NMDevice *self,
 	/* use the current NMConfigData, which makes this configuration reloadable.
 	 * Note that that means that the route-metric might change between SIGHUP.
 	 * You must cache the returned value if that is a problem. */
-	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-	                                               addr_family == AF_INET ? "ipv4.route-metric" : "ipv6.route-metric", self);
-	if (value) {
-		route_metric = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
-		g_free (value);
-
-		if (route_metric >= 0)
-			goto out;
-	}
+	property = addr_family == AF_INET ? "ipv4.route-metric" : "ipv6.route-metric";
+	route_metric = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                            property,
+	                                                            self,
+	                                                            0, G_MAXUINT32, -1);
+	if (route_metric >= 0)
+		goto out;
 
 	route_metric = nm_manager_device_route_metric_reserve (nm_manager_get (),
 	                                                       nm_device_get_ip_ifindex (self),
@@ -2164,21 +2166,15 @@ _get_mdns (NMDevice *self)
 	connection = nm_device_get_applied_connection (self);
 	if (connection)
 		mdns = nm_setting_connection_get_mdns (nm_connection_get_setting_connection (connection));
+	if (mdns != NM_SETTING_CONNECTION_MDNS_DEFAULT)
+		return mdns;
 
-	if (mdns == NM_SETTING_CONNECTION_MDNS_DEFAULT) {
-		gs_free char *value = NULL;
-
-		value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-		                                               "connection.mdns",
-		                                               self);
-		mdns = _nm_utils_ascii_str_to_int64 (value,
-		                                     10,
-		                                     NM_SETTING_CONNECTION_MDNS_NO,
-		                                     NM_SETTING_CONNECTION_MDNS_YES,
-		                                     NM_SETTING_CONNECTION_MDNS_DEFAULT);
-	}
-
-	return mdns;
+	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                    "connection.mdns",
+	                                                    self,
+	                                                    NM_SETTING_CONNECTION_MDNS_NO,
+	                                                    NM_SETTING_CONNECTION_MDNS_YES,
+	                                                    NM_SETTING_CONNECTION_MDNS_DEFAULT);
 }
 
 guint32
@@ -2221,14 +2217,13 @@ nm_device_get_route_table (NMDevice *self,
 		 * connection. Otherwise, the connection is not active, and the
 		 * connection default doesn't matter. */
 		if (route_table == 0) {
-			gs_free char *value = NULL;
+			const char *property;
 
-			value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-			                                               addr_family == AF_INET
-			                                                 ? "ipv4.route-table"
-			                                                 : "ipv6.route-table",
-			                                               self);
-			route_table = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, 0);
+			property = addr_family == AF_INET ? "ipv4.route-table" : "ipv6.route-table";
+			route_table = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+			                                                           property,
+			                                                           self,
+			                                                           0, G_MAXUINT32, 0);
 		}
 	}
 
@@ -6028,15 +6023,12 @@ lldp_rx_enabled (NMDevice *self)
 
 	lldp = nm_setting_connection_get_lldp (s_con);
 	if (lldp == NM_SETTING_CONNECTION_LLDP_DEFAULT) {
-		gs_free char *value = NULL;
-
-		value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-		                                               "connection.lldp",
-		                                               self);
-		lldp = _nm_utils_ascii_str_to_int64 (value, 10,
-		                                     NM_SETTING_CONNECTION_LLDP_DEFAULT,
-		                                     NM_SETTING_CONNECTION_LLDP_ENABLE_RX,
-		                                     NM_SETTING_CONNECTION_LLDP_DEFAULT);
+		lldp = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+		                                                    "connection.lldp",
+		                                                    self,
+		                                                    NM_SETTING_CONNECTION_LLDP_DEFAULT,
+		                                                    NM_SETTING_CONNECTION_LLDP_ENABLE_RX,
+		                                                    NM_SETTING_CONNECTION_LLDP_DEFAULT);
 		if (lldp == NM_SETTING_CONNECTION_LLDP_DEFAULT)
 			lldp = NM_SETTING_CONNECTION_LLDP_DISABLE;
 	}
@@ -6130,18 +6122,17 @@ act_stage1_prepare (NMDevice *self, NMDeviceStateReason *out_failure_reason)
 	    && (s_sriov = (NMSettingSriov *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))) {
 		nm_auto_freev NMPlatformVF **plat_vfs = NULL;
 		gs_free_error GError *error = NULL;
-		gs_free const char *str = NULL;
 		NMSriovVF *vf;
 		int autoprobe;
 
 		autoprobe = nm_setting_sriov_get_autoprobe_drivers (s_sriov);
 		if (autoprobe == NM_TERNARY_DEFAULT) {
-			str = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-			                                             "sriov.autoprobe-drivers", self);
-			autoprobe = _nm_utils_ascii_str_to_int64 (str, 10,
-			                                          NM_TERNARY_FALSE,
-			                                          NM_TERNARY_TRUE,
-			                                          NM_TERNARY_TRUE);
+			autoprobe = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+			                                                         "sriov.autoprobe-drivers",
+			                                                         self,
+			                                                         NM_TERNARY_FALSE,
+			                                                         NM_TERNARY_TRUE,
+			                                                         NM_TERNARY_TRUE);
 		}
 
 		num = nm_setting_sriov_get_num_vfs (s_sriov);
@@ -6496,27 +6487,22 @@ get_ipv4_dad_timeout (NMDevice *self)
 {
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip4 = NULL;
-	gs_free char *value = NULL;
-	int ret = 0;
+	int timeout = -1;
 
 	connection = nm_device_get_applied_connection (self);
 	if (connection)
 		s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	if (s_ip4)
+		timeout = nm_setting_ip_config_get_dad_timeout (s_ip4);
+	if (timeout >= 0)
+		return timeout;
 
-	if (s_ip4) {
-		ret = nm_setting_ip_config_get_dad_timeout (s_ip4);
-
-		if (ret < 0) {
-			value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-			                                               "ipv4.dad-timeout", self);
-			ret = _nm_utils_ascii_str_to_int64 (value, 10, -1,
-			                                    NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX,
-			                                    -1);
-			ret = ret < 0 ? 0 : ret;
-		}
-	}
-
-	return ret;
+	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                    "ipv4.dad-timeout",
+	                                                    self,
+	                                                    0,
+	                                                    NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX,
+	                                                    0);
 }
 
 static void
@@ -7363,19 +7349,14 @@ get_dhcp_timeout (NMDevice *self, int addr_family)
 	if (timeout)
 		return timeout;
 
-	{
-		gs_free char *value = NULL;
-
-		value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-		                                               addr_family == AF_INET
-		                                                 ? "ipv4.dhcp-timeout"
-		                                                 : "ipv6.dhcp-timeout",
-		                                               self);
-		timeout = _nm_utils_ascii_str_to_int64 (value, 10,
-		                                        0, G_MAXINT32, 0);
-		if (timeout)
-			return timeout;
-	}
+	timeout = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                       addr_family == AF_INET
+	                                                         ? "ipv4.dhcp-timeout"
+	                                                         : "ipv6.dhcp-timeout",
+	                                                       self,
+	                                                       0, G_MAXINT32, 0);
+	if (timeout)
+		return timeout;
 
 	klass = NM_DEVICE_GET_CLASS (self);
 	if (klass->get_dhcp_timeout)
@@ -8747,10 +8728,10 @@ gint64
 nm_device_get_configured_mtu_from_connection_default (NMDevice *self,
                                                       const char *property_name)
 {
-	gs_free char *str = NULL;
-
-	str = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA, property_name, self);
-	return _nm_utils_ascii_str_to_int64 (str, 10, 0, G_MAXUINT32, -1);
+	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                    property_name,
+	                                                    self,
+	                                                    0, G_MAXUINT32, -1);
 }
 
 guint32
@@ -9447,7 +9428,6 @@ static NMSettingIP6ConfigPrivacy
 _ip6_privacy_get (NMDevice *self)
 {
 	NMSettingIP6ConfigPrivacy ip6_privacy;
-	gs_free char *value = NULL;
 	NMConnection *connection;
 
 	g_return_val_if_fail (self, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
@@ -9466,14 +9446,13 @@ _ip6_privacy_get (NMDevice *self)
 		}
 	}
 
-	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-	                                               "ipv6.ip6-privacy", self);
-
 	/* 2.) use the default value from the configuration. */
-	ip6_privacy = _nm_utils_ascii_str_to_int64 (value, 10,
-	                                            NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
-	                                            NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
-	                                            NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+	ip6_privacy = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                           "ipv6.ip6-privacy",
+	                                                           self,
+	                                                           NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+	                                                           NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
+	                                                           NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 	if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
 		return ip6_privacy;
 
@@ -15647,7 +15626,6 @@ nm_device_get_supplicant_timeout (NMDevice *self)
 {
 	NMConnection *connection;
 	NMSetting8021x *s_8021x;
-	gs_free char *value = NULL;
 	int timeout;
 #define SUPPLICANT_DEFAULT_TIMEOUT 25
 
@@ -15662,11 +15640,12 @@ nm_device_get_supplicant_timeout (NMDevice *self)
 			return timeout;
 	}
 
-	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-	                                               "802-1x.auth-timeout",
-	                                               self);
-	return _nm_utils_ascii_str_to_int64 (value, 10, 1, G_MAXINT32,
-	                                     SUPPLICANT_DEFAULT_TIMEOUT);
+	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                    "802-1x.auth-timeout",
+	                                                    self,
+	                                                    1,
+	                                                    G_MAXINT32,
+	                                                    SUPPLICANT_DEFAULT_TIMEOUT);
 }
 
 gboolean
@@ -15689,12 +15668,10 @@ nm_device_auth_retries_try_next (NMDevice *self)
 			auth_retries = nm_setting_connection_get_auth_retries (s_con);
 
 		if (auth_retries == -1) {
-			gs_free char *value = NULL;
-
-			value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-			                                               "connection.auth-retries",
-			                                               self);
-			auth_retries = _nm_utils_ascii_str_to_int64 (value, 10, -1, G_MAXINT32, -1);
+			auth_retries = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+			                                                            "connection.auth-retries",
+			                                                            self,
+			                                                            -1, G_MAXINT32, -1);
 		}
 
 		if (auth_retries == 0)
