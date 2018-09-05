@@ -494,7 +494,7 @@ interface_added (GDBusObjectManager *object_manager, GDBusObject *object,
 
 		data = g_slice_new0 (KnownNetworkData);
 		data->known_network = (GDBusProxy *) g_object_ref (proxy);
-		g_hash_table_insert (priv->known_networks, id, data);
+		g_hash_table_replace (priv->known_networks, id, data);
 
 		if (security == NM_IWD_NETWORK_SECURITY_8021X)
 			mirror_8021x_connection (self, id, data);
