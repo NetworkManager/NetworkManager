@@ -1001,6 +1001,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	guint32 frag, hdrs;
 	gs_free char *frag_str = NULL;
 	NMSetting8021xAuthFlags phase1_auth_flags;
+	nm_auto_free_gstring GString *eap_str = NULL;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
@@ -1037,19 +1038,37 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		priv->ap_scan = 0;
 	}
 
-	if (!ADD_STRING_LIST_VAL (self, setting, 802_1x, eap_method, eap_methods, "eap", ' ', TRUE, NULL, error))
-		return FALSE;
-
-	/* Check EAP method for special handling: PEAP + GTC, FAST */
+	/* Build the "eap" option string while we check for EAP methods needing
+	 * special handling: PEAP + GTC, FAST, external */
+	eap_str = g_string_new (NULL);
 	num_eap = nm_setting_802_1x_get_num_eap_methods (setting);
 	for (i = 0; i < num_eap; i++) {
 		const char *method = nm_setting_802_1x_get_eap_method (setting, i);
 
-		if (method && (strcasecmp (method, "fast") == 0)) {
+		if (nm_streq (method, "fast")) {
 			fast = TRUE;
 			priv->fast_required = TRUE;
 		}
+
+		if (nm_streq (method, "external")) {
+			if (num_eap == 1) {
+				g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
+				             "Connection settings managed externally to NM, connection"
+				             " cannot be used with wpa_supplicant");
+				return FALSE;
+			}
+			continue;
+		}
+
+		if (eap_str->len)
+			g_string_append_c (eap_str, ' ');
+		g_string_append (eap_str, method);
 	}
+
+	g_string_ascii_up (eap_str);
+	if (   eap_str->len
+	    && !nm_supplicant_config_add_option (self, "eap", eap_str->str, -1, NULL, error))
+		return FALSE;
 
 	/* Adjust the fragment size according to MTU, but do not set it higher than 1280-14
 	 * for better compatibility */

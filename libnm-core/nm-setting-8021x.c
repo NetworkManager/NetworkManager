@@ -2804,6 +2804,7 @@ static EAPMethodsTable eap_methods_table[] = {
 	{ "sim", need_secrets_sim, NULL },
 	{ "gtc", need_secrets_password, verify_identity },
 	{ "otp", NULL, NULL },  // FIXME: implement
+	{ "external", NULL, NULL },
 	{ NULL, NULL, NULL }
 };
 
@@ -2812,7 +2813,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSetting8021x *self = NM_SETTING_802_1X (setting);
 	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
-	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd", NULL };
+	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd", "external", NULL };
 	GSList *iter;
 
 	if (error)
