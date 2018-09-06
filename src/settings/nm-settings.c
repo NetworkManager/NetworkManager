@@ -526,28 +526,6 @@ nm_settings_get_unmanaged_specs (NMSettings *self)
 	return priv->unmanaged_specs;
 }
 
-static NMSettingsPlugin *
-get_plugin (NMSettings *self, gboolean has_add_connection)
-{
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GSList *iter;
-
-	g_return_val_if_fail (self != NULL, NULL);
-
-	/* Do any of the plugins support the given capability? */
-	for (iter = priv->plugins; iter; iter = iter->next) {
-		NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
-
-		if (!has_add_connection)
-			return plugin;
-
-		if (NM_SETTINGS_PLUGIN_GET_INTERFACE (iter->data)->add_connection != NULL)
-			return plugin;
-	}
-
-	return NULL;
-}
-
 static gboolean
 find_spec (GSList *spec_list, const char *spec)
 {
@@ -608,67 +586,49 @@ unrecognized_specs_changed (NMSettingsPlugin *config,
 	              nm_settings_plugin_get_unrecognized_specs);
 }
 
-static gboolean
-add_plugin (NMSettings *self, NMSettingsPlugin *plugin)
+static void
+add_plugin (NMSettings *self, NMSettingsPlugin *plugin, const char *path)
 {
 	NMSettingsPrivate *priv;
-	const char *path;
 
-	g_return_val_if_fail (NM_IS_SETTINGS (self), FALSE);
-	g_return_val_if_fail (NM_IS_SETTINGS_PLUGIN (plugin), FALSE);
+	nm_assert (NM_IS_SETTINGS (self));
+	nm_assert (NM_IS_SETTINGS_PLUGIN (plugin));
 
 	priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	if (g_slist_find (priv->plugins, plugin)) {
-		/* don't add duplicates. */
-		return FALSE;
-	}
+	nm_assert (!g_slist_find (priv->plugins, plugin));
 
 	priv->plugins = g_slist_append (priv->plugins, g_object_ref (plugin));
-	nm_settings_plugin_init (plugin);
 
+	nm_settings_plugin_initialize (plugin);
 
-	path = g_object_get_qdata (G_OBJECT (plugin), plugin_module_path_quark ());
-
-	_LOGI ("Loaded settings plugin: %s (%s)", G_OBJECT_TYPE_NAME (plugin), path ?: "internal");
-
-	return TRUE;
+	_LOGI ("Loaded settings plugin: %s (%s%s%s)",
+	       G_OBJECT_TYPE_NAME (plugin),
+	       NM_PRINT_FMT_QUOTED (path, "\"", path, "\"", "internal"));
 }
 
 static gboolean
-plugin_loaded (GSList *list, const char *path)
+add_plugin_load_file (NMSettings *self, const char *pname, GError **error)
 {
-	GSList *iter;
-
-	g_return_val_if_fail (path != NULL, TRUE);
-
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		const char *list_path = g_object_get_qdata (G_OBJECT (iter->data),
-		                                            plugin_module_path_quark ());
-
-		if (g_strcmp0 (path, list_path) == 0)
-			return TRUE;
-	}
-
-	return FALSE;
-}
-
-static gboolean
-load_plugin (NMSettings *self, GSList **list, const char *pname, GError **error)
-{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	gs_free char *full_name = NULL;
 	gs_free char *path = NULL;
-	gs_unref_object GObject *obj = NULL;
-	GModule *plugin;
-	GObject * (*factory_func) (void);
+	gs_unref_object NMSettingsPlugin *plugin = NULL;
+	GModule *module;
+	NMSettingsPluginFactoryFunc factory_func;
+	GSList *iter;
 	struct stat st;
 	int errsv;
 
 	full_name = g_strdup_printf ("nm-settings-plugin-%s", pname);
 	path = g_module_build_path (NMPLUGINDIR, full_name);
 
-	if (plugin_loaded (*list, path))
-		return TRUE;
+	for (iter = priv->plugins; iter; iter = iter->next) {
+		if (nm_streq0 (path,
+		               g_object_get_qdata (iter->data,
+		                                   plugin_module_path_quark ())))
+			return TRUE;
+	}
 
 	if (stat (path, &st) != 0) {
 		errsv = errno;
@@ -688,8 +648,8 @@ load_plugin (NMSettings *self, GSList **list, const char *pname, GError **error)
 		return TRUE;
 	}
 
-	plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
-	if (!plugin) {
+	module = g_module_open (path, G_MODULE_BIND_LOCAL);
+	if (!module) {
 		_LOGW ("could not load plugin '%s' from file '%s': %s",
 		     pname, path, g_module_error ());
 		return TRUE;
@@ -697,48 +657,46 @@ load_plugin (NMSettings *self, GSList **list, const char *pname, GError **error)
 
 	/* errors after this point are fatal, because we loaded the shared library already. */
 
-	if (!g_module_symbol (plugin, "nm_settings_plugin_factory", (gpointer) (&factory_func))) {
+	if (!g_module_symbol (module, "nm_settings_plugin_factory", (gpointer) (&factory_func))) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "Could not find plugin '%s' factory function.",
 		             pname);
-		g_module_close (plugin);
+		g_module_close (module);
 		return FALSE;
 	}
 
 	/* after accessing the plugin we cannot unload it anymore, because the glib
 	 * types cannot be properly unregistered. */
-	g_module_make_resident (plugin);
+	g_module_make_resident (module);
 
-	obj = (*factory_func) ();
-	if (!obj || !NM_IS_SETTINGS_PLUGIN (obj)) {
+	plugin = (*factory_func) ();
+	if (!NM_IS_SETTINGS_PLUGIN (plugin)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Plugin '%s' returned invalid system config object.",
+		             "plugin '%s' returned invalid settings plugin",
 		             pname);
 		return FALSE;
 	}
 
-	g_object_set_qdata_full (obj, plugin_module_path_quark (), path, g_free);
-	path = NULL;
-	if (add_plugin (self, NM_SETTINGS_PLUGIN (obj)))
-		*list = g_slist_append (*list, g_steal_pointer (&obj));
-
+	add_plugin (self, NM_SETTINGS_PLUGIN (plugin), path);
+	g_object_set_qdata_full (G_OBJECT (plugin),
+	                         plugin_module_path_quark (),
+	                         g_steal_pointer (&path),
+	                         g_free);
 	return TRUE;
 }
 
 static void
-add_keyfile_plugin (NMSettings *self)
+add_plugin_keyfile (NMSettings *self)
 {
 	gs_unref_object NMSKeyfilePlugin *keyfile_plugin = NULL;
 
 	keyfile_plugin = nms_keyfile_plugin_new ();
-	if (!add_plugin (self, NM_SETTINGS_PLUGIN (keyfile_plugin)))
-		g_return_if_reached ();
+	add_plugin (self, NM_SETTINGS_PLUGIN (keyfile_plugin), NULL);
 }
 
 static gboolean
 load_plugins (NMSettings *self, const char **plugins, GError **error)
 {
-	GSList *list = NULL;
 	const char **iter;
 	gboolean keyfile_added = FALSE;
 	gboolean success = TRUE;
@@ -766,15 +724,15 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 			continue;
 		}
 
-		if (!strcmp (pname, "no-ibft"))
+		if (nm_streq (pname, "no-ibft"))
 			continue;
-		if (has_no_ibft && !strcmp (pname, "ibft"))
+		if (has_no_ibft && nm_streq (pname, "ibft"))
 			continue;
 
 		/* keyfile plugin is built-in now */
-		if (strcmp (pname, "keyfile") == 0) {
+		if (nm_streq (pname, "keyfile")) {
 			if (!keyfile_added) {
-				add_keyfile_plugin (self);
+				add_plugin_keyfile (self);
 				keyfile_added = TRUE;
 			}
 			continue;
@@ -788,27 +746,25 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 			continue;
 		}
 
-		success = load_plugin (self, &list, pname, error);
+		success = add_plugin_load_file (self, pname, error);
 		if (!success)
 			break;
 
-		if (add_ibft && !strcmp (pname, "ifcfg-rh")) {
+		if (add_ibft && nm_streq (pname, "ifcfg-rh")) {
 			/* The plugin ibft is not explicitly mentioned but we just enabled "ifcfg-rh".
 			 * Enable "ibft" by default after "ifcfg-rh". */
 			pname = "ibft";
 			add_ibft = FALSE;
 
-			success = load_plugin (self, &list, "ibft", error);
+			success = add_plugin_load_file (self, "ibft", error);
 			if (!success)
 				break;
 		}
 	}
 
 	/* If keyfile plugin was not among configured plugins, add it as the last one */
-	if (!keyfile_added)
-		add_keyfile_plugin (self);
-
-	g_slist_free_full (list, g_object_unref);
+	if (!keyfile_added && success)
+		add_plugin_keyfile (self);
 
 	return success;
 }
@@ -1294,14 +1250,6 @@ nm_settings_add_connection_dbus (NMSettings *self,
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                             "WPA Ad-Hoc disabled due to kernel bugs");
-		goto done;
-	}
-
-	/* Do any of the plugins support adding? */
-	if (!get_plugin (self, TRUE)) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_NOT_SUPPORTED,
-		                             "None of the registered plugins support add.");
 		goto done;
 	}
 
@@ -1884,7 +1832,7 @@ get_property (GObject *object, guint prop_id,
 		                      : NULL);
 		break;
 	case PROP_CAN_MODIFY:
-		g_value_set_boolean (value, !!get_plugin (self, TRUE));
+		g_value_set_boolean (value, TRUE);
 		break;
 	case PROP_CONNECTIONS:
 		if (priv->connections_loaded) {
@@ -1948,6 +1896,7 @@ finalize (GObject *object)
 {
 	NMSettings *self = NM_SETTINGS (object);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GSList *iter;
 
 	_clear_connections_cached_list (priv);
 
@@ -1956,7 +1905,12 @@ finalize (GObject *object)
 	g_slist_free_full (priv->unmanaged_specs, g_free);
 	g_slist_free_full (priv->unrecognized_specs, g_free);
 
-	g_slist_free_full (priv->plugins, g_object_unref);
+	while ((iter = priv->plugins)) {
+		gs_unref_object NMSettingsPlugin *plugin = iter->data;
+
+		priv->plugins = g_slist_delete_link (priv->plugins, iter);
+		g_signal_handlers_disconnect_by_data (plugin, self);
+	}
 
 	g_clear_object (&priv->agent_mgr);
 

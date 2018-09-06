@@ -23,33 +23,37 @@
 #ifndef _INTERFACE_PARSER_H
 #define _INTERFACE_PARSER_H
 
-typedef struct _if_data
-{
-	char *key;
-	char *data;
-	struct _if_data *next;
+#include "c-list/src/c-list.h"
+
+typedef struct {
+	CList data_lst;
+	const char *data;
+	const char key[];
 } if_data;
 
-typedef struct _if_block
-{
-	char *type;
-	char *name;
-	if_data *info;
-	struct _if_block *next;
+typedef struct {
+	CList block_lst;
+	CList data_lst_head;
+	const char *type;
+	const char name[];
 } if_block;
 
-void ifparser_init(const char *eni_file, int quiet);
-void ifparser_destroy(void);
+typedef struct {
+	CList block_lst_head;
+} if_parser;
 
-if_block *ifparser_getif(const char* iface);
-if_block *ifparser_getfirst(void);
-const char *ifparser_getkey(if_block* iface, const char *key);
-gboolean ifparser_haskey(if_block* iface, const char *key);
-int ifparser_get_num_blocks(void);
-int ifparser_get_num_info(if_block* iface);
+if_parser *ifparser_parse (const char *eni_file, int quiet);
 
-void add_block(const char *type, const char* name);
-void add_data(const char *key,const char *data);
-void _destroy_data(if_data *ifd);
-void _destroy_block(if_block* ifb);
+void ifparser_destroy (if_parser *parser);
+NM_AUTO_DEFINE_FCN0 (if_parser *, _nm_auto_ifparser, ifparser_destroy);
+#define nm_auto_ifparser nm_auto(_nm_auto_ifparser)
+
+if_block *ifparser_getif (if_parser *parser, const char* iface);
+if_block *ifparser_getfirst (if_parser *parser);
+const char *ifparser_getkey (if_block* iface, const char *key);
+gboolean ifparser_haskey (if_block* iface, const char *key);
+
+guint ifparser_get_num_blocks (if_parser *parser);
+guint ifparser_get_num_info (if_block* iface);
+
 #endif

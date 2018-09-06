@@ -32,78 +32,90 @@
 
 #include "nm-utils.h"
 
-if_block* first;
-if_block* last;
+/*****************************************************************************/
 
-if_data* last_data;
+static void _ifparser_source (if_parser *parser, const char *path, const char *en_dir, int quiet, int dir);
 
-void add_block(const char *type, const char* name)
+/*****************************************************************************/
+
+#define _NMLOG_PREFIX_NAME      "ifupdown"
+#define _NMLOG_DOMAIN           LOGD_SETTINGS
+#define _NMLOG(level, ...) \
+    nm_log ((level), _NMLOG_DOMAIN, NULL, NULL, \
+            "%s" _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+            _NMLOG_PREFIX_NAME": " \
+            _NM_UTILS_MACRO_REST (__VA_ARGS__))
+
+/*****************************************************************************/
+
+static void
+add_block (if_parser *parser, const char *type, const char* name)
 {
-	if_block *ret = g_slice_new0 (struct _if_block);
-	ret->name = g_strdup(name);
-	ret->type = g_strdup(type);
-	if (first == NULL)
-		first = last = ret;
-	else
-	{
-		last->next = ret;
-		last = ret;
-	}
-	last_data = NULL;
+	if_block *ifb;
+	gsize l_type, l_name;
+
+	l_type = strlen (type) + 1;
+	l_name = strlen (name) + 1;
+
+	ifb = g_malloc (sizeof (if_block) + l_type + l_name);
+	memcpy ((char *) ifb->name, name, l_name);
+	ifb->type = &ifb->name[l_name];
+	memcpy ((char *) ifb->type, type, l_type);
+	c_list_init (&ifb->data_lst_head);
+	c_list_link_tail (&parser->block_lst_head, &ifb->block_lst);
 }
 
-void add_data(const char *key,const char *data)
+static void
+add_data (if_parser *parser, const char *key, const char *data)
 {
-	if_data *ret;
+	if_block *last_block;
+	if_data *ifd;
 	char *idx;
+	gsize l_key, l_data;
+
+	last_block = c_list_last_entry (&parser->block_lst_head, if_block, block_lst);
 
 	/* Check if there is a block where we can attach our data */
-	if (first == NULL)
+	if (!last_block)
 		return;
 
-	ret = g_slice_new0 (struct _if_data);
-	ret->key = g_strdup(key);
+	l_key = strlen (key) + 1;
+	l_data = strlen (data) + 1;
+
+	ifd = g_malloc (sizeof (if_data) + l_key + l_data);
+	memcpy ((char *) ifd->key, key, l_key);
+	ifd->data = &ifd->key[l_key];
+	memcpy ((char *) ifd->data, data, l_data);
 
 	/* Normalize keys. Convert '_' to '-', as ifupdown accepts both variants.
 	 * When querying keys via ifparser_getkey(), use '-'. */
-	while ((idx = strrchr(ret->key, '_'))) {
-		*idx = '-';
-	}
-	ret->data = g_strdup(data);
+	idx = (char *) ifd->key;
+	while ((idx = strchr (idx, '_')))
+		*(idx++) = '-';
 
-	if (last->info == NULL)
-	{
-		last->info = ret;
-		last_data = ret;
-	}
-	else
-	{
-		last_data->next = ret;
-		last_data = last_data->next;
-	}
+	c_list_link_tail (&last_block->data_lst_head, &ifd->data_lst);
 }
 
 /* join values in src with spaces into dst;  dst needs to be large enough */
-static char *join_values_with_spaces(char *dst, char **src)
+static char *
+join_values_with_spaces (char *dst, char **src)
 {
 	if (dst != NULL) {
 		*dst = '\0';
 		if (src != NULL && *src != NULL) {
-			strcat(dst, *src);
+			strcat (dst, *src);
 
 			for (src++; *src != NULL; src++) {
-				strcat(dst, " ");
-				strcat(dst, *src);
+				strcat (dst, " ");
+				strcat (dst, *src);
 			}
 		}
 	}
-	return(dst);
+	return (dst);
 }
 
-static void _ifparser_source (const char *path, const char *en_dir, int quiet, int dir);
-
 static void
-_recursive_ifparser (const char *eni_file, int quiet)
+_recursive_ifparser (if_parser *parser, const char *eni_file, int quiet)
 {
 	FILE *inp;
 	char line[255];
@@ -114,36 +126,35 @@ _recursive_ifparser (const char *eni_file, int quiet)
 	/* Check if interfaces file exists and open it */
 	if (!g_file_test (eni_file, G_FILE_TEST_EXISTS)) {
 		if (!quiet)
-			nm_log_warn (LOGD_SETTINGS, "interfaces file %s doesn't exist\n", eni_file);
+			_LOGW ("interfaces file %s doesn't exist\n", eni_file);
 		return;
 	}
 	inp = fopen (eni_file, "re");
 	if (inp == NULL) {
 		if (!quiet)
-			nm_log_warn (LOGD_SETTINGS, "Can't open %s\n", eni_file);
+			_LOGW ("Can't open %s\n", eni_file);
 		return;
 	}
 	if (!quiet)
-		nm_log_info (LOGD_SETTINGS, "      interface-parser: parsing file %s\n", eni_file);
+		_LOGI ("      interface-parser: parsing file %s\n", eni_file);
 
-	while (!feof(inp))
-	{
+	while (!feof (inp)) {
 		char *token[128]; /* 255 chars can only be split into 127 tokens */
 		char value[255];  /* large enough to join previously split tokens */
 		char *safeptr;
 		int toknum;
 		int len = 0;
 
-		char *ptr = fgets(line+offs, 255-offs, inp);
+		char *ptr = fgets (line+offs, 255-offs, inp);
 		if (ptr == NULL)
 			break;
 
-		len = strlen(line);
+		len = strlen (line);
 		/* skip over-long lines */
-		if (!feof(inp) && len > 0 &&  line[len-1] != '\n') {
+		if (!feof (inp) && len > 0 &&  line[len-1] != '\n') {
 			if (!skip_long_line) {
 				if (!quiet)
-					nm_log_warn (LOGD_SETTINGS, "Skipping over-long-line '%s...'\n", line);
+					_LOGW ("Skipping over-long-line '%s...'\n", line);
 			}
 			skip_long_line = 1;
 			continue;
@@ -170,9 +181,9 @@ _recursive_ifparser (const char *eni_file, int quiet)
 
 #define SPACES " \t"
 		/* tokenize input; */
-		for (toknum = 0, token[toknum] = strtok_r(line, SPACES, &safeptr);
+		for (toknum = 0, token[toknum] = strtok_r (line, SPACES, &safeptr);
 		     token[toknum] != NULL;
-		     toknum++, token[toknum] = strtok_r(NULL, SPACES, &safeptr))
+		     toknum++, token[toknum] = strtok_r (NULL, SPACES, &safeptr))
 			;
 
 		/* ignore comments and empty lines */
@@ -181,8 +192,8 @@ _recursive_ifparser (const char *eni_file, int quiet)
 
 		if (toknum < 2) {
 			if (!quiet) {
-				nm_log_warn (LOGD_SETTINGS, "Can't parse interface line '%s'\n",
-				             join_values_with_spaces(value, token));
+				_LOGW ("Can't parse interface line '%s'\n",
+				       join_values_with_spaces (value, token));
 			}
 			skip_to_block = 1;
 			continue;
@@ -193,71 +204,71 @@ _recursive_ifparser (const char *eni_file, int quiet)
 		 * Create a block for each of them except source and source-directory.  */
 
 		/* iface stanza takes at least 3 parameters */
-		if (strcmp(token[0], "iface") == 0) {
+		if (nm_streq (token[0], "iface")) {
 			if (toknum < 4) {
 				if (!quiet) {
-					nm_log_warn (LOGD_SETTINGS, "Can't parse iface line '%s'\n",
-					             join_values_with_spaces(value, token));
+					_LOGW ("Can't parse iface line '%s'\n",
+					       join_values_with_spaces (value, token));
 				}
 				continue;
 			}
-			add_block(token[0], token[1]);
+			add_block (parser, token[0], token[1]);
 			skip_to_block = 0;
-			add_data(token[2], join_values_with_spaces(value, token + 3));
+			add_data (parser, token[2], join_values_with_spaces (value, token + 3));
 		}
 		/* auto and allow-auto stanzas are equivalent,
 		 * both can take multiple interfaces as parameters: add one block for each */
-		else if (strcmp(token[0], "auto") == 0 ||
-			 strcmp(token[0], "allow-auto") == 0) {
+		else if (NM_IN_STRSET (token[0], "auto", "allow-auto")) {
 			int i;
+
 			for (i = 1; i < toknum; i++)
-				add_block("auto", token[i]);
+				add_block (parser, "auto", token[i]);
 			skip_to_block = 0;
 		}
-		else if (strcmp(token[0], "mapping") == 0) {
-			add_block(token[0], join_values_with_spaces(value, token + 1));
+		else if (nm_streq (token[0], "mapping")) {
+			add_block (parser, token[0], join_values_with_spaces (value, token + 1));
 			skip_to_block = 0;
 		}
 		/* allow-* can take multiple interfaces as parameters: add one block for each */
-		else if (strncmp(token[0],"allow-",6) == 0) {
+		else if (g_str_has_prefix (token[0], "allow-")) {
 			int i;
 			for (i = 1; i < toknum; i++)
-				add_block(token[0], token[i]);
+				add_block (parser, token[0], token[i]);
 			skip_to_block = 0;
 		}
 		/* source and source-directory stanzas take one or more paths as parameters */
-		else if (strcmp (token[0], "source") == 0 || strcmp (token[0], "source-directory") == 0) {
+		else if (NM_IN_STRSET (token[0], "source", "source-directory")) {
 			int i;
 			char *en_dir;
 
 			skip_to_block = 0;
 			en_dir = g_path_get_dirname (eni_file);
 			for (i = 1; i < toknum; ++i) {
-				if (strcmp (token[0], "source-directory") == 0)
-					_ifparser_source (token[i], en_dir, quiet, TRUE);
+				if (nm_streq (token[0], "source-directory"))
+					_ifparser_source (parser, token[i], en_dir, quiet, TRUE);
 				else
-					_ifparser_source (token[i], en_dir, quiet, FALSE);
+					_ifparser_source (parser, token[i], en_dir, quiet, FALSE);
 			}
 			g_free (en_dir);
 		}
 		else {
 			if (skip_to_block) {
 				if (!quiet) {
-					nm_log_warn (LOGD_SETTINGS, "ignoring out-of-block data '%s'\n",
-					             join_values_with_spaces(value, token));
+					_LOGW ("ignoring out-of-block data '%s'\n",
+					       join_values_with_spaces (value, token));
 				}
 			} else
-				add_data(token[0], join_values_with_spaces(value, token + 1));
+				add_data (parser, token[0], join_values_with_spaces (value, token + 1));
 		}
 	}
-	fclose(inp);
+	fclose (inp);
 
 	if (!quiet)
-		nm_log_info (LOGD_SETTINGS, "      interface-parser: finished parsing file %s\n", eni_file);
+		_LOGI ("      interface-parser: finished parsing file %s\n", eni_file);
 }
 
 static void
-_ifparser_source (const char *path, const char *en_dir, int quiet, int dir)
+_ifparser_source (if_parser *parser, const char *path, const char *en_dir, int quiet, int dir)
 {
 	char *abs_path;
 	const char *item;
@@ -272,132 +283,128 @@ _ifparser_source (const char *path, const char *en_dir, int quiet, int dir)
 		abs_path = g_build_filename (en_dir, path, NULL);
 
 	if (!quiet)
-		nm_log_info (LOGD_SETTINGS, "      interface-parser: source line includes interfaces file(s) %s\n", abs_path);
+		_LOGI ("      interface-parser: source line includes interfaces file(s) %s\n", abs_path);
 
 	/* ifupdown uses WRDE_NOCMD for wordexp. */
 	if (wordexp (abs_path, &we, WRDE_NOCMD)) {
 		if (!quiet)
-			nm_log_warn (LOGD_SETTINGS, "word expansion for %s failed\n", abs_path);
+			_LOGW ("word expansion for %s failed\n", abs_path);
 	} else {
 		for (i = 0; i < we.we_wordc; i++) {
 			if (dir) {
 				source_dir = g_dir_open (we.we_wordv[i], 0, &error);
 				if (!source_dir) {
 					if (!quiet) {
-						nm_log_warn (LOGD_SETTINGS, "Failed to open directory %s: %s",
-						             we.we_wordv[i], error->message);
+						_LOGW ("Failed to open directory %s: %s",
+						       we.we_wordv[i], error->message);
 					}
 					g_clear_error (&error);
 				} else {
 					while ((item = g_dir_read_name (source_dir)))
-						_ifparser_source (item, we.we_wordv[i], quiet, FALSE);
+						_ifparser_source (parser, item, we.we_wordv[i], quiet, FALSE);
 					g_dir_close (source_dir);
 				}
 			} else
-				_recursive_ifparser (we.we_wordv[i], quiet);
+				_recursive_ifparser (parser, we.we_wordv[i], quiet);
 		}
 		wordfree (&we);
 	}
 	g_free (abs_path);
 }
 
-void ifparser_init (const char *eni_file, int quiet)
+if_parser *
+ifparser_parse (const char *eni_file, int quiet)
 {
-	first = last = NULL;
-	_recursive_ifparser (eni_file, quiet);
+	if_parser *parser;
+
+	parser = g_slice_new (if_parser);
+	c_list_init (&parser->block_lst_head);
+	_recursive_ifparser (parser, eni_file, quiet);
+	return parser;
 }
 
-void _destroy_data(if_data *ifd)
+static void
+_destroy_data (if_data *ifd)
 {
-	if (ifd == NULL)
-		return;
-	_destroy_data(ifd->next);
-	g_free(ifd->key);
-	g_free(ifd->data);
-	g_slice_free(struct _if_data, ifd);
-	return;
+	c_list_unlink_stale (&ifd->data_lst);
+	g_free (ifd);
 }
 
-void _destroy_block(if_block* ifb)
+static void
+_destroy_block (if_block* ifb)
 {
-	if (ifb == NULL)
-		return;
-	_destroy_block(ifb->next);
-	_destroy_data(ifb->info);
-	g_free(ifb->name);
-	g_free(ifb->type);
-	g_slice_free(struct _if_block, ifb);
-	return;
+	if_data *ifd;
+
+	while ((ifd = c_list_first_entry (&ifb->data_lst_head, if_data, data_lst)))
+		_destroy_data (ifd);
+	c_list_unlink_stale (&ifb->block_lst);
+	g_free (ifb);
 }
 
-void ifparser_destroy(void)
+void
+ifparser_destroy (if_parser *parser)
 {
-	_destroy_block(first);
-	first = last = NULL;
+	if_block *ifb;
+
+	while ((ifb = c_list_first_entry (&parser->block_lst_head, if_block, block_lst)))
+		_destroy_block (ifb);
+	g_slice_free (if_parser, parser);
 }
 
-if_block *ifparser_getfirst(void)
+if_block *
+ifparser_getfirst (if_parser *parser)
 {
-	return first;
+	return c_list_first_entry (&parser->block_lst_head, if_block, block_lst);
 }
 
-int ifparser_get_num_blocks(void)
+guint
+ifparser_get_num_blocks (if_parser *parser)
 {
-	int i = 0;
-	if_block *iter = first;
+	return c_list_length (&parser->block_lst_head);
+}
 
-	while (iter) {
-		i++;
-		iter = iter->next;
+if_block *
+ifparser_getif (if_parser *parser, const char* iface)
+{
+	if_block *ifb;
+
+	c_list_for_each_entry (ifb, &parser->block_lst_head, block_lst) {
+		if (   nm_streq (ifb->type, "iface")
+		    && nm_streq (ifb->name, iface))
+			return ifb;
 	}
-	return i;
+	return NULL;
 }
 
-if_block *ifparser_getif(const char* iface)
+static if_data *
+ifparser_findkey (if_block* iface, const char *key)
 {
-	if_block *curr = first;
-	while(curr!=NULL)
-	{
-		if (strcmp(curr->type,"iface")==0 && strcmp(curr->name,iface)==0)
-			return curr;
-		curr = curr->next;
+	if_data *ifd;
+
+	c_list_for_each_entry (ifd, &iface->data_lst_head, data_lst) {
+		if (nm_streq (ifd->key, key))
+			return ifd;
 	}
 	return NULL;
 }
 
-const char *ifparser_getkey(if_block* iface, const char *key)
+const char *
+ifparser_getkey (if_block* iface, const char *key)
 {
-	if_data *curr = iface->info;
-	while(curr!=NULL)
-	{
-		if (strcmp(curr->key,key)==0)
-			return curr->data;
-		curr = curr->next;
-	}
-	return NULL;
+	if_data *ifd;
+
+	ifd = ifparser_findkey (iface, key);
+	return ifd ? ifd->data : NULL;
 }
 
 gboolean
-ifparser_haskey(if_block* iface, const char *key)
+ifparser_haskey (if_block* iface, const char *key)
 {
-	if_data *curr = iface->info;
-
-	while (curr != NULL) {
-		if (strcmp (curr->key, key) == 0)
-			return TRUE;
-		curr = curr->next;
-	}
-	return FALSE;
+	return !!ifparser_findkey (iface, key);
 }
 
-int ifparser_get_num_info(if_block* iface)
+guint
+ifparser_get_num_info (if_block* iface)
 {
-	int i = 0;
-	if_data *iter = iface->info;
-
-	while (iter) {
-		i++;
-		iter = iter->next;
-	}
-	return i;
+	return c_list_length (&iface->data_lst_head);
 }

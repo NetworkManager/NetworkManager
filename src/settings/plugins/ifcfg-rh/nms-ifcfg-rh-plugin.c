@@ -70,19 +70,15 @@ typedef struct {
 } SettingsPluginIfcfgPrivate;
 
 struct _SettingsPluginIfcfg {
-	GObject parent;
+	NMSettingsPlugin parent;
 	SettingsPluginIfcfgPrivate _priv;
 };
 
 struct _SettingsPluginIfcfgClass {
-	GObjectClass parent;
+	NMSettingsPluginClass parent;
 };
 
-static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
-
-G_DEFINE_TYPE_EXTENDED (SettingsPluginIfcfg, settings_plugin_ifcfg, G_TYPE_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
-                                               settings_plugin_interface_init))
+G_DEFINE_TYPE (SettingsPluginIfcfg, settings_plugin_ifcfg, NM_TYPE_SETTINGS_PLUGIN)
 
 #define SETTINGS_PLUGIN_IFCFG_GET_PRIVATE(self) _NM_GET_PRIVATE (self, SettingsPluginIfcfg, SETTINGS_IS_PLUGIN_IFCFG)
 
@@ -164,9 +160,9 @@ remove_connection (SettingsPluginIfcfg *self, NMIfcfgConnection *connection)
 
 	/* Emit changes _after_ removing the connection */
 	if (unmanaged)
-		g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED);
+		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
 	if (unrecognized)
-		g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_UNRECOGNIZED_SPECS_CHANGED);
+		_nm_settings_plugin_emit_signal_unrecognized_specs_changed (NM_SETTINGS_PLUGIN (self));
 }
 
 static NMIfcfgConnection *
@@ -349,18 +345,20 @@ update_connection (SettingsPluginIfcfg *self,
 				if (old_unmanaged /* && !new_unmanaged */) {
 					_LOGI ("Managing connection "NM_IFCFG_CONNECTION_LOG_FMT" and its device because NM_CONTROLLED was true.",
 					       NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
-					g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_CONNECTION_ADDED, connection_by_uuid);
+					_nm_settings_plugin_emit_signal_connection_added (NM_SETTINGS_PLUGIN (self),
+					                                                  NM_SETTINGS_CONNECTION (connection_by_uuid));
 				} else if (old_unrecognized /* && !new_unrecognized */) {
 					_LOGI ("Managing connection "NM_IFCFG_CONNECTION_LOG_FMT" because it is now a recognized type.",
 					       NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
-					g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_CONNECTION_ADDED, connection_by_uuid);
+					_nm_settings_plugin_emit_signal_connection_added (NM_SETTINGS_PLUGIN (self),
+					                                                  NM_SETTINGS_CONNECTION (connection_by_uuid));
 				}
 			}
 
 			if (unmanaged_changed)
-				g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED);
+				_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
 			if (unrecognized_changed)
-				g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_UNRECOGNIZED_SPECS_CHANGED);
+				_nm_settings_plugin_emit_signal_unrecognized_specs_changed (NM_SETTINGS_PLUGIN (self));
 		}
 		nm_settings_connection_set_filename (NM_SETTINGS_CONNECTION (connection_by_uuid), full_path);
 		g_object_unref (connection_new);
@@ -398,11 +396,13 @@ update_connection (SettingsPluginIfcfg *self,
 			/* Only raise the signal if we were called without source, i.e. if we read the connection from file.
 			 * Otherwise, we were called by add_connection() which does not expect the signal. */
 			if (nm_ifcfg_connection_get_unmanaged_spec (connection_new))
-				g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED);
+				_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
 			else if (nm_ifcfg_connection_get_unrecognized_spec (connection_new))
-				g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_UNRECOGNIZED_SPECS_CHANGED);
-			else
-				g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_CONNECTION_ADDED, connection_new);
+				_nm_settings_plugin_emit_signal_unrecognized_specs_changed (NM_SETTINGS_PLUGIN (self));
+			else {
+				_nm_settings_plugin_emit_signal_connection_added (NM_SETTINGS_PLUGIN (self),
+				                                                  NM_SETTINGS_CONNECTION (connection_new));
+			}
 		}
 		return connection_new;
 	}
@@ -1002,11 +1002,6 @@ config_changed_cb (NMConfig *config,
 /*****************************************************************************/
 
 static void
-init (NMSettingsPlugin *config)
-{
-}
-
-static void
 settings_plugin_ifcfg_init (SettingsPluginIfcfg *plugin)
 {
 	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE ((SettingsPluginIfcfg *) plugin);
@@ -1063,30 +1058,26 @@ dispose (GObject *object)
 }
 
 static void
-settings_plugin_ifcfg_class_init (SettingsPluginIfcfgClass *req_class)
+settings_plugin_ifcfg_class_init (SettingsPluginIfcfgClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingsPluginClass *plugin_class = NM_SETTINGS_PLUGIN_CLASS (klass);
 
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
-}
 
-static void
-settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
-{
-	plugin_iface->get_connections = get_connections;
-	plugin_iface->add_connection = add_connection;
-	plugin_iface->load_connection = load_connection;
-	plugin_iface->reload_connections = reload_connections;
-	plugin_iface->get_unmanaged_specs = get_unmanaged_specs;
-	plugin_iface->get_unrecognized_specs = get_unrecognized_specs;
-	plugin_iface->init = init;
+	plugin_class->get_connections = get_connections;
+	plugin_class->add_connection = add_connection;
+	plugin_class->load_connection = load_connection;
+	plugin_class->reload_connections = reload_connections;
+	plugin_class->get_unmanaged_specs = get_unmanaged_specs;
+	plugin_class->get_unrecognized_specs = get_unrecognized_specs;
 }
 
 /*****************************************************************************/
 
-G_MODULE_EXPORT GObject *
+G_MODULE_EXPORT NMSettingsPlugin *
 nm_settings_plugin_factory (void)
 {
-	return G_OBJECT (g_object_ref (settings_plugin_ifcfg_get ()));
+	return NM_SETTINGS_PLUGIN (g_object_ref (settings_plugin_ifcfg_get ()));
 }
