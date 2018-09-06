@@ -1109,6 +1109,10 @@ do { \
 		case NL_STOP: \
 			goto stop; \
 		default: \
+			if (err >= 0) { \
+				nm_assert_not_reached (); \
+				err = -NLE_BUG; \
+			} \
 			goto out; \
 		} \
 	} \
@@ -1216,11 +1220,12 @@ continue_reading:
 					else if (err == NL_SKIP)
 						goto skip;
 					else if (err == NL_STOP) {
-						err = -e->error;
+						err = -nl_syserr2nlerr (e->error);
 						goto out;
 					}
+					nm_assert (err == NL_OK);
 				} else {
-					err = -e->error;
+					err = -nl_syserr2nlerr (e->error);
 					goto out;
 				}
 			} else
@@ -1251,6 +1256,7 @@ out:
 	if (interrupted)
 		err = -NLE_DUMP_INTR;
 
+	nm_assert (err <= 0);
 	return err ?: nrecv;
 }
 
