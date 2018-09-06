@@ -81,6 +81,7 @@ typedef struct {
 	NMSettingConnectionLldp lldp;
 	int auth_retries;
 	int mdns;
+	int llmnr;
 } NMSettingConnectionPrivate;
 
 enum {
@@ -105,6 +106,7 @@ enum {
 	PROP_METERED,
 	PROP_LLDP,
 	PROP_MDNS,
+	PROP_LLMNR,
 	PROP_STABLE_ID,
 	PROP_AUTH_RETRIES,
 
@@ -896,6 +898,23 @@ nm_setting_connection_get_mdns (NMSettingConnection *setting)
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->mdns;
 }
 
+/**
+ * nm_setting_connection_get_llmnr:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the #NMSettingConnection:llmnr property of the setting.
+ *
+ * Since: 1.14
+ **/
+NMSettingConnectionLlmnr
+nm_setting_connection_get_llmnr (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting),
+	                      NM_SETTING_CONNECTION_LLMNR_DEFAULT);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->llmnr;
+}
+
 static void
 _set_error_missing_base_setting (GError **error, const char *type)
 {
@@ -1093,14 +1112,25 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (   priv->mdns < NM_SETTING_CONNECTION_MDNS_DEFAULT
-	    || priv->mdns > NM_SETTING_CONNECTION_MDNS_YES) {
+	if (   priv->mdns < (int) NM_SETTING_CONNECTION_MDNS_DEFAULT
+	    || priv->mdns > (int) NM_SETTING_CONNECTION_MDNS_YES) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("mdns value %d is not valid"), priv->mdns);
+		             _("value %d is not valid"), priv->mdns);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME,
 		                NM_SETTING_CONNECTION_MDNS);
+		return FALSE;
+	}
+
+	if (   priv->llmnr < (int) NM_SETTING_CONNECTION_LLMNR_DEFAULT
+	    || priv->llmnr > (int) NM_SETTING_CONNECTION_LLMNR_YES) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("value %d is not valid"), priv->llmnr);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME,
+		                NM_SETTING_CONNECTION_LLMNR);
 		return FALSE;
 	}
 
@@ -1276,6 +1306,7 @@ nm_setting_connection_init (NMSettingConnection *setting)
 	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
 
 	priv->mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
+	priv->llmnr = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
 }
 
 static void
@@ -1400,6 +1431,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MDNS:
 		priv->mdns = g_value_get_int (value);
 		break;
+	case PROP_LLMNR:
+		priv->llmnr = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1493,6 +1527,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_MDNS:
 		g_value_set_int (value, priv->mdns);
+		break;
+	case PROP_LLMNR:
+		g_value_set_int (value, priv->llmnr);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2104,8 +2141,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * The permitted values are: yes: register hostname and resolving
 	 * for the connection, no: disable mDNS for the interface, resolve:
 	 * do not register hostname but allow resolving of mDNS host names.
-	 * When updating this property on a currently activated connection,
-	 * the change takes effect immediately.
 	 *
 	 * This feature requires a plugin which supports mDNS. One such
 	 * plugin is dns-systemd-resolved.
@@ -2114,11 +2149,11 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: mdns
-	 * variable: CONNECTION_MDNS(+)
+	 * variable: MDNS(+)
 	 * values: yes,no,resolve
 	 * default: missing variable means global default
 	 * description: Whether or not mDNS is enabled for the connection
-	 * example: CONNECTION_MDNS=yes
+	 * example: MDNS=yes
 	 * ---end---
 	 */
 	g_object_class_install_property
@@ -2126,6 +2161,40 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 		 g_param_spec_int (NM_SETTING_CONNECTION_MDNS, "", "",
 		                   G_MININT32, G_MAXINT32,
 		                   NM_SETTING_CONNECTION_MDNS_DEFAULT,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingConnection:llmnr:
+	 *
+	 * Whether Link-Local Multicast Name Resolution (LLMNR) is enabled
+	 * for the connection. LLMNR is a protocol based on the Domain Name
+	 * System (DNS) packet format that allows both IPv4 and IPv6 hosts
+	 * to perform name resolution for hosts on the same local link.
+	 *
+	 * The permitted values are: yes: register hostname and resolving
+	 * for the connection, no: disable LLMNR for the interface, resolve:
+	 * do not register hostname but allow resolving of LLMNR host names.
+	 *
+	 * This feature requires a plugin which supports LLMNR. One such
+	 * plugin is dns-systemd-resolved.
+	 *
+	 * Since: 1.14
+	 **/
+	/* ---ifcfg-rh---
+	 * property: llmnr
+	 * variable: LLMNR(+)
+	 * values: yes,no,resolve
+	 * default: missing variable means global default
+	 * description: Whether or not LLMNR is enabled for the connection
+	 * example: LLMNR=yes
+	 * ---end---
+	 */
+	g_object_class_install_property
+		(object_class, PROP_LLMNR,
+		 g_param_spec_int (NM_SETTING_CONNECTION_LLMNR, "", "",
+		                   G_MININT32, G_MAXINT32,
+		                   NM_SETTING_CONNECTION_LLMNR_DEFAULT,
 		                   G_PARAM_READWRITE |
 		                   G_PARAM_STATIC_STRINGS));
 

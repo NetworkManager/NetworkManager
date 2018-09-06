@@ -295,6 +295,7 @@ typedef struct {
 	NMIPConfigSource mtu_source;
 	int dns_priority;
 	NMSettingConnectionMdns mdns;
+	NMSettingConnectionLlmnr llmnr;
 	GArray *nameservers;
 	GPtrArray *domains;
 	GPtrArray *searches;
@@ -916,6 +917,7 @@ void
 nm_ip4_config_merge_setting (NMIP4Config *self,
                              NMSettingIPConfig *setting,
                              NMSettingConnectionMdns mdns,
+                             NMSettingConnectionLlmnr llmnr,
                              guint32 route_table,
                              guint32 route_metric)
 {
@@ -1033,6 +1035,7 @@ nm_ip4_config_merge_setting (NMIP4Config *self,
 		nm_ip4_config_set_dns_priority (self, priority);
 
 	nm_ip4_config_mdns_set (self, mdns);
+	nm_ip4_config_llmnr_set (self, llmnr);
 
 	g_object_thaw_notify (G_OBJECT (self));
 }
@@ -1253,6 +1256,10 @@ nm_ip4_config_merge (NMIP4Config *dst,
 	nm_ip4_config_mdns_set (dst,
 	                        NM_MAX (nm_ip4_config_mdns_get (src),
 	                                nm_ip4_config_mdns_get (dst)));
+	/* LLMNR */
+	nm_ip4_config_llmnr_set (dst,
+	                         NM_MAX (nm_ip4_config_llmnr_get (src),
+	                                 nm_ip4_config_llmnr_get (dst)));
 
 	g_object_thaw_notify (G_OBJECT (dst));
 }
@@ -1494,6 +1501,10 @@ nm_ip4_config_subtract (NMIP4Config *dst,
 	if (nm_ip4_config_mdns_get (src) == nm_ip4_config_mdns_get (dst))
 		nm_ip4_config_mdns_set (dst, NM_SETTING_CONNECTION_MDNS_DEFAULT);
 
+	/* LLMNR */
+	if (nm_ip4_config_llmnr_get (src) == nm_ip4_config_llmnr_get (dst))
+		nm_ip4_config_llmnr_set (dst, NM_SETTING_CONNECTION_LLMNR_DEFAULT);
+
 	g_object_thaw_notify (G_OBJECT (dst));
 }
 
@@ -1595,6 +1606,7 @@ _nm_ip4_config_intersect_helper (NMIP4Config *dst,
 	/* ignore NIS */
 	/* ignore WINS */
 	/* ignore mdns */
+	/* ignore LLMNR */
 
 	if (update_dst)
 		g_object_thaw_notify (G_OBJECT (dst));
@@ -1873,7 +1885,15 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 		has_relevant_changes = TRUE;
 	}
 
-	dst_priv->mdns = src_priv->mdns;
+	if (src_priv->mdns != dst_priv->mdns) {
+		dst_priv->mdns = src_priv->mdns;
+		has_relevant_changes = TRUE;
+	}
+
+	if (src_priv->llmnr != dst_priv->llmnr) {
+		dst_priv->llmnr = src_priv->llmnr;
+		has_relevant_changes = TRUE;
+	}
 
 	/* DNS priority */
 	if (src_priv->dns_priority != dst_priv->dns_priority) {
@@ -2562,6 +2582,19 @@ nm_ip4_config_mdns_set (NMIP4Config *self,
 	NM_IP4_CONFIG_GET_PRIVATE (self)->mdns = mdns;
 }
 
+NMSettingConnectionLlmnr
+nm_ip4_config_llmnr_get (const NMIP4Config *self)
+{
+	return NM_IP4_CONFIG_GET_PRIVATE (self)->llmnr;
+}
+
+void
+nm_ip4_config_llmnr_set (NMIP4Config *self,
+                         NMSettingConnectionLlmnr llmnr)
+{
+	NM_IP4_CONFIG_GET_PRIVATE (self)->llmnr = llmnr;
+}
+
 /*****************************************************************************/
 
 void
@@ -2851,6 +2884,7 @@ nm_ip4_config_hash (const NMIP4Config *self, GChecksum *sum, gboolean dns_only)
 	NMDedupMultiIter ipconf_iter;
 	const NMPlatformIP4Address *address;
 	const NMPlatformIP4Route *route;
+	int val;
 
 	g_return_if_fail (self);
 	g_return_if_fail (sum);
@@ -2897,6 +2931,25 @@ nm_ip4_config_hash (const NMIP4Config *self, GChecksum *sum, gboolean dns_only)
 		s = nm_ip4_config_get_dns_option (self, i);
 		g_checksum_update (sum, (const guint8 *) s, strlen (s));
 	}
+
+	val = nm_ip4_config_mdns_get (self);
+	if (val != NM_SETTING_CONNECTION_MDNS_DEFAULT)
+		g_checksum_update (sum, (const guint8 *) &val, sizeof (val));
+
+	val = nm_ip4_config_llmnr_get (self);
+	if (val != NM_SETTING_CONNECTION_LLMNR_DEFAULT)
+		g_checksum_update (sum, (const guint8 *) &val, sizeof (val));
+
+	/* FIXME(ip-config-checksum): the DNS priority should be considered relevant
+	 * and added into the checksum as well, but this can't be done right now
+	 * because in the DNS manager we rely on the fact that an empty
+	 * configuration (i.e. just created) has a zero checksum. This is needed to
+	 * avoid rewriting resolv.conf when there is no change.
+	 *
+	 * The DNS priority initial value depends on the connection type (VPN or
+	 * not), so it's a bit difficult to add it to checksum maintaining the
+	 * assumption of checksum(empty)=0
+	 */
 }
 
 /**
@@ -3212,6 +3265,7 @@ nm_ip4_config_init (NMIP4Config *self)
 	                                        NMP_OBJECT_TYPE_IP4_ROUTE);
 
 	priv->mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
+	priv->llmnr = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
 	priv->nameservers = g_array_new (FALSE, FALSE, sizeof (guint32));
 	priv->domains = g_ptr_array_new_with_free_func (g_free);
 	priv->searches = g_ptr_array_new_with_free_func (g_free);

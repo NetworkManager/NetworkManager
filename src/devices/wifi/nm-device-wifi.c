@@ -2364,7 +2364,6 @@ build_supplicant_config (NMDeviceWifi *self,
 	NMSettingWirelessSecurity *s_wireless_sec;
 	NMSettingWirelessSecurityPmf pmf;
 	NMSettingWirelessSecurityFils fils;
-	gs_free char *value = NULL;
 
 	g_return_val_if_fail (priv->sup_iface, NULL);
 
@@ -2406,25 +2405,23 @@ build_supplicant_config (NMDeviceWifi *self,
 		/* Configure PMF (802.11w) */
 		pmf = nm_setting_wireless_security_get_pmf (s_wireless_sec);
 		if (pmf == NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT) {
-			value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-			                                               "wifi-sec.pmf",
-			                                               NM_DEVICE (self));
-			pmf = _nm_utils_ascii_str_to_int64 (value, 10,
-			                                    NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE,
-			                                    NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED,
-			                                    NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL);
+			pmf = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+			                                                   "wifi-sec.pmf",
+			                                                   NM_DEVICE (self),
+			                                                   NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE,
+			                                                   NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED,
+			                                                   NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL);
 		}
 
 		/* Configure FILS (802.11ai) */
 		fils = nm_setting_wireless_security_get_fils (s_wireless_sec);
 		if (fils == NM_SETTING_WIRELESS_SECURITY_FILS_DEFAULT) {
-			value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-			                                               "wifi-sec.fils",
-			                                               NM_DEVICE (self));
-			fils = _nm_utils_ascii_str_to_int64 (value, 10,
-			                                     NM_SETTING_WIRELESS_SECURITY_FILS_DISABLE,
-			                                     NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED,
-			                                     NM_SETTING_WIRELESS_SECURITY_FILS_OPTIONAL);
+			fils = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+			                                                    "wifi-sec.fils",
+			                                                    NM_DEVICE (self),
+			                                                    NM_SETTING_WIRELESS_SECURITY_FILS_DISABLE,
+			                                                    NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED,
+			                                                    NM_SETTING_WIRELESS_SECURITY_FILS_OPTIONAL);
 		}
 
 		s_8021x = nm_connection_get_setting_802_1x (connection);
@@ -2461,7 +2458,6 @@ wake_on_wlan_enable (NMDeviceWifi *self)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMSettingWirelessWakeOnWLan wowl;
 	NMSettingWireless *s_wireless;
-	gs_free char *value = NULL;
 
 	s_wireless = (NMSettingWireless *) nm_device_get_applied_setting (NM_DEVICE (self), NM_TYPE_SETTING_WIRELESS);
 	if (s_wireless) {
@@ -2470,31 +2466,27 @@ wake_on_wlan_enable (NMDeviceWifi *self)
 			goto found;
 	}
 
-	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-	                                               "wifi.wake-on-wlan",
-	                                               NM_DEVICE (self));
+	wowl = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                    "wifi.wake-on-wlan",
+	                                                    NM_DEVICE (self),
+	                                                    NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE,
+	                                                    G_MAXINT32,
+	                                                    NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT);
 
-	if (value) {
-		wowl = _nm_utils_ascii_str_to_int64 (value, 10,
-		                                     NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE,
-		                                     G_MAXINT32,
-		                                     NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT);
-
-		if (NM_FLAGS_ANY (wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_EXCLUSIVE_FLAGS)) {
-			if (!nm_utils_is_power_of_two (wowl)) {
-				_LOGD (LOGD_WIFI, "invalid default value %u for wake-on-wlan: "
-				       "'default' and 'ignore' are exclusive flags", (guint) wowl);
-				wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT;
-			}
-		} else if (NM_FLAGS_ANY (wowl, ~NM_SETTING_WIRELESS_WAKE_ON_WLAN_ALL)) {
-			_LOGD (LOGD_WIFI, "invalid default value %u for wake-on-wlan", (guint) wowl);
+	if (NM_FLAGS_ANY (wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_EXCLUSIVE_FLAGS)) {
+		if (!nm_utils_is_power_of_two (wowl)) {
+			_LOGD (LOGD_WIFI, "invalid default value %u for wake-on-wlan: "
+			       "'default' and 'ignore' are exclusive flags", (guint) wowl);
 			wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT;
 		}
-		if (wowl != NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT)
-			goto found;
+	} else if (NM_FLAGS_ANY (wowl, ~NM_SETTING_WIRELESS_WAKE_ON_WLAN_ALL)) {
+		_LOGD (LOGD_WIFI, "invalid default value %u for wake-on-wlan", (guint) wowl);
+		wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT;
 	}
-	wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
+	if (wowl != NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT)
+		goto found;
 
+	wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
 found:
 	if (wowl == NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE) {
 		priv->wowlan_restore = wowl;
@@ -2641,31 +2633,29 @@ set_powersave (NMDevice *device)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMSettingWireless *s_wireless;
-	NMSettingWirelessPowersave powersave;
-	gs_free char *value = NULL;
+	NMSettingWirelessPowersave val;
 
 	s_wireless = (NMSettingWireless *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRELESS);
 	g_return_if_fail (s_wireless);
 
-	powersave = nm_setting_wireless_get_powersave (s_wireless);
-	if (powersave == NM_SETTING_WIRELESS_POWERSAVE_DEFAULT) {
-		value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-		                                               "wifi.powersave",
-		                                               device);
-		powersave = _nm_utils_ascii_str_to_int64 (value, 10,
-		                                          NM_SETTING_WIRELESS_POWERSAVE_IGNORE,
-		                                          NM_SETTING_WIRELESS_POWERSAVE_ENABLE,
-		                                          NM_SETTING_WIRELESS_POWERSAVE_IGNORE);
+	val = nm_setting_wireless_get_powersave (s_wireless);
+	if (val == NM_SETTING_WIRELESS_POWERSAVE_DEFAULT) {
+		val = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+		                                                   "wifi.powersave",
+		                                                   device,
+		                                                   NM_SETTING_WIRELESS_POWERSAVE_IGNORE,
+		                                                   NM_SETTING_WIRELESS_POWERSAVE_ENABLE,
+		                                                   NM_SETTING_WIRELESS_POWERSAVE_IGNORE);
 	}
 
-	_LOGT (LOGD_WIFI, "powersave is set to %u", (unsigned) powersave);
+	_LOGT (LOGD_WIFI, "powersave is set to %u", (unsigned) val);
 
-	if (powersave == NM_SETTING_WIRELESS_POWERSAVE_IGNORE)
+	if (val == NM_SETTING_WIRELESS_POWERSAVE_IGNORE)
 		return;
 
 	nm_platform_wifi_set_powersave (nm_device_get_platform (device),
 	                                nm_device_get_ifindex (device),
-	                                powersave == NM_SETTING_WIRELESS_POWERSAVE_ENABLE);
+	                                val == NM_SETTING_WIRELESS_POWERSAVE_ENABLE);
 }
 
 static NMActStageReturn

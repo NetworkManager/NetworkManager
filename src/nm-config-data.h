@@ -181,6 +181,13 @@ char *nm_config_data_get_connection_default (const NMConfigData *self,
                                              const char *property,
                                              NMDevice *device);
 
+gint64 nm_config_data_get_connection_default_int64 (const NMConfigData *self,
+                                                    const char *property,
+                                                    NMDevice *device,
+                                                    gint64 min,
+                                                    gint64 max,
+                                                    gint64 fallback);
+
 char *nm_config_data_get_device_config (const NMConfigData *self,
                                         const char *property,
                                         NMDevice *device,

@@ -3959,27 +3959,24 @@ static gboolean
 should_connect_slaves (NMConnection *connection, NMDevice *device)
 {
 	NMSettingConnection *s_con;
-	NMSettingConnectionAutoconnectSlaves autoconnect_slaves;
-	gs_free char *value = NULL;
+	NMSettingConnectionAutoconnectSlaves val;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
-	/* Check autoconnect-slaves property */
-	autoconnect_slaves = nm_setting_connection_get_autoconnect_slaves (s_con);
-	if (autoconnect_slaves != NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT)
+	val = nm_setting_connection_get_autoconnect_slaves (s_con);
+	if (val != NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT)
 		goto out;
 
-	/* Check configuration default for autoconnect-slaves property */
-	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-	                                               "connection.autoconnect-slaves", device);
-	if (value)
-		autoconnect_slaves = _nm_utils_ascii_str_to_int64 (value, 10, 0, 1, -1);
+	val = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                   "connection.autoconnect-slaves",
+	                                                   device,
+	                                                   0, 1, -1);
 
 out:
-	if (autoconnect_slaves == NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_NO)
+	if (val == NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_NO)
 		return FALSE;
-	if (autoconnect_slaves == NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_YES)
+	if (val == NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_YES)
 		return TRUE;
 	return FALSE;
 }

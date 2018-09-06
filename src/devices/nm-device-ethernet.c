@@ -1198,7 +1198,6 @@ wake_on_lan_enable (NMDevice *device)
 	NMSettingWiredWakeOnLan wol;
 	NMSettingWired *s_wired;
 	const char *password = NULL;
-	gs_free char *value = NULL;
 
 	s_wired = (NMSettingWired *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRED);
 	if (s_wired) {
@@ -1208,27 +1207,25 @@ wake_on_lan_enable (NMDevice *device)
 			goto found;
 	}
 
-	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-	                                               "ethernet.wake-on-lan",
-	                                               device);
+	wol = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                   "ethernet.wake-on-lan",
+	                                                   device,
+	                                                   NM_SETTING_WIRED_WAKE_ON_LAN_NONE,
+	                                                   G_MAXINT32,
+	                                                   NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT);
 
-	if (value) {
-		wol = _nm_utils_ascii_str_to_int64 (value, 10,
-		                                    NM_SETTING_WIRED_WAKE_ON_LAN_NONE,
-		                                    G_MAXINT32,
-		                                    NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT);
-
-		if (   NM_FLAGS_ANY (wol, NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS)
-		    && !nm_utils_is_power_of_two (wol)) {
-			nm_log_dbg (LOGD_ETHER, "invalid default value %u for wake-on-lan", (guint) wol);
-			wol = NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT;
-		}
-		if (wol != NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT)
-			goto found;
+	if (   NM_FLAGS_ANY (wol, NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS)
+	    && !nm_utils_is_power_of_two (wol)) {
+		nm_log_dbg (LOGD_ETHER, "invalid default value %u for wake-on-lan", (guint) wol);
+		wol = NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT;
 	}
+	if (wol != NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT)
+		goto found;
 	wol = NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE;
 found:
-	return nm_platform_ethtool_set_wake_on_lan (nm_device_get_platform (device), nm_device_get_ifindex (device), wol, password);
+	return nm_platform_ethtool_set_wake_on_lan (nm_device_get_platform (device),
+	                                            nm_device_get_ifindex (device),
+	                                            wol, password);
 }
 
 /*****************************************************************************/

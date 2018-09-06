@@ -1393,7 +1393,9 @@ global:
 	nm_device_wireguard_get_type;
 	nm_device_wpan_get_type;
 	nm_setting_6lowpan_get_type;
+	nm_setting_connection_get_llmnr;
 	nm_setting_connection_get_multi_connect;
+	nm_setting_connection_llmnr_get_type;
 	nm_setting_ethtool_clear_features;
 	nm_setting_ethtool_get_feature;
 	nm_setting_ethtool_get_type;
