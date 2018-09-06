@@ -190,6 +190,22 @@ nm_ip_addr_set (int addr_family, gpointer dst, const NMIPAddr *src)
 
 /*****************************************************************************/
 
+static inline gboolean
+nm_utils_mem_all_zero (gconstpointer mem, gsize len)
+{
+	const guint8 *p;
+
+	for (p = mem; len-- > 0; p++) {
+		if (*p != 0)
+			return FALSE;
+	}
+
+	/* incidentally, a buffer with len==0, is also *all-zero*. */
+	return TRUE;
+}
+
+/*****************************************************************************/
+
 /* like g_memdup(). The difference is that the @size argument is of type
  * gsize, while g_memdup() has type guint. Since, the size of container types
  * like GArray is guint as well, this means trying to g_memdup() an
