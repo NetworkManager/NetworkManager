@@ -62,7 +62,7 @@ nl_errno (int err)
 	 * normalizes the error and returns its positive value. */
 	return err >= 0
 	       ? err
-	       : ((err == G_MININT) ? NLE_BUG : -errno);
+	       : ((err == G_MININT) ? NLE_BUG : -err);
 }
 
 static inline int
