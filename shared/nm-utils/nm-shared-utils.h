@@ -257,6 +257,7 @@ _nm_utils_strbuf_init (char *buf, gsize len, char **p_buf_ptr, gsize *p_buf_len)
 void nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...) _nm_printf (3, 4);
 void nm_utils_strbuf_append_c (char **buf, gsize *len, char c);
 void nm_utils_strbuf_append_str (char **buf, gsize *len, const char *str);
+void nm_utils_strbuf_seek_end (char **buf, gsize *len);
 
 const char *nm_strquote (char *buf, gsize buf_len, const char *str);
 

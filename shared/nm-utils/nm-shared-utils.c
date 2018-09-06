@@ -115,6 +115,88 @@ nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...)
 	}
 }
 
+/**
+ * nm_utils_strbuf_seek_end:
+ * @buf: the input/output buffer
+ * @len: the input/output lenght of the buffer.
+ *
+ * Commonly, one uses nm_utils_strbuf_append*(), to incrementally
+ * append strings to the buffer. However, sometimes we need to use
+ * existing API to write to the buffer.
+ * After doing so, we want to adjust the buffer counter.
+ * Essentially,
+ *
+ *   g_snprintf (buf, len, ...);
+ *   nm_utils_strbuf_seek_end (&buf, &len);
+ *
+ * is almost the same as
+ *
+ *   nm_utils_strbuf_append (&buf, &len, ...);
+ *
+ * They only behave differently, if the string fits exactly
+ * into the buffer without truncation. The former cannot distinguish
+ * the two cases, while the latter can.
+ */
+void
+nm_utils_strbuf_seek_end (char **buf, gsize *len)
+{
+	gsize l;
+	char *end;
+
+	nm_assert (len);
+	nm_assert (buf && *buf);
+
+	if (*len == 0)
+		return;
+
+	end = memchr (*buf, 0, *len);
+	if (!end) {
+		/* hm, no NUL character within len bytes.
+		 * Just NUL terminate the array and consume them
+		 * all. */
+		*buf += *len;
+		(*buf)[-1] = '\0';
+		*len = 0;
+		return;
+	}
+
+	l = end - *buf;
+	nm_assert (l < *len);
+
+	*buf = end;
+	*len -= l;
+	if (*len == 1) {
+		/* the last character of a buffer is the '\0'. There are two
+		 * cases why that may happen:
+		 *   - but string was truncated
+		 *   - the string fit exactly into the buffer.
+		 * Here we cannot distinguish between the two, so assume the string
+		 * was truncated and signal that by setting @len to 0 and pointing the
+		 * buffer *past* the end (like all other nm_utils_strbuf_*() functions).
+		 *
+		 * Note that nm_utils_strbuf_append_str() can distinguish between
+		 * the two cases, and leaves @len at 1, if the string was not actually
+		 * truncated.
+		 *
+		 * For consistancy, it might be better not to do this and just
+		 * seek to end of the buffer (not past it). However, that would mean,
+		 * in a series of
+		 *     g_snprintf()
+		 *     nm_utils_strbuf_seek_end()
+		 * the length would never reach zero, but stay at 1. With this,
+		 * it reaches len 0 early.
+		 * It seems better to declare the buffer as fully consumed and set
+		 * the length to zero.
+		 *
+		 * If the caller does not care about truncation, then this behavior
+		 * is more sensible. If the caller cares about truncation, it must
+		 * check earlier (right when the truncation occures).
+		 */
+		(*buf)++;
+		*len = 0;
+	}
+}
+
 /*****************************************************************************/
 
 /**
