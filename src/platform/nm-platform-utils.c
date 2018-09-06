@@ -935,6 +935,10 @@ nmp_utils_ethtool_set_link_settings (int ifindex,
 	if (ethtool_call_ifindex (ifindex, &edata) < 0)
 		return FALSE;
 
+	/* FIXME: try first new ETHTOOL_GLINKSETTINGS/SLINKSETTINGS API
+	 * https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=3f1ac7a700d039c61d8d8b99f28d605d489a60cf
+	 */
+
 	/* then change the needed ones */
 	edata.cmd = ETHTOOL_SSET;
 	if (autoneg) {
