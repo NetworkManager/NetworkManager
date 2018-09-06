@@ -760,31 +760,35 @@ static const char *
 _vt_cmd_obj_to_string_link (const NMPObject *obj, NMPObjectToStringMode to_string_mode, char *buf, gsize buf_size)
 {
 	const NMPClass *klass = NMP_OBJECT_GET_CLASS (obj);
-	char buf2[sizeof (_nm_utils_to_string_buffer)];
-	char buf3[sizeof (_nm_utils_to_string_buffer)];
+	char *b = buf;
 
 	switch (to_string_mode) {
 	case NMP_OBJECT_TO_STRING_ID:
 		return klass->cmd_plobj_to_string_id (&obj->object, buf, buf_size);
 	case NMP_OBJECT_TO_STRING_ALL:
-		g_snprintf (buf, buf_size,
-		            "[%s,%p,%u,%calive,%cvisible,%cin-nl,%p; %s]",
-		            klass->obj_type_name, obj, obj->parent._ref_count,
-		            nmp_object_is_alive (obj) ? '+' : '-',
-		            nmp_object_is_visible (obj) ? '+' : '-',
-		            obj->_link.netlink.is_in_netlink ? '+' : '-',
-		            obj->_link.udev.device,
-		            nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, buf2, sizeof (buf2)));
+		nm_utils_strbuf_append (&b, &buf_size,
+		                        "[%s,%p,%u,%calive,%cvisible,%cin-nl,%p; ",
+		                        klass->obj_type_name, obj, obj->parent._ref_count,
+		                        nmp_object_is_alive (obj) ? '+' : '-',
+		                        nmp_object_is_visible (obj) ? '+' : '-',
+		                        obj->_link.netlink.is_in_netlink ? '+' : '-',
+		                        obj->_link.udev.device);
+		NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, b, buf_size);
+		nm_utils_strbuf_seek_end (&b, &buf_size);
+		if (obj->_link.netlink.lnk) {
+			nm_utils_strbuf_append (&b, &buf_size, "; ");
+			nmp_object_to_string (obj->_link.netlink.lnk, NMP_OBJECT_TO_STRING_ALL, b, buf_size);
+			nm_utils_strbuf_seek_end (&b, &buf_size);
+		}
+		nm_utils_strbuf_append_c (&b, &buf_size, ']');
 		return buf;
 	case NMP_OBJECT_TO_STRING_PUBLIC:
+		NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, b, buf_size);
 		if (obj->_link.netlink.lnk) {
-			NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, buf2, sizeof (buf2));
-			nmp_object_to_string (obj->_link.netlink.lnk, NMP_OBJECT_TO_STRING_PUBLIC, buf3, sizeof (buf3));
-			g_snprintf (buf, buf_size,
-			            "%s; %s",
-			            buf2, buf3);
-		} else
-			NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, buf, buf_size);
+			nm_utils_strbuf_seek_end (&b, &buf_size);
+			nm_utils_strbuf_append (&b, &buf_size, "; ");
+			nmp_object_to_string (obj->_link.netlink.lnk, NMP_OBJECT_TO_STRING_PUBLIC, b, buf_size);
+		}
 		return buf;
 	default:
 		g_return_val_if_reached ("ERROR");
