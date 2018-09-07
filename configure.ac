@@ -822,7 +822,7 @@ if test "$with_dhcpcanon" != "no"; then
 fi
 if test "$with_dhcpcanon" != "no"; then
     AC_DEFINE(WITH_DHCPCANON, 1, [Define if you have dhcpcanon])
-    AC_SUBST(DHCPCANON_PATH, $with_dhcpcanon)
+    AC_DEFINE_UNQUOTED(DHCPCANON_PATH, "$with_dhcpcanon", [Define path to dhcpcanon])
 else
     AC_DEFINE(WITH_DHCPCANON, 0, [Define if you have dhcpcanon])
 fi
@@ -855,7 +855,7 @@ if test "$with_dhclient" != "no"; then
 fi
 if test "$with_dhclient" != "no"; then
 	AC_DEFINE(WITH_DHCLIENT, 1, [Define if you have dhclient])
-	AC_SUBST(DHCLIENT_PATH, $with_dhclient)
+	AC_DEFINE_UNQUOTED(DHCLIENT_PATH, "$with_dhclient", [Define path to dhclient])
 else
 	AC_DEFINE(WITH_DHCLIENT, 0, [Define if you have dhclient])
 fi
@@ -874,7 +874,7 @@ if test "$with_dhcpcd" != "no"; then
 fi
 if test "$with_dhcpcd" != "no"; then
 	AC_DEFINE(WITH_DHCPCD, 1, [Define if you have dhcpcd])
-	AC_SUBST(DHCPCD_PATH, $with_dhcpcd)
+	AC_DEFINE_UNQUOTED(DHCPCD_PATH, "$with_dhcpcd", [Define path to dhcpcd])
 else
 	AC_DEFINE(WITH_DHCPCD, 0, [Define if you have dhcpcd])
 fi

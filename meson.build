@@ -885,15 +885,6 @@ config_extra_h = configuration_data()
 
 config_extra_h.set_quoted('BINDIR',            nm_bindir)
 config_extra_h.set_quoted('DATADIR',           nm_datadir)
-if enable_dhclient
-    config_extra_h.set_quoted('DHCLIENT_PATH',     dhclient.path())
-endif
-if enable_dhcpcanon
-    config_extra_h.set_quoted('DHCPCANON_PATH',    dhcpcanon.path())
-endif
-if enable_dhcpcd
-    config_extra_h.set_quoted('DHCPCD_PATH',       dhcpcd.path())
-endif
 config_extra_h.set_quoted('LIBEXECDIR',        nm_libexecdir)
 config_extra_h.set_quoted('LOCALSTATEDIR',     nm_localstatedir)
 config_extra_h.set_quoted('NMCONFDIR',         nm_pkgconfdir)
