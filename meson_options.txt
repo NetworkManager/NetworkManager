@@ -30,7 +30,7 @@ option('wext', type: 'boolean', value: true, description: 'Enable or disable Lin
 option('wifi', type: 'boolean', value: true, description: 'enable Wi-Fi support')
 option('iwd', type: 'boolean', value: false, description: 'enable iwd support (experimental)')
 option('ppp', type: 'boolean', value: true, description: 'enable PPP/PPPoE support')
-option('pppd', type: 'array', value: ['pppd', '/sbin/pppd', '/usr/sbin/pppd'], description: 'path to pppd binary')
+option('pppd', type: 'string', value: '', description: 'path to pppd binary')
 option('pppd_plugin_dir', type: 'string', value: '', description: 'path to the pppd plugins directory')
 option('modem_manager', type: 'boolean', value: true, description: 'Enable new ModemManager1 interface support')
 option('ofono', type: 'boolean', value: false, description: 'Enable oFono support (experimental)')
