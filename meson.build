@@ -539,58 +539,39 @@ config_h.set10('WITH_BLUEZ5_DUN', enable_bluez5_dun)
 enable_ofono = get_option('ofono')
 config_h.set10('WITH_OFONO', enable_ofono)
 
-# DHCP client support with dhcpcanon
-locations = get_option('dhcpcanon')
-enable_dhcpcanon = (locations != ['no'])
-if enable_dhcpcanon
-  dhcpcanon = find_program(locations, required: false)
-  enable_dhcpcanon = dhcpcanon.found()
-
-  if enable_dhcpcanon
-    config_h.set_quoted('DHCPCANON_PATH', dhcpcanon.path())
-  endif
-endif
-config_h.set10('WITH_DHCPCANON', enable_dhcpcanon)
-
 # DHCP client support
-locations = get_option('dhclient')
-enable_dhclient = (locations != ['no'])
-if enable_dhclient
-  dhclient = find_program(locations, required: false)
-  enable_dhclient = dhclient.found()
-
-  if enable_dhclient
-    config_h.set_quoted('DHCLIENT_PATH', dhclient.path())
-  endif
-endif
-config_h.set10('WITH_DHCLIENT', enable_dhclient)
-
-locations = get_option('dhcpcd')
-enable_dhcpcd = (locations != ['no'])
-if enable_dhcpcd
-  dhcpcd = find_program(locations, required: false)
-  enable_dhcpcd = dhcpcd.found()
-
-  if enable_dhcpcd
-    config_h.set_quoted('DHCPCD_PATH', dhcpcd.path())
-  endif
-endif
-config_h.set10('WITH_DHCPCD', enable_dhcpcd)
-
 config_dhcp_default = get_option('config_dhcp_default')
-if config_dhcp_default == 'dhcpcanon' and not enable_dhcpcanon
-  error(config_dhcp_default + ' has not been enabled. Please don\'t disable it or use another configuration option for main.dhcp setting')
-endif
-
-if config_dhcp_default == 'dhclient' and not enable_dhclient
-  error(config_dhcp_default + ' has not been enabled. Please don\'t disable it or use another configuration option for main.dhcp setting')
-endif
-
-if config_dhcp_default == 'dhcpcd' and not enable_dhcpcd
-  error(config_dhcp_default + ' has not been enabled. Please don\'t disable it or use another configuration option for main.dhcp setting')
-endif
-
 config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_DHCP', config_dhcp_default)
+dhcp_summary = ''
+foreach client : [ 'dhclient', 'dhcpcd', 'dhcpcanon' ]
+  client_path = get_option(client)
+  client_enable = (client_path != 'no')
+  if client_enable
+    if client_path == ''
+      client_prog = find_program(client,
+                                 '/sbin/' + client,
+                                 '/usr/sbin/pppd/' + client,
+                                 '/usr/local/sbin/' + client,
+                                 required : false)
+      if client_prog.found()
+        client_path = client_prog.path()
+      else
+        client_path = '/usr/sbin/' + client
+        message('@0@ not found, assume path @1@'.format(client, client_path))
+      endif
+    endif
+    config_h.set_quoted(client.to_upper() + '_PATH', client_path)
+  endif
+  if config_dhcp_default == client and not client_enable
+    error(client + ' has not been enabled. Please don\'t disable it or use another configuration option for main.dhcp setting')
+  endif
+  config_h.set10('WITH_' + client.to_upper(), client_enable)
+  dhcp_summary += (client + ': ' + client_enable.to_string())
+  if (client_enable)
+    dhcp_summary += (' ' + client_path)
+  endif
+  dhcp_summary += '\n'
+endforeach
 
 # OpenVSwitch integration
 enable_ovs = get_option('ovs')
@@ -982,21 +963,7 @@ if enable_netconfig
 endif
 output += '\n'
 output += '  config-dns-rc-manager-default: ' + config_dns_rc_manager_default + '\n'
-output += '\nDHCP clients (default ' + config_dhcp_default + '):\n'
-output += '  dhcpcanon: ' + enable_dhcpcanon.to_string()
-if enable_dhcpcanon
-  output += ' ' + dhcpcanon.path()
-endif
-output += '\n'
-output += '  dhclient: ' + enable_dhclient.to_string()
-if enable_dhclient
-  output += ' ' + dhclient.path()
-endif
-output += '\n'
-output += '  dhcpcd: ' + enable_dhcpcd.to_string()
-if enable_dhcpcd
-  output += ' ' + dhcpcd.path()
-endif
+output += '\nDHCP clients (default ' + config_dhcp_default + '):\n' + dhcp_summary
 output += '\n'
 output += '\nMiscellaneous:\n'
 output += '  have introspection: ' + enable_introspection.to_string() + '\n'
