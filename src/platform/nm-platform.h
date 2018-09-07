@@ -752,11 +752,14 @@ typedef struct {
 	bool l3miss:1;
 } NMPlatformLnkVxlan;
 
+#define NMP_WIREGUARD_PUBLIC_KEY_LEN 32
+#define NMP_WIREGUARD_SYMMETRIC_KEY_LEN 32
+
 typedef struct {
-	guint8 private_key[NM_WG_PUBLIC_KEY_LEN];
-	guint8 public_key[NM_WG_PUBLIC_KEY_LEN];
-	guint16 listen_port;
 	guint32 fwmark;
+	guint16 listen_port;
+	guint8 private_key[NMP_WIREGUARD_PUBLIC_KEY_LEN];
+	guint8 public_key[NMP_WIREGUARD_PUBLIC_KEY_LEN];
 } NMPlatformLnkWireGuard;
 
 typedef enum {
@@ -1463,7 +1466,8 @@ const char *nm_platform_vlan_qos_mapping_to_string (const char *name,
                                                     char *buf,
                                                     gsize len);
 
-const char *nm_platform_wireguard_peer_to_string (const NMWireGuardPeer *peer,
+struct _NMPWireGuardPeer;
+const char *nm_platform_wireguard_peer_to_string (const struct _NMPWireGuardPeer *peer,
                                                   char *buf,
                                                   gsize len);
 

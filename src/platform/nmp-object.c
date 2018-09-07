@@ -27,6 +27,7 @@
 #include <libudev.h>
 
 #include "nm-utils.h"
+#include "nm-utils/nm-secret-utils.h"
 
 #include "nm-core-utils.h"
 #include "nm-platform-utils.h"
@@ -340,124 +341,99 @@ _vlan_xgress_qos_mappings_cpy (guint *dst_n_map,
 		g_clear_pointer (dst_map, g_free);
 		*dst_n_map = src_n_map;
 		if (src_n_map > 0)
-			*dst_map = g_memdup (src_map, sizeof (*src_map) * src_n_map);
+			*dst_map = nm_memdup (src_map, sizeof (*src_map) * src_n_map);
 	}
 }
 
 /*****************************************************************************/
 
 static void
-_wireguard_peers_hash_update (gsize n_peers,
-                              const NMWireGuardPeer *peers,
-                              NMHashState *h)
+_wireguard_allowed_ip_hash_update (const NMPWireGuardAllowedIP *ip,
+                                   NMHashState *h)
 {
-	gsize i, j;
+	nm_hash_update_vals (h, ip->family,
+	                        ip->mask);
 
-	nm_hash_update_val (h, n_peers);
-	for (i = 0; i < n_peers; i++) {
-		const NMWireGuardPeer *p = &peers[i];
-
-		nm_hash_update (h, p->public_key, sizeof (p->public_key));
-		nm_hash_update (h, p->preshared_key, sizeof (p->preshared_key));
-		nm_hash_update_vals (h,
-	                             p->persistent_keepalive_interval,
-	                             p->allowedips_len,
-	                             p->rx_bytes,
-	                             p->tx_bytes,
-	                             p->last_handshake_time.tv_sec,
-	                             p->last_handshake_time.tv_nsec,
-	                             p->endpoint.addr.sa_family);
-
-		if (p->endpoint.addr.sa_family == AF_INET)
-			nm_hash_update_val (h, p->endpoint.addr4);
-		else if (p->endpoint.addr.sa_family == AF_INET6)
-			nm_hash_update_val (h, p->endpoint.addr6);
-		else if (p->endpoint.addr.sa_family != AF_UNSPEC)
-			g_assert_not_reached ();
-
-		for (j = 0; j < p->allowedips_len; j++) {
-			const NMWireGuardAllowedIP *ip = &p->allowedips[j];
-
-			nm_hash_update_vals (h, ip->family, ip->mask);
-
-			if (ip->family == AF_INET)
-				nm_hash_update_val (h, ip->ip.addr4);
-			else if (ip->family == AF_INET6)
-				nm_hash_update_val (h, ip->ip.addr6);
-			else if (ip->family != AF_UNSPEC)
-				g_assert_not_reached ();
-		}
-	}
+	if (ip->family == AF_INET)
+		nm_hash_update_val (h, ip->addr.addr4);
+	else if (ip->family == AF_INET6)
+		nm_hash_update_val (h, ip->addr.addr6);
 }
 
 static int
-_wireguard_peers_cmp (gsize n_peers,
-                      const NMWireGuardPeer *p1,
-                      const NMWireGuardPeer *p2)
+_wireguard_allowed_ip_cmp (const NMPWireGuardAllowedIP *a,
+                           const NMPWireGuardAllowedIP *b)
 {
-	gsize i, j;
+	NM_CMP_SELF (a, b);
 
-	for (i = 0; i < n_peers; i++) {
-		const NMWireGuardPeer *a = &p1[i];
-		const NMWireGuardPeer *b = &p2[i];
+	NM_CMP_FIELD (a, b, family);
+	NM_CMP_FIELD (a, b, mask);
 
-		NM_CMP_FIELD (a, b, last_handshake_time.tv_sec);
-		NM_CMP_FIELD (a, b, last_handshake_time.tv_nsec);
-		NM_CMP_FIELD (a, b, rx_bytes);
-		NM_CMP_FIELD (a, b, tx_bytes);
-		NM_CMP_FIELD (a, b, allowedips_len);
-		NM_CMP_FIELD (a, b, persistent_keepalive_interval);
-		NM_CMP_FIELD (a, b, endpoint.addr.sa_family);
-		NM_CMP_FIELD_MEMCMP (a, b, public_key);
-		NM_CMP_FIELD_MEMCMP (a, b, preshared_key);
-
-		if (a->endpoint.addr.sa_family == AF_INET)
-			NM_CMP_FIELD_MEMCMP (a, b, endpoint.addr4);
-		else if (a->endpoint.addr.sa_family == AF_INET6)
-			NM_CMP_FIELD_MEMCMP (a, b, endpoint.addr6);
-		else if (a->endpoint.addr.sa_family != AF_UNSPEC)
-			g_assert_not_reached ();
-
-		for (j = 0; j < a->allowedips_len; j++) {
-			const NMWireGuardAllowedIP *aip = &a->allowedips[j];
-			const NMWireGuardAllowedIP *bip = &b->allowedips[j];
-
-			NM_CMP_FIELD (aip, bip, family);
-			NM_CMP_FIELD (aip, bip, mask);
-
-			if (aip->family == AF_INET)
-				NM_CMP_FIELD_MEMCMP (&aip->ip, &bip->ip, addr4);
-			else if (aip->family == AF_INET6)
-				NM_CMP_FIELD_MEMCMP (&aip->ip, &bip->ip, addr6);
-			else if (aip->family != AF_UNSPEC)
-				g_assert_not_reached ();
-		}
-	}
+	if (a->family == AF_INET)
+		NM_CMP_FIELD (a, b, addr.addr4);
+	else if (a->family == AF_INET6)
+		NM_CMP_FIELD_IN6ADDR (a, b, addr.addr6);
 
 	return 0;
 }
 
 static void
-_wireguard_peers_cpy (gsize *dst_n_peers,
-                      NMWireGuardPeer **dst_peers,
-                      gsize src_n_peers,
-                      const NMWireGuardPeer *src_peers)
+_wireguard_peer_hash_update (const NMPWireGuardPeer *peer,
+                             NMHashState *h)
 {
-	if (src_n_peers == 0) {
-		g_clear_pointer (dst_peers, g_free);
-		*dst_n_peers = 0;
-	} else if (   src_n_peers != *dst_n_peers
-	           || _wireguard_peers_cmp (src_n_peers, *dst_peers, src_peers) != 0) {
-		gsize i;
-		g_clear_pointer (dst_peers, g_free);
-		*dst_n_peers = src_n_peers;
-		if (src_n_peers > 0)
-			*dst_peers = g_memdup (src_peers, sizeof (*src_peers) * src_n_peers);
-		for (i = 0; i < src_n_peers; i++) {
-			dst_peers[i]->allowedips = g_memdup (src_peers[i].allowedips, sizeof (src_peers[i].allowedips) * src_peers[i].allowedips_len);
-			dst_peers[i]->allowedips_len = src_peers[i].allowedips_len;
-		}
+	guint i;
+
+	nm_hash_update (h, peer->public_key, sizeof (peer->public_key));
+	nm_hash_update (h, peer->preshared_key, sizeof (peer->preshared_key));
+	nm_hash_update_vals (h,
+	                     peer->persistent_keepalive_interval,
+	                     peer->allowed_ips_len,
+	                     peer->rx_bytes,
+	                     peer->tx_bytes,
+	                     peer->last_handshake_time.tv_sec,
+	                     peer->last_handshake_time.tv_nsec,
+	                     peer->endpoint_port,
+	                     peer->endpoint_family);
+
+	if (peer->endpoint_family == AF_INET)
+		nm_hash_update_val (h, peer->endpoint_addr.addr4);
+	else if (peer->endpoint_family == AF_INET6)
+		nm_hash_update_val (h, peer->endpoint_addr.addr6);
+
+	for (i = 0; i < peer->allowed_ips_len; i++)
+		_wireguard_allowed_ip_hash_update (&peer->allowed_ips[i], h);
+}
+
+static int
+_wireguard_peer_cmp (const NMPWireGuardPeer *a,
+                     const NMPWireGuardPeer *b)
+{
+	guint i;
+
+	NM_CMP_SELF (a, b);
+
+	NM_CMP_FIELD (a, b, last_handshake_time.tv_sec);
+	NM_CMP_FIELD (a, b, last_handshake_time.tv_nsec);
+	NM_CMP_FIELD (a, b, rx_bytes);
+	NM_CMP_FIELD (a, b, tx_bytes);
+	NM_CMP_FIELD (a, b, allowed_ips_len);
+	NM_CMP_FIELD (a, b, persistent_keepalive_interval);
+	NM_CMP_FIELD (a, b, endpoint_port);
+	NM_CMP_FIELD (a, b, endpoint_family);
+	NM_CMP_FIELD_MEMCMP (a, b, public_key);
+	NM_CMP_FIELD_MEMCMP (a, b, preshared_key);
+
+	if (a->endpoint_family == AF_INET)
+		NM_CMP_FIELD (a, b, endpoint_addr.addr4);
+	else if (a->endpoint_family == AF_INET6)
+		NM_CMP_FIELD_IN6ADDR (a, b, endpoint_addr.addr6);
+
+	for (i = 0; i < a->allowed_ips_len; i++) {
+		NM_CMP_RETURN (_wireguard_allowed_ip_cmp (&a->allowed_ips[i],
+		                                          &b->allowed_ips[i]));
 	}
+
+	return 0;
 }
 
 /*****************************************************************************/
@@ -587,12 +563,25 @@ _vt_cmd_obj_dispose_lnk_vlan (NMPObject *obj)
 }
 
 static void
+_wireguard_clear (NMPObjectLnkWireGuard *lnk)
+{
+	guint i;
+
+	nm_explicit_bzero (lnk->_public.private_key,
+	                   sizeof (lnk->_public.private_key));
+	for (i = 0; i < lnk->peers_len; i++) {
+		NMPWireGuardPeer *peer = (NMPWireGuardPeer *) &lnk->peers[i];
+
+		nm_explicit_bzero (peer->preshared_key, sizeof (peer->preshared_key));
+	}
+	g_free ((gpointer) lnk->peers);
+	g_free ((gpointer) lnk->_allowed_ips_buf);
+}
+
+static void
 _vt_cmd_obj_dispose_lnk_wireguard (NMPObject *obj)
 {
-	if (obj->_lnk_wireguard.peers_len)
-		g_free (obj->_lnk_wireguard.peers[0].allowedips);
-
-	g_free (obj->_lnk_wireguard.peers);
+	_wireguard_clear (&obj->_lnk_wireguard);
 }
 
 static NMPObject *
@@ -760,31 +749,35 @@ static const char *
 _vt_cmd_obj_to_string_link (const NMPObject *obj, NMPObjectToStringMode to_string_mode, char *buf, gsize buf_size)
 {
 	const NMPClass *klass = NMP_OBJECT_GET_CLASS (obj);
-	char buf2[sizeof (_nm_utils_to_string_buffer)];
-	char buf3[sizeof (_nm_utils_to_string_buffer)];
+	char *b = buf;
 
 	switch (to_string_mode) {
 	case NMP_OBJECT_TO_STRING_ID:
 		return klass->cmd_plobj_to_string_id (&obj->object, buf, buf_size);
 	case NMP_OBJECT_TO_STRING_ALL:
-		g_snprintf (buf, buf_size,
-		            "[%s,%p,%u,%calive,%cvisible,%cin-nl,%p; %s]",
-		            klass->obj_type_name, obj, obj->parent._ref_count,
-		            nmp_object_is_alive (obj) ? '+' : '-',
-		            nmp_object_is_visible (obj) ? '+' : '-',
-		            obj->_link.netlink.is_in_netlink ? '+' : '-',
-		            obj->_link.udev.device,
-		            nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, buf2, sizeof (buf2)));
+		nm_utils_strbuf_append (&b, &buf_size,
+		                        "[%s,%p,%u,%calive,%cvisible,%cin-nl,%p; ",
+		                        klass->obj_type_name, obj, obj->parent._ref_count,
+		                        nmp_object_is_alive (obj) ? '+' : '-',
+		                        nmp_object_is_visible (obj) ? '+' : '-',
+		                        obj->_link.netlink.is_in_netlink ? '+' : '-',
+		                        obj->_link.udev.device);
+		NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, b, buf_size);
+		nm_utils_strbuf_seek_end (&b, &buf_size);
+		if (obj->_link.netlink.lnk) {
+			nm_utils_strbuf_append_str (&b, &buf_size, "; ");
+			nmp_object_to_string (obj->_link.netlink.lnk, NMP_OBJECT_TO_STRING_ALL, b, buf_size);
+			nm_utils_strbuf_seek_end (&b, &buf_size);
+		}
+		nm_utils_strbuf_append_c (&b, &buf_size, ']');
 		return buf;
 	case NMP_OBJECT_TO_STRING_PUBLIC:
+		NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, b, buf_size);
 		if (obj->_link.netlink.lnk) {
-			NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, buf2, sizeof (buf2));
-			nmp_object_to_string (obj->_link.netlink.lnk, NMP_OBJECT_TO_STRING_PUBLIC, buf3, sizeof (buf3));
-			g_snprintf (buf, buf_size,
-			            "%s; %s",
-			            buf2, buf3);
-		} else
-			NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, buf, buf_size);
+			nm_utils_strbuf_seek_end (&b, &buf_size);
+			nm_utils_strbuf_append_str (&b, &buf_size, "; ");
+			nmp_object_to_string (obj->_link.netlink.lnk, NMP_OBJECT_TO_STRING_PUBLIC, b, buf_size);
+		}
 		return buf;
 	default:
 		g_return_val_if_reached ("ERROR");
@@ -855,7 +848,7 @@ _vt_cmd_obj_to_string_lnk_wireguard (const NMPObject *obj, NMPObjectToStringMode
 	const NMPClass *klass;
 	char buf2[sizeof (_nm_utils_to_string_buffer)];
 	char *b;
-	gsize i, l;
+	guint i;
 
 	klass = NMP_OBJECT_GET_CLASS (obj);
 
@@ -867,23 +860,26 @@ _vt_cmd_obj_to_string_lnk_wireguard (const NMPObject *obj, NMPObjectToStringMode
 		b = buf;
 
 		nm_utils_strbuf_append (&b, &buf_size,
-		                        "[%s,%p,%u,%calive,%cvisible; %s "
-		                        "peers (%" G_GSIZE_FORMAT ") {",
+		                        "[%s,%p,%u,%calive,%cvisible; %s"
+		                        "%s",
 		                        klass->obj_type_name, obj, obj->parent._ref_count,
 		                        nmp_object_is_alive (obj) ? '+' : '-',
 		                        nmp_object_is_visible (obj) ? '+' : '-',
 		                        nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, buf2, sizeof (buf2)),
-		                        obj->_lnk_wireguard.peers_len);
+		                        obj->_lnk_wireguard.peers_len > 0
+		                          ? " peers {"
+		                          : "");
 
 		for (i = 0; i < obj->_lnk_wireguard.peers_len; i++) {
-			const NMWireGuardPeer *peer = &obj->_lnk_wireguard.peers[i];
-			nm_platform_wireguard_peer_to_string (peer, b, buf_size);
-			l = strlen (b);
-			b += l;
-			buf_size -= l;
-		}
+			const NMPWireGuardPeer *peer = &obj->_lnk_wireguard.peers[i];
 
-		nm_utils_strbuf_append_str (&b, &buf_size, " }");
+			nm_utils_strbuf_append_str (&b, &buf_size, " { ");
+			nm_platform_wireguard_peer_to_string (peer, b, buf_size);
+			nm_utils_strbuf_seek_end (&b, &buf_size);
+			nm_utils_strbuf_append_str (&b, &buf_size, " }");
+		}
+		if (obj->_lnk_wireguard.peers_len)
+			nm_utils_strbuf_append_str (&b, &buf_size, " }");
 
 		return buf;
 	case NMP_OBJECT_TO_STRING_PUBLIC:
@@ -943,6 +939,7 @@ _vt_cmd_obj_hash_update_link (const NMPObject *obj, NMHashState *h)
 	nm_platform_link_hash_update (&obj->link, h);
 	nm_hash_update_vals (h,
 	                     obj->_link.netlink.is_in_netlink,
+	                     obj->_link.wireguard_family_id,
 	                     obj->_link.udev.device);
 	if (obj->_link.netlink.lnk)
 		nmp_object_hash_update (obj->_link.netlink.lnk, h);
@@ -965,10 +962,15 @@ _vt_cmd_obj_hash_update_lnk_vlan (const NMPObject *obj, NMHashState *h)
 static void
 _vt_cmd_obj_hash_update_lnk_wireguard (const NMPObject *obj, NMHashState *h)
 {
+	guint i;
+
 	nm_assert (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LNK_WIREGUARD);
 
 	nm_platform_lnk_wireguard_hash_update (&obj->lnk_wireguard, h);
-	_wireguard_peers_hash_update (obj->_lnk_wireguard.peers_len, obj->_lnk_wireguard.peers, h);
+
+	nm_hash_update_val (h, obj->_lnk_wireguard.peers_len);
+	for (i = 0; i < obj->_lnk_wireguard.peers_len; i++)
+		_wireguard_peer_hash_update (&obj->_lnk_wireguard.peers[i], h);
 }
 
 int
@@ -976,12 +978,7 @@ nmp_object_cmp (const NMPObject *obj1, const NMPObject *obj2)
 {
 	const NMPClass *klass1, *klass2;
 
-	if (obj1 == obj2)
-		return 0;
-	if (!obj1)
-		return -1;
-	if (!obj2)
-		return 1;
+	NM_CMP_SELF (obj1, obj2);
 
 	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj1), -1);
 	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj2), 1);
@@ -1002,16 +999,11 @@ nmp_object_cmp (const NMPObject *obj1, const NMPObject *obj2)
 static int
 _vt_cmd_obj_cmp_link (const NMPObject *obj1, const NMPObject *obj2)
 {
-	int i;
+	NM_CMP_RETURN (nm_platform_link_cmp (&obj1->link, &obj2->link));
+	NM_CMP_DIRECT (obj1->_link.netlink.is_in_netlink, obj2->_link.netlink.is_in_netlink);
+	NM_CMP_RETURN (nmp_object_cmp (obj1->_link.netlink.lnk, obj2->_link.netlink.lnk));
+	NM_CMP_DIRECT (obj1->_link.wireguard_family_id, obj2->_link.wireguard_family_id);
 
-	i = nm_platform_link_cmp (&obj1->link, &obj2->link);
-	if (i)
-		return i;
-	if (obj1->_link.netlink.is_in_netlink != obj2->_link.netlink.is_in_netlink)
-		return obj1->_link.netlink.is_in_netlink ? -1 : 1;
-	i = nmp_object_cmp (obj1->_link.netlink.lnk, obj2->_link.netlink.lnk);
-	if (i)
-		return i;
 	if (obj1->_link.udev.device != obj2->_link.udev.device) {
 		if (!obj1->_link.udev.device)
 			return -1;
@@ -1024,6 +1016,7 @@ _vt_cmd_obj_cmp_link (const NMPObject *obj1, const NMPObject *obj2)
 		 * Have this check as very last. */
 		return (obj1->_link.udev.device < obj2->_link.udev.device) ? -1 : 1;
 	}
+
 	return 0;
 }
 
@@ -1052,16 +1045,16 @@ _vt_cmd_obj_cmp_lnk_vlan (const NMPObject *obj1, const NMPObject *obj2)
 static int
 _vt_cmd_obj_cmp_lnk_wireguard (const NMPObject *obj1, const NMPObject *obj2)
 {
-	int c;
+	guint i;
 
-	c = nm_platform_lnk_wireguard_cmp (&obj1->lnk_wireguard, &obj2->lnk_wireguard);
-	if (c)
-		return c;
+	NM_CMP_RETURN (nm_platform_lnk_wireguard_cmp (&obj1->lnk_wireguard, &obj2->lnk_wireguard));
 
-	if (obj1->_lnk_wireguard.peers_len != obj2->_lnk_wireguard.peers_len)
-		return obj1->_lnk_wireguard.peers_len < obj2->_lnk_wireguard.peers_len ? -1 : 1;
+	NM_CMP_FIELD (obj1, obj2, _lnk_wireguard.peers_len);
 
-	return _wireguard_peers_cmp(obj1->_lnk_wireguard.peers_len, obj1->_lnk_wireguard.peers, obj2->_lnk_wireguard.peers);
+	for (i = 0; i < obj1->_lnk_wireguard.peers_len; i++)
+		NM_CMP_RETURN (_wireguard_peer_cmp (&obj1->_lnk_wireguard.peers[i], &obj2->_lnk_wireguard.peers[i]));
+
+	return 0;
 }
 
 /* @src is a const object, which is not entirely correct for link types, where
@@ -1133,9 +1126,36 @@ _vt_cmd_obj_copy_lnk_vlan (NMPObject *dst, const NMPObject *src)
 static void
 _vt_cmd_obj_copy_lnk_wireguard (NMPObject *dst, const NMPObject *src)
 {
-	dst->lnk_wireguard = src->lnk_wireguard;
-	_wireguard_peers_cpy (&dst->_lnk_wireguard.peers_len, &dst->_lnk_wireguard.peers,
-	                      src->_lnk_wireguard.peers_len, src->_lnk_wireguard.peers);
+	guint i;
+
+	nm_assert (dst != src);
+
+	_wireguard_clear (&dst->_lnk_wireguard);
+
+	dst->_lnk_wireguard = src->_lnk_wireguard;
+
+	dst->_lnk_wireguard.peers = nm_memdup (dst->_lnk_wireguard.peers,
+	                                       sizeof (NMPWireGuardPeer) * dst->_lnk_wireguard.peers_len);
+	dst->_lnk_wireguard._allowed_ips_buf = nm_memdup (dst->_lnk_wireguard._allowed_ips_buf,
+	                                                  sizeof (NMPWireGuardAllowedIP) * dst->_lnk_wireguard._allowed_ips_buf_len);
+
+	/* all the peers' pointers point into the buffer. They need to be readjusted. */
+	for (i = 0; i < dst->_lnk_wireguard.peers_len; i++) {
+		NMPWireGuardPeer *peer = (NMPWireGuardPeer *) &dst->_lnk_wireguard.peers[i];
+
+		if (peer->allowed_ips_len == 0) {
+			nm_assert (!peer->allowed_ips);
+			continue;
+		}
+		nm_assert (dst->_lnk_wireguard._allowed_ips_buf_len > 0);
+		nm_assert (src->_lnk_wireguard._allowed_ips_buf);
+		nm_assert (peer->allowed_ips >= src->_lnk_wireguard._allowed_ips_buf);
+		nm_assert (&peer->allowed_ips[peer->allowed_ips_len] <= &src->_lnk_wireguard._allowed_ips_buf[src->_lnk_wireguard._allowed_ips_buf_len]);
+
+		peer->allowed_ips = &dst->_lnk_wireguard._allowed_ips_buf[peer->allowed_ips - src->_lnk_wireguard._allowed_ips_buf];
+	}
+
+	nm_assert (nmp_object_equal (src, dst));
 }
 
 #define _vt_cmd_plobj_id_copy(type, plat_type, cmd) \
@@ -3080,4 +3100,3 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_vlan_cmp,
 	},
 };
-

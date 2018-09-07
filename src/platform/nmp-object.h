@@ -27,6 +27,36 @@
 
 struct udev_device;
 
+/*****************************************************************************/
+
+typedef struct {
+	NMIPAddr addr;
+	guint8 family;
+	guint8 mask;
+} NMPWireGuardAllowedIP;
+
+typedef struct _NMPWireGuardPeer {
+	NMIPAddr endpoint_addr;
+	struct timespec last_handshake_time;
+	guint64 rx_bytes;
+	guint64 tx_bytes;
+	union {
+		const NMPWireGuardAllowedIP *allowed_ips;
+		guint _construct_idx_start;
+	};
+	union {
+		guint allowed_ips_len;
+		guint _construct_idx_end;
+	};
+	guint16 persistent_keepalive_interval;
+	guint16 endpoint_port;
+	guint8 public_key[NMP_WIREGUARD_PUBLIC_KEY_LEN];
+	guint8 preshared_key[NMP_WIREGUARD_SYMMETRIC_KEY_LEN];
+	guint8 endpoint_family;
+} NMPWireGuardPeer;
+
+/*****************************************************************************/
+
 typedef enum { /*< skip >*/
 	NMP_OBJECT_TO_STRING_ID,
 	NMP_OBJECT_TO_STRING_PUBLIC,
@@ -168,6 +198,9 @@ typedef struct {
 	/* Auxiliary data object for Wi-Fi and WPAN */
 	GObject *ext_data;
 
+	/* FIXME: not every NMPObjectLink should pay the price for tracking
+	 * the wireguard family id. This should be tracked via ext_data, which
+	 * would be exactly the right place. */
 	int wireguard_family_id;
 } NMPObjectLink;
 
@@ -220,9 +253,10 @@ typedef struct {
 
 typedef struct {
 	NMPlatformLnkWireGuard _public;
-
-	gsize peers_len;
-	NMWireGuardPeer *peers;
+	const NMPWireGuardPeer *peers;
+	const NMPWireGuardAllowedIP *_allowed_ips_buf;
+	guint peers_len;
+	guint _allowed_ips_buf_len;
 } NMPObjectLnkWireGuard;
 
 typedef struct {
