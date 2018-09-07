@@ -1,8 +1,5 @@
 #mesondefine BINDIR
 #mesondefine DATADIR
-#mesondefine DHCLIENT_PATH
-#mesondefine DHCPCANON_PATH
-#mesondefine DHCPCD_PATH
 #mesondefine LIBEXECDIR
 #mesondefine LOCALSTATEDIR
 #mesondefine NMCONFDIR
