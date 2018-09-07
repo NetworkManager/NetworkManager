@@ -842,7 +842,7 @@ AM_CONDITIONAL(WITH_OPENVSWITCH, test "${enable_ovs}" = "yes")
 
 # DHCP client support
 AC_ARG_WITH([dhclient],
-            AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient 4.x support]))
+            AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient support]))
 if test "$with_dhclient" != "no"; then
 	with_dhclient_="$with_dhclient"
 	AC_PATH_PROGS(with_dhclient, dhclient, no, /sbin:/usr/sbin:/usr/local/sbin)
@@ -850,10 +850,6 @@ if test "$with_dhclient" != "no"; then
 		if test "$with_dhclient_" == yes; then
 			AC_MSG_WARN([dhclient not found, assume path /usr/sbin/dhclient])
 			with_dhclient=/usr/sbin/dhclient
-		fi
-	else
-		if ! $with_dhclient --version 2>&1 | grep -q "^isc-dhclient-4\."; then
-			AC_MSG_WARN([Seems version of dhclient $with_dhclient is too old, version 4.x or newer is required.])
 		fi
 	fi
 fi
