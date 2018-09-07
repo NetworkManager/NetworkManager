@@ -14,6 +14,16 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Add match setting to restrict a profile to devices based on
   a list of interface names with globbing supported.
 * Add support for ethtool offload features.
+* Add support for configuring llmnr.
+* Deprecate endian-dependent D-Bus API and add new API that can be
+  used instead (rh#1153559).
+* Add support for ip6gre/ip6gretap IP tunnels.
+* Add support for detecting WireGuard interfaces (WireGuard VPN cannot
+  be controlled via NetworkManager).
+* Add support for configuring SR-IOV devices.
+* Improve error reporting of activation when no device is available.
+* Support reapplying changes of the route metric.
+* Support EAP profiles with iwd Wi-Fi backend.
 
 The following changes were backported to 1.12.x releases between 1.12.0
 and 1.12.2 are also present in NetworkManager-1.14:
