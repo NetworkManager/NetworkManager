@@ -2927,7 +2927,9 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * "link-local", these properties must be empty.
 	 *
 	 * For IPv4 method "shared", the IP subnet can be configured by adding one
-	 * manual IPv4 address or otherwise 10.42.x.0/24 is chosen.
+	 * manual IPv4 address or otherwise 10.42.x.0/24 is chosen. Note that the
+	 * shared method must be configured on the interface which shares the internet
+	 * to a subnet, not on the uplink which is shared.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_METHOD,
