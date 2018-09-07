@@ -64,6 +64,16 @@ containsElement () {
     return 1
 }
 
+git_remote_add_gnome() {
+    git remote add "${2-origin}" "https://gitlab.gnome.org/GNOME/$1.git" && \
+    git remote 'set-url' --push "${2-origin}" "git@gitlab.gnome.org:GNOME/$1.git"
+}
+
+git_remote_add_github() {
+    git remote add "${2-origin}" "git://github.com/$1.git"
+    git remote 'set-url' --push "${2-origin}" "git@github.com:$1.git"
+}
+
 srcdir="$(readlink -f "$(git rev-parse --show-toplevel 2>/dev/null)")"
 [[ "x$srcdir" != x ]] || die "Could not detect dist-git directory (are you inside the git working directory?)"
 cd "$srcdir" || die "Could not switch to dist-git directory"
@@ -343,39 +353,24 @@ pushd "$DIRNAME"
         git remote 'set-url' --push origin "ssh://$USER@git.freedesktop.org/git/ModemManager/ModemManager"
         git config --add remote.origin.fetch refs/tags/*:refs/tags/*
     elif [[ "$BUILD_TYPE" == "libnl3" ]]; then
-        git remote add origin "git://github.com/thom311/libnl.git"
-        git remote 'set-url' --push origin "git@github.com:thom311/libnl.git"
-    elif [[ "$BUILD_TYPE" == "network-manager-applet" ]]; then
-        git remote add origin "git://git.gnome.org/network-manager-applet";
-        git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-applet"
-    elif [[ "$BUILD_TYPE" == "NetworkManager-openvpn" ]]; then
-        git remote add origin "git://git.gnome.org/network-manager-openvpn";
-        git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-openvpn"
-    elif [[ "$BUILD_TYPE" == "NetworkManager-openconnect" ]]; then
-        git remote add origin "git://git.gnome.org/network-manager-openconnect";
-        git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-openconnect"
+        git_remote_add_github thom311/libnl
+    elif [[ "$BUILD_TYPE" == "network-manager-applet" ||
+            "$BUILD_TYPE" == "gnome-control-center" ||
+            "$BUILD_TYPE" == "NetworkManager-fortisslvpn" ||
+            "$BUILD_TYPE" == "NetworkManager-libreswan" ||
+            "$BUILD_TYPE" == "NetworkManager-openconnect" ||
+            "$BUILD_TYPE" == "NetworkManager-openvpn" ||
+            "$BUILD_TYPE" == "NetworkManager-pptp" ||
+            "$BUILD_TYPE" == "NetworkManager-vpnc" ]]; then
+        git_remote_add_gnome "$BUILD_TYPE"
+    elif [[ "$BUILD_TYPE" == "glib2" ]]; then
+        git_remote_add_gnome glib
     elif [[ "$BUILD_TYPE" == "NetworkManager-openswan" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-openswan";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-openswan"
-    elif [[ "$BUILD_TYPE" == "NetworkManager-libreswan" ]]; then
-        git remote add origin "git://git.gnome.org/network-manager-libreswan";
-        git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-libreswan"
-    elif [[ "$BUILD_TYPE" == "NetworkManager-fortisslvpn" ]]; then
-        git remote add origin "git://git.gnome.org/network-manager-fortisslvpn";
-        git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-fortisslvpn"
-    elif [[ "$BUILD_TYPE" == "NetworkManager-pptp" ]]; then
-        git remote add origin "git://git.gnome.org/network-manager-pptp";
-        git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-pptp"
-    elif [[ "$BUILD_TYPE" == "NetworkManager-vpnc" ]]; then
-        git remote add origin "git://git.gnome.org/network-manager-vpnc";
-        git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-vpnc"
-    elif [[ "$BUILD_TYPE" == "glib2" ]]; then
-        git remote add origin "git://git.gnome.org/glib"
-        git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/glib"
     elif [[ "$BUILD_TYPE" == "wpa_supplicant" ]]; then
         git remote add origin "git://w1.fi/hostap.git"
-        git remote add nm "https://github.com/NetworkManager/hostap.git"
-        git remote set-url --push nm 'git@github.com:NetworkManager/hostap.git'
+        git_remote_add_github NetworkManager/hostap nm
     elif [[ "$BUILD_TYPE" == "mipv6-daemon" ]]; then
         git remote add origin "git://git.umip.org/umip.git";
     elif [[ "$BUILD_TYPE" == "libqmi" ]]; then
@@ -386,10 +381,8 @@ pushd "$DIRNAME"
         git remote add origin "https://git.fedorahosted.org/git/initscripts.git";
     elif [[ "$BUILD_TYPE" == "iproute" ]]; then
         git remote add origin "git://git.kernel.org/pub/scm/linux/kernel/git/shemminger/iproute2.git"
-    elif [[ "$BUILD_TYPE" == "gnome-control-center" ]]; then
-        git remote add origin "git://git.gnome.org/gnome-control-center"
     elif [[ "$BUILD_TYPE" == "vpnc" ]]; then
-        git remote add origin "https://github.com/ndpgroup/vpnc.git"
+        git_remote_add_github ndpgroup/vpnc
     fi
     LOCAL_MIRROR_URL="$(LANG=C git remote -v | sed -n 's/^origin\t*\([^\t].*\) (fetch)/\1/p')"
     LOCAL_MIRROR="$(get_local_mirror "$LOCAL_MIRROR_URL")"
