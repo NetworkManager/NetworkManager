@@ -49,8 +49,8 @@ option('ifcfg_rh', type: 'boolean', value: false, description: 'enable ifcfg-rh 
 option('ifupdown', type: 'boolean', value: false, description: 'enable ifupdown configuration plugin (Debian/Ubuntu)')
 
 # handlers for resolv.conf
-option('resolvconf', type: 'array', value: ['resolvconf', '/sbin/resolvconf', '/usr/sbin/resolvconf', '/usr/local/sbin/resolvconf'], description: 'Enable resolvconf support')
-option('netconfig', type: 'array', value: ['netconfig', '/sbin/netconfig', '/usr/sbin/netconfig', '/usr/local/sbin/netconfig'], description: 'Enable SUSE netconfig support')
+option('resolvconf', type: 'string', value: '', description: 'Enable resolvconf support')
+option('netconfig', type: 'string', value: '', description: 'Enable SUSE netconfig support')
 option('config_dns_rc_manager_default', type: 'combo', choices: ['symlink', 'file', 'netconfig', 'resolvconf'], value: 'symlink', description: 'Configure default value for main.rc-manager setting')
 
 # dhcp clients
