@@ -2366,6 +2366,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 
 	if (   completed_from_cache
 	    && (   lnk_data_complete_from_cache
+	        || need_ext_data
 	        || address_complete_from_cache
 	        || !af_inet6_token_valid
 	        || !af_inet6_addr_gen_mode_valid
