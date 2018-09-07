@@ -603,9 +603,6 @@ if (test "${enable_teamdctl}" = "yes"); then
 	fi
 	# temporary bug workaround
 	LIBTEAMDCTL_CFLAGS=`echo $LIBTEAMDCTL_CFLAGS | sed -e 's:/teamdctl.h::'`
-	AC_DEFINE(WITH_TEAMDCTL, 1, [Define if you have Teamd control support])
-else
-	AC_DEFINE(WITH_TEAMDCTL, 0, [Define if you have Teamd control support])
 fi
 AM_CONDITIONAL(WITH_TEAMDCTL, test "${enable_teamdctl}" = "yes")
 
@@ -674,16 +671,6 @@ if test "${have_crypto_nss}" = "yes"; then
 fi
 AM_CONDITIONAL(HAVE_CRYPTO_GNUTLS, test "${have_crypto_gnutls}" = 'yes')
 AM_CONDITIONAL(HAVE_CRYPTO_NSS, test "${have_crypto_nss}" = 'yes')
-if test "${have_crypto_gnutls}" = 'yes'; then
-	AC_DEFINE(HAVE_CRYPTO_GNUTLS, 1, [Define if you have gnutls support])
-else
-	AC_DEFINE(HAVE_CRYPTO_GNUTLS, 0, [Define if you have gnutls support])
-fi
-if test "${have_crypto_nss}" = 'yes'; then
-	AC_DEFINE(HAVE_CRYPTO_NSS, 1, [Define if you have nss support])
-else
-	AC_DEFINE(HAVE_CRYPTO_NSS, 0, [Define if you have nss support])
-fi
 
 AC_ARG_WITH(crypto,
             AS_HELP_STRING([--with-crypto=nss|gnutls],
@@ -773,12 +760,6 @@ if (test "${with_modem_manager_1}" != "no"); then
 		with_modem_manager_1="yes"
 	fi
 fi
-
-if (test "${with_modem_manager_1}" = "yes"); then
-	AC_DEFINE(WITH_MODEM_MANAGER_1, 1, [Define if you have ModemManager1 support])
-else
-	AC_DEFINE(WITH_MODEM_MANAGER_1, 0, [Define if you have ModemManager1 support])
-fi
 AM_CONDITIONAL(WITH_MODEM_MANAGER_1, test "${with_modem_manager_1}" = "yes")
 
 # Bluez5 DUN support
@@ -834,9 +815,6 @@ if test "${enable_ovs}" != "no"; then
 	if test "$have_jansson" = "no"; then
 		AC_MSG_ERROR(Jansson is required for ovs support)
 	fi
-	AC_DEFINE(WITH_OPENVSWITCH, 1, [Define if you have OpenVSwitch support])
-else
-	AC_DEFINE(WITH_OPENVSWITCH, 0, [Define if you have OpenVSwitch support])
 fi
 AM_CONDITIONAL(WITH_OPENVSWITCH, test "${enable_ovs}" = "yes")
 
