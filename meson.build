@@ -652,19 +652,34 @@ endif
 
 config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_RC_MANAGER', config_dns_rc_manager_default)
 
-# iptables path
-config_h.set_quoted('IPTABLES_PATH', find_program(get_option('iptables')).path())
+# external misc tools paths
+default_paths = ['/sbin', '/usr/sbin']
+dnssec_ts_paths = ['/usr/local/libexec',
+                   '/usr/local/lib',
+                   '/usr/local/lib/dnssec-trigger',
+                   '/usr/libexec',
+                   '/usr/lib',
+                   '/usr/lib/dnssec-trigger']
 
-# dnsmasq path
-config_h.set_quoted('DNSMASQ_PATH', find_program(get_option('dnsmasq')).path())
+# 0: cmdline option, 1: paths, 2: fallback, 3: config.h option
+progs = [['iptables',       default_paths,   '/sbin/iptables'],
+         ['dnsmasq',        default_paths,   ''],
+         ['dnssec_trigger', dnssec_ts_paths, join_paths(nm_libexecdir, 'dnssec-trigger-script'), 'DNSSEC_TRIGGER_SCRIPT'],
+        ]
 
-# dnssec-trigger-script path
-dnssec_trigger_script = find_program(get_option('dnssec_trigger'), required: false)
-if dnssec_trigger_script.found()
-  config_h.set_quoted('DNSSEC_TRIGGER_SCRIPT', dnssec_trigger_script.path())
-else
-  config_h.set_quoted('DNSSEC_TRIGGER_SCRIPT', join_paths(nm_libexecdir, 'dnssec-trigger-script'))
-endif
+foreach prog : progs
+  path = get_option(prog[0])
+  if path == ''
+    search_paths = [ prog[0] ]
+    foreach path : prog[1]
+      search_paths += (path + '/' + prog[0])
+    endforeach
+    exe = find_program(search_paths, required : false)
+    path = exe.found() ? exe.path() : prog[2]
+  endif
+  name = prog.length() > 3 ? prog[3] : (prog[0].to_upper() + '_PATH')
+  config_h.set_quoted(name, path)
+endforeach
 
 # system CA certificates path
 system_ca_path = get_option('system_ca_path')
