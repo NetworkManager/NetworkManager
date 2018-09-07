@@ -216,8 +216,8 @@ nmtst_platform_ip4_routes_equal (const NMPlatformIP4Route *a, const NMPlatformIP
 	g_assert (b);
 
 	if (ignore_order) {
-		a = c_a = g_memdup (a, sizeof (NMPlatformIP4Route) * len);
-		b = c_b = g_memdup (b, sizeof (NMPlatformIP4Route) * len);
+		a = c_a = nm_memdup (a, sizeof (NMPlatformIP4Route) * len);
+		b = c_b = nm_memdup (b, sizeof (NMPlatformIP4Route) * len);
 		g_qsort_with_data (c_a, len, sizeof (NMPlatformIP4Route), _nmtst_platform_ip4_routes_equal_sort, NULL);
 		g_qsort_with_data (c_b, len, sizeof (NMPlatformIP4Route), _nmtst_platform_ip4_routes_equal_sort, NULL);
 	}
@@ -269,8 +269,8 @@ nmtst_platform_ip6_routes_equal (const NMPlatformIP6Route *a, const NMPlatformIP
 	g_assert (b);
 
 	if (ignore_order) {
-		a = c_a = g_memdup (a, sizeof (NMPlatformIP6Route) * len);
-		b = c_b = g_memdup (b, sizeof (NMPlatformIP6Route) * len);
+		a = c_a = nm_memdup (a, sizeof (NMPlatformIP6Route) * len);
+		b = c_b = nm_memdup (b, sizeof (NMPlatformIP6Route) * len);
 		g_qsort_with_data (c_a, len, sizeof (NMPlatformIP6Route), _nmtst_platform_ip6_routes_equal_sort, NULL);
 		g_qsort_with_data (c_b, len, sizeof (NMPlatformIP6Route), _nmtst_platform_ip6_routes_equal_sort, NULL);
 	}

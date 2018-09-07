@@ -5532,67 +5532,57 @@ nm_platform_lnk_vxlan_to_string (const NMPlatformLnkVxlan *lnk, char *buf, gsize
 }
 
 const char *
-nm_platform_wireguard_peer_to_string (const NMWireGuardPeer *peer, char *buf, gsize len)
+nm_platform_wireguard_peer_to_string (const NMPWireGuardPeer *peer, char *buf, gsize len)
 {
-	gs_free char *public_b64 = NULL;
-	char s_address[INET6_ADDRSTRLEN] = {0};
-	char s_endpoint[INET6_ADDRSTRLEN + NI_MAXSERV + sizeof("endpoint []:") + 1] = {0};
-	guint8 nonzero_key = 0;
-	gsize i;
+	gs_free char *public_key_b64 = NULL;
+	char s_endpoint[NM_UTILS_INET_ADDRSTRLEN + 100];
+	char s_addr[NM_UTILS_INET_ADDRSTRLEN];
+	guint i;
 
 	nm_utils_to_string_buffer_init (&buf, &len);
 
-	if (peer->endpoint.addr.sa_family == AF_INET || peer->endpoint.addr.sa_family == AF_INET6) {
-		char s_service[NI_MAXSERV];
-		socklen_t addr_len = 0;
+	if (peer->endpoint_family == AF_INET) {
+		nm_sprintf_buf (s_endpoint,
+		                " endpoint %s:%u",
+		                nm_utils_inet4_ntop (peer->endpoint_addr.addr4, s_addr),
+		                (guint) peer->endpoint_port);
+	} else if (peer->endpoint_family == AF_INET6) {
+		nm_sprintf_buf (s_endpoint,
+		                " endpoint [%s]:%u",
+		                nm_utils_inet6_ntop (&peer->endpoint_addr.addr6, s_addr),
+		                (guint) peer->endpoint_port);
+	} else
+		s_endpoint[0] = '\0';
 
-		if (peer->endpoint.addr.sa_family == AF_INET)
-			addr_len = sizeof (struct sockaddr_in);
-		else if (peer->endpoint.addr.sa_family == AF_INET6)
-			addr_len = sizeof (struct sockaddr_in6);
-		if (!getnameinfo (&peer->endpoint.addr, addr_len, s_address, sizeof(s_address), s_service, sizeof(s_service), NI_DGRAM | NI_NUMERICSERV | NI_NUMERICHOST)) {
-			if (peer->endpoint.addr.sa_family == AF_INET6 && strchr (s_address, ':'))
-				g_snprintf(s_endpoint, sizeof (s_endpoint), "endpoint [%s]:%s ", s_address, s_service);
-			else
-				g_snprintf(s_endpoint, sizeof (s_endpoint), "endpoint %s:%s ", s_address, s_service);
-		}
-	}
-
-
-	for (i = 0; i < sizeof (peer->preshared_key); i++)
-		nonzero_key |= peer->preshared_key[i];
-
-	public_b64 = g_base64_encode (peer->public_key, sizeof (peer->public_key));
+	public_key_b64 = g_base64_encode (peer->public_key, sizeof (peer->public_key));
 
 	nm_utils_strbuf_append (&buf, &len,
-	                        "{ "
-	                        "public_key %s "
-	                        "%s" /* preshared key indicator */
+	                        "public-key %s"
+	                        "%s" /* preshared-key */
 	                        "%s" /* endpoint */
-	                        "rx %"G_GUINT64_FORMAT" "
-	                        "tx %"G_GUINT64_FORMAT" "
-	                        "allowedips (%"G_GSIZE_FORMAT") {",
-	                        public_b64,
-	                        nonzero_key ? "preshared_key (hidden) " : "",
+	                        " rx %"G_GUINT64_FORMAT
+	                        " tx %"G_GUINT64_FORMAT
+	                        "%s", /* allowed-ips */
+	                        public_key_b64,
+	                        nm_utils_mem_all_zero (peer->preshared_key, sizeof (peer->preshared_key))
+	                          ? ""
+	                          : " preshared-key (hidden)",
 	                        s_endpoint,
 	                        peer->rx_bytes,
 	                        peer->tx_bytes,
-				peer->allowedips_len);
+	                        peer->allowed_ips_len > 0
+	                          ? " allowed-ips"
+	                          : "");
 
-
-	for (i = 0; i < peer->allowedips_len; i++) {
-		NMWireGuardAllowedIP *allowedip = &peer->allowedips[i];
-		const char *ret;
-
-		ret = inet_ntop (allowedip->family, &allowedip->ip, s_address, sizeof(s_address));
+	for (i = 0; i < peer->allowed_ips_len; i++) {
+		const NMPWireGuardAllowedIP *allowed_ip = &peer->allowed_ips[i];
 
 		nm_utils_strbuf_append (&buf, &len,
 		                        " %s/%u",
-		                        ret ? s_address : "<EAFNOSUPPORT>",
-		                        allowedip->mask);
+		                        nm_utils_inet_ntop (allowed_ip->family, &allowed_ip->addr, s_addr),
+		                        allowed_ip->mask);
 	}
 
-	nm_utils_strbuf_append_str (&buf, &len, " } }");
 	return buf;
 }
 
@@ -5600,25 +5590,26 @@ const char *
 nm_platform_lnk_wireguard_to_string (const NMPlatformLnkWireGuard *lnk, char *buf, gsize len)
 {
 	gs_free char *public_b64 = NULL;
-	guint8 nonzero_key = 0;
-	gsize i;
 
 	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
 		return buf;
 
-	public_b64 = g_base64_encode (lnk->public_key, sizeof (lnk->public_key));
-
-	for (i = 0; i < sizeof (lnk->private_key); i++)
-		nonzero_key |= lnk->private_key[i];
+	if (!nm_utils_mem_all_zero (lnk->public_key, sizeof (lnk->public_key)))
+		public_b64 = g_base64_encode (lnk->public_key, sizeof (lnk->public_key));
 
 	g_snprintf (buf, len,
-	            "wireguard "
-	            "public_key %s "
-	            "%s" /* private key indicator */
-	            "listen_port %u "
-	            "fwmark 0x%x",
-	            public_b64,
-	            nonzero_key ? "private_key (hidden) " : "",
+	            "wireguard"
+	            "%s%s" /* public-key */
+	            "%s" /* private-key */
+	            " listen-port %u"
+	            " fwmark 0x%x",
+	            public_b64
+	              ? " public-key "
+	              : "",
+	            public_b64 ?: "",
+	            nm_utils_mem_all_zero (lnk->private_key, sizeof (lnk->private_key))
+	              ? ""
+	              : " private-key (hidden)",
 	            lnk->listen_port,
 	            lnk->fwmark);
 

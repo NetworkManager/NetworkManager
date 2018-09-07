@@ -62,7 +62,7 @@ nl_errno (int err)
 	 * normalizes the error and returns its positive value. */
 	return err >= 0
 	       ? err
-	       : ((err == G_MININT) ? NLE_BUG : -errno);
+	       : ((err == G_MININT) ? NLE_BUG : -err);
 }
 
 static inline int
@@ -313,8 +313,6 @@ nla_parse_nested (struct nlattr *tb[], int maxtype, struct nlattr *nla,
 struct nl_msg *nlmsg_alloc (void);
 
 struct nl_msg *nlmsg_alloc_size (size_t max);
-
-struct nl_msg *nlmsg_alloc_inherit (struct nlmsghdr *hdr);
 
 struct nl_msg *nlmsg_alloc_convert (struct nlmsghdr *hdr);
 

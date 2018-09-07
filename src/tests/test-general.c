@@ -1445,7 +1445,7 @@ test_nm_utils_strbuf_append (void)
 			t_buf = buf;
 			t_len = buf_len;
 
-			test_mode = nmtst_get_rand_int () % 4;
+			test_mode = nmtst_get_rand_int () % 5;
 
 			switch (test_mode) {
 			case 0:
@@ -1465,6 +1465,47 @@ test_nm_utils_strbuf_append (void)
 				/* fall through */
 			case 3:
 				nm_utils_strbuf_append (&t_buf, &t_len, "%s", str);
+				break;
+			case 4:
+				g_snprintf (t_buf, t_len, "%s", str);
+				if (   t_len > 0
+				    && strlen (str) >= buf_len
+				    && (nmtst_get_rand_int () % 2)) {
+					/* the string was truncated by g_snprintf(). That means, at the last position in the
+					 * buffer is now NUL.
+					 * Replace the NUL by the actual character, and check that nm_utils_strbuf_seek_end()
+					 * does the right thing: NUL terminate the buffer and seek past the end of the buffer. */
+					g_assert_cmpmem (t_buf, t_len - 1, str, t_len - 1);
+					g_assert (t_buf[t_len - 1] == '\0');
+					g_assert (str[t_len - 1] != '\0');
+					t_buf[t_len - 1] = str[t_len - 1];
+					nm_utils_strbuf_seek_end (&t_buf, &t_len);
+					g_assert (t_len == 0);
+					g_assert (t_buf == &buf[buf_len]);
+					g_assert (t_buf[-1] == '\0');
+				} else {
+					nm_utils_strbuf_seek_end (&t_buf, &t_len);
+					if (strlen (str) + 1 == buf_len) {
+						/* Special case: we appended a string that fit into the buffer
+						 * exactly, without truncation.
+						 * If we would append the string via nm_utils_strbuf_append(),
+						 * then it would have recognized that the string was not truncated
+						 * and leave len==1, and pointing the buffer to the terminating NUL
+						 * (at the very end, not past it).
+						 *
+						 * But nm_utils_strbuf_seek_end() cannot distinguish whether
+						 * truncation occured, and assumes the buffer was indeed truncated.
+						 *
+						 * Assert for that, but also adjust the numbers, so that the assertions
+						 * below pass (the assertions below theck for the nm_utils_strbuf_append()
+						 * case). */
+						g_assert (t_len == 0);
+						g_assert (t_buf == &buf[buf_len]);
+						g_assert (t_buf[-1] == '\0');
+						t_len = 1;
+						t_buf--;
+					}
+				}
 				break;
 			}
 

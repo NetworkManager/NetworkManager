@@ -190,6 +190,53 @@ nm_ip_addr_set (int addr_family, gpointer dst, const NMIPAddr *src)
 
 /*****************************************************************************/
 
+static inline gboolean
+nm_utils_mem_all_zero (gconstpointer mem, gsize len)
+{
+	const guint8 *p;
+
+	for (p = mem; len-- > 0; p++) {
+		if (*p != 0)
+			return FALSE;
+	}
+
+	/* incidentally, a buffer with len==0, is also *all-zero*. */
+	return TRUE;
+}
+
+/*****************************************************************************/
+
+/* like g_memdup(). The difference is that the @size argument is of type
+ * gsize, while g_memdup() has type guint. Since, the size of container types
+ * like GArray is guint as well, this means trying to g_memdup() an
+ * array,
+ *    g_memdup (array->data, array->len * sizeof (ElementType))
+ * will lead to integer overflow, if there are more than G_MAXUINT/sizeof(ElementType)
+ * bytes. That seems unnecessarily dangerous to me.
+ * nm_memdup() avoids that, because its size argument is always large enough
+ * to contain all data that a GArray can hold.
+ *
+ * Another minor difference to g_memdup() is that the glib version also
+ * returns %NULL if @data is %NULL. E.g. g_memdup(NULL, 1)
+ * gives %NULL, but nm_memdup(NULL, 1) crashes. I think that
+ * is desirable, because @size MUST be correct at all times. @size
+ * may be zero, but one must not claim to have non-zero bytes when
+ * passing a %NULL @data pointer.
+ */
+static inline gpointer
+nm_memdup (gconstpointer data, gsize size)
+{
+	gpointer p;
+
+	if (size == 0)
+		return NULL;
+	p = g_malloc (size);
+	memcpy (p, data, size);
+	return p;
+}
+
+/*****************************************************************************/
+
 extern const void *const _NM_PTRARRAY_EMPTY[1];
 
 #define NM_PTRARRAY_EMPTY(type) ((type const*) _NM_PTRARRAY_EMPTY)
@@ -210,6 +257,7 @@ _nm_utils_strbuf_init (char *buf, gsize len, char **p_buf_ptr, gsize *p_buf_len)
 void nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...) _nm_printf (3, 4);
 void nm_utils_strbuf_append_c (char **buf, gsize *len, char c);
 void nm_utils_strbuf_append_str (char **buf, gsize *len, const char *str);
+void nm_utils_strbuf_seek_end (char **buf, gsize *len);
 
 const char *nm_strquote (char *buf, gsize buf_len, const char *str);
 
