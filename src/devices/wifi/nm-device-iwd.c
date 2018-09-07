@@ -554,7 +554,7 @@ check_connection_available (NMDevice *device,
 
 	/* Only Infrastrusture mode at this time */
 	mode = nm_setting_wireless_get_mode (s_wifi);
-	if (!NM_IN_SET (mode, NULL, NM_SETTING_WIRELESS_MODE_INFRA)) {
+	if (!NM_IN_STRSET (mode, NULL, NM_SETTING_WIRELESS_MODE_INFRA)) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 		                            "iwd only supports infrastructure mode connections");
 		return FALSE;

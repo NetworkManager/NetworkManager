@@ -611,6 +611,34 @@ object_added (NMIwdManager *self, GDBusObject *object)
 	g_list_free_full (interfaces, g_object_unref);
 }
 
+static void
+release_object_manager (NMIwdManager *self)
+{
+	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
+
+	if (!priv->object_manager)
+		return;
+
+	g_signal_handlers_disconnect_by_data (priv->object_manager, self);
+
+	if (priv->agent_id) {
+		GDBusConnection *agent_connection;
+		GDBusObjectManagerClient *omc = G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager);
+
+		agent_connection = g_dbus_object_manager_client_get_connection (omc);
+
+		/* We're is called when we're shutting down (i.e. our DBus connection
+		 * is being closed, and IWD will detect this) or IWD was stopped so
+		 * in either case calling UnregisterAgent will not do anything.
+		 */
+		g_dbus_connection_unregister_object (agent_connection, priv->agent_id);
+		priv->agent_id = 0;
+		nm_clear_g_free (&priv->agent_path);
+	}
+
+	g_clear_object (&priv->object_manager);
+}
+
 static void prepare_object_manager (NMIwdManager *self);
 
 static void
@@ -623,8 +651,7 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 	nm_assert (object_manager == priv->object_manager);
 
 	if (_om_has_name_owner (object_manager)) {
-		g_signal_handlers_disconnect_by_data (object_manager, self);
-		g_clear_object (&priv->object_manager);
+		release_object_manager (self);
 		prepare_object_manager (self);
 	} else {
 		const CList *tmp_lst;
@@ -708,7 +735,7 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 	                                   &priv->agent_path,
 	                                   &error);
 	if (!priv->agent_id) {
-		_LOGE ("failed to export the IWD Agent: PSK/8021x WiFi networks will not work: %s",
+		_LOGE ("failed to export the IWD Agent: PSK/8021x WiFi networks may not work: %s",
 		       error->message);
 		g_clear_error (&error);
 	}
@@ -789,25 +816,7 @@ dispose (GObject *object)
 	NMIwdManager *self = (NMIwdManager *) object;
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
 
-	if (priv->object_manager) {
-		if (priv->agent_id) {
-			GDBusConnection *connection;
-			GDBusObjectManagerClient *omc = G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager);
-
-			/* No need to unregister the agent as IWD will detect
-			 * our DBus connection being closed.
-			 */
-
-			connection = g_dbus_object_manager_client_get_connection (omc);
-
-			g_dbus_connection_unregister_object (connection, priv->agent_id);
-			priv->agent_id = 0;
-		}
-
-		g_clear_object (&priv->object_manager);
-	}
-
-	nm_clear_g_free (&priv->agent_path);
+	release_object_manager (self);
 
 	nm_clear_g_cancellable (&priv->cancellable);
 

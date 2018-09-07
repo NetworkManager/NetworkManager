@@ -36,6 +36,9 @@
 	"net.connman.iwd.WiFiSimpleConfiguration"
 #define NM_IWD_KNOWN_NETWORK_INTERFACE  "net.connman.iwd.KnownNetwork"
 #define NM_IWD_SIGNAL_AGENT_INTERFACE   "net.connman.iwd.SignalLevelAgent"
+#define NM_IWD_AP_INTERFACE             "net.connman.iwd.AccessPoint"
+#define NM_IWD_ADHOC_INTERFACE          "net.connman.iwd.AdHoc"
+#define NM_IWD_STATION_INTERFACE        "net.connman.iwd.Station"
 
 #define NM_TYPE_IWD_MANAGER              (nm_iwd_manager_get_type ())
 #define NM_IWD_MANAGER(obj)              (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IWD_MANAGER, NMIwdManager))
