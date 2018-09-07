@@ -1924,7 +1924,7 @@ static gboolean
 _wireguard_update_from_allowedips_nla (struct _wireguard_device_buf *buf,
                                        struct nlattr *allowedip_attr)
 {
-	static const struct nla_policy allowedip_policy[WGALLOWEDIP_A_MAX + 1] = {
+	static const struct nla_policy policy[WGALLOWEDIP_A_MAX + 1] = {
 		[WGALLOWEDIP_A_FAMILY]    = { .type = NLA_U16 },
 		[WGALLOWEDIP_A_IPADDR]    = { .minlen = sizeof (struct in_addr) },
 		[WGALLOWEDIP_A_CIDR_MASK] = { .type = NLA_U8 },
@@ -1936,7 +1936,7 @@ _wireguard_update_from_allowedips_nla (struct _wireguard_device_buf *buf,
 	int addr_len;
 	int nlerr;
 
-	nlerr = nla_parse_nested (tba, WGALLOWEDIP_A_MAX, allowedip_attr, allowedip_policy);
+	nlerr = nla_parse_nested (tba, WGALLOWEDIP_A_MAX, allowedip_attr, policy);
 	if (nlerr < 0)
 		return FALSE;
 
@@ -1967,7 +1967,7 @@ static gboolean
 _wireguard_update_from_peers_nla (struct _wireguard_device_buf *buf,
                                   struct nlattr *peer_attr)
 {
-	static const struct nla_policy peer_policy[WGPEER_A_MAX + 1] = {
+	static const struct nla_policy policy[WGPEER_A_MAX + 1] = {
 		[WGPEER_A_PUBLIC_KEY]                    = { .minlen = NM_WG_PUBLIC_KEY_LEN },
 		[WGPEER_A_PRESHARED_KEY]                 = { },
 		[WGPEER_A_FLAGS]                         = { .type = NLA_U32 },
@@ -1978,55 +1978,55 @@ _wireguard_update_from_peers_nla (struct _wireguard_device_buf *buf,
 		[WGPEER_A_TX_BYTES]                      = { .type = NLA_U64 },
 		[WGPEER_A_ALLOWEDIPS]                    = { .type = NLA_NESTED },
 	};
-	struct nlattr *tbp[WGPEER_A_MAX + 1];
+	struct nlattr *tb[WGPEER_A_MAX + 1];
 	NMWireGuardPeer *const last = buf->peers->len ? &g_array_index (buf->peers, NMWireGuardPeer, buf->peers->len - 1) : NULL;
 	NMWireGuardPeer *peer;
 	NMWireGuardPeer new_peer = { 0 };
 
-	if (nla_parse_nested (tbp, WGPEER_A_MAX, peer_attr, peer_policy) < 0)
+	if (nla_parse_nested (tb, WGPEER_A_MAX, peer_attr, policy) < 0)
 		return FALSE;
 
-	if (!tbp[WGPEER_A_PUBLIC_KEY])
+	if (!tb[WGPEER_A_PUBLIC_KEY])
 		return FALSE;
 
 	/* a peer with the same public key as last peer is just a continuation for extra AllowedIPs */
 	if (   last
-	    && !memcmp (nla_data (tbp[WGPEER_A_PUBLIC_KEY]), last->public_key, sizeof (last->public_key)))
+	    && !memcmp (nla_data (tb[WGPEER_A_PUBLIC_KEY]), last->public_key, sizeof (last->public_key)))
 		peer = last;
 	else {
 		/* otherwise, start a new peer */
 		g_array_append_val (buf->peers, new_peer);
 		peer = &g_array_index (buf->peers, NMWireGuardPeer, buf->peers->len - 1);
 
-		nla_memcpy (&peer->public_key, tbp[WGPEER_A_PUBLIC_KEY], sizeof (peer->public_key));
+		nla_memcpy (&peer->public_key, tb[WGPEER_A_PUBLIC_KEY], sizeof (peer->public_key));
 
-		if (tbp[WGPEER_A_PRESHARED_KEY])
-			nla_memcpy (&peer->preshared_key, tbp[WGPEER_A_PRESHARED_KEY], sizeof (peer->preshared_key));
-		if (tbp[WGPEER_A_ENDPOINT]) {
-			struct sockaddr *addr = nla_data (tbp[WGPEER_A_ENDPOINT]);
+		if (tb[WGPEER_A_PRESHARED_KEY])
+			nla_memcpy (&peer->preshared_key, tb[WGPEER_A_PRESHARED_KEY], sizeof (peer->preshared_key));
+		if (tb[WGPEER_A_ENDPOINT]) {
+			struct sockaddr *addr = nla_data (tb[WGPEER_A_ENDPOINT]);
 			if (addr->sa_family == AF_INET)
-				nla_memcpy (&peer->endpoint.addr4, tbp[WGPEER_A_ENDPOINT], sizeof (peer->endpoint.addr4));
+				nla_memcpy (&peer->endpoint.addr4, tb[WGPEER_A_ENDPOINT], sizeof (peer->endpoint.addr4));
 			else if (addr->sa_family == AF_INET6)
-				nla_memcpy (&peer->endpoint.addr6, tbp[WGPEER_A_ENDPOINT], sizeof (peer->endpoint.addr6));
+				nla_memcpy (&peer->endpoint.addr6, tb[WGPEER_A_ENDPOINT], sizeof (peer->endpoint.addr6));
 		}
-		if (tbp[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL])
-			peer->persistent_keepalive_interval = nla_get_u64 (tbp[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL]);
-		if (tbp[WGPEER_A_LAST_HANDSHAKE_TIME])
-			nla_memcpy (&peer->last_handshake_time, tbp[WGPEER_A_LAST_HANDSHAKE_TIME], sizeof (peer->last_handshake_time));
-		if (tbp[WGPEER_A_RX_BYTES])
-			peer->rx_bytes = nla_get_u64 (tbp[WGPEER_A_RX_BYTES]);
-		if (tbp[WGPEER_A_TX_BYTES])
-			peer->tx_bytes = nla_get_u64 (tbp[WGPEER_A_TX_BYTES]);
+		if (tb[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL])
+			peer->persistent_keepalive_interval = nla_get_u64 (tb[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL]);
+		if (tb[WGPEER_A_LAST_HANDSHAKE_TIME])
+			nla_memcpy (&peer->last_handshake_time, tb[WGPEER_A_LAST_HANDSHAKE_TIME], sizeof (peer->last_handshake_time));
+		if (tb[WGPEER_A_RX_BYTES])
+			peer->rx_bytes = nla_get_u64 (tb[WGPEER_A_RX_BYTES]);
+		if (tb[WGPEER_A_TX_BYTES])
+			peer->tx_bytes = nla_get_u64 (tb[WGPEER_A_TX_BYTES]);
 
 		peer->allowedips = NULL;
 		peer->allowedips_len = 0;
 	}
 
-	if (tbp[WGPEER_A_ALLOWEDIPS]) {
+	if (tb[WGPEER_A_ALLOWEDIPS]) {
 		struct nlattr *attr;
 		int rem;
 
-		nla_for_each_nested (attr, tbp[WGPEER_A_ALLOWEDIPS], rem) {
+		nla_for_each_nested (attr, tb[WGPEER_A_ALLOWEDIPS], rem) {
 			if (!_wireguard_update_from_allowedips_nla (buf, attr))
 				return FALSE;
 		}
@@ -2038,7 +2038,7 @@ _wireguard_update_from_peers_nla (struct _wireguard_device_buf *buf,
 static int
 _wireguard_get_device_cb (struct nl_msg *msg, void *arg)
 {
-	static const struct nla_policy device_policy[WGDEVICE_A_MAX + 1] = {
+	static const struct nla_policy policy[WGDEVICE_A_MAX + 1] = {
 		[WGDEVICE_A_IFINDEX]     = { .type = NLA_U32 },
 		[WGDEVICE_A_IFNAME]      = { .type = NLA_NUL_STRING, .maxlen = IFNAMSIZ },
 		[WGDEVICE_A_PRIVATE_KEY] = { },
@@ -2049,29 +2049,29 @@ _wireguard_get_device_cb (struct nl_msg *msg, void *arg)
 		[WGDEVICE_A_PEERS]       = { .type = NLA_NESTED },
 	};
 	struct _wireguard_device_buf *buf = arg;
-	struct nlattr *tbd[WGDEVICE_A_MAX + 1];
+	struct nlattr *tb[WGDEVICE_A_MAX + 1];
 	NMPlatformLnkWireGuard *props = &buf->obj->lnk_wireguard;
 	struct nlmsghdr *nlh = nlmsg_hdr (msg);
 	int nlerr;
 
-	nlerr = genlmsg_parse (nlh, 0, tbd, WGDEVICE_A_MAX, device_policy);
+	nlerr = genlmsg_parse (nlh, 0, tb, WGDEVICE_A_MAX, policy);
 	if (nlerr < 0)
 		return NL_SKIP;
 
-	if (tbd[WGDEVICE_A_PRIVATE_KEY])
-		nla_memcpy (props->private_key, tbd[WGDEVICE_A_PRIVATE_KEY], sizeof (props->private_key));
-	if (tbd[WGDEVICE_A_PUBLIC_KEY])
-		nla_memcpy (props->public_key, tbd[WGDEVICE_A_PUBLIC_KEY], sizeof (props->public_key));
-	if (tbd[WGDEVICE_A_LISTEN_PORT])
-		props->listen_port = nla_get_u16 (tbd[WGDEVICE_A_LISTEN_PORT]);
-	if (tbd[WGDEVICE_A_FWMARK])
-		props->fwmark = nla_get_u32 (tbd[WGDEVICE_A_FWMARK]);
+	if (tb[WGDEVICE_A_PRIVATE_KEY])
+		nla_memcpy (props->private_key, tb[WGDEVICE_A_PRIVATE_KEY], sizeof (props->private_key));
+	if (tb[WGDEVICE_A_PUBLIC_KEY])
+		nla_memcpy (props->public_key, tb[WGDEVICE_A_PUBLIC_KEY], sizeof (props->public_key));
+	if (tb[WGDEVICE_A_LISTEN_PORT])
+		props->listen_port = nla_get_u16 (tb[WGDEVICE_A_LISTEN_PORT]);
+	if (tb[WGDEVICE_A_FWMARK])
+		props->fwmark = nla_get_u32 (tb[WGDEVICE_A_FWMARK]);
 
-	if (tbd[WGDEVICE_A_PEERS]) {
+	if (tb[WGDEVICE_A_PEERS]) {
 		struct nlattr *attr;
 		int rem;
 
-		nla_for_each_nested (attr, tbd[WGDEVICE_A_PEERS], rem) {
+		nla_for_each_nested (attr, tb[WGDEVICE_A_PEERS], rem) {
 			if (!_wireguard_update_from_peers_nla (buf, attr))
 				return NL_SKIP;
 		}
