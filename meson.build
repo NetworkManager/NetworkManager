@@ -560,11 +560,6 @@ if enable_dhclient
   enable_dhclient = dhclient.found()
 
   if enable_dhclient
-    res = run_command(dhclient, '--version')
-    # FIXME: dhcp outputs the version string through stderr!?
-    if not res.stderr().strip().contains('isc-dhclient-4.')
-      message('Seems version of dhclient ' + dhclient.path() + ' is too old, version 4.x or newer is required')
-    endif
     config_h.set_quoted('DHCLIENT_PATH', dhclient.path())
   endif
 endif
