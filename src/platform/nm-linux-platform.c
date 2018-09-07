@@ -44,6 +44,7 @@
 #include "nm-core-internal.h"
 #include "nm-setting-vlan.h"
 
+#include "nm-utils/nm-secret-utils.h"
 #include "nm-netlink.h"
 #include "nm-core-utils.h"
 #include "nmp-object.h"
@@ -1912,63 +1913,60 @@ _parse_lnk_vxlan (const char *kind, struct nlattr *info_data)
 
 /*****************************************************************************/
 
-/* Context to build a NMPObjectLnkWireGuard instance.
- * GArray wrappers are discarded after processing all netlink messages. */
-struct _wireguard_device_buf {
-	NMPObject *obj;
-	GArray *peers;
-	GArray *allowedips;
-};
-
 static gboolean
-_wireguard_update_from_allowedips_nla (struct _wireguard_device_buf *buf,
-                                       struct nlattr *allowedip_attr)
+_wireguard_update_from_allowed_ips_nla (NMPWireGuardAllowedIP *allowed_ip,
+                                        struct nlattr *nlattr)
 {
 	static const struct nla_policy policy[WGALLOWEDIP_A_MAX + 1] = {
 		[WGALLOWEDIP_A_FAMILY]    = { .type = NLA_U16 },
 		[WGALLOWEDIP_A_IPADDR]    = { .minlen = sizeof (struct in_addr) },
 		[WGALLOWEDIP_A_CIDR_MASK] = { .type = NLA_U8 },
 	};
-	struct nlattr *tba[WGALLOWEDIP_A_MAX + 1];
-	NMWireGuardPeer *peer = &g_array_index (buf->peers, NMWireGuardPeer, buf->peers->len - 1);
-	NMWireGuardAllowedIP *allowedip;
-	NMWireGuardAllowedIP new_allowedip = {0};
+	struct nlattr *tb[WGALLOWEDIP_A_MAX + 1];
+	int family;
 	int addr_len;
-	int nlerr;
 
-	nlerr = nla_parse_nested (tba, WGALLOWEDIP_A_MAX, allowedip_attr, policy);
-	if (nlerr < 0)
+	if (nla_parse_nested (tb, WGALLOWEDIP_A_MAX, nlattr, policy) < 0)
 		return FALSE;
 
-	g_array_append_val (buf->allowedips, new_allowedip);
-	allowedip = &g_array_index (buf->allowedips, NMWireGuardAllowedIP, buf->allowedips->len - 1);
-	peer->allowedips_len++;
+	if (!tb[WGALLOWEDIP_A_FAMILY])
+		return FALSE;
 
-	if (tba[WGALLOWEDIP_A_FAMILY])
-		allowedip->family = nla_get_u16 (tba[WGALLOWEDIP_A_FAMILY]);
-
-	if (allowedip->family == AF_INET)
+	family = nla_get_u16 (tb[WGALLOWEDIP_A_FAMILY]);
+	if (family == AF_INET)
 		addr_len = sizeof (in_addr_t);
-	else if (allowedip->family == AF_INET6)
+	else if (family == AF_INET6)
 		addr_len = sizeof (struct in6_addr);
 	else
 		return FALSE;
 
-	_check_addr_or_return_val (tba, WGALLOWEDIP_A_IPADDR, addr_len, FALSE);
-	if (tba[WGALLOWEDIP_A_IPADDR])
-		nla_memcpy (&allowedip->ip, tba[WGALLOWEDIP_A_IPADDR], addr_len);
-	if (tba[WGALLOWEDIP_A_CIDR_MASK])
-		allowedip->mask = nla_get_u8 (tba[WGALLOWEDIP_A_CIDR_MASK]);
+	_check_addr_or_return_val (tb, WGALLOWEDIP_A_IPADDR, addr_len, FALSE);
+
+	memset (allowed_ip, 0, sizeof (NMPWireGuardAllowedIP));
+
+	allowed_ip->family = family;
+	nm_assert ((int) allowed_ip->family == family);
+
+	if (tb[WGALLOWEDIP_A_IPADDR])
+		nla_memcpy (&allowed_ip->addr, tb[WGALLOWEDIP_A_IPADDR], addr_len);
+	if (tb[WGALLOWEDIP_A_CIDR_MASK])
+		allowed_ip->mask = nla_get_u8 (tb[WGALLOWEDIP_A_CIDR_MASK]);
 
 	return TRUE;
 }
 
+typedef struct {
+	CList lst;
+	NMPWireGuardPeer data;
+} WireGuardPeerConstruct;
+
 static gboolean
-_wireguard_update_from_peers_nla (struct _wireguard_device_buf *buf,
+_wireguard_update_from_peers_nla (CList *peers,
+                                  GArray **p_allowed_ips,
                                   struct nlattr *peer_attr)
 {
 	static const struct nla_policy policy[WGPEER_A_MAX + 1] = {
-		[WGPEER_A_PUBLIC_KEY]                    = { .minlen = NM_WG_PUBLIC_KEY_LEN },
+		[WGPEER_A_PUBLIC_KEY]                    = { .minlen = NMP_WIREGUARD_PUBLIC_KEY_LEN },
 		[WGPEER_A_PRESHARED_KEY]                 = { },
 		[WGPEER_A_FLAGS]                         = { .type = NLA_U32 },
 		[WGPEER_A_ENDPOINT]                      = { },
@@ -1978,10 +1976,8 @@ _wireguard_update_from_peers_nla (struct _wireguard_device_buf *buf,
 		[WGPEER_A_TX_BYTES]                      = { .type = NLA_U64 },
 		[WGPEER_A_ALLOWEDIPS]                    = { .type = NLA_NESTED },
 	};
+	WireGuardPeerConstruct *peer_c;
 	struct nlattr *tb[WGPEER_A_MAX + 1];
-	NMWireGuardPeer *const last = buf->peers->len ? &g_array_index (buf->peers, NMWireGuardPeer, buf->peers->len - 1) : NULL;
-	NMWireGuardPeer *peer;
-	NMWireGuardPeer new_peer = { 0 };
 
 	if (nla_parse_nested (tb, WGPEER_A_MAX, peer_attr, policy) < 0)
 		return FALSE;
@@ -1990,50 +1986,97 @@ _wireguard_update_from_peers_nla (struct _wireguard_device_buf *buf,
 		return FALSE;
 
 	/* a peer with the same public key as last peer is just a continuation for extra AllowedIPs */
-	if (   last
-	    && !memcmp (nla_data (tb[WGPEER_A_PUBLIC_KEY]), last->public_key, sizeof (last->public_key)))
-		peer = last;
+	peer_c = c_list_last_entry (peers, WireGuardPeerConstruct, lst);
+	if (   peer_c
+	    && !memcmp (nla_data (tb[WGPEER_A_PUBLIC_KEY]), peer_c->data.public_key, NMP_WIREGUARD_PUBLIC_KEY_LEN)) {
+		G_STATIC_ASSERT_EXPR (NMP_WIREGUARD_PUBLIC_KEY_LEN == sizeof (peer_c->data.public_key));
+		/* this message is a continuation of the previous peer.
+		 * Only parse WGPEER_A_ALLOWEDIPS below. */
+	}
 	else {
 		/* otherwise, start a new peer */
-		g_array_append_val (buf->peers, new_peer);
-		peer = &g_array_index (buf->peers, NMWireGuardPeer, buf->peers->len - 1);
+		peer_c = g_slice_new0 (WireGuardPeerConstruct);
+		c_list_link_tail (peers, &peer_c->lst);
 
-		nla_memcpy (&peer->public_key, tb[WGPEER_A_PUBLIC_KEY], sizeof (peer->public_key));
+		nla_memcpy (&peer_c->data.public_key, tb[WGPEER_A_PUBLIC_KEY], sizeof (peer_c->data.public_key));
 
-		if (tb[WGPEER_A_PRESHARED_KEY])
-			nla_memcpy (&peer->preshared_key, tb[WGPEER_A_PRESHARED_KEY], sizeof (peer->preshared_key));
+		if (tb[WGPEER_A_PRESHARED_KEY]) {
+			nla_memcpy (&peer_c->data.preshared_key, tb[WGPEER_A_PRESHARED_KEY], sizeof (peer_c->data.preshared_key));
+			/* FIXME(netlink-bzero-secret) */
+			nm_explicit_bzero (nla_data (tb[WGPEER_A_PRESHARED_KEY]),
+			                   nla_len (tb[WGPEER_A_PRESHARED_KEY]));
+		}
 		if (tb[WGPEER_A_ENDPOINT]) {
-			struct sockaddr *addr = nla_data (tb[WGPEER_A_ENDPOINT]);
-			if (addr->sa_family == AF_INET)
-				nla_memcpy (&peer->endpoint.addr4, tb[WGPEER_A_ENDPOINT], sizeof (peer->endpoint.addr4));
-			else if (addr->sa_family == AF_INET6)
-				nla_memcpy (&peer->endpoint.addr6, tb[WGPEER_A_ENDPOINT], sizeof (peer->endpoint.addr6));
+			const struct sockaddr *addr = nla_data (tb[WGPEER_A_ENDPOINT]);
+			unsigned short family;
+
+			G_STATIC_ASSERT (sizeof (addr->sa_family) == sizeof (family));
+			memcpy (&family, &addr->sa_family, sizeof (addr->sa_family));
+
+			if (   family == AF_INET
+			    && nla_len (tb[WGPEER_A_ENDPOINT]) == sizeof (struct sockaddr_in)) {
+				const struct sockaddr_in *addr4 = (const struct sockaddr_in *) addr;
+
+				peer_c->data.endpoint_family = AF_INET;
+				peer_c->data.endpoint_port = unaligned_read_be16 (&addr4->sin_port);
+				peer_c->data.endpoint_addr.addr4 = unaligned_read_ne32 (&addr4->sin_addr.s_addr);
+				memcpy (&peer_c->data.endpoint_addr.addr4, &addr4->sin_addr.s_addr, 4);
+			} else if (   family == AF_INET6
+			           && nla_len (tb[WGPEER_A_ENDPOINT]) == sizeof (struct sockaddr_in6)) {
+				const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6 *) addr;
+
+				peer_c->data.endpoint_family = AF_INET6;
+				peer_c->data.endpoint_port = unaligned_read_be16 (&addr6->sin6_port);
+				memcpy (&peer_c->data.endpoint_addr.addr6, &addr6->sin6_addr, 16);
+			}
 		}
 		if (tb[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL])
-			peer->persistent_keepalive_interval = nla_get_u64 (tb[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL]);
+			peer_c->data.persistent_keepalive_interval = nla_get_u64 (tb[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL]);
 		if (tb[WGPEER_A_LAST_HANDSHAKE_TIME])
-			nla_memcpy (&peer->last_handshake_time, tb[WGPEER_A_LAST_HANDSHAKE_TIME], sizeof (peer->last_handshake_time));
+			nla_memcpy (&peer_c->data.last_handshake_time, tb[WGPEER_A_LAST_HANDSHAKE_TIME], sizeof (peer_c->data.last_handshake_time));
 		if (tb[WGPEER_A_RX_BYTES])
-			peer->rx_bytes = nla_get_u64 (tb[WGPEER_A_RX_BYTES]);
+			peer_c->data.rx_bytes = nla_get_u64 (tb[WGPEER_A_RX_BYTES]);
 		if (tb[WGPEER_A_TX_BYTES])
-			peer->tx_bytes = nla_get_u64 (tb[WGPEER_A_TX_BYTES]);
-
-		peer->allowedips = NULL;
-		peer->allowedips_len = 0;
+			peer_c->data.tx_bytes = nla_get_u64 (tb[WGPEER_A_TX_BYTES]);
 	}
 
 	if (tb[WGPEER_A_ALLOWEDIPS]) {
 		struct nlattr *attr;
 		int rem;
+		GArray *allowed_ips = *p_allowed_ips;
 
 		nla_for_each_nested (attr, tb[WGPEER_A_ALLOWEDIPS], rem) {
-			if (!_wireguard_update_from_allowedips_nla (buf, attr))
-				return FALSE;
+			if (!allowed_ips) {
+				allowed_ips = g_array_new (FALSE, FALSE, sizeof (NMPWireGuardAllowedIP));
+				*p_allowed_ips = allowed_ips;
+				g_array_set_size (allowed_ips, 1);
+			} else
+				g_array_set_size (allowed_ips, allowed_ips->len + 1);
+
+			if (!_wireguard_update_from_allowed_ips_nla (&g_array_index (allowed_ips,
+			                                                             NMPWireGuardAllowedIP,
+			                                                             allowed_ips->len - 1),
+			                                            attr)) {
+				/* we ignore the error of parsing one allowed-ip. */
+				g_array_set_size (allowed_ips, allowed_ips->len - 1);
+				continue;
+			}
+
+			if (!peer_c->data._construct_idx_end)
+				peer_c->data._construct_idx_start = allowed_ips->len - 1;
+			peer_c->data._construct_idx_end = allowed_ips->len;
 		}
 	}
 
 	return TRUE;
 }
+
+typedef struct {
+	const int ifindex;
+	NMPObject *obj;
+	CList peers;
+	GArray *allowed_ips;
+} WireGuardParseData;
 
 static int
 _wireguard_get_device_cb (struct nl_msg *msg, void *arg)
@@ -2048,95 +2091,196 @@ _wireguard_get_device_cb (struct nl_msg *msg, void *arg)
 		[WGDEVICE_A_FWMARK]      = { .type = NLA_U32 },
 		[WGDEVICE_A_PEERS]       = { .type = NLA_NESTED },
 	};
-	struct _wireguard_device_buf *buf = arg;
+	WireGuardParseData *parse_data = arg;
 	struct nlattr *tb[WGDEVICE_A_MAX + 1];
-	NMPlatformLnkWireGuard *props = &buf->obj->lnk_wireguard;
-	struct nlmsghdr *nlh = nlmsg_hdr (msg);
 	int nlerr;
 
-	nlerr = genlmsg_parse (nlh, 0, tb, WGDEVICE_A_MAX, policy);
+	nlerr = genlmsg_parse (nlmsg_hdr (msg), 0, tb, WGDEVICE_A_MAX, policy);
 	if (nlerr < 0)
 		return NL_SKIP;
 
-	if (tb[WGDEVICE_A_PRIVATE_KEY])
-		nla_memcpy (props->private_key, tb[WGDEVICE_A_PRIVATE_KEY], sizeof (props->private_key));
-	if (tb[WGDEVICE_A_PUBLIC_KEY])
-		nla_memcpy (props->public_key, tb[WGDEVICE_A_PUBLIC_KEY], sizeof (props->public_key));
-	if (tb[WGDEVICE_A_LISTEN_PORT])
-		props->listen_port = nla_get_u16 (tb[WGDEVICE_A_LISTEN_PORT]);
-	if (tb[WGDEVICE_A_FWMARK])
-		props->fwmark = nla_get_u32 (tb[WGDEVICE_A_FWMARK]);
+	if (tb[WGDEVICE_A_IFINDEX]) {
+		int ifindex;
+
+		ifindex = (int) nla_get_u32 (tb[WGDEVICE_A_IFINDEX]);
+		if (   ifindex <= 0
+		    || parse_data->ifindex != ifindex)
+			return NL_SKIP;
+	} else {
+		if (!parse_data->obj)
+			return NL_SKIP;
+	}
+
+	if (parse_data->obj) {
+		/* we already have an object instance. This means the netlink message
+		 * is a continuation, only providing more WGDEVICE_A_PEERS data below. */
+	} else {
+		NMPObject *obj;
+		NMPlatformLnkWireGuard *props;
+
+		obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_WIREGUARD, NULL);
+		props = &obj->lnk_wireguard;
+
+		if (tb[WGDEVICE_A_PRIVATE_KEY]) {
+			nla_memcpy (props->private_key, tb[WGDEVICE_A_PRIVATE_KEY], sizeof (props->private_key));
+			/* FIXME(netlink-bzero-secret): extend netlink library to wipe memory. For now,
+			 * just hack it here (yes, this does not cover all places where the
+			 * private key was copied). */
+			nm_explicit_bzero (nla_data (tb[WGDEVICE_A_PRIVATE_KEY]),
+			                   nla_len (tb[WGDEVICE_A_PRIVATE_KEY]));
+		}
+		if (tb[WGDEVICE_A_PUBLIC_KEY])
+			nla_memcpy (props->public_key, tb[WGDEVICE_A_PUBLIC_KEY], sizeof (props->public_key));
+		if (tb[WGDEVICE_A_LISTEN_PORT])
+			props->listen_port = nla_get_u16 (tb[WGDEVICE_A_LISTEN_PORT]);
+		if (tb[WGDEVICE_A_FWMARK])
+			props->fwmark = nla_get_u32 (tb[WGDEVICE_A_FWMARK]);
+
+		parse_data->obj = obj;
+	}
 
 	if (tb[WGDEVICE_A_PEERS]) {
 		struct nlattr *attr;
 		int rem;
 
 		nla_for_each_nested (attr, tb[WGDEVICE_A_PEERS], rem) {
-			if (!_wireguard_update_from_peers_nla (buf, attr))
-				return NL_SKIP;
+			if (!_wireguard_update_from_peers_nla (&parse_data->peers, &parse_data->allowed_ips, attr)) {
+				/* we ignore the error of parsing one peer.
+				 * _wireguard_update_from_peers_nla() leaves the @peers array in the
+				 * desired state. */
+			}
 		}
 	}
 
 	return NL_OK;
 }
 
-static gboolean
-_wireguard_get_link_properties (NMPlatform *platform, const NMPlatformLink *link, NMPObject *obj)
+static const NMPObject *
+_wireguard_read_info (NMPlatform *platform /* used only as logging context */,
+                     struct nl_sock *genl,
+                     int wireguard_family_id,
+                     int ifindex)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
-	struct _wireguard_device_buf buf = {
-		.obj = obj,
-		.peers = g_array_new (FALSE, FALSE, sizeof (NMWireGuardPeer)),
-		.allowedips = g_array_new (FALSE, FALSE, sizeof (NMWireGuardAllowedIP)),
+	NMPObject *obj = NULL;
+	WireGuardPeerConstruct *peer_c;
+	WireGuardPeerConstruct *peer_c_safe;
+	gs_unref_array GArray *allowed_ips = NULL;
+	WireGuardParseData parse_data = {
+		.ifindex = ifindex,
 	};
-	struct nl_cb cb = {
-		.valid_cb = _wireguard_get_device_cb,
-		.valid_arg = &buf,
-	};
-	guint i, j;
-	int wireguard_family_id;
+	guint i;
 
-	wireguard_family_id = genl_ctrl_resolve (priv->genl, "wireguard");
-	if (wireguard_family_id < 0) {
-		_LOGD ("wireguard: kernel support not available for wireguard link %s", link->name);
-		goto err;
-	}
+	nm_assert (genl);
+	nm_assert (wireguard_family_id >= 0);
+	nm_assert (ifindex > 0);
 
 	msg = nlmsg_alloc ();
 
-	if (!genlmsg_put (msg, NL_AUTO_PORT, NL_AUTO_SEQ, wireguard_family_id,
-	                  0, NLM_F_DUMP, WG_CMD_GET_DEVICE, 1))
-		goto err;
+	if (!genlmsg_put (msg,
+	                  NL_AUTO_PORT,
+	                  NL_AUTO_SEQ,
+	                  wireguard_family_id,
+	                  0,
+	                  NLM_F_DUMP,
+	                  WG_CMD_GET_DEVICE,
+	                  1))
+		return NULL;
 
-	NLA_PUT_U32 (msg, WGDEVICE_A_IFINDEX, link->ifindex);
+	NLA_PUT_U32 (msg, WGDEVICE_A_IFINDEX, (guint32) ifindex);
 
-	if (nl_send_auto (priv->genl, msg) < 0)
-		goto err;
+	if (nl_send_auto (genl, msg) < 0)
+		return NULL;
 
-	if (nl_recvmsgs (priv->genl, &cb) < 0)
-		goto err;
+	c_list_init (&parse_data.peers);
 
-	/* have each peer point to its own chunk of the allowedips buffer */
-	for (i = 0, j = 0; i < buf.peers->len; i++) {
-		NMWireGuardPeer *p = &g_array_index (buf.peers, NMWireGuardPeer, i);
+	/* we ignore errors, and return whatever we could successfully
+	 * parse. */
+	nl_recvmsgs (genl,
+	             &((const struct nl_cb) {
+	                 .valid_cb = _wireguard_get_device_cb,
+	                 .valid_arg = (gpointer) &parse_data,
+	             }));
 
-		p->allowedips = &g_array_index (buf.allowedips, NMWireGuardAllowedIP, j);
-		j += p->allowedips_len;
+	/* unpack: transfer ownership */
+	obj = parse_data.obj;
+	allowed_ips = parse_data.allowed_ips;
+
+	if (!obj) {
+		while ((peer_c = c_list_first_entry (&parse_data.peers, WireGuardPeerConstruct, lst))) {
+			c_list_unlink_stale (&peer_c->lst);
+			nm_explicit_bzero (&peer_c->data.preshared_key, sizeof (peer_c->data.preshared_key));
+			g_slice_free (WireGuardPeerConstruct, peer_c);
+		}
+		return NULL;
 	}
-	/* drop the wrapper (but also the buffer if no peer points to it) */
-	g_array_free (buf.allowedips, buf.peers->len ? FALSE : TRUE);
 
-	obj->_lnk_wireguard.peers_len = buf.peers->len;
-	obj->_lnk_wireguard.peers = (NMWireGuardPeer *) g_array_free (buf.peers, FALSE);
+	/* we receive peers/allowed-ips possibly in separate netlink messages. Hence, while
+	 * parsing the dump, we don't know upfront how many peers/allowed-ips we will receive.
+	 *
+	 * We solve that, by collecting all peers with a CList. It's done this way,
+	 * because a GArray would require growing the array, but we want to bzero()
+	 * the preshared-key of each peer while reallocating. The CList apprach avoids
+	 * that.
+	 *
+	 * For allowed-ips, we instead track one GArray, which are all appended
+	 * there. The realloc/resize of the GArray is fine there. However,
+	 * while we build the GArray, we don't yet have the final pointers.
+	 * Hence, while constructing, we track the indexes with peer->_construct_idx_*
+	 * fields. These indexes must be convered to actual pointers blow.
+	 *
+	 * This is all done during parsing. In the final NMPObjectLnkWireGuard we
+	 * don't want the CList anymore and repackage the NMPObject tightly. The
+	 * reason is, that NMPObject instances are immutable and long-living. Spend
+	 * a bit effort below during construction to obtain a most suitable representation
+	 * in this regard. */
+	obj->_lnk_wireguard.peers_len = c_list_length (&parse_data.peers);
+	obj->_lnk_wireguard.peers = obj->_lnk_wireguard.peers_len > 0
+	                            ? g_new (NMPWireGuardPeer, obj->_lnk_wireguard.peers_len)
+	                            : NULL;
 
-	return TRUE;
+	/* duplicate allowed_ips instead of using the pointer. The GArray possibly has more
+	 * space allocated then we need, and we want to get rid of this excess buffer.
+	 * Note that NMPObject instance is possibly put into the cache and long-living. */
+	obj->_lnk_wireguard._allowed_ips_buf_len = allowed_ips ? allowed_ips->len : 0u;
+	obj->_lnk_wireguard._allowed_ips_buf = obj->_lnk_wireguard._allowed_ips_buf_len > 0
+	                                       ? (NMPWireGuardAllowedIP *) nm_memdup (allowed_ips->data,
+	                                                                              sizeof (NMPWireGuardAllowedIP) * allowed_ips->len)
+	                                       : NULL;
 
-err:
+	i = 0;
+	c_list_for_each_entry_safe (peer_c, peer_c_safe, &parse_data.peers, lst) {
+		NMPWireGuardPeer *peer = (NMPWireGuardPeer *) &obj->_lnk_wireguard.peers[i++];
+
+		*peer = peer_c->data;
+
+		c_list_unlink_stale (&peer_c->lst);
+		nm_explicit_bzero (&peer_c->data.preshared_key, sizeof (peer_c->data.preshared_key));
+		g_slice_free (WireGuardPeerConstruct, peer_c);
+
+		if (peer->_construct_idx_end != 0) {
+			guint len;
+
+			nm_assert (obj->_lnk_wireguard._allowed_ips_buf);
+			nm_assert (peer->_construct_idx_end > peer->_construct_idx_start);
+			nm_assert (peer->_construct_idx_start < obj->_lnk_wireguard._allowed_ips_buf_len);
+			nm_assert (peer->_construct_idx_end <= obj->_lnk_wireguard._allowed_ips_buf_len);
+
+			len = peer->_construct_idx_end - peer->_construct_idx_start;
+			peer->allowed_ips = &obj->_lnk_wireguard._allowed_ips_buf[peer->_construct_idx_start];
+			peer->allowed_ips_len = len;
+		} else {
+			nm_assert (!peer->_construct_idx_start);
+			nm_assert (!peer->_construct_idx_end);
+			peer->allowed_ips = NULL;
+			peer->allowed_ips_len = 0;
+		}
+	}
+
+	return obj;
+
 nla_put_failure:
-	g_array_free (buf.peers, TRUE);
-	g_array_free (buf.allowedips, TRUE);
-	return FALSE;
+	g_return_val_if_reached (NULL);
 }
 
 /*****************************************************************************/
@@ -2188,7 +2332,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	gboolean completed_from_cache_val = FALSE;
 	gboolean *completed_from_cache = cache ? &completed_from_cache_val : NULL;
 	const NMPObject *link_cached = NULL;
-	NMPObject *lnk_data = NULL;
+	const NMPObject *lnk_data = NULL;
 	gboolean address_complete_from_cache = TRUE;
 	gboolean lnk_data_complete_from_cache = TRUE;
 	gboolean need_ext_data = FALSE;
@@ -2197,9 +2341,11 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 
 	if (!nlmsg_valid_hdr (nlh, sizeof (*ifi)))
 		return NULL;
-	ifi = nlmsg_data(nlh);
+	ifi = nlmsg_data (nlh);
 
 	if (ifi->ifi_family != AF_UNSPEC)
+		return NULL;
+	if (ifi->ifi_index <= 0)
 		return NULL;
 
 	obj = nmp_object_new_link (ifi->ifi_index);
@@ -2358,6 +2504,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		lnk_data_complete_from_cache = FALSE;
 		break;
 	case NM_LINK_TYPE_WIREGUARD:
+		lnk_data_complete_from_cache = TRUE;
 		break;
 	default:
 		lnk_data_complete_from_cache = FALSE;
@@ -2386,7 +2533,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 				 * Also, sometimes the info-data is missing for updates. In this case
 				 * we want to keep the previously received lnk_data. */
 				nmp_object_unref (lnk_data);
-				lnk_data = (NMPObject *) nmp_object_ref (link_cached->_link.netlink.lnk);
+				lnk_data = nmp_object_ref (link_cached->_link.netlink.lnk);
 			}
 
 			if (   need_ext_data
@@ -2411,29 +2558,10 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		}
 	}
 
-	if (obj->link.type == NM_LINK_TYPE_WIREGUARD) {
-		nm_auto_nmpobj NMPObject *lnk_data_now = NULL;
-
-		/* The WireGuard kernel module does not yet send link update
-		 * notifications, so we don't actually update the cache. For
-		 * now, always refetch link data here. */
-		lnk_data_now = nmp_object_new (NMP_OBJECT_TYPE_LNK_WIREGUARD, NULL);
-		if (!_wireguard_get_link_properties (platform, &obj->link, lnk_data_now)) {
-			_LOGD ("wireguard: %d %s: failed to get properties",
-			       obj->link.ifindex,
-			       obj->link.name ?: "");
-		}
-
-		if (lnk_data && nmp_object_cmp (lnk_data, lnk_data_now))
-			nmp_object_unref (g_steal_pointer (&lnk_data));
-
-		if (!lnk_data)
-			lnk_data = (NMPObject *) nmp_object_ref (lnk_data_now);
-	}
-
 	obj->_link.netlink.lnk = lnk_data;
 
-	if (need_ext_data && obj->_link.ext_data == NULL) {
+	if (   need_ext_data
+	    && obj->_link.ext_data == NULL) {
 		switch (obj->link.type) {
 		case NM_LINK_TYPE_WIFI:
 			obj->_link.ext_data = (GObject *) nm_wifi_utils_new (ifi->ifi_index,
@@ -2456,6 +2584,42 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 			break;
 		default:
 			g_assert_not_reached ();
+		}
+	}
+
+	if (obj->link.type == NM_LINK_TYPE_WIREGUARD) {
+		const NMPObject *lnk_data_new = NULL;
+		struct nl_sock *genl = NM_LINUX_PLATFORM_GET_PRIVATE (platform)->genl;
+
+		/* The WireGuard kernel module does not yet send link update
+		 * notifications, so we don't actually update the cache. For
+		 * now, always refetch link data here. */
+
+		_lookup_cached_link (cache, obj->link.ifindex, completed_from_cache, &link_cached);
+		if (   link_cached
+		    && link_cached->_link.netlink.is_in_netlink
+		    && link_cached->link.type == NM_LINK_TYPE_WIREGUARD)
+			obj->_link.wireguard_family_id = link_cached->_link.wireguard_family_id;
+		else
+			obj->_link.wireguard_family_id = -1;
+
+		if (obj->_link.wireguard_family_id < 0)
+			obj->_link.wireguard_family_id = genl_ctrl_resolve (genl, "wireguard");
+
+		if (obj->_link.wireguard_family_id >= 0) {
+			lnk_data_new = _wireguard_read_info (platform,
+			                                     genl,
+			                                     obj->_link.wireguard_family_id,
+			                                     obj->link.ifindex);
+		}
+
+		if (   lnk_data_new
+		    && obj->_link.netlink.lnk
+		    && nmp_object_equal (obj->_link.netlink.lnk, lnk_data_new))
+			nmp_object_unref (lnk_data_new);
+		else {
+			nmp_object_unref (obj->_link.netlink.lnk);
+			obj->_link.netlink.lnk = lnk_data_new;
 		}
 	}
 
