@@ -1485,25 +1485,23 @@ test_nm_utils_strbuf_append (void)
 					g_assert (t_buf[-1] == '\0');
 				} else {
 					nm_utils_strbuf_seek_end (&t_buf, &t_len);
-					if (strlen (str) + 1 == buf_len) {
-						/* Special case: we appended a string that fit into the buffer
-						 * exactly, without truncation.
-						 * If we would append the string via nm_utils_strbuf_append(),
-						 * then it would have recognized that the string was not truncated
-						 * and leave len==1, and pointing the buffer to the terminating NUL
-						 * (at the very end, not past it).
+					if (   buf_len > 0
+					    && strlen (str) + 1 > buf_len) {
+						/* the buffer was truncated by g_snprintf() above.
 						 *
-						 * But nm_utils_strbuf_seek_end() cannot distinguish whether
-						 * truncation occured, and assumes the buffer was indeed truncated.
+						 * But nm_utils_strbuf_seek_end() does not recognize that and returns
+						 * a remaining length of 1.
 						 *
-						 * Assert for that, but also adjust the numbers, so that the assertions
-						 * below pass (the assertions below theck for the nm_utils_strbuf_append()
-						 * case). */
-						g_assert (t_len == 0);
-						g_assert (t_buf == &buf[buf_len]);
-						g_assert (t_buf[-1] == '\0');
-						t_len = 1;
-						t_buf--;
+						 * Note that other nm_utils_strbuf_append*() functions recognize
+						 * truncation, and properly set the remaining length to zero.
+						 * As the assertions below check for the behavior of nm_utils_strbuf_append*(),
+						 * we assert here that nm_utils_strbuf_seek_end() behaved as expected, and then
+						 * adjust t_buf/t_len according to the "is-truncated" case. */
+						g_assert (t_len == 1);
+						g_assert (t_buf == &buf[buf_len - 1]);
+						g_assert (t_buf[0] == '\0');
+						t_len = 0;
+						t_buf++;
 					}
 				}
 				break;

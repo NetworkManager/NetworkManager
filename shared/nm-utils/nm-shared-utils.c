@@ -133,9 +133,29 @@ nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...)
  *
  *   nm_utils_strbuf_append (&buf, &len, ...);
  *
- * They only behave differently, if the string fits exactly
- * into the buffer without truncation. The former cannot distinguish
- * the two cases, while the latter can.
+ * The only difference is the behavior when the string got truncated:
+ * nm_utils_strbuf_append() will recognize that and set the remaining
+ * length to zero.
+ *
+ * In general, the behavior is:
+ *
+ *  - if *len is zero, do nothing
+ *  - if the buffer contains a NUL byte within the first *len characters,
+ *    the buffer is pointed to the NUL byte and len is adjusted. In this
+ *    case, the remaining *len is always >= 1.
+ *    In particular, that is also the case if the NUL byte is at the very last
+ *    position ((*buf)[*len -1]). That happens, when the previous operation
+ *    either fit the string exactly into the buffer or the string was truncated
+ *    by g_snprintf(). The difference cannot be determined.
+ *  - if the buffer contains no NUL bytes within the first *len characters,
+ *    write NUL at the last position, set *len to zero, and point *buf past
+ *    the NUL byte. This would happen with
+ *
+ *       strncpy (buf, long_str, len);
+ *       nm_utils_strbuf_seek_end (&buf, &len).
+ *
+ *    where strncpy() does truncate the string and not NUL terminate it.
+ *    nm_utils_strbuf_seek_end() would then NUL terminate it.
  */
 void
 nm_utils_strbuf_seek_end (char **buf, gsize *len)
@@ -146,55 +166,31 @@ nm_utils_strbuf_seek_end (char **buf, gsize *len)
 	nm_assert (len);
 	nm_assert (buf && *buf);
 
-	if (*len == 0)
+	if (*len <= 1) {
+		if (   *len == 1
+		    && (*buf)[0])
+			goto truncate;
 		return;
+	}
 
 	end = memchr (*buf, 0, *len);
-	if (!end) {
-		/* hm, no NUL character within len bytes.
-		 * Just NUL terminate the array and consume them
-		 * all. */
-		*buf += *len;
-		(*buf)[-1] = '\0';
-		*len = 0;
+	if (end) {
+		l = end - *buf;
+		nm_assert (l < *len);
+
+		*buf = end;
+		*len -= l;
 		return;
 	}
 
-	l = end - *buf;
-	nm_assert (l < *len);
-
-	*buf = end;
-	*len -= l;
-	if (*len == 1) {
-		/* the last character of a buffer is the '\0'. There are two
-		 * cases why that may happen:
-		 *   - but string was truncated
-		 *   - the string fit exactly into the buffer.
-		 * Here we cannot distinguish between the two, so assume the string
-		 * was truncated and signal that by setting @len to 0 and pointing the
-		 * buffer *past* the end (like all other nm_utils_strbuf_*() functions).
-		 *
-		 * Note that nm_utils_strbuf_append_str() can distinguish between
-		 * the two cases, and leaves @len at 1, if the string was not actually
-		 * truncated.
-		 *
-		 * For consistancy, it might be better not to do this and just
-		 * seek to end of the buffer (not past it). However, that would mean,
-		 * in a series of
-		 *     g_snprintf()
-		 *     nm_utils_strbuf_seek_end()
-		 * the length would never reach zero, but stay at 1. With this,
-		 * it reaches len 0 early.
-		 * It seems better to declare the buffer as fully consumed and set
-		 * the length to zero.
-		 *
-		 * If the caller does not care about truncation, then this behavior
-		 * is more sensible. If the caller cares about truncation, it must
-		 * check earlier (right when the truncation occures).
-		 */
-		(*buf)++;
-		*len = 0;
-	}
+truncate:
+	/* hm, no NUL character within len bytes.
+	 * Just NUL terminate the array and consume them
+	 * all. */
+	*buf += *len;
+	(*buf)[-1] = '\0';
+	*len = 0;
+	return;
 }
 
 /*****************************************************************************/
