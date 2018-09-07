@@ -505,11 +505,14 @@ enable_ppp = get_option('ppp')
 if enable_ppp
   assert(cc.has_header('pppd/pppd.h'), 'couldn\'t find pppd.h. pppd development headers are required')
 
-  locations = get_option('pppd')
-  pppd = find_program(locations, required: false)
-  assert(pppd.found(), 'pppd required but not found, please provide a valid pppd path or use -Dppp=false to disable it')
+  pppd_path = get_option('pppd')
+  if pppd_path == ''
+    pppd = find_program('pppd', '/sbin/pppd', '/usr/sbin/pppd', required: false)
+    assert(pppd.found(), 'pppd required but not found, please provide a valid pppd path or use -Dppp=false to disable it')
+    pppd_path = pppd.path()
+  endif
 
-  config_h.set_quoted('PPPD_PATH', pppd.path())
+  config_h.set_quoted('PPPD_PATH', pppd_path)
 
   pppd_plugin_dir = get_option('pppd_plugin_dir')
   if pppd_plugin_dir == ''
@@ -984,7 +987,7 @@ output += '  wifi: ' + enable_wifi.to_string() + '\n'
 output += '  iwd:  ' + enable_iwd.to_string() + '\n'
 output += '  pppd: ' + enable_ppp.to_string()
 if enable_ppp
-  output += ' ' + pppd.path()
+  output += ' ' + pppd_path
 endif
 output += '\n'
 output += '  modemmanager-1: ' + enable_modem_manager.to_string() + '\n'
