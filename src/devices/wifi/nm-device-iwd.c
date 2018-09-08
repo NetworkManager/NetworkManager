@@ -229,6 +229,85 @@ vardict_from_network_type (const char *type)
 }
 
 static void
+insert_ap_from_network (GHashTable *aps, GDBusProxy *proxy, const char *path, int16_t signal, uint32_t ap_id)
+{
+	gs_unref_object GDBusProxy *network_proxy = NULL;
+	gs_unref_variant GVariant *name_value = NULL, *type_value = NULL;
+	const char *name, *type;
+	GVariantBuilder builder;
+	gs_unref_variant GVariant *props = NULL;
+	GVariant *rsn;
+	uint8_t bssid[6];
+	NMWifiAP *ap;
+	GError *error;
+
+	network_proxy = g_dbus_proxy_new_sync (g_dbus_proxy_get_connection (proxy),
+	                                       G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
+	                                       NULL,
+	                                       NM_IWD_SERVICE,
+	                                       path,
+	                                       NM_IWD_NETWORK_INTERFACE,
+	                                       NULL, &error);
+	if (!network_proxy) {
+		g_clear_error (&error);
+		return;
+	}
+
+	name_value = g_dbus_proxy_get_cached_property (network_proxy, "Name");
+	type_value = g_dbus_proxy_get_cached_property (network_proxy, "Type");
+	if (   !name_value
+	    || !g_variant_is_of_type (name_value, G_VARIANT_TYPE_STRING)
+	    || !type_value
+	    || !g_variant_is_of_type (type_value, G_VARIANT_TYPE_STRING))
+		return;
+
+	name = g_variant_get_string (name_value, NULL);
+	type = g_variant_get_string (type_value, NULL);
+
+	/* What we get from IWD are networks, or ESSs, that may contain
+	 * multiple APs, or BSSs, each.  We don't get information about any
+	 * specific BSSs within an ESS but we can safely present each ESS
+	 * as an individual BSS to NM, which will be seen as ESSs comprising
+	 * a single BSS each.  NM won't be able to handle roaming but IWD
+	 * already does that.  We fake the BSSIDs as they don't play any
+	 * role either.
+	 */
+	bssid[0] = 0x00;
+	bssid[1] = 0x01;
+	bssid[2] = 0x02;
+	bssid[3] = ap_id >> 16;
+	bssid[4] = ap_id >> 8;
+	bssid[5] = ap_id;
+
+	/* WEP not supported */
+	if (nm_streq (type, "wep"))
+		return;
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+	g_variant_builder_add (&builder, "{sv}", "BSSID",
+	                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, bssid, 6, 1));
+	g_variant_builder_add (&builder, "{sv}", "Mode",
+	                       g_variant_new_string ("infrastructure"));
+
+	rsn = vardict_from_network_type (type);
+	if (rsn)
+		g_variant_builder_add (&builder, "{sv}", "RSN", rsn);
+
+	props = g_variant_new ("a{sv}", &builder);
+
+	ap = nm_wifi_ap_new_from_properties (path, props);
+
+	nm_wifi_ap_set_ssid_arr (ap,
+	                         (const guint8 *) name,
+	                         NM_MIN (32, strlen (name)));
+
+	nm_wifi_ap_set_strength (ap, nm_wifi_utils_level_to_quality (signal / 100));
+	nm_wifi_ap_set_freq (ap, 2417);
+	nm_wifi_ap_set_max_bitrate (ap, 65000);
+	g_hash_table_insert (aps, (gpointer) nm_wifi_ap_get_supplicant_path (ap), ap);
+}
+
+static void
 get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 {
 	NMDeviceIwd *self = user_data;
@@ -242,9 +321,16 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	gboolean changed = FALSE;
 	GHashTableIter ap_iter;
 	gs_unref_hashtable GHashTable *new_aps = NULL;
+	/* Depending on whether we're using the Station interface or the Device
+	 * interface for compatibility with IWD <= 0.7, the return signature of
+	 * GetOrderedNetworks will be different.
+	 */
+	gboolean compat = priv->dbus_station_proxy == priv->dbus_device_proxy;
+	const char *return_sig = compat ? "(a(osns))" : "(a(on))";
+	static uint32_t ap_id = 0;
 
 	variant = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (source), res,
-	                                      G_VARIANT_TYPE ("(a(osns))"),
+	                                      G_VARIANT_TYPE (return_sig),
 	                                      &error);
 	if (!variant) {
 		_LOGE (LOGD_WIFI, "Station.GetOrderedNetworks failed: %s",
@@ -254,60 +340,14 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 
 	new_aps = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_object_unref);
 
-	g_variant_get (variant, "(a(osns))", &networks);
+	g_variant_get (variant, return_sig, &networks);
 
-	while (g_variant_iter_next (networks, "(&o&sn&s)", &path, &name, &signal, &type)) {
-		GVariantBuilder builder;
-		gs_unref_variant GVariant *props = NULL;
-		GVariant *rsn;
-		static uint32_t ap_id = 0;
-		uint8_t bssid[6];
-
-		/*
-		 * What we get from IWD are networks, or ESSs, that may
-		 * contain multiple APs, or BSSs, each.  We don't get
-		 * information about any specific BSSs within an ESS but
-		 * we can safely present each ESS as an individual BSS to
-		 * NM, which will be seen as ESSs comprising a single BSS
-		 * each.  NM won't be able to handle roaming but IWD already
-		 * does that.  We fake the BSSIDs as they don't play any
-		 * role either.
-		 */
-		bssid[0] = 0x00;
-		bssid[1] = 0x01;
-		bssid[2] = 0x02;
-		bssid[3] = ap_id >> 16;
-		bssid[4] = ap_id >> 8;
-		bssid[5] = ap_id++;
-
-		/* WEP not supported */
-		if (!strcmp (type, "wep"))
-			continue;
-
-		g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
-		g_variant_builder_add (&builder, "{sv}", "BSSID",
-		                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, bssid, 6, 1));
-		g_variant_builder_add (&builder, "{sv}", "Mode",
-		                       g_variant_new_string ("infrastructure"));
-
-		rsn = vardict_from_network_type (type);
-		if (rsn)
-			g_variant_builder_add (&builder, "{sv}", "RSN", rsn);
-
-		props = g_variant_new ("a{sv}", &builder);
-
-		ap = nm_wifi_ap_new_from_properties (path, props);
-
-		nm_wifi_ap_set_ssid_arr (ap,
-		                         (const guint8 *) name,
-		                         NM_MIN (32, strlen (name)));
-
-		nm_wifi_ap_set_strength (ap, nm_wifi_utils_level_to_quality (signal / 100));
-		nm_wifi_ap_set_freq (ap, 2417);
-		nm_wifi_ap_set_max_bitrate (ap, 65000);
-		g_hash_table_insert (new_aps,
-		                     (gpointer) nm_wifi_ap_get_supplicant_path (ap),
-		                     ap);
+	if (compat) {
+		while (g_variant_iter_next (networks, "(&o&sn&s)", &path, &name, &signal, &type))
+			insert_ap_from_network (new_aps, priv->dbus_station_proxy, path, signal, ap_id++);
+	} else {
+		while (g_variant_iter_next (networks, "(&on)", &path, &signal))
+			insert_ap_from_network (new_aps, priv->dbus_station_proxy, path, signal, ap_id++);
 	}
 
 	g_variant_iter_free (networks);
