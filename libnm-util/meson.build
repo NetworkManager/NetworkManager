@@ -57,7 +57,6 @@ libnm_utils_enum = gnome.mkenums(
 
 sources = files(
   'crypto.c',
-  'crypto_' + crypto + '.c',
   'nm-connection.c',
   'nm-param-spec-specialized.c',
   'nm-setting-8021x.c',
@@ -93,7 +92,6 @@ sources = files(
 sources += shared_files_libnm_util
 
 deps = [
-  crypto_dep,
   dbus_dep,
   dbus_glib_dep,
   shared_dep,
@@ -109,6 +107,32 @@ cflags = common_cflags + [
   '-DG_LOG_DOMAIN="@0@"'.format(libnm_util_name)
 ]
 
+if crypto_gnutls_dep.found()
+  libnm_util_crypto_gnutls = static_library(
+    'nm-util-crypto-gnutls',
+    sources: [ 'crypto_gnutls.c' ],
+    dependencies: deps + [ crypto_gnutls_dep ],
+    c_args: cflags
+  )
+endif
+
+if crypto_nss_dep.found()
+  libnm_util_crypto_nss = static_library(
+    'nm-util-crypto-nss',
+    sources: [ 'crypto_nss.c' ],
+    dependencies: deps + [ crypto_nss_dep ],
+    c_args: cflags
+  )
+endif
+
+if crypto == 'gnutls'
+  libnm_util_crypto = libnm_util_crypto_gnutls
+elif crypto == 'nss'
+  libnm_util_crypto = libnm_util_crypto_nss
+else
+  error('bug')
+endif
+
 linker_script = join_paths(meson.current_source_dir(), 'libnm-util.ver')
 
 libnm_util = shared_library(
@@ -121,6 +145,7 @@ libnm_util = shared_library(
     '-Wl,--version-script,@0@'.format(linker_script),
   ],
   link_depends: linker_script,
+  link_with: libnm_util_crypto,
   install: true
 )
 
@@ -175,11 +200,9 @@ run_target(
 
 sources = files(
   'crypto.c',
-  'crypto_' + crypto + '.c'
 )
 
 deps = [
-  crypto_dep,
   shared_dep
 ]
 
@@ -187,6 +210,7 @@ libtest_crypto = static_library(
   'test-crypto',
   sources: sources,
   dependencies: deps,
+  link_with: libnm_util_crypto,
   c_args: cflags
 )
 
