@@ -2295,12 +2295,12 @@ _do_read_vpn_details_impl1 (const char *file,
 static void
 test_nm_vpn_service_plugin_read_vpn_details (void)
 {
-	//_do_read_vpn_details_empty ("");
-	//_do_read_vpn_details_empty ("hallo");
-	//_do_read_vpn_details_empty ("DONE");
+	_do_read_vpn_details_empty ("");
+	_do_read_vpn_details_empty ("hallo");
+	_do_read_vpn_details_empty ("DONE");
 	_do_read_vpn_details_empty ("DONE\n");
-	//_do_read_vpn_details_empty ("DONE\0");
-	//_do_read_vpn_details_empty ("\0DONE\0");
+	_do_read_vpn_details_empty ("DONE\0");
+	_do_read_vpn_details_empty ("\0DONE\0");
 
 	_do_read_vpn_details (""
 	                      "DATA_KEY=some-key\n"
@@ -2375,7 +2375,6 @@ test_nm_vpn_service_plugin_read_vpn_details (void)
 	                      "=can have\n"
 	                      "=continuations too\n"
 	                      "SECRET_VAL=value\n"
-	                      "DONE\n"
 	                      "",
 	                      READ_VPN_DETAIL_DATA (
 	                        { "some-key", "string\ncontinued after a line break" },

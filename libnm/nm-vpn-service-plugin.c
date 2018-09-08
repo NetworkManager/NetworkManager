@@ -810,15 +810,14 @@ nm_vpn_service_plugin_read_vpn_details (int fd,
 
 		errno = 0;
 		nr = read (fd, &c, 1);
-		if (nr == -1) {
+		if (nr < 0) {
 			if (errno == EAGAIN) {
 				g_usleep (100);
 				continue;
 			}
 			break;
 		}
-
-		if (c != '\n') {
+		if (nr > 0 && c != '\n') {
 			g_string_append_c (line, c);
 			continue;
 		}
@@ -879,6 +878,9 @@ nm_vpn_service_plugin_read_vpn_details (int fd,
 		}
 
 		g_string_truncate (line, 0);
+
+		if (nr == 0)
+			break;
 	}
 
 	if (success) {
