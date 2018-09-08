@@ -652,7 +652,11 @@ config_h.set_quoted('DNSMASQ_PATH', find_program(get_option('dnsmasq')).path())
 
 # dnssec-trigger-script path
 dnssec_trigger_script = find_program(get_option('dnssec_trigger'), required: false)
-config_h.set_quoted('DNSSEC_TRIGGER_SCRIPT', (dnssec_trigger_script.found() ? dnssec_trigger_script.path() : '/usr/libexec/dnssec-trigger-script'))
+if dnssec_trigger_script.found()
+  config_h.set_quoted('DNSSEC_TRIGGER_SCRIPT', dnssec_trigger_script.path())
+else
+  config_h.set_quoted('DNSSEC_TRIGGER_SCRIPT', join_paths(nm_libexecdir, 'dnssec-trigger-script'))
+endif
 
 # system CA certificates path
 system_ca_path = get_option('system_ca_path')
