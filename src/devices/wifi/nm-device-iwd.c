@@ -67,7 +67,8 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	GDBusObject *   dbus_obj;
-	GDBusProxy *    dbus_proxy;
+	GDBusProxy *    dbus_device_proxy;
+	GDBusProxy *    dbus_station_proxy;
 	CList           aps_lst_head;
 	NMWifiAP *      current_ap;
 	GCancellable *  cancellable;
@@ -246,7 +247,7 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	                                      G_VARIANT_TYPE ("(a(osns))"),
 	                                      &error);
 	if (!variant) {
-		_LOGE (LOGD_WIFI, "Device.GetOrderedNetworks failed: %s",
+		_LOGE (LOGD_WIFI, "Station.GetOrderedNetworks failed: %s",
 		       error->message);
 		return;
 	}
@@ -358,7 +359,7 @@ update_aps (NMDeviceIwd *self)
 	if (!priv->cancellable)
 		priv->cancellable = g_cancellable_new ();
 
-	g_dbus_proxy_call (priv->dbus_proxy, "GetOrderedNetworks",
+	g_dbus_proxy_call (priv->dbus_station_proxy, "GetOrderedNetworks",
 	                   g_variant_new ("()"), G_DBUS_CALL_FLAGS_NONE,
 	                   2000, priv->cancellable,
 	                   get_ordered_networks_cb, self);
@@ -369,7 +370,7 @@ send_disconnect (NMDeviceIwd *self)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
-	g_dbus_proxy_call (priv->dbus_proxy, "Disconnect", g_variant_new ("()"),
+	g_dbus_proxy_call (priv->dbus_station_proxy, "Disconnect", g_variant_new ("()"),
 	                   G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
 }
 
@@ -408,7 +409,7 @@ deactivate_async_finish (NMDevice *device, GAsyncResult *res, GError **error)
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (NM_DEVICE_IWD (device));
 	gs_unref_variant GVariant *variant = NULL;
 
-	variant = g_dbus_proxy_call_finish (priv->dbus_proxy, res, error);
+	variant = g_dbus_proxy_call_finish (priv->dbus_station_proxy, res, error);
 	return variant != NULL;
 }
 
@@ -444,7 +445,7 @@ deactivate_async (NMDevice *device,
 	ctx->callback = callback;
 	ctx->user_data = user_data;
 
-	g_dbus_proxy_call (priv->dbus_proxy, "Disconnect", g_variant_new ("()"),
+	g_dbus_proxy_call (priv->dbus_station_proxy, "Disconnect", g_variant_new ("()"),
 	                   G_DBUS_CALL_FLAGS_NONE, -1, cancellable, disconnect_cb, ctx);
 }
 
@@ -791,7 +792,7 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 	if (!priv->enabled || !priv->dbus_obj)
 		return FALSE;
 
-	value = g_dbus_proxy_get_cached_property (priv->dbus_proxy, "Powered");
+	value = g_dbus_proxy_get_cached_property (priv->dbus_device_proxy, "Powered");
 	return get_variant_boolean (value, "Powered");
 }
 
@@ -953,7 +954,7 @@ dbus_request_scan_cb (NMDevice *device,
 	}
 
 	if (!priv->scanning && !priv->scan_requested) {
-		g_dbus_proxy_call (priv->dbus_proxy, "Scan",
+		g_dbus_proxy_call (priv->dbus_station_proxy, "Scan",
 		                   g_variant_new ("()"),
 		                   G_DBUS_CALL_FLAGS_NONE, -1,
 		                   priv->cancellable, scan_cb, self);
@@ -1327,7 +1328,7 @@ set_powered (NMDeviceIwd *self, gboolean powered)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
-	g_dbus_proxy_call (priv->dbus_proxy,
+	g_dbus_proxy_call (priv->dbus_device_proxy,
 	                   "org.freedesktop.DBus.Properties.Set",
 	                   g_variant_new ("(ssv)", NM_IWD_DEVICE_INTERFACE,
 	                                  "Powered",
@@ -1480,7 +1481,7 @@ periodic_scan_timeout_cb (gpointer user_data)
 	if (priv->scanning || priv->scan_requested)
 		return FALSE;
 
-	g_dbus_proxy_call (priv->dbus_proxy, "Scan", g_variant_new ("()"),
+	g_dbus_proxy_call (priv->dbus_station_proxy, "Scan", g_variant_new ("()"),
 	                   G_DBUS_CALL_FLAGS_NONE, -1,
 	                   priv->cancellable, scan_cb, self);
 	priv->scan_requested = TRUE;
@@ -1584,7 +1585,7 @@ set_enabled (NMDevice *device, gboolean enabled)
 		return;
 	}
 
-	if (priv->dbus_proxy)
+	if (priv->dbus_obj)
 		set_powered (self, enabled);
 
 	if (enabled) {
@@ -1790,16 +1791,8 @@ scanning_changed (NMDeviceIwd *self, gboolean new_scanning)
 }
 
 static void
-powered_changed (NMDeviceIwd *self, gboolean new_powered)
-{
-	nm_device_queue_recheck_available (NM_DEVICE (self),
-	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
-	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-}
-
-static void
-properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
-                    GStrv invalidate_properties, gpointer user_data)
+station_properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
+                            GStrv invalidate_properties, gpointer user_data)
 {
 	NMDeviceIwd *self = user_data;
 	GVariantIter *iter;
@@ -1814,6 +1807,31 @@ properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
 		if (!strcmp (key, "Scanning"))
 			scanning_changed (self, get_variant_boolean (value, "Scanning"));
 
+		g_variant_unref (value);
+	}
+
+	g_variant_iter_free (iter);
+}
+
+static void
+powered_changed (NMDeviceIwd *self, gboolean new_powered)
+{
+	nm_device_queue_recheck_available (NM_DEVICE (self),
+	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
+	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+}
+
+static void
+device_properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
+                           GStrv invalidate_properties, gpointer user_data)
+{
+	NMDeviceIwd *self = user_data;
+	GVariantIter *iter;
+	const char *key;
+	GVariant *value;
+
+	g_variant_get (changed_properties, "a{sv}", &iter);
+	while (g_variant_iter_next (iter, "{&sv}", &key, &value)) {
 		if (!strcmp (key, "Powered"))
 			powered_changed (self, get_variant_boolean (value, "Powered"));
 
@@ -1833,11 +1851,13 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 	if (!nm_g_object_ref_set ((GObject **) &priv->dbus_obj, (GObject *) object))
 		return;
 
-	if (priv->dbus_proxy) {
-		g_signal_handlers_disconnect_by_func (priv->dbus_proxy,
-		                                      properties_changed, self);
-
-		g_clear_object (&priv->dbus_proxy);
+	if (priv->dbus_device_proxy) {
+		g_signal_handlers_disconnect_by_func (priv->dbus_device_proxy,
+		                                      device_properties_changed, self);
+		g_clear_object (&priv->dbus_device_proxy);
+		g_signal_handlers_disconnect_by_func (priv->dbus_station_proxy,
+		                                      station_properties_changed, self);
+		g_clear_object (&priv->dbus_station_proxy);
 	}
 
 	if (priv->enabled)
@@ -1853,19 +1873,55 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 	}
 
 	interface = g_dbus_object_get_interface (object, NM_IWD_DEVICE_INTERFACE);
-	priv->dbus_proxy = G_DBUS_PROXY (interface);
+	if (!interface) {
+		_LOGE (LOGD_WIFI, "Interface %s not found on obj %s",
+		       NM_IWD_DEVICE_INTERFACE,
+		       g_dbus_object_get_object_path (object));
+		goto error;
+	}
 
-	value = g_dbus_proxy_get_cached_property (priv->dbus_proxy, "Scanning");
+	priv->dbus_device_proxy = G_DBUS_PROXY (interface);
+
+	g_signal_connect (priv->dbus_device_proxy, "g-properties-changed",
+	                  G_CALLBACK (device_properties_changed), self);
+
+	interface = g_dbus_object_get_interface (object, NM_IWD_STATION_INTERFACE);
+	if (!interface) {
+		/* No Station interface on the device object.  Check if the
+		 * "State" property is present on the Device interface, that
+		 * would mean we're dealing with an IWD version from before the
+		 * Device/Station split (0.7 or earlier) and we can easily
+		 * handle that by making priv->dbus_device_proxy and
+		 * priv->dbus_station_proxy both point at the Device interface.
+		 *
+		 * TODO: handle device in a mode initially other than station
+		 * -- also means the Station interface won't be there.
+		 */
+		value = g_dbus_proxy_get_cached_property (priv->dbus_device_proxy, "State");
+		g_variant_unref (value);
+		if (!value) {
+			_LOGE (LOGD_WIFI, "Interface %s not found on obj %s",
+			       NM_IWD_STATION_INTERFACE,
+			       g_dbus_object_get_object_path (object));
+			goto error;
+		}
+
+		interface = g_object_ref (priv->dbus_device_proxy);
+	}
+
+	priv->dbus_station_proxy = G_DBUS_PROXY (interface);
+
+	value = g_dbus_proxy_get_cached_property (priv->dbus_station_proxy, "Scanning");
 	priv->scanning = get_variant_boolean (value, "Scanning");
 	g_variant_unref (value);
 	priv->scan_requested = FALSE;
 
-	value = g_dbus_proxy_get_cached_property (priv->dbus_proxy, "State");
+	value = g_dbus_proxy_get_cached_property (priv->dbus_station_proxy, "State");
 	state_changed (self, get_variant_state (value));
 	g_variant_unref (value);
 
-	g_signal_connect (priv->dbus_proxy, "g-properties-changed",
-	                  G_CALLBACK (properties_changed), self);
+	g_signal_connect (priv->dbus_station_proxy, "g-properties-changed",
+	                  G_CALLBACK (station_properties_changed), self);
 
 	set_powered (self, priv->enabled);
 
@@ -1874,6 +1930,15 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 	 */
 	if (priv->enabled)
 		send_disconnect (self);
+
+	return;
+error:
+	g_clear_object (&priv->dbus_obj);
+	if (priv->dbus_device_proxy) {
+		g_signal_handlers_disconnect_by_func (priv->dbus_device_proxy,
+		                                      device_properties_changed, self);
+		g_clear_object (&priv->dbus_device_proxy);
+	}
 }
 
 gboolean
@@ -1966,7 +2031,8 @@ dispose (GObject *object)
 
 	cleanup_association_attempt (self, TRUE);
 
-	g_clear_object (&priv->dbus_proxy);
+	g_clear_object (&priv->dbus_device_proxy);
+	g_clear_object (&priv->dbus_station_proxy);
 	g_clear_object (&priv->dbus_obj);
 
 	remove_all_aps (self);
