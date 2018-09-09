@@ -2264,6 +2264,9 @@ nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_fr
 				v = v * 8 + (ch - '0');
 				ch = (++str)[0];
 				if (ch >= '0' && ch <= '7') {
+					/* technically, escape sequences larger than \3FF are out of range
+					 * and invalid. We don't check for that, and do the same as
+					 * g_strcompress(): silently clip the value with & 0xFF. */
 					v = v * 8 + (ch - '0');
 					++str;
 				}
@@ -2432,13 +2435,11 @@ nm_utils_buf_utf8safe_escape_bytes (GBytes *bytes, NMUtilsStrUtf8SafeFlags flags
 const char *
 nm_utils_str_utf8safe_unescape (const char *str, char **to_free)
 {
+	gsize len;
+
 	g_return_val_if_fail (to_free, NULL);
 
-	if (!str || !strchr (str, '\\')) {
-		*to_free = NULL;
-		return str;
-	}
-	return (*to_free = g_strcompress (str));
+	return nm_utils_buf_utf8safe_unescape (str, &len, (gpointer *) to_free);
 }
 
 /**
@@ -2498,7 +2499,10 @@ nm_utils_str_utf8safe_escape_cp (const char *str, NMUtilsStrUtf8SafeFlags flags)
 char *
 nm_utils_str_utf8safe_unescape_cp (const char *str)
 {
-	return str ? g_strcompress (str) : NULL;
+	char *s;
+
+	str = nm_utils_str_utf8safe_unescape (str, &s);
+	return s ?: g_strdup (str);
 }
 
 char *
