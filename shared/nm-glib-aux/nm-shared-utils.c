@@ -2204,12 +2204,14 @@ nm_g_type_find_implementing_class_for_property (GType gtype,
 /*****************************************************************************/
 
 static void
-_str_append_escape (GString *s, char ch)
+_str_buf_append_c_escape_octal (NMStrBuf *strbuf,
+                                char ch)
 {
-	g_string_append_c (s, '\\');
-	g_string_append_c (s, '0' + ((((guchar) ch) >> 6) & 07));
-	g_string_append_c (s, '0' + ((((guchar) ch) >> 3) & 07));
-	g_string_append_c (s, '0' + ( ((guchar) ch)       & 07));
+	nm_str_buf_append_c4 (strbuf,
+	                      '\\',
+	                      '0' + ((char) ((((guchar) ch) >> 6) & 07)),
+	                      '0' + ((char) ((((guchar) ch) >> 3) & 07)),
+	                      '0' + ((char) ((((guchar) ch)     ) & 07)));
 }
 
 gconstpointer
@@ -2338,7 +2340,7 @@ nm_utils_buf_utf8safe_escape (gconstpointer buf, gssize buflen, NMUtilsStrUtf8Sa
 	const char *p = NULL;
 	const char *s;
 	gboolean nul_terminated = FALSE;
-	GString *gstr;
+	NMStrBuf strbuf;
 
 	g_return_val_if_fail (to_free, NULL);
 
@@ -2369,7 +2371,9 @@ nm_utils_buf_utf8safe_escape (gconstpointer buf, gssize buflen, NMUtilsStrUtf8Sa
 			return str;
 	}
 
-	gstr = g_string_sized_new (buflen + 5);
+	nm_str_buf_init (&strbuf,
+	                 buflen + 5,
+	                 NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_SECRET));
 
 	s = str;
 	do {
@@ -2379,21 +2383,22 @@ nm_utils_buf_utf8safe_escape (gconstpointer buf, gssize buflen, NMUtilsStrUtf8Sa
 		for (; s < p; s++) {
 			char ch = s[0];
 
+			nm_assert (ch);
 			if (ch == '\\')
-				g_string_append (gstr, "\\\\");
+				nm_str_buf_append_c2 (&strbuf, '\\', '\\');
 			else if (   (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL) \
 			             && ch < ' ') \
 			         || (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII) \
 			             && ((guchar) ch) >= 127))
-				_str_append_escape (gstr, ch);
+				_str_buf_append_c_escape_octal (&strbuf, ch);
 			else
-				g_string_append_c (gstr, ch);
+				nm_str_buf_append_c (&strbuf, ch);
 		}
 
 		if (buflen <= 0)
 			break;
 
-		_str_append_escape (gstr, p[0]);
+		_str_buf_append_c_escape_octal (&strbuf, p[0]);
 
 		buflen--;
 		if (buflen == 0)
@@ -2403,8 +2408,7 @@ nm_utils_buf_utf8safe_escape (gconstpointer buf, gssize buflen, NMUtilsStrUtf8Sa
 		(void) g_utf8_validate (s, buflen, &p);
 	} while (TRUE);
 
-	*to_free = g_string_free (gstr, FALSE);
-	return *to_free;
+	return (*to_free = nm_str_buf_finalize (&strbuf, NULL));
 }
 
 const char *
