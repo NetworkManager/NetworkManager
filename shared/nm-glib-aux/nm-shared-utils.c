@@ -15,6 +15,7 @@
 #include <net/if.h>
 
 #include "nm-errno.h"
+#include "nm-str-buf.h"
 
 /*****************************************************************************/
 
@@ -4454,4 +4455,70 @@ nm_utils_ifname_valid (const char* name,
 	}
 
 	g_return_val_if_reached (FALSE);
+}
+
+/*****************************************************************************/
+
+void
+_nm_str_buf_ensure_size (NMStrBuf *strbuf,
+                         gsize new_size,
+                         gboolean reserve_exact)
+{
+	_nm_str_buf_assert (strbuf);
+
+	/* Currently this only supports strictly growing the buffer. */
+	nm_assert (new_size > strbuf->_allocated);
+
+	if (!reserve_exact) {
+		new_size = nm_utils_get_next_realloc_size (!strbuf->_do_bzero_mem,
+		                                           new_size);
+	}
+
+	strbuf->_str = nm_secret_mem_realloc (strbuf->_str,
+	                                      strbuf->_do_bzero_mem,
+	                                      strbuf->_allocated,
+	                                      new_size);
+	strbuf->_allocated = new_size;
+}
+
+void
+nm_str_buf_append_printf (NMStrBuf *strbuf,
+                          const char *format,
+                          ...)
+{
+	va_list args;
+	gsize available;
+	int l;
+
+	_nm_str_buf_assert (strbuf);
+
+	available = strbuf->_allocated - strbuf->_len;
+
+	va_start (args, format);
+	l = g_vsnprintf (&strbuf->_str[strbuf->_len],
+	                 available,
+	                 format,
+	                 args);
+	va_end (args);
+
+	nm_assert (l >= 0);
+	nm_assert (l < G_MAXINT);
+
+	if ((gsize) l > available) {
+		gsize l2 = ((gsize) l) + 1u;
+
+		nm_str_buf_maybe_expand (strbuf, l2, FALSE);
+
+		va_start (args, format);
+		l = g_vsnprintf (&strbuf->_str[strbuf->_len],
+		                 l2,
+		                 format,
+		                 args);
+		va_end (args);
+
+		nm_assert (l >= 0);
+		nm_assert (l == l2 - 1);
+	}
+
+	strbuf->_len += (gsize) l;
 }
