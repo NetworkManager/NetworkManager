@@ -1,6 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 AUTOMAKE_OPTIONS = 1.6
 
+check_local =
+
 # The name of the module
 DOC_MODULE=libnm
 
@@ -94,3 +96,13 @@ CLEANFILES += \
 	tmpl/* \
 	xml/*
 
+if GTK_DOC_BUILD_HTML
+check-local-gtk-doc-patch:
+	if grep -q -F '<a href="libnm-nm-setting-user.html">nm-setting-user</a>' "$(top_builddir)/docs/libnm/html/index.html"; then \
+		echo "The generated documentation has issues. Patch your gtk-doc (see https://gitlab.gnome.org/GNOME/gtk-doc/merge_requests/2). This check fails with NMTST_CHECK_GTK_DOC=1"; \
+		test "$$NMTST_CHECK_GTK_DOC" != 1; \
+	fi
+check_local += check-local-gtk-doc-patch
+endif
+
+check-local: $(check_local)
