@@ -2217,7 +2217,7 @@ _str_buf_append_c_escape_octal (NMStrBuf *strbuf,
 gconstpointer
 nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_free)
 {
-	GString *gstr;
+	NMStrBuf strbuf;
 	gsize len;
 	const char *s;
 
@@ -2239,9 +2239,9 @@ nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_fr
 		return str;
 	}
 
-	gstr = g_string_new_len (NULL, len);
+	nm_str_buf_init (&strbuf, len, FALSE);
 
-	g_string_append_len (gstr, str, s - str);
+	nm_str_buf_append_len (&strbuf, str, s - str);
 	str = s;
 
 	for (;;) {
@@ -2288,21 +2288,20 @@ nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_fr
 			str++;
 		}
 
-		g_string_append_c (gstr, ch);
+		nm_str_buf_append_c (&strbuf, ch);
 
 		s = strchr (str, '\\');
 		if (!s) {
-			g_string_append (gstr, str);
+			nm_str_buf_append (&strbuf, str);
 			break;
 		}
 
-		g_string_append_len (gstr, str, s - str);
+		nm_str_buf_append_len (&strbuf, str, s - str);
 		str = s;
 	}
 
-	*out_len = gstr->len;
-	*to_free = gstr->str;
-	return g_string_free (gstr, FALSE);
+	return (*to_free = nm_str_buf_finalize (&strbuf,
+	                                        out_len));
 }
 
 /**
