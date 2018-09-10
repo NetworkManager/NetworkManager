@@ -83,6 +83,7 @@
 
 #include "nm-device-generic.h"
 #include "nm-device-vlan.h"
+#include "nm-device-wireguard.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF (NMDevice);
@@ -4301,7 +4302,10 @@ realize_start_setup (NMDevice *self,
 	/* Unmanaged the loopback device with an explicit NM_UNMANAGED_BY_TYPE flag.
 	 * Later we might want to manage 'lo' too. Currently that doesn't work because
 	 * NetworkManager might down the interface or remove the 127.0.0.1 address. */
-	nm_device_set_unmanaged_flags (self, NM_UNMANAGED_BY_TYPE, is_loopback (self));
+	nm_device_set_unmanaged_flags (self,
+	                               NM_UNMANAGED_BY_TYPE,
+	                                  is_loopback (self)
+	                               || NM_IS_DEVICE_WIREGUARD (self));
 
 	nm_device_set_unmanaged_by_user_udev (self);
 	nm_device_set_unmanaged_by_user_conf (self);
