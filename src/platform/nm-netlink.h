@@ -52,32 +52,48 @@
 #endif
 
 static inline int
-nl_errno (int err)
+nl_errno (int nlerr)
 {
-	/* the error codes from our netlink implementation are plain errno
-	 * extended with our own error in a particular range starting from
-	 * _NLE_BASE.
+	/* Normalizes an netlink error to be positive. Various API returns negative
+	 * error codes, and this function converts the negative value to its
+	 * positive.
 	 *
-	 * However, often we encode errors as negative values. This function
-	 * normalizes the error and returns its positive value. */
-	return err >= 0
-	       ? err
-	       : ((err == G_MININT) ? NLE_BUG : -err);
+	 * It's very similar to nm_errno(), but not exactly. The difference is that
+	 * nm_errno() is for plain errno, while nl_errno() is for netlink error numbers.
+	 * Yes, netlink error number are ~almost~ the same as errno, except that a particular
+	 * range (_NLE_BASE, _NLE_BASE_END) is reserved. The difference between the two
+	 * functions is only how G_MININT is mapped.
+	 *
+	 * See also nl_syserr2nlerr() below. */
+	return nlerr >= 0
+	       ? nlerr
+	       : ((nlerr == G_MININT) ? NLE_BUG : -nlerr);
 }
 
 static inline int
-nl_syserr2nlerr (int err)
+nl_syserr2nlerr (int errsv)
 {
-	if (err == G_MININT)
+	/* this maps a native errno to a (always non-negative) netlink error number.
+	 *
+	 * Note that netlink error numbers are embedded into the range of regular
+	 * errno. The only difference is, that netlink error numbers reserve a
+	 * range (_NLE_BASE, _NLE_BASE_END) for their own purpose.
+	 *
+	 * That means, converting an errno to netlink error number means in
+	 * most cases just returning itself (negative values are normalized
+	 * to be positive). Only values G_MININT and [_NLE_BASE, _NLE_BASE_END]
+	 * are coerced to the special value NLE_NATIVE_ERRNO, as they cannot
+	 * otherwise be represented in netlink error number domain. */
+	if (errsv == G_MININT)
 		return NLE_NATIVE_ERRNO;
-	if (err < 0)
-		err = -err;
-	return (err >= _NLE_BASE && err < _NLE_BASE_END)
+	if (errsv < 0)
+		errsv = -errsv;
+	return (errsv >= _NLE_BASE && errsv < _NLE_BASE_END)
 	       ? NLE_NATIVE_ERRNO
-	       : err;
+	       : errsv;
 }
 
-const char *nl_geterror (int err);
+const char *nl_geterror (int nlerr);
 
 /*****************************************************************************/
 
