@@ -380,7 +380,7 @@ int
 main (int argc, char *argv[])
 {
 	char *bad_domains = NULL;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 	gs_free char *pidfile = NULL;
 	gs_unref_object NMDhcpClient *dhcp4_client = NULL;
@@ -516,8 +516,11 @@ main (int argc, char *argv[])
 		                                          client_id,
 		                                          NM_DHCP_TIMEOUT_DEFAULT,
 		                                          NULL,
-		                                          global_opt.dhcp4_address);
-		g_assert (dhcp4_client);
+		                                          global_opt.dhcp4_address,
+		                                          &error);
+		if (!dhcp4_client)
+			g_error ("failure to start DHCP: %s", error->message);
+
 		g_signal_connect (dhcp4_client,
 		                  NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
 		                  G_CALLBACK (dhcp4_state_changed),

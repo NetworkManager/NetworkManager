@@ -7561,6 +7561,7 @@ dhcp4_start (NMDevice *self)
 	gs_unref_bytes GBytes *hwaddr = NULL;
 	gs_unref_bytes GBytes *client_id = NULL;
 	NMConnection *connection;
+	GError *error = NULL;
 
 	connection = nm_device_get_applied_connection (self);
 	g_return_val_if_fail (connection, FALSE);
@@ -7591,10 +7592,14 @@ dhcp4_start (NMDevice *self)
 	                                                client_id,
 	                                                get_dhcp_timeout (self, AF_INET),
 	                                                priv->dhcp_anycast_address,
-	                                                NULL);
+	                                                NULL,
+	                                                &error);
 
-	if (!priv->dhcp4.client)
+	if (!priv->dhcp4.client) {
+		_LOGW (LOGD_DHCP4, "failure to start DHCP: %s", error->message);
+		g_clear_error (&error);
 		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
 
 	priv->dhcp4.state_sigid = g_signal_connect (priv->dhcp4.client,
 	                                            NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
@@ -8396,6 +8401,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	gs_unref_bytes GBytes *hwaddr = NULL;
 	gs_unref_bytes GBytes *duid = NULL;
 	gboolean enforce_duid = FALSE;
+	GError *error = NULL;
 
 	const NMPlatformIP6Address *ll_addr = NULL;
 
@@ -8435,23 +8441,29 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	                                                priv->dhcp_anycast_address,
 	                                                (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF) ? TRUE : FALSE,
 	                                                nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6)),
-	                                                priv->dhcp6.needed_prefixes);
-
-	if (priv->dhcp6.client) {
-		priv->dhcp6.state_sigid = g_signal_connect (priv->dhcp6.client,
-		                                            NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
-		                                            G_CALLBACK (dhcp6_state_changed),
-		                                            self);
-		priv->dhcp6.prefix_sigid = g_signal_connect (priv->dhcp6.client,
-		                                             NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED,
-		                                             G_CALLBACK (dhcp6_prefix_delegated),
-		                                             self);
+	                                                priv->dhcp6.needed_prefixes,
+	                                                &error);
+	if (!priv->dhcp6.client) {
+		_LOGW (LOGD_DHCP6, "failure to start DHCPv6: %s", error->message);
+		g_clear_error (&error);
+		if (nm_device_sys_iface_state_is_external_or_assume (self))
+			priv->dhcp6.was_active = TRUE;
+		return FALSE;
 	}
+
+	priv->dhcp6.state_sigid = g_signal_connect (priv->dhcp6.client,
+	                                            NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
+	                                            G_CALLBACK (dhcp6_state_changed),
+	                                            self);
+	priv->dhcp6.prefix_sigid = g_signal_connect (priv->dhcp6.client,
+	                                             NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED,
+	                                             G_CALLBACK (dhcp6_prefix_delegated),
+	                                             self);
 
 	if (nm_device_sys_iface_state_is_external_or_assume (self))
 		priv->dhcp6.was_active = TRUE;
 
-	return !!priv->dhcp6.client;
+	return TRUE;
 }
 
 static gboolean
