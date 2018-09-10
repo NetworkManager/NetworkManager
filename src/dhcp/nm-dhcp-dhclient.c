@@ -374,11 +374,15 @@ dhclient_start (NMDhcpClient *client,
 		if (g_file_copy (src, dst, G_FILE_COPY_OVERWRITE, NULL, NULL, NULL, &error)) {
 			/* Success; use the preferred leasefile path */
 			g_free (priv->lease_file);
-			priv->lease_file = g_strdup (g_file_get_path (dst));
+			priv->lease_file = g_file_get_path (dst);
 		} else {
+			gs_free char *s_path = NULL;
+			gs_free char *d_path = NULL;
+
 			/* Failure; just use the existing leasefile */
 			_LOGW ("failed to copy leasefile %s to %s: %s",
-			       g_file_get_path (src), g_file_get_path (dst),
+			       (s_path = g_file_get_path (src)),
+			       (d_path = g_file_get_path (dst)),
 			       error->message);
 			g_clear_error (&error);
 		}
