@@ -80,6 +80,8 @@
 #include "nm-audit-manager.h"
 #include "nm-connectivity.h"
 #include "nm-dbus-interface.h"
+
+#include "nm-device-generic.h"
 #include "nm-device-vlan.h"
 
 #include "nm-device-logging.h"
@@ -822,6 +824,13 @@ _ethtool_state_set (NMDevice *self)
 }
 
 /*****************************************************************************/
+
+static gboolean
+is_loopback (NMDevice *self)
+{
+	return    NM_IS_DEVICE_GENERIC (self)
+	       && NM_DEVICE_GET_PRIVATE (self)->ifindex == 1;
+}
 
 NMSettings *
 nm_device_get_settings (NMDevice *self)
@@ -2460,7 +2469,7 @@ concheck_is_possible (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (   !nm_device_is_real (self)
-	    || NM_FLAGS_HAS (priv->unmanaged_flags, NM_UNMANAGED_LOOPBACK))
+	    || is_loopback (self))
 		return FALSE;
 
 	/* we enable periodic checks for every device state (except UNKNOWN). Especially with
@@ -4292,7 +4301,7 @@ realize_start_setup (NMDevice *self,
 	/* Unmanaged the loopback device with an explicit NM_UNMANAGED_LOOPBACK flag.
 	 * Later we might want to manage 'lo' too. Currently that doesn't work because
 	 * NetworkManager might down the interface or remove the 127.0.0.1 address. */
-	nm_device_set_unmanaged_flags (self, NM_UNMANAGED_LOOPBACK, priv->ifindex == 1);
+	nm_device_set_unmanaged_flags (self, NM_UNMANAGED_LOOPBACK, is_loopback (self));
 
 	nm_device_set_unmanaged_by_user_udev (self);
 	nm_device_set_unmanaged_by_user_conf (self);
