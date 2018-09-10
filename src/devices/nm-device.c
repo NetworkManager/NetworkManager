@@ -5596,6 +5596,14 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 		                                        klass->connection_type_check_compatible,
 		                                        error))
 			return FALSE;
+	} else if (klass->check_connection_compatible == check_connection_compatible) {
+		/* the device class does not implement check_connection_compatible nor set
+		 * connection_type_check_compatible. That means, it is by default not compatible
+		 * with any connection type. */
+		nm_utils_error_set_literal (error,
+		                            NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+		                            "device does not support any connections");
+		return FALSE;
 	}
 
 	conn_iface = nm_manager_get_connection_iface (nm_manager_get (),
