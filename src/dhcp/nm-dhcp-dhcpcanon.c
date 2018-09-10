@@ -82,27 +82,35 @@ dhcpcanon_start (NMDhcpClient *client,
                 GBytes *duid,
                 gboolean release,
                 pid_t *out_pid,
-                int prefixes)
+                guint needed_prefixes,
+                GError **error)
 {
 	NMDhcpDhcpcanon *self = NM_DHCP_DHCPCANON (client);
 	NMDhcpDhcpcanonPrivate *priv = NM_DHCP_DHCPCANON_GET_PRIVATE (self);
-	GPtrArray *argv = NULL;
+	gs_unref_ptrarray GPtrArray *argv = NULL;
 	pid_t pid;
-	GError *error = NULL;
-	const char *iface, *system_bus_address, *dhcpcanon_path = NULL;
-	char *binary_name, *cmd_str, *pid_file = NULL, *system_bus_address_env = NULL;
+	gs_free_error GError *local = NULL;
+	const char *iface;
+	const char *system_bus_address;
+	const char *dhcpcanon_path;
+	gs_free char *binary_name = NULL;
+	gs_free char *pid_file = NULL;
+	gs_free char *system_bus_address_env = NULL;
 	int addr_family;
 
-	g_return_val_if_fail (priv->pid_file == NULL, FALSE);
+	g_return_val_if_fail (!priv->pid_file, FALSE);
 
 	iface = nm_dhcp_client_get_iface (client);
+
 	addr_family = nm_dhcp_client_get_addr_family (client);
+
 	dhcpcanon_path = nm_dhcp_dhcpcanon_get_path ();
-	_LOGD ("dhcpcanon_path: %s", dhcpcanon_path);
 	if (!dhcpcanon_path) {
-		_LOGW ("dhcpcanon could not be found");
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "dhcpcanon binary not found");
 		return FALSE;
 	}
+
+	_LOGD ("dhcpcanon_path: %s", dhcpcanon_path);
 
 	pid_file = g_strdup_printf (RUNSTATEDIR "/dhcpcanon%c-%s.pid",
 	                            nm_utils_addr_family_to_char (addr_family),
@@ -112,7 +120,6 @@ dhcpcanon_start (NMDhcpClient *client,
 	/* Kill any existing dhcpcanon from the pidfile */
 	binary_name = g_path_get_basename (dhcpcanon_path);
 	nm_dhcp_client_stop_existing (pid_file, binary_name);
-	g_free (binary_name);
 
 	argv = g_ptr_array_new ();
 	g_ptr_array_add (argv, (gpointer) dhcpcanon_path);
@@ -120,10 +127,8 @@ dhcpcanon_start (NMDhcpClient *client,
 	g_ptr_array_add (argv, (gpointer) "-sf"); /* Set script file */
 	g_ptr_array_add (argv, (gpointer) nm_dhcp_helper_path);
 
-	if (pid_file) {
-		g_ptr_array_add (argv, (gpointer) "-pf"); /* Set pid file */
-		g_ptr_array_add (argv, (gpointer) pid_file);
-	}
+	g_ptr_array_add (argv, (gpointer) "-pf"); /* Set pid file */
+	g_ptr_array_add (argv, (gpointer) pid_file);
 
 	if (priv->conf_file) {
 		g_ptr_array_add (argv, (gpointer) "-cf"); /* Set interface config file */
@@ -144,33 +149,43 @@ dhcpcanon_start (NMDhcpClient *client,
 	g_ptr_array_add (argv, (gpointer) iface);
 	g_ptr_array_add (argv, NULL);
 
-	cmd_str = g_strjoinv (" ", (char **) argv->pdata);
-	g_free (cmd_str);
-
-	if (g_spawn_async (NULL, (char **) argv->pdata, NULL,
-	                   G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
-	                   nm_utils_setpgid, NULL, &pid, &error)) {
-		 g_assert (pid > 0);
-		_LOGI ("dhcpcanon started with pid %d", pid);
-		nm_dhcp_client_watch_child (client, pid);
-		priv->pid_file = pid_file;
-	} else {
-		_LOGW ("dhcpcanon failed to start: '%s'", error->message);
-		g_error_free (error);
-		g_free (pid_file);
+	if (!g_spawn_async (NULL,
+	                   (char **) argv->pdata,
+	                   NULL,
+	                     G_SPAWN_DO_NOT_REAP_CHILD
+	                   | G_SPAWN_STDOUT_TO_DEV_NULL
+	                   | G_SPAWN_STDERR_TO_DEV_NULL,
+	                   nm_utils_setpgid,
+	                   NULL,
+	                   &pid,
+	                   &local)) {
+		nm_utils_error_set (error,
+		                    NM_UTILS_ERROR_UNKNOWN,
+		                    "dhcpcanon failed to start: %s",
+		                    local->message);
+		return FALSE;
 	}
 
-	g_ptr_array_free (argv, TRUE);
-	g_free (system_bus_address_env);
-	return pid > 0 ? TRUE : FALSE;
+	nm_assert (pid > 0);
+	_LOGI ("dhcpcanon started with pid %d", pid);
+	nm_dhcp_client_watch_child (client, pid);
+	priv->pid_file = g_steal_pointer (&pid_file);
+	return TRUE;
 }
 
 static gboolean
-ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last_ip4_address)
+ip4_start (NMDhcpClient *client,
+           const char *dhcp_anycast_addr,
+           const char *last_ip4_address,
+           GError **error)
 {
-	gboolean success = FALSE;
-	success = dhcpcanon_start (client, NULL, NULL, FALSE, NULL, 0);
-	return success;
+	return dhcpcanon_start (client,
+	                        NULL,
+	                        NULL,
+	                        FALSE,
+	                        NULL,
+	                        0,
+	                        error);
 }
 
 static gboolean
@@ -179,11 +194,10 @@ ip6_start (NMDhcpClient *client,
            const struct in6_addr *ll_addr,
            NMSettingIP6ConfigPrivacy privacy,
            GBytes *duid,
-           guint needed_prefixes)
+           guint needed_prefixes,
+           GError **error)
 {
-	NMDhcpDhcpcanon *self = NM_DHCP_DHCPCANON (client);
-
-	_LOGW ("the dhcpcd backend does not support IPv6");
+	nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "dhcpcanon plugin does not support IPv6");
 	return FALSE;
 }
 static void
