@@ -178,12 +178,29 @@ client_start (NMDhcpManager *self,
 	NMDhcpManagerPrivate *priv;
 	NMDhcpClient *client;
 	gboolean success = FALSE;
+	gsize hwaddr_len;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 	g_return_val_if_fail (!dhcp_client_id || g_bytes_get_size (dhcp_client_id) >= 2, NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
+
+	if (!hwaddr) {
+		nm_utils_error_set (error,
+		                    NM_UTILS_ERROR_UNKNOWN,
+		                    "missing MAC address");
+		return NULL;
+	}
+
+	hwaddr_len = g_bytes_get_size (hwaddr);
+	if (   hwaddr_len == 0
+	    || hwaddr_len > NM_UTILS_HWADDR_LEN_MAX) {
+		nm_utils_error_set (error,
+		                    NM_UTILS_ERROR_UNKNOWN,
+		                    "invalid MAC address");
+		g_return_val_if_reached (NULL) ;
+	}
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
