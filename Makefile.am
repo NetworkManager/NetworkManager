@@ -4746,6 +4746,7 @@ EXTRA_DIST += \
 	meson_options.txt \
 	meson_post_install.py \
 	config.h.meson \
+	config-extra.h.meson \
 	docs/meson.build \
 	\
 	po/meson.build \
