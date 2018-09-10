@@ -54,12 +54,15 @@
 static inline int
 nl_errno (int err)
 {
-	/* the error codes from our netlink implementation are plain errno
-	 * extended with our own error in a particular range starting from
-	 * _NLE_BASE.
+	/* Normalizes an nl error to be positive. Various API returns negative
+	 * error codes, and this function convers the negative values to their
+	 * positive.
 	 *
-	 * However, often we encode errors as negative values. This function
-	 * normalizes the error and returns its positive value. */
+	 * It's very similar to nm_errno(), but not exactly. The difference is that
+	 * nm_errno() is for plain errno, while nl_errno() is for nlerrno.
+	 * Yes, nlerrno are ~almost~ the same as errno, except that netlink
+	 * errors have a particular range (_NLE_BASE) reserved. The difference between
+	 * the two functions is only how G_MININT is mapped. */
 	return err >= 0
 	       ? err
 	       : ((err == G_MININT) ? NLE_BUG : -err);
