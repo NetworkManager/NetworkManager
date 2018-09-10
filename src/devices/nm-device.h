@@ -583,7 +583,7 @@ void nm_device_copy_ip6_dns_config (NMDevice *self, NMDevice *from_device);
  * @NM_UNMANAGED_SLEEPING: %TRUE when unmanaged because NM is sleeping.
  * @NM_UNMANAGED_QUITTING: %TRUE when unmanaged because NM is shutting down.
  * @NM_UNMANAGED_PARENT: %TRUE when unmanaged due to parent device being unmanaged
- * @NM_UNMANAGED_LOOPBACK: %TRUE for unmanaging loopback device
+ * @NM_UNMANAGED_BY_TYPE: %TRUE for unmanaging device by type, like loopback.
  * @NM_UNMANAGED_PLATFORM_INIT: %TRUE when unmanaged because platform link not
  *   yet initialized. Unrealized device are also unmanaged for this reason.
  * @NM_UNMANAGED_USER_EXPLICIT: %TRUE when unmanaged by explicit user decision
@@ -614,7 +614,7 @@ typedef enum { /*< skip >*/
 	NM_UNMANAGED_SLEEPING      = (1LL <<  0),
 	NM_UNMANAGED_QUITTING      = (1LL <<  1),
 	NM_UNMANAGED_PARENT        = (1LL <<  2),
-	NM_UNMANAGED_LOOPBACK      = (1LL <<  3),
+	NM_UNMANAGED_BY_TYPE       = (1LL <<  3),
 	NM_UNMANAGED_PLATFORM_INIT = (1LL <<  4),
 	NM_UNMANAGED_USER_EXPLICIT = (1LL <<  5),
 	NM_UNMANAGED_USER_SETTINGS = (1LL <<  6),
