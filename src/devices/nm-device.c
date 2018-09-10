@@ -4298,10 +4298,10 @@ realize_start_setup (NMDevice *self,
 	                               NM_UNMANAGED_EXTERNAL_DOWN,
 	                               is_unmanaged_external_down (self, TRUE));
 
-	/* Unmanaged the loopback device with an explicit NM_UNMANAGED_LOOPBACK flag.
+	/* Unmanaged the loopback device with an explicit NM_UNMANAGED_BY_TYPE flag.
 	 * Later we might want to manage 'lo' too. Currently that doesn't work because
 	 * NetworkManager might down the interface or remove the 127.0.0.1 address. */
-	nm_device_set_unmanaged_flags (self, NM_UNMANAGED_LOOPBACK, is_loopback (self));
+	nm_device_set_unmanaged_flags (self, NM_UNMANAGED_BY_TYPE, is_loopback (self));
 
 	nm_device_set_unmanaged_by_user_udev (self);
 	nm_device_set_unmanaged_by_user_conf (self);
@@ -4497,7 +4497,7 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 
 	nm_device_set_unmanaged_flags (self,
 	                               NM_UNMANAGED_PARENT |
-	                               NM_UNMANAGED_LOOPBACK |
+	                               NM_UNMANAGED_BY_TYPE |
 	                               NM_UNMANAGED_USER_UDEV |
 	                               NM_UNMANAGED_USER_EXPLICIT |
 	                               NM_UNMANAGED_EXTERNAL_DOWN |
@@ -12876,7 +12876,7 @@ NM_UTILS_FLAGS2STR_DEFINE (nm_unmanaged_flags2str, NMUnmanagedFlags,
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_SLEEPING, "sleeping"),
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_QUITTING, "quitting"),
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_PARENT, "parent"),
-	NM_UTILS_FLAGS2STR (NM_UNMANAGED_LOOPBACK, "loopback"),
+	NM_UTILS_FLAGS2STR (NM_UNMANAGED_BY_TYPE, "by-type"),
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_PLATFORM_INIT, "platform-init"),
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_USER_EXPLICIT, "user-explicit"),
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_BY_DEFAULT, "by-default"),
