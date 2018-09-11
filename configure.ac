@@ -1299,7 +1299,7 @@ echo
 echo "Features:"
 echo "  wext: $ac_with_wext"
 echo "  wifi: $enable_wifi"
-echo "  ppp: $enable_ppp ${PPPD_PLUGIN_DIR}"
+echo "  ppp: $enable_ppp ${PPPD_PATH} plugins:${PPPD_PLUGIN_DIR}"
 echo "  modemmanager-1: $with_modem_manager_1"
 echo "  ofono: $with_ofono"
 echo "  concheck: $enable_concheck"
