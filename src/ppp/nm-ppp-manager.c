@@ -441,7 +441,10 @@ impl_ppp_manager_set_ifindex (NMDBusObject *obj,
 	_LOGD ("set-ifindex %d", (int) ifindex);
 
 	if (priv->ifindex >= 0) {
-		_LOGW ("can't change the ifindex from %d to %d", priv->ifindex, (int) ifindex);
+		if (priv->ifindex == ifindex)
+			_LOGD ("ignore repeated calls setting ifindex to %d", (int) ifindex);
+		else
+			_LOGW ("can't change the ifindex from %d to %d", priv->ifindex, (int) ifindex);
 		goto out;
 	}
 
