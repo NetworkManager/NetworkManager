@@ -16,6 +16,7 @@ libnm_core_headers = files(
   'nm-setting-connection.h',
   'nm-setting-dcb.h',
   'nm-setting-dummy.h',
+  'nm-setting-ethtool.h',
   'nm-setting-generic.h',
   'nm-setting-gsm.h',
   'nm-setting-infiniband.h',
