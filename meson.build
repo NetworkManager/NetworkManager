@@ -938,7 +938,7 @@ output += '  wifi: ' + enable_wifi.to_string() + '\n'
 output += '  iwd:  ' + enable_iwd.to_string() + '\n'
 output += '  pppd: ' + enable_ppp.to_string()
 if enable_ppp
-  output += ' ' + pppd_path
+  output += ' ' + pppd_path + ' plugins:' + pppd_plugin_dir
 endif
 output += '\n'
 output += '  modemmanager-1: ' + enable_modem_manager.to_string() + '\n'
