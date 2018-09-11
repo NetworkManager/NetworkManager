@@ -462,7 +462,11 @@ impl_ppp_manager_set_ifindex (NMDBusObject *obj,
 
 	obj_keep_alive = nmp_object_ref (NMP_OBJECT_UP_CAST (plink));
 
-	g_signal_emit (self, signals[IFINDEX_SET], 0, ifindex, plink->name);
+	g_signal_emit (self,
+	               signals[IFINDEX_SET],
+	               0,
+	               ifindex,
+	               plink ? plink->name : NULL);
 
 out:
 	g_dbus_method_invocation_return_value (invocation, NULL);
