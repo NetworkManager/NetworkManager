@@ -50,7 +50,7 @@ nm_pkgdatadir = join_paths(nm_datadir, nm_name)
 nm_pkgincludedir = join_paths(nm_includedir, nm_name)
 nm_pkglibdir = join_paths(nm_prefix, 'lib', nm_name)
 nm_pkgrundir = join_paths(nm_runstatedir, nm_name)
-nm_pkgstatedir = join_paths(nm_localstatedir, nm_name)
+nm_pkgstatedir = join_paths(nm_localstatedir, 'lib', nm_name)
 nm_vpndir = join_paths(nm_libdir, nm_name)
 nm_plugindir = join_paths(nm_libdir, nm_name, dist_version)
 
