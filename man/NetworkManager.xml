@@ -380,6 +380,13 @@
         </para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><arg choice='plain'><option>--configure-and-quit</option></arg><arg>initrd</arg></term>
+        <listitem><para>Quit after all devices reach a stable state.
+        The optional <literal>initrd</literal> parameter enables mode, where no
+        processes are left running after NetworkManager stops, which is useful
+        for running from an initial ramdisk on rearly boot.</para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>--plugins</option></term>
         <listitem><para>List plugins used to manage system-wide
         connection settings.  This list has preference over plugins
