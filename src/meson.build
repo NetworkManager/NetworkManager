@@ -143,7 +143,7 @@ sources = files(
   'nm-sleep-monitor.c'
 )
 
-deps = [
+nm_deps = [
   dl_dep,
   libndp_dep,
   libudev_dep,
@@ -153,68 +153,27 @@ deps = [
 ]
 
 if enable_concheck
-  deps += libcurl_dep
+  nm_deps += libcurl_dep
 endif
 
 if enable_libaudit
-  deps += libaudit_dep
+  nm_deps += libaudit_dep
 endif
 
 if enable_libpsl
-  deps += libpsl_dep
+  nm_deps += libpsl_dep
 endif
 
 if enable_selinux
-  deps += selinux_dep
+  nm_deps += selinux_dep
 endif
 
 libnetwork_manager = static_library(
   nm_name,
   sources: sources,
-  dependencies: deps,
+  dependencies: nm_deps,
   c_args: cflags,
   link_with: [libnetwork_manager_base, libsystemd_nm]
-)
-
-ldflags = ['-rdynamic']
-
-# FIXME: this doesn't work and it depends on libtool
-'''
-src/NetworkManager.ver: src/libNetworkManager.la $(core_plugins)
-  $(AM_V_GEN) NM="$(NM)" "$(srcdir)/tools/create-exports-NetworkManager.sh" --called-from-make "$(srcdir)"
-
-src_NetworkManager_LDFLAGS = \
-  -rdynamic \
-  -Wl,--version-script="src/NetworkManager.ver"
-
-nm = find_program('gcc-nm', 'nm')
-create_exports_networkmanager = join_paths(meson.source_root(), 'tools', 'create-exports-NetworkManager.sh')
-
-symbol_map_name = 'NetworkManager.ver'
-
-linker_script = custom_target(
-  symbol_map_name,
-  input: meson.source_root(),
-  output: symbol_map_name,
-  capture: true,
-  #command: ['NM=' + nm.path(), create_exports_networkmanager, '--called-from-make', '@INPUT@']
-  command: [create_exports_networkmanager, '--called-from-make', '@INPUT@']
-)
-
-ldflags += '-Wl,--version-script,@0@'.format(linker_script)
-'''
-
-network_manager = executable(
-  nm_name,
-  'main.c',
-  dependencies: deps,
-  c_args: cflags,
-  link_with: libnetwork_manager,
-  link_args: ldflags,
-  #FIXME
-  #link_depends: linker_script,
-  install: true,
-  install_dir: nm_sbindir
 )
 
 deps = [
@@ -287,3 +246,30 @@ endif
 
 subdir('devices')
 subdir('settings/plugins')
+
+# NetworkManager binary
+
+create_exports_networkmanager = join_paths(meson.source_root(), 'tools', 'create-exports-NetworkManager.sh')
+symbol_map_name = 'NetworkManager.ver'
+
+ver_script = custom_target(
+  symbol_map_name,
+  input: meson.source_root(),
+  output: symbol_map_name,
+  depends: [ libnetwork_manager, core_plugins ],
+  command: [create_exports_networkmanager, '--called-from-build', '@INPUT@']
+)
+
+ldflags = ['-rdynamic', '-Wl,--version-script,@0@'.format(ver_script.full_path())]
+
+network_manager = executable(
+  nm_name,
+  'main.c',
+  dependencies: nm_deps,
+  c_args: nm_cflags,
+  link_with: libnetwork_manager,
+  link_args: ldflags,
+  link_depends: ver_script,
+  install: true,
+  install_dir: nm_sbindir
+)
