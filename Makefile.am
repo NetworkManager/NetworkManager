@@ -1850,7 +1850,7 @@ $(src_libNetworkManagerTest_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 ###############################################################################
 
 src/NetworkManager.ver: src/libNetworkManager.la $(core_plugins)
-	$(AM_V_GEN) NM="$(NM)" "$(srcdir)/tools/create-exports-NetworkManager.sh" --called-from-make "$(srcdir)"
+	$(AM_V_GEN) NM="$(NM)" "$(srcdir)/tools/create-exports-NetworkManager.sh" --called-from-build "$(srcdir)"
 
 CLEANFILES += src/NetworkManager.ver
 
