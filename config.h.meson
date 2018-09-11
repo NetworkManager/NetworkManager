@@ -19,6 +19,10 @@
 /* Gettext package */
 #mesondefine GETTEXT_PACKAGE
 
+/* Define to 1 if you have the declaration of `memfd_create', and to 0 if you
+   don't. */
+#mesondefine HAVE_DECL_MEMFD_CREATE
+
 /* Define to 1 if you have the declaration of `reallocarray', and to 0 if
    you don't. */
 #mesondefine HAVE_DECL_REALLOCARRAY
