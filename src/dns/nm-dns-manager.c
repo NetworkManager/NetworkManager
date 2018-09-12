@@ -744,9 +744,36 @@ _read_link_cached (const char *path, gboolean *is_cached, char **cached)
 	return (*cached = g_file_read_link (path, NULL));
 }
 
-#define MY_RESOLV_CONF NMRUNDIR "/resolv.conf"
-#define MY_RESOLV_CONF_TMP MY_RESOLV_CONF ".tmp"
-#define RESOLV_CONF_TMP "/etc/.resolv.conf.NetworkManager"
+#define MY_RESOLV_CONF             NMRUNDIR"/resolv.conf"
+#define MY_RESOLV_CONF_TMP         MY_RESOLV_CONF".tmp"
+#define RESOLV_CONF_TMP            "/etc/.resolv.conf.NetworkManager"
+
+#define NO_STUB_RESOLV_CONF        NMRUNDIR "/no-stub-resolv.conf"
+
+static void
+update_resolv_conf_no_stub (NMDnsManager *self,
+                            char **searches,
+                            char **nameservers,
+                            char **options)
+{
+	gs_free char *content = NULL;
+	GError *local = NULL;
+
+	content = create_resolv_conf (searches, nameservers, options);
+
+	if (!g_file_set_contents (NO_STUB_RESOLV_CONF,
+	                          content,
+	                          -1,
+	                          &local)) {
+		_LOGD ("update-resolv-no-stub: failure to write file: %s",
+		       local->message);
+		g_error_free (local);
+		return;
+	}
+
+	_LOGT ("update-resolv-no-stub: '%s' successfully written",
+	       NO_STUB_RESOLV_CONF);
+}
 
 static SpawnResult
 update_resolv_conf (NMDnsManager *self,
@@ -1420,6 +1447,8 @@ update_dns (NMDnsManager *self,
 	skip:
 		;
 	}
+
+	update_resolv_conf_no_stub (self, searches, nameservers, options);
 
 	/* If caching was successful, we only send 127.0.0.1 to /etc/resolv.conf
 	 * to ensure that the glibc resolver doesn't try to round-robin nameservers,
