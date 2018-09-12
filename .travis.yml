@@ -104,8 +104,9 @@ script:
               -D ofono=true \
               -D teamdctl=false \
               \
-              -D dhcpcanon=/bin/true \
-              -D dhclient=/bin/true \
+              -D dhclient=/bin/nowhere/dhclient \
+              -D dhcpcanon=/bin/nowhere/dhcpcanon \
+              -D dhcpcd=/bin/nowhere/dhcpd \
               \
               -D netconfig=true \
               -D resolvconf=true \
