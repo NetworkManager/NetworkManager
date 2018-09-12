@@ -97,8 +97,18 @@ script:
               -D introspection=false \
               -D qt=false \
               -D crypto=$CRYPTO \
-              \
               -D docs=true \
+              \
+              -D libnm_glib=true \
+              -D iwd=true \
+              -D ofono=true \
+              -D teamdctl=false \
+              \
+              -D dhcpcanon=/bin/true \
+              -D dhclient=/bin/true \
+              \
+              -D netconfig=true \
+              -D resolvconf=true \
               \
               -D ifcfg_rh=false \
               -D ibft=true \
@@ -118,7 +128,30 @@ script:
           NOCONFIGURE=1 ./autogen.sh &&
           mkdir ./build &&
           pushd ./build &&
-          ../configure --prefix="$PWD/INST" --with-systemd-logind=no --enable-more-warnings=no --enable-ifcfg-rh --enable-config-plugin-ibft --enable-ifupdown --enable-tests --with-crypto=$CRYPTO &&
+          ../configure \
+              --prefix="$PWD/INST" \
+              --enable-gtk-doc=yes \
+              --with-systemd-logind=no \
+              --enable-more-warnings=no \
+              --enable-tests=yes \
+              --with-crypto=$CRYPTO \
+              \
+              --with-libnm-glib=yes \
+              --with-iwd=yes \
+              --with-ofono=yes \
+              --enable-teamdctl=no \
+              \
+              --with-dhcpcanon=yes \
+              --with-dhcpcd=yes \
+              --with-dhclient=yes \
+              \
+              --with-netconfig=no \
+              --with-resolvconf=yes \
+              \
+              --enable-ifcfg-rh=yes \
+              --enable-config-plugin-ibft=yes \
+              --enable-ifupdown=yes \
+              &&
           make -j4 &&
           if [ "$CC" == gcc ]; then
               sudo locale-gen pl_PL.UTF-8 &&
