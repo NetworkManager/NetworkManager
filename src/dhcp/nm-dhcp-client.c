@@ -510,7 +510,8 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
                           GBytes *client_id,
                           const char *dhcp_anycast_addr,
                           const char *hostname,
-                          const char *last_ip4_address)
+                          const char *last_ip4_address,
+                          GError **error)
 {
 	NMDhcpClientPrivate *priv;
 
@@ -531,7 +532,10 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 	g_clear_pointer (&priv->hostname, g_free);
 	priv->hostname = g_strdup (hostname);
 
-	return NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, dhcp_anycast_addr, last_ip4_address);
+	return NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self,
+	                                                   dhcp_anycast_addr,
+	                                                   last_ip4_address,
+	                                                   error);
 }
 
 static GBytes *
@@ -548,7 +552,8 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                           const struct in6_addr *ll_addr,
                           const char *hostname,
                           NMSettingIP6ConfigPrivacy privacy,
-                          guint needed_prefixes)
+                          guint needed_prefixes,
+                          GError **error)
 {
 	NMDhcpClientPrivate *priv;
 	gs_free char *str = NULL;
@@ -584,7 +589,8 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 	                                                   ll_addr,
 	                                                   privacy,
 	                                                   priv->duid,
-	                                                   needed_prefixes);
+	                                                   needed_prefixes,
+	                                                   error);
 }
 
 void
