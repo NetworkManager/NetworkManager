@@ -108,8 +108,8 @@ script:
               -D dhcpcanon=/bin/nowhere/dhcpcanon \
               -D dhcpcd=/bin/nowhere/dhcpd \
               \
-              -D netconfig=true \
-              -D resolvconf=true \
+              -D netconfig=/bin/nowhere/netconfig \
+              -D resolvconf=/bin/nowhere/resolvconf \
               \
               -D ifcfg_rh=false \
               -D ibft=true \
@@ -146,8 +146,8 @@ script:
               --with-dhcpcd=yes \
               --with-dhclient=yes \
               \
-              --with-netconfig=no \
-              --with-resolvconf=yes \
+              --with-netconfig=/bin/nowhere/netconfig \
+              --with-resolvconf=/bin/nowhere/resolvconf \
               \
               --enable-ifcfg-rh=yes \
               --enable-config-plugin-ibft=yes \
