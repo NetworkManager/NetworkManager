@@ -1,3 +1,12 @@
+===============================================
+NetworkManager-1.12.4
+Overview of changes since NetworkManager-1.12.2
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fix reapplying different route-metric for automatic routes.
+
 =============================================
 NetworkManager-1.12.2
 Overview of changes since NetworkManager-1.12
