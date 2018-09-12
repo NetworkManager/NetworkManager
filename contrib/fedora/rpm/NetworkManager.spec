@@ -681,9 +681,9 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/NetworkManager.conf
 %{_bindir}/nm-online
 %{_libexecdir}/nm-ifup
-%ghost %{_sbindir}/ifup
+%ghost %attr(755, root, root) %{_sbindir}/ifup
 %{_libexecdir}/nm-ifdown
-%ghost %{_sbindir}/ifdown
+%ghost %attr(755, root, root) %{_sbindir}/ifdown
 %{_libexecdir}/nm-dhcp-helper
 %{_libexecdir}/nm-dispatcher
 %{_libexecdir}/nm-iface-helper
