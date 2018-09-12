@@ -30,6 +30,7 @@
 #include <netinet/ether.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <fcntl.h>
 
 #include "nm-client-utils.h"
 #include "nm-vpn-helpers.h"
@@ -8864,7 +8865,7 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 	else {
 		nm_auto_close int fd = -1;
 
-		fd = g_mkstemp (tmpfile);
+		fd = g_mkstemp_full (tmpfile, O_RDWR | O_CLOEXEC, 0600);
 		if (fd == -1) {
 			g_string_printf (nmc->return_text, _("Error: failed to create temporary file %s."), tmpfile);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;

@@ -351,7 +351,7 @@ nm_utils_file_set_contents (const char *filename,
 		length = strlen (contents);
 
 	tmp_name = g_strdup_printf ("%s.XXXXXX", filename);
-	fd = g_mkstemp_full (tmp_name, O_RDWR, mode);
+	fd = g_mkstemp_full (tmp_name, O_RDWR | O_CLOEXEC, mode);
 	if (fd < 0) {
 		errsv = errno;
 		g_set_error (error,
