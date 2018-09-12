@@ -18,12 +18,11 @@ if enable_libnm_glib
     install: true
   )
 
-  packages += libnm_util_vapi
-
   gnome.generate_vapi(
     libnm_glib_name,
     sources: libnm_glib_gir[0],
-    packages: packages,
+    packages: packages + [libnm_util_vapi],
+    gir_dirs: [join_paths(meson.current_build_dir(), '..', 'libnm-util')],
     install: true
   )
 endif
