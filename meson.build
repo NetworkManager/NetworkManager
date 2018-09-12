@@ -624,10 +624,10 @@ dnssec_ts_paths = ['/usr/local/libexec',
                    '/usr/lib',
                    '/usr/lib/dnssec-trigger']
 
-# 0: cmdline option, 1: paths, 2: fallback, 3: config.h option
+# 0: cmdline option, 1: paths, 2: fallback
 progs = [['iptables',       default_paths,   '/sbin/iptables'],
          ['dnsmasq',        default_paths,   ''],
-         ['dnssec_trigger', dnssec_ts_paths, join_paths(nm_libexecdir, 'dnssec-trigger-script'), 'DNSSEC_TRIGGER_SCRIPT'],
+         ['dnssec_trigger', dnssec_ts_paths, join_paths(nm_libexecdir, 'dnssec-trigger-script') ],
         ]
 
 foreach prog : progs
@@ -640,7 +640,7 @@ foreach prog : progs
     exe = find_program(search_paths, required : false)
     path = exe.found() ? exe.path() : prog[2]
   endif
-  name = prog.length() > 3 ? prog[3] : (prog[0].to_upper() + '_PATH')
+  name = prog[0].to_upper() + '_PATH'
   config_h.set_quoted(name, path)
 endforeach
 

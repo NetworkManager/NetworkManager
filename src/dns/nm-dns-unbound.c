@@ -43,7 +43,7 @@ update (NMDnsPlugin *plugin,
         const CList *ip_config_lst_head,
         const char *hostname)
 {
-	char *argv[] = { DNSSEC_TRIGGER_SCRIPT, "--async", "--update", NULL };
+	char *argv[] = { DNSSEC_TRIGGER_PATH, "--async", "--update", NULL };
 	int status;
 
 	/* TODO: We currently call a script installed with the dnssec-trigger
