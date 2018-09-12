@@ -566,7 +566,7 @@ foreach client : [ 'dhclient', 'dhcpcd', 'dhcpcanon' ]
     error(client + ' has not been enabled. Please don\'t disable it or use another configuration option for main.dhcp setting')
   endif
   config_h.set10('WITH_' + client.to_upper(), client_enable)
-  dhcp_summary += (client + ': ' + client_enable.to_string())
+  dhcp_summary += ('  ' + client + ': ' + client_enable.to_string())
   if (client_enable)
     dhcp_summary += (' ' + client_path)
   endif
