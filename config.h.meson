@@ -14,7 +14,7 @@
 #mesondefine DNSMASQ_PATH
 
 /* Define to path of unbound dnssec-trigger-script */
-#mesondefine DNSSEC_TRIGGER_SCRIPT
+#mesondefine DNSSEC_TRIGGER_PATH
 
 /* Gettext package */
 #mesondefine GETTEXT_PACKAGE
