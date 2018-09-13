@@ -603,9 +603,6 @@ if (test "${enable_teamdctl}" = "yes"); then
 	fi
 	# temporary bug workaround
 	LIBTEAMDCTL_CFLAGS=`echo $LIBTEAMDCTL_CFLAGS | sed -e 's:/teamdctl.h::'`
-	AC_DEFINE(WITH_TEAMDCTL, 1, [Define if you have Teamd control support])
-else
-	AC_DEFINE(WITH_TEAMDCTL, 0, [Define if you have Teamd control support])
 fi
 AM_CONDITIONAL(WITH_TEAMDCTL, test "${enable_teamdctl}" = "yes")
 
@@ -674,16 +671,6 @@ if test "${have_crypto_nss}" = "yes"; then
 fi
 AM_CONDITIONAL(HAVE_CRYPTO_GNUTLS, test "${have_crypto_gnutls}" = 'yes')
 AM_CONDITIONAL(HAVE_CRYPTO_NSS, test "${have_crypto_nss}" = 'yes')
-if test "${have_crypto_gnutls}" = 'yes'; then
-	AC_DEFINE(HAVE_CRYPTO_GNUTLS, 1, [Define if you have gnutls support])
-else
-	AC_DEFINE(HAVE_CRYPTO_GNUTLS, 0, [Define if you have gnutls support])
-fi
-if test "${have_crypto_nss}" = 'yes'; then
-	AC_DEFINE(HAVE_CRYPTO_NSS, 1, [Define if you have nss support])
-else
-	AC_DEFINE(HAVE_CRYPTO_NSS, 0, [Define if you have nss support])
-fi
 
 AC_ARG_WITH(crypto,
             AS_HELP_STRING([--with-crypto=nss|gnutls],
@@ -773,12 +760,6 @@ if (test "${with_modem_manager_1}" != "no"); then
 		with_modem_manager_1="yes"
 	fi
 fi
-
-if (test "${with_modem_manager_1}" = "yes"); then
-	AC_DEFINE(WITH_MODEM_MANAGER_1, 1, [Define if you have ModemManager1 support])
-else
-	AC_DEFINE(WITH_MODEM_MANAGER_1, 0, [Define if you have ModemManager1 support])
-fi
 AM_CONDITIONAL(WITH_MODEM_MANAGER_1, test "${with_modem_manager_1}" = "yes")
 
 # Bluez5 DUN support
@@ -822,7 +803,7 @@ if test "$with_dhcpcanon" != "no"; then
 fi
 if test "$with_dhcpcanon" != "no"; then
     AC_DEFINE(WITH_DHCPCANON, 1, [Define if you have dhcpcanon])
-    AC_SUBST(DHCPCANON_PATH, $with_dhcpcanon)
+    AC_DEFINE_UNQUOTED(DHCPCANON_PATH, "$with_dhcpcanon", [Define path to dhcpcanon])
 else
     AC_DEFINE(WITH_DHCPCANON, 0, [Define if you have dhcpcanon])
 fi
@@ -834,15 +815,12 @@ if test "${enable_ovs}" != "no"; then
 	if test "$have_jansson" = "no"; then
 		AC_MSG_ERROR(Jansson is required for ovs support)
 	fi
-	AC_DEFINE(WITH_OPENVSWITCH, 1, [Define if you have OpenVSwitch support])
-else
-	AC_DEFINE(WITH_OPENVSWITCH, 0, [Define if you have OpenVSwitch support])
 fi
 AM_CONDITIONAL(WITH_OPENVSWITCH, test "${enable_ovs}" = "yes")
 
 # DHCP client support
 AC_ARG_WITH([dhclient],
-            AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient 4.x support]))
+            AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient support]))
 if test "$with_dhclient" != "no"; then
 	with_dhclient_="$with_dhclient"
 	AC_PATH_PROGS(with_dhclient, dhclient, no, /sbin:/usr/sbin:/usr/local/sbin)
@@ -851,25 +829,17 @@ if test "$with_dhclient" != "no"; then
 			AC_MSG_WARN([dhclient not found, assume path /usr/sbin/dhclient])
 			with_dhclient=/usr/sbin/dhclient
 		fi
-	else
-		if ! $with_dhclient --version 2>&1 | grep -q "^isc-dhclient-4\."; then
-			AC_MSG_WARN([Seems version of dhclient $with_dhclient is too old, version 4.x or newer is required.])
-		fi
 	fi
 fi
 if test "$with_dhclient" != "no"; then
 	AC_DEFINE(WITH_DHCLIENT, 1, [Define if you have dhclient])
-	AC_SUBST(DHCLIENT_PATH, $with_dhclient)
+	AC_DEFINE_UNQUOTED(DHCLIENT_PATH, "$with_dhclient", [Define path to dhclient])
 else
 	AC_DEFINE(WITH_DHCLIENT, 0, [Define if you have dhclient])
 fi
 
 AC_ARG_WITH([dhcpcd],
             AS_HELP_STRING([--with-dhcpcd=yes|no|path], [Enable dhcpcd 4.x support]))
-AC_ARG_WITH([dhcpcd-supports-ipv6],
-            AS_HELP_STRING([--with-dhcpcd-supports-ipv6=yes|no|auto],
-                           [Whether using dhcpcd >= 6.x which has IPv6 support]),
-            [with_dhcpcd_supports_ipv6=$withval], [with_dhcpcd_supports_ipv6=auto])
 if test "$with_dhcpcd" != "no"; then
 	with_dhcpcd_="$with_dhcpcd"
 	AC_PATH_PROGS(with_dhcpcd, dhcpcd, no, /sbin:/usr/sbin:/usr/local/sbin)
@@ -877,39 +847,12 @@ if test "$with_dhcpcd" != "no"; then
 		if test "$with_dhcpcd_" == yes; then
 			AC_MSG_WARN([dhcpcd not found, assume path /usr/sbin/dhcpcd])
 			with_dhcpcd=/usr/sbin/dhcpcd
-			if test "$with_dhcpcd_supports_ipv6" == auto; then
-				with_dhcpcd_supports_ipv6=yes
-			fi
-		fi
-	else
-		if ! $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [[456789]]\."; then
-			AC_MSG_WARN([Seems version of dhcpcd $with_dhcpcd is too old, version 4.x or newer is required])
 		fi
 	fi
-fi
-if test "$with_dhcpcd" != "no"; then
-	if $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [[6789]]\."; then
-		if test "$with_dhcpcd_supports_ipv6" == no; then
-			AC_MSG_WARN([Seems version of dhcpcd $with_dhcpcd supports IPv6, but compiling --with-dhcpcd-supports-ipv6=no])
-		else
-			with_dhcpcd_supports_ipv6=yes
-		fi
-	else
-		if test "$with_dhcpcd_supports_ipv6" == yes; then
-			AC_MSG_WARN([Seems version of dhcpcd $with_dhcpcd does not support IPv6, but compiling --with-dhcpcd-supports-ipv6=yes])
-		else
-			with_dhcpcd_supports_ipv6=no
-		fi
-	fi
-	if test "$with_dhcpcd_supports_ipv6" != no; then
-		AC_DEFINE(DHCPCD_SUPPORTS_IPV6, 1, [Define if dhcpcd supports IPv6 (6.x+)])
-	fi
-else
-	with_dhcpcd_supports_ipv6=no
 fi
 if test "$with_dhcpcd" != "no"; then
 	AC_DEFINE(WITH_DHCPCD, 1, [Define if you have dhcpcd])
-	AC_SUBST(DHCPCD_PATH, $with_dhcpcd)
+	AC_DEFINE_UNQUOTED(DHCPCD_PATH, "$with_dhcpcd", [Define path to dhcpcd])
 else
 	AC_DEFINE(WITH_DHCPCD, 0, [Define if you have dhcpcd])
 fi
@@ -928,13 +871,12 @@ test -z "$config_dhcp_default"                             && config_dhcp_defaul
 AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_MAIN_DHCP, "$config_dhcp_default", [Default configuration option for main.dhcp setting])
 AC_SUBST(NM_CONFIG_DEFAULT_MAIN_DHCP, $config_dhcp_default)
 
-# resolvconf and netconfig support
 AC_ARG_WITH(resolvconf, AS_HELP_STRING([--with-resolvconf=yes|no|path], [Enable resolvconf support]))
 AC_ARG_WITH(netconfig, AS_HELP_STRING([--with-netconfig=yes|no], [Enable SUSE netconfig support]))
 AC_ARG_WITH(config-dns-rc-manager-default, AS_HELP_STRING([--with-config-dns-rc-manager-default=symlink|file|netconfig|resolvconf], [Configure default value for main.rc-manager setting]), [config_dns_rc_manager_default=$withval])
-if test "$config_dns_rc_manager_default" != symlink -a \
+if test "$config_dns_rc_manager_default" != "" -a \
         "$config_dns_rc_manager_default" != file -a \
-        "$config_dns_rc_manager_default" != "" -a \
+        "$config_dns_rc_manager_default" != symlink -a \
         "$config_dns_rc_manager_default" != netconfig -a \
         "$config_dns_rc_manager_default" != resolvconf; then
 	AC_MSG_WARN([Unknown --with-config-dns-rc-manager-default=$config_dns_rc_manager_default setting.])
@@ -945,21 +887,29 @@ AS_IF([test -z "$with_netconfig" -a -f /etc/SuSE-release], with_netconfig=yes)
 # Otherwise default to "no"
 AS_IF([test -z "$with_resolvconf"], with_resolvconf=no)
 AS_IF([test -z "$with_netconfig"], with_netconfig=no)
-# Find resolvconf and netconfig
+
 if test "$with_resolvconf" = "yes"; then
-	AC_PATH_PROGS(with_resolvconf, resolvconf, no, /sbin:/usr/sbin:/usr/local/sbin)
+	AC_PATH_PROGS(with_resolvconf, resolvconf, 'yes', /sbin:/usr/sbin:/usr/local/sbin)
+	if test "$with_resolvconf" = "yes"; then
+		AC_MSG_ERROR(cannot find resolvconf in path. Set the path explicitly via --with-resolvconf=PATH.)
+	fi
 fi
 if test "$with_resolvconf" != "no"; then
 	AS_IF([test -z "$config_dns_rc_manager_default"], config_dns_rc_manager_default=resolvconf)
 fi
+
 if test "$with_netconfig" = "yes"; then
-	AC_PATH_PROGS(with_netconfig, netconfig, no, /sbin:/usr/sbin:/usr/local/sbin)
+	AC_PATH_PROGS(with_netconfig, netconfig, yes, /sbin:/usr/sbin:/usr/local/sbin)
+	if test "$with_netconfig" = "yes"; then
+		AC_MSG_ERROR(cannot find netconfig in path. Set the path explicitly via --with-netconfig=PATH.)
+	fi
 fi
 if test "$with_netconfig" != "no"; then
 	AS_IF([test -z "$config_dns_rc_manager_default"], config_dns_rc_manager_default=netconfig)
 fi
+
 AS_IF([test -z "$config_dns_rc_manager_default"], config_dns_rc_manager_default=symlink)
-# Define resolvconf and netconfig paths
+
 if test "$with_resolvconf" != "no"; then
 	AC_DEFINE_UNQUOTED(RESOLVCONF_PATH, "$with_resolvconf", [Path to resolvconf])
 fi
@@ -998,13 +948,13 @@ AC_SUBST(DNSMASQ_PATH)
 AC_ARG_WITH(dnssec_trigger,
             AS_HELP_STRING([--with-dnssec-trigger=/path/to/dnssec-trigger-script], [path to unbound dnssec-trigger-script]))
 if test "x${with_dnssec_trigger}" = x; then
-	AC_PATH_PROG(DNSSEC_TRIGGER_SCRIPT, dnssec-trigger-script, /usr/libexec/dnssec-trigger-script,
+	AC_PATH_PROG(DNSSEC_TRIGGER_PATH, dnssec-trigger-script, /usr/libexec/dnssec-trigger-script,
 	             /usr/local/libexec:/usr/local/lib:/usr/local/lib/dnssec-trigger:/usr/libexec:/usr/lib:/usr/lib/dnssec-trigger)
 else
-	DNSSEC_TRIGGER_SCRIPT="$with_dnssec_trigger"
+	DNSSEC_TRIGGER_PATH="$with_dnssec_trigger"
 fi
-AC_DEFINE_UNQUOTED(DNSSEC_TRIGGER_SCRIPT, "$DNSSEC_TRIGGER_SCRIPT", [Define to path of unbound dnssec-trigger-script])
-AC_SUBST(DNSSEC_TRIGGER_SCRIPT)
+AC_DEFINE_UNQUOTED(DNSSEC_TRIGGER_PATH, "$DNSSEC_TRIGGER_PATH", [Define to path of unbound dnssec-trigger-script])
+AC_SUBST(DNSSEC_TRIGGER_PATH)
 
 # system CA certificates path
 AC_ARG_WITH(system-ca-path,
@@ -1356,7 +1306,7 @@ echo
 echo "Features:"
 echo "  wext: $ac_with_wext"
 echo "  wifi: $enable_wifi"
-echo "  ppp: $enable_ppp ${PPPD_PLUGIN_DIR}"
+echo "  ppp: $enable_ppp ${PPPD_PATH} plugins:${PPPD_PLUGIN_DIR}"
 echo "  modemmanager-1: $with_modem_manager_1"
 echo "  ofono: $with_ofono"
 echo "  concheck: $enable_concheck"
@@ -1384,7 +1334,6 @@ echo "DHCP clients (default $config_dhcp_default):"
 echo "  dhcpcanon: $with_dhcpcanon"
 echo "  dhclient: $with_dhclient"
 echo "  dhcpcd: $with_dhcpcd"
-echo "  dhcpcd-supports-ipv6: $with_dhcpcd_supports_ipv6"
 echo
 
 echo "Miscellaneous:"

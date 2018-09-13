@@ -10,14 +10,11 @@
 /* Define to path of dhcpcd binary */
 #mesondefine DHCPCD_PATH
 
-/* Define if dhcpcd supports IPv6 (6.x+) */
-#mesondefine DHCPCD_SUPPORTS_IPV6
-
 /* Define to path of dnsmasq binary */
 #mesondefine DNSMASQ_PATH
 
 /* Define to path of unbound dnssec-trigger-script */
-#mesondefine DNSSEC_TRIGGER_SCRIPT
+#mesondefine DNSSEC_TRIGGER_PATH
 
 /* Gettext package */
 #mesondefine GETTEXT_PACKAGE

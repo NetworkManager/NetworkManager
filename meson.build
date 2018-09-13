@@ -50,7 +50,7 @@ nm_pkgdatadir = join_paths(nm_datadir, nm_name)
 nm_pkgincludedir = join_paths(nm_includedir, nm_name)
 nm_pkglibdir = join_paths(nm_prefix, 'lib', nm_name)
 nm_pkgrundir = join_paths(nm_runstatedir, nm_name)
-nm_pkgstatedir = join_paths(nm_localstatedir, nm_name)
+nm_pkgstatedir = join_paths(nm_localstatedir, 'lib', nm_name)
 nm_vpndir = join_paths(nm_libdir, nm_name)
 nm_plugindir = join_paths(nm_libdir, nm_name, dist_version)
 
@@ -505,11 +505,14 @@ enable_ppp = get_option('ppp')
 if enable_ppp
   assert(cc.has_header('pppd/pppd.h'), 'couldn\'t find pppd.h. pppd development headers are required')
 
-  locations = get_option('pppd')
-  pppd = find_program(locations, required: false)
-  assert(pppd.found(), 'pppd required but not found, please provide a valid pppd path or use -Dppp=false to disable it')
+  pppd_path = get_option('pppd')
+  if pppd_path == ''
+    pppd = find_program('pppd', '/sbin/pppd', '/usr/sbin/pppd', required: false)
+    assert(pppd.found(), 'pppd required but not found, please provide a valid pppd path or use -Dppp=false to disable it')
+    pppd_path = pppd.path()
+  endif
 
-  config_h.set_quoted('PPPD_PATH', pppd.path())
+  config_h.set_quoted('PPPD_PATH', pppd_path)
 
   pppd_plugin_dir = get_option('pppd_plugin_dir')
   if pppd_plugin_dir == ''
@@ -536,81 +539,39 @@ config_h.set10('WITH_BLUEZ5_DUN', enable_bluez5_dun)
 enable_ofono = get_option('ofono')
 config_h.set10('WITH_OFONO', enable_ofono)
 
-# DHCP client support with dhcpcanon
-locations = get_option('dhcpcanon')
-enable_dhcpcanon = (locations != ['no'])
-if enable_dhcpcanon
-  dhcpcanon = find_program(locations, required: false)
-  enable_dhcpcanon = dhcpcanon.found()
-
-  if enable_dhcpcanon
-    config_h.set_quoted('DHCPCANON_PATH', dhcpcanon.path())
-  endif
-endif
-config_h.set10('WITH_DHCPCANON', enable_dhcpcanon)
-
 # DHCP client support
-locations = get_option('dhclient')
-enable_dhclient = (locations != ['no'])
-if enable_dhclient
-  dhclient = find_program(locations, required: false)
-  enable_dhclient = dhclient.found()
-
-  if enable_dhclient
-    res = run_command(dhclient, '--version')
-    # FIXME: dhcp outputs the version string through stderr!?
-    if not res.stderr().strip().contains('isc-dhclient-4.')
-      message('Seems version of dhclient ' + dhclient.path() + ' is too old, version 4.x or newer is required')
-    endif
-    config_h.set_quoted('DHCLIENT_PATH', dhclient.path())
-  endif
-endif
-config_h.set10('WITH_DHCLIENT', enable_dhclient)
-
-locations = get_option('dhcpcd')
-enable_dhcpcd = (locations != ['no'])
-enable_dhcpcd_supports_ipv6 = false
-if enable_dhcpcd
-  dhcpcd = find_program(locations, required: false)
-  enable_dhcpcd = dhcpcd.found()
-
-  if enable_dhcpcd
-    res = run_command(dhcpcd, '--version').stdout().strip()
-    dhcpcd_version = res.split(' ')[1]
-    if not dhcpcd_version.version_compare('> 4')
-      message('Seems version of dhcpcd ' + dhcpcd.path() + ' is too old, version 4.x or newer is required')
-    endif
-
-    enable_dhcpcd_supports_ipv6 = get_option('dhcpcd_supports_ipv6')
-    if dhcpcd_version.version_compare('> 6')
-      if not enable_dhcpcd_supports_ipv6
-        message('Seems version of dhcpcd ' + dhcpcd.path() + ' supports IPv6, but compiling without IPv6 support.')
-      endif
-    else
-      if enable_dhcpcd_supports_ipv6
-        message('Seems version of dhcpcd ' + dhcpcd.path() +'  does not support IPv6, but compiling with IPv6 support.')
-      endif
-    endif
-    config_h.set('DHCPCD_SUPPORTS_IPV6', enable_dhcpcd_supports_ipv6)
-    config_h.set_quoted('DHCPCD_PATH', dhcpcd.path())
-  endif
-endif
-config_h.set10('WITH_DHCPCD', enable_dhcpcd)
-
 config_dhcp_default = get_option('config_dhcp_default')
-if config_dhcp_default == 'dhcpcanon' and not enable_dhcpcanon
-  error(config_dhcp_default + ' has not been enabled. Please don\'t disable it or use another configuration option for main.dhcp setting')
-endif
-
-if config_dhcp_default == 'dhclient' and not enable_dhclient
-  error(config_dhcp_default + ' has not been enabled. Please don\'t disable it or use another configuration option for main.dhcp setting')
-endif
-
-if config_dhcp_default == 'dhcpcd' and not enable_dhcpcd
-  error(config_dhcp_default + ' has not been enabled. Please don\'t disable it or use another configuration option for main.dhcp setting')
-endif
-
 config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_DHCP', config_dhcp_default)
+dhcp_summary = ''
+foreach client : [ 'dhclient', 'dhcpcd', 'dhcpcanon' ]
+  client_path = get_option(client)
+  client_enable = (client_path != 'no')
+  if client_enable
+    if client_path == ''
+      client_prog = find_program(client,
+                                 '/sbin/' + client,
+                                 '/usr/sbin/pppd/' + client,
+                                 '/usr/local/sbin/' + client,
+                                 required : false)
+      if client_prog.found()
+        client_path = client_prog.path()
+      else
+        client_path = '/usr/sbin/' + client
+        message('@0@ not found, assume path @1@'.format(client, client_path))
+      endif
+    endif
+    config_h.set_quoted(client.to_upper() + '_PATH', client_path)
+  endif
+  if config_dhcp_default == client and not client_enable
+    error(client + ' has not been enabled. Please don\'t disable it or use another configuration option for main.dhcp setting')
+  endif
+  config_h.set10('WITH_' + client.to_upper(), client_enable)
+  dhcp_summary += ('  ' + client + ': ' + client_enable.to_string())
+  if (client_enable)
+    dhcp_summary += (' ' + client_path)
+  endif
+  dhcp_summary += '\n'
+endforeach
 
 # OpenVSwitch integration
 enable_ovs = get_option('ovs')
@@ -618,53 +579,70 @@ if enable_ovs
   assert(jansson_dep.found(), 'jansson is needed for OpenVSwitch integration. Use -Dovs=false to disable it')
 endif
 
-# resolvconf and netconfig support
-locations = get_option('resolvconf')
-enable_resolvconf = (locations != ['no'])
-if enable_resolvconf
-  resolvconf = find_program(locations, required: false)
-  enable_resolvconf = resolvconf.found()
-
-  if enable_resolvconf
-    config_h.set_quoted('RESOLVCONF_PATH', resolvconf.path())
-  endif
-endif
-
-locations = get_option('netconfig')
-enable_netconfig = (locations != ['no'])
-if enable_netconfig
-  netconfig = find_program(locations, required: false)
-  enable_netconfig = netconfig.found()
-
-  if enable_netconfig
-    config_h.set_quoted('NETCONFIG_PATH', netconfig.path())
-  endif
-endif
-
+# DNS resolv.conf managers
 config_dns_rc_manager_default = get_option('config_dns_rc_manager_default')
-if config_dns_rc_manager_default == 'resolvconf' and not enable_resolvconf
-  error(config_dns_rc_manager_default + ' has not been enabled. Please don\'t disable it or use another configuration option for main.rc-manager setting')
-endif
-
-if config_dns_rc_manager_default == 'netconfig' and not enable_netconfig
-  error(config_dns_rc_manager_default + ' has not been enabled. Please don\'t disable it or use another configuration option for main.rc-manager setting')
-endif
-
 config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_RC_MANAGER', config_dns_rc_manager_default)
+resolv_conf_summary = ''
+foreach prog_name : ['resolvconf', 'netconfig']
+  prog_path = get_option(prog_name)
+  prog_enable = (prog_path != 'no')
 
-# iptables path
-config_h.set_quoted('IPTABLES_PATH', find_program(get_option('iptables')).path())
+  if prog_enable
+    if prog_path == ''
+      prog = find_program(prog_name,
+                          '/usr/' + prog_name,
+                          '/usr/sbin/' + prog_name,
+                          '/usr/local/sbin' + prog_name,
+                          required : false)
+      if prog.found()
+        prog_path = prog.path()
+      else
+        prog_enable = false
+      endif
+    endif
+  endif
 
-# dnsmasq path
-config_h.set_quoted('DNSMASQ_PATH', find_program(get_option('dnsmasq')).path())
+  if prog_enable
+    config_h.set_quoted(prog_name.to_upper() + '_PATH', prog_path)
+  elif config_dns_rc_manager_default == prog_name
+    error(prog_name + ' has not been enabled. Please don\'t disable it or use another configuration option for main.rc-manager setting')
+  endif
 
-# dnssec-trigger-script path
-dnssec_trigger_script = find_program(get_option('dnssec_trigger'), required: false)
-if dnssec_trigger_script.found()
-  config_h.set_quoted('DNSSEC_TRIGGER_SCRIPT', dnssec_trigger_script.path())
-else
-  config_h.set_quoted('DNSSEC_TRIGGER_SCRIPT', join_paths(nm_libexecdir, 'dnssec-trigger-script'))
-endif
+  resolv_conf_summary += '  ' + prog_name + ': ' + prog_enable.to_string()
+  if prog_enable
+    resolv_conf_summary += ' ' + prog_path
+  endif
+  resolv_conf_summary += '\n'
+endforeach
+
+# external misc tools paths
+default_paths = ['/sbin', '/usr/sbin']
+dnssec_ts_paths = ['/usr/local/libexec',
+                   '/usr/local/lib',
+                   '/usr/local/lib/dnssec-trigger',
+                   '/usr/libexec',
+                   '/usr/lib',
+                   '/usr/lib/dnssec-trigger']
+
+# 0: cmdline option, 1: paths, 2: fallback
+progs = [['iptables',       default_paths,   '/sbin/iptables'],
+         ['dnsmasq',        default_paths,   ''],
+         ['dnssec_trigger', dnssec_ts_paths, join_paths(nm_libexecdir, 'dnssec-trigger-script') ],
+        ]
+
+foreach prog : progs
+  path = get_option(prog[0])
+  if path == ''
+    search_paths = [ prog[0] ]
+    foreach path : prog[1]
+      search_paths += (path + '/' + prog[0])
+    endforeach
+    exe = find_program(search_paths, required : false)
+    path = exe.found() ? exe.path() : prog[2]
+  endif
+  name = prog[0].to_upper() + '_PATH'
+  config_h.set_quoted(name, path)
+endforeach
 
 # system CA certificates path
 system_ca_path = get_option('system_ca_path')
@@ -890,15 +868,6 @@ config_extra_h = configuration_data()
 
 config_extra_h.set_quoted('BINDIR',            nm_bindir)
 config_extra_h.set_quoted('DATADIR',           nm_datadir)
-if enable_dhclient
-    config_extra_h.set_quoted('DHCLIENT_PATH',     dhclient.path())
-endif
-if enable_dhcpcanon
-    config_extra_h.set_quoted('DHCPCANON_PATH',    dhcpcanon.path())
-endif
-if enable_dhcpcd
-    config_extra_h.set_quoted('DHCPCD_PATH',       dhcpcd.path())
-endif
 config_extra_h.set_quoted('LIBEXECDIR',        nm_libexecdir)
 config_extra_h.set_quoted('LOCALSTATEDIR',     nm_localstatedir)
 config_extra_h.set_quoted('NMCONFDIR',         nm_pkgconfdir)
@@ -969,7 +938,7 @@ output += '  wifi: ' + enable_wifi.to_string() + '\n'
 output += '  iwd:  ' + enable_iwd.to_string() + '\n'
 output += '  pppd: ' + enable_ppp.to_string()
 if enable_ppp
-  output += ' ' + pppd.path()
+  output += ' ' + pppd_path + ' plugins:' + pppd_plugin_dir
 endif
 output += '\n'
 output += '  modemmanager-1: ' + enable_modem_manager.to_string() + '\n'
@@ -984,35 +953,11 @@ output += '\nConfiguration_plugins (main.plugins=' + config_plugins_default + ')
 output += '  ibft: ' + enable_ibft.to_string() + '\n'
 output += '  ifcfg-rh: ' + enable_ifcfg_rh.to_string() + '\n'
 output += '  ifupdown: ' + enable_ifupdown.to_string() + '\n'
-output += '\nHandlers for /etc/resolv.conf:\n'
-output += '  resolvconf: ' + enable_resolvconf.to_string()
-if enable_resolvconf
-  output += ' ' + resolvconf.path()
-endif
-output += '\n'
-output += '  netconfig: ' + enable_netconfig.to_string()
-if enable_netconfig
-  output += ' ' + netconfig.path()
-endif
+output += '\nHandlers for /etc/resolv.conf:\n' + resolv_conf_summary
 output += '\n'
 output += '  config-dns-rc-manager-default: ' + config_dns_rc_manager_default + '\n'
-output += '\nDHCP clients (default ' + config_dhcp_default + '):\n'
-output += '  dhcpcanon: ' + enable_dhcpcanon.to_string()
-if enable_dhcpcanon
-  output += ' ' + dhcpcanon.path()
-endif
+output += '\nDHCP clients (default ' + config_dhcp_default + '):\n' + dhcp_summary
 output += '\n'
-output += '  dhclient: ' + enable_dhclient.to_string()
-if enable_dhclient
-  output += ' ' + dhclient.path()
-endif
-output += '\n'
-output += '  dhcpcd: ' + enable_dhcpcd.to_string()
-if enable_dhcpcd
-  output += ' ' + dhcpcd.path()
-endif
-output += '\n'
-output += '  dhcpcd-supports-ipv6: ' + enable_dhcpcd_supports_ipv6.to_string() + '\n'
 output += '\nMiscellaneous:\n'
 output += '  have introspection: ' + enable_introspection.to_string() + '\n'
 output += '  build documentation and manpages: ' + enable_docs.to_string() + '\n'
