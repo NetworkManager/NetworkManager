@@ -43,8 +43,6 @@
 
 %global real_version_major %(printf '%s' '%{real_version}' | sed -n 's/^\\([1-9][0-9]*\\.[1-9][0-9]*\\)\\.[1-9][0-9]*$/\\1/p')
 
-%global is_devel_build %(printf '%s' '%{real_version}' | sed -n 's/^1\\.\\([0-9]*[13579]\\)\\..*/1/p')
-
 ###############################################################################
 
 %bcond_without adsl
@@ -57,11 +55,7 @@
 %bcond_without ppp
 %bcond_without nmtui
 %bcond_without regen_docs
-%if 0%{is_devel_build}
-%bcond_without debug
-%else
 %bcond_with    debug
-%endif
 %bcond_without test
 %bcond_with    sanitizer
 %if 0%{?fedora} > 28 || 0%{?rhel} > 7
