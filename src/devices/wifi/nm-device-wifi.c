@@ -2459,6 +2459,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	set_current_ap (self, ap, FALSE);
 	nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req),
 	                                          nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap)));
+	g_object_unref (ap);
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 
 done:
