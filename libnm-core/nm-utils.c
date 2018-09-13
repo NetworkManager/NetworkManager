@@ -431,7 +431,7 @@ nm_utils_escape_ssid (const guint8 *ssid, gsize len)
 char *
 _nm_utils_ssid_to_string_arr (const guint8 *ssid, gsize len)
 {
-	char *s_copy;
+	gs_free char *s_copy = NULL;
 	const char *s_cnst;
 
 	if (len == 0)
