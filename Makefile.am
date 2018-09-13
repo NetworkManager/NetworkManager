@@ -5040,7 +5040,6 @@ EXTRA_DIST += \
 	valgrind.suppressions \
 	meson.build \
 	meson_options.txt \
-	meson_post_install.py \
 	config.h.meson \
 	config-extra.h.meson \
 	docs/meson.build \
@@ -5081,6 +5080,7 @@ EXTRA_DIST += \
 	tools/check-exports.sh \
 	tools/create-exports-NetworkManager.sh \
 	tools/debug-helper.py \
+	tools/meson-post-install.sh \
 	tools/run-nm-test.sh \
 	tools/test-networkmanager-service.py \
 	tools/test-sudo-wrapper.sh \

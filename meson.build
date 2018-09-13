@@ -895,7 +895,7 @@ configure_file(
 )
 
 meson.add_install_script(
-  'meson_post_install.py',
+  join_paths('tools', 'meson-post-install.sh'),
   nm_datadir,
   nm_bindir,
   nm_pkgconfdir,
