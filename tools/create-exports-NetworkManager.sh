@@ -35,7 +35,7 @@ call_nm() {
 }
 
 get_symbols_nm () {
-    call_nm ./src/.libs/libNetworkManager.a |
+    call_nm ./src/${libs}libNetworkManager.a |
         sed -n 's/^[tTDGRBS] //p' |
         _sort
 }
@@ -47,9 +47,9 @@ EOF
 }
 
 get_symbols_missing() {
-    (for f in $(find ./src/settings/plugins/*/.libs/ \
-              ./src/devices/*/.libs/ \
-              ./src/ppp/.libs/ -name '*.so'); do
+    (for f in $(find ./src/settings/plugins/*/${libs} \
+              ./src/devices/*/${libs} \
+              ./src/ppp/${libs} -name '*.so'); do
         call_nm "$f" |
             sed -n 's/^\([U]\) \(\(nm_\|nmp_\|_nm\|NM\|_NM\|c_siphash_\).*\)$/\2/p'
     done) |
@@ -90,16 +90,25 @@ local:
 EOF
 }
 
-test -f ./src/.libs/libNetworkManager.a || die "must be called from NetworkManager \$(top_builddir) after building the tree"
+if [ -f "build.ninja" ]; then
+    from_meson=1
+    libs=
+else
+    libs=.libs/
+fi
+
+test -f ./src/${libs}libNetworkManager.a || die "must be called from NetworkManager top build dir after building the tree"
 
 case "$1" in
     rebuild)
+        [ -n "$from_meson" ] && die "can't do a build when called from meson"
         do_rebuild
         ;;
     build)
+        [ -n "$from_meson" ] && die "can't do a build when called from meson"
         do_build
         ;;
-    '--called-from-make')
+    --called-from-build)
         if test -z "${NM_BUILD_NO_CREATE_EXPORTS+x}"; then
             do_update
         else
