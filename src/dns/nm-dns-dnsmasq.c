@@ -183,10 +183,12 @@ add_ip_config (NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsIPConfig
 			                        domain[0] ? domain : NULL);
 		}
 
-		for (j = 0; ip_data->domains.reverse[j]; j++) {
-			add_dnsmasq_nameserver (self, servers,
-			                        ip_addr_to_string_buf,
-			                        ip_data->domains.reverse[j]);
+		if (ip_data->domains.reverse) {
+			for (j = 0; ip_data->domains.reverse[j]; j++) {
+				add_dnsmasq_nameserver (self, servers,
+				                        ip_addr_to_string_buf,
+				                        ip_data->domains.reverse[j]);
+			}
 		}
 	}
 }
