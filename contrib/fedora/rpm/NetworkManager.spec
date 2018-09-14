@@ -56,7 +56,7 @@
 %bcond_without nmtui
 %bcond_without regen_docs
 %bcond_with    debug
-%bcond_without test
+%bcond_with    test
 %bcond_with    sanitizer
 %if 0%{?fedora} > 28 || 0%{?rhel} > 7
 %bcond_with libnm_glib
@@ -541,7 +541,11 @@ intltoolize --automake --copy --force
 	--with-system-ca-path=/etc/pki/tls/cert.pem \
 	--with-dbus-sys-dir=%{dbus_sys_dir} \
 	--with-tests=yes \
+%if %{with test}
+	--enable-more-warnings=error \
+%else
 	--enable-more-warnings=yes \
+%endif
 	--with-valgrind=no \
 	--enable-ifcfg-rh=yes \
 %if %{with ppp}

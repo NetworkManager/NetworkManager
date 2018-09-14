@@ -41,7 +41,7 @@ IGNORE_DIRTY=0
 GIT_CLEAN=0
 QUICK=0
 NO_DIST=0
-WITH_LIST=()
+WITH_LIST=(--with test)
 SOURCE_FROM_GIT=0
 SNAPSHOT="$NM_BUILD_SNAPSHOT"
 
@@ -155,10 +155,6 @@ if [[ $NO_DIST != 1 ]]; then
     else
         make distcheck -j 7 || die "Error make distcheck"
     fi
-fi
-
-if [[ $QUICK == 1 ]]; then
-    WITH_LIST=(--without test "${WITH_LIST[@]}")
 fi
 
 export SOURCE_FROM_GIT
