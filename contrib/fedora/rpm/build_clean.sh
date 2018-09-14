@@ -41,9 +41,11 @@ IGNORE_DIRTY=0
 GIT_CLEAN=0
 QUICK=0
 NO_DIST=0
-WITH_LIST=(--with test)
+WITH_LIST=()
 SOURCE_FROM_GIT=0
 SNAPSHOT="$NM_BUILD_SNAPSHOT"
+
+ADD_WITH_TEST=1
 
 NARGS=$#
 
@@ -90,11 +92,17 @@ while [[ $# -gt 0 ]]; do
         -w|--with)
             [[ $# -gt 0 ]] || die "Missing argument to $A"
             WITH_LIST=("${WITH_LIST[@]}" "--with" "$1")
+            if [[ "$1" == test ]]; then
+                ADD_WITH_TEST=0
+            fi
             shift
             ;;
         -W|--without)
             [[ $# -gt 0 ]] || die "Missing argument to $A"
             WITH_LIST=("${WITH_LIST[@]}" "--without" "$1")
+            if [[ "$1" == test ]]; then
+                ADD_WITH_TEST=0
+            fi
             shift
             ;;
         *)
@@ -155,6 +163,10 @@ if [[ $NO_DIST != 1 ]]; then
     else
         make distcheck -j 7 || die "Error make distcheck"
     fi
+fi
+
+if [[ "$ADD_WITH_TEST" == 1 ]]; then
+    WITH_LIST=("${WITH_LIST[@]}" "--with" "test")
 fi
 
 export SOURCE_FROM_GIT
