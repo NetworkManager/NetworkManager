@@ -2141,10 +2141,10 @@ _tc_read_common_opts (const char *str,
 	gs_unref_hashtable GHashTable *ht = NULL;
 	GVariant *variant;
 
-        ht = nm_utils_parse_variant_attributes (str,
-                                                ' ', ' ', FALSE,
-                                                tc_object_attribute_spec,
-                                                error);
+	ht = nm_utils_parse_variant_attributes (str,
+	                                        ' ', ' ', FALSE,
+	                                        tc_object_attribute_spec,
+	                                        error);
 	if (!ht)
 		return FALSE;
 
@@ -2504,10 +2504,10 @@ nm_utils_tc_tfilter_from_str (const char *str, GError **error)
 		return NULL;
 
 	if (rest) {
-	        ht = nm_utils_parse_variant_attributes (rest,
-	                                                ' ', ' ', FALSE,
-	                                                tc_tfilter_attribute_spec,
-	                                                error);
+		ht = nm_utils_parse_variant_attributes (rest,
+		                                        ' ', ' ', FALSE,
+		                                        tc_tfilter_attribute_spec,
+		                                        error);
 		if (!ht)
 			return NULL;
 
