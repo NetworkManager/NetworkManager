@@ -184,7 +184,7 @@ pkg.generate(
   requires: 'gio-2.0',
   variables: [
     'exec_prefix=${prefix}',
-    'vpnservicedir=' + join_paths(nm_pkglibdir, 'VPN')
+    'vpnservicedir=' + join_paths('${prefix}', 'lib', nm_name, 'VPN')
   ]
 )
 
