@@ -15,9 +15,6 @@ DO_TEST_BUILD="${DO_TEST_BUILD:-yes}"
 DO_TEST_PACKAGE="${DO_TEST_PACKAGE:-yes}"
 DO_INSTALL="${DO_INSTALL:-yes}"
 
-# https://github.com/NetworkManager/NetworkManager/pull/196
-export NMTST_IGNORE_GTK_DOC_PATCH=1
-
 if [ -z "$SUDO" ]; then
     unset SUDO
 fi
