@@ -1217,7 +1217,7 @@ else
 	if test "$enable_gtk_doc" = "yes"; then
 		# large parts of the documentation require introspection/pygobject to extract
 		# the documentation out of the source files. You cannot enable gtk-doc without alone.
-		AC_MSG_ERROR(["--with-gtk-doc requires --enable-introspection"])
+		AC_MSG_ERROR(["--enable-gtk-doc requires --enable-introspection"])
 	fi
 	have_introspection=no
 fi
