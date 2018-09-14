@@ -1216,7 +1216,7 @@ _normalize_sriov_vf_order (NMConnection *self, GHashTable *parameters)
 {
 	NMSettingSriov *s_sriov;
 
-	s_sriov = nm_connection_get_setting_sriov (self);
+	s_sriov = NM_SETTING_SRIOV (nm_connection_get_setting (self, NM_TYPE_SETTING_SRIOV));
 	if (!s_sriov)
 		return FALSE;
 
@@ -2279,22 +2279,6 @@ nm_connection_get_virtual_device_description (NMConnection *connection)
 /*****************************************************************************/
 
 /**
- * nm_connection_get_setting_6lowpan:
- * @connection: the #NMConnection
- *
- * A shortcut to return any #NMSetting6Lowpan the connection might contain.
- *
- * Returns: (transfer none): an #NMSetting6Lowpan if the connection contains one, otherwise %NULL
- *
- * Since: 1.14
- **/
-NMSetting6Lowpan *
-nm_connection_get_setting_6lowpan (NMConnection *connection)
-{
-	return _connection_get_setting_check (connection, NM_TYPE_SETTING_6LOWPAN);
-}
-
-/**
  * nm_connection_get_setting_802_1x:
  * @connection: the #NMConnection
  *
@@ -2701,22 +2685,6 @@ nm_connection_get_setting_serial (NMConnection *connection)
 }
 
 /**
- * nm_connection_get_setting_sriov:
- * @connection: the #NMConnection
- *
- * A shortcut to return any #NMSettingSriov the connection might contain.
- *
- * Returns: (transfer none): an #NMSettingSriov if the connection contains one, otherwise %NULL
- *
- * Since: 1.14
- **/
-NMSettingSriov *
-nm_connection_get_setting_sriov (NMConnection *connection)
-{
-	return _connection_get_setting_check (connection, NM_TYPE_SETTING_SRIOV);
-}
-
-/**
  * nm_connection_get_setting_tc_config:
  * @connection: the #NMConnection
  *
@@ -2874,22 +2842,6 @@ NMSettingVlan *
 nm_connection_get_setting_vlan (NMConnection *connection)
 {
 	return _connection_get_setting_check (connection, NM_TYPE_SETTING_VLAN);
-}
-
-/**
- * nm_connection_get_setting_wpan:
- * @connection: the #NMConnection
- *
- * A shortcut to return any #NMSettingWpan the connection might contain.
- *
- * Returns: (transfer none): an #NMSettingWpan if the connection contains one, otherwise %NULL
- *
- * Since: 1.14
- **/
-NMSettingWpan *
-nm_connection_get_setting_wpan (NMConnection *connection)
-{
-	return _connection_get_setting_check (connection, NM_TYPE_SETTING_WPAN);
 }
 
 NMSettingBluetooth *

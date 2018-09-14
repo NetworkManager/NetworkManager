@@ -114,7 +114,7 @@ create_and_realize (NMDevice *device,
 	NMSetting6Lowpan *s_6lowpan;
 	int parent_ifindex;
 
-	s_6lowpan = nm_connection_get_setting_6lowpan (connection);
+	s_6lowpan = NM_SETTING_6LOWPAN (nm_connection_get_setting (connection, NM_TYPE_SETTING_6LOWPAN));
 	g_return_val_if_fail (s_6lowpan, FALSE);
 
 	parent_ifindex = parent ? nm_device_get_ifindex (parent) : 0;
@@ -192,7 +192,7 @@ complete_connection (NMDevice *device,
 	                           NULL,
 	                           TRUE);
 
-	s_6lowpan = nm_connection_get_setting_6lowpan (connection);
+	s_6lowpan = NM_SETTING_6LOWPAN (nm_connection_get_setting (connection, NM_TYPE_SETTING_6LOWPAN));
 	if (!s_6lowpan) {
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INVALID_CONNECTION,
 		                     "A '6lowpan' setting is required.");
@@ -215,7 +215,7 @@ complete_connection (NMDevice *device,
 static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
-	NMSetting6Lowpan *s_6lowpan = nm_connection_get_setting_6lowpan (connection);
+	NMSetting6Lowpan *s_6lowpan = NM_SETTING_6LOWPAN (nm_connection_get_setting (connection, NM_TYPE_SETTING_6LOWPAN));
 
 	if (!s_6lowpan) {
 		s_6lowpan = (NMSetting6Lowpan *) nm_setting_6lowpan_new ();
@@ -310,7 +310,7 @@ get_connection_parent (NMDeviceFactory *factory, NMConnection *connection)
 
 	g_return_val_if_fail (nm_connection_is_type (connection, NM_SETTING_6LOWPAN_SETTING_NAME), NULL);
 
-	s_6lowpan = nm_connection_get_setting_6lowpan (connection);
+	s_6lowpan = NM_SETTING_6LOWPAN (nm_connection_get_setting (connection, NM_TYPE_SETTING_6LOWPAN));
 	g_assert (s_6lowpan);
 
 	return nm_setting_6lowpan_get_parent (s_6lowpan);
@@ -326,7 +326,7 @@ get_connection_iface (NMDeviceFactory *factory,
 
 	g_return_val_if_fail (nm_connection_is_type (connection, NM_SETTING_6LOWPAN_SETTING_NAME), NULL);
 
-	s_6lowpan = nm_connection_get_setting_6lowpan (connection);
+	s_6lowpan = NM_SETTING_6LOWPAN (nm_connection_get_setting (connection, NM_TYPE_SETTING_6LOWPAN));
 	g_assert (s_6lowpan);
 
 	if (!parent_iface)

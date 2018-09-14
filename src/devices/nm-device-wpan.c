@@ -69,7 +69,7 @@ complete_connection (NMDevice *device,
 	                           NULL,
 	                           TRUE);
 
-	s_wpan = nm_connection_get_setting_wpan (connection);
+	s_wpan = NM_SETTING_WPAN (nm_connection_get_setting (connection, NM_TYPE_SETTING_WPAN));
 	if (!s_wpan) {
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INVALID_CONNECTION,
 		                     "A 'wpan' setting is required.");
@@ -82,7 +82,7 @@ complete_connection (NMDevice *device,
 static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
-	NMSettingWpan *s_wpan = nm_connection_get_setting_wpan (connection);
+	NMSettingWpan *s_wpan = NM_SETTING_WPAN (nm_connection_get_setting (connection, NM_TYPE_SETTING_WPAN));
 
 	if (!s_wpan) {
 		s_wpan = (NMSettingWpan *) nm_setting_wpan_new ();
@@ -99,7 +99,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection, GError 
 	if (!NM_DEVICE_CLASS (nm_device_wpan_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
-	s_wpan = nm_connection_get_setting_wpan (connection);
+	s_wpan = NM_SETTING_WPAN (nm_connection_get_setting (connection, NM_TYPE_SETTING_WPAN));
 
 	mac = nm_setting_wpan_get_mac_address (s_wpan);
 	if (mac) {
@@ -143,7 +143,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	connection = nm_device_get_applied_connection (device);
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
-	s_wpan = nm_connection_get_setting_wpan (connection);
+	s_wpan = NM_SETTING_WPAN (nm_connection_get_setting (connection, NM_TYPE_SETTING_WPAN));
 	g_return_val_if_fail (s_wpan, NM_ACT_STAGE_RETURN_FAILURE);
 
 	hwaddr = nm_platform_link_get_address (platform, ifindex, &hwaddr_len);
