@@ -231,6 +231,7 @@ NMSettingProxy *           nm_connection_get_setting_proxy             (NMConnec
 NMSettingSerial *          nm_connection_get_setting_serial            (NMConnection *connection);
 NM_AVAILABLE_IN_1_12
 NMSettingTCConfig *        nm_connection_get_setting_tc_config         (NMConnection *connection);
+NM_AVAILABLE_IN_1_2
 NMSettingTun *             nm_connection_get_setting_tun               (NMConnection *connection);
 NMSettingVpn *             nm_connection_get_setting_vpn               (NMConnection *connection);
 NMSettingWimax *           nm_connection_get_setting_wimax             (NMConnection *connection);
