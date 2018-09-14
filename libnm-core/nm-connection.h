@@ -193,8 +193,6 @@ const char *  nm_connection_get_connection_type (NMConnection *connection);
 gboolean      nm_connection_is_virtual          (NMConnection *connection);
 char *        nm_connection_get_virtual_device_description (NMConnection *connection);
 
-NM_AVAILABLE_IN_1_14
-NMSetting6Lowpan *         nm_connection_get_setting_6lowpan           (NMConnection *connection);
 NMSetting8021x *           nm_connection_get_setting_802_1x            (NMConnection *connection);
 NMSettingBluetooth *       nm_connection_get_setting_bluetooth         (NMConnection *connection);
 NMSettingBond *            nm_connection_get_setting_bond              (NMConnection *connection);
@@ -231,8 +229,6 @@ NMSettingPppoe *           nm_connection_get_setting_pppoe             (NMConnec
 NM_AVAILABLE_IN_1_6
 NMSettingProxy *           nm_connection_get_setting_proxy             (NMConnection *connection);
 NMSettingSerial *          nm_connection_get_setting_serial            (NMConnection *connection);
-NM_AVAILABLE_IN_1_14
-NMSettingSriov *           nm_connection_get_setting_sriov             (NMConnection *connection);
 NM_AVAILABLE_IN_1_12
 NMSettingTCConfig *        nm_connection_get_setting_tc_config         (NMConnection *connection);
 NMSettingTun *             nm_connection_get_setting_tun               (NMConnection *connection);
@@ -245,8 +241,6 @@ NMSettingWirelessSecurity *nm_connection_get_setting_wireless_security (NMConnec
 NMSettingVlan *            nm_connection_get_setting_vlan              (NMConnection *connection);
 NM_AVAILABLE_IN_1_2
 NMSettingVxlan *           nm_connection_get_setting_vxlan             (NMConnection *connection);
-NM_AVAILABLE_IN_1_14
-NMSettingWpan *            nm_connection_get_setting_wpan              (NMConnection *connection);
 
 G_END_DECLS
 

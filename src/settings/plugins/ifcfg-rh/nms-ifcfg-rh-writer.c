@@ -2223,7 +2223,7 @@ write_sriov_setting (NMConnection *connection, shvarFile *ifcfg)
 
 	svUnsetAll (ifcfg, SV_KEY_TYPE_SRIOV_VF);
 
-	s_sriov = nm_connection_get_setting_sriov (connection);
+	s_sriov = NM_SETTING_SRIOV (nm_connection_get_setting (connection, NM_TYPE_SETTING_SRIOV));
 	if (s_sriov)
 		num = nm_setting_sriov_get_total_vfs (s_sriov);
 	if (num == 0) {

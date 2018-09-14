@@ -9721,7 +9721,7 @@ test_sriov_read (void)
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "eth0");
 
-	s_sriov = nm_connection_get_setting_sriov (connection);
+	s_sriov = NM_SETTING_SRIOV (nm_connection_get_setting (connection, NM_TYPE_SETTING_SRIOV));
 	g_assert (s_sriov);
 
 	g_assert_cmpint (nm_setting_sriov_get_total_vfs (s_sriov), ==, 16);

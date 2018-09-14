@@ -1382,9 +1382,6 @@ libnm_1_12_2 {
 
 libnm_1_14_0 {
 global:
-	nm_connection_get_setting_6lowpan;
-	nm_connection_get_setting_sriov;
-	nm_connection_get_setting_wpan;
 	nm_connection_multi_connect_get_type;
 	nm_device_6lowpan_get_type;
 	nm_device_wireguard_get_fwmark;
