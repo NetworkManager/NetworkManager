@@ -2762,6 +2762,9 @@ dispose (GObject *object)
 	NMVpnConnection *self = NM_VPN_CONNECTION (object);
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
+	if (priv->proxy)
+		g_signal_handlers_disconnect_by_data (priv->proxy, self);
+
 	nm_clear_g_source (&priv->start_timeout);
 
 	g_clear_pointer (&priv->connect_hash, g_variant_unref);
