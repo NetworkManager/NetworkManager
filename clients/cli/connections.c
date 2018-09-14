@@ -2565,7 +2565,15 @@ parse_passwords (const char *passwd_file, GError **error)
 			return NULL;
 		}
 
-		pwd_spec = g_strdup_printf ("%s.%s", setting, prop);
+		if (   nm_streq (setting, "vpn")
+		    && g_str_has_prefix (prop, "secret.")) {
+			/* in 1.12.0, we wrongly required the VPN secrets to be named
+			 * "vpn.secret". It should be "vpn.secrets". Work around it
+			 * (rh#1628833). */
+			pwd_spec = g_strdup_printf ("vpn.secrets.%s", &prop[NM_STRLEN ("secret.")]);
+		} else
+			pwd_spec = g_strdup_printf ("%s.%s", setting, prop);
+
 		g_hash_table_insert (pwds_hash, pwd_spec, g_strdup (pwd));
 	}
 	return g_steal_pointer (&pwds_hash);

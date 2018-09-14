@@ -121,13 +121,13 @@ secrets_requested (NMSecretAgentSimple *agent,
 					continue;
 				if (!nm_streq0 (secret->vpn_type, NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT))
 					continue;
-				if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRET "cookie")) {
+				if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "cookie")) {
 					g_free (secret->value);
 					secret->value = g_steal_pointer (&cookie);
-				} else if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRET "gateway")) {
+				} else if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "gateway")) {
 					g_free (secret->value);
 					secret->value = g_steal_pointer (&gateway);
-				} else if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRET "gwcert")) {
+				} else if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "gwcert")) {
 					g_free (secret->value);
 					secret->value = g_steal_pointer (&gwcert);
 				}
