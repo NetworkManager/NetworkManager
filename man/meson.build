@@ -10,7 +10,7 @@ common_conf.set('NM_CONFIG_DEFAULT_MAIN_DHCP', config_dhcp_default)
 
 common = 'common.ent'
 
-configure_file(
+common_ent_file = configure_file(
   input: common + '.in',
   output: common,
   configuration: common_conf
@@ -58,6 +58,7 @@ foreach man: mans
     input: input,
     output: output,
     command: xsltproc_options + [docbook_xls, '@INPUT@'],
+    depend_files: common_ent_file,
     install: true,
     install_dir: join_paths(nm_mandir, 'man' + man[1])
   )
