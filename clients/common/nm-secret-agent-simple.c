@@ -195,7 +195,7 @@ nm_secret_agent_simple_secret_new (NMSecretAgentSecretType secret_type,
 		real->base.is_secret = (secret_type != NM_SECRET_AGENT_SECRET_TYPE_PROPERTY);
 		break;
 	case NM_SECRET_AGENT_SECRET_TYPE_VPN_SECRET:
-		vpn_prefix = NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRET;
+		vpn_prefix = NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS;
 		value = nm_setting_vpn_get_secret (NM_SETTING_VPN (setting), property);
 		real->base.entry_id = g_strdup_printf ("%s%s", vpn_prefix, property);
 		nm_assert (vpn_type);

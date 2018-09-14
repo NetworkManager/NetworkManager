@@ -56,7 +56,7 @@ typedef struct {
 	gboolean is_secret;
 } NMSecretAgentSimpleSecret;
 
-#define NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRET "vpn.secret."
+#define NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "vpn.secrets."
 
 #define NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT  NM_DBUS_INTERFACE".openconnect"
 
