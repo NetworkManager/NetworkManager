@@ -61,7 +61,7 @@ option('config_dhcp_default', type: 'combo', choices: ['dhcpcanon', 'dhclient', 
 
 # miscellaneous
 option('introspection', type: 'boolean', value: true, description: 'Enable introspection for this build')
-option('vapi', type: 'boolean', value: true, description: 'build Vala bindings')
+option('vapi', type : 'combo', choices : ['auto', 'true', 'false'], description: 'build Vala bindings')
 option('docs', type: 'boolean', value: false, description: 'use to build documentation')
 option('tests', type: 'combo', choices: ['yes', 'no', 'root'], value: 'yes', description: 'Build NetworkManager tests')
 option('more_asserts', type: 'string', value: 'all', description: 'Enable more assertions for debugging (0 = none, 100 = all, default: all)')
