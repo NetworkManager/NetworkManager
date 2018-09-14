@@ -119,7 +119,8 @@ if [[ "$DO_TEST_BUILD" == yes ]]; then
         --with-suspend-resume=systemd \
         --enable-teamdctl=yes \
         --enable-tests=root \
-        --with-netconfig=yes \
+        --with-netconfig=/path/does/not/exist/netconfig \
+        --with-resolvconf=/path/does/not/exist/resolvconf \
         --with-crypto=nss \
         --with-session-tracking=systemd \
         --with-consolekit=yes \
