@@ -5990,7 +5990,9 @@ attribute_unescape (const char *start, const char *end)
  * Parse attributes from a string.
  *
  * Returns: (transfer full) (element-type utf8 GVariant): a #GHashTable mapping
- * attribute names to #GVariant values.
+ * attribute names to #GVariant values. Warning: the variant are still floating
+ * references, owned by the hash table. If you take a reference, ensure to sink
+ * the one of the hash table first.
  *
  * Since: 1.8
  */
