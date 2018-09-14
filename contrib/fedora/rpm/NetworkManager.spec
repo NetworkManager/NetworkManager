@@ -540,12 +540,8 @@ intltoolize --automake --copy --force
 	--with-systemdsystemunitdir=%{systemd_dir} \
 	--with-system-ca-path=/etc/pki/tls/cert.pem \
 	--with-dbus-sys-dir=%{dbus_sys_dir} \
-%if %{with test}
 	--with-tests=yes \
-%else
 	--enable-more-warnings=yes \
-	--with-tests=no \
-%endif
 	--with-valgrind=no \
 	--enable-ifcfg-rh=yes \
 %if %{with ppp}
@@ -605,7 +601,9 @@ touch %{buildroot}%{_sbindir}/ifup %{buildroot}%{_sbindir}/ifdown
 
 %check
 %if %{with test}
-make %{?_smp_mflags} check
+make -k %{?_smp_mflags} check
+%else
+make -k %{?_smp_mflags} check || :
 %endif
 
 
