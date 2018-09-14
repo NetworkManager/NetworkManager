@@ -24,6 +24,7 @@ usage() {
     echo "  -w|--with \$OPTION: pass --with \$OPTION to rpmbuild. For example --with debug"
     echo "  -W|--without \$OPTION: pass --without \$OPTION to rpmbuild. For example --without debug"
     echo "  -s|--snapshot TEXT: use TEXT as the snapshot version for the new package (overwrites \$NM_BUILD_SNAPSHOT environment)"
+    echo "  -r|--release: built a release tarball (this option must be alone)"
 }
 
 
@@ -44,6 +45,8 @@ WITH_LIST=()
 SOURCE_FROM_GIT=0
 SNAPSHOT="$NM_BUILD_SNAPSHOT"
 
+NARGS=$#
+
 while [[ $# -gt 0 ]]; do
     A="$1"
     shift
@@ -54,6 +57,11 @@ while [[ $# -gt 0 ]]; do
             ;;
         -f|--force)
             IGNORE_DIRTY=1
+            ;;
+        -r|--release)
+            [[ $NARGS -eq 1 ]] || die "--release option must be alone"
+            export NMTST_CHECK_GTK_DOC=1
+            BUILDTYPE=SRPM
             ;;
         -c|--clean)
             GIT_CLEAN=1
