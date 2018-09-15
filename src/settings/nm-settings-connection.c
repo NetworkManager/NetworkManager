@@ -770,7 +770,7 @@ out:
 		else if (new_connection)
 			_LOGI ("write: successfully updated (%s)", logmsg_change);
 		else
-			_LOGI ("write: successfully commited (%s)", logmsg_change);
+			_LOGI ("write: successfully committed (%s)", logmsg_change);
 	}
 	return TRUE;
 }
@@ -1318,7 +1318,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	/* we remember the current version-id of the secret-agents. The version-id is strictly increasing,
 	 * as new agents register the number. We know hence, that this request was made against a certain
 	 * set of secret-agents.
-	 * If after making this request a new secret-agent registeres, the version-id increases.
+	 * If after making this request a new secret-agent registers, the version-id increases.
 	 * Then we know that the this request probably did not yet include the latest secret-agent. */
 	priv->last_secret_agent_version_id = nm_agent_manager_get_agent_version_id (priv->agent_mgr);
 

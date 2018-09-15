@@ -539,7 +539,7 @@ _nest_end (struct nl_msg *msg, struct nlattr *start, int keep_empty)
 	pad = NLMSG_ALIGN (msg->nm_nlh->nlmsg_len) - msg->nm_nlh->nlmsg_len;
 	if (pad > 0) {
 		/*
-		 * Data inside attribute does not end at a alignment boundry.
+		 * Data inside attribute does not end at a alignment boundary.
 		 * Pad accordingly and accoun for the additional space in
 		 * the message. nlmsg_reserve() may never fail in this situation,
 		 * the allocate message buffer must be a multiple of NLMSG_ALIGNTO.

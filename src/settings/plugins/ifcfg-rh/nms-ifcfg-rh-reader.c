@@ -810,7 +810,7 @@ enum {
  * setting, and one for initscript's handle_ip_file(), which takes the lines
  * and passes them to `ip route add`. The modes are similar, but certain properties
  * are not allowed for OPTIONS.
- * The mode is differenciated by having an @options_route argument.
+ * The mode is differentiated by having an @options_route argument.
  *
  * Returns: returns a negative errno on failure. On success, it returns 0
  *   and @out_route.
@@ -1150,7 +1150,7 @@ next:
 			                                                    : ""));
 			break;
 		case PARSE_LINE_TYPE_FLAG:
-			/* NOTE: the flag (for "onlink") only allows to explictly set "TRUE".
+			/* NOTE: the flag (for "onlink") only allows to explicitly set "TRUE".
 			 * There is no way to express an explicit "FALSE" setting
 			 * of this attribute, hence, the file format cannot encode
 			 * that configuration. */
@@ -3151,7 +3151,7 @@ eap_tls_reader (const char *eap_method,
 	/* FIXME: writer does not actually write IEEE_8021X_CLIENT_CERT_PASSWORD and other
 	 * certificate related passwords. It should, because otherwise persisting such profiles
 	 * to ifcfg looses information. As this currently only matters for PKCS11 URIs, it seems
-	 * a seldomly used feature so that it is not fixed yet. */
+	 * a seldom used feature so that it is not fixed yet. */
 	_secret_set_from_ifcfg (s_8021x,
 	                        ifcfg,
 	                        keys_ifcfg,

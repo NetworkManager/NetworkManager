@@ -194,7 +194,7 @@ link_add_prepare (NMPlatform *platform,
 {
 	gboolean connected;
 
-	/* we must clear the driver, because platform cache want's to set it */
+	/* we must clear the driver, because platform cache wants to set it */
 	g_assert (obj_tmp->link.driver == g_intern_string (obj_tmp->link.driver));
 	obj_tmp->link.driver = NULL;
 

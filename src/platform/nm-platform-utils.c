@@ -664,7 +664,7 @@ nmp_utils_ethtool_set_features (int ifindex,
 	              "set-features",
 	              success
 	                ? "successfully setting features"
-	                : "at least some of the features were not successfuly set");
+	                : "at least some of the features were not successfully set");
 	return success;
 }
 
@@ -1247,7 +1247,7 @@ nmp_utils_ip_config_source_to_string (NMIPConfigSource source, char *buf, gsize 
  * @ifindex: the ifindex for which to open "/sys/class/net/%s"
  * @ifname_guess: (allow-none): optional argument, if present used as initial
  *   guess as the current name for @ifindex. If guessed right,
- *   it saves an addtional if_indextoname() call.
+ *   it saves an additional if_indextoname() call.
  * @out_ifname: (allow-none): if present, must be at least IFNAMSIZ
  *   characters. On success, this will contain the actual ifname
  *   found while opening the directory.

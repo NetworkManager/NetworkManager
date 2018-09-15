@@ -1755,7 +1755,7 @@ con_show_get_items (NmCli *nmc, gboolean active_only, gboolean show_active_field
 		 * color (activated or not) based on primary_active. */
 		if (!row_data) {
 			/* this is unexpected. The active connection references a connection that
-			 * seemingly no longer exists. It's a bug in libnm. Add a row nontheless. */
+			 * seemingly no longer exists. It's a bug in libnm. Add a row nonetheless. */
 			row_data = _metagen_con_show_row_data_new_for_connection (c, show_active_fields);
 			g_hash_table_insert (row_hash, c, row_data);
 		}
@@ -3985,7 +3985,7 @@ con_settings (NMConnection *connection, const NMMetaSettingValidPartItem *const*
 
 /*
  * Make sure all required settings are in place (should be called when
- * it's possible that a type is aready set).
+ * it's possible that a type is already set).
  */
 static void
 ensure_settings (NMConnection *connection, const NMMetaSettingValidPartItem *const*item)
@@ -6789,7 +6789,7 @@ property_edit_submenu (NmCli *nmc,
 		gboolean removed;
 		gboolean dirty;
 
-		/* Get the remote connection again, it may have disapeared */
+		/* Get the remote connection again, it may have disappeared */
 		removed = refresh_remote_connection (rem_con_weak, rem_con);
 		if (removed) {
 			g_print (_("The connection profile has been removed from another client. "
@@ -7180,7 +7180,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 		cmd_user = nmc_readline ("%s", menu_ctx.main_prompt);
 
-		/* Get the remote connection again, it may have disapeared */
+		/* Get the remote connection again, it may have disappeared */
 		removed = refresh_remote_connection (&weak, &rem_con);
 		if (removed) {
 			g_print (_("The connection profile has been removed from another client. "

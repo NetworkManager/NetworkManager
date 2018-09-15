@@ -1296,7 +1296,7 @@ _do_test_match_spec_config (const char *file, int line, const char *spec_str, gu
 	match_result = nm_match_spec_config (specs, version, NULL);
 
 	if (expected != match_result)
-		g_error ("%s:%d: faild comparing \"%s\" with %u.%u.%u. Expected %d, but got %d", file, line, spec_str, v_maj, v_min, v_mic, (int) expected, (int) match_result);
+		g_error ("%s:%d: failed comparing \"%s\" with %u.%u.%u. Expected %d, but got %d", file, line, spec_str, v_maj, v_min, v_mic, (int) expected, (int) match_result);
 
 	if (g_slist_length (specs) == 1 && match_result != NM_MATCH_SPEC_NEG_MATCH) {
 		/* there is only one spec in the list... test that we match except: */

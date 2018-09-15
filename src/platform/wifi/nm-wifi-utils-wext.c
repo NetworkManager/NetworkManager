@@ -771,7 +771,7 @@ nm_wifi_utils_wext_is_wifi (const char *iface)
 	/* performing an ioctl on a non-existing name may cause the automatic
 	 * loading of kernel modules, which should be avoided.
 	 *
-	 * Usually, we should thus make sure that an inteface with this name
+	 * Usually, we should thus make sure that an interface with this name
 	 * exists.
 	 *
 	 * Note that wifi_wext_is_wifi() has only one caller which just verified

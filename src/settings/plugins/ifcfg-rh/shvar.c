@@ -330,7 +330,7 @@ _gstr_init (GString **str, const char *value, gsize i)
 		 * Unescaping usually does not extend the length of a string,
 		 * so we might be tempted to allocate a fixed buffer of length
 		 * (strlen(value)+CONST).
-		 * However, due to $'\Ux' escapes, the maxium length is some
+		 * However, due to $'\Ux' escapes, the maximum length is some
 		 * (FACTOR*strlen(value) + CONST), which is non trivial to get
 		 * right in all cases. Also, we would have to provision for the
 		 * very unlikely extreme case.
@@ -453,7 +453,7 @@ svUnescape (const char *value, char **to_free)
 					if (NM_IN_SET (value[i], '$', '`', '"', '\\')) {
 						/* Drop the backslash. */
 					} else if (NM_IN_SET (value[i], '\'', '~')) {
-						/* '\'' and '~' in double qoutes are not handled special by shell.
+						/* '\'' and '~' in double quotes are not handled special by shell.
 						 * However, old versions of svEscape() would wrongly use double-quoting
 						 * with backslash escaping for these characters (expecting svUnescape()
 						 * to remove the backslash).
@@ -649,7 +649,7 @@ void
 _nmtst_svFileSetName (shvarFile *s, const char *fileName)
 {
 	/* changing the file name is not supported for regular
-	 * operation. Only allowed to use in tests, othewise,
+	 * operation. Only allowed to use in tests, otherwise,
 	 * the filename is immutable. */
 	g_free (s->fileName);
 	s->fileName = g_strdup (fileName);

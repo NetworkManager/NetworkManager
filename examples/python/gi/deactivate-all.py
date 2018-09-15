@@ -35,7 +35,7 @@ import gi
 gi.require_version('NM', '1.0')
 from gi.repository import NM
 
-# suported connection types
+# supported connection types
 connection_types = {
   NM.SETTING_VPN_SETTING_NAME,
   NM.SETTING_WIRELESS_SETTING_NAME,

@@ -448,7 +448,7 @@ check_connection_available (NMDevice *device,
 	state = nm_modem_get_state (priv->modem);
 	if (state <= NM_MODEM_STATE_INITIALIZING) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-		                            "modem not initalized");
+		                            "modem not initialized");
 		return FALSE;
 	}
 

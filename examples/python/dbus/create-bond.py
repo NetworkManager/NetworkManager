@@ -101,7 +101,7 @@ loop = GObject.MainLoop()
 def properties_changed(props):
     if 'State' in props:
         if props['State'] == 2:
-            print("Succesfully connected")
+            print("Successfully connected")
             loop.quit()
         if props['State'] == 3 or props['State'] == 4:
             print("Bond activation failed")

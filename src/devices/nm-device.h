@@ -54,7 +54,7 @@ typedef enum {
 static inline NMDeviceStateReason
 nm_device_state_reason_check (NMDeviceStateReason reason)
 {
-	/* the device-state-reason serves mostly informational purpse during a state
+	/* the device-state-reason serves mostly informational purpose during a state
 	 * change. In some cases however, decisions are made based on the reason.
 	 * I tend to think that interpreting the state reason to derive some behaviors
 	 * is confusing, because the cause and effect are so far apart.
@@ -253,7 +253,7 @@ typedef struct _NMDeviceClass {
 	 * Hook for derived classes to be notfied during realize_start_setup()
 	 * and perform additional setup.
 	 *
-	 * The default implemention of NMDevice calls link_changed().
+	 * The default implementation of NMDevice calls link_changed().
 	 */
 	void        (*realize_start_notify) (NMDevice *self,
 	                                     const NMPlatformLink *pllink);
@@ -592,7 +592,7 @@ void nm_device_copy_ip6_dns_config (NMDevice *self, NMDevice *from_device);
  *   the settings plugin (for example keyfile.unmanaged-devices or ifcfg-rh's
  *   NM_CONTROLLED=no). Although this is user-configuration (provided from
  *   the settings plugins, such as NM_CONTROLLED=no in ifcfg-rh), it cannot
- *   be overruled and is authorative. That is because users may depend on
+ *   be overruled and is authoritative. That is because users may depend on
  *   dropping a ifcfg-rh file to ensure the device is unmanaged.
  * @NM_UNMANAGED_USER_CONF: %TRUE when unmanaged by user decision via
  *   the NetworkManager.conf ("unmanaged" in the [device] section).
@@ -609,7 +609,7 @@ void nm_device_copy_ip6_dns_config (NMDevice *self, NMDevice *from_device);
 typedef enum { /*< skip >*/
 	NM_UNMANAGED_NONE          = 0,
 
-	/* these flags are authorative. If one of them is set,
+	/* these flags are authoritative. If one of them is set,
 	 * the device cannot be managed. */
 	NM_UNMANAGED_SLEEPING      = (1LL <<  0),
 	NM_UNMANAGED_QUITTING      = (1LL <<  1),

@@ -66,7 +66,7 @@ typedef struct {
 	                       gpointer user_data);
 
 	/*
-	 * @gained_authorization: whether the autorization was successful
+	 * @gained_authorization: whether the authorization was successful
 	 *
 	 * Called as a result of completed signal by polkit.
 	 */
@@ -123,7 +123,7 @@ typedef void (*NMPolkitListenerOnShowInfoFunc) (const char *text);
 typedef void (*NMPolkitListenerOnShowErrorFunc) (const char *text);
 /**
  * NMPolkitListenerCompletedFunc:
- * @gained_authorization: whether the autorization was successful
+ * @gained_authorization: whether the authorization was successful
  *
  * Called as a result of completed signal by polkit.
  */

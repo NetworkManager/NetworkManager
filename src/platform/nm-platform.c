@@ -996,7 +996,7 @@ nm_platform_link_set_netns (NMPlatform *self, int ifindex, int netns_fd)
  * @name: Interface name
  *
  * Returns: The interface index corresponding to the given interface name
- * or 0. Inteface name is owned by #NMPlatform, don't free it.
+ * or 0. Interface name is owned by #NMPlatform, don't free it.
  */
 int
 nm_platform_link_get_ifindex (NMPlatform *self, const char *name)
@@ -1084,7 +1084,7 @@ nm_platform_link_get_type_name (NMPlatform *self, int ifindex)
 
 	if (obj->link.type != NM_LINK_TYPE_UNKNOWN) {
 		/* We could detect the @link_type. In this case the function returns
-		 * our internel module names, which differs from rtnl_link_get_type():
+		 * our internal module names, which differs from rtnl_link_get_type():
 		 *   - NM_LINK_TYPE_INFINIBAND (gives "infiniband", instead of "ipoib")
 		 *   - NM_LINK_TYPE_TAP (gives "tap", instead of "tun").
 		 * Note that this functions is only used by NMDeviceGeneric to
@@ -1845,7 +1845,7 @@ nm_platform_link_can_assume (NMPlatform *self, int ifindex)
  * Returns: the internal link lnk object. The returned object
  * is owned by the platform cache and must not be modified. Note
  * however, that the object is guaranteed to be immutable, so
- * you can savely take a reference and keep it for yourself
+ * you can safely take a reference and keep it for yourself
  * (but don't modify it).
  */
 const NMPObject *
@@ -3691,7 +3691,7 @@ ip4_addr_subnets_is_secondary (const NMPObject *address,
  *   That means, expired addresses and addresses that could not be added
  *   will be dropped.
  *   Hence, the input argument @known_addresses is also an output argument
- *   telling which addresses were succesfully added.
+ *   telling which addresses were successfully added.
  *   Addresses are removed by unrefing the instance via nmp_object_unref()
  *   and leaving a NULL tombstone.
  *
@@ -3865,7 +3865,7 @@ ip6_address_scope_cmp (gconstpointer a, gconstpointer b)
  *   That means, expired addresses and addresses that could not be added
  *   will be dropped.
  *   Hence, the input argument @known_addresses is also an output argument
- *   telling which addresses were succesfully added.
+ *   telling which addresses were successfully added.
  *   Addresses are removed by unrefing the instance via nmp_object_unref()
  *   and leaving a NULL tombstone.
  * @full_sync: Also remove link-local and temporary addresses.
@@ -4225,7 +4225,7 @@ nm_platform_ip_route_sync (NMPlatform *self,
 				                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) == 0)
 					continue;
 
-				/* we need to replace the existing route with a (slightly) differnt
+				/* we need to replace the existing route with a (slightly) different
 				 * one. Delete it first. */
 				if (!nm_platform_object_delete (self, plat_o)) {
 					/* ignore error. */
@@ -4787,7 +4787,7 @@ _ip4_dev_route_blacklist_schedule (NMPlatform *self)
  * route, however it has a wrong metric of zero. We add our own device route (with
  * proper metric), but need to delete the route that kernel adds.
  *
- * The problem is, that kernel does not immidiately add the route, when adding
+ * The problem is, that kernel does not immediately add the route, when adding
  * the address. It only shows up some time later. So, we register here a list
  * of blacklisted routes, and when they show up within a time out, we assume it's
  * the kernel generated one, and we delete it.

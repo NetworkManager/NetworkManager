@@ -1126,7 +1126,7 @@ ovsdb_got_msg (NMOvsdb *self, json_t *msg)
 			ovsdb_disconnect (self, FALSE);
 			return;
 		}
-		/* Cool, we found a corresponsing call. Finish it. */
+		/* Cool, we found a corresponding call. Finish it. */
 
 		_call_trace ("response", call, msg);
 
