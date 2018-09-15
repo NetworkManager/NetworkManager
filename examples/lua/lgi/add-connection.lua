@@ -62,7 +62,7 @@ end
 function added_cb(client, result, data)
   local con,err,code = client:add_connection_finish(result)
   if con then
-    print("The connection profile has been succesfully added to NetworkManager:")
+    print("The connection profile has been successfully added to NetworkManager:")
     print(con:get_id(), con:get_uuid())
   else
     print(string.format("Error: (%d) %s", code, err))

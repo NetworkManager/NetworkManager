@@ -251,7 +251,7 @@ test_nm_ip6_config_addresses_sort_check (NMIP6Config *config, NMSettingIP6Config
 	copy2 = nm_ip6_config_clone (config);
 	g_assert (copy2);
 
-	/* initialize the array of indeces, and keep shuffling them for every @repeat iteration. */
+	/* initialize the array of indices, and keep shuffling them for every @repeat iteration. */
 	for (i = 0; i < addr_count; i++)
 		idx[i] = i;
 

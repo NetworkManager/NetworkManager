@@ -221,7 +221,7 @@ _metagen_general_status_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 		goto enabled_out;
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIMAX_HW:
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIMAX:
-		/* deprected fields. Don't return anything. */
+		/* deprecated fields. Don't return anything. */
 		return NULL;
 	default:
 		break;

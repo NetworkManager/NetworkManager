@@ -449,7 +449,7 @@ read_connections (NMSettingsPlugin *config)
 	 * iterating over the files.
 	 *
 	 * To have sensible, reproducible behavior, sort the paths by last modification
-	 * time prefering older files.
+	 * time preferring older files.
 	 */
 	paths = _paths_from_connections (priv->connections);
 	g_ptr_array_sort_with_data (filenames, (GCompareDataFunc) _sort_paths, paths);

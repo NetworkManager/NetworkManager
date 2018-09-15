@@ -198,7 +198,7 @@ choose_identity (GList *identities)
 	GList *elem;
 
 	/* Choose identity. First try current user, then root, and else
-	 * take the firts one */
+	 * take the first one */
 	user = getenv("USER");
 	elem = g_list_find_custom (identities, user, (GCompareFunc) compare_users);
 	if (!elem) {

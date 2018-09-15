@@ -154,7 +154,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		       nm_device_get_iface (priv->companion));
 	}
 
-	/* wait with continuing configuration untill the companion device is done scanning */
+	/* wait with continuing configuration until the companion device is done scanning */
 	g_object_get (priv->companion, NM_DEVICE_WIFI_SCANNING, &scanning, NULL);
 	if (scanning) {
 		priv->stage1_waiting = TRUE;

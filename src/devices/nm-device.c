@@ -2663,7 +2663,7 @@ concheck_periodic_schedule_set (NMDevice *self,
 	/* we are here, because we returned from a connectivity check and adjust the current interval.
 	 *
 	 * But note that we calculate the new timeout based on the time when we scheduled the
-	 * last check, instead of counting from now. The reaons is, that we want that the times
+	 * last check, instead of counting from now. The reasons is, that we want that the times
 	 * when we schedule checks be at precise intervals, without including the time it took for
 	 * the connectivity check. */
 	new_expiry = priv->concheck_p_cur_basetime_ns + (priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
@@ -8907,7 +8907,7 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 	{
 		guint32 mtu = 0;
 
-		/* preferably, get the MTU from explict user-configuration.
+		/* preferably, get the MTU from explicit user-configuration.
 		 * Only if that fails, look at the current @config (which contains
 		 * MTUs from DHCP/PPP) or maybe fallback to a device-specific MTU. */
 
@@ -9227,7 +9227,7 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	} else {
 		/* Don't abort the addrconf at this point -- if ndisc needs the iid
 		 * it will notice this itself. */
-		_LOGI (LOGD_IP6, "addrconf6: no interface identifier; IPv6 adddress creation may fail");
+		_LOGI (LOGD_IP6, "addrconf6: no interface identifier; IPv6 address creation may fail");
 	}
 
 	/* Apply any manual configuration before starting RA */
@@ -12967,10 +12967,10 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
 
 		/* @for_user_request can make the result only ~more~ managed.
 		 * If the flags already indicate a managed state for a non-user-request,
-		 * then it is also managed for an explict user-request.
+		 * then it is also managed for an explicit user-request.
 		 *
 		 * Effectively, this check is redundant, as the code below already
-		 * already ensures that. Still, express this invariant explictly here. */
+		 * already ensures that. Still, express this invariant explicitly here. */
 		if (_get_managed_by_flags (flags, mask, FALSE))
 			return TRUE;
 
@@ -13026,7 +13026,7 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
 /**
  * nm_device_get_managed:
  * @self: the #NMDevice
- * @for_user_request: whether to check the flags for an explict user-request
+ * @for_user_request: whether to check the flags for an explicit user-request
  *
  * Whether the device is unmanaged according to the unmanaged flags.
  *
@@ -13566,7 +13566,7 @@ _nm_device_check_connection_available (NMDevice *self,
 		} else {
 			if (!nm_device_get_managed (self, FALSE)) {
 				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
-				                            "device is unmanaged for interal request");
+				                            "device is unmanaged for internal request");
 				return FALSE;
 			}
 		}
@@ -14111,7 +14111,7 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 		delete_on_deactivate_check_and_schedule (self, nm_device_get_ip_ifindex (self));
 	}
 
-	/* ip_iface should be cleared after flushing all routes and addreses, since
+	/* ip_iface should be cleared after flushing all routes and addresses, since
 	 * those are identified by ip_iface, not by iface (which might be a tty
 	 * or ATM device).
 	 */
@@ -14898,7 +14898,7 @@ nm_device_queue_state (NMDevice *self,
 	}
 
 	/* Add pending action for the new state before clearing the queued states, so
-	 * that we don't accidently pop all pending states and reach 'startup complete'  */
+	 * that we don't accidentally pop all pending states and reach 'startup complete'  */
 	nm_device_add_pending_action (self, queued_state_to_string (state), TRUE);
 
 	/* We should only ever have one delayed state transition at a time */
@@ -15023,7 +15023,7 @@ nm_device_update_hw_address (NMDevice *self)
 	        && priv->state < NM_DEVICE_STATE_PREPARE
 	        && !nm_device_is_activating (self))) {
 		/* when we get a hw_addr the first time or while the device
-		 * is not activated (with no explict hw address set), always
+		 * is not activated (with no explicit hw address set), always
 		 * update our initial hw-address as well. */
 		nm_device_update_initial_hw_address (self);
 	}
@@ -15040,7 +15040,7 @@ nm_device_update_initial_hw_address (NMDevice *self)
 		if (   priv->hw_addr_initial
 		    && priv->hw_addr_type != HW_ADDR_TYPE_UNSET) {
 			/* once we have the initial hw address set, we only allow
-			 * update if the currenty type is "unset". */
+			 * update if the currently type is "unset". */
 			return;
 		}
 		g_free (priv->hw_addr_initial);
@@ -15286,7 +15286,7 @@ _hw_addr_set (NMDevice *self,
 	plerr = nm_platform_link_set_address (nm_device_get_platform (self), nm_device_get_ip_ifindex (self), addr_bytes, addr_len);
 	success = (plerr == NM_PLATFORM_ERROR_SUCCESS);
 	if (success) {
-		/* MAC address succesfully changed; update the current MAC to match */
+		/* MAC address successfully changed; update the current MAC to match */
 		nm_device_update_hw_address (self);
 		if (_hw_addr_matches (self, addr_bytes, addr_len)) {
 			_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s (%s)",
@@ -15308,7 +15308,7 @@ _hw_addr_set (NMDevice *self,
 			 * that is rather complicated and it is not expected that this case
 			 * happens for regular drivers.
 			 * Note that brcmfmac can block NetworkManager for 500 msec while
-			 * taking down the device. Let's add annother 100 msec to that.
+			 * taking down the device. Let's add another 100 msec to that.
 			 *
 			 * wait/poll up to 100 msec until it changes. */
 
@@ -15996,7 +15996,7 @@ dispose (GObject *object)
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 
 	if (nm_clear_g_source (&priv->queued_state.id)) {
-		/* FIXME: we'd expect the queud_state to be alredy cleared and this statement
+		/* FIXME: we'd expect the queud_state to be already cleared and this statement
 		 * not being necessary. Add this check here to hopefully investigate crash
 		 * rh#1270247. */
 		g_return_if_reached ();

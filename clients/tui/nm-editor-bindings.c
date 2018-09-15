@@ -516,7 +516,7 @@ ip_route_transform_from_metric_string (GBinding     *binding,
  * @addr_family: the IP address family
  * @source: the source object
  * @source_property: the source property
- * @dest_target: the target object for the route's destionation
+ * @dest_target: the target object for the route's destination
  * @dest_target_property: the property on @dest_target
  * @next_hop_target: the target object for the route's next hop
  * @next_hop_target_property: the property on @next_hop_target

@@ -69,7 +69,7 @@ def create_profile(name):
 def added_cb(client, result, data):
     try:
         client.add_connection_finish(result)
-        print("The connection profile has been succesfully added to NetworkManager.")
+        print("The connection profile has been successfully added to NetworkManager.")
     except Exception as e:
         sys.stderr.write("Error: %s\n" % e)
     main_loop.quit()

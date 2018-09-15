@@ -407,7 +407,7 @@ typedef enum {
 
 /* the settings-meta data is supposed to be independent of an actual client
  * implementation. Hence, there is a need for hooks to the meta-data.
- * The meta-data handlers may call back to the enviroment with certain
+ * The meta-data handlers may call back to the environment with certain
  * actions. */
 struct _NMMetaEnvironment {
 

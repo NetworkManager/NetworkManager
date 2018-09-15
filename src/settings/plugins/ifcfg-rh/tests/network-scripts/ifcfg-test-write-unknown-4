@@ -6,7 +6,7 @@
 # expected.
 #
 # Also note that setting NAME will replace the last
-# occurance, and delete all previous once.
+# occurrence, and delete all previous once.
 
 #L1
 NAME=l2

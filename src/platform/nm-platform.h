@@ -299,10 +299,10 @@ struct _NMPlatformObject {
 	 *   are permanent. This rule is so that unset addresses (calloc) are permanent by default.
 	 * 2 @lifetime==@preferred==NM_PLATFORM_LIFETIME_PERMANENT: @timestamp is irrelevant (but mostly
 	 *   set to 0). Such addresses are permanent.
-	 * 3 Non permanent addreses should (almost) always have @timestamp > 0. 0 is not a valid timestamp
+	 * 3 Non permanent addresses should (almost) always have @timestamp > 0. 0 is not a valid timestamp
 	 *   and never returned by nm_utils_get_monotonic_timestamp_s(). In this case @valid/@preferred
 	 *   is anchored at @timestamp.
-	 * 4 Non permanent addresses with @timestamp == 0 are implicitely anchored at *now*, thus the time
+	 * 4 Non permanent addresses with @timestamp == 0 are implicitly anchored at *now*, thus the time
 	 *   moves as time goes by. This is usually not useful, except e.g. nm_platform_ip[46]_address_add().
 	 *
 	 * Non permanent addresses from DHCP/RA might have the @timestamp set to the moment of when the
@@ -417,7 +417,7 @@ typedef union {
 	 * On the other hand, for IPv6 you cannot add two IPv6 routes that only differ
 	 * by an RTA_METRICS property.
 	 *
-	 * When deleting a route, kernel seems to ignore the RTA_METRICS propeties.
+	 * When deleting a route, kernel seems to ignore the RTA_METRICS properties.
 	 * That is a problem/bug for IPv4 because you cannot explicitly select which
 	 * route to delete. Kernel just picks the first. See rh#1475642. */ \
 	\
@@ -1160,7 +1160,7 @@ GPtrArray *nm_platform_lookup_clone (NMPlatform *platform,
                                      NMPObjectPredicateFunc predicate,
                                      gpointer user_data);
 
-/* convienience methods to lookup the link and access fields of NMPlatformLink. */
+/* convenience methods to lookup the link and access fields of NMPlatformLink. */
 int nm_platform_link_get_ifindex (NMPlatform *self, const char *name);
 const char *nm_platform_link_get_name (NMPlatform *self, int ifindex);
 NMLinkType nm_platform_link_get_type (NMPlatform *self, int ifindex);
