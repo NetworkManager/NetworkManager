@@ -1461,7 +1461,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	 *   a hardware address in ASCII representation, or one of the special values
 	 *   "preserve", "permanent", "random" or "stable".
 	 *   This field replaces the deprecated "cloned-mac-address" on D-Bus, which
-	 *   can only contain explict hardware addresses. Note that this property
+	 *   can only contain explicit hardware addresses. Note that this property
 	 *   only exists in D-Bus API. libnm and nmcli continue to call this property
 	 *   "cloned-mac-address".
 	 * ---end---

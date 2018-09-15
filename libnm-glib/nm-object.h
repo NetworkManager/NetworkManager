@@ -66,7 +66,7 @@ typedef struct {
 	/* Signals */
 	/* The "object-creation-failed" signal is PRIVATE for libnm-glib and
 	 * is not meant for any external usage.  It indicates that an error
-	 * occured during creation of an object.
+	 * occurred during creation of an object.
 	 */
 	void (*object_creation_failed) (NMObject *master_object,
 	                                GError *error,

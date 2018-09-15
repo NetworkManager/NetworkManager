@@ -168,7 +168,7 @@ typedef enum {
  * @NM_CONNECTIVITY_PORTAL: The Internet connection is hijacked by a captive
  *   portal gateway. The graphical shell may open a sandboxed web browser window
  *   (because the captive portals typically attempt a man-in-the-middle attacks
- *   agains the https connections) for the purpose of authenticating to a gateway
+ *   against the https connections) for the purpose of authenticating to a gateway
  *   and retrigger the connectivity check with CheckConnectivity() when the
  *   browser window is dismissed.
  * @NM_CONNECTIVITY_LIMITED: The host is connected to a network, does not appear
@@ -1004,7 +1004,7 @@ typedef enum { /*< flags >*/
  *   again (because it's about to be deleted), but a manual activation will
  *   clear the volatile flag.
  * @NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT: usually, when the connection
- *   has autoconnect enabled and is modified, it becomes elegible to autoconnect
+ *   has autoconnect enabled and is modified, it becomes eligible to autoconnect
  *   right away. Setting this flag, disables autoconnect until the connection
  *   is manually activated.
  *

@@ -952,7 +952,7 @@ vfs_to_dbus (NMSetting *setting, const char *property)
 
 			/* VLANs are translated into an array of maps, where each map has
 			 * keys 'id', 'qos' and 'proto'. This guarantees enough flexibility
-			 * to accomodate any future new option. */
+			 * to accommodate any future new option. */
 			vlan_ids = nm_sriov_vf_get_vlan_ids (vf, &num_vlans);
 			if (num_vlans) {
 				GVariantBuilder vlans_builder;

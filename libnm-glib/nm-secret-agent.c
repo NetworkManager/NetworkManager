@@ -703,7 +703,7 @@ auto_register_cb (gpointer user_data)
  * @callback: (scope async): a callback, to be invoked when the operation is done
  * @user_data: (closure): caller-specific data to be passed to @callback
  *
- * Asyncronously retrieve secrets belonging to @connection for the
+ * Asynchronously retrieve secrets belonging to @connection for the
  * setting @setting_name.  @flags indicate specific behavior that the secret
  * agent should use when performing the request, for example returning only
  * existing secrets without user interaction, or requesting entirely new
@@ -742,7 +742,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
  * @callback: (scope async): a callback, to be invoked when the operation is done
  * @user_data: (closure): caller-specific data to be passed to @callback
  *
- * Asyncronously ensure that all secrets inside @connection
+ * Asynchronously ensure that all secrets inside @connection
  * are stored to disk.
  */
 void
@@ -1031,7 +1031,7 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 	/**
 	 * NMSecretAgent::registration-result:
 	 * @agent: the agent that received the signal
-	 * @error: the error, if any, that occured while registering
+	 * @error: the error, if any, that occurred while registering
 	 *
 	 * Indicates the result of a registration request; if @error is NULL the
 	 * request was successful.

@@ -2392,7 +2392,7 @@ device_delete_cb (GObject *proxy,
  * @callback: callback to be called when delete operation completes
  * @user_data: caller-specific data passed to @callback
  *
- * Asynchronously begins deleteing the software device. Hardware devices can't
+ * Asynchronously begins deleting the software device. Hardware devices can't
  * be deleted.
  **/
 void

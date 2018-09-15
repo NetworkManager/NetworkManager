@@ -395,7 +395,7 @@ _connection_is_vpn (NMConnection *connection)
 
 	/* we have an incomplete (invalid) connection at hand. That can only
 	 * happen during AddAndActivate. Determine whether it's VPN type based
-	 * on the existance of a [vpn] section. */
+	 * on the existence of a [vpn] section. */
 	return !!nm_connection_get_setting_vpn (connection);
 }
 
@@ -1728,7 +1728,7 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection, NM
 	if (!parent_connection)
 		return NULL;
 
-	/* Check if the parent connection is currently activated or is comaptible
+	/* Check if the parent connection is currently activated or is compatible
 	 * with some known device.
 	 */
 	c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
@@ -4705,7 +4705,7 @@ nm_manager_activate_connection (NMManager *self,
  *   is only a partial activation.
  * @connection: the partial #NMConnection to be activated (if @sett_conn is unspecified)
  * @device_path: the object path of the device to be activated, or NULL
- * @out_device: on successful reutrn, the #NMDevice to be activated with @connection
+ * @out_device: on successful return, the #NMDevice to be activated with @connection
  *   The caller may pass in a device which shortcuts the lookup by path.
  *   In this case, the passed in device must have the matching @device_path
  *   already.
@@ -7245,7 +7245,7 @@ set_property (GObject *object, guint prop_id,
 		                            g_value_get_boolean (value));
 		break;
 	case PROP_WIMAX_ENABLED:
-		/* WIMAX is depreacted. This does nothing. */
+		/* WIMAX is deprecated. This does nothing. */
 		break;
 	case PROP_CONNECTIVITY_CHECK_ENABLED:
 		nm_config_set_connectivity_check_enabled (priv->config,

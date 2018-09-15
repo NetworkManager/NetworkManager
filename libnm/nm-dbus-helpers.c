@@ -105,7 +105,7 @@ _nm_dbus_is_connection_private (GDBusConnection *connection)
  * rule the proxy added and ensure a less granular rule is present instead.
  *
  * Also, don't do this immediately since it has a performance penalty.
- * Still better than loosing the signals altogether.
+ * Still better than losing the signals altogether.
  *
  * Ideally, we should be able to tell glib not to hook its rules:
  * https://bugzilla.gnome.org/show_bug.cgi?id=758749

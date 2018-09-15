@@ -1275,7 +1275,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 	/* ---ifcfg-rh---
 	 * property: priority-traffic-class
 	 * variable: DCB_PG_UP2TC
-	 * description: Priority values. String of eight trafic class values (0 - 7).
+	 * description: Priority values. String of eight traffic class values (0 - 7).
 	 * example: DCB_PG_UP2TC=01623701
 	 * ---end---
 	 */

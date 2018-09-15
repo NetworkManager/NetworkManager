@@ -294,7 +294,7 @@ nm_setting_connection_get_num_permissions (NMSettingConnection *setting)
  * @setting: the #NMSettingConnection
  * @idx: the zero-based index of the permissions entry
  * @out_ptype: on return, the permission type (at this time, always "user")
- * @out_pitem: on return, the permission item (formatted accoring to @ptype, see
+ * @out_pitem: on return, the permission item (formatted according to @ptype, see
  * #NMSettingConnection:permissions for more detail
  * @out_detail: on return, the permission detail (at this time, always %NULL)
  *
@@ -646,7 +646,7 @@ nm_setting_connection_get_secondary (NMSettingConnection *setting, guint32 idx)
  * @setting: the #NMSettingConnection
  * @sec_uuid: the secondary connection UUID to add
  *
- * Adds a new secondary connetion UUID to the setting.
+ * Adds a new secondary connection UUID to the setting.
  *
  * Returns: %TRUE if the secondary connection UUID was added; %FALSE if the UUID
  * was already present

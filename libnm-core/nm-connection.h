@@ -45,7 +45,7 @@ G_BEGIN_DECLS
 
 /*
  * NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD: overwrite the ip6 method
- * when normalizing ip6 configuration. If omited, this defaults to
+ * when normalizing ip6 configuration. If omitted, this defaults to
  * @NM_SETTING_IP6_CONFIG_METHOD_AUTO.
  */
 #define NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD "ip6-config-method"
@@ -59,7 +59,7 @@ G_BEGIN_DECLS
 
 /**
  * NMConnectionInterface:
- * @parent: the parent interace struct
+ * @parent: the parent interface struct
  * @secrets_updated: emitted when the connection's secrets are updated
  * @secrets_cleared: emitted when the connection's secrets are cleared
  * @changed: emitted when any change to the connection's settings occurs

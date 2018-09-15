@@ -2314,7 +2314,7 @@ test_connection_verify_sets_interface_name (void)
 
 	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, NULL);
 
-	/* for backward compatiblity, normalizes the interface name */
+	/* for backward compatibility, normalizes the interface name */
 	success = nm_connection_verify (con, &error);
 	g_assert (success && !error);
 
@@ -2373,7 +2373,7 @@ test_connection_normalize_virtual_iface_name (void)
 	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
 	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, IFACE_VIRT);
 
-	/* for backward compatiblity, normalizes the interface name */
+	/* for backward compatibility, normalizes the interface name */
 	success = nm_connection_verify (con, &error);
 	g_assert (success && !error);
 

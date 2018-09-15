@@ -7452,7 +7452,7 @@ dhcp4_get_client_id (NMDevice *self,
 
 	if (!client_id) {
 		_LOGD (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4,
-		       "ipv4.dhcp-client-id: no explicity client-id configured");
+		       "ipv4.dhcp-client-id: no explicit client-id configured");
 		return NULL;
 	}
 

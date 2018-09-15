@@ -57,7 +57,7 @@ typedef struct {
 
 	/* The "object-creation-failed" method is PRIVATE for libnm and
 	 * is not meant for any external usage.  It indicates that an error
-	 * occured during creation of an object.
+	 * occurred during creation of an object.
 	 */
 	void (*object_creation_failed) (NMObject *master_object,
 	                                const char *failed_path);

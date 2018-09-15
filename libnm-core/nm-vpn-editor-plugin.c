@@ -379,8 +379,8 @@ _nm_vpn_editor_plugin_load (const char *plugin_name,
  * @user_data: user data for @check_file
  * @error: on failure the error reason.
  *
- * Load the shared libary @plugin_name and create a new
- * #NMVpnEditorPlugin instace via the #NMVpnEditorPluginFactory
+ * Load the shared library @plugin_name and create a new
+ * #NMVpnEditorPlugin instance via the #NMVpnEditorPluginFactory
  * function.
  *
  * If @plugin_name is not an absolute path name, it assumes the file
@@ -419,8 +419,8 @@ nm_vpn_editor_plugin_load_from_file  (const char *plugin_name,
  *  the given service.
  * @error: on failure the error reason.
  *
- * Load the shared libary @plugin_name and create a new
- * #NMVpnEditorPlugin instace via the #NMVpnEditorPluginFactory
+ * Load the shared library @plugin_name and create a new
+ * #NMVpnEditorPlugin instance via the #NMVpnEditorPluginFactory
  * function.
  *
  * This is similar to nm_vpn_editor_plugin_load_from_file(), but

@@ -246,7 +246,7 @@ nm_setting_802_1x_check_cert_scheme (gconstpointer pdata, gsize length, GError *
 	if (scheme != NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 		/* An actual URI must be NUL terminated, contain at least
 		 * one non-NUL character, and contain only one trailing NUL
-		 * chracter.
+		 * character.
 		 * And ensure it's UTF-8 valid too so we can pass it through
 		 * D-Bus and stuff like that. */
 

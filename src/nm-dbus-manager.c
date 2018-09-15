@@ -1182,7 +1182,7 @@ _nm_dbus_manager_obj_notify (NMDBusObject *obj,
 	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
 	/* do a naive search for the matching NMDBusPropertyInfoExtended infos. Since the number of
-	 * (interaces x properties) is static and possibly small, this naive search is effectively
+	 * (interfaces x properties) is static and possibly small, this naive search is effectively
 	 * O(1). We might wanna introduce some index to lookup the properties in question faster.
 	 *
 	 * The nice part of this implementation is however, that the order in which properties
@@ -1518,7 +1518,7 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 	 *  (3) if we are able to create the connection but registration fails,
 	 *    it means that something is borked. Quite possibly another NetworkManager
 	 *    instance is running. We need to exit right away.
-	 * To appease (1) and (3), we cannot initalize synchronously, because we need
+	 * To appease (1) and (3), we cannot initialize synchronously, because we need
 	 * to know right away whether another NetworkManager instance is running (3).
 	 **/
 

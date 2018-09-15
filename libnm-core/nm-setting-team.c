@@ -411,7 +411,7 @@ nm_team_link_watcher_get_name (NMTeamLinkWatcher *watcher)
  * @watcher: the #NMTeamLinkWatcher
  *
  * Gets the delay_up interval (in milliseconds) that elapses between the link
- * coming up and the runner beeing notified about it.
+ * coming up and the runner being notified about it.
  *
  * Since: 1.12
  **/
@@ -430,7 +430,7 @@ nm_team_link_watcher_get_delay_up (NMTeamLinkWatcher *watcher)
  * @watcher: the #NMTeamLinkWatcher
  *
  * Gets the delay_down interval (in milliseconds) that elapses between the link
- * going down and the runner beeing notified about it.
+ * going down and the runner being notified about it.
  *
  * Since: 1.12
  **/

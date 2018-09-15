@@ -79,9 +79,9 @@ GQuark nm_setting_wireless_security_error_quark (void);
  * @NM_WEP_KEY_TYPE_LAST: placeholder value for bounds-checking
  *
  * The #NMWepKeyType values specify how any WEP keys present in the setting
- * are intepreted.  There are no standards governing how to hash the various WEP
+ * are interpreted.  There are no standards governing how to hash the various WEP
  * key/passphrase formats into the actual WEP key.  Unfortunately some WEP keys
- * can be interpreted in multiple ways, requring the setting to specify how to
+ * can be interpreted in multiple ways, requiring the setting to specify how to
  * interpret the any WEP keys.  For example, the key "732f2d712e4a394a375d366931"
  * is both a valid Hexadecimal WEP key and a WEP passphrase.  Further, many
  * ASCII keys are also valid WEP passphrases, but since passphrases and ASCII
