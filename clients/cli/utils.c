@@ -1098,7 +1098,7 @@ _print_fill (const NmcConfig *nmc_config,
 				/* don't mark the entry for display. This is to shorten the output in case
 				 * the property is the default value. But we only do that, if the user
 				 * opts in to this behavior (-overview), or of the property marks itself
-				 * elegible to be hidden.
+				 * eligible to be hidden.
 				 *
 				 * In general, only new API shall mark itself eligible to be hidden.
 				 * Long established properties cannot, because it would be a change
@@ -1273,7 +1273,7 @@ _print_do (const NmcConfig *nmc_config,
 			title = header_cell->title;
 
 			width1 = strlen (title);
-			width2 = nmc_string_screen_width (title, NULL);  /* Width of the string (in screen colums) */
+			width2 = nmc_string_screen_width (title, NULL);  /* Width of the string (in screen columns) */
 			g_string_append_printf (str, "%-*s", (int) (header_cell->width + width1 - width2), title);
 			g_string_append_c (str, ' ');  /* Column separator */
 			table_width += header_cell->width + width1 - width2 + 1;
@@ -1355,7 +1355,7 @@ _print_do (const NmcConfig *nmc_config,
 						const PrintDataHeaderCell *header_cell = &header_row[i_col];
 
 						width1 = strlen (text);
-						width2 = nmc_string_screen_width (text, NULL);  /* Width of the string (in screen colums) */
+						width2 = nmc_string_screen_width (text, NULL);  /* Width of the string (in screen columns) */
 						g_string_append_printf (str, "%-*s", (int) (header_cell->width + width1 - width2), text);
 						g_string_append_c (str, ' ');  /* Column separator */
 						table_width += header_cell->width + width1 - width2 + 1;
@@ -1728,7 +1728,7 @@ print_required_fields (const NmcConfig *nmc_config,
 			g_string_append_c (str, ':');  /* Column separator */
 		} else {
 			width1 = strlen (value);
-			width2 = nmc_string_screen_width (value, NULL);  /* Width of the string (in screen colums) */
+			width2 = nmc_string_screen_width (value, NULL);  /* Width of the string (in screen columns) */
 			g_string_append_printf (str, "%-*s", field_values[idx].width + width1 - width2, strlen (value) > 0 ? value : not_set_str);
 			g_string_append_c (str, ' ');  /* Column separator */
 			table_width += field_values[idx].width + width1 - width2 + 1;

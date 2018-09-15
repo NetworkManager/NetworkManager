@@ -7,7 +7,7 @@ from __future__ import print_function
 # This test starts NetworkManager stub service in a user D-Bus session,
 # and runs nmcli against it. The output is recorded and compared to a pre-generated
 # expected output (clients/tests/test-client.check-on-disk/*.expected) which
-# is also commited to git.
+# is also committed to git.
 #
 ###############################################################################
 #

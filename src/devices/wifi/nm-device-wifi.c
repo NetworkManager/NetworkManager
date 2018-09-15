@@ -731,7 +731,7 @@ check_connection_available (NMDevice *device,
 
 	/* Hidden SSIDs obviously don't always appear in the scan list either.
 	 *
-	 * For an explict user-activation-request, a connection is considered
+	 * For an explicit user-activation-request, a connection is considered
 	 * available because for hidden Wi-Fi, clients didn't consistently
 	 * set the 'hidden' property to indicate hidden SSID networks.  If
 	 * activating but the network isn't available let the device recheck
@@ -1235,7 +1235,7 @@ scanning_prohibited (NMDeviceWifi *self, gboolean periodic)
 		return FALSE;
 	case NM_DEVICE_STATE_ACTIVATED:
 		/* Prohibit periodic scans when connected; we ask the supplicant to
-		 * background scan for us, unless the connection is locked to a specifc
+		 * background scan for us, unless the connection is locked to a specific
 		 * BSSID.
 		 */
 		if (periodic)

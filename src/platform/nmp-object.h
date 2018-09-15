@@ -100,14 +100,14 @@ typedef enum { /*< skip >*/
 	 *
 	 * Also, note that links may be considered invisible. This index type
 	 * expose all links, even invisible ones. For addresses/routes, this
-	 * distiction doesn't exist, as all addresses/routes that are alive
+	 * distinction doesn't exist, as all addresses/routes that are alive
 	 * are visible as well. */
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 
 	/* index for the link objects by ifname. */
 	NMP_CACHE_ID_TYPE_LINK_BY_IFNAME,
 
-	/* indeces for the visible default-routes, ignoring ifindex.
+	/* indices for the visible default-routes, ignoring ifindex.
 	 * This index only contains two partitions: all visible default-routes,
 	 * separate for IPv4 and IPv6. */
 	NMP_CACHE_ID_TYPE_DEFAULT_ROUTES,
@@ -504,7 +504,7 @@ nmp_object_ref (const NMPObject *obj)
 	}
 
 	/* ref and unref accept const pointers. NMPObject is supposed to be shared
-	 * and kept immutable. Disallowing to take/retrun a reference to a const
+	 * and kept immutable. Disallowing to take/return a reference to a const
 	 * NMPObject is cumbersome, because callers are precisely expected to
 	 * keep a ref on the otherwise immutable object. */
 	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj), NULL);

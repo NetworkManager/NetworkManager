@@ -332,7 +332,7 @@ _set_fcn_precheck_connection_secondaries (const char *value,
 				g_print (_("Warning: %s is not an UUID of any existing connection profile\n"),
 				         *iter);
 			} else {
-				/* Currenly NM only supports VPN connections as secondaries */
+				/* Currently NM only supports VPN connections as secondaries */
 				if (!nm_connection_is_type (con, NM_SETTING_VPN_SETTING_NAME)) {
 					g_set_error (error, 1, 0, _("'%s' is not a VPN connection profile"), *iter);
 					return FALSE;
@@ -345,7 +345,7 @@ _set_fcn_precheck_connection_secondaries (const char *value,
 				return FALSE;
 			}
 
-			/* Currenly NM only supports VPN connections as secondaries */
+			/* Currently NM only supports VPN connections as secondaries */
 			if (!nm_connection_is_type (con, NM_SETTING_VPN_SETTING_NAME)) {
 				g_set_error (error, 1, 0, _("'%s' is not a VPN connection profile"), *iter);
 				return FALSE;
@@ -590,11 +590,11 @@ nmc_property_set_default_value (NMSetting *setting, const char *prop)
 }
 
 /*
- * Generic function for reseting (single value) properties.
+ * Generic function for resetting (single value) properties.
  *
  * The function resets the property value to the default one. It respects
  * nmcli restrictions for changing properties. So if 'set_func' is NULL,
- * reseting the value is denied.
+ * resetting the value is denied.
  *
  * Returns: TRUE on success; FALSE on failure and sets error
  */

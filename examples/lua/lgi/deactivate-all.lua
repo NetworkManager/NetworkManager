@@ -29,7 +29,7 @@
 local lgi = require 'lgi'
 local NM = lgi.NM
 
--- suported connection types
+-- supported connection types
 connection_types = {
   NM.SETTING_VPN_SETTING_NAME,
   NM.SETTING_WIRELESS_SETTING_NAME,

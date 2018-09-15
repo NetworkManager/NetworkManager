@@ -1217,7 +1217,7 @@ test_software_detect (gconstpointer user_data)
 				g_assert_cmpint (plnk->dst_port, ==, 4789);
 				if (   plnk->src_port_min != 0
 				    || plnk->src_port_max != 0) {
-					/* on some kernels, omiting the port range results in setting
+					/* on some kernels, omitting the port range results in setting
 					 * following default port range. */
 					g_assert_cmpint (plnk->src_port_min, ==, 32768);
 					g_assert_cmpint (plnk->src_port_max, ==, 61000);

@@ -62,7 +62,7 @@ gboolean nm_wifi_utils_get_bssid (NMWifiUtils *data, guint8 *out_bssid);
 /* Returns current bitrate in Kbps */
 guint32 nm_wifi_utils_get_rate (NMWifiUtils *data);
 
-/* Returns quality 0 - 100% on succes, or -1 on error */
+/* Returns quality 0 - 100% on success, or -1 on error */
 int nm_wifi_utils_get_qual (NMWifiUtils *data);
 
 /* Tells the driver DHCP or SLAAC is running */

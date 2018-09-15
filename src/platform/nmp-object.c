@@ -1636,7 +1636,7 @@ nmp_cache_link_connected_needs_toggle (const NMPCache *cache, const NMPObject *m
  * The flag obj->link.connected depends on the state of other links in the
  * @cache. See also nmp_cache_link_connected_needs_toggle(). Given an ifindex
  * of a master, check if the cache contains such a master link that needs
- * toogling of the connected flag.
+ * toggling of the connected flag.
  *
  * Returns: NULL if there is no master link with ifindex @master_ifindex that should be toggled.
  *   Otherwise, return the link object from inside the cache with the given ifindex.
@@ -2338,7 +2338,7 @@ nmp_cache_remove_netlink (NMPCache *cache,
  *
  * Returns: how the cache changed.
  *
- * Even if there was no change in the cace (NMP_CACHE_OPS_UNCHANGED), @out_obj_old
+ * Even if there was no change in the cache (NMP_CACHE_OPS_UNCHANGED), @out_obj_old
  * and @out_obj_new will be set accordingly.
  **/
 NMPCacheOpsType
@@ -2609,7 +2609,7 @@ update_done:
 		nm_dedup_multi_entry_reorder (entry_cur, NULL, FALSE);
 		break;
 	default:
-		/* this is an unexecpted case, probably a bug that we need to handle better. */
+		/* this is an unexpected case, probably a bug that we need to handle better. */
 		resync_required = TRUE;
 		break;
 	}

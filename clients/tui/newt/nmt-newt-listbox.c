@@ -227,7 +227,7 @@ nmt_newt_listbox_get_active_key (NmtNewtListbox *listbox)
 /**
  * nmt_newt_listbox_set_height:
  * @listbox: an #NmtNewtListbox
- * @height: the new height, or -1 for no fixed heigh
+ * @height: the new height, or -1 for no fixed height
  *
  * Updates @listbox's height.
  */

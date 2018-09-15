@@ -447,7 +447,7 @@ G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
         if (nm_logging_enabled (__level, __domain)) { \
             int __errsv = (errsv); \
             \
-            /* The %m format specifier (GNU extension) would alread allow you to specify the error
+            /* The %m format specifier (GNU extension) would already allow you to specify the error
              * message conveniently (and nm_log would get that right too). But we don't want to depend
              * on that, so instead append the message at the end.
              * Currently users are expected not to use %m in the format string. */ \
@@ -2227,7 +2227,7 @@ _wireguard_read_info (NMPlatform *platform /* used only as logging context */,
 	 * there. The realloc/resize of the GArray is fine there. However,
 	 * while we build the GArray, we don't yet have the final pointers.
 	 * Hence, while constructing, we track the indexes with peer->_construct_idx_*
-	 * fields. These indexes must be convered to actual pointers blow.
+	 * fields. These indexes must be converted to actual pointers blow.
 	 *
 	 * This is all done during parsing. In the final NMPObjectLnkWireGuard we
 	 * don't want the CList anymore and repackage the NMPObject tightly. The

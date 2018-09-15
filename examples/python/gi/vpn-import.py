@@ -64,7 +64,7 @@ main_loop = GLib.MainLoop()
 def added_cb(client, result, data):
     try:
         client.add_connection_finish(result)
-        print("The connection profile has been succesfully added to NetworkManager.")
+        print("The connection profile has been successfully added to NetworkManager.")
     except Exception, e:
         print("ERROR: failed to add connection: %s\n" % e)
     main_loop.quit()
