@@ -1840,7 +1840,7 @@ constructed (GObject *object)
 	GError *error = NULL;
 
 	if (!nm_utils_init (&error)) {
-		g_warning ("Couldn't initilize nm-utils/crypto system: %s",
+		g_warning ("Couldn't initialize nm-utils/crypto system: %s",
 		           error->message);
 		g_clear_error (&error);
 	}

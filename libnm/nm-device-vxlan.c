@@ -361,7 +361,7 @@ nm_device_vxlan_get_l2miss (NMDeviceVxlan *device)
  * nm_device_vxlan_get_l3miss:
  * @device: a #NMDeviceVxlan
  *
- * Returns: wether netlink IP ADDR miss notifications are generated
+ * Returns: whether netlink IP ADDR miss notifications are generated
  *
  * Since: 1.2
  **/

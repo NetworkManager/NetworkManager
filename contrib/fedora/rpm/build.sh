@@ -3,7 +3,7 @@
 #set -vx
 
 # Set arguments via environment variables.
-# Argument can be omited and defaults will be detected.
+# Argument can be omitted and defaults will be detected.
 #
 #   BUILDTYPE=|SRPM
 #   NM_RPMBUILD_ARGS=<additional argus for rpmbuild>
@@ -157,7 +157,7 @@ ln "$BUILDLOG" "$TEMPBASE/build.log"
 rm -f "$BUILDLOG"
 
 TEMPSPEC="$TEMP/SPECS/NetworkManager.spec"
-mkdir -p "$TEMP/SOURCES/" "$TEMP/SPECS/" || die "error creating SPECS directoy"
+mkdir -p "$TEMP/SOURCES/" "$TEMP/SPECS/" || die "error creating SPECS directory"
 
 if [[ "$(dirname "$SOURCE")" != "$TEMP/SOURCES" ]]; then
     cp "$SOURCE" "$TEMP/SOURCES/" || die "Could not copy source $SOURCE to $TEMP/SOURCES"

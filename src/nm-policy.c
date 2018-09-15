@@ -1969,7 +1969,7 @@ device_ip_config_changed (NMDevice *device,
 	/* We catch already all the IP events registering on the device state changes but
 	 * the ones where the IP changes but the device state keep stable (i.e., activated):
 	 * ignore IP config changes but when the device is in activated state.
-	 * Prevents unecessary changes to DNS information.
+	 * Prevents unnecessary changes to DNS information.
 	 */
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
 		if (old_config != new_config) {

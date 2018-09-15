@@ -91,7 +91,7 @@ GQuark nm_setting_error_quark (void);
  * should be requested from the user each time it is needed
  * @NM_SETTING_SECRET_FLAG_NOT_REQUIRED: in situations where it cannot be
  * automatically determined that the secret is required (some VPNs and PPP
- * providers dont require all secrets) this flag indicates that the specific
+ * providers don't require all secrets) this flag indicates that the specific
  * secret is not required
  *
  * These flags indicate specific behavior related to handling of a secret.  Each

@@ -241,7 +241,7 @@ _keyfile_convert (NMConnection **con,
 		k0_c1_k2 = _nm_keyfile_write (k0_c1, write_handler, write_data);
 		k0_c1_k2_c3 = _nm_keyfile_read (k0_c1_k2, keyfile_name, base_dir, read_handler, read_data, FALSE);
 
-		/* It is a expeced behavior, that if @k0 contains a relative path ca-cert, @k0_c1 will
+		/* It is a expected behavior, that if @k0 contains a relative path ca-cert, @k0_c1 will
 		 * contain that path as relative. But @k0_c1_k2 and @k0_c1_k2_c3 will have absolute paths.
 		 * In this case, hack up @k0_c1_k2_c3 to contain the same relative path. */
 		s1 = nm_connection_get_setting_802_1x (k0_c1);
@@ -409,7 +409,7 @@ test_8021x_cert (void)
 	g_assert_no_error (error);
 	g_assert (success);
 
-	/* test reseting ca-cert to different values and see whether we can write/read. */
+	/* test resetting ca-cert to different values and see whether we can write/read. */
 
 	nm_connection_add_setting (con, NM_SETTING (s_8021x));
 	nmtst_assert_connection_verifies_and_normalizable (con);

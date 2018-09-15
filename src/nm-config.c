@@ -801,7 +801,7 @@ read_config (GKeyFile *keyfile, gboolean is_base_config, const char *dirname, co
 						new_val = _nm_utils_slist_to_strv (new_specs, FALSE);
 					}
 
-					/* merge the string lists, by omiting duplicates. */
+					/* merge the string lists, by omitting duplicates. */
 
 					for (iter_val = old_val; iter_val && *iter_val; iter_val++) {
 						if (   last_char != '-'
@@ -1858,7 +1858,7 @@ state_write (NMConfig *self)
 	                          &error)) {
 		_LOGD ("state: error writing state file \"%s\": %s", filename, error->message);
 		g_clear_error (&error);
-		/* we leave the state dirty. That potentally means, that we try to
+		/* we leave the state dirty. That potentially means, that we try to
 		 * write the file over and over again, although it isn't possible. */
 		priv->state->p.dirty = TRUE;
 	} else

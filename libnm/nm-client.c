@@ -2470,7 +2470,7 @@ proxy_type (GDBusObjectManagerClient *manager,
             const char *interface_name,
             gpointer user_data)
 {
-	/* ObjectManager asks us for an object proxy. Unfortunatelly, we can't
+	/* ObjectManager asks us for an object proxy. Unfortunately, we can't
 	 * decide that by interface name and GDBusObjectManager doesn't allow
 	 * us to look at the known interface list. Thus we need to create a
 	 * generic GDBusObject and only couple a NMObject subclass later. */

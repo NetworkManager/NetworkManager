@@ -69,7 +69,7 @@
         mapping D-Bus signals and properties to GObject signals and properties,
         and providing helpful accessor and utility functions.  However, unlike
         the old libnm-util/libnm-glib API, the mapping to the D-Bus API is not
-        exact, and various inconveniences and historical anomolies of the D-Bus
+        exact, and various inconveniences and historical anomalies of the D-Bus
         API are papered over.
       </para>
       <para>
@@ -295,7 +295,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
   </chapter>
 
   <!--
-    These don't contain any useful documentaiton. Keep them here,
+    These don't contain any useful documentation. Keep them here,
     so that tools/check-docs.sh knows that we did omit them intentionally.
     <xi:include href="xml/nm-core-enum-types.xml"/>
     <xi:include href="xml/nm-enum-types.xml"/>

@@ -103,7 +103,7 @@ static const struct IsoLangToEncodings isoLangEntries2[] =
 	{ "bg",         {"windows-1251","koi8-r",               "iso-8859-5"} },        /* Bulgarian */
 	{ "mk",         {"koi8-r",      "windows-1251", "iso-8859-5"} },        /* Macedonian */
 	{ "sr",         {"koi8-r",      "windows-1251", "iso-8859-5"} },        /* Serbian */
-	{ "uk",         {"koi8-u",      "koi8-r",                       "windows-1251"} },      /* Ukranian */
+	{ "uk",         {"koi8-u",      "koi8-r",                       "windows-1251"} },      /* Ukrainian */
 
 	/* Arabic */
 	{ "ar",         {"iso-8859-6",  "windows-1256", NULL} },
@@ -600,7 +600,7 @@ device_supports_ap_ciphers (guint32 dev_caps,
 
 /**
  * nm_utils_ap_mode_security_valid:
- * @type: the security type to check device capabilties against,
+ * @type: the security type to check device capabilities against,
  * e.g. #NMU_SEC_STATIC_WEP
  * @wifi_caps: bitfield of the capabilities of the specific Wi-Fi device, e.g.
  * #NM_WIFI_DEVICE_CAP_CIPHER_WEP40
@@ -638,16 +638,16 @@ nm_utils_ap_mode_security_valid (NMUtilsSecurityType type,
 
 /**
  * nm_utils_security_valid:
- * @type: the security type to check AP flags and device capabilties against,
+ * @type: the security type to check AP flags and device capabilities against,
  * e.g. #NMU_SEC_STATIC_WEP
  * @wifi_caps: bitfield of the capabilities of the specific Wi-Fi device, e.g.
  * #NM_WIFI_DEVICE_CAP_CIPHER_WEP40
  * @have_ap: whether the @ap_flags, @ap_wpa, and @ap_rsn arguments are valid
  * @adhoc: whether the capabilities being tested are from an Ad-Hoc AP (IBSS)
  * @ap_flags: bitfield of AP capabilities, e.g. #NM_802_11_AP_FLAGS_PRIVACY
- * @ap_wpa: bitfield of AP capabilties derived from the AP's WPA beacon,
+ * @ap_wpa: bitfield of AP capabilities derived from the AP's WPA beacon,
  * e.g. (#NM_802_11_AP_SEC_PAIR_TKIP | #NM_802_11_AP_SEC_KEY_MGMT_PSK)
- * @ap_rsn: bitfield of AP capabilties derived from the AP's RSN/WPA2 beacon,
+ * @ap_rsn: bitfield of AP capabilities derived from the AP's RSN/WPA2 beacon,
  * e.g. (#NM_802_11_AP_SEC_PAIR_CCMP | #NM_802_11_AP_SEC_PAIR_TKIP)
  *
  * Given a set of device capabilities, and a desired security type to check
@@ -657,7 +657,7 @@ nm_utils_ap_mode_security_valid (NMUtilsSecurityType type,
  * NOTE: this function cannot handle checking security for AP/Hotspot mode;
  * use nm_utils_ap_mode_security_valid() instead.
  *
- * Returns: %TRUE if the device capabilities and AP capabilties intersect and are
+ * Returns: %TRUE if the device capabilities and AP capabilities intersect and are
  * compatible with the desired @type, %FALSE if they are not
  **/
 gboolean

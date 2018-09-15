@@ -69,7 +69,7 @@ int nm_match_spec_device_by_pllink (const NMPlatformLink *pllink,
  * away. It iterates the mainloop for another NM_SHUTDOWN_TIMEOUT_MS_EXTRA. This
  * should give time to reap the child process (after SIGKILL).
  *
- * So, the maxiumum time we should wait before sending SIGKILL should be at most
+ * So, the maximum time we should wait before sending SIGKILL should be at most
  * NM_SHUTDOWN_TIMEOUT_MS.
  */
 #define NM_SHUTDOWN_TIMEOUT_MS            1500

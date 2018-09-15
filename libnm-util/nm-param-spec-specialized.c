@@ -539,9 +539,9 @@ _gvalues_compare (const GValue *value1, const GValue *value2)
 		if (p1 == p2)
 			ret = 0; /* Exactly the same values */
 		else if (!p1)
-			ret = 1; /* The comparision functions below don't handle NULLs */
+			ret = 1; /* The comparison functions below don't handle NULLs */
 		else if (!p2)
-			ret = -1; /* The comparision functions below don't handle NULLs */
+			ret = -1; /* The comparison functions below don't handle NULLs */
 		else if (type1 == G_TYPE_STRV)
 			ret = _gvalues_compare_strv (value1, value2);
 		else if (dbus_g_type_is_collection (type1))

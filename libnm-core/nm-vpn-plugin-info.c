@@ -1341,7 +1341,7 @@ nm_vpn_plugin_info_class_init (NMVpnPluginInfoClass *plugin_class)
 	/**
 	 * NMVpnPluginInfo:keyfile:
 	 *
-	 * Initalize the instance with a different keyfile instance.
+	 * Initialize the instance with a different keyfile instance.
 	 * When passing a keyfile instance, the constructor will not
 	 * try to read from filename.
 	 *

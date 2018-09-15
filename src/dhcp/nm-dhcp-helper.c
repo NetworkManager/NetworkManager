@@ -118,7 +118,7 @@ kill_pid (void)
 	if (pid_str)
 		pid = strtol (pid_str, NULL, 10);
 	if (pid) {
-		_LOGI ("a fatal error occured, kill dhclient instance with pid %d\n", pid);
+		_LOGI ("a fatal error occurred, kill dhclient instance with pid %d\n", pid);
 		kill (pid, SIGTERM);
 	}
 }
@@ -190,7 +190,7 @@ do_notify:
 		_LOGW ("failure to call notify: %s (try signal via Event)", error->message);
 		g_clear_error (&error);
 
-		/* for backward compatibilty, try to emit the signal. There is no stable
+		/* for backward compatibility, try to emit the signal. There is no stable
 		 * API between the dhcp-helper and NetworkManager. However, while upgrading
 		 * the NetworkManager package, a newer helper might want to notify an
 		 * older server, which still uses the "Event". */

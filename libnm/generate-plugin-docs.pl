@@ -60,7 +60,7 @@ open $fo, '>', $output or die "Can't open $output: $!";
 # write XML header
 write_header();
 
-# write generated documenation for each setting
+# write generated documentation for each setting
 foreach my $c_file (@source_files) {
   my $setting_name = get_setting_name($c_file);
   if ($setting_name) {

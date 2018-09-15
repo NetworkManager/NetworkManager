@@ -97,7 +97,7 @@ same MAC address, the connection with the most recent timestamp should be
 preferred.
 
 Similarly, if the probing/listening process detects 802.1x frames the device
-should be marked as requring 802.1x authentication until the carrier drops.
+should be marked as requiring 802.1x authentication until the carrier drops.
 This would be accomplished by adding a new property to the NMDeviceEthernet
 object and exporting that property through the
 introspection/nm-device-ethernet.xml file.  This would allow clients like
@@ -231,7 +231,7 @@ proceeds with the connection.
 
 NM sends the correct wpa_supplicant config for WPS to the supplicant, and waits
 for the connection to occur.  WPS can only be used the *first* time, so after a
-first successfull connection, NM must request the actual hexadecimal PSK from
+first successful connection, NM must request the actual hexadecimal PSK from
 wpa_supplicant via D-Bus, and store that PSK in the connection, clear any WPS
 PIN code from the connection, and save the connection to backing storage.
 
@@ -283,7 +283,7 @@ connection process.
 2) single-device-at-a-time with overlapping connections: this is also probably
 the best route to go for desktop use-cases as well.  Instead of bringing all
 available connections up, only bring up the "best" connection at any given
-time based on the current priority list (which is rougly Ethernet > WiFi >
+time based on the current priority list (which is roughly Ethernet > WiFi >
 3G/Bluetooth).  However, to ensure seamless connectivity, when one connection
 begins to degrade, the next-best connection should be started before the
 current one is terminated, such that there is a small amount of overlap.

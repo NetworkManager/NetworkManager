@@ -125,7 +125,7 @@ next:
 	}
 	if (square_brackets_sensible) {
 		/* If there's a [<string>] that survived the substitution, then the string
-		 * is a short form that is generally preferrable. */
+		 * is a short form that is generally preferable. */
 		q = strchr (desc_full, ']');
 		if (p && q > p) {
 			p++;

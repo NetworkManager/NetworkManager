@@ -100,7 +100,7 @@ typedef enum
 
 /*
  * NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD: overwrite the ip6 method
- * when normalizing ip6 configuration. If omited, this defaults to
+ * when normalizing ip6 configuration. If omitted, this defaults to
  * @NM_SETTING_IP6_CONFIG_METHOD_AUTO.
  */
 #define NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD "ip6-config-method"

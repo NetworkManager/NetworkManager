@@ -271,7 +271,7 @@ pacrunner_send_done (GObject *source, GAsyncResult *res, gpointer user_data)
 		g_variant_get (variant, "(&o)", &path);
 
 		if (c_list_is_empty (&config->lst)) {
-			_LOG2D (config, "sent (%s), but destory it right away", path);
+			_LOG2D (config, "sent (%s), but destroy it right away", path);
 			g_dbus_proxy_call (priv->pacrunner,
 			                   "DestroyProxyConfiguration",
 			                   g_variant_new ("(o)", path),

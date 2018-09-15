@@ -708,7 +708,7 @@ _sleep_duration_convert_ms_to_us (guint32 sleep_duration_msec)
  * @log_domain: log debug information for this domain. Errors and warnings are logged both
  * as %LOGD_CORE and @log_domain.
  * @log_name: name of the process to kill for logging.
- * @child_status: (out) (allow-none): return the exit status of the child, if no error occured.
+ * @child_status: (out) (allow-none): return the exit status of the child, if no error occurred.
  * @wait_before_kill_msec: Waittime in milliseconds before sending %SIGKILL signal. Set this value
  * to zero, not to send %SIGKILL. If @sig is already %SIGKILL, this parameter has not effect.
  * @sleep_duration_msec: the synchronous function sleeps repeatedly waiting for the child to terminate.
@@ -717,7 +717,7 @@ _sleep_duration_convert_ms_to_us (guint32 sleep_duration_msec)
  * Kill a child process synchronously and wait. The function first checks if the child already terminated
  * and if it did, return the exit status. Otherwise send one @sig signal. @sig  will always be
  * sent unless the child already exited. If the child does not exit within @wait_before_kill_msec milliseconds,
- * the function will send %SIGKILL and waits for the child indefinitly. If @wait_before_kill_msec is zero, no
+ * the function will send %SIGKILL and waits for the child indefinitely. If @wait_before_kill_msec is zero, no
  * %SIGKILL signal will be sent.
  *
  * In case of error, errno is preserved to contain the last reason of failure.
@@ -894,7 +894,7 @@ out:
  * @sleep_duration_msec: the synchronous function sleeps repeatedly waiting for the child to terminate.
  *   Set to zero, to use the default (meaning 20 wakeups per seconds).
  * @max_wait_msec: if 0, waits indefinitely until the process is gone (or a zombie). Otherwise, this
- *   is the maxium wait time until returning. If @max_wait_msec is non-zero but smaller then @wait_before_kill_msec,
+ *   is the maximum wait time until returning. If @max_wait_msec is non-zero but smaller then @wait_before_kill_msec,
  *   we will not send a final %SIGKILL.
  *
  * Kill a non-child process synchronously and wait. This function will not return before the
@@ -2231,7 +2231,7 @@ nm_utils_log_connection_diff (NMConnection *connection,
 		return;
 	}
 
-	/* FIXME: it doesn't nicely show the content of NMSettingVpn, becuase nm_connection_diff() does not
+	/* FIXME: it doesn't nicely show the content of NMSettingVpn, because nm_connection_diff() does not
 	 * expand the hash values. */
 
 	sorted_hashes = _log_connection_sort_hashes (connection, diff_base, connection_diff);
@@ -2610,7 +2610,7 @@ _secret_key_read (guint8 **out_secret_key,
 	}
 
 out:
-	/* regardless of success or failue, we always return a secret-key. The
+	/* regardless of success or failure, we always return a secret-key. The
 	 * caller may choose to ignore the error and proceed. */
 	*out_key_len = key_len;
 	*out_secret_key = secret_key;
@@ -3047,7 +3047,7 @@ nm_utils_stable_id_parse (const char *stable_id,
 			_stable_id_append (str, deviceid);
 		else if (g_str_has_prefix (&stable_id[i], "${RANDOM}")) {
 			/* RANDOM makes not so much sense for cloned-mac-address
-			 * as the result is simmilar to specyifing "cloned-mac-address=random".
+			 * as the result is similar to specyifing "cloned-mac-address=random".
 			 * It makes however sense for RFC 7217 Stable Privacy IPv6 addresses
 			 * where this is effectively the only way to generate a different
 			 * (random) host identifier for each connect.

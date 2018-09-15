@@ -435,7 +435,7 @@ get_cert_scheme (GByteArray *array)
 	    && !memcmp (array->data, SCHEME_PATH, NM_STRLEN (SCHEME_PATH))) {
 		/* But it must also be NUL terminated, contain at least
 		 * one non-NUL character, and contain only one trailing NUL
-		 * chracter.
+		 * character.
 		 * And ensure it's UTF-8 valid too so we can pass it through
 		 * D-Bus and stuff like that. */
 		if (   array->len > NM_STRLEN (SCHEME_PATH) + 1
@@ -3723,7 +3723,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 
 	/* Initialize crypto lbrary. */
 	if (!nm_utils_init (&error)) {
-		g_warning ("Couldn't initilize nm-utils/crypto system: %s",
+		g_warning ("Couldn't initialize nm-utils/crypto system: %s",
 		           error->message);
 		g_error_free (error);
 	}

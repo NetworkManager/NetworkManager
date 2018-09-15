@@ -372,7 +372,7 @@ read_field (char **current, const char **out_err_str, const char *characters, co
  * address/plen,gateway,metric (NETWORK via GATEWAY dev DEVICE metric METRIC)
  *
  * For backward, forward and sideward compatibility, slash (/),
- * semicolon (;) and comma (,) are interchangable. The choice of
+ * semicolon (;) and comma (,) are interchangeable. The choice of
  * separator in the above examples is therefore not significant.
  *
  * Leaving out the prefix length is discouraged and DEPRECATED. The
@@ -2544,7 +2544,7 @@ read_one_setting_value (NMSetting *setting,
 	 */
 	if (   (!pip || !pip->parser_no_check_key)
 	    && !nm_keyfile_plugin_kf_has_key (keyfile, setting_name, key, &err)) {
-		/* Key doesn't exist or an error ocurred, thus nothing to do. */
+		/* Key doesn't exist or an error occurred, thus nothing to do. */
 		if (err) {
 			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("error loading setting value: %s"),
@@ -2902,7 +2902,7 @@ nm_keyfile_read (GKeyFile *keyfile,
 		nm_connection_add_setting (connection, NM_SETTING (s_con));
 	}
 
-	/* Make sure that we have 'id' even if not explictly specified in the keyfile */
+	/* Make sure that we have 'id' even if not explicitly specified in the keyfile */
 	if (   keyfile_name
 	    && !nm_setting_connection_get_id (s_con)) {
 		gs_free char *base_name = NULL;
@@ -2911,7 +2911,7 @@ nm_keyfile_read (GKeyFile *keyfile,
 		g_object_set (s_con, NM_SETTING_CONNECTION_ID, base_name, NULL);
 	}
 
-	/* Make sure that we have 'uuid' even if not explictly specified in the keyfile */
+	/* Make sure that we have 'uuid' even if not explicitly specified in the keyfile */
 	if (   keyfile_name
 	    && !nm_setting_connection_get_uuid (s_con)) {
 		gs_free char *hashed_uuid = NULL;

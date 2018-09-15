@@ -390,7 +390,7 @@ nm_setting_wireless_security_remove_pairwise (NMSettingWirelessSecurity *setting
  * Removes an encryption algorithm from the allowed pairwise encryption
  * algorithm list.
  *
- * Returns: %TRUE if the encryption algorith was found and removed; %FALSE if it was not.
+ * Returns: %TRUE if the encryption algorithm was found and removed; %FALSE if it was not.
  **/
 gboolean
 nm_setting_wireless_security_remove_pairwise_by_value (NMSettingWirelessSecurity *setting,

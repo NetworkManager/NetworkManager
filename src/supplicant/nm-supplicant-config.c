@@ -557,7 +557,7 @@ nm_supplicant_config_add_bgscan (NMSupplicantConfig *self,
 	                  NM_SETTING_WIRELESS_MODE_ADHOC))
 		return TRUE;
 
-	/* Don't scan when the connection is locked to a specifc AP, since
+	/* Don't scan when the connection is locked to a specific AP, since
 	 * intra-ESS roaming (which requires periodic scanning) isn't being
 	 * used due to the specific AP lock. (bgo #513820)
 	 */
