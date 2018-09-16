@@ -786,6 +786,21 @@ nm_iwd_manager_is_known_network (NMIwdManager *self, const char *name,
 	return g_hash_table_contains (priv->known_networks, &kn_id);
 }
 
+GDBusProxy *
+nm_iwd_manager_get_dbus_interface (NMIwdManager *self, const char *path,
+                                   const char *name)
+{
+	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
+	GDBusInterface *interface;
+
+	if (!priv->object_manager)
+		return NULL;
+
+	interface = g_dbus_object_manager_get_interface (priv->object_manager, path, name);
+
+	return interface ? G_DBUS_PROXY (interface) : NULL;
+}
+
 /*****************************************************************************/
 
 NM_DEFINE_SINGLETON_GETTER (NMIwdManager, nm_iwd_manager_get,
