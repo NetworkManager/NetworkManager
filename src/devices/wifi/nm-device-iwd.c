@@ -229,7 +229,7 @@ vardict_from_network_type (const char *type)
 }
 
 static void
-insert_ap_from_network (GHashTable *aps, GDBusProxy *proxy, const char *path, int16_t signal, uint32_t ap_id)
+insert_ap_from_network (GHashTable *aps, const char *path, int16_t signal, uint32_t ap_id)
 {
 	gs_unref_object GDBusProxy *network_proxy = NULL;
 	gs_unref_variant GVariant *name_value = NULL, *type_value = NULL;
@@ -239,19 +239,12 @@ insert_ap_from_network (GHashTable *aps, GDBusProxy *proxy, const char *path, in
 	GVariant *rsn;
 	uint8_t bssid[6];
 	NMWifiAP *ap;
-	GError *error;
 
-	network_proxy = g_dbus_proxy_new_sync (g_dbus_proxy_get_connection (proxy),
-	                                       G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
-	                                       NULL,
-	                                       NM_IWD_SERVICE,
-	                                       path,
-	                                       NM_IWD_NETWORK_INTERFACE,
-	                                       NULL, &error);
-	if (!network_proxy) {
-		g_clear_error (&error);
+	network_proxy = nm_iwd_manager_get_dbus_interface (nm_iwd_manager_get (),
+	                                                   path,
+	                                                   NM_IWD_NETWORK_INTERFACE);
+	if (!network_proxy)
 		return;
-	}
 
 	name_value = g_dbus_proxy_get_cached_property (network_proxy, "Name");
 	type_value = g_dbus_proxy_get_cached_property (network_proxy, "Type");
@@ -344,10 +337,10 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 
 	if (compat) {
 		while (g_variant_iter_next (networks, "(&o&sn&s)", &path, &name, &signal, &type))
-			insert_ap_from_network (new_aps, priv->dbus_station_proxy, path, signal, ap_id++);
+			insert_ap_from_network (new_aps, path, signal, ap_id++);
 	} else {
 		while (g_variant_iter_next (networks, "(&on)", &path, &signal))
-			insert_ap_from_network (new_aps, priv->dbus_station_proxy, path, signal, ap_id++);
+			insert_ap_from_network (new_aps, path, signal, ap_id++);
 	}
 
 	g_variant_iter_free (networks);
@@ -1430,7 +1423,6 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMActRequest *req;
 	NMWifiAP *ap;
 	NMConnection *connection;
-	GError *error = NULL;
 	GDBusProxy *network_proxy;
 
 	req = nm_device_get_act_request (device);
@@ -1460,21 +1452,13 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		goto out;
 	}
 
-	/* Locate the IWD Network object */
-	network_proxy = g_dbus_proxy_new_for_bus_sync (NM_IWD_BUS_TYPE,
-	                                               G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
-	                                               G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
-	                                               NULL,
-	                                               NM_IWD_SERVICE,
-	                                               nm_wifi_ap_get_supplicant_path (ap),
-	                                               NM_IWD_NETWORK_INTERFACE,
-	                                               NULL, &error);
+	network_proxy = nm_iwd_manager_get_dbus_interface (nm_iwd_manager_get (),
+	                                                   nm_wifi_ap_get_supplicant_path (ap),
+	                                                   NM_IWD_NETWORK_INTERFACE);
 	if (!network_proxy) {
 		_LOGE (LOGD_DEVICE | LOGD_WIFI,
-		       "Activation: (wifi) could not get Network interface proxy for %s: %s",
-		       nm_wifi_ap_get_supplicant_path (ap),
-		       error->message);
-		g_clear_error (&error);
+		       "Activation: (wifi) could not get Network interface proxy for %s",
+		       nm_wifi_ap_get_supplicant_path (ap));
 		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 		goto out;
 	}
