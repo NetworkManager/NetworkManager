@@ -1248,12 +1248,7 @@ secrets_error:
 	g_dbus_method_invocation_return_error_literal (invocation, NM_DEVICE_ERROR,
 	                                               NM_DEVICE_ERROR_INVALID_CONNECTION,
 	                                               "NM secrets request failed");
-
-	nm_device_state_changed (device,
-	                         NM_DEVICE_STATE_FAILED,
-	                         NM_DEVICE_STATE_REASON_NO_SECRETS);
-
-	cleanup_association_attempt (self, TRUE);
+	/* Now wait for the Connect callback to update device state */
 }
 
 static void
