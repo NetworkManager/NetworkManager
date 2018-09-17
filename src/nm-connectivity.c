@@ -46,8 +46,10 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_state_to_string, int /*NMConnectivityState*/
 	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_PORTAL,   "PORTAL"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_FULL,     "FULL"),
 
-	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_ERROR,    "ERROR"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_FAKE,     "FAKE"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_ERROR,     "ERROR"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_FAKE,      "FAKE"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_CANCELLED, "CANCELLED"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_DISPOSING, "DISPOSING"),
 );
 
 const char *
@@ -77,6 +79,10 @@ struct _NMConnectivityCheckHandle {
 	} concheck;
 #endif
 
+	const char *completed_log_message;
+	char *completed_log_message_free;
+	NMConnectivityState completed_state;
+
 	guint timeout_id;
 };
 
@@ -90,6 +96,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	CList handles_lst_head;
+	CList completed_handles_lst_head;
 	char *uri;
 	char *response;
 	gboolean enabled;
@@ -142,60 +149,37 @@ NM_DEFINE_SINGLETON_GETTER (NMConnectivity, nm_connectivity_get, NM_TYPE_CONNECT
 /*****************************************************************************/
 
 static void
-cb_data_invoke_callback (NMConnectivityCheckHandle *cb_data,
-                         NMConnectivityState state,
-                         GError *error,
-                         const char *log_message)
-{
-	NMConnectivityCheckCallback callback;
-
-	nm_assert (cb_data);
-	nm_assert (NM_IS_CONNECTIVITY (cb_data->self));
-
-	callback = cb_data->callback;
-	if (!callback)
-		return;
-
-	cb_data->callback = NULL;
-
-	nm_assert (log_message);
-
-	_LOG2D ("check completed: %s; %s",
-	        nm_connectivity_state_to_string (state),
-	        log_message);
-
-	callback (cb_data->self,
-	          cb_data,
-	          state,
-	          error,
-	          cb_data->user_data);
-}
-
-static void
-cb_data_free (NMConnectivityCheckHandle *cb_data,
-              NMConnectivityState state,
-              GError *error,
-              const char *log_message)
+cb_data_complete (NMConnectivityCheckHandle *cb_data,
+                  NMConnectivityState state,
+                  const char *log_message)
 {
 	NMConnectivity *self;
 
 	nm_assert (cb_data);
+	nm_assert (NM_IS_CONNECTIVITY (cb_data->self));
+	nm_assert (cb_data->callback);
+	nm_assert (state != NM_CONNECTIVITY_UNKNOWN);
+	nm_assert (log_message);
 
 	self = cb_data->self;
 
-	nm_assert (NM_IS_CONNECTIVITY (self));
+	/* mark the handle as completing. After this point, nm_connectivity_check_cancel()
+	 * is no longer possible. */
+	cb_data->self = NULL;
 
-	c_list_unlink (&cb_data->handles_lst);
+	c_list_unlink_stale (&cb_data->handles_lst);
 
 #if WITH_CONCHECK
 	if (cb_data->concheck.curl_ehandle) {
 		NMConnectivityPrivate *priv;
 
 		/* Contrary to what cURL manual claim it is *not* safe to remove
-		 * the easy handle "at any moment"; specifically not from the
-		 * write function. Thus here we just dissociate the cb_data from
-		 * the easy handle and the easy handle will be cleaned up when the
-		 * message goes to CURLMSG_DONE in _con_curl_check_connectivity(). */
+		 * the easy handle "at any moment"; specifically it's not safe to
+		 * remove *any* handle from within a libcurl callback. That is
+		 * why we queue completed handles in this case.
+		 *
+		 * cb_data_complete() is however only called *not* from within a
+		 * libcurl callback. So, this is fine. */
 		curl_easy_setopt (cb_data->concheck.curl_ehandle, CURLOPT_WRITEFUNCTION, NULL);
 		curl_easy_setopt (cb_data->concheck.curl_ehandle, CURLOPT_WRITEDATA, NULL);
 		curl_easy_setopt (cb_data->concheck.curl_ehandle, CURLOPT_HEADERFUNCTION, NULL);
@@ -214,7 +198,18 @@ cb_data_free (NMConnectivityCheckHandle *cb_data,
 
 	nm_clear_g_source (&cb_data->timeout_id);
 
-	cb_data_invoke_callback (cb_data, state, error, log_message);
+	_LOG2D ("check completed: %s; %s",
+	        nm_connectivity_state_to_string (state),
+	        log_message);
+
+	cb_data->callback (self,
+	                   cb_data,
+	                   state,
+	                   cb_data->user_data);
+
+	/* Note: self might be a danling pointer at this point. It must not be used
+	 * after this point, and all callers must either take a reference first, or
+	 * not use the self pointer too. */
 
 #if WITH_CONCHECK
 	g_free (cb_data->concheck.response);
@@ -222,12 +217,54 @@ cb_data_free (NMConnectivityCheckHandle *cb_data,
 		g_string_free (cb_data->concheck.recv_msg, TRUE);
 #endif
 	g_free (cb_data->ifspec);
+	if (cb_data->completed_log_message_free)
+		g_free (cb_data->completed_log_message_free);
 	g_slice_free (NMConnectivityCheckHandle, cb_data);
 }
 
 /*****************************************************************************/
 
 #if WITH_CONCHECK
+
+static void
+cb_data_queue_completed (NMConnectivityCheckHandle *cb_data,
+                         NMConnectivityState state,
+                         const char *log_message_static,
+                         char *log_message_take /* take */)
+{
+	nm_assert (cb_data);
+	nm_assert (NM_IS_CONNECTIVITY (cb_data->self));
+	nm_assert (state != NM_CONNECTIVITY_UNKNOWN);
+	nm_assert (log_message_static || log_message_take);
+	nm_assert (cb_data->completed_state == NM_CONNECTIVITY_UNKNOWN);
+	nm_assert (!cb_data->completed_log_message);
+	nm_assert (c_list_contains (&NM_CONNECTIVITY_GET_PRIVATE (cb_data->self)->handles_lst_head, &cb_data->handles_lst));
+
+	cb_data->completed_state = state;
+	cb_data->completed_log_message = log_message_static ?: log_message_take;
+	cb_data->completed_log_message_free = log_message_take;
+
+	c_list_unlink_stale (&cb_data->handles_lst);
+	c_list_link_tail (&NM_CONNECTIVITY_GET_PRIVATE (cb_data->self)->completed_handles_lst_head, &cb_data->handles_lst);
+}
+
+static void
+_complete_queued (NMConnectivity *self)
+{
+	NMConnectivity *self_keep_alive = NULL;
+	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+	NMConnectivityCheckHandle *cb_data;
+
+	while ((cb_data = c_list_first_entry (&priv->completed_handles_lst_head, NMConnectivityCheckHandle, handles_lst))) {
+		if (!self_keep_alive)
+			self_keep_alive = g_object_ref (self);
+		cb_data_complete (cb_data,
+		                  cb_data->completed_state,
+		                  cb_data->completed_log_message);
+	}
+	nm_g_object_unref (self_keep_alive);
+}
+
 static const char *
 _check_handle_get_response (NMConnectivityCheckHandle *cb_data)
 {
@@ -265,29 +302,37 @@ _con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 			continue;
 		}
 
-		if (!cb_data->callback) {
-			/* callback was already invoked earlier. */
-			cb_data_free (cb_data, NM_CONNECTIVITY_UNKNOWN, NULL, NULL);
-		} else if (msg->data.result != CURLE_OK) {
-			gs_free char *log_message = NULL;
+		nm_assert (cb_data);
+		nm_assert (NM_IS_CONNECTIVITY (cb_data->self));
 
-			log_message = g_strdup_printf ("check failed with curl status %d", msg->data.result);
-			cb_data_free (cb_data, NM_CONNECTIVITY_LIMITED, NULL,
-			              log_message);
+		if (cb_data->completed_state != NM_CONNECTIVITY_UNKNOWN) {
+			/* callback was already invoked earlier. Nothing to do. */
+			continue;
+		}
+
+		if (msg->data.result != CURLE_OK) {
+			cb_data_queue_completed (cb_data,
+			                         NM_CONNECTIVITY_LIMITED,
+			                         NULL,
+			                         g_strdup_printf ("check failed with curl status %d", msg->data.result));
 		} else if (   !((_check_handle_get_response (cb_data))[0])
 		           && (curl_easy_getinfo (msg->easy_handle, CURLINFO_RESPONSE_CODE, &response_code) == CURLE_OK)
 		           && response_code == 204) {
 			/* If we got a 204 response code (no content) and we actually
 			 * requested no content, report full connectivity. */
-			cb_data_free (cb_data, NM_CONNECTIVITY_FULL, NULL,
-			              "no content, as expected");
+			cb_data_queue_completed (cb_data,
+			                         NM_CONNECTIVITY_FULL,
+			                         "no content, as expected",
+			                         NULL);
 		} else {
 			/* If we get here, it means that easy_write_cb() didn't read enough
 			 * bytes to be able to do a match, or that we were asking for no content
 			 * (204 response code) and we actually got some. Either way, that is
 			 * an indication of a captive portal */
-			cb_data_free (cb_data, NM_CONNECTIVITY_PORTAL, NULL,
-			              "unexpected short response");
+			cb_data_queue_completed (cb_data,
+			                         NM_CONNECTIVITY_PORTAL,
+			                         "unexpected short response",
+			                         NULL);
 		}
 	}
 
@@ -306,6 +351,7 @@ _con_curl_timeout_cb (gpointer user_data)
 
 	priv->concheck.curl_timer = 0;
 	_con_curl_check_connectivity (priv->concheck.curl_mhandle, CURL_SOCKET_TIMEOUT, 0);
+	_complete_queued (self);
 	return G_SOURCE_REMOVE;
 }
 
@@ -368,6 +414,8 @@ _con_curl_socketevent_cb (GIOChannel *ch, GIOCondition condition, gpointer user_
 			fdp->ev = 0;
 	}
 
+	_complete_queued (self);
+
 	return success ? G_SOURCE_CONTINUE : G_SOURCE_REMOVE;
 }
 
@@ -419,10 +467,17 @@ easy_header_cb (char *buffer, size_t size, size_t nitems, void *userdata)
 	NMConnectivityCheckHandle *cb_data = userdata;
 	size_t len = size * nitems;
 
+	if (cb_data->completed_state != NM_CONNECTIVITY_UNKNOWN) {
+		/* already completed. */
+		return 0;
+	}
+
 	if (   len >= sizeof (HEADER_STATUS_ONLINE) - 1
 	    && !g_ascii_strncasecmp (buffer, HEADER_STATUS_ONLINE, sizeof (HEADER_STATUS_ONLINE) - 1)) {
-		cb_data_invoke_callback (cb_data, NM_CONNECTIVITY_FULL,
-		                         NULL, "status header found");
+		cb_data_queue_completed (cb_data,
+		                         NM_CONNECTIVITY_FULL,
+		                         "status header found",
+		                         NULL);
 		return 0;
 	}
 
@@ -434,24 +489,33 @@ easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 {
 	NMConnectivityCheckHandle *cb_data = userdata;
 	size_t len = size * nmemb;
-	const char *response = _check_handle_get_response (cb_data);;
+	const char *response;
+
+	if (cb_data->completed_state != NM_CONNECTIVITY_UNKNOWN) {
+		/* already completed. */
+		return 0;
+	}
 
 	if (!cb_data->concheck.recv_msg)
 		cb_data->concheck.recv_msg = g_string_sized_new (len + 10);
 
 	g_string_append_len (cb_data->concheck.recv_msg, buffer, len);
 
+	response = _check_handle_get_response (cb_data);;
 	if (   response
 	    && cb_data->concheck.recv_msg->len >= strlen (response)) {
 		/* We already have enough data -- check response */
 		if (g_str_has_prefix (cb_data->concheck.recv_msg->str, response)) {
-			cb_data_invoke_callback (cb_data, NM_CONNECTIVITY_FULL, NULL,
-			                         "expected response");
+			cb_data_queue_completed (cb_data,
+			                         NM_CONNECTIVITY_FULL,
+			                         "expected response",
+			                         NULL);
 		} else {
-			cb_data_invoke_callback (cb_data, NM_CONNECTIVITY_PORTAL, NULL,
-			                         "unexpected response");
+			cb_data_queue_completed (cb_data,
+			                         NM_CONNECTIVITY_PORTAL,
+			                         "unexpected response",
+			                         NULL);
 		}
-
 		return 0;
 	}
 
@@ -462,15 +526,11 @@ static gboolean
 _timeout_cb (gpointer user_data)
 {
 	NMConnectivityCheckHandle *cb_data = user_data;
-	NMConnectivity *self;
 
 	nm_assert (NM_IS_CONNECTIVITY (cb_data->self));
+	nm_assert (c_list_contains (&NM_CONNECTIVITY_GET_PRIVATE (cb_data->self)->handles_lst_head, &cb_data->handles_lst));
 
-	self = cb_data->self;
-
-	nm_assert (c_list_contains (&NM_CONNECTIVITY_GET_PRIVATE (self)->handles_lst_head, &cb_data->handles_lst));
-
-	cb_data_free (cb_data, NM_CONNECTIVITY_LIMITED, NULL, "timeout");
+	cb_data_complete (cb_data, NM_CONNECTIVITY_LIMITED, "timeout");
 	return G_SOURCE_REMOVE;
 }
 #endif
@@ -490,9 +550,9 @@ _idle_cb (gpointer user_data)
 		/* the invocation was with an invalid ifname. It is a fail. */
 		g_set_error (&error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
 		             "no interface specified for connectivity check");
-		cb_data_free (cb_data, NM_CONNECTIVITY_ERROR, NULL, "missing interface");
+		cb_data_complete (cb_data, NM_CONNECTIVITY_ERROR, "missing interface");
 	} else
-		cb_data_free (cb_data, NM_CONNECTIVITY_FAKE, NULL, "fake result");
+		cb_data_complete (cb_data, NM_CONNECTIVITY_FAKE, "fake result");
 	return G_SOURCE_REMOVE;
 }
 
@@ -516,6 +576,7 @@ nm_connectivity_check_start (NMConnectivity *self,
 	c_list_link_tail (&priv->handles_lst_head, &cb_data->handles_lst);
 	cb_data->callback = callback;
 	cb_data->user_data = user_data;
+	cb_data->completed_state = NM_CONNECTIVITY_UNKNOWN;
 
 	if (iface)
 		cb_data->ifspec = g_strdup_printf ("if!%s", iface);
@@ -556,22 +617,13 @@ nm_connectivity_check_start (NMConnectivity *self,
 void
 nm_connectivity_check_cancel (NMConnectivityCheckHandle *cb_data)
 {
-	NMConnectivity *self;
-	gs_free_error GError *error = NULL;
-
 	g_return_if_fail (cb_data);
+	g_return_if_fail (NM_IS_CONNECTIVITY (cb_data->self));
 
-	self = cb_data->self;
+	nm_assert (   c_list_contains (&NM_CONNECTIVITY_GET_PRIVATE (cb_data->self)->handles_lst_head,           &cb_data->handles_lst)
+	           || c_list_contains (&NM_CONNECTIVITY_GET_PRIVATE (cb_data->self)->completed_handles_lst_head, &cb_data->handles_lst));
 
-	g_return_if_fail (NM_IS_CONNECTIVITY (self));
-	g_return_if_fail (!c_list_is_empty (&cb_data->handles_lst));
-	g_return_if_fail (cb_data->callback);
-
-	nm_assert (c_list_contains (&NM_CONNECTIVITY_GET_PRIVATE (self)->handles_lst_head, &cb_data->handles_lst));
-
-	nm_utils_error_set_cancelled (&error, FALSE, "NMConnectivity");
-
-	cb_data_free (cb_data, NM_CONNECTIVITY_ERROR, error, "cancelled");
+	cb_data_complete (cb_data, NM_CONNECTIVITY_CANCELLED, "cancelled");
 }
 
 /*****************************************************************************/
@@ -684,6 +736,7 @@ nm_connectivity_init (NMConnectivity *self)
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
 	c_list_init (&priv->handles_lst_head);
+	c_list_init (&priv->completed_handles_lst_head);
 
 	priv->config = g_object_ref (nm_config_get ());
 	g_signal_connect (G_OBJECT (priv->config),
@@ -715,16 +768,13 @@ dispose (GObject *object)
 	NMConnectivity *self = NM_CONNECTIVITY (object);
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 	NMConnectivityCheckHandle *cb_data;
-	GError *error = NULL;
 
-again:
-	c_list_for_each_entry (cb_data, &priv->handles_lst_head, handles_lst) {
-		if (!error)
-			nm_utils_error_set_cancelled (&error, TRUE, "NMConnectivity");
-		cb_data_free (cb_data, NM_CONNECTIVITY_ERROR, error, "shutting down");
-		goto again;
-	}
-	g_clear_error (&error);
+	nm_assert (c_list_is_empty (&priv->completed_handles_lst_head));
+
+	while ((cb_data = c_list_first_entry (&priv->handles_lst_head,
+	                                      NMConnectivityCheckHandle,
+	                                      handles_lst)))
+		cb_data_complete (cb_data, NM_CONNECTIVITY_DISPOSING, "shutting down");
 
 	g_clear_pointer (&priv->uri, g_free);
 	g_clear_pointer (&priv->response, g_free);
