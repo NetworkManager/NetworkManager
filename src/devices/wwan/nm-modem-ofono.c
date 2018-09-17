@@ -883,7 +883,7 @@ context_property_changed (GDBusProxy *proxy,
 		goto out;
 	}
 	if (   !s
-	    || !nm_utils_parse_inaddr_bin (AF_INET, s, &address_network)) {
+	    || !nm_utils_parse_inaddr_bin (AF_INET, s, NULL, &address_network)) {
 		_LOGW ("can't convert 'Address' %s to addr", s ?: "");
 		goto out;
 	}
@@ -897,7 +897,7 @@ context_property_changed (GDBusProxy *proxy,
 		goto out;
 	}
 	if (   !s
-	    || !nm_utils_parse_inaddr_bin (AF_INET, s, &address_network)) {
+	    || !nm_utils_parse_inaddr_bin (AF_INET, s, NULL, &address_network)) {
 		_LOGW ("invalid 'Netmask': %s", s ?: "");
 		goto out;
 	}
@@ -911,7 +911,7 @@ context_property_changed (GDBusProxy *proxy,
 		_LOGW ("Settings 'Gateway' missing");
 		goto out;
 	}
-	if (!nm_utils_parse_inaddr_bin (AF_INET, s, &gateway_network)) {
+	if (!nm_utils_parse_inaddr_bin (AF_INET, s, NULL, &gateway_network)) {
 		_LOGW ("invalid 'Gateway': %s", s);
 		goto out;
 	}
@@ -938,7 +938,7 @@ context_property_changed (GDBusProxy *proxy,
 	}
 	if (array) {
 		for (iter = array; *iter; iter++) {
-			if (   nm_utils_parse_inaddr_bin (AF_INET, *iter, &address_network)
+			if (   nm_utils_parse_inaddr_bin (AF_INET, *iter, NULL, &address_network)
 			    && address_network) {
 				_LOGI ("DNS: %s", *iter);
 				nm_ip4_config_add_nameserver (priv->ip4_config, address_network);
@@ -958,7 +958,7 @@ context_property_changed (GDBusProxy *proxy,
 	if (g_variant_lookup (v_dict, "MessageProxy", "&s", &s)) {
 		_LOGI ("MessageProxy: %s", s);
 		if (   s
-		    && nm_utils_parse_inaddr_bin (AF_INET, s, &address_network)) {
+		    && nm_utils_parse_inaddr_bin (AF_INET, s, NULL, &address_network)) {
 			nm_modem_get_route_parameters (NM_MODEM (self),
 			                               &ip4_route_table,
 			                               &ip4_route_metric,

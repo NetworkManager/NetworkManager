@@ -86,16 +86,17 @@ typedef struct {
 extern const NMIPAddr nm_ip_addr_zero;
 
 static inline void
-nm_ip_addr_set (int addr_family, gpointer dst, const NMIPAddr *src)
+nm_ip_addr_set (int addr_family, gpointer dst, gconstpointer src)
 {
 	nm_assert_addr_family (addr_family);
 	nm_assert (dst);
 	nm_assert (src);
 
-	if (addr_family != AF_INET6)
-		*((in_addr_t *) dst) = src->addr4;
-	else
-		*((struct in6_addr *) dst) = src->addr6;
+	memcpy (dst,
+	        src,
+	        (addr_family != AF_INET6)
+	          ? sizeof (in_addr_t)
+	          : sizeof (struct in6_addr));
 }
 
 /*****************************************************************************/
@@ -331,6 +332,7 @@ gboolean nm_utils_ip_is_site_local (int addr_family,
 
 gboolean nm_utils_parse_inaddr_bin  (int addr_family,
                                      const char *text,
+                                     int *out_addr_family,
                                      gpointer out_addr);
 
 gboolean nm_utils_parse_inaddr (int addr_family,
@@ -339,6 +341,7 @@ gboolean nm_utils_parse_inaddr (int addr_family,
 
 gboolean nm_utils_parse_inaddr_prefix_bin (int addr_family,
                                            const char *text,
+                                           int *out_addr_family,
                                            gpointer out_addr,
                                            int *out_prefix);
 

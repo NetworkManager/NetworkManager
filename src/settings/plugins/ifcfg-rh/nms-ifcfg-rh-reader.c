@@ -873,7 +873,7 @@ parse_route_line (const char *line,
 	};
 
 	nm_assert (line);
-	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+	nm_assert_addr_family (addr_family);
 	nm_assert (!options_route || nm_ip_route_get_family (options_route) == addr_family);
 
 	/* initscripts read the legacy route file line-by-line and
@@ -1018,6 +1018,7 @@ parse_line_type_addr_with_prefix:
 			if (info->type == PARSE_LINE_TYPE_ADDR) {
 				if (!nm_utils_parse_inaddr_bin (addr_family,
 				                                s,
+				                                NULL,
 				                                &info->v.addr.addr)) {
 					if (   info == &infos[PARSE_LINE_ATTR_ROUTE_VIA]
 					    && nm_streq (s, "(null)")) {
@@ -1045,6 +1046,7 @@ parse_line_type_addr_with_prefix:
 					prefix = 0;
 				} else if (!nm_utils_parse_inaddr_prefix_bin (addr_family,
 				                                              s,
+				                                              NULL,
 				                                              &info->v.addr.addr,
 				                                              &prefix)) {
 					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,

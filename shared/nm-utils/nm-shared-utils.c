@@ -459,34 +459,25 @@ nm_utils_ip_is_site_local (int addr_family,
 gboolean
 nm_utils_parse_inaddr_bin (int addr_family,
                            const char *text,
+                           int *out_addr_family,
                            gpointer out_addr)
 {
 	NMIPAddr addrbin;
 
 	g_return_val_if_fail (text, FALSE);
 
-	if (addr_family == AF_UNSPEC)
+	if (addr_family == AF_UNSPEC) {
+		g_return_val_if_fail (!out_addr || out_addr_family, FALSE);
 		addr_family = strchr (text, ':') ? AF_INET6 : AF_INET;
-	else
+	} else
 		g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), FALSE);
 
-	/* use a temporary variable @addrbin, to guarantee that @out_addr
-	 * is only modified on success. */
 	if (inet_pton (addr_family, text, &addrbin) != 1)
 		return FALSE;
 
-	if (out_addr) {
-		switch (addr_family) {
-		case AF_INET:
-			*((in_addr_t *) out_addr) = addrbin.addr4;
-			break;
-		case AF_INET6:
-			*((struct in6_addr *) out_addr) = addrbin.addr6;
-			break;
-		default:
-			nm_assert_not_reached ();
-		}
-	}
+	NM_SET_OUT (out_addr_family, addr_family);
+	if (out_addr)
+		nm_ip_addr_set (addr_family, out_addr, &addrbin);
 	return TRUE;
 }
 
@@ -500,7 +491,7 @@ nm_utils_parse_inaddr (int addr_family,
 
 	nm_assert (!out_addr || !*out_addr);
 
-	if (!nm_utils_parse_inaddr_bin (addr_family, text, &addrbin))
+	if (!nm_utils_parse_inaddr_bin (addr_family, text, &addr_family, &addrbin))
 		return FALSE;
 	NM_SET_OUT (out_addr, g_strdup (inet_ntop (addr_family, &addrbin, addrstr_buf, sizeof (addrstr_buf))));
 	return TRUE;
@@ -509,6 +500,7 @@ nm_utils_parse_inaddr (int addr_family,
 gboolean
 nm_utils_parse_inaddr_prefix_bin (int addr_family,
                                   const char *text,
+                                  int *out_addr_family,
                                   gpointer out_addr,
                                   int *out_prefix)
 {
@@ -517,19 +509,14 @@ nm_utils_parse_inaddr_prefix_bin (int addr_family,
 	const char *slash;
 	const char *addrstr;
 	NMIPAddr addrbin;
-	int addr_len;
 
 	g_return_val_if_fail (text, FALSE);
 
-	if (addr_family == AF_UNSPEC)
+	if (addr_family == AF_UNSPEC) {
+		g_return_val_if_fail (!out_addr || out_addr_family, FALSE);
 		addr_family = strchr (text, ':') ? AF_INET6 : AF_INET;
-
-	if (addr_family == AF_INET)
-		addr_len = sizeof (in_addr_t);
-	else if (addr_family == AF_INET6)
-		addr_len = sizeof (struct in6_addr);
-	else
-		g_return_val_if_reached (FALSE);
+	} else
+		g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), FALSE);
 
 	slash = strchr (text, '/');
 	if (slash)
@@ -549,8 +536,9 @@ nm_utils_parse_inaddr_prefix_bin (int addr_family,
 			return FALSE;
 	}
 
+	NM_SET_OUT (out_addr_family, addr_family);
 	if (out_addr)
-		memcpy (out_addr, &addrbin, addr_len);
+		nm_ip_addr_set (addr_family, out_addr, &addrbin);
 	NM_SET_OUT (out_prefix, prefix);
 	return TRUE;
 }
@@ -564,7 +552,9 @@ nm_utils_parse_inaddr_prefix (int addr_family,
 	NMIPAddr addrbin;
 	char addrstr_buf[MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
 
-	if (!nm_utils_parse_inaddr_prefix_bin (addr_family, text, &addrbin, out_prefix))
+	nm_assert (!out_addr || !*out_addr);
+
+	if (!nm_utils_parse_inaddr_prefix_bin (addr_family, text, &addr_family, &addrbin, out_prefix))
 		return FALSE;
 	NM_SET_OUT (out_addr, g_strdup (inet_ntop (addr_family, &addrbin, addrstr_buf, sizeof (addrstr_buf))));
 	return TRUE;
