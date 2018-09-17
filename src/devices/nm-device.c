@@ -2615,7 +2615,6 @@ static void
 concheck_cb (NMConnectivity *connectivity,
              NMConnectivityCheckHandle *c_handle,
              NMConnectivityState state,
-             GError *error,
              gpointer user_data)
 {
 	_nm_unused gs_unref_object NMDevice *self_keep_alive = NULL;
@@ -2636,7 +2635,7 @@ concheck_cb (NMConnectivity *connectivity,
 	handle->c_handle = NULL;
 	self = handle->self;
 
-	if (nm_utils_error_is_cancelled (error, FALSE)) {
+	if (state == NM_CONNECTIVITY_CANCELLED) {
 		/* the only place where we nm_connectivity_check_cancel(@c_handle), is
 		 * from inside concheck_handle_complete(). This is a recursive call,
 		 * nothing to do. */
@@ -2645,15 +2644,14 @@ concheck_cb (NMConnectivity *connectivity,
 		return;
 	}
 
+	/* we keep NMConnectivity instance alive. It cannot be disposing. */
+	nm_assert (state != NM_CONNECTIVITY_DISPOSING);
+
 	self_keep_alive = g_object_ref (self);
 
-	_LOGT (LOGD_CONCHECK, "connectivity: complete check (seq:%llu, state:%s%s%s%s)",
+	_LOGT (LOGD_CONCHECK, "connectivity: complete check (seq:%llu, state:%s)",
 	       (long long unsigned) handle->seq,
-	       nm_connectivity_state_to_string (state),
-	       NM_PRINT_FMT_QUOTED (error, ", error: ", error->message, "", ""));
-
-	/* we keep NMConnectivity instance alive. It cannot be disposing. */
-	nm_assert (!nm_utils_error_is_cancelled (error, TRUE));
+	       nm_connectivity_state_to_string (state));
 
 	/* keep @self alive, while we invoke callbacks. */
 	priv = NM_DEVICE_GET_PRIVATE (self);
