@@ -1,13 +1,28 @@
-LIBNACD_1 {
+LIBNACD_2 {
 global:
+        n_acd_config_new;
+        n_acd_config_free;
+        n_acd_config_set_ifindex;
+        n_acd_config_set_transport;
+        n_acd_config_set_mac;
+
+        n_acd_probe_config_new;
+        n_acd_probe_config_free;
+        n_acd_probe_config_set_ip;
+        n_acd_probe_config_set_timeout;
+
         n_acd_new;
-        n_acd_free;
+        n_acd_ref;
+        n_acd_unref;
         n_acd_get_fd;
         n_acd_dispatch;
         n_acd_pop_event;
-        n_acd_start;
-        n_acd_stop;
-        n_acd_announce;
+        n_acd_probe;
+
+        n_acd_probe_free;
+        n_acd_probe_set_userdata;
+        n_acd_probe_get_userdata;
+        n_acd_probe_announce;
 local:
        *;
 };

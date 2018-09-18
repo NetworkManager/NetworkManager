@@ -4,3 +4,6 @@
 [submodule "subprojects/c-siphash"]
 	path = subprojects/c-siphash
 	url = https://github.com/c-util/c-siphash.git
+[submodule "subprojects/c-rbtree"]
+	path = subprojects/c-rbtree
+	url = https://github.com/c-util/c-rbtree.git
