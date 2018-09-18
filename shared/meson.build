@@ -10,14 +10,51 @@ shared_c_siphash_dep = declare_dependency(
     link_with: shared_c_siphash,
 )
 
+shared_c_rbtree = static_library(
+    'c-rbtree',
+    c_args: '-std=c11',
+    sources: files('c-rbtree/src/c-rbtree.c',
+                   'c-rbtree/src/c-rbtree.h',
+                   'c-rbtree/src/c-rbtree-private.h'),
+)
+
+shared_c_rbtree_dep = declare_dependency(
+    include_directories: shared_inc,
+    link_with: shared_c_rbtree,
+)
+
+
+if get_option('ebpf')
+    shared_n_acd_bpf_files = files('n-acd/src/n-acd-bpf.c')
+else
+    shared_n_acd_bpf_files = files('n-acd/src/n-acd-bpf-fallback.c')
+endif
+
 shared_n_acd = static_library(
     'n-acd',
-    sources: 'n-acd/src/n-acd.c',
+    sources: files('n-acd/src/n-acd.c',
+                   'n-acd/src/n-acd.h',
+                   'n-acd/src/n-acd-private.h',
+                   'n-acd/src/n-acd-probe.c',
+                   'n-acd/src/util/timer.c',
+                   'n-acd/src/util/timer.h')
+             + shared_n_acd_bpf_files,
+    c_args: [
+        '-D_GNU_SOURCE',
+        '-DSO_ATTACH_BPF=50',
+        '-std=c11',
+        '-Wno-pointer-arith',
+        '-Wno-vla',
+    ],
     include_directories: [
         include_directories('c-siphash/src'),
         include_directories('c-list/src'),
+        include_directories('c-rbtree/src'),
     ],
-    dependencies: shared_c_siphash_dep,
+    dependencies: [
+        shared_c_siphash_dep,
+        shared_c_rbtree_dep
+    ],
 )
 
 shared_n_acd_dep = declare_dependency(

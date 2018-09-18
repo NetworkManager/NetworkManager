@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -e
+
+rm -Rf "./ci-build"
+mkdir "./ci-build"
+cd "./ci-build"
+
+${CHERRY_LIB_MESONSETUP} . "${CHERRY_LIB_SRCDIR}" ${N_ACD_CONF}
+${CHERRY_LIB_NINJABUILD}
+sudo ${CHERRY_LIB_MESONTEST}
+# no valgrind tests, since bpf(2) is not supported by it

@@ -9,44 +9,62 @@
 #include "test.h"
 
 static void test_loopback(int ifindex, uint8_t *mac, size_t n_mac) {
-        NAcdConfig config = {
-                .ifindex = ifindex,
-                .transport = N_ACD_TRANSPORT_ETHERNET,
-                .mac = mac,
-                .n_mac = n_mac,
-                .ip = { htobe32((192 << 24) | (168 << 16) | (1 << 0)) },
-                .timeout_msec = 100,
-        };
-        struct pollfd pfds;
+        NAcdConfig *config;
         NAcd *acd;
+        struct pollfd pfds;
         int r, fd;
 
-        r = n_acd_new(&acd);
+        r = n_acd_config_new(&config);
         assert(!r);
 
-        n_acd_get_fd(acd, &fd);
-        r = n_acd_start(acd, &config);
+        n_acd_config_set_ifindex(config, ifindex);
+        n_acd_config_set_transport(config, N_ACD_TRANSPORT_ETHERNET);
+        n_acd_config_set_mac(config, mac, n_mac);
+
+        r = n_acd_new(&acd, config);
         assert(!r);
 
-        for (;;) {
-                NAcdEvent *event;
-                pfds = (struct pollfd){ .fd = fd, .events = POLLIN };
-                r = poll(&pfds, 1, -1);
-                assert(r >= 0);
+        n_acd_config_free(config);
 
-                r = n_acd_dispatch(acd);
+        {
+                NAcdProbeConfig *probe_config;
+                NAcdProbe *probe;
+                struct in_addr ip = { htobe32((192 << 24) | (168 << 16) | (1 << 0)) };
+
+                r = n_acd_probe_config_new(&probe_config);
                 assert(!r);
 
-                r = n_acd_pop_event(acd, &event);
-                if (!r) {
-                        assert(event->event == N_ACD_EVENT_READY);
-                        break;
-                } else {
-                        assert(r == N_ACD_E_DONE);
+                n_acd_probe_config_set_ip(probe_config, ip);
+                n_acd_probe_config_set_timeout(probe_config, 100);
+
+                r = n_acd_probe(acd, &probe, probe_config);
+                assert(!r);
+
+                n_acd_probe_config_free(probe_config);
+
+                n_acd_get_fd(acd, &fd);
+
+                for (;;) {
+                        NAcdEvent *event;
+                        pfds = (struct pollfd){ .fd = fd, .events = POLLIN };
+                        r = poll(&pfds, 1, -1);
+                        assert(r >= 0);
+
+                        r = n_acd_dispatch(acd);
+                        assert(!r);
+
+                        r = n_acd_pop_event(acd, &event);
+                        assert(!r);
+                        if (event) {
+                                assert(event->event == N_ACD_EVENT_READY);
+                                break;
+                        }
                 }
+
+                n_acd_probe_free(probe);
         }
 
-        n_acd_free(acd);
+        n_acd_unref(acd);
 }
 
 int main(int argc, char **argv) {
@@ -57,9 +75,7 @@ int main(int argc, char **argv) {
         if (r)
                 return r;
 
-        r = system("ip link set lo up");
-        assert(r == 0);
-        test_if_query("lo", &ifindex, &mac);
+        test_loopback_up(&ifindex, &mac);
         test_loopback(ifindex, mac.ether_addr_octet, sizeof(mac.ether_addr_octet));
 
         return 0;

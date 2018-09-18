@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -e
+
+CHERRY_MATRIX+=("export N_ACD_CONF=-Debpf=false ${CHERRY_LIB_M_DEFAULT[*]}")

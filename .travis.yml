@@ -48,7 +48,7 @@ addons:
   coverity_scan:
     project:
       name: NetworkManager/NetworkManager
-    build_command_prepend: sh autogen.sh --with-systemd-logind=no --enable-more-warnings=no --disable-ovs
+    build_command_prepend: sh autogen.sh --with-systemd-logind=no --enable-more-warnings=no --disable-ovs --without-ebpf
     build_command: make -j4
     branch_pattern: .*coverity.*
 
@@ -114,6 +114,7 @@ script:
               -D ifcfg_rh=false \
               -D ibft=true \
               -D ifupdown=true \
+              -D ebpf=false \
               &&
           ninja -C build &&
           ninja -C build test
@@ -136,6 +137,7 @@ script:
               --enable-more-warnings=no \
               --enable-tests=yes \
               --with-crypto=$CRYPTO \
+              --without-ebpf \
               \
               --with-libnm-glib=yes \
               --with-iwd=yes \

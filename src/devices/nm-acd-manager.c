@@ -39,10 +39,7 @@ typedef enum {
 typedef struct {
 	in_addr_t address;
 	gboolean duplicate;
-	NMAcdManager *manager;
-	NAcd *acd;
-	GIOChannel *channel;
-	guint event_id;
+	NAcdProbe *probe;
 } AddressInfo;
 
 enum {
@@ -58,6 +55,9 @@ typedef struct {
 	State          state;
 	GHashTable    *addresses;
 	guint          completed;
+	NAcd          *acd;
+	GIOChannel    *channel;
+	guint          event_id;
 } NMAcdManagerPrivate;
 
 struct _NMAcdManager {
@@ -114,29 +114,22 @@ _acd_event_to_string (unsigned int event)
 #define acd_event_to_string(event) NM_UTILS_LOOKUP_STR (_acd_event_to_string, event)
 
 static const char *
-_acd_error_to_string (int error)
+acd_error_to_string (int error)
 {
 	if (error < 0)
-		return strerror(-error);
+		return g_strerror (-error);
 
 	switch (error) {
 	case _N_ACD_E_SUCCESS:
 		return "success";
-	case N_ACD_E_DONE:
-		return "no more events (engine running)";
-	case N_ACD_E_STOPPED:
-		return "no more events (engine stopped)";
 	case N_ACD_E_PREEMPTED:
 		return "preempted";
 	case N_ACD_E_INVALID_ARGUMENT:
 		return "invalid argument";
-	case N_ACD_E_BUSY:
-		return "busy";
 	}
-	return NULL;
-}
 
-#define acd_error_to_string(error) NM_UTILS_LOOKUP_STR (_acd_error_to_string, error)
+	g_return_val_if_reached (NULL);
+}
 
 /*****************************************************************************/
 
@@ -164,7 +157,6 @@ nm_acd_manager_add_address (NMAcdManager *self, in_addr_t address)
 
 	info = g_slice_new0 (AddressInfo);
 	info->address = address;
-	info->manager = self;
 
 	g_hash_table_insert (priv->addresses, GUINT_TO_POINTER (address), info);
 
@@ -174,113 +166,128 @@ nm_acd_manager_add_address (NMAcdManager *self, in_addr_t address)
 static gboolean
 acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 {
-	AddressInfo *info = data;
-	NMAcdManager *self = info->manager;
+	NMAcdManager *self = data;
 	NMAcdManagerPrivate *priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 	NAcdEvent *event;
+	AddressInfo *info;
 	char address_str[INET_ADDRSTRLEN];
 	gs_free char *hwaddr_str = NULL;
 	int r;
 
-	if (   n_acd_dispatch (info->acd)
-	    || n_acd_pop_event (info->acd, &event))
+	if (n_acd_dispatch (priv->acd))
 		return G_SOURCE_CONTINUE;
 
-	switch (event->event) {
-	case N_ACD_EVENT_READY:
-		info->duplicate = FALSE;
-		if (priv->state == STATE_ANNOUNCING) {
-			r = n_acd_announce (info->acd, N_ACD_DEFEND_ONCE);
-			if (r) {
-				_LOGW ("couldn't announce address %s on interface '%s': %s",
-				       nm_utils_inet4_ntop (info->address, address_str),
-				       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
-				       acd_error_to_string (r));
-			} else {
-				_LOGD ("announcing address %s",
-				       nm_utils_inet4_ntop (info->address, address_str));
+	while (!n_acd_pop_event (priv->acd, &event) && event) {
+		switch (event->event) {
+		case N_ACD_EVENT_READY:
+			n_acd_probe_get_userdata (event->ready.probe, (void **) &info);
+			info->duplicate = FALSE;
+			if (priv->state == STATE_ANNOUNCING) {
+				/* fake probe ended, start announcing */
+				r = n_acd_probe_announce (info->probe, N_ACD_DEFEND_ONCE);
+				if (r) {
+					_LOGW ("couldn't announce address %s on interface '%s': %s",
+					       nm_utils_inet4_ntop (info->address, address_str),
+					       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
+					       acd_error_to_string (r));
+				} else {
+					_LOGD ("announcing address %s",
+					       nm_utils_inet4_ntop (info->address, address_str));
+				}
 			}
+			break;
+		case N_ACD_EVENT_USED:
+			n_acd_probe_get_userdata (event->used.probe, (void **) &info);
+			info->duplicate = TRUE;
+			break;
+		case N_ACD_EVENT_DEFENDED:
+			n_acd_probe_get_userdata (event->defended.probe, (void **) &info);
+			_LOGD ("defended address %s from host %s",
+			       nm_utils_inet4_ntop (info->address, address_str),
+			       (hwaddr_str = nm_utils_hwaddr_ntoa (event->defended.sender,
+			                                           event->defended.n_sender)));
+			return G_SOURCE_CONTINUE;
+		case N_ACD_EVENT_CONFLICT:
+			n_acd_probe_get_userdata (event->conflict.probe, (void **) &info);
+			_LOGW ("conflict for address %s detected with host %s on interface '%s'",
+			       nm_utils_inet4_ntop (info->address, address_str),
+			       (hwaddr_str = nm_utils_hwaddr_ntoa (event->defended.sender,
+			                                           event->defended.n_sender)),
+			       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex));
+			return G_SOURCE_CONTINUE;
+		default:
+			_LOGD ("unhandled event '%s'", acd_event_to_string (event->event));
+			return G_SOURCE_CONTINUE;
 		}
-		break;
-	case N_ACD_EVENT_USED:
-		info->duplicate = TRUE;
-		break;
-	case N_ACD_EVENT_DEFENDED:
-		_LOGD ("defended address %s from host %s",
-		       nm_utils_inet4_ntop (info->address, address_str),
-		       (hwaddr_str = nm_utils_hwaddr_ntoa (event->defended.sender,
-		                                           event->defended.n_sender)));
-		break;
-	case N_ACD_EVENT_CONFLICT:
-		_LOGW ("conflict for address %s detected with host %s on interface '%s'",
-		       nm_utils_inet4_ntop (info->address, address_str),
-		       (hwaddr_str = nm_utils_hwaddr_ntoa (event->defended.sender,
-		                                           event->defended.n_sender)),
-		       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex));
-		break;
-	default:
-		_LOGD ("event '%s' for address %s",
-		       acd_event_to_string (event->event),
-		       nm_utils_inet4_ntop (info->address, address_str));
-		return G_SOURCE_CONTINUE;
-	}
 
-	if (   priv->state == STATE_PROBING
-	    && ++priv->completed == g_hash_table_size (priv->addresses)) {
-		priv->state = STATE_PROBE_DONE;
-		g_signal_emit (self, signals[PROBE_TERMINATED], 0);
+		if (   priv->state == STATE_PROBING
+		    && ++priv->completed == g_hash_table_size (priv->addresses)) {
+			priv->state = STATE_PROBE_DONE;
+			g_signal_emit (self, signals[PROBE_TERMINATED], 0);
+		}
 	}
 
 	return G_SOURCE_CONTINUE;
 }
 
 static gboolean
-acd_probe_start (NMAcdManager *self,
-                 AddressInfo *info,
-                 guint64 timeout)
+acd_probe_add (NMAcdManager *self,
+               AddressInfo *info,
+               guint64 timeout)
 {
 	NMAcdManagerPrivate *priv = NM_ACD_MANAGER_GET_PRIVATE (self);
-	NAcdConfig *config;
-	int r, fd;
+	NAcdProbeConfig *probe_config;
+	int r;
 
-	r = n_acd_new (&info->acd);
+	r = n_acd_probe_config_new (&probe_config);
 	if (r) {
-		_LOGW ("could not create ACD for %s on interface '%s': %s",
+		_LOGW ("could not create probe config for %s on interface '%s': %s",
 		       nm_utils_inet4_ntop (info->address, NULL),
 		       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
 		       acd_error_to_string (r));
 		return FALSE;
 	}
 
-	n_acd_get_fd (info->acd, &fd);
-	info->channel = g_io_channel_unix_new (fd);
-	info->event_id = g_io_add_watch (info->channel, G_IO_IN, acd_event, info);
+	n_acd_probe_config_set_ip (probe_config, (struct in_addr) { info->address });
+	n_acd_probe_config_set_timeout (probe_config, timeout);
 
-	config = &(NAcdConfig) {
-		.ifindex = priv->ifindex,
-		.mac = priv->hwaddr,
-		.n_mac = ETH_ALEN,
-		.ip = info->address,
-		.timeout_msec = timeout,
-		.transport = N_ACD_TRANSPORT_ETHERNET,
-	};
-
-	r = n_acd_start (info->acd, config);
+	r = n_acd_probe (priv->acd, &info->probe, probe_config);
 	if (r) {
 		_LOGW ("could not start probe for %s on interface '%s': %s",
 		       nm_utils_inet4_ntop (info->address, NULL),
 		       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
 		       acd_error_to_string (r));
+		n_acd_probe_config_free (probe_config);
 		return FALSE;
 	}
 
-	if (timeout) {
-		_LOGD ("started probe for %s with timeout %llu",
-		       nm_utils_inet4_ntop (info->address, NULL),
-		       (unsigned long long) timeout);
-	}
+	n_acd_probe_set_userdata (info->probe, info);
+	n_acd_probe_config_free (probe_config);
 
 	return TRUE;
+}
+
+static int
+acd_init (NMAcdManager *self)
+{
+	NMAcdManagerPrivate *priv = NM_ACD_MANAGER_GET_PRIVATE (self);
+	NAcdConfig *config;
+	int r;
+
+	if (priv->acd)
+		return 0;
+
+	r = n_acd_config_new (&config);
+	if (r)
+		return r;
+
+	n_acd_config_set_ifindex (config, priv->ifindex);
+	n_acd_config_set_transport (config, N_ACD_TRANSPORT_ETHERNET);
+	n_acd_config_set_mac (config, priv->hwaddr, ETH_ALEN);
+
+	r = n_acd_new (&priv->acd, config);
+	n_acd_config_free (config);
+	return r;
 }
 
 /**
@@ -301,19 +308,32 @@ nm_acd_manager_start_probe (NMAcdManager *self, guint timeout)
 	GHashTableIter iter;
 	AddressInfo *info;
 	gboolean success = FALSE;
+	int fd, r;
 
 	g_return_val_if_fail (NM_IS_ACD_MANAGER (self), FALSE);
 	priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->state == STATE_INIT, FALSE);
 
+	r = acd_init (self);
+	if (r) {
+		_LOGW ("couldn't init ACD for probing on interface '%s': %s",
+		       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
+		       acd_error_to_string (r));
+		return FALSE;
+	}
+
 	priv->completed = 0;
 
 	g_hash_table_iter_init (&iter, priv->addresses);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info))
-		success |= acd_probe_start (self, info, timeout);
+		success |= acd_probe_add (self, info, timeout);
 
 	if (success)
 		priv->state = STATE_PROBING;
+
+	n_acd_get_fd (priv->acd, &fd);
+	priv->channel = g_io_channel_unix_new (fd);
+	priv->event_id = g_io_add_watch (priv->channel, G_IO_IN, acd_event, self);
 
 	return success;
 }
@@ -393,26 +413,29 @@ nm_acd_manager_announce_addresses (NMAcdManager *self)
 	AddressInfo *info;
 	int r;
 
+	r = acd_init (self);
+	if (r) {
+		_LOGW ("couldn't init ACD for announcing address %s on interface '%s': %s",
+		       nm_utils_inet4_ntop (info->address, NULL),
+		       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
+		       acd_error_to_string (r));
+		return;
+	}
+
 	if (priv->state == STATE_INIT) {
 		/* n-acd can't announce without probing, therefore let's
 		 * start a fake probe with zero timeout and then perform
-		 * the announce. */
-		priv->state = STATE_ANNOUNCING;
+		 * the announcement. */
 		g_hash_table_iter_init (&iter, priv->addresses);
-		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info)) {
-			if (!acd_probe_start (self, info, 0)) {
-				_LOGW ("couldn't announce address %s on interface '%s'",
-				       nm_utils_inet4_ntop (info->address, NULL),
-				       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex));
-			}
-		}
-	} else if (priv->state == STATE_PROBE_DONE) {
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info))
+			acd_probe_add (self, info, 0);
 		priv->state = STATE_ANNOUNCING;
+	} else if (priv->state == STATE_ANNOUNCING) {
 		g_hash_table_iter_init (&iter, priv->addresses);
 		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info)) {
 			if (info->duplicate)
 				continue;
-			r = n_acd_announce (info->acd, N_ACD_DEFEND_ONCE);
+			r = n_acd_probe_announce (info->probe, N_ACD_DEFEND_ONCE);
 			if (r) {
 				_LOGW ("couldn't announce address %s on interface '%s': %s",
 				       nm_utils_inet4_ntop (info->address, NULL),
@@ -421,8 +444,7 @@ nm_acd_manager_announce_addresses (NMAcdManager *self)
 			} else
 				_LOGD ("announcing address %s", nm_utils_inet4_ntop (info->address, NULL));
 		}
-	} else
-		nm_assert_not_reached ();
+	}
 }
 
 static void
@@ -430,9 +452,7 @@ destroy_address_info (gpointer data)
 {
 	AddressInfo *info = (AddressInfo *) data;
 
-	g_clear_pointer (&info->channel, g_io_channel_unref);
-	g_clear_pointer (&info->acd, n_acd_free);
-	nm_clear_g_source (&info->event_id);
+	n_acd_probe_free (info->probe);
 
 	g_slice_free (AddressInfo, info);
 }
@@ -450,11 +470,12 @@ nm_acd_manager_init (NMAcdManager *self)
 }
 
 NMAcdManager *
-nm_acd_manager_new (int ifindex, const guint8 *hwaddr, size_t hwaddr_len)
+nm_acd_manager_new (int ifindex, const guint8 *hwaddr, guint hwaddr_len)
 {
 	NMAcdManager *self;
 	NMAcdManagerPrivate *priv;
 
+	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (hwaddr, NULL);
 	g_return_val_if_fail (hwaddr_len == ETH_ALEN, NULL);
 
@@ -473,6 +494,9 @@ dispose (GObject *object)
 	NMAcdManagerPrivate *priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 
 	g_clear_pointer (&priv->addresses, g_hash_table_destroy);
+	g_clear_pointer (&priv->channel, g_io_channel_unref);
+	nm_clear_g_source (&priv->event_id);
+	nm_clear_pointer (&priv->acd, n_acd_unref);
 
 	G_OBJECT_CLASS (nm_acd_manager_parent_class)->dispose (object);
 }

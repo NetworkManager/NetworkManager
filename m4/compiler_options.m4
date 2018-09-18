@@ -31,7 +31,7 @@ AC_DEFUN([NM_COMPILER_FLAG], [
 
 dnl Check whether a particular warning is not emitted with code provided,
 dnl append an option to disable the warning to a specified variable if the check fails.
-dnl NM_COMPILER_WARNING([ENV-VAR], [C-SNIPPET], [WARNING]])
+dnl NM_COMPILER_WARNING([ENV-VAR], [WARNING], [C-SNIPPET])
 AC_DEFUN([NM_COMPILER_WARNING], [
         _NM_COMPILER_FLAG([-W$2], [$3], [eval "AS_TR_SH([$1])='$$1 -W$2'"], [eval "AS_TR_SH([$1])='$$1 -Wno-$2'"])
 ])
@@ -47,10 +47,10 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 
 	dnl This is enabled in clang by default, makes little sense,
 	dnl and causes the build to abort with -Werror.
-	CFLAGS_SAVED="$$1"
-	eval "AS_TR_SH([$1])='$$1 -Qunused-arguments'"
-	AC_COMPILE_IFELSE([AC_LANG_SOURCE([])], [], eval "AS_TR_SH([$1])='$CFLAGS_SAVED'")
-	unset CFLAGS_SAVED
+	CFLAGS_SAVED="$CFLAGS"
+	CFLAGS="$CFLAGS -Qunused-arguments"
+	AC_COMPILE_IFELSE([AC_LANG_SOURCE([])], eval "AS_TR_SH([$1])='$$1 -Qunused-arguments'", [])
+	CFLAGS="$CFLAGS_SAVED"
 
 	dnl clang only warns about unknown warnings, unless
 	dnl called with "-Werror=unknown-warning-option"

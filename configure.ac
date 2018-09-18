@@ -518,6 +518,15 @@ case $with_suspend_resume in
 		;;
 esac
 
+# eBPF support
+AC_ARG_WITH(ebpf,
+            AS_HELP_STRING([--with-ebpf=yes|no], [Build with eBPF support (default: yes)]),
+            [], [with_ebpf=yes])
+if test "$with_ebpf" != "yes" -a "$with_ebpf" != "no"; then
+	AC_MSG_ERROR(--with-ebpf must be one of [yes, no])
+fi
+AM_CONDITIONAL(WITH_EBPF, test "${with_ebpf}" = "yes")
+
 # SELinux support
 AC_ARG_WITH(selinux,
             AS_HELP_STRING([--with-selinux=yes|no|auto], [Build with SELinux (default: auto)]),
@@ -1043,7 +1052,7 @@ else
 	more_logging_default=no
 fi
 
-NM_COMPILER_WARNINGS(CFLAGS, ${more_warnings_default})
+NM_COMPILER_WARNINGS(AM_CFLAGS, ${more_warnings_default})
 
 NM_COMPILER_FLAG(LIBSYSTEMD_NM_CFLAGS, "-Wno-gnu-variable-sized-type-not-at-end")
 AC_SUBST(LIBSYSTEMD_NM_CFLAGS)
@@ -1051,7 +1060,7 @@ AC_SUBST(LIBSYSTEMD_NM_CFLAGS)
 CC_CHECK_FLAGS_APPEND([with_cflags], [CFLAGS], [\
 	-fno-strict-aliasing \
 ])
-CFLAGS="$CFLAGS $with_cflags"
+AM_CFLAGS="$AM_CFLAGS $with_cflags"
 
 AC_ARG_ENABLE(more-asserts,
               AS_HELP_STRING([--enable-more-asserts],
@@ -1248,6 +1257,7 @@ fi
 
 AM_CONDITIONAL(BUILD_DOCS, test "$build_docs" = "yes")
 AM_CONDITIONAL(HAVE_DOCS, test "$build_docs" = "yes" -o "$use_pregen_docs" = "yes")
+AC_SUBST(AM_CFLAGS)
 
 AC_CONFIG_FILES([
 Makefile
@@ -1352,4 +1362,5 @@ echo "  JSON validation for libnm: $enable_json_validation"
 echo "  crypto: $with_crypto (have-gnutls: $have_crypto_gnutls, have-nss: $have_crypto_nss)"
 echo "  sanitizers: $sanitizers"
 echo "  Mozilla Public Suffix List: $with_libpsl"
+echo "  eBPF: $with_ebpf"
 echo
