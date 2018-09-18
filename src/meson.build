@@ -252,11 +252,27 @@ subdir('settings/plugins')
 create_exports_networkmanager = join_paths(meson.source_root(), 'tools', 'create-exports-NetworkManager.sh')
 symbol_map_name = 'NetworkManager.ver'
 
+# libNetworkManager.a, as built by meson doesn't contain all symbols
+# from libNetworkManagerBase.a and other static libraries, unless we
+# add dependencies with link_whole, only supported in meson >= 0.46.
+# Create an executable with full symbols that we use in place of the
+# library to enumerate the symbols.
+network_manager_sym = executable(
+  'nm-full-symbols',
+  'main.c',
+  c_args: nm_cflags,
+  link_args: '-Wl,--no-gc-sections',
+  dependencies: nm_deps,
+  link_whole: [libnetwork_manager, libnetwork_manager_base, libnm_core],
+  install: false,
+)
+
+# this uses symbols from nm-full-symbols instead of libNetworkManager.a
 ver_script = custom_target(
   symbol_map_name,
   input: meson.source_root(),
   output: symbol_map_name,
-  depends: [ libnetwork_manager, core_plugins ],
+  depends: [ network_manager_sym, core_plugins ],
   command: [create_exports_networkmanager, '--called-from-build', '@INPUT@']
 )
 
@@ -273,3 +289,12 @@ network_manager = executable(
   install: true,
   install_dir: nm_sbindir
 )
+
+if enable_tests
+  foreach plugin : core_plugins
+    test ('sym/' + plugin.full_path().split('/')[-1],
+          network_manager,
+          args: '--version',
+          env: ['LD_BIND_NOW=1', 'LD_PRELOAD=' + plugin.full_path()])
+  endforeach
+endif
