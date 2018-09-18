@@ -54,24 +54,24 @@ get_conn (GHashTable *connections, const char *ifname, const char *type_name)
 		setting = nm_setting_ip4_config_new ();
 		nm_connection_add_setting (connection, setting);
 		g_object_set (setting,
-			      NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-			      NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
-			      NULL);
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+		              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+		              NULL);
 
 		setting = nm_setting_ip6_config_new ();
 		nm_connection_add_setting (connection, setting);
 		g_object_set (setting,
-			      NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-			      NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
-			      NULL);
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+		              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+		              NULL);
 
 		setting = nm_setting_connection_new ();
 		nm_connection_add_setting (connection, setting);
 		g_object_set (setting,
-			      NM_SETTING_CONNECTION_ID, ifname ?: "Wired Connection",
-			      NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
-			      NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,
-			      NULL);
+		              NM_SETTING_CONNECTION_ID, ifname ?: "Wired Connection",
+		              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
+		              NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,
+		              NULL);
 
 		if (!type_name)
 			type_name = NM_SETTING_WIRED_SETTING_NAME;
@@ -291,16 +291,16 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 			switch (client_ip_family) {
 			case AF_INET:
 				g_object_set (s_ip4,
-					      NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
-					      NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
-					      NULL);
+				              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+				              NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
+				              NULL);
 				nm_setting_ip_config_add_address (s_ip4, address);
 				break;
 			case AF_INET6:
 				g_object_set (s_ip6,
-					      NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
-					      NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
-					      NULL);
+				              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+				              NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
+				              NULL);
 				nm_setting_ip_config_add_address (s_ip6, address);
 				break;
 			default:
@@ -315,42 +315,42 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 	if (g_strcmp0 (kind, "none") == 0 || (g_strcmp0 (kind, "off") == 0)) {
 		if (nm_setting_ip_config_get_num_addresses (s_ip6) == 0) {
 			g_object_set (s_ip6,
-				      NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-				      NULL);
+			              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+			              NULL);
 		}
 		if (nm_setting_ip_config_get_num_addresses (s_ip4) == 0) {
 			g_object_set (s_ip4,
-				      NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
-				      NULL);
+			              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+			              NULL);
 		}
 	} else if (g_strcmp0 (kind, "dhcp") == 0) {
 		g_object_set (s_ip4,
-			      NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-			      NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
-			      NULL);
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+		              NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
+		              NULL);
 		if (nm_setting_ip_config_get_num_addresses (s_ip6) == 0) {
 			g_object_set (s_ip6,
-				      NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-				      NULL);
+			              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+			              NULL);
 		}
 	} else if (g_strcmp0 (kind, "dhcp6") == 0) {
 		g_object_set (s_ip6,
-			      NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_DHCP,
-			      NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
-			      NULL);
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_DHCP,
+		              NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
+		              NULL);
 		if (nm_setting_ip_config_get_num_addresses (s_ip4) == 0) {
 			g_object_set (s_ip4,
-				      NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
-				      NULL);
+			              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+			              NULL);
 		}
 	} else if (g_strcmp0 (kind, "auto6") == 0) {
 		g_object_set (s_ip4,
-			      NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
-			      NULL);
+		              NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
+		              NULL);
 		if (nm_setting_ip_config_get_num_addresses (s_ip4) == 0) {
 			g_object_set (s_ip4,
-				      NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
-				      NULL);
+			              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+			              NULL);
 		}
 	} else if (g_strcmp0 (kind, "ibft") == 0) {
 		gs_free char *address_path = g_build_filename (sysfs_dir, "class", "net", ifname, "address", NULL);
@@ -703,8 +703,8 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, char **argv)
 
 		s_wired = nm_connection_get_setting_wired (connection);
 		g_object_set (s_wired,
-			      NM_SETTING_WIRED_MAC_ADDRESS, bootif,
-			      NULL);
+		              NM_SETTING_WIRED_MAC_ADDRESS, bootif,
+		              NULL);
 	}
 
 	g_hash_table_foreach (connections, _normalize_conn, NULL);
