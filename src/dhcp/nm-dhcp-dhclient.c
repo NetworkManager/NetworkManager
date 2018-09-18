@@ -41,6 +41,7 @@
 #include "nm-utils/nm-dedup-multi.h"
 
 #include "nm-utils.h"
+#include "nm-config.h"
 #include "nm-dhcp-dhclient-utils.h"
 #include "nm-dhcp-manager.h"
 #include "NetworkManagerUtils.h"
@@ -120,7 +121,19 @@ get_dhclient_leasefile (int addr_family,
                         const char *uuid,
                         char **out_preferred_path)
 {
+	char *rundir_path;
 	char *path;
+
+	/* First, see if the lease file is in /run */
+	rundir_path = g_strdup_printf (NMRUNDIR "/dhclient%s-%s-%s.lease",
+	                               _addr_family_to_path_part (addr_family),
+	                               uuid,
+	                               iface);
+
+	if (g_file_test (rundir_path, G_FILE_TEST_EXISTS)) {
+		NM_SET_OUT (out_preferred_path, g_strdup (rundir_path));
+		return rundir_path;
+	}
 
 	/* /var/lib/NetworkManager is the preferred leasefile path */
 	path = g_strdup_printf (NMSTATEDIR "/dhclient%s-%s-%s.lease",
@@ -133,6 +146,12 @@ get_dhclient_leasefile (int addr_family,
 		return path;
 	}
 
+	if (nm_config_get_configure_and_quit (nm_config_get ()) == NM_CONFIG_CONFIGURE_AND_QUIT_INITRD) {
+		g_free (path);
+		path = rundir_path;
+	} else {
+		g_free (rundir_path);
+	}
 	NM_SET_OUT (out_preferred_path, g_steal_pointer (&path));
 
 	/* If the leasefile we're looking for doesn't exist yet in the new location

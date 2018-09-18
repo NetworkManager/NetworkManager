@@ -227,21 +227,12 @@ pan_connection_check_create (NMBluezDevice *self)
 	              NULL);
 	nm_connection_add_setting (connection, setting);
 
-	/* Setting: IPv4 */
-	setting = nm_setting_ip4_config_new ();
-	g_object_set (G_OBJECT (setting),
-	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-	              NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
-	              NULL);
-	nm_connection_add_setting (connection, setting);
-
-	/* Setting: IPv6 */
-	setting = nm_setting_ip6_config_new ();
-	g_object_set (G_OBJECT (setting),
-	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
-	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
-	              NULL);
-	nm_connection_add_setting (connection, setting);
+	if (!nm_connection_normalize (connection, NULL, NULL, &error)) {
+		nm_log_err (LOGD_BT, "bluez[%s] couldn't generate a connection for NAP device: %s",
+		            priv->path, error->message);
+		g_error_free (error);
+		g_return_if_reached ();
+	}
 
 	/* Adding a new connection raises a signal which eventually calls check_emit_usable (again)
 	 * which then already finds the suitable connection in priv->connections. This is confusing,

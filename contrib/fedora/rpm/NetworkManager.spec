@@ -553,7 +553,7 @@ intltoolize --automake --copy --force
 	--enable-ppp=yes \
 %endif
 	--with-dist-version=%{version}-%{release} \
-	--with-config-plugins-default='ifcfg-rh,ibft' \
+	--with-config-plugins-default='ifcfg-rh' \
 	--with-config-dns-rc-manager-default=symlink \
 	--with-config-logging-backend-default=journal \
 	--enable-json-validation \
@@ -687,6 +687,7 @@ fi
 %{_libexecdir}/nm-dhcp-helper
 %{_libexecdir}/nm-dispatcher
 %{_libexecdir}/nm-iface-helper
+%{_libexecdir}/nm-initrd-generator
 %dir %{_libdir}/%{name}
 %dir %{nmplugindir}
 %{nmplugindir}/libnm-settings-plugin*.so

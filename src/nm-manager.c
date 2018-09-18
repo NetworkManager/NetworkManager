@@ -1632,7 +1632,7 @@ remove_device (NMManager *self,
 				nm_device_sys_iface_state_set (device, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
 				nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_PLATFORM_INIT, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
 			}
-		} else if (quitting && nm_config_get_configure_and_quit (priv->config)) {
+		} else if (quitting && nm_config_get_configure_and_quit (priv->config) == NM_CONFIG_CONFIGURE_AND_QUIT_ENABLED) {
 			nm_device_spawn_iface_helper (device);
 		}
 	}
@@ -6101,6 +6101,8 @@ nm_manager_write_device_state (NMManager *self, NMDevice *device)
 	guint32 route_metric_default_aspired;
 	guint32 route_metric_default_effective;
 	int nm_owned;
+	NMDhcp4Config *dhcp4_config;
+	const char *root_path = NULL;
 
 	ifindex = nm_device_get_ip_ifindex (device);
 	if (ifindex <= 0)
@@ -6117,7 +6119,8 @@ nm_manager_write_device_state (NMManager *self, NMDevice *device)
 	if (managed) {
 		NMSettingsConnection *sett_conn;
 
-		sett_conn = nm_device_get_settings_connection (device);
+		if (nm_device_get_state (device) <= NM_DEVICE_STATE_ACTIVATED)
+			sett_conn = nm_device_get_settings_connection (device);
 		if (sett_conn)
 			uuid = nm_settings_connection_get_uuid (sett_conn);
 		managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED;
@@ -6135,13 +6138,18 @@ nm_manager_write_device_state (NMManager *self, NMDevice *device)
 	route_metric_default_effective = _device_route_metric_get (self, ifindex, NM_DEVICE_TYPE_UNKNOWN,
 	                                                           TRUE, &route_metric_default_aspired);
 
+	dhcp4_config = nm_device_get_dhcp4_config (device);
+	if (dhcp4_config)
+		root_path = nm_dhcp4_config_get_option (dhcp4_config, "root_path");
+
 	return nm_config_device_state_write (ifindex,
 	                                     managed_type,
 	                                     perm_hw_addr_fake,
 	                                     uuid,
 	                                     nm_owned,
 	                                     route_metric_default_aspired,
-	                                     route_metric_default_effective);
+	                                     route_metric_default_effective,
+	                                     root_path);
 }
 
 void

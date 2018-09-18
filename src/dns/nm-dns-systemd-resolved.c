@@ -391,28 +391,20 @@ static void
 nm_dns_systemd_resolved_init (NMDnsSystemdResolved *self)
 {
 	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
-	NMDBusManager *dbus_mgr;
-	GDBusConnection *connection;
 
 	c_list_init (&priv->request_queue_lst_head);
 
-	dbus_mgr = nm_dbus_manager_get ();
-	g_return_if_fail (dbus_mgr);
-
-	connection = nm_dbus_manager_get_connection (dbus_mgr);
-	g_return_if_fail (connection);
-
 	priv->init_cancellable = g_cancellable_new ();
-	g_dbus_proxy_new (connection,
-	                  G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
-	                  G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
-	                  NULL,
-	                  SYSTEMD_RESOLVED_DBUS_SERVICE,
-	                  SYSTEMD_RESOLVED_DBUS_PATH,
-	                  SYSTEMD_RESOLVED_DBUS_SERVICE ".Manager",
-	                  priv->init_cancellable,
-	                  resolved_proxy_created,
-	                  self);
+	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
+	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
+	                          G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
+	                          NULL,
+	                          SYSTEMD_RESOLVED_DBUS_SERVICE,
+	                          SYSTEMD_RESOLVED_DBUS_PATH,
+	                          SYSTEMD_RESOLVED_DBUS_SERVICE ".Manager",
+	                          priv->init_cancellable,
+	                          resolved_proxy_created,
+	                          self);
 }
 
 NMDnsPlugin *

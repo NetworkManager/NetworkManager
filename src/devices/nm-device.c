@@ -464,6 +464,7 @@ typedef struct _NMDevicePrivate {
 		gulong          state_sigid;
 		NMDhcp4Config * config;
 		char *          pac_url;
+		char *          root_path;
 		bool            was_active;
 		guint           grace_id;
 	} dhcp4;
@@ -4580,9 +4581,23 @@ nm_device_owns_iface (NMDevice *self, const char *iface)
 NMConnection *
 nm_device_new_default_connection (NMDevice *self)
 {
-	if (NM_DEVICE_GET_CLASS (self)->new_default_connection)
-		return NM_DEVICE_GET_CLASS (self)->new_default_connection (self);
-	return NULL;
+	NMConnection *connection;
+	GError *error = NULL;
+
+	if (!NM_DEVICE_GET_CLASS (self)->new_default_connection)
+		return NULL;
+
+	connection = NM_DEVICE_GET_CLASS (self)->new_default_connection (self);
+	if (!connection)
+		return NULL;
+
+	if (!nm_connection_normalize (connection, NULL, NULL, &error)) {
+		_LOGD (LOGD_DEVICE, "device generated an invalid default connection: %s", error->message);
+		g_error_free (error);
+		g_return_val_if_reached (NULL);
+	}
+
+	return connection;
 }
 
 static void
@@ -5041,11 +5056,15 @@ nm_device_removed (NMDevice *self, gboolean unconfigure_ip_config)
 		nm_device_master_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 	}
 
-	if (!unconfigure_ip_config)
-		return;
-
-	nm_device_set_ip_config (self, AF_INET, NULL, FALSE, NULL);
-	nm_device_set_ip_config (self, AF_INET6, NULL, FALSE, NULL);
+	if (unconfigure_ip_config) {
+		nm_device_set_ip_config (self, AF_INET, NULL, FALSE, NULL);
+		nm_device_set_ip_config (self, AF_INET6, NULL, FALSE, NULL);
+	} else {
+		if (priv->dhcp4.client)
+			nm_dhcp_client_stop (priv->dhcp4.client, FALSE);
+		if (priv->dhcp6.client)
+			nm_dhcp_client_stop (priv->dhcp6.client, FALSE);
+	}
 }
 
 static gboolean
@@ -5449,7 +5468,7 @@ nm_device_generate_connection (NMDevice *self,
 
 	klass->update_connection (self, connection);
 
-	if (!nm_connection_verify (connection, &local)) {
+	if (!nm_connection_normalize (connection, NULL, NULL, error)) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		             "generated connection does not verify: %s",
 		             local->message);
@@ -6953,6 +6972,7 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 
 	nm_clear_g_source (&priv->dhcp4.grace_id);
 	g_clear_pointer (&priv->dhcp4.pac_url, g_free);
+	g_clear_pointer (&priv->dhcp4.root_path, g_free);
 
 	if (priv->dhcp4.client) {
 		/* Stop any ongoing DHCP transaction on this device */
@@ -7325,6 +7345,9 @@ dhcp4_state_changed (NMDhcpClient *client,
 		g_free (priv->dhcp4.pac_url);
 		priv->dhcp4.pac_url = g_strdup (g_hash_table_lookup (options, "wpad"));
 		nm_device_set_proxy_config (self, priv->dhcp4.pac_url);
+
+		g_free (priv->dhcp4.root_path);
+		priv->dhcp4.root_path = g_strdup (g_hash_table_lookup (options, "root_path"));
 
 		nm_dhcp4_config_set_options (priv->dhcp4.config, options);
 		_notify (self, PROP_DHCP4_CONFIG);

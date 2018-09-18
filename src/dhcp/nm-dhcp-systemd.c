@@ -32,6 +32,7 @@
 #include "nm-utils/unaligned.h"
 
 #include "nm-utils.h"
+#include "nm-config.h"
 #include "nm-dhcp-utils.h"
 #include "NetworkManagerUtils.h"
 #include "platform/nm-platform.h"
@@ -121,6 +122,7 @@ static const ReqOption dhcp4_requests[] = {
 	{ SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE,         REQPREFIX "rfc3442_classless_static_routes", TRUE },
 	{ SD_DHCP_OPTION_PRIVATE_CLASSLESS_STATIC_ROUTE, REQPREFIX "ms_classless_static_routes",      TRUE },
 	{ SD_DHCP_OPTION_PRIVATE_PROXY_AUTODISCOVERY,    REQPREFIX "wpad",                            TRUE },
+	{ SD_DHCP_OPTION_ROOT_PATH,                      REQPREFIX "root_path",                       TRUE },
 
 	/* Internal values */
 	{ SD_DHCP_OPTION_IP_ADDRESS_LEASE_TIME,          REQPREFIX "expiry",                          FALSE },
@@ -432,6 +434,13 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 		add_option (options, dhcp4_requests, SD_DHCP_OPTION_NTP_SERVER, str->str);
 	}
 
+	/* Root path */
+	r = sd_dhcp_lease_get_root_path (lease, &s);
+	if (r >= 0) {
+		LOG_LEASE (LOGD_DHCP4, "root path '%s'", s);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROOT_PATH, s);
+	}
+
 	r = sd_dhcp_lease_get_vendor_specific (lease, &data, &data_len);
 	if (r >= 0)
 		metered = !!memmem (data, data_len, "ANDROID_METERED", NM_STRLEN ("ANDROID_METERED"));
@@ -445,10 +454,30 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 static char *
 get_leasefile_path (int addr_family, const char *iface, const char *uuid)
 {
-	return g_strdup_printf (NMSTATEDIR "/internal%s-%s-%s.lease",
-	                        addr_family == AF_INET6 ? "6" : "",
-	                        uuid,
-	                        iface);
+	char *rundir_path;
+	char *statedir_path;
+
+	rundir_path = g_strdup_printf (NMRUNDIR "/internal%s-%s-%s.lease",
+	                               addr_family == AF_INET6 ? "6" : "",
+	                               uuid,
+	                               iface);
+
+	if (g_file_test (rundir_path, G_FILE_TEST_EXISTS))
+		return rundir_path;
+
+	statedir_path = g_strdup_printf (NMSTATEDIR "/internal%s-%s-%s.lease",
+	                                 addr_family == AF_INET6 ? "6" : "",
+	                                 uuid,
+	                                 iface);
+
+	if (   g_file_test (statedir_path, G_FILE_TEST_EXISTS)
+	    || nm_config_get_configure_and_quit (nm_config_get ()) != NM_CONFIG_CONFIGURE_AND_QUIT_INITRD) {
+		g_free (rundir_path);
+		return statedir_path;
+	} else {
+		g_free (statedir_path);
+		return rundir_path;
+	}
 }
 
 /*****************************************************************************/
