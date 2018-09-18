@@ -58,10 +58,12 @@ our @functions_seen;
 our $type;
 our $filename;
 our $line_no;
+our $indent;
 
 sub new_hunk
 {
 	$type = undef;
+	$indent = "";
 }
 
 sub new_file
@@ -138,6 +140,10 @@ s/\s*\/\*.*//;
 s/\s*\/\/.*//;
 /^\s* \* / and next;
 new_hunk if $_ eq '';
+
+my ($this_indent) = /^(\s*)/;
+complain ('Bad indentation') if $this_indent =~ /^$indent\t+ +/;
+$indent = $this_indent;
 
 if (/^typedef*/) {
 	# We expect the { on the same line as the typedef. Otherwise it
