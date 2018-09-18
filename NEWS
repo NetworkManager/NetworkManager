@@ -1,3 +1,14 @@
+================================================
+NetworkManager-1.10.12
+Overview of changes since NetworkManager-1.10.10
+================================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Don't block autoconnect for connection profile when modem is gone
+* Support private keys encrypted with AES-{192,256}-CBC in libnm
+* Minor bugfixes
+
 ===============================================
 NetworkManager-1.10.10
 Overview of changes since NetworkManager-1.10.8
