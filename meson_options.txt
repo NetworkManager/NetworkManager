@@ -1,0 +1,1 @@
+option('ebpf', type: 'boolean', value: true, description: 'Enable eBPF packet filtering')
