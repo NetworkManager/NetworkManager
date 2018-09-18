@@ -6117,7 +6117,7 @@ nm_manager_write_device_state (NMManager *self, NMDevice *device)
 
 	managed = nm_device_get_managed (device, FALSE);
 	if (managed) {
-		NMSettingsConnection *sett_conn;
+		NMSettingsConnection *sett_conn = NULL;
 
 		if (nm_device_get_state (device) <= NM_DEVICE_STATE_ACTIVATED)
 			sett_conn = nm_device_get_settings_connection (device);
