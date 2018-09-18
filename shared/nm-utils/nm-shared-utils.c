@@ -489,8 +489,6 @@ nm_utils_parse_inaddr (int addr_family,
 	NMIPAddr addrbin;
 	char addrstr_buf[MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
 
-	nm_assert (!out_addr || !*out_addr);
-
 	if (!nm_utils_parse_inaddr_bin (addr_family, text, &addr_family, &addrbin))
 		return FALSE;
 	NM_SET_OUT (out_addr, g_strdup (inet_ntop (addr_family, &addrbin, addrstr_buf, sizeof (addrstr_buf))));
@@ -551,8 +549,6 @@ nm_utils_parse_inaddr_prefix (int addr_family,
 {
 	NMIPAddr addrbin;
 	char addrstr_buf[MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
-
-	nm_assert (!out_addr || !*out_addr);
 
 	if (!nm_utils_parse_inaddr_prefix_bin (addr_family, text, &addr_family, &addrbin, out_prefix))
 		return FALSE;
