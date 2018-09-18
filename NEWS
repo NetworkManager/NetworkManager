@@ -6,6 +6,11 @@ Overview of changes since NetworkManager-1.12.2
 This is a new stable release of NetworkManager.  Notable changes include:
 
 * Fix reapplying different route-metric for automatic routes.
+* Fix crash in connectivity check.
+* Fix accepted input format for vpn.secrets in nmcli's password file.
+* libnm: support private keys encrypted with AES-{192,256}-CBC.
+* Fix stopping pppd on modem hangup
+* Various minor bugfixes and translation updates.
 
 =============================================
 NetworkManager-1.12.2
