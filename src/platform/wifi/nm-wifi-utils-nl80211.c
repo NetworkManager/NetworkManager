@@ -41,7 +41,7 @@
 #define _NMLOG(level, domain, ...) \
 	G_STMT_START { \
 		char _ifname_buf[IFNAMSIZ]; \
-		const char *_ifname = nl80211 ? nmp_utils_if_indextoname (nl80211->parent.ifindex, _ifname_buf) : NULL; \
+		const char *_ifname = self ? nmp_utils_if_indextoname (self->parent.ifindex, _ifname_buf) : NULL; \
 		\
 		nm_log ((level), (domain), _ifname ?: NULL, NULL, \
 		        "%s%s%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
@@ -107,13 +107,13 @@ nla_put_failure:
 }
 
 static struct nl_msg *
-nl80211_alloc_msg (NMWifiUtilsNl80211 *nl80211, guint32 cmd, guint32 flags)
+nl80211_alloc_msg (NMWifiUtilsNl80211 *self, guint32 cmd, guint32 flags)
 {
-	return _nl80211_alloc_msg (nl80211->id, nl80211->parent.ifindex, nl80211->phy, cmd, flags);
+	return _nl80211_alloc_msg (self->id, self->parent.ifindex, self->phy, cmd, flags);
 }
 
 static int
-nl80211_send_and_recv (NMWifiUtilsNl80211 *nl80211,
+nl80211_send_and_recv (NMWifiUtilsNl80211 *self,
                        struct nl_msg *msg,
                        int (*valid_handler) (struct nl_msg *, void *),
                        void *valid_data)
@@ -133,7 +133,7 @@ nl80211_send_and_recv (NMWifiUtilsNl80211 *nl80211,
 
 	g_return_val_if_fail (msg != NULL, -ENOMEM);
 
-	err = nl_send_auto (nl80211->nl_sock, msg);
+	err = nl_send_auto (self->nl_sock, msg);
 	if (err < 0)
 		return err;
 
@@ -141,7 +141,7 @@ nl80211_send_and_recv (NMWifiUtilsNl80211 *nl80211,
 	 * done will be 1, on error it will be < 0.
 	 */
 	while (!done) {
-		err = nl_recvmsgs (nl80211->nl_sock, &cb);
+		err = nl_recvmsgs (self->nl_sock, &cb);
 		if (err < 0 && err != -EAGAIN) {
 			/* Kernel scan list can change while we are dumping it, as new scan
 			 * results from H/W can arrive. BSS info is assured to be consistent
@@ -166,9 +166,9 @@ nl80211_send_and_recv (NMWifiUtilsNl80211 *nl80211,
 static void
 dispose (GObject *object)
 {
-	NMWifiUtilsNl80211 *nl80211 = NM_WIFI_UTILS_NL80211 (object);
+	NMWifiUtilsNl80211 *self = NM_WIFI_UTILS_NL80211 (object);
 
-	g_clear_pointer (&nl80211->freqs, g_free);
+	g_clear_pointer (&self->freqs, g_free);
 }
 
 struct nl80211_iface_info {
@@ -207,15 +207,15 @@ nl80211_iface_info_handler (struct nl_msg *msg, void *arg)
 static NM80211Mode
 wifi_nl80211_get_mode (NMWifiUtils *data)
 {
-	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
+	NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
 	struct nl80211_iface_info iface_info = {
 		.mode = NM_802_11_MODE_UNKNOWN,
 	};
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 
-	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_INTERFACE, 0);
+	msg = nl80211_alloc_msg (self, NL80211_CMD_GET_INTERFACE, 0);
 
-	if (nl80211_send_and_recv (nl80211, msg, nl80211_iface_info_handler,
+	if (nl80211_send_and_recv (self, msg, nl80211_iface_info_handler,
 	                           &iface_info) < 0)
 		return NM_802_11_MODE_UNKNOWN;
 
@@ -225,11 +225,11 @@ wifi_nl80211_get_mode (NMWifiUtils *data)
 static gboolean
 wifi_nl80211_set_mode (NMWifiUtils *data, const NM80211Mode mode)
 {
-	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
+	NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	int err;
 
-	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_SET_INTERFACE, 0);
+	msg = nl80211_alloc_msg (self, NL80211_CMD_SET_INTERFACE, 0);
 
 	switch (mode) {
 	case NM_802_11_MODE_INFRA:
@@ -245,7 +245,7 @@ wifi_nl80211_set_mode (NMWifiUtils *data, const NM80211Mode mode)
 		g_assert_not_reached ();
 	}
 
-	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
+	err = nl80211_send_and_recv (self, msg, NULL, NULL);
 	return err >= 0;
 
 nla_put_failure:
@@ -255,14 +255,14 @@ nla_put_failure:
 static gboolean
 wifi_nl80211_set_powersave (NMWifiUtils *data, guint32 powersave)
 {
-	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
+	NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	int err;
 
-	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_SET_POWER_SAVE, 0);
+	msg = nl80211_alloc_msg (self, NL80211_CMD_SET_POWER_SAVE, 0);
 	NLA_PUT_U32 (msg, NL80211_ATTR_PS_STATE,
 	             powersave == 1 ? NL80211_PS_ENABLED : NL80211_PS_DISABLED);
-	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
+	err = nl80211_send_and_recv (self, msg, NULL, NULL);
 	return err >= 0;
 
 nla_put_failure:
@@ -312,13 +312,13 @@ nl80211_get_wake_on_wlan_handler (struct nl_msg *msg, void *arg)
 static NMSettingWirelessWakeOnWLan
 wifi_nl80211_get_wake_on_wlan (NMWifiUtils *data)
 {
-	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
+	NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
 	NMSettingWirelessWakeOnWLan wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 
-	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_WOWLAN, 0);
+	msg = nl80211_alloc_msg (self, NL80211_CMD_GET_WOWLAN, 0);
 
-	nl80211_send_and_recv (nl80211, msg, nl80211_get_wake_on_wlan_handler, &wowl);
+	nl80211_send_and_recv (self, msg, nl80211_get_wake_on_wlan_handler, &wowl);
 
 	return wowl;
 }
@@ -326,7 +326,7 @@ wifi_nl80211_get_wake_on_wlan (NMWifiUtils *data)
 static gboolean
 wifi_nl80211_set_wake_on_wlan (NMWifiUtils *data, NMSettingWirelessWakeOnWLan wowl)
 {
-	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
+	NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	struct nlattr *triggers;
 	int err;
@@ -334,7 +334,7 @@ wifi_nl80211_set_wake_on_wlan (NMWifiUtils *data, NMSettingWirelessWakeOnWLan wo
 	if (wowl == NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE)
 		return TRUE;
 
-	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_SET_WOWLAN, 0);
+	msg = nl80211_alloc_msg (self, NL80211_CMD_SET_WOWLAN, 0);
 	if (!msg)
 		return FALSE;
 
@@ -357,7 +357,7 @@ wifi_nl80211_set_wake_on_wlan (NMWifiUtils *data, NMSettingWirelessWakeOnWLan wo
 
 	nla_nest_end(msg, triggers);
 
-	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
+	err = nl80211_send_and_recv (self, msg, NULL, NULL);
 
 	return err >= 0;
 
@@ -485,25 +485,25 @@ nl80211_bss_dump_handler (struct nl_msg *msg, void *arg)
 }
 
 static void
-nl80211_get_bss_info (NMWifiUtilsNl80211 *nl80211,
+nl80211_get_bss_info (NMWifiUtilsNl80211 *self,
                       struct nl80211_bss_info *bss_info)
 {
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 
 	memset (bss_info, 0, sizeof (*bss_info));
 
-	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_SCAN, NLM_F_DUMP);
+	msg = nl80211_alloc_msg (self, NL80211_CMD_GET_SCAN, NLM_F_DUMP);
 
-	nl80211_send_and_recv (nl80211, msg, nl80211_bss_dump_handler, bss_info);
+	nl80211_send_and_recv (self, msg, nl80211_bss_dump_handler, bss_info);
 }
 
 static guint32
 wifi_nl80211_get_freq (NMWifiUtils *data)
 {
-	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
+	NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
 	struct nl80211_bss_info bss_info;
 
-	nl80211_get_bss_info (nl80211, &bss_info);
+	nl80211_get_bss_info (self, &bss_info);
 
 	return bss_info.freq;
 }
@@ -511,12 +511,12 @@ wifi_nl80211_get_freq (NMWifiUtils *data)
 static guint32
 wifi_nl80211_find_freq (NMWifiUtils *data, const guint32 *freqs)
 {
-	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
+	NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
 	int i;
 
-	for (i = 0; i < nl80211->num_freqs; i++) {
+	for (i = 0; i < self->num_freqs; i++) {
 		while (*freqs) {
-			if (nl80211->freqs[i] == *freqs)
+			if (self->freqs[i] == *freqs)
 				return *freqs;
 			freqs++;
 		}
@@ -527,10 +527,10 @@ wifi_nl80211_find_freq (NMWifiUtils *data, const guint32 *freqs)
 static gboolean
 wifi_nl80211_get_bssid (NMWifiUtils *data, guint8 *out_bssid)
 {
-	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
+	NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
 	struct nl80211_bss_info bss_info;
 
-	nl80211_get_bss_info (nl80211, &bss_info);
+	nl80211_get_bss_info (self, &bss_info);
 
 	if (bss_info.valid)
 		memcpy (out_bssid, bss_info.bssid, ETH_ALEN);
@@ -609,7 +609,7 @@ nl80211_station_handler (struct nl_msg *msg, void *arg)
 }
 
 static void
-nl80211_get_ap_info (NMWifiUtilsNl80211 *nl80211,
+nl80211_get_ap_info (NMWifiUtilsNl80211 *self,
                      struct nl80211_station_info *sta_info)
 {
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
@@ -617,15 +617,15 @@ nl80211_get_ap_info (NMWifiUtilsNl80211 *nl80211,
 
 	memset (sta_info, 0, sizeof (*sta_info));
 
-	nl80211_get_bss_info (nl80211, &bss_info);
+	nl80211_get_bss_info (self, &bss_info);
 	if (!bss_info.valid)
 		return;
 
-	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_STATION, 0);
+	msg = nl80211_alloc_msg (self, NL80211_CMD_GET_STATION, 0);
 	if (msg) {
 		NLA_PUT (msg, NL80211_ATTR_MAC, ETH_ALEN, bss_info.bssid);
 
-		nl80211_send_and_recv (nl80211, msg, nl80211_station_handler, sta_info);
+		nl80211_send_and_recv (self, msg, nl80211_station_handler, sta_info);
 		if (!sta_info->signal_valid) {
 			/* Fall back to bss_info signal quality (both are in percent) */
 			sta_info->signal = bss_info.beacon_signal;
@@ -641,10 +641,10 @@ nla_put_failure:
 static guint32
 wifi_nl80211_get_rate (NMWifiUtils *data)
 {
-	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
+	NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
 	struct nl80211_station_info sta_info;
 
-	nl80211_get_ap_info (nl80211, &sta_info);
+	nl80211_get_ap_info (self, &sta_info);
 
 	return sta_info.txrate;
 }
@@ -652,21 +652,21 @@ wifi_nl80211_get_rate (NMWifiUtils *data)
 static int
 wifi_nl80211_get_qual (NMWifiUtils *data)
 {
-	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
+	NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
 	struct nl80211_station_info sta_info;
 
-	nl80211_get_ap_info (nl80211, &sta_info);
+	nl80211_get_ap_info (self, &sta_info);
 	return sta_info.signal;
 }
 
 static gboolean
 wifi_nl80211_indicate_addressing_running (NMWifiUtils *data, gboolean running)
 {
-	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
+	NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	int err;
 
-	msg = nl80211_alloc_msg (nl80211,
+	msg = nl80211_alloc_msg (self,
 	                         running
 	                           ? 98 /* NL80211_CMD_CRIT_PROTOCOL_START */
 	                           : 99 /* NL80211_CMD_CRIT_PROTOCOL_STOP */,
@@ -684,7 +684,7 @@ wifi_nl80211_indicate_addressing_running (NMWifiUtils *data, gboolean running)
 		             5000);
 	}
 
-	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
+	err = nl80211_send_and_recv (self, msg, NULL, NULL);
 	return err >= 0;
 
 nla_put_failure:
@@ -692,7 +692,7 @@ nla_put_failure:
 }
 
 struct nl80211_device_info {
-	NMWifiUtilsNl80211 *nl80211;
+	NMWifiUtilsNl80211 *self;
 	int phy;
 	guint32 *freqs;
 	int num_freqs;
@@ -718,7 +718,7 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct genlmsghdr *gnlh = nlmsg_data (nlmsg_hdr (msg));
 	struct nl80211_device_info *info = arg;
-	NMWifiUtilsNl80211 *nl80211 = info->nl80211;
+	NMWifiUtilsNl80211 *self = info->self;
 	struct nlattr *tb_band[NL80211_BAND_ATTR_MAX + 1];
 	struct nlattr *tb_freq[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct nlattr *nl_band;
@@ -925,30 +925,30 @@ nm_wifi_utils_nl80211_class_init (NMWifiUtilsNl80211Class *klass)
 NMWifiUtils *
 nm_wifi_utils_nl80211_new (int ifindex, struct nl_sock *genl)
 {
-	gs_unref_object NMWifiUtilsNl80211 *nl80211 = NULL;
+	gs_unref_object NMWifiUtilsNl80211 *self = NULL;
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	struct nl80211_device_info device_info = { };
 
 	if (!genl)
 		return NULL;
 
-	nl80211 = g_object_new (NM_TYPE_WIFI_UTILS_NL80211, NULL);
+	self = g_object_new (NM_TYPE_WIFI_UTILS_NL80211, NULL);
 
-	nl80211->parent.ifindex = ifindex;
-	nl80211->nl_sock = genl;
+	self->parent.ifindex = ifindex;
+	self->nl_sock = genl;
 
-	nl80211->id = genl_ctrl_resolve (nl80211->nl_sock, "nl80211");
-	if (nl80211->id < 0) {
+	self->id = genl_ctrl_resolve (self->nl_sock, "nl80211");
+	if (self->id < 0) {
 		_LOGD (LOGD_WIFI, "genl_ctrl_resolve: failed to resolve \"nl80211\"");
 		return NULL;
 	}
 
-	nl80211->phy = -1;
+	self->phy = -1;
 
-	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_WIPHY, 0);
+	msg = nl80211_alloc_msg (self, NL80211_CMD_GET_WIPHY, 0);
 
-	device_info.nl80211 = nl80211;
-	if (nl80211_send_and_recv (nl80211, msg, nl80211_wiphy_info_handler,
+	device_info.self = self;
+	if (nl80211_send_and_recv (self, msg, nl80211_wiphy_info_handler,
 	                           &device_info) < 0) {
 		_LOGD (LOGD_PLATFORM | LOGD_WIFI, "NL80211_CMD_GET_WIPHY request failed");
 		return NULL;
@@ -979,12 +979,12 @@ nm_wifi_utils_nl80211_new (int ifindex, struct nl_sock *genl)
 		return NULL;
 	}
 
-	nl80211->phy = device_info.phy;
-	nl80211->freqs = device_info.freqs;
-	nl80211->num_freqs = device_info.num_freqs;
-	nl80211->parent.caps = device_info.caps;
-	nl80211->can_wowlan = device_info.can_wowlan;
+	self->phy = device_info.phy;
+	self->freqs = device_info.freqs;
+	self->num_freqs = device_info.num_freqs;
+	self->parent.caps = device_info.caps;
+	self->can_wowlan = device_info.can_wowlan;
 
 	_LOGD (LOGD_PLATFORM | LOGD_WIFI, "using nl80211 for WiFi device control");
-	return (NMWifiUtils *) g_steal_pointer (&nl80211);
+	return (NMWifiUtils *) g_steal_pointer (&self);
 }
