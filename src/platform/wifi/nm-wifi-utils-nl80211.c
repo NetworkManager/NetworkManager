@@ -38,12 +38,13 @@
 #include "nm-utils.h"
 
 #define _NMLOG_PREFIX_NAME      "wifi-nl80211"
-#define _NMLOG(level, domain, ...) \
+#define _NMLOG_DOMAIN           LOGD_PLATFORM | LOGD_WIFI
+#define _NMLOG(level, ...) \
 	G_STMT_START { \
 		char _ifname_buf[IFNAMSIZ]; \
 		const char *_ifname = self ? nmp_utils_if_indextoname (self->parent.ifindex, _ifname_buf) : NULL; \
 		\
-		nm_log ((level), (domain), _ifname ?: NULL, NULL, \
+		nm_log ((level), _NMLOG_DOMAIN, _ifname ?: NULL, NULL, \
 		        "%s%s%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
 		        _NMLOG_PREFIX_NAME, \
                         NM_PRINT_FMT_QUOTED (_ifname, " (", _ifname, ")", "") \
@@ -152,8 +153,7 @@ nl80211_send_and_recv (NMWifiUtilsNl80211 *self,
 			    genlmsg_hdr (nlmsg_hdr (msg))->cmd == NL80211_CMD_GET_SCAN)
 				break;
 
-			_LOGW (LOGD_WIFI, "nl_recvmsgs() error: (%d) %s",
-			       err, nl_geterror (err));
+			_LOGW ("nl_recvmsgs() error: (%d) %s", err, nl_geterror (err));
 			break;
 		}
 	}
@@ -868,8 +868,7 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 			case WLAN_CIPHER_SUITE_SMS4:
 				break;
 			default:
-				_LOGD (LOGD_PLATFORM | LOGD_WIFI,
-				       "don't know the meaning of NL80211_ATTR_CIPHER_SUITE %#8.8x.",
+				_LOGD ("don't know the meaning of NL80211_ATTR_CIPHER_SUITE %#8.8x.",
 				       ciphers[i]);
 				break;
 			}
@@ -939,7 +938,7 @@ nm_wifi_utils_nl80211_new (int ifindex, struct nl_sock *genl)
 
 	self->id = genl_ctrl_resolve (self->nl_sock, "nl80211");
 	if (self->id < 0) {
-		_LOGD (LOGD_WIFI, "genl_ctrl_resolve: failed to resolve \"nl80211\"");
+		_LOGD ("genl_ctrl_resolve: failed to resolve \"nl80211\"");
 		return NULL;
 	}
 
@@ -950,32 +949,32 @@ nm_wifi_utils_nl80211_new (int ifindex, struct nl_sock *genl)
 	device_info.self = self;
 	if (nl80211_send_and_recv (self, msg, nl80211_wiphy_info_handler,
 	                           &device_info) < 0) {
-		_LOGD (LOGD_PLATFORM | LOGD_WIFI, "NL80211_CMD_GET_WIPHY request failed");
+		_LOGD ("NL80211_CMD_GET_WIPHY request failed");
 		return NULL;
 	}
 
 	if (!device_info.success) {
-		_LOGD (LOGD_PLATFORM | LOGD_WIFI, "NL80211_CMD_GET_WIPHY request indicated failure");
+		_LOGD ("NL80211_CMD_GET_WIPHY request indicated failure");
 		return NULL;
 	}
 
 	if (!device_info.supported) {
-		_LOGD (LOGD_PLATFORM | LOGD_WIFI, "driver does not fully support nl80211, falling back to WEXT");
+		_LOGD ("driver does not fully support nl80211, falling back to WEXT");
 		return NULL;
 	}
 
 	if (!device_info.can_scan_ssid) {
-		_LOGE (LOGD_PLATFORM | LOGD_WIFI, "driver does not support SSID scans");
+		_LOGE ("driver does not support SSID scans");
 		return NULL;
 	}
 
 	if (device_info.num_freqs == 0 || device_info.freqs == NULL) {
-		nm_log_err (LOGD_PLATFORM | LOGD_WIFI, "driver reports no supported frequencies");
+		_LOGE ("driver reports no supported frequencies");
 		return NULL;
 	}
 
 	if (device_info.caps == 0) {
-		_LOGE (LOGD_PLATFORM | LOGD_WIFI, "driver doesn't report support of any encryption");
+		_LOGE ("driver doesn't report support of any encryption");
 		return NULL;
 	}
 
@@ -985,6 +984,6 @@ nm_wifi_utils_nl80211_new (int ifindex, struct nl_sock *genl)
 	self->parent.caps = device_info.caps;
 	self->can_wowlan = device_info.can_wowlan;
 
-	_LOGD (LOGD_PLATFORM | LOGD_WIFI, "using nl80211 for WiFi device control");
+	_LOGD ("using nl80211 for WiFi device control");
 	return (NMWifiUtils *) g_steal_pointer (&self);
 }
