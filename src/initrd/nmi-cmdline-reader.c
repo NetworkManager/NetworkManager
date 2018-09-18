@@ -253,7 +253,7 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 	if (netmask && *netmask) {
 		NMIPAddr addr;
 
-		if (nm_utils_parse_inaddr_bin (AF_INET, netmask, &addr)) {
+		if (nm_utils_parse_inaddr_bin (AF_INET, netmask, NULL, &addr)) {
 			client_ip_prefix = nm_utils_ip4_netmask_to_prefix (addr.addr4);
 		} else {
 			_LOGW (LOGD_CORE, "Unrecognized address: %s\n", client_ip);
@@ -265,7 +265,7 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 		NMIPAddress *address = NULL;
 		NMIPAddr addr;
 
-		if (nm_utils_parse_inaddr_prefix_bin (client_ip_family, client_ip, &addr,
+		if (nm_utils_parse_inaddr_prefix_bin (client_ip_family, client_ip, NULL, &addr,
 		                                      client_ip_prefix == -1 ? &client_ip_prefix : NULL)) {
 			if (client_ip_prefix == -1) {
 				switch (client_ip_family) {
@@ -510,18 +510,17 @@ parse_rd_route (GHashTable *connections, char *argument)
 	gateway = get_word (&argument, ':');
 	interface = get_word (&argument, ':');
 
-	family = guess_ip_address_family (net);
 	connection = get_conn (connections, interface, NULL);
 
 	if (net && *net) {
-		if (!nm_utils_parse_inaddr_prefix_bin (family, net, &net_addr, &net_prefix)) {
+		if (!nm_utils_parse_inaddr_prefix_bin (family, net, &family, &net_addr, &net_prefix)) {
 			_LOGW (LOGD_CORE, "Unrecognized address: %s\n", net);
 			return;
 		}
 	}
 
-	if (gateway && *net) {
-		if (!nm_utils_parse_inaddr_bin (family, gateway, &gateway_addr)) {
+	if (gateway && *gateway) {
+		if (!nm_utils_parse_inaddr_bin (family, gateway, &family, &gateway_addr)) {
 			_LOGW (LOGD_CORE, "Unrecognized address: %s\n", gateway);
 			return;
 		}
