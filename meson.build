@@ -864,11 +864,10 @@ if enable_qt
 endif
 
 enable_docs = get_option('docs')
+
 if enable_docs
+  assert(enable_introspection, '-Ddocs=true requires -Dintrospection=true')
   subdir('man')
-
-  #assert(enable_introspection, '-Dgtk_doc=true requires -Dintrospection=true')
-
   subdir('docs')
 endif
 
