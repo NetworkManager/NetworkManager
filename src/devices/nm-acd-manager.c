@@ -415,8 +415,7 @@ nm_acd_manager_announce_addresses (NMAcdManager *self)
 
 	r = acd_init (self);
 	if (r) {
-		_LOGW ("couldn't init ACD for announcing address %s on interface '%s': %s",
-		       nm_utils_inet4_ntop (info->address, NULL),
+		_LOGW ("couldn't init ACD for announcing addresses on interface '%s': %s",
 		       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
 		       acd_error_to_string (r));
 		return;
