@@ -1292,7 +1292,7 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 	/* Properties */
 
 	/**
-	 * NMObject:path: (skip)
+	 * NMObject:path:
 	 *
 	 * The D-Bus object path.
 	 **/
