@@ -3128,6 +3128,16 @@ nm_platform_wpan_set_short_addr (NMPlatform *self, int ifindex, guint16 short_ad
 	return klass->wpan_set_short_addr (self, ifindex, short_addr);
 }
 
+gboolean
+nm_platform_wpan_set_channel (NMPlatform *self, int ifindex, guint8 page, guint8 channel)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return klass->wpan_set_channel (self, ifindex, page, channel);
+}
+
 #define TO_STRING_DEV_BUF_SIZE (5+15+1)
 static const char *
 _to_string_dev (NMPlatform *self, int ifindex, char *buf, size_t size)

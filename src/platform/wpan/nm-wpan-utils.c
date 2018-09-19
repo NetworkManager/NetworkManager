@@ -248,6 +248,24 @@ nla_put_failure:
 	return FALSE;
 }
 
+gboolean
+nm_wpan_utils_set_channel (NMWpanUtils *self, guint8 page, guint8 channel)
+{
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
+	int err;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+
+	msg = nl802154_alloc_msg (self, NL802154_CMD_SET_CHANNEL, 0);
+	NLA_PUT_U8 (msg, NL802154_ATTR_PAGE, page);
+	NLA_PUT_U8 (msg, NL802154_ATTR_CHANNEL, channel);
+	err = nl802154_send_and_recv (self, msg, NULL, NULL);
+	return err >= 0;
+
+nla_put_failure:
+	return FALSE;
+}
+
 /*****************************************************************************/
 
 static void
