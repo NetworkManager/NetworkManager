@@ -6609,7 +6609,6 @@ _do_test_utils_str_utf8safe (const char *str, gsize str_len, const char *expecte
 	const char *str_safe;
 	const char *buf_safe;
 	const char *s;
-	gs_free gpointer buf_free_1 = NULL;
 	gs_free char *str_free_1 = NULL;
 	gs_free char *str_free_2 = NULL;
 	gs_free char *str_free_3 = NULL;
