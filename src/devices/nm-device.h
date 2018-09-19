@@ -76,6 +76,7 @@ nm_device_state_reason_check (NMDeviceStateReason reason)
 #define NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT    "waiting-for-supplicant"
 #define NM_PENDING_ACTION_WIFI_SCAN                 "wifi-scan"
 #define NM_PENDING_ACTION_WAITING_FOR_COMPANION     "waiting-for-companion"
+#define NM_PENDING_ACTION_LINK_INIT                 "link-init"
 
 #define NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "queued-state-change-"
 #define NM_PENDING_ACTIONPREFIX_ACTIVATION          "activation-"
@@ -748,7 +749,13 @@ gboolean nm_device_supports_vlans (NMDevice *device);
 
 gboolean nm_device_add_pending_action    (NMDevice *device, const char *action, gboolean assert_not_yet_pending);
 gboolean nm_device_remove_pending_action (NMDevice *device, const char *action, gboolean assert_is_pending);
-gboolean nm_device_has_pending_action    (NMDevice *device);
+const char *nm_device_has_pending_action_reason (NMDevice *device);
+
+static inline gboolean
+nm_device_has_pending_action (NMDevice *device)
+{
+	return !!nm_device_has_pending_action_reason (device);
+}
 
 NMSettingsConnection *nm_device_get_best_connection (NMDevice *device,
                                                      const char *specific_object,

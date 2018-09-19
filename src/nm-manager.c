@@ -1518,6 +1518,7 @@ check_if_startup_complete (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device;
+	const char *reason;
 
 	if (!priv->startup)
 		return;
@@ -1525,15 +1526,19 @@ check_if_startup_complete (NMManager *self)
 	if (!priv->devices_inited)
 		return;
 
-	if (!nm_settings_get_startup_complete (priv->settings)) {
-		_LOGD (LOGD_CORE, "check_if_startup_complete returns FALSE because of NMSettings");
+	reason = nm_settings_get_startup_complete_blocked_reason (priv->settings);
+	if (reason) {
+		_LOGD (LOGD_CORE, "startup complete is waiting for connection (%s)",
+		       reason);
 		return;
 	}
 
 	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
-		if (nm_device_has_pending_action (device)) {
-			_LOGD (LOGD_CORE, "check_if_startup_complete returns FALSE because of %s",
-			       nm_device_get_iface (device));
+		reason = nm_device_has_pending_action_reason (device);
+		if (reason) {
+			_LOGD (LOGD_CORE, "startup complete is waiting for device '%s' (%s)",
+			       nm_device_get_iface (device),
+			       reason);
 			return;
 		}
 	}

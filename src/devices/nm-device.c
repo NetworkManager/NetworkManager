@@ -13991,22 +13991,22 @@ nm_device_remove_pending_action (NMDevice *self, const char *action, gboolean as
 	return FALSE;
 }
 
-gboolean
-nm_device_has_pending_action (NMDevice *self)
+const char *
+nm_device_has_pending_action_reason (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (priv->pending_actions)
-		return TRUE;
+		return priv->pending_actions->data;
 
 	if (   nm_device_is_real (self)
 	    && nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
 		/* as long as the platform link is not yet initialized, we have a pending
 		 * action. */
-		return TRUE;
+		return NM_PENDING_ACTION_LINK_INIT;
 	}
 
-	return FALSE;
+	return NULL;
 }
 
 /*****************************************************************************/
