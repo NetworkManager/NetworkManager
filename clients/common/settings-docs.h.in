@@ -359,6 +359,8 @@
 #define DESCRIBE_DOC_NM_SETTING_VXLAN_TTL N_("Specifies the time-to-live value to use in outgoing packets.")
 #define DESCRIBE_DOC_NM_SETTING_WIMAX_MAC_ADDRESS N_("If specified, this connection will only apply to the WiMAX device whose MAC address matches. This property does not change the MAC address of the device (known as MAC spoofing). Deprecated: 1")
 #define DESCRIBE_DOC_NM_SETTING_WIMAX_NETWORK_NAME N_("Network Service Provider (NSP) name of the WiMAX network this connection should use. Deprecated: 1")
+#define DESCRIBE_DOC_NM_SETTING_WPAN_CHANNEL N_("IEEE 802.15.4 channel.")
 #define DESCRIBE_DOC_NM_SETTING_WPAN_MAC_ADDRESS N_("If specified, this connection will only apply to the IEEE 802.15.4 (WPAN) MAC layer device whose permanent MAC address matches.")
+#define DESCRIBE_DOC_NM_SETTING_WPAN_PAGE N_("IEEE 802.15.4 channel page.")
 #define DESCRIBE_DOC_NM_SETTING_WPAN_PAN_ID N_("IEEE 802.15.4 Personal Area Network (PAN) identifier.")
 #define DESCRIBE_DOC_NM_SETTING_WPAN_SHORT_ADDRESS N_("Short IEEE 802.15.4 address to be used within a restricted environment.")
