@@ -39,6 +39,11 @@ G_BEGIN_DECLS
 #define NM_SETTING_WPAN_MAC_ADDRESS        "mac-address"
 #define NM_SETTING_WPAN_PAN_ID             "pan-id"
 #define NM_SETTING_WPAN_SHORT_ADDRESS      "short-address"
+#define NM_SETTING_WPAN_PAGE               "page"
+#define NM_SETTING_WPAN_CHANNEL            "channel"
+
+#define NM_SETTING_WPAN_PAGE_DEFAULT    -1
+#define NM_SETTING_WPAN_CHANNEL_DEFAULT -1
 
 typedef struct _NMSettingWpanClass NMSettingWpanClass;
 
@@ -53,6 +58,10 @@ NM_AVAILABLE_IN_1_14
 guint16     nm_setting_wpan_get_pan_id             (NMSettingWpan *setting);
 NM_AVAILABLE_IN_1_14
 guint16     nm_setting_wpan_get_short_address      (NMSettingWpan *setting);
+NM_AVAILABLE_IN_1_16
+gint16      nm_setting_wpan_get_page               (NMSettingWpan *setting);
+NM_AVAILABLE_IN_1_16
+gint16      nm_setting_wpan_get_channel            (NMSettingWpan *setting);
 
 G_END_DECLS
 
