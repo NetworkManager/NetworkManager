@@ -144,7 +144,7 @@ compare_expected_to_ifparser (if_parser *parser, Expected *e)
 
 		g_assert (b->type && n->type);
 		g_assert_cmpstr (b->type, ==, n->type);
-		g_assert (b->name && n->name);
+		g_assert (b->name);
 		g_assert_cmpstr (b->name, ==, n->name);
 
 		g_assert_cmpint (g_slist_length (b->keys), ==, ifparser_get_num_info (n));
@@ -153,7 +153,7 @@ compare_expected_to_ifparser (if_parser *parser, Expected *e)
 		c_list_for_each_entry (m, &n->data_lst_head, data_lst) {
 			ExpectedKey *k = kiter->data;
 
-			g_assert (k->key && m->key);
+			g_assert (k->key);
 			g_assert_cmpstr (k->key, ==, m->key);
 			g_assert (k->data && m->data);
 			g_assert_cmpstr (k->data, ==, m->data);
