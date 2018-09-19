@@ -188,7 +188,6 @@ parse_old_openssl_key_file (const guint8 *data,
 	int enc_tags = 0;
 	NMCryptoKeyType key_type;
 	nm_auto_clear_secret_ptr NMSecretPtr parsed = { 0 };
-	nm_auto_clear_secret_ptr NMSecretPtr data_content = { 0 };
 	nm_auto_free_secret char *iv = NULL;
 	NMCryptoCipherType cipher = NM_CRYPTO_CIPHER_UNKNOWN;
 	const char *start_tag;
@@ -338,7 +337,6 @@ parse_pkcs8_key_file (const guint8 *data,
                       GError **error)
 {
 	gsize start = 0, end = 0;
-	gs_free guchar *der = NULL;
 	const char *start_tag = NULL, *end_tag = NULL;
 	gboolean encrypted = FALSE;
 	nm_auto_free_secret char *der_base64 = NULL;
@@ -515,7 +513,6 @@ _nmtst_decrypt_key (NMCryptoCipherType cipher,
 {
 	nm_auto_clear_secret_ptr NMSecretPtr bin_iv = { 0 };
 	nm_auto_clear_secret_ptr NMSecretPtr key = { 0 };
-	gs_free char *output = NULL;
 
 	nm_assert (password);
 	nm_assert (cipher != NM_CRYPTO_CIPHER_UNKNOWN);
