@@ -711,11 +711,27 @@ auto_support_src = 'int main() { int a = 0; __auto_type b = a; return b + a; };'
 config_h.set10('_NM_CC_SUPPORT_AUTO_TYPE', cc.compiles(auto_support_src))
 
 # Vala bindings
-enable_vapi = get_option('vapi')
-if enable_vapi
+vapi_opt = get_option('vapi')
+if vapi_opt == 'false'
+  enable_vapi = false
+else
   vala_req_version = '>= 0.17.1.24'
-  assert(add_languages('vala', required: false), 'vala is required to build. Use -Dvapi=false to disable it')
-  assert(meson.get_compiler('vala').version().version_compare(vala_req_version), 'vala ' + vala_req_version + ' is required to build. Use -Dvapi=false to disable it')
+  enable_vapi = true
+
+  if not enable_introspection
+    assert(vapi_opt != 'true', 'vala api require GObject introspection. Use -Dvapi=false to disable it')
+    enable_vapi = false
+  endif
+
+  if enable_vapi and not add_languages('vala', required: false)
+    assert(vapi_opt != 'true', 'vala is required to build. Use -Dvapi=false to disable it')
+    enable_vapi = false
+  endif
+
+  if enable_vapi and not meson.get_compiler('vala').version().version_compare(vala_req_version)
+    assert(vapi_opt != 'true', 'vala ' + vala_req_version + ' is required to build. Use -Dvapi=false to disable it')
+    enable_vapi = false
+  endif
 endif
 
 # Tests, utilities and documentation
@@ -848,11 +864,10 @@ if enable_qt
 endif
 
 enable_docs = get_option('docs')
+
 if enable_docs
+  assert(enable_introspection, '-Ddocs=true requires -Dintrospection=true')
   subdir('man')
-
-  #assert(enable_introspection, '-Dgtk_doc=true requires -Dintrospection=true')
-
   subdir('docs')
 endif
 
@@ -895,7 +910,7 @@ configure_file(
 )
 
 meson.add_install_script(
-  'meson_post_install.py',
+  join_paths('tools', 'meson-post-install.sh'),
   nm_datadir,
   nm_bindir,
   nm_pkgconfdir,
@@ -978,4 +993,5 @@ output += '  JSON validation for libnm: ' + enable_json_validation.to_string() +
 output += '  crypto: ' + crypto + ' (have-gnutls: ' + crypto_gnutls_dep.found().to_string() + ', have-nss: ' + crypto_nss_dep.found().to_string() + ')\n'
 output += '  sanitizers: ' + get_option('b_sanitize') + '\n'
 output += '  Mozilla Public Suffix List: ' + enable_libpsl.to_string() + '\n'
+output += '  vapi: ' + enable_vapi.to_string() + '\n'
 message(output)
