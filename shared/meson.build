@@ -24,7 +24,7 @@ shared_c_rbtree_dep = declare_dependency(
 )
 
 
-if get_option('ebpf')
+if enable_ebpf
     shared_n_acd_bpf_files = files('n-acd/src/n-acd-bpf.c')
 else
     shared_n_acd_bpf_files = files('n-acd/src/n-acd-bpf-fallback.c')

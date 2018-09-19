@@ -423,6 +423,18 @@ if enable_selinux
 endif
 config_h.set10('HAVE_SELINUX', enable_selinux)
 
+# eBPF support
+ebpf_opt = get_option('ebpf')
+if ebpf_opt == 'false'
+  enable_ebpf = false
+else
+  enable_ebpf = true
+  if not cc.has_header('linux/bpf.h')
+    assert(ebpf_opt != 'true', 'eBPF requires kernel support')
+    enable_ebpf = false
+  endif
+endif
+
 # libaudit support
 libaudit = get_option('libaudit')
 enable_libaudit = libaudit.contains('yes')
@@ -994,4 +1006,5 @@ output += '  crypto: ' + crypto + ' (have-gnutls: ' + crypto_gnutls_dep.found().
 output += '  sanitizers: ' + get_option('b_sanitize') + '\n'
 output += '  Mozilla Public Suffix List: ' + enable_libpsl.to_string() + '\n'
 output += '  vapi: ' + enable_vapi.to_string() + '\n'
+output += '  ebpf: ' + enable_ebpf.to_string() + '\n'
 message(output)

@@ -520,12 +520,17 @@ esac
 
 # eBPF support
 AC_ARG_WITH(ebpf,
-            AS_HELP_STRING([--with-ebpf=yes|no], [Build with eBPF support (default: yes)]),
-            [], [with_ebpf=yes])
-if test "$with_ebpf" != "yes" -a "$with_ebpf" != "no"; then
-	AC_MSG_ERROR(--with-ebpf must be one of [yes, no])
+            AS_HELP_STRING([--with-ebpf=yes|no|auto], [Build with eBPF support (default: auto)]),
+            [], [with_ebpf=auto])
+if test "$with_ebpf" = "yes" -o "$with_ebpf" = "auto"; then
+	AC_CHECK_HEADER(linux/bpf.h, [have_ebpf=yes], [have_ebpf=no])
+else
+	have_ebpf=no
 fi
-AM_CONDITIONAL(WITH_EBPF, test "${with_ebpf}" = "yes")
+if test "$with_ebpf" = "yes" -a "$have_ebpf" = "no"; then
+	AC_MSG_ERROR([--with-ebpf=yes requires eBPF kernel header])
+fi
+AM_CONDITIONAL(WITH_EBPF, test "${have_ebpf}" = "yes")
 
 # SELinux support
 AC_ARG_WITH(selinux,
@@ -1362,5 +1367,5 @@ echo "  JSON validation for libnm: $enable_json_validation"
 echo "  crypto: $with_crypto (have-gnutls: $have_crypto_gnutls, have-nss: $have_crypto_nss)"
 echo "  sanitizers: $sanitizers"
 echo "  Mozilla Public Suffix List: $with_libpsl"
-echo "  eBPF: $with_ebpf"
+echo "  eBPF: $have_ebpf"
 echo

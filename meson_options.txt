@@ -41,7 +41,7 @@ option('libnm_glib', type: 'boolean', value: false, description: 'build legacy l
 option('nmcli', type: 'boolean', value: true, description: 'Build nmcli')
 option('nmtui', type: 'boolean', value: true, description: 'Build nmtui')
 option('bluez5_dun', type: 'boolean', value: false, description: 'enable Bluez5 DUN support')
-option('ebpf', type: 'boolean', value: true, description: 'Enable or disable eBPF support')
+option('ebpf', type: 'combo', choices : ['auto', 'true', 'false'], description: 'Enable eBPF support')
 
 # configuration plugins
 option('config_plugins_default', type: 'string', value: '', description: 'Default configuration option for main.plugins setting, used as fallback if the configuration option is unset')
