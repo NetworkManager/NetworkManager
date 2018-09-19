@@ -430,7 +430,16 @@ mirror_8021x_connection (NMIwdManager *self,
 	                                    NULL));
 	nm_connection_add_setting (connection, setting);
 
-	setting = NM_SETTING (g_object_new (NM_TYPE_SETTING_802_1X, NULL));
+	/* "password" and "private-key-password" may be requested by the IWD agent
+	 * from NM and IWD will implement a specific secret cache policy so by
+	 * default respect that policy and don't save copies of those secrets in
+	 * NM settings.  The saved values can not be used anyway because of our
+	 * use of NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW.
+	 */
+	setting = NM_SETTING (g_object_new (NM_TYPE_SETTING_802_1X,
+	                                    NM_SETTING_802_1X_PASSWORD_FLAGS, NM_SETTING_SECRET_FLAG_NOT_SAVED,
+	                                    NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS, NM_SETTING_SECRET_FLAG_NOT_SAVED,
+	                                    NULL));
 	nm_setting_802_1x_add_eap_method (NM_SETTING_802_1X (setting), "external");
 	nm_connection_add_setting (connection, setting);
 
@@ -784,6 +793,21 @@ nm_iwd_manager_is_known_network (NMIwdManager *self, const char *name,
 	KnownNetworkId kn_id = { name, security };
 
 	return g_hash_table_contains (priv->known_networks, &kn_id);
+}
+
+GDBusProxy *
+nm_iwd_manager_get_dbus_interface (NMIwdManager *self, const char *path,
+                                   const char *name)
+{
+	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
+	GDBusInterface *interface;
+
+	if (!priv->object_manager)
+		return NULL;
+
+	interface = g_dbus_object_manager_get_interface (priv->object_manager, path, name);
+
+	return interface ? G_DBUS_PROXY (interface) : NULL;
 }
 
 /*****************************************************************************/
