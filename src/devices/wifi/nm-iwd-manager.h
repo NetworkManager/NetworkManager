@@ -57,4 +57,7 @@ NMIwdManager *nm_iwd_manager_get (void);
 gboolean nm_iwd_manager_is_known_network (NMIwdManager *self, const char *name,
                                           NMIwdNetworkSecurity security);
 
+GDBusProxy *nm_iwd_manager_get_dbus_interface (NMIwdManager *self, const char *path,
+                                               const char *name);
+
 #endif /* __NETWORKMANAGER_IWD_MANAGER_H__ */
