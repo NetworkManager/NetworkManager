@@ -123,6 +123,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMPlatform *platform;
 	guint16 pan_id;
 	guint16 short_address;
+	gint16 page, channel;
 	int ifindex;
 	const guint8 *hwaddr;
 	gsize hwaddr_len = 0;
@@ -178,6 +179,15 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	if (short_address != G_MAXUINT16) {
 		if (!nm_platform_wpan_set_short_addr (platform, ifindex, short_address)) {
 			_LOGW (LOGD_DEVICE, "unable to set the short address");
+			goto out;
+		}
+	}
+
+	channel = nm_setting_wpan_get_channel (s_wpan);
+	if (channel != NM_SETTING_WPAN_CHANNEL_DEFAULT) {
+		page = nm_setting_wpan_get_page (s_wpan);
+		if (!nm_platform_wpan_set_channel (platform, ifindex, page, channel)) {
+			_LOGW (LOGD_DEVICE, "unable to set the channel");
 			goto out;
 		}
 	}
