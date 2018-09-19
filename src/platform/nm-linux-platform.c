@@ -6947,6 +6947,13 @@ wpan_set_short_addr (NMPlatform *platform, int ifindex, guint16 short_addr)
 	return nm_wpan_utils_set_short_addr (wpan_data, short_addr);
 }
 
+static gboolean
+wpan_set_channel (NMPlatform *platform, int ifindex, guint8 page, guint8 channel)
+{
+	WPAN_GET_WPAN_DATA (wpan_data, platform, ifindex, FALSE);
+	return nm_wpan_utils_set_channel (wpan_data, page, channel);
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -8067,6 +8074,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->wpan_set_pan_id = wpan_set_pan_id;
 	platform_class->wpan_get_short_addr = wpan_get_short_addr;
 	platform_class->wpan_set_short_addr = wpan_set_short_addr;
+	platform_class->wpan_set_channel = wpan_set_channel;
 
 	platform_class->link_gre_add = link_gre_add;
 	platform_class->link_ip6tnl_add = link_ip6tnl_add;

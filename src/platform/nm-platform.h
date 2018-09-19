@@ -927,6 +927,7 @@ typedef struct {
 	gboolean    (*wpan_set_pan_id)       (NMPlatform *, int ifindex, guint16 pan_id);
 	guint16     (*wpan_get_short_addr)   (NMPlatform *, int ifindex);
 	gboolean    (*wpan_set_short_addr)   (NMPlatform *, int ifindex, guint16 short_addr);
+	gboolean    (*wpan_set_channel)      (NMPlatform *, int ifindex, guint8 page, guint8 channel);
 
 	gboolean (*object_delete) (NMPlatform *, const NMPObject *obj);
 
@@ -1317,6 +1318,7 @@ guint16     nm_platform_wpan_get_pan_id       (NMPlatform *platform, int ifindex
 gboolean    nm_platform_wpan_set_pan_id       (NMPlatform *platform, int ifindex, guint16 pan_id);
 guint16     nm_platform_wpan_get_short_addr   (NMPlatform *platform, int ifindex);
 gboolean    nm_platform_wpan_set_short_addr   (NMPlatform *platform, int ifindex, guint16 short_addr);
+gboolean    nm_platform_wpan_set_channel      (NMPlatform *platform, int ifindex, guint8 page, guint8 channel);
 
 void                   nm_platform_ip4_address_set_addr (NMPlatformIP4Address *addr, in_addr_t address, guint8 plen);
 const struct in6_addr *nm_platform_ip6_address_get_peer (const NMPlatformIP6Address *addr);

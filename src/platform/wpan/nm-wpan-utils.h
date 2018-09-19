@@ -44,4 +44,6 @@ gboolean nm_wpan_utils_set_pan_id (NMWpanUtils *self, guint16 pan_id);
 guint16 nm_wpan_utils_get_short_addr (NMWpanUtils *self);
 gboolean nm_wpan_utils_set_short_addr (NMWpanUtils *self, guint16 short_addr);
 
+gboolean nm_wpan_utils_set_channel (NMWpanUtils *self, guint8 page, guint8 channel);
+
 #endif  /* __WPAN_UTILS_H__ */
