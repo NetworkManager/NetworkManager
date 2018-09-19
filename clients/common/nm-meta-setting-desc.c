@@ -7834,6 +7834,34 @@ static const NMMetaPropertyInfo *const property_infos_WPAN[] = {
 			),
 		),
 	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WPAN_PAGE,
+		.is_cli_option =                TRUE,
+		.property_alias =               "page",
+		.prompt =                       N_("Page (<default|0-31>)"),
+		.property_type =                &_pt_gobject_int,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int, \
+			.value_infos =          INT_VALUE_INFOS (
+				{
+					.value = NM_SETTING_WPAN_PAGE_DEFAULT,
+					.nick = "default",
+				}
+			),
+		),
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WPAN_CHANNEL,
+		.is_cli_option =                TRUE,
+		.property_alias =               "channel",
+		.prompt =                       N_("Channel (<default|0-26>)"),
+		.property_type =                &_pt_gobject_int,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int, \
+			.value_infos =          INT_VALUE_INFOS (
+				{
+					.value = NM_SETTING_WPAN_CHANNEL_DEFAULT,
+					.nick = "default",
+				}
+			),
+		),
+	),
 	NULL
 };
 
