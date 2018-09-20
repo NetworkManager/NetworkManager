@@ -75,11 +75,15 @@ aren't expecting the dynamic requests that NetworkManager and wpa_supplicant
 make.  Driver bugs should be filed in the bug tracker of the distribution being
 run, since often distributions customize their kernel and drivers.
 
-Sometimes, it really is NetworkManager's fault.  If you think that's the case,
-please file a bug at http://bugzilla.gnome.org and choose the NetworkManager
-component.  Attaching the output of /var/log/messages or /var/log/daemon.log
-(wherever your distribution directs syslog's 'daemon' facility output) is often
-very helpful, and (if you can get) a working wpa_supplicant config file helps
-enormously.
+Sometimes, it really is NetworkManager's fault.  If you think that's
+the case, please file a bug at:
 
+https://gitlab.freedesktop.org/NetworkManager/NetworkManager/issues
 
+Attaching NetworkManager debug logs from the journal (or wherever your
+distribution directs syslog's 'daemon' facility output, as
+/var/log/messages or /var/log/daemon.log) is often very helpful, and
+(if you can get) a working wpa_supplicant config file helps
+enormously.  See the logging section of file
+contrib/fedora/rpm/NetworkManager.conf for how to enable debug logging
+in NetworkManager.
