@@ -10363,8 +10363,10 @@ nm_device_reactivate_ip4_config (NMDevice *self,
 					nm_ip4_config_update_routes_metric ((NMIP4Config *) priv->wwan_ip_config_4.orig,
 					                                    nm_device_get_route_metric (self, AF_INET));
 				}
-				if (priv->dhcp4.client)
-					nm_dhcp_client_set_route_metric (priv->dhcp4.client, metric_new);
+				if (priv->dhcp4.client) {
+					nm_dhcp_client_set_route_metric (priv->dhcp4.client,
+					                                 nm_device_get_route_metric (self, AF_INET));
+				}
 			}
 		}
 
@@ -10434,8 +10436,10 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 					nm_ip6_config_update_routes_metric ((NMIP6Config *) priv->wwan_ip_config_6.orig,
 					                                    nm_device_get_route_metric (self, AF_INET6));
 				}
-				if (priv->dhcp6.client)
-					nm_dhcp_client_set_route_metric (priv->dhcp6.client, metric_new);
+				if (priv->dhcp6.client) {
+					nm_dhcp_client_set_route_metric (priv->dhcp6.client,
+					                                 nm_device_get_route_metric (self, AF_INET6));
+				}
 			}
 		}
 
