@@ -37,7 +37,6 @@ typedef struct _NMAuthSubject        NMAuthSubject;
 typedef struct _NMDBusManager        NMDBusManager;
 typedef struct _NMConfig             NMConfig;
 typedef struct _NMConfigData         NMConfigData;
-typedef struct _NMAcdManager         NMAcdManager;
 typedef struct _NMConnectivity       NMConnectivity;
 typedef struct _NMDevice             NMDevice;
 typedef struct _NMDhcp4Config        NMDhcp4Config;

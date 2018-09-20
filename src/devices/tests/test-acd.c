@@ -61,20 +61,23 @@ typedef struct {
 } TestInfo;
 
 static void
-acd_manager_probe_terminated (NMAcdManager *acd_manager, GMainLoop *loop)
+acd_manager_probe_terminated (NMAcdManager *acd_manager, gpointer user_data)
 {
-	g_main_loop_quit (loop);
+	g_main_loop_quit (user_data);
 }
 
 static void
 test_acd_common (test_fixture *fixture, TestInfo *info)
 {
-	gs_unref_object NMAcdManager *manager = NULL;
+	NMAcdManager *manager;
 	GMainLoop *loop;
 	int i;
 	const guint WAIT_TIME_OPTIMISTIC = 50;
 	guint wait_time;
-	gulong signal_id;
+	static const NMAcdCallbacks callbacks = {
+		.probe_terminated_callback = acd_manager_probe_terminated,
+		.user_data_destroy         = (GDestroyNotify) g_main_loop_unref,
+	};
 
 	/* first, try with a short waittime. We hope that this is long enough
 	 * to successfully complete the test. Only if that's not the case, we
@@ -83,7 +86,13 @@ test_acd_common (test_fixture *fixture, TestInfo *info)
 	wait_time = WAIT_TIME_OPTIMISTIC;
 again:
 
-	manager = nm_acd_manager_new (fixture->ifindex0, fixture->hwaddr0, fixture->hwaddr0_len);
+	loop = g_main_loop_new (NULL, FALSE);
+
+	manager = nm_acd_manager_new (fixture->ifindex0,
+	                              fixture->hwaddr0,
+	                              fixture->hwaddr0_len,
+	                              &callbacks,
+	                              g_main_loop_ref (loop));
 	g_assert (manager != NULL);
 
 	for (i = 0; info->addresses[i]; i++)
@@ -94,12 +103,8 @@ again:
 		                        24, 0, 3600, 1800, 0, NULL);
 	}
 
-	loop = g_main_loop_new (NULL, FALSE);
-	signal_id = g_signal_connect (manager, NM_ACD_MANAGER_PROBE_TERMINATED,
-	                              G_CALLBACK (acd_manager_probe_terminated), loop);
 	g_assert (nm_acd_manager_start_probe (manager, wait_time));
 	g_assert (nmtst_main_loop_run (loop, 2000));
-	g_signal_handler_disconnect (manager, signal_id);
 	g_main_loop_unref (loop);
 
 	for (i = 0; info->addresses[i]; i++) {
@@ -113,7 +118,7 @@ again:
 			/* probably we just had a glitch and the system took longer than
 			 * expected. Re-verify with a large timeout this time. */
 			wait_time = 1000;
-			g_clear_object (&manager);
+			nm_clear_pointer (&manager, nm_acd_manager_free);
 			goto again;
 		}
 
@@ -121,6 +126,8 @@ again:
 		         i, nm_utils_inet4_ntop (info->addresses[i], NULL),
 		         info->expected_result[i] ? "detect no duplicated" : "detect a duplicate");
 	}
+
+	nm_acd_manager_free (manager);
 }
 
 static void
@@ -146,10 +153,14 @@ test_acd_probe_2 (test_fixture *fixture, gconstpointer user_data)
 static void
 test_acd_announce (test_fixture *fixture, gconstpointer user_data)
 {
-	gs_unref_object NMAcdManager *manager = NULL;
+	NMAcdManager *manager;
 	GMainLoop *loop;
 
-	manager = nm_acd_manager_new (fixture->ifindex0, fixture->hwaddr0, fixture->hwaddr0_len);
+	manager = nm_acd_manager_new (fixture->ifindex0,
+	                              fixture->hwaddr0,
+	                              fixture->hwaddr0_len,
+	                              NULL,
+	                              NULL);
 	g_assert (manager != NULL);
 
 	g_assert (nm_acd_manager_add_address (manager, ADDR1));
@@ -159,6 +170,8 @@ test_acd_announce (test_fixture *fixture, gconstpointer user_data)
 	nm_acd_manager_announce_addresses (manager);
 	g_assert (!nmtst_main_loop_run (loop, 200));
 	g_main_loop_unref (loop);
+
+	nm_acd_manager_free (manager);
 }
 
 static void
