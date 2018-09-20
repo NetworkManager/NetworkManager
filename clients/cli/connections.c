@@ -2287,7 +2287,7 @@ find_device_for_connection (NmCli *nmc,
 					continue;
 
 				if (!nm_device_connection_compatible (dev, connection, error)) {
-					g_prefix_error (error, _("device '%s' not compatible with connection '%s':"),
+					g_prefix_error (error, _("device '%s' not compatible with connection '%s': "),
 					                iface, nm_setting_connection_get_id (s_con));
 					return FALSE;
 				}
