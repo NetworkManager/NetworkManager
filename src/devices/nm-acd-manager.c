@@ -170,6 +170,7 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 	NMAcdManagerPrivate *priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 	NAcdEvent *event;
 	AddressInfo *info;
+	gboolean emit_probe_terminated = FALSE;
 	char address_str[INET_ADDRSTRLEN];
 	gs_free char *hwaddr_str = NULL;
 	int r;
@@ -177,7 +178,10 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 	if (n_acd_dispatch (priv->acd))
 		return G_SOURCE_CONTINUE;
 
-	while (!n_acd_pop_event (priv->acd, &event) && event) {
+	while (   !n_acd_pop_event (priv->acd, &event)
+	       && event) {
+		gboolean check_probing_done = FALSE;
+
 		switch (event->event) {
 		case N_ACD_EVENT_READY:
 			n_acd_probe_get_userdata (event->ready.probe, (void **) &info);
@@ -195,10 +199,12 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 					       nm_utils_inet4_ntop (info->address, address_str));
 				}
 			}
+			check_probing_done = TRUE;
 			break;
 		case N_ACD_EVENT_USED:
 			n_acd_probe_get_userdata (event->used.probe, (void **) &info);
 			info->duplicate = TRUE;
+			check_probing_done = TRUE;
 			break;
 		case N_ACD_EVENT_DEFENDED:
 			n_acd_probe_get_userdata (event->defended.probe, (void **) &info);
@@ -206,7 +212,7 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 			       nm_utils_inet4_ntop (info->address, address_str),
 			       (hwaddr_str = nm_utils_hwaddr_ntoa (event->defended.sender,
 			                                           event->defended.n_sender)));
-			return G_SOURCE_CONTINUE;
+			break;
 		case N_ACD_EVENT_CONFLICT:
 			n_acd_probe_get_userdata (event->conflict.probe, (void **) &info);
 			_LOGW ("conflict for address %s detected with host %s on interface '%s'",
@@ -214,18 +220,22 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 			       (hwaddr_str = nm_utils_hwaddr_ntoa (event->defended.sender,
 			                                           event->defended.n_sender)),
 			       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex));
-			return G_SOURCE_CONTINUE;
+			break;
 		default:
 			_LOGD ("unhandled event '%s'", acd_event_to_string (event->event));
-			return G_SOURCE_CONTINUE;
+			break;
 		}
 
-		if (   priv->state == STATE_PROBING
+		if (   check_probing_done
+		    && priv->state == STATE_PROBING
 		    && ++priv->completed == g_hash_table_size (priv->addresses)) {
 			priv->state = STATE_PROBE_DONE;
-			g_signal_emit (self, signals[PROBE_TERMINATED], 0);
+			emit_probe_terminated = TRUE;
 		}
 	}
+
+	if (emit_probe_terminated)
+		g_signal_emit (self, signals[PROBE_TERMINATED], 0);
 
 	return G_SOURCE_CONTINUE;
 }
