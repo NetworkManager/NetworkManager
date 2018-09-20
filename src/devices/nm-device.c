@@ -6622,17 +6622,15 @@ get_ipv4_dad_timeout (NMDevice *self)
 }
 
 static void
-acd_data_destroy (gpointer ptr, GClosure *closure)
+acd_data_destroy (gpointer ptr)
 {
 	AcdData *data = ptr;
 	int i;
 
-	if (data) {
-		for (i = 0; data->configs && data->configs[i]; i++)
-			g_object_unref (data->configs[i]);
-		g_free (data->configs);
-		g_slice_free (AcdData, data);
-	}
+	for (i = 0; data->configs && data->configs[i]; i++)
+		g_object_unref (data->configs[i]);
+	g_free (data->configs);
+	g_slice_free (AcdData, data);
 }
 
 static void
@@ -6666,8 +6664,9 @@ ipv4_manual_method_apply (NMDevice *self, NMIP4Config **configs, gboolean succes
 }
 
 static void
-acd_manager_probe_terminated (NMAcdManager *acd_manager, AcdData *data)
+acd_manager_probe_terminated (NMAcdManager *acd_manager, gpointer user_data)
 {
+	AcdData *data = user_data;
 	NMDevice *self;
 	NMDevicePrivate *priv;
 	NMDedupMultiIter ipconf_iter;
@@ -6695,7 +6694,7 @@ acd_manager_probe_terminated (NMAcdManager *acd_manager, AcdData *data)
 	data->callback (self, data->configs, success);
 
 	priv->acd.dad_list = g_slist_remove (priv->acd.dad_list, acd_manager);
-	nm_acd_manager_destroy (acd_manager);
+	nm_acd_manager_free (acd_manager);
 }
 
 /**
@@ -6711,6 +6710,10 @@ acd_manager_probe_terminated (NMAcdManager *acd_manager, AcdData *data)
 static void
 ipv4_dad_start (NMDevice *self, NMIP4Config **configs, AcdCallback cb)
 {
+	static const NMAcdCallbacks acd_callbacks = {
+		.probe_terminated_callback = acd_manager_probe_terminated,
+		.user_data_destroy         = acd_data_destroy,
+	};
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMAcdManager *acd_manager;
 	const NMPlatformIP4Address *address;
@@ -6754,25 +6757,22 @@ ipv4_dad_start (NMDevice *self, NMIP4Config **configs, AcdCallback cb)
 		return;
 	}
 
-	/* don't take additional references of @acd_manager that outlive @self.
-	 * Otherwise, the callback can be invoked on a dangling pointer as we don't
-	 * disconnect the handler. */
-	acd_manager = nm_acd_manager_new (nm_device_get_ip_ifindex (self), hwaddr_arr, length);
-	priv->acd.dad_list = g_slist_append (priv->acd.dad_list, acd_manager);
-
 	data = g_slice_new0 (AcdData);
 	data->configs = configs;
 	data->callback = cb;
 	data->device = self;
 
+	acd_manager = nm_acd_manager_new (nm_device_get_ip_ifindex (self),
+	                                  hwaddr_arr,
+	                                  length,
+	                                  &acd_callbacks,
+	                                  data);
+	priv->acd.dad_list = g_slist_append (priv->acd.dad_list, acd_manager);
+
 	for (i = 0; configs[i]; i++) {
 		nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, configs[i], &address)
 			nm_acd_manager_add_address (acd_manager, address->address);
 	}
-
-	g_signal_connect_data (acd_manager, NM_ACD_MANAGER_PROBE_TERMINATED,
-	                       G_CALLBACK (acd_manager_probe_terminated), data,
-	                       acd_data_destroy, 0);
 
 	ret = nm_acd_manager_start_probe (acd_manager, timeout);
 
@@ -6783,7 +6783,7 @@ ipv4_dad_start (NMDevice *self, NMIP4Config **configs, AcdCallback cb)
 		cb (self, configs, TRUE);
 
 		priv->acd.dad_list = g_slist_remove (priv->acd.dad_list, acd_manager);
-		nm_acd_manager_destroy (acd_manager);
+		nm_acd_manager_free (acd_manager);
 	}
 }
 
@@ -10207,10 +10207,7 @@ arp_cleanup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->acd.announcing) {
-		nm_acd_manager_destroy (priv->acd.announcing);
-		priv->acd.announcing = NULL;
-	}
+	nm_clear_pointer (&priv->acd.announcing, nm_acd_manager_free);
 }
 
 void
@@ -10245,7 +10242,11 @@ nm_device_arp_announce (NMDevice *self)
 	if (num == 0)
 		return;
 
-	priv->acd.announcing = nm_acd_manager_new (nm_device_get_ip_ifindex (self), hw_addr, hw_addr_len);
+	priv->acd.announcing = nm_acd_manager_new (nm_device_get_ip_ifindex (self),
+	                                           hw_addr,
+	                                           hw_addr_len,
+	                                           NULL,
+	                                           NULL);
 
 	for (i = 0; i < num; i++) {
 		NMIPAddress *ip = nm_setting_ip_config_get_address (s_ip4, i);
@@ -10720,7 +10721,7 @@ _cleanup_ip_pre (NMDevice *self, int addr_family, CleanupType cleanup_type)
 		arp_cleanup (self);
 		dnsmasq_cleanup (self);
 		ipv4ll_cleanup (self);
-		g_slist_free_full (priv->acd.dad_list, (GDestroyNotify) nm_acd_manager_destroy);
+		g_slist_free_full (priv->acd.dad_list, (GDestroyNotify) nm_acd_manager_free);
 		priv->acd.dad_list = NULL;
 	} else {
 		g_slist_free_full (priv->dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);

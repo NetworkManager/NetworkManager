@@ -1668,12 +1668,12 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-checkpoint-manager.c \
 	src/nm-checkpoint-manager.h \
 	\
-	src/devices/nm-device.c \
-	src/devices/nm-device.h \
-	src/devices/nm-lldp-listener.c \
-	src/devices/nm-lldp-listener.h \
 	src/devices/nm-acd-manager.c \
 	src/devices/nm-acd-manager.h \
+	src/devices/nm-lldp-listener.c \
+	src/devices/nm-lldp-listener.h \
+	src/devices/nm-device.c \
+	src/devices/nm-device.h \
 	src/devices/nm-device-ethernet-utils.c \
 	src/devices/nm-device-ethernet-utils.h \
 	src/devices/nm-device-factory.c \

@@ -42,14 +42,7 @@ typedef struct {
 	NAcdProbe *probe;
 } AddressInfo;
 
-enum {
-	PROBE_TERMINATED,
-	LAST_SIGNAL,
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
-
-typedef struct {
+struct _NMAcdManager {
 	int            ifindex;
 	guint8         hwaddr[ETH_ALEN];
 	State          state;
@@ -58,20 +51,10 @@ typedef struct {
 	NAcd          *acd;
 	GIOChannel    *channel;
 	guint          event_id;
-} NMAcdManagerPrivate;
 
-struct _NMAcdManager {
-	GObject parent;
-	NMAcdManagerPrivate _priv;
+	NMAcdCallbacks callbacks;
+	gpointer user_data;
 };
-
-struct _NMAcdManagerClass {
-	GObjectClass parent;
-};
-
-G_DEFINE_TYPE (NMAcdManager, nm_acd_manager, G_TYPE_OBJECT)
-
-#define NM_ACD_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMAcdManager, NM_IS_ACD_MANAGER)
 
 /*****************************************************************************/
 
@@ -80,14 +63,13 @@ G_DEFINE_TYPE (NMAcdManager, nm_acd_manager, G_TYPE_OBJECT)
 #define _NMLOG(level, ...) \
     G_STMT_START { \
         char _sbuf[64]; \
-        int _ifindex = (self) ? NM_ACD_MANAGER_GET_PRIVATE (self)->ifindex : 0; \
         \
         nm_log ((level), _NMLOG_DOMAIN, \
-                nm_platform_link_get_name (NM_PLATFORM_GET, _ifindex), \
+                self ? nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex) : "", \
                 NULL, \
                 "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                 _NMLOG_PREFIX_NAME, \
-                self ? nm_sprintf_buf (_sbuf, "[%p,%d]", self, _ifindex) : "" \
+                self ? nm_sprintf_buf (_sbuf, "[%p,%d]", self, self->ifindex) : "" \
                 _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
     } G_STMT_END
 
@@ -145,20 +127,18 @@ acd_error_to_string (int error)
 gboolean
 nm_acd_manager_add_address (NMAcdManager *self, in_addr_t address)
 {
-	NMAcdManagerPrivate *priv;
 	AddressInfo *info;
 
-	g_return_val_if_fail (NM_IS_ACD_MANAGER (self), FALSE);
-	priv = NM_ACD_MANAGER_GET_PRIVATE (self);
-	g_return_val_if_fail (priv->state == STATE_INIT, FALSE);
+	g_return_val_if_fail (self, FALSE);
+	g_return_val_if_fail (self->state == STATE_INIT, FALSE);
 
-	if (g_hash_table_lookup (priv->addresses, GUINT_TO_POINTER (address)))
+	if (g_hash_table_lookup (self->addresses, GUINT_TO_POINTER (address)))
 		return FALSE;
 
 	info = g_slice_new0 (AddressInfo);
 	info->address = address;
 
-	g_hash_table_insert (priv->addresses, GUINT_TO_POINTER (address), info);
+	g_hash_table_insert (self->addresses, GUINT_TO_POINTER (address), info);
 
 	return TRUE;
 }
@@ -167,7 +147,6 @@ static gboolean
 acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 {
 	NMAcdManager *self = data;
-	NMAcdManagerPrivate *priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 	NAcdEvent *event;
 	AddressInfo *info;
 	gboolean emit_probe_terminated = FALSE;
@@ -175,10 +154,10 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 	gs_free char *hwaddr_str = NULL;
 	int r;
 
-	if (n_acd_dispatch (priv->acd))
+	if (n_acd_dispatch (self->acd))
 		return G_SOURCE_CONTINUE;
 
-	while (   !n_acd_pop_event (priv->acd, &event)
+	while (   !n_acd_pop_event (self->acd, &event)
 	       && event) {
 		gboolean check_probing_done = FALSE;
 
@@ -186,13 +165,13 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 		case N_ACD_EVENT_READY:
 			n_acd_probe_get_userdata (event->ready.probe, (void **) &info);
 			info->duplicate = FALSE;
-			if (priv->state == STATE_ANNOUNCING) {
+			if (self->state == STATE_ANNOUNCING) {
 				/* fake probe ended, start announcing */
 				r = n_acd_probe_announce (info->probe, N_ACD_DEFEND_ONCE);
 				if (r) {
 					_LOGW ("couldn't announce address %s on interface '%s': %s",
 					       nm_utils_inet4_ntop (info->address, address_str),
-					       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
+					       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex),
 					       acd_error_to_string (r));
 				} else {
 					_LOGD ("announcing address %s",
@@ -219,7 +198,7 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 			       nm_utils_inet4_ntop (info->address, address_str),
 			       (hwaddr_str = nm_utils_hwaddr_ntoa (event->defended.sender,
 			                                           event->defended.n_sender)),
-			       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex));
+			       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex));
 			break;
 		default:
 			_LOGD ("unhandled event '%s'", acd_event_to_string (event->event));
@@ -227,15 +206,19 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 		}
 
 		if (   check_probing_done
-		    && priv->state == STATE_PROBING
-		    && ++priv->completed == g_hash_table_size (priv->addresses)) {
-			priv->state = STATE_PROBE_DONE;
+		    && self->state == STATE_PROBING
+		    && ++self->completed == g_hash_table_size (self->addresses)) {
+			self->state = STATE_PROBE_DONE;
 			emit_probe_terminated = TRUE;
 		}
 	}
 
-	if (emit_probe_terminated)
-		g_signal_emit (self, signals[PROBE_TERMINATED], 0);
+	if (emit_probe_terminated) {
+		if (self->callbacks.probe_terminated_callback) {
+			self->callbacks.probe_terminated_callback (self,
+			                                           self->user_data);
+		}
+	}
 
 	return G_SOURCE_CONTINUE;
 }
@@ -245,7 +228,6 @@ acd_probe_add (NMAcdManager *self,
                AddressInfo *info,
                guint64 timeout)
 {
-	NMAcdManagerPrivate *priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 	NAcdProbeConfig *probe_config;
 	int r;
 
@@ -253,7 +235,7 @@ acd_probe_add (NMAcdManager *self,
 	if (r) {
 		_LOGW ("could not create probe config for %s on interface '%s': %s",
 		       nm_utils_inet4_ntop (info->address, NULL),
-		       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
+		       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex),
 		       acd_error_to_string (r));
 		return FALSE;
 	}
@@ -261,11 +243,11 @@ acd_probe_add (NMAcdManager *self,
 	n_acd_probe_config_set_ip (probe_config, (struct in_addr) { info->address });
 	n_acd_probe_config_set_timeout (probe_config, timeout);
 
-	r = n_acd_probe (priv->acd, &info->probe, probe_config);
+	r = n_acd_probe (self->acd, &info->probe, probe_config);
 	if (r) {
 		_LOGW ("could not start probe for %s on interface '%s': %s",
 		       nm_utils_inet4_ntop (info->address, NULL),
-		       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
+		       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex),
 		       acd_error_to_string (r));
 		n_acd_probe_config_free (probe_config);
 		return FALSE;
@@ -280,22 +262,21 @@ acd_probe_add (NMAcdManager *self,
 static int
 acd_init (NMAcdManager *self)
 {
-	NMAcdManagerPrivate *priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 	NAcdConfig *config;
 	int r;
 
-	if (priv->acd)
+	if (self->acd)
 		return 0;
 
 	r = n_acd_config_new (&config);
 	if (r)
 		return r;
 
-	n_acd_config_set_ifindex (config, priv->ifindex);
+	n_acd_config_set_ifindex (config, self->ifindex);
 	n_acd_config_set_transport (config, N_ACD_TRANSPORT_ETHERNET);
-	n_acd_config_set_mac (config, priv->hwaddr, ETH_ALEN);
+	n_acd_config_set_mac (config, self->hwaddr, ETH_ALEN);
 
-	r = n_acd_new (&priv->acd, config);
+	r = n_acd_new (&self->acd, config);
 	n_acd_config_free (config);
 	return r;
 }
@@ -314,72 +295,36 @@ acd_init (NMAcdManager *self)
 gboolean
 nm_acd_manager_start_probe (NMAcdManager *self, guint timeout)
 {
-	NMAcdManagerPrivate *priv;
 	GHashTableIter iter;
 	AddressInfo *info;
 	gboolean success = FALSE;
 	int fd, r;
 
-	g_return_val_if_fail (NM_IS_ACD_MANAGER (self), FALSE);
-	priv = NM_ACD_MANAGER_GET_PRIVATE (self);
-	g_return_val_if_fail (priv->state == STATE_INIT, FALSE);
+	g_return_val_if_fail (self, FALSE);
+	g_return_val_if_fail (self->state == STATE_INIT, FALSE);
 
 	r = acd_init (self);
 	if (r) {
 		_LOGW ("couldn't init ACD for probing on interface '%s': %s",
-		       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
+		       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex),
 		       acd_error_to_string (r));
 		return FALSE;
 	}
 
-	priv->completed = 0;
+	self->completed = 0;
 
-	g_hash_table_iter_init (&iter, priv->addresses);
+	g_hash_table_iter_init (&iter, self->addresses);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info))
 		success |= acd_probe_add (self, info, timeout);
 
 	if (success)
-		priv->state = STATE_PROBING;
+		self->state = STATE_PROBING;
 
-	n_acd_get_fd (priv->acd, &fd);
-	priv->channel = g_io_channel_unix_new (fd);
-	priv->event_id = g_io_add_watch (priv->channel, G_IO_IN, acd_event, self);
+	n_acd_get_fd (self->acd, &fd);
+	self->channel = g_io_channel_unix_new (fd);
+	self->event_id = g_io_add_watch (self->channel, G_IO_IN, acd_event, self);
 
 	return success;
-}
-
-/**
- * nm_acd_manager_reset:
- * @self: a #NMAcdManager
- *
- * Stop any operation in progress and reset @self to the initial state.
- */
-void
-nm_acd_manager_reset (NMAcdManager *self)
-{
-	NMAcdManagerPrivate *priv;
-
-	g_return_if_fail (NM_IS_ACD_MANAGER (self));
-	priv = NM_ACD_MANAGER_GET_PRIVATE (self);
-
-	g_hash_table_remove_all (priv->addresses);
-
-	priv->state = STATE_INIT;
-}
-
-/**
- * nm_acd_manager_destroy:
- * @self: the #NMAcdManager
- *
- * Calls nm_acd_manager_reset() and unrefs @self.
- */
-void
-nm_acd_manager_destroy (NMAcdManager *self)
-{
-	g_return_if_fail (NM_IS_ACD_MANAGER (self));
-
-	nm_acd_manager_reset (self);
-	g_object_unref (self);
 }
 
 /**
@@ -395,15 +340,12 @@ nm_acd_manager_destroy (NMAcdManager *self)
 gboolean
 nm_acd_manager_check_address (NMAcdManager *self, in_addr_t address)
 {
-	NMAcdManagerPrivate *priv;
 	AddressInfo *info;
 
-	g_return_val_if_fail (NM_IS_ACD_MANAGER (self), FALSE);
-	priv = NM_ACD_MANAGER_GET_PRIVATE (self);
-	g_return_val_if_fail (   priv->state == STATE_INIT
-	                      || priv->state == STATE_PROBE_DONE, FALSE);
+	g_return_val_if_fail (self, FALSE);
+	g_return_val_if_fail (NM_IN_SET (self->state, STATE_INIT, STATE_PROBE_DONE), FALSE);
 
-	info = g_hash_table_lookup (priv->addresses, GUINT_TO_POINTER (address));
+	info = g_hash_table_lookup (self->addresses, GUINT_TO_POINTER (address));
 	g_return_val_if_fail (info, FALSE);
 
 	return !info->duplicate;
@@ -418,7 +360,6 @@ nm_acd_manager_check_address (NMAcdManager *self, in_addr_t address)
 void
 nm_acd_manager_announce_addresses (NMAcdManager *self)
 {
-	NMAcdManagerPrivate *priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 	GHashTableIter iter;
 	AddressInfo *info;
 	int r;
@@ -426,21 +367,21 @@ nm_acd_manager_announce_addresses (NMAcdManager *self)
 	r = acd_init (self);
 	if (r) {
 		_LOGW ("couldn't init ACD for announcing addresses on interface '%s': %s",
-		       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
+		       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex),
 		       acd_error_to_string (r));
 		return;
 	}
 
-	if (priv->state == STATE_INIT) {
+	if (self->state == STATE_INIT) {
 		/* n-acd can't announce without probing, therefore let's
 		 * start a fake probe with zero timeout and then perform
 		 * the announcement. */
-		g_hash_table_iter_init (&iter, priv->addresses);
+		g_hash_table_iter_init (&iter, self->addresses);
 		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info))
 			acd_probe_add (self, info, 0);
-		priv->state = STATE_ANNOUNCING;
-	} else if (priv->state == STATE_ANNOUNCING) {
-		g_hash_table_iter_init (&iter, priv->addresses);
+		self->state = STATE_ANNOUNCING;
+	} else if (self->state == STATE_ANNOUNCING) {
+		g_hash_table_iter_init (&iter, self->addresses);
 		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info)) {
 			if (info->duplicate)
 				continue;
@@ -448,7 +389,7 @@ nm_acd_manager_announce_addresses (NMAcdManager *self)
 			if (r) {
 				_LOGW ("couldn't announce address %s on interface '%s': %s",
 				       nm_utils_inet4_ntop (info->address, NULL),
-				       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
+				       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex),
 				       acd_error_to_string (r));
 			} else
 				_LOGD ("announcing address %s", nm_utils_inet4_ntop (info->address, NULL));
@@ -468,59 +409,45 @@ destroy_address_info (gpointer data)
 
 /*****************************************************************************/
 
-static void
-nm_acd_manager_init (NMAcdManager *self)
-{
-	NMAcdManagerPrivate *priv = NM_ACD_MANAGER_GET_PRIVATE (self);
-
-	priv->addresses = g_hash_table_new_full (nm_direct_hash, NULL,
-	                                         NULL, destroy_address_info);
-	priv->state = STATE_INIT;
-}
-
 NMAcdManager *
-nm_acd_manager_new (int ifindex, const guint8 *hwaddr, guint hwaddr_len)
+nm_acd_manager_new (int ifindex,
+                    const guint8 *hwaddr,
+                    guint hwaddr_len,
+                    const NMAcdCallbacks *callbacks,
+                    gpointer user_data)
 {
 	NMAcdManager *self;
-	NMAcdManagerPrivate *priv;
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (hwaddr, NULL);
 	g_return_val_if_fail (hwaddr_len == ETH_ALEN, NULL);
 
-	self = g_object_new (NM_TYPE_ACD_MANAGER, NULL);
-	priv = NM_ACD_MANAGER_GET_PRIVATE (self);
-	priv->ifindex = ifindex;
-	memcpy (priv->hwaddr, hwaddr, ETH_ALEN);
+	self = g_slice_new0 (NMAcdManager);
 
+	if (callbacks)
+		self->callbacks = *callbacks;
+	self->user_data = user_data;
+
+	self->addresses = g_hash_table_new_full (nm_direct_hash, NULL,
+	                                         NULL, destroy_address_info);
+	self->state = STATE_INIT;
+	self->ifindex = ifindex;
+	memcpy (self->hwaddr, hwaddr, ETH_ALEN);
 	return self;
 }
 
-static void
-dispose (GObject *object)
+void
+nm_acd_manager_free (NMAcdManager *self)
 {
-	NMAcdManager *self = NM_ACD_MANAGER (object);
-	NMAcdManagerPrivate *priv = NM_ACD_MANAGER_GET_PRIVATE (self);
+	g_return_if_fail (self);
 
-	g_clear_pointer (&priv->addresses, g_hash_table_destroy);
-	g_clear_pointer (&priv->channel, g_io_channel_unref);
-	nm_clear_g_source (&priv->event_id);
-	nm_clear_pointer (&priv->acd, n_acd_unref);
+	if (self->callbacks.user_data_destroy)
+		self->callbacks.user_data_destroy (self->user_data);
 
-	G_OBJECT_CLASS (nm_acd_manager_parent_class)->dispose (object);
-}
+	nm_clear_pointer (&self->addresses, g_hash_table_destroy);
+	nm_clear_pointer (&self->channel, g_io_channel_unref);
+	nm_clear_g_source (&self->event_id);
+	nm_clear_pointer (&self->acd, n_acd_unref);
 
-static void
-nm_acd_manager_class_init (NMAcdManagerClass *klass)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-	object_class->dispose = dispose;
-
-	signals[PROBE_TERMINATED] =
-	    g_signal_new (NM_ACD_MANAGER_PROBE_TERMINATED,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_FIRST,
-	                  0, NULL, NULL, NULL,
-	                  G_TYPE_NONE, 0);
+	g_slice_free (NMAcdManager, self);
 }
