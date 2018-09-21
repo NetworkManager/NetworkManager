@@ -306,8 +306,8 @@ no-auto-default=*
       </varlistentry>
       <varlistentry>
         <term><varname>dns</varname></term>
-        <listitem><para>Set the DNS (<filename>resolv.conf</filename>) processing mode.
-        If the key is unspecified, <literal>default</literal> is used,
+        <listitem><para>Set the DNS processing mode.</para>
+        <para>If the key is unspecified, <literal>default</literal> is used,
         unless <filename>/etc/resolv.conf</filename> is a symlink to
         <filename>/run/systemd/resolve/stub-resolv.conf</filename>,
         <filename>/run/systemd/resolve/resolv.conf</filename>,
