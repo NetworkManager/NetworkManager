@@ -262,6 +262,37 @@ nm_memdup (gconstpointer data, gsize size)
 	return p;
 }
 
+/* Similar to g_strndup(), however, if the string (including the terminating
+ * NUL char) fits into alloca_maxlen, this will alloca() the memory.
+ *
+ * It's a mix of strndup() and strndupa(), but deciding based on @alloca_maxlen
+ * which one to use.
+ *
+ * In case malloc() is necessary, @out_str_free will be set (this string
+ * must be freed afterwards). It is permissible to pass %NULL as @out_str_free,
+ * if you ensure that len < alloca_maxlen. */
+#define nm_strndup_a(alloca_maxlen, str, len, out_str_free) \
+	({ \
+		const gsize _alloca_maxlen = (alloca_maxlen); \
+		const char *const _str = (str); \
+		const gsize _len = (len); \
+		char **const _out_str_free = (out_str_free); \
+		char *_s; \
+		\
+		if (   _out_str_free \
+		    && _len >= _alloca_maxlen) { \
+			_s = g_malloc (_len + 1); \
+			*_out_str_free = _s; \
+		} else { \
+			g_assert (_len < _alloca_maxlen); \
+			_s = g_alloca (_len + 1); \
+		} \
+		if (_len > 0) \
+			strncpy (_s, _str, _len); \
+		_s[_len] = '\0'; \
+		_s; \
+	})
+
 /*****************************************************************************/
 
 extern const void *const _NM_PTRARRAY_EMPTY[1];
