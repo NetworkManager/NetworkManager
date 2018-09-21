@@ -1483,53 +1483,6 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 	return has_relevant_changes || has_minor_changes;
 }
 
-void
-nm_ip6_config_dump (const NMIP6Config *self, const char *detail)
-{
-	const struct in6_addr *tmp;
-	guint32 i;
-	const char *str;
-	NMDedupMultiIter ipconf_iter;
-	const NMPlatformIP6Address *address;
-	const NMPlatformIP6Route *route;
-
-	g_return_if_fail (self != NULL);
-
-	g_message ("--------- NMIP6Config %p (%s)", self, detail);
-
-	str = nm_dbus_object_get_path (NM_DBUS_OBJECT (self));
-	if (str)
-		g_message ("   path: %s", str);
-
-	/* addresses */
-	nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, self, &address)
-		g_message ("      a: %s", nm_platform_ip6_address_to_string (address, NULL, 0));
-
-	/* nameservers */
-	for (i = 0; i < nm_ip6_config_get_num_nameservers (self); i++) {
-		tmp = nm_ip6_config_get_nameserver (self, i);
-		g_message ("     ns: %s", nm_utils_inet6_ntop (tmp, NULL));
-	}
-
-	/* routes */
-	nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, self, &route)
-		g_message ("     rt: %s", nm_platform_ip6_route_to_string (route, NULL, 0));
-
-	/* domains */
-	for (i = 0; i < nm_ip6_config_get_num_domains (self); i++)
-		g_message (" domain: %s", nm_ip6_config_get_domain (self, i));
-
-	/* dns searches */
-	for (i = 0; i < nm_ip6_config_get_num_searches (self); i++)
-		g_message (" search: %s", nm_ip6_config_get_search (self, i));
-
-	/* dns options */
-	for (i = 0; i < nm_ip6_config_get_num_dns_options (self); i++)
-		g_message (" dnsopt: %s", nm_ip6_config_get_dns_option (self, i));
-
-	g_message (" dnspri: %d", nm_ip6_config_get_dns_priority (self));
-}
-
 /*****************************************************************************/
 
 void
