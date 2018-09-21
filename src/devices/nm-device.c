@@ -12125,7 +12125,9 @@ nm_device_get_firmware_missing (NMDevice *self)
 }
 
 static void
-intersect_ext_config (NMDevice *self, AppliedConfig *config)
+intersect_ext_config (NMDevice *self,
+                      AppliedConfig *config,
+                      gboolean intersect_routes)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMIPConfig *ext;
@@ -12142,10 +12144,11 @@ intersect_ext_config (NMDevice *self, AppliedConfig *config)
 	      : (NMIPConfig *) priv->ext_ip_config_6;
 
 	if (config->current)
-		nm_ip_config_intersect (config->current, ext, penalty);
+		nm_ip_config_intersect (config->current, ext, intersect_routes, penalty);
 	else {
 		config->current = nm_ip_config_intersect_alloc (config->orig,
 		                                                ext,
+		                                                intersect_routes,
 		                                                penalty);
 	}
 }
@@ -12177,14 +12180,15 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean intersect_config
 				 * by the user. */
 				if (priv->con_ip_config_4) {
 					nm_ip4_config_intersect (priv->con_ip_config_4, priv->ext_ip_config_4,
+					                         TRUE,
 					                         default_route_metric_penalty_get (self, AF_INET));
 				}
 
-				intersect_ext_config (self, &priv->dev_ip4_config);
-				intersect_ext_config (self, &priv->wwan_ip_config_4);
+				intersect_ext_config (self, &priv->dev_ip4_config, TRUE);
+				intersect_ext_config (self, &priv->wwan_ip_config_4, TRUE);
 
 				for (iter = priv->vpn_configs_4; iter; iter = iter->next)
-					nm_ip4_config_intersect (iter->data, priv->ext_ip_config_4, 0);
+					nm_ip4_config_intersect (iter->data, priv->ext_ip_config_4, TRUE, 0);
 			}
 
 			/* Remove parts from ext_ip_config_4 to only contain the information that
@@ -12228,15 +12232,16 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean intersect_config
 				 * by the user. */
 				if (priv->con_ip_config_6) {
 					nm_ip6_config_intersect (priv->con_ip_config_6, priv->ext_ip_config_6,
+					                         TRUE,
 					                         default_route_metric_penalty_get (self, AF_INET6));
 				}
 
-				intersect_ext_config (self, &priv->ac_ip6_config);
-				intersect_ext_config (self, &priv->dhcp6.ip6_config);
-				intersect_ext_config (self, &priv->wwan_ip_config_6);
+				intersect_ext_config (self, &priv->ac_ip6_config, TRUE);
+				intersect_ext_config (self, &priv->dhcp6.ip6_config, TRUE);
+				intersect_ext_config (self, &priv->wwan_ip_config_6, TRUE);
 
 				for (iter = priv->vpn_configs_6; iter; iter = iter->next)
-					nm_ip6_config_intersect (iter->data, priv->ext_ip_config_6, 0);
+					nm_ip6_config_intersect (iter->data, priv->ext_ip_config_6, TRUE, 0);
 
 				if (   priv->ipv6ll_has
 				    && !nm_ip6_config_lookup_address (priv->ext_ip_config_6, &priv->ipv6ll_addr))
