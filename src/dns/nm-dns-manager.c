@@ -791,22 +791,6 @@ update_resolv_conf (NMDnsManager *self,
 	gboolean resconf_link_cached = FALSE;
 	gs_free char *resconf_link = NULL;
 
-	/* If we are not managing /etc/resolv.conf and it points to
-	 * MY_RESOLV_CONF, don't write the private DNS configuration to
-	 * MY_RESOLV_CONF otherwise we would overwrite the changes done by
-	 * some external application.
-	 *
-	 * This is the only situation, where we don't try to update our
-	 * internal resolv.conf file. */
-	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED) {
-		if (nm_streq0 (_read_link_cached (_PATH_RESCONF, &resconf_link_cached, &resconf_link),
-		               MY_RESOLV_CONF)) {
-			_LOGD ("update-resolv-conf: not updating " _PATH_RESCONF
-			       " since it points to " MY_RESOLV_CONF);
-			return SR_SUCCESS;
-		}
-	}
-
 	content = create_resolv_conf (searches, nameservers, options);
 
 	if (   rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE
