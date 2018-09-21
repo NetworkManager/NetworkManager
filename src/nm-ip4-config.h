@@ -194,7 +194,6 @@ NMIP4Config *nm_ip4_config_intersect_alloc (const NMIP4Config *a,
                                             const NMIP4Config *b,
                                             guint32 default_route_metric_penalty);
 gboolean nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relevant_changes);
-void nm_ip4_config_dump (const NMIP4Config *self, const char *detail);
 
 const NMPObject *nm_ip4_config_best_default_route_get (const NMIP4Config *self);
 const NMPObject *_nm_ip4_config_best_default_route_find (const NMIP4Config *self);
@@ -296,6 +295,11 @@ void nm_ip4_config_hash (const NMIP4Config *self, GChecksum *sum, gboolean dns_o
 gboolean nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b);
 
 gboolean _nm_ip_config_check_and_add_domain (GPtrArray *array, const char *domain);
+
+void nm_ip_config_dump (const NMIPConfig *self,
+                        const char *detail,
+                        NMLogLevel level,
+                        NMLogDomain domain);
 
 /*****************************************************************************/
 
