@@ -1511,6 +1511,7 @@ nm_ip4_config_subtract (NMIP4Config *dst,
 static gboolean
 _nm_ip4_config_intersect_helper (NMIP4Config *dst,
                                  const NMIP4Config *src,
+                                 gboolean intersect_routes,
                                  guint32 default_route_metric_penalty,
                                  gboolean update_dst)
 {
@@ -1555,6 +1556,9 @@ _nm_ip4_config_intersect_helper (NMIP4Config *dst,
 	/* ignore nameservers */
 
 	/* routes */
+	if (!intersect_routes)
+		goto skip_routes;
+
 	changed = FALSE;
 	new_best_default_route = NULL;
 	nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, dst, &r) {
@@ -1595,6 +1599,7 @@ _nm_ip4_config_intersect_helper (NMIP4Config *dst,
 		_notify (dst, PROP_GATEWAY);
 	}
 
+skip_routes:
 	if (changed) {
 		_notify_routes (dst);
 		result = TRUE;
@@ -1625,9 +1630,10 @@ _nm_ip4_config_intersect_helper (NMIP4Config *dst,
 void
 nm_ip4_config_intersect (NMIP4Config *dst,
                          const NMIP4Config *src,
+                         gboolean intersect_routes,
                          guint32 default_route_metric_penalty)
 {
-	_nm_ip4_config_intersect_helper (dst, src, default_route_metric_penalty, TRUE);
+	_nm_ip4_config_intersect_helper (dst, src, intersect_routes, default_route_metric_penalty, TRUE);
 }
 
 /**
@@ -1648,14 +1654,17 @@ nm_ip4_config_intersect (NMIP4Config *dst,
 NMIP4Config *
 nm_ip4_config_intersect_alloc (const NMIP4Config *a,
                                const NMIP4Config *b,
+                               gboolean intersect_routes,
                                guint32 default_route_metric_penalty)
 {
 	NMIP4Config *a_copy;
 
 	if (_nm_ip4_config_intersect_helper ((NMIP4Config *) a, b,
+	                                     intersect_routes,
 	                                     default_route_metric_penalty, FALSE)) {
 		a_copy = nm_ip4_config_clone (a);
-		_nm_ip4_config_intersect_helper (a_copy, b, default_route_metric_penalty, TRUE);
+		_nm_ip4_config_intersect_helper (a_copy, b, intersect_routes,
+		                                 default_route_metric_penalty, TRUE);
 		return a_copy;
 	} else
 		return NULL;
