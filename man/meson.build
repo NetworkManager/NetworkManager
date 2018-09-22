@@ -40,7 +40,8 @@ mans = [
   ['nm-online', '1'],
   ['nmcli-examples', '7'],
   ['nmcli', '1'],
-  ['nmtui', '1']
+  ['nmtui', '1'],
+  ['nm-initrd-generator', '8'],
 ]
 
 if enable_ovs
