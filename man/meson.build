@@ -47,8 +47,6 @@ if enable_ovs
   mans += [['nm-openvswitch', '7']]
 endif
 
-content_files += join_paths(meson.current_build_dir(), 'common.ent')
-
 foreach man: mans
   input = man[0] + '.xml'
   content_files += join_paths(meson.current_source_dir(), input)

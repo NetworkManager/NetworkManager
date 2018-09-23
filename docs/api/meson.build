@@ -21,6 +21,23 @@ configure_file(
 )
 
 content_files += join_paths(meson.source_root(), 'COPYING')
+filecopier = find_program('cp')
+foreach intro : introspection_files
+  path = intro.full_path().split('/')[-1]
+  custom_target(path,
+                input: intro,
+                output: path,
+                command : [filecopier, '@INPUT@', '@OUTPUT@'],
+                build_by_default: true,
+)
+endforeach
+
+custom_target('common.ent',
+              input: common_ent_file,
+              output: 'common.ent',
+              command: [filecopier, '@INPUT@', '@OUTPUT@'],
+              build_by_default: true,
+)
 
 gnome.gtkdoc(
   doc_module,
