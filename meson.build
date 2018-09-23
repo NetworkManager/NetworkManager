@@ -879,6 +879,7 @@ enable_docs = get_option('docs')
 
 if enable_docs
   assert(enable_introspection, '-Ddocs=true requires -Dintrospection=true')
+  assert(meson.version().version_compare('>= 0.46.0'), '-Ddocs requires meson >= 0.46')
   subdir('man')
   subdir('docs')
 endif
