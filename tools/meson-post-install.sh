@@ -4,7 +4,7 @@ datadir=$1
 bindir=$2
 pkgconfdir=$3
 pkglibdir=$4
-localstatedir=$5
+pkgstatedir=$5
 
 [ -n "$DESTDIR" ] && DESTDIR=${DESTDIR%%/}/
 
@@ -26,11 +26,14 @@ for dir in "${pkgconfdir}/conf.d" \
            "${pkgconfdir}/dispatcher.d/pre-up.d" \
            "${pkgconfdir}/dnsmasq.d" \
            "${pkgconfdir}/dnsmasq-shared.d" \
-           "${pkgconfdir}/conf.d" \
-           "${pkgconfdir}/VPN" \
-           "${localstatedir}/lib/NetworkManager"; do
+           "${pkglibdir}/conf.d" \
+           "${pkglibdir}/VPN"; do
     mkdir -p "${DESTDIR}${dir}"
+    chmod 0755 "${DESTDIR}${dir}"
 done
+
+mkdir -p "${DESTDIR}${pkgstatedir}"
+chmod 0700 "${DESTDIR}${pkgstatedir}"
 
 if [ "$6" = install_docs ]; then
     mandir=$7

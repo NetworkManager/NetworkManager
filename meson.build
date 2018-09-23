@@ -917,7 +917,7 @@ meson.add_install_script(
   nm_bindir,
   nm_pkgconfdir,
   nm_pkglibdir,
-  nm_localstatedir,
+  nm_pkgstatedir,
   enable_docs ? 'install_docs' : '',
   nm_mandir
 )
