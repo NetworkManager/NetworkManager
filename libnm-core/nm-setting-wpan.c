@@ -240,11 +240,11 @@ nm_setting_wpan_class_init (NMSettingWpanClass *klass)
 	 * ---end---
 	 */
 	g_object_class_install_property
-	        (object_class, PROP_MAC_ADDRESS,
-	         g_param_spec_string (NM_SETTING_WPAN_MAC_ADDRESS, "", "",
-	                              NULL,
-	                              G_PARAM_READWRITE |
-	                              G_PARAM_STATIC_STRINGS));
+		(object_class, PROP_MAC_ADDRESS,
+		 g_param_spec_string (NM_SETTING_WPAN_MAC_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWpan:pan-id:
@@ -252,11 +252,11 @@ nm_setting_wpan_class_init (NMSettingWpanClass *klass)
 	 * IEEE 802.15.4 Personal Area Network (PAN) identifier.
 	 **/
 	g_object_class_install_property
-	        (object_class, PROP_PAN_ID,
-	         g_param_spec_uint (NM_SETTING_WPAN_PAN_ID, "", "",
-	                            0, G_MAXUINT16, G_MAXUINT16,
-	                            G_PARAM_READWRITE |
-	                            G_PARAM_STATIC_STRINGS));
+		(object_class, PROP_PAN_ID,
+		 g_param_spec_uint (NM_SETTING_WPAN_PAN_ID, "", "",
+		                    0, G_MAXUINT16, G_MAXUINT16,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWpan:short-address:
@@ -264,11 +264,11 @@ nm_setting_wpan_class_init (NMSettingWpanClass *klass)
 	 * Short IEEE 802.15.4 address to be used within a restricted environment.
 	 **/
 	g_object_class_install_property
-	        (object_class, PROP_SHORT_ADDRESS,
-	         g_param_spec_uint (NM_SETTING_WPAN_SHORT_ADDRESS, "", "",
-	                            0, G_MAXUINT16, G_MAXUINT16,
-	                            G_PARAM_READWRITE |
-	                            G_PARAM_STATIC_STRINGS));
+		(object_class, PROP_SHORT_ADDRESS,
+		 g_param_spec_uint (NM_SETTING_WPAN_SHORT_ADDRESS, "", "",
+		                    0, G_MAXUINT16, G_MAXUINT16,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_WPAN);
 }
