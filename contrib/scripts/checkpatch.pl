@@ -93,7 +93,7 @@ if ($is_patch) {
 		new_file ($2);
 		next;
 	}
-	/^([ \+])(.*)/ or next;
+	s/^([ \+])(.*)/$2/ or next;
 	$line_no++;
 	$check_line = $1 eq '+';
 	$line = $2;
