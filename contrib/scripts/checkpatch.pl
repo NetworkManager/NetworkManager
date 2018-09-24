@@ -63,7 +63,7 @@ our $indent;
 sub new_hunk
 {
 	$type = undef;
-	$indent = "";
+	$indent = undef;
 }
 
 sub new_file
@@ -133,17 +133,17 @@ complain ("Don't use \"unsigned int\" but just use \"unsigned\"") if $line =~ /\
 complain ("Please use LGPL2+ for new files") if $is_patch and $line =~ /under the terms of the GNU General Public License/;
 complain ("Don't use space inside elvis operator ?:") if $line =~ /\?[\t ]+:/;
 
+new_hunk if $_ eq '';
+my ($this_indent) = /^(\s*)/;
+complain ("Bad indentation") if defined $indent and $this_indent =~ /^$indent\t+ +/;
+$indent = $this_indent;
+
 # Further on we process stuff without comments.
 $_ = $line;
 s/\s*\/\*.*\*\///;
 s/\s*\/\*.*//;
 s/\s*\/\/.*//;
 /^\s* \* / and next;
-new_hunk if $_ eq '';
-
-my ($this_indent) = /^(\s*)/;
-complain ('Bad indentation') if $this_indent =~ /^$indent\t+ +/;
-$indent = $this_indent;
 
 if (/^typedef*/) {
 	# We expect the { on the same line as the typedef. Otherwise it
