@@ -135,7 +135,15 @@ complain ("Don't use space inside elvis operator ?:") if $line =~ /\?[\t ]+:/;
 
 new_hunk if $_ eq '';
 my ($this_indent) = /^(\s*)/;
-complain ("Bad indentation") if defined $indent and $this_indent =~ /^$indent\t+ +/;
+if (defined $indent) {
+	my $this_tabs_before_spaces = length $1 if $this_indent =~ /^(\t*) +/;
+	my $tabs_before_spaces = length $1 if $indent =~ /^(\t*) +/;
+
+	complain ("Bad indentation")
+		if $this_indent =~ /^$indent\t+ +/
+		or (defined $tabs_before_spaces and defined $this_tabs_before_spaces
+			and $this_tabs_before_spaces < $tabs_before_spaces);
+}
 $indent = $this_indent;
 
 # Further on we process stuff without comments.
