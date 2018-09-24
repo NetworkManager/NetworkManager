@@ -74,6 +74,8 @@ typedef struct {
 	NMDhcpConfig *dhcp4_config;
 	NMIPConfig *ip6_config;
 	NMDhcpConfig *dhcp6_config;
+	NMConnectivityState ip4_connectivity;
+	NMConnectivityState ip6_connectivity;
 	NMDeviceState state;
 	NMDeviceState last_seen_state;
 	NMDeviceStateReason reason;
@@ -120,6 +122,8 @@ enum {
 	PROP_MTU,
 	PROP_METERED,
 	PROP_LLDP_NEIGHBORS,
+	PROP_IP4_CONNECTIVITY,
+	PROP_IP6_CONNECTIVITY,
 
 	LAST_PROP
 };
@@ -144,6 +148,8 @@ nm_device_init (NMDevice *device)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
+	priv->ip4_connectivity = NM_CONNECTIVITY_UNKNOWN;
+	priv->ip6_connectivity = NM_CONNECTIVITY_UNKNOWN;
 	priv->state = NM_DEVICE_STATE_UNKNOWN;
 	priv->reason = NM_DEVICE_STATE_REASON_NONE;
 	priv->lldp_neighbors = g_ptr_array_new ();
@@ -216,6 +222,8 @@ init_dbus (NMObject *object)
 		{ NM_DEVICE_DHCP4_CONFIG,      &priv->dhcp4_config, NULL, NM_TYPE_DHCP4_CONFIG },
 		{ NM_DEVICE_IP6_CONFIG,        &priv->ip6_config, NULL, NM_TYPE_IP6_CONFIG },
 		{ NM_DEVICE_DHCP6_CONFIG,      &priv->dhcp6_config, NULL, NM_TYPE_DHCP6_CONFIG },
+		{ NM_DEVICE_IP4_CONNECTIVITY,  &priv->ip4_connectivity },
+		{ NM_DEVICE_IP6_CONNECTIVITY,  &priv->ip6_connectivity },
 		{ NM_DEVICE_STATE,             &priv->state },
 		{ NM_DEVICE_STATE_REASON,      &priv->reason, demarshal_state_reason },
 		{ NM_DEVICE_ACTIVE_CONNECTION, &priv->active_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
@@ -427,6 +435,12 @@ get_property (GObject *object,
 		break;
 	case PROP_LLDP_NEIGHBORS:
 		g_value_set_boxed (value, nm_device_get_lldp_neighbors (device));
+		break;
+	case PROP_IP4_CONNECTIVITY:
+		g_value_set_enum (value, nm_device_get_connectivity (device, AF_INET));
+		break;
+	case PROP_IP6_CONNECTIVITY:
+		g_value_set_enum (value, nm_device_get_connectivity (device, AF_INET6));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -699,6 +713,36 @@ nm_device_class_init (NMDeviceClass *device_class)
 		                      NM_TYPE_DHCP_CONFIG,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMDevice:ip4-connectivity:
+	 *
+	 * The IPv4 connectivity state of the device.
+	 *
+	 * Since: 1.16
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_IP4_CONNECTIVITY,
+		 g_param_spec_enum (NM_DEVICE_IP4_CONNECTIVITY, "", "",
+		                    NM_TYPE_CONNECTIVITY_STATE,
+		                    NM_CONNECTIVITY_UNKNOWN,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMDevice:ip6-connectivity:
+	 *
+	 * The IPv6 connectivity state of the device.
+	 *
+	 * Since: 1.16
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_IP6_CONNECTIVITY,
+		 g_param_spec_enum (NM_DEVICE_IP6_CONNECTIVITY, "", "",
+		                    NM_TYPE_CONNECTIVITY_STATE,
+		                    NM_CONNECTIVITY_UNKNOWN,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:state:
@@ -1228,6 +1272,36 @@ nm_device_get_dhcp6_config (NMDevice *device)
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
 	return NM_DEVICE_GET_PRIVATE (device)->dhcp6_config;
+}
+
+/**
+ * nm_device_get_connectivity:
+ * @device: a #NMDevice
+ * @addr_family: network address family
+ *
+ * The connectivity state of the device for given address family.
+ * Supported address families are %AF_INET for IPv4, %AF_INET6
+ * for IPv6 or %AF_UNSPEC for any.
+ *
+ * Returns: the current connectivity state
+ *
+ * Since: 1.16
+ **/
+NMConnectivityState
+nm_device_get_connectivity (NMDevice *device, int addr_family)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	switch (addr_family) {
+	case AF_INET:
+		return priv->ip4_connectivity;
+	case AF_INET6:
+		return priv->ip6_connectivity;
+	case AF_UNSPEC:
+		return NM_MAX (priv->ip4_connectivity, priv->ip6_connectivity);
+	default:
+		g_return_val_if_reached (NM_CONNECTIVITY_UNKNOWN);
+	}
 }
 
 /**

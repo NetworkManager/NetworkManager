@@ -93,4 +93,7 @@ extern const NmcMetaGenericInfo *const metagen_ip4_config[];
 extern const NmcMetaGenericInfo *const metagen_ip6_config[];
 extern const NmcMetaGenericInfo *const metagen_dhcp_config[];
 
+const char *nm_connectivity_to_string (NMConnectivityState connectivity);
+const char *nm_connectivity_to_string_no_l10n (NMConnectivityState connectivity);
+
 #endif /* NMC_COMMON_H */

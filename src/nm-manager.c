@@ -2812,6 +2812,7 @@ device_realized (NMDevice *device,
 
 static void
 device_connectivity_changed (NMDevice *device,
+                             GParamSpec *pspec,
                              NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -2954,7 +2955,10 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	                  G_CALLBACK (device_realized),
 	                  self);
 
-	g_signal_connect (device, NM_DEVICE_CONNECTIVITY_CHANGED,
+	g_signal_connect (device, "notify::" NM_DEVICE_IP4_CONNECTIVITY,
+	                  G_CALLBACK (device_connectivity_changed),
+	                  self);
+	g_signal_connect (device, "notify::" NM_DEVICE_IP6_CONNECTIVITY,
 	                  G_CALLBACK (device_connectivity_changed),
 	                  self);
 
@@ -6041,6 +6045,12 @@ check_connectivity_auth_done_cb (NMAuthChain *chain,
 
 	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 		if (nm_device_check_connectivity (device,
+		                                  AF_INET,
+		                                  device_connectivity_done,
+		                                  data))
+			data->remaining++;
+		if (nm_device_check_connectivity (device,
+		                                  AF_INET6,
 		                                  device_connectivity_done,
 		                                  data))
 			data->remaining++;

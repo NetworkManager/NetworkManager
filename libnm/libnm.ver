@@ -1439,3 +1439,8 @@ global:
 	nm_utils_sriov_vf_from_str;
 	nm_utils_sriov_vf_to_str;
 } libnm_1_12_0;
+
+libnm_1_16_0 {
+global:
+	nm_device_get_connectivity;
+} libnm_1_14_0;

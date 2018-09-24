@@ -143,13 +143,13 @@ nm_device_state_reason_check (NMDeviceStateReason reason)
 #define NM_DEVICE_STATE_CHANGED         "state-changed"
 #define NM_DEVICE_LINK_INITIALIZED      "link-initialized"
 #define NM_DEVICE_AUTOCONNECT_ALLOWED   "autoconnect-allowed"
-#define NM_DEVICE_CONNECTIVITY_CHANGED  "connectivity-changed"
 
 #define NM_DEVICE_STATISTICS_REFRESH_RATE_MS "refresh-rate-ms"
 #define NM_DEVICE_STATISTICS_TX_BYTES        "tx-bytes"
 #define NM_DEVICE_STATISTICS_RX_BYTES        "rx-bytes"
 
-#define NM_DEVICE_CONNECTIVITY               "connectivity"
+#define NM_DEVICE_IP4_CONNECTIVITY           "ip4-connectivity"
+#define NM_DEVICE_IP6_CONNECTIVITY           "ip6-connectivity"
 
 #define NM_TYPE_DEVICE            (nm_device_get_type ())
 #define NM_DEVICE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE, NMDevice))
@@ -818,6 +818,7 @@ typedef void (*NMDeviceConnectivityCallback) (NMDevice *self,
 void nm_device_check_connectivity_update_interval (NMDevice *self);
 
 NMDeviceConnectivityHandle *nm_device_check_connectivity (NMDevice *self,
+                                                          int addr_family,
                                                           NMDeviceConnectivityCallback callback,
                                                           gpointer user_data);
 

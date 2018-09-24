@@ -108,6 +108,7 @@ typedef struct {
 
 	char *dns_mode;
 	char *rc_manager;
+	gboolean systemd_resolved;
 
 	NMGlobalDnsConfig *global_dns;
 } NMConfigDataPrivate;
@@ -320,6 +321,14 @@ nm_config_data_get_rc_manager (const NMConfigData *self)
 	g_return_val_if_fail (self, NULL);
 
 	return NM_CONFIG_DATA_GET_PRIVATE (self)->rc_manager;
+}
+
+gboolean
+nm_config_data_get_systemd_resolved (const NMConfigData *self)
+{
+	g_return_val_if_fail (self, FALSE);
+
+	return NM_CONFIG_DATA_GET_PRIVATE (self)->systemd_resolved;
 }
 
 gboolean
@@ -1654,6 +1663,7 @@ constructed (GObject *object)
 
 	priv->dns_mode = nm_strstrip (g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "dns", NULL));
 	priv->rc_manager = nm_strstrip (g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "rc-manager", NULL));
+	priv->systemd_resolved = nm_config_keyfile_get_boolean (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "systemd-resolved", TRUE);
 
 	priv->ignore_carrier = nm_config_get_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "ignore-carrier", NULL);
 	priv->assume_ipv6ll_only = nm_config_get_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "assume-ipv6ll-only", NULL);
