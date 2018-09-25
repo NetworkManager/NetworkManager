@@ -3578,6 +3578,7 @@ device_link_changed (NMDevice *self)
 	gboolean ip_ifname_changed = FALSE;
 	nm_auto_nmpobj const NMPObject *pllink_keep_alive = NULL;
 	const NMPlatformLink *pllink;
+	const char *str;
 	int ifindex;
 	gboolean was_up;
 	gboolean update_unmanaged_specs = FALSE;
@@ -3592,7 +3593,23 @@ device_link_changed (NMDevice *self)
 
 	pllink_keep_alive = nmp_object_ref (NMP_OBJECT_UP_CAST (pllink));
 
-	nm_device_update_from_platform_link (self, pllink);
+	str = nm_platform_link_get_udi (nm_device_get_platform (self), pllink->ifindex);
+	if (!nm_streq0 (str, priv->udi)) {
+		g_free (priv->udi);
+		priv->udi = g_strdup (str);
+		_notify (self, PROP_UDI);
+	}
+
+	if (!nm_streq0 (pllink->driver, priv->driver)) {
+		g_free (priv->driver);
+		priv->driver = g_strdup (pllink->driver);
+		_notify (self, PROP_DRIVER);
+	}
+
+	_set_mtu (self, pllink->mtu);
+
+	if (ifindex == nm_device_get_ip_ifindex (self))
+		_stats_update_counters_from_pllink (self, pllink);
 
 	had_hw_addr = (priv->hw_addr != NULL);
 	nm_device_update_hw_address (self);
