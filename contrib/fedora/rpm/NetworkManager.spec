@@ -780,7 +780,6 @@ fi
 
 %if %{with libnm_glib}
 %files glib-devel
-%doc docs/api/html/*
 %dir %{_includedir}/libnm-glib
 %dir %{_includedir}/%{name}
 %{_includedir}/libnm-glib/*.h
@@ -816,7 +815,6 @@ fi
 
 
 %files libnm-devel
-%doc docs/api/html/*
 %dir %{_includedir}/libnm
 %{_includedir}/libnm/*.h
 %{_libdir}/pkgconfig/libnm.pc
