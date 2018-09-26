@@ -244,7 +244,7 @@ endif
 
 enable_ifcfg_rh = get_option('ifcfg_rh') or (distro == 'redhat')
 enable_ifupdown = get_option('ifupdown') or (distro == 'debian')
-enable_ibft = get_option('ibft') or enable_ifcfg_rh
+enable_ibft = get_option('ibft')
 
 config_h.set10('WITH_SETTINGS_PLUGIN_IBFT', enable_ibft)
 
