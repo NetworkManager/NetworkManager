@@ -96,6 +96,7 @@ typedef struct {
 	bool              requested_scan:1;
 	bool              ssid_found:1;
 	bool              is_scanning:1;
+	bool              hidden_probe_scan_warn:1;
 
 	gint64            last_scan; /* milliseconds */
 	gint32            scheduled_scan_time; /* seconds */
@@ -1349,8 +1350,17 @@ request_wireless_scan (NMDeviceWifi *self,
 
 		_LOGD (LOGD_WIFI, "wifi-scan: scanning requested");
 
-		if (!ssids)
-			ssids = hidden_ssids = build_hidden_probe_list (self);
+		if (!ssids) {
+			hidden_ssids = build_hidden_probe_list (self);
+			if (hidden_ssids) {
+				if (priv->hidden_probe_scan_warn) {
+					priv->hidden_probe_scan_warn = FALSE;
+					_LOGW (LOGD_WIFI, "wifi-scan: active scanning for networks due to profiles with wifi.hidden=yes. This makes you trackable");
+				}
+				ssids = hidden_ssids;
+			} else
+				priv->hidden_probe_scan_warn = TRUE;
+		}
 
 		if (_LOGD_ENABLED (LOGD_WIFI)) {
 			if (ssids) {
@@ -3244,6 +3254,7 @@ nm_device_wifi_init (NMDeviceWifi *self)
 
 	c_list_init (&priv->aps_lst_head);
 
+	priv->hidden_probe_scan_warn = TRUE;
 	priv->mode = NM_802_11_MODE_INFRA;
 	priv->wowlan_restore = NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
 }
