@@ -312,35 +312,21 @@ _config_data_free (NMDnsConfigData *data)
 }
 
 static int
-_ip_config_data_cmp (const NMDnsIPConfigData *a, const NMDnsIPConfigData *b)
-{
-	int a_prio, b_prio;
-
-	a_prio = nm_ip_config_get_dns_priority (a->ip_config);
-	b_prio = nm_ip_config_get_dns_priority (b->ip_config);
-
-	/* Configurations with lower priority value first */
-	if (a_prio < b_prio)
-		return -1;
-	else if (a_prio > b_prio)
-		return 1;
-
-	/* Sort also according to type */
-	if (a->ip_config_type > b->ip_config_type)
-		return -1;
-	else if (a->ip_config_type < b->ip_config_type)
-		return 1;
-
-	return 0;
-}
-
-static int
-_ip_config_lst_cmp (const CList *a,
-                    const CList *b,
+_ip_config_lst_cmp (const CList *a_lst,
+                    const CList *b_lst,
                     const void *user_data)
 {
-	return _ip_config_data_cmp (c_list_entry (a, NMDnsIPConfigData, ip_config_lst),
-	                            c_list_entry (b, NMDnsIPConfigData, ip_config_lst));
+	const NMDnsIPConfigData *a = c_list_entry (a_lst, NMDnsIPConfigData, ip_config_lst);
+	const NMDnsIPConfigData *b = c_list_entry (b_lst, NMDnsIPConfigData, ip_config_lst);
+
+	/* Configurations with lower priority value first */
+	NM_CMP_DIRECT (nm_ip_config_get_dns_priority (a->ip_config),
+	               nm_ip_config_get_dns_priority (b->ip_config));
+
+	/* Sort also according to type */
+	NM_CMP_DIRECT (a->ip_config_type, b->ip_config_type);
+
+	return 0;
 }
 
 static CList *
