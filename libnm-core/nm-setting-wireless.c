@@ -1589,14 +1589,20 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_wireless_class)
 	/**
 	 * NMSettingWireless:hidden:
 	 *
-	 * If %TRUE, indicates this network is a non-broadcasting network that hides
-	 * its SSID.  In this case various workarounds may take place, such as
-	 * probe-scanning the SSID for more reliable network discovery.  However,
+	 * If %TRUE, indicates that the network is a non-broadcasting network that
+	 * hides its SSID. This works both in infrastructure and AP mode.
+	 *
+	 * In infrastructure mode, various workarounds are used for a more reliable
+	 * discovery of hidden networks, such as probe-scanning the SSID.  However,
 	 * these workarounds expose inherent insecurities with hidden SSID networks,
 	 * and thus hidden SSID networks should be used with caution.
 	 *
-	 * Note that marking the network as hidden may be a privacy issue for you, as
-	 * the explicit probe-scans may be distinctly recognizable on the air.
+	 * In AP mode, the created network does not broadcast its SSID.
+	 *
+	 * Note that marking the network as hidden may be a privacy issue for you
+	 * (in infrastructure mode) or client stations (in AP mode), as the explicit
+	 * probe-scans are distinctly recognizable on the air.
+	 *
 	 **/
 	/* ---ifcfg-rh---
 	 * property: hidden

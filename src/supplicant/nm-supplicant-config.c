@@ -491,6 +491,12 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	if (is_ap) {
 		if (!nm_supplicant_config_add_option (self, "mode", "2", -1, NULL, error))
 			return FALSE;
+
+		if (   nm_setting_wireless_get_hidden (setting)
+		    && !nm_supplicant_config_add_option (self,
+		                                         "ignore_broadcast_ssid", "1",
+		                                         -1, NULL, error))
+			return FALSE;
 	}
 
 	if ((is_adhoc || is_ap) && fixed_freq) {
