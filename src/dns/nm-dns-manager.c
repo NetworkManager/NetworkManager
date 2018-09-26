@@ -1444,7 +1444,6 @@ update_dns (NMDnsManager *self,
 	 * strings owned by IP configurations and we can't
 	 * guarantee they stay alive. */
 	clear_domain_lists (self);
-	clear_domain_lists (self);
 
 	update_resolv_conf_no_stub (self, searches, nameservers, options);
 
