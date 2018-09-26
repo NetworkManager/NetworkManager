@@ -142,6 +142,7 @@ get_dhclient_leasefile (int addr_family,
 	                        iface);
 
 	if (g_file_test (path, G_FILE_TEST_EXISTS)) {
+		g_free (rundir_path);
 		NM_SET_OUT (out_preferred_path, g_strdup (path));
 		return path;
 	}
