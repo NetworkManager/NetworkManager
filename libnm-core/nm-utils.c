@@ -3613,12 +3613,12 @@ nm_utils_hwaddr_len (int type)
 }
 
 guint8 *
-_nm_utils_str2bin_full (const char *asc,
-                        gboolean delimiter_required,
-                        const char *delimiter_candidates,
-                        guint8 *buffer,
-                        gsize buffer_length,
-                        gsize *out_len)
+_nm_utils_hexstr2bin_full (const char *asc,
+                           gboolean delimiter_required,
+                           const char *delimiter_candidates,
+                           guint8 *buffer,
+                           gsize buffer_length,
+                           gsize *out_len)
 {
 	const char *in = asc;
 	guint8 *out = buffer;
@@ -3688,7 +3688,7 @@ _nm_utils_str2bin_full (const char *asc,
 	return buffer;
 }
 
-#define hwaddr_aton(asc, buffer, buffer_length, out_len) _nm_utils_str2bin_full ((asc), TRUE, ":-", (buffer), (buffer_length), (out_len))
+#define hwaddr_aton(asc, buffer, buffer_length, out_len) _nm_utils_hexstr2bin_full ((asc), TRUE, ":-", (buffer), (buffer_length), (out_len))
 
 /**
  * nm_utils_hexstr2bin:
@@ -3714,7 +3714,7 @@ nm_utils_hexstr2bin (const char *hex)
 
 	buffer_length = strlen (hex) / 2 + 3;
 	buffer = g_malloc (buffer_length);
-	if (!_nm_utils_str2bin_full (hex, FALSE, ":", buffer, buffer_length, &len)) {
+	if (!_nm_utils_hexstr2bin_full (hex, FALSE, ":", buffer, buffer_length, &len)) {
 		g_free (buffer);
 		return NULL;
 	}
@@ -3815,7 +3815,7 @@ nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
 }
 
 void
-_nm_utils_bin2str_full (gconstpointer addr, gsize length, const char delimiter, gboolean upper_case, char *out)
+_nm_utils_bin2hexstr_full (gconstpointer addr, gsize length, const char delimiter, gboolean upper_case, char *out)
 {
 	const guint8 *in = addr;
 	const char *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
@@ -3865,7 +3865,7 @@ nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len)
 	g_return_val_if_fail (final_len < 0 || (gsize) final_len < buflen, NULL);
 
 	result = g_malloc (buflen);
-	_nm_utils_bin2str_full (src, len, '\0', FALSE, result);
+	_nm_utils_bin2hexstr_full (src, len, '\0', FALSE, result);
 
 	/* Cut converted key off at the correct length for this cipher type */
 	if (final_len >= 0 && (gsize) final_len < buflen)
@@ -3892,7 +3892,7 @@ nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
 	g_return_val_if_fail (length > 0, g_strdup (""));
 
 	result = g_malloc (length * 3);
-	_nm_utils_bin2str_full (addr, length, ':', TRUE, result);
+	_nm_utils_bin2hexstr_full (addr, length, ':', TRUE, result);
 	return result;
 }
 
@@ -3905,12 +3905,12 @@ nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_cas
 	if (buf_len < addr_len * 3)
 		g_return_val_if_reached (NULL);
 
-	_nm_utils_bin2str_full (addr, addr_len, ':', upper_case, buf);
+	_nm_utils_bin2hexstr_full (addr, addr_len, ':', upper_case, buf);
 	return buf;
 }
 
 /**
- * _nm_utils_bin2str:
+ * _nm_utils_bin2hexstr:
  * @addr: (type guint8) (array length=length): a binary hardware address
  * @length: the length of @addr
  * @upper_case: the case for the hexadecimal digits.
@@ -3920,7 +3920,7 @@ nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_cas
  * Return value: (transfer full): the textual form of @addr
  */
 char *
-_nm_utils_bin2str (gconstpointer addr, gsize length, gboolean upper_case)
+_nm_utils_bin2hexstr (gconstpointer addr, gsize length, gboolean upper_case)
 {
 	char *result;
 
@@ -3928,7 +3928,7 @@ _nm_utils_bin2str (gconstpointer addr, gsize length, gboolean upper_case)
 	g_return_val_if_fail (length > 0, g_strdup (""));
 
 	result = g_malloc (length * 3);
-	_nm_utils_bin2str_full (addr, length, ':', upper_case, result);
+	_nm_utils_bin2hexstr_full (addr, length, ':', upper_case, result);
 	return result;
 }
 
@@ -4596,7 +4596,7 @@ _nm_utils_dhcp_duid_valid (const char *duid, GBytes **out_duid_bin)
 		return TRUE;
 	}
 
-	if (_nm_utils_str2bin_full (duid, FALSE, ":", duid_arr, sizeof (duid_arr), &duid_len)) {
+	if (_nm_utils_hexstr2bin_full (duid, FALSE, ":", duid_arr, sizeof (duid_arr), &duid_len)) {
 		/* MAX DUID length is 128 octects + the type code (2 octects). */
 		if (   duid_len > 2
 		    && duid_len <= (128 + 2)) {

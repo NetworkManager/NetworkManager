@@ -189,7 +189,7 @@ _secret_password_raw_to_bytes (const char *ifcfg_key,
 		password_raw += 2;
 
 	secret = nm_secret_buf_new (strlen (password_raw) / 2 + 3);
-	if (!_nm_utils_str2bin_full (password_raw, FALSE, ":", secret->bin, secret->len, &len)) {
+	if (!_nm_utils_hexstr2bin_full (password_raw, FALSE, ":", secret->bin, secret->len, &len)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Invalid hex password in %s",
 		             ifcfg_key);

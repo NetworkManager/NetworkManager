@@ -14384,9 +14384,9 @@ nm_device_spawn_iface_helper (NMDevice *self)
 			if (client_id) {
 				g_ptr_array_add (argv, g_strdup ("--dhcp4-clientid"));
 				g_ptr_array_add (argv,
-				                 _nm_utils_bin2str (g_bytes_get_data (client_id, NULL),
-				                                    g_bytes_get_size (client_id),
-				                                    FALSE));
+				                 _nm_utils_bin2hexstr (g_bytes_get_data (client_id, NULL),
+				                                       g_bytes_get_size (client_id),
+				                                       FALSE));
 			}
 
 			hostname = nm_dhcp_client_get_hostname (priv->dhcp4.client);
@@ -14424,9 +14424,9 @@ nm_device_spawn_iface_helper (NMDevice *self)
 		if (nm_device_get_ip_iface_identifier (self, &iid, FALSE)) {
 			g_ptr_array_add (argv, g_strdup ("--iid"));
 			g_ptr_array_add (argv,
-			                 _nm_utils_bin2str (iid.id_u8,
-			                                    sizeof (NMUtilsIPv6IfaceId),
-			                                    FALSE));
+			                 _nm_utils_bin2hexstr (iid.id_u8,
+			                                       sizeof (NMUtilsIPv6IfaceId),
+			                                       FALSE));
 		}
 
 		g_ptr_array_add (argv, g_strdup ("--addr-gen-mode"));
