@@ -256,7 +256,7 @@ verify_macsec_key (const char *key, gboolean cak, GError **error)
 	req_len = cak ?
 	    NM_SETTING_MACSEC_MKA_CAK_LENGTH :
 	    NM_SETTING_MACSEC_MKA_CKN_LENGTH;
-	if (strlen (key) != req_len) {
+	if (strlen (key) != (gsize) req_len) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -342,6 +342,10 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_MACSEC_SETTING_NAME, NM_SETTING_MACSEC_MKA_CKN);
 			return FALSE;
 		}
+		if (!verify_macsec_key (priv->mka_cak, TRUE, error)) {
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_MACSEC_SETTING_NAME, NM_SETTING_MACSEC_MKA_CAK);
+			return FALSE;
+		}
 	} else if (priv->mode == NM_SETTING_MACSEC_MODE_EAP) {
 		if (!s_8021x) {
 			g_set_error (error,
@@ -352,6 +356,13 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			g_prefix_error (error, "%s: ", NM_SETTING_MACSEC_SETTING_NAME);
 			return FALSE;
 		}
+	} else {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("must be either psk (0) or eap (1)"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_MACSEC_SETTING_NAME, NM_SETTING_MACSEC_MODE);
+		return FALSE;
 	}
 
 	if (priv->port <= 0 || priv->port > 65534) {
@@ -362,6 +373,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		             priv->port);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_MACSEC_SETTING_NAME, NM_SETTING_MACSEC_PORT);
 		return FALSE;
+	}
+
+	if (   priv->mode != NM_SETTING_MACSEC_MODE_PSK
+	    && (priv->mka_cak || priv->mka_ckn)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("only valid for psk mode"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_MACSEC_SETTING_NAME,
+		                priv->mka_cak ? NM_SETTING_MACSEC_MKA_CAK : NM_SETTING_MACSEC_MKA_CKN);
+		return NM_SETTING_VERIFY_NORMALIZABLE;
 	}
 
 	return TRUE;
