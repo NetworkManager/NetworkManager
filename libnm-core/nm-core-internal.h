@@ -221,12 +221,24 @@ const char *nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboole
 
 char *_nm_utils_bin2hexstr_full (gconstpointer addr, gsize length, const char delimiter, gboolean upper_case, char *out);
 
-guint8 *_nm_utils_hexstr2bin_full (const char *asc,
+guint8 *_nm_utils_hexstr2bin_full (const char *hexstr,
+                                   gboolean allow_0x_prefix,
                                    gboolean delimiter_required,
                                    const char *delimiter_candidates,
+                                   gsize required_len,
                                    guint8 *buffer,
-                                   gsize buffer_length,
+                                   gsize buffer_len,
                                    gsize *out_len);
+
+#define _nm_utils_hexstr2bin_buf(hexstr, allow_0x_prefix, delimiter_required, delimiter_candidates, buffer) \
+    _nm_utils_hexstr2bin_full ((hexstr), (allow_0x_prefix), (delimiter_required), (delimiter_candidates), G_N_ELEMENTS (buffer), (buffer), G_N_ELEMENTS (buffer), NULL)
+
+guint8 *_nm_utils_hexstr2bin_alloc (const char *hexstr,
+                                    gboolean allow_0x_prefix,
+                                    gboolean delimiter_required,
+                                    const char *delimiter_candidates,
+                                    gsize required_len,
+                                    gsize *out_len);
 
 GSList *    _nm_utils_hash_values_to_slist (GHashTable *hash);
 
