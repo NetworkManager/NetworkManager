@@ -25,6 +25,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "nm-utils/nm-secret-utils.h"
+
 #include "nm-utils.h"
 #include "nm-core-types-internal.h"
 #include "nm-setting-connection.h"
@@ -389,7 +391,7 @@ set_property (GObject *object, guint prop_id,
 		priv->encrypt = g_value_get_boolean (value);
 		break;
 	case PROP_MKA_CAK:
-		g_free (priv->mka_cak);
+		nm_free_secret (priv->mka_cak);
 		priv->mka_cak = g_value_dup_string (value);
 		break;
 	case PROP_MKA_CAK_FLAGS:
@@ -462,10 +464,7 @@ finalize (GObject *object)
 	NMSettingMacsecPrivate *priv = NM_SETTING_MACSEC_GET_PRIVATE (setting);
 
 	g_free (priv->parent);
-	if (priv->mka_cak) {
-		memset (priv->mka_cak, 0, strlen (priv->mka_cak));
-		g_free (priv->mka_cak);
-	}
+	nm_free_secret (priv->mka_cak);
 	g_free (priv->mka_ckn);
 
 	G_OBJECT_CLASS (nm_setting_macsec_parent_class)->finalize (object);
