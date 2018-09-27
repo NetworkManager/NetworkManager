@@ -3851,25 +3851,6 @@ nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_cas
 }
 
 /**
- * _nm_utils_bin2hexstr:
- * @addr: (type guint8) (array length=length): a binary hardware address
- * @length: the length of @addr
- * @upper_case: the case for the hexadecimal digits.
- *
- * Converts @addr to textual form.
- *
- * Return value: (transfer full): the textual form of @addr
- */
-char *
-_nm_utils_bin2hexstr (gconstpointer addr, gsize length, gboolean upper_case)
-{
-	g_return_val_if_fail (addr, g_strdup (""));
-	g_return_val_if_fail (length > 0, g_strdup (""));
-
-	return _nm_utils_bin2hexstr_full (addr, length, ':', upper_case, NULL);
-}
-
-/**
  * nm_utils_hwaddr_valid:
  * @asc: the ASCII representation of a hardware address
  * @length: the length of address that @asc is expected to convert to
