@@ -99,7 +99,7 @@ static inline void name (Type *v) \
  * Call g_free() on a variable location when it goes out of scope.
  */
 #define gs_free nm_auto(gs_local_free)
-NM_AUTO_DEFINE_FCN_VOID (void *, gs_local_free, g_free)
+NM_AUTO_DEFINE_FCN_VOID0 (void *, gs_local_free, g_free)
 
 /**
  * gs_unref_object:
@@ -160,7 +160,7 @@ NM_AUTO_DEFINE_FCN0 (GHashTable *, gs_local_hashtable_unref, g_hash_table_unref)
  * of scope.
  */
 #define gs_free_slist nm_auto(gs_local_free_slist)
-NM_AUTO_DEFINE_FCN (GSList *, gs_local_free_slist, g_slist_free)
+NM_AUTO_DEFINE_FCN0 (GSList *, gs_local_free_slist, g_slist_free)
 
 /**
  * gs_unref_bytes:
@@ -178,7 +178,7 @@ NM_AUTO_DEFINE_FCN0 (GBytes *, gs_local_bytes_unref, g_bytes_unref)
  * Call g_strfreev() on a variable location when it goes out of scope.
  */
 #define gs_strfreev nm_auto(gs_local_strfreev)
-NM_AUTO_DEFINE_FCN (char **, gs_local_strfreev, g_strfreev)
+NM_AUTO_DEFINE_FCN0 (char **, gs_local_strfreev, g_strfreev)
 
 /**
  * gs_free_error:
@@ -222,7 +222,7 @@ static inline int nm_close (int fd);
  * However, let's never mix them. To free malloc'ed memory, always use
  * free() or nm_auto_free.
  */
-NM_AUTO_DEFINE_FCN_VOID (void *, _nm_auto_free_impl, free)
+NM_AUTO_DEFINE_FCN_VOID0 (void *, _nm_auto_free_impl, free)
 #define nm_auto_free nm_auto(_nm_auto_free_impl)
 
 NM_AUTO_DEFINE_FCN0 (GVariantIter *, _nm_auto_free_variant_iter, g_variant_iter_free)
@@ -231,7 +231,7 @@ NM_AUTO_DEFINE_FCN0 (GVariantIter *, _nm_auto_free_variant_iter, g_variant_iter_
 NM_AUTO_DEFINE_FCN0 (GVariantBuilder *, _nm_auto_unref_variant_builder, g_variant_builder_unref)
 #define nm_auto_unref_variant_builder nm_auto(_nm_auto_unref_variant_builder)
 
-NM_AUTO_DEFINE_FCN (GList *, _nm_auto_free_list, g_list_free)
+NM_AUTO_DEFINE_FCN0 (GList *, _nm_auto_free_list, g_list_free)
 #define nm_auto_free_list nm_auto(_nm_auto_free_list)
 
 NM_AUTO_DEFINE_FCN0 (GChecksum *, _nm_auto_checksum_free, g_checksum_free)

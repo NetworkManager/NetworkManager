@@ -43,7 +43,7 @@ nm_free_secret (char *secret)
 	}
 }
 
-NM_AUTO_DEFINE_FCN (char *, _nm_auto_free_secret, nm_free_secret)
+NM_AUTO_DEFINE_FCN0 (char *, _nm_auto_free_secret, nm_free_secret)
 /**
  * nm_auto_free_secret:
  *
