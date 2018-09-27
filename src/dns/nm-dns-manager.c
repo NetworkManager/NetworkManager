@@ -323,8 +323,8 @@ _ip_config_lst_cmp (const CList *a_lst,
 	NM_CMP_DIRECT (nm_ip_config_get_dns_priority (a->ip_config),
 	               nm_ip_config_get_dns_priority (b->ip_config));
 
-	/* Sort also according to type */
-	NM_CMP_DIRECT (a->ip_config_type, b->ip_config_type);
+	/* Sort according to type (descendingly) */
+	NM_CMP_FIELD (b, a, ip_config_type);
 
 	return 0;
 }
