@@ -729,7 +729,7 @@ nm_dhcp_utils_duid_to_string (GBytes *duid)
 	g_return_val_if_fail (duid != NULL, NULL);
 
 	data = g_bytes_get_data (duid, &len);
-	return _nm_utils_bin2str (data, len, FALSE);
+	return _nm_utils_bin2hexstr (data, len, FALSE);
 }
 
 /**
