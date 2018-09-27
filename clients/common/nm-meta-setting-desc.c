@@ -1913,9 +1913,8 @@ nmc_property_set_bytes (NMSetting *setting, const char *prop, const char *value,
 	gs_free char *val_strip = NULL;
 	gs_free const char **strv = NULL;
 	const char **iter;
-	GBytes *bytes;
-	GByteArray *array = NULL;
-	gboolean success = TRUE;
+	gs_unref_bytes GBytes *bytes = NULL;
+	GByteArray *array;
 
 	nm_assert (!error || !*error);
 
@@ -1937,8 +1936,7 @@ nmc_property_set_bytes (NMSetting *setting, const char *prop, const char *value,
 		if (v == -1) {
 			g_set_error (error, 1, 0, _("'%s' is not a valid hex character"), *iter);
 			g_byte_array_free (array, TRUE);
-			success = FALSE;
-			goto done;
+			return FALSE;
 		}
 		v8 = v;
 		g_byte_array_append (array, &v8, 1);
@@ -1946,13 +1944,8 @@ nmc_property_set_bytes (NMSetting *setting, const char *prop, const char *value,
 	bytes = g_byte_array_free_to_bytes (array);
 
 done:
-	if (success)
-		g_object_set (setting, prop, bytes, NULL);
-
-	if (bytes)
-		g_bytes_unref (bytes);
-
-	return success;
+	g_object_set (setting, prop, bytes, NULL);
+	return TRUE;
 }
 
 /*****************************************************************************/
