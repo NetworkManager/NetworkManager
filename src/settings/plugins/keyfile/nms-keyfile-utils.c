@@ -56,18 +56,11 @@ check_mkstemp_suffix (const char *path)
 }
 
 static gboolean
-check_prefix (const char *base, const char *tag)
+check_prefix_dot (const char *base)
 {
-	int len, tag_len;
+	nm_assert (base && base[0]);
 
-	g_return_val_if_fail (base != NULL, TRUE);
-	g_return_val_if_fail (tag != NULL, TRUE);
-
-	len = strlen (base);
-	tag_len = strlen (tag);
-	if ((len > tag_len) && !g_ascii_strncasecmp (base, tag, tag_len))
-		return TRUE;
-	return FALSE;
+	return base[0] == '.';
 }
 
 static gboolean
@@ -102,7 +95,7 @@ nms_keyfile_utils_should_ignore_file (const char *filename)
 
 	/* Ignore hidden and backup files */
 	/* should_ignore_file() must mirror escape_filename() */
-	if (check_prefix (base, ".") || check_suffix (base, "~"))
+	if (check_prefix_dot (base) || check_suffix (base, "~"))
 		return TRUE;
 	/* Ignore temporary files */
 	if (check_mkstemp_suffix (base))
@@ -198,7 +191,7 @@ nms_keyfile_utils_escape_filename (const char *filename)
 
 	/* escape_filename() must avoid anything that should_ignore_file() would reject.
 	 * We can escape here more aggressivly then what we would read back. */
-	if (check_prefix (str->str, "."))
+	if (check_prefix_dot (str->str))
 		str->str[0] = ESCAPE_CHAR2;
 	if (check_suffix (str->str, "~"))
 		str->str[str->len - 1] = ESCAPE_CHAR2;
