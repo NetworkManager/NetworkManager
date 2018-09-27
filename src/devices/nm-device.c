@@ -5525,7 +5525,7 @@ nm_device_generate_connection (NMDevice *self,
 
 	klass->update_connection (self, connection);
 
-	if (!nm_connection_normalize (connection, NULL, NULL, error)) {
+	if (!nm_connection_normalize (connection, NULL, NULL, &local)) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		             "generated connection does not verify: %s",
 		             local->message);
