@@ -28,6 +28,7 @@
 #include "nm-keyfile-internal.h"
 
 #include "NetworkManagerUtils.h"
+#include "nms-keyfile-utils.h"
 
 /*****************************************************************************/
 
@@ -116,31 +117,13 @@ NMConnection *
 nms_keyfile_reader_from_file (const char *filename, GError **error)
 {
 	gs_unref_keyfile GKeyFile *key_file = NULL;
-	struct stat statbuf;
 	NMConnection *connection = NULL;
 	GError *verify_error = NULL;
 
-	if (stat (filename, &statbuf) != 0 || !S_ISREG (statbuf.st_mode)) {
-		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		                     "File did not exist or was not a regular file");
+	if (!nms_keyfile_utils_check_file_permissions (filename,
+	                                               NULL,
+	                                               error))
 		return NULL;
-	}
-
-	if (!NM_FLAGS_HAS (nm_utils_get_testing (), NM_UTILS_TEST_NO_KEYFILE_OWNER_CHECK)) {
-		if (statbuf.st_mode & 0077) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "File permissions (%o) were insecure",
-			             statbuf.st_mode);
-			return NULL;
-		}
-
-		if (statbuf.st_uid != 0) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "File owner (%o) is insecure",
-			             statbuf.st_mode);
-			return NULL;
-		}
-	}
 
 	key_file = g_key_file_new ();
 	if (!g_key_file_load_from_file (key_file, filename, G_KEY_FILE_NONE, error))
