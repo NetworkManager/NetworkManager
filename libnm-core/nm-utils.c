@@ -3814,15 +3814,45 @@ nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
 	return buffer;
 }
 
-void
-_nm_utils_bin2hexstr_full (gconstpointer addr, gsize length, const char delimiter, gboolean upper_case, char *out)
+/**
+ * _nm_utils_bin2hexstr_full:
+ * @addr: pointer of @length bytes.
+ * @length: number of bytes in @addr
+ * @delimiter: either '\0', otherwise the output string will have the
+ *   given delimiter character between each two hex numbers.
+ * @upper_case: if TRUE, use upper case ASCII characters for hex.
+ * @out: if %NULL, the function will allocate a new buffer of
+ *   either (@length*2+1) or (@length*3) bytes, depending on whether
+ *   a @delimiter is specified. In that case, the allocated buffer will
+ *   be returned and must be freed by the caller.
+ *   If not %NULL, the buffer must already be preallocated and contain
+ *   at least (@length*2+1) or (@length*3) bytes, depending on the delimiter.
+ *
+ * Returns: the binary value converted to a hex string. If @out is given,
+ *   this always returns @out. If @out is %NULL, a newly allocated string
+ *   is returned.
+ */
+char *
+_nm_utils_bin2hexstr_full (gconstpointer addr,
+                           gsize length,
+                           char delimiter,
+                           gboolean upper_case,
+                           char *out)
 {
 	const guint8 *in = addr;
 	const char *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
+	char *out0;
 
 	nm_assert (addr);
-	nm_assert (out);
 	nm_assert (length > 0);
+
+	if (out)
+		out0 = out;
+	else {
+		out0 = out = g_new (char, delimiter == '\0'
+		                          ? length * 2 + 1
+		                          : length * 3);
+	}
 
 	/* @out must contain at least @length*3 bytes if @delimiter is set,
 	 * otherwise, @length*2+1. */
@@ -3840,6 +3870,7 @@ _nm_utils_bin2hexstr_full (gconstpointer addr, gsize length, const char delimite
 	}
 
 	*out = 0;
+	return out0;
 }
 
 /**
@@ -3865,6 +3896,7 @@ nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len)
 	g_return_val_if_fail (final_len < 0 || (gsize) final_len < buflen, NULL);
 
 	result = g_malloc (buflen);
+
 	_nm_utils_bin2hexstr_full (src, len, '\0', FALSE, result);
 
 	/* Cut converted key off at the correct length for this cipher type */
@@ -3886,14 +3918,10 @@ nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len)
 char *
 nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
 {
-	char *result;
-
 	g_return_val_if_fail (addr, g_strdup (""));
 	g_return_val_if_fail (length > 0, g_strdup (""));
 
-	result = g_malloc (length * 3);
-	_nm_utils_bin2hexstr_full (addr, length, ':', TRUE, result);
-	return result;
+	return _nm_utils_bin2hexstr_full (addr, length, ':', TRUE, NULL);
 }
 
 const char *
@@ -3905,8 +3933,7 @@ nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_cas
 	if (buf_len < addr_len * 3)
 		g_return_val_if_reached (NULL);
 
-	_nm_utils_bin2hexstr_full (addr, addr_len, ':', upper_case, buf);
-	return buf;
+	return _nm_utils_bin2hexstr_full (addr, addr_len, ':', upper_case, buf);
 }
 
 /**
@@ -3922,14 +3949,10 @@ nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_cas
 char *
 _nm_utils_bin2hexstr (gconstpointer addr, gsize length, gboolean upper_case)
 {
-	char *result;
-
 	g_return_val_if_fail (addr, g_strdup (""));
 	g_return_val_if_fail (length > 0, g_strdup (""));
 
-	result = g_malloc (length * 3);
-	_nm_utils_bin2hexstr_full (addr, length, ':', upper_case, result);
-	return result;
+	return _nm_utils_bin2hexstr_full (addr, length, ':', upper_case, NULL);
 }
 
 /**

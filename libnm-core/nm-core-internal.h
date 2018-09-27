@@ -220,7 +220,7 @@ guint8 *_nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize buffer_le
 const char *nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_case, char *buf, gsize buf_len);
 
 char *_nm_utils_bin2hexstr (gconstpointer addr, gsize length, gboolean upper_case);
-void _nm_utils_bin2hexstr_full (gconstpointer addr, gsize length, const char delimiter, gboolean upper_case, char *out);
+char *_nm_utils_bin2hexstr_full (gconstpointer addr, gsize length, const char delimiter, gboolean upper_case, char *out);
 
 guint8 *_nm_utils_hexstr2bin_full (const char *asc,
                                    gboolean delimiter_required,
