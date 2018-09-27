@@ -427,6 +427,8 @@ nm_supplicant_config_add_setting_macsec (NMSupplicantConfig * self,
 			return FALSE;
 		}
 
+
+		g_bytes_unref (bytes);
 		bytes = nm_utils_hexstr2bin (value);
 		if (!nm_supplicant_config_add_option (self,
 		                                      "mka_ckn",
