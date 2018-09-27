@@ -394,6 +394,7 @@ typedef struct _NMDevicePrivate {
 
 	bool            ipv6ll_handle:1; /* TRUE if NM handles the device's IPv6LL address */
 	bool            ipv6ll_has:1;
+	bool            ndisc_started:1;
 
 	/* Generic DHCP stuff */
 	char *          dhcp_anycast_address;
@@ -7240,15 +7241,15 @@ ip_config_merge_and_apply (NMDevice *self,
 	}
 
 	if (!IS_IPv4) {
-		if (commit) {
-			NMUtilsIPv6IfaceId iid;
+		NMUtilsIPv6IfaceId iid;
 
-			if (   ip6_addr_gen_token
-			    && nm_utils_ipv6_interface_identifier_get_from_token (&iid, ip6_addr_gen_token)) {
-				nm_platform_link_set_ipv6_token (nm_device_get_platform (self),
-				                                 nm_device_get_ip_ifindex (self),
-				                                 iid);
-			}
+		if (   commit
+		    && priv->ndisc_started
+		    && ip6_addr_gen_token
+		    && nm_utils_ipv6_interface_identifier_get_from_token (&iid, ip6_addr_gen_token)) {
+			nm_platform_link_set_ipv6_token (nm_device_get_platform (self),
+			                                 nm_device_get_ip_ifindex (self),
+			                                 iid);
 		}
 	}
 
@@ -9342,6 +9343,7 @@ addrconf6_start_with_link_ready (NMDevice *self)
 
 	ndisc_set_router_config (priv->ndisc, self);
 	nm_ndisc_start (priv->ndisc);
+	priv->ndisc_started = TRUE;
 	return;
 }
 
@@ -9426,6 +9428,7 @@ addrconf6_cleanup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
+	priv->ndisc_started = FALSE;
 	nm_clear_g_signal_handler (priv->ndisc, &priv->ndisc_changed_id);
 	nm_clear_g_signal_handler (priv->ndisc, &priv->ndisc_timeout_id);
 
