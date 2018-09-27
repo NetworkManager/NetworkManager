@@ -1125,6 +1125,29 @@ _normalize_wireless_mac_address_randomization (NMConnection *self, GHashTable *p
 }
 
 static gboolean
+_normalize_macsec (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingMacsec *s_macsec = nm_connection_get_setting_macsec (self);
+	gboolean changed = FALSE;
+
+	if (!s_macsec)
+		return FALSE;
+
+	if (nm_setting_macsec_get_mode (s_macsec) != NM_SETTING_MACSEC_MODE_PSK) {
+		if (nm_setting_macsec_get_mka_cak (s_macsec)) {
+			g_object_set (s_macsec, NM_SETTING_MACSEC_MKA_CAK, NULL, NULL);
+			changed = TRUE;
+		}
+		if (nm_setting_macsec_get_mka_ckn (s_macsec)) {
+			g_object_set (s_macsec, NM_SETTING_MACSEC_MKA_CKN, NULL, NULL);
+			changed = TRUE;
+		}
+	}
+
+	return changed;
+}
+
+static gboolean
 _normalize_team_config (NMConnection *self, GHashTable *parameters)
 {
 	NMSettingTeam *s_team = nm_connection_get_setting_team (self);
@@ -1564,6 +1587,7 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_bond_mode (connection, parameters);
 	was_modified |= _normalize_bond_options (connection, parameters);
 	was_modified |= _normalize_wireless_mac_address_randomization (connection, parameters);
+	was_modified |= _normalize_macsec (connection, parameters);
 	was_modified |= _normalize_team_config (connection, parameters);
 	was_modified |= _normalize_team_port_config (connection, parameters);
 	was_modified |= _normalize_bluetooth_type (connection, parameters);
