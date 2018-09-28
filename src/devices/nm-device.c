@@ -7310,8 +7310,9 @@ dhcp4_fail (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	_LOGD (LOGD_DHCP4, "DHCPv4 failed (ip_state %s)",
-	       _ip_state_to_string (priv->ip4_state));
+	_LOGD (LOGD_DHCP4, "DHCPv4 failed (ip_state %s, was_active %d)",
+	       _ip_state_to_string (priv->ip4_state),
+	       priv->dhcp4.was_active);
 
 	/* Keep client running if there are static addresses configured
 	 * on the interface.
@@ -8063,8 +8064,9 @@ dhcp6_fail (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean is_dhcp_managed;
 
-	_LOGD (LOGD_DHCP6, "DHCPv6 failed (ip_state %s)",
-	       _ip_state_to_string (priv->ip6_state));
+	_LOGD (LOGD_DHCP6, "DHCPv6 failed (ip_state %s, was_active %d)",
+	       _ip_state_to_string (priv->ip6_state),
+	       priv->dhcp6.was_active);
 
 	is_dhcp_managed = (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_MANAGED);
 
