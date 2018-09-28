@@ -244,7 +244,7 @@ endif
 
 enable_ifcfg_rh = get_option('ifcfg_rh') or (distro == 'redhat')
 enable_ifupdown = get_option('ifupdown') or (distro == 'debian')
-enable_ibft = get_option('ibft') or enable_ifcfg_rh
+enable_ibft = get_option('ibft')
 
 config_h.set10('WITH_SETTINGS_PLUGIN_IBFT', enable_ibft)
 
@@ -879,6 +879,7 @@ enable_docs = get_option('docs')
 
 if enable_docs
   assert(enable_introspection, '-Ddocs=true requires -Dintrospection=true')
+  assert(meson.version().version_compare('>= 0.46.0'), '-Ddocs requires meson >= 0.46')
   subdir('man')
   subdir('docs')
 endif
@@ -927,7 +928,7 @@ meson.add_install_script(
   nm_bindir,
   nm_pkgconfdir,
   nm_pkglibdir,
-  nm_localstatedir,
+  nm_pkgstatedir,
   enable_docs ? 'install_docs' : '',
   nm_mandir
 )

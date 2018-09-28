@@ -40,14 +40,13 @@ mans = [
   ['nm-online', '1'],
   ['nmcli-examples', '7'],
   ['nmcli', '1'],
-  ['nmtui', '1']
+  ['nmtui', '1'],
+  ['nm-initrd-generator', '8'],
 ]
 
 if enable_ovs
   mans += [['nm-openvswitch', '7']]
 endif
-
-content_files += join_paths(meson.current_build_dir(), 'common.ent')
 
 foreach man: mans
   input = man[0] + '.xml'
