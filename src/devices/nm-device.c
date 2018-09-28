@@ -8058,12 +8058,13 @@ dhcp6_grace_period_expired (gpointer user_data)
 }
 
 static void
-dhcp6_fail (NMDevice *self, gboolean timeout)
+dhcp6_fail (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean is_dhcp_managed;
 
-	_LOGD (LOGD_DHCP6, "DHCPv6 failed%s", timeout ? " (timeout)" : "");
+	_LOGD (LOGD_DHCP6, "DHCPv6 failed (ip_state %s)",
+	       _ip_state_to_string (priv->ip6_state));
 
 	is_dhcp_managed = (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_MANAGED);
 
@@ -8080,7 +8081,7 @@ dhcp6_fail (NMDevice *self, gboolean timeout)
 		 * configuration.
 		 */
 		if (   !priv->dhcp6.was_active
-		    && (timeout || priv->ip6_state == IP_CONF)) {
+		    && priv->ip6_state == IP_CONF) {
 			dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 			nm_device_activate_schedule_ip6_config_timeout (self);
 			return;
@@ -8122,7 +8123,7 @@ dhcp6_timeout (NMDevice *self, NMDhcpClient *client)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_MANAGED)
-		dhcp6_fail (self, TRUE);
+		dhcp6_fail (self);
 	else {
 		/* not a hard failure; just live with the RA info */
 		dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
@@ -8188,7 +8189,7 @@ dhcp6_state_changed (NMDhcpClient *client,
 			nm_device_activate_schedule_ip6_config_result (self);
 		} else if (priv->ip6_state == IP_DONE)
 			if (!dhcp6_lease_change (self))
-				dhcp6_fail (self, FALSE);
+				dhcp6_fail (self);
 		break;
 	case NM_DHCP_STATE_TIMEOUT:
 		dhcp6_timeout (self, client);
@@ -8196,7 +8197,7 @@ dhcp6_state_changed (NMDhcpClient *client,
 	case NM_DHCP_STATE_EXPIRE:
 		/* Ignore expiry before we even have a lease (NAK, old lease, etc) */
 		if (priv->ip6_state != IP_CONF)
-			dhcp6_fail (self, FALSE);
+			dhcp6_fail (self);
 		break;
 	case NM_DHCP_STATE_DONE:
 		/* In IPv6 info-only mode, the client doesn't handle leases so it
@@ -8207,7 +8208,7 @@ dhcp6_state_changed (NMDhcpClient *client,
 			break;
 		/* fall through */
 	case NM_DHCP_STATE_FAIL:
-		dhcp6_fail (self, FALSE);
+		dhcp6_fail (self);
 		break;
 	default:
 		break;
