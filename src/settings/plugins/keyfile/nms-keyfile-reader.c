@@ -172,7 +172,8 @@ nms_keyfile_reader_from_file (const char *full_filename,
 	nm_assert (full_filename && full_filename[0] == '/');
 	nm_assert (!profile_dir || profile_dir[0] == '/');
 
-	if (!nms_keyfile_utils_check_file_permissions (full_filename,
+	if (!nms_keyfile_utils_check_file_permissions (NMS_KEYFILE_FILETYPE_KEYFILE,
+	                                               full_filename,
 	                                               NULL,
 	                                               error))
 		return NULL;

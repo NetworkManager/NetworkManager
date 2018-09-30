@@ -2511,6 +2511,109 @@ test_nm_keyfile_plugin_utils_escape_filename (void)
 
 /*****************************************************************************/
 
+static void
+_assert_keyfile_loaded_uuid (const char *dirname,
+                             const char *uuid,
+                             const char *loaded_path,
+                             gboolean allow_relative,
+                             const char *exp_full_filename,
+                             const char *exp_uuid,
+                             const char *exp_symlink_target,
+                             const char *exp_loaded_path)
+{
+	gs_free char *full_filename = NULL;
+	gs_free char *symlink_target = NULL;
+	gs_free char *uuid2 = NULL;
+	gs_free char *loaded_path2 = NULL;
+	gs_free char *dirname3 = NULL;
+	gs_free char *filename3 = NULL;
+	gs_free char *uuid3 = NULL;
+	gs_free char *loaded_path3 = NULL;
+	gboolean success;
+	gs_free char *filename = NULL;
+
+	g_assert (dirname && dirname[0] == '/');
+	g_assert (exp_full_filename && exp_full_filename[0]);
+	g_assert (!exp_loaded_path || exp_loaded_path[0] == '/');
+
+	filename = g_path_get_basename (exp_full_filename);
+
+	full_filename = nms_keyfile_loaded_uuid_filename (dirname, uuid, FALSE);
+	g_assert_cmpstr (full_filename, ==, full_filename);
+	nm_clear_g_free (&full_filename);
+
+
+	g_assert (nms_keyfile_loaded_uuid_write (dirname, uuid, loaded_path, allow_relative, &full_filename));
+	g_assert_cmpstr (full_filename, ==, exp_full_filename);
+	nm_clear_g_free (&full_filename);
+
+	if (exp_symlink_target)
+		g_assert (g_file_test (exp_full_filename, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_SYMLINK));
+	else
+		g_assert (!g_file_test (exp_full_filename, G_FILE_TEST_EXISTS));
+	symlink_target = g_file_read_link (exp_full_filename, NULL);
+	g_assert_cmpstr (symlink_target, ==, exp_symlink_target);
+
+
+	success = nms_keyfile_loaded_uuid_read (dirname, filename, &full_filename, &uuid2, &loaded_path2);
+	g_assert_cmpint (!!exp_uuid, ==, success);
+	if (success)
+		g_assert_cmpstr (full_filename, ==, exp_full_filename);
+	else
+		g_assert_cmpstr (full_filename, ==, NULL);
+	nm_clear_g_free (&full_filename);
+	g_assert_cmpstr (uuid2, ==, exp_uuid);
+	g_assert_cmpstr (loaded_path2, ==, exp_loaded_path);
+
+
+	success = nms_keyfile_loaded_uuid_read_from_file (exp_full_filename, &dirname3, &filename3, &uuid3, &loaded_path3);
+	g_assert_cmpint (!!exp_uuid, ==, success);
+	if (success) {
+		g_assert_cmpstr (dirname3, ==, dirname);
+		g_assert_cmpstr (filename3, ==, filename);
+	} else {
+		g_assert_cmpstr (dirname3, ==, NULL);
+		g_assert_cmpstr (filename3, ==, NULL);
+	}
+	g_assert_cmpstr (uuid3, ==, exp_uuid);
+	g_assert_cmpstr (loaded_path3, ==, exp_loaded_path);
+}
+
+static void
+test_loaded_uuid (void)
+{
+	const char *uuid = "3c03fd17-ddc3-4100-a954-88b6fafff959";
+	gs_free char *filename = g_strdup_printf ("%s%s%s",
+	                                          NM_KEYFILE_PATH_PREFIX_NMLOADED,
+	                                          uuid,
+	                                          NM_KEYFILE_PATH_SUFFIX_NMCONNECTION);
+	gs_free char *full_filename = g_strdup_printf ("%s/%s",
+	                                               TEST_SCRATCH_DIR,
+	                                               filename);
+	const char *loaded_path0 = NM_KEYFILE_PATH_NMLOADED_NULL;
+	const char *loaded_path1 = "/some/where/but/not/scratch/dir";
+	const char *filename2 = "foo1";
+	gs_free char *loaded_path2 = g_strdup_printf ("%s/%s",
+	                                              TEST_SCRATCH_DIR,
+	                                              filename2);
+
+	_assert_keyfile_loaded_uuid (TEST_SCRATCH_DIR, uuid, NULL,         FALSE, full_filename, NULL, NULL,         NULL);
+	_assert_keyfile_loaded_uuid (TEST_SCRATCH_DIR, uuid, NULL,         TRUE,  full_filename, NULL, NULL,         NULL);
+
+	_assert_keyfile_loaded_uuid (TEST_SCRATCH_DIR, uuid, loaded_path0, FALSE, full_filename, uuid, loaded_path0, loaded_path0);
+	_assert_keyfile_loaded_uuid (TEST_SCRATCH_DIR, uuid, loaded_path0, TRUE,  full_filename, uuid, loaded_path0, loaded_path0);
+
+	_assert_keyfile_loaded_uuid (TEST_SCRATCH_DIR, uuid, loaded_path1, FALSE, full_filename, uuid, loaded_path1, loaded_path1);
+	_assert_keyfile_loaded_uuid (TEST_SCRATCH_DIR, uuid, loaded_path1, TRUE,  full_filename, uuid, loaded_path1, loaded_path1);
+
+	_assert_keyfile_loaded_uuid (TEST_SCRATCH_DIR, uuid, loaded_path2, FALSE, full_filename, uuid, loaded_path2, loaded_path2);
+	_assert_keyfile_loaded_uuid (TEST_SCRATCH_DIR, uuid, loaded_path2, TRUE,  full_filename, uuid, filename2,    loaded_path2);
+
+	(void) unlink (full_filename);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -2592,6 +2695,8 @@ int main (int argc, char **argv)
 	g_test_add_func ("/keyfile/test_write_tc_config", test_write_tc_config);
 
 	g_test_add_func ("/keyfile/test_nm_keyfile_plugin_utils_escape_filename", test_nm_keyfile_plugin_utils_escape_filename);
+
+	g_test_add_func ("/keyfile/test_loaded_uuid", test_loaded_uuid);
 
 	return g_test_run ();
 }
