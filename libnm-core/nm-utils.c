@@ -3527,60 +3527,68 @@ nm_utils_hwaddr_len (int type)
 }
 
 guint8 *
-_nm_utils_str2bin_full (const char *asc,
-                        gboolean delimiter_required,
-                        const char *delimiter_candidates,
-                        guint8 *buffer,
-                        gsize buffer_length,
-                        gsize *out_len)
+_nm_utils_hexstr2bin_full (const char *hexstr,
+                           gboolean allow_0x_prefix,
+                           gboolean delimiter_required,
+                           const char *delimiter_candidates,
+                           gsize required_len,
+                           guint8 *buffer,
+                           gsize buffer_len,
+                           gsize *out_len)
 {
-	const char *in = asc;
+	const char *in = hexstr;
 	guint8 *out = buffer;
 	gboolean delimiter_has = TRUE;
 	guint8 delimiter = '\0';
+	gsize len;
 
-	nm_assert (asc);
+	nm_assert (hexstr);
 	nm_assert (buffer);
-	nm_assert (buffer_length);
-	nm_assert (out_len);
+	nm_assert (required_len > 0 || out_len);
+
+	if (   allow_0x_prefix
+	    && in[0] == '0'
+	    && in[1] == 'x')
+		in += 2;
 
 	while (TRUE) {
 		const guint8 d1 = in[0];
 		guint8 d2;
+		int i1, i2;
 
-		if (!g_ascii_isxdigit (d1))
-			return NULL;
-
-#define HEXVAL(c) ((c) <= '9' ? (c) - '0' : ((c) & 0x4F) - ('A' - 10))
+		i1 = nm_utils_hexchar_to_int (d1);
+		if (i1 < 0)
+			goto fail;
 
 		/* If there's no leading zero (ie "aa:b:cc") then fake it */
 		d2 = in[1];
-		if (d2 && g_ascii_isxdigit (d2)) {
-			*out++ = (HEXVAL (d1) << 4) + HEXVAL (d2);
+		if (   d2
+		    && (i2 = nm_utils_hexchar_to_int (d2)) >= 0) {
+			*out++ = (i1 << 4) + i2;
 			d2 = in[2];
 			if (!d2)
 				break;
 			in += 2;
 		} else {
 			/* Fake leading zero */
-			*out++ = HEXVAL (d1);
+			*out++ = i1;
 			if (!d2) {
 				if (!delimiter_has) {
 					/* when using no delimiter, there must be pairs of hex chars */
-					return NULL;
+					goto fail;
 				}
 				break;
 			}
 			in += 1;
 		}
 
-		if (--buffer_length == 0)
-			return NULL;
+		if (--buffer_len == 0)
+			goto fail;
 
 		if (delimiter_has) {
 			if (d2 != delimiter) {
 				if (delimiter)
-					return NULL;
+					goto fail;
 				if (delimiter_candidates) {
 					while (delimiter_candidates[0]) {
 						if (delimiter_candidates++[0] == d2)
@@ -3589,7 +3597,7 @@ _nm_utils_str2bin_full (const char *asc,
 				}
 				if (!delimiter) {
 					if (delimiter_required)
-						return NULL;
+						goto fail;
 					delimiter_has = FALSE;
 					continue;
 				}
@@ -3598,11 +3606,66 @@ _nm_utils_str2bin_full (const char *asc,
 		}
 	}
 
-	*out_len = out - buffer;
-	return buffer;
+	len = out - buffer;
+	if (   required_len == 0
+	    || len == required_len) {
+		NM_SET_OUT (out_len, len);
+		return buffer;
+	}
+
+fail:
+	NM_SET_OUT (out_len, 0);
+	return NULL;
 }
 
-#define hwaddr_aton(asc, buffer, buffer_length, out_len) _nm_utils_str2bin_full ((asc), TRUE, ":-", (buffer), (buffer_length), (out_len))
+guint8 *
+_nm_utils_hexstr2bin_alloc (const char *hexstr,
+                            gboolean allow_0x_prefix,
+                            gboolean delimiter_required,
+                            const char *delimiter_candidates,
+                            gsize required_len,
+                            gsize *out_len)
+{
+	guint8 *buffer;
+	gsize buffer_len, len;
+
+	g_return_val_if_fail (hexstr, NULL);
+
+	nm_assert (required_len > 0 || out_len);
+
+	if (   allow_0x_prefix
+	    && hexstr[0] == '0'
+	    && hexstr[1] == 'x')
+		hexstr += 2;
+
+	if (!hexstr[0])
+		goto fail;
+
+	if (required_len > 0)
+		buffer_len = required_len;
+	else
+		buffer_len = strlen (hexstr) / 2 + 3;
+
+	buffer = g_malloc (buffer_len);
+
+	if (_nm_utils_hexstr2bin_full (hexstr,
+	                               FALSE,
+	                               delimiter_required,
+	                               delimiter_candidates,
+	                               required_len,
+	                               buffer,
+	                               buffer_len,
+	                               &len)) {
+		NM_SET_OUT (out_len, len);
+		return buffer;
+	}
+
+	g_free (buffer);
+
+fail:
+	NM_SET_OUT (out_len, 0);
+	return NULL;
+}
 
 /**
  * nm_utils_hexstr2bin:
@@ -3619,22 +3682,16 @@ GBytes *
 nm_utils_hexstr2bin (const char *hex)
 {
 	guint8 *buffer;
-	gsize buffer_length, len;
+	gsize len;
 
-	g_return_val_if_fail (hex != NULL, NULL);
-
-	if (hex[0] == '0' && hex[1] == 'x')
-		hex += 2;
-
-	buffer_length = strlen (hex) / 2 + 3;
-	buffer = g_malloc (buffer_length);
-	if (!_nm_utils_str2bin_full (hex, FALSE, ":", buffer, buffer_length, &len)) {
-		g_free (buffer);
+	buffer = _nm_utils_hexstr2bin_alloc (hex, TRUE, FALSE, ":", 0, &len);
+	if (!buffer)
 		return NULL;
-	}
 	buffer = g_realloc (buffer, len);
 	return g_bytes_new_take (buffer, len);
 }
+
+#define hwaddr_aton(asc, buffer, buffer_len, out_len) _nm_utils_hexstr2bin_full ((asc), FALSE, TRUE, ":-", 0, (buffer), (buffer_len), (out_len))
 
 /**
  * nm_utils_hwaddr_atoba:
@@ -3728,15 +3785,45 @@ nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
 	return buffer;
 }
 
-void
-_nm_utils_bin2str_full (gconstpointer addr, gsize length, const char delimiter, gboolean upper_case, char *out)
+/**
+ * _nm_utils_bin2hexstr_full:
+ * @addr: pointer of @length bytes.
+ * @length: number of bytes in @addr
+ * @delimiter: either '\0', otherwise the output string will have the
+ *   given delimiter character between each two hex numbers.
+ * @upper_case: if TRUE, use upper case ASCII characters for hex.
+ * @out: if %NULL, the function will allocate a new buffer of
+ *   either (@length*2+1) or (@length*3) bytes, depending on whether
+ *   a @delimiter is specified. In that case, the allocated buffer will
+ *   be returned and must be freed by the caller.
+ *   If not %NULL, the buffer must already be preallocated and contain
+ *   at least (@length*2+1) or (@length*3) bytes, depending on the delimiter.
+ *
+ * Returns: the binary value converted to a hex string. If @out is given,
+ *   this always returns @out. If @out is %NULL, a newly allocated string
+ *   is returned.
+ */
+char *
+_nm_utils_bin2hexstr_full (gconstpointer addr,
+                           gsize length,
+                           char delimiter,
+                           gboolean upper_case,
+                           char *out)
 {
 	const guint8 *in = addr;
 	const char *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
+	char *out0;
 
 	nm_assert (addr);
-	nm_assert (out);
 	nm_assert (length > 0);
+
+	if (out)
+		out0 = out;
+	else {
+		out0 = out = g_new (char, delimiter == '\0'
+		                          ? length * 2 + 1
+		                          : length * 3);
+	}
 
 	/* @out must contain at least @length*3 bytes if @delimiter is set,
 	 * otherwise, @length*2+1. */
@@ -3754,6 +3841,7 @@ _nm_utils_bin2str_full (gconstpointer addr, gsize length, const char delimiter, 
 	}
 
 	*out = 0;
+	return out0;
 }
 
 /**
@@ -3779,7 +3867,8 @@ nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len)
 	g_return_val_if_fail (final_len < 0 || (gsize) final_len < buflen, NULL);
 
 	result = g_malloc (buflen);
-	_nm_utils_bin2str_full (src, len, '\0', FALSE, result);
+
+	_nm_utils_bin2hexstr_full (src, len, '\0', FALSE, result);
 
 	/* Cut converted key off at the correct length for this cipher type */
 	if (final_len >= 0 && (gsize) final_len < buflen)
@@ -3800,14 +3889,10 @@ nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len)
 char *
 nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
 {
-	char *result;
-
 	g_return_val_if_fail (addr, g_strdup (""));
 	g_return_val_if_fail (length > 0, g_strdup (""));
 
-	result = g_malloc (length * 3);
-	_nm_utils_bin2str_full (addr, length, ':', TRUE, result);
-	return result;
+	return _nm_utils_bin2hexstr_full (addr, length, ':', TRUE, NULL);
 }
 
 const char *
@@ -3819,31 +3904,7 @@ nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_cas
 	if (buf_len < addr_len * 3)
 		g_return_val_if_reached (NULL);
 
-	_nm_utils_bin2str_full (addr, addr_len, ':', upper_case, buf);
-	return buf;
-}
-
-/**
- * _nm_utils_bin2str:
- * @addr: (type guint8) (array length=length): a binary hardware address
- * @length: the length of @addr
- * @upper_case: the case for the hexadecimal digits.
- *
- * Converts @addr to textual form.
- *
- * Return value: (transfer full): the textual form of @addr
- */
-char *
-_nm_utils_bin2str (gconstpointer addr, gsize length, gboolean upper_case)
-{
-	char *result;
-
-	g_return_val_if_fail (addr, g_strdup (""));
-	g_return_val_if_fail (length > 0, g_strdup (""));
-
-	result = g_malloc (length * 3);
-	_nm_utils_bin2str_full (addr, length, ':', upper_case, result);
-	return result;
+	return _nm_utils_bin2hexstr_full (addr, addr_len, ':', upper_case, buf);
 }
 
 /**
@@ -4510,7 +4571,7 @@ _nm_utils_dhcp_duid_valid (const char *duid, GBytes **out_duid_bin)
 		return TRUE;
 	}
 
-	if (_nm_utils_str2bin_full (duid, FALSE, ":", duid_arr, sizeof (duid_arr), &duid_len)) {
+	if (_nm_utils_hexstr2bin_full (duid, FALSE, FALSE, ":", 0, duid_arr, sizeof (duid_arr), &duid_len)) {
 		/* MAX DUID length is 128 octects + the type code (2 octects). */
 		if (   duid_len > 2
 		    && duid_len <= (128 + 2)) {

@@ -25,6 +25,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "nm-utils/nm-secret-utils.h"
+
 #include "nm-utils.h"
 #include "nm-core-types-internal.h"
 #include "nm-setting-connection.h"
@@ -254,7 +256,7 @@ verify_macsec_key (const char *key, gboolean cak, GError **error)
 	req_len = cak ?
 	    NM_SETTING_MACSEC_MKA_CAK_LENGTH :
 	    NM_SETTING_MACSEC_MKA_CKN_LENGTH;
-	if (strlen (key) != req_len) {
+	if (strlen (key) != (gsize) req_len) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -340,6 +342,10 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_MACSEC_SETTING_NAME, NM_SETTING_MACSEC_MKA_CKN);
 			return FALSE;
 		}
+		if (!verify_macsec_key (priv->mka_cak, TRUE, error)) {
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_MACSEC_SETTING_NAME, NM_SETTING_MACSEC_MKA_CAK);
+			return FALSE;
+		}
 	} else if (priv->mode == NM_SETTING_MACSEC_MODE_EAP) {
 		if (!s_8021x) {
 			g_set_error (error,
@@ -350,6 +356,13 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			g_prefix_error (error, "%s: ", NM_SETTING_MACSEC_SETTING_NAME);
 			return FALSE;
 		}
+	} else {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("must be either psk (0) or eap (1)"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_MACSEC_SETTING_NAME, NM_SETTING_MACSEC_MODE);
+		return FALSE;
 	}
 
 	if (priv->port <= 0 || priv->port > 65534) {
@@ -360,6 +373,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		             priv->port);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_MACSEC_SETTING_NAME, NM_SETTING_MACSEC_PORT);
 		return FALSE;
+	}
+
+	if (   priv->mode != NM_SETTING_MACSEC_MODE_PSK
+	    && (priv->mka_cak || priv->mka_ckn)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("only valid for psk mode"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_MACSEC_SETTING_NAME,
+		                priv->mka_cak ? NM_SETTING_MACSEC_MKA_CAK : NM_SETTING_MACSEC_MKA_CKN);
+		return NM_SETTING_VERIFY_NORMALIZABLE;
 	}
 
 	return TRUE;
@@ -389,7 +413,7 @@ set_property (GObject *object, guint prop_id,
 		priv->encrypt = g_value_get_boolean (value);
 		break;
 	case PROP_MKA_CAK:
-		g_free (priv->mka_cak);
+		nm_free_secret (priv->mka_cak);
 		priv->mka_cak = g_value_dup_string (value);
 		break;
 	case PROP_MKA_CAK_FLAGS:
@@ -462,10 +486,7 @@ finalize (GObject *object)
 	NMSettingMacsecPrivate *priv = NM_SETTING_MACSEC_GET_PRIVATE (setting);
 
 	g_free (priv->parent);
-	if (priv->mka_cak) {
-		memset (priv->mka_cak, 0, strlen (priv->mka_cak));
-		g_free (priv->mka_cak);
-	}
+	nm_free_secret (priv->mka_cak);
 	g_free (priv->mka_ckn);
 
 	G_OBJECT_CLASS (nm_setting_macsec_parent_class)->finalize (object);
