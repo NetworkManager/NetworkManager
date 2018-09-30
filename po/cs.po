@@ -17,7 +17,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-05-29 17:44+0200\n"
-"PO-Revision-Date: 2018-09-13 16:02+0200\n"
+"PO-Revision-Date: 2018-09-30 14:02+0200\n"
 "Last-Translator: Daniel Rusek <mail@asciiwolf.com>\n"
 "Language-Team: Czech <gnome-cs-list@gnome.org>\n"
 "Language: cs\n"
@@ -7416,7 +7416,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-infiniband.c:48
 msgid "Connected"
-msgstr "je připojeno"
+msgstr "Připojeno"
 
 #: ../clients/tui/nmt-page-infiniband.c:81
 msgid "INFINIBAND"
@@ -7428,7 +7428,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-ip4.c:38
 msgid "Disabled"
-msgstr "je zakázáno"
+msgstr "Zakázáno"
 
 #: ../clients/tui/nmt-page-ip4.c:39 ../clients/tui/nmt-page-ip6.c:39
 msgid "Automatic"
