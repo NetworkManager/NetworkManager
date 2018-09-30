@@ -11807,7 +11807,7 @@ nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 		return;
 	}
 
-	/* supercede any already-queued request */
+	/* supersede any already-queued request */
 	_clear_queued_act_request (priv);
 	priv->queued_act_request = g_object_ref (req);
 	priv->queued_act_request_is_waiting_for_carrier = must_queue;

@@ -27,7 +27,7 @@ from __future__ import print_function
 #    #  $ LANG=pl_PL.UTF-8 ./clients/cli/nmcli --version
 #    # also ensure that `locale -a` reports the Polish locale.
 #  $ rm -rf  clients/tests/test-client.check-on-disk/*.expected
-#    # (step seldomly required)
+#    # (step seldom required)
 #    # Sometimes, if you want to be sure that the test would generate
 #    # exactly the same .expected files, purge the previous version first.
 #    # This is only necessary, when you remove test from this file.

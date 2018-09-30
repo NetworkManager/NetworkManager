@@ -47,7 +47,7 @@ typedef enum _NMDedupMultiIdxMode {
 	NM_DEDUP_MULTI_IDX_MODE_APPEND,
 
 	/* like NM_DEDUP_MULTI_IDX_MODE_APPEND, but if the object
-	 * is already in teh cache, move it to the end. */
+	 * is already in the cache, move it to the end. */
 	NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE,
 } NMDedupMultiIdxMode;
 
@@ -85,7 +85,7 @@ static inline const NMDedupMultiObj *
 nm_dedup_multi_obj_ref (const NMDedupMultiObj *obj)
 {
 	/* ref and unref accept const pointers. Objects is supposed to be shared
-	 * and kept immutable. Disallowing to take/retrun a reference to a const
+	 * and kept immutable. Disallowing to take/return a reference to a const
 	 * NMPObject is cumbersome, because callers are precisely expected to
 	 * keep a ref on the otherwise immutable object. */
 
@@ -131,12 +131,12 @@ void nm_dedup_multi_index_obj_release (NMDedupMultiIndex *self,
  * routes by ifindex. As the ifindex is dynamic, it does not create an
  * idx-type instance for each ifindex. Instead, it has one idx-type for
  * all routes. But whenever accessing NMDedupMultiIndex with an NMDedupMultiObj,
- * the partitioning NMDedupMultiIdxType takes into accound the NMDedupMultiObj
+ * the partitioning NMDedupMultiIdxType takes into account the NMDedupMultiObj
  * instance to associate it with the right list.
  *
  * Hence, a NMDedupMultiIdxEntry has a list of possibly multiple NMDedupMultiHeadEntry
  * instances, which each is the head for a list of NMDedupMultiEntry instances.
- * In the platform example, the NMDedupMultiHeadEntry parition the indexed objects
+ * In the platform example, the NMDedupMultiHeadEntry partition the indexed objects
  * by their ifindex. */
 struct _NMDedupMultiIdxType {
 	union {

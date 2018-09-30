@@ -703,7 +703,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	 * Available keys are:   ethtool: 'delay-up', 'delay-down', 'init-wait';
 	 * nsna_ping: 'init-wait', 'interval', 'missed-max', 'target-host';
 	 * arp_ping: all the ones in nsna_ping and 'source-host', 'validate-active',
-	 * 'validate-incative', 'send-always'. See teamd.conf man for more details.
+	 * 'validate-inactive', 'send-always'. See teamd.conf man for more details.
 	 *
 	 * Since: 1.12
 	 **/

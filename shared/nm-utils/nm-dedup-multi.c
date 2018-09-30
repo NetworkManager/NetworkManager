@@ -159,7 +159,7 @@ _entry_unpack (const NMDedupMultiEntry *entry,
 	ASSERT_idx_type (*out_idx_type);
 
 	/* for lookup of the head, we allow to omit object, but only
-	 * if the idx_type does not parition the objects. Otherwise, we
+	 * if the idx_type does not partition the objects. Otherwise, we
 	 * require a obj to compare. */
 	nm_assert (   !*out_lookup_head
 	           || (   *out_obj
@@ -441,10 +441,10 @@ nm_dedup_multi_index_add (NMDedupMultiIndex *self,
  *   object will be placed in. You can omit this, and it will be automatically
  *   detected (at the expense of an additional hash lookup).
  *   Basically, this is the result of nm_dedup_multi_index_lookup_obj(),
- *   with the pecularity that if you know that @obj is not yet tracked,
+ *   with the peculiarity that if you know that @obj is not yet tracked,
  *   you may specify %NM_DEDUP_MULTI_ENTRY_MISSING.
  * @head_existing: an optional argument to safe a lookup for the head. If specified,
- *   it must be identical to nm_dedup_multi_index_lookup_head(), with the pecularity
+ *   it must be identical to nm_dedup_multi_index_lookup_head(), with the peculiarity
  *   that if the head is not yet tracked, you may specify %NM_DEDUP_MULTI_HEAD_ENTRY_MISSING
  * @out_entry: if give, return the added entry. This entry may have already exists (update)
  *   or be newly created. If @obj is not partitionable according to @idx_type, @obj

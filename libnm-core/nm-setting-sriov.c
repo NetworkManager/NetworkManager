@@ -1283,7 +1283,7 @@ nm_setting_sriov_class_init (NMSettingSriovClass *klass)
 	 *
 	 *   "2 mac=00:11:22:33:44:55 spoof-check=true".
 	 *
-	 * The "vlans" attribute is represented as a semicolor-separated
+	 * The "vlans" attribute is represented as a semicolon-separated
 	 * list of VLAN descriptors, where each descriptor has the form
 	 *
 	 *   "ID[.PRIORITY[.PROTO]]".

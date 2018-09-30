@@ -179,7 +179,7 @@
 #if NM_MORE_ASSERTS == 0
 #ifndef G_DISABLE_CAST_CHECKS
 /* Unless compiling with G_DISABLE_CAST_CHECKS, glib performs type checking
- * during G_VARIANT_TYPE() via g_variant_type_checked_(). This is not necesary
+ * during G_VARIANT_TYPE() via g_variant_type_checked_(). This is not necessary
  * because commonly this cast is needed during something like
  *
  *   g_variant_builder_init (&props, G_VARIANT_TYPE ("a{sv}"));

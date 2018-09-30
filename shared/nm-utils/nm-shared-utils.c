@@ -118,7 +118,7 @@ nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...)
 /**
  * nm_utils_strbuf_seek_end:
  * @buf: the input/output buffer
- * @len: the input/output lenght of the buffer.
+ * @len: the input/output length of the buffer.
  *
  * Commonly, one uses nm_utils_strbuf_append*(), to incrementally
  * append strings to the buffer. However, sometimes we need to use

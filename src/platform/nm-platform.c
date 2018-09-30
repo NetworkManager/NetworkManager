@@ -6962,7 +6962,7 @@ nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatfor
 		/* if the lifetime is equal, compare the preferred time. */
 		ta = tb = 0;
 
-		if (a->preferred == NM_PLATFORM_LIFETIME_PERMANENT || a->lifetime == 0 /* liftime==0 means permanent! */)
+		if (a->preferred == NM_PLATFORM_LIFETIME_PERMANENT || a->lifetime == 0 /* lifetime==0 means permanent! */)
 			ta = G_MAXINT64;
 		else if (a->timestamp)
 			ta = ((gint64) a->timestamp) + a->preferred;

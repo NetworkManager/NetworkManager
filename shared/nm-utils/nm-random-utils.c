@@ -81,7 +81,7 @@ nm_utils_random_bytes (void *p, size_t n)
 
 				/* no or partial read. There is not enough entropy.
 				 * Fill the rest reading from urandom, and remember that
-				 * some bits are not hight quality. */
+				 * some bits are not high quality. */
 				nm_assert (r < n);
 				buf += r;
 				n -= r;

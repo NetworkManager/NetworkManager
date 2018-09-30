@@ -55,7 +55,7 @@ void timer_rearm(Timer *timer) {
 
         /*
          * A timeout value of 0 clears the timer, we sholud only set that if
-         * no timout exists in the tree.
+         * no timeout exists in the tree.
          */
 
         timeout = c_rbnode_entry(c_rbtree_first(&timer->tree), Timeout, node);
