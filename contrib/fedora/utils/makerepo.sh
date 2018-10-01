@@ -446,6 +446,7 @@ pushd "$DIRNAME"
 
 # ModemManager
 397761c9758c3a8c2d130afaf36dab645d6e0ecf  d9d93d2961ee35b4cd8a75a6a8631cb4  ModemManager-1.6.0.tar.xz
+b23413a064f03fb2f2214fb32164bcb4b7037c45  67160b94c0eda90ebf95d1b620229ca1  ModemManager-1.6.10.tar.xz
 
 # libnl3
 1a510c57e905c4beb06122b9688162c82d9b044f  d1111959652bd6ad87b2071f61c8c20c *libnl-doc-3.2.24.tar.gz
