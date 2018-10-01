@@ -63,14 +63,17 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OF
         char __prefix[32]; \
         const char *__p_prefix = _NMLOG_PREFIX_NAME; \
         const NMPlatform *const __self = (self); \
+        const char *__name = name; \
         \
         if (__self && NM_PLATFORM_GET_PRIVATE (__self)->log_with_ptr) { \
             g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
             __p_prefix = __prefix; \
         } \
-        _nm_log (__level, _NMLOG_DOMAIN, 0, name, NULL, \
-                 "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                 __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__));
+        _nm_log (__level, _NMLOG_DOMAIN, 0, __name, NULL, \
+                 "%s: %s%s%s" _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                 __p_prefix, \
+                 NM_PRINT_FMT_QUOTED (__name, "(", __name, ") ", "") \
+                 _NM_UTILS_MACRO_REST (__VA_ARGS__));
 
 #define _NMLOG(level, ...) \
     G_STMT_START { \
