@@ -10917,7 +10917,7 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 		if (s_ip6_old && s_ip6_new) {
 			gint64 metric_old, metric_new;
 
-			/* See comment in nm_device_reactivate_ip6_config() */
+			/* See comment in nm_device_reactivate_ip4_config() */
 			metric_old = nm_setting_ip_config_get_route_metric (s_ip6_old);
 			metric_new = nm_setting_ip_config_get_route_metric (s_ip6_new);
 
