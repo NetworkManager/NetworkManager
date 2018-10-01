@@ -439,7 +439,7 @@ nm_supplicant_config_add_setting_macsec (NMSupplicantConfig * self,
 		if (!nm_supplicant_config_add_option (self,
 		                                      "mka_ckn",
 		                                      (char *) buffer_ckn,
-		                                      sizeof (buffer_cak),
+		                                      sizeof (buffer_ckn),
 		                                      NULL,
 		                                      error))
 			return FALSE;
