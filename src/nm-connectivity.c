@@ -892,7 +892,8 @@ update_config (NMConnectivity *self, NMConfigData *config_data)
 
 		g_clear_pointer (&priv->host, g_free);
 		g_clear_pointer (&priv->port, g_free);
-		host_and_port_from_uri (uri, &priv->host, &priv->port);
+		if (uri)
+			host_and_port_from_uri (uri, &priv->host, &priv->port);
 	}
 
 	/* Set the interval. */
