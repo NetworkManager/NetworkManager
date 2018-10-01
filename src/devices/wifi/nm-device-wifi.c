@@ -1685,20 +1685,37 @@ wifi_secrets_cb (NMActRequest *req,
 	g_return_if_fail (nm_act_request_get_settings_connection (req) == connection);
 
 	if (error) {
-		_LOGW (LOGD_WIFI, "%s", error->message);
+		_LOGW (LOGD_WIFI, "no secrets: %s", error->message);
 
-		if (g_error_matches (error, NM_AGENT_MANAGER_ERROR,
-		                     NM_AGENT_MANAGER_ERROR_USER_CANCELED)) {
-			/* Don't wait for WPS timeout on an explicit cancel. */
-			nm_clear_g_source (&priv->wps_timeout_id);
-		}
-
-		if (!priv->wps_timeout_id) {
-			/* Fail the device only if the WPS period is over too. */
-			nm_device_state_changed (device,
-			                         NM_DEVICE_STATE_FAILED,
-			                         NM_DEVICE_STATE_REASON_NO_SECRETS);
-		}
+		/* Even if WPS is still pending, let's abort the activation when the secret
+		 * request returns.
+		 *
+		 * This means, a user can only effectively use WPS when also running a secret
+		 * agent, and pressing the push button while being prompted for the password.
+		 * Note, that in the secret prompt the user can see that WPS is in progress
+		 * (via the NM_SECRET_AGENT_GET_SECRETS_FLAG_WPS_PBC_ACTIVE flag).
+		 *
+		 * Previously, WPS was not cancelled when the secret request returns.
+		 * Note that in common use-cases WPS is enabled in the connection profile
+		 * but it won't succeed (because it's disabled in the AP or because the
+		 * user is not prepared to press the push button).
+		 * That means for example, during boot we would try to autoconnect with WPS.
+		 * At that point, there is no secret-agent running, and WPS is pending for
+		 * full 30 seconds. If in the meantime a secret agent registers (because
+		 * of logging into the DE), the profile is still busy waiting for WPS to time
+		 * out. Only after that delay, autoconnect starts again (note that autoconnect gets
+		 * not blocked in this case, because a secret agent registered in the meantime).
+		 *
+		 * It seems wrong to continue doing WPS if the user is not aware
+		 * that WPS is ongoing. The user is required to perform an action (push button),
+		 * and must be told via the secret prompt.
+		 * If no secret-agent is running, if the user cancels the secret-request, or any
+		 * other error to obtain secrets, the user apparently does not want WPS either.
+		 */
+		nm_clear_g_source (&priv->wps_timeout_id);
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
 	} else
 		nm_device_activate_schedule_stage1_device_prepare (device);
 }
