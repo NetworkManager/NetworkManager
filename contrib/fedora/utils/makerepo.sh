@@ -382,6 +382,8 @@ pushd "$DIRNAME"
         git remote add origin "https://git.fedorahosted.org/git/initscripts.git";
     elif [[ "$BUILD_TYPE" == "iproute" ]]; then
         git remote add origin "git://git.kernel.org/pub/scm/linux/kernel/git/shemminger/iproute2.git"
+    elif [[ "$BUILD_TYPE" == "dracut" ]]; then
+        git remote add origin "https://github.com/dracutdevs/dracut.git"
     elif [[ "$BUILD_TYPE" == "vpnc" ]]; then
         git_remote_add_github ndpgroup/vpnc
     fi
@@ -495,6 +497,9 @@ e87e0361b117f055ace2aa47cdddd0dc62a852f9  da949e268254af6aafdda0e8c1702384 *gnom
 
 # initscripts
 cc304f05edab6c408a0f061eb1a104f9f06b8587  86ef789876b65c61751ce854835b91d4  initscripts-9.49.35.tar.bz2
+
+# dracut
+00efe708cab023bfe6eaf530d8ac8ea97b440de2  SHA512 (dracut-050.tar.xz) = 9d9a66acfd6b9d2fd50855a59a2393e0602c2ef97119db046f68d6167ea84d1423fa465b8b4d96339febb38d5a96df26dec7862c4b3397c3d726db18d280eee4
 EOF
 )"
             OLDIFS="$IFS"
