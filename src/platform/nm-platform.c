@@ -57,22 +57,45 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OF
 
 #define _NMLOG_DOMAIN           LOGD_PLATFORM
 #define _NMLOG_PREFIX_NAME      "platform"
+
+
+#define NMLOG_COMMON(level, name, ...) \
+        char __prefix[32]; \
+        const char *__p_prefix = _NMLOG_PREFIX_NAME; \
+        const NMPlatform *const __self = (self); \
+        \
+        if (__self && NM_PLATFORM_GET_PRIVATE (__self)->log_with_ptr) { \
+            g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
+            __p_prefix = __prefix; \
+        } \
+        _nm_log (__level, _NMLOG_DOMAIN, 0, name, NULL, \
+                 "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                 __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__));
+
 #define _NMLOG(level, ...) \
     G_STMT_START { \
         const NMLogLevel __level = (level); \
         \
         if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
-            char __prefix[32]; \
-            const char *__p_prefix = _NMLOG_PREFIX_NAME; \
-            const NMPlatform *const __self = (self); \
-            \
-            if (__self && NM_PLATFORM_GET_PRIVATE (__self)->log_with_ptr) { \
-                g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
-                __p_prefix = __prefix; \
-            } \
-            _nm_log (__level, _NMLOG_DOMAIN, 0, NULL, NULL, \
-                     "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                     __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+            NMLOG_COMMON(level, NULL, __VA_ARGS__);  \
+        } \
+    } G_STMT_END
+
+#define _NMLOG2(level, ...) \
+    G_STMT_START { \
+        const NMLogLevel __level = (level); \
+        \
+        if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
+            NMLOG_COMMON(level, name, __VA_ARGS__);  \
+        } \
+    } G_STMT_END
+
+#define _NMLOG3(level, ...)  \
+    G_STMT_START { \
+        const NMLogLevel __level = (level); \
+        \
+        if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
+            NMLOG_COMMON(level, ifindex > 0 ? nm_platform_link_get_name (self, ifindex) : NULL, __VA_ARGS__);  \
         } \
     } G_STMT_END
 
@@ -843,11 +866,10 @@ _link_add_check_existing (NMPlatform *self, const char *name, NMLinkType type, c
 		gboolean wrong_type;
 
 		wrong_type = type != NM_LINK_TYPE_NONE && pllink->type != type;
-		_LOGD ("link: skip adding link due to existing interface '%s' of type %s%s%s",
-		       name,
-		       nm_link_type_to_string (pllink->type),
-		       wrong_type ? ", expected " : "",
-		       wrong_type ? nm_link_type_to_string (type) : "");
+		_LOG2D ("link: skip adding link due to existing interface of type %s%s%s",
+		        nm_link_type_to_string (pllink->type),
+		        wrong_type ? ", expected " : "",
+		        wrong_type ? nm_link_type_to_string (type) : "");
 		if (out_link)
 			*out_link = pllink;
 		if (wrong_type)
@@ -902,17 +924,16 @@ nm_platform_link_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("link: adding link '%s': %s (%d)"
-	       "%s%s" /* address */
-	       "%s%s" /* veth peer */
-	       "",
-	       name,
-	       nm_link_type_to_string (type),
-	       (int) type,
-	       address ? ", address: " : "",
-	       address ? nm_utils_hwaddr_ntoa_buf (address, address_len, FALSE, addr_buf, sizeof (addr_buf)) : "",
-	       veth_peer ? ", veth-peer: " : "",
-	       veth_peer ?: "");
+	_LOG2D ("link: adding link: %s (%d)"
+	        "%s%s" /* address */
+	        "%s%s" /* veth peer */
+	        "",
+	        nm_link_type_to_string (type),
+	        (int) type,
+	        address ? ", address: " : "",
+	        address ? nm_utils_hwaddr_ntoa_buf (address, address_len, FALSE, addr_buf, sizeof (addr_buf)) : "",
+	        veth_peer ? ", veth-peer: " : "",
+	        veth_peer ?: "");
 
 	if (!klass->link_add (self, name, type, veth_peer, address, address_len, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -960,7 +981,7 @@ nm_platform_link_delete (NMPlatform *self, int ifindex)
 	if (!pllink)
 		return FALSE;
 
-	_LOGD ("link: deleting '%s' (%d)", pllink->name, ifindex);
+	_LOG3D ("link: deleting");
 	return klass->link_delete (self, ifindex);
 }
 
@@ -986,7 +1007,7 @@ nm_platform_link_set_netns (NMPlatform *self, int ifindex, int netns_fd)
 	if (!pllink)
 		return FALSE;
 
-	_LOGD ("link: move link %d to network namespace with fd %d", ifindex, netns_fd);
+	_LOG3D ("link: move link to network namespace with fd %d", netns_fd);
 	return klass->link_set_netns (self, ifindex, netns_fd);
 }
 
@@ -1363,10 +1384,8 @@ nm_platform_link_set_address (NMPlatform *self, int ifindex, gconstpointer addre
 	g_return_val_if_fail (address, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail (length > 0, NM_PLATFORM_ERROR_BUG);
 
-	_LOGD ("link: setting %s (%d) hardware address to %s",
-	       nm_strquote_a (20, nm_platform_link_get_name (self, ifindex)),
-	       ifindex,
-	       (mac = nm_utils_hwaddr_ntoa (address, length)));
+	_LOG3D ("link: setting hardware address to %s",
+	        (mac = nm_utils_hwaddr_ntoa (address, length)));
 	return klass->link_set_address (self, ifindex, address, length);
 }
 
@@ -1482,11 +1501,7 @@ nm_platform_link_set_sriov_params (NMPlatform *self,
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (NM_IN_SET (autoprobe, -1, 0, 1), FALSE);
 
-	_LOGD ("link: setting %u total VFs and autoprobe %d for %s (%d)",
-	       num_vfs,
-	       autoprobe,
-	       nm_strquote_a (25, nm_platform_link_get_name (self, ifindex)),
-	       ifindex);
+	_LOG3D ("link: setting %u total VFs and autoprobe %d", num_vfs, autoprobe);
 	return klass->link_set_sriov_params (self, ifindex, num_vfs, autoprobe);
 }
 
@@ -1498,14 +1513,11 @@ nm_platform_link_set_sriov_vfs (NMPlatform *self, int ifindex, const NMPlatformV
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	_LOGD ("link: setting VFs for \"%s\" (%d):",
-	       nm_platform_link_get_name (self, ifindex),
-	       ifindex);
-
+	_LOG3D ("link: setting VFs");
 	for (i = 0; vfs[i]; i++) {
 		const NMPlatformVF *vf = vfs[i];
 
-		_LOGD ("link:   VF %s", nm_platform_vf_to_string (vf, NULL, 0));
+		_LOG3D ("link:   VF %s", nm_platform_vf_to_string (vf, NULL, 0));
 	}
 
 	return klass->link_set_sriov_vfs (self, ifindex, vfs);
@@ -1526,7 +1538,7 @@ nm_platform_link_set_up (NMPlatform *self, int ifindex, gboolean *out_no_firmwar
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	_LOGD ("link: setting up %s (%d)", nm_strquote_a (25, nm_platform_link_get_name (self, ifindex)), ifindex);
+	_LOG3D ("link: setting up");
 	return klass->link_set_up (self, ifindex, out_no_firmware);
 }
 
@@ -1544,7 +1556,7 @@ nm_platform_link_set_down (NMPlatform *self, int ifindex)
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	_LOGD ("link: setting down %s (%d)", nm_strquote_a (25, nm_platform_link_get_name (self, ifindex)), ifindex);
+	_LOG3D ("link: setting down");
 	return klass->link_set_down (self, ifindex);
 }
 
@@ -1562,7 +1574,7 @@ nm_platform_link_set_arp (NMPlatform *self, int ifindex)
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 
-	_LOGD ("link: setting arp %s (%d)", nm_strquote_a (25, nm_platform_link_get_name (self, ifindex)), ifindex);
+	_LOG3D ("link: setting arp");
 	return klass->link_set_arp (self, ifindex);
 }
 
@@ -1580,7 +1592,7 @@ nm_platform_link_set_noarp (NMPlatform *self, int ifindex)
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 
-	_LOGD ("link: setting noarp '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
+	_LOG3D ("link: setting noarp");
 	return klass->link_set_noarp (self, ifindex);
 }
 
@@ -1600,7 +1612,7 @@ nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu)
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (mtu > 0, FALSE);
 
-	_LOGD ("link: setting '%s' (%d) mtu %"G_GUINT32_FORMAT, nm_platform_link_get_name (self, ifindex), ifindex, mtu);
+	_LOG3D ("link: setting mtu %"G_GUINT32_FORMAT, mtu);
 	return klass->link_set_mtu (self, ifindex, mtu);
 }
 
@@ -1638,7 +1650,7 @@ nm_platform_link_set_name (NMPlatform *self, int ifindex, const char *name)
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (name, FALSE);
 
-	_LOGD ("link: setting '%s' (%d) name %s", nm_platform_link_get_name (self, ifindex), ifindex, name);
+	_LOG3D ("link: setting name %s", name);
 
 	if (strlen (name) + 1 > IFNAMSIZ)
 		return FALSE;
@@ -1749,47 +1761,43 @@ nm_platform_link_get_driver_info (NMPlatform *self,
  * nm_platform_link_enslave:
  * @self: platform instance
  * @master: Interface index of the master
- * @slave: Interface index of the slave
+ * @ifindex: Interface index of the slave
  *
- * Enslave @slave to @master.
+ * Enslave @ifindex to @master.
  */
 gboolean
-nm_platform_link_enslave (NMPlatform *self, int master, int slave)
+nm_platform_link_enslave (NMPlatform *self, int master, int ifindex)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (master > 0, FALSE);
-	g_return_val_if_fail (slave> 0, FALSE);
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	_LOGD ("link: enslaving '%s' (%d) to master '%s' (%d)",
-	       nm_platform_link_get_name (self, slave), slave,
-	       nm_platform_link_get_name (self, master), master);
-	return klass->link_enslave (self, master, slave);
+	_LOG3D ("link: enslaving to master '%s'", nm_platform_link_get_name (self, master));
+	return klass->link_enslave (self, master, ifindex);
 }
 
 /**
  * nm_platform_link_release:
  * @self: platform instance
  * @master: Interface index of the master
- * @slave: Interface index of the slave
+ * @ifindex: Interface index of the slave
  *
  * Release @slave from @master.
  */
 gboolean
-nm_platform_link_release (NMPlatform *self, int master, int slave)
+nm_platform_link_release (NMPlatform *self, int master, int ifindex)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (master > 0, FALSE);
-	g_return_val_if_fail (slave > 0, FALSE);
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	if (nm_platform_link_get_master (self, slave) != master)
+	if (nm_platform_link_get_master (self, ifindex) != master)
 		return FALSE;
 
-	_LOGD ("link: releasing '%s' (%d) from master '%s' (%d)",
-	       nm_platform_link_get_name (self, slave), slave,
-	       nm_platform_link_get_name (self, master), master);
-	return klass->link_release (self, master, slave);
+	_LOG3D ("link: releasing from master '%s'", nm_platform_link_get_name (self, master));
+	return klass->link_release (self, master, ifindex);
 }
 
 /**
@@ -2058,8 +2066,8 @@ nm_platform_link_vlan_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("link: adding link '%s': vlan parent %d vlanid %d vlanflags %x",
-	       name, parent, vlanid, vlanflags);
+	_LOG2D ("link: adding link vlan parent %d vlanid %d vlanflags %x",
+	        parent, vlanid, vlanflags);
 
 	if (!klass->vlan_add (self, name, parent, vlanid, vlanflags, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2091,8 +2099,7 @@ nm_platform_link_vxlan_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("link: adding link '%s': %s",
-	       name, nm_platform_lnk_vxlan_to_string (props, NULL, 0));
+	_LOG2D ("link: adding link %s", nm_platform_lnk_vxlan_to_string (props, NULL, 0));
 
 	if (!klass->link_vxlan_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2144,8 +2151,7 @@ nm_platform_link_tun_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("link: adding link '%s': %s",
-	       name, nm_platform_lnk_tun_to_string (props, b, sizeof (b)));
+	_LOG2D ("link: adding link %s", nm_platform_lnk_tun_to_string (props, b, sizeof (b)));
 
 	if (!klass->link_tun_add (self, name, props, out_link, out_fd))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2177,7 +2183,7 @@ nm_platform_link_6lowpan_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("adding link '%s': 6lowpan parent %u", name, parent);
+	_LOG2D ("adding link 6lowpan parent %u", parent);
 
 	if (!klass->link_6lowpan_add (self, name, parent, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2387,7 +2393,7 @@ nm_platform_link_vlan_change (NMPlatform *self,
 				nm_utils_strbuf_append_str (&b, &len, " (reset-all)");
 		}
 
-		_LOGD ("link: change vlan %d:%s", ifindex, buf);
+		_LOG3D ("link: change vlan %s", buf);
 	}
 	return klass->link_vlan_change (self,
 	                                ifindex,
@@ -2449,8 +2455,7 @@ nm_platform_link_gre_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("adding link '%s': %s",
-	       name, nm_platform_lnk_gre_to_string (props, NULL, 0));
+	_LOG2D ("adding link %s", nm_platform_lnk_gre_to_string (props, NULL, 0));
 
 	if (!klass->link_gre_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2459,7 +2464,7 @@ nm_platform_link_gre_add (NMPlatform *self,
 
 static NMPlatformError
 _infiniband_add_add_or_delete (NMPlatform *self,
-                               int parent,
+                               int ifindex,
                                int p_key,
                                gboolean add,
                                const NMPlatformLink **out_link)
@@ -2470,14 +2475,14 @@ _infiniband_add_add_or_delete (NMPlatform *self,
 
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
-	g_return_val_if_fail (parent >= 0, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (ifindex >= 0, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail (p_key >= 0 && p_key <= 0xffff, NM_PLATFORM_ERROR_BUG);
 
 	/* the special keys 0x0000 and 0x8000 are not allowed. */
 	if (NM_IN_SET (p_key, 0, 0x8000))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 
-	parent_link = nm_platform_link_get (self, parent);
+	parent_link = nm_platform_link_get (self, ifindex);
 	if (!parent_link)
 		return NM_PLATFORM_ERROR_NOT_FOUND;
 
@@ -2491,15 +2496,13 @@ _infiniband_add_add_or_delete (NMPlatform *self,
 		if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 			return plerr;
 
-		_LOGD ("link: adding infiniband partition %s for parent '%s' (%d), key %d",
-		       name, parent_link->name, parent, p_key);
-		if (!klass->infiniband_partition_add (self, parent, p_key, out_link))
+		_LOG3D ("link: adding infiniband partition %s, key %d", name, p_key);
+		if (!klass->infiniband_partition_add (self, ifindex, p_key, out_link))
 			return NM_PLATFORM_ERROR_UNSPECIFIED;
 	} else {
-		_LOGD ("link: deleting infiniband partition %s for parent '%s' (%d), key %d",
-		       name, parent_link->name, parent, p_key);
+		_LOG3D ("link: deleting infiniband partition %s, key %d", name, p_key);
 
-		if (!klass->infiniband_partition_delete (self, parent, p_key))
+		if (!klass->infiniband_partition_delete (self, ifindex, p_key))
 			return NM_PLATFORM_ERROR_UNSPECIFIED;
 	}
 
@@ -2610,8 +2613,7 @@ nm_platform_link_ip6tnl_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("adding link '%s': %s",
-	       name, nm_platform_lnk_ip6tnl_to_string (props, NULL, 0));
+	_LOG2D ("adding link %s", nm_platform_lnk_ip6tnl_to_string (props, NULL, 0));
 
 	if (!klass->link_ip6tnl_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2650,8 +2652,7 @@ nm_platform_link_ip6gre_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("adding link '%s': %s",
-	       name, nm_platform_lnk_ip6tnl_to_string (props, NULL, 0));
+	_LOG2D ("adding link %s", nm_platform_lnk_ip6tnl_to_string (props, NULL, 0));
 
 	if (!klass->link_ip6gre_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2684,8 +2685,7 @@ nm_platform_link_ipip_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("adding link '%s': %s",
-	       name, nm_platform_lnk_ipip_to_string (props, NULL, 0));
+	_LOG2D ("adding link %s", nm_platform_lnk_ipip_to_string (props, NULL, 0));
 
 	if (!klass->link_ipip_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2720,8 +2720,7 @@ nm_platform_link_macsec_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("adding link '%s': %s",
-	       name, nm_platform_lnk_macsec_to_string (props, NULL, 0));
+	_LOG2D ("adding link %s", nm_platform_lnk_macsec_to_string (props, NULL, 0));
 
 	if (!klass->link_macsec_add (self, name, parent, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2758,8 +2757,7 @@ nm_platform_link_macvlan_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("adding link '%s': %s",
-	       name, nm_platform_lnk_macvlan_to_string (props, NULL, 0));
+	_LOG2D ("adding link %s", nm_platform_lnk_macvlan_to_string (props, NULL, 0));
 
 	if (!klass->link_macvlan_add (self, name, parent, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2792,8 +2790,7 @@ nm_platform_link_sit_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("adding link '%s': %s",
-	       name, nm_platform_lnk_sit_to_string (props, NULL, 0));
+	_LOG2D ("adding link %s", nm_platform_lnk_sit_to_string (props, NULL, 0));
 
 	if (!klass->link_sit_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -3367,7 +3364,7 @@ nm_platform_ip4_address_add (NMPlatform *self,
 		if (label)
 			g_strlcpy (addr.label, label, sizeof (addr.label));
 
-		_LOGD ("address: adding or updating IPv4 address: %s", nm_platform_ip4_address_to_string (&addr, NULL, 0));
+		_LOG3D ("address: adding or updating IPv4 address: %s", nm_platform_ip4_address_to_string (&addr, NULL, 0));
 	}
 	return klass->ip4_address_add (self, ifindex, address, plen, peer_address, lifetime, preferred, flags, label);
 }
@@ -3401,7 +3398,7 @@ nm_platform_ip6_address_add (NMPlatform *self,
 		addr.preferred = preferred;
 		addr.n_ifa_flags = flags;
 
-		_LOGD ("address: adding or updating IPv6 address: %s", nm_platform_ip6_address_to_string (&addr, NULL, 0));
+		_LOG3D ("address: adding or updating IPv6 address: %s", nm_platform_ip6_address_to_string (&addr, NULL, 0));
 	}
 	return klass->ip6_address_add (self, ifindex, address, plen, peer_address, lifetime, preferred, flags);
 }
@@ -3418,12 +3415,11 @@ nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (plen <= 32, FALSE);
 
-	_LOGD ("address: deleting IPv4 address %s/%d, %sifindex %d%s",
-	       nm_utils_inet4_ntop (address, NULL), plen,
-	       peer_address != address
-	           ? nm_sprintf_buf (str_peer, "peer %s, ", nm_utils_inet4_ntop (peer_address, str_peer2)) : "",
-	       ifindex,
-	       _to_string_dev (self, ifindex, str_dev, sizeof (str_dev)));
+	_LOG3D ("address: deleting IPv4 address %s/%d, %s%s",
+	        nm_utils_inet4_ntop (address, NULL), plen,
+	        peer_address != address
+	            ? nm_sprintf_buf (str_peer, "peer %s, ", nm_utils_inet4_ntop (peer_address, str_peer2)) : "",
+	        _to_string_dev (self, ifindex, str_dev, sizeof (str_dev)));
 	return klass->ip4_address_delete (self, ifindex, address, plen, peer_address);
 }
 
@@ -3437,9 +3433,9 @@ nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr a
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (plen <= 128, FALSE);
 
-	_LOGD ("address: deleting IPv6 address %s/%d, ifindex %d%s",
-	       nm_utils_inet6_ntop (&address, NULL), plen, ifindex,
-	       _to_string_dev (self, ifindex, str_dev, sizeof (str_dev)));
+	_LOG3D ("address: deleting IPv6 address %s/%d, %s",
+	        nm_utils_inet6_ntop (&address, NULL), plen,
+	        _to_string_dev (self, ifindex, str_dev, sizeof (str_dev)));
 	return klass->ip6_address_delete (self, ifindex, address, plen);
 }
 
@@ -4207,8 +4203,8 @@ nm_platform_ip_route_sync (NMPlatform *self,
 				                               (GEqualFunc) nmp_object_id_equal);
 			}
 			if (!g_hash_table_insert (routes_idx, (gpointer) conf_o, (gpointer) conf_o)) {
-				_LOGD ("route-sync: skip adding duplicate route %s",
-				       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)));
+				_LOG3D ("route-sync: skip adding duplicate route %s",
+				        nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)));
 				continue;
 			}
 
@@ -4247,27 +4243,27 @@ sync_route_add:
 						                                       NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 						                                       conf_o);
 						if (!plat_entry) {
-							_LOGD ("route-sync: adding route %s failed with EEXIST, however we cannot find such a route",
-							       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)));
+							_LOG3D ("route-sync: adding route %s failed with EEXIST, however we cannot find such a route",
+							        nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)));
 						} else if (vt->route_cmp (NMP_OBJECT_CAST_IPX_ROUTE (conf_o),
 						                          NMP_OBJECT_CAST_IPX_ROUTE (plat_entry->obj),
 						                          NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) != 0) {
-							_LOGD ("route-sync: adding route %s failed due to existing (different!) route %s",
-							       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
-							       nmp_object_to_string (plat_entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf2, sizeof (sbuf2)));
+							_LOG3D ("route-sync: adding route %s failed due to existing (different!) route %s",
+							        nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
+							        nmp_object_to_string (plat_entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf2, sizeof (sbuf2)));
 						}
 					}
 				} else if (NMP_OBJECT_CAST_IP_ROUTE (conf_o)->rt_source < NM_IP_CONFIG_SOURCE_USER) {
-					_LOGD ("route-sync: ignore failure to add IPv%c route: %s: %s",
+					_LOG3D ("route-sync: ignore failure to add IPv%c route: %s: %s",
 					       vt->is_ip4 ? '4' : '6',
 					       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
 					       nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)));
 				} else if (   -((int) plerr) == EINVAL
 				           && out_temporary_not_available
 				           && _err_inval_due_to_ipv6_tentative_pref_src (self, conf_o)) {
-					_LOGD ("route-sync: ignore failure to add IPv6 route with tentative IPv6 pref-src: %s: %s",
-					       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
-					       nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)));
+					_LOG3D ("route-sync: ignore failure to add IPv6 route with tentative IPv6 pref-src: %s: %s",
+					        nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
+					        nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)));
 					if (!*out_temporary_not_available)
 						*out_temporary_not_available = g_ptr_array_new_full (0, (GDestroyNotify) nmp_object_unref);
 					g_ptr_array_add (*out_temporary_not_available, (gpointer) nmp_object_ref (conf_o));
@@ -4308,11 +4304,11 @@ sync_route_add:
 						                      }));
 					}
 
-					_LOGD ("route-sync: failure to add IPv%c route: %s: %s; try adding direct route to gateway %s",
-					       vt->is_ip4 ? '4' : '6',
-					       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
-					       nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)),
-					       nmp_object_to_string (&oo, NMP_OBJECT_TO_STRING_PUBLIC, sbuf2, sizeof (sbuf2)));
+					_LOG3D ("route-sync: failure to add IPv%c route: %s: %s; try adding direct route to gateway %s",
+					        vt->is_ip4 ? '4' : '6',
+					        nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
+					        nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)),
+					        nmp_object_to_string (&oo, NMP_OBJECT_TO_STRING_PUBLIC, sbuf2, sizeof (sbuf2)));
 
 					plerr2 = nm_platform_ip_route_add (self,
 					                                     NMP_NLM_FLAG_APPEND
@@ -4320,16 +4316,16 @@ sync_route_add:
 					                                   &oo);
 
 					if (plerr2 != NM_PLATFORM_ERROR_SUCCESS) {
-						_LOGD ("route-sync: failure to add gateway IPv%c route: %s: %s",
-						       vt->is_ip4 ? '4' : '6',
-						       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
-						       nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)));
+						_LOG3D ("route-sync: failure to add gateway IPv%c route: %s: %s",
+						        vt->is_ip4 ? '4' : '6',
+						        nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
+						        nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)));
 					}
 
 					gateway_route_added = TRUE;
 					goto sync_route_add;
 				} else {
-					_LOGW ("route-sync: failure to add IPv%c route: %s: %s",
+					_LOG3W ("route-sync: failure to add IPv%c route: %s: %s",
 					       vt->is_ip4 ? '4' : '6',
 					       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
 					       nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)));
@@ -4481,18 +4477,20 @@ _ip_route_add (NMPlatform *self,
                gconstpointer route)
 {
 	char sbuf[sizeof (_nm_utils_to_string_buffer)];
+	int ifindex;
 
 	_CHECK_SELF (self, klass, FALSE);
 
 	nm_assert (route);
 	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
-	_LOGD ("route: %-10s IPv%c route: %s",
-	       _nmp_nlm_flag_to_string (flags & NMP_NLM_FLAG_FMASK),
-	       nm_utils_addr_family_to_char (addr_family),
-	       addr_family == AF_INET
-	         ? nm_platform_ip4_route_to_string (route, sbuf, sizeof (sbuf))
-	         : nm_platform_ip6_route_to_string (route, sbuf, sizeof (sbuf)));
+	ifindex = ((NMPlatformObject *)route)->ifindex;
+	_LOG3D ("route: %-10s IPv%c route: %s",
+	        _nmp_nlm_flag_to_string (flags & NMP_NLM_FLAG_FMASK),
+	        nm_utils_addr_family_to_char (addr_family),
+	        addr_family == AF_INET
+	          ? nm_platform_ip4_route_to_string (route, sbuf, sizeof (sbuf))
+	          : nm_platform_ip6_route_to_string (route, sbuf, sizeof (sbuf)));
 
 	return klass->ip_route_add (self, flags, addr_family, route);
 }
@@ -4538,6 +4536,7 @@ gboolean
 nm_platform_object_delete (NMPlatform *self,
                            const NMPObject *obj)
 {
+	int ifindex = obj->object.ifindex;
 	_CHECK_SELF (self, klass, FALSE);
 
 	if (!NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
@@ -4546,9 +4545,9 @@ nm_platform_object_delete (NMPlatform *self,
 	                                           NMP_OBJECT_TYPE_TFILTER))
 		g_return_val_if_reached (FALSE);
 
-	_LOGD ("%s: delete %s",
-	       NMP_OBJECT_GET_CLASS (obj)->obj_type_name,
-	       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+	_LOG3D ("%s: delete %s",
+	        NMP_OBJECT_GET_CLASS (obj)->obj_type_name,
+	        nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 
 	return klass->object_delete (self, obj);
 }
@@ -4883,9 +4882,10 @@ nm_platform_qdisc_add (NMPlatform *self,
                        NMPNlmFlags flags,
                        const NMPlatformQdisc *qdisc)
 {
+	int ifindex = qdisc->ifindex;
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
-	_LOGD ("adding or updating a qdisc: %s", nm_platform_qdisc_to_string (qdisc, NULL, 0));
+	_LOG3D ("adding or updating a qdisc: %s", nm_platform_qdisc_to_string (qdisc, NULL, 0));
 	return klass->qdisc_add (self, flags, qdisc);
 }
 
@@ -4948,9 +4948,10 @@ nm_platform_tfilter_add (NMPlatform *self,
                          NMPNlmFlags flags,
                          const NMPlatformTfilter *tfilter)
 {
+	int ifindex = tfilter->ifindex;
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
-	_LOGD ("adding or updating a tfilter: %s", nm_platform_tfilter_to_string (tfilter, NULL, 0));
+	_LOG3D ("adding or updating a tfilter: %s", nm_platform_tfilter_to_string (tfilter, NULL, 0));
 	return klass->tfilter_add (self, flags, tfilter);
 }
 
@@ -6997,44 +6998,43 @@ nm_platform_signal_change_type_to_string (NMPlatformSignalChangeType change_type
 static void
 log_link (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformLink *device, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-
-	_LOGD ("signal: link %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_link_to_string (device, NULL, 0));
+	_LOG3D ("signal: link %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_link_to_string (device, NULL, 0));
 }
 
 static void
 log_ip4_address (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformIP4Address *address, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	_LOGD ("signal: address 4 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip4_address_to_string (address, NULL, 0));
+	_LOG3D ("signal: address 4 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip4_address_to_string (address, NULL, 0));
 }
 
 static void
 log_ip6_address (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformIP6Address *address, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	_LOGD ("signal: address 6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_address_to_string (address, NULL, 0));
+	_LOG3D ("signal: address 6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_address_to_string (address, NULL, 0));
 }
 
 static void
 log_ip4_route (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformIP4Route *route, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	_LOGD ("signal: route   4 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip4_route_to_string (route, NULL, 0));
+	_LOG3D ("signal: route   4 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip4_route_to_string (route, NULL, 0));
 }
 
 static void
 log_ip6_route (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformIP6Route *route, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	_LOGD ("signal: route   6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_route_to_string (route, NULL, 0));
+	_LOG3D ("signal: route   6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_route_to_string (route, NULL, 0));
 }
 
 static void
 log_qdisc (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformQdisc *qdisc, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	_LOGD ("signal: qdisc %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_qdisc_to_string (qdisc, NULL, 0));
+	_LOG3D ("signal: qdisc %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_qdisc_to_string (qdisc, NULL, 0));
 }
 
 static void
 log_tfilter (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformTfilter *tfilter, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	_LOGD ("signal: tfilter %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_tfilter_to_string (tfilter, NULL, 0));
+	_LOG3D ("signal: tfilter %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_tfilter_to_string (tfilter, NULL, 0));
 }
 
 /*****************************************************************************/
@@ -7049,6 +7049,7 @@ nm_platform_cache_update_emit_signal (NMPlatform *self,
 	gboolean visible_old;
 	const NMPObject *o;
 	const NMPClass *klass;
+	int ifindex;
 
 	nm_assert (NM_IN_SET ((NMPlatformSignalChangeType) cache_op, NM_PLATFORM_SIGNAL_NONE,
 	                                                             NM_PLATFORM_SIGNAL_ADDED,
@@ -7090,6 +7091,7 @@ nm_platform_cache_update_emit_signal (NMPlatform *self,
 		return;
 	}
 
+	ifindex = o->object.ifindex;
 	klass = NMP_OBJECT_GET_CLASS (o);
 
 	if (   klass->obj_type == NMP_OBJECT_TYPE_IP4_ROUTE
@@ -7097,10 +7099,10 @@ nm_platform_cache_update_emit_signal (NMPlatform *self,
 	    && NM_IN_SET (cache_op, NMP_CACHE_OPS_ADDED, NMP_CACHE_OPS_UPDATED))
 		_ip4_dev_route_blacklist_notify_route (self, o);
 
-	_LOGt ("emit signal %s %s: %s",
-	       klass->signal_type,
-	       nm_platform_signal_change_type_to_string ((NMPlatformSignalChangeType) cache_op),
-	       nmp_object_to_string (o, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+	_LOG3t ("emit signal %s %s: %s",
+	        klass->signal_type,
+	        nm_platform_signal_change_type_to_string ((NMPlatformSignalChangeType) cache_op),
+	        nmp_object_to_string (o, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 
 	nmp_object_ref (o);
 	g_signal_emit (self,
