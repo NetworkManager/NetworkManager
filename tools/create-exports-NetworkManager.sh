@@ -48,8 +48,8 @@ EOF
 
 get_symbols_missing() {
     (for f in $(find ./src/settings/plugins/*/${libs} \
-              ./src/devices/*/${libs} \
-              ./src/ppp/${libs} -name '*.so'); do
+                     ./src/devices/*/${libs} \
+                     ./src/ppp/${libs} -name '*.so' 2>/dev/null); do
         call_nm "$f" |
             sed -n 's/^\([U]\) \(\(nm_\|nmp_\|_nm\|NM\|_NM\|c_siphash_\).*\)$/\2/p'
     done) |
