@@ -2150,12 +2150,15 @@ static void
 test_read_missing_id_uuid (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
+	gs_free char *expected_uuid = NULL;
+	const char *FILENAME = TEST_KEYFILES_DIR"/Test_Missing_ID_UUID";
 
-	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_Missing_ID_UUID");
+	expected_uuid = _nm_utils_uuid_generate_from_strings ("keyfile", FILENAME, NULL);
 
-	/* Ensure the ID and UUID properties are there */
+	connection = keyfile_read_connection_from_file (FILENAME);
+
 	g_assert_cmpstr (nm_connection_get_id (connection), ==, "Test_Missing_ID_UUID");
-	g_assert (nm_connection_get_uuid (connection));
+	g_assert_cmpstr (nm_connection_get_uuid (connection), ==, expected_uuid);
 }
 
 static void
