@@ -101,6 +101,12 @@ NMConnection *nm_keyfile_read (GKeyFile *keyfile,
                                void *user_data,
                                GError **error);
 
+gboolean nm_keyfile_read_ensure_id (NMConnection *connection,
+                                    const char *fallback_id);
+
+gboolean nm_keyfile_read_ensure_uuid (NMConnection *connection,
+                                      const char *fallback_uuid_seed);
+
 /*****************************************************************************/
 
 typedef enum {

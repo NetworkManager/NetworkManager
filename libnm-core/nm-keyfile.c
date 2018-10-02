@@ -2812,6 +2812,46 @@ read_vpn_secrets (KeyfileReaderInfo *info, NMSettingVpn *s_vpn)
 	}
 }
 
+gboolean
+nm_keyfile_read_ensure_id (NMConnection *connection,
+                           const char *fallback_id)
+{
+	NMSettingConnection *s_con;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (fallback_id, FALSE);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (s_con), FALSE);
+
+	if (nm_setting_connection_get_id (s_con))
+		return FALSE;
+
+	g_object_set (s_con, NM_SETTING_CONNECTION_ID, fallback_id, NULL);
+	return TRUE;
+}
+
+gboolean
+nm_keyfile_read_ensure_uuid (NMConnection *connection,
+                             const char *fallback_uuid_seed)
+{
+	NMSettingConnection *s_con;
+	gs_free char *hashed_uuid = NULL;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (fallback_uuid_seed, FALSE);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (s_con), FALSE);
+
+	if (nm_setting_connection_get_uuid (s_con))
+		return FALSE;
+
+	hashed_uuid = _nm_utils_uuid_generate_from_strings ("keyfile", fallback_uuid_seed, NULL);
+	g_object_set (s_con, NM_SETTING_CONNECTION_UUID, hashed_uuid, NULL);
+	return TRUE;
+}
+
 /**
  * nm_keyfile_read:
  * @keyfile: the keyfile from which to create the connection
@@ -2902,23 +2942,14 @@ nm_keyfile_read (GKeyFile *keyfile,
 		nm_connection_add_setting (connection, NM_SETTING (s_con));
 	}
 
-	/* Make sure that we have 'id' even if not explicitly specified in the keyfile */
-	if (   keyfile_name
-	    && !nm_setting_connection_get_id (s_con)) {
-		gs_free char *base_name = NULL;
+	if (keyfile_name) {
+		gs_free char *basename = g_path_get_basename (keyfile_name);
 
-		base_name = g_path_get_basename (keyfile_name);
-		g_object_set (s_con, NM_SETTING_CONNECTION_ID, base_name, NULL);
+		nm_keyfile_read_ensure_id (connection, basename);
 	}
 
-	/* Make sure that we have 'uuid' even if not explicitly specified in the keyfile */
-	if (   keyfile_name
-	    && !nm_setting_connection_get_uuid (s_con)) {
-		gs_free char *hashed_uuid = NULL;
-
-		hashed_uuid = _nm_utils_uuid_generate_from_strings ("keyfile", keyfile_name, NULL);
-		g_object_set (s_con, NM_SETTING_CONNECTION_UUID, hashed_uuid, NULL);
-	}
+	if (keyfile_name)
+		nm_keyfile_read_ensure_uuid (connection, keyfile_name);
 
 	/* Make sure that we have 'interface-name' even if it was specified in the
 	 * "wrong" (ie, deprecated) group.
