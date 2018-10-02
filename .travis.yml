@@ -97,7 +97,7 @@ script:
               -D introspection=false \
               -D qt=false \
               -D crypto=$CRYPTO \
-              -D docs=true \
+              -D docs=false \
               \
               -D libnm_glib=true \
               -D iwd=true \

@@ -35,7 +35,12 @@ call_nm() {
 }
 
 get_symbols_nm () {
-    call_nm ./src/${libs}libNetworkManager.a |
+    if [ -z "$from_meson" ]; then
+        base=./src/.libs/libNetworkManager.a
+    else
+        base=./src/nm-full-symbols
+    fi
+    call_nm "$base" |
         sed -n 's/^[tTDGRBS] //p' |
         _sort
 }

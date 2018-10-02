@@ -88,10 +88,14 @@ content_files = \
 	$(top_builddir)/man/nmcli-examples.xml \
 	$(top_builddir)/man/nm-settings.xml \
 	$(top_builddir)/man/nm-settings-keyfile.xml \
-	$(top_builddir)/man/nm-openvswitch.xml \
 	version.xml \
 	../../COPYING \
 	$(NULL)
+
+
+if WITH_OPENVSWITCH
+content_files += $(top_builddir)/man/nm-openvswitch.xml
+endif
 
 if CONFIG_PLUGIN_IFCFG_RH
 content_files += $(top_builddir)/man/nm-settings-ifcfg-rh.xml
