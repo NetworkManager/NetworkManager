@@ -37,7 +37,8 @@ typedef struct _NMSKeyfileConnectionClass NMSKeyfileConnectionClass;
 GType nms_keyfile_connection_get_type (void);
 
 NMSKeyfileConnection *nms_keyfile_connection_new (NMConnection *source,
-                                                  const char *filename,
+                                                  const char *full_path,
+                                                  const char *profile_dir,
                                                   GError **error);
 
 #endif /* __NMS_KEYFILE_CONNECTION_H__ */
