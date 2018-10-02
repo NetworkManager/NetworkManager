@@ -9054,7 +9054,7 @@ test_team_reread_slave (void)
 	        "id=142\n"
 	        "ingress-priority-map=\n"
 	        "parent=enp31s0f1\n"
-	        , "/test_team_reread_slave", NULL);
+	        , "/test_team_reread_slave");
 
 	/* to double-check keyfile syntax, re-create the connection by hand. */
 	connection_2 = nmtst_create_minimal_connection ("team-slave-enp31s0f1-142", "74f435bb-ede4-415a-9d48-f580b60eba04", NM_SETTING_VLAN_SETTING_NAME, &s_con);

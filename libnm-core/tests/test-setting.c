@@ -1319,12 +1319,14 @@ test_ethtool_1 (void)
 	nmtst_assert_success (keyfile, error);
 
 	con3 = nm_keyfile_read (keyfile,
-	                        "ethtool-keyfile-name",
-	                        NULL,
+	                        "/ignored/current/working/directory/for/loading/relative/paths",
 	                        NULL,
 	                        NULL,
 	                        &error);
 	nmtst_assert_success (con3, error);
+
+	nm_keyfile_read_ensure_id (con3, "unused-because-already-has-id");
+	nm_keyfile_read_ensure_uuid (con3, "unused-because-already-has-uuid");
 
 	nmtst_connection_normalize (con3);
 
