@@ -63,6 +63,15 @@ check-local-symbols-settings-ifcfg-rh: src/settings/plugins/ifcfg-rh/libnm-setti
   $(call check_so_symbols,$(builddir)/src/settings/plugins/ifcfg-rh/.libs/libnm-settings-plugin-ifcfg-rh.so)
 '''
 
+install_data(
+  ['nm-ifup', 'nm-ifdown'],
+  install_dir: nm_libexecdir,
+  install_mode: 'rwxr-xr-x',
+)
+
+meson.add_install_script('sh', '-c',
+                         'mkdir -p $DESTDIR/@0@/sysconfig/network-scripts'.format(nm_sysconfdir))
+
 if enable_tests
   subdir('tests')
 endif
