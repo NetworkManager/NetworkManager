@@ -73,6 +73,7 @@ check_ip_route (NMSettingIPConfig *config, int idx, const char *destination, int
 	g_assert (full_filename && full_filename[0] == '/'); \
 	\
 	_connection = nms_keyfile_reader_from_file (full_filename, \
+	                                            NULL, \
 	                                            (nmtst_get_rand_int () % 2) ? &_error : NULL); \
 	nmtst_assert_success (_connection, _error); \
 	nmtst_assert_connection_verifies_without_normalization (_connection); \

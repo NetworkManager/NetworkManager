@@ -124,6 +124,7 @@ nms_keyfile_connection_init (NMSKeyfileConnection *connection)
 NMSKeyfileConnection *
 nms_keyfile_connection_new (NMConnection *source,
                             const char *full_path,
+                            const char *profile_dir,
                             GError **error)
 {
 	GObject *object;
@@ -131,13 +132,15 @@ nms_keyfile_connection_new (NMConnection *source,
 	const char *uuid;
 	gboolean update_unsaved = TRUE;
 
-	g_assert (source || full_path);
+	nm_assert (source || full_path);
+	nm_assert (!full_path || full_path[0] == '/');
+	nm_assert (!profile_dir || profile_dir[0] == '/');
 
 	/* If we're given a connection already, prefer that instead of re-reading */
 	if (source)
 		tmp = g_object_ref (source);
 	else {
-		tmp = nms_keyfile_reader_from_file (full_path, error);
+		tmp = nms_keyfile_reader_from_file (full_path, profile_dir, error);
 		if (!tmp)
 			return NULL;
 

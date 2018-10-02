@@ -95,7 +95,6 @@ typedef struct {
 } NMKeyfileReadTypeDataWarn;
 
 NMConnection *nm_keyfile_read (GKeyFile *keyfile,
-                               const char *keyfile_name,
                                const char *base_dir,
                                NMKeyfileReadHandler handler,
                                void *user_data,
