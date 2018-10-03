@@ -124,6 +124,59 @@ _preference_to_priority (NMIcmpv6RouterPref pref)
 
 /*****************************************************************************/
 
+static gint32
+get_expiry_time (guint32 timestamp, guint32 lifetime)
+{
+	gint64 t;
+
+	/* timestamp is supposed to come from nm_utils_get_monotonic_timestamp_s().
+	 * It is expected to be within a certain range. */
+	nm_assert (timestamp > 0);
+	nm_assert (timestamp <= G_MAXINT32);
+
+	if (lifetime == NM_NDISC_INFINITY)
+		return G_MAXINT32;
+
+	t = (gint64) timestamp + (gint64) lifetime;
+	return CLAMP (t, 0, G_MAXINT32 - 1);
+}
+
+#define get_expiry(item) \
+	({ \
+		typeof (item) _item = (item); \
+		nm_assert (_item); \
+		get_expiry_time ((_item->timestamp), (_item->lifetime)); \
+	})
+
+#define get_expiry_half(item) \
+	({ \
+		typeof (item) _item = (item); \
+		nm_assert (_item); \
+		get_expiry_time ((_item->timestamp),\
+		                 (_item->lifetime) == NM_NDISC_INFINITY \
+		                   ? NM_NDISC_INFINITY \
+		                   : (_item->lifetime) / 2); \
+	})
+
+static const char *
+_get_exp (char *buf, gsize buf_size, gint64 now_ns, gint32 expiry_time)
+{
+	int l;
+
+	if (expiry_time == G_MAXINT32)
+		return "permanent";
+	l = g_snprintf (buf, buf_size,
+	                "%.4f",
+	                ((double) ((expiry_time * NM_UTILS_NS_PER_SECOND) - now_ns)) / ((double) NM_UTILS_NS_PER_SECOND));
+	nm_assert (l < buf_size);
+	return buf;
+}
+
+#define get_exp(buf, now_ns, item) \
+	_get_exp ((buf), G_N_ELEMENTS (buf), (now_ns), (get_expiry (item)))
+
+/*****************************************************************************/
+
 NMPNetns *
 nm_ndisc_netns_get (NMNDisc *self)
 {
@@ -857,57 +910,6 @@ dhcp_level_to_string (NMNDiscDHCPLevel dhcp_level)
 		return "INVALID";
 	}
 }
-
-static gint32
-get_expiry_time (guint32 timestamp, guint32 lifetime)
-{
-	gint64 t;
-
-	/* timestamp is supposed to come from nm_utils_get_monotonic_timestamp_s().
-	 * It is expected to be within a certain range. */
-	nm_assert (timestamp > 0);
-	nm_assert (timestamp <= G_MAXINT32);
-
-	if (lifetime == NM_NDISC_INFINITY)
-		return G_MAXINT32;
-
-	t = (gint64) timestamp + (gint64) lifetime;
-	return CLAMP (t, 0, G_MAXINT32 - 1);
-}
-
-#define get_expiry(item) \
-	({ \
-		typeof (item) _item = (item); \
-		nm_assert (_item); \
-		get_expiry_time ((_item->timestamp), (_item->lifetime)); \
-	})
-
-#define get_expiry_half(item) \
-	({ \
-		typeof (item) _item = (item); \
-		nm_assert (_item); \
-		get_expiry_time ((_item->timestamp),\
-		                 (_item->lifetime) == NM_NDISC_INFINITY \
-		                   ? NM_NDISC_INFINITY \
-		                   : (_item->lifetime) / 2); \
-	})
-
-static const char *
-_get_exp (char *buf, gsize buf_size, gint64 now_ns, gint32 expiry_time)
-{
-	int l;
-
-	if (expiry_time == G_MAXINT32)
-		return "permanent";
-	l = g_snprintf (buf, buf_size,
-	                "%.4f",
-	                ((double) ((expiry_time * NM_UTILS_NS_PER_SECOND) - now_ns)) / ((double) NM_UTILS_NS_PER_SECOND));
-	nm_assert (l < buf_size);
-	return buf;
-}
-
-#define get_exp(buf, now_ns, item) \
-	_get_exp ((buf), G_N_ELEMENTS (buf), (now_ns), (get_expiry (item)))
 
 static void
 _config_changed_log (NMNDisc *ndisc, NMNDiscConfigMap changed)
