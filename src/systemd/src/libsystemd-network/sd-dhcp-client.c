@@ -385,7 +385,7 @@ static int dhcp_client_set_iaid_duid_internal(
         } else
                 switch (duid_type) {
                 case DUID_TYPE_LLT:
-                        if (!client->mac_addr || client->mac_addr_len == 0)
+                        if (client->mac_addr_len == 0)
                                 return -EOPNOTSUPP;
 
                         r = dhcp_identifier_set_duid_llt(&client->client_id.ns.duid, llt_time, client->mac_addr, client->mac_addr_len, client->arp_type, &len);
@@ -398,7 +398,7 @@ static int dhcp_client_set_iaid_duid_internal(
                                 return r;
                         break;
                 case DUID_TYPE_LL:
-                        if (!client->mac_addr || client->mac_addr_len == 0)
+                        if (client->mac_addr_len == 0)
                                 return -EOPNOTSUPP;
 
                         r = dhcp_identifier_set_duid_ll(&client->client_id.ns.duid, client->mac_addr, client->mac_addr_len, client->arp_type, &len);
@@ -698,7 +698,7 @@ static int client_message_init(
            let the server know how large the server may make its DHCP messages.
 
            Note (from ConnMan): Some DHCP servers will send bigger DHCP packets
-           than the defined default size unless the Maximum Messge Size option
+           than the defined default size unless the Maximum Message Size option
            is explicitly set
 
            RFC3442 "Requirements to Avoid Sizing Constraints":
@@ -1951,27 +1951,8 @@ sd_event *sd_dhcp_client_get_event(sd_dhcp_client *client) {
         return client->event;
 }
 
-sd_dhcp_client *sd_dhcp_client_ref(sd_dhcp_client *client) {
-
-        if (!client)
-                return NULL;
-
-        assert(client->n_ref >= 1);
-        client->n_ref++;
-
-        return client;
-}
-
-sd_dhcp_client *sd_dhcp_client_unref(sd_dhcp_client *client) {
-
-        if (!client)
-                return NULL;
-
-        assert(client->n_ref >= 1);
-        client->n_ref--;
-
-        if (client->n_ref > 0)
-                return NULL;
+static sd_dhcp_client *dhcp_client_free(sd_dhcp_client *client) {
+        assert(client);
 
         log_dhcp_client(client, "FREE");
 
@@ -1989,6 +1970,8 @@ sd_dhcp_client *sd_dhcp_client_unref(sd_dhcp_client *client) {
         client->user_class = strv_free(client->user_class);
         return mfree(client);
 }
+
+DEFINE_TRIVIAL_REF_UNREF_FUNC(sd_dhcp_client, sd_dhcp_client, dhcp_client_free);
 
 int sd_dhcp_client_new(sd_dhcp_client **ret, int anonymize) {
         _cleanup_(sd_dhcp_client_unrefp) sd_dhcp_client *client = NULL;

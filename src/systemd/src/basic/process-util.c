@@ -425,7 +425,7 @@ int is_kernel_thread(pid_t pid) {
                 q += l;
         }
 
-        /* Skip preceeding whitespace */
+        /* Skip preceding whitespace */
         l = strspn(q, WHITESPACE);
         if (l < 1)
                 return -EINVAL;
@@ -1104,11 +1104,9 @@ void valgrind_summary_hack(void) {
 #endif
 }
 
-int pid_compare_func(const void *a, const void *b) {
-        const pid_t *p = a, *q = b;
-
+int pid_compare_func(const pid_t *a, const pid_t *b) {
         /* Suitable for usage in qsort() */
-        return CMP(*p, *q);
+        return CMP(*a, *b);
 }
 
 int ioprio_parse_priority(const char *s, int *ret) {

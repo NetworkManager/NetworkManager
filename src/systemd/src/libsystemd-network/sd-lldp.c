@@ -119,7 +119,7 @@ static int lldp_add_neighbor(sd_lldp *lldp, sd_lldp_neighbor *n) {
                 }
 
                 if (lldp_neighbor_equal(n, old)) {
-                        /* Is this equal, then restart the TTL counter, but don't do anyting else. */
+                        /* Is this equal, then restart the TTL counter, but don't do anything else. */
                         old->timestamp = n->timestamp;
                         lldp_start_timer(lldp, old);
                         lldp_callback(lldp, SD_LLDP_EVENT_REFRESHED, old);
@@ -329,27 +329,8 @@ _public_ int sd_lldp_set_ifindex(sd_lldp *lldp, int ifindex) {
         return 0;
 }
 
-_public_ sd_lldp* sd_lldp_ref(sd_lldp *lldp) {
-
-        if (!lldp)
-                return NULL;
-
-        assert(lldp->n_ref > 0);
-        lldp->n_ref++;
-
-        return lldp;
-}
-
-_public_ sd_lldp* sd_lldp_unref(sd_lldp *lldp) {
-
-        if (!lldp)
-                return NULL;
-
-        assert(lldp->n_ref > 0);
-        lldp->n_ref --;
-
-        if (lldp->n_ref > 0)
-                return NULL;
+static sd_lldp* lldp_free(sd_lldp *lldp) {
+        assert(lldp);
 
         lldp_reset(lldp);
         sd_lldp_detach_event(lldp);
@@ -359,6 +340,8 @@ _public_ sd_lldp* sd_lldp_unref(sd_lldp *lldp) {
         prioq_free(lldp->neighbor_by_expiry);
         return mfree(lldp);
 }
+
+DEFINE_PUBLIC_TRIVIAL_REF_UNREF_FUNC(sd_lldp, sd_lldp, lldp_free);
 
 _public_ int sd_lldp_new(sd_lldp **ret) {
         _cleanup_(sd_lldp_unrefp) sd_lldp *lldp = NULL;
@@ -388,10 +371,8 @@ _public_ int sd_lldp_new(sd_lldp **ret) {
         return 0;
 }
 
-static int neighbor_compare_func(const void *a, const void *b) {
-        const sd_lldp_neighbor * const*x = a, * const *y = b;
-
-        return lldp_neighbor_id_hash_ops.compare(&(*x)->id, &(*y)->id);
+static int neighbor_compare_func(sd_lldp_neighbor * const *a, sd_lldp_neighbor * const *b) {
+        return lldp_neighbor_id_compare_func(&(*a)->id, &(*b)->id);
 }
 
 static int on_timer_event(sd_event_source *s, uint64_t usec, void *userdata) {
@@ -479,7 +460,7 @@ _public_ int sd_lldp_get_neighbors(sd_lldp *lldp, sd_lldp_neighbor ***ret) {
         assert((size_t) k == hashmap_size(lldp->neighbor_by_id));
 
         /* Return things in a stable order */
-        qsort(l, k, sizeof(sd_lldp_neighbor*), neighbor_compare_func);
+        typesafe_qsort(l, k, neighbor_compare_func);
         *ret = l;
 
         return k;
