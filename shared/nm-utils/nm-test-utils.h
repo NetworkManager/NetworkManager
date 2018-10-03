@@ -1857,25 +1857,31 @@ nmtst_assert_hwaddr_equals (gconstpointer hwaddr1, gssize hwaddr1_len, const cha
 #if defined(__NM_SIMPLE_CONNECTION_H__) && defined(__NM_SETTING_CONNECTION_H__) && defined(__NM_KEYFILE_INTERNAL_H__)
 
 static inline NMConnection *
-nmtst_create_connection_from_keyfile (const char *keyfile_str, const char *keyfile_name, const char *base_dir)
+nmtst_create_connection_from_keyfile (const char *keyfile_str, const char *full_filename)
 {
 	GKeyFile *keyfile;
 	GError *error = NULL;
 	gboolean success;
 	NMConnection *con;
+	gs_free char *filename = g_path_get_basename (full_filename);
+	gs_free char *base_dir = g_path_get_dirname (full_filename);
 
 	g_assert (keyfile_str);
+	g_assert (full_filename && full_filename[0] == '/');
 
 	keyfile =  g_key_file_new ();
 	success = g_key_file_load_from_data (keyfile, keyfile_str, strlen (keyfile_str), G_KEY_FILE_NONE, &error);
 	g_assert_no_error (error);
 	g_assert (success);
 
-	con = nm_keyfile_read (keyfile, keyfile_name, base_dir, NULL, NULL, &error);
+	con = nm_keyfile_read (keyfile, base_dir, NULL, NULL, &error);
 	g_assert_no_error (error);
 	g_assert (NM_IS_CONNECTION (con));
 
 	g_key_file_unref (keyfile);
+
+	nm_keyfile_read_ensure_id (con, filename);
+	nm_keyfile_read_ensure_uuid (con, full_filename);
 
 	nmtst_connection_normalize (con);
 

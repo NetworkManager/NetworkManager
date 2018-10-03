@@ -20,6 +20,8 @@
 
 #include "nm-default.h"
 
+#include "n-acd/src/n-acd.h"
+
 #include "devices/nm-acd-manager.h"
 #include "platform/tests/test-common.h"
 
@@ -30,6 +32,46 @@
 #define ADDR2 0x02020202
 #define ADDR3 0x03030303
 #define ADDR4 0x04040404
+
+/*****************************************************************************/
+
+static gboolean
+_skip_acd_test_check (void)
+{
+	NAcd *acd;
+	NAcdConfig *config;
+	const guint8 hwaddr[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	int r;
+	static int skip = -1;
+
+	if (skip == -1) {
+		r = n_acd_config_new (&config);
+		g_assert (r == 0);
+
+		n_acd_config_set_ifindex (config, 1);
+		n_acd_config_set_transport (config, N_ACD_TRANSPORT_ETHERNET);
+		n_acd_config_set_mac (config, hwaddr, sizeof (hwaddr));
+
+		r = n_acd_new (&acd, config);
+		n_acd_config_free (config);
+		if (r == 0)
+			n_acd_unref (acd);
+
+		skip = (r != 0);
+	}
+	return skip;
+}
+
+#define _skip_acd_test() \
+	({ \
+		gboolean _skip = _skip_acd_test_check (); \
+		\
+		if (_skip) \
+			g_test_skip ("Cannot create NAcd. Running under valgind?"); \
+		_skip; \
+	})
+
+/*****************************************************************************/
 
 typedef struct {
 	int ifindex0;
@@ -78,6 +120,9 @@ test_acd_common (test_fixture *fixture, TestInfo *info)
 		.probe_terminated_callback = acd_manager_probe_terminated,
 		.user_data_destroy         = (GDestroyNotify) g_main_loop_unref,
 	};
+
+	if (_skip_acd_test ())
+		return;
 
 	/* first, try with a short waittime. We hope that this is long enough
 	 * to successfully complete the test. Only if that's not the case, we
@@ -155,6 +200,9 @@ test_acd_announce (test_fixture *fixture, gconstpointer user_data)
 {
 	NMAcdManager *manager;
 	GMainLoop *loop;
+
+	if (_skip_acd_test ())
+		return;
 
 	manager = nm_acd_manager_new (fixture->ifindex0,
 	                              fixture->hwaddr0,

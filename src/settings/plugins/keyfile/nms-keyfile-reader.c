@@ -28,6 +28,7 @@
 #include "nm-keyfile-internal.h"
 
 #include "NetworkManagerUtils.h"
+#include "nms-keyfile-utils.h"
 
 /*****************************************************************************/
 
@@ -102,51 +103,77 @@ _handler_read (GKeyFile *keyfile,
 NMConnection *
 nms_keyfile_reader_from_keyfile (GKeyFile *key_file,
                                  const char *filename,
+                                 const char *base_dir,
+                                 const char *profile_dir,
                                  gboolean verbose,
                                  GError **error)
 {
+	NMConnection *connection;
 	HandlerReadData data = {
 		.verbose = verbose,
 	};
+	gs_free char *base_dir_free = NULL;
+	gs_free char *profile_filename_free = NULL;
+	const char *profile_filename = NULL;
 
-	return nm_keyfile_read (key_file, filename, NULL, _handler_read, &data, error);
+	nm_assert (filename && filename[0]);
+	nm_assert (!base_dir || base_dir[0] == '/');
+	nm_assert (!profile_dir || profile_dir[0] == '/');
+
+	if (base_dir)
+		nm_assert (!strchr (filename, '/'));
+	else {
+		const char *s;
+
+		nm_assert (filename[0] == '/');
+
+		/* @base_dir may be NULL, in which case @filename must be an absolute path,
+		 * and the directory is taken as the @base_dir. */
+		s = strrchr (filename, '/');
+		base_dir = nm_strndup_a (255, filename, s - filename, &base_dir_free);
+		if (   !profile_dir
+		    || nm_streq (base_dir, profile_dir))
+			profile_filename = filename;
+		filename = &s[1];
+	}
+
+	connection = nm_keyfile_read (key_file, base_dir, _handler_read, &data, error);
+	if (!connection)
+		return NULL;
+
+	nm_keyfile_read_ensure_id (connection, filename);
+
+	if (!profile_filename) {
+		profile_filename_free = g_build_filename (profile_dir ?: base_dir, filename, NULL);
+		profile_filename = profile_filename_free;
+	}
+	nm_keyfile_read_ensure_uuid (connection, profile_filename);
+
+	return connection;
 }
 
 NMConnection *
-nms_keyfile_reader_from_file (const char *filename, GError **error)
+nms_keyfile_reader_from_file (const char *full_filename,
+                              const char *profile_dir,
+                              GError **error)
 {
 	gs_unref_keyfile GKeyFile *key_file = NULL;
-	struct stat statbuf;
 	NMConnection *connection = NULL;
 	GError *verify_error = NULL;
 
-	if (stat (filename, &statbuf) != 0 || !S_ISREG (statbuf.st_mode)) {
-		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		                     "File did not exist or was not a regular file");
+	nm_assert (full_filename && full_filename[0] == '/');
+	nm_assert (!profile_dir || profile_dir[0] == '/');
+
+	if (!nms_keyfile_utils_check_file_permissions (full_filename,
+	                                               NULL,
+	                                               error))
 		return NULL;
-	}
-
-	if (!NM_FLAGS_HAS (nm_utils_get_testing (), NM_UTILS_TEST_NO_KEYFILE_OWNER_CHECK)) {
-		if (statbuf.st_mode & 0077) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "File permissions (%o) were insecure",
-			             statbuf.st_mode);
-			return NULL;
-		}
-
-		if (statbuf.st_uid != 0) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "File owner (%o) is insecure",
-			             statbuf.st_mode);
-			return NULL;
-		}
-	}
 
 	key_file = g_key_file_new ();
-	if (!g_key_file_load_from_file (key_file, filename, G_KEY_FILE_NONE, error))
+	if (!g_key_file_load_from_file (key_file, full_filename, G_KEY_FILE_NONE, error))
 		return NULL;
 
-	connection = nms_keyfile_reader_from_keyfile (key_file, filename, TRUE, error);
+	connection = nms_keyfile_reader_from_keyfile (key_file, full_filename, NULL, profile_dir, TRUE, error);
 	if (!connection)
 		return NULL;
 
