@@ -1132,9 +1132,6 @@ check_timestamps (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap changed)
 	clean_dns_servers (ndisc, now, &changed, &nextevent);
 	clean_dns_domains (ndisc, now, &changed, &nextevent);
 
-	if (changed)
-		nm_ndisc_emit_config_change (ndisc, changed);
-
 	if (nextevent != G_MAXINT32) {
 		if (nextevent <= now)
 			g_return_if_reached ();
@@ -1142,6 +1139,9 @@ check_timestamps (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap changed)
 		       (int) (nextevent - now));
 		priv->timeout_id = g_timeout_add_seconds (nextevent - now, timeout_cb, ndisc);
 	}
+
+	if (changed)
+		nm_ndisc_emit_config_change (ndisc, changed);
 }
 
 static gboolean
