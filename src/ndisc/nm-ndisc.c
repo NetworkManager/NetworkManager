@@ -158,6 +158,13 @@ get_expiry_time (guint32 timestamp, guint32 lifetime)
 		                   : (_item->lifetime) / 2); \
 	})
 
+#define get_expiry_preferred(item) \
+	({ \
+		typeof (item) _item = (item); \
+		nm_assert (_item); \
+		get_expiry_time ((_item->timestamp), (_item->preferred)); \
+	})
+
 static const char *
 _get_exp (char *buf, gsize buf_size, gint64 now_ns, gint32 expiry_time)
 {
@@ -317,9 +324,12 @@ nm_ndisc_add_gateway (NMNDisc *ndisc, const NMNDiscGateway *new)
 				continue;
 			}
 
+			if (get_expiry (item) == get_expiry (new))
+				return FALSE;
+
 			*item = *new;
 			_ASSERT_data_gateways (rdata);
-			return FALSE;
+			return TRUE;
 		}
 
 		/* Put before less preferable gateways. */
@@ -411,17 +421,18 @@ nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new)
 		NMNDiscAddress *item = &g_array_index (rdata->addresses, NMNDiscAddress, i);
 
 		if (IN6_ARE_ADDR_EQUAL (&item->address, &new->address)) {
-			gboolean changed;
-
 			if (new->lifetime == 0) {
 				g_array_remove_index (rdata->addresses, i);
 				return TRUE;
 			}
 
-			changed = item->timestamp + item->lifetime  != new->timestamp + new->lifetime ||
-			          item->timestamp + item->preferred != new->timestamp + new->preferred;
+			if (   item->dad_counter == new->dad_counter
+			    && get_expiry (item) == get_expiry (new)
+			    && get_expiry_preferred (item) == get_expiry_preferred (new))
+				return FALSE;
+
 			*item = *new;
-			return changed;
+			return TRUE;
 		}
 	}
 
@@ -472,7 +483,8 @@ nm_ndisc_add_route (NMNDisc *ndisc, const NMNDiscRoute *new)
 	for (i = 0; i < rdata->routes->len; ) {
 		NMNDiscRoute *item = &g_array_index (rdata->routes, NMNDiscRoute, i);
 
-		if (IN6_ARE_ADDR_EQUAL (&item->network, &new->network) && item->plen == new->plen) {
+		if (   IN6_ARE_ADDR_EQUAL (&item->network, &new->network)
+		    && item->plen == new->plen) {
 			if (new->lifetime == 0) {
 				g_array_remove_index (rdata->routes, i);
 				return TRUE;
@@ -483,8 +495,12 @@ nm_ndisc_add_route (NMNDisc *ndisc, const NMNDiscRoute *new)
 				continue;
 			}
 
-			memcpy (item, new, sizeof (*new));
-			return FALSE;
+			if (   get_expiry (item) == get_expiry (new)
+			    && IN6_ARE_ADDR_EQUAL (&item->gateway, &new->gateway))
+				return FALSE;
+
+			*item = *new;
+			return TRUE;
 		}
 
 		/* Put before less preferable routes. */
@@ -523,11 +539,12 @@ nm_ndisc_add_dns_server (NMNDisc *ndisc, const NMNDiscDNSServer *new)
 				g_array_remove_index (rdata->dns_servers, i);
 				return TRUE;
 			}
-			if (item->timestamp != new->timestamp || item->lifetime != new->lifetime) {
-				*item = *new;
-				return TRUE;
-			}
-			return FALSE;
+
+			if (get_expiry (item) == get_expiry (new))
+				return FALSE;
+
+			*item = *new;
+			return TRUE;
 		}
 	}
 
@@ -552,20 +569,17 @@ nm_ndisc_add_dns_domain (NMNDisc *ndisc, const NMNDiscDNSDomain *new)
 		item = &g_array_index (rdata->dns_domains, NMNDiscDNSDomain, i);
 
 		if (!g_strcmp0 (item->domain, new->domain)) {
-			gboolean changed;
-
 			if (new->lifetime == 0) {
 				g_array_remove_index (rdata->dns_domains, i);
 				return TRUE;
 			}
 
-			changed = (item->timestamp != new->timestamp ||
-			           item->lifetime != new->lifetime);
-			if (changed) {
-				item->timestamp = new->timestamp;
-				item->lifetime = new->lifetime;
-			}
-			return changed;
+			if (get_expiry (item) == get_expiry (new))
+				return FALSE;
+
+			item->timestamp = new->timestamp;
+			item->lifetime = new->lifetime;
+			return TRUE;
 		}
 	}
 
