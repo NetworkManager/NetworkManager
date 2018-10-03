@@ -380,7 +380,6 @@ char *path_simplify(char *path, bool kill_dots) {
         return path;
 }
 
-#if 0 /* NM_IGNORED */
 char* path_startswith(const char *path, const char *prefix) {
         assert(path);
         assert(prefix);
@@ -423,7 +422,6 @@ char* path_startswith(const char *path, const char *prefix) {
                 prefix += b;
         }
 }
-#endif /* NM_IGNORED */
 
 int path_compare(const char *a, const char *b) {
         int d;

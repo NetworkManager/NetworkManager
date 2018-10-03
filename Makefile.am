@@ -1392,6 +1392,8 @@ src_libsystemd_nm_la_libadd = \
 src_libsystemd_nm_la_SOURCES = \
 	src/systemd/nm-sd.c \
 	src/systemd/nm-sd.h \
+	src/systemd/nm-sd-utils.c \
+	src/systemd/nm-sd-utils.h \
 	src/systemd/sd-adapt/nm-sd-adapt.c \
 	src/systemd/sd-adapt/nm-sd-adapt.h \
 	src/systemd/sd-adapt/architecture.h \

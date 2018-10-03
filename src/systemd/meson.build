@@ -49,7 +49,8 @@ sources = files(
   'src/libsystemd/sd-id128/id128-util.c',
   'src/libsystemd/sd-id128/sd-id128.c',
   'src/shared/dns-domain.c',
-  'nm-sd.c'
+  'nm-sd.c',
+  'nm-sd-utils.c',
 )
 
 incs = [
