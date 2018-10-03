@@ -491,6 +491,7 @@ receive_rs (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 static gboolean
 event_ready (GIOChannel *source, GIOCondition condition, NMNDisc *ndisc)
 {
+	gs_unref_object NMNDisc *ndisc_keep_alive = g_object_ref (ndisc);
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE ((NMLndpNDisc *) ndisc);
 
