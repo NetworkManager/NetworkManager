@@ -47,7 +47,7 @@ typedef struct _NMDeviceIwdClass NMDeviceIwdClass;
 
 GType nm_device_iwd_get_type (void);
 
-NMDevice *nm_device_iwd_new (const char *iface, NMDeviceWifiCapabilities capabilities);
+NMDevice *nm_device_iwd_new (const char *iface);
 
 void nm_device_iwd_set_dbus_object (NMDeviceIwd *device, GDBusObject *object);
 
