@@ -176,6 +176,7 @@ char *strrep(const char *s, unsigned n);
 int split_pair(const char *s, const char *sep, char **l, char **r);
 
 int free_and_strdup(char **p, const char *s);
+int free_and_strndup(char **p, const char *s, size_t l);
 
 /* Normal memmem() requires haystack to be nonnull, which is annoying for zero-length buffers */
 static inline void *memmem_safe(const void *haystack, size_t haystacklen, const void *needle, size_t needlelen) {
@@ -225,6 +226,28 @@ static inline void *memory_startswith(const void *p, size_t sz, const char *toke
 
         if (memcmp(p, token, n) != 0)
                 return NULL;
+
+        return (uint8_t*) p + n;
+}
+
+/* Like startswith_no_case(), but operates on arbitrary memory blocks.
+ * It works only for ASCII strings.
+ */
+static inline void *memory_startswith_no_case(const void *p, size_t sz, const char *token) {
+        size_t n, i;
+
+        assert(token);
+
+        n = strlen(token);
+        if (sz < n)
+                return NULL;
+
+        assert(p);
+
+        for (i = 0; i < n; i++) {
+                if (ascii_tolower(((char *)p)[i]) != ascii_tolower(token[i]))
+                        return NULL;
+        }
 
         return (uint8_t*) p + n;
 }
