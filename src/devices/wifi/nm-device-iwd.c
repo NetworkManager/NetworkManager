@@ -41,6 +41,7 @@
 #include "nm-config.h"
 #include "nm-iwd-manager.h"
 #include "nm-dbus-manager.h"
+#include "nm-dbus-compat.h"
 
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceIwd);
@@ -921,7 +922,7 @@ scan_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	gs_free_error GError *error = NULL;
 
 	variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), res, &error);
-	if (!variant && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (!variant && nm_utils_error_is_cancelled (error, FALSE))
 		return;
 
 	priv = NM_DEVICE_IWD_GET_PRIVATE (self);
@@ -1208,7 +1209,7 @@ wifi_secrets_cb (NMActRequest *req,
 
 	priv->wifi_secrets_id = NULL;
 
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+	if (nm_utils_error_is_cancelled (error, FALSE)) {
 		g_dbus_method_invocation_return_error_literal (invocation, NM_DEVICE_ERROR,
 		                                               NM_DEVICE_ERROR_INVALID_CONNECTION,
 		                                               "NM secrets request cancelled");
@@ -1304,7 +1305,7 @@ network_connect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 		       "Activation: (wifi) Network.Connect failed: %s",
 		       error->message);
 
-		if (nm_utils_error_is_cancelled (error, TRUE))
+		if (nm_utils_error_is_cancelled (error, FALSE))
 			return;
 
 		if (!NM_IN_SET (nm_device_get_state (device), NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_NEED_AUTH))
@@ -1373,7 +1374,7 @@ set_powered (NMDeviceIwd *self, gboolean powered)
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
 	g_dbus_proxy_call (priv->dbus_device_proxy,
-	                   "org.freedesktop.DBus.Properties.Set",
+	                   DBUS_INTERFACE_PROPERTIES ".Set",
 	                   g_variant_new ("(ssv)", NM_IWD_DEVICE_INTERFACE,
 	                                  "Powered",
 	                                  g_variant_new ("b", powered)),
