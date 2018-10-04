@@ -1422,7 +1422,7 @@ nm_setting_diff (NMSetting *a,
 		} else {
 			g_hash_table_iter_init (&iter, a_gendata->hash);
 			while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val)) {
-				val2 = b_gendata ? g_hash_table_lookup (b_gendata->hash, key) : NULL;
+				val2 = g_hash_table_lookup (b_gendata->hash, key);
 				compared_any = TRUE;
 				if (   !val2
 				    || !g_variant_equal (val, val2)) {
@@ -1432,7 +1432,7 @@ nm_setting_diff (NMSetting *a,
 			}
 			g_hash_table_iter_init (&iter, b_gendata->hash);
 			while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val)) {
-				val2 = a_gendata ? g_hash_table_lookup (a_gendata->hash, key) : NULL;
+				val2 = g_hash_table_lookup (a_gendata->hash, key);
 				compared_any = TRUE;
 				if (   !val2
 				    || !g_variant_equal (val, val2)) {
