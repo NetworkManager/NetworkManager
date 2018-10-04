@@ -304,7 +304,7 @@ static void
 get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 {
 	NMDeviceIwd *self = user_data;
-	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	NMDeviceIwdPrivate *priv;
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *variant = NULL;
 	GVariantIter *networks;
@@ -314,20 +314,29 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	gboolean changed = FALSE;
 	GHashTableIter ap_iter;
 	gs_unref_hashtable GHashTable *new_aps = NULL;
+	gboolean compat;
+	const char *return_sig;
+	static uint32_t ap_id = 0;
+
+	variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), res, &error);
+	if (!variant) {
+		_LOGE (LOGD_WIFI, "Station.GetOrderedNetworks failed: %s",
+		       error->message);
+		return;
+	}
+
+	priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+
 	/* Depending on whether we're using the Station interface or the Device
 	 * interface for compatibility with IWD <= 0.7, the return signature of
 	 * GetOrderedNetworks will be different.
 	 */
-	gboolean compat = priv->dbus_station_proxy == priv->dbus_device_proxy;
-	const char *return_sig = compat ? "(a(osns))" : "(a(on))";
-	static uint32_t ap_id = 0;
+	compat = priv->dbus_station_proxy == priv->dbus_device_proxy;
+	return_sig = compat ? "(a(osns))" : "(a(on))";
 
-	variant = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (source), res,
-	                                      G_VARIANT_TYPE (return_sig),
-	                                      &error);
-	if (!variant) {
-		_LOGE (LOGD_WIFI, "Station.GetOrderedNetworks failed: %s",
-		       error->message);
+	if (!g_variant_is_of_type (variant, G_VARIANT_TYPE (return_sig))) {
+		_LOGE (LOGD_WIFI, "Station.GetOrderedNetworks returned type %s instead of %s",
+		       g_variant_get_type_string (variant), return_sig);
 		return;
 	}
 
@@ -908,11 +917,11 @@ scan_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 {
 	NMDeviceIwd *self = user_data;
 	NMDeviceIwdPrivate *priv;
+	gs_unref_variant GVariant *variant = NULL;
 	gs_free_error GError *error = NULL;
 
-	if (   !_nm_dbus_proxy_call_finish (G_DBUS_PROXY (source), res,
-	                                   G_VARIANT_TYPE ("()"), &error)
-	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), res, &error);
+	if (!variant && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
 	priv = NM_DEVICE_IWD_GET_PRIVATE (self);
@@ -1274,6 +1283,7 @@ network_connect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	NMDeviceIwd *self = user_data;
 	NMDevice *device = NM_DEVICE (self);
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	gs_unref_variant GVariant *variant = NULL;
 	gs_free_error GError *error = NULL;
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
@@ -1282,9 +1292,8 @@ network_connect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED;
 	GVariant *value;
 
-	if (!_nm_dbus_proxy_call_finish (G_DBUS_PROXY (source), res,
-	                                 G_VARIANT_TYPE ("()"),
-	                                 &error)) {
+	variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), res, &error);
+	if (!variant) {
 		gs_free char *dbus_error = NULL;
 
 		/* Connection failed; radio problems or if the network wasn't
