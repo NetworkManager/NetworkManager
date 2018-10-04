@@ -50,6 +50,7 @@ bool unichar_is_valid(char32_t ch) {
         return true;
 }
 
+#if 0 /* NM_IGNORED */
 static bool unichar_is_control(char32_t ch) {
 
         /*
@@ -61,6 +62,7 @@ static bool unichar_is_control(char32_t ch) {
         return (ch < ' ' && !IN_SET(ch, '\t', '\n')) ||
                 (0x7F <= ch && ch <= 0x9F);
 }
+#endif /* NM_IGNORED */
 
 /* count of characters used to encode one unicode char */
 static int utf8_encoded_expected_len(const char *str) {
@@ -129,6 +131,7 @@ int utf8_encoded_to_unichar(const char *str, char32_t *ret_unichar) {
         return 0;
 }
 
+#if 0 /* NM_IGNORED */
 bool utf8_is_printable_newline(const char* str, size_t length, bool newline) {
         const char *p;
 
@@ -155,6 +158,7 @@ bool utf8_is_printable_newline(const char* str, size_t length, bool newline) {
 
         return true;
 }
+#endif /* NM_IGNORED */
 
 const char *utf8_is_valid(const char *str) {
         const uint8_t *p;
@@ -201,6 +205,7 @@ char *utf8_escape_invalid(const char *str) {
         return p;
 }
 
+#if 0 /* NM_IGNORED */
 char *utf8_escape_non_printable(const char *str) {
         char *p, *s;
 
@@ -239,6 +244,7 @@ char *utf8_escape_non_printable(const char *str) {
 
         return p;
 }
+#endif /* NM_IGNORED */
 
 char *ascii_is_valid(const char *str) {
         const char *p;
@@ -255,6 +261,7 @@ char *ascii_is_valid(const char *str) {
         return (char*) str;
 }
 
+#if 0 /* NM_IGNORED */
 char *ascii_is_valid_n(const char *str, size_t len) {
         size_t i;
 
@@ -269,6 +276,7 @@ char *ascii_is_valid_n(const char *str, size_t len) {
 
         return (char*) str;
 }
+#endif /* NM_IGNORED */
 
 /**
  * utf8_encode_unichar() - Encode single UCS-4 character as UTF-8
@@ -314,6 +322,7 @@ size_t utf8_encode_unichar(char *out_utf8, char32_t g) {
         return 0;
 }
 
+#if 0 /* NM_IGNORED */
 char *utf16_to_utf8(const void *s, size_t length) {
         const uint8_t *f;
         char *r, *t;
@@ -358,6 +367,7 @@ char *utf16_to_utf8(const void *s, size_t length) {
         *t = 0;
         return r;
 }
+#endif /* NM_IGNORED */
 
 /* expected size used to encode one unicode char */
 static int utf8_unichar_to_encoded_len(char32_t unichar) {
@@ -411,6 +421,7 @@ int utf8_encoded_valid_unichar(const char *str) {
         return len;
 }
 
+#if 0 /* NM_IGNORED */
 size_t utf8_n_codepoints(const char *str) {
         size_t n = 0;
 
@@ -430,7 +441,6 @@ size_t utf8_n_codepoints(const char *str) {
         return n;
 }
 
-#if 0 /* NM_IGNORED */
 size_t utf8_console_width(const char *str) {
         size_t n = 0;
 
