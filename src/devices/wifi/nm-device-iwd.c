@@ -2070,7 +2070,7 @@ nm_device_iwd_init (NMDeviceIwd *self)
 }
 
 NMDevice *
-nm_device_iwd_new (const char *iface, NMDeviceWifiCapabilities capabilities)
+nm_device_iwd_new (const char *iface)
 {
 	return g_object_new (NM_TYPE_DEVICE_IWD,
 	                     NM_DEVICE_IFACE, iface,
