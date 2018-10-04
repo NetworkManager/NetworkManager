@@ -1236,7 +1236,7 @@ nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_fr
 				ch = (++str)[0];
 				if (ch >= '0' && ch <= '7') {
 					v = v * 8 + (ch - '0');
-					ch = (++str)[0];
+					++str;
 				}
 			}
 			ch = v;
