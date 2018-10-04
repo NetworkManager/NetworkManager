@@ -4941,18 +4941,18 @@ const char **nm_utils_enum_get_values (GType type, int from, int to)
 static gboolean
 _nm_utils_is_json_object_no_validation (const char *str, GError **error)
 {
-	if (str) {
-		/* libjansson also requires only utf-8 encoding. */
-		if (!g_utf8_validate (str, -1, NULL)) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("not valid utf-8"));
-			return FALSE;
-		}
-		while (g_ascii_isspace (str[0]))
-			str++;
+	nm_assert (str);
+
+	/* libjansson also requires only utf-8 encoding. */
+	if (!g_utf8_validate (str, -1, NULL)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("not valid utf-8"));
+		return FALSE;
 	}
+	while (g_ascii_isspace (str[0]))
+		str++;
 
 	/* do some very basic validation to see if this might be a JSON object. */
 	if (str[0] == '{') {
