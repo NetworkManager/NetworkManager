@@ -29,7 +29,7 @@ nm_device_ethernet_utils_get_default_wired_name (GHashTable *existing_ids)
 	int i;
 
 	/* Find the next available unique connection name */
-	for (i = 1; i <= G_MAXINT; i++) {
+	for (i = 1; i < G_MAXINT; i++) {
 		temp = g_strdup_printf (_("Wired connection %d"), i);
 		if (   !existing_ids
 		    || !g_hash_table_contains (existing_ids, temp))
