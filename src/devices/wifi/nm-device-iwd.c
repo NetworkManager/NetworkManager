@@ -1702,24 +1702,6 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMDeviceIwd *device = NM_DEVICE_IWD (object);
-	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (device);
-
-	switch (prop_id) {
-	case PROP_CAPABILITIES:
-		/* construct-only */
-		priv->capabilities = g_value_get_uint (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
 /*****************************************************************************/
 
 static void
@@ -1928,17 +1910,15 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	GDBusInterface *interface;
-	GVariant *value;
+	gs_unref_variant GVariant *value = NULL;
+	gs_unref_object GDBusProxy *adapter_proxy = NULL;
+	GVariantIter *iter;
+	const char *mode;
 	gboolean powered;
+	NMDeviceWifiCapabilities capabilities;
 
 	if (!nm_g_object_ref_set ((GObject **) &priv->dbus_obj, (GObject *) object))
 		return;
-
-	if (priv->enabled && priv->dbus_station_proxy) {
-		nm_device_queue_recheck_available (NM_DEVICE (self),
-		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
-		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-	}
 
 	if (priv->dbus_device_proxy) {
 		g_signal_handlers_disconnect_by_func (priv->dbus_device_proxy,
@@ -1965,14 +1945,63 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 	g_signal_connect (priv->dbus_device_proxy, "g-properties-changed",
 	                  G_CALLBACK (device_properties_changed), self);
 
+	/* Parse list of interface modes supported by adapter (wiphy) */
+
+	value = g_dbus_proxy_get_cached_property (priv->dbus_device_proxy, "Adapter");
+	if (!value || !g_variant_is_of_type (value, G_VARIANT_TYPE_OBJECT_PATH)) {
+		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
+		             "Adapter property not cached or not an object path");
+		goto error;
+	}
+
+	adapter_proxy = nm_iwd_manager_get_dbus_interface (nm_iwd_manager_get (),
+	                                                   g_variant_get_string (value, NULL),
+	                                                   NM_IWD_WIPHY_INTERFACE);
+	if (!adapter_proxy) {
+		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
+		             "Can't get DBus proxy for IWD Adapter for IWD Device");
+		goto error;
+	}
+
+	g_variant_unref (value);
+	value = g_dbus_proxy_get_cached_property (adapter_proxy, "SupportedModes");
+	if (!value || !g_variant_is_of_type (value, G_VARIANT_TYPE_STRING_ARRAY)) {
+		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
+		             "SupportedModes property not cached or not a string array");
+		goto error;
+	}
+
+	capabilities = NM_WIFI_DEVICE_CAP_CIPHER_CCMP | NM_WIFI_DEVICE_CAP_RSN;
+
+	g_variant_get (value, "as", &iter);
+	while (g_variant_iter_next (iter, "&s", &mode)) {
+		if (nm_streq (mode, "ap"))
+			capabilities |= NM_WIFI_DEVICE_CAP_AP;
+		else if (nm_streq (mode, "ad-hoc"))
+			capabilities |= NM_WIFI_DEVICE_CAP_ADHOC;
+	}
+	g_variant_iter_free (iter);
+
+	if (priv->capabilities != capabilities) {
+		priv->capabilities = capabilities;
+		_notify (self, PROP_CAPABILITIES);
+	}
+
+	g_variant_unref (value);
 	value = g_dbus_proxy_get_cached_property (priv->dbus_device_proxy, "Powered");
 	powered = get_variant_boolean (value, "Powered");
-	g_variant_unref (value);
 
 	if (powered != priv->enabled)
 		set_powered (self, priv->enabled);
 	else if (powered)
 		powered_changed (self, TRUE);
+
+	return;
+
+error:
+	g_signal_handlers_disconnect_by_func (priv->dbus_device_proxy,
+	                                      device_properties_changed, self);
+	g_clear_object (&priv->dbus_device_proxy);
 }
 
 gboolean
@@ -2049,7 +2078,6 @@ nm_device_iwd_new (const char *iface, NMDeviceWifiCapabilities capabilities)
 	                     NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_WIFI,
 	                     NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_WIFI,
 	                     NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WLAN,
-	                     NM_DEVICE_IWD_CAPABILITIES, (guint) capabilities,
 	                     NULL);
 }
 
@@ -2084,7 +2112,6 @@ nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
-	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&nm_interface_info_device_wireless);
@@ -2144,8 +2171,7 @@ nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 	obj_properties[PROP_CAPABILITIES] =
 	    g_param_spec_uint (NM_DEVICE_IWD_CAPABILITIES, "", "",
 	                       0, G_MAXUINT32, NM_WIFI_DEVICE_CAP_NONE,
-	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_READABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_SCANNING] =
