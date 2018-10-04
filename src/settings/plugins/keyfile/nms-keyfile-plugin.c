@@ -195,7 +195,7 @@ update_connection (NMSKeyfilePlugin *self,
 		return FALSE;
 	}
 
-	connection_new = nms_keyfile_connection_new (source, full_path, &local);
+	connection_new = nms_keyfile_connection_new (source, full_path, nms_keyfile_utils_get_path (), &local);
 	if (!connection_new) {
 		/* Error; remove the connection */
 		if (source)

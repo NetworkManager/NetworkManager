@@ -26,9 +26,13 @@
 
 NMConnection *nms_keyfile_reader_from_keyfile (GKeyFile *key_file,
                                                const char *filename,
+                                               const char *base_dir,
+                                               const char *profile_dir,
                                                gboolean verbose,
                                                GError **error);
 
-NMConnection *nms_keyfile_reader_from_file (const char *filename, GError **error);
+NMConnection *nms_keyfile_reader_from_file (const char *full_filename,
+                                            const char *profile_dir,
+                                            GError **error);
 
 #endif /* __NMS_KEYFILE_READER_H__ */

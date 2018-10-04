@@ -65,37 +65,32 @@ check_ip_route (NMSettingIPConfig *config, int idx, const char *destination, int
 	g_assert_cmpint (nm_ip_route_get_metric (route), ==, metric);
 }
 
-static NMConnection *
-keyfile_read_connection_from_file (const char *filename)
-{
-	gs_free_error GError *error = NULL;
-	NMConnection *connection;
-
-	g_assert (filename);
-
-	connection = nms_keyfile_reader_from_file (filename, &error);
-	g_assert_no_error (error);
-
-	nmtst_assert_connection_verifies_without_normalization (connection);
-
-	return connection;
-}
+#define keyfile_read_connection_from_file(full_filename) \
+({ \
+	gs_free_error GError *_error = NULL; \
+	NMConnection *_connection; \
+	\
+	g_assert (full_filename && full_filename[0] == '/'); \
+	\
+	_connection = nms_keyfile_reader_from_file (full_filename, \
+	                                            NULL, \
+	                                            (nmtst_get_rand_int () % 2) ? &_error : NULL); \
+	nmtst_assert_success (_connection, _error); \
+	nmtst_assert_connection_verifies_without_normalization (_connection); \
+	\
+	_connection; \
+})
 
 static void
 assert_reread (NMConnection *connection, gboolean normalize_connection, const char *testfile)
 {
 	gs_unref_object NMConnection *reread = NULL;
 	gs_unref_object NMConnection *connection_clone = NULL;
-	GError *error = NULL;
-	GError **p_error = (nmtst_get_rand_int () % 2) ? &error : NULL;
 	NMSettingConnection *s_con;
 
 	g_assert (NM_IS_CONNECTION (connection));
-	g_assert (testfile && testfile[0]);
 
-	reread = nms_keyfile_reader_from_file (testfile, p_error);
-	g_assert_no_error (error);
-	g_assert (NM_IS_CONNECTION (reread));
+	reread = keyfile_read_connection_from_file (testfile);
 
 	if (   !normalize_connection
 	    && (s_con = nm_connection_get_setting_connection (connection))
@@ -229,10 +224,8 @@ test_read_valid_wired_connection (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	NMIPRoute *route;
-	gs_free_error GError *error = NULL;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
-	gboolean success;
 
 	NMTST_EXPECT_NM_INFO ("*ipv4.addresses:*semicolon at the end*addresses1*");
 	NMTST_EXPECT_NM_INFO ("*ipv4.addresses:*semicolon at the end*addresses2*");
@@ -249,16 +242,9 @@ test_read_valid_wired_connection (void)
 	NMTST_EXPECT_NM_INFO ("*ipv6.address*semicolon at the end*address7*");
 	NMTST_EXPECT_NM_INFO ("*ipv6.routes*semicolon at the end*routes1*");
 	NMTST_EXPECT_NM_INFO ("*ipv6.route*semicolon at the end*route6*");
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection", &error);
-	g_assert_no_error (error);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection");
 	g_test_assert_expected_messages ();
-	g_assert (connection);
 
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "Test Wired Connection");
@@ -266,7 +252,6 @@ test_read_valid_wired_connection (void)
 	g_assert_cmpuint (nm_setting_connection_get_timestamp (s_con), ==, 6654332);
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
-	/* ===== WIRED SETTING ===== */
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired);
 
@@ -275,7 +260,6 @@ test_read_valid_wired_connection (void)
 	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)));
 	g_assert_cmpint (nm_setting_wired_get_mtu (s_wired), ==, 1400);
 
-	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
@@ -324,7 +308,6 @@ test_read_valid_wired_connection (void)
 	nmtst_assert_route_attribute_boolean (route, NM_IP_ROUTE_ATTRIBUTE_LOCK_CWND, TRUE);
 	nmtst_assert_route_attribute_string  (route, NM_IP_ROUTE_ATTRIBUTE_SRC, "7.7.7.7");
 
-	/* ===== IPv6 SETTING ===== */
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
 
@@ -535,32 +518,22 @@ test_read_ip6_wired_connection (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	gs_free_error GError *error = NULL;
-	gboolean success;
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection_IP6", NULL);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection_IP6");
 
-	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "Test Wired Connection IP6");
 	g_assert_cmpstr (nm_setting_connection_get_uuid (s_con), ==, "4e80a56d-c99f-4aad-a6dd-b449bc398c57");
 
-	/* ===== WIRED SETTING ===== */
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired);
 
-	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
 	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 0);
 
-	/* ===== IPv6 SETTING ===== */
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_MANUAL);
@@ -638,28 +611,20 @@ test_read_wired_mac_case (void)
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	gs_free_error GError *error = NULL;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0xaa, 0xbb, 0xcc, 0x55 };
-	gboolean success;
 
 	NMTST_EXPECT_NM_INFO ("*ipv4.addresses*semicolon at the end*addresses1*");
 	NMTST_EXPECT_NM_INFO ("*ipv4.addresses*semicolon at the end*addresses2*");
 	NMTST_EXPECT_NM_INFO ("*ipv6.routes*semicolon at the end*routes1*");
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection_MAC_Case", NULL);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection_MAC_Case");
 	g_test_assert_expected_messages ();
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
 
-	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "Test Wired Connection MAC Case");
 	g_assert_cmpstr (nm_setting_connection_get_uuid (s_con), ==, "4e80a56d-c99f-4aad-a6dd-b449bc398c57");
 
-	/* ===== WIRED SETTING ===== */
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired);
 	mac = nm_setting_wired_get_mac_address (s_wired);
@@ -672,29 +637,19 @@ test_read_mac_old_format (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingWired *s_wired;
-	gs_free_error GError *error = NULL;
-	gboolean success;
 	const char *mac;
 	char expected_mac[ETH_ALEN] = { 0x00, 0x11, 0xaa, 0xbb, 0xcc, 0x55 };
 	char expected_cloned_mac[ETH_ALEN] = { 0x00, 0x16, 0xaa, 0xbb, 0xcc, 0xfe };
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_MAC_Old_Format", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_MAC_Old_Format");
 
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired);
 
-	/* MAC address */
 	mac = nm_setting_wired_get_mac_address (s_wired);
 	g_assert (mac);
 	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac, ETH_ALEN));
 
-	/* Cloned MAC address */
 	mac = nm_setting_wired_get_cloned_mac_address (s_wired);
 	g_assert (mac);
 	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_cloned_mac, ETH_ALEN));
@@ -705,20 +660,12 @@ test_read_mac_ib_old_format (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingInfiniband *s_ib;
-	gs_free_error GError *error = NULL;
-	gboolean success;
 	const char *mac;
 	guint8 expected_mac[INFINIBAND_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
-		0x77, 0x88, 0x99, 0x01, 0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78, 0x89,
-		0x90 };
+	    0x77, 0x88, 0x99, 0x01, 0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78, 0x89,
+	    0x90 };
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_MAC_IB_Old_Format", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_MAC_IB_Old_Format");
 
 	s_ib = nm_connection_get_setting_infiniband (connection);
 	g_assert (s_ib);
@@ -736,18 +683,11 @@ test_read_valid_wireless_connection (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingIPConfig *s_ip4;
-	gs_free_error GError *error = NULL;
 	const char *bssid;
 	const guint8 expected_bssid[ETH_ALEN] = { 0x00, 0x1a, 0x33, 0x44, 0x99, 0x82 };
-	gboolean success;
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wireless_Connection", NULL);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_Wireless_Connection");
 
-	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "Test Wireless Connection");
@@ -755,14 +695,12 @@ test_read_valid_wireless_connection (void)
 	g_assert_cmpuint (nm_setting_connection_get_timestamp (s_con), ==, 1226604314);
 	g_assert (nm_setting_connection_get_autoconnect (s_con) == FALSE);
 
-	/* ===== WIRELESS SETTING ===== */
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wireless);
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
 	g_assert (bssid);
 	g_assert (nm_utils_hwaddr_matches (bssid, -1, expected_bssid, sizeof (expected_bssid)));
 
-	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
@@ -838,24 +776,19 @@ test_read_string_ssid (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingWireless *s_wireless;
-	gs_free_error GError *error = NULL;
 	GBytes *ssid;
 	const guint8 *ssid_data;
 	gsize ssid_len;
 	const char *expected_ssid = "blah blah ssid 1234";
-	gboolean success;
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_String_SSID", NULL);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_String_SSID");
 
-	/* ===== WIRELESS SETTING ===== */
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wireless);
+
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
 	g_assert (ssid);
+
 	ssid_data = g_bytes_get_data (ssid, &ssid_len);
 	g_assert_cmpmem (ssid_data, ssid_len, expected_ssid, strlen (expected_ssid));
 }
@@ -922,22 +855,13 @@ test_read_intlist_ssid (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingWireless *s_wifi;
-	gs_free_error GError *error = NULL;
-	gboolean success;
 	GBytes *ssid;
 	const guint8 *ssid_data;
 	gsize ssid_len;
 	const char *expected_ssid = "blah1234";
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Intlist_SSID", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_Intlist_SSID");
 
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	/* SSID */
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
@@ -1015,16 +939,10 @@ test_read_intlike_ssid (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingWireless *s_wifi;
-	gs_free_error GError *error = NULL;
-	gboolean success;
 	GBytes *ssid;
 	const char *expected_ssid = "101";
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Intlike_SSID", &error);
-	nmtst_assert_success (connection, error);
-
-	success = nm_connection_verify (connection, &error);
-	nmtst_assert_success (success, error);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_Intlike_SSID");
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
@@ -1039,16 +957,10 @@ test_read_intlike_ssid_2 (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingWireless *s_wifi;
-	gs_free_error GError *error = NULL;
-	gboolean success;
 	GBytes *ssid;
 	const char *expected_ssid = "11;12;13;";
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Intlike_SSID_2", &error);
-	nmtst_assert_success (connection, error);
-
-	success = nm_connection_verify (connection, &error);
-	nmtst_assert_success (success, error);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_Intlike_SSID_2");
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
@@ -1183,24 +1095,16 @@ test_read_bt_dun_connection (void)
 	NMSettingBluetooth *s_bluetooth;
 	NMSettingSerial *s_serial;
 	NMSettingGsm *s_gsm;
-	gs_free_error GError *error = NULL;
 	const char *bdaddr;
 	const guint8 expected_bdaddr[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
-	gboolean success;
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/ATT_Data_Connect_BT", NULL);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/ATT_Data_Connect_BT");
 
-	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "AT&T Data Connect BT");
 	g_assert_cmpstr (nm_setting_connection_get_uuid (s_con), ==, "089130ab-ce28-46e4-ad77-d44869b03d19");
 
-	/* ===== BLUETOOTH SETTING ===== */
 	s_bluetooth = nm_connection_get_setting_bluetooth (connection);
 	g_assert (s_bluetooth);
 	bdaddr = nm_setting_bluetooth_get_bdaddr (s_bluetooth);
@@ -1208,14 +1112,12 @@ test_read_bt_dun_connection (void)
 	g_assert (nm_utils_hwaddr_matches (bdaddr, -1, expected_bdaddr, sizeof (expected_bdaddr)));
 	g_assert_cmpstr (nm_setting_bluetooth_get_connection_type (s_bluetooth), ==, NM_SETTING_BLUETOOTH_TYPE_DUN);
 
-	/* ===== GSM SETTING ===== */
 	s_gsm = nm_connection_get_setting_gsm (connection);
 	g_assert (s_gsm);
 	g_assert_cmpstr (nm_setting_gsm_get_apn (s_gsm), ==, "ISP.CINGULAR");
 	g_assert_cmpstr (nm_setting_gsm_get_username (s_gsm), ==, "ISP@CINGULARGPRS.COM");
 	g_assert_cmpstr (nm_setting_gsm_get_password (s_gsm), ==, "CINGULAR1");
 
-	/* ===== SERIAL SETTING ===== */
 	s_serial = nm_connection_get_setting_serial (connection);
 	g_assert (s_serial);
 	g_assert (nm_setting_serial_get_parity (s_serial) == NM_SETTING_SERIAL_PARITY_ODD);
@@ -1288,28 +1190,17 @@ test_read_gsm_connection (void)
 	NMSettingConnection *s_con;
 	NMSettingSerial *s_serial;
 	NMSettingGsm *s_gsm;
-	gs_free_error GError *error = NULL;
-	gboolean success;
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/ATT_Data_Connect_Plain", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/ATT_Data_Connect_Plain");
 
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "AT&T Data Connect");
 	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_GSM_SETTING_NAME);
 
-	/* ===== BLUETOOTH SETTING ===== */
 	/* Plain GSM, so no BT setting expected */
 	g_assert (nm_connection_get_setting_bluetooth (connection) == NULL);
 
-	/* ===== GSM SETTING ===== */
 	s_gsm = nm_connection_get_setting_gsm (connection);
 	g_assert (s_gsm);
 	g_assert_cmpstr (nm_setting_gsm_get_apn (s_gsm), ==, "ISP.CINGULAR");
@@ -1321,7 +1212,6 @@ test_read_gsm_connection (void)
 	g_assert_cmpstr (nm_setting_gsm_get_sim_id (s_gsm), ==, "89148000000060671234");
 	g_assert_cmpstr (nm_setting_gsm_get_sim_operator_id (s_gsm), ==, "310260");
 
-	/* ===== SERIAL SETTING ===== */
 	s_serial = nm_connection_get_setting_serial (connection);
 	g_assert (s_serial);
 	g_assert_cmpint (nm_setting_serial_get_parity (s_serial), ==, NM_SETTING_SERIAL_PARITY_ODD);
@@ -1387,25 +1277,16 @@ test_read_wired_8021x_tls_blob_connection (void)
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingWired *s_wired;
 	NMSetting8021x *s_8021x;
-	gs_free_error GError *error = NULL;
 	const char *tmp;
-	gboolean success;
 	GBytes *blob;
 
 	NMTST_EXPECT_NM_WARN ("keyfile: 802-1x.client-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
 	NMTST_EXPECT_NM_WARN ("keyfile: 802-1x.private-key: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Blob", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Blob");
 
-	/* ===== Wired Setting ===== */
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired != NULL);
 
-	/* ===== 802.1x Setting ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
 	g_assert (s_8021x != NULL);
 
@@ -1445,25 +1326,16 @@ test_read_wired_8021x_tls_bad_path_connection (void)
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingWired *s_wired;
 	NMSetting8021x *s_8021x;
-	gs_free_error GError *error = NULL;
 	const char *tmp;
 	char *tmp2;
-	gboolean success;
 
 	NMTST_EXPECT_NM_WARN ("*does not exist*");
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Path_Missing", &error);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Path_Missing");
 	g_test_assert_expected_messages ();
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
 
-	/* ===== Wired Setting ===== */
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired != NULL);
 
-	/* ===== 802.1x Setting ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
 	g_assert (s_8021x != NULL);
 
@@ -1499,25 +1371,16 @@ test_read_wired_8021x_tls_old_connection (void)
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingWired *s_wired;
 	NMSetting8021x *s_8021x;
-	gs_free_error GError *error = NULL;
 	const char *tmp;
-	gboolean success;
 
 	NMTST_EXPECT_NM_WARN ("keyfile: 802-1x.ca-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/CA/eaptest_ca_cert.pem' does not exist*");
 	NMTST_EXPECT_NM_WARN ("keyfile: 802-1x.client-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
 	NMTST_EXPECT_NM_WARN ("keyfile: 802-1x.private-key: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Old", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Old");
 
-	/* ===== Wired Setting ===== */
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired != NULL);
 
-	/* ===== 802.1x Setting ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
 	g_assert (s_8021x != NULL);
 
@@ -1547,23 +1410,14 @@ test_read_wired_8021x_tls_new_connection (void)
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingWired *s_wired;
 	NMSetting8021x *s_8021x;
-	gs_free_error GError *error = NULL;
 	const char *tmp;
 	char *tmp2;
-	gboolean success;
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_New", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_New");
 
-	/* ===== Wired Setting ===== */
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired != NULL);
 
-	/* ===== 802.1x Setting ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
 	g_assert (s_8021x != NULL);
 
@@ -1701,12 +1555,7 @@ test_write_wired_8021x_tls_connection_path (void)
 	g_clear_object (&reread);
 
 	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nms_keyfile_reader_from_file (testfile, &error);
-	if (!reread) {
-		g_assert (error);
-		g_warning ("Failed to re-read test connection: %s", error->message);
-		g_assert (reread);
-	}
+	reread = keyfile_read_connection_from_file (testfile);
 
 	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
 	if (!reread) {
@@ -1817,12 +1666,7 @@ test_write_wired_8021x_tls_connection_blob (void)
 	g_assert (g_file_test (new_priv_key, G_FILE_TEST_EXISTS));
 
 	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nms_keyfile_reader_from_file (testfile, &error);
-	if (!reread) {
-		g_assert (error);
-		g_warning ("Failed to re-read test connection: %s", error->message);
-		g_assert (reread);
-	}
+	reread = keyfile_read_connection_from_file (testfile);
 
 	/* Ensure the re-read connection's certificates use the path scheme */
 	s_8021x = nm_connection_get_setting_802_1x (reread);
@@ -1862,29 +1706,20 @@ test_read_infiniband_connection (void)
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingInfiniband *s_ib;
-	gs_free_error GError *error = NULL;
 	const char *mac;
 	guint8 expected_mac[INFINIBAND_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
-		0x77, 0x88, 0x99, 0x01, 0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78, 0x89,
-		0x90 };
+	    0x77, 0x88, 0x99, 0x01, 0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78, 0x89,
+	    0x90 };
 	const char *expected_id = "Test InfiniBand Connection";
 	const char *expected_uuid = "4e80a56d-c99f-4aad-a6dd-b449bc398c57";
-	gboolean success;
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_InfiniBand_Connection", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_InfiniBand_Connection");
 
-	/* Connection setting */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
 	g_assert_cmpstr (nm_setting_connection_get_uuid (s_con), ==, expected_uuid);
 
-	/* InfiniBand setting */
 	s_ib = nm_connection_get_setting_infiniband (connection);
 	g_assert (s_ib);
 
@@ -1952,31 +1787,21 @@ test_read_bridge_main (void)
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
 	NMSettingBridge *s_bridge;
-	gs_free_error GError *error = NULL;
 	const char *expected_id = "Test Bridge Main";
 	const char *expected_uuid = "8f061643-fe41-4d4c-a8d9-097d26e2ad3a";
-	gboolean success;
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Bridge_Main", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_Bridge_Main");
 
-	/* Connection setting */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
 	g_assert_cmpstr (nm_setting_connection_get_uuid (s_con), ==, expected_uuid);
 	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, "br0");
 
-	/* IPv4 setting */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
-	/* Bridge setting */
 	s_bridge = nm_connection_get_setting_bridge (connection);
 	g_assert (s_bridge);
 	g_assert_cmpuint (nm_setting_bridge_get_forward_delay (s_bridge), ==, 2);
@@ -2049,19 +1874,11 @@ test_read_bridge_component (void)
 	NMSettingWired *s_wired;
 	const char *mac;
 	guint8 expected_mac[ETH_ALEN] = { 0x00, 0x22, 0x15, 0x59, 0x62, 0x97 };
-	gs_free_error GError *error = NULL;
 	const char *expected_id = "Test Bridge Component";
 	const char *expected_uuid = "d7b4f96c-c45e-4298-bef8-f48574f8c1c0";
-	gboolean success;
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Bridge_Component", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_Bridge_Component");
 
-	/* Connection setting */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
@@ -2069,14 +1886,12 @@ test_read_bridge_component (void)
 	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, "br0");
 	g_assert (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BRIDGE_SETTING_NAME));
 
-	/* Wired setting */
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired);
 	mac = nm_setting_wired_get_mac_address (s_wired);
 	g_assert (mac);
 	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac, sizeof (expected_mac)));
 
-	/* BridgePort setting */
 	s_port = nm_connection_get_setting_bridge_port (connection);
 	g_assert (s_port);
 	g_assert (nm_setting_bridge_port_get_hairpin_mode (s_port));
@@ -2141,17 +1956,9 @@ test_read_new_wired_group_name (void)
 	NMSettingWired *s_wired;
 	const char *mac;
 	guint8 expected_mac[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
-	gs_free_error GError *error = NULL;
-	gboolean success;
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR"/Test_New_Wired_Group_Name", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_New_Wired_Group_Name");
 
-	/* Wired setting */
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired);
 	g_assert_cmpint (nm_setting_wired_get_mtu (s_wired), ==, 1400);
@@ -2221,14 +2028,8 @@ test_read_new_wireless_group_names (void)
 	NMSettingWirelessSecurity *s_wsec;
 	GBytes *ssid;
 	const char *expected_ssid = "foobar";
-	gs_free_error GError *error = NULL;
-	gboolean success;
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR"/Test_New_Wireless_Group_Names", &error);
-	nmtst_assert_success (connection, error);
-
-	success = nm_connection_verify (connection, &error);
-	nmtst_assert_success (success, error);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_New_Wireless_Group_Names");
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
@@ -2323,17 +2124,9 @@ test_read_missing_vlan_setting (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingVlan *s_vlan;
-	gs_free_error GError *error = NULL;
-	gboolean success;
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR"/Test_Missing_Vlan_Setting", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_Missing_Vlan_Setting");
 
-	/* Ensure the VLAN setting exists */
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_assert (s_vlan);
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 0);
@@ -2345,17 +2138,9 @@ test_read_missing_vlan_flags (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingVlan *s_vlan;
-	gs_free_error GError *error = NULL;
-	gboolean success;
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR"/Test_Missing_Vlan_Flags", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_Missing_Vlan_Flags");
 
-	/* Ensure the VLAN setting exists */
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_assert (s_vlan);
 
@@ -2368,19 +2153,15 @@ static void
 test_read_missing_id_uuid (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_free_error GError *error = NULL;
-	gboolean success;
+	gs_free char *expected_uuid = NULL;
+	const char *FILENAME = TEST_KEYFILES_DIR"/Test_Missing_ID_UUID";
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR"/Test_Missing_ID_UUID", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	expected_uuid = _nm_utils_uuid_generate_from_strings ("keyfile", FILENAME, NULL);
 
-	/* Ensure the ID and UUID properties are there */
+	connection = keyfile_read_connection_from_file (FILENAME);
+
 	g_assert_cmpstr (nm_connection_get_id (connection), ==, "Test_Missing_ID_UUID");
-	g_assert (nm_connection_get_uuid (connection));
+	g_assert_cmpstr (nm_connection_get_uuid (connection), ==, expected_uuid);
 }
 
 static void
@@ -2468,17 +2249,9 @@ test_read_enum_property (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingIPConfig *s_ip6;
-	gs_free_error GError *error = NULL;
-	gboolean success;
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR"/Test_Enum_Property", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_Enum_Property");
 
-	/* IPv6 setting */
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
 	g_assert_cmpint (nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6)), ==, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
@@ -2528,17 +2301,9 @@ test_read_flags_property (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingGsm *s_gsm;
-	gs_free_error GError *error = NULL;
-	gboolean success;
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR"/Test_Flags_Property", &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_Flags_Property");
 
-	/* GSM setting */
 	s_gsm = nm_connection_get_setting_gsm (connection);
 	g_assert (s_gsm);
 	g_assert_cmpint (nm_setting_gsm_get_password_flags (s_gsm), ==,
@@ -2591,14 +2356,8 @@ test_read_tc_config (void)
 	NMTCQdisc *qdisc1, *qdisc2;
 	NMTCAction *action1, *action2;
 	NMTCTfilter *tfilter1, *tfilter2;
-	gs_free_error GError *error = NULL;
-	gboolean success;
 
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_TC_Config", NULL);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR "/Test_TC_Config");
 
 	s_tc = nm_connection_get_setting_tc_config (connection);
 	g_assert (s_tc);
