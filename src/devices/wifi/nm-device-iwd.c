@@ -71,6 +71,7 @@ typedef struct {
 	GDBusProxy *    dbus_device_proxy;
 	GDBusProxy *    dbus_station_proxy;
 	GDBusProxy *    dbus_ap_proxy;
+	GDBusProxy *    dbus_adhoc_proxy;
 	CList           aps_lst_head;
 	NMWifiAP *      current_ap;
 	GCancellable *  cancellable;
@@ -637,6 +638,18 @@ check_connection_compatible (NMDevice *device, NMConnection *connection, GError 
 			                            "IWD backend only supports PSK authentication in AP mode");
 			return FALSE;
 		}
+	} else if (nm_streq (mode, NM_SETTING_WIRELESS_MODE_ADHOC)) {
+		if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_ADHOC)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "device does not support Ad-Hoc mode");
+			return FALSE;
+		}
+
+		if (!NM_IN_SET (security, NM_IWD_NETWORK_SECURITY_NONE, NM_IWD_NETWORK_SECURITY_PSK)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "IWD backend only supports Open and PSK authentication in Ad-Hoc mode");
+			return FALSE;
+		}
 	} else {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 		                            "%s type profiles not supported by IWD backend");
@@ -680,16 +693,10 @@ check_connection_available (NMDevice *device,
 		}
 	}
 
-	/* AP connections can be activated independent of the scan list */
+	/* AP and Ad-Hoc connections can be activated independent of the scan list */
 	mode = nm_setting_wireless_get_mode (s_wifi);
-	if (NM_IN_STRSET (mode, NM_SETTING_WIRELESS_MODE_AP))
+	if (NM_IN_STRSET (mode, NM_SETTING_WIRELESS_MODE_AP, NM_SETTING_WIRELESS_MODE_ADHOC))
 		return TRUE;
-
-	if (!NM_IN_STRSET (mode, NULL, NM_SETTING_WIRELESS_MODE_INFRA)) {
-		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-		                            "only AP and infrastructure modes supported by IWD backend");
-		return FALSE;
-	}
 
 	/* 8021x networks can only be used if they've been provisioned on the IWD side and
 	 * thus are Known Networks.
@@ -762,11 +769,16 @@ complete_connection (NMDevice *device,
 		/* Find a compatible AP in the scan list */
 		ap = nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection);
 		if (!ap) {
-			g_set_error_literal (error,
-			                     NM_DEVICE_ERROR,
-			                     NM_DEVICE_ERROR_INVALID_CONNECTION,
-			                     "No compatible AP in the scan list and hidden SSIDs not supported.");
-			return FALSE;
+			if (!nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC)) {
+				g_set_error_literal (error,
+				                     NM_DEVICE_ERROR,
+				                     NM_DEVICE_ERROR_INVALID_CONNECTION,
+				                     "No compatible AP in the scan list and hidden SSIDs not supported.");
+				return FALSE;
+			}
+
+			if (!nm_setting_verify (NM_SETTING (s_wifi), connection, error))
+				return FALSE;
 		}
 	} else {
 		ap = nm_wifi_ap_lookup_for_device (NM_DEVICE (self), specific_object);
@@ -1485,9 +1497,9 @@ error:
 	reset_mode (self, priv->cancellable, act_failed_cb, self);
 }
 
-/* Check if we're activating an AP connection and if the target
- * DBus interface has appeared already.  If so proceed to call Start on
- * that interface.
+/* Check if we're activating an AP/AdHoc connection and if the target
+ * DBus interface has appeared already.  If so proceed to call Start or
+ * StartOpen on that interface.
  */
 static void act_check_interface (NMDeviceIwd *self)
 {
@@ -1497,18 +1509,25 @@ static void act_check_interface (NMDeviceIwd *self)
 	NMConnection *connection;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
+	GDBusProxy *proxy = NULL;
 	GBytes *ssid;
 	gs_free char *ssid_utf8 = NULL;
-	const char *psk;
-
-	if (!priv->dbus_ap_proxy)
-		return;
+	const char *mode;
 
 	if (!priv->act_mode_switch)
 		return;
 
 	connection = nm_device_get_settings_connection_get_connection (device);
 	s_wireless = nm_connection_get_setting_wireless (connection);
+
+	mode = nm_setting_wireless_get_mode (s_wireless);
+	if (nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_AP))
+		proxy = priv->dbus_ap_proxy;
+	else if (nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC))
+		proxy = priv->dbus_adhoc_proxy;
+
+	if (!proxy)
+		return;
 
 	priv->act_mode_switch = FALSE;
 
@@ -1523,18 +1542,26 @@ static void act_check_interface (NMDeviceIwd *self)
 
 	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
 
-	psk = nm_setting_wireless_security_get_psk (s_wireless_sec);
-	if (!psk) {
-		_LOGE (LOGD_DEVICE | LOGD_WIFI,
-		       "Activation: (wifi) No PSK for '%s'.",
-		       ssid_utf8);
-		goto failed;
-	}
+	if (!s_wireless_sec) {
+		g_dbus_proxy_call (proxy, "StartOpen",
+		                   g_variant_new ("(s)", ssid_utf8),
+		                   G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
+		                   priv->cancellable, act_start_cb, self);
+	} else {
+		const char *psk = nm_setting_wireless_security_get_psk (s_wireless_sec);
 
-	g_dbus_proxy_call (priv->dbus_ap_proxy, "Start",
-	                   g_variant_new ("(ss)", ssid_utf8, psk),
-	                   G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
-	                   priv->cancellable, act_start_cb, self);
+		if (!psk) {
+			_LOGE (LOGD_DEVICE | LOGD_WIFI,
+			       "Activation: (wifi) No PSK for '%s'.",
+			       ssid_utf8);
+			goto failed;
+		}
+
+		g_dbus_proxy_call (proxy, "Start",
+		                   g_variant_new ("(ss)", ssid_utf8, psk),
+		                   G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
+		                   priv->cancellable, act_start_cb, self);
+	}
 
 	_LOGD (LOGD_DEVICE | LOGD_WIFI,
 	       "Activation: (wifi) Called Start('%s').",
@@ -1734,12 +1761,16 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		                   priv->cancellable, network_connect_cb, self);
 
 		g_object_unref (network_proxy);
-	} else if (NM_IN_STRSET (mode, NM_SETTING_WIRELESS_MODE_AP)) {
-		/* We need to first set interface mode (Device.Mode) to ap.
-		 * We can't directly queue a call to the Start method on
+	} else if (NM_IN_STRSET (mode, NM_SETTING_WIRELESS_MODE_AP, NM_SETTING_WIRELESS_MODE_ADHOC)) {
+		const char *iwd_mode;
+
+		/* We need to first set interface mode (Device.Mode) to ap or ad-hoc.
+		 * We can't directly queue a call to the Start/StartOpen method on
 		 * the DBus interface that's going to be created after the property
 		 * set call returns.
 		 */
+		iwd_mode = nm_streq (mode, NM_SETTING_WIRELESS_MODE_AP) ? "ap" : "ad-hoc";
+
 		if (!priv->cancellable)
 			priv->cancellable = g_cancellable_new ();
 
@@ -1747,7 +1778,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		                   DBUS_INTERFACE_PROPERTIES ".Set",
 		                   g_variant_new ("(ssv)", NM_IWD_DEVICE_INTERFACE,
 		                                  "Mode",
-		                                  g_variant_new ("s", "ap")),
+		                                  g_variant_new ("s", iwd_mode)),
 		                   G_DBUS_CALL_FLAGS_NONE, 2000,
 		                   priv->cancellable, act_set_mode_cb, self);
 		priv->act_mode_switch = TRUE;
@@ -2102,8 +2133,8 @@ station_properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
 }
 
 static void
-ap_properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
-                       GStrv invalidate_properties, gpointer user_data)
+ap_adhoc_properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
+                             GStrv invalidate_properties, gpointer user_data)
 {
 	NMDeviceIwd *self = user_data;
 	GVariantIter *iter;
@@ -2115,7 +2146,7 @@ ap_properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
 		if (nm_streq (key, "Started")) {
 			gboolean new_started = get_variant_boolean (value, "Started");
 
-			_LOGI (LOGD_DEVICE | LOGD_WIFI, "IWD AP state is now %s", new_started ? "Started" : "Stopped");
+			_LOGI (LOGD_DEVICE | LOGD_WIFI, "IWD AP/AdHoc state is now %s", new_started ? "Started" : "Stopped");
 		}
 
 		g_variant_unref (value);
@@ -2139,14 +2170,14 @@ powered_changed (NMDeviceIwd *self, gboolean new_powered)
 
 	if (priv->dbus_ap_proxy) {
 		g_signal_handlers_disconnect_by_func (priv->dbus_ap_proxy,
-		                                      ap_properties_changed, self);
+		                                      ap_adhoc_properties_changed, self);
 		g_clear_object (&priv->dbus_ap_proxy);
 	}
 
 	if (interface) {
 		priv->dbus_ap_proxy = G_DBUS_PROXY (interface);
 		g_signal_connect (priv->dbus_ap_proxy, "g-properties-changed",
-		                  G_CALLBACK (ap_properties_changed), self);
+		                  G_CALLBACK (ap_adhoc_properties_changed), self);
 
 		if (priv->act_mode_switch)
 			act_check_interface (self);
@@ -2154,7 +2185,30 @@ powered_changed (NMDeviceIwd *self, gboolean new_powered)
 			reset_mode (self, NULL, NULL, NULL);
 	}
 
-	if (new_powered && !priv->dbus_ap_proxy) {
+	interface = new_powered ? g_dbus_object_get_interface (priv->dbus_obj, NM_IWD_ADHOC_INTERFACE) : NULL;
+
+	if (priv->dbus_adhoc_proxy) {
+		g_signal_handlers_disconnect_by_func (priv->dbus_adhoc_proxy,
+		                                      ap_adhoc_properties_changed, self);
+		g_clear_object (&priv->dbus_adhoc_proxy);
+	}
+
+	if (interface) {
+		priv->dbus_adhoc_proxy = G_DBUS_PROXY (interface);
+		g_signal_connect (priv->dbus_adhoc_proxy, "g-properties-changed",
+		                  G_CALLBACK (ap_adhoc_properties_changed), self);
+
+		if (priv->act_mode_switch)
+			act_check_interface (self);
+		else
+			reset_mode (self, NULL, NULL, NULL);
+	}
+
+	/* We expect one of the three interfaces to always be present when
+	 * device is Powered so if AP and AdHoc are not present we should
+	 * be in station mode.
+	 */
+	if (new_powered && !priv->dbus_ap_proxy && !priv->dbus_adhoc_proxy) {
 		interface = g_dbus_object_get_interface (priv->dbus_obj, NM_IWD_STATION_INTERFACE);
 		if (!interface) {
 			/* No Station interface on the device object.  Check if the
@@ -2422,6 +2476,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->dbus_device_proxy);
 	g_clear_object (&priv->dbus_station_proxy);
 	g_clear_object (&priv->dbus_ap_proxy);
+	g_clear_object (&priv->dbus_adhoc_proxy);
 	g_clear_object (&priv->dbus_obj);
 
 	remove_all_aps (self);
