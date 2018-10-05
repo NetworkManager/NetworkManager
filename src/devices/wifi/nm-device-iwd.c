@@ -70,6 +70,7 @@ typedef struct {
 	GDBusObject *   dbus_obj;
 	GDBusProxy *    dbus_device_proxy;
 	GDBusProxy *    dbus_station_proxy;
+	GDBusProxy *    dbus_ap_proxy;
 	CList           aps_lst_head;
 	NMWifiAP *      current_ap;
 	GCancellable *  cancellable;
@@ -81,6 +82,7 @@ typedef struct {
 	bool            can_connect:1;
 	bool            scanning:1;
 	bool            scan_requested:1;
+	bool            act_mode_switch:1;
 	gint64          last_scan;
 } NMDeviceIwdPrivate;
 
@@ -441,36 +443,55 @@ cleanup_association_attempt (NMDeviceIwd *self, gboolean disconnect)
 }
 
 static void
+reset_mode (NMDeviceIwd *self, GCancellable *cancellable, GAsyncReadyCallback callback, gpointer user_data)
+{
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+
+	g_dbus_proxy_call (priv->dbus_device_proxy,
+	                   DBUS_INTERFACE_PROPERTIES ".Set",
+	                   g_variant_new ("(ssv)", NM_IWD_DEVICE_INTERFACE,
+	                                  "Mode",
+	                                  g_variant_new_string ("station")),
+	                   G_DBUS_CALL_FLAGS_NONE, 2000,
+	                   cancellable, callback, user_data);
+}
+
+static void
 deactivate (NMDevice *device)
 {
-	cleanup_association_attempt (NM_DEVICE_IWD (device), TRUE);
+	NMDeviceIwd *self = NM_DEVICE_IWD (device);
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+
+	if (!priv->dbus_obj)
+		return;
+
+	cleanup_association_attempt (self, TRUE);
+	priv->act_mode_switch = FALSE;
+
+	if (!priv->dbus_station_proxy)
+		reset_mode (self, NULL, NULL, NULL);
 }
 
 static gboolean
 deactivate_async_finish (NMDevice *device, GAsyncResult *res, GError **error)
 {
-	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (NM_DEVICE_IWD (device));
-	gs_unref_variant GVariant *variant = NULL;
-
-	variant = g_dbus_proxy_call_finish (priv->dbus_station_proxy, res, error);
-	return variant != NULL;
+	return g_task_propagate_boolean (G_TASK (res), error);
 }
-
-typedef struct {
-	NMDeviceIwd *self;
-	GAsyncReadyCallback callback;
-	gpointer user_data;
-} DeactivateContext;
 
 static void
 disconnect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 {
-	DeactivateContext *ctx = user_data;
+	GTask *task = user_data;
+	gs_unref_variant GVariant *variant = NULL;
+	GError *error = NULL;
 
-	ctx->callback (G_OBJECT (ctx->self), res, ctx->user_data);
+	variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), res, &error);
+	if (variant)
+		g_task_return_boolean (task, TRUE);
+	else
+		g_task_return_error (task, error);
 
-	g_object_unref (ctx->self);
-	g_slice_free (DeactivateContext, ctx);
+	g_object_unref (task);
 }
 
 static void
@@ -481,15 +502,24 @@ deactivate_async (NMDevice *device,
 {
 	NMDeviceIwd *self = NM_DEVICE_IWD (device);
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
-	DeactivateContext *ctx;
+	GTask *task;
 
-	ctx = g_slice_new0 (DeactivateContext);
-	ctx->self = g_object_ref (self);
-	ctx->callback = callback;
-	ctx->user_data = user_data;
+	task = g_task_new (self, cancellable, callback, user_data);
 
-	g_dbus_proxy_call (priv->dbus_station_proxy, "Disconnect", g_variant_new ("()"),
-	                   G_DBUS_CALL_FLAGS_NONE, -1, cancellable, disconnect_cb, ctx);
+	if (!priv->dbus_obj) {
+		g_task_return_boolean (task, TRUE);
+		g_object_unref (task);
+		return;
+	}
+
+	cleanup_association_attempt (self, FALSE);
+	priv->act_mode_switch = FALSE;
+
+	if (priv->dbus_station_proxy) {
+		g_dbus_proxy_call (priv->dbus_station_proxy, "Disconnect", g_variant_new ("()"),
+		                   G_DBUS_CALL_FLAGS_NONE, -1, cancellable, disconnect_cb, task);
+	} else
+		reset_mode (self, cancellable, disconnect_cb, task);
 }
 
 static gboolean
@@ -522,11 +552,16 @@ is_connection_known_network (NMConnection *connection)
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
+	NMDeviceIwd *self = NM_DEVICE_IWD (device);
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMSettingWireless *s_wireless;
 	const char *mac;
 	const char * const *mac_blacklist;
 	int i;
 	const char *perm_hw_addr;
+	const char *mode;
+	NMIwdNetworkSecurity security;
+	gboolean mapped;
 
 	if (!NM_DEVICE_CLASS (nm_device_iwd_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
@@ -559,23 +594,53 @@ check_connection_compatible (NMDevice *device, NMConnection *connection, GError 
 		return FALSE;
 	}
 
-	if (!NM_IN_STRSET (nm_setting_wireless_get_mode (s_wireless),
-	                   NULL,
-	                   NM_SETTING_WIRELESS_MODE_INFRA)) {
+	/* Hidden SSIDs not supported in any mode (client or AP) */
+	if (nm_setting_wireless_get_hidden (s_wireless)) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-		                            "IWD only support infrastructure type profiles");
+		                            "hidden networks not supported by the IWD backend");
 		return FALSE;
 	}
 
-	/* 8021x networks can only be used if they've been provisioned on the IWD side and
-	 * thus are Known Networks.
-	 */
-	if (nm_wifi_connection_get_iwd_security (connection, NULL) == NM_IWD_NETWORK_SECURITY_8021X) {
-		if (!is_connection_known_network (connection)) {
+	security = nm_wifi_connection_get_iwd_security (connection, &mapped);
+	if (!mapped) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "connection authentication type not supported by IWD backend");
+		return FALSE;
+	}
+
+	mode = nm_setting_wireless_get_mode (s_wireless);
+	if (NM_IN_STRSET (mode, NULL, NM_SETTING_WIRELESS_MODE_INFRA)) {
+		/* 8021x networks can only be used if they've been provisioned on the IWD side and
+		 * thus are Known Networks.
+		 */
+		if (security == NM_IWD_NETWORK_SECURITY_8021X) {
+			if (!is_connection_known_network (connection)) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                            "802.1x connections must have IWD provisioning files");
+				return FALSE;
+			}
+		} else if (!NM_IN_SET (security, NM_IWD_NETWORK_SECURITY_NONE, NM_IWD_NETWORK_SECURITY_PSK)) {
 			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-			                            "802.1x profile is not a known network");
+			                            "IWD backend only supports Open, PSK and 802.1x network "
+			                            "authentication in Infrastructure mode");
 			return FALSE;
 		}
+	} else if (nm_streq (mode, NM_SETTING_WIRELESS_MODE_AP)) {
+		if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_AP)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "device does not support Access Point mode");
+			return FALSE;
+		}
+
+		if (!NM_IN_SET (security, NM_IWD_NETWORK_SECURITY_PSK)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "IWD backend only supports PSK authentication in AP mode");
+			return FALSE;
+		}
+	} else {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "%s type profiles not supported by IWD backend");
+		return FALSE;
 	}
 
 	return TRUE;
@@ -596,32 +661,6 @@ check_connection_available (NMDevice *device,
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wifi, FALSE);
 
-	/* Only Infrastrusture mode at this time */
-	mode = nm_setting_wireless_get_mode (s_wifi);
-	if (!NM_IN_STRSET (mode, NULL, NM_SETTING_WIRELESS_MODE_INFRA)) {
-		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-		                            "iwd only supports infrastructure mode connections");
-		return FALSE;
-	}
-
-	/* Hidden SSIDs not supported yet */
-	if (nm_setting_wireless_get_hidden (s_wifi)) {
-		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-		                            "hidden networks not supported by iwd");
-		return FALSE;
-	}
-
-	/* 8021x networks can only be used if they've been provisioned on the IWD side and
-	 * thus are Known Networks.
-	 */
-	if (nm_wifi_connection_get_iwd_security (connection, NULL) == NM_IWD_NETWORK_SECURITY_8021X) {
-		if (!is_connection_known_network (connection)) {
-			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-			                            "network is not known to iwd");
-			return FALSE;
-		}
-	}
-
 	/* a connection that is available for a certain @specific_object, MUST
 	 * also be available in general (without @specific_object). */
 
@@ -639,13 +678,34 @@ check_connection_available (NMDevice *device,
 			                            "requested access point is not compatible with profile");
 			return FALSE;
 		}
+	}
+
+	/* AP connections can be activated independent of the scan list */
+	mode = nm_setting_wireless_get_mode (s_wifi);
+	if (NM_IN_STRSET (mode, NM_SETTING_WIRELESS_MODE_AP))
 		return TRUE;
+
+	if (!NM_IN_STRSET (mode, NULL, NM_SETTING_WIRELESS_MODE_INFRA)) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "only AP and infrastructure modes supported by IWD backend");
+		return FALSE;
+	}
+
+	/* 8021x networks can only be used if they've been provisioned on the IWD side and
+	 * thus are Known Networks.
+	 */
+	if (nm_wifi_connection_get_iwd_security (connection, NULL) == NM_IWD_NETWORK_SECURITY_8021X) {
+		if (!is_connection_known_network (connection)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "802.1x network is not an IWD Known Network (missing provisioning file?)");
+			return FALSE;
+		}
 	}
 
 	if (NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
 		return TRUE;
 
-	if (!nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection)) {
+	if (!specific_object && !nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection)) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 		                            "no compatible access point found");
 		return FALSE;
@@ -676,15 +736,11 @@ complete_connection (NMDevice *device,
 
 	mode = s_wifi ? nm_setting_wireless_get_mode (s_wifi) : NULL;
 
-	if (mode && !nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_INFRA)) {
-		g_set_error_literal (error,
-		                     NM_DEVICE_ERROR,
-		                     NM_DEVICE_ERROR_INVALID_CONNECTION,
-		                     "Only Infrastructure mode is supported.");
-		return FALSE;
-	}
-
-	if (!specific_object) {
+	if (nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_AP)) {
+		if (!nm_setting_verify (NM_SETTING (s_wifi), connection, error))
+			return FALSE;
+		ap = NULL;
+	} else if (!specific_object) {
 		/* If not given a specific object, we need at minimum an SSID */
 		if (!s_wifi) {
 			g_set_error_literal (error,
@@ -730,7 +786,10 @@ complete_connection (NMDevice *device,
 		nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 	}
 
-	ssid = nm_wifi_ap_get_ssid (ap);
+	ssid = nm_setting_wireless_get_ssid (s_wifi);
+	if (!ssid && ap)
+		ssid = nm_wifi_ap_get_ssid (ap);
+
 	if (!ssid) {
 		g_set_error_literal (error,
 		                     NM_DEVICE_ERROR,
@@ -739,11 +798,13 @@ complete_connection (NMDevice *device,
 		return FALSE;
 	}
 
-	if (!nm_wifi_ap_complete_connection (ap,
-	                                     connection,
-	                                     nm_wifi_utils_is_manf_default_ssid (ssid),
-	                                     error))
-		return FALSE;
+	if (ap) {
+		if (!nm_wifi_ap_complete_connection (ap,
+		                                     connection,
+		                                     nm_wifi_utils_is_manf_default_ssid (ssid),
+		                                     error))
+			return FALSE;
+	}
 
 	ssid_utf8 = _nm_utils_ssid_to_utf8 (ssid);
 	nm_utils_complete_generic (nm_device_get_platform (device),
@@ -754,19 +815,6 @@ complete_connection (NMDevice *device,
 	                           ssid_utf8,
 	                           NULL,
 	                           TRUE);
-
-	/* 8021x networks can only be used if they've been provisioned on the IWD side and
-	 * thus are Known Networks.
-	 */
-	if (nm_wifi_connection_get_iwd_security (connection, NULL) == NM_IWD_NETWORK_SECURITY_8021X) {
-		if (!is_connection_known_network (connection)) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_DEVICE_ERROR_INVALID_CONNECTION,
-			                     "This 8021x network has not been provisioned on this machine");
-			return FALSE;
-		}
-	}
 
 	perm_hw_addr = nm_device_get_permanent_hw_address (device);
 	if (perm_hw_addr) {
@@ -830,8 +878,20 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceIwd *self = NM_DEVICE_IWD (device);
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	NMDeviceState state = nm_device_get_state (device);
 
-	return priv->enabled && priv->dbus_station_proxy;
+	/* Available if either the device is UP and in station mode
+	 * or in AP/Ad-Hoc modes while activating or activated.  Device
+	 * may be temporarily DOWN while activating or deactivating and
+	 * we don't want it to be marked unavailable because of this.
+	 *
+	 * For reference:
+	 * We call nm_device_queue_recheck_available whenever
+	 * priv->enabled changes or priv->dbus_station_proxy changes.
+	 */
+	return    priv->enabled
+	       && (   priv->dbus_station_proxy
+	           || (state >= NM_DEVICE_STATE_CONFIG && state <= NM_DEVICE_STATE_DEACTIVATING));
 }
 
 static gboolean
@@ -839,8 +899,7 @@ get_autoconnect_allowed (NMDevice *device)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (NM_DEVICE_IWD (device));
 
-	return is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)
-	       && priv->can_connect;
+	return priv->can_connect;
 }
 
 static gboolean
@@ -866,7 +925,9 @@ can_auto_connect (NMDevice *device,
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wifi, FALSE);
 
-	/* Only Infrastrusture mode */
+	/* Don't auto-activate AP or Ad-Hoc connections.
+	 * Note the wpa_supplicant backend has the opposite policy.
+	 */
 	mode = nm_setting_wireless_get_mode (s_wifi);
 	if (mode && g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) != 0)
 		return FALSE;
@@ -877,14 +938,6 @@ can_auto_connect (NMDevice *device,
 	 */
 	if (nm_settings_connection_get_timestamp (sett_conn, &timestamp)) {
 		if (timestamp == 0)
-			return FALSE;
-	}
-
-	/* 8021x networks can only be used if they've been provisioned on the IWD side and
-	 * thus are Known Networks.
-	 */
-	if (nm_wifi_connection_get_iwd_security (connection, NULL) == NM_IWD_NETWORK_SECURITY_8021X) {
-		if (!is_connection_known_network (connection))
 			return FALSE;
 	}
 
@@ -968,9 +1021,7 @@ dbus_request_scan_cb (NMDevice *device,
 
 	priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
-	if (   !priv->can_scan
-	    || nm_device_get_state (device) < NM_DEVICE_STATE_DISCONNECTED
-	    || nm_device_is_activating (device)) {
+	if (!priv->can_scan) {
 		g_dbus_method_invocation_return_error_literal (context,
 		                                               NM_DEVICE_ERROR,
 		                                               NM_DEVICE_ERROR_NOT_ALLOWED,
@@ -1009,9 +1060,7 @@ _nm_device_iwd_request_scan (NMDeviceIwd *self,
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
 
-	if (   !priv->can_scan
-	    || nm_device_get_state (device) < NM_DEVICE_STATE_DISCONNECTED
-	    || nm_device_is_activating (device)) {
+	if (!priv->can_scan) {
 		g_dbus_method_invocation_return_error_literal (invocation,
 		                                               NM_DEVICE_ERROR,
 		                                               NM_DEVICE_ERROR_NOT_ALLOWED,
@@ -1051,8 +1100,6 @@ scanning_prohibited (NMDeviceIwd *self, gboolean periodic)
 		return TRUE;
 	case NM_DEVICE_STATE_DISCONNECTED:
 	case NM_DEVICE_STATE_FAILED:
-		/* Can always scan when disconnected */
-		return FALSE;
 	case NM_DEVICE_STATE_ACTIVATED:
 		break;
 	}
@@ -1369,6 +1416,168 @@ failed:
 }
 
 static void
+act_failed_cb (GObject *source, GAsyncResult *res, gpointer user_data)
+{
+	NMDeviceIwd *self = user_data;
+	NMDevice *device = NM_DEVICE (self);
+	gs_unref_variant GVariant *variant = NULL;
+	gs_free_error GError *error = NULL;
+
+	variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), res, &error);
+	if (!variant && nm_utils_error_is_cancelled (error, FALSE))
+		return;
+
+	/* Change state to FAILED unless already done by state_changed
+	 * which may have been triggered by the station interface
+	 * appearing on DBus.
+	 */
+	if (nm_device_get_state (device) == NM_DEVICE_STATE_CONFIG)
+		nm_device_queue_state (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+}
+
+static void
+act_start_cb (GObject *source, GAsyncResult *res, gpointer user_data)
+{
+	NMDeviceIwd *self = user_data;
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	NMDevice *device = NM_DEVICE (self);
+	gs_unref_variant GVariant *variant = NULL;
+	gs_free_error GError *error = NULL;
+	NMSettingWireless *s_wireless;
+	GBytes *ssid;
+	gs_free char *ssid_utf8 = NULL;
+
+	variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), res, &error);
+	if (!variant) {
+		_LOGE (LOGD_DEVICE | LOGD_WIFI,
+		       "Activation: (wifi) Network.Connect failed: %s",
+		       error->message);
+
+		if (nm_utils_error_is_cancelled (error, FALSE))
+			return;
+
+		if (!NM_IN_SET (nm_device_get_state (device), NM_DEVICE_STATE_CONFIG))
+			return;
+
+		goto error;
+	}
+
+	nm_assert (nm_device_get_state (device) == NM_DEVICE_STATE_CONFIG);
+
+	s_wireless = (NMSettingWireless *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRELESS);
+	if (!s_wireless)
+		goto error;
+
+	ssid = nm_setting_wireless_get_ssid (s_wireless);
+	if (!ssid)
+		goto error;
+
+	ssid_utf8 = _nm_utils_ssid_to_utf8 (ssid);
+
+	_LOGI (LOGD_DEVICE | LOGD_WIFI,
+	       "Activation: (wifi) Stage 2 of 5 (Device Configure) successful.  Started '%s'.",
+	       ssid_utf8);
+
+	nm_device_activate_schedule_stage3_ip_config_start (device);
+	return;
+
+error:
+	reset_mode (self, priv->cancellable, act_failed_cb, self);
+}
+
+/* Check if we're activating an AP connection and if the target
+ * DBus interface has appeared already.  If so proceed to call Start on
+ * that interface.
+ */
+static void act_check_interface (NMDeviceIwd *self)
+{
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	NMDevice *device = NM_DEVICE (self);
+	gs_free_error GError *error = NULL;
+	NMConnection *connection;
+	NMSettingWireless *s_wireless;
+	NMSettingWirelessSecurity *s_wireless_sec;
+	GBytes *ssid;
+	gs_free char *ssid_utf8 = NULL;
+	const char *psk;
+
+	if (!priv->dbus_ap_proxy)
+		return;
+
+	if (!priv->act_mode_switch)
+		return;
+
+	connection = nm_device_get_settings_connection_get_connection (device);
+	s_wireless = nm_connection_get_setting_wireless (connection);
+
+	priv->act_mode_switch = FALSE;
+
+	if (!NM_IN_SET (nm_device_get_state (device), NM_DEVICE_STATE_CONFIG))
+		return;
+
+	ssid = nm_setting_wireless_get_ssid (s_wireless);
+	if (!ssid)
+		goto failed;
+
+	ssid_utf8 = _nm_utils_ssid_to_utf8 (ssid);
+
+	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
+
+	psk = nm_setting_wireless_security_get_psk (s_wireless_sec);
+	if (!psk) {
+		_LOGE (LOGD_DEVICE | LOGD_WIFI,
+		       "Activation: (wifi) No PSK for '%s'.",
+		       ssid_utf8);
+		goto failed;
+	}
+
+	g_dbus_proxy_call (priv->dbus_ap_proxy, "Start",
+	                   g_variant_new ("(ss)", ssid_utf8, psk),
+	                   G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
+	                   priv->cancellable, act_start_cb, self);
+
+	_LOGD (LOGD_DEVICE | LOGD_WIFI,
+	       "Activation: (wifi) Called Start('%s').",
+	       ssid_utf8);
+	return;
+
+failed:
+	reset_mode (self, priv->cancellable, act_failed_cb, self);
+}
+
+static void
+act_set_mode_cb (GObject *source, GAsyncResult *res, gpointer user_data)
+{
+	NMDeviceIwd *self = user_data;
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	NMDevice *device = NM_DEVICE (self);
+	gs_unref_variant GVariant *variant = NULL;
+	gs_free_error GError *error = NULL;
+
+	variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), res, &error);
+	if (!variant) {
+		_LOGE (LOGD_DEVICE | LOGD_WIFI,
+		       "Activation: (wifi) Setting Device.Mode failed: %s",
+		       error->message);
+
+		if (nm_utils_error_is_cancelled (error, FALSE))
+			return;
+
+		if (   !NM_IN_SET (nm_device_get_state (device), NM_DEVICE_STATE_CONFIG)
+		    || !priv->act_mode_switch)
+			return;
+
+		priv->act_mode_switch = FALSE;
+		nm_device_queue_state (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+		return;
+	}
+
+	_LOGD (LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi) IWD Device.Mode set successfully");
+
+	act_check_interface (self);
+}
+
+static void
 set_powered (NMDeviceIwd *self, gboolean powered)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
@@ -1394,6 +1603,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMActRequest *req;
 	NMConnection *connection;
 	NMSettingWireless *s_wireless;
+	const char *mode;
 	const char *ap_path;
 
 	ret = NM_DEVICE_CLASS (nm_device_iwd_parent_class)->act_stage1_prepare (device, out_failure_reason);
@@ -1409,20 +1619,51 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wireless, NM_ACT_STAGE_RETURN_FAILURE);
 
+	/* AP mode never uses a specific object or existing scanned AP */
+	mode = nm_setting_wireless_get_mode (s_wireless);
+	if (nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_AP))
+		goto add_new;
+
 	ap_path = nm_active_connection_get_specific_object (NM_ACTIVE_CONNECTION (req));
 	ap = ap_path ? nm_wifi_ap_lookup_for_device (NM_DEVICE (self), ap_path) : NULL;
-	if (!ap) {
-		ap = nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection);
-		if (!ap) {
-			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
-			return NM_ACT_STAGE_RETURN_FAILURE;
-		}
-
-		nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req),
-		                                          nm_dbus_object_get_path (NM_DBUS_OBJECT (ap)));
+	if (ap) {
+		set_current_ap (self, ap, TRUE);
+		return NM_ACT_STAGE_RETURN_SUCCESS;
 	}
 
+	ap = nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection);
+	if (ap) {
+		nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req),
+		                                          nm_dbus_object_get_path (NM_DBUS_OBJECT (ap)));
+		set_current_ap (self, ap, TRUE);
+		return NM_ACT_STAGE_RETURN_SUCCESS;
+	}
+
+	if (nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_INFRA)) {
+		/* Hidden networks not supported at this time */
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
+add_new:
+	/* If the user is trying to connect to an AP that NM doesn't yet know about
+	 * (hidden network or something) or starting a Hotspot, create an fake AP
+	 * from the security settings in the connection.  This "fake" AP gets used
+	 * until the real one is found in the scan list (Ad-Hoc or Hidden), or until
+	 * the device is deactivated (Ad-Hoc or Hotspot).
+	 */
+	ap = nm_wifi_ap_new_fake_from_connection (connection);
+	g_return_val_if_fail (ap != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	if (nm_wifi_ap_is_hotspot (ap))
+		nm_wifi_ap_set_address (ap, nm_device_get_hw_address (device));
+
+	g_object_freeze_notify (G_OBJECT (self));
+	ap_add_remove (self, TRUE, ap, FALSE);
+	g_object_thaw_notify (G_OBJECT (self));
 	set_current_ap (self, ap, FALSE);
+	nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req),
+	                                          nm_dbus_object_get_path (NM_DBUS_OBJECT (ap)));
+	g_object_unref (ap);
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
@@ -1433,60 +1674,84 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMActRequest *req;
-	NMWifiAP *ap;
 	NMConnection *connection;
-	GDBusProxy *network_proxy;
+	NMSettingWireless *s_wireless;
+	const char *mode;
 
 	req = nm_device_get_act_request (device);
 	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
 
-	ap = priv->current_ap;
-	if (!ap) {
-		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-		goto out;
-	}
-
 	connection = nm_act_request_get_applied_connection (req);
 	g_assert (connection);
 
-	/* 802.1x networks that are not IWD Known Networks will definitely
-	 * fail, for other combinations we will let the Connect call fail
-	 * or ask us for any missing secrets through the Agent.
-	 */
-	if (   !is_connection_known_network (connection)
-	    && nm_connection_get_setting_802_1x (connection)) {
-		_LOGI (LOGD_DEVICE | LOGD_WIFI,
-		       "Activation: (wifi) access point '%s' has 802.1x security, but is not configured.",
-		       nm_connection_get_id (connection));
+	s_wireless = nm_connection_get_setting_wireless (connection);
+	g_return_val_if_fail (s_wireless, NM_ACT_STAGE_RETURN_FAILURE);
 
-		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
-		ret = NM_ACT_STAGE_RETURN_FAILURE;
-		goto out;
+	mode = nm_setting_wireless_get_mode (s_wireless);
+	if (NM_IN_STRSET (mode, NULL, NM_SETTING_WIRELESS_MODE_INFRA)) {
+		GDBusProxy *network_proxy;
+		NMWifiAP *ap = priv->current_ap;
+
+		if (!ap) {
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+			goto out;
+		}
+
+		/* 802.1x networks that are not IWD Known Networks will definitely
+		 * fail, for other combinations we will let the Connect call fail
+		 * or ask us for any missing secrets through the Agent.
+		 */
+		if (   !is_connection_known_network (connection)
+		    && nm_connection_get_setting_802_1x (connection)) {
+			_LOGI (LOGD_DEVICE | LOGD_WIFI,
+			       "Activation: (wifi) access point '%s' has 802.1x security but is not configured in IWD.",
+			       nm_connection_get_id (connection));
+
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
+			goto out;
+		}
+
+		network_proxy = nm_iwd_manager_get_dbus_interface (nm_iwd_manager_get (),
+		                                                   nm_wifi_ap_get_supplicant_path (ap),
+		                                                   NM_IWD_NETWORK_INTERFACE);
+		if (!network_proxy) {
+			_LOGE (LOGD_DEVICE | LOGD_WIFI,
+			       "Activation: (wifi) could not get Network interface proxy for %s",
+			       nm_wifi_ap_get_supplicant_path (ap));
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+			goto out;
+		}
+
+		if (!priv->cancellable)
+			priv->cancellable = g_cancellable_new ();
+
+		/* Call Network.Connect.  No timeout because IWD already handles
+		 * timeouts.
+		 */
+		g_dbus_proxy_call (network_proxy, "Connect",
+		                   g_variant_new ("()"),
+		                   G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
+		                   priv->cancellable, network_connect_cb, self);
+
+		g_object_unref (network_proxy);
+	} else if (NM_IN_STRSET (mode, NM_SETTING_WIRELESS_MODE_AP)) {
+		/* We need to first set interface mode (Device.Mode) to ap.
+		 * We can't directly queue a call to the Start method on
+		 * the DBus interface that's going to be created after the property
+		 * set call returns.
+		 */
+		if (!priv->cancellable)
+			priv->cancellable = g_cancellable_new ();
+
+		g_dbus_proxy_call (priv->dbus_device_proxy,
+		                   DBUS_INTERFACE_PROPERTIES ".Set",
+		                   g_variant_new ("(ssv)", NM_IWD_DEVICE_INTERFACE,
+		                                  "Mode",
+		                                  g_variant_new ("s", "ap")),
+		                   G_DBUS_CALL_FLAGS_NONE, 2000,
+		                   priv->cancellable, act_set_mode_cb, self);
+		priv->act_mode_switch = TRUE;
 	}
-
-	network_proxy = nm_iwd_manager_get_dbus_interface (nm_iwd_manager_get (),
-	                                                   nm_wifi_ap_get_supplicant_path (ap),
-	                                                   NM_IWD_NETWORK_INTERFACE);
-	if (!network_proxy) {
-		_LOGE (LOGD_DEVICE | LOGD_WIFI,
-		       "Activation: (wifi) could not get Network interface proxy for %s",
-		       nm_wifi_ap_get_supplicant_path (ap));
-		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-		goto out;
-	}
-
-	if (!priv->cancellable)
-		priv->cancellable = g_cancellable_new ();
-
-	/* Call Network.Connect.  No timeout because IWD already handles
-	 * timeouts.
-	 */
-	g_dbus_proxy_call (network_proxy, "Connect",
-	                   g_variant_new ("()"),
-	                   G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
-	                   priv->cancellable, network_connect_cb, self);
-
-	g_object_unref (network_proxy);
 
 	/* We'll get stage3 started when the supplicant connects */
 	ret = NM_ACT_STAGE_RETURN_POSTPONE;
@@ -1531,7 +1796,7 @@ schedule_periodic_scan (NMDeviceIwd *self, NMDeviceState current_state)
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	guint interval;
 
-	if (current_state <= NM_DEVICE_STATE_UNAVAILABLE)
+	if (!priv->can_scan)
 		return;
 
 	if (current_state == NM_DEVICE_STATE_DISCONNECTED)
@@ -1546,6 +1811,23 @@ schedule_periodic_scan (NMDeviceIwd *self, NMDeviceState current_state)
 }
 
 static void
+set_can_scan (NMDeviceIwd *self, gboolean can_scan)
+{
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	NMDeviceState state = nm_device_get_state (NM_DEVICE (self));
+
+	if (priv->can_scan == can_scan)
+		return;
+
+	priv->can_scan = can_scan;
+
+	if (priv->can_scan && !priv->periodic_scan_id && !priv->scan_requested && !priv->scanning)
+		schedule_periodic_scan (self, state);
+	else if (!priv->can_scan && priv->periodic_scan_id)
+		nm_clear_g_source (&priv->periodic_scan_id);
+}
+
+static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
                       NMDeviceState old_state,
@@ -1553,14 +1835,6 @@ device_state_changed (NMDevice *device,
 {
 	NMDeviceIwd *self = NM_DEVICE_IWD (device);
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
-
-	if (new_state <= NM_DEVICE_STATE_UNAVAILABLE) {
-		remove_all_aps (self);
-		nm_clear_g_source (&priv->periodic_scan_id);
-	} else if (old_state <= NM_DEVICE_STATE_UNAVAILABLE) {
-		update_aps (self);
-		schedule_periodic_scan (self, new_state);
-	}
 
 	switch (new_state) {
 	case NM_DEVICE_STATE_UNMANAGED:
@@ -1679,10 +1953,13 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_MODE:
-		if (priv->current_ap)
-			g_value_set_uint (value, NM_802_11_MODE_INFRA);
-		else
+		if (!priv->current_ap)
 			g_value_set_uint (value, NM_802_11_MODE_UNKNOWN);
+		else if (nm_wifi_ap_is_hotspot (priv->current_ap))
+			g_value_set_uint (value, NM_802_11_MODE_AP);
+		else
+			g_value_set_uint (value, nm_wifi_ap_get_mode (priv->current_ap));
+
 		break;
 	case PROP_BITRATE:
 		g_value_set_uint (value, 65000);
@@ -1730,7 +2007,7 @@ state_changed (NMDeviceIwd *self, const char *new_state)
 		iwd_connection = TRUE;
 
 	/* Don't allow scanning while connecting, disconnecting or roaming */
-	priv->can_scan = NM_IN_STRSET (new_state, "connected", "disconnected");
+	set_can_scan (self, NM_IN_STRSET (new_state, "connected", "disconnected"));
 
 	if (NM_IN_STRSET (new_state, "connecting", "connected", "roaming")) {
 		/* If we were connecting, do nothing, the confirmation of
@@ -1825,21 +2102,59 @@ station_properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
 }
 
 static void
+ap_properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
+                       GStrv invalidate_properties, gpointer user_data)
+{
+	NMDeviceIwd *self = user_data;
+	GVariantIter *iter;
+	const char *key;
+	GVariant *value;
+
+	g_variant_get (changed_properties, "a{sv}", &iter);
+	while (g_variant_iter_next (iter, "{&sv}", &key, &value)) {
+		if (nm_streq (key, "Started")) {
+			gboolean new_started = get_variant_boolean (value, "Started");
+
+			_LOGI (LOGD_DEVICE | LOGD_WIFI, "IWD AP state is now %s", new_started ? "Started" : "Stopped");
+		}
+
+		g_variant_unref (value);
+	}
+
+	g_variant_iter_free (iter);
+}
+
+static void
 powered_changed (NMDeviceIwd *self, gboolean new_powered)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	GDBusInterface *interface;
+	GVariant *value;
 
 	nm_device_queue_recheck_available (NM_DEVICE (self),
 	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
 	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 
-	if (new_powered) {
-		GDBusInterface *interface;
-		GVariant *value;
+	interface = new_powered ? g_dbus_object_get_interface (priv->dbus_obj, NM_IWD_AP_INTERFACE) : NULL;
 
-		if (priv->dbus_station_proxy)
-			return;
+	if (priv->dbus_ap_proxy) {
+		g_signal_handlers_disconnect_by_func (priv->dbus_ap_proxy,
+		                                      ap_properties_changed, self);
+		g_clear_object (&priv->dbus_ap_proxy);
+	}
 
+	if (interface) {
+		priv->dbus_ap_proxy = G_DBUS_PROXY (interface);
+		g_signal_connect (priv->dbus_ap_proxy, "g-properties-changed",
+		                  G_CALLBACK (ap_properties_changed), self);
+
+		if (priv->act_mode_switch)
+			act_check_interface (self);
+		else
+			reset_mode (self, NULL, NULL, NULL);
+	}
+
+	if (new_powered && !priv->dbus_ap_proxy) {
 		interface = g_dbus_object_get_interface (priv->dbus_obj, NM_IWD_STATION_INTERFACE);
 		if (!interface) {
 			/* No Station interface on the device object.  Check if the
@@ -1850,18 +2165,30 @@ powered_changed (NMDeviceIwd *self, gboolean new_powered)
 			 * priv->dbus_station_proxy both point at the Device interface.
 			 */
 			value = g_dbus_proxy_get_cached_property (priv->dbus_device_proxy, "State");
-			if (!value) {
+			if (value) {
+				g_variant_unref (value);
+				interface = g_object_ref (priv->dbus_device_proxy);
+			} else {
 				_LOGE (LOGD_WIFI, "Interface %s not found on obj %s",
 				       NM_IWD_STATION_INTERFACE,
 				       g_dbus_object_get_object_path (priv->dbus_obj));
-				return;
+				interface = NULL;
 			}
 
-			g_variant_unref (value);
-			interface = g_object_ref (priv->dbus_device_proxy);
 		}
+	} else
+		interface = NULL;
 
+	if (priv->dbus_station_proxy) {
+		g_signal_handlers_disconnect_by_func (priv->dbus_station_proxy,
+		                                      station_properties_changed, self);
+		g_clear_object (&priv->dbus_station_proxy);
+	}
+
+	if (interface) {
 		priv->dbus_station_proxy = G_DBUS_PROXY (interface);
+		g_signal_connect (priv->dbus_station_proxy, "g-properties-changed",
+		                  G_CALLBACK (station_properties_changed), self);
 
 		value = g_dbus_proxy_get_cached_property (priv->dbus_station_proxy, "Scanning");
 		priv->scanning = get_variant_boolean (value, "Scanning");
@@ -1871,27 +2198,14 @@ powered_changed (NMDeviceIwd *self, gboolean new_powered)
 		state_changed (self, get_variant_state (value));
 		g_variant_unref (value);
 
-		g_signal_connect (priv->dbus_station_proxy, "g-properties-changed",
-		                  G_CALLBACK (station_properties_changed), self);
-
-		/* Call Disconnect to make sure IWD's autoconnect is disabled.
-		 * Autoconnect is the default state after device is brought UP.
-		 */
-		if (priv->enabled)
-			send_disconnect (self);
+		update_aps (self);
 	} else {
-		if (!priv->dbus_station_proxy)
-			return;
-
-		g_signal_handlers_disconnect_by_func (priv->dbus_station_proxy,
-		                                      station_properties_changed, self);
-		g_clear_object (&priv->dbus_station_proxy);
-
-		priv->can_scan = FALSE;
+		set_can_scan (self, FALSE);
 		priv->scanning = FALSE;
 		priv->scan_requested = FALSE;
 		priv->can_connect = FALSE;
 		cleanup_association_attempt (self, FALSE);
+		remove_all_aps (self);
 	}
 }
 
@@ -1936,6 +2250,8 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 		g_clear_object (&priv->dbus_device_proxy);
 
 		powered_changed (self, FALSE);
+
+		priv->act_mode_switch = FALSE;
 	}
 
 	if (!object)
@@ -2105,6 +2421,7 @@ dispose (GObject *object)
 
 	g_clear_object (&priv->dbus_device_proxy);
 	g_clear_object (&priv->dbus_station_proxy);
+	g_clear_object (&priv->dbus_ap_proxy);
 	g_clear_object (&priv->dbus_obj);
 
 	remove_all_aps (self);
