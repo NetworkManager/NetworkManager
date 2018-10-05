@@ -201,16 +201,16 @@ test_path_equal (void)
 	} G_STMT_END
 
 	_path_equal_check ("",                  "",                NULL);
-	_path_equal_check (".",                 ".",               "");
+	_path_equal_check (".",                 ".",               NULL);
 	_path_equal_check ("..",                "..",              NULL);
 	_path_equal_check ("/..",               "/..",             NULL);
 	_path_equal_check ("//..",              "/..",             NULL);
 	_path_equal_check ("/.",                "/.",              "/");
-	_path_equal_check ("./",                ".",               "");
-	_path_equal_check ("./.",               "./.",             "");
-	_path_equal_check (".///.",             "./.",             "");
-	_path_equal_check (".///./",            "./.",             "");
-	_path_equal_check (".////",             ".",               "");
+	_path_equal_check ("./",                ".",               ".");
+	_path_equal_check ("./.",               "./.",             ".");
+	_path_equal_check (".///.",             "./.",             ".");
+	_path_equal_check (".///./",            "./.",             ".");
+	_path_equal_check (".////",             ".",               ".");
 	_path_equal_check ("//..//foo/",        "/../foo",         NULL);
 	_path_equal_check ("///foo//./bar/.",   "/foo/./bar/.",    "/foo/bar");
 	_path_equal_check (".//./foo//./bar/.", "././foo/./bar/.", "foo/bar");
