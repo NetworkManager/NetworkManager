@@ -926,7 +926,7 @@ ip6_start (NMDhcpClient *client,
 	}
 
 	if (needed_prefixes > 0) {
-		_LOGW ("dhcp-client6: prefix delegation not yet supported, won't supply %d prefixes\n",
+		_LOGW ("dhcp-client6: prefix delegation not yet supported, won't supply %d prefixes",
 		       needed_prefixes);
 	}
 

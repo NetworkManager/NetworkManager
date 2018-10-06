@@ -938,7 +938,7 @@ read_base_config (GKeyFile *keyfile,
 	}
 
 	if (!g_error_matches (my_error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND)) {
-		_LOGW ("Old default config file invalid: %s\n",
+		_LOGW ("Old default config file invalid: %s",
 		       my_error->message);
 	}
 	g_clear_error (&my_error);
@@ -950,7 +950,7 @@ read_base_config (GKeyFile *keyfile,
 	}
 
 	if (!g_error_matches (my_error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND)) {
-		_LOGW ("Default config file invalid: %s\n",
+		_LOGW ("Default config file invalid: %s",
 		       my_error->message);
 		g_propagate_error (error, my_error);
 		return FALSE;
@@ -961,7 +961,7 @@ read_base_config (GKeyFile *keyfile,
 	 * config file path.
 	 */
 	*out_config_main_file = g_strdup (DEFAULT_CONFIG_MAIN_FILE);
-	_LOGI ("No config file found or given; using %s\n",
+	_LOGI ("No config file found or given; using %s",
 	       DEFAULT_CONFIG_MAIN_FILE);
 	return TRUE;
 }

@@ -129,7 +129,7 @@ call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 	if (!v) {
 		if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 			return;
-		_LOGW ("Failed: %s\n", error->message);
+		_LOGW ("Failed: %s", error->message);
 		g_error_free (error);
 	}
 }

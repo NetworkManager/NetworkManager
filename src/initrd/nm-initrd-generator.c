@@ -109,7 +109,7 @@ main (int argc, char *argv[])
 	g_option_context_add_main_entries (option_context, option_entries, GETTEXT_PACKAGE);
 
 	if (!g_option_context_parse (option_context, &argc, &argv, &error)) {
-		_LOGW (LOGD_CORE, "%s\n", error->message);
+		_LOGW (LOGD_CORE, "%s", error->message);
 		return 1;
 	}
 
@@ -126,7 +126,7 @@ main (int argc, char *argv[])
 		g_clear_pointer (&connections_dir, g_free);
 
 	if (connections_dir && g_mkdir_with_parents (connections_dir, 0755) != 0) {
-		_LOGW (LOGD_CORE, "%s: %s\n", connections_dir, strerror (errno));
+		_LOGW (LOGD_CORE, "%s: %s", connections_dir, strerror (errno));
 		return 1;
 	}
 
