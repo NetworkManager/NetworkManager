@@ -126,17 +126,17 @@ _recursive_ifparser (if_parser *parser, const char *eni_file, int quiet)
 	/* Check if interfaces file exists and open it */
 	if (!g_file_test (eni_file, G_FILE_TEST_EXISTS)) {
 		if (!quiet)
-			_LOGW ("interfaces file %s doesn't exist\n", eni_file);
+			_LOGW ("interfaces file %s doesn't exist", eni_file);
 		return;
 	}
 	inp = fopen (eni_file, "re");
 	if (inp == NULL) {
 		if (!quiet)
-			_LOGW ("Can't open %s\n", eni_file);
+			_LOGW ("Can't open %s", eni_file);
 		return;
 	}
 	if (!quiet)
-		_LOGI ("      interface-parser: parsing file %s\n", eni_file);
+		_LOGI ("      interface-parser: parsing file %s", eni_file);
 
 	while (!feof (inp)) {
 		char *token[128]; /* 255 chars can only be split into 127 tokens */
@@ -154,7 +154,7 @@ _recursive_ifparser (if_parser *parser, const char *eni_file, int quiet)
 		if (!feof (inp) && len > 0 &&  line[len-1] != '\n') {
 			if (!skip_long_line) {
 				if (!quiet)
-					_LOGW ("Skipping over-long-line '%s...'\n", line);
+					_LOGW ("Skipping over-long-line '%s...'", line);
 			}
 			skip_long_line = 1;
 			continue;
@@ -192,7 +192,7 @@ _recursive_ifparser (if_parser *parser, const char *eni_file, int quiet)
 
 		if (toknum < 2) {
 			if (!quiet) {
-				_LOGW ("Can't parse interface line '%s'\n",
+				_LOGW ("Can't parse interface line '%s'",
 				       join_values_with_spaces (value, token));
 			}
 			skip_to_block = 1;
@@ -207,7 +207,7 @@ _recursive_ifparser (if_parser *parser, const char *eni_file, int quiet)
 		if (nm_streq (token[0], "iface")) {
 			if (toknum < 4) {
 				if (!quiet) {
-					_LOGW ("Can't parse iface line '%s'\n",
+					_LOGW ("Can't parse iface line '%s'",
 					       join_values_with_spaces (value, token));
 				}
 				continue;
@@ -254,7 +254,7 @@ _recursive_ifparser (if_parser *parser, const char *eni_file, int quiet)
 		else {
 			if (skip_to_block) {
 				if (!quiet) {
-					_LOGW ("ignoring out-of-block data '%s'\n",
+					_LOGW ("ignoring out-of-block data '%s'",
 					       join_values_with_spaces (value, token));
 				}
 			} else
@@ -264,7 +264,7 @@ _recursive_ifparser (if_parser *parser, const char *eni_file, int quiet)
 	fclose (inp);
 
 	if (!quiet)
-		_LOGI ("      interface-parser: finished parsing file %s\n", eni_file);
+		_LOGI ("      interface-parser: finished parsing file %s", eni_file);
 }
 
 static void
@@ -283,12 +283,12 @@ _ifparser_source (if_parser *parser, const char *path, const char *en_dir, int q
 		abs_path = g_build_filename (en_dir, path, NULL);
 
 	if (!quiet)
-		_LOGI ("      interface-parser: source line includes interfaces file(s) %s\n", abs_path);
+		_LOGI ("      interface-parser: source line includes interfaces file(s) %s", abs_path);
 
 	/* ifupdown uses WRDE_NOCMD for wordexp. */
 	if (wordexp (abs_path, &we, WRDE_NOCMD)) {
 		if (!quiet)
-			_LOGW ("word expansion for %s failed\n", abs_path);
+			_LOGW ("word expansion for %s failed", abs_path);
 	} else {
 		for (i = 0; i < we.we_wordc; i++) {
 			if (dir) {
