@@ -123,6 +123,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMPlatform *platform;
 	guint16 pan_id;
 	guint16 short_address;
+	gint16 page, channel;
 	int ifindex;
 	const guint8 *hwaddr;
 	gsize hwaddr_len = 0;
@@ -182,9 +183,18 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		}
 	}
 
+	channel = nm_setting_wpan_get_channel (s_wpan);
+	if (channel != NM_SETTING_WPAN_CHANNEL_DEFAULT) {
+		page = nm_setting_wpan_get_page (s_wpan);
+		if (!nm_platform_wpan_set_channel (platform, ifindex, page, channel)) {
+			_LOGW (LOGD_DEVICE, "unable to set the channel");
+			goto out;
+		}
+	}
+
 	ret = NM_ACT_STAGE_RETURN_SUCCESS;
 out:
-        nm_device_bring_up (device, TRUE, NULL);
+	nm_device_bring_up (device, TRUE, NULL);
 
 	if (lowpan_device)
 		nm_device_bring_up (lowpan_device, TRUE, NULL);

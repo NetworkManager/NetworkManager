@@ -63,7 +63,7 @@ our $indent;
 sub new_hunk
 {
 	$type = undef;
-	$indent = "";
+	$indent = undef;
 }
 
 sub new_file
@@ -93,7 +93,7 @@ if ($is_patch) {
 		new_file ($2);
 		next;
 	}
-	/^([ \+])(.*)/ or next;
+	s/^([ \+])(.*)/$2/ or next;
 	$line_no++;
 	$check_line = $1 eq '+';
 	$line = $2;
@@ -133,17 +133,25 @@ complain ("Don't use \"unsigned int\" but just use \"unsigned\"") if $line =~ /\
 complain ("Please use LGPL2+ for new files") if $is_patch and $line =~ /under the terms of the GNU General Public License/;
 complain ("Don't use space inside elvis operator ?:") if $line =~ /\?[\t ]+:/;
 
+new_hunk if $_ eq '';
+my ($this_indent) = /^(\s*)/;
+if (defined $indent) {
+	my $this_tabs_before_spaces = length $1 if $this_indent =~ /^(\t*) +/;
+	my $tabs_before_spaces = length $1 if $indent =~ /^(\t*) +/;
+
+	complain ("Bad indentation")
+		if $this_indent =~ /^$indent\t+ +/
+		or (defined $tabs_before_spaces and defined $this_tabs_before_spaces
+			and $this_tabs_before_spaces < $tabs_before_spaces);
+}
+$indent = $this_indent;
+
 # Further on we process stuff without comments.
 $_ = $line;
 s/\s*\/\*.*\*\///;
 s/\s*\/\*.*//;
 s/\s*\/\/.*//;
 /^\s* \* / and next;
-new_hunk if $_ eq '';
-
-my ($this_indent) = /^(\s*)/;
-complain ('Bad indentation') if $this_indent =~ /^$indent\t+ +/;
-$indent = $this_indent;
 
 if (/^typedef*/) {
 	# We expect the { on the same line as the typedef. Otherwise it

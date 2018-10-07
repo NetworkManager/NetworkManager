@@ -26,9 +26,17 @@
 #include "nm-setting-private.h"
 #include "nm-utils-private.h"
 
-/* Ideally we'll be able to get this from a public header. */
+/* Ideally we'll be able to get these from a public header. */
 #ifndef IEEE802154_ADDR_LEN
 #define IEEE802154_ADDR_LEN 8
+#endif
+
+#ifndef IEEE802154_MAX_PAGE
+#define IEEE802154_MAX_PAGE 31
+#endif
+
+#ifndef IEEE802154_MAX_CHANNEL
+#define IEEE802154_MAX_CHANNEL 26
 #endif
 
 enum {
@@ -36,12 +44,16 @@ enum {
 	PROP_MAC_ADDRESS,
 	PROP_PAN_ID,
 	PROP_SHORT_ADDRESS,
+	PROP_PAGE,
+	PROP_CHANNEL,
 };
 
 typedef struct {
 	char *mac_address;
 	guint16 pan_id;
 	guint16 short_address;
+	gint16 page;
+	gint16 channel;
 } NMSettingWpanPrivate;
 
 /**
@@ -117,6 +129,38 @@ nm_setting_wpan_get_short_address (NMSettingWpan *setting)
 	return NM_SETTING_WPAN_GET_PRIVATE (setting)->short_address;
 }
 
+/**
+ * nm_setting_wpan_get_page:
+ * @setting: the #NMSettingWpan
+ *
+ * Returns: the #NMSettingWpan:page property of the setting
+ *
+ * Since: 1.16
+ **/
+gint16
+nm_setting_wpan_get_page (NMSettingWpan *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WPAN (setting), NM_SETTING_WPAN_PAGE_DEFAULT);
+
+	return NM_SETTING_WPAN_GET_PRIVATE (setting)->page;
+}
+
+/**
+ * nm_setting_wpan_get_channel:
+ * @setting: the #NMSettingWpan
+ *
+ * Returns: the #NMSettingWpan:channel property of the setting
+ *
+ * Since: 1.16
+ **/
+gint16
+nm_setting_wpan_get_channel (NMSettingWpan *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WPAN (setting), NM_SETTING_WPAN_CHANNEL_DEFAULT);
+
+	return NM_SETTING_WPAN_GET_PRIVATE (setting)->channel;
+}
+
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -128,6 +172,37 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WPAN_SETTING_NAME, NM_SETTING_WPAN_MAC_ADDRESS);
+		return FALSE;
+	}
+
+	if ((priv->page == NM_SETTING_WPAN_PAGE_DEFAULT) != (priv->channel == NM_SETTING_WPAN_CHANNEL_DEFAULT)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("page must be defined along with a channel"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WPAN_SETTING_NAME, NM_SETTING_WPAN_PAGE);
+		return FALSE;
+	}
+
+	if (priv->page < NM_SETTING_WPAN_PAGE_DEFAULT || priv->page > IEEE802154_MAX_PAGE) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("page must be between %d and %d"),
+		             NM_SETTING_WPAN_PAGE_DEFAULT,
+		             IEEE802154_MAX_PAGE);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WPAN_SETTING_NAME, NM_SETTING_WPAN_PAGE);
+		return FALSE;
+	}
+
+	if (priv->channel < NM_SETTING_WPAN_CHANNEL_DEFAULT || priv->channel > IEEE802154_MAX_CHANNEL) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("channel must not be between %d and %d"),
+		             NM_SETTING_WPAN_CHANNEL_DEFAULT,
+		             IEEE802154_MAX_CHANNEL);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WPAN_SETTING_NAME, NM_SETTING_WPAN_CHANNEL);
 		return FALSE;
 	}
 
@@ -148,6 +223,12 @@ get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 		break;
 	case PROP_SHORT_ADDRESS:
 		g_value_set_uint (value, nm_setting_wpan_get_short_address (setting));
+		break;
+	case PROP_PAGE:
+		g_value_set_int (value, nm_setting_wpan_get_page (setting));
+		break;
+	case PROP_CHANNEL:
+		g_value_set_int (value, nm_setting_wpan_get_channel (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -172,6 +253,12 @@ set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *p
 	case PROP_SHORT_ADDRESS:
 		priv->short_address = g_value_get_uint (value);
 		break;
+	case PROP_PAGE:
+		priv->page = g_value_get_int (value);
+		break;
+	case PROP_CHANNEL:
+		priv->channel = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -183,8 +270,10 @@ nm_setting_wpan_init (NMSettingWpan *setting)
 {
 	NMSettingWpanPrivate *priv = NM_SETTING_WPAN_GET_PRIVATE (setting);
 
-	priv->short_address = G_MAXUINT16;
 	priv->pan_id = G_MAXUINT16;
+	priv->short_address = G_MAXUINT16;
+	priv->page = NM_SETTING_WPAN_PAGE_DEFAULT;
+	priv->channel = NM_SETTING_WPAN_CHANNEL_DEFAULT;
 }
 
 /**
@@ -240,11 +329,11 @@ nm_setting_wpan_class_init (NMSettingWpanClass *klass)
 	 * ---end---
 	 */
 	g_object_class_install_property
-	        (object_class, PROP_MAC_ADDRESS,
-	         g_param_spec_string (NM_SETTING_WPAN_MAC_ADDRESS, "", "",
-	                              NULL,
-	                              G_PARAM_READWRITE |
-	                              G_PARAM_STATIC_STRINGS));
+		(object_class, PROP_MAC_ADDRESS,
+		 g_param_spec_string (NM_SETTING_WPAN_MAC_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWpan:pan-id:
@@ -252,11 +341,11 @@ nm_setting_wpan_class_init (NMSettingWpanClass *klass)
 	 * IEEE 802.15.4 Personal Area Network (PAN) identifier.
 	 **/
 	g_object_class_install_property
-	        (object_class, PROP_PAN_ID,
-	         g_param_spec_uint (NM_SETTING_WPAN_PAN_ID, "", "",
-	                            0, G_MAXUINT16, G_MAXUINT16,
-	                            G_PARAM_READWRITE |
-	                            G_PARAM_STATIC_STRINGS));
+		(object_class, PROP_PAN_ID,
+		 g_param_spec_uint (NM_SETTING_WPAN_PAN_ID, "", "",
+		                    0, G_MAXUINT16, G_MAXUINT16,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWpan:short-address:
@@ -264,11 +353,45 @@ nm_setting_wpan_class_init (NMSettingWpanClass *klass)
 	 * Short IEEE 802.15.4 address to be used within a restricted environment.
 	 **/
 	g_object_class_install_property
-	        (object_class, PROP_SHORT_ADDRESS,
-	         g_param_spec_uint (NM_SETTING_WPAN_SHORT_ADDRESS, "", "",
-	                            0, G_MAXUINT16, G_MAXUINT16,
-	                            G_PARAM_READWRITE |
-	                            G_PARAM_STATIC_STRINGS));
+		(object_class, PROP_SHORT_ADDRESS,
+		 g_param_spec_uint (NM_SETTING_WPAN_SHORT_ADDRESS, "", "",
+		                    0, G_MAXUINT16, G_MAXUINT16,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingWpan:page:
+	 *
+	 * IEEE 802.15.4 channel page. A positive integer or -1, meaning "do not
+	 * set, use whatever the device is already set to".
+	 *
+	 * Since: 1.16
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_PAGE,
+		 g_param_spec_int (NM_SETTING_WPAN_PAGE, "", "",
+		                    G_MININT16,
+		                    G_MAXINT16,
+		                    NM_SETTING_WPAN_PAGE_DEFAULT,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingWpan:channel:
+	 *
+	 * IEEE 802.15.4 channel. A positive integer or -1, meaning "do not
+	 * set, use whatever the device is already set to".
+	 *
+	 * Since: 1.16
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_CHANNEL,
+		 g_param_spec_int (NM_SETTING_WPAN_CHANNEL, "", "",
+		                    G_MININT16,
+		                    G_MAXINT16,
+		                    NM_SETTING_WPAN_CHANNEL_DEFAULT,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_WPAN);
 }
