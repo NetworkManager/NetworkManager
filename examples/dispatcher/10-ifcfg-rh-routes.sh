@@ -45,7 +45,7 @@ handle_ip_file() {
 }
 
 
-if [ "$2" != "pre-up" -a "$2" != "down" ]; then
+if [ "$2" != "pre-up" ] && [ "$2" != "down" ]; then
     exit 0
 fi
 
@@ -59,7 +59,7 @@ if [ -z "$profile" ]; then
     exit 0
 fi
 
-if ! [ -f "$dir/rule-$profile" -o -f "$dir/rule6-$profile" ]; then
+if [ ! -f "$dir/rule-$profile" ] && [ ! -f "$dir/rule6-$profile" ]; then
     exit 0
 fi
 
