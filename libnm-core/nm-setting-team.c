@@ -125,9 +125,11 @@ nm_team_link_watcher_new_ethtool (int delay_up,
 	NMTeamLinkWatcher *watcher;
 	const char *val_fail = NULL;
 
-	if (delay_up < 0 || delay_up > G_MAXINT32)
+	G_STATIC_ASSERT_EXPR (sizeof (int) == sizeof (gint32));
+
+	if (delay_up < 0)
 		val_fail = "delay-up";
-	if (delay_down < 0 || delay_down > G_MAXINT32)
+	if (delay_down < 0)
 		val_fail = "delay-down";
 	if (val_fail) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
@@ -182,11 +184,13 @@ nm_team_link_watcher_new_nsna_ping (int init_wait,
 		return NULL;
 	}
 
-	if (init_wait < 0 || init_wait > G_MAXINT32)
+	G_STATIC_ASSERT_EXPR (sizeof (int) == sizeof (gint32));
+
+	if (init_wait < 0)
 		val_fail = "init-wait";
-	if (interval < 0 || interval > G_MAXINT32)
+	if (interval < 0)
 		val_fail = "interval";
-	if (missed_max < 0 || missed_max > G_MAXINT32)
+	if (missed_max < 0)
 		val_fail = "missed-max";
 	if (val_fail) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
@@ -255,11 +259,13 @@ nm_team_link_watcher_new_arp_ping (int init_wait,
 		return NULL;
 	}
 
-	if (init_wait < 0 || init_wait > G_MAXINT32)
+	G_STATIC_ASSERT_EXPR (sizeof (int) == sizeof (gint32));
+
+	if (init_wait < 0)
 		val_fail = "init-wait";
-	if (interval < 0 || interval > G_MAXINT32)
+	if (interval < 0)
 		val_fail = "interval";
-	if (missed_max < 0 || missed_max > G_MAXINT32)
+	if (missed_max < 0)
 		val_fail = "missed-max";
 	if (val_fail) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,

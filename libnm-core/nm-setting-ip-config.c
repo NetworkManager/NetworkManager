@@ -1310,7 +1310,7 @@ nm_ip_route_attribute_validate  (const char *name,
 		return FALSE;
 	}
 
-	if (spec->type == G_VARIANT_TYPE_STRING) {
+	if (g_variant_type_equal (spec->type, G_VARIANT_TYPE_STRING)) {
 		const char *string = g_variant_get_string (value, NULL);
 		gs_free char *string_free = NULL;
 		char *sep;
