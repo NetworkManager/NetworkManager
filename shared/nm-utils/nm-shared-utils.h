@@ -34,7 +34,7 @@ _NM_INT_NOT_NEGATIVE (gssize val)
 	 *
 	 * When using such an enum for accessing an array, one naturally wants to check
 	 * that the enum is not negative. However, the compiler doesn't like a plain
-	 * comparisong "enum_val >= 0", because (if the enum is unsigned), it will warn
+	 * comparison "enum_val >= 0", because (if the enum is unsigned), it will warn
 	 * that the expression is always true *duh*. Not even a cast to a signed
 	 * type helps to avoid the compiler warning in any case.
 	 *
@@ -42,6 +42,33 @@ _NM_INT_NOT_NEGATIVE (gssize val)
 	 * that an enum is not negative. */
 	return val >= 0;
 }
+
+/* check whether the integer value is smaller than G_MAXINT32. This macro exists
+ * for the sole purpose, that a plain "((int) value <= G_MAXINT32)" comparison
+ * may cause the compiler or coverity that this check is always TRUE. But the
+ * check depends on compile time and the size of C type "int".  Of course, most
+ * of the time in is gint32 and an int value is always <= G_MAXINT32.  The check
+ * exists to catch cases where that is not true.
+ *
+ * Together with the G_STATIC_ASSERT(), we make sure that this is always satisfied. */
+G_STATIC_ASSERT (sizeof (int) == sizeof (gint32));
+#if _NM_CC_SUPPORT_GENERIC
+#define _NM_INT_LE_MAXINT32(value) \
+	({ \
+		_nm_unused typeof (value) _value = (value); \
+		\
+		_Generic((value), \
+		         int: TRUE \
+		); \
+	})
+#else
+#define _NM_INT_LE_MAXINT32(value) ({ \
+		_nm_unused typeof (value) _value = (value); \
+		_nm_unused const int *_p_value = &_value; \
+		\
+		TRUE; \
+	})
+#endif
 
 /*****************************************************************************/
 

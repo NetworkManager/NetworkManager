@@ -125,9 +125,9 @@ nm_team_link_watcher_new_ethtool (int delay_up,
 	NMTeamLinkWatcher *watcher;
 	const char *val_fail = NULL;
 
-	if (delay_up < 0 || delay_up > G_MAXINT32)
+	if (delay_up < 0 || !_NM_INT_LE_MAXINT32 (delay_up))
 		val_fail = "delay-up";
-	if (delay_down < 0 || delay_down > G_MAXINT32)
+	if (delay_down < 0 || !_NM_INT_LE_MAXINT32 (delay_up))
 		val_fail = "delay-down";
 	if (val_fail) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
