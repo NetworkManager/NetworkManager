@@ -433,7 +433,7 @@ nm_sriov_vf_attribute_validate  (const char *name,
 		return FALSE;
 	}
 
-	if (spec->type == G_VARIANT_TYPE_STRING) {
+	if (g_variant_type_equal (spec->type, G_VARIANT_TYPE_STRING)) {
 		const char *string;
 
 		switch (spec->str_type) {
