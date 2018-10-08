@@ -6616,8 +6616,8 @@ static gboolean
 progress_activation_editor_cb (gpointer user_data)
 {
 	MonitorACInfo *info = (MonitorACInfo *) user_data;
-	gs_unref_object NMDevice *device = info->device;
-	gs_unref_object NMActiveConnection *ac = info->ac;
+	NMDevice *device = info->device;
+	NMActiveConnection *ac = info->ac;
 	NMActiveConnectionState ac_state;
 	NMDeviceState dev_state;
 
@@ -6650,11 +6650,13 @@ progress_activation_editor_cb (gpointer user_data)
 		                               nm_object_get_path (NM_OBJECT (connection)));
 	}
 
-	return TRUE;
+	return G_SOURCE_CONTINUE;
 
 finish:
+	nm_g_object_unref (device);
+	nm_g_object_unref (ac);
 	info->monitor_id = 0;
-	return FALSE;
+	return G_SOURCE_REMOVE;
 }
 
 static void
