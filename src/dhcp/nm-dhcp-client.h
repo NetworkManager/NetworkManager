@@ -56,6 +56,7 @@ typedef enum {
 	NM_DHCP_STATE_DONE,         /* client quit or stopped */
 	NM_DHCP_STATE_EXPIRE,       /* lease expired or NAKed */
 	NM_DHCP_STATE_FAIL,         /* failed for some reason */
+	NM_DHCP_STATE_TERMINATED,   /* client is no longer running */
 	__NM_DHCP_STATE_MAX,
 	NM_DHCP_STATE_MAX = __NM_DHCP_STATE_MAX - 1,
 } NMDhcpState;
