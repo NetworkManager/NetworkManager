@@ -1511,6 +1511,7 @@ nm_ip4_config_subtract (NMIP4Config *dst,
 static gboolean
 _nm_ip4_config_intersect_helper (NMIP4Config *dst,
                                  const NMIP4Config *src,
+                                 gboolean intersect_routes,
                                  guint32 default_route_metric_penalty,
                                  gboolean update_dst)
 {
@@ -1555,6 +1556,9 @@ _nm_ip4_config_intersect_helper (NMIP4Config *dst,
 	/* ignore nameservers */
 
 	/* routes */
+	if (!intersect_routes)
+		goto skip_routes;
+
 	changed = FALSE;
 	new_best_default_route = NULL;
 	nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, dst, &r) {
@@ -1595,6 +1599,7 @@ _nm_ip4_config_intersect_helper (NMIP4Config *dst,
 		_notify (dst, PROP_GATEWAY);
 	}
 
+skip_routes:
 	if (changed) {
 		_notify_routes (dst);
 		result = TRUE;
@@ -1625,9 +1630,10 @@ _nm_ip4_config_intersect_helper (NMIP4Config *dst,
 void
 nm_ip4_config_intersect (NMIP4Config *dst,
                          const NMIP4Config *src,
+                         gboolean intersect_routes,
                          guint32 default_route_metric_penalty)
 {
-	_nm_ip4_config_intersect_helper (dst, src, default_route_metric_penalty, TRUE);
+	_nm_ip4_config_intersect_helper (dst, src, intersect_routes, default_route_metric_penalty, TRUE);
 }
 
 /**
@@ -1648,14 +1654,17 @@ nm_ip4_config_intersect (NMIP4Config *dst,
 NMIP4Config *
 nm_ip4_config_intersect_alloc (const NMIP4Config *a,
                                const NMIP4Config *b,
+                               gboolean intersect_routes,
                                guint32 default_route_metric_penalty)
 {
 	NMIP4Config *a_copy;
 
 	if (_nm_ip4_config_intersect_helper ((NMIP4Config *) a, b,
+	                                     intersect_routes,
 	                                     default_route_metric_penalty, FALSE)) {
 		a_copy = nm_ip4_config_clone (a);
-		_nm_ip4_config_intersect_helper (a_copy, b, default_route_metric_penalty, TRUE);
+		_nm_ip4_config_intersect_helper (a_copy, b, intersect_routes,
+		                                 default_route_metric_penalty, TRUE);
 		return a_copy;
 	} else
 		return NULL;
@@ -1971,71 +1980,90 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 }
 
 void
-nm_ip4_config_dump (const NMIP4Config *self, const char *detail)
+nm_ip_config_dump (const NMIPConfig *self,
+                   const char *detail,
+                   NMLogLevel level,
+                   NMLogDomain domain)
 {
-	guint32 tmp;
-	guint i;
-	const char *str;
 	NMDedupMultiIter ipconf_iter;
-	const NMPlatformIP4Address *address;
-	const NMPlatformIP4Route *route;
+	const NMPlatformIP4Address *addr4;
+	const NMPlatformIP6Address *addr6;
+	const NMPlatformIP4Route *route4;
+	const NMPlatformIP6Route *route6;
+	const NMIP4Config *ip4;
+	const NMIP6Config *ip6;
+	int addr_family = AF_UNSPEC;
+	char addr_family_char = '?';
+	const char *path;
+	gconstpointer ptr;
+	guint i;
 
-	g_message ("--------- NMIP4Config %p (%s)", self, detail);
+	if (self) {
+		addr_family = nm_ip_config_get_addr_family (self);
+		addr_family_char = nm_utils_addr_family_to_char (addr_family);
+	}
 
-	if (self == NULL) {
-		g_message (" (null)");
+	nm_log (level, domain, NULL, NULL,
+	        "---- NMIP%cConfig %p (%s)",
+	        addr_family_char,
+	        self,
+	        detail);
+
+	if (!self)
 		return;
+
+	path = nm_dbus_object_get_path (NM_DBUS_OBJECT (self));
+	if (path)
+		nm_log (level, domain, NULL, NULL, " path     : %s", path);
+
+	if (addr_family == AF_INET) {
+		ip4 = NM_IP4_CONFIG (self);
+		nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, ip4, &addr4) {
+			nm_log (level, domain, NULL, NULL, " address  : %s",
+			        nm_platform_ip4_address_to_string (addr4, NULL, 0));
+		}
+		nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, ip4, &route4) {
+			nm_log (level, domain, NULL, NULL, " route    : %s",
+			        nm_platform_ip4_route_to_string (route4, NULL, 0));
+		}
+	} else {
+		ip6 = NM_IP6_CONFIG (self);
+		nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, ip6, &addr6) {
+			nm_log (level, domain, NULL, NULL, " address  : %s",
+			        nm_platform_ip6_address_to_string (addr6, NULL, 0));
+		}
+		nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, ip6, &route6) {
+			nm_log (level, domain, NULL, NULL, " route    : %s",
+			        nm_platform_ip6_route_to_string (route6, NULL, 0));
+		}
 	}
 
-	str = nm_dbus_object_get_path (NM_DBUS_OBJECT (self));
-	if (str)
-		g_message ("   path: %s", str);
-
-	/* addresses */
-	nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, self, &address)
-		g_message ("      a: %s", nm_platform_ip4_address_to_string (address, NULL, 0));
-
-	/* nameservers */
-	for (i = 0; i < nm_ip4_config_get_num_nameservers (self); i++) {
-		tmp = nm_ip4_config_get_nameserver (self, i);
-		g_message ("     ns: %s", nm_utils_inet4_ntop (tmp, NULL));
+	for (i = 0; i < nm_ip_config_get_num_nameservers (self); i++) {
+		ptr = nm_ip_config_get_nameserver (self, i);
+		nm_log (level, domain, NULL, NULL, " dns      : %s",
+		        nm_utils_inet_ntop (addr_family, ptr, NULL));
 	}
 
-	/* routes */
-	nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, self, &route)
-		g_message ("     rt: %s", nm_platform_ip4_route_to_string (route, NULL, 0));
+	for (i = 0; i < nm_ip_config_get_num_domains (self); i++)
+		nm_log (level, domain, NULL, NULL, " domain   : %s", nm_ip_config_get_domain (self, i));
 
-	/* domains */
-	for (i = 0; i < nm_ip4_config_get_num_domains (self); i++)
-		g_message (" domain: %s", nm_ip4_config_get_domain (self, i));
+	for (i = 0; i < nm_ip_config_get_num_searches (self); i++)
+		nm_log (level, domain, NULL, NULL, " search   : %s", nm_ip_config_get_search (self, i));
 
-	/* dns searches */
-	for (i = 0; i < nm_ip4_config_get_num_searches (self); i++)
-		g_message (" search: %s", nm_ip4_config_get_search (self, i));
+	for (i = 0; i < nm_ip_config_get_num_dns_options (self); i++)
+		nm_log (level, domain, NULL, NULL, "dns-option: %s", nm_ip_config_get_dns_option (self, i));
 
-	/* dns options */
-	for (i = 0; i < nm_ip4_config_get_num_dns_options (self); i++)
-		g_message (" dnsopt: %s", nm_ip4_config_get_dns_option (self, i));
+	nm_log (level, domain, NULL, NULL, " dns-prio : %d", nm_ip_config_get_dns_priority (self));
 
-	g_message (" dnspri: %d", nm_ip4_config_get_dns_priority (self));
-
-	g_message ("    mtu: %"G_GUINT32_FORMAT" (source: %d)", nm_ip4_config_get_mtu (self), (int) nm_ip4_config_get_mtu_source (self));
-
-	/* NIS */
-	for (i = 0; i < nm_ip4_config_get_num_nis_servers (self); i++) {
-		tmp = nm_ip4_config_get_nis_server (self, i);
-		g_message ("    nis: %s", nm_utils_inet4_ntop (tmp, NULL));
+	if (addr_family == AF_INET) {
+		ip4 = NM_IP4_CONFIG (self);
+		nm_log (level, domain, NULL, NULL,
+		        " mtu      : %"G_GUINT32_FORMAT" (source: %d)",
+		        nm_ip4_config_get_mtu (ip4),
+		        (int) nm_ip4_config_get_mtu_source (ip4));
+		nm_log (level, domain, NULL, NULL, " metered  : %d",
+		        (int) nm_ip4_config_get_metered (ip4));
 	}
-
-	g_message (" nisdmn: %s", nm_ip4_config_get_nis_domain (self) ?: "(none)");
-
-	/* WINS */
-	for (i = 0; i < nm_ip4_config_get_num_wins (self); i++) {
-		tmp = nm_ip4_config_get_wins (self, i);
-		g_message ("   wins: %s", nm_utils_inet4_ntop (tmp, NULL));
-	}
-
-	g_message (" mtrd:   %d", (int) nm_ip4_config_get_metered (self));
 }
 
 /*****************************************************************************/
