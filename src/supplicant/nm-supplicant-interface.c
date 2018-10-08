@@ -1289,6 +1289,38 @@ interface_add_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	}
 }
 
+static void
+interface_removed_cb (GDBusProxy *proxy,
+                      const char *path,
+                      gpointer user_data)
+{
+	NMSupplicantInterface *self;
+	NMSupplicantInterfacePrivate *priv;
+
+	self = NM_SUPPLICANT_INTERFACE (user_data);
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (g_strcmp0 (priv->object_path, path) != 0)
+		return;
+
+	_LOGD ("Received interface removed signal");
+
+	/* The interface may lose its last reference during signal handling otherwise. */
+	g_object_ref (self);
+
+	/* Invalidate the object path to prevent the manager from trying to remove
+	 * a non-existing interface. */
+	g_clear_pointer (&priv->object_path, g_free);
+
+	/* No need to clean up everything now, that will happen at dispose time. */
+
+	/* Interface is down and has been removed. */
+	set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
+	g_signal_emit (self, signals[REMOVED], 0);
+
+	g_object_unref (self);
+}
+
 #if HAVE_WEXT
 #define DEFAULT_WIFI_DRIVER "nl80211,wext"
 #else
@@ -1319,6 +1351,10 @@ on_wpas_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	priv->wpas_proxy = wpas_proxy;
+
+	/* Watch for interface removal. */
+	_nm_dbus_signal_connect (priv->wpas_proxy, "InterfaceRemoved", G_VARIANT_TYPE ("(o)"),
+	                         G_CALLBACK (interface_removed_cb), self);
 
 	/* Try to add the interface to the supplicant.  If the supplicant isn't
 	 * running, this will start it via D-Bus activation and return the response
@@ -1374,8 +1410,7 @@ interface_add (NMSupplicantInterface *self)
 	priv->init_cancellable = g_cancellable_new ();
 
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
-	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
-	                            G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
+	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
 	                          NULL,
 	                          WPAS_DBUS_SERVICE,
 	                          WPAS_DBUS_PATH,
@@ -1983,6 +2018,8 @@ dispose (GObject *object)
 	nm_clear_g_cancellable (&priv->init_cancellable);
 	nm_clear_g_cancellable (&priv->other_cancellable);
 
+	if (priv->wpas_proxy)
+		g_signal_handlers_disconnect_by_data (priv->wpas_proxy, object);
 	g_clear_object (&priv->wpas_proxy);
 	g_clear_pointer (&priv->bss_proxies, g_hash_table_destroy);
 
