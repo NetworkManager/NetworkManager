@@ -444,7 +444,10 @@ cleanup_association_attempt (NMDeviceIwd *self, gboolean disconnect)
 }
 
 static void
-reset_mode (NMDeviceIwd *self, GCancellable *cancellable, GAsyncReadyCallback callback, gpointer user_data)
+reset_mode (NMDeviceIwd *self,
+            GCancellable *cancellable,
+            GAsyncReadyCallback callback,
+            gpointer user_data)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
@@ -454,7 +457,9 @@ reset_mode (NMDeviceIwd *self, GCancellable *cancellable, GAsyncReadyCallback ca
 	                                  "Mode",
 	                                  g_variant_new_string ("station")),
 	                   G_DBUS_CALL_FLAGS_NONE, 2000,
-	                   cancellable, callback, user_data);
+	                   cancellable,
+	                   callback,
+	                   user_data);
 }
 
 static void
@@ -473,43 +478,53 @@ deactivate (NMDevice *device)
 		reset_mode (self, NULL, NULL, NULL);
 }
 
-static gboolean
-deactivate_async_finish (NMDevice *device, GAsyncResult *res, GError **error)
-{
-	return g_task_propagate_boolean (G_TASK (res), error);
-}
-
 static void
 disconnect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 {
-	GTask *task = user_data;
+	gs_unref_object NMDeviceIwd *self = NULL;
+	NMDeviceDeactivateCallback callback;
+	gpointer callback_user_data;
 	gs_unref_variant GVariant *variant = NULL;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
+
+	nm_utils_user_data_unpack (user_data, &self, &callback, &callback_user_data);
 
 	variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), res, &error);
-	if (variant)
-		g_task_return_boolean (task, TRUE);
-	else
-		g_task_return_error (task, error);
+	callback (NM_DEVICE (self), error, callback_user_data);
+}
 
-	g_object_unref (task);
+static void
+disconnect_cb_on_idle (gpointer user_data,
+                       GCancellable *cancellable)
+{
+	gs_unref_object NMDeviceIwd *self = NULL;
+	NMDeviceDeactivateCallback callback;
+	gpointer callback_user_data;
+	gs_free_error GError *cancelled_error = NULL;
+
+	nm_utils_user_data_unpack (user_data, &self, &callback, &callback_user_data);
+
+	g_cancellable_set_error_if_cancelled (cancellable, &cancelled_error);
+	callback (NM_DEVICE (self), cancelled_error, callback_user_data);
 }
 
 static void
 deactivate_async (NMDevice *device,
                   GCancellable *cancellable,
-                  GAsyncReadyCallback callback,
-                  gpointer user_data)
+                  NMDeviceDeactivateCallback callback,
+                  gpointer callback_user_data)
 {
 	NMDeviceIwd *self = NM_DEVICE_IWD (device);
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
-	GTask *task;
+	gpointer user_data;
 
-	task = g_task_new (self, cancellable, callback, user_data);
+	nm_assert (G_IS_CANCELLABLE (cancellable));
+	nm_assert (callback);
+
+	user_data = nm_utils_user_data_pack (g_object_ref (self), callback, callback_user_data);
 
 	if (!priv->dbus_obj) {
-		g_task_return_boolean (task, TRUE);
-		g_object_unref (task);
+		nm_utils_invoke_on_idle (disconnect_cb_on_idle, user_data, cancellable);
 		return;
 	}
 
@@ -517,10 +532,16 @@ deactivate_async (NMDevice *device,
 	priv->act_mode_switch = FALSE;
 
 	if (priv->dbus_station_proxy) {
-		g_dbus_proxy_call (priv->dbus_station_proxy, "Disconnect", g_variant_new ("()"),
-		                   G_DBUS_CALL_FLAGS_NONE, -1, cancellable, disconnect_cb, task);
+		g_dbus_proxy_call (priv->dbus_station_proxy,
+		                   "Disconnect",
+		                   g_variant_new ("()"),
+		                   G_DBUS_CALL_FLAGS_NONE,
+		                   -1,
+		                   cancellable,
+		                   disconnect_cb,
+		                   user_data);
 	} else
-		reset_mode (self, cancellable, disconnect_cb, task);
+		reset_mode (self, cancellable, disconnect_cb, user_data);
 }
 
 static gboolean
@@ -2540,7 +2561,6 @@ nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 	device_class->get_configured_mtu = get_configured_mtu;
 	device_class->deactivate = deactivate;
 	device_class->deactivate_async = deactivate_async;
-	device_class->deactivate_async_finish = deactivate_async_finish;
 	device_class->can_reapply_change = can_reapply_change;
 
 	device_class->state_changed = device_state_changed;

@@ -1098,91 +1098,90 @@ stage3_ip6_config_request (NMModem *modem, NMDeviceStateReason *out_failure_reas
 
 typedef struct {
 	NMModemBroadband *self;
-	GSimpleAsyncResult *result;
+	_NMModemDisconnectCallback callback;
+	gpointer callback_user_data;
 	GCancellable *cancellable;
 	gboolean warn;
 } DisconnectContext;
 
 static void
-disconnect_context_complete (DisconnectContext *ctx)
+disconnect_context_complete (DisconnectContext *ctx, GError *error)
 {
-	g_simple_async_result_complete_in_idle (ctx->result);
-	if (ctx->cancellable)
-		g_object_unref (ctx->cancellable);
-	g_object_unref (ctx->result);
+	if (ctx->callback)
+		ctx->callback (NM_MODEM (ctx->self), error, ctx->callback_user_data);
+	nm_g_object_unref (ctx->cancellable);
 	g_object_unref (ctx->self);
 	g_slice_free (DisconnectContext, ctx);
 }
 
-static gboolean
-disconnect_finish (NMModem *self,
-                   GAsyncResult *res,
-                   GError **error)
+static void
+disconnect_context_complete_on_idle (gpointer user_data,
+                                     GCancellable *cancellable)
 {
-	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (res), error);
+	DisconnectContext *ctx = NULL;
+	gs_free_error GError *cancelled_error = NULL;
+
+	g_cancellable_set_error_if_cancelled (cancellable, &cancelled_error);
+	disconnect_context_complete (ctx, cancelled_error);
 }
 
 static void
-simple_disconnect_ready (MMModemSimple *modem_iface,
+simple_disconnect_ready (GObject *source_object,
                          GAsyncResult *res,
-                         DisconnectContext *ctx)
+                         gpointer user_data)
 {
+	MMModemSimple *modem_iface = MM_MODEM_SIMPLE (source_object);
+	DisconnectContext *ctx = user_data;
 	GError *error = NULL;
 
 	if (!mm_modem_simple_disconnect_finish (modem_iface, res, &error)) {
-		if (ctx->warn && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)) {
+		if (   ctx->warn
+		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)) {
 			NMModemBroadband *self = ctx->self;
 
 			_LOGW ("failed to disconnect modem: %s",
 			       error->message);
 		}
-		g_simple_async_result_take_error (ctx->result, error);
 	}
 
-	disconnect_context_complete (ctx);
+	disconnect_context_complete (ctx, error);
 }
 
 static void
 disconnect (NMModem *modem,
             gboolean warn,
             GCancellable *cancellable,
-            GAsyncReadyCallback callback,
+            _NMModemDisconnectCallback callback,
             gpointer user_data)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (modem);
 	DisconnectContext *ctx;
-	GError *error = NULL;
 
 	connect_context_clear (self);
-	ctx = g_slice_new (DisconnectContext);
-	ctx->cancellable = NULL;
+
+	ctx = g_slice_new0 (DisconnectContext);
 	ctx->self = g_object_ref (self);
-	ctx->result = g_simple_async_result_new (G_OBJECT (self),
-	                                         callback,
-	                                         user_data,
-	                                         disconnect);
+	ctx->cancellable = nm_g_object_ref (cancellable);
+	ctx->callback = callback;
+	ctx->callback_user_data = user_data;
+
 	/* Don't bother warning on FAILED since the modem is already gone */
 	ctx->warn = warn;
 
-	/* Already cancelled? */
-	if (g_cancellable_set_error_if_cancelled (cancellable, &error)) {
-		g_simple_async_result_take_error (ctx->result, error);
-		disconnect_context_complete (ctx);
-		return;
-	}
-
-	/* If no simple iface, we're done */
-	if (!ctx->self->_priv.simple_iface) {
-		disconnect_context_complete (ctx);
+	/* Already cancelled or no simple-iface? We are done. */
+	if (   !ctx->self->_priv.simple_iface
+	    || g_cancellable_is_cancelled (cancellable)) {
+		nm_utils_invoke_on_idle (disconnect_context_complete_on_idle,
+		                         ctx,
+		                         cancellable);
 		return;
 	}
 
 	_LOGD ("notifying ModemManager about the modem disconnection");
-	ctx->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
-	mm_modem_simple_disconnect (ctx->self->_priv.simple_iface,
+	mm_modem_simple_disconnect (self->_priv.simple_iface,
 	                            NULL, /* bearer path; if NULL given ALL get disconnected */
 	                            cancellable,
-	                            (GAsyncReadyCallback) simple_disconnect_ready,
+	                            simple_disconnect_ready,
 	                            ctx);
 }
 
@@ -1468,7 +1467,6 @@ nm_modem_broadband_class_init (NMModemBroadbandClass *klass)
 	modem_class->static_stage3_ip4_config_start = static_stage3_ip4_config_start;
 	modem_class->stage3_ip6_config_request = stage3_ip6_config_request;
 	modem_class->disconnect = disconnect;
-	modem_class->disconnect_finish = disconnect_finish;
 	modem_class->deactivate_cleanup = deactivate_cleanup;
 	modem_class->set_mm_enabled = set_mm_enabled;
 	modem_class->get_user_pass = get_user_pass;

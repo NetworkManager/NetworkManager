@@ -61,7 +61,7 @@ struct _NMDeviceModemClass {
 
 G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_MODEM_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceModem, NM_IS_DEVICE_MODEM)
+#define NM_DEVICE_MODEM_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceModem, NM_IS_DEVICE_MODEM, NMDevice)
 
 /*****************************************************************************/
 
@@ -483,44 +483,35 @@ deactivate (NMDevice *device)
 
 /*****************************************************************************/
 
-static gboolean
-deactivate_async_finish (NMDevice *self,
-                         GAsyncResult *res,
-                         GError **error)
-{
-	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (res), error);
-}
-
 static void
-modem_deactivate_async_ready (NMModem *modem,
-                              GAsyncResult *res,
-                              GSimpleAsyncResult *simple)
+modem_deactivate_async_cb (NMModem *modem,
+                           GError *error,
+                           gpointer user_data)
 {
-	GError *error = NULL;
+	gs_unref_object NMDevice *self = NULL;
+	NMDeviceDeactivateCallback callback;
+	gpointer callback_user_data;
 
-	if (!nm_modem_deactivate_async_finish (modem, res, &error))
-		g_simple_async_result_take_error (simple, error);
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
+	nm_utils_user_data_unpack (user_data, &self, &callback, &callback_user_data);
+	callback (self, error, callback_user_data);
 }
 
 static void
 deactivate_async (NMDevice *self,
                   GCancellable *cancellable,
-                  GAsyncReadyCallback callback,
+                  NMDeviceDeactivateCallback callback,
                   gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
+	nm_assert (G_IS_CANCELLABLE (cancellable));
+	nm_assert (callback);
 
-	simple = g_simple_async_result_new (G_OBJECT (self),
-	                                    callback,
-	                                    user_data,
-	                                    deactivate_async);
-	nm_modem_deactivate_async (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) self)->modem,
+	nm_modem_deactivate_async (NM_DEVICE_MODEM_GET_PRIVATE (self)->modem,
 	                           self,
 	                           cancellable,
-	                           (GAsyncReadyCallback) modem_deactivate_async_ready,
-	                           simple);
+	                           modem_deactivate_async_cb,
+	                           nm_utils_user_data_pack (g_object_ref (self),
+	                                                    callback,
+	                                                    user_data));
 }
 
 /*****************************************************************************/
@@ -805,7 +796,6 @@ nm_device_modem_class_init (NMDeviceModemClass *klass)
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;
 	device_class->deactivate_async = deactivate_async;
-	device_class->deactivate_async_finish = deactivate_async_finish;
 	device_class->deactivate = deactivate;
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->act_stage2_config = act_stage2_config;
