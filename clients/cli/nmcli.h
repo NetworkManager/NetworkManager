@@ -167,6 +167,8 @@ void     nmc_clear_sigint (void);
 void     nmc_set_sigquit_internal (void);
 void     nmc_exit (void);
 
+void nm_cli_spawn_pager (NmCli *nmc);
+
 void nmc_empty_output_fields (NmcOutputData *output_data);
 
 #define NMC_OUTPUT_DATA_DEFINE_SCOPED(out) \

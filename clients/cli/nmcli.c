@@ -998,6 +998,14 @@ nmc_value_transforms_register (void)
 	                                 nmc_convert_bytes_to_string);
 }
 
+void
+nm_cli_spawn_pager (NmCli *nmc)
+{
+	if (nmc->pager_pid > 0)
+		return;
+	nmc->pager_pid = nmc_terminal_spawn_pager (&nmc->nmc_config);
+}
+
 static void
 nmc_cleanup (NmCli *nmc)
 {

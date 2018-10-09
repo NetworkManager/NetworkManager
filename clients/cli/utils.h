@@ -40,7 +40,7 @@ gboolean nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***a
 char *ssid_to_hex (const char *str, gsize len);
 void nmc_terminal_erase_line (void);
 void nmc_terminal_show_progress (const char *str);
-void nmc_terminal_spawn_pager (const NmcConfig *nmc_config);
+pid_t nmc_terminal_spawn_pager (const NmcConfig *nmc_config);
 char *nmc_colorize (const NmcConfig *nmc_config, NMMetaColor color, const char * fmt, ...)  _nm_printf (3, 4);
 void nmc_filter_out_colors_inplace (char *str);
 char *nmc_filter_out_colors (const char *str);
