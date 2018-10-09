@@ -5109,7 +5109,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 
 	next_arg (nmc, &argc, &argv, NULL);
 
-	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_con_add_tab_completion;
+	rl_attempted_completion_function = nmcli_con_add_tab_completion;
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
 
@@ -8121,7 +8121,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 
 	/* Setup some readline completion stuff */
 	/* Set a pointer to an alternative function to create matches */
-	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_editor_tab_completion;
+	rl_attempted_completion_function = nmcli_editor_tab_completion;
 	/* Use ' ' and '.' as word break characters */
 	rl_completer_word_break_characters = ". ";
 
@@ -9103,7 +9103,7 @@ do_connections (NmCli *nmc, int argc, char **argv)
 	nmc_start_polkit_agent_start_try (nmc);
 
 	/* Set completion function for 'nmcli con' */
-	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_con_tab_completion;
+	rl_attempted_completion_function = nmcli_con_tab_completion;
 
 	nmc_do_cmd (nmc, connection_cmds, *argv, argc, argv);
 

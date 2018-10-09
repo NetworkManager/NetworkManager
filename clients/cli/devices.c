@@ -2538,7 +2538,7 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 		return error->code;
 	}
 
-        if (!argc) {
+	if (!argc) {
 		g_string_printf (nmc->return_text, _("Error: No property specified."));
 		return NMC_RESULT_ERROR_USER_INPUT;
 	}
