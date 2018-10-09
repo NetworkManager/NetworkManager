@@ -1988,8 +1988,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			}
 		}
 
-		/* Optionally start paging the output. */
-		nmc_terminal_spawn_pager (&nmc->nmc_config);
+		nm_cli_spawn_pager (nmc);
 
 		items = con_show_get_items (nmc, active_only, show_active_fields, order);
 		g_ptr_array_add (items, NULL);

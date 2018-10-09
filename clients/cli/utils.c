@@ -36,6 +36,7 @@
 #include "nm-meta-setting-access.h"
 
 #include "common.h"
+#include "nmcli.h"
 #include "settings.h"
 
 #define ML_HEADER_WIDTH 79
@@ -1445,38 +1446,38 @@ pager_fallback (void)
 	_exit(EXIT_SUCCESS);
 }
 
-void
+pid_t
 nmc_terminal_spawn_pager (const NmcConfig *nmc_config)
 {
 	const char *pager = getenv ("PAGER");
+	pid_t pager_pid;
 	pid_t parent_pid;
 	int fd[2];
 
-	if (   nm_cli.nmc_config.in_editor
-	    || nm_cli.pager_pid > 0
+	if (   nmc_config->in_editor
 	    || nmc_config->print_output == NMC_PRINT_TERSE
 	    || !nmc_config->use_colors
 	    || g_strcmp0 (pager, "") == 0
 	    || getauxval (AT_SECURE))
-		return;
+		return 0;
 
 	if (pipe (fd) == -1) {
 		g_printerr (_("Failed to create pager pipe: %s\n"), strerror (errno));
-		return;
+		return 0;
 	}
 
 	parent_pid = getpid ();
 
-	nm_cli.pager_pid = fork ();
-	if (nm_cli.pager_pid == -1) {
+	pager_pid = fork ();
+	if (pager_pid == -1) {
 		g_printerr (_("Failed to fork pager: %s\n"), strerror (errno));
 		nm_close (fd[0]);
 		nm_close (fd[1]);
-		return;
+		return 0;
 	}
 
 	/* In the child start the pager */
-	if (nm_cli.pager_pid == 0) {
+	if (pager_pid == 0) {
 		dup2 (fd[0], STDIN_FILENO);
 		nm_close (fd[0]);
 		nm_close (fd[1]);
@@ -1521,6 +1522,7 @@ nmc_terminal_spawn_pager (const NmcConfig *nmc_config)
 
 	nm_close (fd[0]);
 	nm_close (fd[1]);
+	return pager_pid;
 }
 
 /*****************************************************************************/
@@ -1587,8 +1589,7 @@ print_required_fields (const NmcConfig *nmc_config,
 	gboolean field_names = of_flags & NMC_OF_FLAG_FIELD_NAMES;
 	gboolean section_prefix = of_flags & NMC_OF_FLAG_SECTION_PREFIX;
 
-	/* Optionally start paging the output. */
-	nmc_terminal_spawn_pager (nmc_config);
+	nm_cli_spawn_pager (&nm_cli);
 
 	/* --- Main header --- */
 	if (   nmc_config->print_output == NMC_PRINT_PRETTY
