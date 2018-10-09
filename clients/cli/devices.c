@@ -1029,9 +1029,11 @@ get_device_list (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (nmc->ask) {
-			char *line = nmc_readline (PROMPT_INTERFACES);
+			gs_free char *line = NULL;
+
+			line = nmc_readline (&nmc->nmc_config,
+			                     PROMPT_INTERFACES);
 			nmc_string_to_arg_array (line, NULL, FALSE, &arg_arr, &arg_num);
-			g_free (line);
 			arg_ptr = arg_arr;
 		}
 		if (arg_num == 0) {
@@ -1086,8 +1088,10 @@ get_device (NmCli *nmc, int *argc, char ***argv, GError **error)
 	int i;
 
 	if (*argc == 0) {
-		if (nmc->ask)
-			ifname = ifname_ask = nmc_readline (PROMPT_INTERFACE);
+		if (nmc->ask) {
+			ifname = ifname_ask = nmc_readline (&nmc->nmc_config,
+			                                    PROMPT_INTERFACE);
+		}
 
 		if (!ifname_ask) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -3211,7 +3215,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 		g_assert (!nmc->complete);
 
 		if (nmc->ask) {
-			ssid_ask = nmc_readline (_("SSID or BSSID: "));
+			ssid_ask = nmc_readline (&nmc->nmc_config, _("SSID or BSSID: "));
 			param_user = ssid_ask ?: "";
 			bssid1_arr = nm_utils_hwaddr_atoba (param_user, ETH_ALEN);
 		}
@@ -3470,8 +3474,11 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	    || ap_wpa_flags != NM_802_11_AP_SEC_NONE
 	    || ap_rsn_flags != NM_802_11_AP_SEC_NONE) {
 		/* Ask for missing password when one is expected and '--ask' is used */
-		if (!password && nmc->ask)
-			password = passwd_ask = nmc_readline_echo (nmc->nmc_config.show_secrets, _("Password: "));
+		if (!password && nmc->ask) {
+			password = passwd_ask = nmc_readline_echo (&nmc->nmc_config,
+			                                           nmc->nmc_config.show_secrets,
+			                                           _("Password: "));
+		}
 
 		if (password) {
 			if (!connection)
