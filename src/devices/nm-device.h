@@ -197,6 +197,10 @@ typedef enum { /*< skip >*/
 	NM_DEVICE_CHECK_DEV_AVAILABLE_ALL                                   = (1L << 1) - 1,
 } NMDeviceCheckDevAvailableFlags;
 
+typedef void (*NMDeviceDeactivateCallback) (NMDevice *self,
+                                            GError *error,
+                                            gpointer user_data);
+
 typedef struct _NMDeviceClass {
 	NMDBusObjectClass parent;
 
@@ -354,11 +358,8 @@ typedef struct _NMDeviceClass {
 	/* Async deactivating (in the DEACTIVATING phase) */
 	void            (* deactivate_async)        (NMDevice *self,
 	                                             GCancellable *cancellable,
-	                                             GAsyncReadyCallback callback,
+	                                             NMDeviceDeactivateCallback callback,
 	                                             gpointer user_data);
-	gboolean        (* deactivate_async_finish) (NMDevice *self,
-	                                             GAsyncResult *res,
-	                                             GError **error);
 
 	void            (* deactivate_reset_hw_addr) (NMDevice *self);
 

@@ -1169,7 +1169,8 @@ typedef struct {
 	NMModem *self;
 	NMDevice *device;
 	GCancellable *cancellable;
-	GSimpleAsyncResult *result;
+	NMModemDeactivateCallback callback;
+	gpointer callback_user_data;
 	DeactivateContextStep step;
 	NMPPPManager *ppp_manager;
 	NMPPPManagerStopHandle *ppp_stop_handle;
@@ -1177,7 +1178,7 @@ typedef struct {
 } DeactivateContext;
 
 static void
-deactivate_context_complete (DeactivateContext *ctx)
+deactivate_context_complete (DeactivateContext *ctx, GError *error)
 {
 	if (ctx->ppp_stop_handle)
 		nm_ppp_manager_stop_cancel (ctx->ppp_stop_handle);
@@ -1185,41 +1186,29 @@ deactivate_context_complete (DeactivateContext *ctx)
 	nm_assert (!ctx->ppp_stop_handle);
 	nm_assert (ctx->ppp_stop_cancellable_id == 0);
 
-	if (ctx->ppp_manager)
-		g_object_unref (ctx->ppp_manager);
-	if (ctx->cancellable)
-		g_object_unref (ctx->cancellable);
-	g_simple_async_result_complete_in_idle (ctx->result);
-	g_object_unref (ctx->result);
+	if (ctx->callback)
+		ctx->callback (ctx->self, error, ctx->callback_user_data);
+	nm_g_object_unref (ctx->ppp_manager);
+	nm_g_object_unref (ctx->cancellable);
 	g_object_unref (ctx->device);
 	g_object_unref (ctx->self);
 	g_slice_free (DeactivateContext, ctx);
-}
-
-gboolean
-nm_modem_deactivate_async_finish (NMModem *self,
-                                  GAsyncResult *res,
-                                  GError **error)
-{
-	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (res), error);
 }
 
 static void deactivate_step (DeactivateContext *ctx);
 
 static void
 disconnect_ready (NMModem *self,
-                  GAsyncResult *res,
-                  DeactivateContext *ctx)
+                  GError *error,
+                  gpointer user_data)
 {
-	GError *error = NULL;
+	DeactivateContext *ctx = user_data;
 
-	if (!NM_MODEM_GET_CLASS (self)->disconnect_finish (self, res, &error)) {
-		g_simple_async_result_take_error (ctx->result, error);
-		deactivate_context_complete (ctx);
+	if (error) {
+		deactivate_context_complete (ctx, error);
 		return;
 	}
 
-	/* Go on */
 	ctx->step++;
 	deactivate_step (ctx);
 }
@@ -1265,8 +1254,8 @@ deactivate_step (DeactivateContext *ctx)
 
 	/* Check cancellable in each step */
 	if (g_cancellable_set_error_if_cancelled (ctx->cancellable, &error)) {
-		g_simple_async_result_take_error (ctx->result, error);
-		deactivate_context_complete (ctx);
+		deactivate_context_complete (ctx, error);
+		g_error_free (error);
 		return;
 	}
 
@@ -1304,13 +1293,13 @@ deactivate_step (DeactivateContext *ctx)
 		NM_MODEM_GET_CLASS (self)->disconnect (self,
 		                                       FALSE,
 		                                       ctx->cancellable,
-		                                       (GAsyncReadyCallback) disconnect_ready,
+		                                       disconnect_ready,
 		                                       ctx);
 		return;
 
 	case DEACTIVATE_CONTEXT_STEP_LAST:
 		_LOGD ("modem deactivation finished");
-		deactivate_context_complete (ctx);
+		deactivate_context_complete (ctx, NULL);
 		return;
 	}
 
@@ -1321,25 +1310,27 @@ void
 nm_modem_deactivate_async (NMModem *self,
                            NMDevice *device,
                            GCancellable *cancellable,
-                           GAsyncReadyCallback callback,
+                           NMModemDeactivateCallback callback,
                            gpointer user_data)
 {
 	DeactivateContext *ctx;
 
+	g_return_if_fail (NM_IS_MODEM (self));
+	g_return_if_fail (NM_IS_DEVICE (device));
+	g_return_if_fail (G_IS_CANCELLABLE (cancellable));
+
 	ctx = g_slice_new0 (DeactivateContext);
 	ctx->self = g_object_ref (self);
 	ctx->device = g_object_ref (device);
-	ctx->result = g_simple_async_result_new (G_OBJECT (self),
-	                                         callback,
-	                                         user_data,
-	                                         nm_modem_deactivate_async);
-	/* FIXME(shutdown): we always require a cancellable, otherwise we cannot
-	 * do a coordinated shutdown. */
-	ctx->cancellable = nm_g_object_ref (cancellable);
+	ctx->cancellable = g_object_ref (cancellable);
+	ctx->callback = callback;
+	ctx->callback_user_data = user_data;
 
 	/* Start */
 	ctx->step = DEACTIVATE_CONTEXT_STEP_FIRST;
 	deactivate_step (ctx);
+
+	/* FIXME: never invoke the callback syncronously. */
 }
 
 /*****************************************************************************/

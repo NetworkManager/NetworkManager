@@ -14532,30 +14532,25 @@ ip6_managed_setup (NMDevice *self)
 
 static void
 deactivate_async_ready (NMDevice *self,
-                        GAsyncResult *res,
+                        GError *error,
                         gpointer user_data)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMDeviceStateReason reason = GPOINTER_TO_UINT (user_data);
-	GError *error = NULL;
 
-	NM_DEVICE_GET_CLASS (self)->deactivate_async_finish (self, res, &error);
-
-	/* If operation cancelled, just return */
-	if (   g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)
-	    || (priv->deactivating_cancellable && g_cancellable_is_cancelled (priv->deactivating_cancellable))) {
-		_LOGW (LOGD_DEVICE, "Deactivation cancelled");
-	} else {
-		/* In every other case, transition to the DISCONNECTED state */
-		if (error) {
-			_LOGW (LOGD_DEVICE, "Deactivation failed: %s",
-			       error->message);
-		}
-		nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, reason);
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		_LOGD (LOGD_DEVICE, "Deactivation cancelled");
+		return;
 	}
 
 	g_clear_object (&priv->deactivating_cancellable);
-	g_clear_error (&error);
+
+	/* In every other case, transition to the DISCONNECTED state */
+	if (error) {
+		_LOGW (LOGD_DEVICE, "Deactivation failed: %s",
+		       error->message);
+	}
+	nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, reason);
 }
 
 static void
@@ -14575,14 +14570,13 @@ deactivate_dispatcher_complete (guint call_id, gpointer user_data)
 	priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
 
 	if (nm_clear_g_cancellable (&priv->deactivating_cancellable))
-		g_warn_if_reached ();
+		nm_assert_not_reached ();
 
-	if (   NM_DEVICE_GET_CLASS (self)->deactivate_async
-	    && NM_DEVICE_GET_CLASS (self)->deactivate_async_finish) {
+	if (NM_DEVICE_GET_CLASS (self)->deactivate_async) {
 		priv->deactivating_cancellable = g_cancellable_new ();
 		NM_DEVICE_GET_CLASS (self)->deactivate_async (self,
 		                                              priv->deactivating_cancellable,
-		                                              (GAsyncReadyCallback) deactivate_async_ready,
+		                                              deactivate_async_ready,
 		                                              GUINT_TO_POINTER (reason));
 	} else
 		nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, reason);
@@ -14639,8 +14633,8 @@ _set_state_full (NMDevice *self,
 	queued_state_clear (self);
 
 	dispatcher_cleanup (self);
-	if (priv->deactivating_cancellable)
-		g_cancellable_cancel (priv->deactivating_cancellable);
+
+	nm_clear_g_cancellable (&priv->deactivating_cancellable);
 
 	/* Cache the activation request for the dispatcher */
 	req = nm_g_object_ref (priv->act_request.obj);
