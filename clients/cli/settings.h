@@ -42,7 +42,8 @@ char       *nmc_setting_get_property (NMSetting *setting,
 char       *nmc_setting_get_property_parsable (NMSetting *setting,
                                                const char *prop,
                                                GError **error);
-gboolean    nmc_setting_set_property (NMSetting *setting,
+gboolean    nmc_setting_set_property (NMClient *client,
+                                      NMSetting *setting,
                                       const char *prop,
                                       const char *val,
                                       GError **error);
