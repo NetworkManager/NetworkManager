@@ -661,12 +661,12 @@ vpn_openconnect_get_secrets (NMConnection *connection, GPtrArray *secrets)
 }
 
 static gboolean
-get_secrets_from_user (const char *request_id,
+get_secrets_from_user (const NmcConfig *nmc_config,
+                       const char *request_id,
                        const char *title,
                        const char *msg,
                        NMConnection *connection,
                        gboolean ask,
-                       gboolean echo_on,
                        GHashTable *pwds_hash,
                        GPtrArray *secrets)
 {
@@ -698,8 +698,9 @@ get_secrets_from_user (const char *request_id,
 				}
 				if (msg)
 					g_print ("%s\n", msg);
-				pwd = nmc_readline_echo (secret->is_secret
-				                         ? echo_on
+				pwd = nmc_readline_echo (nmc_config,
+				                         secret->is_secret
+				                         ? nmc_config->show_secrets
 				                         : TRUE,
 				                         "%s (%s): ", secret->pretty_name, secret->entry_id);
 				if (!pwd)
@@ -763,8 +764,14 @@ nmc_secrets_requested (NMSecretAgentSimple *agent,
 		g_free (path);
 	}
 
-	success = get_secrets_from_user (request_id, title, msg, connection, nmc->nmc_config.in_editor || nmc->ask,
-	                                 nmc->nmc_config.show_secrets, nmc->pwds_hash, secrets);
+	success = get_secrets_from_user (&nmc->nmc_config,
+	                                 request_id,
+	                                 title,
+	                                 msg,
+	                                 connection,
+	                                 nmc->nmc_config.in_editor || nmc->ask,
+	                                 nmc->pwds_hash,
+	                                 secrets);
 	if (success)
 		nm_secret_agent_simple_response (agent, request_id, secrets);
 	else {
@@ -847,7 +854,8 @@ stdin_ready_cb (GIOChannel * io, GIOCondition condition, gpointer data)
 }
 
 static char *
-nmc_readline_helper (const char *prompt)
+nmc_readline_helper (const NmcConfig *nmc_config,
+                     const char *prompt)
 {
 	GIOChannel *io = NULL;
 	guint io_watch_id;
@@ -884,7 +892,7 @@ read_again:
 	if (nmc_seen_sigint ()) {
 		/* Ctrl-C */
 		nmc_clear_sigint ();
-		if (   nm_cli.nmc_config.in_editor
+		if (   nmc_config->in_editor
 		    || (rl_string  && *rl_string)) {
 			/* In editor, or the line is not empty */
 			/* Call readline again to get new prompt (repeat) */
@@ -926,20 +934,17 @@ read_again:
  * this function returns NULL.
  */
 char *
-nmc_readline (const char *prompt_fmt, ...)
+nmc_readline (const NmcConfig *nmc_config,
+              const char *prompt_fmt,
+              ...)
 {
 	va_list args;
-	char *prompt, *str;
+	gs_free char *prompt = NULL;
 
 	va_start (args, prompt_fmt);
 	prompt = g_strdup_vprintf (prompt_fmt, args);
 	va_end (args);
-
-	str = nmc_readline_helper (prompt);
-
-	g_free (prompt);
-
-	return str;
+	return nmc_readline_helper (nmc_config, prompt);
 }
 
 static void
@@ -974,10 +979,14 @@ nmc_secret_redisplay (void)
  * nmc_readline(TRUE, ...) == nmc_readline(...)
  */
 char *
-nmc_readline_echo (gboolean echo_on, const char *prompt_fmt, ...)
+nmc_readline_echo (const NmcConfig *nmc_config,
+                   gboolean echo_on,
+                   const char *prompt_fmt,
+                   ...)
 {
 	va_list args;
-	char *prompt, *str;
+	gs_free char *prompt = NULL;
+	char *str;
 	HISTORY_STATE *saved_history;
 	HISTORY_STATE passwd_history = { 0, };
 
@@ -992,9 +1001,7 @@ nmc_readline_echo (gboolean echo_on, const char *prompt_fmt, ...)
 		rl_redisplay_function = nmc_secret_redisplay;
 	}
 
-	str = nmc_readline_helper (prompt);
-
-	g_free (prompt);
+	str = nmc_readline_helper (nmc_config, prompt);
 
 	/* Restore the non-hiding behavior */
 	if (!echo_on) {

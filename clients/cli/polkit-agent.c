@@ -40,24 +40,25 @@ polkit_request (NMPolkitListener *listener,
                 gboolean echo_on,
                 gpointer user_data)
 {
-	char *response, *tmp, *p;
+	NmCli *nmc = user_data;
 
 	g_print ("%s\n", message);
 	g_print ("(action_id: %s)\n", action_id);
 
 	/* Ask user for polkit authorization password */
 	if (user) {
+		gs_free char *tmp = NULL;
+		char *p;
+
 		/* chop of ": " if present */
 		tmp = g_strdup (request);
 		p = strrchr (tmp, ':');
-		if (p && !strcmp (p, ": "))
+		if (p && nm_streq (p, ": "))
 			*p = '\0';
-		response = nmc_readline_echo (echo_on, "%s (%s): ", tmp, user);
-		g_free (tmp);
-	} else
-		response = nmc_readline_echo (echo_on, "%s", request);
+		return nmc_readline_echo (&nmc->nmc_config, echo_on, "%s (%s): ", tmp, user);
+	}
 
-	return response;
+	return nmc_readline_echo (&nmc->nmc_config, echo_on, "%s", request);
 }
 
 static void
