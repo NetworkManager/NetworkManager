@@ -2344,27 +2344,29 @@ typedef struct {
 } ActivateConnectionInfo;
 
 static void
-active_connection_hint (GString *return_text, ActivateConnectionInfo *info)
+active_connection_hint (GString *return_text,
+                        NMActiveConnection *active,
+                        NMDevice *device)
 {
 	NMRemoteConnection *connection;
 	nm_auto_free_gstring GString *hint = NULL;
 	const GPtrArray *devices;
-	int i;
+	guint i;
 
-	if (strcmp(NM_CONFIG_DEFAULT_LOGGING_BACKEND, "journal") != 0)
+	if (!nm_streq (NM_CONFIG_DEFAULT_LOGGING_BACKEND, "journal"))
 		return;
 
-	connection = nm_active_connection_get_connection (info->active);
+	connection = nm_active_connection_get_connection (active);
 	g_return_if_fail (connection);
 
 	hint = g_string_new ("journalctl -xe ");
 	g_string_append_printf (hint, "NM_CONNECTION=%s",
 	                        nm_connection_get_uuid (NM_CONNECTION (connection)));
 
-	if (info->device) {
-		g_string_append_printf (hint, " + NM_DEVICE=%s", nm_device_get_iface (info->device));
-	} else {
-		devices = nm_active_connection_get_devices (info->active);
+	if (device)
+		g_string_append_printf (hint, " + NM_DEVICE=%s", nm_device_get_iface (device));
+	else {
+		devices = nm_active_connection_get_devices (active);
 		for (i = 0; i < devices->len; i++) {
 			g_string_append_printf (hint, " + NM_DEVICE=%s",
 			                        nm_device_get_iface (NM_DEVICE (g_ptr_array_index (devices, i))));
@@ -2403,7 +2405,7 @@ check_activated (ActivateConnectionInfo *info)
 		nm_assert (reason);
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s"),
 		                 reason);
-		active_connection_hint (nmc->return_text, info);
+		active_connection_hint (nmc->return_text, info->active, info->device);
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		activate_connection_info_finish (info);
 		break;
@@ -2526,7 +2528,7 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s"),
 		                 error->message);
 		g_error_free (error);
-		active_connection_hint (nmc->return_text, info);
+		active_connection_hint (nmc->return_text, info->active, info->device);
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		activate_connection_info_finish (info);
 	} else {
