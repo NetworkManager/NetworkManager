@@ -6687,6 +6687,10 @@ activate_connection_editor_cb (GObject *client,
 		} else
 			g_object_unref (active);
 	}
+
+	nm_g_object_unref (info->device);
+	g_free (info);
+
 	set_info_and_signal_editor_thread (error, monitor_ac_info);
 	g_clear_error (&error);
 }
