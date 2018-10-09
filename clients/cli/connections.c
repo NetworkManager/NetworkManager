@@ -3890,9 +3890,13 @@ reset_options (void)
 }
 
 static gboolean
-set_property (NMConnection *connection,
-              const char *setting_name, const char *property, const char *value,
-              char modifier, GError **error)
+set_property (NMClient *client,
+              NMConnection *connection,
+              const char *setting_name,
+              const char *property,
+              const char *value,
+              char modifier,
+              GError **error)
 {
 	gs_free char *property_name = NULL, *value_free = NULL;
 	NMSetting *setting;
@@ -3925,7 +3929,7 @@ set_property (NMConnection *connection,
 			value = value_free = g_strdup (value);
 			nmc_setting_reset_property (setting, property_name, NULL);
 		}
-		if (!nmc_setting_set_property (setting, property_name, value, &local)) {
+		if (!nmc_setting_set_property (client, setting, property_name, value, &local)) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			             _("Error: failed to modify %s.%s: %s."),
 			             setting_name, property, local->message);
@@ -3977,7 +3981,7 @@ set_option (NmCli *nmc, NMConnection *connection, const NMMetaAbstractInfo *abst
 	if (option && option->check_and_set) {
 		return option->check_and_set (nmc, connection, option, value, error);
 	} else if (value) {
-		return set_property (connection, setting_name, property_name,
+		return set_property (nmc->client, connection, setting_name, property_name,
 		                     value, inf_flags & NM_META_PROPERTY_INF_FLAG_MULTI ? '+' : '\0', error);
 	} else if (inf_flags & NM_META_PROPERTY_INF_FLAG_REQD) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -4099,7 +4103,7 @@ set_connection_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, co
 	}
 
 	if (slave_type) {
-		if (!set_property (con, NM_SETTING_CONNECTION_SETTING_NAME,
+		if (!set_property (nmc->client, con, NM_SETTING_CONNECTION_SETTING_NAME,
 		                   NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
 		                   '\0', error)) {
 			return FALSE;
@@ -4116,7 +4120,7 @@ set_connection_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, co
 		                 NM_SETTING_CONNECTION_INTERFACE_NAME);
 	}
 
-	if (!set_property (con, option->setting_info->general->setting_name, option->property, value, '\0', error))
+	if (!set_property (nmc->client, con, option->setting_info->general->setting_name, option->property, value, '\0', error))
 		return FALSE;
 
 	if (!con_settings (con, &type_settings, &slv_settings, error))
@@ -4145,7 +4149,7 @@ set_connection_iface (NmCli *nmc, NMConnection *con, const OptionInfo *option, c
 		}
 	}
 
-	return set_property (con, option->setting_info->general->setting_name, option->property, value, '\0', error);
+	return set_property (nmc->client, con, option->setting_info->general->setting_name, option->property, value, '\0', error);
 }
 
 static gboolean
@@ -4168,13 +4172,13 @@ set_connection_master (NmCli *nmc, NMConnection *con, const OptionInfo *option, 
 	connections = nm_client_get_connections (nmc->client);
 	value = normalized_master_for_slave (connections, value, slave_type, &slave_type);
 
-	if (!set_property (con, NM_SETTING_CONNECTION_SETTING_NAME,
+	if (!set_property (nmc->client, con, NM_SETTING_CONNECTION_SETTING_NAME,
 	                   NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
 	                   '\0', error)) {
 		return FALSE;
 	}
 
-	return set_property (con, option->setting_info->general->setting_name, option->property, value, '\0', error);
+	return set_property (nmc->client, con, option->setting_info->general->setting_name, option->property, value, '\0', error);
 }
 
 static gboolean
@@ -4288,7 +4292,7 @@ set_bluetooth_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, con
 		return FALSE;
 	}
 
-	return set_property (con, option->setting_info->general->setting_name, option->property, value, '\0', error);
+	return set_property (nmc->client, con, option->setting_info->general->setting_name, option->property, value, '\0', error);
 }
 
 static gboolean
@@ -4307,7 +4311,7 @@ set_ip4_address (NmCli *nmc, NMConnection *con, const OptionInfo *option, const 
 		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
 		              NULL);
 	}
-	return set_property (con, option->setting_info->general->setting_name, option->property, value,
+	return set_property (nmc->client, con, option->setting_info->general->setting_name, option->property, value,
 	                     '+', error);
 }
 
@@ -4327,7 +4331,7 @@ set_ip6_address (NmCli *nmc, NMConnection *con, const OptionInfo *option, const 
 		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
 		              NULL);
 	}
-	return set_property (con, option->setting_info->general->setting_name, option->property, value,
+	return set_property (nmc->client, con, option->setting_info->general->setting_name, option->property, value,
 	                     '+', error);
 }
 
@@ -4613,7 +4617,7 @@ nmc_read_connection_properties (NmCli *nmc,
 			if (!*argc && nmc->complete)
 				complete_property (setting, strv[1], value ?: "", connection);
 
-			if (!set_property (connection, setting_name, strv[1], value, modifier, error))
+			if (!set_property (nmc->client, connection, setting_name, strv[1], value, modifier, error))
 				return FALSE;
 		} else {
 			NMMetaSettingType s;
@@ -6891,7 +6895,7 @@ property_edit_submenu (NmCli *nmc,
 				nmc_property_set_default_value (curr_setting, prop_name);
 			}
 
-			set_result = nmc_setting_set_property (curr_setting, prop_name, prop_val_user, &tmp_err);
+			set_result = nmc_setting_set_property (nmc->client, curr_setting, prop_name, prop_val_user, &tmp_err);
 			if (!set_result) {
 				g_print (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
 				g_clear_error (&tmp_err);
@@ -6914,7 +6918,7 @@ property_edit_submenu (NmCli *nmc,
 			nmc_property_get_gvalue (curr_setting, prop_name, &prop_g_value);
 			nmc_property_set_default_value (curr_setting, prop_name);
 
-			if (!nmc_setting_set_property (curr_setting, prop_name, prop_val_user, &tmp_err)) {
+			if (!nmc_setting_set_property (nmc->client, curr_setting, prop_name, prop_val_user, &tmp_err)) {
 				g_print (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
 				g_clear_error (&tmp_err);
 				g_signal_handlers_block_matched (curr_setting, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, NULL);
@@ -7287,7 +7291,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					                              prop_name);
 
 					/* Set property value */
-					if (!nmc_setting_set_property (menu_ctx.curr_setting, prop_name, prop_val_user, &tmp_err)) {
+					if (!nmc_setting_set_property (nmc->client, menu_ctx.curr_setting, prop_name, prop_val_user, &tmp_err)) {
 						g_print (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
 						g_clear_error (&tmp_err);
 					}
@@ -7348,7 +7352,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				}
 
 				/* Set property value */
-				if (!nmc_setting_set_property (ss, prop_name, cmd_arg_v, &tmp_err)) {
+				if (!nmc_setting_set_property (nmc->client, ss, prop_name, cmd_arg_v, &tmp_err)) {
 					g_print (_("Error: failed to set '%s' property: %s\n"),
 					         prop_name, tmp_err->message);
 					g_clear_error (&tmp_err);
