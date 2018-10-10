@@ -35,6 +35,7 @@
 #define WPAS_DBUS_IFACE_INTERFACE_WPS         WPAS_DBUS_INTERFACE ".Interface.WPS"
 #define WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE  WPAS_DBUS_INTERFACE ".Interface.P2PDevice"
 #define WPAS_DBUS_IFACE_BSS                   WPAS_DBUS_INTERFACE ".BSS"
+#define WPAS_DBUS_IFACE_PEER                  WPAS_DBUS_INTERFACE ".Peer"
 #define WPAS_DBUS_IFACE_NETWORK               WPAS_DBUS_INTERFACE ".Network"
 #define WPAS_ERROR_INVALID_IFACE              WPAS_DBUS_INTERFACE ".InvalidInterface"
 #define WPAS_ERROR_EXISTS_ERROR               WPAS_DBUS_INTERFACE ".InterfaceExists"
@@ -45,6 +46,11 @@ typedef struct {
 	GDBusProxy *proxy;
 	gulong change_id;
 } BssData;
+
+typedef struct {
+	GDBusProxy *proxy;
+	gulong change_id;
+} PeerData;
 
 struct _AddNetworkData;
 
@@ -79,6 +85,8 @@ enum {
 	REMOVED,             /* interface was removed by the supplicant */
 	BSS_UPDATED,         /* a new BSS appeared or an existing had properties changed */
 	BSS_REMOVED,         /* supplicant removed BSS from its scan list */
+	PEER_UPDATED,        /* a new Peer appeared or an existing had properties changed */
+	PEER_REMOVED,        /* supplicant removed Peer from its scan list */
 	SCAN_DONE,           /* wifi scan is complete */
 	CREDENTIALS_REQUEST, /* 802.1x identity or password requested */
 	WPS_CREDENTIALS,     /* WPS credentials received */
@@ -138,6 +146,8 @@ typedef struct {
 	char *         net_path;
 	GHashTable *   bss_proxies;
 	char *         current_bss;
+
+	GHashTable *   peer_proxies;
 
 	gint64         last_scan; /* timestamp as returned by nm_utils_get_monotonic_timestamp_ms() */
 
@@ -318,6 +328,122 @@ bss_add_new (NMSupplicantInterface *self, const char *object_path)
 	                             G_PRIORITY_DEFAULT,
 	                             priv->other_cancellable,
 	                             (GAsyncReadyCallback) bss_proxy_acquired_cb,
+	                             self);
+}
+
+static void
+peer_data_destroy (gpointer user_data)
+{
+	PeerData *peer_data = user_data;
+
+	nm_clear_g_signal_handler (peer_data->proxy, &peer_data->change_id);
+	g_object_unref (peer_data->proxy);
+	g_slice_free (PeerData, peer_data);
+}
+
+static void
+peer_proxy_properties_changed_cb (GDBusProxy *proxy,
+                                  GVariant *changed_properties,
+                                  char **invalidated_properties,
+                                  gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+
+	g_signal_emit (self, signals[PEER_UPDATED], 0,
+	               g_dbus_proxy_get_object_path (proxy),
+	               changed_properties);
+}
+
+static GVariant *
+peer_proxy_get_properties (NMSupplicantInterface *self, GDBusProxy *proxy)
+{
+	gs_strfreev char **properties = NULL;
+	GVariantBuilder builder;
+	char **iter;
+
+	iter = properties = g_dbus_proxy_get_cached_property_names (proxy);
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+	if (iter) {
+		while (*iter) {
+			GVariant *copy = g_dbus_proxy_get_cached_property (proxy, *iter);
+
+			g_variant_builder_add (&builder, "{sv}", *iter++, copy);
+			g_variant_unref (copy);
+		}
+	}
+	return g_variant_builder_end (&builder);
+}
+
+static void
+peer_proxy_acquired_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+{
+	NMSupplicantInterface *self;
+	NMSupplicantInterfacePrivate *priv;
+	gs_free_error GError *error = NULL;
+	GVariant *props = NULL;
+	const char *object_path;
+	PeerData *peer_data;
+	gboolean success;
+
+	success = g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error);
+	if (   !success
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = NM_SUPPLICANT_INTERFACE (user_data);
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (!success) {
+		_LOGD ("failed to acquire Peer proxy: (%s)", error->message);
+		g_hash_table_remove (priv->peer_proxies,
+		                     g_dbus_proxy_get_object_path (proxy));
+		return;
+	}
+
+	object_path = g_dbus_proxy_get_object_path (proxy);
+	peer_data = g_hash_table_lookup (priv->peer_proxies, object_path);
+	if (!peer_data)
+		return;
+
+	peer_data->change_id = g_signal_connect (proxy, "g-properties-changed", G_CALLBACK (peer_proxy_properties_changed_cb), self);
+
+	props = peer_proxy_get_properties (self, proxy);
+
+	g_signal_emit (self, signals[PEER_UPDATED], 0,
+	               g_dbus_proxy_get_object_path (proxy),
+	               g_variant_ref_sink (props));
+	g_variant_unref (props);
+}
+
+static void
+peer_add_new (NMSupplicantInterface *self, const char *object_path)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	GDBusProxy *peer_proxy;
+	PeerData *peer_data;
+
+	g_return_if_fail (object_path != NULL);
+
+	if (g_hash_table_lookup (priv->peer_proxies, object_path))
+		return;
+
+	peer_proxy = g_object_new (G_TYPE_DBUS_PROXY,
+	                           "g-bus-type", G_BUS_TYPE_SYSTEM,
+	                           "g-flags", G_DBUS_PROXY_FLAGS_NONE,
+	                           "g-name", WPAS_DBUS_SERVICE,
+	                           "g-object-path", object_path,
+	                           "g-interface-name", WPAS_DBUS_IFACE_PEER,
+	                           NULL);
+	peer_data = g_slice_new0 (PeerData);
+	peer_data->proxy = peer_proxy;
+	g_hash_table_insert (priv->peer_proxies,
+	                     (char *) g_dbus_proxy_get_object_path (peer_proxy),
+	                     peer_data);
+	g_async_initable_init_async (G_ASYNC_INITABLE (peer_proxy),
+	                             G_PRIORITY_DEFAULT,
+	                             priv->other_cancellable,
+	                             (GAsyncReadyCallback) peer_proxy_acquired_cb,
 	                             self);
 }
 
@@ -1156,6 +1282,54 @@ props_changed_cb (GDBusProxy *proxy,
 }
 
 static void
+p2p_props_changed_cb (GDBusProxy *proxy,
+                      GVariant *changed_properties,
+                      GStrv invalidated_properties,
+                      gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	const char **array, **iter;
+
+	g_object_freeze_notify (G_OBJECT (self));
+
+	if (g_variant_lookup (changed_properties, "Peers", "^a&o", &array)) {
+		iter = array;
+		while (*iter)
+			peer_add_new (self, *iter++);
+		g_free (array);
+	}
+
+	g_object_thaw_notify (G_OBJECT (self));
+}
+
+static void
+p2p_device_found (GDBusProxy *proxy,
+                  const char *path,
+                  gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+
+	peer_add_new (self, path);
+}
+
+static void
+p2p_device_lost (GDBusProxy *proxy,
+                 const char *path,
+                 gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	PeerData *peer_data;
+
+	peer_data = g_hash_table_lookup (priv->peer_proxies, path);
+	if (!peer_data)
+		return;
+	g_hash_table_steal (priv->peer_proxies, path);
+	g_signal_emit (self, signals[PEER_REMOVED], 0, path);
+	peer_data_destroy (peer_data);
+}
+
+static void
 on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
 	NMSupplicantInterface *self;
@@ -1261,9 +1435,11 @@ on_p2p_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_da
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
+	_nm_dbus_signal_connect (priv->p2p_proxy, "DeviceFound", G_VARIANT_TYPE ("(o)"),
+	                         G_CALLBACK (p2p_device_found), self);
+	_nm_dbus_signal_connect (priv->p2p_proxy, "DeviceLost", G_VARIANT_TYPE ("(o)"),
+	                         G_CALLBACK (p2p_device_lost), self);
 	/* TODO:
-	 *  * DeviceFound
-	 *  * DeviceLost
 	 *  * GroupStarted
 	 *  * GroupFinished
 	 *  * GroupFormationFailure
@@ -1313,6 +1489,7 @@ interface_add_done (NMSupplicantInterface *self, const char *path)
 		                                "g-object-path", priv->object_path,
 		                                "g-interface-name", WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE,
 		                                NULL);
+		g_signal_connect (priv->p2p_proxy, "g-properties-changed", G_CALLBACK (p2p_props_changed_cb), self);
 		g_async_initable_init_async (G_ASYNC_INITABLE (priv->p2p_proxy),
 		                             G_PRIORITY_DEFAULT,
 		                             priv->init_cancellable,
@@ -2088,6 +2265,7 @@ nm_supplicant_interface_init (NMSupplicantInterface * self)
 
 	priv->state = NM_SUPPLICANT_INTERFACE_STATE_INIT;
 	priv->bss_proxies = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, bss_data_destroy);
+	priv->peer_proxies = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, peer_data_destroy);
 }
 
 NMSupplicantInterface *
@@ -2151,6 +2329,7 @@ dispose (GObject *object)
 		g_signal_handlers_disconnect_by_data (priv->wpas_proxy, object);
 	g_clear_object (&priv->wpas_proxy);
 	g_clear_pointer (&priv->bss_proxies, g_hash_table_destroy);
+	g_clear_pointer (&priv->peer_proxies, g_hash_table_destroy);
 
 	g_clear_pointer (&priv->net_path, g_free);
 	g_clear_pointer (&priv->dev, g_free);
@@ -2273,6 +2452,22 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 
 	signals[BSS_REMOVED] =
 	    g_signal_new (NM_SUPPLICANT_INTERFACE_BSS_REMOVED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1, G_TYPE_STRING);
+
+	signals[PEER_UPDATED] =
+	    g_signal_new (NM_SUPPLICANT_INTERFACE_PEER_UPDATED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_VARIANT);
+
+	signals[PEER_REMOVED] =
+	    g_signal_new (NM_SUPPLICANT_INTERFACE_PEER_REMOVED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_LAST,
 	                  0,
