@@ -218,6 +218,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-ovs-interface.xml"/>
     <xi:include href="xml/nm-setting-ovs-patch.xml"/>
     <xi:include href="xml/nm-setting-ovs-port.xml"/>
+    <xi:include href="xml/nm-setting-p2p-wireless.xml"/>
     <xi:include href="xml/nm-setting-pppoe.xml"/>
     <xi:include href="xml/nm-setting-ppp.xml"/>
     <xi:include href="xml/nm-setting-proxy.xml"/>

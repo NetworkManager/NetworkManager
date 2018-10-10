@@ -63,6 +63,7 @@
 #include "nm-setting-ovs-interface.h"
 #include "nm-setting-ovs-patch.h"
 #include "nm-setting-ovs-port.h"
+#include "nm-setting-p2p-wireless.h"
 #include "nm-setting-ppp.h"
 #include "nm-setting-pppoe.h"
 #include "nm-setting-serial.h"

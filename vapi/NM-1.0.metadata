@@ -28,6 +28,7 @@ SETTING_IP6_CONFIG_*        parent="NM.SettingIP6Config"            name="SETTIN
 SETTING_IP_TUNNEL_*         parent="NM.SettingIPTunnel"             name="SETTING_IP_TUNNEL_(.+)"
 SETTING_MACVLAN_*           parent="NM.SettingMacvlan"              name="SETTING_MACVLAN_(.+)"
 SETTING_OLPC_MESH_*         parent="NM.SettingOlpcMesh"             name="SETTING_OLPC_MESH_(.+)"
+SETTING_P2P_WIRELESS_*      parent="NM.SettingP2PWireless"          name="SETTING_P2P_WIRELESS_(.+)"
 SETTING_PPP_*               parent="NM.SettingPpp"                  name="SETTING_PPP_(.+)"
 SETTING_PPPOE_*             parent="NM.SettingPppoe"                name="SETTING_PPPOE_(.+)"
 SETTING_PROXY_*             parent="NM.SettingProxy"                name="SETTING_PROXY_(.+)"

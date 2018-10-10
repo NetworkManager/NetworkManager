@@ -7843,6 +7843,27 @@ static const NMMetaPropertyInfo *const property_infos_6LOWPAN[] = {
 	NULL
 };
 
+#undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_P2P_WIRELESS
+static const NMMetaPropertyInfo *const property_infos_P2P_WIRELESS[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_P2P_WIRELESS_PEER,
+		.is_cli_option =                TRUE,
+		.property_alias =               "peer",
+		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+		.prompt =                       N_("Peer"),
+		.property_type =                &_pt_gobject_mac,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_WPS_METHOD,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.get_gtype =            nm_setting_wireless_security_wps_method_get_type,
+			),
+		),
+	),
+	NULL
+};
+
 /*****************************************************************************/
 
 static void
@@ -8008,6 +8029,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_WIRELESS_SECURITY   N_("Wi-Fi security settings")
 #define SETTING_PRETTY_NAME_WPAN                N_("WPAN settings")
 #define SETTING_PRETTY_NAME_6LOWPAN             N_("6LOWPAN settings")
+#define SETTING_PRETTY_NAME_P2P_WIRELESS        N_("P2P Wi-Fi connection")
 
 #define NM_META_SETTING_VALID_PARTS(...) \
 	((const NMMetaSettingValidPartItem *const[]) { __VA_ARGS__  NULL })
@@ -8280,6 +8302,12 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 		.valid_parts = NM_META_SETTING_VALID_PARTS (
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (WPAN,                  TRUE),
+		),
+	),
+	SETTING_INFO (P2P_WIRELESS,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (P2P_WIRELESS,          TRUE),
 		),
 	),
 };

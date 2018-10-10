@@ -57,6 +57,7 @@ typedef struct _NMSettingOvsBridge        NMSettingOvsBridge;
 typedef struct _NMSettingOvsInterface     NMSettingOvsInterface;
 typedef struct _NMSettingOvsPatch         NMSettingOvsPatch;
 typedef struct _NMSettingOvsPort          NMSettingOvsPort;
+typedef struct _NMSettingP2PWireless      NMSettingP2PWireless;
 typedef struct _NMSettingPpp              NMSettingPpp;
 typedef struct _NMSettingPppoe            NMSettingPppoe;
 typedef struct _NMSettingSerial           NMSettingSerial;

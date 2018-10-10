@@ -796,6 +796,7 @@ const NmcMetaGenericInfo *const metagen_con_active_vpn[_NMC_GENERIC_INFO_TYPE_CO
                                          NM_SETTING_IP4_CONFIG_SETTING_NAME","\
                                          NM_SETTING_IP6_CONFIG_SETTING_NAME","\
                                          NM_SETTING_SERIAL_SETTING_NAME","\
+                                         NM_SETTING_P2P_WIRELESS_SETTING_NAME","\
                                          NM_SETTING_PPP_SETTING_NAME","\
                                          NM_SETTING_PPPOE_SETTING_NAME","\
                                          NM_SETTING_ADSL_SETTING_NAME","\
