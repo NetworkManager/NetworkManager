@@ -42,42 +42,43 @@ MKHTML_OPTIONS=--path="$(abs_srcdir)"
 content_files = \
 	$(GENERATED_FILES) \
 	dbus-org.freedesktop.NetworkManager.AccessPoint.xml \
-	dbus-org.freedesktop.NetworkManager.Connection.Active.xml \
-	dbus-org.freedesktop.NetworkManager.Device.Team.xml \
-	dbus-org.freedesktop.NetworkManager.DHCP6Config.xml \
-	dbus-org.freedesktop.NetworkManager.Device.Wireless.xml \
-	dbus-org.freedesktop.NetworkManager.xml \
-	dbus-org.freedesktop.NetworkManager.VPN.Connection.xml \
-	dbus-org.freedesktop.NetworkManager.SecretAgent.xml \
-	dbus-org.freedesktop.NetworkManager.Device.xml \
-	dbus-org.freedesktop.NetworkManager.VPN.Plugin.xml \
-	dbus-org.freedesktop.NetworkManager.Device.Bluetooth.xml \
-	dbus-org.freedesktop.NetworkManager.Device.Dummy.xml \
-	dbus-org.freedesktop.NetworkManager.Device.Vxlan.xml \
-	dbus-org.freedesktop.NetworkManager.Settings.Connection.xml \
-	dbus-org.freedesktop.NetworkManager.Device.Bond.xml \
-	dbus-org.freedesktop.NetworkManager.Device.Macvlan.xml \
-	dbus-org.freedesktop.NetworkManager.Device.Macsec.xml \
-	dbus-org.freedesktop.NetworkManager.PPP.xml \
-	dbus-org.freedesktop.NetworkManager.Device.Vlan.xml \
-	dbus-org.freedesktop.NetworkManager.Device.Adsl.xml \
 	dbus-org.freedesktop.NetworkManager.AgentManager.xml \
-	dbus-org.freedesktop.NetworkManager.Device.IPTunnel.xml \
-	dbus-org.freedesktop.NetworkManager.Device.Tun.xml \
-	dbus-org.freedesktop.NetworkManager.Device.Bridge.xml \
-	dbus-org.freedesktop.NetworkManager.Device.OlpcMesh.xml \
+	dbus-org.freedesktop.NetworkManager.Connection.Active.xml \
 	dbus-org.freedesktop.NetworkManager.DHCP4Config.xml \
+	dbus-org.freedesktop.NetworkManager.DHCP6Config.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Adsl.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Bluetooth.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Bond.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Bridge.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Dummy.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Generic.xml \
+	dbus-org.freedesktop.NetworkManager.Device.IPTunnel.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Infiniband.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Macsec.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Macvlan.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Modem.xml \
-	dbus-org.freedesktop.NetworkManager.IP6Config.xml \
-	dbus-org.freedesktop.NetworkManager.Device.Veth.xml \
-	dbus-org.freedesktop.NetworkManager.Settings.xml \
-	dbus-org.freedesktop.NetworkManager.Device.Wired.xml \
-	dbus-org.freedesktop.NetworkManager.Device.WireGuard.xml \
-	dbus-org.freedesktop.NetworkManager.IP4Config.xml \
+	dbus-org.freedesktop.NetworkManager.Device.OlpcMesh.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Statistics.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Team.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Tun.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Veth.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Vlan.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Vxlan.xml \
+	dbus-org.freedesktop.NetworkManager.Device.WireGuard.xml \
+	dbus-org.freedesktop.NetworkManager.Device.P2PWireless.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Wired.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Wireless.xml \
+	dbus-org.freedesktop.NetworkManager.Device.xml \
 	dbus-org.freedesktop.NetworkManager.DnsManager.xml \
+	dbus-org.freedesktop.NetworkManager.IP4Config.xml \
+	dbus-org.freedesktop.NetworkManager.IP6Config.xml \
+	dbus-org.freedesktop.NetworkManager.PPP.xml \
+	dbus-org.freedesktop.NetworkManager.SecretAgent.xml \
+	dbus-org.freedesktop.NetworkManager.Settings.Connection.xml \
+	dbus-org.freedesktop.NetworkManager.Settings.xml \
+	dbus-org.freedesktop.NetworkManager.VPN.Connection.xml \
+	dbus-org.freedesktop.NetworkManager.VPN.Plugin.xml \
+	dbus-org.freedesktop.NetworkManager.xml \
 	$(top_builddir)/libnm-core/nm-dbus-types.xml \
 	$(top_builddir)/libnm-core/nm-vpn-dbus-types.xml \
 	$(top_builddir)/man/nmcli.xml \
