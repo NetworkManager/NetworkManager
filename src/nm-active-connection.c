@@ -30,6 +30,7 @@
 #include "nm-auth-utils.h"
 #include "nm-auth-manager.h"
 #include "nm-auth-subject.h"
+#include "nm-keep-alive.h"
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 
@@ -75,6 +76,7 @@ typedef struct _NMActiveConnectionPrivate {
 		gpointer user_data;
 	} auth;
 
+	NMKeepAlive *keep_alive;
 } NMActiveConnectionPrivate;
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMActiveConnection,
@@ -103,6 +105,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMActiveConnection,
 	PROP_INT_MASTER_READY,
 	PROP_INT_ACTIVATION_TYPE,
 	PROP_INT_ACTIVATION_REASON,
+	PROP_INT_KEEP_ALIVE,
 );
 
 enum {
@@ -172,6 +175,14 @@ NM_UTILS_FLAGS2STR_DEFINE_STATIC (_state_flags_to_string, NMActivationStateFlags
 );
 
 /*****************************************************************************/
+
+static void
+keep_alive_alive_changed (NMActiveConnection *ac,
+                          GParamSpec         *pspec,
+                          NMKeepAlive        *keep_alive)
+{
+	_notify (ac, PROP_INT_KEEP_ALIVE);
+}
 
 static void
 _settings_connection_updated (NMSettingsConnection *sett_conn,
@@ -904,6 +915,14 @@ nm_active_connection_get_activation_reason (NMActiveConnection *self)
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->activation_reason;
 }
 
+gboolean
+nm_active_connection_get_keep_alive (NMActiveConnection *self)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	return nm_keep_alive_is_alive (priv->keep_alive);
+}
+
 /*****************************************************************************/
 
 static void
@@ -1293,6 +1312,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_INT_MASTER_READY:
 		g_value_set_boolean (value, priv->master_ready);
 		break;
+	case PROP_INT_KEEP_ALIVE:
+		g_value_set_boolean (value, nm_keep_alive_is_alive (priv->keep_alive));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1400,6 +1422,12 @@ nm_active_connection_init (NMActiveConnection *self)
 
 	priv->activation_type = NM_ACTIVATION_TYPE_MANAGED;
 	priv->version_id = _version_id_new ();
+
+	priv->keep_alive = nm_keep_alive_new (TRUE);
+	g_signal_connect_object (priv->keep_alive, "notify::" NM_KEEP_ALIVE_ALIVE,
+	                         (GCallback) keep_alive_alive_changed,
+	                         self,
+	                         G_CONNECT_SWAPPED);
 }
 
 static void
@@ -1431,6 +1459,12 @@ constructed (GObject *object)
 
 	g_return_if_fail (priv->subject);
 	g_return_if_fail (priv->activation_reason != NM_ACTIVATION_REASON_UNSET);
+
+	if (priv->activation_reason == NM_ACTIVATION_REASON_AUTOCONNECT ||
+	    priv->activation_reason == NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES) {
+		nm_keep_alive_set_settings_connection_watch_visible (priv->keep_alive, priv->settings_connection.obj);
+		nm_keep_alive_sink (priv->keep_alive);
+	}
 }
 
 static void
@@ -1474,6 +1508,7 @@ finalize (GObject *object)
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
 	nm_dbus_track_obj_path_set (&priv->settings_connection, NULL, FALSE);
+	g_clear_object (&priv->keep_alive);
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->finalize (object);
 }
@@ -1683,6 +1718,11 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 	                       G_PARAM_WRITABLE |
 	                       G_PARAM_CONSTRUCT_ONLY |
 	                       G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_INT_KEEP_ALIVE] =
+	     g_param_spec_boolean (NM_ACTIVE_CONNECTION_INT_KEEP_ALIVE, "", "",
+	                           TRUE, G_PARAM_READABLE |
+	                           G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

@@ -59,6 +59,7 @@
 #define NM_ACTIVE_CONNECTION_INT_MASTER_READY        "int-master-ready"
 #define NM_ACTIVE_CONNECTION_INT_ACTIVATION_TYPE     "int-activation-type"
 #define NM_ACTIVE_CONNECTION_INT_ACTIVATION_REASON   "int-activation-reason"
+#define NM_ACTIVE_CONNECTION_INT_KEEP_ALIVE          "int-keep-alive"
 
 /* Signals */
 #define NM_ACTIVE_CONNECTION_STATE_CHANGED           "state-changed"
@@ -184,6 +185,8 @@ void          nm_active_connection_set_parent (NMActiveConnection *self,
 NMActivationType nm_active_connection_get_activation_type (NMActiveConnection *self);
 
 NMActivationReason nm_active_connection_get_activation_reason (NMActiveConnection *self);
+
+gboolean      nm_active_connection_get_keep_alive (NMActiveConnection *self);
 
 void          nm_active_connection_clear_secrets (NMActiveConnection *self);
 
