@@ -31,12 +31,13 @@
 #include "nm-core-internal.h"
 #include "nm-dbus-compat.h"
 
-#define WPAS_DBUS_IFACE_INTERFACE       WPAS_DBUS_INTERFACE ".Interface"
-#define WPAS_DBUS_IFACE_INTERFACE_WPS   WPAS_DBUS_INTERFACE ".Interface.WPS"
-#define WPAS_DBUS_IFACE_BSS             WPAS_DBUS_INTERFACE ".BSS"
-#define WPAS_DBUS_IFACE_NETWORK         WPAS_DBUS_INTERFACE ".Network"
-#define WPAS_ERROR_INVALID_IFACE        WPAS_DBUS_INTERFACE ".InvalidInterface"
-#define WPAS_ERROR_EXISTS_ERROR         WPAS_DBUS_INTERFACE ".InterfaceExists"
+#define WPAS_DBUS_IFACE_INTERFACE             WPAS_DBUS_INTERFACE ".Interface"
+#define WPAS_DBUS_IFACE_INTERFACE_WPS         WPAS_DBUS_INTERFACE ".Interface.WPS"
+#define WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE  WPAS_DBUS_INTERFACE ".Interface.P2PDevice"
+#define WPAS_DBUS_IFACE_BSS                   WPAS_DBUS_INTERFACE ".BSS"
+#define WPAS_DBUS_IFACE_NETWORK               WPAS_DBUS_INTERFACE ".Network"
+#define WPAS_ERROR_INVALID_IFACE              WPAS_DBUS_INTERFACE ".InvalidInterface"
+#define WPAS_ERROR_EXISTS_ERROR               WPAS_DBUS_INTERFACE ".InterfaceExists"
 
 /*****************************************************************************/
 
@@ -90,6 +91,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSupplicantInterface,
 	PROP_SCANNING,
 	PROP_CURRENT_BSS,
 	PROP_DRIVER,
+	PROP_P2P_AVAILABLE,
 	PROP_FAST_SUPPORT,
 	PROP_AP_SUPPORT,
 	PROP_PMF_SUPPORT,
@@ -124,6 +126,10 @@ typedef struct {
 	GCancellable * init_cancellable;
 	GDBusProxy *   iface_proxy;
 	GCancellable * other_cancellable;
+	GDBusProxy *   p2p_proxy;
+
+	gboolean       p2p_proxy_acquired;
+	gboolean       p2p_capable;
 
 	WpsData *wps_data;
 
@@ -454,11 +460,23 @@ static void
 parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	gboolean have_active = FALSE, have_ssid = FALSE;
+	gboolean have_active = FALSE, have_p2p = FALSE, have_ssid = FALSE;
 	gint32 max_scan_ssids = -1;
 	const char **array;
 
 	g_return_if_fail (capabilities && g_variant_is_of_type (capabilities, G_VARIANT_TYPE_VARDICT));
+
+	if (   g_variant_lookup (capabilities, "Modes", "^a&s", &array)
+	    && array) {
+		if (g_strv_contains (array, "p2p"))
+			have_p2p = TRUE;
+		g_free (array);
+	}
+
+	if (priv->p2p_capable != have_p2p) {
+		priv->p2p_capable = have_p2p;
+		_notify (self, PROP_P2P_AVAILABLE);
+	}
 
 	if (   g_variant_lookup (capabilities, "Scan", "^a&s", &array)
 	    && array) {
@@ -1190,7 +1208,6 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   NULL);
 
 	/* Check whether NetworkReply and AP mode are supported */
-	priv->ready_count = 1;
 	g_dbus_proxy_call (priv->iface_proxy,
 	                   "NetworkReply",
 	                   g_variant_new ("(oss)",
@@ -1222,11 +1239,55 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 }
 
 static void
+on_p2p_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+{
+	NMSupplicantInterface *self;
+	NMSupplicantInterfacePrivate *priv;
+	gs_free_error GError *error = NULL;
+
+	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error)) {
+		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+			self = NM_SUPPLICANT_INTERFACE (user_data);
+			priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+			_LOGW ("failed to acquire wpa_supplicant p2p proxy: (%s)", error->message);
+
+			g_clear_object (&priv->p2p_proxy);
+
+			iface_check_ready (self);
+		}
+		return;
+	}
+
+	self = NM_SUPPLICANT_INTERFACE (user_data);
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	/* TODO:
+	 *  * DeviceFound
+	 *  * DeviceLost
+	 *  * GroupStarted
+	 *  * GroupFinished
+	 *  * GroupFormationFailure
+	 *  * WpsFailed
+	 *  * FindStopped
+	 *  * GONegotationFailure
+	 *  * InvitationReceived
+	 */
+
+	priv->p2p_proxy_acquired = TRUE;
+	_notify (self, PROP_P2P_AVAILABLE);
+
+	iface_check_ready (self);
+}
+
+static void
 interface_add_done (NMSupplicantInterface *self, const char *path)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	_LOGD ("interface added to supplicant");
+
+	/* Iface ready check happens in iface_check_netreply_cb */
+	priv->ready_count = 1;
 
 	priv->object_path = g_strdup (path);
 	priv->iface_proxy = g_object_new (G_TYPE_DBUS_PROXY,
@@ -1242,6 +1303,22 @@ interface_add_done (NMSupplicantInterface *self, const char *path)
 	                             priv->init_cancellable,
 	                             (GAsyncReadyCallback) on_iface_proxy_acquired,
 	                             self);
+
+	if (priv->p2p_support == NM_SUPPLICANT_FEATURE_YES) {
+		priv->ready_count++;
+		priv->p2p_proxy = g_object_new (G_TYPE_DBUS_PROXY,
+		                                "g-bus-type", G_BUS_TYPE_SYSTEM,
+		                                "g-flags", G_DBUS_PROXY_FLAGS_NONE,
+		                                "g-name", WPAS_DBUS_SERVICE,
+		                                "g-object-path", priv->object_path,
+		                                "g-interface-name", WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE,
+		                                NULL);
+		g_async_initable_init_async (G_ASYNC_INITABLE (priv->p2p_proxy),
+		                             G_PRIORITY_DEFAULT,
+		                             priv->init_cancellable,
+		                             (GAsyncReadyCallback) on_p2p_proxy_acquired,
+		                             self);
+	}
 }
 
 static void
@@ -1947,6 +2024,9 @@ get_property (GObject *object,
 	case PROP_CURRENT_BSS:
 		g_value_set_string (value, priv->current_bss);
 		break;
+	case PROP_P2P_AVAILABLE:
+		g_value_set_boolean (value, priv->p2p_capable && priv->p2p_proxy_acquired);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -2060,6 +2140,9 @@ dispose (GObject *object)
 	if (priv->iface_proxy)
 		g_signal_handlers_disconnect_by_data (priv->iface_proxy, object);
 	g_clear_object (&priv->iface_proxy);
+	if (priv->p2p_proxy)
+		g_signal_handlers_disconnect_by_data (priv->p2p_proxy, object);
+	g_clear_object (&priv->p2p_proxy);
 
 	nm_clear_g_cancellable (&priv->init_cancellable);
 	nm_clear_g_cancellable (&priv->other_cancellable);
@@ -2108,6 +2191,11 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                       G_PARAM_WRITABLE |
 	                       G_PARAM_CONSTRUCT_ONLY |
 	                       G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_P2P_AVAILABLE] =
+	    g_param_spec_boolean (NM_SUPPLICANT_INTERFACE_P2P_AVAILABLE, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_FAST_SUPPORT] =
 	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_FAST_SUPPORT, "", "",
 	                      NM_SUPPLICANT_FEATURE_UNKNOWN,

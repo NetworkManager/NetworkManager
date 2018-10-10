@@ -58,6 +58,7 @@ typedef enum {
 #define NM_SUPPLICANT_INTERFACE_SCANNING         "scanning"
 #define NM_SUPPLICANT_INTERFACE_CURRENT_BSS      "current-bss"
 #define NM_SUPPLICANT_INTERFACE_DRIVER           "driver"
+#define NM_SUPPLICANT_INTERFACE_P2P_AVAILABLE    "p2p-available"
 #define NM_SUPPLICANT_INTERFACE_FAST_SUPPORT     "fast-support"
 #define NM_SUPPLICANT_INTERFACE_AP_SUPPORT       "ap-support"
 #define NM_SUPPLICANT_INTERFACE_PMF_SUPPORT      "pmf-support"
