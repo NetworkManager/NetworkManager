@@ -2029,7 +2029,7 @@ state_changed (NMDeviceIwd *self, const char *new_state)
 	NMDevice *device = NM_DEVICE (self);
 	NMDeviceState dev_state = nm_device_get_state (device);
 	gboolean iwd_connection = FALSE;
-	gboolean can_connect;
+	gboolean can_connect = priv->can_connect;
 
 	_LOGI (LOGD_DEVICE | LOGD_WIFI, "new IWD device state is %s", new_state);
 
@@ -2039,6 +2039,8 @@ state_changed (NMDeviceIwd *self, const char *new_state)
 
 	/* Don't allow scanning while connecting, disconnecting or roaming */
 	set_can_scan (self, NM_IN_STRSET (new_state, "connected", "disconnected"));
+
+	priv->can_connect = FALSE;
 
 	if (NM_IN_STRSET (new_state, "connecting", "connected", "roaming")) {
 		/* If we were connecting, do nothing, the confirmation of
@@ -2081,10 +2083,10 @@ state_changed (NMDeviceIwd *self, const char *new_state)
 	/* Don't allow new connection until iwd exits disconnecting and no
 	 * Connect callback is pending.
 	 */
-	can_connect = NM_IN_STRSET (new_state, "disconnected");
-	if (can_connect != priv->can_connect) {
-		priv->can_connect = can_connect;
-		nm_device_emit_recheck_auto_activate (device);
+	if (NM_IN_STRSET (new_state, "disconnected")) {
+		priv->can_connect = TRUE;
+		if (!can_connect)
+			nm_device_emit_recheck_auto_activate (device);
 	}
 }
 
