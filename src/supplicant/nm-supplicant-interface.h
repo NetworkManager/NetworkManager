@@ -146,6 +146,13 @@ gboolean nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,
                                                     const char *value,
                                                     GError **error);
 
+void nm_supplicant_interface_p2p_connect (NMSupplicantInterface * self,
+                                          const char * peer,
+                                          const char * wps_method,
+                                          const char * wps_pin);
+void nm_supplicant_interface_p2p_cancel_connect (NMSupplicantInterface * self);
+void nm_supplicant_interface_p2p_disconnect (NMSupplicantInterface * self);
+
 NMSupplicantFeature nm_supplicant_interface_get_ap_support (NMSupplicantInterface *self);
 NMSupplicantFeature nm_supplicant_interface_get_pmf_support (NMSupplicantInterface *self);
 NMSupplicantFeature nm_supplicant_interface_get_fils_support (NMSupplicantInterface *self);

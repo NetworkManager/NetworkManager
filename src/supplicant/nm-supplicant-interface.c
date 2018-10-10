@@ -2436,6 +2436,95 @@ nm_supplicant_interface_get_max_scan_ssids (NMSupplicantInterface *self)
 
 /*****************************************************************************/
 
+void
+nm_supplicant_interface_p2p_connect (NMSupplicantInterface * self,
+                                     const char * peer,
+                                     const char * wps_method,
+                                     const char * wps_pin)
+{
+	NMSupplicantInterfacePrivate *priv;
+	GVariantBuilder builder;
+
+	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
+
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	/* Don't do anything if there is no connection to the supplicant yet. */
+	if (!priv->p2p_proxy || !priv->object_path)
+		return;
+
+	/* Connect parameters */
+	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+
+	g_variant_builder_add (&builder, "{sv}", "wps_method", g_variant_new_string (wps_method));
+
+	if (wps_pin)
+		g_variant_builder_add (&builder, "{sv}", "pin", g_variant_new_string (wps_pin));
+
+	g_variant_builder_add (&builder, "{sv}", "peer", g_variant_new_object_path (peer));
+
+	g_variant_builder_add (&builder, "{sv}", "join", g_variant_new_boolean (FALSE));
+	g_variant_builder_add (&builder, "{sv}", "persistent", g_variant_new_boolean (FALSE));
+	g_variant_builder_add (&builder, "{sv}", "go_intent", g_variant_new_int32 (7));
+
+	g_dbus_proxy_call (priv->p2p_proxy,
+	                   "Connect",
+	                   g_variant_new ("(a{sv})", &builder),
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   priv->other_cancellable,
+	                   (GAsyncReadyCallback) log_result_cb,
+	                   "p2p connect");
+}
+
+void
+nm_supplicant_interface_p2p_cancel_connect (NMSupplicantInterface * self)
+{
+	NMSupplicantInterfacePrivate *priv;
+
+	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
+
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	/* Don't do anything if there is no connection to the supplicant yet. */
+	if (!priv->p2p_proxy || !priv->object_path)
+		return;
+
+	g_dbus_proxy_call (priv->p2p_proxy,
+	                   "Cancel",
+	                   NULL,
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   priv->other_cancellable,
+	                   (GAsyncReadyCallback) log_result_cb,
+	                   "cancel p2p connect");
+}
+
+void
+nm_supplicant_interface_p2p_disconnect (NMSupplicantInterface * self)
+{
+	NMSupplicantInterfacePrivate *priv;
+
+	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
+
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	/* Don't do anything if there is no connection to the supplicant. */
+	if (!priv->p2p_proxy || !priv->object_path)
+		return;
+
+	g_dbus_proxy_call (priv->p2p_proxy,
+	                   "Disconnect",
+	                   NULL,
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   priv->other_cancellable,
+	                   (GAsyncReadyCallback) log_result_cb,
+	                   "p2p disconnect");
+}
+
+/*****************************************************************************/
+
 static void
 get_property (GObject *object,
               guint prop_id,
