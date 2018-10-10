@@ -307,7 +307,8 @@ nmc_setting_connection_connect_handlers (NMSettingConnection *setting, NMConnect
 /*****************************************************************************/
 
 static gboolean
-_set_fcn_precheck_connection_secondaries (const char *value,
+_set_fcn_precheck_connection_secondaries (NMClient *client,
+                                          const char *value,
                                           char **value_coerced,
                                           GError **error)
 {
@@ -322,7 +323,7 @@ _set_fcn_precheck_connection_secondaries (const char *value,
 	if (!strv0)
 		return TRUE;
 
-	connections = nm_client_get_connections (nm_cli.client);
+	connections = nm_client_get_connections (client);
 
 	strv = g_strdupv ((char **) strv0);
 	for (iter = strv; *iter; iter++) {
@@ -531,7 +532,7 @@ _set_fcn_call (const NMMetaPropertyInfo *property_info,
  * Returns: TRUE on success; FALSE on failure and sets error
  */
 gboolean
-nmc_setting_set_property (NMSetting *setting, const char *prop, const char *value, GError **error)
+nmc_setting_set_property (NMClient *client, NMSetting *setting, const char *prop, const char *value, GError **error)
 {
 	const NMMetaPropertyInfo *property_info;
 
@@ -552,7 +553,7 @@ nmc_setting_set_property (NMSetting *setting, const char *prop, const char *valu
 				if (nm_streq (property_info->property_name, NM_SETTING_CONNECTION_SECONDARIES)) {
 					gs_free char *value_coerced = NULL;
 
-					if (!_set_fcn_precheck_connection_secondaries (value, &value_coerced, error))
+					if (!_set_fcn_precheck_connection_secondaries (client, value, &value_coerced, error))
 						return FALSE;
 
 					return _set_fcn_call (property_info,

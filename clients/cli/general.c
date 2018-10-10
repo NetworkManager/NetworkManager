@@ -546,8 +546,7 @@ print_permissions (void *user_data)
 		permissions[i++] = GINT_TO_POINTER (perm);
 	permissions[i++] = NULL;
 
-	/* Optionally start paging the output. */
-	nmc_terminal_spawn_pager (&nmc->nmc_config);
+	nm_cli_spawn_pager (nmc);
 
 	if (!nmc_print (&nmc->nmc_config,
 	                permissions,
@@ -1270,8 +1269,7 @@ do_overview (NmCli *nmc, int argc, char **argv)
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
-	/* Optionally start paging the output. */
-	nmc_terminal_spawn_pager (&nmc->nmc_config);
+	nm_cli_spawn_pager (nmc);
 
 	/* The VPN connections don't have devices (yet?). */
 	p = nm_client_get_active_connections (nmc->client);
