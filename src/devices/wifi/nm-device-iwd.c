@@ -551,6 +551,25 @@ is_connection_known_network (NMConnection *connection)
 }
 
 static gboolean
+is_ap_known_network (NMWifiAP *ap)
+{
+	GDBusProxy *network_proxy;
+	gs_unref_variant GVariant *known_network = NULL;
+
+	network_proxy = nm_iwd_manager_get_dbus_interface (nm_iwd_manager_get (),
+	                                                   nm_wifi_ap_get_supplicant_path (ap),
+	                                                   NM_IWD_NETWORK_INTERFACE);
+	if (!network_proxy)
+		return FALSE;
+
+	known_network = g_dbus_proxy_get_cached_property (network_proxy, "KnownNetwork");
+	g_object_unref (network_proxy);
+
+	return    known_network
+	       && g_variant_is_of_type (known_network, G_VARIANT_TYPE_OBJECT_PATH);
+}
+
+static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMDeviceIwd *self = NM_DEVICE_IWD (device);
@@ -670,6 +689,7 @@ check_connection_available (NMDevice *device,
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMSettingWireless *s_wifi;
 	const char *mode;
+	NMWifiAP *ap = NULL;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wifi, FALSE);
@@ -678,8 +698,6 @@ check_connection_available (NMDevice *device,
 	 * also be available in general (without @specific_object). */
 
 	if (specific_object) {
-		NMWifiAP *ap;
-
 		ap = nm_wifi_ap_lookup_for_device (NM_DEVICE (self), specific_object);
 		if (!ap) {
 			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
@@ -698,24 +716,27 @@ check_connection_available (NMDevice *device,
 	if (NM_IN_STRSET (mode, NM_SETTING_WIRELESS_MODE_AP, NM_SETTING_WIRELESS_MODE_ADHOC))
 		return TRUE;
 
+	if (NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
+		return TRUE;
+
+	if (!ap)
+		ap = nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection);
+
+	if (!ap) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "no compatible access point found");
+		return FALSE;
+	}
+
 	/* 8021x networks can only be used if they've been provisioned on the IWD side and
 	 * thus are Known Networks.
 	 */
 	if (nm_wifi_connection_get_iwd_security (connection, NULL) == NM_IWD_NETWORK_SECURITY_8021X) {
-		if (!is_connection_known_network (connection)) {
+		if (!is_ap_known_network (ap)) {
 			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 			                            "802.1x network is not an IWD Known Network (missing provisioning file?)");
 			return FALSE;
 		}
-	}
-
-	if (NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
-		return TRUE;
-
-	if (!specific_object && !nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection)) {
-		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-		                            "no compatible access point found");
-		return FALSE;
 	}
 
 	return TRUE;
@@ -1728,8 +1749,8 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		 * fail, for other combinations we will let the Connect call fail
 		 * or ask us for any missing secrets through the Agent.
 		 */
-		if (   !is_connection_known_network (connection)
-		    && nm_connection_get_setting_802_1x (connection)) {
+		if (   nm_connection_get_setting_802_1x (connection)
+		    && !is_ap_known_network (ap)) {
 			_LOGI (LOGD_DEVICE | LOGD_WIFI,
 			       "Activation: (wifi) access point '%s' has 802.1x security but is not configured in IWD.",
 			       nm_connection_get_id (connection));
