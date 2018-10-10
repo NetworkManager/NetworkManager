@@ -650,6 +650,8 @@ static void concheck_update_state (NMDevice *self,
                                    NMConnectivityState state,
                                    gboolean is_periodic);
 
+static const char * nm_device_get_effective_ip_config_method (NMDevice *self, GType ip_setting_type);
+
 /*****************************************************************************/
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (queued_state_to_string, NMDeviceState,
@@ -2846,6 +2848,29 @@ concheck_update_state (NMDevice *self, int addr_family,
 		    && !ip_config_merge_and_apply (self, AF_INET6, TRUE))
 			_LOGW (LOGD_IP6, "Failed to update IPv6 route metric");
 	}
+}
+
+static const char *
+nm_device_get_effective_ip_config_method (NMDevice *self, GType ip_setting_type)
+{
+	NMConnection *connection = nm_device_get_applied_connection (self);
+	const char *method = NULL;
+
+	g_assert (connection);
+
+	method = nm_utils_get_ip_config_method (connection, ip_setting_type);
+	if ((ip_setting_type == NM_TYPE_SETTING_IP4_CONFIG && strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0) ||
+	    (ip_setting_type == NM_TYPE_SETTING_IP6_CONFIG && strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO))) {
+
+		const char *auto_method = NULL;
+		if (NM_DEVICE_GET_CLASS (self)->get_auto_ip_config_method)
+			auto_method = NM_DEVICE_GET_CLASS (self)->get_auto_ip_config_method (self, ip_setting_type);
+
+		if (auto_method)
+			return auto_method;
+	}
+
+	return method;
 }
 
 static void
@@ -6894,7 +6919,6 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 {
 	NMDevice *self = data;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMConnection *connection = NULL;
 	const char *method;
 	struct in_addr address;
 	NMIP4Config *config;
@@ -6903,11 +6927,8 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 	if (priv->act_request.obj == NULL)
 		return;
 
-	connection = nm_act_request_get_applied_connection (priv->act_request.obj);
-	g_assert (connection);
-
 	/* Ignore if the connection isn't an AutoIP connection */
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	method = nm_device_get_effective_ip_config_method (self, NM_TYPE_SETTING_IP4_CONFIG);
 	if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL) != 0)
 		return;
 
@@ -7936,11 +7957,11 @@ have_any_ready_slaves (NMDevice *self)
 }
 
 static gboolean
-ip4_requires_slaves (NMConnection *connection)
+ip4_requires_slaves (NMDevice *self)
 {
 	const char *method;
 
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	method = nm_device_get_effective_ip_config_method (self, NM_TYPE_SETTING_IP4_CONFIG);
 	return strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0;
 }
 
@@ -7965,7 +7986,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 		return NM_ACT_STAGE_RETURN_IP_WAIT;
 	}
 
-	if (nm_device_is_master (self) && ip4_requires_slaves (connection)) {
+	if (nm_device_is_master (self) && ip4_requires_slaves (self)) {
 		/* If the master has no ready slaves, and depends on slaves for
 		 * a successful IPv4 attempt, then postpone IPv4 addressing.
 		 */
@@ -7976,7 +7997,8 @@ act_stage3_ip4_config_start (NMDevice *self,
 		}
 	}
 
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	method = nm_device_get_effective_ip_config_method (self, NM_TYPE_SETTING_IP4_CONFIG);
+	_LOGD (LOGD_IP4 | LOGD_DEVICE, "IPv4 config method is %s", method);
 
 	if (NM_IN_STRSET (method,
 	                  NM_SETTING_IP4_CONFIG_METHOD_AUTO,
@@ -8790,7 +8812,7 @@ linklocal6_check_complete (NMDevice *self)
 	connection = nm_device_get_applied_connection (self);
 	g_assert (connection);
 
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	method = nm_device_get_effective_ip_config_method (self, NM_TYPE_SETTING_IP6_CONFIG);
 
 	_LOGD (LOGD_DEVICE, "linklocal6: waiting for link-local addresses successful, continue with method %s", method);
 
@@ -8887,7 +8909,6 @@ static gboolean
 linklocal6_start (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMConnection *connection;
 	const char *method;
 
 	nm_clear_g_source (&priv->linklocal6_timeout_id);
@@ -8898,10 +8919,7 @@ linklocal6_start (NMDevice *self)
 	                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL))
 		return TRUE;
 
-	connection = nm_device_get_applied_connection (self);
-	g_assert (connection);
-
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	method = nm_device_get_effective_ip_config_method (self, NM_TYPE_SETTING_IP6_CONFIG);
 	_LOGD (LOGD_DEVICE, "linklocal6: starting IPv6 with method '%s', but the device has no link-local addresses configured. Wait.", method);
 
 	check_and_add_ipv6ll_addr (self);
@@ -9407,12 +9425,7 @@ addrconf6_start_with_link_ready (NMDevice *self)
 static NMNDiscNodeType
 ndisc_node_type (NMDevice *self)
 {
-	NMConnection *connection;
-
-	connection = nm_device_get_applied_connection (self);
-	g_assert (connection);
-
-	if (strcmp (nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG),
+	if (strcmp (nm_device_get_effective_ip_config_method (self, NM_TYPE_SETTING_IP6_CONFIG),
 	            NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0)
 		return NM_NDISC_NODE_TYPE_ROUTER;
 	else
@@ -9666,11 +9679,11 @@ _ip6_privacy_get (NMDevice *self)
 /*****************************************************************************/
 
 static gboolean
-ip6_requires_slaves (NMConnection *connection)
+ip6_requires_slaves (NMDevice *self)
 {
 	const char *method;
 
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	method = nm_device_get_effective_ip_config_method (self, NM_TYPE_SETTING_IP6_CONFIG);
 
 	/* SLAAC, DHCP, and Link-Local depend on connectivity (and thus slaves)
 	 * to complete addressing.  SLAAC and DHCP need a peer to provide a prefix.
@@ -9702,7 +9715,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 		return NM_ACT_STAGE_RETURN_IP_WAIT;
 	}
 
-	if (nm_device_is_master (self) && ip6_requires_slaves (connection)) {
+	if (nm_device_is_master (self) && ip6_requires_slaves (self)) {
 		/* If the master has no ready slaves, and depends on slaves for
 		 * a successful IPv6 attempt, then postpone IPv6 addressing.
 		 */
@@ -9714,7 +9727,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	}
 
 	priv->dhcp6.mode = NM_NDISC_DHCP_LEVEL_NONE;
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	method = nm_device_get_effective_ip_config_method (self, NM_TYPE_SETTING_IP6_CONFIG);
 
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0) {
 		if (   !priv->master
@@ -10361,13 +10374,10 @@ activate_stage5_ip4_config_result (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActRequest *req;
 	const char *method;
-	NMConnection *connection;
 	int ip_ifindex;
 
 	req = nm_device_get_act_request (self);
 	g_assert (req);
-	connection = nm_act_request_get_applied_connection (req);
-	g_assert (connection);
 
 	/* Interface must be IFF_UP before IP config can be applied */
 	ip_ifindex = nm_device_get_ip_ifindex (self);
@@ -10384,7 +10394,7 @@ activate_stage5_ip4_config_result (NMDevice *self)
 	}
 
 	/* Start IPv4 sharing if we need it */
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	method = nm_device_get_effective_ip_config_method (self, NM_TYPE_SETTING_IP4_CONFIG);
 
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0) {
 		gs_free_error GError *error = NULL;
@@ -10532,14 +10542,11 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActRequest *req;
 	const char *method;
-	NMConnection *connection;
 	int ip_ifindex;
 	int errsv;
 
 	req = nm_device_get_act_request (self);
 	g_assert (req);
-	connection = nm_act_request_get_applied_connection (req);
-	g_assert (connection);
 
 	/* Interface must be IFF_UP before IP config can be applied */
 	ip_ifindex = nm_device_get_ip_ifindex (self);
@@ -10571,7 +10578,7 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 		nm_device_remove_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, FALSE);
 
 		/* Start IPv6 forwarding if we need it */
-		method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+		method = nm_device_get_effective_ip_config_method (self, NM_TYPE_SETTING_IP6_CONFIG);
 
 		if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0) {
 			if (!nm_platform_sysctl_set (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv6/conf/all/forwarding"), "1")) {
@@ -14534,7 +14541,7 @@ nm_device_spawn_iface_helper (NMDevice *self)
 
 	dhcp4_address = find_dhcp4_address (self);
 
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	method = nm_device_get_effective_ip_config_method (self, NM_TYPE_SETTING_IP4_CONFIG);
 	if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0) {
 		NMSettingIPConfig *s_ip4;
 
