@@ -41,5 +41,7 @@ NMSupplicantManager *nm_supplicant_manager_get (void);
 NMSupplicantInterface *nm_supplicant_manager_create_interface (NMSupplicantManager *mgr,
                                                                const char *ifname,
                                                                NMSupplicantDriver driver);
+NMSupplicantInterface *nm_supplicant_manager_create_interface_from_path (NMSupplicantManager *self,
+                                                                         const char *object_path);
 
 #endif /* __NETWORKMANAGER_SUPPLICANT_MANAGER_H__ */

@@ -55,6 +55,7 @@ typedef enum {
 
 /* Properties */
 #define NM_SUPPLICANT_INTERFACE_IFACE            "iface"
+#define NM_SUPPLICANT_INTERFACE_OBJECT_PATH      "object-path"
 #define NM_SUPPLICANT_INTERFACE_SCANNING         "scanning"
 #define NM_SUPPLICANT_INTERFACE_CURRENT_BSS      "current-bss"
 #define NM_SUPPLICANT_INTERFACE_DRIVER           "driver"
@@ -82,6 +83,7 @@ typedef struct _NMSupplicantInterfaceClass NMSupplicantInterfaceClass;
 GType nm_supplicant_interface_get_type (void);
 
 NMSupplicantInterface * nm_supplicant_interface_new (const char *ifname,
+                                                     const char *object_path,
                                                      NMSupplicantDriver driver,
                                                      NMSupplicantFeature fast_support,
                                                      NMSupplicantFeature ap_support,

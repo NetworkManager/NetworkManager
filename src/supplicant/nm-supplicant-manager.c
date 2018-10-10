@@ -161,7 +161,65 @@ nm_supplicant_manager_create_interface (NMSupplicantManager *self,
 	}
 
 	iface = nm_supplicant_interface_new (ifname,
+	                                     NULL,
 	                                     driver,
+	                                     priv->fast_support,
+	                                     priv->ap_support,
+	                                     priv->pmf_support,
+	                                     priv->fils_support,
+	                                     priv->p2p_support,
+	                                     priv->wfd_support);
+
+	priv->ifaces = g_slist_prepend (priv->ifaces, iface);
+	g_object_add_toggle_ref ((GObject *) iface, _sup_iface_last_ref, self);
+
+	/* If we're making the supplicant take a time out for a bit, don't
+	 * let the supplicant interface start immediately, just let it hang
+	 * around in INIT state until we're ready to talk to the supplicant
+	 * again.
+	 */
+	if (is_available (self))
+		nm_supplicant_interface_set_supplicant_available (iface, TRUE);
+
+	return iface;
+}
+
+/**
+ * nm_supplicant_manager_create_interface_from_path:
+ * @self: the #NMSupplicantManager
+ * @object_path: the DBus object path for which to obtain the supplicant interface
+ *
+ * Note: the manager owns a reference to the instance and the only way to
+ *   get the manager to release it, is by dropping all other references
+ *   to the supplicant-interface (or destroying the manager).
+ *
+ * Returns: (transfer full): returns a #NMSupplicantInterface or %NULL.
+ *   Must be unrefed at the end.
+ * */
+NMSupplicantInterface *
+nm_supplicant_manager_create_interface_from_path (NMSupplicantManager *self,
+                                                  const char *object_path)
+{
+	NMSupplicantManagerPrivate *priv;
+	NMSupplicantInterface *iface;
+	GSList *ifaces;
+
+	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (self), NULL);
+	g_return_val_if_fail (object_path != NULL, NULL);
+
+	priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+
+	_LOGD ("creating new supplicant interface for dbus path %s", object_path);
+
+	/* assert against not requesting duplicate interfaces. */
+	for (ifaces = priv->ifaces; ifaces; ifaces = ifaces->next) {
+		if (g_strcmp0 (nm_supplicant_interface_get_object_path (ifaces->data), object_path) == 0)
+			g_return_val_if_reached (NULL);
+	}
+
+	iface = nm_supplicant_interface_new (NULL,
+	                                     object_path,
+	                                     NM_SUPPLICANT_DRIVER_WIRELESS,
 	                                     priv->fast_support,
 	                                     priv->ap_support,
 	                                     priv->pmf_support,

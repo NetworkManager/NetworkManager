@@ -22,6 +22,7 @@
 #include "nm-default.h"
 
 #include "nm-supplicant-interface.h"
+#include "nm-supplicant-manager.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -96,6 +97,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMSupplicantInterface,
 	PROP_IFACE,
+	PROP_OBJECT_PATH,
 	PROP_SCANNING,
 	PROP_CURRENT_BSS,
 	PROP_DRIVER,
@@ -1278,6 +1280,14 @@ props_changed_cb (GDBusProxy *proxy,
 			_LOGW ("connection disconnected (reason %d)", priv->disconnect_reason);
 	}
 
+	/* We may not have priv->dev set yet if this interface was created from a
+	 * known wpa_supplicant interface without knowing the device name.
+	 */
+	if (priv->dev == NULL && g_variant_lookup (changed_properties, "Ifname", "&s", &s)) {
+		priv->dev = g_strdup (s);
+		_notify (self, PROP_IFACE);
+	}
+
 	g_object_thaw_notify (G_OBJECT (self));
 }
 
@@ -1466,6 +1476,7 @@ interface_add_done (NMSupplicantInterface *self, const char *path)
 	priv->ready_count = 1;
 
 	priv->object_path = g_strdup (path);
+	_notify (self, PROP_OBJECT_PATH);
 	priv->iface_proxy = g_object_new (G_TYPE_DBUS_PROXY,
 	                                  "g-bus-type", G_BUS_TYPE_SYSTEM,
 	                                  "g-flags", G_DBUS_PROXY_FLAGS_NONE,
@@ -1599,6 +1610,7 @@ interface_removed_cb (GDBusProxy *proxy,
 	/* Invalidate the object path to prevent the manager from trying to remove
 	 * a non-existing interface. */
 	g_clear_pointer (&priv->object_path, g_free);
+	_notify (self, PROP_OBJECT_PATH);
 
 	/* No need to clean up everything now, that will happen at dispose time. */
 
@@ -1623,7 +1635,6 @@ on_wpas_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	gs_free_error GError *error = NULL;
 	GDBusProxy *wpas_proxy;
 	GVariantBuilder props;
-	const char *driver_name = NULL;
 
 	wpas_proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
 	if (!wpas_proxy) {
@@ -1649,36 +1660,44 @@ on_wpas_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	 * when the supplicant has started.
 	 */
 
-	switch (priv->driver) {
-	case NM_SUPPLICANT_DRIVER_WIRELESS:
-		driver_name = DEFAULT_WIFI_DRIVER;
-		break;
-	case NM_SUPPLICANT_DRIVER_WIRED:
-		driver_name = "wired";
-		break;
-	case NM_SUPPLICANT_DRIVER_MACSEC:
-		driver_name = "macsec_linux";
-		break;
+	if (priv->dev != NULL) {
+		const char *driver_name = NULL;
+
+		switch (priv->driver) {
+		case NM_SUPPLICANT_DRIVER_WIRELESS:
+			driver_name = DEFAULT_WIFI_DRIVER;
+			break;
+		case NM_SUPPLICANT_DRIVER_WIRED:
+			driver_name = "wired";
+			break;
+		case NM_SUPPLICANT_DRIVER_MACSEC:
+			driver_name = "macsec_linux";
+			break;
+		}
+
+		g_return_if_fail (driver_name);
+
+		g_variant_builder_init (&props, G_VARIANT_TYPE_VARDICT);
+		g_variant_builder_add (&props, "{sv}",
+		                       "Driver",
+		                       g_variant_new_string (driver_name));
+		g_variant_builder_add (&props, "{sv}",
+		                       "Ifname",
+		                       g_variant_new_string (priv->dev));
+
+		g_dbus_proxy_call (priv->wpas_proxy,
+		                   "CreateInterface",
+		                   g_variant_new ("(a{sv})", &props),
+		                   G_DBUS_CALL_FLAGS_NONE,
+		                   -1,
+		                   priv->init_cancellable,
+		                   (GAsyncReadyCallback) interface_add_cb,
+		                   self);
+	} else if (priv->object_path) {
+		interface_add_done (self, priv->object_path);
+	} else {
+		g_assert_not_reached ();
 	}
-
-	g_return_if_fail (driver_name);
-
-	g_variant_builder_init (&props, G_VARIANT_TYPE_VARDICT);
-	g_variant_builder_add (&props, "{sv}",
-	                       "Driver",
-	                       g_variant_new_string (driver_name));
-	g_variant_builder_add (&props, "{sv}",
-	                       "Ifname",
-	                       g_variant_new_string (priv->dev));
-
-	g_dbus_proxy_call (priv->wpas_proxy,
-	                   "CreateInterface",
-	                   g_variant_new ("(a{sv})", &props),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   priv->init_cancellable,
-	                   (GAsyncReadyCallback) interface_add_cb,
-	                   self);
 }
 
 static void
@@ -2222,7 +2241,10 @@ set_property (GObject *object,
 	case PROP_IFACE:
 		/* construct-only */
 		priv->dev = g_value_dup_string (value);
-		g_return_if_fail (priv->dev);
+		break;
+	case PROP_OBJECT_PATH:
+		/* construct-only */
+		priv->object_path = g_value_dup_string (value);
 		break;
 	case PROP_DRIVER:
 		/* construct-only */
@@ -2270,6 +2292,7 @@ nm_supplicant_interface_init (NMSupplicantInterface * self)
 
 NMSupplicantInterface *
 nm_supplicant_interface_new (const char *ifname,
+                             const char *object_path,
                              NMSupplicantDriver driver,
                              NMSupplicantFeature fast_support,
                              NMSupplicantFeature ap_support,
@@ -2278,10 +2301,13 @@ nm_supplicant_interface_new (const char *ifname,
                              NMSupplicantFeature p2p_support,
                              NMSupplicantFeature wfd_support)
 {
-	g_return_val_if_fail (ifname != NULL, NULL);
+	/* One of ifname or path need to be set */
+	g_return_val_if_fail (ifname != NULL || object_path != NULL, NULL);
+	g_return_val_if_fail (ifname == NULL || object_path == NULL, NULL);
 
 	return g_object_new (NM_TYPE_SUPPLICANT_INTERFACE,
 	                     NM_SUPPLICANT_INTERFACE_IFACE, ifname,
+	                     NM_SUPPLICANT_INTERFACE_OBJECT_PATH, object_path,
 	                     NM_SUPPLICANT_INTERFACE_DRIVER, (guint) driver,
 	                     NM_SUPPLICANT_INTERFACE_FAST_SUPPORT, (int) fast_support,
 	                     NM_SUPPLICANT_INTERFACE_AP_SUPPORT, (int) ap_support,
@@ -2360,6 +2386,12 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IFACE] =
 	    g_param_spec_string (NM_SUPPLICANT_INTERFACE_IFACE, "", "",
+	                         NULL,
+	                         G_PARAM_WRITABLE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_OBJECT_PATH] =
+	    g_param_spec_string (NM_SUPPLICANT_INTERFACE_OBJECT_PATH, "", "",
 	                         NULL,
 	                         G_PARAM_WRITABLE |
 	                         G_PARAM_CONSTRUCT_ONLY |
