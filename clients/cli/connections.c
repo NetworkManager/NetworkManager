@@ -2352,6 +2352,9 @@ active_connection_hint (GString *return_text,
 	const GPtrArray *devices;
 	guint i;
 
+	if (!active)
+		return;
+
 	if (!nm_streq (NM_CONFIG_DEFAULT_LOGGING_BACKEND, "journal"))
 		return;
 
