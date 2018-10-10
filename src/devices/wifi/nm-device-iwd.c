@@ -2158,22 +2158,14 @@ station_properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
                             GStrv invalidate_properties, gpointer user_data)
 {
 	NMDeviceIwd *self = user_data;
-	GVariantIter *iter;
-	const char *key;
-	GVariant *value;
+	const char *new_str;
+	gboolean new_bool;
 
-	g_variant_get (changed_properties, "a{sv}", &iter);
-	while (g_variant_iter_next (iter, "{&sv}", &key, &value)) {
-		if (!strcmp (key, "State"))
-			state_changed (self, get_variant_state (value));
+	if (g_variant_lookup (changed_properties, "State", "&s", &new_str))
+		state_changed (self, new_str);
 
-		if (!strcmp (key, "Scanning"))
-			scanning_changed (self, get_variant_boolean (value, "Scanning"));
-
-		g_variant_unref (value);
-	}
-
-	g_variant_iter_free (iter);
+	if (g_variant_lookup (changed_properties, "Scanning", "b", &new_bool))
+		scanning_changed (self, new_bool);
 }
 
 static void
@@ -2181,22 +2173,10 @@ ap_adhoc_properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
                              GStrv invalidate_properties, gpointer user_data)
 {
 	NMDeviceIwd *self = user_data;
-	GVariantIter *iter;
-	const char *key;
-	GVariant *value;
+	gboolean new_bool;
 
-	g_variant_get (changed_properties, "a{sv}", &iter);
-	while (g_variant_iter_next (iter, "{&sv}", &key, &value)) {
-		if (nm_streq (key, "Started")) {
-			gboolean new_started = get_variant_boolean (value, "Started");
-
-			_LOGI (LOGD_DEVICE | LOGD_WIFI, "IWD AP/AdHoc state is now %s", new_started ? "Started" : "Stopped");
-		}
-
-		g_variant_unref (value);
-	}
-
-	g_variant_iter_free (iter);
+	if (g_variant_lookup (changed_properties, "Started", "b", &new_bool))
+		_LOGI (LOGD_DEVICE | LOGD_WIFI, "IWD AP/AdHoc state is now %s", new_bool ? "Started" : "Stopped");
 }
 
 static void
@@ -2312,19 +2292,10 @@ device_properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
                            GStrv invalidate_properties, gpointer user_data)
 {
 	NMDeviceIwd *self = user_data;
-	GVariantIter *iter;
-	const char *key;
-	GVariant *value;
+	gboolean new_bool;
 
-	g_variant_get (changed_properties, "a{sv}", &iter);
-	while (g_variant_iter_next (iter, "{&sv}", &key, &value)) {
-		if (!strcmp (key, "Powered"))
-			powered_changed (self, get_variant_boolean (value, "Powered"));
-
-		g_variant_unref (value);
-	}
-
-	g_variant_iter_free (iter);
+	if (g_variant_lookup (changed_properties, "Powered", "b", &new_bool))
+		powered_changed (self, new_bool);
 }
 
 void
