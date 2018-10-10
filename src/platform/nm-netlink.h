@@ -252,7 +252,7 @@ struct nlattr *nla_find (const struct nlattr *head, int len, int attrtype);
 static inline int
 nla_ok (const struct nlattr *nla, int remaining)
 {
-	return remaining >= sizeof(*nla) &&
+	return remaining >= (int) sizeof(*nla) &&
 	       nla->nla_len >= sizeof(*nla) &&
 	       nla->nla_len <= remaining;
 }
