@@ -58,6 +58,8 @@ typedef enum {
 #define NM_SUPPLICANT_INTERFACE_OBJECT_PATH      "object-path"
 #define NM_SUPPLICANT_INTERFACE_SCANNING         "scanning"
 #define NM_SUPPLICANT_INTERFACE_CURRENT_BSS      "current-bss"
+#define NM_SUPPLICANT_INTERFACE_P2P_GROUP_JOINED "p2p-group-joined"
+#define NM_SUPPLICANT_INTERFACE_P2P_GROUP_OWNER  "p2p-group-owner"
 #define NM_SUPPLICANT_INTERFACE_DRIVER           "driver"
 #define NM_SUPPLICANT_INTERFACE_P2P_AVAILABLE    "p2p-available"
 #define NM_SUPPLICANT_INTERFACE_FAST_SUPPORT     "fast-support"
@@ -77,6 +79,9 @@ typedef enum {
 #define NM_SUPPLICANT_INTERFACE_SCAN_DONE        "scan-done"
 #define NM_SUPPLICANT_INTERFACE_CREDENTIALS_REQUEST "credentials-request"
 #define NM_SUPPLICANT_INTERFACE_WPS_CREDENTIALS  "wps-credentials"
+#define NM_SUPPLICANT_INTERFACE_GROUP_STARTED           "group-started"
+#define NM_SUPPLICANT_INTERFACE_GROUP_FINISHED          "group-finished"
+#define NM_SUPPLICANT_INTERFACE_GROUP_FORMATION_FAILURE "group-formation-failure"
 
 typedef struct _NMSupplicantInterfaceClass NMSupplicantInterfaceClass;
 
@@ -128,6 +133,10 @@ const char *nm_supplicant_interface_get_ifname (NMSupplicantInterface *self);
 guint nm_supplicant_interface_get_max_scan_ssids (NMSupplicantInterface *self);
 
 gboolean nm_supplicant_interface_get_has_credentials_request (NMSupplicantInterface *self);
+
+gboolean nm_supplicant_interface_get_p2p_group_joined (NMSupplicantInterface *self);
+
+gboolean nm_supplicant_interface_get_p2p_group_owner (NMSupplicantInterface *self);
 
 gboolean nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,
                                                     const char *field,
