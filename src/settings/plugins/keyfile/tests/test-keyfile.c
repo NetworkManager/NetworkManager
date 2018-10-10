@@ -1537,7 +1537,6 @@ test_write_wired_8021x_tls_connection_path (void)
 	char *tmp, *tmp2;
 	gboolean success;
 	gs_free char *testfile = NULL;
-	gs_free_error GError *error = NULL;
 	gs_unref_keyfile GKeyFile *keyfile = NULL;
 	gboolean relative = FALSE;
 	gboolean reread_same = FALSE;
@@ -1620,7 +1619,6 @@ test_write_wired_8021x_tls_connection_blob (void)
 	char *new_priv_key;
 	const char *uuid;
 	gboolean reread_same = FALSE;
-	gs_free_error GError *error = NULL;
 	GBytes *password_raw;
 
 #define PASSWORD_RAW "password-raw\0test"
