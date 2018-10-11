@@ -451,6 +451,9 @@ nm_bluez_device_disconnect (NMBluezDevice *self)
 
 	g_return_if_fail (priv->dbus_connection);
 
+	/* FIXME: if we are in the process of connecting and cancel the
+	 * connection attempt, we must complete the pending connect request.
+	 * However, we must also ensure that we don't leave a connected device. */
 	if (priv->connection_bt_type == NM_BT_CAPABILITY_DUN) {
 		if (priv->bluez_version == 4) {
 			/* Can't pass a NULL interface name through dbus to bluez, so just
@@ -496,76 +499,109 @@ out:
 }
 
 static void
-bluez_connect_cb (GDBusConnection *dbus_connection,
+_connect_complete (NMBluezDevice *self,
+                   const char *device,
+                   NMBluezDeviceConnectCallback callback,
+                   gpointer callback_user_data,
+                   GError *error)
+{
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+
+	nm_assert ((device || error) && !(device && error));
+
+	if (   device
+	    && priv->bluez_version == 5) {
+		priv->connected = TRUE;
+		_notify (self, PROP_CONNECTED);
+	}
+
+	if (callback)
+		callback (self, device, error, callback_user_data);
+}
+
+static void
+_connect_cb (GObject *source_object,
                   GAsyncResult *res,
                   gpointer user_data)
 {
-	GSimpleAsyncResult *result = G_SIMPLE_ASYNC_RESULT (user_data);
-	GObject *result_object = g_async_result_get_source_object (G_ASYNC_RESULT (result));
-	NMBluezDevice *self = NM_BLUEZ_DEVICE (result_object);
-	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
-	GError *error = NULL;
-	char *device;
-	GVariant *variant;
+	gs_unref_object NMBluezDevice *self = NULL;
+	NMBluezDevicePrivate *priv;
+	NMBluezDeviceConnectCallback callback;
+	gpointer callback_user_data;
+	gs_free_error GError *error = NULL;
+	char *device = NULL;
+	gs_unref_variant GVariant *variant = NULL;
 
-	variant = g_dbus_connection_call_finish (dbus_connection, res, &error);
+	nm_utils_user_data_unpack (user_data, &self, &callback, &callback_user_data);
 
-	if (!variant) {
-		g_simple_async_result_take_error (result, error);
-	} else {
+	priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+
+	variant = _nm_dbus_connection_call_finish (G_DBUS_CONNECTION (source_object), res, G_VARIANT_TYPE ("(s)"), &error);
+	if (variant) {
 		g_variant_get (variant, "(s)", &device);
-
-		g_simple_async_result_set_op_res_gpointer (result,
-		                                           g_strdup (device),
-		                                           g_free);
 		priv->b4_iface = device;
-		g_variant_unref (variant);
 	}
 
-	g_simple_async_result_complete (result);
-	g_object_unref (result);
-	g_object_unref (result_object);
+	_connect_complete (self, device, callback, callback_user_data, error);
 }
 
 #if WITH_BLUEZ5_DUN
 static void
-bluez5_dun_connect_cb (NMBluez5DunContext *context,
-                   const char *device,
-                   GError *error,
-                   gpointer user_data)
+_connect_cb_bluez5_dun (NMBluez5DunContext *context,
+                        const char *device,
+                        GError *error,
+                        gpointer user_data)
 {
-	GSimpleAsyncResult *result = G_SIMPLE_ASYNC_RESULT (user_data);
+	gs_unref_object NMBluezDevice *self = NULL;
+	gs_unref_object GCancellable *cancellable = NULL;
+	NMBluezDeviceConnectCallback callback;
+	gpointer callback_user_data;
+	gs_free_error GError *cancelled_error = NULL;
 
-	if (error) {
-		g_simple_async_result_take_error (result, error);
-	} else {
-		g_simple_async_result_set_op_res_gpointer (result,
-		                                           g_strdup (device),
-		                                           g_free);
-	}
+	nm_utils_user_data_unpack (user_data, &self, &cancellable, &callback, &callback_user_data);
 
-	g_simple_async_result_complete (result);
-	g_object_unref (result);
+	/* FIXME(shutdown): the async operation nm_bluez5_dun_connect() should be cancellable.
+	 * Fake it here. */
+	if (g_cancellable_set_error_if_cancelled (cancellable, &cancelled_error))
+		error = cancelled_error;
+
+	_connect_complete (self, device, callback, callback_user_data, error);
 }
-#endif
+#else /* WITH_BLUEZ5_DUN */
+static void
+_connect_cb_bluez5_dun_idle_no_b5 (gpointer user_data,
+                                   GCancellable *cancellable)
+{
+	gs_unref_object NMBluezDevice *self = NULL;
+	NMBluezDeviceConnectCallback callback;
+	gpointer callback_user_data;
+	gs_free_error GError *error = NULL;
+
+	nm_utils_user_data_unpack (user_data, &self, &callback, &callback_user_data);
+
+	if (!g_cancellable_set_error_if_cancelled (cancellable, &error)) {
+		g_set_error (&error,
+		             NM_BT_ERROR,
+		             NM_BT_ERROR_DUN_CONNECT_FAILED,
+		             "NetworkManager built without support for Bluez 5");
+	}
+	callback (self, NULL, error, callback_user_data);
+}
+#endif /* WITH_BLUEZ5_DUN */
 
 void
 nm_bluez_device_connect_async (NMBluezDevice *self,
                                NMBluetoothCapabilities connection_bt_type,
-                               GAsyncReadyCallback callback,
-                               gpointer user_data)
+                               GCancellable *cancellable,
+                               NMBluezDeviceConnectCallback callback,
+                               gpointer callback_user_data)
 {
-	GSimpleAsyncResult *simple;
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	const char *dbus_iface = NULL;
 	const char *connect_type = NULL;
 
 	g_return_if_fail (priv->capabilities & connection_bt_type & (NM_BT_CAPABILITY_DUN | NM_BT_CAPABILITY_NAP));
 
-	simple = g_simple_async_result_new (G_OBJECT (self),
-	                                    callback,
-	                                    user_data,
-	                                    nm_bluez_device_connect_async);
 	priv->connection_bt_type = connection_bt_type;
 
 	if (connection_bt_type == NM_BT_CAPABILITY_NAP) {
@@ -582,19 +618,29 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 #if WITH_BLUEZ5_DUN
 			if (priv->b5_dun_context == NULL)
 				priv->b5_dun_context = nm_bluez5_dun_new (priv->adapter_address, priv->address);
-			nm_bluez5_dun_connect (priv->b5_dun_context, bluez5_dun_connect_cb, simple);
+			nm_bluez5_dun_connect (priv->b5_dun_context,
+			                       _connect_cb_bluez5_dun,
+			                       nm_utils_user_data_pack (g_object_ref (self),
+			                                                nm_g_object_ref (cancellable),
+			                                                callback,
+			                                                callback_user_data));
 #else
-			g_simple_async_result_set_error (simple,
-							 NM_BT_ERROR,
-							 NM_BT_ERROR_DUN_CONNECT_FAILED,
-							 "NetworkManager built without support for Bluez 5");
-			g_simple_async_result_complete (simple);
+			if (callback) {
+				nm_utils_invoke_on_idle (_connect_cb_bluez5_dun_idle_no_b5,
+				                         nm_utils_user_data_pack (g_object_ref (self),
+				                                                  callback,
+				                                                  callback_user_data),
+				                         cancellable);
+			}
 #endif
 			return;
 		}
 	} else
-		g_assert_not_reached ();
+		g_return_if_reached ();
 
+	/* FIXME: we need to remember that a connect is in progress.
+	 * So, if the request gets cancelled, that we disconnect the
+	 * connection that was established in the meantime. */
 	g_dbus_connection_call (priv->dbus_connection,
 	                        NM_BLUEZ_SERVICE,
 	                        priv->path,
@@ -604,37 +650,11 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 	                        NULL,
 	                        G_DBUS_CALL_FLAGS_NONE,
 	                        20000,
-	                        NULL,
-	                        (GAsyncReadyCallback) bluez_connect_cb,
-	                        simple);
-}
-
-const char *
-nm_bluez_device_connect_finish (NMBluezDevice *self,
-                                GAsyncResult *result,
-                                GError **error)
-{
-	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
-	GSimpleAsyncResult *simple;
-	const char *device;
-
-	g_return_val_if_fail (g_simple_async_result_is_valid (result,
-	                                                      G_OBJECT (self),
-	                                                      nm_bluez_device_connect_async),
-	                      NULL);
-
-	simple = (GSimpleAsyncResult *) result;
-
-	if (g_simple_async_result_propagate_error (simple, error))
-		return NULL;
-
-	device = (const char *) g_simple_async_result_get_op_res_gpointer (simple);
-	if (device && priv->bluez_version == 5) {
-		priv->connected = TRUE;
-		_notify (self, PROP_CONNECTED);
-	}
-
-	return device;
+	                        cancellable,
+	                        _connect_cb,
+	                        nm_utils_user_data_pack (g_object_ref (self),
+	                                                 callback,
+	                                                 callback_user_data));
 }
 
 /*****************************************************************************/

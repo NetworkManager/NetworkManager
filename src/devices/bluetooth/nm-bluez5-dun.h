@@ -32,7 +32,8 @@ NMBluez5DunContext *nm_bluez5_dun_new (const char *adapter,
                                        const char *remote);
 
 void nm_bluez5_dun_connect (NMBluez5DunContext *context,
-                            NMBluez5DunFunc callback, gpointer user_data);
+                            NMBluez5DunFunc callback,
+                            gpointer user_data);
 
 /* Clean up connection resources */
 void nm_bluez5_dun_cleanup (NMBluez5DunContext *context);

@@ -342,13 +342,14 @@ nm_bluez5_dun_connect (NMBluez5DunContext *context,
 
 	if (context->rfcomm_channel != -1) {
 		nm_log_dbg (LOGD_BT, "(%s): channel number on device %s cached: %d",
-			    context->src_str, context->dst_str, context->rfcomm_channel);
+		            context->src_str, context->dst_str, context->rfcomm_channel);
+		/* FIXME: don't invoke the callback synchronously. */
 		dun_connect (context);
 		return;
 	}
 
 	nm_log_dbg (LOGD_BT, "(%s): starting channel number discovery for device %s",
-		    context->src_str, context->dst_str);
+	            context->src_str, context->dst_str);
 
 	context->sdp_session = sdp_connect (&context->src, &context->dst, SDP_NON_BLOCKING);
 	if (!context->sdp_session) {
@@ -358,10 +359,12 @@ nm_bluez5_dun_connect (NMBluez5DunContext *context,
 		error = g_error_new (NM_BT_ERROR, NM_BT_ERROR_DUN_CONNECT_FAILED,
 		                     "Failed to connect to the SDP server: (%d) %s",
 		                      err, strerror (err));
+		/* FIXME: don't invoke the callback synchronously. */
 		context->callback (context, NULL, error, context->user_data);
 		return;
 	}
 
+	/* FIXME(shutdown): make connect cancellable. */
 	channel = g_io_channel_unix_new (sdp_get_socket (context->sdp_session));
 	context->sdp_watch_id = g_io_add_watch (channel,
 	                                        G_IO_OUT | G_IO_HUP | G_IO_ERR | G_IO_NVAL,
