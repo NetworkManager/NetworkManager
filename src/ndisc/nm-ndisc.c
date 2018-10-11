@@ -124,6 +124,66 @@ _preference_to_priority (NMIcmpv6RouterPref pref)
 
 /*****************************************************************************/
 
+static gint32
+get_expiry_time (guint32 timestamp, guint32 lifetime)
+{
+	gint64 t;
+
+	/* timestamp is supposed to come from nm_utils_get_monotonic_timestamp_s().
+	 * It is expected to be within a certain range. */
+	nm_assert (timestamp > 0);
+	nm_assert (timestamp <= G_MAXINT32);
+
+	if (lifetime == NM_NDISC_INFINITY)
+		return G_MAXINT32;
+
+	t = (gint64) timestamp + (gint64) lifetime;
+	return CLAMP (t, 0, G_MAXINT32 - 1);
+}
+
+#define get_expiry(item) \
+	({ \
+		typeof (item) _item = (item); \
+		nm_assert (_item); \
+		get_expiry_time ((_item->timestamp), (_item->lifetime)); \
+	})
+
+#define get_expiry_half(item) \
+	({ \
+		typeof (item) _item = (item); \
+		nm_assert (_item); \
+		get_expiry_time ((_item->timestamp),\
+		                 (_item->lifetime) == NM_NDISC_INFINITY \
+		                   ? NM_NDISC_INFINITY \
+		                   : (_item->lifetime) / 2); \
+	})
+
+#define get_expiry_preferred(item) \
+	({ \
+		typeof (item) _item = (item); \
+		nm_assert (_item); \
+		get_expiry_time ((_item->timestamp), (_item->preferred)); \
+	})
+
+static const char *
+_get_exp (char *buf, gsize buf_size, gint64 now_ns, gint32 expiry_time)
+{
+	int l;
+
+	if (expiry_time == G_MAXINT32)
+		return "permanent";
+	l = g_snprintf (buf, buf_size,
+	                "%.4f",
+	                ((double) ((expiry_time * NM_UTILS_NS_PER_SECOND) - now_ns)) / ((double) NM_UTILS_NS_PER_SECOND));
+	nm_assert (l < buf_size);
+	return buf;
+}
+
+#define get_exp(buf, now_ns, item) \
+	_get_exp ((buf), G_N_ELEMENTS (buf), (now_ns), (get_expiry (item)))
+
+/*****************************************************************************/
+
 NMPNetns *
 nm_ndisc_netns_get (NMNDisc *self)
 {
@@ -264,9 +324,12 @@ nm_ndisc_add_gateway (NMNDisc *ndisc, const NMNDiscGateway *new)
 				continue;
 			}
 
+			if (get_expiry (item) == get_expiry (new))
+				return FALSE;
+
 			*item = *new;
 			_ASSERT_data_gateways (rdata);
-			return FALSE;
+			return TRUE;
 		}
 
 		/* Put before less preferable gateways. */
@@ -358,17 +421,18 @@ nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new)
 		NMNDiscAddress *item = &g_array_index (rdata->addresses, NMNDiscAddress, i);
 
 		if (IN6_ARE_ADDR_EQUAL (&item->address, &new->address)) {
-			gboolean changed;
-
 			if (new->lifetime == 0) {
 				g_array_remove_index (rdata->addresses, i);
 				return TRUE;
 			}
 
-			changed = item->timestamp + item->lifetime  != new->timestamp + new->lifetime ||
-			          item->timestamp + item->preferred != new->timestamp + new->preferred;
+			if (   item->dad_counter == new->dad_counter
+			    && get_expiry (item) == get_expiry (new)
+			    && get_expiry_preferred (item) == get_expiry_preferred (new))
+				return FALSE;
+
 			*item = *new;
-			return changed;
+			return TRUE;
 		}
 	}
 
@@ -419,7 +483,8 @@ nm_ndisc_add_route (NMNDisc *ndisc, const NMNDiscRoute *new)
 	for (i = 0; i < rdata->routes->len; ) {
 		NMNDiscRoute *item = &g_array_index (rdata->routes, NMNDiscRoute, i);
 
-		if (IN6_ARE_ADDR_EQUAL (&item->network, &new->network) && item->plen == new->plen) {
+		if (   IN6_ARE_ADDR_EQUAL (&item->network, &new->network)
+		    && item->plen == new->plen) {
 			if (new->lifetime == 0) {
 				g_array_remove_index (rdata->routes, i);
 				return TRUE;
@@ -430,8 +495,12 @@ nm_ndisc_add_route (NMNDisc *ndisc, const NMNDiscRoute *new)
 				continue;
 			}
 
-			memcpy (item, new, sizeof (*new));
-			return FALSE;
+			if (   get_expiry (item) == get_expiry (new)
+			    && IN6_ARE_ADDR_EQUAL (&item->gateway, &new->gateway))
+				return FALSE;
+
+			*item = *new;
+			return TRUE;
 		}
 
 		/* Put before less preferable routes. */
@@ -470,11 +539,12 @@ nm_ndisc_add_dns_server (NMNDisc *ndisc, const NMNDiscDNSServer *new)
 				g_array_remove_index (rdata->dns_servers, i);
 				return TRUE;
 			}
-			if (item->timestamp != new->timestamp || item->lifetime != new->lifetime) {
-				*item = *new;
-				return TRUE;
-			}
-			return FALSE;
+
+			if (get_expiry (item) == get_expiry (new))
+				return FALSE;
+
+			*item = *new;
+			return TRUE;
 		}
 	}
 
@@ -499,20 +569,17 @@ nm_ndisc_add_dns_domain (NMNDisc *ndisc, const NMNDiscDNSDomain *new)
 		item = &g_array_index (rdata->dns_domains, NMNDiscDNSDomain, i);
 
 		if (!g_strcmp0 (item->domain, new->domain)) {
-			gboolean changed;
-
 			if (new->lifetime == 0) {
 				g_array_remove_index (rdata->dns_domains, i);
 				return TRUE;
 			}
 
-			changed = (item->timestamp != new->timestamp ||
-			           item->lifetime != new->lifetime);
-			if (changed) {
-				item->timestamp = new->timestamp;
-				item->lifetime = new->lifetime;
-			}
-			return changed;
+			if (get_expiry (item) == get_expiry (new))
+				return FALSE;
+
+			item->timestamp = new->timestamp;
+			item->lifetime = new->lifetime;
+			return TRUE;
 		}
 	}
 
@@ -860,57 +927,6 @@ dhcp_level_to_string (NMNDiscDHCPLevel dhcp_level)
 	}
 }
 
-static gint32
-get_expiry_time (guint32 timestamp, guint32 lifetime)
-{
-	gint64 t;
-
-	/* timestamp is supposed to come from nm_utils_get_monotonic_timestamp_s().
-	 * It is expected to be within a certain range. */
-	nm_assert (timestamp > 0);
-	nm_assert (timestamp <= G_MAXINT32);
-
-	if (lifetime == NM_NDISC_INFINITY)
-		return G_MAXINT32;
-
-	t = (gint64) timestamp + (gint64) lifetime;
-	return CLAMP (t, 0, G_MAXINT32 - 1);
-}
-
-#define get_expiry(item) \
-	({ \
-		typeof (item) _item = (item); \
-		nm_assert (_item); \
-		get_expiry_time ((_item->timestamp), (_item->lifetime)); \
-	})
-
-#define get_expiry_half(item) \
-	({ \
-		typeof (item) _item = (item); \
-		nm_assert (_item); \
-		get_expiry_time ((_item->timestamp),\
-		                 (_item->lifetime) == NM_NDISC_INFINITY \
-		                   ? NM_NDISC_INFINITY \
-		                   : (_item->lifetime) / 2); \
-	})
-
-static const char *
-_get_exp (char *buf, gsize buf_size, gint64 now_ns, gint32 expiry_time)
-{
-	int l;
-
-	if (expiry_time == G_MAXINT32)
-		return "permanent";
-	l = g_snprintf (buf, buf_size,
-	                "%.4f",
-	                ((double) ((expiry_time * NM_UTILS_NS_PER_SECOND) - now_ns)) / ((double) NM_UTILS_NS_PER_SECOND));
-	nm_assert (l < buf_size);
-	return buf;
-}
-
-#define get_exp(buf, now_ns, item) \
-	_get_exp ((buf), G_N_ELEMENTS (buf), (now_ns), (get_expiry (item)))
-
 static void
 _config_changed_log (NMNDisc *ndisc, NMNDiscConfigMap changed)
 {
@@ -1132,9 +1148,6 @@ check_timestamps (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap changed)
 	clean_dns_servers (ndisc, now, &changed, &nextevent);
 	clean_dns_domains (ndisc, now, &changed, &nextevent);
 
-	if (changed)
-		nm_ndisc_emit_config_change (ndisc, changed);
-
 	if (nextevent != G_MAXINT32) {
 		if (nextevent <= now)
 			g_return_if_reached ();
@@ -1142,6 +1155,9 @@ check_timestamps (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap changed)
 		       (int) (nextevent - now));
 		priv->timeout_id = g_timeout_add_seconds (nextevent - now, timeout_cb, ndisc);
 	}
+
+	if (changed)
+		nm_ndisc_emit_config_change (ndisc, changed);
 }
 
 static gboolean
