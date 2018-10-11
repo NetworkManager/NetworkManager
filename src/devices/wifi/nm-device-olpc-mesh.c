@@ -369,7 +369,7 @@ device_added_cb (NMManager *manager, NMDevice *other, gpointer user_data)
 		nm_device_queue_recheck_available (NM_DEVICE (self),
 		                                   NM_DEVICE_STATE_REASON_NONE,
 		                                   NM_DEVICE_STATE_REASON_NONE);
-		nm_device_remove_pending_action (NM_DEVICE (self), NM_PENDING_ACTION_WAITING_FOR_COMPANION, TRUE);
+		nm_device_remove_pending_action (NM_DEVICE (self), NM_PENDING_ACTION_WAITING_FOR_COMPANION, FALSE);
 	}
 }
 
