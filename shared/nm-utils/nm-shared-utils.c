@@ -2055,3 +2055,70 @@ _nm_utils_unescape_spaces (char *str)
 }
 
 #undef IS_SPACE
+
+/*****************************************************************************/
+
+typedef struct {
+	gpointer callback_user_data;
+	GCancellable *cancellable;
+	NMUtilsInvokeOnIdleCallback callback;
+	gulong cancelled_id;
+	guint idle_id;
+} InvokeOnIdleData;
+
+static gboolean
+_nm_utils_invoke_on_idle_cb_idle (gpointer user_data)
+{
+	InvokeOnIdleData *data = user_data;
+
+	data->idle_id = 0;
+	nm_clear_g_signal_handler (data->cancellable, &data->cancelled_id);
+
+	data->callback (data->callback_user_data, data->cancellable);
+	nm_g_object_unref (data->cancellable);
+	g_slice_free (InvokeOnIdleData, data);
+	return G_SOURCE_REMOVE;
+}
+
+static void
+_nm_utils_invoke_on_idle_cb_cancelled (GCancellable *cancellable,
+                                       InvokeOnIdleData *data)
+{
+	/* on cancellation, we invoke the callback synchronously. */
+	nm_clear_g_signal_handler (data->cancellable, &data->cancelled_id);
+	nm_clear_g_source (&data->idle_id);
+	data->callback (data->callback_user_data, data->cancellable);
+	nm_g_object_unref (data->cancellable);
+	g_slice_free (InvokeOnIdleData, data);
+}
+
+void
+nm_utils_invoke_on_idle (NMUtilsInvokeOnIdleCallback callback,
+                         gpointer callback_user_data,
+                         GCancellable *cancellable)
+{
+	InvokeOnIdleData *data;
+
+	g_return_if_fail (callback);
+
+	data = g_slice_new (InvokeOnIdleData);
+	data->callback = callback;
+	data->callback_user_data = callback_user_data;
+	data->cancellable = nm_g_object_ref (cancellable);
+	if (   cancellable
+	    && !g_cancellable_is_cancelled (cancellable)) {
+		/* if we are passed a non-cancelled cancellable, we register to the "cancelled"
+		 * signal an invoke the callback synchronously (from the signal handler).
+		 *
+		 * We don't do that,
+		 *  - if the cancellable is already cancelled (because we don't want to invoke
+		 *    the callback synchronously from the caller).
+		 *  - if we have no cancellable at hand. */
+		data->cancelled_id = g_signal_connect (cancellable,
+		                                       "cancelled",
+		                                       G_CALLBACK (_nm_utils_invoke_on_idle_cb_cancelled),
+		                                       data);
+	} else
+		data->cancelled_id = 0;
+	data->idle_id = g_idle_add (_nm_utils_invoke_on_idle_cb_idle, data);
+}
