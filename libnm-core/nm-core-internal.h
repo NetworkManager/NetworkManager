@@ -305,6 +305,10 @@ void _nm_dbus_errors_init (void);
 
 extern gboolean _nm_utils_is_manager_process;
 
+gboolean _nm_dbus_typecheck_response (GVariant *response,
+                                      const GVariantType *reply_type,
+                                      GError **error);
+
 gulong _nm_dbus_signal_connect_data (GDBusProxy *proxy,
                                      const char *signal_name,
                                      const GVariantType *signature,
@@ -328,6 +332,11 @@ GVariant *_nm_dbus_proxy_call_sync   (GDBusProxy           *proxy,
                                       int                   timeout_msec,
                                       GCancellable         *cancellable,
                                       GError              **error);
+
+GVariant * _nm_dbus_connection_call_finish (GDBusConnection *dbus_connection,
+                                            GAsyncResult *result,
+                                            const GVariantType *reply_type,
+                                            GError **error);
 
 gboolean _nm_dbus_error_has_name (GError     *error,
                                   const char *dbus_error_name);
