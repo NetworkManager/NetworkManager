@@ -416,6 +416,7 @@ nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new)
 	nm_assert (new->timestamp > 0 && new->timestamp < G_MAXINT32);
 	nm_assert (!IN6_IS_ADDR_UNSPECIFIED (&new->address));
 	nm_assert (!IN6_IS_ADDR_LINKLOCAL (&new->address));
+	nm_assert (new->preferred <= new->lifetime);
 
 	for (i = 0; i < rdata->addresses->len; i++) {
 		NMNDiscAddress *item = &g_array_index (rdata->addresses, NMNDiscAddress, i);
