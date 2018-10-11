@@ -411,6 +411,7 @@ nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new, gboolean from_r
 	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
 	NMNDiscDataInternal *rdata = &priv->rdata;
 	NMNDiscAddress new2;
+	NMNDiscAddress *existing = NULL;
 	guint i;
 
 	nm_assert (new);
@@ -425,29 +426,35 @@ nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new, gboolean from_r
 		if (from_ra) {
 			/* RFC4862 5.5.3.d, we find an existing address with the same prefix.
 			 * (note that all prefixes at this point have implicity length /64). */
-			if (memcmp (&item->address, &new->address, 8) != 0)
-				continue;
+			if (memcmp (&item->address, &new->address, 8) == 0) {
+				existing = item;
+				break;
+			}
 		} else {
-			if (!IN6_ARE_ADDR_EQUAL (&item->address, &new->address))
-				continue;
+			if (IN6_ARE_ADDR_EQUAL (&item->address, &new->address)) {
+				existing = item;
+				break;
+			}
 		}
+	}
 
+	if (existing) {
 		if (new->lifetime == 0) {
 			g_array_remove_index (rdata->addresses, i);
 			return TRUE;
 		}
 
-		if (   get_expiry (item) == get_expiry (new)
-		    && get_expiry_preferred (item) == get_expiry_preferred (new)
+		if (   get_expiry (existing) == get_expiry (new)
+		    && get_expiry_preferred (existing) == get_expiry_preferred (new)
 		    && (   from_ra
-		        || item->dad_counter == new->dad_counter))
+		        || existing->dad_counter == new->dad_counter))
 			return FALSE;
 
 		if (!from_ra)
-			item->dad_counter = new->dad_counter;
-		item->timestamp = new->timestamp;
-		item->lifetime = new->lifetime;
-		item->preferred = new->preferred;
+			existing->dad_counter = new->dad_counter;
+		existing->timestamp = new->timestamp;
+		existing->lifetime = new->lifetime;
+		existing->preferred = new->preferred;
 		return TRUE;
 	}
 
