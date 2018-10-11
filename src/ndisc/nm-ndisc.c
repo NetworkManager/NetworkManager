@@ -406,10 +406,11 @@ complete_address (NMNDisc *ndisc, NMNDiscAddress *addr)
 }
 
 static gboolean
-nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new)
+nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new, gboolean from_ra)
 {
 	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
 	NMNDiscDataInternal *rdata = &priv->rdata;
+	NMNDiscAddress new2;
 	guint i;
 
 	nm_assert (new);
@@ -421,20 +422,33 @@ nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new)
 	for (i = 0; i < rdata->addresses->len; i++) {
 		NMNDiscAddress *item = &g_array_index (rdata->addresses, NMNDiscAddress, i);
 
-		if (IN6_ARE_ADDR_EQUAL (&item->address, &new->address)) {
-			if (new->lifetime == 0) {
-				g_array_remove_index (rdata->addresses, i);
-				return TRUE;
-			}
+		if (from_ra) {
+			/* RFC4862 5.5.3.d, we find an existing address with the same prefix.
+			 * (note that all prefixes at this point have implicity length /64). */
+			if (memcmp (&item->address, &new->address, 8) != 0)
+				continue;
+		} else {
+			if (!IN6_ARE_ADDR_EQUAL (&item->address, &new->address))
+				continue;
+		}
 
-			if (   item->dad_counter == new->dad_counter
-			    && get_expiry (item) == get_expiry (new)
-			    && get_expiry_preferred (item) == get_expiry_preferred (new))
-				return FALSE;
-
-			*item = *new;
+		if (new->lifetime == 0) {
+			g_array_remove_index (rdata->addresses, i);
 			return TRUE;
 		}
+
+		if (   get_expiry (item) == get_expiry (new)
+		    && get_expiry_preferred (item) == get_expiry_preferred (new)
+		    && (   from_ra
+		        || item->dad_counter == new->dad_counter))
+			return FALSE;
+
+		if (!from_ra)
+			item->dad_counter = new->dad_counter;
+		item->timestamp = new->timestamp;
+		item->lifetime = new->lifetime;
+		item->preferred = new->preferred;
+		return TRUE;
 	}
 
 	/* we create at most max_addresses autoconf addresses. This is different from
@@ -445,18 +459,25 @@ nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new)
 	    && rdata->addresses->len >= priv->max_addresses)
 		return FALSE;
 
-	if (new->lifetime)
-		g_array_append_val (rdata->addresses, *new);
-	return !!new->lifetime;
+	if (new->lifetime == 0)
+		return FALSE;
+
+	if (from_ra) {
+		new2 = *new;
+		new2.dad_counter = 0;
+		if (!complete_address (ndisc, &new2))
+			return FALSE;
+		new = &new2;
+	}
+
+	g_array_append_val (rdata->addresses, *new);
+	return TRUE;
 }
 
 gboolean
-nm_ndisc_complete_and_add_address (NMNDisc *ndisc, NMNDiscAddress *new)
+nm_ndisc_complete_and_add_address (NMNDisc *ndisc, const NMNDiscAddress *new)
 {
-	if (!complete_address (ndisc, new))
-		return FALSE;
-
-	return nm_ndisc_add_address (ndisc, new);
+	return nm_ndisc_add_address (ndisc, new, TRUE);
 }
 
 gboolean
@@ -754,7 +775,7 @@ nm_ndisc_set_config (NMNDisc *ndisc,
 	guint i;
 
 	for (i = 0; i < addresses->len; i++) {
-		if (nm_ndisc_add_address (ndisc, &g_array_index (addresses, NMNDiscAddress, i)))
+		if (nm_ndisc_add_address (ndisc, &g_array_index (addresses, NMNDiscAddress, i), FALSE))
 			changed = TRUE;
 	}
 
