@@ -1067,7 +1067,7 @@ stage3_ip6_done (NMModemBroadband *self)
 
 	/* DNS servers */
 	dns = mm_bearer_ip_config_get_dns (self->_priv.ipv6_config);
-	for (i = 0; dns[i]; i++) {
+	for (i = 0; dns && dns[i]; i++) {
 		struct in6_addr addr;
 
 		if (inet_pton (AF_INET6, dns[i], &addr)) {
