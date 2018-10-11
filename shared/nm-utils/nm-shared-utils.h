@@ -909,4 +909,13 @@ void _nm_utils_user_data_unpack (gpointer user_data, int nargs, ...);
 const char *_nm_utils_escape_spaces (const char *str, char **to_free);
 char *_nm_utils_unescape_spaces (char *str);
 
+/*****************************************************************************/
+
+typedef void (*NMUtilsInvokeOnIdleCallback) (gpointer callback_user_data,
+                                             GCancellable *cancellable);
+
+void nm_utils_invoke_on_idle (NMUtilsInvokeOnIdleCallback callback,
+                              gpointer callback_user_data,
+                              GCancellable *cancellable);
+
 #endif /* __NM_SHARED_UTILS_H__ */
