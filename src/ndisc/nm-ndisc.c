@@ -419,7 +419,10 @@ complete_address (NMNDisc *ndisc, NMNDiscAddress *addr)
 }
 
 static gboolean
-nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new, gboolean from_ra)
+nm_ndisc_add_address (NMNDisc *ndisc,
+                      const NMNDiscAddress *new,
+                      gint32 now_s,
+                      gboolean from_ra)
 {
 	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
 	NMNDiscDataInternal *rdata = &priv->rdata;
@@ -432,6 +435,7 @@ nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new, gboolean from_r
 	nm_assert (!IN6_IS_ADDR_UNSPECIFIED (&new->address));
 	nm_assert (!IN6_IS_ADDR_LINKLOCAL (&new->address));
 	nm_assert (new->preferred <= new->lifetime);
+	nm_assert (!from_ra || now_s > 0);
 
 	for (i = 0; i < rdata->addresses->len; i++) {
 		NMNDiscAddress *item = &g_array_index (rdata->addresses, NMNDiscAddress, i);
@@ -452,6 +456,51 @@ nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new, gboolean from_r
 	}
 
 	if (existing) {
+		if (from_ra) {
+			const gint32 NM_NDISC_PREFIX_LFT_MIN = 7200; /* seconds, RFC4862 5.5.3.e */
+			gint64 old_expiry_lifetime, old_expiry_preferred;
+
+			old_expiry_lifetime = get_expiry (existing);
+			old_expiry_preferred = get_expiry_preferred (existing);
+
+			if (new->lifetime == NM_NDISC_INFINITY)
+				existing->lifetime = NM_NDISC_INFINITY;
+			else {
+				gint64 new_lifetime, remaining_lifetime;
+
+				/* see RFC4862 5.5.3.e */
+				if (existing->lifetime == NM_NDISC_INFINITY)
+					remaining_lifetime = G_MAXINT64;
+				else
+					remaining_lifetime = ((gint64) existing->timestamp) + ((gint64) existing->lifetime) - ((gint64) now_s);
+				new_lifetime = ((gint64) new->timestamp) + ((gint64) new->lifetime) - ((gint64) now_s);
+
+				if (   new_lifetime > (gint64) NM_NDISC_PREFIX_LFT_MIN
+				    || new_lifetime > remaining_lifetime) {
+					existing->timestamp = now_s;
+					existing->lifetime = CLAMP (new_lifetime, (gint64) 0, (gint64) (G_MAXUINT32 - 1));
+				} else if (remaining_lifetime <= (gint64) NM_NDISC_PREFIX_LFT_MIN) {
+					/* keep the current lifetime. */
+				} else {
+					existing->timestamp = now_s;
+					existing->lifetime = NM_NDISC_PREFIX_LFT_MIN;
+				}
+			}
+
+			if (new->preferred == NM_NDISC_INFINITY) {
+				nm_assert (existing->lifetime == NM_NDISC_INFINITY);
+				existing->preferred = new->preferred;
+			} else {
+				existing->preferred = NM_CLAMP (((gint64) new->timestamp) + ((gint64) new->preferred) - ((gint64) existing->timestamp),
+				                                0, G_MAXUINT32 - 1);
+				if (existing->lifetime != NM_NDISC_INFINITY)
+					existing->preferred = MIN (existing->preferred, existing->lifetime);
+			}
+
+			return    old_expiry_lifetime != get_expiry (existing)
+			       || old_expiry_preferred != get_expiry_preferred (existing);
+		}
+
 		if (new->lifetime == 0) {
 			g_array_remove_index (rdata->addresses, i);
 			return TRUE;
@@ -459,12 +508,10 @@ nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new, gboolean from_r
 
 		if (   get_expiry (existing) == get_expiry (new)
 		    && get_expiry_preferred (existing) == get_expiry_preferred (new)
-		    && (   from_ra
-		        || existing->dad_counter == new->dad_counter))
+		    && existing->dad_counter == new->dad_counter)
 			return FALSE;
 
-		if (!from_ra)
-			existing->dad_counter = new->dad_counter;
+		existing->dad_counter = new->dad_counter;
 		existing->timestamp = new->timestamp;
 		existing->lifetime = new->lifetime;
 		existing->preferred = new->preferred;
@@ -495,9 +542,11 @@ nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new, gboolean from_r
 }
 
 gboolean
-nm_ndisc_complete_and_add_address (NMNDisc *ndisc, const NMNDiscAddress *new)
+nm_ndisc_complete_and_add_address (NMNDisc *ndisc,
+                                   const NMNDiscAddress *new,
+                                   gint32 now_s)
 {
-	return nm_ndisc_add_address (ndisc, new, TRUE);
+	return nm_ndisc_add_address (ndisc, new, now_s, TRUE);
 }
 
 gboolean
@@ -795,7 +844,7 @@ nm_ndisc_set_config (NMNDisc *ndisc,
 	guint i;
 
 	for (i = 0; i < addresses->len; i++) {
-		if (nm_ndisc_add_address (ndisc, &g_array_index (addresses, NMNDiscAddress, i), FALSE))
+		if (nm_ndisc_add_address (ndisc, &g_array_index (addresses, NMNDiscAddress, i), 0, FALSE))
 			changed = TRUE;
 	}
 
