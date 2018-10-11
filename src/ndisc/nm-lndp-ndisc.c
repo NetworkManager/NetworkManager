@@ -222,7 +222,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 			};
 
 			if (address.preferred <= address.lifetime) {
-				if (nm_ndisc_complete_and_add_address (ndisc, &address))
+				if (nm_ndisc_complete_and_add_address (ndisc, &address, now))
 					changed |= NM_NDISC_CONFIG_ADDRESSES;
 			}
 		}
