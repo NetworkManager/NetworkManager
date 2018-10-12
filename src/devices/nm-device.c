@@ -2645,7 +2645,8 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 		guint32 lifetime, preferred;
 		gint32 base;
 
-		if (IN6_IS_ADDR_LINKLOCAL (&addr->address))
+		if (   IN6_IS_ADDR_UNSPECIFIED (&addr->address)
+		    || IN6_IS_ADDR_LINKLOCAL (&addr->address))
 			continue;
 
 		if (   addr->n_ifa_flags & IFA_F_TENTATIVE
