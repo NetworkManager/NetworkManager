@@ -252,7 +252,9 @@ disconnect (NMModem *modem,
 }
 
 static void
-deactivate_cleanup (NMModem *modem, NMDevice *device)
+deactivate_cleanup (NMModem *modem,
+                    NMDevice *device,
+                    gboolean stop_ppp_manager)
 {
 	NMModemOfono *self = NM_MODEM_OFONO (modem);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
@@ -261,7 +263,9 @@ deactivate_cleanup (NMModem *modem, NMDevice *device)
 
 	g_clear_object (&priv->ip4_config);
 
-	NM_MODEM_CLASS (nm_modem_ofono_parent_class)->deactivate_cleanup (modem, device);
+	NM_MODEM_CLASS (nm_modem_ofono_parent_class)->deactivate_cleanup (modem,
+	                                                                  device,
+	                                                                  stop_ppp_manager);
 }
 
 static gboolean

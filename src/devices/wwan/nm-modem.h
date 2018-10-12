@@ -156,7 +156,9 @@ typedef struct {
 	                                            _NMModemDisconnectCallback callback,
 	                                            gpointer user_data);
 
-	void     (*deactivate_cleanup)             (NMModem *self, NMDevice *device);
+	void     (*deactivate_cleanup)             (NMModem *self,
+	                                            NMDevice *device,
+	                                            gboolean stop_ppp_manager);
 
 	gboolean (*owns_port)                      (NMModem *self, const char *iface);
 } NMModemClass;

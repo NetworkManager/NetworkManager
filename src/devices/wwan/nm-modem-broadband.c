@@ -1188,9 +1188,11 @@ disconnect (NMModem *modem,
 /*****************************************************************************/
 
 static void
-deactivate_cleanup (NMModem *_self, NMDevice *device)
+deactivate_cleanup (NMModem *modem,
+                    NMDevice *device,
+                    gboolean stop_ppp_manager)
 {
-	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
+	NMModemBroadband *self = NM_MODEM_BROADBAND (modem);
 
 	/* TODO: cancel SimpleConnect() if any */
 
@@ -1201,8 +1203,9 @@ deactivate_cleanup (NMModem *_self, NMDevice *device)
 
 	self->_priv.pin_tries = 0;
 
-	/* Chain up parent's */
-	NM_MODEM_CLASS (nm_modem_broadband_parent_class)->deactivate_cleanup (_self, device);
+	NM_MODEM_CLASS (nm_modem_broadband_parent_class)->deactivate_cleanup (modem,
+	                                                                      device,
+	                                                                      stop_ppp_manager);
 }
 
 /*****************************************************************************/
