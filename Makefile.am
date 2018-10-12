@@ -204,6 +204,39 @@ DISTCLEANFILES += $(polkit_policy_DATA)
 
 ###############################################################################
 
+check_programs += shared/nm-utils/tests/test-shared-general
+
+shared_nm_utils_tests_test_shared_general_CPPFLAGS = \
+	$(dflt_cppflags) \
+	-I$(srcdir)/shared \
+	-DNETWORKMANAGER_COMPILATION_TEST \
+	-DNETWORKMANAGER_COMPILATION='(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)' \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(LIBUDEV_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	$(NULL)
+
+shared_nm_utils_tests_test_shared_general_SOURCES = \
+	shared/nm-utils/c-list-util.c \
+	shared/nm-utils/nm-dedup-multi.c \
+	shared/nm-utils/nm-enum-utils.c \
+	shared/nm-utils/nm-hash-utils.c \
+	shared/nm-utils/nm-io-utils.c \
+	shared/nm-utils/nm-random-utils.c \
+	shared/nm-utils/nm-secret-utils.c \
+	shared/nm-utils/nm-shared-utils.c \
+	shared/nm-utils/nm-time-utils.c \
+	shared/nm-utils/tests/test-shared-general.c \
+	$(NULL)
+
+shared_nm_utils_tests_test_shared_general_LDADD = \
+	$(GLIB_LIBS) \
+	shared/libcsiphash.la \
+	$(NULL)
+
+###############################################################################
+
 noinst_LTLIBRARIES += \
 	introspection/libnmdbus.la
 
