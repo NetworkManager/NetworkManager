@@ -1,4 +1,18 @@
 =============================================
+NetworkManager-1.14.2
+Overview of changes since NetworkManager-1.14
+=============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fix a bug that could cause NetworkManager to crash after checking
+  connectivity status.
+* Correctly apply a default (-1) metric from DHCP.
+* Multiple fixes for IWD Wi-Fi backend.
+* Multiple fixes for builds with Meson build system.
+* Fix a crash with OLPC XO-1 mesh Wi-Fi.
+
+=============================================
 NetworkManager-1.14
 Overview of changes since NetworkManager-1.12
 =============================================
