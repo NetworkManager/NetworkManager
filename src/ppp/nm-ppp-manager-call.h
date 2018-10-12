@@ -40,6 +40,7 @@ gboolean            nm_ppp_manager_start       (NMPPPManager *self,
                                                 GError **error);
 
 NMPPPManagerStopHandle *nm_ppp_manager_stop (NMPPPManager *self,
+                                             GCancellable *cancellable,
                                              NMPPPManagerStopCallback callback,
                                              gpointer user_data);
 

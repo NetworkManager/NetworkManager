@@ -1347,7 +1347,7 @@ deactivate (NMDevice *device)
 	nm_clear_g_source (&priv->pppoe_wait_id);
 
 	if (priv->ppp_manager) {
-		nm_ppp_manager_stop (priv->ppp_manager, NULL, NULL);
+		nm_ppp_manager_stop (priv->ppp_manager, NULL, NULL, NULL);
 		g_clear_object (&priv->ppp_manager);
 	}
 

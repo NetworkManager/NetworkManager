@@ -137,8 +137,11 @@ G_DEFINE_TYPE (NMPPPManager, nm_ppp_manager, NM_TYPE_DBUS_OBJECT)
 static void _ppp_cleanup  (NMPPPManager *self);
 
 static NMPPPManagerStopHandle *_ppp_manager_stop (NMPPPManager *self,
+                                                  GCancellable *cancellable,
                                                   NMPPPManagerStopCallback callback,
                                                   gpointer user_data);
+
+static void _ppp_manager_stop_cancel (NMPPPManagerStopHandle *handle);
 
 /*****************************************************************************/
 
@@ -791,7 +794,7 @@ pppd_timed_out (gpointer data)
 	NMPPPManager *self = NM_PPP_MANAGER (data);
 
 	_LOGW ("pppd timed out or didn't initialize our dbus module");
-	_ppp_manager_stop (self, NULL, NULL);
+	_ppp_manager_stop (self, NULL, NULL, NULL);
 
 	g_signal_emit (self, signals[STATE_CHANGED], 0, (guint) NM_PPP_STATUS_DEAD);
 
@@ -1170,6 +1173,10 @@ struct _NMPPPManagerStopHandle {
 	 * pppd process terminated. */
 	GObject *shutdown_waitobj;
 
+	GCancellable *cancellable;
+
+	gulong cancellable_id;
+
 	guint idle_id;
 };
 
@@ -1178,6 +1185,13 @@ _stop_handle_complete (NMPPPManagerStopHandle *handle, gboolean was_cancelled)
 {
 	gs_unref_object NMPPPManager *self = NULL;
 	NMPPPManagerStopCallback callback;
+
+	if (handle->cancellable_id) {
+		g_cancellable_disconnect (handle->cancellable,
+		                          nm_steal_int (&handle->cancellable_id));
+	}
+
+	g_clear_object (&handle->cancellable);
 
 	self = g_steal_pointer (&handle->self);
 	if (!self)
@@ -1219,8 +1233,20 @@ _stop_idle_cb (gpointer user_data)
 	return G_SOURCE_REMOVE;
 }
 
+static void
+_stop_cancelled_cb (GCancellable *cancellable,
+                    gpointer user_data)
+{
+	NMPPPManagerStopHandle *handle = user_data;
+
+	nm_clear_g_signal_handler (handle->cancellable,
+	                           &handle->cancellable_id);
+	_ppp_manager_stop_cancel (handle);
+}
+
 static NMPPPManagerStopHandle *
 _ppp_manager_stop (NMPPPManager *self,
+                   GCancellable *cancellable,
                    NMPPPManagerStopCallback callback,
                    gpointer user_data)
 {
@@ -1246,6 +1272,13 @@ _ppp_manager_stop (NMPPPManager *self,
 	handle->self = g_object_ref (self);
 	handle->callback = callback;
 	handle->user_data = user_data;
+	if (cancellable) {
+		handle->cancellable = g_object_ref (cancellable);
+		handle->cancellable_id = g_cancellable_connect (cancellable,
+		                                                G_CALLBACK (_stop_cancelled_cb),
+		                                                handle,
+		                                                NULL);
+	}
 
 	if (!priv->pid) {
 		/* No PID. There is nothing to kill, however, invoke the callback in
@@ -1271,6 +1304,8 @@ _ppp_manager_stop (NMPPPManager *self,
 
 	return handle;
 }
+
+/*****************************************************************************/
 
 static void
 _ppp_manager_stop_cancel (NMPPPManagerStopHandle *handle)
@@ -1360,7 +1395,7 @@ dispose (GObject *object)
 	 * still stop. */
 	g_warn_if_fail (!priv->pid);
 	g_warn_if_fail (!nm_dbus_object_is_exported (NM_DBUS_OBJECT (self)));
-	_ppp_manager_stop (self, NULL, NULL);
+	_ppp_manager_stop (self, NULL, NULL, NULL);
 
 	g_clear_object (&priv->act_req);
 
