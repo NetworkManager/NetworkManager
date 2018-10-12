@@ -303,6 +303,7 @@ _nm_g_return_if_fail_warning (const char *log_domain,
 /*****************************************************************************/
 
 #if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_DAEMON
+#include "nm-core-types.h"
 #include "nm-types.h"
 #include "nm-logging.h"
 #endif

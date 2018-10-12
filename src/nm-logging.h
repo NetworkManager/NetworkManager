@@ -22,8 +22,6 @@
 #ifndef __NETWORKMANAGER_LOGGING_H__
 #define __NETWORKMANAGER_LOGGING_H__
 
-#include "nm-core-types.h"
-
 #ifdef __NM_TEST_UTILS_H__
 #error nm-test-utils.h must be included as last header
 #endif

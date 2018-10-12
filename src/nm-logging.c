@@ -21,6 +21,8 @@
 
 #include "nm-default.h"
 
+#include "nm-logging.h"
+
 #include <dlfcn.h>
 #include <syslog.h>
 #include <stdio.h>
@@ -37,8 +39,8 @@
 #include <systemd/sd-journal.h>
 #endif
 
+#include "nm-utils/nm-time-utils.h"
 #include "nm-errors.h"
-#include "nm-core-utils.h"
 
 /* often we have some static string where we need to know the maximum length.
  * _MAX_LEN() returns @max but adds a debugging assertion that @str is indeed
