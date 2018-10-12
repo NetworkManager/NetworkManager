@@ -58,6 +58,9 @@ typedef enum {
 	NM_NDISC_DHCP_LEVEL_MANAGED
 } NMNDiscDHCPLevel;
 
+/* we rely on the fact that NM_NDISC_INFINITY is the largest possible
+ * time duration (G_MAXUINT32) and that the range of finite values
+ * goes from 0 to G_MAXUINT32-1. */
 #define NM_NDISC_INFINITY  G_MAXUINT32
 
 struct _NMNDiscGateway {
