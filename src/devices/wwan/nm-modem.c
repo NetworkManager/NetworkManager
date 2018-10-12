@@ -1126,7 +1126,7 @@ deactivate_cleanup (NMModem *self, NMDevice *device)
 
 	if (priv->ppp_manager) {
 		g_signal_handlers_disconnect_by_data (priv->ppp_manager, self);
-		nm_ppp_manager_stop (priv->ppp_manager, NULL, NULL);
+		nm_ppp_manager_stop (priv->ppp_manager, NULL, NULL, NULL);
 		g_clear_object (&priv->ppp_manager);
 	}
 
@@ -1173,19 +1173,11 @@ typedef struct {
 	gpointer callback_user_data;
 	DeactivateContextStep step;
 	NMPPPManager *ppp_manager;
-	NMPPPManagerStopHandle *ppp_stop_handle;
-	gulong ppp_stop_cancellable_id;
 } DeactivateContext;
 
 static void
 deactivate_context_complete (DeactivateContext *ctx, GError *error)
 {
-	if (ctx->ppp_stop_handle)
-		nm_ppp_manager_stop_cancel (ctx->ppp_stop_handle);
-
-	nm_assert (!ctx->ppp_stop_handle);
-	nm_assert (ctx->ppp_stop_cancellable_id == 0);
-
 	if (ctx->callback)
 		ctx->callback (ctx->self, error, ctx->callback_user_data);
 	nm_g_object_unref (ctx->ppp_manager);
@@ -1221,28 +1213,11 @@ ppp_manager_stop_ready (NMPPPManager *ppp_manager,
 {
 	DeactivateContext *ctx = user_data;
 
-	nm_assert (ctx->ppp_stop_handle == handle);
-	ctx->ppp_stop_handle = NULL;
-
-	if (ctx->ppp_stop_cancellable_id) {
-		g_cancellable_disconnect (ctx->cancellable,
-		                          nm_steal_int (&ctx->ppp_stop_cancellable_id));
-	}
-
 	if (was_cancelled)
 		return;
 
 	ctx->step++;
 	deactivate_step (ctx);
-}
-
-static void
-ppp_manager_stop_cancelled (GCancellable *cancellable,
-                            gpointer user_data)
-{
-	DeactivateContext *ctx = user_data;
-
-	nm_ppp_manager_stop_cancel (ctx->ppp_stop_handle);
 }
 
 static void
@@ -1274,17 +1249,10 @@ deactivate_step (DeactivateContext *ctx)
 	case DEACTIVATE_CONTEXT_STEP_PPP_MANAGER_STOP:
 		/* If we have a PPP manager, stop it */
 		if (ctx->ppp_manager) {
-			nm_assert (!ctx->ppp_stop_handle);
-			if (ctx->cancellable) {
-				ctx->ppp_stop_cancellable_id = g_cancellable_connect (ctx->cancellable,
-				                                                      G_CALLBACK (ppp_manager_stop_cancelled),
-				                                                      ctx,
-				                                                      NULL);
-			}
-			ctx->ppp_stop_handle = nm_ppp_manager_stop (ctx->ppp_manager,
-			                                            ppp_manager_stop_ready,
-			                                            ctx);
-			return;
+			nm_ppp_manager_stop (ctx->ppp_manager,
+			                     ctx->cancellable,
+			                     ppp_manager_stop_ready,
+			                     ctx);
 		}
 		ctx->step++;
 		/* fall through */

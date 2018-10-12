@@ -40,6 +40,7 @@ typedef const struct {
 	                        GError **err);
 
 	NMPPPManagerStopHandle *(*stop) (NMPPPManager *manager,
+	                                 GCancellable *cancellable,
 	                                 NMPPPManagerStopCallback callback,
 	                                 gpointer user_data);
 
