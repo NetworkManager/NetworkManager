@@ -1931,17 +1931,7 @@ monotonic_timestamp_get (struct timespec *tp)
 	monotonic_timestamp_offset_sec = (- ((gint64) tp->tv_sec)) + 1;
 	monotonic_timestamp_clock_mode = clock_mode;
 
-	if (nm_logging_enabled (LOGL_DEBUG, LOGD_CORE)) {
-		time_t now = time (NULL);
-		struct tm tm;
-		char s[255];
-
-		strftime (s, sizeof (s), "%Y-%m-%d %H:%M:%S", localtime_r (&now, &tm));
-		nm_log_dbg (LOGD_CORE, "monotonic timestamp started counting 1.%09ld seconds ago with "
-		                       "an offset of %lld.0 seconds to %s (local time is %s)",
-		                       tp->tv_nsec, (long long) -monotonic_timestamp_offset_sec,
-		                       clock_mode == 1 ? "CLOCK_BOOTTIME" : "CLOCK_MONOTONIC", s);
-	}
+	_nm_utils_monotonic_timestamp_initialized (tp, monotonic_timestamp_offset_sec, clock_mode == 1);
 }
 
 /**

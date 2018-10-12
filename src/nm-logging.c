@@ -744,6 +744,27 @@ _nm_log_impl (const char *file,
 
 /*****************************************************************************/
 
+void
+_nm_utils_monotonic_timestamp_initialized (const struct timespec *tp,
+                                           gint64 offset_sec,
+                                           gboolean is_boottime)
+{
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_CORE)) {
+		time_t now = time (NULL);
+		struct tm tm;
+		char s[255];
+
+		strftime (s, sizeof (s), "%Y-%m-%d %H:%M:%S", localtime_r (&now, &tm));
+		nm_log_dbg (LOGD_CORE, "monotonic timestamp started counting 1.%09ld seconds ago with "
+		                       "an offset of %lld.0 seconds to %s (local time is %s)",
+		                       tp->tv_nsec,
+		                       (long long) -offset_sec,
+		                       is_boottime ? "CLOCK_BOOTTIME" : "CLOCK_MONOTONIC", s);
+	}
+}
+
+/*****************************************************************************/
+
 static void
 nm_log_handler (const char *log_domain,
                 GLogLevelFlags level,
