@@ -464,13 +464,11 @@ config_h.set10('WITH_JSON_VALIDATION', enable_json_validation)
 # polkit
 enable_polkit = get_option('polkit')
 if enable_polkit
-  polkit_dir = get_option('polkit_dir')
-  if polkit_dir == ''
-    polkit_dir = dependency('polkit-gobject-1').get_pkgconfig_variable('policydir')
-  endif
+  # FIXME: policydir should be relative to `datadir`, not `prefix`. Fixed in https://gitlab.freedesktop.org/polkit/polkit/merge_requests/2
+  polkit_dir = dependency('polkit-gobject-1').get_pkgconfig_variable('policydir', define_variable: ['prefix', nm_prefix])
 endif
 
-config_default_main_auth_polkit = (polkit == 'yes').to_string()
+config_default_main_auth_polkit = enable_polkit.to_string()
 config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT', config_default_main_auth_polkit)
 
 enable_modify_system = get_option('modify_system')
@@ -499,17 +497,8 @@ if dbus_conf_dir == ''
   dbus_conf_dir = join_paths(dbus_dep.get_pkgconfig_variable('sysconfdir'), 'dbus-1', 'system.d')
 endif
 
-dbus_ifaces_dir = get_option('dbus_ifaces_dir')
-if dbus_ifaces_dir == ''
-  assert(dbus_dep.found(), 'D-Bus required but not found, please provide a valid interfaces dir')
-  dbus_ifaces_dir = dbus_dep.get_pkgconfig_variable('interfaces_dir')
-endif
-
-dbus_sys_dir = get_option('dbus_sys_dir')
-if dbus_sys_dir == ''
-  assert(dbus_dep.found(), 'D-Bus required but not found, please provide a valid system bus services dir')
-  dbus_sys_dir = dbus_dep.get_pkgconfig_variable('system_bus_services_dir')
-endif
+dbus_ifaces_dir = dbus_dep.get_pkgconfig_variable('interfaces_dir',  define_variable: ['datadir', nm_datadir])
+dbus_sys_dir = dbus_dep.get_pkgconfig_variable('system_bus_services_dir', define_variable: ['datadir', nm_datadir])
 
 # pppd
 enable_ppp = get_option('ppp')
@@ -950,7 +939,7 @@ output += '  suspend/resume: ' + suspend_resume + '\n'
 output += '  policykit: ' + enable_polkit.to_string()
 if enable_polkit
   modify = (enable_modify_system ? 'permissive' : 'restrictive')
-  output += ' (' + modify + ' modify.system) (default: main.auth-polkit=' + polkit + ')'
+  output += ' (' + modify + ' modify.system) (default: main.auth-polkit=true)'
 endif
 output += '\n'
 output += '  polkit agent: ' + enable_polkit_agent.to_string() + '\n'
