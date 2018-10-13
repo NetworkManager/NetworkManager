@@ -507,11 +507,9 @@ nm_ndisc_add_address (NMNDisc *ndisc,
 		}
 
 		if (   get_expiry (existing) == get_expiry (new)
-		    && get_expiry_preferred (existing) == get_expiry_preferred (new)
-		    && existing->dad_counter == new->dad_counter)
+		    && get_expiry_preferred (existing) == get_expiry_preferred (new))
 			return FALSE;
 
-		existing->dad_counter = new->dad_counter;
 		existing->timestamp = new->timestamp;
 		existing->lifetime = new->lifetime;
 		existing->preferred = new->preferred;
