@@ -296,7 +296,7 @@ receive_ra (gpointer user_data)
 				.dad_counter = 0,
 			};
 
-			if (nm_ndisc_complete_and_add_address (ndisc, &address))
+			if (nm_ndisc_complete_and_add_address (ndisc, &address, now))
 				changed |= NM_NDISC_CONFIG_ADDRESSES;
 		}
 	}
