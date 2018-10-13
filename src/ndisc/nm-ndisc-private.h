@@ -40,7 +40,7 @@ void nm_ndisc_ra_received (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap changed)
 void nm_ndisc_rs_received (NMNDisc *ndisc);
 
 gboolean nm_ndisc_add_gateway              (NMNDisc *ndisc, const NMNDiscGateway *new);
-gboolean nm_ndisc_complete_and_add_address (NMNDisc *ndisc, NMNDiscAddress *new);
+gboolean nm_ndisc_complete_and_add_address (NMNDisc *ndisc, const NMNDiscAddress *new, gint32 now_s);
 gboolean nm_ndisc_add_route                (NMNDisc *ndisc, const NMNDiscRoute *new);
 gboolean nm_ndisc_add_dns_server           (NMNDisc *ndisc, const NMNDiscDNSServer *new);
 gboolean nm_ndisc_add_dns_domain           (NMNDisc *ndisc, const NMNDiscDNSDomain *new);
