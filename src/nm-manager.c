@@ -3328,6 +3328,49 @@ nm_manager_get_devices (NMManager *manager)
 	return &NM_MANAGER_GET_PRIVATE (manager)->devices_lst_head;
 }
 
+typedef enum {
+	DEVICE_ACTIVATION_PRIO_NONE,
+	DEVICE_ACTIVATION_PRIO_UNMANAGED,
+	DEVICE_ACTIVATION_PRIO_UNAVAILABLE,
+	DEVICE_ACTIVATION_PRIO_DEACTIVATING,
+	DEVICE_ACTIVATION_PRIO_ACTIVATING,
+	DEVICE_ACTIVATION_PRIO_ACTIVATED,
+	DEVICE_ACTIVATION_PRIO_DISCONNECTED,
+
+	_DEVICE_ACTIVATION_PRIO_BEST = DEVICE_ACTIVATION_PRIO_DISCONNECTED,
+} DeviceActivationPrio;
+
+static DeviceActivationPrio
+_device_get_activation_prio (NMDevice *device)
+{
+	if (!nm_device_get_managed (device, TRUE))
+		return DEVICE_ACTIVATION_PRIO_NONE;
+
+	switch (nm_device_get_state (device)) {
+	case NM_DEVICE_STATE_DISCONNECTED:
+		return DEVICE_ACTIVATION_PRIO_DISCONNECTED;
+	case NM_DEVICE_STATE_ACTIVATED:
+		return DEVICE_ACTIVATION_PRIO_ACTIVATED;
+	case NM_DEVICE_STATE_PREPARE:
+	case NM_DEVICE_STATE_CONFIG:
+	case NM_DEVICE_STATE_NEED_AUTH:
+	case NM_DEVICE_STATE_IP_CONFIG:
+	case NM_DEVICE_STATE_IP_CHECK:
+	case NM_DEVICE_STATE_SECONDARIES:
+		return DEVICE_ACTIVATION_PRIO_ACTIVATING;
+	case NM_DEVICE_STATE_DEACTIVATING:
+	case NM_DEVICE_STATE_FAILED:
+		return DEVICE_ACTIVATION_PRIO_DEACTIVATING;
+	case NM_DEVICE_STATE_UNAVAILABLE:
+		return DEVICE_ACTIVATION_PRIO_UNAVAILABLE;
+	case NM_DEVICE_STATE_UNKNOWN:
+	case NM_DEVICE_STATE_UNMANAGED:
+		return DEVICE_ACTIVATION_PRIO_UNMANAGED;
+	}
+
+	g_return_val_if_reached (DEVICE_ACTIVATION_PRIO_UNAVAILABLE);
+}
+
 static NMDevice *
 nm_manager_get_best_device_for_connection (NMManager *self,
                                            NMSettingsConnection *sett_conn,
@@ -3341,6 +3384,13 @@ nm_manager_get_best_device_for_connection (NMManager *self,
 	NMActiveConnection *ac;
 	NMDevice *ac_device;
 	NMDevice *device;
+	struct {
+		NMDevice *device;
+		DeviceActivationPrio prio;
+	} best = {
+		.device = NULL,
+		.prio = DEVICE_ACTIVATION_PRIO_NONE,
+	};
 	NMDeviceCheckConAvailableFlags flags;
 	gs_unref_ptrarray GPtrArray *all_ac_arr = NULL;
 	gs_free_error GError *local_best = NULL;
@@ -3355,8 +3405,15 @@ nm_manager_get_best_device_for_connection (NMManager *self,
 
 	flags = for_user_request ? NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST : NM_DEVICE_CHECK_CON_AVAILABLE_NONE;
 
-	ac = active_connection_find_by_connection (self, sett_conn, connection, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, &all_ac_arr);
-	if (ac) {
+	if (   _nm_connection_get_multi_connect (nm_settings_connection_get_connection (sett_conn)) == NM_CONNECTION_MULTI_CONNECT_SINGLE
+	    && (ac = active_connection_find_by_connection (self, sett_conn, connection, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, &all_ac_arr))) {
+		/* if we have a profile which may activate on only one device (multi-connect single), then
+		 * we prefer the device on which the profile is already active. It means to reactivate
+		 * the profile on the same device.
+		 *
+		 * If the profile can be activated on multiple devices, we don't do this. In fact, the
+		 * check below for the DeviceActivationPrio will prefer devices which are not already
+		 * activated (with this or another) profile. */
 
 		ac_device = nm_active_connection_get_device (ac);
 		if (   ac_device
@@ -3427,17 +3484,38 @@ found_better:
 	/* Pick the first device that's compatible with the connection. */
 	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 		GError *local = NULL;
+		DeviceActivationPrio prio;
 
 		if (   unavailable_devices
 		    && g_hash_table_contains (unavailable_devices, device))
 			continue;
 
+		/* determine the priority of this device. Currently this priority is independent
+		 * of the profile (connection) and the device's details (aside the state).
+		 * Maybe nm_device_check_connection_available() should instead return a priority,
+		 * as it has more information available. For now, that is not needed nor implemented. */
+		prio = _device_get_activation_prio (device);
+		if (   prio <= best.prio
+		    && best.device) {
+			/* we already have a matching device with a better priority. This candidate
+			 * cannot be better. Skip the check. */
+			continue;
+		}
+
 		if (nm_device_check_connection_available (device,
 		                                          connection,
 		                                          flags,
 		                                          NULL,
-		                                          error ? &local : NULL))
-			return device;
+		                                          error ? &local : NULL)) {
+			if (prio == _DEVICE_ACTIVATION_PRIO_BEST) {
+				/* this device already has the best priority. It cannot get better
+				 * and finish the search. */
+				return device;
+			}
+			best.prio = prio;
+			best.device = device;
+			continue;
+		}
 
 		if (error) {
 			gboolean reset_error;
@@ -3463,6 +3541,9 @@ found_better:
 			g_error_free (local);
 		}
 	}
+
+	if (best.device)
+		return best.device;
 
 	if (error) {
 		if (local_best)
