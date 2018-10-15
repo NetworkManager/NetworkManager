@@ -7028,6 +7028,7 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
+	priv->dhcp4.was_active = FALSE;
 	nm_clear_g_source (&priv->dhcp4.grace_id);
 	g_clear_pointer (&priv->dhcp4.pac_url, g_free);
 	g_clear_pointer (&priv->dhcp4.root_path, g_free);
@@ -7306,12 +7307,13 @@ dhcp4_grace_period_expired (gpointer user_data)
 }
 
 static void
-dhcp4_fail (NMDevice *self)
+dhcp4_fail (NMDevice *self, NMDhcpState dhcp_state)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	_LOGD (LOGD_DHCP4, "DHCPv4 failed (ip_state %s)",
-	       _ip_state_to_string (priv->ip4_state));
+	_LOGD (LOGD_DHCP4, "DHCPv4 failed (ip_state %s, was_active %d)",
+	       _ip_state_to_string (priv->ip4_state),
+	       priv->dhcp4.was_active);
 
 	/* Keep client running if there are static addresses configured
 	 * on the interface.
@@ -7321,11 +7323,14 @@ dhcp4_fail (NMDevice *self)
 	    && nm_ip4_config_get_num_addresses (priv->con_ip_config_4) > 0)
 		goto clear_config;
 
-	/* Fail the method in case of timeout or failure during initial
-	 * configuration.
+	/* Fail the method when one of the following is true:
+	 * 1) the DHCP client terminated: it does not make sense to start a grace
+	 *    period without a client running;
+	 * 2) we failed to get an initial lease AND the client was
+	 *    not active before.
 	 */
-	if (   !priv->dhcp4.was_active
-	    && priv->ip4_state == IP_CONF) {
+	if (   dhcp_state == NM_DHCP_STATE_TERMINATED
+	    || (!priv->dhcp4.was_active && priv->ip4_state == IP_CONF)) {
 		dhcp4_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 		nm_device_activate_schedule_ip4_config_timeout (self);
 		return;
@@ -7388,7 +7393,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 	case NM_DHCP_STATE_BOUND:
 		if (!ip4_config) {
 			_LOGW (LOGD_DHCP4, "failed to get IPv4 config in response to DHCP event.");
-			dhcp4_fail (self);
+			dhcp4_fail (self, state);
 			break;
 		}
 
@@ -7431,11 +7436,11 @@ dhcp4_state_changed (NMDhcpClient *client,
 			if (dhcp4_lease_change (self, ip4_config))
 				nm_device_update_metered (self);
 			else
-				dhcp4_fail (self);
+				dhcp4_fail (self, state);
 		}
 		break;
 	case NM_DHCP_STATE_TIMEOUT:
-		dhcp4_fail (self);
+		dhcp4_fail (self, state);
 		break;
 	case NM_DHCP_STATE_EXPIRE:
 		/* Ignore expiry before we even have a lease (NAK, old lease, etc) */
@@ -7444,7 +7449,8 @@ dhcp4_state_changed (NMDhcpClient *client,
 		/* fall through */
 	case NM_DHCP_STATE_DONE:
 	case NM_DHCP_STATE_FAIL:
-		dhcp4_fail (self);
+	case NM_DHCP_STATE_TERMINATED:
+		dhcp4_fail (self, state);
 		break;
 	default:
 		break;
@@ -7985,6 +7991,7 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
+	priv->dhcp6.was_active = FALSE;
 	priv->dhcp6.mode = NM_NDISC_DHCP_LEVEL_NONE;
 	applied_config_clear (&priv->dhcp6.ip6_config);
 	g_clear_pointer (&priv->dhcp6.event_id, g_free);
@@ -8058,12 +8065,14 @@ dhcp6_grace_period_expired (gpointer user_data)
 }
 
 static void
-dhcp6_fail (NMDevice *self, gboolean timeout)
+dhcp6_fail (NMDevice *self, NMDhcpState dhcp_state)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean is_dhcp_managed;
 
-	_LOGD (LOGD_DHCP6, "DHCPv6 failed%s", timeout ? " (timeout)" : "");
+	_LOGD (LOGD_DHCP6, "DHCPv6 failed (ip_state %s, was_active %d)",
+	       _ip_state_to_string (priv->ip6_state),
+	       priv->dhcp6.was_active);
 
 	is_dhcp_managed = (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_MANAGED);
 
@@ -8076,11 +8085,14 @@ dhcp6_fail (NMDevice *self, gboolean timeout)
 		    && nm_ip6_config_get_num_addresses (priv->con_ip_config_6))
 			goto clear_config;
 
-		/* Fail the method in case of timeout or failure during initial
-		 * configuration.
+		/* Fail the method when one of the following is true:
+		 * 1) the DHCP client terminated: it does not make sense to start a grace
+		 *    period without a client running;
+		 * 2) we failed to get an initial lease AND the client was
+		 *    not active before.
 		 */
-		if (   !priv->dhcp6.was_active
-		    && (timeout || priv->ip6_state == IP_CONF)) {
+		if (   dhcp_state == NM_DHCP_STATE_TERMINATED
+		    || (!priv->dhcp6.was_active && priv->ip6_state == IP_CONF)) {
 			dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 			nm_device_activate_schedule_ip6_config_timeout (self);
 			return;
@@ -8113,21 +8125,6 @@ clear_config:
 		nm_dbus_object_clear_and_unexport (&priv->dhcp6.config);
 		priv->dhcp6.config = nm_dhcp6_config_new ();
 		_notify (self, PROP_DHCP6_CONFIG);
-	}
-}
-
-static void
-dhcp6_timeout (NMDevice *self, NMDhcpClient *client)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_MANAGED)
-		dhcp6_fail (self, TRUE);
-	else {
-		/* not a hard failure; just live with the RA info */
-		dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
-		if (priv->ip6_state == IP_CONF)
-			nm_device_activate_schedule_ip6_config_result (self);
 	}
 }
 
@@ -8188,17 +8185,24 @@ dhcp6_state_changed (NMDhcpClient *client,
 			nm_device_activate_schedule_ip6_config_result (self);
 		} else if (priv->ip6_state == IP_DONE)
 			if (!dhcp6_lease_change (self))
-				dhcp6_fail (self, FALSE);
+				dhcp6_fail (self, state);
 		break;
 	case NM_DHCP_STATE_TIMEOUT:
-		dhcp6_timeout (self, client);
+		if (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_MANAGED)
+			dhcp6_fail (self, state);
+		else {
+			/* not a hard failure; just live with the RA info */
+			dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
+			if (priv->ip6_state == IP_CONF)
+				nm_device_activate_schedule_ip6_config_result (self);
+		}
 		break;
 	case NM_DHCP_STATE_EXPIRE:
 		/* Ignore expiry before we even have a lease (NAK, old lease, etc) */
 		if (priv->ip6_state != IP_CONF)
-			dhcp6_fail (self, FALSE);
+			dhcp6_fail (self, state);
 		break;
-	case NM_DHCP_STATE_DONE:
+	case NM_DHCP_STATE_TERMINATED:
 		/* In IPv6 info-only mode, the client doesn't handle leases so it
 		 * may exit right after getting a response from the server.  That's
 		 * normal.  In that case we just ignore the exit.
@@ -8206,8 +8210,9 @@ dhcp6_state_changed (NMDhcpClient *client,
 		if (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF)
 			break;
 		/* fall through */
+	case NM_DHCP_STATE_DONE:
 	case NM_DHCP_STATE_FAIL:
-		dhcp6_fail (self, FALSE);
+		dhcp6_fail (self, state);
 		break;
 	default:
 		break;
