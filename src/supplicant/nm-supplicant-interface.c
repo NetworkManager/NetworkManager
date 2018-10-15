@@ -2437,6 +2437,53 @@ nm_supplicant_interface_get_max_scan_ssids (NMSupplicantInterface *self)
 /*****************************************************************************/
 
 void
+nm_supplicant_interface_p2p_start_find (NMSupplicantInterface *self,
+                                        guint timeout)
+{
+	NMSupplicantInterfacePrivate *priv;
+	GVariantBuilder builder;
+
+	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
+	g_return_if_fail (timeout > 0 && timeout <= 600);
+
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	/* Find parameters */
+	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+	g_variant_builder_add (&builder, "{sv}", "Timeout", g_variant_new_int32 (timeout));
+
+	g_dbus_proxy_call (priv->p2p_proxy,
+	                   "Find",
+	                   g_variant_new ("(a{sv})", &builder),
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   priv->other_cancellable,
+	                   (GAsyncReadyCallback) log_result_cb,
+	                   self);
+}
+
+void
+nm_supplicant_interface_p2p_stop_find (NMSupplicantInterface *self)
+{
+	NMSupplicantInterfacePrivate *priv;
+
+	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
+
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	g_dbus_proxy_call (priv->p2p_proxy,
+	                   "StopFind",
+	                   NULL,
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   priv->other_cancellable,
+	                   (GAsyncReadyCallback) scan_request_cb,
+	                   self);
+}
+
+/*****************************************************************************/
+
+void
 nm_supplicant_interface_p2p_connect (NMSupplicantInterface * self,
                                      const char * peer,
                                      const char * wps_method,

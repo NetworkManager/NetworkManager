@@ -146,6 +146,10 @@ gboolean nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,
                                                     const char *value,
                                                     GError **error);
 
+void nm_supplicant_interface_p2p_start_find (NMSupplicantInterface *self,
+                                             guint timeout);
+void nm_supplicant_interface_p2p_stop_find (NMSupplicantInterface *self);
+
 void nm_supplicant_interface_p2p_connect (NMSupplicantInterface * self,
                                           const char * peer,
                                           const char * wps_method,
