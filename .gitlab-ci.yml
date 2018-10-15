@@ -1,0 +1,91 @@
+# Quick syntax check:
+# python -c 'import sys, yaml; yaml.dump (yaml.load (sys.stdin), sys.stdout)' <.gitlab-ci.yml
+
+# If things don't seem to work, this can help:
+# https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/ci/lint
+
+stages:
+  - test
+  - deploy
+
+.fedora_install: &fedora_install
+  before_script:
+    - NM_INSTALL="dnf install -y" ./contrib/fedora/REQUIRED_PACKAGES
+
+checkpatch:
+  image: fedora:28
+  stage: test
+  script:
+    - dnf install -y git
+    - contrib/scripts/checkpatch-feature-branch.sh 2>&1 | tee checkpatch-out.txt
+  allow_failure: true
+  artifacts:
+    when: on_failure
+    paths:
+      - checkpatch-out.txt
+
+f28_build_default:
+  <<: *fedora_install
+  image: fedora:28
+  stage: test
+  script:
+    - dnf install -y glibc-langpack-pl
+    - locale -a
+    - NOCONFIGURE=1 ./autogen.sh
+    - mkdir ./build
+    - cd ./build
+    - ../configure
+          --prefix="$PWD/INST"
+          --enable-gtk-doc=yes
+          --with-systemd-logind=yes
+          --enable-more-warnings=error
+          --enable-tests=yes
+          --with-crypto=gnutls
+          --with-libnm-glib=yes
+          --with-iwd=yes
+          --with-ofono=yes
+          --enable-teamdctl=yes
+          --with-dhcpcanon=yes
+          --with-dhcpcd=yes
+          --with-dhclient=yes
+          --with-netconfig=/bin/nowhere/netconfig
+          --with-resolvconf=/bin/nowhere/resolvconf
+          --enable-ifcfg-rh=yes
+          --enable-config-plugin-ibft=yes
+          --enable-ifupdown=yes
+    - make -j 6
+    - make install
+    - NM_TEST_CLIENT_CHECK_L10N=1 make -j 6 -k check
+    - cd ..
+    - mv build/INST/share/gtk-doc/html docs-html
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - docs-html
+
+f28_rpm_autotools_dbg:
+  <<: *fedora_install
+  image: fedora:28
+  stage: test
+  script:
+    - ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test
+
+f28_rpm_meson_dbg:
+  <<: *fedora_install
+  image: fedora:28
+  stage: test
+  script:
+    - ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w meson -w test
+
+pages:
+  stage: deploy
+  dependencies:
+    - f28_build_default
+  script:
+    - mv docs-html public
+  artifacts:
+    expire_in: 20 days
+    paths:
+      - public
+  only:
+    - master
