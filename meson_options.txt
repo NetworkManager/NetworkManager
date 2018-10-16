@@ -16,7 +16,7 @@ option('dist_version', type: 'string', value: '', description: 'Define the NM\'s
 option('session_tracking_consolekit', type: 'boolean', value: true, description: 'Support consolekit session tracking')
 option('session_tracking', type: 'combo', choices: ['systemd', 'elogind', 'no'], value: 'systemd', description: 'Compatibility option to choose one session tracking module')
 option('suspend_resume', type: 'combo', choices: ['upower', 'systemd', 'elogind', 'consolekit', 'auto'], value: 'auto', description: 'Build NetworkManager with specific suspend/resume support')
-option('polkit', type: 'combo', choices: ['yes', 'no', 'disabled'], value: 'yes', description: 'set default value for auth-polkit configuration option. This value can be overwritten by NM configuration. \'disabled\' compiles NM without any support')
+option('polkit', type: 'boolean', value: true, description: 'User auth-polkit configuration option.')
 option('modify_system', type: 'boolean', value: false, description: 'Allow users to modify system connections')
 option('polkit_agent', type: 'boolean', value: false, description: 'enable polkit agent for clients')
 option('selinux', type: 'boolean', value: true, description: 'Build with SELinux')

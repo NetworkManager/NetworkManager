@@ -530,7 +530,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	-Dovs=false \
 %endif
 	-Dselinux=true \
-	-Dpolkit=yes  \
+	-Dpolkit=true  \
 	-Dpolkit_agent=true \
 	-Dmodify_system=true \
 	-Dconcheck=true \

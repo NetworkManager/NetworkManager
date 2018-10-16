@@ -462,9 +462,7 @@ endif
 config_h.set10('WITH_JSON_VALIDATION', enable_json_validation)
 
 # polkit
-polkit = get_option('polkit')
-enable_polkit = (polkit != 'no')
-
+enable_polkit = get_option('polkit')
 if enable_polkit
   polkit_dir = get_option('polkit_dir')
   if polkit_dir == ''
