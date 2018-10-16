@@ -225,9 +225,14 @@ struct _NMMetaPropertyType {
 
 struct _NMUtilsEnumValueInfo;
 
+typedef union {
+	gint64  i64;
+	guint64 u64;
+} NMMetaSignUnsignInt64;
+
 typedef struct {
 	const char *nick;
-	gint64 value;
+	NMMetaSignUnsignInt64 value;
 } NMMetaUtilsIntValueInfo;
 
 struct _NMMetaPropertyTypData {
@@ -248,8 +253,8 @@ struct _NMMetaPropertyTypData {
 			                        int value);
 		} gobject_enum;
 		struct {
-			gint64 min;
-			gint64 max;
+			NMMetaSignUnsignInt64 min;
+			NMMetaSignUnsignInt64 max;
 			guint base;
 			const NMMetaUtilsIntValueInfo *value_infos;
 		} gobject_int;
