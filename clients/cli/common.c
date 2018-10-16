@@ -696,7 +696,7 @@ get_secrets_from_user (const NmcConfig *nmc_config,
 						nmc_rl_pre_input_deftext = g_strdup (secret->value);
 					}
 				}
-				if (msg)
+				if (i == 0 && msg)
 					g_print ("%s\n", msg);
 				pwd = nmc_readline_echo (nmc_config,
 				                         secret->is_secret

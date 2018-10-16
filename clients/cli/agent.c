@@ -98,7 +98,7 @@ get_secrets_from_user (const NmcConfig *nmc_config,
 		char *pwd = NULL;
 
 		/* Ask user for the password */
-		if (msg)
+		if (i == 0 && msg)
 			g_print ("%s\n", msg);
 		if (secret->value) {
 			/* Prefill the password if we have it. */
