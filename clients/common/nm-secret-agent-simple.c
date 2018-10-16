@@ -430,19 +430,27 @@ add_vpn_secrets (NMSecretAgentSimpleRequest *request,
 	NMSettingVpn *s_vpn = nm_connection_get_setting_vpn (request->connection);
 	const VpnPasswordName *secret_names, *p;
 	const char *vpn_msg = NULL;
+	gboolean ask_from_setting = TRUE;
 	char **iter;
+
 
 	/* If hints are given, then always ask for what the hints require */
 	if (request->hints) {
 		for (iter = request->hints; *iter; iter++) {
 			if (!vpn_msg && g_str_has_prefix (*iter, VPN_MSG_TAG))
 				vpn_msg = &(*iter)[NM_STRLEN (VPN_MSG_TAG)];
-			else
+			else {
 				add_vpn_secret_helper (secrets, s_vpn, *iter, *iter);
+				if (!nm_streq (*iter, "x-vpn-interactive-username"))
+					ask_from_setting = FALSE;
+			}
 		}
 	}
 
 	NM_SET_OUT (msg, g_strdup (vpn_msg));
+
+	if (!ask_from_setting)
+		return TRUE;
 
 	/* Now add what client thinks might be required, because hints may be empty or incomplete */
 	p = secret_names = nm_vpn_get_secret_names (nm_setting_vpn_get_service_type (s_vpn));
