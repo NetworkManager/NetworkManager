@@ -497,6 +497,50 @@ _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 ma
 	return v;
 }
 
+guint64
+_nm_utils_ascii_str_to_uint64 (const char *str, guint base, guint64 min, guint64 max, guint64 fallback)
+{
+	guint64 v;
+	const char *s = NULL;
+
+	if (str) {
+		while (g_ascii_isspace (str[0]))
+			str++;
+	}
+	if (!str || !str[0]) {
+		errno = EINVAL;
+		return fallback;
+	}
+
+	errno = 0;
+	v = g_ascii_strtoull (str, (char **) &s, base);
+
+	if (errno != 0)
+		return fallback;
+	if (s[0] != '\0') {
+		while (g_ascii_isspace (s[0]))
+			s++;
+		if (s[0] != '\0') {
+			errno = EINVAL;
+			return fallback;
+		}
+	}
+	if (v > max || v < min) {
+		errno = ERANGE;
+		return fallback;
+	}
+
+	if (   v != 0
+	    && str[0] == '-') {
+		/* I don't know why, but g_ascii_strtoull() accepts minus signs ("-2" gives 18446744073709551614).
+		 * For "-0" that is OK, but otherwise not. */
+		errno = ERANGE;
+		return fallback;
+	}
+
+	return v;
+}
+
 /*****************************************************************************/
 
 /* like nm_strcmp_p(), suitable for g_ptr_array_sort_with_data().
