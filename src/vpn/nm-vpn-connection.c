@@ -2684,14 +2684,16 @@ get_secrets (NMVpnConnection *self,
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE;
+	gs_free char *hints_str = NULL;
 
 	g_return_if_fail (secrets_idx < SECRETS_REQ_LAST);
 	priv->secrets_idx = secrets_idx;
 
 	cancel_get_secrets (self);
 
-	_LOGD ("requesting VPN secrets pass #%d",
-	       priv->secrets_idx + 1);
+	_LOGD ("requesting VPN secrets pass #%d, hints: %s",
+	       priv->secrets_idx + 1,
+	       (hints_str = hints ? g_strjoinv (",", (char **) hints) : NULL));
 
 	switch (priv->secrets_idx) {
 	case SECRETS_REQ_SYSTEM:
