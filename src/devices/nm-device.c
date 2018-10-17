@@ -13615,6 +13615,19 @@ nm_device_update_metered (NMDevice *self)
 	}
 }
 
+static NMDeviceCheckDevAvailableFlags
+_device_check_dev_available_flags_from_con (NMDeviceCheckConAvailableFlags con_flags)
+{
+	NMDeviceCheckDevAvailableFlags dev_flags;
+
+	dev_flags = NM_DEVICE_CHECK_DEV_AVAILABLE_NONE;
+
+	if (NM_FLAGS_HAS (con_flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER))
+		dev_flags |= _NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER;
+
+	return dev_flags;
+}
+
 static gboolean
 _nm_device_check_connection_available (NMDevice *self,
                                        NMConnection *connection,
@@ -13656,34 +13669,30 @@ _nm_device_check_connection_available (NMDevice *self,
 		return FALSE;
 	}
 	if (state < NM_DEVICE_STATE_UNAVAILABLE) {
-		if (NM_FLAGS_ANY (flags, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST)) {
-			if (!nm_device_get_managed (self, TRUE)) {
-				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
-				                            "device is unmanaged");
-				return FALSE;
-			}
-		} else {
+		if (!nm_device_get_managed (self, TRUE)) {
 			if (!nm_device_get_managed (self, FALSE)) {
 				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
-				                            "device is unmanaged for internal request");
+				                            "device is strictly unmanaged");
+				return FALSE;
+			}
+			if (!NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_OVERRULE_UNMANAGED)) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
+				                            "device is currently unmanaged");
 				return FALSE;
 			}
 		}
 	}
 	if (   state < NM_DEVICE_STATE_DISCONNECTED
 	    && !nm_device_is_software (self)) {
-		if (NM_FLAGS_ANY (flags, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST)) {
-			if (!nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST)) {
+		if (!nm_device_is_available (self, _device_check_dev_available_flags_from_con (flags))) {
+			if (NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST)) {
 				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 				                            "device is not available");
-				return FALSE;
-			}
-		} else {
-			if (!nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)) {
+			} else {
 				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 				                            "device is not available for internal request");
-				return FALSE;
 			}
+			return FALSE;
 		}
 	}
 
