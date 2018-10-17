@@ -3385,6 +3385,7 @@ nm_manager_get_best_device_for_connection (NMManager *self,
 	NMDeviceCheckConAvailableFlags flags;
 	gs_unref_ptrarray GPtrArray *all_ac_arr = NULL;
 	gs_free_error GError *local_best = NULL;
+	NMConnectionMultiConnect multi_connect;
 
 	nm_assert (!sett_conn || NM_IS_SETTINGS_CONNECTION (sett_conn));
 	nm_assert (!connection || NM_IS_CONNECTION (connection));
@@ -3396,7 +3397,9 @@ nm_manager_get_best_device_for_connection (NMManager *self,
 
 	flags = for_user_request ? NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST : NM_DEVICE_CHECK_CON_AVAILABLE_NONE;
 
-	if (   _nm_connection_get_multi_connect (nm_settings_connection_get_connection (sett_conn)) == NM_CONNECTION_MULTI_CONNECT_SINGLE
+	multi_connect =  _nm_connection_get_multi_connect (connection);
+
+	if (   multi_connect == NM_CONNECTION_MULTI_CONNECT_SINGLE
 	    && (ac = active_connection_find_by_connection (self, sett_conn, connection, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, &all_ac_arr))) {
 		/* if we have a profile which may activate on only one device (multi-connect single), then
 		 * we prefer the device on which the profile is already active. It means to reactivate
