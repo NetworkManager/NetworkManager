@@ -1334,12 +1334,13 @@ _set_fcn_gobject_enum (ARGS_SET_FCN)
 		g_value_set_int (&gval, v);
 	else if (gtype_prop == G_TYPE_UINT)
 		g_value_set_uint (&gval, v);
-	else if (G_IS_ENUM_CLASS (gtype_class))
-		g_value_set_enum (&gval, v);
-	else if (G_IS_FLAGS_CLASS (gtype_class))
+	else if (is_flags) {
+		nm_assert (G_IS_FLAGS_CLASS (gtype_class));
 		g_value_set_flags (&gval, v);
-	else
-		g_return_val_if_reached (FALSE);
+	} else {
+		nm_assert (G_IS_ENUM_CLASS (gtype_class));
+		g_value_set_enum (&gval, v);
+	}
 
 	if (!nm_g_object_set_property (G_OBJECT (setting), property_info->property_name, &gval, NULL))
 		goto fail;
