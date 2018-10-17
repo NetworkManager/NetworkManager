@@ -181,12 +181,20 @@ typedef enum { /*< skip >*/
 	 * visible. */
 	_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP           = (1L << 2),
 
+	/* a device can be marked as unmanaged for various reasons. Some of these reasons
+	 * are authorative, others not. Non-authoritative reasons can be overruled by
+	 * `nmcli device set $DEVICE managed yes`. Also, for an explicit user activation
+	 * request we may want to consider the device as managed. This flag makes devices
+	 * that are unmanaged appear available. */
+	_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_OVERRULE_UNMANAGED  = (1L << 3),
+
 	/* a collection of flags, that are commonly set for an explict user-request. */
 	NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST                      = _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST
 	                                                                    | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER
-	                                                                    | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP,
+	                                                                    | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP
+	                                                                    | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_OVERRULE_UNMANAGED,
 
-	NM_DEVICE_CHECK_CON_AVAILABLE_ALL                                   = (1L << 3) - 1,
+	NM_DEVICE_CHECK_CON_AVAILABLE_ALL                                   = (1L << 4) - 1,
 } NMDeviceCheckConAvailableFlags;
 
 struct _NMDevicePrivate;

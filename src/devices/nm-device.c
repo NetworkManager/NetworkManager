@@ -13598,16 +13598,15 @@ _nm_device_check_connection_available (NMDevice *self,
 		return FALSE;
 	}
 	if (state < NM_DEVICE_STATE_UNAVAILABLE) {
-		if (NM_FLAGS_ANY (flags, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST)) {
-			if (!nm_device_get_managed (self, TRUE)) {
-				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
-				                            "device is unmanaged");
-				return FALSE;
-			}
-		} else {
+		if (!nm_device_get_managed (self, TRUE)) {
 			if (!nm_device_get_managed (self, FALSE)) {
 				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
-				                            "device is unmanaged for interal request");
+				                            "device is strictly unmanaged");
+				return FALSE;
+			}
+			if (!NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_OVERRULE_UNMANAGED)) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
+				                            "device is currently unmanaged");
 				return FALSE;
 			}
 		}
