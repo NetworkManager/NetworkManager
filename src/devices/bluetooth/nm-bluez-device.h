@@ -66,16 +66,17 @@ guint32 nm_bluez_device_get_capabilities (NMBluezDevice *self);
 
 gboolean nm_bluez_device_get_connected (NMBluezDevice *self);
 
+typedef void (*NMBluezDeviceConnectCallback) (NMBluezDevice *self,
+                                              const char *device,
+                                              GError *error,
+                                              gpointer user_data);
+
 void
 nm_bluez_device_connect_async (NMBluezDevice *self,
                                NMBluetoothCapabilities connection_bt_type,
-                               GAsyncReadyCallback callback,
-                               gpointer user_data);
-
-const char *
-nm_bluez_device_connect_finish (NMBluezDevice *self,
-                                GAsyncResult *result,
-                                GError **error);
+                               GCancellable *cancellable,
+                               NMBluezDeviceConnectCallback callback,
+                               gpointer callback_user_data);
 
 void
 nm_bluez_device_disconnect (NMBluezDevice *self);
