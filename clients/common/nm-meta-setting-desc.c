@@ -783,7 +783,8 @@ _get_fcn_gobject_int (ARGS_GET_FCN)
 {
 	GParamSpec *pspec;
 	nm_auto_unset_gvalue GValue gval = G_VALUE_INIT;
-	gint64 v;
+	gboolean is_uint64 = FALSE;
+	NMMetaSignUnsignInt64 v;
 	guint base = 10;
 	const NMMetaUtilsIntValueInfo *value_infos;
 	char *return_str;
@@ -799,13 +800,18 @@ _get_fcn_gobject_int (ARGS_GET_FCN)
 	NM_SET_OUT (out_is_default, g_param_value_defaults (pspec, &gval));
 	switch (pspec->value_type) {
 	case G_TYPE_INT:
-		v = g_value_get_int (&gval);
+		v.i64 = g_value_get_int (&gval);
 		break;
 	case G_TYPE_UINT:
-		v = g_value_get_uint (&gval);
+		v.u64 = g_value_get_uint (&gval);
+		is_uint64 = TRUE;
 		break;
 	case G_TYPE_INT64:
-		v = g_value_get_int64 (&gval);
+		v.i64 = g_value_get_int64 (&gval);
+		break;
+	case G_TYPE_UINT64:
+		v.u64 = g_value_get_uint64 (&gval);
+		is_uint64 = TRUE;
 		break;
 	default:
 		g_return_val_if_reached (NULL);
@@ -819,10 +825,16 @@ _get_fcn_gobject_int (ARGS_GET_FCN)
 
 	switch (base) {
 	case 10:
-		return_str = g_strdup_printf ("%"G_GINT64_FORMAT, v);
+		if (is_uint64)
+			return_str = g_strdup_printf ("%"G_GUINT64_FORMAT, v.u64);
+		else
+			return_str = g_strdup_printf ("%"G_GINT64_FORMAT, v.i64);
 		break;
 	case 16:
-		return_str = g_strdup_printf ("0x%"G_GINT64_MODIFIER"x", v);
+		if (is_uint64)
+			return_str = g_strdup_printf ("0x%"G_GINT64_MODIFIER"x", v.u64);
+		else
+			return_str = g_strdup_printf ("0x%"G_GINT64_MODIFIER"x", (guint64) v.i64);
 		break;
 	default:
 		return_str = NULL;
@@ -833,7 +845,8 @@ _get_fcn_gobject_int (ARGS_GET_FCN)
 	    && property_info->property_typ_data
 	    && (value_infos = property_info->property_typ_data->subtype.gobject_int.value_infos)) {
 		for (; value_infos->nick; value_infos++) {
-			if (value_infos->value == v) {
+			if (   ( is_uint64 && value_infos->value.u64 == v.u64)
+			    || (!is_uint64 && value_infos->value.i64 == v.i64)) {
 				char *old_str = return_str;
 
 				return_str = g_strdup_printf ("%s (%s)", old_str, value_infos->nick);
@@ -1060,16 +1073,21 @@ _set_fcn_gobject_int (ARGS_SET_FCN)
 	int errsv;
 	const GParamSpec *pspec;
 	nm_auto_unset_gvalue GValue gval = G_VALUE_INIT;
-	gint64 v = 0;
+	gboolean is_uint64;
+	NMMetaSignUnsignInt64 v;
 	gboolean has_minmax = FALSE;
-	gint64 min = G_MININT64;
-	gint64 max = G_MAXINT64;
+	NMMetaSignUnsignInt64 min = { 0 };
+	NMMetaSignUnsignInt64 max = { 0 };
 	guint base = 10;
-	const NMMetaUtilsIntValueInfo *value_infos = NULL;
-	gboolean has_value = FALSE;
+	const NMMetaUtilsIntValueInfo *value_infos;
+
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), property_info->property_name);
+	if (!G_IS_PARAM_SPEC (pspec))
+		g_return_val_if_reached (FALSE);
+
+	is_uint64 = NM_IN_SET (pspec->value_type, G_TYPE_UINT, G_TYPE_UINT64);
 
 	if (property_info->property_typ_data) {
-
 		if (   value
 		    && (value_infos = property_info->property_typ_data->subtype.gobject_int.value_infos)) {
 			gs_free char *vv_stripped = NULL;
@@ -1083,85 +1101,106 @@ _set_fcn_gobject_int (ARGS_SET_FCN)
 			for (; value_infos->nick; value_infos++) {
 				if (nm_streq (value_infos->nick, vv)) {
 					v = value_infos->value;
-					has_value = TRUE;
-					break;
+					goto have_value_from_nick;
 				}
 			}
 		}
 
 		if (property_info->property_typ_data->subtype.gobject_int.base > 0)
 			base = property_info->property_typ_data->subtype.gobject_int.base;
-		if (   property_info->property_typ_data->subtype.gobject_int.min
-		    || property_info->property_typ_data->subtype.gobject_int.max) {
+
+		if (   (   is_uint64
+		        && (   property_info->property_typ_data->subtype.gobject_int.min.u64
+		            || property_info->property_typ_data->subtype.gobject_int.max.u64))
+		    || (   !is_uint64
+		        && (   property_info->property_typ_data->subtype.gobject_int.min.i64
+		            || property_info->property_typ_data->subtype.gobject_int.max.i64))) {
 			min = property_info->property_typ_data->subtype.gobject_int.min;
 			max = property_info->property_typ_data->subtype.gobject_int.max;
 			has_minmax = TRUE;
 		}
 	}
 
-	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), property_info->property_name);
-	if (!G_IS_PARAM_SPEC (pspec))
-		g_return_val_if_reached (FALSE);
-	switch (pspec->value_type) {
-	case G_TYPE_INT:
-		if (!has_minmax) {
-			const GParamSpecInt *p = (GParamSpecInt *) pspec;
+	if (!has_minmax) {
+		switch (pspec->value_type) {
+		case G_TYPE_INT:
+			{
+				const GParamSpecInt *p = (GParamSpecInt *) pspec;
 
-			min = p->minimum;
-			max = p->maximum;
-		}
-		break;
-	case G_TYPE_UINT:
-		if (!has_minmax) {
-			const GParamSpecUInt *p = (GParamSpecUInt *) pspec;
+				min.i64 = p->minimum;
+				max.i64 = p->maximum;
+			}
+			break;
+		case G_TYPE_UINT:
+			{
+				const GParamSpecUInt *p = (GParamSpecUInt *) pspec;
 
-			min = p->minimum;
-			max = p->maximum;
-		}
-		break;
-	case G_TYPE_INT64:
-		if (!has_minmax) {
-			const GParamSpecInt64 *p = (GParamSpecInt64 *) pspec;
+				min.u64 = p->minimum;
+				max.u64 = p->maximum;
+			}
+			break;
+		case G_TYPE_INT64:
+			{
+				const GParamSpecInt64 *p = (GParamSpecInt64 *) pspec;
 
-			min = p->minimum;
-			max = p->maximum;
+				min.i64 = p->minimum;
+				max.i64 = p->maximum;
+			}
+			break;
+		case G_TYPE_UINT64:
+			{
+				const GParamSpecUInt64 *p = (GParamSpecUInt64 *) pspec;
+
+				min.u64 = p->minimum;
+				max.u64 = p->maximum;
+			}
+			break;
+		default:
+			g_return_val_if_reached (FALSE);
 		}
-		break;
-	default:
-		g_return_val_if_reached (FALSE);
 	}
 
-	if (!has_value) {
-		v = _nm_utils_ascii_str_to_int64 (value, base, min, max, 0);
+	if (is_uint64)
+		v.u64 = _nm_utils_ascii_str_to_uint64 (value, base, min.u64, max.u64, 0);
+	else
+		v.i64 = _nm_utils_ascii_str_to_int64 (value, base, min.i64, max.i64, 0);
 
-		if ((errsv = errno) != 0) {
-			if (errsv == ERANGE) {
+	if ((errsv = errno) != 0) {
+		if (errsv == ERANGE) {
+			if (is_uint64) {
 				g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-				             _("'%s' is out of range [%lli, %lli]"),
-				             value,
-				             (long long) min,
-				             (long long) max);
+				             _("'%s' is out of range [%"G_GUINT64_FORMAT", %"G_GUINT64_FORMAT"]"),
+				             value, min.u64, max.u64);
 			} else {
 				g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-				             _("'%s' is not a valid number"), value);
+				             _("'%s' is out of range [%"G_GINT64_FORMAT", %"G_GINT64_FORMAT"]"),
+				             value, min.i64, max.i64);
 			}
-			return FALSE;
+		} else {
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+			             _("'%s' is not a valid number"), value);
 		}
+		return FALSE;
 	}
+
+have_value_from_nick:
 
 	g_value_init (&gval, pspec->value_type);
 	switch (pspec->value_type) {
 	case G_TYPE_INT:
-		g_value_set_int (&gval, v);
+		g_value_set_int (&gval, v.i64);
 		break;
 	case G_TYPE_UINT:
-		g_value_set_uint (&gval, v);
+		g_value_set_uint (&gval, v.u64);
 		break;
 	case G_TYPE_INT64:
-		g_value_set_int64 (&gval, v);
+		g_value_set_int64 (&gval, v.i64);
+		break;
+	case G_TYPE_UINT64:
+		g_value_set_uint64 (&gval, v.u64);
 		break;
 	default:
-		nm_assert_not_reached ();
+		g_return_val_if_reached (FALSE);
 		break;
 	}
 
@@ -1302,12 +1341,13 @@ _set_fcn_gobject_enum (ARGS_SET_FCN)
 		g_value_set_int (&gval, v);
 	else if (gtype_prop == G_TYPE_UINT)
 		g_value_set_uint (&gval, v);
-	else if (G_IS_ENUM_CLASS (gtype_class))
-		g_value_set_enum (&gval, v);
-	else if (G_IS_FLAGS_CLASS (gtype_class))
+	else if (is_flags) {
+		nm_assert (G_IS_FLAGS_CLASS (gtype_class));
 		g_value_set_flags (&gval, v);
-	else
-		g_return_val_if_reached (FALSE);
+	} else {
+		nm_assert (G_IS_ENUM_CLASS (gtype_class));
+		g_value_set_enum (&gval, v);
+	}
 
 	if (!nm_g_object_set_property (G_OBJECT (setting), property_info->property_name, &gval, NULL))
 		goto fail;
@@ -7113,7 +7153,6 @@ static const NMMetaPropertyInfo *const property_infos_SERIAL[] = {
 		.property_type =                &_pt_gobject_enum,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
-				.get_gtype =            nm_setting_serial_parity_get_type,
 				.value_infos =          ENUM_VALUE_INFOS (
 					{
 						.value = NM_SETTING_SERIAL_PARITY_EVEN,

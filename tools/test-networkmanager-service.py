@@ -281,6 +281,8 @@ class Util:
             return GLib.Variant('s', str(val))
         if isinstance(val, dbus.UInt32):
             return GLib.Variant('u', int(val))
+        if isinstance(val, dbus.UInt64):
+            return GLib.Variant('t', int(val))
         if isinstance(val, dbus.Boolean):
             return GLib.Variant('b', bool(val))
         if isinstance(val, dbus.Byte):
@@ -481,11 +483,12 @@ class NmUtil:
         if not do_verify_strict:
             return;
         t = s_con[NM.SETTING_CONNECTION_TYPE]
-        if t not in [ NM.SETTING_WIRED_SETTING_NAME,
-                      NM.SETTING_WIRELESS_SETTING_NAME,
+        if t not in [ NM.SETTING_GSM_SETTING_NAME,
                       NM.SETTING_VLAN_SETTING_NAME,
+                      NM.SETTING_VPN_SETTING_NAME,
                       NM.SETTING_WIMAX_SETTING_NAME,
-                      NM.SETTING_VPN_SETTING_NAME ]:
+                      NM.SETTING_WIRED_SETTING_NAME,
+                      NM.SETTING_WIRELESS_SETTING_NAME ]:
             raise BusErr.InvalidPropertyException('connection.type: unsupported connection type "%s"' % (t))
 
         try:
