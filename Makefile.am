@@ -1578,6 +1578,9 @@ src_libNetworkManagerBase_la_CPPFLAGS = $(src_cppflags)
 
 src_libNetworkManagerBase_la_SOURCES = \
 	\
+	shared/nm-utils/nm-time-utils.c \
+	shared/nm-utils/nm-time-utils.h \
+	\
 	src/nm-core-utils.c \
 	src/nm-core-utils.h \
 	src/nm-logging.c \

@@ -81,6 +81,8 @@ shared_nm_test_utils_impl_c = files('nm-test-utils-impl.c')
 
 shared_nm_utils_nm_vpn_plugin_utils_c = files('nm-utils/nm-vpn-plugin-utils.c')
 
+shared_files_time_utils = files('nm-utils/nm-time-utils.c')
+
 shared_files_libnm_core = files('''
     nm-utils/c-list-util.c
     nm-utils/nm-dedup-multi.c

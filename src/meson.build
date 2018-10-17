@@ -45,6 +45,8 @@ sources = files(
   'nm-logging.c'
 )
 
+sources += shared_files_time_utils
+
 deps = [
   libsystemd_dep,
   libudev_dep,

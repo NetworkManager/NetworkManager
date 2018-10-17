@@ -746,8 +746,8 @@ _nm_log_impl (const char *file,
 
 void
 _nm_utils_monotonic_timestamp_initialized (const struct timespec *tp,
-                                           gint64 offset_sec,
-                                           gboolean is_boottime)
+                                          gint64 offset_sec,
+                                          gboolean is_boottime)
 {
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_CORE)) {
 		time_t now = time (NULL);
