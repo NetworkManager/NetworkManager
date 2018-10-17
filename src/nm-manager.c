@@ -3495,13 +3495,23 @@ found_better:
 
 		/* determine the priority of this device. Currently this priority is independent
 		 * of the profile (connection) and the device's details (aside the state).
+		 *
 		 * Maybe nm_device_check_connection_available() should instead return a priority,
-		 * as it has more information available. For now, that is not needed nor implemented. */
+		 * as it has more information available.
+		 *
+		 * For example, if you have multiple Wi-Fi devices, currently a user-request would
+		 * also select the device if the AP is not visible. Optimally, if one of the two
+		 * devices sees the AP and the other one doesn't, the former would be preferred.
+		 * For that, the priority would need to be determined by nm_device_check_connection_available(). */
 		prio = _device_get_activation_prio (device);
 		if (   prio <= best.prio
 		    && best.device) {
 			/* we already have a matching device with a better priority. This candidate
-			 * cannot be better. Skip the check. */
+			 * cannot be better. Skip the check.
+			 *
+			 * Also note, that below we collect the best error message @local_best.
+			 * Since we already have best.device, the error message does not matter
+			 * either, and we can skip nm_device_check_connection_available() altogether. */
 			continue;
 		}
 
