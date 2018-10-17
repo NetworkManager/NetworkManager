@@ -88,7 +88,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * nmcli now scans for Wi-Fi networks before displaying them, if the last scan
   was too long ago.
 * Added the ipv6.dhcp-duid property to allow configuring the DHCPv6 DUID
-* Extended ipv6.dhcp-client-id property to support DHCP client identifers
+* Extended ipv6.dhcp-client-id property to support DHCP client identifiers
   depending on the MAC address and the stable ID.
 * Set NM_DISPATCHER_ACTION environment variable in dispatcher scripts.
 
@@ -293,7 +293,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
     into the ifcfg file for improved compatibility with the legacy network service.
 * Improve handling of MTU by resetting the previous MTU when the device deactivates
     and reset the MTU to a defined value on activation.
-* Improve tracking of parent devices for dependend devices like ip-tunnels, MACVLAN,
+* Improve tracking of parent devices for dependent devices like ip-tunnels, MACVLAN,
     VETH, VLAN, and VXLAN.
 * Many bug fixes and improvements
 
@@ -595,7 +595,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * NetworkManager no longer requires polkit libraries at runtime when Polkit
     support is enabled, and Polkit can be disabled at build time too
 * Automatically created connections are now deleted when their device goes away
-* 'nmcli dev connect' now attemts to create a connection if none exists
+* 'nmcli dev connect' now attempts to create a connection if none exists
 * Manually configured static IPv6 configuration is kept even if SLAAC fails
 * Manpages for the 'keyfile' and 'ifcfg-rh' plugins now describe their
     configuration syntax and available options
@@ -738,7 +738,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Better handling of WiFi devices via nl80211 when available (instead of WEXT)
 * IP configuration is now non-blocking; waiting for IPv6 RA no longer blocks
     the device from activating if IPv4 is ready and vice versa
-* Addded support for firewall "zones" via FirewallD
+* Added support for firewall "zones" via FirewallD
 * Added basic support for bonded interfaces
 * WiFi connections are no longer locked to a specific MAC address if they are
     "locally administered" addresses (ie, 02:::::)
@@ -986,13 +986,13 @@ Overview of changes since NetworkManager-0.5.0
 	* Don't drop the last scanned AP (Dan Williams)
 	* Broadcast state change when disconnected (Robert Love)
 	* The Slackware backend now builds (Nico)
-	* Don't install unsued config files (Dan Williams)
+	* Don't install unused config files (Dan Williams)
 	* Add a test for libnm_glib_unregister_callback (Christopher Aillon)
 	* Requires wireless-tools 28pre9 (Christopher Aillon)
 
 * nm-applet
 	* Use g_get_host_name () if we've got it (Christopher Aillon)
-	* Fix an unitialized variable (Robert Love)
+	* Fix an uninitialized variable (Robert Love)
 	* Fix sensitivity of VPN items (Robert Love)
 
 
