@@ -872,6 +872,11 @@ class TestNmcli(NmTestBase):
         self.call_nmcli_l(['c', 's'],
                           replace_stdout = replace_stdout)
 
+        replace_stdout.append((Util.memoize_nullary(lambda: self.srv.findConnectionUuid('con-gsm1')), 'UUID-con-gsm1-REPLACED-REPLACED-REPL'))
+
+        self.call_nmcli(['connection', 'add', 'type', 'gsm', 'autoconnect', 'no', 'con-name', 'con-gsm1', 'ifname', '*', 'apn', 'xyz.con-gsm1', 'serial.baud', '5', 'serial.send-delay', '100', 'serial.pari', '1'],
+                        replace_stdout = replace_stdout)
+
         replace_stdout.append((Util.memoize_nullary(lambda: self.srv.findConnectionUuid('ethernet')), 'UUID-ethernet-REPLACED-REPLACED-REPL'))
 
         self.call_nmcli(['c', 'add', 'type', 'ethernet', 'ifname', '*'],
@@ -886,6 +891,9 @@ class TestNmcli(NmTestBase):
         self.call_nmcli_l(['--complete-args', '-f', 'ALL', 'c', 's', ''],
                           replace_stdout = replace_stdout,
                           sort_lines_stdout = True)
+
+        self.call_nmcli_l(['con', 's', 'con-gsm1'],
+                          replace_stdout = replace_stdout)
 
         # activate the same profile on multiple devices. Our stub-implmentation
         # is fine with that... although NetworkManager service would reject
