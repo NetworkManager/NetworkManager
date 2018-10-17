@@ -1281,6 +1281,11 @@
           that will be activated. It will also consider connections that are not set to
           auto connect.</para>
 
+          <para>If no compatible connection exists, a new profile with default
+          settings will be created and activated. This differentiates
+          <command>nmcli connection up ifname "$DEVICE"</command> from
+          <command>nmcli device connect "$DEVICE"</command></para>
+
           <para>If <option>--wait</option> option is not specified, the default timeout will be 90
           seconds.</para>
         </listitem>
