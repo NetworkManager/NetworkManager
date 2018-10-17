@@ -1,4 +1,31 @@
 =============================================
+NetworkManager-1.16
+Overview of changes since NetworkManager-1.14
+=============================================
+
+This is a snapshot of NetworkManager 1.16 development series.
+The API is subject to change and not guaranteed to be compatible
+with the later release.
+USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+
+* Check connectivity per address family.
+
+The following changes were backported to 1.14.x releases between 1.14.0
+and 1.14.2 are also present in NetworkManager-1.14:
+
+* Fix a bug that could cause NetworkManager to crash after checking
+  connectivity status.
+* Correctly apply a default (-1) metric from DHCP.
+* Multiple fixes for IWD Wi-Fi backend.
+* Multiple fixes for builds with Meson build system.
+* Fix a crash with OLPC XO-1 mesh Wi-Fi.
+* Fix handling "serial.parity" and "serial.send-delay" properties in nmcli.
+* Improve auto-selecting device when activating a connection profile
+  and don't auto-select unmanaged devices when activating multi-connect
+  profile.
+* Avoid expiring the lifetime of IPv6 addresses from router advertisements.
+
+=============================================
 NetworkManager-1.14
 Overview of changes since NetworkManager-1.12
 =============================================
