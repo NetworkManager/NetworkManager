@@ -11,6 +11,11 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Multiple fixes for IWD Wi-Fi backend.
 * Multiple fixes for builds with Meson build system.
 * Fix a crash with OLPC XO-1 mesh Wi-Fi.
+* Fix handling "serial.parity" and "serial.send-delay" properties in nmcli.
+* Improve auto-selecting device when activating a connection profile
+  and don't auto-select unmanaged devices when activating multi-connect
+  profile.
+* Avoid expiring the lifetime of IPv6 addresses from router advertisements.
 
 =============================================
 NetworkManager-1.14
