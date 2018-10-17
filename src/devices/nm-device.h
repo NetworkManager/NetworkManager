@@ -167,14 +167,34 @@ typedef enum NMActStageReturn NMActStageReturn;
 typedef enum { /*< skip >*/
 	NM_DEVICE_CHECK_CON_AVAILABLE_NONE                                  = 0,
 
+	/* since NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST is a collection of flags with more fine grained
+	 * parts, this flag in general indicates that this is a user-request. */
 	_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST                     = (1L << 0),
+
+	/* we also consider devices which have no carrier but are still waiting for the driver
+	 * to detect carrier. Usually, such devices are not yet available, however for a user-request
+	 * they are. They might fail later if carrier doesn't come. */
 	_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER     = (1L << 1),
+
+	/* usually, a profile is only available if the Wi-Fi AP is in range. For an
+	 * explicit user request, we also consider profiles for APs that are not (yet)
+	 * visible. */
 	_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP           = (1L << 2),
+
+	/* a device can be marked as unmanaged for various reasons. Some of these reasons
+	 * are authorative, others not. Non-authoritative reasons can be overruled by
+	 * `nmcli device set $DEVICE managed yes`. Also, for an explicit user activation
+	 * request we may want to consider the device as managed. This flag makes devices
+	 * that are unmanaged appear available. */
+	_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_OVERRULE_UNMANAGED  = (1L << 3),
+
+	/* a collection of flags, that are commonly set for an explict user-request. */
 	NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST                      = _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST
 	                                                                    | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER
-	                                                                    | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP,
+	                                                                    | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP
+	                                                                    | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_OVERRULE_UNMANAGED,
 
-	NM_DEVICE_CHECK_CON_AVAILABLE_ALL                                   = (1L << 3) - 1,
+	NM_DEVICE_CHECK_CON_AVAILABLE_ALL                                   = (1L << 4) - 1,
 } NMDeviceCheckConAvailableFlags;
 
 struct _NMDevicePrivate;
@@ -190,7 +210,12 @@ struct _NMDevice {
 typedef enum { /*< skip >*/
 	NM_DEVICE_CHECK_DEV_AVAILABLE_NONE                                  = 0,
 
+	/* the device is considered available, even if it has no carrier.
+	 *
+	 * For various device types (software devices) we ignore carrier based
+	 * on the type. So, for them, this flag has no effect anyway. */
 	_NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER                       = (1L << 0),
+
 	NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST                      = _NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER,
 
 	NM_DEVICE_CHECK_DEV_AVAILABLE_ALL                                   = (1L << 1) - 1,
