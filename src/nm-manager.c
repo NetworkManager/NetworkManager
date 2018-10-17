@@ -3395,9 +3395,42 @@ nm_manager_get_best_device_for_connection (NMManager *self,
 	if (!connection)
 		connection = nm_settings_connection_get_connection (sett_conn);
 
-	flags = for_user_request ? NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST : NM_DEVICE_CHECK_CON_AVAILABLE_NONE;
-
 	multi_connect =  _nm_connection_get_multi_connect (connection);
+
+	if (!for_user_request)
+		flags = NM_DEVICE_CHECK_CON_AVAILABLE_NONE;
+	else {
+		/* if the profile is multi-connect=single, we also consider devices which
+		 * are marked as unmanaged. And explicit user-request shows sufficent user
+		 * intent to make the device managed.
+		 * That is also, because we expect that such profile is suitably tied
+		 * to the intended device. So when an unmanaged device matches, the user's
+		 * intent is clear.
+		 *
+		 * For multi-connect != single devices that is different. The profile
+		 * is not restricted to a particular device.
+		 * For that reason, plain `nmcli connection up "$MULIT_PROFILE"` seems
+		 * less suitable for multi-connect profiles, because the target device is
+		 * left unspecified. Anyway, if a user issues
+		 *
+		 *   $ nmcli device set "$DEVICE" managed no
+		 *   $ nmcli connection up "$MULIT_PROFILE"
+		 *
+		 * then it is reasonable for multi-connect profiles to not consider
+		 * the device a suitable candidate.
+		 *
+		 * This may be seen inconsistent, but I think that it makes a lot of
+		 * sense. Also note that "connection.multi-connect" work quite differently
+		 * in aspects like activation. E.g. `nmcli connection up` of multi-connect
+		 * "single" profile, will deactivate the profile if it is active already.
+		 * That is different from multi-connect profiles, where it will aim to
+		 * activate the profile one more time on an hitherto disconnected device.
+		 */
+		if (multi_connect == NM_CONNECTION_MULTI_CONNECT_SINGLE)
+			flags = NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST;
+		else
+			flags = NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST & ~_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_OVERRULE_UNMANAGED;
+	}
 
 	if (   multi_connect == NM_CONNECTION_MULTI_CONNECT_SINGLE
 	    && (ac = active_connection_find_by_connection (self, sett_conn, connection, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, &all_ac_arr))) {
