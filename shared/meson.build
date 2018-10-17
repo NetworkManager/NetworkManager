@@ -82,7 +82,6 @@ shared_nm_test_utils_impl_c = files('nm-test-utils-impl.c')
 shared_nm_utils_nm_vpn_plugin_utils_c = files('nm-utils/nm-vpn-plugin-utils.c')
 
 shared_files_libnm_core = files('''
-    c-siphash/src/c-siphash.c
     nm-utils/c-list-util.c
     nm-utils/nm-dedup-multi.c
     nm-utils/nm-enum-utils.c
@@ -95,7 +94,6 @@ shared_files_libnm_core = files('''
 '''.split())
 
 shared_files_clients_common = files('''
-    c-siphash/src/c-siphash.c
     nm-utils/nm-enum-utils.c
     nm-utils/nm-hash-utils.c
     nm-utils/nm-random-utils.c
