@@ -406,7 +406,7 @@ update_aps (NMDeviceIwd *self)
 		priv->cancellable = g_cancellable_new ();
 
 	g_dbus_proxy_call (priv->dbus_station_proxy, "GetOrderedNetworks",
-	                   g_variant_new ("()"), G_DBUS_CALL_FLAGS_NONE,
+	                   NULL, G_DBUS_CALL_FLAGS_NONE,
 	                   2000, priv->cancellable,
 	                   get_ordered_networks_cb, self);
 }
@@ -416,8 +416,8 @@ send_disconnect (NMDeviceIwd *self)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
-	g_dbus_proxy_call (priv->dbus_station_proxy, "Disconnect", g_variant_new ("()"),
-	                   G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
+	g_dbus_proxy_call (priv->dbus_station_proxy, "Disconnect",
+	                   NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
 }
 
 static void
@@ -534,7 +534,7 @@ deactivate_async (NMDevice *device,
 	if (priv->dbus_station_proxy) {
 		g_dbus_proxy_call (priv->dbus_station_proxy,
 		                   "Disconnect",
-		                   g_variant_new ("()"),
+		                   NULL,
 		                   G_DBUS_CALL_FLAGS_NONE,
 		                   -1,
 		                   cancellable,
@@ -1097,8 +1097,7 @@ dbus_request_scan_cb (NMDevice *device,
 
 	if (!priv->scanning && !priv->scan_requested) {
 		g_dbus_proxy_call (priv->dbus_station_proxy, "Scan",
-		                   g_variant_new ("()"),
-		                   G_DBUS_CALL_FLAGS_NONE, -1,
+		                   NULL, G_DBUS_CALL_FLAGS_NONE, -1,
 		                   priv->cancellable, scan_cb, self);
 		priv->scan_requested = TRUE;
 	}
@@ -1798,8 +1797,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		 * timeouts.
 		 */
 		g_dbus_proxy_call (network_proxy, "Connect",
-		                   g_variant_new ("()"),
-		                   G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
+		                   NULL, G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
 		                   priv->cancellable, network_connect_cb, self);
 
 		g_object_unref (network_proxy);
@@ -1855,8 +1853,8 @@ periodic_scan_timeout_cb (gpointer user_data)
 	if (priv->scanning || priv->scan_requested)
 		return FALSE;
 
-	g_dbus_proxy_call (priv->dbus_station_proxy, "Scan", g_variant_new ("()"),
-	                   G_DBUS_CALL_FLAGS_NONE, -1,
+	g_dbus_proxy_call (priv->dbus_station_proxy, "Scan",
+	                   NULL, G_DBUS_CALL_FLAGS_NONE, -1,
 	                   priv->cancellable, scan_cb, self);
 	priv->scan_requested = TRUE;
 
