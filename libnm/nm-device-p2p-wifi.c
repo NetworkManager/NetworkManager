@@ -237,6 +237,76 @@ nm_device_p2p_wifi_get_wfdies_as_variant (const NMDeviceP2PWifi *self)
 		return g_variant_new_array (G_VARIANT_TYPE_BYTE, NULL, 0);
 }
 
+/**
+ * nm_device_p2p_wifi_start_find:
+ * @device: a #NMDeviceP2PWifi
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
+ *
+ * Request NM to search for P2P peers on @device. Note that the function
+ * returns immediately after requesting the find, and it may take some time
+ * after that for peers to be found.
+ *
+ * The find operation will run for 30s by default. You can stop it earlier
+ * using nm_device_p2p_wifi_stop_find().
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error will be
+ * set.
+ *
+ * Since: 1.16
+ **/
+gboolean
+nm_device_p2p_wifi_start_find (NMDeviceP2PWifi  *device,
+                               GCancellable     *cancellable,
+                               GError          **error)
+{
+	NMDeviceP2PWifiPrivate *priv = NM_DEVICE_P2P_WIFI_GET_PRIVATE (device);
+	GVariant *options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
+	gboolean ret;
+
+	g_return_val_if_fail (NM_IS_DEVICE_P2P_WIFI (device), FALSE);
+
+	ret = nmdbus_device_p2p_wifi_call_start_find_sync (priv->proxy,
+	                                                   options,
+	                                                   cancellable, error);
+
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+
+	return ret;
+}
+
+/**
+ * nm_device_p2p_wifi_stop_find:
+ * @device: a #NMDeviceP2PWifi
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
+ *
+ * Request NM to stop searching for P2P peers on @device.
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error will be
+ * set.
+ *
+ * Since: 1.16
+ **/
+gboolean
+nm_device_p2p_wifi_stop_find (NMDeviceP2PWifi  *device,
+                              GCancellable     *cancellable,
+                              GError          **error)
+{
+	NMDeviceP2PWifiPrivate *priv = NM_DEVICE_P2P_WIFI_GET_PRIVATE (device);
+	gboolean ret;
+
+	g_return_val_if_fail (NM_IS_DEVICE_P2P_WIFI (device), FALSE);
+
+	ret = nmdbus_device_p2p_wifi_call_stop_find_sync (priv->proxy,
+	                                                  cancellable, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+
+	return ret;
+}
+
 /*****************************************************************************/
 
 static void

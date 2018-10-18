@@ -42,6 +42,26 @@
     <property name="Peers" type="ao" access="read"/>
 
     <!--
+        StartFind:
+        @options: Options of find. Currently 'timeout' option with value of "i"
+                  in the range of 1-600 seconds is supported. The default is
+                  30 seconds.
+
+        Start a find operation for P2P peers.
+    -->
+    <method name="StartFind">
+      <arg name="options" type="a{sv}" direction="in"/>
+    </method>
+
+    <!--
+        StopFind:
+
+        Stop an ongoing find operation again.
+    -->
+    <method name="StopFind">
+    </method>
+
+    <!--
         PeerAdded:
         @peer: The object path of the newly found access point.
 
