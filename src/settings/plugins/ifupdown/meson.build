@@ -1,11 +1,11 @@
 sources = files(
   'nms-ifupdown-interface-parser.c',
-  'nms-ifupdown-parser.c'
+  'nms-ifupdown-parser.c',
 )
 
 deps = [
   libudev_dep,
-  nm_dep
+  nm_dep,
 ]
 
 libnms_ifupdown_core = static_library(
@@ -16,7 +16,7 @@ libnms_ifupdown_core = static_library(
 
 sources = files(
   'nms-ifupdown-connection.c',
-  'nms-ifupdown-plugin.c'
+  'nms-ifupdown-plugin.c',
 )
 
 libnm_settings_plugin_ifupdown = shared_module(
@@ -27,7 +27,7 @@ libnm_settings_plugin_ifupdown = shared_module(
   link_args: ldflags_linker_script_settings,
   link_depends: linker_script_settings,
   install: true,
-  install_dir: nm_plugindir
+  install_dir: nm_plugindir,
 )
 
 core_plugins += libnm_settings_plugin_ifupdown
@@ -37,7 +37,7 @@ core_plugins += libnm_settings_plugin_ifupdown
 run_target(
   'check-local-symbols-settings-ifupdown',
   command: [check_so_symbols, libnm_settings_plugin_ifupdown.full_path()],
-  depends: libnm_settings_plugin_ifupdown
+  depends: libnm_settings_plugin_ifupdown,
 )
 
 check-local-symbols-settings-ifupdown: src/settings/plugins/ifupdown/libnm-settings-plugin-ifupdown.la

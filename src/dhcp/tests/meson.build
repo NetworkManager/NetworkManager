@@ -1,6 +1,6 @@
 test_units = [
   'test-dhcp-dhclient',
-  'test-dhcp-utils'
+  'test-dhcp-utils',
 ]
 
 foreach test_unit: test_units
@@ -13,6 +13,6 @@ foreach test_unit: test_units
   test(
     'dhcp/' + test_unit,
     test_script,
-    args: test_args + [exe.full_path()]
+    args: test_args + [exe.full_path()],
   )
 endforeach

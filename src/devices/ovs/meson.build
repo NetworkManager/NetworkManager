@@ -3,12 +3,12 @@ sources = files(
   'nm-device-ovs-interface.c',
   'nm-device-ovs-port.c',
   'nm-ovsdb.c',
-  'nm-ovs-factory.c'
+  'nm-ovs-factory.c',
 )
 
 deps = [
   jansson_dep,
-  nm_dep
+  nm_dep,
 ]
 
 libnm_device_plugin_ovs = shared_module(
@@ -18,7 +18,7 @@ libnm_device_plugin_ovs = shared_module(
   link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,
   install: true,
-  install_dir: nm_plugindir
+  install_dir: nm_plugindir,
 )
 
 core_plugins += libnm_device_plugin_ovs

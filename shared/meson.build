@@ -53,7 +53,7 @@ shared_n_acd = static_library(
     ],
     dependencies: [
         shared_c_siphash_dep,
-        shared_c_rbtree_dep
+        shared_c_rbtree_dep,
     ],
 )
 

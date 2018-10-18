@@ -9,13 +9,13 @@ private_headers = [
   'nm-remote-connection-private.h',
   'nm-types-private.h',
   'nm-secret-agent-glue.h',
-  'nm-vpn-plugin-glue.h'
+  'nm-vpn-plugin-glue.h',
 ]
 
 configure_file(
   input: version_xml + '.in',
   output: version_xml,
-  configuration: version_conf
+  configuration: version_conf,
 )
 
 gnome.gtkdoc(
@@ -24,7 +24,7 @@ gnome.gtkdoc(
   src_dir: join_paths(meson.source_root(), 'libnm-glib'),
   dependencies: [
     libnm_glib_dep,
-    libnm_glib_vpn_dep
+    libnm_glib_vpn_dep,
    ],
   scan_args: [
     '--rebuild-types',
@@ -35,5 +35,5 @@ gnome.gtkdoc(
   fixxref_args: '--html-dir=' + join_paths(nm_prefix, gnome.gtkdoc_html_dir(doc_module)),
   gobject_typesfile: doc_module + '.types',
   html_assets: doc_module + '.png',
-  install: true
+  install: true,
 )

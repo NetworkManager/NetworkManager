@@ -13,11 +13,11 @@ foreach test_unit : test_units
     test_unit + '.c',
     dependencies: test_nm_dep,
     c_args: cflags,
-    link_with: libnmi_core
+    link_with: libnmi_core,
   )
   test(
     'initrd/' + test_unit,
     test_script,
-    args: test_args + [exe.full_path()]
+    args: test_args + [exe.full_path()],
   )
 endforeach

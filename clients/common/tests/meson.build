@@ -4,7 +4,7 @@ deps = [
   libnm_dep,
   libnmc_dep,
   libnmc_base_dep,
-  nm_core_dep
+  nm_core_dep,
 ]
 
 exe = executable(
@@ -19,5 +19,5 @@ exe = executable(
 test(
   'clients/' + test_unit,
   test_script,
-  args: test_args + [exe.full_path()]
+  args: test_args + [exe.full_path()],
 )

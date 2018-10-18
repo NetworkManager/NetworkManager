@@ -2,7 +2,7 @@ test_unit = 'test-config'
 
 sources = files(
   'nm-test-device.c',
-  'test-config.c'
+  'test-config.c',
 )
 
 test_config_dir = meson.current_source_dir()
@@ -16,5 +16,5 @@ exe = executable(
 test(
   'config/' + test_unit,
   test_script,
-  args: test_args + [exe.full_path()]
+  args: test_args + [exe.full_path()],
 )

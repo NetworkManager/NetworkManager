@@ -48,7 +48,7 @@ ifaces = [
   'org.freedesktop.NetworkManager.Settings',
   'org.freedesktop.NetworkManager.VPN.Connection',
   'org.freedesktop.NetworkManager.VPN.Plugin',
-  'org.freedesktop.NetworkManager.WiMax.Nsp'
+  'org.freedesktop.NetworkManager.WiMax.Nsp',
 ]
 
 ifaces_xmls = []
@@ -66,7 +66,7 @@ foreach iface: ifaces
     iface_xml,
     interface_prefix: 'org.freedesktop.NetworkManager',
     namespace: 'NMDBus',
-    docbook: 'dbus'
+    docbook: 'dbus',
   )
 
   sources += res
@@ -82,14 +82,14 @@ endforeach
 
 install_data(
   ifaces_xmls,
-  install_dir: dbus_ifaces_dir
+  install_dir: dbus_ifaces_dir,
 )
 
 libnmdbus = static_library(
   'nmdbus',
   sources: sources,
   include_directories: top_inc,
-  dependencies: glib_dep
+  dependencies: glib_dep,
 )
 
 libnmdbus_dep = declare_dependency(
@@ -97,5 +97,5 @@ libnmdbus_dep = declare_dependency(
   #        libNetworkManagerBase and libNetworkManager
   #sources: sources,
   include_directories: include_directories('.'),
-  link_with: libnmdbus
+  link_with: libnmdbus,
 )

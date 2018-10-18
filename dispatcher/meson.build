@@ -15,19 +15,19 @@ configure_file(
   output: service,
   install: true,
   install_dir: dbus_sys_dir,
-  configuration: service_conf
+  configuration: service_conf,
 )
 
 install_data(
   'nm-dispatcher.conf',
-  install_dir: dbus_conf_dir
+  install_dir: dbus_conf_dir,
 )
 
 sources = files('nm-dispatcher-utils.c')
 
 deps = [
   libnm_dep,
-  nm_core_dep
+  nm_core_dep,
 ]
 
 cflags = [
@@ -39,7 +39,7 @@ libnm_dispatcher_core = static_library(
   name + '-core',
   sources: sources,
   dependencies: deps,
-  c_args: cflags
+  c_args: cflags,
 )
 
 sources = files('nm-dispatcher.c')
@@ -48,7 +48,7 @@ sources += gnome.gdbus_codegen(
   'nmdbus-dispatcher',
   name + '.xml',
   interface_prefix: 'org.freedesktop',
-  namespace: 'NMDBus'
+  namespace: 'NMDBus',
 )
 
 executable(
@@ -60,7 +60,7 @@ executable(
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,
-  install_dir: nm_libexecdir
+  install_dir: nm_libexecdir,
 )
 
 if enable_tests

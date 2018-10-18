@@ -46,7 +46,7 @@ libnacd_shared = shared_library(
         link_depends: libnacd_symfile,
         link_args: [
                 '-Wl,--no-undefined',
-                '-Wl,--version-script=@0@'.format(libnacd_symfile)
+                '-Wl,--version-script=@0@'.format(libnacd_symfile),
         ],
 )
 

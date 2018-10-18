@@ -3,12 +3,12 @@ deps = [
   dbus_glib_dep,
   libnm_glib_dep,
   libnm_util_dep,
-  shared_dep
+  shared_dep,
 ]
 
 test_units = [
   'test-nm-client',
-  'test-remote-settings-client'
+  'test-remote-settings-client',
 ]
 
 foreach test_unit: test_units
@@ -25,6 +25,6 @@ foreach test_unit: test_units
   test(
     'libnm-glib/' + test_unit,
     test_script,
-    args: test_args + [exe.full_path()]
+    args: test_args + [exe.full_path()],
   )
 endforeach

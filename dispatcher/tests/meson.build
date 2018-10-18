@@ -2,7 +2,7 @@ test_unit = 'test-dispatcher-envp'
 
 incs = [
   dispatcher_inc,
-  libnm_inc
+  libnm_inc,
 ]
 
 exe = executable(
@@ -14,11 +14,11 @@ exe = executable(
       '-DNETWORKMANAGER_COMPILATION_TEST',
       '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
     ],
-  link_with: libnm_dispatcher_core
+  link_with: libnm_dispatcher_core,
 )
 
 test(
   'dispatcher/' + test_unit,
   test_script,
-  args: test_args + [exe.full_path()]
+  args: test_args + [exe.full_path()],
 )

@@ -18,7 +18,7 @@ sources = files(
   'nmt-newt-textbox.c',
   'nmt-newt-toggle-button.c',
   'nmt-newt-utils.c',
-  'nmt-newt-widget.c'
+  'nmt-newt-widget.c',
 )
 
 libnmt_newt = static_library(
@@ -26,10 +26,10 @@ libnmt_newt = static_library(
   sources: sources + [libnm_enum[1]],
   include_directories: libnm_inc,
   dependencies: deps,
-  c_args: cflags
+  c_args: cflags,
 )
 
 libnmt_newt_dep = declare_dependency(
   include_directories: include_directories('.'),
-  link_with: libnmt_newt
+  link_with: libnmt_newt,
 )

@@ -1,6 +1,6 @@
 install_data(
   'nm-ifcfg-rh.conf',
-  install_dir: dbus_conf_dir
+  install_dir: dbus_conf_dir,
 )
 
 name = 'nmdbus-ifcfg-rh'
@@ -9,7 +9,7 @@ dbus_sources = gnome.gdbus_codegen(
   name,
   'nm-ifcfg-rh.xml',
   interface_prefix: 'com.redhat',
-  namespace: 'NMDBus'
+  namespace: 'NMDBus',
 )
 
 libnmdbus_ifcfg_rh = static_library(
@@ -23,11 +23,11 @@ core_sources = files(
   'nms-ifcfg-rh-reader.c',
   'nms-ifcfg-rh-utils.c',
   'nms-ifcfg-rh-writer.c',
-  'shvar.c'
+  'shvar.c',
 )
 
 deps = [
-  nm_dep
+  nm_dep,
 ]
 
 libnms_ifcfg_rh_core = static_library(
@@ -46,7 +46,7 @@ libnm_settings_plugin_ifcfg_rh = shared_module(
   link_args: ldflags_linker_script_settings,
   link_depends: linker_script_settings,
   install: true,
-  install_dir: nm_plugindir
+  install_dir: nm_plugindir,
 )
 
 core_plugins += libnm_settings_plugin_ifcfg_rh
@@ -56,7 +56,7 @@ core_plugins += libnm_settings_plugin_ifcfg_rh
 run_target(
   'check-local-symbols-settings-ifcfg-rh',
   command: [check_so_symbols, libnm_settings_plugin_ifcfg_rh.full_path()],
-  depends: libnm_settings_plugin_ifcfg_rh
+  depends: libnm_settings_plugin_ifcfg_rh,
 )
 
 check-local-symbols-settings-ifcfg-rh: src/settings/plugins/ifcfg-rh/libnm-settings-plugin-ifcfg-rh.la

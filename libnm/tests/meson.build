@@ -22,14 +22,14 @@ foreach test_unit: test_units
       nm_core_dep,
     ],
     c_args: cflags,
-    link_with: test_unit[1]
+    link_with: test_unit[1],
   )
 
   test(
     'libnm/' + test_unit[0],
     test_script,
     timeout: test_unit[2],
-    args: test_args + [exe.full_path()]
+    args: test_args + [exe.full_path()],
   )
 endforeach
 
@@ -39,5 +39,5 @@ libnm_vpn_plugin_utils_test = static_library(
   sources: shared_nm_utils_nm_vpn_plugin_utils_c + [libnm_enum[1]],
   include_directories: libnm_inc,
   dependencies: nm_core_dep,
-  c_args: cflags
+  c_args: cflags,
 )
