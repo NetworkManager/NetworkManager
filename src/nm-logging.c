@@ -21,6 +21,8 @@
 
 #include "nm-default.h"
 
+#include "nm-logging.h"
+
 #include <dlfcn.h>
 #include <syslog.h>
 #include <stdio.h>
@@ -37,8 +39,8 @@
 #include <systemd/sd-journal.h>
 #endif
 
+#include "nm-utils/nm-time-utils.h"
 #include "nm-errors.h"
-#include "nm-core-utils.h"
 
 /* often we have some static string where we need to know the maximum length.
  * _MAX_LEN() returns @max but adds a debugging assertion that @str is indeed
@@ -740,6 +742,27 @@ _nm_log_impl (const char *file,
 	g_free (msg);
 
 	errno = errno_saved;
+}
+
+/*****************************************************************************/
+
+void
+_nm_utils_monotonic_timestamp_initialized (const struct timespec *tp,
+                                          gint64 offset_sec,
+                                          gboolean is_boottime)
+{
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_CORE)) {
+		time_t now = time (NULL);
+		struct tm tm;
+		char s[255];
+
+		strftime (s, sizeof (s), "%Y-%m-%d %H:%M:%S", localtime_r (&now, &tm));
+		nm_log_dbg (LOGD_CORE, "monotonic timestamp started counting 1.%09ld seconds ago with "
+		                       "an offset of %lld.0 seconds to %s (local time is %s)",
+		                       tp->tv_nsec,
+		                       (long long) -offset_sec,
+		                       is_boottime ? "CLOCK_BOOTTIME" : "CLOCK_MONOTONIC", s);
+	}
 }
 
 /*****************************************************************************/

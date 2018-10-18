@@ -147,6 +147,7 @@ test-*.trs
 /examples/C/qt/change-ipv4-addresses
 
 /shared/nm-version-macros.h
+/shared/nm-utils/tests/test-shared-general
 
 /introspection/org.freedesktop.NetworkManager*.[ch]
 

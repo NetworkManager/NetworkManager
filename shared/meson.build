@@ -81,8 +81,9 @@ shared_nm_test_utils_impl_c = files('nm-test-utils-impl.c')
 
 shared_nm_utils_nm_vpn_plugin_utils_c = files('nm-utils/nm-vpn-plugin-utils.c')
 
+shared_files_time_utils = files('nm-utils/nm-time-utils.c')
+
 shared_files_libnm_core = files('''
-    c-siphash/src/c-siphash.c
     nm-utils/c-list-util.c
     nm-utils/nm-dedup-multi.c
     nm-utils/nm-enum-utils.c
@@ -95,7 +96,6 @@ shared_files_libnm_core = files('''
 '''.split())
 
 shared_files_clients_common = files('''
-    c-siphash/src/c-siphash.c
     nm-utils/nm-enum-utils.c
     nm-utils/nm-hash-utils.c
     nm-utils/nm-random-utils.c
@@ -116,4 +116,32 @@ shared_dep = declare_dependency(
         shared_inc,
     ],
     dependencies: glib_dep,
+)
+
+###############################################################################
+
+test_shared_general = executable(
+  'nm-utils/tests/test-shared-general',
+  [ 'nm-utils/tests/test-shared-general.c',
+    'nm-utils/c-list-util.c',
+    'nm-utils/nm-dedup-multi.c',
+    'nm-utils/nm-enum-utils.c',
+    'nm-utils/nm-hash-utils.c',
+    'nm-utils/nm-io-utils.c',
+    'nm-utils/nm-random-utils.c',
+    'nm-utils/nm-secret-utils.c',
+    'nm-utils/nm-shared-utils.c',
+    'nm-utils/nm-time-utils.c',
+  ],
+  c_args: [
+      '-DNETWORKMANAGER_COMPILATION_TEST',
+      '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)',
+    ],
+  dependencies: shared_dep,
+  link_with: shared_c_siphash,
+)
+test(
+  'shared/nm-utils/test-shared-general',
+  test_script,
+  args: test_args + [test_shared_general.full_path()]
 )

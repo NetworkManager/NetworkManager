@@ -30,6 +30,9 @@
  *
  * Our tests (make check) include this header-only file nm-test-utils.h.
  *
+ * You should always include this header *as last*. Reason is, that depending on
+ * previous includes, functionality will be enabled.
+ *
  * Logging:
  *   In tests, nm-logging redirects to glib logging. By default, glib suppresses all debug
  *   messages unless you set G_MESSAGES_DEBUG. To enable debug logging, you can explicitly set
@@ -110,7 +113,9 @@
 #include <string.h>
 #include <errno.h>
 
+#ifndef NM_TEST_UTILS_NO_LIBNM
 #include "nm-utils.h"
+#endif
 
 /*****************************************************************************/
 
@@ -1089,6 +1094,8 @@ __define_nmtst_static(02, 1024)
 __define_nmtst_static(03, 1024)
 #undef __define_nmtst_static
 
+#if defined (__NM_UTILS_H__) || defined (NM_UTILS_H)
+
 #define NMTST_UUID_INIT(uuid) \
 	gs_free char *_nmtst_hidden_##uuid = nm_utils_uuid_generate (); \
 	const char *const uuid = _nmtst_hidden_##uuid
@@ -1104,6 +1111,8 @@ nmtst_uuid_generate (void)
 	memcpy (u, m, sizeof (u));
 	return u;
 }
+
+#endif
 
 #define NMTST_SWAP(x,y) \
 	G_STMT_START { \
