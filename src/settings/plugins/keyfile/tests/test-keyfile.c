@@ -2460,49 +2460,51 @@ test_write_tc_config (void)
 /*****************************************************************************/
 
 static void
-_escape_filename (const char *filename, gboolean would_be_ignored)
+_escape_filename (gboolean with_extension, const char *filename, gboolean would_be_ignored)
 {
 	gs_free char *esc = NULL;
 
 	g_assert (filename && filename[0]);
 
-	if (!!would_be_ignored != !!nms_keyfile_utils_should_ignore_file (filename)) {
+	if (!!would_be_ignored != !!nms_keyfile_utils_should_ignore_file (filename, with_extension)) {
 		if (would_be_ignored)
 			g_error ("We expect filename \"%s\" to be ignored, but it isn't", filename);
 		else
 			g_error ("We expect filename \"%s\" not to be ignored, but it is", filename);
 	}
 
-	esc = nms_keyfile_utils_escape_filename (filename);
+	esc = nms_keyfile_utils_escape_filename (filename, with_extension);
 	g_assert (esc && esc[0]);
 	g_assert (!strchr (esc, '/'));
 
-	if (nms_keyfile_utils_should_ignore_file (esc))
+	if (nms_keyfile_utils_should_ignore_file (esc, with_extension))
 		g_error ("Escaping filename \"%s\" yielded \"%s\", but this is ignored", filename, esc);
 }
 
 static void
 test_nm_keyfile_plugin_utils_escape_filename (void)
 {
-	_escape_filename ("ab", FALSE);
-	_escape_filename (".vim-file.swp", TRUE);
-	_escape_filename (".vim-file.Swp", TRUE);
-	_escape_filename (".vim-file.SWP", TRUE);
-	_escape_filename (".vim-file.swpx", TRUE);
-	_escape_filename (".vim-file.Swpx", TRUE);
-	_escape_filename (".vim-file.SWPX", TRUE);
-	_escape_filename (".pem-file.pem", TRUE);
-	_escape_filename (".pem-file.Pem", TRUE);
-	_escape_filename (".pem-file.PEM", TRUE);
-	_escape_filename (".pem-file.der", TRUE);
-	_escape_filename (".pem-file.Der", TRUE);
-	_escape_filename (".mkstemp.ABCEDF", TRUE);
-	_escape_filename (".mkstemp.abcdef", TRUE);
-	_escape_filename (".mkstemp.123456", TRUE);
-	_escape_filename (".mkstemp.A23456", TRUE);
-	_escape_filename (".#emacs-locking", TRUE);
-	_escape_filename ("file-with-tilde~", TRUE);
-	_escape_filename (".file-with-dot", TRUE);
+	_escape_filename (FALSE, "ab", FALSE);
+	_escape_filename (FALSE, ".vim-file.swp", TRUE);
+	_escape_filename (FALSE, ".vim-file.Swp", TRUE);
+	_escape_filename (FALSE, ".vim-file.SWP", TRUE);
+	_escape_filename (FALSE, ".vim-file.swpx", TRUE);
+	_escape_filename (FALSE, ".vim-file.Swpx", TRUE);
+	_escape_filename (FALSE, ".vim-file.SWPX", TRUE);
+	_escape_filename (FALSE, ".pem-file.pem", TRUE);
+	_escape_filename (FALSE, ".pem-file.Pem", TRUE);
+	_escape_filename (FALSE, ".pem-file.PEM", TRUE);
+	_escape_filename (FALSE, ".pem-file.der", TRUE);
+	_escape_filename (FALSE, ".pem-file.Der", TRUE);
+	_escape_filename (FALSE, ".mkstemp.ABCEDF", TRUE);
+	_escape_filename (FALSE, ".mkstemp.abcdef", TRUE);
+	_escape_filename (FALSE, ".mkstemp.123456", TRUE);
+	_escape_filename (FALSE, ".mkstemp.A23456", TRUE);
+	_escape_filename (FALSE, ".#emacs-locking", TRUE);
+	_escape_filename (FALSE, "file-with-tilde~", TRUE);
+	_escape_filename (FALSE, ".file-with-dot", TRUE);
+
+	_escape_filename (TRUE, "lala", TRUE);
 }
 
 /*****************************************************************************/

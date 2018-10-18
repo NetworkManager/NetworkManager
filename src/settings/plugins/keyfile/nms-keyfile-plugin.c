@@ -322,7 +322,7 @@ dir_changed (GFileMonitor *monitor,
 	gboolean exists;
 
 	full_path = g_file_get_path (file);
-	if (nms_keyfile_utils_should_ignore_file (full_path)) {
+	if (nms_keyfile_utils_should_ignore_file (full_path, FALSE)) {
 		g_free (full_path);
 		return;
 	}
@@ -428,7 +428,9 @@ _sort_paths (const char **f1, const char **f2, GHashTable *paths)
 }
 
 static void
-_read_dir (GPtrArray *filenames, const char *path)
+_read_dir (GPtrArray *filenames,
+           const char *path,
+           gboolean require_extension)
 {
 	GDir *dir;
 	const char *item;
@@ -442,7 +444,7 @@ _read_dir (GPtrArray *filenames, const char *path)
 	}
 
 	while ((item = g_dir_read_name (dir))) {
-		if (nms_keyfile_utils_should_ignore_file (item))
+		if (nms_keyfile_utils_should_ignore_file (item, require_extension))
 			continue;
 		g_ptr_array_add (filenames, g_build_filename (path, item, NULL));
 	}
@@ -465,8 +467,8 @@ read_connections (NMSettingsPlugin *config)
 
 	filenames = g_ptr_array_new_with_free_func (g_free);
 
-	_read_dir (filenames, NM_CONFIG_KEYFILE_PATH_IN_MEMORY);
-	_read_dir (filenames, nms_keyfile_utils_get_path ());
+	_read_dir (filenames, NM_CONFIG_KEYFILE_PATH_IN_MEMORY, TRUE);
+	_read_dir (filenames, nms_keyfile_utils_get_path (), FALSE);
 
 	alive_connections = g_hash_table_new (nm_direct_hash, NULL);
 
@@ -521,13 +523,61 @@ get_connections (NMSettingsPlugin *config)
 }
 
 static gboolean
+_file_is_in_path (const char *abs_filename,
+                  const char *abs_path)
+{
+	gsize l;
+
+	/* FIXME: ensure that both paths are at least normalized (coalescing ".",
+	 * duplicate '/', and trailing '/'). */
+
+	nm_assert (abs_filename && abs_filename[0] == '/');
+	nm_assert (abs_path && abs_path[0] == '/');
+
+	l = strlen (abs_path);
+	if (strncmp (abs_filename, abs_path, l) != 0)
+		return FALSE;
+
+	abs_filename += l;
+	while (abs_filename[0] == '/')
+		abs_filename++;
+
+	if (!abs_filename[0])
+		return FALSE;
+
+	if (strchr (abs_filename, '/'))
+		return FALSE;
+
+	return TRUE;
+}
+
+static gboolean
 load_connection (NMSettingsPlugin *config,
                  const char *filename)
 {
 	NMSKeyfilePlugin *self = NMS_KEYFILE_PLUGIN ((NMSKeyfilePlugin *) config);
 	NMSKeyfileConnection *connection;
+	gboolean require_extension;
 
-	if (nms_keyfile_utils_should_ignore_file (filename))
+	/* the test whether to require a file extension tries to figure out whether
+	 * the provided filename is inside /etc or /run.
+	 *
+	 * However, on Posix a filename just resolves to an Inode, and there can
+	 * be any kind of paths that point to the same Inode. It's not generally possible
+	 * to check for that (unless, we would stat all files in the target directory
+	 * and see whether their inode matches).
+	 *
+	 * So, when loading the file do something simpler: require that the path
+	 * starts with the well-known prefix. This rejects symlinks or hard links
+	 * which would actually also point to the same file. */
+	if (_file_is_in_path (filename, nms_keyfile_utils_get_path ()))
+		require_extension = FALSE;
+	else if (_file_is_in_path (filename, NM_CONFIG_KEYFILE_PATH_IN_MEMORY))
+		require_extension = TRUE;
+	else
+		return FALSE;
+
+	if (nms_keyfile_utils_should_ignore_file (filename, require_extension))
 		return FALSE;
 
 	connection = update_connection (self, NULL, filename, find_by_path (self, filename), TRUE, NULL, NULL);
