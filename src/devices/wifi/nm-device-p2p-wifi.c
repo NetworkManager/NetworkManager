@@ -1012,6 +1012,68 @@ device_state_changed (NMDevice *device,
 	}
 }
 
+static void
+impl_device_p2p_wifi_start_find (NMDBusObject *obj,
+                                 const NMDBusInterfaceInfoExtended *interface_info,
+                                 const NMDBusMethodInfoExtended *method_info,
+                                 GDBusConnection *connection,
+                                 const char *sender,
+                                 GDBusMethodInvocation *invocation,
+                                 GVariant *parameters)
+{
+	NMDeviceP2PWifi *self = NM_DEVICE_P2P_WIFI (obj);
+	NMDeviceP2PWifiPrivate *priv = NM_DEVICE_P2P_WIFI_GET_PRIVATE (self);
+	gs_unref_variant GVariant *options = NULL;
+	int timeout;
+
+	g_variant_get (parameters, "(@a{sv})", &options);
+
+	if (!g_variant_lookup (options, "Timeout", "^ai", &timeout)) {
+		/* Default to running a find for 30s. */
+		timeout = 30;
+	}
+
+	/* Reject unreasonable timeout values. */
+	if (timeout <= 0 || timeout > 600) {
+		g_dbus_method_invocation_return_error_literal (invocation,
+		                                               NM_DEVICE_ERROR,
+		                                               NM_DEVICE_ERROR_NOT_ALLOWED,
+		                                               "The timeout for a find operation needs to be in the range of 1-600s.");
+
+		return;
+	}
+
+	if (!priv->mgmt_iface) {
+		g_dbus_method_invocation_return_error_literal (invocation,
+		                                               NM_DEVICE_ERROR,
+		                                               NM_DEVICE_ERROR_NOT_ACTIVE,
+		                                               "WPA Supplicant management interface is currently unavailable.");
+
+		return;
+	}
+
+	nm_supplicant_interface_p2p_start_find (priv->mgmt_iface, timeout);
+
+	g_dbus_method_invocation_return_value (invocation, NULL);
+}
+
+static void
+impl_device_p2p_wifi_stop_find (NMDBusObject *obj,
+                                const NMDBusInterfaceInfoExtended *interface_info,
+                                const NMDBusMethodInfoExtended *method_info,
+                                GDBusConnection *connection,
+                                const char *sender,
+                                GDBusMethodInvocation *invocation,
+                                GVariant *parameters)
+{
+	NMDeviceP2PWifi *self = NM_DEVICE_P2P_WIFI (obj);
+	NMDeviceP2PWifiPrivate *priv = NM_DEVICE_P2P_WIFI_GET_PRIVATE (self);
+
+	nm_supplicant_interface_p2p_stop_find (priv->mgmt_iface);
+
+	g_dbus_method_invocation_return_value (invocation, NULL);
+}
+
 /*****************************************************************************/
 
 NMSupplicantInterface *
@@ -1090,6 +1152,23 @@ static const GDBusSignalInfo nm_signal_info_p2p_wireless_peer_removed = NM_DEFIN
 static const NMDBusInterfaceInfoExtended interface_info_device_p2p_wifi = {
 	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
 		NM_DBUS_INTERFACE_DEVICE_P2P_WIRELESS,
+		.methods = NM_DEFINE_GDBUS_METHOD_INFOS (
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"StartFind",
+					.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("options", "a{sv}"),
+					),
+				),
+				.handle = impl_device_p2p_wifi_start_find,
+			),
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"StopFind",
+				),
+				.handle = impl_device_p2p_wifi_stop_find,
+			),
+		),
 		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
 			&nm_signal_info_p2p_wireless_peer_added,
 			&nm_signal_info_p2p_wireless_peer_removed,
