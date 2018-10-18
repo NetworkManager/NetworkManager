@@ -376,7 +376,7 @@ mirror_8021x_connection (NMIwdManager *self,
 	NMSettings *settings = NM_SETTINGS_GET;
 	NMSettingsConnection *const*iter;
 	gs_unref_object NMConnection *connection = NULL;
-	NMSettingsConnection *settings_connection;
+	NMSettingsConnection *settings_connection = NULL;
 	char uuid[37];
 	NMSetting *setting;
 	GError *error = NULL;
@@ -388,6 +388,9 @@ mirror_8021x_connection (NMIwdManager *self,
 		NMIwdNetworkSecurity security;
 		gs_free char *ssid_name = NULL;
 		NMSettingWireless *s_wifi;
+		NMSetting8021x *s_8021x;
+		gboolean external = FALSE;
+		guint i;
 
 		security = nm_wifi_connection_get_iwd_security (conn, NULL);
 		if (security != NM_IWD_NETWORK_SECURITY_8021X)
@@ -399,13 +402,28 @@ mirror_8021x_connection (NMIwdManager *self,
 
 		ssid_name = _nm_utils_ssid_to_utf8 (nm_setting_wireless_get_ssid (s_wifi));
 
-		/* We already have an NMSettingsConnection matching this
-		 * KnownNetwork, whether it's saved or an in-memory connection
-		 * potentially created by ourselves.  Nothing to do here.
-		 */
-		if (nm_streq (ssid_name, name))
-			return NULL;
+		if (!nm_streq (ssid_name, name))
+			continue;
+
+		s_8021x = nm_connection_get_setting_802_1x (conn);
+		for (i = 0; i < nm_setting_802_1x_get_num_eap_methods (s_8021x); i++) {
+			if (nm_streq (nm_setting_802_1x_get_eap_method (s_8021x, i), "external")) {
+				external = TRUE;
+				break;
+			}
+		}
+
+		/* Prefer returning connections for EAP method "external" */
+		if (!settings_connection || external)
+			settings_connection = sett_conn;
 	}
+
+	/* We already have an NMSettingsConnection matching this
+	 * KnownNetwork, whether it's saved or an in-memory connection
+	 * potentially created by ourselves.  Nothing to do here.
+	 */
+	if (settings_connection)
+		return settings_connection;
 
 	connection = nm_simple_connection_new ();
 
