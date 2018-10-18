@@ -544,9 +544,12 @@ interface_added (GDBusObjectManager *object_manager, GDBusObject *object,
 		id = known_network_id_new (name, security);
 
 		data = g_hash_table_lookup (priv->known_networks, id);
-		if (data)
+		if (data) {
+			_LOGW ("DBus error: KnownNetwork already exists ('%s', %s)",
+			       name, type_str);
 			g_free (id);
-		else {
+			nm_g_object_ref_set (&data->known_network, proxy);
+		} else {
 			data = g_slice_new0 (KnownNetworkData);
 			data->known_network = g_object_ref (proxy);
 			g_hash_table_insert (priv->known_networks, id, data);
