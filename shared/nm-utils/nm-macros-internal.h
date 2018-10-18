@@ -1420,7 +1420,8 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
 		char *_buf2; \
 		\
 		nm_assert (_p_val_to_free && !*_p_val_to_free); \
-		if (NM_STRLEN (format) + _name_len < 200) \
+		if (   NM_STRLEN (format) < 200 \
+		    && _name_len < (gsize) (200 - NM_STRLEN (format))) \
 			_buf2 = nm_sprintf_bufa (NM_STRLEN (format) + _name_len, format, _name); \
 		else { \
 			_buf2 = g_strdup_printf (format, _name); \
