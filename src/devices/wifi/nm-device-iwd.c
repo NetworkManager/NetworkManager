@@ -1547,7 +1547,6 @@ static void act_check_interface (NMDeviceIwd *self)
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
 	gs_free_error GError *error = NULL;
-	NMConnection *connection;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
 	GDBusProxy *proxy = NULL;
@@ -1558,8 +1557,7 @@ static void act_check_interface (NMDeviceIwd *self)
 	if (!priv->act_mode_switch)
 		return;
 
-	connection = nm_device_get_settings_connection_get_connection (device);
-	s_wireless = nm_connection_get_setting_wireless (connection);
+	s_wireless = (NMSettingWireless *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRELESS);
 
 	mode = nm_setting_wireless_get_mode (s_wireless);
 	if (nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_AP))
@@ -1581,7 +1579,7 @@ static void act_check_interface (NMDeviceIwd *self)
 
 	ssid_utf8 = _nm_utils_ssid_to_utf8 (ssid);
 
-	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
+	s_wireless_sec = (NMSettingWirelessSecurity *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRELESS_SECURITY);
 
 	if (!s_wireless_sec) {
 		g_dbus_proxy_call (proxy, "StartOpen",
@@ -1643,6 +1641,81 @@ act_set_mode_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	_LOGD (LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi) IWD Device.Mode set successfully");
 
 	act_check_interface (self);
+}
+
+static void
+act_set_mode (NMDeviceIwd *self)
+{
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	NMDevice *device = NM_DEVICE (self);
+	const char *iwd_mode;
+	const char *mode;
+	NMSettingWireless *s_wireless;
+
+	s_wireless = (NMSettingWireless *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRELESS);
+	mode = nm_setting_wireless_get_mode (s_wireless);
+
+	/* We need to first set interface mode (Device.Mode) to ap or ad-hoc.
+	 * We can't directly queue a call to the Start/StartOpen method on
+	 * the DBus interface that's going to be created after the property
+	 * set call returns.
+	 */
+	iwd_mode = nm_streq (mode, NM_SETTING_WIRELESS_MODE_AP) ? "ap" : "ad-hoc";
+
+	if (!priv->cancellable)
+		priv->cancellable = g_cancellable_new ();
+
+	g_dbus_proxy_call (priv->dbus_device_proxy,
+	                   DBUS_INTERFACE_PROPERTIES ".Set",
+	                   g_variant_new ("(ssv)", NM_IWD_DEVICE_INTERFACE,
+	                                  "Mode",
+	                                  g_variant_new ("s", iwd_mode)),
+	                   G_DBUS_CALL_FLAGS_NONE, 2000,
+	                   priv->cancellable, act_set_mode_cb, self);
+	priv->act_mode_switch = TRUE;
+}
+
+static void
+act_psk_cb (NMActRequest *req,
+            NMActRequestGetSecretsCallId *call_id,
+            NMSettingsConnection *s_connection,
+            GError *error,
+            gpointer user_data)
+{
+	NMDeviceIwd *self = user_data;
+	NMDeviceIwdPrivate *priv;
+	NMDevice *device;
+
+	if (nm_utils_error_is_cancelled (error, FALSE))
+		return;
+
+	priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	device = NM_DEVICE (self);
+
+	g_return_if_fail (priv->wifi_secrets_id == call_id);
+	priv->wifi_secrets_id = NULL;
+
+	g_return_if_fail (req == nm_device_get_act_request (device));
+	g_return_if_fail (nm_act_request_get_settings_connection (req) == s_connection);
+
+	if (nm_device_get_state (device) != NM_DEVICE_STATE_NEED_AUTH)
+		goto secrets_error;
+
+	if (error) {
+		_LOGW (LOGD_WIFI, "%s", error->message);
+		goto secrets_error;
+	}
+
+	_LOGD (LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi) missing PSK request completed");
+
+	/* Change state back to what it was before NEED_AUTH */
+	nm_device_state_changed (device, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
+	act_set_mode (self);
+	return;
+
+secrets_error:
+	nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NO_SECRETS);
+	cleanup_association_attempt (self, FALSE);
 }
 
 static void
@@ -1802,26 +1875,24 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
 		g_object_unref (network_proxy);
 	} else if (NM_IN_STRSET (mode, NM_SETTING_WIRELESS_MODE_AP, NM_SETTING_WIRELESS_MODE_ADHOC)) {
-		const char *iwd_mode;
+		NMSettingWirelessSecurity *s_wireless_sec;
 
-		/* We need to first set interface mode (Device.Mode) to ap or ad-hoc.
-		 * We can't directly queue a call to the Start/StartOpen method on
-		 * the DBus interface that's going to be created after the property
-		 * set call returns.
-		 */
-		iwd_mode = nm_streq (mode, NM_SETTING_WIRELESS_MODE_AP) ? "ap" : "ad-hoc";
+		s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
+		if (s_wireless_sec && !nm_setting_wireless_security_get_psk (s_wireless_sec)) {
+			/* PSK is missing from the settings, have to request it */
 
-		if (!priv->cancellable)
-			priv->cancellable = g_cancellable_new ();
+			wifi_secrets_cancel (self);
 
-		g_dbus_proxy_call (priv->dbus_device_proxy,
-		                   DBUS_INTERFACE_PROPERTIES ".Set",
-		                   g_variant_new ("(ssv)", NM_IWD_DEVICE_INTERFACE,
-		                                  "Mode",
-		                                  g_variant_new ("s", iwd_mode)),
-		                   G_DBUS_CALL_FLAGS_NONE, 2000,
-		                   priv->cancellable, act_set_mode_cb, self);
-		priv->act_mode_switch = TRUE;
+			priv->wifi_secrets_id = nm_act_request_get_secrets (req,
+			                                                    TRUE,
+			                                                    NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+			                                                    NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION,
+			                                                    "psk",
+			                                                    act_psk_cb,
+			                                                    self);
+			nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
+		} else
+			act_set_mode (self);
 	}
 
 	/* We'll get stage3 started when the supplicant connects */
@@ -2108,7 +2179,7 @@ state_changed (NMDeviceIwd *self, const char *new_state)
 		 * callback will have more information on the specific failure
 		 * reason.
 		 */
-		if (dev_state == NM_DEVICE_STATE_CONFIG)
+		if (NM_IN_SET (dev_state, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_NEED_AUTH))
 			return;
 
 		if (iwd_connection)
