@@ -261,6 +261,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-device-ovs-bridge.xml"/>
     <xi:include href="xml/nm-device-ovs-interface.xml"/>
     <xi:include href="xml/nm-device-ovs-port.xml"/>
+    <xi:include href="xml/nm-device-p2p-wifi.xml"/>
     <xi:include href="xml/nm-device-ppp.xml"/>
     <xi:include href="xml/nm-device-team.xml"/>
     <xi:include href="xml/nm-device-tun.xml"/>

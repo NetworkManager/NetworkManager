@@ -41,6 +41,7 @@
 
 #include "introspection/org.freedesktop.NetworkManager.h"
 #include "introspection/org.freedesktop.NetworkManager.Device.Wireless.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.P2PWireless.h"
 #include "introspection/org.freedesktop.NetworkManager.Device.h"
 #include "introspection/org.freedesktop.NetworkManager.DnsManager.h"
 #include "introspection/org.freedesktop.NetworkManager.Settings.h"
@@ -68,6 +69,7 @@
 #include "nm-device-ovs-interface.h"
 #include "nm-device-ovs-port.h"
 #include "nm-device-ovs-bridge.h"
+#include "nm-device-p2p-wifi.h"
 #include "nm-device-ppp.h"
 #include "nm-device-team.h"
 #include "nm-device-tun.h"
@@ -2612,6 +2614,8 @@ proxy_type (GDBusObjectManagerClient *manager,
 		return NMDBUS_TYPE_MANAGER_PROXY;
 	else if (strcmp (interface_name, NM_DBUS_INTERFACE_DEVICE_WIRELESS) == 0)
 		return NMDBUS_TYPE_DEVICE_WIFI_PROXY;
+	else if (strcmp (interface_name, NM_DBUS_INTERFACE_DEVICE_P2P_WIRELESS) == 0)
+		return NMDBUS_TYPE_DEVICE_P2P_WIFI_PROXY;
 	else if (strcmp (interface_name, NM_DBUS_INTERFACE_DEVICE) == 0)
 		return NMDBUS_TYPE_DEVICE_PROXY;
 	else if (strcmp (interface_name, NM_DBUS_INTERFACE_SETTINGS_CONNECTION) == 0)
@@ -2690,6 +2694,8 @@ obj_nm_for_gdbus_object (NMClient *self, GDBusObject *object, GDBusObjectManager
 			type = NM_TYPE_DEVICE_OVS_PORT;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_OVS_BRIDGE) == 0)
 			type = NM_TYPE_DEVICE_OVS_BRIDGE;
+		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_P2P_WIRELESS) == 0)
+			type = NM_TYPE_DEVICE_P2P_WIFI;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_PPP) == 0)
 			type = NM_TYPE_DEVICE_PPP;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_TEAM) == 0)

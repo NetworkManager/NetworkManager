@@ -152,6 +152,7 @@ libnm/nm-device-olpc-mesh.c
 libnm/nm-device-ovs-bridge.c
 libnm/nm-device-ovs-interface.c
 libnm/nm-device-ovs-port.c
+libnm/nm-device-p2p-wifi.c
 libnm/nm-device-team.c
 libnm/nm-device-vlan.c
 libnm/nm-device-vxlan.c

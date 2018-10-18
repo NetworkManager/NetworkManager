@@ -46,6 +46,7 @@
 #include "nm-device-ovs-interface.h"
 #include "nm-device-ovs-port.h"
 #include "nm-device-ovs-bridge.h"
+#include "nm-device-p2p-wifi.h"
 #include "nm-device-ppp.h"
 #include "nm-device-team.h"
 #include "nm-device-tun.h"

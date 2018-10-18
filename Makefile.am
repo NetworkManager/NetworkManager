@@ -1044,6 +1044,7 @@ libnm_lib_h_pub_real = \
 	libnm/nm-device-ovs-interface.h \
 	libnm/nm-device-ovs-port.h \
 	libnm/nm-device-ovs-bridge.h \
+	libnm/nm-device-p2p-wifi.h \
 	libnm/nm-device-ppp.h \
 	libnm/nm-device-team.h \
 	libnm/nm-device-tun.h \
@@ -1104,6 +1105,7 @@ libnm_lib_c_real = \
 	libnm/nm-device-ovs-interface.c \
 	libnm/nm-device-ovs-port.c \
 	libnm/nm-device-ovs-bridge.c \
+	libnm/nm-device-p2p-wifi.c \
 	libnm/nm-device-ppp.c \
 	libnm/nm-device-team.c \
 	libnm/nm-device-tun.c \

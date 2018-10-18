@@ -54,6 +54,7 @@ typedef struct _NMDeviceTun          NMDeviceTun;
 typedef struct _NMDeviceVlan         NMDeviceVlan;
 typedef struct _NMDeviceVxlan        NMDeviceVxlan;
 typedef struct _NMDeviceWifi         NMDeviceWifi;
+typedef struct _NMDeviceP2PWifi      NMDeviceP2PWifi;
 typedef struct _NMDeviceWimax        NMDeviceWimax;
 typedef struct _NMDeviceWireGuard    NMDeviceWireGuard;
 typedef struct _NMDeviceWpan         NMDeviceWpan;
