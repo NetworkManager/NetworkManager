@@ -48,6 +48,7 @@ typedef struct {
 
 typedef struct {
 	NMManager *manager;
+	NMSettings *settings;
 	GCancellable *cancellable;
 	gboolean running;
 	GDBusObjectManager *object_manager;
@@ -363,17 +364,18 @@ set_device_dbus_object (NMIwdManager *self, GDBusProxy *proxy,
 	nm_device_iwd_set_dbus_object (NM_DEVICE_IWD (device), object);
 }
 
-/* Create an in-memory NMConnection for a WPA2-Enterprise network that
- * has been preprovisioned with an IWD config file so that NM autoconnect
- * mechanism and the clients know this networks needs no additional EAP
- * configuration from the user.  Only do this if no existing connection
- * SSID and security type match that network yet.
+/* Look up an existing NMSettingsConnection for a WPA2-Enterprise network
+ * that has been preprovisioned with an IWD config file, or create a new
+ * in-memory connection object so that NM autoconnect mechanism and the
+ * clients know this networks needs no additional EAP configuration from
+ * the user.
  */
 static NMSettingsConnection *
 mirror_8021x_connection (NMIwdManager *self,
-                         const char *name)
+                         const char *name,
+                         gboolean create_new)
 {
-	NMSettings *settings = NM_SETTINGS_GET;
+	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
 	NMSettingsConnection *const*iter;
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingsConnection *settings_connection = NULL;
@@ -382,7 +384,7 @@ mirror_8021x_connection (NMIwdManager *self,
 	GError *error = NULL;
 	gs_unref_bytes GBytes *new_ssid = NULL;
 
-	for (iter = nm_settings_get_connections (settings, NULL); *iter; iter++) {
+	for (iter = nm_settings_get_connections (priv->settings, NULL); *iter; iter++) {
 		NMSettingsConnection *sett_conn = *iter;
 		NMConnection *conn = nm_settings_connection_get_connection (sett_conn);
 		NMIwdNetworkSecurity security;
@@ -418,11 +420,12 @@ mirror_8021x_connection (NMIwdManager *self,
 			settings_connection = sett_conn;
 	}
 
-	/* We already have an NMSettingsConnection matching this
+	/* If we already have an NMSettingsConnection matching this
 	 * KnownNetwork, whether it's saved or an in-memory connection
-	 * potentially created by ourselves.  Nothing to do here.
+	 * potentially created by ourselves then we have nothing left to
+	 * do here.
 	 */
-	if (settings_connection)
+	if (settings_connection || !create_new)
 		return settings_connection;
 
 	connection = nm_simple_connection_new ();
@@ -464,7 +467,7 @@ mirror_8021x_connection (NMIwdManager *self,
 	if (!nm_connection_normalize (connection, NULL, NULL, NULL))
 		return NULL;
 
-	settings_connection = nm_settings_add_connection (settings, connection,
+	settings_connection = nm_settings_add_connection (priv->settings, connection,
 	                                                  FALSE, &error);
 	if (!settings_connection) {
 		_LOGW ("failed to add a mirror NMConnection for IWD's Known Network '%s': %s",
@@ -556,7 +559,7 @@ interface_added (GDBusObjectManager *object_manager, GDBusObject *object,
 		}
 
 		if (security == NM_IWD_NETWORK_SECURITY_8021X) {
-			sett_conn = mirror_8021x_connection (self, name);
+			sett_conn = mirror_8021x_connection (self, name, TRUE);
 
 			if (   sett_conn
 			    && sett_conn != data->mirror_connection) {
@@ -612,6 +615,55 @@ interface_removed (GDBusObjectManager *object_manager, GDBusObject *object,
 		g_hash_table_remove (priv->known_networks, &id);
 		return;
 	}
+}
+
+static void
+connection_removed (NMSettings *settings,
+                    NMSettingsConnection *sett_conn,
+                    gpointer user_data)
+{
+	NMIwdManager *self = user_data;
+	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
+	NMConnection *conn = nm_settings_connection_get_connection (sett_conn);
+	NMSettingWireless *s_wireless;
+	gboolean mapped;
+	KnownNetworkData *data;
+	KnownNetworkId id;
+
+	id.security = nm_wifi_connection_get_iwd_security (conn, &mapped);
+	if (!mapped)
+		return;
+
+	s_wireless = nm_connection_get_setting_wireless (conn);
+	id.name = _nm_utils_ssid_to_utf8 (nm_setting_wireless_get_ssid (s_wireless));
+	data = g_hash_table_lookup (priv->known_networks, &id);
+	g_free ((char *) id.name);
+	if (!data)
+		return;
+
+	if (id.security == NM_IWD_NETWORK_SECURITY_8021X) {
+		NMSettingsConnection *new_mirror_conn;
+
+		if (data->mirror_connection != sett_conn)
+			return;
+
+		g_clear_object (&data->mirror_connection);
+
+		/* Don't call Forget for an 8021x network until there's no
+		 * longer *any* matching NMSettingsConnection (debatable)
+		 */
+		new_mirror_conn = mirror_8021x_connection (self, id.name, FALSE);
+		if (new_mirror_conn) {
+			data->mirror_connection = g_object_ref (new_mirror_conn);
+			return;
+		}
+	}
+
+	if (!priv->running)
+		return;
+
+	g_dbus_proxy_call (data->known_network, "Forget",
+	                   NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
 }
 
 static gboolean
@@ -845,6 +897,10 @@ nm_iwd_manager_init (NMIwdManager *self)
 	g_signal_connect (priv->manager, NM_MANAGER_DEVICE_ADDED,
 	                  G_CALLBACK (device_added), self);
 
+	priv->settings = g_object_ref (nm_settings_get ());
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
+	                  G_CALLBACK (connection_removed), self);
+
 	priv->cancellable = g_cancellable_new ();
 
 	priv->known_networks = g_hash_table_new_full ((GHashFunc) known_network_id_hash,
@@ -865,6 +921,14 @@ dispose (GObject *object)
 
 	nm_clear_g_cancellable (&priv->cancellable);
 
+	if (priv->settings) {
+		g_signal_handlers_disconnect_by_data (priv->settings, self);
+		g_clear_object (&priv->settings);
+	}
+
+	/* This may trigger mirror connection removals so it happens
+	 * after the g_signal_handlers_disconnect_by_data above.
+	 */
 	nm_clear_pointer (&priv->known_networks, g_hash_table_destroy);
 
 	if (priv->manager) {
