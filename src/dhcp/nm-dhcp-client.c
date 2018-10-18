@@ -230,6 +230,15 @@ _set_client_id (NMDhcpClient *self, GBytes *client_id, gboolean take)
 	priv->client_id = client_id;
 	if (!take && client_id)
 		g_bytes_ref (client_id);
+
+	{
+		gs_free char *s = NULL;
+
+		_LOGT ("client-id: %s",
+		       priv->client_id
+		         ? (s = nm_dhcp_utils_duid_to_string (priv->client_id))
+		         : "default");
+	}
 }
 
 void
