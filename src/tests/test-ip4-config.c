@@ -319,11 +319,15 @@ test_strip_search_trailing_dot (void)
 	nm_ip4_config_add_search (config, "bar.");
 	nm_ip4_config_add_search (config, "baz.com");
 	nm_ip4_config_add_search (config, "baz.com.");
+	nm_ip4_config_add_search (config, "foobar..");
+	nm_ip4_config_add_search (config, ".foobar");
+	nm_ip4_config_add_search (config, "~.");
 
-	g_assert_cmpuint (nm_ip4_config_get_num_searches (config), ==, 3);
+	g_assert_cmpuint (nm_ip4_config_get_num_searches (config), ==, 4);
 	g_assert_cmpstr (nm_ip4_config_get_search (config, 0), ==, "foo");
 	g_assert_cmpstr (nm_ip4_config_get_search (config, 1), ==, "bar");
 	g_assert_cmpstr (nm_ip4_config_get_search (config, 2), ==, "baz.com");
+	g_assert_cmpstr (nm_ip4_config_get_search (config, 3), ==, "~");
 
 	g_object_unref (config);
 }
