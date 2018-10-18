@@ -114,6 +114,7 @@ nms_keyfile_reader_from_keyfile (GKeyFile *key_file,
 	};
 	gs_free char *base_dir_free = NULL;
 	gs_free char *profile_filename_free = NULL;
+	gs_free char *filename_id = NULL;
 	const char *profile_filename = NULL;
 
 	nm_assert (filename && filename[0]);
@@ -141,7 +142,14 @@ nms_keyfile_reader_from_keyfile (GKeyFile *key_file,
 	if (!connection)
 		return NULL;
 
-	nm_keyfile_read_ensure_id (connection, filename);
+	if (g_str_has_suffix (filename, NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION)) {
+		gsize l = strlen (filename);
+
+		if (l > NM_STRLEN (NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION))
+			filename_id = g_strndup (filename, l - NM_STRLEN (NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION));
+	}
+
+	nm_keyfile_read_ensure_id (connection, filename_id ?: filename);
 
 	if (!profile_filename) {
 		profile_filename_free = g_build_filename (profile_dir ?: base_dir, filename, NULL);

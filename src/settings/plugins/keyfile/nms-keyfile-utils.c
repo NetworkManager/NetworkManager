@@ -84,7 +84,7 @@ check_suffix (const char *base, const char *tag)
 #define DER_TAG ".der"
 
 gboolean
-nms_keyfile_utils_should_ignore_file (const char *filename)
+nms_keyfile_utils_should_ignore_file (const char *filename, gboolean require_extension)
 {
 	gs_free char *base = NULL;
 
@@ -103,6 +103,14 @@ nms_keyfile_utils_should_ignore_file (const char *filename)
 	/* Ignore 802.1x certificates and keys */
 	if (check_suffix (base, PEM_TAG) || check_suffix (base, DER_TAG))
 		return TRUE;
+
+	if (require_extension) {
+		gsize l = strlen (base);
+
+		if (   l <= NM_STRLEN (NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION)
+		    || !g_str_has_suffix (base, NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION))
+			return TRUE;
+	}
 
 	return FALSE;
 }
@@ -167,14 +175,16 @@ nms_keyfile_utils_check_file_permissions (const char *filename,
 /*****************************************************************************/
 
 char *
-nms_keyfile_utils_escape_filename (const char *filename)
+nms_keyfile_utils_escape_filename (const char *filename,
+                                   gboolean with_extension)
 {
 	GString *str;
 	const char *f = filename;
-	const char ESCAPE_CHAR = '*';
-
 	/* keyfile used to escape with '*', do not change that behavior.
-	 * But for newly added escapings, use '_' instead. */
+	 *
+	 * But for newly added escapings, use '_' instead.
+	 * Also, @with_extension is new-style. */
+	const char ESCAPE_CHAR = with_extension ? '_' : '*';
 	const char ESCAPE_CHAR2 = '_';
 
 	g_return_val_if_fail (filename && filename[0], NULL);
@@ -199,6 +209,9 @@ nms_keyfile_utils_escape_filename (const char *filename)
 	    || check_suffix (str->str, PEM_TAG)
 	    || check_suffix (str->str, DER_TAG))
 		g_string_append_c (str, ESCAPE_CHAR2);
+
+	if (with_extension)
+		g_string_append (str, NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION);
 
 	return g_string_free (str, FALSE);;
 }
