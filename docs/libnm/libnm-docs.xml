@@ -274,6 +274,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-active-connection.xml"/>
     <xi:include href="xml/nm-vpn-connection.xml"/>
     <xi:include href="xml/nm-access-point.xml"/>
+    <xi:include href="xml/nm-p2p-peer.xml"/>
     <xi:include href="xml/nm-wimax-nsp.xml"/>
     <xi:include href="xml/nm-ip-config.xml"/>
     <xi:include href="xml/nm-dhcp-config.xml"/>

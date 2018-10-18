@@ -1057,6 +1057,7 @@ libnm_lib_h_pub_real = \
 	libnm/nm-dhcp-config.h \
 	libnm/nm-ip-config.h \
 	libnm/nm-object.h \
+	libnm/nm-p2p-peer.h \
 	libnm/nm-remote-connection.h \
 	libnm/nm-secret-agent-old.h \
 	libnm/nm-types.h \
@@ -1122,6 +1123,7 @@ libnm_lib_c_real = \
 	libnm/nm-ip6-config.c \
 	libnm/nm-manager.c \
 	libnm/nm-object.c \
+	libnm/nm-p2p-peer.c \
 	libnm/nm-remote-connection.c \
 	libnm/nm-remote-settings.c \
 	libnm/nm-secret-agent-old.c \

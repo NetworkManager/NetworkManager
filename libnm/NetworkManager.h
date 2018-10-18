@@ -60,6 +60,7 @@
 #include "nm-enum-types.h"
 #include "nm-ip-config.h"
 #include "nm-object.h"
+#include "nm-p2p-peer.h"
 #include "nm-remote-connection.h"
 #include "nm-setting-6lowpan.h"
 #include "nm-setting-8021x.h"

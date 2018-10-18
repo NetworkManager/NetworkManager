@@ -83,6 +83,7 @@
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-manager.h"
+#include "nm-p2p-peer.h"
 #include "nm-remote-connection.h"
 #include "nm-remote-settings.h"
 #include "nm-vpn-connection.h"
@@ -2715,6 +2716,8 @@ obj_nm_for_gdbus_object (NMClient *self, GDBusObject *object, GDBusObjectManager
 			type = NM_TYPE_IP4_CONFIG;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_IP6_CONFIG) == 0)
 			type = NM_TYPE_IP6_CONFIG;
+		else if (strcmp (ifname, NM_DBUS_INTERFACE_P2P_PEER) == 0)
+			type = NM_TYPE_P2P_PEER;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_SETTINGS_CONNECTION) == 0)
 			type = NM_TYPE_REMOTE_CONNECTION;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_SETTINGS) == 0)

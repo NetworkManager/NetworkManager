@@ -59,6 +59,7 @@ typedef struct _NMDeviceWireGuard    NMDeviceWireGuard;
 typedef struct _NMDeviceWpan         NMDeviceWpan;
 typedef struct _NMDhcpConfig         NMDhcpConfig;
 typedef struct _NMIPConfig           NMIPConfig;
+typedef struct _NMP2PPeer            NMP2PPeer;
 typedef struct _NMObject             NMObject;
 typedef struct _NMRemoteConnection   NMRemoteConnection;
 typedef struct _NMVpnConnection      NMVpnConnection;
