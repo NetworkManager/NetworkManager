@@ -30,6 +30,9 @@
  *
  * Our tests (make check) include this header-only file nm-test-utils.h.
  *
+ * You should always include this header *as last*. Reason is, that depending on
+ * previous includes, functionality will be enabled.
+ *
  * Logging:
  *   In tests, nm-logging redirects to glib logging. By default, glib suppresses all debug
  *   messages unless you set G_MESSAGES_DEBUG. To enable debug logging, you can explicitly set
