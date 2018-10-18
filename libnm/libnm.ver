@@ -1331,3 +1331,9 @@ global:
 	nm_utils_tc_tfilter_from_str;
 	nm_utils_tc_tfilter_to_str;
 } libnm_1_10_0;
+
+libnm_1_10_14 {
+global:
+	nm_setting_connection_get_mdns;
+	nm_setting_connection_mdns_get_type;
+} libnm_1_10_2;
