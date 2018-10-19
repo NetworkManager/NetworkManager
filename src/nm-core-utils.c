@@ -4329,6 +4329,21 @@ nm_utils_format_con_diff_for_audit (GHashTable *diff)
 	return g_string_free (str, FALSE);
 }
 
+const char *
+nm_utils_parse_dns_domain (const char *domain, gboolean *is_routing)
+{
+	g_return_val_if_fail (domain, NULL);
+	g_return_val_if_fail (domain[0], NULL);
+
+	if (domain[0] == '~') {
+		domain++;
+		NM_SET_OUT (is_routing, TRUE);
+	} else
+		NM_SET_OUT (is_routing, FALSE);
+
+	return domain;
+}
+
 /*****************************************************************************/
 
 NM_UTILS_ENUM2STR_DEFINE (nm_icmpv6_router_pref_to_string, NMIcmpv6RouterPref,

@@ -77,15 +77,15 @@ G_DEFINE_TYPE_EXTENDED (NMDnsPlugin, nm_dns_plugin, G_TYPE_OBJECT, G_TYPE_FLAG_A
 
 gboolean
 nm_dns_plugin_update (NMDnsPlugin *self,
-                      const GPtrArray *configs,
                       const NMGlobalDnsConfig *global_config,
+                      const CList *ip_config_lst_head,
                       const char *hostname)
 {
 	g_return_val_if_fail (NM_DNS_PLUGIN_GET_CLASS (self)->update != NULL, FALSE);
 
 	return NM_DNS_PLUGIN_GET_CLASS (self)->update (self,
-	                                               configs,
 	                                               global_config,
+	                                               ip_config_lst_head,
 	                                               hostname);
 }
 

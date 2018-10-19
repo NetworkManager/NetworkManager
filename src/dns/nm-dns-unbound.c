@@ -39,8 +39,8 @@ G_DEFINE_TYPE (NMDnsUnbound, nm_dns_unbound, NM_TYPE_DNS_PLUGIN)
 
 static gboolean
 update (NMDnsPlugin *plugin,
-        const GPtrArray *configs,
         const NMGlobalDnsConfig *global_config,
+        const CList *ip_config_lst_head,
         const char *hostname)
 {
 	char *argv[] = { DNSSEC_TRIGGER_SCRIPT, "--async", "--update", NULL };
