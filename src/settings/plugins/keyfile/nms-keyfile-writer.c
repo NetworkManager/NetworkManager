@@ -172,6 +172,8 @@ _handler_write (NMConnection *connection,
 static gboolean
 _internal_write_connection (NMConnection *connection,
                             const char *keyfile_dir,
+                            const char *profile_dir,
+                            gboolean with_extension,
                             uid_t owner_uid,
                             pid_t owner_grp,
                             const char *existing_path,
@@ -228,7 +230,7 @@ _internal_write_connection (NMConnection *connection,
 	if (existing_path != NULL && !rename) {
 		path = g_strdup (existing_path);
 	} else {
-		char *filename_escaped = nms_keyfile_utils_escape_filename (id);
+		char *filename_escaped = nms_keyfile_utils_escape_filename (id, with_extension);
 
 		path = g_build_filename (keyfile_dir, filename_escaped, NULL);
 		g_free (filename_escaped);
@@ -254,7 +256,7 @@ _internal_write_connection (NMConnection *connection,
 			else
 				filename = g_strdup_printf ("%s-%s-%u", id, nm_connection_get_uuid (connection), i);
 
-			filename_escaped = nms_keyfile_utils_escape_filename (filename);
+			filename_escaped = nms_keyfile_utils_escape_filename (filename, with_extension);
 
 			g_free (path);
 			path = g_strdup_printf ("%s/%s", keyfile_dir, filename_escaped);
@@ -308,7 +310,7 @@ _internal_write_connection (NMConnection *connection,
 		gs_unref_object NMConnection *reread = NULL;
 		gboolean reread_same = FALSE;
 
-		reread = nms_keyfile_reader_from_keyfile (key_file, path, FALSE, NULL);
+		reread = nms_keyfile_reader_from_keyfile (key_file, path, NULL, profile_dir, FALSE, NULL);
 
 		nm_assert (NM_IS_CONNECTION (reread));
 
@@ -350,15 +352,21 @@ nms_keyfile_writer_connection (NMConnection *connection,
                                GError **error)
 {
 	const char *keyfile_dir;
+	gboolean with_extension = FALSE;
 
 	if (save_to_disk)
 		keyfile_dir = nms_keyfile_utils_get_path ();
-	else
+	else {
 		keyfile_dir = NM_CONFIG_KEYFILE_PATH_IN_MEMORY;
+		with_extension = TRUE;
+	}
 
 	return _internal_write_connection (connection,
 	                                   keyfile_dir,
-	                                   0, 0,
+	                                   nms_keyfile_utils_get_path (),
+	                                   with_extension,
+	                                   0,
+	                                   0,
 	                                   existing_path,
 	                                   force_rename,
 	                                   out_path,
@@ -379,7 +387,10 @@ nms_keyfile_writer_test_connection (NMConnection *connection,
 {
 	return _internal_write_connection (connection,
 	                                   keyfile_dir,
-	                                   owner_uid, owner_grp,
+	                                   keyfile_dir,
+	                                   FALSE,
+	                                   owner_uid,
+	                                   owner_grp,
 	                                   NULL,
 	                                   FALSE,
 	                                   out_path,

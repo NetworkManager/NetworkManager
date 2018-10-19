@@ -24,6 +24,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
@@ -55,18 +56,11 @@ check_mkstemp_suffix (const char *path)
 }
 
 static gboolean
-check_prefix (const char *base, const char *tag)
+check_prefix_dot (const char *base)
 {
-	int len, tag_len;
+	nm_assert (base && base[0]);
 
-	g_return_val_if_fail (base != NULL, TRUE);
-	g_return_val_if_fail (tag != NULL, TRUE);
-
-	len = strlen (base);
-	tag_len = strlen (tag);
-	if ((len > tag_len) && !g_ascii_strncasecmp (base, tag, tag_len))
-		return TRUE;
-	return FALSE;
+	return base[0] == '.';
 }
 
 static gboolean
@@ -90,7 +84,7 @@ check_suffix (const char *base, const char *tag)
 #define DER_TAG ".der"
 
 gboolean
-nms_keyfile_utils_should_ignore_file (const char *filename)
+nms_keyfile_utils_should_ignore_file (const char *filename, gboolean require_extension)
 {
 	gs_free char *base = NULL;
 
@@ -101,7 +95,7 @@ nms_keyfile_utils_should_ignore_file (const char *filename)
 
 	/* Ignore hidden and backup files */
 	/* should_ignore_file() must mirror escape_filename() */
-	if (check_prefix (base, ".") || check_suffix (base, "~"))
+	if (check_prefix_dot (base) || check_suffix (base, "~"))
 		return TRUE;
 	/* Ignore temporary files */
 	if (check_mkstemp_suffix (base))
@@ -110,18 +104,87 @@ nms_keyfile_utils_should_ignore_file (const char *filename)
 	if (check_suffix (base, PEM_TAG) || check_suffix (base, DER_TAG))
 		return TRUE;
 
+	if (require_extension) {
+		gsize l = strlen (base);
+
+		if (   l <= NM_STRLEN (NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION)
+		    || !g_str_has_suffix (base, NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION))
+			return TRUE;
+	}
+
 	return FALSE;
 }
 
+/*****************************************************************************/
+
+gboolean
+nms_keyfile_utils_check_file_permissions_stat (const struct stat *st,
+                                               GError **error)
+{
+	g_return_val_if_fail (st, FALSE);
+
+	if (!S_ISREG (st->st_mode)) {
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		                     "file is not a regular file");
+		return FALSE;
+	}
+
+	if (!NM_FLAGS_HAS (nm_utils_get_testing (), NM_UTILS_TEST_NO_KEYFILE_OWNER_CHECK)) {
+		if (st->st_uid != 0) {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "File owner (%lld) is insecure",
+			             (long long) st->st_uid);
+			return FALSE;
+		}
+
+		if (st->st_mode & 0077) {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "File permissions (%03o) are insecure",
+			             st->st_mode);
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+gboolean
+nms_keyfile_utils_check_file_permissions (const char *filename,
+                                          struct stat *out_st,
+                                          GError **error)
+{
+	struct stat st;
+	int errsv;
+
+	g_return_val_if_fail (filename && filename[0] == '/', FALSE);
+
+	if (stat (filename, &st) != 0) {
+		errsv = errno;
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "cannot access file: %s", g_strerror (errsv));
+		return FALSE;
+	}
+
+	if (!nms_keyfile_utils_check_file_permissions_stat (&st, error))
+		return FALSE;
+
+	NM_SET_OUT (out_st, st);
+	return TRUE;
+}
+
+/*****************************************************************************/
+
 char *
-nms_keyfile_utils_escape_filename (const char *filename)
+nms_keyfile_utils_escape_filename (const char *filename,
+                                   gboolean with_extension)
 {
 	GString *str;
 	const char *f = filename;
-	const char ESCAPE_CHAR = '*';
-
 	/* keyfile used to escape with '*', do not change that behavior.
-	 * But for newly added escapings, use '_' instead. */
+	 *
+	 * But for newly added escapings, use '_' instead.
+	 * Also, @with_extension is new-style. */
+	const char ESCAPE_CHAR = with_extension ? '_' : '*';
 	const char ESCAPE_CHAR2 = '_';
 
 	g_return_val_if_fail (filename && filename[0], NULL);
@@ -138,7 +201,7 @@ nms_keyfile_utils_escape_filename (const char *filename)
 
 	/* escape_filename() must avoid anything that should_ignore_file() would reject.
 	 * We can escape here more aggressivly then what we would read back. */
-	if (check_prefix (str->str, "."))
+	if (check_prefix_dot (str->str))
 		str->str[0] = ESCAPE_CHAR2;
 	if (check_suffix (str->str, "~"))
 		str->str[str->len - 1] = ESCAPE_CHAR2;
@@ -146,6 +209,9 @@ nms_keyfile_utils_escape_filename (const char *filename)
 	    || check_suffix (str->str, PEM_TAG)
 	    || check_suffix (str->str, DER_TAG))
 		g_string_append_c (str, ESCAPE_CHAR2);
+
+	if (with_extension)
+		g_string_append (str, NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION);
 
 	return g_string_free (str, FALSE);;
 }
