@@ -214,9 +214,6 @@ if enable_tests
     test_cflags += ['-DREQUIRE_ROOT_TESTS=1']
   endif
 
-  platform = (host_machine.system().contains('linux') ? 'linux' : 'fake')
-  test_cflags_platform = '-DSETUP=nm_' + platform + '_platform_setup'
-
   libnetwork_manager_test = static_library(
     nm_name + 'Test',
     sources: sources,
@@ -229,6 +226,16 @@ if enable_tests
     dependencies: nm_dep,
     compile_args: test_cflags,
     link_with: libnetwork_manager_test
+  )
+
+  test_nm_dep_fake = declare_dependency(
+    dependencies: test_nm_dep,
+    compile_args: ['-DSETUP=nm_fake_platform_setup']
+  )
+
+  test_nm_dep_linux = declare_dependency(
+    dependencies: test_nm_dep,
+    compile_args: ['-DSETUP=nm_linux_platform_setup']
   )
 
   subdir('dnsmasq/tests')
