@@ -23,19 +23,11 @@
 
 #include "NetworkManagerUtils.h"
 
-#define NM_CONFIG_KEYFILE_PATH_IN_MEMORY NMRUNDIR "/system-connections"
-
-#define NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION      ".nmconnection"
-
 #define NMS_KEYFILE_CONNECTION_LOG_PATH(path)  ((path) ?: "in-memory")
 #define NMS_KEYFILE_CONNECTION_LOG_FMT         "%s (%s,\"%s\")"
 #define NMS_KEYFILE_CONNECTION_LOG_ARG(con)    NMS_KEYFILE_CONNECTION_LOG_PATH (nm_settings_connection_get_filename ((NMSettingsConnection *) (con))), nm_settings_connection_get_uuid ((NMSettingsConnection *) (con)), nm_settings_connection_get_id ((NMSettingsConnection *) (con))
 #define NMS_KEYFILE_CONNECTION_LOG_FMTD        "%s (%s,\"%s\",%p)"
 #define NMS_KEYFILE_CONNECTION_LOG_ARGD(con)   NMS_KEYFILE_CONNECTION_LOG_PATH (nm_settings_connection_get_filename ((NMSettingsConnection *) (con))), nm_settings_connection_get_uuid ((NMSettingsConnection *) (con)), nm_settings_connection_get_id ((NMSettingsConnection *) (con)), (con)
-
-gboolean nms_keyfile_utils_should_ignore_file (const char *filename, gboolean require_extension);
-
-char *nms_keyfile_utils_escape_filename (const char *filename, gboolean with_extension);
 
 const char *nms_keyfile_utils_get_path (void);
 
