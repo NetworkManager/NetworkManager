@@ -230,7 +230,7 @@ _internal_write_connection (NMConnection *connection,
 	if (existing_path != NULL && !rename) {
 		path = g_strdup (existing_path);
 	} else {
-		char *filename_escaped = nms_keyfile_utils_escape_filename (id, with_extension);
+		char *filename_escaped = nm_keyfile_utils_create_filename (id, with_extension);
 
 		path = g_build_filename (keyfile_dir, filename_escaped, NULL);
 		g_free (filename_escaped);
@@ -256,7 +256,7 @@ _internal_write_connection (NMConnection *connection,
 			else
 				filename = g_strdup_printf ("%s-%s-%u", id, nm_connection_get_uuid (connection), i);
 
-			filename_escaped = nms_keyfile_utils_escape_filename (filename, with_extension);
+			filename_escaped = nm_keyfile_utils_create_filename (filename, with_extension);
 
 			g_free (path);
 			path = g_strdup_printf ("%s/%s", keyfile_dir, filename_escaped);
@@ -356,7 +356,7 @@ nms_keyfile_writer_connection (NMConnection *connection,
 	if (save_to_disk)
 		keyfile_dir = nms_keyfile_utils_get_path ();
 	else
-		keyfile_dir = NM_CONFIG_KEYFILE_PATH_IN_MEMORY;
+		keyfile_dir = NM_KEYFILE_PATH_NAME_RUN;
 
 	return _internal_write_connection (connection,
 	                                   keyfile_dir,

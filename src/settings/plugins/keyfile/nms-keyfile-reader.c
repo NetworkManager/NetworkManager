@@ -142,11 +142,11 @@ nms_keyfile_reader_from_keyfile (GKeyFile *key_file,
 	if (!connection)
 		return NULL;
 
-	if (g_str_has_suffix (filename, NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION)) {
+	if (g_str_has_suffix (filename, NM_KEYFILE_PATH_SUFFIX_NMCONNECTION)) {
 		gsize l = strlen (filename);
 
-		if (l > NM_STRLEN (NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION))
-			filename_id = g_strndup (filename, l - NM_STRLEN (NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION));
+		if (l > NM_STRLEN (NM_KEYFILE_PATH_SUFFIX_NMCONNECTION))
+			filename_id = g_strndup (filename, l - NM_STRLEN (NM_KEYFILE_PATH_SUFFIX_NMCONNECTION));
 	}
 
 	nm_keyfile_read_ensure_id (connection, filename_id ?: filename);

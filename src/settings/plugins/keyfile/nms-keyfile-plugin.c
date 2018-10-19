@@ -182,8 +182,8 @@ update_connection (NMSKeyfilePlugin *self,
 
 	if (g_str_has_prefix (full_path, nms_keyfile_utils_get_path ())) {
 		dir_len = strlen (nms_keyfile_utils_get_path ());
-	} else if (g_str_has_prefix (full_path, NM_CONFIG_KEYFILE_PATH_IN_MEMORY)) {
-		dir_len = NM_STRLEN (NM_CONFIG_KEYFILE_PATH_IN_MEMORY);
+	} else if (g_str_has_prefix (full_path, NM_KEYFILE_PATH_NAME_RUN)) {
+		dir_len = NM_STRLEN (NM_KEYFILE_PATH_NAME_RUN);
 	} else {
 		/* Just make sure the file name is not going go pass the following check. */
 		dir_len = strlen (full_path);
@@ -323,7 +323,7 @@ dir_changed (GFileMonitor *monitor,
 	gboolean exists;
 
 	full_path = g_file_get_path (file);
-	if (nms_keyfile_utils_should_ignore_file (full_path, FALSE)) {
+	if (nm_keyfile_utils_ignore_filename (full_path, FALSE)) {
 		g_free (full_path);
 		return;
 	}
@@ -445,7 +445,7 @@ _read_dir (GPtrArray *filenames,
 	}
 
 	while ((item = g_dir_read_name (dir))) {
-		if (nms_keyfile_utils_should_ignore_file (item, require_extension))
+		if (nm_keyfile_utils_ignore_filename (item, require_extension))
 			continue;
 		g_ptr_array_add (filenames, g_build_filename (path, item, NULL));
 	}
@@ -468,7 +468,7 @@ read_connections (NMSettingsPlugin *config)
 
 	filenames = g_ptr_array_new_with_free_func (g_free);
 
-	_read_dir (filenames, NM_CONFIG_KEYFILE_PATH_IN_MEMORY, TRUE);
+	_read_dir (filenames, NM_KEYFILE_PATH_NAME_RUN, TRUE);
 	_read_dir (filenames, nms_keyfile_utils_get_path (), FALSE);
 
 	alive_connections = g_hash_table_new (nm_direct_hash, NULL);
@@ -573,12 +573,12 @@ load_connection (NMSettingsPlugin *config,
 	 * which would actually also point to the same file. */
 	if (_file_is_in_path (filename, nms_keyfile_utils_get_path ()))
 		require_extension = FALSE;
-	else if (_file_is_in_path (filename, NM_CONFIG_KEYFILE_PATH_IN_MEMORY))
+	else if (_file_is_in_path (filename, NM_KEYFILE_PATH_NAME_RUN))
 		require_extension = TRUE;
 	else
 		return FALSE;
 
-	if (nms_keyfile_utils_should_ignore_file (filename, require_extension))
+	if (nm_keyfile_utils_ignore_filename (filename, require_extension))
 		return FALSE;
 
 	connection = update_connection (self, NULL, filename, find_by_path (self, filename), TRUE, NULL, NULL);
