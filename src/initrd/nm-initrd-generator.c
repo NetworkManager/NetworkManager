@@ -60,9 +60,8 @@ output_conn (gpointer key, gpointer value, gpointer user_data)
 		gs_free char *filename = NULL;
 		gs_free char *full_filename = NULL;
 
-		full_filename = g_build_filename (connections_dir,
-		                                  nm_construct_name_a ("%s.nmconnection", basename, &filename),
-		                                  NULL);
+		filename = nm_keyfile_utils_create_filename (basename, TRUE);
+		full_filename = g_build_filename (connections_dir, filename,NULL);
 
 		if (!nm_utils_file_set_contents (filename, data, len, 0600, &error))
 			goto err_out;
@@ -74,7 +73,6 @@ err_out:
 	g_print ("%s\n", error->message);
 }
 
-#define DEFAULT_CONNECTIONS_DIR  NMRUNDIR "/system-connections"
 #define DEFAULT_SYSFS_DIR        "/sys"
 
 int
@@ -86,7 +84,7 @@ main (int argc, char *argv[])
 	gboolean dump_to_stdout = FALSE;
 	gs_strfreev char **remaining = NULL;
 	GOptionEntry option_entries[] = {
-		{ "connections-dir", 'c', 0, G_OPTION_ARG_FILENAME, &connections_dir, "Output connection directory", DEFAULT_CONNECTIONS_DIR },
+		{ "connections-dir", 'c', 0, G_OPTION_ARG_FILENAME, &connections_dir, "Output connection directory", NM_KEYFILE_PATH_NAME_RUN },
 		{ "sysfs-dir", 'd', 0, G_OPTION_ARG_FILENAME, &sysfs_dir, "The sysfs mount point", DEFAULT_SYSFS_DIR },
 		{ "stdout", 's', 0, G_OPTION_ARG_NONE, &dump_to_stdout, "Dump connections to standard output", NULL },
 		{ G_OPTION_REMAINING, '\0', 0, G_OPTION_ARG_STRING_ARRAY, &remaining, NULL, NULL },
@@ -116,7 +114,7 @@ main (int argc, char *argv[])
 	}
 
 	if (!connections_dir)
-		connections_dir = g_strdup (DEFAULT_CONNECTIONS_DIR);
+		connections_dir = g_strdup (NM_KEYFILE_PATH_NAME_RUN);
 	if (!sysfs_dir)
 		sysfs_dir = g_strdup (DEFAULT_SYSFS_DIR);
 	if (dump_to_stdout)
