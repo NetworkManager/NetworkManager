@@ -34,6 +34,7 @@
 
 #include "platform/nm-platform.h"
 #include "nm-auth-utils.h"
+#include "systemd/nm-sd-utils.h"
 
 /*****************************************************************************/
 
@@ -997,4 +998,63 @@ nm_shutdown_wait_obj_unregister (NMShutdownWaitObjHandle *handle)
 
 	g_object_weak_unref (handle->watched_obj, _shutdown_waitobj_cb, handle);
 	_shutdown_waitobj_unregister (handle);
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_utils_file_is_in_path:
+ * @abs_filename: the absolute filename to test
+ * @abs_path: the absolute path, to check whether filename is in.
+ *
+ * This tests, whether @abs_filename is a file which lies inside @abs_path.
+ * Basically, this checks whether @abs_filename is the same as @abs_path +
+ * basename(@abs_filename). It allows simple normalizations, like coalescing
+ * multiple "//".
+ *
+ * However, beware that this function is purely filename based. That means,
+ * it will reject files that reference the same file (i.e. inode) via
+ * symlinks or bind mounts. Maybe one would like to check for file (inode)
+ * identity, but that is not really possible based on the file name alone.
+ *
+ * This means, that nm_utils_file_is_in_path("/var/run/some-file", "/var/run")
+ * will succeed, but nm_utils_file_is_in_path("/run/some-file", "/var/run")
+ * will not (although, it's well known that they reference the same path).
+ *
+ * Also, note that @abs_filename must not have trailing slashes itself.
+ * So, this will reject nm_utils_file_is_in_path("/usr/lib/", "/usr") as
+ * invalid, because the function searches for file names (and "lib/" is
+ * clearly a directory).
+ *
+ * Returns: if @abs_filename is a file inside @abs_path, returns the
+ *   trailing part of @abs_filename which is the filename. Otherwise
+ *   %NULL.
+ */
+const char *
+nm_utils_file_is_in_path (const char *abs_filename,
+                          const char *abs_path)
+{
+	const char *path;
+
+	g_return_val_if_fail (abs_filename && abs_filename[0] == '/', NULL);
+	g_return_val_if_fail (abs_path && abs_path[0] == '/', NULL);
+
+	path = nm_sd_utils_path_startswith (abs_filename, abs_path);
+	if (!path)
+		return NULL;
+
+	nm_assert (path[0] != '/');
+	nm_assert (path > abs_filename);
+	nm_assert (path <= &abs_filename[strlen (abs_filename)]);
+
+	/* we require a non-empty remainder with no slashes. That is, only a filename.
+	 *
+	 * Note this will reject "/var/run/" as not being in "/var",
+	 * while "/var/run" would pass. The function searches for files
+	 * only, so a trailing slash (indicating a directory is not allowed).
+	 * Despite, that the function cannot determine whether "/var/run"
+	 * is itself a file or a directory. "*/
+	return path[0] && !strchr (path, '/')
+	       ? path
+	       : NULL;
 }
