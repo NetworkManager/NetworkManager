@@ -1332,6 +1332,11 @@ global:
 	nm_utils_tc_tfilter_to_str;
 } libnm_1_10_0;
 
+libnm_1_10_14 {
+	#nm_setting_connection_get_mdns@libnm_1_10_14;
+	#nm_setting_connection_mdns_get_type@libnm_1_10_14;
+} libnm_1_10_2;
+
 libnm_1_12_0 {
 global:
 	nm_checkpoint_create_flags_get_type;
