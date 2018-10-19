@@ -1933,7 +1933,7 @@ make_ip6_setting (shvarFile *ifcfg,
 			goto error;
 		}
 
-		g_free (value);
+		nm_clear_g_free (&value);
 	}
 
 	if (!routes_read) {
