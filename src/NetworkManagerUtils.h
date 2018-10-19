@@ -86,4 +86,10 @@ void nm_shutdown_wait_obj_unregister (NMShutdownWaitObjHandle *handle);
 
 /*****************************************************************************/
 
+const char *
+nm_utils_file_is_in_path (const char *abs_filename,
+                          const char *abs_path);
+
+/*****************************************************************************/
+
 #endif /* __NETWORKMANAGER_UTILS_H__ */
