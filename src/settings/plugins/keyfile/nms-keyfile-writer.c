@@ -352,19 +352,16 @@ nms_keyfile_writer_connection (NMConnection *connection,
                                GError **error)
 {
 	const char *keyfile_dir;
-	gboolean with_extension = FALSE;
 
 	if (save_to_disk)
 		keyfile_dir = nms_keyfile_utils_get_path ();
-	else {
+	else
 		keyfile_dir = NM_CONFIG_KEYFILE_PATH_IN_MEMORY;
-		with_extension = TRUE;
-	}
 
 	return _internal_write_connection (connection,
 	                                   keyfile_dir,
 	                                   nms_keyfile_utils_get_path (),
-	                                   with_extension,
+	                                   TRUE,
 	                                   0,
 	                                   0,
 	                                   existing_path,
