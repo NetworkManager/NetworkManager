@@ -3793,3 +3793,7 @@ NM_BACKPORT_SYMBOL (libnm_1_0_6, gboolean, nm_utils_enum_from_str,
                     (type, str, out_value, err_token));
 
 NM_BACKPORT_SYMBOL (libnm_1_2_4, gint, nm_setting_ip_config_get_dns_priority, (NMSettingIPConfig *setting), (setting));
+
+NM_BACKPORT_SYMBOL (libnm_1_10_14, NMSettingConnectionMdns, nm_setting_connection_get_mdns,
+                    (NMSettingConnection *setting), (setting));
+NM_BACKPORT_SYMBOL (libnm_1_10_14, GType, nm_setting_connection_mdns_get_type, (void), ());
