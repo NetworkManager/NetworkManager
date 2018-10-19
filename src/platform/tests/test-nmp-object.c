@@ -587,7 +587,7 @@ main (int argc, char **argv)
 
 	while (global.udev_devices) {
 		udev_device_unref (global.udev_devices->data);
-		global.udev_devices = g_list_remove (global.udev_devices, global.udev_devices->data);
+		global.udev_devices = g_list_delete_link (global.udev_devices, global.udev_devices);
 	}
 
 	nm_udev_client_unref (udev_client);
