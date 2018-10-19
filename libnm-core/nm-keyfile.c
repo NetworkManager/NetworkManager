@@ -3205,7 +3205,7 @@ check_suffix (const char *base, const char *tag)
 #define DER_TAG ".der"
 
 gboolean
-nms_keyfile_utils_should_ignore_file (const char *filename, gboolean require_extension)
+nm_keyfile_utils_ignore_filename (const char *filename, gboolean require_extension)
 {
 	gs_free char *base = NULL;
 
@@ -3228,8 +3228,8 @@ nms_keyfile_utils_should_ignore_file (const char *filename, gboolean require_ext
 	if (require_extension) {
 		gsize l = strlen (base);
 
-		if (   l <= NM_STRLEN (NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION)
-		    || !g_str_has_suffix (base, NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION))
+		if (   l <= NM_STRLEN (NM_KEYFILE_PATH_SUFFIX_NMCONNECTION)
+		    || !g_str_has_suffix (base, NM_KEYFILE_PATH_SUFFIX_NMCONNECTION))
 			return TRUE;
 	}
 
@@ -3237,11 +3237,11 @@ nms_keyfile_utils_should_ignore_file (const char *filename, gboolean require_ext
 }
 
 char *
-nms_keyfile_utils_escape_filename (const char *filename,
-                                   gboolean with_extension)
+nm_keyfile_utils_create_filename (const char *name,
+                                  gboolean with_extension)
 {
 	GString *str;
-	const char *f = filename;
+	const char *f = name;
 	/* keyfile used to escape with '*', do not change that behavior.
 	 *
 	 * But for newly added escapings, use '_' instead.
@@ -3249,12 +3249,12 @@ nms_keyfile_utils_escape_filename (const char *filename,
 	const char ESCAPE_CHAR = with_extension ? '_' : '*';
 	const char ESCAPE_CHAR2 = '_';
 
-	g_return_val_if_fail (filename && filename[0], NULL);
+	g_return_val_if_fail (name && name[0], NULL);
 
 	str = g_string_sized_new (60);
 
 	/* Convert '/' to ESCAPE_CHAR */
-	for (f = filename; f[0]; f++) {
+	for (f = name; f[0]; f++) {
 		if (f[0] == '/')
 			g_string_append_c (str, ESCAPE_CHAR);
 		else
@@ -3273,7 +3273,7 @@ nms_keyfile_utils_escape_filename (const char *filename,
 		g_string_append_c (str, ESCAPE_CHAR2);
 
 	if (with_extension)
-		g_string_append (str, NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION);
+		g_string_append (str, NM_KEYFILE_PATH_SUFFIX_NMCONNECTION);
 
 	return g_string_free (str, FALSE);;
 }

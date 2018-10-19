@@ -170,12 +170,12 @@ gboolean _nm_keyfile_has_values (GKeyFile *keyfile);
 
 /*****************************************************************************/
 
-#define NM_CONFIG_KEYFILE_PATH_IN_MEMORY NMRUNDIR "/system-connections"
+#define NM_KEYFILE_PATH_NAME_RUN                 NMRUNDIR "/system-connections"
 
-#define NMS_KEYFILE_PATH_SUFFIX_NMCONNECTION      ".nmconnection"
+#define NM_KEYFILE_PATH_SUFFIX_NMCONNECTION      ".nmconnection"
 
-gboolean nms_keyfile_utils_should_ignore_file (const char *filename, gboolean require_extension);
+gboolean nm_keyfile_utils_ignore_filename (const char *filename, gboolean require_extension);
 
-char *nms_keyfile_utils_escape_filename (const char *filename, gboolean with_extension);
+char *nm_keyfile_utils_create_filename (const char *filename, gboolean with_extension);
 
 #endif /* __NM_KEYFILE_INTERNAL_H__ */
