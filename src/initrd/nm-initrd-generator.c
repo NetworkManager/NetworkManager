@@ -40,42 +40,38 @@ output_conn (gpointer key, gpointer value, gpointer user_data)
 	const char *basename = key;
 	NMConnection *connection = value;
 	char *connections_dir = user_data;
-	GKeyFile *file;
+	gs_unref_keyfile GKeyFile *file = NULL;
 	gs_free char *data = NULL;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	gsize len;
 
-	if (!nm_connection_normalize (connection, NULL, NULL, &error)) {
-		g_print ("%s\n", error->message);
-		g_error_free (error);
-		return;
-	}
+	if (!nm_connection_normalize (connection, NULL, NULL, &error))
+		goto err_out;
 
 	file = nm_keyfile_write (connection, NULL, NULL, &error);
-	if (file == NULL) {
-		g_print ("%s\n", error->message);
-		g_error_free (error);
-		return;
-	}
+	if (file == NULL)
+		goto err_out;
 
 	data = g_key_file_to_data (file, &len, &error);
-	if (!data) {
-		g_print ("%s\n", error->message);
-		g_error_free (error);
-	} else if (connections_dir) {
-		gs_free char *basename_w_ext = g_strconcat (basename, ".nmconnection", NULL);
-		char *filename = g_build_filename (connections_dir, basename_w_ext, NULL);
+	if (!data)
+		goto err_out;
 
-		if (!nm_utils_file_set_contents (filename, data, len, 0600, &error)) {
-			g_print ("%s\n", error->message);
-			g_error_free (error);
-		}
-		g_free (filename);
-	} else {
+	if (connections_dir) {
+		gs_free char *filename = NULL;
+		gs_free char *full_filename = NULL;
+
+		full_filename = g_build_filename (connections_dir,
+		                                  nm_construct_name_a ("%s.nmconnection", basename, &filename),
+		                                  NULL);
+
+		if (!nm_utils_file_set_contents (filename, data, len, 0600, &error))
+			goto err_out;
+	} else
 		g_print ("\n*** Connection '%s' ***\n\n%s\n", basename, data);
-	}
 
-	g_key_file_free (file);
+	return;
+err_out:
+	g_print ("%s\n", error->message);
 }
 
 #define DEFAULT_CONNECTIONS_DIR  NMRUNDIR "/system-connections"
