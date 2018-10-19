@@ -63,7 +63,8 @@ output_conn (gpointer key, gpointer value, gpointer user_data)
 		g_print ("%s\n", error->message);
 		g_error_free (error);
 	} else if (connections_dir) {
-		char *filename = g_build_filename (connections_dir, basename, NULL);
+		gs_free char *basename_w_ext = g_strconcat (basename, ".nmconnection", NULL);
+		char *filename = g_build_filename (connections_dir, basename_w_ext, NULL);
 
 		if (!nm_utils_file_set_contents (filename, data, len, 0600, &error)) {
 			g_print ("%s\n", error->message);
