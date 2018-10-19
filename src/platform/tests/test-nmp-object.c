@@ -267,10 +267,11 @@ test_cache_link (void)
 	struct udev_device *udev_device_3 = g_list_nth_data (global.udev_devices, 0);
 	NMPCacheOpsType ops_type;
 	nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = NULL;
+	gboolean use_udev = nmtst_get_rand_int () % 2;
 
 	multi_idx = nm_dedup_multi_index_new ();
 
-	cache = nmp_cache_new (multi_idx, nmtst_get_rand_int () % 2);
+	cache = nmp_cache_new (multi_idx, use_udev);
 
 	/* if we have a link, and don't set is_in_netlink, adding it has no effect. */
 	objm1 = nmp_object_new (NMP_OBJECT_TYPE_LINK, (NMPlatformObject *) &pl_link_2);
@@ -387,7 +388,8 @@ test_cache_link (void)
 	} else {
 		g_assert (nmp_cache_lookup_obj (cache, objm1) == NULL);
 		g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_2.ifindex)) == NULL);
-		g_assert (nmp_object_is_visible (obj_new));
+		g_assert (!nmp_object_is_alive (obj_new));
+		g_assert (!nmp_object_is_visible (obj_new));
 	}
 	nmp_object_unref (objm1);
 	nmp_object_unref (obj_old);
