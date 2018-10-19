@@ -2248,8 +2248,9 @@ delete_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		device_cb_info_finish (info, device);
 	} else {
-		if (nmc->nowait_flag)
-			device_cb_info_finish (info, device);
+		g_print (_("Device '%s' successfully removed.\n"),
+		         nm_device_get_iface (device));
+		device_cb_info_finish (info, device);
 	}
 }
 
@@ -2276,9 +2277,6 @@ do_devices_delete (NmCli *nmc, int argc, char **argv)
 	info->nmc = nmc;
 	if (nmc->timeout > 0)
 		info->timeout_id = g_timeout_add_seconds (nmc->timeout, device_op_timeout_cb, info);
-
-	g_signal_connect (nmc->client, NM_CLIENT_DEVICE_REMOVED,
-	                  G_CALLBACK (device_removed_cb), info);
 
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait++;
