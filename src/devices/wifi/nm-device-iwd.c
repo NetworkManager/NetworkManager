@@ -233,7 +233,11 @@ vardict_from_network_type (const char *type)
 }
 
 static void
-insert_ap_from_network (GHashTable *aps, const char *path, int16_t signal, uint32_t ap_id)
+insert_ap_from_network (NMDeviceIwd *self,
+                        GHashTable *aps,
+                        const char *path,
+                        int16_t signal,
+                        uint32_t ap_id)
 {
 	gs_unref_object GDBusProxy *network_proxy = NULL;
 	gs_unref_variant GVariant *name_value = NULL, *type_value = NULL;
@@ -243,6 +247,11 @@ insert_ap_from_network (GHashTable *aps, const char *path, int16_t signal, uint3
 	GVariant *rsn;
 	uint8_t bssid[6];
 	NMWifiAP *ap;
+
+	if (g_hash_table_lookup (aps, path)) {
+		_LOGD (LOGD_WIFI, "Duplicate network at %s", path);
+		return;
+	}
 
 	network_proxy = nm_iwd_manager_get_dbus_interface (nm_iwd_manager_get (),
 	                                                   path,
@@ -350,10 +359,10 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 
 	if (compat) {
 		while (g_variant_iter_next (networks, "(&o&sn&s)", &path, &name, &signal, &type))
-			insert_ap_from_network (new_aps, path, signal, ap_id++);
+			insert_ap_from_network (self, new_aps, path, signal, ap_id++);
 	} else {
 		while (g_variant_iter_next (networks, "(&on)", &path, &signal))
-			insert_ap_from_network (new_aps, path, signal, ap_id++);
+			insert_ap_from_network (self, new_aps, path, signal, ap_id++);
 	}
 
 	g_variant_iter_free (networks);
