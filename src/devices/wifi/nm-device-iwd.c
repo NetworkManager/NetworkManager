@@ -108,7 +108,7 @@ G_DEFINE_TYPE (NMDeviceIwd, nm_device_iwd, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 static void schedule_periodic_scan (NMDeviceIwd *self,
-                                    NMDeviceState current_state);
+                                    gboolean initial_scan);
 
 /*****************************************************************************/
 
@@ -1042,11 +1042,8 @@ scan_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	 * scheduled when priv->scanning goes back to false.  On error,
 	 * schedule a retry now.
 	 */
-	if (error && !priv->scanning) {
-		NMDeviceState state = nm_device_get_state (NM_DEVICE (self));
-
-		schedule_periodic_scan (self, state);
-	}
+	if (error && !priv->scanning)
+		schedule_periodic_scan (self, FALSE);
 }
 
 static void
@@ -1933,18 +1930,37 @@ periodic_scan_timeout_cb (gpointer user_data)
 }
 
 static void
-schedule_periodic_scan (NMDeviceIwd *self, NMDeviceState current_state)
+schedule_periodic_scan (NMDeviceIwd *self, gboolean initial_scan)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	GVariant *value;
+	gboolean disconnected;
 	guint interval;
 
-	if (!priv->can_scan)
+	if (!priv->can_scan || priv->scan_requested)
 		return;
 
-	if (current_state == NM_DEVICE_STATE_DISCONNECTED)
-		interval = 10;
+	value = g_dbus_proxy_get_cached_property (priv->dbus_station_proxy, "State");
+	disconnected = nm_streq0 (get_variant_state (value), "disconnected");
+	g_variant_unref (value);
+
+	/* Start scan immediately after a disconnect, mode change or
+	 * device UP, otherwise wait a period dependent on the current
+	 * state.
+	 *
+	 * (initial_scan && disconnected) override priv->scanning below
+	 * because of an IWD quirk where a device will often be in the
+	 * autoconnect state and scanning at the time of our initial_scan,
+	 * but our logic will the send it a Disconnect() causeing IWD to
+	 * exit autoconnect and interrupt the ongoing scan, meaning that
+	 * we still want a new scan ASAP.
+	 */
+	if (initial_scan && disconnected)
+		interval = 0;
+	else if (!priv->periodic_scan_id && !priv->scanning)
+		interval = disconnected ? 10 : 20;
 	else
-		interval = 20;
+		return;
 
 	nm_clear_g_source (&priv->periodic_scan_id);
 	priv->periodic_scan_id = g_timeout_add_seconds (interval,
@@ -1956,17 +1972,13 @@ static void
 set_can_scan (NMDeviceIwd *self, gboolean can_scan)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
-	NMDeviceState state = nm_device_get_state (NM_DEVICE (self));
 
 	if (priv->can_scan == can_scan)
 		return;
 
 	priv->can_scan = can_scan;
 
-	if (priv->can_scan && !priv->periodic_scan_id && !priv->scan_requested && !priv->scanning)
-		schedule_periodic_scan (self, state);
-	else if (!priv->can_scan && priv->periodic_scan_id)
-		nm_clear_g_source (&priv->periodic_scan_id);
+	schedule_periodic_scan (self, TRUE);
 }
 
 static void
@@ -2205,7 +2217,6 @@ static void
 scanning_changed (NMDeviceIwd *self, gboolean new_scanning)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
-	NMDeviceState state = nm_device_get_state (NM_DEVICE (self));
 
 	if (new_scanning == priv->scanning)
 		return;
@@ -2218,7 +2229,7 @@ scanning_changed (NMDeviceIwd *self, gboolean new_scanning)
 		update_aps (self);
 
 		if (!priv->scan_requested)
-			schedule_periodic_scan (self, state);
+			schedule_periodic_scan (self, FALSE);
 	}
 }
 
@@ -2348,6 +2359,7 @@ powered_changed (NMDeviceIwd *self, gboolean new_powered)
 		update_aps (self);
 	} else {
 		set_can_scan (self, FALSE);
+		nm_clear_g_source (&priv->periodic_scan_id);
 		priv->scanning = FALSE;
 		priv->scan_requested = FALSE;
 		priv->can_connect = FALSE;
