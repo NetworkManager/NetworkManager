@@ -952,7 +952,8 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 	 * We call nm_device_queue_recheck_available whenever
 	 * priv->enabled changes or priv->dbus_station_proxy changes.
 	 */
-	return    priv->enabled
+	return    priv->dbus_obj
+	       && priv->enabled
 	       && (   priv->dbus_station_proxy
 	           || (state >= NM_DEVICE_STATE_CONFIG && state <= NM_DEVICE_STATE_DEACTIVATING));
 }
