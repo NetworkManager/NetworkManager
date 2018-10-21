@@ -170,6 +170,7 @@ gboolean _nm_keyfile_has_values (GKeyFile *keyfile);
 
 /*****************************************************************************/
 
+#define NM_KEYFILE_PATH_NAME_ETC_DEFAULT         NMCONFDIR "/system-connections"
 #define NM_KEYFILE_PATH_NAME_RUN                 NMRUNDIR "/system-connections"
 
 #define NM_KEYFILE_PATH_SUFFIX_NMCONNECTION      ".nmconnection"
