@@ -2503,6 +2503,8 @@ test_nm_keyfile_plugin_utils_escape_filename (void)
 	_escape_filename (FALSE, ".#emacs-locking", TRUE);
 	_escape_filename (FALSE, "file-with-tilde~", TRUE);
 	_escape_filename (FALSE, ".file-with-dot", TRUE);
+	_escape_filename (FALSE, "/some/path/with/trailing/slash/", FALSE);
+	_escape_filename (FALSE, "/some/path/without/trailing/slash", FALSE);
 
 	_escape_filename (TRUE, "lala", TRUE);
 }
