@@ -26,12 +26,11 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#include "nm-keyfile-internal.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-config.h"
-
-#define NM_CONFIG_KEYFILE_PATH_DEFAULT NMCONFDIR "/system-connections"
 
 /*****************************************************************************/
 
@@ -103,7 +102,7 @@ nms_keyfile_utils_get_path (void)
 		                                 NM_CONFIG_KEYFILE_KEY_KEYFILE_PATH,
 		                                 NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
 		if (!path)
-			path = g_strdup (""NM_CONFIG_KEYFILE_PATH_DEFAULT"");
+			path = g_strdup (""NM_KEYFILE_PATH_NAME_ETC_DEFAULT"");
 	}
 	return path;
 }
