@@ -12,5 +12,6 @@ exe = executable(
 test(
   'ifcfg-rh/' + test_unit,
   test_script,
+  timeout: 90,
   args: test_args + [exe.full_path()]
 )

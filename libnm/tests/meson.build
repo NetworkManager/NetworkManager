@@ -1,8 +1,8 @@
 test_units = [
-  ['test-general',                [libnm_utils, libnm_core]],
-  ['test-nm-client',              []],
-  ['test-remote-settings-client', []],
-  ['test-secret-agent',           []],
+  ['test-general',                [libnm_utils, libnm_core], 30],
+  ['test-nm-client',              [],                        90],
+  ['test-remote-settings-client', [],                        90],
+  ['test-secret-agent',           [],                        90],
 ]
 
 cflags = [
@@ -28,6 +28,7 @@ foreach test_unit: test_units
   test(
     'libnm/' + test_unit[0],
     test_script,
+    timeout: test_unit[2],
     args: test_args + [exe.full_path()]
   )
 endforeach
