@@ -308,7 +308,9 @@ devices.
 Summary: Open vSwitch device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
+%if 0%{?rhel} == 0
 Requires: openvswitch
+%endif
 
 %description ovs
 This package contains NetworkManager support for Open vSwitch bridges.
