@@ -138,9 +138,17 @@ _base_setting_set (NMConnection *connection, const char *property, const char *v
 
 	setting = nm_connection_get_setting_by_name (connection, type_name);
 
-	if (G_IS_PARAM_SPEC_UINT (spec))
-		g_object_set (setting, property, g_ascii_strtoull (value, NULL, 10), NULL);
-	else if (G_IS_PARAM_SPEC_STRING (spec))
+	if (G_IS_PARAM_SPEC_UINT (spec)) {
+		guint v;
+
+		v =  _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT, 0);
+		if (   errno
+		    || !nm_g_object_set_property_uint (G_OBJECT (setting), property, v, NULL)) {
+			_LOGW (LOGD_CORE,
+			       "Could not set property '%s.%s' to '%s'",
+			       type_name, property, value);
+		}
+	} else if (G_IS_PARAM_SPEC_STRING (spec))
 		g_object_set (setting, property, value, NULL);
 	else
 		_LOGW (LOGD_CORE, "Don't know how to set '%s' of %s", property, type_name);
