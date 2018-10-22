@@ -1954,9 +1954,10 @@ nm_device_get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *iid, gboo
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
 	if (!ignore_token) {
-		s_ip6 = (NMSettingIP6Config *)
-		    nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
+		s_ip6 = nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
+
 		g_return_val_if_fail (s_ip6, FALSE);
+
 		token = nm_setting_ip6_config_get_token (s_ip6);
 	}
 	if (token)
@@ -4933,12 +4934,12 @@ check_ip_state (NMDevice *self, gboolean may_fail, gboolean full_state_update)
 	    && !priv->is_enslaved)
 		return;
 
-	s_ip4 = (NMSettingIPConfig *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP4_CONFIG);
+	s_ip4 = nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP4_CONFIG);
 	if (s_ip4 && nm_streq0 (nm_setting_ip_config_get_method (s_ip4),
 	                        NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
 		ip4_disabled = TRUE;
 
-	s_ip6 = (NMSettingIPConfig *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
+	s_ip6 = nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
 	if (s_ip6 && nm_streq0 (nm_setting_ip_config_get_method (s_ip6),
 	                        NM_SETTING_IP6_CONFIG_METHOD_IGNORE))
 		ip6_ignore = TRUE;
@@ -6237,7 +6238,7 @@ act_stage1_prepare (NMDevice *self, NMDeviceStateReason *out_failure_reason)
 
 	if (   priv->ifindex > 0
 	    && nm_device_has_capability (self, NM_DEVICE_CAP_SRIOV)
-	    && (s_sriov = (NMSettingSriov *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))) {
+	    && (s_sriov = nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))) {
 		nm_auto_freev NMPlatformVF **plat_vfs = NULL;
 		gs_free_error GError *error = NULL;
 		NMSriovVF *vf;
@@ -9026,7 +9027,7 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 	if (mtu_desired && mtu_desired < 1280) {
 		NMSettingIPConfig *s_ip6;
 
-		s_ip6 = (NMSettingIPConfig *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
+		s_ip6 = nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
 		if (   s_ip6
 		    && !NM_IN_STRSET (nm_setting_ip_config_get_method (s_ip6),
 		                      NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
@@ -14375,7 +14376,8 @@ nm_device_spawn_iface_helper (NMDevice *self)
 		return;
 
 	connection = nm_device_get_applied_connection (self);
-	g_assert (connection);
+
+	g_return_if_fail (connection);
 
 	argv = g_ptr_array_sized_new (10);
 	g_ptr_array_set_free_func (argv, g_free);
@@ -15799,7 +15801,9 @@ nm_device_get_supplicant_timeout (NMDevice *self)
 	g_return_val_if_fail (NM_IS_DEVICE (self), SUPPLICANT_DEFAULT_TIMEOUT);
 
 	connection = nm_device_get_applied_connection (self);
+
 	g_return_val_if_fail (connection, SUPPLICANT_DEFAULT_TIMEOUT);
+
 	s_8021x = nm_connection_get_setting_802_1x (connection);
 	if (s_8021x) {
 		timeout = nm_setting_802_1x_get_auth_timeout (s_8021x);
@@ -15830,7 +15834,7 @@ nm_device_auth_retries_try_next (NMDevice *self)
 	if (G_UNLIKELY (auth_retries == NM_DEVICE_AUTH_RETRIES_UNSET)) {
 		auth_retries = -1;
 
-		s_con = NM_SETTING_CONNECTION (nm_device_get_applied_setting (self, NM_TYPE_SETTING_CONNECTION));
+		s_con = nm_device_get_applied_setting (self, NM_TYPE_SETTING_CONNECTION);
 		if (s_con)
 			auth_retries = nm_setting_connection_get_auth_retries (s_con);
 

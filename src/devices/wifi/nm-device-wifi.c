@@ -1868,9 +1868,10 @@ need_new_8021x_secrets (NMDeviceWifi *self,
 	NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 	NMConnection *connection;
 
-	g_assert (setting_name != NULL);
+	g_return_val_if_fail (setting_name, FALSE);
 
 	connection = nm_device_get_applied_connection (NM_DEVICE (self));
+
 	g_return_val_if_fail (connection != NULL, FALSE);
 
 	/* 802.1x stuff only happens in the supplicant's ASSOCIATED state when it's
@@ -1922,10 +1923,11 @@ need_new_wpa_psk (NMDeviceWifi *self,
 	NMConnection *connection;
 	const char *key_mgmt = NULL;
 
-	g_assert (setting_name != NULL);
+	g_return_val_if_fail (setting_name, FALSE);
 
 	connection = nm_device_get_applied_connection (NM_DEVICE (self));
-	g_return_val_if_fail (connection != NULL, FALSE);
+
+	g_return_val_if_fail (connection, FALSE);
 
 	/* A bad PSK will cause the supplicant to disconnect during the 4-way handshake */
 	if (old_state != NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE)
@@ -2057,15 +2059,12 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		 * schedule the next activation stage.
 		 */
 		if (devstate == NM_DEVICE_STATE_CONFIG) {
-			NMConnection *connection;
 			NMSettingWireless *s_wifi;
 			GBytes *ssid;
 			gs_free char *ssid_str = NULL;
 
-			connection = nm_device_get_applied_connection (NM_DEVICE (self));
-			g_return_if_fail (connection);
+			s_wifi = nm_device_get_applied_setting (NM_DEVICE (self), NM_TYPE_SETTING_WIRELESS);
 
-			s_wifi = nm_connection_get_setting_wireless (connection);
 			g_return_if_fail (s_wifi);
 
 			ssid = nm_setting_wireless_get_ssid (s_wifi);
@@ -2486,7 +2485,7 @@ wake_on_wlan_enable (NMDeviceWifi *self)
 	NMSettingWirelessWakeOnWLan wowl;
 	NMSettingWireless *s_wireless;
 
-	s_wireless = (NMSettingWireless *) nm_device_get_applied_setting (NM_DEVICE (self), NM_TYPE_SETTING_WIRELESS);
+	s_wireless = nm_device_get_applied_setting (NM_DEVICE (self), NM_TYPE_SETTING_WIRELESS);
 	if (s_wireless) {
 		wowl = nm_setting_wireless_get_wake_on_wlan (s_wireless);
 		if (wowl != NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT)
@@ -2663,7 +2662,8 @@ set_powersave (NMDevice *device)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessPowersave val;
 
-	s_wireless = (NMSettingWireless *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRELESS);
+	s_wireless = nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRELESS);
+
 	g_return_if_fail (s_wireless);
 
 	val = nm_setting_wireless_get_powersave (s_wireless);
@@ -2813,6 +2813,7 @@ act_stage3_ip4_config_start (NMDevice *device,
 	const char *method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 
 	connection = nm_device_get_applied_connection (device);
+
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -2836,6 +2837,7 @@ act_stage3_ip6_config_start (NMDevice *device,
 	const char *method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 
 	connection = nm_device_get_applied_connection (device);
+
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
@@ -2935,6 +2937,7 @@ act_stage4_ip4_config_timeout (NMDevice *device, NMDeviceStateReason *out_failur
 	NMActStageReturn ret;
 
 	connection = nm_device_get_applied_connection (device);
+
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -2956,6 +2959,7 @@ act_stage4_ip6_config_timeout (NMDevice *device, NMDeviceStateReason *out_failur
 	NMActStageReturn ret;
 
 	connection = nm_device_get_applied_connection (device);
+
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);

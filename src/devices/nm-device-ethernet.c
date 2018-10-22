@@ -556,7 +556,9 @@ build_supplicant_config (NMDeviceEthernet *self,
 	guint32 mtu;
 
 	connection = nm_device_get_applied_connection (NM_DEVICE (self));
-	g_assert (connection);
+
+	g_return_val_if_fail (connection, NULL);
+
 	con_uuid = nm_connection_get_uuid (connection);
 	mtu = nm_platform_link_get_mtu (nm_device_get_platform (NM_DEVICE (self)),
 	                                nm_device_get_ifindex (NM_DEVICE (self)));
@@ -790,7 +792,7 @@ link_negotiation_set (NMDevice *device)
 	guint32 speed = 0;
 	guint32 link_speed;
 
-	s_wired = (NMSettingWired *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRED);
+	s_wired = nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRED);
 	if (s_wired) {
 		autoneg = nm_setting_wired_get_auto_negotiate (s_wired);
 		speed = nm_setting_wired_get_speed (s_wired);
@@ -880,8 +882,8 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
 			       delay);
 			g_assert (!priv->pppoe_wait_id);
 			priv->pppoe_wait_id = g_timeout_add_seconds (delay,
-								     pppoe_reconnect_delay,
-								     self);
+			                                             pppoe_reconnect_delay,
+			                                             self);
 			return NM_ACT_STAGE_RETURN_POSTPONE;
 		}
 		priv->last_pppoe_time = 0;
@@ -900,6 +902,7 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *out_failure
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	connection = nm_device_get_applied_connection (NM_DEVICE (self));
+
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
 	security = nm_connection_get_setting_802_1x (connection);
@@ -995,10 +998,12 @@ pppoe_stage3_ip4_config_start (NMDeviceEthernet *self, NMDeviceStateReason *out_
 	NMActRequest *req;
 	GError *err = NULL;
 
-	req = nm_device_get_act_request (NM_DEVICE (self));
+	req = nm_device_get_act_request (device);
+
 	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
 
-	s_pppoe = (NMSettingPppoe *) nm_device_get_applied_setting ((NMDevice *) self, NM_TYPE_SETTING_PPPOE);
+	s_pppoe = nm_device_get_applied_setting (device, NM_TYPE_SETTING_PPPOE);
+
 	g_return_val_if_fail (s_pppoe, NM_ACT_STAGE_RETURN_FAILURE);
 
 	priv->ppp_manager = nm_ppp_manager_create (nm_device_get_iface (device),
@@ -1069,8 +1074,10 @@ dcb_configure (NMDevice *device)
 
 	nm_clear_g_source (&priv->dcb_timeout_id);
 
-	s_dcb = (NMSettingDcb *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_DCB);
-	g_assert (s_dcb);
+	s_dcb = nm_device_get_applied_setting (device, NM_TYPE_SETTING_DCB);
+
+	g_return_val_if_fail (s_dcb, FALSE);
+
 	if (!nm_dcb_setup (nm_device_get_iface (device), s_dcb, &error)) {
 		_LOGW (LOGD_DCB, "Activation: (ethernet) failed to enable DCB/FCoE: %s",
 		       error->message);
@@ -1199,7 +1206,8 @@ wake_on_lan_enable (NMDevice *device)
 	NMSettingWired *s_wired;
 	const char *password = NULL;
 
-	s_wired = (NMSettingWired *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRED);
+	s_wired = nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRED);
+
 	if (s_wired) {
 		wol = nm_setting_wired_get_wake_on_lan (s_wired);
 		password = nm_setting_wired_get_wake_on_lan_password (s_wired);
@@ -1240,8 +1248,8 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	NMSettingDcb *s_dcb;
 
-	s_con = NM_SETTING_CONNECTION (nm_device_get_applied_setting (device,
-	                                                              NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_device_get_applied_setting (device, NM_TYPE_SETTING_CONNECTION);
+
 	g_return_val_if_fail (s_con, NM_ACT_STAGE_RETURN_FAILURE);
 
 	nm_clear_g_source (&priv->dcb_timeout_id);
@@ -1254,8 +1262,8 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	if (!strcmp (connection_type, NM_SETTING_WIRED_SETTING_NAME)) {
 		NMSetting8021x *security;
 
-		security = (NMSetting8021x *) nm_device_get_applied_setting (device,
-		                                                             NM_TYPE_SETTING_802_1X);
+		security = nm_device_get_applied_setting (device, NM_TYPE_SETTING_802_1X);
+
 		if (security) {
 			/* FIXME: for now 802.1x is mutually exclusive with DCB */
 			return nm_8021x_stage2_config (self, out_failure_reason);
@@ -1265,7 +1273,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	wake_on_lan_enable (device);
 
 	/* DCB and FCoE setup */
-	s_dcb = (NMSettingDcb *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_DCB);
+	s_dcb = nm_device_get_applied_setting (device, NM_TYPE_SETTING_DCB);
 	if (s_dcb) {
 		/* lldpad really really wants the carrier to be up */
 		if (nm_platform_link_is_connected (nm_device_get_platform (device), nm_device_get_ifindex (device))) {
@@ -1288,7 +1296,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	                           NM_SETTING_PPPOE_SETTING_NAME)) {
 		NMSettingPpp *s_ppp;
 
-		s_ppp = (NMSettingPpp *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_PPP);
+		s_ppp = nm_device_get_applied_setting (device, NM_TYPE_SETTING_PPP);
 		if (s_ppp) {
 			guint32 mtu = 0, mru = 0, mxu;
 
@@ -1316,7 +1324,8 @@ act_stage3_ip4_config_start (NMDevice *device,
 	NMSettingConnection *s_con;
 	const char *connection_type;
 
-	s_con = NM_SETTING_CONNECTION (nm_device_get_applied_setting (device, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_device_get_applied_setting (device, NM_TYPE_SETTING_CONNECTION);
+
 	g_return_val_if_fail (s_con, NM_ACT_STAGE_RETURN_FAILURE);
 
 	connection_type = nm_setting_connection_get_connection_type (s_con);
@@ -1358,7 +1367,7 @@ deactivate (NMDevice *device)
 	priv->dcb_handle_carrier_changes = FALSE;
 
 	/* Tear down DCB/FCoE if it was enabled */
-	s_dcb = (NMSettingDcb *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_DCB);
+	s_dcb = nm_device_get_applied_setting (device, NM_TYPE_SETTING_DCB);
 	if (s_dcb) {
 		if (!nm_dcb_cleanup (nm_device_get_iface (device), &error)) {
 			_LOGW (LOGD_DEVICE | LOGD_PLATFORM, "failed to disable DCB/FCoE: %s",

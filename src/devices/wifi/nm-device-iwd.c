@@ -1518,7 +1518,7 @@ act_start_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 
 	nm_assert (nm_device_get_state (device) == NM_DEVICE_STATE_CONFIG);
 
-	s_wireless = (NMSettingWireless *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRELESS);
+	s_wireless = nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRELESS);
 	if (!s_wireless)
 		goto error;
 

@@ -86,7 +86,8 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
-	s_infiniband = (NMSettingInfiniband *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_INFINIBAND);
+	s_infiniband = nm_device_get_applied_setting (device, NM_TYPE_SETTING_INFINIBAND);
+
 	g_return_val_if_fail (s_infiniband, NM_ACT_STAGE_RETURN_FAILURE);
 
 	transport_mode = nm_setting_infiniband_get_transport_mode (s_infiniband);

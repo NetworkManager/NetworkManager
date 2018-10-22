@@ -118,7 +118,6 @@ static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceWpan *self = NM_DEVICE_WPAN (device);
-	NMConnection *connection;
 	NMSettingWpan *s_wpan;
 	NMPlatform *platform;
 	guint16 pan_id;
@@ -139,12 +138,11 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	g_return_val_if_fail (platform, NM_ACT_STAGE_RETURN_FAILURE);
 
 	ifindex = nm_device_get_ifindex (device);
+
 	g_return_val_if_fail (ifindex > 0, NM_ACT_STAGE_RETURN_FAILURE);
 
-	connection = nm_device_get_applied_connection (device);
-	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
+	s_wpan = nm_device_get_applied_setting (device, NM_TYPE_SETTING_WPAN);
 
-	s_wpan = NM_SETTING_WPAN (nm_connection_get_setting (connection, NM_TYPE_SETTING_WPAN));
 	g_return_val_if_fail (s_wpan, NM_ACT_STAGE_RETURN_FAILURE);
 
 	hwaddr = nm_platform_link_get_address (platform, ifindex, &hwaddr_len);

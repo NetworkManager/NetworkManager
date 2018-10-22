@@ -626,6 +626,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
 	connection = nm_device_get_applied_connection (device);
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
+
 	s_team = nm_connection_get_setting_team (connection);
 	g_return_val_if_fail (s_team, NM_ACT_STAGE_RETURN_FAILURE);
 

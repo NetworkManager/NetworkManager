@@ -210,7 +210,7 @@ update_properties (NMDevice *device)
 static NMSupplicantConfig *
 build_supplicant_config (NMDeviceMacsec *self, GError **error)
 {
-	NMSupplicantConfig *config = NULL;
+	gs_unref_object NMSupplicantConfig *config = NULL;
 	NMSettingMacsec *s_macsec;
 	NMSetting8021x *s_8021x;
 	NMConnection *connection;
@@ -218,19 +218,21 @@ build_supplicant_config (NMDeviceMacsec *self, GError **error)
 	guint32 mtu;
 
 	connection = nm_device_get_applied_connection (NM_DEVICE (self));
-	g_assert (connection);
+
+	g_return_val_if_fail (connection, NULL);
+
 	con_uuid = nm_connection_get_uuid (connection);
 	mtu = nm_platform_link_get_mtu (nm_device_get_platform (NM_DEVICE (self)),
 	                                nm_device_get_ifindex (NM_DEVICE (self)));
 
 	config = nm_supplicant_config_new (FALSE, FALSE);
 
-	s_macsec = (NMSettingMacsec *)
-		nm_device_get_applied_setting (NM_DEVICE (self), NM_TYPE_SETTING_MACSEC);
+	s_macsec = nm_device_get_applied_setting (NM_DEVICE (self), NM_TYPE_SETTING_MACSEC);
+
+	g_return_val_if_fail (s_macsec, NULL);
 
 	if (!nm_supplicant_config_add_setting_macsec (config, s_macsec, error)) {
 		g_prefix_error (error, "macsec-setting: ");
-		g_object_unref (config);
 		return NULL;
 	}
 
@@ -238,11 +240,11 @@ build_supplicant_config (NMDeviceMacsec *self, GError **error)
 		s_8021x = nm_connection_get_setting_802_1x (connection);
 		if (!nm_supplicant_config_add_setting_8021x (config, s_8021x, con_uuid, mtu, TRUE, error)) {
 			g_prefix_error (error, "802-1x-setting: ");
-			g_clear_object (&config);
+			return NULL;
 		}
 	}
 
-	return config;
+	return g_steal_pointer (&config);
 }
 
 static void
@@ -588,6 +590,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	const char *setting_name;
 
 	connection = nm_device_get_applied_connection (NM_DEVICE (self));
+
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
 	if (!priv->supplicant.mgr)

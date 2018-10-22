@@ -493,7 +493,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		parent_mtu_maybe_changed (parent_device, NULL, device);
 	}
 
-	s_vlan = (NMSettingVlan *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_VLAN);
+	s_vlan = nm_device_get_applied_setting (device, NM_TYPE_SETTING_VLAN);
 	if (s_vlan) {
 		gs_free NMVlanQosMapping *ingress_map = NULL;
 		gs_free NMVlanQosMapping *egress_map = NULL;
