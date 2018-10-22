@@ -132,7 +132,7 @@ nm_phasechange (void *data, int arg)
 		                   NULL, NULL);
 	}
 
-	if (ppp_status == PHASE_RUNNING) {
+	if (ppp_status == NM_PPP_STATUS_RUNNING) {
 		index = if_nametoindex (ifname);
 		/* Make a sync call to ensure that when the call
 		 * terminates the interface already has its final
