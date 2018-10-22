@@ -21,19 +21,19 @@ else
 
     RANGES=( $(git show-ref | sed 's#^\(.*\) '"$BASE_REF"'\(master\|nm-1-[0-9]\+\)$#\1..'"$HEAD"'#p' -n) )
 
-    [ "${#RANGES[@]}" != 0 ] || die "cannot detect git-ranges (HEAD is $(git rev-parse HEAD))"
+    [ "${#RANGES[@]}" != 0 ] || die "cannot detect git-ranges (HEAD is $(git rev-parse "$HEAD"))"
 
     REFS=( $(git log --reverse --format='%H' "${RANGES[@]}") )
 
     if [ "${#REFS[@]}" == 0 ] ; then
         # no refs detected. This means, $HEAD is already on master (or one of the
         # stable nm-1-* branches. Just check the patch itself.
-        REFS=( $HEAD )
+        REFS=( "$HEAD" )
     fi
 fi
 
 SUCCESS=0
-for H in ${REFS[@]}; do
+for H in "${REFS[@]}"; do
     export NM_CHECKPATCH_HEADER=$'\n'">>> VALIDATE \"$(git log --oneline -n1 "$H")\""
     git format-patch -U65535 --stdout -1 "$H" | "$BASE_DIR/checkpatch.pl"
     if [ $? != 0 ]; then
