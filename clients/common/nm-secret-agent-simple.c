@@ -31,6 +31,8 @@
 
 #include "nm-default.h"
 
+#include <gio/gunixoutputstream.h>
+#include <gio/gunixinputstream.h>
 #include <string.h>
 
 #include "nm-vpn-service-plugin.h"
@@ -58,6 +60,8 @@ typedef struct {
 	char                         **hints;
 	NMSecretAgentOldGetSecretsFunc callback;
 	gpointer                       callback_data;
+	GCancellable                  *cancellable;
+	NMSecretAgentGetSecretsFlags   flags;
 } NMSecretAgentSimpleRequest;
 
 typedef struct {
@@ -73,11 +77,23 @@ nm_secret_agent_simple_request_free (gpointer data)
 {
 	NMSecretAgentSimpleRequest *request = data;
 
+	g_clear_object (&request->cancellable);
 	g_object_unref (request->self);
 	g_object_unref (request->connection);
 	g_strfreev (request->hints);
 
 	g_slice_free (NMSecretAgentSimpleRequest, request);
+}
+
+static void
+nm_secret_agent_simple_request_cancel (NMSecretAgentSimpleRequest *request,
+                                       GError *error)
+{
+	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (request->self);
+
+	request->callback (NM_SECRET_AGENT_OLD (request->self), request->connection,
+	                   NULL, error, request->callback_data);
+	g_hash_table_remove (priv->requests, request->request_id);
 }
 
 static void
@@ -443,6 +459,293 @@ add_vpn_secrets (NMSecretAgentSimpleRequest *request,
 	return TRUE;
 }
 
+typedef struct {
+	GPid auth_dialog_pid;
+	char read_buf[5];
+	GString *auth_dialog_response;
+	NMSecretAgentSimpleRequest *request;
+	GPtrArray *secrets;
+	guint child_watch_id;
+	gulong cancellable_id;
+} AuthDialogData;
+
+static void
+_auth_dialog_data_free (AuthDialogData *data)
+{
+	g_ptr_array_unref (data->secrets);
+	g_spawn_close_pid (data->auth_dialog_pid);
+	g_string_free (data->auth_dialog_response, TRUE);
+	g_slice_free (AuthDialogData, data);
+}
+
+static void
+_auth_dialog_exited (GPid pid, int status, gpointer user_data)
+{
+	AuthDialogData *data = user_data;
+	NMSecretAgentSimpleRequest *request = data->request;
+	GPtrArray *secrets = data->secrets;
+	NMSettingVpn *s_vpn = nm_connection_get_setting_vpn (request->connection);
+	GKeyFile *keyfile = NULL;
+	gs_strfreev char **groups = NULL;
+	gs_free char *title = NULL;
+	gs_free char *message = NULL;
+	int i;
+	gs_free_error GError *error = NULL;
+
+	g_cancellable_disconnect (request->cancellable, data->cancellable_id);
+
+	if (status != 0) {
+		g_set_error (&error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
+		             "Auth dialog failed with error code %d\n", status);
+		goto out;
+	}
+
+	keyfile = g_key_file_new ();
+	if (!g_key_file_load_from_data (keyfile,
+	                                data->auth_dialog_response->str,
+	                                data->auth_dialog_response->len, G_KEY_FILE_NONE,
+	                                &error)) {
+		goto out;
+	}
+
+	groups = g_key_file_get_groups (keyfile, NULL);
+	if (g_strcmp0 (groups[0], "VPN Plugin UI") != 0) {
+		g_set_error (&error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
+		             "Expected [VPN Plugin UI] in auth dialog response");
+		goto out;
+	}
+
+	title = g_key_file_get_string (keyfile, "VPN Plugin UI", "Title", &error);
+	if (!title)
+		goto out;
+
+	message = g_key_file_get_string (keyfile, "VPN Plugin UI", "Description", &error);
+	if (!message)
+		goto out;
+
+	for (i = 1; groups[i]; i++) {
+		if (!g_key_file_get_boolean (keyfile, groups[i], "IsSecret", NULL))
+			continue;
+		if (!g_key_file_get_boolean (keyfile, groups[i], "ShouldAsk", NULL))
+			continue;
+
+		g_ptr_array_add (secrets,
+			nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_VPN_SECRET,
+		                                           g_key_file_get_string (keyfile, groups[i], "Label", NULL),
+		                                           NM_SETTING (s_vpn),
+		                                           groups[i],
+		                                           nm_setting_vpn_get_service_type (s_vpn)));
+
+	}
+
+out:
+	/* Try to fall back to the hardwired VPN support if the auth dialog fails.
+	 * We may eventually get rid of the whole hardwired secrets handling at some point,
+	 * when the auth helpers are goode enough.. */
+	if (error && add_vpn_secrets (request, secrets, &message)) {
+		g_clear_error (&error);
+		if (!message) {
+			message = g_strdup_printf (_("A password is required to connect to '%s'."),
+			                           nm_connection_get_id (request->connection));
+		}
+	}
+
+	if (error) {
+		nm_secret_agent_simple_request_cancel (request, error);
+	} else {
+		g_signal_emit (request->self, signals[REQUEST_SECRETS], 0,
+		               request->request_id, title, message, secrets);
+	}
+
+	g_clear_pointer (&keyfile, g_key_file_unref);
+	_auth_dialog_data_free (data);
+}
+
+static void
+_request_cancelled (GObject *object, gpointer user_data)
+{
+	AuthDialogData *data = user_data;
+
+	g_source_remove (data->child_watch_id);
+	_auth_dialog_data_free (data);
+}
+
+static void
+_auth_dialog_read_done (GObject *source_object,
+                        GAsyncResult *res,
+                        gpointer user_data)
+{
+	GInputStream *auth_dialog_out = G_INPUT_STREAM (source_object);
+	AuthDialogData *data = user_data;
+	gssize read_size;
+	gs_free_error GError *error = NULL;
+
+	read_size = g_input_stream_read_finish (auth_dialog_out, res, &error);
+	switch (read_size) {
+	case -1:
+		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+			nm_secret_agent_simple_request_cancel (data->request, error);
+		_auth_dialog_data_free (data);
+		break;
+	case 0:
+		/* Done reading. Let's wait for the auth dialog to exit so that we're able to collect the status.
+		 * Remember we can be cancelled in between. */
+		data->child_watch_id = g_child_watch_add (data->auth_dialog_pid, _auth_dialog_exited, data);
+		data->cancellable_id = g_cancellable_connect (data->request->cancellable,
+		                                              G_CALLBACK (_request_cancelled), data, NULL);
+		break;
+	default:
+		g_string_append_len (data->auth_dialog_response, data->read_buf, read_size);
+		g_input_stream_read_async (auth_dialog_out,
+		                           data->read_buf,
+		                           sizeof (data->read_buf),
+		                           G_PRIORITY_DEFAULT,
+		                           NULL,
+		                           _auth_dialog_read_done,
+		                           data);
+		return;
+	}
+
+	g_input_stream_close (auth_dialog_out, NULL, NULL);
+}
+
+static void
+_auth_dialog_write_done (GObject *source_object,
+                        GAsyncResult *res,
+                        gpointer user_data)
+{
+	GOutputStream *auth_dialog_out = G_OUTPUT_STREAM (source_object);
+	GString *auth_dialog_request = user_data;
+
+	/* We don't care about write errors. If there are any problems, the
+	 * reader shall notice. */
+	g_output_stream_write_finish (auth_dialog_out, res, NULL);
+	g_string_free (auth_dialog_request, TRUE);
+	g_output_stream_close (auth_dialog_out, NULL, NULL);
+}
+
+static void
+_add_to_string (GString *string, const char *key, const char *value)
+{
+	gs_strfreev char **lines = NULL;
+	int i;
+
+	lines = g_strsplit (value, "\n", -1);
+
+	g_string_append (string, key);
+	for (i = 0; lines[i]; i++) {
+		g_string_append_c (string, '=');
+		g_string_append (string, lines[i]);
+		g_string_append_c (string, '\n');
+	}
+}
+
+static void
+_add_data_item_to_string (const char *key, const char *value, gpointer user_data)
+{
+	GString *string = user_data;
+
+	_add_to_string (string, "DATA_KEY", key);
+	_add_to_string (string, "DATA_VAL", value);
+	g_string_append_c (string, '\n');
+}
+
+static void
+_add_secret_to_string (const char *key, const char *value, gpointer user_data)
+{
+	GString *string = user_data;
+
+	_add_to_string (string, "SECRET_KEY", key);
+	_add_to_string (string, "SECRET_VAL", value);
+	g_string_append_c (string, '\n');
+}
+
+static gboolean
+try_spawn_vpn_auth_helper (NMSecretAgentSimpleRequest *request,
+                           GPtrArray *secrets)
+{
+	NMSettingVpn *s_vpn = nm_connection_get_setting_vpn (request->connection);
+        NMVpnPluginInfo *plugin_info;
+	gboolean supports_external;
+	const char *auth_dialog_argv[] = { NULL,
+		"-u", nm_connection_get_uuid (request->connection),
+		"-n", nm_connection_get_id (request->connection),
+		"-s", nm_setting_vpn_get_service_type (s_vpn),
+		"--external-ui-mode",
+		"-i",
+		NULL, /* [9], slot for "-r" */
+		NULL };
+	const char *s;
+	GPid auth_dialog_pid;
+	int auth_dialog_in_fd;
+	int auth_dialog_out_fd;
+	GOutputStream *auth_dialog_in;
+	GInputStream *auth_dialog_out;
+	GError *error = NULL;
+	GString *auth_dialog_request;
+	AuthDialogData *data;
+
+	plugin_info = nm_vpn_plugin_info_list_find_by_service (nm_vpn_get_plugin_infos (),
+	                                                       nm_setting_vpn_get_service_type (s_vpn));
+	if (!plugin_info)
+		return FALSE;
+
+	s = nm_vpn_plugin_info_lookup_property (plugin_info, "GNOME", "supports-external-ui-mode");
+	supports_external = _nm_utils_ascii_str_to_bool (s, FALSE);
+	if (!supports_external)
+		return FALSE;
+
+	auth_dialog_argv[0] = nm_vpn_plugin_info_lookup_property (plugin_info, "GNOME", "auth-dialog");
+	g_return_val_if_fail (auth_dialog_argv[0], FALSE);
+
+	if (request->flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW)
+		auth_dialog_argv[9] = "-r";
+
+	if (!g_spawn_async_with_pipes (NULL, (char **)auth_dialog_argv, NULL,
+	                               G_SPAWN_DO_NOT_REAP_CHILD,
+	                               NULL, NULL,
+	                               &auth_dialog_pid,
+	                               &auth_dialog_in_fd,
+	                               &auth_dialog_out_fd,
+	                               NULL,
+	                               &error)) {
+		g_warning ("Failed to spawn the auth dialog%s\n", error->message);
+		return FALSE;
+	}
+
+	auth_dialog_in = g_unix_output_stream_new (auth_dialog_in_fd, TRUE);
+	auth_dialog_out =  g_unix_input_stream_new (auth_dialog_out_fd, TRUE);
+
+	auth_dialog_request = g_string_new_len (NULL, 1024);
+	nm_setting_vpn_foreach_data_item (s_vpn, _add_data_item_to_string, auth_dialog_request);
+	nm_setting_vpn_foreach_secret (s_vpn, _add_secret_to_string, auth_dialog_request);
+	g_string_append (auth_dialog_request, "DONE\nQUIT\n");
+
+	data = g_slice_alloc0 (sizeof (AuthDialogData));
+	data->auth_dialog_response = g_string_new_len (NULL, sizeof (data->read_buf));
+	data->auth_dialog_pid = auth_dialog_pid;
+	data->request = request;
+	data->secrets = secrets;
+
+	g_output_stream_write_async (auth_dialog_in,
+	                             auth_dialog_request->str,
+	                             auth_dialog_request->len,
+	                             G_PRIORITY_DEFAULT,
+	                             request->cancellable,
+	                             _auth_dialog_write_done,
+	                             auth_dialog_request);
+
+	g_input_stream_read_async (auth_dialog_out,
+	                           data->read_buf,
+	                           sizeof (data->read_buf),
+	                            G_PRIORITY_DEFAULT,
+	                           request->cancellable,
+	                           _auth_dialog_read_done,
+	                           data);
+
+	return TRUE;
+}
+
 static void
 request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 {
@@ -463,9 +766,7 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 		error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
 		                     "Request for %s secrets doesn't match path %s",
 		                     request->request_id, priv->path);
-		request->callback (NM_SECRET_AGENT_OLD (request->self), request->connection,
-		                   NULL, error, request->callback_data);
-		g_hash_table_remove (priv->requests, request->request_id);
+		nm_secret_agent_simple_request_cancel (request, error);
 		return;
 	}
 
@@ -581,6 +882,11 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 		title = _("VPN password required");
 		msg = NULL;
 
+		if (try_spawn_vpn_auth_helper (request, secrets)) {
+			/* This will emit REQUEST_SECRETS when ready */
+			return;
+		}
+
 		ok = add_vpn_secrets (request, secrets, &msg);
 		if (!msg)
 			msg = g_strdup_printf (_("A password is required to connect to '%s'."),
@@ -595,9 +901,7 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 		                     "Cannot service a secrets request %s for a %s connection",
 		                     request->request_id,
 		                     nm_connection_get_connection_type (request->connection));
-		request->callback (NM_SECRET_AGENT_OLD (request->self), request->connection,
-		                   NULL, error, request->callback_data);
-		g_hash_table_remove (priv->requests, request->request_id);
+		nm_secret_agent_simple_request_cancel (request, error);
 		g_ptr_array_unref (secrets);
 		return;
 	}
@@ -648,6 +952,8 @@ nm_secret_agent_simple_get_secrets (NMSecretAgentOld                 *agent,
 	request->callback = callback;
 	request->callback_data = callback_data;
 	request->request_id = request_id;
+	request->flags = flags;
+	request->cancellable = g_cancellable_new ();
 	g_hash_table_replace (priv->requests, request->request_id, request);
 
 	if (priv->enabled)
