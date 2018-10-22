@@ -602,12 +602,9 @@ load_connection (NMSettingsPlugin *config,
 {
 	SettingsPluginIfcfg *plugin = SETTINGS_PLUGIN_IFCFG (config);
 	NMIfcfgConnection *connection;
-	int dir_len = strlen (IFCFG_DIR);
 	char *ifcfg_path;
 
-	if (   strncmp (filename, IFCFG_DIR, dir_len) != 0
-	    || filename[dir_len] != '/'
-	    || strchr (filename + dir_len + 1, '/') != NULL)
+	if (!nm_utils_file_is_in_path (filename, IFCFG_DIR))
 		return FALSE;
 
 	/* get the real ifcfg-path. This allows us to properly
