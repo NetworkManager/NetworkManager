@@ -17,7 +17,11 @@ RANGES=( $(git show-ref | sed 's#^\(.*\) '"$BASE_REF"'\(master\|nm-1-[0-9]\+\)$#
 
 REFS=( $(git log --reverse --format='%H' "${RANGES[@]}") )
 
-[ "${#REFS[@]}" != 0 ] || die "no refs detected (HEAD is $(git rev-parse HEAD))"
+if [ "${#REFS[@]}" == 0 ] ; then
+	# no refs detected. This means, $HEAD is already on master (or one of the
+	# stable nm-1-* branches. Just check the patch itself.
+	REFS=( $HEAD )
+fi
 
 SUCCESS=0
 for H in ${REFS[@]}; do
