@@ -931,6 +931,8 @@ nmc_readline (const char *prompt_fmt, ...)
 	va_list args;
 	char *prompt, *str;
 
+	rl_initialize ();
+
 	va_start (args, prompt_fmt);
 	prompt = g_strdup_vprintf (prompt_fmt, args);
 	va_end (args);
@@ -984,6 +986,8 @@ nmc_readline_echo (gboolean echo_on, const char *prompt_fmt, ...)
 	va_start (args, prompt_fmt);
 	prompt = g_strdup_vprintf (prompt_fmt, args);
 	va_end (args);
+
+	rl_initialize ();
 
 	/* Hide the actual password */
 	if (!echo_on) {
