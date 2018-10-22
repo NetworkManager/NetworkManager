@@ -543,7 +543,9 @@ NMConnection *  nm_device_get_settings_connection_get_connection (NMDevice *self
 NMConnection *  nm_device_get_applied_connection (NMDevice *dev);
 gboolean        nm_device_has_unmodified_applied_connection (NMDevice *self,
                                                              NMSettingCompareFlags compare_flags);
-NMSetting *     nm_device_get_applied_setting   (NMDevice *dev, GType setting_type);
+
+gpointer /* (NMSetting *) */ nm_device_get_applied_setting   (NMDevice *dev,
+                                                              GType setting_type);
 
 void            nm_device_removed               (NMDevice *self, gboolean unconfigure_ip_config);
 

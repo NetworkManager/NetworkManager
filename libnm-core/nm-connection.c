@@ -169,11 +169,15 @@ nm_connection_remove_setting (NMConnection *connection, GType setting_type)
 static gpointer
 _connection_get_setting (NMConnection *connection, GType setting_type)
 {
+	NMSetting *setting;
+
 	nm_assert (NM_IS_CONNECTION (connection));
 	nm_assert (g_type_is_a (setting_type, NM_TYPE_SETTING));
 
-	return g_hash_table_lookup (NM_CONNECTION_GET_PRIVATE (connection)->settings,
-	                            g_type_name (setting_type));
+	setting = g_hash_table_lookup (NM_CONNECTION_GET_PRIVATE (connection)->settings,
+	                               g_type_name (setting_type));
+	nm_assert (!setting || G_TYPE_CHECK_INSTANCE_TYPE (setting, setting_type));
+	return setting;
 }
 
 static gpointer

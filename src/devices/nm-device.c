@@ -2418,7 +2418,7 @@ nm_device_has_unmodified_applied_connection (NMDevice *self, NMSettingCompareFla
 	return nm_active_connection_has_unmodified_applied_connection ((NMActiveConnection *) priv->act_request.obj, compare_flags);
 }
 
-NMSetting *
+gpointer
 nm_device_get_applied_setting (NMDevice *self, GType setting_type)
 {
 	NMConnection *connection;
