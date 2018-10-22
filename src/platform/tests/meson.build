@@ -1,6 +1,6 @@
 test_units = [
   ['test-link-fake',     'test-link.c',       test_nm_dep_fake,  30],
-  ['test-link-linux',    'test-link.c',       test_nm_dep_linux, 90],
+  ['test-link-linux',    'test-link.c',       test_nm_dep_linux, 180],
   ['test-address-fake',  'test-address.c',    test_nm_dep_fake,  30],
   ['test-address-linux', 'test-address.c',    test_nm_dep_linux, 30],
   ['test-general',       'test-general.c',    test_nm_dep,       30],
