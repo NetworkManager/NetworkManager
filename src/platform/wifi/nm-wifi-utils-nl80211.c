@@ -47,7 +47,7 @@
 		nm_log ((level), _NMLOG_DOMAIN, _ifname ?: NULL, NULL, \
 		        "%s%s%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
 		        _NMLOG_PREFIX_NAME, \
-                        NM_PRINT_FMT_QUOTED (_ifname, " (", _ifname, ")", "") \
+		        NM_PRINT_FMT_QUOTED (_ifname, " (", _ifname, ")", "") \
 		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
 	} G_STMT_END
 
