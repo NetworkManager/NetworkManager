@@ -70,11 +70,19 @@ sub new_file
 	@functions_seen = ();
 }
 
+my $header = $ENV{'NM_CHECKPATCH_HEADER'};
+
 sub complain
 {
 	my $message = shift;
 
 	return unless $check_line;
+
+	if (defined($header)) {
+		warn "$header\n";
+		undef $header;
+	}
+
 	warn "$filename:$line_no: $message:\n";
 	warn "> $line\n\n";
 	$seen_error = 1;
