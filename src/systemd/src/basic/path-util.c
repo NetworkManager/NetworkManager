@@ -337,11 +337,14 @@ char *path_simplify(char *path, bool kill_dots) {
         /* Removes redundant inner and trailing slashes. Also removes unnecessary dots
          * if kill_dots is true. Modifies the passed string in-place.
          *
-         * ///foo//./bar/.   becomes /foo/./bar/.  (if kill_dots is false)
-         * ///foo//./bar/.   becomes /foo/bar      (if kill_dots is true)
-         * .//./foo//./bar/. becomes ./foo/bar     (if kill_dots is false)
-         * .//./foo//./bar/. becomes foo/bar       (if kill_dots is true)
+         * ///foo//./bar/.   becomes /foo/./bar/.      (if kill_dots is false)
+         * ///foo//./bar/.   becomes /foo/bar          (if kill_dots is true)
+         * .//./foo//./bar/. becomes ././foo/./bar/.   (if kill_dots is false)
+         * .//./foo//./bar/. becomes foo/bar           (if kill_dots is true)
          */
+
+        if (isempty(path))
+            return path;
 
         absolute = path_is_absolute(path);
 
@@ -372,15 +375,19 @@ char *path_simplify(char *path, bool kill_dots) {
                 *(t++) = *f;
         }
 
-        /* Special rule, if we are talking of the root directory, a trailing slash is good */
-        if (absolute && t == path)
-                *(t++) = '/';
+        /* Special rule, if we stripped everything, we either need a "/" (for the root directory)
+         * or "." for the current directory */
+        if (t == path) {
+                if (absolute)
+                        *(t++) = '/';
+                else
+                        *(t++) = '.';
+        }
 
         *t = 0;
         return path;
 }
 
-#if 0 /* NM_IGNORED */
 char* path_startswith(const char *path, const char *prefix) {
         assert(path);
         assert(prefix);
@@ -423,7 +430,6 @@ char* path_startswith(const char *path, const char *prefix) {
                 prefix += b;
         }
 }
-#endif /* NM_IGNORED */
 
 int path_compare(const char *a, const char *b) {
         int d;

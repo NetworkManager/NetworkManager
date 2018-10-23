@@ -1845,6 +1845,25 @@ test_nm_utils_exp10 (void)
 
 /*****************************************************************************/
 
+static void
+test_utils_file_is_in_path (void)
+{
+	g_assert (!nm_utils_file_is_in_path ("/", "/"));
+	g_assert (!nm_utils_file_is_in_path ("//", "/"));
+	g_assert (!nm_utils_file_is_in_path ("/a/", "/"));
+	g_assert ( nm_utils_file_is_in_path ("/a", "/"));
+	g_assert ( nm_utils_file_is_in_path ("///a", "/"));
+	g_assert ( nm_utils_file_is_in_path ("//b/a", "/b//"));
+	g_assert ( nm_utils_file_is_in_path ("//b///a", "/b//"));
+	g_assert (!nm_utils_file_is_in_path ("//b///a/", "/b//"));
+	g_assert (!nm_utils_file_is_in_path ("//b///a/", "/b/a/"));
+	g_assert (!nm_utils_file_is_in_path ("//b///a", "/b/a/"));
+	g_assert ( nm_utils_file_is_in_path ("//b///a/.", "/b/a/"));
+	g_assert ( nm_utils_file_is_in_path ("//b///a/..", "/b/a/"));
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -1890,6 +1909,8 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/general/stable-id/parse", test_stable_id_parse);
 	g_test_add_func ("/general/stable-id/generated-complete", test_stable_id_generated_complete);
+
+	g_test_add_func ("/general/test_utils_file_is_in_path", test_utils_file_is_in_path);
 
 	return g_test_run ();
 }

@@ -171,7 +171,6 @@ update_connection (NMSKeyfilePlugin *self,
 	NMSKeyfileConnection *connection_by_uuid;
 	GError *local = NULL;
 	const char *uuid;
-	int dir_len;
 
 	g_return_val_if_fail (!source || NM_IS_CONNECTION (source), NULL);
 	g_return_val_if_fail (full_path || source, NULL);
@@ -179,17 +178,8 @@ update_connection (NMSKeyfilePlugin *self,
 	if (full_path)
 		_LOGD ("loading from file \"%s\"...", full_path);
 
-	if (g_str_has_prefix (full_path, nms_keyfile_utils_get_path ())) {
-		dir_len = strlen (nms_keyfile_utils_get_path ());
-	} else if (g_str_has_prefix (full_path, NM_CONFIG_KEYFILE_PATH_IN_MEMORY)) {
-		dir_len = NM_STRLEN (NM_CONFIG_KEYFILE_PATH_IN_MEMORY);
-	} else {
-		/* Just make sure the file name is not going go pass the following check. */
-		dir_len = strlen (full_path);
-	}
-
-	if (   full_path[dir_len] != '/'
-	    || strchr (full_path + dir_len + 1, '/') != NULL) {
+	if (   !nm_utils_file_is_in_path (full_path, nms_keyfile_utils_get_path ())
+	    && !nm_utils_file_is_in_path (full_path, NM_CONFIG_KEYFILE_PATH_IN_MEMORY)) {
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		                     "File not in recognized system-connections directory");
 		return FALSE;
@@ -523,35 +513,6 @@ get_connections (NMSettingsPlugin *config)
 }
 
 static gboolean
-_file_is_in_path (const char *abs_filename,
-                  const char *abs_path)
-{
-	gsize l;
-
-	/* FIXME: ensure that both paths are at least normalized (coalescing ".",
-	 * duplicate '/', and trailing '/'). */
-
-	nm_assert (abs_filename && abs_filename[0] == '/');
-	nm_assert (abs_path && abs_path[0] == '/');
-
-	l = strlen (abs_path);
-	if (strncmp (abs_filename, abs_path, l) != 0)
-		return FALSE;
-
-	abs_filename += l;
-	while (abs_filename[0] == '/')
-		abs_filename++;
-
-	if (!abs_filename[0])
-		return FALSE;
-
-	if (strchr (abs_filename, '/'))
-		return FALSE;
-
-	return TRUE;
-}
-
-static gboolean
 load_connection (NMSettingsPlugin *config,
                  const char *filename)
 {
@@ -559,20 +520,9 @@ load_connection (NMSettingsPlugin *config,
 	NMSKeyfileConnection *connection;
 	gboolean require_extension;
 
-	/* the test whether to require a file extension tries to figure out whether
-	 * the provided filename is inside /etc or /run.
-	 *
-	 * However, on Posix a filename just resolves to an Inode, and there can
-	 * be any kind of paths that point to the same Inode. It's not generally possible
-	 * to check for that (unless, we would stat all files in the target directory
-	 * and see whether their inode matches).
-	 *
-	 * So, when loading the file do something simpler: require that the path
-	 * starts with the well-known prefix. This rejects symlinks or hard links
-	 * which would actually also point to the same file. */
-	if (_file_is_in_path (filename, nms_keyfile_utils_get_path ()))
+	if (nm_utils_file_is_in_path (filename, nms_keyfile_utils_get_path ()))
 		require_extension = FALSE;
-	else if (_file_is_in_path (filename, NM_CONFIG_KEYFILE_PATH_IN_MEMORY))
+	else if (nm_utils_file_is_in_path (filename, NM_CONFIG_KEYFILE_PATH_IN_MEMORY))
 		require_extension = TRUE;
 	else
 		return FALSE;
