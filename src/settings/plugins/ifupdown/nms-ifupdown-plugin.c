@@ -171,7 +171,7 @@ initialize (NMSettingsPlugin *plugin)
 
 		if (nm_streq (block->type, "iface")) {
 			/* Bridge configuration */
-			if (g_str_has_prefix (block_name, "br")) {
+			if (g_str_has_prefix (block->name, "br")) {
 				/* Try to find bridge ports */
 				const char *ports = ifparser_getkey (block, "bridge-ports");
 
