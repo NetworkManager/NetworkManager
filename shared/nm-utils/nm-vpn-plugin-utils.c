@@ -81,8 +81,8 @@ nm_vpn_plugin_utils_load_editor (const char *module_name,
 				return NULL;
 			}
 			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_FAILED,
+			             NM_VPN_PLUGIN_ERROR,
+			             NM_VPN_PLUGIN_ERROR_FAILED,
 			             _("cannot load editor plugin: %s"), dlerror ());
 			return NULL;
 		}
@@ -90,8 +90,8 @@ nm_vpn_plugin_utils_load_editor (const char *module_name,
 		factory = dlsym (dl_module, factory_name);
 		if (!factory) {
 			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_FAILED,
+			             NM_VPN_PLUGIN_ERROR,
+			             NM_VPN_PLUGIN_ERROR_FAILED,
 			             _("cannot load factory %s from plugin: %s"),
 			             factory_name, dlerror ());
 			dlclose (dl_module);
@@ -116,8 +116,8 @@ nm_vpn_plugin_utils_load_editor (const char *module_name,
 	if (!editor) {
 		if (error && !*error ) {
 			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_FAILED,
+			                     NM_VPN_PLUGIN_ERROR,
+			                     NM_VPN_PLUGIN_ERROR_FAILED,
 			                     _("unknown error creating editor instance"));
 			g_return_val_if_reached (NULL);
 		}
