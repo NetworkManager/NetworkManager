@@ -173,6 +173,7 @@ static gboolean
 _internal_write_connection (NMConnection *connection,
                             const char *keyfile_dir,
                             const char *profile_dir,
+                            gboolean with_extension,
                             uid_t owner_uid,
                             pid_t owner_grp,
                             const char *existing_path,
@@ -229,7 +230,7 @@ _internal_write_connection (NMConnection *connection,
 	if (existing_path != NULL && !rename) {
 		path = g_strdup (existing_path);
 	} else {
-		char *filename_escaped = nm_keyfile_utils_create_filename (id, TRUE);
+		char *filename_escaped = nm_keyfile_utils_create_filename (id, with_extension);
 
 		path = g_build_filename (keyfile_dir, filename_escaped, NULL);
 		g_free (filename_escaped);
@@ -255,7 +256,7 @@ _internal_write_connection (NMConnection *connection,
 			else
 				filename = g_strdup_printf ("%s-%s-%u", id, nm_connection_get_uuid (connection), i);
 
-			filename_escaped = nm_keyfile_utils_create_filename (filename, TRUE);
+			filename_escaped = nm_keyfile_utils_create_filename (filename, with_extension);
 
 			g_free (path);
 			path = g_strdup_printf ("%s/%s", keyfile_dir, filename_escaped);
@@ -360,6 +361,7 @@ nms_keyfile_writer_connection (NMConnection *connection,
 	return _internal_write_connection (connection,
 	                                   keyfile_dir,
 	                                   nms_keyfile_utils_get_path (),
+	                                   TRUE,
 	                                   0,
 	                                   0,
 	                                   existing_path,
@@ -383,6 +385,7 @@ nms_keyfile_writer_test_connection (NMConnection *connection,
 	return _internal_write_connection (connection,
 	                                   keyfile_dir,
 	                                   keyfile_dir,
+	                                   FALSE,
 	                                   owner_uid,
 	                                   owner_grp,
 	                                   NULL,
