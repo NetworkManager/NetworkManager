@@ -3153,3 +3153,127 @@ nm_keyfile_write (NMConnection *connection,
 
 	return info.keyfile;
 }
+
+/*****************************************************************************/
+
+static const char temp_letters[] =
+"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+/*
+ * Check '.[a-zA-Z0-9]{6}' file suffix used for temporary files by g_file_set_contents() (mkstemp()).
+ */
+static gboolean
+check_mkstemp_suffix (const char *path)
+{
+	const char *ptr;
+
+	g_return_val_if_fail (path != NULL, FALSE);
+
+	/* Matches *.[a-zA-Z0-9]{6} suffix of mkstemp()'s temporary files */
+	ptr = strrchr (path, '.');
+	if (ptr && (strspn (ptr + 1, temp_letters) == 6) && (! ptr[7]))
+		return TRUE;
+	return FALSE;
+}
+
+static gboolean
+check_prefix_dot (const char *base)
+{
+	nm_assert (base && base[0]);
+
+	return base[0] == '.';
+}
+
+static gboolean
+check_suffix (const char *base, const char *tag)
+{
+	int len, tag_len;
+
+	g_return_val_if_fail (base != NULL, TRUE);
+	g_return_val_if_fail (tag != NULL, TRUE);
+
+	len = strlen (base);
+	tag_len = strlen (tag);
+	if ((len > tag_len) && !g_ascii_strcasecmp (base + len - tag_len, tag))
+		return TRUE;
+	return FALSE;
+}
+
+#define SWP_TAG ".swp"
+#define SWPX_TAG ".swpx"
+#define PEM_TAG ".pem"
+#define DER_TAG ".der"
+
+gboolean
+nm_keyfile_utils_ignore_filename (const char *filename, gboolean require_extension)
+{
+	gs_free char *base = NULL;
+
+	g_return_val_if_fail (filename != NULL, TRUE);
+
+	base = g_path_get_basename (filename);
+	g_return_val_if_fail (base != NULL, TRUE);
+
+	/* Ignore hidden and backup files */
+	/* should_ignore_file() must mirror escape_filename() */
+	if (check_prefix_dot (base) || check_suffix (base, "~"))
+		return TRUE;
+	/* Ignore temporary files */
+	if (check_mkstemp_suffix (base))
+		return TRUE;
+	/* Ignore 802.1x certificates and keys */
+	if (check_suffix (base, PEM_TAG) || check_suffix (base, DER_TAG))
+		return TRUE;
+
+	if (require_extension) {
+		gsize l = strlen (base);
+
+		if (   l <= NM_STRLEN (NM_KEYFILE_PATH_SUFFIX_NMCONNECTION)
+		    || !g_str_has_suffix (base, NM_KEYFILE_PATH_SUFFIX_NMCONNECTION))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+char *
+nm_keyfile_utils_create_filename (const char *name,
+                                  gboolean with_extension)
+{
+	GString *str;
+	const char *f = name;
+	/* keyfile used to escape with '*', do not change that behavior.
+	 *
+	 * But for newly added escapings, use '_' instead.
+	 * Also, @with_extension is new-style. */
+	const char ESCAPE_CHAR = with_extension ? '_' : '*';
+	const char ESCAPE_CHAR2 = '_';
+
+	g_return_val_if_fail (name && name[0], NULL);
+
+	str = g_string_sized_new (60);
+
+	/* Convert '/' to ESCAPE_CHAR */
+	for (f = name; f[0]; f++) {
+		if (f[0] == '/')
+			g_string_append_c (str, ESCAPE_CHAR);
+		else
+			g_string_append_c (str, f[0]);
+	}
+
+	/* escape_filename() must avoid anything that should_ignore_file() would reject.
+	 * We can escape here more aggressivly then what we would read back. */
+	if (check_prefix_dot (str->str))
+		str->str[0] = ESCAPE_CHAR2;
+	if (check_suffix (str->str, "~"))
+		str->str[str->len - 1] = ESCAPE_CHAR2;
+	if (   check_mkstemp_suffix (str->str)
+	    || check_suffix (str->str, PEM_TAG)
+	    || check_suffix (str->str, DER_TAG))
+		g_string_append_c (str, ESCAPE_CHAR2);
+
+	if (with_extension)
+		g_string_append (str, NM_KEYFILE_PATH_SUFFIX_NMCONNECTION);
+
+	return g_string_free (str, FALSE);;
+}

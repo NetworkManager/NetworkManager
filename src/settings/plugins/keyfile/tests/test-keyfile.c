@@ -2466,18 +2466,18 @@ _escape_filename (gboolean with_extension, const char *filename, gboolean would_
 
 	g_assert (filename && filename[0]);
 
-	if (!!would_be_ignored != !!nms_keyfile_utils_should_ignore_file (filename, with_extension)) {
+	if (!!would_be_ignored != !!nm_keyfile_utils_ignore_filename (filename, with_extension)) {
 		if (would_be_ignored)
 			g_error ("We expect filename \"%s\" to be ignored, but it isn't", filename);
 		else
 			g_error ("We expect filename \"%s\" not to be ignored, but it is", filename);
 	}
 
-	esc = nms_keyfile_utils_escape_filename (filename, with_extension);
+	esc = nm_keyfile_utils_create_filename (filename, with_extension);
 	g_assert (esc && esc[0]);
 	g_assert (!strchr (esc, '/'));
 
-	if (nms_keyfile_utils_should_ignore_file (esc, with_extension))
+	if (nm_keyfile_utils_ignore_filename (esc, with_extension))
 		g_error ("Escaping filename \"%s\" yielded \"%s\", but this is ignored", filename, esc);
 }
 
