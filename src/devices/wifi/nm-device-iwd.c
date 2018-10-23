@@ -108,7 +108,7 @@ G_DEFINE_TYPE (NMDeviceIwd, nm_device_iwd, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 static void schedule_periodic_scan (NMDeviceIwd *self,
-                                    NMDeviceState current_state);
+                                    gboolean initial_scan);
 
 /*****************************************************************************/
 
@@ -233,7 +233,11 @@ vardict_from_network_type (const char *type)
 }
 
 static void
-insert_ap_from_network (GHashTable *aps, const char *path, int16_t signal, uint32_t ap_id)
+insert_ap_from_network (NMDeviceIwd *self,
+                        GHashTable *aps,
+                        const char *path,
+                        int16_t signal,
+                        uint32_t ap_id)
 {
 	gs_unref_object GDBusProxy *network_proxy = NULL;
 	gs_unref_variant GVariant *name_value = NULL, *type_value = NULL;
@@ -243,6 +247,11 @@ insert_ap_from_network (GHashTable *aps, const char *path, int16_t signal, uint3
 	GVariant *rsn;
 	uint8_t bssid[6];
 	NMWifiAP *ap;
+
+	if (g_hash_table_lookup (aps, path)) {
+		_LOGD (LOGD_WIFI, "Duplicate network at %s", path);
+		return;
+	}
 
 	network_proxy = nm_iwd_manager_get_dbus_interface (nm_iwd_manager_get (),
 	                                                   path,
@@ -350,10 +359,10 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 
 	if (compat) {
 		while (g_variant_iter_next (networks, "(&o&sn&s)", &path, &name, &signal, &type))
-			insert_ap_from_network (new_aps, path, signal, ap_id++);
+			insert_ap_from_network (self, new_aps, path, signal, ap_id++);
 	} else {
 		while (g_variant_iter_next (networks, "(&on)", &path, &signal))
-			insert_ap_from_network (new_aps, path, signal, ap_id++);
+			insert_ap_from_network (self, new_aps, path, signal, ap_id++);
 	}
 
 	g_variant_iter_free (networks);
@@ -406,7 +415,7 @@ update_aps (NMDeviceIwd *self)
 		priv->cancellable = g_cancellable_new ();
 
 	g_dbus_proxy_call (priv->dbus_station_proxy, "GetOrderedNetworks",
-	                   g_variant_new ("()"), G_DBUS_CALL_FLAGS_NONE,
+	                   NULL, G_DBUS_CALL_FLAGS_NONE,
 	                   2000, priv->cancellable,
 	                   get_ordered_networks_cb, self);
 }
@@ -416,8 +425,8 @@ send_disconnect (NMDeviceIwd *self)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
-	g_dbus_proxy_call (priv->dbus_station_proxy, "Disconnect", g_variant_new ("()"),
-	                   G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
+	g_dbus_proxy_call (priv->dbus_station_proxy, "Disconnect",
+	                   NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
 }
 
 static void
@@ -534,7 +543,7 @@ deactivate_async (NMDevice *device,
 	if (priv->dbus_station_proxy) {
 		g_dbus_proxy_call (priv->dbus_station_proxy,
 		                   "Disconnect",
-		                   g_variant_new ("()"),
+		                   NULL,
 		                   G_DBUS_CALL_FLAGS_NONE,
 		                   -1,
 		                   cancellable,
@@ -943,7 +952,8 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 	 * We call nm_device_queue_recheck_available whenever
 	 * priv->enabled changes or priv->dbus_station_proxy changes.
 	 */
-	return    priv->enabled
+	return    priv->dbus_obj
+	       && priv->enabled
 	       && (   priv->dbus_station_proxy
 	           || (state >= NM_DEVICE_STATE_CONFIG && state <= NM_DEVICE_STATE_DEACTIVATING));
 }
@@ -1042,11 +1052,8 @@ scan_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	 * scheduled when priv->scanning goes back to false.  On error,
 	 * schedule a retry now.
 	 */
-	if (error && !priv->scanning) {
-		NMDeviceState state = nm_device_get_state (NM_DEVICE (self));
-
-		schedule_periodic_scan (self, state);
-	}
+	if (error && !priv->scanning)
+		schedule_periodic_scan (self, FALSE);
 }
 
 static void
@@ -1097,8 +1104,7 @@ dbus_request_scan_cb (NMDevice *device,
 
 	if (!priv->scanning && !priv->scan_requested) {
 		g_dbus_proxy_call (priv->dbus_station_proxy, "Scan",
-		                   g_variant_new ("()"),
-		                   G_DBUS_CALL_FLAGS_NONE, -1,
+		                   NULL, G_DBUS_CALL_FLAGS_NONE, -1,
 		                   priv->cancellable, scan_cb, self);
 		priv->scan_requested = TRUE;
 	}
@@ -1548,7 +1554,6 @@ static void act_check_interface (NMDeviceIwd *self)
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
 	gs_free_error GError *error = NULL;
-	NMConnection *connection;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
 	GDBusProxy *proxy = NULL;
@@ -1559,8 +1564,7 @@ static void act_check_interface (NMDeviceIwd *self)
 	if (!priv->act_mode_switch)
 		return;
 
-	connection = nm_device_get_settings_connection_get_connection (device);
-	s_wireless = nm_connection_get_setting_wireless (connection);
+	s_wireless = (NMSettingWireless *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRELESS);
 
 	mode = nm_setting_wireless_get_mode (s_wireless);
 	if (nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_AP))
@@ -1582,7 +1586,7 @@ static void act_check_interface (NMDeviceIwd *self)
 
 	ssid_utf8 = _nm_utils_ssid_to_utf8 (ssid);
 
-	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
+	s_wireless_sec = (NMSettingWirelessSecurity *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRELESS_SECURITY);
 
 	if (!s_wireless_sec) {
 		g_dbus_proxy_call (proxy, "StartOpen",
@@ -1644,6 +1648,81 @@ act_set_mode_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	_LOGD (LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi) IWD Device.Mode set successfully");
 
 	act_check_interface (self);
+}
+
+static void
+act_set_mode (NMDeviceIwd *self)
+{
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	NMDevice *device = NM_DEVICE (self);
+	const char *iwd_mode;
+	const char *mode;
+	NMSettingWireless *s_wireless;
+
+	s_wireless = (NMSettingWireless *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRELESS);
+	mode = nm_setting_wireless_get_mode (s_wireless);
+
+	/* We need to first set interface mode (Device.Mode) to ap or ad-hoc.
+	 * We can't directly queue a call to the Start/StartOpen method on
+	 * the DBus interface that's going to be created after the property
+	 * set call returns.
+	 */
+	iwd_mode = nm_streq (mode, NM_SETTING_WIRELESS_MODE_AP) ? "ap" : "ad-hoc";
+
+	if (!priv->cancellable)
+		priv->cancellable = g_cancellable_new ();
+
+	g_dbus_proxy_call (priv->dbus_device_proxy,
+	                   DBUS_INTERFACE_PROPERTIES ".Set",
+	                   g_variant_new ("(ssv)", NM_IWD_DEVICE_INTERFACE,
+	                                  "Mode",
+	                                  g_variant_new ("s", iwd_mode)),
+	                   G_DBUS_CALL_FLAGS_NONE, 2000,
+	                   priv->cancellable, act_set_mode_cb, self);
+	priv->act_mode_switch = TRUE;
+}
+
+static void
+act_psk_cb (NMActRequest *req,
+            NMActRequestGetSecretsCallId *call_id,
+            NMSettingsConnection *s_connection,
+            GError *error,
+            gpointer user_data)
+{
+	NMDeviceIwd *self = user_data;
+	NMDeviceIwdPrivate *priv;
+	NMDevice *device;
+
+	if (nm_utils_error_is_cancelled (error, FALSE))
+		return;
+
+	priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	device = NM_DEVICE (self);
+
+	g_return_if_fail (priv->wifi_secrets_id == call_id);
+	priv->wifi_secrets_id = NULL;
+
+	g_return_if_fail (req == nm_device_get_act_request (device));
+	g_return_if_fail (nm_act_request_get_settings_connection (req) == s_connection);
+
+	if (nm_device_get_state (device) != NM_DEVICE_STATE_NEED_AUTH)
+		goto secrets_error;
+
+	if (error) {
+		_LOGW (LOGD_WIFI, "%s", error->message);
+		goto secrets_error;
+	}
+
+	_LOGD (LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi) missing PSK request completed");
+
+	/* Change state back to what it was before NEED_AUTH */
+	nm_device_state_changed (device, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
+	act_set_mode (self);
+	return;
+
+secrets_error:
+	nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NO_SECRETS);
+	cleanup_association_attempt (self, FALSE);
 }
 
 static void
@@ -1798,32 +1877,29 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		 * timeouts.
 		 */
 		g_dbus_proxy_call (network_proxy, "Connect",
-		                   g_variant_new ("()"),
-		                   G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
+		                   NULL, G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
 		                   priv->cancellable, network_connect_cb, self);
 
 		g_object_unref (network_proxy);
 	} else if (NM_IN_STRSET (mode, NM_SETTING_WIRELESS_MODE_AP, NM_SETTING_WIRELESS_MODE_ADHOC)) {
-		const char *iwd_mode;
+		NMSettingWirelessSecurity *s_wireless_sec;
 
-		/* We need to first set interface mode (Device.Mode) to ap or ad-hoc.
-		 * We can't directly queue a call to the Start/StartOpen method on
-		 * the DBus interface that's going to be created after the property
-		 * set call returns.
-		 */
-		iwd_mode = nm_streq (mode, NM_SETTING_WIRELESS_MODE_AP) ? "ap" : "ad-hoc";
+		s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
+		if (s_wireless_sec && !nm_setting_wireless_security_get_psk (s_wireless_sec)) {
+			/* PSK is missing from the settings, have to request it */
 
-		if (!priv->cancellable)
-			priv->cancellable = g_cancellable_new ();
+			wifi_secrets_cancel (self);
 
-		g_dbus_proxy_call (priv->dbus_device_proxy,
-		                   DBUS_INTERFACE_PROPERTIES ".Set",
-		                   g_variant_new ("(ssv)", NM_IWD_DEVICE_INTERFACE,
-		                                  "Mode",
-		                                  g_variant_new ("s", iwd_mode)),
-		                   G_DBUS_CALL_FLAGS_NONE, 2000,
-		                   priv->cancellable, act_set_mode_cb, self);
-		priv->act_mode_switch = TRUE;
+			priv->wifi_secrets_id = nm_act_request_get_secrets (req,
+			                                                    TRUE,
+			                                                    NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+			                                                    NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION,
+			                                                    "psk",
+			                                                    act_psk_cb,
+			                                                    self);
+			nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
+		} else
+			act_set_mode (self);
 	}
 
 	/* We'll get stage3 started when the supplicant connects */
@@ -1855,8 +1931,8 @@ periodic_scan_timeout_cb (gpointer user_data)
 	if (priv->scanning || priv->scan_requested)
 		return FALSE;
 
-	g_dbus_proxy_call (priv->dbus_station_proxy, "Scan", g_variant_new ("()"),
-	                   G_DBUS_CALL_FLAGS_NONE, -1,
+	g_dbus_proxy_call (priv->dbus_station_proxy, "Scan",
+	                   NULL, G_DBUS_CALL_FLAGS_NONE, -1,
 	                   priv->cancellable, scan_cb, self);
 	priv->scan_requested = TRUE;
 
@@ -1864,18 +1940,37 @@ periodic_scan_timeout_cb (gpointer user_data)
 }
 
 static void
-schedule_periodic_scan (NMDeviceIwd *self, NMDeviceState current_state)
+schedule_periodic_scan (NMDeviceIwd *self, gboolean initial_scan)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	GVariant *value;
+	gboolean disconnected;
 	guint interval;
 
-	if (!priv->can_scan)
+	if (!priv->can_scan || priv->scan_requested)
 		return;
 
-	if (current_state == NM_DEVICE_STATE_DISCONNECTED)
-		interval = 10;
+	value = g_dbus_proxy_get_cached_property (priv->dbus_station_proxy, "State");
+	disconnected = nm_streq0 (get_variant_state (value), "disconnected");
+	g_variant_unref (value);
+
+	/* Start scan immediately after a disconnect, mode change or
+	 * device UP, otherwise wait a period dependent on the current
+	 * state.
+	 *
+	 * (initial_scan && disconnected) override priv->scanning below
+	 * because of an IWD quirk where a device will often be in the
+	 * autoconnect state and scanning at the time of our initial_scan,
+	 * but our logic will the send it a Disconnect() causeing IWD to
+	 * exit autoconnect and interrupt the ongoing scan, meaning that
+	 * we still want a new scan ASAP.
+	 */
+	if (initial_scan && disconnected)
+		interval = 0;
+	else if (!priv->periodic_scan_id && !priv->scanning)
+		interval = disconnected ? 10 : 20;
 	else
-		interval = 20;
+		return;
 
 	nm_clear_g_source (&priv->periodic_scan_id);
 	priv->periodic_scan_id = g_timeout_add_seconds (interval,
@@ -1887,17 +1982,13 @@ static void
 set_can_scan (NMDeviceIwd *self, gboolean can_scan)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
-	NMDeviceState state = nm_device_get_state (NM_DEVICE (self));
 
 	if (priv->can_scan == can_scan)
 		return;
 
 	priv->can_scan = can_scan;
 
-	if (priv->can_scan && !priv->periodic_scan_id && !priv->scan_requested && !priv->scanning)
-		schedule_periodic_scan (self, state);
-	else if (!priv->can_scan && priv->periodic_scan_id)
-		nm_clear_g_source (&priv->periodic_scan_id);
+	schedule_periodic_scan (self, TRUE);
 }
 
 static void
@@ -2110,7 +2201,7 @@ state_changed (NMDeviceIwd *self, const char *new_state)
 		 * callback will have more information on the specific failure
 		 * reason.
 		 */
-		if (dev_state == NM_DEVICE_STATE_CONFIG)
+		if (NM_IN_SET (dev_state, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_NEED_AUTH))
 			return;
 
 		if (iwd_connection)
@@ -2136,7 +2227,6 @@ static void
 scanning_changed (NMDeviceIwd *self, gboolean new_scanning)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
-	NMDeviceState state = nm_device_get_state (NM_DEVICE (self));
 
 	if (new_scanning == priv->scanning)
 		return;
@@ -2149,7 +2239,7 @@ scanning_changed (NMDeviceIwd *self, gboolean new_scanning)
 		update_aps (self);
 
 		if (!priv->scan_requested)
-			schedule_periodic_scan (self, state);
+			schedule_periodic_scan (self, FALSE);
 	}
 }
 
@@ -2158,22 +2248,14 @@ station_properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
                             GStrv invalidate_properties, gpointer user_data)
 {
 	NMDeviceIwd *self = user_data;
-	GVariantIter *iter;
-	const char *key;
-	GVariant *value;
+	const char *new_str;
+	gboolean new_bool;
 
-	g_variant_get (changed_properties, "a{sv}", &iter);
-	while (g_variant_iter_next (iter, "{&sv}", &key, &value)) {
-		if (!strcmp (key, "State"))
-			state_changed (self, get_variant_state (value));
+	if (g_variant_lookup (changed_properties, "State", "&s", &new_str))
+		state_changed (self, new_str);
 
-		if (!strcmp (key, "Scanning"))
-			scanning_changed (self, get_variant_boolean (value, "Scanning"));
-
-		g_variant_unref (value);
-	}
-
-	g_variant_iter_free (iter);
+	if (g_variant_lookup (changed_properties, "Scanning", "b", &new_bool))
+		scanning_changed (self, new_bool);
 }
 
 static void
@@ -2181,22 +2263,10 @@ ap_adhoc_properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
                              GStrv invalidate_properties, gpointer user_data)
 {
 	NMDeviceIwd *self = user_data;
-	GVariantIter *iter;
-	const char *key;
-	GVariant *value;
+	gboolean new_bool;
 
-	g_variant_get (changed_properties, "a{sv}", &iter);
-	while (g_variant_iter_next (iter, "{&sv}", &key, &value)) {
-		if (nm_streq (key, "Started")) {
-			gboolean new_started = get_variant_boolean (value, "Started");
-
-			_LOGI (LOGD_DEVICE | LOGD_WIFI, "IWD AP/AdHoc state is now %s", new_started ? "Started" : "Stopped");
-		}
-
-		g_variant_unref (value);
-	}
-
-	g_variant_iter_free (iter);
+	if (g_variant_lookup (changed_properties, "Started", "b", &new_bool))
+		_LOGI (LOGD_DEVICE | LOGD_WIFI, "IWD AP/AdHoc state is now %s", new_bool ? "Started" : "Stopped");
 }
 
 static void
@@ -2299,6 +2369,7 @@ powered_changed (NMDeviceIwd *self, gboolean new_powered)
 		update_aps (self);
 	} else {
 		set_can_scan (self, FALSE);
+		nm_clear_g_source (&priv->periodic_scan_id);
 		priv->scanning = FALSE;
 		priv->scan_requested = FALSE;
 		priv->can_connect = FALSE;
@@ -2312,19 +2383,10 @@ device_properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
                            GStrv invalidate_properties, gpointer user_data)
 {
 	NMDeviceIwd *self = user_data;
-	GVariantIter *iter;
-	const char *key;
-	GVariant *value;
+	gboolean new_bool;
 
-	g_variant_get (changed_properties, "a{sv}", &iter);
-	while (g_variant_iter_next (iter, "{&sv}", &key, &value)) {
-		if (!strcmp (key, "Powered"))
-			powered_changed (self, get_variant_boolean (value, "Powered"));
-
-		g_variant_unref (value);
-	}
-
-	g_variant_iter_free (iter);
+	if (g_variant_lookup (changed_properties, "Powered", "b", &new_bool))
+		powered_changed (self, new_bool);
 }
 
 void
