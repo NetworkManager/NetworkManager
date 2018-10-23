@@ -181,16 +181,13 @@ static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (device);
-	NMConnection *connection;
 	NMSettingOlpcMesh *s_mesh;
 	guint32 channel;
 	GBytes *ssid;
 	const char *anycast_addr;
 
-	connection = nm_device_get_applied_connection (device);
-	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
+	s_mesh = nm_device_get_applied_setting (device, NM_TYPE_SETTING_OLPC_MESH);
 
-	s_mesh = nm_connection_get_setting_olpc_mesh (connection);
 	g_return_val_if_fail (s_mesh, NM_ACT_STAGE_RETURN_FAILURE);
 
 	channel = nm_setting_olpc_mesh_get_channel (s_mesh);

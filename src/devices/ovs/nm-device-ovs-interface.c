@@ -121,12 +121,13 @@ link_changed (NMDevice *device,
 static gboolean
 _is_internal_interface (NMDevice *device)
 {
-	NMConnection *connection = nm_device_get_applied_connection (device);
-	NMSettingOvsInterface *s_ovs_iface = nm_connection_get_setting_ovs_interface (connection);
+	NMSettingOvsInterface *s_ovs_iface;
+
+	s_ovs_iface = nm_device_get_applied_setting (device, NM_TYPE_SETTING_OVS_INTERFACE);
 
 	g_return_val_if_fail (s_ovs_iface, FALSE);
 
-	return strcmp (nm_setting_ovs_interface_get_interface_type (s_ovs_iface), "internal") == 0;
+	return nm_streq (nm_setting_ovs_interface_get_interface_type (s_ovs_iface), "internal");
 }
 
 static NMActStageReturn

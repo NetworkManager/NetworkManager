@@ -75,6 +75,22 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 /*****************************************************************************/
 
+static gpointer
+_gtype_to_hash_key (GType gtype)
+{
+#if NM_MORE_ASSERTS
+	_nm_unused const gsize *const test_gtype_typedef = &gtype;
+
+	nm_assert ((GType) (GPOINTER_TO_SIZE (GSIZE_TO_POINTER (gtype))) == gtype);
+	G_STATIC_ASSERT_EXPR (sizeof (gpointer) >= sizeof (gsize));
+	G_STATIC_ASSERT_EXPR (sizeof (gsize) == sizeof (GType));
+#endif
+
+	return GSIZE_TO_POINTER (gtype);
+}
+
+/*****************************************************************************/
+
 static void
 setting_changed_cb (NMSetting *setting,
                     GParamSpec *pspec,
@@ -94,18 +110,18 @@ static void
 _nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
 {
 	NMConnectionPrivate *priv;
-	const char *name;
+	GType setting_type;
 	NMSetting *s_old;
 
 	nm_assert (NM_IS_CONNECTION (connection));
 	nm_assert (NM_IS_SETTING (setting));
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
-	name = G_OBJECT_TYPE_NAME (setting);
+	setting_type = G_OBJECT_TYPE (setting);
 
-	if ((s_old = g_hash_table_lookup (priv->settings, (gpointer) name)))
+	if ((s_old = g_hash_table_lookup (priv->settings, _gtype_to_hash_key (setting_type))))
 		g_signal_handlers_disconnect_by_func (s_old, setting_changed_cb, connection);
-	g_hash_table_insert (priv->settings, (gpointer) name, setting);
+	g_hash_table_insert (priv->settings, _gtype_to_hash_key (setting_type), setting);
 	/* Listen for property changes so we can emit the 'changed' signal */
 	g_signal_connect (setting, "notify", (GCallback) setting_changed_cb, connection);
 }
@@ -135,17 +151,15 @@ _nm_connection_remove_setting (NMConnection *connection, GType setting_type)
 {
 	NMConnectionPrivate *priv;
 	NMSetting *setting;
-	const char *setting_name;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (g_type_is_a (setting_type, NM_TYPE_SETTING), FALSE);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
-	setting_name = g_type_name (setting_type);
-	setting = g_hash_table_lookup (priv->settings, setting_name);
+	setting = g_hash_table_lookup (priv->settings, _gtype_to_hash_key (setting_type));
 	if (setting) {
 		g_signal_handlers_disconnect_by_func (setting, setting_changed_cb, connection);
-		g_hash_table_remove (priv->settings, setting_name);
+		g_hash_table_remove (priv->settings, _gtype_to_hash_key (setting_type));
 		g_signal_emit (connection, signals[CHANGED], 0);
 		return TRUE;
 	}
@@ -169,11 +183,15 @@ nm_connection_remove_setting (NMConnection *connection, GType setting_type)
 static gpointer
 _connection_get_setting (NMConnection *connection, GType setting_type)
 {
+	NMSetting *setting;
+
 	nm_assert (NM_IS_CONNECTION (connection));
 	nm_assert (g_type_is_a (setting_type, NM_TYPE_SETTING));
 
-	return g_hash_table_lookup (NM_CONNECTION_GET_PRIVATE (connection)->settings,
-	                            g_type_name (setting_type));
+	setting = g_hash_table_lookup (NM_CONNECTION_GET_PRIVATE (connection)->settings,
+	                               _gtype_to_hash_key (setting_type));
+	nm_assert (!setting || G_TYPE_CHECK_INSTANCE_TYPE (setting, setting_type));
+	return setting;
 }
 
 static gpointer
@@ -1874,7 +1892,7 @@ nm_connection_to_dbus (NMConnection *connection,
 	NMConnectionPrivate *priv;
 	GVariantBuilder builder;
 	GHashTableIter iter;
-	gpointer key, data;
+	gpointer data;
 	GVariant *setting_dict, *ret;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
@@ -1884,7 +1902,7 @@ nm_connection_to_dbus (NMConnection *connection,
 
 	/* Add each setting's hash to the main hash */
 	g_hash_table_iter_init (&iter, priv->settings);
-	while (g_hash_table_iter_next (&iter, &key, &data)) {
+	while (g_hash_table_iter_next (&iter, NULL, &data)) {
 		NMSetting *setting = NM_SETTING (data);
 
 		setting_dict = _nm_setting_to_dbus (setting, connection, flags);
@@ -2029,14 +2047,13 @@ nm_connection_dump (NMConnection *connection)
 {
 	GHashTableIter iter;
 	NMSetting *setting;
-	const char *setting_name;
 	char *str;
 
 	if (!connection)
 		return;
 
 	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (connection)->settings);
-	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting)) {
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting)) {
 		str = nm_setting_to_string (setting);
 		g_print ("%s\n", str);
 		g_free (str);
@@ -2910,7 +2927,10 @@ nm_connection_get_private (NMConnection *connection)
 		                         priv, (GDestroyNotify) nm_connection_private_free);
 
 		priv->self = connection;
-		priv->settings = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_object_unref);
+		priv->settings = g_hash_table_new_full (nm_direct_hash,
+		                                        NULL,
+		                                        NULL,
+		                                        g_object_unref);
 	}
 
 	return priv;
