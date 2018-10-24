@@ -384,6 +384,12 @@ nm_dhcp_manager_get_config (NMDhcpManager *self)
 
 NM_DEFINE_SINGLETON_GETTER (NMDhcpManager, nm_dhcp_manager_get, NM_TYPE_DHCP_MANAGER);
 
+void
+nmtst_dhcp_manager_unget (gpointer self)
+{
+	_nmtst_nm_dhcp_manager_get_reset (self);
+}
+
 static void
 nm_dhcp_manager_init (NMDhcpManager *self)
 {
@@ -446,6 +452,10 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 
 	nm_log_info (LOGD_DHCP, "dhcp-init: Using DHCP client '%s'", client_factory->name);
 
+	/* NOTE: currently the DHCP plugin is chosen once at start. It's not
+	 * possible to reload that configuration. If that ever becomes possible,
+	 * beware that the "dhcp-plugin" device spec made decisions based on
+	 * the previous plugin and may need reevaluation. */
 	priv->client_factory = client_factory;
 }
 
