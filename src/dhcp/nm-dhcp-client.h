@@ -104,12 +104,6 @@ typedef struct {
 	 * returned.
 	 */
 	GBytes *(*get_duid) (NMDhcpClient *self);
-
-	/* Signals */
-	void (*state_changed) (NMDhcpClient *self,
-	                       NMDhcpState state,
-	                       GObject *ip_config,
-	                       GHashTable *options);
 } NMDhcpClientClass;
 
 GType nm_dhcp_client_get_type (void);

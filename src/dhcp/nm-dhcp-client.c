@@ -1061,7 +1061,7 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	    g_signal_new (NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMDhcpClientClass, state_changed),
+	                  0,
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 4, G_TYPE_UINT, G_TYPE_OBJECT, G_TYPE_HASH_TABLE, G_TYPE_STRING);
 
@@ -1069,7 +1069,7 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	    g_signal_new (NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMDhcpClientClass, state_changed),
+	                  0,
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 1, G_TYPE_POINTER);
 }
