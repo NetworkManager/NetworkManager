@@ -547,6 +547,7 @@ error:
 
 #define DUID_PREFIX "default-duid \""
 
+/* Beware: @error may be unset even if the function returns %NULL. */
 GBytes *
 nm_dhcp_dhclient_read_duid (const char *leasefile, GError **error)
 {
