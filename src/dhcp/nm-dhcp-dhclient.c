@@ -619,7 +619,7 @@ get_duid (NMDhcpClient *client)
 	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
 	GBytes *duid = NULL;
-	char *leasefile;
+	gs_free char *leasefile = NULL;
 	GError *error = NULL;
 
 	/* Look in interface-specific leasefile first for backwards compat */
@@ -630,25 +630,23 @@ get_duid (NMDhcpClient *client)
 	if (leasefile) {
 		_LOGD ("looking for DUID in '%s'", leasefile);
 		duid = nm_dhcp_dhclient_read_duid (leasefile, &error);
-
 		if (error) {
 			_LOGW ("failed to read leasefile '%s': %s",
 			       leasefile, error->message);
 			g_clear_error (&error);
 		}
-		g_free (leasefile);
+		if (duid)
+			return duid;
 	}
 
-	if (!duid) {
-		/* Otherwise read the default machine-wide DUID */
-		_LOGD ("looking for default DUID in '%s'", priv->def_leasefile);
-		duid = nm_dhcp_dhclient_read_duid (priv->def_leasefile, &error);
-		if (error) {
-			_LOGW ("failed to read leasefile '%s': %s",
-			        priv->def_leasefile,
-			        error->message);
-			g_clear_error (&error);
-		}
+	/* Otherwise read the default machine-wide DUID */
+	_LOGD ("looking for default DUID in '%s'", priv->def_leasefile);
+	duid = nm_dhcp_dhclient_read_duid (priv->def_leasefile, &error);
+	if (error) {
+		_LOGW ("failed to read leasefile '%s': %s",
+		        priv->def_leasefile,
+		        error->message);
+		g_clear_error (&error);
 	}
 
 	return duid;
