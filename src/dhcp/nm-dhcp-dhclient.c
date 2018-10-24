@@ -624,24 +624,6 @@ stop (NMDhcpClient *client, gboolean release, GBytes *duid)
 	}
 }
 
-static void
-state_changed (NMDhcpClient *client,
-               NMDhcpState state,
-               GObject *ip_config,
-               GHashTable *options)
-{
-	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE ((NMDhcpDhclient *) client);
-	gs_unref_bytes GBytes *client_id = NULL;
-
-	if (nm_dhcp_client_get_client_id (client))
-		return;
-	if (state != NM_DHCP_STATE_BOUND)
-		return;
-
-	client_id = nm_dhcp_dhclient_get_client_id_from_config_file (priv->conf_file);
-	nm_dhcp_client_set_client_id (client, client_id);
-}
-
 static GBytes *
 get_duid (NMDhcpClient *client)
 {
@@ -742,7 +724,6 @@ nm_dhcp_dhclient_class_init (NMDhcpDhclientClass *dhclient_class)
 	client_class->ip6_start = ip6_start;
 	client_class->stop = stop;
 	client_class->get_duid = get_duid;
-	client_class->state_changed = state_changed;
 }
 
 const NMDhcpClientFactory _nm_dhcp_client_factory_dhclient = {

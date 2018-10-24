@@ -216,18 +216,6 @@ stop (NMDhcpClient *client, gboolean release, GBytes *duid)
 	}
 }
 
-static void
-state_changed (NMDhcpClient *client,
-               NMDhcpState state,
-               GObject *ip_config,
-               GHashTable *options)
-{
-	if (nm_dhcp_client_get_client_id (client))
-		return;
-	if (state != NM_DHCP_STATE_BOUND)
-		return;
-}
-
 /*****************************************************************************/
 
 static void
@@ -270,7 +258,6 @@ nm_dhcp_dhcpcanon_class_init (NMDhcpDhcpcanonClass *dhcpcanon_class)
 	client_class->ip4_start = ip4_start;
 	client_class->ip6_start = ip6_start;
 	client_class->stop = stop;
-	client_class->state_changed = state_changed;
 }
 
 const NMDhcpClientFactory _nm_dhcp_client_factory_dhcpcanon = {
