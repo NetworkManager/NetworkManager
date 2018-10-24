@@ -193,20 +193,20 @@ ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
            const struct in6_addr *ll_addr,
            NMSettingIP6ConfigPrivacy privacy,
-           GBytes *duid,
            guint needed_prefixes,
            GError **error)
 {
 	nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "dhcpcanon plugin does not support IPv6");
 	return FALSE;
 }
+
 static void
-stop (NMDhcpClient *client, gboolean release, GBytes *duid)
+stop (NMDhcpClient *client, gboolean release)
 {
 	NMDhcpDhcpcanon *self = NM_DHCP_DHCPCANON (client);
 	NMDhcpDhcpcanonPrivate *priv = NM_DHCP_DHCPCANON_GET_PRIVATE (self);
 
-	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhcpcanon_parent_class)->stop (client, release, duid);
+	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhcpcanon_parent_class)->stop (client, release);
 
 	if (priv->pid_file) {
 		if (remove (priv->pid_file) == -1)

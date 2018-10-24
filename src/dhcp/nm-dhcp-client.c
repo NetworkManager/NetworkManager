@@ -365,7 +365,7 @@ nm_dhcp_client_stop_pid (pid_t pid, const char *iface)
 }
 
 static void
-stop (NMDhcpClient *self, gboolean release, GBytes *duid)
+stop (NMDhcpClient *self, gboolean release)
 {
 	NMDhcpClientPrivate *priv;
 
@@ -557,14 +557,14 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 	gs_unref_bytes GBytes *own_client_id = NULL;
 
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
+	g_return_val_if_fail (client_id, FALSE);
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+
 	g_return_val_if_fail (priv->pid == -1, FALSE);
 	g_return_val_if_fail (priv->addr_family == AF_INET6, FALSE);
 	g_return_val_if_fail (priv->uuid != NULL, FALSE);
-
-	nm_assert (!priv->client_id);
-	nm_assert (client_id);
+	g_return_val_if_fail (!priv->client_id, FALSE);
 
 	if (!enforce_duid)
 		own_client_id = NM_DHCP_CLIENT_GET_CLASS (self)->get_duid (self);
@@ -585,7 +585,6 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 	                                                   dhcp_anycast_addr,
 	                                                   ll_addr,
 	                                                   privacy,
-	                                                   priv->client_id,
 	                                                   needed_prefixes,
 	                                                   error);
 }
@@ -652,7 +651,7 @@ nm_dhcp_client_stop (NMDhcpClient *self, gboolean release)
 
 	/* Kill the DHCP client */
 	old_pid = priv->pid;
-	NM_DHCP_CLIENT_GET_CLASS (self)->stop (self, release, priv->client_id);
+	NM_DHCP_CLIENT_GET_CLASS (self)->stop (self, release);
 	if (old_pid > 0)
 		_LOGI ("canceled DHCP transaction, DHCP client pid %d", old_pid);
 	else

@@ -86,13 +86,11 @@ typedef struct {
 	                           const char *anycast_addr,
 	                           const struct in6_addr *ll_addr,
 	                           NMSettingIP6ConfigPrivacy privacy,
-	                           GBytes *duid,
 	                           guint needed_prefixes,
 	                           GError **error);
 
 	void (*stop)              (NMDhcpClient *self,
-	                           gboolean release,
-	                           GBytes *duid);
+	                           gboolean release);
 
 	/**
 	 * get_duid:

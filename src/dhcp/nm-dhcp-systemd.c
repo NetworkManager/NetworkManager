@@ -895,7 +895,6 @@ ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
            const struct in6_addr *ll_addr,
            NMSettingIP6ConfigPrivacy privacy,
-           GBytes *duid,
            guint needed_prefixes,
            GError **error)
 {
@@ -907,10 +906,13 @@ ip6_start (NMDhcpClient *client,
 	int r, i;
 	const guint8 *duid_arr;
 	gsize duid_len;
+	GBytes *duid;
 
-	g_assert (priv->client4 == NULL);
-	g_assert (priv->client6 == NULL);
-	g_return_val_if_fail (duid != NULL, FALSE);
+	g_return_val_if_fail (!priv->client4, FALSE);
+	g_return_val_if_fail (!priv->client6, FALSE);
+
+	duid = nm_dhcp_client_get_client_id (client);
+	g_return_val_if_fail (duid, FALSE);
 
 	duid_arr = g_bytes_get_data (duid, &duid_len);
 	if (!duid_arr || duid_len < 2)
@@ -1013,13 +1015,13 @@ errout:
 }
 
 static void
-stop (NMDhcpClient *client, gboolean release, GBytes *duid)
+stop (NMDhcpClient *client, gboolean release)
 {
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (client);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
 	int r = 0;
 
-	NM_DHCP_CLIENT_CLASS (nm_dhcp_systemd_parent_class)->stop (client, release, duid);
+	NM_DHCP_CLIENT_CLASS (nm_dhcp_systemd_parent_class)->stop (client, release);
 
 	_LOGT ("dhcp-client%d: stop %p",
 	       priv->client4 ? '4' : '6',
