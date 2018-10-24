@@ -151,7 +151,7 @@ if [[ $NO_DIST != 1 ]]; then
         --with-libnm-glib \
         --enable-ifcfg-rh \
         --enable-ifupdown \
-        --enable-ibft \
+        --enable-config-plugin-ibft \
         --with-config-logging-backend-default=syslog \
         --with-libaudit=yes-disabled-by-default \
         --enable-polkit=yes \
