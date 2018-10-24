@@ -1,3 +1,18 @@
+===============================================
+NetworkManager-1.14.4
+Overview of changes since NetworkManager-1.14.2
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fix a crash in nmcli when a device is removed while being disconnected.
+* Fix a crash in ifupdown (Debian) configuration plugin.
+* Fix a daemon crash when a generated connection doesn't validate.
+* Fix a memory leak in dhclient DHCP plugin.
+* Fix line editing in nmcli password prompts.
+* Fix a RPATH in bluetooth and wwan plugin when built with Meson (otherwise
+  they wouldn't find libnm-wwan.so).
+
 =============================================
 NetworkManager-1.14.2
 Overview of changes since NetworkManager-1.14
