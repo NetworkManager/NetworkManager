@@ -167,7 +167,9 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--with-wext=no \
 	--enable-ifcfg-rh \
 	--enable-ifupdown \
-	--disable-dependency-tracking
+	--enable-config-plugin-ibft \
+	--disable-dependency-tracking \
+	$(NULL)
 
 dist-configure-check:
 	@echo "*** 'make dist' requires '--enable-gtk-doc --enable-introspection --with-libnm-glib'. ***"
