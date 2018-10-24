@@ -43,7 +43,4 @@ gboolean nm_dhcp_dhclient_save_duid (const char *leasefile,
                                      const char *escaped_duid,
                                      GError **error);
 
-GBytes *nm_dhcp_dhclient_get_client_id_from_config_file (const char *path);
-
 #endif /* __NETWORKMANAGER_DHCP_DHCLIENT_UTILS_H__ */
-

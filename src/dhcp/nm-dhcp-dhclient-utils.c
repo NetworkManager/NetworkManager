@@ -233,29 +233,6 @@ read_client_id (const char *str)
 	return nm_utils_hexstr2bin (s);
 }
 
-GBytes *
-nm_dhcp_dhclient_get_client_id_from_config_file (const char *path)
-{
-	gs_free char *contents = NULL;
-	gs_strfreev char **lines = NULL;
-	char **line;
-
-	g_return_val_if_fail (path != NULL, NULL);
-
-	if (!g_file_test (path, G_FILE_TEST_EXISTS))
-		return NULL;
-
-	if (!g_file_get_contents (path, &contents, NULL, NULL))
-		return NULL;
-
-	lines = g_strsplit_set (contents, "\n\r", 0);
-	for (line = lines; lines && *line; line++) {
-		if (!strncmp (*line, CLIENTID_TAG, NM_STRLEN (CLIENTID_TAG)))
-			return read_client_id (*line);
-	}
-	return NULL;
-}
-
 static gboolean
 read_interface (const char *line, char *interface, guint size)
 {
