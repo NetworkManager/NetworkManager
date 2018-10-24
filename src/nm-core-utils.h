@@ -225,7 +225,8 @@ NMMatchSpecMatchType nm_match_spec_device (const GSList *specs,
                                            const char *driver,
                                            const char *driver_version,
                                            const char *hwaddr,
-                                           const char *s390_subchannels);
+                                           const char *s390_subchannels,
+                                           const char *dhcp_plugin);
 NMMatchSpecMatchType nm_match_spec_config (const GSList *specs,
                                            guint nm_version,
                                            const char *env);

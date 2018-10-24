@@ -15776,6 +15776,7 @@ nm_device_spec_match_list_full (NMDevice *self, const GSList *specs, int no_matc
 	                          nm_device_get_driver (self),
 	                          nm_device_get_driver_version (self),
 	                          nm_device_get_permanent_hw_address (self),
+	                          nm_dhcp_manager_get_config (nm_dhcp_manager_get ()),
 	                          klass->get_s390_subchannels ? klass->get_s390_subchannels (self) : NULL);
 
 	switch (m) {

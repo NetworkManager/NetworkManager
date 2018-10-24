@@ -25,6 +25,7 @@
 #include "nm-config.h"
 #include "nm-test-device.h"
 #include "platform/nm-fake-platform.h"
+#include "dhcp/nm-dhcp-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-connectivity.h"
 
@@ -123,6 +124,24 @@ setup_config (GError **error, const char *config_file, const char *intern_config
 		g_assert_no_error (local_error);
 	}
 	nm_config_cmd_line_options_free (cli);
+
+	if (config) {
+		NMDhcpManager *dhcp_manager;
+		gpointer logging_old_state;
+
+		logging_old_state = nmtst_logging_disable (FALSE);
+
+		dhcp_manager = nm_dhcp_manager_get ();
+		g_test_assert_expected_messages ();
+
+		nmtst_logging_reenable (logging_old_state);
+
+		g_object_set_data_full (G_OBJECT (config),
+		                        "nmtst-config-keep-dhcp-manager-alive",
+		                        dhcp_manager,
+		                        nmtst_dhcp_manager_unget);
+	}
+
 	return config;
 }
 

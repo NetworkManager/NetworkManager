@@ -882,6 +882,7 @@ nm_utils_match_connection (NMConnection *const*connections,
 int
 nm_match_spec_device_by_pllink (const NMPlatformLink *pllink,
                                 const char *match_device_type,
+                                const char *match_dhcp_plugin,
                                 const GSList *specs,
                                 int no_match_value)
 {
@@ -898,7 +899,8 @@ nm_match_spec_device_by_pllink (const NMPlatformLink *pllink,
 	                          pllink ? pllink->driver : NULL,
 	                          NULL,
 	                          NULL,
-	                          NULL);
+	                          NULL,
+	                          match_dhcp_plugin);
 
 	switch (m) {
 	case NM_MATCH_SPEC_MATCH:
