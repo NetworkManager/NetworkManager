@@ -1347,6 +1347,42 @@ _nmtst_assert_resolve_relative_path_equals (const char *f1, const char *f2, cons
 
 /*****************************************************************************/
 
+#ifdef __NETWORKMANAGER_LOGGING_H__
+static inline gpointer
+nmtst_logging_disable (gboolean always)
+{
+	gpointer p;
+
+	g_assert (nmtst_initialized ());
+	if (!always && __nmtst_internal.no_expect_message) {
+		/* The caller does not want to @always suppress logging. Instead,
+		 * the caller wants to suppress unexpected log messages that would
+		 * fail assertions (since we possibly assert against all unexpected
+		 * log messages).
+		 *
+		 * If the test is run with no-expect-message, then don't suppress
+		 * the loggings, because they also wouldn't fail assertions. */
+		return NULL;
+	}
+
+	p = g_memdup (_nm_logging_enabled_state, sizeof (_nm_logging_enabled_state));
+	memset (_nm_logging_enabled_state, 0, sizeof (_nm_logging_enabled_state));
+	return p;
+}
+
+static inline void
+nmtst_logging_reenable (gpointer old_state)
+{
+	g_assert (nmtst_initialized ());
+	if (old_state) {
+		memcpy (_nm_logging_enabled_state, old_state, sizeof (_nm_logging_enabled_state));
+		g_free (old_state);
+	}
+}
+#endif
+
+/*****************************************************************************/
+
 #ifdef NM_SETTING_IP_CONFIG_H
 static inline void
 nmtst_setting_ip_config_add_address (NMSettingIPConfig *s_ip,
