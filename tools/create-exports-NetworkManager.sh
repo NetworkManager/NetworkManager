@@ -19,7 +19,7 @@ die() {
 _build() {
     git clean -fdx
     ./autogen.sh --enable-ld-gc --enable-ifcfg-rh --enable-ifupdown \
-        --enable-ibft --enable-teamdctl --enable-wifi \
+        --enable-config-plugin-ibft --enable-teamdctl --enable-wifi \
         --with-modem-manager-1 --with-ofono --with-more-asserts \
         --with-more-logging
     make -j20
