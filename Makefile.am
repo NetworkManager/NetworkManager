@@ -167,7 +167,9 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--with-wext=no \
 	--enable-ifcfg-rh \
 	--enable-ifupdown \
-	--disable-dependency-tracking
+	--enable-config-plugin-ibft \
+	--disable-dependency-tracking \
+	$(NULL)
 
 dist-configure-check:
 	@echo "*** 'make dist' requires '--enable-gtk-doc --enable-introspection --with-libnm-glib'. ***"
@@ -2460,6 +2462,13 @@ src_settings_plugins_ibft_tests_test_ibft_LDADD = \
 
 $(src_settings_plugins_ibft_tests_test_ibft_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
+check-local-symbols-settings-ibft: src/settings/plugins/ibft/libnm-settings-plugin-ibft.la
+	$(call check_so_symbols,$(builddir)/src/settings/plugins/ibft/.libs/libnm-settings-plugin-ibft.so)
+
+check_local += check-local-symbols-settings-ibft
+
+endif
+
 EXTRA_DIST += \
 	src/settings/plugins/ibft/tests/iscsiadm-test-dhcp \
 	src/settings/plugins/ibft/tests/iscsiadm-test-static \
@@ -2469,16 +2478,7 @@ EXTRA_DIST += \
 	src/settings/plugins/ibft/tests/iscsiadm-test-bad-dns2 \
 	src/settings/plugins/ibft/tests/iscsiadm-test-bad-entry \
 	src/settings/plugins/ibft/tests/iscsiadm-test-bad-record \
-	src/settings/plugins/ibft/tests/iscsiadm-test-vlan
-
-check-local-symbols-settings-ibft: src/settings/plugins/ibft/libnm-settings-plugin-ibft.la
-	$(call check_so_symbols,$(builddir)/src/settings/plugins/ibft/.libs/libnm-settings-plugin-ibft.so)
-
-check_local += check-local-symbols-settings-ibft
-
-endif
-
-EXTRA_DIST += \
+	src/settings/plugins/ibft/tests/iscsiadm-test-vlan \
 	src/settings/plugins/ibft/meson.build \
 	src/settings/plugins/ibft/tests/meson.build
 
