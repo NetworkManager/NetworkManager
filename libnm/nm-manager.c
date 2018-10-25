@@ -885,22 +885,20 @@ activate_info_complete (ActivateInfo *info,
                         NMActiveConnection *active,
                         GError *error)
 {
+	nm_clear_g_signal_handler (info->cancellable, &info->cancelled_id);
+
+	c_list_unlink_stale (&info->lst);
+
 	if (active)
 		g_simple_async_result_set_op_res_gpointer (info->simple, g_object_ref (active), g_object_unref);
 	else
 		g_simple_async_result_set_from_error (info->simple, error);
 	g_simple_async_result_complete (info->simple);
 
-	c_list_unlink_stale (&info->lst);
-
 	g_free (info->active_path);
 	g_free (info->new_connection_path);
 	g_object_unref (info->simple);
-	if (info->cancellable) {
-		if (info->cancelled_id)
-			g_signal_handler_disconnect (info->cancellable, info->cancelled_id);
-		g_object_unref (info->cancellable);
-	}
+	nm_g_object_unref (info->cancellable);
 	g_slice_free (ActivateInfo, info);
 }
 
