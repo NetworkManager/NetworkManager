@@ -141,6 +141,7 @@ complain ("Don't use \"unsigned int\" but just use \"unsigned\"") if $line =~ /\
 complain ("Please use LGPL2+ for new files") if $is_patch and $line =~ /under the terms of the GNU General Public License/;
 complain ("Don't use space inside elvis operator ?:") if $line =~ /\?[\t ]+:/;
 complain ("Don't add Emacs editor formatting hints to source files") if $line_no == 1 and $line =~ /-\*-.+-\*-/;
+complain ("XXX marker are reserved for development while work-in-progress. Use TODO or FIXME comment instead?") if $line =~ /\bXXX\b/;
 
 new_hunk if $_ eq '';
 my ($this_indent) = /^(\s*)/;
