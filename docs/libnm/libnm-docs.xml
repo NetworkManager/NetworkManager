@@ -294,13 +294,6 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-vpn-plugin-old.xml"/>
   </chapter>
 
-  <!--
-    These don't contain any useful documentaiton. Keep them here,
-    so that tools/check-docs.sh knows that we did omit them intentionally.
-    <xi:include href="xml/nm-core-enum-types.xml"/>
-    <xi:include href="xml/nm-enum-types.xml"/>
-  -->
-
   <chapter id="object-tree">
     <title>Object Hierarchy</title>
      <xi:include href="xml/tree_index.sgml"/>

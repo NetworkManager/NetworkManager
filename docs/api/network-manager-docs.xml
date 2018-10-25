@@ -257,15 +257,6 @@
       <title>Types</title>
       <xi:include href="../../libnm-core/nm-dbus-types.xml"/>
     </chapter>
-
-    <!--
-      These are obsolete and intentionally ommitted from the manual since they can't
-      appear on the D-Bus API of the present version of NetworkManager.
-      Keep them here so that "make check" won't think that they were skipped accidentally .
-      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.WiMax.xml"/>
-      <xi:include href="dbus-org.freedesktop.NetworkManager.WiMax.Nsp.xml"/>
-    -->
-
   </part>
 
   <part id="secret-agents">

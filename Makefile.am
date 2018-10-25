@@ -429,7 +429,7 @@ EXTRA_DIST += \
 	introspection/meson.build
 
 check-docs:
-	$(srcdir)/tools/check-docs.sh "$(srcdir)"
+	$(srcdir)/tools/check-docs.sh "$(srcdir)" "$(builddir)"
 
 check_local += check-docs
 
