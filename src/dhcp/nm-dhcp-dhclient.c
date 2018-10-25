@@ -322,8 +322,18 @@ create_dhclient_config (NMDhcpDhclient *self,
 	else
 		_LOGD ("no existing dhclient configuration to merge");
 
-	if (!merge_dhclient_config (self, addr_family, iface, new, client_id, dhcp_anycast_addr,
-	                            hostname, timeout, use_fqdn, orig, out_new_client_id, &error)) {
+	if (!merge_dhclient_config (self,
+	                            addr_family,
+	                            iface,
+	                            new,
+	                            client_id,
+	                            dhcp_anycast_addr,
+	                            hostname,
+	                            timeout,
+	                            use_fqdn,
+	                            orig,
+	                            out_new_client_id,
+	                            &error)) {
 		_LOGW ("error creating dhclient configuration: %s", error->message);
 		g_clear_error (&error);
 	}

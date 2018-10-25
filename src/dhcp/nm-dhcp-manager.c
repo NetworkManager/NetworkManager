@@ -311,10 +311,27 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
 		}
 	}
 
-	return client_start (self, AF_INET, multi_idx, iface, ifindex, hwaddr, uuid,
-	                     route_table, route_metric, NULL,
-	                     dhcp_client_id, 0, timeout, dhcp_anycast_addr, hostname,
-	                     use_fqdn, FALSE, 0, last_ip_address, 0, error);
+	return client_start (self,
+	                     AF_INET,
+	                     multi_idx,
+	                     iface,
+	                     ifindex,
+	                     hwaddr,
+	                     uuid,
+	                     route_table,
+	                     route_metric,
+	                     NULL,
+	                     dhcp_client_id,
+	                     FALSE,
+	                     timeout,
+	                     dhcp_anycast_addr,
+	                     hostname,
+	                     use_fqdn,
+	                     FALSE,
+	                     0,
+	                     last_ip_address,
+	                     0,
+	                     error);
 }
 
 /* Caller owns a reference to the NMDhcpClient on return */
@@ -349,10 +366,27 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
 		/* Always prefer the explicit dhcp-hostname if given */
 		hostname = dhcp_hostname ?: priv->default_hostname;
 	}
-	return client_start (self, AF_INET6, multi_idx, iface, ifindex, hwaddr, uuid,
-	                     route_table, route_metric, ll_addr, duid, enforce_duid,
-	                     timeout, dhcp_anycast_addr, hostname, TRUE, info_only,
-	                     privacy, NULL, needed_prefixes, error);
+	return client_start (self,
+	                     AF_INET6,
+	                     multi_idx,
+	                     iface,
+	                     ifindex,
+	                     hwaddr,
+	                     uuid,
+	                     route_table,
+	                     route_metric,
+	                     ll_addr,
+	                     duid,
+	                     enforce_duid,
+	                     timeout,
+	                     dhcp_anycast_addr,
+	                     hostname,
+	                     TRUE,
+	                     info_only,
+	                     privacy,
+	                     NULL,
+	                     needed_prefixes,
+	                     error);
 }
 
 void
