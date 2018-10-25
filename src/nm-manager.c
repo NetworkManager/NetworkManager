@@ -95,6 +95,7 @@ typedef struct {
 				struct {
 					GDBusMethodInvocation *invocation;
 					NMConnection *connection;
+					NMSettingsConnectionPersistMode persist;
 				} add_and_activate;
 			};
 		} ac_auth;
@@ -370,6 +371,7 @@ static void _add_and_activate_auth_done (NMManager *self,
                                          NMActiveConnection *active,
                                          NMConnection *connection,
                                          GDBusMethodInvocation *invocation,
+                                         NMSettingsConnectionPersistMode persist,
                                          gboolean success,
                                          const char *error_desc);
 static void _activation_auth_done (NMManager *self,
@@ -484,7 +486,8 @@ static AsyncOpData *
 _async_op_data_new_ac_auth_add_and_activate (NMManager *self,
                                              NMActiveConnection *active_take,
                                              GDBusMethodInvocation *invocation_take,
-                                             NMConnection *connection_take)
+                                             NMConnection *connection_take,
+                                             NMSettingsConnectionPersistMode persist)
 {
 	AsyncOpData *async_op_data;
 
@@ -494,6 +497,7 @@ _async_op_data_new_ac_auth_add_and_activate (NMManager *self,
 	async_op_data->ac_auth.active = active_take;
 	async_op_data->ac_auth.add_and_activate.invocation = invocation_take;
 	async_op_data->ac_auth.add_and_activate.connection = connection_take;
+	async_op_data->ac_auth.add_and_activate.persist = persist;
 	c_list_link_tail (&NM_MANAGER_GET_PRIVATE (self)->async_op_lst_head, &async_op_data->async_op_lst);
 	return async_op_data;
 }
@@ -533,6 +537,7 @@ _async_op_complete_ac_auth_cb (NMActiveConnection *active,
 		                             async_op_data->ac_auth.active,
 		                             async_op_data->ac_auth.add_and_activate.connection,
 		                             async_op_data->ac_auth.add_and_activate.invocation,
+		                             async_op_data->ac_auth.add_and_activate.persist,
 		                             success,
 		                             error_desc);
 		g_object_unref (async_op_data->ac_auth.add_and_activate.connection);
@@ -5117,8 +5122,11 @@ activation_add_done (NMSettings *settings,
 	NMManager *self;
 	gs_unref_object NMActiveConnection *active = NULL;
 	gs_free_error GError *local = NULL;
+	gpointer persist_ptr;
+	NMSettingsConnectionPersistMode persist;
 
-	nm_utils_user_data_unpack (user_data, &self, &active);
+	nm_utils_user_data_unpack (user_data, &self, &active, &persist_ptr);
+	persist = GPOINTER_TO_INT (persist_ptr);
 
 	if (!error) {
 		nm_active_connection_set_settings_connection (active, new_connection);
@@ -5126,7 +5134,7 @@ activation_add_done (NMSettings *settings,
 		if (_internal_activate_generic (self, active, &local)) {
 			nm_settings_connection_update (new_connection,
 			                               NULL,
-			                               NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
+			                               persist,
 			                               NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION | NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED,
 			                               "add-and-activate",
 			                               NULL);
@@ -5167,6 +5175,7 @@ _add_and_activate_auth_done (NMManager *self,
                              NMActiveConnection *active,
                              NMConnection *connection,
                              GDBusMethodInvocation *invocation,
+                             NMSettingsConnectionPersistMode persist,
                              gboolean success,
                              const char *error_desc)
 {
@@ -5199,7 +5208,8 @@ _add_and_activate_auth_done (NMManager *self,
 	                                 invocation,
 	                                 activation_add_done,
 	                                 nm_utils_user_data_pack (self,
-	                                                          g_object_ref (active)));
+	                                                          g_object_ref (active),
+	                                                          GINT_TO_POINTER (persist)));
 }
 
 static void
@@ -5224,6 +5234,7 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	const char *device_path;
 	const char *specific_object_path;
 	gs_free NMConnection **conns = NULL;
+	NMSettingsConnectionPersistMode persist = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
 
 	if (g_strcmp0 (method_info->parent.name, "AddAndActivateConnection2") == 0)
 		g_variant_get (parameters, "(@a{sa{sv}}&o&o@a{sv})", &settings, &device_path, &specific_object_path, &options);
@@ -5235,17 +5246,37 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 		const char *option_name;
 		GVariant *option_value;
 
-		/* Just a commit to prepare the support, error out if any option is passed. */
 		g_variant_iter_init (&iter, options);
 		while (g_variant_iter_next (&iter, "{&sv}", &option_name, &option_value)) {
 			gs_unref_variant GVariant *option_value_free = NULL;
+			const char *s;
 
 			option_value_free = option_value;
 
-			error = g_error_new_literal (NM_MANAGER_ERROR,
-			                             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
-			                             "Unknown extra option passed.");
-			goto error;
+			if ((g_strcmp0 (option_name, "persist") == 0) &&
+			    g_variant_is_of_type (option_value, G_VARIANT_TYPE_STRING)) {
+				s = g_variant_get_string (option_value, NULL);
+
+				if (g_strcmp0 (s, "volatile") == 0) {
+					persist = NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_ONLY;
+				} else if (g_strcmp0 (s, "memory") == 0) {
+					persist = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY;
+				} else if (g_strcmp0 (s, "disk") == 0) {
+					persist = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+				} else {
+					error = g_error_new_literal (NM_MANAGER_ERROR,
+					                             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
+					                             "Option \"persist\" must be one of \"volatile\", \"memory\" or \"disk\".");
+					goto error;
+				}
+
+			} else {
+				/* Unknown argument */
+				error = g_error_new_literal (NM_MANAGER_ERROR,
+				                             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
+				                             "Unknown extra option passed.");
+				goto error;
+			}
 		}
 	}
 
@@ -5325,7 +5356,8 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	                                _async_op_data_new_ac_auth_add_and_activate (self,
 	                                                                             active,
 	                                                                             invocation,
-	                                                                             incompl_conn));
+	                                                                             incompl_conn,
+	                                                                             persist));
 
 	/* we passed the pointers on to _async_op_data_new_ac_auth_add_and_activate() */
 	g_steal_pointer (&incompl_conn);

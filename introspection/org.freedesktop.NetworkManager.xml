@@ -126,7 +126,9 @@
         Cannot be used for VPN connections at this time.
 
         This method extends AddAndActivateConnection to allow passing further
-        parameters. At this time no further options are supported.
+        parameters. At this time the following options are supported:
+
+         * persist: A string value of either "disk" (default), "memory" or "volatile". If "memory" is passed, the connection will not be saved to disk. If "volatile" is passed, the connection will not be saved to disk and will be destroyed when disconnected.
     -->
     <method name="AddAndActivateConnection2">
       <arg name="connection" type="a{sa{sv}}" direction="in"/>
