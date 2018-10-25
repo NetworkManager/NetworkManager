@@ -20,7 +20,15 @@
 
 #include "nm-default.h"
 
+#if defined (HAVE_DECL_MEMFD_CREATE) && HAVE_DECL_MEMFD_CREATE
+#include <linux/memfd.h>
+#endif
+
+#include <sys/mman.h>
+
 #include "nm-libnm-utils.h"
+
+#include "nm-vpn-service-plugin.h"
 
 #include "nm-utils/nm-test-utils.h"
 
@@ -2158,6 +2166,271 @@ test_fixup_product_string (void)
 
 /*****************************************************************************/
 
+static int
+_memfd_create (const char *name)
+{
+#if defined (HAVE_DECL_MEMFD_CREATE) && HAVE_DECL_MEMFD_CREATE
+	return memfd_create (name, MFD_CLOEXEC);
+#endif
+	return -1;
+}
+
+typedef struct {
+	const char *key;
+	const char *val;
+} ReadVpnDetailData;
+
+#define READ_VPN_DETAIL_DATA(...) \
+	((ReadVpnDetailData []) { __VA_ARGS__ })
+
+static gboolean
+_do_read_vpn_details_impl1 (const char *file,
+                            int line,
+                            int memfd,
+                            char *mem,
+                            gsize len,
+                            const ReadVpnDetailData *expected_data,
+                            guint expected_data_len,
+                            const ReadVpnDetailData *expected_secrets,
+                            guint expected_secrets_len)
+{
+	gssize written;
+	off_t lseeked;
+	gs_unref_hashtable GHashTable *data = NULL;
+	gs_unref_hashtable GHashTable *secrets = NULL;
+
+	written = write (memfd, mem, len);
+	g_assert_cmpint (written, ==, (gssize) len);
+
+	lseeked = lseek (memfd, 0, SEEK_SET);
+	g_assert_cmpint (lseeked, ==, 0);
+
+	if (!nm_vpn_service_plugin_read_vpn_details (memfd,
+	                                             &data,
+	                                             &secrets)) {
+		g_assert (!data);
+		g_assert (!secrets);
+		g_assert_cmpint (expected_data_len, ==, 0);
+		g_assert_cmpint (expected_secrets_len, ==, 0);
+		return TRUE;
+	}
+
+#define _assert_hash(hash, expected, expected_len) \
+	G_STMT_START { \
+		GHashTable *_hash = (hash); \
+		guint _expected_len = (expected_len); \
+		const ReadVpnDetailData *_expected = (expected); \
+		GHashTableIter _iter; \
+		const char *_k, *_v; \
+		guint _i; \
+		\
+		g_assert (_hash); \
+		\
+		g_hash_table_iter_init (&_iter, _hash); \
+		while (g_hash_table_iter_next (&_iter, (gpointer *) &_k, (gpointer *) &_v)) { \
+			for (_i = 0; _i < _expected_len; _i++) { \
+				if (nm_streq (_expected[_i].key, _k)) \
+					break; \
+			} \
+			if (_i >= _expected_len) \
+				g_error ("%s:%d: hash '%s' contains unexpected data key '%s' with value '%s'", file, line, G_STRINGIFY (hash), _k, _v); \
+		} \
+		\
+		for (_i = 0; _i < _expected_len; _i++) { \
+			const ReadVpnDetailData *_d = &_expected[_i]; \
+			\
+			g_assert (_d->key); \
+			g_assert (_d->val); \
+			_v = g_hash_table_lookup (_hash, _d->key); \
+			if (!nm_streq0 (_v, _d->val)) \
+				g_error ("%s:%d: hash '%s' contains data key '%s' with value %s%s%s but we expected '%s'", file, line, G_STRINGIFY (hash), _d->key, NM_PRINT_FMT_QUOTE_STRING (_v), _d->val); \
+		} \
+		\
+		g_assert_cmpint (g_hash_table_size (_hash), ==, _expected_len); \
+	} G_STMT_END
+
+	_assert_hash (data, expected_data, expected_data_len);
+	_assert_hash (secrets, expected_secrets, expected_secrets_len);
+
+#undef _assert_hash
+	return TRUE;
+}
+
+#define _do_read_vpn_details_impl0(str, expected_data, expected_data_len, expected_secrets, expected_secrets_len, pre_setup_cmd) \
+	G_STMT_START { \
+		nm_auto_close int _memfd = _memfd_create ("libnm-test-read-vpn-details"); \
+		\
+		if (_memfd < 0) \
+			g_test_skip ("cannot create memfd"); \
+		else { \
+			{ pre_setup_cmd ; } \
+			_do_read_vpn_details_impl1 (__FILE__, \
+			                            __LINE__, \
+			                            _memfd, \
+			                            ""str"", \
+			                            NM_STRLEN (str), \
+			                            expected_data, \
+			                            expected_data_len, \
+			                            expected_secrets, \
+			                            expected_secrets_len); \
+		} \
+	} G_STMT_END
+
+#define _do_read_vpn_details_empty(str) \
+	_do_read_vpn_details_impl0 (str, \
+	                            NULL, \
+	                            0, \
+	                            NULL, \
+	                            0, \
+	                            { } )
+
+#define _do_read_vpn_details(str, expected_data, expected_secrets, pre_setup_cmd) \
+	_do_read_vpn_details_impl0 (str, \
+	                            expected_data, \
+	                            G_N_ELEMENTS (expected_data), \
+	                            expected_secrets, \
+	                            G_N_ELEMENTS (expected_secrets), \
+	                            pre_setup_cmd)
+
+static void
+test_nm_vpn_service_plugin_read_vpn_details (void)
+{
+	_do_read_vpn_details_empty ("");
+	_do_read_vpn_details_empty ("hallo");
+	_do_read_vpn_details_empty ("DONE");
+	_do_read_vpn_details_empty ("DONE\n");
+	_do_read_vpn_details_empty ("DONE\0");
+	_do_read_vpn_details_empty ("\0DONE\0");
+
+	_do_read_vpn_details (""
+	                      "DATA_KEY=some-key\n"
+	                      "DATA_VAL=string\n"
+	                      "\n"
+	                      "DATA_KEY=some-other-key\n"
+	                      "DATA_VAL=val2\n"
+	                      "\n"
+	                      "SECRET_KEY=some-secret\n"
+	                      "SECRET_VAL=val3\n"
+	                      "\n"
+	                      "DONE\n"
+	                      "\n"
+	                      "",
+	                      READ_VPN_DETAIL_DATA (
+	                        { "some-key", "string" },
+	                        { "some-other-key", "val2" },
+	                      ),
+	                      READ_VPN_DETAIL_DATA (
+	                        { "some-secret", "val3" },
+	                      ),
+	                      );
+
+	_do_read_vpn_details (""
+	                      "DATA_KEY=some-key\n"
+	                      "DATA_VAL=string\n"
+	                      "DONE\n",
+	                      READ_VPN_DETAIL_DATA (
+	                        { "some-key", "string" },
+	                      ),
+	                      READ_VPN_DETAIL_DATA (),
+	                      );
+
+	_do_read_vpn_details (""
+	                      "DATA_KEY=some-key\n"
+	                      "DATA_VAL=string\n"
+	                      "=continued after a line break\n"
+	                      "SECRET_KEY=key names\n"
+	                      "=can have\n"
+	                      "=continuations too\n"
+	                      "bogus1=\n"
+	                      "SECRET_VAL=value\n"
+	                      "bogus=value\n"
+	                      "bogus=\n"
+	                      "DATA_VAL=x\n"
+	                      "DATA_KEY=\n"
+	                      "DATA_VAL=\n"
+	                      "DATA_VAL=y\n"
+	                      "DATA_KEY=y\n"
+	                      "DATA_KEY=y\n"
+	                      "DATA_KEY=z\n"
+	                      "SECRET_KEY=s1\n"
+	                      "DATA_VAL=z\n"
+	                      "SECRET_VAL=S1\n"
+	                      "\n"
+	                      "DONE\n"
+	                      "",
+	                      READ_VPN_DETAIL_DATA (
+	                        { "some-key", "string\ncontinued after a line break" },
+	                      ),
+	                      READ_VPN_DETAIL_DATA (
+	                        { "key names\ncan have\ncontinuations too", "value" },
+	                      ),
+	                      NMTST_EXPECT_LIBNM_WARNING ("DATA_VAL= not preceded by DATA_KEY=")
+	                      );
+
+	_do_read_vpn_details (""
+	                      "DATA_KEY=some-key\n"
+	                      "DATA_VAL=string\n"
+	                      "=continued after a line break\n"
+	                      "SECRET_KEY=key names\n"
+	                      "=can have\n"
+	                      "=continuations too\n"
+	                      "SECRET_VAL=value\n"
+	                      "",
+	                      READ_VPN_DETAIL_DATA (
+	                        { "some-key", "string\ncontinued after a line break" },
+	                      ),
+	                      READ_VPN_DETAIL_DATA (
+	                        { "key names\ncan have\ncontinuations too", "value" },
+	                      ),
+	                      );
+
+	_do_read_vpn_details (""
+	                      "DATA_KEY=some-key\n"
+	                      "DATA_VAL=string\n"
+	                      "\n"
+	                      "DATA_KEY=some\n"
+	                      "=key-2\n"
+	                      "DATA_VAL=val2\n"
+	                      "\n"
+	                      "DATA_KEY=key3\0"
+	                      "=key-2\n"
+	                      "DATA_VAL=val3\n"
+	                      "\n"
+	                      "SECRET_KEY=some-secret\n"
+	                      "SECRET_VAL=val3\n"
+	                      "\n"
+	                      "SECRET_KEY=\n"
+	                      "SECRET_VAL=val3\n"
+	                      "\n"
+	                      "SECRET_KEY=keyx\n"
+	                      "SECRET_VAL=\n"
+	                      "\n"
+	                      "SECRET_KEY=ke\xc0yx\n"
+	                      "SECRET_VAL=inval\n"
+	                      "\n"
+	                      "SECRET_KEY=key-inval\n"
+	                      "SECRET_VAL=in\xc1val\n"
+	                      "\n"
+	                      "DONE\n"
+	                      "\n"
+	                      "",
+	                      READ_VPN_DETAIL_DATA (
+	                        { "some\nkey-2", "val2" },
+	                        { "some-key", "string" },
+	                        { "key3", "val3" },
+	                      ),
+	                      READ_VPN_DETAIL_DATA (
+	                        { "some-secret", "val3" },
+	                        { "", "val3" },
+	                        { "keyx", "" },
+	                        { "ke\xc0yx", "inval" },
+	                        { "key-inval", "in\xc1val" },
+	                      ),
+	                      );
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -2166,6 +2439,7 @@ int main (int argc, char **argv)
 
 	g_test_add_func ("/libnm/general/fixup_product_string", test_fixup_product_string);
 	g_test_add_func ("/libnm/general/fixup_vendor_string", test_fixup_vendor_string);
+	g_test_add_func ("/libnm/general/nm_vpn_service_plugin_read_vpn_details", test_nm_vpn_service_plugin_read_vpn_details);
 
 	return g_test_run ();
 }

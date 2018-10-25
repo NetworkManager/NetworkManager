@@ -700,6 +700,7 @@ nmtst_test_quick (void)
 #else
 #define NMTST_EXPECT_LIBNM(level, msg)          NMTST_EXPECT ("libnm", level, msg)
 
+#define NMTST_EXPECT_LIBNM_WARNING(msg)         NMTST_EXPECT_LIBNM (G_LOG_LEVEL_WARNING, msg)
 #define NMTST_EXPECT_LIBNM_CRITICAL(msg)        NMTST_EXPECT_LIBNM (G_LOG_LEVEL_CRITICAL, msg)
 #endif
 
