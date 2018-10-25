@@ -748,6 +748,7 @@ class TestNmcli(NmTestBase):
                 print("EXPECT OUTPUT:\n[[%s]]\n" % (n['content']))
                 print("Let the test write the file by rerunning with NM_TEST_REGENERATE=1")
                 print("See howto in %s for details.\n" % (PathConfiguration.canonical_script_filename()))
+                sys.stdout.flush()
                 self.fail("Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files" % (filename))
             if len(results_expect) != len(results):
                 if not regenerate:
@@ -758,6 +759,7 @@ class TestNmcli(NmTestBase):
                         print("EXPECT OUTPUT:\n[[%s]]\n" % (results_expect[len(results)]))
                     print("Let the test write the file by rerunning with NM_TEST_REGENERATE=1")
                     print("See howto in %s for details.\n" % (PathConfiguration.canonical_script_filename()))
+                    sys.stdout.flush()
                     self.fail("Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files" % (filename))
 
         if regenerate:
