@@ -437,16 +437,13 @@
       <varlistentry>
         <term><varname>NM_UNMANAGED</varname></term>
         <listitem><para>
-          No default connection will be created and automatic activation
-          will not be attempted when this property of a device is set to a
-          true value ("1" or "true"). You will still be able to attach a
-          connection to the device manually or observe externally added
-          configuration such as addresses or routes.
-        </para><para>
-          Create an udev rule that sets this property to prevent NetworkManager
-          from interfering with virtual Ethernet device interfaces that are
-          managed by virtualization tools.
-        </para></listitem>
+          If set to <literal>"1"</literal> or <literal>"true"</literal>, the device is
+          configured as unmanaged by NetworkManager. Note that the user still can
+          explicitly overrule this configuration via means like
+          <command>nmcli device set "$DEVICE" managed yes</command> or
+          <literal>"device*.managed=1"</literal> in NetworkManager.conf.
+        </para>
+        </listitem>
       </varlistentry>
     </variablelist>
   </refsect1>
