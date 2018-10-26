@@ -1233,7 +1233,7 @@ nm_client_add_and_activate_connection_async (NMClient *client,
 	if (cancellable)
 		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nm_manager_add_and_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                              partial, device, specific_object,
+	                                              partial, device, specific_object, NULL,
 	                                              cancellable, add_activate_cb, simple);
 }
 
@@ -1255,6 +1255,114 @@ NMActiveConnection *
 nm_client_add_and_activate_connection_finish (NMClient *client,
                                               GAsyncResult *result,
                                               GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return NULL;
+	else
+		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+}
+
+/**
+ * nm_client_add_and_activate_connection_options_async:
+ * @client: a #NMClient
+ * @partial: (allow-none): an #NMConnection to add; the connection may be
+ *   partially filled (or even %NULL) and will be completed by NetworkManager
+ *   using the given @device and @specific_object before being added
+ * @device: the #NMDevice
+ * @specific_object: (allow-none): the object path of a connection-type-specific
+ *   object this activation should use. This parameter is currently ignored for
+ *   wired and mobile broadband connections, and the value of %NULL should be used
+ *   (ie, no specific object).  For Wi-Fi or WiMAX connections, pass the object
+ *   path of a #NMAccessPoint or #NMWimaxNsp owned by @device, which you can
+ *   get using nm_object_get_path(), and which will be used to complete the
+ *   details of the newly added connection.
+ * @options: a #GVariant containing a dictionary with options, or %NULL
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when the activation has started
+ * @user_data: caller-specific data passed to @callback
+ *
+ * Adds a new connection using the given details (if any) as a template,
+ * automatically filling in missing settings with the capabilities of the given
+ * device and specific object.  The new connection is then asynchronously
+ * activated as with nm_client_activate_connection_async(). Cannot be used for
+ * VPN connections at this time.
+ *
+ * Note that the callback is invoked when NetworkManager has started activating
+ * the new connection, not when it finishes. You can used the returned
+ * #NMActiveConnection object (in particular, #NMActiveConnection:state) to
+ * track the activation to its completion.
+ *
+ * This is identitcal to nm_client_add_and_activate_connection_async() but takes
+ * a further @options parameter. Currently the following options are supported
+ * by the daemon:
+ *  * "persist": A string describing how the connection should be stored.
+ *               The default is "disk", but it can be modified to "memory" (until
+ *               the daemon quits) or "volatile" (will be deleted on disconnect).
+ *  * "bind": Bind the connection lifetime to something. The default is "none",
+ *            meaning an explicit disconnect is needed. The value "dbus-client"
+ *            means the connection will automatically be closed when the calling
+ *            DBus client disappears from the system bus.
+ *            A non-default "bind" option must always be used together with
+ *            "persist" set to "volatile".
+ *
+ * Since: 1.16
+ **/
+void
+nm_client_add_and_activate_connection_options_async (NMClient *client,
+                                                     NMConnection *partial,
+                                                     NMDevice *device,
+                                                     const char *specific_object,
+                                                     GVariant *options,
+                                                     GCancellable *cancellable,
+                                                     GAsyncReadyCallback callback,
+                                                     gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+	GError *error = NULL;
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (NM_IS_DEVICE (device));
+	if (partial)
+		g_return_if_fail (NM_IS_CONNECTION (partial));
+
+	if (!_nm_client_check_nm_running (client, &error)) {
+		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
+		return;
+	}
+
+	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
+	                                    nm_client_add_and_activate_connection_options_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
+	nm_manager_add_and_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->manager,
+	                                              partial, device, specific_object, options,
+	                                              cancellable, add_activate_cb, simple);
+}
+
+/**
+ * nm_client_add_and_activate_connection_options_finish:
+ * @client: an #NMClient
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_client_add_and_activate_connection_options_async().
+ *
+ * You can call nm_active_connection_get_connection() on the returned
+ * #NMActiveConnection to find the path of the created #NMConnection.
+ *
+ * Returns: (transfer full): the new #NMActiveConnection on success, %NULL on
+ *   failure, in which case @error will be set.
+ **/
+NMActiveConnection *
+nm_client_add_and_activate_connection_options_finish (NMClient *client,
+                                                      GAsyncResult *result,
+                                                      GError **error)
 {
 	GSimpleAsyncResult *simple;
 

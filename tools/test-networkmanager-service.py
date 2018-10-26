@@ -1341,6 +1341,12 @@ class NetworkManager(ExportedObj):
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='a{sa{sv}}oo', out_signature='oo')
     def AddAndActivateConnection(self, con_hash, devpath, specific_object):
+        return self.AddAndActivateConnection2(con_hash, devpath, specific_object, dict())
+
+    @dbus.service.method(dbus_interface=IFACE_NM, in_signature='a{sa{sv}}ooa{sv}', out_signature='oo')
+    def AddAndActivateConnection2(self, con_hash, devpath, specific_object, options):
+        # TODO: Do some processing of the "options" parameter.
+
         device = self.find_device_first(path = devpath, require = BusErr.UnknownDeviceException)
         conpath = gl.settings.AddConnection(con_hash)
         return (conpath, self.ActivateConnection(conpath, devpath, specific_object))

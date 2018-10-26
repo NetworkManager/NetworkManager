@@ -163,6 +163,7 @@ void                nm_manager_add_and_activate_connection_async  (NMManager *ma
                                                                    NMConnection *partial,
                                                                    NMDevice *device,
                                                                    const char *specific_object,
+                                                                   GVariant *options,
                                                                    GCancellable *cancellable,
                                                                    GAsyncReadyCallback callback,
                                                                    gpointer user_data);

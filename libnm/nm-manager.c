@@ -1098,6 +1098,7 @@ nm_manager_add_and_activate_connection_async (NMManager *manager,
                                               NMConnection *partial,
                                               NMDevice *device,
                                               const char *specific_object,
+                                              GVariant *options,
                                               GCancellable *cancellable,
                                               GAsyncReadyCallback callback,
                                               gpointer user_data)
@@ -1127,13 +1128,16 @@ nm_manager_add_and_activate_connection_async (NMManager *manager,
 		dict = nm_connection_to_dbus (partial, NM_CONNECTION_SERIALIZE_ALL);
 	if (!dict)
 		dict = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
+	if (!options)
+		options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
 
-	nmdbus_manager_call_add_and_activate_connection (priv->proxy,
-	                                                 dict,
-	                                                 nm_object_get_path (NM_OBJECT (device)),
-	                                                 specific_object ?: "/",
-	                                                 cancellable,
-	                                                 add_activate_cb, info);
+	nmdbus_manager_call_add_and_activate_connection2 (priv->proxy,
+	                                                  dict,
+	                                                  nm_object_get_path (NM_OBJECT (device)),
+	                                                  specific_object ?: "/",
+	                                                  options,
+	                                                  cancellable,
+	                                                  add_activate_cb, info);
 }
 
 NMActiveConnection *

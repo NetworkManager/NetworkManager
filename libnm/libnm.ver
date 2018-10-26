@@ -1447,5 +1447,7 @@ global:
 
 libnm_1_16_0 {
 global:
+	nm_client_add_and_activate_connection_options_async;
+	nm_client_add_and_activate_connection_options_finish;
 	nm_device_get_connectivity;
 } libnm_1_14_0;
