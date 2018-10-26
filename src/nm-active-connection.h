@@ -190,4 +190,8 @@ gboolean      nm_active_connection_get_keep_alive (NMActiveConnection *self);
 
 void          nm_active_connection_clear_secrets (NMActiveConnection *self);
 
+void          nm_active_connection_bind_dbus_client (NMActiveConnection *self,
+                                                     GDBusConnection *dbus_con,
+                                                     const char *dbus_name);
+
 #endif /* __NETWORKMANAGER_ACTIVE_CONNECTION_H__ */

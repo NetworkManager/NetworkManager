@@ -5224,7 +5224,7 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	NMManager *self = NM_MANAGER (obj);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	gs_unref_object NMConnection *incompl_conn = NULL;
-	NMActiveConnection *active = NULL;
+	gs_unref_object NMActiveConnection *active = NULL;
 	gs_unref_object NMAuthSubject *subject = NULL;
 	GError *error = NULL;
 	NMDevice *device = NULL;
@@ -5235,6 +5235,7 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	const char *specific_object_path;
 	gs_free NMConnection **conns = NULL;
 	NMSettingsConnectionPersistMode persist = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+	const char *bind_lifetime = "none";
 
 	if (g_strcmp0 (method_info->parent.name, "AddAndActivateConnection2") == 0)
 		g_variant_get (parameters, "(@a{sa{sv}}&o&o@a{sv})", &settings, &device_path, &specific_object_path, &options);
@@ -5269,6 +5270,19 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 					                             "Option \"persist\" must be one of \"volatile\", \"memory\" or \"disk\".");
 					goto error;
 				}
+
+			} else if ((g_strcmp0 (option_name, "bind") == 0) &&
+			    g_variant_is_of_type (option_value, G_VARIANT_TYPE_STRING)) {
+				s = g_variant_get_string (option_value, NULL);
+
+				if (!NM_IN_STRSET (s, "dbus-client", "none")) {
+					error = g_error_new_literal (NM_MANAGER_ERROR,
+					                             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
+					                             "Option \"bind\" must be one of \"dbus-client\" or \"none\".");
+					goto error;
+				}
+
+				bind_lifetime = s;
 
 			} else {
 				/* Unknown argument */
@@ -5349,6 +5363,13 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	                                 &error);
 	if (!active)
 		goto error;
+
+	if (g_strcmp0 (bind_lifetime, "dbus-client") == 0) {
+		if (persist != NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_ONLY)
+			goto error;
+
+		nm_active_connection_bind_dbus_client (active, dbus_connection, sender);
+	}
 
 	nm_active_connection_authorize (active,
 	                                incompl_conn,

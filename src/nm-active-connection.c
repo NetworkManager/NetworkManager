@@ -1014,6 +1014,23 @@ nm_active_connection_set_parent (NMActiveConnection *self, NMActiveConnection *p
 	g_object_weak_ref ((GObject *) priv->parent, parent_destroyed, self);
 }
 
+/**
+ * nm_active_connection_bind_dbus_client:
+ * @self: the #NMActiveConnection
+ * @dbus_client: The dbus client to watch.
+ *
+ * Binds the lifetime of this active connection to the given dbus client. If
+ * the dbus client disappears, then the connection will be disconnected.
+ */
+void
+nm_active_connection_bind_dbus_client (NMActiveConnection *self, GDBusConnection *dbus_con, const char *dbus_client)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	nm_keep_alive_set_dbus_client_watch (priv->keep_alive, dbus_con, dbus_client, NULL);
+	nm_keep_alive_sink (priv->keep_alive);
+}
+
 /*****************************************************************************/
 
 static void
