@@ -134,13 +134,6 @@ static inline bool pid_is_valid(pid_t p) {
         return p > 0;
 }
 
-static inline int sched_policy_to_string_alloc_with_check(int n, char **s) {
-        if (!sched_policy_is_valid(n))
-                return -EINVAL;
-
-        return sched_policy_to_string_alloc(n, s);
-}
-
 int ioprio_parse_priority(const char *s, int *ret);
 
 pid_t getpid_cached(void);
@@ -166,7 +159,7 @@ static inline int safe_fork(const char *name, ForkFlags flags, pid_t *ret_pid) {
         return safe_fork_full(name, NULL, 0, flags, ret_pid);
 }
 
-int fork_agent(const char *name, const int except[], size_t n_except, pid_t *pid, const char *path, ...);
+int fork_agent(const char *name, const int except[], size_t n_except, pid_t *pid, const char *path, ...) _sentinel_;
 
 int set_oom_score_adjust(int value);
 

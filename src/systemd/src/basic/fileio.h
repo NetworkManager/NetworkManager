@@ -59,20 +59,12 @@ DIR *xopendirat(int dirfd, const char *name, int flags);
 int search_and_fopen(const char *path, const char *mode, const char *root, const char **search, FILE **_f);
 int search_and_fopen_nulstr(const char *path, const char *mode, const char *root, const char *search, FILE **_f);
 
-#define FOREACH_LINE(line, f, on_error)                         \
-        for (;;)                                                \
-                if (!fgets(line, sizeof(line), f)) {            \
-                        if (ferror(f)) {                        \
-                                on_error;                       \
-                        }                                       \
-                        break;                                  \
-                } else
-
 int fflush_and_check(FILE *f);
 int fflush_sync_and_check(FILE *f);
 
 int fopen_temporary(const char *path, FILE **_f, char **_temp_path);
 int mkostemp_safe(char *pattern);
+int fmkostemp_safe(char *pattern, const char *mode, FILE**_f);
 
 int tempfn_xxxxxx(const char *p, const char *extra, char **ret);
 int tempfn_random(const char *p, const char *extra, char **ret);

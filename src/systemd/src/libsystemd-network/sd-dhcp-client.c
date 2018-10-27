@@ -86,7 +86,7 @@ struct sd_dhcp_client {
         uint32_t mtu;
         uint32_t xid;
         usec_t start_time;
-        unsigned int attempt;
+        unsigned attempt;
         usec_t request_sent;
         sd_event_source *timeout_t1;
         sd_event_source *timeout_t2;
@@ -1682,6 +1682,8 @@ static int client_handle_message(sd_dhcp_client *client, DHCPMessage *message, i
                         /* got a NAK, let's restart the client */
                         client->timeout_resend =
                                 sd_event_source_unref(client->timeout_resend);
+
+                        client_notify(client, SD_DHCP_CLIENT_EVENT_EXPIRED);
 
                         r = client_initialize(client);
                         if (r < 0)

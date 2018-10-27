@@ -132,7 +132,7 @@ int rename_noreplace(int olddirfd, const char *oldpath, int newdirfd, const char
 }
 
 int readlinkat_malloc(int fd, const char *p, char **ret) {
-        size_t l = 100;
+        size_t l = FILENAME_MAX+1;
         int r;
 
         assert(p);
@@ -1173,7 +1173,7 @@ int unlinkat_deallocate(int fd, const char *name, int flags) {
                 return 0;
 
         if (fstat(truncate_fd, &st) < 0) {
-                log_debug_errno(errno, "Failed to stat file '%s' for deallocation, ignoring.", name);
+                log_debug_errno(errno, "Failed to stat file '%s' for deallocation, ignoring: %m", name);
                 return 0;
         }
 
@@ -1230,6 +1230,34 @@ int fsync_directory_of_file(int fd) {
                 return dfd;
 
         if (fsync(dfd) < 0)
+                return -errno;
+
+        return 0;
+}
+
+int fsync_path_at(int at_fd, const char *path) {
+        _cleanup_close_ int opened_fd = -1;
+        int fd;
+
+        if (isempty(path)) {
+                if (at_fd == AT_FDCWD) {
+                        opened_fd = open(".", O_RDONLY|O_DIRECTORY|O_CLOEXEC);
+                        if (opened_fd < 0)
+                                return -errno;
+
+                        fd = opened_fd;
+                } else
+                        fd = at_fd;
+        } else {
+
+                opened_fd = openat(at_fd, path, O_RDONLY|O_CLOEXEC);
+                if (opened_fd < 0)
+                        return -errno;
+
+                fd = opened_fd;
+        }
+
+        if (fsync(fd) < 0)
                 return -errno;
 
         return 0;
