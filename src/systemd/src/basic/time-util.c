@@ -16,6 +16,7 @@
 #include <unistd.h>
 
 #include "alloc-util.h"
+#include "def.h"
 #include "fd-util.h"
 #include "fileio.h"
 #include "fs-util.h"
@@ -25,6 +26,7 @@
 #include "parse-util.h"
 #include "path-util.h"
 #include "process-util.h"
+#include "serialize.h"
 #include "stat-util.h"
 #include "string-util.h"
 #include "strv.h"
@@ -282,7 +284,7 @@ static char *format_timestamp_internal(
 
         /* Let's not format times with years > 9999 */
         if (t > USEC_TIMESTAMP_FORMATTABLE_MAX) {
-                assert(l >= strlen("--- XXXX-XX-XX XX:XX:XX") + 1);
+                assert(l >= STRLEN("--- XXXX-XX-XX XX:XX:XX") + 1);
                 strcpy(buf, "--- XXXX-XX-XX XX:XX:XX");
                 return buf;
         }
@@ -534,64 +536,6 @@ char *format_timespan(char *buf, size_t l, usec_t t, usec_t accuracy) {
 }
 
 #if 0 /* NM_IGNORED */
-void dual_timestamp_serialize(FILE *f, const char *name, dual_timestamp *t) {
-
-        assert(f);
-        assert(name);
-        assert(t);
-
-        if (!dual_timestamp_is_set(t))
-                return;
-
-        fprintf(f, "%s="USEC_FMT" "USEC_FMT"\n",
-                name,
-                t->realtime,
-                t->monotonic);
-}
-
-int dual_timestamp_deserialize(const char *value, dual_timestamp *t) {
-        uint64_t a, b;
-        int r, pos;
-
-        assert(value);
-        assert(t);
-
-        pos = strspn(value, WHITESPACE);
-        if (value[pos] == '-')
-                return -EINVAL;
-        pos += strspn(value + pos, DIGITS);
-        pos += strspn(value + pos, WHITESPACE);
-        if (value[pos] == '-')
-                return -EINVAL;
-
-        r = sscanf(value, "%" PRIu64 "%" PRIu64 "%n", &a, &b, &pos);
-        if (r != 2) {
-                log_debug("Failed to parse dual timestamp value \"%s\".", value);
-                return -EINVAL;
-        }
-
-        if (value[pos] != '\0')
-                /* trailing garbage */
-                return -EINVAL;
-
-        t->realtime = a;
-        t->monotonic = b;
-
-        return 0;
-}
-
-int timestamp_deserialize(const char *value, usec_t *timestamp) {
-        int r;
-
-        assert(value);
-
-        r = safe_atou64(value, timestamp);
-        if (r < 0)
-                return log_debug_errno(r, "Failed to parse timestamp value \"%s\": %m", value);
-
-        return r;
-}
-
 static int parse_timestamp_impl(const char *t, usec_t *usec, bool with_tz) {
         static const struct {
                 const char *name;
@@ -1030,7 +974,7 @@ int parse_time(const char *t, usec_t *usec, usec_t default_unit) {
                         char *b = e + 1;
 
                         /* Don't allow "0.-0", "3.+1" or "3. 1" */
-                        if (*b == '-' || *b == '+' || isspace(*b))
+                        if (IN_SET(*b, '-', '+') || isspace(*b))
                                 return -EINVAL;
 
                         errno = 0;
@@ -1052,12 +996,21 @@ int parse_time(const char *t, usec_t *usec, usec_t default_unit) {
 
                 something = true;
 
+
+                k = ((usec_t) -1) / multiplier;
+                if ((usec_t) l + 1 >= k || (usec_t) z >= k)
+                        return -ERANGE;
+
                 k = (usec_t) z * multiplier;
 
                 for (; n > 0; n--)
                         k /= 10;
 
-                r += (usec_t) l * multiplier + k;
+                k += (usec_t) l * multiplier;
+                if (k >= ((usec_t) -1) - r)
+                        return -ERANGE;
+
+                r += k;
         }
 
         *usec = r;
@@ -1069,18 +1022,19 @@ int parse_sec(const char *t, usec_t *usec) {
         return parse_time(t, usec, USEC_PER_SEC);
 }
 
-int parse_sec_fix_0(const char *t, usec_t *usec) {
+int parse_sec_fix_0(const char *t, usec_t *ret) {
+        usec_t k;
+        int r;
+
         assert(t);
-        assert(usec);
+        assert(ret);
 
-        t += strspn(t, WHITESPACE);
+        r = parse_sec(t, &k);
+        if (r < 0)
+                return r;
 
-        if (streq(t, "0")) {
-                *usec = USEC_INFINITY;
-                return 0;
-        }
-
-        return parse_sec(t, usec);
+        *ret = k == 0 ? USEC_INFINITY : k;
+        return r;
 }
 
 int parse_nsec(const char *t, nsec_t *nsec) {
@@ -1168,7 +1122,7 @@ int parse_nsec(const char *t, nsec_t *nsec) {
                 if (*e == '.') {
                         char *b = e + 1;
 
-                        if (*b == '-' || *b == '+' || isspace(*b))
+                        if (IN_SET(*b, '-', '+') || isspace(*b))
                                 return -EINVAL;
 
                         errno = 0;
@@ -1189,12 +1143,22 @@ int parse_nsec(const char *t, nsec_t *nsec) {
 
                 for (i = 0; i < ELEMENTSOF(table); i++)
                         if (startswith(e, table[i].suffix)) {
-                                nsec_t k = (nsec_t) z * table[i].nsec;
+                                nsec_t k;
+
+                                k = ((nsec_t) -1) / table[i].nsec;
+                                if ((nsec_t) l + 1 >= k || (nsec_t) z >= k)
+                                        return -ERANGE;
+
+                                k = (nsec_t) z * table[i].nsec;
 
                                 for (; n > 0; n--)
                                         k /= 10;
 
-                                r += (nsec_t) l * table[i].nsec + k;
+                                k += (nsec_t) l * table[i].nsec;
+                                if (k >= ((nsec_t) -1) - r)
+                                        return -ERANGE;
+
+                                r += k;
                                 p = e + strlen(table[i].suffix);
 
                                 something = true;
@@ -1227,6 +1191,7 @@ int get_timezones(char ***ret) {
         _cleanup_fclose_ FILE *f = NULL;
         _cleanup_strv_free_ char **zones = NULL;
         size_t n_zones = 0, n_allocated = 0;
+        int r;
 
         assert(ret);
 
@@ -1239,13 +1204,18 @@ int get_timezones(char ***ret) {
 
         f = fopen("/usr/share/zoneinfo/zone.tab", "re");
         if (f) {
-                char l[LINE_MAX];
-
-                FOREACH_LINE(l, f, return -errno) {
+                for (;;) {
+                        _cleanup_free_ char *line = NULL;
                         char *p, *w;
                         size_t k;
 
-                        p = strstrip(l);
+                        r = read_line(f, LONG_LINE_MAX, &line);
+                        if (r < 0)
+                                return r;
+                        if (r == 0)
+                                break;
+
+                        p = strstrip(line);
 
                         if (isempty(p) || *p == '#')
                                 continue;

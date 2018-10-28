@@ -316,6 +316,7 @@ static sd_event *event_resolve(sd_event *e) {
 
 static int pending_prioq_compare(const void *a, const void *b) {
         const sd_event_source *x = a, *y = b;
+        int r;
 
         assert(x->pending);
         assert(y->pending);
@@ -327,22 +328,17 @@ static int pending_prioq_compare(const void *a, const void *b) {
                 return 1;
 
         /* Lower priority values first */
-        if (x->priority < y->priority)
-                return -1;
-        if (x->priority > y->priority)
-                return 1;
+        r = CMP(x->priority, y->priority);
+        if (r != 0)
+                return r;
 
         /* Older entries first */
-        if (x->pending_iteration < y->pending_iteration)
-                return -1;
-        if (x->pending_iteration > y->pending_iteration)
-                return 1;
-
-        return 0;
+        return CMP(x->pending_iteration, y->pending_iteration);
 }
 
 static int prepare_prioq_compare(const void *a, const void *b) {
         const sd_event_source *x = a, *y = b;
+        int r;
 
         assert(x->prepare);
         assert(y->prepare);
@@ -356,18 +352,12 @@ static int prepare_prioq_compare(const void *a, const void *b) {
         /* Move most recently prepared ones last, so that we can stop
          * preparing as soon as we hit one that has already been
          * prepared in the current iteration */
-        if (x->prepare_iteration < y->prepare_iteration)
-                return -1;
-        if (x->prepare_iteration > y->prepare_iteration)
-                return 1;
+        r = CMP(x->prepare_iteration, y->prepare_iteration);
+        if (r != 0)
+                return r;
 
         /* Lower priority values first */
-        if (x->priority < y->priority)
-                return -1;
-        if (x->priority > y->priority)
-                return 1;
-
-        return 0;
+        return CMP(x->priority, y->priority);
 }
 
 static int earliest_time_prioq_compare(const void *a, const void *b) {
@@ -389,12 +379,7 @@ static int earliest_time_prioq_compare(const void *a, const void *b) {
                 return 1;
 
         /* Order by time */
-        if (x->time.next < y->time.next)
-                return -1;
-        if (x->time.next > y->time.next)
-                return 1;
-
-        return 0;
+        return CMP(x->time.next, y->time.next);
 }
 
 static usec_t time_event_source_latest(const sd_event_source *s) {
@@ -420,12 +405,7 @@ static int latest_time_prioq_compare(const void *a, const void *b) {
                 return 1;
 
         /* Order by time */
-        if (time_event_source_latest(x) < time_event_source_latest(y))
-                return -1;
-        if (time_event_source_latest(x) > time_event_source_latest(y))
-                return 1;
-
-        return 0;
+        return CMP(time_event_source_latest(x), time_event_source_latest(y));
 }
 
 static int exit_prioq_compare(const void *a, const void *b) {
@@ -441,12 +421,7 @@ static int exit_prioq_compare(const void *a, const void *b) {
                 return 1;
 
         /* Lower priority values first */
-        if (x->priority < y->priority)
-                return -1;
-        if (x->priority > y->priority)
-                return 1;
-
-        return 0;
+        return CMP(x->priority, y->priority);
 }
 
 static void free_clock_data(struct clock_data *d) {
@@ -1594,21 +1569,16 @@ static int event_make_inotify_data(
 
 static int inode_data_compare(const void *a, const void *b) {
         const struct inode_data *x = a, *y = b;
+        int r;
 
         assert(x);
         assert(y);
 
-        if (x->dev < y->dev)
-                return -1;
-        if (x->dev > y->dev)
-                return 1;
+        r = CMP(x->dev, y->dev);
+        if (r != 0)
+                return r;
 
-        if (x->ino < y->ino)
-                return -1;
-        if (x->ino > y->ino)
-                return 1;
-
-        return 0;
+        return CMP(x->ino, y->ino);
 }
 
 static void inode_data_hash_func(const void *p, struct siphash *state) {

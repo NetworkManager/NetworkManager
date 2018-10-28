@@ -1483,6 +1483,7 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/sd-adapt/raw-clone.h \
 	src/systemd/sd-adapt/sd-daemon.h \
 	src/systemd/sd-adapt/sd-device.h \
+	src/systemd/sd-adapt/serialize.h \
 	src/systemd/sd-adapt/stat-util.h \
 	src/systemd/sd-adapt/terminal-util.h \
 	src/systemd/sd-adapt/unaligned.h \
