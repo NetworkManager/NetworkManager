@@ -418,10 +418,7 @@ dhclient_start (NMDhcpClient *client,
 
 	/* Save the DUID to the leasefile dhclient will actually use */
 	if (addr_family == AF_INET6) {
-		gs_free char *escaped = NULL;
-
-		escaped = nm_dhcp_dhclient_escape_duid (duid);
-		if (!nm_dhcp_dhclient_save_duid (priv->lease_file, escaped, &local)) {
+		if (!nm_dhcp_dhclient_save_duid (priv->lease_file, duid, &local)) {
 			nm_utils_error_set (error,
 			                    NM_UTILS_ERROR_UNKNOWN,
 			                    "failed to save DUID to '%s': %s",
