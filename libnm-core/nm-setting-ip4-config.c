@@ -724,8 +724,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 	 * The special value "stable" is supported to generate a type 0 client identifier based
 	 * on the stable-id (see connection.stable-id) and a per-host key.
 	 *
-	 * If unset, a globally configured default is used. If still unset, the
-	 * client-id from the last lease is reused.
+	 * If unset, a globally configured default is used. If still unset, the default
+	 * depends on the DHCP plugin.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: dhcp-client-id

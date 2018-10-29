@@ -661,17 +661,6 @@ ip4_start (NMDhcpClient *client,
 	}
 
 	client_id = nm_dhcp_client_get_client_id (client);
-	if (   !client_id
-	    && lease) {
-		r = sd_dhcp_lease_get_client_id (lease,
-		                                 (const void **) &client_id_arr,
-		                                 &client_id_len);
-		if (   r >= 0
-		    && client_id_len >= 2) {
-			client_id_new = g_bytes_new (client_id_arr, client_id_len);
-			client_id = client_id_new;
-		}
-	}
 	if (!client_id) {
 		client_id_new = nm_utils_dhcp_client_id_systemd_node_specific (TRUE,
 		                                                               nm_dhcp_client_get_iface (client));
@@ -900,7 +889,6 @@ ip6_start (NMDhcpClient *client,
 {
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (client);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
-	const char *iface = nm_dhcp_client_get_iface (client);
 	GBytes *hwaddr;
 	const char *hostname;
 	int r, i;
@@ -917,9 +905,6 @@ ip6_start (NMDhcpClient *client,
 	duid_arr = g_bytes_get_data (duid, &duid_len);
 	if (!duid_arr || duid_len < 2)
 		g_return_val_if_reached (FALSE);
-
-	g_free (priv->lease_file);
-	priv->lease_file = get_leasefile_path (AF_INET6, iface, nm_dhcp_client_get_uuid (client));
 
 	r = sd_dhcp6_client_new (&priv->client6);
 	if (r < 0) {
