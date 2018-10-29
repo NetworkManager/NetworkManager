@@ -583,9 +583,10 @@ nm_dhcp_dhclient_read_duid (const char *leasefile, GError **error)
 
 gboolean
 nm_dhcp_dhclient_save_duid (const char *leasefile,
-                            const char *escaped_duid,
+                            GBytes *duid,
                             GError **error)
 {
+	gs_free char *escaped_duid = NULL;
 	gs_strfreev char **lines = NULL;
 	char **iter, *l;
 	GString *s;
@@ -593,6 +594,14 @@ nm_dhcp_dhclient_save_duid (const char *leasefile,
 	gsize len = 0;
 
 	g_return_val_if_fail (leasefile != NULL, FALSE);
+
+	if (!duid) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN,
+		                            "missing duid");
+		g_return_val_if_reached (FALSE);
+	}
+
+	escaped_duid = nm_dhcp_dhclient_escape_duid (duid);
 	g_return_val_if_fail (escaped_duid != NULL, FALSE);
 
 	if (g_file_test (leasefile, G_FILE_TEST_EXISTS)) {
