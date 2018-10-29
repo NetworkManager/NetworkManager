@@ -34,6 +34,7 @@
 #include "nm-utils.h"
 #include "nm-config.h"
 #include "nm-dhcp-utils.h"
+#include "nm-core-utils.h"
 #include "NetworkManagerUtils.h"
 #include "platform/nm-platform.h"
 #include "nm-dhcp-client-logging.h"
@@ -483,22 +484,6 @@ get_leasefile_path (int addr_family, const char *iface, const char *uuid)
 /*****************************************************************************/
 
 static void
-_save_client_id (NMDhcpSystemd *self,
-                 uint8_t type,
-                 const uint8_t *client_id,
-                 size_t len)
-{
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (client_id != NULL);
-	g_return_if_fail (len > 0);
-
-	if (!nm_dhcp_client_get_client_id (NM_DHCP_CLIENT (self))) {
-		nm_dhcp_client_set_client_id_bin (NM_DHCP_CLIENT (self),
-		                                  type, client_id, len);
-	}
-}
-
-static void
 bound4_handle (NMDhcpSystemd *self)
 {
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
@@ -529,16 +514,8 @@ bound4_handle (NMDhcpSystemd *self)
 	                                  TRUE,
 	                                  &error);
 	if (ip4_config) {
-		const uint8_t *client_id = NULL;
-		size_t client_id_len = 0;
-		uint8_t type = 0;
-
 		add_requests_to_options (options, dhcp4_requests);
 		dhcp_lease_save (lease, priv->lease_file);
-
-		sd_dhcp_client_get_client_id (priv->client4, &type, &client_id, &client_id_len);
-		if (client_id)
-			_save_client_id (self, type, client_id, client_id_len);
 
 		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self),
 		                          NM_DHCP_STATE_BOUND,
@@ -583,9 +560,9 @@ dhcp_event_cb (sd_dhcp_client *client, int event, gpointer user_data)
 }
 
 static guint16
-get_arp_type (GBytes *hwaddr)
+get_arp_type (gsize hwaddr_len)
 {
-	switch (g_bytes_get_size (hwaddr)) {
+	switch (hwaddr_len) {
 	case ETH_ALEN:
 		return ARPHRD_ETHER;
 	case INFINIBAND_ALEN:
@@ -603,22 +580,27 @@ ip4_start (NMDhcpClient *client,
 {
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (client);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
-	const char *iface = nm_dhcp_client_get_iface (client);
 	GBytes *hwaddr;
+	const uint8_t *hwaddr_arr;
+	gsize hwaddr_len;
+	guint16 arptype;
 	sd_dhcp_lease *lease = NULL;
-	GBytes *override_client_id;
-	const uint8_t *client_id = NULL;
-	size_t client_id_len = 0;
+	GBytes *client_id;
+	gs_unref_bytes GBytes *client_id_new = NULL;
+	const uint8_t *client_id_arr;
+	size_t client_id_len;
 	struct in_addr last_addr = { 0 };
 	const char *hostname;
 	int r, i;
 	gboolean success = FALSE;
 
-	g_assert (priv->client4 == NULL);
-	g_assert (priv->client6 == NULL);
+	g_return_val_if_fail (!priv->client4, FALSE);
+	g_return_val_if_fail (!priv->client6, FALSE);
 
 	g_free (priv->lease_file);
-	priv->lease_file = get_leasefile_path (AF_INET, iface, nm_dhcp_client_get_uuid (client));
+	priv->lease_file = get_leasefile_path (AF_INET,
+	                                       nm_dhcp_client_get_iface (client),
+	                                       nm_dhcp_client_get_uuid (client));
 
 	r = sd_dhcp_client_new (&priv->client4, FALSE);
 	if (r < 0) {
@@ -635,22 +617,23 @@ ip4_start (NMDhcpClient *client,
 	}
 
 	hwaddr = nm_dhcp_client_get_hw_addr (client);
-	if (hwaddr) {
-		const uint8_t *data;
-		gsize len;
-
-		data = g_bytes_get_data (hwaddr, &len);
-		r = sd_dhcp_client_set_mac (priv->client4,
-		                            data,
-		                            len,
-		                            get_arp_type (hwaddr));
-		if (r < 0) {
-			nm_utils_error_set_errno (error, r, "failed to set MAC address: %s");
-			goto errout;
-		}
+	if (   !hwaddr
+	    || !(hwaddr_arr = g_bytes_get_data (hwaddr, &hwaddr_len))
+	    || (arptype = get_arp_type (hwaddr_len)) == ARPHRD_NONE) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "invalid MAC address");
+		goto errout;
+	}
+	r = sd_dhcp_client_set_mac (priv->client4,
+	                            hwaddr_arr,
+	                            hwaddr_len,
+	                            arptype);
+	if (r < 0) {
+		nm_utils_error_set_errno (error, r, "failed to set MAC address: %s");
+		goto errout;
 	}
 
-	r = sd_dhcp_client_set_ifindex (priv->client4, nm_dhcp_client_get_ifindex (client));
+	r = sd_dhcp_client_set_ifindex (priv->client4,
+	                                nm_dhcp_client_get_ifindex (client));
 	if (r < 0) {
 		nm_utils_error_set_errno (error, r, "failed to set ifindex: %s");
 		goto errout;
@@ -677,27 +660,44 @@ ip4_start (NMDhcpClient *client,
 		}
 	}
 
-	override_client_id = nm_dhcp_client_get_client_id (client);
-	if (override_client_id) {
-		client_id = g_bytes_get_data (override_client_id, &client_id_len);
-		nm_assert (client_id && client_id_len >= 2);
-		sd_dhcp_client_set_client_id (priv->client4,
-		                              client_id[0],
-		                              client_id + 1,
-		                              NM_MIN (client_id_len - 1, _NM_SD_MAX_CLIENT_ID_LEN));
-	} else if (lease) {
-		r = sd_dhcp_lease_get_client_id (lease, (const void **) &client_id, &client_id_len);
-		if (r == 0 && client_id_len >= 2) {
-			sd_dhcp_client_set_client_id (priv->client4,
-			                              client_id[0],
-			                              client_id + 1,
-			                              client_id_len - 1);
-			_save_client_id (NM_DHCP_SYSTEMD (client),
-			                 client_id[0],
-			                 client_id + 1,
-			                 client_id_len - 1);
+	client_id = nm_dhcp_client_get_client_id (client);
+	if (   !client_id
+	    && lease) {
+		r = sd_dhcp_lease_get_client_id (lease,
+		                                 (const void **) &client_id_arr,
+		                                 &client_id_len);
+		if (   r >= 0
+		    && client_id_len >= 2) {
+			client_id_new = g_bytes_new (client_id_arr, client_id_len);
+			client_id = client_id_new;
 		}
 	}
+	if (!client_id) {
+		client_id_new = nm_utils_dhcp_client_id_systemd_node_specific (TRUE,
+		                                                               nm_dhcp_client_get_iface (client));
+		client_id = client_id_new;
+	}
+
+	if (   !(client_id_arr = g_bytes_get_data (client_id, &client_id_len))
+	    || client_id_len < 2) {
+
+		/* invalid client-ids are not expected. */
+		nm_assert_not_reached ();
+
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "no valid IPv4 client-id");
+		goto errout;
+	}
+
+	r = sd_dhcp_client_set_client_id (priv->client4,
+	                                  client_id_arr[0],
+	                                  client_id_arr + 1,
+	                                  NM_MIN (client_id_len - 1, _NM_SD_MAX_CLIENT_ID_LEN));
+	if (r < 0) {
+		nm_utils_error_set_errno (error, r, "failed to set IPv4 client-id: %s");
+		goto errout;
+	}
+
+	nm_dhcp_client_set_client_id (client, client_id);
 
 	/* Add requested options */
 	for (i = 0; dhcp4_requests[i].name; i++) {
@@ -954,21 +954,28 @@ ip6_start (NMDhcpClient *client,
 
 	hwaddr = nm_dhcp_client_get_hw_addr (client);
 	if (hwaddr) {
-		const uint8_t *data;
-		gsize len;
+		const uint8_t *hwaddr_arr;
+		gsize hwaddr_len;
+		guint16 arptype;
 
-		data = g_bytes_get_data (hwaddr, &len);
+		if (   !(hwaddr_arr = g_bytes_get_data (hwaddr, &hwaddr_len))
+		    || (arptype = get_arp_type (hwaddr_len)) == ARPHRD_NONE) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "invalid MAC address");
+			goto errout;
+		}
+
 		r = sd_dhcp6_client_set_mac (priv->client6,
-		                             data,
-		                             len,
-		                             get_arp_type (hwaddr));
+		                             hwaddr_arr,
+		                             hwaddr_len,
+		                             arptype);
 		if (r < 0) {
 			nm_utils_error_set_errno (error, r, "failed to set MAC address: %s");
 			goto errout;
 		}
 	}
 
-	r = sd_dhcp6_client_set_ifindex (priv->client6, nm_dhcp_client_get_ifindex (client));
+	r = sd_dhcp6_client_set_ifindex (priv->client6,
+	                                 nm_dhcp_client_get_ifindex (client));
 	if (r < 0) {
 		nm_utils_error_set_errno (error, r, "failed to set ifindex: %s");
 		goto errout;

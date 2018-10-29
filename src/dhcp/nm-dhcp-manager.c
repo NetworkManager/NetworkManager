@@ -181,6 +181,7 @@ client_start (NMDhcpManager *self,
 	gsize hwaddr_len;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
+	g_return_val_if_fail (iface, NULL);
 	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 	g_return_val_if_fail (!dhcp_client_id || g_bytes_get_size (dhcp_client_id) >= 2, NULL);
