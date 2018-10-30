@@ -2785,6 +2785,42 @@ _nm_utils_sriov_vf_from_strparts (const char *index, const char *detail, GError 
 
 /*****************************************************************************/
 
+NMUuid *
+_nm_utils_uuid_parse (const char *str,
+                      NMUuid *out_uuid)
+{
+	nm_assert (str);
+	nm_assert (out_uuid);
+
+	if (uuid_parse (str, out_uuid->uuid) != 0)
+		return NULL;
+	return out_uuid;
+}
+
+char *
+_nm_utils_uuid_unparse (const NMUuid *uuid,
+                        char *out_str /*[37]*/)
+{
+	nm_assert (uuid);
+
+	if (!out_str) {
+		/* for convenience, allow %NULL to indicate that a new
+		 * string should be allocated. */
+		out_str = g_malloc (37);
+	}
+	uuid_unparse_lower (uuid->uuid, out_str);
+	return out_str;
+}
+
+NMUuid *
+_nm_utils_uuid_generate_random (NMUuid *out_uuid)
+{
+	nm_assert (out_uuid);
+
+	uuid_generate_random (out_uuid->uuid);
+	return out_uuid;
+}
+
 /**
  * nm_utils_uuid_generate_buf_:
  * @buf: input buffer, must contain at least 37 bytes
@@ -2794,11 +2830,12 @@ _nm_utils_sriov_vf_from_strparts (const char *index, const char *detail, GError 
 char *
 nm_utils_uuid_generate_buf_ (char *buf)
 {
-	uuid_t uuid;
+	NMUuid uuid;
 
-	uuid_generate_random (uuid);
-	uuid_unparse_lower (uuid, buf);
-	return buf;
+	nm_assert (buf);
+
+	_nm_utils_uuid_generate_random (&uuid);
+	return _nm_utils_uuid_unparse (&uuid, buf);
 }
 
 /**
@@ -2830,8 +2867,7 @@ nm_utils_uuid_generate (void)
 char *
 nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, gpointer type_args)
 {
-	uuid_t uuid;
-	char *buf;
+	NMUuid uuid;
 
 	g_return_val_if_fail (slen == 0 || s, FALSE);
 
@@ -2847,37 +2883,34 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 		                    0,
 		                    (guint8 *) s,
 		                    slen,
-		                    (guint8 *) uuid,
+		                    (guint8 *) &uuid,
 		                    sizeof (uuid));
 		break;
 	case NM_UTILS_UUID_TYPE_VARIANT3: {
-		uuid_t ns_uuid = { 0 };
+		NMUuid ns_uuid = { 0 };
 
 		if (type_args) {
 			/* type_args can be a name space UUID. Interpret it as (char *) */
-			if (uuid_parse ((char *) type_args, ns_uuid) != 0)
+			if (!_nm_utils_uuid_parse (type_args, &ns_uuid))
 				g_return_val_if_reached (NULL);
 		}
 
 		nm_crypto_md5_hash ((guint8 *) s,
 		                    slen,
-		                    (guint8 *) ns_uuid,
+		                    (guint8 *) &ns_uuid,
 		                    sizeof (ns_uuid),
-		                    (guint8 *) uuid,
+		                    (guint8 *) &uuid,
 		                    sizeof (uuid));
 
-		uuid[6] = (uuid[6] & 0x0F) | 0x30;
-		uuid[8] = (uuid[8] & 0x3F) | 0x80;
+		uuid.uuid[6] = (uuid.uuid[6] & 0x0F) | 0x30;
+		uuid.uuid[8] = (uuid.uuid[8] & 0x3F) | 0x80;
 		break;
 	}
 	default:
 		g_return_val_if_reached (NULL);
 	}
 
-	buf = g_malloc (37);
-	uuid_unparse_lower (uuid, &buf[0]);
-
-	return buf;
+	return _nm_utils_uuid_unparse (&uuid, NULL);
 }
 
 /**

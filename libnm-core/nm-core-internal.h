@@ -279,6 +279,18 @@ gboolean _nm_utils_check_module_file (const char *name,
                                       gpointer user_data,
                                       GError **error);
 
+/*****************************************************************************/
+
+typedef struct _NMUuid {
+	guchar uuid[16];
+} NMUuid;
+
+NMUuid *_nm_utils_uuid_parse (const char *str,
+                              NMUuid *uuid);
+char *_nm_utils_uuid_unparse (const NMUuid *uuid,
+                              char *out_str /*[37]*/);
+NMUuid *_nm_utils_uuid_generate_random (NMUuid *out_uuid);
+
 #define NM_UTILS_UUID_TYPE_LEGACY            0
 #define NM_UTILS_UUID_TYPE_VARIANT3          1
 
