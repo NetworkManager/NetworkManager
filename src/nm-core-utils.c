@@ -2319,60 +2319,153 @@ nm_utils_is_specific_hostname (const char *name)
 
 /*****************************************************************************/
 
-gboolean
-nm_utils_machine_id_parse (const char *id_str, /*uuid_t*/ guchar *out_uuid)
+typedef struct {
+	NMUuid bin;
+	char _nul_sentinel; /* just for safety, if somebody accidentally uses the binary in a string context. */
+
+	/* depending on whether the string is packed or not (with/without hyphens),
+	 * it's 32 or 36 characters long (plus the trailing NUL).
+	 *
+	 * The difference is that boot-id is a valid RFC 4211 UUID and represented
+	 * as a 36 ascii string (with hyphens). The machine-id technically is not
+	 * a UUID, but just a 32 byte sequence of hexchars. */
+	char str[37];
+	bool is_fake;
+} UuidData;
+
+static UuidData *
+_uuid_data_init (UuidData *uuid_data,
+                 gboolean packed,
+                 gboolean is_fake,
+                 const NMUuid *uuid)
 {
-	int i;
-	guint8 v0, v1;
+	nm_assert (uuid_data);
+	nm_assert (uuid);
 
-	if (!id_str)
-		return FALSE;
-
-	for (i = 0; i < 32; i++) {
-		if (!g_ascii_isxdigit (id_str[i]))
-			return FALSE;
+	uuid_data->bin = *uuid;
+	uuid_data->_nul_sentinel = '\0';
+	uuid_data->is_fake = is_fake;
+	if (packed) {
+		G_STATIC_ASSERT_EXPR (sizeof (uuid_data->str) >= (sizeof (*uuid) * 2 + 1));
+		_nm_utils_bin2hexstr_full (uuid,
+		                           sizeof (*uuid),
+		                           '\0',
+		                           FALSE,
+		                           uuid_data->str);
+	} else {
+		G_STATIC_ASSERT_EXPR (sizeof (uuid_data->str) >= 37);
+		_nm_utils_uuid_unparse (uuid, uuid_data->str);
 	}
-	if (id_str[i] != '\0')
-		return FALSE;
-
-	if (out_uuid) {
-		for (i = 0; i < 16; i++) {
-			v0 = g_ascii_xdigit_value (*(id_str++));
-			v1 = g_ascii_xdigit_value (*(id_str++));
-			out_uuid[i] = (v0 << 4) + v1;
-		}
-	}
-	return TRUE;
+	return uuid_data;
 }
 
-char *
-nm_utils_machine_id_read (void)
+/*****************************************************************************/
+
+static const UuidData *
+_machine_id_get (void)
 {
-	gs_free char *contents = NULL;
-	int i;
+	static const UuidData *volatile p_uuid_data;
+	const UuidData *d;
 
-	/* Get the machine ID from /etc/machine-id; it's always in /etc no matter
-	 * where our configured SYSCONFDIR is.  Alternatively, it might be in
-	 * LOCALSTATEDIR /lib/dbus/machine-id.
-	 */
-	if (   !g_file_get_contents ("/etc/machine-id", &contents, NULL, NULL)
-	    && !g_file_get_contents (LOCALSTATEDIR "/lib/dbus/machine-id", &contents, NULL, NULL))
-		return NULL;
+again:
+	d = g_atomic_pointer_get (&p_uuid_data);
+	if (G_UNLIKELY (!d)) {
+		static gsize lock;
+		static UuidData uuid_data;
+		gs_free char *content = NULL;
+		gboolean is_fake = TRUE;
+		const char *fake_type = NULL;
+		NMUuid uuid;
 
-	contents = g_strstrip (contents);
-
-	for (i = 0; i < 32; i++) {
-		if (!g_ascii_isxdigit (contents[i]))
-			return NULL;
-		if (contents[i] >= 'A' && contents[i] <= 'F') {
-			/* canonicalize to lower-case */
-			contents[i] = 'a' + (contents[i] - 'A');
+		/* Get the machine ID from /etc/machine-id; it's always in /etc no matter
+		 * where our configured SYSCONFDIR is.  Alternatively, it might be in
+		 * LOCALSTATEDIR /lib/dbus/machine-id.
+		 */
+		if (   nm_utils_file_get_contents (-1, "/etc/machine-id", 100*1024, 0, &content, NULL, NULL) >= 0
+		    || nm_utils_file_get_contents (-1, LOCALSTATEDIR"/lib/dbus/machine-id", 100*1024, 0, &content, NULL, NULL) >= 0) {
+			g_strstrip (content);
+			if (_nm_utils_hexstr2bin_full (content,
+			                               FALSE,
+			                               FALSE,
+			                               NULL,
+			                               16,
+			                               (guint8 *) &uuid,
+			                               sizeof (uuid),
+			                               NULL)) {
+				if (!nm_utils_uuid_is_null (&uuid)) {
+					/* an all-zero machine-id is not valid. */
+					is_fake = FALSE;
+				}
+			}
 		}
-	}
-	if (contents[i] != '\0')
-		return NULL;
 
-	return g_steal_pointer (&contents);
+		if (is_fake) {
+			const guint8 *seed_bin;
+			const char *hash_seed;
+			gsize seed_len;
+
+			if (nm_utils_secret_key_get (&seed_bin, &seed_len)) {
+				/* we have no valid machine-id. Generate a fake one by hashing
+				 * the secret-key. This key is commonly persisted, so it should be
+				 * stable accross reboots (despite having a broken system without
+				 * proper machine-id). */
+				fake_type = "secret-key";
+				hash_seed = "ab085f06-b629-46d1-a553-84eeba5683b6";
+			} else {
+				/* the secret-key is not valid/persistent either. That happens when we fail
+				 * to read/write the secret-key to disk. Fallback to boot-id. The boot-id
+				 * itself may be fake and randomly generated ad-hoc, but that is as best
+				 * as it gets.  */
+				seed_bin = (const guint8 *) nm_utils_get_boot_id_bin ();
+				seed_len = sizeof (NMUuid);
+				fake_type = "boot-id";
+				hash_seed = "7ff0c8f5-5399-4901-ab63-61bf594abe8b";
+			}
+
+			/* the fake machine-id is based on secret-key/boot-id, but we hash it
+			 * again, so that they are not literally the same. */
+			nm_utils_uuid_generate_from_string_bin (&uuid,
+			                                        (const char *) seed_bin,
+			                                        seed_len,
+			                                        NM_UTILS_UUID_TYPE_VERSION5,
+			                                        (gpointer) hash_seed);
+		}
+
+		if (!g_once_init_enter (&lock))
+			goto again;
+
+		d = _uuid_data_init (&uuid_data, TRUE, is_fake, &uuid);
+		g_atomic_pointer_set (&p_uuid_data, d);
+		g_once_init_leave (&lock, 1);
+
+		if (is_fake) {
+			nm_log_err (LOGD_CORE,
+			            "/etc/machine-id: no valid machine-id. Use fake one based on %s: %s",
+			            fake_type,
+			            d->str);
+		} else
+			nm_log_dbg (LOGD_CORE, "/etc/machine-id: %s", d->str);
+	}
+
+	return d;
+}
+
+const char *
+nm_utils_machine_id_str (void)
+{
+	return _machine_id_get ()->str;
+}
+
+const NMUuid *
+nm_utils_machine_id_bin (void)
+{
+	return &_machine_id_get ()->bin;
+}
+
+gboolean
+nm_utils_machine_id_is_fake (void)
+{
+	return _machine_id_get ()->is_fake;
 }
 
 /*****************************************************************************/
@@ -2443,9 +2536,10 @@ gboolean
 nm_utils_secret_key_get (const guint8 **out_secret_key,
                          gsize *out_key_len)
 {
-	static volatile const SecretKeyData *secret_key_static;
+	static const SecretKeyData *volatile secret_key_static;
 	const SecretKeyData *secret_key;
 
+again:
 	secret_key = g_atomic_pointer_get (&secret_key_static);
 	if (G_UNLIKELY (!secret_key)) {
 		static gsize init_value = 0;
@@ -2455,20 +2549,15 @@ nm_utils_secret_key_get (const guint8 **out_secret_key,
 		gsize tmp_key_len;
 
 		tmp_success = _secret_key_read (&tmp_secret_key, &tmp_key_len);
-		if (g_once_init_enter (&init_value)) {
-			secret_key_data.secret_key = tmp_secret_key;
-			secret_key_data.key_len = tmp_key_len;
-			secret_key_data.is_good = tmp_success;
+		if (!g_once_init_enter (&init_value))
+			goto again;
 
-			if (g_atomic_pointer_compare_and_exchange (&secret_key_static, NULL, &secret_key_data)) {
-				g_steal_pointer (&tmp_secret_key);
-				secret_key = &secret_key_data;
-			}
-
-			g_once_init_leave (&init_value, 1);
-		}
-		if (!secret_key)
-			secret_key = g_atomic_pointer_get (&secret_key_static);
+		secret_key_data.secret_key = g_steal_pointer (&tmp_secret_key);
+		secret_key_data.key_len = tmp_key_len;
+		secret_key_data.is_good = tmp_success;
+		secret_key = &secret_key_data;
+		g_atomic_pointer_set (&secret_key_static, secret_key);
+		g_once_init_leave (&init_value, 1);
 	}
 
 	*out_secret_key = secret_key->secret_key;
@@ -2494,34 +2583,52 @@ nm_utils_secret_key_get_timestamp (void)
 
 /*****************************************************************************/
 
-const char *
-nm_utils_get_boot_id (void)
+static const UuidData *
+_boot_id_get (void)
 {
-	static const char *boot_id;
+	static const UuidData *volatile p_boot_id;
+	const UuidData *d;
 
-	if (G_UNLIKELY (!boot_id)) {
+again:
+	d = g_atomic_pointer_get (&p_boot_id);
+	if (G_UNLIKELY (!d)) {
+		static gsize lock;
+		static UuidData boot_id;
 		gs_free char *contents = NULL;
+		NMUuid uuid;
+		gboolean is_fake = FALSE;
 
 		nm_utils_file_get_contents (-1, "/proc/sys/kernel/random/boot_id", 0,
 		                            NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
 		                            &contents, NULL, NULL);
-		if (contents) {
-			g_strstrip (contents);
-			if (contents[0]) {
-				/* clone @contents because we keep @boot_id until the program
-				 * ends.
-				 * nm_utils_file_get_contents() likely allocated a larger
-				 * buffer chunk initially and (although using realloc to shrink
-				 * the buffer) it might not be best to keep this memory
-				 * around. */
-				boot_id = g_strdup (contents);
-			}
+		if (   !contents
+		    || !_nm_utils_uuid_parse (nm_strstrip (contents), &uuid)) {
+			/* generate a random UUID instead. */
+			is_fake = TRUE;
+			_nm_utils_uuid_generate_random (&uuid);
 		}
-		if (!boot_id)
-			boot_id = nm_utils_uuid_generate ();
+
+		if (!g_once_init_enter (&lock))
+			goto again;
+
+		d = _uuid_data_init (&boot_id, FALSE, is_fake, &uuid);
+		g_atomic_pointer_set (&p_boot_id, d);
+		g_once_init_leave (&lock, 1);
 	}
 
-	return boot_id;
+	return d;
+}
+
+const char *
+nm_utils_get_boot_id_str (void)
+{
+	return _boot_id_get ()->str;
+}
+
+const NMUuid *
+nm_utils_get_boot_id_bin (void)
+{
+	return &_boot_id_get ()->bin;
 }
 
 /*****************************************************************************/
@@ -2850,7 +2957,7 @@ nm_utils_stable_id_parse (const char *stable_id,
 		if (CHECK_PREFIX ("${CONNECTION}"))
 			_stable_id_append (str, uuid);
 		else if (CHECK_PREFIX ("${BOOT}"))
-			_stable_id_append (str, bootid ?: nm_utils_get_boot_id ());
+			_stable_id_append (str, bootid ?: nm_utils_get_boot_id_str ());
 		else if (CHECK_PREFIX ("${DEVICE}"))
 			_stable_id_append (str, deviceid);
 		else if (g_str_has_prefix (&stable_id[i], "${RANDOM}")) {

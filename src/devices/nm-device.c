@@ -37,7 +37,6 @@
 #include <linux/if_arp.h>
 #include <linux/rtnetlink.h>
 #include <linux/pkt_sched.h>
-#include <uuid/uuid.h>
 
 #include "nm-utils/nm-dedup-multi.h"
 #include "nm-utils/nm-random-utils.h"
@@ -8303,8 +8302,7 @@ generate_duid_uuid (guint8 *data, gsize data_len)
 static GBytes *
 generate_duid_from_machine_id (void)
 {
-	gs_free const char *machine_id_s = NULL;
-	uuid_t uuid;
+	const NMUuid *uuid;
 	GChecksum *sum;
 	guint8 sha256_digest[32];
 	gsize len = sizeof (sha256_digest);
@@ -8313,13 +8311,11 @@ generate_duid_from_machine_id (void)
 	if (global_duid)
 		return g_bytes_ref (global_duid);
 
-	machine_id_s = nm_utils_machine_id_read ();
-	if (!nm_utils_machine_id_parse (machine_id_s, uuid))
-		return NULL;
+	uuid = nm_utils_machine_id_bin ();
 
 	/* Hash the machine ID so it's not leaked to the network */
 	sum = g_checksum_new (G_CHECKSUM_SHA256);
-	g_checksum_update (sum, (const guchar *) &uuid, sizeof (uuid));
+	g_checksum_update (sum, (const guchar *) uuid, sizeof (*uuid));
 	g_checksum_get_digest (sum, sha256_digest, &len);
 	g_checksum_free (sum);
 

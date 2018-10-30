@@ -28,7 +28,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <uuid/uuid.h>
 #include <linux/rtnetlink.h>
 
 #include "nm-utils/nm-dedup-multi.h"

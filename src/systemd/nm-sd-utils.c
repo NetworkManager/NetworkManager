@@ -20,9 +20,12 @@
 
 #include "nm-sd-utils.h"
 
+#include "nm-core-internal.h"
+
 #include "nm-sd-adapt.h"
 
 #include "path-util.h"
+#include "sd-id128.h"
 
 /*****************************************************************************/
 
@@ -42,4 +45,17 @@ const char *
 nm_sd_utils_path_startswith (const char *path, const char *prefix)
 {
 	return path_startswith (path, prefix);
+}
+
+/*****************************************************************************/
+
+NMUuid *
+nm_sd_utils_id128_get_machine (NMUuid *out_uuid)
+{
+	g_assert (out_uuid);
+
+	G_STATIC_ASSERT_EXPR (sizeof (*out_uuid) == sizeof (sd_id128_t));
+	if (sd_id128_get_machine ((sd_id128_t *) out_uuid) < 0)
+		return NULL;
+	return out_uuid;
 }

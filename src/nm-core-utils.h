@@ -269,14 +269,18 @@ gboolean nm_utils_sysctl_ip_conf_is_path (int addr_family, const char *path, con
 
 gboolean nm_utils_is_specific_hostname (const char *name);
 
-char *nm_utils_machine_id_read (void);
-gboolean nm_utils_machine_id_parse (const char *id_str, /*uuid_t*/ guchar *out_uuid);
+struct _NMUuid;
+
+const char *nm_utils_machine_id_str (void);
+const struct _NMUuid *nm_utils_machine_id_bin (void);
+gboolean nm_utils_machine_id_is_fake (void);
+
+const char *nm_utils_get_boot_id_str (void);
+const struct _NMUuid *nm_utils_get_boot_id_bin (void);
 
 gboolean nm_utils_secret_key_get (const guint8 **out_secret_key,
                                   gsize *out_key_len);
 gint64 nm_utils_secret_key_get_timestamp (void);
-
-const char *nm_utils_get_boot_id (void);
 
 /* IPv6 Interface Identifier helpers */
 
