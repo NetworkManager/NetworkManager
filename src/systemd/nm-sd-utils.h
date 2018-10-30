@@ -35,10 +35,4 @@ struct _NMUuid *nm_sd_utils_id128_get_machine (struct _NMUuid *out_uuid);
 
 /*****************************************************************************/
 
-GBytes *nm_sd_utils_generate_default_dhcp_client_id (int ifindex,
-                                                     const guint8 *mac_addr,
-                                                     gsize mac_addr_len);
-
-/*****************************************************************************/
-
 #endif /* __NM_SD_UTILS_H__ */

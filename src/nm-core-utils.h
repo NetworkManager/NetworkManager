@@ -373,6 +373,19 @@ char *nm_utils_hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
                                        const char *current_mac_address,
                                        const char *generate_mac_address_mask);
 
+/*****************************************************************************/
+
+GBytes *nm_utils_dhcp_client_id_systemd_node_specific_full (gboolean legacy_unstable_byteorder,
+                                                            const guint8 *interface_id,
+                                                            gsize interface_id_len,
+                                                            const guint8 *machine_id,
+                                                            gsize machine_id_len);
+
+GBytes *nm_utils_dhcp_client_id_systemd_node_specific (gboolean legacy_unstable_byteorder,
+                                                       const char *ifname);
+
+/*****************************************************************************/
+
 void nm_utils_array_remove_at_indexes (GArray *array, const guint *indexes_to_delete, gsize len);
 
 void nm_utils_setpgid (gpointer unused);
