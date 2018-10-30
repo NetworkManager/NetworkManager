@@ -26,7 +26,6 @@
 
 #include "path-util.h"
 #include "sd-id128.h"
-#include "dhcp-identifier.h"
 
 /*****************************************************************************/
 
@@ -59,49 +58,4 @@ nm_sd_utils_id128_get_machine (NMUuid *out_uuid)
 	if (sd_id128_get_machine ((sd_id128_t *) out_uuid) < 0)
 		return NULL;
 	return out_uuid;
-}
-
-/*****************************************************************************/
-
-/**
- * nm_sd_utils_generate_default_dhcp_client_id:
- * @ifindex: the interface ifindex
- * @mac: the MAC address
- * @mac_addr_len: the length of MAC address.
- *
- * Systemd's sd_dhcp_client generates a default client ID (type 255, node-specific,
- * RFC 4361) if no explicit client-id is set. This function duplicates that
- * implementation and exposes it as (internal) API.
- *
- * Returns: a %GBytes of generated client-id, or %NULL on failure.
- */
-GBytes *
-nm_sd_utils_generate_default_dhcp_client_id (int ifindex,
-                                             const guint8 *mac_addr,
-                                             gsize mac_addr_len)
-{
-	struct _nm_packed {
-		guint8 type;
-		guint32 iaid;
-		struct duid duid;
-	} client_id;
-	int r;
-	gsize duid_len;
-
-	g_return_val_if_fail (ifindex > 0, NULL);
-	g_return_val_if_fail (mac_addr, NULL);
-	g_return_val_if_fail (mac_addr_len > 0, NULL);
-
-	client_id.type = 255;
-
-	r = dhcp_identifier_set_iaid (ifindex, (guint8 *) mac_addr, mac_addr_len, &client_id.iaid);
-	if (r < 0)
-		return NULL;
-
-	r = dhcp_identifier_set_duid_en (&client_id.duid, &duid_len);
-	if (r < 0)
-		return NULL;
-
-	return g_bytes_new (&client_id,
-	                    G_STRUCT_OFFSET (typeof (client_id), duid) + duid_len);
 }
