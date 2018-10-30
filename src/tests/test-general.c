@@ -28,6 +28,8 @@
 
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
+#include "nm-core-utils.h"
+#include "systemd/nm-sd-utils.h"
 
 #include "dns/nm-dns-manager.h"
 
@@ -1891,6 +1893,52 @@ test_dns_create_resolv_conf (void)
 
 /*****************************************************************************/
 
+static void
+test_machine_id_read (void)
+{
+	NMUuid machine_id_sd;
+	const NMUuid *machine_id;
+	char machine_id_str[33];
+	gpointer logstate;
+
+	logstate = nmtst_logging_disable (FALSE);
+	/* If you run this test as root, without a valid /etc/machine-id,
+	 * the code will try to get the secret-key (and possibly attempt
+	 * to write it).
+	 *
+	 * That's especially ugly, if you run the test as root and it writes
+	 * a new "/var/lib/NetworkManager/secret_key" file. Another reason
+	 * not to run tests as root. */
+	machine_id = nm_utils_machine_id_bin ();
+	nmtst_logging_reenable (logstate);
+
+	g_assert (machine_id);
+	g_assert (_nm_utils_bin2hexstr_full (machine_id,
+	                                     sizeof (NMUuid),
+	                                     '\0',
+	                                     FALSE,
+	                                     machine_id_str) == machine_id_str);
+	g_assert (strlen (machine_id_str) == 32);
+	g_assert_cmpstr (machine_id_str, ==, nm_utils_machine_id_str ());
+
+	/* double check with systemd's implementation... */
+	if (!nm_sd_utils_id128_get_machine (&machine_id_sd)) {
+		/* if systemd failed to read /etc/machine-id, the file likely
+		 * is invalid. Our machine-id is fake, and we have nothing to
+		 * compare against. */
+
+		/* NOTE: this test will fail, if you don't have /etc/machine-id,
+		 * but a valid "LOCALSTATEDIR/lib/dbus/machine-id" file.
+		 * Just don't do that. */
+		g_assert (nm_utils_machine_id_is_fake ());
+	} else {
+		g_assert (!nm_utils_machine_id_is_fake ());
+		g_assert_cmpmem (&machine_id_sd, sizeof (NMUuid), machine_id, 16);
+	}
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -1936,6 +1984,8 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/general/stable-id/parse", test_stable_id_parse);
 	g_test_add_func ("/general/stable-id/generated-complete", test_stable_id_generated_complete);
+
+	g_test_add_func ("/general/machine-id/read", test_machine_id_read);
 
 	g_test_add_func ("/general/test_dns_create_resolv_conf", test_dns_create_resolv_conf);
 
