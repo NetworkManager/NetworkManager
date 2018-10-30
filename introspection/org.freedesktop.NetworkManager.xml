@@ -100,11 +100,39 @@
         (automatically filling in missing settings with the capabilities of the
         given device and specific object), then activate the new connection.
         Cannot be used for VPN connections at this time.
+
+        See also AddAndActivateConnection2.
     -->
     <method name="AddAndActivateConnection">
       <arg name="connection" type="a{sa{sv}}" direction="in"/>
       <arg name="device" type="o" direction="in"/>
       <arg name="specific_object" type="o" direction="in"/>
+      <arg name="path" type="o" direction="out"/>
+      <arg name="active_connection" type="o" direction="out"/>
+    </method>
+
+    <!--
+        AddAndActivateConnection2:
+        @connection: Connection settings and properties; if incomplete missing settings will be automatically completed using the given device and specific object.
+        @device: The object path of device to be activated using the given connection.
+        @specific_object: The path of a connection-type-specific object this activation should use. This parameter is currently ignored for wired and mobile broadband connections, and the value of "/" should be used (ie, no specific object). For WiFi connections, pass the object path of a specific AP from the card's scan list, which will be used to complete the details of the newly added connection.
+        @options: Further options for the method call.
+        @path: Object path of the new connection that was just added.
+        @active_connection: The path of the active connection object representing this active connection.
+
+        Adds a new connection using the given details (if any) as a template
+        (automatically filling in missing settings with the capabilities of the
+        given device and specific object), then activate the new connection.
+        Cannot be used for VPN connections at this time.
+
+        This method extends AddAndActivateConnection to allow passing further
+        parameters. At this time no further options are supported.
+    -->
+    <method name="AddAndActivateConnection2">
+      <arg name="connection" type="a{sa{sv}}" direction="in"/>
+      <arg name="device" type="o" direction="in"/>
+      <arg name="specific_object" type="o" direction="in"/>
+      <arg name="options" type="a{sv}" direction="in"/>
       <arg name="path" type="o" direction="out"/>
       <arg name="active_connection" type="o" direction="out"/>
     </method>

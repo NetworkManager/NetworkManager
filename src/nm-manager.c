@@ -5220,11 +5220,34 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	NMDevice *device = NULL;
 	gboolean is_vpn = FALSE;
 	gs_unref_variant GVariant *settings = NULL;
+	gs_unref_variant GVariant *options = NULL;
 	const char *device_path;
 	const char *specific_object_path;
 	gs_free NMConnection **conns = NULL;
 
-	g_variant_get (parameters, "(@a{sa{sv}}&o&o)", &settings, &device_path, &specific_object_path);
+	if (g_strcmp0 (method_info->parent.name, "AddAndActivateConnection2") == 0)
+		g_variant_get (parameters, "(@a{sa{sv}}&o&o@a{sv})", &settings, &device_path, &specific_object_path, &options);
+	else
+		g_variant_get (parameters, "(@a{sa{sv}}&o&o)", &settings, &device_path, &specific_object_path);
+
+	if (options) {
+		GVariantIter iter;
+		const char *option_name;
+		GVariant *option_value;
+
+		/* Just a commit to prepare the support, error out if any option is passed. */
+		g_variant_iter_init (&iter, options);
+		while (g_variant_iter_next (&iter, "{&sv}", &option_name, &option_value)) {
+			gs_unref_variant GVariant *option_value_free = NULL;
+
+			option_value_free = option_value;
+
+			error = g_error_new_literal (NM_MANAGER_ERROR,
+			                             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
+			                             "Unknown extra option passed.");
+			goto error;
+		}
+	}
 
 	specific_object_path = nm_utils_dbus_normalize_object_path (specific_object_path);
 	device_path = nm_utils_dbus_normalize_object_path (device_path);
@@ -7641,6 +7664,22 @@ static const NMDBusInterfaceInfoExtended interface_info_manager = {
 						NM_DEFINE_GDBUS_ARG_INFO ("connection",      "a{sa{sv}}"),
 						NM_DEFINE_GDBUS_ARG_INFO ("device",          "o"),
 						NM_DEFINE_GDBUS_ARG_INFO ("specific_object", "o"),
+					),
+					.out_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("path",              "o"),
+						NM_DEFINE_GDBUS_ARG_INFO ("active_connection", "o"),
+					),
+				),
+				.handle = impl_manager_add_and_activate_connection,
+			),
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"AddAndActivateConnection2",
+					.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("connection",      "a{sa{sv}}"),
+						NM_DEFINE_GDBUS_ARG_INFO ("device",          "o"),
+						NM_DEFINE_GDBUS_ARG_INFO ("specific_object", "o"),
+						NM_DEFINE_GDBUS_ARG_INFO ("options",         "a{sv}"),
 					),
 					.out_args = NM_DEFINE_GDBUS_ARG_INFOS (
 						NM_DEFINE_GDBUS_ARG_INFO ("path",              "o"),
