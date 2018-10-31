@@ -299,6 +299,8 @@ NMUuid *_nm_utils_uuid_generate_random (NMUuid *out_uuid);
 #define NM_UTILS_UUID_TYPE_VERSION3          3
 #define NM_UTILS_UUID_TYPE_VERSION5          5
 
+NMUuid *nm_utils_uuid_generate_from_string_bin (NMUuid *uuid, const char *s, gssize slen, int uuid_type, gpointer type_args);
+
 char *nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, gpointer type_args);
 
 /* arbitrarily chosen namespace UUID for _nm_utils_uuid_generate_from_strings() */

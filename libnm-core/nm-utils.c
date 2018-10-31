@@ -2851,6 +2851,84 @@ nm_utils_uuid_generate (void)
 }
 
 /**
+ * nm_utils_uuid_generate_from_string_bin:
+ * @uuid: the UUID to update inplace. This function cannot
+ *   fail to succeed.
+ * @s: a string to use as the seed for the UUID
+ * @slen: if negative, treat @s as zero terminated C string.
+ *   Otherwise, assume the length as given (and allow @s to be
+ *   non-null terminated or contain '\0').
+ * @uuid_type: a type identifier which UUID format to generate.
+ * @type_args: additional arguments, depending on the uuid_type
+ *
+ * For a given @s, this function will always return the same UUID.
+ *
+ * Returns: the input @uuid. This function cannot fail.
+ **/
+NMUuid *
+nm_utils_uuid_generate_from_string_bin (NMUuid *uuid, const char *s, gssize slen, int uuid_type, gpointer type_args)
+{
+	g_return_val_if_fail (uuid, FALSE);
+	g_return_val_if_fail (slen == 0 || s, FALSE);
+
+	if (slen < 0)
+		slen = s ? strlen (s) : 0;
+
+	switch (uuid_type) {
+	case NM_UTILS_UUID_TYPE_LEGACY:
+		g_return_val_if_fail (!type_args, NULL);
+		nm_crypto_md5_hash (NULL,
+		                    0,
+		                    (guint8 *) s,
+		                    slen,
+		                    (guint8 *) uuid,
+		                    sizeof (*uuid));
+		break;
+	case NM_UTILS_UUID_TYPE_VERSION3:
+	case NM_UTILS_UUID_TYPE_VERSION5: {
+		NMUuid ns_uuid = { 0 };
+
+		if (type_args) {
+			/* type_args can be a name space UUID. Interpret it as (char *) */
+			if (!_nm_utils_uuid_parse (type_args, &ns_uuid))
+				g_return_val_if_reached (NULL);
+		}
+
+		if (uuid_type == NM_UTILS_UUID_TYPE_VERSION3) {
+			nm_crypto_md5_hash ((guint8 *) s,
+			                    slen,
+			                    (guint8 *) &ns_uuid,
+			                    sizeof (ns_uuid),
+			                    (guint8 *) uuid,
+			                    sizeof (*uuid));
+		} else {
+			nm_auto_free_checksum GChecksum *sum = NULL;
+			guint8 buf[20];
+			gsize len;
+
+			sum = g_checksum_new (G_CHECKSUM_SHA1);
+			g_checksum_update (sum, (guchar *) &ns_uuid, sizeof (ns_uuid));
+			g_checksum_update (sum, (guchar *) s, slen);
+			len = sizeof (buf);
+			g_checksum_get_digest (sum, buf, &len);
+			nm_assert (len == sizeof (buf));
+
+			G_STATIC_ASSERT_EXPR (sizeof (*uuid) <= sizeof (buf));
+			memcpy (uuid, buf, sizeof (*uuid));
+		}
+
+		uuid->uuid[6] = (uuid->uuid[6] & 0x0F) | (uuid_type << 4);
+		uuid->uuid[8] = (uuid->uuid[8] & 0x3F) | 0x80;
+		break;
+	}
+	default:
+		g_return_val_if_reached (NULL);
+	}
+
+	return uuid;
+}
+
+/**
  * nm_utils_uuid_generate_from_string:
  * @s: a string to use as the seed for the UUID
  * @slen: if negative, treat @s as zero terminated C string.
@@ -2869,62 +2947,7 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 {
 	NMUuid uuid;
 
-	g_return_val_if_fail (slen == 0 || s, FALSE);
-
-	if (slen < 0)
-		slen = s ? strlen (s) : 0;
-
-	switch (uuid_type) {
-	case NM_UTILS_UUID_TYPE_LEGACY:
-		g_return_val_if_fail (!type_args, NULL);
-		nm_crypto_md5_hash (NULL,
-		                    0,
-		                    (guint8 *) s,
-		                    slen,
-		                    (guint8 *) &uuid,
-		                    sizeof (uuid));
-		break;
-	case NM_UTILS_UUID_TYPE_VERSION3:
-	case NM_UTILS_UUID_TYPE_VERSION5: {
-		NMUuid ns_uuid = { 0 };
-
-		if (type_args) {
-			/* type_args can be a name space UUID. Interpret it as (char *) */
-			if (!_nm_utils_uuid_parse (type_args, &ns_uuid))
-				g_return_val_if_reached (NULL);
-		}
-
-		if (uuid_type == NM_UTILS_UUID_TYPE_VERSION3) {
-			nm_crypto_md5_hash ((guint8 *) s,
-			                    slen,
-			                    (guint8 *) &ns_uuid,
-			                    sizeof (ns_uuid),
-			                    (guint8 *) &uuid,
-			                    sizeof (uuid));
-		} else {
-			nm_auto_free_checksum GChecksum *sum = NULL;
-			guint8 buf[20];
-			gsize len;
-
-			sum = g_checksum_new (G_CHECKSUM_SHA1);
-			g_checksum_update (sum, (guchar *) &ns_uuid, sizeof (ns_uuid));
-			g_checksum_update (sum, (guchar *) s, slen);
-			len = sizeof (buf);
-			g_checksum_get_digest (sum, buf, &len);
-			nm_assert (len == sizeof (buf));
-
-			G_STATIC_ASSERT_EXPR (sizeof (uuid) <= sizeof (buf));
-			memcpy (&uuid, buf, sizeof (uuid));
-		}
-
-		uuid.uuid[6] = (uuid.uuid[6] & 0x0F) | (uuid_type << 4);
-		uuid.uuid[8] = (uuid.uuid[8] & 0x3F) | 0x80;
-		break;
-	}
-	default:
-		g_return_val_if_reached (NULL);
-	}
-
+	nm_utils_uuid_generate_from_string_bin (&uuid, s, slen, uuid_type, type_args);
 	return _nm_utils_uuid_unparse (&uuid, NULL);
 }
 
