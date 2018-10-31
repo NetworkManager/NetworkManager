@@ -295,6 +295,8 @@ char *_nm_utils_uuid_unparse (const NMUuid *uuid,
                               char *out_str /*[37]*/);
 NMUuid *_nm_utils_uuid_generate_random (NMUuid *out_uuid);
 
+gboolean nm_utils_uuid_is_null (const NMUuid *uuid);
+
 #define NM_UTILS_UUID_TYPE_LEGACY            0
 #define NM_UTILS_UUID_TYPE_VERSION3          3
 #define NM_UTILS_UUID_TYPE_VERSION5          5
