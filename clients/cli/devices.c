@@ -2822,7 +2822,7 @@ show_access_point_info (NMDeviceWifi *wifi, NmCli *nmc, NmcOutputData *out)
 
 		aps = sort_access_points (nm_device_wifi_get_access_points (wifi));
 		g_ptr_array_foreach (aps, fill_output_access_point, &info);
-		g_ptr_array_free (aps, FALSE);
+		g_ptr_array_free (aps, TRUE);
 	}
 
 	print_data_prepare_width (out->output_data);
