@@ -2871,8 +2871,8 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 
 	g_return_val_if_fail (slen == 0 || s, FALSE);
 
-	g_return_val_if_fail (uuid_type == NM_UTILS_UUID_TYPE_LEGACY || uuid_type == NM_UTILS_UUID_TYPE_VARIANT3, NULL);
-	g_return_val_if_fail (!type_args || uuid_type == NM_UTILS_UUID_TYPE_VARIANT3, NULL);
+	g_return_val_if_fail (uuid_type == NM_UTILS_UUID_TYPE_LEGACY || uuid_type == NM_UTILS_UUID_TYPE_VERSION3, NULL);
+	g_return_val_if_fail (!type_args || uuid_type == NM_UTILS_UUID_TYPE_VERSION3, NULL);
 
 	if (slen < 0)
 		slen = s ? strlen (s) : 0;
@@ -2886,7 +2886,7 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 		                    (guint8 *) &uuid,
 		                    sizeof (uuid));
 		break;
-	case NM_UTILS_UUID_TYPE_VARIANT3: {
+	case NM_UTILS_UUID_TYPE_VERSION3: {
 		NMUuid ns_uuid = { 0 };
 
 		if (type_args) {
@@ -2935,7 +2935,7 @@ _nm_utils_uuid_generate_from_strings (const char *string1, ...)
 	char *uuid;
 
 	if (!string1)
-		return nm_utils_uuid_generate_from_string (NULL, 0, NM_UTILS_UUID_TYPE_VARIANT3, NM_UTILS_UUID_NS);
+		return nm_utils_uuid_generate_from_string (NULL, 0, NM_UTILS_UUID_TYPE_VERSION3, NM_UTILS_UUID_NS);
 
 	str = g_string_sized_new (120); /* effectively allocates power of 2 (128)*/
 
@@ -2949,7 +2949,7 @@ _nm_utils_uuid_generate_from_strings (const char *string1, ...)
 	}
 	va_end (args);
 
-	uuid = nm_utils_uuid_generate_from_string (str->str, str->len, NM_UTILS_UUID_TYPE_VARIANT3, NM_UTILS_UUID_NS);
+	uuid = nm_utils_uuid_generate_from_string (str->str, str->len, NM_UTILS_UUID_TYPE_VERSION3, NM_UTILS_UUID_NS);
 
 	g_string_free (str, TRUE);
 	return uuid;
