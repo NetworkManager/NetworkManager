@@ -744,8 +744,8 @@ class TestNmcli(NmTestBase):
                     skip_test_for_l10n_diff.append(n['test_name'])
                     continue
                 print("\n\n\nThe file '%s' does not have the expected content:" % (filename))
-                print("ACTUAL OUTPUT:\n[[%s]]\n" % (results_expect[i]))
-                print("EXPECT OUTPUT:\n[[%s]]\n" % (n['content']))
+                print("ACTUAL OUTPUT:\n[[%s]]\n" % (n['content']))
+                print("EXPECT OUTPUT:\n[[%s]]\n" % (results_expect[i]))
                 print("Let the test write the file by rerunning with NM_TEST_REGENERATE=1")
                 print("See howto in %s for details.\n" % (PathConfiguration.canonical_script_filename()))
                 sys.stdout.flush()
