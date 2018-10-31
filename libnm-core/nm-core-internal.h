@@ -292,7 +292,8 @@ char *_nm_utils_uuid_unparse (const NMUuid *uuid,
 NMUuid *_nm_utils_uuid_generate_random (NMUuid *out_uuid);
 
 #define NM_UTILS_UUID_TYPE_LEGACY            0
-#define NM_UTILS_UUID_TYPE_VERSION3          1
+#define NM_UTILS_UUID_TYPE_VERSION3          3
+#define NM_UTILS_UUID_TYPE_VERSION5          5
 
 char *nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, gpointer type_args);
 
