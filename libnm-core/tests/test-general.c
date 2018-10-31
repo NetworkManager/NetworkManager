@@ -5445,6 +5445,16 @@ test_nm_strquote (void)
 #define UUID_NS_OID     "6ba7b812-9dad-11d1-80b4-00c04fd430c8"
 #define UUID_NS_X500    "6ba7b814-9dad-11d1-80b4-00c04fd430c8"
 
+static const NMUuid *
+_uuid (const char *str)
+{
+	static NMUuid u;
+
+	g_assert (str);
+	g_assert (_nm_utils_uuid_parse (str, &u));
+	return &u;
+}
+
 static void
 _test_uuid (int uuid_type, const char *expected_uuid, const char *str, gssize slen, gpointer type_args)
 {
@@ -5677,6 +5687,15 @@ __test_uuid (const char *expected_uuid, const char *str, gssize slen, char *uuid
 static void
 test_nm_utils_uuid_generate_from_strings (void)
 {
+	const NMUuid uuid0 = { 0 };
+
+	g_assert_cmpmem (&uuid0, sizeof (uuid0), _uuid ("00000000-0000-0000-0000-000000000000"), 16);
+
+	g_assert (nm_utils_uuid_is_null (NULL));
+	g_assert (nm_utils_uuid_is_null (&uuid0));
+	g_assert ( nm_utils_uuid_is_null (_uuid ("00000000-0000-0000-0000-000000000000")));
+	g_assert (!nm_utils_uuid_is_null (_uuid ("10000000-0000-0000-0000-000000000000")));
+
 	_test_uuid ("b07c334a-399b-32de-8d50-58e4e08f98e3", "",         0, NULL);
 	_test_uuid ("b8a426cb-bcb5-30a3-bd8f-6786fea72df9", "\0",       1, "");
 	_test_uuid ("12a4a982-7aae-39e1-951e-41aeb1250959", "a\0",      2, "a");

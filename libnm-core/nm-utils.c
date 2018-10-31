@@ -2821,6 +2821,21 @@ _nm_utils_uuid_generate_random (NMUuid *out_uuid)
 	return out_uuid;
 }
 
+gboolean
+nm_utils_uuid_is_null (const NMUuid *uuid)
+{
+	int i;
+
+	if (!uuid)
+		return TRUE;
+
+	for (i = 0; i < G_N_ELEMENTS (uuid->uuid); i++) {
+		if (uuid->uuid[i])
+			return FALSE;
+	}
+	return TRUE;
+}
+
 /**
  * nm_utils_uuid_generate_buf_:
  * @buf: input buffer, must contain at least 37 bytes
