@@ -5439,8 +5439,11 @@ test_nm_strquote (void)
 
 /*****************************************************************************/
 
-#define UUID_NIL        "00000000-0000-0000-0000-000000000000"
+#define UUID_NS_ZERO    "00000000-0000-0000-0000-000000000000"
 #define UUID_NS_DNS     "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+#define UUID_NS_URL     "6ba7b811-9dad-11d1-80b4-00c04fd430c8"
+#define UUID_NS_OID     "6ba7b812-9dad-11d1-80b4-00c04fd430c8"
+#define UUID_NS_X500    "6ba7b814-9dad-11d1-80b4-00c04fd430c8"
 
 static void
 _test_uuid (int uuid_type, const char *expected_uuid, const char *str, gssize slen, gpointer type_args)
@@ -5452,9 +5455,16 @@ _test_uuid (int uuid_type, const char *expected_uuid, const char *str, gssize sl
 	g_assert (uuid_test);
 	g_assert (nm_utils_is_uuid (uuid_test));
 
-	if (strcmp (uuid_test, expected_uuid)) {
-		g_error ("UUID test failed: type=%d; text=%s, len=%lld, uuid=%s, expected=%s", uuid_type,
-		         str, (long long) slen, uuid_test, expected_uuid);
+	if (!nm_streq (uuid_test, expected_uuid)) {
+		g_error ("UUID test failed: type=%d; text=%s, len=%lld, ns=%s, uuid=%s, expected=%s",
+		         uuid_type,
+		         str,
+		         (long long) slen,
+		         NM_IN_SET (uuid_type, NM_UTILS_UUID_TYPE_VERSION3)
+		           ? (((const char *) type_args) ?: "(all-zero)")
+		           : (type_args ? "(unknown)" : "(null)"),
+		         uuid_test,
+		         expected_uuid);
 	}
 
 	if (slen < 0) {
@@ -5465,15 +5475,127 @@ _test_uuid (int uuid_type, const char *expected_uuid, const char *str, gssize sl
 		_test_uuid (uuid_type, expected_uuid, NULL, 0, type_args);
 	}
 
-	if (uuid_type == NM_UTILS_UUID_TYPE_VERSION3 && !type_args) {
-		/* For NM_UTILS_UUID_TYPE_VERSION3, a missing @type_args is equal to UUID_NIL */
-		_test_uuid (uuid_type, expected_uuid, str, slen, UUID_NIL);
+	if (   NM_IN_SET (uuid_type, NM_UTILS_UUID_TYPE_VERSION3)
+	    && !type_args) {
+		/* For version3 and version5, a missing @type_args is equal to UUID_NS_ZERO */
+		_test_uuid (uuid_type, expected_uuid, str, slen, UUID_NS_ZERO);
 	}
 }
+
+typedef struct {
+	const char *uuid3;
+} ExpectedUuids;
 
 static void
 test_nm_utils_uuid_generate_from_string (void)
 {
+	const ExpectedUuids zero_uuids[] = {
+	    { .uuid3 = "19826852-5007-3022-a72a-212f66e9fac3", },
+	    { .uuid3 = "9153af2e-fc8e-34f3-9e8b-81f73b33d0cb", },
+	    { .uuid3 = "2f06a3ae-d78d-30d7-b898-088a0e0b76f6", },
+	    { .uuid3 = "aca948e0-1468-3a51-9f2e-c688a484efd7", },
+	    { .uuid3 = "b74e537a-53e8-3808-9abd-58546a6542bd", },
+	    { .uuid3 = "1b00958a-7d76-3d08-8aba-c66c5828658c", },
+	    { .uuid3 = "7ba18f7d-c9cf-3b48-a89e-ad79243135cc", },
+	    { .uuid3 = "9baf0978-1a60-35c5-9e9b-bec8d259fd4e", },
+	    { .uuid3 = "588668c0-7631-39c7-9976-c7d414adf7ba", },
+	    { .uuid3 = "8edb3613-9612-3b32-9dd7-0a01aa8ed453", },
+	    { .uuid3 = "f3b34394-63a5-3773-9014-1f8a50d765b8", },
+	    { .uuid3 = "0572965f-05b8-342b-b225-d5c29d449eee", },
+	    { .uuid3 = "6f7177c3-77b0-3f42-82a8-7031e25fcccf", },
+	    { .uuid3 = "d1e0f845-bc1b-368c-b8c8-49ab0b9e486b", },
+	    { .uuid3 = "46371ea3-c8a3-34d8-b2cf-2fa90bda4378", },
+	    { .uuid3 = "f1e6b499-9b68-343b-a5c5-ece7acc49a68", },
+	    { .uuid3 = "9ed06458-c712-31dd-aba5-6cf79879fabe", },
+	    { .uuid3 = "4ddd5cd7-bc83-36aa-909c-4e660f57c830", },
+	    { .uuid3 = "335fa537-0909-395d-a696-6f41827dcbeb", },
+	    { .uuid3 = "dbd58444-05ad-3edd-adc7-4393ecbcb43c", },
+	    { .uuid3 = "a1c62d82-d13c-361b-8f4e-ca91bc2f7fc5", },
+	    { .uuid3 = "e943d83e-3f82-307f-81ed-b7a7bcd0743e", },
+	    { .uuid3 = "cabf46dd-9f09-375c-8f6e-f2a8cf114709", },
+	    { .uuid3 = "19beddf3-f2fb-340f-96ac-4f394960b7a7", },
+	    { .uuid3 = "08d835c2-f4ca-394c-ba7f-2494d8b60c6c", },
+	    { .uuid3 = "3b8c6847-5331-35bf-9cd9-ced50e53cd7c", },
+	    { .uuid3 = "e601f160-484b-3254-8f3b-0a25c7203d8a", },
+	    { .uuid3 = "e5e492ed-5349-379d-b7de-a370a51e44a3", },
+	    { .uuid3 = "c40111f6-fe97-305e-bfce-7db730c3d2ec", },
+	    { .uuid3 = "21e18ea8-95c2-362b-9ca9-25d6a0ff2dff", },
+	    { .uuid3 = "adab623b-1343-307f-80d8-58d005376ad9", },
+	    { .uuid3 = "67e9fc7c-dafe-356d-ac1a-a63ce3f44813", },
+	    { .uuid3 = "36cc7f20-126c-3e40-94e7-737ac7486547", },
+	    { .uuid3 = "fe282996-ac5e-3d13-b478-5def30007a8e", },
+	    { .uuid3 = "3bfe339c-05ae-3233-a1a5-ebf1ead589db", },
+	    { .uuid3 = "d1d90bc7-da4a-3cd7-a7c8-a1a89765d8ee", },
+	    { .uuid3 = "10b88a02-0102-359b-81e9-7e3b0ff7d25e", },
+	    { .uuid3 = "7da5e4f2-6df0-3aca-a1b0-b7f8b1340e1d", },
+	    { .uuid3 = "cbe24d98-ca20-3058-86b6-24a6b36ceff0", },
+	    { .uuid3 = "04d84e6a-b793-3993-afbf-bae7cfc42b49", },
+	    { .uuid3 = "fdd157d8-a537-350a-9cc9-1930e8666c63", },
+	    { .uuid3 = "0bea36bb-24a7-3ee6-a98d-116433c14cd4", },
+	    { .uuid3 = "52b040a4-1b84-32d2-b758-f82386f7e0f0", },
+	    { .uuid3 = "0f0a4e26-e034-3021-acf2-4e886af43092", },
+	    { .uuid3 = "819d3cd1-afe5-3e4a-9f0c-945e25d09879", },
+	    { .uuid3 = "e7df1a3b-c9f8-3e5a-88d6-ba72b2a0f27b", },
+	    { .uuid3 = "0854bedf-74ba-3f2b-b823-dc2c90d27c76", },
+	    { .uuid3 = "a1b8c3ba-f821-32ef-a3fd-b97b3855efa8", },
+	    { .uuid3 = "9458f819-079b-3033-9430-ba10f576c067", },
+	    { .uuid3 = "8e1f240a-e386-3e00-866a-6f9da1e3503f", },
+	};
+	const ExpectedUuids dns_uuids[] = {
+	    { .uuid3 = "4385125b-dd1e-3025-880f-3311517cc8d5", },
+	    { .uuid3 = "afd0b036-625a-3aa8-b639-9dc8c8fff0ff", },
+	    { .uuid3 = "9c45c2f1-1761-3daa-ad31-1ff8703ae846", },
+	    { .uuid3 = "15e0ba07-10e4-3d7f-aaff-c00fed873c88", },
+	    { .uuid3 = "bc27b4db-bc0f-34f9-ae8e-4b72f2d51b60", },
+	    { .uuid3 = "7586bfed-b8b8-3bb3-9c95-09a4a79dc0f7", },
+	    { .uuid3 = "881430b6-8d28-3175-b87d-e81f2f5978c6", },
+	    { .uuid3 = "24075675-98ae-354e-89ca-0126a9ad36e3", },
+	    { .uuid3 = "2c269ea4-dbfd-32dd-9bd7-a5c22677d18b", },
+	    { .uuid3 = "44eb0948-118f-3f28-87e4-f61c8f889aba", },
+	    { .uuid3 = "fc72beeb-f790-36ee-a73d-33888c9d8880", },
+	    { .uuid3 = "1e46afa2-6176-3cd3-9750-3015846723df", },
+	    { .uuid3 = "0042b01d-95bd-343f-bd9f-3186bfd63508", },
+	    { .uuid3 = "115ff52f-d605-3b4b-98fe-c0ea57f4930c", },
+	    { .uuid3 = "ed0221e8-ac7d-393b-821d-25183567885b", },
+	    { .uuid3 = "508ef333-85a6-314c-bcf3-17ddc32b2216", },
+	    { .uuid3 = "a4715ee0-524a-37cc-beb2-a0b5030757b7", },
+	    { .uuid3 = "d1c72756-aaec-3470-a2f2-97415f44d72f", },
+	    { .uuid3 = "7aec2f01-586e-3d53-b8f3-6cf7e6b649a4", },
+	    { .uuid3 = "3d234b88-8d6f-319a-91ea-edb6059fc825", },
+	    { .uuid3 = "d2568554-93ec-30c7-9e15-f383be19e5bb", },
+	    { .uuid3 = "800e59a7-dd0f-3114-8e58-ab7e213895ca", },
+	    { .uuid3 = "3b7d03f0-e067-3d72-84f4-e410ac36ef57", },
+	    { .uuid3 = "8762be68-de95-391a-94a0-c5fd0446e037", },
+	    { .uuid3 = "2bd8b4c9-01af-3cd0-aced-94ee6e2004b8", },
+	    { .uuid3 = "a627d6a4-394a-33f5-b68e-22bfb6488d01", },
+	    { .uuid3 = "6a592510-17d9-3925-b321-4a8d4927f8d0", },
+	    { .uuid3 = "9ee72491-59c4-333c-bb93-fe733a842fdb", },
+	    { .uuid3 = "2591c62c-0a9d-3c28-97bc-fa0401556a3c", },
+	    { .uuid3 = "7912be1e-4562-373b-92e2-3d6d2123bc8e", },
+	    { .uuid3 = "09370cda-89a4-3a48-b592-9c0486e0d5e4", },
+	    { .uuid3 = "de5980d3-a137-373c-850b-ca3e5f100779", },
+	    { .uuid3 = "9441501d-f633-365a-8955-9df443edc762", },
+	    { .uuid3 = "434ada18-13ce-3c08-8b40-a1a1ae030569", },
+	    { .uuid3 = "a13b6160-bd23-3710-a150-41d800dd30b4", },
+	    { .uuid3 = "73a67c12-c5f0-3288-ad6a-c78aea0917b0", },
+	    { .uuid3 = "a126ee4f-a222-357d-b71b-7d3f226c559f", },
+	    { .uuid3 = "48f4f36b-b015-3137-9b6e-351bb175c7f7", },
+	    { .uuid3 = "3fe8f6a3-fe4a-3487-89d6-dd06c6ad02e3", },
+	    { .uuid3 = "d68fa2d4-adc9-3b20-ac77-42585cd1d59f", },
+	    { .uuid3 = "819f86a3-31d5-3e72-a83e-142c3a3e4832", },
+	    { .uuid3 = "9957b433-ddc8-3113-a3e6-5512cf13dab1", },
+	    { .uuid3 = "5aab6e0c-b7d3-379c-92e3-2bfbb5572511", },
+	    { .uuid3 = "11c8ff30-3a7d-3547-80a7-d61b8abeeda8", },
+	    { .uuid3 = "98799b9f-1c5e-30b3-930f-e412b862cbe4", },
+	    { .uuid3 = "9bdf2544-31d8-3555-94b0-6a749118a996", },
+	    { .uuid3 = "ddcfb9b3-e990-3985-9021-546a2711e7e5", },
+	    { .uuid3 = "190d7a78-1484-3136-80a6-40f28852785c", },
+	    { .uuid3 = "6ed693e4-7dc0-3210-856b-a6eb4cc73e13", },
+	    { .uuid3 = "b6a14b21-e73a-3ce2-9076-a804c434f5c6", },
+	};
+	char i_str[30];
+	guint i;
+
 	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "d41d8cd9-8f00-b204-e980-0998ecf8427e", "", -1, NULL);
 	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "0cc175b9-c0f1-b6a8-31c3-99e269772661", "a", -1, NULL);
 	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "098f6bcd-4621-d373-cade-4e832627b4f6", "test", -1, NULL);
@@ -5489,6 +5611,23 @@ test_nm_utils_uuid_generate_from_string (void)
 	_test_uuid (NM_UTILS_UUID_TYPE_VERSION3, "4c104dd0-4821-30d5-9ce3-0e7a1f8b7c0d", "a", -1, UUID_NS_DNS);
 	_test_uuid (NM_UTILS_UUID_TYPE_VERSION3, "45a113ac-c7f2-30b0-90a5-a399ab912716", "test", -1, UUID_NS_DNS);
 	_test_uuid (NM_UTILS_UUID_TYPE_VERSION3, "002a0ada-f547-375a-bab5-896a11d1927e", "a\0b", 3, UUID_NS_DNS);
+	_test_uuid (NM_UTILS_UUID_TYPE_VERSION3, "9a75f5f2-195e-31a9-9d07-8c18b5d3b285", "test123", -1, UUID_NS_DNS);
+	_test_uuid (NM_UTILS_UUID_TYPE_VERSION3, "ec794efe-a384-3b11-a0b6-ec8995bc6acc", "x", -1, UUID_NS_DNS);
+
+	for (i = 0; i < G_N_ELEMENTS (zero_uuids); i++) {
+		nm_sprintf_buf (i_str, "%u", i),
+		_test_uuid (NM_UTILS_UUID_TYPE_VERSION3, zero_uuids[i].uuid3, i_str, -1, NULL);
+	}
+	for (i = 0; i < G_N_ELEMENTS (dns_uuids); i++) {
+		nm_sprintf_buf (i_str, "%u", i),
+		_test_uuid (NM_UTILS_UUID_TYPE_VERSION3, dns_uuids[i].uuid3, i_str, -1, UUID_NS_DNS);
+	}
+
+	/* examples from cpython unit tests: */
+	_test_uuid (NM_UTILS_UUID_TYPE_VERSION3, "6fa459ea-ee8a-3ca4-894e-db77e160355e", "python.org", -1, UUID_NS_DNS);
+	_test_uuid (NM_UTILS_UUID_TYPE_VERSION3, "9fe8e8c4-aaa8-32a9-a55c-4535a88b748d", "http://python.org/", -1, UUID_NS_URL);
+	_test_uuid (NM_UTILS_UUID_TYPE_VERSION3, "dd1a1cef-13d5-368a-ad82-eca71acd4cd1", "1.3.6.1", -1, UUID_NS_OID);
+	_test_uuid (NM_UTILS_UUID_TYPE_VERSION3, "658d3002-db6b-3040-a1d1-8ddd7d189a4d", "c=ca", -1, UUID_NS_X500);
 }
 
 /*****************************************************************************/
