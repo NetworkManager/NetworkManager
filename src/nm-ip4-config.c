@@ -2996,29 +2996,19 @@ nm_ip4_config_hash (const NMIP4Config *self, GChecksum *sum, gboolean dns_only)
 gboolean
 nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b)
 {
-	GChecksum *a_checksum = g_checksum_new (G_CHECKSUM_SHA1);
-	GChecksum *b_checksum = g_checksum_new (G_CHECKSUM_SHA1);
-	guchar a_data[20], b_data[20];
-	gsize a_len = sizeof (a_data);
-	gsize b_len = sizeof (b_data);
-	gboolean equal;
+	nm_auto_free_checksum GChecksum *a_checksum = g_checksum_new (G_CHECKSUM_SHA1);
+	nm_auto_free_checksum GChecksum *b_checksum = g_checksum_new (G_CHECKSUM_SHA1);
+	guint8 a_data[NM_UTILS_CHECKSUM_LENGTH_SHA1];
+	guint8 b_data[NM_UTILS_CHECKSUM_LENGTH_SHA1];
 
 	if (a)
 		nm_ip4_config_hash (a, a_checksum, FALSE);
 	if (b)
 		nm_ip4_config_hash (b, b_checksum, FALSE);
 
-	g_checksum_get_digest (a_checksum, a_data, &a_len);
-	g_checksum_get_digest (b_checksum, b_data, &b_len);
-
-	nm_assert (a_len == sizeof (a_data));
-	nm_assert (b_len == sizeof (b_data));
-	equal = !memcmp (a_data, b_data, a_len);
-
-	g_checksum_free (a_checksum);
-	g_checksum_free (b_checksum);
-
-	return equal;
+	nm_utils_checksum_get_digest (a_checksum, a_data);
+	nm_utils_checksum_get_digest (b_checksum, b_data);
+	return !memcmp (a_data, b_data, sizeof (a_data));
 }
 
 /*****************************************************************************/

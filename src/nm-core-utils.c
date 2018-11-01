@@ -2725,9 +2725,8 @@ nm_utils_stable_id_random (void)
 char *
 nm_utils_stable_id_generated_complete (const char *stable_id_generated)
 {
-	guint8 buf[20];
-	GChecksum *sum;
-	gsize buf_size;
+	nm_auto_free_checksum GChecksum *sum = NULL;
+	guint8 buf[NM_UTILS_CHECKSUM_LENGTH_SHA1];
 	char *base64;
 
 	/* for NM_UTILS_STABLE_TYPE_GENERATED we genererate a possibly long string
@@ -2738,15 +2737,8 @@ nm_utils_stable_id_generated_complete (const char *stable_id_generated)
 	g_return_val_if_fail (stable_id_generated, NULL);
 
 	sum = g_checksum_new (G_CHECKSUM_SHA1);
-	nm_assert (sum);
-
 	g_checksum_update (sum, (guchar *) stable_id_generated, strlen (stable_id_generated));
-
-	buf_size = sizeof (buf);
-	g_checksum_get_digest (sum, buf, &buf_size);
-	nm_assert (buf_size == sizeof (buf));
-
-	g_checksum_free (sum);
+	nm_utils_checksum_get_digest (sum, buf);
 
 	/* we don't care to use the sha1 sum in common hex representation.
 	 * Use instead base64, it's 27 chars (stripping the padding) vs.
@@ -2930,22 +2922,14 @@ _set_stable_privacy (NMUtilsStableType stable_type,
                      gsize key_len,
                      GError **error)
 {
-	GChecksum *sum;
-	guint8 digest[32];
+	nm_auto_free_checksum GChecksum *sum = NULL;
+	guint8 digest[NM_UTILS_CHECKSUM_LENGTH_SHA256];
 	guint32 tmp[2];
-	gsize len = sizeof (digest);
 
 	nm_assert (key_len);
 	nm_assert (network_id);
 
-	/* Documentation suggests that this can fail.
-	 * Maybe in case of a missing algorithm in crypto library? */
 	sum = g_checksum_new (G_CHECKSUM_SHA256);
-	if (!sum) {
-		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		                     "Can't create a SHA256 hash");
-		return FALSE;
-	}
 
 	key_len = MIN (key_len, G_MAXUINT32);
 
@@ -2974,24 +2958,17 @@ _set_stable_privacy (NMUtilsStableType stable_type,
 	tmp[1] = htonl (key_len);
 	g_checksum_update (sum, (const guchar *) tmp, sizeof (tmp));
 	g_checksum_update (sum, (const guchar *) secret_key, key_len);
-
-	g_checksum_get_digest (sum, digest, &len);
-
-	nm_assert (len == sizeof (digest));
+	nm_utils_checksum_get_digest (sum, digest);
 
 	while (_is_reserved_ipv6_iid (digest)) {
 		g_checksum_reset (sum);
 		tmp[0] = htonl (++dad_counter);
-		g_checksum_update (sum, digest, len);
+		g_checksum_update (sum, digest, sizeof (digest));
 		g_checksum_update (sum, (const guchar *) &tmp[0], sizeof (tmp[0]));
-		g_checksum_get_digest (sum, digest, &len);
-		nm_assert (len == sizeof (digest));
+		nm_utils_checksum_get_digest (sum, digest);
 	}
 
-	g_checksum_free (sum);
-
 	memcpy (addr->s6_addr + 8, &digest[0], 8);
-
 	return TRUE;
 }
 
@@ -3117,10 +3094,9 @@ _hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
                          const char *current_mac_address,
                          const char *generate_mac_address_mask)
 {
-	GChecksum *sum;
+	nm_auto_free_checksum GChecksum *sum = NULL;
 	guint32 tmp;
-	guint8 digest[32];
-	gsize len = sizeof (digest);
+	guint8 digest[NM_UTILS_CHECKSUM_LENGTH_SHA256];
 	struct ether_addr bin_addr;
 	guint8 stable_type_uint8;
 
@@ -3128,8 +3104,6 @@ _hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
 	nm_assert (secret_key);
 
 	sum = g_checksum_new (G_CHECKSUM_SHA256);
-	if (!sum)
-		return NULL;
 
 	key_len = MIN (key_len, G_MAXUINT32);
 
@@ -3143,10 +3117,7 @@ _hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
 	g_checksum_update (sum, (const guchar *) (ifname ?: ""), ifname ? (strlen (ifname) + 1) : 1);
 	g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id) + 1);
 
-	g_checksum_get_digest (sum, digest, &len);
-	g_checksum_free (sum);
-
-	g_return_val_if_fail (len == 32, NULL);
+	nm_utils_checksum_get_digest (sum, digest);
 
 	memcpy (&bin_addr, digest, ETH_ALEN);
 	_hw_addr_eth_complete (&bin_addr, current_mac_address, generate_mac_address_mask);

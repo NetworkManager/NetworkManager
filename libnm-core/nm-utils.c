@@ -2918,18 +2918,18 @@ nm_utils_uuid_generate_from_string_bin (NMUuid *uuid, const char *s, gssize slen
 			                    sizeof (*uuid));
 		} else {
 			nm_auto_free_checksum GChecksum *sum = NULL;
-			guint8 buf[20];
-			gsize len;
+			union {
+				guint8 sha1[NM_UTILS_CHECKSUM_LENGTH_SHA1];
+				NMUuid uuid;
+			} digest;
 
 			sum = g_checksum_new (G_CHECKSUM_SHA1);
 			g_checksum_update (sum, (guchar *) &ns_uuid, sizeof (ns_uuid));
 			g_checksum_update (sum, (guchar *) s, slen);
-			len = sizeof (buf);
-			g_checksum_get_digest (sum, buf, &len);
-			nm_assert (len == sizeof (buf));
+			nm_utils_checksum_get_digest (sum, digest.sha1);
 
-			G_STATIC_ASSERT_EXPR (sizeof (*uuid) <= sizeof (buf));
-			memcpy (uuid, buf, sizeof (*uuid));
+			G_STATIC_ASSERT_EXPR (sizeof (digest.sha1) > sizeof (digest.uuid));
+			*uuid = digest.uuid;
 		}
 
 		uuid->uuid[6] = (uuid->uuid[6] & 0x0F) | (uuid_type << 4);
