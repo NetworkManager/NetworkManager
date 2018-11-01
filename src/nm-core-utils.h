@@ -61,20 +61,35 @@ void _nm_singleton_instance_register_destruction (GObject *instance);
 #define NM_DEFINE_SINGLETON_GETTER(TYPE, GETTER, GTYPE, ...) \
 NM_DEFINE_SINGLETON_INSTANCE (TYPE); \
 NM_DEFINE_SINGLETON_REGISTER (TYPE); \
+static char _already_created_##GETTER = FALSE; \
 TYPE * \
 GETTER (void) \
 { \
 	if (G_UNLIKELY (!singleton_instance)) { \
-		static char _already_created = FALSE; \
-\
-		g_assert (!_already_created || (NM_DEFINE_SINGLETON_ALLOW_MULTIPLE)); \
-		_already_created = TRUE;\
+		g_assert (!(_already_created_##GETTER) || (NM_DEFINE_SINGLETON_ALLOW_MULTIPLE)); \
+		(_already_created_##GETTER) = TRUE;\
 		singleton_instance = (g_object_new (GTYPE, ##__VA_ARGS__, NULL)); \
 		g_assert (singleton_instance); \
 		nm_singleton_instance_register (); \
 		nm_log_dbg (LOGD_CORE, "create %s singleton (%p)", G_STRINGIFY (TYPE), singleton_instance); \
 	} \
 	return singleton_instance; \
+} \
+_nm_unused static void \
+_nmtst_##GETTER##_reset (TYPE *instance) \
+{ \
+	/* usually, the singleton can only be created once (and further instantiations
+	 * are guarded by an assert). For testing, we need to reset the singleton to
+	 * allow multiple instantiations. */ \
+	g_assert (G_IS_OBJECT (instance)); \
+	g_assert (instance == singleton_instance); \
+	g_assert (_already_created_##GETTER); \
+	g_object_unref (instance); \
+	\
+	/* require that the last unref also destroyed the singleton. If this fails,
+	 * somebody still keeps a reference. Fix your test! */ \
+	g_assert (!singleton_instance); \
+	_already_created_##GETTER = FALSE; \
 }
 
 /* attach @instance to the data or @owner. @owner owns a reference
@@ -208,7 +223,8 @@ NMMatchSpecMatchType nm_match_spec_device (const GSList *specs,
                                            const char *driver,
                                            const char *driver_version,
                                            const char *hwaddr,
-                                           const char *s390_subchannels);
+                                           const char *s390_subchannels,
+                                           const char *dhcp_plugin);
 NMMatchSpecMatchType nm_match_spec_config (const GSList *specs,
                                            guint nm_version,
                                            const char *env);
