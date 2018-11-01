@@ -1250,8 +1250,12 @@ _match_section_infos_lookup (const MatchSectionInfo *match_section_infos,
                              const char *match_device_type,
                              char **out_value)
 {
+	const char *match_dhcp_plugin;
+
 	if (!match_section_infos)
 		return NULL;
+
+	match_dhcp_plugin = nm_dhcp_manager_get_config (nm_dhcp_manager_get ());
 
 	for (; match_section_infos->group_name; match_section_infos++) {
 		char *value = NULL;
@@ -1272,7 +1276,7 @@ _match_section_infos_lookup (const MatchSectionInfo *match_section_infos,
 			if (device)
 				match = nm_device_spec_match_list (device, match_section_infos->match_device.spec);
 			else if (pllink)
-				match = nm_match_spec_device_by_pllink (pllink, match_device_type, match_section_infos->match_device.spec, FALSE);
+				match = nm_match_spec_device_by_pllink (pllink, match_device_type, match_dhcp_plugin, match_section_infos->match_device.spec, FALSE);
 			else
 				match = FALSE;
 		} else

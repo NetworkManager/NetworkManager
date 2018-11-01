@@ -117,8 +117,9 @@ URL: http://www.gnome.org/projects/NetworkManager/
 Source: __SOURCE1__
 Source1: NetworkManager.conf
 Source2: 00-server.conf
-Source3: 20-connectivity-fedora.conf
-Source4: 20-connectivity-redhat.conf
+Source3: 00-server-dhcp-client-id.conf
+Source4: 20-connectivity-fedora.conf
+Source5: 20-connectivity-redhat.conf
 
 #Patch1: 0001-some.patch
 
@@ -677,13 +678,14 @@ make install DESTDIR=%{buildroot}
 cp %{SOURCE1} %{buildroot}%{_sysconfdir}/%{name}/
 
 cp %{SOURCE2} %{buildroot}%{nmlibdir}/conf.d/
+cp %{SOURCE3} %{buildroot}%{nmlibdir}/conf.d/
 
 %if %{with connectivity_fedora}
-cp %{SOURCE3} %{buildroot}%{nmlibdir}/conf.d/
+cp %{SOURCE4} %{buildroot}%{nmlibdir}/conf.d/
 %endif
 
 %if %{with connectivity_redhat}
-cp %{SOURCE4} %{buildroot}%{nmlibdir}/conf.d/
+cp %{SOURCE5} %{buildroot}%{nmlibdir}/conf.d/
 %endif
 
 cp examples/dispatcher/10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/
@@ -961,6 +963,7 @@ fi
 %dir %{nmlibdir}
 %dir %{nmlibdir}/conf.d
 %{nmlibdir}/conf.d/00-server.conf
+%{nmlibdir}/conf.d/00-server-dhcp-client-id.conf
 
 
 %files dispatcher-routing-rules

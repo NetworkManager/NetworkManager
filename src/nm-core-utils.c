@@ -1141,6 +1141,7 @@ nm_utils_read_link_absolute (const char *link_file, GError **error)
 #define DEVICE_TYPE_TAG "type:"
 #define DRIVER_TAG "driver:"
 #define SUBCHAN_TAG "s390-subchannels:"
+#define DHCP_PLUGIN_TAG "dhcp-plugin:"
 #define EXCEPT_TAG "except:"
 #define MATCH_TAG_CONFIG_NM_VERSION             "nm-version:"
 #define MATCH_TAG_CONFIG_NM_VERSION_MIN         "nm-version-min:"
@@ -1152,6 +1153,7 @@ typedef struct {
 	const char *device_type;
 	const char *driver;
 	const char *driver_version;
+	const char *dhcp_plugin;
 	struct {
 		const char *value;
 		gboolean is_parsed;
@@ -1369,6 +1371,9 @@ match_device_eval (const char *spec_str,
 	if (_MATCH_CHECK (spec_str, SUBCHAN_TAG))
 		return match_data_s390_subchannels_eval (spec_str, match_data);
 
+	if (_MATCH_CHECK (spec_str, DHCP_PLUGIN_TAG))
+		return nm_streq0 (spec_str, match_data->dhcp_plugin);
+
 	if (allow_fuzzy) {
 		if (match_device_hwaddr_eval (spec_str, match_data))
 			return TRUE;
@@ -1387,7 +1392,8 @@ nm_match_spec_device (const GSList *specs,
                       const char *driver,
                       const char *driver_version,
                       const char *hwaddr,
-                      const char *s390_subchannels)
+                      const char *s390_subchannels,
+                      const char *dhcp_plugin)
 {
 	const GSList *iter;
 	NMMatchSpecMatchType match;
@@ -1398,6 +1404,7 @@ nm_match_spec_device (const GSList *specs,
 	    .device_type = nm_str_not_empty (device_type),
 	    .driver = nm_str_not_empty (driver),
 	    .driver_version = nm_str_not_empty (driver_version),
+	    .dhcp_plugin = nm_str_not_empty (dhcp_plugin),
 	    .hwaddr = {
 	        .value = hwaddr,
 	    },

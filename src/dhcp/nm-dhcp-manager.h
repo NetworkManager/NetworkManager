@@ -87,4 +87,6 @@ extern const char* nm_dhcp_helper_path;
 
 extern const NMDhcpClientFactory *const _nm_dhcp_manager_factories[4];
 
+void nmtst_dhcp_manager_unget (gpointer singleton_instance);
+
 #endif /* __NETWORKMANAGER_DHCP_MANAGER_H__ */

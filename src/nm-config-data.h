@@ -233,5 +233,14 @@ GKeyFile *_nm_config_data_get_keyfile (const NMConfigData *self);
 GKeyFile *_nm_config_data_get_keyfile_user (const NMConfigData *self);
 GKeyFile *_nm_config_data_get_keyfile_intern (const NMConfigData *self);
 
+/*****************************************************************************/
+
+/* nm-config-data.c requires getting the DHCP manager's configuration. That is a bit
+ * ugly, and optimally, NMConfig* is independent of NMDhcpManager. Instead of
+ * including the header, forward declare the two functions that we need. */
+struct _NMDhcpManager;
+struct _NMDhcpManager *nm_dhcp_manager_get (void);
+const char *nm_dhcp_manager_get_config (struct _NMDhcpManager *self);
+
 #endif /* NM_CONFIG_DATA_H */
 
