@@ -234,6 +234,32 @@ client_start (NMDhcpManager *self,
 	c_list_link_tail (&priv->dhcp_client_lst_head, &client->dhcp_client_lst);
 	g_signal_connect (client, NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED, G_CALLBACK (client_state_changed), self);
 
+	/* unfortunately, our implementations work differently per address-family regarding client-id/DUID.
+	 *
+	 * - for IPv4, the calling code may determine a client-id (from NM's connection profile).
+	 *   If present, it is taken. If not present, the DHCP plugin uses a plugin specific default.
+	 *     - for "internal" plugin, the default is just "duid".
+	 *     - for "dhclient", we try to get the configuration from dhclient's /etc/dhcp or fallback
+	 *       to whatever dhclient uses by default.
+	 *   We do it this way, because for dhclient the user may configure a default
+	 *   outside of NM, and we want to honor that. Worse, dhclient could be a wapper
+	 *   script where the wrapper script overwrites the client-id. We need to distinguish
+	 *   between: force a particular client-id and leave it unspecified to whatever dhclient
+	 *   wants.
+	 *
+	 * - for IPv6, the calling code always determines a client-id. It also specifies @enforce_duid,
+	 *   to determine whether the given client-id must be used.
+	 *     - for "internal" plugin @enforce_duid doesn't matter and the given client-id is
+	 *       always used.
+	 *     - for "dhclient", @enforce_duid FALSE means to first try to load the DUID from the
+	 *       lease file, and only otherwise fallback to the given client-id.
+	 *     - other plugins don't support DHCPv6.
+	 *   It's done this way, so that existing dhclient setups don't change behavior on upgrade.
+	 *
+	 * This difference is cumbersome and only exists because of "dhclient" which supports hacking the
+	 * default outside of NetworkManager API.
+	 */
+
 	if (addr_family == AF_INET) {
 		success = nm_dhcp_client_start_ip4 (client,
 		                                    dhcp_client_id,
