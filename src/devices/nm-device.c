@@ -1268,6 +1268,8 @@ _get_stable_id (NMDevice *self,
 		gs_free char *generated = NULL;
 		NMUtilsStableType stable_type;
 		NMSettingConnection *s_con;
+		gboolean hwaddr_is_fake;
+		const char *hwaddr;
 		const char *stable_id;
 		const char *uuid;
 
@@ -1284,8 +1286,14 @@ _get_stable_id (NMDevice *self,
 
 		uuid = nm_connection_get_uuid (connection);
 
+		/* the cloned-mac-address may be generated based on the stable-id.
+		 * Thus, at this point, we can only use the permanant MAC address
+		 * as seed. */
+		hwaddr = nm_device_get_permanent_hw_address_full (self, TRUE, &hwaddr_is_fake);
+
 		stable_type = nm_utils_stable_id_parse (stable_id,
 		                                        nm_device_get_ip_iface (self),
+		                                        !hwaddr_is_fake ? hwaddr : NULL,
 		                                        nm_utils_get_boot_id_str (),
 		                                        uuid,
 		                                        &generated);

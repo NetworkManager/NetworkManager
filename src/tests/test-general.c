@@ -1739,7 +1739,7 @@ do_test_stable_id_parse (const char *stable_id,
 	else
 		g_assert (stable_id);
 
-	stable_type = nm_utils_stable_id_parse (stable_id, "_DEVICE", "_BOOT", "_CONNECTION", &generated);
+	stable_type = nm_utils_stable_id_parse (stable_id, "_DEVICE", "_MAC", "_BOOT", "_CONNECTION", &generated);
 
 	g_assert_cmpint (expected_stable_type, ==, stable_type);
 
@@ -1778,6 +1778,7 @@ test_stable_id_parse (void)
 	_parse_generated ("x${BOOT}", "x${BOOT}=5{_BOOT}");
 	_parse_generated ("x${BOOT}${CONNECTION}", "x${BOOT}=5{_BOOT}${CONNECTION}=11{_CONNECTION}");
 	_parse_generated ("xX${BOOT}yY${CONNECTION}zZ", "xX${BOOT}=5{_BOOT}yY${CONNECTION}=11{_CONNECTION}zZ");
+	_parse_generated ("${MAC}x", "${MAC}=4{_MAC}x");
 	_parse_random ("${RANDOM}");
 	_parse_random (" ${RANDOM}");
 	_parse_random ("${BOOT}${RANDOM}");

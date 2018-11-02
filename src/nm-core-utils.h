@@ -335,6 +335,7 @@ typedef enum {
 
 NMUtilsStableType nm_utils_stable_id_parse (const char *stable_id,
                                             const char *deviceid,
+                                            const char *hwaddr,
                                             const char *bootid,
                                             const char *uuid,
                                             char **out_generated);
