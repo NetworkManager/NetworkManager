@@ -3092,6 +3092,7 @@ _stable_id_append (GString *str,
 NMUtilsStableType
 nm_utils_stable_id_parse (const char *stable_id,
                           const char *deviceid,
+                          const char *hwaddr,
                           const char *bootid,
                           const char *uuid,
                           char **out_generated)
@@ -3170,6 +3171,8 @@ nm_utils_stable_id_parse (const char *stable_id,
 			_stable_id_append (str, bootid);
 		else if (CHECK_PREFIX ("${DEVICE}"))
 			_stable_id_append (str, deviceid);
+		else if (CHECK_PREFIX ("${MAC}"))
+			_stable_id_append (str, hwaddr);
 		else if (g_str_has_prefix (&stable_id[i], "${RANDOM}")) {
 			/* RANDOM makes not so much sense for cloned-mac-address
 			 * as the result is simmilar to specyifing "cloned-mac-address=random".
