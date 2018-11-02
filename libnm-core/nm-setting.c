@@ -685,10 +685,15 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 				continue;
 		}
 
-		if (property->synth_func)
-			dbus_value = property->synth_func (setting, connection, property->name);
-		else
+		if (property->synth_func) {
+			if (!(flags & NM_CONNECTION_SERIALIZE_NO_SYNTH))
+				dbus_value = property->synth_func (setting, connection, property->name);
+			else
+				dbus_value = NULL;
+		} else {
 			dbus_value = get_property_for_dbus (setting, property, TRUE);
+		}
+
 		if (dbus_value) {
 			/* Allow dbus_value to be either floating or not. */
 			g_variant_take_ref (dbus_value);
@@ -2013,7 +2018,8 @@ nm_setting_to_string (NMSetting *setting)
 	string = g_string_new (nm_setting_get_name (setting));
 	g_string_append_c (string, '\n');
 
-	variant = _nm_setting_to_dbus (setting, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	variant = _nm_setting_to_dbus (setting, NULL,   NM_CONNECTION_SERIALIZE_ALL
+	                                              | NM_CONNECTION_SERIALIZE_NO_SYNTH);
 
 	g_variant_iter_init (&iter, variant);
 	while ((child = g_variant_iter_next_value (&iter))) {

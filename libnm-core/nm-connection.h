@@ -121,6 +121,8 @@ typedef enum { /*< flags >*/
 	NM_CONNECTION_SERIALIZE_ALL = 0x00000000,
 	NM_CONNECTION_SERIALIZE_NO_SECRETS = 0x00000001,
 	NM_CONNECTION_SERIALIZE_ONLY_SECRETS = 0x00000002,
+
+	/* 0x80000000 is used for a private flag */
 } NMConnectionSerializationFlags;
 
 GVariant     *nm_connection_to_dbus       (NMConnection *connection,
