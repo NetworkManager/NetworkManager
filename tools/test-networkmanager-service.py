@@ -916,16 +916,8 @@ class WifiDevice(Device):
         self.aps = []
         self.scan_cb_id = None
 
-        # Note: we would like to simulate how nmcli calls RequestScan() and we could
-        # do so by using an older timestamp. However, that makes the client tests
-        # racy, because if a bunch of nmcli instances run in parallel against this
-        # service, earlier instances will issue a RequestScan(), while later instances
-        # won't do that (because the LastScan timestamp is already updated). That means,
-        # the later instances will print the scan result immediately, and in another sort
-        # order. That should be fixed, by nmcli not starting to print anything, before
-        # all RequestScan() requests complete, and thus, always print a consistent list
-        # of results.
-        ts = NM.utils_get_timestamp_msec()
+        # Use a randomly older timestamp to trigger RequestScan() from the client
+        ts = max(0, NM.utils_get_timestamp_msec() - Util.random_int(self.path, 20000, 40000))
 
         props = {
             PRP_WIFI_HW_ADDRESS:            mac,
