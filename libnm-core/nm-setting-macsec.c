@@ -245,6 +245,12 @@ verify_macsec_key (const char *key, gboolean cak, GError **error)
 {
 	int req_len;
 
+	/* CAK is a connection secret and can be NULL for various
+	 * reasons (agent-owned, no permissions to get secrets, etc.)
+	 */
+	if (cak && !key)
+		return TRUE;
+
 	if (!key || !key[0]) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
