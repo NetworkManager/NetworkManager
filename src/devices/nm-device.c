@@ -7587,6 +7587,12 @@ dhcp4_get_client_id (NMDevice *self,
 		goto out_good;
 	}
 
+	if (nm_streq (client_id, "duid")) {
+		result = nm_utils_dhcp_client_id_systemd_node_specific (TRUE,
+		                                                        nm_device_get_ip_iface (self));
+		goto out_good;
+	}
+
 	if (nm_streq (client_id, "stable")) {
 		nm_auto_free_checksum GChecksum *sum = NULL;
 		guint8 digest[NM_UTILS_CHECKSUM_LENGTH_SHA1];

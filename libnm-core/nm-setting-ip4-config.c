@@ -721,6 +721,9 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 	 * with type ethernet (01). Currently, these options only work for ethernet
 	 * type of links.
 	 *
+	 * The special value "duid" generates a RFC4361-compliant client identifier based
+	 * on a hash of the interface name as IAID and /etc/machine-id.
+	 *
 	 * The special value "stable" is supported to generate a type 0 client identifier based
 	 * on the stable-id (see connection.stable-id) and a per-host key. If you set the
 	 * stable-id, you may want to include the "${DEVICE}" or "{$MAC}" specifier to get a
