@@ -578,13 +578,14 @@ ip4_start (NMDhcpClient *client,
            const char *last_ip4_address,
            GError **error)
 {
+	nm_auto (sd_dhcp_client_unrefp) sd_dhcp_client *sd_client = NULL;
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (client);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
+	gs_free char *lease_file = NULL;
 	GBytes *hwaddr;
 	const uint8_t *hwaddr_arr;
 	gsize hwaddr_len;
 	guint16 arptype;
-	sd_dhcp_lease *lease = NULL;
 	GBytes *client_id;
 	gs_unref_bytes GBytes *client_id_new = NULL;
 	const uint8_t *client_id_arr;
@@ -592,28 +593,22 @@ ip4_start (NMDhcpClient *client,
 	struct in_addr last_addr = { 0 };
 	const char *hostname;
 	int r, i;
-	gboolean success = FALSE;
 
 	g_return_val_if_fail (!priv->client4, FALSE);
 	g_return_val_if_fail (!priv->client6, FALSE);
 
-	g_free (priv->lease_file);
-	priv->lease_file = get_leasefile_path (AF_INET,
-	                                       nm_dhcp_client_get_iface (client),
-	                                       nm_dhcp_client_get_uuid (client));
-
-	r = sd_dhcp_client_new (&priv->client4, FALSE);
+	r = sd_dhcp_client_new (&sd_client, FALSE);
 	if (r < 0) {
 		nm_utils_error_set_errno (error, r, "failed to create dhcp-client: %s");
 		return FALSE;
 	}
 
-	_LOGT ("dhcp-client4: set %p", priv->client4);
+	_LOGT ("dhcp-client4: set %p", sd_client);
 
-	r = sd_dhcp_client_attach_event (priv->client4, NULL, 0);
+	r = sd_dhcp_client_attach_event (sd_client, NULL, 0);
 	if (r < 0) {
 		nm_utils_error_set_errno (error, r, "failed to attach event: %s");
-		goto errout;
+		return FALSE;
 	}
 
 	hwaddr = nm_dhcp_client_get_hw_addr (client);
@@ -621,42 +616,43 @@ ip4_start (NMDhcpClient *client,
 	    || !(hwaddr_arr = g_bytes_get_data (hwaddr, &hwaddr_len))
 	    || (arptype = get_arp_type (hwaddr_len)) == ARPHRD_NONE) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "invalid MAC address");
-		goto errout;
+		return FALSE;
 	}
-	r = sd_dhcp_client_set_mac (priv->client4,
+	r = sd_dhcp_client_set_mac (sd_client,
 	                            hwaddr_arr,
 	                            hwaddr_len,
 	                            arptype);
 	if (r < 0) {
 		nm_utils_error_set_errno (error, r, "failed to set MAC address: %s");
-		goto errout;
+		return FALSE;
 	}
 
-	r = sd_dhcp_client_set_ifindex (priv->client4,
+	r = sd_dhcp_client_set_ifindex (sd_client,
 	                                nm_dhcp_client_get_ifindex (client));
 	if (r < 0) {
 		nm_utils_error_set_errno (error, r, "failed to set ifindex: %s");
-		goto errout;
+		return FALSE;
 	}
 
-	r = sd_dhcp_client_set_callback (priv->client4, dhcp_event_cb, client);
-	if (r < 0) {
-		nm_utils_error_set_errno (error, r, "failed to set callback: %s");
-		goto errout;
-	}
-
-	dhcp_lease_load (&lease, priv->lease_file);
+	lease_file = get_leasefile_path (AF_INET,
+	                                 nm_dhcp_client_get_iface (client),
+	                                 nm_dhcp_client_get_uuid (client));
 
 	if (last_ip4_address)
 		inet_pton (AF_INET, last_ip4_address, &last_addr);
-	else if (lease)
-		sd_dhcp_lease_get_address (lease, &last_addr);
+	else {
+		nm_auto (sd_dhcp_lease_unrefp) sd_dhcp_lease *lease = NULL;
+
+		dhcp_lease_load (&lease, lease_file);
+		if (lease)
+			sd_dhcp_lease_get_address (lease, &last_addr);
+	}
 
 	if (last_addr.s_addr) {
-		r = sd_dhcp_client_set_request_address (priv->client4, &last_addr);
+		r = sd_dhcp_client_set_request_address (sd_client, &last_addr);
 		if (r < 0) {
 			nm_utils_error_set_errno (error, r, "failed to set last IPv4 address: %s");
-			goto errout;
+			return FALSE;
 		}
 	}
 
@@ -674,24 +670,22 @@ ip4_start (NMDhcpClient *client,
 		nm_assert_not_reached ();
 
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "no valid IPv4 client-id");
-		goto errout;
+		return FALSE;
 	}
 
-	r = sd_dhcp_client_set_client_id (priv->client4,
+	r = sd_dhcp_client_set_client_id (sd_client,
 	                                  client_id_arr[0],
 	                                  client_id_arr + 1,
 	                                  NM_MIN (client_id_len - 1, _NM_SD_MAX_CLIENT_ID_LEN));
 	if (r < 0) {
 		nm_utils_error_set_errno (error, r, "failed to set IPv4 client-id: %s");
-		goto errout;
+		return FALSE;
 	}
-
-	nm_dhcp_client_set_client_id (client, client_id);
 
 	/* Add requested options */
 	for (i = 0; dhcp4_requests[i].name; i++) {
 		if (dhcp4_requests[i].include)
-			sd_dhcp_client_set_request_option (priv->client4, dhcp4_requests[i].num);
+			sd_dhcp_client_set_request_option (sd_client, dhcp4_requests[i].num);
 	}
 
 	hostname = nm_dhcp_client_get_hostname (client);
@@ -700,28 +694,36 @@ ip4_start (NMDhcpClient *client,
 		 * only based on whether the hostname has a domain part or not. At the
 		 * moment there is no way to force one or another.
 		 */
-		r = sd_dhcp_client_set_hostname (priv->client4, hostname);
+		r = sd_dhcp_client_set_hostname (sd_client, hostname);
 		if (r < 0) {
 			nm_utils_error_set_errno (error, r, "failed to set DHCP hostname: %s");
-			goto errout;
+			return FALSE;
 		}
 	}
 
+	r = sd_dhcp_client_set_callback (sd_client, dhcp_event_cb, client);
+	if (r < 0) {
+		nm_utils_error_set_errno (error, r, "failed to set callback: %s");
+		return FALSE;
+	}
+
+	priv->client4 = g_steal_pointer (&sd_client);
+
+	g_free (priv->lease_file);
+	priv->lease_file = g_steal_pointer (&lease_file);
+
+	nm_dhcp_client_set_client_id (client, client_id);
+
 	r = sd_dhcp_client_start (priv->client4);
 	if (r < 0) {
+		sd_dhcp_client_set_callback (priv->client4, NULL, NULL);
+		nm_clear_pointer (&priv->client4, sd_dhcp_client_unref);
 		nm_utils_error_set_errno (error, r, "failed to start DHCP client: %s");
-		goto errout;
+		return FALSE;
 	}
 
 	nm_dhcp_client_start_timeout (client);
-
-	success = TRUE;
-
-errout:
-	sd_dhcp_lease_unref (lease);
-	if (!success)
-		sd_dhcp_client_unref (g_steal_pointer (&priv->client4));
-	return success;
+	return TRUE;
 }
 
 static NMIP6Config *
@@ -889,6 +891,7 @@ ip6_start (NMDhcpClient *client,
 {
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (client);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
+	nm_auto (sd_dhcp6_client_unrefp) sd_dhcp6_client *sd_client = NULL;
 	GBytes *hwaddr;
 	const char *hostname;
 	int r, i;
@@ -899,14 +902,14 @@ ip6_start (NMDhcpClient *client,
 	g_return_val_if_fail (!priv->client4, FALSE);
 	g_return_val_if_fail (!priv->client6, FALSE);
 
-	duid = nm_dhcp_client_get_client_id (client);
-	g_return_val_if_fail (duid, FALSE);
-
-	duid_arr = g_bytes_get_data (duid, &duid_len);
-	if (!duid_arr || duid_len < 2)
+	if (   !(duid = nm_dhcp_client_get_client_id (client))
+	    || !(duid_arr = g_bytes_get_data (duid, &duid_len))
+	    || duid_len < 2) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "missing DUID");
 		g_return_val_if_reached (FALSE);
+	}
 
-	r = sd_dhcp6_client_new (&priv->client6);
+	r = sd_dhcp6_client_new (&sd_client);
 	if (r < 0) {
 		nm_utils_error_set_errno (error, r, "failed to create dhcp-client: %s");
 		return FALSE;
@@ -917,12 +920,12 @@ ip6_start (NMDhcpClient *client,
 		       needed_prefixes);
 	}
 
-	_LOGT ("dhcp-client6: set %p", priv->client6);
+	_LOGT ("dhcp-client6: set %p", sd_client);
 
 	if (nm_dhcp_client_get_info_only (client))
-		sd_dhcp6_client_set_information_request (priv->client6, 1);
+		sd_dhcp6_client_set_information_request (sd_client, 1);
 
-	r = sd_dhcp6_client_set_duid (priv->client6,
+	r = sd_dhcp6_client_set_duid (sd_client,
 	                              unaligned_read_be16 (&duid_arr[0]),
 	                              &duid_arr[2],
 	                              duid_len - 2);
@@ -931,10 +934,10 @@ ip6_start (NMDhcpClient *client,
 		return FALSE;
 	}
 
-	r = sd_dhcp6_client_attach_event (priv->client6, NULL, 0);
+	r = sd_dhcp6_client_attach_event (sd_client, NULL, 0);
 	if (r < 0) {
 		nm_utils_error_set_errno (error, r, "failed to attach event: %s");
-		goto errout;
+		return FALSE;
 	}
 
 	hwaddr = nm_dhcp_client_get_hw_addr (client);
@@ -946,64 +949,63 @@ ip6_start (NMDhcpClient *client,
 		if (   !(hwaddr_arr = g_bytes_get_data (hwaddr, &hwaddr_len))
 		    || (arptype = get_arp_type (hwaddr_len)) == ARPHRD_NONE) {
 			nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "invalid MAC address");
-			goto errout;
+			return FALSE;
 		}
 
-		r = sd_dhcp6_client_set_mac (priv->client6,
+		r = sd_dhcp6_client_set_mac (sd_client,
 		                             hwaddr_arr,
 		                             hwaddr_len,
 		                             arptype);
 		if (r < 0) {
 			nm_utils_error_set_errno (error, r, "failed to set MAC address: %s");
-			goto errout;
+			return FALSE;
 		}
 	}
 
-	r = sd_dhcp6_client_set_ifindex (priv->client6,
+	r = sd_dhcp6_client_set_ifindex (sd_client,
 	                                 nm_dhcp_client_get_ifindex (client));
 	if (r < 0) {
 		nm_utils_error_set_errno (error, r, "failed to set ifindex: %s");
-		goto errout;
-	}
-
-	r = sd_dhcp6_client_set_callback (priv->client6, dhcp6_event_cb, client);
-	if (r < 0) {
-		nm_utils_error_set_errno (error, r, "failed to set callback: %s");
-		goto errout;
+		return FALSE;
 	}
 
 	/* Add requested options */
 	for (i = 0; dhcp6_requests[i].name; i++) {
 		if (dhcp6_requests[i].include)
-			sd_dhcp6_client_set_request_option (priv->client6, dhcp6_requests[i].num);
+			sd_dhcp6_client_set_request_option (sd_client, dhcp6_requests[i].num);
 	}
 
-	r = sd_dhcp6_client_set_local_address (priv->client6, ll_addr);
+	r = sd_dhcp6_client_set_local_address (sd_client, ll_addr);
 	if (r < 0) {
 		nm_utils_error_set_errno (error, r, "failed to set local address: %s");
-		goto errout;
+		return FALSE;
 	}
 
 	hostname = nm_dhcp_client_get_hostname (client);
-	r = sd_dhcp6_client_set_fqdn (priv->client6, hostname);
+	r = sd_dhcp6_client_set_fqdn (sd_client, hostname);
 	if (r < 0) {
 		nm_utils_error_set_errno (error, r, "failed to set DHCP hostname: %s");
-		goto errout;
+		return FALSE;
 	}
+
+	r = sd_dhcp6_client_set_callback (sd_client, dhcp6_event_cb, client);
+	if (r < 0) {
+		nm_utils_error_set_errno (error, r, "failed to set callback: %s");
+		return FALSE;
+	}
+
+	priv->client6 = g_steal_pointer (&sd_client);
 
 	r = sd_dhcp6_client_start (priv->client6);
 	if (r < 0) {
+		sd_dhcp6_client_set_callback (priv->client6, NULL, NULL);
+		nm_clear_pointer (&priv->client6, sd_dhcp6_client_unref);
 		nm_utils_error_set_errno (error, r, "failed to start client: %s");
-		goto errout;
+		return FALSE;
 	}
 
 	nm_dhcp_client_start_timeout (client);
-
 	return TRUE;
-
-errout:
-	sd_dhcp6_client_unref (g_steal_pointer (&priv->client6));
-	return FALSE;
 }
 
 static void
