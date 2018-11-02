@@ -6534,6 +6534,12 @@ static gboolean nmc_editor_cb_called;
 static GError *nmc_editor_error;
 static MonitorACInfo *nmc_editor_monitor_ac;
 
+static void
+editor_connection_changed_cb (NMConnection *connection, gboolean *changed)
+{
+	*changed = TRUE;
+}
+
 /*
  * Store 'error' to shared 'nmc_editor_error' and monitoring info to
  * 'nmc_editor_monitor_ac' and signal the condition so that
@@ -7128,6 +7134,16 @@ menu_switch_to_level1 (const NmcConfig *nmc_config,
 }
 
 static gboolean
+editor_save_timeout (gpointer user_data)
+{
+	gboolean *timeout = user_data;
+
+	*timeout = TRUE;
+
+	return G_SOURCE_REMOVE;
+}
+
+static gboolean
 editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_type)
 {
 	gs_unref_object NMRemoteConnection *rem_con = NULL;
@@ -7646,6 +7662,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			/* Save the connection */
 			if (nm_connection_verify (connection, &err1)) {
 				gboolean persistent = TRUE;
+				gboolean connection_changed;
+				nm_auto_unref_gsource GSource *source = NULL;
+				gboolean timeout = FALSE;
+				gulong handler_id = 0;
 
 				/* parse argument */
 				if (cmd_arg) {
@@ -7674,16 +7694,33 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					                    connection,
 					                    add_connection_editor_cb,
 					                    info);
+					connection_changed = TRUE;
 				} else {
 					/* Save/update already saved (existing) connection */
 					nm_connection_replace_settings_from_connection (NM_CONNECTION (rem_con),
 					                                                connection);
 					update_connection (persistent, rem_con, update_connection_editor_cb, NULL);
+
+					handler_id = g_signal_connect (rem_con,
+					                               NM_CONNECTION_CHANGED,
+					                               G_CALLBACK (editor_connection_changed_cb),
+					                               &connection_changed);
+					connection_changed = FALSE;
 				}
 
-				//FIXME: add also a timeout for cases the callback is not called
-				while (!nmc_editor_cb_called)
+				source = g_timeout_source_new (10 * NM_UTILS_MSEC_PER_SECOND);
+				g_source_set_callback (source, editor_save_timeout, &timeout, NULL);
+				g_source_attach (source, g_main_loop_get_context (loop));
+
+				while (!nmc_editor_cb_called && !timeout)
 					g_main_context_iteration (NULL, TRUE);
+
+				while (!connection_changed && !timeout)
+					g_main_context_iteration (NULL, TRUE);
+
+				if (handler_id)
+					g_signal_handler_disconnect (rem_con, handler_id);
+				g_source_destroy (source);
 
 				if (nmc_editor_error) {
 					g_print (_("Error: Failed to save '%s' (%s) connection: %s\n"),
@@ -7691,6 +7728,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					         nm_connection_get_uuid (connection),
 					         nmc_editor_error->message);
 					g_error_free (nmc_editor_error);
+				} else if (timeout) {
+					g_print (_("Error: Timeout saving '%s' (%s) connection\n"),
+					         nm_connection_get_id (connection),
+					         nm_connection_get_uuid (connection));
 				} else {
 					g_print (!rem_con ?
 					         _("Connection '%s' (%s) successfully saved.\n") :
