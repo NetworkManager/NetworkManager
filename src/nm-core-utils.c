@@ -2963,7 +2963,7 @@ nm_utils_stable_id_parse (const char *stable_id,
 		if (CHECK_PREFIX ("${CONNECTION}"))
 			_stable_id_append (str, uuid);
 		else if (CHECK_PREFIX ("${BOOT}"))
-			_stable_id_append (str, bootid ?: nm_utils_get_boot_id_str ());
+			_stable_id_append (str, bootid);
 		else if (CHECK_PREFIX ("${DEVICE}"))
 			_stable_id_append (str, deviceid);
 		else if (g_str_has_prefix (&stable_id[i], "${RANDOM}")) {

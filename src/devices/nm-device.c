@@ -1286,7 +1286,7 @@ _get_stable_id (NMDevice *self,
 
 		stable_type = nm_utils_stable_id_parse (stable_id,
 		                                        nm_device_get_ip_iface (self),
-		                                        NULL,
+		                                        nm_utils_get_boot_id_str (),
 		                                        uuid,
 		                                        &generated);
 
