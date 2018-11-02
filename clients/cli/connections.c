@@ -7796,9 +7796,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						if (menu_ctx.curr_setting)
 							s_name = g_strdup (nm_setting_get_name (menu_ctx.curr_setting));
 
-						/* Update settings in the local connection */
+						/* Update settings and secrets in the local connection */
 						nm_connection_replace_settings_from_connection (connection,
 						                                                NM_CONNECTION (con_tmp));
+						update_secrets_in_connection (con_tmp, connection);
 
 						/* Also update setting for menu context and TAB-completion */
 						menu_ctx.curr_setting = s_name ? nm_connection_get_setting_by_name (connection, s_name) : NULL;
