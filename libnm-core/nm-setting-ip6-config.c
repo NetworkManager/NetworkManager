@@ -852,7 +852,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	 *
 	 * The special values "stable-llt", "stable-ll" and "stable-uuid" will generate
 	 * a DUID of the corresponding type, derived from the connection's stable-id and
-	 * a per-host unique key.
+	 * a per-host unique key. You may want to include the "${DEVICE}" or "${MAC}" specifier
+	 * in the stable-id, in case this profile gets activated on multiple devices.
 	 * So, the link-layer address of "stable-ll" and "stable-llt" will be a generated
 	 * address derived from the stable id. The DUID-LLT time value in the "stable-llt"
 	 * option will be picked among a static timespan of three years (the upper bound
