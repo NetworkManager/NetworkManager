@@ -919,6 +919,8 @@ nmc_empty_output_fields (NmcOutputData *output_data)
 	/* Empty output_data array */
 	if (output_data->output_data->len > 0)
 		g_ptr_array_remove_range (output_data->output_data, 0, output_data->output_data->len);
+
+	g_ptr_array_unref (output_data->output_data);
 }
 
 /*****************************************************************************/
