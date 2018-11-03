@@ -215,7 +215,8 @@ shared_libcsiphash_la_CPPFLAGS = \
 
 shared_libcsiphash_la_SOURCES = \
 	shared/c-siphash/src/c-siphash.c \
-	shared/c-siphash/src/c-siphash.h
+	shared/c-siphash/src/c-siphash.h \
+	$(NULL)
 
 ###############################################################################
 
@@ -231,14 +232,19 @@ shared_libcrbtree_la_CPPFLAGS = \
 shared_libcrbtree_la_SOURCES = \
 	shared/c-rbtree/src/c-rbtree.c \
 	shared/c-rbtree/src/c-rbtree.h \
-	shared/c-rbtree/src/c-rbtree-private.h
+	shared/c-rbtree/src/c-rbtree-private.h \
+	$(NULL)
 
 ###############################################################################
 
 noinst_LTLIBRARIES += shared/libnacd.la
 
-shared_libnacd_la_CFLAGS = $(AM_CFLAGS) -std=c11 -Wno-pointer-arith -Wno-vla
-shared_libnacd_la_LIBADD = shared/libcrbtree.la
+shared_libnacd_la_CFLAGS = \
+	$(AM_CFLAGS) \
+	-std=c11 \
+	-Wno-pointer-arith \
+	-Wno-vla \
+	$(NULL)
 
 shared_libnacd_la_CPPFLAGS = \
 	-D_GNU_SOURCE \
@@ -256,7 +262,8 @@ shared_libnacd_la_SOURCES = \
 	shared/n-acd/src/n-acd-private.h \
 	shared/n-acd/src/n-acd-probe.c \
 	shared/n-acd/src/util/timer.c \
-	shared/n-acd/src/util/timer.h
+	shared/n-acd/src/util/timer.h \
+	$(NULL)
 
 if WITH_EBPF
 shared_libnacd_la_SOURCES += shared/n-acd/src/n-acd-bpf.c
@@ -264,7 +271,88 @@ else
 shared_libnacd_la_SOURCES += shared/n-acd/src/n-acd-bpf-fallback.c
 endif
 
-EXTRA_DIST += shared/c-list/src/c-list.h
+shared_libnacd_la_LIBADD = \
+	shared/libcrbtree.la \
+	$(NULL)
+
+###############################################################################
+
+shared_nm_utils_libnm_utils_cppflags = \
+	$(dflt_cppflags) \
+	-I$(srcdir)/shared \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	-DG_LOG_DOMAIN=\""libnm"\" \
+	-DNETWORKMANAGER_COMPILATION='(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)' \
+	$(NULL)
+
+noinst_LTLIBRARIES += shared/nm-utils/libnm-utils-base.la
+
+shared_nm_utils_libnm_utils_base_la_CPPFLAGS = \
+	$(shared_nm_utils_libnm_utils_cppflags) \
+	$(NULL)
+
+shared_nm_utils_libnm_utils_base_la_SOURCES = \
+	shared/c-list/src/c-list.h \
+	shared/nm-utils/c-list-util.c \
+	shared/nm-utils/c-list-util.h \
+	shared/nm-utils/nm-c-list.h \
+	shared/nm-utils/nm-dedup-multi.c \
+	shared/nm-utils/nm-dedup-multi.h \
+	shared/nm-utils/nm-enum-utils.c \
+	shared/nm-utils/nm-enum-utils.h \
+	shared/nm-utils/nm-glib.h \
+	shared/nm-utils/nm-hash-utils.c \
+	shared/nm-utils/nm-hash-utils.h \
+	shared/nm-utils/nm-io-utils.c \
+	shared/nm-utils/nm-io-utils.h \
+	shared/nm-utils/nm-macros-internal.h \
+	shared/nm-utils/nm-obj.h \
+	shared/nm-utils/nm-random-utils.c \
+	shared/nm-utils/nm-random-utils.h \
+	shared/nm-utils/nm-secret-utils.c \
+	shared/nm-utils/nm-secret-utils.h \
+	shared/nm-utils/nm-shared-utils.c \
+	shared/nm-utils/nm-shared-utils.h \
+	shared/nm-utils/nm-time-utils.c \
+	shared/nm-utils/nm-time-utils.h \
+	shared/nm-utils/unaligned.h \
+	$(NULL)
+
+shared_nm_utils_libnm_utils_base_la_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_LIB_LDFLAGS) \
+	$(NULL)
+
+shared_nm_utils_libnm_utils_base_la_LIBADD = \
+	shared/libcsiphash.la \
+	$(GLIB_LIBS) \
+	$(NULL)
+
+###############################################################################
+
+noinst_LTLIBRARIES += shared/nm-utils/libnm-utils-udev.la
+
+shared_nm_utils_libnm_utils_udev_la_CPPFLAGS = \
+	$(shared_nm_utils_libnm_utils_cppflags) \
+	$(LIBUDEV_CFLAGS) \
+	$(NULL)
+
+shared_nm_utils_libnm_utils_udev_la_SOURCES = \
+	shared/nm-utils/nm-udev-utils.c \
+	shared/nm-utils/nm-udev-utils.h \
+	$(NULL)
+
+shared_nm_utils_libnm_utils_udev_la_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_LIB_LDFLAGS) \
+	$(NULL)
+
+shared_nm_utils_libnm_utils_udev_la_LIBADD = \
+	$(GLIB_LIBS) \
+	$(LIBUDEV_LIBS) \
+	$(NULL)
 
 ###############################################################################
 
@@ -277,26 +365,12 @@ shared_nm_utils_tests_test_shared_general_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION='(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)' \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	$(LIBUDEV_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
 
-shared_nm_utils_tests_test_shared_general_SOURCES = \
-	shared/nm-utils/c-list-util.c \
-	shared/nm-utils/nm-dedup-multi.c \
-	shared/nm-utils/nm-enum-utils.c \
-	shared/nm-utils/nm-hash-utils.c \
-	shared/nm-utils/nm-io-utils.c \
-	shared/nm-utils/nm-random-utils.c \
-	shared/nm-utils/nm-secret-utils.c \
-	shared/nm-utils/nm-shared-utils.c \
-	shared/nm-utils/nm-time-utils.c \
-	shared/nm-utils/tests/test-shared-general.c \
-	$(NULL)
-
 shared_nm_utils_tests_test_shared_general_LDADD = \
+	shared/nm-utils/libnm-utils-base.la \
 	$(GLIB_LIBS) \
-	shared/libcsiphash.la \
 	$(NULL)
 
 ###############################################################################
@@ -591,15 +665,6 @@ libnm_core_lib_h_pub_real = \
 libnm_core_lib_h_pub_mkenums = \
 	libnm-core/nm-core-enum-types.h
 libnm_core_lib_h_priv = \
-	shared/nm-utils/c-list-util.h \
-	shared/nm-utils/nm-dedup-multi.h \
-	shared/nm-utils/nm-enum-utils.h \
-	shared/nm-utils/nm-hash-utils.h \
-	shared/nm-utils/nm-io-utils.h \
-	shared/nm-utils/nm-secret-utils.h \
-	shared/nm-utils/nm-shared-utils.h \
-	shared/nm-utils/nm-random-utils.h \
-	shared/nm-utils/nm-udev-utils.h \
 	shared/nm-ethtool-utils.h \
 	shared/nm-meta-setting.h \
 	libnm-core/nm-crypto.h \
@@ -660,15 +725,6 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-wpan.c
 libnm_core_lib_c_real = \
 	$(libnm_core_lib_c_settings_real) \
-	shared/nm-utils/c-list-util.c \
-	shared/nm-utils/nm-dedup-multi.c \
-	shared/nm-utils/nm-enum-utils.c \
-	shared/nm-utils/nm-hash-utils.c \
-	shared/nm-utils/nm-io-utils.c \
-	shared/nm-utils/nm-secret-utils.c \
-	shared/nm-utils/nm-shared-utils.c \
-	shared/nm-utils/nm-random-utils.c \
-	shared/nm-utils/nm-udev-utils.c \
 	shared/nm-ethtool-utils.c \
 	shared/nm-meta-setting.c \
 	libnm-core/nm-crypto.c \
@@ -761,7 +817,6 @@ nodist_libnm_core_libnm_core_la_SOURCES = \
 libnm_core_libnm_core_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(UUID_LIBS) \
-	$(LIBUDEV_LIBS) \
 	$(NULL)
 
 libnm_core_libnm_core_la_LDFLAGS = \
@@ -879,7 +934,7 @@ nodist_libnm_core_tests_test_general_SOURCES = \
 
 libnm_core_tests_ldadd = \
 	libnm-core/libnm-core.la \
-	shared/libcsiphash.la \
+	shared/nm-utils/libnm-utils-base.la \
 	$(libnm_crypto_lib) \
 	$(GLIB_LIBS)
 
@@ -1085,10 +1140,11 @@ libnm_libnm_utils_la_SOURCES = \
 
 libnm_libnm_utils_la_LIBADD = \
 	libnm-core/libnm-core.la \
-	shared/libcsiphash.la \
 	$(libnm_crypto_lib) \
 	introspection/libnmdbus.la \
-	$(GLIB_LIBS)
+	shared/nm-utils/libnm-utils-base.la \
+	$(GLIB_LIBS) \
+	$(NULL)
 
 $(libnm_libnm_utils_la_OBJECTS) : $(libnm_lib_h_pub_mkenums)
 
@@ -1129,10 +1185,11 @@ EXTRA_libnm_libnm_la_DEPENDENCIES = \
 
 libnm_libnm_la_LIBADD = \
 	libnm/libnm-utils.la \
+	shared/nm-utils/libnm-utils-udev.la \
 	$(DL_LIBS) \
 	$(GLIB_LIBS) \
 	$(UUID_LIBS) \
-	$(LIBUDEV_LIBS)
+	$(NULL)
 
 libnm_libnm_la_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/libnm/libnm.ver" \
@@ -1616,9 +1673,6 @@ src_libNetworkManagerBase_la_CPPFLAGS = $(src_cppflags)
 
 src_libNetworkManagerBase_la_SOURCES = \
 	\
-	shared/nm-utils/nm-time-utils.c \
-	shared/nm-utils/nm-time-utils.h \
-	\
 	src/nm-core-utils.c \
 	src/nm-core-utils.h \
 	src/nm-logging.c \
@@ -1686,8 +1740,9 @@ endif
 
 src_libNetworkManagerBase_la_LIBADD = \
 	libnm-core/libnm-core.la \
-	shared/libcsiphash.la \
 	$(libnm_crypto_lib) \
+	shared/nm-utils/libnm-utils-udev.la \
+	shared/nm-utils/libnm-utils-base.la \
 	$(GLIB_LIBS) \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(LIBUDEV_LIBS) \
@@ -1989,7 +2044,9 @@ src_initrd_nm_initrd_generator_LDADD = \
 	libnm-core/libnm-core.la \
 	src/initrd/libnmi-core.la \
 	src/libNetworkManagerBase.la \
-	$(GLIB_LIBS)
+	shared/nm-utils/libnm-utils-base.la \
+	$(GLIB_LIBS) \
+	$(NULL)
 
 src_initrd_nm_initrd_generator_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
@@ -2010,7 +2067,9 @@ src_initrd_tests_test_ibft_reader_LDADD = \
 	libnm-core/libnm-core.la \
 	src/initrd/libnmi-core.la \
 	src/libNetworkManagerTest.la \
-	$(GLIB_LIBS)
+	shared/nm-utils/libnm-utils-base.la \
+	$(GLIB_LIBS) \
+	$(NULL)
 
 EXTRA_DIST += \
 	src/initrd/tests/sysfs/class/net/eth0/address \
@@ -2222,7 +2281,9 @@ src_initrd_tests_test_cmdline_reader_LDADD = \
 	libnm-core/libnm-core.la \
 	src/initrd/libnmi-core.la \
 	src/libNetworkManagerTest.la \
-	$(GLIB_LIBS)
+	shared/nm-utils/libnm-utils-base.la \
+	$(GLIB_LIBS) \
+	$(NULL)
 
 $(src_initrd_libnmi_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_initrd_nm_initrd_generator_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
@@ -2876,13 +2937,14 @@ check_programs += src/settings/plugins/ifupdown/tests/test-ifupdown
 src_settings_plugins_ifupdown_tests_test_ifupdown_CPPFLAGS = $(src_cppflags_base_test)
 
 src_settings_plugins_ifupdown_tests_test_ifupdown_LDFLAGS = \
-	$(GLIB_LDFLAGS) \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS)
 
 src_settings_plugins_ifupdown_tests_test_ifupdown_LDADD = \
 	src/settings/plugins/ifupdown/libnms-ifupdown-core.la \
-	src/libNetworkManagerTest.la
+	src/libNetworkManagerTest.la \
+	$(GLIB_LIBS) \
+	$(NULL)
 
 $(src_settings_plugins_ifupdown_tests_test_ifupdown_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -3729,15 +3791,6 @@ clients_cppflags = \
 check_ltlibraries += clients/common/libnmc-base.la
 
 clients_common_libnmc_base_la_SOURCES = \
-	shared/nm-utils/nm-enum-utils.c \
-	shared/nm-utils/nm-enum-utils.h \
-	shared/nm-utils/nm-hash-utils.c \
-	shared/nm-utils/nm-hash-utils.h \
-	shared/nm-utils/nm-random-utils.c \
-	shared/nm-utils/nm-random-utils.h \
-	shared/nm-utils/nm-shared-utils.c \
-	shared/nm-utils/nm-shared-utils.h \
-	\
 	clients/common/nm-secret-agent-simple.c \
 	clients/common/nm-secret-agent-simple.h \
 	clients/common/nm-vpn-helpers.c \
@@ -3752,7 +3805,7 @@ clients_common_libnmc_base_la_CPPFLAGS = \
 
 clients_common_libnmc_base_la_LIBADD = \
 	libnm/libnm.la \
-	shared/libcsiphash.la \
+	shared/nm-utils/libnm-utils-base.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -4272,7 +4325,6 @@ libnm_util_lib_h_pub_real = \
 libnm_util_lib_h_pub_mkenums = \
 	libnm-util/nm-utils-enum-types.h
 libnm_util_lib_h_priv = \
-	shared/nm-utils/nm-shared-utils.h \
 	libnm-util/crypto.h \
 	libnm-util/nm-dbus-glib-types.h \
 	libnm-util/nm-gvaluearray-compat.h \
@@ -4287,7 +4339,6 @@ nodist_libnm_util_libnm_util_include_HEADERS = \
 	$(libnm_util_lib_h_pub_mkenums)
 
 libnm_util_lib_c_real = \
-	shared/nm-utils/nm-shared-utils.c \
 	libnm-util/crypto.c \
 	libnm-util/nm-connection.c \
 	libnm-util/nm-param-spec-specialized.c \
@@ -4345,6 +4396,7 @@ nm_utils_enum_types_sources = $(filter-out libnm-util/NetworkManager%,$(libnm_ut
 $(libnm_util_libnm_util_la_OBJECTS): $(libnm_util_lib_h_pub_mkenums)
 
 libnm_util_libnm_util_la_LIBADD = \
+	shared/nm-utils/libnm-utils-base.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
 	$(UUID_LIBS)
@@ -4586,7 +4638,6 @@ libnm_glib_lib_h_pub_real = \
 libnm_glib_lib_h_pub_mkenums = \
 	libnm-glib/nm-glib-enum-types.h
 libnm_glib_lib_h_priv = \
-	shared/nm-utils/nm-udev-utils.h \
 	libnm-glib/nm-object-private.h \
 	libnm-glib/nm-device-private.h \
 	libnm-glib/nm-types-private.h \
@@ -4613,7 +4664,6 @@ nodist_libnm_glib_libnmvpn_HEADERS = \
 	$(libnm_glib_vpn_h_mkenums)
 
 libnm_glib_lib_c_real = \
-	shared/nm-utils/nm-udev-utils.c \
 	libnm-glib/nm-object.c \
 	libnm-glib/nm-dbus-helpers.c \
 	libnm-glib/nm-client.c \
@@ -4668,9 +4718,12 @@ libnm_glib_libnm_glib_la_LDFLAGS = \
 libnm_glib_libnm_glib_la_LIBADD = \
 	libnm-util/libnm-util.la \
 	libnm-glib/libdeprecated-nm-glib.la \
+	shared/nm-utils/libnm-utils-udev.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
-	$(LIBUDEV_LIBS)
+	$(LIBUDEV_LIBS) \
+	$(NULL)
+
 $(libnm_glib_libnm_glib_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 GLIB_GENERATED += \
@@ -5085,27 +5138,14 @@ EXTRA_DIST += \
 	shared/nm-dispatcher-api.h \
 	shared/nm-test-libnm-utils.h \
 	shared/nm-test-utils-impl.c \
-	shared/nm-utils/c-list-util.c \
-	shared/nm-utils/c-list-util.h \
-	shared/nm-utils/nm-c-list.h \
 	shared/nm-utils/nm-compat.c \
 	shared/nm-utils/nm-compat.h \
-	shared/nm-utils/nm-glib.h \
-	shared/nm-utils/nm-io-utils.c \
-	shared/nm-utils/nm-io-utils.h \
 	shared/nm-utils/nm-jansson.h \
-	shared/nm-utils/nm-obj.h \
-	shared/nm-utils/nm-macros-internal.h \
-	shared/nm-utils/nm-secret-utils.c \
-	shared/nm-utils/nm-secret-utils.h \
-	shared/nm-utils/nm-shared-utils.c \
-	shared/nm-utils/nm-shared-utils.h \
 	shared/nm-utils/nm-test-utils.h \
 	shared/nm-utils/nm-vpn-editor-plugin-call.h \
 	shared/nm-utils/nm-vpn-plugin-macros.h \
 	shared/nm-utils/nm-vpn-plugin-utils.c \
 	shared/nm-utils/nm-vpn-plugin-utils.h \
-	shared/nm-utils/unaligned.h \
 	shared/nm-version-macros.h.in \
 	shared/meson.build \
 	\
