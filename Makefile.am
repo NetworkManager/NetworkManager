@@ -206,6 +206,68 @@ DISTCLEANFILES += $(polkit_policy_DATA)
 
 ###############################################################################
 
+noinst_LTLIBRARIES += shared/libcsiphash.la
+
+shared_libcsiphash_la_CPPFLAGS = \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	$(NULL)
+
+shared_libcsiphash_la_SOURCES = \
+	shared/c-siphash/src/c-siphash.c \
+	shared/c-siphash/src/c-siphash.h
+
+###############################################################################
+
+noinst_LTLIBRARIES += shared/libcrbtree.la
+
+shared_libcrbtree_la_CFLAGS = $(AM_CFLAGS) -std=c11
+
+shared_libcrbtree_la_CPPFLAGS = \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	$(NULL)
+
+shared_libcrbtree_la_SOURCES = \
+	shared/c-rbtree/src/c-rbtree.c \
+	shared/c-rbtree/src/c-rbtree.h \
+	shared/c-rbtree/src/c-rbtree-private.h
+
+###############################################################################
+
+noinst_LTLIBRARIES += shared/libnacd.la
+
+shared_libnacd_la_CFLAGS = $(AM_CFLAGS) -std=c11 -Wno-pointer-arith -Wno-vla
+shared_libnacd_la_LIBADD = shared/libcrbtree.la
+
+shared_libnacd_la_CPPFLAGS = \
+	-D_GNU_SOURCE \
+	-DSO_ATTACH_BPF=50 \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	-I$(srcdir)/shared/c-list/src \
+	-I$(srcdir)/shared/c-siphash/src \
+	-I$(srcdir)/shared/c-rbtree/src \
+	$(NULL)
+
+shared_libnacd_la_SOURCES = \
+	shared/n-acd/src/n-acd.c \
+	shared/n-acd/src/n-acd.h \
+	shared/n-acd/src/n-acd-private.h \
+	shared/n-acd/src/n-acd-probe.c \
+	shared/n-acd/src/util/timer.c \
+	shared/n-acd/src/util/timer.h
+
+if WITH_EBPF
+shared_libnacd_la_SOURCES += shared/n-acd/src/n-acd-bpf.c
+else
+shared_libnacd_la_SOURCES += shared/n-acd/src/n-acd-bpf-fallback.c
+endif
+
+EXTRA_DIST += shared/c-list/src/c-list.h
+
+###############################################################################
+
 check_programs += shared/nm-utils/tests/test-shared-general
 
 shared_nm_utils_tests_test_shared_general_CPPFLAGS = \
@@ -1366,68 +1428,6 @@ noinst_LTLIBRARIES += \
 	src/libNetworkManagerBase.la \
 	src/libNetworkManager.la \
 	src/libsystemd-nm.la
-
-###############################################################################
-
-noinst_LTLIBRARIES += shared/libcsiphash.la
-
-shared_libcsiphash_la_CPPFLAGS = \
-	$(CODE_COVERAGE_CFLAGS) \
-	$(SANITIZER_LIB_CFLAGS) \
-	$(NULL)
-
-shared_libcsiphash_la_SOURCES = \
-	shared/c-siphash/src/c-siphash.c \
-	shared/c-siphash/src/c-siphash.h
-
-###############################################################################
-
-noinst_LTLIBRARIES += shared/libcrbtree.la
-
-shared_libcrbtree_la_CFLAGS = $(AM_CFLAGS) -std=c11
-
-shared_libcrbtree_la_CPPFLAGS = \
-	$(CODE_COVERAGE_CFLAGS) \
-	$(SANITIZER_LIB_CFLAGS) \
-	$(NULL)
-
-shared_libcrbtree_la_SOURCES = \
-	shared/c-rbtree/src/c-rbtree.c \
-	shared/c-rbtree/src/c-rbtree.h \
-	shared/c-rbtree/src/c-rbtree-private.h
-
-###############################################################################
-
-noinst_LTLIBRARIES += shared/libnacd.la
-
-shared_libnacd_la_CFLAGS = $(AM_CFLAGS) -std=c11 -Wno-pointer-arith -Wno-vla
-shared_libnacd_la_LIBADD = shared/libcrbtree.la
-
-shared_libnacd_la_CPPFLAGS = \
-	-D_GNU_SOURCE \
-	-DSO_ATTACH_BPF=50 \
-	$(CODE_COVERAGE_CFLAGS) \
-	$(SANITIZER_LIB_CFLAGS) \
-	-I$(srcdir)/shared/c-list/src \
-	-I$(srcdir)/shared/c-siphash/src \
-	-I$(srcdir)/shared/c-rbtree/src \
-	$(NULL)
-
-shared_libnacd_la_SOURCES = \
-	shared/n-acd/src/n-acd.c \
-	shared/n-acd/src/n-acd.h \
-	shared/n-acd/src/n-acd-private.h \
-	shared/n-acd/src/n-acd-probe.c \
-	shared/n-acd/src/util/timer.c \
-	shared/n-acd/src/util/timer.h
-
-if WITH_EBPF
-shared_libnacd_la_SOURCES += shared/n-acd/src/n-acd-bpf.c
-else
-shared_libnacd_la_SOURCES += shared/n-acd/src/n-acd-bpf-fallback.c
-endif
-
-EXTRA_DIST += shared/c-list/src/c-list.h
 
 ###############################################################################
 
