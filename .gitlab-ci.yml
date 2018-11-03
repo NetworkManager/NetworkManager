@@ -11,6 +11,8 @@ stages:
 .fedora_install: &fedora_install
   before_script:
     - NM_INSTALL="dnf install -y" ./contrib/fedora/REQUIRED_PACKAGES
+    - dnf install -y glibc-langpack-pl
+    - locale -a
 
 checkpatch:
   image: fedora:28
@@ -24,44 +26,24 @@ checkpatch:
     paths:
       - checkpatch-out.txt
 
-f28_build_default:
+f28_build_autotools:
   <<: *fedora_install
   image: fedora:28
   stage: test
   script:
-    - dnf install -y glibc-langpack-pl
-    - locale -a
-    - NOCONFIGURE=1 ./autogen.sh
-    - mkdir ./build
-    - cd ./build
-    - ../configure
-          --prefix="$PWD/INST"
-          --enable-gtk-doc=yes
-          --with-systemd-logind=yes
-          --enable-more-warnings=error
-          --enable-tests=yes
-          --with-crypto=gnutls
-          --with-libnm-glib=yes
-          --with-iwd=yes
-          --with-ofono=yes
-          --enable-teamdctl=yes
-          --with-dhcpcanon=yes
-          --with-dhcpcd=yes
-          --with-dhclient=yes
-          --with-netconfig=/bin/nowhere/netconfig
-          --with-resolvconf=/bin/nowhere/resolvconf
-          --enable-ifcfg-rh=yes
-          --enable-config-plugin-ibft=yes
-          --enable-ifupdown=yes
-    - make -j 6
-    - make install
-    - NM_TEST_CLIENT_CHECK_L10N=1 make -j 6 -k check
-    - cd ..
+    - CI=gitlab BUILD_TYPE=autotools contrib/scripts/nm-ci-run.sh
     - mv build/INST/share/gtk-doc/html docs-html
   artifacts:
     expire_in: 1 day
     paths:
       - docs-html
+
+f28_build_meson:
+  <<: *fedora_install
+  image: fedora:28
+  stage: test
+  script:
+    - CI=gitlab BUILD_TYPE=meson contrib/scripts/nm-ci-run.sh
 
 f28_rpm_autotools_dbg:
   <<: *fedora_install
@@ -80,7 +62,7 @@ f28_rpm_meson_dbg:
 pages:
   stage: deploy
   dependencies:
-    - f28_build_default
+    - f28_build_autotools
   script:
     - mv docs-html public
   artifacts:

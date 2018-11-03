@@ -75,94 +75,10 @@ before_install:
           popd
       fi
     - sudo chmod o+x /usr/sbin/pppd
+    - sudo locale-gen pl_PL.UTF-8
 
 script:
-    - |
-      if test "$BUILD_TYPE" == 'meson'; then
-          if [ "$CC" == gcc ]; then
-              CRYPTO=nss
-          else
-              CRYPTO=gnutls
-          fi &&
-          meson build \
-              \
-              -D ld_gc=false \
-              -D session_tracking=no \
-              -D systemdsystemunitdir=no \
-              -D systemd_journal=false \
-              -D selinux=false \
-              -D libaudit=no \
-              -D libpsl=false \
-              -D vapi=false \
-              -D introspection=false \
-              -D qt=false \
-              -D crypto=$CRYPTO \
-              -D docs=false \
-              \
-              -D libnm_glib=true \
-              -D iwd=true \
-              -D ofono=true \
-              -D teamdctl=false \
-              \
-              -D dhclient=/bin/nowhere/dhclient \
-              -D dhcpcanon=/bin/nowhere/dhcpcanon \
-              -D dhcpcd=/bin/nowhere/dhcpd \
-              \
-              -D netconfig=/bin/nowhere/netconfig \
-              -D resolvconf=/bin/nowhere/resolvconf \
-              \
-              -D ifcfg_rh=false \
-              -D ibft=true \
-              -D ifupdown=true \
-              &&
-          ninja -C build &&
-          ninja -C build test
-      fi
-    - |
-      if test "$BUILD_TYPE" == 'autotools'; then
-          if [ "$CC" == gcc ]; then
-              CRYPTO=gnutls
-          else
-              CRYPTO=nss
-          fi &&
-          git clean -fdx &&
-          NOCONFIGURE=1 ./autogen.sh &&
-          mkdir ./build &&
-          pushd ./build &&
-          ../configure \
-              --prefix="$PWD/INST" \
-              --enable-gtk-doc=yes \
-              --with-systemd-logind=no \
-              --enable-more-warnings=no \
-              --enable-tests=yes \
-              --with-crypto=$CRYPTO \
-              \
-              --with-libnm-glib=yes \
-              --with-iwd=yes \
-              --with-ofono=yes \
-              --enable-teamdctl=no \
-              \
-              --with-dhcpcanon=yes \
-              --with-dhcpcd=yes \
-              --with-dhclient=yes \
-              \
-              --with-netconfig=/bin/nowhere/netconfig \
-              --with-resolvconf=/bin/nowhere/resolvconf \
-              \
-              --enable-ifcfg-rh=yes \
-              --enable-config-plugin-ibft=yes \
-              --enable-ifupdown=yes \
-              &&
-          make -j4 &&
-          if [ "$CC" == gcc ]; then
-              sudo locale-gen pl_PL.UTF-8 &&
-              sudo make install &&
-              NM_TEST_CLIENT_CHECK_L10N=1 ../contrib/travis/travis-check.sh
-          else
-              ../contrib/travis/travis-check.sh
-          fi &&
-          popd
-      fi
+    - CI=travis contrib/scripts/nm-ci-run.sh
 
 env:
   matrix:
