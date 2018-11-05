@@ -68,29 +68,13 @@
   <refsect1 id='options'><title>Options</title>
     <variablelist>
       <varlistentry>
-        <term>
-          <group choice='plain'>
-            <arg choice='plain'><option>-t</option></arg>
-            <arg choice='plain'><option>--timeout</option></arg>
-          </group>
-          <arg choice='plain'><replaceable>seconds</replaceable></arg>
-        </term>
-
-        <listitem>
-          <para>Time to wait for a connection, in seconds. If the option is not provided,
-          the default timeout is 30 seconds.</para>
-        </listitem>
-      </varlistentry>
-
-
-      <varlistentry>
         <term><group choice='plain'>
-          <arg choice='plain'><option>-x</option></arg>
-          <arg choice='plain'><option>--exit</option></arg>
+          <arg choice='plain'><option>-h</option></arg>
+          <arg choice='plain'><option>--help</option></arg>
         </group></term>
 
         <listitem>
-          <para>Exit immediately if NetworkManager is not running or connecting.</para>
+          <para>Print help information.</para>
         </listitem>
       </varlistentry>
 
@@ -119,6 +103,33 @@
           generally only useful at boot time; after startup has completed,
           <command>nm-online -s</command> will just return immediately, regardless of the
           current network state.)</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <group choice='plain'>
+            <arg choice='plain'><option>-t</option></arg>
+            <arg choice='plain'><option>--timeout</option></arg>
+          </group>
+          <arg choice='plain'><replaceable>seconds</replaceable></arg>
+        </term>
+
+        <listitem>
+          <para>Time to wait for a connection, in seconds. If the option is not provided,
+          the default timeout is 30 seconds.</para>
+        </listitem>
+      </varlistentry>
+
+
+      <varlistentry>
+        <term><group choice='plain'>
+          <arg choice='plain'><option>-x</option></arg>
+          <arg choice='plain'><option>--exit</option></arg>
+        </group></term>
+
+        <listitem>
+          <para>Exit immediately if NetworkManager is not running or connecting.</para>
         </listitem>
       </varlistentry>
 

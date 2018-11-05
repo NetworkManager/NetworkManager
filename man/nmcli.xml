@@ -95,26 +95,130 @@
 
       <varlistentry>
         <term><group choice='plain'>
-          <arg choice='plain'><option>-t</option></arg>
-          <arg choice='plain'><option>--terse</option></arg>
+          <arg choice='plain'><option>-a</option></arg>
+          <arg choice='plain'><option>--ask</option></arg>
         </group></term>
 
         <listitem>
-          <para>Output is terse. This mode is designed and suitable for computer (script)
-          processing.</para>
+          <para>When using this option <command>nmcli</command> will stop and ask for any
+          missing required arguments, so do not use this option for non-interactive
+          purposes like scripts. This option controls, for example, whether you will be
+          prompted for a password if it is required for connecting to a network.</para>
         </listitem>
       </varlistentry>
 
       <varlistentry>
         <term><group choice='plain'>
-          <arg choice='plain'><option>-p</option></arg>
-          <arg choice='plain'><option>--pretty</option></arg>
+          <arg choice='plain'><option>-c</option></arg>
+          <arg choice='plain'><option>--colors</option></arg>
+          <group choice='req'>
+            <arg choice='plain'>yes</arg>
+            <arg choice='plain'>no</arg>
+            <arg choice='plain'>auto</arg>
+          </group>
         </group></term>
 
         <listitem>
-          <para>Output is pretty. This causes <command>nmcli</command> to produce easily
-          readable outputs for humans, i.e. values are aligned, headers are printed,
-          etc.</para>
+          <para>This option controls color output (using terminal escape sequences).
+          <literal>yes</literal> enables colors, <literal>no</literal> disables them,
+          <literal>auto</literal> only produces colors when standard output is directed
+          to a terminal. The default value is <literal>auto</literal>.</para>
+          <para>The actual colors used are configured as described in
+          <citerefentry><refentrytitle>terminal-colors.d</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+          Please refer to the <link linkend='colors' endterm='colors.title' /> section for a
+          list of color names supported by <command>nmcli</command>.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><group choice='plain'>
+          <arg choice='plain'><option>--complete-args</option></arg>
+        </group></term>
+
+        <listitem>
+          <para>Instead of conducting the desired action, <command>nmcli</command>
+          will list possible completions for the last argument. This is useful to implement
+          argument completion in shell.</para>
+
+          <para>The <link linkend='exit_status'>exit status</link> will indicate success
+          or return a code 65 to indicate the last argument is a file name.</para>
+
+          <para>NetworkManager ships with command completion support for GNU Bash.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><group choice='plain'>
+          <arg choice='plain'><option>-e</option></arg>
+          <arg choice='plain'><option>--escape</option></arg>
+          <group choice='req'>
+            <arg choice='plain'>yes</arg>
+            <arg choice='plain'>no</arg>
+          </group>
+        </group></term>
+
+        <listitem>
+          <para>Whether to escape <literal>:</literal> and <literal>\</literal> characters in terse tabular mode. The
+          escape character is <literal>\</literal>.</para>
+
+          <para>If omitted, default is <literal>yes</literal>.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><group choice='plain'>
+          <arg choice='plain'><option>-f</option></arg>
+          <arg choice='plain'><option>--fields</option></arg>
+          <group choice='req'>
+            <arg choice='plain' rep='repeat'><replaceable>field1</replaceable>,<replaceable>field2</replaceable></arg>
+            <arg choice='plain'>all</arg>
+            <arg choice='plain'>common</arg>
+          </group>
+        </group></term>
+
+        <listitem>
+          <para>This option is used to specify what fields (column names) should be
+          printed. Valid field names differ for specific commands. List available fields
+          by providing an invalid value to the <option>--fields</option> option.
+          <literal>all</literal> is used to print all valid field values of the
+          command. <literal>common</literal> is used to print common field values of
+          the command.</para>
+
+          <para>If omitted, default is <literal>common</literal>.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><group choice='plain'>
+          <arg choice='plain'><option>-g</option></arg>
+          <arg choice='plain'><option>--get-values</option></arg>
+          <group choice='req'>
+            <arg choice='plain' rep='repeat'><replaceable>field1</replaceable>,<replaceable>field2</replaceable></arg>
+            <arg choice='plain'>all</arg>
+            <arg choice='plain'>common</arg>
+          </group>
+        </group></term>
+
+        <listitem>
+          <para>This option is used to print values from specific fields. It is basically
+          a shortcut for <literal>--mode tabular --terse --fields</literal> and is a convenient
+          way to retrieve values for particular fields. The values are printed one per line
+          without headers.</para>
+
+          <para>If a section is specified instead of a field, the section name will be printed
+          followed by colon separated values of the fields belonging to that section, all on
+          the same line.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><group choice='plain'>
+          <arg choice='plain'><option>-h</option></arg>
+          <arg choice='plain'><option>--help</option></arg>
+        </group></term>
+
+        <listitem>
+          <para>Print help information.</para>
         </listitem>
       </varlistentry>
 
@@ -169,102 +273,14 @@
 
       <varlistentry>
         <term><group choice='plain'>
-          <arg choice='plain'><option>-c</option></arg>
-          <arg choice='plain'><option>--colors</option></arg>
-          <group choice='req'>
-            <arg choice='plain'>yes</arg>
-            <arg choice='plain'>no</arg>
-            <arg choice='plain'>auto</arg>
-          </group>
+          <arg choice='plain'><option>-p</option></arg>
+          <arg choice='plain'><option>--pretty</option></arg>
         </group></term>
 
         <listitem>
-          <para>This option controls color output (using terminal escape sequences).
-          <literal>yes</literal> enables colors, <literal>no</literal> disables them,
-          <literal>auto</literal> only produces colors when standard output is directed
-          to a terminal. The default value is <literal>auto</literal>.</para>
-          <para>The actual colors used are configured as described in
-          <citerefentry><refentrytitle>terminal-colors.d</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
-          Please refer to the <link linkend='colors' endterm='colors.title' /> section for a
-          list of color names supported by <command>nmcli</command>.</para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><group choice='plain'>
-          <arg choice='plain'><option>-f</option></arg>
-          <arg choice='plain'><option>--fields</option></arg>
-          <group choice='req'>
-            <arg choice='plain' rep='repeat'><replaceable>field1</replaceable>,<replaceable>field2</replaceable></arg>
-            <arg choice='plain'>all</arg>
-            <arg choice='plain'>common</arg>
-          </group>
-        </group></term>
-
-        <listitem>
-          <para>This option is used to specify what fields (column names) should be
-          printed. Valid field names differ for specific commands. List available fields
-          by providing an invalid value to the <option>--fields</option> option.
-          <literal>all</literal> is used to print all valid field values of the
-          command. <literal>common</literal> is used to print common field values of
-          the command.</para>
-
-          <para>If omitted, default is <literal>common</literal>.</para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><group choice='plain'>
-          <arg choice='plain'><option>-g</option></arg>
-          <arg choice='plain'><option>--get-values</option></arg>
-          <group choice='req'>
-            <arg choice='plain' rep='repeat'><replaceable>field1</replaceable>,<replaceable>field2</replaceable></arg>
-            <arg choice='plain'>all</arg>
-            <arg choice='plain'>common</arg>
-          </group>
-        </group></term>
-
-        <listitem>
-          <para>This option is used to print values from specific fields. It is basically
-          a shortcut for <literal>--mode tabular --terse --fields</literal> and is a convenient
-          way to retrieve values for particular fields. The values are printed one per line
-          without headers.</para>
-
-          <para>If a section is specified instead of a field, the section name will be printed
-          followed by colon separated values of the fields belonging to that section, all on
-          the same line.</para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><group choice='plain'>
-          <arg choice='plain'><option>-e</option></arg>
-          <arg choice='plain'><option>--escape</option></arg>
-          <group choice='req'>
-            <arg choice='plain'>yes</arg>
-            <arg choice='plain'>no</arg>
-          </group>
-        </group></term>
-
-        <listitem>
-          <para>Whether to escape <literal>:</literal> and <literal>\</literal> characters in terse tabular mode. The
-          escape character is <literal>\</literal>.</para>
-
-          <para>If omitted, default is <literal>yes</literal>.</para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><group choice='plain'>
-          <arg choice='plain'><option>-a</option></arg>
-          <arg choice='plain'><option>--ask</option></arg>
-        </group></term>
-
-        <listitem>
-          <para>When using this option <command>nmcli</command> will stop and ask for any
-          missing required arguments, so do not use this option for non-interactive
-          purposes like scripts. This option controls, for example, whether you will be
-          prompted for a password if it is required for connecting to a network.</para>
+          <para>Output is pretty. This causes <command>nmcli</command> to produce easily
+          readable outputs for humans, i.e. values are aligned, headers are printed,
+          etc.</para>
         </listitem>
       </varlistentry>
 
@@ -278,6 +294,29 @@
           <para>When using this option <command>nmcli</command> will display passwords
           and secrets that might be present in an output of an operation. This option
           also influences echoing passwords typed by user as an input.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><group choice='plain'>
+          <arg choice='plain'><option>-t</option></arg>
+          <arg choice='plain'><option>--terse</option></arg>
+        </group></term>
+
+        <listitem>
+          <para>Output is terse. This mode is designed and suitable for computer (script)
+          processing.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><group choice='plain'>
+          <arg choice='plain'><option>-v</option></arg>
+          <arg choice='plain'><option>--version</option></arg>
+        </group></term>
+
+        <listitem>
+          <para>Show <command>nmcli</command> version.</para>
         </listitem>
       </varlistentry>
 
@@ -297,45 +336,6 @@
           <para>Specifying a value of <literal>0</literal> instructs
           <command>nmcli</command> not to wait but to exit immediately with a status of
           success. The default value depends on the executed command.</para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><group choice='plain'>
-          <arg choice='plain'><option>--complete-args</option></arg>
-        </group></term>
-
-        <listitem>
-          <para>Instead of conducting the desired action, <command>nmcli</command>
-          will list possible completions for the last argument. This is useful to implement
-          argument completion in shell.</para>
-
-          <para>The <link linkend='exit_status'>exit status</link> will indicate success
-          or return a code 65 to indicate the last argument is a file name.</para>
-
-          <para>NetworkManager ships with command completion support for GNU Bash.</para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><group choice='plain'>
-          <arg choice='plain'><option>-v</option></arg>
-          <arg choice='plain'><option>--version</option></arg>
-        </group></term>
-
-        <listitem>
-          <para>Show <command>nmcli</command> version.</para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><group choice='plain'>
-          <arg choice='plain'><option>-h</option></arg>
-          <arg choice='plain'><option>--help</option></arg>
-        </group></term>
-
-        <listitem>
-          <para>Print help information.</para>
         </listitem>
       </varlistentry>
 
