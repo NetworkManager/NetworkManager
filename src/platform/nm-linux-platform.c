@@ -5123,7 +5123,7 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 
 /*****************************************************************************/
 
-static gboolean
+static int
 do_add_link_with_lookup (NMPlatform *platform,
                          NMLinkType link_type,
                          const char *name,
@@ -5146,7 +5146,7 @@ do_add_link_with_lookup (NMPlatform *platform,
 		       nm_link_type_to_string (link_type),
 		       nm_strerror (nle), -nle);
 		NM_SET_OUT (out_link, NULL);
-		return FALSE;
+		return nle;
 	}
 
 	delayed_action_handle_all (platform, FALSE);
@@ -5166,7 +5166,7 @@ do_add_link_with_lookup (NMPlatform *platform,
 		*out_link = NMP_OBJECT_CAST_LINK (obj);
 	}
 
-	return seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+	return wait_for_nl_response_to_nmerr (seq_result);
 }
 
 static int
@@ -5380,7 +5380,7 @@ out:
 	return result;
 }
 
-static gboolean
+static int
 link_add (NMPlatform *platform,
           const char *name,
           NMLinkType type,
@@ -5410,17 +5410,17 @@ link_add (NMPlatform *platform,
 	                          0,
 	                          0);
 	if (!nlmsg)
-		return FALSE;
+		return -NME_UNSPEC;
 
 	if (address && address_len)
 		NLA_PUT (nlmsg, IFLA_ADDRESS, address_len, address);
 
 	if (!_nl_msg_new_link_set_linkinfo (nlmsg, type, veth_peer))
-		return FALSE;
+		return -NME_UNSPEC;
 
 	return do_add_link_with_lookup (platform, type, name, nlmsg, out_link);
 nla_put_failure:
-	g_return_val_if_reached (FALSE);
+	g_return_val_if_reached (-NME_BUG);
 }
 
 static gboolean
@@ -5984,7 +5984,7 @@ vlan_add (NMPlatform *platform,
 	                                         0))
 		return FALSE;
 
-	return do_add_link_with_lookup (platform, NM_LINK_TYPE_VLAN, name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform, NM_LINK_TYPE_VLAN, name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6031,9 +6031,9 @@ link_gre_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform,
-	                                props->is_tap ? NM_LINK_TYPE_GRETAP : NM_LINK_TYPE_GRE,
-	                                name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform,
+	                                 props->is_tap ? NM_LINK_TYPE_GRETAP : NM_LINK_TYPE_GRE,
+	                                 name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6089,7 +6089,7 @@ link_ip6tnl_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform, NM_LINK_TYPE_IP6TNL, name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform, NM_LINK_TYPE_IP6TNL, name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6149,9 +6149,9 @@ link_ip6gre_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform,
-	                                props->is_tap ? NM_LINK_TYPE_IP6GRETAP : NM_LINK_TYPE_IP6GRE,
-	                                name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform,
+	                                 props->is_tap ? NM_LINK_TYPE_IP6GRETAP : NM_LINK_TYPE_IP6GRE,
+	                                 name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6194,7 +6194,7 @@ link_ipip_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform, NM_LINK_TYPE_IPIP, name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform, NM_LINK_TYPE_IPIP, name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6249,9 +6249,9 @@ link_macsec_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform,
-	                               NM_LINK_TYPE_MACSEC,
-	                                name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform,
+	                                 NM_LINK_TYPE_MACSEC,
+	                                 name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6292,9 +6292,9 @@ link_macvlan_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform,
-	                                props->tap ? NM_LINK_TYPE_MACVTAP : NM_LINK_TYPE_MACVLAN,
-	                                name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform,
+	                                 props->tap ? NM_LINK_TYPE_MACVTAP : NM_LINK_TYPE_MACVLAN,
+	                                 name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6337,7 +6337,7 @@ link_sit_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform, NM_LINK_TYPE_SIT, name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform, NM_LINK_TYPE_SIT, name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6463,7 +6463,7 @@ link_vxlan_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform, NM_LINK_TYPE_VXLAN, name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform, NM_LINK_TYPE_VXLAN, name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6495,9 +6495,9 @@ link_6lowpan_add (NMPlatform *platform,
 
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform,
-	                                NM_LINK_TYPE_6LOWPAN,
-	                                name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform,
+	                                 NM_LINK_TYPE_6LOWPAN,
+	                                 name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
