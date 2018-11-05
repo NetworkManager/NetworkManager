@@ -966,9 +966,7 @@ nm_platform_link_add (NMPlatform *self,
 	        veth_peer ? ", veth-peer: " : "",
 	        veth_peer ?: "");
 
-	if (!klass->link_add (self, name, type, veth_peer, address, address_len, out_link))
-		return -NME_UNSPEC;
-	return 0;
+	return klass->link_add (self, name, type, veth_peer, address, address_len, out_link);
 }
 
 int

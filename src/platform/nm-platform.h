@@ -770,13 +770,14 @@ typedef struct {
 
 	void (*refresh_all) (NMPlatform *self, NMPObjectType obj_type);
 
-	gboolean (*link_add) (NMPlatform *,
-	                      const char *name,
-	                      NMLinkType type,
-	                      const char *veth_peer,
-	                      const void *address,
-	                      size_t address_len,
-	                      const NMPlatformLink **out_link);
+	int (*link_add) (NMPlatform *,
+	                 const char *name,
+	                 NMLinkType type,
+	                 const char *veth_peer,
+	                 const void *address,
+	                 size_t address_len,
+	                 const NMPlatformLink **out_link);
+
 	gboolean (*link_delete) (NMPlatform *, int ifindex);
 
 	gboolean (*link_refresh) (NMPlatform *, int ifindex);

@@ -283,7 +283,7 @@ link_add_pre (NMPlatform *platform,
 	return device;
 }
 
-static gboolean
+static int
 link_add (NMPlatform *platform,
           const char *name,
           NMLinkType type,
@@ -335,7 +335,7 @@ link_add (NMPlatform *platform,
 	if (veth_peer)
 		link_changed (platform, device_veth, cache_op_veth, NULL);
 
-	return TRUE;
+	return 0;
 }
 
 static NMFakePlatformLink *
