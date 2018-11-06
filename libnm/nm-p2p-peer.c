@@ -45,6 +45,8 @@ typedef struct {
 	char *model_number;
 	char *serial;
 
+	GBytes *wfd_ies;
+
 	char *hw_address;
 
 	guint8 strength;
@@ -59,7 +61,7 @@ enum {
 	PROP_MODEL,
 	PROP_MODEL_NUMBER,
 	PROP_SERIAL,
-	PROP_WFDIES,
+	PROP_WFD_IES,
 	PROP_HW_ADDRESS,
 	PROP_STRENGTH,
 	PROP_LAST_SEEN,
@@ -173,6 +175,30 @@ nm_p2p_peer_get_serial (NMP2PPeer *peer)
 	g_return_val_if_fail (NM_IS_P2P_PEER (peer), NULL);
 
 	return NM_P2P_PEER_GET_PRIVATE (peer)->serial;
+}
+
+/**
+ * nm_p2p_peer_get_wfd_ies:
+ * @peer: a #NMP2PPeer
+ *
+ * Gets the WFD information elements of the P2P peer.
+ *
+ * Returns: (transfer none): the #GBytes containing the WFD IEs, or %NULL.
+ *
+ * Since: 1.16
+ **/
+GBytes *
+nm_p2p_peer_get_wfd_ies (NMP2PPeer *peer)
+{
+	NMP2PPeerPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_P2P_PEER (peer), NULL);
+
+	priv = NM_P2P_PEER_GET_PRIVATE (peer);
+	if (!priv->wfd_ies || g_bytes_get_size (priv->wfd_ies) == 0)
+		return NULL;
+
+	return priv->wfd_ies;
 }
 
 /**
@@ -345,6 +371,9 @@ get_property (GObject *object,
 	case PROP_SERIAL:
 		g_value_set_string (value, nm_p2p_peer_get_serial (peer));
 		break;
+	case PROP_WFD_IES:
+		g_value_set_boxed (value, nm_p2p_peer_get_wfd_ies (peer));
+		break;
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, nm_p2p_peer_get_hw_address (peer));
 		break;
@@ -377,6 +406,9 @@ finalize (GObject *object)
 	g_free (priv->model_number);
 	g_free (priv->serial);
 
+	if (priv->wfd_ies)
+		g_bytes_unref (priv->wfd_ies);
+
 	G_OBJECT_CLASS (nm_p2p_peer_parent_class)->finalize (object);
 }
 
@@ -391,6 +423,7 @@ init_dbus (NMObject *object)
 		{ NM_P2P_PEER_MODEL,        &priv->model },
 		{ NM_P2P_PEER_MODEL_NUMBER, &priv->model_number },
 		{ NM_P2P_PEER_SERIAL,       &priv->serial },
+		{ NM_P2P_PEER_WFD_IES,      &priv->wfd_ies },
 		{ NM_P2P_PEER_HW_ADDRESS,   &priv->hw_address },
 		{ NM_P2P_PEER_STRENGTH,     &priv->strength },
 		{ NM_P2P_PEER_LAST_SEEN,    &priv->last_seen },
@@ -505,6 +538,19 @@ nm_p2p_peer_class_init (NMP2PPeerClass *peer_class)
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
+	/**
+	 * NMP2PPeer:wfd-ies:
+	 *
+	 * The WFD information elements of the P2P peer.
+	 *
+	 * Since: 1.16
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_WFD_IES,
+		 g_param_spec_boxed (NM_P2P_PEER_WFD_IES, "", "",
+		                     G_TYPE_BYTES,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 	/**
 	 * NMP2PPeer:hw-address:
 	 *

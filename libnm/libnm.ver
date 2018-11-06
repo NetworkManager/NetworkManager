@@ -1468,6 +1468,7 @@ global:
 	nm_p2p_peer_get_serial;
 	nm_p2p_peer_get_strength;
 	nm_p2p_peer_get_type;
+	nm_p2p_peer_get_wfd_ies;
 	nm_setting_p2p_wireless_get_peer;
 	nm_setting_p2p_wireless_get_type;
 	nm_setting_p2p_wireless_get_wps_method;
