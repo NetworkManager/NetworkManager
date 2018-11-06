@@ -100,7 +100,7 @@ sub send_netlink
 	my %props = @_;
 	my $props = join '', map { $_, '=', $props{$_}, "\0" } keys %props;
 
-	my $head = pack 'a8NLLLLLLL',
+	my $head = pack 'a8NLLLNLLL',
 		# signature + magic
 		'libudev',
 		0xfeedcafe,
@@ -108,8 +108,9 @@ sub send_netlink
 		# 40 octets is the length of this header
 		40, 40, 40 + length ($props),
 
-		# SUBSYS=tty hash. Precomputed somehow.
-		0xc890fa8a,
+		# Digest::MurmurHash2::Neutral::murmur_hash2_neutral("tty")
+		0x8afa90c8,
+
 		0x00000000,
 		0x00040002,
 		0x00008010;
