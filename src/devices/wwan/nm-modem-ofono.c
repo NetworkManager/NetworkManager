@@ -166,7 +166,7 @@ static void
 disconnect_context_complete_on_idle (gpointer user_data,
                                      GCancellable *cancellable)
 {
-	DisconnectContext *ctx = NULL;
+	DisconnectContext *ctx = user_data;
 	gs_free_error GError *error = NULL;
 
 	if (!g_cancellable_set_error_if_cancelled (cancellable, &error)) {
