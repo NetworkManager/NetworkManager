@@ -216,6 +216,18 @@ BuildRequires: libubsan
 %endif
 %endif
 
+# NetworkManager uses various parts of systemd-networkd internally, including
+# DHCP client, IPv4 Link-Local address negotiation or LLDP support.
+# This provide is essentially here so that NetworkManager shows on Security
+# Response Team's radar in case a flaw is found. The code is frequently
+# synchronized and thus it's not easy to establish a good version number
+# here. The version of zero is there just to have something conservative so
+# that the scripts that would parse the SPEC file naively would be unlikely
+# to fail. Refer to git log for the real date and commit number of last
+# synchronization:
+# https://gitlab.freedesktop.org/NetworkManager/NetworkManager/commits/master/src/systemd
+Provides: bundled(systemd) = 0
+
 
 %description
 NetworkManager is a system service that manages network interfaces and
