@@ -1946,6 +1946,8 @@ src_initrd_tests_test_ibft_reader_LDADD = \
 	$(GLIB_LIBS)
 
 EXTRA_DIST += \
+	src/initrd/meson.build \
+	src/initrd/tests/meson.build \
 	src/initrd/tests/sysfs/class/net/eth0/address \
 	src/initrd/tests/sysfs/class/net/eth2/address \
 	src/initrd/tests/sysfs/firmware/ibft/ethernet0/prefix-len \
