@@ -121,8 +121,16 @@ sub send_netlink
 	die "Can't send a netlink message: $!" if $! and not $!{ECONNREFUSED};
 }
 
+my $devpath = '/devices/pci0000:00/0000:00:00.0';
+unless (-d "/sys/$devpath") {
+	# Create a virtual device. Older ModemManager likes a hotpluggable bus
+	# (USB, PCI), but there's none on an IBM POWER lpar...
+	warn "No PCI bus to use for parent. Don't expect this to work with ModemManager 1.6";
+	$devpath = '/devices/virtual';
+}
+
 my %props = (
-	DEVPATH			=> "/devices/pci0000:00/0000:00:00.0/$name",
+	DEVPATH			=> "$devpath/$name",
 	SUBSYSTEM		=> 'tty',
 	DEVNAME			=> "/dev/$name",
 
