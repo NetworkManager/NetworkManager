@@ -34,6 +34,7 @@
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-private.h"
 #include "platform/nm-platform.h"
+#include "nm-config.h"
 #include "nm-core-internal.h"
 #include "nm-ip4-config.h"
 #include "nm-dbus-compat.h"
@@ -479,11 +480,25 @@ teamd_child_setup (gpointer user_data)
 	signal (SIGPIPE, SIG_IGN);
 }
 
+static const char **
+teamd_env (void)
+{
+	const char **env = g_new0 (const char *, 2);
+
+	if (nm_config_get_is_debug (nm_config_get ()))
+		env[0] = "TEAM_LOG_OUTPUT=stderr";
+	else
+		env[0] = "TEAM_LOG_OUTPUT=syslog";
+
+	return env;
+}
+
 static gboolean
 teamd_kill (NMDeviceTeam *self, const char *teamd_binary, GError **error)
 {
 	gs_unref_ptrarray GPtrArray *argv = NULL;
 	gs_free char *tmp_str = NULL;
+	gs_free const char **envp = NULL;
 
 	if (!teamd_binary) {
 		teamd_binary = nm_utils_find_helper ("teamd", NULL, error);
@@ -500,8 +515,11 @@ teamd_kill (NMDeviceTeam *self, const char *teamd_binary, GError **error)
 	g_ptr_array_add (argv, (gpointer) nm_device_get_iface (NM_DEVICE (self)));
 	g_ptr_array_add (argv, NULL);
 
+	envp = teamd_env ();
+
 	_LOGD (LOGD_TEAM, "running: %s", (tmp_str = g_strjoinv (" ", (char **) argv->pdata)));
-	return g_spawn_sync ("/", (char **) argv->pdata, NULL, 0, teamd_child_setup, NULL, NULL, NULL, NULL, error);
+	return g_spawn_sync ("/", (char **) argv->pdata, (char **) envp, 0,
+	                     teamd_child_setup, NULL, NULL, NULL, NULL, error);
 }
 
 static gboolean
@@ -518,6 +536,7 @@ teamd_start (NMDevice *device, NMConnection *connection)
 	nm_auto_free const char *config_free = NULL;
 	NMSettingTeam *s_team;
 	gs_free char *cloned_mac = NULL;
+	gs_free const char **envp = NULL;
 
 	s_team = nm_connection_get_setting_team (connection);
 	g_return_val_if_fail (s_team, FALSE);
@@ -588,8 +607,10 @@ teamd_start (NMDevice *device, NMConnection *connection)
 		g_ptr_array_add (argv, (gpointer) "-gg");
 	g_ptr_array_add (argv, NULL);
 
+	envp = teamd_env ();
+
 	_LOGD (LOGD_TEAM, "running: %s", (tmp_str = g_strjoinv (" ", (char **) argv->pdata)));
-	if (!g_spawn_async ("/", (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
+	if (!g_spawn_async ("/", (char **) argv->pdata, (char **) envp, G_SPAWN_DO_NOT_REAP_CHILD,
 	                    teamd_child_setup, NULL, &priv->teamd_pid, &error)) {
 		_LOGW (LOGD_TEAM, "Activation: (team) failed to start teamd: %s", error->message);
 		teamd_cleanup (device, TRUE);
