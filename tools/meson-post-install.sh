@@ -42,6 +42,6 @@ if [ "$6" = install_docs ]; then
         ln -f "${DESTDIR}${mandir}/man1/nmtui.1" "${DESTDIR}${mandir}/man1/${alias}.1"
     done
 
-    ln -f "${DESTDIR}${mandir}/man5/NetworkManager.conf.5" "${DESTDIR}${mandir}/man5/nm-system-settings.conf"
+    ln -f "${DESTDIR}${mandir}/man5/NetworkManager.conf.5" "${DESTDIR}${mandir}/man5/nm-system-settings.conf.5"
 fi
 
