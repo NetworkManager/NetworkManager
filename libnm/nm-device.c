@@ -2524,7 +2524,7 @@ nm_device_connection_compatible (NMDevice *device, NMConnection *connection, GEr
  * incompatible with the device. To get the full list of connections see
  * nm_client_get_connections().
  *
- * Returns: (transfer container) (element-type NMConnection): an array of
+ * Returns: (transfer full) (element-type NMConnection): an array of
  * #NMConnections that could be activated with the given @device.  The array
  * should be freed with g_ptr_array_unref() when it is no longer required.
  **/
