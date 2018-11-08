@@ -1100,7 +1100,6 @@ _collect_resolv_conf_data (NMDnsManager *self,
                            const char **out_nis_domain)
 {
 	NMDnsManagerPrivate *priv;
-	guint i, num, len;
 	NMResolvConfData rc = {
 		.nameservers = g_ptr_array_new (),
 		.searches = g_ptr_array_new (),
@@ -1169,17 +1168,6 @@ _collect_resolv_conf_data (NMDnsManager *self,
 				add_string_item (rc.searches, priv->hostname, TRUE);
 		}
 	}
-
-	/* Per 'man resolv.conf', the search list is limited to 6 domains
-	 * totalling 256 characters.
-	 */
-	num = MIN (rc.searches->len, 6u);
-	for (i = 0, len = 0; i < num; i++) {
-		len += strlen (rc.searches->pdata[i]) + 1; /* +1 for spaces */
-		if (len > 256)
-			break;
-	}
-	g_ptr_array_set_size (rc.searches, i);
 
 	*out_searches = _ptrarray_to_strv (rc.searches);
 	*out_options = _ptrarray_to_strv (rc.options);
