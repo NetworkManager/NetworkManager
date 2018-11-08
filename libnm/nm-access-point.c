@@ -367,7 +367,7 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
  * #NMDevice using nm_device_filter_connections() and finally filter that list
  * with this function.
  *
- * Returns: (transfer container) (element-type NMConnection): an array of
+ * Returns: (transfer full) (element-type NMConnection): an array of
  * #NMConnections that could be activated with the given @ap.  The array should
  * be freed with g_ptr_array_unref() when it is no longer required.
  **/

@@ -151,7 +151,7 @@ nm_wimax_nsp_connection_valid (NMWimaxNsp *nsp, NMConnection *connection)
  * return connections which may be activated with the NSP.  Any returned
  * connections will match the @nsp's network name and other attributes.
  *
- * Returns: (transfer container) (element-type NMConnection): an array of
+ * Returns: (transfer full) (element-type NMConnection): an array of
  * #NMConnections that could be activated with the given @nsp.  The array should
  * be freed with g_ptr_array_unref() when it is no longer required.
  **/
