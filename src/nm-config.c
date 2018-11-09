@@ -743,6 +743,9 @@ typedef struct {
 	bool is_connection:1;
 } ConfigGroup;
 
+/* The following comment is used by check-config-options.sh, don't remove it. */
+/* START OPTION LIST */
+
 static const ConfigGroup config_groups[] = {
 	{
 		.group = NM_CONFIG_KEYFILE_GROUP_MAIN,
@@ -836,6 +839,9 @@ static const ConfigGroup config_groups[] = {
 	},
 	{ } /* sentinel */
 };
+
+/* The following comment is used by check-config-options.sh, don't remove it. */
+/* END OPTION LIST */
 
 static gboolean
 check_config_key (const char *group, const char *key)

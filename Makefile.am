@@ -1486,6 +1486,11 @@ noinst_LTLIBRARIES += \
 	src/libNetworkManager.la \
 	src/libsystemd-nm.la
 
+check-config-options:
+	$(srcdir)/tools/check-config-options.sh "$(srcdir)"
+
+check_local += check-config-options
+
 ###############################################################################
 
 src_libsystemd_nm_la_cppflags = \
@@ -5158,6 +5163,7 @@ EXTRA_DIST += \
 	shared/nm-version-macros.h.in \
 	shared/meson.build \
 	\
+	tools/check-config-options.sh \
 	tools/check-docs.sh \
 	tools/check-exports.sh \
 	tools/create-exports-NetworkManager.sh \

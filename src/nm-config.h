@@ -105,8 +105,8 @@
 #define NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE           "match-device"
 #define NM_CONFIG_KEYFILE_KEY_STOP_MATCH             "stop-match"
 
-#define NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS            ".was"
-#define NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE                 "enable"
+#define NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS            ".was"   /* check-config-options skip */
+#define NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE                 "enable" /* check-config-options skip */
 
 #define NM_CONFIG_KEYFILE_KEYPREFIX_WAS                     ".was."
 #define NM_CONFIG_KEYFILE_KEYPREFIX_SET                     ".set."
