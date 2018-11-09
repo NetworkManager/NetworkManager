@@ -922,7 +922,10 @@ load_global_dns (GKeyFile *keyfile, gboolean internal)
 	dns_config->domains = g_hash_table_new_full (nm_str_hash, g_str_equal,
 	                                             g_free, (GDestroyNotify) global_dns_domain_free);
 
-	strv = g_key_file_get_string_list (keyfile, group, "searches", NULL, NULL);
+	strv = g_key_file_get_string_list (keyfile,
+	                                   group,
+	                                   NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_SEARCHES,
+	                                   NULL, NULL);
 	if (strv) {
 		_nm_utils_strv_cleanup (strv, TRUE, TRUE, TRUE);
 		if (!strv[0])
@@ -931,7 +934,10 @@ load_global_dns (GKeyFile *keyfile, gboolean internal)
 			dns_config->searches = strv;
 	}
 
-	strv = g_key_file_get_string_list (keyfile, group, "options", NULL, NULL);
+	strv = g_key_file_get_string_list (keyfile,
+	                                   group,
+	                                   NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_OPTIONS,
+	                                   NULL, NULL);
 	if (strv) {
 		_nm_utils_strv_cleanup (strv, TRUE, TRUE, TRUE);
 		for (i = 0, j = 0; strv[i]; i++) {
@@ -958,7 +964,10 @@ load_global_dns (GKeyFile *keyfile, gboolean internal)
 		    || !groups[g][domain_prefix_len])
 			continue;
 
-		strv = g_key_file_get_string_list (keyfile, groups[g], "servers", NULL, NULL);
+		strv = g_key_file_get_string_list (keyfile,
+		                                   groups[g],
+		                                   NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_DOMAIN_SERVERS,
+		                                   NULL, NULL);
 		if (strv) {
 			_nm_utils_strv_cleanup (strv, TRUE, TRUE, TRUE);
 			for (i = 0, j = 0; strv[i]; i++) {
@@ -979,7 +988,10 @@ load_global_dns (GKeyFile *keyfile, gboolean internal)
 		if (!servers)
 			continue;
 
-		strv = g_key_file_get_string_list (keyfile, groups[g], "options", NULL, NULL);
+		strv = g_key_file_get_string_list (keyfile,
+		                                   groups[g],
+		                                   NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_DOMAIN_OPTIONS,
+		                                   NULL, NULL);
 		if (strv) {
 			options = _nm_utils_strv_cleanup (strv, TRUE, TRUE, TRUE);
 			if (!options[0])
@@ -1406,9 +1418,12 @@ _get_connection_info_init (MatchSectionInfo *connection_info, GKeyFile *keyfile,
 
 	connection_info->match_device.spec = nm_config_get_match_spec (keyfile,
 	                                                               group,
-	                                                               "match-device",
+	                                                               NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE,
 	                                                               &connection_info->match_device.has);
-	connection_info->stop_match = nm_config_keyfile_get_boolean (keyfile, group, "stop-match", FALSE);
+	connection_info->stop_match = nm_config_keyfile_get_boolean (keyfile,
+	                                                             group,
+	                                                             NM_CONFIG_KEYFILE_KEY_STOP_MATCH,
+	                                                             FALSE);
 }
 
 static void
@@ -1651,28 +1666,58 @@ constructed (GObject *object)
 	priv->connection_infos = _match_section_infos_construct (priv->keyfile, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
 	priv->device_infos = _match_section_infos_construct (priv->keyfile, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
 
-	priv->connectivity.enabled = nm_config_keyfile_get_boolean (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "enabled", TRUE);
-	priv->connectivity.uri = nm_strstrip (g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "uri", NULL));
-	priv->connectivity.response = g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "response", NULL);
-
-	str = nm_config_keyfile_get_value (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_AUTOCONNECT_RETRIES_DEFAULT, NM_CONFIG_GET_VALUE_NONE);
+	priv->connectivity.enabled = nm_config_keyfile_get_boolean (priv->keyfile,
+	                                                            NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY,
+	                                                            NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_ENABLED,
+	                                                            TRUE);
+	priv->connectivity.uri = nm_strstrip (g_key_file_get_string (priv->keyfile,
+	                                                             NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY,
+	                                                             NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_URI,
+	                                                             NULL));
+	priv->connectivity.response = g_key_file_get_string (priv->keyfile,
+	                                                     NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY,
+	                                                     NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_RESPONSE,
+	                                                     NULL);
+	str = nm_config_keyfile_get_value (priv->keyfile,
+	                                   NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                   NM_CONFIG_KEYFILE_KEY_MAIN_AUTOCONNECT_RETRIES_DEFAULT,
+	                                   NM_CONFIG_GET_VALUE_NONE);
 	priv->autoconnect_retries_default = _nm_utils_ascii_str_to_int64 (str, 10, 0, G_MAXINT32, 4);
 	g_free (str);
 
 	/* On missing config value, fallback to 300. On invalid value, disable connectivity checking by setting
 	 * the interval to zero. */
-	str = g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "interval", NULL);
+	str = g_key_file_get_string (priv->keyfile,
+	                             NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY,
+	                             NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_INTERVAL,
+	                             NULL);
 	priv->connectivity.interval = _nm_utils_ascii_str_to_int64 (str, 10, 0, G_MAXUINT, NM_CONFIG_DEFAULT_CONNECTIVITY_INTERVAL);
 	g_free (str);
 
-	priv->dns_mode = nm_strstrip (g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "dns", NULL));
-	priv->rc_manager = nm_strstrip (g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "rc-manager", NULL));
-	priv->systemd_resolved = nm_config_keyfile_get_boolean (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "systemd-resolved", TRUE);
-
-	priv->ignore_carrier = nm_config_get_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "ignore-carrier", NULL);
-	priv->assume_ipv6ll_only = nm_config_get_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "assume-ipv6ll-only", NULL);
-
-	priv->no_auto_default.specs_config = nm_config_get_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "no-auto-default", NULL);
+	priv->dns_mode = nm_strstrip (g_key_file_get_string (priv->keyfile,
+	                                                     NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                                     NM_CONFIG_KEYFILE_KEY_MAIN_DNS,
+	                                                     NULL));
+	priv->rc_manager = nm_strstrip (g_key_file_get_string (priv->keyfile,
+	                                                       NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                                       NM_CONFIG_KEYFILE_KEY_MAIN_RC_MANAGER,
+	                                                       NULL));
+	priv->systemd_resolved = nm_config_keyfile_get_boolean (priv->keyfile,
+	                                                        NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                                        NM_CONFIG_KEYFILE_KEY_MAIN_SYSTEMD_RESOLVED,
+	                                                        TRUE);
+	priv->ignore_carrier = nm_config_get_match_spec (priv->keyfile,
+	                                                 NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                                 NM_CONFIG_KEYFILE_KEY_MAIN_IGNORE_CARRIER,
+	                                                 NULL);
+	priv->assume_ipv6ll_only = nm_config_get_match_spec (priv->keyfile,
+	                                                     NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                                     NM_CONFIG_KEYFILE_KEY_MAIN_ASSUME_IPV6LL_ONLY,
+	                                                     NULL);
+	priv->no_auto_default.specs_config = nm_config_get_match_spec (priv->keyfile,
+	                                                               NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                                               NM_CONFIG_KEYFILE_KEY_MAIN_NO_AUTO_DEFAULT,
+	                                                               NULL);
 
 	priv->global_dns = load_global_dns (priv->keyfile_user, FALSE);
 	if (!priv->global_dns)
