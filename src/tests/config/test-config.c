@@ -552,6 +552,34 @@ test_config_confdir_parse_error (void)
 	g_clear_error (&error);
 }
 
+static void
+test_config_warnings (void)
+{
+	gs_unref_object NMConfig *config = NULL;
+	const char *const *warnings;
+
+	config = setup_config (NULL, TEST_DIR "/NetworkManager-warn.conf", "", NULL, "/no/such/dir", "", NULL);
+
+	warnings = nm_config_get_warnings (config);
+
+#define check_warning(str, group, key) \
+	{ \
+		gs_free char *expected = NULL; \
+		\
+		expected = g_strdup_printf ("unknown key '%s' in section [%s] of file '" TEST_DIR "/NetworkManager-warn.conf'", \
+		                            key, group); \
+		g_assert_cmpstr (str, ==, expected); \
+	}
+
+	g_assert (warnings);
+	g_assert_cmpint (g_strv_length ((char **) warnings), ==, 3);
+	check_warning (warnings[0], "main", "plugin");
+	check_warning (warnings[1], "main", "rc-managed");
+	check_warning (warnings[2], "connectivity", "audit");
+
+#undef check_warning
+}
+
 /*****************************************************************************/
 
 typedef void (*TestSetValuesUserSetFcn) (NMConfig *config, gboolean is_user, GKeyFile *keyfile_user, NMConfigChangeFlags *out_expected_changes);
@@ -622,7 +650,7 @@ _set_values_user (NMConfig *config,
 	else
 		NMTST_EXPECT_NM_INFO ("config: signal: SIGHUP (no changes from disk)*");
 
-	nm_config_reload (config, NM_CONFIG_CHANGE_CAUSE_SIGHUP);
+	nm_config_reload (config, NM_CONFIG_CHANGE_CAUSE_SIGHUP, FALSE);
 
 	g_test_assert_expected_messages ();
 
@@ -926,15 +954,15 @@ test_config_signal (void)
 
 	expected = NM_CONFIG_CHANGE_CAUSE_SIGUSR1;
 	NMTST_EXPECT_NM_INFO ("config: signal: SIGUSR1");
-	nm_config_reload (config, expected);
+	nm_config_reload (config, expected, FALSE);
 
 	expected = NM_CONFIG_CHANGE_CAUSE_SIGUSR2;
 	NMTST_EXPECT_NM_INFO ("config: signal: SIGUSR2");
-	nm_config_reload (config, expected);
+	nm_config_reload (config, expected, FALSE);
 
 	expected = NM_CONFIG_CHANGE_CAUSE_SIGHUP;
 	NMTST_EXPECT_NM_INFO ("config: signal: SIGHUP (no changes from disk)*");
-	nm_config_reload (config, expected);
+	nm_config_reload (config, expected, FALSE);
 
 	/* test with subscribing two signals...
 	 *
@@ -946,7 +974,7 @@ test_config_signal (void)
 	                  &expected);
 	expected = NM_CONFIG_CHANGE_CAUSE_SIGUSR2;
 	NMTST_EXPECT_NM_INFO ("config: signal: SIGUSR2");
-	nm_config_reload (config, NM_CONFIG_CHANGE_CAUSE_SIGUSR2);
+	nm_config_reload (config, NM_CONFIG_CHANGE_CAUSE_SIGUSR2, FALSE);
 	g_signal_handlers_disconnect_by_func (config, _test_signal_config_changed_cb2, &expected);
 
 	g_signal_handlers_disconnect_by_func (config, _test_signal_config_changed_cb, &expected);
@@ -1064,6 +1092,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/config/no-auto-default", test_config_no_auto_default);
 	g_test_add_func ("/config/confdir", test_config_confdir);
 	g_test_add_func ("/config/confdir-parse-error", test_config_confdir_parse_error);
+	g_test_add_func ("/config/warnings", test_config_warnings);
 
 	g_test_add_func ("/config/set-values", test_config_set_values);
 	g_test_add_func ("/config/global-dns", test_config_global_dns);

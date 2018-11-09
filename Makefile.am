@@ -3521,6 +3521,7 @@ $(src_tests_config_test_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
 	src/tests/config/NetworkManager.conf \
+	src/tests/config/NetworkManager-warn.conf \
 	src/tests/config/NetworkManager.state \
 	src/tests/config/bad.conf \
 	src/tests/config/global-dns-invalid.conf \

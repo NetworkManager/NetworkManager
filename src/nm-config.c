@@ -130,6 +130,8 @@ typedef struct {
 	 * that they are changed outside of NM (at least not while NM is running).
 	 * Hence, we read them once, that's it. */
 	GHashTable *device_states;
+
+	char **warnings;
 } NMConfigPrivate;
 
 struct _NMConfig {
@@ -280,6 +282,18 @@ nm_config_keyfile_set_string_list (GKeyFile *keyfile,
 }
 
 /*****************************************************************************/
+
+const char *const*
+nm_config_get_warnings (NMConfig *config)
+{
+	return (const char *const *) NM_CONFIG_GET_PRIVATE (config)->warnings;
+}
+
+void
+nm_config_clear_warnings (NMConfig *config)
+{
+	g_clear_pointer (&NM_CONFIG_GET_PRIVATE (config)->warnings, g_strfreev);
+}
 
 NMConfigData *
 nm_config_get_data (NMConfig *config)
@@ -722,8 +736,139 @@ _setting_is_string_list (const char *group, const char *key)
 #undef _IS
 }
 
+typedef struct {
+	char *group;
+	const char *const *keys;
+	bool is_prefix:1;
+	bool is_connection:1;
+} ConfigGroup;
+
+static const ConfigGroup config_groups[] = {
+	{
+		.group = NM_CONFIG_KEYFILE_GROUP_MAIN,
+		.keys = NM_MAKE_STRV (
+			NM_CONFIG_KEYFILE_KEY_MAIN_ASSUME_IPV6LL_ONLY,
+			NM_CONFIG_KEYFILE_KEY_MAIN_AUTH_POLKIT,
+			NM_CONFIG_KEYFILE_KEY_MAIN_AUTOCONNECT_RETRIES_DEFAULT,
+			NM_CONFIG_KEYFILE_KEY_MAIN_CONFIGURE_AND_QUIT,
+			NM_CONFIG_KEYFILE_KEY_MAIN_DEBUG,
+			NM_CONFIG_KEYFILE_KEY_MAIN_DHCP,
+			NM_CONFIG_KEYFILE_KEY_MAIN_DNS,
+			NM_CONFIG_KEYFILE_KEY_MAIN_HOSTNAME_MODE,
+			NM_CONFIG_KEYFILE_KEY_MAIN_IGNORE_CARRIER,
+			NM_CONFIG_KEYFILE_KEY_MAIN_MONITOR_CONNECTION_FILES,
+			NM_CONFIG_KEYFILE_KEY_MAIN_NO_AUTO_DEFAULT,
+			NM_CONFIG_KEYFILE_KEY_MAIN_PLUGINS,
+			NM_CONFIG_KEYFILE_KEY_MAIN_RC_MANAGER,
+			NM_CONFIG_KEYFILE_KEY_MAIN_SLAVES_ORDER,
+			NM_CONFIG_KEYFILE_KEY_MAIN_SYSTEMD_RESOLVED,
+		),
+	},
+	{
+		.group = NM_CONFIG_KEYFILE_GROUP_LOGGING,
+		.keys = NM_MAKE_STRV (
+			NM_CONFIG_KEYFILE_KEY_LOGGING_AUDIT,
+			NM_CONFIG_KEYFILE_KEY_LOGGING_BACKEND,
+			NM_CONFIG_KEYFILE_KEY_LOGGING_DOMAINS,
+			NM_CONFIG_KEYFILE_KEY_LOGGING_LEVEL,
+		),
+	},
+	{
+		.group = NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY,
+		.keys = NM_MAKE_STRV (
+			NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_ENABLED,
+			NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_INTERVAL,
+			NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_RESPONSE,
+			NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_URI,
+		),
+	},
+	{
+		.group = NM_CONFIG_KEYFILE_GROUP_KEYFILE,
+		.keys = NM_MAKE_STRV (
+			NM_CONFIG_KEYFILE_KEY_KEYFILE_HOSTNAME,
+			NM_CONFIG_KEYFILE_KEY_KEYFILE_PATH,
+			NM_CONFIG_KEYFILE_KEY_KEYFILE_UNMANAGED_DEVICES,
+		),
+	},
+	{
+		.group = NM_CONFIG_KEYFILE_GROUP_IFUPDOWN,
+		.keys = NM_MAKE_STRV (
+			NM_CONFIG_KEYFILE_KEY_IFUPDOWN_MANAGED,
+		),
+	},
+	{
+		.group = NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE,
+		.is_prefix = TRUE,
+		.keys = NM_MAKE_STRV (
+			NM_CONFIG_KEYFILE_KEY_DEVICE_CARRIER_WAIT_TIMEOUT,
+			NM_CONFIG_KEYFILE_KEY_DEVICE_IGNORE_CARRIER,
+			NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
+			NM_CONFIG_KEYFILE_KEY_DEVICE_SRIOV_NUM_VFS,
+			NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_BACKEND,
+			NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_SCAN_RAND_MAC_ADDRESS,
+			NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE,
+			NM_CONFIG_KEYFILE_KEY_STOP_MATCH,
+		),
+	},
+	{
+		.group = NM_CONFIG_KEYFILE_GROUP_GLOBAL_DNS,
+		.keys = NM_MAKE_STRV (
+			NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_OPTIONS,
+			NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_SEARCHES,
+		),
+	},
+	{
+		.group = NM_CONFIG_KEYFILE_GROUPPREFIX_GLOBAL_DNS_DOMAIN,
+		.is_prefix = TRUE,
+		.keys = NM_MAKE_STRV (
+			NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_DOMAIN_SERVERS,
+			NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_DOMAIN_OPTIONS,
+		),
+	},
+	{
+		.group = NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION,
+		.is_prefix = TRUE,
+		.is_connection = TRUE,
+		.keys = NM_MAKE_STRV (
+			NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE,
+			NM_CONFIG_KEYFILE_KEY_STOP_MATCH,
+		),
+	},
+	{ } /* sentinel */
+};
+
 static gboolean
-read_config (GKeyFile *keyfile, gboolean is_base_config, const char *dirname, const char *path, GError **error)
+check_config_key (const char *group, const char *key)
+{
+	const ConfigGroup *g;
+	const char *const *k;
+
+	for (g = config_groups; g->group; g++) {
+		if (   (!g->is_prefix && nm_streq (group, g->group))
+		    || (g->is_prefix && g_str_has_prefix (group, g->group)))
+			break;
+	}
+
+	if (!g->group)
+		return FALSE;
+
+	for (k = g->keys; *k; k++) {
+		if (nm_streq (key, *k))
+			return TRUE;
+	}
+
+	if (g->is_connection) {
+		/* For now just accept everything */
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+static gboolean
+read_config (GKeyFile *keyfile, gboolean is_base_config,
+             const char *dirname, const char *path,
+             GPtrArray *warnings, GError **error)
 {
 	GKeyFile *kf;
 	char **groups, **keys;
@@ -892,6 +1037,12 @@ read_config (GKeyFile *keyfile, gboolean is_base_config, const char *dirname, co
 
 			new_value = g_key_file_get_value (kf, group, key, NULL);
 			g_key_file_set_value (keyfile, group, key, new_value);
+
+			if (!check_config_key (group, key)) {
+				g_ptr_array_add (warnings,
+				                 g_strdup_printf ("unknown key '%s' in section [%s] of file '%s'",
+				                                  key, group, path));
+			}
 			g_free (new_value);
 		}
 		g_strfreev (keys);
@@ -906,6 +1057,7 @@ static gboolean
 read_base_config (GKeyFile *keyfile,
                   const char *cli_config_main_file,
                   char **out_config_main_file,
+                  GPtrArray *warnings,
                   GError **error)
 {
 	GError *my_error = NULL;
@@ -917,7 +1069,7 @@ read_base_config (GKeyFile *keyfile,
 	/* Try a user-specified config file first */
 	if (cli_config_main_file) {
 		/* Bad user-specific config file path is a hard error */
-		if (read_config (keyfile, TRUE, NULL, cli_config_main_file, error)) {
+		if (read_config (keyfile, TRUE, NULL, cli_config_main_file, warnings, error)) {
 			*out_config_main_file = g_strdup (cli_config_main_file);
 			return TRUE;
 		} else
@@ -932,7 +1084,7 @@ read_base_config (GKeyFile *keyfile,
 	 */
 
 	/* Try deprecated nm-system-settings.conf first */
-	if (read_config (keyfile, TRUE, NULL, DEFAULT_CONFIG_MAIN_FILE_OLD, &my_error)) {
+	if (read_config (keyfile, TRUE, NULL, DEFAULT_CONFIG_MAIN_FILE_OLD, warnings, &my_error)) {
 		*out_config_main_file = g_strdup (DEFAULT_CONFIG_MAIN_FILE_OLD);
 		return TRUE;
 	}
@@ -944,7 +1096,7 @@ read_base_config (GKeyFile *keyfile,
 	g_clear_error (&my_error);
 
 	/* Try the standard config file location next */
-	if (read_config (keyfile, TRUE, NULL, DEFAULT_CONFIG_MAIN_FILE, &my_error)) {
+	if (read_config (keyfile, TRUE, NULL, DEFAULT_CONFIG_MAIN_FILE, warnings, &my_error)) {
 		*out_config_main_file = g_strdup (DEFAULT_CONFIG_MAIN_FILE);
 		return TRUE;
 	}
@@ -1022,6 +1174,7 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
                     const char *system_config_dir,
                     char **out_config_main_file,
                     char **out_config_description,
+                    char ***out_warnings,
                     GError **error)
 {
 	gs_unref_keyfile GKeyFile *keyfile = NULL;
@@ -1031,12 +1184,14 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 	guint i;
 	gs_free char *o_config_main_file = NULL;
 	const char *run_config_dir = "";
+	gs_unref_ptrarray GPtrArray *warnings = NULL;
 
 	g_return_val_if_fail (config_dir, NULL);
 	g_return_val_if_fail (system_config_dir, NULL);
 	g_return_val_if_fail (!out_config_main_file || !*out_config_main_file, FALSE);
 	g_return_val_if_fail (!out_config_description || !*out_config_description, NULL);
 	g_return_val_if_fail (!error || !*error, FALSE);
+	g_return_val_if_fail (out_warnings && !*out_warnings, FALSE);
 
 	if (   (""RUN_CONFIG_DIR)[0] == '/'
 	    && !nm_streq (RUN_CONFIG_DIR, system_config_dir)
@@ -1045,6 +1200,7 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 
 	/* create a default configuration file. */
 	keyfile = nm_config_create_keyfile ();
+	warnings = g_ptr_array_new_with_free_func (g_free);
 
 	system_confs = _get_config_dir_files (system_config_dir);
 	confs = _get_config_dir_files (config_dir);
@@ -1060,7 +1216,7 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 			continue;
 		}
 
-		if (!read_config (keyfile, FALSE, system_config_dir, filename, error))
+		if (!read_config (keyfile, FALSE, system_config_dir, filename, warnings, error))
 			return NULL;
 		i++;
 	}
@@ -1074,19 +1230,19 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 			continue;
 		}
 
-		if (!read_config (keyfile, FALSE, run_config_dir, filename, error))
+		if (!read_config (keyfile, FALSE, run_config_dir, filename, warnings, error))
 			return NULL;
 		i++;
 	}
 
 	/* First read the base config file */
-	if (!read_base_config (keyfile, cli ? cli->config_main_file : NULL, &o_config_main_file, error))
+	if (!read_base_config (keyfile, cli ? cli->config_main_file : NULL, &o_config_main_file, warnings, error))
 		return NULL;
 
 	g_assert (o_config_main_file);
 
 	for (i = 0; i < confs->len; i++) {
-		if (!read_config (keyfile, FALSE, config_dir, confs->pdata[i], error))
+		if (!read_config (keyfile, FALSE, config_dir, confs->pdata[i], warnings, error))
 			return NULL;
 	}
 
@@ -1133,6 +1289,11 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 		*out_config_description = g_string_free (str, FALSE);
 	}
 	NM_SET_OUT (out_config_main_file, g_steal_pointer (&o_config_main_file));
+
+	g_ptr_array_add (warnings, NULL);
+	*out_warnings = (char **) g_ptr_array_free (warnings, warnings->len == 1);
+	g_steal_pointer (&warnings);
+
 	return g_steal_pointer (&keyfile);
 }
 
@@ -2356,7 +2517,7 @@ nm_config_device_state_get (NMConfig *self,
 /*****************************************************************************/
 
 void
-nm_config_reload (NMConfig *self, NMConfigChangeFlags reload_flags)
+nm_config_reload (NMConfig *self, NMConfigChangeFlags reload_flags, gboolean emit_warnings)
 {
 	NMConfigPrivate *priv;
 	GError *error = NULL;
@@ -2366,6 +2527,8 @@ nm_config_reload (NMConfig *self, NMConfigChangeFlags reload_flags)
 	char *config_description = NULL;
 	gs_strfreev char **no_auto_default = NULL;
 	gboolean intern_config_needs_rewrite;
+	gs_strfreev char **warnings = NULL;
+	guint i;
 
 	g_return_if_fail (NM_IS_CONFIG (self));
 	g_return_if_fail (   reload_flags
@@ -2390,12 +2553,18 @@ nm_config_reload (NMConfig *self, NMConfigChangeFlags reload_flags)
 	                              priv->system_config_dir,
 	                              &config_main_file,
 	                              &config_description,
+	                              &warnings,
 	                              &error);
 	if (!keyfile) {
 		_LOGE ("Failed to reload the configuration: %s", error->message);
 		g_clear_error (&error);
 		_set_config_data (self, NULL, reload_flags);
 		return;
+	}
+
+	if (emit_warnings && warnings) {
+		for (i = 0; warnings[i]; i++)
+			_LOGW ("%s", warnings[i]);
 	}
 
 	no_auto_default = no_auto_default_from_file (priv->no_auto_default_file);
@@ -2594,6 +2763,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	                              priv->system_config_dir,
 	                              &config_main_file,
 	                              &config_description,
+	                              &priv->warnings,
 	                              error);
 	if (!keyfile)
 		return FALSE;
@@ -2685,6 +2855,7 @@ finalize (GObject *gobject)
 	g_free (priv->log_level);
 	g_free (priv->log_domains);
 	g_strfreev (priv->atomic_section_prefixes);
+	g_strfreev (priv->warnings);
 
 	_nm_config_cmd_line_options_clear (&priv->cli);
 

@@ -155,7 +155,7 @@ nm_main_config_reload (int signal)
 	 *
 	 * Hence, a NMConfig singleton instance must always be
 	 * available. */
-	nm_config_reload (nm_config_get (), reload_flags);
+	nm_config_reload (nm_config_get (), reload_flags, TRUE);
 }
 
 static void
@@ -232,6 +232,7 @@ main (int argc, char *argv[])
 	NMConfigCmdLineOptions *config_cli;
 	guint sd_id = 0;
 	GError *error_invalid_logging_config = NULL;
+	const char *const *warnings;
 
 	/* Known to cause a possible deadlock upon GDBus initialization:
 	 * https://bugzilla.gnome.org/show_bug.cgi?id=674885 */
@@ -375,6 +376,11 @@ main (int argc, char *argv[])
 		               : "command line");
 		nm_clear_g_free (&bad_domains);
 	}
+
+	warnings = nm_config_get_warnings (config);
+	for ( ; warnings && *warnings; warnings++)
+		nm_log_warn (LOGD_CORE, "config: %s", *warnings);
+	nm_config_clear_warnings (config);
 
 	/* the first access to State causes the file to be read (and possibly print a warning) */
 	nm_config_state_get (config);
