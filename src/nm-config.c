@@ -704,20 +704,20 @@ static gboolean
 _setting_is_device_spec (const char *group, const char *key)
 {
 #define _IS(group_v, key_v) (strcmp (group, (""group_v)) == 0 && strcmp (key, (""key_v)) == 0)
-	return    _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "no-auto-default")
-	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "ignore-carrier")
-	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "assume-ipv6ll-only")
-	       || _IS (NM_CONFIG_KEYFILE_GROUP_KEYFILE, "unmanaged-devices")
-	       || (g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION) && !strcmp (key, "match-device"))
-	       || (g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE    ) && !strcmp (key, "match-device"));
+	return    _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_NO_AUTO_DEFAULT)
+	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_IGNORE_CARRIER)
+	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_ASSUME_IPV6LL_ONLY)
+	       || _IS (NM_CONFIG_KEYFILE_GROUP_KEYFILE, NM_CONFIG_KEYFILE_KEY_KEYFILE_UNMANAGED_DEVICES)
+	       || (g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION) && !strcmp (key, NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE))
+	       || (g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE    ) && !strcmp (key, NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE));
 }
 
 static gboolean
 _setting_is_string_list (const char *group, const char *key)
 {
-	return    _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins")
+	return    _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_PLUGINS)
 	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_DEBUG)
-	       || _IS (NM_CONFIG_KEYFILE_GROUP_LOGGING, "domains")
+	       || _IS (NM_CONFIG_KEYFILE_GROUP_LOGGING, NM_CONFIG_KEYFILE_KEY_LOGGING_DOMAINS)
 	       || g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST);
 #undef _IS
 }
@@ -1657,11 +1657,13 @@ nm_config_set_global_dns (NMConfig *self, NMGlobalDnsConfig *global_dns, GError 
 
 	/* Set new values */
 	nm_config_keyfile_set_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS,
-	                                   "searches", nm_global_dns_config_get_searches (global_dns),
+	                                   NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_SEARCHES,
+	                                   nm_global_dns_config_get_searches (global_dns),
 	                                   -1);
 
 	nm_config_keyfile_set_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS,
-	                                   "options", nm_global_dns_config_get_options (global_dns),
+	                                   NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_OPTIONS,
+	                                   nm_global_dns_config_get_options (global_dns),
 	                                   -1);
 
 	for (i = 0; i < nm_global_dns_config_get_num_domains (global_dns); i++) {
@@ -1671,9 +1673,9 @@ nm_config_set_global_dns (NMConfig *self, NMGlobalDnsConfig *global_dns, GError 
 		group_name = g_strdup_printf (NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN "%s",
 		                              nm_global_dns_domain_get_name (domain));
 
-		nm_config_keyfile_set_string_list (keyfile, group_name, "servers",
+		nm_config_keyfile_set_string_list (keyfile, group_name, NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_DOMAIN_SERVERS,
 		                                   nm_global_dns_domain_get_servers (domain), -1);
-		nm_config_keyfile_set_string_list (keyfile, group_name, "options",
+		nm_config_keyfile_set_string_list (keyfile, group_name, NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_DOMAIN_OPTIONS,
 		                                   nm_global_dns_domain_get_options (domain), -1);
 	}
 
@@ -2603,12 +2605,22 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	else
 		priv->no_auto_default_file = g_strdup (DEFAULT_NO_AUTO_DEFAULT_FILE);
 
-	priv->monitor_connection_files = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "monitor-connection-files", FALSE);
-
-	priv->log_level = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_LOGGING, "level", NULL));
-	priv->log_domains = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_LOGGING, "domains", NULL));
-
-	configure_and_quit = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "configure-and-quit", NULL));
+	priv->monitor_connection_files = nm_config_keyfile_get_boolean (keyfile,
+	                                                                NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                                                NM_CONFIG_KEYFILE_KEY_MAIN_MONITOR_CONNECTION_FILES,
+	                                                                FALSE);
+	priv->log_level = nm_strstrip (g_key_file_get_string (keyfile,
+	                                                      NM_CONFIG_KEYFILE_GROUP_LOGGING,
+	                                                      NM_CONFIG_KEYFILE_KEY_LOGGING_LEVEL,
+	                                                      NULL));
+	priv->log_domains = nm_strstrip (g_key_file_get_string (keyfile,
+	                                                        NM_CONFIG_KEYFILE_GROUP_LOGGING,
+	                                                        NM_CONFIG_KEYFILE_KEY_LOGGING_DOMAINS,
+	                                                        NULL));
+	configure_and_quit = nm_strstrip (g_key_file_get_string (keyfile,
+	                                                         NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                                         NM_CONFIG_KEYFILE_KEY_MAIN_CONFIGURE_AND_QUIT,
+	                                                         NULL));
 	priv->configure_and_quit = string_to_configure_and_quit (configure_and_quit, error);
 	if (priv->configure_and_quit == NM_CONFIG_CONFIGURE_AND_QUIT_INVALID)
 		return FALSE;
