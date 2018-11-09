@@ -141,8 +141,8 @@ active_connection_get_state_ord (NMActiveConnection *active)
 	return -1;
 }
 
-static int
-active_connection_cmp (NMActiveConnection *ac_a, NMActiveConnection *ac_b)
+int
+nmc_active_connection_cmp (NMActiveConnection *ac_a, NMActiveConnection *ac_b)
 {
 	NM_CMP_SELF (ac_a, ac_b);
 	NM_CMP_DIRECT (active_connection_get_state_ord (ac_b),
@@ -1149,7 +1149,7 @@ get_ac_for_connection_cmp (gconstpointer pa, gconstpointer pb, gpointer user_dat
 	NMActiveConnection *ac_a = *((NMActiveConnection *const*) pa);
 	NMActiveConnection *ac_b = *((NMActiveConnection *const*) pb);
 
-	return active_connection_cmp (ac_a, ac_b);
+	return nmc_active_connection_cmp (ac_a, ac_b);
 }
 
 static NMActiveConnection *
@@ -1682,7 +1682,7 @@ con_show_get_items_cmp (gconstpointer pa, gconstpointer pb, gpointer user_data)
 		 * active connections... */
 	}
 
-	return active_connection_cmp (ac_a, ac_b);
+	return nmc_active_connection_cmp (ac_a, ac_b);
 }
 
 static GPtrArray *
