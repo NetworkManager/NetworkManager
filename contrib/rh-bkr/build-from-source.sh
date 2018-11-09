@@ -62,6 +62,7 @@ $SUDO yum install \
     libpsl-devel \
     libcurl-devel \
     libasan \
+    gnutls-devel \
     -y
 
 $SUDO yum install \
