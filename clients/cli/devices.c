@@ -905,6 +905,8 @@ compare_devices (const void *a, const void *b)
 	NMDevice *db = *(NMDevice **)b;
 	NMActiveConnection *da_ac;
 	NMActiveConnection *db_ac;
+	NMSettingIPConfig *s_ip;
+	NMRemoteConnection *conn;
 	NMIPConfig *da_ip;
 	NMIPConfig *db_ip;
 	int da_num_addrs;
@@ -927,7 +929,30 @@ compare_devices (const void *a, const void *b)
 	if (cmp != 0)
 		return cmp;
 
-	/* VPNs go on the top if possible */
+	/* Shared connections (likely hotspots) go on the top if possible */
+	conn = da_ac ? nm_active_connection_get_connection (da_ac) : NULL;
+	s_ip = conn ? nm_connection_get_setting_ip6_config (NM_CONNECTION (conn)) : NULL;
+	if (s_ip && strcmp (nm_setting_ip_config_get_method (s_ip), NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0)
+		cmp--;
+	conn = db_ac ? nm_active_connection_get_connection (db_ac) : NULL;
+	s_ip = conn ? nm_connection_get_setting_ip6_config (NM_CONNECTION (conn)) : NULL;
+	if (s_ip && strcmp (nm_setting_ip_config_get_method (s_ip), NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0)
+		cmp++;
+	if (cmp != 0)
+		return cmp;
+
+	conn = da_ac ? nm_active_connection_get_connection (da_ac) : NULL;
+	s_ip = conn ? nm_connection_get_setting_ip4_config (NM_CONNECTION (conn)) : NULL;
+	if (s_ip && strcmp (nm_setting_ip_config_get_method (s_ip), NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0)
+		cmp--;
+	conn = db_ac ? nm_active_connection_get_connection (db_ac) : NULL;
+	s_ip = conn ? nm_connection_get_setting_ip4_config (NM_CONNECTION (conn)) : NULL;
+	if (s_ip && strcmp (nm_setting_ip_config_get_method (s_ip), NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0)
+		cmp++;
+	if (cmp != 0)
+		return cmp;
+
+	/* VPNs go next */
 	if (da_ac && !nm_active_connection_get_vpn (da_ac))
 		cmp++;
 	if (db_ac && !nm_active_connection_get_vpn (db_ac))
