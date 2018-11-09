@@ -536,8 +536,10 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	-Dconcheck=true \
 %if 0%{?fedora}
 	-Dlibpsl=true \
+	-Debpf=true \
 %else
 	-Dlibpsl=false \
+	-Debpf=false \
 %endif
 	-Dsession_tracking=systemd \
 	-Dsuspend_resume=systemd \
@@ -645,8 +647,10 @@ intltoolize --automake --copy --force
 	--enable-concheck \
 %if 0%{?fedora}
 	--with-libpsl \
+	--with-ebpf \
 %else
 	--without-libpsl \
+	--without-ebpf \
 %endif
 	--with-session-tracking=systemd \
 	--with-suspend-resume=systemd \
