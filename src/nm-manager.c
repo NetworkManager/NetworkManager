@@ -1181,7 +1181,7 @@ _reload_auth_cb (NMAuthChain *chain,
 		goto out;
 	}
 
-	nm_config_reload (priv->config, reload_type);
+	nm_config_reload (priv->config, reload_type, TRUE);
 	g_dbus_method_invocation_return_value (context, NULL);
 
 out:

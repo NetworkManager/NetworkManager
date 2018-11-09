@@ -181,7 +181,7 @@ void nm_config_set_no_auto_default_for_device  (NMConfig *config, NMDevice *devi
 
 NMConfig *nm_config_new (const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes, GError **error);
 NMConfig *nm_config_setup (const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes, GError **error);
-void nm_config_reload (NMConfig *config, NMConfigChangeFlags reload_flags);
+void nm_config_reload (NMConfig *config, NMConfigChangeFlags reload_flags, gboolean emit_warnings);
 
 const NMConfigState *nm_config_state_get (NMConfig *config);
 
@@ -277,6 +277,9 @@ void nm_config_device_state_prune_unseen (GHashTable *seen_ifindexes);
 const GHashTable *nm_config_device_state_get_all (NMConfig *self);
 const NMConfigDeviceStateData *nm_config_device_state_get (NMConfig *self,
                                                            int ifindex);
+
+const char *const *nm_config_get_warnings (NMConfig *config);
+void nm_config_clear_warnings (NMConfig *config);
 
 /*****************************************************************************/
 
