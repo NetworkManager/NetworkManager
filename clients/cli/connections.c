@@ -144,12 +144,65 @@ active_connection_get_state_ord (NMActiveConnection *active)
 int
 nmc_active_connection_cmp (NMActiveConnection *ac_a, NMActiveConnection *ac_b)
 {
+	NMSettingIPConfig *s_ip;
+	NMRemoteConnection *conn;
+	NMIPConfig *da_ip;
+	NMIPConfig *db_ip;
+	int da_num_addrs;
+	int db_num_addrs;
+	int cmp = 0;
+
+	/* Non-active sort last. */
 	NM_CMP_SELF (ac_a, ac_b);
 	NM_CMP_DIRECT (active_connection_get_state_ord (ac_b),
 	               active_connection_get_state_ord (ac_a));
-	NM_CMP_DIRECT_STRCMP0 (nm_active_connection_get_id (ac_a), nm_active_connection_get_id (ac_b));
-	NM_CMP_DIRECT_STRCMP0 (nm_active_connection_get_connection_type (ac_a), nm_active_connection_get_connection_type (ac_b));
-	NM_CMP_DIRECT_STRCMP0 (nm_object_get_path (NM_OBJECT (ac_a)), nm_object_get_path (NM_OBJECT (ac_b)));
+
+	/* Shared connections (likely hotspots) go on the top if possible */
+	conn = nm_active_connection_get_connection (ac_a);
+	s_ip = conn ? nm_connection_get_setting_ip6_config (NM_CONNECTION (conn)) : NULL;
+	if (s_ip && strcmp (nm_setting_ip_config_get_method (s_ip), NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0)
+		cmp++;
+	conn = nm_active_connection_get_connection (ac_b);
+	s_ip = conn ? nm_connection_get_setting_ip6_config (NM_CONNECTION (conn)) : NULL;
+	if (s_ip && strcmp (nm_setting_ip_config_get_method (s_ip), NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0)
+		cmp--;
+	NM_CMP_RETURN (cmp);
+
+	conn = nm_active_connection_get_connection (ac_a);
+	s_ip = conn ? nm_connection_get_setting_ip4_config (NM_CONNECTION (conn)) : NULL;
+	if (s_ip && strcmp (nm_setting_ip_config_get_method (s_ip), NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0)
+		cmp++;
+	conn = nm_active_connection_get_connection (ac_b);
+	s_ip = conn ? nm_connection_get_setting_ip4_config (NM_CONNECTION (conn)) : NULL;
+	if (s_ip && strcmp (nm_setting_ip_config_get_method (s_ip), NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0)
+		cmp--;
+	NM_CMP_RETURN (cmp);
+
+	/* VPNs go next */
+	NM_CMP_DIRECT (!!nm_active_connection_get_vpn (ac_a),
+	               !!nm_active_connection_get_vpn (ac_b));
+
+	/* Default devices are prioritized */
+	NM_CMP_DIRECT (nm_active_connection_get_default (ac_a),
+	               nm_active_connection_get_default (ac_b));
+
+	/* Default IPv6 devices are prioritized */
+	NM_CMP_DIRECT (nm_active_connection_get_default6 (ac_a),
+	               nm_active_connection_get_default6 (ac_b));
+
+	/* Sort by number of addresses. */
+	da_ip = nm_active_connection_get_ip4_config (ac_a);
+	da_num_addrs = da_ip ? nm_ip_config_get_addresses (da_ip)->len : 0;
+	db_ip = nm_active_connection_get_ip4_config (ac_b);
+	db_num_addrs = db_ip ? nm_ip_config_get_addresses (db_ip)->len : 0;
+
+	da_ip = nm_active_connection_get_ip6_config (ac_a);
+	da_num_addrs += da_ip ? nm_ip_config_get_addresses (da_ip)->len : 0;
+	db_ip = nm_active_connection_get_ip6_config (ac_b);
+	db_num_addrs += db_ip ? nm_ip_config_get_addresses (db_ip)->len : 0;
+
+	NM_CMP_DIRECT (da_num_addrs, db_num_addrs);
+
 	return 0;
 }
 
@@ -1144,12 +1197,20 @@ construct_header_name (const char *base, const char *spec)
 }
 
 static int
-get_ac_for_connection_cmp (gconstpointer pa, gconstpointer pb, gpointer user_data)
+get_ac_for_connection_cmp (gconstpointer pa, gconstpointer pb)
 {
 	NMActiveConnection *ac_a = *((NMActiveConnection *const*) pa);
 	NMActiveConnection *ac_b = *((NMActiveConnection *const*) pb);
 
-	return nmc_active_connection_cmp (ac_a, ac_b);
+	NM_CMP_RETURN (nmc_active_connection_cmp (ac_a, ac_b));
+	NM_CMP_DIRECT_STRCMP0 (nm_active_connection_get_id (ac_a),
+	                       nm_active_connection_get_id (ac_b));
+	NM_CMP_DIRECT_STRCMP0 (nm_active_connection_get_connection_type (ac_a),
+	                       nm_active_connection_get_connection_type (ac_b));
+	NM_CMP_DIRECT_STRCMP0 (nm_object_get_path (NM_OBJECT (ac_a)),
+	                       nm_object_get_path (NM_OBJECT (ac_b)));
+
+	g_return_val_if_reached (0);
 }
 
 static NMActiveConnection *
@@ -1175,7 +1236,7 @@ get_ac_for_connection (const GPtrArray *active_cons, NMConnection *connection, G
 	}
 
 	if (result) {
-		g_ptr_array_sort_with_data (result, get_ac_for_connection_cmp, NULL);
+		g_ptr_array_sort (result, get_ac_for_connection_cmp);
 		best_candidate = result->pdata[0];
 	}
 
@@ -1676,13 +1737,12 @@ con_show_get_items_cmp (gconstpointer pa, gconstpointer pb, gpointer user_data)
 		                       nm_connection_get_uuid (c_b));
 		NM_CMP_DIRECT_STRCMP0 (nm_connection_get_path (c_a),
 		                       nm_connection_get_path (c_b));
-
-		/* This line is not expected to be reached, because there shouldn't be two
-		 * different connections with the same path. Anyway, fall-through and compare by
-		 * active connections... */
 	}
 
-	return nmc_active_connection_cmp (ac_a, ac_b);
+	NM_CMP_DIRECT_STRCMP0 (nm_object_get_path (NM_OBJECT (ac_a)),
+	                       nm_object_get_path (NM_OBJECT (ac_b)));
+
+	g_return_val_if_reached (0);
 }
 
 static GPtrArray *

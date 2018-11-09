@@ -903,102 +903,19 @@ compare_devices (const void *a, const void *b)
 {
 	NMDevice *da = *(NMDevice **)a;
 	NMDevice *db = *(NMDevice **)b;
-	NMActiveConnection *da_ac;
-	NMActiveConnection *db_ac;
-	NMSettingIPConfig *s_ip;
-	NMRemoteConnection *conn;
-	NMIPConfig *da_ip;
-	NMIPConfig *db_ip;
-	int da_num_addrs;
-	int db_num_addrs;
-	int cmp;
+	NMActiveConnection *da_ac = nm_device_get_active_connection (da);
+	NMActiveConnection *db_ac = nm_device_get_active_connection (db);
 
-	/* Sort by later device states first */
-	cmp = nm_device_get_state (db) - nm_device_get_state (da);
-	if (cmp != 0)
-		return cmp;
+	NM_CMP_DIRECT (nm_device_get_state (db), nm_device_get_state (da));
+	NM_CMP_RETURN (nmc_active_connection_cmp (db_ac, da_ac));
+	NM_CMP_DIRECT_STRCMP0 (nm_device_get_type_description (da),
+	                       nm_device_get_type_description (db));
+	NM_CMP_DIRECT_STRCMP0 (nm_device_get_iface (da),
+	                       nm_device_get_iface (db));
+	NM_CMP_DIRECT_STRCMP0 (nm_object_get_path (NM_OBJECT (da)),
+	                       nm_object_get_path (NM_OBJECT (db)));
 
-	da_ac = nm_device_get_active_connection (da);
-	db_ac = nm_device_get_active_connection (db);
-
-	/* Prioritize devices with active connections */
-	if (da_ac)
-		cmp++;
-	if (db_ac)
-		cmp--;
-	if (cmp != 0)
-		return cmp;
-
-	/* Shared connections (likely hotspots) go on the top if possible */
-	conn = da_ac ? nm_active_connection_get_connection (da_ac) : NULL;
-	s_ip = conn ? nm_connection_get_setting_ip6_config (NM_CONNECTION (conn)) : NULL;
-	if (s_ip && strcmp (nm_setting_ip_config_get_method (s_ip), NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0)
-		cmp--;
-	conn = db_ac ? nm_active_connection_get_connection (db_ac) : NULL;
-	s_ip = conn ? nm_connection_get_setting_ip6_config (NM_CONNECTION (conn)) : NULL;
-	if (s_ip && strcmp (nm_setting_ip_config_get_method (s_ip), NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0)
-		cmp++;
-	if (cmp != 0)
-		return cmp;
-
-	conn = da_ac ? nm_active_connection_get_connection (da_ac) : NULL;
-	s_ip = conn ? nm_connection_get_setting_ip4_config (NM_CONNECTION (conn)) : NULL;
-	if (s_ip && strcmp (nm_setting_ip_config_get_method (s_ip), NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0)
-		cmp--;
-	conn = db_ac ? nm_active_connection_get_connection (db_ac) : NULL;
-	s_ip = conn ? nm_connection_get_setting_ip4_config (NM_CONNECTION (conn)) : NULL;
-	if (s_ip && strcmp (nm_setting_ip_config_get_method (s_ip), NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0)
-		cmp++;
-	if (cmp != 0)
-		return cmp;
-
-	/* VPNs go next */
-	if (da_ac && !nm_active_connection_get_vpn (da_ac))
-		cmp++;
-	if (db_ac && !nm_active_connection_get_vpn (db_ac))
-		cmp--;
-	if (cmp != 0)
-		return cmp;
-
-	/* Default devices are prioritized */
-	if (da_ac && !nm_active_connection_get_default (da_ac))
-		cmp++;
-	if (db_ac && !nm_active_connection_get_default (db_ac))
-		cmp--;
-	if (cmp != 0)
-		return cmp;
-
-	/* Default IPv6 devices are prioritized */
-	if (da_ac && !nm_active_connection_get_default6 (da_ac))
-		cmp++;
-	if (db_ac && !nm_active_connection_get_default6 (db_ac))
-		cmp--;
-	if (cmp != 0)
-		return cmp;
-
-	/* Sort by number of addresses. */
-	da_ip = da_ac ? nm_active_connection_get_ip4_config (da_ac) : NULL;
-	da_num_addrs = da_ip ? nm_ip_config_get_addresses (da_ip)->len : 0;
-	db_ip = db_ac ? nm_active_connection_get_ip4_config (db_ac) : NULL;
-	db_num_addrs = db_ip ? nm_ip_config_get_addresses (db_ip)->len : 0;
-
-	da_ip = da_ac ? nm_active_connection_get_ip6_config (da_ac) : NULL;
-	da_num_addrs += da_ip ? nm_ip_config_get_addresses (da_ip)->len : 0;
-	db_ip = db_ac ? nm_active_connection_get_ip6_config (db_ac) : NULL;
-	db_num_addrs += db_ip ? nm_ip_config_get_addresses (db_ip)->len : 0;
-
-	cmp = db_num_addrs - da_num_addrs;
-	if (cmp != 0)
-		return cmp;
-
-	/* Fall back to alphanumeric sort by description and interface. */
-	cmp = g_strcmp0 (nm_device_get_type_description (da),
-	                 nm_device_get_type_description (db));
-	if (cmp != 0)
-		return cmp;
-
-	return g_strcmp0 (nm_device_get_iface (da),
-	                  nm_device_get_iface (db));
+	g_return_val_if_reached (0);
 }
 
 NMDevice **
