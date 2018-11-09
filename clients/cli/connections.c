@@ -1693,12 +1693,10 @@ con_show_get_items_cmp (gconstpointer pa, gconstpointer pb, gpointer user_data)
 			switch (item) {
 
 			case NMC_SORT_ACTIVE:
-				NM_CMP_DIRECT (active_connection_get_state_ord (ac_b),
-				               active_connection_get_state_ord (ac_a));
+				NM_CMP_RETURN (nmc_active_connection_cmp (ac_b, ac_a));
 				break;
 			case NMC_SORT_ACTIVE_INV:
-				NM_CMP_DIRECT (active_connection_get_state_ord (ac_a),
-				               active_connection_get_state_ord (ac_b));
+				NM_CMP_RETURN (nmc_active_connection_cmp (ac_a, ac_b));
 				break;
 
 			case NMC_SORT_TYPE:
