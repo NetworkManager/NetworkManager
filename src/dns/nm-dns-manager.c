@@ -582,9 +582,9 @@ again:
 }
 
 static char *
-create_resolv_conf (char **searches,
-                    char **nameservers,
-                    char **options)
+create_resolv_conf (const char *const*searches,
+                    const char *const*nameservers,
+                    const char *const*options)
 {
 	GString *str;
 	gsize i;
@@ -649,9 +649,9 @@ write_resolv_conf_contents (FILE *f,
 
 static gboolean
 write_resolv_conf (FILE *f,
-                   char **searches,
-                   char **nameservers,
-                   char **options,
+                   const char *const*searches,
+                   const char *const*nameservers,
+                   const char *const*options,
                    GError **error)
 {
 	gs_free char *content = NULL;
@@ -713,7 +713,11 @@ dispatch_resolvconf (NMDnsManager *self,
 		return SR_ERROR;
 	}
 
-	success = write_resolv_conf (f, searches, nameservers, options, error);
+	success = write_resolv_conf (f,
+	                             NM_CAST_STRV_CC (searches),
+	                             NM_CAST_STRV_CC (nameservers),
+	                             NM_CAST_STRV_CC (options),
+	                             error);
 	err = pclose (f);
 	if (err < 0) {
 		errnosv = errno;
@@ -752,9 +756,9 @@ _read_link_cached (const char *path, gboolean *is_cached, char **cached)
 
 static SpawnResult
 update_resolv_conf (NMDnsManager *self,
-                    char **searches,
-                    char **nameservers,
-                    char **options,
+                    const char *const*searches,
+                    const char *const*nameservers,
+                    const char *const*options,
                     GError **error,
                     NMDnsManagerResolvConfManager rc_manager)
 {
@@ -1444,7 +1448,12 @@ update_dns (NMDnsManager *self,
 		switch (priv->rc_manager) {
 		case NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK:
 		case NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE:
-			result = update_resolv_conf (self, searches, nameservers, options, error, priv->rc_manager);
+			result = update_resolv_conf (self,
+			                             NM_CAST_STRV_CC (searches),
+			                             NM_CAST_STRV_CC (nameservers),
+			                             NM_CAST_STRV_CC (options),
+			                             error,
+			                             priv->rc_manager);
 			resolv_conf_updated = TRUE;
 			/* If we have ended with no nameservers avoid updating again resolv.conf
 			 * on stop, as some external changes may be applied to it in the meanwhile */
@@ -1469,15 +1478,26 @@ update_dns (NMDnsManager *self,
 		if (result == SR_NOTFOUND) {
 			_LOGD ("update-dns: program not available, writing to resolv.conf");
 			g_clear_error (error);
-			result = update_resolv_conf (self, searches, nameservers, options, error, NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK);
+			result = update_resolv_conf (self,
+			                             NM_CAST_STRV_CC (searches),
+			                             NM_CAST_STRV_CC (nameservers),
+			                             NM_CAST_STRV_CC (options),
+			                             error,
+			                             NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK);
 			resolv_conf_updated = TRUE;
 		}
 	}
 
 	/* Unless we've already done it, update private resolv.conf in NMRUNDIR
 	   ignoring any errors */
-	if (!resolv_conf_updated)
-		update_resolv_conf (self, searches, nameservers, options, NULL, NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED);
+	if (!resolv_conf_updated) {
+		update_resolv_conf (self,
+		                    NM_CAST_STRV_CC (searches),
+		                    NM_CAST_STRV_CC (nameservers),
+		                    NM_CAST_STRV_CC (options),
+		                    NULL,
+		                    NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED);
+	}
 
 	/* signal that resolv.conf was changed */
 	if (update && result == SR_SUCCESS)
