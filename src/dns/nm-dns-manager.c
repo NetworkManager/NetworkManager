@@ -626,6 +626,14 @@ create_resolv_conf (const char *const*searches,
 	return g_string_free (str, FALSE);
 }
 
+char *
+nmtst_dns_create_resolv_conf (const char *const*searches,
+                              const char *const*nameservers,
+                              const char *const*options)
+{
+	return create_resolv_conf (searches, nameservers, options);
+}
+
 static gboolean
 write_resolv_conf_contents (FILE *f,
                             const char *content,
