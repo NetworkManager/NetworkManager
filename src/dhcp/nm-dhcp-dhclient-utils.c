@@ -24,6 +24,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <arpa/inet.h>
+#include <net/if.h>
 
 #include "nm-utils/nm-dedup-multi.h"
 

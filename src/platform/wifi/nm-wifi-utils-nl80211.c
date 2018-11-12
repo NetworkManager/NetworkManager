@@ -30,6 +30,7 @@
 #include <net/ethernet.h>
 #include <unistd.h>
 #include <linux/nl80211.h>
+#include <linux/if.h>
 
 #include "platform/nm-netlink.h"
 #include "nm-wifi-utils-private.h"

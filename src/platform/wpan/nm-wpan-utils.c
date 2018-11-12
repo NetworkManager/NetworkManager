@@ -21,6 +21,8 @@
 
 #include "nm-wpan-utils.h"
 
+#include <linux/if.h>
+
 #include "platform/linux/nl802154.h"
 #include "platform/nm-netlink.h"
 #include "platform/nm-platform-utils.h"
