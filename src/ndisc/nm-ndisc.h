@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 #include <netinet/in.h>
+#include <linux/if_addr.h>
 
 #include "nm-setting-ip6-config.h"
 #include "NetworkManagerUtils.h"

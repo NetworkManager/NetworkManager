@@ -22,6 +22,7 @@
 
 #include "nm-device-infiniband.h"
 
+#include <linux/if.h>
 #include <linux/if_infiniband.h>
 
 #include "NetworkManagerUtils.h"

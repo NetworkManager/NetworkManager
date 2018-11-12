@@ -21,12 +21,6 @@
 #ifndef __NETWORKMANAGER_PLATFORM_H__
 #define __NETWORKMANAGER_PLATFORM_H__
 
-#include <netinet/in.h>
-#include <linux/if.h>
-#include <linux/if_addr.h>
-#include <linux/if_link.h>
-#include <linux/ip6_tunnel.h>
-
 #include "nm-dbus-interface.h"
 #include "nm-core-types-internal.h"
 
@@ -50,6 +44,12 @@
 #define NM_PLATFORM_NETNS_SUPPORT      "netns-support"
 #define NM_PLATFORM_USE_UDEV           "use-udev"
 #define NM_PLATFORM_LOG_WITH_PTR       "log-with-ptr"
+
+/*****************************************************************************/
+
+/* IFNAMSIZ is both defined in <linux/if.h> and <net/if.h>. In the past, these
+ * headers conflicted, so we cannot simply include either of them in a header-file.*/
+#define NMP_IFNAMSIZ 16
 
 /*****************************************************************************/
 
@@ -208,7 +208,7 @@ typedef enum {
 
 struct _NMPlatformLink {
 	__NMPlatformObject_COMMON;
-	char name[IFNAMSIZ];
+	char name[NMP_IFNAMSIZ];
 	NMLinkType type;
 
 	/* rtnl_link_get_type(), IFLA_INFO_KIND. */
@@ -355,7 +355,7 @@ struct _NMPlatformIP4Address {
 	 * */
 	in_addr_t peer_address;  /* PTP peer address */
 
-	char label[IFNAMSIZ];
+	char label[NMP_IFNAMSIZ];
 };
 
 /**
@@ -1105,12 +1105,12 @@ const char *nm_platform_error_to_string (NMPlatformError error,
 	((const char *) NULL), -1, (path)
 
 #define NMP_SYSCTL_PATHID_NETDIR_unsafe(dirfd, ifname, path) \
-	nm_sprintf_bufa (NM_STRLEN ("net:/sys/class/net//\0") + IFNAMSIZ + strlen (path), \
+	nm_sprintf_bufa (NM_STRLEN ("net:/sys/class/net//\0") + NMP_IFNAMSIZ + strlen (path), \
 	                 "net:/sys/class/net/%s/%s", (ifname), (path)), \
 	(dirfd), (path)
 
 #define NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, path) \
-	nm_sprintf_bufa (NM_STRLEN ("net:/sys/class/net//"path"/\0") + IFNAMSIZ, \
+	nm_sprintf_bufa (NM_STRLEN ("net:/sys/class/net//"path"/\0") + NMP_IFNAMSIZ, \
 	                 "net:/sys/class/net/%s/%s", (ifname), path), \
 	(dirfd), (""path"")
 

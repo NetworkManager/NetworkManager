@@ -31,6 +31,7 @@
 #include <netdb.h>
 #include <string.h>
 #include <linux/ip.h>
+#include <linux/if.h>
 #include <linux/if_tun.h>
 #include <linux/if_tunnel.h>
 #include <linux/rtnetlink.h>

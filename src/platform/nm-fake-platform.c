@@ -26,6 +26,7 @@
 #include <unistd.h>
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
+#include <linux/if.h>
 #include <linux/rtnetlink.h>
 
 #include "nm-utils.h"

@@ -21,6 +21,9 @@
 #include <syslog.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <linux/if.h>
+#include <linux/if_link.h>
+#include <linux/ip6_tunnel.h>
 
 #include "platform/nm-platform.h"
 #include "platform/nmp-object.h"

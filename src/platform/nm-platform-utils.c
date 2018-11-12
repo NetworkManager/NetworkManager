@@ -29,6 +29,7 @@
 #include <linux/ethtool.h>
 #include <linux/sockios.h>
 #include <linux/mii.h>
+#include <linux/if.h>
 #include <linux/version.h>
 #include <linux/rtnetlink.h>
 #include <fcntl.h>

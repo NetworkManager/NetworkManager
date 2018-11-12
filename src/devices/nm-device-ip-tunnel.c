@@ -27,6 +27,7 @@
 #include <linux/if.h>
 #include <linux/ip.h>
 #include <linux/if_tunnel.h>
+#include <linux/ip6_tunnel.h>
 
 #include "nm-device-private.h"
 #include "nm-manager.h"

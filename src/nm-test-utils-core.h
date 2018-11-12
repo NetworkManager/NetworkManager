@@ -88,8 +88,8 @@ nmtst_platform_ip4_address_full (const char *address, const char *peer_address, 
 {
 	NMPlatformIP4Address *addr = nmtst_platform_ip4_address (address, peer_address, plen);
 
-	G_STATIC_ASSERT (IFNAMSIZ == sizeof (addr->label));
-	g_assert (!label || strlen (label) < IFNAMSIZ);
+	G_STATIC_ASSERT (NMP_IFNAMSIZ == sizeof (addr->label));
+	g_assert (!label || strlen (label) < NMP_IFNAMSIZ);
 
 	addr->ifindex = ifindex;
 	addr->addr_source = source;

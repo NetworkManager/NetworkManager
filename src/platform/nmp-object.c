@@ -24,6 +24,7 @@
 
 #include <unistd.h>
 #include <linux/rtnetlink.h>
+#include <linux/if.h>
 #include <libudev.h>
 
 #include "nm-utils.h"
