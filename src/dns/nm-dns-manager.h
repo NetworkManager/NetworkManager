@@ -129,4 +129,10 @@ typedef enum {
 
 void nm_dns_manager_stop (NMDnsManager *self);
 
+/*****************************************************************************/
+
+char *nmtst_dns_create_resolv_conf (const char *const*searches,
+                                    const char *const*nameservers,
+                                    const char *const*options);
+
 #endif /* __NETWORKMANAGER_DNS_MANAGER_H__ */
