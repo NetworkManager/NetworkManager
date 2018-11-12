@@ -639,6 +639,9 @@ NM_G_ERROR_MSG (GError *error)
 #define NM_PROPAGATE_CONST(test_expr, ptr) (ptr)
 #endif
 
+#define NM_MAKE_STRV(...) \
+	((const char *const[]) { __VA_ARGS__, NULL })
+
 /*****************************************************************************/
 
 #define _NM_IN_SET_EVAL_1( op, _x, y)           (_x == (y))
