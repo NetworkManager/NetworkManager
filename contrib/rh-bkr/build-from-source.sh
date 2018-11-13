@@ -151,7 +151,7 @@ fi
 
 if [[ "$DO_INSTALL" == yes ]]; then
     pushd "./contrib/fedora/rpm/latest/RPMS/$ARCH/"
-        for p in $(ls -1 ./*.rpm | sed 's#.*\(NetworkManager.*\)-1\.[0-9]\..*#\1#'); do
+        for p in $(ls -1 ./*.rpm | sed 's#.*\(NetworkManager.*\)-1\.[0-9]\+\..*#\1#'); do
             $SUDO rpm -e --nodeps $p || true
         done
         $SUDO yum install -y ./*.rpm
