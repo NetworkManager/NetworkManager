@@ -36,6 +36,7 @@ $SUDO yum install \
     gnutls-devel \
     gobject-introspection-devel \
     gtk-doc \
+    intltool \
     iptables \
     jansson-devel \
     libasan \
