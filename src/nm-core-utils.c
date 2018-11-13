@@ -52,6 +52,17 @@
 #endif
 
 G_STATIC_ASSERT (sizeof (NMUtilsTestFlags) <= sizeof (int));
+
+/* we read _nm_utils_testing without memory barrier. This is thread-safe,
+ * because the static variable is initialized to zero, and only reset
+ * once to a non-zero value (via g_atomic_int_compare_and_exchange()).
+ *
+ * Since there is only one integer that contains the data, there is no
+ * caching problem reading this (atomic int) variable without
+ * synchronization/memory-barrier. Contrary to a double-checked locking,
+ * where one needs a memory barrier to read the variable and ensure
+ * that also the related data is coherent in cache. Here there is no
+ * related data. */
 static int _nm_utils_testing = 0;
 
 gboolean
@@ -70,6 +81,7 @@ nm_utils_get_testing ()
 {
 	NMUtilsTestFlags flags;
 
+again:
 	flags = (NMUtilsTestFlags) _nm_utils_testing;
 	if (flags != NM_UTILS_TEST_NONE) {
 		/* Flags already initialized. Return them. */
@@ -82,12 +94,11 @@ nm_utils_get_testing ()
 	if (g_test_initialized ())
 		flags |= _NM_UTILS_TEST_GENERAL;
 
-	if (g_atomic_int_compare_and_exchange (&_nm_utils_testing, 0, (int) flags)) {
-		/* Done. We set it. */
-		return flags & NM_UTILS_TEST_ALL;
-	}
-	/* It changed in the meantime (??). Re-read the value. */
-	return ((NMUtilsTestFlags) _nm_utils_testing) & NM_UTILS_TEST_ALL;
+	g_atomic_int_compare_and_exchange (&_nm_utils_testing, 0, (int) flags);
+
+	/* regardless of whether we won the race of initializing _nm_utils_testing,
+	 * go back and read the value again. It must be non-zero by now. */
+	goto again;
 }
 
 void
