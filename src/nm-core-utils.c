@@ -2713,6 +2713,12 @@ _secret_key_read (guint8 **out_secret_key,
 		goto out;
 	}
 
+	if (nm_utils_get_testing ()) {
+		/* for test code, we don't write the generated secret-key to disk. */
+		success = FALSE;
+		goto out;
+	}
+
 	if (!nm_utils_file_set_contents (NMSTATEDIR "/secret_key", (char *) secret_key, key_len, 0077, &error)) {
 		nm_log_warn (LOGD_CORE, "secret-key: failure to persist secret key in \"%s\" (%s) (use non-persistent key)",
 		             NMSTATEDIR "/secret_key", error->message);

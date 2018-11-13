@@ -1903,12 +1903,8 @@ test_machine_id_read (void)
 
 	logstate = nmtst_logging_disable (FALSE);
 	/* If you run this test as root, without a valid /etc/machine-id,
-	 * the code will try to get the secret-key (and possibly attempt
-	 * to write it).
-	 *
-	 * That's especially ugly, if you run the test as root and it writes
-	 * a new "/var/lib/NetworkManager/secret_key" file. Another reason
-	 * not to run tests as root. */
+	 * the code will try to get the secret-key. That is a bit ugly,
+	 * but no real problem. */
 	machine_id = nm_utils_machine_id_bin ();
 	nmtst_logging_reenable (logstate);
 
