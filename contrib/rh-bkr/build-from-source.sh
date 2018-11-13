@@ -1,7 +1,6 @@
 #!/bin/bash
 
-set -e
-set -xv
+set -exv
 
 BUILD_DIR="${BUILD_DIR:-/tmp/nm-build}"
 BUILD_ID="${BUILD_ID:-master}"
@@ -20,55 +19,52 @@ if [ -z "$SUDO" ]; then
 fi
 
 $SUDO yum install \
-    git \
-    rpm-build \
-    valgrind \
-    strace \
-    dbus-devel \
-    dbus-glib-devel \
-    wireless-tools-devel \
-    glib2-devel \
-    gobject-introspection-devel \
-    gettext-devel \
-    pkgconfig \
-    libnl3-devel \
     'perl(XML::Parser)' \
     'perl(YAML)' \
-    automake \
-    ppp-devel \
-    nss-devel \
-    dhclient \
-    readline-devel \
+    /usr/bin/dbus-launch \
+    ModemManager-glib-devel \
     audit-libs-devel \
+    automake \
+    bluez-libs-devel \
+    dbus-devel \
+    dbus-glib-devel \
+    dbus-python \
+    dhclient \
+    gettext-devel \
+    git \
+    glib2-devel \
+    gnutls-devel \
+    gobject-introspection-devel \
     gtk-doc \
+    iptables \
+    jansson-devel \
+    libasan \
+    libcurl-devel \
+    libgudev1-devel \
+    libndp-devel \
+    libnl3-devel \
+    libpsl-devel \
+    libselinux-devel \
+    libsoup-devel \
+    libubsan \
     libudev-devel \
     libuuid-devel \
-    libgudev1-devel \
-    vala-tools \
-    iptables \
-    bluez-libs-devel \
-    systemd \
-    libsoup-devel \
-    libndp-devel \
-    ModemManager-glib-devel \
     newt-devel \
-    /usr/bin/dbus-launch \
-    pygobject3-base \
-    dbus-python \
-    libselinux-devel \
+    nss-devel \
+    pkgconfig \
     polkit-devel \
+    ppp-devel \
+    pygobject3-base \
+    readline-devel \
+    rpm-build \
+    strace \
+    systemd \
     teamd-devel \
-    jansson-devel \
-    libpsl-devel \
-    libcurl-devel \
-    libasan \
-    gnutls-devel \
+    vala-tools \
+    valgrind \
+    wireless-tools-devel \
     --enablerepo=* --skip-broken \
     -y
-
-$SUDO yum install \
-    libubsan \
-    -y || true
 
 # for the tests, let's pre-load some modules:
 $SUDO modprobe ip_gre
