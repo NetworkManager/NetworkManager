@@ -831,9 +831,10 @@
           <para>Be aware that this command deactivates the specified active connection,
           but the device on which the connection was active, is still ready to connect
           and will perform auto-activation by looking for a suitable connection that has
-          the 'autoconnect' flag set. This includes the just deactivated connection. So
-          if the connection is set to auto-connect, it will be automatically started on
-          the disconnected device again.</para>
+          the 'autoconnect' flag set. Note that the deactivating connection profile is
+          internally blocked from autoconnecting again. Hence it will not autoconnect
+          until reboot or until the user performs an action that unblocks autoconnect,
+          like modifying the profile or explcitly activating it.</para>
 
           <para>In most cases you may want to use <command>device disconnect</command>
           command instead.</para>
