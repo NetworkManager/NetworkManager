@@ -61,6 +61,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDhcpClient,
 	PROP_ROUTE_TABLE,
 	PROP_TIMEOUT,
 	PROP_UUID,
+	PROP_HOSTNAME,
 );
 
 typedef struct _NMDhcpClientPrivate {
@@ -511,7 +512,6 @@ gboolean
 nm_dhcp_client_start_ip4 (NMDhcpClient *self,
                           GBytes *client_id,
                           const char *dhcp_anycast_addr,
-                          const char *hostname,
                           const char *last_ip4_address,
                           GError **error)
 {
@@ -531,9 +531,6 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 
 	nm_dhcp_client_set_client_id (self, client_id);
 
-	g_clear_pointer (&priv->hostname, g_free);
-	priv->hostname = g_strdup (hostname);
-
 	return NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self,
 	                                                   dhcp_anycast_addr,
 	                                                   last_ip4_address,
@@ -552,7 +549,6 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                           gboolean enforce_duid,
                           const char *dhcp_anycast_addr,
                           const struct in6_addr *ll_addr,
-                          const char *hostname,
                           NMSettingIP6ConfigPrivacy privacy,
                           guint needed_prefixes,
                           GError **error)
@@ -577,9 +573,6 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 	_set_client_id (self,
 	                own_client_id ?: client_id,
 	                FALSE);
-
-	g_clear_pointer (&priv->hostname, g_free);
-	priv->hostname = g_strdup (hostname);
 
 	if (priv->timeout == NM_DHCP_TIMEOUT_INFINITY)
 		_LOGI ("activation: beginning transaction (no timeout)");
@@ -860,6 +853,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_UUID:
 		g_value_set_string (value, priv->uuid);
 		break;
+	case PROP_HOSTNAME:
+		g_value_set_string (value, priv->hostname);
+		break;
 	case PROP_ROUTE_METRIC:
 		g_value_set_uint (value, priv->route_metric);
 		break;
@@ -921,6 +917,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_UUID:
 		/* construct-only */
 		priv->uuid = g_value_dup_string (value);
+		break;
+	case PROP_HOSTNAME:
+		/* construct-only */
+		priv->hostname = g_value_dup_string (value);
 		break;
 	case PROP_ROUTE_TABLE:
 		priv->route_table = g_value_get_uint (value);
@@ -1026,6 +1026,12 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 
 	obj_properties[PROP_UUID] =
 	    g_param_spec_string (NM_DHCP_CLIENT_UUID, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_HOSTNAME] =
+	    g_param_spec_string (NM_DHCP_CLIENT_HOSTNAME, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
