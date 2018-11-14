@@ -643,6 +643,12 @@ ipv6.ip6-privacy=0
       explicitly allows for that.
       <variablelist>
         <varlistentry>
+          <term><varname>802-1x.auth-timeout</varname></term>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>cdma.mtu</varname></term>
+        </varlistentry>
+        <varlistentry>
           <term><varname>connection.auth-retries</varname></term>
           <listitem><para>If left unspecified, the default value is 3 tries before failing the connection.
           </para></listitem>
@@ -675,6 +681,9 @@ ipv6.ip6-privacy=0
         </varlistentry>
         <varlistentry>
           <term><varname>ethernet.wake-on-lan</varname></term>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>gsm.mtu</varname></term>
         </varlistentry>
         <varlistentry>
           <term><varname>infiniband.mtu</varname></term>
@@ -769,6 +778,9 @@ ipv6.ip6-privacy=0
           <term><varname>wifi-sec.fils</varname></term>
           <listitem><para>If left unspecified, the default value
           "<literal>optional</literal>" will be used.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>wifi.wake-on-wlan</varname></term>
         </varlistentry>
       </variablelist>
     </para>
