@@ -178,6 +178,21 @@ int      nm_config_data_get_sriov_num_vfs (const NMConfigData *self, NMDevice *d
 
 NMGlobalDnsConfig *nm_config_data_get_global_dns_config (const NMConfigData *self);
 
+extern const char *__start_connection_defaults[];
+extern const char *__stop_connection_defaults[];
+
+#define NM_CON_DEFAULT_NOP(name) \
+	static const char *NM_UNIQ_T (connection_default, NM_UNIQ) \
+		_nm_used _nm_section ("connection_defaults") = "" name
+
+#define NM_CON_DEFAULT(name) \
+	({ \
+		static const char *__con_default_prop \
+			_nm_used _nm_section ("connection_defaults") = "" name; \
+		\
+		name; \
+	})
+
 char *nm_config_data_get_connection_default (const NMConfigData *self,
                                              const char *property,
                                              NMDevice *device);

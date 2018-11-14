@@ -1216,7 +1216,7 @@ wake_on_lan_enable (NMDevice *device)
 	}
 
 	wol = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                   "ethernet.wake-on-lan",
+	                                                   NM_CON_DEFAULT ("ethernet.wake-on-lan"),
 	                                                   device,
 	                                                   NM_SETTING_WIRED_WAKE_ON_LAN_NONE,
 	                                                   G_MAXINT32,

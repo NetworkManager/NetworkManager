@@ -1386,6 +1386,19 @@ nm_config_data_get_connection_default (const NMConfigData *self,
 
 	priv = NM_CONFIG_DATA_GET_PRIVATE (self);
 
+#if NM_MORE_ASSERTS > 10
+	{
+		const char **ptr;
+
+		for (ptr = __start_connection_defaults; ptr < __stop_connection_defaults; ptr++) {
+			if (nm_streq (property, *ptr))
+				break;
+		}
+
+		nm_assert (ptr < __stop_connection_defaults);
+	}
+#endif
+
 	_match_section_infos_lookup (&priv->connection_infos[0],
 	                             priv->keyfile,
 	                             property,
