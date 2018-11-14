@@ -41,6 +41,7 @@
 #define NM_DHCP_CLIENT_IFINDEX      "ifindex"
 #define NM_DHCP_CLIENT_INTERFACE    "iface"
 #define NM_DHCP_CLIENT_MULTI_IDX    "multi-idx"
+#define NM_DHCP_CLIENT_HOSTNAME     "hostname"
 #define NM_DHCP_CLIENT_ROUTE_METRIC "route-metric"
 #define NM_DHCP_CLIENT_ROUTE_TABLE  "route-table"
 #define NM_DHCP_CLIENT_TIMEOUT      "timeout"
@@ -143,7 +144,6 @@ gboolean nm_dhcp_client_get_use_fqdn (NMDhcpClient *self);
 gboolean nm_dhcp_client_start_ip4 (NMDhcpClient *self,
                                    GBytes *client_id,
                                    const char *dhcp_anycast_addr,
-                                   const char *hostname,
                                    const char *last_ip4_address,
                                    GError **error);
 
@@ -152,7 +152,6 @@ gboolean nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                                    gboolean enforce_duid,
                                    const char *dhcp_anycast_addr,
                                    const struct in6_addr *ll_addr,
-                                   const char *hostname,
                                    NMSettingIP6ConfigPrivacy privacy,
                                    guint needed_prefixes,
                                    GError **error);
