@@ -6,6 +6,7 @@
 #include "nm-default.h"
 
 #include "nm-enum-utils.h"
+#include "nm-str-buf.h"
 
 /*****************************************************************************/
 
@@ -142,11 +143,13 @@ _nm_utils_enum_to_str_full (GType type,
 		else
 			return g_strdup (enum_value->value_nick);
 	} else if (G_IS_FLAGS_CLASS (klass)) {
-		GFlagsValue *flags_value;
-		GString *str = g_string_sized_new (16);
 		unsigned uvalue = (unsigned) value;
+		GFlagsValue *flags_value;
+		NMStrBuf strbuf;
 
 		flags_separator = flags_separator ?: " ";
+
+		nm_str_buf_init (&strbuf, 16, FALSE);
 
 		for ( ; value_infos && value_infos->nick; value_infos++) {
 
@@ -160,9 +163,9 @@ _nm_utils_enum_to_str_full (GType type,
 					continue;
 			}
 
-			if (str->len)
-				g_string_append (str, flags_separator);
-			g_string_append (str, value_infos->nick);
+			if (strbuf.len)
+				nm_str_buf_append (&strbuf, flags_separator);
+			nm_str_buf_append (&strbuf, value_infos->nick);
 			uvalue &= ~((unsigned) value_infos->value);
 			if (uvalue == 0) {
 				/* we printed all flags. Done. */
@@ -172,20 +175,20 @@ _nm_utils_enum_to_str_full (GType type,
 
 		do {
 			flags_value = g_flags_get_first_value (G_FLAGS_CLASS (klass), uvalue);
-			if (str->len)
-				g_string_append (str, flags_separator);
+			if (strbuf.len)
+				nm_str_buf_append (&strbuf, flags_separator);
 			if (   !flags_value
 			    || !_enum_is_valid_flags_nick (flags_value->value_nick)) {
 				if (uvalue)
-					g_string_append_printf (str, "0x%x", uvalue);
+					nm_str_buf_append_printf (&strbuf, "0x%x", uvalue);
 				break;
 			}
-			g_string_append (str, flags_value->value_nick);
+			nm_str_buf_append (&strbuf, flags_value->value_nick);
 			uvalue &= ~flags_value->value;
 		} while (uvalue);
 
 flags_done:
-		return g_string_free (str, FALSE);
+		return nm_str_buf_finalize (&strbuf, NULL);
 	}
 
 	g_return_val_if_reached (NULL);
