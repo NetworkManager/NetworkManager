@@ -672,6 +672,8 @@ ipv6.ip6-privacy=0
       (see <link linkend='nm-settings'><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry></link> for details).
       A default value is only consulted if the corresponding per-connection value
       explicitly allows for that.
+      <!-- The following comment is used by check-config-options.sh, don't remove it. -->
+      <!-- start connection defaults -->
       <variablelist>
         <varlistentry>
           <term><varname>802-1x.auth-timeout</varname></term>
@@ -824,6 +826,8 @@ ipv6.ip6-privacy=0
           <term><varname>wifi.wake-on-wlan</varname></term>
         </varlistentry>
       </variablelist>
+      <!-- The following comment is used by check-config-options.sh, don't remove it. -->
+      <!-- end connection defaults -->
     </para>
     </refsect2>
 

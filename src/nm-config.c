@@ -848,6 +848,24 @@ check_config_key (const char *group, const char *key)
 {
 	const ConfigGroup *g;
 	const char *const *k;
+	const char **ptr;
+
+#if NM_MORE_ASSERTS > 10
+	{
+		static gboolean checked = FALSE;
+		const char **ptr1, **ptr2;
+
+		/* check for duplicate elements in the static list */
+
+		if (!checked) {
+			for (ptr1 = __start_connection_defaults; ptr1 < __stop_connection_defaults; ptr1++) {
+				for (ptr2 = ptr1 + 1; ptr2 < __stop_connection_defaults; ptr2++)
+					nm_assert (!nm_streq (*ptr1, *ptr2));
+			}
+			checked = TRUE;
+		}
+	}
+#endif
 
 	for (g = config_groups; g->group; g++) {
 		if (   (!g->is_prefix && nm_streq (group, g->group))
@@ -864,8 +882,11 @@ check_config_key (const char *group, const char *key)
 	}
 
 	if (g->is_connection) {
-		/* For now just accept everything */
-		return TRUE;
+		for (ptr = __start_connection_defaults; ptr < __stop_connection_defaults; ptr++) {
+			if (nm_streq (key, *ptr))
+				return TRUE;
+		}
+		return FALSE;
 	}
 
 	return FALSE;

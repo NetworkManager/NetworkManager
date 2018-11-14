@@ -34,10 +34,12 @@
 
 #define _nm_packed           __attribute__ ((packed))
 #define _nm_unused           __attribute__ ((unused))
+#define _nm_used             __attribute__ ((used))
 #define _nm_pure             __attribute__ ((pure))
 #define _nm_const            __attribute__ ((const))
 #define _nm_printf(a,b)      __attribute__ ((__format__ (__printf__, a, b)))
 #define _nm_align(s)         __attribute__ ((aligned (s)))
+#define _nm_section(s)       __attribute__ ((section (s)))
 #define _nm_alignof(type)    __alignof (type)
 #define _nm_alignas(type)    _nm_align (_nm_alignof (type))
 #define nm_auto(fcn)         __attribute__ ((cleanup(fcn)))

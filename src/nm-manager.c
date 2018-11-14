@@ -4110,7 +4110,7 @@ should_connect_slaves (NMConnection *connection, NMDevice *device)
 		goto out;
 
 	val = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                   "connection.autoconnect-slaves",
+	                                                   NM_CON_DEFAULT ("connection.autoconnect-slaves"),
 	                                                   device,
 	                                                   0, 1, -1);
 
