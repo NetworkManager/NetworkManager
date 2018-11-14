@@ -68,7 +68,9 @@
     replacement for <command>nm-applet</command> or other graphical clients.
     <command>nmcli</command> is used to create, display, edit, delete, activate,
     and deactivate network connections, as well as control and display network
-    device status.</para>
+    device status. See
+    <link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>
+    for ready to run nmcli examples.</para>
 
     <para>Typical uses include:</para>
     <itemizedlist>
