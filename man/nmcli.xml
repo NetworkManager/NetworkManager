@@ -836,7 +836,7 @@
           the 'autoconnect' flag set. Note that the deactivating connection profile is
           internally blocked from autoconnecting again. Hence it will not autoconnect
           until reboot or until the user performs an action that unblocks autoconnect,
-          like modifying the profile or explcitly activating it.</para>
+          like modifying the profile or explicitly activating it.</para>
 
           <para>In most cases you may want to use <command>device disconnect</command>
           command instead.</para>
