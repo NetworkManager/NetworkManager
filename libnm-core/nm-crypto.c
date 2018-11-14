@@ -879,12 +879,9 @@ nm_crypto_md5_hash (const guint8 *salt,
                     gsize buflen)
 {
 	nm_auto_free_checksum GChecksum *ctx = NULL;
-#define MD5_DIGEST_LEN 16
-	nm_auto_clear_static_secret_ptr const NMSecretPtr digest = NM_SECRET_PTR_STATIC (MD5_DIGEST_LEN);
+	nm_auto_clear_static_secret_ptr const NMSecretPtr digest = NM_SECRET_PTR_STATIC (NM_UTILS_CHECKSUM_LENGTH_MD5);
 	gsize bufidx = 0;
 	int i;
-
-	nm_assert (g_checksum_type_get_length (G_CHECKSUM_MD5) == MD5_DIGEST_LEN);
 
 	g_return_if_fail (password_len == 0 || password);
 	g_return_if_fail (buffer);
@@ -894,25 +891,21 @@ nm_crypto_md5_hash (const guint8 *salt,
 	ctx = g_checksum_new (G_CHECKSUM_MD5);
 
 	for (;;) {
-		gsize digest_len;
-
 		if (password_len > 0)
 			g_checksum_update (ctx, (const guchar *) password, password_len);
 		if (salt_len > 0)
 			g_checksum_update (ctx, (const guchar *) salt, salt_len);
 
-		digest_len = MD5_DIGEST_LEN;
-		g_checksum_get_digest (ctx, digest.bin, &digest_len);
-		nm_assert (digest_len == MD5_DIGEST_LEN);
+		nm_utils_checksum_get_digest_len (ctx, digest.bin, NM_UTILS_CHECKSUM_LENGTH_MD5);
 
-		for (i = 0; i < MD5_DIGEST_LEN; i++) {
+		for (i = 0; i < NM_UTILS_CHECKSUM_LENGTH_MD5; i++) {
 			if (bufidx >= buflen)
 				return;
 			buffer[bufidx++] = digest.bin[i];
 		}
 
 		g_checksum_reset (ctx);
-		g_checksum_update (ctx, digest.ptr, MD5_DIGEST_LEN);
+		g_checksum_update (ctx, digest.ptr, NM_UTILS_CHECKSUM_LENGTH_MD5);
 	}
 }
 

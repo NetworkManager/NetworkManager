@@ -37,7 +37,6 @@
 #include <linux/if_arp.h>
 #include <linux/rtnetlink.h>
 #include <linux/pkt_sched.h>
-#include <uuid/uuid.h>
 
 #include "nm-utils/nm-dedup-multi.h"
 #include "nm-utils/nm-random-utils.h"
@@ -1264,6 +1263,8 @@ _get_stable_id (NMDevice *self,
 		gs_free char *generated = NULL;
 		NMUtilsStableType stable_type;
 		NMSettingConnection *s_con;
+		gboolean hwaddr_is_fake;
+		const char *hwaddr;
 		const char *stable_id;
 		const char *uuid;
 
@@ -1280,9 +1281,15 @@ _get_stable_id (NMDevice *self,
 
 		uuid = nm_connection_get_uuid (connection);
 
+		/* the cloned-mac-address may be generated based on the stable-id.
+		 * Thus, at this point, we can only use the permanant MAC address
+		 * as seed. */
+		hwaddr = nm_device_get_permanent_hw_address_full (self, TRUE, &hwaddr_is_fake);
+
 		stable_type = nm_utils_stable_id_parse (stable_id,
 		                                        nm_device_get_ip_iface (self),
-		                                        NULL,
+		                                        !hwaddr_is_fake ? hwaddr : NULL,
+		                                        nm_utils_get_boot_id_str (),
 		                                        uuid,
 		                                        &generated);
 
@@ -7533,12 +7540,17 @@ dhcp4_get_client_id (NMDevice *self,
 		goto out_good;
 	}
 
+	if (nm_streq (client_id, "duid")) {
+		result = nm_utils_dhcp_client_id_systemd_node_specific (TRUE,
+		                                                        nm_device_get_ip_iface (self));
+		goto out_good;
+	}
+
 	if (nm_streq (client_id, "stable")) {
+		nm_auto_free_checksum GChecksum *sum = NULL;
+		guint8 digest[NM_UTILS_CHECKSUM_LENGTH_SHA1];
 		NMUtilsStableType stable_type;
 		const char *stable_id;
-		GChecksum *sum;
-		guint8 buf[20];
-		gsize buf_size;
 		guint32 salted_header;
 		const guint8 *secret_key;
 		gsize secret_key_len;
@@ -7552,20 +7564,14 @@ dhcp4_get_client_id (NMDevice *self,
 		nm_utils_secret_key_get (&secret_key, &secret_key_len);
 
 		sum = g_checksum_new (G_CHECKSUM_SHA1);
-
 		g_checksum_update (sum, (const guchar *) &salted_header, sizeof (salted_header));
 		g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id) + 1);
 		g_checksum_update (sum, (const guchar *) secret_key, secret_key_len);
-
-		buf_size = sizeof (buf);
-		g_checksum_get_digest (sum, buf, &buf_size);
-		nm_assert (buf_size == sizeof (buf));
-
-		g_checksum_free (sum);
+		nm_utils_checksum_get_digest (sum, digest);
 
 		client_id_buf = g_malloc (1 + 15);
 		client_id_buf[0] = 0;
-		memcpy (&client_id_buf[1], buf, 15);
+		memcpy (&client_id_buf[1], digest, 15);
 		result = g_bytes_new_take (client_id_buf, 1 + 15);
 		goto out_good;
 	}
@@ -8187,6 +8193,8 @@ dhcp6_prefix_delegated (NMDhcpClient *client,
 	g_signal_emit (self, signals[IP6_PREFIX_DELEGATED], 0, prefix);
 }
 
+/*****************************************************************************/
+
 /* RFC 3315 defines the epoch for the DUID-LLT time field on Jan 1st 2000. */
 #define EPOCH_DATETIME_200001010000  946684800
 
@@ -8226,14 +8234,12 @@ generate_duid_ll (const guint8 *hwaddr /* ETH_ALEN bytes */)
 }
 
 static GBytes *
-generate_duid_uuid (guint8 *data, gsize data_len)
+generate_duid_uuid (const NMUuid *uuid)
 {
-	const guint16 duid_type = g_htons (4);
-	const int DUID_SIZE = 18;
+	const guint16 duid_type = htons (4);
 	guint8 *duid_buffer;
 
-	nm_assert (data);
-	nm_assert (data_len >= 16);
+	nm_assert (uuid);
 
 	/* Generate a DHCP Unique Identifier for DHCPv6 using the
 	 * DUID-UUID method (see RFC 6355 section 4).  Format is:
@@ -8241,44 +8247,47 @@ generate_duid_uuid (guint8 *data, gsize data_len)
 	 * u16: type (DUID-UUID = 4)
 	 * u8[16]: UUID bytes
 	 */
-	duid_buffer = g_malloc (DUID_SIZE);
-
 	G_STATIC_ASSERT_EXPR (sizeof (duid_type) == 2);
+	G_STATIC_ASSERT_EXPR (sizeof (*uuid) == 16);
+	duid_buffer = g_malloc (18);
 	memcpy (&duid_buffer[0], &duid_type, 2);
-
-	/* UUID is 128 bits, we just take the first 128 bits
-	 * (regardless of data size) as the DUID-UUID.
-	 */
-	memcpy (&duid_buffer[2], data, 16);
-
-	return g_bytes_new_take (duid_buffer, DUID_SIZE);
+	memcpy (&duid_buffer[2], uuid, 16);
+	return g_bytes_new_take (duid_buffer, 18);
 }
 
 static GBytes *
 generate_duid_from_machine_id (void)
 {
-	gs_free const char *machine_id_s = NULL;
-	uuid_t uuid;
-	GChecksum *sum;
-	guint8 sha256_digest[32];
-	gsize len = sizeof (sha256_digest);
-	static GBytes *global_duid = NULL;
+	static GBytes *volatile global_duid = NULL;
+	GBytes *p;
 
-	if (global_duid)
-		return g_bytes_ref (global_duid);
+again:
+	p = g_atomic_pointer_get (&global_duid);
+	if (G_UNLIKELY (!p)) {
+		nm_auto_free_checksum GChecksum *sum = NULL;
+		const NMUuid *machine_id;
+		union {
+			guint8 sha256[NM_UTILS_CHECKSUM_LENGTH_SHA256];
+			NMUuid uuid;
+		} digest;
 
-	machine_id_s = nm_utils_machine_id_read ();
-	if (!nm_utils_machine_id_parse (machine_id_s, uuid))
-		return NULL;
+		machine_id = nm_utils_machine_id_bin ();
 
-	/* Hash the machine ID so it's not leaked to the network */
-	sum = g_checksum_new (G_CHECKSUM_SHA256);
-	g_checksum_update (sum, (const guchar *) &uuid, sizeof (uuid));
-	g_checksum_get_digest (sum, sha256_digest, &len);
-	g_checksum_free (sum);
+		/* Hash the machine ID so it's not leaked to the network */
+		sum = g_checksum_new (G_CHECKSUM_SHA256);
+		g_checksum_update (sum, (const guchar *) machine_id, sizeof (*machine_id));
+		nm_utils_checksum_get_digest (sum, digest.sha256);
 
-	global_duid = generate_duid_uuid (sha256_digest, len);
-	return g_bytes_ref (global_duid);
+		G_STATIC_ASSERT_EXPR (sizeof (digest.sha256) > sizeof (digest.uuid));
+		p = generate_duid_uuid (&digest.uuid);
+
+		if (!g_atomic_pointer_compare_and_exchange (&global_duid, NULL, p)) {
+			g_bytes_unref (p);
+			goto again;
+		}
+	}
+
+	return g_bytes_ref (p);
 }
 
 static GBytes *
@@ -8289,8 +8298,6 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 	gs_free char *duid_default = NULL;
 	const char *duid_error;
 	GBytes *duid_out;
-	guint8 sha256_digest[32];
-	gsize len = sizeof (sha256_digest);
 	gboolean duid_enforce = TRUE;
 	gs_free char *logstr1 = NULL;
 
@@ -8308,10 +8315,6 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 	if (nm_streq (duid, "lease")) {
 		duid_enforce = FALSE;
 		duid_out = generate_duid_from_machine_id ();
-		if (!duid_out) {
-			duid_error = "failure to read machine-id";
-			goto out_fail;
-		}
 		goto out_good;
 	}
 
@@ -8351,12 +8354,21 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 	}
 
 	if (NM_IN_STRSET (duid, "stable-ll", "stable-llt", "stable-uuid")) {
+		nm_auto_free_checksum GChecksum *sum = NULL;
 		NMUtilsStableType stable_type;
 		const char *stable_id = NULL;
 		guint32 salted_header;
-		GChecksum *sum;
 		const guint8 *secret_key;
 		gsize secret_key_len;
+		union {
+			guint8 sha256[NM_UTILS_CHECKSUM_LENGTH_SHA256];
+			guint8 hwaddr[ETH_ALEN];
+			NMUuid uuid;
+			struct _nm_packed {
+				guint8 hwaddr[ETH_ALEN];
+				guint32 timestamp;
+			} llt;
+		} digest;
 
 		stable_id = _get_stable_id (self, connection, &stable_type);
 		if (!stable_id)
@@ -8367,16 +8379,15 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 		nm_utils_secret_key_get (&secret_key, &secret_key_len);
 
 		sum = g_checksum_new (G_CHECKSUM_SHA256);
-
 		g_checksum_update (sum, (const guchar *) &salted_header, sizeof (salted_header));
 		g_checksum_update (sum, (const guchar *) stable_id, -1);
 		g_checksum_update (sum, (const guchar *) secret_key, secret_key_len);
+		nm_utils_checksum_get_digest (sum, digest.sha256);
 
-		g_checksum_get_digest (sum, sha256_digest, &len);
-		g_checksum_free (sum);
+		G_STATIC_ASSERT_EXPR (sizeof (digest) == sizeof (digest.sha256));
 
 		if (nm_streq (duid, "stable-ll")) {
-			duid_out = generate_duid_ll (sha256_digest);
+			duid_out = generate_duid_ll (digest.hwaddr);
 		} else if (nm_streq (duid, "stable-llt")) {
 			gint64 time;
 
@@ -8394,12 +8405,12 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 			/* don't use too old timestamps. They cannot be expressed in DUID-LLT and
 			 * would all be truncated to zero. */
 			time = NM_MAX (time, EPOCH_DATETIME_200001010000 + EPOCH_DATETIME_THREE_YEARS);
-			time -= (unaligned_read_be32 (&sha256_digest[ETH_ALEN]) % EPOCH_DATETIME_THREE_YEARS);
+			time -= unaligned_read_be32 (&digest.llt.timestamp) % EPOCH_DATETIME_THREE_YEARS;
 
-			duid_out = generate_duid_llt (sha256_digest, time);
+			duid_out = generate_duid_llt (digest.llt.hwaddr, time);
 		} else {
 			nm_assert (nm_streq (duid, "stable-uuid"));
-			duid_out = generate_duid_uuid (sha256_digest, len);
+			duid_out = generate_duid_uuid (&digest.uuid);
 		}
 
 		goto out_good;
@@ -8410,14 +8421,14 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 out_fail:
 	nm_assert (!duid_out && duid_error);
 	{
-		guint8 uuid[16];
+		NMUuid uuid;
 
 		_LOGW (LOGD_IP6 | LOGD_DHCP6,
 		       "ipv6.dhcp-duid: failure to generate %s DUID: %s. Fallback to random DUID-UUID.",
 		       duid, duid_error);
 
-		nm_utils_random_bytes (uuid, sizeof (uuid));
-		duid_out = generate_duid_uuid (uuid, sizeof (uuid));
+		nm_utils_random_bytes (&uuid, sizeof (uuid));
+		duid_out = generate_duid_uuid (&uuid);
 	}
 
 out_good:
@@ -8431,6 +8442,8 @@ out_good:
 	NM_SET_OUT (out_enforce, duid_enforce);
 	return duid_out;
 }
+
+/*****************************************************************************/
 
 static gboolean
 dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)

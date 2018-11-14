@@ -233,29 +233,6 @@ read_client_id (const char *str)
 	return nm_utils_hexstr2bin (s);
 }
 
-GBytes *
-nm_dhcp_dhclient_get_client_id_from_config_file (const char *path)
-{
-	gs_free char *contents = NULL;
-	gs_strfreev char **lines = NULL;
-	char **line;
-
-	g_return_val_if_fail (path != NULL, NULL);
-
-	if (!g_file_test (path, G_FILE_TEST_EXISTS))
-		return NULL;
-
-	if (!g_file_get_contents (path, &contents, NULL, NULL))
-		return NULL;
-
-	lines = g_strsplit_set (contents, "\n\r", 0);
-	for (line = lines; lines && *line; line++) {
-		if (!strncmp (*line, CLIENTID_TAG, NM_STRLEN (CLIENTID_TAG)))
-			return read_client_id (*line);
-	}
-	return NULL;
-}
-
 static gboolean
 read_interface (const char *line, char *interface, guint size)
 {
@@ -570,6 +547,7 @@ error:
 
 #define DUID_PREFIX "default-duid \""
 
+/* Beware: @error may be unset even if the function returns %NULL. */
 GBytes *
 nm_dhcp_dhclient_read_duid (const char *leasefile, GError **error)
 {
@@ -606,9 +584,10 @@ nm_dhcp_dhclient_read_duid (const char *leasefile, GError **error)
 
 gboolean
 nm_dhcp_dhclient_save_duid (const char *leasefile,
-                            const char *escaped_duid,
+                            GBytes *duid,
                             GError **error)
 {
+	gs_free char *escaped_duid = NULL;
 	gs_strfreev char **lines = NULL;
 	char **iter, *l;
 	GString *s;
@@ -616,6 +595,14 @@ nm_dhcp_dhclient_save_duid (const char *leasefile,
 	gsize len = 0;
 
 	g_return_val_if_fail (leasefile != NULL, FALSE);
+
+	if (!duid) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN,
+		                            "missing duid");
+		g_return_val_if_reached (FALSE);
+	}
+
+	escaped_duid = nm_dhcp_dhclient_escape_duid (duid);
 	g_return_val_if_fail (escaped_duid != NULL, FALSE);
 
 	if (g_file_test (leasefile, G_FILE_TEST_EXISTS)) {

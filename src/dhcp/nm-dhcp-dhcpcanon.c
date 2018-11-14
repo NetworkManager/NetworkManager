@@ -193,20 +193,20 @@ ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
            const struct in6_addr *ll_addr,
            NMSettingIP6ConfigPrivacy privacy,
-           GBytes *duid,
            guint needed_prefixes,
            GError **error)
 {
 	nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "dhcpcanon plugin does not support IPv6");
 	return FALSE;
 }
+
 static void
-stop (NMDhcpClient *client, gboolean release, GBytes *duid)
+stop (NMDhcpClient *client, gboolean release)
 {
 	NMDhcpDhcpcanon *self = NM_DHCP_DHCPCANON (client);
 	NMDhcpDhcpcanonPrivate *priv = NM_DHCP_DHCPCANON_GET_PRIVATE (self);
 
-	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhcpcanon_parent_class)->stop (client, release, duid);
+	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhcpcanon_parent_class)->stop (client, release);
 
 	if (priv->pid_file) {
 		if (remove (priv->pid_file) == -1)
@@ -214,18 +214,6 @@ stop (NMDhcpClient *client, gboolean release, GBytes *duid)
 		g_free (priv->pid_file);
 		priv->pid_file = NULL;
 	}
-}
-
-static void
-state_changed (NMDhcpClient *client,
-               NMDhcpState state,
-               GObject *ip_config,
-               GHashTable *options)
-{
-	if (nm_dhcp_client_get_client_id (client))
-		return;
-	if (state != NM_DHCP_STATE_BOUND)
-		return;
 }
 
 /*****************************************************************************/
@@ -270,7 +258,6 @@ nm_dhcp_dhcpcanon_class_init (NMDhcpDhcpcanonClass *dhcpcanon_class)
 	client_class->ip4_start = ip4_start;
 	client_class->ip6_start = ip6_start;
 	client_class->stop = stop;
-	client_class->state_changed = state_changed;
 }
 
 const NMDhcpClientFactory _nm_dhcp_client_factory_dhcpcanon = {

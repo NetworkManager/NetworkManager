@@ -55,7 +55,7 @@
 #include "nm-dns-systemd-resolved.h"
 #include "nm-dns-unbound.h"
 
-#define HASH_LEN 20
+#define HASH_LEN   NM_UTILS_CHECKSUM_LENGTH_SHA1
 
 #ifndef RESOLVCONF_PATH
 #define RESOLVCONF_PATH "/sbin/resolvconf"
@@ -994,12 +994,11 @@ update_resolv_conf (NMDnsManager *self,
 static void
 compute_hash (NMDnsManager *self, const NMGlobalDnsConfig *global, guint8 buffer[HASH_LEN])
 {
-	GChecksum *sum;
-	gsize len = HASH_LEN;
+	nm_auto_free_checksum GChecksum *sum = NULL;
 	NMDnsIPConfigData *ip_data;
 
 	sum = g_checksum_new (G_CHECKSUM_SHA1);
-	nm_assert (len == g_checksum_type_get_length (G_CHECKSUM_SHA1));
+	nm_assert (HASH_LEN == g_checksum_type_get_length (G_CHECKSUM_SHA1));
 
 	if (global)
 		nm_global_dns_config_update_checksum (global, sum);
@@ -1013,8 +1012,7 @@ compute_hash (NMDnsManager *self, const NMGlobalDnsConfig *global, guint8 buffer
 			nm_ip_config_hash (ip_data->ip_config, sum, TRUE);
 	}
 
-	g_checksum_get_digest (sum, buffer, &len);
-	g_checksum_free (sum);
+	nm_utils_checksum_get_digest_len (sum, buffer, HASH_LEN);
 }
 
 static gboolean

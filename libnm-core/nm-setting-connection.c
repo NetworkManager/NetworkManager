@@ -1626,11 +1626,11 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * name is included, so that different interfaces yield different addresses.
 	 *
 	 * The '$' character is treated special to perform dynamic substitutions
-	 * at runtime. Currently supported are "${CONNECTION}", "${DEVICE}",
+	 * at runtime. Currently supported are "${CONNECTION}", "${DEVICE}", "${MAC}",
 	 * "${BOOT}", "${RANDOM}".
 	 * These effectively create unique IDs per-connection, per-device, per-boot,
 	 * or every time. Note that "${DEVICE}" corresponds the the interface name of the
-	 * device.
+	 * device and "${MAC}" is the permanent MAC address of the device.
 	 * Any unrecognized patterns following '$' are treated verbatim, however
 	 * are reserved for future use. You are thus advised to avoid '$' or
 	 * escape it as "$$".
