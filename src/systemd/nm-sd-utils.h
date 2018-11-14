@@ -29,5 +29,10 @@ const char *nm_sd_utils_path_startswith (const char *path, const char *prefix);
 
 /*****************************************************************************/
 
-#endif /* __NM_SD_UTILS_H__ */
+struct _NMUuid;
 
+struct _NMUuid *nm_sd_utils_id128_get_machine (struct _NMUuid *out_uuid);
+
+/*****************************************************************************/
+
+#endif /* __NM_SD_UTILS_H__ */

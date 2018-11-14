@@ -656,31 +656,28 @@ add_string_val (NMSupplicantConfig *self,
 
 static void
 wep128_passphrase_hash (const char *input,
-                        size_t input_len,
-                        guint8 *out_digest,
-                        size_t *out_digest_len)
+                        gsize input_len,
+                        guint8 *digest /* 13 bytes */)
 {
-	GChecksum *sum;
+	nm_auto_free_checksum GChecksum *sum = NULL;
+	guint8 md5[NM_UTILS_CHECKSUM_LENGTH_MD5];
 	guint8 data[64];
 	int i;
 
-	g_return_if_fail (out_digest != NULL);
-	g_return_if_fail (out_digest_len != NULL);
-	g_return_if_fail (*out_digest_len >= 16);
+	nm_assert (input);
+	nm_assert (input_len);
+	nm_assert (digest);
 
 	/* Get at least 64 bytes by repeating the passphrase into the buffer */
 	for (i = 0; i < sizeof (data); i++)
 		data[i] = input[i % input_len];
 
 	sum = g_checksum_new (G_CHECKSUM_MD5);
-	g_assert (sum);
 	g_checksum_update (sum, data, sizeof (data));
-	g_checksum_get_digest (sum, out_digest, out_digest_len);
-	g_checksum_free (sum);
+	nm_utils_checksum_get_digest (sum, md5);
 
-	g_assert (*out_digest_len == 16);
 	/* WEP104 keys are 13 bytes in length (26 hex characters) */
-	*out_digest_len = 13;
+	memcpy (digest, md5, 13);
 }
 
 static gboolean
@@ -690,9 +687,10 @@ add_wep_key (NMSupplicantConfig *self,
              NMWepKeyType wep_type,
              GError **error)
 {
-	size_t key_len = key ? strlen (key) : 0;
+	gsize key_len;
 
-	if (!key || !key_len)
+	if (   !key
+	    || (key_len = strlen (key)) == 0)
 		return TRUE;
 
 	if (wep_type == NM_WEP_KEY_TYPE_UNKNOWN) {
@@ -737,11 +735,10 @@ add_wep_key (NMSupplicantConfig *self,
 			return FALSE;
 		}
 	} else if (wep_type == NM_WEP_KEY_TYPE_PASSPHRASE) {
-		guint8 digest[16];
-		size_t digest_len = sizeof (digest);
+		guint8 digest[13];
 
-		wep128_passphrase_hash (key, key_len, digest, &digest_len);
-		if (!nm_supplicant_config_add_option (self, name, (const char *) digest, digest_len, "<hidden>", error))
+		wep128_passphrase_hash (key, key_len, digest);
+		if (!nm_supplicant_config_add_option (self, name, (const char *) digest, sizeof (digest), "<hidden>", error))
 			return FALSE;
 	}
 

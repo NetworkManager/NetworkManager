@@ -380,6 +380,46 @@ char **_nm_utils_strv_cleanup (char **strv,
 
 /*****************************************************************************/
 
+#define NM_UTILS_CHECKSUM_LENGTH_MD5          16
+#define NM_UTILS_CHECKSUM_LENGTH_SHA1         20
+#define NM_UTILS_CHECKSUM_LENGTH_SHA256       32
+
+#define nm_utils_checksum_get_digest(sum, arr) \
+	G_STMT_START { \
+		GChecksum *const _sum = (sum); \
+		gsize _len; \
+		\
+		G_STATIC_ASSERT_EXPR (   sizeof (arr) == NM_UTILS_CHECKSUM_LENGTH_MD5 \
+		                      || sizeof (arr) == NM_UTILS_CHECKSUM_LENGTH_SHA1 \
+		                      || sizeof (arr) == NM_UTILS_CHECKSUM_LENGTH_SHA256); \
+		G_STATIC_ASSERT_EXPR (sizeof (arr) == G_N_ELEMENTS (arr)); \
+		\
+		nm_assert (_sum); \
+		\
+		_len = G_N_ELEMENTS (arr); \
+		\
+		g_checksum_get_digest (_sum, (arr), &_len); \
+		nm_assert (_len == G_N_ELEMENTS (arr)); \
+	} G_STMT_END
+
+#define nm_utils_checksum_get_digest_len(sum, buf, len) \
+	G_STMT_START { \
+		GChecksum *const _sum = (sum); \
+		const gsize _len0 = (len); \
+		gsize _len; \
+		\
+		nm_assert (NM_IN_SET (_len0, NM_UTILS_CHECKSUM_LENGTH_MD5, \
+		                             NM_UTILS_CHECKSUM_LENGTH_SHA1, \
+		                             NM_UTILS_CHECKSUM_LENGTH_SHA256)); \
+		nm_assert (_sum); \
+		\
+		_len = _len0; \
+		g_checksum_get_digest (_sum, (buf), &_len); \
+		nm_assert (_len == _len0); \
+	} G_STMT_END
+
+/*****************************************************************************/
+
 guint32 _nm_utils_ip4_prefix_to_netmask (guint32 prefix);
 guint32 _nm_utils_ip4_get_default_prefix (guint32 ip);
 

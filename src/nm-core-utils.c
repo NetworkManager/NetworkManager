@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <resolv.h>
+#include <byteswap.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
@@ -39,6 +40,7 @@
 
 #include "nm-utils/nm-random-utils.h"
 #include "nm-utils/nm-io-utils.h"
+#include "nm-utils/unaligned.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-setting-connection.h"
@@ -52,6 +54,17 @@
 #endif
 
 G_STATIC_ASSERT (sizeof (NMUtilsTestFlags) <= sizeof (int));
+
+/* we read _nm_utils_testing without memory barrier. This is thread-safe,
+ * because the static variable is initialized to zero, and only reset
+ * once to a non-zero value (via g_atomic_int_compare_and_exchange()).
+ *
+ * Since there is only one integer that contains the data, there is no
+ * caching problem reading this (atomic int) variable without
+ * synchronization/memory-barrier. Contrary to a double-checked locking,
+ * where one needs a memory barrier to read the variable and ensure
+ * that also the related data is coherent in cache. Here there is no
+ * related data. */
 static int _nm_utils_testing = 0;
 
 gboolean
@@ -70,6 +83,7 @@ nm_utils_get_testing ()
 {
 	NMUtilsTestFlags flags;
 
+again:
 	flags = (NMUtilsTestFlags) _nm_utils_testing;
 	if (flags != NM_UTILS_TEST_NONE) {
 		/* Flags already initialized. Return them. */
@@ -82,12 +96,11 @@ nm_utils_get_testing ()
 	if (g_test_initialized ())
 		flags |= _NM_UTILS_TEST_GENERAL;
 
-	if (g_atomic_int_compare_and_exchange (&_nm_utils_testing, 0, (int) flags)) {
-		/* Done. We set it. */
-		return flags & NM_UTILS_TEST_ALL;
-	}
-	/* It changed in the meantime (??). Re-read the value. */
-	return ((NMUtilsTestFlags) _nm_utils_testing) & NM_UTILS_TEST_ALL;
+	g_atomic_int_compare_and_exchange (&_nm_utils_testing, 0, (int) flags);
+
+	/* regardless of whether we won the race of initializing _nm_utils_testing,
+	 * go back and read the value again. It must be non-zero by now. */
+	goto again;
 }
 
 void
@@ -2308,60 +2321,153 @@ nm_utils_is_specific_hostname (const char *name)
 
 /*****************************************************************************/
 
-gboolean
-nm_utils_machine_id_parse (const char *id_str, /*uuid_t*/ guchar *out_uuid)
+typedef struct {
+	NMUuid bin;
+	char _nul_sentinel; /* just for safety, if somebody accidentally uses the binary in a string context. */
+
+	/* depending on whether the string is packed or not (with/without hyphens),
+	 * it's 32 or 36 characters long (plus the trailing NUL).
+	 *
+	 * The difference is that boot-id is a valid RFC 4211 UUID and represented
+	 * as a 36 ascii string (with hyphens). The machine-id technically is not
+	 * a UUID, but just a 32 byte sequence of hexchars. */
+	char str[37];
+	bool is_fake;
+} UuidData;
+
+static UuidData *
+_uuid_data_init (UuidData *uuid_data,
+                 gboolean packed,
+                 gboolean is_fake,
+                 const NMUuid *uuid)
 {
-	int i;
-	guint8 v0, v1;
+	nm_assert (uuid_data);
+	nm_assert (uuid);
 
-	if (!id_str)
-		return FALSE;
-
-	for (i = 0; i < 32; i++) {
-		if (!g_ascii_isxdigit (id_str[i]))
-			return FALSE;
+	uuid_data->bin = *uuid;
+	uuid_data->_nul_sentinel = '\0';
+	uuid_data->is_fake = is_fake;
+	if (packed) {
+		G_STATIC_ASSERT_EXPR (sizeof (uuid_data->str) >= (sizeof (*uuid) * 2 + 1));
+		_nm_utils_bin2hexstr_full (uuid,
+		                           sizeof (*uuid),
+		                           '\0',
+		                           FALSE,
+		                           uuid_data->str);
+	} else {
+		G_STATIC_ASSERT_EXPR (sizeof (uuid_data->str) >= 37);
+		_nm_utils_uuid_unparse (uuid, uuid_data->str);
 	}
-	if (id_str[i] != '\0')
-		return FALSE;
-
-	if (out_uuid) {
-		for (i = 0; i < 16; i++) {
-			v0 = g_ascii_xdigit_value (*(id_str++));
-			v1 = g_ascii_xdigit_value (*(id_str++));
-			out_uuid[i] = (v0 << 4) + v1;
-		}
-	}
-	return TRUE;
+	return uuid_data;
 }
 
-char *
-nm_utils_machine_id_read (void)
+/*****************************************************************************/
+
+static const UuidData *
+_machine_id_get (void)
 {
-	gs_free char *contents = NULL;
-	int i;
+	static const UuidData *volatile p_uuid_data;
+	const UuidData *d;
 
-	/* Get the machine ID from /etc/machine-id; it's always in /etc no matter
-	 * where our configured SYSCONFDIR is.  Alternatively, it might be in
-	 * LOCALSTATEDIR /lib/dbus/machine-id.
-	 */
-	if (   !g_file_get_contents ("/etc/machine-id", &contents, NULL, NULL)
-	    && !g_file_get_contents (LOCALSTATEDIR "/lib/dbus/machine-id", &contents, NULL, NULL))
-		return NULL;
+again:
+	d = g_atomic_pointer_get (&p_uuid_data);
+	if (G_UNLIKELY (!d)) {
+		static gsize lock;
+		static UuidData uuid_data;
+		gs_free char *content = NULL;
+		gboolean is_fake = TRUE;
+		const char *fake_type = NULL;
+		NMUuid uuid;
 
-	contents = g_strstrip (contents);
-
-	for (i = 0; i < 32; i++) {
-		if (!g_ascii_isxdigit (contents[i]))
-			return NULL;
-		if (contents[i] >= 'A' && contents[i] <= 'F') {
-			/* canonicalize to lower-case */
-			contents[i] = 'a' + (contents[i] - 'A');
+		/* Get the machine ID from /etc/machine-id; it's always in /etc no matter
+		 * where our configured SYSCONFDIR is.  Alternatively, it might be in
+		 * LOCALSTATEDIR /lib/dbus/machine-id.
+		 */
+		if (   nm_utils_file_get_contents (-1, "/etc/machine-id", 100*1024, 0, &content, NULL, NULL) >= 0
+		    || nm_utils_file_get_contents (-1, LOCALSTATEDIR"/lib/dbus/machine-id", 100*1024, 0, &content, NULL, NULL) >= 0) {
+			g_strstrip (content);
+			if (_nm_utils_hexstr2bin_full (content,
+			                               FALSE,
+			                               FALSE,
+			                               NULL,
+			                               16,
+			                               (guint8 *) &uuid,
+			                               sizeof (uuid),
+			                               NULL)) {
+				if (!nm_utils_uuid_is_null (&uuid)) {
+					/* an all-zero machine-id is not valid. */
+					is_fake = FALSE;
+				}
+			}
 		}
-	}
-	if (contents[i] != '\0')
-		return NULL;
 
-	return g_steal_pointer (&contents);
+		if (is_fake) {
+			const guint8 *seed_bin;
+			const char *hash_seed;
+			gsize seed_len;
+
+			if (nm_utils_secret_key_get (&seed_bin, &seed_len)) {
+				/* we have no valid machine-id. Generate a fake one by hashing
+				 * the secret-key. This key is commonly persisted, so it should be
+				 * stable accross reboots (despite having a broken system without
+				 * proper machine-id). */
+				fake_type = "secret-key";
+				hash_seed = "ab085f06-b629-46d1-a553-84eeba5683b6";
+			} else {
+				/* the secret-key is not valid/persistent either. That happens when we fail
+				 * to read/write the secret-key to disk. Fallback to boot-id. The boot-id
+				 * itself may be fake and randomly generated ad-hoc, but that is as best
+				 * as it gets.  */
+				seed_bin = (const guint8 *) nm_utils_get_boot_id_bin ();
+				seed_len = sizeof (NMUuid);
+				fake_type = "boot-id";
+				hash_seed = "7ff0c8f5-5399-4901-ab63-61bf594abe8b";
+			}
+
+			/* the fake machine-id is based on secret-key/boot-id, but we hash it
+			 * again, so that they are not literally the same. */
+			nm_utils_uuid_generate_from_string_bin (&uuid,
+			                                        (const char *) seed_bin,
+			                                        seed_len,
+			                                        NM_UTILS_UUID_TYPE_VERSION5,
+			                                        (gpointer) hash_seed);
+		}
+
+		if (!g_once_init_enter (&lock))
+			goto again;
+
+		d = _uuid_data_init (&uuid_data, TRUE, is_fake, &uuid);
+		g_atomic_pointer_set (&p_uuid_data, d);
+		g_once_init_leave (&lock, 1);
+
+		if (is_fake) {
+			nm_log_err (LOGD_CORE,
+			            "/etc/machine-id: no valid machine-id. Use fake one based on %s: %s",
+			            fake_type,
+			            d->str);
+		} else
+			nm_log_dbg (LOGD_CORE, "/etc/machine-id: %s", d->str);
+	}
+
+	return d;
+}
+
+const char *
+nm_utils_machine_id_str (void)
+{
+	return _machine_id_get ()->str;
+}
+
+const NMUuid *
+nm_utils_machine_id_bin (void)
+{
+	return &_machine_id_get ()->bin;
+}
+
+gboolean
+nm_utils_machine_id_is_fake (void)
+{
+	return _machine_id_get ()->is_fake;
 }
 
 /*****************************************************************************/
@@ -2407,6 +2513,12 @@ _secret_key_read (guint8 **out_secret_key,
 		goto out;
 	}
 
+	if (nm_utils_get_testing ()) {
+		/* for test code, we don't write the generated secret-key to disk. */
+		success = FALSE;
+		goto out;
+	}
+
 	if (!nm_utils_file_set_contents (NMSTATEDIR "/secret_key", (char *) secret_key, key_len, 0077, &error)) {
 		nm_log_warn (LOGD_CORE, "secret-key: failure to persist secret key in \"%s\" (%s) (use non-persistent key)",
 		             NMSTATEDIR "/secret_key", error->message);
@@ -2432,9 +2544,10 @@ gboolean
 nm_utils_secret_key_get (const guint8 **out_secret_key,
                          gsize *out_key_len)
 {
-	static volatile const SecretKeyData *secret_key_static;
+	static const SecretKeyData *volatile secret_key_static;
 	const SecretKeyData *secret_key;
 
+again:
 	secret_key = g_atomic_pointer_get (&secret_key_static);
 	if (G_UNLIKELY (!secret_key)) {
 		static gsize init_value = 0;
@@ -2444,20 +2557,15 @@ nm_utils_secret_key_get (const guint8 **out_secret_key,
 		gsize tmp_key_len;
 
 		tmp_success = _secret_key_read (&tmp_secret_key, &tmp_key_len);
-		if (g_once_init_enter (&init_value)) {
-			secret_key_data.secret_key = tmp_secret_key;
-			secret_key_data.key_len = tmp_key_len;
-			secret_key_data.is_good = tmp_success;
+		if (!g_once_init_enter (&init_value))
+			goto again;
 
-			if (g_atomic_pointer_compare_and_exchange (&secret_key_static, NULL, &secret_key_data)) {
-				g_steal_pointer (&tmp_secret_key);
-				secret_key = &secret_key_data;
-			}
-
-			g_once_init_leave (&init_value, 1);
-		}
-		if (!secret_key)
-			secret_key = g_atomic_pointer_get (&secret_key_static);
+		secret_key_data.secret_key = g_steal_pointer (&tmp_secret_key);
+		secret_key_data.key_len = tmp_key_len;
+		secret_key_data.is_good = tmp_success;
+		secret_key = &secret_key_data;
+		g_atomic_pointer_set (&secret_key_static, secret_key);
+		g_once_init_leave (&init_value, 1);
 	}
 
 	*out_secret_key = secret_key->secret_key;
@@ -2483,34 +2591,52 @@ nm_utils_secret_key_get_timestamp (void)
 
 /*****************************************************************************/
 
-const char *
-nm_utils_get_boot_id (void)
+static const UuidData *
+_boot_id_get (void)
 {
-	static const char *boot_id;
+	static const UuidData *volatile p_boot_id;
+	const UuidData *d;
 
-	if (G_UNLIKELY (!boot_id)) {
+again:
+	d = g_atomic_pointer_get (&p_boot_id);
+	if (G_UNLIKELY (!d)) {
+		static gsize lock;
+		static UuidData boot_id;
 		gs_free char *contents = NULL;
+		NMUuid uuid;
+		gboolean is_fake = FALSE;
 
 		nm_utils_file_get_contents (-1, "/proc/sys/kernel/random/boot_id", 0,
 		                            NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
 		                            &contents, NULL, NULL);
-		if (contents) {
-			g_strstrip (contents);
-			if (contents[0]) {
-				/* clone @contents because we keep @boot_id until the program
-				 * ends.
-				 * nm_utils_file_get_contents() likely allocated a larger
-				 * buffer chunk initially and (although using realloc to shrink
-				 * the buffer) it might not be best to keep this memory
-				 * around. */
-				boot_id = g_strdup (contents);
-			}
+		if (   !contents
+		    || !_nm_utils_uuid_parse (nm_strstrip (contents), &uuid)) {
+			/* generate a random UUID instead. */
+			is_fake = TRUE;
+			_nm_utils_uuid_generate_random (&uuid);
 		}
-		if (!boot_id)
-			boot_id = nm_utils_uuid_generate ();
+
+		if (!g_once_init_enter (&lock))
+			goto again;
+
+		d = _uuid_data_init (&boot_id, FALSE, is_fake, &uuid);
+		g_atomic_pointer_set (&p_boot_id, d);
+		g_once_init_leave (&lock, 1);
 	}
 
-	return boot_id;
+	return d;
+}
+
+const char *
+nm_utils_get_boot_id_str (void)
+{
+	return _boot_id_get ()->str;
+}
+
+const NMUuid *
+nm_utils_get_boot_id_bin (void)
+{
+	return &_boot_id_get ()->bin;
 }
 
 /*****************************************************************************/
@@ -2725,9 +2851,8 @@ nm_utils_stable_id_random (void)
 char *
 nm_utils_stable_id_generated_complete (const char *stable_id_generated)
 {
-	guint8 buf[20];
-	GChecksum *sum;
-	gsize buf_size;
+	nm_auto_free_checksum GChecksum *sum = NULL;
+	guint8 buf[NM_UTILS_CHECKSUM_LENGTH_SHA1];
 	char *base64;
 
 	/* for NM_UTILS_STABLE_TYPE_GENERATED we genererate a possibly long string
@@ -2738,15 +2863,8 @@ nm_utils_stable_id_generated_complete (const char *stable_id_generated)
 	g_return_val_if_fail (stable_id_generated, NULL);
 
 	sum = g_checksum_new (G_CHECKSUM_SHA1);
-	nm_assert (sum);
-
 	g_checksum_update (sum, (guchar *) stable_id_generated, strlen (stable_id_generated));
-
-	buf_size = sizeof (buf);
-	g_checksum_get_digest (sum, buf, &buf_size);
-	nm_assert (buf_size == sizeof (buf));
-
-	g_checksum_free (sum);
+	nm_utils_checksum_get_digest (sum, buf);
 
 	/* we don't care to use the sha1 sum in common hex representation.
 	 * Use instead base64, it's 27 chars (stripping the padding) vs.
@@ -2772,6 +2890,7 @@ _stable_id_append (GString *str,
 NMUtilsStableType
 nm_utils_stable_id_parse (const char *stable_id,
                           const char *deviceid,
+                          const char *hwaddr,
                           const char *bootid,
                           const char *uuid,
                           char **out_generated)
@@ -2847,9 +2966,11 @@ nm_utils_stable_id_parse (const char *stable_id,
 		if (CHECK_PREFIX ("${CONNECTION}"))
 			_stable_id_append (str, uuid);
 		else if (CHECK_PREFIX ("${BOOT}"))
-			_stable_id_append (str, bootid ?: nm_utils_get_boot_id ());
+			_stable_id_append (str, bootid);
 		else if (CHECK_PREFIX ("${DEVICE}"))
 			_stable_id_append (str, deviceid);
+		else if (CHECK_PREFIX ("${MAC}"))
+			_stable_id_append (str, hwaddr);
 		else if (g_str_has_prefix (&stable_id[i], "${RANDOM}")) {
 			/* RANDOM makes not so much sense for cloned-mac-address
 			 * as the result is similar to specyifing "cloned-mac-address=random".
@@ -2930,22 +3051,14 @@ _set_stable_privacy (NMUtilsStableType stable_type,
                      gsize key_len,
                      GError **error)
 {
-	GChecksum *sum;
-	guint8 digest[32];
+	nm_auto_free_checksum GChecksum *sum = NULL;
+	guint8 digest[NM_UTILS_CHECKSUM_LENGTH_SHA256];
 	guint32 tmp[2];
-	gsize len = sizeof (digest);
 
 	nm_assert (key_len);
 	nm_assert (network_id);
 
-	/* Documentation suggests that this can fail.
-	 * Maybe in case of a missing algorithm in crypto library? */
 	sum = g_checksum_new (G_CHECKSUM_SHA256);
-	if (!sum) {
-		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		                     "Can't create a SHA256 hash");
-		return FALSE;
-	}
 
 	key_len = MIN (key_len, G_MAXUINT32);
 
@@ -2974,24 +3087,17 @@ _set_stable_privacy (NMUtilsStableType stable_type,
 	tmp[1] = htonl (key_len);
 	g_checksum_update (sum, (const guchar *) tmp, sizeof (tmp));
 	g_checksum_update (sum, (const guchar *) secret_key, key_len);
-
-	g_checksum_get_digest (sum, digest, &len);
-
-	nm_assert (len == sizeof (digest));
+	nm_utils_checksum_get_digest (sum, digest);
 
 	while (_is_reserved_ipv6_iid (digest)) {
 		g_checksum_reset (sum);
 		tmp[0] = htonl (++dad_counter);
-		g_checksum_update (sum, digest, len);
+		g_checksum_update (sum, digest, sizeof (digest));
 		g_checksum_update (sum, (const guchar *) &tmp[0], sizeof (tmp[0]));
-		g_checksum_get_digest (sum, digest, &len);
-		nm_assert (len == sizeof (digest));
+		nm_utils_checksum_get_digest (sum, digest);
 	}
 
-	g_checksum_free (sum);
-
 	memcpy (addr->s6_addr + 8, &digest[0], 8);
-
 	return TRUE;
 }
 
@@ -3117,10 +3223,9 @@ _hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
                          const char *current_mac_address,
                          const char *generate_mac_address_mask)
 {
-	GChecksum *sum;
+	nm_auto_free_checksum GChecksum *sum = NULL;
 	guint32 tmp;
-	guint8 digest[32];
-	gsize len = sizeof (digest);
+	guint8 digest[NM_UTILS_CHECKSUM_LENGTH_SHA256];
 	struct ether_addr bin_addr;
 	guint8 stable_type_uint8;
 
@@ -3128,8 +3233,6 @@ _hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
 	nm_assert (secret_key);
 
 	sum = g_checksum_new (G_CHECKSUM_SHA256);
-	if (!sum)
-		return NULL;
 
 	key_len = MIN (key_len, G_MAXUINT32);
 
@@ -3143,10 +3246,7 @@ _hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
 	g_checksum_update (sum, (const guchar *) (ifname ?: ""), ifname ? (strlen (ifname) + 1) : 1);
 	g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id) + 1);
 
-	g_checksum_get_digest (sum, digest, &len);
-	g_checksum_free (sum);
-
-	g_return_val_if_fail (len == 32, NULL);
+	nm_utils_checksum_get_digest (sum, digest);
 
 	memcpy (&bin_addr, digest, ETH_ALEN);
 	_hw_addr_eth_complete (&bin_addr, current_mac_address, generate_mac_address_mask);
@@ -3186,6 +3286,101 @@ nm_utils_hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
 	                                ifname,
 	                                current_mac_address,
 	                                generate_mac_address_mask);
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_utils_dhcp_client_id_systemd_node_specific_full:
+ * @legacy_unstable_byteorder: historically, the code would generate a iaid
+ *   dependent on host endianness. This is undesirable, if backward compatibility
+ *   are not a concern, generate stable endianness.
+ * @interface_id: a binary identifer that is hashed into the DUID.
+ *   Comonly this is the interface-name, but it may be the MAC address.
+ * @interface_id_len: the length of @interface_id.
+ * @machine_id: the binary identifier for the machine. It is hashed
+ *   into the DUID. It commonly is /etc/machine-id (parsed in binary as NMUuid).
+ * @machine_id_len: the length of the @machine_id.
+ *
+ * Systemd's sd_dhcp_client generates a default client ID (type 255, node-specific,
+ * RFC 4361) if no explicit client-id is set. This function duplicates that
+ * implementation and exposes it as (internal) API.
+ *
+ * Returns: a %GBytes of generated client-id. This function cannot fail.
+ */
+GBytes *
+nm_utils_dhcp_client_id_systemd_node_specific_full (gboolean legacy_unstable_byteorder,
+                                                    const guint8 *interface_id,
+                                                    gsize interface_id_len,
+                                                    const guint8 *machine_id,
+                                                    gsize machine_id_len)
+{
+	const guint8 HASH_KEY[16] = { 0x80, 0x11, 0x8c, 0xc2, 0xfe, 0x4a, 0x03, 0xee, 0x3e, 0xd6, 0x0c, 0x6f, 0x36, 0x39, 0x14, 0x09 };
+	const guint16 DUID_TYPE_EN = 2;
+	const guint32 SYSTEMD_PEN = 43793;
+	struct _nm_packed {
+		guint8 type;
+		guint32 iaid;
+		struct _nm_packed {
+			guint16 type;
+			union {
+				struct _nm_packed {
+						/* DUID_TYPE_EN */
+						guint32 pen;
+						uint8_t id[8];
+				} en;
+			};
+		} duid;
+	} *client_id;
+	guint64 u64;
+	guint32 u32;
+
+	g_return_val_if_fail (interface_id, NULL);
+	g_return_val_if_fail (interface_id_len > 0, NULL);
+	g_return_val_if_fail (machine_id, NULL);
+	g_return_val_if_fail (machine_id_len > 0, NULL);
+
+	client_id = g_malloc (sizeof (*client_id));
+
+	client_id->type = 255;
+
+	u64 = c_siphash_hash (HASH_KEY, interface_id, interface_id_len);
+	u32 = (u64 & 0xffffffffu) ^ (u64 >> 32);
+	if (legacy_unstable_byteorder) {
+		/* original systemd code dhcp_identifier_set_iaid() generates the iaid
+		 * in native endianness. Do that too, to preserve compatibility
+		 * (https://github.com/systemd/systemd/pull/10614). */
+		u32 = bswap_32 (u32);
+	} else {
+		/* generate fixed byteorder, in a way that on little endian systems
+		 * the values agree. Meaning: legacy behavior is identical to this
+		 * on little endian. */
+		u32 = be32toh (u32);
+	}
+	unaligned_write_ne32 (&client_id->iaid, u32);
+
+	unaligned_write_be16 (&client_id->duid.type, DUID_TYPE_EN);
+
+	unaligned_write_be32 (&client_id->duid.en.pen, SYSTEMD_PEN);
+
+	u64 = htole64 (c_siphash_hash (HASH_KEY, machine_id, machine_id_len));
+	memcpy(client_id->duid.en.id, &u64, sizeof (client_id->duid.en.id));
+
+	G_STATIC_ASSERT_EXPR (sizeof (*client_id) == 19);
+	return g_bytes_new_take (client_id, 19);
+}
+
+GBytes *
+nm_utils_dhcp_client_id_systemd_node_specific (gboolean legacy_unstable_byteorder,
+                                               const char *ifname)
+{
+	g_return_val_if_fail (ifname && ifname[0], NULL);
+
+	return nm_utils_dhcp_client_id_systemd_node_specific_full (legacy_unstable_byteorder,
+	                                                           (const guint8 *) ifname,
+	                                                           strlen (ifname),
+	                                                           (const guint8 *) nm_utils_machine_id_bin (),
+	                                                           sizeof (NMUuid));
 }
 
 /*****************************************************************************/

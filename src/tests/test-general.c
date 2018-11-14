@@ -22,12 +22,16 @@
 
 #include <string.h>
 #include <errno.h>
+#include <net/if.h>
+#include <byteswap.h>
 
 /* need math.h for isinf() and INFINITY. No need to link with -lm */
 #include <math.h>
 
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
+#include "nm-core-utils.h"
+#include "systemd/nm-sd-utils.h"
 
 #include "dns/nm-dns-manager.h"
 
@@ -1735,7 +1739,7 @@ do_test_stable_id_parse (const char *stable_id,
 	else
 		g_assert (stable_id);
 
-	stable_type = nm_utils_stable_id_parse (stable_id, "_DEVICE", "_BOOT", "_CONNECTION", &generated);
+	stable_type = nm_utils_stable_id_parse (stable_id, "_DEVICE", "_MAC", "_BOOT", "_CONNECTION", &generated);
 
 	g_assert_cmpint (expected_stable_type, ==, stable_type);
 
@@ -1774,6 +1778,7 @@ test_stable_id_parse (void)
 	_parse_generated ("x${BOOT}", "x${BOOT}=5{_BOOT}");
 	_parse_generated ("x${BOOT}${CONNECTION}", "x${BOOT}=5{_BOOT}${CONNECTION}=11{_CONNECTION}");
 	_parse_generated ("xX${BOOT}yY${CONNECTION}zZ", "xX${BOOT}=5{_BOOT}yY${CONNECTION}=11{_CONNECTION}zZ");
+	_parse_generated ("${MAC}x", "${MAC}=4{_MAC}x");
 	_parse_random ("${RANDOM}");
 	_parse_random (" ${RANDOM}");
 	_parse_random ("${BOOT}${RANDOM}");
@@ -1910,6 +1915,125 @@ test_dns_create_resolv_conf (void)
 
 /*****************************************************************************/
 
+static void
+test_machine_id_read (void)
+{
+	NMUuid machine_id_sd;
+	const NMUuid *machine_id;
+	char machine_id_str[33];
+	gpointer logstate;
+
+	logstate = nmtst_logging_disable (FALSE);
+	/* If you run this test as root, without a valid /etc/machine-id,
+	 * the code will try to get the secret-key. That is a bit ugly,
+	 * but no real problem. */
+	machine_id = nm_utils_machine_id_bin ();
+	nmtst_logging_reenable (logstate);
+
+	g_assert (machine_id);
+	g_assert (_nm_utils_bin2hexstr_full (machine_id,
+	                                     sizeof (NMUuid),
+	                                     '\0',
+	                                     FALSE,
+	                                     machine_id_str) == machine_id_str);
+	g_assert (strlen (machine_id_str) == 32);
+	g_assert_cmpstr (machine_id_str, ==, nm_utils_machine_id_str ());
+
+	/* double check with systemd's implementation... */
+	if (!nm_sd_utils_id128_get_machine (&machine_id_sd)) {
+		/* if systemd failed to read /etc/machine-id, the file likely
+		 * is invalid. Our machine-id is fake, and we have nothing to
+		 * compare against. */
+
+		/* NOTE: this test will fail, if you don't have /etc/machine-id,
+		 * but a valid "LOCALSTATEDIR/lib/dbus/machine-id" file.
+		 * Just don't do that. */
+		g_assert (nm_utils_machine_id_is_fake ());
+	} else {
+		g_assert (!nm_utils_machine_id_is_fake ());
+		g_assert_cmpmem (&machine_id_sd, sizeof (NMUuid), machine_id, 16);
+	}
+}
+
+/*****************************************************************************/
+
+static void
+test_nm_utils_dhcp_client_id_systemd_node_specific (gconstpointer test_data)
+{
+	const int TEST_IDX = GPOINTER_TO_INT (test_data);
+	const guint8 HASH_KEY[16] = { 0x80, 0x11, 0x8c, 0xc2, 0xfe, 0x4a, 0x03, 0xee, 0x3e, 0xd6, 0x0c, 0x6f, 0x36, 0x39, 0x14, 0x09 };
+	const guint16 duid_type_en = htons (2);
+	const guint32 systemd_pen = htonl (43793);
+	const struct {
+		NMUuid machine_id;
+		const char *ifname;
+		guint64 ifname_hash_1;
+		guint32 iaid_ifname;
+		guint64 duid_id;
+	} d_array[] = {
+		[0] = {
+			.machine_id = { 0xcb, 0xc2, 0x2e, 0x47, 0x41, 0x8e, 0x40, 0x2a, 0xa7, 0xb3, 0x0d, 0xea, 0x92, 0x83, 0x94, 0xef },
+			.ifname = "lo",
+			.ifname_hash_1 = 0x7297085c2b12c911llu,
+			.iaid_ifname = htobe32 (0x5985c14du),
+			.duid_id = htobe64 (0x3d769bb2c14d29e1u),
+		},
+		[1] = {
+			.machine_id = { 0x11, 0x4e, 0xb4, 0xda, 0xd3, 0x22, 0x4a, 0xff, 0x9f, 0xc3, 0x30, 0x83, 0x38, 0xa0, 0xeb, 0xb7 },
+			.ifname = "eth0",
+			.ifname_hash_1 = 0x9e1cb083b54cd7b6llu,
+			.iaid_ifname = htobe32 (0x2b506735u),
+			.duid_id = htobe64 (0x551572e0f2a2a10fu),
+		},
+	};
+	int i;
+	typeof (d_array[0]) *d = &d_array[TEST_IDX];
+	gint64 u64;
+	gint32 u32;
+
+	/* the test already hard-codes the expected values iaid_ifname and duid_id
+	 * above. Still, redo the steps to derive them from the ifname/machine-id
+	 * and double check. */
+	u64 = c_siphash_hash (HASH_KEY, (const guint8 *) d->ifname, strlen (d->ifname));
+	g_assert_cmpint (u64, ==, d->ifname_hash_1);
+	u32 = be32toh ((u64 & 0xffffffffu) ^ (u64 >> 32));
+	g_assert_cmpint (u32, ==, d->iaid_ifname);
+
+	u64 = htole64 (c_siphash_hash (HASH_KEY, (const guint8 *) &d->machine_id, sizeof (d->machine_id)));
+	g_assert_cmpint (u64, ==, d->duid_id);
+
+	for (i = 0; i < 2; i++) {
+		const gboolean legacy_unstable_byteorder = (i != 0);
+		gs_unref_bytes GBytes *client_id = NULL;
+		const guint8 *cid;
+		guint32 iaid = d->iaid_ifname;
+
+		client_id = nm_utils_dhcp_client_id_systemd_node_specific_full (legacy_unstable_byteorder,
+		                                                                (const guint8 *) d->ifname,
+		                                                                strlen (d->ifname),
+		                                                                (const guint8 *) &d->machine_id,
+		                                                                sizeof (d->machine_id));
+
+		g_assert (client_id);
+		g_assert_cmpint (g_bytes_get_size (client_id), ==, 19);
+		cid = g_bytes_get_data (client_id, NULL);
+		g_assert_cmpint (cid[0], ==, 255);
+#if __BYTE_ORDER == __BIG_ENDIAN
+		if (legacy_unstable_byteorder) {
+			/* on non-little endian, the legacy behavior is to have the bytes
+			 * swapped. */
+			iaid = bswap_32 (iaid);
+		}
+#endif
+		g_assert_cmpmem (&cid[1], 4, &iaid, sizeof (iaid));
+		g_assert_cmpmem (&cid[5], 2, &duid_type_en, sizeof (duid_type_en));
+		g_assert_cmpmem (&cid[7], 4, &systemd_pen, sizeof (systemd_pen));
+		g_assert_cmpmem (&cid[11], 8, &d->duid_id, sizeof (d->duid_id));
+	}
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -1956,9 +2080,14 @@ main (int argc, char **argv)
 	g_test_add_func ("/general/stable-id/parse", test_stable_id_parse);
 	g_test_add_func ("/general/stable-id/generated-complete", test_stable_id_generated_complete);
 
+	g_test_add_func ("/general/machine-id/read", test_machine_id_read);
+
 	g_test_add_func ("/general/test_utils_file_is_in_path", test_utils_file_is_in_path);
 
 	g_test_add_func ("/general/test_dns_create_resolv_conf", test_dns_create_resolv_conf);
+
+	g_test_add_data_func ("/general/nm_utils_dhcp_client_id_systemd_node_specific/0", GINT_TO_POINTER (0), test_nm_utils_dhcp_client_id_systemd_node_specific);
+	g_test_add_data_func ("/general/nm_utils_dhcp_client_id_systemd_node_specific/1", GINT_TO_POINTER (1), test_nm_utils_dhcp_client_id_systemd_node_specific);
 
 	return g_test_run ();
 }

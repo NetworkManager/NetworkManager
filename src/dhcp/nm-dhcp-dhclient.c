@@ -121,8 +121,8 @@ get_dhclient_leasefile (int addr_family,
                         const char *uuid,
                         char **out_preferred_path)
 {
-	char *rundir_path;
-	char *path;
+	gs_free char *rundir_path = NULL;
+	gs_free char *path = NULL;
 
 	/* First, see if the lease file is in /run */
 	rundir_path = g_strdup_printf (NMRUNDIR "/dhclient%s-%s-%s.lease",
@@ -132,7 +132,7 @@ get_dhclient_leasefile (int addr_family,
 
 	if (g_file_test (rundir_path, G_FILE_TEST_EXISTS)) {
 		NM_SET_OUT (out_preferred_path, g_strdup (rundir_path));
-		return rundir_path;
+		return g_steal_pointer (&rundir_path);
 	}
 
 	/* /var/lib/NetworkManager is the preferred leasefile path */
@@ -142,18 +142,14 @@ get_dhclient_leasefile (int addr_family,
 	                        iface);
 
 	if (g_file_test (path, G_FILE_TEST_EXISTS)) {
-		g_free (rundir_path);
 		NM_SET_OUT (out_preferred_path, g_strdup (path));
-		return path;
+		return g_steal_pointer (&path);
 	}
 
-	if (nm_config_get_configure_and_quit (nm_config_get ()) == NM_CONFIG_CONFIGURE_AND_QUIT_INITRD) {
-		g_free (path);
-		path = rundir_path;
-	} else {
-		g_free (rundir_path);
-	}
-	NM_SET_OUT (out_preferred_path, g_steal_pointer (&path));
+	if (nm_config_get_configure_and_quit (nm_config_get ()) == NM_CONFIG_CONFIGURE_AND_QUIT_INITRD)
+		NM_SET_OUT (out_preferred_path, g_steal_pointer (&rundir_path));
+	else
+		NM_SET_OUT (out_preferred_path, g_steal_pointer (&path));
 
 	/* If the leasefile we're looking for doesn't exist yet in the new location
 	 * (eg, /var/lib/NetworkManager) then look in old locations to maintain
@@ -166,17 +162,16 @@ get_dhclient_leasefile (int addr_family,
 	path = g_strdup_printf (LOCALSTATEDIR "/lib/dhcp/dhclient%s-%s-%s.lease",
 	                        _addr_family_to_path_part (addr_family), uuid, iface);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
-		return path;
+		return g_steal_pointer (&path);
 
 	/* Old Red Hat and Fedora location */
 	g_free (path);
 	path = g_strdup_printf (LOCALSTATEDIR "/lib/dhclient/dhclient%s-%s-%s.lease",
 	                        _addr_family_to_path_part (addr_family), uuid, iface);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
-		return path;
+		return g_steal_pointer (&path);
 
 	/* Fail */
-	g_free (path);
 	return NULL;
 }
 
@@ -327,8 +322,18 @@ create_dhclient_config (NMDhcpDhclient *self,
 	else
 		_LOGD ("no existing dhclient configuration to merge");
 
-	if (!merge_dhclient_config (self, addr_family, iface, new, client_id, dhcp_anycast_addr,
-	                            hostname, timeout, use_fqdn, orig, out_new_client_id, &error)) {
+	if (!merge_dhclient_config (self,
+	                            addr_family,
+	                            iface,
+	                            new,
+	                            client_id,
+	                            dhcp_anycast_addr,
+	                            hostname,
+	                            timeout,
+	                            use_fqdn,
+	                            orig,
+	                            out_new_client_id,
+	                            &error)) {
 		_LOGW ("error creating dhclient configuration: %s", error->message);
 		g_clear_error (&error);
 	}
@@ -339,7 +344,6 @@ create_dhclient_config (NMDhcpDhclient *self,
 static gboolean
 dhclient_start (NMDhcpClient *client,
                 const char *mode_opt,
-                GBytes *duid,
                 gboolean release,
                 pid_t *out_pid,
                 int prefixes,
@@ -418,10 +422,9 @@ dhclient_start (NMDhcpClient *client,
 
 	/* Save the DUID to the leasefile dhclient will actually use */
 	if (addr_family == AF_INET6) {
-		gs_free char *escaped = NULL;
-
-		escaped = nm_dhcp_dhclient_escape_duid (duid);
-		if (!nm_dhcp_dhclient_save_duid (priv->lease_file, escaped, &local)) {
+		if (!nm_dhcp_dhclient_save_duid (priv->lease_file,
+		                                 nm_dhcp_client_get_client_id (client),
+		                                 &local)) {
 			nm_utils_error_set (error,
 			                    NM_UTILS_ERROR_UNKNOWN,
 			                    "failed to save DUID to '%s': %s",
@@ -541,7 +544,6 @@ ip4_start (NMDhcpClient *client,
 	}
 	return dhclient_start (client,
 	                       NULL,
-	                       NULL,
 	                       FALSE,
 	                       NULL,
 	                       0,
@@ -553,7 +555,6 @@ ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
            const struct in6_addr *ll_addr,
            NMSettingIP6ConfigPrivacy privacy,
-           GBytes *duid,
            guint needed_prefixes,
            GError **error)
 {
@@ -581,7 +582,6 @@ ip6_start (NMDhcpClient *client,
 	                       nm_dhcp_client_get_info_only (NM_DHCP_CLIENT (self))
 	                         ? "-S"
 	                         : "-N",
-	                       duid,
 	                       FALSE,
 	                       NULL,
 	                       needed_prefixes,
@@ -589,12 +589,12 @@ ip6_start (NMDhcpClient *client,
 }
 
 static void
-stop (NMDhcpClient *client, gboolean release, GBytes *duid)
+stop (NMDhcpClient *client, gboolean release)
 {
 	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
 
-	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->stop (client, release, duid);
+	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->stop (client, release);
 
 	if (priv->conf_file)
 		if (remove (priv->conf_file) == -1)
@@ -613,7 +613,6 @@ stop (NMDhcpClient *client, gboolean release, GBytes *duid)
 
 		if (dhclient_start (client,
 		                    NULL,
-		                    duid,
 		                    TRUE,
 		                    &rpid,
 		                    0,
@@ -624,31 +623,13 @@ stop (NMDhcpClient *client, gboolean release, GBytes *duid)
 	}
 }
 
-static void
-state_changed (NMDhcpClient *client,
-               NMDhcpState state,
-               GObject *ip_config,
-               GHashTable *options)
-{
-	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE ((NMDhcpDhclient *) client);
-	gs_unref_bytes GBytes *client_id = NULL;
-
-	if (nm_dhcp_client_get_client_id (client))
-		return;
-	if (state != NM_DHCP_STATE_BOUND)
-		return;
-
-	client_id = nm_dhcp_dhclient_get_client_id_from_config_file (priv->conf_file);
-	nm_dhcp_client_set_client_id (client, client_id);
-}
-
 static GBytes *
 get_duid (NMDhcpClient *client)
 {
 	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
 	GBytes *duid = NULL;
-	char *leasefile;
+	gs_free char *leasefile = NULL;
 	GError *error = NULL;
 
 	/* Look in interface-specific leasefile first for backwards compat */
@@ -659,25 +640,23 @@ get_duid (NMDhcpClient *client)
 	if (leasefile) {
 		_LOGD ("looking for DUID in '%s'", leasefile);
 		duid = nm_dhcp_dhclient_read_duid (leasefile, &error);
-
 		if (error) {
 			_LOGW ("failed to read leasefile '%s': %s",
 			       leasefile, error->message);
 			g_clear_error (&error);
 		}
-		g_free (leasefile);
+		if (duid)
+			return duid;
 	}
 
-	if (!duid) {
-		/* Otherwise read the default machine-wide DUID */
-		_LOGD ("looking for default DUID in '%s'", priv->def_leasefile);
-		duid = nm_dhcp_dhclient_read_duid (priv->def_leasefile, &error);
-		if (error) {
-			_LOGW ("failed to read leasefile '%s': %s",
-			        priv->def_leasefile,
-			        error->message);
-			g_clear_error (&error);
-		}
+	/* Otherwise read the default machine-wide DUID */
+	_LOGD ("looking for default DUID in '%s'", priv->def_leasefile);
+	duid = nm_dhcp_dhclient_read_duid (priv->def_leasefile, &error);
+	if (error) {
+		_LOGW ("failed to read leasefile '%s': %s",
+		        priv->def_leasefile,
+		        error->message);
+		g_clear_error (&error);
 	}
 
 	return duid;
@@ -742,7 +721,6 @@ nm_dhcp_dhclient_class_init (NMDhcpDhclientClass *dhclient_class)
 	client_class->ip6_start = ip6_start;
 	client_class->stop = stop;
 	client_class->get_duid = get_duid;
-	client_class->state_changed = state_changed;
 }
 
 const NMDhcpClientFactory _nm_dhcp_client_factory_dhclient = {

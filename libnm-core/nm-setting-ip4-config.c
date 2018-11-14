@@ -721,11 +721,16 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 	 * with type ethernet (01). Currently, these options only work for ethernet
 	 * type of links.
 	 *
-	 * The special value "stable" is supported to generate a type 0 client identifier based
-	 * on the stable-id (see connection.stable-id) and a per-host key.
+	 * The special value "duid" generates a RFC4361-compliant client identifier based
+	 * on a hash of the interface name as IAID and /etc/machine-id.
 	 *
-	 * If unset, a globally configured default is used. If still unset, the
-	 * client-id from the last lease is reused.
+	 * The special value "stable" is supported to generate a type 0 client identifier based
+	 * on the stable-id (see connection.stable-id) and a per-host key. If you set the
+	 * stable-id, you may want to include the "${DEVICE}" or "{$MAC}" specifier to get a
+	 * per-device key.
+	 *
+	 * If unset, a globally configured default is used. If still unset, the default
+	 * depends on the DHCP plugin.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: dhcp-client-id

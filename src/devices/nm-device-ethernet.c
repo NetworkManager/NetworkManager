@@ -1455,7 +1455,6 @@ new_default_connection (NMDevice *self)
 	const char *uprop = "0";
 	gs_free char *defname = NULL;
 	gs_free char *uuid = NULL;
-	gs_free char *machine_id = NULL;
 	guint i, n_connections;
 
 	if (nm_config_get_no_auto_default_for_device (nm_config_get (), self))
@@ -1479,12 +1478,10 @@ new_default_connection (NMDevice *self)
 	if (!defname)
 		return NULL;
 
-	machine_id = nm_utils_machine_id_read ();
-
 	/* Create a stable UUID. The UUID is also the Network_ID for stable-privacy addr-gen-mode,
 	 * thus when it changes we will also generate different IPv6 addresses. */
 	uuid = _nm_utils_uuid_generate_from_strings ("default-wired",
-	                                             machine_id ?: "",
+	                                             nm_utils_machine_id_str (),
 	                                             defname,
 	                                             perm_hw_addr,
 	                                             NULL);

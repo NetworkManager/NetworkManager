@@ -181,6 +181,7 @@ client_start (NMDhcpManager *self,
 	gsize hwaddr_len;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
+	g_return_val_if_fail (iface, NULL);
 	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 	g_return_val_if_fail (!dhcp_client_id || g_bytes_get_size (dhcp_client_id) >= 2, NULL);
@@ -221,6 +222,7 @@ client_start (NMDhcpManager *self,
 	                       NM_DHCP_CLIENT_IFINDEX, ifindex,
 	                       NM_DHCP_CLIENT_HWADDR, hwaddr,
 	                       NM_DHCP_CLIENT_UUID, uuid,
+	                       NM_DHCP_CLIENT_HOSTNAME, hostname,
 	                       NM_DHCP_CLIENT_ROUTE_TABLE, (guint) route_table,
 	                       NM_DHCP_CLIENT_ROUTE_METRIC, (guint) route_metric,
 	                       NM_DHCP_CLIENT_TIMEOUT, (guint) timeout,
@@ -233,11 +235,36 @@ client_start (NMDhcpManager *self,
 	c_list_link_tail (&priv->dhcp_client_lst_head, &client->dhcp_client_lst);
 	g_signal_connect (client, NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED, G_CALLBACK (client_state_changed), self);
 
+	/* unfortunately, our implementations work differently per address-family regarding client-id/DUID.
+	 *
+	 * - for IPv4, the calling code may determine a client-id (from NM's connection profile).
+	 *   If present, it is taken. If not present, the DHCP plugin uses a plugin specific default.
+	 *     - for "internal" plugin, the default is just "duid".
+	 *     - for "dhclient", we try to get the configuration from dhclient's /etc/dhcp or fallback
+	 *       to whatever dhclient uses by default.
+	 *   We do it this way, because for dhclient the user may configure a default
+	 *   outside of NM, and we want to honor that. Worse, dhclient could be a wapper
+	 *   script where the wrapper script overwrites the client-id. We need to distinguish
+	 *   between: force a particular client-id and leave it unspecified to whatever dhclient
+	 *   wants.
+	 *
+	 * - for IPv6, the calling code always determines a client-id. It also specifies @enforce_duid,
+	 *   to determine whether the given client-id must be used.
+	 *     - for "internal" plugin @enforce_duid doesn't matter and the given client-id is
+	 *       always used.
+	 *     - for "dhclient", @enforce_duid FALSE means to first try to load the DUID from the
+	 *       lease file, and only otherwise fallback to the given client-id.
+	 *     - other plugins don't support DHCPv6.
+	 *   It's done this way, so that existing dhclient setups don't change behavior on upgrade.
+	 *
+	 * This difference is cumbersome and only exists because of "dhclient" which supports hacking the
+	 * default outside of NetworkManager API.
+	 */
+
 	if (addr_family == AF_INET) {
 		success = nm_dhcp_client_start_ip4 (client,
 		                                    dhcp_client_id,
 		                                    dhcp_anycast_addr,
-		                                    hostname,
 		                                    last_ip4_address,
 		                                    error);
 	} else {
@@ -246,7 +273,6 @@ client_start (NMDhcpManager *self,
 		                                    enforce_duid,
 		                                    dhcp_anycast_addr,
 		                                    ipv6_ll_addr,
-		                                    hostname,
 		                                    privacy,
 		                                    needed_prefixes,
 		                                    error);
@@ -311,10 +337,27 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
 		}
 	}
 
-	return client_start (self, AF_INET, multi_idx, iface, ifindex, hwaddr, uuid,
-	                     route_table, route_metric, NULL,
-	                     dhcp_client_id, 0, timeout, dhcp_anycast_addr, hostname,
-	                     use_fqdn, FALSE, 0, last_ip_address, 0, error);
+	return client_start (self,
+	                     AF_INET,
+	                     multi_idx,
+	                     iface,
+	                     ifindex,
+	                     hwaddr,
+	                     uuid,
+	                     route_table,
+	                     route_metric,
+	                     NULL,
+	                     dhcp_client_id,
+	                     FALSE,
+	                     timeout,
+	                     dhcp_anycast_addr,
+	                     hostname,
+	                     use_fqdn,
+	                     FALSE,
+	                     0,
+	                     last_ip_address,
+	                     0,
+	                     error);
 }
 
 /* Caller owns a reference to the NMDhcpClient on return */
@@ -349,10 +392,27 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
 		/* Always prefer the explicit dhcp-hostname if given */
 		hostname = dhcp_hostname ?: priv->default_hostname;
 	}
-	return client_start (self, AF_INET6, multi_idx, iface, ifindex, hwaddr, uuid,
-	                     route_table, route_metric, ll_addr, duid, enforce_duid,
-	                     timeout, dhcp_anycast_addr, hostname, TRUE, info_only,
-	                     privacy, NULL, needed_prefixes, error);
+	return client_start (self,
+	                     AF_INET6,
+	                     multi_idx,
+	                     iface,
+	                     ifindex,
+	                     hwaddr,
+	                     uuid,
+	                     route_table,
+	                     route_metric,
+	                     ll_addr,
+	                     duid,
+	                     enforce_duid,
+	                     timeout,
+	                     dhcp_anycast_addr,
+	                     hostname,
+	                     TRUE,
+	                     info_only,
+	                     privacy,
+	                     NULL,
+	                     needed_prefixes,
+	                     error);
 }
 
 void

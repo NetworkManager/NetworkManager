@@ -40,53 +40,66 @@ static const guint8 *volatile global_seed = NULL;
 static const guint8 *
 _get_hash_key_init (void)
 {
+	static gsize g_lock;
 	/* the returned hash is aligned to guin64, hence, it is safe
 	 * to use it as guint* or guint64* pointer. */
 	static union {
 		guint8 v8[HASH_KEY_SIZE];
 	} g_arr _nm_alignas (guint64);
-	static gsize g_lock;
 	const guint8 *g;
-	CSipHash siph_state;
-	uint64_t h;
-	guint *p;
+	union {
+		guint8 v8[HASH_KEY_SIZE];
+		guint vuint;
+	} t_arr;
 
-	g = global_seed;
+again:
+	g = g_atomic_pointer_get (&global_seed);
 	if (G_LIKELY (g != NULL)) {
 		nm_assert (g == g_arr.v8);
 		return g;
 	}
 
-	if (g_once_init_enter (&g_lock)) {
+	{
+		CSipHash siph_state;
+		uint64_t h;
 
-		nm_utils_random_bytes (g_arr.v8, sizeof (g_arr.v8));
+		/* initialize a random key in t_arr. */
+
+		nm_utils_random_bytes (&t_arr, sizeof (t_arr));
 
 		/* use siphash() of the key-size, to mangle the first guint. Otherwise,
 		 * the first guint has only the entropy that nm_utils_random_bytes()
-		 * generated for the first 4 bytes and relies on a good random generator. */
-		c_siphash_init (&siph_state, g_arr.v8);
-		c_siphash_append (&siph_state, g_arr.v8, sizeof (g_arr.v8));
+		 * generated for the first 4 bytes and relies on a good random generator.
+		 *
+		 * The first int is especially intersting for nm_hash_static() below, and we
+		 * want to have it all the entropy of t_arr. */
+		c_siphash_init (&siph_state, t_arr.v8);
+		c_siphash_append (&siph_state, (const guint8 *) &t_arr, sizeof (t_arr));
 		h = c_siphash_finalize (&siph_state);
-		p = (guint *) g_arr.v8;
 		if (sizeof (guint) < sizeof (h))
-			*p = *p ^ ((guint) (h & 0xFFFFFFFFu)) ^ ((guint) (h >> 32));
+			t_arr.vuint = t_arr.vuint ^ ((guint) (h & 0xFFFFFFFFu)) ^ ((guint) (h >> 32));
 		else
-			*p = *p ^ ((guint) (h & 0xFFFFFFFFu));
-
-		g_atomic_pointer_compare_and_exchange (&global_seed, NULL, g_arr.v8);
-		g_once_init_leave (&g_lock, 1);
+			t_arr.vuint = t_arr.vuint ^ ((guint) (h & 0xFFFFFFFFu));
 	}
 
-	nm_assert (global_seed == g_arr.v8);
-	return g_arr.v8;
+	if (!g_once_init_enter (&g_lock)) {
+		/* lost a race. The random key is already initialized. */
+		goto again;
+	}
+
+	memcpy (g_arr.v8, t_arr.v8, HASH_KEY_SIZE);
+	g = g_arr.v8;
+	g_atomic_pointer_set (&global_seed, g);
+	g_once_init_leave (&g_lock, 1);
+	return g;
 }
 
 #define _get_hash_key() \
 	({ \
 		const guint8 *_g; \
 		\
-		_g = global_seed; \
-		if (G_UNLIKELY (_g == NULL)) \
+		_g = g_atomic_pointer_get (&global_seed); \
+		if (G_UNLIKELY (!_g)) \
 			_g = _get_hash_key_init (); \
 		_g; \
 	})

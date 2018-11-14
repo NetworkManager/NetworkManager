@@ -269,14 +269,18 @@ gboolean nm_utils_sysctl_ip_conf_is_path (int addr_family, const char *path, con
 
 gboolean nm_utils_is_specific_hostname (const char *name);
 
-char *nm_utils_machine_id_read (void);
-gboolean nm_utils_machine_id_parse (const char *id_str, /*uuid_t*/ guchar *out_uuid);
+struct _NMUuid;
+
+const char *nm_utils_machine_id_str (void);
+const struct _NMUuid *nm_utils_machine_id_bin (void);
+gboolean nm_utils_machine_id_is_fake (void);
+
+const char *nm_utils_get_boot_id_str (void);
+const struct _NMUuid *nm_utils_get_boot_id_bin (void);
 
 gboolean nm_utils_secret_key_get (const guint8 **out_secret_key,
                                   gsize *out_key_len);
 gint64 nm_utils_secret_key_get_timestamp (void);
-
-const char *nm_utils_get_boot_id (void);
 
 /* IPv6 Interface Identifier helpers */
 
@@ -331,6 +335,7 @@ typedef enum {
 
 NMUtilsStableType nm_utils_stable_id_parse (const char *stable_id,
                                             const char *deviceid,
+                                            const char *hwaddr,
                                             const char *bootid,
                                             const char *uuid,
                                             char **out_generated);
@@ -368,6 +373,19 @@ char *nm_utils_hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
                                        const char *ifname,
                                        const char *current_mac_address,
                                        const char *generate_mac_address_mask);
+
+/*****************************************************************************/
+
+GBytes *nm_utils_dhcp_client_id_systemd_node_specific_full (gboolean legacy_unstable_byteorder,
+                                                            const guint8 *interface_id,
+                                                            gsize interface_id_len,
+                                                            const guint8 *machine_id,
+                                                            gsize machine_id_len);
+
+GBytes *nm_utils_dhcp_client_id_systemd_node_specific (gboolean legacy_unstable_byteorder,
+                                                       const char *ifname);
+
+/*****************************************************************************/
 
 void nm_utils_array_remove_at_indexes (GArray *array, const guint *indexes_to_delete, gsize len);
 
