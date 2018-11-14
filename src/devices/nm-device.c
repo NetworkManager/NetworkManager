@@ -14734,7 +14734,7 @@ _get_generate_mac_address_mask_setting (NMDevice *self, NMConnection *connection
 	}
 
 	a = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-	                                           is_wifi ? "wifi.generate-mac-address-mask" : "ethernet.generate-mac-mac-address-mask",
+	                                           is_wifi ? "wifi.generate-mac-address-mask" : "ethernet.generate-mac-address-mask",
 	                                           self);
 	if (!a)
 		return NULL;
