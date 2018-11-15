@@ -918,7 +918,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, NM_REMOTE_CONNECTION_GET_PRIVATE (object)->unsaved);
 		break;
 	case PROP_FLAGS:
-		g_value_set_boolean (value, NM_REMOTE_CONNECTION_GET_PRIVATE (object)->flags);
+		g_value_set_uint (value, NM_REMOTE_CONNECTION_GET_PRIVATE (object)->flags);
 		break;
 	case PROP_FILENAME:
 		g_value_set_string (value, NM_REMOTE_CONNECTION_GET_PRIVATE (object)->filename);
