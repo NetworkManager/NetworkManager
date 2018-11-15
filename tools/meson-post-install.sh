@@ -27,6 +27,9 @@ for dir in "${pkgconfdir}/conf.d" \
            "${pkgconfdir}/dnsmasq.d" \
            "${pkgconfdir}/dnsmasq-shared.d" \
            "${pkglibdir}/conf.d" \
+           "${pkglibdir}/dispatcher.d/no-wait.d" \
+           "${pkglibdir}/dispatcher.d/pre-down.d" \
+           "${pkglibdir}/dispatcher.d/pre-up.d" \
            "${pkglibdir}/VPN"; do
     mkdir -p "${DESTDIR}${dir}"
     chmod 0755 "${DESTDIR}${dir}"

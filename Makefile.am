@@ -3891,14 +3891,15 @@ dispatcher/org.freedesktop.nm_dispatcher.service: $(srcdir)/dispatcher/org.freed
 dbusactivation_DATA += dispatcher/org.freedesktop.nm_dispatcher.service
 CLEANFILES += dispatcher/org.freedesktop.nm_dispatcher.service
 
-
-dispatcherdir=$(sysconfdir)/NetworkManager/dispatcher.d
-
 install-data-hook-dispatcher:
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)/pre-down.d
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)/pre-up.d
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)/no-wait.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/dispatcher.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/dispatcher.d/pre-down.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/dispatcher.d/pre-up.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/dispatcher.d/no-wait.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/dispatcher.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/dispatcher.d/pre-down.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/dispatcher.d/pre-up.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/dispatcher.d/no-wait.d
 
 install_data_hook += install-data-hook-dispatcher
 
