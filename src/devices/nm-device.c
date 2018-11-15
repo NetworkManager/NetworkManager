@@ -14097,8 +14097,18 @@ nm_device_has_pending_action_reason (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->pending_actions)
+	if (priv->pending_actions) {
+
+		if (   !priv->pending_actions->next
+		    && nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED
+		    && nm_streq (priv->pending_actions->data, NM_PENDING_ACTION_CARRIER_WAIT)) {
+			/* if the device is already in activated state, and the only reason
+			 * why it appears still busy is "carrier-wait", then we are already complete. */
+			return NULL;
+		}
+
 		return priv->pending_actions->data;
+	}
 
 	if (   nm_device_is_real (self)
 	    && nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
