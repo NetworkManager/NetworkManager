@@ -56,6 +56,7 @@ $SUDO yum install \
     polkit-devel \
     ppp-devel \
     pygobject3-base \
+    python3 \
     readline-devel \
     rpm-build \
     strace \
@@ -69,6 +70,12 @@ $SUDO yum install \
 
 # for the tests, let's pre-load some modules:
 $SUDO modprobe ip_gre
+
+# in particular on rhel-8, the pygobject module does not exist for
+# python2. Hence, we prefer python3 over python2.
+PYTHON=$(which python3) || \
+PYTHON=$(which python2) || \
+PYTHON=$(which python)
 
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
@@ -96,6 +103,7 @@ if [[ "$DO_TEST_BUILD" == yes ]]; then
     NOCONFIGURE=yes ./autogen.sh
 
     ./configure \
+        PYTHON="${PYTHON}" \
         --enable-maintainer-mode \
         --enable-more-warnings=error \
         --prefix=/opt/test \
@@ -143,6 +151,7 @@ if [[ "$DO_TEST_PACKAGE" == yes || "$DO_INSTALL" == yes ]]; then
         A=("${A[@]}" --without sanitizer)
     fi
     NM_BUILD_SNAPSHOT="${BUILD_SNAPSHOT}" \
+    PYTHON="${PYTHON}" \
         ./contrib/fedora/rpm/build_clean.sh -c "${A[@]}"
 fi
 
