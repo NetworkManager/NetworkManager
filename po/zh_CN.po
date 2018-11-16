@@ -2775,7 +2775,7 @@ msgstr "Ad-Hoc"
 
 #: ../clients/cli/devices.c:1227
 msgid "Infra"
-msgstr "红外"
+msgstr "Infra"
 
 #: ../clients/cli/devices.c:1228
 msgid "N/A"
