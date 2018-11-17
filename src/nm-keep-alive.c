@@ -179,14 +179,17 @@ cleanup_dbus_watch (NMKeepAlive *self)
 {
 	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
+	if (!priv->dbus_client)
+		return;
+
 	_LOGD ("Cleanup DBus client watch");
 
-	g_clear_pointer (&priv->dbus_client, g_free);
-
-	if (priv->dbus_connection)
+	nm_clear_g_free (&priv->dbus_client);
+	if (priv->dbus_connection) {
 		g_dbus_connection_signal_unsubscribe (priv->dbus_connection,
 		                                      priv->subscription_id);
-	g_clear_object (&priv->dbus_connection);
+		g_clear_object (&priv->dbus_connection);
+	}
 }
 
 static void
@@ -221,23 +224,26 @@ nm_keep_alive_set_dbus_client_watch (NMKeepAlive *self,
 
 	cleanup_dbus_watch (self);
 
-	if (client_address == NULL)
-		return;
+	if (client_address) {
+		_LOGD ("Registering dbus client watch for keep alive");
 
-	_LOGD ("Registering dbus client watch for keep alive");
+		priv->dbus_client = g_strdup (client_address);
+		priv->dbus_connection = g_object_ref (connection);
+		priv->subscription_id = g_dbus_connection_signal_subscribe (connection,
+		                                                            "org.freedesktop.DBus",
+		                                                            "org.freedesktop.DBus",
+		                                                            "NameOwnerChanged",
+		                                                            "/org/freedesktop/DBus",
+		                                                            priv->dbus_client,
+		                                                            G_DBUS_SIGNAL_FLAGS_NONE,
+		                                                            name_owner_changed_cb,
+		                                                            self,
+		                                                            NULL);
+		/* FIXME: is there are race here and is it possible that name-owner is already gone?
+		 *        Do we need a GetNameOwner first? */
+	}
 
-	priv->dbus_client = g_strdup (client_address);
-	priv->dbus_connection = g_object_ref (connection);
-	priv->subscription_id = g_dbus_connection_signal_subscribe (connection,
-	                                                            "org.freedesktop.DBus",
-	                                                            "org.freedesktop.DBus",
-	                                                            "NameOwnerChanged",
-	                                                            "/org/freedesktop/DBus",
-	                                                            priv->dbus_client,
-	                                                            G_DBUS_SIGNAL_FLAGS_NONE,
-	                                                            name_owner_changed_cb,
-	                                                            self,
-	                                                            NULL);
+	_notify_alive (self);
 }
 
 /*****************************************************************************/
