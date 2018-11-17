@@ -135,22 +135,41 @@ connection_flags_changed (NMSettingsConnection *connection,
 	_notify_alive (self);
 }
 
+static void
+_set_settings_connection_watch_visible (NMKeepAlive *self,
+                                        NMSettingsConnection *connection,
+                                        gboolean emit_signal)
+{
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+	gs_unref_object NMSettingsConnection *old_connection = NULL;
+
+	if (priv->connection == connection)
+		return;
+
+	if (priv->connection) {
+		g_signal_handlers_disconnect_by_func (priv->connection,
+		                                      G_CALLBACK (connection_flags_changed),
+		                                      self);
+		old_connection = g_steal_pointer (&priv->connection);
+	}
+
+	if (connection) {
+		priv->connection = g_object_ref (connection);
+		g_signal_connect (priv->connection,
+		                  NM_SETTINGS_CONNECTION_FLAGS_CHANGED,
+		                  G_CALLBACK (connection_flags_changed),
+		                  self);
+	}
+
+	if (emit_signal)
+		_notify_alive (self);
+}
+
 void
 nm_keep_alive_set_settings_connection_watch_visible (NMKeepAlive         *self,
                                                      NMSettingsConnection *connection)
 {
-	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
-
-	if (priv->connection) {
-		g_signal_handlers_disconnect_by_data (priv->connection, self);
-		priv->connection = NULL;
-	}
-
-	priv->connection = g_object_ref (connection);
-	g_signal_connect_object (priv->connection, NM_SETTINGS_CONNECTION_FLAGS_CHANGED,
-	                         G_CALLBACK (connection_flags_changed), self, 0);
-
-	_notify_alive (self);
+	_set_settings_connection_watch_visible (self, connection, TRUE);
 }
 
 /*****************************************************************************/
@@ -265,10 +284,8 @@ static void
 dispose (GObject *object)
 {
 	NMKeepAlive *self = NM_KEEP_ALIVE (object);
-	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
-	g_clear_object (&priv->connection);
-
+	_set_settings_connection_watch_visible (self, NULL, FALSE);
 	cleanup_dbus_watch (self);
 }
 
