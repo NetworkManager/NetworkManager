@@ -2190,22 +2190,20 @@ active_connection_keep_alive_changed (NMActiveConnection *ac,
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	GError *error = NULL;
 
-	/* The connection does not have a reason to stay alive anymore. */
-	if (!nm_active_connection_get_keep_alive (ac)) {
-		if (nm_active_connection_get_state (ac) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-			if (!nm_manager_deactivate_connection (priv->manager,
-			                                       ac,
-			                                       NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
-			                                       &error)) {
-				_LOGW (LOGD_DEVICE, "connection '%s' is no longer kept alive, but error deactivating it: (%d) %s",
-				       nm_active_connection_get_settings_connection_id (ac),
-				       error ? error->code : -1,
-				       error ? error->message : "(unknown)");
-				g_clear_error (&error);
-			}
+	if (nm_active_connection_get_keep_alive (ac))
+		return;
+
+	if (nm_active_connection_get_state (ac) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+		if (!nm_manager_deactivate_connection (priv->manager,
+		                                       ac,
+		                                       NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
+		                                       &error)) {
+			_LOGW (LOGD_DEVICE, "connection '%s' is no longer kept alive, but error deactivating it: %s",
+			       nm_active_connection_get_settings_connection_id (ac),
+			       error->message);
+			g_clear_error (&error);
 		}
 	}
-
 }
 
 static void
