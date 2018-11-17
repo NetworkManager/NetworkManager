@@ -50,7 +50,6 @@ void nm_keep_alive_set_settings_connection_watch_visible (NMKeepAlive         *s
 
 void nm_keep_alive_set_dbus_client_watch (NMKeepAlive      *self,
                                           GDBusConnection  *connection,
-                                          const char       *client_address,
-                                          GError          **error);
+                                          const char       *client_address);
 
 #endif /* __NETWORKMANAGER_KEEP_ALIVE_H__ */

@@ -175,10 +175,9 @@ name_owner_changed_cb (GDBusConnection *connection,
 }
 
 void
-nm_keep_alive_set_dbus_client_watch (NMKeepAlive      *self,
-                                     GDBusConnection  *connection,
-                                     const char       *client_address,
-                                     GError          **error)
+nm_keep_alive_set_dbus_client_watch (NMKeepAlive *self,
+                                     GDBusConnection *connection,
+                                     const char *client_address)
 {
 	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
