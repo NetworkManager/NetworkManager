@@ -22,9 +22,10 @@
 #include "nm-default.h"
 
 #include "nm-keep-alive.h"
-#include "settings/nm-settings-connection.h"
 
 #include <string.h>
+
+#include "settings/nm-settings-connection.h"
 
 /*****************************************************************************/
 
@@ -33,13 +34,14 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMKeepAlive,
 );
 
 typedef struct {
-	gboolean floating;
-	gboolean forced;
 	NMSettingsConnection *connection;
 	GDBusConnection *dbus_connection;
 	char *dbus_client;
 
 	guint subscription_id;
+
+	bool floating:1;
+	bool forced:1;
 } NMKeepAlivePrivate;
 
 struct _NMKeepAlive {
@@ -62,25 +64,18 @@ G_DEFINE_TYPE (NMKeepAlive, nm_keep_alive, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
-NMKeepAlive* nm_keep_alive_new (gboolean floating)
-{
-	NMKeepAlive *res = g_object_new (NM_TYPE_KEEP_ALIVE, NULL);
-	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (res);
-
-	priv->floating = floating;
-
-	return res;
-}
-
-gboolean nm_keep_alive_is_alive (NMKeepAlive *self)
+gboolean
+nm_keep_alive_is_alive (NMKeepAlive *self)
 {
 	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
-	if (priv->floating || priv->forced)
+	if (   priv->floating
+	    || priv->forced)
 		return TRUE;
 
-	if (priv->connection && NM_FLAGS_HAS (nm_settings_connection_get_flags (priv->connection),
-	                                      NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE))
+	if (   priv->connection
+	    && NM_FLAGS_HAS (nm_settings_connection_get_flags (priv->connection),
+	                     NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE))
 		return TRUE;
 
 	if (priv->dbus_client)
@@ -89,7 +84,8 @@ gboolean nm_keep_alive_is_alive (NMKeepAlive *self)
 	return FALSE;
 }
 
-void nm_keep_alive_sink (NMKeepAlive *self)
+void
+nm_keep_alive_sink (NMKeepAlive *self)
 {
 	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
@@ -98,7 +94,8 @@ void nm_keep_alive_sink (NMKeepAlive *self)
 	_notify (self, PROP_ALIVE);
 }
 
-void nm_keep_alive_set_forced (NMKeepAlive *self, gboolean forced)
+void
+nm_keep_alive_set_forced (NMKeepAlive *self, gboolean forced)
 {
 	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
@@ -107,13 +104,14 @@ void nm_keep_alive_set_forced (NMKeepAlive *self, gboolean forced)
 	_notify (self, PROP_ALIVE);
 }
 
+/*****************************************************************************/
+
 static void
 connection_flags_changed (NMSettingsConnection *connection,
                           NMKeepAlive          *self)
 {
 	_notify (self, PROP_ALIVE);
 }
-
 
 void
 nm_keep_alive_set_settings_connection_watch_visible (NMKeepAlive         *self,
@@ -132,6 +130,8 @@ nm_keep_alive_set_settings_connection_watch_visible (NMKeepAlive         *self,
 
 	_notify (self, PROP_ALIVE);
 }
+
+/*****************************************************************************/
 
 static void
 cleanup_dbus_watch (NMKeepAlive *self)
@@ -158,19 +158,16 @@ name_owner_changed_cb (GDBusConnection *connection,
                        gpointer         user_data)
 {
 	NMKeepAlive *self = NM_KEEP_ALIVE (user_data);
-
 	const char *old_owner;
 	const char *new_owner;
 
 	g_variant_get (parameters, "(&s&s&s)", NULL, &old_owner, &new_owner);
 
-	if (g_strcmp0 (new_owner, "") != 0)
+	if (!nm_streq0 (new_owner, ""))
 		return;
 
 	_LOGD ("DBus client for keep alive disappeared from bus");
-
 	cleanup_dbus_watch (self);
-
 	_notify (self, PROP_ALIVE);
 }
 
@@ -190,12 +187,19 @@ nm_keep_alive_set_dbus_client_watch (NMKeepAlive *self,
 
 	priv->dbus_client = g_strdup (client_address);
 	priv->dbus_connection = g_object_ref (connection);
-	priv->subscription_id =
-		g_dbus_connection_signal_subscribe (connection, "org.freedesktop.DBus",
-		                                    "org.freedesktop.DBus", "NameOwnerChanged", "/org/freedesktop/DBus",
-		                                    priv->dbus_client, G_DBUS_SIGNAL_FLAGS_NONE,
-		                                    name_owner_changed_cb, self, NULL);
+	priv->subscription_id = g_dbus_connection_signal_subscribe (connection,
+	                                                            "org.freedesktop.DBus",
+	                                                            "org.freedesktop.DBus",
+	                                                            "NameOwnerChanged",
+	                                                            "/org/freedesktop/DBus",
+	                                                            priv->dbus_client,
+	                                                            G_DBUS_SIGNAL_FLAGS_NONE,
+	                                                            name_owner_changed_cb,
+	                                                            self,
+	                                                            NULL);
 }
+
+/*****************************************************************************/
 
 static void
 get_property (GObject *object,
@@ -215,10 +219,22 @@ get_property (GObject *object,
 	}
 }
 
+/*****************************************************************************/
+
 static void
 nm_keep_alive_init (NMKeepAlive *self)
 {
-	/* Nothing to do */
+}
+
+NMKeepAlive *
+nm_keep_alive_new (gboolean floating)
+{
+	NMKeepAlive *res = g_object_new (NM_TYPE_KEEP_ALIVE, NULL);
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (res);
+
+	priv->floating = floating;
+
+	return res;
 }
 
 static void

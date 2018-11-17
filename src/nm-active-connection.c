@@ -1477,8 +1477,9 @@ constructed (GObject *object)
 	g_return_if_fail (priv->subject);
 	g_return_if_fail (priv->activation_reason != NM_ACTIVATION_REASON_UNSET);
 
-	if (priv->activation_reason == NM_ACTIVATION_REASON_AUTOCONNECT ||
-	    priv->activation_reason == NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES) {
+	if (NM_IN_SET ((NMActivationReason) priv->activation_reason,
+	               NM_ACTIVATION_REASON_AUTOCONNECT,
+	               NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES)) {
 		nm_keep_alive_set_settings_connection_watch_visible (priv->keep_alive, priv->settings_connection.obj);
 		nm_keep_alive_sink (priv->keep_alive);
 	}
