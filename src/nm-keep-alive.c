@@ -42,6 +42,7 @@ typedef struct {
 
 	bool floating:1;
 	bool forced:1;
+	bool alive:1;
 } NMKeepAlivePrivate;
 
 struct _NMKeepAlive {
@@ -64,8 +65,8 @@ G_DEFINE_TYPE (NMKeepAlive, nm_keep_alive, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
-gboolean
-nm_keep_alive_is_alive (NMKeepAlive *self)
+static gboolean
+_is_alive (NMKeepAlive *self)
 {
 	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
@@ -84,14 +85,34 @@ nm_keep_alive_is_alive (NMKeepAlive *self)
 	return FALSE;
 }
 
+static void
+_notify_alive (NMKeepAlive *self)
+{
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+
+	if (priv->alive == _is_alive (self))
+		return;
+	priv->alive = !priv->alive;
+	_notify (self, PROP_ALIVE);
+}
+
+gboolean
+nm_keep_alive_is_alive (NMKeepAlive *self)
+{
+	return NM_KEEP_ALIVE_GET_PRIVATE (self)->alive;
+}
+
+/*****************************************************************************/
+
 void
 nm_keep_alive_sink (NMKeepAlive *self)
 {
 	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
-	priv->floating = FALSE;
-
-	_notify (self, PROP_ALIVE);
+	if (priv->floating) {
+		priv->floating = FALSE;
+		_notify_alive (self);
+	}
 }
 
 void
@@ -99,9 +120,10 @@ nm_keep_alive_set_forced (NMKeepAlive *self, gboolean forced)
 {
 	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
-	priv->forced = forced;
-
-	_notify (self, PROP_ALIVE);
+	if (priv->forced != (!!forced)) {
+		priv->forced = forced;
+		_notify_alive (self);
+	}
 }
 
 /*****************************************************************************/
@@ -110,7 +132,7 @@ static void
 connection_flags_changed (NMSettingsConnection *connection,
                           NMKeepAlive          *self)
 {
-	_notify (self, PROP_ALIVE);
+	_notify_alive (self);
 }
 
 void
@@ -128,7 +150,7 @@ nm_keep_alive_set_settings_connection_watch_visible (NMKeepAlive         *self,
 	g_signal_connect_object (priv->connection, NM_SETTINGS_CONNECTION_FLAGS_CHANGED,
 	                         G_CALLBACK (connection_flags_changed), self, 0);
 
-	_notify (self, PROP_ALIVE);
+	_notify_alive (self);
 }
 
 /*****************************************************************************/
@@ -168,7 +190,7 @@ name_owner_changed_cb (GDBusConnection *connection,
 
 	_LOGD ("DBus client for keep alive disappeared from bus");
 	cleanup_dbus_watch (self);
-	_notify (self, PROP_ALIVE);
+	_notify_alive (self);
 }
 
 void
@@ -224,17 +246,19 @@ get_property (GObject *object,
 static void
 nm_keep_alive_init (NMKeepAlive *self)
 {
+	nm_assert (NM_KEEP_ALIVE_GET_PRIVATE (self)->alive == _is_alive (self));
 }
 
 NMKeepAlive *
 nm_keep_alive_new (gboolean floating)
 {
-	NMKeepAlive *res = g_object_new (NM_TYPE_KEEP_ALIVE, NULL);
-	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (res);
+	NMKeepAlive *self = g_object_new (NM_TYPE_KEEP_ALIVE, NULL);
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
 	priv->floating = floating;
-
-	return res;
+	priv->alive = TRUE;
+	nm_assert (priv->alive == _is_alive (self));
+	return self;
 }
 
 static void
