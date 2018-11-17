@@ -5254,25 +5254,24 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 
 			option_value_free = option_value;
 
-			if ((g_strcmp0 (option_name, "persist") == 0) &&
-			    g_variant_is_of_type (option_value, G_VARIANT_TYPE_STRING)) {
+			if (   nm_streq (option_name, "persist")
+			    && g_variant_is_of_type (option_value, G_VARIANT_TYPE_STRING)) {
 				s = g_variant_get_string (option_value, NULL);
 
-				if (g_strcmp0 (s, "volatile") == 0) {
+				if (nm_streq (s, "volatile"))
 					persist = NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_ONLY;
-				} else if (g_strcmp0 (s, "memory") == 0) {
+				else if (nm_streq (s, "memory"))
 					persist = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY;
-				} else if (g_strcmp0 (s, "disk") == 0) {
+				else if (nm_streq (s, "disk"))
 					persist = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
-				} else {
+				else {
 					error = g_error_new_literal (NM_MANAGER_ERROR,
 					                             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
-					                             "Option \"persist\" must be one of \"volatile\", \"memory\" or \"disk\".");
+					                             "Option \"persist\" must be one of \"volatile\", \"memory\" or \"disk\"");
 					goto error;
 				}
-
-			} else if ((g_strcmp0 (option_name, "bind") == 0) &&
-			    g_variant_is_of_type (option_value, G_VARIANT_TYPE_STRING)) {
+			} else if (   nm_streq (option_name, "bind")
+			           && g_variant_is_of_type (option_value, G_VARIANT_TYPE_STRING)) {
 				s = g_variant_get_string (option_value, NULL);
 
 				if (nm_streq (s, "dbus-client"))
@@ -5282,14 +5281,13 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 				else {
 					error = g_error_new_literal (NM_MANAGER_ERROR,
 					                             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
-					                             "Option \"bind\" must be one of \"dbus-client\" or \"none\".");
+					                             "Option \"bind\" must be one of \"dbus-client\" or \"none\"");
 					goto error;
 				}
 			} else {
-				/* Unknown argument */
 				error = g_error_new_literal (NM_MANAGER_ERROR,
 				                             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
-				                             "Unknown extra option passed.");
+				                             "Unknown extra option passed");
 				goto error;
 			}
 		}
