@@ -339,6 +339,7 @@ NMActiveConnection *nm_client_add_and_activate_connection_finish (NMClient *clie
                                                                   GAsyncResult *result,
                                                                   GError **error);
 
+NM_AVAILABLE_IN_1_16
 void                nm_client_add_and_activate_connection_options_async  (NMClient *client,
                                                                           NMConnection *partial,
                                                                           NMDevice *device,
@@ -347,6 +348,7 @@ void                nm_client_add_and_activate_connection_options_async  (NMClie
                                                                           GCancellable *cancellable,
                                                                           GAsyncReadyCallback callback,
                                                                           gpointer user_data);
+NM_AVAILABLE_IN_1_16
 NMActiveConnection *nm_client_add_and_activate_connection_options_finish (NMClient *client,
                                                                           GAsyncResult *result,
                                                                           GError **error);
