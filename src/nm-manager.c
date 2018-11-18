@@ -5235,7 +5235,7 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	const char *specific_object_path;
 	gs_free NMConnection **conns = NULL;
 	NMSettingsConnectionPersistMode persist = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
-	const char *bind_lifetime = "none";
+	gboolean bind_dbus_client = FALSE;
 
 	if (g_strcmp0 (method_info->parent.name, "AddAndActivateConnection2") == 0)
 		g_variant_get (parameters, "(@a{sa{sv}}&o&o@a{sv})", &settings, &device_path, &specific_object_path, &options);
@@ -5275,15 +5275,16 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 			    g_variant_is_of_type (option_value, G_VARIANT_TYPE_STRING)) {
 				s = g_variant_get_string (option_value, NULL);
 
-				if (!NM_IN_STRSET (s, "dbus-client", "none")) {
+				if (nm_streq (s, "dbus-client"))
+					bind_dbus_client = TRUE;
+				else if (nm_streq (s, "none"))
+					bind_dbus_client = FALSE;
+				else {
 					error = g_error_new_literal (NM_MANAGER_ERROR,
 					                             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
 					                             "Option \"bind\" must be one of \"dbus-client\" or \"none\".");
 					goto error;
 				}
-
-				bind_lifetime = s;
-
 			} else {
 				/* Unknown argument */
 				error = g_error_new_literal (NM_MANAGER_ERROR,
@@ -5364,7 +5365,7 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	if (!active)
 		goto error;
 
-	if (g_strcmp0 (bind_lifetime, "dbus-client") == 0)
+	if (bind_dbus_client)
 		nm_active_connection_bind_dbus_client (active, dbus_connection, sender);
 
 	nm_active_connection_authorize (active,
