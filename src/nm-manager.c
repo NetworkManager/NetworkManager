@@ -5364,12 +5364,8 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	if (!active)
 		goto error;
 
-	if (g_strcmp0 (bind_lifetime, "dbus-client") == 0) {
-		if (persist != NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_ONLY)
-			goto error;
-
+	if (g_strcmp0 (bind_lifetime, "dbus-client") == 0)
 		nm_active_connection_bind_dbus_client (active, dbus_connection, sender);
-	}
 
 	nm_active_connection_authorize (active,
 	                                incompl_conn,
