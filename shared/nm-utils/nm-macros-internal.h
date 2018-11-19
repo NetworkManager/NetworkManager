@@ -639,8 +639,11 @@ NM_G_ERROR_MSG (GError *error)
 #define NM_PROPAGATE_CONST(test_expr, ptr) (ptr)
 #endif
 
+/* with the way it is implemented, the caller may or may not pass a trailing
+ * ',' and it will work. However, this makes the macro unsuitable for initializing
+ * an array. */
 #define NM_MAKE_STRV(...) \
-	((const char *const[]) { __VA_ARGS__, NULL })
+	((const char *const[(sizeof (((const char *const[]) { __VA_ARGS__ })) / sizeof (const char *)) + 1]) { __VA_ARGS__ })
 
 /*****************************************************************************/
 
