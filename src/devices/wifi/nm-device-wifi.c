@@ -909,18 +909,6 @@ complete_connection (NMDevice *device,
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_MAC_ADDRESS);
 				return FALSE;
 			}
-		} else {
-			guint8 tmp[ETH_ALEN];
-
-			/* Lock the connection to this device by default if it uses a
-			 * permanent MAC address (ie not a 'locally administered' one)
-			 */
-			nm_utils_hwaddr_aton (perm_hw_addr, tmp, ETH_ALEN);
-			if (!(tmp[0] & 0x02)) {
-				g_object_set (G_OBJECT (s_wifi),
-				              NM_SETTING_WIRELESS_MAC_ADDRESS, perm_hw_addr,
-				              NULL);
-			}
 		}
 	}
 
