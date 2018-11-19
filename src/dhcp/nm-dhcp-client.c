@@ -554,7 +554,6 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                           GError **error)
 {
 	NMDhcpClientPrivate *priv;
-	gs_free char *str = NULL;
 	gs_unref_bytes GBytes *own_client_id = NULL;
 
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
