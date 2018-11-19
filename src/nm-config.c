@@ -2755,10 +2755,12 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
 	NMConfig *self = NM_CONFIG (initable);
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
-	GKeyFile *keyfile, *keyfile_intern;
-	char *config_main_file = NULL;
-	char *config_description = NULL;
+	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	gs_unref_keyfile GKeyFile *keyfile_intern = NULL;
+	gs_free char *config_main_file = NULL;
+	gs_free char *config_description = NULL;
 	gs_strfreev char **no_auto_default = NULL;
+	gs_strfreev char **warnings = NULL;
 	gs_free char *configure_and_quit = NULL;
 	gboolean intern_config_needs_rewrite;
 	const char *s;
@@ -2790,12 +2792,12 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	                              priv->system_config_dir,
 	                              &config_main_file,
 	                              &config_description,
-	                              &priv->warnings,
+	                              &warnings,
 	                              error);
 	if (!keyfile)
 		return FALSE;
 
-	/* Initialize read only private members */
+	/* Initialize read-only private members */
 
 	if (priv->cli.no_auto_default_file)
 		priv->no_auto_default_file = g_strdup (priv->cli.no_auto_default_file);
@@ -2841,12 +2843,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	                                             keyfile_intern);
 
 	priv->config_data = g_object_ref (priv->config_data_orig);
-
-	g_free (config_main_file);
-	g_free (config_description);
-	g_key_file_unref (keyfile);
-	if (keyfile_intern)
-		g_key_file_unref (keyfile_intern);
+	priv->warnings = g_steal_pointer (&warnings);
 	return TRUE;
 }
 
