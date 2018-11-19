@@ -1269,7 +1269,7 @@ nm_client_add_and_activate_connection_finish (NMClient *client,
 }
 
 /**
- * nm_client_add_and_activate_connection_options_async:
+ * nm_client_add_and_activate_connection_options:
  * @client: a #NMClient
  * @partial: (allow-none): an #NMConnection to add; the connection may be
  *   partially filled (or even %NULL) and will be completed by NetworkManager
@@ -1314,14 +1314,14 @@ nm_client_add_and_activate_connection_finish (NMClient *client,
  * Since: 1.16
  **/
 void
-nm_client_add_and_activate_connection_options_async (NMClient *client,
-                                                     NMConnection *partial,
-                                                     NMDevice *device,
-                                                     const char *specific_object,
-                                                     GVariant *options,
-                                                     GCancellable *cancellable,
-                                                     GAsyncReadyCallback callback,
-                                                     gpointer user_data)
+nm_client_add_and_activate_connection_options (NMClient *client,
+                                               NMConnection *partial,
+                                               NMDevice *device,
+                                               const char *specific_object,
+                                               GVariant *options,
+                                               GCancellable *cancellable,
+                                               GAsyncReadyCallback callback,
+                                               gpointer user_data)
 {
 	GSimpleAsyncResult *simple;
 	GError *error = NULL;
@@ -1337,7 +1337,7 @@ nm_client_add_and_activate_connection_options_async (NMClient *client,
 	}
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_add_and_activate_connection_options_async);
+	                                    nm_client_add_and_activate_connection_options);
 	if (cancellable)
 		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nm_manager_add_and_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->manager,
@@ -1351,7 +1351,7 @@ nm_client_add_and_activate_connection_options_async (NMClient *client,
  * @result: the result passed to the #GAsyncReadyCallback
  * @error: location for a #GError, or %NULL
  *
- * Gets the result of a call to nm_client_add_and_activate_connection_options_async().
+ * Gets the result of a call to nm_client_add_and_activate_connection_options().
  *
  * You can call nm_active_connection_get_connection() on the returned
  * #NMActiveConnection to find the path of the created #NMConnection.
