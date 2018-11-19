@@ -44,6 +44,7 @@ typedef struct {
 	bool floating:1;
 	bool forced:1;
 	bool alive:1;
+	bool dbus_client_confirmed:1;
 } NMKeepAlivePrivate;
 
 struct _NMKeepAlive {
@@ -66,6 +67,7 @@ G_DEFINE_TYPE (NMKeepAlive, nm_keep_alive, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+static gboolean _is_alive_dbus_client (NMKeepAlive *self);
 static void cleanup_dbus_watch (NMKeepAlive *self);
 
 /*****************************************************************************/
@@ -84,7 +86,10 @@ _is_alive (NMKeepAlive *self)
 	                     NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE))
 		return TRUE;
 
-	if (priv->dbus_client)
+	/* Perform this check as last. We want to confirm whether the dbus-client
+	 * is alive lazyly, so if we already decided above that the keep-alive
+	 * is good, we don't rely on the outcome of this check. */
+	if (_is_alive_dbus_client (self))
 		return TRUE;
 
 	return FALSE;
@@ -213,6 +218,37 @@ get_name_owner_cb (GObject *source_object,
 	_notify_alive (self);
 }
 
+static gboolean
+_is_alive_dbus_client (NMKeepAlive *self)
+{
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+
+	if (!priv->dbus_client)
+		return FALSE;
+
+	if (!priv->dbus_client_confirmed) {
+		/* it's unconfirmed that the D-Bus client is really alive.
+		 * It looks like it is, but as we are claiming that to be
+		 * the case, issue an async GetNameOwner call to make sure. */
+		priv->dbus_client_confirmed = TRUE;
+		priv->dbus_client_confirm_cancellable = g_cancellable_new ();
+
+		g_dbus_connection_call (priv->dbus_connection,
+		                        "org.freedesktop.DBus",
+		                        "/org/freedesktop/DBus",
+		                        "org.freedesktop.DBus",
+		                        "GetNameOwner",
+		                        g_variant_new ("(s)", priv->dbus_client),
+		                        G_VARIANT_TYPE ("(s)"),
+		                        G_DBUS_CALL_FLAGS_NONE,
+		                        -1,
+		                        priv->dbus_client_confirm_cancellable,
+		                        get_name_owner_cb,
+		                        self);
+	}
+	return TRUE;
+}
+
 static void
 cleanup_dbus_watch (NMKeepAlive *self)
 {
@@ -268,6 +304,7 @@ nm_keep_alive_set_dbus_client_watch (NMKeepAlive *self,
 		_LOGD ("Registering dbus client watch for keep alive");
 
 		priv->dbus_client = g_strdup (client_address);
+		priv->dbus_client_confirmed = FALSE;
 		priv->dbus_connection = g_object_ref (connection);
 		priv->subscription_id = g_dbus_connection_signal_subscribe (connection,
 		                                                            "org.freedesktop.DBus",
@@ -279,20 +316,6 @@ nm_keep_alive_set_dbus_client_watch (NMKeepAlive *self,
 		                                                            name_owner_changed_cb,
 		                                                            self,
 		                                                            NULL);
-
-		priv->dbus_client_confirm_cancellable = g_cancellable_new ();
-		g_dbus_connection_call (priv->dbus_connection,
-		                        "org.freedesktop.DBus",
-		                        "/org/freedesktop/DBus",
-		                        "org.freedesktop.DBus",
-		                        "GetNameOwner",
-		                        g_variant_new ("(s)", priv->dbus_client),
-		                        G_VARIANT_TYPE ("(s)"),
-		                        G_DBUS_CALL_FLAGS_NONE,
-		                        -1,
-		                        priv->dbus_client_confirm_cancellable,
-		                        get_name_owner_cb,
-		                        self);
 	}
 
 	_notify_alive (self);
