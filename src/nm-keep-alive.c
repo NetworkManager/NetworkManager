@@ -38,6 +38,7 @@ typedef struct {
 	GDBusConnection *dbus_connection;
 	char *dbus_client;
 
+	GCancellable *dbus_client_confirm_cancellable;
 	guint subscription_id;
 
 	bool floating:1;
@@ -62,6 +63,10 @@ G_DEFINE_TYPE (NMKeepAlive, nm_keep_alive, G_TYPE_OBJECT)
 
 #define _NMLOG_DOMAIN      LOGD_CORE
 #define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, "keep-alive", __VA_ARGS__)
+
+/*****************************************************************************/
+
+static void cleanup_dbus_watch (NMKeepAlive *self);
 
 /*****************************************************************************/
 
@@ -175,6 +180,40 @@ nm_keep_alive_set_settings_connection_watch_visible (NMKeepAlive         *self,
 /*****************************************************************************/
 
 static void
+get_name_owner_cb (GObject *source_object,
+                   GAsyncResult *res,
+                   gpointer user_data)
+{
+	NMKeepAlive *self = user_data;
+	NMKeepAlivePrivate *priv;
+	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *result = NULL;
+	const char *name_owner;
+
+	result = g_dbus_connection_call_finish ((GDBusConnection *) source_object,
+	                                        res,
+	                                        &error);
+	if (   !result
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	if (result) {
+		g_variant_get (result, "(&s)", &name_owner);
+
+		priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+
+		if (nm_streq (name_owner, priv->dbus_client)) {
+			/* all good, the name is confirmed. */
+			return;
+		}
+	}
+
+	_LOGD ("DBus client for keep alive is not on the bus");
+	cleanup_dbus_watch (self);
+	_notify_alive (self);
+}
+
+static void
 cleanup_dbus_watch (NMKeepAlive *self)
 {
 	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
@@ -184,6 +223,7 @@ cleanup_dbus_watch (NMKeepAlive *self)
 
 	_LOGD ("Cleanup DBus client watch");
 
+	nm_clear_g_cancellable (&priv->dbus_client_confirm_cancellable);
 	nm_clear_g_free (&priv->dbus_client);
 	if (priv->dbus_connection) {
 		g_dbus_connection_signal_unsubscribe (priv->dbus_connection,
@@ -239,8 +279,20 @@ nm_keep_alive_set_dbus_client_watch (NMKeepAlive *self,
 		                                                            name_owner_changed_cb,
 		                                                            self,
 		                                                            NULL);
-		/* FIXME: is there are race here and is it possible that name-owner is already gone?
-		 *        Do we need a GetNameOwner first? */
+
+		priv->dbus_client_confirm_cancellable = g_cancellable_new ();
+		g_dbus_connection_call (priv->dbus_connection,
+		                        "org.freedesktop.DBus",
+		                        "/org/freedesktop/DBus",
+		                        "org.freedesktop.DBus",
+		                        "GetNameOwner",
+		                        g_variant_new ("(s)", priv->dbus_client),
+		                        G_VARIANT_TYPE ("(s)"),
+		                        G_DBUS_CALL_FLAGS_NONE,
+		                        -1,
+		                        priv->dbus_client_confirm_cancellable,
+		                        get_name_owner_cb,
+		                        self);
 	}
 
 	_notify_alive (self);
