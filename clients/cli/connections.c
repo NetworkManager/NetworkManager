@@ -7228,7 +7228,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	gboolean temp_changes;
 	GError *err1 = NULL;
 	NmcEditorMenuContext menu_ctx = { 0 };
-	gulong handler_id;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	if (s_con)
@@ -7254,7 +7253,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 		gs_free char *cmd_arg_s = NULL;
 		gs_free char *cmd_arg_p = NULL;
 		gs_free char *cmd_arg_v = NULL;
-		gboolean dirty, connection_changed;
+		gboolean dirty;
 
 		/* Connection is dirty? (not saved or differs from the saved) */
 		dirty = is_connection_dirty (connection, rem_con);
@@ -7743,8 +7742,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			/* Save the connection */
 			if (nm_connection_verify (connection, &err1)) {
 				gboolean persistent = TRUE;
+				gboolean connection_changed;
 				nm_auto_unref_gsource GSource *source = NULL;
 				gboolean timeout = FALSE;
+				gulong handler_id = 0;
 
 				/* parse argument */
 				if (cmd_arg) {
@@ -7776,21 +7777,19 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					                    connection,
 					                    add_connection_editor_cb,
 					                    info);
+					connection_changed = TRUE;
 				} else {
 					/* Save/update already saved (existing) connection */
 					nm_connection_replace_settings_from_connection (NM_CONNECTION (rem_con),
 					                                                connection);
 					update_connection (persistent, rem_con, update_connection_editor_cb, NULL);
+
+					handler_id = g_signal_connect (rem_con,
+					                               NM_CONNECTION_CHANGED,
+					                               G_CALLBACK (editor_connection_changed_cb),
+					                               &connection_changed);
+					connection_changed = FALSE;
 				}
-
-
-
-				connection_changed = FALSE;
-				handler_id = g_signal_connect (rem_con,
-				                               NM_CONNECTION_CHANGED,
-				                               G_CALLBACK (editor_connection_changed_cb),
-				                               &connection_changed);
-
 
 				source = g_timeout_source_new (10 * NM_UTILS_MSEC_PER_SECOND);
 				g_source_set_callback (source, editor_save_timeout, &timeout, NULL);
@@ -7802,7 +7801,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				while (!connection_changed && !timeout)
 					g_main_context_iteration (NULL, TRUE);
 
-				g_signal_handler_disconnect (rem_con, handler_id);
+				if (handler_id)
+					g_signal_handler_disconnect (rem_con, handler_id);
 				g_source_destroy (source);
 
 				if (nmc_editor_error) {
