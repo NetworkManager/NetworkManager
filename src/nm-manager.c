@@ -5270,7 +5270,7 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 					                             "Option \"persist\" must be one of \"volatile\", \"memory\" or \"disk\"");
 					goto error;
 				}
-			} else if (   nm_streq (option_name, "bind")
+			} else if (   nm_streq (option_name, "bind-activation")
 			           && g_variant_is_of_type (option_value, G_VARIANT_TYPE_STRING)) {
 				s = g_variant_get_string (option_value, NULL);
 
@@ -5281,7 +5281,7 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 				else {
 					error = g_error_new_literal (NM_MANAGER_ERROR,
 					                             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
-					                             "Option \"bind\" must be one of \"dbus-client\" or \"none\"");
+					                             "Option \"bind-activation\" must be one of \"dbus-client\" or \"none\"");
 					goto error;
 				}
 			} else {

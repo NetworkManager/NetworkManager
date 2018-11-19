@@ -1304,12 +1304,10 @@ nm_client_add_and_activate_connection_finish (NMClient *client,
  *  * "persist": A string describing how the connection should be stored.
  *               The default is "disk", but it can be modified to "memory" (until
  *               the daemon quits) or "volatile" (will be deleted on disconnect).
- *  * "bind": Bind the connection lifetime to something. The default is "none",
+ *  * "bind-activation": Bind the connection lifetime to something. The default is "none",
  *            meaning an explicit disconnect is needed. The value "dbus-client"
- *            means the connection will automatically be closed when the calling
+ *            means the connection will automatically be deactivated when the calling
  *            DBus client disappears from the system bus.
- *            A non-default "bind" option must always be used together with
- *            "persist" set to "volatile".
  *
  * Since: 1.16
  **/
