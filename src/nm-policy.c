@@ -2183,6 +2183,30 @@ active_connection_state_changed (NMActiveConnection *active,
 }
 
 static void
+active_connection_keep_alive_changed (NMActiveConnection *ac,
+                                      GParamSpec *pspec,
+                                      NMPolicy *self)
+{
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	GError *error = NULL;
+
+	if (nm_active_connection_get_keep_alive (ac))
+		return;
+
+	if (nm_active_connection_get_state (ac) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+		if (!nm_manager_deactivate_connection (priv->manager,
+		                                       ac,
+		                                       NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
+		                                       &error)) {
+			_LOGW (LOGD_DEVICE, "connection '%s' is no longer kept alive, but error deactivating it: %s",
+			       nm_active_connection_get_settings_connection_id (ac),
+			       error->message);
+			g_clear_error (&error);
+		}
+	}
+}
+
+static void
 active_connection_added (NMManager *manager,
                          NMActiveConnection *active,
                          gpointer user_data)
@@ -2202,6 +2226,10 @@ active_connection_added (NMManager *manager,
 	g_signal_connect (active, "notify::" NM_ACTIVE_CONNECTION_STATE,
 	                  G_CALLBACK (active_connection_state_changed),
 	                  self);
+	g_signal_connect (active, "notify::" NM_ACTIVE_CONNECTION_INT_KEEP_ALIVE,
+	                  G_CALLBACK (active_connection_keep_alive_changed),
+	                  self);
+	active_connection_keep_alive_changed (active, NULL, self);
 }
 
 static void
@@ -2404,8 +2432,7 @@ connection_flags_changed (NMSettings *settings,
 	                  NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE)) {
 		if (!nm_settings_connection_autoconnect_is_blocked (connection))
 			schedule_activate_all (self);
-	} else
-		_deactivate_if_active (self, connection);
+	}
 }
 
 static void

@@ -135,6 +135,7 @@ sources = files(
   'nm-dispatcher.c',
   'nm-firewall-manager.c',
   'nm-hostname-manager.c',
+  'nm-keep-alive.c',
   'nm-manager.c',
   'nm-netns.c',
   'nm-pacrunner-manager.c',

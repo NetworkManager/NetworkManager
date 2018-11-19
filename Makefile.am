@@ -1926,6 +1926,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-rfkill-manager.h \
 	src/nm-session-monitor.h \
 	src/nm-session-monitor.c \
+	src/nm-keep-alive.c \
+	src/nm-keep-alive.h \
 	src/nm-sleep-monitor.c \
 	src/nm-sleep-monitor.h \
 	src/nm-types.h \

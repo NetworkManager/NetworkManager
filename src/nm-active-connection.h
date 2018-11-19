@@ -59,6 +59,7 @@
 #define NM_ACTIVE_CONNECTION_INT_MASTER_READY        "int-master-ready"
 #define NM_ACTIVE_CONNECTION_INT_ACTIVATION_TYPE     "int-activation-type"
 #define NM_ACTIVE_CONNECTION_INT_ACTIVATION_REASON   "int-activation-reason"
+#define NM_ACTIVE_CONNECTION_INT_KEEP_ALIVE          "int-keep-alive"
 
 /* Signals */
 #define NM_ACTIVE_CONNECTION_STATE_CHANGED           "state-changed"
@@ -185,6 +186,12 @@ NMActivationType nm_active_connection_get_activation_type (NMActiveConnection *s
 
 NMActivationReason nm_active_connection_get_activation_reason (NMActiveConnection *self);
 
+gboolean      nm_active_connection_get_keep_alive (NMActiveConnection *self);
+
 void          nm_active_connection_clear_secrets (NMActiveConnection *self);
+
+void          nm_active_connection_bind_dbus_client (NMActiveConnection *self,
+                                                     GDBusConnection *dbus_con,
+                                                     const char *dbus_name);
 
 #endif /* __NETWORKMANAGER_ACTIVE_CONNECTION_H__ */
