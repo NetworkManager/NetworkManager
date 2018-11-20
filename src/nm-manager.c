@@ -5420,10 +5420,10 @@ nm_manager_deactivate_connection (NMManager *manager,
 			return FALSE;
 		}
 	} else {
-		g_assert (NM_IS_ACT_REQUEST (active));
-		nm_device_state_changed (nm_active_connection_get_device (active),
-		                         NM_DEVICE_STATE_DEACTIVATING,
-		                         reason);
+		nm_assert (NM_IS_ACT_REQUEST (active));
+		nm_device_disconnect_active_connection (active,
+		                                        reason,
+		                                        NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN);
 	}
 
 	_notify (manager, PROP_ACTIVE_CONNECTIONS);
