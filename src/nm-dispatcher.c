@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2017 Red Hat, Inc.
+ * Copyright (C) 2004 - 2018 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
@@ -46,42 +46,6 @@
 
 static GDBusProxy *dispatcher_proxy;
 static GHashTable *requests = NULL;
-
-typedef struct {
-	GFileMonitor *monitor;
-	const char *const description;
-	const char *const dir;
-	const guint16 dir_len;
-	char has_scripts;
-} Monitor;
-
-enum {
-	MONITOR_INDEX_DEFAULT,
-	MONITOR_INDEX_PRE_UP,
-	MONITOR_INDEX_PRE_DOWN,
-};
-
-static Monitor monitors[3] = {
-#define MONITORS_INIT_SET(INDEX, USE, SCRIPT_DIR)   [INDEX] = { .dir_len = NM_STRLEN (SCRIPT_DIR), .dir = SCRIPT_DIR, .description = ("" USE), .has_scripts = TRUE }
-	MONITORS_INIT_SET (MONITOR_INDEX_DEFAULT,  "default",  NMD_SCRIPT_DIR_DEFAULT),
-	MONITORS_INIT_SET (MONITOR_INDEX_PRE_UP,   "pre-up",   NMD_SCRIPT_DIR_PRE_UP),
-	MONITORS_INIT_SET (MONITOR_INDEX_PRE_DOWN, "pre-down", NMD_SCRIPT_DIR_PRE_DOWN),
-};
-
-static const Monitor*
-_get_monitor_by_action (NMDispatcherAction action)
-{
-	switch (action) {
-	case NM_DISPATCHER_ACTION_PRE_UP:
-	case NM_DISPATCHER_ACTION_VPN_PRE_UP:
-		return &monitors[MONITOR_INDEX_PRE_UP];
-	case NM_DISPATCHER_ACTION_PRE_DOWN:
-	case NM_DISPATCHER_ACTION_VPN_PRE_DOWN:
-		return &monitors[MONITOR_INDEX_PRE_DOWN];
-	default:
-		return &monitors[MONITOR_INDEX_DEFAULT];
-	}
-}
 
 static void
 dump_proxy_to_props (NMProxyConfig *proxy, GVariantBuilder *builder)
@@ -379,7 +343,6 @@ dispatcher_results_process (guint request_id, NMDispatcherAction action, GVarian
 {
 	const char *script, *err;
 	guint32 result;
-	const Monitor *monitor = _get_monitor_by_action (action);
 
 	g_return_if_fail (results != NULL);
 
@@ -389,31 +352,14 @@ dispatcher_results_process (guint request_id, NMDispatcherAction action, GVarian
 	}
 
 	while (g_variant_iter_next (results, "(&su&s)", &script, &result, &err)) {
-		const char *script_validation_msg = "";
-
-		if (!*script) {
-			script_validation_msg = " (path is NULL)";
-			script = "(unknown)";
-		} else if (!strncmp (script, monitor->dir, monitor->dir_len)            /* check: prefixed by script directory */
-		    && script[monitor->dir_len] == '/' && script[monitor->dir_len+1]    /* check: with additional "/?" */
-		    && !strchr (&script[monitor->dir_len+1], '/')) {                    /* check: and no further '/' */
-			/* we expect the script to lie inside monitor->dir. If it does,
-			 * strip the directory name. Otherwise show the full path and a warning. */
-			script += monitor->dir_len + 1;
-		} else
-			script_validation_msg = " (unexpected path)";
-
 		if (result == DISPATCH_RESULT_SUCCESS) {
-			_LOGD ("(%u) %s succeeded%s",
-			       request_id,
-			       script, script_validation_msg);
+			_LOGD ("(%u) %s succeeded", request_id, script);
 		} else {
-			_LOGW ("(%u) %s failed (%s): %s%s",
+			_LOGW ("(%u) %s failed (%s): %s",
 			       request_id,
 			       script,
 			       dispatch_result_to_string (result),
-			       err,
-			       script_validation_msg);
+			       err);
 		}
 	}
 }
@@ -472,18 +418,6 @@ action_to_string (NMDispatcherAction action)
 {
 	g_assert ((gsize) action < G_N_ELEMENTS (action_table));
 	return action_table[action];
-}
-
-static gboolean
-dispatcher_idle_cb (gpointer user_data)
-{
-	DispatchInfo *info = user_data;
-
-	info->idle_id = 0;
-	if (info->callback)
-		info->callback (info->request_id, info->user_data);
-	dispatcher_info_cleanup (info);
-	return G_SOURCE_REMOVE;
 }
 
 static gboolean
@@ -549,21 +483,6 @@ _dispatcher_call (NMDispatcherAction action,
 		       blocking
 		           ? " (blocking)"
 		           : (callback ? " (with callback)" : ""));
-	}
-
-	if (!_get_monitor_by_action(action)->has_scripts) {
-		if (blocking == FALSE && (out_call_id || callback)) {
-			info = g_malloc0 (sizeof (*info));
-			info->action = action;
-			info->request_id = reqid;
-			info->callback = callback;
-			info->user_data = user_data;
-			info->idle_id = g_idle_add (dispatcher_idle_cb, info);
-			_LOGD ("(%u) simulate request; no scripts in %s",  reqid, _get_monitor_by_action(action)->dir);
-		} else
-			_LOGD ("(%u) ignoring request; no scripts in %s", reqid, _get_monitor_by_action(action)->dir);
-		success = TRUE;
-		goto done;
 	}
 
 	if (applied_connection)
@@ -698,7 +617,6 @@ _dispatcher_call (NMDispatcherAction action,
 	g_variant_unref (device_dhcp4_props);
 	g_variant_unref (device_dhcp6_props);
 
-done:
 	if (success && info) {
 		/* Track the request in case of cancelation */
 		g_hash_table_insert (requests, GUINT_TO_POINTER (info->request_id), info);
@@ -931,69 +849,10 @@ nm_dispatcher_call_cancel (guint call_id)
 	}
 }
 
-static void
-dispatcher_dir_changed (GFileMonitor *monitor,
-                        GFile *file,
-                        GFile *other_file,
-                        GFileMonitorEvent event_type,
-                        Monitor *item)
-{
-	const char *name;
-	char *full_name;
-	GDir *dir;
-	GError *error = NULL;
-
-	dir = g_dir_open (item->dir, 0, &error);
-	if (dir) {
-		int errsv = 0;
-
-		item->has_scripts = FALSE;
-		errno = 0;
-		while (!item->has_scripts
-		    && (name = g_dir_read_name (dir))) {
-			full_name = g_build_filename (item->dir, name, NULL);
-			item->has_scripts = g_file_test (full_name, G_FILE_TEST_IS_EXECUTABLE);
-			g_free (full_name);
-		}
-		errsv = errno;
-		g_dir_close (dir);
-		if (item->has_scripts)
-			_LOGD ("%s script directory '%s' has scripts", item->description, item->dir);
-		else if (errsv == 0)
-			_LOGD ("%s script directory '%s' has no scripts", item->description, item->dir);
-		else {
-			_LOGD ("%s script directory '%s' error reading (%s)", item->description, item->dir, nm_strerror_native (errsv));
-			item->has_scripts = TRUE;
-		}
-	} else {
-		if (g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
-			_LOGD ("%s script directory '%s' does not exist", item->description, item->dir);
-			item->has_scripts = FALSE;
-		} else {
-			_LOGD ("%s script directory '%s' error (%s)", item->description, item->dir, error->message);
-			item->has_scripts = TRUE;
-		}
-		g_error_free (error);
-	}
-
-}
-
 void
 nm_dispatcher_init (void)
 {
-	GFile *file;
-	guint i;
 	GError *error = NULL;
-
-	for (i = 0; i < G_N_ELEMENTS (monitors); i++) {
-		file = g_file_new_for_path (monitors[i].dir);
-		monitors[i].monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
-		if (monitors[i].monitor) {
-			g_signal_connect (monitors[i].monitor, "changed", G_CALLBACK (dispatcher_dir_changed), &monitors[i]);
-			dispatcher_dir_changed (monitors[i].monitor, file, NULL, 0, &monitors[i]);
-		}
-		g_object_unref (file);
-	}
 
 	dispatcher_proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
 	                                                  G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
