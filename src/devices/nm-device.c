@@ -11835,13 +11835,9 @@ nm_device_disconnect_active_connection (NMActiveConnection *active,
 	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (active));
 
 	self = nm_active_connection_get_device (active);
-
 	if (!self) {
 		/* hm, no device? Just fail the active connection. */
-		nm_active_connection_set_state_fail (active,
-		                                     active_reason,
-		                                     NULL);
-		return;
+		goto do_fail;
 	}
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
@@ -11850,15 +11846,25 @@ nm_device_disconnect_active_connection (NMActiveConnection *active,
 		_clear_queued_act_request (priv, active_reason);
 		return;
 	}
+
 	if (NM_ACTIVE_CONNECTION (priv->act_request.obj) == active) {
 		if (priv->state < NM_DEVICE_STATE_DEACTIVATING) {
 			nm_device_state_changed (self,
 			                         NM_DEVICE_STATE_DEACTIVATING,
 			                         device_reason);
 		} else {
-			/* it's going down already... */
+			/* @active is the current ac of @self, but it's going down already.
+			 * Nothing to do. */
 		}
+		return;
 	}
+
+	/* the active connection references this device, but it's neither the
+	 * queued_act_request nor the current act_request. Just set it to fail... */
+do_fail:
+	nm_active_connection_set_state_fail (active,
+	                                     active_reason,
+	                                     NULL);
 }
 
 void
