@@ -39,6 +39,7 @@
 #include "platform/nm-platform.h"
 #include "platform/nmp-object.h"
 #include "nm-hostname-manager.h"
+#include "nm-keep-alive.h"
 #include "nm-rfkill-manager.h"
 #include "dhcp/nm-dhcp-manager.h"
 #include "settings/nm-settings.h"
@@ -5378,8 +5379,13 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	if (!active)
 		goto error;
 
-	if (bind_dbus_client)
-		nm_active_connection_bind_dbus_client (active, dbus_connection, sender);
+	if (bind_dbus_client) {
+		NMKeepAlive *keep_alive;
+
+		keep_alive = nm_active_connection_get_keep_alive (active);
+		nm_keep_alive_set_dbus_client_watch (keep_alive, dbus_connection, sender);
+		nm_keep_alive_arm (keep_alive);
+	}
 
 	nm_active_connection_authorize (active,
 	                                incompl_conn,

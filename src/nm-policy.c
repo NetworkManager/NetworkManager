@@ -30,6 +30,7 @@
 
 #include "NetworkManagerUtils.h"
 #include "nm-act-request.h"
+#include "nm-keep-alive.h"
 #include "devices/nm-device.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
@@ -2183,26 +2184,36 @@ active_connection_state_changed (NMActiveConnection *active,
 }
 
 static void
-active_connection_keep_alive_changed (NMActiveConnection *ac,
+active_connection_keep_alive_changed (NMKeepAlive *keep_alive,
                                       GParamSpec *pspec,
                                       NMPolicy *self)
 {
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	NMPolicyPrivate *priv;
+	NMActiveConnection *ac;
 	GError *error = NULL;
 
-	if (nm_active_connection_get_keep_alive (ac))
+	nm_assert (NM_IS_POLICY (self));
+	nm_assert (NM_IS_KEEP_ALIVE (keep_alive));
+	nm_assert (NM_IS_ACTIVE_CONNECTION (nm_keep_alive_get_owner (keep_alive)));
+
+	if (nm_keep_alive_is_alive (keep_alive))
 		return;
 
-	if (nm_active_connection_get_state (ac) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-		if (!nm_manager_deactivate_connection (priv->manager,
-		                                       ac,
-		                                       NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
-		                                       &error)) {
-			_LOGW (LOGD_DEVICE, "connection '%s' is no longer kept alive, but error deactivating it: %s",
-			       nm_active_connection_get_settings_connection_id (ac),
-			       error->message);
-			g_clear_error (&error);
-		}
+	ac = nm_keep_alive_get_owner (keep_alive);
+
+	if (nm_active_connection_get_state (ac) > NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
+		return;
+
+	priv = NM_POLICY_GET_PRIVATE (self);
+
+	if (!nm_manager_deactivate_connection (priv->manager,
+	                                       ac,
+	                                       NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
+	                                       &error)) {
+		_LOGW (LOGD_DEVICE, "connection '%s' is no longer kept alive, but error deactivating it: %s",
+		       nm_active_connection_get_settings_connection_id (ac),
+		       error->message);
+		g_clear_error (&error);
 	}
 }
 
@@ -2213,6 +2224,7 @@ active_connection_added (NMManager *manager,
 {
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
+	NMKeepAlive *keep_alive;
 
 	if (NM_IS_VPN_CONNECTION (active)) {
 		g_signal_connect (active, NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED,
@@ -2223,13 +2235,16 @@ active_connection_added (NMManager *manager,
 		                  self);
 	}
 
+	keep_alive = nm_active_connection_get_keep_alive (active);
+
 	g_signal_connect (active, "notify::" NM_ACTIVE_CONNECTION_STATE,
 	                  G_CALLBACK (active_connection_state_changed),
 	                  self);
-	g_signal_connect (active, "notify::" NM_ACTIVE_CONNECTION_INT_KEEP_ALIVE,
+	g_signal_connect (keep_alive,
+	                  "notify::" NM_KEEP_ALIVE_ALIVE,
 	                  G_CALLBACK (active_connection_keep_alive_changed),
 	                  self);
-	active_connection_keep_alive_changed (active, NULL, self);
+	active_connection_keep_alive_changed (keep_alive, NULL, self);
 }
 
 static void
@@ -2249,7 +2264,7 @@ active_connection_removed (NMManager *manager,
 	g_signal_handlers_disconnect_by_func (active,
 	                                      active_connection_state_changed,
 	                                      self);
-	g_signal_handlers_disconnect_by_func (active,
+	g_signal_handlers_disconnect_by_func (nm_active_connection_get_keep_alive (active),
 	                                      active_connection_keep_alive_changed,
 	                                      self);
 }
