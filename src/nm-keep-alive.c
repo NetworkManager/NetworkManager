@@ -41,7 +41,7 @@ typedef struct {
 	GCancellable *dbus_client_confirm_cancellable;
 	guint subscription_id;
 
-	bool floating:1;
+	bool armed:1;
 	bool disarmed:1;
 
 	bool forced:1;
@@ -79,8 +79,14 @@ _is_alive (NMKeepAlive *self)
 {
 	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
-	if (   priv->floating
-	    || priv->forced)
+	nm_assert (!priv->disarmed);
+
+	if (!priv->armed) {
+		/* before arming, the instance is always alive. */
+		return TRUE;
+	}
+
+	if (priv->forced)
 		return TRUE;
 
 	if (   priv->connection
@@ -120,17 +126,6 @@ nm_keep_alive_is_alive (NMKeepAlive *self)
 }
 
 /*****************************************************************************/
-
-void
-nm_keep_alive_sink (NMKeepAlive *self)
-{
-	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
-
-	if (priv->floating) {
-		priv->floating = FALSE;
-		_notify_alive (self);
-	}
-}
 
 void
 nm_keep_alive_set_forced (NMKeepAlive *self, gboolean forced)
@@ -333,6 +328,30 @@ nm_keep_alive_set_dbus_client_watch (NMKeepAlive *self,
 /*****************************************************************************/
 
 /**
+ * nm_keep_alive_arm:
+ * @self: the #NMKeepAlive
+ *
+ * A #NMKeepAlive instance is unarmed by default. That means, it's
+ * alive and stays alive until being armed. Arming means, that the conditions
+ * start to be actively evaluated, that the alive state may change, and
+ * that property changed signals are emitted.
+ *
+ * The opposite is nm_keep_alive_disarm() which freezes the alive state
+ * for good. Once disarmed, the instance cannot be armed again. Arming an
+ * instance multiple times has no effect. Arming an already disarmed instance
+ * also has no effect. */
+void
+nm_keep_alive_arm (NMKeepAlive *self)
+{
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+
+	if (!priv->armed) {
+		priv->armed = TRUE;
+		_notify_alive (self);
+	}
+}
+
+/**
  * nm_keep_alive_disarm:
  * @self: the #NMKeepAlive instance
  *
@@ -384,7 +403,6 @@ nm_keep_alive_init (NMKeepAlive *self)
 {
 	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
-	priv->floating = TRUE;
 	priv->alive = TRUE;
 
 	nm_assert (priv->alive == _is_alive (self));

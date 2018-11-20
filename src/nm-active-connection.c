@@ -1034,7 +1034,7 @@ nm_active_connection_bind_dbus_client (NMActiveConnection *self, GDBusConnection
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
 	nm_keep_alive_set_dbus_client_watch (priv->keep_alive, dbus_con, dbus_client);
-	nm_keep_alive_sink (priv->keep_alive);
+	nm_keep_alive_arm (priv->keep_alive);
 }
 
 /*****************************************************************************/
@@ -1487,7 +1487,7 @@ constructed (GObject *object)
 	               NM_ACTIVATION_REASON_AUTOCONNECT,
 	               NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES)) {
 		nm_keep_alive_set_settings_connection_watch_visible (priv->keep_alive, priv->settings_connection.obj);
-		nm_keep_alive_sink (priv->keep_alive);
+		nm_keep_alive_arm (priv->keep_alive);
 	}
 }
 
