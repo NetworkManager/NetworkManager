@@ -1538,6 +1538,18 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 		return FALSE;
 	}
 
+	registration_id = g_dbus_connection_register_object (connection,
+	                                                     OBJECT_MANAGER_SERVER_BASE_PATH,
+	                                                     NM_UNCONST_PTR (GDBusInterfaceInfo, &interface_info_objmgr),
+	                                                     &dbus_vtable_objmgr,
+	                                                     self,
+	                                                     NULL,
+	                                                     &error);
+	if (!registration_id) {
+		_LOGE ("failure to register object manager: %s", error->message);
+		return FALSE;
+	}
+
 	ret = _nm_dbus_proxy_call_sync (proxy,
 	                                "RequestName",
 	                                g_variant_new ("(su)",
@@ -1550,6 +1562,7 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 	if (!ret) {
 		_LOGE ("fatal failure to acquire D-Bus service \"%s"": %s",
 		       NM_DBUS_SERVICE, error->message);
+		g_dbus_connection_unregister_object(connection, registration_id);
 		return FALSE;
 	}
 
@@ -1557,18 +1570,7 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 	if (result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
 		_LOGE ("fatal failure to acquire D-Bus service \"%s\" (%u). Service already taken",
 		       NM_DBUS_SERVICE, (guint) result);
-		return FALSE;
-	}
-
-	registration_id = g_dbus_connection_register_object (connection,
-	                                                     OBJECT_MANAGER_SERVER_BASE_PATH,
-	                                                     NM_UNCONST_PTR (GDBusInterfaceInfo, &interface_info_objmgr),
-	                                                     &dbus_vtable_objmgr,
-	                                                     self,
-	                                                     NULL,
-	                                                     &error);
-	if (!registration_id) {
-		_LOGE ("failure to register object manager: %s", error->message);
+		g_dbus_connection_unregister_object(connection, registration_id);
 		return FALSE;
 	}
 
