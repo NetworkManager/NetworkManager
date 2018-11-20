@@ -5408,31 +5408,26 @@ nm_manager_deactivate_connection (NMManager *manager,
                                   NMDeviceStateReason reason,
                                   GError **error)
 {
-	gboolean success = FALSE;
-
 	if (NM_IS_VPN_CONNECTION (active)) {
 		NMActiveConnectionStateReason vpn_reason = NM_ACTIVE_CONNECTION_STATE_REASON_USER_DISCONNECTED;
 
 		if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_CONNECTION_REMOVED)
 			vpn_reason = NM_ACTIVE_CONNECTION_STATE_REASON_CONNECTION_REMOVED;
 
-		if (nm_vpn_connection_deactivate (NM_VPN_CONNECTION (active), vpn_reason, FALSE))
-			success = TRUE;
-		else
+		if (!nm_vpn_connection_deactivate (NM_VPN_CONNECTION (active), vpn_reason, FALSE)) {
 			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
 			                     "The VPN connection was not active.");
+			return FALSE;
+		}
 	} else {
 		g_assert (NM_IS_ACT_REQUEST (active));
 		nm_device_state_changed (nm_active_connection_get_device (active),
 		                         NM_DEVICE_STATE_DEACTIVATING,
 		                         reason);
-		success = TRUE;
 	}
 
-	if (success)
-		_notify (manager, PROP_ACTIVE_CONNECTIONS);
-
-	return success;
+	_notify (manager, PROP_ACTIVE_CONNECTIONS);
+	return TRUE;
 }
 
 static void
