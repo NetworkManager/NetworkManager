@@ -2249,6 +2249,9 @@ active_connection_removed (NMManager *manager,
 	g_signal_handlers_disconnect_by_func (active,
 	                                      active_connection_state_changed,
 	                                      self);
+	g_signal_handlers_disconnect_by_func (active,
+	                                      active_connection_keep_alive_changed,
+	                                      self);
 }
 
 /*****************************************************************************/
