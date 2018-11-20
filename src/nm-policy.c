@@ -2237,6 +2237,8 @@ active_connection_added (NMManager *manager,
 
 	keep_alive = nm_active_connection_get_keep_alive (active);
 
+	nm_keep_alive_arm (keep_alive);
+
 	g_signal_connect (active, "notify::" NM_ACTIVE_CONNECTION_STATE,
 	                  G_CALLBACK (active_connection_state_changed),
 	                  self);

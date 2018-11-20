@@ -67,6 +67,7 @@
 #include "settings/nm-settings.h"
 #include "nm-setting-ethtool.h"
 #include "nm-auth-utils.h"
+#include "nm-keep-alive.h"
 #include "nm-netns.h"
 #include "nm-dispatcher.h"
 #include "nm-config.h"
@@ -11870,8 +11871,23 @@ do_fail:
 void
 nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv;
 	gboolean must_queue;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+	g_return_if_fail (NM_IS_ACT_REQUEST (req));
+
+	nm_keep_alive_arm (nm_active_connection_get_keep_alive (NM_ACTIVE_CONNECTION (req)));
+
+	if (nm_active_connection_get_state (NM_ACTIVE_CONNECTION (req)) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
+		/* it's already deactivating. Nothing to do. */
+		nm_assert (NM_IN_SET (nm_active_connection_get_device (NM_ACTIVE_CONNECTION (req)), NULL, self));
+		return;
+	}
+
+	nm_assert (self == nm_active_connection_get_device (NM_ACTIVE_CONNECTION (req)));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	must_queue = _carrier_wait_check_act_request_must_queue (self, req);
 

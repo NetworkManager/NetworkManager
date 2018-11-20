@@ -1472,10 +1472,8 @@ constructed (GObject *object)
 
 	if (NM_IN_SET ((NMActivationReason) priv->activation_reason,
 	               NM_ACTIVATION_REASON_AUTOCONNECT,
-	               NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES)) {
+	               NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES))
 		nm_keep_alive_set_settings_connection_watch_visible (priv->keep_alive, priv->settings_connection.obj);
-		nm_keep_alive_arm (priv->keep_alive);
-	}
 }
 
 static void
