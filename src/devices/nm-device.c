@@ -11619,14 +11619,15 @@ disconnect_cb (NMDevice *self,
 }
 
 static void
-_clear_queued_act_request (NMDevicePrivate *priv)
+_clear_queued_act_request (NMDevicePrivate *priv,
+                           NMActiveConnectionStateReason active_reason)
 {
 	if (priv->queued_act_request) {
 		gs_unref_object NMActRequest *ac = NULL;
 
 		ac = g_steal_pointer (&priv->queued_act_request);
 		nm_active_connection_set_state_fail ((NMActiveConnection *) ac,
-		                                     NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED,
+		                                     active_reason,
 		                                     NULL);
 	}
 }
@@ -11768,7 +11769,8 @@ _carrier_wait_check_queued_act_request (NMDevice *self)
 	priv->queued_act_request_is_waiting_for_carrier = FALSE;
 	if (!priv->carrier) {
 		_LOGD (LOGD_DEVICE, "Cancel queued activation request as we have no carrier after timeout");
-		_clear_queued_act_request (priv);
+		_clear_queued_act_request (priv,
+		                           NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
 	} else {
 		gs_unref_object NMActRequest *queued_req = NULL;
 
@@ -11844,7 +11846,8 @@ nm_device_disconnect_active_connection (NMActiveConnection *active,
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (NM_ACTIVE_CONNECTION (priv->queued_act_request) == active) {
-		_clear_queued_act_request (priv);
+		_clear_queued_act_request (priv,
+		                           NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
 		return;
 	}
 	if (NM_ACTIVE_CONNECTION (priv->act_request.obj) == active) {
@@ -11874,7 +11877,8 @@ nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 	}
 
 	/* supersede any already-queued request */
-	_clear_queued_act_request (priv);
+	_clear_queued_act_request (priv,
+	                           NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
 	priv->queued_act_request = g_object_ref (req);
 	priv->queued_act_request_is_waiting_for_carrier = must_queue;
 
@@ -14743,8 +14747,10 @@ _set_state_full (NMDevice *self,
 	if (state <= NM_DEVICE_STATE_UNAVAILABLE) {
 		if (available_connections_del_all (self))
 			_notify (self, PROP_AVAILABLE_CONNECTIONS);
-		if (old_state > NM_DEVICE_STATE_UNAVAILABLE)
-			_clear_queued_act_request (priv);
+		if (old_state > NM_DEVICE_STATE_UNAVAILABLE) {
+			_clear_queued_act_request (priv,
+			                           NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
+		}
 	}
 
 	/* Update the available connections list when a device first becomes available */
@@ -16189,7 +16195,8 @@ dispose (GObject *object)
 	if (nm_clear_g_source (&priv->carrier_wait_id))
 		nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
 
-	_clear_queued_act_request (priv);
+	_clear_queued_act_request (priv,
+	                           NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
 
 	nm_clear_g_source (&priv->device_link_changed_id);
 	nm_clear_g_source (&priv->device_ip_link_changed_id);
