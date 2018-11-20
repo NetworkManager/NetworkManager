@@ -4549,7 +4549,8 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 			for (i = 0; i < n_all; i++) {
 				nm_device_disconnect_active_connection (  all_ac_arr
 				                                        ? all_ac_arr->pdata[i]
-				                                        : ac);
+				                                        : ac,
+				                                        NM_DEVICE_STATE_REASON_NEW_ACTIVATION);
 			}
 		}
 	}

@@ -11823,7 +11823,8 @@ _carrier_wait_check_act_request_must_queue (NMDevice *self, NMActRequest *req)
 }
 
 void
-nm_device_disconnect_active_connection (NMActiveConnection *active)
+nm_device_disconnect_active_connection (NMActiveConnection *active,
+                                        NMDeviceStateReason device_reason)
 {
 	NMDevice *self;
 	NMDevicePrivate *priv;
@@ -11850,7 +11851,7 @@ nm_device_disconnect_active_connection (NMActiveConnection *active)
 		if (priv->state < NM_DEVICE_STATE_DEACTIVATING) {
 			nm_device_state_changed (self,
 			                         NM_DEVICE_STATE_DEACTIVATING,
-			                         NM_DEVICE_STATE_REASON_NEW_ACTIVATION);
+			                         device_reason);
 		} else {
 			/* it's going down already... */
 		}
