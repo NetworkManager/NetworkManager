@@ -53,4 +53,10 @@ void nm_keep_alive_set_dbus_client_watch (NMKeepAlive      *self,
                                           GDBusConnection  *connection,
                                           const char       *client_address);
 
+gpointer /* GObject * */ nm_keep_alive_get_owner (NMKeepAlive *self);
+
+/* _nm_keep_alive_set_owner() is reserved for the owner to set/unset itself. */
+void                     _nm_keep_alive_set_owner (NMKeepAlive *self,
+                                                   GObject *owner);
+
 #endif /* __NETWORKMANAGER_KEEP_ALIVE_H__ */

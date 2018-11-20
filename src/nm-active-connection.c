@@ -1447,6 +1447,7 @@ nm_active_connection_init (NMActiveConnection *self)
 	priv->version_id = _version_id_new ();
 
 	priv->keep_alive = nm_keep_alive_new ();
+	_nm_keep_alive_set_owner (priv->keep_alive, G_OBJECT (self));
 	g_signal_connect_object (priv->keep_alive, "notify::" NM_KEEP_ALIVE_ALIVE,
 	                         (GCallback) keep_alive_alive_changed,
 	                         self,
@@ -1532,6 +1533,8 @@ finalize (GObject *object)
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
 	nm_dbus_track_obj_path_set (&priv->settings_connection, NULL, FALSE);
+
+	_nm_keep_alive_set_owner (priv->keep_alive, NULL);
 	g_clear_object (&priv->keep_alive);
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->finalize (object);

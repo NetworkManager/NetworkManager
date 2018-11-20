@@ -34,6 +34,8 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMKeepAlive,
 );
 
 typedef struct {
+	GObject *owner;
+
 	NMSettingsConnection *connection;
 	GDBusConnection *dbus_connection;
 	char *dbus_client;
@@ -398,6 +400,62 @@ get_property (GObject *object,
 
 /*****************************************************************************/
 
+/**
+ * nm_keep_alive_get_owner:
+ * @self: the #NMKeepAlive
+ *
+ * Returns: the owner instance associated with this @self. This commonly
+ *   is set to be the target instance, which @self guards for being alive.
+ *   Returns a gpointer, but of course it's some GObject instance. */
+gpointer /* GObject * */
+nm_keep_alive_get_owner (NMKeepAlive *self)
+{
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+
+	nm_assert (!priv->owner || G_IS_OBJECT (priv->owner));
+
+	return priv->owner;
+}
+
+/**
+ * _nm_keep_alive_set_owner:
+ * @self: the #NMKeepAlive
+ * @owner: the owner to set or unset.
+ *
+ * Sets or unsets the owner instance. Think of the owner the target
+ * instance that is guarded by @self. It's the responsibility of the
+ * owner to set and properly unset this pointer. As the owner also
+ * controls the lifetime of the NMKeepAlive instance.
+ *
+ * This API is not to be called by everybody, but only the owner of
+ * @self.
+ */
+void
+_nm_keep_alive_set_owner (NMKeepAlive *self,
+                          GObject *owner)
+{
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+
+	nm_assert (!owner || G_IS_OBJECT (owner));
+
+	/* it's bad style to reset the owner object. You are supposed to
+	 * set it once, and clear it once. That's it. */
+	nm_assert (!owner || !priv->owner);
+
+	/* optimally, we would take a reference to @owner. But the
+	 * owner already owns a refrence to the keep-alive, so we cannot
+	 * just own a reference back.
+	 *
+	 * We could register a weak-pointer here. But instead, declare that
+	 * owner is required to set itself as owner when creating the
+	 * keep-alive instance, and unset itself when it lets go of the
+	 * keep-alive instance (at latest, when the owner itself gets destroyed).
+	 */
+	priv->owner = owner;
+}
+
+/*****************************************************************************/
+
 static void
 nm_keep_alive_init (NMKeepAlive *self)
 {
@@ -418,6 +476,8 @@ static void
 dispose (GObject *object)
 {
 	NMKeepAlive *self = NM_KEEP_ALIVE (object);
+
+	nm_assert (!NM_KEEP_ALIVE_GET_PRIVATE (self)->owner);
 
 	/* disarm also happens to free all resources. */
 	nm_keep_alive_disarm (self);
