@@ -770,7 +770,8 @@ void nm_device_queue_state   (NMDevice *self,
 gboolean nm_device_get_firmware_missing (NMDevice *self);
 
 void nm_device_disconnect_active_connection (NMActiveConnection *active,
-                                             NMDeviceStateReason device_reason);
+                                             NMDeviceStateReason device_reason,
+                                             NMActiveConnectionStateReason active_reason);
 
 void nm_device_queue_activation (NMDevice *device, NMActRequest *req);
 

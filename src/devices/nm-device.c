@@ -11826,7 +11826,8 @@ _carrier_wait_check_act_request_must_queue (NMDevice *self, NMActRequest *req)
 
 void
 nm_device_disconnect_active_connection (NMActiveConnection *active,
-                                        NMDeviceStateReason device_reason)
+                                        NMDeviceStateReason device_reason,
+                                        NMActiveConnectionStateReason active_reason)
 {
 	NMDevice *self;
 	NMDevicePrivate *priv;
@@ -11838,7 +11839,7 @@ nm_device_disconnect_active_connection (NMActiveConnection *active,
 	if (!self) {
 		/* hm, no device? Just fail the active connection. */
 		nm_active_connection_set_state_fail (active,
-		                                     NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
+		                                     active_reason,
 		                                     NULL);
 		return;
 	}

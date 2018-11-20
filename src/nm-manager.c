@@ -4550,7 +4550,8 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 				nm_device_disconnect_active_connection (  all_ac_arr
 				                                        ? all_ac_arr->pdata[i]
 				                                        : ac,
-				                                        NM_DEVICE_STATE_REASON_NEW_ACTIVATION);
+				                                        NM_DEVICE_STATE_REASON_NEW_ACTIVATION,
+				                                        NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN);
 			}
 		}
 	}
