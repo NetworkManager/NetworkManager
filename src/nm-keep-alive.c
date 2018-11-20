@@ -382,19 +382,18 @@ get_property (GObject *object,
 static void
 nm_keep_alive_init (NMKeepAlive *self)
 {
-	nm_assert (NM_KEEP_ALIVE_GET_PRIVATE (self)->alive == _is_alive (self));
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+
+	priv->floating = TRUE;
+	priv->alive = TRUE;
+
+	nm_assert (priv->alive == _is_alive (self));
 }
 
 NMKeepAlive *
-nm_keep_alive_new (gboolean floating)
+nm_keep_alive_new (void)
 {
-	NMKeepAlive *self = g_object_new (NM_TYPE_KEEP_ALIVE, NULL);
-	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
-
-	priv->floating = floating;
-	priv->alive = TRUE;
-	nm_assert (priv->alive == _is_alive (self));
-	return self;
+	return g_object_new (NM_TYPE_KEEP_ALIVE, NULL);
 }
 
 static void

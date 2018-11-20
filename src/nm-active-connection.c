@@ -1446,7 +1446,7 @@ nm_active_connection_init (NMActiveConnection *self)
 	priv->activation_type = NM_ACTIVATION_TYPE_MANAGED;
 	priv->version_id = _version_id_new ();
 
-	priv->keep_alive = nm_keep_alive_new (TRUE);
+	priv->keep_alive = nm_keep_alive_new ();
 	g_signal_connect_object (priv->keep_alive, "notify::" NM_KEEP_ALIVE_ALIVE,
 	                         (GCallback) keep_alive_alive_changed,
 	                         self,

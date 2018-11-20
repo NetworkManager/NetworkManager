@@ -36,7 +36,7 @@ typedef struct _NMKeepAliveClass NMKeepAliveClass;
 
 GType nm_keep_alive_get_type (void) G_GNUC_CONST;
 
-NMKeepAlive* nm_keep_alive_new (gboolean floating);
+NMKeepAlive* nm_keep_alive_new (void);
 
 gboolean nm_keep_alive_is_alive (NMKeepAlive *self);
 
