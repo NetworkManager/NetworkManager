@@ -1,4 +1,23 @@
 ================================================
+NetworkManager-1.10.14
+Overview of changes since NetworkManager-1.10.12
+================================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Support hidden SSID in wifi AP mode
+* The systemd-resolved DNS plugins now supports MDNS
+* Fix leak of DNS queries to local name servers when connecting to a
+  full-tunnel VPN (CVE-2018-1000135) (bgo #746422)
+* Fix a vulnerability in the internal DHCPv6 client (CVE-2018-15688)
+  (LP #1795921) (rh #1639067)
+* Fix handling of IPv6 address lifetimes in RA to prevent a possible
+  denial-of-service (LP #1796622)
+* Fix crash parsing more than 10 DNS settings in the ifcfg-rh plugin
+  (rh #1607866)
+* Minor bugfixes
+
+================================================
 NetworkManager-1.10.12
 Overview of changes since NetworkManager-1.10.10
 ================================================
