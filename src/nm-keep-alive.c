@@ -42,6 +42,8 @@ typedef struct {
 	guint subscription_id;
 
 	bool floating:1;
+	bool disarmed:1;
+
 	bool forced:1;
 	bool alive:1;
 	bool dbus_client_confirmed:1;
@@ -99,6 +101,11 @@ static void
 _notify_alive (NMKeepAlive *self)
 {
 	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+
+	if (priv->disarmed) {
+		/* once disarmed, the alive state is frozen. */
+		return;
+	}
 
 	if (priv->alive == _is_alive (self))
 		return;
@@ -163,7 +170,8 @@ _set_settings_connection_watch_visible (NMKeepAlive *self,
 		old_connection = g_steal_pointer (&priv->connection);
 	}
 
-	if (connection) {
+	if (   connection
+	    && !priv->disarmed) {
 		priv->connection = g_object_ref (connection);
 		g_signal_connect (priv->connection,
 		                  NM_SETTINGS_CONNECTION_FLAGS_CHANGED,
@@ -300,7 +308,8 @@ nm_keep_alive_set_dbus_client_watch (NMKeepAlive *self,
 
 	cleanup_dbus_watch (self);
 
-	if (client_address) {
+	if (   client_address
+	    && !priv->disarmed) {
 		_LOGD ("Registering dbus client watch for keep alive");
 
 		priv->dbus_client = g_strdup (client_address);
@@ -319,6 +328,33 @@ nm_keep_alive_set_dbus_client_watch (NMKeepAlive *self,
 	}
 
 	_notify_alive (self);
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_keep_alive_disarm:
+ * @self: the #NMKeepAlive instance
+ *
+ * Once the instance is disarmed, it will not change its alive state
+ * anymore and will not emit anymore property changed signals about
+ * alive state changed.
+ *
+ * As such, it will also free internal resources (since they no longer
+ * affect the externally visible state).
+ *
+ * Once disarmed, the instance is frozen and cannot change anymore.
+ */
+void
+nm_keep_alive_disarm (NMKeepAlive *self)
+{
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+
+	priv->disarmed = TRUE;
+
+	/* release internal data. */
+	_set_settings_connection_watch_visible (self, NULL, FALSE);
+	cleanup_dbus_watch (self);
 }
 
 /*****************************************************************************/
@@ -366,8 +402,8 @@ dispose (GObject *object)
 {
 	NMKeepAlive *self = NM_KEEP_ALIVE (object);
 
-	_set_settings_connection_watch_visible (self, NULL, FALSE);
-	cleanup_dbus_watch (self);
+	/* disarm also happens to free all resources. */
+	nm_keep_alive_disarm (self);
 }
 
 static void

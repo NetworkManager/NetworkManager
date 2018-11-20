@@ -42,6 +42,8 @@ gboolean nm_keep_alive_is_alive (NMKeepAlive *self);
 
 void nm_keep_alive_sink (NMKeepAlive *self);
 
+void nm_keep_alive_disarm (NMKeepAlive *self);
+
 void nm_keep_alive_set_forced (NMKeepAlive  *self,
                                gboolean      forced);
 

@@ -264,6 +264,12 @@ nm_active_connection_set_state (NMActiveConnection *self,
 	       state_to_string (new_state),
 	       state_to_string (priv->state));
 
+	if (new_state > NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+		/* once we are about to deactivate, we don't need the keep-alive instance
+		 * anymore. Freeze/disarm it. */
+		nm_keep_alive_disarm (priv->keep_alive);
+	}
+
 	if (   new_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED
 	    && priv->activation_type == NM_ACTIVATION_TYPE_ASSUME) {
 		/* assuming connections mean to gracefully take over an externally
