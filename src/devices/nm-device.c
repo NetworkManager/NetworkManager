@@ -11847,8 +11847,7 @@ nm_device_disconnect_active_connection (NMActiveConnection *active,
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (NM_ACTIVE_CONNECTION (priv->queued_act_request) == active) {
-		_clear_queued_act_request (priv,
-		                           NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
+		_clear_queued_act_request (priv, active_reason);
 		return;
 	}
 	if (NM_ACTIVE_CONNECTION (priv->act_request.obj) == active) {
