@@ -97,6 +97,19 @@ const CList * nm_manager_get_active_connections        (NMManager *manager);
 	    }); \
 	    iter = c_list_entry (iter->active_connections_lst.next, NMActiveConnection, active_connections_lst))
 
+#define nm_manager_for_each_active_connection_safe(manager, iter, tmp_list, iter_safe) \
+	for (tmp_list = nm_manager_get_active_connections (manager), \
+	     iter_safe = tmp_list->next; \
+	     ({ \
+	        if (iter_safe != tmp_list) { \
+	            iter = c_list_entry (iter_safe, NMActiveConnection, active_connections_lst); \
+	            iter_safe = iter_safe->next; \
+	        } else \
+	            iter = NULL; \
+	        (iter != NULL); \
+	     }); \
+	    )
+
 NMSettingsConnection **nm_manager_get_activatable_connections (NMManager *manager,
                                                                gboolean for_auto_activation,
                                                                gboolean sort,
@@ -120,6 +133,19 @@ const CList *       nm_manager_get_devices             (NMManager *manager);
 	         _has_next; \
 	    }); \
 	    iter = c_list_entry (iter->devices_lst.next, NMDevice, devices_lst))
+
+#define nm_manager_for_each_device_safe(manager, iter, tmp_list, iter_safe) \
+	for (tmp_list = nm_manager_get_devices (manager), \
+	     iter_safe = tmp_list->next; \
+	     ({ \
+	        if (iter_safe != tmp_list) { \
+	            iter = c_list_entry (iter_safe, NMDevice, devices_lst); \
+	            iter_safe = iter_safe->next; \
+	        } else \
+	            iter = NULL; \
+	        (iter != NULL); \
+	     }); \
+	    )
 
 NMDevice *          nm_manager_get_device_by_ifindex   (NMManager *manager,
                                                         int ifindex);
