@@ -2404,12 +2404,12 @@ _deactivate_if_active (NMPolicy *self, NMSettingsConnection *connection)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	NMActiveConnection *ac;
-	const CList *tmp_list;
+	const CList *tmp_list, *tmp_safe;
 	GError *error = NULL;
 
 	nm_assert (NM_IS_SETTINGS_CONNECTION (connection));
 
-	nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+	nm_manager_for_each_active_connection_safe (priv->manager, ac, tmp_list, tmp_safe) {
 
 		if (   nm_active_connection_get_settings_connection (ac) == connection
 		    && (nm_active_connection_get_state (ac) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED)) {
