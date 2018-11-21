@@ -534,11 +534,13 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 				l = data8[2];
 				if (len != 3 + l)
 					continue;
+				if (l > 32)
+					continue;
 
 				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_VID,
 				                       _access_uint16 (&data8[0]));
 				_lldp_attr_set_str_ptr (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,
-				                        &data8[3], len);
+				                        &data8[3], l);
 				break;
 			}
 			default:
