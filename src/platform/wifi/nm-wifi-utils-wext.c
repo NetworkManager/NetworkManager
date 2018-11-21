@@ -751,7 +751,7 @@ nm_wifi_utils_wext_new (int ifindex, gboolean check_scan)
 		wext->parent.caps |= NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
 
 	_LOGI (LOGD_PLATFORM | LOGD_WIFI,
-	       "(%s): using WEXT for WiFi device control",
+	       "(%s): using WEXT for Wi-Fi device control",
 	       ifname);
 
 	return (NMWifiUtils *) wext;

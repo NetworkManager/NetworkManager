@@ -817,7 +817,7 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 	                                   &priv->agent_path,
 	                                   &error);
 	if (!priv->agent_id) {
-		_LOGE ("failed to export the IWD Agent: PSK/8021x WiFi networks may not work: %s",
+		_LOGE ("failed to export the IWD Agent: PSK/8021x Wi-Fi networks may not work: %s",
 		       error->message);
 		g_clear_error (&error);
 	}

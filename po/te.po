@@ -3564,7 +3564,7 @@ msgstr "నెట్వర్కింగ్"
 msgid "Radio switches"
 msgstr "రేడియో స్విచెస్"
 
-#. no argument, show current WiFi state
+#. no argument, show current Wi-Fi state
 #: ../clients/cli/general.c:1011
 msgid "Wi-Fi radio switch"
 msgstr "వై-ఫై రేడియో స్విచ్"
@@ -10567,12 +10567,12 @@ msgid "System policy prevents putting NetworkManager to sleep or waking it up"
 msgstr "నెట్వర్కుమేనేజర్‌ను స్లీప్‌నకు లేదా దానిని మెల్కొలుపుటకు వుంచుటను సిస్టమ్ విధానము నిరోధించుచున్నది"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:7
-msgid "Enable or disable WiFi devices"
-msgstr "WiFi పరికరములను చేతనము లేదా అచేతనము చేయుము"
+msgid "Enable or disable Wi-Fi devices"
+msgstr "Wi-Fi పరికరములను చేతనము లేదా అచేతనము చేయుము"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:8
-msgid "System policy prevents enabling or disabling WiFi devices"
-msgstr "WiFi పరికరములను చేతనము చేయుటకు లేదా అచేతనము చేయుటకు సిస్టమ్ విధానము నిరోధించుచున్నది"
+msgid "System policy prevents enabling or disabling Wi-Fi devices"
+msgstr "Wi-Fi పరికరములను చేతనము చేయుటకు లేదా అచేతనము చేయుటకు సిస్టమ్ విధానము నిరోధించుచున్నది"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:9
 msgid "Enable or disable mobile broadband devices"
@@ -10601,20 +10601,20 @@ msgid "System policy prevents control of network connections"
 msgstr "నెట్వర్కు అనుసంధానముల నియంత్రణను సిస్టమ్ విధానము నిరోధించుచున్నది"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:15
-msgid "Connection sharing via a protected WiFi network"
-msgstr "రక్షిత WiFi నెట్వర్కు ద్వారా అనుసంధానపు భాగస్వామ్యము."
+msgid "Connection sharing via a protected Wi-Fi network"
+msgstr "రక్షిత Wi-Fi నెట్వర్కు ద్వారా అనుసంధానపు భాగస్వామ్యము."
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:16
-msgid "System policy prevents sharing connections via a protected WiFi network"
-msgstr "రక్షిత WiFi నెట్వర్కు ద్వారా అనుసంధానములను భాగస్వామ్యపరచుట సిస్టమ్ విధానము నిరోధించుచున్నది"
+msgid "System policy prevents sharing connections via a protected Wi-Fi network"
+msgstr "రక్షిత Wi-Fi నెట్వర్కు ద్వారా అనుసంధానములను భాగస్వామ్యపరచుట సిస్టమ్ విధానము నిరోధించుచున్నది"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:17
-msgid "Connection sharing via an open WiFi network"
-msgstr "ఓపెన్ WiFi నెట్వర్కు ద్వారా అనుసంధానపు భాగస్వామ్యము"
+msgid "Connection sharing via an open Wi-Fi network"
+msgstr "ఓపెన్ Wi-Fi నెట్వర్కు ద్వారా అనుసంధానపు భాగస్వామ్యము"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:18
-msgid "System policy prevents sharing connections via an open WiFi network"
-msgstr "ఓపెన్ WiFi నెట్వర్కు ద్వారా అనుసంధానములను భాగస్వామ్యపరచుట సిస్టమ్ విధానము నిరోధించుచున్నది"
+msgid "System policy prevents sharing connections via an open Wi-Fi network"
+msgstr "ఓపెన్ Wi-Fi నెట్వర్కు ద్వారా అనుసంధానములను భాగస్వామ్యపరచుట సిస్టమ్ విధానము నిరోధించుచున్నది"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:19
 msgid "Modify personal network connections"

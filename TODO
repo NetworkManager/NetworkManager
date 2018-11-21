@@ -18,7 +18,7 @@ of each device's state.  Unfortunately that requires two things:
 The first is the largest obstacle, but ideally we implement this and enable it
 when we have the required glib and libsoup versions available.  One other
 complication is that this checking should be done during the
-NM_DEVICE_STATE_IP_CHECK phase (along with other operations like WiFi hotspot
+NM_DEVICE_STATE_IP_CHECK phase (along with other operations like Wi-Fi hotspot
 auto-login) while the current checks are done globally in nm-manager.c, so
 keeping both code paths might be complex.
 
@@ -109,10 +109,10 @@ successfully connect to this network.
 * VPN re-connect (bgo #349151)
 
 NM should remember whether a VPN was connected if a connection disconnects
-(like WiFi drops out or short carrier drop) or if the laptop goes to sleep.
+(like Wi-Fi drops out or short carrier drop) or if the laptop goes to sleep.
 Upon reconnect, if the same Connection is again active, the previously
 connected VPN should be activated again as well.  Basically, don't just drop
-the VPN because WiFi choked for 10 seconds, but reconnect the VPN if it was
+the VPN because Wi-Fi choked for 10 seconds, but reconnect the VPN if it was
 connected before the drop.
 
 
@@ -248,7 +248,7 @@ There are a few components to this:
 1) kernel driver and hardware capabilities: most mobile devices use periodic
 background scanning to quickly determine whether a known SSID is available and
 notify the connection manager to connect to it.  This typically requires special
-capabilities and good powersave/sleep support from the WiFi kernel driver.
+capabilities and good powersave/sleep support from the Wi-Fi kernel driver.
 There is a background scanning API in nl80211, but we need to determine how many
 SSIDs each driver allows for background scanning, and based on that number, give
 the driver the most recent N SSIDs.  We still need to periodically wake the
@@ -283,7 +283,7 @@ connection process.
 2) single-device-at-a-time with overlapping connections: this is also probably
 the best route to go for desktop use-cases as well.  Instead of bringing all
 available connections up, only bring up the "best" connection at any given
-time based on the current priority list (which is roughly Ethernet > WiFi >
+time based on the current priority list (which is roughly Ethernet > Wi-Fi >
 3G/Bluetooth).  However, to ensure seamless connectivity, when one connection
 begins to degrade, the next-best connection should be started before the
 current one is terminated, such that there is a small amount of overlap.

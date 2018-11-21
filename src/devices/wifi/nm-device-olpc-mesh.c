@@ -330,7 +330,7 @@ check_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 	g_assert (priv->companion == NULL);
 	priv->companion = g_object_ref (other);
 
-	_LOGI (LOGD_OLPC, "found companion WiFi device %s",
+	_LOGI (LOGD_OLPC, "found companion Wi-Fi device %s",
 	       nm_device_get_iface (other));
 
 	g_signal_connect (G_OBJECT (other), NM_DEVICE_STATE_CHANGED,

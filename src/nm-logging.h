@@ -49,7 +49,7 @@ typedef enum  { /*< skip >*/
 	LOGD_DNS        = (1LL << 13),
 	LOGD_VPN        = (1LL << 14),
 	LOGD_SHARING    = (1LL << 15), /* Connection sharing/dnsmasq */
-	LOGD_SUPPLICANT = (1LL << 16), /* WiFi and 802.1x */
+	LOGD_SUPPLICANT = (1LL << 16), /* Wi-Fi and 802.1x */
 	LOGD_AGENTS     = (1LL << 17), /* Secret agents */
 	LOGD_SETTINGS   = (1LL << 18), /* Settings */
 	LOGD_SUSPEND    = (1LL << 19), /* Suspend/Resume */

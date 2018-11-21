@@ -3188,7 +3188,7 @@ msgstr ""
 msgid "Radio switches"
 msgstr ""
 
-#. no argument, show current WiFi state
+#. no argument, show current Wi-Fi state
 #: ../clients/cli/general.c:1011
 msgid "Wi-Fi radio switch"
 msgstr ""
@@ -10044,11 +10044,11 @@ msgid "System policy prevents putting NetworkManager to sleep or waking it up"
 msgstr ""
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:7
-msgid "Enable or disable WiFi devices"
+msgid "Enable or disable Wi-Fi devices"
 msgstr ""
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:8
-msgid "System policy prevents enabling or disabling WiFi devices"
+msgid "System policy prevents enabling or disabling Wi-Fi devices"
 msgstr ""
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:9
@@ -10077,21 +10077,21 @@ msgid "System policy prevents control of network connections"
 msgstr ""
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:15
-msgid "Connection sharing via a protected WiFi network"
+msgid "Connection sharing via a protected Wi-Fi network"
 msgstr "Yhteyden jakaminen suojatun langattoman verkon kautta"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:16
-msgid "System policy prevents sharing connections via a protected WiFi network"
+msgid "System policy prevents sharing connections via a protected Wi-Fi network"
 msgstr ""
 "Tietoturvakäytäntö estää yhteyksien jakamisen suojatun langattoman verkon "
 "kautta"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:17
-msgid "Connection sharing via an open WiFi network"
+msgid "Connection sharing via an open Wi-Fi network"
 msgstr "Yhteyden jakaminen avoimen langattoman verkon kautta"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:18
-msgid "System policy prevents sharing connections via an open WiFi network"
+msgid "System policy prevents sharing connections via an open Wi-Fi network"
 msgstr ""
 "Tietoturvakäytäntö estää yhteyksien jakamisen avoimen langattoman verkon "
 "kautta"

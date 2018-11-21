@@ -486,7 +486,7 @@ are also present in NetworkManager-1.2:
     nmcli.
 * Added support for adding ADSL connections in nmcli.
 * Improved capture portal detection.
-* Default route through WiFi connection is now preferred to Mobile
+* Default route through Wi-Fi connection is now preferred to Mobile
     Broadband if both are available.
 * Expose a flag to determine whether a particular connection is metered
     via API and client tools. Configurable in ifcfg with CONNECTION_METERED
@@ -630,7 +630,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Added support for Data Center Bridging (DCB) and FibreChannel over Ethernet (FCoE)
 * IPv6 autoconfiguration is now done in userspace with libndp instead of the kernel
 * The D-Bus daemon is no longer required for root-only operation
-* WiFi, ADSL, WWAN, and Bluetooth are now optional plugins, reducing install size
+* Wi-Fi, ADSL, WWAN, and Bluetooth are now optional plugins, reducing install size
 * Added support for Infiniband Partitions
 * Network connection files are no longer watched by default, use "nmcli con reload"
     to notice changes made externally or set "monitor-connection-files=true" in
@@ -687,16 +687,16 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Fix crash in dnsmasq plugin when no nameservers were present
 * Add support for 4G LTE network modes
 * Fix signal handling when daemonizing at startup
-* Don't autoconnect to WiFi networks that have never successfully connected
-* Only request new WiFi secrets during the initial association or when the
+* Don't autoconnect to Wi-Fi networks that have never successfully connected
+* Only request new Wi-Fi secrets during the initial association or when the
     secrets are known to be wrong, not every time the connection randomly fails
 * Add capability to autoconnect VPN connections when a parent connection succeeds
 * Add configure-time option for "permissive" system connection editing policy
 * Various libnm-glib fixes for asynchronous usage
 * Fix gateway handling when given with secondary IP addresses
 * Optionally listen to systemd for suspend/resume events instead of UPower
-* Fix 'seen-bssids' property when retrieving WiFi connections via D-Bus
-* Add support for AP-mode WiFi hotspots (instead of just Ad-Hoc)
+* Fix 'seen-bssids' property when retrieving Wi-Fi connections via D-Bus
+* Add support for AP-mode Wi-Fi hotspots (instead of just Ad-Hoc)
 * Add a "slaves" property to Bond devices
 * Add support for ModemManager 0.7/0.8
 * Allow more human-readable formatting of IP address in keyfile connections
@@ -707,7 +707,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Add support for bridge master devices and bridge ports
 * Fix canceling secrets requests in GUI agents
 * Always enable Proactive Key Caching (PKC, also called OKC) for WPA Enterprise
-    WiFi configurations
+    Wi-Fi configurations
 
 
 ==============================================
@@ -720,12 +720,12 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Many libnm-glib fixes, including crashes when NetworkManager restarts
 * Enhanced IPv6 stability and compatibility
 * Fix regression in carrier handling for devices that don't support carrier detect
-* Add ability to connect to new WiFi networks from nmcli
+* Add ability to connect to new Wi-Fi networks from nmcli
 * Add native support for ADSL modems using PPPoE or PPPoATM
 * Reduce number of changes made to DNS information during connection setup
 * Add support for IPv6-enabled VPN connections
 * Add device driver version, firmware version, and autoconnect properties to D-Bus API
-* Add on-demand WiFi scan support
+* Add on-demand Wi-Fi scan support
 * Fix IPv6 default gateway handling for DHCPv6
 * Add Vala language bindings
 * Fix various crashes and issues in the ifcfg-rh system settings plugin
@@ -743,12 +743,12 @@ Overview of changes since NetworkManager-0.9.2
 
 This is a new stable release of NetworkManager.  Notable changes include:
 
-* Better handling of WiFi devices via nl80211 when available (instead of WEXT)
+* Better handling of Wi-Fi devices via nl80211 when available (instead of WEXT)
 * IP configuration is now non-blocking; waiting for IPv6 RA no longer blocks
     the device from activating if IPv4 is ready and vice versa
 * Added support for firewall "zones" via FirewallD
 * Added basic support for bonded interfaces
-* WiFi connections are no longer locked to a specific MAC address if they are
+* Wi-Fi connections are no longer locked to a specific MAC address if they are
     "locally administered" addresses (ie, 02:::::)
 * New state change reasons have been added for mobile broadband PIN errors
 * Agent-owned secrets are now sent to agents for newly created connections
@@ -773,7 +773,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Enable out-of-the-box IPv6 connectivity by allowing IPv4 to fail if IPv6 succeeds
 * Allow proxying of DNSSEC data when using the dnsmasq local caching nameserver plugin
 * Add support for multiple domain names sent from VPN plugins
-* Removed support for WiFi Ad-Hoc WPA connections due to kernel bugs
+* Removed support for Wi-Fi Ad-Hoc WPA connections due to kernel bugs
 
 
 ==============================================
@@ -892,8 +892,8 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Native local caching nameserver support using dnsmasq
 * Automatically detect addition and removal of new VPN plugins
 * Support for handling suspend/resume signals from UPower
-* Ensure users are allowed to enable/disable WiFi and networking
-* Ensure WiFi enable state is perserved across reboot and suspend
+* Ensure users are allowed to enable/disable Wi-Fi and networking
+* Ensure Wi-Fi enable state is perserved across reboot and suspend
 * Better handling of /etc/hosts and preservation of custom hostnames
 * Support for the systemd session management service
 * Better handling of 'keyfile' system connection errors

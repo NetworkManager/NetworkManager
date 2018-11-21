@@ -259,7 +259,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 
 			/* Pad the lifetime somewhat to give a bit of slack in cases
 			 * where one RA gets lost or something (which can happen on unreliable
-			 * links like WiFi where certain types of frames are not retransmitted).
+			 * links like Wi-Fi where certain types of frames are not retransmitted).
 			 * Note that 0 has special meaning and is therefore not adjusted.
 			 */
 			if (dns_server.lifetime && dns_server.lifetime < 7200)
@@ -281,7 +281,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 
 			/* Pad the lifetime somewhat to give a bit of slack in cases
 			 * where one RA gets lost or something (which can happen on unreliable
-			 * links like WiFi where certain types of frames are not retransmitted).
+			 * links like Wi-Fi where certain types of frames are not retransmitted).
 			 * Note that 0 has special meaning and is therefore not adjusted.
 			 */
 			if (dns_domain.lifetime && dns_domain.lifetime < 7200)

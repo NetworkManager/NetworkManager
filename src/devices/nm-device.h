@@ -334,7 +334,7 @@ typedef struct _NMDeviceClass {
 
 	/* Checks whether the connection is compatible with the device using
 	 * only the devices type and characteristics.  Does not use any live
-	 * network information like WiFi scan lists etc.
+	 * network information like Wi-Fi scan lists etc.
 	 */
 	gboolean    (* check_connection_compatible) (NMDevice *self,
 	                                             NMConnection *connection,

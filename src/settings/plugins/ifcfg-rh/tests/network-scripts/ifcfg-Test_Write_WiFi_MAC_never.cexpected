@@ -13,6 +13,6 @@ IPV6_AUTOCONF=yes
 IPV6_DEFROUTE=yes
 IPV6_FAILURE_FATAL=no
 IPV6_ADDR_GEN_MODE=stable-privacy
-NAME="Test Write WiFi MAC never"
+NAME="Test Write Wi-Fi MAC never"
 UUID=${UUID}
 ONBOOT=yes

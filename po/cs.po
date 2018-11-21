@@ -2767,7 +2767,7 @@ msgstr ""
 #: ../clients/cli/devices.c:3439 ../clients/cli/devices.c:3598
 #, fuzzy, c-format
 msgid "Error: Device '%s' is not a Wi-Fi device."
-msgstr "Chyba: Zařízení „%s“ není zařízení WiFi."
+msgstr "Chyba: Zařízení „%s“ není zařízení Wi-Fi."
 
 #: ../clients/cli/devices.c:2854
 msgid "SSID or BSSID: "
@@ -2878,7 +2878,7 @@ msgstr "Chyba: „%s“ je neplatný argument pro přepínač „%s“."
 #: ../clients/cli/devices.c:3452
 #, fuzzy, c-format
 msgid "Error: Device '%s' supports neither AP nor Ad-Hoc mode."
-msgstr "Chyba: Zařízení „%s“ není zařízení WiFi."
+msgstr "Chyba: Zařízení „%s“ není zařízení Wi-Fi."
 
 #: ../clients/cli/devices.c:3486
 #, fuzzy, c-format
@@ -3198,7 +3198,7 @@ msgstr "Síť povolena"
 msgid "Radio switches"
 msgstr ""
 
-#. no argument, show current WiFi state
+#. no argument, show current Wi-Fi state
 #: ../clients/cli/general.c:1011
 msgid "Wi-Fi radio switch"
 msgstr ""
@@ -9389,7 +9389,7 @@ msgstr ""
 #: ../libnm-util/nm-setting-wireless.c:787
 #, fuzzy, c-format
 msgid "'%s' is not a valid Wi-Fi mode"
-msgstr "Chyba: Zařízení „%s“ není zařízení WiFi."
+msgstr "Chyba: Zařízení „%s“ není zařízení Wi-Fi."
 
 #: ../libnm-core/nm-setting-wireless.c:779
 #: ../libnm-util/nm-setting-wireless.c:797
@@ -10037,12 +10037,12 @@ msgid "System policy prevents putting NetworkManager to sleep or waking it up"
 msgstr "Systémová zásada zamezuje NetworkManager uspat nebo probudit"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:7
-msgid "Enable or disable WiFi devices"
-msgstr "Povolit nebo zakázat zařízení WiFi"
+msgid "Enable or disable Wi-Fi devices"
+msgstr "Povolit nebo zakázat zařízení Wi-Fi"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:8
-msgid "System policy prevents enabling or disabling WiFi devices"
-msgstr "Systémová zásada zamezuje povolit nebo zakázat zařízení WiFi"
+msgid "System policy prevents enabling or disabling Wi-Fi devices"
+msgstr "Systémová zásada zamezuje povolit nebo zakázat zařízení Wi-Fi"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:9
 msgid "Enable or disable mobile broadband devices"
@@ -10074,20 +10074,20 @@ msgid "System policy prevents control of network connections"
 msgstr "Systémová zásada zamezuje ovládání síťových připojení"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:15
-msgid "Connection sharing via a protected WiFi network"
-msgstr "Sdílení připojení přes chráněnou síť WiFi"
+msgid "Connection sharing via a protected Wi-Fi network"
+msgstr "Sdílení připojení přes chráněnou síť Wi-Fi"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:16
-msgid "System policy prevents sharing connections via a protected WiFi network"
-msgstr "Systémová zásada zabránila sdílení připojení přes chráněnou síť WiFi"
+msgid "System policy prevents sharing connections via a protected Wi-Fi network"
+msgstr "Systémová zásada zabránila sdílení připojení přes chráněnou síť Wi-Fi"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:17
-msgid "Connection sharing via an open WiFi network"
-msgstr "Sdílení připojení přes otevřenou síť WiFi"
+msgid "Connection sharing via an open Wi-Fi network"
+msgstr "Sdílení připojení přes otevřenou síť Wi-Fi"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:18
-msgid "System policy prevents sharing connections via an open WiFi network"
-msgstr "Systémová zásada zabránila sdílení připojení přes otevřenou síť WiFi"
+msgid "System policy prevents sharing connections via an open Wi-Fi network"
+msgstr "Systémová zásada zabránila sdílení připojení přes otevřenou síť Wi-Fi"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:19
 msgid "Modify personal network connections"

@@ -2374,7 +2374,7 @@ test_read_wifi_open (void)
 	g_assert_cmpstr (nm_setting_wireless_get_mode (s_wireless), ==, "infrastructure");
 	g_assert_cmpint (nm_setting_wireless_get_channel (s_wireless), ==, 1);
 
-	/* ===== WiFi SECURITY SETTING ===== */
+	/* ===== Wi-Fi SECURITY SETTING ===== */
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec == NULL);
 
@@ -3275,7 +3275,7 @@ test_read_wifi_dynamic_wep_leap (void)
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
-	/* ===== WiFi SECURITY SETTING ===== */
+	/* ===== Wi-Fi SECURITY SETTING ===== */
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
 
@@ -3501,7 +3501,7 @@ test_write_wifi_hidden (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_ID, "Test Write WiFi Hidden",
+	              NM_SETTING_CONNECTION_ID, "Test Write Wi-Fi Hidden",
 	              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
 	              NULL);
@@ -3584,7 +3584,7 @@ test_write_wifi_mac_random (gconstpointer user_data)
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	val = g_strdup_printf ("Test Write WiFi MAC %s", name);
+	val = g_strdup_printf ("Test Write Wi-Fi MAC %s", name);
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, val,
 	              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
@@ -3803,7 +3803,7 @@ test_write_wifi_band_a (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_ID, "Test Write WiFi Band A",
+	              NM_SETTING_CONNECTION_ID, "Test Write Wi-Fi Band A",
 	              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
 	              NULL);

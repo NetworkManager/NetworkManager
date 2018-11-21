@@ -982,7 +982,7 @@ do_radio_wifi (NmCli *nmc, int argc, char **argv)
 		if (nmc->complete)
 			return nmc->return_value;
 
-		/* no argument, show current WiFi state */
+		/* no argument, show current Wi-Fi state */
 		nmc_switch_show (nmc, NMC_FIELDS_NM_WIFI, N_("Wi-Fi radio switch"));
 	} else {
 		if (nmc->complete) {

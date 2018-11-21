@@ -82,7 +82,7 @@ static const char *
 rfkill_type_to_desc (RfKillType rtype)
 {
 	if (rtype == 0)
-		return "WiFi";
+		return "Wi-Fi";
 	else if (rtype == 1)
 		return "WWAN";
 	else if (rtype == 2)

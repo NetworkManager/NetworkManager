@@ -2073,7 +2073,7 @@ test_write_new_wireless_group_names (void)
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
 	              NULL);
 
-	/* WiFi setting */
+	/* Wi-Fi setting */
 	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
@@ -2084,7 +2084,7 @@ test_write_new_wireless_group_names (void)
 	              NULL);
 	g_bytes_unref (ssid);
 
-	/* WiFi security setting */
+	/* Wi-Fi security setting */
 	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
 	g_object_set (s_wsec,

@@ -838,7 +838,7 @@ complete_connection (NMDevice *device,
 		ssid = nm_wifi_ap_get_ssid (ap);
 
 	if (ssid == NULL) {
-		/* The AP must be hidden.  Connecting to a WiFi AP requires the SSID
+		/* The AP must be hidden.  Connecting to a Wi-Fi AP requires the SSID
 		 * as part of the initial handshake, so check the connection details
 		 * for the SSID.  The AP object will still be used for encryption
 		 * settings and such.
@@ -2890,7 +2890,7 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 	/* If IP configuration times out and it's a static WEP connection, that
 	 * usually means the WEP key is wrong.  WEP's Open System auth mode has
 	 * no provision for figuring out if the WEP key is wrong, so you just have
-	 * to wait for DHCP to fail to figure it out.  For all other WiFi security
+	 * to wait for DHCP to fail to figure it out.  For all other Wi-Fi security
 	 * types (open, WPA, 802.1x, etc) if the secrets/certs were wrong the
 	 * connection would have failed before IP configuration.
 	 */
@@ -3288,7 +3288,7 @@ nm_device_wifi_new (const char *iface, NMDeviceWifiCapabilities capabilities)
 {
 	return g_object_new (NM_TYPE_DEVICE_WIFI,
 	                     NM_DEVICE_IFACE, iface,
-	                     NM_DEVICE_TYPE_DESC, "802.11 WiFi",
+	                     NM_DEVICE_TYPE_DESC, "802.11 Wi-Fi",
 	                     NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_WIFI,
 	                     NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_WIFI,
 	                     NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WLAN,
