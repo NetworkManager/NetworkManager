@@ -511,7 +511,7 @@ wifi_wext_set_mesh_ssid (NMWifiUtils *data, const guint8 *ssid, gsize len)
 
 		errsv = errno;
 		_LOGE (LOGD_PLATFORM | LOGD_WIFI | LOGD_OLPC,
-		       "(%s): error setting SSID to '%s': %s",
+		       "(%s): error setting SSID to %s: %s",
 		       ifname,
 		       (ssid_str = _nm_utils_ssid_to_string_arr (ssid, len)),
 		       strerror (errsv));
