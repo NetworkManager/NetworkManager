@@ -795,7 +795,12 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
-	/* signals */
+	/**
+	 * NMActiveConnection::state-changed:
+	 * @active_connection: the source #NMActiveConnection
+	 * @state: the new state number (#NMActiveConnectionState)
+	 * @reason: the state change reason (#NMActiveConnectionStateReason)
+	 */
 	signals[STATE_CHANGED] =
 		g_signal_new ("state-changed",
 		              G_OBJECT_CLASS_TYPE (object_class),
