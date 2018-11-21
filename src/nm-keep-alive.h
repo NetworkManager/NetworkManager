@@ -43,9 +43,6 @@ gboolean nm_keep_alive_is_alive (NMKeepAlive *self);
 void nm_keep_alive_arm (NMKeepAlive *self);
 void nm_keep_alive_disarm (NMKeepAlive *self);
 
-void nm_keep_alive_set_forced (NMKeepAlive  *self,
-                               gboolean      forced);
-
 void nm_keep_alive_set_settings_connection_watch_visible (NMKeepAlive         *self,
                                                           NMSettingsConnection *connection);
 

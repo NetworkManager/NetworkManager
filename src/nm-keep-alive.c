@@ -46,7 +46,6 @@ typedef struct {
 	bool armed:1;
 	bool disarmed:1;
 
-	bool forced:1;
 	bool alive:1;
 	bool dbus_client_confirmed:1;
 } NMKeepAlivePrivate;
@@ -88,9 +87,6 @@ _is_alive (NMKeepAlive *self)
 		return TRUE;
 	}
 
-	if (priv->forced)
-		return TRUE;
-
 	if (   priv->connection
 	    && NM_FLAGS_HAS (nm_settings_connection_get_flags (priv->connection),
 	                     NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE))
@@ -125,19 +121,6 @@ gboolean
 nm_keep_alive_is_alive (NMKeepAlive *self)
 {
 	return NM_KEEP_ALIVE_GET_PRIVATE (self)->alive;
-}
-
-/*****************************************************************************/
-
-void
-nm_keep_alive_set_forced (NMKeepAlive *self, gboolean forced)
-{
-	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
-
-	if (priv->forced != (!!forced)) {
-		priv->forced = forced;
-		_notify_alive (self);
-	}
 }
 
 /*****************************************************************************/
