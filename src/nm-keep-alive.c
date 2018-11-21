@@ -114,6 +114,7 @@ _notify_alive (NMKeepAlive *self)
 	if (priv->alive == _is_alive (self))
 		return;
 	priv->alive = !priv->alive;
+	_LOGD ("instance is now %s", priv->alive ? "alive" : "dead");
 	_notify (self, PROP_ALIVE);
 }
 
