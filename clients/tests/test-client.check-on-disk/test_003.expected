@@ -882,11 +882,11 @@ returncode: 0
 stdout: 1272 bytes
 >>>
 DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
+eth0    ethernet  unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
 eth1    ethernet  unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/2  --          --                                    --                                                 
 wlan0   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
 wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
 wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
-eth0    ethernet  unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
 
 <<<
 stderr: 24 bytes
@@ -902,11 +902,11 @@ returncode: 0
 stdout: 1277 bytes
 >>>
 DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
+eth0    ethernet  niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
 eth1    ethernet  niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/2  --          --                                    --                                                 
 wlan0   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
 wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
 wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
-eth0    ethernet  niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
 
 <<<
 stderr: 24 bytes
@@ -1760,11 +1760,11 @@ returncode: 0
 stdout: 1272 bytes
 >>>
 DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
+eth0    ethernet  unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
+eth1    ethernet  unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/2  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/2 
 wlan0   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
 wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
 wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
-eth0    ethernet  unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
-eth1    ethernet  unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/2  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/2 
 
 <<<
 stderr: 24 bytes
@@ -1780,11 +1780,11 @@ returncode: 0
 stdout: 1277 bytes
 >>>
 DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
+eth0    ethernet  niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
+eth1    ethernet  niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/2  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/2 
 wlan0   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
 wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
 wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
-eth0    ethernet  niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
-eth1    ethernet  niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/2  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/2 
 
 <<<
 stderr: 24 bytes
@@ -2064,8 +2064,8 @@ returncode: 0
 stdout: 1938 bytes
 >>>
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth0    deactivating  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          never           no           0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -2079,8 +2079,8 @@ returncode: 0
 stdout: 1950 bytes
 >>>
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth1    aktywowano      /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth0    dezaktywowanie  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth1    aktywowano      /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          nigdy           nie          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -2688,8 +2688,8 @@ returncode: 0
 stdout: 2208 bytes
 >>>
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
-[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnever[0m           [32myes[0m          [32m0[0m                     [32mno[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32myes[0m     [32meth1[0m    [32mactivated[0m     [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 [31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m0[0m          [31mnever[0m           [31myes[0m          [31m0[0m                     [31mno[0m        [31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [31myes[0m     [31meth0[0m    [31mdeactivating[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnever[0m           [32myes[0m          [32m0[0m                     [32mno[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32myes[0m     [32meth1[0m    [32mactivated[0m     [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          never           no           0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -2703,8 +2703,8 @@ returncode: 0
 stdout: 2220 bytes
 >>>
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
-[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnigdy[0m           [32mtak[0m          [32m0[0m                     [32mnie[0m       [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 [31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m0[0m          [31mnigdy[0m           [31mtak[0m          [31m0[0m                     [31mnie[0m       [31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [31mtak[0m     [31meth0[0m    [31mdezaktywowanie[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnigdy[0m           [32mtak[0m          [32m0[0m                     [32mnie[0m       [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          nigdy           nie          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -3316,8 +3316,8 @@ stdout: 2415 bytes
 ======================================
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth0    deactivating  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          never           no           0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -3335,8 +3335,8 @@ stdout: 2449 bytes
 ==========================================
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth1    aktywowano      /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth0    dezaktywowanie  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth1    aktywowano      /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          nigdy           nie          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -4034,8 +4034,8 @@ stdout: 2685 bytes
 ======================================
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnever[0m           [32myes[0m          [32m0[0m                     [32mno[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32myes[0m     [32meth1[0m    [32mactivated[0m     [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 [31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m0[0m          [31mnever[0m           [31myes[0m          [31m0[0m                     [31mno[0m        [31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [31myes[0m     [31meth0[0m    [31mdeactivating[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnever[0m           [32myes[0m          [32m0[0m                     [32mno[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32myes[0m     [32meth1[0m    [32mactivated[0m     [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          never           no           0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -4053,8 +4053,8 @@ stdout: 2719 bytes
 ==========================================
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnigdy[0m           [32mtak[0m          [32m0[0m                     [32mnie[0m       [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 [31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m0[0m          [31mnigdy[0m           [31mtak[0m          [31m0[0m                     [31mnie[0m       [31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [31mtak[0m     [31meth0[0m    [31mdezaktywowanie[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnigdy[0m           [32mtak[0m          [32m0[0m                     [32mnie[0m       [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          nigdy           nie          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -4747,8 +4747,8 @@ lang: C
 returncode: 0
 stdout: 1046 bytes
 >>>
-ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
 ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth0:deactivating:/org/freedesktop/NetworkManager/ActiveConnection/1::/etc/NetworkManager/system-connections/ethernet
+ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm:0:never:no:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:no:::::/etc/NetworkManager/system-connections/con-gsm1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
@@ -4761,8 +4761,8 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1046 bytes
 >>>
-ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
 ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth0:deactivating:/org/freedesktop/NetworkManager/ActiveConnection/1::/etc/NetworkManager/system-connections/ethernet
+ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm:0:never:no:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:no:::::/etc/NetworkManager/system-connections/con-gsm1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
@@ -5367,8 +5367,8 @@ lang: C
 returncode: 0
 stdout: 1316 bytes
 >>>
-[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m0[0m:[32mnever[0m:[32myes[0m:[32m0[0m:[32mno[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
 [31methernet[0m:[31mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[31m802-3-ethernet[0m:[31m0[0m:[31mnever[0m:[31myes[0m:[31m0[0m:[31mno[0m:[31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[31myes[0m:[31meth0[0m:[31mdeactivating[0m:[31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m:[31m[0m:[31m/etc/NetworkManager/system-connections/ethernet[0m
+[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m0[0m:[32mnever[0m:[32myes[0m:[32m0[0m:[32mno[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm:0:never:no:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:no:::::/etc/NetworkManager/system-connections/con-gsm1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
@@ -5381,8 +5381,8 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1316 bytes
 >>>
-[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m0[0m:[32mnever[0m:[32myes[0m:[32m0[0m:[32mno[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
 [31methernet[0m:[31mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[31m802-3-ethernet[0m:[31m0[0m:[31mnever[0m:[31myes[0m:[31m0[0m:[31mno[0m:[31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[31myes[0m:[31meth0[0m:[31mdeactivating[0m:[31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m:[31m[0m:[31m/etc/NetworkManager/system-connections/ethernet[0m
+[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m0[0m:[32mnever[0m:[32myes[0m:[32m0[0m:[32mno[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm:0:never:no:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:no:::::/etc/NetworkManager/system-connections/con-gsm1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
@@ -5988,8 +5988,8 @@ returncode: 0
 stdout: 1938 bytes
 >>>
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth0    deactivating  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          never           no           0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -6003,8 +6003,8 @@ returncode: 0
 stdout: 1950 bytes
 >>>
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth1    aktywowano      /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth0    dezaktywowanie  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth1    aktywowano      /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          nigdy           nie          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -6226,8 +6226,8 @@ returncode: 0
 stdout: 2208 bytes
 >>>
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
-[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnever[0m           [32myes[0m          [32m0[0m                     [32mno[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32myes[0m     [32meth1[0m    [32mactivated[0m     [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 [31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m0[0m          [31mnever[0m           [31myes[0m          [31m0[0m                     [31mno[0m        [31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [31myes[0m     [31meth0[0m    [31mdeactivating[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnever[0m           [32myes[0m          [32m0[0m                     [32mno[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32myes[0m     [32meth1[0m    [32mactivated[0m     [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          never           no           0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -6241,8 +6241,8 @@ returncode: 0
 stdout: 2220 bytes
 >>>
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
-[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnigdy[0m           [32mtak[0m          [32m0[0m                     [32mnie[0m       [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 [31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m0[0m          [31mnigdy[0m           [31mtak[0m          [31m0[0m                     [31mnie[0m       [31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [31mtak[0m     [31meth0[0m    [31mdezaktywowanie[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnigdy[0m           [32mtak[0m          [32m0[0m                     [32mnie[0m       [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          nigdy           nie          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -6468,8 +6468,8 @@ stdout: 2415 bytes
 ======================================
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth0    deactivating  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          never           no           0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -6487,8 +6487,8 @@ stdout: 2449 bytes
 ==========================================
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth1    aktywowano      /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth0    dezaktywowanie  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth1    aktywowano      /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          nigdy           nie          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -6800,8 +6800,8 @@ stdout: 2685 bytes
 ======================================
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnever[0m           [32myes[0m          [32m0[0m                     [32mno[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32myes[0m     [32meth1[0m    [32mactivated[0m     [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 [31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m0[0m          [31mnever[0m           [31myes[0m          [31m0[0m                     [31mno[0m        [31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [31myes[0m     [31meth0[0m    [31mdeactivating[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnever[0m           [32myes[0m          [32m0[0m                     [32mno[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32myes[0m     [32meth1[0m    [32mactivated[0m     [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          never           no           0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -6819,8 +6819,8 @@ stdout: 2719 bytes
 ==========================================
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnigdy[0m           [32mtak[0m          [32m0[0m                     [32mnie[0m       [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 [31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m0[0m          [31mnigdy[0m           [31mtak[0m          [31m0[0m                     [31mnie[0m       [31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [31mtak[0m     [31meth0[0m    [31mdezaktywowanie[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnigdy[0m           [32mtak[0m          [32m0[0m                     [32mnie[0m       [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          nigdy           nie          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -7127,8 +7127,8 @@ lang: C
 returncode: 0
 stdout: 1046 bytes
 >>>
-ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
 ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth0:deactivating:/org/freedesktop/NetworkManager/ActiveConnection/1::/etc/NetworkManager/system-connections/ethernet
+ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm:0:never:no:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:no:::::/etc/NetworkManager/system-connections/con-gsm1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
@@ -7141,8 +7141,8 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1046 bytes
 >>>
-ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
 ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth0:deactivating:/org/freedesktop/NetworkManager/ActiveConnection/1::/etc/NetworkManager/system-connections/ethernet
+ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm:0:never:no:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:no:::::/etc/NetworkManager/system-connections/con-gsm1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
@@ -7279,8 +7279,8 @@ lang: C
 returncode: 0
 stdout: 1316 bytes
 >>>
-[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m0[0m:[32mnever[0m:[32myes[0m:[32m0[0m:[32mno[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
 [31methernet[0m:[31mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[31m802-3-ethernet[0m:[31m0[0m:[31mnever[0m:[31myes[0m:[31m0[0m:[31mno[0m:[31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[31myes[0m:[31meth0[0m:[31mdeactivating[0m:[31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m:[31m[0m:[31m/etc/NetworkManager/system-connections/ethernet[0m
+[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m0[0m:[32mnever[0m:[32myes[0m:[32m0[0m:[32mno[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm:0:never:no:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:no:::::/etc/NetworkManager/system-connections/con-gsm1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
@@ -7293,8 +7293,8 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1316 bytes
 >>>
-[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m0[0m:[32mnever[0m:[32myes[0m:[32m0[0m:[32mno[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
 [31methernet[0m:[31mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[31m802-3-ethernet[0m:[31m0[0m:[31mnever[0m:[31myes[0m:[31m0[0m:[31mno[0m:[31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[31myes[0m:[31meth0[0m:[31mdeactivating[0m:[31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m:[31m[0m:[31m/etc/NetworkManager/system-connections/ethernet[0m
+[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m0[0m:[32mnever[0m:[32myes[0m:[32m0[0m:[32mno[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm:0:never:no:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:no:::::/etc/NetworkManager/system-connections/con-gsm1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
@@ -7441,9 +7441,9 @@ AUTOCONNECT-PRIORITY:                   0
 READONLY:                               no
 DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:                                 yes
-DEVICE:                                 eth1
-STATE:                                  activated
-ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
+DEVICE:                                 eth0
+STATE:                                  deactivating
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
 SLAVE:                                  --
 FILENAME:                               /etc/NetworkManager/system-connections/ethernet
 NAME:                                   ethernet
@@ -7456,9 +7456,9 @@ AUTOCONNECT-PRIORITY:                   0
 READONLY:                               no
 DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:                                 yes
-DEVICE:                                 eth0
-STATE:                                  deactivating
-ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
+DEVICE:                                 eth1
+STATE:                                  activated
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
 SLAVE:                                  --
 FILENAME:                               /etc/NetworkManager/system-connections/ethernet
 NAME:                                   con-1
@@ -7525,9 +7525,9 @@ AUTOCONNECT-PRIORITY:                   0
 READONLY:                               nie
 DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:                                 tak
-DEVICE:                                 eth1
-STATE:                                  aktywowano
-ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
+DEVICE:                                 eth0
+STATE:                                  dezaktywowanie
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
 SLAVE:                                  --
 FILENAME:                               /etc/NetworkManager/system-connections/ethernet
 NAME:                                   ethernet
@@ -7540,9 +7540,9 @@ AUTOCONNECT-PRIORITY:                   0
 READONLY:                               nie
 DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:                                 tak
-DEVICE:                                 eth0
-STATE:                                  dezaktywowanie
-ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
+DEVICE:                                 eth1
+STATE:                                  aktywowano
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
 SLAVE:                                  --
 FILENAME:                               /etc/NetworkManager/system-connections/ethernet
 NAME:                                   con-1
@@ -8199,21 +8199,6 @@ lang: C
 returncode: 0
 stdout: 4320 bytes
 >>>
-NAME:                                   [32methernet[0m
-UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
-TYPE:                                   [32methernet[0m
-TIMESTAMP:                              [32m0[0m
-TIMESTAMP-REAL:                         [32mnever[0m
-AUTOCONNECT:                            [32myes[0m
-AUTOCONNECT-PRIORITY:                   [32m0[0m
-READONLY:                               [32mno[0m
-DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
-ACTIVE:                                 [32myes[0m
-DEVICE:                                 [32meth1[0m
-STATE:                                  [32mactivated[0m
-ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
-SLAVE:                                  [32m--[0m
-FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
 NAME:                                   [31methernet[0m
 UUID:                                   [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m
 TYPE:                                   [31methernet[0m
@@ -8229,6 +8214,21 @@ STATE:                                  [31mdeactivating[0m
 ACTIVE-PATH:                            [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m
 SLAVE:                                  [31m--[0m
 FILENAME:                               [31m/etc/NetworkManager/system-connections/ethernet[0m
+NAME:                                   [32methernet[0m
+UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
+TYPE:                                   [32methernet[0m
+TIMESTAMP:                              [32m0[0m
+TIMESTAMP-REAL:                         [32mnever[0m
+AUTOCONNECT:                            [32myes[0m
+AUTOCONNECT-PRIORITY:                   [32m0[0m
+READONLY:                               [32mno[0m
+DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
+ACTIVE:                                 [32myes[0m
+DEVICE:                                 [32meth1[0m
+STATE:                                  [32mactivated[0m
+ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+SLAVE:                                  [32m--[0m
+FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
 NAME:                                   con-1
 UUID:                                   5fcfd6d7-1e63-3332-8826-a7eda103792d
 TYPE:                                   ethernet
@@ -8283,21 +8283,6 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 4332 bytes
 >>>
-NAME:                                   [32methernet[0m
-UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
-TYPE:                                   [32methernet[0m
-TIMESTAMP:                              [32m0[0m
-TIMESTAMP-REAL:                         [32mnigdy[0m
-AUTOCONNECT:                            [32mtak[0m
-AUTOCONNECT-PRIORITY:                   [32m0[0m
-READONLY:                               [32mnie[0m
-DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
-ACTIVE:                                 [32mtak[0m
-DEVICE:                                 [32meth1[0m
-STATE:                                  [32maktywowano[0m
-ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
-SLAVE:                                  [32m--[0m
-FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
 NAME:                                   [31methernet[0m
 UUID:                                   [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m
 TYPE:                                   [31methernet[0m
@@ -8313,6 +8298,21 @@ STATE:                                  [31mdezaktywowanie[0m
 ACTIVE-PATH:                            [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m
 SLAVE:                                  [31m--[0m
 FILENAME:                               [31m/etc/NetworkManager/system-connections/ethernet[0m
+NAME:                                   [32methernet[0m
+UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
+TYPE:                                   [32methernet[0m
+TIMESTAMP:                              [32m0[0m
+TIMESTAMP-REAL:                         [32mnigdy[0m
+AUTOCONNECT:                            [32mtak[0m
+AUTOCONNECT-PRIORITY:                   [32m0[0m
+READONLY:                               [32mnie[0m
+DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
+ACTIVE:                                 [32mtak[0m
+DEVICE:                                 [32meth1[0m
+STATE:                                  [32maktywowano[0m
+ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+SLAVE:                                  [32m--[0m
+FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
 NAME:                                   con-1
 UUID:                                   5fcfd6d7-1e63-3332-8826-a7eda103792d
 TYPE:                                   ethernet
@@ -8980,9 +8980,9 @@ AUTOCONNECT-PRIORITY:                   0
 READONLY:                               no
 DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:                                 yes
-DEVICE:                                 eth1
-STATE:                                  activated
-ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
+DEVICE:                                 eth0
+STATE:                                  deactivating
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
 SLAVE:                                  --
 FILENAME:                               /etc/NetworkManager/system-connections/ethernet
 -------------------------------------------------------------------------------
@@ -8996,9 +8996,9 @@ AUTOCONNECT-PRIORITY:                   0
 READONLY:                               no
 DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:                                 yes
-DEVICE:                                 eth0
-STATE:                                  deactivating
-ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
+DEVICE:                                 eth1
+STATE:                                  activated
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
 SLAVE:                                  --
 FILENAME:                               /etc/NetworkManager/system-connections/ethernet
 -------------------------------------------------------------------------------
@@ -9072,9 +9072,9 @@ AUTOCONNECT-PRIORITY:                   0
 READONLY:                               nie
 DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:                                 tak
-DEVICE:                                 eth1
-STATE:                                  aktywowano
-ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
+DEVICE:                                 eth0
+STATE:                                  dezaktywowanie
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
 SLAVE:                                  --
 FILENAME:                               /etc/NetworkManager/system-connections/ethernet
 -------------------------------------------------------------------------------
@@ -9088,9 +9088,9 @@ AUTOCONNECT-PRIORITY:                   0
 READONLY:                               nie
 DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:                                 tak
-DEVICE:                                 eth0
-STATE:                                  dezaktywowanie
-ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
+DEVICE:                                 eth1
+STATE:                                  aktywowano
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
 SLAVE:                                  --
 FILENAME:                               /etc/NetworkManager/system-connections/ethernet
 -------------------------------------------------------------------------------
@@ -9846,22 +9846,6 @@ stdout: 4937 bytes
 ===============================================================================
                       NetworkManager connection profiles
 ===============================================================================
-NAME:                                   [32methernet[0m
-UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
-TYPE:                                   [32methernet[0m
-TIMESTAMP:                              [32m0[0m
-TIMESTAMP-REAL:                         [32mnever[0m
-AUTOCONNECT:                            [32myes[0m
-AUTOCONNECT-PRIORITY:                   [32m0[0m
-READONLY:                               [32mno[0m
-DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
-ACTIVE:                                 [32myes[0m
-DEVICE:                                 [32meth1[0m
-STATE:                                  [32mactivated[0m
-ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
-SLAVE:                                  [32m--[0m
-FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
--------------------------------------------------------------------------------
 NAME:                                   [31methernet[0m
 UUID:                                   [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m
 TYPE:                                   [31methernet[0m
@@ -9877,6 +9861,22 @@ STATE:                                  [31mdeactivating[0m
 ACTIVE-PATH:                            [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m
 SLAVE:                                  [31m--[0m
 FILENAME:                               [31m/etc/NetworkManager/system-connections/ethernet[0m
+-------------------------------------------------------------------------------
+NAME:                                   [32methernet[0m
+UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
+TYPE:                                   [32methernet[0m
+TIMESTAMP:                              [32m0[0m
+TIMESTAMP-REAL:                         [32mnever[0m
+AUTOCONNECT:                            [32myes[0m
+AUTOCONNECT-PRIORITY:                   [32m0[0m
+READONLY:                               [32mno[0m
+DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
+ACTIVE:                                 [32myes[0m
+DEVICE:                                 [32meth1[0m
+STATE:                                  [32mactivated[0m
+ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+SLAVE:                                  [32m--[0m
+FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
 -------------------------------------------------------------------------------
 NAME:                                   con-1
 UUID:                                   5fcfd6d7-1e63-3332-8826-a7eda103792d
@@ -9938,22 +9938,6 @@ stdout: 4955 bytes
 ===============================================================================
                     Profile połączeń usługi NetworkManager
 ===============================================================================
-NAME:                                   [32methernet[0m
-UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
-TYPE:                                   [32methernet[0m
-TIMESTAMP:                              [32m0[0m
-TIMESTAMP-REAL:                         [32mnigdy[0m
-AUTOCONNECT:                            [32mtak[0m
-AUTOCONNECT-PRIORITY:                   [32m0[0m
-READONLY:                               [32mnie[0m
-DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
-ACTIVE:                                 [32mtak[0m
-DEVICE:                                 [32meth1[0m
-STATE:                                  [32maktywowano[0m
-ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
-SLAVE:                                  [32m--[0m
-FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
--------------------------------------------------------------------------------
 NAME:                                   [31methernet[0m
 UUID:                                   [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m
 TYPE:                                   [31methernet[0m
@@ -9969,6 +9953,22 @@ STATE:                                  [31mdezaktywowanie[0m
 ACTIVE-PATH:                            [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m
 SLAVE:                                  [31m--[0m
 FILENAME:                               [31m/etc/NetworkManager/system-connections/ethernet[0m
+-------------------------------------------------------------------------------
+NAME:                                   [32methernet[0m
+UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
+TYPE:                                   [32methernet[0m
+TIMESTAMP:                              [32m0[0m
+TIMESTAMP-REAL:                         [32mnigdy[0m
+AUTOCONNECT:                            [32mtak[0m
+AUTOCONNECT-PRIORITY:                   [32m0[0m
+READONLY:                               [32mnie[0m
+DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
+ACTIVE:                                 [32mtak[0m
+DEVICE:                                 [32meth1[0m
+STATE:                                  [32maktywowano[0m
+ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+SLAVE:                                  [32m--[0m
+FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
 -------------------------------------------------------------------------------
 NAME:                                   con-1
 UUID:                                   5fcfd6d7-1e63-3332-8826-a7eda103792d
@@ -10729,9 +10729,9 @@ AUTOCONNECT-PRIORITY:0
 READONLY:no
 DBUS-PATH:/org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:yes
-DEVICE:eth1
-STATE:activated
-ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/2
+DEVICE:eth0
+STATE:deactivating
+ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/1
 SLAVE:
 FILENAME:/etc/NetworkManager/system-connections/ethernet
 NAME:ethernet
@@ -10744,9 +10744,9 @@ AUTOCONNECT-PRIORITY:0
 READONLY:no
 DBUS-PATH:/org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:yes
-DEVICE:eth0
-STATE:deactivating
-ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/1
+DEVICE:eth1
+STATE:activated
+ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/2
 SLAVE:
 FILENAME:/etc/NetworkManager/system-connections/ethernet
 NAME:con-1
@@ -10813,9 +10813,9 @@ AUTOCONNECT-PRIORITY:0
 READONLY:no
 DBUS-PATH:/org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:yes
-DEVICE:eth1
-STATE:activated
-ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/2
+DEVICE:eth0
+STATE:deactivating
+ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/1
 SLAVE:
 FILENAME:/etc/NetworkManager/system-connections/ethernet
 NAME:ethernet
@@ -10828,9 +10828,9 @@ AUTOCONNECT-PRIORITY:0
 READONLY:no
 DBUS-PATH:/org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:yes
-DEVICE:eth0
-STATE:deactivating
-ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/1
+DEVICE:eth1
+STATE:activated
+ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/2
 SLAVE:
 FILENAME:/etc/NetworkManager/system-connections/ethernet
 NAME:con-1
@@ -11487,21 +11487,6 @@ lang: C
 returncode: 0
 stdout: 2011 bytes
 >>>
-NAME:[32methernet[0m
-UUID:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
-TYPE:[32m802-3-ethernet[0m
-TIMESTAMP:[32m0[0m
-TIMESTAMP-REAL:[32mnever[0m
-AUTOCONNECT:[32myes[0m
-AUTOCONNECT-PRIORITY:[32m0[0m
-READONLY:[32mno[0m
-DBUS-PATH:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
-ACTIVE:[32myes[0m
-DEVICE:[32meth1[0m
-STATE:[32mactivated[0m
-ACTIVE-PATH:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
-SLAVE:[32m[0m
-FILENAME:[32m/etc/NetworkManager/system-connections/ethernet[0m
 NAME:[31methernet[0m
 UUID:[31mUUID-ethernet-REPLACED-REPLACED-REPL[0m
 TYPE:[31m802-3-ethernet[0m
@@ -11517,6 +11502,21 @@ STATE:[31mdeactivating[0m
 ACTIVE-PATH:[31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m
 SLAVE:[31m[0m
 FILENAME:[31m/etc/NetworkManager/system-connections/ethernet[0m
+NAME:[32methernet[0m
+UUID:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
+TYPE:[32m802-3-ethernet[0m
+TIMESTAMP:[32m0[0m
+TIMESTAMP-REAL:[32mnever[0m
+AUTOCONNECT:[32myes[0m
+AUTOCONNECT-PRIORITY:[32m0[0m
+READONLY:[32mno[0m
+DBUS-PATH:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
+ACTIVE:[32myes[0m
+DEVICE:[32meth1[0m
+STATE:[32mactivated[0m
+ACTIVE-PATH:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+SLAVE:[32m[0m
+FILENAME:[32m/etc/NetworkManager/system-connections/ethernet[0m
 NAME:con-1
 UUID:5fcfd6d7-1e63-3332-8826-a7eda103792d
 TYPE:802-3-ethernet
@@ -11571,21 +11571,6 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 2011 bytes
 >>>
-NAME:[32methernet[0m
-UUID:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
-TYPE:[32m802-3-ethernet[0m
-TIMESTAMP:[32m0[0m
-TIMESTAMP-REAL:[32mnever[0m
-AUTOCONNECT:[32myes[0m
-AUTOCONNECT-PRIORITY:[32m0[0m
-READONLY:[32mno[0m
-DBUS-PATH:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
-ACTIVE:[32myes[0m
-DEVICE:[32meth1[0m
-STATE:[32mactivated[0m
-ACTIVE-PATH:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
-SLAVE:[32m[0m
-FILENAME:[32m/etc/NetworkManager/system-connections/ethernet[0m
 NAME:[31methernet[0m
 UUID:[31mUUID-ethernet-REPLACED-REPLACED-REPL[0m
 TYPE:[31m802-3-ethernet[0m
@@ -11601,6 +11586,21 @@ STATE:[31mdeactivating[0m
 ACTIVE-PATH:[31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m
 SLAVE:[31m[0m
 FILENAME:[31m/etc/NetworkManager/system-connections/ethernet[0m
+NAME:[32methernet[0m
+UUID:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
+TYPE:[32m802-3-ethernet[0m
+TIMESTAMP:[32m0[0m
+TIMESTAMP-REAL:[32mnever[0m
+AUTOCONNECT:[32myes[0m
+AUTOCONNECT-PRIORITY:[32m0[0m
+READONLY:[32mno[0m
+DBUS-PATH:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
+ACTIVE:[32myes[0m
+DEVICE:[32meth1[0m
+STATE:[32mactivated[0m
+ACTIVE-PATH:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+SLAVE:[32m[0m
+FILENAME:[32m/etc/NetworkManager/system-connections/ethernet[0m
 NAME:con-1
 UUID:5fcfd6d7-1e63-3332-8826-a7eda103792d
 TYPE:802-3-ethernet
@@ -12256,8 +12256,8 @@ returncode: 0
 stdout: 1938 bytes
 >>>
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth0    deactivating  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          never           no           0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -12271,8 +12271,8 @@ returncode: 0
 stdout: 1950 bytes
 >>>
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth1    aktywowano      /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth0    dezaktywowanie  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth1    aktywowano      /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          nigdy           nie          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -12506,8 +12506,8 @@ returncode: 0
 stdout: 2208 bytes
 >>>
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
-[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m--[0m         [32m--[0m              [32m--[0m           [32m--[0m                    [32m--[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32myes[0m     [32meth1[0m    [32mactivated[0m     [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 [31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m--[0m         [31m--[0m              [31m--[0m           [31m--[0m                    [31m--[0m        [31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [31myes[0m     [31meth0[0m    [31mdeactivating[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m--[0m         [32m--[0m              [32m--[0m           [32m--[0m                    [32m--[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32myes[0m     [32meth1[0m    [32mactivated[0m     [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          never           no           0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -12521,8 +12521,8 @@ returncode: 0
 stdout: 2220 bytes
 >>>
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
-[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m--[0m         [32m--[0m              [32m--[0m           [32m--[0m                    [32m--[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 [31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m--[0m         [31m--[0m              [31m--[0m           [31m--[0m                    [31m--[0m        [31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [31mtak[0m     [31meth0[0m    [31mdezaktywowanie[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m--[0m         [32m--[0m              [32m--[0m           [32m--[0m                    [32m--[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          nigdy           nie          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -12760,8 +12760,8 @@ stdout: 2415 bytes
 ======================================
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth0    deactivating  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          never           no           0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -12779,8 +12779,8 @@ stdout: 2449 bytes
 ==========================================
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth1    aktywowano      /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth0    dezaktywowanie  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth1    aktywowano      /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          nigdy           nie          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -13062,8 +13062,8 @@ stdout: 2685 bytes
 ======================================
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m--[0m         [32m--[0m              [32m--[0m           [32m--[0m                    [32m--[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32myes[0m     [32meth1[0m    [32mactivated[0m     [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 [31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m--[0m         [31m--[0m              [31m--[0m           [31m--[0m                    [31m--[0m        [31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [31myes[0m     [31meth0[0m    [31mdeactivating[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m--[0m         [32m--[0m              [32m--[0m           [32m--[0m                    [32m--[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32myes[0m     [32meth1[0m    [32mactivated[0m     [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          never           no           0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -13081,8 +13081,8 @@ stdout: 2719 bytes
 ==========================================
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m--[0m         [32m--[0m              [32m--[0m           [32m--[0m                    [32m--[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 [31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m--[0m         [31m--[0m              [31m--[0m           [31m--[0m                    [31m--[0m        [31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [31mtak[0m     [31meth0[0m    [31mdezaktywowanie[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m--[0m         [32m--[0m              [32m--[0m           [32m--[0m                    [32m--[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          nigdy           nie          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -13359,8 +13359,8 @@ lang: C
 returncode: 0
 stdout: 1022 bytes
 >>>
-ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet::::::/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
 ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet::::::/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth0:deactivating:/org/freedesktop/NetworkManager/ActiveConnection/1::/etc/NetworkManager/system-connections/ethernet
+ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet::::::/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm:0:never:no:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:no:::::/etc/NetworkManager/system-connections/con-gsm1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
@@ -13373,8 +13373,8 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1022 bytes
 >>>
-ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet::::::/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
 ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet::::::/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth0:deactivating:/org/freedesktop/NetworkManager/ActiveConnection/1::/etc/NetworkManager/system-connections/ethernet
+ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet::::::/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm:0:never:no:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:no:::::/etc/NetworkManager/system-connections/con-gsm1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
@@ -13605,8 +13605,8 @@ lang: C
 returncode: 0
 stdout: 1292 bytes
 >>>
-[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m[0m:[32m[0m:[32m[0m:[32m[0m:[32m[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
 [31methernet[0m:[31mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[31m802-3-ethernet[0m:[31m[0m:[31m[0m:[31m[0m:[31m[0m:[31m[0m:[31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[31myes[0m:[31meth0[0m:[31mdeactivating[0m:[31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m:[31m[0m:[31m/etc/NetworkManager/system-connections/ethernet[0m
+[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m[0m:[32m[0m:[32m[0m:[32m[0m:[32m[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm:0:never:no:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:no:::::/etc/NetworkManager/system-connections/con-gsm1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
@@ -13619,8 +13619,8 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1292 bytes
 >>>
-[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m[0m:[32m[0m:[32m[0m:[32m[0m:[32m[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
 [31methernet[0m:[31mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[31m802-3-ethernet[0m:[31m[0m:[31m[0m:[31m[0m:[31m[0m:[31m[0m:[31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[31myes[0m:[31meth0[0m:[31mdeactivating[0m:[31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m:[31m[0m:[31m/etc/NetworkManager/system-connections/ethernet[0m
+[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m[0m:[32m[0m:[32m[0m:[32m[0m:[32m[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm:0:never:no:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:no:::::/etc/NetworkManager/system-connections/con-gsm1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
@@ -13852,8 +13852,8 @@ returncode: 0
 stdout: 1938 bytes
 >>>
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth0    deactivating  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          never           no           0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -13867,8 +13867,8 @@ returncode: 0
 stdout: 1950 bytes
 >>>
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth1    aktywowano      /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth0    dezaktywowanie  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth1    aktywowano      /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          nigdy           nie          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -14016,8 +14016,8 @@ returncode: 0
 stdout: 2208 bytes
 >>>
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
-[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m--[0m         [32m--[0m              [32m--[0m           [32m--[0m                    [32m--[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32myes[0m     [32meth1[0m    [32mactivated[0m     [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 [31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m--[0m         [31m--[0m              [31m--[0m           [31m--[0m                    [31m--[0m        [31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [31myes[0m     [31meth0[0m    [31mdeactivating[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m--[0m         [32m--[0m              [32m--[0m           [32m--[0m                    [32m--[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32myes[0m     [32meth1[0m    [32mactivated[0m     [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          never           no           0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -14031,8 +14031,8 @@ returncode: 0
 stdout: 2220 bytes
 >>>
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
-[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m--[0m         [32m--[0m              [32m--[0m           [32m--[0m                    [32m--[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 [31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m--[0m         [31m--[0m              [31m--[0m           [31m--[0m                    [31m--[0m        [31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [31mtak[0m     [31meth0[0m    [31mdezaktywowanie[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m--[0m         [32m--[0m              [32m--[0m           [32m--[0m                    [32m--[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          nigdy           nie          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -14184,8 +14184,8 @@ stdout: 2415 bytes
 ======================================
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth0    deactivating  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          never           no           0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -14203,8 +14203,8 @@ stdout: 2449 bytes
 ==========================================
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth1    aktywowano      /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth0    dezaktywowanie  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --         --              --           --                    --        /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth1    aktywowano      /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          nigdy           nie          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -14400,8 +14400,8 @@ stdout: 2685 bytes
 ======================================
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m--[0m         [32m--[0m              [32m--[0m           [32m--[0m                    [32m--[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32myes[0m     [32meth1[0m    [32mactivated[0m     [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 [31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m--[0m         [31m--[0m              [31m--[0m           [31m--[0m                    [31m--[0m        [31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [31myes[0m     [31meth0[0m    [31mdeactivating[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m--[0m         [32m--[0m              [32m--[0m           [32m--[0m                    [32m--[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32myes[0m     [32meth1[0m    [32mactivated[0m     [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          never           no           0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -14419,8 +14419,8 @@ stdout: 2719 bytes
 ==========================================
 NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m--[0m         [32m--[0m              [32m--[0m           [32m--[0m                    [32m--[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 [31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m--[0m         [31m--[0m              [31m--[0m           [31m--[0m                    [31m--[0m        [31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [31mtak[0m     [31meth0[0m    [31mdezaktywowanie[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m--[0m         [32m--[0m              [32m--[0m           [32m--[0m                    [32m--[0m        [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
 con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
 con-gsm1  UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm       0          nigdy           nie          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-gsm1 
 con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
@@ -14611,8 +14611,8 @@ lang: C
 returncode: 0
 stdout: 1022 bytes
 >>>
-ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet::::::/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
 ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet::::::/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth0:deactivating:/org/freedesktop/NetworkManager/ActiveConnection/1::/etc/NetworkManager/system-connections/ethernet
+ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet::::::/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm:0:never:no:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:no:::::/etc/NetworkManager/system-connections/con-gsm1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
@@ -14625,8 +14625,8 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1022 bytes
 >>>
-ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet::::::/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
 ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet::::::/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth0:deactivating:/org/freedesktop/NetworkManager/ActiveConnection/1::/etc/NetworkManager/system-connections/ethernet
+ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet::::::/org/freedesktop/NetworkManager/Settings/Connection/4:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm:0:never:no:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:no:::::/etc/NetworkManager/system-connections/con-gsm1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
@@ -14737,8 +14737,8 @@ lang: C
 returncode: 0
 stdout: 1292 bytes
 >>>
-[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m[0m:[32m[0m:[32m[0m:[32m[0m:[32m[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
 [31methernet[0m:[31mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[31m802-3-ethernet[0m:[31m[0m:[31m[0m:[31m[0m:[31m[0m:[31m[0m:[31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[31myes[0m:[31meth0[0m:[31mdeactivating[0m:[31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m:[31m[0m:[31m/etc/NetworkManager/system-connections/ethernet[0m
+[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m[0m:[32m[0m:[32m[0m:[32m[0m:[32m[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm:0:never:no:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:no:::::/etc/NetworkManager/system-connections/con-gsm1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
@@ -14751,8 +14751,8 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1292 bytes
 >>>
-[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m[0m:[32m[0m:[32m[0m:[32m[0m:[32m[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
 [31methernet[0m:[31mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[31m802-3-ethernet[0m:[31m[0m:[31m[0m:[31m[0m:[31m[0m:[31m[0m:[31m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[31myes[0m:[31meth0[0m:[31mdeactivating[0m:[31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m:[31m[0m:[31m/etc/NetworkManager/system-connections/ethernet[0m
+[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m[0m:[32m[0m:[32m[0m:[32m[0m:[32m[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm:0:never:no:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:no:::::/etc/NetworkManager/system-connections/con-gsm1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
@@ -14873,9 +14873,9 @@ AUTOCONNECT-PRIORITY:                   --
 READONLY:                               --
 DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:                                 yes
-DEVICE:                                 eth1
-STATE:                                  activated
-ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
+DEVICE:                                 eth0
+STATE:                                  deactivating
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
 SLAVE:                                  --
 FILENAME:                               /etc/NetworkManager/system-connections/ethernet
 NAME:                                   ethernet
@@ -14888,9 +14888,9 @@ AUTOCONNECT-PRIORITY:                   --
 READONLY:                               --
 DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:                                 yes
-DEVICE:                                 eth0
-STATE:                                  deactivating
-ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
+DEVICE:                                 eth1
+STATE:                                  activated
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
 SLAVE:                                  --
 FILENAME:                               /etc/NetworkManager/system-connections/ethernet
 NAME:                                   con-1
@@ -14957,9 +14957,9 @@ AUTOCONNECT-PRIORITY:                   --
 READONLY:                               --
 DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:                                 tak
-DEVICE:                                 eth1
-STATE:                                  aktywowano
-ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
+DEVICE:                                 eth0
+STATE:                                  dezaktywowanie
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
 SLAVE:                                  --
 FILENAME:                               /etc/NetworkManager/system-connections/ethernet
 NAME:                                   ethernet
@@ -14972,9 +14972,9 @@ AUTOCONNECT-PRIORITY:                   --
 READONLY:                               --
 DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:                                 tak
-DEVICE:                                 eth0
-STATE:                                  dezaktywowanie
-ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
+DEVICE:                                 eth1
+STATE:                                  aktywowano
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
 SLAVE:                                  --
 FILENAME:                               /etc/NetworkManager/system-connections/ethernet
 NAME:                                   con-1
@@ -15255,21 +15255,6 @@ lang: C
 returncode: 0
 stdout: 4316 bytes
 >>>
-NAME:                                   [32methernet[0m
-UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
-TYPE:                                   [32methernet[0m
-TIMESTAMP:                              [32m--[0m
-TIMESTAMP-REAL:                         [32m--[0m
-AUTOCONNECT:                            [32m--[0m
-AUTOCONNECT-PRIORITY:                   [32m--[0m
-READONLY:                               [32m--[0m
-DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
-ACTIVE:                                 [32myes[0m
-DEVICE:                                 [32meth1[0m
-STATE:                                  [32mactivated[0m
-ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
-SLAVE:                                  [32m--[0m
-FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
 NAME:                                   [31methernet[0m
 UUID:                                   [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m
 TYPE:                                   [31methernet[0m
@@ -15285,6 +15270,21 @@ STATE:                                  [31mdeactivating[0m
 ACTIVE-PATH:                            [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m
 SLAVE:                                  [31m--[0m
 FILENAME:                               [31m/etc/NetworkManager/system-connections/ethernet[0m
+NAME:                                   [32methernet[0m
+UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
+TYPE:                                   [32methernet[0m
+TIMESTAMP:                              [32m--[0m
+TIMESTAMP-REAL:                         [32m--[0m
+AUTOCONNECT:                            [32m--[0m
+AUTOCONNECT-PRIORITY:                   [32m--[0m
+READONLY:                               [32m--[0m
+DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
+ACTIVE:                                 [32myes[0m
+DEVICE:                                 [32meth1[0m
+STATE:                                  [32mactivated[0m
+ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+SLAVE:                                  [32m--[0m
+FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
 NAME:                                   con-1
 UUID:                                   5fcfd6d7-1e63-3332-8826-a7eda103792d
 TYPE:                                   ethernet
@@ -15339,21 +15339,6 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 4326 bytes
 >>>
-NAME:                                   [32methernet[0m
-UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
-TYPE:                                   [32methernet[0m
-TIMESTAMP:                              [32m--[0m
-TIMESTAMP-REAL:                         [32m--[0m
-AUTOCONNECT:                            [32m--[0m
-AUTOCONNECT-PRIORITY:                   [32m--[0m
-READONLY:                               [32m--[0m
-DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
-ACTIVE:                                 [32mtak[0m
-DEVICE:                                 [32meth1[0m
-STATE:                                  [32maktywowano[0m
-ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
-SLAVE:                                  [32m--[0m
-FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
 NAME:                                   [31methernet[0m
 UUID:                                   [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m
 TYPE:                                   [31methernet[0m
@@ -15369,6 +15354,21 @@ STATE:                                  [31mdezaktywowanie[0m
 ACTIVE-PATH:                            [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m
 SLAVE:                                  [31m--[0m
 FILENAME:                               [31m/etc/NetworkManager/system-connections/ethernet[0m
+NAME:                                   [32methernet[0m
+UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
+TYPE:                                   [32methernet[0m
+TIMESTAMP:                              [32m--[0m
+TIMESTAMP-REAL:                         [32m--[0m
+AUTOCONNECT:                            [32m--[0m
+AUTOCONNECT-PRIORITY:                   [32m--[0m
+READONLY:                               [32m--[0m
+DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
+ACTIVE:                                 [32mtak[0m
+DEVICE:                                 [32meth1[0m
+STATE:                                  [32maktywowano[0m
+ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+SLAVE:                                  [32m--[0m
+FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
 NAME:                                   con-1
 UUID:                                   5fcfd6d7-1e63-3332-8826-a7eda103792d
 TYPE:                                   ethernet
@@ -15660,9 +15660,9 @@ AUTOCONNECT-PRIORITY:                   --
 READONLY:                               --
 DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:                                 yes
-DEVICE:                                 eth1
-STATE:                                  activated
-ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
+DEVICE:                                 eth0
+STATE:                                  deactivating
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
 SLAVE:                                  --
 FILENAME:                               /etc/NetworkManager/system-connections/ethernet
 -------------------------------------------------------------------------------
@@ -15676,9 +15676,9 @@ AUTOCONNECT-PRIORITY:                   --
 READONLY:                               --
 DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:                                 yes
-DEVICE:                                 eth0
-STATE:                                  deactivating
-ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
+DEVICE:                                 eth1
+STATE:                                  activated
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
 SLAVE:                                  --
 FILENAME:                               /etc/NetworkManager/system-connections/ethernet
 -------------------------------------------------------------------------------
@@ -15752,9 +15752,9 @@ AUTOCONNECT-PRIORITY:                   --
 READONLY:                               --
 DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:                                 tak
-DEVICE:                                 eth1
-STATE:                                  aktywowano
-ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
+DEVICE:                                 eth0
+STATE:                                  dezaktywowanie
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
 SLAVE:                                  --
 FILENAME:                               /etc/NetworkManager/system-connections/ethernet
 -------------------------------------------------------------------------------
@@ -15768,9 +15768,9 @@ AUTOCONNECT-PRIORITY:                   --
 READONLY:                               --
 DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:                                 tak
-DEVICE:                                 eth0
-STATE:                                  dezaktywowanie
-ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
+DEVICE:                                 eth1
+STATE:                                  aktywowano
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
 SLAVE:                                  --
 FILENAME:                               /etc/NetworkManager/system-connections/ethernet
 -------------------------------------------------------------------------------
@@ -16106,22 +16106,6 @@ stdout: 4933 bytes
 ===============================================================================
                       NetworkManager connection profiles
 ===============================================================================
-NAME:                                   [32methernet[0m
-UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
-TYPE:                                   [32methernet[0m
-TIMESTAMP:                              [32m--[0m
-TIMESTAMP-REAL:                         [32m--[0m
-AUTOCONNECT:                            [32m--[0m
-AUTOCONNECT-PRIORITY:                   [32m--[0m
-READONLY:                               [32m--[0m
-DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
-ACTIVE:                                 [32myes[0m
-DEVICE:                                 [32meth1[0m
-STATE:                                  [32mactivated[0m
-ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
-SLAVE:                                  [32m--[0m
-FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
--------------------------------------------------------------------------------
 NAME:                                   [31methernet[0m
 UUID:                                   [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m
 TYPE:                                   [31methernet[0m
@@ -16137,6 +16121,22 @@ STATE:                                  [31mdeactivating[0m
 ACTIVE-PATH:                            [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m
 SLAVE:                                  [31m--[0m
 FILENAME:                               [31m/etc/NetworkManager/system-connections/ethernet[0m
+-------------------------------------------------------------------------------
+NAME:                                   [32methernet[0m
+UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
+TYPE:                                   [32methernet[0m
+TIMESTAMP:                              [32m--[0m
+TIMESTAMP-REAL:                         [32m--[0m
+AUTOCONNECT:                            [32m--[0m
+AUTOCONNECT-PRIORITY:                   [32m--[0m
+READONLY:                               [32m--[0m
+DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
+ACTIVE:                                 [32myes[0m
+DEVICE:                                 [32meth1[0m
+STATE:                                  [32mactivated[0m
+ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+SLAVE:                                  [32m--[0m
+FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
 -------------------------------------------------------------------------------
 NAME:                                   con-1
 UUID:                                   5fcfd6d7-1e63-3332-8826-a7eda103792d
@@ -16198,22 +16198,6 @@ stdout: 4949 bytes
 ===============================================================================
                     Profile połączeń usługi NetworkManager
 ===============================================================================
-NAME:                                   [32methernet[0m
-UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
-TYPE:                                   [32methernet[0m
-TIMESTAMP:                              [32m--[0m
-TIMESTAMP-REAL:                         [32m--[0m
-AUTOCONNECT:                            [32m--[0m
-AUTOCONNECT-PRIORITY:                   [32m--[0m
-READONLY:                               [32m--[0m
-DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
-ACTIVE:                                 [32mtak[0m
-DEVICE:                                 [32meth1[0m
-STATE:                                  [32maktywowano[0m
-ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
-SLAVE:                                  [32m--[0m
-FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
--------------------------------------------------------------------------------
 NAME:                                   [31methernet[0m
 UUID:                                   [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m
 TYPE:                                   [31methernet[0m
@@ -16229,6 +16213,22 @@ STATE:                                  [31mdezaktywowanie[0m
 ACTIVE-PATH:                            [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m
 SLAVE:                                  [31m--[0m
 FILENAME:                               [31m/etc/NetworkManager/system-connections/ethernet[0m
+-------------------------------------------------------------------------------
+NAME:                                   [32methernet[0m
+UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
+TYPE:                                   [32methernet[0m
+TIMESTAMP:                              [32m--[0m
+TIMESTAMP-REAL:                         [32m--[0m
+AUTOCONNECT:                            [32m--[0m
+AUTOCONNECT-PRIORITY:                   [32m--[0m
+READONLY:                               [32m--[0m
+DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
+ACTIVE:                                 [32mtak[0m
+DEVICE:                                 [32meth1[0m
+STATE:                                  [32maktywowano[0m
+ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+SLAVE:                                  [32m--[0m
+FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
 -------------------------------------------------------------------------------
 NAME:                                   con-1
 UUID:                                   5fcfd6d7-1e63-3332-8826-a7eda103792d
@@ -16569,9 +16569,9 @@ AUTOCONNECT-PRIORITY:
 READONLY:
 DBUS-PATH:/org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:yes
-DEVICE:eth1
-STATE:activated
-ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/2
+DEVICE:eth0
+STATE:deactivating
+ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/1
 SLAVE:
 FILENAME:/etc/NetworkManager/system-connections/ethernet
 NAME:ethernet
@@ -16584,9 +16584,9 @@ AUTOCONNECT-PRIORITY:
 READONLY:
 DBUS-PATH:/org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:yes
-DEVICE:eth0
-STATE:deactivating
-ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/1
+DEVICE:eth1
+STATE:activated
+ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/2
 SLAVE:
 FILENAME:/etc/NetworkManager/system-connections/ethernet
 NAME:con-1
@@ -16653,9 +16653,9 @@ AUTOCONNECT-PRIORITY:
 READONLY:
 DBUS-PATH:/org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:yes
-DEVICE:eth1
-STATE:activated
-ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/2
+DEVICE:eth0
+STATE:deactivating
+ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/1
 SLAVE:
 FILENAME:/etc/NetworkManager/system-connections/ethernet
 NAME:ethernet
@@ -16668,9 +16668,9 @@ AUTOCONNECT-PRIORITY:
 READONLY:
 DBUS-PATH:/org/freedesktop/NetworkManager/Settings/Connection/4
 ACTIVE:yes
-DEVICE:eth0
-STATE:deactivating
-ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/1
+DEVICE:eth1
+STATE:activated
+ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/2
 SLAVE:
 FILENAME:/etc/NetworkManager/system-connections/ethernet
 NAME:con-1
@@ -16951,21 +16951,6 @@ lang: C
 returncode: 0
 stdout: 1987 bytes
 >>>
-NAME:[32methernet[0m
-UUID:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
-TYPE:[32m802-3-ethernet[0m
-TIMESTAMP:[32m[0m
-TIMESTAMP-REAL:[32m[0m
-AUTOCONNECT:[32m[0m
-AUTOCONNECT-PRIORITY:[32m[0m
-READONLY:[32m[0m
-DBUS-PATH:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
-ACTIVE:[32myes[0m
-DEVICE:[32meth1[0m
-STATE:[32mactivated[0m
-ACTIVE-PATH:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
-SLAVE:[32m[0m
-FILENAME:[32m/etc/NetworkManager/system-connections/ethernet[0m
 NAME:[31methernet[0m
 UUID:[31mUUID-ethernet-REPLACED-REPLACED-REPL[0m
 TYPE:[31m802-3-ethernet[0m
@@ -16981,6 +16966,21 @@ STATE:[31mdeactivating[0m
 ACTIVE-PATH:[31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m
 SLAVE:[31m[0m
 FILENAME:[31m/etc/NetworkManager/system-connections/ethernet[0m
+NAME:[32methernet[0m
+UUID:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
+TYPE:[32m802-3-ethernet[0m
+TIMESTAMP:[32m[0m
+TIMESTAMP-REAL:[32m[0m
+AUTOCONNECT:[32m[0m
+AUTOCONNECT-PRIORITY:[32m[0m
+READONLY:[32m[0m
+DBUS-PATH:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
+ACTIVE:[32myes[0m
+DEVICE:[32meth1[0m
+STATE:[32mactivated[0m
+ACTIVE-PATH:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+SLAVE:[32m[0m
+FILENAME:[32m/etc/NetworkManager/system-connections/ethernet[0m
 NAME:con-1
 UUID:5fcfd6d7-1e63-3332-8826-a7eda103792d
 TYPE:802-3-ethernet
@@ -17035,21 +17035,6 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1987 bytes
 >>>
-NAME:[32methernet[0m
-UUID:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
-TYPE:[32m802-3-ethernet[0m
-TIMESTAMP:[32m[0m
-TIMESTAMP-REAL:[32m[0m
-AUTOCONNECT:[32m[0m
-AUTOCONNECT-PRIORITY:[32m[0m
-READONLY:[32m[0m
-DBUS-PATH:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
-ACTIVE:[32myes[0m
-DEVICE:[32meth1[0m
-STATE:[32mactivated[0m
-ACTIVE-PATH:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
-SLAVE:[32m[0m
-FILENAME:[32m/etc/NetworkManager/system-connections/ethernet[0m
 NAME:[31methernet[0m
 UUID:[31mUUID-ethernet-REPLACED-REPLACED-REPL[0m
 TYPE:[31m802-3-ethernet[0m
@@ -17065,6 +17050,21 @@ STATE:[31mdeactivating[0m
 ACTIVE-PATH:[31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m
 SLAVE:[31m[0m
 FILENAME:[31m/etc/NetworkManager/system-connections/ethernet[0m
+NAME:[32methernet[0m
+UUID:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
+TYPE:[32m802-3-ethernet[0m
+TIMESTAMP:[32m[0m
+TIMESTAMP-REAL:[32m[0m
+AUTOCONNECT:[32m[0m
+AUTOCONNECT-PRIORITY:[32m[0m
+READONLY:[32m[0m
+DBUS-PATH:[32m/org/freedesktop/NetworkManager/Settings/Connection/4[0m
+ACTIVE:[32myes[0m
+DEVICE:[32meth1[0m
+STATE:[32mactivated[0m
+ACTIVE-PATH:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+SLAVE:[32m[0m
+FILENAME:[32m/etc/NetworkManager/system-connections/ethernet[0m
 NAME:con-1
 UUID:5fcfd6d7-1e63-3332-8826-a7eda103792d
 TYPE:802-3-ethernet
