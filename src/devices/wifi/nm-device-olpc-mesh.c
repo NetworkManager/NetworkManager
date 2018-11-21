@@ -82,7 +82,19 @@ G_DEFINE_TYPE (NMDeviceOlpcMesh, nm_device_olpc_mesh, NM_TYPE_DEVICE)
 static gboolean
 get_autoconnect_allowed (NMDevice *device)
 {
-	return FALSE;
+	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (device);
+	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
+
+	/* We shall always have a companion if we're >= DISCONENCTED, and this
+	 * ought not be called until then. */
+	g_return_val_if_fail (priv->companion, FALSE);
+
+	/* We must not attempt to autoconnect when the companion is connected or
+	 * connecting, * because we'd tear down its connection. */
+	if (nm_device_get_state (priv->companion) > NM_DEVICE_STATE_DISCONNECTED)
+		return FALSE;
+
+	return TRUE;
 }
 
 #define DEFAULT_SSID "olpc-mesh"
@@ -264,6 +276,11 @@ companion_state_changed_cb (NMDeviceWifi *companion,
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (user_data);
 	NMDeviceState self_state = nm_device_get_state (NM_DEVICE (self));
+
+	if (   old_state > NM_DEVICE_STATE_DISCONNECTED
+	    && state <= NM_DEVICE_STATE_DISCONNECTED) {
+		nm_device_emit_recheck_auto_activate (NM_DEVICE (self));
+	}
 
 	if (   self_state < NM_DEVICE_STATE_PREPARE
 	    || self_state > NM_DEVICE_STATE_ACTIVATED
