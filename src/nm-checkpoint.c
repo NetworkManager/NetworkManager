@@ -46,6 +46,7 @@ typedef struct {
 	guint64 ac_version_id;
 	NMDeviceState state;
 	bool realized:1;
+	bool activation_lifetime_bound_to_profile_visiblity:1;
 	NMUnmanFlagOp unmanaged_explicit;
 	NMActivationReason activation_reason;
 } DeviceCheckpoint;
@@ -335,6 +336,9 @@ activate:
 				                                     subject,
 				                                     NM_ACTIVATION_TYPE_MANAGED,
 				                                     dev_checkpoint->activation_reason,
+				                                       dev_checkpoint->activation_lifetime_bound_to_profile_visiblity
+				                                     ? NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY
+				                                     : NM_ACTIVATION_STATE_FLAG_NONE,
 				                                     &local_error)) {
 					_LOGW ("rollback: reactivation of connection %s/%s failed: %s",
 					       nm_settings_connection_get_id (connection),
@@ -439,6 +443,8 @@ device_checkpoint_create (NMDevice *device)
 		dev_checkpoint->settings_connection = nm_simple_connection_new_clone (nm_settings_connection_get_connection (settings_connection));
 		dev_checkpoint->ac_version_id = nm_active_connection_version_id_get (NM_ACTIVE_CONNECTION (act_request));
 		dev_checkpoint->activation_reason = nm_active_connection_get_activation_reason (NM_ACTIVE_CONNECTION (act_request));
+		dev_checkpoint->activation_lifetime_bound_to_profile_visiblity = NM_FLAGS_HAS (nm_active_connection_get_state_flags (NM_ACTIVE_CONNECTION (act_request)),
+		                                                                               NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY);
 	}
 
 	return dev_checkpoint;

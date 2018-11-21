@@ -1284,6 +1284,7 @@ auto_activate_device (NMPolicy *self,
 	                                     subject,
 	                                     NM_ACTIVATION_TYPE_MANAGED,
 	                                     NM_ACTIVATION_REASON_AUTOCONNECT,
+	                                     NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY,
 	                                     &error);
 	if (!ac) {
 		_LOGI (LOGD_DEVICE, "connection '%s' auto-activation failed: %s",
@@ -1674,9 +1675,14 @@ activate_secondary_connections (NMPolicy *self,
 	GError *error = NULL;
 	guint32 i;
 	gboolean success = TRUE;
+	NMActivationStateFlags initial_state_flags;
 
 	s_con = nm_connection_get_setting_connection (connection);
-	nm_assert (s_con);
+	nm_assert (NM_IS_SETTING_CONNECTION (s_con));
+
+	/* we propagate the activation's state flags. */
+	initial_state_flags =   nm_device_get_activation_state_flags (device)
+	                      & NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY;
 
 	for (i = 0; i < nm_setting_connection_get_num_secondaries (s_con); i++) {
 		NMSettingsConnection *sett_conn;
@@ -1700,7 +1706,6 @@ activate_secondary_connections (NMPolicy *self,
 		}
 
 		req = nm_device_get_act_request (device);
-		g_assert (req);
 
 		_LOGD (LOGD_DEVICE, "activating secondary connection '%s (%s)' for base connection '%s (%s)'",
 		       nm_settings_connection_get_id (sett_conn), sec_uuid,
@@ -1713,6 +1718,7 @@ activate_secondary_connections (NMPolicy *self,
 		                                     nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (req)),
 		                                     NM_ACTIVATION_TYPE_MANAGED,
 		                                     nm_active_connection_get_activation_reason (NM_ACTIVE_CONNECTION (req)),
+		                                     initial_state_flags,
 		                                     &error);
 		if (ac)
 			secondary_ac_list = g_slist_append (secondary_ac_list, g_object_ref (ac));
@@ -2162,6 +2168,8 @@ vpn_connection_retry_after_failure (NMVpnConnection *vpn, NMPolicy *self)
 	                                     nm_active_connection_get_subject (ac),
 	                                     NM_ACTIVATION_TYPE_MANAGED,
 	                                     nm_active_connection_get_activation_reason (ac),
+	                                     (  nm_active_connection_get_state_flags (ac)
+	                                      & NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY),
 	                                     &error)) {
 		_LOGW (LOGD_DEVICE, "VPN '%s' reconnect failed: %s",
 		       nm_settings_connection_get_id (connection),

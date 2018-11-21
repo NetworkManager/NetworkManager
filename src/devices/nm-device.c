@@ -2384,10 +2384,27 @@ nm_device_get_act_request (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->act_request.obj;
 }
 
+NMActivationStateFlags
+nm_device_get_activation_state_flags (NMDevice *self)
+{
+	NMActRequest *ac;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_ACTIVATION_STATE_FLAG_NONE);
+
+	ac = NM_DEVICE_GET_PRIVATE (self)->act_request.obj;
+	if (!ac)
+		return NM_ACTIVATION_STATE_FLAG_NONE;
+	return nm_active_connection_get_state_flags (NM_ACTIVE_CONNECTION (ac));
+}
+
 NMSettingsConnection *
 nm_device_get_settings_connection (NMDevice *self)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	return priv->act_request.obj ? nm_act_request_get_settings_connection (priv->act_request.obj) : NULL;
 }

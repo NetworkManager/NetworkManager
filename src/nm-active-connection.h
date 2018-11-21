@@ -163,6 +163,13 @@ nm_active_connection_set_state_flags (NMActiveConnection *self,
 	nm_active_connection_set_state_flags_full (self, state_flags, state_flags);
 }
 
+static inline void
+nm_active_connection_set_state_flags_clear (NMActiveConnection *self,
+                                            NMActivationStateFlags state_flags)
+{
+	nm_active_connection_set_state_flags_full (self, NM_ACTIVATION_STATE_FLAG_NONE, state_flags);
+}
+
 NMDevice *    nm_active_connection_get_device (NMActiveConnection *self);
 
 gboolean      nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device);
