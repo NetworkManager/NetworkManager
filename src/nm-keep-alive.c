@@ -48,6 +48,7 @@ typedef struct {
 
 	bool alive:1;
 	bool dbus_client_confirmed:1;
+	bool dbus_client_watching:1;
 } NMKeepAlivePrivate;
 
 struct _NMKeepAlive {
@@ -87,18 +88,31 @@ _is_alive (NMKeepAlive *self)
 		return TRUE;
 	}
 
-	if (   priv->connection
-	    && NM_FLAGS_HAS (nm_settings_connection_get_flags (priv->connection),
-	                     NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE))
-		return TRUE;
+	if (priv->dbus_client_watching) {
+		if (_is_alive_dbus_client (self)) {
+			/* no matter what, the keep-alive is alive, because there is a D-Bus client
+			 * still around keeping it alive. */
+			return TRUE;
+		}
+		/* the D-Bus client is gone. The only other binding (below) for the connection's
+		 * visibility cannot keep the instance alive.
+		 *
+		 * As such, a D-Bus client watch is authorative and overrules other conditions (that
+		 * we have so far). */
+		return FALSE;
+	}
 
-	/* Perform this check as last. We want to confirm whether the dbus-client
-	 * is alive lazyly, so if we already decided above that the keep-alive
-	 * is good, we don't rely on the outcome of this check. */
-	if (_is_alive_dbus_client (self))
-		return TRUE;
+	if (priv->connection) {
+		if (!NM_FLAGS_HAS (nm_settings_connection_get_flags (priv->connection),
+		                   NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE)) {
+			/* the connection is invisible (and apparently has no D-Bus client
+			 * watch above). The instance is dead. */
+			return FALSE;
+		}
+	}
 
-	return FALSE;
+	/* by default, the instance is alive. */
+	return TRUE;
 }
 
 static void
@@ -287,13 +301,16 @@ nm_keep_alive_set_dbus_client_watch (NMKeepAlive *self,
 {
 	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
+	if (priv->disarmed)
+		return;
+
 	cleanup_dbus_watch (self);
 
-	if (   client_address
-	    && !priv->disarmed) {
+	if (client_address) {
 		_LOGD ("Registering dbus client watch for keep alive");
 
 		priv->dbus_client = g_strdup (client_address);
+		priv->dbus_client_watching = TRUE;
 		priv->dbus_client_confirmed = FALSE;
 		priv->dbus_connection = g_object_ref (connection);
 		priv->subscription_id = g_dbus_connection_signal_subscribe (connection,
@@ -306,7 +323,8 @@ nm_keep_alive_set_dbus_client_watch (NMKeepAlive *self,
 		                                                            name_owner_changed_cb,
 		                                                            self,
 		                                                            NULL);
-	}
+	} else
+		priv->dbus_client_watching = FALSE;
 
 	_notify_alive (self);
 }
