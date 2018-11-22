@@ -6651,6 +6651,7 @@ _dbus_set_property_auth_cb (NMAuthChain *chain,
 	gs_unref_object NMManager *self = handle_data->self;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMAuthCallResult result;
+	gs_free_error GError *local = NULL;
 	const char *error_name = NULL;
 	const char *error_message = NULL;
 	GValue gvalue;
@@ -6688,7 +6689,10 @@ _dbus_set_property_auth_cb (NMAuthChain *chain,
 	}
 
 	g_dbus_gvariant_to_gvalue (value, &gvalue);
-	g_object_set_property (G_OBJECT (obj), property_info->property_name, &gvalue);
+	if (!nm_g_object_set_property (G_OBJECT (obj), property_info->property_name, &gvalue, &local)) {
+		error_name = "org.freedesktop.DBus.Error.InvalidArgs";
+		error_message = local->message;
+	}
 	g_value_unset (&gvalue);
 
 out:
