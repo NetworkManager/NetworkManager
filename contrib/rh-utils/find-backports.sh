@@ -11,7 +11,8 @@ print_usage() {
 }
 
 ref_exists() {
-    git rev-parse --verify "$1" &> /dev/null
+    git rev-parse --verify "$1" &> /dev/null && return 0
+    [[ -n "$2" ]] && ref_exists "$2/$1"
 }
 
 get_cherry_picked_from() {
@@ -56,21 +57,55 @@ get_fixes() {
     sort | uniq
 }
 
-if [ "$#" -lt 3 -a "$#" -ne 0 ]; then
-    print_usage
-    die "Wrong arguments"
+REF_BASE=
+if ( ! ref_exists "$1" ) && [[ "$1" =~ ^[1-9][0-9]*\.[1-9][0-9]*$ ]]; then
+    V_MAJ="$(echo "$1" | sed 's/\..*//')"
+    V_MIN="$(echo "$1" | sed 's/.*\.//')"
+    if ref_exists "refs/tags/$V_MAJ.$V_MIN.0"; then
+        REF_BASE="refs/tags/$V_MAJ.$V_MIN.0"
+        REF_STABLE="nm-$V_MAJ-$V_MIN"
+        if ! ref_exists "$REF_STABLE" && ref_exists "refs/remotes/origin/$REF_STABLE"; then
+            REF_STABLE="refs/remotes/origin/$REF_STABLE"
+        fi
+        shift
+        if [ "$#" -eq 0 ]; then
+            REFS_UPSTREAM=()
+            V_MIN=$((V_MIN + 2))
+            NEXT="nm-$V_MAJ-$V_MIN"
+            while ref_exists "$NEXT" "refs/remotes/origin"; do
+                if ! ref_exists "$NEXT" ; then
+                    NEXT="refs/remotes/origin/$NEXT"
+                fi
+                REFS_UPSTREAM=( "${REFS_UPSTREAM[@]}" "$NEXT" )
+                V_MIN=$((V_MIN + 2))
+                NEXT="nm-$V_MAJ-$V_MIN"
+            done
+            for NEXT in master refs/remotes/origin/master; do
+                if ref_exists "$NEXT"; then
+                    REFS_UPSTREAM=( "${REFS_UPSTREAM[@]}" "$NEXT" )
+                    break;
+                fi
+            done
+        else
+            REFS_UPSTREAM=( "$@")
+        fi
+    fi
 fi
-
-if [ "$#" -ge 3 ]; then
+if [ -n "$REF_BASE" ]; then
+    echo "### $0 $REF_BASE $REF_STABLE ${REFS_UPSTREAM[@]}"
+elif [ "$#" -ge 3 ]; then
     REF_BASE="$1"
     REF_STABLE="$2"
     shift
     shift
     REFS_UPSTREAM=( "$@" )
-else
+elif [ "$#" -eq 0 ]; then
     REF_BASE=1.1.0-dev~
     REF_STABLE=nm-1-0
     REFS_UPSTREAM=( master )
+else
+    print_usage
+    die "Wrong arguments"
 fi
 
 ref_exists "$REF_BASE" || die "Invalid REF_BASE=\"$REF_BASE\""
