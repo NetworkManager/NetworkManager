@@ -25,7 +25,6 @@
 
 #include "alloc-util.h"
 #include "architecture.h"
-#include "def.h"
 #include "escape.h"
 #include "fd-util.h"
 #include "fileio.h"
@@ -832,7 +831,7 @@ int wait_for_terminate_with_timeout(pid_t pid, usec_t timeout) {
 void sigkill_wait(pid_t pid) {
         assert(pid > 1);
 
-        if (kill(pid, SIGKILL) > 0)
+        if (kill(pid, SIGKILL) >= 0)
                 (void) wait_for_terminate(pid, NULL);
 }
 
@@ -850,7 +849,7 @@ void sigkill_waitp(pid_t *pid) {
 void sigterm_wait(pid_t pid) {
         assert(pid > 1);
 
-        if (kill_and_sigcont(pid, SIGTERM) > 0)
+        if (kill_and_sigcont(pid, SIGTERM) >= 0)
                 (void) wait_for_terminate(pid, NULL);
 }
 
@@ -1228,8 +1227,7 @@ int must_be_root(void) {
         if (geteuid() == 0)
                 return 0;
 
-        log_error("Need to be root.");
-        return -EPERM;
+        return log_error_errno(SYNTHETIC_ERRNO(EPERM), "Need to be root.");
 }
 
 int safe_fork_full(
@@ -1407,6 +1405,60 @@ int safe_fork_full(
                 *ret_pid = getpid_cached();
 
         return 0;
+}
+
+int namespace_fork(
+                const char *outer_name,
+                const char *inner_name,
+                const int except_fds[],
+                size_t n_except_fds,
+                ForkFlags flags,
+                int pidns_fd,
+                int mntns_fd,
+                int netns_fd,
+                int userns_fd,
+                int root_fd,
+                pid_t *ret_pid) {
+
+        int r;
+
+        /* This is much like safe_fork(), but forks twice, and joins the specified namespaces in the middle
+         * process. This ensures that we are fully a member of the destination namespace, with pidns an all, so that
+         * /proc/self/fd works correctly. */
+
+        r = safe_fork_full(outer_name, except_fds, n_except_fds, (flags|FORK_DEATHSIG) & ~(FORK_REOPEN_LOG|FORK_NEW_MOUNTNS|FORK_MOUNTNS_SLAVE), ret_pid);
+        if (r < 0)
+                return r;
+        if (r == 0) {
+                pid_t pid;
+
+                /* Child */
+
+                r = namespace_enter(pidns_fd, mntns_fd, netns_fd, userns_fd, root_fd);
+                if (r < 0) {
+                        log_full_errno(FLAGS_SET(flags, FORK_LOG) ? LOG_ERR : LOG_DEBUG, r, "Failed to join namespace: %m");
+                        _exit(EXIT_FAILURE);
+                }
+
+                /* We mask a few flags here that either make no sense for the grandchild, or that we don't have to do again */
+                r = safe_fork_full(inner_name, except_fds, n_except_fds, flags & ~(FORK_WAIT|FORK_RESET_SIGNALS|FORK_CLOSE_ALL_FDS|FORK_NULL_STDIO), &pid);
+                if (r < 0)
+                        _exit(EXIT_FAILURE);
+                if (r == 0) {
+                        /* Child */
+                        if (ret_pid)
+                                *ret_pid = pid;
+                        return 0;
+                }
+
+                r = wait_for_terminate_and_check(inner_name, pid, FLAGS_SET(flags, FORK_LOG) ? WAIT_LOG : 0);
+                if (r < 0)
+                        _exit(EXIT_FAILURE);
+
+                _exit(r);
+        }
+
+        return 1;
 }
 
 int fork_agent(const char *name, const int except[], size_t n_except, pid_t *ret_pid, const char *path, ...) {
