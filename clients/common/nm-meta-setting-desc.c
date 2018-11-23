@@ -283,7 +283,7 @@ _dump_team_link_watcher (NMTeamLinkWatcher *watcher)
 	}
 	/* NM_TEAM_LINK_WATCHER_NSNA_PING and NM_TEAM_LINK_WATCHER_ARP_PING */
 	DUMP_WATCHER_INT (w_dump, watcher, "init-wait", init_wait);
-	DUMP_WATCHER_INT (w_dump, watcher, "initerval", interval);
+	DUMP_WATCHER_INT (w_dump, watcher, "interval", interval);
 	DUMP_WATCHER_INT (w_dump, watcher, "missed-max", missed_max);
 #undef DUMP_WATCHER_INT
 	g_string_append_printf (w_dump, " target-host=%s",
