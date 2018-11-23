@@ -15,11 +15,6 @@
 #include "sparse-endian.h"
 #include "virt.h"
 
-#if 0 /* NM_IGNORED */
-#else /* NM_IGNORED */
-#include <net/if.h>
-#endif /* NM_IGNORED */
-
 #define SYSTEMD_PEN    43793
 #define HASH_KEY       SD_ID128_MAKE(80,11,8c,c2,fe,4a,03,ee,3e,d6,0c,6f,36,39,14,09)
 #define APPLICATION_ID SD_ID128_MAKE(a5,0a,d1,12,bf,60,45,77,a2,fb,74,1a,b1,95,5b,03)
@@ -169,14 +164,10 @@ int dhcp_identifier_set_iaid(
         /* name is a pointer to memory in the sd_device struct, so must
          * have the same scope */
         _cleanup_(sd_device_unrefp) sd_device *device = NULL;
-#else /* NM_IGNORED */
-        char name_buf[IF_NAMESIZE];
-#endif /* NM_IGNORED */
         const char *name = NULL;
         uint64_t id;
         uint32_t id32;
 
-#if 0 /* NM_IGNORED */
         if (detect_container() <= 0) {
                 /* not in a container, udev will be around */
                 char ifindex_str[2 + DECIMAL_STR_MAX(int)];
@@ -194,9 +185,6 @@ int dhcp_identifier_set_iaid(
                         name = net_get_name(device);
                 }
         }
-#else /* NM_IGNORED */
-        name = if_indextoname(ifindex, name_buf);
-#endif /* NM_IGNORED */
 
         if (name)
                 id = siphash24(name, strlen(name), HASH_KEY.bytes);
@@ -218,4 +206,9 @@ int dhcp_identifier_set_iaid(
 
         unaligned_write_ne32(_id, id32);
         return 0;
+#else /* NM_IGNORED */
+        /* for NetworkManager, we don't use this function and we should never call here.
+         * This got replaced by nm_utils_create_dhcp_iaid(). */
+        g_return_val_if_reached (-EINVAL);
+#endif /* NM_IGNORED */
 }
