@@ -45,6 +45,7 @@ sources = files(
   'src/libsystemd-network/sd-ipv4acd.c',
   'src/libsystemd-network/sd-ipv4ll.c',
   'src/libsystemd-network/sd-lldp.c',
+  'src/libsystemd/sd-event/event-util.c',
   'src/libsystemd/sd-event/sd-event.c',
   'src/libsystemd/sd-id128/id128-util.c',
   'src/libsystemd/sd-id128/sd-id128.c',
@@ -59,6 +60,7 @@ incs = [
     'sd-adapt',
     'src/basic',
     'src/libsystemd-network',
+    'src/libsystemd/sd-event',
     'src/shared',
     'src/systemd'
   )

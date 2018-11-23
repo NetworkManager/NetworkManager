@@ -10,7 +10,6 @@
 #include <unistd.h>
 
 #include "alloc-util.h"
-#include "def.h"
 #include "fd-util.h"
 #include "fileio.h"
 #include "hostname-util.h"

@@ -1500,6 +1500,7 @@ src_libsystemd_nm_la_cppflags = \
 	-I$(srcdir)/src/systemd/src/basic \
 	-I$(srcdir)/src/systemd/src/shared \
 	-I$(srcdir)/src/systemd/src/libsystemd-network \
+	-I$(srcdir)/src/systemd/src/libsystemd/sd-event \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD \
 	$(LIBSYSTEMD_NM_CFLAGS) \
 	$(GLIB_CFLAGS) \
@@ -1642,6 +1643,9 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/src/libsystemd-network/sd-ipv4acd.c \
 	src/systemd/src/libsystemd-network/sd-ipv4ll.c \
 	src/systemd/src/libsystemd-network/sd-lldp.c \
+	src/systemd/src/libsystemd/sd-event/event-source.h \
+	src/systemd/src/libsystemd/sd-event/event-util.c \
+	src/systemd/src/libsystemd/sd-event/event-util.h \
 	src/systemd/src/libsystemd/sd-event/sd-event.c \
 	src/systemd/src/libsystemd/sd-id128/id128-util.c \
 	src/systemd/src/libsystemd/sd-id128/id128-util.h \

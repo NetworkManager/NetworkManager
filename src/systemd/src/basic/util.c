@@ -170,6 +170,28 @@ void *xbsearch_r(const void *key, const void *base, size_t nmemb, size_t size,
         return NULL;
 }
 
+bool memeqzero(const void *data, size_t length) {
+        /* Does the buffer consist entirely of NULs?
+         * Copied from https://github.com/systemd/casync/, copied in turn from
+         * https://github.com/rustyrussell/ccan/blob/master/ccan/mem/mem.c#L92,
+         * which is licensed CC-0.
+         */
+
+        const uint8_t *p = data;
+        size_t i;
+
+        /* Check first 16 bytes manually */
+        for (i = 0; i < 16; i++, length--) {
+                if (length == 0)
+                        return true;
+                if (p[i])
+                        return false;
+        }
+
+        /* Now we know first 16 bytes are NUL, memcmp with self.  */
+        return memcmp(data, p + i, length) == 0;
+}
+
 int on_ac_power(void) {
         bool found_offline = false, found_online = false;
         _cleanup_closedir_ DIR *d = NULL;
@@ -253,7 +275,9 @@ int container_get_leader(const char *machine, pid_t *pid) {
                 return -EINVAL;
 
         p = strjoina("/run/systemd/machines/", machine);
-        r = parse_env_file(NULL, p, NEWLINE, "LEADER", &s, "CLASS", &class, NULL);
+        r = parse_env_file(NULL, p,
+                           "LEADER", &s,
+                           "CLASS", &class);
         if (r == -ENOENT)
                 return -EHOSTDOWN;
         if (r < 0)
@@ -611,7 +635,7 @@ void disable_coredumps(void) {
         if (detect_container() > 0)
                 return;
 
-        r = write_string_file("/proc/sys/kernel/core_pattern", "|/bin/false", 0);
+        r = write_string_file("/proc/sys/kernel/core_pattern", "|/bin/false", WRITE_STRING_FILE_DISABLE_BUFFER);
         if (r < 0)
                 log_debug_errno(r, "Failed to turn off coredumps, ignoring: %m");
 }

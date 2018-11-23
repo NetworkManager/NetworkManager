@@ -8,14 +8,25 @@
 #include "sd-lldp.h"
 
 #include "alloc-util.h"
+#include "ether-addr-util.h"
+#include "event-util.h"
 #include "fd-util.h"
 #include "lldp-internal.h"
 #include "lldp-neighbor.h"
 #include "lldp-network.h"
 #include "socket-util.h"
-#include "ether-addr-util.h"
+#include "string-table.h"
 
 #define LLDP_DEFAULT_NEIGHBORS_MAX 128U
+
+static const char * const lldp_event_table[_SD_LLDP_EVENT_MAX] = {
+        [SD_LLDP_EVENT_ADDED]   = "added",
+        [SD_LLDP_EVENT_REMOVED] = "removed",
+        [SD_LLDP_EVENT_UPDATED]   = "updated",
+        [SD_LLDP_EVENT_REFRESHED] = "refreshed",
+};
+
+DEFINE_STRING_TABLE_LOOKUP(lldp_event, sd_lldp_event);
 
 static void lldp_flush_neighbors(sd_lldp *lldp) {
         sd_lldp_neighbor *n;
@@ -28,12 +39,14 @@ static void lldp_flush_neighbors(sd_lldp *lldp) {
 
 static void lldp_callback(sd_lldp *lldp, sd_lldp_event event, sd_lldp_neighbor *n) {
         assert(lldp);
+        assert(event >= 0 && event < _SD_LLDP_EVENT_MAX);
 
-        log_lldp("Invoking callback for '%c'.", event);
-
-        if (!lldp->callback)
+        if (!lldp->callback) {
+                log_lldp("Received '%s' event.", lldp_event_to_string(event));
                 return;
+        }
 
+        log_lldp("Invoking callback for '%s' event.", lldp_event_to_string(event));
         lldp->callback(lldp, event, n, lldp->userdata);
 }
 
@@ -225,7 +238,7 @@ static int lldp_receive_datagram(sd_event_source *s, int fd, uint32_t revents, v
 static void lldp_reset(sd_lldp *lldp) {
         assert(lldp);
 
-        lldp->timer_event_source = sd_event_source_unref(lldp->timer_event_source);
+        (void) event_source_disable(lldp->timer_event_source);
         lldp->io_event_source = sd_event_source_unref(lldp->io_event_source);
         lldp->fd = safe_close(lldp->fd);
 }
@@ -334,6 +347,8 @@ _public_ int sd_lldp_set_ifindex(sd_lldp *lldp, int ifindex) {
 static sd_lldp* lldp_free(sd_lldp *lldp) {
         assert(lldp);
 
+        lldp->timer_event_source = sd_event_source_unref(lldp->timer_event_source);
+
         lldp_reset(lldp);
         sd_lldp_detach_event(lldp);
         lldp_flush_neighbors(lldp);
@@ -351,14 +366,16 @@ _public_ int sd_lldp_new(sd_lldp **ret) {
 
         assert_return(ret, -EINVAL);
 
-        lldp = new0(sd_lldp, 1);
+        lldp = new(sd_lldp, 1);
         if (!lldp)
                 return -ENOMEM;
 
-        lldp->n_ref = 1;
-        lldp->fd = -1;
-        lldp->neighbors_max = LLDP_DEFAULT_NEIGHBORS_MAX;
-        lldp->capability_mask = (uint16_t) -1;
+        *lldp = (sd_lldp) {
+                .n_ref = 1,
+                .fd = -1,
+                .neighbors_max = LLDP_DEFAULT_NEIGHBORS_MAX,
+                .capability_mask = (uint16_t) -1,
+        };
 
         lldp->neighbor_by_id = hashmap_new(&lldp_neighbor_id_hash_ops);
         if (!lldp->neighbor_by_id)
@@ -394,7 +411,6 @@ static int on_timer_event(sd_event_source *s, uint64_t usec, void *userdata) {
 
 static int lldp_start_timer(sd_lldp *lldp, sd_lldp_neighbor *neighbor) {
         sd_lldp_neighbor *n;
-        int r;
 
         assert(lldp);
 
@@ -402,35 +418,17 @@ static int lldp_start_timer(sd_lldp *lldp, sd_lldp_neighbor *neighbor) {
                 lldp_neighbor_start_ttl(neighbor);
 
         n = prioq_peek(lldp->neighbor_by_expiry);
-        if (!n) {
-
-                if (lldp->timer_event_source)
-                        return sd_event_source_set_enabled(lldp->timer_event_source, SD_EVENT_OFF);
-
-                return 0;
-        }
-
-        if (lldp->timer_event_source) {
-                r = sd_event_source_set_time(lldp->timer_event_source, n->until);
-                if (r < 0)
-                        return r;
-
-                return sd_event_source_set_enabled(lldp->timer_event_source, SD_EVENT_ONESHOT);
-        }
+        if (!n)
+                return event_source_disable(lldp->timer_event_source);
 
         if (!lldp->event)
                 return 0;
 
-        r = sd_event_add_time(lldp->event, &lldp->timer_event_source, clock_boottime_or_monotonic(), n->until, 0, on_timer_event, lldp);
-        if (r < 0)
-                return r;
-
-        r = sd_event_source_set_priority(lldp->timer_event_source, lldp->event_priority);
-        if (r < 0)
-                return r;
-
-        (void) sd_event_source_set_description(lldp->timer_event_source, "lldp-timer");
-        return 0;
+        return event_reset_time(lldp->event, &lldp->timer_event_source,
+                                clock_boottime_or_monotonic(),
+                                n->until, 0,
+                                on_timer_event, lldp,
+                                lldp->event_priority, "lldp-timer", true);
 }
 
 _public_ int sd_lldp_get_neighbors(sd_lldp *lldp, sd_lldp_neighbor ***ret) {
