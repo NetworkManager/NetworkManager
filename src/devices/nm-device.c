@@ -15331,7 +15331,8 @@ _hw_addr_set (NMDevice *self,
 	NMPlatformError plerr;
 	guint8 addr_bytes[NM_UTILS_HWADDR_LEN_MAX];
 	gsize addr_len;
-	gboolean was_up;
+	gboolean was_taken_down;
+	gboolean retry_down;
 
 	nm_assert (NM_IS_DEVICE (self));
 	nm_assert (addr);
@@ -15354,21 +15355,30 @@ _hw_addr_set (NMDevice *self,
 
 	_LOGT (LOGD_DEVICE, "set-hw-addr: setting MAC address to '%s' (%s, %s)...", addr, operation, detail);
 
-	was_up = nm_device_is_up (self);
-	if (was_up) {
-		/* Can't change MAC address while device is up */
-		nm_device_take_down (self, FALSE);
-	}
+	was_taken_down = FALSE;
 
+again:
 	plerr = nm_platform_link_set_address (nm_device_get_platform (self), nm_device_get_ip_ifindex (self), addr_bytes, addr_len);
 	success = (plerr == NM_PLATFORM_ERROR_SUCCESS);
-	if (success) {
-		/* MAC address succesfully changed; update the current MAC to match */
+	if (!success) {
+		retry_down =    !was_taken_down
+		             && plerr != NM_PLATFORM_ERROR_NOT_FOUND
+		             && nm_platform_link_is_up (nm_device_get_platform (self),
+		                                        nm_device_get_ip_ifindex (self));
+		_NMLOG (     retry_down
+		          || plerr == NM_PLATFORM_ERROR_NOT_FOUND
+		        ? LOGL_DEBUG
+		        : LOGL_WARN,
+		        LOGD_DEVICE,
+		        "set-hw-addr: failed to %s MAC address to %s (%s) (%s)%s",
+		        operation, addr, detail,
+		        nm_platform_error_to_string_a (plerr),
+		        retry_down ? " (retry with taking down)" : "");
+	} else {
+		/* MAC address successfully changed; update the current MAC to match */
 		nm_device_update_hw_address (self);
-		if (_hw_addr_matches (self, addr_bytes, addr_len)) {
-			_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s (%s)",
-			       operation, addr, detail);
-		} else {
+
+		if (!_hw_addr_matches (self, addr_bytes, addr_len)) {
 			gint64 poll_end, now;
 
 			_LOGD (LOGD_DEVICE,
@@ -15409,24 +15419,40 @@ handle_fail:
 				success = FALSE;
 				break;
 			}
-
-			if (success) {
-				_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s (%s)",
-				       operation, addr, detail);
-			} else {
-				_LOGW (LOGD_DEVICE,
-				       "set-hw-addr: new MAC address %s not successfully %s (%s)",
-				       addr, operation, detail);
-			}
 		}
-	} else {
-		_NMLOG (plerr == NM_PLATFORM_ERROR_NOT_FOUND ? LOGL_DEBUG : LOGL_WARN,
-		        LOGD_DEVICE, "set-hw-addr: failed to %s MAC address to %s (%s) (%s)",
-		        operation, addr, detail,
-		        nm_platform_error_to_string_a (plerr));
+
+		if (success) {
+			retry_down = FALSE;
+			_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s (%s)",
+			       operation, addr, detail);
+		} else {
+			retry_down =    !was_taken_down
+			             && nm_platform_link_is_up (nm_device_get_platform (self),
+			                                        nm_device_get_ip_ifindex (self));
+
+			_NMLOG (  retry_down
+			        ? LOGL_DEBUG
+			        : LOGL_WARN,
+			        LOGD_DEVICE,
+			        "set-hw-addr: new MAC address %s not successfully %s (%s)%s",
+			        addr,
+			        operation,
+			        detail,
+			        retry_down ? " (retry with taking down)" : "");
+		}
 	}
 
-	if (was_up) {
+	if (retry_down) {
+		/* changing the MAC address failed, but also the device was up (and we did not yet try to take
+		 * it down). Optimally, we change the MAC address without taking the device down, but some
+		 * devices don't like that. So, retry with taking the device down. */
+		retry_down = FALSE;
+		was_taken_down = TRUE;
+		nm_device_take_down (self, FALSE);
+		goto again;
+	}
+
+	if (was_taken_down) {
 		if (!nm_device_bring_up (self, TRUE, NULL))
 			return FALSE;
 	}
