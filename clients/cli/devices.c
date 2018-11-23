@@ -1906,6 +1906,7 @@ typedef struct {
 	GSList *queue;
 	guint timeout_id;
 	gboolean cmd_disconnect;
+	GCancellable *cancellable;
 } DeviceCbInfo;
 
 static void device_cb_info_finish (DeviceCbInfo *info, NMDevice *device);
@@ -1978,7 +1979,10 @@ device_cb_info_finish (DeviceCbInfo *info, NMDevice *device)
 
 	if (info->timeout_id)
 		g_source_remove (info->timeout_id);
+
 	g_signal_handlers_disconnect_by_func (info->nmc->client, device_removed_cb, info);
+	nm_clear_g_cancellable (&info->cancellable);
+
 	g_slice_free (DeviceCbInfo, info);
 	quit ();
 }
@@ -2155,11 +2159,14 @@ disconnect_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (object);
 	DeviceCbInfo *info = (DeviceCbInfo *) user_data;
-	NmCli *nmc = info->nmc;
+	NmCli *nmc;
 	NMDeviceState state;
 	GError *error = NULL;
 
 	if (!nm_device_disconnect_finish (device, result, &error)) {
+		if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+			return;
+		nmc = info->nmc;
 		g_string_printf (nmc->return_text, _("Error: not all devices disconnected."));
 		g_printerr (_("Error: Device '%s' (%s) disconnecting failed: %s\n"),
 		            nm_device_get_iface (device),
@@ -2169,6 +2176,7 @@ disconnect_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 		nmc->return_value = NMC_RESULT_ERROR_DEV_DISCONNECT;
 		device_cb_info_finish (info, device);
 	} else {
+		nmc = info->nmc;
 		state = nm_device_get_state (device);
 		if (nmc->nowait_flag || state <= NM_DEVICE_STATE_DISCONNECTED) {
 			/* Don't want to wait or device already disconnected */
@@ -2205,6 +2213,7 @@ do_devices_disconnect (NmCli *nmc, int argc, char **argv)
 	info = g_slice_new0 (DeviceCbInfo);
 	info->nmc = nmc;
 	info->cmd_disconnect = TRUE;
+	info->cancellable = g_cancellable_new ();
 	if (nmc->timeout > 0)
 		info->timeout_id = g_timeout_add_seconds (nmc->timeout, device_op_timeout_cb, info);
 
@@ -2222,7 +2231,7 @@ do_devices_disconnect (NmCli *nmc, int argc, char **argv)
 		                  G_CALLBACK (disconnect_state_cb), info);
 
 		/* Now disconnect the device */
-		nm_device_disconnect_async (device, NULL, disconnect_device_cb, info);
+		nm_device_disconnect_async (device, info->cancellable, disconnect_device_cb, info);
 	}
 
 out:
