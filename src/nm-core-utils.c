@@ -3290,6 +3290,49 @@ nm_utils_hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
 
 /*****************************************************************************/
 
+#define HASH_KEY ((const guint8[16]) { 0x80, 0x11, 0x8c, 0xc2, 0xfe, 0x4a, 0x03, 0xee, 0x3e, 0xd6, 0x0c, 0x6f, 0x36, 0x39, 0x14, 0x09 })
+
+/**
+ * nm_utils_create_dhcp_iaid:
+ * @legacy_unstable_byteorder: legacy behavior is to generate a u32 iaid which
+ *   is endianness dependant. This is to preserve backward compatibility.
+ *   For non-legacy behavior, the returned integer is in stable endianness,
+ *   and corresponds to legacy behavior on little endian systems.
+ * @interface_id: the seed for hashing when generating the ID. Usually,
+ *   this is the interface name.
+ * @interface_id_len: length of @interface_id
+ *
+ * This corresponds to systemd's dhcp_identifier_set_iaid() for generating
+ * a IAID for the interface.
+ *
+ * Returns: the IAID in host byte order. */
+guint32
+nm_utils_create_dhcp_iaid (gboolean legacy_unstable_byteorder,
+                           const guint8 *interface_id,
+                           gsize interface_id_len)
+{
+	guint64 u64;
+	guint32 u32;
+
+	u64 = c_siphash_hash (HASH_KEY, interface_id, interface_id_len);
+	u32 = (u64 & 0xffffffffu) ^ (u64 >> 32);
+	if (legacy_unstable_byteorder) {
+		/* legacy systemd code dhcp_identifier_set_iaid() generates the iaid
+		 * dependent on the host endianness. Since this function returns the IAID
+		 * in native-byte order, we need to account for that.
+		 *
+		 * On little endian systems, we want the legacy-behavior is identical to
+		 * the endianness-agnostic behavior. So, we need to swap the bytes on
+		 * big-endian systems.
+		 *
+		 * (https://github.com/systemd/systemd/pull/10614). */
+		return htole32 (u32);
+	} else {
+		/* we return the value as-is, in native byte order. */
+		return u32;
+	}
+}
+
 /**
  * nm_utils_dhcp_client_id_systemd_node_specific_full:
  * @legacy_unstable_byteorder: historically, the code would generate a iaid
@@ -3315,7 +3358,6 @@ nm_utils_dhcp_client_id_systemd_node_specific_full (gboolean legacy_unstable_byt
                                                     const guint8 *machine_id,
                                                     gsize machine_id_len)
 {
-	const guint8 HASH_KEY[16] = { 0x80, 0x11, 0x8c, 0xc2, 0xfe, 0x4a, 0x03, 0xee, 0x3e, 0xd6, 0x0c, 0x6f, 0x36, 0x39, 0x14, 0x09 };
 	const guint16 DUID_TYPE_EN = 2;
 	const guint32 SYSTEMD_PEN = 43793;
 	struct _nm_packed {
@@ -3344,20 +3386,10 @@ nm_utils_dhcp_client_id_systemd_node_specific_full (gboolean legacy_unstable_byt
 
 	client_id->type = 255;
 
-	u64 = c_siphash_hash (HASH_KEY, interface_id, interface_id_len);
-	u32 = (u64 & 0xffffffffu) ^ (u64 >> 32);
-	if (legacy_unstable_byteorder) {
-		/* original systemd code dhcp_identifier_set_iaid() generates the iaid
-		 * in native endianness. Do that too, to preserve compatibility
-		 * (https://github.com/systemd/systemd/pull/10614). */
-		u32 = bswap_32 (u32);
-	} else {
-		/* generate fixed byteorder, in a way that on little endian systems
-		 * the values agree. Meaning: legacy behavior is identical to this
-		 * on little endian. */
-		u32 = be32toh (u32);
-	}
-	unaligned_write_ne32 (&client_id->iaid, u32);
+	u32 = nm_utils_create_dhcp_iaid (legacy_unstable_byteorder,
+	                                 interface_id,
+	                                 interface_id_len);
+	unaligned_write_be32 (&client_id->iaid, u32);
 
 	unaligned_write_be16 (&client_id->duid.type, DUID_TYPE_EN);
 

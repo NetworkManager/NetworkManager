@@ -376,6 +376,10 @@ char *nm_utils_hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
 
 /*****************************************************************************/
 
+guint32 nm_utils_create_dhcp_iaid (gboolean legacy_unstable_byteorder,
+                                   const guint8 *interface_id,
+                                   gsize interface_id_len);
+
 GBytes *nm_utils_dhcp_client_id_systemd_node_specific_full (gboolean legacy_unstable_byteorder,
                                                             const guint8 *interface_id,
                                                             gsize interface_id_len,

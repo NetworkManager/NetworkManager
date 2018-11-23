@@ -2029,6 +2029,10 @@ test_nm_utils_dhcp_client_id_systemd_node_specific (gconstpointer test_data)
 		g_assert_cmpmem (&cid[5], 2, &duid_type_en, sizeof (duid_type_en));
 		g_assert_cmpmem (&cid[7], 4, &systemd_pen, sizeof (systemd_pen));
 		g_assert_cmpmem (&cid[11], 8, &d->duid_id, sizeof (d->duid_id));
+
+		g_assert_cmpint (iaid, ==, htonl (nm_utils_create_dhcp_iaid (legacy_unstable_byteorder,
+		                                                             (const guint8 *) d->ifname,
+		                                                             strlen (d->ifname))));
 	}
 }
 
