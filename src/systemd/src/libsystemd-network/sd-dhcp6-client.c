@@ -262,7 +262,6 @@ int sd_dhcp6_client_set_duid(
         return dhcp6_client_set_duid_internal(client, duid_type, duid, duid_len, 0);
 }
 
-#if 0 /* NM_IGNORED */
 int sd_dhcp6_client_set_duid_llt(
                 sd_dhcp6_client *client,
                 usec_t llt_time) {
@@ -279,7 +278,6 @@ int sd_dhcp6_client_set_iaid(sd_dhcp6_client *client, uint32_t iaid) {
 
         return 0;
 }
-#endif /* NM_IGNORED */
 
 int sd_dhcp6_client_set_fqdn(
                 sd_dhcp6_client *client,
