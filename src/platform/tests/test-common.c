@@ -787,8 +787,6 @@ nmtstp_ip_address_assert_lifetime (const NMPlatformIPAddress *addr,
 		if (lft == NM_PLATFORM_LIFETIME_PERMANENT)
 			g_assert_cmpint (adr, ==, NM_PLATFORM_LIFETIME_PERMANENT);
 		else {
-			g_assert_cmpint (adr, <=, lft);
-			g_assert_cmpint (offset, <=, adr);
 			g_assert_cmpint (adr - offset, <=, lft + CHECK_LIFETIME_MAX_DIFF);
 			g_assert_cmpint (adr - offset, >=, lft - CHECK_LIFETIME_MAX_DIFF);
 		}
