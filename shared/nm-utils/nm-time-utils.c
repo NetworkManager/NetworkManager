@@ -24,41 +24,36 @@
 
 /*****************************************************************************/
 
-static gint64 monotonic_timestamp_offset_sec;
-static int monotonic_timestamp_clock_mode = 0;
+typedef struct {
+	/* the offset to the native clock, in seconds. */
+	gint64 offset_sec;
+	clockid_t clk_id;
+} GlobalState;
 
-static void
-monotonic_timestamp_get (struct timespec *tp)
+static const GlobalState *volatile p_global_state;
+
+static const GlobalState *
+_t_init_global_state (void)
 {
-	int clock_mode = 0;
-	int err = 0;
+	static GlobalState global_state = { };
+	static gsize init_once = 0;
+	const GlobalState *p;
+	clockid_t clk_id;
+	struct timespec tp;
+	gint64 offset_sec;
+	int r;
 
-	switch (monotonic_timestamp_clock_mode) {
-	case 0:
-		/* the clock is not yet initialized (first run) */
-		err = clock_gettime (CLOCK_BOOTTIME, tp);
-		if (err == -1 && errno == EINVAL) {
-			clock_mode = 2;
-			err = clock_gettime (CLOCK_MONOTONIC, tp);
-		} else
-			clock_mode = 1;
-		break;
-	case 1:
-		/* default, return CLOCK_BOOTTIME */
-		err = clock_gettime (CLOCK_BOOTTIME, tp);
-		break;
-	case 2:
-		/* fallback, return CLOCK_MONOTONIC. Kernels prior to 2.6.39
-		 * (released on 18 May, 2011) don't support CLOCK_BOOTTIME. */
-		err = clock_gettime (CLOCK_MONOTONIC, tp);
-		break;
+	clk_id = CLOCK_BOOTTIME;
+	r = clock_gettime (clk_id, &tp);
+	if (r == -1 && errno == EINVAL) {
+		clk_id = CLOCK_MONOTONIC;
+		r = clock_gettime (clk_id, &tp);
 	}
 
-	g_assert (err == 0); (void)err;
-	g_assert (tp->tv_nsec >= 0 && tp->tv_nsec < NM_UTILS_NS_PER_SECOND);
-
-	if (G_LIKELY (clock_mode == 0))
-		return;
+	/* The only failure we tolerate is that CLOCK_BOOTTIME is not supported.
+	 * Other than that, we rely on kernel to not fail on this. */
+	g_assert (r == 0);
+	g_assert (tp.tv_nsec >= 0 && tp.tv_nsec < NM_UTILS_NS_PER_SECOND);
 
 	/* Calculate an offset for the time stamp.
 	 *
@@ -73,11 +68,56 @@ monotonic_timestamp_get (struct timespec *tp)
 	 * range of signed int, before the time stamp for nm_utils_get_monotonic_timestamp_s()
 	 * wraps (~68 years).
 	 **/
-	monotonic_timestamp_offset_sec = (- ((gint64) tp->tv_sec)) + 1;
-	monotonic_timestamp_clock_mode = clock_mode;
+	offset_sec = (- ((gint64) tp.tv_sec)) + 1;
 
-	_nm_utils_monotonic_timestamp_initialized (tp, monotonic_timestamp_offset_sec, clock_mode == 1);
+	if (!g_once_init_enter (&init_once)) {
+		/* there was a race. We expect the pointer to be fully initialized now. */
+		p = g_atomic_pointer_get (&p_global_state);
+		g_assert (p);
+		return p;
+	}
+
+	global_state.offset_sec = offset_sec;
+	global_state.clk_id = clk_id;
+	p = &global_state;
+	g_atomic_pointer_set (&p_global_state, p);
+	g_once_init_leave (&init_once, 1);
+
+	_nm_utils_monotonic_timestamp_initialized (&tp,
+	                                           p->offset_sec,
+	                                           p->clk_id == CLOCK_BOOTTIME);
+
+	return p;
 }
+
+#define _t_get_global_state() \
+	({ \
+		const GlobalState *_p; \
+		\
+		_p = g_atomic_pointer_get (&p_global_state); \
+		(G_LIKELY (_p) ? _p : _t_init_global_state ()); \
+	})
+
+#define _t_clock_gettime_eval(p, tp) \
+	({ \
+		struct timespec *const _tp = (tp); \
+		const GlobalState *const _p2 = (p); \
+		int _r; \
+		\
+		nm_assert (_tp); \
+		\
+		_r = clock_gettime (_p2->clk_id, _tp); \
+		\
+		nm_assert (_r == 0); \
+		nm_assert (_tp->tv_nsec >= 0 && _tp->tv_nsec < NM_UTILS_NS_PER_SECOND); \
+		\
+		_p2; \
+	})
+
+#define _t_clock_gettime(tp) \
+	_t_clock_gettime_eval (_t_get_global_state (), tp);
+
+/*****************************************************************************/
 
 /**
  * nm_utils_get_monotonic_timestamp_ns:
@@ -94,15 +134,16 @@ monotonic_timestamp_get (struct timespec *tp)
 gint64
 nm_utils_get_monotonic_timestamp_ns (void)
 {
-	struct timespec tp = { 0 };
+	const GlobalState *p;
+	struct timespec tp;
 
-	monotonic_timestamp_get (&tp);
+	p = _t_clock_gettime (&tp);
 
 	/* Although the result will always be positive, we return a signed
 	 * integer, which makes it easier to calculate time differences (when
 	 * you want to subtract signed values).
 	 **/
-	return (((gint64) tp.tv_sec) + monotonic_timestamp_offset_sec) * NM_UTILS_NS_PER_SECOND +
+	return (((gint64) tp.tv_sec) + p->offset_sec) * NM_UTILS_NS_PER_SECOND +
 	       tp.tv_nsec;
 }
 
@@ -121,15 +162,16 @@ nm_utils_get_monotonic_timestamp_ns (void)
 gint64
 nm_utils_get_monotonic_timestamp_us (void)
 {
-	struct timespec tp = { 0 };
+	const GlobalState *p;
+	struct timespec tp;
 
-	monotonic_timestamp_get (&tp);
+	p = _t_clock_gettime (&tp);
 
 	/* Although the result will always be positive, we return a signed
 	 * integer, which makes it easier to calculate time differences (when
 	 * you want to subtract signed values).
 	 **/
-	return (((gint64) tp.tv_sec) + monotonic_timestamp_offset_sec) * ((gint64) G_USEC_PER_SEC) +
+	return (((gint64) tp.tv_sec) + p->offset_sec) * ((gint64) G_USEC_PER_SEC) +
 	       (tp.tv_nsec / (NM_UTILS_NS_PER_SECOND/G_USEC_PER_SEC));
 }
 
@@ -148,15 +190,16 @@ nm_utils_get_monotonic_timestamp_us (void)
 gint64
 nm_utils_get_monotonic_timestamp_ms (void)
 {
-	struct timespec tp = { 0 };
+	const GlobalState *p;
+	struct timespec tp;
 
-	monotonic_timestamp_get (&tp);
+	p = _t_clock_gettime (&tp);
 
 	/* Although the result will always be positive, we return a signed
 	 * integer, which makes it easier to calculate time differences (when
 	 * you want to subtract signed values).
 	 **/
-	return (((gint64) tp.tv_sec) + monotonic_timestamp_offset_sec) * ((gint64) 1000) +
+	return (((gint64) tp.tv_sec) + p->offset_sec) * ((gint64) 1000) +
 	       (tp.tv_nsec / (NM_UTILS_NS_PER_SECOND/1000));
 }
 
@@ -175,10 +218,12 @@ nm_utils_get_monotonic_timestamp_ms (void)
 gint32
 nm_utils_get_monotonic_timestamp_s (void)
 {
-	struct timespec tp = { 0 };
+	const GlobalState *p;
+	struct timespec tp;
 
-	monotonic_timestamp_get (&tp);
-	return (((gint64) tp.tv_sec) + monotonic_timestamp_offset_sec);
+	p = _t_clock_gettime (&tp);
+
+	return (((gint64) tp.tv_sec) + p->offset_sec);
 }
 
 /**
@@ -199,6 +244,7 @@ nm_utils_get_monotonic_timestamp_s (void)
 gint64
 nm_utils_monotonic_timestamp_as_boottime (gint64 timestamp, gint64 timestamp_ns_per_tick)
 {
+	const GlobalState *p;
 	gint64 offset;
 
 	/* only support ns-per-tick being a multiple of 10. */
@@ -213,15 +259,15 @@ nm_utils_monotonic_timestamp_as_boottime (gint64 timestamp, gint64 timestamp_ns_
 
 	/* if the caller didn't yet ever fetch a monotonic-timestamp, he cannot pass any meaningful
 	 * value (because he has no idea what these timestamps would be). That would be a bug. */
-	g_return_val_if_fail (monotonic_timestamp_clock_mode != 0, -1);
+	nm_assert (g_atomic_pointer_get (&p_global_state));
+
+	p = _t_get_global_state ();
 
 	/* calculate the offset of monotonic-timestamp to boottime. offset_s is <= 1. */
-	offset = monotonic_timestamp_offset_sec * (NM_UTILS_NS_PER_SECOND / timestamp_ns_per_tick);
+	offset = p->offset_sec * (NM_UTILS_NS_PER_SECOND / timestamp_ns_per_tick);
 
 	/* check for overflow. */
 	g_return_val_if_fail (offset > 0 || timestamp < G_MAXINT64 + offset, G_MAXINT64);
 
 	return timestamp - offset;
 }
-
-
