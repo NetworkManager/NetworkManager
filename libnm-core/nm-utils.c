@@ -4500,10 +4500,11 @@ nm_utils_inet_ntop (int addr_family, gconstpointer addr, char *dst)
 
 	nm_assert_addr_family (addr_family);
 	nm_assert (addr);
+	nm_assert (dst);
 
 	s = inet_ntop (addr_family,
 	               addr,
-	               dst ?: _nm_utils_inet_ntop_buffer,
+	               dst,
 	               addr_family == AF_INET6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN);
 	nm_assert (s);
 	return s;
@@ -4529,6 +4530,11 @@ nm_utils_inet_ntop (int addr_family, gconstpointer addr, char *dst)
 const char *
 nm_utils_inet4_ntop (in_addr_t inaddr, char *dst)
 {
+	/* relying on the static buffer (by leaving @dst as %NULL) is discouraged.
+	 * Don't do that!
+	 *
+	 * However, still support it to be lenient against mistakes and because
+	 * this is public API of libnm. */
 	return inet_ntop (AF_INET, &inaddr, dst ?: _nm_utils_inet_ntop_buffer,
 	                  INET_ADDRSTRLEN);
 }
@@ -4554,6 +4560,11 @@ nm_utils_inet4_ntop (in_addr_t inaddr, char *dst)
 const char *
 nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst)
 {
+	/* relying on the static buffer (by leaving @dst as %NULL) is discouraged.
+	 * Don't do that!
+	 *
+	 * However, still support it to be lenient against mistakes and because
+	 * this is public API of libnm. */
 	g_return_val_if_fail (in6addr, NULL);
 	return inet_ntop (AF_INET6, in6addr, dst ?: _nm_utils_inet_ntop_buffer,
 	                  INET6_ADDRSTRLEN);
