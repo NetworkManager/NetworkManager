@@ -490,8 +490,8 @@ bound4_handle (NMDhcpSystemd *self)
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
 	const char *iface = nm_dhcp_client_get_iface (NM_DHCP_CLIENT (self));
 	sd_dhcp_lease *lease;
-	NMIP4Config *ip4_config;
-	GHashTable *options;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
+	gs_unref_hashtable GHashTable *options = NULL;
 	GError *error = NULL;
 	int r;
 
@@ -505,6 +505,7 @@ bound4_handle (NMDhcpSystemd *self)
 	_LOGD ("lease available");
 
 	options = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_free);
+
 	ip4_config = lease_to_ip4_config (nm_dhcp_client_get_multi_idx (NM_DHCP_CLIENT (self)),
 	                                  iface,
 	                                  nm_dhcp_client_get_ifindex (NM_DHCP_CLIENT (self)),
@@ -514,22 +515,20 @@ bound4_handle (NMDhcpSystemd *self)
 	                                  nm_dhcp_client_get_route_metric (NM_DHCP_CLIENT (self)),
 	                                  TRUE,
 	                                  &error);
-	if (ip4_config) {
-		add_requests_to_options (options, dhcp4_requests);
-		dhcp_lease_save (lease, priv->lease_file);
-
-		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self),
-		                          NM_DHCP_STATE_BOUND,
-		                          NM_IP_CONFIG_CAST (ip4_config),
-		                          options);
-	} else {
+	if (!ip4_config) {
 		_LOGW ("%s", error->message);
-		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self), NM_DHCP_STATE_FAIL, NULL, NULL);
 		g_clear_error (&error);
+		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self), NM_DHCP_STATE_FAIL, NULL, NULL);
+		return;
 	}
 
-	g_hash_table_destroy (options);
-	g_clear_object (&ip4_config);
+	add_requests_to_options (options, dhcp4_requests);
+	dhcp_lease_save (lease, priv->lease_file);
+
+	nm_dhcp_client_set_state (NM_DHCP_CLIENT (self),
+	                          NM_DHCP_STATE_BOUND,
+	                          NM_IP_CONFIG_CAST (ip4_config),
+	                          options);
 }
 
 static void
@@ -825,6 +824,7 @@ bound6_handle (NMDhcpSystemd *self)
 	_LOGD ("lease available");
 
 	options = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_free);
+
 	ip6_config = lease_to_ip6_config (nm_dhcp_client_get_multi_idx (NM_DHCP_CLIENT (self)),
 	                                  iface,
 	                                  nm_dhcp_client_get_ifindex (NM_DHCP_CLIENT (self)),
@@ -834,15 +834,16 @@ bound6_handle (NMDhcpSystemd *self)
 	                                  nm_dhcp_client_get_info_only (NM_DHCP_CLIENT (self)),
 	                                  &error);
 
-	if (ip6_config) {
-		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self),
-		                          NM_DHCP_STATE_BOUND,
-		                          NM_IP_CONFIG_CAST (ip6_config),
-		                          options);
-	} else {
+	if (!ip6_config) {
 		_LOGW ("%s", error->message);
 		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self), NM_DHCP_STATE_FAIL, NULL, NULL);
+		return;
 	}
+
+	nm_dhcp_client_set_state (NM_DHCP_CLIENT (self),
+	                          NM_DHCP_STATE_BOUND,
+	                          NM_IP_CONFIG_CAST (ip6_config),
+	                          options);
 }
 
 static void
