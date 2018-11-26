@@ -1173,7 +1173,7 @@ nm_utils_ip4_dns_from_variant (GVariant *value)
 	dns = g_new (char *, length + 1);
 
 	for (i = 0; i < length; i++)
-		dns[i] = g_strdup (nm_utils_inet4_ntop (array[i], NULL));
+		dns[i] = nm_utils_inet4_ntop_dup (array[i]);
 	dns[i] = NULL;
 
 	return dns;
@@ -1271,7 +1271,7 @@ nm_utils_ip4_addresses_from_variant (GVariant *value, char **out_gateway)
 			g_ptr_array_add (addresses, addr);
 
 			if (addr_array[2] && out_gateway && !*out_gateway)
-				*out_gateway = g_strdup (nm_utils_inet4_ntop (addr_array[2], NULL));
+				*out_gateway = nm_utils_inet4_ntop_dup (addr_array[2]);
 		} else {
 			g_warning ("Ignoring invalid IP4 address: %s", error->message);
 			g_clear_error (&error);
@@ -1493,7 +1493,7 @@ nm_utils_ip6_dns_from_variant (GVariant *value)
 			continue;
 		}
 
-		dns[i++] = g_strdup (nm_utils_inet6_ntop (ip, NULL));
+		dns[i++] = nm_utils_inet6_ntop_dup (ip);
 		g_variant_unref (ip_var);
 	}
 	dns[i] = NULL;
@@ -1612,7 +1612,7 @@ nm_utils_ip6_addresses_from_variant (GVariant *value, char **out_gateway)
 					goto next;
 				}
 				if (!IN6_IS_ADDR_UNSPECIFIED (gateway_bytes))
-					*out_gateway = g_strdup (nm_utils_inet6_ntop (gateway_bytes, NULL));
+					*out_gateway = nm_utils_inet6_ntop_dup (gateway_bytes);
 			}
 		} else {
 			g_warning ("Ignoring invalid IP6 address: %s", error->message);

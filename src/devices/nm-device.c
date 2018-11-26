@@ -5475,10 +5475,13 @@ nm_device_generate_connection (NMDevice *self,
 		nm_connection_add_setting (connection, nm_setting_proxy_new ());
 
 		pllink = nm_platform_link_get (nm_device_get_platform (self), priv->ifindex);
-		if (pllink && pllink->inet6_token.id) {
+		if (   pllink
+		    && pllink->inet6_token.id) {
+			char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+
 			g_object_set (s_ip6,
 			              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, NM_IN6_ADDR_GEN_MODE_EUI64,
-			              NM_SETTING_IP6_CONFIG_TOKEN, nm_utils_inet6_interface_identifier_to_token (pllink->inet6_token, NULL),
+			              NM_SETTING_IP6_CONFIG_TOKEN, nm_utils_inet6_interface_identifier_to_token (pllink->inet6_token, sbuf),
 			              NULL);
 		}
 	}
@@ -6641,13 +6644,15 @@ acd_manager_probe_terminated (NMAcdManager *acd_manager, gpointer user_data)
 
 	for (i = 0; data->configs && data->configs[i]; i++) {
 		nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, data->configs[i], &address) {
+			char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+
 			result = nm_acd_manager_check_address (acd_manager, address->address);
 			success &= result;
 
 			_NMLOG (result ? LOGL_DEBUG : LOGL_WARN,
 			        LOGD_DEVICE,
 			        "IPv4 DAD result: address %s is %s",
-			        nm_utils_inet4_ntop (address->address, NULL),
+			        nm_utils_inet4_ntop (address->address, sbuf),
 			        result ? "unique" : "duplicate");
 		}
 	}
@@ -8678,6 +8683,7 @@ nm_device_use_ip6_subnet (NMDevice *self, const NMPlatformIP6Address *subnet)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMPlatformIP6Address address = *subnet;
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
 	if (!applied_config_get_current (&priv->ac_ip6_config))
 		applied_config_init_new (&priv->ac_ip6_config, self, AF_INET6);
@@ -8687,7 +8693,7 @@ nm_device_use_ip6_subnet (NMDevice *self, const NMPlatformIP6Address *subnet)
 	applied_config_add_address (&priv->ac_ip6_config, NM_PLATFORM_IP_ADDRESS_CAST (&address));
 
 	_LOGD (LOGD_IP6, "ipv6-pd: using %s address (preferred for %u seconds)",
-	       nm_utils_inet6_ntop (&address.address, NULL),
+	       nm_utils_inet6_ntop (&address.address, sbuf),
 	       subnet->preferred);
 
 	/* This also updates the ndisc if there are actual changes. */
@@ -8806,6 +8812,7 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 	NMSettingIP6Config *s_ip6 = NULL;
 	GError *error = NULL;
 	const char *addr_type;
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
 	if (!priv->ipv6ll_handle)
 		return;
@@ -8866,7 +8873,8 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 		addr_type = "EUI-64";
 	}
 
-	_LOGD (LOGD_IP6, "linklocal6: generated %s IPv6LL address %s", addr_type, nm_utils_inet6_ntop (&lladdr, NULL));
+	_LOGD (LOGD_IP6, "linklocal6: generated %s IPv6LL address %s",
+	       addr_type, nm_utils_inet6_ntop (&lladdr, sbuf));
 	priv->ipv6ll_has = TRUE;
 	priv->ipv6ll_addr = lladdr;
 	ip_config_merge_and_apply (self, AF_INET6, TRUE);
@@ -14435,7 +14443,7 @@ find_dhcp4_address (NMDevice *self)
 
 	nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, priv->ip_config_4, &a) {
 		if (a->addr_source == NM_IP_CONFIG_SOURCE_DHCP)
-			return g_strdup (nm_utils_inet4_ntop (a->address, NULL));
+			return nm_utils_inet4_ntop_dup (a->address);
 	}
 	return NULL;
 }

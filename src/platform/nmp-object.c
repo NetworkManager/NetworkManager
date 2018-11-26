@@ -903,11 +903,9 @@ static const char * \
 _vt_cmd_plobj_to_string_id_##type (const NMPlatformObject *_obj, char *buf, gsize buf_len) \
 { \
 	plat_type *const obj = (plat_type *) _obj; \
-	char buf1[NM_UTILS_INET_ADDRSTRLEN]; \
-	char buf2[NM_UTILS_INET_ADDRSTRLEN]; \
+	_nm_unused char buf1[NM_UTILS_INET_ADDRSTRLEN]; \
+	_nm_unused char buf2[NM_UTILS_INET_ADDRSTRLEN]; \
 	\
-	(void) buf1; \
-	(void) buf2; \
 	g_snprintf (buf, buf_len, \
 	            __VA_ARGS__); \
 	return buf; \

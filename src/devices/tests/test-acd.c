@@ -154,6 +154,7 @@ again:
 
 	for (i = 0; info->addresses[i]; i++) {
 		gboolean val;
+		char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
 		val = nm_acd_manager_check_address (manager, info->addresses[i]);
 		if (val == info->expected_result[i])
@@ -168,7 +169,7 @@ again:
 		}
 
 		g_error ("expected check for address #%d (%s) to %s, but it didn't",
-		         i, nm_utils_inet4_ntop (info->addresses[i], NULL),
+		         i, nm_utils_inet4_ntop (info->addresses[i], sbuf),
 		         info->expected_result[i] ? "detect no duplicated" : "detect a duplicate");
 	}
 

@@ -5084,7 +5084,7 @@ test_setting_ip4_gateway (void)
 	GVariantBuilder addrs_builder;
 	GError *error = NULL;
 
-	g_assert_cmpstr (nm_utils_inet4_ntop (addr_vals_0[0], NULL), ==, "192.168.1.10");
+	nmtst_assert_ip4_address (addr_vals_0[0], "192.168.1.10");
 
 	/* When serializing on the daemon side, ipv4.gateway is copied to the first
 	 * entry of ipv4.addresses
@@ -5126,7 +5126,7 @@ test_setting_ip4_gateway (void)
 
 		addr_array = g_variant_get_fixed_array (addr_var, &length, sizeof (guint32));
 		g_assert_cmpint (length, ==, 3);
-		g_assert_cmpstr (nm_utils_inet4_ntop (addr_array[2], NULL), ==, "192.168.1.1");
+		nmtst_assert_ip4_address (addr_array[2], "192.168.1.1");
 		g_variant_unref (addr_var);
 	}
 	g_variant_unref (value);
@@ -5233,7 +5233,7 @@ test_setting_ip6_gateway (void)
 
 		gateway_bytes = g_variant_get_fixed_array (gateway_var, &length, 1);
 		g_assert_cmpint (length, ==, 16);
-		g_assert_cmpstr (nm_utils_inet6_ntop ((struct in6_addr *) gateway_bytes, NULL), ==, "abcd::1");
+		nmtst_assert_ip6_address ((struct in6_addr *) gateway_bytes, "abcd::1");
 		g_variant_unref (gateway_var);
 	}
 	g_variant_unref (value);

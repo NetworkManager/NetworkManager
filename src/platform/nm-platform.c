@@ -3466,8 +3466,9 @@ gboolean
 nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address)
 {
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
-	char str_peer2[NM_UTILS_INET_ADDRSTRLEN];
-	char str_peer[100];
+	char b1[NM_UTILS_INET_ADDRSTRLEN];
+	char b2[NM_UTILS_INET_ADDRSTRLEN];
+	char str_peer[INET_ADDRSTRLEN + 50];
 
 	_CHECK_SELF (self, klass, FALSE);
 
@@ -3475,9 +3476,13 @@ nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address
 	g_return_val_if_fail (plen <= 32, FALSE);
 
 	_LOG3D ("address: deleting IPv4 address %s/%d, %s%s",
-	        nm_utils_inet4_ntop (address, NULL), plen,
+	        nm_utils_inet4_ntop (address, b1),
+	        plen,
 	        peer_address != address
-	            ? nm_sprintf_buf (str_peer, "peer %s, ", nm_utils_inet4_ntop (peer_address, str_peer2)) : "",
+	            ? nm_sprintf_buf (str_peer,
+	                              "peer %s, ",
+	                              nm_utils_inet4_ntop (peer_address, b2))
+	            : "",
 	        _to_string_dev (self, ifindex, str_dev, sizeof (str_dev)));
 	return klass->ip4_address_delete (self, ifindex, address, plen, peer_address);
 }
@@ -3486,6 +3491,7 @@ gboolean
 nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr address, guint8 plen)
 {
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
 	_CHECK_SELF (self, klass, FALSE);
 
@@ -3493,7 +3499,7 @@ nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr a
 	g_return_val_if_fail (plen <= 128, FALSE);
 
 	_LOG3D ("address: deleting IPv6 address %s/%d, %s",
-	        nm_utils_inet6_ntop (&address, NULL), plen,
+	        nm_utils_inet6_ntop (&address, sbuf), plen,
 	        _to_string_dev (self, ifindex, str_dev, sizeof (str_dev)));
 	return klass->ip6_address_delete (self, ifindex, address, plen);
 }
@@ -5517,6 +5523,7 @@ nm_platform_lnk_vxlan_to_string (const NMPlatformLnkVxlan *lnk, char *buf, gsize
 	char str_dst_port[25];
 	char str_tos[25];
 	char str_ttl[25];
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
 	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
 		return buf;
@@ -5527,7 +5534,7 @@ nm_platform_lnk_vxlan_to_string (const NMPlatformLnkVxlan *lnk, char *buf, gsize
 		g_snprintf (str_group, sizeof (str_group),
 		            " %s %s",
 		            IN_MULTICAST (ntohl (lnk->group)) ? "group" : "remote",
-		            nm_utils_inet4_ntop (lnk->group, NULL));
+		            nm_utils_inet4_ntop (lnk->group, sbuf));
 	}
 	if (IN6_IS_ADDR_UNSPECIFIED (&lnk->group6))
 		str_group6[0] = '\0';
@@ -5536,7 +5543,7 @@ nm_platform_lnk_vxlan_to_string (const NMPlatformLnkVxlan *lnk, char *buf, gsize
 		            " %s%s %s",
 		            IN6_IS_ADDR_MULTICAST (&lnk->group6) ? "group" : "remote",
 		            str_group[0] ? "6" : "", /* usually, a vxlan has either v4 or v6 only. */
-		            nm_utils_inet6_ntop (&lnk->group6, NULL));
+		            nm_utils_inet6_ntop (&lnk->group6, sbuf));
 	}
 
 	if (lnk->local == 0)
@@ -5544,7 +5551,7 @@ nm_platform_lnk_vxlan_to_string (const NMPlatformLnkVxlan *lnk, char *buf, gsize
 	else {
 		g_snprintf (str_local, sizeof (str_local),
 		            " local %s",
-		            nm_utils_inet4_ntop (lnk->local, NULL));
+		            nm_utils_inet4_ntop (lnk->local, sbuf));
 	}
 	if (IN6_IS_ADDR_UNSPECIFIED (&lnk->local6))
 		str_local6[0] = '\0';
@@ -5552,7 +5559,7 @@ nm_platform_lnk_vxlan_to_string (const NMPlatformLnkVxlan *lnk, char *buf, gsize
 		g_snprintf (str_local6, sizeof (str_local6),
 		            " local%s %s",
 		            str_local[0] ? "6" : "", /* usually, a vxlan has either v4 or v6 only. */
-		            nm_utils_inet6_ntop (&lnk->local6, NULL));
+		            nm_utils_inet6_ntop (&lnk->local6, sbuf));
 	}
 
 	g_snprintf (buf, len,
@@ -5966,13 +5973,21 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 const char *
 nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsize len)
 {
-	char s_network[INET6_ADDRSTRLEN], s_gateway[INET6_ADDRSTRLEN], s_pref_src[INET6_ADDRSTRLEN];
-	char s_src_all[INET6_ADDRSTRLEN + 40], s_src[INET6_ADDRSTRLEN];
+	char s_network[INET6_ADDRSTRLEN];
+	char s_gateway[INET6_ADDRSTRLEN];
+	char s_pref_src[INET6_ADDRSTRLEN];
+	char s_src_all[INET6_ADDRSTRLEN + 40];
+	char s_src[INET6_ADDRSTRLEN];
 	char str_table[30];
 	char str_pref[40];
 	char str_pref2[30];
-	char str_dev[TO_STRING_DEV_BUF_SIZE], s_source[50];
-	char str_window[32], str_cwnd[32], str_initcwnd[32], str_initrwnd[32], str_mtu[32];
+	char str_dev[TO_STRING_DEV_BUF_SIZE];
+	char s_source[50];
+	char str_window[32];
+	char str_cwnd[32];
+	char str_initcwnd[32];
+	char str_initrwnd[32];
+	char str_mtu[32];
 	char str_rtm_flags[_RTM_FLAGS_TO_STRING_MAXLEN];
 
 	if (!nm_utils_to_string_buffer_init_null (route, &buf, &len))

@@ -3045,14 +3045,12 @@ nm_utils_ipv6_interface_identifier_get_from_token (NMUtilsIPv6IfaceId *iid,
 /**
  * nm_utils_inet6_interface_identifier_to_token:
  * @iid: %NMUtilsIPv6IfaceId interface identifier
- * @buf: the destination buffer or %NULL
+ * @buf: the destination buffer of at least %NM_UTILS_INET_ADDRSTRLEN
+ *   bytes.
  *
  * Converts the interface identifier to a string token.
- * If the destination buffer it set, set it is used to store the
- * resulting token, otherwise an internal static buffer is used.
- * The buffer needs to be %NM_UTILS_INET_ADDRSTRLEN characters long.
  *
- * Returns: a statically allocated array. Do not g_free().
+ * Returns: the input buffer filled with the id as string.
  */
 const char *
 nm_utils_inet6_interface_identifier_to_token (NMUtilsIPv6IfaceId iid, char *buf)

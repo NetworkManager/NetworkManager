@@ -965,7 +965,9 @@ nm_ndisc_dad_failed (NMNDisc *ndisc, const struct in6_addr *address, gboolean em
 		NMNDiscAddress *item = &g_array_index (rdata->addresses, NMNDiscAddress, i);
 
 		if (IN6_ARE_ADDR_EQUAL (&item->address, address)) {
-			_LOGD ("DAD failed for discovered address %s", nm_utils_inet6_ntop (address, NULL));
+			char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+
+			_LOGD ("DAD failed for discovered address %s", nm_utils_inet6_ntop (address, sbuf));
 			changed = TRUE;
 			if (!complete_address (ndisc, item)) {
 				g_array_remove_index (rdata->addresses, i);
@@ -1056,10 +1058,11 @@ _config_changed_log (NMNDisc *ndisc, NMNDiscConfigMap changed)
 	}
 	for (i = 0; i < rdata->routes->len; i++) {
 		NMNDiscRoute *route = &g_array_index (rdata->routes, NMNDiscRoute, i);
+		char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
 		inet_ntop (AF_INET6, &route->network, addrstr, sizeof (addrstr));
 		_LOGD ("  route %s/%u via %s pref %s exp %s", addrstr, (guint) route->plen,
-		       nm_utils_inet6_ntop (&route->gateway, NULL),
+		       nm_utils_inet6_ntop (&route->gateway, sbuf),
 		       nm_icmpv6_router_pref_to_string (route->preference, str_pref, sizeof (str_pref)),
 		       get_exp (str_exp, now_ns, route));
 	}
