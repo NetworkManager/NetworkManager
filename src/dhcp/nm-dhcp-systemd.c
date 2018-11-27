@@ -244,13 +244,13 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	char addr_str[NM_UTILS_INET_ADDRSTRLEN];
 	char addr_str2[NM_UTILS_INET_ADDRSTRLEN];
 	const char *s;
-	guint32 lifetime = 0, i;
+	guint32 lifetime = 0;
 	NMPlatformIP4Address address;
 	nm_auto_free_gstring GString *str = NULL;
 	gs_free sd_dhcp_route **routes = NULL;
 	const char *const*search_domains = NULL;
 	guint16 mtu;
-	int r, num;
+	int r, i, num;
 	guint64 end_time;
 	const void *data;
 	gsize data_len;
