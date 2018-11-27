@@ -496,6 +496,30 @@ NMSettingBluetooth *_nm_connection_get_setting_bluetooth_for_nap (NMConnection *
 
 const char *nm_utils_inet_ntop (int addr_family, gconstpointer addr, char *dst);
 
+static inline char *
+nm_utils_inet4_ntop_dup (in_addr_t addr)
+{
+	char buf[NM_UTILS_INET_ADDRSTRLEN];
+
+	return g_strdup (nm_utils_inet4_ntop (addr, buf));
+}
+
+static inline char *
+nm_utils_inet6_ntop_dup (const struct in6_addr *addr)
+{
+	char buf[NM_UTILS_INET_ADDRSTRLEN];
+
+	return g_strdup (nm_utils_inet6_ntop (addr, buf));
+}
+
+static inline char *
+nm_utils_inet_ntop_dup (int addr_family, const struct in6_addr *addr)
+{
+	char buf[NM_UTILS_INET_ADDRSTRLEN];
+
+	return g_strdup (nm_utils_inet_ntop (addr_family, addr, buf));
+}
+
 gboolean _nm_utils_inet6_is_token (const struct in6_addr *in6addr);
 
 /*****************************************************************************/
