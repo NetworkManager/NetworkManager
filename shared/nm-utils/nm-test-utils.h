@@ -1166,6 +1166,48 @@ nmtst_inet6_from_string (const char *str)
 	return &addr;
 }
 
+static inline gconstpointer
+nmtst_inet_from_string (int addr_family, const char *str)
+{
+	if (addr_family == AF_INET) {
+		static in_addr_t a;
+
+		a = nmtst_inet4_from_string (str);
+		return &a;
+	}
+	if (addr_family == AF_INET6)
+		return nmtst_inet6_from_string (str);
+
+	g_assert_not_reached ();
+	return NULL;
+}
+
+static inline const char *
+nmtst_inet_to_string (int addr_family, gconstpointer addr)
+{
+	static char buf[MAX (INET6_ADDRSTRLEN, INET_ADDRSTRLEN)];
+
+	g_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+	g_assert (addr);
+
+	if (inet_ntop (addr_family, addr, buf, sizeof (buf)) != buf)
+		g_assert_not_reached ();
+
+	return buf;
+}
+
+static inline const char *
+nmtst_inet4_to_string (in_addr_t addr)
+{
+	return nmtst_inet_to_string (AF_INET, &addr);
+}
+
+static inline const char *
+nmtst_inet6_to_string (const struct in6_addr *addr)
+{
+	return nmtst_inet_to_string (AF_INET6, addr);
+}
+
 static inline void
 _nmtst_assert_ip4_address (const char *file, int line, in_addr_t addr, const char *str_expected)
 {
