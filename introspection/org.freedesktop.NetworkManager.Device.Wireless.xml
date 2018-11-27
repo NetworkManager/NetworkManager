@@ -36,7 +36,7 @@
         RequestScan:
         @options: Options of scan. Currently 'ssids' option with value of "aay" type is supported.
 
-        Request the device to scan
+        Request the device to scan. To know when the scan is finished, use the "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" to listen to changes to the "LastScan" property.
     -->
     <method name="RequestScan">
       <arg name="options" type="a{sv}" direction="in"/>
