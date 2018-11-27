@@ -220,6 +220,12 @@ add_requests_to_options (GHashTable *options, const ReqOption *requests)
 	}
 }
 
+static GHashTable *
+create_options_dict (void)
+{
+	return g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_free);
+}
+
 #define LOG_LEASE(domain, ...) \
 G_STMT_START { \
 	if (log_lease) { \
@@ -232,13 +238,14 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
                      const char *iface,
                      int ifindex,
                      sd_dhcp_lease *lease,
-                     GHashTable *options,
                      guint32 route_table,
                      guint32 route_metric,
                      gboolean log_lease,
+                     GHashTable **out_options,
                      GError **error)
 {
-	NMIP4Config *ip4_config = NULL;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
+	gs_unref_hashtable GHashTable *options = NULL;
 	struct in_addr tmp_addr;
 	const struct in_addr *addr_list;
 	char addr_str[NM_UTILS_INET_ADDRSTRLEN];
@@ -262,6 +269,8 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	g_return_val_if_fail (lease != NULL, NULL);
 
 	ip4_config = nm_ip4_config_new (multi_idx, ifindex);
+
+	options = out_options ? create_options_dict () : NULL;
 
 	/* Address */
 	sd_dhcp_lease_get_address (lease, &tmp_addr);
@@ -457,7 +466,8 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 		metered = !!memmem (data, data_len, "ANDROID_METERED", NM_STRLEN ("ANDROID_METERED"));
 	nm_ip4_config_set_metered (ip4_config, metered);
 
-	return ip4_config;
+	NM_SET_OUT (out_options, g_steal_pointer (&options));
+	return g_steal_pointer (&ip4_config);
 }
 
 /*****************************************************************************/
@@ -513,16 +523,14 @@ bound4_handle (NMDhcpSystemd *self)
 
 	_LOGD ("lease available");
 
-	options = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_free);
-
 	ip4_config = lease_to_ip4_config (nm_dhcp_client_get_multi_idx (NM_DHCP_CLIENT (self)),
 	                                  iface,
 	                                  nm_dhcp_client_get_ifindex (NM_DHCP_CLIENT (self)),
 	                                  lease,
-	                                  options,
 	                                  nm_dhcp_client_get_route_table (NM_DHCP_CLIENT (self)),
 	                                  nm_dhcp_client_get_route_metric (NM_DHCP_CLIENT (self)),
 	                                  TRUE,
+	                                  &options,
 	                                  &error);
 	if (!ip4_config) {
 		_LOGW ("%s", error->message);
@@ -730,23 +738,26 @@ lease_to_ip6_config (NMDedupMultiIndex *multi_idx,
                      const char *iface,
                      int ifindex,
                      sd_dhcp6_lease *lease,
-                     GHashTable *options,
                      gboolean log_lease,
                      gboolean info_only,
+                     GHashTable **out_options,
                      GError **error)
 {
+	gs_unref_object NMIP6Config *ip6_config = NULL;
+	gs_unref_hashtable GHashTable *options = NULL;
 	struct in6_addr tmp_addr, *dns;
 	uint32_t lft_pref, lft_valid;
-	NMIP6Config *ip6_config;
 	char addr_str[NM_UTILS_INET_ADDRSTRLEN];
 	char **domains;
 	nm_auto_free_gstring GString *str = NULL;
 	int num, i;
-	gint32 ts;
+	const gint32 ts = nm_utils_get_monotonic_timestamp_s ();
 
 	g_return_val_if_fail (lease, NULL);
+
 	ip6_config = nm_ip6_config_new (multi_idx, ifindex);
-	ts = nm_utils_get_monotonic_timestamp_s ();
+
+	options = out_options ? create_options_dict () : NULL;
 
 	/* Addresses */
 	sd_dhcp6_lease_reset_address_iter (lease);
@@ -776,8 +787,8 @@ lease_to_ip6_config (NMDedupMultiIndex *multi_idx,
 	if (str->len)
 		add_option (options, dhcp6_requests, DHCP6_OPTION_IP_ADDRESS, str->str);
 
-	if (!info_only && nm_ip6_config_get_num_addresses (ip6_config) == 0) {
-		g_object_unref (ip6_config);
+	if (   !info_only
+	    && nm_ip6_config_get_num_addresses (ip6_config) == 0) {
 		g_set_error_literal (error,
 		                     NM_MANAGER_ERROR,
 		                     NM_MANAGER_ERROR_FAILED,
@@ -812,7 +823,8 @@ lease_to_ip6_config (NMDedupMultiIndex *multi_idx,
 		add_option (options, dhcp6_requests, SD_DHCP6_OPTION_DOMAIN_LIST, str->str);
 	}
 
-	return ip6_config;
+	NM_SET_OUT (out_options, g_steal_pointer (&options));
+	return g_steal_pointer (&ip6_config);
 }
 
 static void
@@ -835,15 +847,13 @@ bound6_handle (NMDhcpSystemd *self)
 
 	_LOGD ("lease available");
 
-	options = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_free);
-
 	ip6_config = lease_to_ip6_config (nm_dhcp_client_get_multi_idx (NM_DHCP_CLIENT (self)),
 	                                  iface,
 	                                  nm_dhcp_client_get_ifindex (NM_DHCP_CLIENT (self)),
 	                                  lease,
-	                                  options,
 	                                  TRUE,
 	                                  nm_dhcp_client_get_info_only (NM_DHCP_CLIENT (self)),
+	                                  &options,
 	                                  &error);
 
 	if (!ip6_config) {
