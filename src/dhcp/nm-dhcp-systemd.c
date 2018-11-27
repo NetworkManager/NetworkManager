@@ -253,7 +253,6 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	gs_unref_hashtable GHashTable *options = NULL;
 	const struct in_addr *addr_list;
 	char addr_str[NM_UTILS_INET_ADDRSTRLEN];
-	char addr_str2[NM_UTILS_INET_ADDRSTRLEN];
 	const char *s;
 	nm_auto_free_gstring GString *str = NULL;
 	gs_free sd_dhcp_route **routes = NULL;
@@ -263,9 +262,9 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	const void *data;
 	gsize data_len;
 	gboolean metered = FALSE;
-	gboolean static_default_gateway = FALSE;
-	gboolean gateway_has = FALSE;
-	in_addr_t gateway = 0;
+	gboolean has_router_from_classless = FALSE;
+	gboolean has_classless_route = FALSE;
+	gboolean has_static_route = FALSE;
 	const gint32 ts = nm_utils_get_monotonic_timestamp_s ();
 	gint64 ts_time = time (NULL);
 	struct in_addr a_address;
@@ -371,12 +370,40 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 
 	num = sd_dhcp_lease_get_routes (lease, &routes);
 	if (num > 0) {
-		nm_gstring_prepare (&str);
+		nm_auto_free_gstring GString *str_classless = NULL;
+		nm_auto_free_gstring GString *str_static = NULL;
+		guint32 default_route_metric = route_metric;
+
 		for (i = 0; i < num; i++) {
-			const char *gw_str;
+			switch (sd_dhcp_route_get_option (routes[i])) {
+			case SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE:
+				has_classless_route = TRUE;
+				break;
+			case SD_DHCP_OPTION_STATIC_ROUTE:
+				has_static_route = TRUE;
+				break;
+			}
+		}
+
+		if (has_classless_route)
+			str_classless = g_string_sized_new (30);
+		if (has_static_route)
+			str_static = g_string_sized_new (30);
+
+		for (i = 0; i < num; i++) {
+			char network_net_str[NM_UTILS_INET_ADDRSTRLEN];
+			char gateway_str[NM_UTILS_INET_ADDRSTRLEN];
 			guint8 r_plen;
 			struct in_addr r_network;
 			struct in_addr r_gateway;
+			in_addr_t network_net;
+			int option;
+			guint32 m;
+
+			option = sd_dhcp_route_get_option (routes[i]);
+			if (!NM_IN_SET (option, SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE,
+			                        SD_DHCP_OPTION_STATIC_ROUTE))
+				continue;
 
 			if (sd_dhcp_route_get_destination (routes[i], &r_network) < 0)
 				continue;
@@ -386,64 +413,95 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 			if (sd_dhcp_route_get_gateway (routes[i], &r_gateway) < 0)
 				continue;
 
-			if (r_plen > 0) {
-				const in_addr_t network_net = nm_utils_ip4_address_clear_host_address (r_network.s_addr,
-				                                                                       r_plen);
+			network_net = nm_utils_ip4_address_clear_host_address (r_network.s_addr,
+			                                                       r_plen);
+			nm_utils_inet4_ntop (network_net, network_net_str);
+			nm_utils_inet4_ntop (r_gateway.s_addr, gateway_str);
 
-				nm_ip4_config_add_route (ip4_config,
-				                         &((const NMPlatformIP4Route) {
-				                             .network       = network_net,
-				                             .plen          = r_plen,
-				                             .gateway       = r_gateway.s_addr,
-				                             .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
-				                             .metric        = route_metric,
-				                             .table_coerced = nm_platform_route_table_coerce (route_table),
-				                         }),
-				                         NULL);
+			LOG_LEASE (LOGD_DHCP4,
+			           "%sstatic route %s/%d gw %s",
+			             option == SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE
+			           ? "classless "
+			           : "",
+			           network_net_str,
+			           (int) r_plen,
+			           gateway_str);
+			g_string_append_printf (nm_gstring_add_space_delimiter (  option == SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE
+			                                                        ? str_classless
+			                                                        : str_static),
+			                        "%s/%d %s",
+			                        network_net_str,
+			                        (int) r_plen,
+			                        gateway_str);
 
-				s = nm_utils_inet4_ntop (network_net, addr_str);
-				gw_str = nm_utils_inet4_ntop (r_gateway.s_addr, addr_str2);
-				LOG_LEASE (LOGD_DHCP4, "static route %s/%d gw %s", s, (int) r_plen, gw_str);
-				g_string_append_printf (str, "%s%s/%d %s",
-				                        str->len ? " " : "",
-				                        s,
-				                        (int) r_plen,
-				                        gw_str);
-			} else {
-				if (!static_default_gateway) {
-					static_default_gateway = TRUE;
-					gateway_has = TRUE;
-					gateway = r_gateway.s_addr;
-				}
+			if (   option == SD_DHCP_OPTION_STATIC_ROUTE
+			    && has_classless_route) {
+				/* RFC 3443: if the DHCP server returns both a Classless Static Routes
+				 * option and a Static Routes option, the DHCP client MUST ignore the
+				 * Static Routes option. */
+				continue;
 			}
+
+			if (   r_plen == 0
+			    && option == SD_DHCP_OPTION_STATIC_ROUTE) {
+				/* for option 33 (static route), RFC 2132 says:
+				 *
+				 * The default route (0.0.0.0) is an illegal destination for a static
+				 * route. */
+				continue;
+			}
+
+			if (r_plen == 0) {
+				/* if there are multiple default routes, we add them with differing
+				 * metrics. */
+				m = default_route_metric;
+				if (default_route_metric < G_MAXUINT32)
+					default_route_metric++;
+
+				has_router_from_classless = TRUE;
+			} else
+				m = route_metric;
+
+			nm_ip4_config_add_route (ip4_config,
+			                         &((const NMPlatformIP4Route) {
+			                             .network       = network_net,
+			                             .plen          = r_plen,
+			                             .gateway       = r_gateway.s_addr,
+			                             .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
+			                             .metric        = m,
+			                             .table_coerced = nm_platform_route_table_coerce (route_table),
+			                         }),
+			                         NULL);
 		}
-		if (str->len)
-			add_option (options, dhcp4_requests, SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE, str->str);
+
+		if (str_classless && str_classless->len > 0)
+			add_option (options, dhcp4_requests, SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE, str_classless->str);
+		if (str_static && str_static->len > 0)
+			add_option (options, dhcp4_requests, SD_DHCP_OPTION_STATIC_ROUTE, str_static->str);
 	}
 
-	/* If the DHCP server returns both a Classless Static Routes option and a
-	 * Router option, the DHCP client MUST ignore the Router option [RFC 3442].
-	 * Be more lenient and ignore the Router option only if Classless Static
-	 * Routes contain a default gateway (as other DHCP backends do).
-	 */
-	if (   !static_default_gateway
-	    && sd_dhcp_lease_get_router (lease, &a_router) >= 0) {
-		gateway_has = TRUE;
-		gateway = a_router.s_addr;
-	}
-
-	if (gateway_has) {
-		s = nm_utils_inet4_ntop (gateway, addr_str);
+	/* FIXME: internal client only supports returing the first router. */
+	if (sd_dhcp_lease_get_router (lease, &a_router) >= 0) {
+		s = nm_utils_inet4_ntop (a_router.s_addr, addr_str);
 		LOG_LEASE (LOGD_DHCP4, "gateway %s", s);
 		add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROUTER, s);
-		nm_ip4_config_add_route (ip4_config,
-		                         &((const NMPlatformIP4Route) {
-		                             .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
-		                             .gateway       = gateway,
-		                             .table_coerced = nm_platform_route_table_coerce (route_table),
-		                             .metric        = route_metric,
-		                         }),
-		                         NULL);
+
+		/* If the DHCP server returns both a Classless Static Routes option and a
+		 * Router option, the DHCP client MUST ignore the Router option [RFC 3442].
+		 *
+		 * Be more lenient and ignore the Router option only if Classless Static
+		 * Routes contain a default gateway (as other DHCP backends do).
+		 */
+		if (!has_router_from_classless) {
+			nm_ip4_config_add_route (ip4_config,
+			                         &((const NMPlatformIP4Route) {
+			                             .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
+			                             .gateway       = a_router.s_addr,
+			                             .table_coerced = nm_platform_route_table_coerce (route_table),
+			                             .metric        = route_metric,
+			                         }),
+			                         NULL);
+		}
 	}
 
 	if (   sd_dhcp_lease_get_mtu (lease, &mtu) >= 0
