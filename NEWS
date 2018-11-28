@@ -140,8 +140,8 @@ Overview of changes since NetworkManager-1.8
 
 This is a new stable release of NetworkManager.  Notable changes include:
 
-* NetworkManager includes now basic OpenVSwitch support, good enough
-    to be capable of setting up simple OpenVSwitch configurations.
+* NetworkManager includes now basic Open vSwitch support, good enough
+    to be capable of setting up simple Open vSwitch configurations.
 * Added support for activating PPP connections on non-Ethernet
   interfaces.
 * It is now possible to authenticate to a Wi-Fi network using WPS

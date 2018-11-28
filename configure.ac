@@ -828,8 +828,8 @@ else
     AC_DEFINE(WITH_DHCPCANON, 0, [Define if you have dhcpcanon])
 fi
 
-# OpenVSwitch integration
-AC_ARG_ENABLE(ovs, AS_HELP_STRING([--enable-ovs], [enable OpenVSwitch support]))
+# Open vSwitch integration
+AC_ARG_ENABLE(ovs, AS_HELP_STRING([--enable-ovs], [enable Open vSwitch support]))
 if test "${enable_ovs}" != "no"; then
 	enable_ovs='yes'
 	if test "$have_jansson" = "no"; then

@@ -586,10 +586,10 @@ foreach client : [ 'dhclient', 'dhcpcd', 'dhcpcanon' ]
   dhcp_summary += '\n'
 endforeach
 
-# OpenVSwitch integration
+# Open vSwitch integration
 enable_ovs = get_option('ovs')
 if enable_ovs
-  assert(jansson_dep.found(), 'jansson is needed for OpenVSwitch integration. Use -Dovs=false to disable it')
+  assert(jansson_dep.found(), 'jansson is needed for Open vSwitch integration. Use -Dovs=false to disable it')
 endif
 
 # DNS resolv.conf managers

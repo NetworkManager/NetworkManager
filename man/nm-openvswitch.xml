@@ -26,30 +26,30 @@
 <refentry id="nm-openvswitch">
   <refentryinfo>
     <title>nm-openvswitch</title>
-    <author>NetworkManager OpenVSwitch support</author>
+    <author>NetworkManager Open vSwitch support</author>
   </refentryinfo>
 
   <refmeta>
     <refentrytitle>nm-openvswitch</refentrytitle>
     <manvolnum>7</manvolnum>
     <refmiscinfo class="source">NetworkManager</refmiscinfo>
-    <refmiscinfo class="manual">OpenVSwitch support overview</refmiscinfo>
+    <refmiscinfo class="manual">Open vSwitch support overview</refmiscinfo>
     <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>
   </refmeta>
 
   <refnamediv>
     <refname>nm-openvswitch</refname>
-    <refpurpose>overview of NetworkManager OpenVSwitch support</refpurpose>
+    <refpurpose>overview of NetworkManager Open vSwitch support</refpurpose>
   </refnamediv>
 
   <refsect1>
     <title>Overview</title>
 
-    <para>NetworkManager includes basic OpenVSwitch support, good enough
-    to be capable of setting up simple OpenVSwitch configurations. It is not
-    extensive and does not expose all functionality of OpenVSwitch provides.
+    <para>NetworkManager includes basic Open vSwitch support, good enough
+    to be capable of setting up simple Open vSwitch configurations. It is not
+    extensive and does not expose all functionality of Open vSwitch provides.
     For large or complicated deployments users are advised to use native tools
-    shipped with OpenVSwitch. This document seeks to provide overview of
+    shipped with Open vSwitch. This document seeks to provide overview of
     functionality currently provided by NetworkManager, its capabilities and
     limitations.</para>
 
@@ -182,10 +182,10 @@ Connection 'ovs-slave-eth3' (8dedeecb-ed12-482b-b77a-24a4fb835136) successfully 
 
     <itemizedlist>
        <listitem>
-          <para>Not all OpenVSwitch capabilities are supported.</para>
+          <para>Not all Open vSwitch capabilities are supported.</para>
        </listitem>
        <listitem>
-          <para>OpenVSwitch devices don't expose many useful properties on D-Bus.</para>
+          <para>Open vSwitch devices don't expose many useful properties on D-Bus.</para>
        </listitem>
     </itemizedlist>
     <para>Probably many more.</para>
