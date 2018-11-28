@@ -49,6 +49,7 @@ typedef struct {
 	bool alive:1;
 	bool dbus_client_confirmed:1;
 	bool dbus_client_watching:1;
+	bool connection_was_visible:1;
 } NMKeepAlivePrivate;
 
 struct _NMKeepAlive {
@@ -102,13 +103,17 @@ _is_alive (NMKeepAlive *self)
 		return FALSE;
 	}
 
-	if (priv->connection) {
-		if (!NM_FLAGS_HAS (nm_settings_connection_get_flags (priv->connection),
-		                   NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE)) {
-			/* the connection is invisible (and apparently has no D-Bus client
-			 * watch above). The instance is dead. */
-			return FALSE;
-		}
+	if (   priv->connection
+	    && priv->connection_was_visible
+	    && !NM_FLAGS_HAS (nm_settings_connection_get_flags (priv->connection),
+	                      NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE)) {
+		/* note that we only declare the keep-alive as dead due to invisible
+		 * connection, if
+		 *    (1) we monitor a connection, obviously
+		 *    (2) the connection was visible earlier and is no longer. It was
+		 *        was invisible all the time, it does not suffice.
+		 */
+		return FALSE;
 	}
 
 	/* by default, the instance is alive. */
@@ -144,6 +149,24 @@ static void
 connection_flags_changed (NMSettingsConnection *connection,
                           NMKeepAlive          *self)
 {
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+
+	if (   !priv->connection_was_visible
+	    && NM_FLAGS_HAS (nm_settings_connection_get_flags (priv->connection),
+	                     NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE)) {
+		/* the profile was never visible but now it becomes visible.
+		 * Remember that.
+		 *
+		 * Before this happens (that is, if the device was invisible all along),
+		 * the keep alive instance is considered alive (w.r.t. watching the connection).
+		 *
+		 * The reason is to allow a user to manually activate an invisible profile and keep
+		 * it alive. At least, as long until the user logs out the first time (which is the
+		 * first time, the profiles changes from visible to invisible).
+		 *
+		 * Yes, that is odd. How to improve? */
+		priv->connection_was_visible = TRUE;
+	}
 	_notify_alive (self);
 }
 
@@ -168,6 +191,8 @@ _set_settings_connection_watch_visible (NMKeepAlive *self,
 	if (   connection
 	    && !priv->disarmed) {
 		priv->connection = g_object_ref (connection);
+		priv->connection_was_visible = NM_FLAGS_HAS (nm_settings_connection_get_flags (priv->connection),
+		                                             NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE);
 		g_signal_connect (priv->connection,
 		                  NM_SETTINGS_CONNECTION_FLAGS_CHANGED,
 		                  G_CALLBACK (connection_flags_changed),
