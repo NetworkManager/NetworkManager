@@ -3241,7 +3241,7 @@ msgstr "Hálózatkezelés"
 msgid "Radio switches"
 msgstr "Rádiókapcsolók"
 
-#. no argument, show current WiFi state
+#. no argument, show current Wi-Fi state
 #: ../clients/cli/general.c:1011
 msgid "Wi-Fi radio switch"
 msgstr "Wi-Fi rádiókapcsoló"
@@ -10186,13 +10186,13 @@ msgstr ""
 "felébresztését"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:7
-msgid "Enable or disable WiFi devices"
-msgstr "WiFi eszközök be- és kikapcsolása"
+msgid "Enable or disable Wi-Fi devices"
+msgstr "Wi-Fi eszközök be- és kikapcsolása"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:8
-msgid "System policy prevents enabling or disabling WiFi devices"
+msgid "System policy prevents enabling or disabling Wi-Fi devices"
 msgstr ""
-"A rendszer házirendje megakadályozza a WiFi eszközök be- vagy kikapcsolását"
+"A rendszer házirendje megakadályozza a Wi-Fi eszközök be- vagy kikapcsolását"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:9
 msgid "Enable or disable mobile broadband devices"
@@ -10225,23 +10225,23 @@ msgstr ""
 "A rendszer házirendje megakadályozza a hálózati kapcsolatok felügyeletét"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:15
-msgid "Connection sharing via a protected WiFi network"
-msgstr "Kapcsolatmegosztás védett WiFi hálózaton"
+msgid "Connection sharing via a protected Wi-Fi network"
+msgstr "Kapcsolatmegosztás védett Wi-Fi hálózaton"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:16
-msgid "System policy prevents sharing connections via a protected WiFi network"
+msgid "System policy prevents sharing connections via a protected Wi-Fi network"
 msgstr ""
-"A rendszer házirendje megakadályozza a kapcsolatok megosztását védett WiFi "
+"A rendszer házirendje megakadályozza a kapcsolatok megosztását védett Wi-Fi "
 "hálózaton"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:17
-msgid "Connection sharing via an open WiFi network"
-msgstr "Kapcsolatmegosztás nyílt WiFi hálózaton"
+msgid "Connection sharing via an open Wi-Fi network"
+msgstr "Kapcsolatmegosztás nyílt Wi-Fi hálózaton"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:18
-msgid "System policy prevents sharing connections via an open WiFi network"
+msgid "System policy prevents sharing connections via an open Wi-Fi network"
 msgstr ""
-"A rendszer házirendje megakadályozza a kapcsolatok megosztását nyílt WiFi "
+"A rendszer házirendje megakadályozza a kapcsolatok megosztását nyílt Wi-Fi "
 "hálózaton"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:19
@@ -10301,13 +10301,13 @@ msgstr ""
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:29
 #, fuzzy
 msgid "Enable or disable device statistics"
-msgstr "WiFi eszközök be- és kikapcsolása"
+msgstr "Wi-Fi eszközök be- és kikapcsolása"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:30
 #, fuzzy
 msgid "System policy prevents enabling or disabling device statistics"
 msgstr ""
-"A rendszer házirendje megakadályozza a WiFi eszközök be- vagy kikapcsolását"
+"A rendszer házirendje megakadályozza a Wi-Fi eszközök be- vagy kikapcsolását"
 
 #: ../shared/nm-utils/nm-shared-utils.c:345
 #, c-format

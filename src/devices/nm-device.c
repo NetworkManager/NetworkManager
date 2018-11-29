@@ -5305,7 +5305,7 @@ nm_device_autoconnect_allowed (NMDevice *self)
 	/* The 'autoconnect-allowed' signal is emitted on a device to allow
 	 * other listeners to block autoconnect on the device if they wish.
 	 * This is mainly used by the OLPC Mesh devices to block autoconnect
-	 * on their companion WiFi device as they share radio resources and
+	 * on their companion Wi-Fi device as they share radio resources and
 	 * cannot be connected at the same time.
 	 */
 

@@ -3523,7 +3523,7 @@ msgstr "ନେଟୱର୍କିଙ୍ଗ"
 msgid "Radio switches"
 msgstr "ରେଡିଓ ସ୍ୱୀଚଗୁଡ଼ିକ"
 
-#. no argument, show current WiFi state
+#. no argument, show current Wi-Fi state
 #: ../clients/cli/general.c:1011
 msgid "Wi-Fi radio switch"
 msgstr "Wi-Fi ରେଡିଓ ସ୍ୱୀଚ"
@@ -10523,12 +10523,12 @@ msgid "System policy prevents putting NetworkManager to sleep or waking it up"
 msgstr "ତନ୍ତ୍ର ନିତୀ NetworkManager କୁ ସୁପ୍ତ କିମ୍ବା ଜାଗ୍ରତ ରହିବାରୁ ବାରଣ କରିଥାଏ"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:7
-msgid "Enable or disable WiFi devices"
-msgstr "WiFi ଉପକରଣଗୁଡ଼ିକୁ ସକ୍ରିୟ କିମ୍ବା ନିଷ୍କ୍ରିୟ କରନ୍ତୁ"
+msgid "Enable or disable Wi-Fi devices"
+msgstr "Wi-Fi ଉପକରଣଗୁଡ଼ିକୁ ସକ୍ରିୟ କିମ୍ବା ନିଷ୍କ୍ରିୟ କରନ୍ତୁ"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:8
-msgid "System policy prevents enabling or disabling WiFi devices"
-msgstr "ତନ୍ତ୍ର ନିତୀ WiFi ଉପକରଣଗୁଡ଼ିକୁ ସକ୍ରିୟ କିମ୍ବା ନିଷ୍କ୍ରିୟ ହେବାରୁ ବାରଣ କରିଥାଏ"
+msgid "System policy prevents enabling or disabling Wi-Fi devices"
+msgstr "ତନ୍ତ୍ର ନିତୀ Wi-Fi ଉପକରଣଗୁଡ଼ିକୁ ସକ୍ରିୟ କିମ୍ବା ନିଷ୍କ୍ରିୟ ହେବାରୁ ବାରଣ କରିଥାଏ"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:9
 msgid "Enable or disable mobile broadband devices"
@@ -10557,20 +10557,20 @@ msgid "System policy prevents control of network connections"
 msgstr "ତନ୍ତ୍ର ନିତୀ ନେଟୱର୍କ ସଂଯୋଗଗୁଡ଼ିକର ନିୟନ୍ତ୍ରଣକୁ ବାରଣ କରିଥାଏ"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:15
-msgid "Connection sharing via a protected WiFi network"
-msgstr "ଗୋଟିଏ ସୁରକ୍ଷିତ WiFi ନେଟୱର୍କରେ ସଂଯୋଗ ସହଭାଗ"
+msgid "Connection sharing via a protected Wi-Fi network"
+msgstr "ଗୋଟିଏ ସୁରକ୍ଷିତ Wi-Fi ନେଟୱର୍କରେ ସଂଯୋଗ ସହଭାଗ"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:16
-msgid "System policy prevents sharing connections via a protected WiFi network"
-msgstr "ତନ୍ତ୍ର ନିତୀ ଗୋଟିଏ ସୁରକ୍ଷିତ WiFi ନେଟୱର୍କରେ ସଂଯୋଗ ସହଭାଗ କରିବାରେ ବାରଣ କରିଥାଏ"
+msgid "System policy prevents sharing connections via a protected Wi-Fi network"
+msgstr "ତନ୍ତ୍ର ନିତୀ ଗୋଟିଏ ସୁରକ୍ଷିତ Wi-Fi ନେଟୱର୍କରେ ସଂଯୋଗ ସହଭାଗ କରିବାରେ ବାରଣ କରିଥାଏ"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:17
-msgid "Connection sharing via an open WiFi network"
-msgstr "ଗୋଟିଏ ଖୋଲା WiFi ନେଟୱର୍କରେ ସଂଯୋଗ ସହଭାଗ"
+msgid "Connection sharing via an open Wi-Fi network"
+msgstr "ଗୋଟିଏ ଖୋଲା Wi-Fi ନେଟୱର୍କରେ ସଂଯୋଗ ସହଭାଗ"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:18
-msgid "System policy prevents sharing connections via an open WiFi network"
-msgstr "ତନ୍ତ୍ର ନିତୀ ଗୋଟିଏ ଖୋଲା WiFi ନେଟୱର୍କରେ ସଂଯୋଗ ସହଭାଗ କରିବାରେ ବାରଣ କରିଥାଏ"
+msgid "System policy prevents sharing connections via an open Wi-Fi network"
+msgstr "ତନ୍ତ୍ର ନିତୀ ଗୋଟିଏ ଖୋଲା Wi-Fi ନେଟୱର୍କରେ ସଂଯୋଗ ସହଭାଗ କରିବାରେ ବାରଣ କରିଥାଏ"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:19
 msgid "Modify personal network connections"

@@ -511,7 +511,7 @@ wifi_wext_set_mesh_ssid (NMWifiUtils *data, const guint8 *ssid, gsize len)
 
 		errsv = errno;
 		_LOGE (LOGD_PLATFORM | LOGD_WIFI | LOGD_OLPC,
-		       "(%s): error setting SSID to '%s': %s",
+		       "(%s): error setting SSID to %s: %s",
 		       ifname,
 		       (ssid_str = _nm_utils_ssid_to_string_arr (ssid, len)),
 		       strerror (errsv));
@@ -751,7 +751,7 @@ nm_wifi_utils_wext_new (int ifindex, gboolean check_scan)
 		wext->parent.caps |= NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
 
 	_LOGI (LOGD_PLATFORM | LOGD_WIFI,
-	       "(%s): using WEXT for WiFi device control",
+	       "(%s): using WEXT for Wi-Fi device control",
 	       ifname);
 
 	return (NMWifiUtils *) wext;

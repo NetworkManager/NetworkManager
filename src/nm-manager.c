@@ -7037,14 +7037,14 @@ rfkill_change (NMManager *self, const char *desc, RfKillType rtype, gboolean ena
 
 	len = write (fd, &event, sizeof (event));
 	if (len < 0) {
-		_LOGW (LOGD_RFKILL, "rfkill: (%s): failed to change WiFi killswitch state: (%d) %s",
+		_LOGW (LOGD_RFKILL, "rfkill: (%s): failed to change Wi-Fi killswitch state: (%d) %s",
 		       desc, errno, g_strerror (errno));
 	} else if (len == sizeof (event)) {
 		_LOGI (LOGD_RFKILL, "rfkill: %s hardware radio set %s",
 		       desc, enabled ? "enabled" : "disabled");
 	} else {
 		/* Failed to write full structure */
-		_LOGW (LOGD_RFKILL, "rfkill: (%s): failed to change WiFi killswitch state", desc);
+		_LOGW (LOGD_RFKILL, "rfkill: (%s): failed to change Wi-Fi killswitch state", desc);
 	}
 
 	nm_close (fd);
@@ -7241,7 +7241,7 @@ constructed (GObject *object)
 	                  G_CALLBACK (rfkill_manager_rfkill_changed_cb),
 	                  self);
 
-	/* Force kernel WiFi/WWAN rfkill state to follow NM saved WiFi/WWAN state
+	/* Force kernel Wi-Fi/WWAN rfkill state to follow NM saved Wi-Fi/WWAN state
 	 * in case the BIOS doesn't save rfkill state, and to be consistent with user
 	 * changes to the WirelessEnabled/WWANEnabled properties which toggle kernel
 	 * rfkill.
@@ -7274,7 +7274,7 @@ nm_manager_init (NMManager *self)
 	priv->radio_states[RFKILL_TYPE_WLAN].key = NM_CONFIG_STATE_PROPERTY_WIFI_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WLAN].prop = NM_MANAGER_WIRELESS_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WLAN].hw_prop = NM_MANAGER_WIRELESS_HARDWARE_ENABLED;
-	priv->radio_states[RFKILL_TYPE_WLAN].desc = "WiFi";
+	priv->radio_states[RFKILL_TYPE_WLAN].desc = "Wi-Fi";
 	priv->radio_states[RFKILL_TYPE_WLAN].rtype = RFKILL_TYPE_WLAN;
 
 	priv->radio_states[RFKILL_TYPE_WWAN].user_enabled = TRUE;

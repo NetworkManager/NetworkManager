@@ -137,7 +137,7 @@ if not connection_path:
 
 device_path = get_wifi_device_path()
 if not device_path:
-    print("no wifi device found")
+    print("no Wi-Fi device found")
     sys.exit(1)
 
 # Is it already activated?

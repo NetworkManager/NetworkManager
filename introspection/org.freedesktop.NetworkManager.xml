@@ -76,7 +76,7 @@
         ActivateConnection:
         @connection: The connection to activate. If "/" is given, a valid device path must be given, and NetworkManager picks the best connection to activate for the given device. VPN connections must always pass a valid connection path.
         @device: The object path of device to be activated for physical connections. This parameter is ignored for VPN connections, because the specific_object (if provided) specifies the device to use.
-        @specific_object: The path of a connection-type-specific object this activation should use. This parameter is currently ignored for wired and mobile broadband connections, and the value of "/" should be used (ie, no specific object). For WiFi connections, pass the object path of a specific AP from the card's scan list, or "/" to pick an AP automatically. For VPN connections, pass the object path of an ActiveConnection object that should serve as the "base" connection (to which the VPN connections lifetime will be tied), or pass "/" and NM will automatically use the current default device.
+        @specific_object: The path of a connection-type-specific object this activation should use. This parameter is currently ignored for wired and mobile broadband connections, and the value of "/" should be used (ie, no specific object). For Wi-Fi connections, pass the object path of a specific AP from the card's scan list, or "/" to pick an AP automatically. For VPN connections, pass the object path of an ActiveConnection object that should serve as the "base" connection (to which the VPN connections lifetime will be tied), or pass "/" and NM will automatically use the current default device.
         @active_connection: The path of the active connection object representing this active connection.
 
         Activate a connection using the supplied device.
@@ -92,7 +92,7 @@
         AddAndActivateConnection:
         @connection: Connection settings and properties; if incomplete missing settings will be automatically completed using the given device and specific object.
         @device: The object path of device to be activated using the given connection.
-        @specific_object: The path of a connection-type-specific object this activation should use. This parameter is currently ignored for wired and mobile broadband connections, and the value of "/" should be used (ie, no specific object). For WiFi connections, pass the object path of a specific AP from the card's scan list, which will be used to complete the details of the newly added connection.
+        @specific_object: The path of a connection-type-specific object this activation should use. This parameter is currently ignored for wired and mobile broadband connections, and the value of "/" should be used (ie, no specific object). For Wi-Fi connections, pass the object path of a specific AP from the card's scan list, which will be used to complete the details of the newly added connection.
         @path: Object path of the new connection that was just added.
         @active_connection: The path of the active connection object representing this active connection.
 
@@ -115,7 +115,7 @@
         AddAndActivateConnection2:
         @connection: Connection settings and properties; if incomplete missing settings will be automatically completed using the given device and specific object.
         @device: The object path of device to be activated using the given connection.
-        @specific_object: The path of a connection-type-specific object this activation should use. This parameter is currently ignored for wired and mobile broadband connections, and the value of "/" should be used (ie, no specific object). For WiFi connections, pass the object path of a specific AP from the card's scan list, which will be used to complete the details of the newly added connection.
+        @specific_object: The path of a connection-type-specific object this activation should use. This parameter is currently ignored for wired and mobile broadband connections, and the value of "/" should be used (ie, no specific object). For Wi-Fi connections, pass the object path of a specific AP from the card's scan list, which will be used to complete the details of the newly added connection.
         @options: Further options for the method call.
         @path: Object path of the new connection that was just added.
         @active_connection: The path of the active connection object representing this active connection.
@@ -183,7 +183,7 @@
 
         Returns the permissions a caller has for various authenticated operations
         that NetworkManager provides, like Enable/Disable networking, changing
-        WiFi, WWAN, and WiMAX state, etc.
+        Wi-Fi, WWAN, and WiMAX state, etc.
     -->
     <method name="GetPermissions">
       <arg name="permissions" type="a{ss}" direction="out"/>

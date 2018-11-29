@@ -198,7 +198,7 @@
     <!--
         DeviceType:
 
-        The general type of the network device; ie Ethernet, WiFi, etc.
+        The general type of the network device; ie Ethernet, Wi-Fi, etc.
 
         Returns: <link linkend="NMDeviceType">NMDeviceType</link>
     -->

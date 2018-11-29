@@ -55,7 +55,7 @@
       The NetworkManager daemon attempts to make networking
       configuration and operation as painless and automatic as
       possible by managing the primary network connection and other
-      network interfaces, like Ethernet, WiFi, and Mobile Broadband
+      network interfaces, like Ethernet, Wi-Fi, and Mobile Broadband
       devices.  NetworkManager will connect any network device when a
       connection for that device becomes available, unless that
       behavior is disabled.  Information about networking is exported

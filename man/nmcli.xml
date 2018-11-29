@@ -2540,9 +2540,9 @@ It's equivalent to the <literal>+bond.options 'option=value'</literal> syntax.</
       </varlistentry>
 
       <varlistentry>
-        <term><userinput>nmcli --show-secrets connection show "My Home WiFi"</userinput></term>
+        <term><userinput>nmcli --show-secrets connection show "My Home Wi-Fi"</userinput></term>
         <listitem>
-          <para>shows details for "My Home WiFi" connection profile with all passwords.
+          <para>shows details for "My Home Wi-Fi" connection profile with all passwords.
           Without <option>--show-secrets</option> option, secrets would not be
           displayed.</para>
         </listitem>

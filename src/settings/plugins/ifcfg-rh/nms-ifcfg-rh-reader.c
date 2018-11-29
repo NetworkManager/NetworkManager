@@ -3528,7 +3528,7 @@ fill_8021x (shvarFile *ifcfg,
 				goto next;
 
 			/* Some EAP methods don't provide keying material, thus they
-			 * cannot be used with WiFi unless they are an inner method
+			 * cannot be used with Wi-Fi unless they are an inner method
 			 * used with TTLS or PEAP or whatever.
 			 */
 			if (wifi && eap->wifi_phase2_only) {

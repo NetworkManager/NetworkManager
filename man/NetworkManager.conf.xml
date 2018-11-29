@@ -271,7 +271,7 @@ no-auto-default=*
             environments where network setup is more or less static or it is
             desirable to save process time but still handle some dynamic
             configurations.  When this option is <literal>true</literal>,
-            network configuration for WiFi, WWAN, Bluetooth, ADSL, and PPPoE
+            network configuration for Wi-Fi, WWAN, Bluetooth, ADSL, and PPPoE
             interfaces cannot be preserved due to their use of external
             services, and these devices will be deconfigured when NetworkManager
             quits even though other interface's configuration may be preserved.

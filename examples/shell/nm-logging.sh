@@ -31,7 +31,7 @@
 # Examples:
 #   nm-logging.sh debug   -  switches the debugging level on
 #   nm-logging.sh info    -  turns debugging off (back to normal)
-#   nm-logging.sh "" "WIFI"     -  changes domain to print only WiFi related messages
+#   nm-logging.sh "" "WIFI"     -  changes domain to print only Wi-Fi related messages
 #   nm-logging.sh err "HW,IP4"  -  will print only error messages related to hardware or IPv4
 #
 

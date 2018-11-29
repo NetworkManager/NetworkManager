@@ -38,8 +38,8 @@
   </action>
 
   <action id="org.freedesktop.NetworkManager.enable-disable-wifi">
-    <_description>Enable or disable WiFi devices</_description>
-    <_message>System policy prevents enabling or disabling WiFi devices</_message>
+    <_description>Enable or disable Wi-Fi devices</_description>
+    <_message>System policy prevents enabling or disabling Wi-Fi devices</_message>
     <defaults>
       <allow_inactive>no</allow_inactive>
       <allow_active>yes</allow_active>
@@ -75,8 +75,8 @@
   </action>
 
   <action id="org.freedesktop.NetworkManager.wifi.share.protected">
-    <_description>Connection sharing via a protected WiFi network</_description>
-    <_message>System policy prevents sharing connections via a protected WiFi network</_message>
+    <_description>Connection sharing via a protected Wi-Fi network</_description>
+    <_message>System policy prevents sharing connections via a protected Wi-Fi network</_message>
     <defaults>
       <allow_inactive>no</allow_inactive>
       <allow_active>yes</allow_active>
@@ -84,8 +84,8 @@
   </action>
 
   <action id="org.freedesktop.NetworkManager.wifi.share.open">
-    <_description>Connection sharing via an open WiFi network</_description>
-    <_message>System policy prevents sharing connections via an open WiFi network</_message>
+    <_description>Connection sharing via an open Wi-Fi network</_description>
+    <_message>System policy prevents sharing connections via an open Wi-Fi network</_message>
     <defaults>
       <allow_inactive>no</allow_inactive>
       <allow_active>yes</allow_active>

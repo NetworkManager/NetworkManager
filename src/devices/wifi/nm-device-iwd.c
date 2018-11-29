@@ -2560,7 +2560,7 @@ nm_device_iwd_new (const char *iface)
 {
 	return g_object_new (NM_TYPE_DEVICE_IWD,
 	                     NM_DEVICE_IFACE, iface,
-	                     NM_DEVICE_TYPE_DESC, "802.11 WiFi",
+	                     NM_DEVICE_TYPE_DESC, "802.11 Wi-Fi",
 	                     NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_WIFI,
 	                     NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_WIFI,
 	                     NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WLAN,

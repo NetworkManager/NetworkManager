@@ -3574,7 +3574,7 @@ msgstr "नेटवर्किंग"
 msgid "Radio switches"
 msgstr "रेडिओ स्विचेस"
 
-#. no argument, show current WiFi state
+#. no argument, show current Wi-Fi state
 #: ../clients/cli/general.c:1011
 msgid "Wi-Fi radio switch"
 msgstr "Wi-Fi रेडिओ स्विच"
@@ -10582,12 +10582,12 @@ msgid "System policy prevents putting NetworkManager to sleep or waking it up"
 msgstr "प्रणाली करार NetworkManager ला स्लीप किंवा वेकअप मध्ये जाण्यापासून रोखते"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:7
-msgid "Enable or disable WiFi devices"
-msgstr "WiFi साधने सुरू किंवा बंद करा"
+msgid "Enable or disable Wi-Fi devices"
+msgstr "Wi-Fi साधने सुरू किंवा बंद करा"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:8
-msgid "System policy prevents enabling or disabling WiFi devices"
-msgstr "प्रणाली करार WiFi साधनांना सुरू किंवा बंद होण्यापासून रोखते"
+msgid "System policy prevents enabling or disabling Wi-Fi devices"
+msgstr "प्रणाली करार Wi-Fi साधनांना सुरू किंवा बंद होण्यापासून रोखते"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:9
 msgid "Enable or disable mobile broadband devices"
@@ -10615,20 +10615,20 @@ msgid "System policy prevents control of network connections"
 msgstr "प्रणाली करार नेटवर्क जोडणीचे नियंत्रण रोखते"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:15
-msgid "Connection sharing via a protected WiFi network"
-msgstr "सुरक्षीत WiFi नेटवर्क द्वारे जोडणीचे शेअरींग करा"
+msgid "Connection sharing via a protected Wi-Fi network"
+msgstr "सुरक्षीत Wi-Fi नेटवर्क द्वारे जोडणीचे शेअरींग करा"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:16
-msgid "System policy prevents sharing connections via a protected WiFi network"
-msgstr "प्रणाली करार सुरक्षीत WiFi नेटवर्क द्वारे जोडणीचे शेअरींग रोखत आहे"
+msgid "System policy prevents sharing connections via a protected Wi-Fi network"
+msgstr "प्रणाली करार सुरक्षीत Wi-Fi नेटवर्क द्वारे जोडणीचे शेअरींग रोखत आहे"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:17
-msgid "Connection sharing via an open WiFi network"
-msgstr "ओपन WiFi नेटवर्क द्वारे कनेक्शन शेअरींग करा"
+msgid "Connection sharing via an open Wi-Fi network"
+msgstr "ओपन Wi-Fi नेटवर्क द्वारे कनेक्शन शेअरींग करा"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:18
-msgid "System policy prevents sharing connections via an open WiFi network"
-msgstr "प्रणाली करार ओपन WiFi नेटवर्क द्वारे जोडणीचे शेअरींग रोखत आहे"
+msgid "System policy prevents sharing connections via an open Wi-Fi network"
+msgstr "प्रणाली करार ओपन Wi-Fi नेटवर्क द्वारे जोडणीचे शेअरींग रोखत आहे"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:19
 msgid "Modify personal network connections"
