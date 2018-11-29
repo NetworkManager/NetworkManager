@@ -343,7 +343,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	ensure_no_signal (link_added);
 	ensure_no_signal (link_changed);
 	ensure_no_signal (link_removed);
-	nmtstp_link_del (NULL, -1, ifindex, NULL);
+	nmtstp_link_delete (NULL, -1, ifindex, NULL, TRUE);
 	accept_signals (master_changed, 0, 1);
 	accept_signals (link_changed, 0, 1);
 	accept_signal (link_removed);
@@ -439,7 +439,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 	free_signal (link_changed);
 
 	/* Delete */
-	nmtstp_link_del (NULL, -1, ifindex, DEVICE_NAME);
+	nmtstp_link_delete (NULL, -1, ifindex, DEVICE_NAME, TRUE);
 	accept_signal (link_removed);
 
 	/* Delete again */
@@ -450,7 +450,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 	if (link_type == NM_LINK_TYPE_VLAN) {
 		SignalData *link_removed_parent = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, link_callback, vlan_parent);
 
-		nmtstp_link_del (NULL, -1, vlan_parent, NULL);
+		nmtstp_link_delete (NULL, -1, vlan_parent, NULL, TRUE);
 		accept_signal (link_removed_parent);
 		free_signal (link_removed_parent);
 	}
@@ -534,7 +534,7 @@ test_bridge_addr (void)
 	g_assert_cmpint (plink->addr.len, ==, sizeof (addr));
 	g_assert (!memcmp (plink->addr.data, addr, sizeof (addr)));
 
-	nmtstp_link_del (NULL, -1, link.ifindex, link.name);
+	nmtstp_link_delete (NULL, -1, link.ifindex, link.name, TRUE);
 }
 
 /*****************************************************************************/
@@ -609,7 +609,7 @@ test_internal (void)
 	accept_signal (link_changed);
 
 	/* Delete device */
-	nmtstp_link_del (NULL, -1, ifindex, DEVICE_NAME);
+	nmtstp_link_delete (NULL, -1, ifindex, DEVICE_NAME, TRUE);
 	accept_signal (link_removed);
 
 	/* Try to delete again */
@@ -897,7 +897,7 @@ test_software_detect (gconstpointer user_data)
 
 			dummy = nmtstp_link_dummy_add (NM_PLATFORM_GET, FALSE, "dummy-tmp");
 			g_assert_cmpint (dummy->ifindex, ==, i);
-			nmtstp_link_del (NM_PLATFORM_GET, FALSE, dummy->ifindex, NULL);
+			nmtstp_link_delete (NM_PLATFORM_GET, FALSE, dummy->ifindex, NULL, TRUE);
 		}
 
 		if (!nmtstp_link_macvlan_add (NULL, ext, DEVICE_NAME, ifindex_parent, &lnk_macvlan))
@@ -1243,9 +1243,9 @@ test_software_detect (gconstpointer user_data)
 		}
 	}
 
-	nmtstp_link_del (NULL, -1, ifindex, DEVICE_NAME);
+	nmtstp_link_delete (NULL, -1, ifindex, DEVICE_NAME, TRUE);
 out_delete_parent:
-	nmtstp_link_del (NULL, -1, ifindex_parent, PARENT_NAME);
+	nmtstp_link_delete (NULL, -1, ifindex_parent, PARENT_NAME, TRUE);
 }
 
 static void
@@ -1822,8 +1822,8 @@ test_vlan_set_xgress (void)
 		_assert_vlan_flags (ifindex, NM_VLAN_FLAG_REORDER_HEADERS | NM_VLAN_FLAG_GVRP);
 	}
 
-	nmtstp_link_del (NULL, -1, ifindex, DEVICE_NAME);
-	nmtstp_link_del (NULL, -1, ifindex_parent, PARENT_NAME);
+	nmtstp_link_delete (NULL, -1, ifindex, DEVICE_NAME, TRUE);
+	nmtstp_link_delete (NULL, -1, ifindex_parent, PARENT_NAME, TRUE);
 }
 
 /*****************************************************************************/
@@ -1879,7 +1879,7 @@ test_create_many_links_do (guint n_devices)
 		if (EX == 2)
 			nmtstp_run_command_check ("ip link delete %s", name);
 		else
-			nmtstp_link_del (NULL, EX, g_array_index (ifindexes, int, i), name);
+			nmtstp_link_delete (NULL, EX, g_array_index (ifindexes, int, i), name, TRUE);
 	}
 
 	_LOGI (">>> process events after deleting devices...");
@@ -1965,7 +1965,7 @@ test_nl_bugs_veth (void)
 	});
 
 out:
-	nmtstp_link_del (NULL, -1, ifindex_veth0, IFACE_VETH0);
+	nmtstp_link_delete (NULL, -1, ifindex_veth0, IFACE_VETH0, TRUE);
 	g_assert (!nmtstp_link_get (NM_PLATFORM_GET, ifindex_veth0, IFACE_VETH0));
 	g_assert (!nmtstp_link_get (NM_PLATFORM_GET, ifindex_veth1, IFACE_VETH1));
 	nmtstp_namespace_handle_release (ns_handle);
@@ -2018,7 +2018,7 @@ again:
 	}
 
 	g_assert (!nmtstp_link_get (NM_PLATFORM_GET, ifindex_bond0, IFACE_BOND0));
-	nmtstp_link_del (NULL, -1, ifindex_dummy0, IFACE_DUMMY0);
+	nmtstp_link_delete (NULL, -1, ifindex_dummy0, IFACE_DUMMY0, TRUE);
 }
 
 /*****************************************************************************/
@@ -2072,8 +2072,8 @@ again:
 		goto again;
 	}
 
-	nmtstp_link_del (NULL, -1, ifindex_bridge0, IFACE_BRIDGE0);
-	nmtstp_link_del (NULL, -1, ifindex_dummy0, IFACE_DUMMY0);
+	nmtstp_link_delete (NULL, -1, ifindex_bridge0, IFACE_BRIDGE0, TRUE);
+	nmtstp_link_delete (NULL, -1, ifindex_dummy0, IFACE_DUMMY0, TRUE);
 }
 
 /*****************************************************************************/
@@ -2637,8 +2637,8 @@ test_sysctl_rename (void)
 	}
 
 	nm_platform_process_events (PL);
-	nmtstp_link_del (PL, -1, ifindex[0], NULL);
-	nmtstp_link_del (PL, -1, ifindex[1], NULL);
+	nmtstp_link_delete (PL, -1, ifindex[0], NULL, TRUE);
+	nmtstp_link_delete (PL, -1, ifindex[1], NULL, TRUE);
 }
 
 /*****************************************************************************/
@@ -2717,7 +2717,7 @@ test_sysctl_netns_switch (void)
 	else
 		g_assert_cmpint (ifindex_tmp, ==, -1);
 
-	nmtstp_link_del (PL, FALSE, ifindex, NULL);
+	nmtstp_link_delete (PL, FALSE, ifindex, NULL, TRUE);
 }
 
 /*****************************************************************************/

@@ -327,10 +327,11 @@ const NMPlatformLink *nmtstp_link_vxlan_add (NMPlatform *platform,
                                              const char *name,
                                              const NMPlatformLnkVxlan *lnk);
 
-void nmtstp_link_del (NMPlatform *platform,
-                      gboolean external_command,
-                      int ifindex,
-                      const char *name);
+void nmtstp_link_delete (NMPlatform *platform,
+                         gboolean external_command,
+                         int ifindex,
+                         const char *name,
+                         gboolean require_exist);
 
 /*****************************************************************************/
 
