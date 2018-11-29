@@ -242,6 +242,8 @@ BuildRequires: libubsan
 %endif
 %endif
 
+Provides: %{name}-dispatcher%{?_isa} = %{epoch}:%{version}-%{release}
+
 # NetworkManager uses various parts of systemd-networkd internally, including
 # DHCP client, IPv4 Link-Local address negotiation or LLDP support.
 # This provide is essentially here so that NetworkManager shows on Security
