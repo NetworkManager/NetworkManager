@@ -971,13 +971,9 @@ nm_platform_link_dummy_add (NMPlatform *self,
 gboolean
 nm_platform_link_delete (NMPlatform *self, int ifindex)
 {
-	const NMPlatformLink *pllink;
-
 	_CHECK_SELF (self, klass, FALSE);
 
-	pllink = nm_platform_link_get (self, ifindex);
-	if (!pllink)
-		return FALSE;
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
 	_LOG3D ("link: deleting");
 	return klass->link_delete (self, ifindex);
@@ -994,16 +990,10 @@ nm_platform_link_delete (NMPlatform *self, int ifindex)
 gboolean
 nm_platform_link_set_netns (NMPlatform *self, int ifindex, int netns_fd)
 {
-	const NMPlatformLink *pllink;
-
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (netns_fd > 0, FALSE);
-
-	pllink = nm_platform_link_get (self, ifindex);
-	if (!pllink)
-		return FALSE;
 
 	_LOG3D ("link: move link to network namespace with fd %d", netns_fd);
 	return klass->link_set_netns (self, ifindex, netns_fd);
