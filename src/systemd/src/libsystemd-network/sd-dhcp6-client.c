@@ -58,6 +58,7 @@ struct sd_dhcp6_client {
         struct sd_dhcp6_lease *lease;
         int fd;
         bool information_request;
+        bool has_iaid;
         be16_t *req_opts;
         size_t req_opts_allocated;
         size_t req_opts_len;
@@ -261,7 +262,6 @@ int sd_dhcp6_client_set_duid(
         return dhcp6_client_set_duid_internal(client, duid_type, duid, duid_len, 0);
 }
 
-#if 0 /* NM_IGNORED */
 int sd_dhcp6_client_set_duid_llt(
                 sd_dhcp6_client *client,
                 usec_t llt_time) {
@@ -274,10 +274,10 @@ int sd_dhcp6_client_set_iaid(sd_dhcp6_client *client, uint32_t iaid) {
 
         client->ia_na.ia_na.id = htobe32(iaid);
         client->ia_pd.ia_pd.id = htobe32(iaid);
+        client->has_iaid = true;
 
         return 0;
 }
-#endif /* NM_IGNORED */
 
 int sd_dhcp6_client_set_fqdn(
                 sd_dhcp6_client *client,
@@ -798,7 +798,7 @@ static int client_ensure_iaid(sd_dhcp6_client *client) {
 
         assert(client);
 
-        if (client->ia_na.ia_na.id)
+        if (client->has_iaid)
                 return 0;
 
         r = dhcp_identifier_set_iaid(client->ifindex, client->mac_addr, client->mac_addr_len, true, &iaid);
@@ -807,6 +807,7 @@ static int client_ensure_iaid(sd_dhcp6_client *client) {
 
         client->ia_na.ia_na.id = iaid;
         client->ia_pd.ia_pd.id = iaid;
+        client->has_iaid = true;
 
         return 0;
 }
