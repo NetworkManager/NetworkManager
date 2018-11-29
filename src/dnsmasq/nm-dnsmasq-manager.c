@@ -235,6 +235,7 @@ create_dm_cmd_line (const char *iface,
 			g_string_append_c (s, ',');
 			g_string_append (s, nm_utils_inet4_ntop (nm_ip4_config_get_nameserver (ip4_config, i), tmpaddr));
 		}
+		nm_cmd_line_add_string (cmd, s->str);
 		g_string_truncate (s, 0);
 	}
 
@@ -244,6 +245,7 @@ create_dm_cmd_line (const char *iface,
 			g_string_append_c (s, ',');
 			g_string_append (s, nm_ip4_config_get_search (ip4_config, i));
 		}
+		nm_cmd_line_add_string (cmd, s->str);
 		g_string_truncate (s, 0);
 	}
 
