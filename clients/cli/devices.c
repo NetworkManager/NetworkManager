@@ -1849,7 +1849,6 @@ add_and_activate_cb (GObject *client,
 	AddAndActivateInfo *info = (AddAndActivateInfo *) user_data;
 	NmCli *nmc = info->nmc;
 	NMDevice *device = info->device;
-	NMActiveConnectionState state;
 	NMActiveConnection *active;
 	GError *error = NULL;
 
@@ -1872,42 +1871,15 @@ add_and_activate_cb (GObject *client,
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		quit ();
 	} else {
-		state = nm_active_connection_get_state (active);
-
-		if (state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
-			if (info->hotspot)
-				g_string_printf (nmc->return_text, _("Error: Failed to setup a Wi-Fi hotspot"));
-			else if (info->create)
-				g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: Unknown error"));
-			else
-				g_string_printf (nmc->return_text, _("Error: Failed to activate connection: Unknown error"));
-			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-			g_object_unref (active);
-			quit ();
-		}
-
-		if (nmc->nowait_flag || state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-			/* User doesn't want to wait or already activated */
-			if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-				if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
-					nmc_terminal_erase_line ();
-				if (info->hotspot)
-					g_print (_("Hotspot '%s' activated on device '%s'\n"),
-					         nm_active_connection_get_id (active), nm_device_get_iface (device));
-				else if (info->create)
-					g_print (_("Connection with UUID '%s' created and activated on device '%s'\n"),
-					         nm_active_connection_get_uuid (active), nm_device_get_iface (device));
-				else
-					g_print (_("Connection with ID '%s', UUID '%s' activated on device '%s'\n"),
-					         nm_active_connection_get_id (active), nm_active_connection_get_uuid (active),
-					         nm_device_get_iface (device));
-			}
+		if (nmc->nowait_flag) {
 			g_object_unref (active);
 			quit ();
 		} else {
 			g_object_ref (device);
 			g_signal_connect (device, "notify::state", G_CALLBACK (device_state_cb), active);
 			g_signal_connect (active, "notify::state", G_CALLBACK (active_state_cb), device);
+
+			connected_state_cb (device, active);
 
 			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);  /* Exit if timeout expires */
 
@@ -1952,7 +1924,6 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 	GError *error = NULL;
 	const GPtrArray *devices;
 	NMDevice *device;
-	NMDeviceState state;
 
 	active = nm_client_activate_connection_finish (NM_CLIENT (client), result, &error);
 
@@ -1982,14 +1953,8 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 		}
 
 		device = g_ptr_array_index (devices, 0);
-		state = nm_device_get_state (device);
 
-		if (nmc->nowait_flag || state == NM_DEVICE_STATE_ACTIVATED) {
-			/* Don't want to wait or device already activated */
-			if (state == NM_DEVICE_STATE_ACTIVATED && nmc->nmc_config.print_output == NMC_PRINT_PRETTY) {
-				nmc_terminal_erase_line ();
-				g_print (_("Device '%s' has been connected.\n"), nm_device_get_iface (device));
-			}
+		if (nmc->nowait_flag) {
 			g_object_unref (active);
 			quit ();
 		} else {
@@ -2003,6 +1968,9 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 			g_object_ref (device);
 			g_signal_connect (device, "notify::state", G_CALLBACK (device_state_cb), active);
 			g_signal_connect (active, "notify::state", G_CALLBACK (active_state_cb), device);
+
+			connected_state_cb (device, active);
+
 			/* Start timer not to loop forever if "notify::state" signal is not issued */
 			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
 		}
