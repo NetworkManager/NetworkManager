@@ -756,9 +756,6 @@ nm_platform_link_get_obj (NMPlatform *self,
 
 	_CHECK_SELF (self, klass, NULL);
 
-	if (ifindex <= 0)
-		return NULL;
-
 	obj_cache = nmp_cache_lookup_link (nm_platform_get_cache (self), ifindex);
 	if (   !obj_cache
 	    || (   visible_only
@@ -1058,8 +1055,6 @@ nm_platform_link_get_name (NMPlatform *self, int ifindex)
 {
 	const NMPlatformLink *pllink;
 
-	_CHECK_SELF (self, klass, NULL);
-
 	pllink = nm_platform_link_get (self, ifindex);
 	return pllink ? pllink->name : NULL;
 }
@@ -1076,8 +1071,6 @@ NMLinkType
 nm_platform_link_get_type (NMPlatform *self, int ifindex)
 {
 	const NMPlatformLink *pllink;
-
-	_CHECK_SELF (self, klass, NM_LINK_TYPE_NONE);
 
 	pllink = nm_platform_link_get (self, ifindex);
 	return pllink ? pllink->type : NM_LINK_TYPE_NONE;
@@ -1097,10 +1090,7 @@ nm_platform_link_get_type_name (NMPlatform *self, int ifindex)
 {
 	const NMPObject *obj;
 
-	_CHECK_SELF (self, klass, NULL);
-
 	obj = nm_platform_link_get_obj (self, ifindex, TRUE);
-
 	if (!obj)
 		return NULL;
 
@@ -1221,11 +1211,6 @@ nm_platform_link_get_ifi_flags (NMPlatform *self,
 {
 	const NMPlatformLink *pllink;
 
-	_CHECK_SELF (self, klass, -EINVAL);
-
-	if (ifindex <= 0)
-		return -EINVAL;
-
 	/* include invisible links (only in netlink, not udev). */
 	pllink = NMP_OBJECT_CAST_LINK (nm_platform_link_get_obj (self, ifindex, FALSE));
 	if (!pllink)
@@ -1263,8 +1248,6 @@ gboolean
 nm_platform_link_is_connected (NMPlatform *self, int ifindex)
 {
 	const NMPlatformLink *pllink;
-
-	_CHECK_SELF (self, klass, FALSE);
 
 	pllink = nm_platform_link_get (self, ifindex);
 	return pllink ? pllink->connected : FALSE;
@@ -1331,10 +1314,6 @@ nm_platform_link_get_udev_device (NMPlatform *self, int ifindex)
 {
 	const NMPObject *obj_cache;
 
-	_CHECK_SELF (self, klass, FALSE);
-
-	g_return_val_if_fail (ifindex >= 0, NULL);
-
 	obj_cache = nm_platform_link_get_obj (self, ifindex, FALSE);
 	return obj_cache ? obj_cache->_link.udev.device : NULL;
 }
@@ -1354,10 +1333,6 @@ gboolean
 nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex)
 {
 	const NMPlatformLink *pllink;
-
-	_CHECK_SELF (self, klass, FALSE);
-
-	g_return_val_if_fail (ifindex >= 0, FALSE);
 
 	pllink = nm_platform_link_get (self, ifindex);
 	if (pllink && pllink->inet6_addr_gen_mode_inv)
@@ -1424,12 +1399,7 @@ nm_platform_link_get_address (NMPlatform *self, int ifindex, size_t *length)
 {
 	const NMPlatformLink *pllink;
 
-	_CHECK_SELF (self, klass, NULL);
-
-	g_return_val_if_fail (ifindex > 0, NULL);
-
 	pllink = nm_platform_link_get (self, ifindex);
-
 	if (   !pllink
 	    || pllink->addr.len <= 0) {
 		NM_SET_OUT (length, 0);
@@ -1649,8 +1619,6 @@ nm_platform_link_get_mtu (NMPlatform *self, int ifindex)
 {
 	const NMPlatformLink *pllink;
 
-	_CHECK_SELF (self, klass, 0);
-
 	pllink = nm_platform_link_get (self, ifindex);
 	return pllink ? pllink->mtu : 0;
 }
@@ -1833,10 +1801,6 @@ nm_platform_link_get_master (NMPlatform *self, int slave)
 {
 	const NMPlatformLink *pllink;
 
-	_CHECK_SELF (self, klass, 0);
-
-	g_return_val_if_fail (slave >= 0, FALSE);
-
 	pllink = nm_platform_link_get (self, slave);
 	return pllink ? pllink->master : 0;
 }
@@ -1882,15 +1846,11 @@ nm_platform_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, c
 {
 	const NMPObject *obj;
 
-	_CHECK_SELF (self, klass, FALSE);
-
-	NM_SET_OUT (out_link, NULL);
-
-	g_return_val_if_fail (ifindex > 0, NULL);
-
 	obj = nm_platform_link_get_obj (self, ifindex, TRUE);
-	if (!obj)
+	if (!obj) {
+		NM_SET_OUT (out_link, NULL);
 		return NULL;
+	}
 
 	NM_SET_OUT (out_link, &obj->link);
 
@@ -2215,12 +2175,11 @@ gboolean
 nm_platform_link_6lowpan_get_properties (NMPlatform *self, int ifindex, int *out_parent)
 {
 	const NMPlatformLink *plink;
-	_CHECK_SELF (self, klass, FALSE);
 
 	plink = nm_platform_link_get (self, ifindex);
-
 	if (!plink)
 		return FALSE;
+
 	if (plink->type != NM_LINK_TYPE_6LOWPAN)
 		return FALSE;
 
@@ -2823,12 +2782,11 @@ nm_platform_link_veth_get_properties (NMPlatform *self, int ifindex, int *out_pe
 {
 	const NMPlatformLink *plink;
 	int peer_ifindex;
-	_CHECK_SELF (self, klass, FALSE);
 
 	plink = nm_platform_link_get (self, ifindex);
-
 	if (!plink)
 		return FALSE;
+
 	if (plink->type != NM_LINK_TYPE_VETH)
 		return FALSE;
 
@@ -2886,14 +2844,11 @@ nm_platform_link_tun_get_properties (NMPlatform *self,
 	gint64 group;
 	gint64 flags;
 
-	_CHECK_SELF (self, klass, FALSE);
-
-	g_return_val_if_fail (ifindex > 0, FALSE);
-
 	/* we consider also invisible links (those that are not yet in udev). */
 	plobj = nm_platform_link_get_obj (self, ifindex, FALSE);
 	if (!plobj)
 		return FALSE;
+
 	if (NMP_OBJECT_CAST_LINK (plobj)->type != NM_LINK_TYPE_TUN)
 		return FALSE;
 

@@ -443,7 +443,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 	accept_signal (link_removed);
 
 	/* Delete again */
-	g_assert (!nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME)));
+	g_assert (nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME) <= 0);
 	g_assert (!nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
 
 	/* VLAN: Delete parent */
@@ -2829,9 +2829,9 @@ _nmtstp_init_tests (int *argc, char ***argv)
 void
 _nmtstp_setup_tests (void)
 {
-	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
-	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, SLAVE_NAME));
-	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, PARENT_NAME));
+	nmtstp_link_delete (NM_PLATFORM_GET, -1, -1, DEVICE_NAME, FALSE);
+	nmtstp_link_delete (NM_PLATFORM_GET, -1, -1, SLAVE_NAME, FALSE);
+	nmtstp_link_delete (NM_PLATFORM_GET, -1, -1, PARENT_NAME, FALSE);
 	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, DEVICE_NAME));
 	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, SLAVE_NAME));
 	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, PARENT_NAME));
