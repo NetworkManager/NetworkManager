@@ -1111,6 +1111,7 @@ int nm_platform_link_get_ifindex (NMPlatform *self, const char *name);
 const char *nm_platform_link_get_name (NMPlatform *self, int ifindex);
 NMLinkType nm_platform_link_get_type (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_is_software (NMPlatform *self, int ifindex);
+int nm_platform_link_get_ifi_flags (NMPlatform *self, int ifindex, guint requested_flags);
 gboolean nm_platform_link_is_up (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_is_connected (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_uses_arp (NMPlatform *self, int ifindex);
