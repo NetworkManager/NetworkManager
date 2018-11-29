@@ -754,6 +754,11 @@ nm_platform_link_get_obj (NMPlatform *self,
 {
 	const NMPObject *obj_cache;
 
+	_CHECK_SELF (self, klass, NULL);
+
+	if (ifindex <= 0)
+		return NULL;
+
 	obj_cache = nmp_cache_lookup_link (nm_platform_get_cache (self), ifindex);
 	if (   !obj_cache
 	    || (   visible_only
@@ -779,15 +784,7 @@ nm_platform_link_get_obj (NMPlatform *self,
 const NMPlatformLink *
 nm_platform_link_get (NMPlatform *self, int ifindex)
 {
-	const NMPObject *obj;
-
-	_CHECK_SELF (self, klass, NULL);
-
-	if (ifindex <= 0)
-		return NULL;
-
-	obj = nm_platform_link_get_obj (self, ifindex, TRUE);
-	return NMP_OBJECT_CAST_LINK (obj);
+	return NMP_OBJECT_CAST_LINK (nm_platform_link_get_obj (self, ifindex, TRUE));
 }
 
 /**
