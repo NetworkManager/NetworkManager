@@ -1976,6 +1976,8 @@ nmp_cache_lookup_link_full (const NMPCache *cache,
 	} else if (!ifname && !match_fn)
 		return NULL;
 	else {
+		const NMPObject *obj_best = NULL;
+
 		if (ifname) {
 			if (strlen (ifname) >= IFNAMSIZ)
 				return NULL;
@@ -1987,16 +1989,21 @@ nmp_cache_lookup_link_full (const NMPCache *cache,
 		nmp_cache_iter_for_each_link (&iter, head_entry, &link) {
 			obj = NMP_OBJECT_UP_CAST (link);
 
-			if (visible_only && !nmp_object_is_visible (obj))
-				continue;
 			if (link_type != NM_LINK_TYPE_NONE && obj->link.type != link_type)
+				continue;
+			if (visible_only && !nmp_object_is_visible (obj))
 				continue;
 			if (match_fn && !match_fn (obj, user_data))
 				continue;
 
-			return obj;
+			/* if there are multiple candidates, prefer the visible ones. */
+			if (   visible_only
+			    || nmp_object_is_visible (obj))
+				return obj;
+			if (!obj_best)
+				obj_best = obj;
 		}
-		return NULL;
+		return obj_best;
 	}
 }
 
