@@ -104,6 +104,7 @@ static GPtrArray *
 create_dm_cmd_line (const char *iface,
                     const NMIP4Config *ip4_config,
                     const char *pidfile,
+                    gboolean announce_android_metered,
                     GError **error)
 {
 	gs_unref_ptrarray GPtrArray *cmd = NULL;
@@ -199,6 +200,12 @@ create_dm_cmd_line (const char *iface,
 		nm_strv_ptrarray_take_gstring (cmd, &s);
 	}
 
+	if (announce_android_metered) {
+		/* force option 43 to announce ANDROID_METERED. Do this, even if the client
+		 * did not ask for this option. See https://www.lorier.net/docs/android-metered.html */
+		nm_strv_ptrarray_add_string_dup (cmd, "--dhcp-option-force=43,ANDROID_METERED");
+	}
+
 	nm_strv_ptrarray_add_string_dup (cmd, "--dhcp-lease-max=50");
 
 	nm_strv_ptrarray_add_string_printf (cmd,
@@ -258,6 +265,7 @@ out:
 gboolean
 nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
                           NMIP4Config *ip4_config,
+                          gboolean announce_android_metered,
                           GError **error)
 {
 	NMDnsMasqManagerPrivate *priv;
@@ -272,7 +280,11 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 
 	kill_existing_by_pidfile (priv->pidfile);
 
-	dm_cmd = create_dm_cmd_line (priv->iface, ip4_config, priv->pidfile, error);
+	dm_cmd = create_dm_cmd_line (priv->iface,
+	                             ip4_config,
+	                             priv->pidfile,
+	                             announce_android_metered,
+	                             error);
 	if (!dm_cmd)
 		return FALSE;
 

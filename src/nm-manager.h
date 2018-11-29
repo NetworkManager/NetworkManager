@@ -174,4 +174,6 @@ void nm_manager_dbus_set_property_handle (NMDBusObject *obj,
                                           GVariant *value,
                                           gpointer user_data);
 
+NMMetered nm_manager_get_metered (NMManager *self);
+
 #endif /* __NETWORKMANAGER_MANAGER_H__ */

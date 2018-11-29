@@ -48,6 +48,7 @@ NMDnsMasqManager *nm_dnsmasq_manager_new (const char *iface);
 
 gboolean nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
                                    NMIP4Config *ip4_config,
+                                   gboolean announce_android_metered,
                                    GError **error);
 
 void     nm_dnsmasq_manager_stop  (NMDnsMasqManager *manager);

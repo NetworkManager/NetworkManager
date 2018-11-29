@@ -1445,6 +1445,14 @@ nm_manager_update_metered (NMManager *self)
 	}
 }
 
+NMMetered
+nm_manager_get_metered (NMManager *self)
+{
+	g_return_val_if_fail (NM_IS_MANAGER (self), NM_METERED_UNKNOWN);
+
+	return NM_MANAGER_GET_PRIVATE (self)->metered;
+}
+
 static void
 nm_manager_update_state (NMManager *self)
 {

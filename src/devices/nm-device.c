@@ -10175,6 +10175,9 @@ start_sharing (NMDevice *self, NMIP4Config *config, GError **error)
 	const NMPlatformIP4Address *ip4_addr = NULL;
 	const char *ip_iface;
 	GError *local = NULL;
+	NMConnection *conn;
+	NMSettingConnection *s_con;
+	gboolean announce_android_metered;
 
 	g_return_val_if_fail (config, FALSE);
 
@@ -10196,7 +10199,7 @@ start_sharing (NMDevice *self, NMIP4Config *config, GError **error)
 		return FALSE;
 
 	req = nm_device_get_act_request (self);
-	g_assert (req);
+	g_return_val_if_fail (req, FALSE);
 
 	netmask = _nm_utils_ip4_prefix_to_netmask (ip4_addr->plen);
 	nm_utils_inet4_ntop (netmask, str_mask);
@@ -10217,7 +10220,35 @@ start_sharing (NMDevice *self, NMIP4Config *config, GError **error)
 
 	nm_act_request_set_shared (req, TRUE);
 
-	if (!nm_dnsmasq_manager_start (priv->dnsmasq_manager, config, &local)) {
+	conn = nm_act_request_get_applied_connection (req);
+	s_con = nm_connection_get_setting_connection (conn);
+
+	switch (nm_setting_connection_get_metered (s_con)) {
+	case NM_METERED_YES:
+		/* honor the metered flag. Note that reapply on the device does not affect
+		 * the metered setting. This is different from other profiles, where the
+		 * metered flag of an activated profile can be changed (reapplied). */
+		announce_android_metered = TRUE;
+		break;
+	case NM_METERED_UNKNOWN:
+		/* we pick up the current value and announce it. But again, we cannot update
+		 * the announced setting without restarting dnsmasq. That means, if the default
+		 * route changes w.r.t. being metered, then the shared connection does not get
+		 * updated before reactivating. */
+		announce_android_metered = NM_IN_SET (nm_manager_get_metered (nm_manager_get ()),
+		                                      NM_METERED_YES,
+		                                      NM_METERED_GUESS_YES);
+		break;
+	default:
+		announce_android_metered = FALSE;
+		break;
+	}
+
+
+	if (!nm_dnsmasq_manager_start (priv->dnsmasq_manager,
+	                               config,
+	                               announce_android_metered,
+	                               &local)) {
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "could not start dnsmasq due to %s", local->message);
 		g_error_free (local);
