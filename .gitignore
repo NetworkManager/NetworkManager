@@ -292,12 +292,14 @@ test-*.trs
 /policy/org.freedesktop.NetworkManager.policy.in
 /initscript/Slackware/rc.networkmanager
 /initscript/*/[Nn]etwork[Mm]anager
+/shared/nm-utils/tests/
 /src/devices/wifi/tests/test-wifi-ap-utils
 /src/dhcp-manager/nm-dhcp-helper
 /src/dhcp-manager/tests/test-dhcp-dhclient
 /src/dhcp-manager/tests/test-dhcp-options
 /src/dhcp-manager/tests/test-dhcp-utils
 /src/dnsmasq-manager/tests/test-dnsmasq-utils
+/src/initrd/
 /src/rdisc/
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh-utils
 /src/supplicant-manager/tests/test-supplicant-config
