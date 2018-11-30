@@ -1,4 +1,19 @@
 ===============================================
+NetworkManager-1.12.6
+Overview of changes since NetworkManager-1.12.4
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Support hidden SSID in wifi AP mode.
+* Fix a vulnerability in the internal DHCPv6 client (CVE-2018-15688).
+* Avoid expiring the lifetime of IPv6 addresses from router advertisements.
+* Fix handling "serial.parity" and "serial.send-delay" properties in nmcli.
+* Avoid taking down device when changing MAC address.
+* Fix crash with internal DHCPv6 client.
+* Various minor bugfixes and translation updates.
+
+===============================================
 NetworkManager-1.12.4
 Overview of changes since NetworkManager-1.12.2
 ===============================================
