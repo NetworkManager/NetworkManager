@@ -67,7 +67,7 @@ struct IsoLangToEncodings
 	const char *const *encodings;
 };
 
-#define LANG_ENCODINGS(l, ...) { .lang = l, .encodings = (const char *[]) { __VA_ARGS__, NULL }}
+#define LANG_ENCODINGS(l, ...) { .lang = l, .encodings = NM_MAKE_STRV (__VA_ARGS__), }
 
 /* 5-letter language codes */
 static const struct IsoLangToEncodings isoLangEntries5[] =

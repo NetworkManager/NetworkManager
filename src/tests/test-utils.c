@@ -64,10 +64,10 @@ _do_test_hw_addr (NMUtilsStableType stable_type,
                   const char *ifname,
                   const char *current_mac_address,
                   const char *generate_mac_address_mask,
-                  const char **expected)
+                  const char *const *expected)
 {
 	gs_free char *generated = NULL;
-	const char **e;
+	const char *const *e;
 	gboolean found = FALSE;
 
 	for (e = expected; *e; e++) {
@@ -95,7 +95,13 @@ _do_test_hw_addr (NMUtilsStableType stable_type,
 	g_assert (found);
 }
 #define do_test_hw_addr(stable_type, stable_id, secret_key, ifname, current_mac_address, generate_mac_address_mask, ...) \
-	_do_test_hw_addr ((stable_type), (stable_id), (const guint8 *) ""secret_key"", NM_STRLEN (secret_key), (ifname), ""current_mac_address"", generate_mac_address_mask, (const char *[]) { __VA_ARGS__, NULL })
+	_do_test_hw_addr ((stable_type), \
+	                  (stable_id), \
+	                  (const guint8 *) ""secret_key"", \
+	                  NM_STRLEN (secret_key), (ifname), \
+	                  ""current_mac_address"", \
+	                  generate_mac_address_mask, \
+	                  NM_MAKE_STRV (__VA_ARGS__))
 
 static void
 test_hw_addr_gen_stable_eth (void)

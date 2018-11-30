@@ -10763,8 +10763,10 @@ _cleanup_ip_pre (NMDevice *self, int addr_family, CleanupType cleanup_type)
 }
 
 gboolean
-_nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
-                                    GError **error, const char **whitelist)
+_nm_device_hash_check_invalid_keys (GHashTable *hash,
+                                    const char *setting_name,
+                                    GError **error,
+                                    const char *const*whitelist)
 {
 	guint found_whitelisted_keys = 0;
 	guint i;

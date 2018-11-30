@@ -421,20 +421,17 @@ create_bond_connection (NMConnection **con, NMSettingBond **s_bond)
 }
 
 #define test_verify_options(exp, ...) \
-	G_STMT_START { \
-		const char *__opts[] = { __VA_ARGS__ , NULL }; \
-		\
-		_test_verify_options (__opts, exp); \
-	} G_STMT_END
+	_test_verify_options (NM_MAKE_STRV (__VA_ARGS__), exp)
 
 static void
-_test_verify_options (const char **options, gboolean expected_result)
+_test_verify_options (const char *const *options,
+                      gboolean expected_result)
 {
 	gs_unref_object NMConnection *con = NULL;
 	NMSettingBond *s_bond;
 	GError *error = NULL;
 	gboolean success;
-	const char **option;
+	const char *const *option;
 
 	create_bond_connection (&con, &s_bond);
 

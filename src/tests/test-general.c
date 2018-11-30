@@ -1115,7 +1115,10 @@ _test_match_spec_device (const GSList *specs, const char *match_str)
 }
 
 static void
-_do_test_match_spec_device (const char *spec_str, const char **matches, const char **no_matches, const char **neg_matches)
+_do_test_match_spec_device (const char *spec_str,
+                            const char *const *matches,
+                            const char *const *no_matches,
+                            const char *const *neg_matches)
 {
 	GSList *specs, *specs_randperm = NULL, *specs_resplit, *specs_i, *specs_j;
 	guint i;
@@ -1187,98 +1190,96 @@ _do_test_match_spec_device (const char *spec_str, const char **matches, const ch
 static void
 test_match_spec_device (void)
 {
-#define S(...) ((const char *[]) { __VA_ARGS__, NULL } )
 	_do_test_match_spec_device ("em1",
-	                            S ("em1"),
+	                            NM_MAKE_STRV ("em1"),
 	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("em1,em2",
-	                            S ("em1", "em2"),
+	                            NM_MAKE_STRV ("em1", "em2"),
 	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("em1,em2,interface-name:em2",
-	                            S ("em1", "em2"),
+	                            NM_MAKE_STRV ("em1", "em2"),
 	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("interface-name:em1",
-	                            S ("em1"),
+	                            NM_MAKE_STRV ("em1"),
 	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("interface-name:em*",
-	                            S ("em", "em*", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"),
+	                            NM_MAKE_STRV ("em", "em*", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"),
 	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("interface-name:em\\*",
-	                            S ("em\\", "em\\*", "em\\1", "em\\11", "em\\2"),
+	                            NM_MAKE_STRV ("em\\", "em\\*", "em\\1", "em\\11", "em\\2"),
 	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("interface-name:~em\\*",
-	                            S ("em\\", "em\\*", "em\\1", "em\\11", "em\\2"),
+	                            NM_MAKE_STRV ("em\\", "em\\*", "em\\1", "em\\11", "em\\2"),
 	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("except:*",
 	                            NULL,
-	                            S (NULL),
-	                            S ("a"));
+	                            NM_MAKE_STRV (NULL),
+	                            NM_MAKE_STRV ("a"));
 	_do_test_match_spec_device ("interface-name:=em*",
-	                            S ("em*"),
+	                            NM_MAKE_STRV ("em*"),
 	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("interface-name:em*,except:interface-name:em1*",
-	                            S ("em", "em*", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em2", "em3"),
+	                            NM_MAKE_STRV ("em", "em*", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em2", "em3"),
 	                            NULL,
-	                            S ("em1", "em11"));
+	                            NM_MAKE_STRV ("em1", "em11"));
 	_do_test_match_spec_device ("interface-name:em*,except:interface-name:=em*",
-	                            S ("em", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"),
+	                            NM_MAKE_STRV ("em", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"),
 	                            NULL,
-	                            S ("em*"));
+	                            NM_MAKE_STRV ("em*"));
 	_do_test_match_spec_device ("aa,bb,cc\\,dd,e,,",
-	                            S ("aa", "bb", "cc,dd", "e"),
+	                            NM_MAKE_STRV ("aa", "bb", "cc,dd", "e"),
 	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("aa;bb;cc\\;dd;e,;",
-	                            S ("aa", "bb", "cc;dd", "e"),
+	                            NM_MAKE_STRV ("aa", "bb", "cc;dd", "e"),
 	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("interface-name:em\\;1,em\\,2,\\,,\\\\,,em\\\\x",
-	                            S ("em;1", "em,2", ",", "\\", "em\\x"),
+	                            NM_MAKE_STRV ("em;1", "em,2", ",", "\\", "em\\x"),
 	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("\\s\\s,\\sinterface-name:a,\\s,",
-	                            S ("  ", " ", " interface-name:a"),
+	                            NM_MAKE_STRV ("  ", " ", " interface-name:a"),
 	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device (" aa ;  bb   ; cc\\;dd  ;e , ; \t\\t  , ",
-	                            S ("aa", "bb", "cc;dd", "e", "\t"),
+	                            NM_MAKE_STRV ("aa", "bb", "cc;dd", "e", "\t"),
 	                            NULL,
 	                            NULL);
 
 	_do_test_match_spec_device ("s390-subchannels:0.0.1000\\,0.0.1001",
-	                            S (MATCH_S390"0.0.1000", MATCH_S390"0.0.1000,deadbeef", MATCH_S390"0.0.1000,0.0.1001", MATCH_S390"0.0.1000,0.0.1002"),
-	                            S (MATCH_S390"0.0.1001"),
+	                            NM_MAKE_STRV (MATCH_S390"0.0.1000", MATCH_S390"0.0.1000,deadbeef", MATCH_S390"0.0.1000,0.0.1001", MATCH_S390"0.0.1000,0.0.1002"),
+	                            NM_MAKE_STRV (MATCH_S390"0.0.1001"),
 	                            NULL);
 	_do_test_match_spec_device ("*,except:s390-subchannels:0.0.1000\\,0.0.1001",
 	                            NULL,
-	                            S (NULL),
-	                            S (MATCH_S390"0.0.1000", MATCH_S390"0.0.1000,deadbeef", MATCH_S390"0.0.1000,0.0.1001", MATCH_S390"0.0.1000,0.0.1002"));
+	                            NM_MAKE_STRV (NULL),
+	                            NM_MAKE_STRV (MATCH_S390"0.0.1000", MATCH_S390"0.0.1000,deadbeef", MATCH_S390"0.0.1000,0.0.1001", MATCH_S390"0.0.1000,0.0.1002"));
 
 	_do_test_match_spec_device ("driver:DRV",
-	                            S (MATCH_DRIVER"DRV", MATCH_DRIVER"DRV|1.6"),
-	                            S (MATCH_DRIVER"DR", MATCH_DRIVER"DR*"),
+	                            NM_MAKE_STRV (MATCH_DRIVER"DRV", MATCH_DRIVER"DRV|1.6"),
+	                            NM_MAKE_STRV (MATCH_DRIVER"DR", MATCH_DRIVER"DR*"),
 	                            NULL);
 	_do_test_match_spec_device ("driver:DRV//",
-	                            S (MATCH_DRIVER"DRV/"),
-	                            S (MATCH_DRIVER"DRV/|1.6", MATCH_DRIVER"DR", MATCH_DRIVER"DR*"),
+	                            NM_MAKE_STRV (MATCH_DRIVER"DRV/"),
+	                            NM_MAKE_STRV (MATCH_DRIVER"DRV/|1.6", MATCH_DRIVER"DR", MATCH_DRIVER"DR*"),
 	                            NULL);
 	_do_test_match_spec_device ("driver:DRV//*",
-	                            S (MATCH_DRIVER"DRV/", MATCH_DRIVER"DRV/|1.6"),
-	                            S (MATCH_DRIVER"DR", MATCH_DRIVER"DR*"),
+	                            NM_MAKE_STRV (MATCH_DRIVER"DRV/", MATCH_DRIVER"DRV/|1.6"),
+	                            NM_MAKE_STRV (MATCH_DRIVER"DR", MATCH_DRIVER"DR*"),
 	                            NULL);
 	_do_test_match_spec_device ("driver:DRV//1.5*",
-	                            S (MATCH_DRIVER"DRV/|1.5", MATCH_DRIVER"DRV/|1.5.2"),
-	                            S (MATCH_DRIVER"DRV/", MATCH_DRIVER"DRV/|1.6", MATCH_DRIVER"DR", MATCH_DRIVER"DR*"),
+	                            NM_MAKE_STRV (MATCH_DRIVER"DRV/|1.5", MATCH_DRIVER"DRV/|1.5.2"),
+	                            NM_MAKE_STRV (MATCH_DRIVER"DRV/", MATCH_DRIVER"DRV/|1.6", MATCH_DRIVER"DR", MATCH_DRIVER"DR*"),
 	                            NULL);
-#undef S
 }
 
 /*****************************************************************************/
