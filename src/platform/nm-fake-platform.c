@@ -417,7 +417,7 @@ link_changed (NMPlatform *platform, NMFakePlatformLink *device, gboolean raise_s
 
 	if (device->link.ifindex && !IN6_IS_ADDR_UNSPECIFIED (&device->ip6_lladdr)) {
 		if (device->link.connected)
-			ip6_address_add (platform, device->link.ifindex, in6addr_any, 64, device->ip6_lladdr, NM_PLATFORM_LIFETIME_PERMANENT, NM_PLATFORM_LIFETIME_PERMANENT, 0);
+			ip6_address_add (platform, device->link.ifindex, device->ip6_lladdr, 64, in6addr_any, NM_PLATFORM_LIFETIME_PERMANENT, NM_PLATFORM_LIFETIME_PERMANENT, 0);
 		else
 			ip6_address_delete (platform, device->link.ifindex, device->ip6_lladdr, 64);
 	}
