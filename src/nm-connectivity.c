@@ -69,6 +69,9 @@ struct _NMConnectivityCheckHandle {
 
 	char *ifspec;
 
+	const char *completed_log_message;
+	char *completed_log_message_free;
+
 #if WITH_CONCHECK
 	struct {
 		char *response;
@@ -85,8 +88,7 @@ struct _NMConnectivityCheckHandle {
 	} concheck;
 #endif
 
-	const char *completed_log_message;
-	char *completed_log_message_free;
+	guint64 request_counter;
 
 	int addr_family;
 
@@ -146,10 +148,11 @@ NM_DEFINE_SINGLETON_GETTER (NMConnectivity, nm_connectivity_get, NM_TYPE_CONNECT
             _nm_log (__level, _NMLOG2_DOMAIN, 0, \
                      (cb_data->ifspec ? &cb_data->ifspec[3] : NULL), \
                      NULL, \
-                     "connectivity: (%s,AF_INET%s) " \
+                     "connectivity: (%s,IPv%c,%"G_GUINT64_FORMAT") " \
                      _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                      (cb_data->ifspec ? &cb_data->ifspec[3] : ""), \
-                     (cb_data->addr_family == AF_INET6 ? "6" : "") \
+                     nm_utils_addr_family_to_char (cb_data->addr_family), \
+                     cb_data->request_counter \
                      _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
@@ -704,6 +707,7 @@ nm_connectivity_check_start (NMConnectivity *self,
 {
 	NMConnectivityPrivate *priv;
 	NMConnectivityCheckHandle *cb_data;
+	static guint64 request_counter = 0;
 
 	g_return_val_if_fail (NM_IS_CONNECTIVITY (self), NULL);
 	g_return_val_if_fail (callback, NULL);
@@ -712,6 +716,7 @@ nm_connectivity_check_start (NMConnectivity *self,
 
 	cb_data = g_slice_new0 (NMConnectivityCheckHandle);
 	cb_data->self = self;
+	cb_data->request_counter = ++request_counter;
 	c_list_link_tail (&priv->handles_lst_head, &cb_data->handles_lst);
 	cb_data->callback = callback;
 	cb_data->user_data = user_data;
