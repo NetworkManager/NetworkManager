@@ -1486,6 +1486,11 @@ noinst_LTLIBRARIES += \
 	src/libNetworkManager.la \
 	src/libsystemd-nm.la
 
+check-config-options:
+	$(srcdir)/tools/check-config-options.sh "$(srcdir)"
+
+check_local += check-config-options
+
 ###############################################################################
 
 src_libsystemd_nm_la_cppflags = \
@@ -3521,6 +3526,7 @@ $(src_tests_config_test_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
 	src/tests/config/NetworkManager.conf \
+	src/tests/config/NetworkManager-warn.conf \
 	src/tests/config/NetworkManager.state \
 	src/tests/config/bad.conf \
 	src/tests/config/global-dns-invalid.conf \
@@ -5157,6 +5163,7 @@ EXTRA_DIST += \
 	shared/nm-version-macros.h.in \
 	shared/meson.build \
 	\
+	tools/check-config-options.sh \
 	tools/check-docs.sh \
 	tools/check-exports.sh \
 	tools/create-exports-NetworkManager.sh \

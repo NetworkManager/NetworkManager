@@ -5187,8 +5187,6 @@ static const NMMetaPropertyType _pt_ethtool = {
 #define PROPERTY_INFO_WITH_DESC(name, ...) \
 	PROPERTY_INFO (name, DESCRIBE_DOC_##name, ##__VA_ARGS__)
 
-#define VALUES_STATIC(...)  (((const char *[]) { __VA_ARGS__, NULL }))
-
 #define ENUM_VALUE_INFOS(...)  (((const NMUtilsEnumValueInfo []) { __VA_ARGS__, { 0 } }))
 #define INT_VALUE_INFOS(...)  (((const NMMetaUtilsIntValueInfo []) { __VA_ARGS__, { 0 } }))
 
@@ -5247,7 +5245,7 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 			.remove_fcn =               _remove_fcn_802_1x_eap,
 		),
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC ("leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd"),
+			.values_static =            NM_MAKE_STRV ("leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_IDENTITY,
@@ -5314,19 +5312,19 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE1_PEAPVER,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC ("0", "1"),
+			.values_static =            NM_MAKE_STRV ("0", "1"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE1_PEAPLABEL,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC ("0", "1"),
+			.values_static =            NM_MAKE_STRV ("0", "1"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC ("0", "1", "2", "3"),
+			.values_static =            NM_MAKE_STRV ("0", "1", "2", "3"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE1_AUTH_FLAGS,
@@ -5341,13 +5339,13 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_AUTH,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC ("pap", "chap", "mschap", "mschapv2", "gtc", "otp", "md5", "tls"),
+			.values_static =            NM_MAKE_STRV ("pap", "chap", "mschap", "mschapv2", "gtc", "otp", "md5", "tls"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_AUTHEAP,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC ("md5", "mschapv2", "otp", "gtc", "tls"),
+			.values_static =            NM_MAKE_STRV ("md5", "mschapv2", "otp", "gtc", "tls"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_CA_CERT,
@@ -5509,9 +5507,9 @@ static const NMMetaPropertyInfo *const property_infos_ADSL[] = {
 		.def_hint =                     NM_META_TEXT_PROMPT_ADSL_PROTO_CHOICES,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC (NM_SETTING_ADSL_PROTOCOL_PPPOA,
-			                                           NM_SETTING_ADSL_PROTOCOL_PPPOE,
-			                                           NM_SETTING_ADSL_PROTOCOL_IPOATM),
+			.values_static =            NM_MAKE_STRV (NM_SETTING_ADSL_PROTOCOL_PPPOA,
+			                                          NM_SETTING_ADSL_PROTOCOL_PPPOE,
+			                                          NM_SETTING_ADSL_PROTOCOL_IPOATM),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_ADSL_ENCAPSULATION,
@@ -5521,8 +5519,8 @@ static const NMMetaPropertyInfo *const property_infos_ADSL[] = {
 		.def_hint =                     NM_META_TEXT_PROMPT_ADSL_ENCAP_CHOICES,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC (NM_SETTING_ADSL_ENCAPSULATION_VCMUX,
-			                                           NM_SETTING_ADSL_ENCAPSULATION_LLC),
+			.values_static =            NM_MAKE_STRV (NM_SETTING_ADSL_ENCAPSULATION_VCMUX,
+			                                          NM_SETTING_ADSL_ENCAPSULATION_LLC),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_ADSL_VPI,
@@ -5550,9 +5548,9 @@ static const NMMetaPropertyInfo *const property_infos_BLUETOOTH[] = {
 		.def_hint =                     NM_META_TEXT_PROMPT_BT_TYPE_CHOICES,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC (NM_SETTING_BLUETOOTH_TYPE_DUN,
-			                                           NM_SETTING_BLUETOOTH_TYPE_PANU,
-			                                           NM_SETTING_BLUETOOTH_TYPE_NAP),
+			.values_static =            NM_MAKE_STRV (NM_SETTING_BLUETOOTH_TYPE_DUN,
+			                                          NM_SETTING_BLUETOOTH_TYPE_PANU,
+			                                          NM_SETTING_BLUETOOTH_TYPE_NAP),
 		),
 	),
 	NULL
@@ -5805,11 +5803,11 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_DONT_ASK,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC (NM_SETTING_BOND_SETTING_NAME,
-			                                           NM_SETTING_BRIDGE_SETTING_NAME,
-			                                           NM_SETTING_OVS_BRIDGE_SETTING_NAME,
-			                                           NM_SETTING_OVS_PORT_SETTING_NAME,
-			                                           NM_SETTING_TEAM_SETTING_NAME),
+			.values_static =            NM_MAKE_STRV (NM_SETTING_BOND_SETTING_NAME,
+			                                          NM_SETTING_BRIDGE_SETTING_NAME,
+			                                          NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+			                                          NM_SETTING_OVS_PORT_SETTING_NAME,
+			                                          NM_SETTING_TEAM_SETTING_NAME),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
@@ -5844,7 +5842,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 			.set_fcn =                  _set_fcn_connection_metered,
 		),
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC ("yes", "no", "unknown"),
+			.values_static =            NM_MAKE_STRV ("yes", "no", "unknown"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_LLDP,
@@ -5897,7 +5895,7 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_APP_FCOE_MODE,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC (NM_SETTING_DCB_FCOE_MODE_FABRIC,
+			.values_static =            NM_MAKE_STRV (NM_SETTING_DCB_FCOE_MODE_FABRIC,
 			                                           NM_SETTING_DCB_FCOE_MODE_VN2VN),
 		),
 	),
@@ -6127,7 +6125,7 @@ static const NMMetaPropertyInfo *const property_infos_INFINIBAND[] = {
 		.def_hint =                     NM_META_TEXT_PROMPT_IB_MODE_CHOICES,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC ("datagram", "connected"),
+			.values_static =            NM_MAKE_STRV ("datagram", "connected"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_INFINIBAND_P_KEY,
@@ -6727,7 +6725,7 @@ static const NMMetaPropertyInfo *const property_infos_OVS_BRIDGE[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_BRIDGE_FAIL_MODE,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =        VALUES_STATIC ("secure", "standalone"),
+			.values_static =            NM_MAKE_STRV ("secure", "standalone"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_BRIDGE_MCAST_SNOOPING_ENABLE,
@@ -6748,7 +6746,7 @@ static const NMMetaPropertyInfo *const property_infos_OVS_INTERFACE[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_INTERFACE_TYPE,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =        VALUES_STATIC ("internal", "patch"),
+			.values_static =            NM_MAKE_STRV ("internal", "patch"),
 		),
 	),
 	NULL
@@ -6769,7 +6767,7 @@ static const NMMetaPropertyInfo *const property_infos_OVS_PORT[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_PORT_VLAN_MODE,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =        VALUES_STATIC ("access", "native-tagged", "native-untagged", "trunk"),
+			.values_static =            NM_MAKE_STRV ("access", "native-tagged", "native-untagged", "trunk"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_PORT_TAG,
@@ -6778,13 +6776,13 @@ static const NMMetaPropertyInfo *const property_infos_OVS_PORT[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_PORT_LACP,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =        VALUES_STATIC ("active", "off", "passive"),
+			.values_static =            NM_MAKE_STRV ("active", "off", "passive"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_PORT_BOND_MODE,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =        VALUES_STATIC ("active-backup", "balance-slb", "balance-tcp"),
+			.values_static =            NM_MAKE_STRV ("active-backup", "balance-slb", "balance-tcp"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_PORT_BOND_UPDELAY,
@@ -6980,20 +6978,20 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_RUNNER,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC (NM_SETTING_TEAM_RUNNER_BROADCAST,
-			                                           NM_SETTING_TEAM_RUNNER_ROUNDROBIN,
-			                                           NM_SETTING_TEAM_RUNNER_RANDOM,
-			                                           NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP,
-			                                           NM_SETTING_TEAM_RUNNER_LOADBALANCE,
-			                                           NM_SETTING_TEAM_RUNNER_LACP),
+			.values_static =            NM_MAKE_STRV (NM_SETTING_TEAM_RUNNER_BROADCAST,
+			                                          NM_SETTING_TEAM_RUNNER_ROUNDROBIN,
+			                                          NM_SETTING_TEAM_RUNNER_RANDOM,
+			                                          NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP,
+			                                          NM_SETTING_TEAM_RUNNER_LOADBALANCE,
+			                                          NM_SETTING_TEAM_RUNNER_LACP),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_RUNNER_HWADDR_POLICY,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC (NM_SETTING_TEAM_RUNNER_HWADDR_POLICY_SAME_ALL,
-			                                           NM_SETTING_TEAM_RUNNER_HWADDR_POLICY_BY_ACTIVE,
-			                                           NM_SETTING_TEAM_RUNNER_HWADDR_POLICY_ONLY_ACTIVE),
+			.values_static =            NM_MAKE_STRV (NM_SETTING_TEAM_RUNNER_HWADDR_POLICY_SAME_ALL,
+			                                          NM_SETTING_TEAM_RUNNER_HWADDR_POLICY_BY_ACTIVE,
+			                                          NM_SETTING_TEAM_RUNNER_HWADDR_POLICY_ONLY_ACTIVE),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_RUNNER_TX_HASH,
@@ -7006,7 +7004,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_RUNNER_TX_BALANCER,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC ("basic"),
+			.values_static =            NM_MAKE_STRV ("basic"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL,
@@ -7051,11 +7049,11 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC (NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_LACP_PRIO,
-			                                           NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_LACP_PRIO_STABLE,
-			                                           NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_BANDWIDTH,
-			                                           NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_COUNT,
-			                                           NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_PORT_CONFIG),
+			.values_static =            NM_MAKE_STRV (NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_LACP_PRIO,
+			                                          NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_LACP_PRIO_STABLE,
+			                                          NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_BANDWIDTH,
+			                                          NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_COUNT,
+			                                          NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_PORT_CONFIG),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_LINK_WATCHERS,
@@ -7466,7 +7464,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_DUPLEX,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC ("half", "full"),
+			.values_static =            NM_MAKE_STRV ("half", "full"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_AUTO_NEGOTIATE,
@@ -7518,7 +7516,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_S390_NETTYPE,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC ("qeth", "lcs", "ctc"),
+			.values_static =            NM_MAKE_STRV ("qeth", "lcs", "ctc"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_S390_OPTIONS,
@@ -7580,15 +7578,15 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
 		.def_hint =                     NM_META_TEXT_PROMPT_WIFI_MODE_CHOICES,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC (NM_SETTING_WIRELESS_MODE_INFRA,
-			                                           NM_SETTING_WIRELESS_MODE_ADHOC,
-			                                           NM_SETTING_WIRELESS_MODE_AP),
+			.values_static =            NM_MAKE_STRV (NM_SETTING_WIRELESS_MODE_INFRA,
+			                                          NM_SETTING_WIRELESS_MODE_ADHOC,
+			                                          NM_SETTING_WIRELESS_MODE_AP),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_BAND,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC ("a", "bg"),
+			.values_static =            NM_MAKE_STRV ("a", "bg"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_CHANNEL,
@@ -7690,7 +7688,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC ("none", "ieee8021x", "wpa-none", "wpa-psk", "wpa-eap"),
+			.values_static =            NM_MAKE_STRV ("none", "ieee8021x", "wpa-none", "wpa-psk", "wpa-eap"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX,
@@ -7699,7 +7697,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_AUTH_ALG,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC ("open", "shared", "leap"),
+			.values_static =            NM_MAKE_STRV ("open", "shared", "leap"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_PROTO,

@@ -309,3 +309,9 @@ if enable_tests
           env: ['LD_BIND_NOW=1', 'LD_PRELOAD=' + plugin.full_path()])
   endforeach
 endif
+
+test(
+  'check-config-options',
+  find_program(join_paths(meson.source_root(), 'tools', 'check-config-options.sh')),
+  args: [meson.source_root()]
+)

@@ -1120,8 +1120,8 @@ init_ip_config_dns_priority (NMDevice *self, NMIPConfig *config)
 	int priority;
 
 	property = (nm_ip_config_get_addr_family (config) == AF_INET)
-	             ? "ipv4.dns-priority"
-	             : "ipv6.dns-priority";
+	             ? NM_CON_DEFAULT ("ipv4.dns-priority")
+	             : NM_CON_DEFAULT ("ipv6.dns-priority");
 
 	priority = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
 	                                                        property,
@@ -1279,7 +1279,7 @@ _get_stable_id (NMDevice *self,
 
 		if (!stable_id) {
 			default_id = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-			                                                    "connection.stable-id",
+			                                                    NM_CON_DEFAULT ("connection.stable-id"),
 			                                                    self);
 			stable_id = default_id;
 		}
@@ -2165,7 +2165,9 @@ nm_device_get_route_metric (NMDevice *self,
 	/* use the current NMConfigData, which makes this configuration reloadable.
 	 * Note that that means that the route-metric might change between SIGHUP.
 	 * You must cache the returned value if that is a problem. */
-	property = addr_family == AF_INET ? "ipv4.route-metric" : "ipv6.route-metric";
+	property = addr_family == AF_INET
+	    ? NM_CON_DEFAULT ("ipv4.route-metric")
+	    : NM_CON_DEFAULT ("ipv6.route-metric");
 	route_metric = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
 	                                                            property,
 	                                                            self,
@@ -2195,7 +2197,7 @@ _get_mdns (NMDevice *self)
 		return mdns;
 
 	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                    "connection.mdns",
+	                                                    NM_CON_DEFAULT ("connection.mdns"),
 	                                                    self,
 	                                                    NM_SETTING_CONNECTION_MDNS_NO,
 	                                                    NM_SETTING_CONNECTION_MDNS_YES,
@@ -2217,7 +2219,7 @@ _get_llmnr (NMDevice *self)
 		return llmnr;
 
 	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                    "connection.llmnr",
+	                                                    NM_CON_DEFAULT ("connection.llmnr"),
 	                                                    self,
 	                                                    NM_SETTING_CONNECTION_LLMNR_NO,
 	                                                    NM_SETTING_CONNECTION_LLMNR_YES,
@@ -2266,7 +2268,9 @@ nm_device_get_route_table (NMDevice *self,
 		if (route_table == 0) {
 			const char *property;
 
-			property = addr_family == AF_INET ? "ipv4.route-table" : "ipv6.route-table";
+			property = addr_family == AF_INET
+			    ? NM_CON_DEFAULT ("ipv4.route-table")
+			    : NM_CON_DEFAULT ("ipv6.route-table");
 			route_table = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
 			                                                           property,
 			                                                           self,
@@ -6150,7 +6154,7 @@ lldp_rx_enabled (NMDevice *self)
 	lldp = nm_setting_connection_get_lldp (s_con);
 	if (lldp == NM_SETTING_CONNECTION_LLDP_DEFAULT) {
 		lldp = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-		                                                    "connection.lldp",
+		                                                    NM_CON_DEFAULT ("connection.lldp"),
 		                                                    self,
 		                                                    NM_SETTING_CONNECTION_LLDP_DEFAULT,
 		                                                    NM_SETTING_CONNECTION_LLDP_ENABLE_RX,
@@ -6254,7 +6258,7 @@ act_stage1_prepare (NMDevice *self, NMDeviceStateReason *out_failure_reason)
 		autoprobe = nm_setting_sriov_get_autoprobe_drivers (s_sriov);
 		if (autoprobe == NM_TERNARY_DEFAULT) {
 			autoprobe = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-			                                                         "sriov.autoprobe-drivers",
+			                                                         NM_CON_DEFAULT ("sriov.autoprobe-drivers"),
 			                                                         self,
 			                                                         NM_TERNARY_FALSE,
 			                                                         NM_TERNARY_TRUE,
@@ -6624,7 +6628,7 @@ get_ipv4_dad_timeout (NMDevice *self)
 		return timeout;
 
 	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                    "ipv4.dad-timeout",
+	                                                    NM_CON_DEFAULT ("ipv4.dad-timeout"),
 	                                                    self,
 	                                                    0,
 	                                                    NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX,
@@ -7489,8 +7493,8 @@ get_dhcp_timeout (NMDevice *self, int addr_family)
 
 	timeout = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
 	                                                       addr_family == AF_INET
-	                                                         ? "ipv4.dhcp-timeout"
-	                                                         : "ipv6.dhcp-timeout",
+	                                                         ? NM_CON_DEFAULT ("ipv4.dhcp-timeout")
+	                                                         : NM_CON_DEFAULT ("ipv6.dhcp-timeout"),
 	                                                       self,
 	                                                       0, G_MAXINT32, 0);
 	if (timeout)
@@ -7536,7 +7540,8 @@ dhcp4_get_client_id (NMDevice *self,
 
 	if (!client_id) {
 		client_id_default = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-		                                                           "ipv4.dhcp-client-id", self);
+		                                                           NM_CON_DEFAULT ("ipv4.dhcp-client-id"),
+		                                                           self);
 		if (client_id_default && client_id_default[0]) {
 			/* a non-empty client-id is always valid, see nm_dhcp_utils_client_id_string_to_bytes().  */
 			client_id = client_id_default;
@@ -8352,7 +8357,8 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 
 	if (!duid) {
 		duid_default = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-		                                                      "ipv6.dhcp-duid", self);
+		                                                      NM_CON_DEFAULT ("ipv6.dhcp-duid"),
+		                                                      self);
 		duid = duid_default;
 		if (!duid)
 			duid = "lease";
@@ -8913,19 +8919,19 @@ nm_device_get_configured_mtu_from_connection (NMDevice *self,
 	if (setting_type == NM_TYPE_SETTING_WIRED) {
 		if (setting)
 			mtu = nm_setting_wired_get_mtu (NM_SETTING_WIRED (setting));
-		global_property_name = "ethernet.mtu";
+		global_property_name = NM_CON_DEFAULT ("ethernet.mtu");
 	} else if (setting_type == NM_TYPE_SETTING_WIRELESS) {
 		if (setting)
 			mtu = nm_setting_wireless_get_mtu (NM_SETTING_WIRELESS (setting));
-		global_property_name = "wifi.mtu";
+		global_property_name = NM_CON_DEFAULT ("wifi.mtu");
 	} else if (setting_type == NM_TYPE_SETTING_INFINIBAND) {
 		if (setting)
 			mtu = nm_setting_infiniband_get_mtu (NM_SETTING_INFINIBAND (setting));
-		global_property_name = "infiniband.mtu";
+		global_property_name = NM_CON_DEFAULT ("infiniband.mtu");
 	} else if (setting_type == NM_TYPE_SETTING_IP_TUNNEL) {
 		if (setting)
 			mtu = nm_setting_ip_tunnel_get_mtu (NM_SETTING_IP_TUNNEL (setting));
-		global_property_name = "ip-tunnel.mtu";
+		global_property_name = NM_CON_DEFAULT ("ip-tunnel.mtu");
 	} else
 		g_return_val_if_reached (0);
 
@@ -9606,7 +9612,7 @@ _ip6_privacy_get (NMDevice *self)
 
 	/* 2.) use the default value from the configuration. */
 	ip6_privacy = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                           "ipv6.ip6-privacy",
+	                                                           NM_CON_DEFAULT ("ipv6.ip6-privacy"),
 	                                                           self,
 	                                                           NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
 	                                                           NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
@@ -10757,8 +10763,10 @@ _cleanup_ip_pre (NMDevice *self, int addr_family, CleanupType cleanup_type)
 }
 
 gboolean
-_nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
-                                    GError **error, const char **whitelist)
+_nm_device_hash_check_invalid_keys (GHashTable *hash,
+                                    const char *setting_name,
+                                    GError **error,
+                                    const char *const*whitelist)
 {
 	guint found_whitelisted_keys = 0;
 	guint i;
@@ -15296,7 +15304,9 @@ _get_cloned_mac_address_setting (NMDevice *self, NMConnection *connection, gbool
 		gs_free char *a = NULL;
 
 		a = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-		                                           is_wifi ? "wifi.cloned-mac-address" : "ethernet.cloned-mac-address",
+		                                           is_wifi
+		                                               ? NM_CON_DEFAULT ("wifi.cloned-mac-address")
+		                                               : NM_CON_DEFAULT ("ethernet.cloned-mac-address"),
 		                                           self);
 
 		addr = NM_CLONED_MAC_PRESERVE;
@@ -15307,7 +15317,7 @@ _get_cloned_mac_address_setting (NMDevice *self, NMConnection *connection, gbool
 
 				/* for backward compatibility, read the deprecated wifi.mac-address-randomization setting. */
 				a = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-				                                           "wifi." NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION,
+				                                           NM_CON_DEFAULT ("wifi.mac-address-randomization"),
 				                                           self);
 				v = _nm_utils_ascii_str_to_int64 (a, 10,
 				                                  NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
@@ -15344,7 +15354,9 @@ _get_generate_mac_address_mask_setting (NMDevice *self, NMConnection *connection
 	}
 
 	a = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-	                                           is_wifi ? "wifi.generate-mac-address-mask" : "ethernet.generate-mac-mac-address-mask",
+	                                           is_wifi
+	                                               ? NM_CON_DEFAULT ("wifi.generate-mac-address-mask")
+	                                               : NM_CON_DEFAULT ("ethernet.generate-mac-address-mask"),
 	                                           self);
 	if (!a)
 		return NULL;
@@ -15862,7 +15874,7 @@ nm_device_get_supplicant_timeout (NMDevice *self)
 	}
 
 	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                    "802-1x.auth-timeout",
+	                                                    NM_CON_DEFAULT ("802-1x.auth-timeout"),
 	                                                    self,
 	                                                    1,
 	                                                    G_MAXINT32,
@@ -15890,7 +15902,7 @@ nm_device_auth_retries_try_next (NMDevice *self)
 
 		if (auth_retries == -1) {
 			auth_retries = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-			                                                            "connection.auth-retries",
+			                                                            NM_CON_DEFAULT ("connection.auth-retries"),
 			                                                            self,
 			                                                            -1, G_MAXINT32, -1);
 		}
@@ -16947,3 +16959,11 @@ nm_device_class_init (NMDeviceClass *klass)
 	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 0);
 }
+
+/* Connection defaults from plugins */
+NM_CON_DEFAULT_NOP ("cdma.mtu");
+NM_CON_DEFAULT_NOP ("gsm.mtu");
+NM_CON_DEFAULT_NOP ("wifi.powersave");
+NM_CON_DEFAULT_NOP ("wifi.wake-on-wlan");
+NM_CON_DEFAULT_NOP ("wifi-sec.pmf");
+NM_CON_DEFAULT_NOP ("wifi-sec.fils");

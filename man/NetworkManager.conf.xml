@@ -672,7 +672,15 @@ ipv6.ip6-privacy=0
       (see <link linkend='nm-settings'><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry></link> for details).
       A default value is only consulted if the corresponding per-connection value
       explicitly allows for that.
+      <!-- The following comment is used by check-config-options.sh, don't remove it. -->
+      <!-- start connection defaults -->
       <variablelist>
+        <varlistentry>
+          <term><varname>802-1x.auth-timeout</varname></term>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>cdma.mtu</varname></term>
+        </varlistentry>
         <varlistentry>
           <term><varname>connection.auth-retries</varname></term>
           <listitem><para>If left unspecified, the default value is 3 tries before failing the connection.
@@ -706,6 +714,9 @@ ipv6.ip6-privacy=0
         </varlistentry>
         <varlistentry>
           <term><varname>ethernet.wake-on-lan</varname></term>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>gsm.mtu</varname></term>
         </varlistentry>
         <varlistentry>
           <term><varname>infiniband.mtu</varname></term>
@@ -811,7 +822,12 @@ ipv6.ip6-privacy=0
           <listitem><para>If left unspecified, the default value
           "<literal>optional</literal>" will be used.</para></listitem>
         </varlistentry>
+        <varlistentry>
+          <term><varname>wifi.wake-on-wlan</varname></term>
+        </varlistentry>
       </variablelist>
+      <!-- The following comment is used by check-config-options.sh, don't remove it. -->
+      <!-- end connection defaults -->
     </para>
     </refsect2>
 

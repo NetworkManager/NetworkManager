@@ -1181,7 +1181,7 @@ _reload_auth_cb (NMAuthChain *chain,
 		goto out;
 	}
 
-	nm_config_reload (priv->config, reload_type);
+	nm_config_reload (priv->config, reload_type, TRUE);
 	g_dbus_method_invocation_return_value (context, NULL);
 
 out:
@@ -4110,7 +4110,7 @@ should_connect_slaves (NMConnection *connection, NMDevice *device)
 		goto out;
 
 	val = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                   "connection.autoconnect-slaves",
+	                                                   NM_CON_DEFAULT ("connection.autoconnect-slaves"),
 	                                                   device,
 	                                                   0, 1, -1);
 

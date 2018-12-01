@@ -32,19 +32,21 @@
 
 /*****************************************************************************/
 
-#define _nm_packed           __attribute__ ((packed))
-#define _nm_unused           __attribute__ ((unused))
-#define _nm_pure             __attribute__ ((pure))
-#define _nm_const            __attribute__ ((const))
+#define _nm_packed           __attribute__ ((__packed__))
+#define _nm_unused           __attribute__ ((__unused__))
+#define _nm_used             __attribute__ ((__used__))
+#define _nm_pure             __attribute__ ((__pure__))
+#define _nm_const            __attribute__ ((__const__))
 #define _nm_printf(a,b)      __attribute__ ((__format__ (__printf__, a, b)))
-#define _nm_align(s)         __attribute__ ((aligned (s)))
+#define _nm_align(s)         __attribute__ ((__aligned__ (s)))
+#define _nm_section(s)       __attribute__ ((__section__ (s)))
 #define _nm_alignof(type)    __alignof (type)
 #define _nm_alignas(type)    _nm_align (_nm_alignof (type))
-#define nm_auto(fcn)         __attribute__ ((cleanup(fcn)))
+#define nm_auto(fcn)         __attribute__ ((__cleanup__(fcn)))
 
 
 #if __GNUC__ >= 7
-#define _nm_fallthrough      __attribute__ ((fallthrough))
+#define _nm_fallthrough      __attribute__ ((__fallthrough__))
 #else
 #define _nm_fallthrough
 #endif
@@ -639,8 +641,11 @@ NM_G_ERROR_MSG (GError *error)
 #define NM_PROPAGATE_CONST(test_expr, ptr) (ptr)
 #endif
 
+/* with the way it is implemented, the caller may or may not pass a trailing
+ * ',' and it will work. However, this makes the macro unsuitable for initializing
+ * an array. */
 #define NM_MAKE_STRV(...) \
-	((const char *const[]) { __VA_ARGS__, NULL })
+	((const char *const[(sizeof (((const char *const[]) { __VA_ARGS__ })) / sizeof (const char *)) + 1]) { __VA_ARGS__ })
 
 /*****************************************************************************/
 

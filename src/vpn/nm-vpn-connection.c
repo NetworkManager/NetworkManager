@@ -1878,7 +1878,7 @@ connect_success (NMVpnConnection *self)
 	timeout = nm_setting_vpn_get_timeout (s_vpn);
 	if (timeout == 0) {
 		timeout = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-		                                                       "vpn.timeout",
+		                                                       NM_CON_DEFAULT ("vpn.timeout"),
 		                                                       NULL,
 		                                                       1, G_MAXUINT32, 60);
 	}

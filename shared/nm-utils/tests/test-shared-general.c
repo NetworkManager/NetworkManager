@@ -62,6 +62,46 @@ test_nmhash (void)
 
 /*****************************************************************************/
 
+static const char *
+_make_strv_foo (void)
+{
+	return "foo";
+}
+
+static const char *const*const _tst_make_strv_1 = NM_MAKE_STRV ("1", "2");
+
+static void
+test_make_strv (void)
+{
+	const char *const*v1a = NM_MAKE_STRV ("a");
+	const char *const*v1b = NM_MAKE_STRV ("a", );
+	const char *const*v2a = NM_MAKE_STRV ("a", "b");
+	const char *const*v2b = NM_MAKE_STRV ("a", "b", );
+	const char *const v3[] = { "a", "b", };
+	const char *const*v4b = NM_MAKE_STRV ("a", _make_strv_foo (), );
+
+	g_assert (NM_PTRARRAY_LEN (v1a) == 1);
+	g_assert (NM_PTRARRAY_LEN (v1b) == 1);
+	g_assert (NM_PTRARRAY_LEN (v2a) == 2);
+	g_assert (NM_PTRARRAY_LEN (v2b) == 2);
+
+	g_assert (NM_PTRARRAY_LEN (_tst_make_strv_1) == 2);
+	g_assert_cmpstr (_tst_make_strv_1[0], ==, "1");
+	g_assert_cmpstr (_tst_make_strv_1[1], ==, "2");
+	/* writing the static read-only variable leads to crash .*/
+	//((char **) _tst_make_strv_1)[0] = NULL;
+	//((char **) _tst_make_strv_1)[2] = "c";
+
+	G_STATIC_ASSERT_EXPR (G_N_ELEMENTS (v3) == 2);
+
+	g_assert (NM_PTRARRAY_LEN (v4b) == 2);
+
+	G_STATIC_ASSERT_EXPR (G_N_ELEMENTS (NM_MAKE_STRV ("a", "b"  )) == 3);
+	G_STATIC_ASSERT_EXPR (G_N_ELEMENTS (NM_MAKE_STRV ("a", "b", )) == 3);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -70,6 +110,7 @@ int main (int argc, char **argv)
 
 	g_test_add_func ("/general/test_monotonic_timestamp", test_monotonic_timestamp);
 	g_test_add_func ("/general/test_nmhash", test_nmhash);
+	g_test_add_func ("/general/test_nm_make_strv", test_make_strv);
 
 	return g_test_run ();
 }

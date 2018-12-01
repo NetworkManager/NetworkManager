@@ -206,20 +206,20 @@ test_config_simple (void)
 	g_assert_cmpstr (value, ==, "52");
 	g_free (value);
 
-	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "dummy.test1", dev51);
-	g_assert_cmpstr (value, ==, "yes");
+	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "ethernet.mtu", dev51);
+	g_assert_cmpstr (value, ==, "9000");
 	g_free (value);
 
-	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "dummy.test1", dev50);
-	g_assert_cmpstr (value, ==, "no");
+	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "ethernet.mtu", dev50);
+	g_assert_cmpstr (value, ==, "1400");
 	g_free (value);
 
-	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "dummy.test2", dev51);
+	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "ipv4.dns-priority", dev51);
 	g_assert_cmpstr (value, ==, NULL);
 	g_free (value);
 
-	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "dummy.test2", dev50);
-	g_assert_cmpstr (value, ==, "no");
+	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "ipv4.dns-priority", dev50);
+	g_assert_cmpstr (value, ==, "60");
 	g_free (value);
 }
 
@@ -506,17 +506,17 @@ test_config_confdir (void)
 		gs_free char *_value = nm_config_data_get_connection_default (nm_config_get_data_orig (xconfig), (xname), NULL); \
 		g_assert_cmpstr (_value, ==, (xvalue)); \
 	} G_STMT_END
-	ASSERT_GET_CONN_DEFAULT (config, "ord.key00", "A-0.0.00");
-	ASSERT_GET_CONN_DEFAULT (config, "ord.key01", "A-0.3.01");
-	ASSERT_GET_CONN_DEFAULT (config, "ord.key02", "A-0.2.02");
-	ASSERT_GET_CONN_DEFAULT (config, "ord.key03", "A-0.1.03");
-	ASSERT_GET_CONN_DEFAULT (config, "ord.key04", "B-1.3.04");
-	ASSERT_GET_CONN_DEFAULT (config, "ord.key05", "B-1.2.05");
-	ASSERT_GET_CONN_DEFAULT (config, "ord.key06", "B-1.1.06");
-	ASSERT_GET_CONN_DEFAULT (config, "ord.key07", "C-2.3.07");
-	ASSERT_GET_CONN_DEFAULT (config, "ord.key08", "C-2.2.08");
-	ASSERT_GET_CONN_DEFAULT (config, "ord.key09", "C-2.1.09");
-	ASSERT_GET_CONN_DEFAULT (config, "ord.ovw01", "C-0.1.ovw01");
+	ASSERT_GET_CONN_DEFAULT (config, NM_CON_DEFAULT ("ord.key00"), "A-0.0.00");
+	ASSERT_GET_CONN_DEFAULT (config, NM_CON_DEFAULT ("ord.key01"), "A-0.3.01");
+	ASSERT_GET_CONN_DEFAULT (config, NM_CON_DEFAULT ("ord.key02"), "A-0.2.02");
+	ASSERT_GET_CONN_DEFAULT (config, NM_CON_DEFAULT ("ord.key03"), "A-0.1.03");
+	ASSERT_GET_CONN_DEFAULT (config, NM_CON_DEFAULT ("ord.key04"), "B-1.3.04");
+	ASSERT_GET_CONN_DEFAULT (config, NM_CON_DEFAULT ("ord.key05"), "B-1.2.05");
+	ASSERT_GET_CONN_DEFAULT (config, NM_CON_DEFAULT ("ord.key06"), "B-1.1.06");
+	ASSERT_GET_CONN_DEFAULT (config, NM_CON_DEFAULT ("ord.key07"), "C-2.3.07");
+	ASSERT_GET_CONN_DEFAULT (config, NM_CON_DEFAULT ("ord.key08"), "C-2.2.08");
+	ASSERT_GET_CONN_DEFAULT (config, NM_CON_DEFAULT ("ord.key09"), "C-2.1.09");
+	ASSERT_GET_CONN_DEFAULT (config, NM_CON_DEFAULT ("ord.ovw01"), "C-0.1.ovw01");
 
 	value = nm_config_data_get_value (nm_config_get_data_orig (config), NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST".1", "val1", NM_CONFIG_GET_VALUE_NONE);
 	g_assert_cmpstr (value, ==, "a,c");
@@ -550,6 +550,36 @@ test_config_confdir_parse_error (void)
 	setup_config (&error, TEST_DIR "/NetworkManager.conf", "", NULL, TEST_DIR, "", NULL);
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_PARSE);
 	g_clear_error (&error);
+}
+
+static void
+test_config_warnings (void)
+{
+	gs_unref_object NMConfig *config = NULL;
+	const char *const *warnings;
+
+	config = setup_config (NULL, TEST_DIR "/NetworkManager-warn.conf", "", NULL, "/no/such/dir", "", NULL);
+
+	warnings = nm_config_get_warnings (config);
+
+#define check_warning(str, group, key) \
+	{ \
+		gs_free char *expected = NULL; \
+		\
+		expected = g_strdup_printf ("unknown key '%s' in section [%s] of file '" TEST_DIR "/NetworkManager-warn.conf'", \
+		                            key, group); \
+		g_assert_cmpstr (str, ==, expected); \
+	}
+
+	g_assert (warnings);
+	g_assert_cmpint (g_strv_length ((char **) warnings), ==, 5);
+	check_warning (warnings[0], "main", "plugin");
+	check_warning (warnings[1], "main", "rc-managed");
+	check_warning (warnings[2], "connectivity", "audit");
+	check_warning (warnings[3], "connection-wifi", "wifi.tx-power");
+	check_warning (warnings[4], "connection", "ipv4.addresses");
+
+#undef check_warning
 }
 
 /*****************************************************************************/
@@ -622,7 +652,7 @@ _set_values_user (NMConfig *config,
 	else
 		NMTST_EXPECT_NM_INFO ("config: signal: SIGHUP (no changes from disk)*");
 
-	nm_config_reload (config, NM_CONFIG_CHANGE_CAUSE_SIGHUP);
+	nm_config_reload (config, NM_CONFIG_CHANGE_CAUSE_SIGHUP, FALSE);
 
 	g_test_assert_expected_messages ();
 
@@ -926,15 +956,15 @@ test_config_signal (void)
 
 	expected = NM_CONFIG_CHANGE_CAUSE_SIGUSR1;
 	NMTST_EXPECT_NM_INFO ("config: signal: SIGUSR1");
-	nm_config_reload (config, expected);
+	nm_config_reload (config, expected, FALSE);
 
 	expected = NM_CONFIG_CHANGE_CAUSE_SIGUSR2;
 	NMTST_EXPECT_NM_INFO ("config: signal: SIGUSR2");
-	nm_config_reload (config, expected);
+	nm_config_reload (config, expected, FALSE);
 
 	expected = NM_CONFIG_CHANGE_CAUSE_SIGHUP;
 	NMTST_EXPECT_NM_INFO ("config: signal: SIGHUP (no changes from disk)*");
-	nm_config_reload (config, expected);
+	nm_config_reload (config, expected, FALSE);
 
 	/* test with subscribing two signals...
 	 *
@@ -946,7 +976,7 @@ test_config_signal (void)
 	                  &expected);
 	expected = NM_CONFIG_CHANGE_CAUSE_SIGUSR2;
 	NMTST_EXPECT_NM_INFO ("config: signal: SIGUSR2");
-	nm_config_reload (config, NM_CONFIG_CHANGE_CAUSE_SIGUSR2);
+	nm_config_reload (config, NM_CONFIG_CHANGE_CAUSE_SIGUSR2, FALSE);
 	g_signal_handlers_disconnect_by_func (config, _test_signal_config_changed_cb2, &expected);
 
 	g_signal_handlers_disconnect_by_func (config, _test_signal_config_changed_cb, &expected);
@@ -1064,6 +1094,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/config/no-auto-default", test_config_no_auto_default);
 	g_test_add_func ("/config/confdir", test_config_confdir);
 	g_test_add_func ("/config/confdir-parse-error", test_config_confdir_parse_error);
+	g_test_add_func ("/config/warnings", test_config_warnings);
 
 	g_test_add_func ("/config/set-values", test_config_set_values);
 	g_test_add_func ("/config/global-dns", test_config_global_dns);
