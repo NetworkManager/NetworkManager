@@ -120,6 +120,7 @@ typedef struct {
 	guint interval;
 
 	bool enabled:1;
+	bool uri_valid:1;
 } NMConnectivityPrivate;
 
 struct _NMConnectivity {
@@ -733,7 +734,10 @@ nm_connectivity_check_start (NMConnectivity *self,
 		cb_data->ifspec = g_strdup_printf ("if!%s", iface);
 
 #if WITH_CONCHECK
-	if (iface && ifindex > 0 && priv->enabled && priv->host) {
+	if (   iface
+	    && ifindex > 0
+	    && priv->enabled
+	    && priv->uri_valid) {
 		gboolean has_systemd_resolved;
 
 		cb_data->concheck.ifindex = ifindex;
@@ -882,43 +886,50 @@ static void
 update_config (NMConnectivity *self, NMConfigData *config_data)
 {
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-	const char *uri, *response;
+	const char *uri;
+	const char *response;
 	guint interval;
 	gboolean enabled;
 	gboolean changed = FALSE;
 
-	/* Set the URI. */
 	uri = nm_config_data_get_connectivity_uri (config_data);
-	if (uri && !*uri)
-		uri = NULL;
-	changed = g_strcmp0 (uri, priv->uri) != 0;
-	if (uri) {
-		char *scheme = g_uri_parse_scheme (uri);
+	if (!nm_streq0 (uri, priv->uri)) {
+		gboolean uri_valid;
 
-		if (!scheme) {
-			_LOGE ("invalid URI '%s' for connectivity check.", uri);
-			uri = NULL;
-		} else if (g_ascii_strcasecmp (scheme, "https") == 0) {
-			_LOGW ("use of HTTPS for connectivity checking is not reliable and is discouraged (URI: %s)", uri);
-		} else if (g_ascii_strcasecmp (scheme, "http") != 0) {
-			_LOGE ("scheme of '%s' uri doesn't use a scheme that is allowed for connectivity check.", uri);
-			uri = NULL;
+		uri_valid = (uri && *uri);
+		if (uri_valid) {
+			gs_free char *scheme = g_uri_parse_scheme (uri);
+
+			if (!scheme) {
+				_LOGE ("invalid URI '%s' for connectivity check.", uri);
+				uri_valid = FALSE;
+			} else if (g_ascii_strcasecmp (scheme, "https") == 0) {
+				_LOGW ("use of HTTPS for connectivity checking is not reliable and is discouraged (URI: %s)", uri);
+			} else if (g_ascii_strcasecmp (scheme, "http") != 0) {
+				_LOGE ("scheme of '%s' uri doesn't use a scheme that is allowed for connectivity check.", uri);
+				uri_valid = FALSE;
+			}
 		}
-
-		if (scheme)
-			g_free (scheme);
-	}
-	if (changed) {
-		g_free (priv->uri);
-		priv->uri = g_strdup (uri);
 
 		g_clear_pointer (&priv->host, g_free);
 		g_clear_pointer (&priv->port, g_free);
-		if (uri)
-			host_and_port_from_uri (uri, &priv->host, &priv->port);
+		if (uri_valid) {
+			if (!host_and_port_from_uri (uri, &priv->host, &priv->port)) {
+				_LOGE ("cannot parse host and port from '%s'", uri);
+				uri_valid = FALSE;
+			}
+		}
+
+		if (   priv->uri_valid != uri_valid
+		    || (   uri_valid
+		        && !nm_streq0 (priv->uri, uri)))
+			changed = TRUE;
+
+		g_free (priv->uri);
+		priv->uri = g_strdup (uri);
+		priv->uri_valid = uri_valid;
 	}
 
-	/* Set the interval. */
 	interval = nm_config_data_get_connectivity_interval (config_data);
 	interval = MIN (interval, (7 * 24 * 3600));
 	if (priv->interval != interval) {
@@ -928,7 +939,7 @@ update_config (NMConnectivity *self, NMConfigData *config_data)
 
 	enabled = FALSE;
 #if WITH_CONCHECK
-	if (   priv->uri
+	if (   priv->uri_valid
 	    && priv->interval)
 		enabled = nm_config_data_get_connectivity_enabled (config_data);
 #endif
@@ -938,7 +949,6 @@ update_config (NMConnectivity *self, NMConfigData *config_data)
 		changed = TRUE;
 	}
 
-	/* Set the response. */
 	response = nm_config_data_get_connectivity_response (config_data);
 	if (!nm_streq0 (response, priv->response)) {
 		/* a response %NULL means, NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE. Any other response
