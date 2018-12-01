@@ -31,6 +31,7 @@
 #endif
 
 #include "c-list/src/c-list.h"
+#include "nm-core-internal.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dbus-manager.h"
@@ -643,16 +644,12 @@ resolve_cb (GObject *object, GAsyncResult *res, gpointer user_data)
 	NMConnectivityCheckHandle *cb_data;
 	NMConnectivity *self;
 	NMConnectivityPrivate *priv;
-	GVariant *result;
-	GVariant *addresses;
+	gs_unref_variant GVariant *result = NULL;
+	gs_unref_variant GVariant *addresses = NULL;
 	gsize no_addresses;
 	int ifindex;
 	int addr_family;
-	GVariant *address = NULL;
-	const guchar *address_buf;
 	gsize len = 0;
-	char str[INET6_ADDRSTRLEN + 1] = { 0, };
-	char *host;
 	gsize i;
 	gs_free_error GError *error = NULL;
 
@@ -675,25 +672,32 @@ resolve_cb (GObject *object, GAsyncResult *res, gpointer user_data)
 
 	addresses = g_variant_get_child_value (result, 0);
 	no_addresses = g_variant_n_children (addresses);
-	g_variant_unref (result);
 
 	for (i = 0; i < no_addresses; i++) {
+		gs_unref_variant GVariant *address = NULL;
+		char str_addr[NM_UTILS_INET_ADDRSTRLEN];
+		gs_free char *host_entry = NULL;
+		const guchar *address_buf;
+
 		g_variant_get_child (addresses, i, "(ii@ay)", &ifindex, &addr_family, &address);
+
+		if (   cb_data->addr_family != AF_UNSPEC
+		    && cb_data->addr_family != addr_family)
+			continue;
+
 		address_buf = g_variant_get_fixed_array (address, &len, 1);
+		if (   (addr_family == AF_INET  && len != sizeof (struct in_addr))
+		    || (addr_family == AF_INET6 && len != sizeof (struct in6_addr)))
+			continue;
 
-		if (   (addr_family == AF_INET && len == sizeof (struct in_addr))
-		    || (addr_family == AF_INET6 && len == sizeof (struct in6_addr))) {
-			inet_ntop (addr_family, address_buf, str, sizeof (str));
-			host = g_strdup_printf ("%s:%s:%s", priv->host, priv->port ?: "80", str);
-			cb_data->concheck.hosts = curl_slist_append (cb_data->concheck.hosts, host);
-			_LOG2T ("adding '%s' to curl resolve list", host);
-			g_free (host);
-		}
-
-		g_variant_unref (address);
+		host_entry = g_strdup_printf ("%s:%s:%s",
+		                              priv->host,
+		                              priv->port ?: "80",
+		                              nm_utils_inet_ntop (addr_family, address_buf, str_addr));
+		cb_data->concheck.hosts = curl_slist_append (cb_data->concheck.hosts, host_entry);
+		_LOG2T ("adding '%s' to curl resolve list", host_entry);
 	}
 
-	g_variant_unref (addresses);
 	do_curl_request (cb_data);
 }
 
@@ -858,7 +862,7 @@ host_and_port_from_uri (const char *uri, char **host, char **port)
 	}
 	if (host_len == 0)
 		return FALSE;
-	*host = strndup (host_begin, host_len);
+	*host = g_strndup (host_begin, host_len);
 
 	/* port */
 	if (*p++ == ':') {
@@ -868,7 +872,7 @@ host_and_port_from_uri (const char *uri, char **host, char **port)
 			p++;
 		}
 		if (port_len)
-			*port = strndup (port_begin, port_len);
+			*port = g_strndup (port_begin, port_len);
 	}
 
 	return TRUE;
@@ -894,9 +898,9 @@ update_config (NMConnectivity *self, NMConfigData *config_data)
 		if (!scheme) {
 			_LOGE ("invalid URI '%s' for connectivity check.", uri);
 			uri = NULL;
-		} else if (strcasecmp (scheme, "https") == 0) {
+		} else if (g_ascii_strcasecmp (scheme, "https") == 0) {
 			_LOGW ("use of HTTPS for connectivity checking is not reliable and is discouraged (URI: %s)", uri);
-		} else if (strcasecmp (scheme, "http") != 0) {
+		} else if (g_ascii_strcasecmp (scheme, "http") != 0) {
 			_LOGE ("scheme of '%s' uri doesn't use a scheme that is allowed for connectivity check.", uri);
 			uri = NULL;
 		}
@@ -1002,10 +1006,10 @@ dispose (GObject *object)
 	                                      handles_lst)))
 		cb_data_complete (cb_data, NM_CONNECTIVITY_DISPOSING, "shutting down");
 
-	g_clear_pointer (&priv->uri, g_free);
-	g_clear_pointer (&priv->host, g_free);
-	g_clear_pointer (&priv->port, g_free);
-	g_clear_pointer (&priv->response, g_free);
+	nm_clear_g_free (&priv->uri);
+	nm_clear_g_free (&priv->host);
+	nm_clear_g_free (&priv->port);
+	nm_clear_g_free (&priv->response);
 
 #if WITH_CONCHECK
 	curl_global_cleanup ();
