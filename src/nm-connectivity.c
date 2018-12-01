@@ -23,7 +23,6 @@
 #include "nm-default.h"
 
 #include "nm-connectivity.h"
-#include "nm-dbus-manager.h"
 
 #include <string.h>
 
@@ -34,6 +33,8 @@
 #include "c-list/src/c-list.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
+#include "nm-dbus-manager.h"
+#include "dns/nm-dns-manager.h"
 
 #define HEADER_STATUS_ONLINE "X-NetworkManager-Status: online\r\n"
 
@@ -114,9 +115,10 @@ typedef struct {
 	char *host;
 	char *port;
 	char *response;
-	gboolean enabled;
-	guint interval;
 	NMConfig *config;
+	guint interval;
+
+	bool enabled:1;
 } NMConnectivityPrivate;
 
 struct _NMConnectivity {
@@ -728,43 +730,60 @@ nm_connectivity_check_start (NMConnectivity *self,
 
 #if WITH_CONCHECK
 	if (iface && ifindex > 0 && priv->enabled && priv->host) {
-		GDBusConnection *dbus_connection;
+		gboolean has_systemd_resolved;
 
 		cb_data->concheck.ifindex = ifindex;
 
-		dbus_connection = nm_dbus_manager_get_dbus_connection (nm_dbus_manager_get ());
-		if (!dbus_connection) {
-			/* we have no D-Bus connection? That might happen in configure and quit mode.
-			 *
-			 * Anyway, something is very odd, just fail connectivity check. */
-			_LOG2D ("start fake request (fail due to no D-Bus connection)");
-			cb_data->fail_reason_no_dbus_connection = TRUE;
-			cb_data->timeout_id = g_idle_add (_idle_cb, cb_data);
-			return cb_data;
+		/* note that we pick up support for systemd-resolved right away when we need it.
+		 * We don't need to remember the setting, because we can (cheaply) check anew
+		 * on each request.
+		 *
+		 * Yes, this makes NMConnectivity singleton dependent on NMDnsManager singleton.
+		 * Well, not really: it makes connectivity-check-start dependent on NMDnsManager
+		 * which merely means, not to start a connectivity check, late during shutdown. */
+		has_systemd_resolved = nm_dns_manager_has_systemd_resolved (nm_dns_manager_get ());
+
+		if (has_systemd_resolved) {
+			GDBusConnection *dbus_connection;
+
+			dbus_connection = nm_dbus_manager_get_dbus_connection (nm_dbus_manager_get ());
+			if (!dbus_connection) {
+				/* we have no D-Bus connection? That might happen in configure and quit mode.
+				 *
+				 * Anyway, something is very odd, just fail connectivity check. */
+				_LOG2D ("start fake request (fail due to no D-Bus connection)");
+				cb_data->fail_reason_no_dbus_connection = TRUE;
+				cb_data->timeout_id = g_idle_add (_idle_cb, cb_data);
+				return cb_data;
+			}
+
+			cb_data->concheck.resolve_cancellable = g_cancellable_new ();
+
+			g_dbus_connection_call (nm_dbus_manager_get_dbus_connection (nm_dbus_manager_get ()),
+			                        "org.freedesktop.resolve1",
+			                        "/org/freedesktop/resolve1",
+			                        "org.freedesktop.resolve1.Manager",
+			                        "ResolveHostname",
+			                        g_variant_new ("(isit)",
+			                                       (gint32) cb_data->concheck.ifindex,
+			                                       priv->host,
+			                                       (gint32) cb_data->addr_family,
+			                                       SD_RESOLVED_DNS),
+			                        G_VARIANT_TYPE ("(a(iiay)st)"),
+			                        G_DBUS_CALL_FLAGS_NONE,
+			                        -1,
+			                        cb_data->concheck.resolve_cancellable,
+			                        resolve_cb,
+			                        cb_data);
+			_LOG2D ("start request to '%s' (try resolving '%s' using systemd-resolved)",
+			        priv->uri,
+			        priv->host);
+		} else {
+			_LOG2D ("start request to '%s' (systemd-resolved not available)",
+			        priv->uri);
+			do_curl_request (cb_data);
 		}
 
-		cb_data->concheck.resolve_cancellable = g_cancellable_new ();
-
-		g_dbus_connection_call (nm_dbus_manager_get_dbus_connection (nm_dbus_manager_get ()),
-		                        "org.freedesktop.resolve1",
-		                        "/org/freedesktop/resolve1",
-		                        "org.freedesktop.resolve1.Manager",
-		                        "ResolveHostname",
-		                        g_variant_new ("(isit)",
-		                                       (gint32) cb_data->concheck.ifindex,
-		                                       priv->host,
-		                                       (gint32) cb_data->addr_family,
-		                                       SD_RESOLVED_DNS),
-		                        G_VARIANT_TYPE ("(a(iiay)st)"),
-		                        G_DBUS_CALL_FLAGS_NONE,
-		                        -1,
-		                        cb_data->concheck.resolve_cancellable,
-		                        resolve_cb,
-		                        cb_data);
-
-		_LOG2D ("start request to '%s' (try resolving '%s' using systemd-resolved)",
-		        priv->uri,
-		        priv->host);
 		return cb_data;
 	}
 #endif
