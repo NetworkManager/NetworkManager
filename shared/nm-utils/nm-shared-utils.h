@@ -76,8 +76,9 @@ static inline char
 nm_utils_addr_family_to_char (int addr_family)
 {
 	switch (addr_family) {
-	case AF_INET:  return '4';
-	case AF_INET6: return '6';
+	case AF_UNSPEC: return 'X';
+	case AF_INET:   return '4';
+	case AF_INET6:  return '6';
 	}
 	g_return_val_if_reached ('?');
 }
