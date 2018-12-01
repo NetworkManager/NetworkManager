@@ -2263,7 +2263,7 @@ make_sriov_setting (shvarFile *ifcfg)
 
 			key += NM_STRLEN ("SRIOV_VF");
 
-			vf = _nm_utils_sriov_vf_from_strparts (key, value, &error);
+			vf = _nm_utils_sriov_vf_from_strparts (key, value, TRUE, &error);
 			if (!vf) {
 				PARSE_WARNING ("ignoring invalid SR-IOV VF '%s %s': %s",
 				               key, value, error->message);
