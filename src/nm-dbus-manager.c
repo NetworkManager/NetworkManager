@@ -1470,6 +1470,14 @@ static const GDBusInterfaceInfo interface_info_objmgr = NM_DEFINE_GDBUS_INTERFAC
 
 /*****************************************************************************/
 
+GDBusConnection *
+nm_dbus_manager_get_dbus_connection (NMDBusManager *self)
+{
+	g_return_val_if_fail (NM_IS_DBUS_MANAGER (self), NULL);
+
+	return NM_DBUS_MANAGER_GET_PRIVATE (self)->connection;
+}
+
 void
 nm_dbus_manager_start (NMDBusManager *self,
                        NMDBusManagerSetPropertyHandler set_property_handler,
