@@ -344,6 +344,21 @@ _ip_config_lst_head (NMDnsManager *self)
 
 /*****************************************************************************/
 
+gboolean
+nm_dns_manager_has_systemd_resolved (NMDnsManager *self)
+{
+	NMDnsManagerPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DNS_MANAGER (self), FALSE);
+
+	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+
+	return    priv->sd_resolve_plugin
+	       || NM_IS_DNS_SYSTEMD_RESOLVED (priv->plugin);
+}
+
+/*****************************************************************************/
+
 static void
 add_string_item (GPtrArray *array, const char *str, gboolean dup)
 {
