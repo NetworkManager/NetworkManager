@@ -117,10 +117,10 @@ _metagen_device_status_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 		return nmc_meta_generic_get_str_i18n (nmc_device_state_to_string (nm_device_get_state (d)),
 		                                      get_type);
 	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_IP4_CONNECTIVITY:
-		return nmc_meta_generic_get_str_i18n (nm_connectivity_to_string (nm_device_get_connectivity (d, AF_INET)),
+		return nmc_meta_generic_get_str_i18n (nm_connectivity_to_string_no_l10n (nm_device_get_connectivity (d, AF_INET)),
 		                                      get_type);
 	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_IP6_CONNECTIVITY:
-		return nmc_meta_generic_get_str_i18n (nm_connectivity_to_string (nm_device_get_connectivity (d, AF_INET6)),
+		return nmc_meta_generic_get_str_i18n (nm_connectivity_to_string_no_l10n (nm_device_get_connectivity (d, AF_INET6)),
 		                                      get_type);
 	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_DBUS_PATH:
 		return nm_object_get_path (NM_OBJECT (d));
@@ -207,13 +207,13 @@ _metagen_device_detail_general_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 		connectivity = nm_device_get_connectivity (d, AF_INET);
 		return (*out_to_free = nmc_meta_generic_get_enum_with_detail (NMC_META_GENERIC_GET_ENUM_TYPE_PARENTHESES,
 		                                                              connectivity,
-		                                                              nm_connectivity_to_string (connectivity),
+		                                                              nm_connectivity_to_string_no_l10n (connectivity),
 		                                                              get_type));
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_IP6_CONNECTIVITY:
 		connectivity = nm_device_get_connectivity (d, AF_INET6);
 		return (*out_to_free = nmc_meta_generic_get_enum_with_detail (NMC_META_GENERIC_GET_ENUM_TYPE_PARENTHESES,
 		                                                              connectivity,
-		                                                              nm_connectivity_to_string (connectivity),
+		                                                              nm_connectivity_to_string_no_l10n (connectivity),
 		                                                              get_type));
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_UDI:
 		return nm_device_get_udi (d);
