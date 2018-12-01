@@ -63,6 +63,14 @@ nm_connectivity_state_to_string (NMConnectivityState state)
 
 /*****************************************************************************/
 
+typedef struct {
+	guint ref_count;
+	char *uri;
+	char *host;
+	char *port;
+	char *response;
+} ConConfig;
+
 struct _NMConnectivityCheckHandle {
 	CList handles_lst;
 	NMConnectivity *self;
@@ -76,17 +84,18 @@ struct _NMConnectivityCheckHandle {
 
 #if WITH_CONCHECK
 	struct {
-		char *response;
+		ConConfig *con_config;
 
-		int ifindex;
 		GCancellable *resolve_cancellable;
 		CURLM *curl_mhandle;
-		guint curl_timer;
 		CURL *curl_ehandle;
 		struct curl_slist *request_headers;
 		struct curl_slist *hosts;
 
 		GString *recv_msg;
+
+		guint curl_timer;
+		int ch_ifindex;
 	} concheck;
 #endif
 
@@ -112,11 +121,8 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct {
 	CList handles_lst_head;
 	CList completed_handles_lst_head;
-	char *uri;
-	char *host;
-	char *port;
-	char *response;
 	NMConfig *config;
+	ConConfig *con_config;
 	guint interval;
 
 	bool enabled:1;
@@ -160,6 +166,42 @@ NM_DEFINE_SINGLETON_GETTER (NMConnectivity, nm_connectivity_get, NM_TYPE_CONNECT
                      _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
+
+/*****************************************************************************/
+
+static ConConfig *
+_con_config_ref (ConConfig *con_config)
+{
+	if (con_config) {
+		nm_assert (con_config->ref_count > 0);
+		++con_config->ref_count;
+	}
+	return con_config;
+}
+
+static void
+_con_config_unref (ConConfig *con_config)
+{
+	if (!con_config)
+		return;
+
+	nm_assert (con_config->ref_count > 0);
+
+	if (--con_config->ref_count != 0)
+		return;
+
+	g_free (con_config->uri);
+	g_free (con_config->host);
+	g_free (con_config->port);
+	g_free (con_config->response);
+	g_slice_free (ConConfig, con_config);
+}
+
+static const char *
+_con_config_get_response (const ConConfig *con_config)
+{
+	return con_config->response ?: NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE;
+}
 
 /*****************************************************************************/
 
@@ -228,7 +270,7 @@ cb_data_complete (NMConnectivityCheckHandle *cb_data,
 	 * not use the self pointer too. */
 
 #if WITH_CONCHECK
-	g_free (cb_data->concheck.response);
+	_con_config_unref (cb_data->concheck.con_config);
 	if (cb_data->concheck.recv_msg)
 		g_string_free (cb_data->concheck.recv_msg, TRUE);
 #endif
@@ -281,12 +323,6 @@ _complete_queued (NMConnectivity *self)
 	nm_g_object_unref (self_keep_alive);
 }
 
-static const char *
-_check_handle_get_response (NMConnectivityCheckHandle *cb_data)
-{
-	return cb_data->concheck.response ?: NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE;
-}
-
 static gboolean
 _con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 {
@@ -334,7 +370,7 @@ _con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 			                         g_strdup_printf ("check failed: (%d) %s",
 			                                          msg->data.result,
 			                                          curl_easy_strerror (msg->data.result)));
-		} else if (   !((_check_handle_get_response (cb_data))[0])
+		} else if (   !((_con_config_get_response (cb_data->concheck.con_config))[0])
 		           && (curl_easy_getinfo (msg->easy_handle, CURLINFO_RESPONSE_CODE, &response_code) == CURLE_OK)
 		           && response_code == 204) {
 			/* If we got a 204 response code (no content) and we actually
@@ -516,7 +552,7 @@ easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 
 	g_string_append_len (cb_data->concheck.recv_msg, buffer, len);
 
-	response = _check_handle_get_response (cb_data);;
+	response = _con_config_get_response (cb_data->concheck.con_config);;
 	if (   response
 	    && cb_data->concheck.recv_msg->len >= strlen (response)) {
 		/* We already have enough data -- check response */
@@ -580,7 +616,6 @@ _idle_cb (gpointer user_data)
 static void
 do_curl_request (NMConnectivityCheckHandle *cb_data)
 {
-	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (cb_data->self);
 	CURLM *mhandle;
 	CURL *ehandle;
 	long resolve;
@@ -598,7 +633,6 @@ do_curl_request (NMConnectivityCheckHandle *cb_data)
 		return;
 	}
 
-	cb_data->concheck.response = g_strdup (priv->response);
 	cb_data->concheck.curl_mhandle = mhandle;
 	cb_data->concheck.curl_ehandle = ehandle;
 	cb_data->concheck.request_headers = curl_slist_append (NULL, "Connection: close");
@@ -625,7 +659,7 @@ do_curl_request (NMConnectivityCheckHandle *cb_data)
 		g_warn_if_reached ();
 	}
 
-	curl_easy_setopt (ehandle, CURLOPT_URL, priv->uri);
+	curl_easy_setopt (ehandle, CURLOPT_URL, cb_data->concheck.con_config->uri);
 	curl_easy_setopt (ehandle, CURLOPT_WRITEFUNCTION, easy_write_cb);
 	curl_easy_setopt (ehandle, CURLOPT_WRITEDATA, cb_data);
 	curl_easy_setopt (ehandle, CURLOPT_HEADERFUNCTION, easy_header_cb);
@@ -643,8 +677,6 @@ static void
 resolve_cb (GObject *object, GAsyncResult *res, gpointer user_data)
 {
 	NMConnectivityCheckHandle *cb_data;
-	NMConnectivity *self;
-	NMConnectivityPrivate *priv;
 	gs_unref_variant GVariant *result = NULL;
 	gs_unref_variant GVariant *addresses = NULL;
 	gsize no_addresses;
@@ -659,8 +691,6 @@ resolve_cb (GObject *object, GAsyncResult *res, gpointer user_data)
 		return;
 
 	cb_data = user_data;
-	self = cb_data->self;
-	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
 	g_clear_object (&cb_data->concheck.resolve_cancellable);
 
@@ -692,8 +722,8 @@ resolve_cb (GObject *object, GAsyncResult *res, gpointer user_data)
 			continue;
 
 		host_entry = g_strdup_printf ("%s:%s:%s",
-		                              priv->host,
-		                              priv->port ?: "80",
+		                              cb_data->concheck.con_config->host,
+		                              cb_data->concheck.con_config->port ?: "80",
 		                              nm_utils_inet_ntop (addr_family, address_buf, str_addr));
 		cb_data->concheck.hosts = curl_slist_append (cb_data->concheck.hosts, host_entry);
 		_LOG2T ("adding '%s' to curl resolve list", host_entry);
@@ -729,18 +759,20 @@ nm_connectivity_check_start (NMConnectivity *self,
 	cb_data->user_data = user_data;
 	cb_data->completed_state = NM_CONNECTIVITY_UNKNOWN;
 	cb_data->addr_family = addr_family;
+	cb_data->concheck.con_config = _con_config_ref (priv->con_config);
 
 	if (iface)
 		cb_data->ifspec = g_strdup_printf ("if!%s", iface);
 
 #if WITH_CONCHECK
+
 	if (   iface
 	    && ifindex > 0
 	    && priv->enabled
 	    && priv->uri_valid) {
 		gboolean has_systemd_resolved;
 
-		cb_data->concheck.ifindex = ifindex;
+		cb_data->concheck.ch_ifindex = ifindex;
 
 		/* note that we pick up support for systemd-resolved right away when we need it.
 		 * We don't need to remember the setting, because we can (cheaply) check anew
@@ -773,8 +805,8 @@ nm_connectivity_check_start (NMConnectivity *self,
 			                        "org.freedesktop.resolve1.Manager",
 			                        "ResolveHostname",
 			                        g_variant_new ("(isit)",
-			                                       (gint32) cb_data->concheck.ifindex,
-			                                       priv->host,
+			                                       (gint32) cb_data->concheck.ch_ifindex,
+			                                       cb_data->concheck.con_config->host,
 			                                       (gint32) cb_data->addr_family,
 			                                       SD_RESOLVED_DNS),
 			                        G_VARIANT_TYPE ("(a(iiay)st)"),
@@ -784,11 +816,11 @@ nm_connectivity_check_start (NMConnectivity *self,
 			                        resolve_cb,
 			                        cb_data);
 			_LOG2D ("start request to '%s' (try resolving '%s' using systemd-resolved)",
-			        priv->uri,
-			        priv->host);
+			        cb_data->concheck.con_config->uri,
+			        cb_data->concheck.con_config->host);
 		} else {
 			_LOG2D ("start request to '%s' (systemd-resolved not available)",
-			        priv->uri);
+			        cb_data->concheck.con_config->uri);
 			do_curl_request (cb_data);
 		}
 
@@ -886,49 +918,70 @@ static void
 update_config (NMConnectivity *self, NMConfigData *config_data)
 {
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-	const char *uri;
-	const char *response;
 	guint interval;
 	gboolean enabled;
 	gboolean changed = FALSE;
+	const char *cur_uri = priv->con_config ? priv->con_config->uri : NULL;
+	const char *cur_response = priv->con_config ? priv->con_config->response : NULL;
+	const char *new_response;
+	const char *new_uri;
+	gboolean new_uri_valid = priv->uri_valid;
+	gboolean new_host_port = FALSE;
+	gs_free char *new_host = NULL;
+	gs_free char *new_port = NULL;
 
-	uri = nm_config_data_get_connectivity_uri (config_data);
-	if (!nm_streq0 (uri, priv->uri)) {
-		gboolean uri_valid;
+	new_uri = nm_config_data_get_connectivity_uri (config_data);
+	if (!nm_streq0 (new_uri, cur_uri)) {
 
-		uri_valid = (uri && *uri);
-		if (uri_valid) {
-			gs_free char *scheme = g_uri_parse_scheme (uri);
+		new_uri_valid = (new_uri && *new_uri);
+		if (new_uri_valid) {
+			gs_free char *scheme = g_uri_parse_scheme (new_uri);
 
 			if (!scheme) {
-				_LOGE ("invalid URI '%s' for connectivity check.", uri);
-				uri_valid = FALSE;
+				_LOGE ("invalid URI '%s' for connectivity check.", new_uri);
+				new_uri_valid = FALSE;
 			} else if (g_ascii_strcasecmp (scheme, "https") == 0) {
-				_LOGW ("use of HTTPS for connectivity checking is not reliable and is discouraged (URI: %s)", uri);
+				_LOGW ("use of HTTPS for connectivity checking is not reliable and is discouraged (URI: %s)", new_uri);
 			} else if (g_ascii_strcasecmp (scheme, "http") != 0) {
-				_LOGE ("scheme of '%s' uri doesn't use a scheme that is allowed for connectivity check.", uri);
-				uri_valid = FALSE;
+				_LOGE ("scheme of '%s' uri doesn't use a scheme that is allowed for connectivity check.", new_uri);
+				new_uri_valid = FALSE;
+			}
+			if (new_uri_valid) {
+				new_host_port = TRUE;
+				if (!host_and_port_from_uri (new_uri, &new_host, &new_port)) {
+					_LOGE ("cannot parse host and port from '%s'", new_uri);
+					new_uri_valid = FALSE;
+				}
 			}
 		}
 
-		g_clear_pointer (&priv->host, g_free);
-		g_clear_pointer (&priv->port, g_free);
-		if (uri_valid) {
-			if (!host_and_port_from_uri (uri, &priv->host, &priv->port)) {
-				_LOGE ("cannot parse host and port from '%s'", uri);
-				uri_valid = FALSE;
-			}
-		}
-
-		if (   priv->uri_valid != uri_valid
-		    || (   uri_valid
-		        && !nm_streq0 (priv->uri, uri)))
+		if (   new_uri_valid
+		    || priv->uri_valid != new_uri_valid)
 			changed = TRUE;
-
-		g_free (priv->uri);
-		priv->uri = g_strdup (uri);
-		priv->uri_valid = uri_valid;
 	}
+
+	new_response = nm_config_data_get_connectivity_response (config_data);
+	if (!nm_streq0 (new_response, cur_response))
+		changed = TRUE;
+
+	if (   !priv->con_config
+	    || !nm_streq0 (new_uri, priv->con_config->uri)
+	    || !nm_streq0 (new_response, priv->con_config->response)) {
+		if (!new_host_port) {
+			new_host = priv->con_config ? g_strdup (priv->con_config->host) : NULL;
+			new_port = priv->con_config ? g_strdup (priv->con_config->port) : NULL;
+		}
+		_con_config_unref (priv->con_config);
+		priv->con_config = g_slice_new (ConConfig);
+		*priv->con_config = (ConConfig) {
+			.ref_count = 1,
+			.uri       = g_strdup (new_uri),
+			.response  = g_strdup (new_response),
+			.host      = g_steal_pointer (&new_host),
+			.port      = g_steal_pointer (&new_port),
+		};
+	}
+	priv->uri_valid = new_uri_valid;
 
 	interval = nm_config_data_get_connectivity_interval (config_data);
 	interval = MIN (interval, (7 * 24 * 3600));
@@ -946,15 +999,6 @@ update_config (NMConnectivity *self, NMConfigData *config_data)
 
 	if (priv->enabled != enabled) {
 		priv->enabled = enabled;
-		changed = TRUE;
-	}
-
-	response = nm_config_data_get_connectivity_response (config_data);
-	if (!nm_streq0 (response, priv->response)) {
-		/* a response %NULL means, NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE. Any other response
-		 * (including "") is accepted. */
-		g_free (priv->response);
-		priv->response = g_strdup (response);
 		changed = TRUE;
 	}
 
@@ -1016,10 +1060,7 @@ dispose (GObject *object)
 	                                      handles_lst)))
 		cb_data_complete (cb_data, NM_CONNECTIVITY_DISPOSING, "shutting down");
 
-	nm_clear_g_free (&priv->uri);
-	nm_clear_g_free (&priv->host);
-	nm_clear_g_free (&priv->port);
-	nm_clear_g_free (&priv->response);
+	nm_clear_pointer (&priv->con_config, _con_config_unref);
 
 #if WITH_CONCHECK
 	curl_global_cleanup ();
