@@ -37,7 +37,7 @@
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (nm_state_to_string_no_l10n, NMState,
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (nm_state_to_string, NMState,
 	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
 	NM_UTILS_LOOKUP_ITEM (NM_STATE_ASLEEP,           N_("asleep")),
 	NM_UTILS_LOOKUP_ITEM (NM_STATE_CONNECTING,       N_("connecting")),
@@ -48,12 +48,6 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (nm_state_to_string_no_l10n, NMState,
 	NM_UTILS_LOOKUP_ITEM (NM_STATE_DISCONNECTED,     N_("disconnected")),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_STATE_UNKNOWN),
 );
-
-static const char *
-nm_state_to_string (NMState state)
-{
-	return _(nm_state_to_string_no_l10n (state));
-}
 
 static NMMetaColor
 state_to_color (NMState state)
@@ -136,7 +130,7 @@ permission_to_string (NMClientPermission perm)
 	}
 }
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (permission_result_to_string_no_l10n, NMClientPermissionResult,
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (permission_result_to_string, NMClientPermissionResult,
 	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
 	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_YES,  N_("yes")),
 	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_NO,   N_("no")),
@@ -177,7 +171,7 @@ _metagen_general_status_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_STATE:
 		state = nm_client_get_state (nmc->client);
 		NMC_HANDLE_COLOR (state_to_color (state));
-		value = nm_state_to_string_no_l10n (state);
+		value = nm_state_to_string (state);
 		goto translate_and_out;
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_STARTUP:
 		v_bool = nm_client_get_startup (nmc->client);
@@ -187,7 +181,7 @@ _metagen_general_status_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_CONNECTIVITY:
 		connectivity = nm_client_get_connectivity (nmc->client);
 		NMC_HANDLE_COLOR (connectivity_to_color (connectivity));
-		value = nm_connectivity_to_string_no_l10n (connectivity);
+		value = nm_connectivity_to_string (connectivity);
 		goto translate_and_out;
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_NETWORKING:
 		v_bool = nm_client_networking_get_enabled (nmc->client);
@@ -271,7 +265,7 @@ _metagen_general_permissions_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 	case NMC_GENERIC_INFO_TYPE_GENERAL_PERMISSIONS_VALUE:
 		perm_result = nm_client_get_permission_result (nmc->client, perm);
 		NMC_HANDLE_COLOR (permission_result_to_color (perm_result));
-		s = permission_result_to_string_no_l10n (perm_result);
+		s = permission_result_to_string (perm_result);
 		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
 			return _(s);
 		return s;
@@ -1098,7 +1092,8 @@ client_connectivity (NMClient *client, GParamSpec *param, NmCli *nmc)
 
 	g_object_get (client, NM_CLIENT_CONNECTIVITY, &connectivity, NULL);
 	str = nmc_colorize (&nmc->nmc_config, connectivity_to_color (connectivity),
-	                    _("Connectivity is now '%s'\n"), nm_connectivity_to_string (connectivity));
+	                    _("Connectivity is now '%s'\n"),
+	                    gettext (nm_connectivity_to_string (connectivity)));
 	g_print ("%s", str);
 	g_free (str);
 }
@@ -1112,7 +1107,7 @@ client_state (NMClient *client, GParamSpec *param, NmCli *nmc)
 	g_object_get (client, NM_CLIENT_STATE, &state, NULL);
 	str = nmc_colorize (&nmc->nmc_config, state_to_color (state),
 	                    _("Networkmanager is now in the '%s' state\n"),
-	                    nm_state_to_string (state));
+	                    gettext (nm_state_to_string (state)));
 	g_print ("%s", str);
 	g_free (str);
 }
