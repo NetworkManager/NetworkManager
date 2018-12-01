@@ -68,7 +68,6 @@ struct _NMConnectivityCheckHandle {
 	gpointer user_data;
 
 	char *ifspec;
-	int addr_family;
 
 #if WITH_CONCHECK
 	struct {
@@ -88,9 +87,14 @@ struct _NMConnectivityCheckHandle {
 
 	const char *completed_log_message;
 	char *completed_log_message_free;
-	NMConnectivityState completed_state;
+
+	int addr_family;
 
 	guint timeout_id;
+
+	NMConnectivityState completed_state;
+
+	bool fail_reason_no_dbus_connection:1;
 };
 
 enum {
@@ -555,6 +559,12 @@ _idle_cb (gpointer user_data)
 		g_set_error (&error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
 		             "no interface specified for connectivity check");
 		cb_data_complete (cb_data, NM_CONNECTIVITY_ERROR, "missing interface");
+	} else if (cb_data->fail_reason_no_dbus_connection) {
+		gs_free_error GError *error = NULL;
+
+		g_set_error (&error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		             "no D-Bus connection");
+		cb_data_complete (cb_data, NM_CONNECTIVITY_ERROR, "no D-Bus connection");
 	} else
 		cb_data_complete (cb_data, NM_CONNECTIVITY_FAKE, "fake result");
 	return G_SOURCE_REMOVE;
@@ -625,7 +635,7 @@ do_curl_request (NMConnectivityCheckHandle *cb_data)
 static void
 resolve_cb (GObject *object, GAsyncResult *res, gpointer user_data)
 {
-	NMConnectivityCheckHandle *cb_data = user_data;
+	NMConnectivityCheckHandle *cb_data;
 	NMConnectivity *self;
 	NMConnectivityPrivate *priv;
 	GVariant *result;
@@ -641,12 +651,15 @@ resolve_cb (GObject *object, GAsyncResult *res, gpointer user_data)
 	gsize i;
 	gs_free_error GError *error = NULL;
 
-	result = g_dbus_proxy_call_finish (G_DBUS_PROXY (object), res, &error);
+	result = g_dbus_connection_call_finish (G_DBUS_CONNECTION (object), res, &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
+	cb_data = user_data;
 	self = cb_data->self;
 	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+
+	g_clear_object (&cb_data->concheck.resolve_cancellable);
 
 	if (!result) {
 		/* Never mind. Just let do curl do its own resolving. */
@@ -679,47 +692,7 @@ resolve_cb (GObject *object, GAsyncResult *res, gpointer user_data)
 	do_curl_request (cb_data);
 }
 
-#define SD_RESOLVED_DNS 1
-
-static void
-resolved_proxy_created (GObject *object, GAsyncResult *res, gpointer user_data)
-{
-	NMConnectivityCheckHandle *cb_data = user_data;
-	NMConnectivity *self;
-	NMConnectivityPrivate *priv;
-	gs_free_error GError *error = NULL;
-	GDBusProxy *proxy;
-
-	proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-		return;
-
-	self = cb_data->self;
-	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-
-	if (!proxy) {
-		/* Log a warning, but still proceed without systemd-resolved */
-		_LOG2D ("failed to connect to resolved via DBus: %s", error->message);
-		do_curl_request (cb_data);
-		return;
-	}
-
-	g_dbus_proxy_call (proxy,
-	                   "ResolveHostname",
-	                   g_variant_new ("(isit)",
-	                                  cb_data->concheck.ifindex,
-	                                  priv->host,
-	                                  (gint32) cb_data->addr_family,
-	                                  (guint64) SD_RESOLVED_DNS),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   cb_data->concheck.resolve_cancellable,
-	                   resolve_cb,
-	                   cb_data);
-	g_object_unref (proxy);
-
-	_LOG2D ("resolving '%s' for '%s' using systemd-resolved", priv->host, priv->uri);
-}
+#define SD_RESOLVED_DNS ((guint64) (1LL << 0))
 
 NMConnectivityCheckHandle *
 nm_connectivity_check_start (NMConnectivity *self,
@@ -733,7 +706,6 @@ nm_connectivity_check_start (NMConnectivity *self,
 	NMConnectivityCheckHandle *cb_data;
 
 	g_return_val_if_fail (NM_IS_CONNECTIVITY (self), NULL);
-	g_return_val_if_fail (!iface || iface[0], NULL);
 	g_return_val_if_fail (callback, NULL);
 
 	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
@@ -751,21 +723,43 @@ nm_connectivity_check_start (NMConnectivity *self,
 
 #if WITH_CONCHECK
 	if (iface && ifindex > 0 && priv->enabled && priv->host) {
+		GDBusConnection *dbus_connection;
+
 		cb_data->concheck.ifindex = ifindex;
+
+		dbus_connection = nm_dbus_manager_get_dbus_connection (nm_dbus_manager_get ());
+		if (!dbus_connection) {
+			/* we have no D-Bus connection? That might happen in configure and quit mode.
+			 *
+			 * Anyway, something is very odd, just fail connectivity check. */
+			_LOG2D ("start fake request (fail due to no D-Bus connection)");
+			cb_data->fail_reason_no_dbus_connection = TRUE;
+			cb_data->timeout_id = g_idle_add (_idle_cb, cb_data);
+			return cb_data;
+		}
+
 		cb_data->concheck.resolve_cancellable = g_cancellable_new ();
 
-		g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
-		                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
-		                          G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
-		                          NULL,
-		                          "org.freedesktop.resolve1",
-		                          "/org/freedesktop/resolve1",
-		                          "org.freedesktop.resolve1.Manager",
-		                          cb_data->concheck.resolve_cancellable,
-		                          resolved_proxy_created,
-		                          cb_data);
+		g_dbus_connection_call (nm_dbus_manager_get_dbus_connection (nm_dbus_manager_get ()),
+		                        "org.freedesktop.resolve1",
+		                        "/org/freedesktop/resolve1",
+		                        "org.freedesktop.resolve1.Manager",
+		                        "ResolveHostname",
+		                        g_variant_new ("(isit)",
+		                                       (gint32) cb_data->concheck.ifindex,
+		                                       priv->host,
+		                                       (gint32) cb_data->addr_family,
+		                                       SD_RESOLVED_DNS),
+		                        G_VARIANT_TYPE ("(a(iiay)st)"),
+		                        G_DBUS_CALL_FLAGS_NONE,
+		                        -1,
+		                        cb_data->concheck.resolve_cancellable,
+		                        resolve_cb,
+		                        cb_data);
 
-		_LOG2D ("start request to '%s'", priv->uri);
+		_LOG2D ("start request to '%s' (try resolving '%s' using systemd-resolved)",
+		        priv->uri,
+		        priv->host);
 		return cb_data;
 	}
 #endif
