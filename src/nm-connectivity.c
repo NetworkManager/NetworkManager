@@ -936,12 +936,14 @@ update_config (NMConnectivity *self, NMConfigData *config_data)
 		new_uri_valid = (new_uri && *new_uri);
 		if (new_uri_valid) {
 			gs_free char *scheme = g_uri_parse_scheme (new_uri);
+			gboolean is_https = FALSE;
 
 			if (!scheme) {
 				_LOGE ("invalid URI '%s' for connectivity check.", new_uri);
 				new_uri_valid = FALSE;
 			} else if (g_ascii_strcasecmp (scheme, "https") == 0) {
 				_LOGW ("use of HTTPS for connectivity checking is not reliable and is discouraged (URI: %s)", new_uri);
+				is_https = TRUE;
 			} else if (g_ascii_strcasecmp (scheme, "http") != 0) {
 				_LOGE ("scheme of '%s' uri doesn't use a scheme that is allowed for connectivity check.", new_uri);
 				new_uri_valid = FALSE;
@@ -951,7 +953,8 @@ update_config (NMConnectivity *self, NMConfigData *config_data)
 				if (!host_and_port_from_uri (new_uri, &new_host, &new_port)) {
 					_LOGE ("cannot parse host and port from '%s'", new_uri);
 					new_uri_valid = FALSE;
-				}
+				} else if (!new_port && is_https)
+					new_port = g_strdup ("443");
 			}
 		}
 
