@@ -108,9 +108,10 @@ typedef struct {
 
 	char *dns_mode;
 	char *rc_manager;
-	gboolean systemd_resolved;
 
 	NMGlobalDnsConfig *global_dns;
+
+	bool systemd_resolved:1;
 } NMConfigDataPrivate;
 
 struct _NMConfigData {
