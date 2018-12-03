@@ -2843,44 +2843,91 @@ device_realized (NMDevice *device,
 	_emit_device_added_removed (self, device, nm_device_is_real (device));
 }
 
+static NMConnectivityState
+_get_best_connectivity (NMManager *self, int addr_family)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMConnectivityState best_state;
+	NMDevice *dev;
+	gint64 best_metric;
+
+	if (addr_family == AF_UNSPEC) {
+		best_state = _get_best_connectivity (self, AF_INET);
+		if (nm_connectivity_state_cmp (best_state, NM_CONNECTIVITY_FULL) >= 0) {
+			/* already FULL IPv4 connectivity. No need to check IPv6, it doesn't get
+			 * better. */
+			return best_state;
+		}
+		return NM_MAX_WITH_CMP (nm_connectivity_state_cmp,
+		                        best_state,
+		                        _get_best_connectivity (self, AF_INET6));
+	}
+
+	nm_assert_addr_family (addr_family);
+
+	best_state = NM_CONNECTIVITY_UNKNOWN;
+	best_metric = G_MAXINT64;
+	c_list_for_each_entry (dev, &priv->devices_lst_head, devices_lst) {
+		const NMPObject *r;
+		NMConnectivityState state;
+		gint64 metric;
+
+		r = nm_device_get_best_default_route (dev, addr_family);
+		if (r) {
+			metric = nm_utils_ip_route_metric_normalize (addr_family,
+			                                             NMP_OBJECT_CAST_IP_ROUTE (r)->metric);
+		} else {
+			/* if all devices have no default-route, we still include the best
+			 * of all connectivity state of all the devices. */
+			metric = G_MAXINT64;
+		}
+
+		if (metric > best_metric) {
+			/* we already have a default route with better metric. The connectivity state
+			 * of this device is irreleavnt. */
+			continue;
+		}
+
+		state = nm_device_get_connectivity_state (dev, addr_family);
+		if (metric < best_metric) {
+			/* this device has a better default route. It wins. */
+			best_metric = metric;
+			best_state = state;
+		} else {
+			best_state = NM_MAX_WITH_CMP (nm_connectivity_state_cmp,
+			                              best_state,
+			                              state);
+		}
+
+		if (nm_connectivity_state_cmp (best_state, NM_CONNECTIVITY_FULL) >= 0) {
+			/* it doesn't get better than FULL. We are done. */
+			break;
+		}
+	}
+
+	return best_state;
+}
+
 static void
 device_connectivity_changed (NMDevice *device,
                              GParamSpec *pspec,
                              NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMConnectivityState best_state = NM_CONNECTIVITY_UNKNOWN;
-	NMConnectivityState state;
-	NMDevice *dev;
+	NMConnectivityState best_state;
 
-	best_state = nm_device_get_connectivity_state (device);
-	if (best_state < NM_CONNECTIVITY_FULL) {
-		/* FIXME: is this really correct, to considere devices that don't have
-		 * (the best) default route for connectivity checking? */
-		c_list_for_each_entry (dev, &priv->devices_lst_head, devices_lst) {
-			state = nm_device_get_connectivity_state (dev);
-			if (nm_connectivity_state_cmp (state, best_state) <= 0)
-				continue;
-			best_state = state;
-			if (nm_connectivity_state_cmp (best_state, NM_CONNECTIVITY_FULL) >= 0) {
-				/* it doesn't get better than this. */
-				break;
-			}
-		}
-	}
-	nm_assert (best_state <= NM_CONNECTIVITY_FULL);
-	nm_assert (nm_connectivity_state_cmp (best_state, NM_CONNECTIVITY_FULL) <= 0);
+	best_state = _get_best_connectivity (self, AF_UNSPEC);
+	if (best_state == priv->connectivity_state)
+		return;
 
-	if (best_state != priv->connectivity_state) {
-		priv->connectivity_state = best_state;
+	priv->connectivity_state = best_state;
 
-		_LOGD (LOGD_CORE, "connectivity checking indicates %s",
-		       nm_connectivity_state_to_string (priv->connectivity_state));
+	_LOGD (LOGD_CORE, "connectivity checking indicates %s",
+	       nm_connectivity_state_to_string (priv->connectivity_state));
 
-		nm_manager_update_state (self);
-		_notify (self, PROP_CONNECTIVITY);
-		nm_dispatcher_call_connectivity (priv->connectivity_state, NULL, NULL, NULL);
-	}
+	nm_manager_update_state (self);
+	_notify (self, PROP_CONNECTIVITY);
+	nm_dispatcher_call_connectivity (priv->connectivity_state, NULL, NULL, NULL);
 }
 
 static void

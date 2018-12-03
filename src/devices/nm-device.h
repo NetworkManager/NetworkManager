@@ -855,7 +855,7 @@ NMDeviceConnectivityHandle *nm_device_check_connectivity (NMDevice *self,
 
 void nm_device_check_connectivity_cancel (NMDeviceConnectivityHandle *handle);
 
-NMConnectivityState nm_device_get_connectivity_state (NMDevice *self);
+NMConnectivityState nm_device_get_connectivity_state (NMDevice *self, int addr_family);
 
 typedef struct _NMBtVTableNetworkServer NMBtVTableNetworkServer;
 struct _NMBtVTableNetworkServer {
