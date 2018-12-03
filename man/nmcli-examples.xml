@@ -272,6 +272,23 @@ IP4:192.168.1.12/24:192.168.1.1::192.168.1.1::</screen>
       </para>
     </example>
 
+    <example><title>Adding an Ethernet connection and configuring SR-IOV VFs</title>
+<screen><prompt>$ </prompt><userinput>nmcli con add type ethernet con-name EthernetPF ifname em1</userinput>
+<prompt>$ </prompt><userinput>nmcli con modify EthernetPF sriov.total-vfs 3 sriov.autoprobe-drivers false</userinput>
+<prompt>$ </prompt><userinput>nmcli con modify EthernetPF sriov.vfs '0 mac=00:11:22:33:44:55 vlans=10, 1 trust=true spoof-check=false'</userinput>
+<prompt>$ </prompt><userinput>nmcli con modify EthernetPF +sriov.vfs '2 max-tx-rate=20'</userinput></screen>
+      <para>
+        This example demonstrates adding an Ethernet connection for
+        physical function (PF) <emphasis>ens4</emphasis> and
+        configuring 3 SR-IOV virtual functions (VFs) on it. The first
+        VF is configured with MAC address 00:11:22:33:44:55 and VLAN
+        10, the second one has the <emphasis>trust</emphasis> and
+        <emphasis>spoof-check</emphasis> features respectively enabled
+        and disabled. VF number 2 has a maximux transmission rate of
+        20Mbps. The kernel is instructed to not automatically
+        instantiate a network interface for the VFs.
+      </para>
+    </example>
 
     <example><title>Escaping colon characters in tabular mode</title>
 <screen><prompt>$ </prompt><userinput>nmcli -t -f general -e yes -m tab dev show eth0</userinput>
