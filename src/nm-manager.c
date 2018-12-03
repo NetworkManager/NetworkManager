@@ -2451,11 +2451,23 @@ device_connectivity_changed (NMDevice *device,
 	NMConnectivityState state;
 	const GSList *devices;
 
-	for (devices = priv->devices; devices; devices = devices->next) {
-		state = nm_device_get_connectivity_state (NM_DEVICE (devices->data));
-		if (state > best_state)
+	best_state = nm_device_get_connectivity_state (device);
+	if (best_state < NM_CONNECTIVITY_FULL) {
+		/* FIXME: is this really correct, to considere devices that don't have
+		 * (the best) default route for connectivity checking? */
+		for (devices = priv->devices; devices; devices = devices->next) {
+			state = nm_device_get_connectivity_state (devices->data);
+			if (nm_connectivity_state_cmp (state, best_state) <= 0)
+				continue;
 			best_state = state;
+			if (nm_connectivity_state_cmp (best_state, NM_CONNECTIVITY_FULL) >= 0) {
+				/* it doesn't get better than this. */
+				break;
+			}
+		}
 	}
+	nm_assert (best_state <= NM_CONNECTIVITY_FULL);
+	nm_assert (nm_connectivity_state_cmp (best_state, NM_CONNECTIVITY_FULL) <= 0);
 
 	if (best_state != priv->connectivity_state) {
 		priv->connectivity_state = best_state;
