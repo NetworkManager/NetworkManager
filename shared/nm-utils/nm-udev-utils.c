@@ -253,6 +253,7 @@ nm_udev_client_new (const char *const*subsystems,
 
 			/* listen to events, and buffer them */
 			if (self->monitor) {
+				udev_monitor_set_receive_buffer_size (self->monitor, 4*1024*1024);
 				udev_monitor_enable_receiving (self->monitor);
 				channel = g_io_channel_unix_new (udev_monitor_get_fd (self->monitor));
 				self->watch_source = g_io_create_watch (channel, G_IO_IN);
