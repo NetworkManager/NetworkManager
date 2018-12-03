@@ -115,19 +115,24 @@ typedef struct {
 static const ReqOption dhcp4_requests[] = {
 	REQ (SD_DHCP_OPTION_SUBNET_MASK,                    "subnet_mask",                     TRUE ),
 	REQ (SD_DHCP_OPTION_TIME_OFFSET,                    "time_offset",                     TRUE ),
-	REQ (SD_DHCP_OPTION_ROUTER,                         "routers",                         TRUE ),
 	REQ (SD_DHCP_OPTION_DOMAIN_NAME_SERVER,             "domain_name_servers",             TRUE ),
 	REQ (SD_DHCP_OPTION_HOST_NAME,                      "host_name",                       TRUE ),
 	REQ (SD_DHCP_OPTION_DOMAIN_NAME,                    "domain_name",                     TRUE ),
 	REQ (SD_DHCP_OPTION_INTERFACE_MTU,                  "interface_mtu",                   TRUE ),
 	REQ (SD_DHCP_OPTION_BROADCAST,                      "broadcast_address",               TRUE ),
+
+	/* RFC 3442: The Classless Static Routes option code MUST appear in the parameter
+	 *   request list prior to both the Router option code and the Static
+	 *   Routes option code, if present. */
+	REQ (SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE,         "rfc3442_classless_static_routes", TRUE ),
+	REQ (SD_DHCP_OPTION_ROUTER,                         "routers",                         TRUE ),
 	REQ (SD_DHCP_OPTION_STATIC_ROUTE,                   "static_routes",                   TRUE ),
+
 	REQ (DHCP_OPTION_NIS_DOMAIN,                        "nis_domain",                      TRUE ),
 	REQ (DHCP_OPTION_NIS_SERVERS,                       "nis_servers",                     TRUE ),
 	REQ (SD_DHCP_OPTION_NTP_SERVER,                     "ntp_servers",                     TRUE ),
 	REQ (SD_DHCP_OPTION_SERVER_IDENTIFIER,              "dhcp_server_identifier",          TRUE ),
 	REQ (SD_DHCP_OPTION_DOMAIN_SEARCH_LIST,             "domain_search",                   TRUE ),
-	REQ (SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE,         "rfc3442_classless_static_routes", TRUE ),
 	REQ (SD_DHCP_OPTION_PRIVATE_CLASSLESS_STATIC_ROUTE, "ms_classless_static_routes",      TRUE ),
 	REQ (SD_DHCP_OPTION_PRIVATE_PROXY_AUTODISCOVERY,    "wpad",                            TRUE ),
 	REQ (SD_DHCP_OPTION_ROOT_PATH,                      "root_path",                       TRUE ),
