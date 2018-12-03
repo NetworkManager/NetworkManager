@@ -175,6 +175,10 @@ gboolean _nm_keyfile_has_values (GKeyFile *keyfile);
 
 #define NM_KEYFILE_PATH_SUFFIX_NMCONNECTION      ".nmconnection"
 
+#define NM_KEYFILE_PATH_PREFIX_NMLOADED          ".loaded-"
+
+#define NM_KEYFILE_PATH_NMLOADED_NULL            "/dev/null"
+
 gboolean nm_keyfile_utils_ignore_filename (const char *filename, gboolean require_extension);
 
 char *nm_keyfile_utils_create_filename (const char *filename, gboolean with_extension);

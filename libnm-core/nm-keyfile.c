@@ -3167,37 +3167,33 @@ check_mkstemp_suffix (const char *path)
 {
 	const char *ptr;
 
-	g_return_val_if_fail (path != NULL, FALSE);
+	nm_assert (path);
 
 	/* Matches *.[a-zA-Z0-9]{6} suffix of mkstemp()'s temporary files */
 	ptr = strrchr (path, '.');
-	if (ptr && (strspn (ptr + 1, temp_letters) == 6) && (! ptr[7]))
+	if (   ptr
+	    && strspn (&ptr[1], temp_letters) == 6
+	    && ptr[7] == '\0')
 		return TRUE;
 	return FALSE;
 }
 
 static gboolean
-check_prefix_dot (const char *base)
+_check_suffix_impl (const char *base, const char *tag, gsize tag_len)
 {
-	nm_assert (base && base[0]);
+	gsize len;
 
-	return base[0] == '.';
-}
-
-static gboolean
-check_suffix (const char *base, const char *tag)
-{
-	int len, tag_len;
-
-	g_return_val_if_fail (base != NULL, TRUE);
-	g_return_val_if_fail (tag != NULL, TRUE);
+	nm_assert (base);
+	nm_assert (tag);
+	nm_assert (strlen (tag) == tag_len);
 
 	len = strlen (base);
-	tag_len = strlen (tag);
-	if ((len > tag_len) && !g_ascii_strcasecmp (base + len - tag_len, tag))
+	if (   len > tag_len
+	    && !g_ascii_strcasecmp (base + len - tag_len, tag))
 		return TRUE;
 	return FALSE;
 }
+#define check_suffix(base, tag) _check_suffix_impl ((base), ""tag"", NM_STRLEN (tag))
 
 #define SWP_TAG ".swp"
 #define SWPX_TAG ".swpx"
@@ -3207,31 +3203,52 @@ check_suffix (const char *base, const char *tag)
 gboolean
 nm_keyfile_utils_ignore_filename (const char *filename, gboolean require_extension)
 {
-	gs_free char *base = NULL;
+	const char *base;
+	gsize l;
 
-	g_return_val_if_fail (filename != NULL, TRUE);
+	/* ignore_filename() must mirror nm_keyfile_utils_create_filename() */
 
-	base = g_path_get_basename (filename);
-	g_return_val_if_fail (base != NULL, TRUE);
+	g_return_val_if_fail (filename, TRUE);
 
-	/* Ignore hidden and backup files */
-	/* should_ignore_file() must mirror escape_filename() */
-	if (check_prefix_dot (base) || check_suffix (base, "~"))
+	base = strrchr (filename, '/');
+	if (base)
+		base++;
+	else
+		base = filename;
+
+	if (!base[0]) {
+		/* this check above with strrchr() also rejects "/some/path/with/trailing/slash/",
+		 * but that is fine, because such a path would name a directory, and we are not
+		 * interested in directories. */
 		return TRUE;
-	/* Ignore temporary files */
-	if (check_mkstemp_suffix (base))
+	}
+
+	if (base[0] == '.') {
+		/* don't allow hidden files */
 		return TRUE;
-	/* Ignore 802.1x certificates and keys */
-	if (check_suffix (base, PEM_TAG) || check_suffix (base, DER_TAG))
-		return TRUE;
+	}
+
+	l = strlen (base);
 
 	if (require_extension) {
-		gsize l = strlen (base);
-
 		if (   l <= NM_STRLEN (NM_KEYFILE_PATH_SUFFIX_NMCONNECTION)
 		    || !g_str_has_suffix (base, NM_KEYFILE_PATH_SUFFIX_NMCONNECTION))
 			return TRUE;
+		return FALSE;
 	}
+
+	/* Ignore backup files */
+	if (base[l - 1] == '~')
+		return TRUE;
+
+	/* Ignore temporary files */
+	if (check_mkstemp_suffix (base))
+		return TRUE;
+
+	/* Ignore 802.1x certificates and keys */
+	if (   check_suffix (base, PEM_TAG)
+	    || check_suffix (base, DER_TAG))
+		return TRUE;
 
 	return FALSE;
 }
@@ -3261,11 +3278,11 @@ nm_keyfile_utils_create_filename (const char *name,
 			g_string_append_c (str, f[0]);
 	}
 
-	/* escape_filename() must avoid anything that should_ignore_file() would reject.
+	/* nm_keyfile_utils_create_filename() must avoid anything that ignore_filename() would reject.
 	 * We can escape here more aggressivly then what we would read back. */
-	if (check_prefix_dot (str->str))
+	if (str->str[0] == '.')
 		str->str[0] = ESCAPE_CHAR2;
-	if (check_suffix (str->str, "~"))
+	if (str->str[str->len - 1] == '~')
 		str->str[str->len - 1] = ESCAPE_CHAR2;
 	if (   check_mkstemp_suffix (str->str)
 	    || check_suffix (str->str, PEM_TAG)
@@ -3274,6 +3291,10 @@ nm_keyfile_utils_create_filename (const char *name,
 
 	if (with_extension)
 		g_string_append (str, NM_KEYFILE_PATH_SUFFIX_NMCONNECTION);
+
+	/* nm_keyfile_utils_create_filename() must mirror ignore_filename() */
+	nm_assert (!strchr (str->str, '/'));
+	nm_assert (!nm_keyfile_utils_ignore_filename (str->str, with_extension));
 
 	return g_string_free (str, FALSE);;
 }
