@@ -1702,10 +1702,11 @@ nmtstp_link_get (NMPlatform *platform,
 /*****************************************************************************/
 
 void
-nmtstp_link_del (NMPlatform *platform,
-                 gboolean external_command,
-                 int ifindex,
-                 const char *name)
+nmtstp_link_delete (NMPlatform *platform,
+                    gboolean external_command,
+                    int ifindex,
+                    const char *name,
+                    gboolean require_exist)
 {
 	gint64 end_time;
 	const NMPlatformLink *pllink;
@@ -1718,7 +1719,10 @@ nmtstp_link_del (NMPlatform *platform,
 
 	pllink = nmtstp_link_get (platform, ifindex, name);
 
-	g_assert (pllink);
+	if (!pllink) {
+		g_assert (!require_exist);
+		return;
+	}
 
 	name = name_copy = g_strdup (pllink->name);
 	ifindex = pllink->ifindex;
@@ -2072,7 +2076,7 @@ main (int argc, char **argv)
 
 	result = g_test_run ();
 
-	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
+	nmtstp_link_delete (NM_PLATFORM_GET, -1, -1, DEVICE_NAME, FALSE);
 
 	g_object_unref (NM_PLATFORM_GET);
 	return result;

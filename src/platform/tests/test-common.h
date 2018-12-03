@@ -327,10 +327,11 @@ const NMPlatformLink *nmtstp_link_vxlan_add (NMPlatform *platform,
                                              const char *name,
                                              const NMPlatformLnkVxlan *lnk);
 
-void nmtstp_link_del (NMPlatform *platform,
-                      gboolean external_command,
-                      int ifindex,
-                      const char *name);
+void nmtstp_link_delete (NMPlatform *platform,
+                         gboolean external_command,
+                         int ifindex,
+                         const char *name,
+                         gboolean require_exist);
 
 /*****************************************************************************/
 
@@ -349,8 +350,8 @@ _nmtstp_env1_wrapper_setup (const NmtstTestData *test_data)
 
 	_LOGT ("TEST[%s]: setup", test_data->testpath);
 
-	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
-	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, DEVICE_NAME));
+	nmtstp_link_delete (NM_PLATFORM_GET, -1, -1, DEVICE_NAME, FALSE);
+
 	g_assert_cmpint (nm_platform_link_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL), ==, NM_PLATFORM_ERROR_SUCCESS);
 
 	*p_ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
