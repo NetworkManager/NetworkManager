@@ -296,6 +296,37 @@ nm_memdup (gconstpointer data, gsize size)
 
 /*****************************************************************************/
 
+/* generic macro to convert an int to a (heap allocated) string.
+ *
+ * Usually, an inline function nm_strdup_int64() would be enough. However,
+ * that cannot be used for guint64. So, we would also need nm_strdup_uint64().
+ * This causes suble error potential, because the caller needs to ensure to
+ * use the right one (and compiler isn't going to help as it silently casts).
+ *
+ * Instead, this generic macro is supposed to handle all integers correctly. */
+#if _NM_CC_SUPPORT_GENERIC
+#define nm_strdup_int(val) \
+	_Generic ((val), \
+	          gint8:   g_strdup_printf ("%d",                (int)     (val)), \
+	          gint16:  g_strdup_printf ("%d",                (int)     (val)), \
+	          gint32:  g_strdup_printf ("%d",                (int)     (val)), \
+	          gint64:  g_strdup_printf ("%"G_GINT64_FORMAT,  (gint64)  (val)), \
+	          \
+	          guint8:  g_strdup_printf ("%u",                (guint)   (val)), \
+	          guint16: g_strdup_printf ("%u",                (guint)   (val)), \
+	          guint32: g_strdup_printf ("%u",                (guint)   (val)), \
+	          guint64: g_strdup_printf ("%"G_GUINT64_FORMAT, (guint64) (val))  \
+	)
+#else
+#define nm_strdup_int(val) \
+	(  (   sizeof (val) == sizeof (guint64) \
+	    && ((typeof (val)) -1) > 0) \
+	 ? g_strdup_printf ("%"G_GUINT64_FORMAT, (guint64) (val)) \
+	 : g_strdup_printf ("%"G_GINT64_FORMAT, (gint64) (val)))
+#endif
+
+/*****************************************************************************/
+
 extern const void *const _NM_PTRARRAY_EMPTY[1];
 
 #define NM_PTRARRAY_EMPTY(type) ((type const*) _NM_PTRARRAY_EMPTY)
@@ -958,5 +989,45 @@ typedef void (*NMUtilsInvokeOnIdleCallback) (gpointer callback_user_data,
 void nm_utils_invoke_on_idle (NMUtilsInvokeOnIdleCallback callback,
                               gpointer callback_user_data,
                               GCancellable *cancellable);
+
+/*****************************************************************************/
+
+static inline void
+nm_strv_ptrarray_add_string_take (GPtrArray *cmd,
+                                  char *str)
+{
+	nm_assert (cmd);
+	nm_assert (str);
+
+	g_ptr_array_add (cmd, str);
+}
+
+static inline void
+nm_strv_ptrarray_add_string_dup (GPtrArray *cmd,
+                                 const char *str)
+{
+	nm_strv_ptrarray_add_string_take (cmd,
+	                                  g_strdup (str));
+}
+
+#define nm_strv_ptrarray_add_string_concat(cmd, ...) \
+	nm_strv_ptrarray_add_string_take ((cmd), g_strconcat (__VA_ARGS__, NULL))
+
+#define nm_strv_ptrarray_add_string_printf(cmd, ...) \
+	nm_strv_ptrarray_add_string_take ((cmd), g_strdup_printf (__VA_ARGS__))
+
+#define nm_strv_ptrarray_add_int(cmd, val) \
+	nm_strv_ptrarray_add_string_take ((cmd), nm_strdup_int (val))
+
+static inline void
+nm_strv_ptrarray_take_gstring (GPtrArray *cmd,
+                               GString **gstr)
+{
+	nm_assert (gstr && *gstr);
+
+	nm_strv_ptrarray_add_string_take (cmd,
+	                                  g_string_free (g_steal_pointer (gstr),
+	                                                 FALSE));
+}
 
 #endif /* __NM_SHARED_UTILS_H__ */

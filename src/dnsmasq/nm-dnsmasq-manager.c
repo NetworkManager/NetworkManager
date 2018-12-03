@@ -73,51 +73,6 @@ G_DEFINE_TYPE (NMDnsMasqManager, nm_dnsmasq_manager, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
-typedef struct {
-	GPtrArray *array;
-	GStringChunk *chunk;
-} NMCmdLine;
-
-static NMCmdLine *
-nm_cmd_line_new (void)
-{
-	NMCmdLine *cmd;
-
-	cmd = g_slice_new (NMCmdLine);
-	cmd->array = g_ptr_array_new ();
-	cmd->chunk = g_string_chunk_new (1024);
-
-	return cmd;
-}
-
-static void
-nm_cmd_line_destroy (NMCmdLine *cmd)
-{
-	g_ptr_array_free (cmd->array, TRUE);
-	g_string_chunk_free (cmd->chunk);
-	g_slice_free (NMCmdLine, cmd);
-}
-
-static char *
-nm_cmd_line_to_str (NMCmdLine *cmd)
-{
-	char *str;
-
-	g_ptr_array_add (cmd->array, NULL);
-	str = g_strjoinv (" ", (char **) cmd->array->pdata);
-	g_ptr_array_remove_index (cmd->array, cmd->array->len - 1);
-
-	return str;
-}
-
-static void
-nm_cmd_line_add_string (NMCmdLine *cmd, const char *str)
-{
-	g_ptr_array_add (cmd->array, g_string_chunk_insert (cmd->chunk, str));
-}
-
-/*****************************************************************************/
-
 static void
 dm_watch_cb (GPid pid, int status, gpointer user_data)
 {
@@ -145,40 +100,40 @@ dm_watch_cb (GPid pid, int status, gpointer user_data)
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, NM_DNSMASQ_STATUS_DEAD);
 }
 
-static NMCmdLine *
+static GPtrArray *
 create_dm_cmd_line (const char *iface,
                     const NMIP4Config *ip4_config,
                     const char *pidfile,
+                    gboolean announce_android_metered,
                     GError **error)
 {
-	NMCmdLine *cmd;
+	gs_unref_ptrarray GPtrArray *cmd = NULL;
 	nm_auto_free_gstring GString *s = NULL;
 	char first[INET_ADDRSTRLEN];
 	char last[INET_ADDRSTRLEN];
-	char localaddr[INET_ADDRSTRLEN];
+	char listen_address_s[INET_ADDRSTRLEN];
 	char tmpaddr[INET_ADDRSTRLEN];
-	char *error_desc = NULL;
+	gs_free char *error_desc = NULL;
 	const char *dm_binary;
 	const NMPlatformIP4Address *listen_address;
 	guint i, n;
 
 	listen_address = nm_ip4_config_get_first_address (ip4_config);
+
 	g_return_val_if_fail (listen_address, NULL);
 
 	dm_binary = nm_utils_find_helper ("dnsmasq", DNSMASQ_PATH, error);
 	if (!dm_binary)
 		return NULL;
 
-	s = g_string_sized_new (100);
+	cmd = g_ptr_array_new_with_free_func (g_free);
 
-	/* Create dnsmasq command line */
-	cmd = nm_cmd_line_new ();
-	nm_cmd_line_add_string (cmd, dm_binary);
+	nm_strv_ptrarray_add_string_dup (cmd, dm_binary);
 
 	if (   nm_logging_enabled (LOGL_TRACE, LOGD_SHARING)
 	    || getenv ("NM_DNSMASQ_DEBUG")) {
-		nm_cmd_line_add_string (cmd, "--log-dhcp");
-		nm_cmd_line_add_string (cmd, "--log-queries");
+		nm_strv_ptrarray_add_string_dup (cmd, "--log-dhcp");
+		nm_strv_ptrarray_add_string_dup (cmd, "--log-queries");
 	}
 
 	/* dnsmasq may read from its default config file location, which if that
@@ -187,25 +142,23 @@ create_dm_cmd_line (const char *iface,
 	 * as the gateway or whatever.  So tell dnsmasq not to use any config file
 	 * at all.
 	 */
-	nm_cmd_line_add_string (cmd, "--conf-file=/dev/null");
+	nm_strv_ptrarray_add_string_dup (cmd, "--conf-file=/dev/null");
 
-	nm_cmd_line_add_string (cmd, "--no-hosts");
-	nm_cmd_line_add_string (cmd, "--keep-in-foreground");
-	nm_cmd_line_add_string (cmd, "--bind-interfaces");
-	nm_cmd_line_add_string (cmd, "--except-interface=lo");
-	nm_cmd_line_add_string (cmd, "--clear-on-reload");
+	nm_strv_ptrarray_add_string_dup (cmd, "--no-hosts");
+	nm_strv_ptrarray_add_string_dup (cmd, "--keep-in-foreground");
+	nm_strv_ptrarray_add_string_dup (cmd, "--bind-interfaces");
+	nm_strv_ptrarray_add_string_dup (cmd, "--except-interface=lo");
+	nm_strv_ptrarray_add_string_dup (cmd, "--clear-on-reload");
 
 	/* Use strict order since in the case of VPN connections, the VPN's
 	 * nameservers will be first in resolv.conf, and those need to be tried
 	 * first by dnsmasq to successfully resolve names from the VPN.
 	 */
-	nm_cmd_line_add_string (cmd, "--strict-order");
+	nm_strv_ptrarray_add_string_dup (cmd, "--strict-order");
 
-	nm_utils_inet4_ntop (listen_address->address, localaddr);
-	g_string_append (s, "--listen-address=");
-	g_string_append (s, localaddr);
-	nm_cmd_line_add_string (cmd, s->str);
-	g_string_truncate (s, 0);
+	nm_utils_inet4_ntop (listen_address->address, listen_address_s);
+
+	nm_strv_ptrarray_add_string_concat (cmd, "--listen-address=", listen_address_s);
 
 	if (!nm_dnsmasq_utils_get_range (listen_address, first, last, &error_desc)) {
 		g_set_error_literal (error,
@@ -213,59 +166,61 @@ create_dm_cmd_line (const char *iface,
 		                     NM_MANAGER_ERROR_FAILED,
 		                     error_desc);
 		_LOGW ("failed to find DHCP address ranges: %s", error_desc);
-		g_free (error_desc);
-		nm_cmd_line_destroy (cmd);
 		return NULL;
 	}
 
-	g_string_append_printf (s, "--dhcp-range=%s,%s,60m", first, last);
-	nm_cmd_line_add_string (cmd, s->str);
-	g_string_truncate (s, 0);
+	nm_strv_ptrarray_add_string_printf (cmd,
+	                                    "--dhcp-range=%s,%s,60m",
+	                                    first,
+	                                    last);
 
 	if (nm_ip4_config_best_default_route_get (ip4_config)) {
-		g_string_append (s, "--dhcp-option=option:router,");
-		g_string_append (s, localaddr);
-		nm_cmd_line_add_string (cmd, s->str);
-		g_string_truncate (s, 0);
+		nm_strv_ptrarray_add_string_concat (cmd,
+		                                    "--dhcp-option=option:router,",
+		                                    listen_address_s);
 	}
 
 	if ((n = nm_ip4_config_get_num_nameservers (ip4_config))) {
+		nm_gstring_prepare (&s);
 		g_string_append (s, "--dhcp-option=option:dns-server");
 		for (i = 0; i < n; i++) {
 			g_string_append_c (s, ',');
 			g_string_append (s, nm_utils_inet4_ntop (nm_ip4_config_get_nameserver (ip4_config, i), tmpaddr));
 		}
-		nm_cmd_line_add_string (cmd, s->str);
-		g_string_truncate (s, 0);
+		nm_strv_ptrarray_take_gstring (cmd, &s);
 	}
 
 	if ((n = nm_ip4_config_get_num_searches (ip4_config))) {
+		nm_gstring_prepare (&s);
 		g_string_append (s, "--dhcp-option=option:domain-search");
 		for (i = 0; i < n; i++) {
 			g_string_append_c (s, ',');
 			g_string_append (s, nm_ip4_config_get_search (ip4_config, i));
 		}
-		nm_cmd_line_add_string (cmd, s->str);
-		g_string_truncate (s, 0);
+		nm_strv_ptrarray_take_gstring (cmd, &s);
 	}
 
-	nm_cmd_line_add_string (cmd, "--dhcp-lease-max=50");
+	if (announce_android_metered) {
+		/* force option 43 to announce ANDROID_METERED. Do this, even if the client
+		 * did not ask for this option. See https://www.lorier.net/docs/android-metered.html */
+		nm_strv_ptrarray_add_string_dup (cmd, "--dhcp-option-force=43,ANDROID_METERED");
+	}
 
-	g_string_append (s, "--dhcp-leasefile=" NMSTATEDIR);
-	g_string_append_printf (s, "/dnsmasq-%s.leases", iface);
-	nm_cmd_line_add_string (cmd, s->str);
-	g_string_truncate (s, 0);
+	nm_strv_ptrarray_add_string_dup (cmd, "--dhcp-lease-max=50");
 
-	g_string_append (s, "--pid-file=");
-	g_string_append (s, pidfile);
-	nm_cmd_line_add_string (cmd, s->str);
-	g_string_truncate (s, 0);
+	nm_strv_ptrarray_add_string_printf (cmd,
+	                                    "--dhcp-leasefile=%s/dnsmasq-%s.leases",
+	                                    NMSTATEDIR,
+	                                    iface);
+
+	nm_strv_ptrarray_add_string_concat (cmd, "--pid-file=", pidfile);
 
 	/* dnsmasq exits if the conf dir is not present */
 	if (g_file_test (CONFDIR, G_FILE_TEST_IS_DIR))
-		nm_cmd_line_add_string (cmd, "--conf-dir=" CONFDIR);
+		nm_strv_ptrarray_add_string_dup (cmd, "--conf-dir=" CONFDIR);
 
-	return cmd;
+	g_ptr_array_add (cmd, NULL);
+	return g_steal_pointer (&cmd);
 }
 
 static void
@@ -310,10 +265,11 @@ out:
 gboolean
 nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
                           NMIP4Config *ip4_config,
+                          gboolean announce_android_metered,
                           GError **error)
 {
 	NMDnsMasqManagerPrivate *priv;
-	NMCmdLine *dm_cmd;
+	gs_unref_ptrarray GPtrArray *dm_cmd = NULL;
 	gs_free char *cmd_str = NULL;
 
 	g_return_val_if_fail (NM_IS_DNSMASQ_MANAGER (manager), FALSE);
@@ -324,32 +280,35 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 
 	kill_existing_by_pidfile (priv->pidfile);
 
-	dm_cmd = create_dm_cmd_line (priv->iface, ip4_config, priv->pidfile, error);
+	dm_cmd = create_dm_cmd_line (priv->iface,
+	                             ip4_config,
+	                             priv->pidfile,
+	                             announce_android_metered,
+	                             error);
 	if (!dm_cmd)
 		return FALSE;
 
-	g_ptr_array_add (dm_cmd->array, NULL);
-
 	_LOGI ("starting dnsmasq...");
-	_LOGD ("command line: %s", (cmd_str = nm_cmd_line_to_str (dm_cmd)));
+	_LOGD ("command line: %s", (cmd_str = g_strjoinv (" ", (char **) dm_cmd->pdata)));
 
 	priv->pid = 0;
-	if (!g_spawn_async (NULL, (char **) dm_cmd->array->pdata, NULL,
+	if (!g_spawn_async (NULL,
+	                    (char **) dm_cmd->pdata,
+	                    NULL,
 	                    G_SPAWN_DO_NOT_REAP_CHILD,
-	                    nm_utils_setpgid, NULL,
-	                    &priv->pid, error)) {
-		goto out;
-	}
+	                    nm_utils_setpgid,
+	                    NULL,
+	                    &priv->pid,
+	                    error))
+		return FALSE;
+
+	nm_assert (priv->pid > 0);
 
 	_LOGD ("dnsmasq started with pid %d", priv->pid);
 
 	priv->dm_watch_id = g_child_watch_add (priv->pid, (GChildWatchFunc) dm_watch_cb, manager);
 
- out:
-	if (dm_cmd)
-		nm_cmd_line_destroy (dm_cmd);
-
-	return priv->pid > 0;
+	return TRUE;
 }
 
 void
