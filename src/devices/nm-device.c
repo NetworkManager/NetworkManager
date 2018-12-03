@@ -2766,8 +2766,8 @@ concheck_update_interval (NMDevice *self, int addr_family, gboolean check_now)
 void
 nm_device_check_connectivity_update_interval (NMDevice *self)
 {
-	concheck_update_interval (self, AF_INET, FALSE);
-	concheck_update_interval (self, AF_INET6, FALSE);
+	concheck_update_interval (self, AF_INET, TRUE);
+	concheck_update_interval (self, AF_INET6, TRUE);
 }
 
 static void
