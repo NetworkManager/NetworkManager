@@ -65,7 +65,7 @@ struct _NMAcdManager {
         char _sbuf[64]; \
         \
         nm_log ((level), _NMLOG_DOMAIN, \
-                self ? nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex) : "", \
+                self && self->ifindex > 0 ? nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex) : NULL, \
                 NULL, \
                 "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                 _NMLOG_PREFIX_NAME, \

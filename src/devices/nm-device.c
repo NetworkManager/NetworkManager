@@ -4846,7 +4846,8 @@ nm_device_master_release_slaves (NMDevice *self)
 	if (priv->state == NM_DEVICE_STATE_FAILED)
 		reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
 
-	if (!nm_platform_link_get (nm_device_get_platform (self), priv->ifindex))
+	if (   priv->ifindex <= 0
+	    || !nm_platform_link_get (nm_device_get_platform (self), priv->ifindex))
 		configure = FALSE;
 
 	c_list_for_each_safe (iter, safe, &priv->slaves) {
