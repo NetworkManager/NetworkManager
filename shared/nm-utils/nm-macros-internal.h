@@ -1324,6 +1324,16 @@ nm_strcmp_p (gconstpointer a, gconstpointer b)
 		     : NM_UNIQ_T(X,xq)); \
 	})
 
+#define NM_MAX_WITH_CMP(cmp, a, b) \
+	({ \
+		typeof (a) _a = (a); \
+		typeof (b) _b = (b); \
+		\
+		(  ((cmp (_a, _b)) >= 0) \
+		 ? _a \
+		 : _b); \
+	})
+
 /*****************************************************************************/
 
 static inline guint
