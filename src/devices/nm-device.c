@@ -3080,17 +3080,26 @@ nm_device_check_connectivity_cancel (NMDeviceConnectivityHandle *handle)
 }
 
 NMConnectivityState
-nm_device_get_connectivity_state (NMDevice *self)
+nm_device_get_connectivity_state (NMDevice *self, int addr_family)
 {
 	NMDevicePrivate *priv;
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), NM_CONNECTIVITY_UNKNOWN);
+	nm_assert_addr_family (addr_family);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	return NM_MAX_WITH_CMP (nm_connectivity_state_cmp,
-	                        priv->concheck_x[0].state,
-	                        priv->concheck_x[1].state);
+	switch (addr_family) {
+	case AF_INET:
+	case AF_INET6:
+		return priv->concheck_x[IS_IPv4].state;
+	default:
+		nm_assert (addr_family == AF_UNSPEC);
+		return NM_MAX_WITH_CMP (nm_connectivity_state_cmp,
+		                        priv->concheck_x[0].state,
+		                        priv->concheck_x[1].state);
+	}
 }
 
 /*****************************************************************************/
