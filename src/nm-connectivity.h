@@ -24,6 +24,21 @@
 
 #include "nm-dbus-interface.h"
 
+/*****************************************************************************/
+
+static inline int
+nm_connectivity_state_cmp (NMConnectivityState a, NMConnectivityState b)
+{
+	if (a == NM_CONNECTIVITY_PORTAL && b == NM_CONNECTIVITY_LIMITED)
+		return 1;
+	if (b == NM_CONNECTIVITY_PORTAL && a == NM_CONNECTIVITY_LIMITED)
+		return -1;
+	NM_CMP_DIRECT (a, b);
+	return 0;
+}
+
+/*****************************************************************************/
+
 #define NM_CONNECTIVITY_ERROR     ((NMConnectivityState) -1)
 #define NM_CONNECTIVITY_FAKE      ((NMConnectivityState) -2)
 #define NM_CONNECTIVITY_CANCELLED ((NMConnectivityState) -3)

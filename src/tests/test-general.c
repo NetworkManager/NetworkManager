@@ -34,6 +34,7 @@
 #include "systemd/nm-sd-utils.h"
 
 #include "dns/nm-dns-manager.h"
+#include "nm-connectivity.h"
 
 #include "nm-test-utils-core.h"
 
@@ -2015,6 +2016,60 @@ test_nm_utils_dhcp_client_id_systemd_node_specific (gconstpointer test_data)
 
 /*****************************************************************************/
 
+static void
+test_connectivity_state_cmp (void)
+{
+	NMConnectivityState a;
+
+#define _cmp(a, b, cmp) \
+	G_STMT_START { \
+		const NMConnectivityState _a = (a); \
+		const NMConnectivityState _b = (b); \
+		const int _cmp = (cmp); \
+		\
+		g_assert (NM_IN_SET (_cmp, -1, 0, 1)); \
+		g_assert_cmpint (nm_connectivity_state_cmp (_a, _b), ==, _cmp); \
+		g_assert_cmpint (nm_connectivity_state_cmp (_b, _a), ==, -_cmp); \
+	} G_STMT_END
+
+	for (a = NM_CONNECTIVITY_UNKNOWN; a <= NM_CONNECTIVITY_FULL; a++)
+		_cmp (a, a, 0);
+
+	_cmp (NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_UNKNOWN,  0);
+	_cmp (NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_NONE,    -1);
+	_cmp (NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_LIMITED, -1);
+	_cmp (NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_PORTAL,  -1);
+	_cmp (NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL,    -1);
+
+	_cmp (NM_CONNECTIVITY_NONE,    NM_CONNECTIVITY_UNKNOWN,  1);
+	_cmp (NM_CONNECTIVITY_NONE,    NM_CONNECTIVITY_NONE,     0);
+	_cmp (NM_CONNECTIVITY_NONE,    NM_CONNECTIVITY_LIMITED, -1);
+	_cmp (NM_CONNECTIVITY_NONE,    NM_CONNECTIVITY_PORTAL,  -1);
+	_cmp (NM_CONNECTIVITY_NONE,    NM_CONNECTIVITY_FULL,    -1);
+
+	_cmp (NM_CONNECTIVITY_LIMITED, NM_CONNECTIVITY_UNKNOWN,  1);
+	_cmp (NM_CONNECTIVITY_LIMITED, NM_CONNECTIVITY_NONE,     1);
+	_cmp (NM_CONNECTIVITY_LIMITED, NM_CONNECTIVITY_LIMITED,  0);
+	_cmp (NM_CONNECTIVITY_LIMITED, NM_CONNECTIVITY_PORTAL,  -1);
+	_cmp (NM_CONNECTIVITY_LIMITED, NM_CONNECTIVITY_FULL,    -1);
+
+	_cmp (NM_CONNECTIVITY_PORTAL,  NM_CONNECTIVITY_UNKNOWN,  1);
+	_cmp (NM_CONNECTIVITY_PORTAL,  NM_CONNECTIVITY_NONE,     1);
+	_cmp (NM_CONNECTIVITY_PORTAL,  NM_CONNECTIVITY_LIMITED,  1);
+	_cmp (NM_CONNECTIVITY_PORTAL,  NM_CONNECTIVITY_PORTAL,   0);
+	_cmp (NM_CONNECTIVITY_PORTAL,  NM_CONNECTIVITY_FULL,    -1);
+
+	_cmp (NM_CONNECTIVITY_FULL,    NM_CONNECTIVITY_UNKNOWN,  1);
+	_cmp (NM_CONNECTIVITY_FULL,    NM_CONNECTIVITY_NONE,     1);
+	_cmp (NM_CONNECTIVITY_FULL,    NM_CONNECTIVITY_LIMITED,  1);
+	_cmp (NM_CONNECTIVITY_FULL,    NM_CONNECTIVITY_PORTAL,   1);
+	_cmp (NM_CONNECTIVITY_FULL,    NM_CONNECTIVITY_FULL,     0);
+
+#undef _cmp
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -2067,6 +2122,8 @@ main (int argc, char **argv)
 
 	g_test_add_data_func ("/general/nm_utils_dhcp_client_id_systemd_node_specific/0", GINT_TO_POINTER (0), test_nm_utils_dhcp_client_id_systemd_node_specific);
 	g_test_add_data_func ("/general/nm_utils_dhcp_client_id_systemd_node_specific/1", GINT_TO_POINTER (1), test_nm_utils_dhcp_client_id_systemd_node_specific);
+
+	g_test_add_func ("/core/general/test_connectivity_state_cmp", test_connectivity_state_cmp);
 
 	return g_test_run ();
 }
