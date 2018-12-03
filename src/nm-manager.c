@@ -2855,18 +2855,21 @@ device_connectivity_changed (NMDevice *device,
 
 	best_state = nm_device_get_connectivity_state (device);
 	if (best_state < NM_CONNECTIVITY_FULL) {
+		/* FIXME: is this really correct, to considere devices that don't have
+		 * (the best) default route for connectivity checking? */
 		c_list_for_each_entry (dev, &priv->devices_lst_head, devices_lst) {
 			state = nm_device_get_connectivity_state (dev);
-			if (state <= best_state)
+			if (nm_connectivity_state_cmp (state, best_state) <= 0)
 				continue;
 			best_state = state;
-			if (best_state >= NM_CONNECTIVITY_FULL) {
+			if (nm_connectivity_state_cmp (best_state, NM_CONNECTIVITY_FULL) >= 0) {
 				/* it doesn't get better than this. */
 				break;
 			}
 		}
 	}
 	nm_assert (best_state <= NM_CONNECTIVITY_FULL);
+	nm_assert (nm_connectivity_state_cmp (best_state, NM_CONNECTIVITY_FULL) <= 0);
 
 	if (best_state != priv->connectivity_state) {
 		priv->connectivity_state = best_state;
