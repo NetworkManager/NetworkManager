@@ -3080,7 +3080,9 @@ nm_device_get_connectivity_state (NMDevice *self)
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	return NM_MAX (priv->concheck_x[0].state, priv->concheck_x[1].state);
+	return NM_MAX_WITH_CMP (nm_connectivity_state_cmp,
+	                        priv->concheck_x[0].state,
+	                        priv->concheck_x[1].state);
 }
 
 /*****************************************************************************/
