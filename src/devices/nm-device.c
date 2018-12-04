@@ -14732,6 +14732,7 @@ _set_state_full (NMDevice *self,
 	NMActRequest *req;
 	gboolean no_firmware = FALSE;
 	NMSettingsConnection *sett_conn;
+	NMSettingSriov *s_sriov;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -14930,6 +14931,12 @@ _set_state_full (NMDevice *self,
 		}
 		break;
 	case NM_DEVICE_STATE_DEACTIVATING:
+		if (   (s_sriov = nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))
+		    && priv->ifindex > 0) {
+			nm_platform_link_set_sriov_params (nm_device_get_platform (self),
+			                                   priv->ifindex, 0, 1);
+		}
+
 		_cancel_activation (self);
 
 		/* We cache the ignore_carrier state to not react on config-reloads while the connection
