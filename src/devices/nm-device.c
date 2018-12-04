@@ -3641,6 +3641,8 @@ device_link_changed (NMDevice *self)
 	priv->device_link_changed_id = 0;
 
 	ifindex = nm_device_get_ifindex (self);
+	if (ifindex <= 0)
+		return G_SOURCE_REMOVE;
 	pllink = nm_platform_link_get (nm_device_get_platform (self), ifindex);
 	if (!pllink)
 		return G_SOURCE_REMOVE;
