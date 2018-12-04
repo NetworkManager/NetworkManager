@@ -1468,21 +1468,20 @@ nm_platform_link_supports_sriov (NMPlatform *self, int ifindex)
  * @self: platform instance
  * @ifindex: the index of the interface to change
  * @num_vfs: the number of VFs to create
- * @autoprobe: -1 to keep the current autoprobe-drivers value,
- *   or {0,1} to set a new value
+ * @autoprobe: the new autoprobe-drivers value (pass
+ *     %NM_TERNARY_DEFAULT to keep current value)
  */
 gboolean
 nm_platform_link_set_sriov_params (NMPlatform *self,
                                    int ifindex,
                                    guint num_vfs,
-                                   int autoprobe)
+                                   NMTernary autoprobe)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (NM_IN_SET (autoprobe, -1, 0, 1), FALSE);
 
-	_LOG3D ("link: setting %u total VFs and autoprobe %d", num_vfs, autoprobe);
+	_LOG3D ("link: setting %u total VFs and autoprobe %d", num_vfs, (int) autoprobe);
 	return klass->link_set_sriov_params (self, ifindex, num_vfs, autoprobe);
 }
 

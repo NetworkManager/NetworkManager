@@ -5737,7 +5737,7 @@ static gboolean
 link_set_sriov_params (NMPlatform *platform,
                        int ifindex,
                        guint num_vfs,
-                       int autoprobe)
+                       NMTernary autoprobe)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	nm_auto_close int dirfd = -1;
@@ -5782,7 +5782,7 @@ link_set_sriov_params (NMPlatform *platform,
 	                                                                                  "device/sriov_drivers_autoprobe"),
 	                                                        10, 0, G_MAXUINT, 0);
 	if (   current_num == num_vfs
-	    && (autoprobe == -1 || current_autoprobe == autoprobe))
+	    && (autoprobe == NM_TERNARY_DEFAULT || current_autoprobe == autoprobe))
 		return TRUE;
 
 	if (current_num != 0) {
@@ -5800,14 +5800,14 @@ link_set_sriov_params (NMPlatform *platform,
 	if (num_vfs == 0)
 		return TRUE;
 
-	if (   autoprobe >= 0
+	if (   NM_IN_SET (autoprobe, NM_TERNARY_TRUE, NM_TERNARY_FALSE)
 	    && current_autoprobe != autoprobe
 	    && !nm_platform_sysctl_set (NM_PLATFORM_GET,
 	                                NMP_SYSCTL_PATHID_NETDIR (dirfd,
 	                                                          ifname,
 	                                                          "device/sriov_drivers_autoprobe"),
-	                                nm_sprintf_buf (buf, "%d", autoprobe))) {
-		_LOGW ("link: couldn't set SR-IOV drivers-autoprobe to %d: %s", autoprobe, strerror (errno));
+	                                nm_sprintf_buf (buf, "%d", (int) autoprobe))) {
+		_LOGW ("link: couldn't set SR-IOV drivers-autoprobe to %d: %s", (int) autoprobe, strerror (errno));
 		return FALSE;
 	}
 

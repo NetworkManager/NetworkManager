@@ -4227,7 +4227,7 @@ device_init_static_sriov_num_vfs (NMDevice *self)
 		num_vfs = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT32, -1);
 		if (num_vfs >= 0) {
 			nm_platform_link_set_sriov_params (nm_device_get_platform (self),
-			                                   priv->ifindex, num_vfs, -1);
+			                                   priv->ifindex, num_vfs, NM_TERNARY_DEFAULT);
 		}
 	}
 }
@@ -6294,7 +6294,7 @@ act_stage1_prepare (NMDevice *self, NMDeviceStateReason *out_failure_reason)
 		nm_auto_freev NMPlatformVF **plat_vfs = NULL;
 		gs_free_error GError *error = NULL;
 		NMSriovVF *vf;
-		int autoprobe;
+		NMTernary autoprobe;
 
 		autoprobe = nm_setting_sriov_get_autoprobe_drivers (s_sriov);
 		if (autoprobe == NM_TERNARY_DEFAULT) {
@@ -14934,7 +14934,7 @@ _set_state_full (NMDevice *self,
 		if (   (s_sriov = nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))
 		    && priv->ifindex > 0) {
 			nm_platform_link_set_sriov_params (nm_device_get_platform (self),
-			                                   priv->ifindex, 0, 1);
+			                                   priv->ifindex, 0, NM_TERNARY_TRUE);
 		}
 
 		_cancel_activation (self);
