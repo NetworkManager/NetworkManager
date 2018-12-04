@@ -1596,7 +1596,12 @@ again:
 static gboolean
 device_is_wake_on_lan (NMPlatform *platform, NMDevice *device)
 {
-	return nm_platform_link_get_wake_on_lan (platform, nm_device_get_ip_ifindex (device));
+	int ifindex;
+
+	ifindex = nm_device_get_ip_ifindex (device);
+	if (ifindex <= 0)
+		return FALSE;
+	return nm_platform_link_get_wake_on_lan (platform, ifindex);
 }
 
 static void
