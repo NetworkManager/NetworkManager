@@ -4303,8 +4303,6 @@ realize_start_setup (NMDevice *self,
 
 	nm_device_set_carrier_from_platform (self);
 
-	device_init_static_sriov_num_vfs (self);
-
 	nm_assert (!priv->stats.timeout_id);
 	real_rate = _stats_refresh_rate_real (priv->stats.refresh_rate_ms);
 	if (real_rate)
@@ -14675,6 +14673,7 @@ _set_state_full (NMDevice *self,
 			save_ip6_properties (self);
 			if (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED)
 				ip6_managed_setup (self);
+			device_init_static_sriov_num_vfs (self);
 		}
 
 		if (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED) {
