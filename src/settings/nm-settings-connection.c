@@ -640,7 +640,9 @@ nm_settings_connection_update (NMSettingsConnection *self,
 	gboolean replaced = FALSE;
 	gs_free char *logmsg_change = NULL;
 	GError *local = NULL;
+	gs_unref_object NMConnection *simple = NULL;
 	gs_unref_variant GVariant *con_agent_secrets = NULL;
+	gs_unref_variant GVariant *new_agent_secrets = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
@@ -681,6 +683,16 @@ nm_settings_connection_update (NMSettingsConnection *self,
 
 	replace_connection = reread_connection ?: new_connection;
 
+	/* Save agent-owned secrets from the new connection for later use */
+	if (new_connection) {
+		simple = nm_simple_connection_new_clone (new_connection);
+		nm_connection_clear_secrets_with_flags (simple,
+		                                        secrets_filter_cb,
+		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
+		new_agent_secrets = nm_connection_to_dbus (simple, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+		g_clear_object (&simple);
+	}
+
 	/* Disconnect the changed signal to ensure we don't set Unsaved when
 	 * it's not required.
 	 */
@@ -691,7 +703,6 @@ nm_settings_connection_update (NMSettingsConnection *self,
 	    && !nm_connection_compare (nm_settings_connection_get_connection (self),
 	                               replace_connection,
 	                               NM_SETTING_COMPARE_FLAG_EXACT)) {
-		gs_unref_object NMConnection *simple = NULL;
 
 		if (log_diff_name) {
 			nm_utils_log_connection_diff (replace_connection, nm_settings_connection_get_connection (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ",
@@ -736,6 +747,15 @@ nm_settings_connection_update (NMSettingsConnection *self,
 		}
 		if (con_agent_secrets)
 			(void) nm_connection_update_secrets (nm_settings_connection_get_connection (self), NULL, con_agent_secrets, NULL);
+	}
+
+	/* Apply agent-owned secrets from the new connection so that
+	 * they can be sent to agents */
+	if (new_agent_secrets) {
+		(void) nm_connection_update_secrets (nm_settings_connection_get_connection (self),
+		                                     NULL,
+		                                     new_agent_secrets,
+		                                     NULL);
 	}
 
 	nm_settings_connection_recheck_visibility (self);
