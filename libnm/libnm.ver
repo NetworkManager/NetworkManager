@@ -1450,4 +1450,6 @@ global:
 	nm_client_add_and_activate_connection_options;
 	nm_client_add_and_activate_connection_options_finish;
 	nm_device_get_connectivity;
+	nm_team_link_watcher_get_vlanid;
+	nm_team_link_watcher_new_arp_ping2;
 } libnm_1_14_0;

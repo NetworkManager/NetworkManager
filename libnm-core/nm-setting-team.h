@@ -74,6 +74,15 @@ NMTeamLinkWatcher *nm_team_link_watcher_new_arp_ping (int init_wait,
                                                       const char *source_host,
                                                       NMTeamLinkWatcherArpPingFlags flags,
                                                       GError **error);
+NM_AVAILABLE_IN_1_16
+NMTeamLinkWatcher *nm_team_link_watcher_new_arp_ping2 (int init_wait,
+                                                       int interval,
+                                                       int missed_max,
+                                                       int vlanid,
+                                                       const char *target_host,
+                                                       const char *source_host,
+                                                       NMTeamLinkWatcherArpPingFlags flags,
+                                                       GError **error);
 NM_AVAILABLE_IN_1_12
 void nm_team_link_watcher_ref                    (NMTeamLinkWatcher *watcher);
 NM_AVAILABLE_IN_1_12
@@ -100,6 +109,8 @@ NM_AVAILABLE_IN_1_12
 const char *nm_team_link_watcher_get_source_host (NMTeamLinkWatcher *watcher);
 NM_AVAILABLE_IN_1_12
 NMTeamLinkWatcherArpPingFlags nm_team_link_watcher_get_flags (NMTeamLinkWatcher *watcher);
+NM_AVAILABLE_IN_1_16
+int nm_team_link_watcher_get_vlanid              (NMTeamLinkWatcher *watcher);
 
 #define NM_TYPE_SETTING_TEAM            (nm_setting_team_get_type ())
 #define NM_SETTING_TEAM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_TEAM, NMSettingTeam))

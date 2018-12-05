@@ -285,13 +285,14 @@ _dump_team_link_watcher (NMTeamLinkWatcher *watcher)
 	DUMP_WATCHER_INT (w_dump, watcher, "init-wait", init_wait);
 	DUMP_WATCHER_INT (w_dump, watcher, "interval", interval);
 	DUMP_WATCHER_INT (w_dump, watcher, "missed-max", missed_max);
-#undef DUMP_WATCHER_INT
 	g_string_append_printf (w_dump, " target-host=%s",
 	                        nm_team_link_watcher_get_target_host (watcher));
 
 	if (nm_streq (name, NM_TEAM_LINK_WATCHER_NSNA_PING))
 		return g_string_free (w_dump, FALSE);
 
+	DUMP_WATCHER_INT (w_dump, watcher, "vlanid", vlanid);
+#undef DUMP_WATCHER_INT
 	g_string_append_printf (w_dump, " source-host=%s",
 	                        nm_team_link_watcher_get_source_host (watcher));
 	flags = nm_team_link_watcher_get_flags (watcher);
@@ -313,7 +314,7 @@ _parse_team_link_watcher (const char *str,
 	gs_free char *str_clean = NULL;
 	guint i;
 	gs_free const char *name = NULL;
-	int val1 = 0, val2 = 0, val3 = 3;
+	int val1 = 0, val2 = 0, val3 = 3, val4 = -1;
 	gs_free const char *target_host = NULL;
 	gs_free const char *source_host = NULL;
 	NMTeamLinkWatcherArpPingFlags flags = 0;
@@ -358,6 +359,8 @@ _parse_team_link_watcher (const char *str,
 			val2 = _nm_utils_ascii_str_to_int64 (pair[1], 10, 0, G_MAXINT32, -1);
 		else if (nm_streq (pair[0], "missed-max"))
 			val3 = _nm_utils_ascii_str_to_int64 (pair[1], 10, 0, G_MAXINT32, -1);
+		else if (nm_streq (pair[0], "vlanid"))
+			val4 = _nm_utils_ascii_str_to_int64 (pair[1], 10, -1, 4094, -2);
 		else if (nm_streq (pair[0], "target-host"))
 			target_host = g_strdup (pair[1]);
 		else if (nm_streq (pair[0], "source-host"))
@@ -382,6 +385,11 @@ _parse_team_link_watcher (const char *str,
 			             "value is not a valid number [0, MAXINT]");
 			return NULL;
 		}
+		if (val4 < -1) {
+			g_set_error (error, 1, 0, "'%s' is not valid: %s", watcherv[i],
+			             "value is not a valid number [-1, 4094]");
+			return NULL;
+		}
 	}
 
 	if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_ETHTOOL))
@@ -389,7 +397,7 @@ _parse_team_link_watcher (const char *str,
 	else if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_NSNA_PING))
 		return nm_team_link_watcher_new_nsna_ping (val1, val2, val3, target_host, error);
 	else if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_ARP_PING))
-		return nm_team_link_watcher_new_arp_ping (val1, val2, val3, target_host, source_host, flags, error);
+		return nm_team_link_watcher_new_arp_ping2 (val1, val2, val3, val4, target_host, source_host, flags, error);
 
 	if (!name)
 		g_set_error (error, 1, 0, "link watcher name missing");
