@@ -14775,7 +14775,7 @@ _hw_addr_set (NMDevice *self,
 	NMPlatformError plerr;
 	guint8 addr_bytes[NM_UTILS_HWADDR_LEN_MAX];
 	gsize addr_len;
-	gboolean was_taken_down;
+	gboolean was_taken_down = FALSE;
 	gboolean retry_down;
 
 	nm_assert (NM_IS_DEVICE (self));
@@ -14799,7 +14799,14 @@ _hw_addr_set (NMDevice *self,
 
 	_LOGT (LOGD_DEVICE, "set-hw-addr: setting MAC address to '%s' (%s, %s)...", addr, operation, detail);
 
-	was_taken_down = FALSE;
+	if (nm_device_get_device_type (self) == NM_DEVICE_TYPE_WIFI) {
+		/* Always take the device down for Wi-Fi because
+		 * wpa_supplicant needs it to properly detect the MAC
+		 * change. */
+		retry_down = FALSE;
+		was_taken_down = TRUE;
+		nm_device_take_down (self, FALSE);
+	}
 
 again:
 	plerr = nm_platform_link_set_address (nm_device_get_platform (self), nm_device_get_ip_ifindex (self), addr_bytes, addr_len);
