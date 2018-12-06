@@ -37,15 +37,11 @@ if enable_introspection
     command: [xsltproc, '--output', '@OUTPUT@', join_paths(meson.current_source_dir(), 'settings-docs.xsl'), '@INPUT@']
   )
 
-  # FIXME: if enabled the check happens even if the settings_docs_source is not set
-  '''
-  if get_option('check_settings_docs')
-    res = run_command(find_program('cmp'), '-s', settings_docs + '.in', settings_docs_source.full_path())
-    if res.returncode() != 0
-      message('The generated file ' + settings_docs_source.full_path() + ' differs from the source file ' + settings_docs + '.in' + '. You probably should copy the generated file over to the source file. You can skip this test by setting -Dcheck_settings_docs=false')
-    endif
-  endif
-  '''
+  test(
+    'check-settings-docs',
+    find_program(join_paths(meson.source_root(), 'tools', 'check-settings-docs.sh')),
+    args: [meson.source_root(), meson.build_root(), 'clients/common/' + settings_docs]
+  )
 else
   settings_docs_source = configure_file(
     input: settings_docs + '.in',
