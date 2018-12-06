@@ -3465,11 +3465,14 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 static void
 nm_device_set_carrier_from_platform (NMDevice *self)
 {
+	int ifindex;
+
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
-		if (!nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER)) {
+		if (   !nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER)
+		    && (ifindex = nm_device_get_ip_ifindex (self)) > 0) {
 			nm_device_set_carrier (self,
 			                       nm_platform_link_is_connected (nm_device_get_platform (self),
-			                                                      nm_device_get_ip_ifindex (self)));
+			                                                      ifindex));
 		}
 	} else {
 		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
