@@ -3701,16 +3701,7 @@ $(clients_common_settings_doc_h): clients/common/settings-docs.xsl libnm/nm-prop
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $< $(word 2,$^)
 DISTCLEANFILES += $(clients_common_settings_doc_h)
 check-local-settings-docs: $(clients_common_settings_doc_h)
-	@if test -z "$$NMTST_NO_CHECK_SETTINGS_DOCS" ; then \
-		if ! cmp -s "$(srcdir)/$(clients_common_settings_doc_h).in" "$(builddir)/$(clients_common_settings_doc_h)" ; then \
-			if test "$$NM_TEST_REGENERATE" == 1 ; then \
-				cp -f "$(builddir)/$(clients_common_settings_doc_h)" "$(srcdir)/$(clients_common_settings_doc_h).in"; \
-			else \
-				echo "The generated file \"$(builddir)/$(clients_common_settings_doc_h)\" differs from the source file \"$(srcdir)/$(clients_common_settings_doc_h).in\". You probably should copy the generated file over to the source file. You can skip this test by setting \$$NMTST_NO_CHECK_SETTINGS_DOCS=yes". You can also automatically copy the file by rerunning the test with \$$NM_TEST_REGENERATE=1 ; \
-				false; \
-			fi; \
-		fi;\
-	fi
+	$(srcdir)/tools/check-settings-docs.sh "$(srcdir)" "$(builddir)" "$(clients_common_settings_doc_h)"
 check_local += check-local-settings-docs
 else
 $(clients_common_settings_doc_h): $(clients_common_settings_doc_h).in clients/common/.dirstamp
@@ -5052,6 +5043,7 @@ EXTRA_DIST += \
 	\
 	tools/check-docs.sh \
 	tools/check-exports.sh \
+	tools/check-settings-docs.sh \
 	tools/create-exports-NetworkManager.sh \
 	tools/debug-helper.py \
 	tools/meson-post-install.sh \

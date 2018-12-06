@@ -73,4 +73,3 @@ option('libpsl', type: 'boolean', value: true, description: 'Link against libpsl
 option('json_validation', type: 'boolean', value: true, description: 'Enable JSON validation in libnm')
 option('crypto', type: 'combo', choices: ['nss', 'gnutls'], value: 'nss', description: 'Cryptography library to use for certificate and key operations')
 option('qt', type: 'boolean', value: true, description: 'enable Qt examples')
-option('check_settings_docs', type: 'boolean', value: false, description: 'compare check settings-docs.h file')
