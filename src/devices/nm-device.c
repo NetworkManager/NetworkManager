@@ -67,6 +67,7 @@
 #include "settings/nm-settings.h"
 #include "nm-setting-ethtool.h"
 #include "nm-auth-utils.h"
+#include "nm-keep-alive.h"
 #include "nm-netns.h"
 #include "nm-dispatcher.h"
 #include "nm-config.h"
@@ -2383,10 +2384,27 @@ nm_device_get_act_request (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->act_request.obj;
 }
 
+NMActivationStateFlags
+nm_device_get_activation_state_flags (NMDevice *self)
+{
+	NMActRequest *ac;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_ACTIVATION_STATE_FLAG_NONE);
+
+	ac = NM_DEVICE_GET_PRIVATE (self)->act_request.obj;
+	if (!ac)
+		return NM_ACTIVATION_STATE_FLAG_NONE;
+	return nm_active_connection_get_state_flags (NM_ACTIVE_CONNECTION (ac));
+}
+
 NMSettingsConnection *
 nm_device_get_settings_connection (NMDevice *self)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	return priv->act_request.obj ? nm_act_request_get_settings_connection (priv->act_request.obj) : NULL;
 }
@@ -11619,14 +11637,15 @@ disconnect_cb (NMDevice *self,
 }
 
 static void
-_clear_queued_act_request (NMDevicePrivate *priv)
+_clear_queued_act_request (NMDevicePrivate *priv,
+                           NMActiveConnectionStateReason active_reason)
 {
 	if (priv->queued_act_request) {
 		gs_unref_object NMActRequest *ac = NULL;
 
 		ac = g_steal_pointer (&priv->queued_act_request);
 		nm_active_connection_set_state_fail ((NMActiveConnection *) ac,
-		                                     NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED,
+		                                     active_reason,
 		                                     NULL);
 	}
 }
@@ -11768,7 +11787,8 @@ _carrier_wait_check_queued_act_request (NMDevice *self)
 	priv->queued_act_request_is_waiting_for_carrier = FALSE;
 	if (!priv->carrier) {
 		_LOGD (LOGD_DEVICE, "Cancel queued activation request as we have no carrier after timeout");
-		_clear_queued_act_request (priv);
+		_clear_queued_act_request (priv,
+		                           NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
 	} else {
 		gs_unref_object NMActRequest *queued_req = NULL;
 
@@ -11823,7 +11843,9 @@ _carrier_wait_check_act_request_must_queue (NMDevice *self, NMActRequest *req)
 }
 
 void
-nm_device_disconnect_active_connection (NMActiveConnection *active)
+nm_device_disconnect_active_connection (NMActiveConnection *active,
+                                        NMDeviceStateReason device_reason,
+                                        NMActiveConnectionStateReason active_reason)
 {
 	NMDevice *self;
 	NMDevicePrivate *priv;
@@ -11831,37 +11853,58 @@ nm_device_disconnect_active_connection (NMActiveConnection *active)
 	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (active));
 
 	self = nm_active_connection_get_device (active);
-
 	if (!self) {
 		/* hm, no device? Just fail the active connection. */
-		nm_active_connection_set_state_fail (active,
-		                                     NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
-		                                     NULL);
-		return;
+		goto do_fail;
 	}
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (NM_ACTIVE_CONNECTION (priv->queued_act_request) == active) {
-		_clear_queued_act_request (priv);
+		_clear_queued_act_request (priv, active_reason);
 		return;
 	}
+
 	if (NM_ACTIVE_CONNECTION (priv->act_request.obj) == active) {
 		if (priv->state < NM_DEVICE_STATE_DEACTIVATING) {
 			nm_device_state_changed (self,
 			                         NM_DEVICE_STATE_DEACTIVATING,
-			                         NM_DEVICE_STATE_REASON_NEW_ACTIVATION);
+			                         device_reason);
 		} else {
-			/* it's going down already... */
+			/* @active is the current ac of @self, but it's going down already.
+			 * Nothing to do. */
 		}
+		return;
 	}
+
+	/* the active connection references this device, but it's neither the
+	 * queued_act_request nor the current act_request. Just set it to fail... */
+do_fail:
+	nm_active_connection_set_state_fail (active,
+	                                     active_reason,
+	                                     NULL);
 }
 
 void
 nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv;
 	gboolean must_queue;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+	g_return_if_fail (NM_IS_ACT_REQUEST (req));
+
+	nm_keep_alive_arm (nm_active_connection_get_keep_alive (NM_ACTIVE_CONNECTION (req)));
+
+	if (nm_active_connection_get_state (NM_ACTIVE_CONNECTION (req)) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
+		/* it's already deactivating. Nothing to do. */
+		nm_assert (NM_IN_SET (nm_active_connection_get_device (NM_ACTIVE_CONNECTION (req)), NULL, self));
+		return;
+	}
+
+	nm_assert (self == nm_active_connection_get_device (NM_ACTIVE_CONNECTION (req)));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	must_queue = _carrier_wait_check_act_request_must_queue (self, req);
 
@@ -11873,7 +11916,8 @@ nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 	}
 
 	/* supersede any already-queued request */
-	_clear_queued_act_request (priv);
+	_clear_queued_act_request (priv,
+	                           NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
 	priv->queued_act_request = g_object_ref (req);
 	priv->queued_act_request_is_waiting_for_carrier = must_queue;
 
@@ -14742,8 +14786,10 @@ _set_state_full (NMDevice *self,
 	if (state <= NM_DEVICE_STATE_UNAVAILABLE) {
 		if (available_connections_del_all (self))
 			_notify (self, PROP_AVAILABLE_CONNECTIONS);
-		if (old_state > NM_DEVICE_STATE_UNAVAILABLE)
-			_clear_queued_act_request (priv);
+		if (old_state > NM_DEVICE_STATE_UNAVAILABLE) {
+			_clear_queued_act_request (priv,
+			                           NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
+		}
 	}
 
 	/* Update the available connections list when a device first becomes available */
@@ -16188,7 +16234,8 @@ dispose (GObject *object)
 	if (nm_clear_g_source (&priv->carrier_wait_id))
 		nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
 
-	_clear_queued_act_request (priv);
+	_clear_queued_act_request (priv,
+	                           NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
 
 	nm_clear_g_source (&priv->device_link_changed_id);
 	nm_clear_g_source (&priv->device_ip_link_changed_id);

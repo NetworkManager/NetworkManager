@@ -960,20 +960,25 @@ typedef enum { /*< flags >*/
  * @NM_ACTIVATION_STATE_FLAG_IP6_READY: IPv6 setting is completed.
  * @NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES: The master has any slave devices attached.
  *   This only makes sense if the device is a master.
+ * @NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY: the lifetime
+ *   of the activation is bound to the visilibity of the connection profile,
+ *   which in turn depends on "connection.permissions" and whether a session
+ *   for the user exists. Since: 1.16
  *
  * Flags describing the current activation state.
  *
  * Since: 1.10
  **/
 typedef enum { /*< flags >*/
-	NM_ACTIVATION_STATE_FLAG_NONE                       = 0,
+	NM_ACTIVATION_STATE_FLAG_NONE                                 = 0,
 
-	NM_ACTIVATION_STATE_FLAG_IS_MASTER                  = (1LL <<  0),
-	NM_ACTIVATION_STATE_FLAG_IS_SLAVE                   = (1LL <<  1),
-	NM_ACTIVATION_STATE_FLAG_LAYER2_READY               = (1LL <<  2),
-	NM_ACTIVATION_STATE_FLAG_IP4_READY                  = (1LL <<  3),
-	NM_ACTIVATION_STATE_FLAG_IP6_READY                  = (1LL <<  4),
-	NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES          = (1LL <<  5),
+	NM_ACTIVATION_STATE_FLAG_IS_MASTER                            = (1LL <<  0),
+	NM_ACTIVATION_STATE_FLAG_IS_SLAVE                             = (1LL <<  1),
+	NM_ACTIVATION_STATE_FLAG_LAYER2_READY                         = (1LL <<  2),
+	NM_ACTIVATION_STATE_FLAG_IP4_READY                            = (1LL <<  3),
+	NM_ACTIVATION_STATE_FLAG_IP6_READY                            = (1LL <<  4),
+	NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES                    = (1LL <<  5),
+	NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY = (1LL <<  6),
 } NMActivationStateFlags;
 
 /**

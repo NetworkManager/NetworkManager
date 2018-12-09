@@ -36,14 +36,12 @@ typedef struct _NMKeepAliveClass NMKeepAliveClass;
 
 GType nm_keep_alive_get_type (void) G_GNUC_CONST;
 
-NMKeepAlive* nm_keep_alive_new (gboolean floating);
+NMKeepAlive* nm_keep_alive_new (void);
 
 gboolean nm_keep_alive_is_alive (NMKeepAlive *self);
 
-void nm_keep_alive_sink (NMKeepAlive *self);
-
-void nm_keep_alive_set_forced (NMKeepAlive  *self,
-                               gboolean      forced);
+void nm_keep_alive_arm (NMKeepAlive *self);
+void nm_keep_alive_disarm (NMKeepAlive *self);
 
 void nm_keep_alive_set_settings_connection_watch_visible (NMKeepAlive         *self,
                                                           NMSettingsConnection *connection);
@@ -51,5 +49,11 @@ void nm_keep_alive_set_settings_connection_watch_visible (NMKeepAlive         *s
 void nm_keep_alive_set_dbus_client_watch (NMKeepAlive      *self,
                                           GDBusConnection  *connection,
                                           const char       *client_address);
+
+gpointer /* GObject * */ nm_keep_alive_get_owner (NMKeepAlive *self);
+
+/* _nm_keep_alive_set_owner() is reserved for the owner to set/unset itself. */
+void                     _nm_keep_alive_set_owner (NMKeepAlive *self,
+                                                   GObject *owner);
 
 #endif /* __NETWORKMANAGER_KEEP_ALIVE_H__ */

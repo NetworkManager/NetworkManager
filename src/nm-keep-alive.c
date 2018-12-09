@@ -34,6 +34,8 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMKeepAlive,
 );
 
 typedef struct {
+	GObject *owner;
+
 	NMSettingsConnection *connection;
 	GDBusConnection *dbus_connection;
 	char *dbus_client;
@@ -41,10 +43,13 @@ typedef struct {
 	GCancellable *dbus_client_confirm_cancellable;
 	guint subscription_id;
 
-	bool floating:1;
-	bool forced:1;
+	bool armed:1;
+	bool disarmed:1;
+
 	bool alive:1;
 	bool dbus_client_confirmed:1;
+	bool dbus_client_watching:1;
+	bool connection_was_visible:1;
 } NMKeepAlivePrivate;
 
 struct _NMKeepAlive {
@@ -77,22 +82,42 @@ _is_alive (NMKeepAlive *self)
 {
 	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
-	if (   priv->floating
-	    || priv->forced)
+	nm_assert (!priv->disarmed);
+
+	if (!priv->armed) {
+		/* before arming, the instance is always alive. */
 		return TRUE;
+	}
+
+	if (priv->dbus_client_watching) {
+		if (_is_alive_dbus_client (self)) {
+			/* no matter what, the keep-alive is alive, because there is a D-Bus client
+			 * still around keeping it alive. */
+			return TRUE;
+		}
+		/* the D-Bus client is gone. The only other binding (below) for the connection's
+		 * visibility cannot keep the instance alive.
+		 *
+		 * As such, a D-Bus client watch is authorative and overrules other conditions (that
+		 * we have so far). */
+		return FALSE;
+	}
 
 	if (   priv->connection
-	    && NM_FLAGS_HAS (nm_settings_connection_get_flags (priv->connection),
-	                     NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE))
-		return TRUE;
+	    && priv->connection_was_visible
+	    && !NM_FLAGS_HAS (nm_settings_connection_get_flags (priv->connection),
+	                      NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE)) {
+		/* note that we only declare the keep-alive as dead due to invisible
+		 * connection, if
+		 *    (1) we monitor a connection, obviously
+		 *    (2) the connection was visible earlier and is no longer. It was
+		 *        was invisible all the time, it does not suffice.
+		 */
+		return FALSE;
+	}
 
-	/* Perform this check as last. We want to confirm whether the dbus-client
-	 * is alive lazyly, so if we already decided above that the keep-alive
-	 * is good, we don't rely on the outcome of this check. */
-	if (_is_alive_dbus_client (self))
-		return TRUE;
-
-	return FALSE;
+	/* by default, the instance is alive. */
+	return TRUE;
 }
 
 static void
@@ -100,9 +125,15 @@ _notify_alive (NMKeepAlive *self)
 {
 	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
+	if (priv->disarmed) {
+		/* once disarmed, the alive state is frozen. */
+		return;
+	}
+
 	if (priv->alive == _is_alive (self))
 		return;
 	priv->alive = !priv->alive;
+	_LOGD ("instance is now %s", priv->alive ? "alive" : "dead");
 	_notify (self, PROP_ALIVE);
 }
 
@@ -114,34 +145,28 @@ nm_keep_alive_is_alive (NMKeepAlive *self)
 
 /*****************************************************************************/
 
-void
-nm_keep_alive_sink (NMKeepAlive *self)
-{
-	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
-
-	if (priv->floating) {
-		priv->floating = FALSE;
-		_notify_alive (self);
-	}
-}
-
-void
-nm_keep_alive_set_forced (NMKeepAlive *self, gboolean forced)
-{
-	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
-
-	if (priv->forced != (!!forced)) {
-		priv->forced = forced;
-		_notify_alive (self);
-	}
-}
-
-/*****************************************************************************/
-
 static void
 connection_flags_changed (NMSettingsConnection *connection,
                           NMKeepAlive          *self)
 {
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+
+	if (   !priv->connection_was_visible
+	    && NM_FLAGS_HAS (nm_settings_connection_get_flags (priv->connection),
+	                     NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE)) {
+		/* the profile was never visible but now it becomes visible.
+		 * Remember that.
+		 *
+		 * Before this happens (that is, if the device was invisible all along),
+		 * the keep alive instance is considered alive (w.r.t. watching the connection).
+		 *
+		 * The reason is to allow a user to manually activate an invisible profile and keep
+		 * it alive. At least, as long until the user logs out the first time (which is the
+		 * first time, the profiles changes from visible to invisible).
+		 *
+		 * Yes, that is odd. How to improve? */
+		priv->connection_was_visible = TRUE;
+	}
 	_notify_alive (self);
 }
 
@@ -163,8 +188,11 @@ _set_settings_connection_watch_visible (NMKeepAlive *self,
 		old_connection = g_steal_pointer (&priv->connection);
 	}
 
-	if (connection) {
+	if (   connection
+	    && !priv->disarmed) {
 		priv->connection = g_object_ref (connection);
+		priv->connection_was_visible = NM_FLAGS_HAS (nm_settings_connection_get_flags (priv->connection),
+		                                             NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE);
 		g_signal_connect (priv->connection,
 		                  NM_SETTINGS_CONNECTION_FLAGS_CHANGED,
 		                  G_CALLBACK (connection_flags_changed),
@@ -298,12 +326,16 @@ nm_keep_alive_set_dbus_client_watch (NMKeepAlive *self,
 {
 	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
+	if (priv->disarmed)
+		return;
+
 	cleanup_dbus_watch (self);
 
 	if (client_address) {
 		_LOGD ("Registering dbus client watch for keep alive");
 
 		priv->dbus_client = g_strdup (client_address);
+		priv->dbus_client_watching = TRUE;
 		priv->dbus_client_confirmed = FALSE;
 		priv->dbus_connection = g_object_ref (connection);
 		priv->subscription_id = g_dbus_connection_signal_subscribe (connection,
@@ -316,9 +348,61 @@ nm_keep_alive_set_dbus_client_watch (NMKeepAlive *self,
 		                                                            name_owner_changed_cb,
 		                                                            self,
 		                                                            NULL);
-	}
+	} else
+		priv->dbus_client_watching = FALSE;
 
 	_notify_alive (self);
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_keep_alive_arm:
+ * @self: the #NMKeepAlive
+ *
+ * A #NMKeepAlive instance is unarmed by default. That means, it's
+ * alive and stays alive until being armed. Arming means, that the conditions
+ * start to be actively evaluated, that the alive state may change, and
+ * that property changed signals are emitted.
+ *
+ * The opposite is nm_keep_alive_disarm() which freezes the alive state
+ * for good. Once disarmed, the instance cannot be armed again. Arming an
+ * instance multiple times has no effect. Arming an already disarmed instance
+ * also has no effect. */
+void
+nm_keep_alive_arm (NMKeepAlive *self)
+{
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+
+	if (!priv->armed) {
+		priv->armed = TRUE;
+		_notify_alive (self);
+	}
+}
+
+/**
+ * nm_keep_alive_disarm:
+ * @self: the #NMKeepAlive instance
+ *
+ * Once the instance is disarmed, it will not change its alive state
+ * anymore and will not emit anymore property changed signals about
+ * alive state changed.
+ *
+ * As such, it will also free internal resources (since they no longer
+ * affect the externally visible state).
+ *
+ * Once disarmed, the instance is frozen and cannot change anymore.
+ */
+void
+nm_keep_alive_disarm (NMKeepAlive *self)
+{
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+
+	priv->disarmed = TRUE;
+
+	/* release internal data. */
+	_set_settings_connection_watch_visible (self, NULL, FALSE);
+	cleanup_dbus_watch (self);
 }
 
 /*****************************************************************************/
@@ -343,22 +427,76 @@ get_property (GObject *object,
 
 /*****************************************************************************/
 
+/**
+ * nm_keep_alive_get_owner:
+ * @self: the #NMKeepAlive
+ *
+ * Returns: the owner instance associated with this @self. This commonly
+ *   is set to be the target instance, which @self guards for being alive.
+ *   Returns a gpointer, but of course it's some GObject instance. */
+gpointer /* GObject * */
+nm_keep_alive_get_owner (NMKeepAlive *self)
+{
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+
+	nm_assert (!priv->owner || G_IS_OBJECT (priv->owner));
+
+	return priv->owner;
+}
+
+/**
+ * _nm_keep_alive_set_owner:
+ * @self: the #NMKeepAlive
+ * @owner: the owner to set or unset.
+ *
+ * Sets or unsets the owner instance. Think of the owner the target
+ * instance that is guarded by @self. It's the responsibility of the
+ * owner to set and properly unset this pointer. As the owner also
+ * controls the lifetime of the NMKeepAlive instance.
+ *
+ * This API is not to be called by everybody, but only the owner of
+ * @self.
+ */
+void
+_nm_keep_alive_set_owner (NMKeepAlive *self,
+                          GObject *owner)
+{
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+
+	nm_assert (!owner || G_IS_OBJECT (owner));
+
+	/* it's bad style to reset the owner object. You are supposed to
+	 * set it once, and clear it once. That's it. */
+	nm_assert (!owner || !priv->owner);
+
+	/* optimally, we would take a reference to @owner. But the
+	 * owner already owns a refrence to the keep-alive, so we cannot
+	 * just own a reference back.
+	 *
+	 * We could register a weak-pointer here. But instead, declare that
+	 * owner is required to set itself as owner when creating the
+	 * keep-alive instance, and unset itself when it lets go of the
+	 * keep-alive instance (at latest, when the owner itself gets destroyed).
+	 */
+	priv->owner = owner;
+}
+
+/*****************************************************************************/
+
 static void
 nm_keep_alive_init (NMKeepAlive *self)
 {
-	nm_assert (NM_KEEP_ALIVE_GET_PRIVATE (self)->alive == _is_alive (self));
+	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
+
+	priv->alive = TRUE;
+
+	nm_assert (priv->alive == _is_alive (self));
 }
 
 NMKeepAlive *
-nm_keep_alive_new (gboolean floating)
+nm_keep_alive_new (void)
 {
-	NMKeepAlive *self = g_object_new (NM_TYPE_KEEP_ALIVE, NULL);
-	NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
-
-	priv->floating = floating;
-	priv->alive = TRUE;
-	nm_assert (priv->alive == _is_alive (self));
-	return self;
+	return g_object_new (NM_TYPE_KEEP_ALIVE, NULL);
 }
 
 static void
@@ -366,8 +504,10 @@ dispose (GObject *object)
 {
 	NMKeepAlive *self = NM_KEEP_ALIVE (object);
 
-	_set_settings_connection_watch_visible (self, NULL, FALSE);
-	cleanup_dbus_watch (self);
+	nm_assert (!NM_KEEP_ALIVE_GET_PRIVATE (self)->owner);
+
+	/* disarm also happens to free all resources. */
+	nm_keep_alive_disarm (self);
 }
 
 static void

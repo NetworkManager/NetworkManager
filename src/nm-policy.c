@@ -30,6 +30,7 @@
 
 #include "NetworkManagerUtils.h"
 #include "nm-act-request.h"
+#include "nm-keep-alive.h"
 #include "devices/nm-device.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
@@ -1283,6 +1284,7 @@ auto_activate_device (NMPolicy *self,
 	                                     subject,
 	                                     NM_ACTIVATION_TYPE_MANAGED,
 	                                     NM_ACTIVATION_REASON_AUTOCONNECT,
+	                                     NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY,
 	                                     &error);
 	if (!ac) {
 		_LOGI (LOGD_DEVICE, "connection '%s' auto-activation failed: %s",
@@ -1673,9 +1675,14 @@ activate_secondary_connections (NMPolicy *self,
 	GError *error = NULL;
 	guint32 i;
 	gboolean success = TRUE;
+	NMActivationStateFlags initial_state_flags;
 
 	s_con = nm_connection_get_setting_connection (connection);
-	nm_assert (s_con);
+	nm_assert (NM_IS_SETTING_CONNECTION (s_con));
+
+	/* we propagate the activation's state flags. */
+	initial_state_flags =   nm_device_get_activation_state_flags (device)
+	                      & NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY;
 
 	for (i = 0; i < nm_setting_connection_get_num_secondaries (s_con); i++) {
 		NMSettingsConnection *sett_conn;
@@ -1699,7 +1706,6 @@ activate_secondary_connections (NMPolicy *self,
 		}
 
 		req = nm_device_get_act_request (device);
-		g_assert (req);
 
 		_LOGD (LOGD_DEVICE, "activating secondary connection '%s (%s)' for base connection '%s (%s)'",
 		       nm_settings_connection_get_id (sett_conn), sec_uuid,
@@ -1712,6 +1718,7 @@ activate_secondary_connections (NMPolicy *self,
 		                                     nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (req)),
 		                                     NM_ACTIVATION_TYPE_MANAGED,
 		                                     nm_active_connection_get_activation_reason (NM_ACTIVE_CONNECTION (req)),
+		                                     initial_state_flags,
 		                                     &error);
 		if (ac)
 			secondary_ac_list = g_slist_append (secondary_ac_list, g_object_ref (ac));
@@ -2161,6 +2168,8 @@ vpn_connection_retry_after_failure (NMVpnConnection *vpn, NMPolicy *self)
 	                                     nm_active_connection_get_subject (ac),
 	                                     NM_ACTIVATION_TYPE_MANAGED,
 	                                     nm_active_connection_get_activation_reason (ac),
+	                                     (  nm_active_connection_get_state_flags (ac)
+	                                      & NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY),
 	                                     &error)) {
 		_LOGW (LOGD_DEVICE, "VPN '%s' reconnect failed: %s",
 		       nm_settings_connection_get_id (connection),
@@ -2183,26 +2192,36 @@ active_connection_state_changed (NMActiveConnection *active,
 }
 
 static void
-active_connection_keep_alive_changed (NMActiveConnection *ac,
+active_connection_keep_alive_changed (NMKeepAlive *keep_alive,
                                       GParamSpec *pspec,
                                       NMPolicy *self)
 {
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	NMPolicyPrivate *priv;
+	NMActiveConnection *ac;
 	GError *error = NULL;
 
-	if (nm_active_connection_get_keep_alive (ac))
+	nm_assert (NM_IS_POLICY (self));
+	nm_assert (NM_IS_KEEP_ALIVE (keep_alive));
+	nm_assert (NM_IS_ACTIVE_CONNECTION (nm_keep_alive_get_owner (keep_alive)));
+
+	if (nm_keep_alive_is_alive (keep_alive))
 		return;
 
-	if (nm_active_connection_get_state (ac) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-		if (!nm_manager_deactivate_connection (priv->manager,
-		                                       ac,
-		                                       NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
-		                                       &error)) {
-			_LOGW (LOGD_DEVICE, "connection '%s' is no longer kept alive, but error deactivating it: %s",
-			       nm_active_connection_get_settings_connection_id (ac),
-			       error->message);
-			g_clear_error (&error);
-		}
+	ac = nm_keep_alive_get_owner (keep_alive);
+
+	if (nm_active_connection_get_state (ac) > NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
+		return;
+
+	priv = NM_POLICY_GET_PRIVATE (self);
+
+	if (!nm_manager_deactivate_connection (priv->manager,
+	                                       ac,
+	                                       NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
+	                                       &error)) {
+		_LOGW (LOGD_DEVICE, "connection '%s' is no longer kept alive, but error deactivating it: %s",
+		       nm_active_connection_get_settings_connection_id (ac),
+		       error->message);
+		g_clear_error (&error);
 	}
 }
 
@@ -2213,6 +2232,7 @@ active_connection_added (NMManager *manager,
 {
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
+	NMKeepAlive *keep_alive;
 
 	if (NM_IS_VPN_CONNECTION (active)) {
 		g_signal_connect (active, NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED,
@@ -2223,13 +2243,18 @@ active_connection_added (NMManager *manager,
 		                  self);
 	}
 
+	keep_alive = nm_active_connection_get_keep_alive (active);
+
+	nm_keep_alive_arm (keep_alive);
+
 	g_signal_connect (active, "notify::" NM_ACTIVE_CONNECTION_STATE,
 	                  G_CALLBACK (active_connection_state_changed),
 	                  self);
-	g_signal_connect (active, "notify::" NM_ACTIVE_CONNECTION_INT_KEEP_ALIVE,
+	g_signal_connect (keep_alive,
+	                  "notify::" NM_KEEP_ALIVE_ALIVE,
 	                  G_CALLBACK (active_connection_keep_alive_changed),
 	                  self);
-	active_connection_keep_alive_changed (active, NULL, self);
+	active_connection_keep_alive_changed (keep_alive, NULL, self);
 }
 
 static void
@@ -2248,6 +2273,9 @@ active_connection_removed (NMManager *manager,
 	                                      self);
 	g_signal_handlers_disconnect_by_func (active,
 	                                      active_connection_state_changed,
+	                                      self);
+	g_signal_handlers_disconnect_by_func (nm_active_connection_get_keep_alive (active),
+	                                      active_connection_keep_alive_changed,
 	                                      self);
 }
 
@@ -2386,12 +2414,12 @@ _deactivate_if_active (NMPolicy *self, NMSettingsConnection *connection)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	NMActiveConnection *ac;
-	const CList *tmp_list;
+	const CList *tmp_list, *tmp_safe;
 	GError *error = NULL;
 
 	nm_assert (NM_IS_SETTINGS_CONNECTION (connection));
 
-	nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+	nm_manager_for_each_active_connection_safe (priv->manager, ac, tmp_list, tmp_safe) {
 
 		if (   nm_active_connection_get_settings_connection (ac) == connection
 		    && (nm_active_connection_get_state (ac) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED)) {

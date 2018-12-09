@@ -39,6 +39,7 @@
 #include "platform/nm-platform.h"
 #include "platform/nmp-object.h"
 #include "nm-hostname-manager.h"
+#include "nm-keep-alive.h"
 #include "nm-rfkill-manager.h"
 #include "dhcp/nm-dhcp-manager.h"
 #include "settings/nm-settings.h"
@@ -319,6 +320,7 @@ static NMActiveConnection *_new_active_connection (NMManager *self,
                                                    NMAuthSubject *subject,
                                                    NMActivationType activation_type,
                                                    NMActivationReason activation_reason,
+                                                   NMActivationStateFlags initial_state_flags,
                                                    GError **error);
 
 static void policy_activating_ac_changed (GObject *object, GParamSpec *pspec, gpointer user_data);
@@ -2697,6 +2699,18 @@ recheck_assume_connection (NMManager *self,
 		GError *error = NULL;
 
 		subject = nm_auth_subject_new_internal ();
+
+		/* Note: the lifetime of the activation connection is always bound to the profiles visiblity
+		 * via NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY.
+		 *
+		 * This only makes a difference, if the profile actually has "connection.permissions"
+		 * set to limit visibility (which is not the case for externally managed, generated profiles).
+		 *
+		 * If we assume a previously active connection whose lifetime was unbound, we now bind it
+		 * after restart. That is not correct, and can mean that the profile becomes subject to
+		 * deactivation after restart (if the user logs out).
+		 *
+		 * This should be improved, but it's unclear how. */
 		active = _new_active_connection (self,
 		                                 FALSE,
 		                                 sett_conn,
@@ -2707,6 +2721,7 @@ recheck_assume_connection (NMManager *self,
 		                                 subject,
 		                                 generated ? NM_ACTIVATION_TYPE_EXTERNAL : NM_ACTIVATION_TYPE_ASSUME,
 		                                 generated ? NM_ACTIVATION_REASON_EXTERNAL : NM_ACTIVATION_REASON_ASSUME,
+		                                 NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY,
 		                                 &error);
 
 		if (!active) {
@@ -3891,11 +3906,16 @@ ensure_master_active_connection (NMManager *self,
                                  GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMActiveConnection *ac;
 	NMActiveConnection *master_ac = NULL;
 	NMDeviceState master_state;
+	gboolean bind_lifetime_to_profile_visibility;
 
-	g_assert (connection);
-	g_assert (master_connection || master_device);
+	g_return_val_if_fail (connection, NULL);
+	g_return_val_if_fail (master_connection || master_device, FALSE);
+
+	bind_lifetime_to_profile_visibility = NM_FLAGS_HAS (nm_device_get_activation_state_flags (device),
+	                                                    NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY);
 
 	/* If the master device isn't activated then we need to activate it using
 	 * compatible connection.  If it's already activating we can just proceed.
@@ -3920,8 +3940,16 @@ ensure_master_active_connection (NMManager *self,
 		if (   (master_state == NM_DEVICE_STATE_ACTIVATED)
 		    || nm_device_is_activating (master_device)) {
 			/* Device already using master_connection */
-			g_assert (device_connection);
-			return NM_ACTIVE_CONNECTION (nm_device_get_act_request (master_device));
+			ac = NM_ACTIVE_CONNECTION (nm_device_get_act_request (master_device));
+			g_return_val_if_fail (device_connection, ac);
+
+			if (!bind_lifetime_to_profile_visibility) {
+				/* unbind the lifetime. */
+				nm_active_connection_set_state_flags_clear (ac,
+				                                            NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY);
+			}
+
+			return ac;
 		}
 
 		/* If the device is disconnected, find a compatible connection and
@@ -3958,6 +3986,9 @@ ensure_master_active_connection (NMManager *self,
 					                                            subject,
 					                                            NM_ACTIVATION_TYPE_MANAGED,
 					                                            activation_reason,
+					                                              bind_lifetime_to_profile_visibility
+					                                            ? NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY
+					                                            : NM_ACTIVATION_STATE_FLAG_NONE,
 					                                            error);
 					return master_ac;
 				}
@@ -4006,6 +4037,9 @@ ensure_master_active_connection (NMManager *self,
 			                                            subject,
 			                                            NM_ACTIVATION_TYPE_MANAGED,
 			                                            activation_reason,
+			                                              bind_lifetime_to_profile_visibility
+			                                            ? NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY
+			                                            : NM_ACTIVATION_STATE_FLAG_NONE,
 			                                            error);
 			return master_ac;
 		}
@@ -4167,6 +4201,7 @@ autoconnect_slaves (NMManager *self,
 	                           master_device)) {
 		gs_free SlaveConnectionInfo *slaves = NULL;
 		guint i, n_slaves = 0;
+		gboolean bind_lifetime_to_profile_visibility;
 
 		slaves = find_slaves (self, master_connection, master_device, &n_slaves);
 		if (n_slaves > 1) {
@@ -4180,6 +4215,10 @@ autoconnect_slaves (NMManager *self,
 			                   compare_slaves,
 			                   GINT_TO_POINTER (!nm_streq0 (value, "index")));
 		}
+
+		bind_lifetime_to_profile_visibility =    n_slaves > 0
+		                                      && NM_FLAGS_HAS (nm_device_get_activation_state_flags (master_device),
+		                                                       NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY);
 
 		for (i = 0; i < n_slaves; i++) {
 			SlaveConnectionInfo *slave = &slaves[i];
@@ -4235,6 +4274,9 @@ autoconnect_slaves (NMManager *self,
 			                                subject,
 			                                NM_ACTIVATION_TYPE_MANAGED,
 			                                NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES,
+			                                  bind_lifetime_to_profile_visibility
+			                                ? NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY
+			                                : NM_ACTIVATION_STATE_FLAG_NONE,
 			                                &local_err);
 			if (local_err) {
 				_LOGW (LOGD_CORE, "Slave connection activation failed: %s", local_err->message);
@@ -4293,6 +4335,40 @@ unmanaged_to_disconnected (NMDevice *device)
 		                         NM_DEVICE_STATE_DISCONNECTED,
 		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 	}
+}
+
+static NMActivationStateFlags
+_activation_bind_lifetime_to_profile_visibility (NMAuthSubject *subject)
+{
+	if (   nm_auth_subject_is_internal (subject)
+	    || nm_auth_subject_get_unix_process_uid (subject) == 0) {
+		/* internal requests and requests from root are always unbound. */
+		return NM_ACTIVATION_STATE_FLAG_NONE;
+	}
+
+	/* if the activation was not done by internal decision nor root, there
+	 * are the following cases:
+	 *
+	 * - the connection has "connection.permissions" unset and the profile
+	 *   is not restricted to a user and commonly always visible. It does
+	 *   not hurt to bind the lifetime, because we expect the profile to be
+	 *   visible at the moment. If the profile changes (while still being active),
+	 *   we want to pick-up changes to the visibility and possibly disconnect.
+	 *
+	 * - the connection has "connection.permissions" set, and the current user
+	 *   is the owner:
+	 *
+	 *      - Usually, we would expect that the profile is visible at the moment,
+	 *        and of course we want to bind the lifetime. The moment the user
+	 *        logs out, the connection becomes invisible and disconnects.
+	 *
+	 *      - the profile at this time could already be invisible (e.g. if the
+	 *        user didn't ceate a proper session (sudo) and manually activates
+	 *        an invisible profile. In this case, we still want to bind the
+	 *        lifetime, and it will disconnect after the user logs in and logs
+	 *        out again. NMKeepAlive takes care of that.
+	 */
+	return NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY;
 }
 
 /* The parent connection is ready; we can proceed realizing the device and
@@ -4424,6 +4500,8 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 			                                            subject,
 			                                            NM_ACTIVATION_TYPE_MANAGED,
 			                                            nm_active_connection_get_activation_reason (active),
+			                                              nm_active_connection_get_state_flags (active)
+			                                            & NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY,
 			                                            error);
 			if (!parent_ac) {
 				g_prefix_error (error, "%s failed to activate parent: ", nm_device_get_iface (device));
@@ -4549,7 +4627,9 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 			for (i = 0; i < n_all; i++) {
 				nm_device_disconnect_active_connection (  all_ac_arr
 				                                        ? all_ac_arr->pdata[i]
-				                                        : ac);
+				                                        : ac,
+				                                        NM_DEVICE_STATE_REASON_NEW_ACTIVATION,
+				                                        NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN);
 			}
 		}
 	}
@@ -4622,6 +4702,7 @@ _new_active_connection (NMManager *self,
                         NMAuthSubject *subject,
                         NMActivationType activation_type,
                         NMActivationReason activation_reason,
+                        NMActivationStateFlags initial_state_flags,
                         GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -4693,6 +4774,7 @@ _new_active_connection (NMManager *self,
 		                                                     parent_device,
 		                                                     nm_dbus_object_get_path (NM_DBUS_OBJECT (parent)),
 		                                                     activation_reason,
+		                                                     initial_state_flags,
 		                                                     subject);
 	}
 
@@ -4702,6 +4784,7 @@ _new_active_connection (NMManager *self,
 	                                                  subject,
 	                                                  activation_type,
 	                                                  activation_reason,
+	                                                  initial_state_flags,
 	                                                  device);
 }
 
@@ -4765,6 +4848,7 @@ fail:
  * @activation_type: whether to assume the connection. That is, take over gracefully,
  *   non-destructible.
  * @activation_reason: the reason for activation
+ * @initial_state_flags: the inital state flags for the activation.
  * @error: return location for an error
  *
  * Begins a new internally-initiated activation of @sett_conn on @device.
@@ -4786,6 +4870,7 @@ nm_manager_activate_connection (NMManager *self,
                                 NMAuthSubject *subject,
                                 NMActivationType activation_type,
                                 NMActivationReason activation_reason,
+                                NMActivationStateFlags initial_state_flags,
                                 GError **error)
 {
 	NMManagerPrivate *priv;
@@ -4839,6 +4924,7 @@ nm_manager_activate_connection (NMManager *self,
 	                                 subject,
 	                                 activation_type,
 	                                 activation_reason,
+	                                 initial_state_flags,
 	                                 error);
 	if (!active)
 		return NULL;
@@ -5098,6 +5184,7 @@ impl_manager_activate_connection (NMDBusObject *obj,
 	                                 subject,
 	                                 NM_ACTIVATION_TYPE_MANAGED,
 	                                 NM_ACTIVATION_REASON_USER_REQUEST,
+	                                 _activation_bind_lifetime_to_profile_visibility (subject),
 	                                 &error);
 	if (!active)
 		goto error;
@@ -5372,12 +5459,18 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	                                 subject,
 	                                 NM_ACTIVATION_TYPE_MANAGED,
 	                                 NM_ACTIVATION_REASON_USER_REQUEST,
+	                                 _activation_bind_lifetime_to_profile_visibility (subject),
 	                                 &error);
 	if (!active)
 		goto error;
 
-	if (bind_dbus_client)
-		nm_active_connection_bind_dbus_client (active, dbus_connection, sender);
+	if (bind_dbus_client) {
+		NMKeepAlive *keep_alive;
+
+		keep_alive = nm_active_connection_get_keep_alive (active);
+		nm_keep_alive_set_dbus_client_watch (keep_alive, dbus_connection, sender);
+		nm_keep_alive_arm (keep_alive);
+	}
 
 	nm_active_connection_authorize (active,
 	                                incompl_conn,
@@ -5406,31 +5499,26 @@ nm_manager_deactivate_connection (NMManager *manager,
                                   NMDeviceStateReason reason,
                                   GError **error)
 {
-	gboolean success = FALSE;
-
 	if (NM_IS_VPN_CONNECTION (active)) {
 		NMActiveConnectionStateReason vpn_reason = NM_ACTIVE_CONNECTION_STATE_REASON_USER_DISCONNECTED;
 
 		if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_CONNECTION_REMOVED)
 			vpn_reason = NM_ACTIVE_CONNECTION_STATE_REASON_CONNECTION_REMOVED;
 
-		if (nm_vpn_connection_deactivate (NM_VPN_CONNECTION (active), vpn_reason, FALSE))
-			success = TRUE;
-		else
+		if (!nm_vpn_connection_deactivate (NM_VPN_CONNECTION (active), vpn_reason, FALSE)) {
 			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
 			                     "The VPN connection was not active.");
+			return FALSE;
+		}
 	} else {
-		g_assert (NM_IS_ACT_REQUEST (active));
-		nm_device_state_changed (nm_active_connection_get_device (active),
-		                         NM_DEVICE_STATE_DEACTIVATING,
-		                         reason);
-		success = TRUE;
+		nm_assert (NM_IS_ACT_REQUEST (active));
+		nm_device_disconnect_active_connection (active,
+		                                        reason,
+		                                        NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN);
 	}
 
-	if (success)
-		_notify (manager, PROP_ACTIVE_CONNECTIONS);
-
-	return success;
+	_notify (manager, PROP_ACTIVE_CONNECTIONS);
+	return TRUE;
 }
 
 static void

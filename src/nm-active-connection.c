@@ -105,7 +105,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMActiveConnection,
 	PROP_INT_MASTER_READY,
 	PROP_INT_ACTIVATION_TYPE,
 	PROP_INT_ACTIVATION_REASON,
-	PROP_INT_KEEP_ALIVE,
 );
 
 enum {
@@ -164,25 +163,21 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_state_to_string, NMActiveConnectionState,
 );
 #define state_to_string(state) NM_UTILS_LOOKUP_STR (_state_to_string, state)
 
+/* the maximum required buffer size for _state_flags_to_string(). */
+#define _NM_ACTIVATION_STATE_FLAG_TO_STRING_BUFSIZE (255)
+
 NM_UTILS_FLAGS2STR_DEFINE_STATIC (_state_flags_to_string, NMActivationStateFlags,
-	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_NONE,                 "none"),
-	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IS_MASTER,            "is-master"),
-	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IS_SLAVE,             "is-slave"),
-	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_LAYER2_READY,         "layer2-ready"),
-	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IP4_READY,            "ip4-ready"),
-	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IP6_READY,            "ip6-ready"),
-	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES,    "master-has-slaves"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_NONE,                                 "none"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IS_MASTER,                            "is-master"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IS_SLAVE,                             "is-slave"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_LAYER2_READY,                         "layer2-ready"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IP4_READY,                            "ip4-ready"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IP6_READY,                            "ip6-ready"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES,                    "master-has-slaves"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY, "lifetime-bound-to-profile-visibility"),
 );
 
 /*****************************************************************************/
-
-static void
-keep_alive_alive_changed (NMActiveConnection *ac,
-                          GParamSpec         *pspec,
-                          NMKeepAlive        *keep_alive)
-{
-	_notify (ac, PROP_INT_KEEP_ALIVE);
-}
 
 static void
 _settings_connection_updated (NMSettingsConnection *sett_conn,
@@ -263,6 +258,12 @@ nm_active_connection_set_state (NMActiveConnection *self,
 	_LOGD ("set state %s (was %s)",
 	       state_to_string (new_state),
 	       state_to_string (priv->state));
+
+	if (new_state > NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+		/* once we are about to deactivate, we don't need the keep-alive instance
+		 * anymore. Freeze/disarm it. */
+		nm_keep_alive_disarm (priv->keep_alive);
+	}
 
 	if (   new_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED
 	    && priv->activation_type == NM_ACTIVATION_TYPE_ASSUME) {
@@ -364,14 +365,20 @@ nm_active_connection_set_state_flags_full (NMActiveConnection *self,
 
 	f = (priv->state_flags & ~mask) | (state_flags & mask);
 	if (f != priv->state_flags) {
-		char buf1[G_N_ELEMENTS (_nm_utils_to_string_buffer)];
-		char buf2[G_N_ELEMENTS (_nm_utils_to_string_buffer)];
+		char buf1[_NM_ACTIVATION_STATE_FLAG_TO_STRING_BUFSIZE];
+		char buf2[_NM_ACTIVATION_STATE_FLAG_TO_STRING_BUFSIZE];
 
 		_LOGD ("set state-flags %s (was %s)",
 		       _state_flags_to_string (f, buf1, sizeof (buf1)),
 		       _state_flags_to_string (priv->state_flags, buf2, sizeof (buf2)));
 		priv->state_flags = f;
 		_notify (self, PROP_STATE_FLAGS);
+
+		nm_keep_alive_set_settings_connection_watch_visible (priv->keep_alive,
+		                                                       NM_FLAGS_HAS (priv->state_flags,
+		                                                                     NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY)
+		                                                     ? priv->settings_connection.obj
+		                                                     : NULL);
 	}
 }
 
@@ -915,12 +922,30 @@ nm_active_connection_get_activation_reason (NMActiveConnection *self)
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->activation_reason;
 }
 
-gboolean
+/*****************************************************************************/
+
+/**
+ * nm_active_connection_get_keep_alive:
+ * @self: the #NMActiveConnection instance
+ *
+ * Gives the #NMKeepAlive instance of the active connection. Note that
+ * @self is guaranteed not to swap the keep-alive instance, so it is
+ * in particular safe to assume that the keep-alive instance is alive
+ * as long as @self, and that nm_active_connection_get_keep_alive()
+ * will return always the same instance.
+ *
+ * In particular this means, that it is safe and encouraged, that you
+ * register to the notify:alive property changed signal of the returned
+ * instance.
+ *
+ * Returns: the #NMKeepAlive instance.
+ */
+NMKeepAlive *
 nm_active_connection_get_keep_alive (NMActiveConnection *self)
 {
-	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), NULL);
 
-	return nm_keep_alive_is_alive (priv->keep_alive);
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->keep_alive;
 }
 
 /*****************************************************************************/
@@ -1012,23 +1037,6 @@ nm_active_connection_set_parent (NMActiveConnection *self, NMActiveConnection *p
 	                  (GCallback) parent_state_cb,
 	                  self);
 	g_object_weak_ref ((GObject *) priv->parent, parent_destroyed, self);
-}
-
-/**
- * nm_active_connection_bind_dbus_client:
- * @self: the #NMActiveConnection
- * @dbus_client: The dbus client to watch.
- *
- * Binds the lifetime of this active connection to the given dbus client. If
- * the dbus client disappears, then the connection will be disconnected.
- */
-void
-nm_active_connection_bind_dbus_client (NMActiveConnection *self, GDBusConnection *dbus_con, const char *dbus_client)
-{
-	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
-
-	nm_keep_alive_set_dbus_client_watch (priv->keep_alive, dbus_con, dbus_client);
-	nm_keep_alive_sink (priv->keep_alive);
 }
 
 /*****************************************************************************/
@@ -1329,9 +1337,6 @@ get_property (GObject *object, guint prop_id,
 	case PROP_INT_MASTER_READY:
 		g_value_set_boolean (value, priv->master_ready);
 		break;
-	case PROP_INT_KEEP_ALIVE:
-		g_value_set_boolean (value, nm_keep_alive_is_alive (priv->keep_alive));
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1389,6 +1394,12 @@ set_property (GObject *object, guint prop_id,
 			g_return_if_reached ();
 		_set_activation_type (self, (NMActivationType) i);
 		break;
+	case PROP_STATE_FLAGS:
+		/* construct-only */
+		priv->state_flags = g_value_get_uint (value);
+		nm_assert ((guint) priv->state_flags == g_value_get_uint (value));
+		nm_assert (!NM_FLAGS_ANY (priv->state_flags, ~NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY));
+		break;
 	case PROP_INT_ACTIVATION_REASON:
 		/* construct-only */
 		i = g_value_get_int (value);
@@ -1440,11 +1451,9 @@ nm_active_connection_init (NMActiveConnection *self)
 	priv->activation_type = NM_ACTIVATION_TYPE_MANAGED;
 	priv->version_id = _version_id_new ();
 
-	priv->keep_alive = nm_keep_alive_new (TRUE);
-	g_signal_connect_object (priv->keep_alive, "notify::" NM_KEEP_ALIVE_ALIVE,
-	                         (GCallback) keep_alive_alive_changed,
-	                         self,
-	                         G_CONNECT_SWAPPED);
+	/* the keep-alive instance must never change. Callers rely on that. */
+	priv->keep_alive = nm_keep_alive_new ();
+	_nm_keep_alive_set_owner (priv->keep_alive, G_OBJECT (self));
 }
 
 static void
@@ -1474,15 +1483,12 @@ constructed (GObject *object)
 		                              g_steal_pointer (&priv->applied_connection));
 	}
 
+	if (NM_FLAGS_HAS (priv->state_flags,
+	                  NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY))
+		nm_keep_alive_set_settings_connection_watch_visible (priv->keep_alive, priv->settings_connection.obj);
+
 	g_return_if_fail (priv->subject);
 	g_return_if_fail (priv->activation_reason != NM_ACTIVATION_REASON_UNSET);
-
-	if (NM_IN_SET ((NMActivationReason) priv->activation_reason,
-	               NM_ACTIVATION_REASON_AUTOCONNECT,
-	               NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES)) {
-		nm_keep_alive_set_settings_connection_watch_visible (priv->keep_alive, priv->settings_connection.obj);
-		nm_keep_alive_sink (priv->keep_alive);
-	}
 }
 
 static void
@@ -1526,6 +1532,8 @@ finalize (GObject *object)
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
 	nm_dbus_track_obj_path_set (&priv->settings_connection, NULL, FALSE);
+
+	_nm_keep_alive_set_owner (priv->keep_alive, NULL);
 	g_clear_object (&priv->keep_alive);
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->finalize (object);
@@ -1632,7 +1640,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 	obj_properties[PROP_STATE_FLAGS] =
 	     g_param_spec_uint (NM_ACTIVE_CONNECTION_STATE_FLAGS, "", "",
 	                        0, G_MAXUINT32, NM_ACTIVATION_STATE_FLAG_NONE,
-	                        G_PARAM_READABLE |
+	                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 	                        G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_DEFAULT] =
@@ -1736,11 +1744,6 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 	                       G_PARAM_WRITABLE |
 	                       G_PARAM_CONSTRUCT_ONLY |
 	                       G_PARAM_STATIC_STRINGS);
-
-	obj_properties[PROP_INT_KEEP_ALIVE] =
-	     g_param_spec_boolean (NM_ACTIVE_CONNECTION_INT_KEEP_ALIVE, "", "",
-	                           TRUE, G_PARAM_READABLE |
-	                           G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

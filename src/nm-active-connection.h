@@ -59,7 +59,6 @@
 #define NM_ACTIVE_CONNECTION_INT_MASTER_READY        "int-master-ready"
 #define NM_ACTIVE_CONNECTION_INT_ACTIVATION_TYPE     "int-activation-type"
 #define NM_ACTIVE_CONNECTION_INT_ACTIVATION_REASON   "int-activation-reason"
-#define NM_ACTIVE_CONNECTION_INT_KEEP_ALIVE          "int-keep-alive"
 
 /* Signals */
 #define NM_ACTIVE_CONNECTION_STATE_CHANGED           "state-changed"
@@ -164,6 +163,13 @@ nm_active_connection_set_state_flags (NMActiveConnection *self,
 	nm_active_connection_set_state_flags_full (self, state_flags, state_flags);
 }
 
+static inline void
+nm_active_connection_set_state_flags_clear (NMActiveConnection *self,
+                                            NMActivationStateFlags state_flags)
+{
+	nm_active_connection_set_state_flags_full (self, NM_ACTIVATION_STATE_FLAG_NONE, state_flags);
+}
+
 NMDevice *    nm_active_connection_get_device (NMActiveConnection *self);
 
 gboolean      nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device);
@@ -186,12 +192,8 @@ NMActivationType nm_active_connection_get_activation_type (NMActiveConnection *s
 
 NMActivationReason nm_active_connection_get_activation_reason (NMActiveConnection *self);
 
-gboolean      nm_active_connection_get_keep_alive (NMActiveConnection *self);
+NMKeepAlive  *nm_active_connection_get_keep_alive (NMActiveConnection *self);
 
 void          nm_active_connection_clear_secrets (NMActiveConnection *self);
-
-void          nm_active_connection_bind_dbus_client (NMActiveConnection *self,
-                                                     GDBusConnection *dbus_con,
-                                                     const char *dbus_name);
 
 #endif /* __NETWORKMANAGER_ACTIVE_CONNECTION_H__ */

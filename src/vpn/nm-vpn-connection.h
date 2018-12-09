@@ -53,6 +53,7 @@ NMVpnConnection * nm_vpn_connection_new (NMSettingsConnection *settings_connecti
                                          NMDevice *parent_device,
                                          const char *specific_object,
                                          NMActivationReason activation_reason,
+                                         NMActivationStateFlags initial_state_flags,
                                          NMAuthSubject *subject);
 
 void                 nm_vpn_connection_activate        (NMVpnConnection *self,
