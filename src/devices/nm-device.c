@@ -12952,6 +12952,7 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 
 		if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
 		    && priv->state < NM_DEVICE_STATE_DEACTIVATING
+		    && priv->ifindex > 0
 		    && !nm_device_sys_iface_state_is_external (self)
 		    && (platform = nm_device_get_platform (self))
 		    && nm_platform_link_get (platform, priv->ifindex)) {
