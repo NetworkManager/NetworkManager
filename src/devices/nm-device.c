@@ -9905,6 +9905,8 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 static void
 activate_stage3_ip_config_start (NMDevice *self)
 {
+	int ifindex;
+
 	_set_ip_state (self, AF_INET, IP_WAIT);
 	_set_ip_state (self, AF_INET6, IP_WAIT);
 
@@ -9914,7 +9916,8 @@ activate_stage3_ip_config_start (NMDevice *self)
 	nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
 	/* Device should be up before we can do anything with it */
-	if (!nm_platform_link_is_up (nm_device_get_platform (self), nm_device_get_ip_ifindex (self)))
+	if (   (ifindex = nm_device_get_ip_ifindex (self)) > 0
+	    && !nm_platform_link_is_up (nm_device_get_platform (self), ifindex))
 		_LOGW (LOGD_DEVICE, "interface %s not up for IP configuration", nm_device_get_ip_iface (self));
 
 	/* IPv4 */
