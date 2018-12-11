@@ -1295,6 +1295,34 @@ match_device_hwaddr_eval (const char *spec_str,
 		_has; \
 	})
 
+static NMMatchSpecMatchType
+_match_result (gboolean has_except,
+               gboolean has_not_except,
+               gboolean has_match,
+               gboolean has_match_except)
+{
+	if (   has_except
+	    && !has_not_except) {
+		/* a match spec that only consists of a list of except matches is treated specially. */
+		nm_assert (!has_match);
+		if (has_match_except) {
+			/* one of the "except:" matches matched. The result is an explicit
+			 * negative match. */
+			return NM_MATCH_SPEC_NEG_MATCH;
+		} else {
+			/* none of the "except:" matches matched. The result is a positive match,
+			 * despite there being no positive match. */
+			return NM_MATCH_SPEC_MATCH;
+		}
+	}
+
+	if (has_match_except)
+		return NM_MATCH_SPEC_NEG_MATCH;
+	if (has_match)
+		return NM_MATCH_SPEC_MATCH;
+	return NM_MATCH_SPEC_NO_MATCH;
+}
+
 static const char *
 match_except (const char *spec_str, gboolean *out_except)
 {
@@ -1401,9 +1429,11 @@ nm_match_spec_device (const GSList *specs,
                       const char *dhcp_plugin)
 {
 	const GSList *iter;
-	NMMatchSpecMatchType match;
+	gboolean has_match = FALSE;
+	gboolean has_match_except = FALSE;
+	gboolean has_except = FALSE;
+	gboolean has_not_except = FALSE;
 	const char *spec_str;
-	gboolean except;
 	MatchDeviceData match_data = {
 	    .interface_name = interface_name,
 	    .device_type = nm_str_not_empty (device_type),
@@ -1423,19 +1453,9 @@ nm_match_spec_device (const GSList *specs,
 	if (!specs)
 		return NM_MATCH_SPEC_NO_MATCH;
 
-	match = NM_MATCH_SPEC_NO_MATCH;
-
-	/* pre-search for "*" */
 	for (iter = specs; iter; iter = iter->next) {
-		spec_str = iter->data;
+		gboolean except;
 
-		if (spec_str && spec_str[0] == '*' && spec_str[1] == '\0') {
-			match = NM_MATCH_SPEC_MATCH;
-			break;
-		}
-	}
-
-	for (iter = specs; iter; iter = iter->next) {
 		spec_str = iter->data;
 
 		if (!spec_str || !*spec_str)
@@ -1443,10 +1463,14 @@ nm_match_spec_device (const GSList *specs,
 
 		spec_str = match_except (spec_str, &except);
 
-		if (   !except
-		    && match == NM_MATCH_SPEC_MATCH) {
-			/* we have no "except-match" but already match. No need to evaluate
-			 * the match, we cannot match stronger. */
+		if (except)
+			has_except = TRUE;
+		else
+			has_not_except = TRUE;
+
+		if (   ( except && has_match_except)
+		    || (!except && has_match)) {
+			/* evaluating the match does not give new information. Skip it. */
 			continue;
 		}
 
@@ -1456,11 +1480,12 @@ nm_match_spec_device (const GSList *specs,
 			continue;
 
 		if (except)
-			return NM_MATCH_SPEC_NEG_MATCH;
-		match = NM_MATCH_SPEC_MATCH;
+			has_match_except = TRUE;
+		else
+			has_match = TRUE;
 	}
 
-	return match;
+	return _match_result (has_except, has_not_except, has_match, has_match_except);
 }
 
 static gboolean
@@ -1530,7 +1555,10 @@ NMMatchSpecMatchType
 nm_match_spec_config (const GSList *specs, guint cur_nm_version, const char *env)
 {
 	const GSList *iter;
-	NMMatchSpecMatchType match = NM_MATCH_SPEC_NO_MATCH;
+	gboolean has_match = FALSE;
+	gboolean has_match_except = FALSE;
+	gboolean has_except = FALSE;
+	gboolean has_not_except = FALSE;
 
 	if (!specs)
 		return NM_MATCH_SPEC_NO_MATCH;
@@ -1545,6 +1573,17 @@ nm_match_spec_config (const GSList *specs, guint cur_nm_version, const char *env
 
 		spec_str = match_except (spec_str, &except);
 
+		if (except)
+			has_except = TRUE;
+		else
+			has_not_except = TRUE;
+
+		if (   ( except && has_match_except)
+		    || (!except && has_match)) {
+			/* evaluating the match does not give new information. Skip it. */
+			continue;
+		}
+
 		if (_MATCH_CHECK (spec_str, MATCH_TAG_CONFIG_NM_VERSION))
 			v_match = match_config_eval (spec_str, MATCH_TAG_CONFIG_NM_VERSION, cur_nm_version);
 		else if (_MATCH_CHECK (spec_str, MATCH_TAG_CONFIG_NM_VERSION_MIN))
@@ -1554,15 +1593,18 @@ nm_match_spec_config (const GSList *specs, guint cur_nm_version, const char *env
 		else if (_MATCH_CHECK (spec_str, MATCH_TAG_CONFIG_ENV))
 			v_match = env && env[0] && !strcmp (spec_str, env);
 		else
+			v_match = FALSE;
+
+		if (!v_match)
 			continue;
 
-		if (v_match) {
-			if (except)
-				return NM_MATCH_SPEC_NEG_MATCH;
-			match = NM_MATCH_SPEC_MATCH;
-		}
+		if (except)
+			has_match_except = TRUE;
+		else
+			has_match = TRUE;
 	}
-	return match;
+
+	return _match_result (has_except, has_not_except, has_match, has_match_except);
 }
 
 #undef _MATCH_CHECK
