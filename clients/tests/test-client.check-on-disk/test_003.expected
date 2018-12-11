@@ -1112,12 +1112,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2251
+size: 2249
 location: clients/tests/test-client.py:944:test_003()/36
 cmd: $NMCLI -f ALL -t dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2098 bytes
+stdout: 2096 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -1131,8 +1131,8 @@ GENERAL.HWADDR:C0:61:AE:26:4D:D7
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -1990,12 +1990,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2251
+size: 2249
 location: clients/tests/test-client.py:944:test_003()/59
 cmd: $NMCLI -f ALL -t dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2098 bytes
+stdout: 2096 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -2009,8 +2009,8 @@ GENERAL.HWADDR:C0:61:AE:26:4D:D7
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -5294,12 +5294,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2257
+size: 2255
 location: clients/tests/test-client.py:971:test_003()/109
 cmd: $NMCLI --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2098 bytes
+stdout: 2096 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -5313,8 +5313,8 @@ GENERAL.HWADDR:C0:61:AE:26:4D:D7
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -5914,12 +5914,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2269
+size: 2267
 location: clients/tests/test-client.py:971:test_003()/119
 cmd: $NMCLI --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2098 bytes
+stdout: 2096 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -5933,8 +5933,8 @@ GENERAL.HWADDR:C0:61:AE:26:4D:D7
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -7255,14 +7255,14 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 1387
+size: 1385
 location: clients/tests/test-client.py:971:test_003()/169
 cmd: $NMCLI --mode tabular --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1213 bytes
+stdout: 1211 bytes
 >>>
-GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
+GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
 WIRED-PROPERTIES:off:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
@@ -7407,14 +7407,14 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 1399
+size: 1397
 location: clients/tests/test-client.py:971:test_003()/179
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1213 bytes
+stdout: 1211 bytes
 >>>
-GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
+GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
 WIRED-PROPERTIES:off:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
@@ -11414,12 +11414,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2274
+size: 2272
 location: clients/tests/test-client.py:971:test_003()/229
 cmd: $NMCLI --mode multiline --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2098 bytes
+stdout: 2096 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -11433,8 +11433,8 @@ GENERAL.HWADDR:C0:61:AE:26:4D:D7
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -12182,12 +12182,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2286
+size: 2284
 location: clients/tests/test-client.py:971:test_003()/239
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2098 bytes
+stdout: 2096 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -12201,8 +12201,8 @@ GENERAL.HWADDR:C0:61:AE:26:4D:D7
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -13532,12 +13532,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:<invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 2277
+size: 2275
 location: clients/tests/test-client.py:971:test_003()/289
 cmd: $NMCLI --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2118 bytes
+stdout: 2116 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -13551,8 +13551,8 @@ GENERAL.HWADDR:C0:61:AE:26:4D:D7
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -13778,12 +13778,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:<invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 2289
+size: 2287
 location: clients/tests/test-client.py:971:test_003()/299
 cmd: $NMCLI --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2118 bytes
+stdout: 2116 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -13797,8 +13797,8 @@ GENERAL.HWADDR:C0:61:AE:26:4D:D7
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -14713,14 +14713,14 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 1407
+size: 1405
 location: clients/tests/test-client.py:971:test_003()/349
 cmd: $NMCLI --mode tabular --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1233 bytes
+stdout: 1231 bytes
 >>>
-GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
+GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
 WIRED-PROPERTIES:off:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
@@ -14839,14 +14839,14 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 1419
+size: 1417
 location: clients/tests/test-client.py:971:test_003()/359
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1233 bytes
+stdout: 1231 bytes
 >>>
-GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
+GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
 WIRED-PROPERTIES:off:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
@@ -16878,12 +16878,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:<invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 2294
+size: 2292
 location: clients/tests/test-client.py:971:test_003()/409
 cmd: $NMCLI --mode multiline --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2118 bytes
+stdout: 2116 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -16897,8 +16897,8 @@ GENERAL.HWADDR:C0:61:AE:26:4D:D7
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -17270,12 +17270,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:<invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 2306
+size: 2304
 location: clients/tests/test-client.py:971:test_003()/419
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2118 bytes
+stdout: 2116 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -17289,8 +17289,8 @@ GENERAL.HWADDR:C0:61:AE:26:4D:D7
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no

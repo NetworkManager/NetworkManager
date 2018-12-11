@@ -344,6 +344,21 @@ _ip_config_lst_head (NMDnsManager *self)
 
 /*****************************************************************************/
 
+gboolean
+nm_dns_manager_has_systemd_resolved (NMDnsManager *self)
+{
+	NMDnsManagerPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DNS_MANAGER (self), FALSE);
+
+	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+
+	return    priv->sd_resolve_plugin
+	       || NM_IS_DNS_SYSTEMD_RESOLVED (priv->plugin);
+}
+
+/*****************************************************************************/
+
 static void
 add_string_item (GPtrArray *array, const char *str, gboolean dup)
 {
@@ -1975,8 +1990,10 @@ init_resolv_conf_mode (NMDnsManager *self, gboolean force_reload_plugin)
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	NMDnsManagerResolvConfManager rc_manager;
 	const char *mode;
-	gboolean systemd_resolved = FALSE;
-	gboolean param_changed = FALSE, plugin_changed = FALSE;
+	gboolean systemd_resolved;
+	gboolean param_changed = FALSE;
+	gboolean plugin_changed = FALSE;
+	gboolean systemd_resolved_changed = FALSE;
 
 	mode = nm_config_data_get_dns_mode (nm_config_get_data (priv->config));
 	systemd_resolved = nm_config_data_get_systemd_resolved (nm_config_get_data (priv->config));
@@ -2053,16 +2070,13 @@ again:
 	if (systemd_resolved) {
 		if (!priv->sd_resolve_plugin) {
 			priv->sd_resolve_plugin = nm_dns_systemd_resolved_new ();
-			plugin_changed = TRUE;
+			systemd_resolved_changed = TRUE;
 		}
-	} else {
-		if (priv->sd_resolve_plugin) {
-			g_clear_object (&priv->sd_resolve_plugin);
-			plugin_changed = TRUE;
-		}
-	}
+	} else if (nm_clear_g_object (&priv->sd_resolve_plugin))
+		systemd_resolved_changed = TRUE;
 
-	if (plugin_changed && priv->plugin) {
+	if (   plugin_changed
+	    && priv->plugin) {
 		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_FAILED, G_CALLBACK (plugin_failed), self);
 		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_CHILD_QUIT, G_CALLBACK (plugin_child_quit), self);
 	}
@@ -2082,9 +2096,10 @@ again:
 		_notify (self, PROP_RC_MANAGER);
 	}
 
-	if (param_changed || plugin_changed) {
+	if (param_changed || plugin_changed || systemd_resolved_changed) {
 		_LOGI ("init: dns=%s%s rc-manager=%s%s%s%s",
-		       mode, (systemd_resolved ? ",systemd-resolved" : ""),
+		       mode,
+		       (systemd_resolved ? ",systemd-resolved" : ""),
 		       _rc_manager_to_string (rc_manager),
 		       NM_PRINT_FMT_QUOTED (priv->plugin, ", plugin=",
 		                            nm_dns_plugin_get_name (priv->plugin), "", ""));

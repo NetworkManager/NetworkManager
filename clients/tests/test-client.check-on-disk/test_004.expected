@@ -14218,18 +14218,18 @@ wlan1:wifi:unavailable:unknown:unknown:/org/freedesktop/NetworkManager/Devices/4
 wlan1:wifi:unavailable:unknown:unknown:/org/freedesktop/NetworkManager/Devices/5:::
 
 <<<
-size: 687
+size: 677
 location: clients/tests/test-client.py:1044:test_004()/220
 cmd: $NMCLI --terse -f all dev status
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 531 bytes
+stdout: 521 bytes
 >>>
-wlan0:wifi:unavailable:nieznane:nieznane:/org/freedesktop/NetworkManager/Devices/3:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2
-eth0:ethernet:unavailable:nieznane:nieznane:/org/freedesktop/NetworkManager/Devices/1:::
-eth1:ethernet:unavailable:nieznane:nieznane:/org/freedesktop/NetworkManager/Devices/2:::
-wlan1:wifi:unavailable:nieznane:nieznane:/org/freedesktop/NetworkManager/Devices/4:::
-wlan1:wifi:unavailable:nieznane:nieznane:/org/freedesktop/NetworkManager/Devices/5:::
+wlan0:wifi:unavailable:unknown:unknown:/org/freedesktop/NetworkManager/Devices/3:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2
+eth0:ethernet:unavailable:unknown:unknown:/org/freedesktop/NetworkManager/Devices/1:::
+eth1:ethernet:unavailable:unknown:unknown:/org/freedesktop/NetworkManager/Devices/2:::
+wlan1:wifi:unavailable:unknown:unknown:/org/freedesktop/NetworkManager/Devices/4:::
+wlan1:wifi:unavailable:unknown:unknown:/org/freedesktop/NetworkManager/Devices/5:::
 
 <<<
 size: 4540
@@ -14913,12 +14913,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 11993
+size: 11983
 location: clients/tests/test-client.py:1050:test_004()/224
 cmd: $NMCLI --terse -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 11837 bytes
+stdout: 11827 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -14932,8 +14932,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -15024,8 +15024,8 @@ GENERAL.HWADDR:AB:B7:BF:E2:48:E8
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -15087,8 +15087,8 @@ GENERAL.HWADDR:E7:78:B1:93:2B:22
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth1
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -15157,8 +15157,8 @@ GENERAL.HWADDR:21:E9:64:81:8C:A8
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan1
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -15245,8 +15245,8 @@ GENERAL.HWADDR:71:52:AD:63:5C:7C
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan1
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -15468,12 +15468,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 2742
+size: 2740
 location: clients/tests/test-client.py:1056:test_004()/228
 cmd: $NMCLI --terse -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2581 bytes
+stdout: 2579 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -15487,8 +15487,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -15613,12 +15613,12 @@ WIFI-PROPERTIES.2GHZ:unknown
 WIFI-PROPERTIES.5GHZ:unknown
 
 <<<
-size: 1203
+size: 1201
 location: clients/tests/test-client.py:1059:test_004()/230
 cmd: $NMCLI --terse -f GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1007 bytes
+stdout: 1005 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -15632,8 +15632,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -15703,12 +15703,12 @@ WIFI-PROPERTIES.2GHZ:unknown
 WIFI-PROPERTIES.5GHZ:unknown
 
 <<<
-size: 1203
+size: 1201
 location: clients/tests/test-client.py:1062:test_004()/232
 cmd: $NMCLI --terse -f GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1007 bytes
+stdout: 1005 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -15722,8 +15722,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -16038,12 +16038,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 2745
+size: 2743
 location: clients/tests/test-client.py:1082:test_004()/248
 cmd: $NMCLI --terse -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2581 bytes
+stdout: 2579 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -16057,8 +16057,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -16304,12 +16304,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 2883
+size: 2881
 location: clients/tests/test-client.py:1086:test_004()/252
 cmd: $NMCLI --terse -f GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2581 bytes
+stdout: 2579 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -16323,8 +16323,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -17090,18 +17090,18 @@ stdout: 881 bytes
 [2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2munknown[0m:[2munknown[0m:[2m/org/freedesktop/NetworkManager/Devices/5[0m:[2m[0m:[2m[0m:[2m[0m
 
 <<<
-size: 1059
+size: 1049
 location: clients/tests/test-client.py:1044:test_004()/266
 cmd: $NMCLI --terse --color yes -f all dev status
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 891 bytes
+stdout: 881 bytes
 >>>
-[2mwlan0[0m:[2mwifi[0m:[2munavailable[0m:[2mnieznane[0m:[2mnieznane[0m:[2m/org/freedesktop/NetworkManager/Devices/3[0m:[2mcon-vpn-1[0m:[2mUUID-con-vpn-1-REPLACED-REPLACED-REP[0m:[2m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
-[2meth0[0m:[2methernet[0m:[2munavailable[0m:[2mnieznane[0m:[2mnieznane[0m:[2m/org/freedesktop/NetworkManager/Devices/1[0m:[2m[0m:[2m[0m:[2m[0m
-[2meth1[0m:[2methernet[0m:[2munavailable[0m:[2mnieznane[0m:[2mnieznane[0m:[2m/org/freedesktop/NetworkManager/Devices/2[0m:[2m[0m:[2m[0m:[2m[0m
-[2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2mnieznane[0m:[2mnieznane[0m:[2m/org/freedesktop/NetworkManager/Devices/4[0m:[2m[0m:[2m[0m:[2m[0m
-[2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2mnieznane[0m:[2mnieznane[0m:[2m/org/freedesktop/NetworkManager/Devices/5[0m:[2m[0m:[2m[0m:[2m[0m
+[2mwlan0[0m:[2mwifi[0m:[2munavailable[0m:[2munknown[0m:[2munknown[0m:[2m/org/freedesktop/NetworkManager/Devices/3[0m:[2mcon-vpn-1[0m:[2mUUID-con-vpn-1-REPLACED-REPLACED-REP[0m:[2m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+[2meth0[0m:[2methernet[0m:[2munavailable[0m:[2munknown[0m:[2munknown[0m:[2m/org/freedesktop/NetworkManager/Devices/1[0m:[2m[0m:[2m[0m:[2m[0m
+[2meth1[0m:[2methernet[0m:[2munavailable[0m:[2munknown[0m:[2munknown[0m:[2m/org/freedesktop/NetworkManager/Devices/2[0m:[2m[0m:[2m[0m:[2m[0m
+[2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2munknown[0m:[2munknown[0m:[2m/org/freedesktop/NetworkManager/Devices/4[0m:[2m[0m:[2m[0m:[2m[0m
+[2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2munknown[0m:[2munknown[0m:[2m/org/freedesktop/NetworkManager/Devices/5[0m:[2m[0m:[2m[0m:[2m[0m
 
 <<<
 size: 4552
@@ -17785,12 +17785,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 12293
+size: 12283
 location: clients/tests/test-client.py:1050:test_004()/270
 cmd: $NMCLI --terse --color yes -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 12125 bytes
+stdout: 12115 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -17804,8 +17804,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -17896,8 +17896,8 @@ GENERAL.HWADDR:AB:B7:BF:E2:48:E8
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -17959,8 +17959,8 @@ GENERAL.HWADDR:E7:78:B1:93:2B:22
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth1
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -18029,8 +18029,8 @@ GENERAL.HWADDR:21:E9:64:81:8C:A8
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan1
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -18117,8 +18117,8 @@ GENERAL.HWADDR:71:52:AD:63:5C:7C
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan1
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -18340,12 +18340,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 2970
+size: 2968
 location: clients/tests/test-client.py:1056:test_004()/274
 cmd: $NMCLI --terse --color yes -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2797 bytes
+stdout: 2795 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -18359,8 +18359,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -18485,12 +18485,12 @@ WIFI-PROPERTIES.2GHZ:unknown
 WIFI-PROPERTIES.5GHZ:unknown
 
 <<<
-size: 1215
+size: 1213
 location: clients/tests/test-client.py:1059:test_004()/276
 cmd: $NMCLI --terse --color yes -f GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1007 bytes
+stdout: 1005 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -18504,8 +18504,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -18575,12 +18575,12 @@ WIFI-PROPERTIES.2GHZ:unknown
 WIFI-PROPERTIES.5GHZ:unknown
 
 <<<
-size: 1215
+size: 1213
 location: clients/tests/test-client.py:1062:test_004()/278
 cmd: $NMCLI --terse --color yes -f GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1007 bytes
+stdout: 1005 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -18594,8 +18594,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -18910,12 +18910,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 2973
+size: 2971
 location: clients/tests/test-client.py:1082:test_004()/294
 cmd: $NMCLI --terse --color yes -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2797 bytes
+stdout: 2795 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -18929,8 +18929,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -19176,12 +19176,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 3111
+size: 3109
 location: clients/tests/test-client.py:1086:test_004()/298
 cmd: $NMCLI --terse --color yes -f GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2797 bytes
+stdout: 2795 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -19195,8 +19195,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -26578,18 +26578,18 @@ wlan1:wifi:unavailable:unknown:unknown:/org/freedesktop/NetworkManager/Devices/4
 wlan1:wifi:unavailable:unknown:unknown:/org/freedesktop/NetworkManager/Devices/5:::
 
 <<<
-size: 702
+size: 692
 location: clients/tests/test-client.py:1044:test_004()/496
 cmd: $NMCLI --mode tabular --terse -f all dev status
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 531 bytes
+stdout: 521 bytes
 >>>
-wlan0:wifi:unavailable:nieznane:nieznane:/org/freedesktop/NetworkManager/Devices/3:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2
-eth0:ethernet:unavailable:nieznane:nieznane:/org/freedesktop/NetworkManager/Devices/1:::
-eth1:ethernet:unavailable:nieznane:nieznane:/org/freedesktop/NetworkManager/Devices/2:::
-wlan1:wifi:unavailable:nieznane:nieznane:/org/freedesktop/NetworkManager/Devices/4:::
-wlan1:wifi:unavailable:nieznane:nieznane:/org/freedesktop/NetworkManager/Devices/5:::
+wlan0:wifi:unavailable:unknown:unknown:/org/freedesktop/NetworkManager/Devices/3:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2
+eth0:ethernet:unavailable:unknown:unknown:/org/freedesktop/NetworkManager/Devices/1:::
+eth1:ethernet:unavailable:unknown:unknown:/org/freedesktop/NetworkManager/Devices/2:::
+wlan1:wifi:unavailable:unknown:unknown:/org/freedesktop/NetworkManager/Devices/4:::
+wlan1:wifi:unavailable:unknown:unknown:/org/freedesktop/NetworkManager/Devices/5:::
 
 <<<
 size: 3096
@@ -26769,14 +26769,14 @@ DHCP6:dhcp-6-opt-2 = val-2 | dhcp-6-opt-6 = val-6 | dhcp-6-opt-7 = val-7 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 6381
+size: 6371
 location: clients/tests/test-client.py:1050:test_004()/500
 cmd: $NMCLI --mode tabular --terse -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6211 bytes
+stdout: 6201 bytes
 >>>
-GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
+GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:unknown:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 AP[1]: :wlan0-ap-2:Infrastruktura:1:54 Mb/s:92:****:WPA1 WPA2
@@ -26788,7 +26788,7 @@ IP6:::dst = 2001\:a\:\:dd5b\:aa7b\:b4a2\:e42/102, nh = \:\:, mt = 2504159086::se
 DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-6-opt-4 = val-4 | dhcp-6-opt-5 = val-5
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
-GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::AB\:B7\:BF\:E2\:48\:E8:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/eth0::no:yes:yes:no:no:::::unknown
+GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::AB\:B7\:BF\:E2\:48\:E8:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:100 Mb/s:no:no
 WIRED-PROPERTIES:off:
 IP4:192.168.49.34/22 | 192.168.135.86/19:::192.168.45.230 | 192.168.180.201 | 192.168.253.2:sear4.foo2.bar | sear4.foo1.bar:192.168.163.23 | 192.168.151.246
@@ -26797,7 +26797,7 @@ IP6:2001\:a\:\:ed81\:3d7\:c2e9\:df82/99:::2001\:a\:\:2703\:f06\:9619\:d89f | 200
 DHCP6:dhcp-6-opt-0 = val-0 | dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-6-opt-4 = val-4 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-6-opt-7 = val-7 | dhcp-6-opt-8 = val-8 | dhcp-6-opt-9 = val-9
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1
 
-GENERAL:eth1:ethernet:NMDeviceEthernet:::virtual:::E7\:78\:B1\:93\:2B\:22:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/eth1::no:yes:yes:no:no:::::unknown
+GENERAL:eth1:ethernet:NMDeviceEthernet:::virtual:::E7\:78\:B1\:93\:2B\:22:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth1::no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:100 Mb/s:no:no
 WIRED-PROPERTIES:off:
 IP4:192.168.127.210/25:192.168.88.4:dst = 192.168.222.35/19, nh = 192.168.170.142, mt = 3609264321 | dst = 192.168.135.81/32, nh = 192.168.32.11, mt = 1316413247 | dst = 192.168.24.65/26, nh = 192.168.23.163, mt = 3855574583:192.168.16.144 | 192.168.79.53 | 192.168.237.155:sear4.foo4.bar | sear4.foo3.bar | sear4.foo1.bar:192.168.211.91 | 192.168.58.182 | 192.168.114.97
@@ -26806,7 +26806,7 @@ IP6:2001\:a\:\:1c1\:c178\:169f\:2b80/93 | 2001\:a\:\:1f79\:e0fb\:87b9\:3cc6/123:
 DHCP6:dhcp-6-opt-2 = val-2 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-6-opt-8 = val-8 | dhcp-6-opt-9 = val-9
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1
 
-GENERAL:wlan1:wifi:NMDeviceWifi:::virtual:::21\:E9\:64\:81\:8C\:A8:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/wlan1::no:yes:yes:no:no:::::unknown
+GENERAL:wlan1:wifi:NMDeviceWifi:::virtual:::21\:E9\:64\:81\:8C\:A8:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan1::no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:unknown:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 AP[1]: :wlan1-ap-4:Infrastruktura:1:54 Mb/s:48:**  :WPA1 WPA2
@@ -26816,7 +26816,7 @@ IP6:2001\:a\:\:fa05\:2ab4\:9300\:e8fe/116 | 2001\:a\:\:e9cf\:bd3\:caba\:99b3/86 
 DHCP6:dhcp-6-opt-0 = val-0 | dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-6-opt-4 = val-4 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-6-opt-7 = val-7 | dhcp-6-opt-9 = val-9
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
-GENERAL:wlan1:wifi:NMDeviceWifi:::virtual:::71\:52\:AD\:63\:5C\:7C:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/wlan1::no:yes:yes:no:no:::::unknown
+GENERAL:wlan1:wifi:NMDeviceWifi:::virtual:::71\:52\:AD\:63\:5C\:7C:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan1::no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:unknown:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 IP4:192.168.97.124/29 | 192.168.76.154/18::dst = 192.168.33.233/22, nh = 192.168.222.210, mt = 2810496551:192.168.107.109:sear4.fo.o.bar | sear4.fo.x.y | sear4.foo2.bar | sear4.foo3.bar | sear4.foo4.bar:192.168.60.60 | 192.168.63.92
@@ -26882,14 +26882,14 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 1404
+size: 1402
 location: clients/tests/test-client.py:1056:test_004()/504
 cmd: $NMCLI --mode tabular --terse -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1228 bytes
+stdout: 1226 bytes
 >>>
-GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
+GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:unknown:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 AP[1]: :wlan0-ap-2:Infrastruktura:1:54 Mb/s:92:****:WPA1 WPA2
@@ -26914,14 +26914,14 @@ GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavail
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 
 <<<
-size: 577
+size: 575
 location: clients/tests/test-client.py:1059:test_004()/506
 cmd: $NMCLI --mode tabular --terse -f GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 367 bytes
+stdout: 365 bytes
 >>>
-GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
+GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 13\:E0\:74\:85\:7C\:D9
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 
@@ -26938,14 +26938,14 @@ GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavail
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 
 <<<
-size: 577
+size: 575
 location: clients/tests/test-client.py:1062:test_004()/508
 cmd: $NMCLI --mode tabular --terse -f GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 367 bytes
+stdout: 365 bytes
 >>>
-GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
+GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 13\:E0\:74\:85\:7C\:D9
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 
@@ -27160,14 +27160,14 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 1407
+size: 1405
 location: clients/tests/test-client.py:1082:test_004()/524
 cmd: $NMCLI --mode tabular --terse -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1228 bytes
+stdout: 1226 bytes
 >>>
-GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
+GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:unknown:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 AP[1]: :wlan0-ap-2:Infrastruktura:1:54 Mb/s:92:****:WPA1 WPA2
@@ -27236,14 +27236,14 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 1545
+size: 1543
 location: clients/tests/test-client.py:1086:test_004()/528
 cmd: $NMCLI --mode tabular --terse -f GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1228 bytes
+stdout: 1226 bytes
 >>>
-GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
+GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:unknown:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 AP[1]: :wlan0-ap-2:Infrastruktura:1:54 Mb/s:92:****:WPA1 WPA2
@@ -27430,18 +27430,18 @@ stdout: 881 bytes
 [2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2munknown[0m:[2munknown[0m:[2m/org/freedesktop/NetworkManager/Devices/5[0m:[2m[0m:[2m[0m:[2m[0m
 
 <<<
-size: 1074
+size: 1064
 location: clients/tests/test-client.py:1044:test_004()/542
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev status
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 891 bytes
+stdout: 881 bytes
 >>>
-[2mwlan0[0m:[2mwifi[0m:[2munavailable[0m:[2mnieznane[0m:[2mnieznane[0m:[2m/org/freedesktop/NetworkManager/Devices/3[0m:[2mcon-vpn-1[0m:[2mUUID-con-vpn-1-REPLACED-REPLACED-REP[0m:[2m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
-[2meth0[0m:[2methernet[0m:[2munavailable[0m:[2mnieznane[0m:[2mnieznane[0m:[2m/org/freedesktop/NetworkManager/Devices/1[0m:[2m[0m:[2m[0m:[2m[0m
-[2meth1[0m:[2methernet[0m:[2munavailable[0m:[2mnieznane[0m:[2mnieznane[0m:[2m/org/freedesktop/NetworkManager/Devices/2[0m:[2m[0m:[2m[0m:[2m[0m
-[2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2mnieznane[0m:[2mnieznane[0m:[2m/org/freedesktop/NetworkManager/Devices/4[0m:[2m[0m:[2m[0m:[2m[0m
-[2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2mnieznane[0m:[2mnieznane[0m:[2m/org/freedesktop/NetworkManager/Devices/5[0m:[2m[0m:[2m[0m:[2m[0m
+[2mwlan0[0m:[2mwifi[0m:[2munavailable[0m:[2munknown[0m:[2munknown[0m:[2m/org/freedesktop/NetworkManager/Devices/3[0m:[2mcon-vpn-1[0m:[2mUUID-con-vpn-1-REPLACED-REPLACED-REP[0m:[2m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+[2meth0[0m:[2methernet[0m:[2munavailable[0m:[2munknown[0m:[2munknown[0m:[2m/org/freedesktop/NetworkManager/Devices/1[0m:[2m[0m:[2m[0m:[2m[0m
+[2meth1[0m:[2methernet[0m:[2munavailable[0m:[2munknown[0m:[2munknown[0m:[2m/org/freedesktop/NetworkManager/Devices/2[0m:[2m[0m:[2m[0m:[2m[0m
+[2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2munknown[0m:[2munknown[0m:[2m/org/freedesktop/NetworkManager/Devices/4[0m:[2m[0m:[2m[0m:[2m[0m
+[2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2munknown[0m:[2munknown[0m:[2m/org/freedesktop/NetworkManager/Devices/5[0m:[2m[0m:[2m[0m:[2m[0m
 
 <<<
 size: 3108
@@ -27621,14 +27621,14 @@ DHCP6:dhcp-6-opt-2 = val-2 | dhcp-6-opt-6 = val-6 | dhcp-6-opt-7 = val-7 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 6717
+size: 6707
 location: clients/tests/test-client.py:1050:test_004()/546
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6535 bytes
+stdout: 6525 bytes
 >>>
-GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
+GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:unknown:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 [32mAP[1][0m:[32m [0m:[32mwlan0-ap-2[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
@@ -27640,7 +27640,7 @@ IP6:::dst = 2001\:a\:\:dd5b\:aa7b\:b4a2\:e42/102, nh = \:\:, mt = 2504159086::se
 DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-6-opt-4 = val-4 | dhcp-6-opt-5 = val-5
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
-GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::AB\:B7\:BF\:E2\:48\:E8:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/eth0::no:yes:yes:no:no:::::unknown
+GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::AB\:B7\:BF\:E2\:48\:E8:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:100 Mb/s:no:no
 WIRED-PROPERTIES:off:
 IP4:192.168.49.34/22 | 192.168.135.86/19:::192.168.45.230 | 192.168.180.201 | 192.168.253.2:sear4.foo2.bar | sear4.foo1.bar:192.168.163.23 | 192.168.151.246
@@ -27649,7 +27649,7 @@ IP6:2001\:a\:\:ed81\:3d7\:c2e9\:df82/99:::2001\:a\:\:2703\:f06\:9619\:d89f | 200
 DHCP6:dhcp-6-opt-0 = val-0 | dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-6-opt-4 = val-4 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-6-opt-7 = val-7 | dhcp-6-opt-8 = val-8 | dhcp-6-opt-9 = val-9
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1
 
-GENERAL:eth1:ethernet:NMDeviceEthernet:::virtual:::E7\:78\:B1\:93\:2B\:22:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/eth1::no:yes:yes:no:no:::::unknown
+GENERAL:eth1:ethernet:NMDeviceEthernet:::virtual:::E7\:78\:B1\:93\:2B\:22:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth1::no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:100 Mb/s:no:no
 WIRED-PROPERTIES:off:
 IP4:192.168.127.210/25:192.168.88.4:dst = 192.168.222.35/19, nh = 192.168.170.142, mt = 3609264321 | dst = 192.168.135.81/32, nh = 192.168.32.11, mt = 1316413247 | dst = 192.168.24.65/26, nh = 192.168.23.163, mt = 3855574583:192.168.16.144 | 192.168.79.53 | 192.168.237.155:sear4.foo4.bar | sear4.foo3.bar | sear4.foo1.bar:192.168.211.91 | 192.168.58.182 | 192.168.114.97
@@ -27658,7 +27658,7 @@ IP6:2001\:a\:\:1c1\:c178\:169f\:2b80/93 | 2001\:a\:\:1f79\:e0fb\:87b9\:3cc6/123:
 DHCP6:dhcp-6-opt-2 = val-2 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-6-opt-8 = val-8 | dhcp-6-opt-9 = val-9
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1
 
-GENERAL:wlan1:wifi:NMDeviceWifi:::virtual:::21\:E9\:64\:81\:8C\:A8:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/wlan1::no:yes:yes:no:no:::::unknown
+GENERAL:wlan1:wifi:NMDeviceWifi:::virtual:::21\:E9\:64\:81\:8C\:A8:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan1::no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:unknown:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 [35mAP[1][0m:[35m [0m:[35mwlan1-ap-4[0m:[35mInfrastruktura[0m:[35m1[0m:[35m54 Mb/s[0m:[35m48[0m:[35m**  [0m:[35mWPA1 WPA2[0m
@@ -27668,7 +27668,7 @@ IP6:2001\:a\:\:fa05\:2ab4\:9300\:e8fe/116 | 2001\:a\:\:e9cf\:bd3\:caba\:99b3/86 
 DHCP6:dhcp-6-opt-0 = val-0 | dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-6-opt-4 = val-4 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-6-opt-7 = val-7 | dhcp-6-opt-9 = val-9
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
-GENERAL:wlan1:wifi:NMDeviceWifi:::virtual:::71\:52\:AD\:63\:5C\:7C:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/wlan1::no:yes:yes:no:no:::::unknown
+GENERAL:wlan1:wifi:NMDeviceWifi:::virtual:::71\:52\:AD\:63\:5C\:7C:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan1::no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:unknown:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 IP4:192.168.97.124/29 | 192.168.76.154/18::dst = 192.168.33.233/22, nh = 192.168.222.210, mt = 2810496551:192.168.107.109:sear4.fo.o.bar | sear4.fo.x.y | sear4.foo2.bar | sear4.foo3.bar | sear4.foo4.bar:192.168.60.60 | 192.168.63.92
@@ -27734,14 +27734,14 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 1659
+size: 1657
 location: clients/tests/test-client.py:1056:test_004()/550
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1471 bytes
+stdout: 1469 bytes
 >>>
-GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
+GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:unknown:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 [32mAP[1][0m:[32m [0m:[32mwlan0-ap-2[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
@@ -27766,14 +27766,14 @@ GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavail
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 
 <<<
-size: 589
+size: 587
 location: clients/tests/test-client.py:1059:test_004()/552
 cmd: $NMCLI --mode tabular --terse --color yes -f GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 367 bytes
+stdout: 365 bytes
 >>>
-GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
+GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 13\:E0\:74\:85\:7C\:D9
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 
@@ -27790,14 +27790,14 @@ GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavail
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 
 <<<
-size: 589
+size: 587
 location: clients/tests/test-client.py:1062:test_004()/554
 cmd: $NMCLI --mode tabular --terse --color yes -f GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 367 bytes
+stdout: 365 bytes
 >>>
-GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
+GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 13\:E0\:74\:85\:7C\:D9
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 
@@ -28012,14 +28012,14 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 1662
+size: 1660
 location: clients/tests/test-client.py:1082:test_004()/570
 cmd: $NMCLI --mode tabular --terse --color yes -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1471 bytes
+stdout: 1469 bytes
 >>>
-GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
+GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:unknown:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 [32mAP[1][0m:[32m [0m:[32mwlan0-ap-2[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
@@ -28088,14 +28088,14 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 1800
+size: 1798
 location: clients/tests/test-client.py:1086:test_004()/574
 cmd: $NMCLI --mode tabular --terse --color yes -f GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1471 bytes
+stdout: 1469 bytes
 >>>
-GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (nieznane):0 (nieznane):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
+GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:unknown:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown
 [32mAP[1][0m:[32m [0m:[32mwlan0-ap-2[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
@@ -43696,18 +43696,18 @@ CON-UUID:
 CON-PATH:
 
 <<<
-size: 1159
+size: 1149
 location: clients/tests/test-client.py:1044:test_004()/772
 cmd: $NMCLI --mode multiline --terse -f all dev status
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 986 bytes
+stdout: 976 bytes
 >>>
 DEVICE:wlan0
 TYPE:wifi
 STATE:unavailable
-IP4-CONNECTIVITY:nieznane
-IP6-CONNECTIVITY:nieznane
+IP4-CONNECTIVITY:unknown
+IP6-CONNECTIVITY:unknown
 DBUS-PATH:/org/freedesktop/NetworkManager/Devices/3
 CONNECTION:con-vpn-1
 CON-UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -43715,8 +43715,8 @@ CON-PATH:/org/freedesktop/NetworkManager/ActiveConnection/2
 DEVICE:eth0
 TYPE:ethernet
 STATE:unavailable
-IP4-CONNECTIVITY:nieznane
-IP6-CONNECTIVITY:nieznane
+IP4-CONNECTIVITY:unknown
+IP6-CONNECTIVITY:unknown
 DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 CONNECTION:
 CON-UUID:
@@ -43724,8 +43724,8 @@ CON-PATH:
 DEVICE:eth1
 TYPE:ethernet
 STATE:unavailable
-IP4-CONNECTIVITY:nieznane
-IP6-CONNECTIVITY:nieznane
+IP4-CONNECTIVITY:unknown
+IP6-CONNECTIVITY:unknown
 DBUS-PATH:/org/freedesktop/NetworkManager/Devices/2
 CONNECTION:
 CON-UUID:
@@ -43733,8 +43733,8 @@ CON-PATH:
 DEVICE:wlan1
 TYPE:wifi
 STATE:unavailable
-IP4-CONNECTIVITY:nieznane
-IP6-CONNECTIVITY:nieznane
+IP4-CONNECTIVITY:unknown
+IP6-CONNECTIVITY:unknown
 DBUS-PATH:/org/freedesktop/NetworkManager/Devices/4
 CONNECTION:
 CON-UUID:
@@ -43742,8 +43742,8 @@ CON-PATH:
 DEVICE:wlan1
 TYPE:wifi
 STATE:unavailable
-IP4-CONNECTIVITY:nieznane
-IP6-CONNECTIVITY:nieznane
+IP4-CONNECTIVITY:unknown
+IP6-CONNECTIVITY:unknown
 DBUS-PATH:/org/freedesktop/NetworkManager/Devices/5
 CONNECTION:
 CON-UUID:
@@ -44431,12 +44431,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 12010
+size: 12000
 location: clients/tests/test-client.py:1050:test_004()/776
 cmd: $NMCLI --mode multiline --terse -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 11837 bytes
+stdout: 11827 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -44450,8 +44450,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -44542,8 +44542,8 @@ GENERAL.HWADDR:AB:B7:BF:E2:48:E8
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -44605,8 +44605,8 @@ GENERAL.HWADDR:E7:78:B1:93:2B:22
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth1
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -44675,8 +44675,8 @@ GENERAL.HWADDR:21:E9:64:81:8C:A8
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan1
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -44763,8 +44763,8 @@ GENERAL.HWADDR:71:52:AD:63:5C:7C
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan1
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -44986,12 +44986,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 2759
+size: 2757
 location: clients/tests/test-client.py:1056:test_004()/780
 cmd: $NMCLI --mode multiline --terse -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2581 bytes
+stdout: 2579 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -45005,8 +45005,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -45131,12 +45131,12 @@ WIFI-PROPERTIES.2GHZ:unknown
 WIFI-PROPERTIES.5GHZ:unknown
 
 <<<
-size: 1220
+size: 1218
 location: clients/tests/test-client.py:1059:test_004()/782
 cmd: $NMCLI --mode multiline --terse -f GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1007 bytes
+stdout: 1005 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -45150,8 +45150,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -45221,12 +45221,12 @@ WIFI-PROPERTIES.2GHZ:unknown
 WIFI-PROPERTIES.5GHZ:unknown
 
 <<<
-size: 1220
+size: 1218
 location: clients/tests/test-client.py:1062:test_004()/784
 cmd: $NMCLI --mode multiline --terse -f GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1007 bytes
+stdout: 1005 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -45240,8 +45240,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -45966,12 +45966,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 2762
+size: 2760
 location: clients/tests/test-client.py:1082:test_004()/800
 cmd: $NMCLI --mode multiline --terse -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2581 bytes
+stdout: 2579 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -45985,8 +45985,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -46232,12 +46232,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 2900
+size: 2898
 location: clients/tests/test-client.py:1086:test_004()/804
 cmd: $NMCLI --mode multiline --terse -f GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2581 bytes
+stdout: 2579 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -46251,8 +46251,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -47088,18 +47088,18 @@ CON-UUID:[2m[0m
 CON-PATH:[2m[0m
 
 <<<
-size: 1532
+size: 1522
 location: clients/tests/test-client.py:1044:test_004()/818
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev status
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1346 bytes
+stdout: 1336 bytes
 >>>
 DEVICE:[2mwlan0[0m
 TYPE:[2mwifi[0m
 STATE:[2munavailable[0m
-IP4-CONNECTIVITY:[2mnieznane[0m
-IP6-CONNECTIVITY:[2mnieznane[0m
+IP4-CONNECTIVITY:[2munknown[0m
+IP6-CONNECTIVITY:[2munknown[0m
 DBUS-PATH:[2m/org/freedesktop/NetworkManager/Devices/3[0m
 CONNECTION:[2mcon-vpn-1[0m
 CON-UUID:[2mUUID-con-vpn-1-REPLACED-REPLACED-REP[0m
@@ -47107,8 +47107,8 @@ CON-PATH:[2m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
 DEVICE:[2meth0[0m
 TYPE:[2methernet[0m
 STATE:[2munavailable[0m
-IP4-CONNECTIVITY:[2mnieznane[0m
-IP6-CONNECTIVITY:[2mnieznane[0m
+IP4-CONNECTIVITY:[2munknown[0m
+IP6-CONNECTIVITY:[2munknown[0m
 DBUS-PATH:[2m/org/freedesktop/NetworkManager/Devices/1[0m
 CONNECTION:[2m[0m
 CON-UUID:[2m[0m
@@ -47116,8 +47116,8 @@ CON-PATH:[2m[0m
 DEVICE:[2meth1[0m
 TYPE:[2methernet[0m
 STATE:[2munavailable[0m
-IP4-CONNECTIVITY:[2mnieznane[0m
-IP6-CONNECTIVITY:[2mnieznane[0m
+IP4-CONNECTIVITY:[2munknown[0m
+IP6-CONNECTIVITY:[2munknown[0m
 DBUS-PATH:[2m/org/freedesktop/NetworkManager/Devices/2[0m
 CONNECTION:[2m[0m
 CON-UUID:[2m[0m
@@ -47125,8 +47125,8 @@ CON-PATH:[2m[0m
 DEVICE:[2mwlan1[0m
 TYPE:[2mwifi[0m
 STATE:[2munavailable[0m
-IP4-CONNECTIVITY:[2mnieznane[0m
-IP6-CONNECTIVITY:[2mnieznane[0m
+IP4-CONNECTIVITY:[2munknown[0m
+IP6-CONNECTIVITY:[2munknown[0m
 DBUS-PATH:[2m/org/freedesktop/NetworkManager/Devices/4[0m
 CONNECTION:[2m[0m
 CON-UUID:[2m[0m
@@ -47134,8 +47134,8 @@ CON-PATH:[2m[0m
 DEVICE:[2mwlan1[0m
 TYPE:[2mwifi[0m
 STATE:[2munavailable[0m
-IP4-CONNECTIVITY:[2mnieznane[0m
-IP6-CONNECTIVITY:[2mnieznane[0m
+IP4-CONNECTIVITY:[2munknown[0m
+IP6-CONNECTIVITY:[2munknown[0m
 DBUS-PATH:[2m/org/freedesktop/NetworkManager/Devices/5[0m
 CONNECTION:[2m[0m
 CON-UUID:[2m[0m
@@ -47823,12 +47823,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 12310
+size: 12300
 location: clients/tests/test-client.py:1050:test_004()/822
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 12125 bytes
+stdout: 12115 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -47842,8 +47842,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -47934,8 +47934,8 @@ GENERAL.HWADDR:AB:B7:BF:E2:48:E8
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -47997,8 +47997,8 @@ GENERAL.HWADDR:E7:78:B1:93:2B:22
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/eth1
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -48067,8 +48067,8 @@ GENERAL.HWADDR:21:E9:64:81:8C:A8
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan1
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -48155,8 +48155,8 @@ GENERAL.HWADDR:71:52:AD:63:5C:7C
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan1
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -48378,12 +48378,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 2987
+size: 2985
 location: clients/tests/test-client.py:1056:test_004()/826
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2797 bytes
+stdout: 2795 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -48397,8 +48397,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -48523,12 +48523,12 @@ WIFI-PROPERTIES.2GHZ:unknown
 WIFI-PROPERTIES.5GHZ:unknown
 
 <<<
-size: 1232
+size: 1230
 location: clients/tests/test-client.py:1059:test_004()/828
 cmd: $NMCLI --mode multiline --terse --color yes -f GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1007 bytes
+stdout: 1005 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -48542,8 +48542,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -48613,12 +48613,12 @@ WIFI-PROPERTIES.2GHZ:unknown
 WIFI-PROPERTIES.5GHZ:unknown
 
 <<<
-size: 1232
+size: 1230
 location: clients/tests/test-client.py:1062:test_004()/830
 cmd: $NMCLI --mode multiline --terse --color yes -f GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1007 bytes
+stdout: 1005 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -48632,8 +48632,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -49358,12 +49358,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 2990
+size: 2988
 location: clients/tests/test-client.py:1082:test_004()/846
 cmd: $NMCLI --mode multiline --terse --color yes -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2797 bytes
+stdout: 2795 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -49377,8 +49377,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -49624,12 +49624,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 3128
+size: 3126
 location: clients/tests/test-client.py:1086:test_004()/850
 cmd: $NMCLI --mode multiline --terse --color yes -f GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2797 bytes
+stdout: 2795 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -49643,8 +49643,8 @@ GENERAL.HWADDR:13:E0:74:85:7C:D9
 GENERAL.MTU:0
 GENERAL.STATE:20 (unavailable)
 GENERAL.REASON:0 (No reason given)
-GENERAL.IP4-CONNECTIVITY:0 (nieznane)
-GENERAL.IP6-CONNECTIVITY:0 (nieznane)
+GENERAL.IP4-CONNECTIVITY:0 (unknown)
+GENERAL.IP6-CONNECTIVITY:0 (unknown)
 GENERAL.UDI:/sys/devices/virtual/wlan0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
