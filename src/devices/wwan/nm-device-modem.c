@@ -125,14 +125,40 @@ modem_prepare_result (NMModem *modem,
 	if (success)
 		nm_device_activate_schedule_stage2_device_config (device);
 	else {
-		if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT) {
-			/* If the connect failed because the SIM PIN was wrong don't allow
-			 * the device to be auto-activated anymore, which would risk locking
-			 * the SIM if the incorrect PIN continues to be used.
-			 */
+		/* There are several reasons to block autoconnection at device level:
+		 *
+		 *  - Wrong SIM-PIN: The device won't autoconnect because it doesn't make sense
+		 *    to retry the connection with the same PIN. This error also makes autoconnection
+		 *    blocked at settings level, so not even a modem unplug and replug will allow
+		 *    autoconnection again. It is somewhat redundant to block autoconnection at
+		 *    both device and setting level really.
+		 *
+		 *  - SIM wrong or not inserted: If the modem is reporting a SIM not inserted error,
+		 *    we can block autoconnection at device level, so that if the same device is
+		 *    unplugged and replugged with a SIM (or if a SIM hotplug event happens in MM,
+		 *    recreating the device completely), we can try the autoconnection again.
+		 *
+		 *  - Modem initialization failed: For some reason unknown to NM, the modem wasn't
+		 *    initialized correctly, which leads to an unusable device. A device unplug and
+		 *    replug may solve the issue, so make it a device-level autoconnection blocking
+		 *    reason.
+		 */
+		switch (nm_device_state_reason_check (reason)) {
+		case NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED:
+		case NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED:
+		case NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT:
 			nm_device_autoconnect_blocked_set (device, NM_DEVICE_AUTOCONNECT_BLOCKED_WRONG_PIN);
+			break;
+		case NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED:
+		case NM_DEVICE_STATE_REASON_GSM_SIM_WRONG:
+			nm_device_autoconnect_blocked_set (device, NM_DEVICE_AUTOCONNECT_BLOCKED_SIM_MISSING);
+			break;
+		case NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED:
+			nm_device_autoconnect_blocked_set (device, NM_DEVICE_AUTOCONNECT_BLOCKED_INIT_FAILED);
+			break;
+		default:
+			break;
 		}
-
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
 	}
 }
