@@ -59,6 +59,7 @@ typedef enum {
 #define NM_SUPPLICANT_INTERFACE_SCANNING         "scanning"
 #define NM_SUPPLICANT_INTERFACE_CURRENT_BSS      "current-bss"
 #define NM_SUPPLICANT_INTERFACE_P2P_GROUP_JOINED "p2p-group-joined"
+#define NM_SUPPLICANT_INTERFACE_P2P_GROUP_PATH   "p2p-group-path"
 #define NM_SUPPLICANT_INTERFACE_P2P_GROUP_OWNER  "p2p-group-owner"
 #define NM_SUPPLICANT_INTERFACE_DRIVER           "driver"
 #define NM_SUPPLICANT_INTERFACE_P2P_AVAILABLE    "p2p-available"
@@ -135,6 +136,8 @@ guint nm_supplicant_interface_get_max_scan_ssids (NMSupplicantInterface *self);
 gboolean nm_supplicant_interface_get_has_credentials_request (NMSupplicantInterface *self);
 
 gboolean nm_supplicant_interface_get_p2p_group_joined (NMSupplicantInterface *self);
+
+const char* nm_supplicant_interface_get_p2p_group_path (NMSupplicantInterface *self);
 
 gboolean nm_supplicant_interface_get_p2p_group_owner (NMSupplicantInterface *self);
 

@@ -103,6 +103,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSupplicantInterface,
 	PROP_IFACE,
 	PROP_OBJECT_PATH,
 	PROP_P2P_GROUP_JOINED,
+	PROP_P2P_GROUP_PATH,
 	PROP_P2P_GROUP_OWNER,
 	PROP_SCANNING,
 	PROP_CURRENT_BSS,
@@ -719,6 +720,17 @@ gboolean
 nm_supplicant_interface_get_p2p_group_joined (NMSupplicantInterface *self)
 {
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->group_proxy_acquired;
+}
+
+const char*
+nm_supplicant_interface_get_p2p_group_path (NMSupplicantInterface *self)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (priv->group_proxy_acquired)
+		return g_dbus_proxy_get_object_path (priv->group_proxy);
+	else
+		return NULL;
 }
 
 gboolean
@@ -1357,7 +1369,11 @@ group_props_changed_cb (GDBusProxy *proxy,
 		g_free (s);
 	}
 
-	/* TODO: Members! */
+	/* NOTE: We do not seem to get any property change notifications for the Members
+	 *       property. However, we can keep track of these indirectly either by querying
+	 *       the groups that each peer is in or listening to the Join/Disconnect
+	 *       notifications.
+	 */
 
 	g_object_thaw_notify (G_OBJECT (self));
 }
@@ -1386,6 +1402,7 @@ group_proxy_acquired_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 
 	priv->group_proxy_acquired = TRUE;
 	_notify (self, PROP_P2P_GROUP_JOINED);
+	_notify (self, PROP_P2P_GROUP_PATH);
 
 	iface_check_ready (self);
 }
@@ -1418,6 +1435,7 @@ p2p_props_changed_cb (GDBusProxy *proxy,
 				_LOGW ("P2P: Unexpected udpate of the group object path");
 				priv->group_proxy_acquired = FALSE;
 				_notify (self, PROP_P2P_GROUP_JOINED);
+				_notify (self, PROP_P2P_GROUP_PATH);
 				g_clear_object (&priv->group_proxy);
 			}
 
@@ -1441,6 +1459,7 @@ p2p_props_changed_cb (GDBusProxy *proxy,
 		} else {
 			priv->group_proxy_acquired = FALSE;
 			_notify (self, PROP_P2P_GROUP_JOINED);
+			_notify (self, PROP_P2P_GROUP_PATH);
 			g_clear_object (&priv->group_proxy);
 		}
 	}
@@ -2435,6 +2454,9 @@ get_property (GObject *object,
 	case PROP_P2P_GROUP_JOINED:
 		g_value_set_boolean (value, priv->p2p_capable && priv->group_proxy_acquired);
 		break;
+	case PROP_P2P_GROUP_PATH:
+		g_value_set_string (value, nm_supplicant_interface_get_p2p_group_path (NM_SUPPLICANT_INTERFACE (object)));
+		break;
 	case PROP_P2P_GROUP_OWNER:
 		g_value_set_boolean (value, priv->p2p_group_owner);
 		break;
@@ -2622,6 +2644,11 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                          FALSE,
 	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_P2P_GROUP_PATH] =
+	    g_param_spec_string (NM_SUPPLICANT_INTERFACE_P2P_GROUP_PATH, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_P2P_GROUP_OWNER] =
 	    g_param_spec_boolean (NM_SUPPLICANT_INTERFACE_P2P_GROUP_OWNER, "", "",
 	                          FALSE,
