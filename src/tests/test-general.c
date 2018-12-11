@@ -1236,8 +1236,8 @@ test_match_spec_device (void)
 	                            NULL,
 	                            NM_MAKE_STRV ("em*"));
 	_do_test_match_spec_device ("except:interface-name:em*",
-	                            NULL,
 	                            NM_MAKE_STRV ("", "eth", "eth1", "e1"),
+	                            NM_MAKE_STRV (NULL),
 	                            NM_MAKE_STRV ("em", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"));
 	_do_test_match_spec_device ("aa,bb,cc\\,dd,e,,",
 	                            NM_MAKE_STRV ("aa", "bb", "cc,dd", "e"),
@@ -1310,7 +1310,8 @@ _do_test_match_spec_config (const char *file, int line, const char *spec_str, gu
 	if (expected != match_result)
 		g_error ("%s:%d: failed comparing \"%s\" with %u.%u.%u. Expected %d, but got %d", file, line, spec_str, v_maj, v_min, v_mic, (int) expected, (int) match_result);
 
-	if (g_slist_length (specs) == 1 && match_result != NM_MATCH_SPEC_NEG_MATCH) {
+	if (   g_slist_length (specs) == 1
+	    && !g_str_has_prefix (specs->data, "except:")) {
 		/* there is only one spec in the list... test that we match except: */
 		char *sss = g_strdup_printf ("except:%s", (char *) specs->data);
 		GSList *specs2 = g_slist_append (NULL, sss);
@@ -1318,7 +1319,7 @@ _do_test_match_spec_config (const char *file, int line, const char *spec_str, gu
 
 		match_result2 = nm_match_spec_config (specs2, version, NULL);
 		if (match_result == NM_MATCH_SPEC_NO_MATCH)
-			g_assert_cmpint (match_result2, ==, NM_MATCH_SPEC_NO_MATCH);
+			g_assert_cmpint (match_result2, ==, NM_MATCH_SPEC_MATCH);
 		else
 			g_assert_cmpint (match_result2, ==, NM_MATCH_SPEC_NEG_MATCH);
 
@@ -1402,7 +1403,7 @@ test_match_spec_config (void)
 	do_test_match_spec_config ("nm-version-max:1", 1, 4, 30, NM_MATCH_SPEC_MATCH);
 	do_test_match_spec_config ("nm-version-max:1", 2, 4, 30, NM_MATCH_SPEC_NO_MATCH);
 
-	do_test_match_spec_config ("except:nm-version:1.4.8", 1, 6, 0, NM_MATCH_SPEC_NO_MATCH);
+	do_test_match_spec_config ("except:nm-version:1.4.8", 1, 6, 0, NM_MATCH_SPEC_MATCH);
 	do_test_match_spec_config ("nm-version-min:1.6,except:nm-version:1.4.8", 1, 6, 0, NM_MATCH_SPEC_MATCH);
 
 	do_test_match_spec_config ("nm-version-min:1.6,nm-version-min:1.4.6,nm-version-min:1.2.16,except:nm-version:1.4.8", 1, 2, 0, NM_MATCH_SPEC_NO_MATCH);
