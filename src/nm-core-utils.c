@@ -2872,7 +2872,7 @@ out:
 }
 
 typedef struct {
-	const guint8 *secret_key;
+	guint8 *secret_key;
 	gsize key_len;
 	bool is_good:1;
 } SecretKeyData;
@@ -2887,19 +2887,14 @@ nm_utils_secret_key_get (const guint8 **out_secret_key,
 again:
 	secret_key = g_atomic_pointer_get (&secret_key_static);
 	if (G_UNLIKELY (!secret_key)) {
-		static gsize init_value = 0;
 		static SecretKeyData secret_key_data;
-		gboolean tmp_success;
-		gs_free guint8 *tmp_secret_key = NULL;
-		gsize tmp_key_len;
+		static gsize init_value = 0;
 
-		tmp_success = _secret_key_read (&tmp_secret_key, &tmp_key_len);
 		if (!g_once_init_enter (&init_value))
 			goto again;
 
-		secret_key_data.secret_key = g_steal_pointer (&tmp_secret_key);
-		secret_key_data.key_len = tmp_key_len;
-		secret_key_data.is_good = tmp_success;
+		secret_key_data.is_good = _secret_key_read (&secret_key_data.secret_key,
+		                                            &secret_key_data.key_len);
 		secret_key = &secret_key_data;
 		g_atomic_pointer_set (&secret_key_static, secret_key);
 		g_once_init_leave (&init_value, 1);
