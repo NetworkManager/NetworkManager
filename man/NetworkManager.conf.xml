@@ -1217,6 +1217,8 @@ enable=env:TAG1
               be used to negate the match. Note that if one except-predicate
               matches, the entire configuration will be disabled.
               In other words, a except predicate always wins over other predicates.
+              If the setting only consists of "except:" matches and none of the
+              negative conditions are satisfied, the configuration is still enabled.
 <programlisting>
 # enable the configuration either when the environment variable
 # is present or the version is at least 1.2.0.
@@ -1411,7 +1413,11 @@ enable=nm-version-min:1.3,nm-version-min:1.2.6,nm-version-min:1.0.16
           <term>except:SPEC</term>
           <listitem><para>Negative match of a device. <literal>SPEC</literal> must be explicitly qualified with
              a prefix such as <literal>interface-name:</literal>. A negative match has higher priority then the positive
-             matches above.</para></listitem>
+             matches above.</para>
+             <para>If there is a list consisting only of negative matches, the behavior is the same as if there
+             is also match-all. That means, if none of all the negative matches is satisfied, the overall result is
+             still a positive match. That means, <literal>"except:interface-name:eth0"</literal> is the same as
+             <literal>"*,except:interface-name:eth0"</literal>.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term>SPEC[,;]SPEC</term>
