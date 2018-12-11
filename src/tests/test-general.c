@@ -1233,6 +1233,10 @@ test_match_spec_device (void)
 	                            S ("em", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"),
 	                            NULL,
 	                            S ("em*"));
+	_do_test_match_spec_device ("except:interface-name:em*",
+	                            NULL,
+	                            S ("", "eth", "eth1", "e1"),
+	                            S ("em", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"));
 	_do_test_match_spec_device ("aa,bb,cc\\,dd,e,,",
 	                            S ("aa", "bb", "cc,dd", "e"),
 	                            NULL,
