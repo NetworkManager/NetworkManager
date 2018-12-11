@@ -1235,6 +1235,10 @@ test_match_spec_device (void)
 	                            NM_MAKE_STRV ("em", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"),
 	                            NULL,
 	                            NM_MAKE_STRV ("em*"));
+	_do_test_match_spec_device ("except:interface-name:em*",
+	                            NULL,
+	                            NM_MAKE_STRV ("", "eth", "eth1", "e1"),
+	                            NM_MAKE_STRV ("em", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"));
 	_do_test_match_spec_device ("aa,bb,cc\\,dd,e,,",
 	                            NM_MAKE_STRV ("aa", "bb", "cc,dd", "e"),
 	                            NULL,
