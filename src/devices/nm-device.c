@@ -385,7 +385,7 @@ typedef struct _NMDevicePrivate {
 	bool            v4_route_table_initialized:1;
 	bool            v6_route_table_initialized:1;
 
-	NMDeviceAutoconnectBlockedFlags autoconnect_blocked_flags:4;
+	NMDeviceAutoconnectBlockedFlags autoconnect_blocked_flags:5;
 
 	bool            is_enslaved:1;
 	bool            master_ready_handled:1;

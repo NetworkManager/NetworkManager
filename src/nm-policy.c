@@ -1751,17 +1751,14 @@ device_state_changed (NMDevice *device,
 	NMSettingConnection *s_con = NULL;
 
 	switch (nm_device_state_reason_check (reason)) {
-	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED:
-	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING:
-	case NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED:
 	case NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED:
 	case NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED:
-	case NM_DEVICE_STATE_REASON_GSM_SIM_WRONG:
 	case NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT:
-	case NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED:
 	case NM_DEVICE_STATE_REASON_GSM_APN_FAILED:
-		/* Block autoconnect of the just-failed connection for situations
-		 * where a retry attempt would just fail again.
+		/* Block autoconnection at settings level if there is any settings-specific
+		 * error reported by the modem (e.g. wrong SIM-PIN or wrong APN). Do not block
+		 * autoconnection at settings level for errors in the device domain (e.g.
+		 * a missing SIM or wrong modem initialization).
 		 */
 		if (sett_conn) {
 			nm_settings_connection_autoconnect_blocked_reason_set (sett_conn,
