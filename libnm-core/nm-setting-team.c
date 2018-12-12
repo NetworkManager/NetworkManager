@@ -234,53 +234,14 @@ nm_team_link_watcher_new_arp_ping (int init_wait,
                                    NMTeamLinkWatcherArpPingFlags flags,
                                    GError **error)
 {
-	NMTeamLinkWatcher *watcher;
-	const char *val_fail = NULL;
-
-	if (!target_host || !source_host) {
-		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-		             _("Missing %s in arp_ping link watcher"),
-		             target_host ? "source-host" : "target-host");
-		return NULL;
-	}
-
-	if (strpbrk (target_host, " \\/\t=\"\'")) {
-		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-		             _("target-host '%s' contains invalid characters"), target_host);
-		return NULL;
-	}
-
-	if (strpbrk (source_host, " \\/\t=\"\'")) {
-		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-		             _("source-host '%s' contains invalid characters"), source_host);
-		return NULL;
-	}
-
-	if (init_wait < 0 || !_NM_INT_LE_MAXINT32 (init_wait))
-		val_fail = "init-wait";
-	if (interval < 0 || !_NM_INT_LE_MAXINT32 (interval))
-		val_fail = "interval";
-	if (missed_max < 0 || !_NM_INT_LE_MAXINT32 (missed_max))
-		val_fail = "missed-max";
-	if (val_fail) {
-		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-		             _("%s is out of range [0, %d]"), val_fail, G_MAXINT32);
-		return NULL;
-	}
-
-	watcher = g_slice_new0 (NMTeamLinkWatcher);
-	watcher->refcount = 1;
-
-	watcher->type = LINK_WATCHER_ARP_PING;
-	watcher->arp_ping.init_wait = init_wait;
-	watcher->arp_ping.interval = interval;
-	watcher->arp_ping.missed_max = missed_max;
-	watcher->arp_ping.target_host = g_strdup (target_host);
-	watcher->arp_ping.source_host = g_strdup (source_host);
-	watcher->arp_ping.flags = flags;
-	watcher->arp_ping.vlanid = -1;
-
-	return watcher;
+	return nm_team_link_watcher_new_arp_ping2 (init_wait,
+	                                           interval,
+	                                           missed_max,
+	                                           -1,
+	                                           target_host,
+	                                           source_host,
+	                                           flags,
+	                                           error);
 }
 
 /**
@@ -315,21 +276,53 @@ nm_team_link_watcher_new_arp_ping2 (int init_wait,
 	NMTeamLinkWatcher *watcher;
 	const char *val_fail = NULL;
 
-	watcher = nm_team_link_watcher_new_arp_ping (init_wait, interval, missed_max,
-	                                             target_host, source_host, flags,
-	                                             error);
-
-	if (!watcher)
-		return NULL;
-	if (vlanid < -1 || vlanid > 4094)
-		val_fail = "vlanid";
-	if (val_fail) {
-		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-		                     _("vlanid is out of range [-1, 4094]"));
-		nm_team_link_watcher_unref (watcher);
+	if (!target_host || !source_host) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("Missing %s in arp_ping link watcher"),
+		             target_host ? "source-host" : "target-host");
 		return NULL;
 	}
 
+	if (strpbrk (target_host, " \\/\t=\"\'")) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("target-host '%s' contains invalid characters"), target_host);
+		return NULL;
+	}
+
+	if (strpbrk (source_host, " \\/\t=\"\'")) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("source-host '%s' contains invalid characters"), source_host);
+		return NULL;
+	}
+
+	else if (init_wait < 0 || !_NM_INT_LE_MAXINT32 (init_wait))
+		val_fail = "init-wait";
+	else if (interval < 0 || !_NM_INT_LE_MAXINT32 (interval))
+		val_fail = "interval";
+	else if (missed_max < 0 || !_NM_INT_LE_MAXINT32 (missed_max))
+		val_fail = "missed-max";
+	if (val_fail) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("%s is out of range [0, %d]"), val_fail, G_MAXINT32);
+		return NULL;
+	}
+
+	if (vlanid < -1 || vlanid > 4094) {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		                     _("vlanid is out of range [-1, 4094]"));
+		return NULL;
+	}
+
+	watcher = g_slice_new0 (NMTeamLinkWatcher);
+	watcher->refcount = 1;
+
+	watcher->type = LINK_WATCHER_ARP_PING;
+	watcher->arp_ping.init_wait = init_wait;
+	watcher->arp_ping.interval = interval;
+	watcher->arp_ping.missed_max = missed_max;
+	watcher->arp_ping.target_host = g_strdup (target_host);
+	watcher->arp_ping.source_host = g_strdup (source_host);
+	watcher->arp_ping.flags = flags;
 	watcher->arp_ping.vlanid = vlanid;
 
 	return watcher;
