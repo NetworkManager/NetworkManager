@@ -2467,7 +2467,7 @@ again:
 				 * to read/write the secret-key to disk. Fallback to boot-id. The boot-id
 				 * itself may be fake and randomly generated ad-hoc, but that is as best
 				 * as it gets.  */
-				seed_bin = (const guint8 *) nm_utils_get_boot_id_bin ();
+				seed_bin = (const guint8 *) nm_utils_boot_id_bin ();
 				seed_len = sizeof (NMUuid);
 				fake_type = "boot-id";
 				hash_seed = "7ff0c8f5-5399-4901-ab63-61bf594abe8b";
@@ -2773,13 +2773,13 @@ again:
 }
 
 const char *
-nm_utils_get_boot_id_str (void)
+nm_utils_boot_id_str (void)
 {
 	return _boot_id_get ()->str;
 }
 
 const NMUuid *
-nm_utils_get_boot_id_bin (void)
+nm_utils_boot_id_bin (void)
 {
 	return &_boot_id_get ()->bin;
 }
