@@ -2533,7 +2533,7 @@ _secret_key_read (guint8 **out_secret_key,
 		nm_log_warn (LOGD_CORE, "secret-key: too short secret key in \"%s\" (generate new key)", NMSTATEDIR "/secret_key");
 		nm_clear_g_free (&secret_key);
 	} else {
-		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND)) {
+		if (!nm_utils_error_is_notfound (error)) {
 			nm_log_warn (LOGD_CORE, "secret-key: failure reading secret key in \"%s\": %s (generate new key)",
 			             NMSTATEDIR "/secret_key", error->message);
 		}
