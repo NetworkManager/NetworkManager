@@ -83,6 +83,7 @@ struct NMTeamLinkWatcher {
 			int init_wait;
 			int interval;
 			int missed_max;
+			int vlanid;
 			char *target_host;
 			char *source_host;
 			NMTeamLinkWatcherArpPingFlags flags;
@@ -233,6 +234,45 @@ nm_team_link_watcher_new_arp_ping (int init_wait,
                                    NMTeamLinkWatcherArpPingFlags flags,
                                    GError **error)
 {
+	return nm_team_link_watcher_new_arp_ping2 (init_wait,
+	                                           interval,
+	                                           missed_max,
+	                                           -1,
+	                                           target_host,
+	                                           source_host,
+	                                           flags,
+	                                           error);
+}
+
+/**
+ * nm_team_link_watcher_new_arp_ping2:
+ * @init_wait: init_wait value
+ * @interval: interval value
+ * @missed_max: missed_max value
+ * @vlanid: vlanid value
+ * @target_host: the host name or the ip address that will be used as destination
+ *   address in the arp request
+ * @source_host: the host name or the ip address that will be used as source
+ *   address in the arp request
+ * @flags: the watcher #NMTeamLinkWatcherArpPingFlags
+ * @error: (out) (allow-none): location to store the error on failure
+ *
+ * Creates a new arp_ping #NMTeamLinkWatcher object
+ *
+ * Returns: (transfer full): the new #NMTeamLinkWatcher object, or %NULL on error
+ *
+ * Since: 1.16
+ **/
+NMTeamLinkWatcher *
+nm_team_link_watcher_new_arp_ping2 (int init_wait,
+                                    int interval,
+                                    int missed_max,
+                                    int vlanid,
+                                    const char *target_host,
+                                    const char *source_host,
+                                    NMTeamLinkWatcherArpPingFlags flags,
+                                    GError **error)
+{
 	NMTeamLinkWatcher *watcher;
 	const char *val_fail = NULL;
 
@@ -255,15 +295,21 @@ nm_team_link_watcher_new_arp_ping (int init_wait,
 		return NULL;
 	}
 
-	if (init_wait < 0 || !_NM_INT_LE_MAXINT32 (init_wait))
+	else if (init_wait < 0 || !_NM_INT_LE_MAXINT32 (init_wait))
 		val_fail = "init-wait";
-	if (interval < 0 || !_NM_INT_LE_MAXINT32 (interval))
+	else if (interval < 0 || !_NM_INT_LE_MAXINT32 (interval))
 		val_fail = "interval";
-	if (missed_max < 0 || !_NM_INT_LE_MAXINT32 (missed_max))
+	else if (missed_max < 0 || !_NM_INT_LE_MAXINT32 (missed_max))
 		val_fail = "missed-max";
 	if (val_fail) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
 		             _("%s is out of range [0, %d]"), val_fail, G_MAXINT32);
+		return NULL;
+	}
+
+	if (vlanid < -1 || vlanid > 4094) {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		                     _("vlanid is out of range [-1, 4094]"));
 		return NULL;
 	}
 
@@ -277,6 +323,7 @@ nm_team_link_watcher_new_arp_ping (int init_wait,
 	watcher->arp_ping.target_host = g_strdup (target_host);
 	watcher->arp_ping.source_host = g_strdup (source_host);
 	watcher->arp_ping.flags = flags;
+	watcher->arp_ping.vlanid = vlanid;
 
 	return watcher;
 }
@@ -342,6 +389,7 @@ nm_team_link_watcher_equal (NMTeamLinkWatcher *watcher, NMTeamLinkWatcher *other
 	    || watcher->arp_ping.init_wait != other->arp_ping.init_wait
 	    || watcher->arp_ping.interval != other->arp_ping.interval
 	    || watcher->arp_ping.missed_max != other->arp_ping.missed_max
+	    || watcher->arp_ping.vlanid != other->arp_ping.vlanid
 	    || watcher->arp_ping.flags != other->arp_ping.flags)
 		return FALSE;
 
@@ -377,12 +425,13 @@ nm_team_link_watcher_dup (NMTeamLinkWatcher *watcher)
 		                                           NULL);
 		break;
 	case LINK_WATCHER_ARP_PING:
-		return nm_team_link_watcher_new_arp_ping (watcher->arp_ping.init_wait,
-		                                          watcher->arp_ping.interval,
-		                                          watcher->arp_ping.missed_max,
-		                                          watcher->arp_ping.target_host,
-		                                          watcher->arp_ping.source_host,
-		                                          watcher->arp_ping.flags,
+		return nm_team_link_watcher_new_arp_ping2 (watcher->arp_ping.init_wait,
+		                                           watcher->arp_ping.interval,
+		                                           watcher->arp_ping.missed_max,
+		                                           watcher->arp_ping.vlanid,
+		                                           watcher->arp_ping.target_host,
+		                                           watcher->arp_ping.source_host,
+		                                           watcher->arp_ping.flags,
 		                                          NULL);
 	default:
 		g_assert_not_reached ();
@@ -504,6 +553,24 @@ nm_team_link_watcher_get_missed_max (NMTeamLinkWatcher *watcher)
 	                LINK_WATCHER_ARP_PING))
 		return -1;
 	return watcher->arp_ping.missed_max;
+}
+
+/**
+ * nm_team_link_watcher_get_vlanid:
+ * @watcher: the #NMTeamLinkWatcher
+ *
+ * Gets the VLAN tag ID to be used to outgoing link probes
+ *
+ * Since: 1.16
+ **/
+int
+nm_team_link_watcher_get_vlanid (NMTeamLinkWatcher *watcher)
+{
+	_CHECK_WATCHER (watcher, -1);
+
+	if (watcher->type != LINK_WATCHER_ARP_PING)
+		return -1;
+	return watcher->arp_ping.vlanid;
 }
 
 /**

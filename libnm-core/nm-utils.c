@@ -5427,7 +5427,7 @@ _nm_utils_team_link_watcher_from_json (json_t *json_element)
 	const char *j_key;
 	json_t *j_val;
 	gs_free char *name = NULL, *target_host = NULL, *source_host = NULL;
-	int val1 = 0, val2 = 0, val3 = 3;
+	int val1 = 0, val2 = 0, val3 = 3, val4 = -1;
 	NMTeamLinkWatcherArpPingFlags flags = 0;
 
 	g_return_val_if_fail (json_element, NULL);
@@ -5448,6 +5448,8 @@ _nm_utils_team_link_watcher_from_json (json_t *json_element)
 			val2 = json_integer_value (j_val);
 		else if (nm_streq (j_key, "missed_max"))
 			val3 = json_integer_value (j_val);
+		else if (nm_streq (j_key, "vlanid"))
+			val4 = json_integer_value (j_val);
 		else if (nm_streq (j_key, "validate_active")) {
 			if (json_is_true (j_val))
 				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE;
@@ -5465,8 +5467,8 @@ _nm_utils_team_link_watcher_from_json (json_t *json_element)
 	else if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_NSNA_PING))
 		return nm_team_link_watcher_new_nsna_ping (val1, val2, val3, target_host, NULL);
 	else if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_ARP_PING)) {
-		return nm_team_link_watcher_new_arp_ping (val1, val2, val3, target_host,
-		                                          source_host, flags, NULL);
+		return nm_team_link_watcher_new_arp_ping2 (val1, val2, val3, val4, target_host,
+		                                           source_host, flags, NULL);
 	} else
 		return NULL;
 }
@@ -5516,6 +5518,9 @@ _nm_utils_team_link_watcher_to_json (NMTeamLinkWatcher *watcher)
 	if (nm_streq (name, NM_TEAM_LINK_WATCHER_NSNA_PING))
 		return json_element;
 
+	int_val = nm_team_link_watcher_get_vlanid (watcher);
+	if (int_val != -1)
+		json_object_set_new (json_element, "vlanid", json_integer (int_val));
 	str_val = nm_team_link_watcher_get_source_host (watcher);
 	if (!str_val)
 		goto fail;
@@ -6017,6 +6022,12 @@ _nm_utils_team_link_watchers_to_variant (GPtrArray *link_watchers)
 		}
 
 		/* arp_ping watcher only */
+		int_val = nm_team_link_watcher_get_vlanid (watcher);
+		if (int_val != -1) {
+			g_variant_builder_add (&watcher_builder, "{sv}",
+			                       "vlanid",
+			                       g_variant_new_int32 (int_val));
+		}
 		g_variant_builder_add (&watcher_builder, "{sv}",
 		                       "source-host",
 		                       g_variant_new_string (nm_team_link_watcher_get_source_host (watcher)));
@@ -6067,7 +6078,7 @@ _nm_utils_team_link_watchers_from_variant (GVariant *value)
 	while (g_variant_iter_next (&iter, "@a{sv}", &watcher_var)) {
 		NMTeamLinkWatcher *watcher;
 		const char *name;
-		int val1, val2, val3 = 0;
+		int val1, val2, val3 = 0, val4 = -1;
 		const char *target_host = NULL, *source_host = NULL;
 		gboolean bval;
 		NMTeamLinkWatcherArpPingFlags flags = NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_NONE;
@@ -6098,6 +6109,8 @@ _nm_utils_team_link_watchers_from_variant (GVariant *value)
 			if (!g_variant_lookup (watcher_var, "missed-max", "i", &val3))
 				val3 = 3;
 			if nm_streq (name, NM_TEAM_LINK_WATCHER_ARP_PING) {
+				if (!g_variant_lookup (watcher_var, "vlanid", "i", &val4))
+					val4 = -1;
 				if (!g_variant_lookup (watcher_var, "source-host", "&s", &source_host))
 					goto next;
 				if (!g_variant_lookup (watcher_var, "validate-active", "b", &bval))
@@ -6112,9 +6125,9 @@ _nm_utils_team_link_watchers_from_variant (GVariant *value)
 					bval = FALSE;
 				if (bval)
 					flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS;
-				watcher = nm_team_link_watcher_new_arp_ping (val1, val2, val3,
-				                                             target_host, source_host,
-				                                             flags, &error);
+				watcher = nm_team_link_watcher_new_arp_ping2 (val1, val2, val3, val4,
+				                                              target_host, source_host,
+				                                              flags, &error);
 			} else
 				watcher = nm_team_link_watcher_new_nsna_ping (val1, val2, val3,
 				                                              target_host, &error);
