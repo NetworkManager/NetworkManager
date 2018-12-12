@@ -41,6 +41,7 @@
 #include "nm-utils/nm-random-utils.h"
 #include "nm-utils/nm-io-utils.h"
 #include "nm-utils/unaligned.h"
+#include "nm-utils/nm-secret-utils.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-setting-connection.h"
@@ -2406,7 +2407,7 @@ _uuid_data_init (UuidData *uuid_data,
 /*****************************************************************************/
 
 static const UuidData *
-_machine_id_get (void)
+_machine_id_get (gboolean allow_fake)
 {
 	static const UuidData *volatile p_uuid_data;
 	const UuidData *d;
@@ -2447,6 +2448,12 @@ again:
 			const guint8 *seed_bin;
 			const char *hash_seed;
 			gsize seed_len;
+
+			if (!allow_fake) {
+				/* we don't allow generating (and memoizing) a fake key.
+				 * Signal that no valid machine-id exists. */
+				return NULL;
+			}
 
 			if (nm_utils_secret_key_get (&seed_bin, &seed_len)) {
 				/* we have no valid machine-id. Generate a fake one by hashing
@@ -2497,87 +2504,173 @@ again:
 const char *
 nm_utils_machine_id_str (void)
 {
-	return _machine_id_get ()->str;
+	return _machine_id_get (TRUE)->str;
 }
 
 const NMUuid *
 nm_utils_machine_id_bin (void)
 {
-	return &_machine_id_get ()->bin;
+	return &_machine_id_get (TRUE)->bin;
 }
 
 gboolean
 nm_utils_machine_id_is_fake (void)
 {
-	return _machine_id_get ()->is_fake;
+	return _machine_id_get (TRUE)->is_fake;
 }
 
 /*****************************************************************************/
 
+/* prefix for version2 secret key. The secret key is hashed with /etc/machine-id. */
+#define SECRET_KEY_V2_PREFIX "nm-v2:"
+#define SECRET_KEY_FILE      NMSTATEDIR"/secret_key"
+
+static const guint8 *
+_secret_key_hash_v2 (const guint8 *seed_arr,
+                     gsize seed_len,
+                     guint8 *out_digest /* 32 bytes (NM_UTILS_CHECKSUM_LENGTH_SHA256) */)
+{
+	nm_auto_free_checksum GChecksum *sum = g_checksum_new (G_CHECKSUM_SHA256);
+	const UuidData *machine_id_data;
+	char slen[100];
+
+	/*
+	    (stat -c '%s' /var/lib/NetworkManager/secret_key;
+	     echo -n ' ';
+	     cat /var/lib/NetworkManager/secret_key;
+	     cat /etc/machine-id | tr -d '\n' | sed -n 's/[a-f0-9-]/\0/pg') | sha256sum
+	*/
+
+	nm_sprintf_buf (slen, "%"G_GSIZE_FORMAT" ", seed_len);
+	g_checksum_update (sum, (const guchar *) slen, strlen (slen));
+
+	g_checksum_update (sum, (const guchar *) seed_arr, seed_len);
+
+	machine_id_data = _machine_id_get (FALSE);
+	if (   machine_id_data
+	    && !machine_id_data->is_fake)
+		g_checksum_update (sum, (const guchar *) machine_id_data->str, strlen (machine_id_data->str));
+
+	nm_utils_checksum_get_digest_len (sum, out_digest, NM_UTILS_CHECKSUM_LENGTH_SHA256);
+	return out_digest;
+}
+
 static gboolean
-_secret_key_read (guint8 **out_secret_key,
+_secret_key_read (guint8 **out_key,
                   gsize *out_key_len)
 {
-	guint8 *secret_key;
-	gboolean success = TRUE;
-	gsize key_len;
-	gs_free_error GError *error = NULL;
+#define SECRET_KEY_LEN 32u
+	guint8 sha256_digest[NM_UTILS_CHECKSUM_LENGTH_SHA256];
+	nm_auto_clear_secret_ptr NMSecretPtr file_content = { 0 };
+	const guint8 *secret_arr;
+	gsize secret_len;
+	GError *error = NULL;
+	gboolean success;
 
-	/* Let's try to load a saved secret key first. */
-	if (g_file_get_contents (NMSTATEDIR "/secret_key", (char **) &secret_key, &key_len, &error)) {
-		if (key_len >= 16)
-			goto out;
-
-		/* the secret key is borked. Log a warning, but proceed below to generate
-		 * a new one. */
-		nm_log_warn (LOGD_CORE, "secret-key: too short secret key in \"%s\" (generate new key)", NMSTATEDIR "/secret_key");
-		nm_clear_g_free (&secret_key);
-	} else {
-		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND)) {
+	if (nm_utils_file_get_contents (-1,
+	                                SECRET_KEY_FILE,
+	                                10*1024,
+	                                NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET,
+	                                (char **) &file_content.str,
+	                                &file_content.len,
+	                                &error) < 0) {
+		if (!nm_utils_error_is_notfound (error)) {
 			nm_log_warn (LOGD_CORE, "secret-key: failure reading secret key in \"%s\": %s (generate new key)",
-			             NMSTATEDIR "/secret_key", error->message);
+			             SECRET_KEY_FILE, error->message);
 		}
 		g_clear_error (&error);
+	} else if (   file_content.len >= NM_STRLEN (SECRET_KEY_V2_PREFIX) + SECRET_KEY_LEN
+	           && memcmp (file_content.bin, SECRET_KEY_V2_PREFIX, NM_STRLEN (SECRET_KEY_V2_PREFIX)) == 0) {
+		/* for this type of secret key, we require a prefix followed at least SECRET_KEY_LEN (32) bytes. We
+		 * (also) do that, because older versions of NetworkManager wrote exactly 32 bytes without
+		 * prefix, so we won't wrongly interpret such legacy keys as v2 (if they accidentally have
+		 * a SECRET_KEY_V2_PREFIX prefix, they'll still have the wrong size).
+		 *
+		 * Note that below we generate the random seed in base64 encoding. But that is only done
+		 * to write an ASCII file. There is no base64 decoding and the ASCII is hashed as-is.
+		 * We would accept any binary data just as well (provided a suitable prefix and at least
+		 * 32 bytes).
+		 *
+		 * Note that when hashing the v2 content, we also hash the prefix. There is no strong reason,
+		 * except that it seems simpler not to distinguish between the v2 prefix and the content.
+		 * It's all just part of the seed. */
+
+		secret_arr = _secret_key_hash_v2 (file_content.bin, file_content.len, sha256_digest);
+		secret_len = NM_UTILS_CHECKSUM_LENGTH_SHA256;
+		success = TRUE;
+		goto out;
+	} else if (file_content.len >= 16) {
+		secret_arr = file_content.bin;
+		secret_len = file_content.len;
+		success = TRUE;
+		goto out;
+	} else {
+		/* the secret key is borked. Log a warning, but proceed below to generate
+		 * a new one. */
+		nm_log_warn (LOGD_CORE, "secret-key: too short secret key in \"%s\" (generate new key)", SECRET_KEY_FILE);
 	}
 
-	/* RFC7217 mandates the key SHOULD be at least 128 bits.
-	 * Let's use twice as much. */
-	key_len = 32;
-	secret_key = g_malloc (key_len + 1);
+	/* generate and persist new key */
+	{
+#define SECRET_KEY_LEN_BASE64 ((((SECRET_KEY_LEN / 3) + 1) * 4) + 4)
+		guint8 rnd_buf[SECRET_KEY_LEN];
+		guint8 new_content[NM_STRLEN (SECRET_KEY_V2_PREFIX) + SECRET_KEY_LEN_BASE64];
+		int base64_state = 0;
+		int base64_save = 0;
+		gsize len;
 
-	/* the secret-key is binary. Still, ensure that it's NULL terminated, just like
-	 * g_file_set_contents() does. */
-	secret_key[32] = '\0';
+		success = nm_utils_random_bytes (rnd_buf, sizeof (rnd_buf));
 
-	if (!nm_utils_random_bytes (secret_key, key_len)) {
-		nm_log_warn (LOGD_CORE, "secret-key: failure to generate good random data for secret-key (use non-persistent key)");
-		success = FALSE;
-		goto out;
-	}
+		/* Our key is really binary data. But since we anyway generate a random seed
+		 * (with 32 random bytes), don't write it in binary, but instead create
+		 * an pure ASCII (base64) representation. Note that the ASCII will still be taken
+		 * as-is (no base64 decoding is done). The sole purpose is to write a ASCII file
+		 * instead of a binary. The content is gibberish either way. */
+		memcpy (new_content, SECRET_KEY_V2_PREFIX, NM_STRLEN (SECRET_KEY_V2_PREFIX));
+		len = NM_STRLEN (SECRET_KEY_V2_PREFIX);
+		len += g_base64_encode_step (rnd_buf,
+		                             sizeof (rnd_buf),
+		                             FALSE,
+		                             (char *) &new_content[len],
+		                             &base64_state,
+		                             &base64_save);
+		len += g_base64_encode_close (FALSE,
+		                              (char *) &new_content[len],
+		                              &base64_state,
+		                              &base64_save);
+		nm_assert (len <= sizeof (new_content));
 
-	if (nm_utils_get_testing ()) {
-		/* for test code, we don't write the generated secret-key to disk. */
-		success = FALSE;
-		goto out;
-	}
+		secret_arr = _secret_key_hash_v2 (new_content, len, sha256_digest);
+		secret_len = NM_UTILS_CHECKSUM_LENGTH_SHA256;
 
-	if (!nm_utils_file_set_contents (NMSTATEDIR "/secret_key", (char *) secret_key, key_len, 0077, &error)) {
-		nm_log_warn (LOGD_CORE, "secret-key: failure to persist secret key in \"%s\" (%s) (use non-persistent key)",
-		             NMSTATEDIR "/secret_key", error->message);
-		success = FALSE;
-		goto out;
+		if (!success)
+			nm_log_warn (LOGD_CORE, "secret-key: failure to generate good random data for secret-key (use non-persistent key)");
+		else if (nm_utils_get_testing ()) {
+			/* for test code, we don't write the generated secret-key to disk. */
+		} else if (!nm_utils_file_set_contents (SECRET_KEY_FILE,
+		                                        (const char *) new_content,
+		                                        len,
+		                                        0077,
+		                                        &error)) {
+			nm_log_warn (LOGD_CORE, "secret-key: failure to persist secret key in \"%s\" (%s) (use non-persistent key)",
+			             SECRET_KEY_FILE, error->message);
+			g_clear_error (&error);
+			success = FALSE;
+		} else
+			nm_log_dbg (LOGD_CORE, "secret-key: persist new secret key to \"%s\"", SECRET_KEY_FILE);
+
+		nm_explicit_bzero (rnd_buf, sizeof (rnd_buf));
+		nm_explicit_bzero (new_content, sizeof (new_content));
 	}
 
 out:
-	/* regardless of success or failure, we always return a secret-key. The
-	 * caller may choose to ignore the error and proceed. */
-	*out_key_len = key_len;
-	*out_secret_key = secret_key;
+	*out_key_len = secret_len;
+	*out_key = nm_memdup (secret_arr, secret_len);
 	return success;
 }
 
 typedef struct {
-	const guint8 *secret_key;
+	guint8 *secret_key;
 	gsize key_len;
 	bool is_good:1;
 } SecretKeyData;
@@ -2592,19 +2685,14 @@ nm_utils_secret_key_get (const guint8 **out_secret_key,
 again:
 	secret_key = g_atomic_pointer_get (&secret_key_static);
 	if (G_UNLIKELY (!secret_key)) {
-		static gsize init_value = 0;
 		static SecretKeyData secret_key_data;
-		gboolean tmp_success;
-		gs_free guint8 *tmp_secret_key = NULL;
-		gsize tmp_key_len;
+		static gsize init_value = 0;
 
-		tmp_success = _secret_key_read (&tmp_secret_key, &tmp_key_len);
 		if (!g_once_init_enter (&init_value))
 			goto again;
 
-		secret_key_data.secret_key = g_steal_pointer (&tmp_secret_key);
-		secret_key_data.key_len = tmp_key_len;
-		secret_key_data.is_good = tmp_success;
+		secret_key_data.is_good = _secret_key_read (&secret_key_data.secret_key,
+		                                            &secret_key_data.key_len);
 		secret_key = &secret_key_data;
 		g_atomic_pointer_set (&secret_key_static, secret_key);
 		g_once_init_leave (&init_value, 1);
@@ -2625,7 +2713,7 @@ nm_utils_secret_key_get_timestamp (void)
 	if (!nm_utils_secret_key_get (&key, &key_len))
 		return 0;
 
-	if (stat (NMSTATEDIR "/secret_key", &stat_buf) != 0)
+	if (stat (SECRET_KEY_FILE, &stat_buf) != 0)
 		return 0;
 
 	return stat_buf.st_mtim.tv_sec;

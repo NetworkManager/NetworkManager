@@ -680,6 +680,8 @@ void nm_utils_error_set_cancelled (GError **error,
 gboolean nm_utils_error_is_cancelled (GError *error,
                                       gboolean consider_is_disposing);
 
+gboolean nm_utils_error_is_notfound (GError *error);
+
 static inline void
 nm_utils_error_set_literal (GError **error, int error_code, const char *literal)
 {

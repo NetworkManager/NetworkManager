@@ -1067,11 +1067,24 @@ nm_utils_error_is_cancelled (GError *error,
                              gboolean consider_is_disposing)
 {
 	if (error) {
-		if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-			return TRUE;
-		if (   consider_is_disposing
-		    && g_error_matches (error, NM_UTILS_ERROR, NM_UTILS_ERROR_CANCELLED_DISPOSING))
-			return TRUE;
+		if (error->domain == G_IO_ERROR)
+			return NM_IN_SET (error->code, G_IO_ERROR_CANCELLED);
+		if (consider_is_disposing) {
+			if (error->domain == NM_UTILS_ERROR)
+				return NM_IN_SET (error->code, NM_UTILS_ERROR_CANCELLED_DISPOSING);
+		}
+	}
+	return FALSE;
+}
+
+gboolean
+nm_utils_error_is_notfound (GError *error)
+{
+	if (error) {
+		if (error->domain == G_IO_ERROR)
+			return NM_IN_SET (error->code, G_IO_ERROR_NOT_FOUND);
+		if (error->domain == G_FILE_ERROR)
+			return NM_IN_SET (error->code, G_FILE_ERROR_NOENT);
 	}
 	return FALSE;
 }
