@@ -969,7 +969,7 @@ can_auto_connect (NMDevice *device,
 	g_return_val_if_fail (s_wifi, FALSE);
 
 	/* Always allow autoconnect for AP and non-autoconf Ad-Hoc */
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	method = nm_utils_get_ip_config_method (connection, AF_INET);
 	mode = nm_setting_wireless_get_mode (s_wifi);
 	if (nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_AP))
 		return TRUE;

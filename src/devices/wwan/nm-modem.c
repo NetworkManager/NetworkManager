@@ -706,7 +706,7 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 
 	nm_modem_set_route_parameters_from_device (self, device);
 
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	method = nm_utils_get_ip_config_method (connection, AF_INET);
 
 	/* Only Disabled and Auto methods make sense for WWAN */
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
@@ -823,7 +823,7 @@ nm_modem_stage3_ip6_config_start (NMModem *self,
 
 	nm_modem_set_route_parameters_from_device (self, device);
 
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	method = nm_utils_get_ip_config_method (connection, AF_INET6);
 
 	/* Only Ignore and Auto methods make sense for WWAN */
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0)

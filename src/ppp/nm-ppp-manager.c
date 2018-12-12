@@ -1030,9 +1030,9 @@ _ppp_manager_start (NMPPPManager *self,
 	adsl_setting = (NMSettingAdsl *) nm_connection_get_setting (connection, NM_TYPE_SETTING_ADSL);
 
 	/* Figure out what address methods should be enabled */
-	ip4_method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	ip4_method = nm_utils_get_ip_config_method (connection, AF_INET);
 	ip4_enabled = g_strcmp0 (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0;
-	ip6_method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	ip6_method = nm_utils_get_ip_config_method (connection, AF_INET6);
 	ip6_enabled = g_strcmp0 (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0;
 
 	ppp_cmd = create_pppd_cmd_line (self,

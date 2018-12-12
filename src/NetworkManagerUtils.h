@@ -26,6 +26,9 @@
 
 /*****************************************************************************/
 
+const char *nm_utils_get_ip_config_method (NMConnection *connection,
+                                           int addr_family);
+
 const char *nm_utils_get_shared_wifi_permission (NMConnection *connection);
 
 void nm_utils_complete_generic (NMPlatform *platform,

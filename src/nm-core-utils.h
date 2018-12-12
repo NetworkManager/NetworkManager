@@ -239,9 +239,6 @@ gboolean nm_wildcard_match_check (const char *str,
 
 /*****************************************************************************/
 
-const char *nm_utils_get_ip_config_method (NMConnection *connection,
-                                           GType         ip_setting_type);
-
 gboolean nm_utils_connection_has_default_route (NMConnection *connection,
                                                 int addr_family,
                                                 gboolean *out_is_never_default);

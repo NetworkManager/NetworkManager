@@ -51,7 +51,7 @@ nm_utils_get_shared_wifi_permission (NMConnection *connection)
 	NMSettingWirelessSecurity *s_wsec;
 	const char *method = NULL;
 
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	method = nm_utils_get_ip_config_method (connection, AF_INET);
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) != 0)
 		return NULL;  /* Not shared */
 
@@ -161,38 +161,39 @@ next:
 
 const char *
 nm_utils_get_ip_config_method (NMConnection *connection,
-                               GType         ip_setting_type)
+                               int addr_family)
 {
 	NMSettingConnection *s_con;
-	NMSettingIPConfig *s_ip4, *s_ip6;
+	NMSettingIPConfig *s_ip;
 	const char *method;
 
 	s_con = nm_connection_get_setting_connection (connection);
 
-	if (ip_setting_type == NM_TYPE_SETTING_IP4_CONFIG) {
+	if (addr_family == AF_INET) {
 		g_return_val_if_fail (s_con != NULL, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
-		s_ip4 = nm_connection_get_setting_ip4_config (connection);
-		if (!s_ip4)
+		s_ip = nm_connection_get_setting_ip4_config (connection);
+		if (!s_ip)
 			return NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
-		method = nm_setting_ip_config_get_method (s_ip4);
+
+		method = nm_setting_ip_config_get_method (s_ip);
 		g_return_val_if_fail (method != NULL, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
-
 		return method;
+	}
 
-	} else if (ip_setting_type == NM_TYPE_SETTING_IP6_CONFIG) {
+	if (addr_family == AF_INET6) {
 		g_return_val_if_fail (s_con != NULL, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
 
-		s_ip6 = nm_connection_get_setting_ip6_config (connection);
-		if (!s_ip6)
+		s_ip = nm_connection_get_setting_ip6_config (connection);
+		if (!s_ip)
 			return NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
-		method = nm_setting_ip_config_get_method (s_ip6);
+
+		method = nm_setting_ip_config_get_method (s_ip);
 		g_return_val_if_fail (method != NULL, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
-
 		return method;
+	}
 
-	} else
-		g_assert_not_reached ();
+	g_return_val_if_reached ("" /* bogus */);
 }
 
 gboolean
@@ -223,13 +224,13 @@ nm_utils_connection_has_default_route (NMConnection *connection,
 	}
 
 	if (addr_family == AF_INET) {
-		method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+		method = nm_utils_get_ip_config_method (connection, AF_INET);
 		if (NM_IN_STRSET (method, NULL,
 		                          NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
 		                          NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
 			goto out;
 	} else {
-		method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+		method = nm_utils_get_ip_config_method (connection, AF_INET6);
 		if (NM_IN_STRSET (method, NULL,
 		                          NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 		                          NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
@@ -348,8 +349,8 @@ check_ip6_method (NMConnection *orig,
 	 * the connection could not possibly have been previously activated on the
 	 * device if the device has no non-link-local IPv6 address.
 	 */
-	orig_ip6_method = nm_utils_get_ip_config_method (orig, NM_TYPE_SETTING_IP6_CONFIG);
-	candidate_ip6_method = nm_utils_get_ip_config_method (candidate, NM_TYPE_SETTING_IP6_CONFIG);
+	orig_ip6_method = nm_utils_get_ip_config_method (orig, AF_INET6);
+	candidate_ip6_method = nm_utils_get_ip_config_method (candidate, AF_INET6);
 	candidate_ip6 = nm_connection_get_setting_ip6_config (candidate);
 
 	if (   strcmp (orig_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0
@@ -525,8 +526,8 @@ check_ip4_method (NMConnection *orig,
 	 * not complete and thus no IP addresses were assigned.  In that case, allow
 	 * matching to the "auto" method.
 	 */
-	orig_ip4_method = nm_utils_get_ip_config_method (orig, NM_TYPE_SETTING_IP4_CONFIG);
-	candidate_ip4_method = nm_utils_get_ip_config_method (candidate, NM_TYPE_SETTING_IP4_CONFIG);
+	orig_ip4_method = nm_utils_get_ip_config_method (orig, AF_INET);
+	candidate_ip4_method = nm_utils_get_ip_config_method (candidate, AF_INET);
 	candidate_ip4 = nm_connection_get_setting_ip4_config (candidate);
 
 	if (   strcmp (orig_ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0
