@@ -275,12 +275,12 @@ const char *nm_utils_machine_id_str (void);
 const struct _NMUuid *nm_utils_machine_id_bin (void);
 gboolean nm_utils_machine_id_is_fake (void);
 
-const char *nm_utils_get_boot_id_str (void);
-const struct _NMUuid *nm_utils_get_boot_id_bin (void);
+const char *nm_utils_boot_id_str (void);
+const struct _NMUuid *nm_utils_boot_id_bin (void);
 
-gboolean nm_utils_secret_key_get (const guint8 **out_secret_key,
-                                  gsize *out_key_len);
-gint64 nm_utils_secret_key_get_timestamp (void);
+gboolean nm_utils_host_id_get (const guint8 **out_host_id,
+                               gsize *out_host_id_len);
+gint64 nm_utils_host_id_get_timestamp_ns (void);
 
 /* IPv6 Interface Identifier helpers */
 
@@ -348,8 +348,8 @@ gboolean nm_utils_ipv6_addr_set_stable_privacy_impl (NMUtilsStableType stable_ty
                                                      const char *ifname,
                                                      const char *network_id,
                                                      guint32 dad_counter,
-                                                     guint8 *secret_key,
-                                                     gsize key_len,
+                                                     guint8 *host_id,
+                                                     gsize host_id_len,
                                                      GError **error);
 
 gboolean nm_utils_ipv6_addr_set_stable_privacy (NMUtilsStableType id_type,
@@ -363,8 +363,8 @@ char *nm_utils_hw_addr_gen_random_eth (const char *current_mac_address,
                                        const char *generate_mac_address_mask);
 char *nm_utils_hw_addr_gen_stable_eth_impl (NMUtilsStableType stable_type,
                                             const char *stable_id,
-                                            const guint8 *secret_key,
-                                            gsize key_len,
+                                            const guint8 *host_id,
+                                            gsize host_id_len,
                                             const char *ifname,
                                             const char *current_mac_address,
                                             const char *generate_mac_address_mask);
