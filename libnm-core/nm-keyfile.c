@@ -152,7 +152,7 @@ sriov_vfs_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 		                                         keys[i],
 		                                         NULL);
 
-		vf = _nm_utils_sriov_vf_from_strparts (rest, value, NULL);
+		vf = _nm_utils_sriov_vf_from_strparts (rest, value, TRUE, NULL);
 		if (vf)
 			g_ptr_array_add (vfs, vf);
 	}

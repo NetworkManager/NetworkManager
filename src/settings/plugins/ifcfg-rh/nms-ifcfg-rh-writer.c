@@ -2223,16 +2223,15 @@ write_sriov_setting (NMConnection *connection, shvarFile *ifcfg)
 
 	svUnsetAll (ifcfg, SV_KEY_TYPE_SRIOV_VF);
 
-	s_sriov = NM_SETTING_SRIOV (nm_connection_get_setting (connection, NM_TYPE_SETTING_SRIOV));
-	if (s_sriov)
-		num = nm_setting_sriov_get_total_vfs (s_sriov);
-	if (num == 0) {
+	s_sriov = NM_SETTING_SRIOV (nm_connection_get_setting (connection,
+	                                                       NM_TYPE_SETTING_SRIOV));
+	if (!s_sriov) {
 		svUnsetValue (ifcfg, "SRIOV_TOTAL_VFS");
 		svUnsetValue (ifcfg, "SRIOV_AUTOPROBE_DRIVERS");
 		return;
 	}
 
-	svSetValueInt64 (ifcfg, "SRIOV_TOTAL_VFS", num);
+	svSetValueInt64 (ifcfg, "SRIOV_TOTAL_VFS", nm_setting_sriov_get_total_vfs (s_sriov));
 
 	b = nm_setting_sriov_get_autoprobe_drivers (s_sriov);
 	if (b != NM_TERNARY_DEFAULT)
