@@ -49,11 +49,11 @@ nm_utils_get_shared_wifi_permission (NMConnection *connection)
 {
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	const char *method = NULL;
+	const char *method;
 
 	method = nm_utils_get_ip_config_method (connection, AF_INET);
-	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) != 0)
-		return NULL;  /* Not shared */
+	if (!nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+		return NULL;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	if (s_wifi) {
@@ -223,16 +223,13 @@ nm_utils_connection_has_default_route (NMConnection *connection,
 		goto out;
 	}
 
+	method = nm_utils_get_ip_config_method (connection, addr_family);
 	if (addr_family == AF_INET) {
-		method = nm_utils_get_ip_config_method (connection, AF_INET);
-		if (NM_IN_STRSET (method, NULL,
-		                          NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+		if (NM_IN_STRSET (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
 		                          NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
 			goto out;
 	} else {
-		method = nm_utils_get_ip_config_method (connection, AF_INET6);
-		if (NM_IN_STRSET (method, NULL,
-		                          NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+		if (NM_IN_STRSET (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 		                          NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
 			goto out;
 	}
@@ -343,29 +340,28 @@ check_ip6_method (NMConnection *orig,
 	if (!props)
 		return TRUE;
 
-	/* If the generated connection is 'link-local' and the candidate is both 'auto'
-	 * and may-fail=TRUE, then the candidate is OK to use.  may-fail is included
-	 * in the decision because if the candidate is 'auto' but may-fail=FALSE, then
-	 * the connection could not possibly have been previously activated on the
-	 * device if the device has no non-link-local IPv6 address.
-	 */
 	orig_ip6_method = nm_utils_get_ip_config_method (orig, AF_INET6);
 	candidate_ip6_method = nm_utils_get_ip_config_method (candidate, AF_INET6);
 	candidate_ip6 = nm_connection_get_setting_ip6_config (candidate);
 
-	if (   strcmp (orig_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0
-	    && strcmp (candidate_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
-	    && (!candidate_ip6 || nm_setting_ip_config_get_may_fail (candidate_ip6))) {
+	if (   nm_streq (orig_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)
+	    && nm_streq (candidate_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
+	    && (   !candidate_ip6
+	        || nm_setting_ip_config_get_may_fail (candidate_ip6))) {
+		/* If the generated connection is 'link-local' and the candidate is both 'auto'
+		 * and may-fail=TRUE, then the candidate is OK to use.  may-fail is included
+		 * in the decision because if the candidate is 'auto' but may-fail=FALSE, then
+		 * the connection could not possibly have been previously activated on the
+		 * device if the device has no non-link-local IPv6 address.
+		 */
 		allow = TRUE;
-	}
-
-	/* If the generated connection method is 'link-local' or 'auto' and the candidate
-	 * method is 'ignore' we can take the connection, because NM didn't simply take care
-	 * of IPv6.
-	 */
-	if (  (   strcmp (orig_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0
-	       || strcmp (orig_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0)
-	    && strcmp (candidate_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0) {
+	} else if (   NM_IN_STRSET (orig_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+	                                             NM_SETTING_IP6_CONFIG_METHOD_AUTO)
+	           && nm_streq0 (candidate_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
+		/* If the generated connection method is 'link-local' or 'auto' and the candidate
+		 * method is 'ignore' we can take the connection, because NM didn't simply take care
+		 * of IPv6.
+		 */
 		allow = TRUE;
 	}
 
@@ -374,6 +370,7 @@ check_ip6_method (NMConnection *orig,
 		                  NM_SETTING_IP6_CONFIG_SETTING_NAME,
 		                  NM_SETTING_IP_CONFIG_METHOD);
 	}
+
 	return allow;
 }
 
@@ -521,19 +518,20 @@ check_ip4_method (NMConnection *orig,
 	if (!props)
 		return TRUE;
 
-	/* If the generated connection is 'disabled' (device had no IP addresses)
-	 * but it has no carrier, that most likely means that IP addressing could
-	 * not complete and thus no IP addresses were assigned.  In that case, allow
-	 * matching to the "auto" method.
-	 */
 	orig_ip4_method = nm_utils_get_ip_config_method (orig, AF_INET);
 	candidate_ip4_method = nm_utils_get_ip_config_method (candidate, AF_INET);
 	candidate_ip4 = nm_connection_get_setting_ip4_config (candidate);
 
-	if (   strcmp (orig_ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0
-	    && strcmp (candidate_ip4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0
-	    && (!candidate_ip4 || nm_setting_ip_config_get_may_fail (candidate_ip4))
-	    && (device_has_carrier == FALSE)) {
+	if (   nm_streq (orig_ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)
+	    && nm_streq (candidate_ip4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)
+	    && (   !candidate_ip4
+	        || nm_setting_ip_config_get_may_fail (candidate_ip4))
+	    && !device_has_carrier) {
+		/* If the generated connection is 'disabled' (device had no IP addresses)
+		 * but it has no carrier, that most likely means that IP addressing could
+		 * not complete and thus no IP addresses were assigned.  In that case, allow
+		 * matching to the "auto" method.
+		 */
 		remove_from_hash (settings, props,
 		                  NM_SETTING_IP4_CONFIG_SETTING_NAME,
 		                  NM_SETTING_IP_CONFIG_METHOD);

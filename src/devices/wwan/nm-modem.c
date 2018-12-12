@@ -709,10 +709,10 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 	method = nm_utils_get_ip_config_method (connection, AF_INET);
 
 	/* Only Disabled and Auto methods make sense for WWAN */
-	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
+	if (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
 		return NM_ACT_STAGE_RETURN_SUCCESS;
 
-	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) != 0) {
+	if (!nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		_LOGE ("unhandled WWAN IPv4 method '%s'; will fail", method);
 		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED);
 		return NM_ACT_STAGE_RETURN_FAILURE;
@@ -826,10 +826,10 @@ nm_modem_stage3_ip6_config_start (NMModem *self,
 	method = nm_utils_get_ip_config_method (connection, AF_INET6);
 
 	/* Only Ignore and Auto methods make sense for WWAN */
-	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0)
+	if (nm_streq (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE))
 		return NM_ACT_STAGE_RETURN_IP_DONE;
 
-	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) != 0) {
+	if (!nm_streq (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
 		_LOGW ("unhandled WWAN IPv6 method '%s'; will fail",
 		       method);
 		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);

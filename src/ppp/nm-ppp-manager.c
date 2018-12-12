@@ -1031,9 +1031,9 @@ _ppp_manager_start (NMPPPManager *self,
 
 	/* Figure out what address methods should be enabled */
 	ip4_method = nm_utils_get_ip_config_method (connection, AF_INET);
-	ip4_enabled = g_strcmp0 (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0;
+	ip4_enabled = nm_streq (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 	ip6_method = nm_utils_get_ip_config_method (connection, AF_INET6);
-	ip6_enabled = g_strcmp0 (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0;
+	ip6_enabled = nm_streq (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
 
 	ppp_cmd = create_pppd_cmd_line (self,
 	                                s_ppp,
