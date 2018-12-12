@@ -1248,6 +1248,11 @@ nm_setting_sriov_class_init (NMSettingSriovClass *klass)
 	 *
 	 * The total number of virtual functions to create.
 	 *
+	 * Note that when the sriov setting is present NetworkManager
+	 * enforces the number of virtual functions on the interface
+	 * also when it is zero. To prevent any changes to SR-IOV
+	 * parameters don't add a sriov setting to the connection.
+	 *
 	 * Since: 1.14
 	 **/
 	/* ---ifcfg-rh---
@@ -1283,7 +1288,11 @@ nm_setting_sriov_class_init (NMSettingSriovClass *klass)
 	 *
 	 *   "2 mac=00:11:22:33:44:55 spoof-check=true".
 	 *
-	 * The "vlans" attribute is represented as a semicolor-separated
+	 * Multiple VFs can be specified using a comma as separator.
+	 * Currently the following attributes are supported: mac,
+	 * spoof-check, trust, min-tx-rate, max-tx-rate, vlans.
+	 *
+	 * The "vlans" attribute is represented as a semicolon-separated
 	 * list of VLAN descriptors, where each descriptor has the form
 	 *
 	 *   "ID[.PRIORITY[.PROTO]]".
@@ -1291,6 +1300,7 @@ nm_setting_sriov_class_init (NMSettingSriovClass *klass)
 	 * PROTO can be either 'q' for 802.1Q (the default) or 'ad' for
 	 * 802.1ad.
 	 *
+
 	 * Since: 1.14
 	 **/
 	/* ---ifcfg-rh---

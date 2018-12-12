@@ -241,26 +241,23 @@ nm_udev_client_new (const char *const*subsystems,
 		if (self->subsystems) {
 			/* install subsystem filters to only wake up for certain events */
 			for (n = 0; self->subsystems[n]; n++) {
-				if (self->monitor) {
-					gs_free char *to_free = NULL;
-					const char *subsystem;
-					const char *devtype;
+				gs_free char *to_free = NULL;
+				const char *subsystem;
+				const char *devtype;
 
-					_subsystem_split (self->subsystems[n], &subsystem, &devtype, &to_free);
-					udev_monitor_filter_add_match_subsystem_devtype (self->monitor, subsystem, devtype);
-				}
+				_subsystem_split (self->subsystems[n], &subsystem, &devtype, &to_free);
+				udev_monitor_filter_add_match_subsystem_devtype (self->monitor, subsystem, devtype);
 			}
 
 			/* listen to events, and buffer them */
-			if (self->monitor) {
-				udev_monitor_enable_receiving (self->monitor);
-				channel = g_io_channel_unix_new (udev_monitor_get_fd (self->monitor));
-				self->watch_source = g_io_create_watch (channel, G_IO_IN);
-				g_io_channel_unref (channel);
-				g_source_set_callback (self->watch_source, (GSourceFunc)(void (*) (void)) monitor_event, self, NULL);
-				g_source_attach (self->watch_source, g_main_context_get_thread_default ());
-				g_source_unref (self->watch_source);
-			}
+			udev_monitor_set_receive_buffer_size (self->monitor, 4*1024*1024);
+			udev_monitor_enable_receiving (self->monitor);
+			channel = g_io_channel_unix_new (udev_monitor_get_fd (self->monitor));
+			self->watch_source = g_io_create_watch (channel, G_IO_IN);
+			g_io_channel_unref (channel);
+			g_source_set_callback (self->watch_source, (GSourceFunc)(void (*) (void)) monitor_event, self, NULL);
+			g_source_attach (self->watch_source, g_main_context_get_thread_default ());
+			g_source_unref (self->watch_source);
 		}
 	}
 

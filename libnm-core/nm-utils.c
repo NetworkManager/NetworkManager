@@ -2737,11 +2737,14 @@ nm_utils_sriov_vf_from_str (const char *str, GError **error)
 		detail++;
 	}
 
-	return _nm_utils_sriov_vf_from_strparts (str, detail, error);
+	return _nm_utils_sriov_vf_from_strparts (str, detail, FALSE, error);
 }
 
 NMSriovVF *
-_nm_utils_sriov_vf_from_strparts (const char *index, const char *detail, GError **error)
+_nm_utils_sriov_vf_from_strparts (const char *index,
+                                  const char *detail,
+                                  gboolean ignore_unknown,
+                                  GError **error)
 {
 	NMSriovVF *vf;
 	guint32 n_index;
@@ -2761,7 +2764,12 @@ _nm_utils_sriov_vf_from_strparts (const char *index, const char *detail, GError 
 
 	vf = nm_sriov_vf_new (n_index);
 	if (detail) {
-		ht = nm_utils_parse_variant_attributes (detail, ' ', '=', TRUE, _nm_sriov_vf_attribute_spec, error);
+		ht = nm_utils_parse_variant_attributes (detail,
+		                                        ' ',
+		                                        '=',
+		                                        ignore_unknown,
+		                                        _nm_sriov_vf_attribute_spec,
+		                                        error);
 		if (!ht) {
 			nm_sriov_vf_unref (vf);
 			return NULL;

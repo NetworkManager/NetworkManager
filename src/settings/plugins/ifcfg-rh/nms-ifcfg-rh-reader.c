@@ -2226,20 +2226,19 @@ make_sriov_setting (shvarFile *ifcfg)
 {
 	gs_unref_hashtable GHashTable *keys = NULL;
 	gs_unref_ptrarray GPtrArray *vfs = NULL;
-	NMTernary autoprobe_drivers;
+	int autoprobe_drivers;
 	NMSettingSriov *s_sriov;
-	int total_vfs;
+	gint64 total_vfs;
 
-	total_vfs = svGetValueInt64 (ifcfg, "SRIOV_TOTAL_VFS", 10, 0, G_MAXINT32, 0);
-	if (!total_vfs)
-		return NULL;
+
+	total_vfs = svGetValueInt64 (ifcfg, "SRIOV_TOTAL_VFS", 10, 0, G_MAXUINT32, -1);
 
 	autoprobe_drivers = svGetValueInt64 (ifcfg,
 	                                     "SRIOV_AUTOPROBE_DRIVERS",
 	                                     10,
-	                                     NM_TERNARY_FALSE,
+	                                     NM_TERNARY_DEFAULT,
 	                                     NM_TERNARY_TRUE,
-	                                     NM_TERNARY_DEFAULT);
+	                                     -2);
 
 	keys = svGetKeys (ifcfg, SV_KEY_TYPE_SRIOV_VF);
 	if (keys) {
@@ -2261,7 +2260,7 @@ make_sriov_setting (shvarFile *ifcfg)
 
 			key += NM_STRLEN ("SRIOV_VF");
 
-			vf = _nm_utils_sriov_vf_from_strparts (key, value, &error);
+			vf = _nm_utils_sriov_vf_from_strparts (key, value, TRUE, &error);
 			if (!vf) {
 				PARSE_WARNING ("ignoring invalid SR-IOV VF '%s %s': %s",
 				               key, value, error->message);
@@ -2273,11 +2272,21 @@ make_sriov_setting (shvarFile *ifcfg)
 		}
 	}
 
+	/* Create the setting when at least one key is set */
+	if (   total_vfs < 0
+	    && !vfs
+	    && autoprobe_drivers < NM_TERNARY_DEFAULT)
+		return NULL;
+
 	s_sriov = (NMSettingSriov *) nm_setting_sriov_new ();
+
+	autoprobe_drivers = NM_MAX (autoprobe_drivers, NM_TERNARY_DEFAULT);
+	total_vfs = NM_MAX (total_vfs, 0);
+
 	g_object_set (s_sriov,
 	              NM_SETTING_SRIOV_TOTAL_VFS, total_vfs,
 	              NM_SETTING_SRIOV_VFS, vfs,
-	              NM_SETTING_SRIOV_AUTOPROBE_DRIVERS, (int) autoprobe_drivers,
+	              NM_SETTING_SRIOV_AUTOPROBE_DRIVERS, autoprobe_drivers,
 	              NULL);
 
 	return (NMSetting *) s_sriov;
