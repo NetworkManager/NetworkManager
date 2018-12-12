@@ -2455,7 +2455,7 @@ again:
 				return NULL;
 			}
 
-			if (nm_utils_secret_key_get (&seed_bin, &seed_len)) {
+			if (nm_utils_host_id_get (&seed_bin, &seed_len)) {
 				/* we have no valid machine-id. Generate a fake one by hashing
 				 * the secret-key. This key is commonly persisted, so it should be
 				 * stable accross reboots (despite having a broken system without
@@ -2526,9 +2526,9 @@ nm_utils_machine_id_is_fake (void)
 #define SECRET_KEY_FILE      NMSTATEDIR"/secret_key"
 
 static const guint8 *
-_secret_key_hash_v2 (const guint8 *seed_arr,
-                     gsize seed_len,
-                     guint8 *out_digest /* 32 bytes (NM_UTILS_CHECKSUM_LENGTH_SHA256) */)
+_host_id_hash_v2 (const guint8 *seed_arr,
+                  gsize seed_len,
+                  guint8 *out_digest /* 32 bytes (NM_UTILS_CHECKSUM_LENGTH_SHA256) */)
 {
 	nm_auto_free_checksum GChecksum *sum = g_checksum_new (G_CHECKSUM_SHA256);
 	const UuidData *machine_id_data;
@@ -2556,8 +2556,8 @@ _secret_key_hash_v2 (const guint8 *seed_arr,
 }
 
 static gboolean
-_secret_key_read (guint8 **out_key,
-                  gsize *out_key_len)
+_host_id_read (guint8 **out_host_id,
+               gsize *out_host_id_len)
 {
 #define SECRET_KEY_LEN 32u
 	guint8 sha256_digest[NM_UTILS_CHECKSUM_LENGTH_SHA256];
@@ -2595,7 +2595,7 @@ _secret_key_read (guint8 **out_key,
 		 * except that it seems simpler not to distinguish between the v2 prefix and the content.
 		 * It's all just part of the seed. */
 
-		secret_arr = _secret_key_hash_v2 (file_content.bin, file_content.len, sha256_digest);
+		secret_arr = _host_id_hash_v2 (file_content.bin, file_content.len, sha256_digest);
 		secret_len = NM_UTILS_CHECKSUM_LENGTH_SHA256;
 		success = TRUE;
 		goto out;
@@ -2640,7 +2640,7 @@ _secret_key_read (guint8 **out_key,
 		                              &base64_save);
 		nm_assert (len <= sizeof (new_content));
 
-		secret_arr = _secret_key_hash_v2 (new_content, len, sha256_digest);
+		secret_arr = _host_id_hash_v2 (new_content, len, sha256_digest);
 		secret_len = NM_UTILS_CHECKSUM_LENGTH_SHA256;
 
 		if (!success)
@@ -2664,53 +2664,68 @@ _secret_key_read (guint8 **out_key,
 	}
 
 out:
-	*out_key_len = secret_len;
-	*out_key = nm_memdup (secret_arr, secret_len);
+	*out_host_id_len = secret_len;
+	*out_host_id = nm_memdup (secret_arr, secret_len);
 	return success;
 }
 
 typedef struct {
-	guint8 *secret_key;
-	gsize key_len;
+	guint8 *host_id;
+	gsize host_id_len;
 	bool is_good:1;
-} SecretKeyData;
+} HostIdData;
 
+/**
+ * nm_utils_host_id_get:
+ * @out_host_id: (out) (transfer none): the binary host key
+ * @out_host_id_len: the length of the host key.
+ *
+ * This returns a per-host key that depends on /var/lib/NetworkManage/secret_key
+ * and (depending on the version) on /etc/machine-id. If /var/lib/NetworkManage/secret_key
+ * does not exist, it will be generated and persisted for next boot.
+ *
+ * Returns: %TRUE, if the host key is "good". Note that this function
+ *   will always succeed to return a host-key, and that this key
+ *   won't change during the run of the program (no matter what).
+ *   A %FALSE return possibly means, that the secret_key is not persisted
+ *   to disk, and/or that it was generated with bad randomness.
+ */
 gboolean
-nm_utils_secret_key_get (const guint8 **out_secret_key,
-                         gsize *out_key_len)
+nm_utils_host_id_get (const guint8 **out_host_id,
+                      gsize *out_host_id_len)
 {
-	static const SecretKeyData *volatile secret_key_static;
-	const SecretKeyData *secret_key;
+	static const HostIdData *volatile host_id_static;
+	const HostIdData *host_id;
 
 again:
-	secret_key = g_atomic_pointer_get (&secret_key_static);
-	if (G_UNLIKELY (!secret_key)) {
-		static SecretKeyData secret_key_data;
+	host_id = g_atomic_pointer_get (&host_id_static);
+	if (G_UNLIKELY (!host_id)) {
+		static HostIdData host_id_data;
 		static gsize init_value = 0;
 
 		if (!g_once_init_enter (&init_value))
 			goto again;
 
-		secret_key_data.is_good = _secret_key_read (&secret_key_data.secret_key,
-		                                            &secret_key_data.key_len);
-		secret_key = &secret_key_data;
-		g_atomic_pointer_set (&secret_key_static, secret_key);
+		host_id_data.is_good = _host_id_read (&host_id_data.host_id,
+		                                      &host_id_data.host_id_len);
+		host_id = &host_id_data;
+		g_atomic_pointer_set (&host_id_static, host_id);
 		g_once_init_leave (&init_value, 1);
 	}
 
-	*out_secret_key = secret_key->secret_key;
-	*out_key_len = secret_key->key_len;
-	return secret_key->is_good;
+	*out_host_id = host_id->host_id;
+	*out_host_id_len = host_id->host_id_len;
+	return host_id->is_good;
 }
 
 gint64
-nm_utils_secret_key_get_timestamp (void)
+nm_utils_host_id_get_timestamp (void)
 {
 	struct stat stat_buf;
-	const guint8 *key;
-	gsize key_len;
+	const guint8 *host_id;
+	gsize host_id_len;
 
-	if (!nm_utils_secret_key_get (&key, &key_len))
+	if (!nm_utils_host_id_get (&host_id, &host_id_len))
 		return 0;
 
 	if (stat (SECRET_KEY_FILE, &stat_buf) != 0)
@@ -3177,20 +3192,20 @@ _set_stable_privacy (NMUtilsStableType stable_type,
                      const char *ifname,
                      const char *network_id,
                      guint32 dad_counter,
-                     const guint8 *secret_key,
-                     gsize key_len,
+                     const guint8 *host_id,
+                     gsize host_id_len,
                      GError **error)
 {
 	nm_auto_free_checksum GChecksum *sum = NULL;
 	guint8 digest[NM_UTILS_CHECKSUM_LENGTH_SHA256];
 	guint32 tmp[2];
 
-	nm_assert (key_len);
+	nm_assert (host_id_len);
 	nm_assert (network_id);
 
 	sum = g_checksum_new (G_CHECKSUM_SHA256);
 
-	key_len = MIN (key_len, G_MAXUINT32);
+	host_id_len = MIN (host_id_len, G_MAXUINT32);
 
 	if (stable_type != NM_UTILS_STABLE_TYPE_UUID) {
 		guint8 stable_type_uint8;
@@ -3203,7 +3218,7 @@ _set_stable_privacy (NMUtilsStableType stable_type,
 		 *
 		 * That is no real problem and it is still impossible to
 		 * force a collision here, because of how the remaining
-		 * fields are hashed. That is, as we also hash @key_len
+		 * fields are hashed. That is, as we also hash @host_id_len
 		 * and the terminating '\0' of @network_id, it is unambigiously
 		 * possible to revert the process and deduce the @stable_type.
 		 */
@@ -3214,9 +3229,9 @@ _set_stable_privacy (NMUtilsStableType stable_type,
 	g_checksum_update (sum, (const guchar *) ifname, strlen (ifname) + 1);
 	g_checksum_update (sum, (const guchar *) network_id, strlen (network_id) + 1);
 	tmp[0] = htonl (dad_counter);
-	tmp[1] = htonl (key_len);
+	tmp[1] = htonl (host_id_len);
 	g_checksum_update (sum, (const guchar *) tmp, sizeof (tmp));
-	g_checksum_update (sum, (const guchar *) secret_key, key_len);
+	g_checksum_update (sum, (const guchar *) host_id, host_id_len);
 	nm_utils_checksum_get_digest (sum, digest);
 
 	while (_is_reserved_ipv6_iid (digest)) {
@@ -3237,11 +3252,11 @@ nm_utils_ipv6_addr_set_stable_privacy_impl (NMUtilsStableType stable_type,
                                             const char *ifname,
                                             const char *network_id,
                                             guint32 dad_counter,
-                                            guint8 *secret_key,
-                                            gsize key_len,
+                                            guint8 *host_id,
+                                            gsize host_id_len,
                                             GError **error)
 {
-	return _set_stable_privacy (stable_type, addr, ifname, network_id, dad_counter, secret_key, key_len, error);
+	return _set_stable_privacy (stable_type, addr, ifname, network_id, dad_counter, host_id, host_id_len, error);
 }
 
 #define RFC7217_IDGEN_RETRIES 3
@@ -3261,8 +3276,8 @@ nm_utils_ipv6_addr_set_stable_privacy (NMUtilsStableType stable_type,
                                        guint32 dad_counter,
                                        GError **error)
 {
-	const guint8 *secret_key;
-	gsize key_len;
+	const guint8 *host_id;
+	gsize host_id_len;
 
 	g_return_val_if_fail (network_id, FALSE);
 
@@ -3272,10 +3287,10 @@ nm_utils_ipv6_addr_set_stable_privacy (NMUtilsStableType stable_type,
 		return FALSE;
 	}
 
-	nm_utils_secret_key_get (&secret_key, &key_len);
+	nm_utils_host_id_get (&host_id, &host_id_len);
 
 	return _set_stable_privacy (stable_type, addr, ifname, network_id, dad_counter,
-	                            secret_key, key_len, error);
+	                            host_id, host_id_len, error);
 }
 
 /*****************************************************************************/
@@ -3347,8 +3362,8 @@ nm_utils_hw_addr_gen_random_eth (const char *current_mac_address,
 static char *
 _hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
                          const char *stable_id,
-                         const guint8 *secret_key,
-                         gsize key_len,
+                         const guint8 *host_id,
+                         gsize host_id_len,
                          const char *ifname,
                          const char *current_mac_address,
                          const char *generate_mac_address_mask)
@@ -3360,19 +3375,19 @@ _hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
 	guint8 stable_type_uint8;
 
 	nm_assert (stable_id);
-	nm_assert (secret_key);
+	nm_assert (host_id);
 
 	sum = g_checksum_new (G_CHECKSUM_SHA256);
 
-	key_len = MIN (key_len, G_MAXUINT32);
+	host_id_len = MIN (host_id_len, G_MAXUINT32);
 
 	nm_assert (stable_type < (NMUtilsStableType) 255);
 	stable_type_uint8 = stable_type;
 	g_checksum_update (sum, (const guchar *) &stable_type_uint8, sizeof (stable_type_uint8));
 
-	tmp = htonl ((guint32) key_len);
+	tmp = htonl ((guint32) host_id_len);
 	g_checksum_update (sum, (const guchar *) &tmp, sizeof (tmp));
-	g_checksum_update (sum, (const guchar *) secret_key, key_len);
+	g_checksum_update (sum, (const guchar *) host_id, host_id_len);
 	g_checksum_update (sum, (const guchar *) (ifname ?: ""), ifname ? (strlen (ifname) + 1) : 1);
 	g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id) + 1);
 
@@ -3386,13 +3401,13 @@ _hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
 char *
 nm_utils_hw_addr_gen_stable_eth_impl (NMUtilsStableType stable_type,
                                       const char *stable_id,
-                                      const guint8 *secret_key,
-                                      gsize key_len,
+                                      const guint8 *host_id,
+                                      gsize host_id_len,
                                       const char *ifname,
                                       const char *current_mac_address,
                                       const char *generate_mac_address_mask)
 {
-	return _hw_addr_gen_stable_eth (stable_type, stable_id, secret_key, key_len, ifname, current_mac_address, generate_mac_address_mask);
+	return _hw_addr_gen_stable_eth (stable_type, stable_id, host_id, host_id_len, ifname, current_mac_address, generate_mac_address_mask);
 }
 
 char *
@@ -3402,17 +3417,17 @@ nm_utils_hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
                                  const char *current_mac_address,
                                  const char *generate_mac_address_mask)
 {
-	const guint8 *secret_key;
-	gsize key_len;
+	const guint8 *host_id;
+	gsize host_id_len;
 
 	g_return_val_if_fail (stable_id, NULL);
 
-	nm_utils_secret_key_get (&secret_key, &key_len);
+	nm_utils_host_id_get (&host_id, &host_id_len);
 
 	return _hw_addr_gen_stable_eth (stable_type,
 	                                stable_id,
-	                                secret_key,
-	                                key_len,
+	                                host_id,
+	                                host_id_len,
 	                                ifname,
 	                                current_mac_address,
 	                                generate_mac_address_mask);

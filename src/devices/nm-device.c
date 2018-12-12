@@ -7647,8 +7647,8 @@ dhcp4_get_client_id (NMDevice *self,
 		NMUtilsStableType stable_type;
 		const char *stable_id;
 		guint32 salted_header;
-		const guint8 *secret_key;
-		gsize secret_key_len;
+		const guint8 *host_id;
+		gsize host_id_len;
 
 		stable_id = _get_stable_id (self, connection, &stable_type);
 		if (!stable_id)
@@ -7656,12 +7656,12 @@ dhcp4_get_client_id (NMDevice *self,
 
 		salted_header = htonl (2011610591 + stable_type);
 
-		nm_utils_secret_key_get (&secret_key, &secret_key_len);
+		nm_utils_host_id_get (&host_id, &host_id_len);
 
 		sum = g_checksum_new (G_CHECKSUM_SHA1);
 		g_checksum_update (sum, (const guchar *) &salted_header, sizeof (salted_header));
 		g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id) + 1);
-		g_checksum_update (sum, (const guchar *) secret_key, secret_key_len);
+		g_checksum_update (sum, (const guchar *) host_id, host_id_len);
 		nm_utils_checksum_get_digest (sum, digest);
 
 		client_id_buf = g_malloc (1 + 15);
@@ -8436,7 +8436,7 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 		} else {
 			gint64 time;
 
-			time = nm_utils_secret_key_get_timestamp ();
+			time = nm_utils_host_id_get_timestamp ();
 			if (!time) {
 				duid_error = "cannot retrieve the secret key timestamp";
 				goto out_fail;
@@ -8453,8 +8453,8 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 		NMUtilsStableType stable_type;
 		const char *stable_id = NULL;
 		guint32 salted_header;
-		const guint8 *secret_key;
-		gsize secret_key_len;
+		const guint8 *host_id;
+		gsize host_id_len;
 		union {
 			guint8 sha256[NM_UTILS_CHECKSUM_LENGTH_SHA256];
 			guint8 hwaddr[ETH_ALEN];
@@ -8471,12 +8471,12 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 
 		salted_header = htonl (670531087 + stable_type);
 
-		nm_utils_secret_key_get (&secret_key, &secret_key_len);
+		nm_utils_host_id_get (&host_id, &host_id_len);
 
 		sum = g_checksum_new (G_CHECKSUM_SHA256);
 		g_checksum_update (sum, (const guchar *) &salted_header, sizeof (salted_header));
 		g_checksum_update (sum, (const guchar *) stable_id, -1);
-		g_checksum_update (sum, (const guchar *) secret_key, secret_key_len);
+		g_checksum_update (sum, (const guchar *) host_id, host_id_len);
 		nm_utils_checksum_get_digest (sum, digest.sha256);
 
 		G_STATIC_ASSERT_EXPR (sizeof (digest) == sizeof (digest.sha256));
@@ -8488,11 +8488,11 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 
 #define EPOCH_DATETIME_THREE_YEARS  (356 * 24 * 3600 * 3)
 
-			/* We want a variable time between the secret_key timestamp and three years
+			/* We want a variable time between the host_id timestamp and three years
 			 * before. Let's compute the time (in seconds) from 0 to 3 years; then we'll
-			 * subtract it from the secret_key timestamp.
+			 * subtract it from the host_id timestamp.
 			 */
-			time = nm_utils_secret_key_get_timestamp ();
+			time = nm_utils_host_id_get_timestamp ();
 			if (!time) {
 				duid_error = "cannot retrieve the secret key timestamp";
 				goto out_fail;
