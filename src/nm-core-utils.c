@@ -2525,6 +2525,49 @@ nm_utils_machine_id_is_fake (void)
 #define SECRET_KEY_V2_PREFIX "nm-v2:"
 #define SECRET_KEY_FILE      NMSTATEDIR"/secret_key"
 
+static gboolean
+_host_id_read_timestamp (gboolean use_secret_key_file,
+                         const guint8 *host_id,
+                         gsize host_id_len,
+                         gint64 *out_timestamp_ns)
+{
+	struct stat st;
+	gint64 now;
+	guint64 v;
+
+	if (   use_secret_key_file
+	    && stat (SECRET_KEY_FILE, &st) == 0) {
+		/* don't check for overflow or timestamps in the future. We get whatever
+		 * (bogus) date is on the file. */
+		*out_timestamp_ns = (st.st_mtim.tv_sec * NM_UTILS_NS_PER_SECOND) + st.st_mtim.tv_nsec;
+		return TRUE;
+	}
+
+	/* generate a fake timestamp based on the host-id.
+	 *
+	 * This really should never happen under normal circumstances. We already
+	 * are in a code path, where the system has a problem (unable to get good randomness
+	 * and/or can't access the secret_key). In such a scenario, a fake timestamp is the
+	 * least of our problems.
+	 *
+	 * At least, generate something sensible so we don't have to worry about the
+	 * timestamp. It is wrong to worry about using a fake timestamp (which is tied to
+	 * the secret_key) if we are unable to access the secret_key file in the first place.
+	 *
+	 * Pick a random timestamp from the past two years. Yes, this timestamp
+	 * is not stable accross restarts, but apparently neither is the host-id
+	 * nor the secret_key itself. */
+
+#define EPOCH_TWO_YEARS  (G_GINT64_CONSTANT (2 * 365 * 24 * 3600) * NM_UTILS_NS_PER_SECOND)
+
+	v = nm_hash_siphash42 (1156657133u, host_id, host_id_len);
+
+	now = time (NULL);
+	*out_timestamp_ns = NM_MAX ((gint64) 1,
+	                            (now * NM_UTILS_NS_PER_SECOND) - ((gint64) (v % ((guint64) (EPOCH_TWO_YEARS)))));
+	return FALSE;
+}
+
 static const guint8 *
 _host_id_hash_v2 (const guint8 *seed_arr,
                   gsize seed_len,
@@ -2672,7 +2715,9 @@ out:
 typedef struct {
 	guint8 *host_id;
 	gsize host_id_len;
+	gint64 timestamp_ns;
 	bool is_good:1;
+	bool timestamp_is_good:1;
 } HostIdData;
 
 static const HostIdData *
@@ -2692,6 +2737,15 @@ again:
 
 		host_id_data.is_good = _host_id_read (&host_id_data.host_id,
 		                                      &host_id_data.host_id_len);
+
+		host_id_data.timestamp_is_good = _host_id_read_timestamp (host_id_data.is_good,
+		                                                          host_id_data.host_id,
+		                                                          host_id_data.host_id_len,
+		                                                          &host_id_data.timestamp_ns);
+		if (   !host_id_data.timestamp_is_good
+		    && host_id_data.is_good)
+			nm_log_warn (LOGD_CORE, "secret-key: failure reading host timestamp (use fake one)");
+
 		host_id = &host_id_data;
 		g_atomic_pointer_set (&host_id_static, host_id);
 		g_once_init_leave (&init_value, 1);
@@ -2728,17 +2782,9 @@ nm_utils_host_id_get (const guint8 **out_host_id,
 }
 
 gint64
-nm_utils_host_id_get_timestamp (void)
+nm_utils_host_id_get_timestamp_ns (void)
 {
-	struct stat stat_buf;
-
-	if (!_host_id_get ()->is_good)
-		return 0;
-
-	if (stat (SECRET_KEY_FILE, &stat_buf) != 0)
-		return 0;
-
-	return stat_buf.st_mtim.tv_sec;
+	return _host_id_get ()->timestamp_ns;
 }
 
 /*****************************************************************************/

@@ -8434,15 +8434,8 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 		if (nm_streq (duid, "ll")) {
 			duid_out = generate_duid_ll (g_bytes_get_data (hwaddr, NULL));
 		} else {
-			gint64 time;
-
-			time = nm_utils_host_id_get_timestamp ();
-			if (!time) {
-				duid_error = "cannot retrieve the secret key timestamp";
-				goto out_fail;
-			}
-
-			duid_out = generate_duid_llt (g_bytes_get_data (hwaddr, NULL), time);
+			duid_out = generate_duid_llt (g_bytes_get_data (hwaddr, NULL),
+			                              nm_utils_host_id_get_timestamp_ns () / NM_UTILS_NS_PER_SECOND);
 		}
 
 		goto out_good;
@@ -8492,11 +8485,8 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 			 * before. Let's compute the time (in seconds) from 0 to 3 years; then we'll
 			 * subtract it from the host_id timestamp.
 			 */
-			time = nm_utils_host_id_get_timestamp ();
-			if (!time) {
-				duid_error = "cannot retrieve the secret key timestamp";
-				goto out_fail;
-			}
+			time = nm_utils_host_id_get_timestamp_ns () / NM_UTILS_NS_PER_SECOND;
+
 			/* don't use too old timestamps. They cannot be expressed in DUID-LLT and
 			 * would all be truncated to zero. */
 			time = NM_MAX (time, EPOCH_DATETIME_200001010000 + EPOCH_DATETIME_THREE_YEARS);
