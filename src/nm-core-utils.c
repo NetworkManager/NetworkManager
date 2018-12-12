@@ -2675,24 +2675,8 @@ typedef struct {
 	bool is_good:1;
 } HostIdData;
 
-/**
- * nm_utils_host_id_get:
- * @out_host_id: (out) (transfer none): the binary host key
- * @out_host_id_len: the length of the host key.
- *
- * This returns a per-host key that depends on /var/lib/NetworkManage/secret_key
- * and (depending on the version) on /etc/machine-id. If /var/lib/NetworkManage/secret_key
- * does not exist, it will be generated and persisted for next boot.
- *
- * Returns: %TRUE, if the host key is "good". Note that this function
- *   will always succeed to return a host-key, and that this key
- *   won't change during the run of the program (no matter what).
- *   A %FALSE return possibly means, that the secret_key is not persisted
- *   to disk, and/or that it was generated with bad randomness.
- */
-gboolean
-nm_utils_host_id_get (const guint8 **out_host_id,
-                      gsize *out_host_id_len)
+static const HostIdData *
+_host_id_get (void)
 {
 	static const HostIdData *volatile host_id_static;
 	const HostIdData *host_id;
@@ -2713,6 +2697,31 @@ again:
 		g_once_init_leave (&init_value, 1);
 	}
 
+	return host_id;
+}
+
+/**
+ * nm_utils_host_id_get:
+ * @out_host_id: (out) (transfer none): the binary host key
+ * @out_host_id_len: the length of the host key.
+ *
+ * This returns a per-host key that depends on /var/lib/NetworkManage/secret_key
+ * and (depending on the version) on /etc/machine-id. If /var/lib/NetworkManage/secret_key
+ * does not exist, it will be generated and persisted for next boot.
+ *
+ * Returns: %TRUE, if the host key is "good". Note that this function
+ *   will always succeed to return a host-key, and that this key
+ *   won't change during the run of the program (no matter what).
+ *   A %FALSE return possibly means, that the secret_key is not persisted
+ *   to disk, and/or that it was generated with bad randomness.
+ */
+gboolean
+nm_utils_host_id_get (const guint8 **out_host_id,
+                      gsize *out_host_id_len)
+{
+	const HostIdData *host_id;
+
+	host_id = _host_id_get ();
 	*out_host_id = host_id->host_id;
 	*out_host_id_len = host_id->host_id_len;
 	return host_id->is_good;
@@ -2722,10 +2731,8 @@ gint64
 nm_utils_host_id_get_timestamp (void)
 {
 	struct stat stat_buf;
-	const guint8 *host_id;
-	gsize host_id_len;
 
-	if (!nm_utils_host_id_get (&host_id, &host_id_len))
+	if (!_host_id_get ()->is_good)
 		return 0;
 
 	if (stat (SECRET_KEY_FILE, &stat_buf) != 0)
