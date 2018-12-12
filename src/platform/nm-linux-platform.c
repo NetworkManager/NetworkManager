@@ -5741,8 +5741,9 @@ link_set_sriov_params (NMPlatform *platform,
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	nm_auto_close int dirfd = -1;
-	gboolean current_autoprobe;
-	guint total, current_num;
+	int current_autoprobe;
+	guint total;
+	gint64 current_num;
 	char ifname[IFNAMSIZ];
 	char buf[64];
 
@@ -5775,12 +5776,12 @@ link_set_sriov_params (NMPlatform *platform,
 	                                                  NMP_SYSCTL_PATHID_NETDIR (dirfd,
 	                                                                            ifname,
 	                                                                            "device/sriov_numvfs"),
-	                                                  10, 0, G_MAXUINT, 0);
+	                                                  10, 0, G_MAXUINT, -1);
 	current_autoprobe = nm_platform_sysctl_get_int_checked (platform,
 	                                                        NMP_SYSCTL_PATHID_NETDIR (dirfd,
 	                                                                                  ifname,
 	                                                                                  "device/sriov_drivers_autoprobe"),
-	                                                        10, 0, G_MAXUINT, 0);
+	                                                        10, 0, 1, -1);
 	if (   current_num == num_vfs
 	    && (autoprobe == NM_TERNARY_DEFAULT || current_autoprobe == autoprobe))
 		return TRUE;
