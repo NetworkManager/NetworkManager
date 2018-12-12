@@ -2514,6 +2514,8 @@ nm_utils_machine_id_is_fake (void)
 
 /*****************************************************************************/
 
+#define SECRET_KEY_FILE      NMSTATEDIR"/secret_key"
+
 static gboolean
 _secret_key_read (guint8 **out_secret_key,
                   gsize *out_key_len)
@@ -2524,18 +2526,18 @@ _secret_key_read (guint8 **out_secret_key,
 	gs_free_error GError *error = NULL;
 
 	/* Let's try to load a saved secret key first. */
-	if (g_file_get_contents (NMSTATEDIR "/secret_key", (char **) &secret_key, &key_len, &error)) {
+	if (g_file_get_contents (SECRET_KEY_FILE, (char **) &secret_key, &key_len, &error)) {
 		if (key_len >= 16)
 			goto out;
 
 		/* the secret key is borked. Log a warning, but proceed below to generate
 		 * a new one. */
-		nm_log_warn (LOGD_CORE, "secret-key: too short secret key in \"%s\" (generate new key)", NMSTATEDIR "/secret_key");
+		nm_log_warn (LOGD_CORE, "secret-key: too short secret key in \"%s\" (generate new key)", SECRET_KEY_FILE);
 		nm_clear_g_free (&secret_key);
 	} else {
 		if (!nm_utils_error_is_notfound (error)) {
 			nm_log_warn (LOGD_CORE, "secret-key: failure reading secret key in \"%s\": %s (generate new key)",
-			             NMSTATEDIR "/secret_key", error->message);
+			             SECRET_KEY_FILE, error->message);
 		}
 		g_clear_error (&error);
 	}
@@ -2561,9 +2563,9 @@ _secret_key_read (guint8 **out_secret_key,
 		goto out;
 	}
 
-	if (!nm_utils_file_set_contents (NMSTATEDIR "/secret_key", (char *) secret_key, key_len, 0077, &error)) {
+	if (!nm_utils_file_set_contents (SECRET_KEY_FILE, (char *) secret_key, key_len, 0077, &error)) {
 		nm_log_warn (LOGD_CORE, "secret-key: failure to persist secret key in \"%s\" (%s) (use non-persistent key)",
-		             NMSTATEDIR "/secret_key", error->message);
+		             SECRET_KEY_FILE, error->message);
 		success = FALSE;
 		goto out;
 	}
@@ -2625,7 +2627,7 @@ nm_utils_secret_key_get_timestamp (void)
 	if (!nm_utils_secret_key_get (&key, &key_len))
 		return 0;
 
-	if (stat (NMSTATEDIR "/secret_key", &stat_buf) != 0)
+	if (stat (SECRET_KEY_FILE, &stat_buf) != 0)
 		return 0;
 
 	return stat_buf.st_mtim.tv_sec;
