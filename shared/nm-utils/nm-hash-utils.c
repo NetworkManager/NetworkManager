@@ -122,17 +122,17 @@ nm_hash_static (guint static_seed)
 }
 
 void
-nm_hash_init (NMHashState *state, guint static_seed)
+nm_hash_siphash42_init (CSipHash *h, guint static_seed)
 {
 	const guint8 *g;
 	guint seed[HASH_KEY_SIZE_GUINT];
 
-	nm_assert (state);
+	nm_assert (h);
 
 	g = _get_hash_key ();
 	memcpy (seed, g, HASH_KEY_SIZE);
 	seed[0] ^= static_seed;
-	c_siphash_init (&state->_state, (const guint8 *) seed);
+	c_siphash_init (h, (const guint8 *) seed);
 }
 
 guint
