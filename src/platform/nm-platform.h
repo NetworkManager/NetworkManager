@@ -1106,7 +1106,14 @@ const char *nm_platform_error_to_string (NMPlatformError error,
 	((const char *) NULL), -1, (path)
 
 #define NMP_SYSCTL_PATHID_NETDIR_unsafe(dirfd, ifname, path) \
-	nm_sprintf_bufa (NM_STRLEN ("net:/sys/class/net//\0") + NMP_IFNAMSIZ + strlen (path), \
+	nm_sprintf_bufa (  NM_STRLEN ("net:/sys/class/net//\0") \
+	                 + NMP_IFNAMSIZ \
+	                 + ({ \
+	                     const gsize _l = strlen (path); \
+	                     \
+	                     nm_assert (_l < 200); \
+	                     _l; \
+	                    }), \
 	                 "net:/sys/class/net/%s/%s", (ifname), (path)), \
 	(dirfd), (path)
 
