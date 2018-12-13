@@ -323,7 +323,7 @@ complete_connection (NMDevice *device,
 		} else {
 			fallback_prefix = _("CDMA connection");
 			if (!nm_setting_cdma_get_number (s_cdma))
-				g_object_set (G_OBJECT (s_cdma), NM_SETTING_GSM_NUMBER, "#777", NULL);
+				g_object_set (G_OBJECT (s_cdma), NM_SETTING_CDMA_NUMBER, "#777", NULL);
 		}
 	} else {
 		g_set_error_literal (error,
