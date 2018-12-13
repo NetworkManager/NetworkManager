@@ -1143,7 +1143,6 @@ nm_device_sysctl_ip_conf_set (NMDevice *self,
 {
 	NMPlatform *platform = nm_device_get_platform (self);
 	gs_free char *value_to_free = NULL;
-	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 	const char *ifname;
 	int ifindex;
 
@@ -1159,28 +1158,25 @@ nm_device_sysctl_ip_conf_set (NMDevice *self,
 
 	if (!value) {
 		/* Set to a default value when we've got a NULL @value. */
-		value_to_free = nm_platform_sysctl_get (platform,
-		                                        NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (addr_family,
-		                                                                                                  buf,
-		                                                                                                  "default",
-		                                                                                                  property)));
+		value_to_free = nm_platform_sysctl_ip_conf_get (platform,
+		                                                addr_family,
+		                                                "default",
+		                                                property);
 		value = value_to_free;
 		if (!value)
 			return FALSE;
 	}
 
-	return nm_platform_sysctl_set (platform,
-	                               NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (addr_family,
-	                                                                                         buf,
-	                                                                                         ifname,
-	                                                                                         property)),
-	                               value);
+	return nm_platform_sysctl_ip_conf_set (platform,
+	                                       addr_family,
+	                                       ifname,
+	                                       property,
+	                                       value);
 }
 
 static guint32
 nm_device_sysctl_ip_conf_get_effective_uint32 (NMDevice *self, const char *property, guint32 fallback)
 {
-	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 	gint64 v, v_all;
 
 	if (!nm_device_get_ip_ifindex (self))
@@ -1191,25 +1187,23 @@ nm_device_sysctl_ip_conf_get_effective_uint32 (NMDevice *self, const char *prope
 	 *
 	 * Also do that, by reading both sysctls and return the maximum. */
 
-	v = nm_platform_sysctl_get_int_checked (nm_device_get_platform (self),
-	                                        NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET,
-	                                                                                                  buf,
-	                                                                                                  nm_device_get_ip_iface (self),
-	                                                                                                  property)),
-	                                        10,
-	                                        0,
-	                                        G_MAXUINT32,
-	                                        -1);
+	v = nm_platform_sysctl_ip_conf_get_int_checked (nm_device_get_platform (self),
+	                                                AF_INET,
+	                                                nm_device_get_ip_iface (self),
+	                                                property,
+	                                                10,
+	                                                0,
+	                                                G_MAXUINT32,
+	                                                -1);
 
-	v_all = nm_platform_sysctl_get_int_checked (nm_device_get_platform (self),
-	                                            NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET,
-	                                                                                                      buf,
-	                                                                                                      "all",
-	                                                                                                      property)),
-	                                            10,
-	                                            0,
-	                                            G_MAXUINT32,
-	                                            -1);
+	v_all = nm_platform_sysctl_ip_conf_get_int_checked (nm_device_get_platform (self),
+	                                                    AF_INET,
+	                                                    "all",
+	                                                    property,
+	                                                    10,
+	                                                    0,
+	                                                    G_MAXUINT32,
+	                                                    -1);
 
 	v = NM_MAX (v, v_all);
 	return v > -1 ? (guint32) v : fallback;
@@ -1218,17 +1212,17 @@ nm_device_sysctl_ip_conf_get_effective_uint32 (NMDevice *self, const char *prope
 static guint32
 nm_device_sysctl_ip_conf_get_uint32 (NMDevice *self, const char *property, guint32 fallback)
 {
-	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
-
 	if (!nm_device_get_ip_ifindex (self))
 		return fallback;
 
-	return nm_platform_sysctl_get_int_checked (nm_device_get_platform (self),
-	                                           NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET6, buf, nm_device_get_ip_iface (self), property)),
-	                                           10,
-	                                           0,
-	                                           G_MAXUINT32,
-	                                           fallback);
+	return nm_platform_sysctl_ip_conf_get_int_checked (nm_device_get_platform (self),
+	                                                   AF_INET6,
+	                                                   nm_device_get_ip_iface (self),
+	                                                   property,
+	                                                   10,
+	                                                   0,
+	                                                   G_MAXUINT32,
+	                                                   fallback);
 }
 
 /*****************************************************************************/
@@ -9632,9 +9626,10 @@ save_ip6_properties (NMDevice *self)
 		return;
 
 	for (i = 0; i < G_N_ELEMENTS (ip6_properties_to_save); i++) {
-		char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
-
-		value = nm_platform_sysctl_get (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET6, buf, ifname, ip6_properties_to_save[i])));
+		value = nm_platform_sysctl_ip_conf_get (nm_device_get_platform (self),
+		                                        AF_INET6,
+		                                        ifname,
+		                                        ip6_properties_to_save[i]);
 		if (value) {
 			g_hash_table_insert (priv->ip6_saved_properties,
 			                     (char *) ip6_properties_to_save[i],
@@ -9673,7 +9668,6 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex = nm_device_get_ip_ifindex (self);
-	char *value;
 
 	if (!nm_platform_check_kernel_support (nm_device_get_platform (self),
 	                                       NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL))
@@ -9696,14 +9690,15 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 		}
 
 		if (enable) {
-			char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
+			gs_free char *value = NULL;
 
 			/* Bounce IPv6 to ensure the kernel stops IPv6LL address generation */
-			value = nm_platform_sysctl_get (nm_device_get_platform (self),
-			                                NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET6, buf, nm_device_get_ip_iface (self), "disable_ipv6")));
-			if (g_strcmp0 (value, "0") == 0)
+			value = nm_platform_sysctl_ip_conf_get (nm_device_get_platform (self),
+			                                        AF_INET6,
+			                                        nm_device_get_ip_iface (self),
+			                                        "disable_ipv6");
+			if (nm_streq0 (value, "0"))
 				nm_device_sysctl_ip_conf_set (self, AF_INET6, "disable_ipv6", "1");
-			g_free (value);
 
 			/* Ensure IPv6 is enabled */
 			nm_device_sysctl_ip_conf_set (self, AF_INET6, "disable_ipv6", "0");
