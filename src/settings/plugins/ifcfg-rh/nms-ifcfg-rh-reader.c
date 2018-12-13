@@ -2286,7 +2286,7 @@ make_sriov_setting (shvarFile *ifcfg)
 	total_vfs = NM_MAX (total_vfs, 0);
 
 	g_object_set (s_sriov,
-	              NM_SETTING_SRIOV_TOTAL_VFS, total_vfs,
+	              NM_SETTING_SRIOV_TOTAL_VFS, (guint) total_vfs,
 	              NM_SETTING_SRIOV_VFS, vfs,
 	              NM_SETTING_SRIOV_AUTOPROBE_DRIVERS, autoprobe_drivers,
 	              NULL);
