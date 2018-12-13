@@ -14763,7 +14763,7 @@ _set_state_full (NMDevice *self,
 		}
 		break;
 	case NM_DEVICE_STATE_DEACTIVATING:
-		if (   (s_sriov = nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))
+		if (   (s_sriov = (NMSettingSriov *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))
 		    && priv->ifindex > 0) {
 			nm_platform_link_set_sriov_params (nm_device_get_platform (self),
 			                                   priv->ifindex, 0, NM_TERNARY_TRUE);
