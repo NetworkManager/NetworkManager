@@ -11962,7 +11962,7 @@ nm_device_set_ip_config (NMDevice *self,
 			priv->needs_ip6_subnet = FALSE;
 	}
 
-	if (IS_IPv4) {
+	if (IS_IPv4 && FALSE /* rp_filter handling is disabled */) {
 		if (!nm_device_sys_iface_state_is_external_or_assume (self))
 			ip4_rp_filter_update (self);
 	}
@@ -12860,7 +12860,7 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 
 	set_unmanaged_external_down (self, TRUE);
 
-	if (IS_IPv4) {
+	if (IS_IPv4 && FALSE /* rp_filter handling is disabled */) {
 		if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
 			priv->v4_has_shadowed_routes = _v4_has_shadowed_routes_detect (self);;
 			ip4_rp_filter_update (self);
