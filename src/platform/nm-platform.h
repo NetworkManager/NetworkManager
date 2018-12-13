@@ -1154,7 +1154,9 @@ gboolean nm_platform_sysctl_ip_conf_set_int64 (NMPlatform *platform,
                                                const char *property,
                                                gint64 value);
 
-gboolean nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, int value);
+gboolean nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe (NMPlatform *self,
+                                                             const char *iface,
+                                                             int value);
 
 const char *nm_platform_if_indextoname (NMPlatform *self, int ifindex, char *out_ifname/* of size IFNAMSIZ */);
 int nm_platform_if_nametoindex (NMPlatform *self, const char *ifname);

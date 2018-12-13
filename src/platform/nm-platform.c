@@ -476,7 +476,9 @@ nm_platform_sysctl_set (NMPlatform *self, const char *pathid, int dirfd, const c
 }
 
 gboolean
-nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, int value)
+nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe (NMPlatform *self,
+                                                    const char *iface,
+                                                    int value)
 {
 	const char *path;
 	gint64 cur;

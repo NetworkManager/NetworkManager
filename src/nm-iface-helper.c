@@ -223,7 +223,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 	}
 
 	if (changed & NM_NDISC_CONFIG_HOP_LIMIT)
-		nm_platform_sysctl_set_ip6_hop_limit_safe (NM_PLATFORM_GET, global_opt.ifname, rdata->hop_limit);
+		nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe (NM_PLATFORM_GET, global_opt.ifname, rdata->hop_limit);
 
 	if (changed & NM_NDISC_CONFIG_MTU) {
 		nm_platform_sysctl_ip_conf_set_int64 (NM_PLATFORM_GET,

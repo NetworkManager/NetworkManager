@@ -9414,7 +9414,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 	}
 
 	if (changed & NM_NDISC_CONFIG_HOP_LIMIT)
-		nm_platform_sysctl_set_ip6_hop_limit_safe (nm_device_get_platform (self), nm_device_get_ip_iface (self), rdata->hop_limit);
+		nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe (nm_device_get_platform (self), nm_device_get_ip_iface (self), rdata->hop_limit);
 
 	if (changed & NM_NDISC_CONFIG_MTU) {
 		if (priv->ip6_mtu != rdata->mtu) {
