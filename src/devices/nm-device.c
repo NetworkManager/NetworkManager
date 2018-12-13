@@ -1135,6 +1135,49 @@ init_ip_config_dns_priority (NMDevice *self, NMIPConfig *config)
 
 /*****************************************************************************/
 
+static char *
+nm_device_sysctl_ip_conf_get (NMDevice *self,
+                              int addr_family,
+                              const char *property)
+{
+	const char *ifname;
+
+	nm_assert_addr_family (addr_family);
+
+	ifname = nm_device_get_ip_iface_from_platform (self);
+	if (!ifname)
+		return NULL;
+	return nm_platform_sysctl_ip_conf_get (nm_device_get_platform (self), addr_family, ifname, property);
+}
+
+static gint64
+nm_device_sysctl_ip_conf_get_int_checked (NMDevice *self,
+                                          int addr_family,
+                                          const char *property,
+                                          guint base,
+                                          gint64 min,
+                                          gint64 max,
+                                          gint64 fallback)
+{
+	const char *ifname;
+
+	nm_assert_addr_family (addr_family);
+
+	ifname = nm_device_get_ip_iface_from_platform (self);
+	if (!ifname) {
+		errno = EINVAL;
+		return fallback;
+	}
+	return nm_platform_sysctl_ip_conf_get_int_checked (nm_device_get_platform (self),
+	                                                   addr_family,
+	                                                   ifname,
+	                                                   property,
+	                                                   base,
+	                                                   min,
+	                                                   max,
+	                                                   fallback);
+}
+
 gboolean
 nm_device_sysctl_ip_conf_set (NMDevice *self,
                               int addr_family,
@@ -1144,15 +1187,10 @@ nm_device_sysctl_ip_conf_set (NMDevice *self,
 	NMPlatform *platform = nm_device_get_platform (self);
 	gs_free char *value_to_free = NULL;
 	const char *ifname;
-	int ifindex;
 
 	nm_assert_addr_family (addr_family);
 
-	ifindex = nm_device_get_ip_ifindex (self);
-	if (ifindex <= 0)
-		return FALSE;
-
-	ifname = nm_platform_link_get_name (platform, ifindex);
+	ifname = nm_device_get_ip_iface_from_platform (self);
 	if (!ifname)
 		return FALSE;
 
@@ -1177,9 +1215,11 @@ nm_device_sysctl_ip_conf_set (NMDevice *self,
 static guint32
 nm_device_sysctl_ip_conf_get_effective_uint32 (NMDevice *self, const char *property, guint32 fallback)
 {
-	gint64 v, v_all;
+	const char *ifname;
+	gint64 v_cur, v_all;
 
-	if (!nm_device_get_ip_ifindex (self))
+	ifname = nm_device_get_ip_iface_from_platform (self);
+	if (!ifname)
 		return fallback;
 
 	/* for this kind of sysctl (e.g. "rp_filter"), kernel effectively uses the
@@ -1187,14 +1227,14 @@ nm_device_sysctl_ip_conf_get_effective_uint32 (NMDevice *self, const char *prope
 	 *
 	 * Also do that, by reading both sysctls and return the maximum. */
 
-	v = nm_platform_sysctl_ip_conf_get_int_checked (nm_device_get_platform (self),
-	                                                AF_INET,
-	                                                nm_device_get_ip_iface (self),
-	                                                property,
-	                                                10,
-	                                                0,
-	                                                G_MAXUINT32,
-	                                                -1);
+	v_cur = nm_platform_sysctl_ip_conf_get_int_checked (nm_device_get_platform (self),
+	                                                    AF_INET,
+	                                                    ifname,
+	                                                    property,
+	                                                    10,
+	                                                    0,
+	                                                    G_MAXUINT32,
+	                                                    -1);
 
 	v_all = nm_platform_sysctl_ip_conf_get_int_checked (nm_device_get_platform (self),
 	                                                    AF_INET,
@@ -1205,24 +1245,8 @@ nm_device_sysctl_ip_conf_get_effective_uint32 (NMDevice *self, const char *prope
 	                                                    G_MAXUINT32,
 	                                                    -1);
 
-	v = NM_MAX (v, v_all);
-	return v > -1 ? (guint32) v : fallback;
-}
-
-static guint32
-nm_device_sysctl_ip_conf_get_uint32 (NMDevice *self, const char *property, guint32 fallback)
-{
-	if (!nm_device_get_ip_ifindex (self))
-		return fallback;
-
-	return nm_platform_sysctl_ip_conf_get_int_checked (nm_device_get_platform (self),
-	                                                   AF_INET6,
-	                                                   nm_device_get_ip_iface (self),
-	                                                   property,
-	                                                   10,
-	                                                   0,
-	                                                   G_MAXUINT32,
-	                                                   fallback);
+	v_cur = NM_MAX (v_cur, v_all);
+	return v_cur > -1 ? (guint32) v_cur : fallback;
 }
 
 /*****************************************************************************/
@@ -9252,7 +9276,7 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 #define _IP6_MTU_SYS() \
 	({ \
 		if (!ip6_mtu_sysctl.initialized) { \
-			ip6_mtu_sysctl.value = nm_device_sysctl_ip_conf_get_uint32 (self, "mtu", 0); \
+			ip6_mtu_sysctl.value = nm_device_sysctl_ip_conf_get_int_checked (self, AF_INET6, "mtu", 10, 0, G_MAXUINT32, 0); \
 			ip6_mtu_sysctl.initialized = TRUE; \
 		} \
 		ip6_mtu_sysctl.value; \
@@ -9613,32 +9637,33 @@ addrconf6_cleanup (NMDevice *self)
 
 /*****************************************************************************/
 
-static const char *ip6_properties_to_save[] = {
-	"accept_ra",
-	"accept_ra_defrtr",
-	"accept_ra_pinfo",
-	"accept_ra_rtr_pref",
-	"forwarding",
-	"disable_ipv6",
-	"hop_limit",
-	"use_tempaddr",
-};
-
 static void
 save_ip6_properties (NMDevice *self)
 {
+	static const char *const ip6_properties_to_save[] = {
+		"accept_ra",
+		"accept_ra_defrtr",
+		"accept_ra_pinfo",
+		"accept_ra_rtr_pref",
+		"forwarding",
+		"disable_ipv6",
+		"hop_limit",
+		"use_tempaddr",
+	};
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *ifname = nm_device_get_ip_iface (self);
+	NMPlatform *platform = nm_device_get_platform (self);
+	const char *ifname;
 	char *value;
 	int i;
 
 	g_hash_table_remove_all (priv->ip6_saved_properties);
 
-	if (!nm_device_get_ip_ifindex (self))
+	ifname = nm_device_get_ip_iface_from_platform (self);
+	if (!ifname)
 		return;
 
 	for (i = 0; i < G_N_ELEMENTS (ip6_properties_to_save); i++) {
-		value = nm_platform_sysctl_ip_conf_get (nm_device_get_platform (self),
+		value = nm_platform_sysctl_ip_conf_get (platform,
 		                                        AF_INET6,
 		                                        ifname,
 		                                        ip6_properties_to_save[i]);
@@ -9705,10 +9730,9 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 			gs_free char *value = NULL;
 
 			/* Bounce IPv6 to ensure the kernel stops IPv6LL address generation */
-			value = nm_platform_sysctl_ip_conf_get (nm_device_get_platform (self),
-			                                        AF_INET6,
-			                                        nm_device_get_ip_iface (self),
-			                                        "disable_ipv6");
+			value = nm_device_sysctl_ip_conf_get (self,
+			                                      AF_INET6,
+			                                      "disable_ipv6");
 			if (nm_streq0 (value, "0"))
 				nm_device_sysctl_ip_conf_set (self, AF_INET6, "disable_ipv6", "1");
 
@@ -9774,7 +9798,9 @@ _ip6_privacy_get (NMDevice *self)
 	 * Instead of reading static config files in /etc, just read the current sysctl value.
 	 * This works as NM only writes to "/proc/sys/net/ipv6/conf/IFNAME/use_tempaddr", but leaves
 	 * the "default" entry untouched. */
-	ip6_privacy = nm_platform_sysctl_get_int32 (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv6/conf/default/use_tempaddr"), NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+	ip6_privacy = nm_platform_sysctl_get_int32 (nm_device_get_platform (self),
+	                                            NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv6/conf/default/use_tempaddr"),
+	                                            NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 	return _ip6_privacy_clamp (ip6_privacy);
 }
 
