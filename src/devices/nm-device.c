@@ -1480,6 +1480,18 @@ nm_device_get_ip_iface (NMDevice *self)
 	return priv->ip_iface ?: priv->iface;
 }
 
+const char *
+nm_device_get_ip_iface_from_platform (NMDevice *self)
+{
+	int ifindex;
+
+	ifindex = nm_device_get_ip_ifindex (self);
+	if (ifindex <= 0)
+		return NULL;
+
+	return nm_platform_link_get_name (nm_device_get_platform (self), ifindex);
+}
+
 int
 nm_device_get_ip_ifindex (const NMDevice *self)
 {
