@@ -441,7 +441,7 @@ libaudit = get_option('libaudit')
 enable_libaudit = libaudit.contains('yes')
 if enable_libaudit
   libaudit_dep = dependency('audit', required: false)
-  assert(libaudit_dep.found(), 'You must have libaudit installed to build. Use -Dlibaudit=false to disable it')
+  assert(libaudit_dep.found(), 'You must have libaudit installed to build. Use -Dlibaudit=no to disable it')
 endif
 config_default_logging_audit = (libaudit == 'yes').to_string()
 config_h.set_quoted('NM_CONFIG_DEFAULT_LOGGING_AUDIT', config_default_logging_audit)
