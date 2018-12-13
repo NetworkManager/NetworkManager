@@ -457,9 +457,6 @@ typedef struct _NMDevicePrivate {
 		AppliedConfig wwan_ip_config_x[2];
 	};
 
-	bool v4_has_shadowed_routes;
-	const char *ip4_rp_filter;
-
 	/* DHCPv4 tracking */
 	struct {
 		NMDhcpClient *  client;
@@ -1210,43 +1207,6 @@ nm_device_sysctl_ip_conf_set (NMDevice *self,
 	                                       ifname,
 	                                       property,
 	                                       value);
-}
-
-static guint32
-nm_device_sysctl_ip_conf_get_effective_uint32 (NMDevice *self, const char *property, guint32 fallback)
-{
-	const char *ifname;
-	gint64 v_cur, v_all;
-
-	ifname = nm_device_get_ip_iface_from_platform (self);
-	if (!ifname)
-		return fallback;
-
-	/* for this kind of sysctl (e.g. "rp_filter"), kernel effectively uses the
-	 * MAX of the per-device value and the "all" value.
-	 *
-	 * Also do that, by reading both sysctls and return the maximum. */
-
-	v_cur = nm_platform_sysctl_ip_conf_get_int_checked (nm_device_get_platform (self),
-	                                                    AF_INET,
-	                                                    ifname,
-	                                                    property,
-	                                                    10,
-	                                                    0,
-	                                                    G_MAXUINT32,
-	                                                    -1);
-
-	v_all = nm_platform_sysctl_ip_conf_get_int_checked (nm_device_get_platform (self),
-	                                                    AF_INET,
-	                                                    "all",
-	                                                    property,
-	                                                    10,
-	                                                    0,
-	                                                    G_MAXUINT32,
-	                                                    -1);
-
-	v_cur = NM_MAX (v_cur, v_all);
-	return v_cur > -1 ? (guint32) v_cur : fallback;
 }
 
 /*****************************************************************************/
@@ -3945,126 +3905,6 @@ link_changed_cb (NMPlatform *platform,
 }
 
 /*****************************************************************************/
-
-typedef struct {
-	in_addr_t network;
-	guint8 plen;
-} IP4RPFilterData;
-
-static guint
-_v4_has_shadowed_routes_detect_hash (const IP4RPFilterData *d)
-{
-	NMHashState h;
-
-	nm_hash_init (&h, 1105201169u);
-	nm_hash_update_vals (&h,
-	                     d->network,
-	                     d->plen);
-	return nm_hash_complete (&h);
-}
-
-static gboolean
-_v4_has_shadowed_routes_detect_equal (const IP4RPFilterData *d1, const IP4RPFilterData *d2)
-{
-	return d1->network == d2->network && d1->plen == d2->plen;
-}
-
-static gboolean
-_v4_has_shadowed_routes_detect (NMDevice *self)
-{
-	NMPlatform *platform;
-	int ifindex;
-	NMPLookup lookup;
-	const NMDedupMultiHeadEntry *head_entry;
-	NMDedupMultiIter iter;
-	const NMPObject *o;
-	guint data_len;
-	gs_unref_hashtable GHashTable *data_hash = NULL;
-	gs_free IP4RPFilterData *data_arr = NULL;
-
-	ifindex = nm_device_get_ip_ifindex (self);
-	if (ifindex <= 0)
-		return FALSE;
-
-	platform = nm_device_get_platform (self);
-
-	head_entry = nm_platform_lookup (platform,
-	                                 nmp_lookup_init_object (&lookup,
-	                                                         NMP_OBJECT_TYPE_IP4_ROUTE,
-	                                                         ifindex));
-	if (!head_entry)
-		return FALSE;
-
-	/* first, create a lookup index @data_hash for all network/plen pairs. */
-	data_len = 0;
-	data_arr = g_new (IP4RPFilterData, head_entry->len);
-	data_hash = g_hash_table_new ((GHashFunc) _v4_has_shadowed_routes_detect_hash,
-	                              (GEqualFunc) _v4_has_shadowed_routes_detect_equal);
-
-	nmp_cache_iter_for_each (&iter, head_entry, &o) {
-		const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (o);
-		IP4RPFilterData *d;
-
-		nm_assert (r->ifindex == ifindex);
-
-		if (   NM_PLATFORM_IP_ROUTE_IS_DEFAULT (r)
-		    || r->table_coerced)
-			continue;
-
-		d = &data_arr[data_len++];
-		d->network = nm_utils_ip4_address_clear_host_address (r->network, r->plen);
-		d->plen = r->plen;
-		g_hash_table_add (data_hash, d);
-	}
-
-	/* then, search if there is any route on another interface with the same
-	 * network/plen destination. If yes, we consider this a multihoming
-	 * setup. */
-	head_entry = nm_platform_lookup (platform,
-	                                 nmp_lookup_init_obj_type (&lookup,
-	                                                           NMP_OBJECT_TYPE_IP4_ROUTE));
-	nmp_cache_iter_for_each (&iter, head_entry, &o) {
-		const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (o);
-		IP4RPFilterData d;
-
-		if (   r->ifindex == ifindex
-		    || NM_PLATFORM_IP_ROUTE_IS_DEFAULT (r)
-		    || r->table_coerced)
-			continue;
-
-		d.network = nm_utils_ip4_address_clear_host_address (r->network, r->plen);
-		d.plen = r->plen;
-		if (g_hash_table_contains (data_hash, &d))
-			return TRUE;
-	}
-
-	return FALSE;
-}
-
-static void
-ip4_rp_filter_update (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *ip4_rp_filter;
-
-	if (   priv->v4_has_shadowed_routes
-	    || nm_device_get_best_default_route (self, AF_INET)) {
-		if (nm_device_sysctl_ip_conf_get_effective_uint32 (self, "rp_filter", 0) != 1) {
-			/* Don't touch the rp_filter if it's not strict. */
-			return;
-		}
-		/* Loose rp_filter */
-		ip4_rp_filter = "2";
-	} else {
-		/* Default rp_filter */
-		ip4_rp_filter = NULL;
-	}
-
-	if (ip4_rp_filter != priv->ip4_rp_filter) {
-		nm_device_sysctl_ip_conf_set (self, AF_INET, "rp_filter", ip4_rp_filter);
-		priv->ip4_rp_filter = ip4_rp_filter;
-	}
-}
 
 static void
 link_changed (NMDevice *self, const NMPlatformLink *pllink)
@@ -12254,11 +12094,6 @@ nm_device_set_ip_config (NMDevice *self,
 			priv->needs_ip6_subnet = FALSE;
 	}
 
-	if (IS_IPv4 && FALSE /* rp_filter handling is disabled */) {
-		if (!nm_device_sys_iface_state_is_external_or_assume (self))
-			ip4_rp_filter_update (self);
-	}
-
 	if (has_changes) {
 
 		if (IS_IPv4)
@@ -13152,13 +12987,6 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 	}
 
 	set_unmanaged_external_down (self, TRUE);
-
-	if (IS_IPv4 && FALSE /* rp_filter handling is disabled */) {
-		if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
-			priv->v4_has_shadowed_routes = _v4_has_shadowed_routes_detect (self);;
-			ip4_rp_filter_update (self);
-		}
-	}
 
 	return G_SOURCE_REMOVE;
 }
