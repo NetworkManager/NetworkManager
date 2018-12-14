@@ -133,7 +133,7 @@ static const ReqOption dhcp4_requests[] = {
 };
 
 static const ReqOption dhcp6_requests[] = {
-	{ SD_DHCP6_OPTION_CLIENTID,                      REQPREFIX "dhcp6_client_id",     TRUE },
+	{ SD_DHCP6_OPTION_CLIENTID,                      REQPREFIX "dhcp6_client_id",     FALSE },
 
 	/* Don't request server ID by default; some servers don't reply to
 	 * Information Requests that request the Server ID.

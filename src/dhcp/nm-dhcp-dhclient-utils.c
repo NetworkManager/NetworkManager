@@ -427,6 +427,8 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		add_hostname6 (new_contents, hostname);
 		add_request (reqs, "dhcp6.name-servers");
 		add_request (reqs, "dhcp6.domain-search");
+
+		/* FIXME: internal client does not support requesting client-id option. Does this even work? */
 		add_request (reqs, "dhcp6.client-id");
 	}
 
