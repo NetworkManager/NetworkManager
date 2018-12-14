@@ -559,19 +559,6 @@ dhcp_event_cb (sd_dhcp_client *client, int event, gpointer user_data)
 	}
 }
 
-static guint16
-get_arp_type (gsize hwaddr_len)
-{
-	switch (hwaddr_len) {
-	case ETH_ALEN:
-		return ARPHRD_ETHER;
-	case INFINIBAND_ALEN:
-		return ARPHRD_INFINIBAND;
-	default:
-		return ARPHRD_NONE;
-	}
-}
-
 static gboolean
 ip4_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
@@ -585,7 +572,7 @@ ip4_start (NMDhcpClient *client,
 	GBytes *hwaddr;
 	const uint8_t *hwaddr_arr;
 	gsize hwaddr_len;
-	guint16 arptype;
+	int arp_type;
 	GBytes *client_id;
 	gs_unref_bytes GBytes *client_id_new = NULL;
 	const uint8_t *client_id_arr;
@@ -614,14 +601,14 @@ ip4_start (NMDhcpClient *client,
 	hwaddr = nm_dhcp_client_get_hw_addr (client);
 	if (   !hwaddr
 	    || !(hwaddr_arr = g_bytes_get_data (hwaddr, &hwaddr_len))
-	    || (arptype = get_arp_type (hwaddr_len)) == ARPHRD_NONE) {
+	    || (arp_type = nm_utils_detect_arp_type_from_addrlen (hwaddr_len)) < 0) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "invalid MAC address");
 		return FALSE;
 	}
 	r = sd_dhcp_client_set_mac (sd_client,
 	                            hwaddr_arr,
 	                            hwaddr_len,
-	                            arptype);
+	                            (guint16) arp_type);
 	if (r < 0) {
 		nm_utils_error_set_errno (error, r, "failed to set MAC address: %s");
 		return FALSE;
@@ -900,7 +887,7 @@ ip6_start (NMDhcpClient *client,
 	GBytes *duid;
 	const uint8_t *hwaddr_arr;
 	gsize hwaddr_len;
-	guint16 arptype;
+	int arp_type;
 
 	g_return_val_if_fail (!priv->client4, FALSE);
 	g_return_val_if_fail (!priv->client6, FALSE);
@@ -946,14 +933,14 @@ ip6_start (NMDhcpClient *client,
 	hwaddr = nm_dhcp_client_get_hw_addr (client);
 	if (   !hwaddr
 	    || !(hwaddr_arr = g_bytes_get_data (hwaddr, &hwaddr_len))
-	    || (arptype = get_arp_type (hwaddr_len)) == ARPHRD_NONE) {
+	    || (arp_type = nm_utils_detect_arp_type_from_addrlen (hwaddr_len)) < 0) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "invalid MAC address");
 		return FALSE;
 	}
 	r = sd_dhcp6_client_set_mac (sd_client,
 	                             hwaddr_arr,
 	                             hwaddr_len,
-	                             arptype);
+	                             (guint16) arp_type);
 	if (r < 0) {
 		nm_utils_error_set_errno (error, r, "failed to set MAC address: %s");
 		return FALSE;
