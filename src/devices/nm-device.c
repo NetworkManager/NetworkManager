@@ -7572,16 +7572,35 @@ get_dhcp_timeout (NMDevice *self, int addr_family)
 	return timeout ?: NM_DHCP_TIMEOUT_DEFAULT;
 }
 
+static void
+_ASSERT_arp_type (guint16 arp_type,
+                  const guint8 *hwaddr,
+                  gsize hwaddr_len)
+{
+	/* we actually only support ethernet and infiniband below. Assert that
+	 * the arp-type and the address length correspond. */
+	nm_assert (NM_IN_SET (arp_type, ARPHRD_ETHER, ARPHRD_INFINIBAND));
+	nm_assert (arp_type <= 255);
+	nm_assert (hwaddr_len > 0);
+	nm_assert (arp_type != ARPHRD_ETHER      || hwaddr_len == ETH_ALEN);
+	nm_assert (arp_type != ARPHRD_INFINIBAND || hwaddr_len == INFINIBAND_ALEN);
+	nm_assert (hwaddr);
+}
+
 static GBytes *
-dhcp4_get_client_id_mac (const guint8 *hwaddr /* ETH_ALEN bytes */)
+dhcp4_get_client_id_mac (guint16 arp_type,
+                         const guint8 *hwaddr,
+                         gsize hwaddr_len)
 {
 	guint8 *client_id_buf;
-	guint8 hwaddr_type = ARPHRD_ETHER;
+	const guint8 hwaddr_type = arp_type;
 
-	client_id_buf = g_malloc (ETH_ALEN + 1);
+	_ASSERT_arp_type (arp_type, hwaddr, hwaddr_len);
+
+	client_id_buf = g_malloc (hwaddr_len + 1);
 	client_id_buf[0] = hwaddr_type;
-	memcpy (&client_id_buf[1], hwaddr, ETH_ALEN);
-	return g_bytes_new_take (client_id_buf, ETH_ALEN + 1);
+	memcpy (&client_id_buf[1], hwaddr, hwaddr_len);
+	return g_bytes_new_take (client_id_buf, hwaddr_len + 1);
 }
 
 static GBytes *
@@ -7596,6 +7615,7 @@ dhcp4_get_client_id (NMDevice *self,
 	const char *fail_reason;
 	guint8 hwaddr_bin_buf[NM_UTILS_HWADDR_LEN_MAX];
 	const guint8 *hwaddr_bin;
+	int arp_type;
 	gsize hwaddr_len;
 	GBytes *result;
 	gs_free char *logstr1 = NULL;
@@ -7621,17 +7641,18 @@ dhcp4_get_client_id (NMDevice *self,
 
 	if (nm_streq (client_id, "mac")) {
 		if (!hwaddr) {
-			fail_reason = "failed to get current MAC address";
+			fail_reason = "missing link-layer address";
 			goto out_fail;
 		}
 
 		hwaddr_bin = g_bytes_get_data (hwaddr, &hwaddr_len);
-		if (hwaddr_len != ETH_ALEN) {
-			fail_reason = "MAC address is not ethernet";
+		arp_type = nm_utils_detect_arp_type_from_addrlen (hwaddr_len);
+		if (arp_type < 0) {
+			fail_reason = "unsupported link-layer address";
 			goto out_fail;
 		}
 
-		result = dhcp4_get_client_id_mac (hwaddr_bin);
+		result = dhcp4_get_client_id_mac ((guint16) arp_type, hwaddr_bin, hwaddr_len);
 		goto out_good;
 	}
 
@@ -7640,20 +7661,20 @@ dhcp4_get_client_id (NMDevice *self,
 
 		hwaddr_str = nm_device_get_permanent_hw_address (self);
 		if (!hwaddr_str) {
-			fail_reason = "failed to get permanent MAC address";
+			fail_reason = "missing permanent link-layer address";
 			goto out_fail;
 		}
 
 		if (!_nm_utils_hwaddr_aton (hwaddr_str, hwaddr_bin_buf, sizeof (hwaddr_bin_buf), &hwaddr_len))
 			g_return_val_if_reached (NULL);
 
-		if (hwaddr_len != ETH_ALEN) {
-			/* unsupported type. */
-			fail_reason = "MAC address is not ethernet";
+		arp_type = nm_utils_detect_arp_type_from_addrlen (hwaddr_len);
+		if (arp_type < 0) {
+			fail_reason = "unsupported permanent link-layer address";
 			goto out_fail;
 		}
 
-		result = dhcp4_get_client_id_mac (hwaddr_bin_buf);
+		result = dhcp4_get_client_id_mac ((guint16) arp_type, hwaddr_bin_buf, hwaddr_len);
 		goto out_good;
 	}
 
@@ -8308,38 +8329,46 @@ dhcp6_prefix_delegated (NMDhcpClient *client,
 #define EPOCH_DATETIME_200001010000  946684800
 
 static GBytes *
-generate_duid_llt (const guint8 *hwaddr /* ETH_ALEN bytes */,
+generate_duid_llt (guint16 arp_type,
+                   const guint8 *hwaddr,
+                   gsize hwaddr_len,
                    gint64 time)
 {
 	guint8 *arr;
 	const guint16 duid_type = htons (1);
-	const guint16 hw_type = htons (ARPHRD_ETHER);
+	const guint16 hw_type = htons (arp_type);
 	const guint32 duid_time = htonl (NM_MAX (0, time - EPOCH_DATETIME_200001010000));
 
-	arr = g_new (guint8, 2 + 2 + 4 + ETH_ALEN);
+	_ASSERT_arp_type (arp_type, hwaddr, hwaddr_len);
+
+	arr = g_new (guint8, 2 + 2 + 4 + hwaddr_len);
 
 	memcpy (&arr[0], &duid_type, 2);
 	memcpy (&arr[2], &hw_type, 2);
 	memcpy (&arr[4], &duid_time, 4);
-	memcpy (&arr[8], hwaddr, ETH_ALEN);
+	memcpy (&arr[8], hwaddr, hwaddr_len);
 
-	return g_bytes_new_take (arr, 2 + 2 + 4 + ETH_ALEN);
+	return g_bytes_new_take (arr, 2 + 2 + 4 + hwaddr_len);
 }
 
 static GBytes *
-generate_duid_ll (const guint8 *hwaddr /* ETH_ALEN bytes */)
+generate_duid_ll (guint16 arp_type,
+                  const guint8 *hwaddr,
+                  gsize hwaddr_len)
 {
 	guint8 *arr;
 	const guint16 duid_type = htons (3);
-	const guint16 hw_type = htons (ARPHRD_ETHER);
+	const guint16 hw_type = htons (arp_type);
 
-	arr = g_new (guint8, 2 + 2 + ETH_ALEN);
+	_ASSERT_arp_type (arp_type, hwaddr, hwaddr_len);
+
+	arr = g_new (guint8, 2 + 2 + hwaddr_len);
 
 	memcpy (&arr[0], &duid_type, 2);
 	memcpy (&arr[2], &hw_type, 2);
-	memcpy (&arr[4], hwaddr, ETH_ALEN);
+	memcpy (&arr[4], hwaddr, hwaddr_len);
 
-	return g_bytes_new_take (arr, 2 + 2 + ETH_ALEN);
+	return g_bytes_new_take (arr, 2 + 2 + hwaddr_len);
 }
 
 static GBytes *
@@ -8409,6 +8438,9 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 	GBytes *duid_out;
 	gboolean duid_enforce = TRUE;
 	gs_free char *logstr1 = NULL;
+	const guint8 *hwaddr_bin;
+	gsize hwaddr_len;
+	int arp_type;
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	duid = nm_setting_ip6_config_get_dhcp_duid (NM_SETTING_IP6_CONFIG (s_ip6));
@@ -8441,15 +8473,18 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 			duid_error = "missing link-layer address";
 			goto out_fail;
 		}
-		if (g_bytes_get_size (hwaddr) != ETH_ALEN) {
+
+		hwaddr_bin = g_bytes_get_data (hwaddr, &hwaddr_len);
+		arp_type = nm_utils_detect_arp_type_from_addrlen (hwaddr_len);
+		if (arp_type < 0) {
 			duid_error = "unsupported link-layer address";
 			goto out_fail;
 		}
 
-		if (nm_streq (duid, "ll")) {
-			duid_out = generate_duid_ll (g_bytes_get_data (hwaddr, NULL));
-		} else {
-			duid_out = generate_duid_llt (g_bytes_get_data (hwaddr, NULL),
+		if (nm_streq (duid, "ll"))
+			duid_out = generate_duid_ll (arp_type, hwaddr_bin, hwaddr_len);
+		else {
+			duid_out = generate_duid_llt (arp_type, hwaddr_bin, hwaddr_len,
 			                              nm_utils_host_id_get_timestamp_ns () / NM_UTILS_NS_PER_SECOND);
 		}
 
@@ -8465,19 +8500,54 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 		gsize host_id_len;
 		union {
 			guint8 sha256[NM_UTILS_CHECKSUM_LENGTH_SHA256];
-			guint8 hwaddr[ETH_ALEN];
+			guint8 hwaddr_eth[ETH_ALEN];
+			guint8 hwaddr_infiniband[INFINIBAND_ALEN];
 			NMUuid uuid;
 			struct _nm_packed {
 				guint8 hwaddr[ETH_ALEN];
 				guint32 timestamp;
-			} llt;
+			} llt_eth;
+			struct _nm_packed {
+				guint8 hwaddr[INFINIBAND_ALEN];
+				guint32 timestamp;
+			} llt_infiniband;
 		} digest;
+		guint32 additional_salt = 0;
 
 		stable_id = _get_stable_id (self, connection, &stable_type);
 		if (!stable_id)
 			g_return_val_if_reached (NULL);
 
-		salted_header = htonl (670531087 + stable_type);
+		if (NM_IN_STRSET (duid, "stable-ll", "stable-llt")) {
+			/* for stable LL/LLT DUIDs, we still need a hardware address to detect
+			 * the arp-type. We might be able to detect it based on other means (NMDevice type),
+			 * but instead just require the hardware address to be present. */
+			if (!hwaddr) {
+				duid_error = "missing link-layer address";
+				goto out_fail;
+			}
+			if ((arp_type = nm_utils_detect_arp_type_from_addrlen (g_bytes_get_size (hwaddr))) < 0) {
+				duid_error = "unsupported link-layer address";
+				goto out_fail;
+			}
+
+			if (arp_type == ARPHRD_INFINIBAND)
+				additional_salt = 1112091919u;
+			else
+				nm_assert (arp_type == ARPHRD_ETHER);
+		} else
+			arp_type = -1;
+
+		salted_header = 670531087u + ((guint32) stable_type);
+
+		if (additional_salt != 0) {
+			/* preferably, we salt the checksum differently depending on the @duid type. We
+			 * forgot to do that initially, so only do it for implementations that got recently
+			 * added (like LL/LLT with ARPHRD_INFINIBAND above). */
+			salted_header = salted_header ^ additional_salt;
+		}
+
+		salted_header = htonl (salted_header);
 
 		nm_utils_host_id_get (&host_id, &host_id_len);
 
@@ -8490,9 +8560,19 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 		G_STATIC_ASSERT_EXPR (sizeof (digest) == sizeof (digest.sha256));
 
 		if (nm_streq (duid, "stable-ll")) {
-			duid_out = generate_duid_ll (digest.hwaddr);
+			switch (arp_type) {
+			case ARPHRD_ETHER:
+				duid_out = generate_duid_ll (arp_type, digest.hwaddr_eth, sizeof (digest.hwaddr_eth));
+				break;
+			case ARPHRD_INFINIBAND:
+				duid_out = generate_duid_ll (arp_type, digest.hwaddr_infiniband, sizeof (digest.hwaddr_infiniband));
+				break;
+			default:
+				g_return_val_if_reached (NULL);
+			}
 		} else if (nm_streq (duid, "stable-llt")) {
 			gint64 time;
+			guint32 timestamp;
 
 #define EPOCH_DATETIME_THREE_YEARS  (356 * 24 * 3600 * 3)
 
@@ -8505,9 +8585,21 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 			/* don't use too old timestamps. They cannot be expressed in DUID-LLT and
 			 * would all be truncated to zero. */
 			time = NM_MAX (time, EPOCH_DATETIME_200001010000 + EPOCH_DATETIME_THREE_YEARS);
-			time -= unaligned_read_be32 (&digest.llt.timestamp) % EPOCH_DATETIME_THREE_YEARS;
 
-			duid_out = generate_duid_llt (digest.llt.hwaddr, time);
+			switch (arp_type) {
+			case ARPHRD_ETHER:
+				timestamp = unaligned_read_be32 (&digest.llt_eth.timestamp);
+				time -= timestamp % EPOCH_DATETIME_THREE_YEARS;
+				duid_out = generate_duid_llt (arp_type, digest.llt_eth.hwaddr, sizeof (digest.llt_eth.hwaddr), time);
+				break;
+			case ARPHRD_INFINIBAND:
+				timestamp = unaligned_read_be32 (&digest.llt_infiniband.timestamp);
+				time -= timestamp % EPOCH_DATETIME_THREE_YEARS;
+				duid_out = generate_duid_llt (arp_type, digest.llt_infiniband.hwaddr, sizeof (digest.llt_infiniband.hwaddr), time);
+				break;
+			default:
+				g_return_val_if_reached (NULL);
+			}
 		} else {
 			nm_assert (nm_streq (duid, "stable-uuid"));
 			duid_out = generate_duid_uuid (&digest.uuid);
