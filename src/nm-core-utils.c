@@ -36,6 +36,7 @@
 #include <sys/stat.h>
 #include <linux/if.h>
 #include <linux/if_infiniband.h>
+#include <net/if_arp.h>
 #include <net/ethernet.h>
 
 #include "nm-utils/nm-random-utils.h"
@@ -3040,6 +3041,33 @@ nm_utils_boot_id_bin (void)
 }
 
 /*****************************************************************************/
+
+/**
+ * nm_utils_detect_arp_type_from_addrlen:
+ * @hwaddr_len: the length of the hardware address in bytes.
+ *
+ * Detects the arp-type based on the length of the MAC address.
+ * On success, this returns a (positive) value in uint16_t range,
+ * like ARPHRD_ETHER or ARPHRD_INFINIBAND.
+ *
+ * On failure, returns a negative error code.
+ *
+ * Returns: the arp-type or negative value on error. */
+int
+nm_utils_detect_arp_type_from_addrlen (gsize hwaddr_len)
+{
+	switch (hwaddr_len) {
+	case ETH_ALEN:
+		return ARPHRD_ETHER;
+	case INFINIBAND_ALEN:
+		return ARPHRD_INFINIBAND;
+	default:
+		/* Note: if you ever support anything but ethernet and infiniband,
+		 * make sure to look at all callers. They assert that it's one of
+		 * these two. */
+		return -EINVAL;
+	}
+}
 
 /* Returns the "u" (universal/local) bit value for a Modified EUI-64 */
 static gboolean
