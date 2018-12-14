@@ -267,7 +267,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	gint64 ts_time = time (NULL);
 	struct in_addr a_address;
 	struct in_addr a_netmask;
-	struct in_addr a_router;
+	const struct in_addr *a_router;
 	guint32 a_plen;
 	guint32 a_lifetime;
 
@@ -482,8 +482,10 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	}
 
 	/* FIXME: internal client only supports returning the first router. */
-	if (sd_dhcp_lease_get_router (lease, &a_router) >= 0) {
-		nm_utils_inet4_ntop (a_router.s_addr, addr_str);
+	num = sd_dhcp_lease_get_router (lease, &a_router);
+	if (   num > 0
+	    && a_router[0].s_addr) {
+		nm_utils_inet4_ntop (a_router[0].s_addr, addr_str);
 		LOG_LEASE (LOGD_DHCP4, "gateway %s", addr_str);
 		add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROUTER, addr_str);
 
@@ -497,7 +499,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 			nm_ip4_config_add_route (ip4_config,
 			                         &((const NMPlatformIP4Route) {
 			                             .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
-			                             .gateway       = a_router.s_addr,
+			                             .gateway       = a_router[0].s_addr,
 			                             .table_coerced = nm_platform_route_table_coerce (route_table),
 			                             .metric        = route_metric,
 			                         }),
