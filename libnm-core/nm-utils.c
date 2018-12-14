@@ -1389,30 +1389,13 @@ nm_utils_ip4_routes_from_variant (GVariant *value)
 guint32
 nm_utils_ip4_netmask_to_prefix (guint32 netmask)
 {
-	guint32 prefix;
-	guint8 v;
-	const guint8 *p = (guint8 *) &netmask;
+	G_STATIC_ASSERT_EXPR (__SIZEOF_INT__   == 4);
+	G_STATIC_ASSERT_EXPR (sizeof (int)     == 4);
+	G_STATIC_ASSERT_EXPR (sizeof (netmask) == 4);
 
-	if (p[3]) {
-		prefix = 24;
-		v = p[3];
-	} else if (p[2]) {
-		prefix = 16;
-		v = p[2];
-	} else if (p[1]) {
-		prefix = 8;
-		v = p[1];
-	} else {
-		prefix = 0;
-		v = p[0];
-	}
-
-	while (v) {
-		prefix++;
-		v <<= 1;
-	}
-
-	return prefix;
+	return  (  (netmask != 0)
+	         ? (32 - __builtin_ctz (ntohl (netmask)))
+	         : 0);
 }
 
 /**

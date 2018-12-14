@@ -3468,6 +3468,41 @@ test_connection_changed_cb (NMConnection *connection, gboolean *data)
 	*data = TRUE;
 }
 
+static guint32
+_netmask_to_prefix (guint32 netmask)
+{
+	guint32 prefix;
+	guint8 v;
+	const guint8 *p = (guint8 *) &netmask;
+
+	if (p[3]) {
+		prefix = 24;
+		v = p[3];
+	} else if (p[2]) {
+		prefix = 16;
+		v = p[2];
+	} else if (p[1]) {
+		prefix = 8;
+		v = p[1];
+	} else {
+		prefix = 0;
+		v = p[0];
+	}
+
+	while (v) {
+		prefix++;
+		v <<= 1;
+	}
+
+	g_assert_cmpint (prefix, <=, 32);
+
+	/* we re-implemented the netmask-to-prefix code differently. Check
+	 * that they agree. */
+	g_assert_cmpint (prefix, ==, nm_utils_ip4_netmask_to_prefix (netmask));
+
+	return prefix;
+}
+
 static void
 test_ip4_prefix_to_netmask (void)
 {
@@ -3475,7 +3510,7 @@ test_ip4_prefix_to_netmask (void)
 
 	for (i = 0; i<=32; i++) {
 		guint32 netmask = _nm_utils_ip4_prefix_to_netmask (i);
-		int plen = nm_utils_ip4_netmask_to_prefix (netmask);
+		int plen = _netmask_to_prefix (netmask);
 
 		g_assert_cmpint (i, ==, plen);
 		{
@@ -3505,7 +3540,7 @@ test_ip4_netmask_to_prefix (void)
 		guint32 netmask = _nm_utils_ip4_prefix_to_netmask (i);
 		guint32 netmask_lowest_bit = netmask & ~_nm_utils_ip4_prefix_to_netmask (i-1);
 
-		g_assert_cmpint (i, ==, nm_utils_ip4_netmask_to_prefix (netmask));
+		g_assert_cmpint (i, ==, _netmask_to_prefix (netmask));
 
 		for (j = 0; j < 2*i; j++) {
 			guint32 r = g_rand_int (rand);
@@ -3519,7 +3554,7 @@ test_ip4_netmask_to_prefix (void)
 
 			/* create an invalid netmask with holes and check that the function
 			 * returns the longest prefix. */
-			prefix_holey = nm_utils_ip4_netmask_to_prefix (netmask_holey);
+			prefix_holey = _netmask_to_prefix (netmask_holey);
 
 			g_assert_cmpint (i, ==, prefix_holey);
 		}
