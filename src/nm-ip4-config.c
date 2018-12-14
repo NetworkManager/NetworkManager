@@ -2113,7 +2113,7 @@ nm_ip4_config_add_address (NMIP4Config *self, const NMPlatformIP4Address *new)
 {
 	g_return_if_fail (self);
 	g_return_if_fail (new);
-	g_return_if_fail (new->plen > 0 && new->plen <= 32);
+	g_return_if_fail (new->plen <= 32);
 	g_return_if_fail (NM_IP4_CONFIG_GET_PRIVATE (self)->ifindex > 0);
 
 	_add_address (self, NULL, new);

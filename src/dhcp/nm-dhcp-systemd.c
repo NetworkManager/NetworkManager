@@ -310,7 +310,6 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	                SD_DHCP_OPTION_IP_ADDRESS_LEASE_TIME,
 	                (guint64) (ts_time + a_lifetime));
 
-	// TODO: ensure a_plen of zero is handled correctly.
 	nm_ip4_config_add_address (ip4_config,
 	                           &((const NMPlatformIP4Address) {
 	                               .address      = a_address.s_addr,

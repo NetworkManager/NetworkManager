@@ -485,6 +485,8 @@ nm_ip6_config_add_dependent_routes (NMIP6Config *self,
 
 		if (NM_FLAGS_HAS (my_addr->n_ifa_flags, IFA_F_NOPREFIXROUTE))
 			continue;
+		if (my_addr->plen == 0)
+			continue;
 
 		has_peer = !IN6_IS_ADDR_UNSPECIFIED (&my_addr->peer_address);
 
@@ -1593,7 +1595,7 @@ nm_ip6_config_add_address (NMIP6Config *self, const NMPlatformIP6Address *new)
 {
 	g_return_if_fail (self);
 	g_return_if_fail (new);
-	g_return_if_fail (new->plen > 0 && new->plen <= 128);
+	g_return_if_fail (new->plen <= 128);
 	g_return_if_fail (NM_IP6_CONFIG_GET_PRIVATE (self)->ifindex > 0);
 
 	_add_address (self, NULL, new);
