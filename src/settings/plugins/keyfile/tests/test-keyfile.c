@@ -1177,7 +1177,6 @@ test_write_bt_dun_connection (void)
 	              NM_SETTING_GSM_APN, "internet2.voicestream.com",
 	              NM_SETTING_GSM_USERNAME, "george.clinton",
 	              NM_SETTING_GSM_PASSWORD, "parliament",
-	              NM_SETTING_GSM_NUMBER,  "*99#",
 	              NULL);
 
 	write_test_connection_and_reread (connection, TRUE);
@@ -1259,7 +1258,6 @@ test_write_gsm_connection (void)
 	              NM_SETTING_GSM_APN, "internet2.voicestream.com",
 	              NM_SETTING_GSM_USERNAME, "george.clinton.again",
 	              NM_SETTING_GSM_PASSWORD, "parliament2",
-	              NM_SETTING_GSM_NUMBER,  "*99#",
 	              NM_SETTING_GSM_PIN, "123456",
 	              NM_SETTING_GSM_NETWORK_ID, "254098",
 	              NM_SETTING_GSM_HOME_ONLY, TRUE,
@@ -2333,7 +2331,6 @@ test_write_flags_property (void)
 	s_gsm = nm_setting_gsm_new ();
 	nm_connection_add_setting (connection, s_gsm);
 	g_object_set (s_gsm,
-	              NM_SETTING_GSM_NUMBER, "#99*",
 	              NM_SETTING_GSM_APN, "myapn",
 	              NM_SETTING_GSM_USERNAME, "adfasdfasdf",
 	              NM_SETTING_GSM_PASSWORD_FLAGS, NM_SETTING_SECRET_FLAG_NOT_SAVED | NM_SETTING_SECRET_FLAG_NOT_REQUIRED,
@@ -2700,4 +2697,3 @@ int main (int argc, char **argv)
 
 	return g_test_run ();
 }
-

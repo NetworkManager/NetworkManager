@@ -320,8 +320,6 @@ complete_connection (NMDevice *device,
 
 		if (s_gsm) {
 			fallback_prefix = _("GSM connection");
-			if (!nm_setting_gsm_get_number (s_gsm))
-				g_object_set (G_OBJECT (s_gsm), NM_SETTING_GSM_NUMBER, "*99#", NULL);
 		} else {
 			fallback_prefix = _("CDMA connection");
 			if (!nm_setting_cdma_get_number (s_cdma))

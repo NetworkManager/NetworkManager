@@ -150,12 +150,12 @@ id
 path
 uuid
 <<<
-size: 3989
+size: 3987
 location: clients/tests/test-client.py:898:test_003()/12
 cmd: $NMCLI con s con-gsm1
 lang: C
 returncode: 0
-stdout: 3855 bytes
+stdout: 3853 bytes
 >>>
 connection.id:                          con-gsm1
 connection.uuid:                        UUID-con-gsm1-REPLACED-REPLACED-REPL
@@ -225,7 +225,7 @@ serial.bits:                            8
 serial.parity:                          even
 serial.stopbits:                        1
 serial.send-delay:                      100
-gsm.number:                             *99#
+gsm.number:                             --
 gsm.username:                           --
 gsm.password:                           <hidden>
 gsm.password-flags:                     0 (none)
@@ -244,12 +244,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4018
+size: 4016
 location: clients/tests/test-client.py:898:test_003()/13
 cmd: $NMCLI con s con-gsm1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3874 bytes
+stdout: 3872 bytes
 >>>
 connection.id:                          con-gsm1
 connection.uuid:                        UUID-con-gsm1-REPLACED-REPLACED-REPL
@@ -319,7 +319,7 @@ serial.bits:                            8
 serial.parity:                          even
 serial.stopbits:                        1
 serial.send-delay:                      100
-gsm.number:                             *99#
+gsm.number:                             --
 gsm.username:                           --
 gsm.password:                           <hidden>
 gsm.password-flags:                     0 (brak)
