@@ -14498,6 +14498,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 
 	/* slave: mark no longer enslaved */
 	if (   priv->master
+	    && priv->ifindex > 0
 	    && nm_platform_link_get_master (nm_device_get_platform (self), priv->ifindex) <= 0)
 		nm_device_master_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 
