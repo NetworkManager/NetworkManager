@@ -100,6 +100,8 @@ nm_setting_gsm_new (void)
  * @setting: the #NMSettingGsm
  *
  * Returns: the #NMSettingGsm:number property of the setting
+ *
+ * Deprecated: 1.16:  user-provided values for this setting are no longer used.
  **/
 const char *
 nm_setting_gsm_get_number (NMSettingGsm *setting)
@@ -621,10 +623,10 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	/**
 	 * NMSettingGsm:number:
 	 *
-	 * Number to dial when establishing a PPP data session with the GSM-based
-	 * mobile broadband network.  Many modems do not require PPP for connections
-	 * to the mobile network and thus this property should be left blank, which
-	 * allows NetworkManager to select the appropriate settings automatically.
+	 * Legacy setting that used to help establishing PPP data sessions for
+	 * GSM-based modems.
+	 *
+	 * Deprecated: 1.16: user-provided values for this setting are no longer used.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NUMBER,

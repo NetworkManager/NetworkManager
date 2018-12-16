@@ -7944,9 +7944,9 @@ static void
 _setting_init_fcn_gsm (ARGS_SETTING_INIT_FCN)
 {
 	if (init_type == NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI) {
-		/* Initialize 'number' so that 'gsm' is valid */
+		/* Initialize 'apn' so that 'gsm' is valid */
 		g_object_set (NM_SETTING_GSM (setting),
-		              NM_SETTING_GSM_NUMBER, "*99#",
+		              NM_SETTING_GSM_APN, "internet",
 		              NULL);
 	}
 }

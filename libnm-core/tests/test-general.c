@@ -1351,8 +1351,6 @@ test_setting_gsm_apn_bad_chars (void)
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
 	g_assert (s_gsm);
 
-	g_object_set (s_gsm, NM_SETTING_GSM_NUMBER, "*99#", NULL);
-
 	/* Make sure a valid APN works */
 	g_object_set (s_gsm, NM_SETTING_GSM_APN, "foobar123.-baz", NULL);
 	g_assert (nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL));
@@ -1381,8 +1379,6 @@ test_setting_gsm_apn_underscore (void)
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
 	g_assert (s_gsm);
-
-	g_object_set (s_gsm, NM_SETTING_GSM_NUMBER, "*99#", NULL);
 
 	/* 65-character long */
 	g_object_set (s_gsm, NM_SETTING_GSM_APN, "foobar_baz", NULL);
@@ -2946,7 +2942,6 @@ test_connection_good_base_types (void)
 
 	setting = nm_setting_gsm_new ();
 	g_object_set (setting,
-	              NM_SETTING_GSM_NUMBER, "*99#",
 	              NM_SETTING_GSM_APN, "metered.billing.sucks",
 	              NULL);
 	nm_connection_add_setting (connection, setting);
@@ -7564,4 +7559,3 @@ int main (int argc, char **argv)
 
 	return g_test_run ();
 }
-

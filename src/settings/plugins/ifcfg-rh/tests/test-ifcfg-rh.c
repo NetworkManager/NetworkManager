@@ -7402,8 +7402,6 @@ test_write_mobile_broadband (gconstpointer data)
 		/* GSM setting */
 		s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_gsm));
-
-		g_object_set (s_gsm, NM_SETTING_GSM_NUMBER, "*99#", NULL);
 	} else {
 		/* CDMA setting */
 		s_cdma = (NMSettingCdma *) nm_setting_cdma_new ();

@@ -279,11 +279,6 @@ create_gsm_connect_properties (NMConnection *connection)
 	setting = nm_connection_get_setting_gsm (connection);
 	properties = mm_simple_connect_properties_new ();
 
-	/* TODO: not needed */
-	str = nm_setting_gsm_get_number (setting);
-	if (str)
-		mm_simple_connect_properties_set_number (properties, str);
-
 	/* Blank APN ("") means the default subscription APN */
 	str = nm_setting_gsm_get_apn (setting);
 	mm_simple_connect_properties_set_apn (properties, str ?: "");
@@ -692,10 +687,6 @@ complete_connection (NMModem *_self,
 			g_prefix_error (error, "%s: ", NM_SETTING_GSM_SETTING_NAME);
 			return FALSE;
 		}
-
-		/* TODO: This is not needed */
-		if (!nm_setting_gsm_get_number (s_gsm))
-			g_object_set (G_OBJECT (s_gsm), NM_SETTING_GSM_NUMBER, "*99#", NULL);
 
 		nm_utils_complete_generic (NM_PLATFORM_GET,
 		                           connection,
