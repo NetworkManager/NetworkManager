@@ -670,7 +670,7 @@ read_full_ip4_address (shvarFile *ifcfg,
 		                       &has_key, &a, error))
 			return FALSE;
 		if (has_key)
-			*out_gateway = g_strdup (nm_utils_inet4_ntop (a, inet_buf));
+			*out_gateway = nm_utils_inet4_ntop_dup (a);
 	}
 
 	/* Prefix */
@@ -1529,7 +1529,6 @@ make_ip4_setting (shvarFile *ifcfg,
 	gboolean never_default;
 	gint64 timeout;
 	int priority;
-	char inet_buf[NM_UTILS_INET_ADDRSTRLEN];
 	const char *const *item;
 	guint32 route_table;
 
@@ -1681,7 +1680,7 @@ make_ip4_setting (shvarFile *ifcfg,
 					PARSE_WARNING ("ignoring GATEWAY (/etc/sysconfig/network) for %s "
 					               "because the connection has no static addresses", f);
 				} else
-					gateway = g_strdup (nm_utils_inet4_ntop (a, inet_buf));
+					gateway = nm_utils_inet4_ntop_dup (a);
 			}
 		}
 	}

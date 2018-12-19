@@ -485,6 +485,8 @@ nm_ip6_config_add_dependent_routes (NMIP6Config *self,
 
 		if (NM_FLAGS_HAS (my_addr->n_ifa_flags, IFA_F_NOPREFIXROUTE))
 			continue;
+		if (my_addr->plen == 0)
+			continue;
 
 		has_peer = !IN6_IS_ADDR_UNSPECIFIED (&my_addr->peer_address);
 
@@ -713,6 +715,7 @@ nm_ip6_config_create_setting (const NMIP6Config *self)
 	NMSettingIPConfig *s_ip6;
 	guint nnameservers, nsearches, noptions;
 	const char *method = NULL;
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 	int i;
 	NMDedupMultiIter ipconf_iter;
 	const NMPlatformIP6Address *address;
@@ -765,7 +768,7 @@ nm_ip6_config_create_setting (const NMIP6Config *self)
 		g_object_set (s_ip6,
 		              NM_SETTING_IP_CONFIG_GATEWAY,
 		              nm_utils_inet6_ntop (&NMP_OBJECT_CAST_IP6_ROUTE (priv->best_default_route)->gateway,
-		                                   NULL),
+		                                   sbuf),
 		              NULL);
 	}
 
@@ -804,7 +807,7 @@ nm_ip6_config_create_setting (const NMIP6Config *self)
 	for (i = 0; i < nnameservers; i++) {
 		const struct in6_addr *nameserver = nm_ip6_config_get_nameserver (self, i);
 
-		nm_setting_ip_config_add_dns (s_ip6, nm_utils_inet6_ntop (nameserver, NULL));
+		nm_setting_ip_config_add_dns (s_ip6, nm_utils_inet6_ntop (nameserver, sbuf));
 	}
 	for (i = 0; i < nsearches; i++) {
 		const char *search = nm_ip6_config_get_search (self, i);
@@ -1592,7 +1595,7 @@ nm_ip6_config_add_address (NMIP6Config *self, const NMPlatformIP6Address *new)
 {
 	g_return_if_fail (self);
 	g_return_if_fail (new);
-	g_return_if_fail (new->plen > 0 && new->plen <= 128);
+	g_return_if_fail (new->plen <= 128);
 	g_return_if_fail (NM_IP6_CONFIG_GET_PRIVATE (self)->ifindex > 0);
 
 	_add_address (self, NULL, new);
@@ -2473,6 +2476,7 @@ get_property (GObject *object, guint prop_id,
 	NMDedupMultiIter ipconf_iter;
 	const NMPlatformIP6Route *route;
 	GVariantBuilder builder_data, builder_legacy;
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
 	switch (prop_id) {
 	case PROP_IFINDEX:
@@ -2509,7 +2513,7 @@ get_property (GObject *object, guint prop_id,
 				g_variant_builder_init (&addr_builder, G_VARIANT_TYPE ("a{sv}"));
 				g_variant_builder_add (&addr_builder, "{sv}",
 				                       "address",
-				                       g_variant_new_string (nm_utils_inet6_ntop (&address->address, NULL)));
+				                       g_variant_new_string (nm_utils_inet6_ntop (&address->address, sbuf)));
 				g_variant_builder_add (&addr_builder, "{sv}",
 				                       "prefix",
 				                       g_variant_new_uint32 (address->plen));
@@ -2517,7 +2521,7 @@ get_property (GObject *object, guint prop_id,
 				    && !IN6_ARE_ADDR_EQUAL (&address->peer_address, &address->address)) {
 					g_variant_builder_add (&addr_builder, "{sv}",
 					                       "peer",
-					                       g_variant_new_string (nm_utils_inet6_ntop (&address->peer_address, NULL)));
+					                       g_variant_new_string (nm_utils_inet6_ntop (&address->peer_address, sbuf)));
 				}
 
 				g_variant_builder_add (&builder_data, "a{sv}", &addr_builder);
@@ -2562,14 +2566,14 @@ out_addresses_cached:
 			g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
 			g_variant_builder_add (&route_builder, "{sv}",
 			                       "dest",
-			                       g_variant_new_string (nm_utils_inet6_ntop (&route->network, NULL)));
+			                       g_variant_new_string (nm_utils_inet6_ntop (&route->network, sbuf)));
 			g_variant_builder_add (&route_builder, "{sv}",
 			                       "prefix",
 			                       g_variant_new_uint32 (route->plen));
 			if (!IN6_IS_ADDR_UNSPECIFIED (&route->gateway)) {
 				g_variant_builder_add (&route_builder, "{sv}",
 				                       "next-hop",
-				                       g_variant_new_string (nm_utils_inet6_ntop (&route->gateway, NULL)));
+				                       g_variant_new_string (nm_utils_inet6_ntop (&route->gateway, sbuf)));
 			}
 
 			g_variant_builder_add (&route_builder, "{sv}",
@@ -2607,9 +2611,8 @@ out_routes_cached:
 		break;
 	case PROP_GATEWAY:
 		if (priv->best_default_route) {
-			g_value_set_string (value,
-			                    nm_utils_inet6_ntop (&NMP_OBJECT_CAST_IP6_ROUTE (priv->best_default_route)->gateway,
-			                                         NULL));
+			g_value_take_string (value,
+			                     nm_utils_inet6_ntop_dup (&NMP_OBJECT_CAST_IP6_ROUTE (priv->best_default_route)->gateway));
 		} else
 			g_value_set_string (value, NULL);
 		break;

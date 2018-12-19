@@ -179,9 +179,10 @@ static void
 clear_ip6_prefix_delegation (gpointer data)
 {
 	IP6PrefixDelegation *delegation = data;
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
 	_LOGD (LOGD_IP6, "ipv6-pd: undelegating prefix %s/%d",
-	       nm_utils_inet6_ntop (&delegation->prefix.address, NULL),
+	       nm_utils_inet6_ntop (&delegation->prefix.address, sbuf),
 	       delegation->prefix.plen);
 
 	g_hash_table_foreach (delegation->subnets, _clear_ip6_subnet, NULL);
@@ -215,13 +216,14 @@ ip6_subnet_from_delegation (IP6PrefixDelegation *delegation, NMDevice *device)
 {
 	NMPlatformIP6Address *subnet;
 	int ifindex = nm_device_get_ifindex (device);
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
 	subnet = g_hash_table_lookup (delegation->subnets, GINT_TO_POINTER (ifindex));
 	if (!subnet) {
 		/* Check for out-of-prefixes condition. */
 		if (delegation->next_subnet >= (1 << (64 - delegation->prefix.plen))) {
 			_LOGD (LOGD_IP6, "ipv6-pd: no more prefixes in %s/%d",
-			       nm_utils_inet6_ntop (&delegation->prefix.address, NULL),
+			       nm_utils_inet6_ntop (&delegation->prefix.address, sbuf),
 			       delegation->prefix.plen);
 			return FALSE;
 		}
@@ -249,7 +251,7 @@ ip6_subnet_from_delegation (IP6PrefixDelegation *delegation, NMDevice *device)
 	subnet->preferred = delegation->prefix.preferred;
 
 	_LOGD (LOGD_IP6, "ipv6-pd: %s allocated from a /%d prefix on %s",
-	       nm_utils_inet6_ntop (&subnet->address, NULL),
+	       nm_utils_inet6_ntop (&subnet->address, sbuf),
 	       delegation->prefix.plen,
 	       nm_device_get_iface (device));
 
@@ -320,9 +322,10 @@ device_ip6_prefix_delegated (NMDevice *device,
 	guint i;
 	const CList *tmp_list;
 	NMActiveConnection *ac;
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
 	_LOGI (LOGD_IP6, "ipv6-pd: received a prefix %s/%d from %s",
-	       nm_utils_inet6_ntop (&prefix->address, NULL),
+	       nm_utils_inet6_ntop (&prefix->address, sbuf),
 	       prefix->plen,
 	       nm_device_get_iface (device));
 

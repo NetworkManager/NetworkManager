@@ -34,6 +34,7 @@
 #include "settings/nm-settings.h"
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
+#include "nm-core-internal.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceVxlan);
@@ -386,6 +387,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE ((NMDeviceVxlan *) device);
 	NMSettingVxlan *s_vxlan = nm_connection_get_setting_vxlan (connection);
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
 	if (!s_vxlan) {
 		s_vxlan = (NMSettingVxlan *) nm_setting_vxlan_new ();
@@ -404,11 +406,11 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (!address_matches (nm_setting_vxlan_get_remote (s_vxlan), priv->props.group, &priv->props.group6)) {
 		if (priv->props.group) {
 			g_object_set (s_vxlan, NM_SETTING_VXLAN_REMOTE,
-			              nm_utils_inet4_ntop (priv->props.group, NULL),
+			              nm_utils_inet4_ntop (priv->props.group, sbuf),
 			              NULL);
 		} else {
 			g_object_set (s_vxlan, NM_SETTING_VXLAN_REMOTE,
-			              nm_utils_inet6_ntop (&priv->props.group6, NULL),
+			              nm_utils_inet6_ntop (&priv->props.group6, sbuf),
 			              NULL);
 		}
 	}
@@ -416,11 +418,11 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (!address_matches (nm_setting_vxlan_get_local (s_vxlan), priv->props.local, &priv->props.local6)) {
 		if (priv->props.local) {
 			g_object_set (s_vxlan, NM_SETTING_VXLAN_LOCAL,
-			              nm_utils_inet4_ntop (priv->props.local, NULL),
+			              nm_utils_inet4_ntop (priv->props.local, sbuf),
 			              NULL);
 		} else if (memcmp (&priv->props.local6, &in6addr_any, sizeof (in6addr_any))) {
 			g_object_set (s_vxlan, NM_SETTING_VXLAN_LOCAL,
-			              nm_utils_inet6_ntop (&priv->props.local6, NULL),
+			              nm_utils_inet6_ntop (&priv->props.local6, sbuf),
 			              NULL);
 		}
 	}
@@ -510,15 +512,15 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_GROUP:
 		if (priv->props.group)
-			g_value_set_string (value, nm_utils_inet4_ntop (priv->props.group, NULL));
+			g_value_take_string (value, nm_utils_inet4_ntop_dup (priv->props.group));
 		else if (!IN6_IS_ADDR_UNSPECIFIED (&priv->props.group6))
-			g_value_set_string (value, nm_utils_inet6_ntop (&priv->props.group6, NULL));
+			g_value_take_string (value, nm_utils_inet6_ntop_dup (&priv->props.group6));
 		break;
 	case PROP_LOCAL:
 		if (priv->props.local)
-			g_value_set_string (value, nm_utils_inet4_ntop (priv->props.local, NULL));
+			g_value_take_string (value, nm_utils_inet4_ntop_dup (priv->props.local));
 		else if (!IN6_IS_ADDR_UNSPECIFIED (&priv->props.local6))
-			g_value_set_string (value, nm_utils_inet6_ntop (&priv->props.local6, NULL));
+			g_value_take_string (value, nm_utils_inet6_ntop_dup (&priv->props.local6));
 		break;
 	case PROP_TOS:
 		g_value_set_uchar (value, priv->props.tos);

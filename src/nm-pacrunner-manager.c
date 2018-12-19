@@ -173,6 +173,7 @@ get_ip4_domains (GPtrArray *domains, NMIP4Config *ip4)
 	const NMPlatformIP4Address *address;
 	const NMPlatformIP4Route *routes;
 	guint i;
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
 	/* Extract searches */
 	for (i = 0; i < nm_ip4_config_get_num_searches (ip4); i++)
@@ -186,7 +187,7 @@ get_ip4_domains (GPtrArray *domains, NMIP4Config *ip4)
 
 	nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, ip4, &address) {
 		cidr = g_strdup_printf ("%s/%u",
-		                        nm_utils_inet4_ntop (address->address, NULL),
+		                        nm_utils_inet4_ntop (address->address, sbuf),
 		                        address->plen);
 		g_ptr_array_add (domains, cidr);
 	}
@@ -195,7 +196,7 @@ get_ip4_domains (GPtrArray *domains, NMIP4Config *ip4)
 		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (routes))
 			continue;
 		cidr = g_strdup_printf ("%s/%u",
-		                        nm_utils_inet4_ntop (routes->network, NULL),
+		                        nm_utils_inet4_ntop (routes->network, sbuf),
 		                        routes->plen);
 		g_ptr_array_add (domains, cidr);
 	}
@@ -209,6 +210,7 @@ get_ip6_domains (GPtrArray *domains, NMIP6Config *ip6)
 	const NMPlatformIP6Address *address;
 	const NMPlatformIP6Route *routes;
 	guint i;
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
 	/* Extract searches */
 	for (i = 0; i < nm_ip6_config_get_num_searches (ip6); i++)
@@ -221,7 +223,7 @@ get_ip6_domains (GPtrArray *domains, NMIP6Config *ip6)
 	/* Add addresses and routes in CIDR form */
 	nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, ip6, &address) {
 		cidr = g_strdup_printf ("%s/%u",
-		                        nm_utils_inet6_ntop (&address->address, NULL),
+		                        nm_utils_inet6_ntop (&address->address, sbuf),
 		                        address->plen);
 		g_ptr_array_add (domains, cidr);
 	}
@@ -230,7 +232,7 @@ get_ip6_domains (GPtrArray *domains, NMIP6Config *ip6)
 		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (routes))
 			continue;
 		cidr = g_strdup_printf ("%s/%u",
-		                        nm_utils_inet6_ntop (&routes->network, NULL),
+		                        nm_utils_inet6_ntop (&routes->network, sbuf),
 		                        routes->plen);
 		g_ptr_array_add (domains, cidr);
 	}

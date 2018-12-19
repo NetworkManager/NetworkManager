@@ -1301,3 +1301,9 @@ int sd_dhcp_route_get_gateway(sd_dhcp_route *route, struct in_addr *gateway) {
         *gateway = route->gw_addr;
         return 0;
 }
+
+int sd_dhcp_route_get_option(sd_dhcp_route *route) {
+        assert_return(route, -EINVAL);
+
+        return route->option;
+}

@@ -5580,9 +5580,10 @@ static gboolean
 link_set_token (NMPlatform *platform, int ifindex, NMUtilsIPv6IfaceId iid)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
 	_LOGD ("link: change %d: token: set IPv6 address generation token to %s",
-	       ifindex, nm_utils_inet6_interface_identifier_to_token (iid, NULL));
+	       ifindex, nm_utils_inet6_interface_identifier_to_token (iid, sbuf));
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK, 0, ifindex, NULL, 0, 0);
 	if (!nlmsg || !_nl_msg_new_link_set_afspec (nlmsg, -1, &iid))

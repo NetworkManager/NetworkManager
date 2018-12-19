@@ -837,6 +837,14 @@ nm_gstring_prepare (GString **l)
 	return *l;
 }
 
+static inline GString *
+nm_gstring_add_space_delimiter (GString *str)
+{
+	if (str->len > 0)
+		g_string_append_c (str, ' ');
+	return str;
+}
+
 static inline const char *
 nm_str_not_empty (const char *str)
 {

@@ -1173,7 +1173,7 @@ nm_utils_ip4_dns_from_variant (GVariant *value)
 	dns = g_new (char *, length + 1);
 
 	for (i = 0; i < length; i++)
-		dns[i] = g_strdup (nm_utils_inet4_ntop (array[i], NULL));
+		dns[i] = nm_utils_inet4_ntop_dup (array[i]);
 	dns[i] = NULL;
 
 	return dns;
@@ -1271,7 +1271,7 @@ nm_utils_ip4_addresses_from_variant (GVariant *value, char **out_gateway)
 			g_ptr_array_add (addresses, addr);
 
 			if (addr_array[2] && out_gateway && !*out_gateway)
-				*out_gateway = g_strdup (nm_utils_inet4_ntop (addr_array[2], NULL));
+				*out_gateway = nm_utils_inet4_ntop_dup (addr_array[2]);
 		} else {
 			g_warning ("Ignoring invalid IP4 address: %s", error->message);
 			g_clear_error (&error);
@@ -1389,30 +1389,13 @@ nm_utils_ip4_routes_from_variant (GVariant *value)
 guint32
 nm_utils_ip4_netmask_to_prefix (guint32 netmask)
 {
-	guint32 prefix;
-	guint8 v;
-	const guint8 *p = (guint8 *) &netmask;
+	G_STATIC_ASSERT_EXPR (__SIZEOF_INT__   == 4);
+	G_STATIC_ASSERT_EXPR (sizeof (int)     == 4);
+	G_STATIC_ASSERT_EXPR (sizeof (netmask) == 4);
 
-	if (p[3]) {
-		prefix = 24;
-		v = p[3];
-	} else if (p[2]) {
-		prefix = 16;
-		v = p[2];
-	} else if (p[1]) {
-		prefix = 8;
-		v = p[1];
-	} else {
-		prefix = 0;
-		v = p[0];
-	}
-
-	while (v) {
-		prefix++;
-		v <<= 1;
-	}
-
-	return prefix;
+	return  (  (netmask != 0)
+	         ? (32 - __builtin_ctz (ntohl (netmask)))
+	         : 0);
 }
 
 /**
@@ -1510,7 +1493,7 @@ nm_utils_ip6_dns_from_variant (GVariant *value)
 			continue;
 		}
 
-		dns[i++] = g_strdup (nm_utils_inet6_ntop (ip, NULL));
+		dns[i++] = nm_utils_inet6_ntop_dup (ip);
 		g_variant_unref (ip_var);
 	}
 	dns[i] = NULL;
@@ -1629,7 +1612,7 @@ nm_utils_ip6_addresses_from_variant (GVariant *value, char **out_gateway)
 					goto next;
 				}
 				if (!IN6_IS_ADDR_UNSPECIFIED (gateway_bytes))
-					*out_gateway = g_strdup (nm_utils_inet6_ntop (gateway_bytes, NULL));
+					*out_gateway = nm_utils_inet6_ntop_dup (gateway_bytes);
 			}
 		} else {
 			g_warning ("Ignoring invalid IP6 address: %s", error->message);
@@ -4517,10 +4500,11 @@ nm_utils_inet_ntop (int addr_family, gconstpointer addr, char *dst)
 
 	nm_assert_addr_family (addr_family);
 	nm_assert (addr);
+	nm_assert (dst);
 
 	s = inet_ntop (addr_family,
 	               addr,
-	               dst ?: _nm_utils_inet_ntop_buffer,
+	               dst,
 	               addr_family == AF_INET6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN);
 	nm_assert (s);
 	return s;
@@ -4546,6 +4530,11 @@ nm_utils_inet_ntop (int addr_family, gconstpointer addr, char *dst)
 const char *
 nm_utils_inet4_ntop (in_addr_t inaddr, char *dst)
 {
+	/* relying on the static buffer (by leaving @dst as %NULL) is discouraged.
+	 * Don't do that!
+	 *
+	 * However, still support it to be lenient against mistakes and because
+	 * this is public API of libnm. */
 	return inet_ntop (AF_INET, &inaddr, dst ?: _nm_utils_inet_ntop_buffer,
 	                  INET_ADDRSTRLEN);
 }
@@ -4571,6 +4560,11 @@ nm_utils_inet4_ntop (in_addr_t inaddr, char *dst)
 const char *
 nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst)
 {
+	/* relying on the static buffer (by leaving @dst as %NULL) is discouraged.
+	 * Don't do that!
+	 *
+	 * However, still support it to be lenient against mistakes and because
+	 * this is public API of libnm. */
 	g_return_val_if_fail (in6addr, NULL);
 	return inet_ntop (AF_INET6, in6addr, dst ?: _nm_utils_inet_ntop_buffer,
 	                  INET6_ADDRSTRLEN);

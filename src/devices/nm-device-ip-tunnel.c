@@ -329,28 +329,28 @@ clear:
 		if (!address_equal_pn (AF_INET, priv->local, &local4)) {
 			g_clear_pointer (&priv->local, g_free);
 			if (local4)
-				priv->local = g_strdup (nm_utils_inet4_ntop (local4, NULL));
+				priv->local = nm_utils_inet4_ntop_dup (local4);
 			_notify (self, PROP_LOCAL);
 		}
 
 		if (!address_equal_pn (AF_INET, priv->remote, &remote4)) {
 			g_clear_pointer (&priv->remote, g_free);
 			if (remote4)
-				priv->remote = g_strdup (nm_utils_inet4_ntop (remote4, NULL));
+				priv->remote = nm_utils_inet4_ntop_dup (remote4);
 			_notify (self, PROP_REMOTE);
 		}
 	} else {
 		if (!address_equal_pn (AF_INET6, priv->local, &local6)) {
 			g_clear_pointer (&priv->local, g_free);
 			if (memcmp (&local6, &in6addr_any, sizeof (in6addr_any)))
-				priv->local = g_strdup (nm_utils_inet6_ntop (&local6, NULL));
+				priv->local = nm_utils_inet6_ntop_dup (&local6);
 			_notify (self, PROP_LOCAL);
 		}
 
 		if (!address_equal_pn (AF_INET6, priv->remote, &remote6)) {
 			g_clear_pointer (&priv->remote, g_free);
 			if (memcmp (&remote6, &in6addr_any, sizeof (in6addr_any)))
-				priv->remote = g_strdup (nm_utils_inet6_ntop (&remote6, NULL));
+				priv->remote = nm_utils_inet6_ntop_dup (&remote6);
 			_notify (self, PROP_REMOTE);
 		}
 	}

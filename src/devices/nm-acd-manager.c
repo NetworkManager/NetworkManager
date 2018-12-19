@@ -230,11 +230,12 @@ acd_probe_add (NMAcdManager *self,
 {
 	NAcdProbeConfig *probe_config;
 	int r;
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
 	r = n_acd_probe_config_new (&probe_config);
 	if (r) {
 		_LOGW ("could not create probe config for %s on interface '%s': %s",
-		       nm_utils_inet4_ntop (info->address, NULL),
+		       nm_utils_inet4_ntop (info->address, sbuf),
 		       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex),
 		       acd_error_to_string (r));
 		return FALSE;
@@ -246,7 +247,7 @@ acd_probe_add (NMAcdManager *self,
 	r = n_acd_probe (self->acd, &info->probe, probe_config);
 	if (r) {
 		_LOGW ("could not start probe for %s on interface '%s': %s",
-		       nm_utils_inet4_ntop (info->address, NULL),
+		       nm_utils_inet4_ntop (info->address, sbuf),
 		       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex),
 		       acd_error_to_string (r));
 		n_acd_probe_config_free (probe_config);
@@ -381,6 +382,8 @@ nm_acd_manager_announce_addresses (NMAcdManager *self)
 			acd_probe_add (self, info, 0);
 		self->state = STATE_ANNOUNCING;
 	} else if (self->state == STATE_ANNOUNCING) {
+		char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+
 		g_hash_table_iter_init (&iter, self->addresses);
 		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info)) {
 			if (info->duplicate)
@@ -388,11 +391,11 @@ nm_acd_manager_announce_addresses (NMAcdManager *self)
 			r = n_acd_probe_announce (info->probe, N_ACD_DEFEND_ONCE);
 			if (r) {
 				_LOGW ("couldn't announce address %s on interface '%s': %s",
-				       nm_utils_inet4_ntop (info->address, NULL),
+				       nm_utils_inet4_ntop (info->address, sbuf),
 				       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex),
 				       acd_error_to_string (r));
 			} else
-				_LOGD ("announcing address %s", nm_utils_inet4_ntop (info->address, NULL));
+				_LOGD ("announcing address %s", nm_utils_inet4_ntop (info->address, sbuf));
 		}
 	}
 }

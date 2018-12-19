@@ -366,9 +366,12 @@ _nmtstp_assert_ip4_route_exists (const char *file,
 	                    &c);
 
 	if (c != c_exists && c_exists != -1) {
+		char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+
 		g_error ("[%s:%u] %s(): The ip4 route %s/%d metric %u tos %u shall exist %u times, but platform has it %u times",
 		         file, line, func,
-		         nm_utils_inet4_ntop (network, NULL), plen,
+		         nm_utils_inet4_ntop (network, sbuf),
+		         plen,
 		         metric,
 		         tos,
 		         c_exists,
@@ -821,7 +824,8 @@ _ip_address_add (NMPlatform *platform,
 		gs_free char *s_valid = NULL;
 		gs_free char *s_preferred = NULL;
 		gs_free char *s_label = NULL;
-		char b1[NM_UTILS_INET_ADDRSTRLEN], b2[NM_UTILS_INET_ADDRSTRLEN];
+		char b1[NM_UTILS_INET_ADDRSTRLEN];
+		char b2[NM_UTILS_INET_ADDRSTRLEN];
 
 		ifname = nm_platform_link_get_name (platform, ifindex);
 		g_assert (ifname);
@@ -834,14 +838,14 @@ _ip_address_add (NMPlatform *platform,
 			s_label = g_strdup_printf ("%s:%s", ifname, label);
 
 		if (is_v4) {
-			char s_peer[100];
+			char s_peer[NM_UTILS_INET_ADDRSTRLEN + 50];
 
 			g_assert (flags == 0);
 
 			if (   peer_address->addr4 != address->addr4
 			    || nmtst_get_rand_int () % 2) {
 				/* If the peer is the same as the local address, we can omit it. The result should be identical */
-				g_snprintf (s_peer, sizeof (s_peer), " peer %s", nm_utils_inet4_ntop (peer_address->addr4, b2));
+				nm_sprintf_buf (s_peer, " peer %s", nm_utils_inet4_ntop (peer_address->addr4, b2));
 			} else
 				s_peer[0] = '\0';
 
@@ -1052,7 +1056,8 @@ _ip_address_del (NMPlatform *platform,
 
 	if (external_command) {
 		const char *ifname;
-		char b1[NM_UTILS_INET_ADDRSTRLEN], b2[NM_UTILS_INET_ADDRSTRLEN];
+		char b1[NM_UTILS_INET_ADDRSTRLEN];
+		char b2[NM_UTILS_INET_ADDRSTRLEN];
 		int success;
 		gboolean had_address;
 
@@ -1240,7 +1245,8 @@ nmtstp_link_gre_add (NMPlatform *platform,
 {
 	const NMPlatformLink *pllink = NULL;
 	gboolean success;
-	char buffer[INET_ADDRSTRLEN];
+	char b1[INET_ADDRSTRLEN];
+	char b2[INET_ADDRSTRLEN];
 	NMLinkType link_type;
 
 	g_assert (nm_utils_is_valid_iface_name (name, NULL));
@@ -1265,8 +1271,8 @@ nmtstp_link_gre_add (NMPlatform *platform,
 		                                name,
 		                                type,
 		                                dev ?: "",
-		                                nm_utils_inet4_ntop (lnk->local, NULL),
-		                                nm_utils_inet4_ntop (lnk->remote, buffer),
+		                                nm_utils_inet4_ntop (lnk->local, b1),
+		                                nm_utils_inet4_ntop (lnk->remote, b2),
 		                                lnk->ttl,
 		                                lnk->tos,
 		                                lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
@@ -1288,7 +1294,8 @@ nmtstp_link_ip6tnl_add (NMPlatform *platform,
 {
 	const NMPlatformLink *pllink = NULL;
 	gboolean success;
-	char buffer[INET6_ADDRSTRLEN];
+	char b1[NM_UTILS_INET_ADDRSTRLEN];
+	char b2[NM_UTILS_INET_ADDRSTRLEN];
 	char encap[20];
 	char tclass[20];
 	gboolean encap_ignore;
@@ -1326,8 +1333,8 @@ nmtstp_link_ip6tnl_add (NMPlatform *platform,
 		                                name,
 		                                mode,
 		                                dev,
-		                                nm_utils_inet6_ntop (&lnk->local, NULL),
-		                                nm_utils_inet6_ntop (&lnk->remote, buffer),
+		                                nm_utils_inet6_ntop (&lnk->local, b1),
+		                                nm_utils_inet6_ntop (&lnk->remote, b2),
 		                                lnk->ttl,
 		                                tclass_inherit ? "inherit" : nm_sprintf_buf (tclass, "%02x", lnk->tclass),
 		                                encap_ignore ? "none" : nm_sprintf_buf (encap, "%u", lnk->encap_limit),
@@ -1350,7 +1357,8 @@ nmtstp_link_ip6gre_add (NMPlatform *platform,
 {
 	const NMPlatformLink *pllink = NULL;
 	gboolean success;
-	char buffer[INET6_ADDRSTRLEN];
+	char b1[NM_UTILS_INET_ADDRSTRLEN];
+	char b2[NM_UTILS_INET_ADDRSTRLEN];
 	char tclass[20];
 	gboolean tclass_inherit;
 
@@ -1373,8 +1381,8 @@ nmtstp_link_ip6gre_add (NMPlatform *platform,
 		                                name,
 		                                lnk->is_tap ? "ip6gretap" : "ip6gre",
 		                                dev,
-		                                nm_utils_inet6_ntop (&lnk->local, NULL),
-		                                nm_utils_inet6_ntop (&lnk->remote, buffer),
+		                                nm_utils_inet6_ntop (&lnk->local, b1),
+		                                nm_utils_inet6_ntop (&lnk->remote, b2),
 		                                lnk->ttl,
 		                                tclass_inherit ? "inherit" : nm_sprintf_buf (tclass, "%02x", lnk->tclass),
 		                                lnk->flow_label);
@@ -1400,7 +1408,8 @@ nmtstp_link_ipip_add (NMPlatform *platform,
 {
 	const NMPlatformLink *pllink = NULL;
 	gboolean success;
-	char buffer[INET_ADDRSTRLEN];
+	char b1[INET_ADDRSTRLEN];
+	char b2[INET_ADDRSTRLEN];
 
 	g_assert (nm_utils_is_valid_iface_name (name, NULL));
 
@@ -1417,8 +1426,8 @@ nmtstp_link_ipip_add (NMPlatform *platform,
 		success = !nmtstp_run_command ("ip tunnel add %s mode ipip %s local %s remote %s ttl %u tos %02x %s",
 		                                name,
 		                                dev,
-		                                nm_utils_inet4_ntop (lnk->local, NULL),
-		                                nm_utils_inet4_ntop (lnk->remote, buffer),
+		                                nm_utils_inet4_ntop (lnk->local, b1),
+		                                nm_utils_inet4_ntop (lnk->remote, b2),
 		                                lnk->ttl,
 		                                lnk->tos,
 		                                lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
@@ -1488,7 +1497,8 @@ nmtstp_link_sit_add (NMPlatform *platform,
 {
 	const NMPlatformLink *pllink = NULL;
 	gboolean success;
-	char buffer[INET_ADDRSTRLEN];
+	char b1[INET_ADDRSTRLEN];
+	char b2[INET_ADDRSTRLEN];
 
 	g_assert (nm_utils_is_valid_iface_name (name, NULL));
 
@@ -1510,8 +1520,8 @@ nmtstp_link_sit_add (NMPlatform *platform,
 		success = !nmtstp_run_command ("ip tunnel add %s mode sit%s local %s remote %s ttl %u tos %02x %s",
 		                                name,
 		                                dev,
-		                                nm_utils_inet4_ntop (lnk->local, NULL),
-		                                nm_utils_inet4_ntop (lnk->remote, buffer),
+		                                nm_utils_inet4_ntop (lnk->local, b1),
+		                                nm_utils_inet4_ntop (lnk->remote, b2),
 		                                lnk->ttl,
 		                                lnk->tos,
 		                                lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
@@ -1607,27 +1617,32 @@ nmtstp_link_vxlan_add (NMPlatform *platform,
 
 	if (external_command) {
 		gs_free char *dev = NULL;
-		gs_free char *local = NULL, *remote = NULL;
+		char local[NM_UTILS_INET_ADDRSTRLEN];
+		char group[NM_UTILS_INET_ADDRSTRLEN];
 
 		if (lnk->parent_ifindex)
 			dev = g_strdup_printf ("dev %s", nm_platform_link_get_name (platform, lnk->parent_ifindex));
 
 		if (lnk->local)
-			local = g_strdup_printf ("%s", nm_utils_inet4_ntop (lnk->local, NULL));
+			nm_utils_inet4_ntop (lnk->local, local);
 		else if (memcmp (&lnk->local6, &in6addr_any, sizeof (in6addr_any)))
-			local = g_strdup_printf ("%s", nm_utils_inet6_ntop (&lnk->local6, NULL));
+			nm_utils_inet6_ntop (&lnk->local6, local);
+		else
+			local[0] = '\0';
 
 		if (lnk->group)
-			remote = g_strdup_printf ("%s", nm_utils_inet4_ntop (lnk->group, NULL));
+			nm_utils_inet4_ntop (lnk->group, group);
 		else if (memcmp (&lnk->group6, &in6addr_any, sizeof (in6addr_any)))
-			remote = g_strdup_printf ("%s", nm_utils_inet6_ntop (&lnk->group6, NULL));
+			nm_utils_inet6_ntop (&lnk->group6, group);
+		else
+			group[0] = '\0';
 
 		err = nmtstp_run_command ("ip link add %s type vxlan id %u %s local %s group %s ttl %u tos %02x dstport %u srcport %u %u ageing %u",
 		                          name,
 		                          lnk->id,
 		                          dev ?: "",
 		                          local,
-		                          remote,
+		                          group,
 		                          lnk->ttl,
 		                          lnk->tos,
 		                          lnk->dst_port,
