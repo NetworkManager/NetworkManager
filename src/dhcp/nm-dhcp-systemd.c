@@ -660,6 +660,8 @@ ip4_start (NMDhcpClient *client,
 		return FALSE;
 	}
 
+	/* Note that we always set a client-id. In particular for infiniband that is necessary,
+	 * see https://tools.ietf.org/html/rfc4390#section-2.1 . */
 	r = sd_dhcp_client_set_client_id (sd_client,
 	                                  client_id_arr[0],
 	                                  client_id_arr + 1,
