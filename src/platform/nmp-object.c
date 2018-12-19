@@ -630,9 +630,12 @@ _nmp_object_stackinit_from_class (NMPObject *obj, const NMPClass *klass)
 	nm_assert (obj);
 	nm_assert (klass);
 
-	memset (obj, 0, sizeof (NMPObject));
-	obj->_class = klass;
-	obj->parent._ref_count = NM_OBJ_REF_COUNT_STACKINIT;
+	*obj = (NMPObject) {
+		.parent = {
+			.klass      = (const NMDedupMultiObjClass *) klass,
+			._ref_count = NM_OBJ_REF_COUNT_STACKINIT,
+		},
+	};
 }
 
 static NMPObject *
@@ -644,9 +647,12 @@ _nmp_object_stackinit_from_type (NMPObject *obj, NMPObjectType obj_type)
 	klass = nmp_class_from_type (obj_type);
 	nm_assert (klass);
 
-	memset (obj, 0, sizeof (NMPObject));
-	obj->_class = klass;
-	obj->parent._ref_count = NM_OBJ_REF_COUNT_STACKINIT;
+	*obj = (NMPObject) {
+		.parent = {
+			.klass      = (const NMDedupMultiObjClass *) klass,
+			._ref_count = NM_OBJ_REF_COUNT_STACKINIT,
+		},
+	};
 	return obj;
 }
 

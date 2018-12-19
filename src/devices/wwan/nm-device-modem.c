@@ -244,7 +244,7 @@ modem_ip6_config_result (NMModem *modem,
 	}
 
 	/* Re-enable IPv6 on the interface */
-	nm_device_ipv6_sysctl_set (device, "disable_ipv6", "0");
+	nm_device_sysctl_ip_conf_set (device, AF_INET6, "disable_ipv6", "0");
 
 	if (config)
 		nm_device_set_wwan_ip6_config (device, config);
@@ -303,7 +303,7 @@ ip_ifindex_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 	 * internally, and leaving it enabled could allow the kernel's IPv6
 	 * RA handling code to run before NM is ready.
 	 */
-	nm_device_ipv6_sysctl_set (device, "disable_ipv6", "1");
+	nm_device_sysctl_ip_conf_set (device, AF_INET6, "disable_ipv6", "1");
 }
 
 static void

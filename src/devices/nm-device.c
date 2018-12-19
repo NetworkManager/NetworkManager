@@ -457,9 +457,6 @@ typedef struct _NMDevicePrivate {
 		AppliedConfig wwan_ip_config_x[2];
 	};
 
-	bool v4_has_shadowed_routes;
-	const char *ip4_rp_filter;
-
 	/* DHCPv4 tracking */
 	struct {
 		NMDhcpClient *  client;
@@ -1135,95 +1132,84 @@ init_ip_config_dns_priority (NMDevice *self, NMIPConfig *config)
 
 /*****************************************************************************/
 
-static gboolean
-nm_device_ipv4_sysctl_set (NMDevice *self, const char *property, const char *value)
+static char *
+nm_device_sysctl_ip_conf_get (NMDevice *self,
+                              int addr_family,
+                              const char *property)
 {
-	NMPlatform *platform = nm_device_get_platform (self);
-	gs_free char *value_to_free = NULL;
-	const char *value_to_set;
-	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
+	const char *ifname;
 
-	if (!nm_device_get_ip_ifindex (self))
-		return FALSE;
+	nm_assert_addr_family (addr_family);
 
-	if (value) {
-		value_to_set = value;
-	} else {
-		/* Set to a default value when we've got a NULL @value. */
-		value_to_free = nm_platform_sysctl_get (platform,
-		                                        NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET, buf, "default", property)));
-		value_to_set = value_to_free;
-	}
-
-	return nm_platform_sysctl_set (platform,
-	                               NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET, buf, nm_device_get_ip_iface (self), property)),
-	                               value_to_set);
+	ifname = nm_device_get_ip_iface_from_platform (self);
+	if (!ifname)
+		return NULL;
+	return nm_platform_sysctl_ip_conf_get (nm_device_get_platform (self), addr_family, ifname, property);
 }
 
-static guint32
-nm_device_ipv4_sysctl_get_effective_uint32 (NMDevice *self, const char *property, guint32 fallback)
+static gint64
+nm_device_sysctl_ip_conf_get_int_checked (NMDevice *self,
+                                          int addr_family,
+                                          const char *property,
+                                          guint base,
+                                          gint64 min,
+                                          gint64 max,
+                                          gint64 fallback)
 {
-	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
-	gint64 v, v_all;
+	const char *ifname;
 
-	if (!nm_device_get_ip_ifindex (self))
+	nm_assert_addr_family (addr_family);
+
+	ifname = nm_device_get_ip_iface_from_platform (self);
+	if (!ifname) {
+		errno = EINVAL;
 		return fallback;
-
-	/* for this kind of sysctl (e.g. "rp_filter"), kernel effectively uses the
-	 * MAX of the per-device value and the "all" value.
-	 *
-	 * Also do that, by reading both sysctls and return the maximum. */
-
-	v = nm_platform_sysctl_get_int_checked (nm_device_get_platform (self),
-	                                        NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET,
-	                                                                                                  buf,
-	                                                                                                  nm_device_get_ip_iface (self),
-	                                                                                                  property)),
-	                                        10,
-	                                        0,
-	                                        G_MAXUINT32,
-	                                        -1);
-
-	v_all = nm_platform_sysctl_get_int_checked (nm_device_get_platform (self),
-	                                            NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET,
-	                                                                                                      buf,
-	                                                                                                      "all",
-	                                                                                                      property)),
-	                                            10,
-	                                            0,
-	                                            G_MAXUINT32,
-	                                            -1);
-
-	v = NM_MAX (v, v_all);
-	return v > -1 ? (guint32) v : fallback;
+	}
+	return nm_platform_sysctl_ip_conf_get_int_checked (nm_device_get_platform (self),
+	                                                   addr_family,
+	                                                   ifname,
+	                                                   property,
+	                                                   base,
+	                                                   min,
+	                                                   max,
+	                                                   fallback);
 }
 
 gboolean
-nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *value)
+nm_device_sysctl_ip_conf_set (NMDevice *self,
+                              int addr_family,
+                              const char *property,
+                              const char *value)
 {
-	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
+	NMPlatform *platform = nm_device_get_platform (self);
+	gs_free char *value_to_free = NULL;
+	const char *ifname;
 
-	if (!nm_device_get_ip_ifindex (self))
+	nm_assert_addr_family (addr_family);
+
+	ifname = nm_device_get_ip_iface_from_platform (self);
+	if (!ifname)
 		return FALSE;
 
-	return nm_platform_sysctl_set (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET6, buf, nm_device_get_ip_iface (self), property)), value);
+	if (!value) {
+		/* Set to a default value when we've got a NULL @value. */
+		value_to_free = nm_platform_sysctl_ip_conf_get (platform,
+		                                                addr_family,
+		                                                "default",
+		                                                property);
+		value = value_to_free;
+		if (!value)
+			return FALSE;
+	}
+
+	return nm_platform_sysctl_ip_conf_set (platform,
+	                                       addr_family,
+	                                       ifname,
+	                                       property,
+	                                       value);
 }
 
-static guint32
-nm_device_ipv6_sysctl_get_uint32 (NMDevice *self, const char *property, guint32 fallback)
-{
-	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
-
-	if (!nm_device_get_ip_ifindex (self))
-		return fallback;
-
-	return nm_platform_sysctl_get_int_checked (nm_device_get_platform (self),
-	                                           NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET6, buf, nm_device_get_ip_iface (self), property)),
-	                                           10,
-	                                           0,
-	                                           G_MAXUINT32,
-	                                           fallback);
-}
+/*****************************************************************************/
 
 gboolean
 nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps)
@@ -1476,6 +1462,18 @@ nm_device_get_ip_iface (NMDevice *self)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	/* If it's not set, default to iface */
 	return priv->ip_iface ?: priv->iface;
+}
+
+const char *
+nm_device_get_ip_iface_from_platform (NMDevice *self)
+{
+	int ifindex;
+
+	ifindex = nm_device_get_ip_ifindex (self);
+	if (ifindex <= 0)
+		return NULL;
+
+	return nm_platform_link_get_name (nm_device_get_platform (self), ifindex);
 }
 
 int
@@ -3907,126 +3905,6 @@ link_changed_cb (NMPlatform *platform,
 }
 
 /*****************************************************************************/
-
-typedef struct {
-	in_addr_t network;
-	guint8 plen;
-} IP4RPFilterData;
-
-static guint
-_v4_has_shadowed_routes_detect_hash (const IP4RPFilterData *d)
-{
-	NMHashState h;
-
-	nm_hash_init (&h, 1105201169u);
-	nm_hash_update_vals (&h,
-	                     d->network,
-	                     d->plen);
-	return nm_hash_complete (&h);
-}
-
-static gboolean
-_v4_has_shadowed_routes_detect_equal (const IP4RPFilterData *d1, const IP4RPFilterData *d2)
-{
-	return d1->network == d2->network && d1->plen == d2->plen;
-}
-
-static gboolean
-_v4_has_shadowed_routes_detect (NMDevice *self)
-{
-	NMPlatform *platform;
-	int ifindex;
-	NMPLookup lookup;
-	const NMDedupMultiHeadEntry *head_entry;
-	NMDedupMultiIter iter;
-	const NMPObject *o;
-	guint data_len;
-	gs_unref_hashtable GHashTable *data_hash = NULL;
-	gs_free IP4RPFilterData *data_arr = NULL;
-
-	ifindex = nm_device_get_ip_ifindex (self);
-	if (ifindex <= 0)
-		return FALSE;
-
-	platform = nm_device_get_platform (self);
-
-	head_entry = nm_platform_lookup (platform,
-	                                 nmp_lookup_init_object (&lookup,
-	                                                         NMP_OBJECT_TYPE_IP4_ROUTE,
-	                                                         ifindex));
-	if (!head_entry)
-		return FALSE;
-
-	/* first, create a lookup index @data_hash for all network/plen pairs. */
-	data_len = 0;
-	data_arr = g_new (IP4RPFilterData, head_entry->len);
-	data_hash = g_hash_table_new ((GHashFunc) _v4_has_shadowed_routes_detect_hash,
-	                              (GEqualFunc) _v4_has_shadowed_routes_detect_equal);
-
-	nmp_cache_iter_for_each (&iter, head_entry, &o) {
-		const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (o);
-		IP4RPFilterData *d;
-
-		nm_assert (r->ifindex == ifindex);
-
-		if (   NM_PLATFORM_IP_ROUTE_IS_DEFAULT (r)
-		    || r->table_coerced)
-			continue;
-
-		d = &data_arr[data_len++];
-		d->network = nm_utils_ip4_address_clear_host_address (r->network, r->plen);
-		d->plen = r->plen;
-		g_hash_table_add (data_hash, d);
-	}
-
-	/* then, search if there is any route on another interface with the same
-	 * network/plen destination. If yes, we consider this a multihoming
-	 * setup. */
-	head_entry = nm_platform_lookup (platform,
-	                                 nmp_lookup_init_obj_type (&lookup,
-	                                                           NMP_OBJECT_TYPE_IP4_ROUTE));
-	nmp_cache_iter_for_each (&iter, head_entry, &o) {
-		const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (o);
-		IP4RPFilterData d;
-
-		if (   r->ifindex == ifindex
-		    || NM_PLATFORM_IP_ROUTE_IS_DEFAULT (r)
-		    || r->table_coerced)
-			continue;
-
-		d.network = nm_utils_ip4_address_clear_host_address (r->network, r->plen);
-		d.plen = r->plen;
-		if (g_hash_table_contains (data_hash, &d))
-			return TRUE;
-	}
-
-	return FALSE;
-}
-
-static void
-ip4_rp_filter_update (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *ip4_rp_filter;
-
-	if (   priv->v4_has_shadowed_routes
-	    || nm_device_get_best_default_route (self, AF_INET)) {
-		if (nm_device_ipv4_sysctl_get_effective_uint32 (self, "rp_filter", 0) != 1) {
-			/* Don't touch the rp_filter if it's not strict. */
-			return;
-		}
-		/* Loose rp_filter */
-		ip4_rp_filter = "2";
-	} else {
-		/* Default rp_filter */
-		ip4_rp_filter = NULL;
-	}
-
-	if (ip4_rp_filter != priv->ip4_rp_filter) {
-		nm_device_ipv4_sysctl_set (self, "rp_filter", ip4_rp_filter);
-		priv->ip4_rp_filter = ip4_rp_filter;
-	}
-}
 
 static void
 link_changed (NMDevice *self, const NMPlatformLink *pllink)
@@ -9238,7 +9116,7 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 #define _IP6_MTU_SYS() \
 	({ \
 		if (!ip6_mtu_sysctl.initialized) { \
-			ip6_mtu_sysctl.value = nm_device_ipv6_sysctl_get_uint32 (self, "mtu", 0); \
+			ip6_mtu_sysctl.value = nm_device_sysctl_ip_conf_get_int_checked (self, AF_INET6, "mtu", 10, 0, G_MAXUINT32, 0); \
 			ip6_mtu_sysctl.initialized = TRUE; \
 		} \
 		ip6_mtu_sysctl.value; \
@@ -9269,8 +9147,8 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 		}
 
 		if (ip6_mtu && ip6_mtu != _IP6_MTU_SYS ()) {
-			if (!nm_device_ipv6_sysctl_set (self, "mtu",
-			                                nm_sprintf_buf (sbuf, "%u", (unsigned) ip6_mtu))) {
+			if (!nm_device_sysctl_ip_conf_set (self, AF_INET6, "mtu",
+			                                   nm_sprintf_buf (sbuf, "%u", (unsigned) ip6_mtu))) {
 				int errsv = errno;
 
 				_NMLOG (anticipated_failure && errsv == EINVAL ? LOGL_DEBUG : LOGL_WARN,
@@ -9412,7 +9290,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 	}
 
 	if (changed & NM_NDISC_CONFIG_HOP_LIMIT)
-		nm_platform_sysctl_set_ip6_hop_limit_safe (nm_device_get_platform (self), nm_device_get_ip_iface (self), rdata->hop_limit);
+		nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe (nm_device_get_platform (self), nm_device_get_ip_iface (self), rdata->hop_limit);
 
 	if (changed & NM_NDISC_CONFIG_MTU) {
 		if (priv->ip6_mtu != rdata->mtu) {
@@ -9479,14 +9357,14 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	switch (nm_ndisc_get_node_type (priv->ndisc)) {
 	case NM_NDISC_NODE_TYPE_HOST:
 		/* Accepting prefixes from discovered routers. */
-		nm_device_ipv6_sysctl_set (self, "accept_ra", "1");
-		nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
-		nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
-		nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
+		nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra", "1");
+		nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra_defrtr", "0");
+		nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra_pinfo", "0");
+		nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra_rtr_pref", "0");
 		break;
 	case NM_NDISC_NODE_TYPE_ROUTER:
 		/* We're the router. */
-		nm_device_ipv6_sysctl_set (self, "forwarding", "1");
+		nm_device_sysctl_ip_conf_set (self, AF_INET6, "forwarding", "1");
 		nm_device_activate_schedule_ip6_config_result (self);
 		priv->needs_ip6_subnet = TRUE;
 		g_signal_emit (self, signals[IP6_SUBNET_NEEDED], 0);
@@ -9599,34 +9477,36 @@ addrconf6_cleanup (NMDevice *self)
 
 /*****************************************************************************/
 
-static const char *ip6_properties_to_save[] = {
-	"accept_ra",
-	"accept_ra_defrtr",
-	"accept_ra_pinfo",
-	"accept_ra_rtr_pref",
-	"forwarding",
-	"disable_ipv6",
-	"hop_limit",
-	"use_tempaddr",
-};
-
 static void
 save_ip6_properties (NMDevice *self)
 {
+	static const char *const ip6_properties_to_save[] = {
+		"accept_ra",
+		"accept_ra_defrtr",
+		"accept_ra_pinfo",
+		"accept_ra_rtr_pref",
+		"forwarding",
+		"disable_ipv6",
+		"hop_limit",
+		"use_tempaddr",
+	};
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *ifname = nm_device_get_ip_iface (self);
+	NMPlatform *platform = nm_device_get_platform (self);
+	const char *ifname;
 	char *value;
 	int i;
 
 	g_hash_table_remove_all (priv->ip6_saved_properties);
 
-	if (!nm_device_get_ip_ifindex (self))
+	ifname = nm_device_get_ip_iface_from_platform (self);
+	if (!ifname)
 		return;
 
 	for (i = 0; i < G_N_ELEMENTS (ip6_properties_to_save); i++) {
-		char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
-
-		value = nm_platform_sysctl_get (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET6, buf, ifname, ip6_properties_to_save[i])));
+		value = nm_platform_sysctl_ip_conf_get (platform,
+		                                        AF_INET6,
+		                                        ifname,
+		                                        ip6_properties_to_save[i]);
 		if (value) {
 			g_hash_table_insert (priv->ip6_saved_properties,
 			                     (char *) ip6_properties_to_save[i],
@@ -9648,7 +9528,7 @@ restore_ip6_properties (NMDevice *self)
 		if (   priv->ipv6ll_handle
 		    && nm_streq (key, "disable_ipv6"))
 			continue;
-		nm_device_ipv6_sysctl_set (self, key, value);
+		nm_device_sysctl_ip_conf_set (self, AF_INET6, key, value);
 	}
 }
 
@@ -9657,7 +9537,7 @@ set_disable_ipv6 (NMDevice *self, const char *value)
 {
 	/* We only touch disable_ipv6 when NM is not managing the IPv6LL address */
 	if (!NM_DEVICE_GET_PRIVATE (self)->ipv6ll_handle)
-		nm_device_ipv6_sysctl_set (self, "disable_ipv6", value);
+		nm_device_sysctl_ip_conf_set (self, AF_INET6, "disable_ipv6", value);
 }
 
 static inline void
@@ -9665,7 +9545,6 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex = nm_device_get_ip_ifindex (self);
-	char *value;
 
 	if (!nm_platform_check_kernel_support (nm_device_get_platform (self),
 	                                       NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL))
@@ -9688,17 +9567,17 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 		}
 
 		if (enable) {
-			char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
+			gs_free char *value = NULL;
 
 			/* Bounce IPv6 to ensure the kernel stops IPv6LL address generation */
-			value = nm_platform_sysctl_get (nm_device_get_platform (self),
-			                                NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET6, buf, nm_device_get_ip_iface (self), "disable_ipv6")));
-			if (g_strcmp0 (value, "0") == 0)
-				nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
-			g_free (value);
+			value = nm_device_sysctl_ip_conf_get (self,
+			                                      AF_INET6,
+			                                      "disable_ipv6");
+			if (nm_streq0 (value, "0"))
+				nm_device_sysctl_ip_conf_set (self, AF_INET6, "disable_ipv6", "1");
 
 			/* Ensure IPv6 is enabled */
-			nm_device_ipv6_sysctl_set (self, "disable_ipv6", "0");
+			nm_device_sysctl_ip_conf_set (self, AF_INET6, "disable_ipv6", "0");
 		}
 
 	}
@@ -9759,7 +9638,9 @@ _ip6_privacy_get (NMDevice *self)
 	 * Instead of reading static config files in /etc, just read the current sysctl value.
 	 * This works as NM only writes to "/proc/sys/net/ipv6/conf/IFNAME/use_tempaddr", but leaves
 	 * the "default" entry untouched. */
-	ip6_privacy = nm_platform_sysctl_get_int32 (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv6/conf/default/use_tempaddr"), NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+	ip6_privacy = nm_platform_sysctl_get_int32 (nm_device_get_platform (self),
+	                                            NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv6/conf/default/use_tempaddr"),
+	                                            NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 	return _ip6_privacy_clamp (ip6_privacy);
 }
 
@@ -9826,7 +9707,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 			 */
 			set_nm_ipv6ll (self, FALSE);
 			if (ipv6ll_handle_old)
-				nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
+				nm_device_sysctl_ip_conf_set (self, AF_INET6, "disable_ipv6", "1");
 			restore_ip6_properties (self);
 		}
 		return NM_ACT_STAGE_RETURN_IP_DONE;
@@ -9898,7 +9779,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 			ip6_privacy_str = "2";
 			break;
 		}
-		nm_device_ipv6_sysctl_set (self, "use_tempaddr", ip6_privacy_str);
+		nm_device_sysctl_ip_conf_set (self, AF_INET6, "use_tempaddr", ip6_privacy_str);
 	}
 
 	return ret;
@@ -12213,11 +12094,6 @@ nm_device_set_ip_config (NMDevice *self,
 			priv->needs_ip6_subnet = FALSE;
 	}
 
-	if (IS_IPv4 && FALSE /* rp_filter handling is disabled */) {
-		if (!nm_device_sys_iface_state_is_external_or_assume (self))
-			ip4_rp_filter_update (self);
-	}
-
 	if (has_changes) {
 
 		if (IS_IPv4)
@@ -13111,13 +12987,6 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 	}
 
 	set_unmanaged_external_down (self, TRUE);
-
-	if (IS_IPv4 && FALSE /* rp_filter handling is disabled */) {
-		if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
-			priv->v4_has_shadowed_routes = _v4_has_shadowed_routes_detect (self);;
-			ip4_rp_filter_update (self);
-		}
-	}
 
 	return G_SOURCE_REMOVE;
 }
@@ -14468,8 +14337,8 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 	/* Turn off kernel IPv6 */
 	if (cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
 		set_disable_ipv6 (self, "1");
-		nm_device_ipv6_sysctl_set (self, "accept_ra", "0");
-		nm_device_ipv6_sysctl_set (self, "use_tempaddr", "0");
+		nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra", "0");
+		nm_device_sysctl_ip_conf_set (self, AF_INET6, "use_tempaddr", "0");
 	}
 
 	/* Call device type-specific deactivation */
@@ -14535,8 +14404,8 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 			if (priv->ip6_mtu_initial) {
 				char sbuf[64];
 
-				nm_device_ipv6_sysctl_set (self, "mtu",
-				                           nm_sprintf_buf (sbuf, "%u", (unsigned) priv->ip6_mtu_initial));
+				nm_device_sysctl_ip_conf_set (self, AF_INET6, "mtu",
+				                              nm_sprintf_buf (sbuf, "%u", (unsigned) priv->ip6_mtu_initial));
 			}
 		}
 		priv->mtu_initial = 0;
@@ -14754,11 +14623,11 @@ ip6_managed_setup (NMDevice *self)
 {
 	set_nm_ipv6ll (self, TRUE);
 	set_disable_ipv6 (self, "1");
-	nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
-	nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
-	nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
-	nm_device_ipv6_sysctl_set (self, "use_tempaddr", "0");
-	nm_device_ipv6_sysctl_set (self, "forwarding", "0");
+	nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra_defrtr", "0");
+	nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra_pinfo", "0");
+	nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra_rtr_pref", "0");
+	nm_device_sysctl_ip_conf_set (self, AF_INET6, "use_tempaddr", "0");
+	nm_device_sysctl_ip_conf_set (self, AF_INET6, "forwarding", "0");
 }
 
 static void

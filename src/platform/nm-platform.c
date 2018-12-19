@@ -476,7 +476,9 @@ nm_platform_sysctl_set (NMPlatform *self, const char *pathid, int dirfd, const c
 }
 
 gboolean
-nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, int value)
+nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe (NMPlatform *self,
+                                                    const char *iface,
+                                                    int value)
 {
 	const char *path;
 	gint64 cur;
@@ -570,7 +572,14 @@ nm_platform_sysctl_get_int32 (NMPlatform *self, const char *pathid, int dirfd, c
  * (inclusive) or @fallback.
  */
 gint64
-nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *pathid, int dirfd, const char *path, guint base, gint64 min, gint64 max, gint64 fallback)
+nm_platform_sysctl_get_int_checked (NMPlatform *self,
+                                    const char *pathid,
+                                    int dirfd,
+                                    const char *path,
+                                    guint base,
+                                    gint64 min,
+                                    gint64 max,
+                                    gint64 fallback)
 {
 	char *value = NULL;
 	gint32 ret;
@@ -593,6 +602,81 @@ nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *pathid, int di
 	g_free (value);
 	errno = errsv;
 	return ret;
+}
+
+/*****************************************************************************/
+
+char *
+nm_platform_sysctl_ip_conf_get (NMPlatform *platform,
+                                int addr_family,
+                                const char *ifname,
+                                const char *property)
+{
+	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
+
+	return nm_platform_sysctl_get (platform,
+	                               NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (addr_family,
+	                                                                                         buf,
+	                                                                                         ifname,
+	                                                                                         property)));
+}
+
+gint64
+nm_platform_sysctl_ip_conf_get_int_checked (NMPlatform *platform,
+                                            int addr_family,
+                                            const char *ifname,
+                                            const char *property,
+                                            guint base,
+                                            gint64 min,
+                                            gint64 max,
+                                            gint64 fallback)
+{
+	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
+
+	return nm_platform_sysctl_get_int_checked (platform,
+	                                           NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (addr_family,
+	                                                                                                     buf,
+	                                                                                                     ifname,
+	                                                                                                     property)),
+	                                           base,
+	                                           min,
+	                                           max,
+	                                           fallback);
+}
+
+gboolean
+nm_platform_sysctl_ip_conf_set (NMPlatform *platform,
+                                int addr_family,
+                                const char *ifname,
+                                const char *property,
+                                const char *value)
+{
+	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
+
+	return nm_platform_sysctl_set (platform,
+	                               NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (addr_family,
+	                                                                                         buf,
+	                                                                                         ifname,
+	                                                                                         property)),
+	                               value);
+}
+
+gboolean
+nm_platform_sysctl_ip_conf_set_int64 (NMPlatform *platform,
+                                      int addr_family,
+                                      const char *ifname,
+                                      const char *property,
+                                      gint64 value)
+{
+	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
+	char s[64];
+
+	return nm_platform_sysctl_set (platform,
+	                               NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (addr_family,
+	                                                                                         buf,
+	                                                                                         ifname,
+	                                                                                         property)),
+	                               nm_sprintf_buf (s, "%"G_GINT64_FORMAT, value));
 }
 
 /*****************************************************************************/

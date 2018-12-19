@@ -223,14 +223,14 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 	}
 
 	if (changed & NM_NDISC_CONFIG_HOP_LIMIT)
-		nm_platform_sysctl_set_ip6_hop_limit_safe (NM_PLATFORM_GET, global_opt.ifname, rdata->hop_limit);
+		nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe (NM_PLATFORM_GET, global_opt.ifname, rdata->hop_limit);
 
 	if (changed & NM_NDISC_CONFIG_MTU) {
-		char val[16];
-		char sysctl_path_buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
-
-		g_snprintf (val, sizeof (val), "%d", rdata->mtu);
-		nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET6, sysctl_path_buf, global_opt.ifname, "mtu")), val);
+		nm_platform_sysctl_ip_conf_set_int64 (NM_PLATFORM_GET,
+		                                      AF_INET6,
+		                                      global_opt.ifname,
+		                                      "mtu",
+		                                      rdata->mtu);
 	}
 
 	nm_ip6_config_merge (existing, ndisc_config, NM_IP_CONFIG_MERGE_DEFAULT, 0);
@@ -389,7 +389,6 @@ main (int argc, char *argv[])
 	gs_unref_bytes GBytes *client_id = NULL;
 	gs_free NMUtilsIPv6IfaceId *iid = NULL;
 	guint sd_id;
-	char sysctl_path_buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 
 	c_list_init (&gl.dad_failed_lst_head);
 
@@ -500,7 +499,11 @@ main (int argc, char *argv[])
 	}
 
 	if (global_opt.dhcp4_address) {
-		nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET, sysctl_path_buf, global_opt.ifname, "promote_secondaries")), "1");
+		nm_platform_sysctl_ip_conf_set (NM_PLATFORM_GET,
+		                                AF_INET,
+		                                global_opt.ifname,
+		                                "promote_secondaries",
+		                                "1");
 
 		dhcp4_client = nm_dhcp_manager_start_ip4 (nm_dhcp_manager_get (),
 		                                          nm_platform_get_multi_idx (NM_PLATFORM_GET),
@@ -552,10 +555,10 @@ main (int argc, char *argv[])
 		if (iid)
 			nm_ndisc_set_iid (ndisc, *iid);
 
-		nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET6, sysctl_path_buf, global_opt.ifname, "accept_ra")), "1");
-		nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET6, sysctl_path_buf, global_opt.ifname, "accept_ra_defrtr")), "0");
-		nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET6, sysctl_path_buf, global_opt.ifname, "accept_ra_pinfo")), "0");
-		nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET6, sysctl_path_buf, global_opt.ifname, "accept_ra_rtr_pref")), "0");
+		nm_platform_sysctl_ip_conf_set (NM_PLATFORM_GET, AF_INET6, global_opt.ifname, "accept_ra",          "1");
+		nm_platform_sysctl_ip_conf_set (NM_PLATFORM_GET, AF_INET6, global_opt.ifname, "accept_ra_defrtr",   "0");
+		nm_platform_sysctl_ip_conf_set (NM_PLATFORM_GET, AF_INET6, global_opt.ifname, "accept_ra_pinfo",    "0");
+		nm_platform_sysctl_ip_conf_set (NM_PLATFORM_GET, AF_INET6, global_opt.ifname, "accept_ra_rtr_pref", "0");
 
 		g_signal_connect (NM_PLATFORM_GET,
 		                  NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,

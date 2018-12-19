@@ -111,9 +111,12 @@ void nm_device_set_wwan_ip6_config (NMDevice *device, NMIP6Config *config);
 
 gboolean nm_device_hw_addr_is_explict (NMDevice *device);
 
-void nm_device_ip_method_failed (NMDevice *self, int family, NMDeviceStateReason reason);
+void nm_device_ip_method_failed (NMDevice *self, int addr_family, NMDeviceStateReason reason);
 
-gboolean nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *value);
+gboolean nm_device_sysctl_ip_conf_set (NMDevice *self,
+                                       int addr_family,
+                                       const char *property,
+                                       const char *value);
 
 /*****************************************************************************/
 

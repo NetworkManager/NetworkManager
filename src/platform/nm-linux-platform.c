@@ -1942,9 +1942,10 @@ _wireguard_update_from_allowed_ips_nla (NMPWireGuardAllowedIP *allowed_ip,
 
 	_check_addr_or_return_val (tb, WGALLOWEDIP_A_IPADDR, addr_len, FALSE);
 
-	memset (allowed_ip, 0, sizeof (NMPWireGuardAllowedIP));
+	*allowed_ip = (NMPWireGuardAllowedIP) {
+		.family = family,
+	};
 
-	allowed_ip->family = family;
 	nm_assert ((int) allowed_ip->family == family);
 
 	if (tb[WGALLOWEDIP_A_IPADDR])

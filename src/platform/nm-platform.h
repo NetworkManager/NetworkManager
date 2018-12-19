@@ -1106,7 +1106,14 @@ const char *nm_platform_error_to_string (NMPlatformError error,
 	((const char *) NULL), -1, (path)
 
 #define NMP_SYSCTL_PATHID_NETDIR_unsafe(dirfd, ifname, path) \
-	nm_sprintf_bufa (NM_STRLEN ("net:/sys/class/net//\0") + NMP_IFNAMSIZ + strlen (path), \
+	nm_sprintf_bufa (  NM_STRLEN ("net:/sys/class/net//\0") \
+	                 + NMP_IFNAMSIZ \
+	                 + ({ \
+	                     const gsize _l = strlen (path); \
+	                     \
+	                     nm_assert (_l < 200); \
+	                     _l; \
+	                    }), \
 	                 "net:/sys/class/net/%s/%s", (ifname), (path)), \
 	(dirfd), (path)
 
@@ -1121,7 +1128,35 @@ char *nm_platform_sysctl_get (NMPlatform *self, const char *pathid, int dirfd, c
 gint32 nm_platform_sysctl_get_int32 (NMPlatform *self, const char *pathid, int dirfd, const char *path, gint32 fallback);
 gint64 nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *pathid, int dirfd, const char *path, guint base, gint64 min, gint64 max, gint64 fallback);
 
-gboolean nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, int value);
+char *nm_platform_sysctl_ip_conf_get (NMPlatform *platform,
+                                      int addr_family,
+                                      const char *ifname,
+                                      const char *property);
+
+gint64 nm_platform_sysctl_ip_conf_get_int_checked (NMPlatform *platform,
+                                                   int addr_family,
+                                                   const char *ifname,
+                                                   const char *property,
+                                                   guint base,
+                                                   gint64 min,
+                                                   gint64 max,
+                                                   gint64 fallback);
+
+gboolean nm_platform_sysctl_ip_conf_set (NMPlatform *platform,
+                                         int addr_family,
+                                         const char *ifname,
+                                         const char *property,
+                                         const char *value);
+
+gboolean nm_platform_sysctl_ip_conf_set_int64 (NMPlatform *platform,
+                                               int addr_family,
+                                               const char *ifname,
+                                               const char *property,
+                                               gint64 value);
+
+gboolean nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe (NMPlatform *self,
+                                                             const char *iface,
+                                                             int value);
 
 const char *nm_platform_if_indextoname (NMPlatform *self, int ifindex, char *out_ifname/* of size IFNAMSIZ */);
 int nm_platform_if_nametoindex (NMPlatform *self, const char *ifname);
