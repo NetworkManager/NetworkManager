@@ -7472,6 +7472,22 @@ _ASSERT_arp_type (guint16 arp_type,
 	nm_assert (hwaddr);
 }
 
+static void
+_hwaddr_get_relevant_part (guint16 arp_type,
+                           const guint8 **hwaddr,
+                           gsize *hwaddr_len)
+{
+	nm_assert (hwaddr);
+	nm_assert (hwaddr_len);
+	_ASSERT_arp_type (arp_type, *hwaddr, *hwaddr_len);
+
+	/* for infiniband, we only consider the last 8 bytes. */
+	if (arp_type == ARPHRD_INFINIBAND) {
+		*hwaddr += (INFINIBAND_ALEN - 8);
+		*hwaddr_len = 8;
+	}
+}
+
 static GBytes *
 dhcp4_get_client_id_mac (guint16 arp_type,
                          const guint8 *hwaddr,
@@ -7480,7 +7496,7 @@ dhcp4_get_client_id_mac (guint16 arp_type,
 	guint8 *client_id_buf;
 	const guint8 hwaddr_type = arp_type;
 
-	_ASSERT_arp_type (arp_type, hwaddr, hwaddr_len);
+	_hwaddr_get_relevant_part (arp_type, &hwaddr, &hwaddr_len);
 
 	client_id_buf = g_malloc (hwaddr_len + 1);
 	client_id_buf[0] = hwaddr_type;
@@ -8224,7 +8240,7 @@ generate_duid_llt (guint16 arp_type,
 	const guint16 hw_type = htons (arp_type);
 	const guint32 duid_time = htonl (NM_MAX (0, time - EPOCH_DATETIME_200001010000));
 
-	_ASSERT_arp_type (arp_type, hwaddr, hwaddr_len);
+	_hwaddr_get_relevant_part (arp_type, &hwaddr, &hwaddr_len);
 
 	arr = g_new (guint8, 2 + 2 + 4 + hwaddr_len);
 
@@ -8245,7 +8261,7 @@ generate_duid_ll (guint16 arp_type,
 	const guint16 duid_type = htons (3);
 	const guint16 hw_type = htons (arp_type);
 
-	_ASSERT_arp_type (arp_type, hwaddr, hwaddr_len);
+	_hwaddr_get_relevant_part (arp_type, &hwaddr, &hwaddr_len);
 
 	arr = g_new (guint8, 2 + 2 + hwaddr_len);
 
