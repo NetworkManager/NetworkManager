@@ -5278,32 +5278,37 @@ activation_add_done (NMSettings *settings,
 	nm_utils_user_data_unpack (user_data, &self, &active, &persist_ptr);
 	persist = GPOINTER_TO_INT (persist_ptr);
 
-	if (!error) {
-		nm_active_connection_set_settings_connection (active, new_connection);
+	if (error)
+		goto fail;
 
-		if (_internal_activate_generic (self, active, &local)) {
-			nm_settings_connection_update (new_connection,
-			                               NULL,
-			                               persist,
-			                               NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION | NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED,
-			                               "add-and-activate",
-			                               NULL);
-			g_dbus_method_invocation_return_value (
-			    context,
-			    g_variant_new ("(oo)",
-			                   nm_dbus_object_get_path (NM_DBUS_OBJECT (new_connection)),
-			                   nm_dbus_object_get_path (NM_DBUS_OBJECT (active))));
-			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
-			                            nm_active_connection_get_settings_connection (active),
-			                            TRUE,
-			                            NULL,
-			                            nm_active_connection_get_subject (active),
-			                            NULL);
-			return;
-		}
+	nm_active_connection_set_settings_connection (active, new_connection);
+
+	if (!_internal_activate_generic (self, active, &local)) {
 		error = local;
+		goto fail;
 	}
 
+	nm_settings_connection_update (new_connection,
+	                               NULL,
+	                               persist,
+	                               NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION | NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED,
+	                               "add-and-activate",
+	                               NULL);
+
+	g_dbus_method_invocation_return_value (context,
+	                                       g_variant_new ("(oo)",
+	                                                      nm_dbus_object_get_path (NM_DBUS_OBJECT (new_connection)),
+	                                                      nm_dbus_object_get_path (NM_DBUS_OBJECT (active))));
+
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
+	                            nm_active_connection_get_settings_connection (active),
+	                            TRUE,
+	                            NULL,
+	                            nm_active_connection_get_subject (active),
+	                            NULL);
+	return;
+
+fail:
 	nm_assert (error);
 
 	nm_active_connection_set_state_fail (active,
