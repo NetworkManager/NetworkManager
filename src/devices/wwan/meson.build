@@ -1,13 +1,13 @@
 sources = files(
   'nm-modem-broadband.c',
   'nm-modem.c',
-  'nm-modem-manager.c'
+  'nm-modem-manager.c',
 )
 
 deps = [
   libsystemd_dep,
   mm_glib_dep,
-  nm_dep
+  nm_dep,
 ]
 
 if enable_ofono
@@ -25,12 +25,12 @@ libnm_wwan = shared_module(
   ],
   link_depends: linker_script,
   install: true,
-  install_dir: nm_plugindir
+  install_dir: nm_plugindir,
 )
 
 libnm_wwan_dep = declare_dependency(
   include_directories: include_directories('.'),
-  link_with: libnm_wwan
+  link_with: libnm_wwan,
 )
 
 core_plugins += libnm_wwan
@@ -43,7 +43,7 @@ test(
 
 sources = files(
   'nm-device-modem.c',
-  'nm-wwan-factory.c'
+  'nm-wwan-factory.c',
 )
 
 libnm_device_plugin_wwan = shared_module(
@@ -55,7 +55,7 @@ libnm_device_plugin_wwan = shared_module(
   link_depends: linker_script_devices,
   install: true,
   install_dir: nm_plugindir,
-  install_rpath: nm_plugindir
+  install_rpath: nm_plugindir,
 )
 
 core_plugins += libnm_device_plugin_wwan
@@ -63,7 +63,7 @@ core_plugins += libnm_device_plugin_wwan
 run_target(
   'check-local-devices-wwan',
   command: [check_exports, libnm_device_plugin_wwan.full_path(), linker_script_devices],
-  depends: libnm_device_plugin_wwan
+  depends: libnm_device_plugin_wwan,
 )
 
 # FIXME: check_so_symbols replacement

@@ -4,7 +4,7 @@ project(
         version: '3',
         license: 'Apache',
         default_options: [
-                'c_std=c11'
+                'c_std=c11',
         ],
 )
 project_description = 'Intrusive Red-Black Tree Collection'

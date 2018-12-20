@@ -14,7 +14,7 @@ common = 'common.ent'
 common_ent_file = configure_file(
   input: common + '.in',
   output: common,
-  configuration: common_conf
+  configuration: common_conf,
 )
 
 xsltproc_options = [
@@ -28,7 +28,7 @@ xsltproc_options = [
   '--stringparam', 'man.th.extra1.suppress', '1',
   '--stringparam', 'man.authors.section.enabled', '0',
   '--stringparam', 'man.copyright.section.enabled', '0',
-  '--stringparam', 'man.th.title.max.length', '30'
+  '--stringparam', 'man.th.title.max.length', '30',
 ]
 
 docbook_xls = 'http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl'
@@ -62,14 +62,14 @@ foreach man: mans
     command: xsltproc_options + [docbook_xls, '@INPUT@'],
     depend_files: common_ent_file,
     install: true,
-    install_dir: join_paths(nm_mandir, 'man' + man[1])
+    install_dir: join_paths(nm_mandir, 'man' + man[1]),
   )
 endforeach
 
 if enable_introspection
   mans = [
     ['nm-settings-keyfile', '5', nm_settings_keyfile_docs],
-    ['nm-settings', '5', nm_settings_docs]
+    ['nm-settings', '5', nm_settings_docs],
   ]
 
   if enable_ifcfg_rh
@@ -83,7 +83,7 @@ if enable_introspection
       output,
       input: man[2],
       output: output,
-      command: xsltproc_options + [join_paths(meson.current_source_dir(), man[0] + '.xsl'), '@INPUT@']
+      command: xsltproc_options + [join_paths(meson.current_source_dir(), man[0] + '.xsl'), '@INPUT@'],
     )
     content_files += input.full_path()
 
@@ -95,7 +95,7 @@ if enable_introspection
       output: output,
       command: xsltproc_options + [docbook_xls, '@INPUT@'],
       install: true,
-      install_dir: join_paths(nm_mandir, 'man' + man[1])
+      install_dir: join_paths(nm_mandir, 'man' + man[1]),
     )
   endforeach
 endif

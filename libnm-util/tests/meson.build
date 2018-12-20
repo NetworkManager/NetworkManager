@@ -2,7 +2,7 @@ deps = [
   dbus_dep,
   dbus_glib_dep,
   libnm_util_dep,
-  shared_dep
+  shared_dep,
 ]
 
 cflags = common_cflags + [
@@ -15,7 +15,7 @@ test_libnm_linking = executable(
   test,
   test + '.c',
   dependencies: deps + [libnm_dep],
-  c_args: cflags
+  c_args: cflags,
 )
 
 test_units = [
@@ -24,7 +24,7 @@ test_units = [
   ['test-secrets', [], []],
   ['test-setting-8021x', [], []],
   ['test-setting-dcb', [], []],
-  ['test-settings-defaults', [], []]
+  ['test-settings-defaults', [], []],
 ]
 
 foreach test_unit: test_units
@@ -34,12 +34,12 @@ foreach test_unit: test_units
     dependencies: deps,
     c_args: cflags,
     link_with: test_unit[1],
-    link_depends: test_unit[2]
+    link_depends: test_unit[2],
   )
 
   test(
     'libnm-util/' + test_unit[0],
     test_script,
-    args: test_args + [exe.full_path()]
+    args: test_args + [exe.full_path()],
   )
 endforeach

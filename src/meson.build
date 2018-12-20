@@ -2,7 +2,7 @@ src_inc = include_directories('.')
 
 install_data(
   'org.freedesktop.NetworkManager.conf',
-  install_dir: dbus_conf_dir
+  install_dir: dbus_conf_dir,
 )
 
 subdir('systemd')
@@ -14,7 +14,7 @@ nm_cflags = ['-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON'
 nm_dep = declare_dependency(
   include_directories: src_inc,
   dependencies: nm_core_dep,
-  compile_args: nm_cflags
+  compile_args: nm_cflags,
 )
 
 cflags = nm_cflags
@@ -42,7 +42,7 @@ sources = files(
   'nm-dbus-utils.c',
   'nm-ip4-config.c',
   'nm-ip6-config.c',
-  'nm-logging.c'
+  'nm-logging.c',
 )
 
 sources += shared_files_time_utils
@@ -50,7 +50,7 @@ sources += shared_files_time_utils
 deps = [
   libsystemd_dep,
   libudev_dep,
-  nm_core_dep
+  nm_core_dep,
 ]
 
 if enable_wext
@@ -62,7 +62,7 @@ libnetwork_manager_base = static_library(
   sources: sources,
   dependencies: deps,
   c_args: cflags,
-  link_with: libnm_core
+  link_with: libnm_core,
 )
 
 sources = files(
@@ -143,7 +143,7 @@ sources = files(
   'nm-proxy-config.c',
   'nm-rfkill-manager.c',
   'nm-session-monitor.c',
-  'nm-sleep-monitor.c'
+  'nm-sleep-monitor.c',
 )
 
 nm_deps = [
@@ -176,14 +176,14 @@ libnetwork_manager = static_library(
   sources: sources,
   dependencies: nm_deps,
   c_args: cflags,
-  link_with: [libnetwork_manager_base, libsystemd_nm]
+  link_with: [libnetwork_manager_base, libsystemd_nm],
 )
 
 deps = [
   dl_dep,
   libndp_dep,
   libudev_dep,
-  nm_core_dep
+  nm_core_dep,
 ]
 
 name = 'nm-iface-helper'
@@ -197,19 +197,19 @@ executable(
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,
-  install_dir: nm_libexecdir
+  install_dir: nm_libexecdir,
 )
 
 if enable_tests
   sources = files(
     'ndisc/nm-fake-ndisc.c',
     'platform/tests/test-common.c',
-    'platform/nm-fake-platform.c'
+    'platform/nm-fake-platform.c',
   )
 
   deps = [
     libudev_dep,
-    nm_core_dep
+    nm_core_dep,
   ]
 
   test_cflags = ['-DNETWORKMANAGER_COMPILATION_TEST']
@@ -222,13 +222,13 @@ if enable_tests
     sources: sources,
     dependencies: deps,
     c_args: cflags + test_cflags,
-    link_with: libnetwork_manager
+    link_with: libnetwork_manager,
   )
 
   test_nm_dep = declare_dependency(
     dependencies: nm_dep,
     compile_args: test_cflags,
-    link_with: libnetwork_manager_test
+    link_with: libnetwork_manager_test,
   )
 
   test_nm_dep_fake = declare_dependency(
@@ -284,7 +284,7 @@ ver_script = custom_target(
   input: meson.source_root(),
   output: symbol_map_name,
   depends: [ network_manager_sym, core_plugins ],
-  command: [create_exports_networkmanager, '--called-from-build', '@INPUT@']
+  command: [create_exports_networkmanager, '--called-from-build', '@INPUT@'],
 )
 
 ldflags = ['-rdynamic', '-Wl,--version-script,@0@'.format(ver_script.full_path())]
@@ -298,7 +298,7 @@ network_manager = executable(
   link_args: ldflags,
   link_depends: ver_script,
   install: true,
-  install_dir: nm_sbindir
+  install_dir: nm_sbindir,
 )
 
 if enable_tests

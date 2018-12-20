@@ -4,7 +4,7 @@ sources = files('nm-libnm-utils.c')
 
 deps = [
   libnmdbus_dep,
-  shared_dep
+  shared_dep,
 ]
 
 cflags = [
@@ -22,7 +22,7 @@ libnm_utils = static_library(
   sources: sources,
   include_directories: libnm_core_inc,
   dependencies: deps,
-  c_args: cflags
+  c_args: cflags,
 )
 
 libnm_headers = files(
@@ -69,12 +69,12 @@ libnm_headers = files(
   'nm-vpn-editor.h',
   'nm-vpn-plugin-old.h',
   'nm-vpn-service-plugin.h',
-  'nm-wimax-nsp.h'
+  'nm-wimax-nsp.h',
 )
 
 install_headers(
   libnm_core_headers + libnm_headers + [version_header],
-  subdir: libnm_name
+  subdir: libnm_name,
 )
 
 enum_headers = libnm_headers + [version_header]
@@ -87,7 +87,7 @@ libnm_enum = gnome.mkenums(
   c_template: enum_types + '.c.template',
   h_template: enum_types + '.h.template',
   install_header: true,
-  install_dir: libnm_pkgincludedir
+  install_dir: libnm_pkgincludedir,
 )
 
 libnm_sources = files(
@@ -139,14 +139,14 @@ libnm_sources = files(
   'nm-vpn-plugin-old.c',
   'nm-vpn-editor.c',
   'nm-vpn-service-plugin.c',
-  'nm-wimax-nsp.c'
+  'nm-wimax-nsp.c',
 )
 
 deps = [
   dl_dep,
   libudev_dep,
   shared_dep,
-  uuid_dep
+  uuid_dep,
 ]
 
 linker_script = join_paths(meson.current_source_dir(), 'libnm.ver')
@@ -165,13 +165,13 @@ libnm = shared_library(
     '-Wl,--version-script,@0@'.format(linker_script),
   ],
   link_depends: linker_script,
-  install: true
+  install: true,
 )
 
 libnm_dep = declare_dependency(
   sources: libnm_enum[1],
   include_directories: libnm_inc,
-  link_with: libnm
+  link_with: libnm,
 )
 
 pkg.generate(
@@ -184,8 +184,8 @@ pkg.generate(
   requires: 'gio-2.0',
   variables: [
     'exec_prefix=${prefix}',
-    'vpnservicedir=' + join_paths('${prefix}', 'lib', nm_name, 'VPN')
-  ]
+    'vpnservicedir=' + join_paths('${prefix}', 'lib', nm_name, 'VPN'),
+  ],
 )
 
 test(
@@ -208,7 +208,7 @@ if enable_introspection
     includes: 'Gio-2.0',
     extra_args: cflags,
     header: 'NetworkManager.h',
-    install: true
+    install: true,
   )
 
   generate_plugin_docs = join_paths(meson.current_source_dir(), 'generate-plugin-docs.pl')
@@ -218,7 +218,7 @@ if enable_introspection
     name,
     input: libnm_core_settings_sources,
     output: name,
-    command: [perl, generate_plugin_docs, 'keyfile', '@OUTPUT@', '@INPUT@']
+    command: [perl, generate_plugin_docs, 'keyfile', '@OUTPUT@', '@INPUT@'],
   )
 
   name = 'nm-settings-docs-overrides.xml'
@@ -226,7 +226,7 @@ if enable_introspection
     name,
     input: libnm_core_settings_sources,
     output: name,
-    command: [perl, generate_plugin_docs, 'dbus', '@OUTPUT@', '@INPUT@']
+    command: [perl, generate_plugin_docs, 'dbus', '@OUTPUT@', '@INPUT@'],
   )
 
   if enable_ifcfg_rh
@@ -235,7 +235,7 @@ if enable_introspection
       name,
       input: libnm_core_settings_sources,
       output: name,
-      command: [perl, generate_plugin_docs, 'ifcfg-rh', '@OUTPUT@', '@INPUT@']
+      command: [perl, generate_plugin_docs, 'ifcfg-rh', '@OUTPUT@', '@INPUT@'],
     )
   endif
 
@@ -256,7 +256,7 @@ if enable_introspection
   generate_setting_docs_env = [
     'env', '-i',
     'GI_TYPELIB_PATH=' + gi_typelib_path,
-    'LD_LIBRARY_PATH=' + ld_library_path
+    'LD_LIBRARY_PATH=' + ld_library_path,
   ]
 
   name = 'nm-property-docs.xml'
@@ -265,7 +265,7 @@ if enable_introspection
     input: libnm_gir[0],
     output: name,
     command: [generate_setting_docs_env, generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--output', '@OUTPUT@'],
-    depends: libnm_gir
+    depends: libnm_gir,
   )
 
   name = 'nm-settings-docs.xml'
@@ -274,7 +274,7 @@ if enable_introspection
     input: libnm_gir[0],
     output: name,
     command: [generate_setting_docs_env, generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--overrides', nm_settings_docs_overrides, '--output', '@OUTPUT@'],
-    depends: libnm_gir
+    depends: libnm_gir,
   )
 endif
 

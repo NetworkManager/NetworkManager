@@ -7,20 +7,20 @@ test_units = [
   'test-ip6-config',
   'test-dcb',
   'test-wired-defname',
-  'test-utils'
+  'test-utils',
 ]
 
 foreach test_unit: test_units
   exe = executable(
     test_unit,
     test_unit + '.c',
-    dependencies: test_nm_dep
+    dependencies: test_nm_dep,
   )
 
   test(
     'src/' + test_unit,
     test_script,
-    args: test_args + [exe.full_path()]
+    args: test_args + [exe.full_path()],
   )
 endforeach
 
@@ -37,11 +37,11 @@ exe = executable(
   include_directories: src_inc,
   dependencies: nm_core_dep,
   c_args: cflags,
-  link_with: libsystemd_nm
+  link_with: libsystemd_nm,
 )
 
 test(
   'src/' + test_unit,
   test_script,
-  args: test_args + [exe.full_path()]
+  args: test_args + [exe.full_path()],
 )

@@ -9,7 +9,7 @@ exe = executable(
 test(
   'ndisc/' + test_unit,
   test_script,
-  args: test_args + [exe.full_path()]
+  args: test_args + [exe.full_path()],
 )
 
 test = 'test-ndisc-linux'

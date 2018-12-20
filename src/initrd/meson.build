@@ -1,6 +1,6 @@
 sources = files(
   'nmi-cmdline-reader.c',
-  'nmi-ibft-reader.c'
+  'nmi-ibft-reader.c',
 )
 
 nm_cflags = ['-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON']

@@ -62,7 +62,7 @@ incs = [
     'src/libsystemd-network',
     'src/libsystemd/sd-event',
     'src/shared',
-    'src/systemd'
+    'src/systemd',
   )
 ]
 
@@ -71,5 +71,5 @@ libsystemd_nm = static_library(
   sources: sources,
   include_directories: incs,
   dependencies: nm_core_dep,
-  c_args: '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD'
+  c_args: '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD',
 )

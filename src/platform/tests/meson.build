@@ -22,7 +22,7 @@ foreach test_unit: test_units
     'platform/' + test_unit[0],
     test_script,
     timeout: test_unit[3],
-    args: test_args + [exe.full_path()]
+    args: test_args + [exe.full_path()],
   )
 endforeach
 

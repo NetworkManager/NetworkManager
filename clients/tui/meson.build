@@ -2,7 +2,7 @@ name = 'nmtui'
 
 deps = [
   newt_dep,
-  nm_core_dep
+  nm_core_dep,
 ]
 
 cflags = clients_cflags + [
@@ -51,13 +51,13 @@ sources = files(
   'nmtui-edit.c',
   'nmtui-hostname.c',
   'nmt-utils.c',
-  'nmt-widget-list.c'
+  'nmt-widget-list.c',
 )
 
 deps += [
   libnm_dep,
   libnmc_base_dep,
-  libnmt_newt_dep
+  libnmt_newt_dep,
 ]
 
 executable(
@@ -67,5 +67,5 @@ executable(
   c_args: cflags,
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
-  install: true
+  install: true,
 )

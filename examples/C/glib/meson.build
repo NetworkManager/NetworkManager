@@ -6,7 +6,7 @@ examples = [
   ['list-connections-gdbus', [], [], []],
   ['list-connections-libnm', [], [], [libnm_dep]],
   ['monitor-nm-running-gdbus', [], [], []],
-  ['monitor-nm-state-gdbus', [], [], []]
+  ['monitor-nm-state-gdbus', [], [], []],
 ]
 
 foreach example: examples

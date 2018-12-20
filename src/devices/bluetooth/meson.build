@@ -5,12 +5,12 @@ sources = files(
   'nm-bluez4-manager.c',
   'nm-bluez5-manager.c',
   'nm-bt-error.c',
-  'nm-device-bt.c'
+  'nm-device-bt.c',
 )
 
 deps = [
   libnm_wwan_dep,
-  nm_dep
+  nm_dep,
 ]
 
 if enable_bluez5_dun
@@ -27,7 +27,7 @@ libnm_device_plugin_bluetooth = shared_module(
   link_depends: linker_script_devices,
   install: true,
   install_dir: nm_plugindir,
-  install_rpath: nm_plugindir
+  install_rpath: nm_plugindir,
 )
 
 core_plugins += libnm_device_plugin_bluetooth

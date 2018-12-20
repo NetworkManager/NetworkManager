@@ -2,7 +2,7 @@ name = 'nm-online'
 
 deps = [
   libnm_dep,
-  nm_core_dep
+  nm_core_dep,
 ]
 
 clients_cflags = [
@@ -20,7 +20,7 @@ executable(
   c_args: cflags,
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
-  install: true
+  install: true,
 )
 
 subdir('common')

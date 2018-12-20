@@ -23,13 +23,13 @@ private_headers = [
   'nm-core-tests-enum-types.h',
   'nm-keyfile-internal.h',
   'nm-keyfile-utils.h',
-  'test-general-enums.h'
+  'test-general-enums.h',
 ]
 
 configure_file(
   input: version_xml + '.in',
   output: version_xml,
-  configuration: version_conf
+  configuration: version_conf,
 )
 
 gnome.gtkdoc(
@@ -37,17 +37,17 @@ gnome.gtkdoc(
   main_xml: doc_module + '-docs.xml',
   src_dir: [
     libnm_core_inc,
-    libnm_inc
+    libnm_inc,
   ],
   dependencies: libnm_dep,
   scan_args: [
     '--rebuild-types',
     '--rebuild-sections',
-    '--ignore-headers=' + ' '.join(private_headers)
+    '--ignore-headers=' + ' '.join(private_headers),
   ],
   scanobjs_args: '--type-init-func="g_type_init();"',
   fixxref_args: '--html-dir=' + join_paths(nm_prefix, gnome.gtkdoc_html_dir(doc_module)),
   gobject_typesfile: doc_module + '.types',
   html_assets: doc_module + '.png',
-  install: true
+  install: true,
 )
