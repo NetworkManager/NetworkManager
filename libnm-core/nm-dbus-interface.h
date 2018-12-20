@@ -837,6 +837,7 @@ typedef enum /*< flags >*/ {
 #define NM_LLDP_ATTR_SYSTEM_NAME             "system-name"
 #define NM_LLDP_ATTR_SYSTEM_DESCRIPTION      "system-description"
 #define NM_LLDP_ATTR_SYSTEM_CAPABILITIES     "system-capabilities"
+#define NM_LLDP_ATTR_MANAGEMENT_ADDRESSES    "management-addresses"
 #define NM_LLDP_ATTR_IEEE_802_1_PVID         "ieee-802-1-pvid"
 #define NM_LLDP_ATTR_IEEE_802_1_PPVID        "ieee-802-1-ppvid"
 #define NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS  "ieee-802-1-ppvid-flags"

@@ -753,6 +753,21 @@ class Device(ExportedObj):
                     'system-description':   dbus.String('Test system #3'),
                     'system-capabilities':  dbus.UInt32(40),
                     'destination':          dbus.String('nearest-customer-bridge'),
+                    'management-addresses': dbus.Array([
+                        dbus.Dictionary({
+                            'address-subtype':          dbus.UInt32(1),
+                            'address':                  dbus.ByteArray(b'\xc0\xa8\x01\x01'),
+                            'interface-number':         dbus.UInt32(4),
+                            'interface-number-subtype': dbus.UInt32(3),
+                            'object-id':                dbus.ByteArray(b'\x01\x02\x03\x04')
+                        }, signature = 'sv'),
+                        dbus.Dictionary({
+                            'address-subtype':          dbus.UInt32(2),
+                            'address':                  dbus.ByteArray(b'\xfd\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x12\x34\x56\x78'),
+                            'interface-number':         dbus.UInt32(1),
+                            'interface-number-subtype': dbus.UInt32(2),
+                        }, signature = 'sv'),
+                    ])
                 })
             ], 'a{sv}')
         }
