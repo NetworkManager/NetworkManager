@@ -6805,7 +6805,6 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 {
 	NMDevice *self = data;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *method;
 	struct in_addr address;
 	NMIP4Config *config;
 	int r;
@@ -6813,10 +6812,8 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 	if (priv->act_request.obj == NULL)
 		return;
 
-	/* Ignore if the connection isn't an AutoIP connection */
-	method = nm_device_get_effective_ip_config_method (self, AF_INET);
-	if (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
-		return;
+	nm_assert (nm_streq (nm_device_get_effective_ip_config_method (self, AF_INET),
+	                     NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL));
 
 	switch (event) {
 	case SD_IPV4LL_EVENT_BIND:
