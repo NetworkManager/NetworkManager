@@ -80,6 +80,7 @@ typedef enum {
 	ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_INTERNAL,
 	ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_USER,
 	ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE,
+	ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE2,
 } AsyncOpType;
 
 typedef struct {
@@ -370,6 +371,7 @@ static void _internal_activation_auth_done (NMManager *self,
                                             gboolean success,
                                             const char *error_desc);
 static void _add_and_activate_auth_done (NMManager *self,
+                                         AsyncOpType async_op_type,
                                          NMActiveConnection *active,
                                          NMConnection *connection,
                                          GDBusMethodInvocation *invocation,
@@ -486,6 +488,7 @@ _async_op_data_new_ac_auth_activate_user (NMManager *self,
 
 static AsyncOpData *
 _async_op_data_new_ac_auth_add_and_activate (NMManager *self,
+                                             AsyncOpType async_op_type,
                                              NMActiveConnection *active_take,
                                              GDBusMethodInvocation *invocation_take,
                                              NMConnection *connection_take,
@@ -493,8 +496,11 @@ _async_op_data_new_ac_auth_add_and_activate (NMManager *self,
 {
 	AsyncOpData *async_op_data;
 
+	nm_assert (NM_IN_SET (async_op_type, ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE,
+	                                     ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE2));
+
 	async_op_data = g_slice_new0 (AsyncOpData);
-	async_op_data->async_op_type = ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE;
+	async_op_data->async_op_type = async_op_type;
 	async_op_data->self = g_object_ref (self);
 	async_op_data->ac_auth.active = active_take;
 	async_op_data->ac_auth.add_and_activate.invocation = invocation_take;
@@ -535,7 +541,9 @@ _async_op_complete_ac_auth_cb (NMActiveConnection *active,
 		                       error_desc);
 		break;
 	case ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE:
+	case ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE2:
 		_add_and_activate_auth_done (async_op_data->self,
+		                             async_op_data->async_op_type,
 		                             async_op_data->ac_auth.active,
 		                             async_op_data->ac_auth.add_and_activate.connection,
 		                             async_op_data->ac_auth.add_and_activate.invocation,
@@ -5274,9 +5282,13 @@ activation_add_done (NMSettings *settings,
 	gs_free_error GError *local = NULL;
 	gpointer persist_ptr;
 	NMSettingsConnectionPersistMode persist;
+	gpointer async_op_type_ptr;
+	AsyncOpType async_op_type;
+	GVariant *result_floating;
 
-	nm_utils_user_data_unpack (user_data, &self, &active, &persist_ptr);
+	nm_utils_user_data_unpack (user_data, &self, &active, &persist_ptr, &async_op_type_ptr);
 	persist = GPOINTER_TO_INT (persist_ptr);
+	async_op_type = GPOINTER_TO_INT (async_op_type_ptr);
 
 	if (error)
 		goto fail;
@@ -5295,10 +5307,17 @@ activation_add_done (NMSettings *settings,
 	                               "add-and-activate",
 	                               NULL);
 
-	g_dbus_method_invocation_return_value (context,
-	                                       g_variant_new ("(oo)",
-	                                                      nm_dbus_object_get_path (NM_DBUS_OBJECT (new_connection)),
-	                                                      nm_dbus_object_get_path (NM_DBUS_OBJECT (active))));
+	if (async_op_type == ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE) {
+		result_floating = g_variant_new ("(oo)",
+		                                 nm_dbus_object_get_path (NM_DBUS_OBJECT (new_connection)),
+		                                 nm_dbus_object_get_path (NM_DBUS_OBJECT (active)));
+	} else {
+		result_floating = g_variant_new ("(ooa{sv})",
+		                                 nm_dbus_object_get_path (NM_DBUS_OBJECT (new_connection)),
+		                                 nm_dbus_object_get_path (NM_DBUS_OBJECT (active)),
+		                                 g_variant_new_array (G_VARIANT_TYPE ("a{sv}"), NULL, 0));
+	}
+	g_dbus_method_invocation_return_value (context, result_floating);
 
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
 	                            nm_active_connection_get_settings_connection (active),
@@ -5327,6 +5346,7 @@ fail:
 
 static void
 _add_and_activate_auth_done (NMManager *self,
+                             AsyncOpType async_op_type,
                              NMActiveConnection *active,
                              NMConnection *connection,
                              GDBusMethodInvocation *invocation,
@@ -5364,7 +5384,8 @@ _add_and_activate_auth_done (NMManager *self,
 	                                 activation_add_done,
 	                                 nm_utils_user_data_pack (self,
 	                                                          g_object_ref (active),
-	                                                          GINT_TO_POINTER (persist)));
+	                                                          GINT_TO_POINTER (persist),
+	                                                          GINT_TO_POINTER (async_op_type)));
 }
 
 static void
@@ -5391,11 +5412,16 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	gs_free NMConnection **conns = NULL;
 	NMSettingsConnectionPersistMode persist = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
 	gboolean bind_dbus_client = FALSE;
+	AsyncOpType async_op_type;
 
-	if (g_strcmp0 (method_info->parent.name, "AddAndActivateConnection2") == 0)
+	if (nm_streq (method_info->parent.name, "AddAndActivateConnection2")) {
+		async_op_type = ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE2;
 		g_variant_get (parameters, "(@a{sa{sv}}&o&o@a{sv})", &settings, &device_path, &specific_object_path, &options);
-	else
+	} else {
+		nm_assert (nm_streq (method_info->parent.name, "AddAndActivateConnection"));
+		async_op_type = ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE;
 		g_variant_get (parameters, "(@a{sa{sv}}&o&o)", &settings, &device_path, &specific_object_path);
+	}
 
 	if (options) {
 		GVariantIter iter;
@@ -5531,6 +5557,7 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	                                incompl_conn,
 	                                _async_op_complete_ac_auth_cb,
 	                                _async_op_data_new_ac_auth_add_and_activate (self,
+	                                                                             async_op_type,
 	                                                                             active,
 	                                                                             invocation,
 	                                                                             incompl_conn,
@@ -7892,6 +7919,7 @@ static const NMDBusInterfaceInfoExtended interface_info_manager = {
 					.out_args = NM_DEFINE_GDBUS_ARG_INFOS (
 						NM_DEFINE_GDBUS_ARG_INFO ("path",              "o"),
 						NM_DEFINE_GDBUS_ARG_INFO ("active_connection", "o"),
+						NM_DEFINE_GDBUS_ARG_INFO ("result",            "a{sv}"),
 					),
 				),
 				.handle = impl_manager_add_and_activate_connection,
