@@ -35,6 +35,7 @@
 #include "missing.h"
 #include "process-util.h"
 #include "raw-clone.h"
+#include "rlimit-util.h"
 #include "signal-util.h"
 #include "stat-util.h"
 #include "string-table.h"
@@ -599,12 +600,14 @@ int get_process_root(pid_t pid, char **root) {
         return get_process_link_contents(p, root);
 }
 
+#define ENVIRONMENT_BLOCK_MAX (5U*1024U*1024U)
+
 int get_process_environ(pid_t pid, char **env) {
         _cleanup_fclose_ FILE *f = NULL;
         _cleanup_free_ char *outcome = NULL;
-        int c;
-        const char *p;
         size_t allocated = 0, sz = 0;
+        const char *p;
+        int r;
 
         assert(pid >= 0);
         assert(env);
@@ -620,9 +623,20 @@ int get_process_environ(pid_t pid, char **env) {
 
         (void) __fsetlocking(f, FSETLOCKING_BYCALLER);
 
-        while ((c = fgetc(f)) != EOF) {
+        for (;;) {
+                char c;
+
+                if (sz >= ENVIRONMENT_BLOCK_MAX)
+                        return -ENOBUFS;
+
                 if (!GREEDY_REALLOC(outcome, allocated, sz + 5))
                         return -ENOMEM;
+
+                r = safe_fgetc(f, &c);
+                if (r < 0)
+                        return r;
+                if (r == 0)
+                        break;
 
                 if (c == '\0')
                         outcome[sz++] = '\n';
@@ -630,13 +644,7 @@ int get_process_environ(pid_t pid, char **env) {
                         sz += cescape_char(c, outcome + sz);
         }
 
-        if (!outcome) {
-                outcome = strdup("");
-                if (!outcome)
-                        return -ENOMEM;
-        } else
-                outcome[sz] = '\0';
-
+        outcome[sz] = '\0';
         *env = TAKE_PTR(outcome);
 
         return 0;
@@ -869,9 +877,9 @@ int kill_and_sigcont(pid_t pid, int sig) {
 int getenv_for_pid(pid_t pid, const char *field, char **ret) {
         _cleanup_fclose_ FILE *f = NULL;
         char *value = NULL;
-        bool done = false;
         const char *path;
-        size_t l;
+        size_t l, sum = 0;
+        int r;
 
         assert(pid >= 0);
         assert(field);
@@ -894,6 +902,9 @@ int getenv_for_pid(pid_t pid, const char *field, char **ret) {
                 return 1;
         }
 
+        if (!pid_is_valid(pid))
+                return -EINVAL;
+
         path = procfs_file_alloca(pid, "environ");
 
         f = fopen(path, "re");
@@ -907,24 +918,19 @@ int getenv_for_pid(pid_t pid, const char *field, char **ret) {
         (void) __fsetlocking(f, FSETLOCKING_BYCALLER);
 
         l = strlen(field);
+        for (;;) {
+                _cleanup_free_ char *line = NULL;
 
-        do {
-                char line[LINE_MAX];
-                size_t i;
+                if (sum > ENVIRONMENT_BLOCK_MAX) /* Give up searching eventually */
+                        return -ENOBUFS;
 
-                for (i = 0; i < sizeof(line)-1; i++) {
-                        int c;
+                r = read_nul_string(f, LONG_LINE_MAX, &line);
+                if (r < 0)
+                        return r;
+                if (r == 0)  /* EOF */
+                        break;
 
-                        c = getc(f);
-                        if (_unlikely_(c == EOF)) {
-                                done = true;
-                                break;
-                        } else if (c == 0)
-                                break;
-
-                        line[i] = c;
-                }
-                line[i] = 0;
+                sum += r;
 
                 if (strneq(line, field, l) && line[l] == '=') {
                         value = strdup(line + l + 1);
@@ -934,8 +940,7 @@ int getenv_for_pid(pid_t pid, const char *field, char **ret) {
                         *ret = value;
                         return 1;
                 }
-
-        } while (!done);
+        }
 
         *ret = NULL;
         return 0;
@@ -1172,7 +1177,7 @@ void reset_cached_pid(void) {
  * headers. __register_atfork() is mostly equivalent to pthread_atfork(), but doesn't require us to link against
  * libpthread, as it is part of glibc anyway. */
 extern int __register_atfork(void (*prepare) (void), void (*parent) (void), void (*child) (void), void *dso_handle);
-extern void* __dso_handle __attribute__ ((__weak__));
+extern void* __dso_handle _weak_;
 
 pid_t getpid_cached(void) {
         static bool installed = false;
@@ -1250,25 +1255,17 @@ int safe_fork_full(
         original_pid = getpid_cached();
 
         if (flags & (FORK_RESET_SIGNALS|FORK_DEATHSIG)) {
-
                 /* We temporarily block all signals, so that the new child has them blocked initially. This way, we can
                  * be sure that SIGTERMs are not lost we might send to the child. */
 
-                if (sigfillset(&ss) < 0)
-                        return log_full_errno(prio, errno, "Failed to reset signal set: %m");
-
+                assert_se(sigfillset(&ss) >= 0);
                 block_signals = true;
 
         } else if (flags & FORK_WAIT) {
-
                 /* Let's block SIGCHLD at least, so that we can safely watch for the child process */
 
-                if (sigemptyset(&ss) < 0)
-                        return log_full_errno(prio, errno, "Failed to clear signal set: %m");
-
-                if (sigaddset(&ss, SIGCHLD) < 0)
-                        return log_full_errno(prio, errno, "Failed to add SIGCHLD to signal set: %m");
-
+                assert_se(sigemptyset(&ss) >= 0);
+                assert_se(sigaddset(&ss, SIGCHLD) >= 0);
                 block_signals = true;
         }
 
@@ -1401,6 +1398,14 @@ int safe_fork_full(
                 }
         }
 
+        if (flags & FORK_RLIMIT_NOFILE_SAFE) {
+                r = rlimit_nofile_safe();
+                if (r < 0) {
+                        log_full_errno(prio, r, "Failed to lower RLIMIT_NOFILE's soft limit to 1K: %m");
+                        _exit(EXIT_FAILURE);
+                }
+        }
+
         if (ret_pid)
                 *ret_pid = getpid_cached();
 
@@ -1511,6 +1516,8 @@ int fork_agent(const char *name, const int except[], size_t n_except, pid_t *ret
 
                 safe_close_above_stdio(fd);
         }
+
+        (void) rlimit_nofile_safe();
 
         /* Count arguments */
         va_start(ap, path);

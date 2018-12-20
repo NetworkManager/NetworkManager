@@ -16,6 +16,7 @@
 #include "dhcp-lease-internal.h"
 #include "dhcp-protocol.h"
 #include "dns-domain.h"
+#include "env-file.h"
 #include "fd-util.h"
 #include "fileio.h"
 #include "hexdecoct.h"
@@ -26,6 +27,7 @@
 #include "stdio-util.h"
 #include "string-util.h"
 #include "strv.h"
+#include "tmpfile-util.h"
 #include "unaligned.h"
 
 int sd_dhcp_lease_get_address(sd_dhcp_lease *lease, struct in_addr *addr) {
@@ -353,7 +355,7 @@ static int lease_parse_domain(const uint8_t *option, size_t len, char **ret) {
                 return 0;
         }
 
-        r = dns_name_normalize(name, &normalized);
+        r = dns_name_normalize(name, 0, &normalized);
         if (r < 0)
                 return r;
 
@@ -1298,4 +1300,10 @@ int sd_dhcp_route_get_gateway(sd_dhcp_route *route, struct in_addr *gateway) {
 
         *gateway = route->gw_addr;
         return 0;
+}
+
+int sd_dhcp_route_get_option(sd_dhcp_route *route) {
+        assert_return(route, -EINVAL);
+
+        return route->option;
 }

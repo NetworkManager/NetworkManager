@@ -56,6 +56,7 @@ struct sd_dhcp6_client {
         struct sd_dhcp6_lease *lease;
         int fd;
         bool information_request;
+        bool iaid_set;
         be16_t *req_opts;
         size_t req_opts_allocated;
         size_t req_opts_len;
@@ -205,9 +206,13 @@ static int dhcp6_client_set_duid_internal(
         assert_return(IN_SET(client->state, DHCP6_STATE_STOPPED), -EBUSY);
 
         if (duid != NULL) {
-                r = dhcp_validate_duid_len(duid_type, duid_len);
-                if (r < 0)
-                        return r;
+                r = dhcp_validate_duid_len(duid_type, duid_len, true);
+                if (r < 0) {
+                        r = dhcp_validate_duid_len(duid_type, duid_len, false);
+                        if (r < 0)
+                                return r;
+                        log_dhcp6_client(client, "Setting DUID of type %u with unexpected content", duid_type);
+                }
 
                 client->duid.type = htobe16(duid_type);
                 memcpy(&client->duid.raw.data, duid, duid_len);
@@ -267,6 +272,7 @@ int sd_dhcp6_client_set_iaid(sd_dhcp6_client *client, uint32_t iaid) {
 
         client->ia_na.ia_na.id = htobe32(iaid);
         client->ia_pd.ia_pd.id = htobe32(iaid);
+        client->iaid_set = true;
 
         return 0;
 }
@@ -790,7 +796,7 @@ static int client_ensure_iaid(sd_dhcp6_client *client) {
 
         assert(client);
 
-        if (client->ia_na.ia_na.id)
+        if (client->iaid_set)
                 return 0;
 
         r = dhcp_identifier_set_iaid(client->ifindex, client->mac_addr, client->mac_addr_len, true, &iaid);
@@ -799,6 +805,7 @@ static int client_ensure_iaid(sd_dhcp6_client *client) {
 
         client->ia_na.ia_na.id = iaid;
         client->ia_pd.ia_pd.id = iaid;
+        client->iaid_set = true;
 
         return 0;
 }

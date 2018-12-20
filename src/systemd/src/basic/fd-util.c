@@ -23,6 +23,7 @@
 #include "socket-util.h"
 #include "stdio-util.h"
 #include "util.h"
+#include "tmpfile-util.h"
 
 int close_nointr(int fd) {
         assert(fd >= 0);
@@ -113,7 +114,7 @@ FILE* safe_fclose(FILE *f) {
         if (f) {
                 PROTECT_ERRNO;
 
-                assert_se(fclose_nointr(f) != EBADF);
+                assert_se(fclose_nointr(f) != -EBADF);
         }
 
         return NULL;
@@ -648,7 +649,7 @@ int fd_duplicate_data_fd(int fd) {
 
                         if ((size_t) isz >= DATA_FD_MEMORY_LIMIT) {
 
-                                r = copy_bytes_full(fd, pipefds[1], DATA_FD_MEMORY_LIMIT, 0, &remains, &remains_size);
+                                r = copy_bytes_full(fd, pipefds[1], DATA_FD_MEMORY_LIMIT, 0, &remains, &remains_size, NULL, NULL);
                                 if (r < 0 && r != -EAGAIN)
                                         return r; /* If we get EAGAIN it could be because of the source or because of
                                                    * the destination fd, we can't know, as sendfile() and friends won't

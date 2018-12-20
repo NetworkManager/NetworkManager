@@ -20,6 +20,7 @@
 #include "io-util.h"
 #include "log.h"
 #include "macro.h"
+#include "missing_timerfd.h"
 #include "parse-util.h"
 #include "path-util.h"
 #include "process-util.h"
@@ -1384,9 +1385,7 @@ int get_timezone(char **tz) {
         if (r < 0)
                 return r; /* returns EINVAL if not a symlink */
 
-        e = path_startswith(t, "/usr/share/zoneinfo/");
-        if (!e)
-                e = path_startswith(t, "../usr/share/zoneinfo/");
+        e = PATH_STARTSWITH_SET(t, "/usr/share/zoneinfo/", "../usr/share/zoneinfo/");
         if (!e)
                 return -EINVAL;
 

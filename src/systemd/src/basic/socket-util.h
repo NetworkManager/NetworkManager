@@ -1,6 +1,10 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
 #pragma once
 
+#include <inttypes.h>
+#include <linux/netlink.h>
+#include <linux/if_infiniband.h>
+#include <linux/if_packet.h>
 #include <netinet/ether.h>
 #include <netinet/in.h>
 #include <stdbool.h>
@@ -8,13 +12,10 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
-#include <linux/netlink.h>
-#include <linux/if_infiniband.h>
-#include <linux/if_packet.h>
 
 #include "macro.h"
-#include "missing.h"
-#include "util.h"
+#include "missing_socket.h"
+#include "sparse-endian.h"
 
 union sockaddr_union {
         /* The minimal, abstract version */
@@ -70,7 +71,7 @@ int socket_address_parse(SocketAddress *a, const char *s);
 int socket_address_parse_and_warn(SocketAddress *a, const char *s);
 int socket_address_parse_netlink(SocketAddress *a, const char *s);
 int socket_address_print(const SocketAddress *a, char **p);
-int socket_address_verify(const SocketAddress *a) _pure_;
+int socket_address_verify(const SocketAddress *a, bool strict) _pure_;
 
 int sockaddr_un_unlink(const struct sockaddr_un *sa);
 

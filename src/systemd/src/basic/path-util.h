@@ -7,6 +7,7 @@
 
 #include "macro.h"
 #include "string-util.h"
+#include "strv.h"
 #include "time-util.h"
 
 #define PATH_SPLIT_SBIN_BIN(x) x "sbin:" x "bin"
@@ -48,7 +49,9 @@ char* path_startswith(const char *path, const char *prefix) _pure_;
 int path_compare(const char *a, const char *b) _pure_;
 bool path_equal(const char *a, const char *b) _pure_;
 bool path_equal_or_files_same(const char *a, const char *b, int flags);
-char* path_join(const char *root, const char *path, const char *rest);
+char* path_join_internal(const char *first, ...);
+#define path_join(x, ...) path_join_internal(x, __VA_ARGS__, (const char*) -1)
+
 char* path_simplify(char *path, bool kill_dots);
 
 static inline bool path_equal_ptr(const char *a, const char *b) {
@@ -70,13 +73,13 @@ static inline bool path_equal_ptr(const char *a, const char *b) {
 
 #define PATH_STARTSWITH_SET(p, ...)                             \
         ({                                                      \
-                char **s;                                       \
-                bool _found = false;                            \
-                STRV_FOREACH(s, STRV_MAKE(__VA_ARGS__))         \
-                        if (path_startswith(p, *s)) {           \
-                               _found = true;                   \
-                               break;                           \
-                        }                                       \
+                const char *_p = (p);                           \
+                char *_found = NULL, **_i;                      \
+                STRV_FOREACH(_i, STRV_MAKE(__VA_ARGS__)) {      \
+                        _found = path_startswith(_p, *_i);      \
+                        if (_found)                             \
+                                break;                          \
+                }                                               \
                 _found;                                         \
         })
 
@@ -94,12 +97,24 @@ int mkfs_exists(const char *fstype);
 /* Iterates through the path prefixes of the specified path, going up
  * the tree, to root. Also returns "" (and not "/"!) for the root
  * directory. Excludes the specified directory itself */
-#define PATH_FOREACH_PREFIX(prefix, path) \
-        for (char *_slash = ({ path_simplify(strcpy(prefix, path), false); streq(prefix, "/") ? NULL : strrchr(prefix, '/'); }); _slash && ((*_slash = 0), true); _slash = strrchr((prefix), '/'))
+#define PATH_FOREACH_PREFIX(prefix, path)                               \
+        for (char *_slash = ({                                          \
+                                path_simplify(strcpy(prefix, path), false); \
+                                streq(prefix, "/") ? NULL : strrchr(prefix, '/'); \
+                        });                                             \
+             _slash && ((*_slash = 0), true);                           \
+             _slash = strrchr((prefix), '/'))
 
 /* Same as PATH_FOREACH_PREFIX but also includes the specified path itself */
-#define PATH_FOREACH_PREFIX_MORE(prefix, path) \
-        for (char *_slash = ({ path_simplify(strcpy(prefix, path), false); if (streq(prefix, "/")) prefix[0] = 0; strrchr(prefix, 0); }); _slash && ((*_slash = 0), true); _slash = strrchr((prefix), '/'))
+#define PATH_FOREACH_PREFIX_MORE(prefix, path)                          \
+        for (char *_slash = ({                                          \
+                                path_simplify(strcpy(prefix, path), false); \
+                                if (streq(prefix, "/"))                 \
+                                        prefix[0] = 0;                  \
+                                strrchr(prefix, 0);                     \
+                        });                                             \
+             _slash && ((*_slash = 0), true);                           \
+             _slash = strrchr((prefix), '/'))
 
 char *prefix_root(const char *root, const char *path);
 
@@ -132,6 +147,7 @@ int parse_path_argument_and_warn(const char *path, bool suppress_root, char **ar
 
 char* dirname_malloc(const char *path);
 const char *last_path_component(const char *path);
+int path_extract_filename(const char *p, char **ret);
 
 bool filename_is_valid(const char *p) _pure_;
 bool path_is_valid(const char *p) _pure_;

@@ -2,6 +2,7 @@
 
 #include <errno.h>
 #include <inttypes.h>
+#include <linux/oom.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,10 +17,12 @@
 #include "missing.h"
 #include "parse-util.h"
 #include "process-util.h"
+#include "stat-util.h"
 #include "string-util.h"
 
 int parse_boolean(const char *v) {
-        assert(v);
+        if (!v)
+                return -EINVAL;
 
         if (streq(v, "1") || strcaseeq(v, "yes") || strcaseeq(v, "y") || strcaseeq(v, "true") || strcaseeq(v, "t") || strcaseeq(v, "on"))
                 return 1;
@@ -710,18 +713,51 @@ int parse_ip_port(const char *s, uint16_t *ret) {
         return 0;
 }
 
+int parse_ip_port_range(const char *s, uint16_t *low, uint16_t *high) {
+        unsigned l, h;
+        int r;
+
+        r = parse_range(s, &l, &h);
+        if (r < 0)
+                return r;
+
+        if (l <= 0 || l > 65535 || h <= 0 || h > 65535)
+                return -EINVAL;
+
+        if (h < l)
+                return -EINVAL;
+
+        *low = l;
+        *high = h;
+
+        return 0;
+}
+
 int parse_dev(const char *s, dev_t *ret) {
+        const char *major;
         unsigned x, y;
-        dev_t d;
+        size_t n;
+        int r;
 
-        if (sscanf(s, "%u:%u", &x, &y) != 2)
+        n = strspn(s, DIGITS);
+        if (n == 0)
+                return -EINVAL;
+        if (s[n] != ':')
                 return -EINVAL;
 
-        d = makedev(x, y);
-        if ((unsigned) major(d) != x || (unsigned) minor(d) != y)
-                return -EINVAL;
+        major = strndupa(s, n);
+        r = safe_atou(major, &x);
+        if (r < 0)
+                return r;
 
-        *ret = d;
+        r = safe_atou(s + n + 1, &y);
+        if (r < 0)
+                return r;
+
+        if (!DEVICE_MAJOR_VALID(x) || !DEVICE_MINOR_VALID(y))
+                return -ERANGE;
+
+        *ret = makedev(x, y);
         return 0;
 }
 
