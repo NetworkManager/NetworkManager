@@ -841,6 +841,10 @@ typedef enum /*< flags >*/ {
 #define NM_LLDP_ATTR_IEEE_802_1_PVID         "ieee-802-1-pvid"
 #define NM_LLDP_ATTR_IEEE_802_1_PPVID        "ieee-802-1-ppvid"
 #define NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS  "ieee-802-1-ppvid-flags"
+#define NM_LLDP_ATTR_IEEE_802_1_VLANS        "ieee-802-1-vlans"
+
+/* These are deprecated in favor of NM_LLDP_ATTR_IEEE_802_1_VLANS,
+ * which can report multiple VLANs */
 #define NM_LLDP_ATTR_IEEE_802_1_VID          "ieee-802-1-vid"
 #define NM_LLDP_ATTR_IEEE_802_1_VLAN_NAME    "ieee-802-1-vlan-name"
 

@@ -58,6 +58,7 @@ typedef enum {
 	LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,
 	LLDP_ATTR_ID_IEEE_802_1_VID,
 	LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,
+	LLDP_ATTR_ID_IEEE_802_1_VLANS,
 	_LLDP_ATTR_ID_COUNT,
 } LldpAttrId;
 
@@ -174,6 +175,7 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_lldp_attr_id_to_name, LldpAttrId,
 	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,  NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS),
 	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_VID,          NM_LLDP_ATTR_IEEE_802_1_VID),
 	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,    NM_LLDP_ATTR_IEEE_802_1_VLAN_NAME),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_VLANS,        NM_LLDP_ATTR_IEEE_802_1_VLANS),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (_LLDP_ATTR_ID_COUNT),
 );
 
@@ -189,6 +191,7 @@ _NM_UTILS_LOOKUP_DEFINE (static, _lldp_attr_id_to_type, LldpAttrId, LldpAttrType
 	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,      LLDP_ATTR_TYPE_UINT32),
 	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_VID,              LLDP_ATTR_TYPE_UINT32),
 	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,        LLDP_ATTR_TYPE_STRING),
+	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_VLANS,            LLDP_ATTR_TYPE_ARRAY_OF_VARDICTS),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (_LLDP_ATTR_ID_COUNT),
 );
 
@@ -208,13 +211,8 @@ _lldp_attr_set_str (LldpAttrData *pdata, LldpAttrId attr_id, const char *v_strin
 }
 
 static void
-_lldp_attr_set_str_ptr (LldpAttrData *pdata, LldpAttrId attr_id, const void *str, gsize len)
+_lldp_attr_take_str_ptr (LldpAttrData *pdata, LldpAttrId attr_id, char *str)
 {
-	const char *s = str;
-	const char *tmp;
-	gsize len0 = len;
-	gs_free char *str_free = NULL;
-
 	nm_assert (pdata);
 	nm_assert (_lldp_attr_id_to_type (attr_id) == LLDP_ATTR_TYPE_STRING);
 
@@ -225,23 +223,7 @@ _lldp_attr_set_str_ptr (LldpAttrData *pdata, LldpAttrId attr_id, const void *str
 		return;
 
 	pdata->attr_type = LLDP_ATTR_TYPE_STRING;
-
-	/* truncate at first NUL, including removing trailing NULs*/
-	tmp = memchr (s, '\0', len);
-	if (tmp)
-		len = tmp - s;
-
-	if (!len) {
-		pdata->v_string = g_strdup ("");
-		return;
-	}
-
-	if (len0 <= len || s[len] != '\0') {
-		/* hmpf, g_strescape needs a trailing NUL. Need to clone */
-		s = str_free = g_strndup (s, len);
-	}
-
-	pdata->v_string = g_strescape (s, NULL);
+	pdata->v_string = str;
 }
 
 static void
@@ -637,6 +619,10 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 				break;
 			case SD_LLDP_OUI_802_1_SUBTYPE_VLAN_NAME: {
 				int l;
+				GVariantDict dict;
+				guint32 vid;
+				const char *name;
+				char *name_to_free;
 
 				if (len <= 3)
 					continue;
@@ -647,10 +633,21 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 				if (l > 32)
 					continue;
 
-				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_VID,
-				                       unaligned_read_be16 (&data8[0]));
-				_lldp_attr_set_str_ptr (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,
-				                        &data8[3], l);
+				name = nm_utils_buf_utf8safe_escape (&data8[3], l, 0, &name_to_free);
+				vid = unaligned_read_be16 (&data8[0]);
+
+				g_variant_dict_init (&dict, NULL);
+				g_variant_dict_insert (&dict, "vid", "u", vid);
+				g_variant_dict_insert (&dict, "name", "s", name);
+
+				_lldp_attr_add_vardict (neigh->attrs,
+				                        LLDP_ATTR_ID_IEEE_802_1_VLANS,
+				                        g_variant_dict_end (&dict));
+
+				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_VID, vid);
+				_lldp_attr_take_str_ptr (neigh->attrs,
+				                         LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,
+				                         name_to_free ?: g_strdup (name));
 				break;
 			}
 			default:

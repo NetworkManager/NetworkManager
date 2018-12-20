@@ -741,7 +741,17 @@ class Device(ExportedObj):
                     'system-name':          dbus.String('test2.example.com'),
                     'system-description':   dbus.String('Test system #2'),
                     'system-capabilities':  dbus.UInt32(2047),
-                    'destination':          dbus.String('nearest-non-tpmr-bridge')
+                    'destination':          dbus.String('nearest-non-tpmr-bridge'),
+                    'ieee-802-1-vlans':     dbus.Array([
+                        dbus.Dictionary({
+                            'vid':          dbus.UInt32(80),
+                            'name':         dbus.String('vlan80'),
+                        }, signature = 'sv'),
+                        dbus.Dictionary({
+                            'vid':          dbus.UInt32(4000),
+                            'name':         dbus.String('My VLAN'),
+                        }, signature = 'sv'),
+                    ]),
                 }),
                 dbus.Dictionary({
                     'chassis-id-type':      dbus.UInt32(6),
