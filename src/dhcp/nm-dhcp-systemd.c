@@ -725,8 +725,7 @@ ip4_start (NMDhcpClient *client,
 
 	client_id = nm_dhcp_client_get_client_id (client);
 	if (!client_id) {
-		client_id_new = nm_utils_dhcp_client_id_systemd_node_specific (TRUE,
-		                                                               nm_dhcp_client_get_iface (client));
+		client_id_new = nm_utils_dhcp_client_id_mac (arp_type, hwaddr_arr, hwaddr_len);
 		client_id = client_id_new;
 	}
 

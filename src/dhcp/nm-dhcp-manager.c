@@ -239,7 +239,7 @@ client_start (NMDhcpManager *self,
 	 *
 	 * - for IPv4, the calling code may determine a client-id (from NM's connection profile).
 	 *   If present, it is taken. If not present, the DHCP plugin uses a plugin specific default.
-	 *     - for "internal" plugin, the default is just "duid".
+	 *     - for "internal" plugin, the default is just "mac".
 	 *     - for "dhclient", we try to get the configuration from dhclient's /etc/dhcp or fallback
 	 *       to whatever dhclient uses by default.
 	 *   We do it this way, because for dhclient the user may configure a default
