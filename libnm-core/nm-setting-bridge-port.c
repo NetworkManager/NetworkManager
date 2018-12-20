@@ -264,7 +264,6 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 		                    0, BR_MAX_PATH_COST, 100,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_INFERRABLE |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
