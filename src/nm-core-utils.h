@@ -279,7 +279,7 @@ gboolean nm_utils_host_id_get (const guint8 **out_host_id,
                                gsize *out_host_id_len);
 gint64 nm_utils_host_id_get_timestamp_ns (void);
 
-int nm_utils_detect_arp_type_from_addrlen (gsize hwaddr_len);
+int nm_utils_arp_type_detect_from_hwaddrlen (gsize hwaddr_len);
 
 /* IPv6 Interface Identifier helpers */
 

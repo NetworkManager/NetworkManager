@@ -2841,7 +2841,7 @@ nm_utils_boot_id_bin (void)
 /*****************************************************************************/
 
 /**
- * nm_utils_detect_arp_type_from_addrlen:
+ * nm_utils_arp_type_detect_from_hwaddrlen:
  * @hwaddr_len: the length of the hardware address in bytes.
  *
  * Detects the arp-type based on the length of the MAC address.
@@ -2852,7 +2852,7 @@ nm_utils_boot_id_bin (void)
  *
  * Returns: the arp-type or negative value on error. */
 int
-nm_utils_detect_arp_type_from_addrlen (gsize hwaddr_len)
+nm_utils_arp_type_detect_from_hwaddrlen (gsize hwaddr_len)
 {
 	switch (hwaddr_len) {
 	case ETH_ALEN:
