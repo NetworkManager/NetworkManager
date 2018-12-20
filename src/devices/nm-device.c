@@ -7459,53 +7459,6 @@ get_dhcp_timeout (NMDevice *self, int addr_family)
 	return timeout ?: NM_DHCP_TIMEOUT_DEFAULT;
 }
 
-static void
-_ASSERT_arp_type (guint16 arp_type,
-                  const guint8 *hwaddr,
-                  gsize hwaddr_len)
-{
-	/* we actually only support ethernet and infiniband below. Assert that
-	 * the arp-type and the address length correspond. */
-	nm_assert (NM_IN_SET (arp_type, ARPHRD_ETHER, ARPHRD_INFINIBAND));
-	nm_assert (arp_type <= 255);
-	nm_assert (hwaddr_len > 0);
-	nm_assert (arp_type != ARPHRD_ETHER      || hwaddr_len == ETH_ALEN);
-	nm_assert (arp_type != ARPHRD_INFINIBAND || hwaddr_len == INFINIBAND_ALEN);
-	nm_assert (hwaddr);
-}
-
-static void
-_hwaddr_get_relevant_part (guint16 arp_type,
-                           const guint8 **hwaddr,
-                           gsize *hwaddr_len)
-{
-	nm_assert (hwaddr);
-	nm_assert (hwaddr_len);
-	_ASSERT_arp_type (arp_type, *hwaddr, *hwaddr_len);
-
-	/* for infiniband, we only consider the last 8 bytes. */
-	if (arp_type == ARPHRD_INFINIBAND) {
-		*hwaddr += (INFINIBAND_ALEN - 8);
-		*hwaddr_len = 8;
-	}
-}
-
-static GBytes *
-dhcp4_get_client_id_mac (guint16 arp_type,
-                         const guint8 *hwaddr,
-                         gsize hwaddr_len)
-{
-	guint8 *client_id_buf;
-	const guint8 hwaddr_type = arp_type;
-
-	_hwaddr_get_relevant_part (arp_type, &hwaddr, &hwaddr_len);
-
-	client_id_buf = g_malloc (hwaddr_len + 1);
-	client_id_buf[0] = hwaddr_type;
-	memcpy (&client_id_buf[1], hwaddr, hwaddr_len);
-	return g_bytes_new_take (client_id_buf, hwaddr_len + 1);
-}
-
 static GBytes *
 dhcp4_get_client_id (NMDevice *self,
                      NMConnection *connection,
@@ -7554,7 +7507,7 @@ dhcp4_get_client_id (NMDevice *self,
 			goto out_fail;
 		}
 
-		result = dhcp4_get_client_id_mac ((guint16) arp_type, hwaddr_bin, hwaddr_len);
+		result = nm_utils_dhcp_client_id_mac (arp_type, hwaddr_bin, hwaddr_len);
 		goto out_good;
 	}
 
@@ -7576,7 +7529,7 @@ dhcp4_get_client_id (NMDevice *self,
 			goto out_fail;
 		}
 
-		result = dhcp4_get_client_id_mac ((guint16) arp_type, hwaddr_bin_buf, hwaddr_len);
+		result = nm_utils_dhcp_client_id_mac (arp_type, hwaddr_bin_buf, hwaddr_len);
 		goto out_good;
 	}
 
@@ -8239,7 +8192,7 @@ dhcp6_prefix_delegated (NMDhcpClient *client,
 #define EPOCH_DATETIME_200001010000  946684800
 
 static GBytes *
-generate_duid_llt (guint16 arp_type,
+generate_duid_llt (int arp_type,
                    const guint8 *hwaddr,
                    gsize hwaddr_len,
                    gint64 time)
@@ -8249,7 +8202,8 @@ generate_duid_llt (guint16 arp_type,
 	const guint16 hw_type = htons (arp_type);
 	const guint32 duid_time = htonl (NM_MAX (0, time - EPOCH_DATETIME_200001010000));
 
-	_hwaddr_get_relevant_part (arp_type, &hwaddr, &hwaddr_len);
+	if (!nm_utils_arp_type_get_hwaddr_relevant_part (arp_type, &hwaddr, &hwaddr_len))
+		nm_assert_not_reached ();
 
 	arr = g_new (guint8, 2 + 2 + 4 + hwaddr_len);
 
@@ -8262,7 +8216,7 @@ generate_duid_llt (guint16 arp_type,
 }
 
 static GBytes *
-generate_duid_ll (guint16 arp_type,
+generate_duid_ll (int arp_type,
                   const guint8 *hwaddr,
                   gsize hwaddr_len)
 {
@@ -8270,7 +8224,8 @@ generate_duid_ll (guint16 arp_type,
 	const guint16 duid_type = htons (3);
 	const guint16 hw_type = htons (arp_type);
 
-	_hwaddr_get_relevant_part (arp_type, &hwaddr, &hwaddr_len);
+	if (!nm_utils_arp_type_get_hwaddr_relevant_part (arp_type, &hwaddr, &hwaddr_len))
+		nm_assert_not_reached ();
 
 	arr = g_new (guint8, 2 + 2 + hwaddr_len);
 
