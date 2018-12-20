@@ -55,7 +55,7 @@ typedef enum {
 	LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,
 	LLDP_ATTR_ID_IEEE_802_1_VID,
 	LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,
-	_LLDP_PROP_ID_COUNT,
+	_LLDP_ATTR_ID_COUNT,
 } LldpAttrId;
 
 typedef struct {
@@ -110,7 +110,7 @@ typedef struct {
 
 	bool valid:1;
 
-	LldpAttrData attrs[_LLDP_PROP_ID_COUNT];
+	LldpAttrData attrs[_LLDP_ATTR_ID_COUNT];
 
 	GVariant *variant;
 } LldpNeighbor;
@@ -169,7 +169,7 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_lldp_attr_id_to_name, LldpAttrId,
 	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,  NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS),
 	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_VID,          NM_LLDP_ATTR_IEEE_802_1_VID),
 	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,    NM_LLDP_ATTR_IEEE_802_1_VLAN_NAME),
-	NM_UTILS_LOOKUP_ITEM_IGNORE (_LLDP_PROP_ID_COUNT),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (_LLDP_ATTR_ID_COUNT),
 );
 
 _NM_UTILS_LOOKUP_DEFINE (static, _lldp_attr_id_to_type, LldpAttrId, LldpAttrType,
@@ -183,7 +183,7 @@ _NM_UTILS_LOOKUP_DEFINE (static, _lldp_attr_id_to_type, LldpAttrId, LldpAttrType
 	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,      LLDP_ATTR_TYPE_UINT32),
 	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_VID,              LLDP_ATTR_TYPE_UINT32),
 	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,        LLDP_ATTR_TYPE_STRING),
-	NM_UTILS_LOOKUP_ITEM_IGNORE (_LLDP_PROP_ID_COUNT),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (_LLDP_ATTR_ID_COUNT),
 );
 
 static void
@@ -302,7 +302,7 @@ lldp_neighbor_free (LldpNeighbor *neighbor)
 	if (neighbor) {
 		g_free (neighbor->chassis_id);
 		g_free (neighbor->port_id);
-		for (attr_id = 0; attr_id < _LLDP_PROP_ID_COUNT; attr_id++) {
+		for (attr_id = 0; attr_id < _LLDP_ATTR_ID_COUNT; attr_id++) {
 			if (neighbor->attrs[attr_id].attr_type == LLDP_ATTR_TYPE_STRING)
 				g_free (neighbor->attrs[attr_id].v_string);
 		}
@@ -332,7 +332,7 @@ lldp_neighbor_equal (LldpNeighbor *a, LldpNeighbor *b)
 	    || !nm_streq0 (a->port_id, b->port_id))
 		return FALSE;
 
-	for (attr_id = 0; attr_id < _LLDP_PROP_ID_COUNT; attr_id++) {
+	for (attr_id = 0; attr_id < _LLDP_ATTR_ID_COUNT; attr_id++) {
 		if (a->attrs[attr_id].attr_type != b->attrs[attr_id].attr_type)
 			return FALSE;
 		switch (a->attrs[attr_id].attr_type) {
@@ -579,7 +579,7 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 		                       g_variant_new_string (dest_str));
 	}
 
-	for (attr_id = 0; attr_id < _LLDP_PROP_ID_COUNT; attr_id++) {
+	for (attr_id = 0; attr_id < _LLDP_ATTR_ID_COUNT; attr_id++) {
 		const LldpAttrData *data = &neigh->attrs[attr_id];
 
 		nm_assert (NM_IN_SET (data->attr_type, _lldp_attr_id_to_type (attr_id), LLDP_ATTR_TYPE_NONE));
