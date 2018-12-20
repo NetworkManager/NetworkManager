@@ -119,6 +119,8 @@
         @options: Further options for the method call.
         @path: Object path of the new connection that was just added.
         @active_connection: The path of the active connection object representing this active connection.
+        @result: a dictionary of additional output arguments for future extension. Currently not additional
+          output arguments are supported.
 
         Adds a new connection using the given details (if any) as a template
         (automatically filling in missing settings with the capabilities of the
@@ -138,6 +140,7 @@
       <arg name="options" type="a{sv}" direction="in"/>
       <arg name="path" type="o" direction="out"/>
       <arg name="active_connection" type="o" direction="out"/>
+      <arg name="result" type="a{sv}" direction="out"/>
     </method>
 
     <!--

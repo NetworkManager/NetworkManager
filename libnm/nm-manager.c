@@ -870,15 +870,48 @@ nm_manager_get_activating_connection (NMManager *manager)
 	return NM_MANAGER_GET_PRIVATE (manager)->activating_connection;
 }
 
+typedef enum {
+	ACTIVATE_TYPE_ACTIVATE_CONNECTION,
+	ACTIVATE_TYPE_ADD_AND_ACTIVATE_CONNECTION,
+	ACTIVATE_TYPE_ADD_AND_ACTIVATE_CONNECTION2,
+} ActivateType;
+
 typedef struct {
 	CList lst;
 	NMManager *manager;
 	GSimpleAsyncResult *simple;
 	GCancellable *cancellable;
-	gulong cancelled_id;
 	char *active_path;
 	char *new_connection_path;
+	GVariant *add_and_activate_output;
+	gulong cancelled_id;
+	ActivateType activate_type;
 } ActivateInfo;
+
+_NMActivateResult *
+_nm_activate_result_new (NMActiveConnection *active,
+                         GVariant *add_and_activate_output)
+{
+	_NMActivateResult *r;
+
+	nm_assert (!add_and_activate_output || g_variant_is_of_type (add_and_activate_output, G_VARIANT_TYPE ("a{sv}")));
+	nm_assert (!add_and_activate_output || !g_variant_is_floating (add_and_activate_output));
+
+	r = g_slice_new (_NMActivateResult);
+	*r = (_NMActivateResult) {
+		.active                  = g_object_ref (active),
+		.add_and_activate_output = nm_g_variant_ref (add_and_activate_output),
+	};
+	return r;
+}
+
+void
+_nm_activate_result_free (_NMActivateResult *result)
+{
+	g_object_unref (result->active);
+	nm_g_variant_unref (result->add_and_activate_output);
+	g_slice_free (_NMActivateResult, result);
+}
 
 static void
 activate_info_complete (ActivateInfo *info,
@@ -889,12 +922,17 @@ activate_info_complete (ActivateInfo *info,
 
 	c_list_unlink_stale (&info->lst);
 
-	if (active)
-		g_simple_async_result_set_op_res_gpointer (info->simple, g_object_ref (active), g_object_unref);
-	else
+	if (active) {
+		g_simple_async_result_set_op_res_gpointer (info->simple,
+		                                           _nm_activate_result_new (active,
+		                                                                    info->add_and_activate_output),
+		                                           (GDestroyNotify) _nm_activate_result_free);
+	} else
 		g_simple_async_result_set_from_error (info->simple, error);
+
 	g_simple_async_result_complete (info->simple);
 
+	nm_g_variant_unref (info->add_and_activate_output);
 	g_free (info->active_path);
 	g_free (info->new_connection_path);
 	g_object_unref (info->simple);
@@ -1035,6 +1073,7 @@ nm_manager_activate_connection_async (NMManager *manager,
 	priv = NM_MANAGER_GET_PRIVATE (manager);
 
 	info = g_slice_new0 (ActivateInfo);
+	info->activate_type = ACTIVATE_TYPE_ACTIVATE_CONNECTION;
 	info->manager = manager;
 	info->simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
 	                                          nm_manager_activate_connection_async);
@@ -1058,14 +1097,16 @@ nm_manager_activate_connection_finish (NMManager *manager,
                                        GError **error)
 {
 	GSimpleAsyncResult *simple;
+	_NMActivateResult *r;
 
 	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager), nm_manager_activate_connection_async), NULL);
 
 	simple = G_SIMPLE_ASYNC_RESULT (result);
 	if (g_simple_async_result_propagate_error (simple, error))
 		return NULL;
-	else
-		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+
+	r = g_simple_async_result_get_op_res_gpointer (simple);
+	return g_object_ref (r->active);
 }
 
 static void
@@ -1074,23 +1115,35 @@ add_activate_cb (GObject *object,
                  gpointer user_data)
 {
 	ActivateInfo *info = user_data;
-	GError *error = NULL;
+	gs_free GError *error = NULL;
+	gboolean success;
 
-	if (nmdbus_manager_call_add_and_activate_connection_finish (NMDBUS_MANAGER (object),
-	                                                            NULL,
-	                                                            &info->active_path,
-	                                                            result, &error)) {
-		if (info->cancellable) {
-			info->cancelled_id = g_signal_connect (info->cancellable, "cancelled",
-			                                       G_CALLBACK (activation_cancelled), info);
-		}
-
-		recheck_pending_activations (info->manager);
+	if (info->activate_type == ACTIVATE_TYPE_ADD_AND_ACTIVATE_CONNECTION) {
+		success = nmdbus_manager_call_add_and_activate_connection_finish (NMDBUS_MANAGER (object),
+		                                                                  NULL,
+		                                                                  &info->active_path,
+		                                                                  result,
+		                                                                  &error);
 	} else {
+		success = nmdbus_manager_call_add_and_activate_connection2_finish (NMDBUS_MANAGER (object),
+		                                                                   NULL,
+		                                                                   &info->active_path,
+		                                                                   &info->add_and_activate_output,
+		                                                                   result,
+		                                                                   &error);
+	}
+	if (!success) {
 		g_dbus_error_strip_remote_error (error);
 		activate_info_complete (info, NULL, error);
-		g_clear_error (&error);
+		return;
 	}
+
+	if (info->cancellable) {
+		info->cancelled_id = g_signal_connect (info->cancellable, "cancelled",
+		                                       G_CALLBACK (activation_cancelled), info);
+	}
+
+	recheck_pending_activations (info->manager);
 }
 
 void
@@ -1099,6 +1152,7 @@ nm_manager_add_and_activate_connection_async (NMManager *manager,
                                               NMDevice *device,
                                               const char *specific_object,
                                               GVariant *options,
+                                              gboolean force_v2,
                                               GCancellable *cancellable,
                                               GAsyncReadyCallback callback,
                                               gpointer user_data)
@@ -1106,6 +1160,7 @@ nm_manager_add_and_activate_connection_async (NMManager *manager,
 	NMManagerPrivate *priv;
 	GVariant *dict = NULL;
 	ActivateInfo *info;
+	ActivateType activate_type = ACTIVATE_TYPE_ADD_AND_ACTIVATE_CONNECTION;
 
 	g_return_if_fail (NM_IS_MANAGER (manager));
 	g_return_if_fail (NM_IS_DEVICE (device));
@@ -1128,32 +1183,61 @@ nm_manager_add_and_activate_connection_async (NMManager *manager,
 		dict = nm_connection_to_dbus (partial, NM_CONNECTION_SERIALIZE_ALL);
 	if (!dict)
 		dict = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
-	if (!options)
-		options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
+	if (force_v2) {
+		if (!options)
+			options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
+		activate_type = ACTIVATE_TYPE_ADD_AND_ACTIVATE_CONNECTION2;
+	} else {
+		if (options) {
+			if (g_variant_n_children (options) > 0)
+				activate_type = ACTIVATE_TYPE_ADD_AND_ACTIVATE_CONNECTION2;
+			else
+				nm_g_variant_unref_floating (options);
+		}
+	}
 
-	nmdbus_manager_call_add_and_activate_connection2 (priv->proxy,
-	                                                  dict,
-	                                                  nm_object_get_path (NM_OBJECT (device)),
-	                                                  specific_object ?: "/",
-	                                                  options,
-	                                                  cancellable,
-	                                                  add_activate_cb, info);
+	info->activate_type = activate_type;
+
+	if (activate_type == ACTIVATE_TYPE_ADD_AND_ACTIVATE_CONNECTION2) {
+		nmdbus_manager_call_add_and_activate_connection2 (priv->proxy,
+		                                                  dict,
+		                                                  nm_object_get_path (NM_OBJECT (device)),
+		                                                  specific_object ?: "/",
+		                                                  options,
+		                                                  cancellable,
+		                                                  add_activate_cb,
+		                                                  info);
+	} else {
+		nmdbus_manager_call_add_and_activate_connection (priv->proxy,
+		                                                  dict,
+		                                                  nm_object_get_path (NM_OBJECT (device)),
+		                                                  specific_object ?: "/",
+		                                                  cancellable,
+		                                                  add_activate_cb,
+		                                                  info);
+	}
 }
 
 NMActiveConnection *
 nm_manager_add_and_activate_connection_finish (NMManager *manager,
                                                GAsyncResult *result,
+                                               GVariant **out_result,
                                                GError **error)
 {
 	GSimpleAsyncResult *simple;
+	_NMActivateResult *r;
 
 	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager), nm_manager_add_and_activate_connection_async), NULL);
 
 	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
+	if (g_simple_async_result_propagate_error (simple, error)) {
+		NM_SET_OUT (out_result, NULL);
 		return NULL;
-	else
-		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+	}
+
+	r = g_simple_async_result_get_op_res_gpointer (simple);
+	NM_SET_OUT (out_result, nm_g_variant_ref (r->add_and_activate_output));
+	return g_object_ref (r->active);
 }
 
 static void
