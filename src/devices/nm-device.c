@@ -7548,7 +7548,7 @@ dhcp4_get_client_id (NMDevice *self,
 		}
 
 		hwaddr_bin = g_bytes_get_data (hwaddr, &hwaddr_len);
-		arp_type = nm_utils_detect_arp_type_from_addrlen (hwaddr_len);
+		arp_type = nm_utils_arp_type_detect_from_hwaddrlen (hwaddr_len);
 		if (arp_type < 0) {
 			fail_reason = "unsupported link-layer address";
 			goto out_fail;
@@ -7570,7 +7570,7 @@ dhcp4_get_client_id (NMDevice *self,
 		if (!_nm_utils_hwaddr_aton (hwaddr_str, hwaddr_bin_buf, sizeof (hwaddr_bin_buf), &hwaddr_len))
 			g_return_val_if_reached (NULL);
 
-		arp_type = nm_utils_detect_arp_type_from_addrlen (hwaddr_len);
+		arp_type = nm_utils_arp_type_detect_from_hwaddrlen (hwaddr_len);
 		if (arp_type < 0) {
 			fail_reason = "unsupported permanent link-layer address";
 			goto out_fail;
@@ -8384,7 +8384,7 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 		}
 
 		hwaddr_bin = g_bytes_get_data (hwaddr, &hwaddr_len);
-		arp_type = nm_utils_detect_arp_type_from_addrlen (hwaddr_len);
+		arp_type = nm_utils_arp_type_detect_from_hwaddrlen (hwaddr_len);
 		if (arp_type < 0) {
 			duid_error = "unsupported link-layer address";
 			goto out_fail;
@@ -8442,7 +8442,7 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 				duid_error = "missing link-layer address";
 				goto out_fail;
 			}
-			if ((arp_type = nm_utils_detect_arp_type_from_addrlen (g_bytes_get_size (hwaddr))) < 0) {
+			if ((arp_type = nm_utils_arp_type_detect_from_hwaddrlen (g_bytes_get_size (hwaddr))) < 0) {
 				duid_error = "unsupported link-layer address";
 				goto out_fail;
 			}
