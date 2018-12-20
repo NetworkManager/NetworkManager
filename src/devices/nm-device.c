@@ -392,6 +392,7 @@ typedef struct _NMDevicePrivate {
 
 	bool            ipv6ll_handle:1; /* TRUE if NM handles the device's IPv6LL address */
 	bool            ipv6ll_has:1;
+	bool            device_link_changed_down:1;
 
 	/* Generic DHCP stuff */
 	char *          dhcp_anycast_address;
@@ -3592,8 +3593,10 @@ device_link_changed (NMDevice *self)
 	gboolean was_up;
 	gboolean update_unmanaged_specs = FALSE;
 	gboolean got_hw_addr = FALSE, had_hw_addr;
+	gboolean seen_down = priv->device_link_changed_down;
 
 	priv->device_link_changed_id = 0;
+	priv->device_link_changed_down = FALSE;
 
 	ifindex = nm_device_get_ifindex (self);
 	pllink = nm_platform_link_get (nm_device_get_platform (self), ifindex);
@@ -3703,7 +3706,7 @@ device_link_changed (NMDevice *self)
 
 	device_recheck_slave_status (self, pllink);
 
-	if (priv->up && !was_up) {
+	if (priv->up && (!was_up || seen_down)) {
 		/* the link was down and just came up. That happens for example, while changing MTU.
 		 * We must restore IP configuration. */
 		if (priv->ip4_state == IP_DONE) {
@@ -3779,6 +3782,8 @@ link_changed_cb (NMPlatform *platform,
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (ifindex == nm_device_get_ifindex (self)) {
+		if (!(info->n_ifi_flags & IFF_UP))
+			priv->device_link_changed_down = TRUE;
 		if (!priv->device_link_changed_id) {
 			priv->device_link_changed_id = g_idle_add ((GSourceFunc) device_link_changed, self);
 			_LOGD (LOGD_DEVICE, "queued link change for ifindex %d", ifindex);
