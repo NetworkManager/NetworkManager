@@ -189,13 +189,14 @@ _internal_write_connection (NMConnection *connection,
 	WriteInfo info = { 0 };
 	GError *local_err = NULL;
 	int errsv;
-	gboolean rename = force_rename;
+	gboolean rename;
 
 	g_return_val_if_fail (!out_path || !*out_path, FALSE);
 	g_return_val_if_fail (keyfile_dir && keyfile_dir[0] == '/', FALSE);
 
-	if (existing_path && !g_str_has_prefix (existing_path, keyfile_dir))
-		rename = TRUE;
+	rename =    force_rename
+	         || (   existing_path
+	             && !nm_utils_file_is_in_path (existing_path, keyfile_dir));
 
 	switch (_nm_connection_verify (connection, error)) {
 	case NM_SETTING_VERIFY_NORMALIZABLE:
