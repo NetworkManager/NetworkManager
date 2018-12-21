@@ -481,30 +481,49 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 			add_option (options, dhcp4_requests, SD_DHCP_OPTION_STATIC_ROUTE, str_static->str);
 	}
 
-	/* FIXME: internal client only supports returning the first router. */
 	num = sd_dhcp_lease_get_router (lease, &a_router);
-	if (   num > 0
-	    && a_router[0].s_addr) {
-		nm_utils_inet4_ntop (a_router[0].s_addr, addr_str);
-		LOG_LEASE (LOGD_DHCP4, "gateway %s", addr_str);
-		add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROUTER, addr_str);
+	if (num > 0) {
+		guint32 default_route_metric = route_metric;
 
-		/* If the DHCP server returns both a Classless Static Routes option and a
-		 * Router option, the DHCP client MUST ignore the Router option [RFC 3442].
-		 *
-		 * Be more lenient and ignore the Router option only if Classless Static
-		 * Routes contain a default gateway (as other DHCP backends do).
-		 */
-		if (!has_router_from_classless) {
+		nm_gstring_prepare (&str);
+		for (i = 0; i < num; i++) {
+			guint32 m;
+
+			s = nm_utils_inet4_ntop (a_router[i].s_addr, addr_str);
+			g_string_append (nm_gstring_add_space_delimiter (str), s);
+
+			if (a_router[i].s_addr == 0) {
+				/* silently skip 0.0.0.0 */
+				continue;
+			}
+
+			if (has_router_from_classless) {
+				/* If the DHCP server returns both a Classless Static Routes option and a
+				 * Router option, the DHCP client MUST ignore the Router option [RFC 3442].
+				 *
+				 * Be more lenient and ignore the Router option only if Classless Static
+				 * Routes contain a default gateway (as other DHCP backends do).
+				 */
+				continue;
+			}
+
+			/* if there are multiple default routes, we add them with differing
+			 * metrics. */
+			m = default_route_metric;
+			if (default_route_metric < G_MAXUINT32)
+				default_route_metric++;
+
 			nm_ip4_config_add_route (ip4_config,
 			                         &((const NMPlatformIP4Route) {
 			                             .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
-			                             .gateway       = a_router[0].s_addr,
+			                             .gateway       = a_router[i].s_addr,
 			                             .table_coerced = nm_platform_route_table_coerce (route_table),
-			                             .metric        = route_metric,
+			                             .metric        = m,
 			                         }),
 			                         NULL);
 		}
+		LOG_LEASE (LOGD_DHCP4, "router %s", str->str);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROUTER, str->str);
 	}
 
 	if (   sd_dhcp_lease_get_mtu (lease, &mtu) >= 0
