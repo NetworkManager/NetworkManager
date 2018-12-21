@@ -326,17 +326,19 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	if (num > 0) {
 		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
-			if (addr_list[i].s_addr == 0)
-				continue;
-
 			nm_utils_inet4_ntop (addr_list[i].s_addr, addr_str);
 			g_string_append (nm_gstring_add_space_delimiter (str), addr_str);
+
+			if (   addr_list[i].s_addr == 0
+			    || nm_ip4_addr_is_localhost (addr_list[i].s_addr)) {
+				/* Skip localhost addresses, like also networkd does.
+				 * See https://github.com/systemd/systemd/issues/4524. */
+				continue;
+			}
 			nm_ip4_config_add_nameserver (ip4_config, addr_list[i].s_addr);
 		}
-		if (str->len) {
-			LOG_LEASE (LOGD_DHCP4, "nameserver '%s'", str->str);
-			add_option (options, dhcp4_requests, SD_DHCP_OPTION_DOMAIN_NAME_SERVER, str->str);
-		}
+		LOG_LEASE (LOGD_DHCP4, "nameserver '%s'", str->str);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_DOMAIN_NAME_SERVER, str->str);
 	}
 
 	num = sd_dhcp_lease_get_search_domains (lease, (char ***) &search_domains);
