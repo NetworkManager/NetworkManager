@@ -273,22 +273,29 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 
 	g_return_val_if_fail (lease != NULL, NULL);
 
-	ip4_config = nm_ip4_config_new (multi_idx, ifindex);
-
-	options = out_options ? create_options_dict () : NULL;
-
 	if (sd_dhcp_lease_get_address (lease, &a_address) < 0) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "could not get address from lease");
 		return NULL;
 	}
-	nm_utils_inet4_ntop (a_address.s_addr, addr_str);
-	LOG_LEASE (LOGD_DHCP4, "address %s", addr_str);
-	add_option (options, dhcp4_requests, DHCP_OPTION_IP_ADDRESS, addr_str);
 
 	if (sd_dhcp_lease_get_netmask (lease, &a_netmask) < 0) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "could not get netmask from lease");
 		return NULL;
 	}
+
+	if (sd_dhcp_lease_get_lifetime (lease, &a_lifetime) < 0) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "could not get lifetime from lease");
+		return NULL;
+	}
+
+	ip4_config = nm_ip4_config_new (multi_idx, ifindex);
+
+	options = out_options ? create_options_dict () : NULL;
+
+	nm_utils_inet4_ntop (a_address.s_addr, addr_str);
+	LOG_LEASE (LOGD_DHCP4, "address %s", addr_str);
+	add_option (options, dhcp4_requests, DHCP_OPTION_IP_ADDRESS, addr_str);
+
 	a_plen = nm_utils_ip4_netmask_to_prefix (a_netmask.s_addr);
 	LOG_LEASE (LOGD_DHCP4, "plen %u", (guint) a_plen);
 	add_option (options,
@@ -296,10 +303,6 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	            SD_DHCP_OPTION_SUBNET_MASK,
 	            nm_utils_inet4_ntop (a_netmask.s_addr, addr_str));
 
-	if (sd_dhcp_lease_get_lifetime (lease, &a_lifetime) < 0) {
-		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "could not get lifetime from lease");
-		return NULL;
-	}
 	LOG_LEASE (LOGD_DHCP4, "expires in %u seconds (at %lld)",
 	           (guint) a_lifetime,
 	           (long long) (ts_time + a_lifetime));
@@ -323,41 +326,42 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	if (num > 0) {
 		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
-			if (addr_list[i].s_addr) {
-				nm_ip4_config_add_nameserver (ip4_config, addr_list[i].s_addr);
-				s = nm_utils_inet4_ntop (addr_list[i].s_addr, addr_str);
-				LOG_LEASE (LOGD_DHCP4, "nameserver '%s'", s);
-				g_string_append_printf (str, "%s%s", str->len ? " " : "", s);
-			}
+			if (addr_list[i].s_addr == 0)
+				continue;
+
+			nm_utils_inet4_ntop (addr_list[i].s_addr, addr_str);
+			g_string_append (nm_gstring_add_space_delimiter (str), addr_str);
+			nm_ip4_config_add_nameserver (ip4_config, addr_list[i].s_addr);
 		}
-		if (str->len)
+		if (str->len) {
+			LOG_LEASE (LOGD_DHCP4, "nameserver '%s'", str->str);
 			add_option (options, dhcp4_requests, SD_DHCP_OPTION_DOMAIN_NAME_SERVER, str->str);
+		}
 	}
 
 	num = sd_dhcp_lease_get_search_domains (lease, (char ***) &search_domains);
 	if (num > 0) {
 		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
+			g_string_append (nm_gstring_add_space_delimiter (str), search_domains[i]);
 			nm_ip4_config_add_search (ip4_config, search_domains[i]);
-			g_string_append_printf (str, "%s%s", str->len ? " " : "", search_domains[i]);
-			LOG_LEASE (LOGD_DHCP4, "domain search '%s'", search_domains[i]);
 		}
+		LOG_LEASE (LOGD_DHCP4, "domain search '%s'", str->str);
 		add_option (options, dhcp4_requests, SD_DHCP_OPTION_DOMAIN_SEARCH_LIST, str->str);
 	}
 
-	if (   sd_dhcp_lease_get_domainname (lease, &s) >= 0
-	    && s) {
+	if (sd_dhcp_lease_get_domainname (lease, &s) >= 0) {
 		gs_strfreev char **domains = NULL;
 		char **d;
+
+		LOG_LEASE (LOGD_DHCP4, "domain name '%s'", s);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_DOMAIN_NAME, s);
 
 		/* Multiple domains sometimes stuffed into option 15 "Domain Name".
 		 * As systemd escapes such characters, split them at \\032. */
 		domains = g_strsplit (s, "\\032", 0);
-		for (d = domains; *d; d++) {
-			LOG_LEASE (LOGD_DHCP4, "domain name '%s'", *d);
+		for (d = domains; *d; d++)
 			nm_ip4_config_add_domain (ip4_config, *d);
-		}
-		add_option (options, dhcp4_requests, SD_DHCP_OPTION_DOMAIN_NAME, s);
 	}
 
 	if (sd_dhcp_lease_get_hostname (lease, &s) >= 0) {
@@ -479,9 +483,9 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 
 	/* FIXME: internal client only supports returning the first router. */
 	if (sd_dhcp_lease_get_router (lease, &a_router) >= 0) {
-		s = nm_utils_inet4_ntop (a_router.s_addr, addr_str);
-		LOG_LEASE (LOGD_DHCP4, "gateway %s", s);
-		add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROUTER, s);
+		nm_utils_inet4_ntop (a_router.s_addr, addr_str);
+		LOG_LEASE (LOGD_DHCP4, "gateway %s", addr_str);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROUTER, addr_str);
 
 		/* If the DHCP server returns both a Classless Static Routes option and a
 		 * Router option, the DHCP client MUST ignore the Router option [RFC 3442].
@@ -503,19 +507,19 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 
 	if (   sd_dhcp_lease_get_mtu (lease, &mtu) >= 0
 	    && mtu) {
-		nm_ip4_config_set_mtu (ip4_config, mtu, NM_IP_CONFIG_SOURCE_DHCP);
-		add_option_u64 (options, dhcp4_requests, SD_DHCP_OPTION_INTERFACE_MTU, mtu);
 		LOG_LEASE (LOGD_DHCP4, "mtu %u", mtu);
+		add_option_u64 (options, dhcp4_requests, SD_DHCP_OPTION_INTERFACE_MTU, mtu);
+		nm_ip4_config_set_mtu (ip4_config, mtu, NM_IP_CONFIG_SOURCE_DHCP);
 	}
 
 	num = sd_dhcp_lease_get_ntp (lease, &addr_list);
 	if (num > 0) {
 		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
-			s = nm_utils_inet4_ntop (addr_list[i].s_addr, addr_str);
-			LOG_LEASE (LOGD_DHCP4, "ntp server '%s'", s);
-			g_string_append_printf (str, "%s%s", str->len ? " " : "", s);
+			nm_utils_inet4_ntop (addr_list[i].s_addr, addr_str);
+			g_string_append (nm_gstring_add_space_delimiter (str), addr_str);
 		}
+		LOG_LEASE (LOGD_DHCP4, "ntp server '%s'", str->str);
 		add_option (options, dhcp4_requests, SD_DHCP_OPTION_NTP_SERVER, str->str);
 	}
 
@@ -824,6 +828,7 @@ lease_to_ip6_config (NMDedupMultiIndex *multi_idx,
 	sd_dhcp6_lease_reset_address_iter (lease);
 	nm_gstring_prepare (&str);
 	while (sd_dhcp6_lease_get_address (lease, &tmp_addr, &lft_pref, &lft_valid) >= 0) {
+		char sbuf[400];
 		const NMPlatformIP6Address address = {
 			.plen        = 128,
 			.address     = tmp_addr,
@@ -836,15 +841,12 @@ lease_to_ip6_config (NMDedupMultiIndex *multi_idx,
 		nm_ip6_config_add_address (ip6_config, &address);
 
 		nm_utils_inet6_ntop (&tmp_addr, addr_str);
-		if (str->len)
-			g_string_append_c (str, ' ');
-		g_string_append (str, addr_str);
+		g_string_append (nm_gstring_add_space_delimiter (str), addr_str);
 
 		LOG_LEASE (LOGD_DHCP6,
 		           "address %s",
-		           nm_platform_ip6_address_to_string (&address, NULL, 0));
+		           nm_platform_ip6_address_to_string (&address, sbuf, sizeof (sbuf)));
 	};
-
 	if (str->len)
 		add_option (options, dhcp6_requests, DHCP6_OPTION_IP_ADDRESS, str->str);
 
@@ -861,13 +863,11 @@ lease_to_ip6_config (NMDedupMultiIndex *multi_idx,
 	if (num > 0) {
 		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
-			nm_ip6_config_add_nameserver (ip6_config, &dns[i]);
 			nm_utils_inet6_ntop (&dns[i], addr_str);
-			if (str->len)
-				g_string_append_c (str, ' ');
-			g_string_append (str, addr_str);
-			LOG_LEASE (LOGD_DHCP6, "nameserver %s", addr_str);
+			g_string_append (nm_gstring_add_space_delimiter (str), addr_str);
+			nm_ip6_config_add_nameserver (ip6_config, &dns[i]);
 		}
+		LOG_LEASE (LOGD_DHCP6, "nameserver %s", str->str);
 		add_option (options, dhcp6_requests, SD_DHCP6_OPTION_DNS_SERVERS, str->str);
 	}
 
@@ -875,10 +875,10 @@ lease_to_ip6_config (NMDedupMultiIndex *multi_idx,
 	if (num > 0) {
 		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
+			g_string_append (nm_gstring_add_space_delimiter (str), domains[i]);
 			nm_ip6_config_add_search (ip6_config, domains[i]);
-			g_string_append_printf (str, "%s%s", str->len ? " " : "", domains[i]);
-			LOG_LEASE (LOGD_DHCP6, "domain name '%s'", domains[i]);
 		}
+		LOG_LEASE (LOGD_DHCP6, "domain name '%s'", str->str);
 		add_option (options, dhcp6_requests, SD_DHCP6_OPTION_DOMAIN_LIST, str->str);
 	}
 
