@@ -87,6 +87,7 @@ shared_files_libnm_core = files('''
     nm-utils/c-list-util.c
     nm-utils/nm-dedup-multi.c
     nm-utils/nm-enum-utils.c
+    nm-utils/nm-errno.c
     nm-utils/nm-hash-utils.c
     nm-utils/nm-io-utils.c
     nm-utils/nm-random-utils.c

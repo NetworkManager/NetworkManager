@@ -302,6 +302,8 @@ shared_nm_utils_libnm_utils_base_la_SOURCES = \
 	shared/nm-utils/nm-dedup-multi.h \
 	shared/nm-utils/nm-enum-utils.c \
 	shared/nm-utils/nm-enum-utils.h \
+	shared/nm-utils/nm-errno.c \
+	shared/nm-utils/nm-errno.h \
 	shared/nm-utils/nm-glib.h \
 	shared/nm-utils/nm-hash-utils.c \
 	shared/nm-utils/nm-hash-utils.h \
