@@ -26,17 +26,17 @@
 /*****************************************************************************/
 
 #define _NLE_BASE               100000
-#define NLE_UNSPEC              (_NLE_BASE +  0)
-#define NLE_BUG                 (_NLE_BASE +  1)
-#define NLE_NATIVE_ERRNO        (_NLE_BASE +  2)
-#define NLE_SEQ_MISMATCH        (_NLE_BASE +  3)
-#define NLE_MSG_TRUNC           (_NLE_BASE +  4)
-#define NLE_MSG_TOOSHORT        (_NLE_BASE +  5)
-#define NLE_DUMP_INTR           (_NLE_BASE +  6)
-#define NLE_ATTRSIZE            (_NLE_BASE +  7)
-#define NLE_BAD_SOCK            (_NLE_BASE +  8)
-#define NLE_NOADDR              (_NLE_BASE +  9)
-#define NLE_MSG_OVERFLOW        (_NLE_BASE + 10)
+#define NME_UNSPEC              (_NLE_BASE +  0)
+#define NME_BUG                 (_NLE_BASE +  1)
+#define NME_NATIVE_ERRNO        (_NLE_BASE +  2)
+#define NME_NL_SEQ_MISMATCH        (_NLE_BASE +  3)
+#define NME_NL_MSG_TRUNC           (_NLE_BASE +  4)
+#define NME_NL_MSG_TOOSHORT        (_NLE_BASE +  5)
+#define NME_NL_DUMP_INTR           (_NLE_BASE +  6)
+#define NME_NL_ATTRSIZE            (_NLE_BASE +  7)
+#define NME_NL_BAD_SOCK            (_NLE_BASE +  8)
+#define NME_NL_NOADDR              (_NLE_BASE +  9)
+#define NME_NL_MSG_OVERFLOW        (_NLE_BASE + 10)
 
 #define _NLE_BASE_END           (_NLE_BASE + 11)
 
@@ -56,7 +56,7 @@ nm_errno (int errsv)
 }
 
 static inline int
-nl_errno (int nlerr)
+nl_errno (int nmerr)
 {
 	/* Normalizes an netlink error to be positive. Various API returns negative
 	 * error codes, and this function converts the negative value to its
@@ -68,14 +68,14 @@ nl_errno (int nlerr)
 	 * range (_NLE_BASE, _NLE_BASE_END) is reserved. The difference between the two
 	 * functions is only how G_MININT is mapped.
 	 *
-	 * See also nl_syserr2nlerr() below. */
-	return nlerr >= 0
-	       ? nlerr
-	       : ((nlerr == G_MININT) ? NLE_BUG : -nlerr);
+	 * See also nm_errno_from_native() below. */
+	return nmerr >= 0
+	       ? nmerr
+	       : ((nmerr == G_MININT) ? NME_BUG : -nmerr);
 }
 
 static inline int
-nl_syserr2nlerr (int errsv)
+nm_errno_from_native (int errsv)
 {
 	/* this maps a native errno to a (always non-negative) netlink error number.
 	 *
@@ -86,18 +86,18 @@ nl_syserr2nlerr (int errsv)
 	 * That means, converting an errno to netlink error number means in
 	 * most cases just returning itself (negative values are normalized
 	 * to be positive). Only values G_MININT and [_NLE_BASE, _NLE_BASE_END]
-	 * are coerced to the special value NLE_NATIVE_ERRNO, as they cannot
+	 * are coerced to the special value NME_NATIVE_ERRNO, as they cannot
 	 * otherwise be represented in netlink error number domain. */
 	if (errsv == G_MININT)
-		return NLE_NATIVE_ERRNO;
+		return NME_NATIVE_ERRNO;
 	if (errsv < 0)
 		errsv = -errsv;
 	return (errsv >= _NLE_BASE && errsv < _NLE_BASE_END)
-	       ? NLE_NATIVE_ERRNO
+	       ? NME_NATIVE_ERRNO
 	       : errsv;
 }
 
-const char *nl_geterror (int nlerr);
+const char *nm_strerror (int nmerr);
 
 /*****************************************************************************/
 

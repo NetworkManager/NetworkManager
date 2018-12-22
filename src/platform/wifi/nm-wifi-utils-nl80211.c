@@ -151,11 +151,11 @@ nl80211_send_and_recv (NMWifiUtilsNl80211 *self,
 			 * and we don't need consistent view of whole scan list. Hence do
 			 * not warn on DUMP_INTR error for get scan command.
 			 */
-			if (err == -NLE_DUMP_INTR &&
+			if (err == -NME_NL_DUMP_INTR &&
 			    genlmsg_hdr (nlmsg_hdr (msg))->cmd == NL80211_CMD_GET_SCAN)
 				break;
 
-			_LOGW ("nl_recvmsgs() error: (%d) %s", err, nl_geterror (err));
+			_LOGW ("nl_recvmsgs() error: (%d) %s", err, nm_strerror (err));
 			break;
 		}
 	}
