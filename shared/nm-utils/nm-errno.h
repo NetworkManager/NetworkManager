@@ -25,48 +25,55 @@
 
 /*****************************************************************************/
 
-#define _NLE_BASE               100000
-#define NME_UNSPEC              (_NLE_BASE +  0)
-#define NME_BUG                 (_NLE_BASE +  1)
-#define NME_NATIVE_ERRNO        (_NLE_BASE +  2)
-#define NME_NL_SEQ_MISMATCH        (_NLE_BASE +  3)
-#define NME_NL_MSG_TRUNC           (_NLE_BASE +  4)
-#define NME_NL_MSG_TOOSHORT        (_NLE_BASE +  5)
-#define NME_NL_DUMP_INTR           (_NLE_BASE +  6)
-#define NME_NL_ATTRSIZE            (_NLE_BASE +  7)
-#define NME_NL_BAD_SOCK            (_NLE_BASE +  8)
-#define NME_NL_NOADDR              (_NLE_BASE +  9)
-#define NME_NL_MSG_OVERFLOW        (_NLE_BASE + 10)
+enum {
+	_NM_ERRNO_RESERVED_FIRST = 100000,
 
-#define _NLE_BASE_END           (_NLE_BASE + 11)
+	NME_UNSPEC = _NM_ERRNO_RESERVED_FIRST,
+	NME_BUG,
+	NME_NATIVE_ERRNO,
+
+	NME_NL_SEQ_MISMATCH,
+	NME_NL_MSG_TRUNC,
+	NME_NL_MSG_TOOSHORT,
+	NME_NL_DUMP_INTR,
+	NME_NL_ATTRSIZE,
+	NME_NL_BAD_SOCK,
+	NME_NL_NOADDR,
+	NME_NL_MSG_OVERFLOW,
+
+	_NM_ERRNO_RESERVED_LAST_PLUS_1,
+	_NM_ERRNO_RESERVED_LAST = _NM_ERRNO_RESERVED_LAST_PLUS_1 - 1,
+};
 
 /*****************************************************************************/
 
 static inline int
-nm_errno (int errsv)
+nm_errno_native (int errsv)
 {
 	/* several API returns negative errno values as errors. Normalize
 	 * negative values to positive values.
 	 *
 	 * As a special case, map G_MININT to G_MAXINT. If you care about the
-	 * distinction, then check for G_MININT before. */
+	 * distinction, then check for G_MININT before.
+	 *
+	 * Basically, this normalizes a plain errno to be non-negative. */
 	return errsv >= 0
 	       ? errsv
 	       : ((errsv == G_MININT) ? G_MAXINT : -errsv);
 }
 
 static inline int
-nl_errno (int nmerr)
+nm_errno (int nmerr)
 {
-	/* Normalizes an netlink error to be positive. Various API returns negative
+	/* Normalizes an nm-error to be positive. Various API returns negative
 	 * error codes, and this function converts the negative value to its
 	 * positive.
 	 *
-	 * It's very similar to nm_errno(), but not exactly. The difference is that
-	 * nm_errno() is for plain errno, while nl_errno() is for netlink error numbers.
-	 * Yes, netlink error number are ~almost~ the same as errno, except that a particular
-	 * range (_NLE_BASE, _NLE_BASE_END) is reserved. The difference between the two
-	 * functions is only how G_MININT is mapped.
+	 * It's very similar to nm_errno_native(), but not exactly. The difference is that
+	 * nm_errno_native() is for plain errno, while nm_errno() is for nm-error numbers.
+	 * Yes, nm-error number are ~almost~ the same as errno, except that a particular
+	 * range (_NM_ERRNO_RESERVED_FIRST, _NM_ERRNO_RESERVED_LAST) is reserved. The difference
+	 * between the two functions is only how G_MININT is mapped.
 	 *
 	 * See also nm_errno_from_native() below. */
 	return nmerr >= 0
@@ -77,22 +84,25 @@ nl_errno (int nmerr)
 static inline int
 nm_errno_from_native (int errsv)
 {
-	/* this maps a native errno to a (always non-negative) netlink error number.
+	/* this maps a native errno to a (always non-negative) nm-error number.
 	 *
-	 * Note that netlink error numbers are embedded into the range of regular
-	 * errno. The only difference is, that netlink error numbers reserve a
-	 * range (_NLE_BASE, _NLE_BASE_END) for their own purpose.
+	 * Note that nm-error numbers are embedded into the range of regular
+	 * errno. The only difference is, that nm-error numbers reserve a
+	 * range (_NM_ERRNO_RESERVED_FIRST, _NM_ERRNO_RESERVED_LAST) for their
+	 * own purpose.
 	 *
-	 * That means, converting an errno to netlink error number means in
+	 * That means, converting an errno to nm-error number means in
 	 * most cases just returning itself (negative values are normalized
-	 * to be positive). Only values G_MININT and [_NLE_BASE, _NLE_BASE_END]
+	 * to be positive). Only values G_MININT and [_NM_ERRNO_RESERVED_FIRST, _NM_ERRNO_RESERVED_LAST]
 	 * are coerced to the special value NME_NATIVE_ERRNO, as they cannot
-	 * otherwise be represented in netlink error number domain. */
-	if (errsv == G_MININT)
-		return NME_NATIVE_ERRNO;
-	if (errsv < 0)
-		errsv = -errsv;
-	return (errsv >= _NLE_BASE && errsv < _NLE_BASE_END)
+	 * otherwise be represented in nm-error number domain. */
+	if (errsv < 0) {
+		return   G_UNLIKELY (errsv == G_MININT)
+		       ? NME_NATIVE_ERRNO
+		       : -errsv;
+	}
+	return   G_UNLIKELY (   errsv >= _NM_ERRNO_RESERVED_FIRST
+	                     && errsv <= _NM_ERRNO_RESERVED_LAST)
 	       ? NME_NATIVE_ERRNO
 	       : errsv;
 }
