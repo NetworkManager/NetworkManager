@@ -26,12 +26,23 @@
 /*****************************************************************************/
 
 enum {
+	_NM_ERRNO_MININT         = G_MININT,
+	_NM_ERRNO_MAXINT         = G_MAXINT,
 	_NM_ERRNO_RESERVED_FIRST = 100000,
 
+	/* an unspecified error. */
 	NME_UNSPEC = _NM_ERRNO_RESERVED_FIRST,
+
+	/* A bug, for example when an assertion failed.
+	 * Should never happen. */
 	NME_BUG,
+
+	/* a native error number (from <errno.h>) cannot be mapped as
+	 * an nm-error, because it is in the range [_NM_ERRNO_RESERVED_FIRST,
+	 * _NM_ERRNO_RESERVED_LAST]. */
 	NME_NATIVE_ERRNO,
 
+	/* netlink errors. */
 	NME_NL_SEQ_MISMATCH,
 	NME_NL_MSG_TRUNC,
 	NME_NL_MSG_TOOSHORT,
@@ -40,6 +51,16 @@ enum {
 	NME_NL_BAD_SOCK,
 	NME_NL_NOADDR,
 	NME_NL_MSG_OVERFLOW,
+
+	/* platform errors. */
+	NME_PL_NOT_FOUND,
+	NME_PL_EXISTS,
+	NME_PL_WRONG_TYPE,
+	NME_PL_NOT_SLAVE,
+	NME_PL_NO_FIRMWARE,
+	NME_PL_OPNOTSUPP,
+	NME_PL_NETLINK,
+	NME_PL_CANT_SET_MTU,
 
 	_NM_ERRNO_RESERVED_LAST_PLUS_1,
 	_NM_ERRNO_RESERVED_LAST = _NM_ERRNO_RESERVED_LAST_PLUS_1 - 1,

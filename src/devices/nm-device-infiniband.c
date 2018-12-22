@@ -235,7 +235,7 @@ create_and_realize (NMDevice *device,
 {
 	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE ((NMDeviceInfiniband *) device);
 	NMSettingInfiniband *s_infiniband;
-	NMPlatformError plerr;
+	int r;
 
 	s_infiniband = nm_connection_get_setting_infiniband (connection);
 	g_assert (s_infiniband);
@@ -269,13 +269,13 @@ create_and_realize (NMDevice *device,
 		return FALSE;
 	}
 
-	plerr = nm_platform_link_infiniband_add (nm_device_get_platform (device), priv->parent_ifindex, priv->p_key, out_plink);
-	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
+	r = nm_platform_link_infiniband_add (nm_device_get_platform (device), priv->parent_ifindex, priv->p_key, out_plink);
+	if (r < 0) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create InfiniBand P_Key interface '%s' for '%s': %s",
 		             nm_device_get_iface (device),
 		             nm_connection_get_id (connection),
-		             nm_platform_error_to_string_a (plerr));
+		             nm_strerror (r));
 		return FALSE;
 	}
 
@@ -287,7 +287,7 @@ static gboolean
 unrealize (NMDevice *device, GError **error)
 {
 	NMDeviceInfinibandPrivate *priv;
-	NMPlatformError plerr;
+	int r;
 
 	g_return_val_if_fail (NM_IS_DEVICE_INFINIBAND (device), FALSE);
 
@@ -299,12 +299,12 @@ unrealize (NMDevice *device, GError **error)
 		return FALSE;
 	}
 
-	plerr = nm_platform_link_infiniband_delete (nm_device_get_platform (device), priv->parent_ifindex, priv->p_key);
-	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
+	r = nm_platform_link_infiniband_delete (nm_device_get_platform (device), priv->parent_ifindex, priv->p_key);
+	if (r < 0) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to remove InfiniBand P_Key interface '%s': %s",
 		             nm_device_get_iface (device),
-		             nm_platform_error_to_string_a (plerr));
+		             nm_strerror (r));
 		return FALSE;
 	}
 

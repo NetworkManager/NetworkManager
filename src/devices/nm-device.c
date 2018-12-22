@@ -9143,7 +9143,10 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 		}
 
 		if (mtu_desired && mtu_desired != mtu_plat) {
-			if (nm_platform_link_set_mtu (nm_device_get_platform (self), ifindex, mtu_desired) == NM_PLATFORM_ERROR_CANT_SET_MTU) {
+			int r;
+
+			r = nm_platform_link_set_mtu (nm_device_get_platform (self), ifindex, mtu_desired);
+			if (r == -NME_PL_CANT_SET_MTU) {
 				anticipated_failure = TRUE;
 				success = FALSE;
 				_LOGW (LOGD_DEVICE, "mtu: failure to set MTU. %s",
@@ -9562,18 +9565,20 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 
 	priv->ipv6ll_handle = enable;
 	if (ifindex > 0) {
-		NMPlatformError plerr;
 		const char *detail = enable ? "enable" : "disable";
+		int r;
 
 		_LOGD (LOGD_IP6, "will %s userland IPv6LL", detail);
-		plerr = nm_platform_link_set_user_ipv6ll_enabled (nm_device_get_platform (self), ifindex, enable);
-		if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
-			_NMLOG ((   plerr == NM_PLATFORM_ERROR_NOT_FOUND
-			         || plerr == NM_PLATFORM_ERROR_OPNOTSUPP) ? LOGL_DEBUG : LOGL_WARN,
+		r = nm_platform_link_set_user_ipv6ll_enabled (nm_device_get_platform (self), ifindex, enable);
+		if (r < 0) {
+			_NMLOG (  NM_IN_SET (r, -NME_PL_NOT_FOUND
+			                        -NME_PL_OPNOTSUPP)
+			        ? LOGL_DEBUG
+			        : LOGL_WARN,
 			        LOGD_IP6,
 			        "failed to %s userspace IPv6LL address handling (%s)",
 			        detail,
-			        nm_platform_error_to_string_a (plerr));
+			        nm_strerror (r));
 		}
 
 		if (enable) {
@@ -15467,7 +15472,7 @@ _hw_addr_set (NMDevice *self,
 {
 	NMDevicePrivate *priv;
 	gboolean success = FALSE;
-	NMPlatformError plerr;
+	int r;
 	guint8 addr_bytes[NM_UTILS_HWADDR_LEN_MAX];
 	gsize addr_len;
 	gboolean was_taken_down = FALSE;
@@ -15504,21 +15509,21 @@ _hw_addr_set (NMDevice *self,
 	}
 
 again:
-	plerr = nm_platform_link_set_address (nm_device_get_platform (self), nm_device_get_ip_ifindex (self), addr_bytes, addr_len);
-	success = (plerr == NM_PLATFORM_ERROR_SUCCESS);
+	r = nm_platform_link_set_address (nm_device_get_platform (self), nm_device_get_ip_ifindex (self), addr_bytes, addr_len);
+	success = (r >= 0);
 	if (!success) {
 		retry_down =    !was_taken_down
-		             && plerr != NM_PLATFORM_ERROR_NOT_FOUND
+		             && r != -NME_PL_NOT_FOUND
 		             && nm_platform_link_is_up (nm_device_get_platform (self),
 		                                        nm_device_get_ip_ifindex (self));
-		_NMLOG (     retry_down
-		          || plerr == NM_PLATFORM_ERROR_NOT_FOUND
+		_NMLOG (  (   retry_down
+		           || r == -NME_PL_NOT_FOUND)
 		        ? LOGL_DEBUG
 		        : LOGL_WARN,
 		        LOGD_DEVICE,
 		        "set-hw-addr: failed to %s MAC address to %s (%s) (%s)%s",
 		        operation, addr, detail,
-		        nm_platform_error_to_string_a (plerr),
+		        nm_strerror (r),
 		        retry_down ? " (retry with taking down)" : "");
 	} else {
 		/* MAC address successfully changed; update the current MAC to match */

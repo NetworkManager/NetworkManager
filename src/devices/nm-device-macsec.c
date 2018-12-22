@@ -657,7 +657,6 @@ create_and_realize (NMDevice *device,
                     GError **error)
 {
 	const char *iface = nm_device_get_iface (device);
-	NMPlatformError plerr;
 	NMSettingMacsec *s_macsec;
 	NMPlatformLnkMacsec lnk = { };
 	int parent_ifindex;
@@ -669,6 +668,7 @@ create_and_realize (NMDevice *device,
 		} s;
 		guint64 u;
 	} sci;
+	int r;
 
 	s_macsec = nm_connection_get_setting_macsec (connection);
 	g_assert (s_macsec);
@@ -697,13 +697,13 @@ create_and_realize (NMDevice *device,
 	parent_ifindex = nm_device_get_ifindex (parent);
 	g_warn_if_fail (parent_ifindex > 0);
 
-	plerr = nm_platform_link_macsec_add (nm_device_get_platform (device), iface, parent_ifindex, &lnk, out_plink);
-	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
+	r = nm_platform_link_macsec_add (nm_device_get_platform (device), iface, parent_ifindex, &lnk, out_plink);
+	if (r < 0) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create macsec interface '%s' for '%s': %s",
 		             iface,
 		             nm_connection_get_id (connection),
-		             nm_platform_error_to_string_a (plerr));
+		             nm_strerror (r));
 		return FALSE;
 	}
 

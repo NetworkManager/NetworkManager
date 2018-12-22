@@ -47,7 +47,7 @@
 #define MTU 1357
 
 #define _ADD_DUMMY(platform, name) \
-	g_assert_cmpint (nm_platform_link_dummy_add ((platform), (name), NULL), ==, NM_PLATFORM_ERROR_SUCCESS)
+	g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_link_dummy_add ((platform), (name), NULL)))
 
 static void
 test_bogus(void)
@@ -77,7 +77,7 @@ test_bogus(void)
 	g_assert (!addrlen);
 	g_assert (!nm_platform_link_get_address (NM_PLATFORM_GET, BOGUS_IFINDEX, NULL));
 
-	g_assert (nm_platform_link_set_mtu (NM_PLATFORM_GET, BOGUS_IFINDEX, MTU) != NM_PLATFORM_ERROR_SUCCESS);
+	g_assert (!NMTST_NM_ERR_SUCCESS (nm_platform_link_set_mtu (NM_PLATFORM_GET, BOGUS_IFINDEX, MTU)));
 
 	g_assert (!nm_platform_link_get_mtu (NM_PLATFORM_GET, BOGUS_IFINDEX));
 
@@ -107,30 +107,30 @@ software_add (NMLinkType link_type, const char *name)
 {
 	switch (link_type) {
 	case NM_LINK_TYPE_DUMMY:
-		return nm_platform_link_dummy_add (NM_PLATFORM_GET, name, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+		return NMTST_NM_ERR_SUCCESS (nm_platform_link_dummy_add (NM_PLATFORM_GET, name, NULL));
 	case NM_LINK_TYPE_BRIDGE:
-		return nm_platform_link_bridge_add (NM_PLATFORM_GET, name, NULL, 0, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+		return NMTST_NM_ERR_SUCCESS (nm_platform_link_bridge_add (NM_PLATFORM_GET, name, NULL, 0, NULL));
 	case NM_LINK_TYPE_BOND:
 		{
 			gboolean bond0_exists = !!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "bond0");
-			NMPlatformError plerr;
+			int r;
 
-			plerr = nm_platform_link_bond_add (NM_PLATFORM_GET, name, NULL);
+			r = nm_platform_link_bond_add (NM_PLATFORM_GET, name, NULL);
 
 			/* Check that bond0 is *not* automatically created. */
 			if (!bond0_exists)
 				g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "bond0"));
-			return plerr == NM_PLATFORM_ERROR_SUCCESS;
+			return r >= 0;
 		}
 	case NM_LINK_TYPE_TEAM:
-		return nm_platform_link_team_add (NM_PLATFORM_GET, name, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+		return NMTST_NM_ERR_SUCCESS (nm_platform_link_team_add (NM_PLATFORM_GET, name, NULL));
 	case NM_LINK_TYPE_VLAN: {
 		SignalData *parent_added;
 		SignalData *parent_changed;
 
 		/* Don't call link_callback for the bridge interface */
 		parent_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, PARENT_NAME);
-		if (nm_platform_link_bridge_add (NM_PLATFORM_GET, PARENT_NAME, NULL, 0, NULL) == NM_PLATFORM_ERROR_SUCCESS)
+		if (NMTST_NM_ERR_SUCCESS (nm_platform_link_bridge_add (NM_PLATFORM_GET, PARENT_NAME, NULL, 0, NULL)))
 			accept_signal (parent_added);
 		free_signal (parent_added);
 
@@ -147,7 +147,7 @@ software_add (NMLinkType link_type, const char *name)
 				accept_signals (parent_changed, 1, 2);
 			free_signal (parent_changed);
 
-			return nm_platform_link_vlan_add (NM_PLATFORM_GET, name, parent_ifindex, VLAN_ID, 0, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+			return NMTST_NM_ERR_SUCCESS (nm_platform_link_vlan_add (NM_PLATFORM_GET, name, parent_ifindex, VLAN_ID, 0, NULL));
 		}
 	}
 	default:
@@ -502,7 +502,7 @@ test_bridge_addr (void)
 
 	nm_utils_hwaddr_aton ("de:ad:be:ef:00:11", addr, sizeof (addr));
 
-	g_assert_cmpint (nm_platform_link_bridge_add (NM_PLATFORM_GET, DEVICE_NAME, addr, sizeof (addr), &plink), ==, NM_PLATFORM_ERROR_SUCCESS);
+	g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_link_bridge_add (NM_PLATFORM_GET, DEVICE_NAME, addr, sizeof (addr), &plink)));
 	g_assert (plink);
 	link = *plink;
 	g_assert_cmpstr (link.name, ==, DEVICE_NAME);
@@ -518,13 +518,13 @@ test_bridge_addr (void)
 		g_assert (!nm_platform_link_get_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex));
 		g_assert_cmpint (_nm_platform_uint8_inv (plink->inet6_addr_gen_mode_inv), ==, NM_IN6_ADDR_GEN_MODE_EUI64);
 
-		g_assert (nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex, TRUE) == NM_PLATFORM_ERROR_SUCCESS);
+		g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex, TRUE)));
 		g_assert (nm_platform_link_get_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex));
 		plink = nm_platform_link_get (NM_PLATFORM_GET, link.ifindex);
 		g_assert (plink);
 		g_assert_cmpint (_nm_platform_uint8_inv (plink->inet6_addr_gen_mode_inv), ==, NM_IN6_ADDR_GEN_MODE_NONE);
 
-		g_assert (nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex, FALSE) == NM_PLATFORM_ERROR_SUCCESS);
+		g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex, FALSE)));
 		g_assert (!nm_platform_link_get_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex));
 		plink = nm_platform_link_get (NM_PLATFORM_GET, link.ifindex);
 		g_assert (plink);
@@ -554,11 +554,11 @@ test_internal (void)
 	g_assert (!nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
 
 	/* Add device */
-	g_assert (nm_platform_link_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL) == NM_PLATFORM_ERROR_SUCCESS);
+	g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_link_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL)));
 	accept_signal (link_added);
 
 	/* Try to add again */
-	g_assert (nm_platform_link_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL) == NM_PLATFORM_ERROR_EXISTS);
+	g_assert (nm_platform_link_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL) == -NME_PL_EXISTS);
 
 	/* Check device index, name and type */
 	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
@@ -595,7 +595,7 @@ test_internal (void)
 	g_assert (nm_platform_link_supports_vlans (NM_PLATFORM_GET, ifindex));
 
 	/* Set MAC address */
-	g_assert (nm_platform_link_set_address (NM_PLATFORM_GET, ifindex, mac, sizeof (mac)) == NM_PLATFORM_ERROR_SUCCESS);
+	g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_link_set_address (NM_PLATFORM_GET, ifindex, mac, sizeof (mac))));
 	address = nm_platform_link_get_address (NM_PLATFORM_GET, ifindex, &addrlen);
 	g_assert (addrlen == sizeof(mac));
 	g_assert (!memcmp (address, mac, addrlen));
@@ -604,7 +604,7 @@ test_internal (void)
 	accept_signal (link_changed);
 
 	/* Set MTU */
-	g_assert (nm_platform_link_set_mtu (NM_PLATFORM_GET, ifindex, MTU) == NM_PLATFORM_ERROR_SUCCESS);
+	g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_link_set_mtu (NM_PLATFORM_GET, ifindex, MTU)));
 	g_assert_cmpint (nm_platform_link_get_mtu (NM_PLATFORM_GET, ifindex), ==, MTU);
 	accept_signal (link_changed);
 

@@ -352,7 +352,7 @@ _nmtstp_env1_wrapper_setup (const NmtstTestData *test_data)
 
 	nmtstp_link_delete (NM_PLATFORM_GET, -1, -1, DEVICE_NAME, FALSE);
 
-	g_assert_cmpint (nm_platform_link_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL), ==, NM_PLATFORM_ERROR_SUCCESS);
+	g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_link_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL)));
 
 	*p_ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
 	g_assert_cmpint (*p_ifindex, >, 0);
