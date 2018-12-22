@@ -171,11 +171,11 @@ create_and_realize (NMDevice *device,
                     GError **error)
 {
 	const char *iface = nm_device_get_iface (device);
-	NMPlatformError plerr;
 	NMPlatformLnkVxlan props = { };
 	NMSettingVxlan *s_vxlan;
 	const char *str;
 	int ret;
+	int r;
 
 	s_vxlan = nm_connection_get_setting_vxlan (connection);
 	g_assert (s_vxlan);
@@ -214,13 +214,13 @@ create_and_realize (NMDevice *device,
 	props.l2miss = nm_setting_vxlan_get_l2_miss (s_vxlan);
 	props.l3miss = nm_setting_vxlan_get_l3_miss (s_vxlan);
 
-	plerr = nm_platform_link_vxlan_add (nm_device_get_platform (device), iface, &props, out_plink);
-	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
+	r = nm_platform_link_vxlan_add (nm_device_get_platform (device), iface, &props, out_plink);
+	if (r < 0) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create VXLAN interface '%s' for '%s': %s",
 		             iface,
 		             nm_connection_get_id (connection),
-		             nm_platform_error_to_string_a (plerr));
+		             nm_strerror (r));
 		return FALSE;
 	}
 

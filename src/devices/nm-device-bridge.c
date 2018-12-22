@@ -459,7 +459,7 @@ create_and_realize (NMDevice *device,
 	const char *hwaddr;
 	gs_free char *hwaddr_cloned = NULL;
 	guint8 mac_address[NM_UTILS_HWADDR_LEN_MAX];
-	NMPlatformError plerr;
+	int r;
 
 	nm_assert (iface);
 
@@ -486,17 +486,17 @@ create_and_realize (NMDevice *device,
 		}
 	}
 
-	plerr = nm_platform_link_bridge_add (nm_device_get_platform (device),
-	                                     iface,
-	                                     hwaddr ? mac_address : NULL,
-	                                     hwaddr ? ETH_ALEN : 0,
-	                                     out_plink);
-	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
+	r = nm_platform_link_bridge_add (nm_device_get_platform (device),
+	                                 iface,
+	                                 hwaddr ? mac_address : NULL,
+	                                 hwaddr ? ETH_ALEN : 0,
+	                                 out_plink);
+	if (r < 0) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create bridge interface '%s' for '%s': %s",
 		             iface,
 		             nm_connection_get_id (connection),
-		             nm_platform_error_to_string_a (plerr));
+		             nm_strerror (r));
 		return FALSE;
 	}
 

@@ -1010,7 +1010,7 @@ void nmtstp_ip4_route_add (NMPlatform *platform,
 	route.metric = metric;
 	route.mss = mss;
 
-	g_assert_cmpint (nm_platform_ip4_route_add (platform, NMP_NLM_FLAG_REPLACE, &route), ==, NM_PLATFORM_ERROR_SUCCESS);
+	g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_ip4_route_add (platform, NMP_NLM_FLAG_REPLACE, &route)));
 }
 
 void nmtstp_ip6_route_add (NMPlatform *platform,
@@ -1034,7 +1034,7 @@ void nmtstp_ip6_route_add (NMPlatform *platform,
 	route.metric = metric;
 	route.mss = mss;
 
-	g_assert_cmpint (nm_platform_ip6_route_add (platform, NMP_NLM_FLAG_REPLACE, &route), ==, NM_PLATFORM_ERROR_SUCCESS);
+	g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_ip6_route_add (platform, NMP_NLM_FLAG_REPLACE, &route)));
 }
 
 /*****************************************************************************/
@@ -1203,7 +1203,7 @@ nmtstp_link_veth_add (NMPlatform *platform,
 			nmtstp_assert_wait_for_link (platform, peer, NM_LINK_TYPE_VETH, 10);
 		}
 	} else
-		success = nm_platform_link_veth_add (platform, name, peer, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
+		success = NMTST_NM_ERR_SUCCESS (nm_platform_link_veth_add (platform, name, peer, &pllink));
 
 	g_assert (success);
 	_assert_pllink (platform, success, pllink, name, NM_LINK_TYPE_VETH);
@@ -1230,7 +1230,7 @@ nmtstp_link_dummy_add (NMPlatform *platform,
 		if (success)
 			pllink = nmtstp_assert_wait_for_link (platform, name, NM_LINK_TYPE_DUMMY, 100);
 	} else
-		success = nm_platform_link_dummy_add (platform, name, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
+		success = NMTST_NM_ERR_SUCCESS (nm_platform_link_dummy_add (platform, name, &pllink));
 
 	g_assert (success);
 	_assert_pllink (platform, success, pllink, name, NM_LINK_TYPE_DUMMY);
@@ -1279,7 +1279,7 @@ nmtstp_link_gre_add (NMPlatform *platform,
 		if (success)
 			pllink = nmtstp_assert_wait_for_link (platform, name, link_type, 100);
 	} else
-		success = nm_platform_link_gre_add (platform, name, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
+		success = NMTST_NM_ERR_SUCCESS (nm_platform_link_gre_add (platform, name, lnk, &pllink));
 
 	_assert_pllink (platform, success, pllink, name, link_type);
 
@@ -1342,7 +1342,7 @@ nmtstp_link_ip6tnl_add (NMPlatform *platform,
 		if (success)
 			pllink = nmtstp_assert_wait_for_link (platform, name, NM_LINK_TYPE_IP6TNL, 100);
 	} else
-		success = nm_platform_link_ip6tnl_add (platform, name, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
+		success = NMTST_NM_ERR_SUCCESS (nm_platform_link_ip6tnl_add (platform, name, lnk, &pllink));
 
 	_assert_pllink (platform, success, pllink, name, NM_LINK_TYPE_IP6TNL);
 
@@ -1393,7 +1393,7 @@ nmtstp_link_ip6gre_add (NMPlatform *platform,
 			                                      100);
 		}
 	} else
-		success = nm_platform_link_ip6gre_add (platform, name, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
+		success = NMTST_NM_ERR_SUCCESS (nm_platform_link_ip6gre_add (platform, name, lnk, &pllink));
 
 	_assert_pllink (platform, success, pllink, name, lnk->is_tap ? NM_LINK_TYPE_IP6GRETAP : NM_LINK_TYPE_IP6GRE);
 
@@ -1434,7 +1434,7 @@ nmtstp_link_ipip_add (NMPlatform *platform,
 		if (success)
 			pllink = nmtstp_assert_wait_for_link (platform, name, NM_LINK_TYPE_IPIP, 100);
 	} else
-		success = nm_platform_link_ipip_add (platform, name, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
+		success = NMTST_NM_ERR_SUCCESS (nm_platform_link_ipip_add (platform, name, lnk, &pllink));
 
 	_assert_pllink (platform, success, pllink, name, NM_LINK_TYPE_IPIP);
 
@@ -1482,7 +1482,7 @@ nmtstp_link_macvlan_add (NMPlatform *platform,
 		if (success)
 			pllink = nmtstp_assert_wait_for_link (platform, name, link_type, 100);
 	} else
-		success = nm_platform_link_macvlan_add (platform, name, parent, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
+		success = NMTST_NM_ERR_SUCCESS (nm_platform_link_macvlan_add (platform, name, parent, lnk, &pllink));
 
 	_assert_pllink (platform, success, pllink, name, link_type);
 
@@ -1528,7 +1528,7 @@ nmtstp_link_sit_add (NMPlatform *platform,
 		if (success)
 			pllink = nmtstp_assert_wait_for_link (platform, name, NM_LINK_TYPE_SIT, 100);
 	} else
-		success = nm_platform_link_sit_add (platform, name, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
+		success = NMTST_NM_ERR_SUCCESS (nm_platform_link_sit_add (platform, name, lnk, &pllink));
 
 	_assert_pllink (platform, success, pllink, name, NM_LINK_TYPE_SIT);
 
@@ -1543,8 +1543,8 @@ nmtstp_link_tun_add (NMPlatform *platform,
                      int *out_fd)
 {
 	const NMPlatformLink *pllink = NULL;
-	NMPlatformError plerr;
 	int err;
+	int r;
 
 	g_assert (nm_utils_is_valid_iface_name (name, NULL));
 	g_assert (lnk);
@@ -1589,8 +1589,8 @@ nmtstp_link_tun_add (NMPlatform *platform,
 			g_error ("failure to add tun/tap device via ip-route");
 	} else {
 		g_assert (lnk->persist || out_fd);
-		plerr = nm_platform_link_tun_add (platform, name, lnk, &pllink, out_fd);
-		g_assert_cmpint (plerr, ==, NM_PLATFORM_ERROR_SUCCESS);
+		r = nm_platform_link_tun_add (platform, name, lnk, &pllink, out_fd);
+		g_assert_cmpint (r, ==, 0);
 	}
 
 	g_assert (pllink);
@@ -1606,8 +1606,8 @@ nmtstp_link_vxlan_add (NMPlatform *platform,
                        const NMPlatformLnkVxlan *lnk)
 {
 	const NMPlatformLink *pllink = NULL;
-	NMPlatformError plerr;
 	int err;
+	int r;
 
 	g_assert (nm_utils_is_valid_iface_name (name, NULL));
 
@@ -1656,8 +1656,8 @@ nmtstp_link_vxlan_add (NMPlatform *platform,
 			_LOGI ("Adding vxlan device via iproute2 failed. Assume iproute2 is not up to the task.");
 	}
 	if (!pllink) {
-		plerr = nm_platform_link_vxlan_add (platform, name, lnk, &pllink);
-		g_assert_cmpint (plerr, ==, NM_PLATFORM_ERROR_SUCCESS);
+		r = nm_platform_link_vxlan_add (platform, name, lnk, &pllink);
+		g_assert (NMTST_NM_ERR_SUCCESS (r));
 		g_assert (pllink);
 	}
 

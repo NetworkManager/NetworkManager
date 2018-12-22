@@ -196,6 +196,25 @@
 
 /*****************************************************************************/
 
+/* Our nm-error error numbers use negative values to signal failure.
+ * A non-negative value signals success. Hence, the correct way for checking
+ * is always (r < 0) vs. (r >= 0). Never (r == 0).
+ *
+ * For assertions in tests, we also want to assert that no positive values
+ * are returned. For a lot of functions, positive return values are unexpected
+ * and a bug. This macro evaluates @r to success or failure, while asserting
+ * that @r is not positive. */
+#define NMTST_NM_ERR_SUCCESS(r) \
+	({ \
+		const int _r = (r); \
+		\
+		if (_r >= 0) \
+			g_assert_cmpint (_r, ==, 0); \
+		(_r >= 0); \
+	})
+
+/*****************************************************************************/
+
 struct __nmtst_internal
 {
 	GRand *rand0;
