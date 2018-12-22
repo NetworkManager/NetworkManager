@@ -45,9 +45,9 @@ nm_strerror (int nmerr)
 {
 	const char *s;
 
-	nmerr = nl_errno (nmerr);
+	nmerr = nm_errno (nmerr);
 
-	if (nmerr >= _NLE_BASE) {
+	if (nmerr >= _NM_ERRNO_RESERVED_FIRST) {
 		s = _geterror (nmerr);
 		if (s)
 			return s;
