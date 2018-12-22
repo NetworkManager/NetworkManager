@@ -614,19 +614,6 @@ _nm_g_slice_free_fcn_define (16)
 
 /*****************************************************************************/
 
-static inline int
-nm_errno (int errsv)
-{
-	/* several API returns negative errno values as errors. Normalize
-	 * negative values to positive values.
-	 *
-	 * As a special case, map G_MININT to G_MAXINT. If you care about the
-	 * distinction, then check for G_MININT before. */
-	return errsv >= 0
-	       ? errsv
-	       : ((errsv == G_MININT) ? G_MAXINT : -errsv);
-}
-
 /**
  * NMUtilsError:
  * @NM_UTILS_ERROR_UNKNOWN: unknown or unclassified error
@@ -697,7 +684,15 @@ nm_utils_error_set_literal (GError **error, int error_code, const char *literal)
 	             NM_UTILS_ERROR_UNKNOWN, \
 	             fmt, \
 	             ##__VA_ARGS__, \
-	             g_strerror (nm_errno (errsv)))
+	             g_strerror (({ \
+	                            const int _errsv = (errsv); \
+	                            \
+	                            (  _errsv >= 0 \
+	                             ? _errsv \
+	                             : (  (_errsv == G_MININT) \
+	                                ? G_MAXINT \
+	                                : -errsv)); \
+	                          })))
 
 /*****************************************************************************/
 
