@@ -4747,7 +4747,7 @@ _nl_send_nlmsg (NMPlatform *platform,
 
 	nle = nl_send_auto (priv->nlh, nlmsg);
 	if (nle < 0) {
-		_LOGD ("netlink: nl-send-nlmsg: failed sending message: %s (%d)", nl_geterror (nle), nle);
+		_LOGD ("netlink: nl-send-nlmsg: failed sending message: %s (%d)", nm_strerror (nle), nle);
 		return nle;
 	}
 
@@ -4793,7 +4793,7 @@ do_request_link_no_delayed_actions (NMPlatform *platform, int ifindex, const cha
 		if (nle < 0) {
 			_LOGE ("do-request-link: %d %s: failed sending netlink request \"%s\" (%d)",
 			       ifindex, name ?: "",
-			       nl_geterror (nle), -nle);
+			       nm_strerror (nle), -nle);
 			return;
 		}
 	}
@@ -5144,7 +5144,7 @@ do_add_link_with_lookup (NMPlatform *platform,
 		_LOGE ("do-add-link[%s/%s]: failed sending netlink request \"%s\" (%d)",
 		       name,
 		       nm_link_type_to_string (link_type),
-		       nl_geterror (nle), -nle);
+		       nm_strerror (nle), -nle);
 		NM_SET_OUT (out_link, NULL);
 		return FALSE;
 	}
@@ -5191,7 +5191,7 @@ do_add_addrroute (NMPlatform *platform,
 		_LOGE ("do-add-%s[%s]: failure sending netlink request \"%s\" (%d)",
 		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
 		       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
-		       nl_geterror (nle), -nle);
+		       nm_strerror (nle), -nle);
 		return NM_PLATFORM_ERROR_NETLINK;
 	}
 
@@ -5241,7 +5241,7 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 		_LOGE ("do-delete-%s[%s]: failure sending netlink request \"%s\" (%d)",
 		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
 		       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
-		       nl_geterror (nle), -nle);
+		       nm_strerror (nle), -nle);
 		return FALSE;
 	}
 
@@ -5319,7 +5319,7 @@ retry:
 	if (nle < 0) {
 		log_level = LOGL_ERR;
 		log_detail_free = g_strdup_printf (", failure sending netlink request: %s (%d)",
-		                                   nl_geterror (nle), -nle);
+		                                   nm_strerror (nle), -nle);
 		log_detail = log_detail_free;
 		goto out;
 	}
@@ -7278,7 +7278,7 @@ qdisc_add (NMPlatform *platform,
 	nle = _nl_send_nlmsg (platform, msg, &seq_result, &errmsg, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 	if (nle < 0) {
 		_LOGE ("do-add-qdisc: failed sending netlink request \"%s\" (%d)",
-		      nl_geterror (nle), -nle);
+		      nm_strerror (nle), -nle);
 		return NM_PLATFORM_ERROR_NETLINK;
 	}
 
@@ -7318,7 +7318,7 @@ tfilter_add (NMPlatform *platform,
 	nle = _nl_send_nlmsg (platform, msg, &seq_result, &errmsg, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 	if (nle < 0) {
 		_LOGE ("do-add-tfilter: failed sending netlink request \"%s\" (%d)",
-		      nl_geterror (nle), -nle);
+		      nm_strerror (nle), -nle);
 		return NM_PLATFORM_ERROR_NETLINK;
 	}
 
@@ -7378,7 +7378,7 @@ continue_reading:
 
 	if (n <= 0) {
 
-		if (n == -NLE_MSG_TRUNC) {
+		if (n == -NME_NL_MSG_TRUNC) {
 			int buf_size;
 
 			/* the message receive buffer was too small. We lost one message, which
@@ -7461,7 +7461,7 @@ continue_reading:
 			/* Data got lost, report back to user. The default action is to
 			 * quit parsing. The user may overrule this action by retuning
 			 * NL_SKIP or NL_PROCEED (dangerous) */
-			err = -NLE_MSG_OVERFLOW;
+			err = -NME_NL_MSG_OVERFLOW;
 			abort_parsing = TRUE;
 		} else if (hdr->nlmsg_type == NLMSG_ERROR) {
 			/* Message carries a nlmsgerr */
@@ -7472,7 +7472,7 @@ continue_reading:
 				 * is to stop parsing. The user may overrule
 				 * this action by returning NL_SKIP or
 				 * NL_PROCEED (dangerous) */
-				err = -NLE_MSG_TRUNC;
+				err = -NME_NL_MSG_TRUNC;
 				abort_parsing = TRUE;
 			} else if (e->error) {
 				int errsv = e->error > 0 ? e->error : -e->error;
@@ -7549,7 +7549,7 @@ stop:
 	}
 
 	if (interrupted)
-		return -NLE_DUMP_INTR;
+		return -NME_NL_DUMP_INTR;
 	return err;
 }
 
@@ -7586,16 +7586,16 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 				switch (nle) {
 				case -EAGAIN:
 					goto after_read;
-				case -NLE_DUMP_INTR:
-					_LOGD ("netlink: read: uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
+				case -NME_NL_DUMP_INTR:
+					_LOGD ("netlink: read: uncritical failure to retrieve incoming events: %s (%d)", nm_strerror (nle), nle);
 					break;
-				case -NLE_MSG_TRUNC:
+				case -NME_NL_MSG_TRUNC:
 				case -ENOBUFS:
 					_LOGI ("netlink: read: %s. Need to resynchronize platform cache",
 					       ({
 					            const char *_reason = "unknown";
 					            switch (nle) {
-					            case -NLE_MSG_TRUNC: _reason = "message truncated";       break;
+					            case -NME_NL_MSG_TRUNC: _reason = "message truncated";       break;
 					            case -ENOBUFS:       _reason = "too many netlink events"; break;
 					            }
 					            _reason;
@@ -7615,7 +7615,7 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 					                         NULL);
 					break;
 				default:
-					_LOGE ("netlink: read: failed to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
+					_LOGE ("netlink: read: failed to retrieve incoming events: %s (%d)", nm_strerror (nle), nle);
 					break;
 				}
 			}
@@ -7843,7 +7843,7 @@ constructed (GObject *_object)
 	nle = nl_connect (priv->genl, NETLINK_GENERIC);
 	if (nle) {
 		_LOGE ("unable to connect the generic netlink socket \"%s\" (%d)",
-		       nl_geterror (nle), -nle);
+		       nm_strerror (nle), -nle);
 		nl_socket_free (priv->genl);
 		priv->genl = NULL;
 	}
@@ -7869,7 +7869,7 @@ constructed (GObject *_object)
 		_LOGD ("could not enable extended acks on netlink socket");
 
 	/* explicitly set the msg buffer size and disable MSG_PEEK.
-	 * If we later encounter NLE_MSG_TRUNC, we will adjust the buffer size. */
+	 * If we later encounter NME_NL_MSG_TRUNC, we will adjust the buffer size. */
 	nl_socket_disable_msg_peek (priv->nlh);
 	nle = nl_socket_set_msg_buf_size (priv->nlh, 32 * 1024);
 	g_assert (!nle);
