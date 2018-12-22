@@ -25,7 +25,6 @@
 
 #include "format-util.h"
 #include "macro.h"
-#include "missing.h"
 #include "time-util.h"
 
 size_t page_size(void) _pure_;
@@ -148,6 +147,12 @@ static inline int memcmp_safe(const void *s1, const void *s2, size_t n) {
         return memcmp(s1, s2, n);
 }
 
+/* Compare s1 (length n1) with s2 (length n2) in lexicographic order. */
+static inline int memcmp_nn(const void *s1, size_t n1, const void *s2, size_t n2) {
+        return memcmp_safe(s1, s2, MIN(n1, n2))
+            ?: CMP(n1, n2);
+}
+
 int on_ac_power(void);
 
 #define memzero(x,l)                                            \
@@ -173,7 +178,7 @@ static inline void _reset_errno_(int *saved_errno) {
 }
 
 #define PROTECT_ERRNO                                                   \
-        _cleanup_(_reset_errno_) __attribute__((__unused__)) int _saved_errno_ = errno
+        _cleanup_(_reset_errno_) _unused_ int _saved_errno_ = errno
 
 static inline int negative_errno(void) {
         /* This helper should be used to shut up gcc if you know 'errno' is
@@ -194,7 +199,7 @@ static inline unsigned u64log2(uint64_t n) {
 
 static inline unsigned u32ctz(uint32_t n) {
 #if __SIZEOF_INT__ == 4
-        return __builtin_ctz(n);
+        return n != 0 ? __builtin_ctz(n) : 32;
 #else
 #error "Wut?"
 #endif

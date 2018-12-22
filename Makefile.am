@@ -1541,9 +1541,14 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/sd-adapt/locale-util.h \
 	src/systemd/sd-adapt/memfd-util.h \
 	src/systemd/sd-adapt/missing.h \
+	src/systemd/sd-adapt/missing_socket.h \
+	src/systemd/sd-adapt/missing_syscall.h \
+	src/systemd/sd-adapt/missing_timerfd.h \
+	src/systemd/sd-adapt/missing_type.h \
 	src/systemd/sd-adapt/mkdir.h \
 	src/systemd/sd-adapt/procfs-util.h \
 	src/systemd/sd-adapt/raw-clone.h \
+	src/systemd/sd-adapt/rlimit-util.h \
 	src/systemd/sd-adapt/sd-daemon.h \
 	src/systemd/sd-adapt/sd-device.h \
 	src/systemd/sd-adapt/serialize.h \
@@ -1555,6 +1560,8 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/src/basic/alloc-util.c \
 	src/systemd/src/basic/alloc-util.h \
 	src/systemd/src/basic/async.h \
+	src/systemd/src/basic/env-file.c \
+	src/systemd/src/basic/env-file.h \
 	src/systemd/src/basic/env-util.c \
 	src/systemd/src/basic/env-util.h \
 	src/systemd/src/basic/escape.c \
@@ -1614,6 +1621,8 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/src/basic/strv.h \
 	src/systemd/src/basic/time-util.c \
 	src/systemd/src/basic/time-util.h \
+	src/systemd/src/basic/tmpfile-util.c \
+	src/systemd/src/basic/tmpfile-util.h \
 	src/systemd/src/basic/umask-util.h \
 	src/systemd/src/basic/utf8.c \
 	src/systemd/src/basic/utf8.h \

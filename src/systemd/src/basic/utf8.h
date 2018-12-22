@@ -9,7 +9,7 @@
 #endif /* NM_IGNORED */
 
 #include "macro.h"
-#include "missing.h"
+#include "missing_type.h"
 
 #define UTF8_REPLACEMENT_CHARACTER "\xef\xbf\xbd"
 #define UTF8_BYTE_ORDER_MARK "\xef\xbb\xbf"

@@ -10,7 +10,7 @@
 #endif /* NM_IGNORED */
 
 #include "string-util.h"
-#include "missing.h"
+#include "missing_type.h"
 
 /* What characters are special in the shell? */
 /* must be escaped outside and inside double-quotes */
