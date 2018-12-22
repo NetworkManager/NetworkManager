@@ -23,3 +23,33 @@
 #include "nm-errno.h"
 
 /*****************************************************************************/
+
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_geterror, int,
+	NM_UTILS_LOOKUP_DEFAULT (NULL),
+	NM_UTILS_LOOKUP_ITEM (NLE_UNSPEC,          "NLE_UNSPEC"),
+	NM_UTILS_LOOKUP_ITEM (NLE_BUG,             "NLE_BUG"),
+	NM_UTILS_LOOKUP_ITEM (NLE_NATIVE_ERRNO,    "NLE_NATIVE_ERRNO"),
+
+	NM_UTILS_LOOKUP_ITEM (NLE_ATTRSIZE,        "NLE_ATTRSIZE"),
+	NM_UTILS_LOOKUP_ITEM (NLE_BAD_SOCK,        "NLE_BAD_SOCK"),
+	NM_UTILS_LOOKUP_ITEM (NLE_DUMP_INTR,       "NLE_DUMP_INTR"),
+	NM_UTILS_LOOKUP_ITEM (NLE_MSG_OVERFLOW,    "NLE_MSG_OVERFLOW"),
+	NM_UTILS_LOOKUP_ITEM (NLE_MSG_TOOSHORT,    "NLE_MSG_TOOSHORT"),
+	NM_UTILS_LOOKUP_ITEM (NLE_MSG_TRUNC,       "NLE_MSG_TRUNC"),
+	NM_UTILS_LOOKUP_ITEM (NLE_SEQ_MISMATCH,    "NLE_SEQ_MISMATCH"),
+)
+
+const char *
+nl_geterror (int nlerr)
+{
+	const char *s;
+
+	nlerr = nl_errno (nlerr);
+
+	if (nlerr >= _NLE_BASE) {
+		s = _geterror (nlerr);
+		if (s)
+			return s;
+	}
+	return g_strerror (nlerr);
+}
