@@ -43,6 +43,19 @@
 /*****************************************************************************/
 
 static inline int
+nm_errno (int errsv)
+{
+	/* several API returns negative errno values as errors. Normalize
+	 * negative values to positive values.
+	 *
+	 * As a special case, map G_MININT to G_MAXINT. If you care about the
+	 * distinction, then check for G_MININT before. */
+	return errsv >= 0
+	       ? errsv
+	       : ((errsv == G_MININT) ? G_MAXINT : -errsv);
+}
+
+static inline int
 nl_errno (int nlerr)
 {
 	/* Normalizes an netlink error to be positive. Various API returns negative
