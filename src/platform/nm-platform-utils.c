@@ -1277,7 +1277,6 @@ nmp_utils_sysctl_open_netdir (int ifindex,
 	for (try_count = 0; try_count < 10; try_count++, ifname = NULL) {
 		nm_auto_close int fd_dir = -1;
 		nm_auto_close int fd_ifindex = -1;
-		int fd;
 
 		if (!ifname) {
 			ifname = nmp_utils_if_indextoname (ifindex, ifname_buf);
@@ -1310,15 +1309,13 @@ nmp_utils_sysctl_open_netdir (int ifindex,
 			continue;
 		fd_buf[nn] = '\0';
 
-		if (ifindex != _nm_utils_ascii_str_to_int64 (fd_buf, 10, 1, G_MAXINT, -1))
+		if (ifindex != (int) _nm_utils_ascii_str_to_int64 (fd_buf, 10, 1, G_MAXINT, -1))
 			continue;
 
 		if (out_ifname)
 			strcpy (out_ifname, ifname);
 
-		fd = fd_dir;
-		fd_dir = -1;
-		return fd;
+		return nm_steal_fd (&fd_dir);
 	}
 
 	return -1;
