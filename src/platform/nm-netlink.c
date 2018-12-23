@@ -44,16 +44,14 @@
 #define NETLINK_EXT_ACK         11
 #endif
 
-#define NL_MSG_CRED_PRESENT 1
-
 struct nl_msg {
 	int                     nm_protocol;
-	int                     nm_flags;
 	struct sockaddr_nl      nm_src;
 	struct sockaddr_nl      nm_dst;
 	struct ucred            nm_creds;
 	struct nlmsghdr *       nm_nlh;
 	size_t                  nm_size;
+	bool                    nm_creds_has:1;
 };
 
 struct nl_sock {
@@ -610,7 +608,7 @@ nlmsg_set_src (struct nl_msg *msg, struct sockaddr_nl *addr)
 struct ucred *
 nlmsg_get_creds (struct nl_msg *msg)
 {
-	if (msg->nm_flags & NL_MSG_CRED_PRESENT)
+	if (msg->nm_creds_has)
 		return &msg->nm_creds;
 	return NULL;
 }
@@ -618,8 +616,11 @@ nlmsg_get_creds (struct nl_msg *msg)
 void
 nlmsg_set_creds (struct nl_msg *msg, struct ucred *creds)
 {
-	memcpy (&msg->nm_creds, creds, sizeof (*creds));
-	msg->nm_flags |= NL_MSG_CRED_PRESENT;
+	if (creds) {
+		memcpy (&msg->nm_creds, creds, sizeof (*creds));
+		msg->nm_creds_has = TRUE;
+	} else
+		msg->nm_creds_has = FALSE;
 }
 
 /*****************************************************************************/
@@ -1098,8 +1099,7 @@ continue_reading:
 
 		nlmsg_set_proto (msg, sk->s_proto);
 		nlmsg_set_src (msg, &nla);
-		if (creds)
-			nlmsg_set_creds (msg, creds);
+		nlmsg_set_creds (msg, creds);
 
 		nrecv++;
 

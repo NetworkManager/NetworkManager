@@ -7422,8 +7422,7 @@ continue_reading:
 		_LOGt ("netlink: recvmsg: new message %s",
 		       nl_nlmsghdr_to_str (hdr, buf_nlmsghdr, sizeof (buf_nlmsghdr)));
 
-		if (creds)
-			nlmsg_set_creds (msg, creds);
+		nlmsg_set_creds (msg, creds);
 
 		if (hdr->nlmsg_flags & NLM_F_MULTI)
 			multipart = TRUE;
