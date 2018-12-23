@@ -476,6 +476,30 @@ static struct nl_sock *_genl_sock (NMLinuxPlatform *platform);
 /*****************************************************************************/
 
 static int
+_sock_addr_set_unaligned (NMSockAddrUnion *dst,
+                          gconstpointer src,
+                          gsize src_len)
+{
+	int f_expected;
+	struct sockaddr sa;
+
+	if (src_len == sizeof (struct sockaddr_in))
+		f_expected = AF_INET;
+	else if (src_len == sizeof (struct sockaddr_in6))
+		f_expected = AF_INET6;
+	else
+		return AF_UNSPEC;
+
+	memcpy (&sa.sa_family, &((struct sockaddr *) src)->sa_family, sizeof (sa.sa_family));
+	if (sa.sa_family != f_expected)
+		return AF_UNSPEC;
+	memcpy (dst, src, src_len);
+	return f_expected;
+}
+
+/*****************************************************************************/
+
+static int
 wait_for_nl_response_to_nmerr (WaitForNlResponseResult seq_result)
 {
 	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
@@ -2009,28 +2033,9 @@ _wireguard_update_from_peers_nla (CList *peers,
 			                   nla_len (tb[WGPEER_A_PRESHARED_KEY]));
 		}
 		if (tb[WGPEER_A_ENDPOINT]) {
-			const struct sockaddr *addr = nla_data (tb[WGPEER_A_ENDPOINT]);
-			unsigned short family;
-
-			G_STATIC_ASSERT (sizeof (addr->sa_family) == sizeof (family));
-			memcpy (&family, &addr->sa_family, sizeof (addr->sa_family));
-
-			if (   family == AF_INET
-			    && nla_len (tb[WGPEER_A_ENDPOINT]) == sizeof (struct sockaddr_in)) {
-				const struct sockaddr_in *addr4 = (const struct sockaddr_in *) addr;
-
-				peer_c->data.endpoint_family = AF_INET;
-				peer_c->data.endpoint_port = unaligned_read_be16 (&addr4->sin_port);
-				peer_c->data.endpoint_addr.addr4 = unaligned_read_ne32 (&addr4->sin_addr.s_addr);
-				memcpy (&peer_c->data.endpoint_addr.addr4, &addr4->sin_addr.s_addr, 4);
-			} else if (   family == AF_INET6
-			           && nla_len (tb[WGPEER_A_ENDPOINT]) == sizeof (struct sockaddr_in6)) {
-				const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6 *) addr;
-
-				peer_c->data.endpoint_family = AF_INET6;
-				peer_c->data.endpoint_port = unaligned_read_be16 (&addr6->sin6_port);
-				memcpy (&peer_c->data.endpoint_addr.addr6, &addr6->sin6_addr, 16);
-			}
+			_sock_addr_set_unaligned (&peer_c->data.endpoint,
+			                          nla_data (tb[WGPEER_A_ENDPOINT]),
+			                          nla_len (tb[WGPEER_A_ENDPOINT]));
 		}
 		if (tb[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL])
 			peer_c->data.persistent_keepalive_interval = nla_get_u64 (tb[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL]);
