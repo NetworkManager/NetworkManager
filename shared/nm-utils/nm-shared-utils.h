@@ -1086,4 +1086,8 @@ nm_strv_ptrarray_take_gstring (GPtrArray *cmd,
 	                                                 FALSE));
 }
 
+/*****************************************************************************/
+
+int nm_utils_getpagesize (void);
+
 #endif /* __NM_SHARED_UTILS_H__ */
