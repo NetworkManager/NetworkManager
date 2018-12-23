@@ -5550,20 +5550,26 @@ nm_platform_wireguard_peer_to_string (const NMPWireGuardPeer *peer, char *buf, g
 	gs_free char *public_key_b64 = NULL;
 	char s_endpoint[NM_UTILS_INET_ADDRSTRLEN + 100];
 	char s_addr[NM_UTILS_INET_ADDRSTRLEN];
+	char s_scope_id[40];
 	guint i;
 
 	nm_utils_to_string_buffer_init (&buf, &len);
 
-	if (peer->endpoint_family == AF_INET) {
+	if (peer->endpoint.sa.sa_family == AF_INET) {
 		nm_sprintf_buf (s_endpoint,
 		                " endpoint %s:%u",
-		                nm_utils_inet4_ntop (peer->endpoint_addr.addr4, s_addr),
-		                (guint) peer->endpoint_port);
-	} else if (peer->endpoint_family == AF_INET6) {
+		                nm_utils_inet4_ntop (peer->endpoint.in.sin_addr.s_addr, s_addr),
+		                (guint) htons (peer->endpoint.in.sin_port));
+	} else if (peer->endpoint.sa.sa_family == AF_INET6) {
+		if (peer->endpoint.in6.sin6_scope_id != 0)
+			nm_sprintf_buf (s_scope_id, "@%u", peer->endpoint.in6.sin6_scope_id);
+		else
+			s_scope_id[0] = '\0';
 		nm_sprintf_buf (s_endpoint,
-		                " endpoint [%s]:%u",
-		                nm_utils_inet6_ntop (&peer->endpoint_addr.addr6, s_addr),
-		                (guint) peer->endpoint_port);
+		                " endpoint [%s]%s:%u",
+		                nm_utils_inet6_ntop (&peer->endpoint.in6.sin6_addr, s_addr),
+		                s_scope_id,
+		                (guint) htons (peer->endpoint.in6.sin6_port));
 	} else
 		s_endpoint[0] = '\0';
 
