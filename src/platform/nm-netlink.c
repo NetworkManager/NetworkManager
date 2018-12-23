@@ -255,20 +255,6 @@ nla_reserve (struct nl_msg *msg, int attrtype, int attrlen)
 
 /*****************************************************************************/
 
-static int
-get_default_page_size (void)
-{
-	static int val = 0;
-	int v;
-
-	if (G_UNLIKELY (val == 0)) {
-		v = getpagesize ();
-		g_assert (v > 0);
-		val = v;
-	}
-	return val;
-}
-
 struct nl_msg *
 nlmsg_alloc_size (size_t len)
 {
@@ -298,7 +284,7 @@ nlmsg_alloc_size (size_t len)
 struct nl_msg *
 nlmsg_alloc (void)
 {
-	return nlmsg_alloc_size (get_default_page_size ());
+	return nlmsg_alloc_size (nm_utils_getpagesize ());
 }
 
 struct nl_msg *
@@ -1334,7 +1320,6 @@ nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
 {
 	ssize_t n;
 	int flags = 0;
-	static int page_size = 0;
 	struct iovec iov;
 	struct msghdr msg = {
 		.msg_name = (void *) nla,
@@ -1354,10 +1339,8 @@ nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
 	        && sk->s_bufsize == 0))
 		flags |= MSG_PEEK | MSG_TRUNC;
 
-	if (page_size == 0)
-		page_size = getpagesize () * 4;
-
-	iov.iov_len = sk->s_bufsize ?: page_size;
+	iov.iov_len =    sk->s_bufsize
+	              ?: (((size_t) nm_utils_getpagesize ()) * 4u);
 	iov.iov_base = g_malloc (iov.iov_len);
 
 	if (   creds
