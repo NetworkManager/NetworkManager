@@ -1084,10 +1084,11 @@ nl_recvmsgs (struct nl_sock *sk, const struct nl_cb *cb)
 	gs_free unsigned char *buf = NULL;
 	struct nlmsghdr *hdr;
 	struct sockaddr_nl nla = { 0 };
-	gs_free struct ucred *creds = NULL;
+	struct ucred creds;
+	gboolean creds_has;
 
 continue_reading:
-	n = nl_recv (sk, &nla, &buf, &creds);
+	n = nl_recv (sk, &nla, &buf, &creds, &creds_has);
 	if (n <= 0)
 		return n;
 
@@ -1099,7 +1100,7 @@ continue_reading:
 
 		nlmsg_set_proto (msg, sk->s_proto);
 		nlmsg_set_src (msg, &nla);
-		nlmsg_set_creds (msg, creds);
+		nlmsg_set_creds (msg, creds_has ? &creds : NULL);
 
 		nrecv++;
 
@@ -1203,7 +1204,6 @@ skip:
 
 	if (multipart) {
 		/* Multipart message not yet complete, continue reading */
-		nm_clear_g_free (&creds);
 		nm_clear_g_free (&buf);
 
 		goto continue_reading;
@@ -1315,8 +1315,11 @@ int nl_send_auto (struct nl_sock *sk, struct nl_msg *msg)
 }
 
 int
-nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
-         unsigned char **buf, struct ucred **creds)
+nl_recv (struct nl_sock *sk,
+         struct sockaddr_nl *nla,
+         unsigned char **buf,
+         struct ucred *out_creds,
+         gboolean *out_creds_has)
 {
 	ssize_t n;
 	int flags = 0;
@@ -1327,12 +1330,13 @@ nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
 		.msg_iov = &iov,
 		.msg_iovlen = 1,
 	};
-	gs_free struct ucred* tmpcreds = NULL;
+	struct ucred tmpcreds;
+	gboolean tmpcreds_has = FALSE;
 	int retval;
 
 	nm_assert (nla);
 	nm_assert (buf && !*buf);
-	nm_assert (!creds || !*creds);
+	nm_assert (!out_creds_has == !out_creds);
 
 	if (   (sk->s_flags & NL_MSG_PEEK)
 	    || (   !(sk->s_flags & NL_MSG_PEEK_EXPLICIT)
@@ -1343,7 +1347,7 @@ nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
 	              ?: (((size_t) nm_utils_getpagesize ()) * 4u);
 	iov.iov_base = g_malloc (iov.iov_len);
 
-	if (   creds
+	if (   out_creds
 	    && (sk->s_flags & NL_SOCK_PASSCRED)) {
 		msg.msg_controllen = CMSG_SPACE (sizeof (struct ucred));
 		msg.msg_control = g_malloc (msg.msg_controllen);
@@ -1403,7 +1407,7 @@ retry:
 		goto abort;
 	}
 
-	if (creds && (sk->s_flags & NL_SOCK_PASSCRED)) {
+	if (out_creds && (sk->s_flags & NL_SOCK_PASSCRED)) {
 		struct cmsghdr *cmsg;
 
 		for (cmsg = CMSG_FIRSTHDR (&msg); cmsg; cmsg = CMSG_NXTHDR (&msg, cmsg)) {
@@ -1411,7 +1415,8 @@ retry:
 				continue;
 			if (cmsg->cmsg_type != SCM_CREDENTIALS)
 				continue;
-			tmpcreds = nm_memdup (CMSG_DATA (cmsg), sizeof (*tmpcreds));
+			memcpy (&tmpcreds, CMSG_DATA (cmsg), sizeof (tmpcreds));
+			tmpcreds_has = TRUE;
 			break;
 		}
 	}
@@ -1427,6 +1432,8 @@ abort:
 	}
 
 	*buf = iov.iov_base;
-	NM_SET_OUT (creds, g_steal_pointer (&tmpcreds));
+	if (out_creds && tmpcreds_has)
+		*out_creds = tmpcreds;
+	NM_SET_OUT (out_creds_has, tmpcreds_has);
 	return retval;
 }
