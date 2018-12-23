@@ -7367,13 +7367,13 @@ event_handler_recvmsgs (NMPlatform *platform, gboolean handle_events)
 	struct nlmsghdr *hdr;
 	WaitForNlResponseResult seq_result;
 	struct sockaddr_nl nla = {0};
-	nm_auto_free struct ucred *creds = NULL;
+	struct ucred creds;
+	gboolean creds_has;
 	nm_auto_free unsigned char *buf = NULL;
 
 continue_reading:
 	g_clear_pointer (&buf, free);
-	g_clear_pointer (&creds, free);
-	n = nl_recv (sk, &nla, &buf, &creds);
+	n = nl_recv (sk, &nla, &buf, &creds, &creds_has);
 
 	if (n <= 0) {
 
@@ -7410,11 +7410,11 @@ continue_reading:
 		nlmsg_set_proto (msg, NETLINK_ROUTE);
 		nlmsg_set_src (msg, &nla);
 
-		if (!creds || creds->pid) {
-			if (creds)
-				_LOGT ("netlink: recvmsg: received non-kernel message (pid %d)", creds->pid);
-			else
+		if (!creds_has || creds.pid) {
+			if (!creds_has)
 				_LOGT ("netlink: recvmsg: received message without credentials");
+			else
+				_LOGT ("netlink: recvmsg: received non-kernel message (pid %d)", creds.pid);
 			err = 0;
 			goto stop;
 		}
@@ -7422,7 +7422,7 @@ continue_reading:
 		_LOGt ("netlink: recvmsg: new message %s",
 		       nl_nlmsghdr_to_str (hdr, buf_nlmsghdr, sizeof (buf_nlmsghdr)));
 
-		nlmsg_set_creds (msg, creds);
+		nlmsg_set_creds (msg, &creds);
 
 		if (hdr->nlmsg_flags & NLM_F_MULTI)
 			multipart = TRUE;

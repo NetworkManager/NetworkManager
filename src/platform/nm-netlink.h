@@ -416,8 +416,11 @@ int nl_socket_add_memberships (struct nl_sock *sk, int group, ...);
 
 int nl_connect (struct nl_sock *sk, int protocol);
 
-int nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
-             unsigned char **buf, struct ucred **creds);
+int nl_recv (struct nl_sock *sk,
+             struct sockaddr_nl *nla,
+             unsigned char **buf,
+             struct ucred *out_creds,
+             gboolean *out_creds_has);
 
 int nl_send (struct nl_sock *sk, struct nl_msg *msg);
 
