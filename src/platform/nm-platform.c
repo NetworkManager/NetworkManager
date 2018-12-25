@@ -1985,6 +1985,47 @@ nm_platform_link_get_lnk_wireguard (NMPlatform *self, int ifindex, const NMPlatf
 
 /*****************************************************************************/
 
+int
+nm_platform_link_wireguard_add (NMPlatform *self,
+                                const char *name,
+                                const NMPlatformLink **out_link)
+{
+	return nm_platform_link_add (self, name, NM_LINK_TYPE_WIREGUARD, NULL, NULL, 0, out_link);
+}
+
+int
+nm_platform_link_wireguard_change (NMPlatform *self,
+                                   int ifindex,
+                                   const NMPlatformLnkWireGuard *lnk_wireguard,
+                                   const struct _NMPWireGuardPeer *peers,
+                                   guint peers_len)
+{
+	_CHECK_SELF (self, klass, -NME_BUG);
+
+	nm_assert (klass->link_wireguard_change);
+
+	if (_LOGD_ENABLED ()) {
+		char buf[512];
+		char *b = buf;
+		gsize len;
+
+		b[0] = '\0';
+		len = sizeof (buf);
+
+		nm_utils_strbuf_append_str (&b, &len, "");
+
+		_LOG3D ("link: change wireguard %s", buf);
+	}
+
+	return klass->link_wireguard_change (self,
+	                                     ifindex,
+	                                     lnk_wireguard,
+	                                     peers,
+	                                     peers_len);
+}
+
+/*****************************************************************************/
+
 /**
  * nm_platform_link_bridge_add:
  * @self: platform instance
