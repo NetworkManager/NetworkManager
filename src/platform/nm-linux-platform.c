@@ -187,6 +187,12 @@ G_STATIC_ASSERT (RTA_MAX == (__RTA_MAX - 1));
 #define WG_CMD_GET_DEVICE 0
 #define WG_CMD_SET_DEVICE 1
 
+#define WGDEVICE_F_REPLACE_PEERS               ((guint32) (1U << 0))
+
+#define WGPEER_F_REMOVE_ME                     ((guint32) (1U << 0))
+#define WGPEER_F_REPLACE_ALLOWEDIPS            ((guint32) (1U << 1))
+
+
 #define WGDEVICE_A_UNSPEC                      0
 #define WGDEVICE_A_IFINDEX                     1
 #define WGDEVICE_A_IFNAME                      2
@@ -2164,9 +2170,9 @@ _wireguard_get_device_cb (struct nl_msg *msg, void *arg)
 
 static const NMPObject *
 _wireguard_read_info (NMPlatform *platform /* used only as logging context */,
-                     struct nl_sock *genl,
-                     int wireguard_family_id,
-                     int ifindex)
+                      struct nl_sock *genl,
+                      int wireguard_family_id,
+                      int ifindex)
 {
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	NMPObject *obj = NULL;
@@ -2181,6 +2187,8 @@ _wireguard_read_info (NMPlatform *platform /* used only as logging context */,
 	nm_assert (genl);
 	nm_assert (wireguard_family_id >= 0);
 	nm_assert (ifindex > 0);
+
+	_LOGT ("wireguard: fetching infomation for ifindex %d (genl-id %d)...", ifindex, wireguard_family_id);
 
 	msg = nlmsg_alloc ();
 
@@ -2288,6 +2296,330 @@ _wireguard_read_info (NMPlatform *platform /* used only as logging context */,
 
 nla_put_failure:
 	g_return_val_if_reached (NULL);
+}
+
+static int
+_wireguard_get_family_id (NMPlatform *platform, int ifindex_try)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	int wireguard_family_id = -1;
+
+	if (ifindex_try > 0) {
+		const NMPlatformLink *plink;
+
+		if (nm_platform_link_get_lnk_wireguard (platform, ifindex_try, &plink))
+			wireguard_family_id = NMP_OBJECT_UP_CAST (plink)->_link.wireguard_family_id;
+	}
+	if (wireguard_family_id < 0)
+		wireguard_family_id = genl_ctrl_resolve (priv->genl, "wireguard");
+	return wireguard_family_id;
+}
+
+static const NMPObject *
+_wireguard_refresh_link (NMPlatform *platform,
+                         int wireguard_family_id,
+                         int ifindex)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	nm_auto_nmpobj const NMPObject *obj_old = NULL;
+	nm_auto_nmpobj const NMPObject *obj_new = NULL;
+	nm_auto_nmpobj const NMPObject *lnk_new = NULL;
+	NMPCacheOpsType cache_op;
+	const NMPObject *plink = NULL;
+	nm_auto_nmpobj NMPObject *obj = NULL;
+
+	nm_assert (wireguard_family_id >= 0);
+	nm_assert (ifindex > 0);
+
+	nm_platform_process_events (platform);
+
+	plink = nm_platform_link_get_obj (platform, ifindex, TRUE);
+
+	if (   !plink
+	    || plink->link.type != NM_LINK_TYPE_WIREGUARD) {
+		nm_platform_link_refresh (platform, ifindex);
+		plink = nm_platform_link_get_obj (platform, ifindex, TRUE);
+		if (   !plink
+		    || plink->link.type != NM_LINK_TYPE_WIREGUARD)
+			return NULL;
+		if (NMP_OBJECT_GET_TYPE (plink->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_WIREGUARD)
+			lnk_new = nmp_object_ref (plink->_link.netlink.lnk);
+	} else {
+		lnk_new = _wireguard_read_info (platform,
+		                                priv->genl,
+		                                wireguard_family_id,
+		                                ifindex);
+		if (!lnk_new) {
+			if (NMP_OBJECT_GET_TYPE (plink->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_WIREGUARD)
+				lnk_new = nmp_object_ref (plink->_link.netlink.lnk);
+		} else if (nmp_object_equal (plink->_link.netlink.lnk, lnk_new)) {
+			nmp_object_unref (lnk_new);
+			lnk_new = nmp_object_ref (plink->_link.netlink.lnk);
+		}
+	}
+
+	if (   plink->_link.wireguard_family_id == wireguard_family_id
+	    && plink->_link.netlink.lnk == lnk_new)
+		return plink;
+
+	/* we use nmp_cache_update_netlink() to re-inject the new object into the cache.
+	 * For that, we need to clone it, and tweak it so that it's suitable. It's a bit
+	 * of a hack, in particular that we need to clear driver and udev-device. */
+	obj = nmp_object_clone (plink, FALSE);
+	obj->_link.wireguard_family_id = wireguard_family_id;
+	nmp_object_unref (obj->_link.netlink.lnk);
+	obj->_link.netlink.lnk = g_steal_pointer (&lnk_new);
+	obj->link.driver = NULL;
+	nm_clear_pointer (&obj->_link.udev.device, udev_device_unref);
+
+	cache_op = nmp_cache_update_netlink (nm_platform_get_cache (platform),
+	                                     obj,
+	                                     FALSE,
+	                                     &obj_old,
+	                                     &obj_new);
+	nm_assert (NM_IN_SET (cache_op, NMP_CACHE_OPS_UPDATED));
+	if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
+		cache_on_change (platform, cache_op, obj_old, obj_new);
+		nm_platform_cache_update_emit_signal (platform, cache_op, obj_old, obj_new);
+	}
+
+	nm_assert (   !obj_new
+	           || (   NMP_OBJECT_GET_TYPE (obj_new) == NMP_OBJECT_TYPE_LINK
+	               && obj_new->link.type == NM_LINK_TYPE_WIREGUARD
+	               && (   !obj_new->_link.netlink.lnk
+	                   || NMP_OBJECT_GET_TYPE (obj_new->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_WIREGUARD)));
+	return obj_new;
+}
+
+static int
+_wireguard_create_change_nlmsgs (NMPlatform *platform,
+                                 int ifindex,
+                                 int wireguard_family_id,
+                                 const NMPlatformLnkWireGuard *lnk_wireguard,
+                                 const NMPWireGuardPeer *peers,
+                                 guint peers_len,
+                                 GPtrArray **out_msgs)
+{
+	gs_unref_ptrarray GPtrArray *msgs = NULL;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
+	const guint IDX_NIL = G_MAXUINT;
+	guint idx_peer_curr;
+	guint idx_allowed_ips_curr;
+	struct nlattr *nest_peers;
+	struct nlattr *nest_curr_peer;
+	struct nlattr *nest_allowed_ips;
+	struct nlattr *nest_curr_allowed_ip;
+
+#define _nla_nest_end(msg, nest_start) \
+	G_STMT_START { \
+		if (nla_nest_end ((msg), (nest_start)) < 0) \
+			g_return_val_if_reached (-NME_BUG); \
+	} G_STMT_END
+
+	/* Adapted from LGPL-2.1+ code [1].
+	 *
+	 * [1] https://git.zx2c4.com/WireGuard/tree/contrib/examples/embeddable-wg-library/wireguard.c?id=5e99a6d43fe2351adf36c786f5ea2086a8fe7ab8#n1073 */
+
+	idx_peer_curr = IDX_NIL;
+	idx_allowed_ips_curr = IDX_NIL;
+
+	/* TODO: for the moment, we always reset all peers and allowed-ips (WGDEVICE_F_REPLACE_PEERS, WGPEER_F_REPLACE_ALLOWEDIPS).
+	 * The platform API should be extended to also support partial updates. In particular, configuring the same configuration
+	 * multiple times, should not clear and re-add all settings, but rather sync the existing settings with the desired configuration. */
+
+again:
+
+	msg = nlmsg_alloc ();
+	if (!genlmsg_put (msg,
+	                  NL_AUTO_PORT,
+	                  NL_AUTO_SEQ,
+	                  wireguard_family_id,
+	                  0,
+	                  NLM_F_REQUEST,
+	                  WG_CMD_SET_DEVICE,
+	                  1))
+		g_return_val_if_reached (-NME_BUG);
+
+	NLA_PUT_U32 (msg, WGDEVICE_A_IFINDEX, (guint32) ifindex);
+
+	if (idx_peer_curr == IDX_NIL) {
+		NLA_PUT (msg, WGDEVICE_A_PRIVATE_KEY, sizeof (lnk_wireguard->private_key), lnk_wireguard->private_key);
+		NLA_PUT_U16 (msg, WGDEVICE_A_LISTEN_PORT, lnk_wireguard->listen_port);
+		NLA_PUT_U32 (msg, WGDEVICE_A_FWMARK, lnk_wireguard->fwmark);
+		NLA_PUT_U32 (msg, WGDEVICE_A_FLAGS, WGDEVICE_F_REPLACE_PEERS);
+	}
+
+	if (peers_len == 0)
+		goto send;
+
+	nest_curr_peer = NULL;
+	nest_allowed_ips = NULL;
+	nest_curr_allowed_ip = NULL;
+
+	nest_peers = nla_nest_start (msg, WGDEVICE_A_PEERS);
+	if (!nest_peers)
+		g_return_val_if_reached (-NME_BUG);
+
+	if (idx_peer_curr == IDX_NIL)
+		idx_peer_curr = 0;
+	for (; idx_peer_curr < peers_len; idx_peer_curr++) {
+		const NMPWireGuardPeer *p = &peers[idx_peer_curr];
+
+		nest_curr_peer = nla_nest_start (msg, 0);
+		if (!nest_curr_peer)
+			goto toobig_peers;
+
+		if (nla_put (msg, WGPEER_A_PUBLIC_KEY, NMP_WIREGUARD_PUBLIC_KEY_LEN, p->public_key) < 0)
+			goto toobig_peers;
+
+		if (idx_allowed_ips_curr == IDX_NIL) {
+
+			if (nla_put (msg, WGPEER_A_PRESHARED_KEY, sizeof (p->preshared_key), p->preshared_key) < 0)
+				goto toobig_peers;
+
+			if (nla_put_uint16 (msg, WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL, p->persistent_keepalive_interval) < 0)
+				goto toobig_peers;
+
+			if (nla_put_uint32 (msg, WGPEER_A_FLAGS, WGPEER_F_REPLACE_ALLOWEDIPS) < 0)
+				goto toobig_peers;
+
+			g_return_val_if_fail (NM_IN_SET (p->endpoint.sa.sa_family, AF_INET, AF_INET6), -NME_BUG);
+
+			if (nla_put (msg,
+			             WGPEER_A_ENDPOINT,
+			               p->endpoint.sa.sa_family == AF_INET
+			             ? sizeof (p->endpoint.in)
+			             : sizeof (p->endpoint.in6),
+			             &p->endpoint) < 0)
+				goto toobig_peers;
+		}
+
+		if (p->allowed_ips_len > 0) {
+			if (idx_allowed_ips_curr == IDX_NIL)
+				idx_allowed_ips_curr = 0;
+
+			nest_allowed_ips = nla_nest_start (msg, WGPEER_A_ALLOWEDIPS);
+			if (!nest_allowed_ips)
+				goto toobig_allowedips;
+
+			for (; idx_allowed_ips_curr < p->allowed_ips_len; idx_allowed_ips_curr++) {
+				const NMPWireGuardAllowedIP *aip = &p->allowed_ips[idx_allowed_ips_curr];
+
+				nest_curr_allowed_ip = nla_nest_start (msg, 0);
+				if (!nest_curr_allowed_ip)
+					goto toobig_allowedips;
+
+				g_return_val_if_fail (NM_IN_SET (aip->family, AF_INET, AF_INET6), -NME_BUG);
+
+				if (nla_put_uint16 (msg, WGALLOWEDIP_A_FAMILY, aip->family) < 0)
+					goto toobig_allowedips;
+				if (nla_put (msg,
+				             WGALLOWEDIP_A_IPADDR,
+				             nm_utils_addr_family_to_size (aip->family),
+				             &aip->addr) < 0)
+					goto toobig_allowedips;
+				if (nla_put_uint8 (msg, WGALLOWEDIP_A_CIDR_MASK, aip->mask) < 0)
+					goto toobig_allowedips;
+
+				_nla_nest_end (msg, nest_curr_allowed_ip);
+				nest_curr_allowed_ip = NULL;
+			}
+			idx_allowed_ips_curr = IDX_NIL;
+
+			_nla_nest_end (msg, nest_allowed_ips);
+			nest_allowed_ips = NULL;
+		}
+
+		_nla_nest_end (msg, nest_curr_peer);
+		nest_curr_peer = NULL;
+	}
+
+	_nla_nest_end (msg, nest_peers);
+	goto send;
+
+toobig_allowedips:
+	if (nest_curr_allowed_ip)
+		nla_nest_cancel (msg, nest_curr_allowed_ip);
+	if (nest_allowed_ips)
+		nla_nest_cancel (msg, nest_allowed_ips);
+	_nla_nest_end (msg, nest_curr_peer);
+	_nla_nest_end (msg, nest_peers);
+	goto send;
+
+toobig_peers:
+	if (nest_curr_peer)
+		nla_nest_cancel (msg, nest_curr_peer);
+	_nla_nest_end (msg, nest_peers);
+	goto send;
+
+send:
+	if (!msgs)
+		msgs = g_ptr_array_new_with_free_func ((GDestroyNotify) nlmsg_free);
+	g_ptr_array_add (msgs, g_steal_pointer (&msg));
+
+	if (   idx_peer_curr != IDX_NIL
+	    && idx_peer_curr < peers_len)
+		goto again;
+
+	NM_SET_OUT (out_msgs, g_steal_pointer (&msgs));
+	return 0;
+
+nla_put_failure:
+	g_return_val_if_reached (-NME_BUG);
+
+#undef _nla_nest_end
+}
+
+static int
+link_wireguard_change (NMPlatform *platform,
+                       int ifindex,
+                       const NMPlatformLnkWireGuard *lnk_wireguard,
+                       const NMPWireGuardPeer *peers,
+                       guint peers_len)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	gs_unref_ptrarray GPtrArray *msgs = NULL;
+	int wireguard_family_id;
+	guint i;
+	int r;
+
+	wireguard_family_id = _wireguard_get_family_id (platform, ifindex);
+	if (wireguard_family_id < 0)
+		return -NME_PL_NO_FIRMWARE;
+
+	r = _wireguard_create_change_nlmsgs (platform,
+	                                     ifindex,
+	                                     wireguard_family_id,
+	                                     lnk_wireguard,
+	                                     peers,
+	                                     peers_len,
+	                                     &msgs);
+	if (r < 0) {
+		_LOGW ("wireguard: set-device, cannot construct netlink message: %s", nm_strerror (r));
+		return r;
+	}
+
+	for (i = 0; i < msgs->len; i++) {
+		r = nl_send_auto (priv->genl, msgs->pdata[i]);
+		if (r < 0) {
+			_LOGW ("wireguard: set-device, send netlink message #%u failed: %s", i, nm_strerror (r));
+			return r;
+		}
+
+		do {
+			r = nl_recvmsgs (priv->genl, NULL);
+		} while (r == -EAGAIN);
+		if (r < 0) {
+			_LOGW ("wireguard: set-device, message #%u was rejected: %s", i, nm_strerror (r));
+			return r;
+		}
+
+		_LOGT ("wireguard: set-device, message #%u sent and confirmed", i);
+	}
+
+	_wireguard_refresh_link (platform, wireguard_family_id, ifindex);
+
+	return 0;
 }
 
 /*****************************************************************************/
@@ -8055,6 +8387,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->vlan_add = vlan_add;
 	platform_class->link_vlan_change = link_vlan_change;
+	platform_class->link_wireguard_change = link_wireguard_change;
 	platform_class->link_vxlan_add = link_vxlan_add;
 
 	platform_class->infiniband_partition_add = infiniband_partition_add;

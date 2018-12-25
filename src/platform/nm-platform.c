@@ -1985,6 +1985,61 @@ nm_platform_link_get_lnk_wireguard (NMPlatform *self, int ifindex, const NMPlatf
 
 /*****************************************************************************/
 
+int
+nm_platform_link_wireguard_add (NMPlatform *self,
+                                const char *name,
+                                const NMPlatformLink **out_link)
+{
+	return nm_platform_link_add (self, name, NM_LINK_TYPE_WIREGUARD, NULL, NULL, 0, out_link);
+}
+
+int
+nm_platform_link_wireguard_change (NMPlatform *self,
+                                   int ifindex,
+                                   const NMPlatformLnkWireGuard *lnk_wireguard,
+                                   const struct _NMPWireGuardPeer *peers,
+                                   guint peers_len)
+{
+	_CHECK_SELF (self, klass, -NME_BUG);
+
+	nm_assert (klass->link_wireguard_change);
+
+	if (_LOGD_ENABLED ()) {
+		char buf_lnk[256];
+		char buf_peers[512];
+
+		buf_peers[0] = '\0';
+		if (peers_len > 0) {
+			char *b = buf_peers;
+			gsize len = sizeof (buf_peers);
+			guint i;
+
+			nm_utils_strbuf_append_str (&b, &len, " { ");
+			for (i = 0; i < peers_len; i++) {
+				nm_utils_strbuf_append_str (&b, &len, " { ");
+				nm_platform_wireguard_peer_to_string (&peers[i], b, len);
+				nm_utils_strbuf_seek_end (&b, &len);
+				nm_utils_strbuf_append_str (&b, &len, " } ");
+			}
+			nm_utils_strbuf_append_str (&b, &len, "}");
+		}
+
+		_LOG3D ("link: change wireguard ifindex %d, %s, %u peers%s",
+		        ifindex,
+		        nm_platform_lnk_wireguard_to_string (lnk_wireguard, buf_lnk, sizeof (buf_lnk)),
+		        peers_len,
+		        buf_peers);
+	}
+
+	return klass->link_wireguard_change (self,
+	                                     ifindex,
+	                                     lnk_wireguard,
+	                                     peers,
+	                                     peers_len);
+}
+
+/*****************************************************************************/
+
 /**
  * nm_platform_link_bridge_add:
  * @self: platform instance
