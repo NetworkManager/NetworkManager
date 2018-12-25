@@ -45,9 +45,11 @@ typedef struct {
 
 typedef struct _NMPWireGuardPeer {
 	NMSockAddrUnion endpoint;
+
 	struct timespec last_handshake_time;
 	guint64 rx_bytes;
 	guint64 tx_bytes;
+
 	union {
 		const NMPWireGuardAllowedIP *allowed_ips;
 		guint _construct_idx_start;
@@ -56,7 +58,9 @@ typedef struct _NMPWireGuardPeer {
 		guint allowed_ips_len;
 		guint _construct_idx_end;
 	};
+
 	guint16 persistent_keepalive_interval;
+
 	guint8 public_key[NMP_WIREGUARD_PUBLIC_KEY_LEN];
 	guint8 preshared_key[NMP_WIREGUARD_SYMMETRIC_KEY_LEN];
 } NMPWireGuardPeer;
