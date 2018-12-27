@@ -905,25 +905,24 @@ _supports_addr_family (NMConnection *self, int family)
 static gboolean
 _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 {
-	const char *default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
-	const char *default_ip6_method = NULL;
 	NMSettingIPConfig *s_ip4, *s_ip6;
 	NMSettingProxy *s_proxy;
 	NMSetting *setting;
 	gboolean changed = FALSE;
 	guint num, i;
 
-	if (parameters)
-		default_ip6_method = g_hash_table_lookup (parameters, NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD);
-	if (!default_ip6_method)
-		default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
-
 	s_ip4 = nm_connection_get_setting_ip4_config (self);
 	s_ip6 = nm_connection_get_setting_ip6_config (self);
 	s_proxy = nm_connection_get_setting_proxy (self);
 
 	if (_supports_addr_family (self, AF_INET)) {
+
 		if (!s_ip4) {
+			const char *default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+
+			if (nm_connection_is_type (self, NM_SETTING_WIREGUARD_SETTING_NAME))
+				default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+
 			 /* But if no IP4 setting was specified, assume the caller was just
 			  * being lazy and use the default method.
 			  */
@@ -966,6 +965,17 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 
 	if (_supports_addr_family (self, AF_INET6)) {
 		if (!s_ip6) {
+			const char *default_ip6_method = NULL;
+
+			if (parameters)
+				default_ip6_method = g_hash_table_lookup (parameters, NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD);
+			if (!default_ip6_method) {
+				if (nm_connection_is_type (self, NM_SETTING_WIREGUARD_SETTING_NAME))
+					default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+				else
+					default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
+			}
+
 			/* If no IP6 setting was specified, then assume that means IP6 config is
 			 * allowed to fail.
 			 */
@@ -2419,7 +2429,8 @@ nm_connection_is_virtual (NMConnection *connection)
 	                        NM_SETTING_TEAM_SETTING_NAME,
 	                        NM_SETTING_TUN_SETTING_NAME,
 	                        NM_SETTING_VLAN_SETTING_NAME,
-	                        NM_SETTING_VXLAN_SETTING_NAME))
+	                        NM_SETTING_VXLAN_SETTING_NAME,
+	                        NM_SETTING_WIREGUARD_SETTING_NAME))
 		return TRUE;
 
 	if (nm_streq (type, NM_SETTING_INFINIBAND_SETTING_NAME)) {

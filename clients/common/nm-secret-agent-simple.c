@@ -405,8 +405,8 @@ add_vpn_secret_helper (GPtrArray *secrets, NMSettingVpn *s_vpn, const char *name
 
 static gboolean
 add_vpn_secrets (RequestData *request,
-                 GPtrArray                  *secrets,
-                 char                       **msg)
+                 GPtrArray *secrets,
+                 char **msg)
 {
 	NMSettingVpn *s_vpn = nm_connection_get_setting_vpn (request->connection);
 	const VpnPasswordName *secret_names, *p;
@@ -432,6 +432,56 @@ add_vpn_secrets (RequestData *request,
 		p++;
 	}
 
+	return TRUE;
+}
+
+static gboolean
+add_wireguard_secrets (RequestData *request,
+                       GPtrArray *secrets,
+                       char **msg,
+                       GError **error)
+{
+	NMSettingWireGuard *s_wg;
+	NMSecretAgentSimpleSecret *secret;
+	guint i;
+
+	s_wg = NM_SETTING_WIREGUARD (nm_connection_get_setting (request->connection, NM_TYPE_SETTING_WIREGUARD));
+	if (!s_wg) {
+		g_set_error (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
+		             "Cannot service a WireGuard secrets request %s for a connection without WireGuard settings",
+		             request->request_id);
+		return FALSE;
+	}
+
+	if (   !request->hints
+	    || !request->hints[0]
+	    || g_strv_contains (NM_CAST_STRV_CC (request->hints), NM_SETTING_WIREGUARD_PRIVATE_KEY)) {
+		secret = _secret_real_new_plain (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+		                                 _("WireGuard private-key"),
+		                                 NM_SETTING (s_wg),
+		                                 NM_SETTING_WIREGUARD_PRIVATE_KEY);
+		g_ptr_array_add (secrets, secret);
+	}
+
+	if (request->hints) {
+		for (i = 0; request->hints[i]; i++) {
+			const char *name = request->hints[i];
+			gs_free char *peer_name = NULL;
+
+			if (nm_streq (name, NM_SETTING_WIREGUARD_PRIVATE_KEY))
+				continue;
+
+			/* TODO: add support for WireGuard peers and their preshared-key. */
+			g_set_error (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
+			             _("Cannot service unknown WireGuard hint '%s' for secrets request %s"),
+			             name,
+			             request->request_id);
+			return FALSE;
+		}
+	}
+
+	*msg = g_strdup_printf (_("Secrets are required to connect WireGuard VPN '%s'"),
+	                        nm_connection_get_id (request->connection));
 	return TRUE;
 }
 
@@ -820,6 +870,10 @@ request_secrets_from_ui (RequestData *request)
 			if (!add_8021x_secrets (request, secrets))
 				goto out_fail;
 		}
+	} else if (nm_connection_is_type (request->connection, NM_SETTING_WIREGUARD_SETTING_NAME)) {
+		title = _("WireGuard VPN secret");
+		if (!add_wireguard_secrets (request, secrets, &msg, &error))
+			goto out_fail_error;
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_CDMA_SETTING_NAME)) {
 		NMSettingCdma *s_cdma = nm_connection_get_setting_cdma (request->connection);
 

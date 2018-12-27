@@ -1462,6 +1462,12 @@ global:
 	nm_setting_wifi_p2p_get_wfd_ies;
 	nm_setting_wifi_p2p_get_wps_method;
 	nm_setting_wifi_p2p_new;
+	nm_setting_wireguard_get_fwmark;
+	nm_setting_wireguard_get_listen_port;
+	nm_setting_wireguard_get_private_key;
+	nm_setting_wireguard_get_private_key_flags;
+	nm_setting_wireguard_get_type;
+	nm_setting_wireguard_new;
 	nm_team_link_watcher_get_vlanid;
 	nm_team_link_watcher_new_arp_ping2;
 	nm_wifi_p2p_peer_connection_valid;

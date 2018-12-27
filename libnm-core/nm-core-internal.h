@@ -79,6 +79,7 @@
 #include "nm-setting-wifi-p2p.h"
 #include "nm-setting-wimax.h"
 #include "nm-setting-wired.h"
+#include "nm-setting-wireguard.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wpan.h"
@@ -765,6 +766,16 @@ gboolean _nm_connection_find_secret (NMConnection *self,
                                      GVariant *secrets,
                                      NMConnectionFindSecretFunc callback,
                                      gpointer callback_data);
+
+/*****************************************************************************/
+
+gboolean _nm_utils_wireguard_decode_key (const char *base64_key,
+                                         gsize required_key_len,
+                                         guint8 *out_key);
+
+gboolean _nm_utils_wireguard_normalize_key (const char *base64_key,
+                                            gsize required_key_len,
+                                            char **out_base64_key_norm);
 
 /*****************************************************************************/
 
