@@ -2319,7 +2319,7 @@ nm_utils_getpagesize (void)
 }
 
 gboolean
-nm_utils_mem_all_zero (gconstpointer data, gsize length)
+nm_utils_memeqzero (gconstpointer data, gsize length)
 {
 	const unsigned char *p = data;
 	int len;
