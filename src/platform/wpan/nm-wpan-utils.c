@@ -23,6 +23,7 @@
 
 #include <linux/if.h>
 
+#include "nm-utils/nm-errno.h"
 #include "platform/linux/nl802154.h"
 #include "platform/nm-netlink.h"
 #include "platform/nm-platform-utils.h"
@@ -133,7 +134,7 @@ nl802154_send_and_recv (NMWpanUtils *self,
 		err = nl_recvmsgs (self->nl_sock, &cb);
 		if (err < 0 && err != -EAGAIN) {
 			_LOGW (LOGD_PLATFORM, "nl_recvmsgs() error: (%d) %s",
-			       err, nl_geterror (err));
+			       err, nm_strerror (err));
 			break;
 		}
 	}

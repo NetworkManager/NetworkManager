@@ -44,6 +44,7 @@
 #include "nm-core-internal.h"
 #include "nm-setting-vlan.h"
 
+#include "nm-utils/nm-errno.h"
 #include "nm-utils/nm-secret-utils.h"
 #include "nm-netlink.h"
 #include "nm-core-utils.h"
@@ -474,14 +475,14 @@ static struct nl_sock *_genl_sock (NMLinuxPlatform *platform);
 
 /*****************************************************************************/
 
-static NMPlatformError
-wait_for_nl_response_to_plerr (WaitForNlResponseResult seq_result)
+static int
+wait_for_nl_response_to_nmerr (WaitForNlResponseResult seq_result)
 {
 	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
-		return NM_PLATFORM_ERROR_SUCCESS;
+		return 0;
 	if (seq_result < 0)
-		return (NMPlatformError) seq_result;
-	return NM_PLATFORM_ERROR_NETLINK;
+		return (int) seq_result;
+	return -NME_PL_NETLINK;
 }
 
 static const char *
@@ -4746,7 +4747,7 @@ _nl_send_nlmsg (NMPlatform *platform,
 
 	nle = nl_send_auto (priv->nlh, nlmsg);
 	if (nle < 0) {
-		_LOGD ("netlink: nl-send-nlmsg: failed sending message: %s (%d)", nl_geterror (nle), nle);
+		_LOGD ("netlink: nl-send-nlmsg: failed sending message: %s (%d)", nm_strerror (nle), nle);
 		return nle;
 	}
 
@@ -4792,7 +4793,7 @@ do_request_link_no_delayed_actions (NMPlatform *platform, int ifindex, const cha
 		if (nle < 0) {
 			_LOGE ("do-request-link: %d %s: failed sending netlink request \"%s\" (%d)",
 			       ifindex, name ?: "",
-			       nl_geterror (nle), -nle);
+			       nm_strerror (nle), -nle);
 			return;
 		}
 	}
@@ -5122,7 +5123,7 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 
 /*****************************************************************************/
 
-static gboolean
+static int
 do_add_link_with_lookup (NMPlatform *platform,
                          NMLinkType link_type,
                          const char *name,
@@ -5143,9 +5144,9 @@ do_add_link_with_lookup (NMPlatform *platform,
 		_LOGE ("do-add-link[%s/%s]: failed sending netlink request \"%s\" (%d)",
 		       name,
 		       nm_link_type_to_string (link_type),
-		       nl_geterror (nle), -nle);
+		       nm_strerror (nle), -nle);
 		NM_SET_OUT (out_link, NULL);
-		return FALSE;
+		return nle;
 	}
 
 	delayed_action_handle_all (platform, FALSE);
@@ -5165,10 +5166,10 @@ do_add_link_with_lookup (NMPlatform *platform,
 		*out_link = NMP_OBJECT_CAST_LINK (obj);
 	}
 
-	return seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+	return wait_for_nl_response_to_nmerr (seq_result);
 }
 
-static NMPlatformError
+static int
 do_add_addrroute (NMPlatform *platform,
                   const NMPObject *obj_id,
                   struct nl_msg *nlmsg,
@@ -5190,8 +5191,8 @@ do_add_addrroute (NMPlatform *platform,
 		_LOGE ("do-add-%s[%s]: failure sending netlink request \"%s\" (%d)",
 		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
 		       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
-		       nl_geterror (nle), -nle);
-		return NM_PLATFORM_ERROR_NETLINK;
+		       nm_strerror (nle), -nle);
+		return -NME_PL_NETLINK;
 	}
 
 	delayed_action_handle_all (platform, FALSE);
@@ -5220,7 +5221,7 @@ do_add_addrroute (NMPlatform *platform,
 			do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id));
 	}
 
-	return wait_for_nl_response_to_plerr (seq_result);
+	return wait_for_nl_response_to_nmerr (seq_result);
 }
 
 static gboolean
@@ -5240,7 +5241,7 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 		_LOGE ("do-delete-%s[%s]: failure sending netlink request \"%s\" (%d)",
 		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
 		       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
-		       nl_geterror (nle), -nle);
+		       nm_strerror (nle), -nle);
 		return FALSE;
 	}
 
@@ -5288,7 +5289,7 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 	return success;
 }
 
-static NMPlatformError
+static int
 do_change_link (NMPlatform *platform,
                 ChangeLinkType change_link_type,
                 int ifindex,
@@ -5300,7 +5301,7 @@ do_change_link (NMPlatform *platform,
 	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
 	gs_free char *errmsg = NULL;
 	char s_buf[256];
-	NMPlatformError result = NM_PLATFORM_ERROR_SUCCESS;
+	int result = 0;
 	NMLogLevel log_level = LOGL_DEBUG;
 	const char *log_result = "failure";
 	const char *log_detail = "";
@@ -5318,7 +5319,7 @@ retry:
 	if (nle < 0) {
 		log_level = LOGL_ERR;
 		log_detail_free = g_strdup_printf (", failure sending netlink request: %s (%d)",
-		                                   nl_geterror (nle), -nle);
+		                                   nm_strerror (nle), -nle);
 		log_detail = log_detail_free;
 		goto out;
 	}
@@ -5343,11 +5344,11 @@ retry:
 		/* */
 	} else if (NM_IN_SET (-((int) seq_result), ESRCH, ENOENT)) {
 		log_detail = ", firmware not found";
-		result = NM_PLATFORM_ERROR_NO_FIRMWARE;
+		result = -NME_PL_NO_FIRMWARE;
 	} else if (   NM_IN_SET (-((int) seq_result), ERANGE)
 	           && change_link_type == CHANGE_LINK_TYPE_SET_MTU) {
 		log_detail = ", setting MTU to requested size is not possible";
-		result = NM_PLATFORM_ERROR_CANT_SET_MTU;
+		result = -NME_PL_CANT_SET_MTU;
 	} else if (   NM_IN_SET (-((int) seq_result), ENFILE)
 	           && change_link_type == CHANGE_LINK_TYPE_SET_ADDRESS
 	           && (obj_cache = nmp_cache_lookup_link (nm_platform_get_cache (platform), ifindex))
@@ -5357,16 +5358,16 @@ retry:
 		 * If the MAC address is as expected, assume success? */
 		log_result = "success";
 		log_detail = " (assume success changing address)";
-		result = NM_PLATFORM_ERROR_SUCCESS;
+		result = 0;
 	} else if (NM_IN_SET (-((int) seq_result), ENODEV)) {
 		log_level = LOGL_DEBUG;
-		result = NM_PLATFORM_ERROR_NOT_FOUND;
+		result = -NME_PL_NOT_FOUND;
 	} else if (-((int) seq_result) == EAFNOSUPPORT) {
 		log_level = LOGL_DEBUG;
-		result = NM_PLATFORM_ERROR_OPNOTSUPP;
+		result = -NME_PL_OPNOTSUPP;
 	} else {
 		log_level = LOGL_WARN;
-		result = NM_PLATFORM_ERROR_UNSPECIFIED;
+		result = -NME_UNSPEC;
 	}
 
 out:
@@ -5379,7 +5380,7 @@ out:
 	return result;
 }
 
-static gboolean
+static int
 link_add (NMPlatform *platform,
           const char *name,
           NMLinkType type,
@@ -5409,17 +5410,17 @@ link_add (NMPlatform *platform,
 	                          0,
 	                          0);
 	if (!nlmsg)
-		return FALSE;
+		return -NME_UNSPEC;
 
 	if (address && address_len)
 		NLA_PUT (nlmsg, IFLA_ADDRESS, address_len, address);
 
 	if (!_nl_msg_new_link_set_linkinfo (nlmsg, type, veth_peer))
-		return FALSE;
+		return -NME_UNSPEC;
 
 	return do_add_link_with_lookup (platform, type, name, nlmsg, out_link);
 nla_put_failure:
-	g_return_val_if_reached (FALSE);
+	g_return_val_if_reached (-NME_BUG);
 }
 
 static gboolean
@@ -5474,13 +5475,13 @@ link_set_netns (NMPlatform *platform,
 		return FALSE;
 
 	NLA_PUT (nlmsg, IFLA_NET_NS_FD, 4, &netns_fd);
-	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+	return (do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) >= 0);
 
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
-static NMPlatformError
+static int
 link_change_flags (NMPlatform *platform,
                    int ifindex,
                    unsigned flags_mask,
@@ -5503,37 +5504,36 @@ link_change_flags (NMPlatform *platform,
 	                          flags_mask,
 	                          flags_set);
 	if (!nlmsg)
-		return NM_PLATFORM_ERROR_UNSPECIFIED;
+		return -NME_UNSPEC;
 	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL);
 }
 
 static gboolean
 link_set_up (NMPlatform *platform, int ifindex, gboolean *out_no_firmware)
 {
-	NMPlatformError plerr;
+	int r;
 
-	plerr = link_change_flags (platform, ifindex, IFF_UP, IFF_UP);
-	if (out_no_firmware)
-		*out_no_firmware = plerr == NM_PLATFORM_ERROR_NO_FIRMWARE;
-	return plerr == NM_PLATFORM_ERROR_SUCCESS;
+	r = link_change_flags (platform, ifindex, IFF_UP, IFF_UP);
+	NM_SET_OUT (out_no_firmware, (r == -NME_PL_NO_FIRMWARE));
+	return r >= 0;
 }
 
 static gboolean
 link_set_down (NMPlatform *platform, int ifindex)
 {
-	return link_change_flags (platform, ifindex, IFF_UP, 0) == NM_PLATFORM_ERROR_SUCCESS;
+	return (link_change_flags (platform, ifindex, IFF_UP, 0) >= 0);
 }
 
 static gboolean
 link_set_arp (NMPlatform *platform, int ifindex)
 {
-	return link_change_flags (platform, ifindex, IFF_NOARP, 0) == NM_PLATFORM_ERROR_SUCCESS;
+	return (link_change_flags (platform, ifindex, IFF_NOARP, 0) >= 0);
 }
 
 static gboolean
 link_set_noarp (NMPlatform *platform, int ifindex)
 {
-	return link_change_flags (platform, ifindex, IFF_NOARP, IFF_NOARP) == NM_PLATFORM_ERROR_SUCCESS;
+	return (link_change_flags (platform, ifindex, IFF_NOARP, IFF_NOARP) >= 0);
 }
 
 static const char *
@@ -5548,7 +5548,7 @@ link_get_udi (NMPlatform *platform, int ifindex)
 	return udev_device_get_syspath (obj->_link.udev.device);
 }
 
-static NMPlatformError
+static int
 link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enabled)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -5560,7 +5560,7 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 
 	if (!_support_user_ipv6ll_get ()) {
 		_LOGD ("link: change %d: user-ipv6ll: not supported", ifindex);
-		return NM_PLATFORM_ERROR_OPNOTSUPP;
+		return -NME_PL_OPNOTSUPP;
 	}
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
@@ -5571,7 +5571,7 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 	                          0);
 	if (   !nlmsg
 	    || !_nl_msg_new_link_set_afspec (nlmsg, mode, NULL))
-		g_return_val_if_reached (NM_PLATFORM_ERROR_BUG);
+		g_return_val_if_reached (-NME_BUG);
 
 	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL);
 }
@@ -5589,7 +5589,7 @@ link_set_token (NMPlatform *platform, int ifindex, NMUtilsIPv6IfaceId iid)
 	if (!nlmsg || !_nl_msg_new_link_set_afspec (nlmsg, -1, &iid))
 		g_return_val_if_reached (FALSE);
 
-	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+	return (do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) >= 0);
 }
 
 static gboolean
@@ -5649,7 +5649,7 @@ link_supports_sriov (NMPlatform *platform, int ifindex)
 	return total > 0;
 }
 
-static NMPlatformError
+static int
 link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size_t length)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -5661,7 +5661,7 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 	};
 
 	if (!address || !length)
-		g_return_val_if_reached (NM_PLATFORM_ERROR_BUG);
+		g_return_val_if_reached (-NME_BUG);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
@@ -5670,16 +5670,16 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 	                          0,
 	                          0);
 	if (!nlmsg)
-		g_return_val_if_reached (NM_PLATFORM_ERROR_UNSPECIFIED);
+		g_return_val_if_reached (-NME_BUG);
 
 	NLA_PUT (nlmsg, IFLA_ADDRESS, length, address);
 
 	return do_change_link (platform, CHANGE_LINK_TYPE_SET_ADDRESS, ifindex, nlmsg, &d);
 nla_put_failure:
-	g_return_val_if_reached (NM_PLATFORM_ERROR_UNSPECIFIED);
+	g_return_val_if_reached (-NME_BUG);
 }
 
-static NMPlatformError
+static int
 link_set_name (NMPlatform *platform, int ifindex, const char *name)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -5691,11 +5691,11 @@ link_set_name (NMPlatform *platform, int ifindex, const char *name)
 	                          0,
 	                          0);
 	if (!nlmsg)
-		g_return_val_if_reached (NM_PLATFORM_ERROR_UNSPECIFIED);
+		g_return_val_if_reached (-NME_BUG);
 
 	NLA_PUT (nlmsg, IFLA_IFNAME, strlen (name) + 1, name);
 
-	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+	return (do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -5714,7 +5714,7 @@ link_get_permanent_address (NMPlatform *platform,
 	return nmp_utils_ethtool_get_permanent_address (ifindex, buf, length);
 }
 
-static NMPlatformError
+static int
 link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -5840,7 +5840,7 @@ link_set_sriov_vfs (NMPlatform *platform, int ifindex, const NMPlatformVF *const
 	                          0,
 	                          0);
 	if (!nlmsg)
-		g_return_val_if_reached (NM_PLATFORM_ERROR_UNSPECIFIED);
+		g_return_val_if_reached (-NME_BUG);
 
 	if (!(list = nla_nest_start (nlmsg, IFLA_VFINFO_LIST)))
 		goto nla_put_failure;
@@ -5916,7 +5916,7 @@ link_set_sriov_vfs (NMPlatform *platform, int ifindex, const NMPlatformVF *const
 	}
 	nla_nest_end (nlmsg, list);
 
-	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+	return (do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -5984,7 +5984,7 @@ vlan_add (NMPlatform *platform,
 	                                         0))
 		return FALSE;
 
-	return do_add_link_with_lookup (platform, NM_LINK_TYPE_VLAN, name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform, NM_LINK_TYPE_VLAN, name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6031,9 +6031,9 @@ link_gre_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform,
-	                                props->is_tap ? NM_LINK_TYPE_GRETAP : NM_LINK_TYPE_GRE,
-	                                name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform,
+	                                 props->is_tap ? NM_LINK_TYPE_GRETAP : NM_LINK_TYPE_GRE,
+	                                 name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6089,7 +6089,7 @@ link_ip6tnl_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform, NM_LINK_TYPE_IP6TNL, name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform, NM_LINK_TYPE_IP6TNL, name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6149,9 +6149,9 @@ link_ip6gre_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform,
-	                                props->is_tap ? NM_LINK_TYPE_IP6GRETAP : NM_LINK_TYPE_IP6GRE,
-	                                name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform,
+	                                 props->is_tap ? NM_LINK_TYPE_IP6GRETAP : NM_LINK_TYPE_IP6GRE,
+	                                 name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6194,7 +6194,7 @@ link_ipip_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform, NM_LINK_TYPE_IPIP, name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform, NM_LINK_TYPE_IPIP, name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6249,9 +6249,9 @@ link_macsec_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform,
-	                               NM_LINK_TYPE_MACSEC,
-	                                name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform,
+	                                 NM_LINK_TYPE_MACSEC,
+	                                 name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6292,9 +6292,9 @@ link_macvlan_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform,
-	                                props->tap ? NM_LINK_TYPE_MACVTAP : NM_LINK_TYPE_MACVLAN,
-	                                name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform,
+	                                 props->tap ? NM_LINK_TYPE_MACVTAP : NM_LINK_TYPE_MACVLAN,
+	                                 name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6337,7 +6337,7 @@ link_sit_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform, NM_LINK_TYPE_SIT, name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform, NM_LINK_TYPE_SIT, name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6463,7 +6463,7 @@ link_vxlan_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform, NM_LINK_TYPE_VXLAN, name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform, NM_LINK_TYPE_VXLAN, name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6495,9 +6495,9 @@ link_6lowpan_add (NMPlatform *platform,
 
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform,
-	                                NM_LINK_TYPE_6LOWPAN,
-	                                name, nlmsg, out_link);
+	return (do_add_link_with_lookup (platform,
+	                                 NM_LINK_TYPE_6LOWPAN,
+	                                 name, nlmsg, out_link) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -6644,7 +6644,7 @@ link_vlan_change (NMPlatform *platform,
 	                                            new_n_egress_map))
 		g_return_val_if_reached (FALSE);
 
-	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+	return (do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) >= 0);
 }
 
 static gboolean
@@ -6664,7 +6664,7 @@ link_enslave (NMPlatform *platform, int master, int slave)
 
 	NLA_PUT_U32 (nlmsg, IFLA_MASTER, master);
 
-	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+	return (do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) >= 0);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -7032,7 +7032,7 @@ ip4_address_add (NMPlatform *platform,
 	                             label);
 
 	nmp_object_stackinit_id_ip4_address (&obj_id, ifindex, addr, plen, peer_addr);
-	return do_add_addrroute (platform, &obj_id, nlmsg, FALSE) == NM_PLATFORM_ERROR_SUCCESS;
+	return (do_add_addrroute (platform, &obj_id, nlmsg, FALSE) >= 0);
 }
 
 static gboolean
@@ -7062,7 +7062,7 @@ ip6_address_add (NMPlatform *platform,
 	                             NULL);
 
 	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &addr);
-	return do_add_addrroute (platform, &obj_id, nlmsg, FALSE) == NM_PLATFORM_ERROR_SUCCESS;
+	return (do_add_addrroute (platform, &obj_id, nlmsg, FALSE) >= 0);
 }
 
 static gboolean
@@ -7117,7 +7117,7 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, gui
 
 /*****************************************************************************/
 
-static NMPlatformError
+static int
 ip_route_add (NMPlatform *platform,
               NMPNlmFlags flags,
               int addr_family,
@@ -7141,7 +7141,7 @@ ip_route_add (NMPlatform *platform,
 
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE, flags & NMP_NLM_FLAG_FMASK, &obj);
 	if (!nlmsg)
-		g_return_val_if_reached (NM_PLATFORM_ERROR_BUG);
+		g_return_val_if_reached (-NME_BUG);
 	return do_add_addrroute (platform,
 	                         &obj,
 	                         nlmsg,
@@ -7180,7 +7180,7 @@ object_delete (NMPlatform *platform,
 
 /*****************************************************************************/
 
-static NMPlatformError
+static int
 ip_route_get (NMPlatform *platform,
               int addr_family,
               gconstpointer address,
@@ -7230,7 +7230,7 @@ ip_route_get (NMPlatform *platform,
 		if (nle < 0) {
 			_LOGE ("get-route: failure sending netlink request \"%s\" (%d)",
 			       g_strerror (-nle), -nle);
-			return NM_PLATFORM_ERROR_UNSPECIFIED;
+			return -NME_UNSPEC;
 		}
 
 		delayed_action_handle_all (platform, FALSE);
@@ -7242,24 +7242,24 @@ ip_route_get (NMPlatform *platform,
 
 	if (seq_result < 0) {
 		/* negative seq_result is an errno from kernel. Map it to negative
-		 * NMPlatformError (which are also errno). */
-		return (NMPlatformError) seq_result;
+		 * int (which are also errno). */
+		return (int) seq_result;
 	}
 
 	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK) {
 		if (route) {
 			NM_SET_OUT (out_route, g_steal_pointer (&route));
-			return NM_PLATFORM_ERROR_SUCCESS;
+			return 0;
 		}
 		seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN;
 	}
 
-	return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return -NME_UNSPEC;
 }
 
 /*****************************************************************************/
 
-static NMPlatformError
+static int
 qdisc_add (NMPlatform *platform,
            NMPNlmFlags flags,
            const NMPlatformQdisc *qdisc)
@@ -7277,8 +7277,8 @@ qdisc_add (NMPlatform *platform,
 	nle = _nl_send_nlmsg (platform, msg, &seq_result, &errmsg, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 	if (nle < 0) {
 		_LOGE ("do-add-qdisc: failed sending netlink request \"%s\" (%d)",
-		      nl_geterror (nle), -nle);
-		return NM_PLATFORM_ERROR_NETLINK;
+		      nm_strerror (nle), -nle);
+		return -NME_PL_NETLINK;
 	}
 
 	delayed_action_handle_all (platform, FALSE);
@@ -7292,14 +7292,14 @@ qdisc_add (NMPlatform *platform,
 	        wait_for_nl_response_to_string (seq_result, errmsg, s_buf, sizeof (s_buf)));
 
 	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
-		return NM_PLATFORM_ERROR_SUCCESS;
+		return 0;
 
-	return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return -NME_UNSPEC;
 }
 
 /*****************************************************************************/
 
-static NMPlatformError
+static int
 tfilter_add (NMPlatform *platform,
              NMPNlmFlags flags,
              const NMPlatformTfilter *tfilter)
@@ -7317,8 +7317,8 @@ tfilter_add (NMPlatform *platform,
 	nle = _nl_send_nlmsg (platform, msg, &seq_result, &errmsg, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 	if (nle < 0) {
 		_LOGE ("do-add-tfilter: failed sending netlink request \"%s\" (%d)",
-		      nl_geterror (nle), -nle);
-		return NM_PLATFORM_ERROR_NETLINK;
+		      nm_strerror (nle), -nle);
+		return -NME_PL_NETLINK;
 	}
 
 	delayed_action_handle_all (platform, FALSE);
@@ -7332,9 +7332,9 @@ tfilter_add (NMPlatform *platform,
 	        wait_for_nl_response_to_string (seq_result, errmsg, s_buf, sizeof (s_buf)));
 
 	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
-		return NM_PLATFORM_ERROR_SUCCESS;
+		return 0;
 
-	return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return -NME_UNSPEC;
 }
 
 /*****************************************************************************/
@@ -7377,7 +7377,7 @@ continue_reading:
 
 	if (n <= 0) {
 
-		if (n == -NLE_MSG_TRUNC) {
+		if (n == -NME_NL_MSG_TRUNC) {
 			int buf_size;
 
 			/* the message receive buffer was too small. We lost one message, which
@@ -7460,7 +7460,7 @@ continue_reading:
 			/* Data got lost, report back to user. The default action is to
 			 * quit parsing. The user may overrule this action by retuning
 			 * NL_SKIP or NL_PROCEED (dangerous) */
-			err = -NLE_MSG_OVERFLOW;
+			err = -NME_NL_MSG_OVERFLOW;
 			abort_parsing = TRUE;
 		} else if (hdr->nlmsg_type == NLMSG_ERROR) {
 			/* Message carries a nlmsgerr */
@@ -7471,7 +7471,7 @@ continue_reading:
 				 * is to stop parsing. The user may overrule
 				 * this action by returning NL_SKIP or
 				 * NL_PROCEED (dangerous) */
-				err = -NLE_MSG_TRUNC;
+				err = -NME_NL_MSG_TRUNC;
 				abort_parsing = TRUE;
 			} else if (e->error) {
 				int errsv = e->error > 0 ? e->error : -e->error;
@@ -7548,7 +7548,7 @@ stop:
 	}
 
 	if (interrupted)
-		return -NLE_DUMP_INTR;
+		return -NME_NL_DUMP_INTR;
 	return err;
 }
 
@@ -7585,16 +7585,16 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 				switch (nle) {
 				case -EAGAIN:
 					goto after_read;
-				case -NLE_DUMP_INTR:
-					_LOGD ("netlink: read: uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
+				case -NME_NL_DUMP_INTR:
+					_LOGD ("netlink: read: uncritical failure to retrieve incoming events: %s (%d)", nm_strerror (nle), nle);
 					break;
-				case -NLE_MSG_TRUNC:
+				case -NME_NL_MSG_TRUNC:
 				case -ENOBUFS:
 					_LOGI ("netlink: read: %s. Need to resynchronize platform cache",
 					       ({
 					            const char *_reason = "unknown";
 					            switch (nle) {
-					            case -NLE_MSG_TRUNC: _reason = "message truncated";       break;
+					            case -NME_NL_MSG_TRUNC: _reason = "message truncated";       break;
 					            case -ENOBUFS:       _reason = "too many netlink events"; break;
 					            }
 					            _reason;
@@ -7614,7 +7614,7 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 					                         NULL);
 					break;
 				default:
-					_LOGE ("netlink: read: failed to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
+					_LOGE ("netlink: read: failed to retrieve incoming events: %s (%d)", nm_strerror (nle), nle);
 					break;
 				}
 			}
@@ -7842,7 +7842,7 @@ constructed (GObject *_object)
 	nle = nl_connect (priv->genl, NETLINK_GENERIC);
 	if (nle) {
 		_LOGE ("unable to connect the generic netlink socket \"%s\" (%d)",
-		       nl_geterror (nle), -nle);
+		       nm_strerror (nle), -nle);
 		nl_socket_free (priv->genl);
 		priv->genl = NULL;
 	}
@@ -7868,7 +7868,7 @@ constructed (GObject *_object)
 		_LOGD ("could not enable extended acks on netlink socket");
 
 	/* explicitly set the msg buffer size and disable MSG_PEEK.
-	 * If we later encounter NLE_MSG_TRUNC, we will adjust the buffer size. */
+	 * If we later encounter NME_NL_MSG_TRUNC, we will adjust the buffer size. */
 	nl_socket_disable_msg_peek (priv->nlh);
 	nle = nl_socket_set_msg_buf_size (priv->nlh, 32 * 1024);
 	g_assert (!nle);

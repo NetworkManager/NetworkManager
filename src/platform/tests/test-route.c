@@ -427,7 +427,7 @@ test_ip4_route_get (void)
 {
 	int ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
 	in_addr_t a;
-	NMPlatformError result;
+	int result;
 	nm_auto_nmpobj NMPObject *route = NULL;
 	const NMPlatformIP4Route *r;
 
@@ -446,7 +446,7 @@ test_ip4_route_get (void)
 	                                   nmtst_get_rand_int () % 2 ? 0 : ifindex,
 	                                   &route);
 
-	g_assert (result == NM_PLATFORM_ERROR_SUCCESS);
+	g_assert (NMTST_NM_ERR_SUCCESS (result));
 	g_assert (NMP_OBJECT_GET_TYPE (route) == NMP_OBJECT_TYPE_IP4_ROUTE);
 	g_assert (!NMP_OBJECT_IS_STACKINIT (route));
 	g_assert (route->parent._ref_count == 1);
@@ -565,7 +565,7 @@ test_ip4_route_options (gconstpointer test_data)
 	}
 
 	for (i = 0; i < rts_n; i++)
-		g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, NMP_NLM_FLAG_REPLACE, &rts_add[i]) == NM_PLATFORM_ERROR_SUCCESS);
+		g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_ip4_route_add (NM_PLATFORM_GET, NMP_NLM_FLAG_REPLACE, &rts_add[i])));
 
 	for (i = 0; i < rts_n; i++) {
 		rts_cmp[i] = rts_add[i];
@@ -589,7 +589,7 @@ test_ip6_route_get (void)
 {
 	int ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
 	const struct in6_addr *a;
-	NMPlatformError result;
+	int result;
 	nm_auto_nmpobj NMPObject *route = NULL;
 	const NMPlatformIP6Route *r;
 
@@ -608,7 +608,7 @@ test_ip6_route_get (void)
 	                                   nmtst_get_rand_int () % 2 ? 0 : ifindex,
 	                                   &route);
 
-	g_assert (result == NM_PLATFORM_ERROR_SUCCESS);
+	g_assert (NMTST_NM_ERR_SUCCESS (result));
 	g_assert (NMP_OBJECT_GET_TYPE (route) == NMP_OBJECT_TYPE_IP6_ROUTE);
 	g_assert (!NMP_OBJECT_IS_STACKINIT (route));
 	g_assert (route->parent._ref_count == 1);
@@ -724,7 +724,7 @@ test_ip6_route_options (gconstpointer test_data)
 	_wait_for_ipv6_addr_non_tentative (NM_PLATFORM_GET, 400, IFINDEX, addr_n, addr_in6);
 
 	for (i = 0; i < rts_n; i++)
-		g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, NMP_NLM_FLAG_REPLACE, &rts_add[i]) == NM_PLATFORM_ERROR_SUCCESS);
+		g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_ip6_route_add (NM_PLATFORM_GET, NMP_NLM_FLAG_REPLACE, &rts_add[i])));
 
 	for (i = 0; i < rts_n; i++) {
 		rts_cmp[i] = rts_add[i];
@@ -823,7 +823,7 @@ again_find_idx:
 			order_idx[order_len++] = idx;
 
 			r->ifindex = iface_data[idx].ifindex;
-			g_assert (nm_platform_ip4_route_add (platform, NMP_NLM_FLAG_APPEND, r) == NM_PLATFORM_ERROR_SUCCESS);
+			g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_ip4_route_add (platform, NMP_NLM_FLAG_APPEND, r)));
 		} else {
 			i = nmtst_get_rand_int () % order_len;
 			idx = order_idx[i];

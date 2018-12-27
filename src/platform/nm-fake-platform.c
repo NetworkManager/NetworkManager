@@ -283,7 +283,7 @@ link_add_pre (NMPlatform *platform,
 	return device;
 }
 
-static gboolean
+static int
 link_add (NMPlatform *platform,
           const char *name,
           NMLinkType type,
@@ -335,7 +335,7 @@ link_add (NMPlatform *platform,
 	if (veth_peer)
 		link_changed (platform, device_veth, cache_op_veth, NULL);
 
-	return TRUE;
+	return 0;
 }
 
 static NMFakePlatformLink *
@@ -563,7 +563,7 @@ link_set_noarp (NMPlatform *platform, int ifindex)
 	return TRUE;
 }
 
-static NMPlatformError
+static int
 link_set_address (NMPlatform *platform, int ifindex, gconstpointer addr, size_t len)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
@@ -572,10 +572,10 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer addr, size_t 
 	if (   len == 0
 	    || len > NM_UTILS_HWADDR_LEN_MAX
 	    || !addr)
-		g_return_val_if_reached (NM_PLATFORM_ERROR_BUG);
+		g_return_val_if_reached (-NME_BUG);
 
 	if (!device)
-		return NM_PLATFORM_ERROR_EXISTS;
+		return -NME_PL_EXISTS;
 
 	obj_tmp = nmp_object_clone (device->obj, FALSE);
 	obj_tmp->link.addr.len = len;
@@ -583,10 +583,10 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer addr, size_t 
 	memcpy (obj_tmp->link.addr.data, addr, len);
 
 	link_set_obj (platform, device, obj_tmp);
-	return NM_PLATFORM_ERROR_SUCCESS;
+	return 0;
 }
 
-static NMPlatformError
+static int
 link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
@@ -594,13 +594,13 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 
 	if (!device) {
 		_LOGE ("failure changing link: netlink error (No such device)");
-		return NM_PLATFORM_ERROR_EXISTS;
+		return -NME_PL_EXISTS;
 	}
 
 	obj_tmp = nmp_object_clone (device->obj, FALSE);
 	obj_tmp->link.mtu = mtu;
 	link_set_obj (platform, device, obj_tmp);
-	return NM_PLATFORM_ERROR_SUCCESS;
+	return 0;
 }
 
 static const char *
@@ -1187,7 +1187,7 @@ object_delete (NMPlatform *platform, const NMPObject *obj)
 	return ipx_route_delete (platform, AF_UNSPEC, -1, obj);
 }
 
-static NMPlatformError
+static int
 ip_route_add (NMPlatform *platform,
               NMPNlmFlags flags,
               int addr_family,
@@ -1276,7 +1276,7 @@ ip_route_add (NMPlatform *platform,
 				nm_log_warn (LOGD_PLATFORM, "Fake platform: failure adding ip6-route '%d: %s/%d %d': Network Unreachable",
 				             r->ifindex, nm_utils_inet6_ntop (&r6->network, sbuf), r->plen, r->metric);
 			}
-			return NM_PLATFORM_ERROR_UNSPECIFIED;
+			return -NME_UNSPEC;
 		}
 	}
 
@@ -1338,7 +1338,7 @@ ip_route_add (NMPlatform *platform,
 		}
 	}
 
-	return NM_PLATFORM_ERROR_SUCCESS;
+	return 0;
 }
 
 /*****************************************************************************/
