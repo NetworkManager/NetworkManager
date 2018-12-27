@@ -5577,7 +5577,7 @@ nm_platform_wireguard_peer_to_string (const NMPWireGuardPeer *peer, char *buf, g
 	                        " tx %"G_GUINT64_FORMAT
 	                        "%s", /* allowed-ips */
 	                        public_key_b64,
-	                        nm_utils_mem_all_zero (peer->preshared_key, sizeof (peer->preshared_key))
+	                        nm_utils_memeqzero (peer->preshared_key, sizeof (peer->preshared_key))
 	                          ? ""
 	                          : " preshared-key (hidden)",
 	                        s_endpoint,
@@ -5607,7 +5607,7 @@ nm_platform_lnk_wireguard_to_string (const NMPlatformLnkWireGuard *lnk, char *bu
 	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
 		return buf;
 
-	if (!nm_utils_mem_all_zero (lnk->public_key, sizeof (lnk->public_key)))
+	if (!nm_utils_memeqzero (lnk->public_key, sizeof (lnk->public_key)))
 		public_b64 = g_base64_encode (lnk->public_key, sizeof (lnk->public_key));
 
 	g_snprintf (buf, len,
@@ -5620,7 +5620,7 @@ nm_platform_lnk_wireguard_to_string (const NMPlatformLnkWireGuard *lnk, char *bu
 	              ? " public-key "
 	              : "",
 	            public_b64 ?: "",
-	            nm_utils_mem_all_zero (lnk->private_key, sizeof (lnk->private_key))
+	            nm_utils_memeqzero (lnk->private_key, sizeof (lnk->private_key))
 	              ? ""
 	              : " private-key (hidden)",
 	            lnk->listen_port,
