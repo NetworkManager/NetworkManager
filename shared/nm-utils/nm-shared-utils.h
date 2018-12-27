@@ -219,19 +219,7 @@ nm_ip_addr_set (int addr_family, gpointer dst, gconstpointer src)
 
 /*****************************************************************************/
 
-static inline gboolean
-nm_utils_mem_all_zero (gconstpointer mem, gsize len)
-{
-	const guint8 *p;
-
-	for (p = mem; len-- > 0; p++) {
-		if (*p != 0)
-			return FALSE;
-	}
-
-	/* incidentally, a buffer with len==0, is also *all-zero*. */
-	return TRUE;
-}
+gboolean nm_utils_mem_all_zero (gconstpointer data, gsize length);
 
 /*****************************************************************************/
 
