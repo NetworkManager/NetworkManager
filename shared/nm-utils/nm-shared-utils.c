@@ -2317,3 +2317,26 @@ nm_utils_getpagesize (void)
 
 	return v;
 }
+
+gboolean
+nm_utils_mem_all_zero (gconstpointer data, gsize length)
+{
+	const unsigned char *p = data;
+	int len;
+
+	/* Taken from https://github.com/rustyrussell/ccan/blob/9d2d2c49f053018724bcc6e37029da10b7c3d60d/ccan/mem/mem.c#L92,
+	 * CC-0 licensed. */
+
+	/* Check first 16 bytes manually */
+	for (len = 0; len < 16; len++) {
+		if (!length)
+			return TRUE;
+		if (*p)
+			return FALSE;
+		p++;
+		length--;
+	}
+
+	/* Now we know that's zero, memcmp with self. */
+	return memcmp (data, p, length) == 0;
+}
