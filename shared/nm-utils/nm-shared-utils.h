@@ -219,7 +219,7 @@ nm_ip_addr_set (int addr_family, gpointer dst, gconstpointer src)
 
 /*****************************************************************************/
 
-gboolean nm_utils_mem_all_zero (gconstpointer data, gsize length);
+gboolean nm_utils_memeqzero (gconstpointer data, gsize length);
 
 /*****************************************************************************/
 
