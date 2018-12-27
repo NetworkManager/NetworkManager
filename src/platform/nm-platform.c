@@ -5546,6 +5546,7 @@ nm_platform_lnk_vxlan_to_string (const NMPlatformLnkVxlan *lnk, char *buf, gsize
 const char *
 nm_platform_wireguard_peer_to_string (const NMPWireGuardPeer *peer, char *buf, gsize len)
 {
+	char *buf0 = buf;
 	gs_free char *public_key_b64 = NULL;
 	char s_endpoint[NM_UTILS_INET_ADDRSTRLEN + 100];
 	char s_addr[NM_UTILS_INET_ADDRSTRLEN];
@@ -5595,7 +5596,7 @@ nm_platform_wireguard_peer_to_string (const NMPWireGuardPeer *peer, char *buf, g
 		                        allowed_ip->mask);
 	}
 
-	return buf;
+	return buf0;
 }
 
 const char *
