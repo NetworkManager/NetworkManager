@@ -96,6 +96,7 @@ libnm-core/nm-setting-vpn.c
 libnm-core/nm-setting-vxlan.c
 libnm-core/nm-setting-wimax.c
 libnm-core/nm-setting-wired.c
+libnm-core/nm-setting-wireguard.c
 libnm-core/nm-setting-wireless-security.c
 libnm-core/nm-setting-wireless.c
 libnm-core/nm-setting-wpan.c

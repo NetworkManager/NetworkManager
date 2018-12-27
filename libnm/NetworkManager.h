@@ -103,6 +103,7 @@
 #include "nm-setting-vxlan.h"
 #include "nm-setting-wimax.h"
 #include "nm-setting-wired.h"
+#include "nm-setting-wireguard.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-wpan.h"

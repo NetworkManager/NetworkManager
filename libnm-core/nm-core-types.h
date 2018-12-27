@@ -71,6 +71,7 @@ typedef struct _NMSettingVpn              NMSettingVpn;
 typedef struct _NMSettingVxlan            NMSettingVxlan;
 typedef struct _NMSettingWimax            NMSettingWimax;
 typedef struct _NMSettingWired            NMSettingWired;
+typedef struct _NMSettingWireGuard        NMSettingWireGuard;
 typedef struct _NMSettingWireless         NMSettingWireless;
 typedef struct _NMSettingWirelessSecurity NMSettingWirelessSecurity;
 typedef struct _NMSettingWpan             NMSettingWpan;

@@ -1450,6 +1450,12 @@ global:
 	nm_client_add_and_activate_connection2;
 	nm_client_add_and_activate_connection2_finish;
 	nm_device_get_connectivity;
+	nm_setting_wireguard_get_fwmark;
+	nm_setting_wireguard_get_listen_port;
+	nm_setting_wireguard_get_private_key;
+	nm_setting_wireguard_get_private_key_flags;
+	nm_setting_wireguard_get_type;
+	nm_setting_wireguard_new;
 	nm_team_link_watcher_get_vlanid;
 	nm_team_link_watcher_new_arp_ping2;
 } libnm_1_14_0;

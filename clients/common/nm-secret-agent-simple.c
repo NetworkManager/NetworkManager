@@ -841,6 +841,19 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 			title = _("MACsec EAP authentication");
 			ok = add_8021x_secrets (request, secrets);
 		}
+	} else if (nm_connection_is_type (request->connection, NM_SETTING_WIREGUARD_SETTING_NAME)) {
+		NMSettingWireGuard *s_wg = NM_SETTING_WIREGUARD (nm_connection_get_setting (request->connection, NM_TYPE_SETTING_WIREGUARD));
+
+		msg = g_strdup_printf (_("Secrets are required to connect WireGuard VPN '%s'"),
+		                       nm_connection_get_id (request->connection));
+
+		title = _("WireGuard VPN secret");
+		secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+		                                            _("VPN private-key"),
+		                                            NM_SETTING (s_wg),
+		                                            NM_SETTING_WIREGUARD_PRIVATE_KEY,
+		                                            NULL);
+		g_ptr_array_add (secrets, secret);
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_CDMA_SETTING_NAME)) {
 		NMSettingCdma *s_cdma = nm_connection_get_setting_cdma (request->connection);
 

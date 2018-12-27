@@ -40,6 +40,8 @@
 #endif
 
 #include "nm-utils/nm-enum-utils.h"
+#include "nm-utils/nm-secret-utils.h"
+#include "systemd/nm-sd-utils-shared.h"
 #include "nm-common-macros.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
@@ -6501,3 +6503,76 @@ nm_utils_version (void)
 	return NM_VERSION;
 }
 
+/*****************************************************************************/
+
+/**
+ * _nm_utils_wireguard_decode_key:
+ * @base64_key: the (possibly invalid) base64 encode key.
+ * @required_key_len: the expected (binary) length of the key after
+ *   decoding. If the length does not match, the validation fails.
+ * @out_key: (allow-none): an optional output buffer for the binary
+ *   key. If given, it will be filled with exactly @required_key_len
+ *   bytes.
+ *
+ * Returns: %TRUE if the input key is a valid base64 encoded key
+ *   with @required_key_len bytes.
+ */
+gboolean
+_nm_utils_wireguard_decode_key (const char *base64_key,
+                                gsize required_key_len,
+                                guint8 *out_key)
+{
+	gs_free guint8 *bin_arr = NULL;
+	gsize base64_key_len;
+	gsize bin_len;
+	int r;
+
+	if (!base64_key)
+		return FALSE;
+
+	base64_key_len = strlen (base64_key);
+
+	r = nm_sd_utils_unbase64mem (base64_key, base64_key_len, &bin_arr, &bin_len);
+	if (r < 0)
+		return FALSE;
+	if (bin_len != required_key_len) {
+		nm_explicit_bzero (bin_arr, bin_len);
+		return FALSE;
+	}
+
+	if (nm_utils_memeqzero (bin_arr, required_key_len)) {
+		/* an all zero key is not valid either. That is used to represet an unset key */
+		return FALSE;
+	}
+
+	if (out_key)
+		memcpy (out_key, bin_arr, required_key_len);
+
+	nm_explicit_bzero (bin_arr, bin_len);
+	return TRUE;
+}
+
+gboolean
+_nm_utils_wireguard_normalize_key (const char *base64_key,
+                                   gsize required_key_len,
+                                   char **out_base64_key_norm)
+{
+	gs_free guint8 *buf_free = NULL;
+	guint8 buf_static[200];
+	guint8 *buf;
+
+	if (required_key_len > sizeof (buf_static)) {
+		buf_free = g_new (guint8, required_key_len);
+		buf = buf_free;
+	} else
+		buf = buf_static;
+
+	if (!_nm_utils_wireguard_decode_key (base64_key, required_key_len, buf)) {
+		NM_SET_OUT (out_base64_key_norm, NULL);
+		return FALSE;
+	}
+
+	NM_SET_OUT (out_base64_key_norm, g_base64_encode (buf, required_key_len));
+	nm_explicit_bzero (buf, required_key_len);
+	return TRUE;
+}

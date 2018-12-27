@@ -2316,7 +2316,8 @@ nm_connection_is_virtual (NMConnection *connection)
 	                        NM_SETTING_TEAM_SETTING_NAME,
 	                        NM_SETTING_TUN_SETTING_NAME,
 	                        NM_SETTING_VLAN_SETTING_NAME,
-	                        NM_SETTING_VXLAN_SETTING_NAME))
+	                        NM_SETTING_VXLAN_SETTING_NAME,
+	                        NM_SETTING_WIREGUARD_SETTING_NAME))
 		return TRUE;
 
 	if (nm_streq (type, NM_SETTING_INFINIBAND_SETTING_NAME)) {

@@ -6869,7 +6869,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-		        .value_infos =          INT_VALUE_INFOS (
+			.value_infos =          INT_VALUE_INFOS (
 				{
 					.value = 0,
 					.nick = "disabled",
@@ -6880,7 +6880,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_NOTIFY_PEERS_INTERVAL,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-		        .value_infos =          INT_VALUE_INFOS (
+			.value_infos =          INT_VALUE_INFOS (
 				{
 					.value = 0,
 					.nick = "default",
@@ -6891,7 +6891,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_MCAST_REJOIN_COUNT,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-		        .value_infos =          INT_VALUE_INFOS (
+			.value_infos =          INT_VALUE_INFOS (
 				{
 					.value = 0,
 					.nick = "disabled",
@@ -6902,7 +6902,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_MCAST_REJOIN_INTERVAL,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-		        .value_infos =          INT_VALUE_INFOS (
+			.value_infos =          INT_VALUE_INFOS (
 				{
 					.value = 0,
 					.nick = "default",
@@ -6945,7 +6945,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-		        .value_infos =          INT_VALUE_INFOS (
+			.value_infos =          INT_VALUE_INFOS (
 				{
 					.value = NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT,
 					.nick = "default",
@@ -6962,7 +6962,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_RUNNER_SYS_PRIO,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-		        .value_infos =          INT_VALUE_INFOS (
+			.value_infos =          INT_VALUE_INFOS (
 				{
 					.value = NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT,
 					.nick = "default",
@@ -6973,7 +6973,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_RUNNER_MIN_PORTS,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-		        .value_infos =          INT_VALUE_INFOS (
+			.value_infos =          INT_VALUE_INFOS (
 				{
 					.value = 0,
 					.nick = "default",
@@ -7494,6 +7494,28 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_WIREGUARD
+static const NMMetaPropertyInfo *const property_infos_WIREGUARD[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_PRIVATE_KEY,
+		.is_secret =                    TRUE,
+		.property_type =                &_pt_gobject_string,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS,
+		.property_type =                &_pt_gobject_secret_flags,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_LISTEN_PORT,
+		.property_type =                &_pt_gobject_int,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_FWMARK,
+		.property_type =                &_pt_gobject_int,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int, \
+			.base =                     16,
+		),
+	),
+	NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_WIRELESS
 static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SSID,
@@ -7773,9 +7795,9 @@ static const NMMetaPropertyInfo *const property_infos_WPAN[] = {
 		.property_alias =               "short-addr",
 		.prompt =                       N_("Short address (<0x0000-0xffff>)"),
 		.property_type =                &_pt_gobject_int,
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int, \
-			.base =			16,
-			.value_infos =          INT_VALUE_INFOS (
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+			.base =                     16,
+			.value_infos =              INT_VALUE_INFOS (
 				{
 					.value = G_MAXUINT16,
 					.nick = "unset",
@@ -7789,9 +7811,9 @@ static const NMMetaPropertyInfo *const property_infos_WPAN[] = {
 		.property_alias =               "pan-id",
 		.prompt =                       N_("PAN Identifier (<0x0000-0xffff>)"),
 		.property_type =                &_pt_gobject_int,
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int, \
-			.base =			16,
-			.value_infos =          INT_VALUE_INFOS (
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+			.base =                     16,
+			.value_infos =              INT_VALUE_INFOS (
 				{
 					.value = G_MAXUINT16,
 					.nick = "unset",
@@ -8004,6 +8026,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_VXLAN               N_("VXLAN connection")
 #define SETTING_PRETTY_NAME_WIMAX               N_("WiMAX connection")
 #define SETTING_PRETTY_NAME_WIRED               N_("Wired Ethernet")
+#define SETTING_PRETTY_NAME_WIREGUARD           N_("WireGuard VPN settings")
 #define SETTING_PRETTY_NAME_WIRELESS            N_("Wi-Fi connection")
 #define SETTING_PRETTY_NAME_WIRELESS_SECURITY   N_("Wi-Fi security settings")
 #define SETTING_PRETTY_NAME_WPAN                N_("WPAN settings")
@@ -8260,6 +8283,12 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (DCB,                   FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (SRIOV,                 FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
+		),
+	),
+	SETTING_INFO (WIREGUARD,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIREGUARD,             TRUE),
 		),
 	),
 	SETTING_INFO (WIRELESS,
