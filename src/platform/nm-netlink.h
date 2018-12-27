@@ -187,6 +187,24 @@ nla_put_string (struct nl_msg *msg, int attrtype, const char *str)
 	return nla_put(msg, attrtype, strlen(str) + 1, str);
 }
 
+static inline int
+nla_put_uint8 (struct nl_msg *msg, int attrtype, uint8_t val)
+{
+	return nla_put (msg, attrtype, sizeof (val), &val);
+}
+
+static inline int
+nla_put_uint16 (struct nl_msg *msg, int attrtype, uint16_t val)
+{
+	return nla_put (msg, attrtype, sizeof (val), &val);
+}
+
+static inline int
+nla_put_uint32 (struct nl_msg *msg, int attrtype, uint32_t val)
+{
+	return nla_put (msg, attrtype, sizeof (val), &val);
+}
+
 #define NLA_PUT(msg, attrtype, attrlen, data) \
 	do { \
 		if (nla_put(msg, attrtype, attrlen, data) < 0) \
