@@ -55,8 +55,8 @@
 #include "nm-setting-proxy.h"
 #include "nm-setting-serial.h"
 #include "nm-setting-tc-config.h"
-#include "nm-setting-team.h"
 #include "nm-setting-team-port.h"
+#include "nm-setting-team.h"
 #include "nm-setting-tun.h"
 #include "nm-setting-user.h"
 #include "nm-setting-vlan.h"
@@ -64,8 +64,9 @@
 #include "nm-setting-vxlan.h"
 #include "nm-setting-wimax.h"
 #include "nm-setting-wired.h"
-#include "nm-setting-wireless.h"
+#include "nm-setting-wireguard.h"
 #include "nm-setting-wireless-security.h"
+#include "nm-setting-wireless.h"
 #include "nm-setting-wpan.h"
 
 /*****************************************************************************/
@@ -394,6 +395,12 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
 		.setting_priority =         NM_SETTING_PRIORITY_HW_BASE,
 		.setting_name =             NM_SETTING_WIRED_SETTING_NAME,
 		.get_setting_gtype =        nm_setting_wired_get_type,
+	},
+	[NM_META_SETTING_TYPE_WIREGUARD] = {
+		.meta_type =                NM_META_SETTING_TYPE_WIREGUARD,
+		.setting_priority =         NM_SETTING_PRIORITY_HW_BASE,
+		.setting_name =             NM_SETTING_WIREGUARD_SETTING_NAME,
+		.get_setting_gtype =        nm_setting_wireguard_get_type,
 	},
 	[NM_META_SETTING_TYPE_WIRELESS] = {
 		.meta_type =                NM_META_SETTING_TYPE_WIRELESS,

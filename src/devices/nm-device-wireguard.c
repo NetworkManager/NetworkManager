@@ -21,12 +21,19 @@
 
 #include "nm-device-wireguard.h"
 
+#include "nm-setting-wireguard.h"
+
 #include "nm-device-private.h"
 #include "platform/nm-platform.h"
 #include "nm-device-factory.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceWireGuard);
+
+/*****************************************************************************/
+
+G_STATIC_ASSERT (NM_WIREGUARD_PUBLIC_KEY_LEN   == NMP_WIREGUARD_PUBLIC_KEY_LEN);
+G_STATIC_ASSERT (NM_WIREGUARD_SYMMETRIC_KEY_LEN == NMP_WIREGUARD_SYMMETRIC_KEY_LEN);
 
 /*****************************************************************************/
 

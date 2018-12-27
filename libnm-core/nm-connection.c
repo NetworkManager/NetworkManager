@@ -25,6 +25,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+#include "nm-utils/nm-secret-utils.h"
 #include "nm-connection.h"
 #include "nm-connection-private.h"
 #include "nm-utils.h"
@@ -1233,6 +1234,36 @@ _normalize_ovs_interface_type (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
+_normalize_wireguard (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingWireGuard *s_wg = NM_SETTING_WIREGUARD (nm_connection_get_setting_by_name (self, NM_SETTING_WIREGUARD_SETTING_NAME));
+	nm_auto_free_secret char *key_normalized = NULL;
+	const char *private_key;
+
+	if (!s_wg)
+		return FALSE;
+
+	private_key = nm_setting_wireguard_get_private_key (s_wg);
+	if (!private_key)
+		return FALSE;
+
+	if (!_nm_utils_wireguard_normalize_key (private_key,
+	                                        NM_WIREGUARD_PUBLIC_KEY_LEN,
+	                                        &key_normalized))
+		return FALSE;
+
+	if (   !key_normalized
+	    || nm_streq (private_key, key_normalized))
+		return FALSE;
+
+	g_object_set (s_wg,
+	              NM_SETTING_WIREGUARD_PRIVATE_KEY,
+	              key_normalized,
+	              NULL);
+	return TRUE;
+}
+
+static gboolean
 _normalize_ip_tunnel_wired_setting (NMConnection *self, GHashTable *parameters)
 {
 	NMSettingIPTunnel *s_ip_tunnel;
@@ -1610,6 +1641,7 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_team_port_config (connection, parameters);
 	was_modified |= _normalize_bluetooth_type (connection, parameters);
 	was_modified |= _normalize_ovs_interface_type (connection, parameters);
+	was_modified |= _normalize_wireguard (connection, parameters);
 	was_modified |= _normalize_ip_tunnel_wired_setting (connection, parameters);
 	was_modified |= _normalize_sriov_vf_order (connection, parameters);
 
@@ -2251,7 +2283,8 @@ nm_connection_is_virtual (NMConnection *connection)
 	                        NM_SETTING_TEAM_SETTING_NAME,
 	                        NM_SETTING_TUN_SETTING_NAME,
 	                        NM_SETTING_VLAN_SETTING_NAME,
-	                        NM_SETTING_VXLAN_SETTING_NAME))
+	                        NM_SETTING_VXLAN_SETTING_NAME,
+	                        NM_SETTING_WIREGUARD_SETTING_NAME))
 		return TRUE;
 
 	if (nm_streq (type, NM_SETTING_INFINIBAND_SETTING_NAME)) {

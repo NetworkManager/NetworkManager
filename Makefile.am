@@ -658,6 +658,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-vxlan.h \
 	libnm-core/nm-setting-wimax.h \
 	libnm-core/nm-setting-wired.h \
+	libnm-core/nm-setting-wireguard.h \
 	libnm-core/nm-setting-wireless-security.h \
 	libnm-core/nm-setting-wireless.h \
 	libnm-core/nm-setting-wpan.h \
@@ -726,6 +727,7 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-vxlan.c \
 	libnm-core/nm-setting-wimax.c \
 	libnm-core/nm-setting-wired.c \
+	libnm-core/nm-setting-wireguard.c \
 	libnm-core/nm-setting-wireless-security.c \
 	libnm-core/nm-setting-wireless.c \
 	libnm-core/nm-setting-wpan.c

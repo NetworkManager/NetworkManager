@@ -52,7 +52,6 @@
 #include "nm-setting-gsm.h"
 #include "nm-setting-infiniband.h"
 #include "nm-setting-ip-tunnel.h"
-#include "nm-setting-proxy.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-macsec.h"
@@ -65,6 +64,7 @@
 #include "nm-setting-ovs-port.h"
 #include "nm-setting-ppp.h"
 #include "nm-setting-pppoe.h"
+#include "nm-setting-proxy.h"
 #include "nm-setting-serial.h"
 #include "nm-setting-sriov.h"
 #include "nm-setting-tc-config.h"
@@ -76,6 +76,7 @@
 #include "nm-setting-vxlan.h"
 #include "nm-setting-wimax.h"
 #include "nm-setting-wired.h"
+#include "nm-setting-wireguard.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wpan.h"
@@ -662,6 +663,16 @@ GBytes *_nm_setting_802_1x_cert_value_to_bytes (NMSetting8021xCKScheme scheme,
                                                 const guint8 *val_bin,
                                                 gssize val_len,
                                                 GError **error);
+
+/*****************************************************************************/
+
+gboolean _nm_utils_wireguard_decode_key (const char *base64_key,
+                                         gsize required_key_len,
+                                         guint8 *out_key);
+
+gboolean _nm_utils_wireguard_normalize_key (const char *base64_key,
+                                            gsize required_key_len,
+                                            char **out_base64_key_norm);
 
 /*****************************************************************************/
 

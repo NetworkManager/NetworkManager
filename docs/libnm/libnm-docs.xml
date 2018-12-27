@@ -233,6 +233,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-vxlan.xml"/>
     <xi:include href="xml/nm-setting-wimax.xml"/>
     <xi:include href="xml/nm-setting-wired.xml"/>
+    <xi:include href="xml/nm-setting-wireguard.xml"/>
     <xi:include href="xml/nm-setting-wireless-security.xml"/>
     <xi:include href="xml/nm-setting-wireless.xml"/>
     <xi:include href="xml/nm-setting-wpan.xml"/>
