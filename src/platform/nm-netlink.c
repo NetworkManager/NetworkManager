@@ -1055,7 +1055,7 @@ nl_wait_for_ack (struct nl_sock *sk,
 do { \
 	const struct nl_cb *_cb = (cb); \
 	\
-	if (_cb->type##_cb) { \
+	if (_cb && _cb->type##_cb) { \
 		/* the returned value here must be either a negative
 		 * netlink error number, or one of NL_SKIP, NL_STOP, NL_OK. */ \
 		nmerr = _cb->type##_cb ((msg), _cb->type##_arg); \
@@ -1171,7 +1171,7 @@ continue_reading:
 			}
 			if (e->error) {
 				/* Error message reported back from kernel. */
-				if (cb->err_cb) {
+				if (cb && cb->err_cb) {
 					/* the returned value here must be either a negative
 					 * netlink error number, or one of NL_SKIP, NL_STOP, NL_OK. */
 					nmerr = cb->err_cb (&nla, e,
