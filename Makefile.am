@@ -940,6 +940,8 @@ nodist_libnm_core_tests_test_general_SOURCES = \
 
 libnm_core_tests_ldadd = \
 	libnm-core/libnm-core.la \
+	shared/systemd/libnm-systemd-shared.la \
+	shared/systemd/libnm-systemd-logging-stub.la \
 	shared/nm-utils/libnm-utils-base.la \
 	$(libnm_crypto_lib) \
 	$(GLIB_LIBS)
@@ -1191,6 +1193,8 @@ EXTRA_libnm_libnm_la_DEPENDENCIES = \
 
 libnm_libnm_la_LIBADD = \
 	libnm/libnm-utils.la \
+	shared/systemd/libnm-systemd-shared.la \
+	shared/systemd/libnm-systemd-logging-stub.la \
 	shared/nm-utils/libnm-utils-udev.la \
 	$(DL_LIBS) \
 	$(GLIB_LIBS) \
@@ -1357,6 +1361,8 @@ libnm_tests_cppflags = \
 
 libnm_tests_ldadd = \
 	libnm/libnm.la \
+	shared/systemd/libnm-systemd-shared.la \
+	shared/systemd/libnm-systemd-logging-stub.la \
 	$(GLIB_LIBS)
 
 libnm_tests_ldflags = \
@@ -1515,6 +1521,22 @@ libsystemd_cppflags = \
 libsystemd_libadd = \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \
+	$(NULL)
+
+noinst_LTLIBRARIES += shared/systemd/libnm-systemd-logging-stub.la
+
+shared_systemd_libnm_systemd_logging_stub_la_CPPFLAGS = \
+	$(libsystemd_cppflags) \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED \
+	-DG_LOG_DOMAIN=\""libnm"\" \
+	$(NULL)
+
+shared_systemd_libnm_systemd_logging_stub_la_SOURCES = \
+	shared/systemd/nm-logging-stub.c \
+	$(NULL)
+
+shared_systemd_libnm_systemd_logging_stub_la_LIBADD = \
+	$(libsystemd_libadd) \
 	$(NULL)
 
 noinst_LTLIBRARIES += shared/systemd/libnm-systemd-shared.la
@@ -2105,6 +2127,7 @@ src_initrd_nm_initrd_generator_LDADD = \
 	libnm-core/libnm-core.la \
 	src/initrd/libnmi-core.la \
 	src/libNetworkManagerBase.la \
+	shared/systemd/libnm-systemd-shared.la \
 	shared/nm-utils/libnm-utils-base.la \
 	$(GLIB_LIBS) \
 	$(NULL)

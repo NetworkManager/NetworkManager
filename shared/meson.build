@@ -207,3 +207,28 @@ libnm_systemd_shared_dep = declare_dependency(
     libnm_systemd_shared,
   ],
 )
+
+libnm_systemd_logging_stub = static_library(
+  'nm-systemd-logging-stub',
+  sources: files(
+    'systemd/nm-logging-stub.c',
+  ),
+  include_directories: include_directories(
+    'systemd/sd-adapt-shared',
+    'systemd/src/basic',
+  ),
+  dependencies: shared_dep,
+  c_args: [
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED',
+    '-DG_LOG_DOMAIN="libnm"',
+  ],
+)
+
+libnm_systemd_shared_no_logging_dep = declare_dependency(
+  dependencies: [
+    libnm_systemd_shared_dep,
+  ],
+  link_with: [
+    libnm_systemd_logging_stub,
+  ],
+)
