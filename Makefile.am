@@ -309,6 +309,7 @@ shared_nm_utils_libnm_utils_base_la_SOURCES = \
 	shared/nm-utils/nm-hash-utils.h \
 	shared/nm-utils/nm-io-utils.c \
 	shared/nm-utils/nm-io-utils.h \
+	shared/nm-utils/nm-logging-fwd.h \
 	shared/nm-utils/nm-macros-internal.h \
 	shared/nm-utils/nm-obj.h \
 	shared/nm-utils/nm-random-utils.c \
