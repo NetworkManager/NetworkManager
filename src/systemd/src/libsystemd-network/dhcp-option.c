@@ -3,7 +3,7 @@
   Copyright © 2013 Intel Corporation. All rights reserved.
 ***/
 
-#include "nm-sd-adapt.h"
+#include "nm-sd-adapt-core.h"
 
 #include <errno.h>
 #include <stdint.h>

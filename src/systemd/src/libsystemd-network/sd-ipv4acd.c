@@ -3,7 +3,7 @@
   Copyright © 2014 Axis Communications AB. All rights reserved.
 ***/
 
-#include "nm-sd-adapt.h"
+#include "nm-sd-adapt-core.h"
 
 #include <arpa/inet.h>
 #include <errno.h>

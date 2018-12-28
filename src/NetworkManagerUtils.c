@@ -34,7 +34,7 @@
 
 #include "platform/nm-platform.h"
 #include "nm-auth-utils.h"
-#include "systemd/nm-sd-utils.h"
+#include "systemd/nm-sd-utils-shared.h"
 
 /*****************************************************************************/
 
