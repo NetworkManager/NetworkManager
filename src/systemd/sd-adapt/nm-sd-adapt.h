@@ -44,6 +44,10 @@
 #define HAVE_SYS_AUXV_H 0
 #endif
 
+/* we build with C11 and thus <uchar.h> provides char32_t,char16_t. */
+#define HAVE_CHAR32_T 1
+#define HAVE_CHAR16_T 1
+
 /*****************************************************************************/
 
 static inline NMLogLevel
@@ -148,12 +152,6 @@ raw_getpid (void) {
 	return (pid_t) syscall (__NR_getpid);
 #endif
 }
-
-/*****************************************************************************/
-
-/* work around missing uchar.h */
-typedef guint16 char16_t;
-typedef guint32 char32_t;
 
 /*****************************************************************************/
 

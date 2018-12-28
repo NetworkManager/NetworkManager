@@ -1549,7 +1549,6 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/sd-adapt/missing_socket.h \
 	src/systemd/sd-adapt/missing_syscall.h \
 	src/systemd/sd-adapt/missing_timerfd.h \
-	src/systemd/sd-adapt/missing_type.h \
 	src/systemd/sd-adapt/mkdir.h \
 	src/systemd/sd-adapt/procfs-util.h \
 	src/systemd/sd-adapt/raw-clone.h \
@@ -1598,6 +1597,7 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/src/basic/macro.h \
 	src/systemd/src/basic/mempool.c \
 	src/systemd/src/basic/mempool.h \
+	src/systemd/src/basic/missing_type.h \
 	src/systemd/src/basic/parse-util.c \
 	src/systemd/src/basic/parse-util.h \
 	src/systemd/src/basic/path-util.c \
