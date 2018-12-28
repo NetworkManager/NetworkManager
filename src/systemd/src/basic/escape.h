@@ -5,9 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
-#if 0 /* NM_IGNORED */
 #include <uchar.h>
-#endif /* NM_IGNORED */
 
 #include "string-util.h"
 #include "missing_type.h"
