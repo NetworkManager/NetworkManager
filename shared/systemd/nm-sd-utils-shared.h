@@ -29,4 +29,8 @@ const char *nm_sd_utils_path_startswith (const char *path, const char *prefix);
 
 /*****************************************************************************/
 
+int nm_sd_utils_unbase64mem (const char *p, size_t l, guint8 **mem, size_t *len);
+
+/*****************************************************************************/
+
 #endif /* __NM_SD_UTILS_SHARED_H__ */
