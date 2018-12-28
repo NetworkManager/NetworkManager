@@ -4323,8 +4323,7 @@ realize_start_setup (NMDevice *self,
 	 * NetworkManager might down the interface or remove the 127.0.0.1 address. */
 	nm_device_set_unmanaged_flags (self,
 	                               NM_UNMANAGED_BY_TYPE,
-	                                  is_loopback (self)
-	                               || NM_IS_DEVICE_WIREGUARD (self));
+	                               is_loopback (self));
 
 	nm_device_set_unmanaged_by_user_udev (self);
 	nm_device_set_unmanaged_by_user_conf (self);
