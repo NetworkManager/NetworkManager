@@ -200,6 +200,7 @@ nm_core_dep = declare_dependency(
   dependencies: [
     shared_dep,
     shared_c_siphash_dep,
+    libnm_systemd_shared_dep,
   ],
 )
 
