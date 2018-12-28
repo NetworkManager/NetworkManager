@@ -31,7 +31,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 #include "nm-core-utils.h"
-#include "systemd/nm-sd-utils.h"
+#include "systemd/nm-sd-utils-core.h"
 
 #include "dns/nm-dns-manager.h"
 #include "nm-connectivity.h"

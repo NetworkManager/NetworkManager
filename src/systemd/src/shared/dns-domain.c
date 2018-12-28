@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
 
-#include "nm-sd-adapt.h"
+#include "nm-sd-adapt-core.h"
 
 #if 0 /* NM_IGNORED */
 #if HAVE_LIBIDN2
