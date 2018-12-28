@@ -105,7 +105,7 @@ endif
 
 endif
 
-dflt_cppflags = -std=gnu99
+dflt_cppflags = -std=gnu11
 
 ###############################################################################
 
@@ -222,7 +222,10 @@ shared_libcsiphash_la_SOURCES = \
 
 noinst_LTLIBRARIES += shared/libcrbtree.la
 
-shared_libcrbtree_la_CFLAGS = $(AM_CFLAGS) -std=c11
+shared_libcrbtree_la_CFLAGS = \
+	$(AM_CFLAGS) \
+	-std=c11 \
+	$(NULL)
 
 shared_libcrbtree_la_CPPFLAGS = \
 	$(CODE_COVERAGE_CFLAGS) \
