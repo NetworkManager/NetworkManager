@@ -20,6 +20,7 @@ foreach test_unit: test_units
     dependencies: [
       libnm_dep,
       nm_core_dep,
+      libnm_systemd_shared_no_logging_dep,
     ],
     c_args: cflags,
     link_with: test_unit[1],

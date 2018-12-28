@@ -38,7 +38,6 @@ libnm_systemd_core = static_library(
     )
   ],
   dependencies: [
-    libnm_systemd_shared_dep,
     nm_core_dep,
   ],
   c_args: [
