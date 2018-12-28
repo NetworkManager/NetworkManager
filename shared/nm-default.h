@@ -78,9 +78,14 @@
                                                      | NM_NETWORKMANAGER_COMPILATION_WITH_DAEMON \
                                                      )
 
+#define NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED ( 0 \
+                                                     | NM_NETWORKMANAGER_COMPILATION_WITH_GLIB \
+                                                     | NM_NETWORKMANAGER_COMPILATION_WITH_SYSTEMD \
+                                                     )
+
 #define NM_NETWORKMANAGER_COMPILATION_SYSTEMD        ( 0 \
                                                      | NM_NETWORKMANAGER_COMPILATION_DAEMON \
-                                                     | NM_NETWORKMANAGER_COMPILATION_WITH_SYSTEMD \
+                                                     | NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED \
                                                      )
 
 #define NM_NETWORKMANAGER_COMPILATION_GLIB           ( 0 \

@@ -20,7 +20,7 @@
 #include "nm-default.h"
 
 #include "systemd/nm-sd.h"
-#include "systemd/nm-sd-utils.h"
+#include "systemd/nm-sd-utils-shared.h"
 
 #include "nm-test-utils-core.h"
 
@@ -47,6 +47,13 @@ nm_utils_get_monotonic_timestamp_s (void)
 }
 
 NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL];
+
+gboolean
+_nm_log_enabled (NMLogLevel level,
+                 NMLogDomain domain)
+{
+	return FALSE;
+}
 
 void
 _nm_log_impl (const char *file,

@@ -176,7 +176,11 @@ libnetwork_manager = static_library(
   sources: sources,
   dependencies: nm_deps,
   c_args: cflags,
-  link_with: [libnetwork_manager_base, libsystemd_nm],
+  link_with: [
+    libnetwork_manager_base,
+    libnm_systemd_core,
+    libnm_systemd_shared,
+  ],
 )
 
 deps = [
@@ -193,7 +197,11 @@ executable(
   name + '.c',
   dependencies: deps,
   c_args: cflags,
-  link_with: [libnetwork_manager_base, libsystemd_nm],
+  link_with: [
+    libnetwork_manager_base,
+    libnm_systemd_core,
+    libnm_systemd_shared,
+  ],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,

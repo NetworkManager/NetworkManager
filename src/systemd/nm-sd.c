@@ -139,7 +139,7 @@ const bool mempool_use_allowed = true;
 
 /* ensure that defines in nm-sd.h correspond to the internal defines. */
 
-#include "nm-sd-adapt.h"
+#include "nm-sd-adapt-core.h"
 #include "dhcp-lease-internal.h"
 
 /*****************************************************************************/
