@@ -2305,23 +2305,23 @@ nm_connection_is_virtual (NMConnection *connection)
 	if (!type)
 		return FALSE;
 
-	if (   !strcmp (type, NM_SETTING_6LOWPAN_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_BOND_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_DUMMY_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_TEAM_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_BRIDGE_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_VLAN_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_TUN_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_IP_TUNNEL_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_MACSEC_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_MACVLAN_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_OVS_BRIDGE_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_OVS_INTERFACE_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_OVS_PORT_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_VXLAN_SETTING_NAME))
+	if (NM_IN_STRSET (type, NM_SETTING_6LOWPAN_SETTING_NAME,
+	                        NM_SETTING_BOND_SETTING_NAME,
+	                        NM_SETTING_BRIDGE_SETTING_NAME,
+	                        NM_SETTING_DUMMY_SETTING_NAME,
+	                        NM_SETTING_IP_TUNNEL_SETTING_NAME,
+	                        NM_SETTING_MACSEC_SETTING_NAME,
+	                        NM_SETTING_MACVLAN_SETTING_NAME,
+	                        NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+	                        NM_SETTING_OVS_INTERFACE_SETTING_NAME,
+	                        NM_SETTING_OVS_PORT_SETTING_NAME,
+	                        NM_SETTING_TEAM_SETTING_NAME,
+	                        NM_SETTING_TUN_SETTING_NAME,
+	                        NM_SETTING_VLAN_SETTING_NAME,
+	                        NM_SETTING_VXLAN_SETTING_NAME))
 		return TRUE;
 
-	if (!strcmp (type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
+	if (nm_streq (type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
 		NMSettingInfiniband *s_ib;
 
 		s_ib = nm_connection_get_setting_infiniband (connection);
