@@ -225,6 +225,59 @@ test_path_equal (void)
 
 /*****************************************************************************/
 
+static void
+_test_unbase64mem_mem (const char *base64, const guint8 *expected_arr, gsize expected_len)
+{
+	gs_free char *expected_base64 = NULL;
+	int r;
+	gs_free guint8 *exp2_arr = NULL;
+	gs_free guint8 *exp3_arr = NULL;
+	gsize exp2_len;
+	gsize exp3_len;
+
+	expected_base64 = g_base64_encode (expected_arr, expected_len);
+
+	r = nm_sd_utils_unbase64mem (expected_base64, strlen (expected_base64), &exp2_arr, &exp2_len);
+	g_assert_cmpint (r, ==, 0);
+	g_assert_cmpmem (expected_arr, expected_len, exp2_arr, exp2_len);
+
+	if (!nm_streq (base64, expected_base64)) {
+		r = nm_sd_utils_unbase64mem (base64, strlen (base64), &exp3_arr, &exp3_len);
+		g_assert_cmpint (r, ==, 0);
+		g_assert_cmpmem (expected_arr, expected_len, exp3_arr, exp3_len);
+	}
+}
+
+#define _test_unbase64mem(base64, expected_str) _test_unbase64mem_mem (base64, (const guint8 *) ""expected_str"", NM_STRLEN (expected_str))
+
+static void
+_test_unbase64mem_inval (const char *base64)
+{
+	gs_free guint8 *exp_arr = NULL;
+	gsize exp_len = 0;
+	int r;
+
+	r = nm_sd_utils_unbase64mem (base64, strlen (base64), &exp_arr, &exp_len);
+	g_assert_cmpint (r, <, 0);
+	g_assert (!exp_arr);
+	g_assert (exp_len == 0);
+}
+
+static void
+test_nm_sd_utils_unbase64mem (void)
+{
+	_test_unbase64mem ("", "");
+	_test_unbase64mem ("  ", "");
+	_test_unbase64mem (" Y Q == ", "a");
+	_test_unbase64mem (" Y   WJjZGV mZ 2g = ", "abcdefgh");
+	_test_unbase64mem_inval (" Y   %WJjZGV mZ 2g = ");
+	_test_unbase64mem_inval (" Y   %WJjZGV mZ 2g = a");
+	_test_unbase64mem ("YQ==", "a");
+	_test_unbase64mem_inval ("YQ==a");
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -236,6 +289,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/systemd/lldp/create", test_lldp_create);
 	g_test_add_func ("/systemd/sd-event", test_sd_event);
 	g_test_add_func ("/systemd/test_path_equal", test_path_equal);
+	g_test_add_func ("/systemd/test_nm_sd_utils_unbase64mem", test_nm_sd_utils_unbase64mem);
 
 	return g_test_run ();
 }

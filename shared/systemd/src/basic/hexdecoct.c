@@ -515,6 +515,7 @@ char base64char(int x) {
                                       "0123456789+/";
         return table[x & 63];
 }
+#endif /* NM_IGNORED */
 
 int unbase64char(char c) {
         unsigned offset;
@@ -545,6 +546,7 @@ int unbase64char(char c) {
         return -EINVAL;
 }
 
+#if 0 /* NM_IGNORED */
 ssize_t base64mem(const void *p, size_t l, char **out) {
         char *r, *z;
         const uint8_t *x;
@@ -644,6 +646,7 @@ int base64_append(
                 /* leave plen on the left, keep last column free */
                 return base64_append_width(prefix, plen, NULL, plen, p, l, width - plen - 1);
 }
+#endif /* NM_IGNORED */
 
 static int unbase64_next(const char **p, size_t *l) {
         int ret;
@@ -775,6 +778,7 @@ int unbase64mem(const char *p, size_t l, void **ret, size_t *ret_size) {
         return 0;
 }
 
+#if 0 /* NM_IGNORED */
 void hexdump(FILE *f, const void *p, size_t s) {
         const uint8_t *b = p;
         unsigned n = 0;
