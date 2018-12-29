@@ -121,11 +121,21 @@
  */
 #define NM_SETTING_COMPARE_FLAG_NONE ((NMSettingCompareFlags) 0)
 
+/*****************************************************************************/
+
 #define NM_SETTING_SECRET_FLAGS_ALL \
-	(NM_SETTING_SECRET_FLAG_NONE | \
-	 NM_SETTING_SECRET_FLAG_AGENT_OWNED | \
-	 NM_SETTING_SECRET_FLAG_NOT_SAVED | \
-	 NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+	((NMSettingSecretFlags) (  NM_SETTING_SECRET_FLAG_NONE \
+	                         | NM_SETTING_SECRET_FLAG_AGENT_OWNED \
+	                         | NM_SETTING_SECRET_FLAG_NOT_SAVED \
+	                         | NM_SETTING_SECRET_FLAG_NOT_REQUIRED))
+
+static inline gboolean
+_nm_setting_secret_flags_valid (NMSettingSecretFlags flags)
+{
+	return !NM_FLAGS_ANY (flags, ~NM_SETTING_SECRET_FLAGS_ALL);
+}
+
+/*****************************************************************************/
 
 typedef enum { /*< skip >*/
 	NM_SETTING_PARSE_FLAGS_NONE                     = 0,

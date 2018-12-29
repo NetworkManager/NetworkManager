@@ -2159,7 +2159,7 @@ nm_setting_set_secret_flags (NMSetting *setting,
 {
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (secret_name != NULL, FALSE);
-	g_return_val_if_fail (flags <= NM_SETTING_SECRET_FLAGS_ALL, FALSE);
+	g_return_val_if_fail (_nm_setting_secret_flags_valid (flags), FALSE);
 
 	return NM_SETTING_GET_CLASS (setting)->set_secret_flags (setting, secret_name, flags, error);
 }
