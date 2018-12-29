@@ -5525,6 +5525,73 @@ test_setting_user_data (void)
 /*****************************************************************************/
 
 static void
+_sock_addr_endpoint (const char *endpoint,
+                     const char *host,
+                     gint32 port)
+{
+	nm_auto_unref_sockaddrendpoint NMSockAddrEndpoint *ep = NULL;
+	const char *s_endpoint;
+	const char *s_host;
+	gint32 s_port;
+
+	g_assert (endpoint);
+	g_assert (!host == (port == -1));
+	g_assert (port >= -1 && port <= G_MAXUINT16);
+
+	ep = nm_sock_addr_endpoint_new (endpoint);
+	g_assert (ep);
+
+	s_endpoint = nm_sock_addr_endpoint_get_endpoint (ep);
+	s_host = nm_sock_addr_endpoint_get_host (ep);
+	s_port = nm_sock_addr_endpoint_get_port (ep);
+	g_assert_cmpstr (endpoint, ==, s_endpoint);
+	g_assert_cmpstr (host,     ==, s_host);
+	g_assert_cmpint (port,     ==, s_port);
+
+	if (endpoint[0] != ' ') {
+		gs_free char *endpoint2 = NULL;
+
+		/* also test with a leading space */
+		endpoint2 = g_strdup_printf (" %s", endpoint);
+		_sock_addr_endpoint (endpoint2, host, port);
+	}
+
+	if (endpoint[0] && endpoint[strlen (endpoint) - 1] != ' ') {
+		gs_free char *endpoint2 = NULL;
+
+		/* also test with a trailing space */
+		endpoint2 = g_strdup_printf ("%s ", endpoint);
+		_sock_addr_endpoint (endpoint2, host, port);
+	}
+}
+
+static void
+test_sock_addr_endpoint (void)
+{
+	_sock_addr_endpoint ("",          NULL, -1);
+	_sock_addr_endpoint (":",         NULL, -1);
+	_sock_addr_endpoint ("a",         NULL, -1);
+	_sock_addr_endpoint ("a:",        NULL, -1);
+	_sock_addr_endpoint (":a",        NULL, -1);
+	_sock_addr_endpoint ("[]:a",      NULL, -1);
+	_sock_addr_endpoint ("[]a",       NULL, -1);
+	_sock_addr_endpoint ("[]:",       NULL, -1);
+	_sock_addr_endpoint ("[a]b",      NULL, -1);
+	_sock_addr_endpoint ("[a:b",      NULL, -1);
+	_sock_addr_endpoint ("[a[:b",     NULL, -1);
+	_sock_addr_endpoint ("a:6",       "a",  6);
+	_sock_addr_endpoint ("a:6",       "a",  6);
+	_sock_addr_endpoint ("[a]:6",     "a",  6);
+	_sock_addr_endpoint ("[a]:6",     "a",  6);
+	_sock_addr_endpoint ("[a]:655",   "a",  655);
+	_sock_addr_endpoint ("[ab]:][6",  NULL, -1);
+	_sock_addr_endpoint ("[ab]:]:[6", NULL, -1);
+	_sock_addr_endpoint ("[a[]:b",    NULL, -1);
+}
+
+/*****************************************************************************/
+
+static void
 test_hexstr2bin (void)
 {
 	static const HexItem items[] = {
@@ -7736,6 +7803,8 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_ip6_gateway", test_setting_ip6_gateway);
 	g_test_add_func ("/core/general/test_setting_compare_default_strv", test_setting_compare_default_strv);
 	g_test_add_func ("/core/general/test_setting_user_data", test_setting_user_data);
+
+	g_test_add_func ("/core/general/test_sock_addr_endpoint", test_sock_addr_endpoint);
 
 	g_test_add_func ("/core/general/hexstr2bin", test_hexstr2bin);
 	g_test_add_func ("/core/general/nm_strquote", test_nm_strquote);

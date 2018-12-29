@@ -614,6 +614,22 @@ gboolean _nm_setting_sriov_sort_vfs (NMSettingSriov *setting);
 
 /*****************************************************************************/
 
+typedef struct _NMSockAddrEndpoint NMSockAddrEndpoint;
+
+NMSockAddrEndpoint *nm_sock_addr_endpoint_new (const char *endpoint);
+
+NMSockAddrEndpoint *nm_sock_addr_endpoint_ref (NMSockAddrEndpoint *self);
+void nm_sock_addr_endpoint_unref (NMSockAddrEndpoint *self);
+
+const char *nm_sock_addr_endpoint_get_endpoint (NMSockAddrEndpoint *self);
+const char *nm_sock_addr_endpoint_get_host (NMSockAddrEndpoint *self);
+gint32 nm_sock_addr_endpoint_get_port (NMSockAddrEndpoint *self);
+
+#define nm_auto_unref_sockaddrendpoint nm_auto(_nm_auto_unref_sockaddrendpoint)
+NM_AUTO_DEFINE_FCN_VOID0 (NMSockAddrEndpoint *, _nm_auto_unref_sockaddrendpoint, nm_sock_addr_endpoint_unref)
+
+/*****************************************************************************/
+
 typedef struct _NMSettInfoSetting  NMSettInfoSetting;
 typedef struct _NMSettInfoProperty NMSettInfoProperty;
 
