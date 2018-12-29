@@ -2877,7 +2877,7 @@ nm_keyfile_read (GKeyFile *keyfile,
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSetting *setting;
-	char **groups;
+	gs_strfreev char **groups = NULL;
 	gsize length;
 	gsize i;
 	gboolean vpn_secrets = FALSE;
@@ -2913,7 +2913,6 @@ nm_keyfile_read (GKeyFile *keyfile,
 		if (setting)
 			nm_connection_add_setting (connection, setting);
 	}
-	g_strfreev (groups);
 
 	s_con = nm_connection_get_setting_connection (connection);
 	if (!s_con) {
