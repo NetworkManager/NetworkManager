@@ -5353,6 +5353,81 @@ test_setting_user_data (void)
 /*****************************************************************************/
 
 static void
+_wireguard_endpoint (const char *endpoint,
+                     const char *host,
+                     const char *port)
+{
+	NMWireGuardEndpoint *ep;
+	const char *s_endpoint;
+	const char *s_host;
+	const char *s_port;
+
+	g_assert (endpoint);
+	g_assert (!host == !port);
+
+	ep = nm_wireguard_endpoint_new (endpoint);
+	g_assert (ep);
+
+	s_endpoint = nm_wireguard_endpoint_get_endpoint (ep);
+	s_host = nm_wireguard_endpoint_get_host (ep);
+	s_port = nm_wireguard_endpoint_get_port (ep);
+	g_assert_cmpstr (endpoint, ==, s_endpoint);
+	g_assert_cmpstr (host,     ==, s_host);
+	g_assert_cmpstr (port,     ==, s_port);
+
+	if (s_host) {
+		if (g_str_has_suffix (endpoint, port)) {
+			g_assert (s_port > s_endpoint);
+			g_assert (s_port < &s_endpoint[strlen (s_endpoint)]);
+			g_assert (s_port == &s_endpoint[strlen (s_endpoint) - strlen (s_port)]);
+		}
+	}
+
+	nm_wireguard_endpoint_unref (ep);
+
+	if (endpoint[0] != ' ') {
+		gs_free char *endpoint2 = NULL;
+
+		/* also test with a leading space */
+		endpoint2 = g_strdup_printf (" %s", endpoint);
+		_wireguard_endpoint (endpoint2, host, port);
+	}
+
+	if (endpoint[0] && endpoint[strlen (endpoint) - 1] != ' ') {
+		gs_free char *endpoint2 = NULL;
+
+		/* also test with a trailing space */
+		endpoint2 = g_strdup_printf ("%s ", endpoint);
+		_wireguard_endpoint (endpoint2, host, port);
+	}
+}
+
+static void
+test_wireguard_endpoint (void)
+{
+	_wireguard_endpoint ("", NULL, NULL);
+	_wireguard_endpoint (":", NULL, NULL);
+	_wireguard_endpoint ("a", NULL, NULL);
+	_wireguard_endpoint ("a:", NULL, NULL);
+	_wireguard_endpoint (":a", NULL, NULL);
+	_wireguard_endpoint ("[]:a", NULL, NULL);
+	_wireguard_endpoint ("[]a", NULL, NULL);
+	_wireguard_endpoint ("[]:", NULL, NULL);
+	_wireguard_endpoint ("[a]b", NULL, NULL);
+	_wireguard_endpoint ("[a:b", NULL, NULL);
+	_wireguard_endpoint ("[a[:b", NULL, NULL);
+	_wireguard_endpoint ("a:6", "a", "6");
+	_wireguard_endpoint ("a:6", "a", "6");
+	_wireguard_endpoint ("[a]:6", "a", "6");
+	_wireguard_endpoint ("[a]:6", "a", "6");
+	_wireguard_endpoint ("[ab]:][6", "ab", "][6");
+	_wireguard_endpoint ("[ab]:]:[6", "ab", "]:[6");
+	_wireguard_endpoint ("[a[]:b", "a[", "b");
+}
+
+/*****************************************************************************/
+
+static void
 test_hexstr2bin (void)
 {
 	static const HexItem items[] = {
@@ -7564,6 +7639,8 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_ip6_gateway", test_setting_ip6_gateway);
 	g_test_add_func ("/core/general/test_setting_compare_default_strv", test_setting_compare_default_strv);
 	g_test_add_func ("/core/general/test_setting_user_data", test_setting_user_data);
+
+	g_test_add_func ("/core/general/test_wireguard_endpoint", test_wireguard_endpoint);
 
 	g_test_add_func ("/core/general/hexstr2bin", test_hexstr2bin);
 	g_test_add_func ("/core/general/nm_strquote", test_nm_strquote);

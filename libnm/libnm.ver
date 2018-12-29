@@ -1458,4 +1458,10 @@ global:
 	nm_setting_wireguard_new;
 	nm_team_link_watcher_get_vlanid;
 	nm_team_link_watcher_new_arp_ping2;
+	nm_wireguard_endpoint_get_endpoint;
+	nm_wireguard_endpoint_get_host;
+	nm_wireguard_endpoint_get_port;
+	nm_wireguard_endpoint_new;
+	nm_wireguard_endpoint_ref;
+	nm_wireguard_endpoint_unref;
 } libnm_1_14_0;

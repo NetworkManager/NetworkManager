@@ -35,6 +35,19 @@ G_BEGIN_DECLS
 
 /*****************************************************************************/
 
+typedef struct _NMWireGuardEndpoint NMWireGuardEndpoint;
+
+NMWireGuardEndpoint *nm_wireguard_endpoint_new (const char *endpoint);
+
+NMWireGuardEndpoint *nm_wireguard_endpoint_ref (NMWireGuardEndpoint *self);
+void nm_wireguard_endpoint_unref (NMWireGuardEndpoint *self);
+
+const char *nm_wireguard_endpoint_get_endpoint (NMWireGuardEndpoint *self);
+const char *nm_wireguard_endpoint_get_host (NMWireGuardEndpoint *self);
+const char *nm_wireguard_endpoint_get_port (NMWireGuardEndpoint *self);
+
+/*****************************************************************************/
+
 #define NM_TYPE_SETTING_WIREGUARD            (nm_setting_wireguard_get_type ())
 #define NM_SETTING_WIREGUARD(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_WIREGUARD, NMSettingWireGuard))
 #define NM_SETTING_WIREGUARD_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SETTING_WIREGUARD, NMSettingWireGuardClass))

@@ -37,6 +37,212 @@
 
 /*****************************************************************************/
 
+struct _NMWireGuardEndpoint {
+	const char *host;
+	const char *port;
+	guint refcount;
+	char endpoint[];
+};
+
+static gboolean
+NM_IS_WIREGUARD_ENDPOINT (NMWireGuardEndpoint *self)
+{
+	return self && self->refcount > 0;
+}
+
+static const char *
+_parse_endpoint (char *str,
+                 const char **out_port)
+{
+	char *s;
+
+	/* Like
+	 * - https://git.zx2c4.com/WireGuard/tree/src/tools/config.c?id=5e99a6d43fe2351adf36c786f5ea2086a8fe7ab8#n192
+	 * - https://github.com/systemd/systemd/blob/911649fdd43f3a9158b847947724a772a5a45c34/src/network/netdev/wireguard.c#L614
+	 */
+
+	g_strstrip (str);
+
+	if (!str[0])
+		return NULL;
+
+	if (str[0] == '[') {
+		str++;
+		s = strchr (str, ']');
+		if (!s)
+			return NULL;
+		if (s == str)
+			return NULL;
+		if (s[1] != ':')
+			return NULL;
+		if (!s[2])
+			return NULL;
+		*s = '\0';
+		*out_port = &s[2];
+		return str;
+	}
+
+	s = strrchr (str, ':');
+	if (!s)
+		return NULL;
+	if (s == str)
+		return NULL;
+	if (!s[1])
+		return NULL;
+	*s = '\0';
+	*out_port = &s[1];
+	return str;
+}
+
+/**
+ * nm_wireguard_endpoint_ref:
+ * @endpoint: the endpoint string.
+ *
+ * This function cannot fail, even if the @endpoint is invalid.
+ * The reason is to allow NMWireGuardEndpoint also to be used
+ * for tracking invalid endpoints. Use nm_wireguard_endpoint_get_host()
+ * to determine whether the endpoint is valid.
+ *
+ * Since: 1.16
+ *
+ * Returns: (transfer full): the new #NMWireGuardEndpoint endpoint.
+ */
+NMWireGuardEndpoint *
+nm_wireguard_endpoint_new (const char *endpoint)
+{
+	NMWireGuardEndpoint *ep;
+	gsize l_endpoint;
+	gsize l_host = 0;
+	gsize l_port = 0;
+	gsize i;
+	gs_free char *host_clone = NULL;
+	const char *host;
+	const char *port;
+
+	g_return_val_if_fail (endpoint, NULL);
+
+	l_endpoint = strlen (endpoint) + 1;
+
+	host = _parse_endpoint (nm_strndup_a (200, endpoint, l_endpoint - 1, &host_clone),
+	                        &port);
+
+	if (host) {
+		l_host = strlen (host) + 1;
+
+		if (!g_str_has_suffix (endpoint, port))
+			l_port = strlen (port) + 1;
+	}
+
+	ep = g_malloc (sizeof (NMWireGuardEndpoint) + l_endpoint + l_host + l_port);
+	ep->refcount = 1;
+	memcpy (ep->endpoint, endpoint, l_endpoint);
+	if (host) {
+		i = l_endpoint;
+		memcpy (&ep->endpoint[i], host, l_host);
+		ep->host = &ep->endpoint[i];
+		if (l_port > 0) {
+			i += l_host;
+			memcpy (&ep->endpoint[i], port, l_port);
+			ep->port = &ep->endpoint[i];
+		} else {
+			ep->port = &ep->endpoint[l_endpoint - strlen (port) - 1];
+			nm_assert (nm_streq (ep->port, port));
+		}
+	} else {
+		ep->host = NULL;
+		ep->port = NULL;
+	}
+	return ep;
+}
+
+/**
+ * nm_wireguard_endpoint_ref:
+ * @self: the #NMWireGuardEndpoint
+ *
+ * Since: 1.16
+ */
+NMWireGuardEndpoint *
+nm_wireguard_endpoint_ref (NMWireGuardEndpoint *self)
+{
+	g_return_val_if_fail (NM_IS_WIREGUARD_ENDPOINT (self), NULL);
+
+	nm_assert (self->refcount < G_MAXUINT);
+
+	self->refcount++;
+	return self;
+}
+
+/**
+ * nm_wireguard_endpoint_unref:
+ * @self: the #NMWireGuardEndpoint
+ *
+ * Since: 1.16
+ */
+void
+nm_wireguard_endpoint_unref (NMWireGuardEndpoint *self)
+{
+	g_return_if_fail (NM_IS_WIREGUARD_ENDPOINT (self));
+
+	if (--self->refcount == 0)
+		g_free (self);
+}
+
+/**
+ * nm_wireguard_endpoint_get_endpoint:
+ * @self: the #NMWireGuardEndpoint
+ *
+ * Gives the endpoint string. Since #NMWireGuardEndpoint's only
+ * information is the endpoint string, this can be used for comparing
+ * to instances for equality and order them lexically.
+ *
+ * Since: 1.16
+ *
+ * Returns: (transfer-none): the endpoint.
+ */
+const char *
+nm_wireguard_endpoint_get_endpoint (NMWireGuardEndpoint *self)
+{
+	g_return_val_if_fail (NM_IS_WIREGUARD_ENDPOINT (self), NULL);
+
+	return self->endpoint;
+}
+
+/**
+ * nm_wireguard_endpoint_get_host:
+ * @self: the #NMWireGuardEndpoint
+ *
+ * Since: 1.16
+ *
+ * Returns: (transfer-none): the parsed host part of the endpoint.
+ *   If the endpoint is invalid, %NULL will be returned.
+ */
+const char *
+nm_wireguard_endpoint_get_host (NMWireGuardEndpoint *self)
+{
+	g_return_val_if_fail (NM_IS_WIREGUARD_ENDPOINT (self), NULL);
+
+	return self->host;
+}
+
+/**
+ * nm_wireguard_endpoint_get_port:
+ * @self: the #NMWireGuardEndpoint
+ *
+ * Since: 1.16
+ *
+ * Returns: (transfer-none): the parsed port part of the endpoint (the service).
+ *   If the endpoint is invalid, %NULL will be returned.
+ */
+const char *
+nm_wireguard_endpoint_get_port (NMWireGuardEndpoint *self)
+{
+	g_return_val_if_fail (NM_IS_WIREGUARD_ENDPOINT (self), NULL);
+
+	return self->port;
+}
+
+/*****************************************************************************/
+
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_PRIVATE_KEY,
 	PROP_PRIVATE_KEY_FLAGS,
