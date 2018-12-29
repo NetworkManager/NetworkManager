@@ -25,6 +25,7 @@
 #endif
 
 #include "nm-setting.h"
+#include "nm-utils.h"
 
 G_BEGIN_DECLS
 
@@ -32,6 +33,87 @@ G_BEGIN_DECLS
 
 #define NM_WIREGUARD_PUBLIC_KEY_LEN     32
 #define NM_WIREGUARD_SYMMETRIC_KEY_LEN  32
+
+/*****************************************************************************/
+
+typedef struct _NMWireGuardPeer NMWireGuardPeer;
+
+NM_AVAILABLE_IN_1_16
+GType nm_wireguard_peer_get_type (void);
+
+NM_AVAILABLE_IN_1_16
+NMWireGuardPeer *nm_wireguard_peer_new (void);
+
+NM_AVAILABLE_IN_1_16
+NMWireGuardPeer *nm_wireguard_peer_new_clone (const NMWireGuardPeer *self,
+                                              gboolean with_secrets);
+
+NM_AVAILABLE_IN_1_16
+NMWireGuardPeer *nm_wireguard_peer_ref (NMWireGuardPeer *self);
+NM_AVAILABLE_IN_1_16
+void nm_wireguard_peer_unref (NMWireGuardPeer *self);
+
+NM_AVAILABLE_IN_1_16
+void nm_wireguard_peer_seal (NMWireGuardPeer *self);
+NM_AVAILABLE_IN_1_16
+gboolean nm_wireguard_peer_is_sealed (const NMWireGuardPeer *self);
+
+NM_AVAILABLE_IN_1_16
+const char *nm_wireguard_peer_get_public_key (const NMWireGuardPeer *self);
+NM_AVAILABLE_IN_1_16
+void nm_wireguard_peer_set_public_key (NMWireGuardPeer *self,
+                                       const char *public_key);
+
+NM_AVAILABLE_IN_1_16
+const char *nm_wireguard_peer_get_preshared_key (const NMWireGuardPeer *self);
+NM_AVAILABLE_IN_1_16
+void nm_wireguard_peer_set_preshared_key (NMWireGuardPeer *self,
+                                          const char *preshared_key);
+
+NM_AVAILABLE_IN_1_16
+NMSettingSecretFlags nm_wireguard_peer_get_preshared_key_flags (const NMWireGuardPeer *self);
+NM_AVAILABLE_IN_1_16
+void nm_wireguard_peer_set_preshared_key_flags (NMWireGuardPeer *self,
+                                                NMSettingSecretFlags preshared_key_flags);
+
+NM_AVAILABLE_IN_1_16
+guint16 nm_wireguard_peer_get_persistent_keepalive (const NMWireGuardPeer *self);
+NM_AVAILABLE_IN_1_16
+void nm_wireguard_peer_set_persistent_keepalive (NMWireGuardPeer *self,
+                                                 guint16 persistent_keepalive);
+
+NM_AVAILABLE_IN_1_16
+const char *nm_wireguard_peer_get_endpoint (const NMWireGuardPeer *self);
+NM_AVAILABLE_IN_1_16
+void nm_wireguard_peer_set_endpoint (NMWireGuardPeer *self,
+                                     const char *endpoint);
+
+NM_AVAILABLE_IN_1_16
+guint nm_wireguard_peer_get_allowed_ips_len (const NMWireGuardPeer *self);
+NM_AVAILABLE_IN_1_16
+const char *nm_wireguard_peer_get_allowed_ip (const NMWireGuardPeer *self,
+                                              guint idx,
+                                              gboolean *out_is_valid);
+NM_AVAILABLE_IN_1_16
+void nm_wireguard_peer_clear_allowed_ips (NMWireGuardPeer *self);
+NM_AVAILABLE_IN_1_16
+gboolean nm_wireguard_peer_append_allowed_ip (NMWireGuardPeer *self,
+                                              const char *allowed_ip,
+                                              gboolean accept_invalid);
+NM_AVAILABLE_IN_1_16
+gboolean nm_wireguard_peer_remove_allowed_ip (NMWireGuardPeer *self,
+                                              guint idx);
+
+NM_AVAILABLE_IN_1_16
+gboolean nm_wireguard_peer_is_valid (const NMWireGuardPeer *self,
+                                     gboolean check_non_secrets,
+                                     gboolean check_secrets,
+                                     GError **error);
+
+NM_AVAILABLE_IN_1_16
+int nm_wireguard_peer_cmp (const NMWireGuardPeer *a,
+                           const NMWireGuardPeer *b,
+                           NMSettingCompareFlags compare_flags);
 
 /*****************************************************************************/
 
@@ -48,6 +130,8 @@ G_BEGIN_DECLS
 #define NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS "private-key-flags"
 #define NM_SETTING_WIREGUARD_LISTEN_PORT       "listen-port"
 #define NM_SETTING_WIREGUARD_FWMARK            "fwmark"
+
+#define NM_SETTING_WIREGUARD_PEERS             "peers"
 
 /*****************************************************************************/
 
@@ -72,6 +156,36 @@ guint16 nm_setting_wireguard_get_listen_port (NMSettingWireGuard *self);
 
 NM_AVAILABLE_IN_1_16
 guint32 nm_setting_wireguard_get_fwmark (NMSettingWireGuard *self);
+
+/*****************************************************************************/
+
+NM_AVAILABLE_IN_1_16
+guint nm_setting_wireguard_get_peers_len (NMSettingWireGuard *self);
+
+NM_AVAILABLE_IN_1_16
+NMWireGuardPeer *nm_setting_wireguard_get_peer (NMSettingWireGuard *self,
+                                                guint idx);
+
+NM_AVAILABLE_IN_1_16
+NMWireGuardPeer *nm_setting_wireguard_get_peer_by_public_key (NMSettingWireGuard *self,
+                                                              const char *public_key,
+                                                              guint *out_idx);
+
+NM_AVAILABLE_IN_1_16
+void nm_setting_wireguard_set_peer (NMSettingWireGuard *self,
+                                    NMWireGuardPeer *peer,
+                                    guint idx);
+
+NM_AVAILABLE_IN_1_16
+void nm_setting_wireguard_append_peer (NMSettingWireGuard *self,
+                                       NMWireGuardPeer *peer);
+
+NM_AVAILABLE_IN_1_16
+gboolean nm_setting_wireguard_remove_peer (NMSettingWireGuard *self,
+                                           guint idx);
+
+NM_AVAILABLE_IN_1_16
+guint nm_setting_wireguard_clear_peers (NMSettingWireGuard *self);
 
 /*****************************************************************************/
 

@@ -633,6 +633,12 @@ NM_AUTO_DEFINE_FCN_VOID0 (NMSockAddrEndpoint *, _nm_auto_unref_sockaddrendpoint,
 
 /*****************************************************************************/
 
+NMSockAddrEndpoint *_nm_wireguard_peer_get_endpoint (const NMWireGuardPeer *self);
+void _nm_wireguard_peer_set_endpoint (NMWireGuardPeer *self,
+                                      NMSockAddrEndpoint *endpoint);
+
+/*****************************************************************************/
+
 typedef struct _NMSettInfoSetting  NMSettInfoSetting;
 typedef struct _NMSettInfoProperty NMSettInfoProperty;
 
@@ -751,6 +757,9 @@ GBytes *_nm_setting_802_1x_cert_value_to_bytes (NMSetting8021xCKScheme scheme,
                                                 GError **error);
 
 /*****************************************************************************/
+
+#define nm_auto_unref_wgpeer nm_auto(_nm_auto_unref_wgpeer)
+NM_AUTO_DEFINE_FCN_VOID0 (NMWireGuardPeer *, _nm_auto_unref_wgpeer, nm_wireguard_peer_unref)
 
 gboolean _nm_utils_wireguard_decode_key (const char *base64_key,
                                          gsize required_key_len,

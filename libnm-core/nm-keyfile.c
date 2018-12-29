@@ -34,11 +34,20 @@
 #include <linux/pkt_sched.h>
 
 #include "nm-utils/nm-secret-utils.h"
+#include "systemd/nm-sd-utils-shared.h"
 #include "nm-common-macros.h"
 #include "nm-core-internal.h"
 #include "nm-keyfile-utils.h"
 
 #include "nm-setting-user.h"
+
+/*****************************************************************************/
+
+#define NM_KEYFILE_KEY_WIREGUARD_PEER_ENDPOINT             "endpoint"
+#define NM_KEYFILE_KEY_WIREGUARD_PEER_PRESHARED_KEY        "preshared-key"
+#define NM_KEYFILE_KEY_WIREGUARD_PEER_PRESHARED_KEY_FLAGS  "preshared-key-flags"
+#define NM_KEYFILE_KEY_WIREGUARD_PEER_PERSISTENT_KEEPALIVE "persistent-keepalive"
+#define NM_KEYFILE_KEY_WIREGUARD_PEER_ALLOWED_IPS          "allowed-ips"
 
 /*****************************************************************************/
 
@@ -2904,6 +2913,135 @@ out:
 }
 
 static void
+_read_setting_wireguard_peer (KeyfileReaderInfo *info)
+{
+	gs_unref_object NMSettingWireGuard *s_wg_new = NULL;
+	nm_auto_unref_wgpeer NMWireGuardPeer *peer = NULL;
+	gs_free_error GError *error = NULL;
+	NMSettingWireGuard *s_wg;
+	gs_free char *str = NULL;
+	const char *cstr = NULL;
+	const char *key;
+	gint64 i64;
+	gs_strfreev char **sa = NULL;
+	gsize n_sa;
+
+	peer = nm_wireguard_peer_new ();
+
+	nm_assert (g_str_has_prefix (info->group, NM_KEYFILE_GROUPPREFIX_WIREGUARD_PEER));
+	cstr = &info->group[NM_STRLEN (NM_KEYFILE_GROUPPREFIX_WIREGUARD_PEER)];
+	if (   !_nm_utils_wireguard_normalize_key (cstr, NM_WIREGUARD_PUBLIC_KEY_LEN, &str)
+	    || !nm_streq0 (str, cstr)) {
+		/* the group name must be identical to the normalized(!) key, so that it
+		 * is uniquely identified. */
+		handle_warn (info, NULL, NM_KEYFILE_WARN_SEVERITY_WARN,
+		             _("invalid peer public key in section '%s'"),
+		             info->group);
+		return;
+	}
+	nm_wireguard_peer_set_public_key (peer, cstr);
+	nm_clear_g_free (&str);
+
+	key = NM_KEYFILE_KEY_WIREGUARD_PEER_PRESHARED_KEY;
+	str = nm_keyfile_plugin_kf_get_string (info->keyfile, info->group, key, NULL);
+	if (str) {
+		if (!_nm_utils_wireguard_decode_key (str, NM_WIREGUARD_SYMMETRIC_KEY_LEN, NULL)) {
+			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+			                  _("key '%s.%s' is not not a valid 256 bit key in base64 encoding"),
+			                  info->group, key))
+				return;
+		} else
+			nm_wireguard_peer_set_preshared_key (peer, str);
+		nm_clear_g_free (&str);
+	}
+
+	key = NM_KEYFILE_KEY_WIREGUARD_PEER_PRESHARED_KEY_FLAGS;
+	i64 = nm_keyfile_plugin_kf_get_int64 (info->keyfile, info->group, key, 0, 0, NM_SETTING_SECRET_FLAGS_ALL, -1, NULL);
+	if (errno != ENODATA) {
+		if (   i64 == -1
+		    || !_nm_setting_secret_flags_valid (i64)) {
+			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+			                  _("key '%s.%s' is not not a valid secret flag"),
+			                  info->group, key))
+				return;
+		} else
+			nm_wireguard_peer_set_preshared_key_flags (peer, i64);
+	}
+
+	key = NM_KEYFILE_KEY_WIREGUARD_PEER_PERSISTENT_KEEPALIVE;
+	i64 = nm_keyfile_plugin_kf_get_int64 (info->keyfile, info->group, key, 0, 0, G_MAXUINT32, -1, NULL);
+	if (errno != ENODATA) {
+		if (i64 == -1) {
+			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+			                  _("key '%s.%s' is not not a integer in range 0 to 2^32"),
+			                  info->group, key))
+				return;
+		} else
+			nm_wireguard_peer_set_persistent_keepalive (peer, i64);
+	}
+
+	key = NM_KEYFILE_KEY_WIREGUARD_PEER_ENDPOINT;
+	str = nm_keyfile_plugin_kf_get_string (info->keyfile, info->group, key, NULL);
+	if (str && str[0]) {
+		nm_auto_unref_sockaddrendpoint NMSockAddrEndpoint *ep = NULL;
+
+		ep = nm_sock_addr_endpoint_new (str);
+		if (!nm_sock_addr_endpoint_get_host (ep)) {
+			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+			                  _("key '%s.%s' is not not a valid endpoint"),
+			                  info->group, key))
+				return;
+		} else
+			_nm_wireguard_peer_set_endpoint (peer, ep);
+	}
+	nm_clear_g_free (&str);
+
+	key = NM_KEYFILE_KEY_WIREGUARD_PEER_ALLOWED_IPS;
+	sa = nm_keyfile_plugin_kf_get_string_list (info->keyfile, info->group, key, &n_sa, NULL);
+	if (n_sa > 0) {
+		gboolean has_error = FALSE;
+		gsize i;
+
+		for (i = 0; i < n_sa; i++) {
+			if (!nm_utils_parse_inaddr_prefix_bin (AF_UNSPEC, sa[i], NULL, NULL, NULL)) {
+				has_error = TRUE;
+				continue;
+			}
+			nm_wireguard_peer_append_allowed_ip (peer, sa[i], TRUE);
+		}
+		if (has_error) {
+			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+			                  _("key '%s.%s' has invalid allowed-ips"),
+			                  info->group, key))
+				return;
+		}
+	}
+	nm_clear_pointer (&sa, g_strfreev);
+
+	if (info->error)
+		return;
+
+	if (!nm_wireguard_peer_is_valid (peer, TRUE, TRUE, &error)) {
+		if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+		                  _("peer '%s' is invalid: %s"),
+		                  info->group, error->message))
+			return;
+		return;
+	}
+
+	s_wg = NM_SETTING_WIREGUARD (nm_connection_get_setting (info->connection, NM_TYPE_SETTING_WIREGUARD));
+	if (!s_wg) {
+		s_wg_new = NM_SETTING_WIREGUARD (nm_setting_wireguard_new ());
+		s_wg = s_wg_new;
+	}
+
+	nm_setting_wireguard_append_peer (s_wg, peer);
+
+	if (s_wg_new)
+		nm_connection_add_setting (info->connection, g_steal_pointer (&s_wg_new));
+}
+
+static void
 _read_setting_vpn_secrets (KeyfileReaderInfo *info)
 {
 	gs_strfreev char **keys = NULL;
@@ -3023,7 +3161,9 @@ nm_keyfile_read (GKeyFile *keyfile,
 		if (nm_streq (groups[i], NM_KEYFILE_GROUP_VPN_SECRETS)) {
 			/* Only read out secrets when needed */
 			vpn_secrets = TRUE;
-		} else
+		} else if (NM_STR_HAS_PREFIX (groups[i], NM_KEYFILE_GROUPPREFIX_WIREGUARD_PEER))
+			_read_setting_wireguard_peer (&info);
+		else
 			_read_setting (&info);
 
 		info.group = NULL;
@@ -3200,6 +3340,85 @@ out_unset_value:
 	g_value_unset (&value);
 }
 
+static void
+_write_setting_wireguard (NMSetting *setting, KeyfileWriterInfo *info)
+{
+	NMSettingWireGuard *s_wg;
+	guint i_peer, n_peers;
+
+	s_wg = NM_SETTING_WIREGUARD (setting);
+
+	n_peers = nm_setting_wireguard_get_peers_len (s_wg);
+	for (i_peer = 0; i_peer < n_peers; i_peer++) {
+		NMWireGuardPeer *peer = nm_setting_wireguard_get_peer (s_wg, i_peer);
+		const char *public_key;
+		char group[NM_STRLEN (NM_KEYFILE_GROUPPREFIX_WIREGUARD_PEER) + 200];
+		NMSettingSecretFlags secret_flags;
+		gboolean any_key = FALSE;
+		guint i_aip, n_aip;
+		const char *cstr;
+		guint32 u32;
+
+		public_key = nm_wireguard_peer_get_public_key (peer);
+		if (   !public_key
+		    || !public_key[0]
+		    || !NM_STRCHAR_ALL (public_key, ch, nm_sd_utils_unbase64char (ch, TRUE) >= 0)) {
+			/* invalid peer. Skip it */
+			continue;
+		}
+
+		nm_sprintf_buf (group, "%s%s", NM_KEYFILE_GROUPPREFIX_WIREGUARD_PEER, nm_wireguard_peer_get_public_key (peer));
+
+		cstr = nm_wireguard_peer_get_endpoint (peer);
+		if (cstr) {
+			g_key_file_set_string (info->keyfile, group, NM_KEYFILE_KEY_WIREGUARD_PEER_ENDPOINT, cstr);
+			any_key = TRUE;
+		}
+
+		secret_flags = nm_wireguard_peer_get_preshared_key_flags (peer);
+		if (_secret_flags_persist_secret (secret_flags)) {
+			cstr = nm_wireguard_peer_get_preshared_key (peer);
+			if (cstr) {
+				g_key_file_set_string (info->keyfile, group, NM_KEYFILE_KEY_WIREGUARD_PEER_PRESHARED_KEY, cstr);
+				any_key = TRUE;
+			}
+		}
+
+		/* usually, we don't persist the secret-flags 0 (because they are the default).
+		 * For WireGuard peers, the default secret-flags for preshared-key are 4 (not-required).
+		 * So, in this case behave differently: a missing preshared-key-flag setting means
+		 * "not-required". */
+		if (secret_flags != NM_SETTING_SECRET_FLAG_NOT_REQUIRED) {
+			g_key_file_set_int64 (info->keyfile, group, NM_KEYFILE_KEY_WIREGUARD_PEER_PRESHARED_KEY_FLAGS, secret_flags);
+			any_key = TRUE;
+		}
+
+		u32 = nm_wireguard_peer_get_persistent_keepalive (peer);
+		if (u32) {
+			g_key_file_set_uint64 (info->keyfile, group, NM_KEYFILE_KEY_WIREGUARD_PEER_PERSISTENT_KEEPALIVE, u32);
+			any_key = TRUE;
+		}
+
+		n_aip = nm_wireguard_peer_get_allowed_ips_len (peer);
+		if (n_aip > 0) {
+			gs_free const char **strv = NULL;
+
+			strv = g_new (const char *, ((gsize) n_aip) + 1);
+			for (i_aip = 0; i_aip < n_aip; i_aip++)
+				strv[i_aip] = nm_wireguard_peer_get_allowed_ip (peer, i_aip, NULL);
+			strv[n_aip] = NULL;
+			g_key_file_set_string_list (info->keyfile, group, NM_KEYFILE_KEY_WIREGUARD_PEER_ALLOWED_IPS,
+			                            strv, n_aip);
+			any_key = TRUE;
+		}
+
+		if (!any_key) {
+			/* we cannot omit all keys. At an empty endpoint. */
+			g_key_file_set_string (info->keyfile, group, NM_KEYFILE_KEY_WIREGUARD_PEER_ENDPOINT, "");
+		}
+	}
+}
+
 GKeyFile *
 nm_keyfile_write (NMConnection *connection,
                   NMKeyfileWriteHandler handler,
@@ -3273,6 +3492,12 @@ nm_keyfile_write (NMConnection *connection,
 			const NMSettInfoProperty *property_info = _nm_sett_info_property_info_get_sorted (sett_info, j);
 
 			write_setting_value (&info, setting, property_info);
+			if (info.error)
+				goto out_with_info_error;
+		}
+
+		if (NM_IS_SETTING_WIREGUARD (setting)) {
+			_write_setting_wireguard (setting, &info);
 			if (info.error)
 				goto out_with_info_error;
 		}
