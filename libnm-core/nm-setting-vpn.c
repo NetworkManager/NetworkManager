@@ -730,7 +730,8 @@ get_secret_flags (NMSetting *setting,
 	}
 
 	i64 = _nm_utils_ascii_str_to_int64 (flags_val, 10, 0, NM_SETTING_SECRET_FLAGS_ALL, -1);
-	if (i64 == -1) {
+	if (   i64 == -1
+	    || !_nm_setting_secret_flags_valid (i64)) {
 		/* The flags keys is set to an unexpected value. That is a configuration
 		 * error. Note that keys named "*-flags" are reserved for secrets. The user
 		 * must not use this for anything but secret flags. Hence, we cannot fail
