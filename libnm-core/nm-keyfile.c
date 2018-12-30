@@ -2723,6 +2723,8 @@ read_setting (KeyfileReaderInfo *info)
 		gsize i, n_keys;
 
 		keys = g_key_file_get_keys (info->keyfile, info->group, &n_keys, NULL);
+		if (!keys)
+			n_keys = 0;
 		if (n_keys > 0) {
 			GHashTable *h = _nm_setting_gendata_hash (setting, TRUE);
 
@@ -2798,15 +2800,15 @@ static void
 read_vpn_secrets (KeyfileReaderInfo *info, NMSettingVpn *s_vpn)
 {
 	gs_strfreev char **keys = NULL;
-	char **iter;
+	gsize i, n_keys;
 
-	keys = nm_keyfile_plugin_kf_get_keys (info->keyfile, NM_KEYFILE_GROUP_VPN_SECRETS, NULL, NULL);
-	for (iter = keys; *iter; iter++) {
+	keys = nm_keyfile_plugin_kf_get_keys (info->keyfile, NM_KEYFILE_GROUP_VPN_SECRETS, &n_keys, NULL);
+	for (i = 0; i < n_keys; i++) {
 		char *secret;
 
-		secret = nm_keyfile_plugin_kf_get_string (info->keyfile, NM_KEYFILE_GROUP_VPN_SECRETS, *iter, NULL);
+		secret = nm_keyfile_plugin_kf_get_string (info->keyfile, NM_KEYFILE_GROUP_VPN_SECRETS, keys[i], NULL);
 		if (secret) {
-			nm_setting_vpn_add_secret (s_vpn, *iter, secret);
+			nm_setting_vpn_add_secret (s_vpn, keys[i], secret);
 			g_free (secret);
 		}
 	}
@@ -2896,6 +2898,9 @@ nm_keyfile_read (GKeyFile *keyfile,
 	info.user_data = user_data;
 
 	groups = g_key_file_get_groups (keyfile, &length);
+	if (!groups)
+		length = 0;
+
 	for (i = 0; i < length; i++) {
 		/* Only read out secrets when needed */
 		if (!strcmp (groups[i], NM_KEYFILE_GROUP_VPN_SECRETS)) {
