@@ -56,6 +56,7 @@ libnm-core/nm-crypto-gnutls.c
 libnm-core/nm-crypto-nss.c
 libnm-core/nm-connection.c
 libnm-core/nm-dbus-utils.c
+libnm-core/nm-keyfile-utils.c
 libnm-core/nm-keyfile.c
 libnm-core/nm-setting-6lowpan.c
 libnm-core/nm-setting-8021x.c

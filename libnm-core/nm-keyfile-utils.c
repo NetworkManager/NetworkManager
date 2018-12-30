@@ -184,6 +184,38 @@ DEFINE_KF_WRAPPER(uint64, guint64, guint64);
 DEFINE_KF_WRAPPER(boolean, gboolean, gboolean);
 DEFINE_KF_WRAPPER(value, char*, const char*);
 
+gint64
+nm_keyfile_plugin_kf_get_int64 (GKeyFile *kf,
+                                const char *group,
+                                const char *key,
+                                guint base,
+                                gint64 min,
+                                gint64 max,
+                                gint64 fallback,
+                                GError **error)
+{
+	gs_free char *s = NULL;
+	int errsv;
+	gint64 v;
+
+	s = nm_keyfile_plugin_kf_get_value (kf, group, key, error);
+	if (!s) {
+		errno = ENODATA;
+		return fallback;
+	}
+
+	v = _nm_utils_ascii_str_to_int64 (s, base, min, max, fallback);
+	errsv = errno;
+	if (   errsv != 0
+	    && error) {
+		g_set_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE,
+		             _("value is not an integer in range [%lld, %lld]"),
+		             (long long) min, (long long) max);
+		errno = errsv;
+	}
+	return v;
+}
+
 char **
 nm_keyfile_plugin_kf_get_keys (GKeyFile *kf,
                                const char *group,

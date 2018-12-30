@@ -73,6 +73,15 @@ DEFINE_KF_WRAPPER_PROTO(boolean, gboolean, gboolean)
 DEFINE_KF_WRAPPER_PROTO(value, char*, const char*)
 
 /* Misc */
+gint64 nm_keyfile_plugin_kf_get_int64 (GKeyFile *kf,
+                                       const char *group,
+                                       const char *key,
+                                       guint base,
+                                       gint64 min,
+                                       gint64 max,
+                                       gint64 fallback,
+                                       GError **error);
+
 char ** nm_keyfile_plugin_kf_get_keys    (GKeyFile *kf,
                                            const char *group,
                                            gsize *out_length,
