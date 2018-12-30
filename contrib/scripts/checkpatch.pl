@@ -59,6 +59,7 @@ our $type;
 our $filename;
 our $line_no;
 our $indent;
+our $check_is_todo;
 
 sub new_hunk
 {
@@ -68,6 +69,7 @@ sub new_hunk
 
 sub new_file
 {
+	$check_is_todo = 1;
 	$filename = shift;
 	@functions_seen = ();
 }
@@ -77,6 +79,7 @@ my $header = $ENV{'NM_CHECKPATCH_HEADER'};
 sub complain
 {
 	my $message = shift;
+	my $plain_message = shift;
 
 	return unless $check_line;
 
@@ -85,8 +88,12 @@ sub complain
 		undef $header;
 	}
 
-	warn "$filename:$line_no: $message:\n";
-	warn "> $line\n\n";
+	if ($plain_message) {
+		warn "$message\n";
+	} else {
+		warn "$filename:$line_no: $message:\n";
+		warn "> $line\n\n";
+	}
 	$seen_error = 1;
 }
 
@@ -126,7 +133,14 @@ if ($is_file and $filename ne $ARGV) {
 	new_hunk;
 }
 
-next unless $filename =~ /\.[ch]$/;
+if ($filename !~ /\.[ch]$/) {
+	if ($check_is_todo) {
+		complain("Resolve todo list \"$filename\" first\n", 1) if $filename =~ /^TODO.txt$/;
+		$check_is_todo = 0;
+	}
+	next;
+}
+
 next if $filename =~ /\/nm-[^\/]+-enum-types\.[ch]$/;
 next if $filename =~ /\bsrc\/systemd\//
 	and not $filename =~ /\/sd-adapt\//
