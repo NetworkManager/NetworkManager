@@ -96,6 +96,15 @@ _handle_warn (KeyfileReaderInfo *info,
 		_info->error == NULL; \
 	})
 
+/*****************************************************************************/
+
+static gboolean
+_secret_flags_persist_secret (NMSettingSecretFlags flags)
+{
+	return flags == NM_SETTING_SECRET_FLAG_NONE;
+}
+
+/*****************************************************************************/
 /* Some setting properties also contain setting names, such as
  * NMSettingConnection's 'type' property (which specifies the base type of the
  * connection, e.g. ethernet or wifi) or 'slave-type' (specifies type of slave
@@ -1863,8 +1872,8 @@ write_hash_of_string (GKeyFile *file,
 
 	keys = nm_utils_strdict_get_keys (hash, TRUE, &l);
 	for (i = 0; i < l; i++) {
+		gs_free char *to_free = NULL;
 		const char *property, *data;
-		gboolean write_item = TRUE;
 
 		property = keys[i];
 
@@ -1876,18 +1885,14 @@ write_hash_of_string (GKeyFile *file,
 			NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
 			nm_setting_get_secret_flags (setting, property, &secret_flags, NULL);
-			if (secret_flags != NM_SETTING_SECRET_FLAG_NONE)
-				write_item = FALSE;
+			if (!_secret_flags_persist_secret (secret_flags))
+				continue;
 		}
 
-		if (write_item) {
-			gs_free char *to_free = NULL;
-
-			data = g_hash_table_lookup (hash, property);
-			nm_keyfile_plugin_kf_set_string (file, group_name,
-			                                 nm_keyfile_key_encode (property, &to_free),
-			                                 data);
-		}
+		data = g_hash_table_lookup (hash, property);
+		nm_keyfile_plugin_kf_set_string (file, group_name,
+		                                 nm_keyfile_key_encode (property, &to_free),
+		                                 data);
 	}
 }
 
@@ -3023,8 +3028,8 @@ write_setting_value (NMSetting *setting,
 		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
 		if (!nm_setting_get_secret_flags (setting, key, &secret_flags, NULL))
-			g_assert_not_reached ();
-		if (secret_flags != NM_SETTING_SECRET_FLAG_NONE)
+			g_return_if_reached ();
+		if (!_secret_flags_persist_secret (secret_flags))
 			return;
 	}
 
