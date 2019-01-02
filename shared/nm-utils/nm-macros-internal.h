@@ -460,6 +460,10 @@ NM_G_ERROR_MSG (GError *error)
 #endif
 
 #ifndef _NM_CC_SUPPORT_GENERIC
+/* In the meantime, NetworkManager requires C11 and _Generic() should always be available.
+ * However, shared/nm-utils may also be used in VPN/applet, which possibly did not yet
+ * bump the C standard requirement. Leave this for the moment, but eventually we can
+ * drop it. */
 #if (defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9 ))) || (defined (__clang__))
 #define _NM_CC_SUPPORT_GENERIC 1
 #else

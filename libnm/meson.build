@@ -147,6 +147,7 @@ deps = [
   libudev_dep,
   shared_dep,
   uuid_dep,
+  libnm_systemd_shared_no_logging_dep,
 ]
 
 linker_script = join_paths(meson.current_source_dir(), 'libnm.ver')

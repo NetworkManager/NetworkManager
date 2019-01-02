@@ -550,6 +550,13 @@ nm_logging_get_level (NMLogDomain domain)
 	return sl;
 }
 
+gboolean
+_nm_log_enabled (NMLogLevel level,
+                 NMLogDomain domain)
+{
+	return nm_logging_enabled (level, domain);
+}
+
 #if SYSTEMD_JOURNAL
 static void
 _iovec_set (struct iovec *iov, const void *str, gsize len)

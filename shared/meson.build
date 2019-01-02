@@ -146,3 +146,89 @@ test(
   test_script,
   args: test_args + [test_shared_general.full_path()]
 )
+
+###############################################################################
+
+libnm_systemd_shared = static_library(
+  'nm-systemd-shared',
+  sources: files(
+    'systemd/src/basic/alloc-util.c',
+    'systemd/src/basic/escape.c',
+    'systemd/src/basic/env-file.c',
+    'systemd/src/basic/env-util.c',
+    'systemd/src/basic/ether-addr-util.c',
+    'systemd/src/basic/extract-word.c',
+    'systemd/src/basic/fd-util.c',
+    'systemd/src/basic/fileio.c',
+    'systemd/src/basic/fs-util.c',
+    'systemd/src/basic/hash-funcs.c',
+    'systemd/src/basic/hashmap.c',
+    'systemd/src/basic/hexdecoct.c',
+    'systemd/src/basic/hostname-util.c',
+    'systemd/src/basic/in-addr-util.c',
+    'systemd/src/basic/io-util.c',
+    'systemd/src/basic/mempool.c',
+    'systemd/src/basic/parse-util.c',
+    'systemd/src/basic/path-util.c',
+    'systemd/src/basic/prioq.c',
+    'systemd/src/basic/process-util.c',
+    'systemd/src/basic/random-util.c',
+    'systemd/src/basic/socket-util.c',
+    'systemd/src/basic/stat-util.c',
+    'systemd/src/basic/string-table.c',
+    'systemd/src/basic/string-util.c',
+    'systemd/src/basic/strv.c',
+    'systemd/src/basic/time-util.c',
+    'systemd/src/basic/tmpfile-util.c',
+    'systemd/src/basic/utf8.c',
+    'systemd/src/basic/util.c',
+    'systemd/nm-sd-utils-shared.c',
+  ),
+  include_directories: include_directories(
+    'systemd/sd-adapt-shared',
+    'systemd/src/basic',
+  ),
+  dependencies: shared_dep,
+  c_args: [
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED',
+    '-DG_LOG_DOMAIN="libnm"',
+  ],
+)
+
+libnm_systemd_shared_dep = declare_dependency(
+  include_directories: include_directories(
+    'systemd/sd-adapt-shared',
+    'systemd/src/basic',
+  ),
+  dependencies: [
+    shared_dep,
+  ],
+  link_with: [
+    libnm_systemd_shared,
+  ],
+)
+
+libnm_systemd_logging_stub = static_library(
+  'nm-systemd-logging-stub',
+  sources: files(
+    'systemd/nm-logging-stub.c',
+  ),
+  include_directories: include_directories(
+    'systemd/sd-adapt-shared',
+    'systemd/src/basic',
+  ),
+  dependencies: shared_dep,
+  c_args: [
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED',
+    '-DG_LOG_DOMAIN="libnm"',
+  ],
+)
+
+libnm_systemd_shared_no_logging_dep = declare_dependency(
+  dependencies: [
+    libnm_systemd_shared_dep,
+  ],
+  link_with: [
+    libnm_systemd_logging_stub,
+  ],
+)
