@@ -582,9 +582,11 @@ typedef struct _NMSettInfoSetting NMSettInfoSetting;
 
 typedef GVariant *(*NMSettingPropertyGetFunc)           (NMSetting     *setting,
                                                          const char    *property);
-typedef GVariant *(*NMSettingPropertySynthFunc)         (NMSetting     *setting,
+typedef GVariant *(*NMSettingPropertySynthFunc)         (const NMSettInfoSetting *sett_info,
+                                                         guint property_idx,
                                                          NMConnection  *connection,
-                                                         const char    *property);
+                                                         NMSetting     *setting,
+                                                         NMConnectionSerializationFlags flags);
 typedef gboolean  (*NMSettingPropertySetFunc)           (NMSetting     *setting,
                                                          GVariant      *connection_dict,
                                                          const char    *property,

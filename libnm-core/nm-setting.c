@@ -662,10 +662,13 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 		if (!prop_spec) {
 			if (!property->synth_func)
 				continue;
-
-			if (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
-				continue;
 		} else {
+
+			/* For the moment, properties backed by a GObject property don't
+			 * define a synth function. There is no problem supporting that,
+			 * however, for now just disallow it. */
+			nm_assert (!property->synth_func);
+
 			if (!(prop_spec->flags & G_PARAM_WRITABLE))
 				continue;
 
@@ -686,9 +689,10 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 		}
 
 		if (property->synth_func)
-			dbus_value = property->synth_func (setting, connection, property->name);
+			dbus_value = property->synth_func (sett_info, i, connection, setting, flags);
 		else
 			dbus_value = get_property_for_dbus (setting, property, TRUE);
+
 		if (dbus_value) {
 			/* Allow dbus_value to be either floating or not. */
 			g_variant_take_ref (dbus_value);
@@ -2031,9 +2035,11 @@ nm_setting_to_string (NMSetting *setting)
 }
 
 GVariant *
-_nm_setting_get_deprecated_virtual_interface_name (NMSetting *setting,
+_nm_setting_get_deprecated_virtual_interface_name (const NMSettInfoSetting *sett_info,
+                                                   guint property_idx,
                                                    NMConnection *connection,
-                                                   const char *property)
+                                                   NMSetting *setting,
+                                                   NMConnectionSerializationFlags flags)
 {
 	NMSettingConnection *s_con;
 

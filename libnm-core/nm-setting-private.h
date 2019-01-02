@@ -82,9 +82,11 @@ gboolean _nm_setting_clear_secrets_with_flags (NMSetting *setting,
 
 #define NM_SETTING_PARAM_GENDATA_BACKED (1 << (7 + G_PARAM_USER_SHIFT))
 
-GVariant *_nm_setting_get_deprecated_virtual_interface_name (NMSetting *setting,
+GVariant *_nm_setting_get_deprecated_virtual_interface_name (const NMSettInfoSetting *sett_info,
+                                                             guint property_idx,
                                                              NMConnection *connection,
-                                                             const char *property);
+                                                             NMSetting *setting,
+                                                             NMConnectionSerializationFlags flags);
 
 NMSettingVerifyResult _nm_setting_verify (NMSetting *setting,
                                           NMConnection *connection,

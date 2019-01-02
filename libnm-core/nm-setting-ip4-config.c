@@ -376,15 +376,20 @@ ip4_addresses_set (NMSetting  *setting,
 }
 
 static GVariant *
-ip4_address_labels_get (NMSetting    *setting,
+ip4_address_labels_get (const NMSettInfoSetting *sett_info,
+                        guint property_idx,
                         NMConnection *connection,
-                        const char   *property)
+                        NMSetting *setting,
+                        NMConnectionSerializationFlags flags)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	gboolean have_labels = FALSE;
 	GPtrArray *labels;
 	GVariant *ret;
 	int num_addrs, i;
+
+	if (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+		return NULL;
 
 	num_addrs = nm_setting_ip_config_get_num_addresses (s_ip);
 	for (i = 0; i < num_addrs; i++) {
@@ -414,18 +419,19 @@ ip4_address_labels_get (NMSetting    *setting,
 }
 
 static GVariant *
-ip4_address_data_get (NMSetting    *setting,
+ip4_address_data_get (const NMSettInfoSetting *sett_info,
+                      guint property_idx,
                       NMConnection *connection,
-                      const char   *property)
+                      NMSetting *setting,
+                      NMConnectionSerializationFlags flags)
 {
-	GPtrArray *addrs;
-	GVariant *ret;
+	gs_unref_ptrarray GPtrArray *addrs = NULL;
+
+	if (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+		return NULL;
 
 	g_object_get (setting, NM_SETTING_IP_CONFIG_ADDRESSES, &addrs, NULL);
-	ret = nm_utils_ip_addresses_to_variant (addrs);
-	g_ptr_array_unref (addrs);
-
-	return ret;
+	return nm_utils_ip_addresses_to_variant (addrs);
 }
 
 static gboolean
@@ -486,18 +492,19 @@ ip4_routes_set (NMSetting  *setting,
 }
 
 static GVariant *
-ip4_route_data_get (NMSetting    *setting,
+ip4_route_data_get (const NMSettInfoSetting *sett_info,
+                    guint property_idx,
                     NMConnection *connection,
-                    const char   *property)
+                    NMSetting *setting,
+                    NMConnectionSerializationFlags flags)
 {
-	GPtrArray *routes;
-	GVariant *ret;
+	gs_unref_ptrarray GPtrArray *routes = NULL;
+
+	if (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+		return NULL;
 
 	g_object_get (setting, NM_SETTING_IP_CONFIG_ROUTES, &routes, NULL);
-	ret = nm_utils_ip_routes_to_variant (routes);
-	g_ptr_array_unref (routes);
-
-	return ret;
+	return nm_utils_ip_routes_to_variant (routes);
 }
 
 static gboolean

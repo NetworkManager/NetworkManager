@@ -949,17 +949,22 @@ compare_property (NMSetting *setting,
 /*****************************************************************************/
 
 static GVariant *
-nm_setting_wireless_get_security (NMSetting    *setting,
+nm_setting_wireless_get_security (const NMSettInfoSetting *sett_info,
+                                  guint property_idx,
                                   NMConnection *connection,
-                                  const char   *property_name)
+                                  NMSetting *setting,
+                                  NMConnectionSerializationFlags flags)
 {
+	if (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+		return NULL;
+
 	if (!connection)
 		return NULL;
 
-	if (nm_connection_get_setting_wireless_security (connection))
-		return g_variant_new_string (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
-	else
+	if (!nm_connection_get_setting_wireless_security (connection))
 		return NULL;
+
+	return g_variant_new_string (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 }
 
 /**

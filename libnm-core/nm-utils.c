@@ -4234,13 +4234,18 @@ _nm_utils_hwaddr_cloned_not_set (NMSetting *setting,
 }
 
 GVariant *
-_nm_utils_hwaddr_cloned_data_synth (NMSetting *setting,
+_nm_utils_hwaddr_cloned_data_synth (const NMSettInfoSetting *sett_info,
+                                    guint property_idx,
                                     NMConnection *connection,
-                                    const char *property)
+                                    NMSetting *setting,
+                                    NMConnectionSerializationFlags flags)
 {
 	gs_free char *addr = NULL;
 
-	nm_assert (nm_streq0 (property, "assigned-mac-address"));
+	if (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+		return NULL;
+
+	nm_assert (nm_streq0 (sett_info->property_infos[property_idx].name, "assigned-mac-address"));
 
 	g_object_get (setting,
 	              "cloned-mac-address",
@@ -4261,7 +4266,9 @@ _nm_utils_hwaddr_cloned_data_synth (NMSetting *setting,
 	 * To preserve that behavior, serialize "" as NULL.
 	 */
 
-	return addr && addr[0] ? g_variant_new_string (addr) : NULL;
+	return addr && addr[0]
+	       ? g_variant_new_take_string (g_steal_pointer (&addr))
+	       : NULL;
 }
 
 gboolean
