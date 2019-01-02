@@ -76,7 +76,7 @@ _nm_log_get_max_level_realm (void)
 	if (nm_logging_enabled (_nm_l, LOGD_SYSTEMD)) { \
 		const char *_nm_location = strrchr ((""file), '/'); \
 		\
-		_nm_log_impl (_nm_location ? _nm_location + 1 : (""file), (line), (func), _nm_l, LOGD_DHCP, _nm_e, NULL, NULL, ("%s"format), "libsystemd: ", ## __VA_ARGS__); \
+		_nm_log_impl (_nm_location ? _nm_location + 1 : (""file), (line), (func), _nm_l, LOGD_SYSTEMD, _nm_e, NULL, NULL, ("%s"format), "libsystemd: ", ## __VA_ARGS__); \
 	} \
 	(_nm_e > 0 ? -_nm_e : _nm_e); \
 })

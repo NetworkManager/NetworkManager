@@ -378,7 +378,7 @@ _clear_connections_cached_list (NMSettingsPrivate *priv)
  * @out_len: (out): (allow-none): returns the number of returned
  *   connections.
  *
- * Returns: (transfer-none): a list of NMSettingsConnections. The list is
+ * Returns: (transfer none): a list of NMSettingsConnections. The list is
  * unsorted and NULL terminated. The result is never %NULL, in case of no
  * connections, it returns an empty list.
  * The returned list is cached internally, only valid until the next

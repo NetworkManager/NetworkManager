@@ -90,4 +90,3 @@ const char *nm_keyfile_key_decode (const char *key,
                                    char **out_to_free);
 
 #endif  /* __NM_KEYFILE_UTILS_H__ */
-
