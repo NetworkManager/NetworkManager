@@ -4385,18 +4385,18 @@ _log_dbg_sysctl_set_impl (NMPlatform *platform, const char *pathid, int dirfd, c
 	if (nm_utils_file_get_contents (dirfd, path, 1*1024*1024,
 	                                NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
 	                                &contents, NULL, &error) < 0) {
-		_LOGD ("sysctl: setting '%s' to '%s' (current value cannot be read: %s)", pathid, value_escaped, error->message);
+		_LOGD ("sysctl: setting '%s' to '%s' (current value cannot be read: %s)", pathid ?: path, value_escaped, error->message);
 		g_clear_error (&error);
 		return;
 	}
 
 	g_strstrip (contents);
 	if (nm_streq (contents, value))
-		_LOGD ("sysctl: setting '%s' to '%s' (current value is identical)", pathid, value_escaped);
+		_LOGD ("sysctl: setting '%s' to '%s' (current value is identical)", pathid ?: path, value_escaped);
 	else {
 		gs_free char *contents_escaped = g_strescape (contents, NULL);
 
-		_LOGD ("sysctl: setting '%s' to '%s' (current value is '%s')", pathid, value_escaped, contents_escaped);
+		_LOGD ("sysctl: setting '%s' to '%s' (current value is '%s')", pathid ?: path, value_escaped, contents_escaped);
 	}
 	g_free (contents);
 }
