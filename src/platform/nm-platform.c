@@ -623,14 +623,14 @@ nm_platform_sysctl_get_int_checked (NMPlatform *self,
 /*****************************************************************************/
 
 char *
-nm_platform_sysctl_ip_conf_get (NMPlatform *platform,
+nm_platform_sysctl_ip_conf_get (NMPlatform *self,
                                 int addr_family,
                                 const char *ifname,
                                 const char *property)
 {
 	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 
-	return nm_platform_sysctl_get (platform,
+	return nm_platform_sysctl_get (self,
 	                               NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (addr_family,
 	                                                                                         buf,
 	                                                                                         ifname,
@@ -638,7 +638,7 @@ nm_platform_sysctl_ip_conf_get (NMPlatform *platform,
 }
 
 gint64
-nm_platform_sysctl_ip_conf_get_int_checked (NMPlatform *platform,
+nm_platform_sysctl_ip_conf_get_int_checked (NMPlatform *self,
                                             int addr_family,
                                             const char *ifname,
                                             const char *property,
@@ -649,7 +649,7 @@ nm_platform_sysctl_ip_conf_get_int_checked (NMPlatform *platform,
 {
 	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 
-	return nm_platform_sysctl_get_int_checked (platform,
+	return nm_platform_sysctl_get_int_checked (self,
 	                                           NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (addr_family,
 	                                                                                                     buf,
 	                                                                                                     ifname,
@@ -661,7 +661,7 @@ nm_platform_sysctl_ip_conf_get_int_checked (NMPlatform *platform,
 }
 
 gboolean
-nm_platform_sysctl_ip_conf_set (NMPlatform *platform,
+nm_platform_sysctl_ip_conf_set (NMPlatform *self,
                                 int addr_family,
                                 const char *ifname,
                                 const char *property,
@@ -669,7 +669,7 @@ nm_platform_sysctl_ip_conf_set (NMPlatform *platform,
 {
 	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 
-	return nm_platform_sysctl_set (platform,
+	return nm_platform_sysctl_set (self,
 	                               NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (addr_family,
 	                                                                                         buf,
 	                                                                                         ifname,
@@ -678,7 +678,7 @@ nm_platform_sysctl_ip_conf_set (NMPlatform *platform,
 }
 
 gboolean
-nm_platform_sysctl_ip_conf_set_int64 (NMPlatform *platform,
+nm_platform_sysctl_ip_conf_set_int64 (NMPlatform *self,
                                       int addr_family,
                                       const char *ifname,
                                       const char *property,
@@ -687,7 +687,7 @@ nm_platform_sysctl_ip_conf_set_int64 (NMPlatform *platform,
 	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 	char s[64];
 
-	return nm_platform_sysctl_set (platform,
+	return nm_platform_sysctl_set (self,
 	                               NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (addr_family,
 	                                                                                         buf,
 	                                                                                         ifname,
@@ -3402,21 +3402,21 @@ nm_platform_ethtool_set_features (NMPlatform *self,
 /*****************************************************************************/
 
 const NMDedupMultiHeadEntry *
-nm_platform_lookup_all (NMPlatform *platform,
+nm_platform_lookup_all (NMPlatform *self,
                         NMPCacheIdType cache_id_type,
                         const NMPObject *obj)
 {
-	return nmp_cache_lookup_all (nm_platform_get_cache (platform),
+	return nmp_cache_lookup_all (nm_platform_get_cache (self),
 	                             cache_id_type,
 	                             obj);
 }
 
 const NMDedupMultiEntry *
-nm_platform_lookup_entry (NMPlatform *platform,
+nm_platform_lookup_entry (NMPlatform *self,
                           NMPCacheIdType cache_id_type,
                           const NMPObject *obj)
 {
-	return nmp_cache_lookup_entry_with_idx_type (nm_platform_get_cache (platform),
+	return nmp_cache_lookup_entry_with_idx_type (nm_platform_get_cache (self),
 	                                             cache_id_type,
 	                                             obj);
 }
