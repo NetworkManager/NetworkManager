@@ -1196,7 +1196,7 @@ nm_g_object_set_property_boolean (GObject *object,
 
 gboolean
 nm_g_object_set_property_uint (GObject *object,
-                               const char   *property_name,
+                               const char *property_name,
                                guint value,
                                GError **error)
 {

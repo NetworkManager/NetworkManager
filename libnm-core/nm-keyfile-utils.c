@@ -48,7 +48,7 @@ nm_keyfile_plugin_get_alias_for_setting_name (const char *setting_name)
 	g_return_val_if_fail (setting_name != NULL, NULL);
 
 	for (i = 0; i < G_N_ELEMENTS (alias_list); i++) {
-		if (strcmp (setting_name, alias_list[i].setting) == 0)
+		if (nm_streq (setting_name, alias_list[i].setting))
 			return alias_list[i].alias;
 	}
 	return NULL;
@@ -62,7 +62,7 @@ nm_keyfile_plugin_get_setting_name_for_alias (const char *alias)
 	g_return_val_if_fail (alias != NULL, NULL);
 
 	for (i = 0; i < G_N_ELEMENTS (alias_list); i++) {
-		if (strcmp (alias, alias_list[i].alias) == 0)
+		if (nm_streq (alias, alias_list[i].alias))
 			return alias_list[i].setting;
 	}
 	return NULL;
