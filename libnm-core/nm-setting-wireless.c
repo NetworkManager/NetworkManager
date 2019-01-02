@@ -953,6 +953,9 @@ nm_setting_wireless_get_security (NMSetting    *setting,
                                   NMConnection *connection,
                                   const char   *property_name)
 {
+	if (!connection)
+		return NULL;
+
 	if (nm_connection_get_setting_wireless_security (connection))
 		return g_variant_new_string (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 	else

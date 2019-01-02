@@ -174,13 +174,6 @@ NMSettingPriority _nm_setting_get_setting_priority (NMSetting *setting);
 
 gboolean _nm_setting_get_property (NMSetting *setting, const char *name, GValue *value);
 
-/* NM_CONNECTION_SERIALIZE_NO_SYNTH: This flag is passed to _nm_setting_to_dbus()
- * by nm_setting_to_string() to let it know that it shouldn't serialize the
- * synthetic properties. It wouldn't be able to do so, since the full connection
- * is not available, only the setting alone.
- */
-#define NM_CONNECTION_SERIALIZE_NO_SYNTH ((NMConnectionSerializationFlags) 0x80000000)
-
 /*****************************************************************************/
 
 GHashTable *_nm_setting_gendata_hash (NMSetting *setting,
