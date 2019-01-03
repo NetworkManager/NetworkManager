@@ -697,18 +697,70 @@ nm_utils_error_set_literal (GError **error, int error_code, const char *literal)
 /*****************************************************************************/
 
 gboolean nm_g_object_set_property (GObject *object,
-                                   const char   *property_name,
+                                   const char *property_name,
                                    const GValue *value,
                                    GError **error);
 
+gboolean nm_g_object_set_property_string (GObject *object,
+                                          const char *property_name,
+                                          const char *value,
+                                          GError **error);
+
+gboolean nm_g_object_set_property_string_static (GObject *object,
+                                                 const char *property_name,
+                                                 const char *value,
+                                                 GError **error);
+
+gboolean nm_g_object_set_property_string_take (GObject *object,
+                                               const char *property_name,
+                                               char *value,
+                                               GError **error);
+
 gboolean nm_g_object_set_property_boolean (GObject *object,
-                                           const char   *property_name,
+                                           const char *property_name,
                                            gboolean value,
                                            GError **error);
 
+gboolean nm_g_object_set_property_char (GObject *object,
+                                        const char *property_name,
+                                        gint8 value,
+                                        GError **error);
+
+gboolean nm_g_object_set_property_uchar (GObject *object,
+                                         const char *property_name,
+                                         guint8 value,
+                                         GError **error);
+
+gboolean nm_g_object_set_property_int (GObject *object,
+                                       const char *property_name,
+                                       int value,
+                                       GError **error);
+
+gboolean nm_g_object_set_property_int64 (GObject *object,
+                                         const char *property_name,
+                                         gint64 value,
+                                         GError **error);
+
 gboolean nm_g_object_set_property_uint (GObject *object,
-                                        const char   *property_name,
+                                        const char *property_name,
                                         guint value,
+                                        GError **error);
+
+gboolean nm_g_object_set_property_uint64 (GObject *object,
+                                          const char *property_name,
+                                          guint64 value,
+                                          GError **error);
+
+gboolean nm_g_object_set_property_flags (GObject *object,
+                                         const char *property_name,
+                                         GType gtype,
+                                         guint value,
+                                         GError **error);
+
+gboolean nm_g_object_set_property_enum (GObject *object,
+                                        const char *property_name,
+                                        GType gtype,
+                                        int value,
                                         GError **error);
 
 GParamSpec *nm_g_object_class_find_property_from_gtype (GType gtype,

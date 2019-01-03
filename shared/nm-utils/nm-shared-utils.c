@@ -1108,7 +1108,7 @@ nm_utils_error_is_notfound (GError *error)
  */
 gboolean
 nm_g_object_set_property (GObject *object,
-                          const char   *property_name,
+                          const char *property_name,
                           const GValue *value,
                           GError **error)
 {
@@ -1181,17 +1181,90 @@ nm_g_object_set_property (GObject *object,
 	return TRUE;
 }
 
+#define _set_property(object, property_name, gtype, gtype_set, value, error) \
+	G_STMT_START { \
+		nm_auto_unset_gvalue GValue gvalue = { 0 }; \
+		\
+		g_value_init (&gvalue, gtype); \
+		gtype_set (&gvalue, (value)); \
+		return nm_g_object_set_property ((object), (property_name), &gvalue, (error)); \
+	} G_STMT_END
+
+gboolean
+nm_g_object_set_property_string (GObject *object,
+                                 const char *property_name,
+                                 const char *value,
+                                 GError **error)
+{
+	_set_property (object, property_name, G_TYPE_STRING, g_value_set_string, value, error);
+}
+
+gboolean
+nm_g_object_set_property_string_static (GObject *object,
+                                        const char *property_name,
+                                        const char *value,
+                                        GError **error)
+{
+	_set_property (object, property_name, G_TYPE_STRING, g_value_set_static_string, value, error);
+}
+
+gboolean
+nm_g_object_set_property_string_take (GObject *object,
+                                      const char *property_name,
+                                      char *value,
+                                      GError **error)
+{
+	_set_property (object, property_name, G_TYPE_STRING, g_value_take_string, value, error);
+}
+
 gboolean
 nm_g_object_set_property_boolean (GObject *object,
-                                  const char   *property_name,
+                                  const char *property_name,
                                   gboolean value,
                                   GError **error)
 {
-	nm_auto_unset_gvalue GValue gvalue = { 0 };
+	_set_property (object, property_name, G_TYPE_BOOLEAN, g_value_set_boolean, !!value, error);
+}
 
-	g_value_init (&gvalue, G_TYPE_BOOLEAN);
-	g_value_set_boolean (&gvalue, !!value);
-	return nm_g_object_set_property (object, property_name, &gvalue, error);
+gboolean
+nm_g_object_set_property_char (GObject *object,
+                               const char *property_name,
+                               gint8 value,
+                               GError **error)
+{
+	/* glib says about G_TYPE_CHAR:
+	 *
+	 * The type designated by G_TYPE_CHAR is unconditionally an 8-bit signed integer.
+	 *
+	 * This is always a (signed!) char. */
+	_set_property (object, property_name, G_TYPE_CHAR, g_value_set_schar, value, error);
+}
+
+gboolean
+nm_g_object_set_property_uchar (GObject *object,
+                                const char *property_name,
+                                guint8 value,
+                                GError **error)
+{
+	_set_property (object, property_name, G_TYPE_UCHAR, g_value_set_uchar, value, error);
+}
+
+gboolean
+nm_g_object_set_property_int (GObject *object,
+                              const char *property_name,
+                              int value,
+                              GError **error)
+{
+	_set_property (object, property_name, G_TYPE_INT, g_value_set_int, value, error);
+}
+
+gboolean
+nm_g_object_set_property_int64 (GObject *object,
+                                const char *property_name,
+                                gint64 value,
+                                GError **error)
+{
+	_set_property (object, property_name, G_TYPE_INT64, g_value_set_int64, value, error);
 }
 
 gboolean
@@ -1200,11 +1273,44 @@ nm_g_object_set_property_uint (GObject *object,
                                guint value,
                                GError **error)
 {
-	nm_auto_unset_gvalue GValue gvalue = { 0 };
+	_set_property (object, property_name, G_TYPE_UINT, g_value_set_uint, value, error);
+}
 
-	g_value_init (&gvalue, G_TYPE_UINT);
-	g_value_set_uint (&gvalue, value);
-	return nm_g_object_set_property (object, property_name, &gvalue, error);
+gboolean
+nm_g_object_set_property_uint64 (GObject *object,
+                                 const char *property_name,
+                                 guint64 value,
+                                 GError **error)
+{
+	_set_property (object, property_name, G_TYPE_UINT64, g_value_set_uint64, value, error);
+}
+
+gboolean
+nm_g_object_set_property_flags (GObject *object,
+                                const char *property_name,
+                                GType gtype,
+                                guint value,
+                                GError **error)
+{
+	nm_assert (({
+	                nm_auto_unref_gtypeclass GTypeClass *gtypeclass = g_type_class_ref (gtype);
+	                G_IS_FLAGS_CLASS (gtypeclass);
+	           }));
+	_set_property (object, property_name, gtype, g_value_set_flags, value, error);
+}
+
+gboolean
+nm_g_object_set_property_enum (GObject *object,
+                               const char *property_name,
+                               GType gtype,
+                               int value,
+                               GError **error)
+{
+	nm_assert (({
+	                nm_auto_unref_gtypeclass GTypeClass *gtypeclass = g_type_class_ref (gtype);
+	                G_IS_ENUM_CLASS (gtypeclass);
+	           }));
+	_set_property (object, property_name, gtype, g_value_set_enum, value, error);
 }
 
 GParamSpec *
