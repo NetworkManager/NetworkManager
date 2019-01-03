@@ -179,8 +179,6 @@ nm_keyfile_plugin_kf_set_##stype (GKeyFile *kf, \
 }
 
 DEFINE_KF_WRAPPER(string, char*, const char*);
-DEFINE_KF_WRAPPER(integer, int, int);
-DEFINE_KF_WRAPPER(uint64, guint64, guint64);
 DEFINE_KF_WRAPPER(boolean, gboolean, gboolean);
 DEFINE_KF_WRAPPER(value, char*, const char*);
 

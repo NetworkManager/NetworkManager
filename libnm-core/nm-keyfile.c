@@ -1384,55 +1384,119 @@ cert_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 	g_object_set (setting, key, bytes, NULL);
 }
 
+static int
+_parity_from_char (int ch)
+{
+#if NM_MORE_ASSERTS > 5
+	{
+		static char check = 0;
+
+		if (check == 0) {
+			nm_auto_unref_gtypeclass GEnumClass *klass = g_type_class_ref (NM_TYPE_SETTING_SERIAL_PARITY);
+			guint i;
+
+			check = 1;
+
+			/* In older versions, parity was G_TYPE_CHAR/gint8, and the character
+			 * value was stored as integer.
+			 * For example parity=69 equals parity=E, meaning NM_SETTING_SERIAL_PARITY_EVEN.
+			 *
+			 * That means, certain values are reserved. Assert that these numbers
+			 * are not reused when we extend NMSettingSerialParity enum.
+			 * Actually, since NM_SETTING_SERIAL_PARITY is g_param_spec_enum(),
+			 * we anyway cannot extend the enum without breaking API...
+			 *
+			 * [1] commit "a91e60902e libnm-core: make NMSettingSerial:parity an enum"
+			 * [2] https://cgit.freedesktop.org/NetworkManager/NetworkManager/commit/?id=a91e60902eabae1de93d61323dae6ac894b5d40f
+			 */
+			g_assert (G_IS_ENUM_CLASS (klass));
+			for (i = 0; i < klass->n_values; i++) {
+				const GEnumValue *v = &klass->values[i];
+				int num = v->value;
+
+				g_assert (_parity_from_char (num) == -1);
+				g_assert (!NM_IN_SET (num, 'e', 'E', 'o', 'O', 'n', 'N'));
+			}
+		}
+	}
+#endif
+
+	switch (ch) {
+	case 'E':
+	case 'e':
+		return NM_SETTING_SERIAL_PARITY_EVEN;
+	case 'O':
+	case 'o':
+		return NM_SETTING_SERIAL_PARITY_ODD;
+	case 'N':
+	case 'n':
+		return NM_SETTING_SERIAL_PARITY_NONE;
+	}
+
+	return -1;
+}
+
 static void
 parity_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
 	const char *setting_name = nm_setting_get_name (setting);
-	NMSettingSerialParity parity;
-	int int_val;
-	gs_free char *str_val = NULL;
+	gs_free_error GError *err = NULL;
+	int parity;
+	gs_free char *tmp_str = NULL;
+	gint64 i64;
 
 	/* Keyfile traditionally stored this as the ASCII value for 'E', 'o', or 'n'.
 	 * We now accept either that or the (case-insensitive) character itself (but
 	 * still always write it the old way, for backward compatibility).
 	 */
-	int_val = nm_keyfile_plugin_kf_get_integer (info->keyfile, setting_name, key, NULL);
-	if (!int_val) {
-		str_val = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key, NULL);
-		if (str_val) {
-			if (str_val[0] && !str_val[1])
-				int_val = str_val[0];
-			else {
-				/* This will hit the warning below */
-				int_val = 'X';
-			}
+	tmp_str = nm_keyfile_plugin_kf_get_value (info->keyfile, setting_name, key, &err);
+	if (err)
+		goto out_err;
+
+	if (   tmp_str
+	    && tmp_str[0] != '\0'
+	    && tmp_str[1] == '\0') {
+		/* the ASCII characters like 'E' are taken directly... */
+		parity = _parity_from_char (tmp_str[0]);
+		if (parity >= 0)
+			goto parity_good;
+	}
+
+	i64 = _nm_utils_ascii_str_to_int64 (tmp_str, 0, G_MININT, G_MAXINT, G_MININT64);
+	if (   i64 != G_MININT64
+	    && errno == 0) {
+
+		if ((parity = _parity_from_char (i64)) >= 0) {
+			/* another oddity: the string is a valid number. However, if the numeric values
+			 * is one of the supported ASCII codes, accept it (like 69 for 'E').
+			 */
+			goto parity_good;
 		}
+
+		/* Finally, take the numeric value as is. */
+		parity = i64;
+		goto parity_good;
 	}
 
-	if (!int_val)
-		return;
+	handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+	             _("invalid parity value '%s'"),
+	             tmp_str ?: "");
+	return;
 
-	switch (int_val) {
-	case 'E':
-	case 'e':
-		parity = NM_SETTING_SERIAL_PARITY_EVEN;
-		break;
-	case 'O':
-	case 'o':
-		parity = NM_SETTING_SERIAL_PARITY_ODD;
-		break;
-	case 'N':
-	case 'n':
-		parity = NM_SETTING_SERIAL_PARITY_NONE;
-		break;
-	default:
-		handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-		             _("invalid parity value '%s'"),
-		             str_val ?: "");
+parity_good:
+	nm_g_object_set_property_enum (G_OBJECT (setting), key, NM_TYPE_SETTING_SERIAL_PARITY, parity, &err);
+
+out_err:
+	if (!err)
+		return;
+	if (   err->domain == G_KEY_FILE_ERROR
+	    && NM_IN_SET (err->code, G_KEY_FILE_ERROR_GROUP_NOT_FOUND,
+	                             G_KEY_FILE_ERROR_KEY_NOT_FOUND)) {
+		/* ignore such errors. The key is not present. */
 		return;
 	}
-
-	g_object_set (setting, key, parity, NULL);
+	handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+	             _("invalid setting: %s"), err->message);
 }
 
 static void
@@ -2531,11 +2595,14 @@ read_one_setting_value (NMSetting *setting,
 {
 	KeyfileReaderInfo *info = user_data;
 	GKeyFile *keyfile = info->keyfile;
-	const char *setting_name;
-	int errsv;
-	GType type;
 	gs_free_error GError *err = NULL;
 	const ParseInfoProperty *pip;
+	gs_free char *tmp_str = NULL;
+	const char *setting_name;
+	GType type;
+	guint64 u64;
+	gint64 i64;
+	int errsv;
 
 	if (info->error)
 		return;
@@ -2581,62 +2648,84 @@ read_one_setting_value (NMSetting *setting,
 	if (type == G_TYPE_STRING) {
 		gs_free char *str_val = NULL;
 
-		str_val = nm_keyfile_plugin_kf_get_string (keyfile, setting_name, key, NULL);
-		g_object_set (setting, key, str_val, NULL);
+		str_val = nm_keyfile_plugin_kf_get_string (keyfile, setting_name, key, &err);
+		if (!err)
+			nm_g_object_set_property_string_take (G_OBJECT (setting), key, g_steal_pointer (&str_val), &err);
 	} else if (type == G_TYPE_UINT) {
-		int int_val;
+		tmp_str = nm_keyfile_plugin_kf_get_value (keyfile, setting_name, key, &err);
+		if (!err) {
+			u64 = _nm_utils_ascii_str_to_uint64 (tmp_str, 0, 0, G_MAXUINT, G_MAXUINT64);
 
-		int_val = nm_keyfile_plugin_kf_get_integer (keyfile, setting_name, key, NULL);
-		if (int_val < 0) {
-			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-			                  _("invalid negative value (%i)"),
-			                  int_val))
-				return;
+			if (   u64 == G_MAXUINT64
+			    && (errsv = errno) != 0) {
+				/* older versions of NetworkManager wrote values larger than G_MAXINT as negative values.
+				 * Try to interpret it that way... */
+				i64 = _nm_utils_ascii_str_to_int64 (tmp_str, 0, G_MININT, -1, 0);
+				if (i64 != 0) {
+					u64 = ((guint) ((int) i64));
+					nm_assert (u64 > G_MAXINT && u64 <= G_MAXUINT);
+				} else
+					errno = errsv;
+			}
+
+			if (   u64 == G_MAXUINT64
+			    && errno != 0) {
+				g_set_error_literal (&err, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE,
+				                     _("value cannot be interpreted as integer"));
+			} else
+				nm_g_object_set_property_uint (G_OBJECT (setting), key, u64, &err);
 		}
-		g_object_set (setting, key, int_val, NULL);
 	} else if (type == G_TYPE_INT) {
-		int int_val;
-
-		int_val = nm_keyfile_plugin_kf_get_integer (keyfile, setting_name, key, NULL);
-		g_object_set (setting, key, int_val, NULL);
+		tmp_str = nm_keyfile_plugin_kf_get_value (keyfile, setting_name, key, &err);
+		if (!err) {
+			i64 = _nm_utils_ascii_str_to_int64 (tmp_str, 0, G_MININT, G_MAXINT, G_MININT64);
+			if (   i64 == G_MININT64
+			    && errno != 0) {
+				g_set_error_literal (&err, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE,
+				                     _("value cannot be interpreted as integer"));
+			} else
+				nm_g_object_set_property_int (G_OBJECT (setting), key, i64, &err);
+		}
 	} else if (type == G_TYPE_BOOLEAN) {
 		gboolean bool_val;
 
-		bool_val = nm_keyfile_plugin_kf_get_boolean (keyfile, setting_name, key, NULL);
-		g_object_set (setting, key, bool_val, NULL);
+		bool_val = nm_keyfile_plugin_kf_get_boolean (keyfile, setting_name, key, &err);
+		if (!err)
+			nm_g_object_set_property_boolean (G_OBJECT (setting), key, bool_val, &err);
 	} else if (type == G_TYPE_CHAR) {
-		int int_val;
-
-		int_val = nm_keyfile_plugin_kf_get_integer (keyfile, setting_name, key, NULL);
-		if (int_val < G_MININT8 || int_val > G_MAXINT8) {
-			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-			                  _("invalid char value (%i)"),
-			                  int_val))
-				return;
+		tmp_str = nm_keyfile_plugin_kf_get_value (keyfile, setting_name, key, &err);
+		if (!err) {
+			/* As documented by glib, G_TYPE_CHAR is really a (signed!) gint8. */
+			i64 = _nm_utils_ascii_str_to_int64 (tmp_str, 0, G_MININT8, G_MAXINT8, G_MININT64);
+			if (   i64 == G_MININT64
+			    && errno != 0) {
+				g_set_error_literal (&err, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE,
+				                     _("value cannot be interpreted as integer"));
+			} else
+				nm_g_object_set_property_char (G_OBJECT (setting), key, i64, &err);
 		}
-
-		g_object_set (setting, key, int_val, NULL);
 	} else if (type == G_TYPE_UINT64) {
-		gs_free char *tmp_str = NULL;
-		guint64 uint_val;
-
-		tmp_str = nm_keyfile_plugin_kf_get_value (keyfile, setting_name, key, NULL);
-		uint_val = g_ascii_strtoull (tmp_str, NULL, 10);
-		g_object_set (setting, key, uint_val, NULL);
+		tmp_str = nm_keyfile_plugin_kf_get_value (keyfile, setting_name, key, &err);
+		if (!err) {
+			u64 = _nm_utils_ascii_str_to_uint64 (tmp_str, 0, 0, G_MAXUINT64, G_MAXUINT64);
+			if (   u64 == G_MAXUINT64
+			    && errno != 0) {
+				g_set_error_literal (&err, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE,
+				                     _("value cannot be interpreted as integer"));
+			} else
+				nm_g_object_set_property_uint64 (G_OBJECT (setting), key, u64, &err);
+		}
 	} else if (type == G_TYPE_INT64) {
-		gs_free char *tmp_str = NULL;
-		gint64 int_val;
-
-		tmp_str = nm_keyfile_plugin_kf_get_value (keyfile, setting_name, key, NULL);
-		int_val = _nm_utils_ascii_str_to_int64 (tmp_str, 10, G_MININT64, G_MAXINT64, 0);
-		errsv = errno;
-		if (errsv) {
-			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-			                  _("invalid int64 value (%s)"),
-			                  tmp_str))
-				return;
-		} else
-			g_object_set (setting, key, int_val, NULL);
+		tmp_str = nm_keyfile_plugin_kf_get_value (keyfile, setting_name, key, &err);
+		if (!err) {
+			i64 = _nm_utils_ascii_str_to_int64 (tmp_str, 0, G_MININT64, G_MAXINT64, G_MAXINT64);
+			if (   i64 == G_MAXINT64
+			    && errno != 0) {
+				g_set_error_literal (&err, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE,
+				                     _("value cannot be interpreted as integer"));
+			} else
+				nm_g_object_set_property_int64 (G_OBJECT (setting), key, i64, &err);
+		}
 	} else if (type == G_TYPE_BYTES) {
 		gs_free int *tmp = NULL;
 		GByteArray *array;
@@ -2679,31 +2768,39 @@ read_one_setting_value (NMSetting *setting,
 	} else if (type == G_TYPE_ARRAY) {
 		read_array_of_uint (keyfile, setting, key);
 	} else if (G_VALUE_HOLDS_FLAGS (value)) {
-		guint64 uint_val;
-
-		/* Flags are guint but GKeyFile has no uint reader, just uint64 */
-		uint_val = nm_keyfile_plugin_kf_get_uint64 (keyfile, setting_name, key, &err);
+		tmp_str = nm_keyfile_plugin_kf_get_value (keyfile, setting_name, key, &err);
 		if (!err) {
-			if (uint_val <= G_MAXUINT)
-				g_object_set (setting, key, (guint) uint_val, NULL);
-			else {
-				if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-				                  _("too large FLAGS property '%s' (%llu)"),
-				                  G_VALUE_TYPE_NAME (value), (unsigned long long) uint_val))
-					return;
-			}
+			u64 = _nm_utils_ascii_str_to_uint64 (tmp_str, 0, 0, G_MAXUINT, G_MAXUINT64);
+			if (   u64 == G_MAXUINT64
+			    && errno != 0) {
+				g_set_error_literal (&err, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE,
+				                     _("value cannot be interpreted as integer"));
+			} else
+				nm_g_object_set_property_flags (G_OBJECT (setting), key, type, u64, &err);
 		}
 	} else if (G_VALUE_HOLDS_ENUM (value)) {
-		int int_val;
+		tmp_str = nm_keyfile_plugin_kf_get_value (keyfile, setting_name, key, &err);
+		if (!err) {
+			i64 = _nm_utils_ascii_str_to_int64 (tmp_str, 0, G_MININT, G_MAXINT, G_MAXINT64);
+			if (   i64 == G_MAXINT64
+			    && errno != 0) {
+				g_set_error_literal (&err, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE,
+				                     _("value cannot be interpreted as integer"));
+			} else
+				nm_g_object_set_property_enum (G_OBJECT (setting), key, type, i64, &err);
+		}
+	} else
+		g_return_if_reached ();
 
-		int_val = nm_keyfile_plugin_kf_get_integer (keyfile, setting_name, key, &err);
-		if (!err)
-			g_object_set (setting, key, (int) int_val, NULL);
-	} else {
-		if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-		                 _("unhandled setting property type '%s'"),
-		                 G_VALUE_TYPE_NAME (value)))
-			return;
+	if (err) {
+		if (   err->domain == G_KEY_FILE_ERROR
+		    && NM_IN_SET (err->code, G_KEY_FILE_ERROR_GROUP_NOT_FOUND,
+		                             G_KEY_FILE_ERROR_KEY_NOT_FOUND)) {
+			/* ignore such errors. The key is not present. */
+		} else {
+			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+			             _("invalid setting: %s"), err->message);
+		}
 	}
 }
 
@@ -2990,6 +3087,7 @@ write_setting_value (NMSetting *setting,
 	GType type;
 	const ParseInfoProperty *pip;
 	GParamSpec *pspec;
+	char numstr[64];
 
 	if (info->error)
 		return;
@@ -3051,24 +3149,26 @@ write_setting_value (NMSetting *setting,
 		str = g_value_get_string (value);
 		if (str)
 			nm_keyfile_plugin_kf_set_string (info->keyfile, setting_name, key, str);
-	} else if (type == G_TYPE_UINT)
-		nm_keyfile_plugin_kf_set_integer (info->keyfile, setting_name, key, (int) g_value_get_uint (value));
-	else if (type == G_TYPE_INT)
-		nm_keyfile_plugin_kf_set_integer (info->keyfile, setting_name, key, g_value_get_int (value));
-	else if (type == G_TYPE_UINT64) {
-		char numstr[30];
-
+	} else if (type == G_TYPE_UINT) {
+		nm_sprintf_buf (numstr, "%u", g_value_get_uint (value));
+		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
+	} else if (type == G_TYPE_INT) {
+		nm_sprintf_buf (numstr, "%d", g_value_get_int (value));
+		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
+	} else if (type == G_TYPE_UINT64) {
 		nm_sprintf_buf (numstr, "%" G_GUINT64_FORMAT, g_value_get_uint64 (value));
 		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
 	} else if (type == G_TYPE_INT64) {
-		char numstr[30];
-
 		nm_sprintf_buf (numstr, "%" G_GINT64_FORMAT, g_value_get_int64 (value));
 		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
 	} else if (type == G_TYPE_BOOLEAN) {
-		nm_keyfile_plugin_kf_set_boolean (info->keyfile, setting_name, key, g_value_get_boolean (value));
+		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key,
+		                                  g_value_get_boolean (value)
+		                                ? "true"
+		                                : "false");
 	} else if (type == G_TYPE_CHAR) {
-		nm_keyfile_plugin_kf_set_integer (info->keyfile, setting_name, key, (int) g_value_get_schar (value));
+		nm_sprintf_buf (numstr, "%d", (int) g_value_get_schar (value));
+		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
 	} else if (type == G_TYPE_BYTES) {
 		GBytes *bytes;
 		const guint8 *data;
@@ -3089,12 +3189,13 @@ write_setting_value (NMSetting *setting,
 	} else if (type == G_TYPE_ARRAY) {
 		write_array_of_uint (info->keyfile, setting, key, value);
 	} else if (G_VALUE_HOLDS_FLAGS (value)) {
-		/* Flags are guint but GKeyFile has no uint reader, just uint64 */
-		nm_keyfile_plugin_kf_set_uint64 (info->keyfile, setting_name, key, (guint64) g_value_get_flags (value));
-	} else if (G_VALUE_HOLDS_ENUM (value))
-		nm_keyfile_plugin_kf_set_integer (info->keyfile, setting_name, key, (int) g_value_get_enum (value));
-	else
-		g_warn_if_reached ();
+		nm_sprintf_buf (numstr, "%u", g_value_get_flags (value));
+		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
+	} else if (G_VALUE_HOLDS_ENUM (value)) {
+		nm_sprintf_buf (numstr, "%d", g_value_get_enum (value));
+		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
+	} else
+		g_return_if_reached ();
 }
 
 GKeyFile *

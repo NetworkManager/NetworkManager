@@ -2078,7 +2078,7 @@ test_roundtrip_conversion (gconstpointer test_data)
 		                     UUID,
 		                     INTERFACE_NAME,
 		                       (ETH_MTU != 0)
-		                     ? nm_sprintf_bufa (100, "mtu=%d\n", (int) ETH_MTU)
+		                     ? nm_sprintf_bufa (100, "mtu=%u\n", ETH_MTU)
 		                     : ""));
 
 		g_ptr_array_add (kf_data_arr,
@@ -2106,7 +2106,7 @@ test_roundtrip_conversion (gconstpointer test_data)
 		                     UUID,
 		                     INTERFACE_NAME,
 		                       (ETH_MTU != 0)
-		                     ? nm_sprintf_bufa (100, "mtu=%u\n", ETH_MTU)
+		                     ? nm_sprintf_bufa (100, "mtu=%d\n", (int) ETH_MTU)
 		                     : ""));
 
 		break;
@@ -2140,17 +2140,6 @@ test_roundtrip_conversion (gconstpointer test_data)
 		case 0:
 			s_eth2 = NM_SETTING_WIRED (nm_connection_get_setting (con2, NM_TYPE_SETTING_WIRED));
 			g_assert (NM_IS_SETTING_WIRED (s_eth2));
-
-			if (   ETH_MTU > (guint32) G_MAXINT
-			    && kf_data_idx == 1) {
-				/* values > 2^21 get written as signed integers. When reading this back,
-				 * positive values are ignored. Patch the MTU in s_eth2. */
-				g_assert_cmpint (nm_setting_wired_get_mtu (s_eth2), ==, 0);
-				g_object_set (s_eth2,
-				              NM_SETTING_WIRED_MTU,
-				              ETH_MTU,
-				              NULL);
-			}
 
 			g_assert_cmpint (nm_setting_wired_get_mtu (s_eth), ==, ETH_MTU);
 			g_assert_cmpint (nm_setting_wired_get_mtu (s_eth2), ==, ETH_MTU);
