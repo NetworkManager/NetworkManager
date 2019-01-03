@@ -104,12 +104,6 @@ nm_setting_bridge_port_get_hairpin_mode (NMSettingBridgePort *setting)
 
 /*****************************************************************************/
 
-#define BR_MAX_PORT_PRIORITY 63
-#define BR_DEF_PRIORITY      32
-
-#define BR_MIN_PATH_COST     1
-#define BR_MAX_PATH_COST     65535
-
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -238,7 +232,7 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PRIORITY, "", "",
-		                    0, BR_MAX_PORT_PRIORITY, BR_DEF_PRIORITY,
+		                    0, NM_BR_PORT_MAX_PRIORITY, NM_BR_PORT_DEF_PRIORITY,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    NM_SETTING_PARAM_INFERRABLE |
@@ -261,7 +255,7 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 	g_object_class_install_property
 		(object_class, PROP_PATH_COST,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PATH_COST, "", "",
-		                    0, BR_MAX_PATH_COST, 100,
+		                    0, NM_BR_PORT_MAX_PATH_COST, 100,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
