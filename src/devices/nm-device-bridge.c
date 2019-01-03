@@ -171,8 +171,8 @@ typedef struct {
 	uint nm_min;
 	uint nm_max;
 	uint nm_default;
-	gboolean default_if_zero;
-	gboolean user_hz_compensate;
+	bool default_if_zero;
+	bool user_hz_compensate;
 } Option;
 
 static const Option master_options[] = {
