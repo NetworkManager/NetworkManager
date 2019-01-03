@@ -2078,7 +2078,7 @@ test_roundtrip_conversion (gconstpointer test_data)
 		                     UUID,
 		                     INTERFACE_NAME,
 		                       (ETH_MTU != 0)
-		                     ? nm_sprintf_bufa (100, "mtu=%d\n", (int) ETH_MTU)
+		                     ? nm_sprintf_bufa (100, "mtu=%u\n", ETH_MTU)
 		                     : ""));
 
 		g_ptr_array_add (kf_data_arr,
@@ -2106,7 +2106,7 @@ test_roundtrip_conversion (gconstpointer test_data)
 		                     UUID,
 		                     INTERFACE_NAME,
 		                       (ETH_MTU != 0)
-		                     ? nm_sprintf_bufa (100, "mtu=%u\n", ETH_MTU)
+		                     ? nm_sprintf_bufa (100, "mtu=%d\n", (int) ETH_MTU)
 		                     : ""));
 
 		break;
@@ -2143,8 +2143,13 @@ test_roundtrip_conversion (gconstpointer test_data)
 
 			if (   ETH_MTU > (guint32) G_MAXINT
 			    && kf_data_idx == 1) {
-				/* values > 2^21 get written as signed integers. When reading this back,
-				 * positive values are ignored. Patch the MTU in s_eth2. */
+				/* older versions wrote values > 2^21 as signed integers, but the reader would
+				 * always reject such negative values for G_TYPE_UINT.
+				 *
+				 * The test case kf_data_idx #1 still writes the values in the old style.
+				 * The behavior was fixed, but such values are still rejected as invalid.
+				 *
+				 * Patch the setting so that the comparison below succeeds are usual. */
 				g_assert_cmpint (nm_setting_wired_get_mtu (s_eth2), ==, 0);
 				g_object_set (s_eth2,
 				              NM_SETTING_WIRED_MTU,
