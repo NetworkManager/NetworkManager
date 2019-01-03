@@ -905,6 +905,16 @@ nmtst_rand_buf (GRand *rand, gpointer buffer, gsize buffer_length)
 	return buffer;
 }
 
+#define _nmtst_rand_select(uniq, v0, ...) \
+	({ \
+		typeof (v0) NM_UNIQ_T (UNIQ, uniq)[1 + NM_NARG (__VA_ARGS__)] = { (v0), __VA_ARGS__ }; \
+		\
+		NM_UNIQ_T (UNIQ, uniq)[nmtst_get_rand_int () % G_N_ELEMENTS (NM_UNIQ_T (UNIQ, uniq))]; \
+	})
+
+#define nmtst_rand_select(...) \
+	_nmtst_rand_select (NM_UNIQ, __VA_ARGS__)
+
 static inline void *
 nmtst_rand_perm (GRand *rand, void *dst, const void *src, gsize elmt_size, gsize n_elmt)
 {
