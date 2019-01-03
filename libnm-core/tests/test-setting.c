@@ -45,6 +45,77 @@
 
 /*****************************************************************************/
 
+/* converts @dict to a connection. In this case, @dict must be good, without warnings, so that
+ * NM_SETTING_PARSE_FLAGS_STRICT and NM_SETTING_PARSE_FLAGS_BEST_EFFORT yield the exact same results. */
+static NMConnection *
+_connection_new_from_dbus_strict (GVariant *dict,
+                                  gboolean normalize)
+{
+	gs_unref_object NMConnection *con_x_0 = NULL;
+	gs_unref_object NMConnection *con_x_s = NULL;
+	gs_unref_object NMConnection *con_x_e = NULL;
+	gs_unref_object NMConnection *con_n_0 = NULL;
+	gs_unref_object NMConnection *con_n_s = NULL;
+	gs_unref_object NMConnection *con_n_e = NULL;
+	gs_free_error GError *error = NULL;
+	guint i;
+
+	g_assert (g_variant_is_of_type (dict, NM_VARIANT_TYPE_CONNECTION));
+
+	con_x_0 = _nm_simple_connection_new_from_dbus (dict, NM_SETTING_PARSE_FLAGS_NONE, &error);
+	nmtst_assert_success (NM_IS_CONNECTION (con_x_0), error);
+
+	con_x_s = _nm_simple_connection_new_from_dbus (dict, NM_SETTING_PARSE_FLAGS_STRICT, &error);
+	nmtst_assert_success (NM_IS_CONNECTION (con_x_s), error);
+
+	con_x_e = _nm_simple_connection_new_from_dbus (dict, NM_SETTING_PARSE_FLAGS_BEST_EFFORT, &error);
+	nmtst_assert_success (NM_IS_CONNECTION (con_x_e), error);
+
+	con_n_0 = _nm_simple_connection_new_from_dbus (dict, NM_SETTING_PARSE_FLAGS_NORMALIZE, &error);
+	nmtst_assert_success (NM_IS_CONNECTION (con_n_0), error);
+
+	con_n_s = _nm_simple_connection_new_from_dbus (dict, NM_SETTING_PARSE_FLAGS_STRICT | NM_SETTING_PARSE_FLAGS_NORMALIZE, &error);
+	nmtst_assert_success (NM_IS_CONNECTION (con_n_s), error);
+
+	con_n_e = _nm_simple_connection_new_from_dbus (dict, NM_SETTING_PARSE_FLAGS_BEST_EFFORT | NM_SETTING_PARSE_FLAGS_NORMALIZE, &error);
+	nmtst_assert_success (NM_IS_CONNECTION (con_n_e), error);
+
+	nmtst_assert_connection_verifies (con_x_0);
+	nmtst_assert_connection_verifies (con_x_e);
+	nmtst_assert_connection_verifies (con_x_s);
+
+	nmtst_assert_connection_verifies_without_normalization (con_n_0);
+	nmtst_assert_connection_verifies_without_normalization (con_n_e);
+	nmtst_assert_connection_verifies_without_normalization (con_n_s);
+
+	/* randomly compare some pairs that we created. They must all be equal,
+	 * after accounting for normalization. */
+	for (i = 0; i < 10; i++) {
+		NMConnection *cons[] = { con_x_0, con_x_s, con_x_e, con_n_0, con_n_s, con_n_e };
+		guint idx_a = (nmtst_get_rand_int () % G_N_ELEMENTS (cons));
+		guint idx_b = (nmtst_get_rand_int () % G_N_ELEMENTS (cons));
+		gboolean normalize_a, normalize_b;
+
+		if (idx_a <= 2 && idx_b <= 2) {
+			normalize_a = nmtst_get_rand_bool ();
+			normalize_b = normalize_a;
+		} else if (idx_a > 2 && idx_b > 2) {
+			normalize_a = nmtst_get_rand_bool ();
+			normalize_b = nmtst_get_rand_bool ();
+		} else {
+			normalize_a = (idx_a <= 2) ? TRUE : nmtst_get_rand_bool ();
+			normalize_b = (idx_b <= 2) ? TRUE : nmtst_get_rand_bool ();
+		}
+		nmtst_assert_connection_equals (cons[idx_a], normalize_a, cons[idx_b], normalize_b);
+	}
+
+	return (normalize)
+	       ? g_steal_pointer (&con_x_0)
+	       : g_steal_pointer (&con_n_0);
+}
+
+/*****************************************************************************/
+
 static void
 compare_blob_data (const char *test,
                    const char *key_path,
@@ -1943,6 +2014,171 @@ test_tc_config_dbus (void)
 
 /*****************************************************************************/
 
+static void
+test_roundtrip_conversion (gconstpointer test_data)
+{
+	const int MODE = GPOINTER_TO_INT (test_data);
+	const char *ID= nm_sprintf_bufa (100, "roundtip-conversion-%d", MODE);
+	const char *UUID= "63376701-b61e-4318-bf7e-664a1c1eeaab";
+	const char *INTERFACE_NAME = nm_sprintf_bufa (100, "ifname%d", MODE);
+	guint32 ETH_MTU = nmtst_rand_select ((guint32) 0u,
+	                                     nmtst_get_rand_int ());
+	gs_unref_ptrarray GPtrArray *kf_data_arr = g_ptr_array_new_with_free_func (g_free);
+	const NMConnectionSerializationFlags dbus_serialization_flags[] = {
+		NM_CONNECTION_SERIALIZE_ALL,
+		NM_CONNECTION_SERIALIZE_NO_SECRETS,
+		NM_CONNECTION_SERIALIZE_ONLY_SECRETS,
+	};
+	guint dbus_serialization_flags_idx;
+	gs_unref_object NMConnection *con = NULL;
+	gs_free_error GError *error = NULL;
+	guint kf_data_idx;
+	NMSettingConnection *s_con = NULL;
+	NMSettingWired *s_eth = NULL;
+
+	switch (MODE) {
+	case 0:
+		con = nmtst_create_minimal_connection (ID, UUID, NM_SETTING_WIRED_SETTING_NAME, &s_con);
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_INTERFACE_NAME,
+		              INTERFACE_NAME,
+		              NULL);
+		nmtst_connection_normalize (con);
+
+		s_eth = NM_SETTING_WIRED (nm_connection_get_setting (con, NM_TYPE_SETTING_WIRED));
+		g_assert (NM_IS_SETTING_WIRED (s_eth));
+
+		g_object_set (s_eth,
+		              NM_SETTING_WIRED_MTU,
+		              ETH_MTU,
+		              NULL);
+
+		g_ptr_array_add (kf_data_arr,
+		    g_strdup_printf ("[connection]\n"
+		                     "id=%s\n"
+		                     "uuid=%s\n"
+		                     "type=ethernet\n"
+		                     "interface-name=%s\n"
+		                     "permissions=\n"
+		                     "\n"
+		                     "[ethernet]\n"
+		                     "mac-address-blacklist=\n"
+		                     "%s" /* mtu */
+		                     "\n"
+		                     "[ipv4]\n"
+		                     "dns-search=\n"
+		                     "method=auto\n"
+		                     "\n"
+		                     "[ipv6]\n"
+		                     "addr-gen-mode=stable-privacy\n"
+		                     "dns-search=\n"
+		                     "method=auto\n"
+		                     "",
+		                     ID,
+		                     UUID,
+		                     INTERFACE_NAME,
+		                       (ETH_MTU != 0)
+		                     ? nm_sprintf_bufa (100, "mtu=%d\n", (int) ETH_MTU)
+		                     : ""));
+
+		g_ptr_array_add (kf_data_arr,
+		    g_strdup_printf ("[connection]\n"
+		                     "id=%s\n"
+		                     "uuid=%s\n"
+		                     "type=ethernet\n"
+		                     "interface-name=%s\n"
+		                     "permissions=\n"
+		                     "\n"
+		                     "[ethernet]\n"
+		                     "mac-address-blacklist=\n"
+		                     "%s" /* mtu */
+		                     "\n"
+		                     "[ipv4]\n"
+		                     "dns-search=\n"
+		                     "method=auto\n"
+		                     "\n"
+		                     "[ipv6]\n"
+		                     "addr-gen-mode=stable-privacy\n"
+		                     "dns-search=\n"
+		                     "method=auto\n"
+		                     "",
+		                     ID,
+		                     UUID,
+		                     INTERFACE_NAME,
+		                       (ETH_MTU != 0)
+		                     ? nm_sprintf_bufa (100, "mtu=%u\n", ETH_MTU)
+		                     : ""));
+
+		break;
+
+	default:
+		g_assert_not_reached ();
+	}
+
+	/* the first kf_data_arr entry is special: it is the exact result of what we expect
+	 * when converting @con to keyfile. Write @con to keyfile and compare the expected result
+	 * literally. */
+	{
+		gs_unref_keyfile GKeyFile *kf = NULL;
+
+		kf = nm_keyfile_write (con, NULL, NULL, &error);
+		nmtst_assert_success (kf, error);
+
+		/* the first kf_data_arr entry is special: it must be what the writer would
+		 * produce again. */
+		nmtst_keyfile_assert_data (kf, kf_data_arr->pdata[0], -1);
+	}
+
+	/* check that reading any of kf_data_arr yields the same result that we expect. */
+	for (kf_data_idx = 0; kf_data_idx < kf_data_arr->len; kf_data_idx++) {
+		gs_unref_object NMConnection *con2 = NULL;
+		NMSettingWired *s_eth2 = NULL;
+
+		con2 = nmtst_create_connection_from_keyfile (kf_data_arr->pdata[kf_data_idx], "/no/where/file.nmconnection");
+
+		switch (MODE) {
+		case 0:
+			s_eth2 = NM_SETTING_WIRED (nm_connection_get_setting (con2, NM_TYPE_SETTING_WIRED));
+			g_assert (NM_IS_SETTING_WIRED (s_eth2));
+
+			if (   ETH_MTU > (guint32) G_MAXINT
+			    && kf_data_idx == 1) {
+				/* values > 2^21 get written as signed integers. When reading this back,
+				 * positive values are ignored. Patch the MTU in s_eth2. */
+				g_assert_cmpint (nm_setting_wired_get_mtu (s_eth2), ==, 0);
+				g_object_set (s_eth2,
+				              NM_SETTING_WIRED_MTU,
+				              ETH_MTU,
+				              NULL);
+			}
+
+			g_assert_cmpint (nm_setting_wired_get_mtu (s_eth), ==, ETH_MTU);
+			g_assert_cmpint (nm_setting_wired_get_mtu (s_eth2), ==, ETH_MTU);
+			break;
+		}
+
+		nmtst_assert_connection_equals (con, nmtst_get_rand_bool (), con2, nmtst_get_rand_bool ());
+	}
+
+	for (dbus_serialization_flags_idx = 0; dbus_serialization_flags_idx < G_N_ELEMENTS (dbus_serialization_flags); dbus_serialization_flags_idx++) {
+		NMConnectionSerializationFlags flag = dbus_serialization_flags[dbus_serialization_flags_idx];
+		gs_unref_variant GVariant *con_var = NULL;
+		gs_unref_object NMConnection *con2 = NULL;
+
+		con_var = nm_connection_to_dbus (con, flag);
+		g_assert (g_variant_is_of_type (con_var, NM_VARIANT_TYPE_CONNECTION));
+		g_assert (g_variant_is_floating (con_var));
+		g_variant_ref_sink (con_var);
+
+		if (flag == NM_CONNECTION_SERIALIZE_ALL) {
+			con2 = _connection_new_from_dbus_strict (con_var, TRUE);
+			nmtst_assert_connection_equals (con, nmtst_get_rand_bool (), con2, nmtst_get_rand_bool ());
+		}
+	}
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -2018,6 +2254,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/settings/team-port/sync_from_config_lacp_key", test_team_port_lacp_key);
 	g_test_add_func ("/libnm/settings/team-port/sycn_from_config_full", test_team_port_full_config);
 #endif
+
+	g_test_add_data_func ("/libnm/settings/roundtrip-conversion/general/0", GINT_TO_POINTER (0), test_roundtrip_conversion);
 
 	return g_test_run ();
 }
