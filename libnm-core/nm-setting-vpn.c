@@ -647,29 +647,42 @@ get_secret_flags (NMSetting *setting,
                   GError **error)
 {
 	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
-	gs_free char *flags_key = NULL;
-	gpointer val;
-	unsigned long tmp;
-	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+	gs_free char *flags_key_free = NULL;
+	const char *flags_key;
+	const char *flags_val;
+	gint64 i64;
 
-	flags_key = g_strdup_printf ("%s-flags", secret_name);
-	if (g_hash_table_lookup_extended (priv->data, flags_key, NULL, &val)) {
-		errno = 0;
-		tmp = strtoul ((const char *) val, NULL, 10);
-		if ((errno != 0) || (tmp > NM_SETTING_SECRET_FLAGS_ALL)) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("failed to convert value '%s' to uint"),
-			             (const char *) val);
+	flags_key = nm_construct_name_a ("%s-flags", secret_name, &flags_key_free);
+
+	if (!g_hash_table_lookup_extended (priv->data, flags_key, NULL, (gpointer *) &flags_val)) {
+		NM_SET_OUT (out_flags, NM_SETTING_SECRET_FLAG_NONE);
+
+		/* having no secret flag for the secret is fine, as long as there
+		 * is the secret itself... */
+		if (   verify_secret
+		    && !g_hash_table_contains (priv->secrets, secret_name)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
+			                     _("secret flags property not found"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_VPN_SETTING_NAME, flags_key);
 			return FALSE;
 		}
-		flags = (NMSettingSecretFlags) tmp;
+		return TRUE;
 	}
 
-	if (out_flags)
-		*out_flags = flags;
+	i64 = _nm_utils_ascii_str_to_int64 (flags_val, 10, 0, NM_SETTING_SECRET_FLAGS_ALL, -1);
+	if (i64 == -1) {
+		/* The flags keys is set to an unexpected value. That is a configuration
+		 * error. Note that keys named "*-flags" are reserved for secrets. The user
+		 * must not use this for anything but secret flags. Hence, we cannot fail
+		 * to read the secret, we pretend that the secret flag is set to the default
+		 * NM_SETTING_SECRET_FLAG_NONE. */
+		NM_SET_OUT (out_flags, NM_SETTING_SECRET_FLAG_NONE);
+		return TRUE;
+	}
+
+	NM_SET_OUT (out_flags, (NMSettingSecretFlags) i64);
 	return TRUE;
 }
 
