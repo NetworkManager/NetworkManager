@@ -2588,27 +2588,27 @@ _parse_info_find (NMSetting *setting,
 /*****************************************************************************/
 
 static void
-read_one_setting_value (NMSetting *setting,
-                        const char *key,
-                        const GValue *value,
-                        GParamFlags flags,
-                        gpointer user_data)
+read_one_setting_value (KeyfileReaderInfo *info,
+                        NMSetting *setting,
+                        const NMSettInfoProperty *property_info)
 {
-	KeyfileReaderInfo *info = user_data;
 	GKeyFile *keyfile = info->keyfile;
 	gs_free_error GError *err = NULL;
 	const ParseInfoProperty *pip;
 	gs_free char *tmp_str = NULL;
 	const char *setting_name;
+	const char *key;
 	GType type;
 	guint64 u64;
 	gint64 i64;
 
-	if (info->error)
+	nm_assert (!info->error);
+	nm_assert (property_info->param_spec);
+
+	if ((property_info->param_spec->flags & (G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY)) != G_PARAM_WRITABLE)
 		return;
 
-	if (!(flags & G_PARAM_WRITABLE))
-		return;
+	key = property_info->param_spec->name;
 
 	pip = _parse_info_find (setting, key, &setting_name);
 
@@ -2643,7 +2643,7 @@ read_one_setting_value (NMSetting *setting,
 		return;
 	}
 
-	type = G_VALUE_TYPE (value);
+	type = G_PARAM_SPEC_VALUE_TYPE (property_info->param_spec);
 
 	if (type == G_TYPE_STRING) {
 		gs_free char *str_val = NULL;
@@ -2754,7 +2754,7 @@ read_one_setting_value (NMSetting *setting,
 		read_hash_of_string (keyfile, setting, key);
 	} else if (type == G_TYPE_ARRAY) {
 		read_array_of_uint (keyfile, setting, key);
-	} else if (G_VALUE_HOLDS_FLAGS (value)) {
+	} else if (G_TYPE_IS_FLAGS (type)) {
 		tmp_str = nm_keyfile_plugin_kf_get_value (keyfile, setting_name, key, &err);
 		if (!err) {
 			u64 = _nm_utils_ascii_str_to_uint64 (tmp_str, 0, 0, G_MAXUINT, G_MAXUINT64);
@@ -2765,7 +2765,7 @@ read_one_setting_value (NMSetting *setting,
 			} else
 				nm_g_object_set_property_flags (G_OBJECT (setting), key, type, u64, &err);
 		}
-	} else if (G_VALUE_HOLDS_ENUM (value)) {
+	} else if (G_TYPE_IS_ENUM (type)) {
 		tmp_str = nm_keyfile_plugin_kf_get_value (keyfile, setting_name, key, &err);
 		if (!err) {
 			i64 = _nm_utils_ascii_str_to_int64 (tmp_str, 0, G_MININT, G_MAXINT, G_MAXINT64);
@@ -2798,6 +2798,7 @@ _read_setting (KeyfileReaderInfo *info)
 	gs_unref_object NMSetting *setting = NULL;
 	const char *alias;
 	GType type;
+	guint i;
 
 	alias = nm_keyfile_plugin_get_setting_name_for_alias (info->group);
 	if (!alias)
@@ -2818,7 +2819,7 @@ _read_setting (KeyfileReaderInfo *info)
 
 	if (sett_info->detail.gendata_info) {
 		gs_free char **keys = NULL;
-		gsize i, n_keys;
+		gsize k, n_keys;
 
 		keys = g_key_file_get_keys (info->keyfile, info->group, &n_keys, NULL);
 		if (!keys)
@@ -2827,16 +2828,16 @@ _read_setting (KeyfileReaderInfo *info)
 			GHashTable *h = _nm_setting_gendata_hash (setting, TRUE);
 
 			nm_utils_strv_sort (keys, n_keys);
-			for (i = 0; i < n_keys; i++) {
-				gs_free char *key = keys[i];
+			for (k = 0; k < n_keys; k++) {
+				gs_free char *key = keys[k];
 				gs_free_error GError *local = NULL;
 				const GVariantType *variant_type;
 				GVariant *variant;
 
 				/* a GKeyFile can return duplicate keys, there is just no API to make sense
 				 * of them. Skip them. */
-				if (   i + 1 < n_keys
-				    && nm_streq (key, keys[i + 1]))
+				if (   k + 1 < n_keys
+				    && nm_streq (key, keys[k + 1]))
 					continue;
 
 				/* currently, the API is very simple. The setting class just returns
@@ -2881,13 +2882,20 @@ _read_setting (KeyfileReaderInfo *info)
 				                     g_steal_pointer (&key),
 				                     g_variant_take_ref (variant));
 			}
-			for (; i < n_keys; i++)
-				g_free (keys[i]);
+			for (; k < n_keys; k++)
+				g_free (keys[k]);
 		}
-		goto out;
 	}
 
-	nm_setting_enumerate_values (setting, read_one_setting_value, info);
+	for (i = 0; i < sett_info->property_infos_len; i++) {
+		const NMSettInfoProperty *property_info = &sett_info->property_infos[i];
+
+		if (property_info->param_spec) {
+			read_one_setting_value (info, setting, property_info);
+			if (info->error)
+				goto out;
+		}
+	}
 
 out:
 	info->setting = NULL;
@@ -3063,24 +3071,23 @@ out_with_info_error:
 /*****************************************************************************/
 
 static void
-write_setting_value (NMSetting *setting,
-                     const char *key,
-                     const GValue *value,
-                     GParamFlags flag,
-                     gpointer user_data)
+write_setting_value (KeyfileWriterInfo *info,
+                     NMSetting *setting,
+                     const NMSettInfoProperty *property_info)
 {
-	KeyfileWriterInfo *info = user_data;
-	const char *setting_name;
-	GType type;
 	const ParseInfoProperty *pip;
-	GParamSpec *pspec;
+	const char *setting_name;
+	const char *key;
 	char numstr[64];
+	GValue value;
+	GType type;
 
-	if (info->error)
+	nm_assert (!info->error);
+
+	if (!property_info->param_spec)
 		return;
 
-	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), key);
-	nm_assert (pspec);
+	key = property_info->param_spec->name;
 
 	pip = _parse_info_find (setting, key, &setting_name);
 
@@ -3108,7 +3115,7 @@ write_setting_value (NMSetting *setting,
 	 * the secret flags there are in a third-level hash in the 'secrets'
 	 * property.
 	 */
-	if (   (pspec->flags & NM_SETTING_PARAM_SECRET)
+	if (   (property_info->param_spec->flags & NM_SETTING_PARAM_SECRET)
 	    && !NM_IS_SETTING_VPN (setting)) {
 		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
@@ -3118,50 +3125,55 @@ write_setting_value (NMSetting *setting,
 			return;
 	}
 
+	value = (GValue) { 0 };
+
+	g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (property_info->param_spec));
+	g_object_get_property (G_OBJECT (setting), property_info->param_spec->name, &value);
+
 	if (   (!pip || !pip->writer_persist_default)
-	    && g_param_value_defaults (pspec, (GValue *) value)) {
+	    && g_param_value_defaults (property_info->param_spec, &value)) {
 		nm_assert (!g_key_file_has_key (info->keyfile, setting_name, key, NULL));
-		return;
+		goto out_unset_value;
 	}
 
 	if (pip && pip->writer) {
-		pip->writer (info, setting, key, value);
-		return;
+		pip->writer (info, setting, key, &value);
+		goto out_unset_value;
 	}
 
-	type = G_VALUE_TYPE (value);
+	type = G_VALUE_TYPE (&value);
 	if (type == G_TYPE_STRING) {
 		const char *str;
 
-		str = g_value_get_string (value);
+		str = g_value_get_string (&value);
 		if (str)
 			nm_keyfile_plugin_kf_set_string (info->keyfile, setting_name, key, str);
 	} else if (type == G_TYPE_UINT) {
-		nm_sprintf_buf (numstr, "%u", g_value_get_uint (value));
+		nm_sprintf_buf (numstr, "%u", g_value_get_uint (&value));
 		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
 	} else if (type == G_TYPE_INT) {
-		nm_sprintf_buf (numstr, "%d", g_value_get_int (value));
+		nm_sprintf_buf (numstr, "%d", g_value_get_int (&value));
 		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
 	} else if (type == G_TYPE_UINT64) {
-		nm_sprintf_buf (numstr, "%" G_GUINT64_FORMAT, g_value_get_uint64 (value));
+		nm_sprintf_buf (numstr, "%" G_GUINT64_FORMAT, g_value_get_uint64 (&value));
 		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
 	} else if (type == G_TYPE_INT64) {
-		nm_sprintf_buf (numstr, "%" G_GINT64_FORMAT, g_value_get_int64 (value));
+		nm_sprintf_buf (numstr, "%" G_GINT64_FORMAT, g_value_get_int64 (&value));
 		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
 	} else if (type == G_TYPE_BOOLEAN) {
 		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key,
-		                                  g_value_get_boolean (value)
+		                                  g_value_get_boolean (&value)
 		                                ? "true"
 		                                : "false");
 	} else if (type == G_TYPE_CHAR) {
-		nm_sprintf_buf (numstr, "%d", (int) g_value_get_schar (value));
+		nm_sprintf_buf (numstr, "%d", (int) g_value_get_schar (&value));
 		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
 	} else if (type == G_TYPE_BYTES) {
 		GBytes *bytes;
 		const guint8 *data;
 		gsize len = 0;
 
-		bytes = g_value_get_boxed (value);
+		bytes = g_value_get_boxed (&value);
 		data = bytes ? g_bytes_get_data (bytes, &len) : NULL;
 
 		if (data != NULL && len > 0)
@@ -3169,20 +3181,23 @@ write_setting_value (NMSetting *setting,
 	} else if (type == G_TYPE_STRV) {
 		char **array;
 
-		array = (char **) g_value_get_boxed (value);
+		array = (char **) g_value_get_boxed (&value);
 		nm_keyfile_plugin_kf_set_string_list (info->keyfile, setting_name, key, (const char **const) array, g_strv_length (array));
 	} else if (type == G_TYPE_HASH_TABLE) {
-		write_hash_of_string (info->keyfile, setting, key, value);
+		write_hash_of_string (info->keyfile, setting, key, &value);
 	} else if (type == G_TYPE_ARRAY) {
-		write_array_of_uint (info->keyfile, setting, key, value);
-	} else if (G_VALUE_HOLDS_FLAGS (value)) {
-		nm_sprintf_buf (numstr, "%u", g_value_get_flags (value));
+		write_array_of_uint (info->keyfile, setting, key, &value);
+	} else if (G_VALUE_HOLDS_FLAGS (&value)) {
+		nm_sprintf_buf (numstr, "%u", g_value_get_flags (&value));
 		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
-	} else if (G_VALUE_HOLDS_ENUM (value)) {
-		nm_sprintf_buf (numstr, "%d", g_value_get_enum (value));
+	} else if (G_VALUE_HOLDS_ENUM (&value)) {
+		nm_sprintf_buf (numstr, "%d", g_value_get_enum (&value));
 		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
 	} else
 		g_return_if_reached ();
+
+out_unset_value:
+	g_value_unset (&value);
 }
 
 GKeyFile *
@@ -3194,7 +3209,7 @@ nm_keyfile_write (NMConnection *connection,
 	gs_unref_keyfile GKeyFile *keyfile = NULL;
 	KeyfileWriterInfo info;
 	gs_free NMSetting **settings = NULL;
-	guint i, n_settings = 0;
+	guint i, j, n_settings = 0;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
@@ -3252,18 +3267,20 @@ nm_keyfile_write (NMConnection *connection,
 					}
 				}
 			}
-			goto next;
 		}
 
-		nm_setting_enumerate_values (setting, write_setting_value, &info);
+		for (j = 0; j < sett_info->property_infos_len; j++) {
+			const NMSettInfoProperty *property_info = _nm_sett_info_property_info_get_sorted (sett_info, j);
 
-next:
-		if (info.error)
-			goto out_with_info_error;
+			write_setting_value (&info, setting, property_info);
+			if (info.error)
+				goto out_with_info_error;
+		}
+
+		nm_assert (!info.error);
 	}
 
-	if (info.error)
-		goto out_with_info_error;
+	nm_assert (!info.error);
 
 	return g_steal_pointer (&keyfile);
 
