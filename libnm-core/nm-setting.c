@@ -1207,9 +1207,6 @@ nm_setting_compare (NMSetting *a,
                     NMSettingCompareFlags flags)
 {
 	const NMSettInfoSetting *sett_info;
-	GParamSpec **property_specs;
-	guint n_property_specs;
-	int same = TRUE;
 	guint i;
 
 	g_return_val_if_fail (NM_IS_SETTING (a), FALSE);
@@ -1232,9 +1229,11 @@ nm_setting_compare (NMSetting *a,
 	}
 
 	/* And now all properties */
-	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (a), &n_property_specs);
-	for (i = 0; i < n_property_specs && same; i++) {
-		GParamSpec *prop_spec = property_specs[i];
+	for (i = 0; i < sett_info->property_infos_len; i++) {
+		GParamSpec *prop_spec = sett_info->property_infos[i].param_spec;
+
+		if (!prop_spec)
+			continue;
 
 		/* Fuzzy compare ignores secrets and properties defined with the FUZZY_IGNORE flag */
 		if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_FUZZY)
@@ -1253,11 +1252,11 @@ nm_setting_compare (NMSetting *a,
 		    && NM_FLAGS_HAS (prop_spec->flags, NM_SETTING_PARAM_SECRET))
 			continue;
 
-		same = NM_SETTING_GET_CLASS (a)->compare_property (a, b, prop_spec, flags);
+		if (!NM_SETTING_GET_CLASS (a)->compare_property (a, b, prop_spec, flags))
+			return FALSE;
 	}
-	g_free (property_specs);
 
-	return same;
+	return TRUE;
 }
 
 static inline gboolean
@@ -1446,14 +1445,12 @@ nm_setting_diff (NMSetting *a,
 			}
 		}
 	} else {
-		gs_free GParamSpec **property_specs = NULL;
-		guint n_property_specs;
-
-		property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (a), &n_property_specs);
-
-		for (i = 0; i < n_property_specs; i++) {
-			GParamSpec *prop_spec = property_specs[i];
+		for (i = 0; i < sett_info->property_infos_len; i++) {
+			GParamSpec *prop_spec = sett_info->property_infos[i].param_spec;
 			NMSettingDiffResult r = NM_SETTING_DIFF_RESULT_UNKNOWN;
+
+			if (!prop_spec)
+				continue;
 
 			/* Handle compare flags */
 			if (!should_compare_prop (a, prop_spec->name, flags, prop_spec->flags))
@@ -1581,8 +1578,8 @@ nm_setting_enumerate_values (NMSetting *setting,
                              gpointer user_data)
 {
 	const NMSettInfoSetting *sett_info;
-	GParamSpec **property_specs;
-	guint n_properties;
+	gs_free GParamSpec **property_specs = NULL;
+	guint n_property_specs;
 	guint i;
 	GType type;
 
@@ -1593,6 +1590,7 @@ nm_setting_enumerate_values (NMSetting *setting,
 
 	if (sett_info->detail.gendata_info) {
 		const char *const*names;
+		guint n_properties;
 
 		/* the properties of this setting are not real GObject properties.
 		 * Hence, this API makes little sense (or does it?). Still, call
@@ -1622,15 +1620,26 @@ nm_setting_enumerate_values (NMSetting *setting,
 		return;
 	}
 
-	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_properties);
+	if (sett_info->property_infos_len == 0)
+		return;
 
 	/* sort the properties. This has an effect on the order in which keyfile
 	 * prints them. */
-	type = G_OBJECT_TYPE (setting);
-	g_qsort_with_data (property_specs, n_properties, sizeof (gpointer),
-	                   (GCompareDataFunc) _enumerate_values_sort, &type);
+	property_specs = g_new (GParamSpec *, sett_info->property_infos_len);
+	n_property_specs = 0;
+	for (i = 0; i < sett_info->property_infos_len; i++) {
+		GParamSpec *prop_spec = sett_info->property_infos[i].param_spec;
 
-	for (i = 0; i < n_properties; i++) {
+		if (prop_spec)
+			property_specs[n_property_specs++] = prop_spec;
+	}
+	if (n_property_specs > 1) {
+		type = G_OBJECT_TYPE (setting);
+		g_qsort_with_data (property_specs, n_property_specs, sizeof (gpointer),
+		                   (GCompareDataFunc) _enumerate_values_sort, &type);
+	}
+
+	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
 		GValue value = G_VALUE_INIT;
 
@@ -1639,8 +1648,6 @@ nm_setting_enumerate_values (NMSetting *setting,
 		func (setting, prop_spec->name, &value, prop_spec->flags, user_data);
 		g_value_unset (&value);
 	}
-
-	g_free (property_specs);
 }
 
 /**
@@ -1656,16 +1663,18 @@ nm_setting_enumerate_values (NMSetting *setting,
 gboolean
 _nm_setting_clear_secrets (NMSetting *setting)
 {
-	gs_free GParamSpec **property_specs = NULL;
-	guint n_property_specs;
-	guint i;
+	const NMSettInfoSetting *sett_info;
 	gboolean changed = FALSE;
+	guint i;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
-	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
-	for (i = 0; i < n_property_specs; i++) {
-		GParamSpec *prop_spec = property_specs[i];
+	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+	for (i = 0; i < sett_info->property_infos_len; i++) {
+		GParamSpec *prop_spec = sett_info->property_infos[i].param_spec;
+
+		if (!prop_spec)
+			continue;
 
 		if (prop_spec->flags & NM_SETTING_PARAM_SECRET) {
 			GValue value = G_VALUE_INIT;
@@ -1730,23 +1739,27 @@ _nm_setting_clear_secrets_with_flags (NMSetting *setting,
                                       NMSettingClearSecretsWithFlagsFn func,
                                       gpointer user_data)
 {
-	gs_free GParamSpec **property_specs = NULL;
-	guint n_property_specs;
-	guint i;
+	const NMSettInfoSetting *sett_info;
 	gboolean changed = FALSE;
+	guint i;
 
-	g_return_val_if_fail (setting, FALSE);
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (func != NULL, FALSE);
 
-	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
-	for (i = 0; i < n_property_specs; i++) {
-		if (property_specs[i]->flags & NM_SETTING_PARAM_SECRET) {
-			changed |= NM_SETTING_GET_CLASS (setting)->clear_secrets_with_flags (setting,
-			                                                                     property_specs[i],
-			                                                                     func,
-			                                                                     user_data);
-		}
+	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+	for (i = 0; i < sett_info->property_infos_len; i++) {
+		GParamSpec *prop_spec = sett_info->property_infos[i].param_spec;
+
+		if (!prop_spec)
+			continue;
+
+		if (!NM_FLAGS_HAS (prop_spec->flags, NM_SETTING_PARAM_SECRET))
+			continue;
+
+		changed |= NM_SETTING_GET_CLASS (setting)->clear_secrets_with_flags (setting,
+		                                                                     prop_spec,
+		                                                                     func,
+		                                                                     user_data);
 	}
 	return changed;
 }
