@@ -1445,14 +1445,13 @@
 
         <listitem>
           <para>Connect to a Wi-Fi network specified by SSID or BSSID. The command
-          creates a new connection and then activates it on a device. This is a
-          command-line counterpart of clicking an SSID in a GUI client. The command
-          always creates a new connection and thus it is mainly useful for connecting to
-          new Wi-Fi networks. If a connection for the network already exists, it is
-          better to bring up (activate) the existing connection as follows:
+          finds a matching connnection or creates one and then activates it on a device.
+          This is a command-line counterpart of clicking an SSID in a GUI client. If
+          a connection for the network already exists, it is possible to bring up
+          (activate) the existing profile as follows:
           <command>nmcli con up id <replaceable>name</replaceable></command>. Note that
-          only open, WEP and WPA-PSK networks are supported at the moment. It is also
-          supposed that IP configuration is obtained via DHCP.</para>
+          only open, WEP and WPA-PSK networks are supported if no previous connection
+          exists. It is also assumed that IP configuration is obtained via DHCP.</para>
 
           <para>If <option>--wait</option> option is not specified, the default timeout will be 90
           seconds.</para>
