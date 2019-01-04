@@ -227,13 +227,13 @@ void nm_lldp_neighbor_unref (NMLldpNeighbor *neighbor);
 NM_AVAILABLE_IN_1_2
 char **nm_lldp_neighbor_get_attr_names (NMLldpNeighbor *neighbor);
 NM_AVAILABLE_IN_1_2
-gboolean nm_lldp_neighbor_get_attr_string_value (NMLldpNeighbor *neighbor, char *name,
+gboolean nm_lldp_neighbor_get_attr_string_value (NMLldpNeighbor *neighbor, const char *name,
                                                  const char **out_value);
 NM_AVAILABLE_IN_1_2
-gboolean nm_lldp_neighbor_get_attr_uint_value (NMLldpNeighbor *neighbor, char *name,
+gboolean nm_lldp_neighbor_get_attr_uint_value (NMLldpNeighbor *neighbor, const char *name,
                                                guint *out_value);
 NM_AVAILABLE_IN_1_2
-const GVariantType *nm_lldp_neighbor_get_attr_type (NMLldpNeighbor *neighbor, char *name);
+const GVariantType *nm_lldp_neighbor_get_attr_type (NMLldpNeighbor *neighbor, const char *name);
 
 G_END_DECLS
 

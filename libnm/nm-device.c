@@ -2765,7 +2765,7 @@ nm_lldp_neighbor_get_attr_names (NMLldpNeighbor *neighbor)
  * Since: 1.2
  **/
 gboolean
-nm_lldp_neighbor_get_attr_string_value (NMLldpNeighbor *neighbor, char *name,
+nm_lldp_neighbor_get_attr_string_value (NMLldpNeighbor *neighbor, const char *name,
                                         const char **out_value)
 {
 	GVariant *variant;
@@ -2795,7 +2795,7 @@ nm_lldp_neighbor_get_attr_string_value (NMLldpNeighbor *neighbor, char *name,
  * Since: 1.2
  **/
 gboolean
-nm_lldp_neighbor_get_attr_uint_value (NMLldpNeighbor *neighbor, char *name,
+nm_lldp_neighbor_get_attr_uint_value (NMLldpNeighbor *neighbor, const char *name,
                                       guint *out_value)
 {
 	GVariant *variant;
@@ -2824,7 +2824,7 @@ nm_lldp_neighbor_get_attr_uint_value (NMLldpNeighbor *neighbor, char *name,
  * Since: 1.2
  **/
 const GVariantType *
-nm_lldp_neighbor_get_attr_type (NMLldpNeighbor *neighbor, char *name)
+nm_lldp_neighbor_get_attr_type (NMLldpNeighbor *neighbor, const char *name)
 {
 	GVariant *variant;
 
