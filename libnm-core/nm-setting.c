@@ -1049,14 +1049,19 @@ _nm_setting_get_property (NMSetting *setting, const char *property_name, GValue 
 }
 
 static void
-duplicate_setting (NMSetting *setting,
-                   const char *name,
-                   const GValue *value,
-                   GParamFlags flags,
-                   gpointer user_data)
+_gobject_copy_property (GObject *src,
+                        GObject *dst,
+                        const char *property_name,
+                        GType gtype)
 {
-	if ((flags & (G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY)) == G_PARAM_WRITABLE)
-		g_object_set_property (G_OBJECT (user_data), name, value);
+	nm_auto_unset_gvalue GValue value = G_VALUE_INIT;
+
+	nm_assert (G_IS_OBJECT (src));
+	nm_assert (G_IS_OBJECT (dst));
+
+	g_value_init (&value, gtype);
+	g_object_get_property (src, property_name, &value);
+	g_object_set_property (dst, property_name, &value);
 }
 
 /**
@@ -1097,11 +1102,35 @@ nm_setting_duplicate (NMSetting *setting)
 				                     g_variant_ref (val));
 			}
 		}
-	} else {
-		g_object_freeze_notify (dup);
-		nm_setting_enumerate_values (setting, duplicate_setting, dup);
-		g_object_thaw_notify (dup);
 	}
+
+	if (sett_info->property_infos_len > 0) {
+		gboolean frozen = FALSE;
+		guint i;
+
+		for (i = 0; i < sett_info->property_infos_len; i++) {
+			GParamSpec *prop_spec = sett_info->property_infos[i].param_spec;
+
+			if (!prop_spec)
+				continue;
+			if ((prop_spec->flags & (G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY)) != G_PARAM_WRITABLE)
+				continue;
+
+			if (!frozen) {
+				g_object_freeze_notify (dup);
+				frozen = TRUE;
+			}
+
+			_gobject_copy_property (G_OBJECT (setting),
+			                        dup,
+			                        prop_spec->name,
+			                        G_PARAM_SPEC_VALUE_TYPE (prop_spec));
+		}
+
+		if (frozen)
+			g_object_thaw_notify (dup);
+	}
+
 	return NM_SETTING (dup);
 }
 
