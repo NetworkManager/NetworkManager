@@ -659,10 +659,38 @@ typedef struct {
 
 struct _NMSettInfoSetting {
 	NMSettingClass *setting_class;
+
+	/* the properties, sorted by property name. */
 	const NMSettInfoProperty *property_infos;
+
+	/* the @property_infos list is sorted by property name. For some uses we need
+	 * a different sort order. If @property_infos_sorted is set, this is the order
+	 * instead. It is used for:
+	 *
+	 *   - nm_setting_enumerate_values()
+	 *   - keyfile writer adding keys to the group.
+	 *
+	 * Note that currently only NMSettingConnection implements here a sort order
+	 * that differs from alphabetical sort of the property names.
+	 */
+	const NMSettInfoProperty *const*property_infos_sorted;
+
 	guint property_infos_len;
 	NMSettInfoSettDetail detail;
 };
+
+static inline const NMSettInfoProperty *
+_nm_sett_info_property_info_get_sorted (const NMSettInfoSetting *sett_info,
+                                        guint idx)
+{
+	nm_assert (sett_info);
+	nm_assert (idx < sett_info->property_infos_len);
+	nm_assert (!sett_info->property_infos_sorted || sett_info->property_infos_sorted[idx]);
+
+	return   sett_info->property_infos_sorted
+	       ? sett_info->property_infos_sorted[idx]
+	       : &sett_info->property_infos[idx];
+}
 
 const NMSettInfoSetting *_nm_sett_info_setting_get (NMSettingClass *setting_class);
 
