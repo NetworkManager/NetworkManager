@@ -1651,6 +1651,75 @@ nm_setting_enumerate_values (NMSetting *setting,
 }
 
 /**
+ * _nm_setting_aggregate:
+ * @setting: the #NMSetting to aggregate.
+ * @type: the #NMConnectionAggregateType aggregate type.
+ * @arg: the in/out arguments for aggregation. They depend on @type.
+ *
+ * This is the implementation detail of _nm_connection_aggregate(). It
+ * makes no sense to call this function directly outside of _nm_connection_aggregate().
+ *
+ * Returns: %TRUE if afterwards the aggregation is complete. That means,
+ *   the only caller _nm_connection_aggregate() will not visit other settings
+ *   after a setting returns %TRUE (indicating that there is nothing further
+ *   to aggregate). Note that is very different from the boolean return
+ *   argument of _nm_connection_aggregate(), which serves a different purpose.
+ */
+gboolean
+_nm_setting_aggregate (NMSetting *setting,
+                       NMConnectionAggregateType type,
+                       gpointer arg)
+{
+	const NMSettInfoSetting *sett_info;
+	guint i;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (arg, FALSE);
+	g_return_val_if_fail (NM_IN_SET (type, NM_CONNECTION_AGGREGATE_ANY_SECRETS,
+	                                       NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS),
+	                      FALSE);
+
+	if (NM_IS_SETTING_VPN (setting))
+		return _nm_setting_vpn_aggregate (NM_SETTING_VPN (setting), type, arg);
+
+	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+	for (i = 0; i < sett_info->property_infos_len; i++) {
+		GParamSpec *prop_spec = sett_info->property_infos[i].param_spec;
+		nm_auto_unset_gvalue GValue value = G_VALUE_INIT;
+		NMSettingSecretFlags secret_flags;
+
+		if (!prop_spec)
+			continue;
+		if (!NM_FLAGS_HAS (prop_spec->flags, NM_SETTING_PARAM_SECRET))
+			continue;
+
+		switch (type) {
+
+		case NM_CONNECTION_AGGREGATE_ANY_SECRETS:
+			g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (prop_spec));
+			g_object_get_property (G_OBJECT (setting), prop_spec->name, &value);
+			if (!g_param_value_defaults (prop_spec, &value)) {
+				*((gboolean *) arg) = TRUE;
+				return TRUE;
+			}
+			break;
+
+		case NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS:
+			if (!nm_setting_get_secret_flags (setting, prop_spec->name, &secret_flags, NULL))
+				nm_assert_not_reached ();
+			if (secret_flags == NM_SETTING_SECRET_FLAG_NONE) {
+				*((gboolean *) arg) = TRUE;
+				return TRUE;
+			}
+			break;
+
+		}
+	}
+
+	return FALSE;
+}
+
+/**
  * _nm_setting_clear_secrets:
  * @setting: the #NMSetting
  *
