@@ -354,6 +354,77 @@ _properties_override_add_transform (GArray *properties_override,
 
 static NMSettInfoSetting _sett_info_settings[_NM_META_SETTING_TYPE_NUM];
 
+static int
+_property_infos_sort_cmp_setting_connection (gconstpointer p_a,
+                                             gconstpointer p_b,
+                                             gpointer user_data)
+{
+	const NMSettInfoProperty *a = *((const NMSettInfoProperty *const*) p_a);
+	const NMSettInfoProperty *b = *((const NMSettInfoProperty *const*) p_b);
+	int c_name;
+
+	c_name = strcmp (a->name, b->name);
+	nm_assert (c_name != 0);
+
+#define CMP_AND_RETURN(n_a, n_b, name) \
+	G_STMT_START { \
+		gboolean _is = nm_streq (n_a, ""name); \
+		\
+		if (   _is \
+		    || nm_streq (n_b, ""name)) \
+			return _is ? -1 : 1; \
+	} G_STMT_END
+
+	/* for [connection], report first id, uuid, type in that order. */
+	if (c_name != 0) {
+		CMP_AND_RETURN (a->name, b->name, NM_SETTING_CONNECTION_ID);
+		CMP_AND_RETURN (a->name, b->name, NM_SETTING_CONNECTION_UUID);
+		CMP_AND_RETURN (a->name, b->name, NM_SETTING_CONNECTION_TYPE);
+	}
+
+#undef CMP_AND_RETURN
+
+	return c_name;
+}
+
+static const NMSettInfoProperty *const*
+_property_infos_sort (const NMSettInfoProperty *property_infos,
+                      guint property_infos_len,
+                      NMSettingClass *setting_class)
+{
+	const NMSettInfoProperty **arr;
+	guint i;
+
+#if NM_MORE_ASSERTS > 5
+	/* assert that the property names are all unique and sorted. */
+	for (i = 0; i < property_infos_len; i++) {
+		if (property_infos[i].param_spec)
+			nm_assert (nm_streq (property_infos[i].name, property_infos[i].param_spec->name));
+		if (i > 0)
+			nm_assert (strcmp (property_infos[i - 1].name, property_infos[i].name) < 0);
+	}
+#endif
+
+	if (property_infos_len <= 1)
+		return NULL;
+	if (G_TYPE_FROM_CLASS (setting_class) != NM_TYPE_SETTING_CONNECTION) {
+		/* we only do something special for certain setting types. This one,
+		 * has just alphabetical sorting. */
+		return NULL;
+	}
+
+	arr = g_new (const NMSettInfoProperty *, property_infos_len);
+	for (i = 0; i < property_infos_len; i++)
+		arr[i] = &property_infos[i];
+
+	g_qsort_with_data (arr,
+	                   property_infos_len,
+	                   sizeof (const NMSettInfoProperty *),
+	                   _property_infos_sort_cmp_setting_connection,
+	                   NULL);
+	return arr;
+}
+
 void
 _nm_setting_class_commit_full (NMSettingClass *setting_class,
                                NMMetaSettingType meta_type,
@@ -387,19 +458,21 @@ _nm_setting_class_commit_full (NMSettingClass *setting_class,
 #if NM_MORE_ASSERTS > 10
 	/* assert that properties_override is constructed consistently. */
 	for (i = 0; i < override_len; i++) {
-		guint j;
 		const NMSettInfoProperty *p = &g_array_index (properties_override, NMSettInfoProperty, i);
+		gboolean found = FALSE;
+		guint j;
 
 		nm_assert (!_nm_sett_info_property_find_in_array ((NMSettInfoProperty *) properties_override->data,
 		                                                  i,
 		                                                  p->name));
 		for (j = 0; j < n_property_specs; j++) {
-			if (nm_streq (property_specs[j]->name, p->name)) {
-				nm_assert (p->param_spec == property_specs[j]);
-				break;
-			}
+			if (!nm_streq (property_specs[j]->name, p->name))
+				continue;
+			nm_assert (!found);
+			found = TRUE;
+			nm_assert (p->param_spec == property_specs[j]);
 		}
-		nm_assert ((j == n_property_specs) == (p->param_spec == NULL));
+		nm_assert (found == (p->param_spec != NULL));
 	}
 #endif
 
@@ -429,6 +502,10 @@ _nm_setting_class_commit_full (NMSettingClass *setting_class,
 	sett_info->property_infos_len = properties_override->len;
 	sett_info->property_infos = (const NMSettInfoProperty *) g_array_free (properties_override,
 	                                                                       properties_override->len == 0);
+
+	sett_info->property_infos_sorted = _property_infos_sort (sett_info->property_infos,
+	                                                         sett_info->property_infos_len,
+	                                                         setting_class);
 }
 
 const NMSettInfoSetting *
@@ -1536,33 +1613,6 @@ nm_setting_diff (NMSetting *a,
 	}
 }
 
-#define CMP_AND_RETURN(n_a, n_b, name) \
-	G_STMT_START { \
-		gboolean _is = (strcmp (n_a, ""name) == 0); \
-		\
-		if (_is || (strcmp (n_b, ""name) == 0)) \
-			return _is ? -1 : 1; \
-	} G_STMT_END
-
-static int
-_enumerate_values_sort (GParamSpec **p_a, GParamSpec **p_b, GType *p_type)
-{
-	const char *n_a = (*p_a)->name;
-	const char *n_b = (*p_b)->name;
-	int c = strcmp (n_a, n_b);
-
-	if (c) {
-		if (*p_type == NM_TYPE_SETTING_CONNECTION) {
-			/* for [connection], report first id, uuid, type in that order. */
-			CMP_AND_RETURN (n_a, n_b, NM_SETTING_CONNECTION_ID);
-			CMP_AND_RETURN (n_a, n_b, NM_SETTING_CONNECTION_UUID);
-			CMP_AND_RETURN (n_a, n_b, NM_SETTING_CONNECTION_TYPE);
-		}
-	}
-	return c;
-}
-#undef CMP_AND_RETURN
-
 /**
  * nm_setting_enumerate_values:
  * @setting: the #NMSetting
@@ -1578,10 +1628,7 @@ nm_setting_enumerate_values (NMSetting *setting,
                              gpointer user_data)
 {
 	const NMSettInfoSetting *sett_info;
-	gs_free GParamSpec **property_specs = NULL;
-	guint n_property_specs;
 	guint i;
-	GType type;
 
 	g_return_if_fail (NM_IS_SETTING (setting));
 	g_return_if_fail (func != NULL);
@@ -1620,28 +1667,12 @@ nm_setting_enumerate_values (NMSetting *setting,
 		return;
 	}
 
-	if (sett_info->property_infos_len == 0)
-		return;
-
-	/* sort the properties. This has an effect on the order in which keyfile
-	 * prints them. */
-	property_specs = g_new (GParamSpec *, sett_info->property_infos_len);
-	n_property_specs = 0;
 	for (i = 0; i < sett_info->property_infos_len; i++) {
-		GParamSpec *prop_spec = sett_info->property_infos[i].param_spec;
-
-		if (prop_spec)
-			property_specs[n_property_specs++] = prop_spec;
-	}
-	if (n_property_specs > 1) {
-		type = G_OBJECT_TYPE (setting);
-		g_qsort_with_data (property_specs, n_property_specs, sizeof (gpointer),
-		                   (GCompareDataFunc) _enumerate_values_sort, &type);
-	}
-
-	for (i = 0; i < n_property_specs; i++) {
-		GParamSpec *prop_spec = property_specs[i];
+		GParamSpec *prop_spec = _nm_sett_info_property_info_get_sorted (sett_info, i)->param_spec;
 		GValue value = G_VALUE_INIT;
+
+		if (!prop_spec)
+			continue;
 
 		g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (prop_spec));
 		g_object_get_property (G_OBJECT (setting), prop_spec->name, &value);
