@@ -97,6 +97,13 @@ gboolean _nm_setting_verify_secret_string (const char *str,
                                            const char *property,
                                            GError **error);
 
+gboolean _nm_setting_aggregate (NMSetting *setting,
+                                NMConnectionAggregateType type,
+                                gpointer arg);
+gboolean _nm_setting_vpn_aggregate (NMSettingVpn *setting,
+                                    NMConnectionAggregateType type,
+                                    gpointer arg);
+
 gboolean _nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_type);
 
 GVariant   *_nm_setting_to_dbus       (NMSetting *setting,

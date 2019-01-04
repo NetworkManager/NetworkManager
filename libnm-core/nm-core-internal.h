@@ -146,6 +146,26 @@ gpointer _nm_connection_check_main_setting (NMConnection *connection,
                                             const char *setting_name,
                                             GError **error);
 
+typedef enum {
+	/* whether the connection has any secrets.
+	 *
+	 * @arg may be %NULL or a pointer to a gboolean for the result. The return
+	 *   value of _nm_connection_aggregate() is likewise the boolean result. */
+	NM_CONNECTION_AGGREGATE_ANY_SECRETS,
+
+	/* whether the connection has any secret with flags NM_SETTING_SECRET_FLAG_NONE.
+	 * Note that this only cares about the flags, not whether the secret is actually
+	 * present.
+	 *
+	 * @arg may be %NULL or a pointer to a gboolean for the result. The return
+	 *   value of _nm_connection_aggregate() is likewise the boolean result. */
+	NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS,
+} NMConnectionAggregateType;
+
+gboolean _nm_connection_aggregate (NMConnection *connection,
+                                   NMConnectionAggregateType type,
+                                   gpointer arg);
+
 /**
  * NMSettingVerifyResult:
  * @NM_SETTING_VERIFY_SUCCESS: the setting verifies successfully

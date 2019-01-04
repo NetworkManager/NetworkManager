@@ -2034,6 +2034,73 @@ nm_connection_for_each_setting_value (NMConnection *connection,
 }
 
 /**
+ * _nm_connection_aggregate:
+ * @connecition: the #NMConnection for which values are to be aggregated.
+ * @type: one of the supported aggrate types.
+ * @arg: the input/output argument that depends on @type.
+ *
+ * For example, with %NM_CONNECTION_AGGREGATE_ANY_SECRETS and
+ * %NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS @arg is a boolean
+ * output argument. It is either %NULL or a pointer to an gboolean
+ * out-argument. The function will always set @arg if given.
+ * Also, the return value of the function is likewise the result
+ * that is set to @arg.
+ *
+ * Returns: a boolean result with the meaning depending on the aggregation
+ *   type @type.
+ */
+gboolean
+_nm_connection_aggregate (NMConnection *connection,
+                          NMConnectionAggregateType type,
+                          gpointer arg)
+{
+	NMConnectionPrivate *priv;
+	GHashTableIter iter;
+	NMSetting *setting;
+	gboolean arg_boolean;
+	gboolean completed_early;
+	gpointer my_arg;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+
+	switch (type) {
+	case NM_CONNECTION_AGGREGATE_ANY_SECRETS:
+		arg_boolean = FALSE;
+		my_arg = &arg_boolean;
+		goto good;
+	case NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS:
+		arg_boolean = FALSE;
+		my_arg = &arg_boolean;
+		goto good;
+	}
+	g_return_val_if_reached (FALSE);
+
+good:
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+
+	completed_early = FALSE;
+	g_hash_table_iter_init (&iter, priv->settings);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting)) {
+		if (_nm_setting_aggregate (setting, type, my_arg)) {
+			completed_early = TRUE;
+			break;
+		}
+		nm_assert (   my_arg != &arg_boolean
+		           || !arg_boolean);
+	}
+
+	if (my_arg == &arg_boolean) {
+		nm_assert (completed_early == arg_boolean);
+		if (arg)
+			*((gboolean *) arg) = arg_boolean;
+		return arg_boolean;
+	}
+
+	nm_assert_not_reached ();
+	return FALSE;
+}
+
+/**
  * nm_connection_dump:
  * @connection: the #NMConnection
  *

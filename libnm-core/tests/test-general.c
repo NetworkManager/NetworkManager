@@ -755,10 +755,12 @@ vpn_check_empty_func (const char *key, const char *value, gpointer user_data)
 static void
 test_setting_vpn_items (void)
 {
-	gs_unref_object NMSettingVpn *s_vpn = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	NMSettingVpn *s_vpn;
 
-	s_vpn = (NMSettingVpn *) nm_setting_vpn_new ();
-	g_assert (s_vpn);
+	connection = nmtst_create_minimal_connection ("vpn-items", NULL, NM_SETTING_VPN_SETTING_NAME, NULL);
+
+	s_vpn = nm_connection_get_setting_vpn (connection);
 
 	nm_setting_vpn_add_data_item (s_vpn, "foobar1", "blahblah1");
 	nm_setting_vpn_add_data_item (s_vpn, "foobar2", "blahblah2");
@@ -772,7 +774,14 @@ test_setting_vpn_items (void)
 	nm_setting_vpn_remove_data_item (s_vpn, "foobar3");
 	nm_setting_vpn_remove_data_item (s_vpn, "foobar4");
 
+	g_assert (!_nm_connection_aggregate (connection, NM_CONNECTION_AGGREGATE_ANY_SECRETS, NULL));
+	g_assert (!_nm_connection_aggregate (connection, NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS, NULL));
+
 	nm_setting_vpn_add_secret (s_vpn, "foobar1", "blahblah1");
+
+	g_assert (_nm_connection_aggregate (connection, NM_CONNECTION_AGGREGATE_ANY_SECRETS, NULL));
+	g_assert (_nm_connection_aggregate (connection, NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS, NULL));
+
 	nm_setting_vpn_add_secret (s_vpn, "foobar2", "blahblah2");
 	nm_setting_vpn_add_secret (s_vpn, "foobar3", "blahblah3");
 	nm_setting_vpn_add_secret (s_vpn, "foobar4", "blahblah4");
@@ -782,7 +791,24 @@ test_setting_vpn_items (void)
 	nm_setting_vpn_remove_secret (s_vpn, "foobar1");
 	nm_setting_vpn_remove_secret (s_vpn, "foobar2");
 	nm_setting_vpn_remove_secret (s_vpn, "foobar3");
+
+	g_assert (_nm_connection_aggregate (connection, NM_CONNECTION_AGGREGATE_ANY_SECRETS, NULL));
+	g_assert (_nm_connection_aggregate (connection, NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS, NULL));
+
+	nm_setting_vpn_add_data_item (s_vpn, "foobar4-flags", "blahblah4");
+
+	g_assert (_nm_connection_aggregate (connection, NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS, NULL));
+
+	nm_setting_vpn_add_data_item (s_vpn, "foobar4-flags", "2");
+
+	g_assert (!_nm_connection_aggregate (connection, NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS, NULL));
+
 	nm_setting_vpn_remove_secret (s_vpn, "foobar4");
+
+	g_assert (!_nm_connection_aggregate (connection, NM_CONNECTION_AGGREGATE_ANY_SECRETS, NULL));
+	g_assert (!_nm_connection_aggregate (connection, NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS, NULL));
+
+	nm_setting_vpn_remove_data_item (s_vpn, "foobar4-flags");
 
 	/* Try to add some blank values and make sure they are rejected */
 	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key != NULL));
@@ -1631,6 +1657,25 @@ test_connection_to_dbus_setting_name (void)
 	connection = nm_simple_connection_new ();
 	s_wsec = make_test_wsec_setting ("connection-to-dbus-setting-name");
 	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_assert (_nm_connection_aggregate (connection, NM_CONNECTION_AGGREGATE_ANY_SECRETS, NULL));
+	g_assert (_nm_connection_aggregate (connection, NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS, NULL));
+
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS, NM_SETTING_SECRET_FLAG_NOT_SAVED,
+	              NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS, NM_SETTING_SECRET_FLAG_NOT_SAVED,
+	              NULL);
+
+	g_assert (_nm_connection_aggregate (connection, NM_CONNECTION_AGGREGATE_ANY_SECRETS, NULL));
+	g_assert (!_nm_connection_aggregate (connection, NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS, NULL));
+
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS, NM_SETTING_SECRET_FLAG_NONE,
+	              NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS, NM_SETTING_SECRET_FLAG_NONE,
+	              NULL);
+
+	g_assert (_nm_connection_aggregate (connection, NM_CONNECTION_AGGREGATE_ANY_SECRETS, NULL));
+	g_assert (_nm_connection_aggregate (connection, NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS, NULL));
 
 	dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
 

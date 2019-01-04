@@ -1660,38 +1660,6 @@ typedef struct {
 } UpdateInfo;
 
 static void
-has_some_secrets_cb (NMSetting *setting,
-                     const char *key,
-                     const GValue *value,
-                     GParamFlags flags,
-                     gpointer user_data)
-{
-	GParamSpec *pspec;
-
-	if (NM_IS_SETTING_VPN (setting)) {
-		if (nm_setting_vpn_get_num_secrets (NM_SETTING_VPN(setting)))
-			*((gboolean *) user_data) = TRUE;
-		return;
-	}
-
-	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), key);
-	if (pspec) {
-		if (   (flags & NM_SETTING_PARAM_SECRET)
-		    && !g_param_value_defaults (pspec, (GValue *)value))
-			*((gboolean *) user_data) = TRUE;
-	}
-}
-
-static gboolean
-any_secrets_present (NMConnection *self)
-{
-	gboolean has_secrets = FALSE;
-
-	nm_connection_for_each_setting_value (self, has_some_secrets_cb, &has_secrets);
-	return has_secrets;
-}
-
-static void
 cached_secrets_to_connection (NMSettingsConnection *self, NMConnection *connection)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
@@ -1758,7 +1726,7 @@ update_auth_cb (NMSettingsConnection *self,
 	}
 
 	if (info->new_settings) {
-		if (!any_secrets_present (info->new_settings)) {
+		if (!_nm_connection_aggregate (info->new_settings, NM_CONNECTION_AGGREGATE_ANY_SECRETS, NULL)) {
 			/* If the new connection has no secrets, we do not want to remove all
 			 * secrets, rather we keep all the existing ones. Do that by merging
 			 * them in to the new connection.

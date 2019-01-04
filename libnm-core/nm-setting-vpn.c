@@ -461,6 +461,66 @@ nm_setting_vpn_foreach_secret (NMSettingVpn *setting,
 	foreach_item_helper (setting, TRUE, func, user_data);
 }
 
+gboolean
+_nm_setting_vpn_aggregate (NMSettingVpn *setting,
+                           NMConnectionAggregateType type,
+                           gpointer arg)
+{
+	NMSettingVpnPrivate *priv;
+	NMSettingSecretFlags secret_flags;
+	const char *key_name;
+	GHashTableIter iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), FALSE);
+
+	priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+
+	switch (type) {
+
+	case NM_CONNECTION_AGGREGATE_ANY_SECRETS:
+		if (g_hash_table_size (priv->secrets) > 0) {
+			*((gboolean *) arg) = TRUE;
+			return TRUE;
+		}
+		return FALSE;
+
+	case NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS:
+
+		g_hash_table_iter_init (&iter, priv->secrets);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key_name, NULL)) {
+			if (!nm_setting_get_secret_flags (NM_SETTING (setting), key_name, &secret_flags, NULL))
+				nm_assert_not_reached ();
+			if (secret_flags == NM_SETTING_SECRET_FLAG_NONE) {
+				*((gboolean *) arg) = TRUE;
+				return TRUE;
+			}
+		}
+
+		/* Ok, we have no secrets with system-secret flags.
+		 * But do we have any secret-flags (without secrets) that indicate system secrets? */
+		g_hash_table_iter_init (&iter, priv->data);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key_name, NULL)) {
+			gs_free char *secret_name = NULL;
+
+			if (!g_str_has_suffix (key_name, "-flags"))
+				continue;
+			secret_name = g_strndup (key_name, strlen (key_name) - NM_STRLEN ("-flags"));
+			if (secret_name[0] == '\0')
+				continue;
+			if (!nm_setting_get_secret_flags (NM_SETTING (setting), secret_name, &secret_flags, NULL))
+				nm_assert_not_reached ();
+			if (secret_flags == NM_SETTING_SECRET_FLAG_NONE) {
+				*((gboolean *) arg) = TRUE;
+				return TRUE;
+			}
+		}
+
+		return FALSE;
+	}
+
+	g_return_val_if_reached (FALSE);
+}
+
 /**
  * nm_setting_vpn_get_timeout:
  * @setting: the #NMSettingVpn
