@@ -1948,7 +1948,8 @@ write_hash_of_string (GKeyFile *file,
 		if (vpn_secrets) {
 			NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
-			nm_setting_get_secret_flags (setting, property, &secret_flags, NULL);
+			if (!nm_setting_get_secret_flags (setting, property, &secret_flags, NULL))
+				nm_assert_not_reached ();
 			if (!_secret_flags_persist_secret (secret_flags))
 				continue;
 		}

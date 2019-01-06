@@ -191,13 +191,11 @@ typedef struct {
 
 	gboolean    (*get_secret_flags)  (NMSetting  *setting,
 	                                  const char *secret_name,
-	                                  gboolean verify_secret,
 	                                  NMSettingSecretFlags *out_flags,
 	                                  GError **error);
 
 	gboolean    (*set_secret_flags)  (NMSetting  *setting,
 	                                  const char *secret_name,
-	                                  gboolean verify_secret,
 	                                  NMSettingSecretFlags flags,
 	                                  GError **error);
 

@@ -109,6 +109,11 @@ NMSetting  *_nm_setting_new_from_dbus (GType setting_type,
                                        NMSettingParseFlags parse_flags,
                                        GError **error);
 
+gboolean _nm_setting_property_is_regular_secret (NMSetting *setting,
+                                                 const char *secret_name);
+gboolean _nm_setting_property_is_regular_secret_flags (NMSetting *setting,
+                                                       const char *secret_flags_name);
+
 /*****************************************************************************/
 
 static inline GArray *
