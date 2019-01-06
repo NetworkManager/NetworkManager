@@ -264,6 +264,15 @@ nm_memdup (gconstpointer data, gsize size)
 	return p;
 }
 
+static inline char *
+_nm_strndup_a_step (char *s, const char *str, gsize len)
+{
+	if (len > 0)
+		strncpy (s, str, len);
+	s[len] = '\0';
+	return s;
+}
+
 /* Similar to g_strndup(), however, if the string (including the terminating
  * NUL char) fits into alloca_maxlen, this will alloca() the memory.
  *
@@ -289,10 +298,7 @@ nm_memdup (gconstpointer data, gsize size)
 			g_assert (_len < _alloca_maxlen); \
 			_s = g_alloca (_len + 1); \
 		} \
-		if (_len > 0) \
-			strncpy (_s, _str, _len); \
-		_s[_len] = '\0'; \
-		_s; \
+		_nm_strndup_a_step (_s, _str, _len); \
 	})
 
 /*****************************************************************************/
