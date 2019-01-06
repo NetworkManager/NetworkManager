@@ -1884,52 +1884,72 @@ _nm_setting_update_secrets (NMSetting *setting, GVariant *secrets, GError **erro
 	return result;
 }
 
-static gboolean
-is_secret_prop (NMSetting *setting, const char *secret_name, GError **error)
+static void
+_set_error_secret_property_not_found (GError **error,
+                                      NMSetting *setting,
+                                      const char *secret_name)
+{
+	g_set_error_literal (error,
+	                     NM_CONNECTION_ERROR,
+	                     NM_CONNECTION_ERROR_PROPERTY_NOT_FOUND,
+	                     _("not a secret property"));
+	g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), secret_name);
+}
+
+gboolean
+_nm_setting_property_is_regular_secret (NMSetting *setting,
+                                        const char *secret_name)
 {
 	const NMSettInfoProperty *property;
-	GParamSpec *pspec;
+
+	nm_assert (NM_IS_SETTING (setting));
+	nm_assert (secret_name);
 
 	property = _nm_sett_info_property_get (NM_SETTING_GET_CLASS (setting), secret_name);
-	if (!property) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_PROPERTY_NOT_FOUND,
-		                     _("secret is not set"));
-		g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), secret_name);
-		return FALSE;
-	}
+	return    property
+	       && property->param_spec
+	       && NM_FLAGS_HAS (property->param_spec->flags, NM_SETTING_PARAM_SECRET);
+}
 
-	pspec = property->param_spec;
-	if (!pspec || !(pspec->flags & NM_SETTING_PARAM_SECRET)) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
-		                     _("not a secret property"));
-		g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), secret_name);
-		return FALSE;
-	}
+gboolean
+_nm_setting_property_is_regular_secret_flags (NMSetting *setting,
+                                              const char *secret_flags_name)
+{
+	const NMSettInfoProperty *property;
 
-	return TRUE;
+	nm_assert (NM_IS_SETTING (setting));
+	nm_assert (secret_flags_name);
+
+	property = _nm_sett_info_property_get (NM_SETTING_GET_CLASS (setting), secret_flags_name);
+	return    property
+	       && property->param_spec
+	       && !NM_FLAGS_HAS (property->param_spec->flags, NM_SETTING_PARAM_SECRET)
+	       && G_PARAM_SPEC_VALUE_TYPE (property->param_spec) == NM_TYPE_SETTING_SECRET_FLAGS;
 }
 
 static gboolean
 get_secret_flags (NMSetting *setting,
                   const char *secret_name,
-                  gboolean verify_secret,
                   NMSettingSecretFlags *out_flags,
                   GError **error)
 {
-	gs_free char *name_to_free = NULL;
-	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+	gs_free char *secret_flags_name_free = NULL;
+	const char *secret_flags_name;
+	NMSettingSecretFlags flags;
 
-	if (verify_secret && !is_secret_prop (setting, secret_name, error)) {
+	if (!_nm_setting_property_is_regular_secret (setting,
+	                                             secret_name)) {
+		_set_error_secret_property_not_found (error, setting, secret_name);
 		NM_SET_OUT (out_flags, NM_SETTING_SECRET_FLAG_NONE);
 		return FALSE;
 	}
 
+	secret_flags_name = nm_construct_name_a ("%s-flags", secret_name, &secret_flags_name_free);
+
+	nm_assert (_nm_setting_property_is_regular_secret_flags (setting, secret_flags_name));
+
 	g_object_get (G_OBJECT (setting),
-	              nm_construct_name_a ("%s-flags", secret_name, &name_to_free),
+	              secret_flags_name,
 	              &flags,
 	              NULL);
 	NM_SET_OUT (out_flags, flags);
@@ -1958,25 +1978,34 @@ nm_setting_get_secret_flags (NMSetting *setting,
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (secret_name != NULL, FALSE);
 
-	return NM_SETTING_GET_CLASS (setting)->get_secret_flags (setting, secret_name, TRUE, out_flags, error);
+	return NM_SETTING_GET_CLASS (setting)->get_secret_flags (setting, secret_name, out_flags, error);
 }
 
 static gboolean
 set_secret_flags (NMSetting *setting,
                   const char *secret_name,
-                  gboolean verify_secret,
                   NMSettingSecretFlags flags,
                   GError **error)
 {
-	gs_free char *name_to_free = NULL;
+	gs_free char *secret_flags_name_free = NULL;
+	const char *secret_flags_name;
 
-	if (verify_secret)
-		g_return_val_if_fail (is_secret_prop (setting, secret_name, error), FALSE);
+	if (!_nm_setting_property_is_regular_secret (setting,
+	                                             secret_name)) {
+		_set_error_secret_property_not_found (error, setting, secret_name);
+		return FALSE;
+	}
 
-	g_object_set (G_OBJECT (setting),
-	              nm_construct_name_a ("%s-flags", secret_name, &name_to_free),
-	              flags,
-	              NULL);
+	secret_flags_name = nm_construct_name_a ("%s-flags", secret_name, &secret_flags_name_free);
+
+	nm_assert (_nm_setting_property_is_regular_secret_flags (setting, secret_flags_name));
+
+	if (!nm_g_object_set_property_flags (G_OBJECT (setting),
+	                                     secret_flags_name,
+	                                     NM_TYPE_SETTING_SECRET_FLAGS,
+	                                     flags,
+	                                     error))
+		g_return_val_if_reached (FALSE);
 	return TRUE;
 }
 
@@ -2003,7 +2032,7 @@ nm_setting_set_secret_flags (NMSetting *setting,
 	g_return_val_if_fail (secret_name != NULL, FALSE);
 	g_return_val_if_fail (flags <= NM_SETTING_SECRET_FLAGS_ALL, FALSE);
 
-	return NM_SETTING_GET_CLASS (setting)->set_secret_flags (setting, secret_name, TRUE, flags, error);
+	return NM_SETTING_GET_CLASS (setting)->set_secret_flags (setting, secret_name, flags, error);
 }
 
 /**

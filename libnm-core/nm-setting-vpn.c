@@ -642,7 +642,6 @@ update_one_secret (NMSetting *setting, const char *key, GVariant *value, GError 
 static gboolean
 get_secret_flags (NMSetting *setting,
                   const char *secret_name,
-                  gboolean verify_secret,
                   NMSettingSecretFlags *out_flags,
                   GError **error)
 {
@@ -659,8 +658,7 @@ get_secret_flags (NMSetting *setting,
 
 		/* having no secret flag for the secret is fine, as long as there
 		 * is the secret itself... */
-		if (   verify_secret
-		    && !g_hash_table_contains (priv->secrets, secret_name)) {
+		if (!g_hash_table_contains (priv->secrets, secret_name)) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
@@ -689,7 +687,6 @@ get_secret_flags (NMSetting *setting,
 static gboolean
 set_secret_flags (NMSetting *setting,
                   const char *secret_name,
-                  gboolean verify_secret,
                   NMSettingSecretFlags flags,
                   GError **error)
 {
