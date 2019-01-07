@@ -2141,6 +2141,22 @@ test_roundtrip_conversion (gconstpointer test_data)
 			s_eth2 = NM_SETTING_WIRED (nm_connection_get_setting (con2, NM_TYPE_SETTING_WIRED));
 			g_assert (NM_IS_SETTING_WIRED (s_eth2));
 
+			if (   ETH_MTU > (guint32) G_MAXINT
+			    && kf_data_idx == 1) {
+				/* older versions wrote values > 2^21 as signed integers, but the reader would
+				 * always reject such negative values for G_TYPE_UINT.
+				 *
+				 * The test case kf_data_idx #1 still writes the values in the old style.
+				 * The behavior was fixed, but such values are still rejected as invalid.
+				 *
+				 * Patch the setting so that the comparison below succeeds are usual. */
+				g_assert_cmpint (nm_setting_wired_get_mtu (s_eth2), ==, 0);
+				g_object_set (s_eth2,
+				              NM_SETTING_WIRED_MTU,
+				              ETH_MTU,
+				              NULL);
+			}
+
 			g_assert_cmpint (nm_setting_wired_get_mtu (s_eth), ==, ETH_MTU);
 			g_assert_cmpint (nm_setting_wired_get_mtu (s_eth2), ==, ETH_MTU);
 			break;

@@ -2602,7 +2602,6 @@ read_one_setting_value (NMSetting *setting,
 	GType type;
 	guint64 u64;
 	gint64 i64;
-	int errsv;
 
 	if (info->error)
 		return;
@@ -2655,19 +2654,6 @@ read_one_setting_value (NMSetting *setting,
 		tmp_str = nm_keyfile_plugin_kf_get_value (keyfile, setting_name, key, &err);
 		if (!err) {
 			u64 = _nm_utils_ascii_str_to_uint64 (tmp_str, 0, 0, G_MAXUINT, G_MAXUINT64);
-
-			if (   u64 == G_MAXUINT64
-			    && (errsv = errno) != 0) {
-				/* older versions of NetworkManager wrote values larger than G_MAXINT as negative values.
-				 * Try to interpret it that way... */
-				i64 = _nm_utils_ascii_str_to_int64 (tmp_str, 0, G_MININT, -1, 0);
-				if (i64 != 0) {
-					u64 = ((guint) ((int) i64));
-					nm_assert (u64 > G_MAXINT && u64 <= G_MAXUINT);
-				} else
-					errno = errsv;
-			}
-
 			if (   u64 == G_MAXUINT64
 			    && errno != 0) {
 				g_set_error_literal (&err, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE,
