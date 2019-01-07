@@ -1129,6 +1129,23 @@ nm_clear_g_cancellable (GCancellable **cancellable)
 
 /*****************************************************************************/
 
+static inline GVariant *
+nm_g_variant_ref (GVariant *v)
+{
+	if (v)
+		g_variant_ref (v);
+	return v;
+}
+
+static inline void
+nm_g_variant_unref (GVariant *v)
+{
+	if (v)
+		g_variant_unref (v);
+}
+
+/*****************************************************************************/
+
 /* Determine whether @x is a power of two (@x being an integer type).
  * Basically, this returns TRUE, if @x has exactly one bit set.
  * For negative values and zero, this always returns FALSE. */
