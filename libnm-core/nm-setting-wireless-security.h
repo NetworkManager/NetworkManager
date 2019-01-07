@@ -99,9 +99,12 @@ typedef enum {
  *
  * Configure the use of WPS by a connection while it activates.
  *
+ * Note: prior to 1.16, this was a GEnum type instead of a GFlags type
+ * altough, with the same numeric values.
+ *
  * Since: 1.10
  **/
-typedef enum {
+typedef enum { /*< flags >*/
 	NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT     = 0x00000000,
 	NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED    = 0x00000001,
 	NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_AUTO        = 0x00000002,
