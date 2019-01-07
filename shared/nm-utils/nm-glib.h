@@ -538,4 +538,28 @@ _nm_g_variant_new_printf (const char *format_string, ...)
 
 /*****************************************************************************/
 
+#if !GLIB_CHECK_VERSION (2, 47, 1)
+/* Older versions of g_value_unset() only allowed to unset a GValue which
+ * was initialized previously. This was relaxed ([1], [2], [3]).
+ *
+ * Our nm_auto_unset_gvalue macro requires to be able to call g_value_unset().
+ * Also, it is our general practice to allow for that. Add a compat implementation.
+ *
+ * [1] https://gitlab.gnome.org/GNOME/glib/commit/4b2d92a864f1505f1b08eb639d74293fa32681da
+ * [2] commit "Allow passing unset GValues to g_value_unset()"
+ * [3] https://bugzilla.gnome.org/show_bug.cgi?id=755766
+ */
+static inline void
+_nm_g_value_unset (GValue *value)
+{
+	g_return_if_fail (value);
+
+	if (value->g_type != 0)
+		g_value_unset (value);
+}
+#define g_value_unset _nm_g_value_unset
+#endif
+
+/*****************************************************************************/
+
 #endif  /* __NM_GLIB_H__ */

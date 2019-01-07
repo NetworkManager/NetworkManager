@@ -121,11 +121,21 @@
  */
 #define NM_SETTING_COMPARE_FLAG_NONE ((NMSettingCompareFlags) 0)
 
+/*****************************************************************************/
+
 #define NM_SETTING_SECRET_FLAGS_ALL \
-	(NM_SETTING_SECRET_FLAG_NONE | \
-	 NM_SETTING_SECRET_FLAG_AGENT_OWNED | \
-	 NM_SETTING_SECRET_FLAG_NOT_SAVED | \
-	 NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+	((NMSettingSecretFlags) (  NM_SETTING_SECRET_FLAG_NONE \
+	                         | NM_SETTING_SECRET_FLAG_AGENT_OWNED \
+	                         | NM_SETTING_SECRET_FLAG_NOT_SAVED \
+	                         | NM_SETTING_SECRET_FLAG_NOT_REQUIRED))
+
+static inline gboolean
+_nm_setting_secret_flags_valid (NMSettingSecretFlags flags)
+{
+	return !NM_FLAGS_ANY (flags, ~NM_SETTING_SECRET_FLAGS_ALL);
+}
+
+/*****************************************************************************/
 
 typedef enum { /*< skip >*/
 	NM_SETTING_PARSE_FLAGS_NONE                     = 0,
@@ -145,6 +155,26 @@ gboolean _nm_connection_replace_settings (NMConnection *connection,
 gpointer _nm_connection_check_main_setting (NMConnection *connection,
                                             const char *setting_name,
                                             GError **error);
+
+typedef enum {
+	/* whether the connection has any secrets.
+	 *
+	 * @arg may be %NULL or a pointer to a gboolean for the result. The return
+	 *   value of _nm_connection_aggregate() is likewise the boolean result. */
+	NM_CONNECTION_AGGREGATE_ANY_SECRETS,
+
+	/* whether the connection has any secret with flags NM_SETTING_SECRET_FLAG_NONE.
+	 * Note that this only cares about the flags, not whether the secret is actually
+	 * present.
+	 *
+	 * @arg may be %NULL or a pointer to a gboolean for the result. The return
+	 *   value of _nm_connection_aggregate() is likewise the boolean result. */
+	NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS,
+} NMConnectionAggregateType;
+
+gboolean _nm_connection_aggregate (NMConnection *connection,
+                                   NMConnectionAggregateType type,
+                                   gpointer arg);
 
 /**
  * NMSettingVerifyResult:
@@ -173,13 +203,6 @@ NMConnection *_nm_simple_connection_new_from_dbus (GVariant      *dict,
 NMSettingPriority _nm_setting_get_setting_priority (NMSetting *setting);
 
 gboolean _nm_setting_get_property (NMSetting *setting, const char *name, GValue *value);
-
-/* NM_CONNECTION_SERIALIZE_NO_SYNTH: This flag is passed to _nm_setting_to_dbus()
- * by nm_setting_to_string() to let it know that it shouldn't serialize the
- * synthetic properties. It wouldn't be able to do so, since the full connection
- * is not available, only the setting alone.
- */
-#define NM_CONNECTION_SERIALIZE_NO_SYNTH ((NMConnectionSerializationFlags) 0x80000000)
 
 /*****************************************************************************/
 
@@ -589,9 +612,11 @@ typedef struct _NMSettInfoSetting NMSettInfoSetting;
 
 typedef GVariant *(*NMSettingPropertyGetFunc)           (NMSetting     *setting,
                                                          const char    *property);
-typedef GVariant *(*NMSettingPropertySynthFunc)         (NMSetting     *setting,
+typedef GVariant *(*NMSettingPropertySynthFunc)         (const NMSettInfoSetting *sett_info,
+                                                         guint property_idx,
                                                          NMConnection  *connection,
-                                                         const char    *property);
+                                                         NMSetting     *setting,
+                                                         NMConnectionSerializationFlags flags);
 typedef gboolean  (*NMSettingPropertySetFunc)           (NMSetting     *setting,
                                                          GVariant      *connection_dict,
                                                          const char    *property,
@@ -644,10 +669,38 @@ typedef struct {
 
 struct _NMSettInfoSetting {
 	NMSettingClass *setting_class;
+
+	/* the properties, sorted by property name. */
 	const NMSettInfoProperty *property_infos;
+
+	/* the @property_infos list is sorted by property name. For some uses we need
+	 * a different sort order. If @property_infos_sorted is set, this is the order
+	 * instead. It is used for:
+	 *
+	 *   - nm_setting_enumerate_values()
+	 *   - keyfile writer adding keys to the group.
+	 *
+	 * Note that currently only NMSettingConnection implements here a sort order
+	 * that differs from alphabetical sort of the property names.
+	 */
+	const NMSettInfoProperty *const*property_infos_sorted;
+
 	guint property_infos_len;
 	NMSettInfoSettDetail detail;
 };
+
+static inline const NMSettInfoProperty *
+_nm_sett_info_property_info_get_sorted (const NMSettInfoSetting *sett_info,
+                                        guint idx)
+{
+	nm_assert (sett_info);
+	nm_assert (idx < sett_info->property_infos_len);
+	nm_assert (!sett_info->property_infos_sorted || sett_info->property_infos_sorted[idx]);
+
+	return   sett_info->property_infos_sorted
+	       ? sett_info->property_infos_sorted[idx]
+	       : &sett_info->property_infos[idx];
+}
 
 const NMSettInfoSetting *_nm_sett_info_setting_get (NMSettingClass *setting_class);
 

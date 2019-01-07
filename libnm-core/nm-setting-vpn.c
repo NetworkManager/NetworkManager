@@ -461,6 +461,66 @@ nm_setting_vpn_foreach_secret (NMSettingVpn *setting,
 	foreach_item_helper (setting, TRUE, func, user_data);
 }
 
+gboolean
+_nm_setting_vpn_aggregate (NMSettingVpn *setting,
+                           NMConnectionAggregateType type,
+                           gpointer arg)
+{
+	NMSettingVpnPrivate *priv;
+	NMSettingSecretFlags secret_flags;
+	const char *key_name;
+	GHashTableIter iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), FALSE);
+
+	priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+
+	switch (type) {
+
+	case NM_CONNECTION_AGGREGATE_ANY_SECRETS:
+		if (g_hash_table_size (priv->secrets) > 0) {
+			*((gboolean *) arg) = TRUE;
+			return TRUE;
+		}
+		return FALSE;
+
+	case NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS:
+
+		g_hash_table_iter_init (&iter, priv->secrets);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key_name, NULL)) {
+			if (!nm_setting_get_secret_flags (NM_SETTING (setting), key_name, &secret_flags, NULL))
+				nm_assert_not_reached ();
+			if (secret_flags == NM_SETTING_SECRET_FLAG_NONE) {
+				*((gboolean *) arg) = TRUE;
+				return TRUE;
+			}
+		}
+
+		/* Ok, we have no secrets with system-secret flags.
+		 * But do we have any secret-flags (without secrets) that indicate system secrets? */
+		g_hash_table_iter_init (&iter, priv->data);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key_name, NULL)) {
+			gs_free char *secret_name = NULL;
+
+			if (!g_str_has_suffix (key_name, "-flags"))
+				continue;
+			secret_name = g_strndup (key_name, strlen (key_name) - NM_STRLEN ("-flags"));
+			if (secret_name[0] == '\0')
+				continue;
+			if (!nm_setting_get_secret_flags (NM_SETTING (setting), secret_name, &secret_flags, NULL))
+				nm_assert_not_reached ();
+			if (secret_flags == NM_SETTING_SECRET_FLAG_NONE) {
+				*((gboolean *) arg) = TRUE;
+				return TRUE;
+			}
+		}
+
+		return FALSE;
+	}
+
+	g_return_val_if_reached (FALSE);
+}
+
 /**
  * nm_setting_vpn_get_timeout:
  * @setting: the #NMSettingVpn
@@ -642,41 +702,52 @@ update_one_secret (NMSetting *setting, const char *key, GVariant *value, GError 
 static gboolean
 get_secret_flags (NMSetting *setting,
                   const char *secret_name,
-                  gboolean verify_secret,
                   NMSettingSecretFlags *out_flags,
                   GError **error)
 {
 	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
-	gs_free char *flags_key = NULL;
-	gpointer val;
-	unsigned long tmp;
-	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+	gs_free char *flags_key_free = NULL;
+	const char *flags_key;
+	const char *flags_val;
+	gint64 i64;
 
-	flags_key = g_strdup_printf ("%s-flags", secret_name);
-	if (g_hash_table_lookup_extended (priv->data, flags_key, NULL, &val)) {
-		errno = 0;
-		tmp = strtoul ((const char *) val, NULL, 10);
-		if ((errno != 0) || (tmp > NM_SETTING_SECRET_FLAGS_ALL)) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("failed to convert value '%s' to uint"),
-			             (const char *) val);
+	flags_key = nm_construct_name_a ("%s-flags", secret_name, &flags_key_free);
+
+	if (!g_hash_table_lookup_extended (priv->data, flags_key, NULL, (gpointer *) &flags_val)) {
+		NM_SET_OUT (out_flags, NM_SETTING_SECRET_FLAG_NONE);
+
+		/* having no secret flag for the secret is fine, as long as there
+		 * is the secret itself... */
+		if (!g_hash_table_contains (priv->secrets, secret_name)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
+			                     _("secret flags property not found"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_VPN_SETTING_NAME, flags_key);
 			return FALSE;
 		}
-		flags = (NMSettingSecretFlags) tmp;
+		return TRUE;
 	}
 
-	if (out_flags)
-		*out_flags = flags;
+	i64 = _nm_utils_ascii_str_to_int64 (flags_val, 10, 0, NM_SETTING_SECRET_FLAGS_ALL, -1);
+	if (   i64 == -1
+	    || !_nm_setting_secret_flags_valid (i64)) {
+		/* The flags keys is set to an unexpected value. That is a configuration
+		 * error. Note that keys named "*-flags" are reserved for secrets. The user
+		 * must not use this for anything but secret flags. Hence, we cannot fail
+		 * to read the secret, we pretend that the secret flag is set to the default
+		 * NM_SETTING_SECRET_FLAG_NONE. */
+		NM_SET_OUT (out_flags, NM_SETTING_SECRET_FLAG_NONE);
+		return TRUE;
+	}
+
+	NM_SET_OUT (out_flags, (NMSettingSecretFlags) i64);
 	return TRUE;
 }
 
 static gboolean
 set_secret_flags (NMSetting *setting,
                   const char *secret_name,
-                  gboolean verify_secret,
                   NMSettingSecretFlags flags,
                   GError **error)
 {

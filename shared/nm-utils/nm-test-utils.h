@@ -905,6 +905,16 @@ nmtst_rand_buf (GRand *rand, gpointer buffer, gsize buffer_length)
 	return buffer;
 }
 
+#define _nmtst_rand_select(uniq, v0, ...) \
+	({ \
+		typeof (v0) NM_UNIQ_T (UNIQ, uniq)[1 + NM_NARG (__VA_ARGS__)] = { (v0), __VA_ARGS__ }; \
+		\
+		NM_UNIQ_T (UNIQ, uniq)[nmtst_get_rand_int () % G_N_ELEMENTS (NM_UNIQ_T (UNIQ, uniq))]; \
+	})
+
+#define nmtst_rand_select(...) \
+	_nmtst_rand_select (NM_UNIQ, __VA_ARGS__)
+
 static inline void *
 nmtst_rand_perm (GRand *rand, void *dst, const void *src, gsize elmt_size, gsize n_elmt)
 {
@@ -1966,8 +1976,8 @@ nmtst_assert_hwaddr_equals (gconstpointer hwaddr1, gssize hwaddr1_len, const cha
 static inline NMConnection *
 nmtst_create_connection_from_keyfile (const char *keyfile_str, const char *full_filename)
 {
-	GKeyFile *keyfile;
-	GError *error = NULL;
+	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	gs_free_error GError *error = NULL;
 	gboolean success;
 	NMConnection *con;
 	gs_free char *filename = g_path_get_basename (full_filename);
@@ -1978,14 +1988,10 @@ nmtst_create_connection_from_keyfile (const char *keyfile_str, const char *full_
 
 	keyfile =  g_key_file_new ();
 	success = g_key_file_load_from_data (keyfile, keyfile_str, strlen (keyfile_str), G_KEY_FILE_NONE, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_success (success, error);
 
 	con = nm_keyfile_read (keyfile, base_dir, NULL, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (NM_IS_CONNECTION (con));
-
-	g_key_file_unref (keyfile);
+	nmtst_assert_success (NM_IS_CONNECTION (con), error);
 
 	nm_keyfile_read_ensure_id (con, filename);
 	nm_keyfile_read_ensure_uuid (con, full_filename);
@@ -2140,5 +2146,51 @@ typedef enum {
 	} G_STMT_END
 
 #endif /* __NM_CONNECTION_H__ */
+
+/*****************************************************************************/
+
+static inline void
+nmtst_keyfile_assert_data (GKeyFile *kf, const char *data, gssize data_len)
+{
+	gs_unref_keyfile GKeyFile *kf2 = NULL;
+	gs_free_error GError *error = NULL;
+	gs_free char *d1 = NULL;
+	gs_free char *d2 = NULL;
+	gboolean success;
+	gsize d1_len;
+	gsize d2_len;
+
+	g_assert (kf);
+	g_assert (data || data_len == 0);
+	g_assert (data_len >= -1);
+
+	d1 = g_key_file_to_data (kf, &d1_len, &error);
+	nmtst_assert_success (d1, error);
+
+	if (data_len == -1) {
+		g_assert_cmpint (strlen (d1), ==, d1_len);
+		data_len = strlen (data);
+		g_assert_cmpstr (d1, ==, data);
+	}
+
+	g_assert_cmpmem (d1, d1_len, data, (gsize) data_len);
+
+	/* also check that we can re-generate the same keyfile from the data. */
+
+	kf2 = g_key_file_new ();
+	success = g_key_file_load_from_data (kf2,
+	                                     d1,
+	                                     d1_len,
+	                                     G_KEY_FILE_NONE,
+	                                     &error);
+	nmtst_assert_success (success, error);
+
+	d2 = g_key_file_to_data (kf2, &d2_len, &error);
+	nmtst_assert_success (d2, error);
+
+	g_assert_cmpmem (d2, d2_len, d1, d1_len);
+}
+
+/*****************************************************************************/
 
 #endif /* __NM_TEST_UTILS_H__ */

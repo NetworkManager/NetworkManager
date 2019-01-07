@@ -1059,49 +1059,6 @@ _con_get_request_start_validated (NMAuthChain *chain,
 }
 
 static void
-has_system_secrets_check (NMSetting *setting,
-                          const char *key,
-                          const GValue *value,
-                          GParamFlags flags,
-                          gpointer user_data)
-{
-	NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
-	gboolean *has_system = user_data;
-
-	if (!(flags & NM_SETTING_PARAM_SECRET))
-		return;
-
-	/* Clear out system-owned or always-ask secrets */
-	if (NM_IS_SETTING_VPN (setting) && !strcmp (key, NM_SETTING_VPN_SECRETS)) {
-		GHashTableIter iter;
-		const char *secret_name = NULL;
-
-		/* VPNs are special; need to handle each secret separately */
-		g_hash_table_iter_init (&iter, (GHashTable *) g_value_get_boxed (value));
-		while (g_hash_table_iter_next (&iter, (gpointer *) &secret_name, NULL)) {
-			secret_flags = NM_SETTING_SECRET_FLAG_NONE;
-			nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL);
-			if (secret_flags == NM_SETTING_SECRET_FLAG_NONE)
-				*has_system = TRUE;
-		}
-	} else {
-		if (!nm_setting_get_secret_flags (setting, key, &secret_flags, NULL))
-			g_return_if_reached ();
-		if (secret_flags == NM_SETTING_SECRET_FLAG_NONE)
-			*has_system = TRUE;
-	}
-}
-
-static gboolean
-has_system_secrets (NMConnection *connection)
-{
-	gboolean has_system = FALSE;
-
-	nm_connection_for_each_setting_value (connection, has_system_secrets_check, &has_system);
-	return has_system;
-}
-
-static void
 _con_get_request_start (Request *req)
 {
 	NMAgentManager *self;
@@ -1121,7 +1078,8 @@ _con_get_request_start (Request *req)
 	 * unprivileged users.
 	 */
 	if (   (req->con.get.flags != NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE)
-	    && (req->con.get.existing_secrets || has_system_secrets (req->con.connection))) {
+	    && (   req->con.get.existing_secrets
+	        || _nm_connection_aggregate (req->con.connection, NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS, NULL))) {
 		_LOGD (NULL, "("LOG_REQ_FMT") request has system secrets; checking agent %s for MODIFY",
 		       LOG_REQ_ARG (req), agent_dbus_owner);
 

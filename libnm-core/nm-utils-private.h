@@ -56,9 +56,11 @@ gboolean    _nm_utils_hwaddr_cloned_not_set (NMSetting *setting,
                                              const char    *property,
                                              NMSettingParseFlags parse_flags,
                                              GError       **error);
-GVariant *  _nm_utils_hwaddr_cloned_data_synth (NMSetting *setting,
+GVariant *  _nm_utils_hwaddr_cloned_data_synth (const NMSettInfoSetting *sett_info,
+                                                guint property_idx,
                                                 NMConnection *connection,
-                                                const char *property);
+                                                NMSetting *setting,
+                                                NMConnectionSerializationFlags flags);
 gboolean    _nm_utils_hwaddr_cloned_data_set (NMSetting *setting,
                                               GVariant *connection_dict,
                                               const char *property,

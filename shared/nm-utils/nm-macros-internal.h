@@ -829,6 +829,9 @@ fcn (void) \
 #define nm_streq(s1, s2)  (strcmp (s1, s2) == 0)
 #define nm_streq0(s1, s2) (g_strcmp0 (s1, s2) == 0)
 
+#define NM_STR_HAS_PREFIX(str, prefix) \
+	(strncmp ((str), ""prefix"", NM_STRLEN (prefix)) == 0)
+
 /*****************************************************************************/
 
 static inline GString *

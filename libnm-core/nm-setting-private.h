@@ -82,9 +82,11 @@ gboolean _nm_setting_clear_secrets_with_flags (NMSetting *setting,
 
 #define NM_SETTING_PARAM_GENDATA_BACKED (1 << (7 + G_PARAM_USER_SHIFT))
 
-GVariant *_nm_setting_get_deprecated_virtual_interface_name (NMSetting *setting,
+GVariant *_nm_setting_get_deprecated_virtual_interface_name (const NMSettInfoSetting *sett_info,
+                                                             guint property_idx,
                                                              NMConnection *connection,
-                                                             const char *property);
+                                                             NMSetting *setting,
+                                                             NMConnectionSerializationFlags flags);
 
 NMSettingVerifyResult _nm_setting_verify (NMSetting *setting,
                                           NMConnection *connection,
@@ -94,6 +96,13 @@ gboolean _nm_setting_verify_secret_string (const char *str,
                                            const char *setting_name,
                                            const char *property,
                                            GError **error);
+
+gboolean _nm_setting_aggregate (NMSetting *setting,
+                                NMConnectionAggregateType type,
+                                gpointer arg);
+gboolean _nm_setting_vpn_aggregate (NMSettingVpn *setting,
+                                    NMConnectionAggregateType type,
+                                    gpointer arg);
 
 gboolean _nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_type);
 
@@ -106,6 +115,11 @@ NMSetting  *_nm_setting_new_from_dbus (GType setting_type,
                                        GVariant *connection_dict,
                                        NMSettingParseFlags parse_flags,
                                        GError **error);
+
+gboolean _nm_setting_property_is_regular_secret (NMSetting *setting,
+                                                 const char *secret_name);
+gboolean _nm_setting_property_is_regular_secret_flags (NMSetting *setting,
+                                                       const char *secret_flags_name);
 
 /*****************************************************************************/
 
