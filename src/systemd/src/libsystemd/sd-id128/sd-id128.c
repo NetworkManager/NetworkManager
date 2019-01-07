@@ -21,7 +21,7 @@
 #include "util.h"
 
 #if 0 /* NM_IGNORED */
-_public_ char *sd_id128_to_string(sd_id128_t id, char s[SD_ID128_STRING_MAX]) {
+_public_ char *sd_id128_to_string(sd_id128_t id, char s[_SD_ARRAY_STATIC SD_ID128_STRING_MAX]) {
         unsigned n;
 
         assert_return(s, NULL);

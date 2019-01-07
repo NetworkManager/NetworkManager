@@ -26,9 +26,6 @@
 #include "parse-util.h"
 #include "path-util.h"
 #include "process-util.h"
-#if 0 /* NM_IGNORED */
-#include "serialize.h"
-#endif /* NM_IGNORED */
 #include "stat-util.h"
 #include "string-util.h"
 #include "strv.h"
