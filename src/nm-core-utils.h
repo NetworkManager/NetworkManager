@@ -279,7 +279,19 @@ gboolean nm_utils_host_id_get (const guint8 **out_host_id,
                                gsize *out_host_id_len);
 gint64 nm_utils_host_id_get_timestamp_ns (void);
 
-int nm_utils_detect_arp_type_from_addrlen (gsize hwaddr_len);
+/*****************************************************************************/
+
+int nm_utils_arp_type_detect_from_hwaddrlen (gsize hwaddr_len);
+
+gboolean nm_utils_arp_type_validate_hwaddr (int arp_type,
+                                            const guint8 *hwaddr,
+                                            gsize hwaddr_len);
+
+gboolean nm_utils_arp_type_get_hwaddr_relevant_part (int arp_type,
+                                                     const guint8 **hwaddr,
+                                                     gsize *hwaddr_len);
+
+/*****************************************************************************/
 
 /* IPv6 Interface Identifier helpers */
 
@@ -374,6 +386,10 @@ char *nm_utils_hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
                                        const char *generate_mac_address_mask);
 
 /*****************************************************************************/
+
+GBytes *nm_utils_dhcp_client_id_mac (int arp_type,
+                                     const guint8 *hwaddr,
+                                     gsize hwaddr_len);
 
 guint32 nm_utils_create_dhcp_iaid (gboolean legacy_unstable_byteorder,
                                    const guint8 *interface_id,

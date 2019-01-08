@@ -2841,7 +2841,7 @@ nm_utils_boot_id_bin (void)
 /*****************************************************************************/
 
 /**
- * nm_utils_detect_arp_type_from_addrlen:
+ * nm_utils_arp_type_detect_from_hwaddrlen:
  * @hwaddr_len: the length of the hardware address in bytes.
  *
  * Detects the arp-type based on the length of the MAC address.
@@ -2852,7 +2852,7 @@ nm_utils_boot_id_bin (void)
  *
  * Returns: the arp-type or negative value on error. */
 int
-nm_utils_detect_arp_type_from_addrlen (gsize hwaddr_len)
+nm_utils_arp_type_detect_from_hwaddrlen (gsize hwaddr_len)
 {
 	switch (hwaddr_len) {
 	case ETH_ALEN:
@@ -2866,6 +2866,51 @@ nm_utils_detect_arp_type_from_addrlen (gsize hwaddr_len)
 		return -EINVAL;
 	}
 }
+
+gboolean
+nm_utils_arp_type_validate_hwaddr (int arp_type,
+                                   const guint8 *hwaddr,
+                                   gsize hwaddr_len)
+{
+
+	if (!hwaddr)
+		return FALSE;
+
+	if (arp_type == ARPHRD_ETHER) {
+		G_STATIC_ASSERT (ARPHRD_ETHER >= 0 && ARPHRD_ETHER <= 0xFF);
+		if (hwaddr_len != ETH_ALEN)
+			return FALSE;
+	} else if (arp_type == ARPHRD_INFINIBAND) {
+		G_STATIC_ASSERT (ARPHRD_INFINIBAND >= 0 && ARPHRD_INFINIBAND <= 0xFF);
+		if (hwaddr_len != INFINIBAND_ALEN)
+			return FALSE;
+	} else
+		return FALSE;
+
+	nm_assert (arp_type == nm_utils_arp_type_detect_from_hwaddrlen (hwaddr_len));
+	return TRUE;
+}
+
+gboolean
+nm_utils_arp_type_get_hwaddr_relevant_part (int arp_type,
+                                            const guint8 **hwaddr,
+                                            gsize *hwaddr_len)
+{
+	g_return_val_if_fail (   hwaddr
+	                      && hwaddr_len
+	                      && nm_utils_arp_type_validate_hwaddr (arp_type, *hwaddr, *hwaddr_len),
+	                      FALSE);
+
+	/* for infiniband, we only consider the last 8 bytes. */
+	if (arp_type == ARPHRD_INFINIBAND) {
+		*hwaddr += (INFINIBAND_ALEN - 8);
+		*hwaddr_len = 8;
+	}
+
+	return TRUE;
+}
+
+/*****************************************************************************/
 
 /* Returns the "u" (universal/local) bit value for a Modified EUI-64 */
 static gboolean
@@ -3513,6 +3558,23 @@ nm_utils_hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
 }
 
 /*****************************************************************************/
+
+GBytes *
+nm_utils_dhcp_client_id_mac (int arp_type,
+                             const guint8 *hwaddr,
+                             gsize hwaddr_len)
+{
+	guint8 *client_id_buf;
+	const guint8 hwaddr_type = arp_type;
+
+	if (!nm_utils_arp_type_get_hwaddr_relevant_part (arp_type, &hwaddr, &hwaddr_len))
+		g_return_val_if_reached (NULL);
+
+	client_id_buf = g_malloc (hwaddr_len + 1);
+	client_id_buf[0] = hwaddr_type;
+	memcpy (&client_id_buf[1], hwaddr, hwaddr_len);
+	return g_bytes_new_take (client_id_buf, hwaddr_len + 1);
+}
 
 #define HASH_KEY ((const guint8[16]) { 0x80, 0x11, 0x8c, 0xc2, 0xfe, 0x4a, 0x03, 0xee, 0x3e, 0xd6, 0x0c, 0x6f, 0x36, 0x39, 0x14, 0x09 })
 

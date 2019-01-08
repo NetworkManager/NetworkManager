@@ -681,7 +681,7 @@ ip4_start (NMDhcpClient *client,
 	hwaddr = nm_dhcp_client_get_hw_addr (client);
 	if (   !hwaddr
 	    || !(hwaddr_arr = g_bytes_get_data (hwaddr, &hwaddr_len))
-	    || (arp_type = nm_utils_detect_arp_type_from_addrlen (hwaddr_len)) < 0) {
+	    || (arp_type = nm_utils_arp_type_detect_from_hwaddrlen (hwaddr_len)) < 0) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "invalid MAC address");
 		return FALSE;
 	}
@@ -725,8 +725,7 @@ ip4_start (NMDhcpClient *client,
 
 	client_id = nm_dhcp_client_get_client_id (client);
 	if (!client_id) {
-		client_id_new = nm_utils_dhcp_client_id_systemd_node_specific (TRUE,
-		                                                               nm_dhcp_client_get_iface (client));
+		client_id_new = nm_utils_dhcp_client_id_mac (arp_type, hwaddr_arr, hwaddr_len);
 		client_id = client_id_new;
 	}
 
@@ -740,6 +739,8 @@ ip4_start (NMDhcpClient *client,
 		return FALSE;
 	}
 
+	/* Note that we always set a client-id. In particular for infiniband that is necessary,
+	 * see https://tools.ietf.org/html/rfc4390#section-2.1 . */
 	r = sd_dhcp_client_set_client_id (sd_client,
 	                                  client_id_arr[0],
 	                                  client_id_arr + 1,
@@ -1032,7 +1033,7 @@ ip6_start (NMDhcpClient *client,
 	hwaddr = nm_dhcp_client_get_hw_addr (client);
 	if (   !hwaddr
 	    || !(hwaddr_arr = g_bytes_get_data (hwaddr, &hwaddr_len))
-	    || (arp_type = nm_utils_detect_arp_type_from_addrlen (hwaddr_len)) < 0) {
+	    || (arp_type = nm_utils_arp_type_detect_from_hwaddrlen (hwaddr_len)) < 0) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "invalid MAC address");
 		return FALSE;
 	}
