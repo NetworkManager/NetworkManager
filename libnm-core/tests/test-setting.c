@@ -2178,6 +2178,14 @@ test_roundtrip_conversion (gconstpointer test_data)
 		if (flag == NM_CONNECTION_SERIALIZE_ALL) {
 			con2 = _connection_new_from_dbus_strict (con_var, TRUE);
 			nmtst_assert_connection_equals (con, nmtst_get_rand_bool (), con2, nmtst_get_rand_bool ());
+
+			{
+				gs_unref_keyfile GKeyFile *kf = NULL;
+
+				kf = nm_keyfile_write (con2, NULL, NULL, &error);
+				nmtst_assert_success (kf, error);
+				nmtst_keyfile_assert_data (kf, kf_data_arr->pdata[0], -1);
+			}
 		}
 	}
 }
