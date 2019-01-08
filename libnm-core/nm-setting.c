@@ -86,6 +86,11 @@ G_DEFINE_ABSTRACT_TYPE (NMSetting, nm_setting, G_TYPE_OBJECT)
 
 static GenData *_gendata_hash (NMSetting *setting, gboolean create_if_necessary);
 
+static gboolean should_compare_prop (gboolean for_diff,
+                                     NMSetting *setting,
+                                     const NMSettInfoProperty *property_info,
+                                     NMSettingCompareFlags comp_flags);
+
 /*****************************************************************************/
 
 static NMSettingPriority
@@ -1334,88 +1339,85 @@ nm_setting_compare (NMSetting *a,
 		                                  g_variant_equal);
 	}
 
-	/* And now all properties */
 	for (i = 0; i < sett_info->property_infos_len; i++) {
-		GParamSpec *prop_spec = sett_info->property_infos[i].param_spec;
+		const NMSettInfoProperty *property_info = &sett_info->property_infos[i];
 
-		if (!prop_spec)
+		if (!should_compare_prop (FALSE, a, property_info, flags))
 			continue;
 
-		/* Fuzzy compare ignores secrets and properties defined with the FUZZY_IGNORE flag */
-		if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_FUZZY)
-		    && NM_FLAGS_ANY (prop_spec->flags, NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET))
-			continue;
-
-		if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)
-		    && !NM_FLAGS_HAS (prop_spec->flags, NM_SETTING_PARAM_INFERRABLE))
-			continue;
-
-		if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY)
-		    && NM_FLAGS_HAS (prop_spec->flags, NM_SETTING_PARAM_REAPPLY_IMMEDIATELY))
-			continue;
-
-		if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
-		    && NM_FLAGS_HAS (prop_spec->flags, NM_SETTING_PARAM_SECRET))
-			continue;
-
-		if (!NM_SETTING_GET_CLASS (a)->compare_property (a, b, prop_spec, flags))
+		if (!NM_SETTING_GET_CLASS (a)->compare_property (a, b, property_info->param_spec, flags))
 			return FALSE;
 	}
 
 	return TRUE;
 }
 
-static inline gboolean
-should_compare_prop (NMSetting *setting,
-                     const char *prop_name,
-                     NMSettingCompareFlags comp_flags,
-                     GParamFlags prop_flags)
+static gboolean
+should_compare_prop (gboolean for_diff,
+                     NMSetting *setting,
+                     const NMSettInfoProperty *property_info,
+                     NMSettingCompareFlags comp_flags)
 {
-	/* Fuzzy compare ignores secrets and properties defined with the FUZZY_IGNORE flag */
-	if (   (comp_flags & NM_SETTING_COMPARE_FLAG_FUZZY)
-	    && (prop_flags & (NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET)))
+	const GParamSpec *param_spec = property_info->param_spec;
+
+	if (!param_spec)
 		return FALSE;
 
-	if ((comp_flags & NM_SETTING_COMPARE_FLAG_INFERRABLE) && !(prop_flags & NM_SETTING_PARAM_INFERRABLE))
+	if (   NM_FLAGS_HAS (comp_flags, NM_SETTING_COMPARE_FLAG_FUZZY)
+	    && NM_FLAGS_ANY (param_spec->flags, NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET))
 		return FALSE;
 
-	if ((comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY) && (prop_flags & NM_SETTING_PARAM_REAPPLY_IMMEDIATELY))
+	if (   NM_FLAGS_HAS (comp_flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)
+	    && !NM_FLAGS_HAS (param_spec->flags, NM_SETTING_PARAM_INFERRABLE))
 		return FALSE;
 
-	if (prop_flags & NM_SETTING_PARAM_SECRET) {
+	if (   NM_FLAGS_HAS (comp_flags, NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY)
+	    && NM_FLAGS_HAS (param_spec->flags, NM_SETTING_PARAM_REAPPLY_IMMEDIATELY))
+		return FALSE;
+
+	if (   NM_FLAGS_HAS (comp_flags, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
+	    && NM_FLAGS_HAS (param_spec->flags, NM_SETTING_PARAM_SECRET))
+		return FALSE;
+
+	if (nm_streq (param_spec->name, NM_SETTING_NAME))
+		return FALSE;
+
+	if (   for_diff
+	    && NM_FLAGS_ANY (comp_flags,   NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS
+	                                 | NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
+	    && NM_FLAGS_HAS (param_spec->flags, NM_SETTING_PARAM_SECRET)) {
 		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
-		if (comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
-			return FALSE;
-
 		if (   NM_IS_SETTING_VPN (setting)
-		    && g_strcmp0 (prop_name, NM_SETTING_VPN_SECRETS) == 0) {
+		    && nm_streq (param_spec->name, NM_SETTING_VPN_SECRETS)) {
 			/* FIXME: NMSettingVPN:NM_SETTING_VPN_SECRETS has NM_SETTING_PARAM_SECRET.
 			 * nm_setting_get_secret_flags() quite possibly fails, but it might succeed if the
 			 * setting accidentally uses a key "secrets". */
 			return TRUE;
 		}
 
-		if (!nm_setting_get_secret_flags (setting, prop_name, &secret_flags, NULL))
+		if (!nm_setting_get_secret_flags (setting, param_spec->name, &secret_flags, NULL))
 			g_return_val_if_reached (FALSE);
 
-		if (   (comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS)
-		    && (secret_flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED))
+		if (   NM_FLAGS_HAS (comp_flags, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS)
+		    && NM_FLAGS_HAS (secret_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED))
 			return FALSE;
 
-		if (   (comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
-		    && (secret_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED))
+		if (   NM_FLAGS_HAS (comp_flags, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
+		    && NM_FLAGS_HAS (secret_flags, NM_SETTING_SECRET_FLAG_NOT_SAVED))
 			return FALSE;
 	}
 
-	if (   (comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_ID)
+	if (   for_diff
+	    && NM_FLAGS_HAS (comp_flags, NM_SETTING_COMPARE_FLAG_IGNORE_ID)
 	    && NM_IS_SETTING_CONNECTION (setting)
-	    && !strcmp (prop_name, NM_SETTING_CONNECTION_ID))
+	    && nm_streq (param_spec->name, NM_SETTING_CONNECTION_ID))
 		return FALSE;
 
-	if (   (comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP)
+	if (   for_diff
+	    && NM_FLAGS_HAS (comp_flags, NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP)
 	    && NM_IS_SETTING_CONNECTION (setting)
-	    && !strcmp (prop_name, NM_SETTING_CONNECTION_TIMESTAMP))
+	    && nm_streq (param_spec->name, NM_SETTING_CONNECTION_TIMESTAMP))
 		return FALSE;
 
 	return TRUE;
@@ -1552,17 +1554,14 @@ nm_setting_diff (NMSetting *a,
 		}
 	} else {
 		for (i = 0; i < sett_info->property_infos_len; i++) {
-			GParamSpec *prop_spec = sett_info->property_infos[i].param_spec;
+			const NMSettInfoProperty *property_info = &sett_info->property_infos[i];
+			GParamSpec *prop_spec;
 			NMSettingDiffResult r = NM_SETTING_DIFF_RESULT_UNKNOWN;
 
-			if (!prop_spec)
+			if (!should_compare_prop (TRUE, a, property_info, flags))
 				continue;
 
-			/* Handle compare flags */
-			if (!should_compare_prop (a, prop_spec->name, flags, prop_spec->flags))
-				continue;
-			if (strcmp (prop_spec->name, NM_SETTING_NAME) == 0)
-				continue;
+			prop_spec = property_info->param_spec;
 
 			compared_any = TRUE;
 
