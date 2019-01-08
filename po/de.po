@@ -22,7 +22,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-01-08 16:44+0100\n"
+"POT-Creation-Date: 2019-01-08 18:22+0100\n"
 "PO-Revision-Date: 2018-07-15 17:31+0200\n"
 "Last-Translator: Mario Blättermann <mario.blaettermann@gmail.com>\n"
 "Language-Team: Deutsch <gnome-de@gnome.org>\n"
@@ -2168,7 +2168,7 @@ msgstr "Ungültige Konfigurationsoption »%s«. Gültig sind [%s]\n"
 #: ../clients/cli/connections.c:8251
 #, c-format
 msgid "Error: only one of 'id', 'filename', uuid, or 'path' can be provided."
-msgstr ""
+msgstr "Fehler: Nur ID, Dateiname, UUID oder Pfad können angegeben werden."
 
 #: ../clients/cli/connections.c:8265 ../clients/cli/connections.c:8426
 #, c-format
@@ -2224,6 +2224,7 @@ msgstr "Tippen Sie »help« oder »?«, um verfügbare Befehle anzuzeigen."
 #, c-format
 msgid "Type 'print' to show all the connection properties."
 msgstr ""
+"Geben Sie \"Drucken\" ein, um alle Verbindungseigenschaften anzuzeigen."
 
 #: ../clients/cli/connections.c:8360
 #, c-format
@@ -3107,7 +3108,7 @@ msgstr "Fehler: »device wifi«: %s"
 #: ../clients/cli/devices.c:3042
 #, c-format
 msgid "Error: invalid rescan argument: '%s' not among [auto, no, yes]"
-msgstr ""
+msgstr "Fehler: ungültiges Rescan-Argument: '%s' nicht unter [auto, nein, ja]"
 
 #: ../clients/cli/devices.c:3049
 #, c-format
@@ -4438,7 +4439,7 @@ msgstr "Die gewählte IP-Methode wird nicht unterstützt"
 
 #: ../clients/common/nm-client-utils.c:354
 msgid "Failed to configure SR-IOV parameters"
-msgstr ""
+msgstr "Fehler beim Konfigurieren der SR-IOV-Parameter"
 
 #: ../clients/common/nm-client-utils.c:360
 msgid "Unknown reason"
@@ -4949,6 +4950,8 @@ msgstr "»%s« ist kein gültiger Kanal. Verwenden Sie <1-13>"
 #: ../clients/common/nm-meta-setting-desc.c:3962
 msgid "The valid syntax is: vf [attribute=value]... [,vf [attribute=value]...]"
 msgstr ""
+"Die gültige Syntax lautet: vf [Attribut = Wert] ... [, vf [Attribut = "
+"Wert] ...]"
 
 #: ../clients/common/nm-meta-setting-desc.c:3984
 msgid ""
@@ -5103,7 +5106,7 @@ msgstr "»%s« ist kein gültiger PSK"
 #: ../clients/common/nm-meta-setting-desc.c:4980
 #, c-format
 msgid "'%s' is not valid; use 'on', 'off', or 'ignore'"
-msgstr ""
+msgstr "'%s' ist ungültig; Verwenden Sie 'ein', 'aus' oder 'ignorieren'"
 
 #: ../clients/common/nm-meta-setting-desc.c:5039
 msgid "Bonding primary interface [none]"
@@ -5185,6 +5188,20 @@ msgid ""
 "   name=arp_ping source-host=172.16.1.1 target-host=172.16.1.254, "
 "name=ethtool delay-up=3\n"
 msgstr ""
+"Geben Sie eine Liste der Linkwächter ein, die als Wörterbücher formatiert "
+"sind, wobei die Schlüssel teamd-Eigenschaften sind. Dictionary-Paare haben "
+"die Form: Schlüssel = Wert und Paare sind durch '' getrennt. Wörterbücher "
+"werden durch ',' getrennt. Die im Wörterbuch erlaubten / benötigten "
+"Schlüssel ändern sich auf der Basis des Linkwatchtyps, während die einzige "
+"für alle Linkwächter gemeinsame Eigenschaft \"Name\" * ist, die den zu "
+"spezifizierenden Linkwatcher definiert. Eigenschaften, die für den 'ethtool' "
+"Link Watcher verfügbar sind: 'delay-up', 'delay-down' Eigenschaften, die für "
+"den 'nsna_ping' Link Watcher verfügbar sind: 'init-wait', 'interval', "
+"'missed-max', 'target- host '* Die für' arp_ping 'verfügbaren Eigenschaften "
+"umfassen alle für' nsna_ping 'und:' source-host '*,' validate-active ',' "
+"validate-inactive ',' send-always '. Eigenschaften, die mit einem '*' "
+"markiert sind, sind Pflichtfelder. Beispiel: name = arp_ping source-host = "
+"172.16.1.1 zielhost = 172.16.1.254, name = ethtool delay-up = 3\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5270
 msgid ""
@@ -5334,7 +5351,7 @@ msgstr "Verfallszeit für MAC-Adressen [300]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5636
 msgid "Group forward mask [0]"
-msgstr ""
+msgstr "Gruppenvorlaufmaske [0]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5642
 msgid "Enable IGMP snooping [no]"
@@ -5735,7 +5752,7 @@ msgstr "Kurze Adresse (<0x0000-0xffff>)"
 
 #: ../clients/common/nm-meta-setting-desc.c:7863
 msgid "PAN Identifier (<0x0000-0xffff>)"
-msgstr ""
+msgstr "PAN-Kennung (<0x0000-0xffff>)"
 
 #: ../clients/common/nm-meta-setting-desc.c:7878
 #, fuzzy
@@ -5748,7 +5765,7 @@ msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:7913
 msgid "IEEE 802.15.4 (WPAN) parent device or connection UUID"
-msgstr ""
+msgstr "IEEE 802.15.4 (WPAN) übergeordnetes Gerät oder Verbindungs-UUID"
 
 #. ***************************************************************************
 #: ../clients/common/nm-meta-setting-desc.c:8040
@@ -5794,7 +5811,7 @@ msgstr "Ersatzweise Einstellungen"
 
 #: ../clients/common/nm-meta-setting-desc.c:8050
 msgid "Ethtool settings"
-msgstr ""
+msgstr "Ethtool Einstellungen"
 
 #: ../clients/common/nm-meta-setting-desc.c:8051
 msgid "Generic settings"
@@ -5850,7 +5867,7 @@ msgstr "OpenVSwitch Schnittstellen-Einstellungen"
 #: ../clients/common/nm-meta-setting-desc.c:8063
 #, fuzzy
 msgid "Open vSwitch patch interface settings"
-msgstr "OpenVSwitch Schnittstellen-Einstellungen"
+msgstr "OpenVSwitch Patch-Schnittstelleneinstellungen"
 
 #: ../clients/common/nm-meta-setting-desc.c:8064
 #, fuzzy
@@ -6112,10 +6129,13 @@ msgid ""
 "If given, specifies the parent interface name or parent connection UUID from "
 "which this 6LowPAN interface should be created."
 msgstr ""
+"Gibt den übergeordneten Schnittstellennamen oder die übergeordnete "
+"Verbindungs-UUID an, aus der diese 6LowPAN-Schnittstelle erstellt werden "
+"soll."
 
 #: ../clients/common/settings-docs.h.in:4
 msgid "Channel on which the mesh network to join is located."
-msgstr ""
+msgstr "Kanal, auf dem sich das zu verknüpfende Mesh-Netzwerk befindet."
 
 #: ../clients/common/settings-docs.h.in:5
 msgid ""
@@ -6129,7 +6149,7 @@ msgstr ""
 
 #: ../clients/common/settings-docs.h.in:6
 msgid "SSID of the mesh network to join."
-msgstr ""
+msgstr "SSID des zu verknüpfenden Mesh-Netzwerks."
 
 #: ../clients/common/settings-docs.h.in:7
 msgid ""
@@ -6188,6 +6208,21 @@ msgid ""
 "different default value). On D-Bus, this field is expressed as \"assigned-"
 "mac-address\" or the deprecated \"cloned-mac-address\"."
 msgstr ""
+"Falls angegeben, fordern Sie an, dass das Gerät stattdessen diese MAC-"
+"Adresse verwendet. Dies wird als MAC-Cloning oder Spoofing bezeichnet. Neben "
+"der expliziten Angabe einer MAC-Adresse werden die speziellen Werte "
+"\"preserve\", \"permanent\", \"random\" und \"stable\" unterstützt. "
+"\"preserve\" bedeutet, dass die MAC-Adresse bei der Aktivierung nicht "
+"berührt wird. \"permanent\" bedeutet, die permanente Hardwareadresse des "
+"Geräts zu verwenden. \"random\" erzeugt bei jeder Verbindung eine zufällige "
+"MAC-Adresse. \"stable\" erstellt eine Hash-MAC-Adresse basierend auf "
+"connection.stable-id und einem maschinenabhängigen Schlüssel. Wenn nicht "
+"angegeben, kann der Wert über globale Standardwerte überschrieben werden, "
+"siehe Handbuch der NetworkManager.conf. Wenn es noch nicht angegeben ist, "
+"wird standardmäßig \"beibehalten\" verwendet (ältere Versionen von "
+"NetworkManager verwenden möglicherweise einen anderen Standardwert). Auf D-"
+"Bus wird dieses Feld als \"zugewiesene Mac-Adresse\" oder die veraltete "
+"\"Cloned-Mac-Adresse\" ausgedrückt."
 
 #: ../clients/common/settings-docs.h.in:11
 #: ../clients/common/settings-docs.h.in:91
@@ -6286,6 +6321,12 @@ msgid ""
 "the MAC address). This property is deprecated for 'cloned-mac-address'. "
 "Deprecated: 1"
 msgstr ""
+"Eine von NM_SETTING_MAC_RANDOMIZATION_DEFAULT (0) (niemals Randomisieren, "
+"außer der Benutzer hat einen globalen Standard auf Randomize gesetzt und der "
+"Supplicant unterstützt Randomisierung), NM_SETTING_MAC_RANDOMIZATION_NEVER "
+"(1) (niemals die MAC-Adresse zufällig), oder "
+"NM_SETTING_MAC_RANDOMIZATION_ALWAYS (2) (immer die MAC-Adresse zufällig) . "
+"Diese Eigenschaft ist für 'cloned-mac-address' veraltet. Veraltet: 1"
 
 #: ../clients/common/settings-docs.h.in:16
 msgid ""
@@ -6314,6 +6355,12 @@ msgid ""
 "configure setting) or NM_SETTING_WIRELESS_POWERSAVE_DEFAULT (0) (use the "
 "globally configured value). All other values are reserved."
 msgstr ""
+"Einer von NM_SETTING_WIRELESS_POWERSAVE_DISABLE (2) (Deaktivieren der Wi-Fi-"
+"Energiesparfunktion), NM_SETTING_WIRELESS_POWERSAVE_ENABLE (3) (Aktivieren "
+"der Wi-Fi-Energiesparfunktion), NM_SETTING_WIRELESS_POWERSAVE_IGNORE (1) "
+"(aktuelle Konfiguration nicht berühren) oder "
+"NM_SETTING_WIRELESS_POWERSAVE_DEFAULT (0) (global verwenden konfigurierter "
+"Wert). Alle anderen Werte sind reserviert."
 
 #: ../clients/common/settings-docs.h.in:19
 msgid ""
@@ -6372,6 +6419,19 @@ msgid ""
 "NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE (0x8000) (to disable management of "
 "Wake-on-LAN in NetworkManager)."
 msgstr ""
+"Die NMSettingWirelessWakeOnWLan-Optionen zum Aktivieren. Nicht alle Geräte "
+"unterstützen alle Optionen. Kann eine beliebige Kombination von "
+"NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY (0x2), "
+"NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT (0x4), "
+"NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC (0x8), "
+"NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE (0x10), "
+"NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST (0x20), "
+"NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE (0x40), "
+"NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE (0x80), "
+"NM_SETTING_WIRELESS_WAKE_ON_WLAN_TCP (0x100) oder die speziellen Werte "
+"NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT ( 0x1) (um globale Einstellungen zu "
+"verwenden) und NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE (0x8000) (um die "
+"Verwaltung von Wake-on-LAN im NetworkManager zu deaktivieren)."
 
 #: ../clients/common/settings-docs.h.in:24
 msgid ""
@@ -6418,6 +6478,11 @@ msgid ""
 "For maximum compatibility leave this property empty.  Each list element may "
 "be one of \"wep40\", \"wep104\", \"tkip\", or \"ccmp\"."
 msgstr ""
+"Eine Liste von Gruppen- / Broadcast-Verschlüsselungsalgorithmen, die "
+"Verbindungen zu Wi-Fi-Netzwerken verhindert, die keinen der Algorithmen in "
+"der Liste verwenden. Für maximale Kompatibilität lassen Sie diese "
+"Eigenschaft leer. Jedes Listenelement kann eines von \"wep40\", \"wep104\", "
+"\"tkip\" oder \"ccmp\" sein."
 
 #: ../clients/common/settings-docs.h.in:27
 msgid ""
@@ -6477,6 +6542,15 @@ msgid ""
 "supported).  When set to NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT (0) and no "
 "global default is set, PMF will be optionally enabled."
 msgstr ""
+"Gibt an, ob Protected Management Frames (802.11w) für die Verbindung "
+"aktiviert sein müssen. Eine von NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT (0) "
+"(globalen Standardwert verwenden), NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE "
+"(1) (PMF deaktivieren), NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL (2) (PMF "
+"aktivieren, wenn der Supplicant und der Access Point dies unterstützen) oder "
+"NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED (3) (PMF aktivieren und Fehler bei "
+"nicht unterstützt). Wenn NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT (0) "
+"festgelegt ist und keine globale Standardeinstellung festgelegt ist, wird "
+"PMF optional aktiviert."
 
 #: ../clients/common/settings-docs.h.in:33
 msgid ""
@@ -6484,6 +6558,10 @@ msgid ""
 "element may be one \"wpa\" (allow WPA) or \"rsn\" (allow WPA2/RSN).  If not "
 "specified, both WPA and RSN connections are allowed."
 msgstr ""
+"Liste der Zeichenfolgen, die die zulässigen zu verwendenden WPA-"
+"Protokollversionen angeben. Jedes Element kann ein \"wpa\" (WPA erlauben) "
+"oder \"rsn\" (WPA2 / RSN erlauben) sein. Wenn nicht angegeben, sind sowohl "
+"WPA- als auch RSN-Verbindungen zulässig."
 
 #: ../clients/common/settings-docs.h.in:34
 msgid ""
@@ -6494,6 +6572,13 @@ msgid ""
 "and is hashed to derive the actual WPA-PSK used when connecting to the Wi-Fi "
 "network."
 msgstr ""
+"Pre-Shared-Key für WPA-Netzwerke. Wenn der Schlüssel 64 Zeichen lang ist, "
+"darf er nur hexadezimale Zeichen enthalten und wird als hexadezimaler WPA-"
+"Schlüssel interpretiert. Andernfalls muss der Schlüssel zwischen 8 und 63 "
+"ASCII-Zeichen (wie im 802.11i-Standard angegeben) enthalten sein und wird "
+"als WPA-Passphrase interpretiert und wird zum Ableiten des tatsächlichen WPA-"
+"PSK verwendet, das beim Herstellen einer Verbindung mit dem Wi-Fi-Netzwerk "
+"verwendet wird."
 
 #: ../clients/common/settings-docs.h.in:35
 msgid "Flags indicating how to handle the \"psk\" property."
@@ -6517,6 +6602,13 @@ msgid ""
 "a string and will be hashed using the de-facto MD5 method to derive the "
 "actual WEP key."
 msgstr ""
+"Steuert die Interpretation von WEP-Schlüsseln. Zulässige Werte sind "
+"NM_WEP_KEY_TYPE_KEY (1). In diesem Fall ist der Schlüssel entweder eine "
+"hexadezimale Zeichenfolge mit 10 oder 26 Zeichen oder ein 5- oder 13-"
+"stelliges ASCII-Kennwort. oder NM_WEP_KEY_TYPE_PASSPHRASE (2), in diesem "
+"Fall wird die Passphrase als eine Zeichenfolge bereitgestellt und wird unter "
+"Verwendung der De-facto-MD5-Methode zum Ableiten des tatsächlichen WEP-"
+"Schlüssels gehackt."
 
 #: ../clients/common/settings-docs.h.in:38
 msgid ""
@@ -6561,6 +6653,11 @@ msgid ""
 "(default key) through 3.  Note that some consumer access points (like the "
 "Linksys WRT54G) number the keys 1 - 4."
 msgstr ""
+"Wenn static WEP verwendet wird (dh key-mgmt = \"none\") und ein nicht "
+"standardmäßiger WEP-Schlüsselindex vom AP verwendet wird, legen Sie diesen "
+"WEP-Schlüsselindex hier ab. Gültige Werte sind 0 (Standardschlüssel) bis 3. "
+"Beachten Sie, dass einige Verbraucherzugriffspunkte (wie der Linksys WRT54G) "
+"die Schlüssel 1 - 4 nummerieren."
 
 #: ../clients/common/settings-docs.h.in:43
 msgid ""
@@ -6570,6 +6667,11 @@ msgid ""
 "Point capabilities. WPS can be disabled by setting this property to a value "
 "of 1."
 msgstr ""
+"Flags, die anzeigen, welcher Modus von WPS verwendet werden soll, falls "
+"vorhanden. Es macht wenig Sinn, die Standardeinstellung zu ändern, da "
+"NetworkManager automatisch feststellen wird, ob es möglich ist, die WPS-"
+"Registrierung über die Access Point-Funktionen zu starten. WPS kann "
+"deaktiviert werden, indem diese Eigenschaft auf den Wert 1 festgelegt wird."
 
 #: ../clients/common/settings-docs.h.in:44
 msgid ""
@@ -6577,6 +6679,10 @@ msgid ""
 "presented by the authentication server. If the list is empty, no "
 "verification of the server certificate's altSubjectName is performed."
 msgstr ""
+"Liste der Zeichenfolgen, die mit dem Attribut altSubjectName des vom "
+"Authentifizierungsserver angegebenen Zertifikats abgeglichen werden sollen. "
+"Wenn die Liste leer ist, wird keine Überprüfung des altSubjectName des "
+"Serverzertifikats durchgeführt."
 
 #: ../clients/common/settings-docs.h.in:45
 msgid ""
@@ -6584,6 +6690,9 @@ msgid ""
 "unencrypted identity with EAP types that support different tunneled identity "
 "like EAP-TTLS."
 msgstr ""
+"Anonyme Identitätszeichenfolge für EAP-Authentifizierungsmethoden. Wird als "
+"unverschlüsselte Identität mit EAP-Typen verwendet, die unterschiedliche "
+"getunnelte Identitäten wie EAP-TTLS unterstützen."
 
 #: ../clients/common/settings-docs.h.in:46
 msgid ""
@@ -6606,6 +6715,17 @@ msgid ""
 "property can be unset even if the EAP method supports CA certificates, but "
 "this allows man-in-the-middle attacks and is NOT recommended."
 msgstr ""
+"Enthält das CA-Zertifikat, wenn es von der in der Eigenschaft \"eap\" "
+"angegebenen EAP-Methode verwendet wird. Zertifikatsdaten werden unter "
+"Verwendung eines \"Schemas\" spezifiziert; Zwei werden derzeit unterstützt: "
+"Blob und Pfad. Bei Verwendung des Blob-Schemas (das abwärtskompatibel zu NM "
+"0.7.x ist) sollte diese Eigenschaft auf die DER-codierten Daten des "
+"Zertifikats gesetzt werden. Bei Verwendung des Pfadschemas sollte diese "
+"Eigenschaft auf den vollständigen UTF-8-codierten Pfad des Zertifikats "
+"gesetzt werden, dem die Zeichenfolge \"file: //\" vorangestellt ist und der "
+"mit einem abschließenden NUL-Byte endet. Diese Eigenschaft kann auch dann "
+"inaktiviert werden, wenn die EAP-Methode CA-Zertifikate unterstützt, dies "
+"jedoch Man-in-the-Middle-Angriffe erlaubt und NICHT empfohlen wird."
 
 #: ../clients/common/settings-docs.h.in:48
 msgid ""
@@ -6630,6 +6750,9 @@ msgid ""
 "certificates to be added to the verification chain in addition to the "
 "certificate specified in the \"ca-cert\" property."
 msgstr ""
+"UTF-8-codierter Pfad zu einem Verzeichnis mit PEM- oder DER-formatierten "
+"Zertifikaten, die zusätzlich zu dem in der Eigenschaft \"ca-cert\" "
+"angegebenen Zertifikat zur Verifizierungskette hinzugefügt werden."
 
 #: ../clients/common/settings-docs.h.in:51
 msgid ""
@@ -6641,6 +6764,15 @@ msgid ""
 "should be set to the full UTF-8 encoded path of the certificate, prefixed "
 "with the string \"file://\" and ending with a terminating NUL byte."
 msgstr ""
+"Enthält das Clientzertifikat, wenn es von der in der Eigenschaft \"eap\" "
+"angegebenen EAP-Methode verwendet wird. Zertifikatsdaten werden unter "
+"Verwendung eines \"Schemas\" spezifiziert; Zwei werden derzeit unterstützt: "
+"Blob und Pfad. Bei Verwendung des Blob-Schemas (das abwärtskompatibel zu NM "
+"0.7.x ist) sollte diese Eigenschaft auf die DER-codierten Daten des "
+"Zertifikats gesetzt werden. Bei Verwendung des Pfadschemas sollte diese "
+"Eigenschaft auf den vollständigen UTF-8-codierten Pfad des Zertifikats "
+"gesetzt werden, dem die Zeichenfolge \"file: //\" vorangestellt ist und der "
+"mit einem abschließenden NUL-Byte endet."
 
 #: ../clients/common/settings-docs.h.in:52
 msgid ""
@@ -6648,6 +6780,10 @@ msgid ""
 "property. Only makes sense if the certificate is stored on a PKCS#11 token "
 "that requires a login."
 msgstr ""
+"Das Kennwort für den Zugriff auf das Clientzertifikat, das in der "
+"Eigenschaft \"client-cert\" gespeichert ist. Dies ist nur sinnvoll, wenn das "
+"Zertifikat auf einem PKCS # 11-Token gespeichert ist, für das eine Anmeldung "
+"erforderlich ist."
 
 #: ../clients/common/settings-docs.h.in:53
 msgid "Flags indicating how to handle the \"client-cert-password\" property."
@@ -6663,6 +6799,13 @@ msgid ""
 "met.  If no dNSName values are present, this constraint is matched against "
 "SubjectName CN using same suffix match comparison."
 msgstr ""
+"Einschränkung für den Server-Domänennamen Wenn dieser FQDN festgelegt ist, "
+"wird er als Suffix-Übereinstimmungsanforderung für dNSName-Elemente des "
+"Zertifikats verwendet, das vom Authentifizierungsserver bereitgestellt wird. "
+"Wenn ein passender dNSName gefunden wird, ist diese Einschränkung erfüllt. "
+"Wenn keine dNSName-Werte vorhanden sind, wird diese Einschränkung mit "
+"SubjectName CN verglichen, wobei der Suffix-Übereinstimmungsvergleich "
+"verwendet wird."
 
 #: ../clients/common/settings-docs.h.in:55
 msgid ""
@@ -6672,16 +6815,23 @@ msgid ""
 "the properties of this setting; refer to wpa_supplicant documentation for "
 "the allowed combinations."
 msgstr ""
+"Die zulässige EAP-Methode, die bei der Authentifizierung mit 802.1x im "
+"Netzwerk verwendet wird. Gültige Methoden sind: \"leap\", \"md5\", \"tls\", "
+"\"peap\", \"ttls\", \"pwd\" und \"fast\". Jede Methode erfordert eine andere "
+"Konfiguration mit den Eigenschaften dieser Einstellung. Informationen zu den "
+"zulässigen Kombinationen finden Sie in der Dokumentation zu wpa_supplicant."
 
 #: ../clients/common/settings-docs.h.in:56
 msgid ""
 "Identity string for EAP authentication methods.  Often the user's user or "
 "login name."
 msgstr ""
+"Identitätszeichenfolge für EAP-Authentifizierungsmethoden Häufig der "
+"Benutzer- oder Anmeldename des Benutzers."
 
 #: ../clients/common/settings-docs.h.in:57
 msgid "UTF-8 encoded file path containing PAC for EAP-FAST."
-msgstr ""
+msgstr "UTF-8-codierter Dateipfad, der PAC für EAP-FAST enthält."
 
 #: ../clients/common/settings-docs.h.in:58
 msgid ""
@@ -6689,6 +6839,9 @@ msgid ""
 "\"password\" property and the \"password-raw\" property are specified, "
 "\"password\" is preferred."
 msgstr ""
+"UTF-8-codiertes Passwort für EAP-Authentifizierungsmethoden. Wenn sowohl die "
+"Eigenschaft \"password\" als auch die Eigenschaft \"password-row\" angegeben "
+"sind, wird \"password\" bevorzugt."
 
 #: ../clients/common/settings-docs.h.in:59
 #: ../clients/common/settings-docs.h.in:104
@@ -6707,6 +6860,10 @@ msgid ""
 "property and the \"password-raw\" property are specified, \"password\" is "
 "preferred."
 msgstr ""
+"Kennwort für EAP-Authentifizierungsmethoden, angegeben als Byte-Array, um "
+"Kennwörter in anderen Kodierungen als UTF-8 zu verwenden. Wenn sowohl die "
+"Eigenschaft \"password\" als auch die Eigenschaft \"password-row\" angegeben "
+"sind, wird \"password\" bevorzugt."
 
 #: ../clients/common/settings-docs.h.in:61
 msgid "Flags indicating how to handle the \"password-raw\" property."
@@ -6723,6 +6880,13 @@ msgid ""
 "tls_disable_tlsv1_x settings. See the wpa_supplicant documentation for more "
 "details."
 msgstr ""
+"Gibt Authentifizierungskennzeichen an, die in der äußeren "
+"Authentifizierungsphase \"Phase 1\" mit den Optionen NMSetting8021xAuthFlags "
+"verwendet werden sollen. Die einzelnen TLS-Versionen können explizit "
+"deaktiviert werden. Wenn ein bestimmtes TLS-Deaktivierungsflag nicht gesetzt "
+"ist, muss der Supplikant dies zulassen oder verbieten. Die TLS-Optionen "
+"werden den Einstellungen für tls_disable_tlsv1_x zugeordnet. Weitere "
+"Informationen finden Sie in der Dokumentation zu wpa_supplicant."
 
 #: ../clients/common/settings-docs.h.in:63
 msgid ""
@@ -6733,6 +6897,13 @@ msgid ""
 "authenticated and unauthenticated provisioning).  See the wpa_supplicant "
 "documentation for more details."
 msgstr ""
+"Aktiviert oder deaktiviert die Inline-Bereitstellung von EAP-FAST-"
+"Anmeldeinformationen, wenn in der Eigenschaft \"eap\" FAST als EAP-Methode "
+"angegeben ist. Erkannte Werte sind \"0\" (deaktiviert), \"1\" (nicht "
+"authentifiziertes Provisioning zulassen), \"2\" (authentifiziertes "
+"Provisioning zulassen) und \"3\" (sowohl authentifiziertes als auch nicht "
+"authentifiziertes Provisioning zulassen). Weitere Informationen finden Sie "
+"in der Dokumentation zu wpa_supplicant."
 
 #: ../clients/common/settings-docs.h.in:64
 msgid ""
@@ -6741,6 +6912,11 @@ msgid ""
 "\"1\" to force use of the new PEAP label.  See the wpa_supplicant "
 "documentation for more details."
 msgstr ""
+"Erzwingt die Verwendung des neuen PEAP-Labels während der "
+"Schlüsselableitung. Bei einigen RADIUS-Servern muss das neue PEAP-Label "
+"möglicherweise gezwungen werden, mit PEAPv1 zu interagieren. Auf \"1\" "
+"setzen, um die Verwendung des neuen PEAP-Labels zu erzwingen. Weitere "
+"Informationen finden Sie in der Dokumentation zu wpa_supplicant."
 
 #: ../clients/common/settings-docs.h.in:65
 msgid ""
@@ -6750,6 +6926,12 @@ msgid ""
 "the client to use a particular PEAP version.  To do so, this property may be "
 "set to \"0\" or \"1\" to force that specific PEAP version."
 msgstr ""
+"Legt fest, welche PEAP-Version verwendet wird, wenn PEAP als EAP-Methode in "
+"der Eigenschaft \"eap\" festgelegt ist. Wenn nicht festgelegt, wird die vom "
+"Server gemeldete Version verwendet. Manchmal ist es bei Verwendung älterer "
+"RADIUS-Server erforderlich, den Client zur Verwendung einer bestimmten PEAP-"
+"Version zu zwingen. Um dies zu tun, kann diese Eigenschaft auf \"0\" oder "
+"\"1\" gesetzt werden, um diese spezifische PEAP-Version zu erzwingen."
 
 #: ../clients/common/settings-docs.h.in:66
 msgid ""
@@ -6758,6 +6940,11 @@ msgid ""
 "authentication. If the list is empty, no verification of the server "
 "certificate's altSubjectName is performed."
 msgstr ""
+"Liste der Zeichenfolgen, die mit dem altSubjectName des Zertifikats "
+"abgeglichen werden sollen, das vom Authentifizierungsserver während der "
+"internen \"Phase 2\" -Authentifizierung angezeigt wird. Wenn die Liste leer "
+"ist, wird keine Überprüfung des altSubjectName des Serverzertifikats "
+"durchgeführt."
 
 #: ../clients/common/settings-docs.h.in:67
 msgid ""
@@ -6768,6 +6955,13 @@ msgid ""
 "\"phase 2\" inner method requires specific parameters for successful "
 "authentication; see the wpa_supplicant documentation for more details."
 msgstr ""
+"Gibt die zulässigen internen Nicht-EAP-Authentifizierungsmethoden der Phase "
+"2 an, wenn in der Eigenschaft \"eap\" eine EAP-Methode angegeben wird, die "
+"einen inneren TLS-Tunnel verwendet. Anerkannte Nicht-EAP- \"Phase 2\" -"
+"Methoden sind \"pap\", \"chap\", \"mschap\", \"mschapv2\", \"gtc\", \"otp\", "
+"\"md5\" und \"tls\". Jede innere \"Phase 2\" -Methode erfordert spezifische "
+"Parameter für eine erfolgreiche Authentifizierung; Weitere Informationen "
+"finden Sie in der Dokumentation zu wpa_supplicant."
 
 #: ../clients/common/settings-docs.h.in:68
 msgid ""
@@ -6778,6 +6972,13 @@ msgid ""
 "requires specific parameters for successful authentication; see the "
 "wpa_supplicant documentation for more details."
 msgstr ""
+"Gibt die zulässigen EAP-basierten Authentifizierungsmethoden für \"Phase 2\" "
+"an, wenn eine EAP-Methode, die einen inneren TLS-Tunnel verwendet, in der "
+"Eigenschaft \"eap\" angegeben ist. Anerkannte EAP-basierte \"Phase 2\" -"
+"Methoden sind \"md5\", \"mschapv2\", \"otp\", \"gtc\" und \"tls\". Jede "
+"innere \"Phase 2\" -Methode erfordert spezifische Parameter für eine "
+"erfolgreiche Authentifizierung; Weitere Informationen finden Sie in der "
+"Dokumentation zu wpa_supplicant."
 
 #: ../clients/common/settings-docs.h.in:69
 msgid ""
@@ -6792,6 +6993,18 @@ msgid ""
 "method supports CA certificates, but this allows man-in-the-middle attacks "
 "and is NOT recommended."
 msgstr ""
+"Enthält das CA-Zertifikat \"Phase 2\", wenn es von der in den Eigenschaften "
+"\"phase2-auth\" oder \"phase2-autheap\" angegebenen EAP-Methode verwendet "
+"wird. Zertifikatsdaten werden unter Verwendung eines \"Schemas\" "
+"spezifiziert; Zwei werden derzeit unterstützt: Blob und Pfad. Bei Verwendung "
+"des Blob-Schemas (das abwärtskompatibel zu NM 0.7.x ist) sollte diese "
+"Eigenschaft auf die DER-codierten Daten des Zertifikats gesetzt werden. Bei "
+"Verwendung des Pfadschemas sollte diese Eigenschaft auf den vollständigen "
+"UTF-8-codierten Pfad des Zertifikats gesetzt werden, dem die Zeichenfolge "
+"\"file: //\" vorangestellt ist und der mit einem abschließenden NUL-Byte "
+"endet. Diese Eigenschaft kann auch dann inaktiviert werden, wenn die EAP-"
+"Methode CA-Zertifikate unterstützt, dies jedoch Man-in-the-Middle-Angriffe "
+"erlaubt und NICHT empfohlen wird."
 
 #: ../clients/common/settings-docs.h.in:70
 msgid ""
@@ -6799,6 +7012,10 @@ msgid ""
 "ca-cert\" property. Only makes sense if the certificate is stored on a "
 "PKCS#11 token that requires a login."
 msgstr ""
+"Das Kennwort für den Zugriff auf das CA-Zertifikat \"phase2\", das in der "
+"Eigenschaft \"phase2-ca-cert\" gespeichert ist. Dies ist nur sinnvoll, wenn "
+"das Zertifikat auf einem PKCS # 11-Token gespeichert ist, für das eine "
+"Anmeldung erforderlich ist."
 
 #: ../clients/common/settings-docs.h.in:71
 msgid ""
@@ -6813,6 +7030,9 @@ msgid ""
 "certificates to be added to the verification chain in addition to the "
 "certificate specified in the \"phase2-ca-cert\" property."
 msgstr ""
+"UTF-8-codierter Pfad zu einem Verzeichnis, das PEM- oder DER-formatierte "
+"Zertifikate enthält, die zusätzlich zu dem in der Eigenschaft \"phase2-ca-"
+"cert\" angegebenen Zertifikat zur Verifizierungskette hinzugefügt werden."
 
 #: ../clients/common/settings-docs.h.in:73
 msgid ""
@@ -6827,6 +7047,18 @@ msgid ""
 "unset even if the EAP method supports CA certificates, but this allows man-"
 "in-the-middle attacks and is NOT recommended."
 msgstr ""
+"Enthält das Clientzertifikat \"Phase 2\", wenn es von der in den "
+"Eigenschaften \"phase2-auth\" oder \"phase2-autheap\" angegebenen EAP-"
+"Methode verwendet wird. Zertifikatsdaten werden unter Verwendung eines "
+"\"Schemas\" spezifiziert; Zwei werden derzeit unterstützt: Blob und Pfad. "
+"Bei Verwendung des Blob-Schemas (das abwärtskompatibel zu NM 0.7.x ist) "
+"sollte diese Eigenschaft auf die DER-codierten Daten des Zertifikats gesetzt "
+"werden. Bei Verwendung des Pfadschemas sollte diese Eigenschaft auf den "
+"vollständigen UTF-8-codierten Pfad des Zertifikats gesetzt werden, dem die "
+"Zeichenfolge \"file: //\" vorangestellt ist und der mit einem abschließenden "
+"NUL-Byte endet. Diese Eigenschaft kann auch dann inaktiviert werden, wenn "
+"die EAP-Methode CA-Zertifikate unterstützt, dies jedoch Man-in-the-Middle-"
+"Angriffe erlaubt und NICHT empfohlen wird."
 
 #: ../clients/common/settings-docs.h.in:74
 msgid ""
@@ -6834,6 +7066,10 @@ msgid ""
 "\"phase2-client-cert\" property. Only makes sense if the certificate is "
 "stored on a PKCS#11 token that requires a login."
 msgstr ""
+"Das Kennwort für den Zugriff auf das Clientzertifikat \"phase2\", das in der "
+"Eigenschaft \"phase2-client-cert\" gespeichert ist. Dies ist nur sinnvoll, "
+"wenn das Zertifikat auf einem PKCS # 11-Token gespeichert ist, für das eine "
+"Anmeldung erforderlich ist."
 
 #: ../clients/common/settings-docs.h.in:75
 msgid ""
@@ -6851,6 +7087,13 @@ msgid ""
 "present, this constraint is matched against SubjectName CN using same suffix "
 "match comparison."
 msgstr ""
+"Einschränkung für den Server-Domänennamen Wenn dieser FQDN festgelegt ist, "
+"wird er als Suffixübereinstimmungsanforderung für dNSName-Elemente des "
+"Zertifikats verwendet, das vom Authentifizierungsserver während der internen "
+"\"Phase 2\" -Authentifizierung angezeigt wird. Wenn ein passender dNSName "
+"gefunden wird, ist diese Einschränkung erfüllt. Wenn keine dNSName-Werte "
+"vorhanden sind, wird diese Einschränkung mit SubjectName CN verglichen, "
+"wobei der Suffix-Übereinstimmungsvergleich verwendet wird."
 
 #: ../clients/common/settings-docs.h.in:77
 msgid ""
@@ -6870,6 +7113,25 @@ msgid ""
 "\"phase2-private-key-password\" property must be set to the password used to "
 "decode the PKCS#12 private key and certificate."
 msgstr ""
+"Enthält den privaten Schlüssel \"Phase 2\", wenn die Eigenschaft \"phase2-"
+"auth\" oder \"phase2-autheap\" auf \"tls\" gesetzt ist. Schlüsseldaten "
+"werden unter Verwendung eines \"Schemas\" spezifiziert; Zwei werden derzeit "
+"unterstützt: Blob und Pfad. Bei Verwendung des Blob-Schemas und der privaten "
+"Schlüssel sollte diese Eigenschaft auf die verschlüsselten PEM-codierten "
+"Daten des Schlüssels eingestellt werden. Wenn Sie private Schlüssel mit dem "
+"Pfadschema verwenden, sollte diese Eigenschaft auf den vollständigen UTF-8-"
+"codierten Pfad des Schlüssels festgelegt werden, dem die Zeichenfolge "
+"\"file: //\" vorangestellt ist und der mit einem abschließenden NUL-Byte "
+"endet. Bei Verwendung privater PKCS # 12-Schlüssel und des Blobschemas "
+"sollte diese Eigenschaft auf die PKCS # 12-Daten und die Eigenschaft "
+"\"phase2-private-key-password\" auf das Kennwort festgelegt werden, das zum "
+"Entschlüsseln des PKCS # 12-Zertifikats verwendet wird Schlüssel. Wenn Sie "
+"PKCS # 12-Dateien und das Pfadschema verwenden, sollte diese Eigenschaft auf "
+"den vollständigen UTF-8-codierten Pfad des Schlüssels festgelegt werden, dem "
+"die Zeichenfolge \"file: //\" vorangestellt ist und der mit einem "
+"abschließenden NUL-Byte endet BLOB-Schema Die Eigenschaft \"phase2-private-"
+"key-password\" muss auf das Kennwort festgelegt werden, das zum Dekodieren "
+"des privaten PKCS # 12-Schlüssels und -Zertifikats verwendet wird."
 
 #: ../clients/common/settings-docs.h.in:78
 msgid ""
@@ -6877,6 +7139,10 @@ msgid ""
 "\"phase2-private-key\" property when the private key either uses the path "
 "scheme, or is a PKCS#12 format key."
 msgstr ""
+"Das Kennwort, das zum Entschlüsseln des privaten Schlüssels \"Phase 2\" "
+"verwendet wird, der in der Eigenschaft \"phase2-private-key\" angegeben ist, "
+"wenn der private Schlüssel entweder das Pfadschema verwendet oder ein PKCS # "
+"12-Formatschlüssel ist."
 
 #: ../clients/common/settings-docs.h.in:79
 msgid ""
@@ -6893,6 +7159,13 @@ msgid ""
 "performed.  This property provides little security, if any, and its use is "
 "deprecated in favor of NMSetting8021x:phase2-domain-suffix-match."
 msgstr ""
+"Teilzeichenfolge, die mit dem Thema des Zertifikats abgeglichen werden soll, "
+"das vom Authentifizierungsserver während der inneren \"Phase 2\" -"
+"Authentifizierung angezeigt wird. Wenn nicht festgelegt, wird keine "
+"Überprüfung des Betreffs des Authentifizierungsserverzertifikats "
+"durchgeführt. Diese Eigenschaft bietet, wenn überhaupt, wenig Sicherheit, "
+"und ihre Verwendung wird zugunsten von NMSetting8021x: phase2-domain-suffix-"
+"match abgelehnt."
 
 #: ../clients/common/settings-docs.h.in:81
 msgid "PIN used for EAP authentication methods."
@@ -6925,6 +7198,30 @@ msgid ""
 "users.  Private keys should always be encrypted with a private key password "
 "to prevent unauthorized access to unencrypted private key data."
 msgstr ""
+"Enthält den privaten Schlüssel, wenn die Eigenschaft \"eap\" auf \"tls\" "
+"gesetzt ist. Schlüsseldaten werden unter Verwendung eines \"Schemas\" "
+"spezifiziert; Zwei werden derzeit unterstützt: Blob und Pfad. Bei Verwendung "
+"des Blob-Schemas und der privaten Schlüssel sollte diese Eigenschaft auf die "
+"verschlüsselten PEM-codierten Daten des Schlüssels eingestellt werden. Wenn "
+"Sie private Schlüssel mit dem Pfadschema verwenden, sollte diese Eigenschaft "
+"auf den vollständigen UTF-8-codierten Pfad des Schlüssels festgelegt werden, "
+"dem die Zeichenfolge \"file: //\" vorangestellt ist und der mit einem "
+"abschließenden NUL-Byte endet. Bei Verwendung privater PKCS # 12-Schlüssel "
+"und des Blobschemas sollte diese Eigenschaft auf die PKCS # 12-Daten und die "
+"Eigenschaft \"private-key-password\" auf das Kennwort festgelegt werden, das "
+"zum Entschlüsseln des PKCS # 12-Zertifikats und -Schlüssels verwendet wird. "
+"Wenn Sie PKCS # 12-Dateien und das Pfadschema verwenden, sollte diese "
+"Eigenschaft auf den vollständigen UTF-8-codierten Pfad des Schlüssels "
+"festgelegt werden, dem die Zeichenfolge \"file: //\" vorangestellt ist und "
+"der mit einem abschließenden NUL-Byte endet BLOB-Schema Die Eigenschaft "
+"\"private-key-password\" muss auf das Kennwort festgelegt werden, das zum "
+"Dekodieren des privaten PKCS # 12-Schlüssels und -Zertifikats verwendet "
+"wird. WARNUNG: \"Privatschlüssel\" ist keine \"geheime\" Eigenschaft, und "
+"daher können unverschlüsselte private Schlüsseldaten, die das BLOB-Schema "
+"verwenden, für nicht privilegierte Benutzer lesbar sein. Private Schlüssel "
+"sollten immer mit einem privaten Schlüsselkennwort verschlüsselt werden, um "
+"den nicht autorisierten Zugriff auf unverschlüsselte private Schlüsseldaten "
+"zu verhindern."
 
 #: ../clients/common/settings-docs.h.in:84
 msgid ""
@@ -6932,6 +7229,10 @@ msgid ""
 "\" property when the private key either uses the path scheme, or if the "
 "private key is a PKCS#12 format key."
 msgstr ""
+"Das Kennwort, das zum Entschlüsseln des in der Eigenschaft \"private-key\" "
+"angegebenen privaten Schlüssels verwendet wird, wenn der private Schlüssel "
+"das Pfadschema verwendet oder wenn der private Schlüssel ein PKCS # 12-"
+"Formatschlüssel ist."
 
 #: ../clients/common/settings-docs.h.in:85
 msgid "Flags indicating how to handle the \"private-key-password\" property."
@@ -6947,6 +7248,12 @@ msgid ""
 "security, if any, and its use is deprecated in favor of NMSetting8021x:"
 "domain-suffix-match."
 msgstr ""
+"Unterzeichenfolge, die mit dem vom Authentifizierungsserver angegebenen "
+"Zertifikat verglichen werden soll. Wenn nicht festgelegt, wird keine "
+"Überprüfung des Betreffs des Authentifizierungsserverzertifikats "
+"durchgeführt. Diese Eigenschaft bietet, wenn überhaupt, wenig Sicherheit, "
+"und ihre Verwendung wird zugunsten von NMSetting8021x: domain-suffix-match "
+"abgelehnt."
 
 #: ../clients/common/settings-docs.h.in:87
 msgid ""
@@ -6959,6 +7266,15 @@ msgid ""
 "\"ca-cert\" and \"phase2-ca-cert\" properties instead (sets ca_cert/ca_cert2 "
 "options for wpa_supplicant)."
 msgstr ""
+"Wenn TRUE, werden die Eigenschaften \"ca-path\" und \"phase2-ca-path\" "
+"überschrieben, indem das zum Konfigurationszeitpunkt mit dem Schalter --"
+"system-ca-path angegebene CA-Verzeichnis des Systems verwendet wird. Die "
+"Zertifikate in diesem Verzeichnis werden zusätzlich zu den Zertifikaten, die "
+"in den Eigenschaften \"ca-cert\" und \"phase2-ca-cert\" angegeben sind, der "
+"Verifizierungskette hinzugefügt. Wenn der mit --system-ca-pfad versehene "
+"Pfad eher ein Dateiname (ein Paket vertrauenswürdiger CA-Zertifikate) ist, "
+"setzt er stattdessen die Eigenschaften \"ca-cert\" und \"phase2-ca-cert\" "
+"außer Kraft (legt ca_cert / ca_cert2-Optionen für wpa_supplicant fest )."
 
 #: ../clients/common/settings-docs.h.in:88
 msgid ""
@@ -6970,6 +7286,14 @@ msgid ""
 "\" and \"duplex\" properties should be both set or link configuration will "
 "be skipped."
 msgstr ""
+"Wenn TRUE, erzwingen Sie Auto-Negotiation von Geschwindigkeit und Duplex-"
+"Modus. Wenn die Eigenschaften \"speed\" und \"duplex\" angegeben sind, wird "
+"nur dieser einzelne Modus während des automatischen "
+"Verbindungsaushandlungsprozesses angekündigt und akzeptiert. Dies "
+"funktioniert nur für BASE-T 802.3-Spezifikationen und ist nützlich, um "
+"Gigabit-Modi wie in diesen zu erzwingen Fälle Link Verhandlung ist "
+"obligatorisch. Wenn FALSE, sollten \"speed\" - und \"duplex\" -Eigenschaften "
+"beide gesetzt sein oder die Link-Konfiguration wird übersprungen."
 
 #: ../clients/common/settings-docs.h.in:89
 msgid ""
@@ -6987,6 +7311,22 @@ msgid ""
 "D-Bus, this field is expressed as \"assigned-mac-address\" or the deprecated "
 "\"cloned-mac-address\"."
 msgstr ""
+"Falls angegeben, fordern Sie an, dass das Gerät stattdessen diese MAC-"
+"Adresse verwendet. Dies wird als MAC-Cloning oder Spoofing bezeichnet. Neben "
+"der expliziten Angabe einer MAC-Adresse werden die speziellen Werte "
+"\"preserve\", \"permanent\", \"random\" und \"stable\" unterstützt. "
+"\"preserve\" bedeutet, dass die MAC-Adresse bei der Aktivierung nicht "
+"berührt wird. \"permanent\" bedeutet, die permanente Hardwareadresse zu "
+"verwenden, wenn das Gerät eine hat (sonst wird dies als \"preserve\" "
+"behandelt). \"random\" erzeugt bei jeder Verbindung eine zufällige MAC-"
+"Adresse. \"stable\" erstellt eine Hash-MAC-Adresse basierend auf connection."
+"stable-id und einem maschinenabhängigen Schlüssel. Wenn nicht angegeben, "
+"kann der Wert über globale Standardwerte überschrieben werden, siehe "
+"Handbuch der NetworkManager.conf. Wenn es noch nicht angegeben ist, wird "
+"standardmäßig \"beibehalten\" verwendet (ältere Versionen von NetworkManager "
+"verwenden möglicherweise einen anderen Standardwert). Auf D-Bus wird dieses "
+"Feld als \"zugewiesene Mac-Adresse\" oder die veraltete \"Cloned-Mac-Adresse"
+"\" ausgedrückt."
 
 #: ../clients/common/settings-docs.h.in:90
 msgid ""
@@ -7002,6 +7342,18 @@ msgid ""
 "\"speed\" property if specified. Before specifying a duplex mode be sure "
 "your device supports it."
 msgstr ""
+"Wenn ein Wert eingestellt ist, entweder \"halb\" oder \"voll\", konfiguriert "
+"das Gerät den spezifizierten Duplex-Modus. Wenn \"Auto-Negotiation\" \"Yes\" "
+"ist, wird der angegebene Duplex-Modus als einziger während der Link-"
+"Verhandlung beworben: Dies funktioniert nur für BASE-T 802.3-Spezifikationen "
+"und ist nützlich für die Durchsetzung von Gigabit-Modi, da in diesen Fällen "
+"Link-Negotiation zwingend erforderlich ist. Wenn der Wert nicht gesetzt ist "
+"(Standard), wird die Link-Konfiguration entweder übersprungen (wenn \"Auto-"
+"Negotiation\" \"Nein\" ist, der Standardwert) oder automatisch ausgehandelt "
+"(wenn \"Auto-Negotiation\" \"Ja\" ist) und das lokale Gerät wird für alle "
+"unterstützten Duplexmodi werben. Muss zusammen mit der Eigenschaft \"speed\" "
+"festgelegt werden, falls angegeben. Bevor Sie einen Duplex-Modus festlegen, "
+"vergewissern Sie sich, dass Ihr Gerät dies unterstützt."
 
 #: ../clients/common/settings-docs.h.in:92
 msgid ""
@@ -7019,6 +7371,9 @@ msgid ""
 "permanent MAC address matches an address in the list.  Each MAC address is "
 "in the standard hex-digits-and-colons notation (00:11:22:33:44:55)."
 msgstr ""
+"Falls angegeben, gilt diese Verbindung niemals für das Ethernet-Gerät, "
+"dessen permanente MAC-Adresse mit einer Adresse in der Liste übereinstimmt. "
+"Jede MAC-Adresse hat die Standard-Hexadezimalziffer (00: 11: 22: 33: 44: 55)."
 
 #: ../clients/common/settings-docs.h.in:95
 msgid ""
@@ -7027,12 +7382,20 @@ msgid ""
 "\"bnc\" (Thin Ethernet) or \"mii\" (Media Independent Interface). If the "
 "device supports only one port type, this setting is ignored."
 msgstr ""
+"Spezifischer Porttyp, der verwendet werden soll, wenn das Gerät mehrere "
+"Anhangsmethoden unterstützt. Eines von \"tp\" (Twisted-Pair), \"Aui"
+"\" (Anschluss-Interface), \"bnc\" (Thin Ethernet) oder \"mii\" (Media "
+"Independent Interface). Wenn das Gerät nur einen Porttyp unterstützt, wird "
+"diese Einstellung ignoriert."
 
 #: ../clients/common/settings-docs.h.in:96
 msgid ""
 "s390 network device type; one of \"qeth\", \"lcs\", or \"ctc\", representing "
 "the different types of virtual network devices available on s390 systems."
 msgstr ""
+"s390 Netzwerkgerätetyp; eines von \"qeth\", \"lcs\" oder \"ctc\", die die "
+"verschiedenen Arten von virtuellen Netzwerkgeräten darstellen, die auf s390-"
+"Systemen verfügbar sind."
 
 #: ../clients/common/settings-docs.h.in:97
 msgid ""
@@ -7041,6 +7404,10 @@ msgid ""
 "\"portname\", \"protocol\", among others.  Key names must contain only "
 "alphanumeric characters (ie, [a-zA-Z0-9])."
 msgstr ""
+"Wörterbuch von Schlüssel / Wert-Paaren von s390-spezifischen Geräteoptionen. "
+"Beide Schlüssel und Werte müssen Zeichenfolgen sein. Zu den zulässigen "
+"Schlüsseln gehören ua \"portno\", \"layer2\", \"portname\", \"protocol\". "
+"Schlüsselnamen dürfen nur alphanumerische Zeichen enthalten (dh [a-zA-Z0-9])."
 
 #: ../clients/common/settings-docs.h.in:98
 msgid ""
@@ -7051,6 +7418,13 @@ msgid ""
 "contain exactly 3 strings, and each string may only be composed of "
 "hexadecimal characters and the period (.) character."
 msgstr ""
+"Identifiziert bestimmte Unterkanäle, die dieses Netzwerkgerät für die "
+"Kommunikation mit z / VM- oder s390-Hosts verwendet. Wie die Eigenschaft "
+"\"Mac-Adresse\" für Nicht-z / VM-Geräte kann diese Eigenschaft verwendet "
+"werden, um sicherzustellen, dass diese Verbindung nur für das Netzwerkgerät "
+"gilt, das diese Unterkanäle verwendet. Die Liste sollte genau 3 "
+"Zeichenfolgen enthalten und jede Zeichenfolge darf nur aus hexadezimalen "
+"Zeichen und dem Punktzeichen (.) Bestehen."
 
 #: ../clients/common/settings-docs.h.in:99
 msgid ""
@@ -7066,6 +7440,19 @@ msgid ""
 "property when non-zero. Before specifying a speed value be sure your device "
 "supports it."
 msgstr ""
+"Wenn ein Wert größer als 0 festgelegt wird, konfiguriert das Gerät die "
+"angegebene Geschwindigkeit. Wenn \"Auto-Negotiation\" \"Yes\" ist, wird die "
+"angegebene Geschwindigkeit als einzige während der Link-Verhandlung "
+"beworben: Dies funktioniert nur für BASE-T 802.3-Spezifikationen und ist "
+"nützlich für die Durchsetzung von Gigabit-Geschwindigkeiten, da in diesem "
+"Fall Link-Negotiation obligatorisch ist. Wenn der Wert nicht gesetzt ist (0, "
+"der Standardwert), wird die Link-Konfiguration entweder übersprungen (wenn "
+"\"Auto-Negotiation\" \"Nein\" ist, der Standardwert) oder automatisch "
+"ausgehandelt (wenn \"Auto-Negotiation\" \"Ja\" ist) \") und das lokale Gerät "
+"wird für alle unterstützten Geschwindigkeiten werben. In Mbit / s, dh 100 = "
+"100 Mbit / s. Muss zusammen mit der Eigenschaft \"duplex\" gesetzt werden, "
+"wenn sie ungleich Null ist. Bevor Sie einen Geschwindigkeitswert angeben, "
+"vergewissern Sie sich, dass Ihr Gerät dies unterstützt."
 
 #: ../clients/common/settings-docs.h.in:100
 msgid ""
@@ -7079,6 +7466,15 @@ msgid ""
 "use global settings) and NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE (0x8000) (to "
 "disable management of Wake-on-LAN in NetworkManager)."
 msgstr ""
+"Die NMSettingWiredWakeOnLan-Optionen zum Aktivieren. Nicht alle Geräte "
+"unterstützen alle Optionen. Kann eine beliebige Kombination von "
+"NM_SETTING_WIRED_WAKE_ON_LAN_PHY (0x2), NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST "
+"(0x4), NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST (0x8), "
+"NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST (0x10), "
+"NM_SETTING_WIRED_WAKE_ON_LAN_ARP (0x20), NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC "
+"(0x40) oder die speziellen Werte NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT (0x1) "
+"(um globale Einstellungen) und NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE (0x8000) "
+"(um die Verwaltung von Wake-on-LAN im NetworkManager zu deaktivieren)."
 
 #: ../clients/common/settings-docs.h.in:101
 msgid ""
@@ -7086,6 +7482,9 @@ msgid ""
 "represented as an Ethernet MAC address.  If NULL, no password will be "
 "required."
 msgstr ""
+"Falls angegeben, wird das mit Magic-Packet-basierte Wake-on-LAN verwendete "
+"Passwort als Ethernet-MAC-Adresse dargestellt. Wenn NULL, wird kein Passwort "
+"benötigt."
 
 #: ../clients/common/settings-docs.h.in:102
 msgid "Encapsulation of ADSL connection.  Can be \"vcmux\" or \"llc\"."
@@ -7122,6 +7521,8 @@ msgid ""
 "Either \"dun\" for Dial-Up Networking connections or \"panu\" for Personal "
 "Area Networking connections to devices supporting the NAP profile."
 msgstr ""
+"Entweder \"dun\" für DFÜ-Netzwerkverbindungen oder \"panu\" für Personal "
+"Area Networking-Verbindungen zu Geräten, die das NAP-Profil unterstützen."
 
 #: ../clients/common/settings-docs.h.in:111
 msgid ""
@@ -7129,6 +7530,9 @@ msgid ""
 "be strings. Option names must contain only alphanumeric characters (ie, [a-"
 "zA-Z0-9])."
 msgstr ""
+"Wörterbuch der Schlüssel / Wert-Paare von Bindungsoptionen. Beide Schlüssel "
+"und Werte müssen Zeichenfolgen sein. Optionsnamen dürfen nur alphanumerische "
+"Zeichen enthalten (z. B. [a-zA-Z0-9])."
 
 #: ../clients/common/settings-docs.h.in:112
 msgid "The Ethernet MAC address aging time, in seconds."
@@ -7147,6 +7551,13 @@ msgid ""
 "address in that range that must be forwarded. The mask can't have bits 0, 1 "
 "or 2 set because they are used for STP, MAC pause frames and LACP."
 msgstr ""
+"Eine Maske von Gruppenadressen zum Weiterleiten. In der Regel werden "
+"Gruppenadressen im Bereich von 01: 80: C2: 00: 00: 00 bis 01: 80: C2: 00: "
+"00: 0F nicht normgerecht weitergeleitet. Diese Eigenschaft ist eine Maske "
+"von 16 Bits, die jeweils einer Gruppenadresse in diesem Bereich entsprechen, "
+"die weitergeleitet werden muss. In der Maske können die Bits 0, 1 oder 2 "
+"nicht gesetzt sein, da sie für STP, MAC-Pausenrahmen und LACP verwendet "
+"werden."
 
 #: ../clients/common/settings-docs.h.in:115
 msgid "The Spanning Tree Protocol (STP) hello time, in seconds."
@@ -7161,6 +7572,13 @@ msgid ""
 "the MAC address of the bridge later while activating the bridge. Hence, this "
 "property is deprecated. Deprecated: 1"
 msgstr ""
+"Wenn angegeben, die MAC-Adresse der Bridge. Wenn Sie eine neue Bridge "
+"erstellen, wird diese MAC-Adresse festgelegt. Wenn dieses Feld nicht "
+"angegeben ist, wird stattdessen die \"ethernet.cloned-mac-Adresse\" "
+"verwendet, um die anfängliche MAC-Adresse zu erzeugen. Beachten Sie, dass "
+"die Einstellung \"ethernet.cloned-mac-address\" die MAC-Adresse der Bridge "
+"später beim Aktivieren der Bridge überschreibt. Daher ist diese Eigenschaft "
+"veraltet. Veraltet: 1"
 
 #: ../clients/common/settings-docs.h.in:117
 #, fuzzy
@@ -7185,6 +7603,9 @@ msgid ""
 "values are \"better\"; the lowest priority bridge will be elected the root "
 "bridge."
 msgstr ""
+"Legt die STP-Priorität (Spanning Tree Protocol) für diese Bridge fest. "
+"Niedrigere Werte sind \"besser\"; Die Brücke mit der niedrigsten Priorität "
+"wird zur Stammbrücke gewählt."
 
 #: ../clients/common/settings-docs.h.in:120
 msgid ""
@@ -7198,6 +7619,9 @@ msgid ""
 "Enables or disables \"hairpin mode\" for the port, which allows frames to be "
 "sent back out through the port the frame was received on."
 msgstr ""
+"Aktiviert oder deaktiviert den \"Haarnadelmodus\" für den Port, mit dem "
+"Frames über den Port, an dem der Frame empfangen wurde, zurückgesendet "
+"werden können."
 
 #: ../clients/common/settings-docs.h.in:122
 msgid ""
@@ -7274,6 +7698,12 @@ msgid ""
 "profiles. See \"secondaries\" as an alternative to automatically connect VPN "
 "profiles."
 msgstr ""
+"Gibt an, ob die Verbindung vom NetworkManager automatisch hergestellt werden "
+"soll, wenn die Ressourcen für die Verbindung verfügbar sind. TRUE zum "
+"automatischen Aktivieren der Verbindung, FALSE zum manuellen Aktivieren der "
+"Verbindung. Beachten Sie, dass Autoconnect für VPN-Profile nicht "
+"implementiert ist. Siehe \"Secondaries\" als Alternative zum automatischen "
+"Verbinden von VPN-Profilen."
 
 #: ../clients/common/settings-docs.h.in:131
 msgid ""
@@ -7281,6 +7711,9 @@ msgid ""
 "connections with higher priority will be preferred. Defaults to 0. The "
 "higher number means higher priority."
 msgstr ""
+"Die Autoconnect-Priorität. Wenn die Verbindung auf Autoconnect eingestellt "
+"ist, werden Verbindungen mit höherer Priorität bevorzugt. Der Standardwert "
+"ist 0. Die höhere Zahl bedeutet höhere Priorität."
 
 #: ../clients/common/settings-docs.h.in:132
 msgid ""
@@ -7290,6 +7723,12 @@ msgid ""
 "blocking autoconnect. Note that after a timeout, NetworkManager will try to "
 "autoconnect again."
 msgstr ""
+"Die Häufigkeit, mit der eine Verbindung versucht werden soll, wenn sie vor "
+"dem Aufgeben automatisch aktiviert wird. Null bedeutet für immer, -1 "
+"bedeutet den globalen Standard (4 mal wenn nicht überschrieben). Setzen Sie "
+"dies auf 1, um die Aktivierung nur einmal zu versuchen, bevor Sie "
+"Autoconnect blockieren. Beachten Sie, dass NetworkManager nach einer "
+"Zeitüberschreitung versucht, die Verbindung erneut herzustellen."
 
 #: ../clients/common/settings-docs.h.in:133
 msgid ""
@@ -7302,12 +7741,24 @@ msgid ""
 "set, global connection.autoconnect-slaves is read to determine the real "
 "value. If it is default as well, this fallbacks to 0."
 msgstr ""
+"Ob Slaves dieser Verbindung automatisch aktiviert werden sollen, wenn "
+"NetworkManager diese Verbindung aktiviert. Dies wirkt sich nur auf Master-"
+"Verbindungen aus. Die Eigenschaften \"autoconnect\", \"autoconnect-priority"
+"\" und \"autoconnect-retries\" stehen nicht im Zusammenhang mit dieser "
+"Einstellung. Die zulässigen Werte sind: 0: Lassen Sie die Slave-Verbindungen "
+"unberührt, 1: aktivieren Sie alle Slave-Verbindungen mit dieser Verbindung, "
+"-1: Standard. Wenn -1 (Standard) festgelegt ist, wird global connection."
+"autoconnect-slaves gelesen, um den tatsächlichen Wert zu ermitteln. Wenn es "
+"ebenfalls Standard ist, wird auf 0 zurückgesetzt."
 
 #: ../clients/common/settings-docs.h.in:134
 msgid ""
 "If greater than zero, delay success of IP addressing until either the "
 "timeout is reached, or an IP gateway replies to a ping."
 msgstr ""
+"Wenn größer als Null, verzögern Sie den Erfolg der IP-Adressierung, bis "
+"entweder die Zeitüberschreitung erreicht ist oder ein IP-Gateway auf einen "
+"Ping antwortet."
 
 #: ../clients/common/settings-docs.h.in:135
 msgid ""
@@ -7329,6 +7780,17 @@ msgid ""
 "names change or are reordered the connection may be applied to the wrong "
 "interface."
 msgstr ""
+"Der Name der Netzwerkschnittstelle, an die diese Verbindung gebunden ist. "
+"Ist dies nicht der Fall, kann die Verbindung an jede Schnittstelle des "
+"entsprechenden Typs angeschlossen werden (vorbehaltlich der Einschränkungen "
+"anderer Einstellungen). Bei Software-Geräten gibt dies den Namen des "
+"erstellten Geräts an. Bei Verbindungstypen, bei denen Schnittstellennamen "
+"nicht ohne weiteres dauerhaft gemacht werden können (z. B. mobiles Breitband "
+"oder USB-Ethernet), sollte diese Eigenschaft nicht verwendet werden. Das "
+"Festlegen dieser Eigenschaft beschränkt die Schnittstellen, mit denen eine "
+"Verbindung verwendet werden kann. Wenn sich die Schnittstellennamen ändern "
+"oder neu angeordnet werden, kann die Verbindung auf die falsche "
+"Schnittstelle angewendet werden."
 
 #: ../clients/common/settings-docs.h.in:137
 msgid "Whether LLDP is enabled for the connection."
@@ -7345,6 +7807,15 @@ msgid ""
 "host names. This feature requires a plugin which supports LLMNR. One such "
 "plugin is dns-systemd-resolved."
 msgstr ""
+"Gibt an, ob Link-Local Multicast Name Resolution (LLMNR) für die Verbindung "
+"aktiviert ist. LLMNR ist ein Protokoll, das auf dem DNS-Paketformat (Domain "
+"Name System) basiert und sowohl IPv4- als auch IPv6-Hosts die "
+"Namensauflösung für Hosts auf derselben lokalen Verbindung ermöglicht. Die "
+"erlaubten Werte sind: yes: register hostname und resolving für die "
+"Verbindung, no: disable LLMNR für die Schnittstelle, resolve: hostname nicht "
+"registrieren, aber das Auflösen von LLMNR-Hostnamen erlauben. Diese Funktion "
+"erfordert ein Plugin, das LLMNR unterstützt. Ein solches Plugin ist DNS-"
+"Systemd-aufgelöst."
 
 #: ../clients/common/settings-docs.h.in:139
 msgid "Interface name of the master device or UUID of the master connection."
@@ -7359,18 +7830,27 @@ msgid ""
 "host names. This feature requires a plugin which supports mDNS. One such "
 "plugin is dns-systemd-resolved."
 msgstr ""
+"Ob mDNS für die Verbindung aktiviert ist. Die erlaubten Werte sind: yes: "
+"register hostname und resolving für die Verbindung, no: disable mDNS für die "
+"Schnittstelle, resolve: hostname nicht registrieren, aber Auflösung von mDNS "
+"Hostnamen erlauben. Diese Funktion benötigt ein Plugin, das mDNS "
+"unterstützt. Ein solches Plugin ist DNS-Systemd-aufgelöst."
 
 #: ../clients/common/settings-docs.h.in:141
 msgid ""
 "Whether the connection is metered. When updating this property on a "
 "currently activated connection, the change takes effect immediately."
 msgstr ""
+"Ob die Verbindung gemessen wird. Wenn Sie diese Eigenschaft für eine derzeit "
+"aktivierte Verbindung aktualisieren, wird die Änderung sofort wirksam."
 
 #: ../clients/common/settings-docs.h.in:142
 msgid ""
 "Specifies whether the profile can be active multiple times at a particular "
 "moment. The value is of type NMConnectionMultiConnect."
 msgstr ""
+"Gibt an, ob das Profil zu einem bestimmten Zeitpunkt mehrmals aktiv sein "
+"kann. Der Wert ist vom Typ NMConnectionMultiConnect."
 
 #: ../clients/common/settings-docs.h.in:143
 msgid ""
@@ -7386,6 +7866,19 @@ msgid ""
 "present must be ignored and is reserved for future use.  All of [type], "
 "[id], and [reserved] must be valid UTF-8."
 msgstr ""
+"Eine Reihe von Zeichenfolgen, die definieren, welchen Zugriff ein bestimmter "
+"Benutzer auf diese Verbindung hat. Wenn dies NULL oder leer ist, können alle "
+"Benutzer auf diese Verbindung zugreifen. Andernfalls sind Benutzer nur dann "
+"erlaubt, wenn sie in dieser Liste sind. Wenn dies nicht leer ist, kann die "
+"Verbindung nur aktiv sein, wenn einer der angegebenen Benutzer in einer "
+"aktiven Sitzung angemeldet ist. Jeder Eintrag hat die Form \"[type]: [id]: "
+"[reserved]\"; zum Beispiel \"user: dcbw: blah\". Zu diesem Zeitpunkt ist nur "
+"der \"Benutzer\" [Typ] erlaubt. Alle anderen Werte werden ignoriert und für "
+"die zukünftige Verwendung reserviert. [id] ist der Benutzername, auf den "
+"sich diese Berechtigung bezieht und der möglicherweise nicht das Zeichen \":"
+"\" enthält. Alle vorhandenen [reservierten] Informationen müssen ignoriert "
+"werden und sind für die zukünftige Verwendung reserviert. Alle [type], [id] "
+"und [reserved] müssen gültige UTF-8 sein."
 
 #: ../clients/common/settings-docs.h.in:144
 msgid ""
@@ -7393,18 +7886,27 @@ msgid ""
 "service's D-Bus interface with the right privileges, or TRUE if the "
 "connection is read-only and cannot be modified."
 msgstr ""
+"FALSE, wenn die Verbindung über die D-Bus-Schnittstelle des bereitgestellten "
+"Einstellungsdiensts mit den entsprechenden Rechten geändert werden kann, "
+"oder TRUE, wenn die Verbindung schreibgeschützt ist und nicht geändert "
+"werden kann."
 
 #: ../clients/common/settings-docs.h.in:145
 msgid ""
 "List of connection UUIDs that should be activated when the base connection "
 "itself is activated. Currently only VPN connections are supported."
 msgstr ""
+"Liste der Verbindungs-UUIDs, die aktiviert werden sollen, wenn die "
+"Basisverbindung selbst aktiviert wird. Derzeit werden nur VPN-Verbindungen "
+"unterstützt."
 
 #: ../clients/common/settings-docs.h.in:146
 msgid ""
 "Setting name of the device type of this slave's master connection (eg, \"bond"
 "\"), or NULL if this connection is not a slave."
 msgstr ""
+"Name des Gerätetyps der Masterverbindung dieses Slaves (z. B. \"bond\") oder "
+"NULL, wenn diese Verbindung kein Slave ist."
 
 #: ../clients/common/settings-docs.h.in:147
 msgid ""
@@ -7436,6 +7938,36 @@ msgid ""
 "If the value is still unset, the default is similar to \"${CONNECTION}\" and "
 "uses a unique, fixed ID for the connection."
 msgstr ""
+"Dies stellt die Identität der Verbindung dar, die für verschiedene Zwecke "
+"verwendet wird. Es ermöglicht die Konfiguration mehrerer Profile für die "
+"gemeinsame Nutzung der Identität. Außerdem kann die stable-id Platzhalter "
+"enthalten, die je nach Kontext dynamisch und deterministisch ersetzt werden. "
+"Die Stable-ID wird verwendet, um IPv6-stabile private Adressen mit ipv6.addr-"
+"gen-mode = stable-privacy zu generieren. Es wird auch verwendet, um die "
+"generierte geklonte MAC-Adresse für ethernet.cloned-mac-address = stable und "
+"wifi.cloned-mac-address = stable zu setzen. Es wird auch als DHCP-Client-ID "
+"mit ipv4.dhcp-client-id = stable verwendet und leitet die DHCP-DUID mit ipv6."
+"dhcp-duid = stable- [llt, ll, uuid] ab. Beachten Sie, dass abhängig vom "
+"Kontext, in dem es verwendet wird, auch andere Parameter in den "
+"Generierungsalgorithmus eingefügt werden. Zum Beispiel ist ein per-Host-"
+"Schlüssel üblicherweise ebenfalls enthalten, so dass unterschiedliche "
+"Systeme unterschiedliche IDs generieren. Oder mit ipv6.addr-gen-mode = "
+"stable-privacy ist auch der Gerätename enthalten, so dass unterschiedliche "
+"Schnittstellen unterschiedliche Adressen ergeben. Das Zeichen '$' wird "
+"speziell behandelt, um dynamische Ersetzungen zur Laufzeit durchzuführen. "
+"Derzeit werden \"$ {CONNECTION}\", \"$ {DEVICE}\", \"$ {BOOT}\", \"$ "
+"{RANDOM}\" unterstützt. Diese erstellen effektiv eindeutige IDs pro "
+"Verbindung, pro Gerät, pro Boot oder jedes Mal. Beachten Sie, dass \"$ "
+"{DEVICE}\" dem Namen der Schnittstelle des Geräts entspricht. Alle nicht "
+"erkannten Muster, die auf $ folgen, werden wörtlich behandelt, sind jedoch "
+"für die zukünftige Verwendung reserviert. Es wird daher empfohlen, \"$\" zu "
+"vermeiden oder als \"$$\" zu entkommen. Setzen Sie es beispielsweise auf \"$ "
+"{CONNECTION} - $ {BOOT} - $ {DEVICE}\", um eine eindeutige ID für diese "
+"Verbindung zu erstellen, die sich bei jedem Neustart ändert und abhängig von "
+"der Schnittstelle, auf der das Profil aktiviert wird. Wenn der Wert nicht "
+"festgelegt ist, wird ein globaler Verbindungsstandard herangezogen. Wenn der "
+"Wert immer noch nicht festgelegt ist, ähnelt der Standardwert \"$ "
+"{CONNECTION}\" und verwendet eine eindeutige feste ID für die Verbindung."
 
 #: ../clients/common/settings-docs.h.in:148
 msgid ""
@@ -7445,6 +7977,12 @@ msgid ""
 "active connection has the latest timestamp. The property is only meant for "
 "reading (changes to this property will not be preserved)."
 msgstr ""
+"Die Zeit in Sekunden seit der Unix-Epoche, dass die Verbindung zuletzt "
+"_successfully_ voll aktiviert wurde. NetworkManager aktualisiert den "
+"Verbindungszeitstempel regelmäßig, wenn die Verbindung aktiv ist, um "
+"sicherzustellen, dass eine aktive Verbindung den neuesten Zeitstempel hat. "
+"Die Eigenschaft dient nur zum Lesen (Änderungen an dieser Eigenschaft werden "
+"nicht beibehalten)."
 
 #: ../clients/common/settings-docs.h.in:149
 msgid ""
@@ -7454,6 +7992,12 @@ msgid ""
 "hardware dependent connections like VPN or otherwise, should contain the "
 "setting name of that setting type (ie, \"vpn\" or \"bridge\", etc)."
 msgstr ""
+"Basistyp der Verbindung Bei hardwareabhängigen Verbindungen sollte der "
+"Einstellungsname der hardwaretypspezifischen Einstellung (z. B. \"802-3-"
+"Ethernet\" oder \"802-11-wireless\" oder \"Bluetooth\" usw.) und nicht "
+"hardwareabhängig sein Verbindungen wie VPN oder andere sollten den "
+"Einstellungsnamen dieses Einstellungstyps enthalten (z. B. \"vpn\" oder "
+"\"bridge\" usw.)."
 
 #: ../clients/common/settings-docs.h.in:150
 msgid ""
@@ -7466,6 +8010,15 @@ msgid ""
 "UUID must be in the format \"2815492f-7e56-435e-b2e9-246bd7cdc664\" (ie, "
 "contains only hexadecimal characters and \"-\")."
 msgstr ""
+"Ein universell eindeutiger Bezeichner für die Verbindung, zum Beispiel "
+"generiert mit libuuid. Es sollte zugewiesen werden, wenn die Verbindung "
+"erstellt wird, und nie geändert werden, solange die Verbindung für das "
+"gleiche Netzwerk gilt. Zum Beispiel sollte es nicht geändert werden, wenn "
+"sich die Eigenschaft \"id\" oder NMSettingIP4Config ändert, aber "
+"möglicherweise neu erstellt werden muss, wenn sich die WLAN-SSID, der mobile "
+"Breitbandnetzwerkanbieter oder die Eigenschaft \"type\" ändert. Die UUID "
+"muss das Format \"2815492f-7e56-435e-b2e9-246bd7cdc664\" haben (dh, enthält "
+"nur hexadezimale Zeichen und \"-\")."
 
 #: ../clients/common/settings-docs.h.in:151
 msgid ""
@@ -7475,6 +8028,12 @@ msgid ""
 "When updating this property on a currently activated connection, the change "
 "takes effect immediately."
 msgstr ""
+"Das Vertrauensniveau einer Verbindung. Freiform Groß-und Kleinschreibung "
+"String (zum Beispiel \"Home\", \"Arbeit\", \"Public\"). NULL oder "
+"unspezifizierte Zone bedeutet, dass die Verbindung in der Standardzone "
+"platziert wird, wie von der Firewall definiert. Wenn Sie diese Eigenschaft "
+"für eine derzeit aktivierte Verbindung aktualisieren, wird die Änderung "
+"sofort wirksam."
 
 #: ../clients/common/settings-docs.h.in:152
 msgid ""
@@ -7482,10 +8041,15 @@ msgid ""
 "any combination of NM_SETTING_DCB_FLAG_ENABLE (0x1), "
 "NM_SETTING_DCB_FLAG_ADVERTISE (0x2), and NM_SETTING_DCB_FLAG_WILLING (0x4)."
 msgstr ""
+"Gibt die NMSettingDcbFlags für die DCB-FCoE-Anwendung an. Flags können eine "
+"beliebige Kombination von NM_SETTING_DCB_FLAG_ENABLE (0x1), "
+"NM_SETTING_DCB_FLAG_ADVERTISE (0x2) und NM_SETTING_DCB_FLAG_WILLING (0x4) "
+"sein."
 
 #: ../clients/common/settings-docs.h.in:153
 msgid "The FCoE controller mode; either \"fabric\" (default) or \"vn2vn\"."
 msgstr ""
+"Der FCoE-Controller-Modus; entweder \"Fabric\" (Standard) oder \"vn2vn\"."
 
 #: ../clients/common/settings-docs.h.in:154
 msgid ""
@@ -7493,6 +8057,9 @@ msgid ""
 "default priority.  Only used when the \"app-fcoe-flags\" property includes "
 "the NM_SETTING_DCB_FLAG_ENABLE (0x1) flag."
 msgstr ""
+"Die höchste Benutzerpriorität (0 - 7), die FCoE-Rahmen verwenden sollten, "
+"oder -1 für die Standardpriorität. Wird nur verwendet, wenn die Eigenschaft "
+"\"app-fcoe-flags\" das Flag NM_SETTING_DCB_FLAG_ENABLE (0x1) enthält."
 
 #: ../clients/common/settings-docs.h.in:155
 msgid ""
@@ -7500,6 +8067,10 @@ msgid ""
 "any combination of NM_SETTING_DCB_FLAG_ENABLE (0x1), "
 "NM_SETTING_DCB_FLAG_ADVERTISE (0x2), and NM_SETTING_DCB_FLAG_WILLING (0x4)."
 msgstr ""
+"Gibt die NMSettingDcbFlags für die DCB-FIP-Anwendung an. Flags können eine "
+"beliebige Kombination von NM_SETTING_DCB_FLAG_ENABLE (0x1), "
+"NM_SETTING_DCB_FLAG_ADVERTISE (0x2) und NM_SETTING_DCB_FLAG_WILLING (0x4) "
+"sein."
 
 #: ../clients/common/settings-docs.h.in:156
 msgid ""
@@ -7507,6 +8078,9 @@ msgid ""
 "default priority.  Only used when the \"app-fip-flags\" property includes "
 "the NM_SETTING_DCB_FLAG_ENABLE (0x1) flag."
 msgstr ""
+"Die höchste Benutzerpriorität (0 - 7), die FIP-Frames verwenden sollten, "
+"oder -1 für die Standardpriorität. Wird nur verwendet, wenn die Eigenschaft "
+"\"app-fip-flags\" das Flag NM_SETTING_DCB_FLAG_ENABLE (0x1) enthält."
 
 #: ../clients/common/settings-docs.h.in:157
 msgid ""
@@ -7514,6 +8088,10 @@ msgid ""
 "any combination of NM_SETTING_DCB_FLAG_ENABLE (0x1), "
 "NM_SETTING_DCB_FLAG_ADVERTISE (0x2), and NM_SETTING_DCB_FLAG_WILLING (0x4)."
 msgstr ""
+"Gibt die NMSettingDcbFlags für die DCB-iSCSI-Anwendung an. Flags können eine "
+"beliebige Kombination von NM_SETTING_DCB_FLAG_ENABLE (0x1), "
+"NM_SETTING_DCB_FLAG_ADVERTISE (0x2) und NM_SETTING_DCB_FLAG_WILLING (0x4) "
+"sein."
 
 #: ../clients/common/settings-docs.h.in:158
 msgid ""
@@ -7521,6 +8099,9 @@ msgid ""
 "default priority. Only used when the \"app-iscsi-flags\" property includes "
 "the NM_SETTING_DCB_FLAG_ENABLE (0x1) flag."
 msgstr ""
+"Die höchste Benutzerpriorität (0 - 7), die iSCSI-Rahmen verwenden sollten, "
+"oder -1 für die Standardpriorität. Wird nur verwendet, wenn die Eigenschaft "
+"\"app-iscsi-flags\" das Flag NM_SETTING_DCB_FLAG_ENABLE (0x1) enthält."
 
 #: ../clients/common/settings-docs.h.in:159
 msgid ""
@@ -7530,6 +8111,11 @@ msgid ""
 "percentages for priorities which belong to the same group must total 100 "
 "percents."
 msgstr ""
+"Ein Array mit 8 Uint-Werten, wobei der Array-Index der Benutzerpriorität (0 "
+"- 7) entspricht und der Wert den Prozentsatz der Bandbreite der zugewiesenen "
+"Prioritätsgruppe angibt, den die Priorität verwenden darf. Die Summe aller "
+"Prozentsätze für Prioritäten, die zu derselben Gruppe gehören, muss 100 "
+"Prozent betragen."
 
 #: ../clients/common/settings-docs.h.in:160
 msgid ""
@@ -7537,6 +8123,9 @@ msgid ""
 "Priority (0 - 7) and the value indicates whether or not the corresponding "
 "priority should transmit priority pause."
 msgstr ""
+"Ein Array mit 8 booleschen Werten, wobei der Array-Index der "
+"Benutzerpriorität (0 - 7) entspricht und der Wert angibt, ob die "
+"entsprechende Priorität die Prioritätspause übertragen soll oder nicht."
 
 #: ../clients/common/settings-docs.h.in:161
 msgid ""
@@ -7544,6 +8133,10 @@ msgid ""
 "may be any combination of NM_SETTING_DCB_FLAG_ENABLE (0x1), "
 "NM_SETTING_DCB_FLAG_ADVERTISE (0x2), and NM_SETTING_DCB_FLAG_WILLING (0x4)."
 msgstr ""
+"Gibt die NMSettingDcbFlags für DCB Priority Flow Control (PFC) an. Flags "
+"können eine beliebige Kombination von NM_SETTING_DCB_FLAG_ENABLE (0x1), "
+"NM_SETTING_DCB_FLAG_ADVERTISE (0x2) und NM_SETTING_DCB_FLAG_WILLING (0x4) "
+"sein."
 
 #: ../clients/common/settings-docs.h.in:162
 msgid ""
@@ -7552,6 +8145,10 @@ msgid ""
 "allocated to that group.  Allowed values are 0 - 100, and the sum of all "
 "values must total 100 percents."
 msgstr ""
+"Ein Array mit 8 Uint-Werten, wobei der Array-Index der Priority Group ID (0 "
+"- 7) entspricht und der Wert den Prozentsatz der Link-Bandbreite angibt, die "
+"dieser Gruppe zugewiesen ist. Zulässige Werte sind 0 - 100, und die Summe "
+"aller Werte muss insgesamt 100 Prozent betragen."
 
 #: ../clients/common/settings-docs.h.in:163
 msgid ""
@@ -7559,6 +8156,10 @@ msgid ""
 "combination of NM_SETTING_DCB_FLAG_ENABLE (0x1), "
 "NM_SETTING_DCB_FLAG_ADVERTISE (0x2), and NM_SETTING_DCB_FLAG_WILLING (0x4)."
 msgstr ""
+"Gibt die NMSettingDcbFlags für DCB-Prioritätsgruppen an. Flags können eine "
+"beliebige Kombination von NM_SETTING_DCB_FLAG_ENABLE (0x1), "
+"NM_SETTING_DCB_FLAG_ADVERTISE (0x2) und NM_SETTING_DCB_FLAG_WILLING (0x4) "
+"sein."
 
 #: ../clients/common/settings-docs.h.in:164
 msgid ""
@@ -7566,6 +8167,10 @@ msgid ""
 "Priority (0 - 7) and the value indicates the Priority Group ID.  Allowed "
 "Priority Group ID values are 0 - 7 or 15 for the unrestricted group."
 msgstr ""
+"Ein Array mit 8 Uint-Werten, wobei der Array-Index der Benutzerpriorität (0 "
+"- 7) entspricht und der Wert die Prioritätsgruppen-ID angibt. Erlaubte "
+"Prioritätsgruppen-ID-Werte sind 0 - 7 oder 15 für die uneingeschränkte "
+"Gruppe."
 
 #: ../clients/common/settings-docs.h.in:165
 msgid ""
@@ -7573,6 +8178,9 @@ msgid ""
 "Priority (0 - 7) and the value indicates whether or not the priority may use "
 "all of the bandwidth allocated to its assigned group."
 msgstr ""
+"Ein Array mit 8 booleschen Werten, wobei der Array-Index der "
+"Benutzerpriorität (0 - 7) entspricht und der Wert angibt, ob die Priorität "
+"die gesamte zugewiesene Bandbreite für die zugewiesene Gruppe verwenden darf."
 
 #: ../clients/common/settings-docs.h.in:166
 msgid ""
@@ -7580,6 +8188,9 @@ msgid ""
 "Priority (0 - 7) and the value indicates the traffic class (0 - 7) to which "
 "the priority is mapped."
 msgstr ""
+"Ein Array von 8 Uint-Werten, wobei der Array-Index der Benutzerpriorität (0 "
+"- 7) entspricht und der Wert die Verkehrsklasse (0 - 7) angibt, der die "
+"Priorität zugeordnet ist."
 
 #: ../clients/common/settings-docs.h.in:167
 msgid ""
@@ -7591,6 +8202,14 @@ msgid ""
 "only be composed of the characters a-z, 0-9, ., and - per GSM 03.60 Section "
 "14.9."
 msgstr ""
+"Der GPRS Access Point Name, der den APN angibt, der beim Aufbau einer "
+"Datensitzung mit dem GSM-basierten Netzwerk verwendet wird. Der APN legt "
+"häufig fest, wie dem Benutzer die Netzwerknutzung in Rechnung gestellt wird "
+"und ob der Benutzer Zugriff auf das Internet oder nur einen "
+"anbieterspezifischen ummauerten Garten hat. Daher ist es wichtig, den "
+"richtigen APN für den mobilen Breitbandplan des Benutzers zu verwenden. Der "
+"APN darf nur aus den Zeichen az, 0-9,. Und - nach GSM 03.60 Abschnitt 14.9 "
+"bestehen."
 
 #: ../clients/common/settings-docs.h.in:168
 msgid ""
@@ -7598,12 +8217,17 @@ msgid ""
 "this connection applies to.  If given, the connection will only apply to the "
 "specified device."
 msgstr ""
+"Die eindeutige ID des Geräts (wie vom WWAN-Verwaltungsdienst angegeben), für "
+"die diese Verbindung gilt. Wenn angegeben, gilt die Verbindung nur für das "
+"angegebene Gerät."
 
 #: ../clients/common/settings-docs.h.in:169
 msgid ""
 "When TRUE, only connections to the home network will be allowed. Connections "
 "to roaming networks will not be made."
 msgstr ""
+"Wenn TRUE, sind nur Verbindungen zum Heimnetzwerk zulässig. Verbindungen zu "
+"Roaming-Netzwerken werden nicht hergestellt."
 
 #: ../clients/common/settings-docs.h.in:171
 msgid ""
@@ -7613,12 +8237,22 @@ msgid ""
 "used to ensure that the device does not roam when direct roaming control of "
 "the device is not otherwise possible."
 msgstr ""
+"Die Netzwerk-ID (GSM LAI-Format, dh MCC-MNC), um eine spezifische "
+"Netzwerkregistrierung zu erzwingen. Wenn die Netzwerk-ID angegeben ist, "
+"versucht NetworkManager, das Gerät zur Registrierung nur im angegebenen "
+"Netzwerk zu zwingen. Dies kann verwendet werden, um sicherzustellen, dass "
+"das Gerät nicht durchstreift, wenn eine direkte Roaming-Steuerung des Geräts "
+"nicht anderweitig möglich ist."
 
 #: ../clients/common/settings-docs.h.in:172
 msgid ""
 "Legacy setting that used to help establishing PPP data sessions for GSM-"
 "based modems. Deprecated: 1"
 msgstr ""
+"Nummer, die beim Aufbau einer PPP-Datensitzung mit dem GSM-basierten mobilen "
+"Breitbandnetz gewählt wird. Viele Modems erfordern kein PPP für Verbindungen "
+"mit dem Mobilfunknetz. Daher sollte diese Eigenschaft leer bleiben, damit "
+"NetworkManager die entsprechenden Einstellungen automatisch auswählen kann."
 
 #: ../clients/common/settings-docs.h.in:175
 msgid ""
@@ -7626,6 +8260,9 @@ msgid ""
 "operations are requested.  Specify the PIN here to allow operation of the "
 "device."
 msgstr ""
+"Wenn die SIM-Karte mit einer PIN gesperrt ist, muss sie entsperrt werden, "
+"bevor andere Operationen angefordert werden. Geben Sie hier die PIN an, um "
+"den Betrieb des Geräts zu ermöglichen."
 
 #: ../clients/common/settings-docs.h.in:177
 msgid ""
@@ -7634,6 +8271,10 @@ msgid ""
 "any device also allowed by \"device-id\" which contains a SIM card matching "
 "the given identifier."
 msgstr ""
+"Die eindeutige ID der SIM-Karte (wie vom WWAN-Verwaltungsdienst angegeben), "
+"für die diese Verbindung gilt. Wenn angegeben, gilt die Verbindung für jedes "
+"Gerät, das auch von \"Geräte-ID\" zugelassen ist, das eine SIM-Karte "
+"enthält, die mit der angegebenen Kennung übereinstimmt."
 
 #: ../clients/common/settings-docs.h.in:178
 msgid ""
@@ -7642,6 +8283,11 @@ msgid ""
 "connection will apply to any device also allowed by \"device-id\" and \"sim-"
 "id\" which contains a SIM card provisioned by the given operator."
 msgstr ""
+"Eine MCC / MNC-Zeichenfolge wie \"310260\" oder \"21601\", die den "
+"spezifischen Mobilfunknetzbetreiber identifiziert, für den diese Verbindung "
+"gilt. Wenn angegeben, gilt die Verbindung für jedes Gerät, das auch von "
+"\"device-id\" und \"sim-id\" zugelassen ist und eine vom jeweiligen "
+"Betreiber bereitgestellte SIM-Karte enthält."
 
 #: ../clients/common/settings-docs.h.in:180
 msgid ""
@@ -7649,6 +8295,9 @@ msgid ""
 "permanent MAC address matches. This property does not change the MAC address "
 "of the device (i.e. MAC spoofing)."
 msgstr ""
+"Falls angegeben, gilt diese Verbindung nur für das IPoIB-Gerät, dessen "
+"permanente MAC-Adresse übereinstimmt. Diese Eigenschaft ändert nicht die MAC-"
+"Adresse des Geräts (z. B. MAC-Spoofing)."
 
 #: ../clients/common/settings-docs.h.in:182
 msgid ""
@@ -7656,6 +8305,11 @@ msgid ""
 "default P_Key (aka \"the P_Key at index 0\").  Otherwise it is a 16-bit "
 "unsigned integer, whose high bit is set if it is a \"full membership\" P_Key."
 msgstr ""
+"Der InfiniBand P_Key, der für dieses Gerät verwendet werden soll. Ein Wert "
+"von -1 bedeutet, den Standard-P_Key zu verwenden (auch bekannt als \"der "
+"P_Key bei Index 0\"). Andernfalls ist es eine 16-Bit-Ganzzahl ohne "
+"Vorzeichen, deren Hochbit gesetzt wird, wenn es sich um eine "
+"\"Vollmitgliedschaft\" P_Key handelt."
 
 #: ../clients/common/settings-docs.h.in:183
 msgid ""
@@ -7663,6 +8317,10 @@ msgid ""
 "if the \"p_key\" property is set, then you must specify the base device by "
 "setting either this property or \"mac-address\"."
 msgstr ""
+"Der Schnittstellenname des übergeordneten Geräts dieses Geräts. "
+"Normalerweise NULL, aber wenn die Eigenschaft \"p_key\" festgelegt ist, "
+"müssen Sie das Basisgerät angeben, indem Sie entweder diese Eigenschaft oder "
+"\"mac-address\" festlegen."
 
 #: ../clients/common/settings-docs.h.in:184
 msgid ""
@@ -7676,6 +8334,8 @@ msgid ""
 "How many additional levels of encapsulation are permitted to be prepended to "
 "packets. This property applies only to IPv6 tunnels."
 msgstr ""
+"Wie viele zusätzliche Kapselungsebenen dürfen Paketen vorangestellt werden. "
+"Diese Eigenschaft gilt nur für IPv6-Tunnel."
 
 #: ../clients/common/settings-docs.h.in:186
 msgid ""
@@ -7687,42 +8347,64 @@ msgid ""
 "(0x10), NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK (0x20). They are valid only "
 "for IPv6 tunnels."
 msgstr ""
+"Tunnelflaggen. Derzeit werden folgende Werte unterstützt: "
+"NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT (0x1), "
+"NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_TCLASS (0x2), "
+"NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FLOWLABEL (0x4), "
+"NM_IP_TUNNEL_FLAG_IP6_MIP6_DEV (0x8), NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY "
+"(0x10), NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK (0x20). Sie sind nur für IPv6-"
+"Tunnel gültig."
 
 #: ../clients/common/settings-docs.h.in:187
 msgid ""
 "The flow label to assign to tunnel packets. This property applies only to "
 "IPv6 tunnels."
 msgstr ""
+"Die Flow-Bezeichnung, die Tunnelpaketen zugewiesen werden soll. Diese "
+"Eigenschaft gilt nur für IPv6-Tunnel."
 
 #: ../clients/common/settings-docs.h.in:188
 msgid ""
 "The key used for tunnel input packets; the property is valid only for "
 "certain tunnel modes (GRE, IP6GRE). If empty, no key is used."
 msgstr ""
+"Der für Tunneleingangspakete verwendete Schlüssel; Die Eigenschaft ist nur "
+"für bestimmte Tunnelmodi (GRE, IP6GRE) gültig. Wenn leer, wird kein "
+"Schlüssel verwendet."
 
 #: ../clients/common/settings-docs.h.in:189
 msgid ""
 "The local endpoint of the tunnel; the value can be empty, otherwise it must "
 "contain an IPv4 or IPv6 address."
 msgstr ""
+"Der lokale Endpunkt des Tunnels; Der Wert kann leer sein, andernfalls muss "
+"er eine IPv4- oder IPv6-Adresse enthalten."
 
 #: ../clients/common/settings-docs.h.in:190
 msgid ""
 "The tunneling mode, for example NM_IP_TUNNEL_MODE_IPIP (1) or "
 "NM_IP_TUNNEL_MODE_GRE (2)."
 msgstr ""
+"Der Tunneling-Modus, zum Beispiel NM_IP_TUNNEL_MODE_IPIP (1) oder "
+"NM_IP_TUNNEL_MODE_GRE (2)."
 
 #: ../clients/common/settings-docs.h.in:191
 msgid ""
 "If non-zero, only transmit packets of the specified size or smaller, "
 "breaking larger packets up into multiple fragments."
 msgstr ""
+"Wenn sie nicht Null ist, werden nur Pakete der angegebenen Größe oder "
+"kleiner übertragen, wodurch größere Pakete in mehrere Fragmente aufgeteilt "
+"werden."
 
 #: ../clients/common/settings-docs.h.in:192
 msgid ""
 "The key used for tunnel output packets; the property is valid only for "
 "certain tunnel modes (GRE, IP6GRE). If empty, no key is used."
 msgstr ""
+"Der für Tunnel-Output-Pakete verwendete Schlüssel; Die Eigenschaft ist nur "
+"für bestimmte Tunnelmodi (GRE, IP6GRE) gültig. Wenn leer, wird kein "
+"Schlüssel verwendet."
 
 #: ../clients/common/settings-docs.h.in:193
 msgid ""
@@ -7730,6 +8412,9 @@ msgid ""
 "new device will be bound to so that tunneled packets will only be routed via "
 "that interface."
 msgstr ""
+"Wenn angegeben, gibt es den übergeordneten Schnittstellennamen oder die "
+"übergeordnete Verbindungs-UUID an, an die das neue Gerät gebunden wird, "
+"sodass getunnelte Pakete nur über diese Schnittstelle weitergeleitet werden."
 
 #: ../clients/common/settings-docs.h.in:194
 msgid "Whether to enable Path MTU Discovery on this tunnel."
@@ -7749,12 +8434,16 @@ msgid ""
 "The type of service (IPv4) or traffic class (IPv6) field to be set on "
 "tunneled packets."
 msgstr ""
+"Das Feld für den Servicetyp (IPv4) oder die Verkehrsklasse (IPv6), das für "
+"getunnelte Pakete festgelegt werden soll."
 
 #: ../clients/common/settings-docs.h.in:197
 msgid ""
 "The TTL to assign to tunneled packets. 0 is a special value meaning that "
 "packets inherit the TTL value."
 msgstr ""
+"Die TTL, die getunnelten Paketen zugewiesen werden soll. 0 ist ein "
+"spezieller Wert, der bedeutet, dass Pakete den TTL-Wert erben."
 
 #: ../clients/common/settings-docs.h.in:198
 #: ../clients/common/settings-docs.h.in:219
@@ -7771,6 +8460,12 @@ msgid ""
 "ipvx.dad-timeout override or zero).  A value greater than zero is a timeout "
 "in milliseconds. The property is currently implemented only for IPv4."
 msgstr ""
+"Timeout in Millisekunden, mit dem nach doppelten IP-Adressen im Netzwerk "
+"gesucht wird Wenn ein Adresskonflikt erkannt wird, schlägt die Aktivierung "
+"fehl. Ein Wert von Null bedeutet, dass keine doppelte Adressenerkennung "
+"durchgeführt wird, -1 bedeutet den Standardwert (entweder Konfiguration ipvx."
+"dad-timeout override oder Null). Ein Wert größer als Null ist ein Timeout in "
+"Millisekunden. Die Eigenschaft wird derzeit nur für IPv4 implementiert."
 
 #: ../clients/common/settings-docs.h.in:200
 msgid ""
@@ -7794,6 +8489,25 @@ msgid ""
 "configured default is used. If still unset, the default depends on the DHCP "
 "plugin."
 msgstr ""
+"Eine Zeichenfolge, die an den DHCP-Server gesendet wird, um den lokalen "
+"Computer zu identifizieren, den der DHCP-Server zum Anpassen der DHCP-Lease "
+"und der Optionen verwenden kann. Wenn die Eigenschaft eine hexadezimale "
+"Zeichenfolge ('aa: bb: cc') ist, wird sie als binäre Client-ID "
+"interpretiert. In diesem Fall wird das erste Byte als das 'type'-Feld gemäß "
+"RFC 2132, Abschnitt 9.14, und den verbleibenden Bytes angenommen kann eine "
+"Hardware-Adresse sein (zB '01: xx: xx: xx: xx: xx: xx ', wobei 1 der "
+"Ethernet-ARP-Typ ist und der Rest eine MAC-Adresse ist). Wenn die "
+"Eigenschaft keine hexadezimale Zeichenfolge ist, wird sie als Client-ID ohne "
+"Hardwareadresse betrachtet, und das Feld \"type\" wird auf 0 gesetzt. Es "
+"werden die speziellen Werte \"mac\" und \"perm-mac\" unterstützt, die den "
+"aktuellen Wert verwenden oder permanente MAC-Adresse des Geräts, um eine "
+"Client-ID mit dem Typ Ethernet (01) zu generieren. Derzeit funktionieren "
+"diese Optionen nur für Ethernet-Verbindungen. Der spezielle Wert \"stable\" "
+"wird unterstützt, um eine Client-ID des Typs 0 basierend auf der stable-id "
+"(siehe connection.stable-id) und einem pro-Host-Schlüssel zu generieren. "
+"Wenn nicht festgelegt, wird ein global konfigurierter Standardwert "
+"verwendet. Wenn noch nicht festgelegt, wird die Client-ID aus der letzten "
+"Lease wiederverwendet."
 
 #: ../clients/common/settings-docs.h.in:201
 msgid ""
@@ -7801,6 +8515,10 @@ msgid ""
 "be sent to the DHCP server when acquiring a lease. This property and \"dhcp-"
 "hostname\" are mutually exclusive and cannot be set at the same time."
 msgstr ""
+"Wenn die Eigenschaft \"dhcp-send-hostname\" den Wert TRUE hat, wird der "
+"angegebene FQDN beim Erwerb einer Lease an den DHCP-Server gesendet. Diese "
+"Eigenschaft und \"dhcp-hostname\" schließen sich gegenseitig aus und können "
+"nicht gleichzeitig festgelegt werden."
 
 #: ../clients/common/settings-docs.h.in:202
 #: ../clients/common/settings-docs.h.in:222
@@ -7809,6 +8527,10 @@ msgid ""
 "be sent to the DHCP server when acquiring a lease. This property and \"dhcp-"
 "fqdn\" are mutually exclusive and cannot be set at the same time."
 msgstr ""
+"Wenn die Eigenschaft \"dhcp-send-hostname\" den Wert TRUE hat, wird der "
+"angegebene Name beim Erwerb einer Lease an den DHCP-Server gesendet. Diese "
+"Eigenschaft und \"dhcp-fqdn\" schließen sich gegenseitig aus und können "
+"nicht gleichzeitig festgelegt werden."
 
 #: ../clients/common/settings-docs.h.in:203
 #: ../clients/common/settings-docs.h.in:223
@@ -7819,6 +8541,12 @@ msgid ""
 "property is NULL and this property is TRUE, the current persistent hostname "
 "of the computer is sent."
 msgstr ""
+"Wenn TRUE, wird beim Erwerb einer Lease ein Hostname an den DHCP-Server "
+"gesendet. Einige DHCP-Server verwenden diesen Hostnamen zum Aktualisieren "
+"von DNS-Datenbanken, wobei im Wesentlichen ein statischer Hostname für den "
+"Computer bereitgestellt wird. Wenn die Eigenschaft \"dhcp-hostname\" NULL "
+"ist und diese Eigenschaft TRUE ist, wird der aktuelle persistente Hostname "
+"des Computers gesendet."
 
 #: ../clients/common/settings-docs.h.in:204
 #: ../clients/common/settings-docs.h.in:224
@@ -7837,6 +8565,10 @@ msgid ""
 "options are unset and left at the default. In this case NetworkManager will "
 "use default options. This is distinct from an empty list of properties."
 msgstr ""
+"Array von DNS-Optionen wie in man 5 resolv.conf beschrieben. NULL bedeutet, "
+"dass die Optionen nicht gesetzt sind und im Standard belassen werden. In "
+"diesem Fall verwendet NetworkManager Standardoptionen. Dies unterscheidet "
+"sich von einer leeren Liste von Eigenschaften."
 
 #: ../clients/common/settings-docs.h.in:207
 #: ../clients/common/settings-docs.h.in:227
@@ -7864,6 +8596,30 @@ msgid ""
 "a connection specifies a domain which is subdomain of another domain with a "
 "negative DNS priority value, the subdomain is ignored."
 msgstr ""
+"Priorität der DNS-Server Die relative Priorität für DNS-Server, die durch "
+"diese Einstellung angegeben wird. Ein niedrigerer Wert ist besser (höhere "
+"Priorität). Null wählt den Standardwert aus, der für VPNs 50 und für andere "
+"Verbindungen 100 ist. Beachten Sie, dass die Priorität darin besteht, die "
+"DNS-Einstellungen für mehrere aktive Verbindungen zu ordnen. Es werden nicht "
+"mehrere DNS-Server innerhalb desselben Verbindungsprofils unterschieden. Bei "
+"Verwendung von dns = default werden Server mit höherer Priorität zusätzlich "
+"zu resolv.conf angezeigt. Um einen bestimmten Server gegenüber einem anderen "
+"Server in derselben Verbindung zu priorisieren, geben Sie ihn einfach in der "
+"gewünschten Reihenfolge an. Wenn mehrere Geräte über Konfigurationen mit "
+"derselben Priorität verfügen, wird das Gerät mit einer aktiven Standardroute "
+"bevorzugt. Negative Werte haben den besonderen Effekt, dass andere "
+"Konfigurationen mit einem höheren Prioritätswert ausgeschlossen werden. Bei "
+"einer negativen Priorität werden daher nur DNS-Server von Verbindungen mit "
+"dem niedrigsten Prioritätswert verwendet. Wenn Sie einen DNS-Auflöser "
+"verwenden, der Split-DNS als dns = dnsmasq oder dns = systemd-resolution "
+"unterstützt, wird jede Verbindung zur Abfrage von Domänen in ihrer Suchliste "
+"verwendet. Abfragen für Domänen, die in keiner Suchliste vorhanden sind, "
+"werden über Verbindungen mit dem ''~.' special wildcard domain, which is "
+"added automatically to connections with the default route (or can be added "
+"manually).  When multiple connections specify the same domain, the one with "
+"the highest priority (lowest numerical value) wins.  If a connection "
+"specifies a domain which is subdomain of another domain with a negative DNS "
+"priority value, the subdomain is ignored."
 
 #: ../clients/common/settings-docs.h.in:208
 #: ../clients/common/settings-docs.h.in:228
@@ -7873,6 +8629,10 @@ msgid ""
 "which a query must be forwarded; they are not used to complete unqualified "
 "host names."
 msgstr ""
+"Array von DNS-Suchdomänen. Domänen, die mit einer Tilde beginnen ('~') are "
+"considered 'routing' domains and are used only to decide the interface over "
+"which a query must be forwarded; they are not used to complete unqualified "
+"host names."
 
 #: ../clients/common/settings-docs.h.in:209
 #: ../clients/common/settings-docs.h.in:229
@@ -7880,6 +8640,8 @@ msgid ""
 "The gateway associated with this configuration. This is only meaningful if "
 "\"addresses\" is also set."
 msgstr ""
+"Das dieser Konfiguration zugeordnete Gateway. Dies ist nur sinnvoll, wenn "
+"auch \"Adressen\" gesetzt ist."
 
 #: ../clients/common/settings-docs.h.in:210
 #: ../clients/common/settings-docs.h.in:230
@@ -7889,6 +8651,10 @@ msgid ""
 "and search domains specified in the \"dns\" and \"dns-search\" properties, "
 "if any, are used."
 msgstr ""
+"Wenn \"method\" auf \"auto\" gesetzt ist und diese Eigenschaft auf TRUE "
+"gesetzt ist, werden automatisch konfigurierte Nameserver und Suchdomänen "
+"ignoriert, und nur Nameserver und Suchdomänen, die in den Eigenschaften \"dns"
+"\" und \"dns-search\" angegeben sind, werden verwendet."
 
 #: ../clients/common/settings-docs.h.in:211
 #: ../clients/common/settings-docs.h.in:231
@@ -7897,6 +8663,9 @@ msgid ""
 "configured routes are ignored and only routes specified in the \"routes\" "
 "property, if any, are used."
 msgstr ""
+"Wenn \"method\" auf \"auto\" gesetzt ist und diese Eigenschaft auf TRUE "
+"gesetzt ist, werden automatisch konfigurierte Routen ignoriert und nur die "
+"in der Eigenschaft \"routes\" angegebenen Routen verwendet."
 
 #: ../clients/common/settings-docs.h.in:212
 #: ../clients/common/settings-docs.h.in:233
@@ -7908,6 +8677,14 @@ msgid ""
 "the NMSettingIP4Config allows the overall network configuration to succeed "
 "if IPv4 configuration fails but IPv6 configuration completes successfully."
 msgstr ""
+"Wenn TRUE, lassen Sie zu, dass die gesamte Netzwerkkonfiguration fortgesetzt "
+"wird, auch wenn die durch diese Eigenschaft angegebene Konfiguration "
+"abläuft. Beachten Sie, dass mindestens eine IP-Konfiguration erfolgreich "
+"sein muss oder dass die gesamte Netzwerkkonfiguration weiterhin fehlschlägt. "
+"In IPv6-only-Netzwerken ermöglicht das Setzen dieser Eigenschaft auf TRUE in "
+"NMSettingIP4Config beispielsweise, dass die gesamte Netzwerkkonfiguration "
+"erfolgreich ausgeführt werden kann, wenn die IPv4-Konfiguration fehlschlägt, "
+"die IPv6-Konfiguration jedoch erfolgreich abgeschlossen wird."
 
 #: ../clients/common/settings-docs.h.in:213
 #: ../clients/common/settings-docs.h.in:234
@@ -7925,6 +8702,20 @@ msgid ""
 "the interface which shares the internet to a subnet, not on the uplink which "
 "is shared."
 msgstr ""
+"IP-Konfigurationsmethode NMSettingIP4Config und NMSettingIP6Config "
+"unterstützen beide \"auto\", \"manual\" und \"link-local\". Informationen zu "
+"anderen Werten finden Sie in der Dokumentation zur Unterklasse. Im "
+"Allgemeinen geben Eigenschaften wie \"DNS\" und \"Routen\" für die "
+"\"automatische\" Methode Informationen an, die den von der automatischen "
+"Konfiguration zurückgegebenen Informationen hinzugefügt werden. Die "
+"Eigenschaften \"ignore-auto-routes\" und \"ignore-auto-dns\" ändern dieses "
+"Verhalten. Für Methoden, die kein Upstream-Netzwerk implizieren, wie \"shared"
+"\" oder \"link-local\", müssen diese Eigenschaften leer sein. Bei der IPv4-"
+"Methode \"shared\" kann das IP-Subnetz durch Hinzufügen einer manuellen IPv4-"
+"Adresse konfiguriert werden, andernfalls wird 10.42.x.0 / 24 ausgewählt. "
+"Beachten Sie, dass die freigegebene Methode auf der Schnittstelle "
+"konfiguriert werden muss, die das Internet mit einem Subnetz teilt, nicht "
+"auf dem freigegebenen Uplink."
 
 #: ../clients/common/settings-docs.h.in:214
 #: ../clients/common/settings-docs.h.in:235
@@ -7932,6 +8723,9 @@ msgid ""
 "If TRUE, this connection will never be the default connection for this IP "
 "type, meaning it will never be assigned the default route by NetworkManager."
 msgstr ""
+"Wenn TRUE, wird diese Verbindung niemals die Standardverbindung für diesen "
+"IP-Typ sein, das heißt, sie wird niemals der Standardroute von "
+"NetworkManager zugewiesen."
 
 #: ../clients/common/settings-docs.h.in:215
 #: ../clients/common/settings-docs.h.in:236
@@ -7944,6 +8738,14 @@ msgid ""
 "it to 1024 (user default). Hence, setting this property to zero effectively "
 "mean setting it to 1024. For IPv4, zero is a regular value for the metric."
 msgstr ""
+"Die Standardmetrik für Routen, die eine Metrik nicht explizit angeben. Der "
+"Standardwert -1 bedeutet, dass die Metrik basierend auf dem Gerätetyp "
+"automatisch ausgewählt wird. Die Metrik gilt für dynamische Routen, manuelle "
+"(statische) Routen ohne explizite Metrikeinstellung, Adressenpräfixrouten "
+"und die Standardroute. Beachten Sie, dass der Kernel für IPv6 null (0) "
+"akzeptiert, aber auf 1024 umsetzt (Benutzerstandard). Wenn Sie diese "
+"Eigenschaft also auf Null setzen, bedeutet dies, dass sie auf 1024 gesetzt "
+"wird. Für IPv4 ist Null ein normaler Wert für die Metrik."
 
 #: ../clients/common/settings-docs.h.in:216
 #: ../clients/common/settings-docs.h.in:237
@@ -7962,6 +8764,21 @@ msgid ""
 "This is to preserve backward compatibility for users who manage routing "
 "tables outside of NetworkManager."
 msgstr ""
+"Aktivieren Sie das Richtlinienrouting (Quellrouting) und legen Sie die "
+"Routingtabelle fest, die beim Hinzufügen von Routen verwendet wird. Dies "
+"betrifft alle Routen, einschließlich Geräte-Routen, IPv4LL, DHCP, SLAAC, "
+"Standard-Routen und statische Routen. Beachten Sie jedoch, dass statische "
+"Routen die Einstellung einzeln überschreiben können, indem Sie explizit eine "
+"Routing-Tabelle ungleich Null angeben. Wenn die Tabelleneinstellung auf Null "
+"bleibt, kann sie über die globale Konfiguration überschrieben werden. Wenn "
+"die Eigenschaft auch nach dem Anwenden des globalen Konfigurationswerts Null "
+"ist, ist das Richtlinienrouting für die Adressfamilie dieser Verbindung "
+"deaktiviert. Richtlinienrouting deaktiviert bedeutet, dass NetworkManager "
+"alle Routen zur Haupttabelle hinzufügt (mit Ausnahme von statischen Routen, "
+"die explizit eine andere Tabelle konfigurieren). Darüber hinaus wird "
+"NetworkManager keine fremden Routen aus Tabellen außer der Haupttabelle "
+"löschen. Dies dient dazu, die Abwärtskompatibilität für Benutzer zu "
+"erhalten, die Routing-Tabellen außerhalb von NetworkManager verwalten."
 
 #: ../clients/common/settings-docs.h.in:217
 #: ../clients/common/settings-docs.h.in:238
@@ -7989,6 +8806,27 @@ msgid ""
 "Privacy Extensions as configured by \"ip6-privacy\" property and it does not "
 "affect the temporary addresses configured with this option."
 msgstr ""
+"Konfigurieren Sie die Methode zum Erstellen der Adresse zur Verwendung mit "
+"RFC4862 IPv6 Stateless Address Autoconfiguration. Die zulässigen Werte sind: "
+"NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64 (0) oder "
+"NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY (1). Wenn die Eigenschaft "
+"auf EUI64 festgelegt ist, werden die Adressen mithilfe der von der "
+"Hardwareadresse abgeleiteten Interface-Tokens generiert. Dadurch bleibt der "
+"Host-Teil der Adresse konstant und ermöglicht die Verfolgung der Anwesenheit "
+"des Hosts, wenn er das Netzwerk wechselt. Die Adresse ändert sich, wenn die "
+"Schnittstellenhardware ausgetauscht wird. Der Wert von stable-privacy "
+"ermöglicht die Verwendung eines kryptografisch sicheren Hash eines geheimen "
+"hostspezifischen Schlüssels zusammen mit der stable-ID der Verbindung und "
+"der Netzwerkadresse gemäß RFC7217. Dies macht es unmöglich, die Anwesenheit "
+"des Adressverfolgungshosts zu verwenden, und macht die Adresse stabil, wenn "
+"die Netzwerkschnittstellenhardware ersetzt wird. Auf D-Bus entspricht das "
+"Fehlen einer Einstellung für den Adrenalin-Modus dem Aktivieren der stabilen "
+"Privatsphäre. Für das Keyfile-Plugin bedeutet das Fehlen der Einstellung auf "
+"dem Datenträger EUI64, sodass sich die Eigenschaft beim Upgrade von älteren "
+"Versionen nicht ändert. Beachten Sie, dass sich diese Einstellung von den "
+"Privacy Extensions unterscheidet, die von der Eigenschaft \"ip6-privacy\" "
+"konfiguriert wurden, und dass sie die mit dieser Option konfigurierten "
+"temporären Adressen nicht beeinflusst."
 
 #: ../clients/common/settings-docs.h.in:221
 msgid ""
@@ -8018,6 +8856,33 @@ msgid ""
 "is used. If no global value is provided, the default \"lease\" value is "
 "assumed."
 msgstr ""
+"Eine Zeichenfolge, die den eindeutigen DHCPv6-Bezeichner (DUID) enthält, der "
+"vom dhcp-Client verwendet wird, um sich gegenüber DHCPv6-Servern zu "
+"identifizieren (RFC 3315). Die DUID wird in der Option Client-ID übertragen. "
+"Wenn die Eigenschaft eine hexadezimale Zeichenfolge ('aa: bb: cc') ist, wird "
+"sie als binäre DUID interpretiert und in der Option Client-ID als "
+"undurchsichtiger Wert aufgefüllt. Der spezielle Wert \"lease\" ruft die "
+"zuvor verwendete DUID aus der zu der Verbindung gehörenden Lease-Datei ab. "
+"Wenn keine DUID gefunden wird und \"dhclient\" der konfigurierte dhcp-Client "
+"ist, wird die DUID in der systemweiten dhclient-Lease-Datei gesucht. Wenn "
+"immer noch keine DUID gefunden wird oder ein anderer dhcp-Client verwendet "
+"wird, wird eine globale und permanente DUID-UUID (RFC 6355) basierend auf "
+"der Maschinen-ID generiert. Die speziellen Werte \"llt\" und \"ll\" erzeugen "
+"eine DUID vom Typ LLT oder LL (siehe RFC 3315) basierend auf der aktuellen "
+"MAC-Adresse des Gerätes. Um zu versuchen, ein stabiles DUID-LLT "
+"bereitzustellen, wird das Zeitfeld einen konstanten Zeitstempel enthalten, "
+"der global (für alle Profile) verwendet wird und auf Platte gespeichert "
+"wird. Die speziellen Werte \"stable-llt\", \"stable-ll\" und \"stable-uuid\" "
+"erzeugen eine DUID des entsprechenden Typs, abgeleitet von der stable-id der "
+"Verbindung und einem eindeutigen Schlüssel pro Host. Die "
+"Verbindungsschichtadresse von \"stable-ll\" und \"stable-llt\" wird also "
+"eine generierte Adresse sein, die von der stabilen ID abgeleitet wird. Der "
+"DUID-LLT-Zeitwert in der \"stable-llt\" -Option wird unter einer statischen "
+"Zeitspanne von drei Jahren ausgewählt (die obere Grenze des Intervalls ist "
+"der gleiche konstante Zeitstempel, der in \"llt\" verwendet wird). Wenn die "
+"Eigenschaft nicht festgelegt ist, wird der globale Wert für \"ipv6.dhcp-duid"
+"\" verwendet. Wenn kein globaler Wert angegeben wird, wird der Standardwert "
+"\"lease\" angenommen."
 
 #: ../clients/common/settings-docs.h.in:232
 msgid ""
@@ -8035,37 +8900,62 @@ msgid ""
 "\"stable-privacy\" setting as another way of avoiding host tracking with "
 "IPv6 addresses."
 msgstr ""
+"Konfigurieren Sie IPv6 Privacy Extensions für SLAAC, wie in RFC4941 "
+"beschrieben. Wenn diese Option aktiviert ist, wird der Kernel eine temporäre "
+"IPv6-Adresse generieren, zusätzlich zu der öffentlichen Adresse, die von der "
+"MAC-Adresse über das modifizierte EUI-64 generiert wird. Dies erhöht die "
+"Privatsphäre, kann jedoch in einigen Anwendungen Probleme verursachen. Die "
+"zulässigen Werte sind: -1: unbekannt, 0: deaktiviert, 1: aktiviert "
+"(bevorzugte öffentliche Adresse), 2: aktiviert (bevorzugen temporäre "
+"Adressen). Wenn die Einstellung pro Verbindung auf \"-1\" (unbekannt) "
+"gesetzt ist, bedeutet dies, dass auf die globale Konfiguration \"ipv6.ip6-"
+"privacy\" zurückgegriffen wird. Wenn auch die globale Konfiguration nicht "
+"angegeben ist oder auf \"-1\" gesetzt ist, wird auf \"/ proc / sys / net / "
+"ipv6 / conf / default / use_tempaddr\" zurückgegriffen. Beachten Sie, dass "
+"sich diese Einstellung von den Stable-Privacy-Adressen unterscheidet, die "
+"mit der Einstellung \"stable-privacy\" der Eigenschaft \"addr-gen-mode\" "
+"aktiviert werden können, um Host-Tracking mit IPv6-Adressen zu vermeiden."
 
 #: ../clients/common/settings-docs.h.in:239
 msgid ""
 "Configure the token for draft-chown-6man-tokenised-ipv6-identifiers-02 IPv6 "
 "tokenized interface identifiers. Useful with eui64 addr-gen-mode."
 msgstr ""
+"Konfigurieren Sie das Token für IPv6-Tokenized-Interface-IDs von Draft-"
+"Chown-6man-tokenised-ipv6-identifiers-02. Nützlich mit eui64 addr-gen-mode."
 
 #: ../clients/common/settings-docs.h.in:240
 msgid "Whether the transmitted traffic must be encrypted."
-msgstr ""
+msgstr "Ob der übertragene Datenverkehr verschlüsselt werden muss."
 
 #: ../clients/common/settings-docs.h.in:241
 msgid ""
 "The pre-shared CAK (Connectivity Association Key) for MACsec Key Agreement."
 msgstr ""
+"Der vorinstallierte CAK (Connectivity Association Key) für die MACSec-"
+"Schlüsselvereinbarung."
 
 #: ../clients/common/settings-docs.h.in:242
 msgid "Flags indicating how to handle the \"mka-cak\" property."
 msgstr ""
+"Flags, die angeben, wie mit der Eigenschaft \"mka-cak\" verfahren werden "
+"soll."
 
 #: ../clients/common/settings-docs.h.in:243
 msgid ""
 "The pre-shared CKN (Connectivity-association Key Name) for MACsec Key "
 "Agreement."
 msgstr ""
+"Der vorab freigegebene CKN (Connectivity-association Key Name) für die "
+"MACsec-Schlüsselvereinbarung."
 
 #: ../clients/common/settings-docs.h.in:244
 msgid ""
 "Specifies how the CAK (Connectivity Association Key) for MKA (MACsec Key "
 "Agreement) is obtained."
 msgstr ""
+"Gibt an, wie der CAK (Connectivity Association Key) für MKA (MACsec Key "
+"Agreement) abgerufen wird."
 
 #: ../clients/common/settings-docs.h.in:245
 msgid ""
@@ -8074,6 +8964,11 @@ msgid ""
 "specified, the connection must contain an \"802-3-ethernet\" setting with a "
 "\"mac-address\" property."
 msgstr ""
+"Gibt den übergeordneten Schnittstellennamen oder die übergeordnete "
+"Verbindungs-UUID an, aus der diese MACSEC-Schnittstelle erstellt werden "
+"soll. Wenn diese Eigenschaft nicht angegeben ist, muss die Verbindung eine "
+"\"802-3-ethernet\" -Einstellung mit einer Eigenschaft \"mac-address\" "
+"enthalten."
 
 #: ../clients/common/settings-docs.h.in:246
 msgid ""
@@ -8088,16 +8983,19 @@ msgid ""
 "Specifies whether the SCI (Secure Channel Identifier) is included in every "
 "packet."
 msgstr ""
+"Gibt an, ob der SCI (Secure Channel Identifier) ​​in jedem Paket enthalten ist."
 
 #: ../clients/common/settings-docs.h.in:248
 msgid "Specifies the validation mode for incoming frames."
-msgstr ""
+msgstr "Gibt den Validierungsmodus für eingehende Frames an."
 
 #: ../clients/common/settings-docs.h.in:249
 msgid ""
 "The macvlan mode, which specifies the communication mechanism between "
 "multiple macvlans on the same lower device."
 msgstr ""
+"Der Macvlan-Modus, der den Kommunikationsmechanismus zwischen mehreren "
+"Macvlans auf demselben unteren Gerät angibt."
 
 #: ../clients/common/settings-docs.h.in:250
 msgid ""
@@ -8106,14 +9004,19 @@ msgid ""
 "specified, the connection must contain an \"802-3-ethernet\" setting with a "
 "\"mac-address\" property."
 msgstr ""
+"Gibt den übergeordneten Schnittstellennamen oder die übergeordnete "
+"Verbindungs-UUID an, aus der diese MAC-VLAN-Schnittstelle erstellt werden "
+"soll. Wenn diese Eigenschaft nicht angegeben ist, muss die Verbindung eine "
+"\"802-3-ethernet\" -Einstellung mit einer Eigenschaft \"mac-address\" "
+"enthalten."
 
 #: ../clients/common/settings-docs.h.in:251
 msgid "Whether the interface should be put in promiscuous mode."
-msgstr ""
+msgstr "Ob die Schnittstelle in Promiscuous-Modus gesetzt werden soll."
 
 #: ../clients/common/settings-docs.h.in:252
 msgid "Whether the interface should be a MACVTAP."
-msgstr ""
+msgstr "Ob die Schnittstelle ein MACVTAP sein soll."
 
 #: ../clients/common/settings-docs.h.in:253
 msgid ""
@@ -8124,14 +9027,22 @@ msgid ""
 "prefixed with '!' matches or there aren't such elements; (b) none of the "
 "elements prefixed with '!' match."
 msgstr ""
+"Eine Liste der übereinstimmenden Schnittstellennamen. Jedes Element ist ein "
+"Shell-Platzhaltermuster. Wenn einem Element ein Ausrufezeichen (!) "
+"Vorangestellt wird, wird die Bedingung invertiert. Ein Name einer "
+"Kandidatenschnittstelle gilt als übereinstimmend, wenn diese beiden "
+"Bedingungen erfüllt sind: (a) Alle Elemente, denen kein '!' Vorangestellt "
+"ist passt oder es gibt keine solchen Elemente; (b) Keines der Elemente mit "
+"dem Präfix \"!\" Spiel."
 
 #: ../clients/common/settings-docs.h.in:254
 msgid "The bridge failure mode. One of \"secure\", \"standalone\" or empty."
 msgstr ""
+"Der Bridge-Fehlermodus. Einer von \"sicher\", \"Standalone\" oder leer."
 
 #: ../clients/common/settings-docs.h.in:255
 msgid "Enable or disable multicast snooping."
-msgstr ""
+msgstr "Aktivieren oder deaktivieren Sie Multicast-Snooping."
 
 #: ../clients/common/settings-docs.h.in:256
 msgid "Enable or disable RSTP."
@@ -8143,30 +9054,37 @@ msgstr "STP ein- oder ausschalten."
 
 #: ../clients/common/settings-docs.h.in:258
 msgid "The interface type. Either \"internal\", or empty."
-msgstr ""
+msgstr "Der Schnittstellentyp. Entweder \"intern\" oder leer."
 
 #: ../clients/common/settings-docs.h.in:259
 msgid ""
 "Specifies the unicast destination IP address of a remote Open vSwitch bridge "
 "port to connect to."
 msgstr ""
+"Gibt die Unicast-Ziel-IP-Adresse eines Remote-Open-vSwitch-Bridge-Ports an, "
+"mit dem eine Verbindung hergestellt werden soll."
 
 #: ../clients/common/settings-docs.h.in:260
 msgid "The time port must be inactive in order to be considered down."
 msgstr ""
+"Der Zeitport muss inaktiv sein, damit er als inaktiv betrachtet werden kann."
 
 #: ../clients/common/settings-docs.h.in:261
 msgid ""
 "Bonding mode. One of \"active-backup\", \"balance-slb\", or \"balance-tcp\"."
 msgstr ""
+"Bindungsmodus. Einer von \"active-backup\", \"balance-slb\" oder \"balance-"
+"tcp\"."
 
 #: ../clients/common/settings-docs.h.in:262
 msgid "The time port must be active before it starts forwarding traffic."
 msgstr ""
+"Der Zeitport muss aktiv sein, bevor er mit dem Weiterleiten von Datenverkehr "
+"beginnt."
 
 #: ../clients/common/settings-docs.h.in:263
 msgid "LACP mode. One of \"active\", \"off\", or \"passive\"."
-msgstr ""
+msgstr "LACP-Modus. Einer von \"aktiv\", \"aus\" oder \"passiv\"."
 
 #: ../clients/common/settings-docs.h.in:264
 msgid "The VLAN tag in the range 0-4095."
@@ -8177,6 +9095,8 @@ msgid ""
 "The VLAN mode. One of \"access\", \"native-tagged\", \"native-untagged\", "
 "\"trunk\" or unset."
 msgstr ""
+"Der VLAN-Modus. Eines von \"access\", \"native-getaggt\", \"native-untagged"
+"\", \"trunk\" oder unset."
 
 #: ../clients/common/settings-docs.h.in:266
 msgid ""
@@ -8184,6 +9104,9 @@ msgid ""
 "baudrate.  This value should normally be left as 0 to automatically choose "
 "the speed."
 msgstr ""
+"Wenn ungleich Null, weisen Sie pppd an, den seriellen Port auf die "
+"angegebene Baudrate zu setzen. Dieser Wert sollte normalerweise 0 bleiben, "
+"um automatisch die Geschwindigkeit zu wählen."
 
 #: ../clients/common/settings-docs.h.in:267
 msgid ""
@@ -8191,6 +9114,9 @@ msgid ""
 "control with RTS and CTS signals.  This value should normally be set to "
 "FALSE."
 msgstr ""
+"Wenn TRUE, geben Sie an, dass pppd den seriellen Anschluss für die "
+"Verwendung der Hardware-Flusssteuerung mit RTS- und CTS-Signalen festlegen "
+"soll. Dieser Wert sollte normalerweise auf FALSE gesetzt werden."
 
 #: ../clients/common/settings-docs.h.in:268
 msgid ""
@@ -8199,6 +9125,11 @@ msgid ""
 "\"lcp-echo-interval\" property must also be set to a non-zero value if this "
 "property is used."
 msgstr ""
+"Wenn nicht Null, weisen Sie pppd an, dass die Verbindung zum Peer "
+"fehlgeschlagen ist, wenn die angegebene Anzahl von LCP-Echoanforderungen vom "
+"Peer nicht beantwortet wird. Die Eigenschaft \"lcp-echo-interval\" muss auch "
+"auf einen Wert ungleich Null gesetzt werden, wenn diese Eigenschaft "
+"verwendet wird."
 
 #: ../clients/common/settings-docs.h.in:269
 msgid ""
@@ -8207,12 +9138,18 @@ msgid ""
 "will respond to echo requests and some will not, and it is not possible to "
 "autodetect this."
 msgstr ""
+"Wenn der Wert nicht null ist, weisen Sie pppd an, alle n Sekunden einen LCP-"
+"Echoanforderungsrahmen an den Peer zu senden (wobei n der angegebene Wert "
+"ist). Beachten Sie, dass einige PPP-Peers auf Echoanforderungen reagieren "
+"und andere nicht, und es ist nicht möglich, dies automatisch zu erkennen."
 
 #: ../clients/common/settings-docs.h.in:270
 msgid ""
 "If TRUE, stateful MPPE is used.  See pppd documentation for more information "
 "on stateful MPPE."
 msgstr ""
+"Wenn TRUE, wird Stateful MPPE verwendet. Weitere Informationen zu Stateful "
+"MPPE finden Sie in der Dokumentation zu pppd."
 
 #: ../clients/common/settings-docs.h.in:271
 msgid ""
@@ -8220,15 +9157,21 @@ msgid ""
 "than the specified size.  If non-zero, the MRU should be between 128 and "
 "16384."
 msgstr ""
+"Wenn nicht Null, weisen Sie pppd an, dass der Peer Pakete sendet, die nicht "
+"größer als die angegebene Größe sind. Wenn sie nicht Null ist, sollte die "
+"MRU zwischen 128 und 16384 liegen."
 
 #: ../clients/common/settings-docs.h.in:272
 msgid ""
 "If non-zero, instruct pppd to send packets no larger than the specified size."
 msgstr ""
+"Wenn nicht Null, weisen Sie pppd an, Pakete zu senden, die nicht größer als "
+"die angegebene Größe sind."
 
 #: ../clients/common/settings-docs.h.in:273
 msgid "If TRUE, Van Jacobsen TCP header compression will not be requested."
 msgstr ""
+"Wenn TRUE, wird die Van Jacobsen TCP Header-Komprimierung nicht angefordert."
 
 #: ../clients/common/settings-docs.h.in:274
 msgid ""
@@ -8236,6 +9179,9 @@ msgid ""
 "authenticate itself to the client.  If FALSE, require authentication from "
 "the remote side.  In almost all cases, this should be TRUE."
 msgstr ""
+"Wenn TRUE, muss die andere Seite (normalerweise der PPP-Server) sich nicht "
+"beim Client authentifizieren. Wenn FALSE, muss die Authentifizierung von der "
+"Gegenseite erfolgen. In fast allen Fällen sollte dies TRUE sein."
 
 #: ../clients/common/settings-docs.h.in:275
 msgid "If TRUE, BSD compression will not be requested."
@@ -8272,6 +9218,10 @@ msgid ""
 "PPP session.  If either 64-bit or 128-bit MPPE is not available the session "
 "will fail.  Note that MPPE is not used on mobile broadband connections."
 msgstr ""
+"Wenn TRUE, wird MPPE (Microsoft Point-to-Point-Verschlüsselung) für die PPP-"
+"Sitzung benötigt. Wenn entweder 64-Bit- oder 128-Bit-MPPE nicht verfügbar "
+"ist, schlägt die Sitzung fehl. Beachten Sie, dass MPPE nicht für mobile "
+"Breitbandverbindungen verwendet wird."
 
 #: ../clients/common/settings-docs.h.in:283
 msgid ""
@@ -8279,6 +9229,10 @@ msgid ""
 "for the PPP session, and the \"require-mppe\" property must also be set to "
 "TRUE.  If 128-bit MPPE is not available the session will fail."
 msgstr ""
+"Wenn TRUE, wird 128-Bit-MPPE (Microsoft-Point-to-Point-Verschlüsselung) für "
+"die PPP-Sitzung benötigt, und die Eigenschaft \"require-mppe\" muss "
+"ebenfalls auf TRUE gesetzt sein. Wenn 128-Bit-MPPE nicht verfügbar ist, "
+"schlägt die Sitzung fehl."
 
 #: ../clients/common/settings-docs.h.in:284
 msgid ""
@@ -8287,6 +9241,10 @@ msgid ""
 "activated on the interface specified in \"interface-name\" of "
 "NMSettingConnection."
 msgstr ""
+"Gibt den Namen der übergeordneten Schnittstelle an, auf der diese PPPoE-"
+"Verbindung erstellt werden soll. Wenn diese Eigenschaft nicht angegeben "
+"wird, wird die Verbindung auf der Schnittstelle aktiviert, die in "
+"\"interface-name\" von NMSettingConnection angegeben ist."
 
 #: ../clients/common/settings-docs.h.in:285
 msgid "Password used to authenticate with the PPPoE service."
@@ -8299,6 +9257,11 @@ msgid ""
 "should be left blank.  It is only required if there are multiple access "
 "concentrators or a specific service is known to be required."
 msgstr ""
+"Wenn angegeben, weisen Sie PPPoE an, nur Sitzungen mit "
+"Zugriffskonzentratoren zu initiieren, die den angegebenen Dienst "
+"bereitstellen. Für die meisten Anbieter sollte dies leer bleiben. Es ist nur "
+"erforderlich, wenn mehrere Zugriffskonzentratoren vorhanden sind oder ein "
+"bestimmter Dienst bekannt ist."
 
 #: ../clients/common/settings-docs.h.in:288
 msgid "Username used to authenticate with the PPPoE service."
@@ -8329,10 +9292,15 @@ msgid ""
 "usually has no effect for mobile broadband modems as they generally ignore "
 "speed settings and use the highest available speed."
 msgstr ""
+"Geschwindigkeit für die Kommunikation über die serielle Schnittstelle. "
+"Beachten Sie, dass dieser Wert für mobile Breitbandmodems normalerweise "
+"keine Auswirkungen hat, da die Geschwindigkeitseinstellungen normalerweise "
+"ignoriert werden und die höchste verfügbare Geschwindigkeit verwendet wird."
 
 #: ../clients/common/settings-docs.h.in:294
 msgid "Byte-width of the serial communication. The 8 in \"8n1\" for example."
 msgstr ""
+"Byte-Breite der seriellen Kommunikation. Die 8 in \"8n1\" zum Beispiel."
 
 #: ../clients/common/settings-docs.h.in:295
 msgid "Parity setting of the serial port."
@@ -8341,12 +9309,16 @@ msgstr "Paritätseinstellung des seriellen Ports."
 #: ../clients/common/settings-docs.h.in:296
 msgid "Time to delay between each byte sent to the modem, in microseconds."
 msgstr ""
+"Verzögerungszeit zwischen jedem Byte, das an das Modem gesendet wird, in "
+"Mikrosekunden."
 
 #: ../clients/common/settings-docs.h.in:297
 msgid ""
 "Number of stop bits for communication on the serial port.  Either 1 or 2. "
 "The 1 in \"8n1\" for example."
 msgstr ""
+"Anzahl der Stoppbits für die Kommunikation an der seriellen Schnittstelle. "
+"Entweder 1 oder 2. Die 1 in \"8n1\" zum Beispiel."
 
 #: ../clients/common/settings-docs.h.in:298
 msgid ""
@@ -8358,6 +9330,14 @@ msgid ""
 "the global default is used; in case the global default is unspecified it is "
 "assumed to be NM_TERNARY_TRUE (1)."
 msgstr ""
+"Gibt an, ob virtuelle Funktionen von einem kompatiblen Treiber automatisch "
+"überprüft werden sollen. Bei NM_TERNARY_TRUE (1) versucht der Kernel, VFs an "
+"einen kompatiblen Treiber zu binden, und wenn dies gelingt, wird für jedes "
+"VF eine neue Netzwerkschnittstelle instanziiert. Wenn NM_TERNARY_FALSE (0) "
+"festgelegt ist, werden VFs nicht beansprucht und es werden keine "
+"Netzwerkschnittstellen für sie erstellt. Wenn NM_TERNARY_DEFAULT (-1) "
+"festgelegt ist, wird der globale Standardwert verwendet. Falls der globale "
+"Standardwert nicht angegeben ist, wird NM_TERNARY_TRUE (1) angenommen."
 
 #: ../clients/common/settings-docs.h.in:299
 msgid ""
@@ -8380,10 +9360,19 @@ msgid ""
 "form \"ID[.PRIORITY[.PROTO]]\". PROTO can be either 'q' for 802.1Q (the "
 "default) or 'ad' for 802.1ad."
 msgstr ""
+"Array von virtuellen Funktionsdeskriptoren. Jeder VF-Deskriptor ist ein "
+"Wörterbuch, das Attributnamen den GVariant-Werten zuordnet. Der 'Index'-"
+"Eintrag ist für jeden VF obligatorisch. Bei der Darstellung als String hat "
+"ein VF die Form: \"INDEX [ATTR = VALUE [ATTR = VALUE] ...]\". zum Beispiel: "
+"\"2 mac = 00: 11: 22: 33: 44: 55 spoof-check = true\". Das Attribut \"vlans"
+"\" wird als eine durch Semikolons getrennte Liste von VLAN-Deskriptoren "
+"dargestellt, wobei jeder Deskriptor die Form \"ID [.PRIORITY [.PROTO]]\" "
+"hat. PROTO kann entweder 'q' für 802.1Q (Standard) oder 'ad' für 802.1ad "
+"sein."
 
 #: ../clients/common/settings-docs.h.in:301
 msgid "Array of TC queueing disciplines."
-msgstr ""
+msgstr "Array von TC-Warteschlangen-Disziplinen."
 
 #: ../clients/common/settings-docs.h.in:302
 #, fuzzy
@@ -8397,6 +9386,10 @@ msgid ""
 "passed directly to teamd. If not specified, the default configuration is "
 "used.  See man teamd.conf for the format details."
 msgstr ""
+"Die JSON-Konfiguration für die Team-Netzwerkschnittstelle. Die Eigenschaft "
+"sollte rohe JSON-Konfigurationsdaten enthalten, die für teamd geeignet sind, "
+"da der Wert direkt an teamd übergeben wird. Wenn nicht angegeben, wird die "
+"Standardkonfiguration verwendet. Siehe Mann teamd.conf für die Formatdetails."
 
 #: ../clients/common/settings-docs.h.in:304
 #: ../clients/common/settings-docs.h.in:322
@@ -8410,22 +9403,30 @@ msgid ""
 "'validate-active', 'validate-inactive', 'send-always'. See teamd.conf man "
 "for more details."
 msgstr ""
+"Linkwatcher-Konfiguration für die Verbindung: Jeder Linkwatcher wird durch "
+"ein Wörterbuch definiert, dessen Schlüssel vom ausgewählten Linkwatcher "
+"abhängen. Verfügbare Linkwatcher sind 'ethtool', 'nsna_ping' und 'arp_ping' "
+"und werden im Wörterbuch mit dem Schlüssel 'name' angegeben. Verfügbare "
+"Schlüssel sind: ethtool: 'verzögerung', 'verzögerung', 'init-warte'; "
+"nsna_ping: 'init-wait', 'Intervall', 'verpasst-max', 'Ziel-Host'; arp_ping: "
+"alle in nsna_ping und 'source-host', 'validate-aktiv', 'validate-incative', "
+"'send-always'. Weitere Informationen finden Sie unter teamd.conf man."
 
 #: ../clients/common/settings-docs.h.in:305
 msgid "Corresponds to the teamd mcast_rejoin.count."
-msgstr ""
+msgstr "Entspricht dem Teamd mcast_rejoin.count."
 
 #: ../clients/common/settings-docs.h.in:306
 msgid "Corresponds to the teamd mcast_rejoin.interval."
-msgstr ""
+msgstr "Entspricht dem teamd mcast_rejoin.interval."
 
 #: ../clients/common/settings-docs.h.in:307
 msgid "Corresponds to the teamd notify_peers.count."
-msgstr ""
+msgstr "Entspricht dem Teamd notify_peers.count."
 
 #: ../clients/common/settings-docs.h.in:308
 msgid "Corresponds to the teamd notify_peers.interval."
-msgstr ""
+msgstr "Entspricht dem Teamd notify_peers.interval."
 
 #: ../clients/common/settings-docs.h.in:309
 msgid ""
@@ -8435,42 +9436,48 @@ msgid ""
 "to the default value; all the properties specific to other runners will be "
 "set to an empty value (or if not possible to a default value)."
 msgstr ""
+"Entspricht dem teamd runner.name. Zulässige Werte sind: \"roundrobin\", "
+"\"broadcast\", \"activebackup\", \"loadbalance\", \"lacp\", \"random\". Beim "
+"Einstellen des Läufers werden alle für den Läufer spezifischen Eigenschaften "
+"auf den Standardwert zurückgesetzt. Alle Eigenschaften, die für andere "
+"Läufer spezifisch sind, werden auf einen leeren Wert gesetzt (oder wenn ein "
+"Standardwert nicht möglich ist)."
 
 #: ../clients/common/settings-docs.h.in:310
 msgid "Corresponds to the teamd runner.active."
-msgstr ""
+msgstr "Entspricht dem Teamd runner.active."
 
 #: ../clients/common/settings-docs.h.in:311
 msgid "Corresponds to the teamd runner.agg_select_policy."
-msgstr ""
+msgstr "Entspricht der teamd runner.agg_select_policy."
 
 #: ../clients/common/settings-docs.h.in:312
 msgid "Corresponds to the teamd runner.fast_rate."
-msgstr ""
+msgstr "Entspricht dem teamd runner.fast_rate."
 
 #: ../clients/common/settings-docs.h.in:313
 msgid "Corresponds to the teamd runner.hwaddr_policy."
-msgstr ""
+msgstr "Entspricht dem teamd runner.hwaddr_policy."
 
 #: ../clients/common/settings-docs.h.in:314
 msgid "Corresponds to the teamd runner.min_ports."
-msgstr ""
+msgstr "Entspricht dem teamd runner.min_ports."
 
 #: ../clients/common/settings-docs.h.in:315
 msgid "Corresponds to the teamd runner.sys_prio."
-msgstr ""
+msgstr "Entspricht dem teamd runner.sys_prio."
 
 #: ../clients/common/settings-docs.h.in:316
 msgid "Corresponds to the teamd runner.tx_balancer.name."
-msgstr ""
+msgstr "Entspricht dem Teamd runner.tx_balancer.name."
 
 #: ../clients/common/settings-docs.h.in:317
 msgid "Corresponds to the teamd runner.tx_balancer.interval."
-msgstr ""
+msgstr "Entspricht dem teamd runner.tx_balancer.interval."
 
 #: ../clients/common/settings-docs.h.in:318
 msgid "Corresponds to the teamd runner.tx_hash."
-msgstr ""
+msgstr "Entspricht dem teamd runner.tx_hash."
 
 #: ../clients/common/settings-docs.h.in:319
 msgid ""
@@ -8479,34 +9486,42 @@ msgid ""
 "directly to teamd. If not specified, the default configuration is used. See "
 "man teamd.conf for the format details."
 msgstr ""
+"Die JSON-Konfiguration für den Team-Port. Die Eigenschaft sollte rohe JSON-"
+"Konfigurationsdaten enthalten, die für teamd geeignet sind, da der Wert "
+"direkt an teamd übergeben wird. Wenn nicht angegeben, wird die "
+"Standardkonfiguration verwendet. Siehe Mann teamd.conf für die Formatdetails."
 
 #: ../clients/common/settings-docs.h.in:320
 msgid "Corresponds to the teamd ports.PORTIFNAME.lacp_key."
-msgstr ""
+msgstr "Entspricht dem teamd ports.PORTIFNAME.lacp_key."
 
 #: ../clients/common/settings-docs.h.in:321
 msgid "Corresponds to the teamd ports.PORTIFNAME.lacp_prio."
-msgstr ""
+msgstr "Entspricht dem teamd ports.PORTIFNAME.lacp_prio."
 
 #: ../clients/common/settings-docs.h.in:323
 msgid "Corresponds to the teamd ports.PORTIFNAME.prio."
-msgstr ""
+msgstr "Entspricht dem teamd ports.PORTIFNAME.prio."
 
 #: ../clients/common/settings-docs.h.in:324
 msgid ""
 "Corresponds to the teamd ports.PORTIFNAME.queue_id. When set to -1 means the "
 "parameter is skipped from the json config."
 msgstr ""
+"Entspricht den Teamd-Ports.PORTIFNAME.queue_id. Wenn der Parameter auf -1 "
+"gesetzt ist, wird der Parameter von der json-Konfiguration aus übersprungen."
 
 #: ../clients/common/settings-docs.h.in:325
 msgid "Corresponds to the teamd ports.PORTIFNAME.sticky."
-msgstr ""
+msgstr "Entspricht dem teamd ports.PORTIFNAME.sticky."
 
 #: ../clients/common/settings-docs.h.in:326
 msgid ""
 "The group ID which will own the device. If set to NULL everyone will be able "
 "to use the device."
 msgstr ""
+"Die Gruppen-ID, die das Gerät besitzen wird. Wenn NULL gesetzt ist, kann "
+"jeder das Gerät benutzen."
 
 #: ../clients/common/settings-docs.h.in:327
 msgid ""
@@ -8514,6 +9529,10 @@ msgid ""
 "NM_SETTING_TUN_MODE_TUN (1) to create a layer 3 device and "
 "NM_SETTING_TUN_MODE_TAP (2) to create an Ethernet-like layer 2 one."
 msgstr ""
+"Der Betriebsmodus des virtuellen Geräts. Zulässige Werte sind "
+"NM_SETTING_TUN_MODE_TUN (1) zum Erstellen eines Layer 3-Geräts und "
+"NM_SETTING_TUN_MODE_TAP (2) zum Erstellen eines Ethernet-ähnlichen Layer 2-"
+"Geräts."
 
 #: ../clients/common/settings-docs.h.in:328
 msgid ""
@@ -8521,24 +9540,34 @@ msgid ""
 "descriptors (queues) to parallelize packet sending or receiving. Otherwise, "
 "the interface will only support a single queue."
 msgstr ""
+"Wenn die Eigenschaft auf TRUE gesetzt ist, unterstützt die Schnittstelle "
+"mehrere Dateideskriptoren (Warteschlangen), um das Senden oder Empfangen von "
+"Paketen zu parallelisieren. Andernfalls unterstützt die Schnittstelle nur "
+"eine einzige Warteschlange."
 
 #: ../clients/common/settings-docs.h.in:329
 msgid ""
 "The user ID which will own the device. If set to NULL everyone will be able "
 "to use the device."
 msgstr ""
+"Die Benutzer-ID, die das Gerät besitzt. Wenn NULL gesetzt ist, kann jeder "
+"das Gerät benutzen."
 
 #: ../clients/common/settings-docs.h.in:330
 msgid ""
 "If TRUE the interface will prepend a 4 byte header describing the physical "
 "interface to the packets."
 msgstr ""
+"Wenn TRUE, wird die Schnittstelle einen 4-Byte-Header voranstellen, der die "
+"physikalische Schnittstelle zu den Paketen beschreibt."
 
 #: ../clients/common/settings-docs.h.in:331
 msgid ""
 "If TRUE the IFF_VNET_HDR the tunnel packets will include a virtio network "
 "header."
 msgstr ""
+"Bei TRUE der IFF_VNET_HDR enthalten die Tunnelpakete einen Virtio-Netzwerk-"
+"Header."
 
 #: ../clients/common/settings-docs.h.in:332
 msgid ""
@@ -8547,6 +9576,11 @@ msgid ""
 "support a strict ascii format, but the values can be arbitrary UTF8 strings "
 "up to a certain length."
 msgstr ""
+"Ein Wörterbuch mit Schlüssel / Wert-Paaren mit Benutzerdaten. Diese Daten "
+"werden vom NetworkManager ignoriert und können nach Ermessen des Benutzers "
+"verwendet werden. Die Schlüssel unterstützen nur ein striktes ascii-Format, "
+"aber die Werte können beliebige UTF8-Strings bis zu einer bestimmten Länge "
+"sein."
 
 #: ../clients/common/settings-docs.h.in:333
 msgid ""
@@ -8554,6 +9588,10 @@ msgid ""
 "priorities.  The mapping is given in the format \"from:to\" where both \"from"
 "\" and \"to\" are unsigned integers, ie \"7:3\"."
 msgstr ""
+"Für ausgehende Pakete eine Liste mit Zuordnungen von Linux-SKB-Prioritäten "
+"zu 802.1p-Prioritäten. Das Mapping wird im Format \"von: bis\" angegeben, "
+"wobei sowohl \"von\" als auch \"bis\" vorzeichenlose Ganzzahlen sind, dh "
+"\"7: 3\"."
 
 #: ../clients/common/settings-docs.h.in:334
 msgid ""
@@ -8567,12 +9605,25 @@ msgid ""
 "compatibility, the default-value in the D-Bus API continues to be 0 and a "
 "missing property on D-Bus is still considered as 0."
 msgstr ""
+"Ein oder mehrere Flags, die das Verhalten und die Funktionen der VLAN-"
+"Schnittstelle steuern. Zu den Flags gehören NM_VLAN_FLAG_REORDER_HEADERS "
+"(0x1) (Neuanordnung der Ausgangspaket-Header), NM_VLAN_FLAG_GVRP (0x2) "
+"(Verwendung des GVRP-Protokolls) und NM_VLAN_FLAG_LOOSE_BINDING (0x4) (lose "
+"Verbindung der Schnittstelle mit dem Betriebszustand des Master-Geräts). "
+"NM_VLAN_FLAG_MVRP (0x8) (Verwendung des MVRP-Protokolls). Der Standardwert "
+"dieser Eigenschaft ist NM_VLAN_FLAG_REORDER_HEADERS, war aber 0. Um die "
+"Abwärtskompatibilität beizubehalten, ist der Standardwert in der D-Bus-API "
+"weiterhin 0 und eine fehlende Eigenschaft auf D-Bus wird immer noch als 0 "
+"betrachtet."
 
 #: ../clients/common/settings-docs.h.in:335
 msgid ""
 "The VLAN identifier that the interface created by this connection should be "
 "assigned. The valid range is from 0 to 4094, without the reserved id 4095."
 msgstr ""
+"Die VLAN-Kennung, die die von dieser Verbindung erstellte Schnittstelle "
+"zugewiesen werden soll. Der gültige Bereich liegt zwischen 0 und 4094, ohne "
+"die reservierte ID 4095."
 
 #: ../clients/common/settings-docs.h.in:336
 msgid ""
@@ -8580,6 +9631,10 @@ msgid ""
 "priorities.  The mapping is given in the format \"from:to\" where both \"from"
 "\" and \"to\" are unsigned integers, ie \"7:3\"."
 msgstr ""
+"Für eingehende Pakete eine Liste von Zuordnungen von 802.1p-Prioritäten zu "
+"Linux-SKB-Prioritäten. Das Mapping wird im Format \"von: bis\" angegeben, "
+"wobei sowohl \"von\" als auch \"bis\" vorzeichenlose Ganzzahlen sind, dh "
+"\"7: 3\"."
 
 #: ../clients/common/settings-docs.h.in:337
 msgid ""
@@ -8588,12 +9643,18 @@ msgid ""
 "specified, the connection must contain an \"802-3-ethernet\" setting with a "
 "\"mac-address\" property."
 msgstr ""
+"Gibt den übergeordneten Schnittstellennamen oder die UUID der übergeordneten "
+"Verbindung an, aus der diese VLAN-Schnittstelle erstellt werden soll. Wenn "
+"diese Eigenschaft nicht angegeben ist, muss die Verbindung eine \"802-3-"
+"ethernet\" -Einstellung mit einer Eigenschaft \"mac-address\" enthalten."
 
 #: ../clients/common/settings-docs.h.in:338
 msgid ""
 "Dictionary of key/value pairs of VPN plugin specific data.  Both keys and "
 "values must be strings."
 msgstr ""
+"Wörterbuch von Schlüssel / Wert-Paaren von VPN-Plugin-spezifischen Daten. "
+"Beide Schlüssel und Werte müssen Zeichenfolgen sein."
 
 #: ../clients/common/settings-docs.h.in:339
 msgid ""
@@ -8601,18 +9662,27 @@ msgid ""
 "will attempt to stay connected across link changes and outages, until "
 "explicitly disconnected."
 msgstr ""
+"Wenn der VPN-Dienst Persistenz unterstützt und diese Eigenschaft TRUE ist, "
+"versucht das VPN, über Verbindungsänderungen und -ausfälle hinweg verbunden "
+"zu bleiben, bis es explizit getrennt wird."
 
 #: ../clients/common/settings-docs.h.in:340
 msgid ""
 "Dictionary of key/value pairs of VPN plugin specific secrets like passwords "
 "or private keys.  Both keys and values must be strings."
 msgstr ""
+"Wörterbuch von Schlüssel / Wert-Paaren von VPN-Plugin-spezifischen "
+"Geheimnissen wie Passwörter oder private Schlüssel. Beide Schlüssel und "
+"Werte müssen Zeichenfolgen sein."
 
 #: ../clients/common/settings-docs.h.in:341
 msgid ""
 "D-Bus service name of the VPN plugin that this setting uses to connect to "
 "its network.  i.e. org.freedesktop.NetworkManager.vpnc for the vpnc plugin."
 msgstr ""
+"D-Bus-Dienstname des VPN-Plug-Ins, mit dem diese Einstellung eine Verbindung "
+"mit dem Netzwerk herstellt. zB org.freedesktop.NetworkManager.vpnc für das "
+"vpnc-plugin."
 
 #: ../clients/common/settings-docs.h.in:342
 msgid ""
@@ -8621,6 +9691,11 @@ msgid ""
 "is 60 seconds (unless overridden by vpn.timeout in configuration file). "
 "Values greater than zero mean timeout in seconds."
 msgstr ""
+"Timeout für den VPN-Dienst, um die Verbindung herzustellen. Einige Dienste "
+"benötigen möglicherweise eine lange Verbindungszeit. Der Wert 0 bedeutet ein "
+"Standard-Timeout von 60 Sekunden (sofern nicht durch vpn.timeout in der "
+"Konfigurationsdatei überschrieben). Werte größer als Null bedeuten Timeout "
+"in Sekunden."
 
 #: ../clients/common/settings-docs.h.in:343
 msgid ""
@@ -8631,50 +9706,70 @@ msgid ""
 "automatically supply the username of the user which requested the VPN "
 "connection."
 msgstr ""
+"Wenn für die VPN-Verbindung ein Benutzername zur Authentifizierung "
+"erforderlich ist, sollte dieser Name hier angegeben werden. Wenn die "
+"Verbindung für mehr als einen Benutzer verfügbar ist und das VPN erfordert, "
+"dass jeder Benutzer einen anderen Namen angibt, lassen Sie diese Eigenschaft "
+"leer. Wenn diese Eigenschaft leer ist, liefert NetworkManager automatisch "
+"den Benutzernamen des Benutzers, der die VPN-Verbindung angefordert hat."
 
 #: ../clients/common/settings-docs.h.in:344
 msgid "Specifies the lifetime in seconds of FDB entries learnt by the kernel."
 msgstr ""
+"Gibt die Lebenszeit von FDB-Einträgen in Sekunden an, die vom Kernel gelernt "
+"wurden."
 
 #: ../clients/common/settings-docs.h.in:345
 msgid ""
 "Specifies the UDP destination port to communicate to the remote VXLAN tunnel "
 "endpoint."
 msgstr ""
+"Gibt den UDP-Zielport für die Kommunikation mit dem Remote-VXLAN-"
+"Tunnelendpunkt an."
 
 #: ../clients/common/settings-docs.h.in:346
 msgid ""
 "Specifies the VXLAN Network Identifier (or VXLAN Segment Identifier) to use."
 msgstr ""
+"Gibt den zu verwendenden VXLAN-Netzwerkbezeichner (oder VXLAN-"
+"Segmentbezeichner) an."
 
 #: ../clients/common/settings-docs.h.in:347
 msgid "Specifies whether netlink LL ADDR miss notifications are generated."
-msgstr ""
+msgstr "Gibt an, ob Netlink LL ADDR-Fehlmeldungen generiert werden."
 
 #: ../clients/common/settings-docs.h.in:348
 msgid "Specifies whether netlink IP ADDR miss notifications are generated."
-msgstr ""
+msgstr "Gibt an, ob Netlink-IP-ADDR-Fehlmeldungen generiert werden."
 
 #: ../clients/common/settings-docs.h.in:349
 msgid ""
 "Specifies whether unknown source link layer addresses and IP addresses are "
 "entered into the VXLAN device forwarding database."
 msgstr ""
+"Gibt an, ob unbekannte Quell-Link-Layer-Adressen und IP-Adressen in die "
+"VXLAN-Geräteweiterleitungsdatenbank eingegeben werden."
 
 #: ../clients/common/settings-docs.h.in:350
 msgid ""
 "Specifies the maximum number of FDB entries. A value of zero means that the "
 "kernel will store unlimited entries."
 msgstr ""
+"Gibt die maximale Anzahl von FDB-Einträgen an. Ein Wert von Null bedeutet, "
+"dass der Kernel unbegrenzte Einträge speichert."
 
 #: ../clients/common/settings-docs.h.in:351
 msgid "If given, specifies the source IP address to use in outgoing packets."
 msgstr ""
+"Wenn angegeben, wird die Quell-IP-Adresse angegeben, die in ausgehenden "
+"Paketen verwendet werden soll."
 
 #: ../clients/common/settings-docs.h.in:352
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID."
 msgstr ""
+"Gibt den übergeordneten Schnittstellennamen oder die übergeordnete "
+"Verbindungs-UUID an."
 
 #: ../clients/common/settings-docs.h.in:353
 msgid "Specifies whether ARP proxy is turned on."
@@ -8686,30 +9781,41 @@ msgid ""
 "the destination link layer address is not known in the VXLAN device "
 "forwarding database, or the multicast IP address to join."
 msgstr ""
+"Gibt die Unicast-Ziel-IP-Adresse an, die in ausgehenden Paketen verwendet "
+"werden soll, wenn die Adresse der Zielverknüpfungsschicht in der VXLAN-"
+"Weiterleitungsdatenbank oder der Multicast-IP-Adresse für die Verknüpfung "
+"nicht bekannt ist."
 
 #: ../clients/common/settings-docs.h.in:355
 msgid "Specifies whether route short circuit is turned on."
-msgstr ""
+msgstr "Gibt an, ob der Kurschluss eingeschaltet ist."
 
 #: ../clients/common/settings-docs.h.in:356
 msgid ""
 "Specifies the maximum UDP source port to communicate to the remote VXLAN "
 "tunnel endpoint."
 msgstr ""
+"Gibt den maximalen UDP-Quellport für die Kommunikation mit dem Remote-VXLAN-"
+"Tunnelendpunkt an."
 
 #: ../clients/common/settings-docs.h.in:357
 msgid ""
 "Specifies the minimum UDP source port to communicate to the remote VXLAN "
 "tunnel endpoint."
 msgstr ""
+"Gibt den minimalen UDP-Quellport für die Kommunikation mit dem Remote-VXLAN-"
+"Tunnelendpunkt an."
 
 #: ../clients/common/settings-docs.h.in:358
 msgid "Specifies the TOS value to use in outgoing packets."
 msgstr ""
+"Gibt den TOS-Wert an, der in ausgehenden Paketen verwendet werden soll."
 
 #: ../clients/common/settings-docs.h.in:359
 msgid "Specifies the time-to-live value to use in outgoing packets."
 msgstr ""
+"Gibt den Lebensdauerwert an, der in ausgehenden Paketen verwendet werden "
+"soll."
 
 #: ../clients/common/settings-docs.h.in:360
 msgid ""
@@ -8717,12 +9823,17 @@ msgid ""
 "address matches. This property does not change the MAC address of the device "
 "(known as MAC spoofing). Deprecated: 1"
 msgstr ""
+"Falls angegeben, gilt diese Verbindung nur für das WiMAX-Gerät, dessen MAC-"
+"Adresse übereinstimmt. Diese Eigenschaft ändert nicht die MAC-Adresse des "
+"Geräts (MAC-Spoofing). Veraltet: 1"
 
 #: ../clients/common/settings-docs.h.in:361
 msgid ""
 "Network Service Provider (NSP) name of the WiMAX network this connection "
 "should use. Deprecated: 1"
 msgstr ""
+"Network Service Provider (NSP) Name des WiMAX-Netzwerks, das diese "
+"Verbindung verwenden soll. Veraltet: 1"
 
 #: ../clients/common/settings-docs.h.in:362
 msgid ""
@@ -8748,11 +9859,13 @@ msgstr ""
 
 #: ../clients/common/settings-docs.h.in:365
 msgid "IEEE 802.15.4 Personal Area Network (PAN) identifier."
-msgstr ""
+msgstr "IEEE 802.15.4 Personal Area Network (PAN) Kennung."
 
 #: ../clients/common/settings-docs.h.in:366
 msgid "Short IEEE 802.15.4 address to be used within a restricted environment."
 msgstr ""
+"Kurze IEEE 802.15.4-Adresse, die in einer eingeschränkten Umgebung verwendet "
+"werden soll."
 
 #: ../clients/nm-online.c:90
 msgid "Connecting"
@@ -9154,7 +10267,7 @@ msgstr "Höchstzulässiges Alter"
 
 #: ../clients/tui/nmt-page-bridge.c:154
 msgid "Group forward mask"
-msgstr ""
+msgstr "Gruppe vorwärts Maske"
 
 #: ../clients/tui/nmt-page-ethernet.c:70
 msgid "ETHERNET"
@@ -10225,11 +11338,11 @@ msgstr "ungültige PKCS#11-Adresse »%s«"
 
 #: ../libnm-core/nm-keyfile.c:1338
 msgid "invalid key/cert value data:;base64, is not base64"
-msgstr ""
+msgstr "ungültige Schlüssel- / cert-Wertdaten:; base64, ist nicht base64"
 
 #: ../libnm-core/nm-keyfile.c:1347
 msgid "invalid key/cert value data:;base64,file://"
-msgstr ""
+msgstr "ungültige Schlüssel- / cert-Wertdaten:; base64, file: //"
 
 #: ../libnm-core/nm-keyfile.c:1380
 msgid "invalid key/cert value is not a valid blob"
@@ -10280,12 +11393,12 @@ msgstr "Ungültiger Einstellungsname »%s«"
 #: ../libnm-core/nm-keyfile.c:2855
 #, c-format
 msgid "invalid key '%s.%s'"
-msgstr ""
+msgstr "ungültiger Schlüssel '%s.%s'"
 
 #: ../libnm-core/nm-keyfile.c:2870
 #, c-format
 msgid "key '%s.%s' is not boolean"
-msgstr ""
+msgstr "Schlüssel '%s.%s' ist nicht boolean"
 
 #: ../libnm-core/nm-setting-6lowpan.c:104
 #, c-format
@@ -10350,6 +11463,8 @@ msgstr "Ungültiges Zertifikatsformat"
 #, c-format
 msgid "password is not supported when certificate is not on a PKCS#11 token"
 msgstr ""
+"Das Kennwort wird nicht unterstützt, wenn sich das Zertifikat nicht auf "
+"einem PKCS # 11-Token befindet"
 
 #: ../libnm-core/nm-setting-8021x.c:2578 ../libnm-core/nm-setting-8021x.c:2595
 #: ../libnm-core/nm-setting-8021x.c:2626 ../libnm-core/nm-setting-8021x.c:2643
@@ -10580,7 +11695,7 @@ msgstr "ist keine gültige MAC-Adresse"
 
 #: ../libnm-core/nm-setting-bridge.c:287
 msgid "the mask can't contain bits 0 (STP), 1 (MAC) or 2 (LACP)"
-msgstr ""
+msgstr "die Maske darf keine Bits 0 (STP), 1 (MAC) oder 2 (LACP) enthalten"
 
 #: ../libnm-core/nm-setting-connection.c:924
 #, c-format
@@ -10619,7 +11734,7 @@ msgstr "»%s« kann nicht ohne »%s« gesetzt werden"
 #: ../libnm-core/nm-setting-connection.c:1095
 #, c-format
 msgid "'%s' connections must be enslaved to '%s', not '%s'"
-msgstr ""
+msgstr "'%s' Verbindungen müssen versklavt werden mit '%s', nicht '%s'"
 
 #: ../libnm-core/nm-setting-connection.c:1109
 #, c-format
@@ -10693,16 +11808,16 @@ msgstr "Eigenschaft fehlt"
 
 #: ../libnm-core/nm-setting-ethtool.c:269
 msgid "unsupported offload feature"
-msgstr ""
+msgstr "nicht unterstützte Offload-Funktion"
 
 #: ../libnm-core/nm-setting-ethtool.c:277
 msgid "offload feature has invalid variant type"
-msgstr ""
+msgstr "Offload-Feature hat einen ungültigen Variantentyp"
 
 #: ../libnm-core/nm-setting-ethtool.c:300
 #, c-format
 msgid "unknown ethtool option '%s'"
-msgstr ""
+msgstr "unbekannte Ethtool-Option '%s'"
 
 #: ../libnm-core/nm-setting-gsm.c:312 ../libnm-util/nm-setting-gsm.c:294
 #, c-format
@@ -10973,12 +12088,12 @@ msgstr ""
 #: ../libnm-core/nm-setting-ip-tunnel.c:453
 #, c-format
 msgid "some flags are invalid for the select mode: %s"
-msgstr ""
+msgstr "Einige Flags sind für den Auswahlmodus ungültig: %s"
 
 #: ../libnm-core/nm-setting-ip-tunnel.c:467
 #, c-format
 msgid "wired setting not allowed for mode %s"
-msgstr ""
+msgstr "verdrahtete Einstellung für Modus nicht erlaubt %s"
 
 #: ../libnm-core/nm-setting-macsec.c:258
 msgid "the key is empty"
@@ -11019,7 +12134,7 @@ msgstr ""
 
 #: ../libnm-core/nm-setting-macvlan.c:186
 msgid "non promiscuous operation is allowed only in passthru mode"
-msgstr ""
+msgstr "Nicht promiskuitive Operation ist nur im Durchgangsmodus erlaubt"
 
 #: ../libnm-core/nm-setting-olpc-mesh.c:128
 #: ../libnm-core/nm-setting-wireless.c:760
@@ -11120,7 +12235,7 @@ msgstr "»%s« ist nicht mit »vlan_mode« erlaubt"
 #: ../libnm-core/nm-setting-ovs-port.c:231
 #, c-format
 msgid "the tag id must be in range 0-4094 but is %u"
-msgstr ""
+msgstr "Die Tag-ID muss im Bereich 0-4094 liegen, ist aber %u"
 
 #: ../libnm-core/nm-setting-ovs-port.c:241
 #, c-format
@@ -11135,7 +12250,7 @@ msgstr "»%s« ist nicht mit »bond_mode« erlaubt"
 #: ../libnm-core/nm-setting-ovs-bridge.c:159
 #, c-format
 msgid "A connection with a '%s' setting must not have a master."
-msgstr ""
+msgstr "Eine Verbindung mit einem '%s' Einstellung darf keinen Master haben."
 
 #: ../libnm-core/nm-setting-ovs-bridge.c:170
 #, c-format
@@ -11182,22 +12297,22 @@ msgstr "dem Skript fehlt die Funktion FindProxyForURL"
 #: ../libnm-core/nm-setting-sriov.c:1086
 #, c-format
 msgid "VF with index %u, but the total number of VFs is %u"
-msgstr ""
+msgstr "VF mit Index %u, aber die Gesamtzahl der VFs ist %u"
 
 #: ../libnm-core/nm-setting-sriov.c:1097
 #, c-format
 msgid "invalid VF %u: %s"
-msgstr ""
+msgstr "ungültige VF %u: %s"
 
 #: ../libnm-core/nm-setting-sriov.c:1109
 #, c-format
 msgid "duplicate VF index %u"
-msgstr ""
+msgstr "doppelte VF-Index %u"
 
 #: ../libnm-core/nm-setting-sriov.c:1130
 #, c-format
 msgid "VFs %d and %d are not sorted by ascending index"
-msgstr ""
+msgstr "VFs %d und %d sind nicht nach aufsteigendem Index sortiert"
 
 #: ../libnm-core/nm-setting-tc-config.c:68
 #: ../libnm-core/nm-setting-tc-config.c:296
@@ -11214,11 +12329,11 @@ msgstr "Daten fehlen"
 
 #: ../libnm-core/nm-setting-tc-config.c:1203
 msgid "there are duplicate TC qdiscs"
-msgstr ""
+msgstr "Es gibt doppelte TC qdiscs"
 
 #: ../libnm-core/nm-setting-tc-config.c:1223
 msgid "there are duplicate TC filters"
-msgstr ""
+msgstr "Es gibt doppelte TC-Filter"
 
 #: ../libnm-core/nm-setting-team.c:135 ../libnm-core/nm-setting-team.c:194
 #: ../libnm-core/nm-setting-team.c:306
@@ -11229,7 +12344,7 @@ msgstr "»%s« ist außerhalb des Bereichs [0, %d]"
 #: ../libnm-core/nm-setting-team.c:176
 #, c-format
 msgid "Missing target-host in nsna_ping link watcher"
-msgstr ""
+msgstr "Fehlender Ziel-Host in nsna_ping Link Watcher"
 
 #: ../libnm-core/nm-setting-team.c:182 ../libnm-core/nm-setting-team.c:288
 #, c-format
@@ -11239,7 +12354,7 @@ msgstr "Zielrechner »%s« enthält ungültige Zeichen"
 #: ../libnm-core/nm-setting-team.c:281
 #, c-format
 msgid "Missing %s in arp_ping link watcher"
-msgstr ""
+msgstr "Vermisst %s in arp_ping Linkbeobachter"
 
 #: ../libnm-core/nm-setting-team.c:294
 #, c-format
@@ -11368,7 +12483,7 @@ msgstr "Eine vlan-Einstellung sollte ebenfalls eine Ethernet-Einstellung haben"
 
 #: ../libnm-core/nm-setting-vpn.c:580
 msgid "cannot set connection.multi-connect for VPN setting"
-msgstr ""
+msgstr "kann connection.multi-connect für die VPN-Einstellung nicht festlegen"
 
 #: ../libnm-core/nm-setting-vpn.c:601
 #, c-format
@@ -11436,6 +12551,8 @@ msgstr ""
 #: ../libnm-core/nm-setting-wired.c:770
 msgid "both speed and duplex should have a valid value or both should be unset"
 msgstr ""
+"Sowohl Geschwindigkeit als auch Duplex sollten einen gültigen Wert haben "
+"oder beide sollten nicht gesetzt sein"
 
 #: ../libnm-core/nm-setting-wired.c:771
 msgid "both speed and duplex are required for static link configuration"
@@ -11506,11 +12623,11 @@ msgstr "Ungültiger Wert"
 
 #: ../libnm-core/nm-setting-wireless.c:893
 msgid "Wake-on-WLAN mode 'default' and 'ignore' are exclusive flags"
-msgstr ""
+msgstr "Wake-on-WLAN Modus 'default' und 'ignore' sind exklusive Flags"
 
 #: ../libnm-core/nm-setting-wireless.c:902
 msgid "Wake-on-WLAN trying to set unknown flag"
-msgstr ""
+msgstr "Wake-on-WLAN versucht, eine unbekannte Flagge zu setzen"
 
 #: ../libnm-core/nm-setting-wireless.c:924
 #, c-format
@@ -11571,7 +12688,7 @@ msgstr "»%s« ist kein gültiges Handle."
 #: ../libnm-core/nm-utils.c:2141
 #, c-format
 msgid "'%s' unexpected: parent already specified."
-msgstr ""
+msgstr "'%s' unerwartet: Elternteil bereits angegeben"
 
 #: ../libnm-core/nm-utils.c:2157
 #, fuzzy, c-format
@@ -11714,7 +12831,7 @@ msgstr "Unbekanntes Attribut »%s«"
 #: ../libnm-core/nm-utils.c:6304
 #, c-format
 msgid "missing key-value separator '%c' after '%s'"
-msgstr ""
+msgstr "fehlendes Schlüsselwert-Trennzeichen '%c' nach dem '%s'"
 
 #: ../libnm-core/nm-utils.c:6320
 #, c-format
@@ -12003,7 +13120,7 @@ msgstr "Umwandeln des  »%s«-Wertes »%s« nach uint ist fehlgeschlagen"
 #: ../libnm-util/nm-setting-vpn.c:588
 #, c-format
 msgid "Secret flags property '%s' not found"
-msgstr ""
+msgstr "Geheime Flaggeneigenschaft '%s' nicht gefunden"
 
 #: ../libnm-util/nm-setting-wireless.c:806
 #, c-format
@@ -12230,11 +13347,11 @@ msgstr "IEEE 802.15.4"
 
 #: ../libnm/nm-device.c:1428
 msgid "6LoWPAN"
-msgstr ""
+msgstr "6LoWPAN"
 
 #: ../libnm/nm-device.c:1430
 msgid "WireGuard"
-msgstr ""
+msgstr "WireGuard"
 
 #: ../libnm/nm-device.c:2549
 #, c-format
@@ -13051,118 +14168,11 @@ msgid "(%s): Invalid DHCP client-id %s\n"
 msgstr "(%s): Ungültige DHCP Client-Kennung %s\n"
 
 #: ../src/nm-logging.c:275
-#, fuzzy, c-format
+#, c-format
 msgid "Unknown log level '%s'"
-msgstr "Unbekanntes Gerät »%s«."
+msgstr "Unbekannte Protokollstufe »%s«"
 
 #: ../src/nm-logging.c:377
-#, fuzzy, c-format
+#, c-format
 msgid "Unknown log domain '%s'"
-msgstr "Unbekannter Befehl: »%s«\n"
-
-#~ msgid "Error: Failed to setup a Wi-Fi hotspot"
-#~ msgstr "Fehler: Einrichten eines WLAN-Zugangspunkts schlug fehl"
-
-#~ msgid "Error: Failed to add/activate new connection: Unknown error"
-#~ msgstr ""
-#~ "Fehler: Neue Verbindung konnte nicht hinzugefügt und aktiviert werden: "
-#~ "Unbekannter Fehler"
-
-#~ msgid "Connection with UUID '%s' created and activated on device '%s'\n"
-#~ msgstr ""
-#~ "Verbindung mit der UUID »%s« wurde erstellt und auf dem Gerät »%s« "
-#~ "aktiviert\n"
-
-#~ msgid "Hotspot '%s' activated on device '%s'\n"
-#~ msgstr "Zugangspunkt »%s« wurde auf dem Gerät »%s« aktiviert\n"
-
-#~ msgid "Device '%s' has been connected.\n"
-#~ msgstr "Gerät »%s« hat sich verbunden.\n"
-
-#~ msgid "The total number of virtual functions to create."
-#~ msgstr "Die Gesamtzahl der anzulegenden virtuellen Funktionen."
-
-#~ msgid "invalid negative value (%i)"
-#~ msgstr "ungültiger negativer Wert (%i)"
-
-#~ msgid "invalid char value (%i)"
-#~ msgstr "ungültiger Zeichen-Wert (%i)"
-
-#~ msgid "invalid int64 value (%s)"
-#~ msgstr "ungültiger in64-Wert (%s)"
-
-#~ msgid "too large FLAGS property '%s' (%llu)"
-#~ msgstr "zu große FLAGS-Eigenschaft »%s« (%llu)"
-
-#, fuzzy
-#~ msgid "unhandled setting property type '%s'"
-#~ msgstr "Fehler: Ungültiger Einstellungsname: »%s«."
-
-#~ msgid "failed to convert value '%s' to uint"
-#~ msgstr "Umwandeln des Wertes »%s« nach uint ist fehlgeschlagen"
-
-#~ msgid "secret is not set"
-#~ msgstr "»Geheimnis« ist nicht festgelegt"
-
-#~ msgid "mdns value %d is not valid"
-#~ msgstr "Der mdns-Wert %d ist ungültig"
-
-#~ msgid ""
-#~ "The setting's name, which uniquely identifies the setting within the "
-#~ "connection.  Each setting type has a name unique to that type, for "
-#~ "example \"ppp\" or \"wireless\" or \"wired\"."
-#~ msgstr ""
-#~ "Der Name der Einstellung, welcher eindeutig die Einstellung in dieser "
-#~ "Verbindung identifiziert. Jeder Einstellungstyp hat einen für diesen Typ "
-#~ "eindeutigen Namen, beispielsweise »ppp«, »Funk« oder »Kabel«."
-
-#~ msgid "Error in configuration file: %s.\n"
-#~ msgstr "Fehler in Konfigurationsdatei: %s.\n"
-
-#~ msgid "Ignoring unrecognized log domain(s) '%s' from config files.\n"
-#~ msgstr ""
-#~ "Unbekannte Protokolldomäne(n) »%s« aus den Konfigurationsdateien werden "
-#~ "ignoriert.\n"
-
-#~ msgid "'%s' is ambiguous (%s x %s)"
-#~ msgstr "»%s« ist mehrdeutig (%s x %s)"
-
-#~ msgid "when link autonegotiation is enabled no duplex value is accepted"
-#~ msgstr ""
-#~ "Wenn die Verbindungsaushandlung eingeschaltet ist, dann wird kein Duplex-"
-#~ "Wert akzeptiert"
-
-#~ msgid "when link autonegotiation is enabled speed should be 0"
-#~ msgstr ""
-#~ "Wenn die Verbindungsaushandlung eingeschaltet ist, dann sollte die "
-#~ "Geschwindigkeit 0 sein"
-
-#~ msgid "Error: bad color: %s\n"
-#~ msgstr "Fehler: Falsche Farbe: %s\n"
-
-#~ msgid "'%s' is not a valid flag number; use <0-%d>"
-#~ msgstr "»%s« ist keine gültige flag-Zahl. Verwenden Sie <0-%d>"
-
-#~ msgid "'%s' sum is higher than all flags => all flags set"
-#~ msgstr "Die Summe »%s« ist größer als alle Flags => alle Flags gesetzt"
-
-#~ msgid "%d (disabled)"
-#~ msgstr "%d (deaktiviert)"
-
-#~ msgid "%d (enabled, prefer public IP)"
-#~ msgstr "%d (aktiviert, öffentliche IP bevorzugen)"
-
-#~ msgid "%d (enabled, prefer temporary IP)"
-#~ msgstr "%d (aktiviert, temporäre IP bevorzugen)"
-
-#~ msgid "Array of DNS search domains."
-#~ msgstr "Feld mit DNS-Suchdomänen."
-
-#~ msgid "Editor failed with status %d"
-#~ msgstr "Editor fehlgeschlagen mit Status %d"
-
-#~ msgid "Editor failed with signal %d"
-#~ msgstr "Editor fehlgeschlagen mit Signal %d"
-
-#~ msgid "ignoring invalid DNS server IPv6 address '%s'"
-#~ msgstr "Ungültige DNS-Server IPv6-Adresse »%s« wird ignoriert"
+msgstr "Unbekannte Protokolldomäne »%s«"

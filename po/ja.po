@@ -14,7 +14,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-01-08 16:44+0100\n"
+"POT-Creation-Date: 2019-01-08 18:22+0100\n"
 "PO-Revision-Date: 2018-08-16 01:39+0000\n"
 "Last-Translator: kemorigu <kemorigu@redhat.com>\n"
 "Language-Team: Japanese <gnome-translation@gnome.gr.jp>\n"
@@ -210,24 +210,20 @@ msgstr "接続タイプを入力してください: "
 
 #. define some other prompts
 #: ../clients/cli/connections.c:71
-#, fuzzy
 msgid "Connection (name, UUID, or path): "
-msgstr "接続 (名前、UUID またはパス)"
+msgstr "接続 (名前、UUID またはパス): "
 
 #: ../clients/cli/connections.c:72
-#, fuzzy
 msgid "VPN connection (name, UUID, or path): "
-msgstr "VPN 接続 (名前、UUID またはパス)"
+msgstr "VPN 接続 (名前、UUID またはパス): "
 
 #: ../clients/cli/connections.c:73
-#, fuzzy
 msgid "Connection(s) (name, UUID, or path): "
-msgstr "接続 (名前、UUID またはパス)"
+msgstr "接続 (名前、UUID またはパス): "
 
 #: ../clients/cli/connections.c:74
-#, fuzzy
 msgid "Connection(s) (name, UUID, path or apath): "
-msgstr "接続 (名前、UUID、パス または apath)"
+msgstr "接続 (名前、UUID、パス または apath): "
 
 #: ../clients/cli/connections.c:82
 msgid "activating"
@@ -4014,7 +4010,7 @@ msgid "%lld (%s)"
 msgstr "%lld (%s)"
 
 #: ../clients/cli/utils.h:335
-#, fuzzy, c-format
+#, c-format
 msgid "%lld - %s"
 msgstr "%lld - %s"
 
@@ -4352,7 +4348,7 @@ msgstr "デバイスの親の管理が変更されました"
 #: ../clients/common/nm-client-utils.c:351
 #, fuzzy
 msgid "Open vSwitch database connection failed"
-msgstr "OpenVSwitch データベースの接続に失敗しました"
+msgstr "Open vSwitch データベースの接続に失敗しました"
 
 #: ../clients/common/nm-client-utils.c:352
 msgid "A duplicate IP address was detected"
@@ -5780,24 +5776,20 @@ msgid "OLPC Mesh connection"
 msgstr "OLPC Mesh 接続"
 
 #: ../clients/common/nm-meta-setting-desc.c:8061
-#, fuzzy
 msgid "Open vSwitch bridge settings"
-msgstr "OpenVSwitch ブリッジ設定"
+msgstr "Open vSwitch ブリッジ設定"
 
 #: ../clients/common/nm-meta-setting-desc.c:8062
-#, fuzzy
 msgid "Open vSwitch interface settings"
-msgstr "OpenVSwitch インターフェース設定"
+msgstr "Open vSwitch インターフェース設定"
 
 #: ../clients/common/nm-meta-setting-desc.c:8063
-#, fuzzy
 msgid "Open vSwitch patch interface settings"
-msgstr "OpenVSwitch パッチインターフェース設定"
+msgstr "Open vSwitch パッチインターフェース設定"
 
 #: ../clients/common/nm-meta-setting-desc.c:8064
-#, fuzzy
 msgid "Open vSwitch port settings"
-msgstr "OpenVSwitch ポート設定"
+msgstr "Open vSwitch ポート設定"
 
 #: ../clients/common/nm-meta-setting-desc.c:8065
 msgid "PPP settings"
@@ -7606,7 +7598,6 @@ msgid "Whether LLDP is enabled for the connection."
 msgstr "この接続に対して LLDP が有効であるかどうか。"
 
 #: ../clients/common/settings-docs.h.in:138
-#, fuzzy
 msgid ""
 "Whether Link-Local Multicast Name Resolution (LLMNR) is enabled for the "
 "connection. LLMNR is a protocol based on the Domain Name System (DNS) packet "
@@ -7617,12 +7608,13 @@ msgid ""
 "host names. This feature requires a plugin which supports LLMNR. One such "
 "plugin is dns-systemd-resolved."
 msgstr ""
-"mDNS の接続が実行されるかどうか。利用できる値は、yes: ホスト名を登録して接続"
-"を解決、no: インターフェースに対して mDNS を無効にする 、resolve: ホスト名を"
-"登録せずに mDNS ホスト名の解決を許可、の 3 つになります。現在有効な接続でこの"
-"プロパティーをアップデートすると、変更はすぐに有効になります。この機能には、"
-"mDNS をサポートするプラグインが必要です。たとえば、dns-systemd-resolved など"
-"です。"
+"LLMNR (リンクローカルマルチキャスト名前解決) を接続で有効にするかどうか。"
+"LLMNR はドメインネームシステム (DNS) パケット形式をベースとしたプロトコルで、"
+"IPv4 と IPv6 の両方のホストが同一のローカルリンク上でホストの名前解決を実行で"
+"きるようにするものです。利用できる値は、yes: ホスト名を登録して接続を解決、"
+"no: インターフェースに対して LLMNR を無効にする 、resolve: ホスト名を登録せず"
+"に LLMNR ホスト名の解決を許可、の 3 つになります。この機能には、LLMNR をサ"
+"ポートするプラグインが必要です。たとえば、dns-systemd-resolved などです。"
 
 #: ../clients/common/settings-docs.h.in:139
 msgid "Interface name of the master device or UUID of the master connection."
@@ -8442,7 +8434,6 @@ msgstr ""
 
 #: ../clients/common/settings-docs.h.in:213
 #: ../clients/common/settings-docs.h.in:234
-#, fuzzy
 msgid ""
 "IP configuration method. NMSettingIP4Config and NMSettingIP6Config both "
 "support \"auto\", \"manual\", and \"link-local\". See the subclass-specific "
@@ -8462,11 +8453,12 @@ msgstr ""
 "ラスに関するドキュメントを参照してください。一般的に、\"auto\" 方法で"
 "は、\"dns\"、\"routes\" などのプロパティーは、自動設定から返された情報に追加"
 "する情報を指定します。\"ignore-auto-routes\" プロパティーと \"ignore-auto-dns"
-"\" プロパティーは、この動作を修正します。アップストリームのネットワークを意味"
-"しない \"shared\"、\"link-local\" などの方法では、このプロパティーを空にする"
-"必要があります。IPv4 方法 \"shared\" の場合は、手動で IPv4 アドレスを 1 つ設"
-"定して IP サブセットを設定できます。設定しない場合は 10.42.x.0/24 が選択され"
-"ます。"
+"\" プロパティーは、この動作を修正します。アップストリームのネットワークなしを"
+"意味する \"shared\"、\"link-local\" などの方法では、このプロパティーを空にす"
+"る必要があります。IPv4 方法 \"shared\" の場合は、手動で IPv4 アドレスを 1 つ"
+"設定して IP サブセットを設定できます。設定しない場合は 10.42.x.0/24 が選択さ"
+"れます。\"shared\" は、共有される uplink ではなく、インターネットをサブネット"
+"に共有するインターフェイス上で設定される必要があることに注意してください。"
 
 #: ../clients/common/settings-docs.h.in:214
 #: ../clients/common/settings-docs.h.in:235
@@ -10514,9 +10506,9 @@ msgid "NetworkManager is not running."
 msgstr "NetworkManager が実行していません。"
 
 #: ../libnm-core/nm-crypto.c:214
-#, fuzzy, c-format
+#, c-format
 msgid "PEM key file had no start tag"
-msgstr "PEM キーファイルには終了タグ '%s' がありません。"
+msgstr "PEM キーファイルには開始タグがありません"
 
 #: ../libnm-core/nm-crypto.c:222 ../libnm-util/crypto.c:130
 #, c-format
@@ -10582,9 +10574,9 @@ msgid "IV contains non-hexadecimal digits."
 msgstr "IV は 16進法でない数字を含んでいます。"
 
 #: ../libnm-core/nm-crypto.c:532
-#, fuzzy, c-format
+#, c-format
 msgid "IV must contain at least 8 characters"
-msgstr "キーに無効な文字が含まれています"
+msgstr "IV は最低 8 文字が必要"
 
 #: ../libnm-core/nm-crypto.c:580 ../libnm-util/crypto.c:515
 #, c-format
@@ -10612,17 +10604,17 @@ msgid "Failed to decode certificate."
 msgstr "証明書の復号に失敗しました。"
 
 #: ../libnm-core/nm-crypto.c:703 ../libnm-core/nm-crypto.c:756
-#, fuzzy, c-format
+#, c-format
 msgid "Certificate file is empty"
-msgstr "キーが空です"
+msgstr "証明書ファイルが空です"
 
 #: ../libnm-core/nm-crypto.c:736
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to recognize certificate"
-msgstr "証明書の復号に失敗しました。"
+msgstr "証明書の認識に失敗しました"
 
 #: ../libnm-core/nm-crypto.c:846
-#, fuzzy, c-format
+#, c-format
 msgid "not a valid private key"
 msgstr "無効なプライベートキー"
 
@@ -10631,14 +10623,14 @@ msgid "Failed to initialize the crypto engine."
 msgstr "暗号化エンジンの初期化に失敗しました。"
 
 #: ../libnm-core/nm-crypto-gnutls.c:107 ../libnm-core/nm-crypto-nss.c:129
-#, fuzzy, c-format
+#, c-format
 msgid "Unsupported key cipher for decryption"
-msgstr "サポートされていない tfilter オプション: '%s'."
+msgstr "解読がサポートされていないキーの暗号"
 
 #: ../libnm-core/nm-crypto-gnutls.c:117 ../libnm-core/nm-crypto-nss.c:136
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid IV length (must be at least %u)."
-msgstr "IV の長さが無効です (最低でも %d は必要)。"
+msgstr "IV の長さが無効です (最低でも %u が必要)。"
 
 #: ../libnm-core/nm-crypto-gnutls.c:134 ../libnm-util/crypto_gnutls.c:175
 #, c-format
@@ -10663,9 +10655,9 @@ msgid "Failed to decrypt the private key."
 msgstr "プライベートキーの復号に失敗しました。"
 
 #: ../libnm-core/nm-crypto-gnutls.c:205 ../libnm-core/nm-crypto-nss.c:289
-#, fuzzy, c-format
+#, c-format
 msgid "Unsupported key cipher for encryption"
-msgstr "サポートされていない tfilter オプション: '%s'."
+msgstr "暗号化がサポートされていないキーの暗号"
 
 #: ../libnm-core/nm-crypto-gnutls.c:221 ../libnm-util/crypto_gnutls.c:280
 #, c-format
@@ -10793,9 +10785,9 @@ msgid "Password must be UTF-8"
 msgstr "パスワードは UTF-8 である必要があります"
 
 #: ../libnm-core/nm-crypto-nss.c:462
-#, fuzzy, c-format
+#, c-format
 msgid "Couldn't initialize slot"
-msgstr "PKCS#8 デコーダーを初期化できませんでした: %s"
+msgstr "スロットを初期化できませんでした"
 
 #: ../libnm-core/nm-crypto-nss.c:470 ../libnm-util/crypto_nss.c:489
 #, c-format
@@ -11116,9 +11108,9 @@ msgid "certificate is invalid: %s"
 msgstr "証明書が無効です: %s"
 
 #: ../libnm-core/nm-setting-8021x.c:323
-#, fuzzy, c-format
+#, c-format
 msgid "certificate detected as invalid scheme"
-msgstr "証明書が無効です: %s"
+msgstr "証明書が無効なスキームと検出されました"
 
 #: ../libnm-core/nm-setting-8021x.c:537 ../libnm-util/nm-setting-8021x.c:639
 msgid "CA certificate must be in X.509 format"

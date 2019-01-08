@@ -1,5 +1,5 @@
 # Brazilian Portuguese translation of NetworkManager.
-# Copyright (C) 2018 Free Software Foundation, Inc.
+# Copyright (C) 2016 Free Software Foundation, Inc.
 # This file is distributed under the same license as the NetworkManager package.
 # Raphael Higino <In memoriam>, 2004-2007
 # Luiz Armesto <luiz.armesto@gmail.com>, 2007.
@@ -19,7 +19,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-01-08 16:44+0100\n"
+"POT-Creation-Date: 2019-01-08 18:22+0100\n"
 "PO-Revision-Date: 2018-09-30 17:37-0200\n"
 "Last-Translator: Rafael Fontenelle <rafaelff@gnome.org>\n"
 "Language-Team: Brazilian Portuguese <gnome-pt_br-list@gnome.org>\n"
@@ -2102,7 +2102,6 @@ msgstr "Erro: status-line: %s\n"
 msgid "Error: save-confirmation: %s\n"
 msgstr "Erro: save-confirmation: %s\n"
 
-# show-secrets é uma opção do nmcli; não traduzir
 #: ../clients/cli/connections.c:8018
 #, c-format
 msgid "Error: show-secrets: %s\n"
@@ -4336,9 +4335,8 @@ msgid "The device parent's management changed"
 msgstr "O gerenciamento do pai do dispositivo foi alterado"
 
 #: ../clients/common/nm-client-utils.c:351
-#, fuzzy
 msgid "Open vSwitch database connection failed"
-msgstr "Conexão com o banco de dados OpenVSwitch falhou"
+msgstr "Conexão com o banco de dados Open vSwitch falhou"
 
 #: ../clients/common/nm-client-utils.c:352
 msgid "A duplicate IP address was detected"
@@ -5767,24 +5765,20 @@ msgid "OLPC Mesh connection"
 msgstr "Conexão OLPC Mesh"
 
 #: ../clients/common/nm-meta-setting-desc.c:8061
-#, fuzzy
 msgid "Open vSwitch bridge settings"
-msgstr "Configurações de ponte OpenVSwitch"
+msgstr "Configurações de ponte Open vSwitch"
 
 #: ../clients/common/nm-meta-setting-desc.c:8062
-#, fuzzy
 msgid "Open vSwitch interface settings"
-msgstr "Configurações de interface OpenVSwitch"
+msgstr "Configurações de interface Open vSwitch"
 
 #: ../clients/common/nm-meta-setting-desc.c:8063
-#, fuzzy
 msgid "Open vSwitch patch interface settings"
-msgstr "Configurações de interface patch OpenVSwitch"
+msgstr "Configurações de interface patch Open vSwitch"
 
 #: ../clients/common/nm-meta-setting-desc.c:8064
-#, fuzzy
 msgid "Open vSwitch port settings"
-msgstr "Configurações de porta OpenVSwitch"
+msgstr "Configurações de porta Open vSwitch"
 
 #: ../clients/common/nm-meta-setting-desc.c:8065
 msgid "PPP settings"
@@ -8082,6 +8076,11 @@ msgid ""
 "Legacy setting that used to help establishing PPP data sessions for GSM-"
 "based modems. Deprecated: 1"
 msgstr ""
+"Número a ser discado ao estabelecer uma sessão de dados PPP com a rede de "
+"banda larga móvel baseada em GSM. Muitos modems não requerem PPP para "
+"conexões com a rede móvel e, portanto, essa propriedade deve ser deixada em "
+"branco, o que permite que o NetworkManager selecione as configurações "
+"apropriadas automaticamente."
 
 #: ../clients/common/settings-docs.h.in:175
 msgid ""
