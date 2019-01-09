@@ -1379,7 +1379,7 @@ should_compare_prop (NMSetting *setting,
 	if ((comp_flags & NM_SETTING_COMPARE_FLAG_INFERRABLE) && !(prop_flags & NM_SETTING_PARAM_INFERRABLE))
 		return FALSE;
 
-	if ((comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY) && !(prop_flags & NM_SETTING_PARAM_REAPPLY_IMMEDIATELY))
+	if ((comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY) && (prop_flags & NM_SETTING_PARAM_REAPPLY_IMMEDIATELY))
 		return FALSE;
 
 	if (prop_flags & NM_SETTING_PARAM_SECRET) {
