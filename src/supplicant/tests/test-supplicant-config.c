@@ -359,8 +359,8 @@ test_wifi_wpa_psk (const char *detail,
 	NMTST_EXPECT_NM_INFO ("Config: added 'pairwise' value 'TKIP CCMP'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'group' value 'TKIP CCMP'");
 	switch (pmf) {
-	case NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL:
-		NMTST_EXPECT_NM_INFO ("Config: added 'ieee80211w' value '1'");
+	case NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE:
+		NMTST_EXPECT_NM_INFO ("Config: added 'ieee80211w' value '0'");
 		break;
 	case NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED:
 		NMTST_EXPECT_NM_INFO ("Config: added 'ieee80211w' value '2'");

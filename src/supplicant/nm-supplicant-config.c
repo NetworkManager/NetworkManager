@@ -864,11 +864,11 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 
 		if (   !nm_streq (key_mgmt, "wpa-none")
 		    && NM_IN_SET (pmf,
-		                  NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL,
+		                  NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE,
 		                  NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED)) {
 			if (!nm_supplicant_config_add_option (self,
 			                                      "ieee80211w",
-			                                      pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL ? "1" : "2",
+			                                      pmf == NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE ? "0" : "2",
 			                                      -1,
 			                                      NULL,
 			                                      error))
