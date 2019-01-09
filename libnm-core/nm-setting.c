@@ -1343,7 +1343,7 @@ nm_setting_compare (NMSetting *a,
 
 		/* Fuzzy compare ignores secrets and properties defined with the FUZZY_IGNORE flag */
 		if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_FUZZY)
-		    && !NM_FLAGS_ANY (prop_spec->flags, NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET))
+		    && NM_FLAGS_ANY (prop_spec->flags, NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET))
 			continue;
 
 		if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)
