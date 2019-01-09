@@ -395,33 +395,34 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-static gboolean
-compare_property (NMSetting *setting,
+static NMTernary
+compare_property (const NMSettInfoSetting *sett_info,
+                  guint property_idx,
+                  NMSetting *setting,
                   NMSetting *other,
-                  const GParamSpec *prop_spec,
                   NMSettingCompareFlags flags)
 {
 	NMSettingUserPrivate *priv, *pri2;
 
-	g_return_val_if_fail (NM_IS_SETTING_USER (setting), FALSE);
-	g_return_val_if_fail (NM_IS_SETTING_USER (other), FALSE);
+	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_USER_DATA)) {
 
-	if (!nm_streq0 (prop_spec->name, NM_SETTING_USER_DATA))
-		goto call_parent;
+		if (NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
+			return NM_TERNARY_DEFAULT;
 
-	priv = NM_SETTING_USER_GET_PRIVATE (NM_SETTING_USER (setting));
-	pri2 = NM_SETTING_USER_GET_PRIVATE (NM_SETTING_USER (other));
+		if (!other)
+			return TRUE;
 
-	if (!nm_utils_hash_table_equal (priv->data, pri2->data, TRUE, g_str_equal))
-		return FALSE;
+		priv = NM_SETTING_USER_GET_PRIVATE (NM_SETTING_USER (setting));
+		pri2 = NM_SETTING_USER_GET_PRIVATE (NM_SETTING_USER (other));
+		return    nm_utils_hash_table_equal (priv->data, pri2->data, TRUE, g_str_equal)
+		       && nm_utils_hash_table_equal (priv->data_invalid, pri2->data_invalid, TRUE, g_str_equal);
+	}
 
-	if (!nm_utils_hash_table_equal (priv->data_invalid, pri2->data_invalid, TRUE, g_str_equal))
-		return FALSE;
-
-	return TRUE;
-
-call_parent:
-	return NM_SETTING_CLASS (nm_setting_user_parent_class)->compare_property (setting, other, prop_spec, flags);
+	return NM_SETTING_CLASS (nm_setting_user_parent_class)->compare_property (sett_info,
+	                                                                          property_idx,
+	                                                                          setting,
+	                                                                          other,
+	                                                                          flags);
 }
 
 /*****************************************************************************/

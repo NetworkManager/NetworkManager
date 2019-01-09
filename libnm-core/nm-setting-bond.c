@@ -811,15 +811,15 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static gboolean
-options_hash_match (NMSettingBond *s_bond,
-                    GHashTable *options1,
-                    GHashTable *options2,
+options_equal_asym (NMSettingBond *s_bond,
+                    NMSettingBond *s_bond2,
                     NMSettingCompareFlags flags)
 {
+	GHashTable *options2 = NM_SETTING_BOND_GET_PRIVATE (s_bond2)->options;
 	GHashTableIter iter;
 	const char *key, *value, *value2;
 
-	g_hash_table_iter_init (&iter, options1);
+	g_hash_table_iter_init (&iter, NM_SETTING_BOND_GET_PRIVATE (s_bond)->options);
 	while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
 
 		if (NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)) {
@@ -841,15 +841,10 @@ options_hash_match (NMSettingBond *s_bond,
 				value2 = g_hash_table_lookup (options2, "num_grat_arp");
 		}
 
-		if (value2) {
-			if (nm_streq (value, value2))
-				continue;
-		} else {
-			if (nm_streq (value, nm_setting_bond_get_option_default (s_bond, key)))
-				continue;
-		}
-
-		return FALSE;
+		if (!value2)
+			value2 = nm_setting_bond_get_option_default (s_bond2, key);
+		if (!nm_streq (value, value2))
+			return FALSE;
 	}
 
 	return TRUE;
@@ -857,31 +852,32 @@ options_hash_match (NMSettingBond *s_bond,
 
 static gboolean
 options_equal (NMSettingBond *s_bond,
-               GHashTable *options1,
-               GHashTable *options2,
+               NMSettingBond *s_bond2,
                NMSettingCompareFlags flags)
 {
-	return    options_hash_match (s_bond, options1, options2, flags)
-	       && options_hash_match (s_bond, options2, options1, flags);
+	return    options_equal_asym (s_bond, s_bond2, flags)
+	       && options_equal_asym (s_bond2, s_bond, flags);
 }
 
-static gboolean
-compare_property (NMSetting *setting,
+static NMTernary
+compare_property (const NMSettInfoSetting *sett_info,
+                  guint property_idx,
+                  NMSetting *setting,
                   NMSetting *other,
-                  const GParamSpec *prop_spec,
                   NMSettingCompareFlags flags)
 {
-	NMSettingClass *setting_class;
-
-	if (nm_streq0 (prop_spec->name, NM_SETTING_BOND_OPTIONS)) {
-		return options_equal (NM_SETTING_BOND (setting),
-		                      NM_SETTING_BOND_GET_PRIVATE (setting)->options,
-		                      NM_SETTING_BOND_GET_PRIVATE (other)->options,
-		                      flags);
+	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_BOND_OPTIONS)) {
+		return (   !other
+		        || options_equal (NM_SETTING_BOND (setting),
+		                          NM_SETTING_BOND (other),
+		                          flags));
 	}
 
-	setting_class = NM_SETTING_CLASS (nm_setting_bond_parent_class);
-	return setting_class->compare_property (setting, other, prop_spec, flags);
+	return NM_SETTING_CLASS (nm_setting_bond_parent_class)->compare_property (sett_info,
+	                                                                          property_idx,
+	                                                                          setting,
+	                                                                          other,
+	                                                                          flags);
 }
 
 /*****************************************************************************/

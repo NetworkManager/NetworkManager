@@ -775,21 +775,25 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-static gboolean
-compare_property (NMSetting *setting,
+static NMTernary
+compare_property (const NMSettInfoSetting *sett_info,
+                  guint property_idx,
+                  NMSetting *setting,
                   NMSetting *other,
-                  const GParamSpec *prop_spec,
                   NMSettingCompareFlags flags)
 {
-	NMSettingClass *setting_class;
 
-	if (nm_streq (prop_spec->name, NM_SETTING_WIRED_CLONED_MAC_ADDRESS)) {
-		return nm_streq0 (NM_SETTING_WIRED_GET_PRIVATE (setting)->cloned_mac_address,
-		                  NM_SETTING_WIRED_GET_PRIVATE (other)->cloned_mac_address);
+	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_WIRED_CLONED_MAC_ADDRESS)) {
+		return    !other
+		       || nm_streq0 (NM_SETTING_WIRED_GET_PRIVATE (setting)->cloned_mac_address,
+		                     NM_SETTING_WIRED_GET_PRIVATE (other)->cloned_mac_address);
 	}
 
-	setting_class = NM_SETTING_CLASS (nm_setting_wired_parent_class);
-	return setting_class->compare_property (setting, other, prop_spec, flags);
+	return NM_SETTING_CLASS (nm_setting_wired_parent_class)->compare_property (sett_info,
+	                                                                           property_idx,
+	                                                                           setting,
+	                                                                           other,
+	                                                                           flags);
 }
 
 static GVariant *

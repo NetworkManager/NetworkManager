@@ -1233,39 +1233,46 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-static gboolean
-compare_property (NMSetting *setting,
+static NMTernary
+compare_property (const NMSettInfoSetting *sett_info,
+                  guint property_idx,
+                  NMSetting *setting,
                   NMSetting *other,
-                  const GParamSpec *prop_spec,
                   NMSettingCompareFlags flags)
 {
 	NMSettingTCConfig *a_tc_config = NM_SETTING_TC_CONFIG (setting);
 	NMSettingTCConfig *b_tc_config = NM_SETTING_TC_CONFIG (other);
-	NMSettingClass *setting_class;
 	guint i;
 
-	if (nm_streq (prop_spec->name, NM_SETTING_TC_CONFIG_QDISCS)) {
-		if (a_tc_config->qdiscs->len != b_tc_config->qdiscs->len)
-			return FALSE;
-		for (i = 0; i < a_tc_config->qdiscs->len; i++) {
-			if (!nm_tc_qdisc_equal (a_tc_config->qdiscs->pdata[i], b_tc_config->qdiscs->pdata[i]))
+	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TC_CONFIG_QDISCS)) {
+		if (other) {
+			if (a_tc_config->qdiscs->len != b_tc_config->qdiscs->len)
 				return FALSE;
+			for (i = 0; i < a_tc_config->qdiscs->len; i++) {
+				if (!nm_tc_qdisc_equal (a_tc_config->qdiscs->pdata[i], b_tc_config->qdiscs->pdata[i]))
+					return FALSE;
+			}
 		}
 		return TRUE;
 	}
 
-	if (nm_streq (prop_spec->name, NM_SETTING_TC_CONFIG_TFILTERS)) {
-		if (a_tc_config->tfilters->len != b_tc_config->tfilters->len)
-			return FALSE;
-		for (i = 0; i < a_tc_config->tfilters->len; i++) {
-			if (!nm_tc_tfilter_equal (a_tc_config->tfilters->pdata[i], b_tc_config->tfilters->pdata[i]))
+	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TC_CONFIG_TFILTERS)) {
+		if (other) {
+			if (a_tc_config->tfilters->len != b_tc_config->tfilters->len)
 				return FALSE;
+			for (i = 0; i < a_tc_config->tfilters->len; i++) {
+				if (!nm_tc_tfilter_equal (a_tc_config->tfilters->pdata[i], b_tc_config->tfilters->pdata[i]))
+					return FALSE;
+			}
 		}
 		return TRUE;
 	}
 
-	setting_class = NM_SETTING_CLASS (nm_setting_tc_config_parent_class);
-	return setting_class->compare_property (setting, other, prop_spec, flags);
+	return NM_SETTING_CLASS (nm_setting_tc_config_parent_class)->compare_property (sett_info,
+	                                                                               property_idx,
+	                                                                               setting,
+	                                                                               other,
+	                                                                               flags);
 }
 
 static void
