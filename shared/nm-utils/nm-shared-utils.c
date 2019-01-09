@@ -2285,3 +2285,58 @@ nm_utils_invoke_on_idle (NMUtilsInvokeOnIdleCallback callback,
 		data->cancelled_id = 0;
 	data->idle_id = g_idle_add (_nm_utils_invoke_on_idle_cb_idle, data);
 }
+
+/*****************************************************************************/
+
+int
+nm_utils_getpagesize (void)
+{
+	static volatile int val = 0;
+	long l;
+	int v;
+
+	v = g_atomic_int_get (&val);
+
+	if (G_UNLIKELY (v == 0)) {
+		l = sysconf (_SC_PAGESIZE);
+
+		g_return_val_if_fail (l > 0 && l < G_MAXINT, 4*1024);
+
+		v = (int) l;
+		if (!g_atomic_int_compare_and_exchange (&val, 0, v)) {
+			v = g_atomic_int_get (&val);
+			g_return_val_if_fail (v > 0, 4*1024);
+		}
+	}
+
+	nm_assert (v > 0);
+#if NM_MORE_ASSERTS > 5
+	nm_assert (v == getpagesize ());
+	nm_assert (v == sysconf (_SC_PAGESIZE));
+#endif
+
+	return v;
+}
+
+gboolean
+nm_utils_memeqzero (gconstpointer data, gsize length)
+{
+	const unsigned char *p = data;
+	int len;
+
+	/* Taken from https://github.com/rustyrussell/ccan/blob/9d2d2c49f053018724bcc6e37029da10b7c3d60d/ccan/mem/mem.c#L92,
+	 * CC-0 licensed. */
+
+	/* Check first 16 bytes manually */
+	for (len = 0; len < 16; len++) {
+		if (!length)
+			return TRUE;
+		if (*p)
+			return FALSE;
+		p++;
+		length--;
+	}
+
+	/* Now we know that's zero, memcmp with self. */
+	return memcmp (data, p, length) == 0;
+}

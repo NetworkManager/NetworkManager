@@ -54,6 +54,8 @@
 
 /*****************************************************************************/
 
+struct _NMPWireGuardPeer;
+
 struct udev_device;
 
 typedef gboolean (*NMPObjectPredicateFunc) (const NMPObject *obj,
@@ -825,6 +827,12 @@ typedef struct {
 
 	gboolean (*link_can_assume) (NMPlatform *, int ifindex);
 
+	int (*link_wireguard_change) (NMPlatform *self,
+	                              int ifindex,
+	                              const NMPlatformLnkWireGuard *lnk_wireguard,
+	                              const struct _NMPWireGuardPeer *peers,
+	                              guint peers_len);
+
 	gboolean (*vlan_add) (NMPlatform *, const char *name, int parent, int vlanid, guint32 vlanflags, const NMPlatformLink **out_link);
 	gboolean (*link_vlan_change) (NMPlatform *self,
 	                              int ifindex,
@@ -1377,6 +1385,16 @@ gboolean nm_platform_link_6lowpan_get_properties (NMPlatform *self,
                                                   int ifindex,
                                                   int *out_parent);
 
+int nm_platform_link_wireguard_add (NMPlatform *self,
+                                    const char *name,
+                                    const NMPlatformLink **out_link);
+
+int nm_platform_link_wireguard_change (NMPlatform *self,
+                                       int ifindex,
+                                       const NMPlatformLnkWireGuard *lnk_wireguard,
+                                       const struct _NMPWireGuardPeer *peers,
+                                       guint peers_len);
+
 const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address);
 
 gboolean nm_platform_object_delete (NMPlatform *self, const NMPObject *route);
@@ -1477,7 +1495,6 @@ const char *nm_platform_vlan_qos_mapping_to_string (const char *name,
                                                     char *buf,
                                                     gsize len);
 
-struct _NMPWireGuardPeer;
 const char *nm_platform_wireguard_peer_to_string (const struct _NMPWireGuardPeer *peer,
                                                   char *buf,
                                                   gsize len);

@@ -393,13 +393,12 @@ _wireguard_peer_hash_update (const NMPWireGuardPeer *peer,
 	                     peer->tx_bytes,
 	                     peer->last_handshake_time.tv_sec,
 	                     peer->last_handshake_time.tv_nsec,
-	                     peer->endpoint_port,
-	                     peer->endpoint_family);
+	                     peer->endpoint.sa.sa_family);
 
-	if (peer->endpoint_family == AF_INET)
-		nm_hash_update_val (h, peer->endpoint_addr.addr4);
-	else if (peer->endpoint_family == AF_INET6)
-		nm_hash_update_val (h, peer->endpoint_addr.addr6);
+	if (peer->endpoint.sa.sa_family == AF_INET)
+		nm_hash_update_val (h, peer->endpoint.in);
+	else if (peer->endpoint.sa.sa_family == AF_INET6)
+		nm_hash_update_val (h, peer->endpoint.in6);
 
 	for (i = 0; i < peer->allowed_ips_len; i++)
 		_wireguard_allowed_ip_hash_update (&peer->allowed_ips[i], h);
@@ -419,15 +418,14 @@ _wireguard_peer_cmp (const NMPWireGuardPeer *a,
 	NM_CMP_FIELD (a, b, tx_bytes);
 	NM_CMP_FIELD (a, b, allowed_ips_len);
 	NM_CMP_FIELD (a, b, persistent_keepalive_interval);
-	NM_CMP_FIELD (a, b, endpoint_port);
-	NM_CMP_FIELD (a, b, endpoint_family);
+	NM_CMP_FIELD (a, b, endpoint.sa.sa_family);
 	NM_CMP_FIELD_MEMCMP (a, b, public_key);
 	NM_CMP_FIELD_MEMCMP (a, b, preshared_key);
 
-	if (a->endpoint_family == AF_INET)
-		NM_CMP_FIELD (a, b, endpoint_addr.addr4);
-	else if (a->endpoint_family == AF_INET6)
-		NM_CMP_FIELD_IN6ADDR (a, b, endpoint_addr.addr6);
+	if (a->endpoint.sa.sa_family == AF_INET)
+		NM_CMP_FIELD_MEMCMP (a, b, endpoint.in);
+	else if (a->endpoint.sa.sa_family == AF_INET6)
+		NM_CMP_FIELD_MEMCMP (a, b, endpoint.in6);
 
 	for (i = 0; i < a->allowed_ips_len; i++) {
 		NM_CMP_RETURN (_wireguard_allowed_ip_cmp (&a->allowed_ips[i],
@@ -3108,7 +3106,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_dispose                    = _vt_cmd_obj_dispose_lnk_wireguard,
 		.cmd_obj_to_string                  = _vt_cmd_obj_to_string_lnk_wireguard,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_wireguard_to_string,
-		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_vlan_hash_update,
-		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_vlan_cmp,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_wireguard_hash_update,
+		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_wireguard_cmp,
 	},
 };

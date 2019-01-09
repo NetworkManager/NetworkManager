@@ -21,6 +21,8 @@
 #ifndef __NMP_OBJECT_H__
 #define __NMP_OBJECT_H__
 
+#include <netinet/in.h>
+
 #include "nm-utils/nm-obj.h"
 #include "nm-utils/nm-dedup-multi.h"
 #include "nm-platform.h"
@@ -29,6 +31,12 @@ struct udev_device;
 
 /*****************************************************************************/
 
+typedef union {
+	struct sockaddr     sa;
+	struct sockaddr_in  in;
+	struct sockaddr_in6 in6;
+} NMSockAddrUnion;
+
 typedef struct {
 	NMIPAddr addr;
 	guint8 family;
@@ -36,10 +44,12 @@ typedef struct {
 } NMPWireGuardAllowedIP;
 
 typedef struct _NMPWireGuardPeer {
-	NMIPAddr endpoint_addr;
+	NMSockAddrUnion endpoint;
+
 	struct timespec last_handshake_time;
 	guint64 rx_bytes;
 	guint64 tx_bytes;
+
 	union {
 		const NMPWireGuardAllowedIP *allowed_ips;
 		guint _construct_idx_start;
@@ -48,11 +58,11 @@ typedef struct _NMPWireGuardPeer {
 		guint allowed_ips_len;
 		guint _construct_idx_end;
 	};
+
 	guint16 persistent_keepalive_interval;
-	guint16 endpoint_port;
+
 	guint8 public_key[NMP_WIREGUARD_PUBLIC_KEY_LEN];
 	guint8 preshared_key[NMP_WIREGUARD_SYMMETRIC_KEY_LEN];
-	guint8 endpoint_family;
 } NMPWireGuardPeer;
 
 /*****************************************************************************/

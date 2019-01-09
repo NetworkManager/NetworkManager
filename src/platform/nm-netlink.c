@@ -44,16 +44,14 @@
 #define NETLINK_EXT_ACK         11
 #endif
 
-#define NL_MSG_CRED_PRESENT 1
-
 struct nl_msg {
 	int                     nm_protocol;
-	int                     nm_flags;
 	struct sockaddr_nl      nm_src;
 	struct sockaddr_nl      nm_dst;
 	struct ucred            nm_creds;
 	struct nlmsghdr *       nm_nlh;
 	size_t                  nm_size;
+	bool                    nm_creds_has:1;
 };
 
 struct nl_sock {
@@ -255,20 +253,6 @@ nla_reserve (struct nl_msg *msg, int attrtype, int attrlen)
 
 /*****************************************************************************/
 
-static int
-get_default_page_size (void)
-{
-	static int val = 0;
-	int v;
-
-	if (G_UNLIKELY (val == 0)) {
-		v = getpagesize ();
-		g_assert (v > 0);
-		val = v;
-	}
-	return val;
-}
-
 struct nl_msg *
 nlmsg_alloc_size (size_t len)
 {
@@ -298,7 +282,7 @@ nlmsg_alloc_size (size_t len)
 struct nl_msg *
 nlmsg_alloc (void)
 {
-	return nlmsg_alloc_size (get_default_page_size ());
+	return nlmsg_alloc_size (nm_utils_getpagesize ());
 }
 
 struct nl_msg *
@@ -624,7 +608,7 @@ nlmsg_set_src (struct nl_msg *msg, struct sockaddr_nl *addr)
 struct ucred *
 nlmsg_get_creds (struct nl_msg *msg)
 {
-	if (msg->nm_flags & NL_MSG_CRED_PRESENT)
+	if (msg->nm_creds_has)
 		return &msg->nm_creds;
 	return NULL;
 }
@@ -632,8 +616,11 @@ nlmsg_get_creds (struct nl_msg *msg)
 void
 nlmsg_set_creds (struct nl_msg *msg, struct ucred *creds)
 {
-	memcpy (&msg->nm_creds, creds, sizeof (*creds));
-	msg->nm_flags |= NL_MSG_CRED_PRESENT;
+	if (creds) {
+		memcpy (&msg->nm_creds, creds, sizeof (*creds));
+		msg->nm_creds_has = TRUE;
+	} else
+		msg->nm_creds_has = FALSE;
 }
 
 /*****************************************************************************/
@@ -1068,7 +1055,7 @@ nl_wait_for_ack (struct nl_sock *sk,
 do { \
 	const struct nl_cb *_cb = (cb); \
 	\
-	if (_cb->type##_cb) { \
+	if (_cb && _cb->type##_cb) { \
 		/* the returned value here must be either a negative
 		 * netlink error number, or one of NL_SKIP, NL_STOP, NL_OK. */ \
 		nmerr = _cb->type##_cb ((msg), _cb->type##_arg); \
@@ -1097,10 +1084,11 @@ nl_recvmsgs (struct nl_sock *sk, const struct nl_cb *cb)
 	gs_free unsigned char *buf = NULL;
 	struct nlmsghdr *hdr;
 	struct sockaddr_nl nla = { 0 };
-	gs_free struct ucred *creds = NULL;
+	struct ucred creds;
+	gboolean creds_has;
 
 continue_reading:
-	n = nl_recv (sk, &nla, &buf, &creds);
+	n = nl_recv (sk, &nla, &buf, &creds, &creds_has);
 	if (n <= 0)
 		return n;
 
@@ -1112,8 +1100,7 @@ continue_reading:
 
 		nlmsg_set_proto (msg, sk->s_proto);
 		nlmsg_set_src (msg, &nla);
-		if (creds)
-			nlmsg_set_creds (msg, creds);
+		nlmsg_set_creds (msg, creds_has ? &creds : NULL);
 
 		nrecv++;
 
@@ -1184,7 +1171,7 @@ continue_reading:
 			}
 			if (e->error) {
 				/* Error message reported back from kernel. */
-				if (cb->err_cb) {
+				if (cb && cb->err_cb) {
 					/* the returned value here must be either a negative
 					 * netlink error number, or one of NL_SKIP, NL_STOP, NL_OK. */
 					nmerr = cb->err_cb (&nla, e,
@@ -1217,7 +1204,6 @@ skip:
 
 	if (multipart) {
 		/* Multipart message not yet complete, continue reading */
-		nm_clear_g_free (&creds);
 		nm_clear_g_free (&buf);
 
 		goto continue_reading;
@@ -1329,12 +1315,14 @@ int nl_send_auto (struct nl_sock *sk, struct nl_msg *msg)
 }
 
 int
-nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
-         unsigned char **buf, struct ucred **creds)
+nl_recv (struct nl_sock *sk,
+         struct sockaddr_nl *nla,
+         unsigned char **buf,
+         struct ucred *out_creds,
+         gboolean *out_creds_has)
 {
 	ssize_t n;
 	int flags = 0;
-	static int page_size = 0;
 	struct iovec iov;
 	struct msghdr msg = {
 		.msg_name = (void *) nla,
@@ -1342,25 +1330,24 @@ nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
 		.msg_iov = &iov,
 		.msg_iovlen = 1,
 	};
-	gs_free struct ucred* tmpcreds = NULL;
+	struct ucred tmpcreds;
+	gboolean tmpcreds_has = FALSE;
 	int retval;
 
 	nm_assert (nla);
 	nm_assert (buf && !*buf);
-	nm_assert (!creds || !*creds);
+	nm_assert (!out_creds_has == !out_creds);
 
 	if (   (sk->s_flags & NL_MSG_PEEK)
 	    || (   !(sk->s_flags & NL_MSG_PEEK_EXPLICIT)
 	        && sk->s_bufsize == 0))
 		flags |= MSG_PEEK | MSG_TRUNC;
 
-	if (page_size == 0)
-		page_size = getpagesize () * 4;
-
-	iov.iov_len = sk->s_bufsize ?: page_size;
+	iov.iov_len =    sk->s_bufsize
+	              ?: (((size_t) nm_utils_getpagesize ()) * 4u);
 	iov.iov_base = g_malloc (iov.iov_len);
 
-	if (   creds
+	if (   out_creds
 	    && (sk->s_flags & NL_SOCK_PASSCRED)) {
 		msg.msg_controllen = CMSG_SPACE (sizeof (struct ucred));
 		msg.msg_control = g_malloc (msg.msg_controllen);
@@ -1420,7 +1407,7 @@ retry:
 		goto abort;
 	}
 
-	if (creds && (sk->s_flags & NL_SOCK_PASSCRED)) {
+	if (out_creds && (sk->s_flags & NL_SOCK_PASSCRED)) {
 		struct cmsghdr *cmsg;
 
 		for (cmsg = CMSG_FIRSTHDR (&msg); cmsg; cmsg = CMSG_NXTHDR (&msg, cmsg)) {
@@ -1428,7 +1415,8 @@ retry:
 				continue;
 			if (cmsg->cmsg_type != SCM_CREDENTIALS)
 				continue;
-			tmpcreds = nm_memdup (CMSG_DATA (cmsg), sizeof (*tmpcreds));
+			memcpy (&tmpcreds, CMSG_DATA (cmsg), sizeof (tmpcreds));
+			tmpcreds_has = TRUE;
 			break;
 		}
 	}
@@ -1444,6 +1432,8 @@ abort:
 	}
 
 	*buf = iov.iov_base;
-	NM_SET_OUT (creds, g_steal_pointer (&tmpcreds));
+	if (out_creds && tmpcreds_has)
+		*out_creds = tmpcreds;
+	NM_SET_OUT (out_creds_has, tmpcreds_has);
 	return retval;
 }

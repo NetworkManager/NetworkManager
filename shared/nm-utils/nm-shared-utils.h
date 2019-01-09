@@ -219,19 +219,7 @@ nm_ip_addr_set (int addr_family, gpointer dst, gconstpointer src)
 
 /*****************************************************************************/
 
-static inline gboolean
-nm_utils_mem_all_zero (gconstpointer mem, gsize len)
-{
-	const guint8 *p;
-
-	for (p = mem; len-- > 0; p++) {
-		if (*p != 0)
-			return FALSE;
-	}
-
-	/* incidentally, a buffer with len==0, is also *all-zero*. */
-	return TRUE;
-}
+gboolean nm_utils_memeqzero (gconstpointer data, gsize length);
 
 /*****************************************************************************/
 
@@ -264,6 +252,15 @@ nm_memdup (gconstpointer data, gsize size)
 	return p;
 }
 
+static inline char *
+_nm_strndup_a_step (char *s, const char *str, gsize len)
+{
+	if (len > 0)
+		strncpy (s, str, len);
+	s[len] = '\0';
+	return s;
+}
+
 /* Similar to g_strndup(), however, if the string (including the terminating
  * NUL char) fits into alloca_maxlen, this will alloca() the memory.
  *
@@ -289,10 +286,7 @@ nm_memdup (gconstpointer data, gsize size)
 			g_assert (_len < _alloca_maxlen); \
 			_s = g_alloca (_len + 1); \
 		} \
-		if (_len > 0) \
-			strncpy (_s, _str, _len); \
-		_s[_len] = '\0'; \
-		_s; \
+		_nm_strndup_a_step (_s, _str, _len); \
 	})
 
 /*****************************************************************************/
@@ -1079,5 +1073,9 @@ nm_strv_ptrarray_take_gstring (GPtrArray *cmd,
 	                                  g_string_free (g_steal_pointer (gstr),
 	                                                 FALSE));
 }
+
+/*****************************************************************************/
+
+int nm_utils_getpagesize (void);
 
 #endif /* __NM_SHARED_UTILS_H__ */
