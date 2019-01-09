@@ -352,13 +352,13 @@ _match_connection (GSList *connections,
                    gint64 default_v4_metric,
                    gint64 default_v6_metric)
 {
-	NMConnection **list;
+	gs_free NMConnection **list = NULL;
 	guint i, len;
 
 	len = g_slist_length (connections);
 	g_assert (len < 10);
 
-	list = g_alloca ((len + 1) * sizeof (NMConnection *));
+	list = g_malloc ((len + 1) * sizeof (NMConnection *));
 	for (i = 0; i < len; i++, connections = connections->next) {
 		g_assert (connections);
 		g_assert (connections->data);
