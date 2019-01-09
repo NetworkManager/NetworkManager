@@ -86,11 +86,6 @@ G_DEFINE_ABSTRACT_TYPE (NMSetting, nm_setting, G_TYPE_OBJECT)
 
 static GenData *_gendata_hash (NMSetting *setting, gboolean create_if_necessary);
 
-static gboolean should_compare_prop (gboolean for_diff,
-                                     NMSetting *setting,
-                                     const NMSettInfoProperty *property_info,
-                                     NMSettingCompareFlags comp_flags);
-
 /*****************************************************************************/
 
 static NMSettingPriority
@@ -1246,58 +1241,148 @@ _nm_setting_verify_secret_string (const char *str,
 	return TRUE;
 }
 
-static gboolean
-compare_property (NMSetting *setting,
-                  NMSetting *other,
-                  const GParamSpec *prop_spec,
-                  NMSettingCompareFlags flags)
+gboolean
+_nm_setting_should_compare_secret_property (NMSetting *setting,
+                                            NMSetting *other,
+                                            const char *secret_name,
+                                            NMSettingCompareFlags flags)
 {
-	const NMSettInfoProperty *property;
-	GVariant *value1, *value2;
-	int cmp;
+	NMSettingSecretFlags a_secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+	NMSettingSecretFlags b_secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
-	/* Handle compare flags */
-	if (prop_spec->flags & NM_SETTING_PARAM_SECRET) {
-		NMSettingSecretFlags a_secret_flags = NM_SETTING_SECRET_FLAG_NONE;
-		NMSettingSecretFlags b_secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+	nm_assert (NM_IS_SETTING (setting));
+	nm_assert (!other || G_OBJECT_TYPE (setting) == G_OBJECT_TYPE (other));
 
-		g_return_val_if_fail (!NM_IS_SETTING_VPN (setting), FALSE);
+	/* secret_name must be a valid secret for @setting. */
+	nm_assert (nm_setting_get_secret_flags (setting, secret_name, NULL, NULL));
 
-		if (!nm_setting_get_secret_flags (setting, prop_spec->name, &a_secret_flags, NULL))
-			g_return_val_if_reached (FALSE);
-		if (!nm_setting_get_secret_flags (other, prop_spec->name, &b_secret_flags, NULL))
-			g_return_val_if_reached (FALSE);
+	if (!NM_FLAGS_ANY (flags,   NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS
+	                          | NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS))
+		return TRUE;
 
-		/* If the secret flags aren't the same the settings aren't the same */
-		if (a_secret_flags != b_secret_flags)
-			return FALSE;
-
-		/* Check for various secret flags that might cause us to ignore comparing
-		 * this property.
-		 */
-		if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS)
-		    && (a_secret_flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED))
-			return TRUE;
-
-		if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
-		    && (a_secret_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED))
-			return TRUE;
+	nm_setting_get_secret_flags (setting, secret_name, &a_secret_flags, NULL);
+	if (other) {
+		if (!nm_setting_get_secret_flags (other, secret_name, &b_secret_flags, NULL)) {
+			/* secret-name may not be a valid secret for @other. That is fine, we ignore that
+			 * and treat @b_secret_flags as NM_SETTING_SECRET_FLAG_NONE.
+			 *
+			 * This can happen with VPN secrets, where the caller knows that @secret_name
+			 * is a secret for setting, but it may not be a secret for @other. Accept that.
+			 *
+			 * Mark @other as missing. */
+			other = NULL;
+		}
 	}
 
-	property = _nm_sett_info_property_get (NM_SETTING_GET_CLASS (setting), prop_spec->name);
-	g_return_val_if_fail (property != NULL, FALSE);
+	/* when @setting has the secret-flags that should be ignored,
+	 * we skip the comparisong if:
+	 *
+	 *   - @other is not present,
+	 *   - @other does not have a secret named @secret_name
+	 *   - @other also has the secret flat to be ignored.
+	 *
+	 * This makes the check symmetric (aside the fact that @setting must
+	 * have the secret while @other may not -- which is asymetric). */
+	if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS)
+	    && NM_FLAGS_HAS (a_secret_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED)
+	    && (   !other
+	        || NM_FLAGS_HAS (b_secret_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED)))
+		return FALSE;
 
-	value1 = get_property_for_dbus (setting, property, TRUE);
-	value2 = get_property_for_dbus (other, property, TRUE);
+	if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
+	    && NM_FLAGS_HAS (a_secret_flags, NM_SETTING_SECRET_FLAG_NOT_SAVED)
+	    && (   !other
+	        || NM_FLAGS_HAS (b_secret_flags, NM_SETTING_SECRET_FLAG_NOT_SAVED)))
+		return FALSE;
 
-	cmp = nm_property_compare (value1, value2);
+	return TRUE;
+}
 
-	if (value1)
-		g_variant_unref (value1);
-	if (value2)
-		g_variant_unref (value2);
+static NMTernary
+compare_property (const NMSettInfoSetting *sett_info,
+                  guint property_idx,
+                  NMSetting *setting,
+                  NMSetting *other,
+                  NMSettingCompareFlags flags)
+{
+	const NMSettInfoProperty *property_info = &sett_info->property_infos[property_idx];
+	const GParamSpec *param_spec = property_info->param_spec;
 
-	return cmp == 0;
+	if (!param_spec)
+		return NM_TERNARY_DEFAULT;
+
+	if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_FUZZY)
+	    && NM_FLAGS_ANY (param_spec->flags, NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET))
+		return NM_TERNARY_DEFAULT;
+
+	if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)
+	    && !NM_FLAGS_HAS (param_spec->flags, NM_SETTING_PARAM_INFERRABLE))
+		return NM_TERNARY_DEFAULT;
+
+	if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY)
+	    && NM_FLAGS_HAS (param_spec->flags, NM_SETTING_PARAM_REAPPLY_IMMEDIATELY))
+		return NM_TERNARY_DEFAULT;
+
+	if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
+	    && NM_FLAGS_HAS (param_spec->flags, NM_SETTING_PARAM_SECRET))
+		return NM_TERNARY_DEFAULT;
+
+	if (nm_streq (param_spec->name, NM_SETTING_NAME))
+		return NM_TERNARY_DEFAULT;
+
+	if (   NM_FLAGS_HAS (param_spec->flags, NM_SETTING_PARAM_SECRET)
+	    && !_nm_setting_should_compare_secret_property (setting,
+	                                                    other,
+	                                                    param_spec->name,
+	                                                    flags))
+		return NM_TERNARY_DEFAULT;
+
+	if (other) {
+		gs_unref_variant GVariant *value1  = NULL;
+		gs_unref_variant GVariant *value2  = NULL;
+
+		value1 = get_property_for_dbus (setting, property_info, TRUE);
+		value2 = get_property_for_dbus (other, property_info, TRUE);
+
+		if (nm_property_compare (value1, value2) != 0)
+			return NM_TERNARY_FALSE;
+	}
+
+	return NM_TERNARY_TRUE;
+}
+
+static NMTernary
+_compare_property (const NMSettInfoSetting *sett_info,
+                   guint property_idx,
+                   NMSetting *setting,
+                   NMSetting *other,
+                   NMSettingCompareFlags flags)
+{
+	NMTernary compare_result;
+
+	nm_assert (sett_info);
+	nm_assert (NM_IS_SETTING_CLASS (sett_info->setting_class));
+	nm_assert (property_idx < sett_info->property_infos_len);
+	nm_assert (NM_SETTING_GET_CLASS (setting) == sett_info->setting_class);
+	nm_assert (!other || NM_SETTING_GET_CLASS (other) == sett_info->setting_class);
+
+	compare_result = NM_SETTING_GET_CLASS (setting)->compare_property (sett_info,
+	                                                                   property_idx,
+	                                                                   setting,
+	                                                                   other,
+	                                                                   flags);
+
+	nm_assert (NM_IN_SET (compare_result, NM_TERNARY_DEFAULT,
+	                                      NM_TERNARY_FALSE,
+	                                      NM_TERNARY_TRUE));
+
+	/* check that the inferable flag and the GObject property flag corresponds. */
+	nm_assert (   !NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)
+	           || !sett_info->property_infos[property_idx].param_spec
+	           || NM_FLAGS_HAS (sett_info->property_infos[property_idx].param_spec->flags, NM_SETTING_PARAM_INFERRABLE)
+	           || compare_result == NM_TERNARY_DEFAULT);
+
+	return compare_result;
 }
 
 /**
@@ -1340,85 +1425,9 @@ nm_setting_compare (NMSetting *a,
 	}
 
 	for (i = 0; i < sett_info->property_infos_len; i++) {
-		const NMSettInfoProperty *property_info = &sett_info->property_infos[i];
-
-		if (!should_compare_prop (FALSE, a, property_info, flags))
-			continue;
-
-		if (!NM_SETTING_GET_CLASS (a)->compare_property (a, b, property_info->param_spec, flags))
+		if (_compare_property (sett_info, i, a, b, flags) == NM_TERNARY_FALSE)
 			return FALSE;
 	}
-
-	return TRUE;
-}
-
-static gboolean
-should_compare_prop (gboolean for_diff,
-                     NMSetting *setting,
-                     const NMSettInfoProperty *property_info,
-                     NMSettingCompareFlags comp_flags)
-{
-	const GParamSpec *param_spec = property_info->param_spec;
-
-	if (!param_spec)
-		return FALSE;
-
-	if (   NM_FLAGS_HAS (comp_flags, NM_SETTING_COMPARE_FLAG_FUZZY)
-	    && NM_FLAGS_ANY (param_spec->flags, NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET))
-		return FALSE;
-
-	if (   NM_FLAGS_HAS (comp_flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)
-	    && !NM_FLAGS_HAS (param_spec->flags, NM_SETTING_PARAM_INFERRABLE))
-		return FALSE;
-
-	if (   NM_FLAGS_HAS (comp_flags, NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY)
-	    && NM_FLAGS_HAS (param_spec->flags, NM_SETTING_PARAM_REAPPLY_IMMEDIATELY))
-		return FALSE;
-
-	if (   NM_FLAGS_HAS (comp_flags, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
-	    && NM_FLAGS_HAS (param_spec->flags, NM_SETTING_PARAM_SECRET))
-		return FALSE;
-
-	if (nm_streq (param_spec->name, NM_SETTING_NAME))
-		return FALSE;
-
-	if (   for_diff
-	    && NM_FLAGS_ANY (comp_flags,   NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS
-	                                 | NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
-	    && NM_FLAGS_HAS (param_spec->flags, NM_SETTING_PARAM_SECRET)) {
-		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
-
-		if (   NM_IS_SETTING_VPN (setting)
-		    && nm_streq (param_spec->name, NM_SETTING_VPN_SECRETS)) {
-			/* FIXME: NMSettingVPN:NM_SETTING_VPN_SECRETS has NM_SETTING_PARAM_SECRET.
-			 * nm_setting_get_secret_flags() quite possibly fails, but it might succeed if the
-			 * setting accidentally uses a key "secrets". */
-			return TRUE;
-		}
-
-		if (!nm_setting_get_secret_flags (setting, param_spec->name, &secret_flags, NULL))
-			g_return_val_if_reached (FALSE);
-
-		if (   NM_FLAGS_HAS (comp_flags, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS)
-		    && NM_FLAGS_HAS (secret_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED))
-			return FALSE;
-
-		if (   NM_FLAGS_HAS (comp_flags, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
-		    && NM_FLAGS_HAS (secret_flags, NM_SETTING_SECRET_FLAG_NOT_SAVED))
-			return FALSE;
-	}
-
-	if (   for_diff
-	    && NM_FLAGS_HAS (comp_flags, NM_SETTING_COMPARE_FLAG_IGNORE_ID)
-	    && NM_IS_SETTING_CONNECTION (setting)
-	    && nm_streq (param_spec->name, NM_SETTING_CONNECTION_ID))
-		return FALSE;
-
-	if (   for_diff
-	    && NM_FLAGS_HAS (comp_flags, NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP)
-	    && NM_IS_SETTING_CONNECTION (setting)
-	    && nm_streq (param_spec->name, NM_SETTING_CONNECTION_TIMESTAMP))
-		return FALSE;
 
 	return TRUE;
 }
@@ -1554,65 +1563,92 @@ nm_setting_diff (NMSetting *a,
 		}
 	} else {
 		for (i = 0; i < sett_info->property_infos_len; i++) {
-			const NMSettInfoProperty *property_info = &sett_info->property_infos[i];
-			GParamSpec *prop_spec;
 			NMSettingDiffResult r = NM_SETTING_DIFF_RESULT_UNKNOWN;
+			const NMSettInfoProperty *property_info;
+			NMTernary compare_result;
+			GParamSpec *prop_spec;
 
-			if (!should_compare_prop (TRUE, a, property_info, flags))
+			compare_result = _compare_property (sett_info, i, a, b, flags);
+			if (compare_result == NM_TERNARY_DEFAULT)
 				continue;
 
-			prop_spec = property_info->param_spec;
+			if (   NM_FLAGS_ANY (flags,   NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS
+			                            | NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
+			    && b
+			    && compare_result == NM_TERNARY_FALSE) {
+				/* we have setting @b and the property is not the same. But we also are instructed
+				 * to ignore secrets based on the flags.
+				 *
+				 * Note that compare_property() called with two settings will ignore secrets
+				 * based on the flags, but it will do so if *both* settings have the flag we
+				 * look for. So that is symetric behavior and good.
+				 *
+				 * But for the purpose of diff(), we do a asymmetric comparison because and
+				 * we want to skip testing the property if setting @a alone indicates to do
+				 * so.
+				 *
+				 * We need to double-check whether the property should be ignored by
+				 * looking at @a alone. */
+				if (_compare_property (sett_info, i, a, NULL, flags) == NM_TERNARY_DEFAULT)
+					continue;
+			}
 
 			compared_any = TRUE;
 
+			property_info = &sett_info->property_infos[i];
+			prop_spec = property_info->param_spec;
+
 			if (b) {
-				gboolean different;
+				if (compare_result == NM_TERNARY_FALSE) {
+					if (prop_spec) {
+						gboolean a_is_default, b_is_default;
+						GValue value = G_VALUE_INIT;
 
-				different = !NM_SETTING_GET_CLASS (a)->compare_property (a, b, prop_spec, flags);
-				if (different) {
-					gboolean a_is_default, b_is_default;
-					GValue value = G_VALUE_INIT;
+						g_value_init (&value, prop_spec->value_type);
+						g_object_get_property (G_OBJECT (a), prop_spec->name, &value);
+						a_is_default = g_param_value_defaults (prop_spec, &value);
 
-					g_value_init (&value, prop_spec->value_type);
-					g_object_get_property (G_OBJECT (a), prop_spec->name, &value);
-					a_is_default = g_param_value_defaults (prop_spec, &value);
+						g_value_reset (&value);
+						g_object_get_property (G_OBJECT (b), prop_spec->name, &value);
+						b_is_default = g_param_value_defaults (prop_spec, &value);
 
-					g_value_reset (&value);
-					g_object_get_property (G_OBJECT (b), prop_spec->name, &value);
-					b_is_default = g_param_value_defaults (prop_spec, &value);
-
-					g_value_unset (&value);
-					if ((flags & NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT) == 0) {
-						if (!a_is_default)
-							r |= a_result;
-						if (!b_is_default)
-							r |= b_result;
-					} else {
+						g_value_unset (&value);
+						if (!NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT)) {
+							if (!a_is_default)
+								r |= a_result;
+							if (!b_is_default)
+								r |= b_result;
+						} else {
+							r |= a_result | b_result;
+							if (a_is_default)
+								r |= a_result_default;
+							if (b_is_default)
+								r |= b_result_default;
+						}
+					} else
 						r |= a_result | b_result;
-						if (a_is_default)
-							r |= a_result_default;
-						if (b_is_default)
-							r |= b_result_default;
-					}
 				}
 			} else if ((flags & (NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT)) == 0)
 				r = a_result;  /* only in A */
 			else {
-				GValue value = G_VALUE_INIT;
+				if (prop_spec) {
+					GValue value = G_VALUE_INIT;
 
-				g_value_init (&value, prop_spec->value_type);
-				g_object_get_property (G_OBJECT (a), prop_spec->name, &value);
-				if (!g_param_value_defaults (prop_spec, &value))
+					g_value_init (&value, prop_spec->value_type);
+					g_object_get_property (G_OBJECT (a), prop_spec->name, &value);
+					if (!g_param_value_defaults (prop_spec, &value))
+						r |= a_result;
+					else if (flags & NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT)
+						r |= a_result | a_result_default;
+
+					g_value_unset (&value);
+				} else
 					r |= a_result;
-				else if (flags & NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT)
-					r |= a_result | a_result_default;
-
-				g_value_unset (&value);
 			}
 
 			if (r != NM_SETTING_DIFF_RESULT_UNKNOWN) {
 				diff_found = TRUE;
-				_setting_diff_add_result (*results, prop_spec->name, r);
+				_setting_diff_add_result (*results, property_info->name, r);
 			}
 		}
 	}

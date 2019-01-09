@@ -1188,29 +1188,37 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
-static gboolean
-compare_property (NMSetting *setting,
+static NMTernary
+compare_property (const NMSettInfoSetting *sett_info,
+                  guint property_idx,
+                  NMSetting *setting,
                   NMSetting *other,
-                  const GParamSpec *prop_spec,
                   NMSettingCompareFlags flags)
 {
-	NMSettingSriov *a = NM_SETTING_SRIOV (setting);
-	NMSettingSriov *b = NM_SETTING_SRIOV (other);
-	NMSettingClass *setting_class;
+	NMSettingSriov *a;
+	NMSettingSriov *b;
 	guint i;
 
-	if (nm_streq (prop_spec->name, NM_SETTING_SRIOV_VFS)) {
-		if (a->vfs->len != b->vfs->len)
-			return FALSE;
-		for (i = 0; i < a->vfs->len; i++) {
-			if (!nm_sriov_vf_equal (a->vfs->pdata[i], b->vfs->pdata[i]))
+	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_SRIOV_VFS)) {
+		if (other) {
+			a = NM_SETTING_SRIOV (setting);
+			b = NM_SETTING_SRIOV (other);
+
+			if (a->vfs->len != b->vfs->len)
 				return FALSE;
+			for (i = 0; i < a->vfs->len; i++) {
+				if (!nm_sriov_vf_equal (a->vfs->pdata[i], b->vfs->pdata[i]))
+					return FALSE;
+			}
 		}
 		return TRUE;
 	}
 
-	setting_class = NM_SETTING_CLASS (nm_setting_sriov_parent_class);
-	return setting_class->compare_property (setting, other, prop_spec, flags);
+	return NM_SETTING_CLASS (nm_setting_sriov_parent_class)->compare_property (sett_info,
+	                                                                           property_idx,
+	                                                                           setting,
+	                                                                           other,
+	                                                                           flags);
 }
 
 static void

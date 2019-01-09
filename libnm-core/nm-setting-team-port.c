@@ -401,48 +401,68 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-static gboolean
-compare_property (NMSetting *setting,
+static NMTernary
+compare_property (const NMSettInfoSetting *sett_info,
+                  guint property_idx,
+                  NMSetting *setting,
                   NMSetting *other,
-                  const GParamSpec *prop_spec,
                   NMSettingCompareFlags flags)
 {
-	NMSettingClass *setting_class;
-	NMSettingTeamPortPrivate *a_priv, *b_priv;
+	NMSettingTeamPortPrivate *a_priv;
+	NMSettingTeamPortPrivate *b_priv;
 	guint i, j;
 
-	/* If we are trying to match a connection in order to assume it (and thus
-	 * @flags contains INFERRABLE), use the "relaxed" matching for team
-	 * configuration. Otherwise, for all other purposes (including connection
-	 * comparison before an update), resort to the default string comparison.
-	 */
-	if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)
-	    && nm_streq0 (prop_spec->name, NM_SETTING_TEAM_PORT_CONFIG)) {
-		return _nm_utils_team_config_equal (NM_SETTING_TEAM_PORT_GET_PRIVATE (setting)->config,
-		                                    NM_SETTING_TEAM_PORT_GET_PRIVATE (other)->config,
-		                                    TRUE);
-	}
-	if (nm_streq0 (prop_spec->name, NM_SETTING_TEAM_PORT_LINK_WATCHERS)) {
-		a_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
-		b_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (other);
+	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TEAM_PORT_LINK_WATCHERS)) {
 
-		if (a_priv->link_watchers->len != b_priv->link_watchers->len)
-			return FALSE;
-		for (i = 0; i < a_priv->link_watchers->len; i++) {
-			for (j = 0; j < b_priv->link_watchers->len; j++) {
-				if (nm_team_link_watcher_equal (a_priv->link_watchers->pdata[i],
-				                                b_priv->link_watchers->pdata[j])) {
-					break;
-				}
-			}
-			if (j == b_priv->link_watchers->len)
+		if (NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
+			return NM_TERNARY_DEFAULT;
+
+		if (other) {
+			a_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
+			b_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (other);
+
+			if (a_priv->link_watchers->len != b_priv->link_watchers->len)
 				return FALSE;
+			for (i = 0; i < a_priv->link_watchers->len; i++) {
+				for (j = 0; j < b_priv->link_watchers->len; j++) {
+					if (nm_team_link_watcher_equal (a_priv->link_watchers->pdata[i],
+					                                b_priv->link_watchers->pdata[j])) {
+						break;
+					}
+				}
+				if (j == b_priv->link_watchers->len)
+					return FALSE;
+			}
 		}
 		return TRUE;
 	}
 
-	setting_class = NM_SETTING_CLASS (nm_setting_team_port_parent_class);
-	return setting_class->compare_property (setting, other, prop_spec, flags);
+	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TEAM_PORT_CONFIG)) {
+		if (other) {
+			a_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
+			b_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (other);
+
+			if (NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)) {
+				/* If we are trying to match a connection in order to assume it (and thus
+				 * @flags contains INFERRABLE), use the "relaxed" matching for team
+				 * configuration. Otherwise, for all other purposes (including connection
+				 * comparison before an update), resort to the default string comparison. */
+				return _nm_utils_team_config_equal (a_priv->config,
+				                                    b_priv->config,
+				                                    TRUE);
+			}
+
+			return nm_streq0 (a_priv->config, b_priv->config);
+		}
+
+		return TRUE;
+	}
+
+	return NM_SETTING_CLASS (nm_setting_team_port_parent_class)->compare_property (sett_info,
+	                                                                               property_idx,
+	                                                                               setting,
+	                                                                               other,
+	                                                                               flags);
 }
 
 static void
