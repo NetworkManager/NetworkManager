@@ -1779,14 +1779,19 @@ _nm_setting_aggregate (NMSetting *setting,
 
 	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
 	for (i = 0; i < sett_info->property_infos_len; i++) {
-		GParamSpec *prop_spec = sett_info->property_infos[i].param_spec;
+		const NMSettInfoProperty *property_info = &sett_info->property_infos[i];
+		GParamSpec *prop_spec = property_info->param_spec;
 		nm_auto_unset_gvalue GValue value = G_VALUE_INIT;
 		NMSettingSecretFlags secret_flags;
 
-		if (!prop_spec)
+		if (   !prop_spec
+		    || !NM_FLAGS_HAS (prop_spec->flags, NM_SETTING_PARAM_SECRET)) {
+			nm_assert (!nm_setting_get_secret_flags (setting, property_info->name, NULL, NULL));
 			continue;
-		if (!NM_FLAGS_HAS (prop_spec->flags, NM_SETTING_PARAM_SECRET))
-			continue;
+		}
+
+		/* for the moment, all aggregate types only care about secrets. */
+		nm_assert (nm_setting_get_secret_flags (setting, property_info->name, NULL, NULL));
 
 		switch (type) {
 
