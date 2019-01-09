@@ -1452,6 +1452,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 		 g_param_spec_string (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, "", "",
 		                      NULL,
 		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	_properties_override_add_override (properties_override,
