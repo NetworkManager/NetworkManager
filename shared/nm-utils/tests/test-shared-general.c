@@ -104,6 +104,54 @@ test_make_strv (void)
 
 /*****************************************************************************/
 
+typedef enum {
+	TEST_NM_STRDUP_ENUM_m1 = -1,
+	TEST_NM_STRDUP_ENUM_3  = 3,
+} TestNMStrdupIntEnum;
+
+static void
+test_nm_strdup_int (void)
+{
+#define _NM_STRDUP_INT_TEST(num, str) \
+	G_STMT_START { \
+		gs_free char *_s1 = NULL; \
+		\
+		_s1 = nm_strdup_int ((num)); \
+		\
+		g_assert (_s1); \
+		g_assert_cmpstr (_s1, ==, str); \
+	} G_STMT_END
+
+#define _NM_STRDUP_INT_TEST_TYPED(type, num) \
+	G_STMT_START { \
+		type _num = ((type) num); \
+		\
+		_NM_STRDUP_INT_TEST (_num, G_STRINGIFY (num)); \
+	} G_STMT_END
+
+	_NM_STRDUP_INT_TEST_TYPED (char, 0);
+	_NM_STRDUP_INT_TEST_TYPED (char, 1);
+	_NM_STRDUP_INT_TEST_TYPED (guint8, 0);
+	_NM_STRDUP_INT_TEST_TYPED (gint8, 25);
+	_NM_STRDUP_INT_TEST_TYPED (char, 47);
+	_NM_STRDUP_INT_TEST_TYPED (short, 47);
+	_NM_STRDUP_INT_TEST_TYPED (int, 47);
+	_NM_STRDUP_INT_TEST_TYPED (long, 47);
+	_NM_STRDUP_INT_TEST_TYPED (unsigned char, 47);
+	_NM_STRDUP_INT_TEST_TYPED (unsigned short, 47);
+	_NM_STRDUP_INT_TEST_TYPED (unsigned, 47);
+	_NM_STRDUP_INT_TEST_TYPED (unsigned long, 47);
+	_NM_STRDUP_INT_TEST_TYPED (gint64, 9223372036854775807);
+	_NM_STRDUP_INT_TEST_TYPED (gint64, -9223372036854775807);
+	_NM_STRDUP_INT_TEST_TYPED (guint64, 0);
+	_NM_STRDUP_INT_TEST_TYPED (guint64, 9223372036854775807);
+
+	_NM_STRDUP_INT_TEST (TEST_NM_STRDUP_ENUM_m1, "-1");
+	_NM_STRDUP_INT_TEST (TEST_NM_STRDUP_ENUM_3,  "3");
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -113,6 +161,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/general/test_monotonic_timestamp", test_monotonic_timestamp);
 	g_test_add_func ("/general/test_nmhash", test_nmhash);
 	g_test_add_func ("/general/test_nm_make_strv", test_make_strv);
+	g_test_add_func ("/general/test_nm_strdup_int", test_nm_strdup_int);
 
 	return g_test_run ();
 }
