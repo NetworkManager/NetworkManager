@@ -2033,7 +2033,7 @@ _log_connection_get_property (NMSetting *setting, const char *name)
 		return g_strdup ("****");
 
 	if (!_nm_setting_get_property (setting, name, &val))
-		g_return_val_if_reached (FALSE);
+		return g_strdup ("<unknown>");
 
 	if (G_VALUE_HOLDS_STRING (&val)) {
 		const char *val_s;
