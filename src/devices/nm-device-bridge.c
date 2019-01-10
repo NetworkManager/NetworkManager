@@ -168,26 +168,52 @@ complete_connection (NMDevice *device,
 typedef struct {
 	const char *name;
 	const char *sysname;
-	gboolean default_if_zero;
-	gboolean user_hz_compensate;
+	uint nm_min;
+	uint nm_max;
+	uint nm_default;
+	bool default_if_zero;
+	bool user_hz_compensate;
+	bool only_with_stp;
 } Option;
 
 static const Option master_options[] = {
-	{ NM_SETTING_BRIDGE_STP, "stp_state", FALSE, FALSE },
-	{ NM_SETTING_BRIDGE_PRIORITY, "priority", TRUE, FALSE },
-	{ NM_SETTING_BRIDGE_FORWARD_DELAY, "forward_delay", TRUE, TRUE },
-	{ NM_SETTING_BRIDGE_HELLO_TIME, "hello_time", TRUE, TRUE },
-	{ NM_SETTING_BRIDGE_MAX_AGE, "max_age", TRUE, TRUE },
-	{ NM_SETTING_BRIDGE_AGEING_TIME, "ageing_time", TRUE, TRUE },
-	{ NM_SETTING_BRIDGE_GROUP_FORWARD_MASK, "group_fwd_mask", TRUE, FALSE },
-	{ NM_SETTING_BRIDGE_MULTICAST_SNOOPING, "multicast_snooping", FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_STP,                "stp_state", /* this must stay as the first item */
+	                                        0, 1, 1,
+	                                        FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_PRIORITY,           "priority",
+	                                        0, G_MAXUINT16, 0x8000,
+	                                        TRUE, FALSE, TRUE },
+	{ NM_SETTING_BRIDGE_FORWARD_DELAY,      "forward_delay",
+	                                        0, NM_BR_MAX_FORWARD_DELAY, 15,
+	                                        TRUE, TRUE, TRUE},
+	{ NM_SETTING_BRIDGE_HELLO_TIME,         "hello_time",
+	                                        0, NM_BR_MAX_HELLO_TIME, 2,
+	                                        TRUE, TRUE, TRUE },
+	{ NM_SETTING_BRIDGE_MAX_AGE,            "max_age",
+	                                        0, NM_BR_MAX_MAX_AGE, 20,
+	                                        TRUE, TRUE, TRUE },
+	{ NM_SETTING_BRIDGE_AGEING_TIME,        "ageing_time",
+	                                        NM_BR_MIN_AGEING_TIME, NM_BR_MAX_AGEING_TIME, 300,
+	                                        TRUE, TRUE, FALSE },
+	{ NM_SETTING_BRIDGE_GROUP_FORWARD_MASK, "group_fwd_mask",
+	                                        0, 0xFFFF, 0,
+	                                        TRUE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_MULTICAST_SNOOPING, "multicast_snooping",
+	                                        0, 1, 1,
+	                                        FALSE, FALSE, FALSE },
 	{ NULL, NULL }
 };
 
 static const Option slave_options[] = {
-	{ NM_SETTING_BRIDGE_PORT_PRIORITY, "priority", TRUE, FALSE },
-	{ NM_SETTING_BRIDGE_PORT_PATH_COST, "path_cost", TRUE, FALSE },
-	{ NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "hairpin_mode", FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_PORT_PRIORITY,     "priority",
+	                                       0, NM_BR_PORT_MAX_PRIORITY, NM_BR_PORT_DEF_PRIORITY,
+	                                       TRUE, FALSE },
+	{ NM_SETTING_BRIDGE_PORT_PATH_COST,    "path_cost",
+	                                       0, NM_BR_PORT_MAX_PATH_COST, 100,
+	                                       TRUE, FALSE },
+	{ NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "hairpin_mode",
+	                                       0, 1, 0,
+	                                       FALSE, FALSE },
 	{ NULL, NULL }
 };
 
@@ -275,23 +301,43 @@ update_connection (NMDevice *device, NMConnection *connection)
 	NMSettingBridge *s_bridge = nm_connection_get_setting_bridge (connection);
 	int ifindex = nm_device_get_ifindex (device);
 	const Option *option;
+	gs_free char *stp = NULL;
+	int stp_value;
 
 	if (!s_bridge) {
 		s_bridge = (NMSettingBridge *) nm_setting_bridge_new ();
 		nm_connection_add_setting (connection, (NMSetting *) s_bridge);
 	}
 
-	for (option = master_options; option->name; option++) {
+	option = master_options;
+	nm_assert (nm_streq (option->sysname, "stp_state"));
+
+	stp = nm_platform_sysctl_master_get_option (nm_device_get_platform (device), ifindex, option->sysname);
+	stp_value = _nm_utils_ascii_str_to_int64 (stp, 10, option->nm_min, option->nm_max, option->nm_default);
+	g_object_set (s_bridge, option->name, stp_value, NULL);
+	option++;
+
+	for (; option->name; option++) {
 		gs_free char *str = nm_platform_sysctl_master_get_option (nm_device_get_platform (device), ifindex, option->sysname);
-		int value;
+		uint value;
+
+		if (!stp_value && option->only_with_stp)
+			continue;
 
 		if (str) {
-			value = strtol (str, NULL, 10);
-
 			/* See comments in set_sysfs_uint() about centiseconds. */
-			if (option->user_hz_compensate)
+			if (option->user_hz_compensate) {
+				value = _nm_utils_ascii_str_to_int64 (str, 10,
+				                                      option->nm_min * 100,
+				                                      option->nm_max * 100,
+				                                      option->nm_default * 100);
 				value /= 100;
-
+			} else {
+				value = _nm_utils_ascii_str_to_int64 (str, 10,
+				                                      option->nm_min,
+				                                      option->nm_max,
+				                                      option->nm_default);
+			}
 			g_object_set (s_bridge, option->name, value, NULL);
 		} else
 			_LOGW (LOGD_BRIDGE, "failed to read bridge setting '%s'", option->sysname);
@@ -322,15 +368,22 @@ master_update_slave_connection (NMDevice *device,
 
 	for (option = slave_options; option->name; option++) {
 		gs_free char *str = nm_platform_sysctl_slave_get_option (nm_device_get_platform (device), ifindex_slave, option->sysname);
-		int value;
+		uint value;
 
 		if (str) {
-			value = strtol (str, NULL, 10);
-
 			/* See comments in set_sysfs_uint() about centiseconds. */
-			if (option->user_hz_compensate)
+			if (option->user_hz_compensate) {
+				value = _nm_utils_ascii_str_to_int64 (str, 10,
+				                                      option->nm_min * 100,
+				                                      option->nm_max * 100,
+				                                      option->nm_default * 100);
 				value /= 100;
-
+			} else {
+				value = _nm_utils_ascii_str_to_int64 (str, 10,
+				                                      option->nm_min,
+				                                      option->nm_max,
+				                                      option->nm_default);
+			}
 			g_object_set (s_port, option->name, value, NULL);
 		} else
 			_LOGW (LOGD_BRIDGE, "failed to read bridge port setting '%s'", option->sysname);
