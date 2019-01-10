@@ -101,6 +101,11 @@
 #define NM_BR_MIN_AGEING_TIME   0
 #define NM_BR_MAX_AGEING_TIME   1000000
 
+#define NM_BR_PORT_MAX_PRIORITY 63
+#define NM_BR_PORT_DEF_PRIORITY 32
+
+#define NM_BR_PORT_MAX_PATH_COST 65535
+
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only
  * takes into account properties marked with the %NM_SETTING_PARAM_INFERRABLE
