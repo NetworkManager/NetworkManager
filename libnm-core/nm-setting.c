@@ -1016,7 +1016,7 @@ gboolean
 _nm_setting_get_property (NMSetting *setting, const char *property_name, GValue *value)
 {
 	const NMSettInfoSetting *sett_info;
-	GParamSpec *prop_spec;
+	const NMSettInfoProperty *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (property_name, FALSE);
@@ -1040,13 +1040,14 @@ _nm_setting_get_property (NMSetting *setting, const char *property_name, GValue 
 		return TRUE;
 	}
 
-	prop_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), property_name);
-	if (!prop_spec) {
+	property_info = _nm_sett_info_setting_get_property_info (sett_info, property_name);
+	if (   !property_info
+	    || !property_info->param_spec) {
 		g_value_unset (value);
 		return FALSE;
 	}
 
-	g_value_init (value, prop_spec->value_type);
+	g_value_init (value, property_info->param_spec->value_type);
 	g_object_get_property (G_OBJECT (setting), property_name, value);
 	return TRUE;
 }
