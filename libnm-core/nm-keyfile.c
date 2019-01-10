@@ -2815,7 +2815,7 @@ _read_setting (KeyfileReaderInfo *info)
 
 	info->setting = setting;
 
-	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
 
 	if (sett_info->detail.gendata_info) {
 		gs_free char **keys = NULL;
@@ -3232,7 +3232,7 @@ nm_keyfile_write (NMConnection *connection,
 		const NMSettInfoSetting *sett_info;
 		NMSetting *setting = settings[i];
 
-		sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+		sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
 
 		if (sett_info->detail.gendata_info) {
 			guint k, n_keys;

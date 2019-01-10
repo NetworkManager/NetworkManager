@@ -509,7 +509,7 @@ _nm_setting_class_commit_full (NMSettingClass *setting_class,
 }
 
 const NMSettInfoSetting *
-_nm_sett_info_setting_get (NMSettingClass *setting_class)
+_nm_setting_class_get_sett_info (NMSettingClass *setting_class)
 {
 	if (   NM_IS_SETTING_CLASS (setting_class)
 	    && setting_class->setting_info) {
@@ -520,10 +520,10 @@ _nm_sett_info_setting_get (NMSettingClass *setting_class)
 }
 
 const NMSettInfoProperty *
-_nm_sett_info_property_get (NMSettingClass *setting_class,
-                            const char *property_name)
+_nm_setting_class_get_property_info (NMSettingClass *setting_class,
+                                     const char *property_name)
 {
-	const NMSettInfoSetting *sett_info = _nm_sett_info_setting_get (setting_class);
+	const NMSettInfoSetting *sett_info = _nm_setting_class_get_sett_info (setting_class);
 	const NMSettInfoProperty *property;
 	gssize idx;
 
@@ -731,7 +731,7 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 		                       g_hash_table_lookup (priv->gendata->hash, gendata_keys[i]));
 	}
 
-	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
 	for (i = 0; i < sett_info->property_infos_len; i++) {
 		const NMSettInfoProperty *property = &sett_info->property_infos[i];
 		GParamSpec *prop_spec = property->param_spec;
@@ -856,7 +856,7 @@ _nm_setting_new_from_dbus (GType setting_type,
 		}
 	}
 
-	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
 
 	if (sett_info->detail.gendata_info) {
 		GHashTable *hash;
@@ -1002,7 +1002,7 @@ nm_setting_get_dbus_property_type (NMSetting *setting,
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 	g_return_val_if_fail (property_name != NULL, NULL);
 
-	property = _nm_sett_info_property_get (NM_SETTING_GET_CLASS (setting), property_name);
+	property = _nm_setting_class_get_property_info (NM_SETTING_GET_CLASS (setting), property_name);
 	g_return_val_if_fail (property != NULL, NULL);
 
 	if (property->dbus_type)
@@ -1021,7 +1021,7 @@ _nm_setting_get_property (NMSetting *setting, const char *property_name, GValue 
 	g_return_val_if_fail (property_name, FALSE);
 	g_return_val_if_fail (value, FALSE);
 
-	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
 
 	if (sett_info->detail.gendata_info) {
 		GVariant *variant;
@@ -1085,7 +1085,7 @@ nm_setting_duplicate (NMSetting *setting)
 
 	dup = g_object_new (G_OBJECT_TYPE (setting), NULL);
 
-	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
 
 	if (sett_info->detail.gendata_info) {
 		GenData *gendata = _gendata_hash (setting, FALSE);
@@ -1412,7 +1412,7 @@ nm_setting_compare (NMSetting *a,
 	if (G_OBJECT_TYPE (a) != G_OBJECT_TYPE (b))
 		return FALSE;
 
-	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (a));
+	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (a));
 
 	if (sett_info->detail.gendata_info) {
 		GenData *a_gendata = _gendata_hash (a, FALSE);
@@ -1519,7 +1519,7 @@ nm_setting_diff (NMSetting *a,
 		results_created = TRUE;
 	}
 
-	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (a));
+	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (a));
 
 	if (sett_info->detail.gendata_info) {
 		const char *key;
@@ -1697,7 +1697,7 @@ nm_setting_enumerate_values (NMSetting *setting,
 	g_return_if_fail (NM_IS_SETTING (setting));
 	g_return_if_fail (func != NULL);
 
-	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
 
 	if (sett_info->detail.gendata_info) {
 		const char *const*names;
@@ -1777,7 +1777,7 @@ _nm_setting_aggregate (NMSetting *setting,
 	if (NM_IS_SETTING_VPN (setting))
 		return _nm_setting_vpn_aggregate (NM_SETTING_VPN (setting), type, arg);
 
-	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
 	for (i = 0; i < sett_info->property_infos_len; i++) {
 		const NMSettInfoProperty *property_info = &sett_info->property_infos[i];
 		GParamSpec *prop_spec = property_info->param_spec;
@@ -1838,7 +1838,7 @@ _nm_setting_clear_secrets (NMSetting *setting)
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
-	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
 	for (i = 0; i < sett_info->property_infos_len; i++) {
 		GParamSpec *prop_spec = sett_info->property_infos[i].param_spec;
 
@@ -1915,7 +1915,7 @@ _nm_setting_clear_secrets_with_flags (NMSetting *setting,
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (func != NULL, FALSE);
 
-	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
 	for (i = 0; i < sett_info->property_infos_len; i++) {
 		GParamSpec *prop_spec = sett_info->property_infos[i].param_spec;
 
@@ -1967,7 +1967,7 @@ update_one_secret (NMSetting *setting, const char *key, GVariant *value, GError 
 	GParamSpec *prop_spec;
 	GValue prop_value = { 0, };
 
-	property = _nm_sett_info_property_get (NM_SETTING_GET_CLASS (setting), key);
+	property = _nm_setting_class_get_property_info (NM_SETTING_GET_CLASS (setting), key);
 	if (!property) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
@@ -2074,7 +2074,7 @@ _nm_setting_property_is_regular_secret (NMSetting *setting,
 	nm_assert (NM_IS_SETTING (setting));
 	nm_assert (secret_name);
 
-	property = _nm_sett_info_property_get (NM_SETTING_GET_CLASS (setting), secret_name);
+	property = _nm_setting_class_get_property_info (NM_SETTING_GET_CLASS (setting), secret_name);
 	return    property
 	       && property->param_spec
 	       && NM_FLAGS_HAS (property->param_spec->flags, NM_SETTING_PARAM_SECRET);
@@ -2089,7 +2089,7 @@ _nm_setting_property_is_regular_secret_flags (NMSetting *setting,
 	nm_assert (NM_IS_SETTING (setting));
 	nm_assert (secret_flags_name);
 
-	property = _nm_sett_info_property_get (NM_SETTING_GET_CLASS (setting), secret_flags_name);
+	property = _nm_setting_class_get_property_info (NM_SETTING_GET_CLASS (setting), secret_flags_name);
 	return    property
 	       && property->param_spec
 	       && !NM_FLAGS_HAS (property->param_spec->flags, NM_SETTING_PARAM_SECRET)
