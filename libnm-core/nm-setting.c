@@ -508,24 +508,14 @@ _nm_setting_class_commit_full (NMSettingClass *setting_class,
 	                                                         setting_class);
 }
 
-const NMSettInfoSetting *
-_nm_setting_class_get_sett_info (NMSettingClass *setting_class)
-{
-	if (   NM_IS_SETTING_CLASS (setting_class)
-	    && setting_class->setting_info) {
-		nm_assert (setting_class->setting_info->meta_type < G_N_ELEMENTS (_sett_info_settings));
-		return &_sett_info_settings[setting_class->setting_info->meta_type];
-	}
-	return NULL;
-}
-
 const NMSettInfoProperty *
-_nm_setting_class_get_property_info (NMSettingClass *setting_class,
-                                     const char *property_name)
+_nm_sett_info_setting_get_property_info (const NMSettInfoSetting *sett_info,
+                                         const char *property_name)
 {
-	const NMSettInfoSetting *sett_info = _nm_setting_class_get_sett_info (setting_class);
 	const NMSettInfoProperty *property;
 	gssize idx;
+
+	nm_assert (property_name);
 
 	if (!sett_info)
 		return NULL;
@@ -547,6 +537,17 @@ _nm_setting_class_get_property_info (NMSettingClass *setting_class,
 	nm_assert (idx == sett_info->property_infos_len - 1 || strcmp (property[0].name, property[1].name) < 0);
 
 	return property;
+}
+
+const NMSettInfoSetting *
+_nm_setting_class_get_sett_info (NMSettingClass *setting_class)
+{
+	if (   NM_IS_SETTING_CLASS (setting_class)
+	    && setting_class->setting_info) {
+		nm_assert (setting_class->setting_info->meta_type < G_N_ELEMENTS (_sett_info_settings));
+		return &_sett_info_settings[setting_class->setting_info->meta_type];
+	}
+	return NULL;
 }
 
 /*****************************************************************************/
