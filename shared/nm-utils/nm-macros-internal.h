@@ -1194,7 +1194,7 @@ fcn_name (lookup_type val) \
 /* Call the string-lookup-table function @fcn_name. If the function returns
  * %NULL, the numeric index is converted to string using a alloca() buffer.
  * Beware: this macro uses alloca(). */
-#define NM_UTILS_LOOKUP_STR(fcn_name, idx) \
+#define NM_UTILS_LOOKUP_STR_A(fcn_name, idx) \
 	({ \
 		typeof (idx) _idx = (idx); \
 		const char *_s; \
