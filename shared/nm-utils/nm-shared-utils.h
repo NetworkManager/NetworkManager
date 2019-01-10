@@ -304,6 +304,8 @@ _nm_strndup_a_step (char *s, const char *str, gsize len)
 #if _NM_CC_SUPPORT_GENERIC
 #define nm_strdup_int(val) \
 	_Generic ((val), \
+	          char:    g_strdup_printf ("%d",                (int)     (val)), \
+	          \
 	          gint8:   g_strdup_printf ("%d",                (int)     (val)), \
 	          gint16:  g_strdup_printf ("%d",                (int)     (val)), \
 	          gint32:  g_strdup_printf ("%d",                (int)     (val)), \
