@@ -278,6 +278,8 @@ _nm_strndup_a_step (char *s, const char *str, gsize len)
 		char **const _out_str_free = (out_str_free); \
 		char *_s; \
 		\
+		G_STATIC_ASSERT_EXPR ((alloca_maxlen) <= 300); \
+		\
 		if (   _out_str_free \
 		    && _len >= _alloca_maxlen) { \
 			_s = g_malloc (_len + 1); \
