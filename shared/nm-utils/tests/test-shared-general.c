@@ -98,6 +98,8 @@ test_make_strv (void)
 
 	G_STATIC_ASSERT_EXPR (G_N_ELEMENTS (NM_MAKE_STRV ("a", "b"  )) == 3);
 	G_STATIC_ASSERT_EXPR (G_N_ELEMENTS (NM_MAKE_STRV ("a", "b", )) == 3);
+
+	nm_strquote_a (300, "");
 }
 
 /*****************************************************************************/

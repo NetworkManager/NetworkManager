@@ -1392,7 +1392,8 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
  * If @str is longer then @trunc_at, the string is truncated and the closing
  * quote is instead '^' to indicate truncation.
  *
- * Thus, the maximum stack allocated buffer will be @trunc_at+3. */
+ * Thus, the maximum stack allocated buffer will be @trunc_at+3. The maximum
+ * buffer size must be a constant and not larger than 300. */
 #define nm_strquote_a(trunc_at, str) \
 	({ \
 		const char *const _str = (str); \
@@ -1402,6 +1403,8 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
 				const gsize _trunc_at = (trunc_at); \
 				const gsize _strlen_trunc = NM_MIN (strlen (_str), _trunc_at); \
 				char *_buf; \
+				\
+				G_STATIC_ASSERT_EXPR ((trunc_at) <= 300); \
 				\
 				_buf = g_alloca (_strlen_trunc + 3); \
 				_buf[0] = '"'; \
@@ -1427,17 +1430,28 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
 		_buf; \
 	})
 
-#define nm_sprintf_bufa(n_elements, format, ...) \
+/* it is "unsafe" because @bufsize must not be a constant expression and
+ * there is no check at compiletime. Regardless of that, the buffer size
+ * must not be larger than 300 bytes, as this gets stack allocated. */
+#define nm_sprintf_buf_unsafe_a(bufsize, format, ...) \
 	({ \
 		char *_buf; \
 		int _buf_len; \
-		typeof (n_elements) _n_elements = (n_elements); \
+		typeof (bufsize) _bufsize = (bufsize); \
 		\
-		_buf = g_alloca (_n_elements); \
-		_buf_len = g_snprintf (_buf, _n_elements, \
+		nm_assert (_bufsize <= 300); \
+		\
+		_buf = g_alloca (_bufsize); \
+		_buf_len = g_snprintf (_buf, _bufsize, \
 		                       ""format"", ##__VA_ARGS__); \
-		nm_assert (_buf_len < _n_elements); \
+		nm_assert (_buf_len >= 0 && _buf_len < _bufsize); \
 		_buf; \
+	})
+
+#define nm_sprintf_bufa(bufsize, format, ...) \
+	({ \
+		G_STATIC_ASSERT_EXPR ((bufsize) <= 300); \
+		nm_sprintf_buf_unsafe_a ((bufsize), format, ##__VA_ARGS__); \
 	})
 
 /* aims to alloca() a buffer and fill it with printf(format, name).
@@ -1453,9 +1467,9 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
 		char *_buf2; \
 		\
 		nm_assert (_p_val_to_free && !*_p_val_to_free); \
-		if (   NM_STRLEN (format) < 200 \
-		    && _name_len < (gsize) (200 - NM_STRLEN (format))) \
-			_buf2 = nm_sprintf_bufa (NM_STRLEN (format) + _name_len, format, _name); \
+		if (   NM_STRLEN (format) <= 290 \
+		    && _name_len < (gsize) (290 - NM_STRLEN (format))) \
+			_buf2 = nm_sprintf_buf_unsafe_a (NM_STRLEN (format) + _name_len, format, _name); \
 		else { \
 			_buf2 = g_strdup_printf (format, _name); \
 			*_p_val_to_free = _buf2; \
