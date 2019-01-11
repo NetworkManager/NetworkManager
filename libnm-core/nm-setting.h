@@ -219,10 +219,15 @@ typedef struct {
 	                                 NMSettingCompareFlags flags);
 
 	/*< private >*/
+	void (*duplicate_copy_properties) (const struct _NMSettInfoSetting *sett_info,
+	                                   NMSetting *src,
+	                                   NMSetting *dst);
+
+	/*< private >*/
 	const struct _NMMetaSettingInfo *setting_info;
 
 	/*< private >*/
-	gpointer padding[6];
+	gpointer padding[5];
 } NMSettingClass;
 
 /**
