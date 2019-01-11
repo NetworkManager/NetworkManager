@@ -707,10 +707,18 @@ _nm_sett_info_property_info_get_sorted (const NMSettInfoSetting *sett_info,
 	       : &sett_info->property_infos[idx];
 }
 
-const NMSettInfoSetting *_nm_sett_info_setting_get (NMSettingClass *setting_class);
+const NMSettInfoProperty *_nm_sett_info_setting_get_property_info (const NMSettInfoSetting *sett_info,
+                                                                   const char *property_name);
 
-const NMSettInfoProperty *_nm_sett_info_property_get (NMSettingClass *setting_class,
-                                                      const char *property_name);
+const NMSettInfoSetting *_nm_setting_class_get_sett_info (NMSettingClass *setting_class);
+
+static inline const NMSettInfoProperty *
+_nm_setting_class_get_property_info (NMSettingClass *setting_class,
+                                     const char *property_name)
+{
+	return _nm_sett_info_setting_get_property_info (_nm_setting_class_get_sett_info (setting_class),
+	                                                property_name);
+}
 
 /*****************************************************************************/
 

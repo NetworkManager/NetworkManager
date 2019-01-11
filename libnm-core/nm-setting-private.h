@@ -201,6 +201,11 @@ gboolean _nm_setting_use_legacy_property (NMSetting *setting,
 
 GPtrArray  *_nm_setting_need_secrets (NMSetting *setting);
 
+gboolean _nm_setting_should_compare_secret_property (NMSetting *setting,
+                                                     NMSetting *other,
+                                                     const char *secret_name,
+                                                     NMSettingCompareFlags flags);
+
 /*****************************************************************************/
 
 #endif  /* NM_SETTING_PRIVATE_H */

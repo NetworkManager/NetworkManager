@@ -3307,11 +3307,110 @@ test_data_compare_secrets_new (NMSettingSecretFlags secret_flags,
 }
 
 static void
+_test_compare_secrets_check_diff (NMSetting *a,
+                                  NMSetting *b,
+                                  NMSettingCompareFlags flags,
+                                  gboolean exp_same_psk,
+                                  gboolean exp_same_psk_flags)
+{
+	gs_unref_hashtable GHashTable *h = NULL;
+	NMSettingDiffResult _RESULT_IN_A = NM_SETTING_DIFF_RESULT_IN_A;
+	NMSettingDiffResult _RESULT_IN_B = NM_SETTING_DIFF_RESULT_IN_B;
+	gboolean invert_results;
+	gboolean diff_result;
+	NMSettingSecretFlags a_psk_flags = nm_setting_wireless_security_get_psk_flags (NM_SETTING_WIRELESS_SECURITY (a));
+	NMSettingSecretFlags b_psk_flags = nm_setting_wireless_security_get_psk_flags (NM_SETTING_WIRELESS_SECURITY (b));
+	const char *a_psk = nm_setting_wireless_security_get_psk (NM_SETTING_WIRELESS_SECURITY (a));
+	const char *b_psk = nm_setting_wireless_security_get_psk (NM_SETTING_WIRELESS_SECURITY (b));
+
+	g_assert (NM_IS_SETTING_WIRELESS_SECURITY (a));
+	g_assert (NM_IS_SETTING_WIRELESS_SECURITY (b));
+
+	invert_results = nmtst_get_rand_bool ();
+	if (invert_results) {
+		_RESULT_IN_A = NM_SETTING_DIFF_RESULT_IN_B;
+		_RESULT_IN_B = NM_SETTING_DIFF_RESULT_IN_A;
+	}
+
+	diff_result = nm_setting_diff (a, b, flags, invert_results, &h);
+
+	g_assert (exp_same_psk_flags == (a_psk_flags == b_psk_flags));
+
+	if (nm_streq0 (a_psk, b_psk))
+		g_assert (exp_same_psk);
+	else {
+		if (flags == NM_SETTING_COMPARE_FLAG_EXACT)
+			g_assert (!exp_same_psk);
+		else if (flags == NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS) {
+			if (   !NM_FLAGS_HAS (a_psk_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED)
+			    && !NM_FLAGS_HAS (b_psk_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED))
+				g_assert (!exp_same_psk);
+			else if (   !NM_FLAGS_HAS (a_psk_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED)
+			         && NM_FLAGS_HAS (b_psk_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED))
+				g_assert (!exp_same_psk);
+			else
+				g_assert (exp_same_psk);
+		} else if (flags == NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS) {
+			if (   !NM_FLAGS_HAS (a_psk_flags, NM_SETTING_SECRET_FLAG_NOT_SAVED)
+			    && !NM_FLAGS_HAS (b_psk_flags, NM_SETTING_SECRET_FLAG_NOT_SAVED))
+				g_assert (!exp_same_psk);
+			else if (   !NM_FLAGS_HAS (a_psk_flags, NM_SETTING_SECRET_FLAG_NOT_SAVED)
+			         && NM_FLAGS_HAS (b_psk_flags, NM_SETTING_SECRET_FLAG_NOT_SAVED))
+				g_assert (!exp_same_psk);
+			else
+				g_assert (exp_same_psk);
+		} else if (flags == NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
+			g_assert (exp_same_psk);
+		else
+			g_assert_not_reached ();
+	}
+
+	g_assert (diff_result == (exp_same_psk && exp_same_psk_flags));
+	g_assert (diff_result == (!h));
+
+	if (!diff_result) {
+		if (flags == NM_SETTING_COMPARE_FLAG_EXACT)
+			g_assert (!exp_same_psk);
+		else if (   NM_IN_SET (flags, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS,
+		                              NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
+		         && (a_psk_flags != b_psk_flags)
+		         && nm_setting_wireless_security_get_psk_flags (NM_SETTING_WIRELESS_SECURITY (a)) == NM_SETTING_SECRET_FLAG_NONE)
+			g_assert (!exp_same_psk);
+		else
+			g_assert (exp_same_psk);
+
+		g_assert ((!exp_same_psk) == g_hash_table_contains (h, NM_SETTING_WIRELESS_SECURITY_PSK));
+		if (!exp_same_psk) {
+			if (nm_setting_wireless_security_get_psk (NM_SETTING_WIRELESS_SECURITY (a)))
+				g_assert_cmpint (GPOINTER_TO_UINT (g_hash_table_lookup (h, NM_SETTING_WIRELESS_SECURITY_PSK)), ==, _RESULT_IN_A);
+			else
+				g_assert_cmpint (GPOINTER_TO_UINT (g_hash_table_lookup (h, NM_SETTING_WIRELESS_SECURITY_PSK)), ==, _RESULT_IN_B);
+		}
+
+		g_assert ((!exp_same_psk_flags) == g_hash_table_contains (h, NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS));
+		if (!exp_same_psk_flags) {
+			if (nm_setting_wireless_security_get_psk_flags (NM_SETTING_WIRELESS_SECURITY (a)) != NM_SETTING_SECRET_FLAG_NONE)
+				g_assert_cmpint (GPOINTER_TO_UINT (g_hash_table_lookup (h, NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS)), ==, _RESULT_IN_A);
+			else
+				g_assert_cmpint (GPOINTER_TO_UINT (g_hash_table_lookup (h, NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS)), ==, _RESULT_IN_B);
+		}
+
+		g_assert_cmpint (g_hash_table_size (h), ==, (!exp_same_psk) + (!exp_same_psk_flags));
+	}
+
+	g_assert (diff_result == nm_setting_compare (a, b, flags));
+	g_assert (diff_result == nm_setting_compare (b, a, flags));
+
+}
+
+static void
 test_setting_compare_secrets (gconstpointer test_data)
 {
 	const TestDataCompareSecrets *data = test_data;
-	gs_unref_object NMSetting *old = NULL, *new = NULL;
-	gboolean success;
+	gs_unref_object NMConnection *conn_old = NULL;
+	gs_unref_object NMConnection *conn_new = NULL;
+	gs_unref_object NMSetting *old = NULL;
+	gs_unref_object NMSetting *new = NULL;
 
 	/* Make sure that a connection with transient/unsaved secrets compares
 	 * successfully to the same connection without those secrets.
@@ -3324,17 +3423,45 @@ test_setting_compare_secrets (gconstpointer test_data)
 	              NULL);
 	nm_setting_set_secret_flags (old, NM_SETTING_WIRELESS_SECURITY_PSK, data->secret_flags, NULL);
 
-	/* Clear the PSK from the duplicated setting */
 	new = nm_setting_duplicate (old);
-	if (data->remove_secret) {
+	if (data->remove_secret)
 		g_object_set (new, NM_SETTING_WIRELESS_SECURITY_PSK, NULL, NULL);
 
-		success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_EXACT);
-		g_assert (success == FALSE);
+	g_assert ((!data->remove_secret) == nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_EXACT));
+	g_assert ((!data->remove_secret) == nm_setting_compare (new, old, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	_test_compare_secrets_check_diff (old, new, NM_SETTING_COMPARE_FLAG_EXACT, !data->remove_secret, TRUE);
+	_test_compare_secrets_check_diff (new, old, NM_SETTING_COMPARE_FLAG_EXACT, !data->remove_secret, TRUE);
+
+	g_assert (nm_setting_compare (old, new, data->comp_flags));
+	g_assert (nm_setting_compare (new, old, data->comp_flags));
+
+	_test_compare_secrets_check_diff (old, new, data->comp_flags, TRUE, TRUE);
+	_test_compare_secrets_check_diff (new, old, data->comp_flags, TRUE, TRUE);
+
+	/* OK. Try again, but this time not only change the secret, also let the secret flags differ... */
+	if (data->secret_flags != NM_SETTING_SECRET_FLAG_NONE) {
+		nm_setting_set_secret_flags (new, NM_SETTING_WIRELESS_SECURITY_PSK, NM_SETTING_SECRET_FLAG_NONE, NULL);
+
+		_test_compare_secrets_check_diff (old, new, NM_SETTING_COMPARE_FLAG_EXACT, FALSE, FALSE);
+		_test_compare_secrets_check_diff (new, old, NM_SETTING_COMPARE_FLAG_EXACT, FALSE, FALSE);
+
+		_test_compare_secrets_check_diff (old, new, data->comp_flags, TRUE, FALSE);
+		_test_compare_secrets_check_diff (new, old, data->comp_flags, FALSE, FALSE);
+
+		nm_setting_set_secret_flags (new, NM_SETTING_WIRELESS_SECURITY_PSK, data->secret_flags, NULL);
 	}
 
-	success = nm_setting_compare (old, new, data->comp_flags);
-	g_assert (success);
+	conn_old = nmtst_create_minimal_connection ("test-compare-secrets", NULL, NM_SETTING_WIRELESS_SETTING_NAME, NULL);
+	nm_connection_add_setting (conn_old, nm_setting_duplicate (old));
+	conn_new = nm_simple_connection_new_clone (conn_old);
+	nm_connection_add_setting (conn_new, nm_setting_duplicate (new));
+
+	g_assert ((!data->remove_secret) == nm_connection_compare (conn_old, conn_new, NM_SETTING_COMPARE_FLAG_EXACT));
+	g_assert ((!data->remove_secret) == nm_connection_compare (conn_new, conn_old, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	g_assert (nm_connection_compare (conn_old, conn_new, data->comp_flags));
+	g_assert (nm_connection_compare (conn_new, conn_old, data->comp_flags));
 }
 
 static void

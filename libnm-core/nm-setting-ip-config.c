@@ -2612,44 +2612,52 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-static gboolean
-compare_property (NMSetting *setting,
+static NMTernary
+compare_property (const NMSettInfoSetting *sett_info,
+                  guint property_idx,
+                  NMSetting *setting,
                   NMSetting *other,
-                  const GParamSpec *prop_spec,
                   NMSettingCompareFlags flags)
 {
-	NMSettingIPConfigPrivate *a_priv, *b_priv;
-	NMSettingClass *setting_class;
+	NMSettingIPConfigPrivate *a_priv;
+	NMSettingIPConfigPrivate *b_priv;
 	guint i;
 
-	if (nm_streq (prop_spec->name, NM_SETTING_IP_CONFIG_ADDRESSES)) {
-		a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-		b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (other);
+	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_IP_CONFIG_ADDRESSES)) {
+		if (other) {
+			a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+			b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (other);
 
-		if (a_priv->addresses->len != b_priv->addresses->len)
-			return FALSE;
-		for (i = 0; i < a_priv->addresses->len; i++) {
-			if (!_nm_ip_address_equal (a_priv->addresses->pdata[i], b_priv->addresses->pdata[i], TRUE))
+			if (a_priv->addresses->len != b_priv->addresses->len)
 				return FALSE;
+			for (i = 0; i < a_priv->addresses->len; i++) {
+				if (!_nm_ip_address_equal (a_priv->addresses->pdata[i], b_priv->addresses->pdata[i], TRUE))
+					return FALSE;
+			}
 		}
 		return TRUE;
 	}
 
-	if (nm_streq (prop_spec->name, NM_SETTING_IP_CONFIG_ROUTES)) {
-		a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-		b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (other);
+	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_IP_CONFIG_ROUTES)) {
+		if (other) {
+			a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+			b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (other);
 
-		if (a_priv->routes->len != b_priv->routes->len)
-			return FALSE;
-		for (i = 0; i < a_priv->routes->len; i++) {
-			if (!nm_ip_route_equal_full (a_priv->routes->pdata[i], b_priv->routes->pdata[i], NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS))
+			if (a_priv->routes->len != b_priv->routes->len)
 				return FALSE;
+			for (i = 0; i < a_priv->routes->len; i++) {
+				if (!nm_ip_route_equal_full (a_priv->routes->pdata[i], b_priv->routes->pdata[i], NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS))
+					return FALSE;
+			}
 		}
 		return TRUE;
 	}
 
-	setting_class = NM_SETTING_CLASS (nm_setting_ip_config_parent_class);
-	return setting_class->compare_property (setting, other, prop_spec, flags);
+	return NM_SETTING_CLASS (nm_setting_ip_config_parent_class)->compare_property (sett_info,
+	                                                                               property_idx,
+	                                                                               setting,
+	                                                                               other,
+	                                                                               flags);
 }
 
 /*****************************************************************************/

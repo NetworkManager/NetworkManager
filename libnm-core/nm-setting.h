@@ -169,6 +169,7 @@ typedef gboolean (*NMSettingClearSecretsWithFlagsFn) (NMSetting *setting,
                                                       gpointer user_data);
 
 struct _NMMetaSettingInfo;
+struct _NMSettInfoSetting;
 
 typedef struct {
 	GObjectClass parent;
@@ -204,11 +205,18 @@ typedef struct {
 	                                         NMSettingClearSecretsWithFlagsFn func,
 	                                         gpointer user_data);
 
-	/* Returns TRUE if the given property contains the same value in both settings */
-	gboolean    (*compare_property)  (NMSetting *setting,
-	                                  NMSetting *other,
-	                                  const GParamSpec *prop_spec,
-	                                  NMSettingCompareFlags flags);
+	/* compare_property() returns a ternary, where DEFAULT means that the property should not
+	 * be compared due to the compare @flags. A TRUE/FALSE result means that the property is
+	 * equal/not-equal.
+	 *
+	 * @other may be %NULL, in which case the function only determines whether
+	 * the setting should be compared (TRUE) or not (DEFAULT). */
+	/*< private >*/
+	NMTernary  (*compare_property)  (const struct _NMSettInfoSetting *sett_info,
+	                                 guint property_idx,
+	                                 NMSetting *setting,
+	                                 NMSetting *other,
+	                                 NMSettingCompareFlags flags);
 
 	/*< private >*/
 	const struct _NMMetaSettingInfo *setting_info;
@@ -270,7 +278,7 @@ typedef enum {
 	NM_SETTING_DIFF_RESULT_IN_A =    0x00000001,
 	NM_SETTING_DIFF_RESULT_IN_B =    0x00000002,
 	NM_SETTING_DIFF_RESULT_IN_A_DEFAULT = 0x00000004,
-	NM_SETTING_DIFF_RESULT_IN_B_DEFAULT = 0x00000004,
+	NM_SETTING_DIFF_RESULT_IN_B_DEFAULT = 0x00000008,
 } NMSettingDiffResult;
 
 gboolean    nm_setting_diff          (NMSetting *a,
