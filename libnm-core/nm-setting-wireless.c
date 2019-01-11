@@ -1076,7 +1076,7 @@ set_property (GObject *object, guint prop_id,
 			 * In this case, we also clear mac-address-randomization flag */
 			if (priv->mac_address_randomization != NM_SETTING_MAC_RANDOMIZATION_DEFAULT) {
 				priv->mac_address_randomization = NM_SETTING_MAC_RANDOMIZATION_DEFAULT;
-				g_object_notify (object, NM_SETTING_WIRELESS_MAC_ADDRESS);
+				g_object_notify (object, NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION);
 			}
 		}
 		break;
