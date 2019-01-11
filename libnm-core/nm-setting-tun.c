@@ -51,16 +51,14 @@ typedef struct {
 	gboolean multi_queue;
 } NMSettingTunPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_MODE,
 	PROP_OWNER,
 	PROP_GROUP,
 	PROP_PI,
 	PROP_VNET_HDR,
 	PROP_MULTI_QUEUE,
-	LAST_PROP
-};
+);
 
 /**
  * nm_setting_tun_new:
@@ -313,14 +311,13 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_MODE,
-		 g_param_spec_uint (NM_SETTING_TUN_MODE, "", "",
-		                    0, G_MAXUINT, NM_SETTING_TUN_MODE_TUN,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_INFERRABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MODE] =
+	    g_param_spec_uint (NM_SETTING_TUN_MODE, "", "",
+	                       0, G_MAXUINT, NM_SETTING_TUN_MODE_TUN,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_INFERRABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTun:owner:
@@ -330,13 +327,12 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_OWNER,
-		 g_param_spec_string (NM_SETTING_TUN_OWNER, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_OWNER] =
+	    g_param_spec_string (NM_SETTING_TUN_OWNER, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTun:group:
@@ -346,13 +342,12 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_GROUP,
-		 g_param_spec_string (NM_SETTING_TUN_GROUP, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_GROUP] =
+	    g_param_spec_string (NM_SETTING_TUN_GROUP, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTun:pi:
@@ -362,13 +357,12 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_PI,
-		 g_param_spec_boolean (NM_SETTING_TUN_PI, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       NM_SETTING_PARAM_INFERRABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PI] =
+	    g_param_spec_boolean (NM_SETTING_TUN_PI, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          NM_SETTING_PARAM_INFERRABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTun:vnet-hdr:
@@ -378,13 +372,12 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_VNET_HDR,
-		 g_param_spec_boolean (NM_SETTING_TUN_VNET_HDR, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       NM_SETTING_PARAM_INFERRABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_VNET_HDR] =
+	    g_param_spec_boolean (NM_SETTING_TUN_VNET_HDR, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          NM_SETTING_PARAM_INFERRABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTun:multi-queue:
@@ -396,13 +389,14 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_MULTI_QUEUE,
-		 g_param_spec_boolean (NM_SETTING_TUN_MULTI_QUEUE, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       NM_SETTING_PARAM_INFERRABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MULTI_QUEUE] =
+	    g_param_spec_boolean (NM_SETTING_TUN_MULTI_QUEUE, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          NM_SETTING_PARAM_INFERRABLE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_TUN);
 }

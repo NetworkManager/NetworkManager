@@ -90,8 +90,7 @@ typedef struct {
 	NMSettingWirelessSecurityFils fils;
 } NMSettingWirelessSecurityPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettingWirelessSecurity,
 	PROP_KEY_MGMT,
 	PROP_WEP_TX_KEYIDX,
 	PROP_AUTH_ALG,
@@ -112,9 +111,7 @@ enum {
 	PROP_LEAP_PASSWORD_FLAGS,
 	PROP_WPS_METHOD,
 	PROP_FILS,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_setting_wireless_security_new:
@@ -209,7 +206,7 @@ nm_setting_wireless_security_add_proto (NMSettingWirelessSecurity *setting, cons
 	}
 
 	priv->proto = g_slist_append (priv->proto, g_ascii_strdown (proto, -1));
-	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PROTO);
+	_notify (setting, PROP_PROTO);
 	return TRUE;
 }
 
@@ -234,7 +231,7 @@ nm_setting_wireless_security_remove_proto (NMSettingWirelessSecurity *setting, g
 
 	g_free (elt->data);
 	priv->proto = g_slist_delete_link (priv->proto, elt);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PROTO);
+	_notify (setting, PROP_PROTO);
 }
 
 /**
@@ -260,7 +257,7 @@ nm_setting_wireless_security_remove_proto_by_value (NMSettingWirelessSecurity *s
 	for (iter = priv->proto; iter; iter = g_slist_next (iter)) {
 		if (strcasecmp (proto, (char *) iter->data) == 0) {
 			priv->proto = g_slist_delete_link (priv->proto, iter);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PROTO);
+			_notify (setting, PROP_PROTO);
 			return TRUE;
 		}
 	}
@@ -284,7 +281,7 @@ nm_setting_wireless_security_clear_protos (NMSettingWirelessSecurity *setting)
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
 	g_slist_free_full (priv->proto, g_free);
 	priv->proto = NULL;
-	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PROTO);
+	_notify (setting, PROP_PROTO);
 }
 
 /**
@@ -353,7 +350,7 @@ nm_setting_wireless_security_add_pairwise (NMSettingWirelessSecurity *setting, c
 	}
 
 	priv->pairwise = g_slist_append (priv->pairwise, g_ascii_strdown (pairwise, -1));
-	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
+	_notify (setting, PROP_PAIRWISE);
 	return TRUE;
 }
 
@@ -379,7 +376,7 @@ nm_setting_wireless_security_remove_pairwise (NMSettingWirelessSecurity *setting
 
 	g_free (elt->data);
 	priv->pairwise = g_slist_delete_link (priv->pairwise, elt);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
+	_notify (setting, PROP_PAIRWISE);
 }
 
 /**
@@ -406,7 +403,7 @@ nm_setting_wireless_security_remove_pairwise_by_value (NMSettingWirelessSecurity
 	for (iter = priv->pairwise; iter; iter = g_slist_next (iter)) {
 		if (strcasecmp (pairwise, (char *) iter->data) == 0) {
 			priv->pairwise = g_slist_delete_link (priv->pairwise, iter);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
+			_notify (setting, PROP_PAIRWISE);
 			return TRUE;
 		}
 	}
@@ -430,7 +427,7 @@ nm_setting_wireless_security_clear_pairwise (NMSettingWirelessSecurity *setting)
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
 	g_slist_free_full (priv->pairwise, g_free);
 	priv->pairwise = NULL;
-	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
+	_notify (setting, PROP_PAIRWISE);
 }
 
 /**
@@ -500,7 +497,7 @@ nm_setting_wireless_security_add_group (NMSettingWirelessSecurity *setting, cons
 	}
 
 	priv->group = g_slist_append (priv->group, g_ascii_strdown (group, -1));
-	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_GROUP);
+	_notify (setting, PROP_GROUP);
 	return TRUE;
 }
 
@@ -526,7 +523,7 @@ nm_setting_wireless_security_remove_group (NMSettingWirelessSecurity *setting, g
 
 	g_free (elt->data);
 	priv->group = g_slist_delete_link (priv->group, elt);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_GROUP);
+	_notify (setting, PROP_GROUP);
 }
 
 /**
@@ -554,7 +551,7 @@ nm_setting_wireless_security_remove_group_by_value (NMSettingWirelessSecurity *s
 	for (iter = priv->group; iter; iter = g_slist_next (iter)) {
 		if (strcasecmp (group, (char *) iter->data) == 0) {
 			priv->group = g_slist_delete_link (priv->group, iter);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_GROUP);
+			_notify (setting, PROP_GROUP);
 			return TRUE;
 		}
 	}
@@ -578,7 +575,7 @@ nm_setting_wireless_security_clear_groups (NMSettingWirelessSecurity *setting)
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
 	g_slist_free_full (priv->group, g_free);
 	priv->group = NULL;
-	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_GROUP);
+	_notify (setting, PROP_GROUP);
 }
 
 /*
@@ -721,22 +718,22 @@ nm_setting_wireless_security_set_wep_key (NMSettingWirelessSecurity *setting, gu
 	case 0:
 		g_free (priv->wep_key0);
 		priv->wep_key0 = g_strdup (key);
-		g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+		_notify (setting, PROP_WEP_KEY0);
 		break;
 	case 1:
 		g_free (priv->wep_key1);
 		priv->wep_key1 = g_strdup (key);
-		g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
+		_notify (setting, PROP_WEP_KEY1);
 		break;
 	case 2:
 		g_free (priv->wep_key2);
 		priv->wep_key2 = g_strdup (key);
-		g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
+		_notify (setting, PROP_WEP_KEY2);
 		break;
 	case 3:
 		g_free (priv->wep_key3);
 		priv->wep_key3 = g_strdup (key);
-		g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
+		_notify (setting, PROP_WEP_KEY3);
 		break;
 	default:
 		g_assert_not_reached ();
@@ -1465,13 +1462,12 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * description: Key management menthod.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_KEY_MGMT,
-		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_REQUIRED |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_KEY_MGMT] =
+	    g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_REQUIRED |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:wep-tx-keyidx:
@@ -1489,13 +1485,12 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * description: Index of active WEP key.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_WEP_TX_KEYIDX,
-		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, "", "",
-		                    0, 3, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WEP_TX_KEYIDX] =
+	    g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, "", "",
+	                       0, 3, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:auth-alg:
@@ -1513,12 +1508,11 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * description: Authentication algorithm for WEP.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_AUTH_ALG,
-		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_AUTH_ALG] =
+	    g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:proto:
@@ -1535,12 +1529,11 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * description: Allowed WPA protocols, WPA and WPA2 (RSN).
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_PROTO,
-		 g_param_spec_boxed (NM_SETTING_WIRELESS_SECURITY_PROTO, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PROTO] =
+	    g_param_spec_boxed (NM_SETTING_WIRELESS_SECURITY_PROTO, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:pairwise:
@@ -1558,12 +1551,11 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 *   separated list.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_PAIRWISE,
-		 g_param_spec_boxed (NM_SETTING_WIRELESS_SECURITY_PAIRWISE, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PAIRWISE] =
+	    g_param_spec_boxed (NM_SETTING_WIRELESS_SECURITY_PAIRWISE, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:group:
@@ -1581,12 +1573,11 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 *   separated list.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_GROUP,
-		 g_param_spec_boxed (NM_SETTING_WIRELESS_SECURITY_GROUP, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_GROUP] =
+	    g_param_spec_boxed (NM_SETTING_WIRELESS_SECURITY_GROUP, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:pmf:
@@ -1610,14 +1601,13 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * example: PMF=required
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_PMF,
-		 g_param_spec_int (NM_SETTING_WIRELESS_SECURITY_PMF, "", "",
-		                   G_MININT32, G_MAXINT32, 0,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_CONSTRUCT |
-		                   NM_SETTING_PARAM_FUZZY_IGNORE |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PMF] =
+	    g_param_spec_int (NM_SETTING_WIRELESS_SECURITY_PMF, "", "",
+	                      G_MININT32, G_MAXINT32, 0,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_CONSTRUCT |
+	                      NM_SETTING_PARAM_FUZZY_IGNORE |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:leap-username:
@@ -1631,12 +1621,11 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * description: Login name for LEAP.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_LEAP_USERNAME,
-		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LEAP_USERNAME] =
+	    g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:wep-key0:
@@ -1650,13 +1639,12 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * description: The first WEP key (used in most networks). See also DEFAULTKEY for key index.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_WEP_KEY0,
-		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_SECRET |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WEP_KEY0] =
+	    g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_SECRET |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:wep-key1:
@@ -1670,13 +1658,12 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * description: WEP key with index 1. See also DEFAULTKEY for key index.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_WEP_KEY1,
-		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_WEP_KEY1, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_SECRET |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WEP_KEY1] =
+	    g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_WEP_KEY1, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_SECRET |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:wep-key2:
@@ -1690,13 +1677,12 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * description: WEP key with index 2. See also DEFAULTKEY for key index.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_WEP_KEY2,
-		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_WEP_KEY2, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_SECRET |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WEP_KEY2] =
+	    g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_WEP_KEY2, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_SECRET |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:wep-key3:
@@ -1710,13 +1696,12 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * description: WEP key with index 3. See also DEFAULTKEY for key index.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_WEP_KEY3,
-		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_WEP_KEY3, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_SECRET |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WEP_KEY3] =
+	    g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_WEP_KEY3, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_SECRET |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:wep-key-flags:
@@ -1732,13 +1717,12 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * description: Password flags for KEY<i>, KEY_PASSPHRASE<i> password.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_WEP_KEY_FLAGS,
-		 g_param_spec_flags (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS, "", "",
-		                     NM_TYPE_SETTING_SECRET_FLAGS,
-		                     NM_SETTING_SECRET_FLAG_NONE,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WEP_KEY_FLAGS] =
+	    g_param_spec_flags (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS, "", "",
+	                        NM_TYPE_SETTING_SECRET_FLAGS,
+	                        NM_SETTING_SECRET_FLAG_NONE,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:psk:
@@ -1756,13 +1740,12 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * description: Pre-Shared-Key for WPA networks.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_PSK,
-		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_PSK, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_SECRET |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PSK] =
+	    g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_PSK, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_SECRET |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:psk-flags:
@@ -1778,13 +1761,12 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * example: WPA_PSK_FLAGS=user
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_PSK_FLAGS,
-		 g_param_spec_flags (NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS, "", "",
-		                     NM_TYPE_SETTING_SECRET_FLAGS,
-		                     NM_SETTING_SECRET_FLAG_NONE,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PSK_FLAGS] =
+	    g_param_spec_flags (NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS, "", "",
+	                        NM_TYPE_SETTING_SECRET_FLAGS,
+	                        NM_SETTING_SECRET_FLAG_NONE,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:leap-password:
@@ -1799,13 +1781,12 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 *  lookaside file, or it can be owned by a secret agent.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_LEAP_PASSWORD,
-		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_SECRET |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LEAP_PASSWORD] =
+	    g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_SECRET |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:leap-password-flags:
@@ -1820,13 +1801,12 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * description: Password flags for IEEE_8021X_PASSWORD_FLAGS.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_LEAP_PASSWORD_FLAGS,
-		 g_param_spec_flags (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS, "", "",
-		                     NM_TYPE_SETTING_SECRET_FLAGS,
-		                     NM_SETTING_SECRET_FLAG_NONE,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LEAP_PASSWORD_FLAGS] =
+	    g_param_spec_flags (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS, "", "",
+	                        NM_TYPE_SETTING_SECRET_FLAGS,
+	                        NM_SETTING_SECRET_FLAG_NONE,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:wep-key-type:
@@ -1848,18 +1828,16 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * example: KEY1=s:ahoj, KEY1=0a1c45bc02, KEY_PASSPHRASE1=mysupersecretkey
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_WEP_KEY_TYPE,
-		 g_param_spec_enum (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, "", "",
-		                    NM_TYPE_WEP_KEY_TYPE,
-		                    NM_WEP_KEY_TYPE_UNKNOWN,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WEP_KEY_TYPE] =
+	    g_param_spec_enum (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, "", "",
+	                       NM_TYPE_WEP_KEY_TYPE,
+	                       NM_WEP_KEY_TYPE_UNKNOWN,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       G_PARAM_STATIC_STRINGS);
 
 	_properties_override_add_transform (properties_override,
-	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                  NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE),
+	                                    obj_properties[PROP_WEP_KEY_TYPE],
 	                                    G_VARIANT_TYPE_UINT32,
 	                                    wep_key_type_to_dbus,
 	                                    NULL);
@@ -1885,14 +1863,13 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * example: WPS_METHOD=disabled, WPS_METHOD="pin pbc"
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_WPS_METHOD,
-		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_WPS_METHOD, "", "",
-		                    0, G_MAXUINT32, NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_FUZZY_IGNORE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WPS_METHOD] =
+	    g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_WPS_METHOD, "", "",
+	                       0, G_MAXUINT32, NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWirelessSecurity:fils:
@@ -1916,14 +1893,15 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 * example: FILS=required
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_FILS,
-		 g_param_spec_int (NM_SETTING_WIRELESS_SECURITY_FILS, "", "",
-		                   G_MININT32, G_MAXINT32, 0,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_CONSTRUCT |
-		                   NM_SETTING_PARAM_FUZZY_IGNORE |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_FILS] =
+	    g_param_spec_int (NM_SETTING_WIRELESS_SECURITY_FILS, "", "",
+	                      G_MININT32, G_MAXINT32, 0,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_CONSTRUCT |
+	                      NM_SETTING_PARAM_FUZZY_IGNORE |
+	                      G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_WIRELESS_SECURITY,
 	                               NULL, properties_override);

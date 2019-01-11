@@ -51,13 +51,10 @@ typedef struct {
 	char *mac_address;
 } NMSettingWimaxPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_NETWORK_NAME,
 	PROP_MAC_ADDRESS,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_setting_wimax_new:
@@ -227,12 +224,11 @@ nm_setting_wimax_class_init (NMSettingWimaxClass *klass)
 	 *
 	 * Deprecated: 1.2: WiMAX is no longer supported.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NETWORK_NAME,
-		 g_param_spec_string (NM_SETTING_WIMAX_NETWORK_NAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NETWORK_NAME] =
+	    g_param_spec_string (NM_SETTING_WIMAX_NETWORK_NAME, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWimax:mac-address:
@@ -243,19 +239,19 @@ nm_setting_wimax_class_init (NMSettingWimaxClass *klass)
 	 *
 	 * Deprecated: 1.2: WiMAX is no longer supported.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MAC_ADDRESS,
-		 g_param_spec_string (NM_SETTING_WIMAX_MAC_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MAC_ADDRESS] =
+	    g_param_spec_string (NM_SETTING_WIMAX_MAC_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	_properties_override_add_transform (properties_override,
-	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                  NM_SETTING_WIMAX_MAC_ADDRESS),
+	                                    obj_properties[PROP_MAC_ADDRESS],
 	                                    G_VARIANT_TYPE_BYTESTRING,
 	                                    _nm_utils_hwaddr_to_dbus,
 	                                    _nm_utils_hwaddr_from_dbus);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_WIMAX,
 	                               NULL, properties_override);

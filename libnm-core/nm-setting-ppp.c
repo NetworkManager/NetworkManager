@@ -60,8 +60,7 @@ typedef struct {
 	guint32 lcp_echo_interval;
 } NMSettingPppPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_NOAUTH,
 	PROP_REFUSE_EAP,
 	PROP_REFUSE_PAP,
@@ -80,9 +79,7 @@ enum {
 	PROP_MTU,
 	PROP_LCP_ECHO_FAILURE,
 	PROP_LCP_ECHO_INTERVAL,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_setting_ppp_new:
@@ -542,120 +539,111 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	 * authenticate itself to the client.  If %FALSE, require authentication
 	 * from the remote side.  In almost all cases, this should be %TRUE.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NOAUTH,
-		 g_param_spec_boolean (NM_SETTING_PPP_NOAUTH, "", "",
-		                       TRUE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NOAUTH] =
+	    g_param_spec_boolean (NM_SETTING_PPP_NOAUTH, "", "",
+	                          TRUE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:refuse-eap:
 	 *
 	 * If %TRUE, the EAP authentication method will not be used.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_REFUSE_EAP,
-		 g_param_spec_boolean (NM_SETTING_PPP_REFUSE_EAP, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_REFUSE_EAP] =
+	    g_param_spec_boolean (NM_SETTING_PPP_REFUSE_EAP, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:refuse-pap:
 	 *
 	 * If %TRUE, the PAP authentication method will not be used.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_REFUSE_PAP,
-		 g_param_spec_boolean (NM_SETTING_PPP_REFUSE_PAP, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_REFUSE_PAP] =
+	    g_param_spec_boolean (NM_SETTING_PPP_REFUSE_PAP, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:refuse-chap:
 	 *
 	 * If %TRUE, the CHAP authentication method will not be used.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_REFUSE_CHAP,
-		 g_param_spec_boolean (NM_SETTING_PPP_REFUSE_CHAP, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_REFUSE_CHAP] =
+	    g_param_spec_boolean (NM_SETTING_PPP_REFUSE_CHAP, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:refuse-mschap:
 	 *
 	 * If %TRUE, the MSCHAP authentication method will not be used.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_REFUSE_MSCHAP,
-		 g_param_spec_boolean (NM_SETTING_PPP_REFUSE_MSCHAP, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_REFUSE_MSCHAP] =
+	    g_param_spec_boolean (NM_SETTING_PPP_REFUSE_MSCHAP, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:refuse-mschapv2:
 	 *
 	 * If %TRUE, the MSCHAPv2 authentication method will not be used.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_REFUSE_MSCHAPV2,
-		 g_param_spec_boolean (NM_SETTING_PPP_REFUSE_MSCHAPV2, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_REFUSE_MSCHAPV2] =
+	    g_param_spec_boolean (NM_SETTING_PPP_REFUSE_MSCHAPV2, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:nobsdcomp:
 	 *
 	 * If %TRUE, BSD compression will not be requested.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NOBSDCOMP,
-		 g_param_spec_boolean (NM_SETTING_PPP_NOBSDCOMP, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       NM_SETTING_PARAM_FUZZY_IGNORE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NOBSDCOMP] =
+	    g_param_spec_boolean (NM_SETTING_PPP_NOBSDCOMP, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          NM_SETTING_PARAM_FUZZY_IGNORE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:nodeflate:
 	 *
 	 * If %TRUE, "deflate" compression will not be requested.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NODEFLATE,
-		 g_param_spec_boolean (NM_SETTING_PPP_NODEFLATE, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       NM_SETTING_PARAM_FUZZY_IGNORE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NODEFLATE] =
+	    g_param_spec_boolean (NM_SETTING_PPP_NODEFLATE, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          NM_SETTING_PARAM_FUZZY_IGNORE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:no-vj-comp:
 	 *
 	 * If %TRUE, Van Jacobsen TCP header compression will not be requested.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NO_VJ_COMP,
-		 g_param_spec_boolean (NM_SETTING_PPP_NO_VJ_COMP, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       NM_SETTING_PARAM_FUZZY_IGNORE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NO_VJ_COMP] =
+	    g_param_spec_boolean (NM_SETTING_PPP_NO_VJ_COMP, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          NM_SETTING_PARAM_FUZZY_IGNORE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:require-mppe:
@@ -665,13 +653,12 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	 * session will fail.  Note that MPPE is not used on mobile broadband
 	 * connections.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_REQUIRE_MPPE,
-		 g_param_spec_boolean (NM_SETTING_PPP_REQUIRE_MPPE, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_REQUIRE_MPPE] =
+	    g_param_spec_boolean (NM_SETTING_PPP_REQUIRE_MPPE, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:require-mppe-128:
@@ -680,12 +667,11 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	 * required for the PPP session, and the "require-mppe" property must also
 	 * be set to %TRUE.  If 128-bit MPPE is not available the session will fail.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_REQUIRE_MPPE_128,
-		 g_param_spec_boolean (NM_SETTING_PPP_REQUIRE_MPPE_128, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE  | G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_REQUIRE_MPPE_128] =
+	    g_param_spec_boolean (NM_SETTING_PPP_REQUIRE_MPPE_128, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE  | G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:mppe-stateful:
@@ -693,13 +679,12 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	 * If %TRUE, stateful MPPE is used.  See pppd documentation for more
 	 * information on stateful MPPE.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MPPE_STATEFUL,
-		 g_param_spec_boolean (NM_SETTING_PPP_MPPE_STATEFUL, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MPPE_STATEFUL] =
+	    g_param_spec_boolean (NM_SETTING_PPP_MPPE_STATEFUL, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:crtscts:
@@ -708,13 +693,12 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	 * flow control with RTS and CTS signals.  This value should normally be set
 	 * to %FALSE.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CRTSCTS,
-		 g_param_spec_boolean (NM_SETTING_PPP_CRTSCTS, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CRTSCTS] =
+	    g_param_spec_boolean (NM_SETTING_PPP_CRTSCTS, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:baud:
@@ -723,14 +707,13 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	 * baudrate.  This value should normally be left as 0 to automatically
 	 * choose the speed.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_BAUD,
-		 g_param_spec_uint (NM_SETTING_PPP_BAUD, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_FUZZY_IGNORE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_BAUD] =
+	    g_param_spec_uint (NM_SETTING_PPP_BAUD, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:mru:
@@ -739,13 +722,12 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	 * larger than the specified size.  If non-zero, the MRU should be between
 	 * 128 and 16384.
 	 */
-	g_object_class_install_property
-		(object_class, PROP_MRU,
-		 g_param_spec_uint (NM_SETTING_PPP_MRU, "", "",
-		                    0, 16384, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MRU] =
+	    g_param_spec_uint (NM_SETTING_PPP_MRU, "", "",
+	                       0, 16384, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:mtu:
@@ -753,14 +735,13 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	 * If non-zero, instruct pppd to send packets no larger than the specified
 	 * size.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MTU,
-		 g_param_spec_uint (NM_SETTING_PPP_MTU, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_FUZZY_IGNORE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MTU] =
+	    g_param_spec_uint (NM_SETTING_PPP_MTU, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:lcp-echo-failure:
@@ -770,14 +751,13 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	 * peer.  The "lcp-echo-interval" property must also be set to a non-zero
 	 * value if this property is used.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_LCP_ECHO_FAILURE,
-		 g_param_spec_uint (NM_SETTING_PPP_LCP_ECHO_FAILURE, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_FUZZY_IGNORE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LCP_ECHO_FAILURE] =
+	    g_param_spec_uint (NM_SETTING_PPP_LCP_ECHO_FAILURE, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPpp:lcp-echo-interval:
@@ -787,14 +767,15 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	 * peers will respond to echo requests and some will not, and it is not
 	 * possible to autodetect this.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_LCP_ECHO_INTERVAL,
-		 g_param_spec_uint (NM_SETTING_PPP_LCP_ECHO_INTERVAL, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_FUZZY_IGNORE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LCP_ECHO_INTERVAL] =
+	    g_param_spec_uint (NM_SETTING_PPP_LCP_ECHO_INTERVAL, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_PPP);
 }

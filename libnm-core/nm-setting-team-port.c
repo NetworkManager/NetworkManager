@@ -54,8 +54,7 @@ typedef struct {
 } NMSettingTeamPortPrivate;
 
 /* Keep aligned with _prop_to_keys[] */
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettingTeamPort,
 	PROP_CONFIG,
 	PROP_QUEUE_ID,
 	PROP_PRIO,
@@ -63,12 +62,10 @@ enum {
 	PROP_LACP_PRIO,
 	PROP_LACP_KEY,
 	PROP_LINK_WATCHERS,
-	LAST_PROP
-};
+);
 
 /* Keep aligned with team-port properties enum */
-static const _NMUtilsTeamPropertyKeys _prop_to_keys[LAST_PROP] = {
-	[PROP_0] =             { NULL, NULL, NULL, 0 },
+static const _NMUtilsTeamPropertyKeys _prop_to_keys[_PROPERTY_ENUMS_LAST] = {
 	[PROP_CONFIG] =        { NULL, NULL, NULL, 0 },
 	[PROP_QUEUE_ID] =      { "queue_id", NULL, NULL, NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT },
 	[PROP_PRIO] =          { "prio", NULL, NULL, 0 },
@@ -251,7 +248,7 @@ nm_setting_team_port_add_link_watcher (NMSettingTeamPort *setting,
 	}
 
 	g_ptr_array_add (priv->link_watchers, nm_team_link_watcher_dup (link_watcher));
-	g_object_notify (G_OBJECT (setting), NM_SETTING_TEAM_PORT_LINK_WATCHERS);
+	_notify (setting, PROP_LINK_WATCHERS);
 	return TRUE;
 }
 
@@ -273,7 +270,7 @@ nm_setting_team_port_remove_link_watcher (NMSettingTeamPort *setting, guint idx)
 	g_return_if_fail (idx < priv->link_watchers->len);
 
 	g_ptr_array_remove_index (priv->link_watchers, idx);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_TEAM_PORT_LINK_WATCHERS);
+	_notify (setting, PROP_LINK_WATCHERS);
 }
 
 /**
@@ -299,7 +296,7 @@ nm_setting_team_port_remove_link_watcher_by_value (NMSettingTeamPort *setting,
 	for (i = 0; i < priv->link_watchers->len; i++) {
 		if (nm_team_link_watcher_equal (priv->link_watchers->pdata[i], link_watcher)) {
 			g_ptr_array_remove_index (priv->link_watchers, i);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_TEAM_PORT_LINK_WATCHERS);
+			_notify (setting, PROP_LINK_WATCHERS);
 			return TRUE;
 		}
 	}
@@ -323,7 +320,7 @@ nm_setting_team_port_clear_link_watchers (NMSettingTeamPort *setting)
 
 	if (priv->link_watchers->len != 0) {
 		g_ptr_array_set_size (priv->link_watchers, 0);
-		g_object_notify (G_OBJECT (setting), NM_SETTING_TEAM_PORT_LINK_WATCHERS);
+		_notify (setting, PROP_LINK_WATCHERS);
 	}
 }
 
@@ -634,13 +631,12 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	 * description: Team port configuration in JSON. See man teamd.conf for details.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_CONFIG,
-		 g_param_spec_string (NM_SETTING_TEAM_PORT_CONFIG, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CONFIG] =
+	    g_param_spec_string (NM_SETTING_TEAM_PORT_CONFIG, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTeamPort:queue-id:
@@ -650,12 +646,11 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	 *
 	 * Since: 1.12
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_QUEUE_ID,
-		 g_param_spec_int (NM_SETTING_TEAM_PORT_QUEUE_ID, "", "",
-		                   G_MININT32, G_MAXINT32, 0,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_QUEUE_ID] =
+	    g_param_spec_int (NM_SETTING_TEAM_PORT_QUEUE_ID, "", "",
+	                      G_MININT32, G_MAXINT32, 0,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTeamPort:prio:
@@ -664,12 +659,11 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	 *
 	 * Since: 1.12
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PRIO,
-		 g_param_spec_int (NM_SETTING_TEAM_PORT_PRIO, "", "",
-		                   G_MININT32, G_MAXINT32, 0,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PRIO] =
+	    g_param_spec_int (NM_SETTING_TEAM_PORT_PRIO, "", "",
+	                      G_MININT32, G_MAXINT32, 0,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTeamPort:sticky:
@@ -678,12 +672,11 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	 *
 	 * Since: 1.12
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_STICKY,
-		 g_param_spec_boolean (NM_SETTING_TEAM_PORT_STICKY, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_STICKY] =
+	    g_param_spec_boolean (NM_SETTING_TEAM_PORT_STICKY, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTeamPort:lacp-prio:
@@ -692,12 +685,11 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	 *
 	 * Since: 1.12
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_LACP_PRIO,
-		 g_param_spec_int (NM_SETTING_TEAM_PORT_LACP_PRIO, "", "",
-		                   G_MININT32, G_MAXINT32, 0,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LACP_PRIO] =
+	    g_param_spec_int (NM_SETTING_TEAM_PORT_LACP_PRIO, "", "",
+	                      G_MININT32, G_MAXINT32, 0,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTeamPort:lacp-key:
@@ -706,12 +698,11 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	 *
 	 * Since: 1.12
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_LACP_KEY,
-		 g_param_spec_int (NM_SETTING_TEAM_PORT_LACP_KEY, "", "",
-		                   G_MININT32, G_MAXINT32, 0,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LACP_KEY] =
+	    g_param_spec_int (NM_SETTING_TEAM_PORT_LACP_KEY, "", "",
+	                      G_MININT32, G_MAXINT32, 0,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTeamPort:link-watchers: (type GPtrArray(NMTeamLinkWatcher))
@@ -727,19 +718,19 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	 *
 	 * Since: 1.12
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_LINK_WATCHERS,
-		 g_param_spec_boxed (NM_SETTING_TEAM_PORT_LINK_WATCHERS, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LINK_WATCHERS] =
+	    g_param_spec_boxed (NM_SETTING_TEAM_PORT_LINK_WATCHERS, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	_properties_override_add_transform (properties_override,
-	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                  NM_SETTING_TEAM_PORT_LINK_WATCHERS),
+	                                    obj_properties[PROP_LINK_WATCHERS],
 	                                    G_VARIANT_TYPE ("aa{sv}"),
 	                                    team_link_watchers_to_dbus,
 	                                    team_link_watchers_from_dbus);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_TEAM_PORT,
 	                               NULL, properties_override);

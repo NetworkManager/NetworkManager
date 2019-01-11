@@ -33,11 +33,9 @@
  * necessary for Open vSwitch interfaces.
  **/
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_TYPE,
-	LAST_PROP
-};
+);
 
 /**
  * NMSettingOvsInterface:
@@ -379,14 +377,15 @@ nm_setting_ovs_interface_class_init (NMSettingOvsInterfaceClass *klass)
 	 *
 	 * Since: 1.10
 	 **/
-	g_object_class_install_property
-	        (object_class, PROP_TYPE,
-	         g_param_spec_string (NM_SETTING_OVS_INTERFACE_TYPE, "", "",
-	                              NULL,
-	                              G_PARAM_READWRITE |
-	                              G_PARAM_CONSTRUCT |
-	                              NM_SETTING_PARAM_INFERRABLE |
-	                              G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TYPE] =
+	    g_param_spec_string (NM_SETTING_OVS_INTERFACE_TYPE, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_OVS_INTERFACE);
 }

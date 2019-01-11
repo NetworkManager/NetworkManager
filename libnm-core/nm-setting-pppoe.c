@@ -50,16 +50,13 @@ typedef struct {
 	NMSettingSecretFlags password_flags;
 } NMSettingPppoePrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_PARENT,
 	PROP_SERVICE,
 	PROP_USERNAME,
 	PROP_PASSWORD,
 	PROP_PASSWORD_FLAGS,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_setting_pppoe_new:
@@ -310,14 +307,13 @@ nm_setting_pppoe_class_init (NMSettingPppoeClass *klass)
 	 *
 	 * Since: 1.10
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PARENT,
-		 g_param_spec_string (NM_SETTING_PPPOE_PARENT, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PARENT] =
+	    g_param_spec_string (NM_SETTING_PPPOE_PARENT, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPppoe:service:
@@ -327,50 +323,48 @@ nm_setting_pppoe_class_init (NMSettingPppoeClass *klass)
 	 * this should be left blank.  It is only required if there are multiple
 	 * access concentrators or a specific service is known to be required.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_SERVICE,
-		 g_param_spec_string (NM_SETTING_PPPOE_SERVICE, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SERVICE] =
+	    g_param_spec_string (NM_SETTING_PPPOE_SERVICE, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPppoe:username:
 	 *
 	 * Username used to authenticate with the PPPoE service.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_USERNAME,
-		 g_param_spec_string (NM_SETTING_PPPOE_USERNAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_USERNAME] =
+	    g_param_spec_string (NM_SETTING_PPPOE_USERNAME, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPppoe:password:
 	 *
 	 * Password used to authenticate with the PPPoE service.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PASSWORD,
-		 g_param_spec_string (NM_SETTING_PPPOE_PASSWORD, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_SECRET |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PASSWORD] =
+	    g_param_spec_string (NM_SETTING_PPPOE_PASSWORD, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_SECRET |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingPppoe:password-flags:
 	 *
 	 * Flags indicating how to handle the #NMSettingPppoe:password property.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PASSWORD_FLAGS,
-		 g_param_spec_flags (NM_SETTING_PPPOE_PASSWORD_FLAGS, "", "",
-		                     NM_TYPE_SETTING_SECRET_FLAGS,
-		                     NM_SETTING_SECRET_FLAG_NONE,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PASSWORD_FLAGS] =
+	    g_param_spec_flags (NM_SETTING_PPPOE_PASSWORD_FLAGS, "", "",
+	                        NM_TYPE_SETTING_SECRET_FLAGS,
+	                        NM_SETTING_SECRET_FLAG_NONE,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_PPPOE);
 }

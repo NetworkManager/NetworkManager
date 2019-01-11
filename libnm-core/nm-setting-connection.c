@@ -84,8 +84,7 @@ typedef struct {
 	int llmnr;
 } NMSettingConnectionPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettingConnection,
 	PROP_ID,
 	PROP_UUID,
 	PROP_INTERFACE_NAME,
@@ -109,9 +108,7 @@ enum {
 	PROP_LLMNR,
 	PROP_STABLE_ID,
 	PROP_AUTH_RETRIES,
-
-	LAST_PROP
-};
+);
 
 /*****************************************************************************/
 
@@ -431,7 +428,7 @@ nm_setting_connection_add_permission (NMSettingConnection *setting,
 	p = permission_new (pitem);
 	g_return_val_if_fail (p != NULL, FALSE);
 	priv->permissions = g_slist_append (priv->permissions, p);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_PERMISSIONS);
+	_notify (setting, PROP_PERMISSIONS);
 
 	return TRUE;
 }
@@ -458,7 +455,7 @@ nm_setting_connection_remove_permission (NMSettingConnection *setting,
 
 	permission_free ((Permission *) iter->data);
 	priv->permissions = g_slist_delete_link (priv->permissions, iter);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_PERMISSIONS);
+	_notify (setting, PROP_PERMISSIONS);
 }
 
 /**
@@ -498,7 +495,7 @@ nm_setting_connection_remove_permission_by_value (NMSettingConnection *setting,
 		if (strcmp (pitem, p->item) == 0) {
 			permission_free ((Permission *) iter->data);
 			priv->permissions = g_slist_delete_link (priv->permissions, iter);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_PERMISSIONS);
+			_notify (setting, PROP_PERMISSIONS);
 			return TRUE;
 		}
 	}
@@ -771,7 +768,7 @@ nm_setting_connection_add_secondary (NMSettingConnection *setting,
 	}
 
 	priv->secondaries = g_slist_append (priv->secondaries, g_strdup (sec_uuid));
-	g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_SECONDARIES);
+	_notify (setting, PROP_SECONDARIES);
 	return TRUE;
 }
 
@@ -796,7 +793,7 @@ nm_setting_connection_remove_secondary (NMSettingConnection *setting, guint32 id
 
 	g_free (elt->data);
 	priv->secondaries = g_slist_delete_link (priv->secondaries, elt);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_SECONDARIES);
+	_notify (setting, PROP_SECONDARIES);
 }
 
 /**
@@ -823,7 +820,7 @@ nm_setting_connection_remove_secondary_by_value (NMSettingConnection *setting,
 	for (iter = priv->secondaries; iter; iter = g_slist_next (iter)) {
 		if (!strcmp (sec_uuid, (char *) iter->data)) {
 			priv->secondaries = g_slist_delete_link (priv->secondaries, iter);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_SECONDARIES);
+			_notify (setting, PROP_SECONDARIES);
 			return TRUE;
 		}
 	}
@@ -1568,13 +1565,12 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * description: User friendly name for the connection profile.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_ID,
-		 g_param_spec_string (NM_SETTING_CONNECTION_ID, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_FUZZY_IGNORE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ID] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_ID, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_FUZZY_IGNORE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:uuid:
@@ -1599,13 +1595,12 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 *   creates the UUID itself (by hashing the filename).
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_UUID,
-		 g_param_spec_string (NM_SETTING_CONNECTION_UUID, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_FUZZY_IGNORE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_UUID] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_UUID, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_FUZZY_IGNORE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:stable-id:
@@ -1653,13 +1648,12 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * description: Token to generate stable IDs.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_STABLE_ID,
-		 g_param_spec_string (NM_SETTING_CONNECTION_STABLE_ID, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_FUZZY_IGNORE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_STABLE_ID] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_STABLE_ID, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_FUZZY_IGNORE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:interface-name:
@@ -1684,17 +1678,15 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 *   can be required for some connection types.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_INTERFACE_NAME,
-		 g_param_spec_string (NM_SETTING_CONNECTION_INTERFACE_NAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_INTERFACE_NAME] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_INTERFACE_NAME, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	_properties_override_add_override (properties_override,
-	                                   g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                 NM_SETTING_CONNECTION_INTERFACE_NAME),
+	                                   obj_properties[PROP_INTERFACE_NAME],
 	                                   G_VARIANT_TYPE_STRING,
 	                                   NULL,
 	                                   nm_setting_connection_set_interface_name,
@@ -1718,13 +1710,12 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * example: TYPE=Ethernet; TYPE=Bond; TYPE=Bridge; DEVICETYPE=TeamPort
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_TYPE,
-		 g_param_spec_string (NM_SETTING_CONNECTION_TYPE, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TYPE] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_TYPE, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:permissions:
@@ -1751,12 +1742,11 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * example: USERS="joe bob"
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_PERMISSIONS,
-		 g_param_spec_boxed (NM_SETTING_CONNECTION_PERMISSIONS, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PERMISSIONS] =
+	    g_param_spec_boxed (NM_SETTING_CONNECTION_PERMISSIONS, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:autoconnect:
@@ -1777,14 +1767,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * description: Whether the connection should be autoconnected (not only while booting).
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_AUTOCONNECT,
-		 g_param_spec_boolean (NM_SETTING_CONNECTION_AUTOCONNECT, "", "",
-		                       TRUE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       NM_SETTING_PARAM_FUZZY_IGNORE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_AUTOCONNECT] =
+	    g_param_spec_boolean (NM_SETTING_CONNECTION_AUTOCONNECT, "", "",
+	                          TRUE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          NM_SETTING_PARAM_FUZZY_IGNORE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:autoconnect-priority:
@@ -1803,8 +1792,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * example: AUTOCONNECT_PRIORITY=20
 	 * ---end---
 	 */
-	g_object_class_install_property
-	    (object_class, PROP_AUTOCONNECT_PRIORITY,
+	obj_properties[PROP_AUTOCONNECT_PRIORITY] =
 	     g_param_spec_int (NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY, "", "",
 	                       NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MIN,
 	                       NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MAX,
@@ -1812,7 +1800,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
-	                       G_PARAM_STATIC_STRINGS));
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:autoconnect-retries:
@@ -1832,14 +1820,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * example: AUTOCONNECT_RETRIES=1
 	 * ---end---
 	 */
-	g_object_class_install_property
-	    (object_class, PROP_AUTOCONNECT_RETRIES,
+	obj_properties[PROP_AUTOCONNECT_RETRIES] =
 	     g_param_spec_int (NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES, "", "",
 	                       -1, G_MAXINT32, -1,
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
-	                       G_PARAM_STATIC_STRINGS));
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:multi-connect:
@@ -1857,13 +1844,12 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * example: ZONE=3
 	 * ---end---
 	 */
-	g_object_class_install_property
-	    (object_class, PROP_MULTI_CONNECT,
+	obj_properties[PROP_MULTI_CONNECT] =
 	     g_param_spec_int (NM_SETTING_CONNECTION_MULTI_CONNECT, "", "",
 	                       G_MININT32, G_MAXINT32, NM_CONNECTION_MULTI_CONNECT_DEFAULT,
 	                       G_PARAM_READWRITE |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
-	                       G_PARAM_STATIC_STRINGS));
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:timestamp:
@@ -1876,14 +1862,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * timestamp. The property is only meant for reading (changes to this
 	 * property will not be preserved).
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_TIMESTAMP,
-		 g_param_spec_uint64 (NM_SETTING_CONNECTION_TIMESTAMP, "", "",
-		                      0, G_MAXUINT64, 0,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT |
-		                      NM_SETTING_PARAM_FUZZY_IGNORE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TIMESTAMP] =
+	    g_param_spec_uint64 (NM_SETTING_CONNECTION_TIMESTAMP, "", "",
+	                         0, G_MAXUINT64, 0,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT |
+	                         NM_SETTING_PARAM_FUZZY_IGNORE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:read-only:
@@ -1892,14 +1877,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * service's D-Bus interface with the right privileges, or %TRUE if the
 	 * connection is read-only and cannot be modified.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_READ_ONLY,
-		 g_param_spec_boolean (NM_SETTING_CONNECTION_READ_ONLY, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       NM_SETTING_PARAM_FUZZY_IGNORE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_READ_ONLY] =
+	    g_param_spec_boolean (NM_SETTING_CONNECTION_READ_ONLY, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          NM_SETTING_PARAM_FUZZY_IGNORE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:zone:
@@ -1920,15 +1904,14 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * example: ZONE=Work
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_ZONE,
-		 g_param_spec_string (NM_SETTING_CONNECTION_ZONE, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT |
-		                      NM_SETTING_PARAM_FUZZY_IGNORE |
-		                      NM_SETTING_PARAM_REAPPLY_IMMEDIATELY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ZONE] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_ZONE, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT |
+	                         NM_SETTING_PARAM_FUZZY_IGNORE |
+	                         NM_SETTING_PARAM_REAPPLY_IMMEDIATELY |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:master:
@@ -1944,14 +1927,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 *   for compatibility with legacy tooling.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_MASTER,
-		 g_param_spec_string (NM_SETTING_CONNECTION_MASTER, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_FUZZY_IGNORE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MASTER] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_MASTER, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_FUZZY_IGNORE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:slave-type:
@@ -1970,14 +1952,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 *   and BRIDGE_UUID for bridging.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_SLAVE_TYPE,
-		 g_param_spec_string (NM_SETTING_CONNECTION_SLAVE_TYPE, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_FUZZY_IGNORE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SLAVE_TYPE] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_SLAVE_TYPE, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_FUZZY_IGNORE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:autoconnect-slaves:
@@ -2002,15 +1983,14 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 *   when this connection is activated.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_AUTOCONNECT_SLAVES,
-		 g_param_spec_enum (NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES, "", "",
-		                    NM_TYPE_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
-		                    NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_FUZZY_IGNORE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_AUTOCONNECT_SLAVES] =
+	    g_param_spec_enum (NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES, "", "",
+	                       NM_TYPE_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
+	                       NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:secondaries:
@@ -2026,13 +2006,12 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 *   together with this connection.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_SECONDARIES,
-		 g_param_spec_boxed (NM_SETTING_CONNECTION_SECONDARIES, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_FUZZY_IGNORE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SECONDARIES] =
+	    g_param_spec_boxed (NM_SETTING_CONNECTION_SECONDARIES, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READWRITE |
+	                        NM_SETTING_PARAM_FUZZY_IGNORE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:gateway-ping-timeout:
@@ -2049,13 +2028,12 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * example: GATEWAY_PING_TIMEOUT=5
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_GATEWAY_PING_TIMEOUT,
-		 g_param_spec_uint (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, "", "",
-		                    0, 600, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_GATEWAY_PING_TIMEOUT] =
+	    g_param_spec_uint (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, "", "",
+	                       0, 600, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:metered:
@@ -2075,14 +2053,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * example: CONNECTION_METERED=yes
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_METERED,
-		 g_param_spec_enum (NM_SETTING_CONNECTION_METERED, "", "",
-		                    NM_TYPE_METERED,
-		                    NM_METERED_UNKNOWN,
-		                    G_PARAM_READWRITE |
-		                    NM_SETTING_PARAM_REAPPLY_IMMEDIATELY |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_METERED] =
+	    g_param_spec_enum (NM_SETTING_CONNECTION_METERED, "", "",
+	                       NM_TYPE_METERED,
+	                       NM_METERED_UNKNOWN,
+	                       G_PARAM_READWRITE |
+	                       NM_SETTING_PARAM_REAPPLY_IMMEDIATELY |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:lldp:
@@ -2100,14 +2077,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * example: LLDP=no
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_LLDP,
-		 g_param_spec_int (NM_SETTING_CONNECTION_LLDP, "", "",
-		                   G_MININT32, G_MAXINT32, NM_SETTING_CONNECTION_LLDP_DEFAULT,
-		                   NM_SETTING_PARAM_FUZZY_IGNORE |
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_CONSTRUCT |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LLDP] =
+	    g_param_spec_int (NM_SETTING_CONNECTION_LLDP, "", "",
+	                      G_MININT32, G_MAXINT32, NM_SETTING_CONNECTION_LLDP_DEFAULT,
+	                      NM_SETTING_PARAM_FUZZY_IGNORE |
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_CONSTRUCT |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:auth-retries:
@@ -2127,14 +2103,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * description: Number of retries for authentication.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_AUTH_RETRIES,
-		 g_param_spec_int (NM_SETTING_CONNECTION_AUTH_RETRIES, "", "",
-		                   -1, G_MAXINT32, -1,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_CONSTRUCT |
-		                   NM_SETTING_PARAM_FUZZY_IGNORE |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_AUTH_RETRIES] =
+	    g_param_spec_int (NM_SETTING_CONNECTION_AUTH_RETRIES, "", "",
+	                      -1, G_MAXINT32, -1,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_CONSTRUCT |
+	                      NM_SETTING_PARAM_FUZZY_IGNORE |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:mdns:
@@ -2159,13 +2134,12 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * example: MDNS=yes
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_MDNS,
-		 g_param_spec_int (NM_SETTING_CONNECTION_MDNS, "", "",
-		                   G_MININT32, G_MAXINT32,
-		                   NM_SETTING_CONNECTION_MDNS_DEFAULT,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MDNS] =
+	    g_param_spec_int (NM_SETTING_CONNECTION_MDNS, "", "",
+	                      G_MININT32, G_MAXINT32,
+	                      NM_SETTING_CONNECTION_MDNS_DEFAULT,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:llmnr:
@@ -2193,13 +2167,14 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * example: LLMNR=yes
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_LLMNR,
-		 g_param_spec_int (NM_SETTING_CONNECTION_LLMNR, "", "",
-		                   G_MININT32, G_MAXINT32,
-		                   NM_SETTING_CONNECTION_LLMNR_DEFAULT,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LLMNR] =
+	    g_param_spec_int (NM_SETTING_CONNECTION_LLMNR, "", "",
+	                      G_MININT32, G_MAXINT32,
+	                      NM_SETTING_CONNECTION_LLMNR_DEFAULT,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_CONNECTION,
 	                               NULL, properties_override);

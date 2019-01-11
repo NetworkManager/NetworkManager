@@ -50,15 +50,12 @@ typedef struct {
 	char *pac_script;
 } NMSettingProxyPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_METHOD,
 	PROP_BROWSER_ONLY,
 	PROP_PAC_URL,
 	PROP_PAC_SCRIPT,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_setting_proxy_new:
@@ -312,13 +309,12 @@ nm_setting_proxy_class_init (NMSettingProxyClass *klass)
 	 * values: none, auto
 	 * ---end---
 	 */
-	g_object_class_install_property
-	    (object_class, PROP_METHOD,
-	     g_param_spec_int (NM_SETTING_PROXY_METHOD, "", "",
-	                       G_MININT32, G_MAXINT32, NM_SETTING_PROXY_METHOD_NONE,
-	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
-	                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_METHOD] =
+	    g_param_spec_int (NM_SETTING_PROXY_METHOD, "", "",
+	                      G_MININT32, G_MAXINT32, NM_SETTING_PROXY_METHOD_NONE,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_CONSTRUCT |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingProxy:browser-only:
@@ -334,12 +330,11 @@ nm_setting_proxy_class_init (NMSettingProxyClass *klass)
 	 * description: Whether the proxy configuration is for browser only.
 	 * ---end---
 	 */
-	g_object_class_install_property
-	    (object_class, PROP_BROWSER_ONLY,
-	     g_param_spec_boolean (NM_SETTING_PROXY_BROWSER_ONLY, "", "",
-	                           FALSE,
-	                           G_PARAM_READWRITE |
-	                           G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_BROWSER_ONLY] =
+	    g_param_spec_boolean (NM_SETTING_PROXY_BROWSER_ONLY, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingProxy:pac-url:
@@ -355,12 +350,11 @@ nm_setting_proxy_class_init (NMSettingProxyClass *klass)
 	 * example: PAC_URL=http://wpad.mycompany.com/wpad.dat
 	 * ---end---
 	 */
-	g_object_class_install_property
-	    (object_class, PROP_PAC_URL,
-	     g_param_spec_string (NM_SETTING_PROXY_PAC_URL, "", "",
-	                          NULL,
-	                          G_PARAM_READWRITE |
-	                          G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PAC_URL] =
+	    g_param_spec_string (NM_SETTING_PROXY_PAC_URL, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingProxy:pac-script:
@@ -376,12 +370,13 @@ nm_setting_proxy_class_init (NMSettingProxyClass *klass)
 	 * example: PAC_SCRIPT=/home/joe/proxy.pac
 	 * ---end---
 	 */
-	g_object_class_install_property
-	    (object_class, PROP_PAC_SCRIPT,
-	     g_param_spec_string (NM_SETTING_PROXY_PAC_SCRIPT, "", "",
-	                          NULL,
-	                          G_PARAM_READWRITE |
-	                          G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PAC_SCRIPT] =
+	    g_param_spec_string (NM_SETTING_PROXY_PAC_SCRIPT, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_PROXY);
 }

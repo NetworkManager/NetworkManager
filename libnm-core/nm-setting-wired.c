@@ -61,8 +61,7 @@ typedef struct {
 	char *wol_password;
 } NMSettingWiredPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettingWired,
 	PROP_PORT,
 	PROP_SPEED,
 	PROP_DUPLEX,
@@ -77,9 +76,7 @@ enum {
 	PROP_S390_OPTIONS,
 	PROP_WAKE_ON_LAN,
 	PROP_WAKE_ON_LAN_PASSWORD,
-
-	LAST_PROP
-};
+);
 
 static const char *valid_s390_opts[] = {
 	"portno", "layer2", "portname", "protocol", "priority_queueing",
@@ -288,7 +285,7 @@ nm_setting_wired_add_mac_blacklist_item (NMSettingWired *setting, const char *ma
 
 	mac = nm_utils_hwaddr_canonical (mac, ETH_ALEN);
 	g_array_append_val (priv->mac_address_blacklist, mac);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
+	_notify (setting, PROP_MAC_ADDRESS_BLACKLIST);
 	return TRUE;
 }
 
@@ -310,7 +307,7 @@ nm_setting_wired_remove_mac_blacklist_item (NMSettingWired *setting, guint32 idx
 	g_return_if_fail (idx < priv->mac_address_blacklist->len);
 
 	g_array_remove_index (priv->mac_address_blacklist, idx);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
+	_notify (setting, PROP_MAC_ADDRESS_BLACKLIST);
 }
 
 /**
@@ -338,7 +335,7 @@ nm_setting_wired_remove_mac_blacklist_item_by_value (NMSettingWired *setting, co
 		candidate = g_array_index (priv->mac_address_blacklist, char *, i);
 		if (!nm_utils_hwaddr_matches (mac, -1, candidate, -1)) {
 			g_array_remove_index (priv->mac_address_blacklist, i);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
+			_notify (setting, PROP_MAC_ADDRESS_BLACKLIST);
 			return TRUE;
 		}
 	}
@@ -357,7 +354,7 @@ nm_setting_wired_clear_mac_blacklist_items (NMSettingWired *setting)
 	g_return_if_fail (NM_IS_SETTING_WIRED (setting));
 
 	g_array_set_size (NM_SETTING_WIRED_GET_PRIVATE (setting)->mac_address_blacklist, 0);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
+	_notify (setting, PROP_MAC_ADDRESS_BLACKLIST);
 }
 
 /**
@@ -530,7 +527,7 @@ nm_setting_wired_add_s390_option (NMSettingWired *setting,
 	g_hash_table_insert (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options,
 	                     g_strdup (key),
 	                     g_strdup (value));
-	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRED_S390_OPTIONS);
+	_notify (setting, PROP_S390_OPTIONS);
 	return TRUE;
 }
 
@@ -557,7 +554,7 @@ nm_setting_wired_remove_s390_option (NMSettingWired *setting,
 
 	found = g_hash_table_remove (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options, key);
 	if (found)
-		g_object_notify (G_OBJECT (setting), NM_SETTING_WIRED_S390_OPTIONS);
+		_notify (setting, PROP_S390_OPTIONS);
 	return found;
 }
 
@@ -1009,12 +1006,11 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	 * description: The property is not saved by the plugin.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_PORT,
-		 g_param_spec_string (NM_SETTING_WIRED_PORT, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PORT] =
+	    g_param_spec_string (NM_SETTING_WIRED_PORT, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWired:speed:
@@ -1040,13 +1036,12 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	 *    parameter in the ETHTOOL_OPTS variable.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_SPEED,
-		 g_param_spec_uint (NM_SETTING_WIRED_SPEED, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SPEED] =
+	    g_param_spec_uint (NM_SETTING_WIRED_SPEED, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWired:duplex:
@@ -1071,12 +1066,11 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	 *    "duplex" parameter in the ETHOOL_OPTS variable.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_DUPLEX,
-		 g_param_spec_string (NM_SETTING_WIRED_DUPLEX, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DUPLEX] =
+	    g_param_spec_string (NM_SETTING_WIRED_DUPLEX, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWired:auto-negotiate:
@@ -1098,17 +1092,15 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	 *    "speed" and "duplex" parameters (skips link configuration).
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_AUTO_NEGOTIATE,
-		 g_param_spec_boolean (NM_SETTING_WIRED_AUTO_NEGOTIATE, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_AUTO_NEGOTIATE] =
+	    g_param_spec_boolean (NM_SETTING_WIRED_AUTO_NEGOTIATE, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	_properties_override_add_override (properties_override,
-	                                   g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                 NM_SETTING_WIRED_AUTO_NEGOTIATE),
+	                                   obj_properties[PROP_AUTO_NEGOTIATE],
 	                                   G_VARIANT_TYPE_BOOLEAN,
 	                                   _override_autoneg_get,
 	                                   NULL,
@@ -1138,17 +1130,15 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	 *    permanent MAC address exists, the MAC address initially configured on the device.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_MAC_ADDRESS,
-		 g_param_spec_string (NM_SETTING_WIRED_MAC_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MAC_ADDRESS] =
+	    g_param_spec_string (NM_SETTING_WIRED_MAC_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	_properties_override_add_transform (properties_override,
-	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                  NM_SETTING_WIRED_MAC_ADDRESS),
+	                                    obj_properties[PROP_MAC_ADDRESS],
 	                                    G_VARIANT_TYPE_BYTESTRING,
 	                                    _nm_utils_hwaddr_to_dbus,
 	                                    _nm_utils_hwaddr_from_dbus);
@@ -1196,17 +1186,15 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	 *    For libnm and nmcli, this field is called "cloned-mac-address".
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_CLONED_MAC_ADDRESS,
-		 g_param_spec_string (NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CLONED_MAC_ADDRESS] =
+	    g_param_spec_string (NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	_properties_override_add_override (properties_override,
-	                                     g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                   NM_SETTING_WIRED_CLONED_MAC_ADDRESS),
+	                                     obj_properties[PROP_CLONED_MAC_ADDRESS],
 	                                     G_VARIANT_TYPE_BYTESTRING,
 	                                     _nm_utils_hwaddr_cloned_get,
 	                                     _nm_utils_hwaddr_cloned_set,
@@ -1269,13 +1257,12 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	 *   cloned-mac-address.
 	 * ---end---
 	 */
-	g_object_class_install_property
-	    (object_class, PROP_GENERATE_MAC_ADDRESS_MASK,
+	obj_properties[PROP_GENERATE_MAC_ADDRESS_MASK] =
 	     g_param_spec_string (NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK, "", "",
 	                          NULL,
 	                          G_PARAM_READWRITE |
 	                          NM_SETTING_PARAM_FUZZY_IGNORE |
-	                          G_PARAM_STATIC_STRINGS));
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWired:mac-address-blacklist:
@@ -1299,13 +1286,12 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	 * example: HWADDR_BLACKLIST="00:22:68:11:69:08 00:11:22:11:44:55"
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_MAC_ADDRESS_BLACKLIST,
-		 g_param_spec_boxed (NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_FUZZY_IGNORE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MAC_ADDRESS_BLACKLIST] =
+	    g_param_spec_boxed (NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READWRITE |
+	                        NM_SETTING_PARAM_FUZZY_IGNORE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWired:mtu:
@@ -1319,14 +1305,13 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	 * description: MTU of the interface.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_MTU,
-		 g_param_spec_uint (NM_SETTING_WIRED_MTU, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_FUZZY_IGNORE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MTU] =
+	    g_param_spec_uint (NM_SETTING_WIRED_MTU, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWired:s390-subchannels:
@@ -1346,13 +1331,12 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	 * example: SUBCHANNELS=0.0.b00a,0.0.b00b,0.0.b00c
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_S390_SUBCHANNELS,
-		 g_param_spec_boxed (NM_SETTING_WIRED_S390_SUBCHANNELS, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_S390_SUBCHANNELS] =
+	    g_param_spec_boxed (NM_SETTING_WIRED_S390_SUBCHANNELS, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READWRITE |
+	                        NM_SETTING_PARAM_INFERRABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWired:s390-nettype:
@@ -1368,13 +1352,12 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	 * example: NETTYPE=qeth
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_S390_NETTYPE,
-		 g_param_spec_string (NM_SETTING_WIRED_S390_NETTYPE, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_S390_NETTYPE] =
+	    g_param_spec_string (NM_SETTING_WIRED_S390_NETTYPE, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWired:s390-options: (type GHashTable(utf8,utf8)):
@@ -1391,17 +1374,15 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	 *   "portname" and "ctcprot" that have their own variables.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_S390_OPTIONS,
-		 g_param_spec_boxed (NM_SETTING_WIRED_S390_OPTIONS, "", "",
-		                     G_TYPE_HASH_TABLE,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_S390_OPTIONS] =
+	    g_param_spec_boxed (NM_SETTING_WIRED_S390_OPTIONS, "", "",
+	                        G_TYPE_HASH_TABLE,
+	                        G_PARAM_READWRITE |
+	                        NM_SETTING_PARAM_INFERRABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	_properties_override_add_transform (properties_override,
-	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                  NM_SETTING_WIRED_S390_OPTIONS),
+	                                    obj_properties[PROP_S390_OPTIONS],
 	                                    G_VARIANT_TYPE ("a{ss}"),
 	                                    _nm_utils_strdict_to_dbus,
 	                                    _nm_utils_strdict_from_dbus);
@@ -1420,13 +1401,12 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_WAKE_ON_LAN,
-		 g_param_spec_uint (NM_SETTING_WIRED_WAKE_ON_LAN, "", "",
-		                    0, G_MAXUINT32, NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT,
-		                    G_PARAM_CONSTRUCT |
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WAKE_ON_LAN] =
+	    g_param_spec_uint (NM_SETTING_WIRED_WAKE_ON_LAN, "", "",
+	                       0, G_MAXUINT32, NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT,
+	                       G_PARAM_CONSTRUCT |
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWired:wake-on-lan-password:
@@ -1437,12 +1417,13 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_WAKE_ON_LAN_PASSWORD,
-		 g_param_spec_string (NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WAKE_ON_LAN_PASSWORD] =
+	    g_param_spec_string (NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_WIRED,
 	                               NULL, properties_override);

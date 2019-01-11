@@ -63,15 +63,12 @@ typedef struct {
 	char *dhcp_duid;
 } NMSettingIP6ConfigPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_IP6_PRIVACY,
 	PROP_ADDR_GEN_MODE,
 	PROP_TOKEN,
 	PROP_DHCP_DUID,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_setting_ip6_config_new:
@@ -749,14 +746,13 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	 * example: IPV6_PRIVACY=rfc3041 IPV6_PRIVACY_PREFER_PUBLIC_IP=yes
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_IP6_PRIVACY,
-		 g_param_spec_enum (NM_SETTING_IP6_CONFIG_IP6_PRIVACY, "", "",
-		                    NM_TYPE_SETTING_IP6_CONFIG_PRIVACY,
-		                    NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IP6_PRIVACY] =
+	    g_param_spec_enum (NM_SETTING_IP6_CONFIG_IP6_PRIVACY, "", "",
+	                       NM_TYPE_SETTING_IP6_CONFIG_PRIVACY,
+	                       NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIP6Config:addr-gen-mode:
@@ -799,14 +795,13 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	 * example: IPV6_ADDR_GEN_MODE=stable-privacy
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_ADDR_GEN_MODE,
-		 g_param_spec_int (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, "", "",
-		                   G_MININT, G_MAXINT,
-		                   NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_CONSTRUCT |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ADDR_GEN_MODE] =
+	    g_param_spec_int (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, "", "",
+	                      G_MININT, G_MAXINT,
+	                      NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_CONSTRUCT |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIP6Config:token:
@@ -823,13 +818,12 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	 * example: IPV6_TOKEN=::53
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_TOKEN,
-		 g_param_spec_string (NM_SETTING_IP6_CONFIG_TOKEN, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TOKEN] =
+	    g_param_spec_string (NM_SETTING_IP6_CONFIG_TOKEN, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIP6Config:dhcp-duid:
@@ -876,12 +870,11 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	 * example: DHCPV6_DUID=LL; DHCPV6_DUID=0301deadbeef0001; DHCPV6_DUID=03:01:de:ad:be:ef:00:01
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_DHCP_DUID,
-		 g_param_spec_string (NM_SETTING_IP6_CONFIG_DHCP_DUID, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DHCP_DUID] =
+	    g_param_spec_string (NM_SETTING_IP6_CONFIG_DHCP_DUID, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/* IP6-specific property overrides */
 
@@ -975,6 +968,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	                                    G_VARIANT_TYPE ("aa{sv}"),
 	                                    ip6_route_data_get,
 	                                    ip6_route_data_set);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_IP6_CONFIG,
 	                               NULL, properties_override);

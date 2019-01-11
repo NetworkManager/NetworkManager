@@ -49,16 +49,13 @@ typedef struct {
 	guint32 mtu;
 } NMSettingCdmaPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_NUMBER,
 	PROP_USERNAME,
 	PROP_PASSWORD,
 	PROP_PASSWORD_FLAGS,
 	PROP_MTU,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_setting_cdma_new:
@@ -305,12 +302,11 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *klass)
 	 * broadband network, if any.  If not specified, the default number (#777)
 	 * is used when required.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NUMBER,
-		 g_param_spec_string (NM_SETTING_CDMA_NUMBER, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NUMBER] =
+	    g_param_spec_string (NM_SETTING_CDMA_NUMBER, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingCdma:username:
@@ -319,12 +315,11 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *klass)
 	 * providers do not require a username, or accept any username.  But if a
 	 * username is required, it is specified here.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_USERNAME,
-		 g_param_spec_string (NM_SETTING_CDMA_USERNAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_USERNAME] =
+	    g_param_spec_string (NM_SETTING_CDMA_USERNAME, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingCdma:password:
@@ -333,26 +328,24 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *klass)
 	 * providers do not require a password, or accept any password.  But if a
 	 * password is required, it is specified here.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PASSWORD,
-		 g_param_spec_string (NM_SETTING_CDMA_PASSWORD, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_SECRET |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PASSWORD] =
+	    g_param_spec_string (NM_SETTING_CDMA_PASSWORD, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_SECRET |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingCdma:password-flags:
 	 *
 	 * Flags indicating how to handle the #NMSettingCdma:password property.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PASSWORD_FLAGS,
-		 g_param_spec_flags (NM_SETTING_CDMA_PASSWORD_FLAGS, "", "",
-		                     NM_TYPE_SETTING_SECRET_FLAGS,
-		                     NM_SETTING_SECRET_FLAG_NONE,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PASSWORD_FLAGS] =
+	    g_param_spec_flags (NM_SETTING_CDMA_PASSWORD_FLAGS, "", "",
+	                        NM_TYPE_SETTING_SECRET_FLAGS,
+	                        NM_SETTING_SECRET_FLAG_NONE,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingCdma:mtu:
@@ -362,14 +355,15 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *klass)
 	 *
 	 * Since: 1.8
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MTU,
-		 g_param_spec_uint (NM_SETTING_CDMA_MTU, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_FUZZY_IGNORE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MTU] =
+	    g_param_spec_uint (NM_SETTING_CDMA_MTU, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_CDMA);
 }

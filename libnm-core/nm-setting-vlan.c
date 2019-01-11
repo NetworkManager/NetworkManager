@@ -53,15 +53,13 @@ typedef struct {
 	GSList *egress_priority_map;
 } NMSettingVlanPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettingVlan,
 	PROP_PARENT,
 	PROP_ID,
 	PROP_FLAGS,
 	PROP_INGRESS_PRIORITY_MAP,
 	PROP_EGRESS_PRIORITY_MAP,
-	LAST_PROP
-};
+);
 
 #define MAX_SKB_PRIO   G_MAXUINT32
 #define MAX_8021P_PRIO 7  /* Max 802.1p priority */
@@ -214,10 +212,10 @@ set_map (NMSettingVlan *self, NMVlanPriorityMap map, GSList *list)
 
 	if (map == NM_VLAN_INGRESS_MAP) {
 		NM_SETTING_VLAN_GET_PRIVATE (self)->ingress_priority_map = list;
-		g_object_notify (G_OBJECT (self), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP);
+		_notify (self, PROP_INGRESS_PRIORITY_MAP);
 	} else if (map == NM_VLAN_EGRESS_MAP) {
 		NM_SETTING_VLAN_GET_PRIVATE (self)->egress_priority_map = list;
-		g_object_notify (G_OBJECT (self), NM_SETTING_VLAN_EGRESS_PRIORITY_MAP);
+		_notify (self, PROP_EGRESS_PRIORITY_MAP);
 	} else
 		g_assert_not_reached ();
 }
@@ -273,9 +271,9 @@ nm_setting_vlan_add_priority_str (NMSettingVlan *setting,
 	if (check_replace_duplicate_priority (list, item->from, item->to)) {
 		g_free (item);
 		if (map == NM_VLAN_INGRESS_MAP)
-			g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP);
+			_notify (setting, PROP_INGRESS_PRIORITY_MAP);
 		else
-			g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_EGRESS_PRIORITY_MAP);
+			_notify (setting, PROP_EGRESS_PRIORITY_MAP);
 		return TRUE;
 	}
 
@@ -377,9 +375,9 @@ nm_setting_vlan_add_priority (NMSettingVlan *setting,
 	list = get_map (setting, map);
 	if (check_replace_duplicate_priority (list, from, to)) {
 		if (map == NM_VLAN_INGRESS_MAP)
-			g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP);
+			_notify (setting, PROP_INGRESS_PRIORITY_MAP);
 		else
-			g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_EGRESS_PRIORITY_MAP);
+			_notify (setting, PROP_EGRESS_PRIORITY_MAP);
 		return TRUE;
 	}
 
@@ -857,14 +855,13 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	 * description: Parent interface of the VLAN.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_PARENT,
-		 g_param_spec_string (NM_SETTING_VLAN_PARENT, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PARENT] =
+	    g_param_spec_string (NM_SETTING_VLAN_PARENT, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingVlan:id:
@@ -878,14 +875,13 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	 * description: VLAN identifier.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_ID,
-		 g_param_spec_uint (NM_SETTING_VLAN_ID, "", "",
-		                    0, 4095, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_INFERRABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ID] =
+	    g_param_spec_uint (NM_SETTING_VLAN_ID, "", "",
+	                       0, 4095, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_INFERRABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingVlan:flags:
@@ -909,19 +905,17 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	 * description: VLAN flags.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_FLAGS,
-		 g_param_spec_flags (NM_SETTING_VLAN_FLAGS, "", "",
-		                     NM_TYPE_VLAN_FLAGS,
-		                     NM_VLAN_FLAG_REORDER_HEADERS,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_CONSTRUCT |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_FLAGS] =
+	    g_param_spec_flags (NM_SETTING_VLAN_FLAGS, "", "",
+	                        NM_TYPE_VLAN_FLAGS,
+	                        NM_VLAN_FLAG_REORDER_HEADERS,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_CONSTRUCT |
+	                        NM_SETTING_PARAM_INFERRABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	_properties_override_add_override (properties_override,
-	                                   g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                 NM_SETTING_VLAN_FLAGS),
+	                                   obj_properties[PROP_FLAGS],
 	                                   NULL,
 	                                   _override_flags_get,
 	                                   NULL,
@@ -941,13 +935,12 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	 * example: VLAN_INGRESS_PRIORITY_MAP=4:2,3:5
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_INGRESS_PRIORITY_MAP,
-		 g_param_spec_boxed (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_INGRESS_PRIORITY_MAP] =
+	    g_param_spec_boxed (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READWRITE |
+	                        NM_SETTING_PARAM_INFERRABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingVlan:egress-priority-map:
@@ -963,13 +956,12 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	 * example: VLAN_EGRESS_PRIORITY_MAP=5:4,4:1,3:7
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_EGRESS_PRIORITY_MAP,
-		 g_param_spec_boxed (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_EGRESS_PRIORITY_MAP] =
+	    g_param_spec_boxed (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READWRITE |
+	                        NM_SETTING_PARAM_INFERRABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/* ---ifcfg-rh---
 	 * property: interface-name
@@ -992,6 +984,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	                                    G_VARIANT_TYPE_STRING,
 	                                    _nm_setting_get_deprecated_virtual_interface_name,
 	                                    NULL);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_VLAN,
 	                               NULL, properties_override);

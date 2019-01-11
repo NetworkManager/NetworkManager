@@ -59,13 +59,10 @@ typedef struct {
 	char *dhcp_fqdn;
 } NMSettingIP4ConfigPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_DHCP_CLIENT_ID,
 	PROP_DHCP_FQDN,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_setting_ip4_config_new:
@@ -747,12 +744,11 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 	 * example: DHCP_CLIENT_ID=ax-srv-1; DHCP_CLIENT_ID=01:44:44:44:44:44:44
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_DHCP_CLIENT_ID,
-		 g_param_spec_string (NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DHCP_CLIENT_ID] =
+	    g_param_spec_string (NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/* ---ifcfg-rh---
 	 * property: dad-timeout
@@ -791,12 +787,11 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 	 * example: DHCP_FQDN=foo.bar.com
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_DHCP_FQDN,
-		 g_param_spec_string (NM_SETTING_IP4_CONFIG_DHCP_FQDN, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DHCP_FQDN] =
+	    g_param_spec_string (NM_SETTING_IP4_CONFIG_DHCP_FQDN, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/* IP4-specific property overrides */
 
@@ -901,6 +896,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 	                                    G_VARIANT_TYPE ("aa{sv}"),
 	                                    ip4_route_data_get,
 	                                    ip4_route_data_set);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_IP4_CONFIG,
 	                               NULL, properties_override);

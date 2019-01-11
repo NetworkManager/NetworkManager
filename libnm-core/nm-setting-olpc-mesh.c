@@ -49,14 +49,11 @@ typedef struct {
 	char *dhcp_anycast_addr;
 } NMSettingOlpcMeshPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_SSID,
 	PROP_CHANNEL,
 	PROP_DHCP_ANYCAST_ADDRESS,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_setting_olpc_mesh_new:
@@ -231,27 +228,25 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *klass)
 	 *
 	 * SSID of the mesh network to join.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_SSID,
-		 g_param_spec_boxed (NM_SETTING_OLPC_MESH_SSID, "", "",
-		                     G_TYPE_BYTES,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SSID] =
+	    g_param_spec_boxed (NM_SETTING_OLPC_MESH_SSID, "", "",
+	                        G_TYPE_BYTES,
+	                        G_PARAM_READWRITE |
+	                        NM_SETTING_PARAM_INFERRABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingOlpcMesh:channel:
 	 *
 	 * Channel on which the mesh network to join is located.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CHANNEL,
-		 g_param_spec_uint (NM_SETTING_OLPC_MESH_CHANNEL, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_INFERRABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CHANNEL] =
+	    g_param_spec_uint (NM_SETTING_OLPC_MESH_CHANNEL, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_INFERRABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingOlpcMesh:dhcp-anycast-address:
@@ -260,19 +255,19 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *klass)
 	 * The specific anycast address used determines which DHCP server class
 	 * answers the request.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DHCP_ANYCAST_ADDRESS,
-		 g_param_spec_string (NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DHCP_ANYCAST_ADDRESS] =
+	    g_param_spec_string (NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	_properties_override_add_transform (properties_override,
-	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                  NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS),
+	                                    obj_properties[PROP_DHCP_ANYCAST_ADDRESS],
 	                                    G_VARIANT_TYPE_BYTESTRING,
 	                                    _nm_utils_hwaddr_to_dbus,
 	                                    _nm_utils_hwaddr_from_dbus);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_OLPC_MESH,
 	                               NULL, properties_override);
