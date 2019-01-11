@@ -255,10 +255,12 @@ nm_memdup (gconstpointer data, gsize size)
 static inline char *
 _nm_strndup_a_step (char *s, const char *str, gsize len)
 {
+	NM_PRAGMA_WARNING_DISABLE ("-Wstringop-truncation");
 	if (len > 0)
 		strncpy (s, str, len);
 	s[len] = '\0';
 	return s;
+	NM_PRAGMA_WARNING_REENABLE;
 }
 
 /* Similar to g_strndup(), however, if the string (including the terminating
@@ -269,7 +271,12 @@ _nm_strndup_a_step (char *s, const char *str, gsize len)
  *
  * In case malloc() is necessary, @out_str_free will be set (this string
  * must be freed afterwards). It is permissible to pass %NULL as @out_str_free,
- * if you ensure that len < alloca_maxlen. */
+ * if you ensure that len < alloca_maxlen.
+ *
+ * Note that just like g_strndup(), this always returns a buffer with @len + 1
+ * bytes, even if strlen(@str) is shorter than that (NUL terminated early). We fill
+ * the buffer with strncpy(), which means, that @str is copied up to the first
+ * NUL character and then filled with NUL characters. */
 #define nm_strndup_a(alloca_maxlen, str, len, out_str_free) \
 	({ \
 		const gsize _alloca_maxlen = (alloca_maxlen); \

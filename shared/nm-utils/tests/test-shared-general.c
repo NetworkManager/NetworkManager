@@ -152,6 +152,58 @@ test_nm_strdup_int (void)
 
 /*****************************************************************************/
 
+static void
+test_nm_strndup_a (void)
+{
+	int run;
+
+	for (run = 0; run < 20; run++) {
+		gs_free char *input = NULL;
+		char ch;
+		gsize i, l;
+
+		input = g_strnfill (nmtst_get_rand_int () % 20, 'x');
+
+		for (i = 0; input[i]; i++) {
+			while ((ch = ((char) nmtst_get_rand_int ())) == '\0') {
+				/* repeat. */
+			}
+			input[i] = ch;
+		}
+
+		{
+			gs_free char *dup_free = NULL;
+			const char *dup;
+
+			l = strlen (input) + 1;
+			dup = nm_strndup_a (10, input, l - 1, &dup_free);
+			g_assert_cmpstr (dup, ==, input);
+			if (strlen (dup) < 10)
+				g_assert (!dup_free);
+			else
+				g_assert (dup == dup_free);
+		}
+
+		{
+			gs_free char *dup_free = NULL;
+			const char *dup;
+
+			l = nmtst_get_rand_int () % 23;
+			dup = nm_strndup_a (10, input, l, &dup_free);
+			g_assert (strncmp (dup, input, l) == 0);
+			g_assert (strlen (dup) <= l);
+			if (l < 10)
+				g_assert (!dup_free);
+			else
+				g_assert (dup == dup_free);
+			if (strlen (input) < l)
+				g_assert (nm_utils_memeqzero (&dup[strlen (input)], l - strlen (input)));
+		}
+	}
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -162,6 +214,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/general/test_nmhash", test_nmhash);
 	g_test_add_func ("/general/test_nm_make_strv", test_make_strv);
 	g_test_add_func ("/general/test_nm_strdup_int", test_nm_strdup_int);
+	g_test_add_func ("/general/test_nm_strndup_a", test_nm_strndup_a);
 
 	return g_test_run ();
 }
