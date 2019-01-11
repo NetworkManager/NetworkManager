@@ -539,12 +539,16 @@ _nm_sett_info_setting_get_property_info (const NMSettInfoSetting *sett_info,
 const NMSettInfoSetting *
 _nm_setting_class_get_sett_info (NMSettingClass *setting_class)
 {
-	if (   NM_IS_SETTING_CLASS (setting_class)
-	    && setting_class->setting_info) {
-		nm_assert (setting_class->setting_info->meta_type < G_N_ELEMENTS (_sett_info_settings));
-		return &_sett_info_settings[setting_class->setting_info->meta_type];
-	}
-	return NULL;
+	const NMSettInfoSetting *sett_info;
+
+	if (   !NM_IS_SETTING_CLASS (setting_class)
+	    || !setting_class->setting_info)
+		return NULL;
+
+	nm_assert (setting_class->setting_info->meta_type < G_N_ELEMENTS (_sett_info_settings));
+	sett_info = &_sett_info_settings[setting_class->setting_info->meta_type];
+	nm_assert (sett_info->setting_class == setting_class);
+	return sett_info;
 }
 
 /*****************************************************************************/
@@ -1070,34 +1074,18 @@ _gobject_copy_property (GObject *src,
 	g_object_set_property (dst, property_name, &value);
 }
 
-/**
- * nm_setting_duplicate:
- * @setting: the #NMSetting to duplicate
- *
- * Duplicates a #NMSetting.
- *
- * Returns: (transfer full): a new #NMSetting containing the same properties and values as the
- * source #NMSetting
- **/
-NMSetting *
-nm_setting_duplicate (NMSetting *setting)
+static void
+duplicate_copy_properties (const NMSettInfoSetting *sett_info,
+                           NMSetting *src,
+                           NMSetting *dst)
 {
-	const NMSettInfoSetting *sett_info;
-	GObject *dup;
-
-	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
-
-	dup = g_object_new (G_OBJECT_TYPE (setting), NULL);
-
-	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
-
 	if (sett_info->detail.gendata_info) {
-		GenData *gendata = _gendata_hash (setting, FALSE);
+		GenData *gendata = _gendata_hash (src, FALSE);
 
 		if (   gendata
 		    && g_hash_table_size (gendata->hash) > 0) {
 			GHashTableIter iter;
-			GHashTable *h = _gendata_hash (NM_SETTING (dup), TRUE)->hash;
+			GHashTable *h = _gendata_hash (dst, TRUE)->hash;
 			const char *key;
 			GVariant *val;
 
@@ -1115,29 +1103,58 @@ nm_setting_duplicate (NMSetting *setting)
 		guint i;
 
 		for (i = 0; i < sett_info->property_infos_len; i++) {
-			GParamSpec *prop_spec = sett_info->property_infos[i].param_spec;
+			const NMSettInfoProperty *property_info = &sett_info->property_infos[i];
 
-			if (!prop_spec)
-				continue;
-			if ((prop_spec->flags & (G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY)) != G_PARAM_WRITABLE)
-				continue;
+			if (property_info->param_spec) {
+				if ((property_info->param_spec->flags & (G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY)) != G_PARAM_WRITABLE)
+					continue;
 
-			if (!frozen) {
-				g_object_freeze_notify (dup);
-				frozen = TRUE;
+				if (!frozen) {
+					g_object_freeze_notify (G_OBJECT (dst));
+					frozen = TRUE;
+				}
+				_gobject_copy_property (G_OBJECT (src),
+				                        G_OBJECT (dst),
+				                        property_info->param_spec->name,
+				                        G_PARAM_SPEC_VALUE_TYPE (property_info->param_spec));
+				continue;
 			}
-
-			_gobject_copy_property (G_OBJECT (setting),
-			                        dup,
-			                        prop_spec->name,
-			                        G_PARAM_SPEC_VALUE_TYPE (prop_spec));
 		}
 
 		if (frozen)
-			g_object_thaw_notify (dup);
+			g_object_thaw_notify (G_OBJECT (dst));
 	}
+}
 
-	return NM_SETTING (dup);
+/**
+ * nm_setting_duplicate:
+ * @setting: the #NMSetting to duplicate
+ *
+ * Duplicates a #NMSetting.
+ *
+ * Returns: (transfer full): a new #NMSetting containing the same properties and values as the
+ * source #NMSetting
+ **/
+NMSetting *
+nm_setting_duplicate (NMSetting *setting)
+{
+	const NMSettInfoSetting *sett_info;
+	NMSettingClass *klass;
+	NMSetting *dst;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
+
+	klass = NM_SETTING_GET_CLASS (setting);
+	nm_assert (NM_IS_SETTING_CLASS (klass));
+	nm_assert (klass->duplicate_copy_properties);
+
+	dst = g_object_new (G_TYPE_FROM_CLASS (klass), NULL);
+
+	sett_info = _nm_setting_class_get_sett_info (klass);
+	nm_assert (sett_info);
+
+	klass->duplicate_copy_properties (sett_info, setting, dst);
+	return dst;
 }
 
 /**
@@ -2584,11 +2601,12 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->update_one_secret = update_one_secret;
-	setting_class->get_secret_flags = get_secret_flags;
-	setting_class->set_secret_flags = set_secret_flags;
-	setting_class->compare_property = compare_property;
-	setting_class->clear_secrets_with_flags = clear_secrets_with_flags;
+	setting_class->update_one_secret         = update_one_secret;
+	setting_class->get_secret_flags          = get_secret_flags;
+	setting_class->set_secret_flags          = set_secret_flags;
+	setting_class->compare_property          = compare_property;
+	setting_class->clear_secrets_with_flags  = clear_secrets_with_flags;
+	setting_class->duplicate_copy_properties = duplicate_copy_properties;
 
 	/**
 	 * NMSetting:name:
