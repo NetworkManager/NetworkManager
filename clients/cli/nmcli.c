@@ -256,7 +256,7 @@ usage (void)
 	              "  -p, --pretty                             pretty output\n"
 	              "  -s, --show-secrets                       allow displaying passwords\n"
 	              "  -t, --terse                              terse output\n"
-	              "  -v, --version                            how program version\n"
+	              "  -v, --version                            show program version\n"
 	              "  -w, --wait <seconds>                     set timeout waiting for finishing operations\n"
 	              "\n"
 	              "OBJECT\n"

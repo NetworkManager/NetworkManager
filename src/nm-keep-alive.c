@@ -98,7 +98,7 @@ _is_alive (NMKeepAlive *self)
 		/* the D-Bus client is gone. The only other binding (below) for the connection's
 		 * visibility cannot keep the instance alive.
 		 *
-		 * As such, a D-Bus client watch is authorative and overrules other conditions (that
+		 * As such, a D-Bus client watch is authoritative and overrules other conditions (that
 		 * we have so far). */
 		return FALSE;
 	}
@@ -470,7 +470,7 @@ _nm_keep_alive_set_owner (NMKeepAlive *self,
 	nm_assert (!owner || !priv->owner);
 
 	/* optimally, we would take a reference to @owner. But the
-	 * owner already owns a refrence to the keep-alive, so we cannot
+	 * owner already owns a reference to the keep-alive, so we cannot
 	 * just own a reference back.
 	 *
 	 * We could register a weak-pointer here. But instead, declare that

@@ -100,7 +100,7 @@ typedef enum {
  * Configure the use of WPS by a connection while it activates.
  *
  * Note: prior to 1.16, this was a GEnum type instead of a GFlags type
- * altough, with the same numeric values.
+ * although, with the same numeric values.
  *
  * Since: 1.10
  **/

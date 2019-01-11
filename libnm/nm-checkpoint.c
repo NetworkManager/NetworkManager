@@ -91,7 +91,7 @@ nm_checkpoint_get_created (NMCheckpoint *checkpoint)
  * nm_checkpoint_get_rollback_timeout:
  * @checkpoint: a #NMCheckpoint
  *
- * Gets the the timeout in seconds for automatic rollback.
+ * Gets the timeout in seconds for automatic rollback.
  *
  * Returns: the rollback timeout.
  *

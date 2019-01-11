@@ -442,7 +442,7 @@ nm_ndisc_add_address (NMNDisc *ndisc,
 
 		if (from_ra) {
 			/* RFC4862 5.5.3.d, we find an existing address with the same prefix.
-			 * (note that all prefixes at this point have implicity length /64). */
+			 * (note that all prefixes at this point have implicitly length /64). */
 			if (memcmp (&item->address, &new->address, 8) == 0) {
 				existing = item;
 				break;

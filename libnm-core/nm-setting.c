@@ -1303,7 +1303,7 @@ _nm_setting_should_compare_secret_property (NMSetting *setting,
 	 *   - @other also has the secret flat to be ignored.
 	 *
 	 * This makes the check symmetric (aside the fact that @setting must
-	 * have the secret while @other may not -- which is asymetric). */
+	 * have the secret while @other may not -- which is asymmetric). */
 	if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS)
 	    && NM_FLAGS_HAS (a_secret_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED)
 	    && (   !other
@@ -1602,7 +1602,7 @@ nm_setting_diff (NMSetting *a,
 				 *
 				 * Note that compare_property() called with two settings will ignore secrets
 				 * based on the flags, but it will do so if *both* settings have the flag we
-				 * look for. So that is symetric behavior and good.
+				 * look for. So that is symmetric behavior and good.
 				 *
 				 * But for the purpose of diff(), we do a asymmetric comparison because and
 				 * we want to skip testing the property if setting @a alone indicates to do
@@ -2490,7 +2490,7 @@ _nm_setting_gendata_reset_from_hash (NMSetting *setting,
 	}
 
 	/* let's not bother to find out whether the new hash has any different
-	 * content the the current gendata. Just replace it. */
+	 * content the current gendata. Just replace it. */
 	g_hash_table_remove_all (gendata->hash);
 	if (num > 0) {
 		g_hash_table_iter_init (&iter, new);

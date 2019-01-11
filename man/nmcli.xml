@@ -1445,7 +1445,7 @@
 
         <listitem>
           <para>Connect to a Wi-Fi network specified by SSID or BSSID. The command
-          finds a matching connnection or creates one and then activates it on a device.
+          finds a matching connection or creates one and then activates it on a device.
           This is a command-line counterpart of clicking an SSID in a GUI client. If
           a connection for the network already exists, it is possible to bring up
           (activate) the existing profile as follows:

@@ -1633,7 +1633,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * at runtime. Currently supported are "${CONNECTION}", "${DEVICE}", "${MAC}",
 	 * "${BOOT}", "${RANDOM}".
 	 * These effectively create unique IDs per-connection, per-device, per-boot,
-	 * or every time. Note that "${DEVICE}" corresponds the the interface name of the
+	 * or every time. Note that "${DEVICE}" corresponds the interface name of the
 	 * device and "${MAC}" is the permanent MAC address of the device.
 	 * Any unrecognized patterns following '$' are treated verbatim, however
 	 * are reserved for future use. You are thus advised to avoid '$' or

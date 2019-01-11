@@ -2459,7 +2459,7 @@ again:
 			if (nm_utils_host_id_get (&seed_bin, &seed_len)) {
 				/* we have no valid machine-id. Generate a fake one by hashing
 				 * the secret-key. This key is commonly persisted, so it should be
-				 * stable accross reboots (despite having a broken system without
+				 * stable across reboots (despite having a broken system without
 				 * proper machine-id). */
 				fake_type = "secret-key";
 				hash_seed = "ab085f06-b629-46d1-a553-84eeba5683b6";
@@ -2556,7 +2556,7 @@ _host_id_read_timestamp (gboolean use_secret_key_file,
 	 * the secret_key) if we are unable to access the secret_key file in the first place.
 	 *
 	 * Pick a random timestamp from the past two years. Yes, this timestamp
-	 * is not stable accross restarts, but apparently neither is the host-id
+	 * is not stable across restarts, but apparently neither is the host-id
 	 * nor the secret_key itself. */
 
 #define EPOCH_TWO_YEARS  (G_GINT64_CONSTANT (2 * 365 * 24 * 3600) * NM_UTILS_NS_PER_SECOND)
@@ -3124,7 +3124,7 @@ nm_utils_stable_id_generated_complete (const char *stable_id_generated)
 	guint8 buf[NM_UTILS_CHECKSUM_LENGTH_SHA1];
 	char *base64;
 
-	/* for NM_UTILS_STABLE_TYPE_GENERATED we genererate a possibly long string
+	/* for NM_UTILS_STABLE_TYPE_GENERATED we generate a possibly long string
 	 * by doing text-substitutions in nm_utils_stable_id_parse().
 	 *
 	 * Let's shorten the (possibly) long stable_id to something more compact. */
@@ -3178,7 +3178,7 @@ nm_utils_stable_id_parse (const char *stable_id,
 	 * of ${...} patterns.
 	 *
 	 * At first, it looks a bit like bash parameter substitution.
-	 * In contrast however, the process is unambigious so that the resulting
+	 * In contrast however, the process is unambiguous so that the resulting
 	 * effective id differs if:
 	 *  - the original, untranslated stable-id differs
 	 *  - or any of the subsitutions differs.
@@ -3581,7 +3581,7 @@ nm_utils_dhcp_client_id_mac (int arp_type,
 /**
  * nm_utils_create_dhcp_iaid:
  * @legacy_unstable_byteorder: legacy behavior is to generate a u32 iaid which
- *   is endianness dependant. This is to preserve backward compatibility.
+ *   is endianness dependent. This is to preserve backward compatibility.
  *   For non-legacy behavior, the returned integer is in stable endianness,
  *   and corresponds to legacy behavior on little endian systems.
  * @interface_id: the seed for hashing when generating the ID. Usually,
@@ -3624,7 +3624,7 @@ nm_utils_create_dhcp_iaid (gboolean legacy_unstable_byteorder,
  * @legacy_unstable_byteorder: historically, the code would generate a iaid
  *   dependent on host endianness. This is undesirable, if backward compatibility
  *   are not a concern, generate stable endianness.
- * @interface_id: a binary identifer that is hashed into the DUID.
+ * @interface_id: a binary identifier that is hashed into the DUID.
  *   Comonly this is the interface-name, but it may be the MAC address.
  * @interface_id_len: the length of @interface_id.
  * @machine_id: the binary identifier for the machine. It is hashed

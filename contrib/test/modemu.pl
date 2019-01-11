@@ -252,7 +252,7 @@ Same as above, with a modem name different from default.
 =head1 BUGS
 
 Only works on machines with a PCI bus. ModemManager is picky about platform
-devices and accepts PCI and USB busses easily. Which is why pretent to have
+devices and accepts PCI and USB buses easily. Which is why pretent to have
 our tty on the PCI root device.
 
 Terminates after a single PPP session. C<pppd> seems to hang up the PTY.

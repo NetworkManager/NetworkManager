@@ -1274,7 +1274,7 @@ _get_stable_id (NMDevice *self,
 		uuid = nm_connection_get_uuid (connection);
 
 		/* the cloned-mac-address may be generated based on the stable-id.
-		 * Thus, at this point, we can only use the permanant MAC address
+		 * Thus, at this point, we can only use the permanent MAC address
 		 * as seed. */
 		hwaddr = nm_device_get_permanent_hw_address_full (self, TRUE, &hwaddr_is_fake);
 
@@ -8350,7 +8350,7 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 		/* preferably, we would salt the checksum differently for each @duid type. We missed
 		 * to do that initially, so most types use the DEFAULT_SALT.
 		 *
-		 * Implemenations that are added later, should use a distinct salt instead,
+		 * Implementations that are added later, should use a distinct salt instead,
 		 * like "stable-ll"/"stable-llt" with ARPHRD_INFINIBAND below. */
 		const guint32 DEFAULT_SALT = 670531087u;
 		nm_auto_free_checksum GChecksum *sum = NULL;

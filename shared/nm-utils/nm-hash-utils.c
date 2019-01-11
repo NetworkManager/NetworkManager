@@ -71,7 +71,7 @@ again:
 		 * the first guint has only the entropy that nm_utils_random_bytes()
 		 * generated for the first 4 bytes and relies on a good random generator.
 		 *
-		 * The first int is especially intersting for nm_hash_static() below, and we
+		 * The first int is especially interesting for nm_hash_static() below, and we
 		 * want to have it all the entropy of t_arr. */
 		c_siphash_init (&siph_state, t_arr.v8);
 		c_siphash_append (&siph_state, (const guint8 *) &t_arr, sizeof (t_arr));

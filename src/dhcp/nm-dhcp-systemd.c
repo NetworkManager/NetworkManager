@@ -479,7 +479,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 			add_option (options, dhcp4_requests, SD_DHCP_OPTION_STATIC_ROUTE, str_static->str);
 	}
 
-	/* FIXME: internal client only supports returing the first router. */
+	/* FIXME: internal client only supports returning the first router. */
 	if (sd_dhcp_lease_get_router (lease, &a_router) >= 0) {
 		s = nm_utils_inet4_ntop (a_router.s_addr, addr_str);
 		LOG_LEASE (LOGD_DHCP4, "gateway %s", s);

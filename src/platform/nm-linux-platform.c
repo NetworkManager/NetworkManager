@@ -2164,7 +2164,7 @@ _wireguard_read_info (NMPlatform *platform /* used only as logging context */,
 	nm_assert (wireguard_family_id >= 0);
 	nm_assert (ifindex > 0);
 
-	_LOGT ("wireguard: fetching infomation for ifindex %d (genl-id %d)...", ifindex, wireguard_family_id);
+	_LOGT ("wireguard: fetching information for ifindex %d (genl-id %d)...", ifindex, wireguard_family_id);
 
 	msg = nlmsg_alloc ();
 

@@ -1452,7 +1452,7 @@ p2p_props_changed_cb (GDBusProxy *proxy,
 			/* We already have the proxy, nothing to do. */
 		} else if (path && g_strcmp0 (path, "/") != 0) {
 			if (priv->group_proxy != NULL) {
-				_LOGW ("P2P: Unexpected udpate of the group object path");
+				_LOGW ("P2P: Unexpected update of the group object path");
 				priv->group_proxy_acquired = FALSE;
 				_notify (self, PROP_P2P_GROUP_JOINED);
 				_notify (self, PROP_P2P_GROUP_PATH);
@@ -1548,7 +1548,7 @@ p2p_group_started (GDBusProxy *proxy,
 		}
 	}
 
-	/* Signal existance of the (new) interface. */
+	/* Signal existence of the (new) interface. */
 	g_signal_emit (self, signals[GROUP_STARTED], 0, iface);
 	g_object_unref (iface);
 }

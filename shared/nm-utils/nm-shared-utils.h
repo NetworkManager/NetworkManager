@@ -305,7 +305,7 @@ _nm_strndup_a_step (char *s, const char *str, gsize len)
  *
  * Usually, an inline function nm_strdup_int64() would be enough. However,
  * that cannot be used for guint64. So, we would also need nm_strdup_uint64().
- * This causes suble error potential, because the caller needs to ensure to
+ * This causes subtle error potential, because the caller needs to ensure to
  * use the right one (and compiler isn't going to help as it silently casts).
  *
  * Instead, this generic macro is supposed to handle all integers correctly. */
