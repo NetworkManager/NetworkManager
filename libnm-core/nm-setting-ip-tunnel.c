@@ -30,9 +30,23 @@
  * @short_description: Describes connection properties for IP tunnel devices
  **/
 
-G_DEFINE_TYPE (NMSettingIPTunnel, nm_setting_ip_tunnel, NM_TYPE_SETTING)
+/*****************************************************************************/
 
-#define NM_SETTING_IP_TUNNEL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_IP_TUNNEL, NMSettingIPTunnelPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_PARENT,
+	PROP_MODE,
+	PROP_LOCAL,
+	PROP_REMOTE,
+	PROP_TTL,
+	PROP_TOS,
+	PROP_PATH_MTU_DISCOVERY,
+	PROP_INPUT_KEY,
+	PROP_OUTPUT_KEY,
+	PROP_ENCAPSULATION_LIMIT,
+	PROP_FLOW_LABEL,
+	PROP_MTU,
+	PROP_FLAGS,
+);
 
 typedef struct {
 	char *parent;
@@ -50,21 +64,11 @@ typedef struct {
 	guint32 flags;
 } NMSettingIPTunnelPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_PARENT,
-	PROP_MODE,
-	PROP_LOCAL,
-	PROP_REMOTE,
-	PROP_TTL,
-	PROP_TOS,
-	PROP_PATH_MTU_DISCOVERY,
-	PROP_INPUT_KEY,
-	PROP_OUTPUT_KEY,
-	PROP_ENCAPSULATION_LIMIT,
-	PROP_FLOW_LABEL,
-	PROP_MTU,
-	PROP_FLAGS,
-);
+G_DEFINE_TYPE (NMSettingIPTunnel, nm_setting_ip_tunnel, NM_TYPE_SETTING)
+
+#define NM_SETTING_IP_TUNNEL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_IP_TUNNEL, NMSettingIPTunnelPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_ip_tunnel_get_parent:
@@ -471,24 +475,59 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-/**
- * nm_setting_ip_tunnel_new:
- *
- * Creates a new #NMSettingIPTunnel object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingIPTunnel object
- *
- * Since: 1.2
- **/
-NMSetting *
-nm_setting_ip_tunnel_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_IP_TUNNEL, NULL);
-}
+/*****************************************************************************/
 
 static void
-nm_setting_ip_tunnel_init (NMSettingIPTunnel *setting)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
+	NMSettingIPTunnel *setting = NM_SETTING_IP_TUNNEL (object);
+	NMSettingIPTunnelPrivate *priv = NM_SETTING_IP_TUNNEL_GET_PRIVATE (setting);
+
+	switch (prop_id) {
+	case PROP_PARENT:
+		g_value_set_string (value, priv->parent);
+		break;
+	case PROP_MODE:
+		g_value_set_uint (value, priv->mode);
+		break;
+	case PROP_LOCAL:
+		g_value_set_string (value, priv->local);
+		break;
+	case PROP_REMOTE:
+		g_value_set_string (value, priv->remote);
+		break;
+	case PROP_TTL:
+		g_value_set_uint (value, priv->ttl);
+		break;
+	case PROP_TOS:
+		g_value_set_uint (value, priv->tos);
+		break;
+	case PROP_PATH_MTU_DISCOVERY:
+		g_value_set_boolean (value, priv->path_mtu_discovery);
+		break;
+	case PROP_INPUT_KEY:
+		g_value_set_string (value, priv->input_key);
+		break;
+	case PROP_OUTPUT_KEY:
+		g_value_set_string (value, priv->output_key);
+		break;
+	case PROP_ENCAPSULATION_LIMIT:
+		g_value_set_uint (value, priv->encapsulation_limit);
+		break;
+	case PROP_FLOW_LABEL:
+		g_value_set_uint (value, priv->flow_label);
+		break;
+	case PROP_MTU:
+		g_value_set_uint (value, priv->mtu);
+		break;
+	case PROP_FLAGS:
+		g_value_set_uint (value, priv->flags);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -549,57 +588,26 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingIPTunnel *setting = NM_SETTING_IP_TUNNEL (object);
-	NMSettingIPTunnelPrivate *priv = NM_SETTING_IP_TUNNEL_GET_PRIVATE (setting);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_PARENT:
-		g_value_set_string (value, priv->parent);
-		break;
-	case PROP_MODE:
-		g_value_set_uint (value, priv->mode);
-		break;
-	case PROP_LOCAL:
-		g_value_set_string (value, priv->local);
-		break;
-	case PROP_REMOTE:
-		g_value_set_string (value, priv->remote);
-		break;
-	case PROP_TTL:
-		g_value_set_uint (value, priv->ttl);
-		break;
-	case PROP_TOS:
-		g_value_set_uint (value, priv->tos);
-		break;
-	case PROP_PATH_MTU_DISCOVERY:
-		g_value_set_boolean (value, priv->path_mtu_discovery);
-		break;
-	case PROP_INPUT_KEY:
-		g_value_set_string (value, priv->input_key);
-		break;
-	case PROP_OUTPUT_KEY:
-		g_value_set_string (value, priv->output_key);
-		break;
-	case PROP_ENCAPSULATION_LIMIT:
-		g_value_set_uint (value, priv->encapsulation_limit);
-		break;
-	case PROP_FLOW_LABEL:
-		g_value_set_uint (value, priv->flow_label);
-		break;
-	case PROP_MTU:
-		g_value_set_uint (value, priv->mtu);
-		break;
-	case PROP_FLAGS:
-		g_value_set_uint (value, priv->flags);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_ip_tunnel_init (NMSettingIPTunnel *setting)
+{
+}
+
+/**
+ * nm_setting_ip_tunnel_new:
+ *
+ * Creates a new #NMSettingIPTunnel object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingIPTunnel object
+ *
+ * Since: 1.2
+ **/
+NMSetting *
+nm_setting_ip_tunnel_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_IP_TUNNEL, NULL);
 }
 
 static void
@@ -625,8 +633,8 @@ nm_setting_ip_tunnel_class_init (NMSettingIPTunnelClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingIPTunnelPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify = verify;

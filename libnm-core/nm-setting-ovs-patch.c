@@ -34,6 +34,8 @@
  * necessary for Open vSwitch interfaces of type "patch".
  **/
 
+/*****************************************************************************/
+
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_PEER,
 );

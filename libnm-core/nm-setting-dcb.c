@@ -21,9 +21,10 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-dcb.h"
+
 #include <string.h>
 
-#include "nm-setting-dcb.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
@@ -40,9 +41,30 @@
  * of storage technologies like Fibre Channel over Ethernet (FCoE) and iSCSI.
  **/
 
-G_DEFINE_TYPE (NMSettingDcb, nm_setting_dcb, NM_TYPE_SETTING)
+/*****************************************************************************/
 
-#define NM_SETTING_DCB_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_DCB, NMSettingDcbPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettingDcb,
+
+	PROP_APP_FCOE_FLAGS,
+	PROP_APP_FCOE_PRIORITY,
+	PROP_APP_FCOE_MODE,
+
+	PROP_APP_ISCSI_FLAGS,
+	PROP_APP_ISCSI_PRIORITY,
+
+	PROP_APP_FIP_FLAGS,
+	PROP_APP_FIP_PRIORITY,
+
+	PROP_PFC_FLAGS,
+	PROP_PRIORITY_FLOW_CONTROL,
+
+	PROP_PRIORITY_GROUP_FLAGS,
+	PROP_PRIORITY_GROUP_ID,
+	PROP_PRIORITY_GROUP_BANDWIDTH,
+	PROP_PRIORITY_BANDWIDTH,
+	PROP_PRIORITY_STRICT_BANDWIDTH,
+	PROP_PRIORITY_TRAFFIC_CLASS,
+);
 
 typedef struct {
 	NMSettingDcbFlags app_fcoe_flags;
@@ -68,41 +90,11 @@ typedef struct {
 	guint             priority_traffic_class[8];
 } NMSettingDcbPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE (NMSettingDcb,
+G_DEFINE_TYPE (NMSettingDcb, nm_setting_dcb, NM_TYPE_SETTING)
 
-	PROP_APP_FCOE_FLAGS,
-	PROP_APP_FCOE_PRIORITY,
-	PROP_APP_FCOE_MODE,
+#define NM_SETTING_DCB_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_DCB, NMSettingDcbPrivate))
 
-	PROP_APP_ISCSI_FLAGS,
-	PROP_APP_ISCSI_PRIORITY,
-
-	PROP_APP_FIP_FLAGS,
-	PROP_APP_FIP_PRIORITY,
-
-	PROP_PFC_FLAGS,
-	PROP_PRIORITY_FLOW_CONTROL,
-
-	PROP_PRIORITY_GROUP_FLAGS,
-	PROP_PRIORITY_GROUP_ID,
-	PROP_PRIORITY_GROUP_BANDWIDTH,
-	PROP_PRIORITY_BANDWIDTH,
-	PROP_PRIORITY_STRICT_BANDWIDTH,
-	PROP_PRIORITY_TRAFFIC_CLASS,
-);
-
-/**
- * nm_setting_dcb_new:
- *
- * Creates a new #NMSettingDcb object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingDcb object
- **/
-NMSetting *
-nm_setting_dcb_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_DCB, NULL);
-}
+/*****************************************************************************/
 
 /**
  * nm_setting_dcb_get_app_fcoe_flags:
@@ -722,11 +714,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 /*****************************************************************************/
 
-static void
-nm_setting_dcb_init (NMSettingDcb *setting)
-{
-}
-
 G_STATIC_ASSERT (sizeof (guint) == sizeof (gboolean));
 
 static inline void
@@ -774,64 +761,7 @@ _nm_setting_dcb_uint_array_from_dbus (GVariant *dbus_value,
 	set_gvalue_from_array (prop_value, (guint *) array, length);
 }
 
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMSettingDcbPrivate *priv = NM_SETTING_DCB_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_APP_FCOE_FLAGS:
-		priv->app_fcoe_flags = g_value_get_flags (value);
-		break;
-	case PROP_APP_FCOE_PRIORITY:
-		priv->app_fcoe_priority = g_value_get_int (value);
-		break;
-	case PROP_APP_FCOE_MODE:
-		g_free (priv->app_fcoe_mode);
-		priv->app_fcoe_mode = g_value_dup_string (value);
-		break;
-	case PROP_APP_ISCSI_FLAGS:
-		priv->app_iscsi_flags = g_value_get_flags (value);
-		break;
-	case PROP_APP_ISCSI_PRIORITY:
-		priv->app_iscsi_priority = g_value_get_int (value);
-		break;
-	case PROP_APP_FIP_FLAGS:
-		priv->app_fip_flags = g_value_get_flags (value);
-		break;
-	case PROP_APP_FIP_PRIORITY:
-		priv->app_fip_priority = g_value_get_int (value);
-		break;
-	case PROP_PFC_FLAGS:
-		priv->pfc_flags = g_value_get_flags (value);
-		break;
-	case PROP_PRIORITY_FLOW_CONTROL:
-		SET_ARRAY_FROM_GVALUE (value, priv->pfc);
-		break;
-	case PROP_PRIORITY_GROUP_FLAGS:
-		priv->priority_group_flags = g_value_get_flags (value);
-		break;
-	case PROP_PRIORITY_GROUP_ID:
-		SET_ARRAY_FROM_GVALUE (value, priv->priority_group_id);
-		break;
-	case PROP_PRIORITY_GROUP_BANDWIDTH:
-		SET_ARRAY_FROM_GVALUE (value, priv->priority_group_bandwidth);
-		break;
-	case PROP_PRIORITY_BANDWIDTH:
-		SET_ARRAY_FROM_GVALUE (value, priv->priority_bandwidth);
-		break;
-	case PROP_PRIORITY_STRICT_BANDWIDTH:
-		SET_ARRAY_FROM_GVALUE (value, priv->priority_strict);
-		break;
-	case PROP_PRIORITY_TRAFFIC_CLASS:
-		SET_ARRAY_FROM_GVALUE (value, priv->priority_traffic_class);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
+/*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id,
@@ -893,6 +823,85 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMSettingDcbPrivate *priv = NM_SETTING_DCB_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_APP_FCOE_FLAGS:
+		priv->app_fcoe_flags = g_value_get_flags (value);
+		break;
+	case PROP_APP_FCOE_PRIORITY:
+		priv->app_fcoe_priority = g_value_get_int (value);
+		break;
+	case PROP_APP_FCOE_MODE:
+		g_free (priv->app_fcoe_mode);
+		priv->app_fcoe_mode = g_value_dup_string (value);
+		break;
+	case PROP_APP_ISCSI_FLAGS:
+		priv->app_iscsi_flags = g_value_get_flags (value);
+		break;
+	case PROP_APP_ISCSI_PRIORITY:
+		priv->app_iscsi_priority = g_value_get_int (value);
+		break;
+	case PROP_APP_FIP_FLAGS:
+		priv->app_fip_flags = g_value_get_flags (value);
+		break;
+	case PROP_APP_FIP_PRIORITY:
+		priv->app_fip_priority = g_value_get_int (value);
+		break;
+	case PROP_PFC_FLAGS:
+		priv->pfc_flags = g_value_get_flags (value);
+		break;
+	case PROP_PRIORITY_FLOW_CONTROL:
+		SET_ARRAY_FROM_GVALUE (value, priv->pfc);
+		break;
+	case PROP_PRIORITY_GROUP_FLAGS:
+		priv->priority_group_flags = g_value_get_flags (value);
+		break;
+	case PROP_PRIORITY_GROUP_ID:
+		SET_ARRAY_FROM_GVALUE (value, priv->priority_group_id);
+		break;
+	case PROP_PRIORITY_GROUP_BANDWIDTH:
+		SET_ARRAY_FROM_GVALUE (value, priv->priority_group_bandwidth);
+		break;
+	case PROP_PRIORITY_BANDWIDTH:
+		SET_ARRAY_FROM_GVALUE (value, priv->priority_bandwidth);
+		break;
+	case PROP_PRIORITY_STRICT_BANDWIDTH:
+		SET_ARRAY_FROM_GVALUE (value, priv->priority_strict);
+		break;
+	case PROP_PRIORITY_TRAFFIC_CLASS:
+		SET_ARRAY_FROM_GVALUE (value, priv->priority_traffic_class);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_setting_dcb_init (NMSettingDcb *setting)
+{
+}
+
+/**
+ * nm_setting_dcb_new:
+ *
+ * Creates a new #NMSettingDcb object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingDcb object
+ **/
+NMSetting *
+nm_setting_dcb_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_DCB, NULL);
+}
+
+static void
 finalize (GObject *object)
 {
 	NMSettingDcbPrivate *priv = NM_SETTING_DCB_GET_PRIVATE (object);
@@ -911,9 +920,9 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingDcbPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-	object_class->finalize = finalize;
+	object_class->set_property = set_property;
+	object_class->finalize     = finalize;
 
 	setting_class->verify = verify;
 

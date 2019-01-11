@@ -22,9 +22,10 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-serial.h"
+
 #include <string.h>
 
-#include "nm-setting-serial.h"
 #include "nm-setting-private.h"
 
 /**
@@ -37,17 +38,7 @@
  * such as mobile broadband or analog telephone connections.
  **/
 
-G_DEFINE_TYPE (NMSettingSerial, nm_setting_serial, NM_TYPE_SETTING)
-
-#define NM_SETTING_SERIAL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_SERIAL, NMSettingSerialPrivate))
-
-typedef struct {
-	guint baud;
-	guint bits;
-	char parity;
-	guint stopbits;
-	guint64 send_delay;
-} NMSettingSerialPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_BAUD,
@@ -57,18 +48,19 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_SEND_DELAY,
 );
 
-/**
- * nm_setting_serial_new:
- *
- * Creates a new #NMSettingSerial object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingSerial object
- **/
-NMSetting *
-nm_setting_serial_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_SERIAL, NULL);
-}
+typedef struct {
+	guint baud;
+	guint bits;
+	char parity;
+	guint stopbits;
+	guint64 send_delay;
+} NMSettingSerialPrivate;
+
+G_DEFINE_TYPE (NMSettingSerial, nm_setting_serial, NM_TYPE_SETTING)
+
+#define NM_SETTING_SERIAL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_SERIAL, NMSettingSerialPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_serial_get_baud:
@@ -140,11 +132,6 @@ nm_setting_serial_get_send_delay (NMSettingSerial *setting)
 	return NM_SETTING_SERIAL_GET_PRIVATE (setting)->send_delay;
 }
 
-static void
-nm_setting_serial_init (NMSettingSerial *setting)
-{
-}
-
 static GVariant *
 parity_to_dbus (const GValue *from)
 {
@@ -172,6 +159,36 @@ parity_from_dbus (GVariant *from, GValue *to)
 	case 'n':
 	default:
 		g_value_set_enum (to, NM_SETTING_SERIAL_PARITY_NONE);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMSettingSerial *setting = NM_SETTING_SERIAL (object);
+
+	switch (prop_id) {
+	case PROP_BAUD:
+		g_value_set_uint (value, nm_setting_serial_get_baud (setting));
+		break;
+	case PROP_BITS:
+		g_value_set_uint (value, nm_setting_serial_get_bits (setting));
+		break;
+	case PROP_PARITY:
+		g_value_set_enum (value, nm_setting_serial_get_parity (setting));
+		break;
+	case PROP_STOPBITS:
+		g_value_set_uint (value, nm_setting_serial_get_stopbits (setting));
+		break;
+	case PROP_SEND_DELAY:
+		g_value_set_uint64 (value, nm_setting_serial_get_send_delay (setting));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
 }
@@ -204,32 +221,24 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingSerial *setting = NM_SETTING_SERIAL (object);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_BAUD:
-		g_value_set_uint (value, nm_setting_serial_get_baud (setting));
-		break;
-	case PROP_BITS:
-		g_value_set_uint (value, nm_setting_serial_get_bits (setting));
-		break;
-	case PROP_PARITY:
-		g_value_set_enum (value, nm_setting_serial_get_parity (setting));
-		break;
-	case PROP_STOPBITS:
-		g_value_set_uint (value, nm_setting_serial_get_stopbits (setting));
-		break;
-	case PROP_SEND_DELAY:
-		g_value_set_uint64 (value, nm_setting_serial_get_send_delay (setting));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_serial_init (NMSettingSerial *setting)
+{
+}
+
+/**
+ * nm_setting_serial_new:
+ *
+ * Creates a new #NMSettingSerial object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingSerial object
+ **/
+NMSetting *
+nm_setting_serial_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_SERIAL, NULL);
 }
 
 static void
@@ -241,8 +250,8 @@ nm_setting_serial_class_init (NMSettingSerialClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingSerialPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 
 	/**
 	 * NMSettingSerial:baud:

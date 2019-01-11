@@ -22,9 +22,10 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-wireless-security.h"
+
 #include <string.h>
 
-#include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
@@ -53,9 +54,30 @@
  *       ISBN: 978-1587051548
  **/
 
-G_DEFINE_TYPE (NMSettingWirelessSecurity, nm_setting_wireless_security, NM_TYPE_SETTING)
+/*****************************************************************************/
 
-#define NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIRELESS_SECURITY, NMSettingWirelessSecurityPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettingWirelessSecurity,
+	PROP_KEY_MGMT,
+	PROP_WEP_TX_KEYIDX,
+	PROP_AUTH_ALG,
+	PROP_PROTO,
+	PROP_PAIRWISE,
+	PROP_GROUP,
+	PROP_PMF,
+	PROP_LEAP_USERNAME,
+	PROP_WEP_KEY0,
+	PROP_WEP_KEY1,
+	PROP_WEP_KEY2,
+	PROP_WEP_KEY3,
+	PROP_WEP_KEY_FLAGS,
+	PROP_WEP_KEY_TYPE,
+	PROP_PSK,
+	PROP_PSK_FLAGS,
+	PROP_LEAP_PASSWORD,
+	PROP_LEAP_PASSWORD_FLAGS,
+	PROP_WPS_METHOD,
+	PROP_FILS,
+);
 
 typedef struct {
 	char *key_mgmt;
@@ -90,41 +112,11 @@ typedef struct {
 	NMSettingWirelessSecurityFils fils;
 } NMSettingWirelessSecurityPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE (NMSettingWirelessSecurity,
-	PROP_KEY_MGMT,
-	PROP_WEP_TX_KEYIDX,
-	PROP_AUTH_ALG,
-	PROP_PROTO,
-	PROP_PAIRWISE,
-	PROP_GROUP,
-	PROP_PMF,
-	PROP_LEAP_USERNAME,
-	PROP_WEP_KEY0,
-	PROP_WEP_KEY1,
-	PROP_WEP_KEY2,
-	PROP_WEP_KEY3,
-	PROP_WEP_KEY_FLAGS,
-	PROP_WEP_KEY_TYPE,
-	PROP_PSK,
-	PROP_PSK_FLAGS,
-	PROP_LEAP_PASSWORD,
-	PROP_LEAP_PASSWORD_FLAGS,
-	PROP_WPS_METHOD,
-	PROP_FILS,
-);
+G_DEFINE_TYPE (NMSettingWirelessSecurity, nm_setting_wireless_security, NM_TYPE_SETTING)
 
-/**
- * nm_setting_wireless_security_new:
- *
- * Creates a new #NMSettingWirelessSecurity object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingWirelessSecurity object
- **/
-NMSetting *
-nm_setting_wireless_security_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_WIRELESS_SECURITY, NULL);
-}
+#define NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIRELESS_SECURITY, NMSettingWirelessSecurityPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_wireless_security_get_key_mgmt:
@@ -1226,36 +1218,6 @@ set_secret_flags (NMSetting *setting,
 	return NM_SETTING_CLASS (nm_setting_wireless_security_parent_class)->set_secret_flags (setting, secret_name, flags, error);
 }
 
-static void
-nm_setting_wireless_security_init (NMSettingWirelessSecurity *setting)
-{
-}
-
-static void
-finalize (GObject *object)
-{
-	NMSettingWirelessSecurity *self = NM_SETTING_WIRELESS_SECURITY (object);
-	NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (self);
-
-	/* Strings first. g_free() already checks for NULLs so we don't have to */
-
-	g_free (priv->key_mgmt);
-	g_free (priv->auth_alg);
-	g_free (priv->leap_username);
-	g_free (priv->wep_key0);
-	g_free (priv->wep_key1);
-	g_free (priv->wep_key2);
-	g_free (priv->wep_key3);
-	g_free (priv->psk);
-	g_free (priv->leap_password);
-
-	g_slist_free_full (priv->proto, g_free);
-	g_slist_free_full (priv->pairwise, g_free);
-	g_slist_free_full (priv->group, g_free);
-
-	G_OBJECT_CLASS (nm_setting_wireless_security_parent_class)->finalize (object);
-}
-
 /* NMSettingWirelessSecurity:wep-key-type is an enum, but needs to be marshalled
  * as 'u', not 'i', for backward-compatibility.
  */
@@ -1263,6 +1225,82 @@ static GVariant *
 wep_key_type_to_dbus (const GValue *from)
 {
 	return g_variant_new_uint32 (g_value_get_enum (from));
+}
+
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMSettingWirelessSecurity *setting = NM_SETTING_WIRELESS_SECURITY (object);
+	NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+
+	switch (prop_id) {
+	case PROP_KEY_MGMT:
+		g_value_set_string (value, priv->key_mgmt);
+		break;
+	case PROP_WEP_TX_KEYIDX:
+		g_value_set_uint (value, priv->wep_tx_keyidx);
+		break;
+	case PROP_AUTH_ALG:
+		g_value_set_string (value, priv->auth_alg);
+		break;
+	case PROP_PROTO:
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->proto, TRUE));
+		break;
+	case PROP_PAIRWISE:
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->pairwise, TRUE));
+		break;
+	case PROP_GROUP:
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->group, TRUE));
+		break;
+	case PROP_PMF:
+		g_value_set_int (value, nm_setting_wireless_security_get_pmf (setting));
+		break;
+	case PROP_LEAP_USERNAME:
+		g_value_set_string (value, priv->leap_username);
+		break;
+	case PROP_WEP_KEY0:
+		g_value_set_string (value, priv->wep_key0);
+		break;
+	case PROP_WEP_KEY1:
+		g_value_set_string (value, priv->wep_key1);
+		break;
+	case PROP_WEP_KEY2:
+		g_value_set_string (value, priv->wep_key2);
+		break;
+	case PROP_WEP_KEY3:
+		g_value_set_string (value, priv->wep_key3);
+		break;
+	case PROP_WEP_KEY_FLAGS:
+		g_value_set_flags (value, priv->wep_key_flags);
+		break;
+	case PROP_PSK:
+		g_value_set_string (value, priv->psk);
+		break;
+	case PROP_PSK_FLAGS:
+		g_value_set_flags (value, priv->psk_flags);
+		break;
+	case PROP_LEAP_PASSWORD:
+		g_value_set_string (value, priv->leap_password);
+		break;
+	case PROP_LEAP_PASSWORD_FLAGS:
+		g_value_set_flags (value, priv->leap_password_flags);
+		break;
+	case PROP_WEP_KEY_TYPE:
+		g_value_set_enum (value, priv->wep_key_type);
+		break;
+	case PROP_WPS_METHOD:
+		g_value_set_uint (value, priv->wps_method);
+		break;
+	case PROP_FILS:
+		g_value_set_int (value, nm_setting_wireless_security_get_fils (setting));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -1354,78 +1392,47 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingWirelessSecurity *setting = NM_SETTING_WIRELESS_SECURITY (object);
-	NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_KEY_MGMT:
-		g_value_set_string (value, priv->key_mgmt);
-		break;
-	case PROP_WEP_TX_KEYIDX:
-		g_value_set_uint (value, priv->wep_tx_keyidx);
-		break;
-	case PROP_AUTH_ALG:
-		g_value_set_string (value, priv->auth_alg);
-		break;
-	case PROP_PROTO:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->proto, TRUE));
-		break;
-	case PROP_PAIRWISE:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->pairwise, TRUE));
-		break;
-	case PROP_GROUP:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->group, TRUE));
-		break;
-	case PROP_PMF:
-		g_value_set_int (value, nm_setting_wireless_security_get_pmf (setting));
-		break;
-	case PROP_LEAP_USERNAME:
-		g_value_set_string (value, priv->leap_username);
-		break;
-	case PROP_WEP_KEY0:
-		g_value_set_string (value, priv->wep_key0);
-		break;
-	case PROP_WEP_KEY1:
-		g_value_set_string (value, priv->wep_key1);
-		break;
-	case PROP_WEP_KEY2:
-		g_value_set_string (value, priv->wep_key2);
-		break;
-	case PROP_WEP_KEY3:
-		g_value_set_string (value, priv->wep_key3);
-		break;
-	case PROP_WEP_KEY_FLAGS:
-		g_value_set_flags (value, priv->wep_key_flags);
-		break;
-	case PROP_PSK:
-		g_value_set_string (value, priv->psk);
-		break;
-	case PROP_PSK_FLAGS:
-		g_value_set_flags (value, priv->psk_flags);
-		break;
-	case PROP_LEAP_PASSWORD:
-		g_value_set_string (value, priv->leap_password);
-		break;
-	case PROP_LEAP_PASSWORD_FLAGS:
-		g_value_set_flags (value, priv->leap_password_flags);
-		break;
-	case PROP_WEP_KEY_TYPE:
-		g_value_set_enum (value, priv->wep_key_type);
-		break;
-	case PROP_WPS_METHOD:
-		g_value_set_uint (value, priv->wps_method);
-		break;
-	case PROP_FILS:
-		g_value_set_int (value, nm_setting_wireless_security_get_fils (setting));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_wireless_security_init (NMSettingWirelessSecurity *setting)
+{
+}
+
+/**
+ * nm_setting_wireless_security_new:
+ *
+ * Creates a new #NMSettingWirelessSecurity object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingWirelessSecurity object
+ **/
+NMSetting *
+nm_setting_wireless_security_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_WIRELESS_SECURITY, NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingWirelessSecurity *self = NM_SETTING_WIRELESS_SECURITY (object);
+	NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (self);
+
+	g_free (priv->key_mgmt);
+	g_free (priv->auth_alg);
+	g_free (priv->leap_username);
+	g_free (priv->wep_key0);
+	g_free (priv->wep_key1);
+	g_free (priv->wep_key2);
+	g_free (priv->wep_key3);
+	g_free (priv->psk);
+	g_free (priv->leap_password);
+
+	g_slist_free_full (priv->proto, g_free);
+	g_slist_free_full (priv->pairwise, g_free);
+	g_slist_free_full (priv->group, g_free);
+
+	G_OBJECT_CLASS (nm_setting_wireless_security_parent_class)->finalize (object);
 }
 
 static void
@@ -1437,8 +1444,8 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingWirelessSecurityPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify           = verify;

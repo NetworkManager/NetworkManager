@@ -21,11 +21,12 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-bridge-port.h"
+
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
 
-#include "nm-setting-bridge-port.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-connection-private.h"
@@ -40,9 +41,13 @@
  * optional properties that apply to bridge ports.
  **/
 
-G_DEFINE_TYPE (NMSettingBridgePort, nm_setting_bridge_port, NM_TYPE_SETTING)
+/*****************************************************************************/
 
-#define NM_SETTING_BRIDGE_PORT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BRIDGE_PORT, NMSettingBridgePortPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_PRIORITY,
+	PROP_PATH_COST,
+	PROP_HAIRPIN_MODE,
+);
 
 typedef struct {
 	guint16 priority;
@@ -50,11 +55,9 @@ typedef struct {
 	gboolean hairpin_mode;
 } NMSettingBridgePortPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_PRIORITY,
-	PROP_PATH_COST,
-	PROP_HAIRPIN_MODE,
-);
+G_DEFINE_TYPE (NMSettingBridgePort, nm_setting_bridge_port, NM_TYPE_SETTING)
+
+#define NM_SETTING_BRIDGE_PORT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BRIDGE_PORT, NMSettingBridgePortPrivate))
 
 /*****************************************************************************/
 
@@ -139,22 +142,26 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 /*****************************************************************************/
 
-/**
- * nm_setting_bridge_port_new:
- *
- * Creates a new #NMSettingBridgePort object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingBridgePort object
- **/
-NMSetting *
-nm_setting_bridge_port_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_BRIDGE_PORT, NULL);
-}
-
 static void
-nm_setting_bridge_port_init (NMSettingBridgePort *setting)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
+	NMSettingBridgePortPrivate *priv = NM_SETTING_BRIDGE_PORT_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_PRIORITY:
+		g_value_set_uint (value, priv->priority);
+		break;
+	case PROP_PATH_COST:
+		g_value_set_uint (value, priv->path_cost);
+		break;
+	case PROP_HAIRPIN_MODE:
+		g_value_set_boolean (value, priv->hairpin_mode);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -179,26 +186,24 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingBridgePortPrivate *priv = NM_SETTING_BRIDGE_PORT_GET_PRIVATE (object);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_PRIORITY:
-		g_value_set_uint (value, priv->priority);
-		break;
-	case PROP_PATH_COST:
-		g_value_set_uint (value, priv->path_cost);
-		break;
-	case PROP_HAIRPIN_MODE:
-		g_value_set_boolean (value, priv->hairpin_mode);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_bridge_port_init (NMSettingBridgePort *setting)
+{
+}
+
+/**
+ * nm_setting_bridge_port_new:
+ *
+ * Creates a new #NMSettingBridgePort object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingBridgePort object
+ **/
+NMSetting *
+nm_setting_bridge_port_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_BRIDGE_PORT, NULL);
 }
 
 static void
@@ -209,8 +214,8 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingBridgePortPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 
 	setting_class->verify = verify;
 

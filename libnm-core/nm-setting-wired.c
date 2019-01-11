@@ -40,26 +40,7 @@
  * necessary for connection to Ethernet networks.
  **/
 
-G_DEFINE_TYPE (NMSettingWired, nm_setting_wired, NM_TYPE_SETTING)
-
-#define NM_SETTING_WIRED_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIRED, NMSettingWiredPrivate))
-
-typedef struct {
-	char *port;
-	guint32 speed;
-	char *duplex;
-	gboolean auto_negotiate;
-	char *device_mac_address;
-	char *cloned_mac_address;
-	char *generate_mac_address_mask;
-	GArray *mac_address_blacklist;
-	guint32 mtu;
-	char **s390_subchannels;
-	char *s390_nettype;
-	GHashTable *s390_options;
-	NMSettingWiredWakeOnLan wol;
-	char *wol_password;
-} NMSettingWiredPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMSettingWired,
 	PROP_PORT,
@@ -78,6 +59,29 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingWired,
 	PROP_WAKE_ON_LAN_PASSWORD,
 );
 
+typedef struct {
+	char *port;
+	guint32 speed;
+	char *duplex;
+	gboolean auto_negotiate;
+	char *device_mac_address;
+	char *cloned_mac_address;
+	char *generate_mac_address_mask;
+	GArray *mac_address_blacklist;
+	guint32 mtu;
+	char **s390_subchannels;
+	char *s390_nettype;
+	GHashTable *s390_options;
+	NMSettingWiredWakeOnLan wol;
+	char *wol_password;
+} NMSettingWiredPrivate;
+
+G_DEFINE_TYPE (NMSettingWired, nm_setting_wired, NM_TYPE_SETTING)
+
+#define NM_SETTING_WIRED_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIRED, NMSettingWiredPrivate))
+
+/*****************************************************************************/
+
 static const char *valid_s390_opts[] = {
 	"portno", "layer2", "portname", "protocol", "priority_queueing",
 	"buffer_count", "isolation", "total", "inter", "inter_jumbo", "route4",
@@ -87,19 +91,6 @@ static const char *valid_s390_opts[] = {
 	"rxip_add4", "rxip_add6", "lancmd_timeout", "ctcprot",
 	NULL
 };
-
-/**
- * nm_setting_wired_new:
- *
- * Creates a new #NMSettingWired object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingWired object
- **/
-NMSetting *
-nm_setting_wired_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_WIRED, NULL);
-}
 
 /**
  * nm_setting_wired_get_port:
@@ -807,40 +798,62 @@ clear_blacklist_item (char **item_p)
 	g_free (*item_p);
 }
 
+/*****************************************************************************/
+
 static void
-nm_setting_wired_init (NMSettingWired *setting)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
+	NMSettingWired *setting = NM_SETTING_WIRED (object);
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
 
-	priv->s390_options = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
-
-	/* We use GArray rather than GPtrArray so it will automatically be NULL-terminated */
-	priv->mac_address_blacklist = g_array_new (TRUE, FALSE, sizeof (char *));
-	g_array_set_clear_func (priv->mac_address_blacklist, (GDestroyNotify) clear_blacklist_item);
-}
-
-static void
-finalize (GObject *object)
-{
-	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (object);
-
-	g_free (priv->port);
-	g_free (priv->duplex);
-	g_free (priv->s390_nettype);
-
-	g_hash_table_destroy (priv->s390_options);
-
-	g_free (priv->device_mac_address);
-	g_free (priv->cloned_mac_address);
-	g_free (priv->generate_mac_address_mask);
-	g_array_unref (priv->mac_address_blacklist);
-
-	if (priv->s390_subchannels)
-		g_strfreev (priv->s390_subchannels);
-
-	g_free (priv->wol_password);
-
-	G_OBJECT_CLASS (nm_setting_wired_parent_class)->finalize (object);
+	switch (prop_id) {
+	case PROP_PORT:
+		g_value_set_string (value, nm_setting_wired_get_port (setting));
+		break;
+	case PROP_SPEED:
+		g_value_set_uint (value, nm_setting_wired_get_speed (setting));
+		break;
+	case PROP_DUPLEX:
+		g_value_set_string (value, nm_setting_wired_get_duplex (setting));
+		break;
+	case PROP_AUTO_NEGOTIATE:
+		g_value_set_boolean (value, nm_setting_wired_get_auto_negotiate (setting));
+		break;
+	case PROP_MAC_ADDRESS:
+		g_value_set_string (value, nm_setting_wired_get_mac_address (setting));
+		break;
+	case PROP_CLONED_MAC_ADDRESS:
+		g_value_set_string (value, nm_setting_wired_get_cloned_mac_address (setting));
+		break;
+	case PROP_GENERATE_MAC_ADDRESS_MASK:
+		g_value_set_string (value, nm_setting_wired_get_generate_mac_address_mask (setting));
+		break;
+	case PROP_MAC_ADDRESS_BLACKLIST:
+		g_value_set_boxed (value, (char **) priv->mac_address_blacklist->data);
+		break;
+	case PROP_MTU:
+		g_value_set_uint (value, nm_setting_wired_get_mtu (setting));
+		break;
+	case PROP_S390_SUBCHANNELS:
+		g_value_set_boxed (value, priv->s390_subchannels);
+		break;
+	case PROP_S390_NETTYPE:
+		g_value_set_string (value, nm_setting_wired_get_s390_nettype (setting));
+		break;
+	case PROP_S390_OPTIONS:
+		g_value_take_boxed (value, _nm_utils_copy_strdict (priv->s390_options));
+		break;
+	case PROP_WAKE_ON_LAN:
+		g_value_set_uint (value, priv->wol);
+		break;
+	case PROP_WAKE_ON_LAN_PASSWORD:
+		g_value_set_string (value, priv->wol_password);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -920,60 +933,55 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+/*****************************************************************************/
+
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
+nm_setting_wired_init (NMSettingWired *setting)
 {
-	NMSettingWired *setting = NM_SETTING_WIRED (object);
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
 
-	switch (prop_id) {
-	case PROP_PORT:
-		g_value_set_string (value, nm_setting_wired_get_port (setting));
-		break;
-	case PROP_SPEED:
-		g_value_set_uint (value, nm_setting_wired_get_speed (setting));
-		break;
-	case PROP_DUPLEX:
-		g_value_set_string (value, nm_setting_wired_get_duplex (setting));
-		break;
-	case PROP_AUTO_NEGOTIATE:
-		g_value_set_boolean (value, nm_setting_wired_get_auto_negotiate (setting));
-		break;
-	case PROP_MAC_ADDRESS:
-		g_value_set_string (value, nm_setting_wired_get_mac_address (setting));
-		break;
-	case PROP_CLONED_MAC_ADDRESS:
-		g_value_set_string (value, nm_setting_wired_get_cloned_mac_address (setting));
-		break;
-	case PROP_GENERATE_MAC_ADDRESS_MASK:
-		g_value_set_string (value, nm_setting_wired_get_generate_mac_address_mask (setting));
-		break;
-	case PROP_MAC_ADDRESS_BLACKLIST:
-		g_value_set_boxed (value, (char **) priv->mac_address_blacklist->data);
-		break;
-	case PROP_MTU:
-		g_value_set_uint (value, nm_setting_wired_get_mtu (setting));
-		break;
-	case PROP_S390_SUBCHANNELS:
-		g_value_set_boxed (value, priv->s390_subchannels);
-		break;
-	case PROP_S390_NETTYPE:
-		g_value_set_string (value, nm_setting_wired_get_s390_nettype (setting));
-		break;
-	case PROP_S390_OPTIONS:
-		g_value_take_boxed (value, _nm_utils_copy_strdict (priv->s390_options));
-		break;
-	case PROP_WAKE_ON_LAN:
-		g_value_set_uint (value, priv->wol);
-		break;
-	case PROP_WAKE_ON_LAN_PASSWORD:
-		g_value_set_string (value, priv->wol_password);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	priv->s390_options = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
+
+	/* We use GArray rather than GPtrArray so it will automatically be NULL-terminated */
+	priv->mac_address_blacklist = g_array_new (TRUE, FALSE, sizeof (char *));
+	g_array_set_clear_func (priv->mac_address_blacklist, (GDestroyNotify) clear_blacklist_item);
+}
+
+/**
+ * nm_setting_wired_new:
+ *
+ * Creates a new #NMSettingWired object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingWired object
+ **/
+NMSetting *
+nm_setting_wired_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_WIRED, NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (object);
+
+	g_free (priv->port);
+	g_free (priv->duplex);
+	g_free (priv->s390_nettype);
+
+	g_hash_table_destroy (priv->s390_options);
+
+	g_free (priv->device_mac_address);
+	g_free (priv->cloned_mac_address);
+	g_free (priv->generate_mac_address_mask);
+	g_array_unref (priv->mac_address_blacklist);
+
+	if (priv->s390_subchannels)
+		g_strfreev (priv->s390_subchannels);
+
+	g_free (priv->wol_password);
+
+	G_OBJECT_CLASS (nm_setting_wired_parent_class)->finalize (object);
 }
 
 static void
@@ -985,8 +993,8 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingWiredPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify           = verify;

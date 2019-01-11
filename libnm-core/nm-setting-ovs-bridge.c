@@ -34,6 +34,8 @@
  * necessary for Open vSwitch bridges.
  **/
 
+/*****************************************************************************/
+
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_FAIL_MODE,
 	PROP_MCAST_SNOOPING_ENABLE,
@@ -265,8 +267,8 @@ nm_setting_ovs_bridge_class_init (NMSettingOvsBridgeClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify = verify;

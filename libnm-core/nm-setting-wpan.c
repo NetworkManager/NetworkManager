@@ -26,6 +26,14 @@
 #include "nm-setting-private.h"
 #include "nm-utils-private.h"
 
+/**
+ * SECTION:nm-setting-wpan
+ * @short_description: Describes connection properties for IEEE 802.15.4 (WPAN) MAC
+ *
+ * The #NMSettingWpan object is a #NMSetting subclass that describes properties
+ * necessary for configuring IEEE 802.15.4 (WPAN) MAC layer devices.
+ **/
+
 /* Ideally we'll be able to get these from a public header. */
 #ifndef IEEE802154_ADDR_LEN
 #define IEEE802154_ADDR_LEN 8
@@ -38,6 +46,8 @@
 #ifndef IEEE802154_MAX_CHANNEL
 #define IEEE802154_MAX_CHANNEL 26
 #endif
+
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_MAC_ADDRESS,
@@ -68,17 +78,11 @@ struct _NMSettingWpanClass {
         NMSettingClass parent;
 };
 
-/**
- * SECTION:nm-setting-wpan
- * @short_description: Describes connection properties for IEEE 802.15.4 (WPAN) MAC
- *
- * The #NMSettingWpan object is a #NMSetting subclass that describes properties
- * necessary for configuring IEEE 802.15.4 (WPAN) MAC layer devices.
- **/
-
 G_DEFINE_TYPE (NMSettingWpan, nm_setting_wpan, NM_TYPE_SETTING)
 
 #define NM_SETTING_WPAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WPAN, NMSettingWpanPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_wpan_get_mac_address:
@@ -208,6 +212,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
+/*****************************************************************************/
+
 static void
 get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
@@ -264,6 +270,8 @@ set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *p
 	}
 }
 
+/*****************************************************************************/
+
 static void
 nm_setting_wpan_init (NMSettingWpan *setting)
 {
@@ -308,8 +316,8 @@ nm_setting_wpan_class_init (NMSettingWpanClass *klass)
 
 	g_type_class_add_private (setting_class, sizeof (NMSettingWpanPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify = verify;

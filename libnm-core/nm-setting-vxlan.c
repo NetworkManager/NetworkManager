@@ -21,10 +21,11 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-vxlan.h"
+
 #include <stdlib.h>
 #include <string.h>
 
-#include "nm-setting-vxlan.h"
 #include "nm-utils.h"
 #include "nm-setting-private.h"
 
@@ -36,28 +37,9 @@
  * necessary for connection to VXLAN interfaces.
  **/
 
-G_DEFINE_TYPE (NMSettingVxlan, nm_setting_vxlan, NM_TYPE_SETTING)
+#define DST_PORT_DEFAULT   8472
 
-#define NM_SETTING_VXLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_VXLAN, NMSettingVxlanPrivate))
-
-typedef struct {
-	char *parent;
-	guint id;
-	char *local;
-	char *remote;
-	guint source_port_min;
-	guint source_port_max;
-	guint destination_port;
-	guint tos;
-	guint ttl;
-	guint ageing;
-	guint limit;
-	gboolean learning;
-	gboolean proxy;
-	gboolean rsc;
-	gboolean l2_miss;
-	gboolean l3_miss;
-} NMSettingVxlanPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_PARENT,
@@ -78,22 +60,30 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_L3_MISS,
 );
 
-#define DST_PORT_DEFAULT   8472
+typedef struct {
+	char *parent;
+	guint id;
+	char *local;
+	char *remote;
+	guint source_port_min;
+	guint source_port_max;
+	guint destination_port;
+	guint tos;
+	guint ttl;
+	guint ageing;
+	guint limit;
+	gboolean learning;
+	gboolean proxy;
+	gboolean rsc;
+	gboolean l2_miss;
+	gboolean l3_miss;
+} NMSettingVxlanPrivate;
 
-/**
- * nm_setting_vxlan_new:
- *
- * Creates a new #NMSettingVxlan object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingVxlan object
- *
- * Since: 1.2
- **/
-NMSetting *
-nm_setting_vxlan_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_VXLAN, NULL);
-}
+G_DEFINE_TYPE (NMSettingVxlan, nm_setting_vxlan, NM_TYPE_SETTING)
+
+#define NM_SETTING_VXLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_VXLAN, NMSettingVxlanPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_vxlan_get_parent:
@@ -337,11 +327,6 @@ nm_setting_vxlan_get_l3_miss (NMSettingVxlan *setting)
 
 /*****************************************************************************/
 
-static void
-nm_setting_vxlan_init (NMSettingVxlan *setting)
-{
-}
-
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -419,6 +404,70 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMSettingVxlan *setting = NM_SETTING_VXLAN (object);
+	NMSettingVxlanPrivate *priv = NM_SETTING_VXLAN_GET_PRIVATE (setting);
+
+	switch (prop_id) {
+	case PROP_PARENT:
+		g_value_set_string (value, priv->parent);
+		break;
+	case PROP_ID:
+		g_value_set_uint (value, priv->id);
+		break;
+	case PROP_LOCAL:
+		g_value_set_string (value, priv->local);
+		break;
+	case PROP_REMOTE:
+		g_value_set_string (value, priv->remote);
+		break;
+	case PROP_SOURCE_PORT_MIN:
+		g_value_set_uint (value, priv->source_port_min);
+		break;
+	case PROP_SOURCE_PORT_MAX:
+		g_value_set_uint (value, priv->source_port_max);
+		break;
+	case PROP_DESTINATION_PORT:
+		g_value_set_uint (value, priv->destination_port);
+		break;
+	case PROP_TOS:
+		g_value_set_uint (value, priv->tos);
+		break;
+	case PROP_AGEING:
+		g_value_set_uint (value, priv->ageing);
+		break;
+	case PROP_LIMIT:
+		g_value_set_uint (value, priv->limit);
+		break;
+	case PROP_PROXY:
+		g_value_set_boolean (value, priv->proxy);
+		break;
+	case PROP_TTL:
+		g_value_set_uint (value, priv->ttl);
+		break;
+	case PROP_LEARNING:
+		g_value_set_boolean (value, priv->learning);
+		break;
+	case PROP_RSC:
+		g_value_set_boolean (value, priv->rsc);
+		break;
+	case PROP_L2_MISS:
+		g_value_set_boolean (value, priv->l2_miss);
+		break;
+	case PROP_L3_MISS:
+		g_value_set_boolean (value, priv->l3_miss);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
 static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
@@ -484,66 +533,26 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingVxlan *setting = NM_SETTING_VXLAN (object);
-	NMSettingVxlanPrivate *priv = NM_SETTING_VXLAN_GET_PRIVATE (setting);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_PARENT:
-		g_value_set_string (value, priv->parent);
-		break;
-	case PROP_ID:
-		g_value_set_uint (value, priv->id);
-		break;
-	case PROP_LOCAL:
-		g_value_set_string (value, priv->local);
-		break;
-	case PROP_REMOTE:
-		g_value_set_string (value, priv->remote);
-		break;
-	case PROP_SOURCE_PORT_MIN:
-		g_value_set_uint (value, priv->source_port_min);
-		break;
-	case PROP_SOURCE_PORT_MAX:
-		g_value_set_uint (value, priv->source_port_max);
-		break;
-	case PROP_DESTINATION_PORT:
-		g_value_set_uint (value, priv->destination_port);
-		break;
-	case PROP_TOS:
-		g_value_set_uint (value, priv->tos);
-		break;
-	case PROP_AGEING:
-		g_value_set_uint (value, priv->ageing);
-		break;
-	case PROP_LIMIT:
-		g_value_set_uint (value, priv->limit);
-		break;
-	case PROP_PROXY:
-		g_value_set_boolean (value, priv->proxy);
-		break;
-	case PROP_TTL:
-		g_value_set_uint (value, priv->ttl);
-		break;
-	case PROP_LEARNING:
-		g_value_set_boolean (value, priv->learning);
-		break;
-	case PROP_RSC:
-		g_value_set_boolean (value, priv->rsc);
-		break;
-	case PROP_L2_MISS:
-		g_value_set_boolean (value, priv->l2_miss);
-		break;
-	case PROP_L3_MISS:
-		g_value_set_boolean (value, priv->l3_miss);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_vxlan_init (NMSettingVxlan *setting)
+{
+}
+
+/**
+ * nm_setting_vxlan_new:
+ *
+ * Creates a new #NMSettingVxlan object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingVxlan object
+ *
+ * Since: 1.2
+ **/
+NMSetting *
+nm_setting_vxlan_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_VXLAN, NULL);
 }
 
 static void
@@ -567,8 +576,8 @@ nm_setting_vxlan_class_init (NMSettingVxlanClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingVxlanPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify = verify;

@@ -21,10 +21,11 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-tun.h"
+
 #include <stdlib.h>
 #include <string.h>
 
-#include "nm-setting-tun.h"
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-private.h"
@@ -38,18 +39,7 @@
  * necessary for connection to TUN/TAP interfaces.
  **/
 
-G_DEFINE_TYPE (NMSettingTun, nm_setting_tun, NM_TYPE_SETTING)
-
-#define NM_SETTING_TUN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_TUN, NMSettingTunPrivate))
-
-typedef struct {
-	NMSettingTunMode mode;
-	char *owner;
-	char *group;
-	gboolean pi;
-	gboolean vnet_hdr;
-	gboolean multi_queue;
-} NMSettingTunPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_MODE,
@@ -60,20 +50,20 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_MULTI_QUEUE,
 );
 
-/**
- * nm_setting_tun_new:
- *
- * Creates a new #NMSettingTun object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingTun object
- *
- * Since: 1.2
- **/
-NMSetting *
-nm_setting_tun_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_TUN, NULL);
-}
+typedef struct {
+	NMSettingTunMode mode;
+	char *owner;
+	char *group;
+	gboolean pi;
+	gboolean vnet_hdr;
+	gboolean multi_queue;
+} NMSettingTunPrivate;
+
+G_DEFINE_TYPE (NMSettingTun, nm_setting_tun, NM_TYPE_SETTING)
+
+#define NM_SETTING_TUN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_TUN, NMSettingTunPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_tun_get_mode:
@@ -165,11 +155,6 @@ nm_setting_tun_get_multi_queue (NMSettingTun *setting)
 	return NM_SETTING_TUN_GET_PRIVATE (setting)->multi_queue;
 }
 
-static void
-nm_setting_tun_init (NMSettingTun *setting)
-{
-}
-
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -210,39 +195,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMSettingTun *setting = NM_SETTING_TUN (object);
-	NMSettingTunPrivate *priv = NM_SETTING_TUN_GET_PRIVATE (setting);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_MODE:
-		priv->mode = g_value_get_uint (value);
-		break;
-	case PROP_OWNER:
-		g_free (priv->owner);
-		priv->owner = g_value_dup_string (value);
-		break;
-	case PROP_GROUP:
-		g_free (priv->group);
-		priv->group = g_value_dup_string (value);
-		break;
-	case PROP_PI:
-		priv->pi = g_value_get_boolean (value);
-		break;
-	case PROP_VNET_HDR:
-		priv->vnet_hdr = g_value_get_boolean (value);
-		break;
-	case PROP_MULTI_QUEUE:
-		priv->multi_queue = g_value_get_boolean (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
@@ -276,6 +230,61 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMSettingTun *setting = NM_SETTING_TUN (object);
+	NMSettingTunPrivate *priv = NM_SETTING_TUN_GET_PRIVATE (setting);
+
+	switch (prop_id) {
+	case PROP_MODE:
+		priv->mode = g_value_get_uint (value);
+		break;
+	case PROP_OWNER:
+		g_free (priv->owner);
+		priv->owner = g_value_dup_string (value);
+		break;
+	case PROP_GROUP:
+		g_free (priv->group);
+		priv->group = g_value_dup_string (value);
+		break;
+	case PROP_PI:
+		priv->pi = g_value_get_boolean (value);
+		break;
+	case PROP_VNET_HDR:
+		priv->vnet_hdr = g_value_get_boolean (value);
+		break;
+	case PROP_MULTI_QUEUE:
+		priv->multi_queue = g_value_get_boolean (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+/*****************************************************************************/
+
+static void
+nm_setting_tun_init (NMSettingTun *setting)
+{
+}
+
+/**
+ * nm_setting_tun_new:
+ *
+ * Creates a new #NMSettingTun object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingTun object
+ *
+ * Since: 1.2
+ **/
+NMSetting *
+nm_setting_tun_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_TUN, NULL);
+}
+
+static void
 finalize (GObject *object)
 {
 	NMSettingTun *setting = NM_SETTING_TUN (object);
@@ -295,8 +304,8 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingTunPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify = verify;

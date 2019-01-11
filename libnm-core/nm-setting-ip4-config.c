@@ -21,9 +21,10 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-ip4-config.h"
+
 #include <string.h>
 
-#include "nm-setting-ip4-config.h"
 #include "nm-setting-private.h"
 
 /**
@@ -50,32 +51,23 @@
  * connection.
  **/
 
-G_DEFINE_TYPE (NMSettingIP4Config, nm_setting_ip4_config, NM_TYPE_SETTING_IP_CONFIG)
-
-#define NM_SETTING_IP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_IP4_CONFIG, NMSettingIP4ConfigPrivate))
-
-typedef struct {
-	char *dhcp_client_id;
-	char *dhcp_fqdn;
-} NMSettingIP4ConfigPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_DHCP_CLIENT_ID,
 	PROP_DHCP_FQDN,
 );
 
-/**
- * nm_setting_ip4_config_new:
- *
- * Creates a new #NMSettingIP4Config object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingIP4Config object
- **/
-NMSetting *
-nm_setting_ip4_config_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_IP4_CONFIG, NULL);
-}
+typedef struct {
+	char *dhcp_client_id;
+	char *dhcp_fqdn;
+} NMSettingIP4ConfigPrivate;
+
+G_DEFINE_TYPE (NMSettingIP4Config, nm_setting_ip4_config, NM_TYPE_SETTING_IP_CONFIG)
+
+#define NM_SETTING_IP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_IP4_CONFIG, NMSettingIP4ConfigPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_ip4_config_get_dhcp_client_id:
@@ -247,62 +239,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	return TRUE;
-}
-
-static void
-nm_setting_ip4_config_init (NMSettingIP4Config *setting)
-{
-}
-
-static void
-finalize (GObject *object)
-{
-	NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (object);
-
-	g_free (priv->dhcp_client_id);
-	g_free (priv->dhcp_fqdn);
-
-	G_OBJECT_CLASS (nm_setting_ip4_config_parent_class)->finalize (object);
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_DHCP_CLIENT_ID:
-		g_free (priv->dhcp_client_id);
-		priv->dhcp_client_id = g_value_dup_string (value);
-		break;
-	case PROP_DHCP_FQDN:
-		g_free (priv->dhcp_fqdn);
-		priv->dhcp_fqdn = g_value_dup_string (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingIP4Config *s_ip4 = NM_SETTING_IP4_CONFIG (object);
-
-	switch (prop_id) {
-	case PROP_DHCP_CLIENT_ID:
-		g_value_set_string (value, nm_setting_ip4_config_get_dhcp_client_id (s_ip4));
-		break;
-	case PROP_DHCP_FQDN:
-		g_value_set_string (value, nm_setting_ip4_config_get_dhcp_fqdn (s_ip4));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
 }
 
 static GVariant *
@@ -526,6 +462,79 @@ ip4_route_data_set (NMSetting  *setting,
 	return TRUE;
 }
 
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMSettingIP4Config *s_ip4 = NM_SETTING_IP4_CONFIG (object);
+
+	switch (prop_id) {
+	case PROP_DHCP_CLIENT_ID:
+		g_value_set_string (value, nm_setting_ip4_config_get_dhcp_client_id (s_ip4));
+		break;
+	case PROP_DHCP_FQDN:
+		g_value_set_string (value, nm_setting_ip4_config_get_dhcp_fqdn (s_ip4));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_DHCP_CLIENT_ID:
+		g_free (priv->dhcp_client_id);
+		priv->dhcp_client_id = g_value_dup_string (value);
+		break;
+	case PROP_DHCP_FQDN:
+		g_free (priv->dhcp_fqdn);
+		priv->dhcp_fqdn = g_value_dup_string (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_setting_ip4_config_init (NMSettingIP4Config *setting)
+{
+}
+
+/**
+ * nm_setting_ip4_config_new:
+ *
+ * Creates a new #NMSettingIP4Config object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingIP4Config object
+ **/
+NMSetting *
+nm_setting_ip4_config_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_IP4_CONFIG, NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (object);
+
+	g_free (priv->dhcp_client_id);
+	g_free (priv->dhcp_fqdn);
+
+	G_OBJECT_CLASS (nm_setting_ip4_config_parent_class)->finalize (object);
+}
+
 static void
 nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 {
@@ -535,8 +544,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 
 	g_type_class_add_private (setting_class, sizeof (NMSettingIP4ConfigPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify = verify;

@@ -34,7 +34,27 @@
  * necessary for connection to dummy devices
  **/
 
+/*****************************************************************************/
+
 G_DEFINE_TYPE (NMSettingDummy, nm_setting_dummy, NM_TYPE_SETTING)
+
+/*****************************************************************************/
+
+static gboolean
+verify (NMSetting *setting, NMConnection *connection, GError **error)
+{
+	if (!_nm_connection_verify_required_interface_name (connection, error))
+		return FALSE;
+
+	return TRUE;
+}
+
+/*****************************************************************************/
+
+static void
+nm_setting_dummy_init (NMSettingDummy *setting)
+{
+}
 
 /**
  * nm_setting_dummy_new:
@@ -49,20 +69,6 @@ NMSetting *
 nm_setting_dummy_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_DUMMY, NULL);
-}
-
-static gboolean
-verify (NMSetting *setting, NMConnection *connection, GError **error)
-{
-	if (!_nm_connection_verify_required_interface_name (connection, error))
-		return FALSE;
-
-	return TRUE;
-}
-
-static void
-nm_setting_dummy_init (NMSettingDummy *setting)
-{
 }
 
 static void

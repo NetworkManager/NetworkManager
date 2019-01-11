@@ -2517,11 +2517,6 @@ _nm_setting_gendata_reset_from_hash (NMSetting *setting,
 /*****************************************************************************/
 
 static void
-nm_setting_init (NMSetting *setting)
-{
-}
-
-static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
@@ -2535,6 +2530,13 @@ get_property (GObject *object, guint prop_id,
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_setting_init (NMSetting *setting)
+{
 }
 
 static void

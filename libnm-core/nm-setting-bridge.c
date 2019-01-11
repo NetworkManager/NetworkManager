@@ -21,11 +21,12 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-bridge.h"
+
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
 
-#include "nm-setting-bridge.h"
 #include "nm-connection-private.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
@@ -38,21 +39,7 @@
  * necessary for bridging connections.
  **/
 
-G_DEFINE_TYPE (NMSettingBridge, nm_setting_bridge, NM_TYPE_SETTING)
-
-#define NM_SETTING_BRIDGE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BRIDGE, NMSettingBridgePrivate))
-
-typedef struct {
-	char *   mac_address;
-	gboolean stp;
-	guint16  priority;
-	guint16  forward_delay;
-	guint16  hello_time;
-	guint16  max_age;
-	guint32  ageing_time;
-	guint16  group_forward_mask;
-	gboolean multicast_snooping;
-} NMSettingBridgePrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_MAC_ADDRESS,
@@ -66,18 +53,23 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_MULTICAST_SNOOPING,
 );
 
-/**
- * nm_setting_bridge_new:
- *
- * Creates a new #NMSettingBridge object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingBridge object
- **/
-NMSetting *
-nm_setting_bridge_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_BRIDGE, NULL);
-}
+typedef struct {
+	char *   mac_address;
+	gboolean stp;
+	guint16  priority;
+	guint16  forward_delay;
+	guint16  hello_time;
+	guint16  max_age;
+	guint32  ageing_time;
+	guint16  group_forward_mask;
+	gboolean multicast_snooping;
+} NMSettingBridgePrivate;
+
+G_DEFINE_TYPE (NMSettingBridge, nm_setting_bridge, NM_TYPE_SETTING)
+
+#define NM_SETTING_BRIDGE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BRIDGE, NMSettingBridgePrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_bridge_get_mac_address:
@@ -290,19 +282,47 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return _nm_connection_verify_required_interface_name (connection, error);
 }
 
-static void
-nm_setting_bridge_init (NMSettingBridge *setting)
-{
-}
+/*****************************************************************************/
 
 static void
-finalize (GObject *object)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
 	NMSettingBridgePrivate *priv = NM_SETTING_BRIDGE_GET_PRIVATE (object);
+	NMSettingBridge *setting = NM_SETTING_BRIDGE (object);
 
-	g_free (priv->mac_address);
-
-	G_OBJECT_CLASS (nm_setting_bridge_parent_class)->finalize (object);
+	switch (prop_id) {
+	case PROP_MAC_ADDRESS:
+		g_value_set_string (value, nm_setting_bridge_get_mac_address (setting));
+		break;
+	case PROP_STP:
+		g_value_set_boolean (value, priv->stp);
+		break;
+	case PROP_PRIORITY:
+		g_value_set_uint (value, priv->priority);
+		break;
+	case PROP_FORWARD_DELAY:
+		g_value_set_uint (value, priv->forward_delay);
+		break;
+	case PROP_HELLO_TIME:
+		g_value_set_uint (value, priv->hello_time);
+		break;
+	case PROP_MAX_AGE:
+		g_value_set_uint (value, priv->max_age);
+		break;
+	case PROP_AGEING_TIME:
+		g_value_set_uint (value, priv->ageing_time);
+		break;
+	case PROP_GROUP_FORWARD_MASK:
+		g_value_set_uint (value, priv->group_forward_mask);
+		break;
+	case PROP_MULTICAST_SNOOPING:
+		g_value_set_boolean (value, priv->multicast_snooping);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -347,45 +367,34 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+/*****************************************************************************/
+
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
+nm_setting_bridge_init (NMSettingBridge *setting)
+{
+}
+
+/**
+ * nm_setting_bridge_new:
+ *
+ * Creates a new #NMSettingBridge object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingBridge object
+ **/
+NMSetting *
+nm_setting_bridge_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_BRIDGE, NULL);
+}
+
+static void
+finalize (GObject *object)
 {
 	NMSettingBridgePrivate *priv = NM_SETTING_BRIDGE_GET_PRIVATE (object);
-	NMSettingBridge *setting = NM_SETTING_BRIDGE (object);
 
-	switch (prop_id) {
-	case PROP_MAC_ADDRESS:
-		g_value_set_string (value, nm_setting_bridge_get_mac_address (setting));
-		break;
-	case PROP_STP:
-		g_value_set_boolean (value, priv->stp);
-		break;
-	case PROP_PRIORITY:
-		g_value_set_uint (value, priv->priority);
-		break;
-	case PROP_FORWARD_DELAY:
-		g_value_set_uint (value, priv->forward_delay);
-		break;
-	case PROP_HELLO_TIME:
-		g_value_set_uint (value, priv->hello_time);
-		break;
-	case PROP_MAX_AGE:
-		g_value_set_uint (value, priv->max_age);
-		break;
-	case PROP_AGEING_TIME:
-		g_value_set_uint (value, priv->ageing_time);
-		break;
-	case PROP_GROUP_FORWARD_MASK:
-		g_value_set_uint (value, priv->group_forward_mask);
-		break;
-	case PROP_MULTICAST_SNOOPING:
-		g_value_set_boolean (value, priv->multicast_snooping);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	g_free (priv->mac_address);
+
+	G_OBJECT_CLASS (nm_setting_bridge_parent_class)->finalize (object);
 }
 
 static void
@@ -397,8 +406,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingBridgePrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify = verify;

@@ -21,9 +21,10 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-adsl.h"
+
 #include <string.h>
 
-#include "nm-setting-adsl.h"
 #include "nm-setting-ppp.h"
 #include "nm-setting-private.h"
 #include "nm-utils.h"
@@ -37,19 +38,7 @@
  * properties of ADSL connections.
  */
 
-G_DEFINE_TYPE (NMSettingAdsl, nm_setting_adsl, NM_TYPE_SETTING)
-
-#define NM_SETTING_ADSL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_ADSL, NMSettingAdslPrivate))
-
-typedef struct {
-	char *  username;
-	char *  password;
-	NMSettingSecretFlags password_flags;
-	char *  protocol;
-	char *  encapsulation;
-	guint32 vpi;
-	guint32 vci;
-} NMSettingAdslPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_USERNAME,
@@ -61,18 +50,21 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_VCI,
 );
 
-/**
- * nm_setting_adsl_new:
- *
- * Creates a new #NMSettingAdsl object with default values.
- *
- * Returns: the new empty #NMSettingAdsl object
- **/
-NMSetting *
-nm_setting_adsl_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_ADSL, NULL);
-}
+typedef struct {
+	char *  username;
+	char *  password;
+	NMSettingSecretFlags password_flags;
+	char *  protocol;
+	char *  encapsulation;
+	guint32 vpi;
+	guint32 vci;
+} NMSettingAdslPrivate;
+
+G_DEFINE_TYPE (NMSettingAdsl, nm_setting_adsl, NM_TYPE_SETTING)
+
+#define NM_SETTING_ADSL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_ADSL, NMSettingAdslPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_adsl_get_username:
@@ -247,22 +239,40 @@ need_secrets (NMSetting *setting)
 	return secrets;
 }
 
-static void
-nm_setting_adsl_init (NMSettingAdsl *setting)
-{
-}
+/*****************************************************************************/
 
 static void
-finalize (GObject *object)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
-	NMSettingAdslPrivate *priv = NM_SETTING_ADSL_GET_PRIVATE (object);
+	NMSettingAdsl *setting = NM_SETTING_ADSL (object);
 
-	g_free (priv->username);
-	g_free (priv->password);
-	g_free (priv->protocol);
-	g_free (priv->encapsulation);
-
-	G_OBJECT_CLASS (nm_setting_adsl_parent_class)->finalize (object);
+	switch (prop_id) {
+	case PROP_USERNAME:
+		g_value_set_string (value, nm_setting_adsl_get_username (setting));
+		break;
+	case PROP_PASSWORD:
+		g_value_set_string (value, nm_setting_adsl_get_password (setting));
+		break;
+	case PROP_PASSWORD_FLAGS:
+		g_value_set_flags (value, nm_setting_adsl_get_password_flags (setting));
+		break;
+	case PROP_PROTOCOL:
+		g_value_set_string (value, nm_setting_adsl_get_protocol (setting));
+		break;
+	case PROP_ENCAPSULATION:
+		g_value_set_string (value, nm_setting_adsl_get_encapsulation (setting));
+		break;
+	case PROP_VPI:
+		g_value_set_uint (value, nm_setting_adsl_get_vpi (setting));
+		break;
+	case PROP_VCI:
+		g_value_set_uint (value, nm_setting_adsl_get_vci (setting));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -306,38 +316,37 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingAdsl *setting = NM_SETTING_ADSL (object);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_USERNAME:
-		g_value_set_string (value, nm_setting_adsl_get_username (setting));
-		break;
-	case PROP_PASSWORD:
-		g_value_set_string (value, nm_setting_adsl_get_password (setting));
-		break;
-	case PROP_PASSWORD_FLAGS:
-		g_value_set_flags (value, nm_setting_adsl_get_password_flags (setting));
-		break;
-	case PROP_PROTOCOL:
-		g_value_set_string (value, nm_setting_adsl_get_protocol (setting));
-		break;
-	case PROP_ENCAPSULATION:
-		g_value_set_string (value, nm_setting_adsl_get_encapsulation (setting));
-		break;
-	case PROP_VPI:
-		g_value_set_uint (value, nm_setting_adsl_get_vpi (setting));
-		break;
-	case PROP_VCI:
-		g_value_set_uint (value, nm_setting_adsl_get_vci (setting));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_adsl_init (NMSettingAdsl *setting)
+{
+}
+
+/**
+ * nm_setting_adsl_new:
+ *
+ * Creates a new #NMSettingAdsl object with default values.
+ *
+ * Returns: the new empty #NMSettingAdsl object
+ **/
+NMSetting *
+nm_setting_adsl_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_ADSL, NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingAdslPrivate *priv = NM_SETTING_ADSL_GET_PRIVATE (object);
+
+	g_free (priv->username);
+	g_free (priv->password);
+	g_free (priv->protocol);
+	g_free (priv->encapsulation);
+
+	G_OBJECT_CLASS (nm_setting_adsl_parent_class)->finalize (object);
 }
 
 static void
@@ -348,8 +357,8 @@ nm_setting_adsl_class_init (NMSettingAdslClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingAdslPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify         = verify;

@@ -21,9 +21,10 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-cdma.h"
+
 #include <string.h>
 
-#include "nm-setting-cdma.h"
 #include "nm-utils.h"
 #include "nm-setting-private.h"
 #include "nm-core-enum-types.h"
@@ -37,17 +38,7 @@
  * networks, including those using CDMA2000/EVDO technology.
  */
 
-G_DEFINE_TYPE (NMSettingCdma, nm_setting_cdma, NM_TYPE_SETTING)
-
-#define NM_SETTING_CDMA_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_CDMA, NMSettingCdmaPrivate))
-
-typedef struct {
-	char *number; /* For dialing, duh */
-	char *username;
-	char *password;
-	NMSettingSecretFlags password_flags;
-	guint32 mtu;
-} NMSettingCdmaPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_NUMBER,
@@ -57,18 +48,19 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_MTU,
 );
 
-/**
- * nm_setting_cdma_new:
- *
- * Creates a new #NMSettingCdma object with default values.
- *
- * Returns: the new empty #NMSettingCdma object
- **/
-NMSetting *
-nm_setting_cdma_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_CDMA, NULL);
-}
+typedef struct {
+	char *number; /* For dialing, duh */
+	char *username;
+	char *password;
+	NMSettingSecretFlags password_flags;
+	guint32 mtu;
+} NMSettingCdmaPrivate;
+
+G_DEFINE_TYPE (NMSettingCdma, nm_setting_cdma, NM_TYPE_SETTING)
+
+#define NM_SETTING_CDMA_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_CDMA, NMSettingCdmaPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_cdma_get_number:
@@ -203,21 +195,34 @@ need_secrets (NMSetting *setting)
 	return secrets;
 }
 
-static void
-nm_setting_cdma_init (NMSettingCdma *setting)
-{
-}
+/*****************************************************************************/
 
 static void
-finalize (GObject *object)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
-	NMSettingCdmaPrivate *priv = NM_SETTING_CDMA_GET_PRIVATE (object);
+	NMSettingCdma *setting = NM_SETTING_CDMA (object);
 
-	g_free (priv->number);
-	g_free (priv->username);
-	g_free (priv->password);
-
-	G_OBJECT_CLASS (nm_setting_cdma_parent_class)->finalize (object);
+	switch (prop_id) {
+	case PROP_NUMBER:
+		g_value_set_string (value, nm_setting_cdma_get_number (setting));
+		break;
+	case PROP_USERNAME:
+		g_value_set_string (value, nm_setting_cdma_get_username (setting));
+		break;
+	case PROP_PASSWORD:
+		g_value_set_string (value, nm_setting_cdma_get_password (setting));
+		break;
+	case PROP_PASSWORD_FLAGS:
+		g_value_set_flags (value, nm_setting_cdma_get_password_flags (setting));
+		break;
+	case PROP_MTU:
+		g_value_set_uint (value, nm_setting_cdma_get_mtu (setting));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -251,32 +256,36 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingCdma *setting = NM_SETTING_CDMA (object);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_NUMBER:
-		g_value_set_string (value, nm_setting_cdma_get_number (setting));
-		break;
-	case PROP_USERNAME:
-		g_value_set_string (value, nm_setting_cdma_get_username (setting));
-		break;
-	case PROP_PASSWORD:
-		g_value_set_string (value, nm_setting_cdma_get_password (setting));
-		break;
-	case PROP_PASSWORD_FLAGS:
-		g_value_set_flags (value, nm_setting_cdma_get_password_flags (setting));
-		break;
-	case PROP_MTU:
-		g_value_set_uint (value, nm_setting_cdma_get_mtu (setting));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_cdma_init (NMSettingCdma *setting)
+{
+}
+
+/**
+ * nm_setting_cdma_new:
+ *
+ * Creates a new #NMSettingCdma object with default values.
+ *
+ * Returns: the new empty #NMSettingCdma object
+ **/
+NMSetting *
+nm_setting_cdma_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_CDMA, NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingCdmaPrivate *priv = NM_SETTING_CDMA_GET_PRIVATE (object);
+
+	g_free (priv->number);
+	g_free (priv->username);
+	g_free (priv->password);
+
+	G_OBJECT_CLASS (nm_setting_cdma_parent_class)->finalize (object);
 }
 
 static void
@@ -287,8 +296,8 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingCdmaPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify         = verify;

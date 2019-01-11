@@ -1095,60 +1095,42 @@ nm_vpn_plugin_info_load_editor_plugin (NMVpnPluginInfo *self, GError **error)
 
 /*****************************************************************************/
 
-/**
- * nm_vpn_plugin_info_new_from_file:
- * @filename: filename to read.
- * @error: on failure, the error reason.
- *
- * Read the plugin info from file @filename. Does not do
- * any further verification on the file. You might want to check
- * file permissions and ownership of the file.
- *
- * Returns: %NULL if there is any error or a newly created
- * #NMVpnPluginInfo instance.
- *
- * Since: 1.2
- */
-NMVpnPluginInfo *
-nm_vpn_plugin_info_new_from_file (const char *filename,
-                                  GError **error)
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
-	g_return_val_if_fail (filename, NULL);
+	NMVpnPluginInfoPrivate *priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE (object);
 
-	return NM_VPN_PLUGIN_INFO (g_initable_new (NM_TYPE_VPN_PLUGIN_INFO,
-	                                           NULL,
-	                                           error,
-	                                           NM_VPN_PLUGIN_INFO_FILENAME, filename,
-	                                           NULL));
+	switch (prop_id) {
+	case PROP_NAME:
+		g_value_set_string (value, priv->name);
+		break;
+	case PROP_FILENAME:
+		g_value_set_string (value, priv->filename);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
-/**
- * nm_vpn_plugin_info_new_with_data:
- * @filename: optional filename.
- * @keyfile: inject data for the plugin info instance.
- * @error: construction may fail if the keyfile lacks mandatory fields.
- *   In this case, return the error reason.
- *
- * This constructor does not read any data from file but
- * takes instead a @keyfile argument.
- *
- * Returns: new plugin info instance.
- *
- * Since: 1.2
- */
-NMVpnPluginInfo *
-nm_vpn_plugin_info_new_with_data (const char *filename,
-                                  GKeyFile *keyfile,
-                                  GError **error)
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
 {
-	g_return_val_if_fail (keyfile, NULL);
+	NMVpnPluginInfoPrivate *priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE (object);
 
-	return NM_VPN_PLUGIN_INFO (g_initable_new (NM_TYPE_VPN_PLUGIN_INFO,
-	                                           NULL,
-	                                           error,
-	                                           NM_VPN_PLUGIN_INFO_FILENAME, filename,
-	                                           NM_VPN_PLUGIN_INFO_KEYFILE, keyfile,
-	                                           NULL));
+	switch (prop_id) {
+	case PROP_FILENAME:
+		priv->filename = g_value_dup_string (value);
+		break;
+	case PROP_KEYFILE:
+		priv->keyfile = g_value_dup_boxed (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 /*****************************************************************************/
@@ -1224,42 +1206,60 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	return TRUE;
 }
 
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
+/**
+ * nm_vpn_plugin_info_new_from_file:
+ * @filename: filename to read.
+ * @error: on failure, the error reason.
+ *
+ * Read the plugin info from file @filename. Does not do
+ * any further verification on the file. You might want to check
+ * file permissions and ownership of the file.
+ *
+ * Returns: %NULL if there is any error or a newly created
+ * #NMVpnPluginInfo instance.
+ *
+ * Since: 1.2
+ */
+NMVpnPluginInfo *
+nm_vpn_plugin_info_new_from_file (const char *filename,
+                                  GError **error)
 {
-	NMVpnPluginInfoPrivate *priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE (object);
+	g_return_val_if_fail (filename, NULL);
 
-	switch (prop_id) {
-	case PROP_FILENAME:
-		priv->filename = g_value_dup_string (value);
-		break;
-	case PROP_KEYFILE:
-		priv->keyfile = g_value_dup_boxed (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	return NM_VPN_PLUGIN_INFO (g_initable_new (NM_TYPE_VPN_PLUGIN_INFO,
+	                                           NULL,
+	                                           error,
+	                                           NM_VPN_PLUGIN_INFO_FILENAME, filename,
+	                                           NULL));
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
+/**
+ * nm_vpn_plugin_info_new_with_data:
+ * @filename: optional filename.
+ * @keyfile: inject data for the plugin info instance.
+ * @error: construction may fail if the keyfile lacks mandatory fields.
+ *   In this case, return the error reason.
+ *
+ * This constructor does not read any data from file but
+ * takes instead a @keyfile argument.
+ *
+ * Returns: new plugin info instance.
+ *
+ * Since: 1.2
+ */
+NMVpnPluginInfo *
+nm_vpn_plugin_info_new_with_data (const char *filename,
+                                  GKeyFile *keyfile,
+                                  GError **error)
 {
-	NMVpnPluginInfoPrivate *priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE (object);
+	g_return_val_if_fail (keyfile, NULL);
 
-	switch (prop_id) {
-	case PROP_NAME:
-		g_value_set_string (value, priv->name);
-		break;
-	case PROP_FILENAME:
-		g_value_set_string (value, priv->filename);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	return NM_VPN_PLUGIN_INFO (g_initable_new (NM_TYPE_VPN_PLUGIN_INFO,
+	                                           NULL,
+	                                           error,
+	                                           NM_VPN_PLUGIN_INFO_FILENAME, filename,
+	                                           NM_VPN_PLUGIN_INFO_KEYFILE, keyfile,
+	                                           NULL));
 }
 
 static void
@@ -1298,13 +1298,10 @@ nm_vpn_plugin_info_class_init (NMVpnPluginInfoClass *plugin_class)
 
 	g_type_class_add_private (object_class, sizeof (NMVpnPluginInfoPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->dispose      = dispose;
 	object_class->finalize     = finalize;
-
-	/* properties */
 
 	/**
 	 * NMVpnPluginInfo:name:
@@ -1361,4 +1358,3 @@ nm_vpn_plugin_info_initable_iface_init (GInitableIface *iface)
 {
 	iface->init = init_sync;
 }
-

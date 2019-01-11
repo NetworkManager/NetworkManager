@@ -22,6 +22,7 @@
 #include "nm-default.h"
 
 #include "nm-setting-proxy.h"
+
 #include "nm-utils.h"
 #include "nm-setting-private.h"
 
@@ -39,16 +40,7 @@
  * to fulfill client queries.
  **/
 
-G_DEFINE_TYPE (NMSettingProxy, nm_setting_proxy, NM_TYPE_SETTING)
-
-#define NM_SETTING_PROXY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_PROXY, NMSettingProxyPrivate))
-
-typedef struct {
-	NMSettingProxyMethod method;
-	gboolean browser_only;
-	char *pac_url;
-	char *pac_script;
-} NMSettingProxyPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_METHOD,
@@ -57,20 +49,18 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_PAC_SCRIPT,
 );
 
-/**
- * nm_setting_proxy_new:
- *
- * Creates a new #NMSettingProxy object.
- *
- * Returns: the new empty #NMSettingProxy object
- *
- * Since: 1.6
- **/
-NMSetting *
-nm_setting_proxy_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_PROXY, NULL);
-}
+typedef struct {
+	NMSettingProxyMethod method;
+	gboolean browser_only;
+	char *pac_url;
+	char *pac_script;
+} NMSettingProxyPrivate;
+
+G_DEFINE_TYPE (NMSettingProxy, nm_setting_proxy, NM_TYPE_SETTING)
+
+#define NM_SETTING_PROXY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_PROXY, NMSettingProxyPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_proxy_get_method:
@@ -210,22 +200,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-static void
-nm_setting_proxy_init (NMSettingProxy *setting)
-{
-}
-
-static void
-finalize (GObject *object)
-{
-	NMSettingProxy *self = NM_SETTING_PROXY (object);
-	NMSettingProxyPrivate *priv = NM_SETTING_PROXY_GET_PRIVATE (self);
-
-	g_free (priv->pac_url);
-	g_free (priv->pac_script);
-
-	G_OBJECT_CLASS (nm_setting_proxy_parent_class)->finalize (object);
-}
+/*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id,
@@ -279,6 +254,40 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+/*****************************************************************************/
+
+static void
+nm_setting_proxy_init (NMSettingProxy *setting)
+{
+}
+
+/**
+ * nm_setting_proxy_new:
+ *
+ * Creates a new #NMSettingProxy object.
+ *
+ * Returns: the new empty #NMSettingProxy object
+ *
+ * Since: 1.6
+ **/
+NMSetting *
+nm_setting_proxy_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_PROXY, NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingProxy *self = NM_SETTING_PROXY (object);
+	NMSettingProxyPrivate *priv = NM_SETTING_PROXY_GET_PRIVATE (self);
+
+	g_free (priv->pac_url);
+	g_free (priv->pac_script);
+
+	G_OBJECT_CLASS (nm_setting_proxy_parent_class)->finalize (object);
+}
+
 static void
 nm_setting_proxy_class_init (NMSettingProxyClass *klass)
 {
@@ -287,8 +296,8 @@ nm_setting_proxy_class_init (NMSettingProxyClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingProxyPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify = verify;

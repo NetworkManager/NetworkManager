@@ -15,6 +15,7 @@
 #include "nm-default.h"
 
 #include "nm-setting-sriov.h"
+
 #include "nm-setting-private.h"
 #include "nm-utils-private.h"
 
@@ -23,6 +24,14 @@
  * @short_description: Describes SR-IOV connection properties
  * @include: nm-setting-sriov.h
  **/
+
+/*****************************************************************************/
+
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettingSriov,
+	PROP_TOTAL_VFS,
+	PROP_VFS,
+	PROP_AUTOPROBE_DRIVERS,
+);
 
 /**
  * NMSettingSriov:
@@ -43,12 +52,6 @@ struct _NMSettingSriovClass {
 };
 
 G_DEFINE_TYPE (NMSettingSriov, nm_setting_sriov, NM_TYPE_SETTING)
-
-NM_GOBJECT_PROPERTIES_DEFINE (NMSettingSriov,
-	PROP_TOTAL_VFS,
-	PROP_VFS,
-	PROP_AUTOPROBE_DRIVERS,
-);
 
 /*****************************************************************************/
 
@@ -702,21 +705,6 @@ nm_sriov_vf_get_vlan_protocol (const NMSriovVF *vf, guint vlan_id)
 /*****************************************************************************/
 
 /**
- * nm_setting_sriov_new:
- *
- * Creates a new #NMSettingSriov object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingSriov object
- *
- * Since: 1.14
- **/
-NMSetting *
-nm_setting_sriov_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_SRIOV, NULL);
-}
-
-/**
  * nm_setting_sriov_get_total_vfs:
  * @setting: the #NMSettingSriov
  *
@@ -1136,55 +1124,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMSettingSriov *self = NM_SETTING_SRIOV (object);
-
-	switch (prop_id) {
-	case PROP_TOTAL_VFS:
-		self->total_vfs = g_value_get_uint (value);
-		break;
-	case PROP_VFS:
-		g_ptr_array_unref (self->vfs);
-		self->vfs = _nm_utils_copy_array (g_value_get_boxed (value),
-		                                  (NMUtilsCopyFunc) nm_sriov_vf_dup,
-		                                  (GDestroyNotify) nm_sriov_vf_unref);
-		break;
-	case PROP_AUTOPROBE_DRIVERS:
-		self->autoprobe_drivers = g_value_get_enum (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingSriov *self = NM_SETTING_SRIOV (object);
-
-	switch (prop_id) {
-	case PROP_TOTAL_VFS:
-		g_value_set_uint (value, self->total_vfs);
-		break;
-	case PROP_VFS:
-		g_value_take_boxed (value, _nm_utils_copy_array (self->vfs,
-		                                                 (NMUtilsCopyFunc) nm_sriov_vf_dup,
-		                                                 (GDestroyNotify) nm_sriov_vf_unref));
-		break;
-	case PROP_AUTOPROBE_DRIVERS:
-		g_value_set_enum (value, self->autoprobe_drivers);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
 static NMTernary
 compare_property (const NMSettInfoSetting *sett_info,
                   guint property_idx,
@@ -1218,10 +1157,78 @@ compare_property (const NMSettInfoSetting *sett_info,
 	                                                                           flags);
 }
 
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMSettingSriov *self = NM_SETTING_SRIOV (object);
+
+	switch (prop_id) {
+	case PROP_TOTAL_VFS:
+		g_value_set_uint (value, self->total_vfs);
+		break;
+	case PROP_VFS:
+		g_value_take_boxed (value, _nm_utils_copy_array (self->vfs,
+		                                                 (NMUtilsCopyFunc) nm_sriov_vf_dup,
+		                                                 (GDestroyNotify) nm_sriov_vf_unref));
+		break;
+	case PROP_AUTOPROBE_DRIVERS:
+		g_value_set_enum (value, self->autoprobe_drivers);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMSettingSriov *self = NM_SETTING_SRIOV (object);
+
+	switch (prop_id) {
+	case PROP_TOTAL_VFS:
+		self->total_vfs = g_value_get_uint (value);
+		break;
+	case PROP_VFS:
+		g_ptr_array_unref (self->vfs);
+		self->vfs = _nm_utils_copy_array (g_value_get_boxed (value),
+		                                  (NMUtilsCopyFunc) nm_sriov_vf_dup,
+		                                  (GDestroyNotify) nm_sriov_vf_unref);
+		break;
+	case PROP_AUTOPROBE_DRIVERS:
+		self->autoprobe_drivers = g_value_get_enum (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
 static void
 nm_setting_sriov_init (NMSettingSriov *setting)
 {
 	setting->vfs = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_sriov_vf_unref);
+}
+
+/**
+ * nm_setting_sriov_new:
+ *
+ * Creates a new #NMSettingSriov object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingSriov object
+ *
+ * Since: 1.14
+ **/
+NMSetting *
+nm_setting_sriov_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_SRIOV, NULL);
 }
 
 static void

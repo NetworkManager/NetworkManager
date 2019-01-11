@@ -41,17 +41,7 @@
  * necessary for connection to VLAN interfaces.
  **/
 
-G_DEFINE_TYPE (NMSettingVlan, nm_setting_vlan, NM_TYPE_SETTING)
-
-#define NM_SETTING_VLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_VLAN, NMSettingVlanPrivate))
-
-typedef struct {
-	char *parent;
-	guint32 id;
-	guint32 flags;
-	GSList *ingress_priority_map;
-	GSList *egress_priority_map;
-} NMSettingVlanPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMSettingVlan,
 	PROP_PARENT,
@@ -61,21 +51,22 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingVlan,
 	PROP_EGRESS_PRIORITY_MAP,
 );
 
+typedef struct {
+	char *parent;
+	guint32 id;
+	guint32 flags;
+	GSList *ingress_priority_map;
+	GSList *egress_priority_map;
+} NMSettingVlanPrivate;
+
+G_DEFINE_TYPE (NMSettingVlan, nm_setting_vlan, NM_TYPE_SETTING)
+
+#define NM_SETTING_VLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_VLAN, NMSettingVlanPrivate))
+
+/*****************************************************************************/
+
 #define MAX_SKB_PRIO   G_MAXUINT32
 #define MAX_8021P_PRIO 7  /* Max 802.1p priority */
-
-/**
- * nm_setting_vlan_new:
- *
- * Creates a new #NMSettingVlan object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingVlan object
- **/
-NMSetting *
-nm_setting_vlan_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_VLAN, NULL);
-}
 
 /**
  * nm_setting_vlan_get_parent:
@@ -591,11 +582,6 @@ nm_setting_vlan_clear_priorities (NMSettingVlan *setting, NMVlanPriorityMap map)
 
 /*****************************************************************************/
 
-static void
-nm_setting_vlan_init (NMSettingVlan *setting)
-{
-}
-
 static int
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -734,6 +720,55 @@ priority_strv_to_maplist (NMVlanPriorityMap map, char **strv)
 	return g_slist_sort (list, prio_map_compare);
 }
 
+static char **
+priority_maplist_to_strv (GSList *list)
+{
+	GSList *iter;
+	GPtrArray *strv;
+
+	strv = g_ptr_array_new ();
+
+	for (iter = list; iter; iter = g_slist_next (iter)) {
+		NMVlanQosMapping *item = iter->data;
+
+		g_ptr_array_add (strv, g_strdup_printf ("%d:%d", item->from, item->to));
+	}
+	g_ptr_array_add (strv, NULL);
+
+	return (char **) g_ptr_array_free (strv, FALSE);
+}
+
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMSettingVlan *setting = NM_SETTING_VLAN (object);
+	NMSettingVlanPrivate *priv = NM_SETTING_VLAN_GET_PRIVATE (setting);
+
+	switch (prop_id) {
+	case PROP_PARENT:
+		g_value_set_string (value, priv->parent);
+		break;
+	case PROP_ID:
+		g_value_set_uint (value, priv->id);
+		break;
+	case PROP_FLAGS:
+		g_value_set_flags (value, priv->flags);
+		break;
+	case PROP_INGRESS_PRIORITY_MAP:
+		g_value_take_boxed (value, priority_maplist_to_strv (priv->ingress_priority_map));
+		break;
+	case PROP_EGRESS_PRIORITY_MAP:
+		g_value_take_boxed (value, priority_maplist_to_strv (priv->egress_priority_map));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
 static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
@@ -766,51 +801,24 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static char **
-priority_maplist_to_strv (GSList *list)
-{
-	GSList *iter;
-	GPtrArray *strv;
-
-	strv = g_ptr_array_new ();
-
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		NMVlanQosMapping *item = iter->data;
-
-		g_ptr_array_add (strv, g_strdup_printf ("%d:%d", item->from, item->to));
-	}
-	g_ptr_array_add (strv, NULL);
-
-	return (char **) g_ptr_array_free (strv, FALSE);
-}
+/*****************************************************************************/
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
+nm_setting_vlan_init (NMSettingVlan *setting)
 {
-	NMSettingVlan *setting = NM_SETTING_VLAN (object);
-	NMSettingVlanPrivate *priv = NM_SETTING_VLAN_GET_PRIVATE (setting);
+}
 
-	switch (prop_id) {
-	case PROP_PARENT:
-		g_value_set_string (value, priv->parent);
-		break;
-	case PROP_ID:
-		g_value_set_uint (value, priv->id);
-		break;
-	case PROP_FLAGS:
-		g_value_set_flags (value, priv->flags);
-		break;
-	case PROP_INGRESS_PRIORITY_MAP:
-		g_value_take_boxed (value, priority_maplist_to_strv (priv->ingress_priority_map));
-		break;
-	case PROP_EGRESS_PRIORITY_MAP:
-		g_value_take_boxed (value, priority_maplist_to_strv (priv->egress_priority_map));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+/**
+ * nm_setting_vlan_new:
+ *
+ * Creates a new #NMSettingVlan object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingVlan object
+ **/
+NMSetting *
+nm_setting_vlan_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_VLAN, NULL);
 }
 
 static void
@@ -835,8 +843,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingVlanPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify = verify;

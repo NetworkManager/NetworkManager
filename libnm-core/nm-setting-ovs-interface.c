@@ -33,6 +33,8 @@
  * necessary for Open vSwitch interfaces.
  **/
 
+/*****************************************************************************/
+
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_TYPE,
 );
@@ -364,8 +366,8 @@ nm_setting_ovs_interface_class_init (NMSettingOvsInterfaceClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify = verify;

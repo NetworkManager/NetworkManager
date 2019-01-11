@@ -22,10 +22,11 @@
 
 #include "nm-default.h"
 
+#include "nm-connection.h"
+
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "nm-connection.h"
 #include "nm-connection-private.h"
 #include "nm-utils.h"
 #include "nm-setting-private.h"
@@ -50,19 +51,7 @@
  *
  */
 
-typedef struct {
-	NMConnection *self;
-
-	GHashTable *settings;
-
-	/* D-Bus path of the connection, if any */
-	char *path;
-} NMConnectionPrivate;
-
-static NMConnectionPrivate *nm_connection_get_private (NMConnection *connection);
-#define NM_CONNECTION_GET_PRIVATE(o) (nm_connection_get_private ((NMConnection *)o))
-
-G_DEFINE_INTERFACE (NMConnection, nm_connection, G_TYPE_OBJECT)
+/*****************************************************************************/
 
 enum {
 	SECRETS_UPDATED,
@@ -72,6 +61,20 @@ enum {
 };
 
 static guint signals[LAST_SIGNAL] = { 0 };
+
+typedef struct {
+	NMConnection *self;
+
+	GHashTable *settings;
+
+	/* D-Bus path of the connection, if any */
+	char *path;
+} NMConnectionPrivate;
+
+G_DEFINE_INTERFACE (NMConnection, nm_connection, G_TYPE_OBJECT)
+
+static NMConnectionPrivate *nm_connection_get_private (NMConnection *connection);
+#define NM_CONNECTION_GET_PRIVATE(o) (nm_connection_get_private ((NMConnection *)o))
 
 /*****************************************************************************/
 

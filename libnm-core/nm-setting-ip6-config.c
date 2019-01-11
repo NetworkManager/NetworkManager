@@ -52,16 +52,7 @@
  * supported.
  **/
 
-G_DEFINE_TYPE (NMSettingIP6Config, nm_setting_ip6_config, NM_TYPE_SETTING_IP_CONFIG)
-
-#define NM_SETTING_IP6_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_IP6_CONFIG, NMSettingIP6ConfigPrivate))
-
-typedef struct {
-	NMSettingIP6ConfigPrivacy ip6_privacy;
-	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
-	char *token;
-	char *dhcp_duid;
-} NMSettingIP6ConfigPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_IP6_PRIVACY,
@@ -70,18 +61,18 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_DHCP_DUID,
 );
 
-/**
- * nm_setting_ip6_config_new:
- *
- * Creates a new #NMSettingIP6Config object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingIP6Config object
- **/
-NMSetting *
-nm_setting_ip6_config_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_IP6_CONFIG, NULL);
-}
+typedef struct {
+	NMSettingIP6ConfigPrivacy ip6_privacy;
+	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
+	char *token;
+	char *dhcp_duid;
+} NMSettingIP6ConfigPrivate;
+
+G_DEFINE_TYPE (NMSettingIP6Config, nm_setting_ip6_config, NM_TYPE_SETTING_IP_CONFIG)
+
+#define NM_SETTING_IP6_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_IP6_CONFIG, NMSettingIP6ConfigPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_ip6_config_get_ip6_privacy:
@@ -309,11 +300,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-static void
-nm_setting_ip6_config_init (NMSettingIP6Config *setting)
-{
-}
-
 static GVariant *
 ip6_dns_to_dbus (const GValue *prop_value)
 {
@@ -481,32 +467,7 @@ ip6_route_data_set (NMSetting  *setting,
 	return TRUE;
 }
 
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_IP6_PRIVACY:
-		priv->ip6_privacy = g_value_get_enum (value);
-		break;
-	case PROP_ADDR_GEN_MODE:
-		priv->addr_gen_mode = g_value_get_int (value);
-		break;
-	case PROP_TOKEN:
-		g_free (priv->token);
-		priv->token = g_value_dup_string (value);
-		break;
-	case PROP_DHCP_DUID:
-		g_free (priv->dhcp_duid);
-		priv->dhcp_duid = g_value_dup_string (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
+/*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id,
@@ -534,6 +495,53 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_IP6_PRIVACY:
+		priv->ip6_privacy = g_value_get_enum (value);
+		break;
+	case PROP_ADDR_GEN_MODE:
+		priv->addr_gen_mode = g_value_get_int (value);
+		break;
+	case PROP_TOKEN:
+		g_free (priv->token);
+		priv->token = g_value_dup_string (value);
+		break;
+	case PROP_DHCP_DUID:
+		g_free (priv->dhcp_duid);
+		priv->dhcp_duid = g_value_dup_string (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_setting_ip6_config_init (NMSettingIP6Config *setting)
+{
+}
+
+/**
+ * nm_setting_ip6_config_new:
+ *
+ * Creates a new #NMSettingIP6Config object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingIP6Config object
+ **/
+NMSetting *
+nm_setting_ip6_config_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_IP6_CONFIG, NULL);
+}
+
+static void
 finalize (GObject *object)
 {
 	NMSettingIP6Config *self = NM_SETTING_IP6_CONFIG (object);
@@ -554,8 +562,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingIP6ConfigPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify = verify;

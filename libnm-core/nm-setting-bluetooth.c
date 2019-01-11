@@ -22,11 +22,12 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-bluetooth.h"
+
 #include <string.h>
 #include <net/ethernet.h>
 
 #include "nm-connection-private.h"
-#include "nm-setting-bluetooth.h"
 #include "nm-setting-cdma.h"
 #include "nm-setting-gsm.h"
 #include "nm-setting-private.h"
@@ -43,31 +44,23 @@
  * Point (NAP) profiles.
  **/
 
-G_DEFINE_TYPE (NMSettingBluetooth, nm_setting_bluetooth, NM_TYPE_SETTING)
-
-#define NM_SETTING_BLUETOOTH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BLUETOOTH, NMSettingBluetoothPrivate))
-
-typedef struct {
-	char *bdaddr;
-	char *type;
-} NMSettingBluetoothPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_BDADDR,
 	PROP_TYPE,
 );
 
-/**
- * nm_setting_bluetooth_new:
- *
- * Creates a new #NMSettingBluetooth object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingBluetooth object
- **/
-NMSetting *nm_setting_bluetooth_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_BLUETOOTH, NULL);
-}
+typedef struct {
+	char *bdaddr;
+	char *type;
+} NMSettingBluetoothPrivate;
+
+G_DEFINE_TYPE (NMSettingBluetooth, nm_setting_bluetooth, NM_TYPE_SETTING)
+
+#define NM_SETTING_BLUETOOTH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BLUETOOTH, NMSettingBluetoothPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_bluetooth_get_connection_type:
@@ -221,20 +214,25 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-static void
-nm_setting_bluetooth_init (NMSettingBluetooth *setting)
-{
-}
+/*****************************************************************************/
 
 static void
-finalize (GObject *object)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
-	NMSettingBluetoothPrivate *priv = NM_SETTING_BLUETOOTH_GET_PRIVATE (object);
+	NMSettingBluetooth *setting = NM_SETTING_BLUETOOTH (object);
 
-	g_free (priv->bdaddr);
-	g_free (priv->type);
-
-	G_OBJECT_CLASS (nm_setting_bluetooth_parent_class)->finalize (object);
+	switch (prop_id) {
+	case PROP_BDADDR:
+		g_value_set_string (value, nm_setting_bluetooth_get_bdaddr (setting));
+		break;
+	case PROP_TYPE:
+		g_value_set_string (value, nm_setting_bluetooth_get_connection_type (setting));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -258,23 +256,34 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingBluetooth *setting = NM_SETTING_BLUETOOTH (object);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_BDADDR:
-		g_value_set_string (value, nm_setting_bluetooth_get_bdaddr (setting));
-		break;
-	case PROP_TYPE:
-		g_value_set_string (value, nm_setting_bluetooth_get_connection_type (setting));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_bluetooth_init (NMSettingBluetooth *setting)
+{
+}
+
+/**
+ * nm_setting_bluetooth_new:
+ *
+ * Creates a new #NMSettingBluetooth object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingBluetooth object
+ **/
+NMSetting *nm_setting_bluetooth_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_BLUETOOTH, NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingBluetoothPrivate *priv = NM_SETTING_BLUETOOTH_GET_PRIVATE (object);
+
+	g_free (priv->bdaddr);
+	g_free (priv->type);
+
+	G_OBJECT_CLASS (nm_setting_bluetooth_parent_class)->finalize (object);
 }
 
 static void
@@ -286,8 +295,8 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingBluetoothPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify       = verify;

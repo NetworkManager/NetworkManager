@@ -21,13 +21,13 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-vpn.h"
+
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
 
 #include "nm-utils/nm-secret-utils.h"
-
-#include "nm-setting-vpn.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
@@ -45,9 +45,16 @@
  * properties.
  **/
 
-G_DEFINE_TYPE (NMSettingVpn, nm_setting_vpn, NM_TYPE_SETTING)
+/*****************************************************************************/
 
-#define NM_SETTING_VPN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_VPN, NMSettingVpnPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettingVpn,
+	PROP_SERVICE_TYPE,
+	PROP_USER_NAME,
+	PROP_PERSISTENT,
+	PROP_DATA,
+	PROP_SECRETS,
+	PROP_TIMEOUT,
+);
 
 typedef struct {
 	char *service_type;
@@ -85,27 +92,11 @@ typedef struct {
 	guint32 timeout;
 } NMSettingVpnPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE (NMSettingVpn,
-	PROP_SERVICE_TYPE,
-	PROP_USER_NAME,
-	PROP_PERSISTENT,
-	PROP_DATA,
-	PROP_SECRETS,
-	PROP_TIMEOUT,
-);
+G_DEFINE_TYPE (NMSettingVpn, nm_setting_vpn, NM_TYPE_SETTING)
 
-/**
- * nm_setting_vpn_new:
- *
- * Creates a new #NMSettingVpn object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingVpn object
- **/
-NMSetting *
-nm_setting_vpn_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_VPN, NULL);
-}
+#define NM_SETTING_VPN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_VPN, NMSettingVpnPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_vpn_get_service_type:
@@ -853,26 +844,38 @@ clear_secrets_with_flags (NMSetting *setting,
 	return changed;
 }
 
+/*****************************************************************************/
+
 static void
-nm_setting_vpn_init (NMSettingVpn *setting)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
+	NMSettingVpn *setting = NM_SETTING_VPN (object);
 	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 
-	priv->data = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
-	priv->secrets = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) nm_free_secret);
-}
-
-static void
-finalize (GObject *object)
-{
-	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (object);
-
-	g_free (priv->service_type);
-	g_free (priv->user_name);
-	g_hash_table_destroy (priv->data);
-	g_hash_table_destroy (priv->secrets);
-
-	G_OBJECT_CLASS (nm_setting_vpn_parent_class)->finalize (object);
+	switch (prop_id) {
+	case PROP_SERVICE_TYPE:
+		g_value_set_string (value, nm_setting_vpn_get_service_type (setting));
+		break;
+	case PROP_USER_NAME:
+		g_value_set_string (value, nm_setting_vpn_get_user_name (setting));
+		break;
+	case PROP_PERSISTENT:
+		g_value_set_boolean (value, priv->persistent);
+		break;
+	case PROP_DATA:
+		g_value_take_boxed (value, _nm_utils_copy_strdict (priv->data));
+		break;
+	case PROP_SECRETS:
+		g_value_take_boxed (value, _nm_utils_copy_strdict (priv->secrets));
+		break;
+	case PROP_TIMEOUT:
+		g_value_set_uint (value, nm_setting_vpn_get_timeout (setting));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -910,36 +913,41 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+/*****************************************************************************/
+
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
+nm_setting_vpn_init (NMSettingVpn *setting)
 {
-	NMSettingVpn *setting = NM_SETTING_VPN (object);
 	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 
-	switch (prop_id) {
-	case PROP_SERVICE_TYPE:
-		g_value_set_string (value, nm_setting_vpn_get_service_type (setting));
-		break;
-	case PROP_USER_NAME:
-		g_value_set_string (value, nm_setting_vpn_get_user_name (setting));
-		break;
-	case PROP_PERSISTENT:
-		g_value_set_boolean (value, priv->persistent);
-		break;
-	case PROP_DATA:
-		g_value_take_boxed (value, _nm_utils_copy_strdict (priv->data));
-		break;
-	case PROP_SECRETS:
-		g_value_take_boxed (value, _nm_utils_copy_strdict (priv->secrets));
-		break;
-	case PROP_TIMEOUT:
-		g_value_set_uint (value, nm_setting_vpn_get_timeout (setting));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	priv->data = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
+	priv->secrets = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) nm_free_secret);
+}
+
+/**
+ * nm_setting_vpn_new:
+ *
+ * Creates a new #NMSettingVpn object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingVpn object
+ **/
+NMSetting *
+nm_setting_vpn_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_VPN, NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (object);
+
+	g_free (priv->service_type);
+	g_free (priv->user_name);
+	g_hash_table_destroy (priv->data);
+	g_hash_table_destroy (priv->secrets);
+
+	G_OBJECT_CLASS (nm_setting_vpn_parent_class)->finalize (object);
 }
 
 static void
@@ -951,8 +959,8 @@ nm_setting_vpn_class_init (NMSettingVpnClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingVpnPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify                   = verify;

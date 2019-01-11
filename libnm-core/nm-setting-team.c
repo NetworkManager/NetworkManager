@@ -21,10 +21,11 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-team.h"
+
 #include <string.h>
 #include <stdlib.h>
 
-#include "nm-setting-team.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-connection-private.h"
@@ -624,29 +625,6 @@ nm_team_link_watcher_get_flags (NMTeamLinkWatcher *watcher)
 
 /*****************************************************************************/
 
-G_DEFINE_TYPE (NMSettingTeam, nm_setting_team, NM_TYPE_SETTING)
-
-#define NM_SETTING_TEAM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_TEAM, NMSettingTeamPrivate))
-
-typedef struct {
-	char *config;
-	int notify_peers_count;
-	int notify_peers_interval;
-	int mcast_rejoin_count;
-	int mcast_rejoin_interval;
-	char *runner;
-	char *runner_hwaddr_policy;
-	GPtrArray *runner_tx_hash;
-	char *runner_tx_balancer;
-	int runner_tx_balancer_interval;
-	gboolean runner_active;
-	gboolean runner_fast_rate;
-	int runner_sys_prio;
-	int runner_min_ports;
-	char *runner_agg_select_policy;
-	GPtrArray *link_watchers; /* Array of NMTeamLinkWatcher */
-} NMSettingTeamPrivate;
-
 /* Keep aligned with _prop_to_keys[] */
 NM_GOBJECT_PROPERTIES_DEFINE (NMSettingTeam,
 	PROP_CONFIG,
@@ -688,18 +666,30 @@ static const _NMUtilsTeamPropertyKeys _prop_to_keys[_PROPERTY_ENUMS_LAST] = {
 	[PROP_LINK_WATCHERS] =               { "link_watch", NULL, NULL, 0 }
 };
 
-/**
- * nm_setting_team_new:
- *
- * Creates a new #NMSettingTeam object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingTeam object
- **/
-NMSetting *
-nm_setting_team_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_TEAM, NULL);
-}
+typedef struct {
+	char *config;
+	int notify_peers_count;
+	int notify_peers_interval;
+	int mcast_rejoin_count;
+	int mcast_rejoin_interval;
+	char *runner;
+	char *runner_hwaddr_policy;
+	GPtrArray *runner_tx_hash;
+	char *runner_tx_balancer;
+	int runner_tx_balancer_interval;
+	gboolean runner_active;
+	gboolean runner_fast_rate;
+	int runner_sys_prio;
+	int runner_min_ports;
+	char *runner_agg_select_policy;
+	GPtrArray *link_watchers; /* Array of NMTeamLinkWatcher */
+} NMSettingTeamPrivate;
+
+G_DEFINE_TYPE (NMSettingTeam, nm_setting_team, NM_TYPE_SETTING)
+
+#define NM_SETTING_TEAM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_TEAM, NMSettingTeamPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_team_get_config:
@@ -1357,35 +1347,6 @@ compare_property (const NMSettInfoSetting *sett_info,
 	                                                                          flags);
 }
 
-static void
-nm_setting_team_init (NMSettingTeam *setting)
-{
-	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
-
-	priv->runner = g_strdup (NM_SETTING_TEAM_RUNNER_ROUNDROBIN);
-	priv->runner_tx_balancer_interval = -1;
-	priv->runner_sys_prio = -1;
-	priv->runner_min_ports = -1;
-	priv->link_watchers = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_team_link_watcher_unref);
-}
-
-static void
-finalize (GObject *object)
-{
-	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (object);
-
-	g_free (priv->config);
-	g_free (priv->runner);
-	g_free (priv->runner_hwaddr_policy);
-	g_free (priv->runner_tx_balancer);
-	g_free (priv->runner_agg_select_policy);
-	if (priv->runner_tx_hash)
-		g_ptr_array_unref (priv->runner_tx_hash);
-	g_ptr_array_unref (priv->link_watchers);
-
-	G_OBJECT_CLASS (nm_setting_team_parent_class)->finalize (object);
-}
-
 #define JSON_TO_VAL(typ, id)   _nm_utils_json_extract_##typ (priv->config, _prop_to_keys[id], FALSE)
 
 static void
@@ -1428,6 +1389,73 @@ _align_team_properties (NMSettingTeam *setting)
 
 	g_ptr_array_unref (priv->link_watchers);
 	priv->link_watchers = JSON_TO_VAL (ptr_array, PROP_LINK_WATCHERS);
+}
+
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMSettingTeam *setting = NM_SETTING_TEAM (object);
+	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
+
+	switch (prop_id) {
+	case PROP_CONFIG:
+		g_value_set_string (value, nm_setting_team_get_config (setting));
+		break;
+	case PROP_NOTIFY_PEERS_COUNT:
+		g_value_set_int (value, priv->notify_peers_count);
+		break;
+	case PROP_NOTIFY_PEERS_INTERVAL:
+		g_value_set_int (value, priv->notify_peers_interval);
+		break;
+	case PROP_MCAST_REJOIN_COUNT:
+		g_value_set_int (value, priv->mcast_rejoin_count);
+		break;
+	case PROP_MCAST_REJOIN_INTERVAL:
+		g_value_set_int (value, priv->mcast_rejoin_interval);
+		break;
+	case PROP_RUNNER:
+		g_value_set_string (value, nm_setting_team_get_runner (setting));
+		break;
+	case PROP_RUNNER_HWADDR_POLICY:
+		g_value_set_string (value, nm_setting_team_get_runner_hwaddr_policy (setting));
+		break;
+	case PROP_RUNNER_TX_HASH:
+		g_value_take_boxed (value, priv->runner_tx_hash ?
+		                    _nm_utils_ptrarray_to_strv (priv->runner_tx_hash): NULL);
+		break;
+	case PROP_RUNNER_TX_BALANCER:
+		g_value_set_string (value, nm_setting_team_get_runner_tx_balancer (setting));
+		break;
+	case PROP_RUNNER_TX_BALANCER_INTERVAL:
+		g_value_set_int (value, priv->runner_tx_balancer_interval);
+		break;
+	case PROP_RUNNER_ACTIVE:
+		g_value_set_boolean (value, nm_setting_team_get_runner_active (setting));
+		break;
+	case PROP_RUNNER_FAST_RATE:
+		g_value_set_boolean (value, nm_setting_team_get_runner_fast_rate (setting));
+		break;
+	case PROP_RUNNER_SYS_PRIO:
+		g_value_set_int (value, priv->runner_sys_prio);
+		break;
+	case PROP_RUNNER_MIN_PORTS:
+		g_value_set_int (value, priv->runner_min_ports);
+		break;
+	case PROP_RUNNER_AGG_SELECT_POLICY:
+		g_value_set_string (value, nm_setting_team_get_runner_agg_select_policy (setting));
+		break;
+	case PROP_LINK_WATCHERS:
+		g_value_take_boxed (value, _nm_utils_copy_array (priv->link_watchers,
+		                                                 (NMUtilsCopyFunc) nm_team_link_watcher_dup,
+		                                                 (GDestroyNotify) nm_team_link_watcher_unref));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -1573,69 +1601,48 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+/*****************************************************************************/
+
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
+nm_setting_team_init (NMSettingTeam *setting)
 {
-	NMSettingTeam *setting = NM_SETTING_TEAM (object);
 	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
 
-	switch (prop_id) {
-	case PROP_CONFIG:
-		g_value_set_string (value, nm_setting_team_get_config (setting));
-		break;
-	case PROP_NOTIFY_PEERS_COUNT:
-		g_value_set_int (value, priv->notify_peers_count);
-		break;
-	case PROP_NOTIFY_PEERS_INTERVAL:
-		g_value_set_int (value, priv->notify_peers_interval);
-		break;
-	case PROP_MCAST_REJOIN_COUNT:
-		g_value_set_int (value, priv->mcast_rejoin_count);
-		break;
-	case PROP_MCAST_REJOIN_INTERVAL:
-		g_value_set_int (value, priv->mcast_rejoin_interval);
-		break;
-	case PROP_RUNNER:
-		g_value_set_string (value, nm_setting_team_get_runner (setting));
-		break;
-	case PROP_RUNNER_HWADDR_POLICY:
-		g_value_set_string (value, nm_setting_team_get_runner_hwaddr_policy (setting));
-		break;
-	case PROP_RUNNER_TX_HASH:
-		g_value_take_boxed (value, priv->runner_tx_hash ?
-		                    _nm_utils_ptrarray_to_strv (priv->runner_tx_hash): NULL);
-		break;
-	case PROP_RUNNER_TX_BALANCER:
-		g_value_set_string (value, nm_setting_team_get_runner_tx_balancer (setting));
-		break;
-	case PROP_RUNNER_TX_BALANCER_INTERVAL:
-		g_value_set_int (value, priv->runner_tx_balancer_interval);
-		break;
-	case PROP_RUNNER_ACTIVE:
-		g_value_set_boolean (value, nm_setting_team_get_runner_active (setting));
-		break;
-	case PROP_RUNNER_FAST_RATE:
-		g_value_set_boolean (value, nm_setting_team_get_runner_fast_rate (setting));
-		break;
-	case PROP_RUNNER_SYS_PRIO:
-		g_value_set_int (value, priv->runner_sys_prio);
-		break;
-	case PROP_RUNNER_MIN_PORTS:
-		g_value_set_int (value, priv->runner_min_ports);
-		break;
-	case PROP_RUNNER_AGG_SELECT_POLICY:
-		g_value_set_string (value, nm_setting_team_get_runner_agg_select_policy (setting));
-		break;
-	case PROP_LINK_WATCHERS:
-		g_value_take_boxed (value, _nm_utils_copy_array (priv->link_watchers,
-		                                                 (NMUtilsCopyFunc) nm_team_link_watcher_dup,
-		                                                 (GDestroyNotify) nm_team_link_watcher_unref));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	priv->runner = g_strdup (NM_SETTING_TEAM_RUNNER_ROUNDROBIN);
+	priv->runner_tx_balancer_interval = -1;
+	priv->runner_sys_prio = -1;
+	priv->runner_min_ports = -1;
+	priv->link_watchers = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_team_link_watcher_unref);
+}
+
+/**
+ * nm_setting_team_new:
+ *
+ * Creates a new #NMSettingTeam object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingTeam object
+ **/
+NMSetting *
+nm_setting_team_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_TEAM, NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (object);
+
+	g_free (priv->config);
+	g_free (priv->runner);
+	g_free (priv->runner_hwaddr_policy);
+	g_free (priv->runner_tx_balancer);
+	g_free (priv->runner_agg_select_policy);
+	if (priv->runner_tx_hash)
+		g_ptr_array_unref (priv->runner_tx_hash);
+	g_ptr_array_unref (priv->link_watchers);
+
+	G_OBJECT_CLASS (nm_setting_team_parent_class)->finalize (object);
 }
 
 static void
@@ -1647,8 +1654,8 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingTeamPrivate));
 
-	object_class->set_property     = set_property;
 	object_class->get_property     = get_property;
+	object_class->set_property     = set_property;
 	object_class->finalize         = finalize;
 
 	setting_class->compare_property = compare_property;

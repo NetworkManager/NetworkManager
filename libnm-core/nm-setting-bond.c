@@ -21,13 +21,14 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-bond.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "nm-setting-bond.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-connection-private.h"
@@ -960,8 +961,8 @@ nm_setting_bond_class_init (NMSettingBondClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingBondPrivate));
 
-	object_class->set_property     = set_property;
 	object_class->get_property     = get_property;
+	object_class->set_property     = set_property;
 	object_class->finalize         = finalize;
 
 	setting_class->verify           = verify;

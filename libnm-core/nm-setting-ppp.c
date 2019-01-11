@@ -23,6 +23,7 @@
 #include "nm-default.h"
 
 #include "nm-setting-ppp.h"
+
 #include "nm-setting-private.h"
 
 /**
@@ -35,30 +36,7 @@
  * cable and DSL modems and some mobile broadband devices.
  **/
 
-G_DEFINE_TYPE (NMSettingPpp, nm_setting_ppp, NM_TYPE_SETTING)
-
-#define NM_SETTING_PPP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_PPP, NMSettingPppPrivate))
-
-typedef struct {
-	gboolean noauth;
-	gboolean refuse_eap;
-	gboolean refuse_pap;
-	gboolean refuse_chap;
-	gboolean refuse_mschap;
-	gboolean refuse_mschapv2;
-	gboolean nobsdcomp;
-	gboolean nodeflate;
-	gboolean no_vj_comp;
-	gboolean require_mppe;
-	gboolean require_mppe_128;
-	gboolean mppe_stateful;
-	gboolean crtscts;
-	guint32 baud;
-	guint32 mru;
-	guint32 mtu;
-	guint32 lcp_echo_failure;
-	guint32 lcp_echo_interval;
-} NMSettingPppPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_NOAUTH,
@@ -81,18 +59,32 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_LCP_ECHO_INTERVAL,
 );
 
-/**
- * nm_setting_ppp_new:
- *
- * Creates a new #NMSettingPpp object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingPpp object
- **/
-NMSetting *
-nm_setting_ppp_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_PPP, NULL);
-}
+typedef struct {
+	gboolean noauth;
+	gboolean refuse_eap;
+	gboolean refuse_pap;
+	gboolean refuse_chap;
+	gboolean refuse_mschap;
+	gboolean refuse_mschapv2;
+	gboolean nobsdcomp;
+	gboolean nodeflate;
+	gboolean no_vj_comp;
+	gboolean require_mppe;
+	gboolean require_mppe_128;
+	gboolean mppe_stateful;
+	gboolean crtscts;
+	guint32 baud;
+	guint32 mru;
+	guint32 mtu;
+	guint32 lcp_echo_failure;
+	guint32 lcp_echo_interval;
+} NMSettingPppPrivate;
+
+G_DEFINE_TYPE (NMSettingPpp, nm_setting_ppp, NM_TYPE_SETTING)
+
+#define NM_SETTING_PPP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_PPP, NMSettingPppPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_ppp_get_noauth:
@@ -380,77 +372,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-static void
-nm_setting_ppp_init (NMSettingPpp *setting)
-{
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMSettingPppPrivate *priv = NM_SETTING_PPP_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_NOAUTH:
-		priv->noauth = g_value_get_boolean (value);
-		break;
-	case PROP_REFUSE_EAP:
-		priv->refuse_eap = g_value_get_boolean (value);
-		break;
-	case PROP_REFUSE_PAP:
-		priv->refuse_pap = g_value_get_boolean (value);
-		break;
-	case PROP_REFUSE_CHAP:
-		priv->refuse_chap = g_value_get_boolean (value);
-		break;
-	case PROP_REFUSE_MSCHAP:
-		priv->refuse_mschap = g_value_get_boolean (value);
-		break;
-	case PROP_REFUSE_MSCHAPV2:
-		priv->refuse_mschapv2 = g_value_get_boolean (value);
-		break;
-	case PROP_NOBSDCOMP:
-		priv->nobsdcomp = g_value_get_boolean (value);
-		break;
-	case PROP_NODEFLATE:
-		priv->nodeflate = g_value_get_boolean (value);
-		break;
-	case PROP_NO_VJ_COMP:
-		priv->no_vj_comp = g_value_get_boolean (value);
-		break;
-	case PROP_REQUIRE_MPPE:
-		priv->require_mppe = g_value_get_boolean (value);
-		break;
-	case PROP_REQUIRE_MPPE_128:
-		priv->require_mppe_128 = g_value_get_boolean (value);
-		break;
-	case PROP_MPPE_STATEFUL:
-		priv->mppe_stateful = g_value_get_boolean (value);
-		break;
-	case PROP_CRTSCTS:
-		priv->crtscts = g_value_get_boolean (value);
-		break;
-	case PROP_BAUD:
-		priv->baud = g_value_get_uint (value);
-		break;
-	case PROP_MRU:
-		priv->mru = g_value_get_uint (value);
-		break;
-	case PROP_MTU:
-		priv->mtu = g_value_get_uint (value);
-		break;
-	case PROP_LCP_ECHO_FAILURE:
-		priv->lcp_echo_failure = g_value_get_uint (value);
-		break;
-	case PROP_LCP_ECHO_INTERVAL:
-		priv->lcp_echo_interval = g_value_get_uint (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
+/*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id,
@@ -520,6 +442,93 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMSettingPppPrivate *priv = NM_SETTING_PPP_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_NOAUTH:
+		priv->noauth = g_value_get_boolean (value);
+		break;
+	case PROP_REFUSE_EAP:
+		priv->refuse_eap = g_value_get_boolean (value);
+		break;
+	case PROP_REFUSE_PAP:
+		priv->refuse_pap = g_value_get_boolean (value);
+		break;
+	case PROP_REFUSE_CHAP:
+		priv->refuse_chap = g_value_get_boolean (value);
+		break;
+	case PROP_REFUSE_MSCHAP:
+		priv->refuse_mschap = g_value_get_boolean (value);
+		break;
+	case PROP_REFUSE_MSCHAPV2:
+		priv->refuse_mschapv2 = g_value_get_boolean (value);
+		break;
+	case PROP_NOBSDCOMP:
+		priv->nobsdcomp = g_value_get_boolean (value);
+		break;
+	case PROP_NODEFLATE:
+		priv->nodeflate = g_value_get_boolean (value);
+		break;
+	case PROP_NO_VJ_COMP:
+		priv->no_vj_comp = g_value_get_boolean (value);
+		break;
+	case PROP_REQUIRE_MPPE:
+		priv->require_mppe = g_value_get_boolean (value);
+		break;
+	case PROP_REQUIRE_MPPE_128:
+		priv->require_mppe_128 = g_value_get_boolean (value);
+		break;
+	case PROP_MPPE_STATEFUL:
+		priv->mppe_stateful = g_value_get_boolean (value);
+		break;
+	case PROP_CRTSCTS:
+		priv->crtscts = g_value_get_boolean (value);
+		break;
+	case PROP_BAUD:
+		priv->baud = g_value_get_uint (value);
+		break;
+	case PROP_MRU:
+		priv->mru = g_value_get_uint (value);
+		break;
+	case PROP_MTU:
+		priv->mtu = g_value_get_uint (value);
+		break;
+	case PROP_LCP_ECHO_FAILURE:
+		priv->lcp_echo_failure = g_value_get_uint (value);
+		break;
+	case PROP_LCP_ECHO_INTERVAL:
+		priv->lcp_echo_interval = g_value_get_uint (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_setting_ppp_init (NMSettingPpp *setting)
+{
+}
+
+/**
+ * nm_setting_ppp_new:
+ *
+ * Creates a new #NMSettingPpp object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingPpp object
+ **/
+NMSetting *
+nm_setting_ppp_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_PPP, NULL);
+}
+
+static void
 nm_setting_ppp_class_init (NMSettingPppClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -527,8 +536,8 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingPppPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 
 	setting_class->verify = verify;
 

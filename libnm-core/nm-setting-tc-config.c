@@ -19,9 +19,10 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-tc-config.h"
+
 #include <linux/pkt_sched.h>
 
-#include "nm-setting-tc-config.h"
 #include "nm-setting-private.h"
 
 /**
@@ -833,20 +834,7 @@ struct _NMSettingTCConfigClass {
 
 G_DEFINE_TYPE (NMSettingTCConfig, nm_setting_tc_config, NM_TYPE_SETTING)
 
-/**
- * nm_setting_tc_config_new:
- *
- * Creates a new #NMSettingTCConfig object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingTCConfig object
- *
- * Since: 1.12
- **/
-NMSetting *
-nm_setting_tc_config_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_TC_CONFIG, NULL);
-}
+/*****************************************************************************/
 
 /**
  * nm_setting_tc_config_get_num_qdiscs:
@@ -1122,65 +1110,6 @@ nm_setting_tc_config_clear_tfilters (NMSettingTCConfig *self)
 
 /*****************************************************************************/
 
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMSettingTCConfig *self = NM_SETTING_TC_CONFIG (object);
-
-	switch (prop_id) {
-	case PROP_QDISCS:
-		g_ptr_array_unref (self->qdiscs);
-		self->qdiscs = _nm_utils_copy_array (g_value_get_boxed (value),
-		                                     (NMUtilsCopyFunc) nm_tc_qdisc_dup,
-		                                     (GDestroyNotify) nm_tc_qdisc_unref);
-		break;
-	case PROP_TFILTERS:
-		g_ptr_array_unref (self->tfilters);
-		self->tfilters = _nm_utils_copy_array (g_value_get_boxed (value),
-		                                       (NMUtilsCopyFunc) nm_tc_tfilter_dup,
-		                                       (GDestroyNotify) nm_tc_tfilter_unref);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingTCConfig *self = NM_SETTING_TC_CONFIG (object);
-
-	switch (prop_id) {
-	case PROP_QDISCS:
-		g_value_take_boxed (value, _nm_utils_copy_array (self->qdiscs,
-		                                                 (NMUtilsCopyFunc) nm_tc_qdisc_dup,
-		                                                 (GDestroyNotify) nm_tc_qdisc_unref));
-		break;
-	case PROP_TFILTERS:
-		g_value_take_boxed (value, _nm_utils_copy_array (self->tfilters,
-		                                                 (NMUtilsCopyFunc) nm_tc_tfilter_dup,
-		                                                 (GDestroyNotify) nm_tc_tfilter_unref));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-finalize (GObject *object)
-{
-	NMSettingTCConfig *self = NM_SETTING_TC_CONFIG (object);
-
-	g_ptr_array_unref (self->qdiscs);
-	g_ptr_array_unref (self->tfilters);
-
-	G_OBJECT_CLASS (nm_setting_tc_config_parent_class)->finalize (object);
-}
-
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -1270,13 +1199,6 @@ compare_property (const NMSettInfoSetting *sett_info,
 	                                                                               setting,
 	                                                                               other,
 	                                                                               flags);
-}
-
-static void
-nm_setting_tc_config_init (NMSettingTCConfig *self)
-{
-	self->qdiscs = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_qdisc_unref);
-	self->tfilters = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_tfilter_unref);
 }
 
 /**
@@ -1590,6 +1512,91 @@ tc_tfilters_set (NMSetting *setting,
 	return TRUE;
 }
 
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMSettingTCConfig *self = NM_SETTING_TC_CONFIG (object);
+
+	switch (prop_id) {
+	case PROP_QDISCS:
+		g_value_take_boxed (value, _nm_utils_copy_array (self->qdiscs,
+		                                                 (NMUtilsCopyFunc) nm_tc_qdisc_dup,
+		                                                 (GDestroyNotify) nm_tc_qdisc_unref));
+		break;
+	case PROP_TFILTERS:
+		g_value_take_boxed (value, _nm_utils_copy_array (self->tfilters,
+		                                                 (NMUtilsCopyFunc) nm_tc_tfilter_dup,
+		                                                 (GDestroyNotify) nm_tc_tfilter_unref));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMSettingTCConfig *self = NM_SETTING_TC_CONFIG (object);
+
+	switch (prop_id) {
+	case PROP_QDISCS:
+		g_ptr_array_unref (self->qdiscs);
+		self->qdiscs = _nm_utils_copy_array (g_value_get_boxed (value),
+		                                     (NMUtilsCopyFunc) nm_tc_qdisc_dup,
+		                                     (GDestroyNotify) nm_tc_qdisc_unref);
+		break;
+	case PROP_TFILTERS:
+		g_ptr_array_unref (self->tfilters);
+		self->tfilters = _nm_utils_copy_array (g_value_get_boxed (value),
+		                                       (NMUtilsCopyFunc) nm_tc_tfilter_dup,
+		                                       (GDestroyNotify) nm_tc_tfilter_unref);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_setting_tc_config_init (NMSettingTCConfig *self)
+{
+	self->qdiscs = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_qdisc_unref);
+	self->tfilters = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_tfilter_unref);
+}
+
+/**
+ * nm_setting_tc_config_new:
+ *
+ * Creates a new #NMSettingTCConfig object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingTCConfig object
+ *
+ * Since: 1.12
+ **/
+NMSetting *
+nm_setting_tc_config_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_TC_CONFIG, NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingTCConfig *self = NM_SETTING_TC_CONFIG (object);
+
+	g_ptr_array_unref (self->qdiscs);
+	g_ptr_array_unref (self->tfilters);
+
+	G_OBJECT_CLASS (nm_setting_tc_config_parent_class)->finalize (object);
+}
+
 static void
 nm_setting_tc_config_class_init (NMSettingTCConfigClass *klass)
 {
@@ -1597,8 +1604,8 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *klass)
 	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
-	object_class->set_property     = set_property;
 	object_class->get_property     = get_property;
+	object_class->set_property     = set_property;
 	object_class->finalize         = finalize;
 
 	setting_class->compare_property = compare_property;
