@@ -876,53 +876,41 @@ _nm_setting_new_from_dbus (GType setting_type,
 	}
 
 	for (i = 0; i < sett_info->property_infos_len; i++) {
-		const NMSettInfoProperty *property = &sett_info->property_infos[i];
+		const NMSettInfoProperty *property_info = &sett_info->property_infos[i];
 		gs_unref_variant GVariant *value = NULL;
 		gs_free_error GError *local = NULL;
 
-		if (property->param_spec && !(property->param_spec->flags & G_PARAM_WRITABLE))
+		if (   property_info->param_spec
+		    && !(property_info->param_spec->flags & G_PARAM_WRITABLE))
 			continue;
 
-		value = g_variant_lookup_value (setting_dict, property->name, NULL);
+		value = g_variant_lookup_value (setting_dict, property_info->name, NULL);
 
 		if (value && keys)
-			g_hash_table_remove (keys, property->name);
+			g_hash_table_remove (keys, property_info->name);
 
-		if (value && property->set_func) {
+		if (   value
+		    && property_info->set_func) {
 
-			if (!g_variant_type_equal (g_variant_get_type (value), property->dbus_type)) {
+			if (!g_variant_type_equal (g_variant_get_type (value), property_info->dbus_type)) {
 				/* for backward behavior, fail unless best-effort is chosen. */
 				if (NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_BEST_EFFORT))
 					continue;
 				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
 				             _("can't set property of type '%s' from value of type '%s'"),
-				             property->dbus_type ?
-				                 g_variant_type_peek_string (property->dbus_type) :
-				                 property->param_spec ?
-				                     g_type_name (property->param_spec->value_type) : "(unknown)",
+				             property_info->dbus_type ?
+				                 g_variant_type_peek_string (property_info->dbus_type) :
+				                 property_info->param_spec ?
+				                     g_type_name (property_info->param_spec->value_type) : "(unknown)",
 				             g_variant_get_type_string (value));
-				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property->name);
+				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property_info->name);
 				return NULL;
 			}
 
-			if (!property->set_func (setting,
-			                         connection_dict,
-			                         property->name,
-			                         value,
-			                         parse_flags,
-			                         &local)) {
-				if (!NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT))
-					continue;
-				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
-				             _("failed to set property: %s"),
-				             local->message);
-				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property->name);
-				return NULL;
-			}
-		} else if (!value && property->not_set_func) {
-			if (!property->not_set_func (setting,
+			if (!property_info->set_func (setting,
 			                             connection_dict,
-			                             property->name,
+			                             property_info->name,
+			                             value,
 			                             parse_flags,
 			                             &local)) {
 				if (!NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT))
@@ -930,35 +918,52 @@ _nm_setting_new_from_dbus (GType setting_type,
 				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
 				             _("failed to set property: %s"),
 				             local->message);
-				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property->name);
+				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property_info->name);
 				return NULL;
 			}
-		} else if (value && property->param_spec) {
+		} else if (   !value
+		           && property_info->not_set_func) {
+			if (!property_info->not_set_func (setting,
+			                                  connection_dict,
+			                                  property_info->name,
+			                                  parse_flags,
+			                                  &local)) {
+				if (!NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT))
+					continue;
+				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("failed to set property: %s"),
+				             local->message);
+				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property_info->name);
+				return NULL;
+			}
+		} else if (   value
+		           && property_info->param_spec) {
 			nm_auto_unset_gvalue GValue object_value = G_VALUE_INIT;
 
-			g_value_init (&object_value, property->param_spec->value_type);
-			if (!set_property_from_dbus (property, value, &object_value)) {
+			g_value_init (&object_value, property_info->param_spec->value_type);
+			if (!set_property_from_dbus (property_info, value, &object_value)) {
 				/* for backward behavior, fail unless best-effort is chosen. */
 				if (NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_BEST_EFFORT))
 					continue;
 				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
 				             _("can't set property of type '%s' from value of type '%s'"),
-				             property->dbus_type ?
-				                 g_variant_type_peek_string (property->dbus_type) :
-				                 property->param_spec ?
-				                     g_type_name (property->param_spec->value_type) : "(unknown)",
+				               property_info->dbus_type
+				             ? g_variant_type_peek_string (property_info->dbus_type)
+				             : (  property_info->param_spec
+				                ? g_type_name (property_info->param_spec->value_type)
+				                : "(unknown)"),
 				             g_variant_get_type_string (value));
-				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property->name);
+				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property_info->name);
 				return NULL;
 			}
 
-			if (!nm_g_object_set_property (G_OBJECT (setting), property->param_spec->name, &object_value, &local)) {
+			if (!nm_g_object_set_property (G_OBJECT (setting), property_info->param_spec->name, &object_value, &local)) {
 				if (!NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT))
 					continue;
 				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
 				             _("can not set property: %s"),
 				             local->message);
-				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property->name);
+				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property_info->name);
 				return NULL;
 			}
 		}
