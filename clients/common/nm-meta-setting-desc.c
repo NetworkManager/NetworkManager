@@ -3392,14 +3392,18 @@ static gboolean
 _set_fcn_ip_config_dns_options (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
+	NMSettingIPConfig *s_ip;
 	gsize i;
 
 	nm_assert (!error || !*error);
+	s_ip = NM_SETTING_IP_CONFIG (setting);
 
 	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
 	if (strv) {
-		for (i = 0; strv[i]; i++)
-			nm_setting_ip_config_add_dns_option (NM_SETTING_IP_CONFIG (setting), strv[i]);
+		for (i = 0; strv[i]; i++) {
+			nm_setting_ip_config_remove_dns_option_by_value (s_ip, strv[i]);
+			nm_setting_ip_config_add_dns_option (s_ip, strv[i]);
+		}
 	}
 	return TRUE;
 }
