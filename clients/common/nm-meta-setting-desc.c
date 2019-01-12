@@ -3396,7 +3396,6 @@ _set_fcn_ip_config_dns_options (ARGS_SET_FCN)
 
 	nm_assert (!error || !*error);
 
-	nm_setting_ip_config_clear_dns_options (NM_SETTING_IP_CONFIG (setting), TRUE);
 	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
 	if (strv) {
 		for (i = 0; strv[i]; i++)
