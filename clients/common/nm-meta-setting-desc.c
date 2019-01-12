@@ -3350,7 +3350,7 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv4_config_dns,
                                _validate_and_remove_ipv4_dns)
 
 static gboolean
-_set_fcn_ip4_config_dns_search (ARGS_SET_FCN)
+_set_fcn_ip_config_dns_search (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	gsize i;
@@ -3369,9 +3369,9 @@ _set_fcn_ip4_config_dns_search (ARGS_SET_FCN)
 }
 
 static gboolean
-_validate_and_remove_ipv4_dns_search (NMSettingIPConfig *setting,
-                                      const char *dns_search,
-                                      GError **error)
+_validate_and_remove_ip_dns_search (NMSettingIPConfig *setting,
+                                    const char *dns_search,
+                                    GError **error)
 {
 	gboolean ret;
 
@@ -3382,33 +3382,36 @@ _validate_and_remove_ipv4_dns_search (NMSettingIPConfig *setting,
 		             dns_search);
 	return ret;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv4_config_dns_search,
+DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ip_config_dns_search,
                                NM_SETTING_IP_CONFIG,
                                nm_setting_ip_config_get_num_dns_searches,
                                nm_setting_ip_config_remove_dns_search,
-                               _validate_and_remove_ipv4_dns_search)
+                               _validate_and_remove_ip_dns_search)
 
 static gboolean
-_set_fcn_ip4_config_dns_options (ARGS_SET_FCN)
+_set_fcn_ip_config_dns_options (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
+	NMSettingIPConfig *s_ip;
 	gsize i;
 
 	nm_assert (!error || !*error);
+	s_ip = NM_SETTING_IP_CONFIG (setting);
 
-	nm_setting_ip_config_clear_dns_options (NM_SETTING_IP_CONFIG (setting), TRUE);
 	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
 	if (strv) {
-		for (i = 0; strv[i]; i++)
-			nm_setting_ip_config_add_dns_option (NM_SETTING_IP_CONFIG (setting), strv[i]);
+		for (i = 0; strv[i]; i++) {
+			nm_setting_ip_config_remove_dns_option_by_value (s_ip, strv[i]);
+			nm_setting_ip_config_add_dns_option (s_ip, strv[i]);
+		}
 	}
 	return TRUE;
 }
 
 static gboolean
-_validate_and_remove_ipv4_dns_option (NMSettingIPConfig *setting,
-                                      const char *dns_option,
-                                      GError **error)
+_validate_and_remove_ip_dns_option (NMSettingIPConfig *setting,
+                                    const char *dns_option,
+                                    GError **error)
 {
 	gboolean ret;
 
@@ -3419,11 +3422,11 @@ _validate_and_remove_ipv4_dns_option (NMSettingIPConfig *setting,
 		             dns_option);
 	return ret;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv4_config_dns_options,
+DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ip_config_dns_options,
                                NM_SETTING_IP_CONFIG,
                                nm_setting_ip_config_get_num_dns_options,
                                nm_setting_ip_config_remove_dns_option,
-                               _validate_and_remove_ipv4_dns_option)
+                               _validate_and_remove_ip_dns_option)
 
 static gboolean
 _set_fcn_ip4_config_addresses (ARGS_SET_FCN)
@@ -3592,82 +3595,6 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv6_config_dns,
                                nm_setting_ip_config_get_num_dns,
                                nm_setting_ip_config_remove_dns,
                                _validate_and_remove_ipv6_dns)
-
-static gboolean
-_set_fcn_ip6_config_dns_search (ARGS_SET_FCN)
-{
-	gs_free const char **strv = NULL;
-	gsize i;
-
-	nm_assert (!error || !*error);
-
-	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
-	if (!verify_string_list (strv, property_info->property_name, nmc_util_is_domain, error))
-		return FALSE;
-
-	if (strv) {
-		for (i = 0; strv[i]; i++)
-			nm_setting_ip_config_add_dns_search (NM_SETTING_IP_CONFIG (setting), strv[i]);
-	}
-	return TRUE;
-}
-
-static gboolean
-_validate_and_remove_ipv6_dns_search (NMSettingIPConfig *setting,
-                                      const char *dns_search,
-                                      GError **error)
-{
-	gboolean ret;
-
-	ret = nm_setting_ip_config_remove_dns_search_by_value (setting, dns_search);
-	if (!ret)
-		g_set_error (error, 1, 0,
-		             _("the property doesn't contain DNS search domain '%s'"),
-		             dns_search);
-	return ret;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv6_config_dns_search,
-                               NM_SETTING_IP_CONFIG,
-                               nm_setting_ip_config_get_num_dns_searches,
-                               nm_setting_ip_config_remove_dns_search,
-                               _validate_and_remove_ipv6_dns_search)
-
-static gboolean
-_set_fcn_ip6_config_dns_options (ARGS_SET_FCN)
-{
-	gs_free const char **strv = NULL;
-	gsize i;
-
-	nm_assert (!error || !*error);
-
-	nm_setting_ip_config_clear_dns_options (NM_SETTING_IP_CONFIG (setting), TRUE);
-	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
-	if (strv) {
-		for (i = 0; strv[i]; i++)
-			nm_setting_ip_config_add_dns_option (NM_SETTING_IP_CONFIG (setting), strv[i]);
-	}
-	return TRUE;
-}
-
-static gboolean
-_validate_and_remove_ipv6_dns_option (NMSettingIPConfig *setting,
-                                      const char *dns_option,
-                                      GError **error)
-{
-	gboolean ret;
-
-	ret = nm_setting_ip_config_remove_dns_option_by_value (setting, dns_option);
-	if (!ret)
-		g_set_error (error, 1, 0,
-		             _("the property doesn't contain DNS option '%s'"),
-		             dns_option);
-	return ret;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv6_config_dns_options,
-                               NM_SETTING_IP_CONFIG,
-                               nm_setting_ip_config_get_num_dns_options,
-                               nm_setting_ip_config_remove_dns_option,
-                               _validate_and_remove_ipv6_dns_option)
 
 static gboolean
 _dns_options_is_default (NMSettingIPConfig *setting)
@@ -6182,15 +6109,15 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_SEARCH, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DNS_SEARCH,
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_ip4_config_dns_search,
-			.remove_fcn =               _remove_fcn_ipv4_config_dns_search,
+			.set_fcn =                  _set_fcn_ip_config_dns_search,
+			.remove_fcn =               _remove_fcn_ip_config_dns_search,
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_OPTIONS, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DNS_OPTIONS,
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_nmc_with_default,
-			.set_fcn =                  _set_fcn_ip4_config_dns_options,
-			.remove_fcn =               _remove_fcn_ipv4_config_dns_options,
+			.set_fcn =                  _set_fcn_ip_config_dns_options,
+			.remove_fcn =               _remove_fcn_ip_config_dns_options,
 		),
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (get_with_default,
 			.fcn =                      GET_FCN_WITH_DEFAULT (NMSettingIPConfig, _dns_options_is_default),
@@ -6345,15 +6272,15 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_SEARCH, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DNS_SEARCH,
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_ip6_config_dns_search,
-			.remove_fcn =               _remove_fcn_ipv6_config_dns_search,
+			.set_fcn =                  _set_fcn_ip_config_dns_search,
+			.remove_fcn =               _remove_fcn_ip_config_dns_search,
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_OPTIONS, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DNS_OPTIONS,
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_nmc_with_default,
-			.set_fcn =                  _set_fcn_ip6_config_dns_options,
-			.remove_fcn =               _remove_fcn_ipv6_config_dns_options,
+			.set_fcn =                  _set_fcn_ip_config_dns_options,
+			.remove_fcn =               _remove_fcn_ip_config_dns_options,
 		),
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (get_with_default,
 			.fcn =     GET_FCN_WITH_DEFAULT (NMSettingIPConfig, _dns_options_is_default),
