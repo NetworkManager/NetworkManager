@@ -37,6 +37,28 @@ typedef union {
 	struct sockaddr_in6 in6;
 } NMSockAddrUnion;
 
+#define NM_SOCK_ADDR_UNION_INIT_UNSPEC \
+	{ \
+		.sa = { \
+			.sa_family = AF_UNSPEC, \
+		}, \
+	}
+
+int nm_sock_addr_union_cmp (const NMSockAddrUnion *a,
+                            const NMSockAddrUnion *b);
+
+void nm_sock_addr_union_hash_update (const NMSockAddrUnion *a,
+                                     NMHashState *h);
+
+void nm_sock_addr_union_cpy (NMSockAddrUnion *dst,
+                             gconstpointer src /* unaligned (const NMSockAddrUnion *) */);
+
+void nm_sock_addr_union_cpy_untrusted (NMSockAddrUnion *dst,
+                                       gconstpointer src /* unaligned (const NMSockAddrUnion *) */,
+                                       gsize src_len);
+
+/*****************************************************************************/
+
 typedef struct {
 	NMIPAddr addr;
 	guint8 family;
