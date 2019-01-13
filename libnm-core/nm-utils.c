@@ -261,6 +261,77 @@ nm_sock_addr_endpoint_get_port (NMSockAddrEndpoint *self)
 	return self->host ? (int) self->port : -1;
 }
 
+gboolean
+nm_sock_addr_endpoint_get_fixed_sockaddr (NMSockAddrEndpoint *self,
+                                          gpointer sockaddr)
+{
+	int addr_family;
+	NMIPAddr addrbin;
+	const char *s;
+	guint scope_id = 0;
+
+	g_return_val_if_fail (NM_IS_SOCK_ADDR_ENDPOINT (self), FALSE);
+	g_return_val_if_fail (sockaddr, FALSE);
+
+	if (!self->host)
+		return FALSE;
+
+	if (nm_utils_parse_inaddr_bin (AF_UNSPEC, self->host, &addr_family, &addrbin))
+		goto good;
+
+	/* See if there is an IPv6 scope-id...
+	 *
+	 * Note that it does not make sense to persist connection profiles to disk,
+	 * that refenrence a scope-id (because the interface's ifindex changes on
+	 * reboot). However, we also support runtime only changes like `nmcli device set`
+	 * where nothing is persisted to disk. At least in that case, passing a scope-id
+	 * might be reasonable. So, parse that too. */
+	s = strchr (self->host, '%');
+	if (!s)
+		return FALSE;
+
+	if (   s[1] == '\0'
+	    || !NM_STRCHAR_ALL (&s[1], ch, (ch >= '0' && ch <= '9')))
+		return FALSE;
+
+	scope_id = _nm_utils_ascii_str_to_int64 (&s[1], 10, 0, G_MAXINT32, G_MAXUINT);
+	if (scope_id == G_MAXUINT)
+		return FALSE;
+
+	{
+		gs_free char *tmp_str = NULL;
+		const char *host_part;
+
+		host_part = nm_strndup_a (200, self->host, s - self->host, &tmp_str);
+		if (nm_utils_parse_inaddr_bin (AF_INET6, host_part, &addr_family, &addrbin))
+			goto good;
+	}
+
+	return FALSE;
+
+good:
+	switch (addr_family) {
+	case AF_INET:
+		*((struct sockaddr_in *) sockaddr) = (struct sockaddr_in) {
+			.sin_family = AF_INET,
+			.sin_addr   = addrbin.addr4_struct,
+			.sin_port   = htons (self->port),
+		};
+		return TRUE;
+	case AF_INET6:
+		*((struct sockaddr_in6 *) sockaddr) = (struct sockaddr_in6) {
+			.sin6_family   = AF_INET6,
+			.sin6_addr     = addrbin.addr6,
+			.sin6_port     = htons (self->port),
+			.sin6_scope_id = scope_id,
+			.sin6_flowinfo = 0,
+		};
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 /*****************************************************************************/
 
 struct IsoLangToEncodings
