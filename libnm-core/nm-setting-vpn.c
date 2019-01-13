@@ -832,7 +832,7 @@ clear_secrets_with_flags (NMSetting *setting,
 		NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 
 		nm_setting_get_secret_flags (setting, secret, &flags, NULL);
-		if (func (setting, pspec->name, flags, user_data) == TRUE) {
+		if (func (setting, secret, flags, user_data) == TRUE) {
 			g_hash_table_iter_remove (&iter);
 			changed = TRUE;
 		}
