@@ -102,6 +102,7 @@ typedef struct {
 	union {
 		guint8 addr_ptr[1];
 		in_addr_t addr4;
+		struct in_addr addr4_struct;
 		struct in6_addr addr6;
 
 		/* NMIPAddr is really a union for IP addresses.
