@@ -228,6 +228,51 @@ nm_sock_addr_union_cpy_untrusted (NMSockAddrUnion *dst,
 	nm_assert (dst->sa.sa_family == sa.sa_family);
 }
 
+const char *
+nm_sock_addr_union_to_string (const NMSockAddrUnion *sa,
+                              char *buf,
+                              gsize len)
+{
+	char s_addr[NM_UTILS_INET_ADDRSTRLEN];
+	char s_scope_id[40];
+
+	if (!nm_utils_to_string_buffer_init_null (sa, &buf, &len))
+		return buf;
+
+	/* maybe we should use getnameinfo(), but here implement it ourself.
+	 *
+	 * We want to see the actual bytes for debugging (as we understand them),
+	 * and now what getnameinfo() makes of it. Also, it's simpler this way. */
+
+	switch (sa->sa.sa_family) {
+	case AF_INET:
+		g_snprintf (buf, len,
+		            "%s:%u",
+		            nm_utils_inet4_ntop (sa->in.sin_addr.s_addr, s_addr),
+		            (guint) htons (sa->in.sin_port));
+		break;
+	case AF_INET6:
+		g_snprintf (buf, len,
+		            "[%s%s]:%u",
+		            nm_utils_inet6_ntop (&sa->in6.sin6_addr, s_addr),
+		            (  sa->in6.sin6_scope_id != 0
+		             ? nm_sprintf_buf (s_scope_id, "%u", sa->in6.sin6_scope_id)
+		             : ""),
+		            (guint) htons (sa->in6.sin6_port));
+		break;
+	case AF_UNSPEC:
+		g_snprintf (buf, len, "unspec");
+		break;
+	default:
+		g_snprintf (buf, len,
+		            "{addr-family:%u}",
+		            (unsigned) sa->sa.sa_family);
+		break;
+	}
+
+	return buf;
+}
+
 /*****************************************************************************/
 
 static const NMDedupMultiIdxTypeClass _dedup_multi_idx_type_class;

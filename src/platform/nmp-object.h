@@ -57,6 +57,10 @@ void nm_sock_addr_union_cpy_untrusted (NMSockAddrUnion *dst,
                                        gconstpointer src /* unaligned (const NMSockAddrUnion *) */,
                                        gsize src_len);
 
+const char *nm_sock_addr_union_to_string (const NMSockAddrUnion *sa,
+                                          char *buf,
+                                          gsize len);
+
 /*****************************************************************************/
 
 typedef struct {
