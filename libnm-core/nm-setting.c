@@ -1841,34 +1841,42 @@ _nm_setting_aggregate (NMSetting *setting,
 }
 
 static gboolean
-clear_secrets_with_flags (NMSetting *setting,
-                          GParamSpec *pspec,
-                          NMSettingClearSecretsWithFlagsFn func,
-                          gpointer user_data)
+clear_secrets (const NMSettInfoSetting *sett_info,
+               guint property_idx,
+               NMSetting *setting,
+               NMSettingClearSecretsWithFlagsFn func,
+               gpointer user_data)
 {
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
-	gboolean changed = FALSE;
+	GParamSpec *param_spec = sett_info->property_infos[property_idx].param_spec;
 
-	g_return_val_if_fail (!NM_IS_SETTING_VPN (setting), FALSE);
+	if (!param_spec)
+		return FALSE;
 
-	/* Clear the secret if the user function says to do so */
-	if (!nm_setting_get_secret_flags (setting, pspec->name, &flags, NULL))
-		g_return_val_if_reached (FALSE);
+	if (!NM_FLAGS_HAS (param_spec->flags, NM_SETTING_PARAM_SECRET))
+		return FALSE;
 
-	if (func (setting, pspec->name, flags, user_data) == TRUE) {
-		GValue value = G_VALUE_INIT;
+	if (func) {
+		if (!nm_setting_get_secret_flags (setting, param_spec->name, &flags, NULL))
+			nm_assert_not_reached ();
+		if (!func (setting, param_spec->name, flags, user_data))
+			return FALSE;
+	} else
+		nm_assert (nm_setting_get_secret_flags (setting, param_spec->name, NULL, NULL));
 
-		g_value_init (&value, pspec->value_type);
-		g_object_get_property (G_OBJECT (setting), pspec->name, &value);
-		if (!g_param_value_defaults (pspec, &value)) {
-			g_param_value_set_default (pspec, &value);
-			g_object_set_property (G_OBJECT (setting), pspec->name, &value);
-			changed = TRUE;
-		}
-		g_value_unset (&value);
+	{
+		nm_auto_unset_gvalue GValue value = G_VALUE_INIT;
+
+		g_value_init (&value, param_spec->value_type);
+		g_object_get_property (G_OBJECT (setting), param_spec->name, &value);
+		if (g_param_value_defaults (param_spec, &value))
+			return FALSE;
+
+		g_param_value_set_default (param_spec, &value);
+		g_object_set_property (G_OBJECT (setting), param_spec->name, &value);
 	}
 
-	return changed;
+	return TRUE;
 }
 
 /**
@@ -1890,36 +1898,23 @@ _nm_setting_clear_secrets (NMSetting *setting,
 	const NMSettInfoSetting *sett_info;
 	gboolean changed = FALSE;
 	guint i;
+	gboolean (*my_clear_secrets) (const struct _NMSettInfoSetting *sett_info,
+	                              guint property_idx,
+	                              NMSetting *setting,
+	                              NMSettingClearSecretsWithFlagsFn func,
+	                              gpointer user_data);
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
+	my_clear_secrets = NM_SETTING_GET_CLASS (setting)->clear_secrets;
+
 	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
 	for (i = 0; i < sett_info->property_infos_len; i++) {
-		GParamSpec *prop_spec = sett_info->property_infos[i].param_spec;
-
-		if (!prop_spec)
-			continue;
-
-		if (!NM_FLAGS_HAS (prop_spec->flags, NM_SETTING_PARAM_SECRET))
-			continue;
-
-		if (func) {
-			changed |= NM_SETTING_GET_CLASS (setting)->clear_secrets_with_flags (setting,
-			                                                                     prop_spec,
-			                                                                     func,
-			                                                                     user_data);
-		} else {
-			GValue value = G_VALUE_INIT;
-
-			g_value_init (&value, prop_spec->value_type);
-			g_object_get_property (G_OBJECT (setting), prop_spec->name, &value);
-			if (!g_param_value_defaults (prop_spec, &value)) {
-				g_param_value_set_default (prop_spec, &value);
-				g_object_set_property (G_OBJECT (setting), prop_spec->name, &value);
-				changed = TRUE;
-			}
-			g_value_unset (&value);
-		}
+		changed |= my_clear_secrets (sett_info,
+		                             i,
+		                             setting,
+		                             func,
+		                             user_data);
 	}
 	return changed;
 }
@@ -2575,7 +2570,7 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	setting_class->get_secret_flags          = get_secret_flags;
 	setting_class->set_secret_flags          = set_secret_flags;
 	setting_class->compare_property          = compare_property;
-	setting_class->clear_secrets_with_flags  = clear_secrets_with_flags;
+	setting_class->clear_secrets             = clear_secrets;
 	setting_class->duplicate_copy_properties = duplicate_copy_properties;
 
 	/**
