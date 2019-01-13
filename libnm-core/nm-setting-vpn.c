@@ -813,29 +813,43 @@ compare_property (const NMSettInfoSetting *sett_info,
 }
 
 static gboolean
-clear_secrets_with_flags (NMSetting *setting,
-                          GParamSpec *pspec,
-                          NMSettingClearSecretsWithFlagsFn func,
-                          gpointer user_data)
+clear_secrets (const NMSettInfoSetting *sett_info,
+               guint property_idx,
+               NMSetting *setting,
+               NMSettingClearSecretsWithFlagsFn func,
+               gpointer user_data)
 {
 	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+	GParamSpec *prop_spec = sett_info->property_infos[property_idx].param_spec;
 	GHashTableIter iter;
 	const char *secret;
 	gboolean changed = TRUE;
 
-	if (priv->secrets == NULL)
+	if (   !prop_spec
+	    || !NM_FLAGS_HAS (prop_spec->flags, NM_SETTING_PARAM_SECRET))
 		return FALSE;
 
-	/* Iterate through secrets hash and check each entry */
+	nm_assert (nm_streq (prop_spec->name, NM_SETTING_VPN_SECRETS));
+
+	if (!priv->secrets)
+		return FALSE;
+
 	g_hash_table_iter_init (&iter, priv->secrets);
 	while (g_hash_table_iter_next (&iter, (gpointer) &secret, NULL)) {
-		NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 
-		nm_setting_get_secret_flags (setting, secret, &flags, NULL);
-		if (func (setting, secret, flags, user_data) == TRUE) {
-			g_hash_table_iter_remove (&iter);
-			changed = TRUE;
-		}
+		if (func) {
+			NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+
+			if (!nm_setting_get_secret_flags (setting, secret, &flags, NULL))
+				nm_assert_not_reached ();
+
+			if (!func (setting, secret, flags, user_data))
+				continue;
+		} else
+			nm_assert (nm_setting_get_secret_flags (setting, secret, NULL, NULL));
+
+		g_hash_table_iter_remove (&iter);
+		changed = TRUE;
 	}
 
 	if (changed)
@@ -963,13 +977,13 @@ nm_setting_vpn_class_init (NMSettingVpnClass *klass)
 	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
-	setting_class->verify                   = verify;
-	setting_class->update_one_secret        = update_one_secret;
-	setting_class->get_secret_flags         = get_secret_flags;
-	setting_class->set_secret_flags         = set_secret_flags;
-	setting_class->need_secrets             = need_secrets;
-	setting_class->compare_property         = compare_property;
-	setting_class->clear_secrets_with_flags = clear_secrets_with_flags;
+	setting_class->verify            = verify;
+	setting_class->update_one_secret = update_one_secret;
+	setting_class->get_secret_flags  = get_secret_flags;
+	setting_class->set_secret_flags  = set_secret_flags;
+	setting_class->need_secrets      = need_secrets;
+	setting_class->compare_property  = compare_property;
+	setting_class->clear_secrets     = clear_secrets;
 
 	/**
 	 * NMSettingVpn:service-type:
