@@ -1998,7 +1998,8 @@ nm_platform_link_wireguard_change (NMPlatform *self,
                                    int ifindex,
                                    const NMPlatformLnkWireGuard *lnk_wireguard,
                                    const NMPWireGuardPeer *peers,
-                                   guint peers_len)
+                                   guint peers_len,
+                                   gboolean replace_peers)
 {
 	_CHECK_SELF (self, klass, -NME_BUG);
 
@@ -2024,18 +2025,20 @@ nm_platform_link_wireguard_change (NMPlatform *self,
 			nm_utils_strbuf_append_str (&b, &len, "}");
 		}
 
-		_LOG3D ("link: change wireguard ifindex %d, %s, %u peers%s",
+		_LOG3D ("link: change wireguard ifindex %d, %s, %u peers%s%s",
 		        ifindex,
 		        nm_platform_lnk_wireguard_to_string (lnk_wireguard, buf_lnk, sizeof (buf_lnk)),
 		        peers_len,
-		        buf_peers);
+		        buf_peers,
+		        replace_peers ? " (replace-peers)" : " (update-peers)");
 	}
 
 	return klass->link_wireguard_change (self,
 	                                     ifindex,
 	                                     lnk_wireguard,
 	                                     peers,
-	                                     peers_len);
+	                                     peers_len,
+	                                     replace_peers);
 }
 
 /*****************************************************************************/
