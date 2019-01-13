@@ -1832,26 +1832,14 @@ nm_connection_need_secrets (NMConnection *connection,
 void
 nm_connection_clear_secrets (NMConnection *connection)
 {
-	GHashTableIter iter;
-	NMSetting *setting;
-
-	g_return_if_fail (NM_IS_CONNECTION (connection));
-
-	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (connection)->settings);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting)) {
-		g_signal_handlers_block_by_func (setting, (GCallback) setting_changed_cb, connection);
-		_nm_setting_clear_secrets (setting);
-		g_signal_handlers_unblock_by_func (setting, (GCallback) setting_changed_cb, connection);
-	}
-
-	g_signal_emit (connection, signals[SECRETS_CLEARED], 0);
+	return nm_connection_clear_secrets_with_flags (connection, NULL, NULL);
 }
 
 /**
  * nm_connection_clear_secrets_with_flags:
  * @connection: the #NMConnection
- * @func: (scope call): function to be called to determine whether a
- *     specific secret should be cleared or not
+ * @func: (scope call): (allow-none): function to be called to determine whether a
+ *     specific secret should be cleared or not. If %NULL, all secrets are cleared.
  * @user_data: caller-supplied data passed to @func
  *
  * Clears and frees secrets determined by @func.
@@ -1869,7 +1857,7 @@ nm_connection_clear_secrets_with_flags (NMConnection *connection,
 	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (connection)->settings);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting)) {
 		g_signal_handlers_block_by_func (setting, (GCallback) setting_changed_cb, connection);
-		_nm_setting_clear_secrets_with_flags (setting, func, user_data);
+		_nm_setting_clear_secrets (setting, func, user_data);
 		g_signal_handlers_unblock_by_func (setting, (GCallback) setting_changed_cb, connection);
 	}
 
