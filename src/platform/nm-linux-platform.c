@@ -2459,15 +2459,16 @@ again:
 			if (nla_put_uint32 (msg, WGPEER_A_FLAGS, WGPEER_F_REPLACE_ALLOWEDIPS) < 0)
 				goto toobig_peers;
 
-			g_return_val_if_fail (NM_IN_SET (p->endpoint.sa.sa_family, AF_INET, AF_INET6), -NME_BUG);
-
-			if (nla_put (msg,
-			             WGPEER_A_ENDPOINT,
-			               p->endpoint.sa.sa_family == AF_INET
-			             ? sizeof (p->endpoint.in)
-			             : sizeof (p->endpoint.in6),
-			             &p->endpoint) < 0)
-				goto toobig_peers;
+			if (NM_IN_SET (p->endpoint.sa.sa_family, AF_INET, AF_INET6)) {
+				if (nla_put (msg,
+				             WGPEER_A_ENDPOINT,
+				               p->endpoint.sa.sa_family == AF_INET
+				             ? sizeof (p->endpoint.in)
+				             : sizeof (p->endpoint.in6),
+				             &p->endpoint) < 0)
+					goto toobig_peers;
+			} else
+				nm_assert (p->endpoint.sa.sa_family == AF_UNSPEC);
 		}
 
 		if (p->allowed_ips_len > 0) {
