@@ -482,30 +482,6 @@ static struct nl_sock *_genl_sock (NMLinuxPlatform *platform);
 /*****************************************************************************/
 
 static int
-_sock_addr_set_unaligned (NMSockAddrUnion *dst,
-                          gconstpointer src,
-                          gsize src_len)
-{
-	int f_expected;
-	struct sockaddr sa;
-
-	if (src_len == sizeof (struct sockaddr_in))
-		f_expected = AF_INET;
-	else if (src_len == sizeof (struct sockaddr_in6))
-		f_expected = AF_INET6;
-	else
-		return AF_UNSPEC;
-
-	memcpy (&sa.sa_family, &((struct sockaddr *) src)->sa_family, sizeof (sa.sa_family));
-	if (sa.sa_family != f_expected)
-		return AF_UNSPEC;
-	memcpy (dst, src, src_len);
-	return f_expected;
-}
-
-/*****************************************************************************/
-
-static int
 wait_for_nl_response_to_nmerr (WaitForNlResponseResult seq_result)
 {
 	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
@@ -2038,11 +2014,11 @@ _wireguard_update_from_peers_nla (CList *peers,
 			nm_explicit_bzero (nla_data (tb[WGPEER_A_PRESHARED_KEY]),
 			                   nla_len (tb[WGPEER_A_PRESHARED_KEY]));
 		}
-		if (tb[WGPEER_A_ENDPOINT]) {
-			_sock_addr_set_unaligned (&peer_c->data.endpoint,
-			                          nla_data (tb[WGPEER_A_ENDPOINT]),
-			                          nla_len (tb[WGPEER_A_ENDPOINT]));
-		}
+
+		nm_sock_addr_union_cpy_untrusted (&peer_c->data.endpoint,
+		                                  tb[WGPEER_A_ENDPOINT] ? nla_data (tb[WGPEER_A_ENDPOINT]) : NULL,
+		                                  tb[WGPEER_A_ENDPOINT] ? nla_len (tb[WGPEER_A_ENDPOINT])  : 0);
+
 		if (tb[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL])
 			peer_c->data.persistent_keepalive_interval = nla_get_u64 (tb[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL]);
 		if (tb[WGPEER_A_LAST_HANDSHAKE_TIME])

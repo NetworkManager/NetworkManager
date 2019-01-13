@@ -89,6 +89,147 @@ struct _NMPCache {
 
 /*****************************************************************************/
 
+int
+nm_sock_addr_union_cmp (const NMSockAddrUnion *a, const NMSockAddrUnion *b)
+{
+	nm_assert (!a || NM_IN_SET (a->sa.sa_family, AF_UNSPEC, AF_INET, AF_INET6));
+	nm_assert (!b || NM_IN_SET (b->sa.sa_family, AF_UNSPEC, AF_INET, AF_INET6));
+
+	NM_CMP_SELF (a, b);
+
+	NM_CMP_FIELD (a, b, sa.sa_family);
+	switch (a->sa.sa_family) {
+	case AF_INET:
+		NM_CMP_DIRECT (ntohl (a->in.sin_addr.s_addr), ntohl (b->in.sin_addr.s_addr));
+		NM_CMP_DIRECT (htons (a->in.sin_port), htons (b->in.sin_port));
+		break;
+	case AF_INET6:
+		NM_CMP_DIRECT_IN6ADDR (&a->in6.sin6_addr, &b->in6.sin6_addr);
+		NM_CMP_DIRECT (htons (a->in6.sin6_port), htons (b->in6.sin6_port));
+		NM_CMP_FIELD (a, b, in6.sin6_scope_id);
+		NM_CMP_FIELD (a, b, in6.sin6_flowinfo);
+		break;
+	}
+	return 0;
+}
+
+void
+nm_sock_addr_union_hash_update (const NMSockAddrUnion *a, NMHashState *h)
+{
+	if (!a) {
+		nm_hash_update_val (h, 1241364739u);
+		return;
+	}
+
+	nm_assert (NM_IN_SET (a->sa.sa_family, AF_UNSPEC, AF_INET, AF_INET6));
+
+	switch (a->sa.sa_family) {
+	case AF_INET:
+		nm_hash_update_vals (h,
+		                     a->in.sin_family,
+		                     a->in.sin_addr.s_addr,
+		                     a->in.sin_port);
+		return;
+	case AF_INET6:
+		nm_hash_update_vals (h,
+		                     a->in6.sin6_family,
+		                     a->in6.sin6_addr,
+		                     a->in6.sin6_port,
+		                     a->in6.sin6_scope_id,
+		                     a->in6.sin6_flowinfo);
+		return;
+	default:
+		nm_hash_update_val (h, a->sa.sa_family);
+		return;
+	}
+}
+
+/**
+ * nm_sock_addr_union_cpy:
+ * @dst: the destination #NMSockAddrUnion. It will always be fully initialized,
+ *   to one of the address families AF_INET, AF_INET6, or AF_UNSPEC (in case of
+ *   error).
+ * @src: (allow-none): the source buffer with an sockaddr to copy. It may be unaligned in
+ *   memory. If not %NULL, the buffer must be at least large enough to contain
+ *   sa.sa_family, and then, depending on sa.sa_family, it must be large enough
+ *   to hold struct sockaddr_in or struct sockaddr_in6.
+ *
+ * @dst will always be fully initialized (including setting all un-used bytes to zero).
+ */
+void
+nm_sock_addr_union_cpy (NMSockAddrUnion *dst,
+                        gconstpointer src /* unaligned (const NMSockAddrUnion *) */)
+{
+	struct sockaddr sa;
+	gsize src_len;
+
+	nm_assert (dst);
+
+	*dst = (NMSockAddrUnion) NM_SOCK_ADDR_UNION_INIT_UNSPEC;
+
+	if (!src)
+		return;
+
+	memcpy (&sa.sa_family, &((struct sockaddr *) src)->sa_family, sizeof (sa.sa_family));
+
+	if (sa.sa_family == AF_INET)
+		src_len = sizeof (struct sockaddr_in);
+	else if (sa.sa_family == AF_INET6)
+		src_len = sizeof (struct sockaddr_in6);
+	else
+		return;
+
+	memcpy (dst, src, src_len);
+	nm_assert (dst->sa.sa_family == sa.sa_family);
+}
+
+/**
+ * nm_sock_addr_union_cpy_untrusted:
+ * @dst: the destination #NMSockAddrUnion. It will always be fully initialized,
+ *   to one of the address families AF_INET, AF_INET6, or AF_UNSPEC (in case of
+ *   error).
+ * @src: the source buffer with an sockaddr to copy. It may be unaligned in
+ *   memory.
+ * @src_len: the length of @src in bytes.
+ *
+ * The function requires @src_len to be either sizeof(struct sockaddr_in) or sizeof (struct sockaddr_in6).
+ * If that's the case, then @src will be interpreted as such structure (unaligned), and
+ * accessed. It will check sa.sa_family to match the expected sizes, and if it does, the
+ * struct will be copied.
+ *
+ * On any failure, @dst will be set to sa.sa_family AF_UNSPEC.
+ * @dst will always be fully initialized (including setting all un-used bytes to zero).
+ */
+void
+nm_sock_addr_union_cpy_untrusted (NMSockAddrUnion *dst,
+                                  gconstpointer src /* unaligned (const NMSockAddrUnion *) */,
+                                  gsize src_len)
+{
+	int f_expected;
+	struct sockaddr sa;
+
+	nm_assert (dst);
+
+	*dst = (NMSockAddrUnion) NM_SOCK_ADDR_UNION_INIT_UNSPEC;
+
+	if (src_len == sizeof (struct sockaddr_in))
+		f_expected = AF_INET;
+	else if (src_len == sizeof (struct sockaddr_in6))
+		f_expected = AF_INET6;
+	else
+		return;
+
+	memcpy (&sa.sa_family, &((struct sockaddr *) src)->sa_family, sizeof (sa.sa_family));
+
+	if (sa.sa_family != f_expected)
+		return;
+
+	memcpy (dst, src, src_len);
+	nm_assert (dst->sa.sa_family == sa.sa_family);
+}
+
+/*****************************************************************************/
+
 static const NMDedupMultiIdxTypeClass _dedup_multi_idx_type_class;
 
 static void
@@ -392,13 +533,9 @@ _wireguard_peer_hash_update (const NMPWireGuardPeer *peer,
 	                     peer->rx_bytes,
 	                     peer->tx_bytes,
 	                     peer->last_handshake_time.tv_sec,
-	                     peer->last_handshake_time.tv_nsec,
-	                     peer->endpoint.sa.sa_family);
+	                     peer->last_handshake_time.tv_nsec);
 
-	if (peer->endpoint.sa.sa_family == AF_INET)
-		nm_hash_update_val (h, peer->endpoint.in);
-	else if (peer->endpoint.sa.sa_family == AF_INET6)
-		nm_hash_update_val (h, peer->endpoint.in6);
+	nm_sock_addr_union_hash_update (&peer->endpoint, h);
 
 	for (i = 0; i < peer->allowed_ips_len; i++)
 		_wireguard_allowed_ip_hash_update (&peer->allowed_ips[i], h);
@@ -422,10 +559,7 @@ _wireguard_peer_cmp (const NMPWireGuardPeer *a,
 	NM_CMP_FIELD_MEMCMP (a, b, public_key);
 	NM_CMP_FIELD_MEMCMP (a, b, preshared_key);
 
-	if (a->endpoint.sa.sa_family == AF_INET)
-		NM_CMP_FIELD_MEMCMP (a, b, endpoint.in);
-	else if (a->endpoint.sa.sa_family == AF_INET6)
-		NM_CMP_FIELD_MEMCMP (a, b, endpoint.in6);
+	NM_CMP_RETURN (nm_sock_addr_union_cmp (&a->endpoint, &b->endpoint));
 
 	for (i = 0; i < a->allowed_ips_len; i++) {
 		NM_CMP_RETURN (_wireguard_allowed_ip_cmp (&a->allowed_ips[i],
