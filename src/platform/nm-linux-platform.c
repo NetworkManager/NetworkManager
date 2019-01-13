@@ -2374,6 +2374,7 @@ _wireguard_create_change_nlmsgs (NMPlatform *platform,
                                  const NMPlatformLnkWireGuard *lnk_wireguard,
                                  const NMPWireGuardPeer *peers,
                                  guint peers_len,
+                                 gboolean replace_peers,
                                  GPtrArray **out_msgs)
 {
 	gs_unref_ptrarray GPtrArray *msgs = NULL;
@@ -2422,7 +2423,9 @@ again:
 		NLA_PUT (msg, WGDEVICE_A_PRIVATE_KEY, sizeof (lnk_wireguard->private_key), lnk_wireguard->private_key);
 		NLA_PUT_U16 (msg, WGDEVICE_A_LISTEN_PORT, lnk_wireguard->listen_port);
 		NLA_PUT_U32 (msg, WGDEVICE_A_FWMARK, lnk_wireguard->fwmark);
-		NLA_PUT_U32 (msg, WGDEVICE_A_FLAGS, WGDEVICE_F_REPLACE_PEERS);
+
+		NLA_PUT_U32 (msg, WGDEVICE_A_FLAGS,
+		             replace_peers ? WGDEVICE_F_REPLACE_PEERS : ((guint32) 0u));
 	}
 
 	if (peers_len == 0)
@@ -2552,7 +2555,8 @@ link_wireguard_change (NMPlatform *platform,
                        int ifindex,
                        const NMPlatformLnkWireGuard *lnk_wireguard,
                        const NMPWireGuardPeer *peers,
-                       guint peers_len)
+                       guint peers_len,
+                       gboolean replace_peers)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	gs_unref_ptrarray GPtrArray *msgs = NULL;
@@ -2570,6 +2574,7 @@ link_wireguard_change (NMPlatform *platform,
 	                                     lnk_wireguard,
 	                                     peers,
 	                                     peers_len,
+	                                     replace_peers,
 	                                     &msgs);
 	if (r < 0) {
 		_LOGW ("wireguard: set-device, cannot construct netlink message: %s", nm_strerror (r));

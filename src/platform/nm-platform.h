@@ -831,7 +831,8 @@ typedef struct {
 	                              int ifindex,
 	                              const NMPlatformLnkWireGuard *lnk_wireguard,
 	                              const struct _NMPWireGuardPeer *peers,
-	                              guint peers_len);
+	                              guint peers_len,
+	                              gboolean replace_peers);
 
 	gboolean (*vlan_add) (NMPlatform *, const char *name, int parent, int vlanid, guint32 vlanflags, const NMPlatformLink **out_link);
 	gboolean (*link_vlan_change) (NMPlatform *self,
@@ -1393,7 +1394,8 @@ int nm_platform_link_wireguard_change (NMPlatform *self,
                                        int ifindex,
                                        const NMPlatformLnkWireGuard *lnk_wireguard,
                                        const struct _NMPWireGuardPeer *peers,
-                                       guint peers_len);
+                                       guint peers_len,
+                                       gboolean replace_peers);
 
 const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address);
 
