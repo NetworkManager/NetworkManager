@@ -102,10 +102,16 @@ setting_changed_cb (NMSetting *setting,
 	g_signal_emit (self, signals[CHANGED], 0);
 }
 
-static gboolean
-_setting_release (gpointer key, gpointer value, gpointer user_data)
+static void
+_setting_release (NMConnection *connection, NMSetting *setting)
 {
-	g_signal_handlers_disconnect_by_func (value, setting_changed_cb, user_data);
+	g_signal_handlers_disconnect_by_func (setting, setting_changed_cb, connection);
+}
+
+static gboolean
+_setting_release_hfr (gpointer key, gpointer value, gpointer user_data)
+{
+	_setting_release (user_data, value);
 	return TRUE;
 }
 
@@ -123,9 +129,10 @@ _nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
 	setting_type = G_OBJECT_TYPE (setting);
 
 	if ((s_old = g_hash_table_lookup (priv->settings, _gtype_to_hash_key (setting_type))))
-		g_signal_handlers_disconnect_by_func (s_old, setting_changed_cb, connection);
+		_setting_release (connection, s_old);
+
 	g_hash_table_insert (priv->settings, _gtype_to_hash_key (setting_type), setting);
-	/* Listen for property changes so we can emit the 'changed' signal */
+
 	g_signal_connect (setting, "notify", (GCallback) setting_changed_cb, connection);
 }
 
@@ -409,7 +416,7 @@ _nm_connection_replace_settings (NMConnection *connection,
 	}
 
 	if (g_hash_table_size (priv->settings) > 0) {
-		g_hash_table_foreach_remove (priv->settings, _setting_release, connection);
+		g_hash_table_foreach_remove (priv->settings, _setting_release_hfr, connection);
 		changed = TRUE;
 	} else
 		changed = (settings != NULL);
@@ -494,7 +501,7 @@ nm_connection_replace_settings_from_connection (NMConnection *connection,
 	new_priv = NM_CONNECTION_GET_PRIVATE (new_connection);
 
 	if ((changed = g_hash_table_size (priv->settings) > 0))
-		g_hash_table_foreach_remove (priv->settings, _setting_release, connection);
+		g_hash_table_foreach_remove (priv->settings, _setting_release_hfr, connection);
 
 	if (g_hash_table_size (new_priv->settings)) {
 		g_hash_table_iter_init (&iter, new_priv->settings);
@@ -523,7 +530,7 @@ nm_connection_clear_settings (NMConnection *connection)
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 
 	if (g_hash_table_size (priv->settings) > 0) {
-		g_hash_table_foreach_remove (priv->settings, _setting_release, connection);
+		g_hash_table_foreach_remove (priv->settings, _setting_release_hfr, connection);
 		g_signal_emit (connection, signals[CHANGED], 0);
 	}
 }
@@ -2961,7 +2968,7 @@ nm_connection_private_free (NMConnectionPrivate *priv)
 {
 	NMConnection *self = priv->self;
 
-	g_hash_table_foreach_remove (priv->settings, _setting_release, self);
+	g_hash_table_foreach_remove (priv->settings, _setting_release_hfr, self);
 	g_hash_table_destroy (priv->settings);
 	g_free (priv->path);
 
