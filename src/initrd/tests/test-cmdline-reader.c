@@ -62,6 +62,8 @@ test_auto (void)
 	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "Wired Connection");
 	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, 0);
+	g_assert_cmpint (nm_setting_connection_get_multi_connect (s_con), ==, NM_CONNECTION_MULTI_CONNECT_MULTIPLE);
+
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
 	s_wired = nm_connection_get_setting_wired (connection);
@@ -328,6 +330,7 @@ test_some_more (void)
 	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "Wired Connection");
 	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, "eth1");
+	g_assert_cmpint (nm_setting_connection_get_multi_connect (s_con), ==, NM_CONNECTION_MULTI_CONNECT_MULTIPLE);
 
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired);
@@ -361,6 +364,7 @@ test_some_more (void)
 	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "ens10");
 	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, "ens10");
+	g_assert_cmpint (nm_setting_connection_get_multi_connect (s_con), ==, NM_CONNECTION_MULTI_CONNECT_SINGLE);
 
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired);
@@ -454,6 +458,7 @@ test_bond (void)
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "eth0");
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BOND_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, master_uuid);
+	g_assert_cmpint (nm_setting_connection_get_multi_connect (s_con), ==, NM_CONNECTION_MULTI_CONNECT_SINGLE);
 
 	connection = g_hash_table_lookup (connections, "eth1");
 	g_assert (connection);
@@ -466,6 +471,7 @@ test_bond (void)
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "eth1");
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BOND_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, master_uuid);
+	g_assert_cmpint (nm_setting_connection_get_multi_connect (s_con), ==, NM_CONNECTION_MULTI_CONNECT_SINGLE);
 }
 
 static void
@@ -525,6 +531,7 @@ test_bond_default (void)
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "eth0");
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BOND_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, master_uuid);
+	g_assert_cmpint (nm_setting_connection_get_multi_connect (s_con), ==, NM_CONNECTION_MULTI_CONNECT_SINGLE);
 }
 
 static void
@@ -588,6 +595,7 @@ test_bridge (void)
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "eth0");
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, master_uuid);
+	g_assert_cmpint (nm_setting_connection_get_multi_connect (s_con), ==, NM_CONNECTION_MULTI_CONNECT_SINGLE);
 
 	connection = g_hash_table_lookup (connections, "eth1");
 	g_assert (connection);
@@ -600,6 +608,7 @@ test_bridge (void)
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "eth1");
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, master_uuid);
+	g_assert_cmpint (nm_setting_connection_get_multi_connect (s_con), ==, NM_CONNECTION_MULTI_CONNECT_SINGLE);
 }
 
 static void
@@ -657,6 +666,7 @@ test_bridge_default (void)
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "eth0");
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, master_uuid);
+	g_assert_cmpint (nm_setting_connection_get_multi_connect (s_con), ==, NM_CONNECTION_MULTI_CONNECT_SINGLE);
 }
 
 static void
@@ -713,6 +723,7 @@ test_team (void)
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "eth0");
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_TEAM_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, master_uuid);
+	g_assert_cmpint (nm_setting_connection_get_multi_connect (s_con), ==, NM_CONNECTION_MULTI_CONNECT_SINGLE);
 
 	connection = g_hash_table_lookup (connections, "eth1");
 	g_assert (connection);
@@ -725,6 +736,7 @@ test_team (void)
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "eth1");
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_TEAM_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, master_uuid);
+	g_assert_cmpint (nm_setting_connection_get_multi_connect (s_con), ==, NM_CONNECTION_MULTI_CONNECT_SINGLE);
 }
 
 static void

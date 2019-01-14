@@ -39,7 +39,17 @@ get_conn (GHashTable *connections, const char *ifname, const char *type_name)
 {
 	NMConnection *connection;
 	NMSetting *setting;
-	const char *basename = ifname ?: "default_connection";
+	const char *basename;
+	NMConnectionMultiConnect multi_connect;
+
+	if (ifname) {
+		basename = ifname;
+		multi_connect = NM_CONNECTION_MULTI_CONNECT_SINGLE;
+	} else {
+		/* This is essentially for the "ip=dhcp" scenario. */
+		basename = "default_connection";
+		multi_connect = NM_CONNECTION_MULTI_CONNECT_MULTIPLE;
+	}
 
 	connection = g_hash_table_lookup (connections, (gpointer)basename);
 
@@ -71,6 +81,7 @@ get_conn (GHashTable *connections, const char *ifname, const char *type_name)
 		              NM_SETTING_CONNECTION_ID, ifname ?: "Wired Connection",
 		              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
 		              NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,
+			      NM_SETTING_CONNECTION_MULTI_CONNECT, multi_connect,
 		              NULL);
 
 		if (!type_name)
