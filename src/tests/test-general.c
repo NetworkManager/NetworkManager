@@ -1440,6 +1440,82 @@ test_nm_utils_strbuf_append (void)
 	char buf[NM_STRLEN (BUF_ORIG) + 1];
 	char str[NM_STRLEN (BUF_ORIG) + 1];
 
+#define _strbuf_append(buf, len, format, ...) \
+	G_STMT_START { \
+		char **_buf = (buf); \
+		gsize *_len = (len); \
+		const char *_str_iter; \
+		gs_free char *_str = NULL; \
+		\
+		switch (nmtst_get_rand_int () % 4) { \
+		case 0: \
+			nm_utils_strbuf_append (_buf, _len, (format), __VA_ARGS__); \
+			break; \
+		case 1: \
+			_str = g_strdup_printf ((format), __VA_ARGS__); \
+			nm_utils_strbuf_append_str (_buf, _len, _str); \
+			break; \
+		case 2: \
+			_str = g_strdup_printf ((format), __VA_ARGS__); \
+			nm_utils_strbuf_append_bin (_buf, _len, _str, strlen (_str)); \
+			break; \
+		case 3: \
+			_str = g_strdup_printf ((format), __VA_ARGS__); \
+			if (!_str[0]) \
+				nm_utils_strbuf_append_str (_buf, _len, _str); \
+			for (_str_iter = _str; _str_iter[0]; _str_iter++) \
+				nm_utils_strbuf_append_c (_buf, _len, _str_iter[0]); \
+			break; \
+		} \
+	} G_STMT_END
+
+#define _strbuf_append_str(buf, len, str) \
+	G_STMT_START { \
+		char **_buf = (buf); \
+		gsize *_len = (len); \
+		const char *_str = (str); \
+		\
+		switch (nmtst_get_rand_int () % 4) { \
+		case 0: \
+			nm_utils_strbuf_append (_buf, _len, "%s", _str ?: ""); \
+			break; \
+		case 1: \
+			nm_utils_strbuf_append_str (_buf, _len, _str); \
+			break; \
+		case 2: \
+			nm_utils_strbuf_append_bin (_buf, _len, _str, _str ? strlen (_str) : 0); \
+			break; \
+		case 3: \
+			if (!_str || !_str[0]) \
+				nm_utils_strbuf_append_str (_buf, _len, _str); \
+			for (; _str && _str[0]; _str++) \
+				nm_utils_strbuf_append_c (_buf, _len, _str[0]); \
+			break; \
+		} \
+	} G_STMT_END
+
+#define _strbuf_append_c(buf, len, ch) \
+	G_STMT_START { \
+		char **_buf = (buf); \
+		gsize *_len = (len); \
+		char _ch = (ch); \
+		\
+		switch (nmtst_get_rand_int () % 4) { \
+		case 0: \
+			nm_utils_strbuf_append (_buf, _len, "%c", _ch); \
+			break; \
+		case 1: \
+			nm_utils_strbuf_append_str (_buf, _len, ((char[2]) { _ch, 0 })); \
+			break; \
+		case 2: \
+			nm_utils_strbuf_append_bin (_buf, _len, &_ch, 1); \
+			break; \
+		case 3: \
+			nm_utils_strbuf_append_c (_buf, _len, _ch); \
+			break; \
+		} \
+	} G_STMT_END
+
 	for (buf_len = 0; buf_len < 10; buf_len++) {
 		for (rep = 0; rep < 50; rep++) {
 			const int s_len = nmtst_get_rand_int () % (sizeof (str) - 5);
@@ -1463,21 +1539,21 @@ test_nm_utils_strbuf_append (void)
 			switch (test_mode) {
 			case 0:
 				if (s_len == 1) {
-					nm_utils_strbuf_append_c (&t_buf, &t_len, str[0]);
+					_strbuf_append_c (&t_buf, &t_len, str[0]);
 					break;
 				}
 				/* fall through */
 			case 1:
-				nm_utils_strbuf_append_str (&t_buf, &t_len, str);
+				_strbuf_append_str (&t_buf, &t_len, str);
 				break;
 			case 2:
 				if (s_len == 1) {
-					nm_utils_strbuf_append (&t_buf, &t_len, "%c", str[0]);
+					_strbuf_append (&t_buf, &t_len, "%c", str[0]);
 					break;
 				}
 				/* fall through */
 			case 3:
-				nm_utils_strbuf_append (&t_buf, &t_len, "%s", str);
+				_strbuf_append (&t_buf, &t_len, "%s", str);
 				break;
 			case 4:
 				g_snprintf (t_buf, t_len, "%s", str);

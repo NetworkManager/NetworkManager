@@ -59,6 +59,41 @@ nm_utils_strbuf_append_c (char **buf, gsize *len, char c)
 }
 
 void
+nm_utils_strbuf_append_bin (char **buf, gsize *len, gconstpointer str, gsize str_len)
+{
+	switch (*len) {
+	case 0:
+		return;
+	case 1:
+		if (str_len == 0) {
+			(*buf)[0] = '\0';
+			return;
+		}
+		(*buf)[0] = '\0';
+		*len = 0;
+		(*buf)++;
+		return;
+	default:
+		if (str_len == 0) {
+			(*buf)[0] = '\0';
+			return;
+		}
+		if (str_len >= *len) {
+			memcpy (*buf, str, *len - 1);
+			(*buf)[*len - 1] = '\0';
+			*buf = &(*buf)[*len];
+			*len = 0;
+		} else {
+			memcpy (*buf, str, str_len);
+			*buf = &(*buf)[str_len];
+			(*buf)[0] = '\0';
+			*len -= str_len;
+		}
+		return;
+	}
+}
+
+void
 nm_utils_strbuf_append_str (char **buf, gsize *len, const char *str)
 {
 	gsize src_len;
