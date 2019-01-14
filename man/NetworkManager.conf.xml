@@ -1087,7 +1087,9 @@ managed=1
           <listitem><para>If set controls what body content
           NetworkManager checks for when requesting the URI for
           connectivity checking.  If missing, defaults to
-          "NetworkManager is online" </para></listitem>
+          "NetworkManager is online". If set to empty, the
+          HTTP server is expected to answer with status code
+          204 or no data.</para></listitem>
         </varlistentry>
       </variablelist>
     </para>
