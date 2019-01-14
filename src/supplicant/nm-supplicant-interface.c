@@ -1176,7 +1176,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   NULL);
 
 	/* Initialize global PMF setting to 'optional' */
-	priv->ready_count++;
+	priv->ready_count = 1;
 	g_dbus_proxy_call (priv->iface_proxy,
 	                   DBUS_INTERFACE_PROPERTIES ".Set",
 	                   g_variant_new ("(ssv)",
@@ -1190,7 +1190,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   self);
 
 	/* Check whether NetworkReply and AP mode are supported */
-	priv->ready_count = 1;
+	priv->ready_count++;
 	g_dbus_proxy_call (priv->iface_proxy,
 	                   "NetworkReply",
 	                   g_variant_new ("(oss)",
