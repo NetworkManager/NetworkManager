@@ -164,11 +164,13 @@ void                nm_manager_add_and_activate_connection_async  (NMManager *ma
                                                                    NMDevice *device,
                                                                    const char *specific_object,
                                                                    GVariant *options,
+                                                                   gboolean force_v2,
                                                                    GCancellable *cancellable,
                                                                    GAsyncReadyCallback callback,
                                                                    gpointer user_data);
 NMActiveConnection *nm_manager_add_and_activate_connection_finish (NMManager *manager,
                                                                    GAsyncResult *result,
+                                                                   GVariant **out_result,
                                                                    GError **error);
 
 gboolean nm_manager_deactivate_connection        (NMManager *manager,
@@ -220,5 +222,19 @@ void nm_manager_checkpoint_adjust_rollback_timeout (NMManager *manager,
 gboolean nm_manager_checkpoint_adjust_rollback_timeout_finish (NMManager *manager,
                                                                GAsyncResult *result,
                                                                GError **error);
+
+/*****************************************************************************/
+
+typedef struct {
+	NMActiveConnection *active;
+	GVariant *add_and_activate_output;
+} _NMActivateResult;
+
+_NMActivateResult *_nm_activate_result_new (NMActiveConnection *active,
+                                            GVariant *add_and_activate_output);
+
+void _nm_activate_result_free (_NMActivateResult *result);
+
+/*****************************************************************************/
 
 #endif /* __NM_MANAGER_H__ */

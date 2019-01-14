@@ -1163,18 +1163,20 @@ add_activate_cb (GObject *object,
                  GAsyncResult *result,
                  gpointer user_data)
 {
-	GSimpleAsyncResult *simple = user_data;
+	gs_unref_object GSimpleAsyncResult *simple = user_data;
+	gs_unref_variant GVariant *result_data = NULL;
 	NMActiveConnection *ac;
 	GError *error = NULL;
 
-	ac = nm_manager_add_and_activate_connection_finish (NM_MANAGER (object), result, &error);
-	if (ac)
-		g_simple_async_result_set_op_res_gpointer (simple, ac, g_object_unref);
-	else
+	ac = nm_manager_add_and_activate_connection_finish (NM_MANAGER (object), result, &result_data, &error);
+	if (ac) {
+		g_simple_async_result_set_op_res_gpointer (simple,
+		                                           _nm_activate_result_new (ac, result_data),
+		                                           (GDestroyNotify) _nm_activate_result_free);
+	} else
 		g_simple_async_result_take_error (simple, error);
 
 	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
 }
 
 /**
@@ -1233,8 +1235,14 @@ nm_client_add_and_activate_connection_async (NMClient *client,
 	if (cancellable)
 		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nm_manager_add_and_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                              partial, device, specific_object, NULL,
-	                                              cancellable, add_activate_cb, simple);
+	                                              partial,
+	                                              device,
+	                                              specific_object,
+	                                              NULL,
+	                                              FALSE,
+	                                              cancellable,
+	                                              add_activate_cb,
+	                                              simple);
 }
 
 /**
@@ -1257,6 +1265,7 @@ nm_client_add_and_activate_connection_finish (NMClient *client,
                                               GError **error)
 {
 	GSimpleAsyncResult *simple;
+	_NMActivateResult *r;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
@@ -1264,12 +1273,12 @@ nm_client_add_and_activate_connection_finish (NMClient *client,
 	simple = G_SIMPLE_ASYNC_RESULT (result);
 	if (g_simple_async_result_propagate_error (simple, error))
 		return NULL;
-	else
-		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+	r = g_simple_async_result_get_op_res_gpointer (simple);
+	return g_object_ref (r->active);
 }
 
 /**
- * nm_client_add_and_activate_connection_options:
+ * nm_client_add_and_activate_connection2:
  * @client: a #NMClient
  * @partial: (allow-none): an #NMConnection to add; the connection may be
  *   partially filled (or even %NULL) and will be completed by NetworkManager
@@ -1312,14 +1321,14 @@ nm_client_add_and_activate_connection_finish (NMClient *client,
  * Since: 1.16
  **/
 void
-nm_client_add_and_activate_connection_options (NMClient *client,
-                                               NMConnection *partial,
-                                               NMDevice *device,
-                                               const char *specific_object,
-                                               GVariant *options,
-                                               GCancellable *cancellable,
-                                               GAsyncReadyCallback callback,
-                                               gpointer user_data)
+nm_client_add_and_activate_connection2 (NMClient *client,
+                                        NMConnection *partial,
+                                        NMDevice *device,
+                                        const char *specific_object,
+                                        GVariant *options,
+                                        GCancellable *cancellable,
+                                        GAsyncReadyCallback callback,
+                                        gpointer user_data)
 {
 	GSimpleAsyncResult *simple;
 	GError *error = NULL;
@@ -1335,21 +1344,30 @@ nm_client_add_and_activate_connection_options (NMClient *client,
 	}
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_add_and_activate_connection_options);
+	                                    nm_client_add_and_activate_connection2);
 	if (cancellable)
 		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nm_manager_add_and_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                              partial, device, specific_object, options,
-	                                              cancellable, add_activate_cb, simple);
+	                                              partial,
+	                                              device,
+	                                              specific_object,
+	                                              options,
+	                                              TRUE,
+	                                              cancellable,
+	                                              add_activate_cb,
+	                                              simple);
 }
 
 /**
- * nm_client_add_and_activate_connection_options_finish:
+ * nm_client_add_and_activate_connection2_finish:
  * @client: an #NMClient
  * @result: the result passed to the #GAsyncReadyCallback
  * @error: location for a #GError, or %NULL
+ * @out_result: (allow-none): (transfer full): the output result
+ *   of type "a{sv}" returned by D-Bus' AddAndActivate2 call. Currently no
+ *   output is implemented yet.
  *
- * Gets the result of a call to nm_client_add_and_activate_connection_options().
+ * Gets the result of a call to nm_client_add_and_activate_connection2().
  *
  * You can call nm_active_connection_get_connection() on the returned
  * #NMActiveConnection to find the path of the created #NMConnection.
@@ -1358,20 +1376,25 @@ nm_client_add_and_activate_connection_options (NMClient *client,
  *   failure, in which case @error will be set.
  **/
 NMActiveConnection *
-nm_client_add_and_activate_connection_options_finish (NMClient *client,
-                                                      GAsyncResult *result,
-                                                      GError **error)
+nm_client_add_and_activate_connection2_finish (NMClient *client,
+                                               GAsyncResult *result,
+                                               GVariant **out_result,
+                                               GError **error)
 {
 	GSimpleAsyncResult *simple;
+	_NMActivateResult *r;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
 
 	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
+	if (g_simple_async_result_propagate_error (simple, error)) {
+		NM_SET_OUT (out_result, NULL);
 		return NULL;
-	else
-		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+	}
+	r = g_simple_async_result_get_op_res_gpointer (simple);
+	NM_SET_OUT (out_result, nm_g_variant_ref (r->add_and_activate_output));
+	return g_object_ref (r->active);
 }
 
 /**
