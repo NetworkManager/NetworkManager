@@ -1580,6 +1580,7 @@ plugin_child_quit (NMDnsPlugin *plugin, int exit_status, gpointer user_data)
 	} else {
 		priv->plugin_ratelimit.num_restarts++;
 		if (priv->plugin_ratelimit.num_restarts > PLUGIN_RATELIMIT_BURST) {
+			plugin_failed (plugin, self);
 			_LOGW ("plugin %s child respawning too fast, delaying update for %u seconds",
 			        nm_dns_plugin_get_name (plugin), PLUGIN_RATELIMIT_DELAY);
 			priv->plugin_ratelimit.timer = g_timeout_add_seconds (PLUGIN_RATELIMIT_DELAY,

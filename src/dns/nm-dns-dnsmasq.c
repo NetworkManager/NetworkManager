@@ -254,9 +254,16 @@ name_owner_changed (GObject    *object,
 		priv->running = TRUE;
 		send_dnsmasq_update (self);
 	} else {
-		_LOGI ("dnsmasq disappeared");
-		priv->running = FALSE;
-		g_signal_emit_by_name (self, NM_DNS_PLUGIN_FAILED);
+		if (priv->running) {
+			_LOGI ("dnsmasq disappeared");
+			priv->running = FALSE;
+			g_signal_emit_by_name (self, NM_DNS_PLUGIN_FAILED);
+		} else {
+			/* The only reason for which (!priv->running) here
+			 * is that the dnsmasq process quit. We don't care
+			 * of that here, the manager handles child restarts
+			 * by itself. */
+		}
 	}
 }
 
