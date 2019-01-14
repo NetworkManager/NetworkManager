@@ -1084,12 +1084,15 @@ managed=1
         </varlistentry>
         <varlistentry>
           <term><varname>response</varname></term>
-          <listitem><para>If set controls what body content
+          <listitem><para>If set, controls what body content
           NetworkManager checks for when requesting the URI for
-          connectivity checking.  If missing, defaults to
-          "NetworkManager is online". If set to empty, the
-          HTTP server is expected to answer with status code
-          204 or no data.</para></listitem>
+          connectivity checking.  Note that this only compares
+          that the HTTP response starts with the specifid text,
+          it does not compare the exact string. This behavior
+          might change in the future, so avoid relying on it.
+          If missing, the response defaults to "NetworkManager is online".
+          If set to empty, the HTTP server is expected to answer with
+          status code 204 or send no data.</para></listitem>
         </varlistentry>
       </variablelist>
     </para>
