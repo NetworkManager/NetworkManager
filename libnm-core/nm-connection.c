@@ -105,7 +105,7 @@ setting_changed_cb (NMSetting *setting,
 static gboolean
 _setting_release (gpointer key, gpointer value, gpointer user_data)
 {
-	g_signal_handlers_disconnect_by_func (user_data, setting_changed_cb, value);
+	g_signal_handlers_disconnect_by_func (value, setting_changed_cb, user_data);
 	return TRUE;
 }
 
