@@ -342,6 +342,7 @@ _con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 	}
 
 	while ((msg = curl_multi_info_read (mhandle, &m_left))) {
+		const char *response;
 
 		if (msg->msg != CURLMSG_DONE)
 			continue;
@@ -370,25 +371,45 @@ _con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 			                         g_strdup_printf ("check failed: (%d) %s",
 			                                          msg->data.result,
 			                                          curl_easy_strerror (msg->data.result)));
-		} else if (   !((_con_config_get_response (cb_data->concheck.con_config))[0])
-		           && (curl_easy_getinfo (msg->easy_handle, CURLINFO_RESPONSE_CODE, &response_code) == CURLE_OK)
-		           && response_code == 204) {
-			/* If we got a 204 response code (no content) and we actually
-			 * requested no content, report full connectivity. */
-			cb_data_queue_completed (cb_data,
-			                         NM_CONNECTIVITY_FULL,
-			                         "no content, as expected",
-			                         NULL);
-		} else {
-			/* If we get here, it means that easy_write_cb() didn't read enough
-			 * bytes to be able to do a match, or that we were asking for no content
-			 * (204 response code) and we actually got some. Either way, that is
-			 * an indication of a captive portal */
-			cb_data_queue_completed (cb_data,
-			                         NM_CONNECTIVITY_PORTAL,
-			                         "unexpected short response",
-			                         NULL);
+			continue;
 		}
+
+		response = _con_config_get_response (cb_data->concheck.con_config);
+
+		if (   response[0] == '\0'
+		    && (curl_easy_getinfo (msg->easy_handle, CURLINFO_RESPONSE_CODE, &response_code) == CURLE_OK)) {
+
+			if (response_code == 204) {
+				/* We expected an empty response, and we got a 204 response code (no content).
+				 * We may or may not have received any content (we would ignore it).
+				 * Anyway, the response_code 204 means we are good. */
+				cb_data_queue_completed (cb_data,
+				                         NM_CONNECTIVITY_FULL,
+				                         "no content, as expected",
+				                         NULL);
+				continue;
+			}
+
+			if (   response_code == 200
+			    && (   !cb_data->concheck.recv_msg
+			        || cb_data->concheck.recv_msg->len == 0)) {
+				/* we expected no response, and indeed we got an empty reply (with status code 200) */
+				cb_data_queue_completed (cb_data,
+				                         NM_CONNECTIVITY_FULL,
+				                         "empty response, as expected",
+				                         NULL);
+				continue;
+			}
+		}
+
+		/* If we get here, it means that easy_write_cb() didn't read enough
+		 * bytes to be able to do a match, or that we were asking for no content
+		 * (204 response code) and we actually got some. Either way, that is
+		 * an indication of a captive portal */
+		cb_data_queue_completed (cb_data,
+		                         NM_CONNECTIVITY_PORTAL,
+		                         "unexpected short response",
+		                         NULL);
 	}
 
 	/* if we return a failure, we don't know what went wrong. It's likely serious, because
@@ -547,14 +568,28 @@ easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 		return 0;
 	}
 
+	if (len == 0) {
+		/* no data. That can happen, it's fine. */
+		return len;
+	}
+
 	if (!cb_data->concheck.recv_msg)
 		cb_data->concheck.recv_msg = g_string_sized_new (len + 10);
 
 	g_string_append_len (cb_data->concheck.recv_msg, buffer, len);
 
 	response = _con_config_get_response (cb_data->concheck.con_config);;
-	if (   response
-	    && cb_data->concheck.recv_msg->len >= strlen (response)) {
+
+	if (response[0] == '\0') {
+		/* no response expected. We are however graceful and accept any
+		 * extra response that we might receive. We determine the empty
+		 * response based on the status code 204.
+		 *
+		 * Continue receiving... */
+		return len;
+	}
+
+	if (cb_data->concheck.recv_msg->len >= strlen (response)) {
 		/* We already have enough data -- check response */
 		if (g_str_has_prefix (cb_data->concheck.recv_msg->str, response)) {
 			cb_data_queue_completed (cb_data,
