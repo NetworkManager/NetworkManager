@@ -21,9 +21,10 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-infiniband.h"
+
 #include <stdlib.h>
 
-#include "nm-setting-infiniband.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
@@ -37,9 +38,15 @@
  * necessary for connection to IP-over-InfiniBand networks.
  **/
 
-G_DEFINE_TYPE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING)
+/*****************************************************************************/
 
-#define NM_SETTING_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_INFINIBAND, NMSettingInfinibandPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_MAC_ADDRESS,
+	PROP_MTU,
+	PROP_TRANSPORT_MODE,
+	PROP_P_KEY,
+	PROP_PARENT,
+);
 
 typedef struct {
 	char *mac_address;
@@ -49,29 +56,11 @@ typedef struct {
 	char *parent, *virtual_iface_name;
 } NMSettingInfinibandPrivate;
 
-enum {
-	PROP_0,
-	PROP_MAC_ADDRESS,
-	PROP_MTU,
-	PROP_TRANSPORT_MODE,
-	PROP_P_KEY,
-	PROP_PARENT,
+G_DEFINE_TYPE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING)
 
-	LAST_PROP
-};
+#define NM_SETTING_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_INFINIBAND, NMSettingInfinibandPrivate))
 
-/**
- * nm_setting_infiniband_new:
- *
- * Creates a new #NMSettingInfiniband object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingInfiniband object
- **/
-NMSetting *
-nm_setting_infiniband_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_INFINIBAND, NULL);
-}
+/*****************************************************************************/
 
 /**
  * nm_setting_infiniband_get_mac_address:
@@ -295,22 +284,34 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-static void
-nm_setting_infiniband_init (NMSettingInfiniband *setting)
-{
-}
+/*****************************************************************************/
 
 static void
-finalize (GObject *object)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
-	NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE (object);
+	NMSettingInfiniband *setting = NM_SETTING_INFINIBAND (object);
 
-	g_free (priv->transport_mode);
-	g_free (priv->mac_address);
-	g_free (priv->parent);
-	g_free (priv->virtual_iface_name);
-
-	G_OBJECT_CLASS (nm_setting_infiniband_parent_class)->finalize (object);
+	switch (prop_id) {
+	case PROP_MAC_ADDRESS:
+		g_value_set_string (value, nm_setting_infiniband_get_mac_address (setting));
+		break;
+	case PROP_MTU:
+		g_value_set_uint (value, nm_setting_infiniband_get_mtu (setting));
+		break;
+	case PROP_TRANSPORT_MODE:
+		g_value_set_string (value, nm_setting_infiniband_get_transport_mode (setting));
+		break;
+	case PROP_P_KEY:
+		g_value_set_int (value, nm_setting_infiniband_get_p_key (setting));
+		break;
+	case PROP_PARENT:
+		g_value_set_string (value, nm_setting_infiniband_get_parent (setting));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -347,32 +348,37 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingInfiniband *setting = NM_SETTING_INFINIBAND (object);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_MAC_ADDRESS:
-		g_value_set_string (value, nm_setting_infiniband_get_mac_address (setting));
-		break;
-	case PROP_MTU:
-		g_value_set_uint (value, nm_setting_infiniband_get_mtu (setting));
-		break;
-	case PROP_TRANSPORT_MODE:
-		g_value_set_string (value, nm_setting_infiniband_get_transport_mode (setting));
-		break;
-	case PROP_P_KEY:
-		g_value_set_int (value, nm_setting_infiniband_get_p_key (setting));
-		break;
-	case PROP_PARENT:
-		g_value_set_string (value, nm_setting_infiniband_get_parent (setting));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_infiniband_init (NMSettingInfiniband *setting)
+{
+}
+
+/**
+ * nm_setting_infiniband_new:
+ *
+ * Creates a new #NMSettingInfiniband object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingInfiniband object
+ **/
+NMSetting *
+nm_setting_infiniband_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_INFINIBAND, NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE (object);
+
+	g_free (priv->transport_mode);
+	g_free (priv->mac_address);
+	g_free (priv->parent);
+	g_free (priv->virtual_iface_name);
+
+	G_OBJECT_CLASS (nm_setting_infiniband_parent_class)->finalize (object);
 }
 
 static void
@@ -384,8 +390,8 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingInfinibandPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify = verify;
@@ -415,17 +421,15 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *klass)
 	 * example: HWADDR=01:02:03:04:05:06:07:08:09:0A:01:02:03:04:05:06:07:08:09:11
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_MAC_ADDRESS,
-		 g_param_spec_string (NM_SETTING_INFINIBAND_MAC_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MAC_ADDRESS] =
+	    g_param_spec_string (NM_SETTING_INFINIBAND_MAC_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	_properties_override_add_transform (properties_override,
-	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                  NM_SETTING_INFINIBAND_MAC_ADDRESS),
+	                                    obj_properties[PROP_MAC_ADDRESS],
 	                                    G_VARIANT_TYPE_BYTESTRING,
 	                                    _nm_utils_hwaddr_to_dbus,
 	                                    _nm_utils_hwaddr_from_dbus);
@@ -442,14 +446,13 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *klass)
 	 * description: MTU of the interface.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_MTU,
-		 g_param_spec_uint (NM_SETTING_INFINIBAND_MTU, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_FUZZY_IGNORE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MTU] =
+	    g_param_spec_uint (NM_SETTING_INFINIBAND_MTU, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingInfiniband:transport-mode:
@@ -465,14 +468,13 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *klass)
 	 *   "datagram" mode
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_TRANSPORT_MODE,
-		 g_param_spec_string (NM_SETTING_INFINIBAND_TRANSPORT_MODE, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TRANSPORT_MODE] =
+	    g_param_spec_string (NM_SETTING_INFINIBAND_TRANSPORT_MODE, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingInfiniband:p-key:
@@ -492,14 +494,13 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *klass)
 	 * example: PKEY=yes PKEY_ID=2 PHYSDEV=mlx4_ib0 DEVICE=mlx4_ib0.8002
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_P_KEY,
-		 g_param_spec_int (NM_SETTING_INFINIBAND_P_KEY, "", "",
-		                   -1, 0xFFFF, -1,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_CONSTRUCT |
-		                   NM_SETTING_PARAM_INFERRABLE |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_P_KEY] =
+	    g_param_spec_int (NM_SETTING_INFINIBAND_P_KEY, "", "",
+	                      -1, 0xFFFF, -1,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_CONSTRUCT |
+	                      NM_SETTING_PARAM_INFERRABLE |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingInfiniband:parent:
@@ -517,14 +518,15 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *klass)
 	 * example: PHYSDEV=ib0
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_PARENT,
-		 g_param_spec_string (NM_SETTING_INFINIBAND_PARENT, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PARENT] =
+	    g_param_spec_string (NM_SETTING_INFINIBAND_PARENT, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_INFINIBAND,
 	                               NULL, properties_override);

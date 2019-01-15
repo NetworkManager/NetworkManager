@@ -29,6 +29,8 @@
 
 #include "nm-core-internal.h"
 
+/*****************************************************************************/
+
 static void nm_vpn_editor_plugin_default_init (NMVpnEditorPluginInterface *iface);
 
 G_DEFINE_INTERFACE (NMVpnEditorPlugin, nm_vpn_editor_plugin, G_TYPE_OBJECT)
@@ -36,18 +38,16 @@ G_DEFINE_INTERFACE (NMVpnEditorPlugin, nm_vpn_editor_plugin, G_TYPE_OBJECT)
 static void
 nm_vpn_editor_plugin_default_init (NMVpnEditorPluginInterface *iface)
 {
-	/* Properties */
-
 	/**
 	 * NMVpnEditorPlugin:name:
 	 *
 	 * Short display name of the VPN plugin.
 	 */
 	g_object_interface_install_property (iface,
-		 g_param_spec_string (NM_VPN_EDITOR_PLUGIN_NAME, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	    g_param_spec_string (NM_VPN_EDITOR_PLUGIN_NAME, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMVpnEditorPlugin:description:
@@ -55,10 +55,10 @@ nm_vpn_editor_plugin_default_init (NMVpnEditorPluginInterface *iface)
 	 * Longer description of the VPN plugin.
 	 */
 	g_object_interface_install_property (iface,
-		 g_param_spec_string (NM_VPN_EDITOR_PLUGIN_DESCRIPTION, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	    g_param_spec_string (NM_VPN_EDITOR_PLUGIN_DESCRIPTION, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMVpnEditorPlugin:service:
@@ -66,10 +66,10 @@ nm_vpn_editor_plugin_default_init (NMVpnEditorPluginInterface *iface)
 	 * D-Bus service name of the plugin's VPN service.
 	 */
 	g_object_interface_install_property (iface,
-		 g_param_spec_string (NM_VPN_EDITOR_PLUGIN_SERVICE, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	    g_param_spec_string (NM_VPN_EDITOR_PLUGIN_SERVICE, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS));
 }
 
 /*****************************************************************************/

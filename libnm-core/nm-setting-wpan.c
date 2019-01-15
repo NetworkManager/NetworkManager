@@ -26,6 +26,14 @@
 #include "nm-setting-private.h"
 #include "nm-utils-private.h"
 
+/**
+ * SECTION:nm-setting-wpan
+ * @short_description: Describes connection properties for IEEE 802.15.4 (WPAN) MAC
+ *
+ * The #NMSettingWpan object is a #NMSetting subclass that describes properties
+ * necessary for configuring IEEE 802.15.4 (WPAN) MAC layer devices.
+ **/
+
 /* Ideally we'll be able to get these from a public header. */
 #ifndef IEEE802154_ADDR_LEN
 #define IEEE802154_ADDR_LEN 8
@@ -39,14 +47,15 @@
 #define IEEE802154_MAX_CHANNEL 26
 #endif
 
-enum {
-	PROP_0,
+/*****************************************************************************/
+
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_MAC_ADDRESS,
 	PROP_PAN_ID,
 	PROP_SHORT_ADDRESS,
 	PROP_PAGE,
 	PROP_CHANNEL,
-};
+);
 
 typedef struct {
 	char *mac_address;
@@ -69,17 +78,11 @@ struct _NMSettingWpanClass {
         NMSettingClass parent;
 };
 
-/**
- * SECTION:nm-setting-wpan
- * @short_description: Describes connection properties for IEEE 802.15.4 (WPAN) MAC
- *
- * The #NMSettingWpan object is a #NMSetting subclass that describes properties
- * necessary for configuring IEEE 802.15.4 (WPAN) MAC layer devices.
- **/
-
 G_DEFINE_TYPE (NMSettingWpan, nm_setting_wpan, NM_TYPE_SETTING)
 
 #define NM_SETTING_WPAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WPAN, NMSettingWpanPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_wpan_get_mac_address:
@@ -209,6 +212,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
+/*****************************************************************************/
+
 static void
 get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
@@ -265,6 +270,8 @@ set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *p
 	}
 }
 
+/*****************************************************************************/
+
 static void
 nm_setting_wpan_init (NMSettingWpan *setting)
 {
@@ -309,8 +316,8 @@ nm_setting_wpan_class_init (NMSettingWpanClass *klass)
 
 	g_type_class_add_private (setting_class, sizeof (NMSettingWpanPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify = verify;
@@ -328,36 +335,33 @@ nm_setting_wpan_class_init (NMSettingWpanClass *klass)
 	 *   (e.g. 76:d8:9b:87:66:60:84:ee).
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_MAC_ADDRESS,
-		 g_param_spec_string (NM_SETTING_WPAN_MAC_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MAC_ADDRESS] =
+	    g_param_spec_string (NM_SETTING_WPAN_MAC_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWpan:pan-id:
 	 *
 	 * IEEE 802.15.4 Personal Area Network (PAN) identifier.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PAN_ID,
-		 g_param_spec_uint (NM_SETTING_WPAN_PAN_ID, "", "",
-		                    0, G_MAXUINT16, G_MAXUINT16,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PAN_ID] =
+	    g_param_spec_uint (NM_SETTING_WPAN_PAN_ID, "", "",
+	                       0, G_MAXUINT16, G_MAXUINT16,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWpan:short-address:
 	 *
 	 * Short IEEE 802.15.4 address to be used within a restricted environment.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_SHORT_ADDRESS,
-		 g_param_spec_uint (NM_SETTING_WPAN_SHORT_ADDRESS, "", "",
-		                    0, G_MAXUINT16, G_MAXUINT16,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SHORT_ADDRESS] =
+	    g_param_spec_uint (NM_SETTING_WPAN_SHORT_ADDRESS, "", "",
+	                       0, G_MAXUINT16, G_MAXUINT16,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWpan:page:
@@ -367,14 +371,13 @@ nm_setting_wpan_class_init (NMSettingWpanClass *klass)
 	 *
 	 * Since: 1.16
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PAGE,
-		 g_param_spec_int (NM_SETTING_WPAN_PAGE, "", "",
-		                    G_MININT16,
-		                    G_MAXINT16,
-		                    NM_SETTING_WPAN_PAGE_DEFAULT,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PAGE] =
+	    g_param_spec_int (NM_SETTING_WPAN_PAGE, "", "",
+	                       G_MININT16,
+	                       G_MAXINT16,
+	                       NM_SETTING_WPAN_PAGE_DEFAULT,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWpan:channel:
@@ -384,14 +387,15 @@ nm_setting_wpan_class_init (NMSettingWpanClass *klass)
 	 *
 	 * Since: 1.16
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CHANNEL,
-		 g_param_spec_int (NM_SETTING_WPAN_CHANNEL, "", "",
-		                    G_MININT16,
-		                    G_MAXINT16,
-		                    NM_SETTING_WPAN_CHANNEL_DEFAULT,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CHANNEL] =
+	    g_param_spec_int (NM_SETTING_WPAN_CHANNEL, "", "",
+	                       G_MININT16,
+	                       G_MAXINT16,
+	                       NM_SETTING_WPAN_CHANNEL_DEFAULT,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_WPAN);
 }

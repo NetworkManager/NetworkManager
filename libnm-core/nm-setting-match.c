@@ -15,6 +15,7 @@
 #include "nm-default.h"
 
 #include "nm-setting-match.h"
+
 #include "nm-setting-private.h"
 #include "nm-utils-private.h"
 
@@ -23,6 +24,12 @@
  * @short_description: Properties to match a connection with a device.
  * @include: nm-setting-match.h
  **/
+
+/*****************************************************************************/
+
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettingMatch,
+	PROP_INTERFACE_NAME,
+);
 
 /**
  * NMSettingMatch:
@@ -41,10 +48,6 @@ struct _NMSettingMatchClass {
 };
 
 G_DEFINE_TYPE (NMSettingMatch, nm_setting_match, NM_TYPE_SETTING)
-
-NM_GOBJECT_PROPERTIES_DEFINE (NMSettingMatch,
-	PROP_INTERFACE_NAME,
-);
 
 /*****************************************************************************/
 
@@ -194,6 +197,8 @@ nm_setting_match_get_interface_names (NMSettingMatch *setting, guint *length)
 	return (const char *const *) setting->interface_name->pdata;
 }
 
+/*****************************************************************************/
+
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
@@ -226,6 +231,8 @@ set_property (GObject *object, guint prop_id,
 		break;
 	}
 }
+
+/*****************************************************************************/
 
 static void
 nm_setting_match_init (NMSettingMatch *setting)
@@ -264,9 +271,9 @@ nm_setting_match_class_init (NMSettingMatchClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	object_class->finalize     = finalize;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
+	object_class->finalize     = finalize;
 
 	/**
 	 * NMSettingMatch:interface-name

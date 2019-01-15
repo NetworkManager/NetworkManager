@@ -22,10 +22,11 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-ip-config.h"
+
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "nm-setting-ip-config.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-utils.h"
@@ -43,6 +44,8 @@
  * #NMSettingIP4Config and #NMSettingIP6Config, providing properties
  * related to IP addressing, routing, and Domain Name Service.
  **/
+
+/*****************************************************************************/
 
 const NMUtilsDNSOptionDesc _nm_utils_dns_option_descs[] = {
 	{ NM_SETTING_DNS_OPTION_DEBUG,                 FALSE,   FALSE },
@@ -1382,9 +1385,26 @@ _nm_ip_route_attribute_validate_all (const NMIPRoute *route)
 
 /*****************************************************************************/
 
-G_DEFINE_ABSTRACT_TYPE (NMSettingIPConfig, nm_setting_ip_config, NM_TYPE_SETTING)
-
-#define NM_SETTING_IP_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_IP_CONFIG, NMSettingIPConfigPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettingIPConfig,
+	PROP_METHOD,
+	PROP_DNS,
+	PROP_DNS_SEARCH,
+	PROP_DNS_OPTIONS,
+	PROP_DNS_PRIORITY,
+	PROP_ADDRESSES,
+	PROP_GATEWAY,
+	PROP_ROUTES,
+	PROP_ROUTE_METRIC,
+	PROP_ROUTE_TABLE,
+	PROP_IGNORE_AUTO_ROUTES,
+	PROP_IGNORE_AUTO_DNS,
+	PROP_DHCP_HOSTNAME,
+	PROP_DHCP_SEND_HOSTNAME,
+	PROP_NEVER_DEFAULT,
+	PROP_MAY_FAIL,
+	PROP_DAD_TIMEOUT,
+	PROP_DHCP_TIMEOUT,
+);
 
 typedef struct {
 	char *method;
@@ -1407,29 +1427,11 @@ typedef struct {
 	int dhcp_timeout;
 } NMSettingIPConfigPrivate;
 
-enum {
-	PROP_0,
-	PROP_METHOD,
-	PROP_DNS,
-	PROP_DNS_SEARCH,
-	PROP_DNS_OPTIONS,
-	PROP_DNS_PRIORITY,
-	PROP_ADDRESSES,
-	PROP_GATEWAY,
-	PROP_ROUTES,
-	PROP_ROUTE_METRIC,
-	PROP_ROUTE_TABLE,
-	PROP_IGNORE_AUTO_ROUTES,
-	PROP_IGNORE_AUTO_DNS,
-	PROP_DHCP_HOSTNAME,
-	PROP_DHCP_SEND_HOSTNAME,
-	PROP_NEVER_DEFAULT,
-	PROP_MAY_FAIL,
-	PROP_DAD_TIMEOUT,
-	PROP_DHCP_TIMEOUT,
+G_DEFINE_ABSTRACT_TYPE (NMSettingIPConfig, nm_setting_ip_config, NM_TYPE_SETTING)
 
-	LAST_PROP
-};
+#define NM_SETTING_IP_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_IP_CONFIG, NMSettingIPConfigPrivate))
+
+/*****************************************************************************/
 
 #define NM_SETTING_IP_CONFIG_GET_FAMILY(setting) (NM_IS_SETTING_IP4_CONFIG (setting) ? AF_INET : AF_INET6)
 
@@ -1515,7 +1517,7 @@ nm_setting_ip_config_add_dns (NMSettingIPConfig *setting, const char *dns)
 	}
 
 	g_ptr_array_add (priv->dns, dns_canonical);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS);
+	_notify (setting, PROP_DNS);
 	return TRUE;
 }
 
@@ -1537,7 +1539,7 @@ nm_setting_ip_config_remove_dns (NMSettingIPConfig *setting, int idx)
 	g_return_if_fail (idx >= 0 && idx < priv->dns->len);
 
 	g_ptr_array_remove_index (priv->dns, idx);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS);
+	_notify (setting, PROP_DNS);
 }
 
 /**
@@ -1566,7 +1568,7 @@ nm_setting_ip_config_remove_dns_by_value (NMSettingIPConfig *setting, const char
 	for (i = 0; i < priv->dns->len; i++) {
 		if (!strcmp (dns_canonical, priv->dns->pdata[i])) {
 			g_ptr_array_remove_index (priv->dns, i);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS);
+			_notify (setting, PROP_DNS);
 			g_free (dns_canonical);
 			return TRUE;
 		}
@@ -1592,7 +1594,7 @@ nm_setting_ip_config_clear_dns (NMSettingIPConfig *setting)
 
 	if (priv->dns->len != 0) {
 		g_ptr_array_set_size (priv->dns, 0);
-		g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS);
+		_notify (setting, PROP_DNS);
 	}
 }
 
@@ -1658,7 +1660,7 @@ nm_setting_ip_config_add_dns_search (NMSettingIPConfig *setting,
 	}
 
 	g_ptr_array_add (priv->dns_search, g_strdup (dns_search));
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_SEARCH);
+	_notify (setting, PROP_DNS_SEARCH);
 	return TRUE;
 }
 
@@ -1680,7 +1682,7 @@ nm_setting_ip_config_remove_dns_search (NMSettingIPConfig *setting, int idx)
 	g_return_if_fail (idx >= 0 && idx < priv->dns_search->len);
 
 	g_ptr_array_remove_index (priv->dns_search, idx);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_SEARCH);
+	_notify (setting, PROP_DNS_SEARCH);
 }
 
 /**
@@ -1707,7 +1709,7 @@ nm_setting_ip_config_remove_dns_search_by_value (NMSettingIPConfig *setting,
 	for (i = 0; i < priv->dns_search->len; i++) {
 		if (!strcmp (dns_search, priv->dns_search->pdata[i])) {
 			g_ptr_array_remove_index (priv->dns_search, i);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_SEARCH);
+			_notify (setting, PROP_DNS_SEARCH);
 			return TRUE;
 		}
 	}
@@ -1731,7 +1733,7 @@ nm_setting_ip_config_clear_dns_searches (NMSettingIPConfig *setting)
 
 	if (priv->dns_search->len != 0) {
 		g_ptr_array_set_size (priv->dns_search, 0);
-		g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_SEARCH);
+		_notify (setting, PROP_DNS_SEARCH);
 	}
 }
 
@@ -1863,7 +1865,7 @@ nm_setting_ip_config_add_dns_option (NMSettingIPConfig *setting,
 	}
 
 	g_ptr_array_add (priv->dns_options, g_strdup (dns_option));
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_OPTIONS);
+	_notify (setting, PROP_DNS_OPTIONS);
 	return TRUE;
 }
 
@@ -1888,7 +1890,7 @@ nm_setting_ip_config_remove_dns_option (NMSettingIPConfig *setting, int idx)
 	g_return_if_fail (idx >= 0 && idx < priv->dns_options->len);
 
 	g_ptr_array_remove_index (priv->dns_options, idx);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_OPTIONS);
+	_notify (setting, PROP_DNS_OPTIONS);
 }
 
 /**
@@ -1920,7 +1922,7 @@ nm_setting_ip_config_remove_dns_option_by_value (NMSettingIPConfig *setting,
 	i = _nm_utils_dns_option_find_idx (priv->dns_options, dns_option);
 	if (i >= 0) {
 		g_ptr_array_remove_index (priv->dns_options, i);
-		g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_OPTIONS);
+		_notify (setting, PROP_DNS_OPTIONS);
 		return TRUE;
 	}
 
@@ -1959,7 +1961,7 @@ nm_setting_ip_config_clear_dns_options (NMSettingIPConfig *setting, gboolean is_
 			g_ptr_array_set_size (priv->dns_options, 0);
 		}
 	}
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_OPTIONS);
+	_notify (setting, PROP_DNS_OPTIONS);
 }
 
 /**
@@ -2042,7 +2044,7 @@ nm_setting_ip_config_add_address (NMSettingIPConfig *setting,
 
 	g_ptr_array_add (priv->addresses, nm_ip_address_dup (address));
 
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ADDRESSES);
+	_notify (setting, PROP_ADDRESSES);
 	return TRUE;
 }
 
@@ -2065,7 +2067,7 @@ nm_setting_ip_config_remove_address (NMSettingIPConfig *setting, int idx)
 
 	g_ptr_array_remove_index (priv->addresses, idx);
 
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ADDRESSES);
+	_notify (setting, PROP_ADDRESSES);
 }
 
 /**
@@ -2091,7 +2093,7 @@ nm_setting_ip_config_remove_address_by_value (NMSettingIPConfig *setting,
 	for (i = 0; i < priv->addresses->len; i++) {
 		if (nm_ip_address_equal (priv->addresses->pdata[i], address)) {
 			g_ptr_array_remove_index (priv->addresses, i);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ADDRESSES);
+			_notify (setting, PROP_ADDRESSES);
 			return TRUE;
 		}
 	}
@@ -2113,7 +2115,7 @@ nm_setting_ip_config_clear_addresses (NMSettingIPConfig *setting)
 
 	if (priv->addresses->len != 0) {
 		g_ptr_array_set_size (priv->addresses, 0);
-		g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ADDRESSES);
+		_notify (setting, PROP_ADDRESSES);
 	}
 }
 
@@ -2200,7 +2202,7 @@ nm_setting_ip_config_add_route (NMSettingIPConfig *setting,
 	}
 
 	g_ptr_array_add (priv->routes, nm_ip_route_dup (route));
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ROUTES);
+	_notify (setting, PROP_ROUTES);
 	return TRUE;
 }
 
@@ -2222,7 +2224,7 @@ nm_setting_ip_config_remove_route (NMSettingIPConfig *setting, int idx)
 	g_return_if_fail (idx >= 0 && idx < priv->routes->len);
 
 	g_ptr_array_remove_index (priv->routes, idx);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ROUTES);
+	_notify (setting, PROP_ROUTES);
 }
 
 /**
@@ -2250,7 +2252,7 @@ nm_setting_ip_config_remove_route_by_value (NMSettingIPConfig *setting,
 	for (i = 0; i < priv->routes->len; i++) {
 		if (nm_ip_route_equal_full (priv->routes->pdata[i], route, NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS)) {
 			g_ptr_array_remove_index (priv->routes, i);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ROUTES);
+			_notify (setting, PROP_ROUTES);
 			return TRUE;
 		}
 	}
@@ -2272,7 +2274,7 @@ nm_setting_ip_config_clear_routes (NMSettingIPConfig *setting)
 
 	if (priv->routes->len != 0) {
 		g_ptr_array_set_size (priv->routes, 0);
-		g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ROUTES);
+		_notify (setting, PROP_ROUTES);
 	}
 }
 
@@ -2662,36 +2664,112 @@ compare_property (const NMSettInfoSetting *sett_info,
 
 /*****************************************************************************/
 
-static void
-nm_setting_ip_config_init (NMSettingIPConfig *setting)
+static gboolean
+ip_gateway_set (NMSetting  *setting,
+                GVariant   *connection_dict,
+                const char *property,
+                GVariant   *value,
+                NMSettingParseFlags parse_flags,
+                GError    **error)
 {
-	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	/* FIXME: properly handle errors */
 
-	priv->dns = g_ptr_array_new_with_free_func (g_free);
-	priv->dns_search = g_ptr_array_new_with_free_func (g_free);
-	priv->dns_options = NULL;
-	priv->addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
-	priv->routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
+	/* Don't set from 'gateway' if we're going to use the gateway in 'addresses' */
+	if (_nm_setting_use_legacy_property (setting, connection_dict, "addresses", "gateway"))
+		return TRUE;
+
+	g_object_set (setting, property, g_variant_get_string (value, NULL), NULL);
+	return TRUE;
 }
 
-static void
-finalize (GObject *object)
+GArray *
+_nm_sett_info_property_override_create_array_ip_config (void)
 {
-	NMSettingIPConfig *self = NM_SETTING_IP_CONFIG (object);
-	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (self);
+	nm_auto_unref_gtypeclass NMSettingClass *setting_class = g_type_class_ref (NM_TYPE_SETTING_IP_CONFIG);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
-	g_free (priv->method);
-	g_free (priv->gateway);
-	g_free (priv->dhcp_hostname);
+	_properties_override_add_override (properties_override,
+	                                   obj_properties[PROP_GATEWAY],
+	                                   G_VARIANT_TYPE_STRING,
+	                                   NULL,
+	                                   ip_gateway_set,
+	                                   NULL);
 
-	g_ptr_array_unref (priv->dns);
-	g_ptr_array_unref (priv->dns_search);
-	if (priv->dns_options)
-		g_ptr_array_unref (priv->dns_options);
-	g_ptr_array_unref (priv->addresses);
-	g_ptr_array_unref (priv->routes);
+	return properties_override;
+}
 
-	G_OBJECT_CLASS (nm_setting_ip_config_parent_class)->finalize (object);
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMSettingIPConfig *setting = NM_SETTING_IP_CONFIG (object);
+	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+
+	switch (prop_id) {
+	case PROP_METHOD:
+		g_value_set_string (value, nm_setting_ip_config_get_method (setting));
+		break;
+	case PROP_DNS:
+		g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (priv->dns));
+		break;
+	case PROP_DNS_SEARCH:
+		g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (priv->dns_search));
+		break;
+	case PROP_DNS_OPTIONS:
+		g_value_take_boxed (value, priv->dns_options ? _nm_utils_ptrarray_to_strv (priv->dns_options) : NULL);
+		break;
+	case PROP_DNS_PRIORITY:
+		g_value_set_int (value, priv->dns_priority);
+		break;
+	case PROP_ADDRESSES:
+		g_value_take_boxed (value, _nm_utils_copy_array (priv->addresses,
+		                                                 (NMUtilsCopyFunc) nm_ip_address_dup,
+		                                                 (GDestroyNotify) nm_ip_address_unref));
+		break;
+	case PROP_GATEWAY:
+		g_value_set_string (value, nm_setting_ip_config_get_gateway (setting));
+		break;
+	case PROP_ROUTES:
+		g_value_take_boxed (value, _nm_utils_copy_array (priv->routes,
+		                                                 (NMUtilsCopyFunc) nm_ip_route_dup,
+		                                                 (GDestroyNotify) nm_ip_route_unref));
+		break;
+	case PROP_ROUTE_METRIC:
+		g_value_set_int64 (value, priv->route_metric);
+		break;
+	case PROP_ROUTE_TABLE:
+		g_value_set_uint (value, priv->route_table);
+		break;
+	case PROP_IGNORE_AUTO_ROUTES:
+		g_value_set_boolean (value, nm_setting_ip_config_get_ignore_auto_routes (setting));
+		break;
+	case PROP_IGNORE_AUTO_DNS:
+		g_value_set_boolean (value, nm_setting_ip_config_get_ignore_auto_dns (setting));
+		break;
+	case PROP_DHCP_HOSTNAME:
+		g_value_set_string (value, nm_setting_ip_config_get_dhcp_hostname (setting));
+		break;
+	case PROP_DHCP_SEND_HOSTNAME:
+		g_value_set_boolean (value, nm_setting_ip_config_get_dhcp_send_hostname (setting));
+		break;
+	case PROP_NEVER_DEFAULT:
+		g_value_set_boolean (value, priv->never_default);
+		break;
+	case PROP_MAY_FAIL:
+		g_value_set_boolean (value, priv->may_fail);
+		break;
+	case PROP_DAD_TIMEOUT:
+		g_value_set_int (value, nm_setting_ip_config_get_dad_timeout (setting));
+		break;
+	case PROP_DHCP_TIMEOUT:
+		g_value_set_int (value, nm_setting_ip_config_get_dhcp_timeout (setting));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -2794,111 +2872,38 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+/*****************************************************************************/
+
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
+nm_setting_ip_config_init (NMSettingIPConfig *setting)
 {
-	NMSettingIPConfig *setting = NM_SETTING_IP_CONFIG (object);
 	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
 
-	switch (prop_id) {
-	case PROP_METHOD:
-		g_value_set_string (value, nm_setting_ip_config_get_method (setting));
-		break;
-	case PROP_DNS:
-		g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (priv->dns));
-		break;
-	case PROP_DNS_SEARCH:
-		g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (priv->dns_search));
-		break;
-	case PROP_DNS_OPTIONS:
-		g_value_take_boxed (value, priv->dns_options ? _nm_utils_ptrarray_to_strv (priv->dns_options) : NULL);
-		break;
-	case PROP_DNS_PRIORITY:
-		g_value_set_int (value, priv->dns_priority);
-		break;
-	case PROP_ADDRESSES:
-		g_value_take_boxed (value, _nm_utils_copy_array (priv->addresses,
-		                                                 (NMUtilsCopyFunc) nm_ip_address_dup,
-		                                                 (GDestroyNotify) nm_ip_address_unref));
-		break;
-	case PROP_GATEWAY:
-		g_value_set_string (value, nm_setting_ip_config_get_gateway (setting));
-		break;
-	case PROP_ROUTES:
-		g_value_take_boxed (value, _nm_utils_copy_array (priv->routes,
-		                                                 (NMUtilsCopyFunc) nm_ip_route_dup,
-		                                                 (GDestroyNotify) nm_ip_route_unref));
-		break;
-	case PROP_ROUTE_METRIC:
-		g_value_set_int64 (value, priv->route_metric);
-		break;
-	case PROP_ROUTE_TABLE:
-		g_value_set_uint (value, priv->route_table);
-		break;
-	case PROP_IGNORE_AUTO_ROUTES:
-		g_value_set_boolean (value, nm_setting_ip_config_get_ignore_auto_routes (setting));
-		break;
-	case PROP_IGNORE_AUTO_DNS:
-		g_value_set_boolean (value, nm_setting_ip_config_get_ignore_auto_dns (setting));
-		break;
-	case PROP_DHCP_HOSTNAME:
-		g_value_set_string (value, nm_setting_ip_config_get_dhcp_hostname (setting));
-		break;
-	case PROP_DHCP_SEND_HOSTNAME:
-		g_value_set_boolean (value, nm_setting_ip_config_get_dhcp_send_hostname (setting));
-		break;
-	case PROP_NEVER_DEFAULT:
-		g_value_set_boolean (value, priv->never_default);
-		break;
-	case PROP_MAY_FAIL:
-		g_value_set_boolean (value, priv->may_fail);
-		break;
-	case PROP_DAD_TIMEOUT:
-		g_value_set_int (value, nm_setting_ip_config_get_dad_timeout (setting));
-		break;
-	case PROP_DHCP_TIMEOUT:
-		g_value_set_int (value, nm_setting_ip_config_get_dhcp_timeout (setting));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	priv->dns = g_ptr_array_new_with_free_func (g_free);
+	priv->dns_search = g_ptr_array_new_with_free_func (g_free);
+	priv->dns_options = NULL;
+	priv->addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
+	priv->routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
 }
 
-static gboolean
-ip_gateway_set (NMSetting  *setting,
-                GVariant   *connection_dict,
-                const char *property,
-                GVariant   *value,
-                NMSettingParseFlags parse_flags,
-                GError    **error)
+static void
+finalize (GObject *object)
 {
-	/* FIXME: properly handle errors */
+	NMSettingIPConfig *self = NM_SETTING_IP_CONFIG (object);
+	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (self);
 
-	/* Don't set from 'gateway' if we're going to use the gateway in 'addresses' */
-	if (_nm_setting_use_legacy_property (setting, connection_dict, "addresses", "gateway"))
-		return TRUE;
+	g_free (priv->method);
+	g_free (priv->gateway);
+	g_free (priv->dhcp_hostname);
 
-	g_object_set (setting, property, g_variant_get_string (value, NULL), NULL);
-	return TRUE;
-}
+	g_ptr_array_unref (priv->dns);
+	g_ptr_array_unref (priv->dns_search);
+	if (priv->dns_options)
+		g_ptr_array_unref (priv->dns_options);
+	g_ptr_array_unref (priv->addresses);
+	g_ptr_array_unref (priv->routes);
 
-GArray *
-_nm_sett_info_property_override_create_array_ip_config (void)
-{
-	nm_auto_unref_gtypeclass NMSettingClass *setting_class = g_type_class_ref (NM_TYPE_SETTING_IP_CONFIG);
-	GArray *properties_override = _nm_sett_info_property_override_create_array ();
-
-	_properties_override_add_override (properties_override,
-	                                   g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                 NM_SETTING_IP_CONFIG_GATEWAY),
-	                                   G_VARIANT_TYPE_STRING,
-	                                   NULL,
-	                                   ip_gateway_set,
-	                                   NULL);
-
-	return properties_override;
+	G_OBJECT_CLASS (nm_setting_ip_config_parent_class)->finalize (object);
 }
 
 static void
@@ -2909,8 +2914,8 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingIPConfigPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify           = verify;
@@ -2939,25 +2944,23 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * shared method must be configured on the interface which shares the internet
 	 * to a subnet, not on the uplink which is shared.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_METHOD,
-		 g_param_spec_string (NM_SETTING_IP_CONFIG_METHOD, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_METHOD] =
+	    g_param_spec_string (NM_SETTING_IP_CONFIG_METHOD, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIPConfig:dns:
 	 *
 	 * Array of IP addresses of DNS servers.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DNS,
-		 g_param_spec_boxed (NM_SETTING_IP_CONFIG_DNS, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DNS] =
+	    g_param_spec_boxed (NM_SETTING_IP_CONFIG_DNS, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIPConfig:dns-search:
@@ -2967,12 +2970,11 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * interface over which a query must be forwarded; they are not used
 	 * to complete unqualified host names.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DNS_SEARCH,
-		 g_param_spec_boxed (NM_SETTING_IP_CONFIG_DNS_SEARCH, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DNS_SEARCH] =
+	    g_param_spec_boxed (NM_SETTING_IP_CONFIG_DNS_SEARCH, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIPConfig:dns-options:
@@ -2985,12 +2987,11 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DNS_OPTIONS,
-		 g_param_spec_boxed (NM_SETTING_IP_CONFIG_DNS_OPTIONS, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DNS_OPTIONS] =
+	    g_param_spec_boxed (NM_SETTING_IP_CONFIG_DNS_OPTIONS, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIPConfig:dns-priority:
@@ -3027,31 +3028,29 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 *
 	 * Since: 1.4
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_DNS_PRIORITY,
+	obj_properties[PROP_DNS_PRIORITY] =
 	     g_param_spec_int (NM_SETTING_IP_CONFIG_DNS_PRIORITY, "", "",
 	                       G_MININT32, G_MAXINT32, 0,
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_CONSTRUCT |
-	                       G_PARAM_STATIC_STRINGS));
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIPConfig:addresses: (type GPtrArray(NMIPAddress))
 	 *
 	 * Array of IP addresses.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ADDRESSES,
-		 g_param_spec_boxed (NM_SETTING_IP_CONFIG_ADDRESSES, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     /* "addresses" is a legacy D-Bus property, because the
-		                      * "addresses" GObject property normally gets set from
-		                      * the "address-data" D-Bus property...
-		                      */
-		                     NM_SETTING_PARAM_LEGACY |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ADDRESSES] =
+	    g_param_spec_boxed (NM_SETTING_IP_CONFIG_ADDRESSES, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READWRITE |
+	                        NM_SETTING_PARAM_INFERRABLE |
+	                        /* "addresses" is a legacy D-Bus property, because the
+	                         * "addresses" GObject property normally gets set from
+	                         * the "address-data" D-Bus property...
+	                         */
+	                        NM_SETTING_PARAM_LEGACY |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIPConfig:gateway:
@@ -3059,28 +3058,26 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * The gateway associated with this configuration. This is only meaningful
 	 * if #NMSettingIPConfig:addresses is also set.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_GATEWAY,
-		 g_param_spec_string (NM_SETTING_IP_CONFIG_GATEWAY, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_GATEWAY] =
+	    g_param_spec_string (NM_SETTING_IP_CONFIG_GATEWAY, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIPConfig:routes: (type GPtrArray(NMIPRoute))
 	 *
 	 * Array of IP routes.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ROUTES,
-		 g_param_spec_boxed (NM_SETTING_IP_CONFIG_ROUTES, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     /* See :addresses above Re: LEGACY */
-		                     NM_SETTING_PARAM_LEGACY |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ROUTES] =
+	    g_param_spec_boxed (NM_SETTING_IP_CONFIG_ROUTES, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READWRITE |
+	                        NM_SETTING_PARAM_INFERRABLE |
+	                        /* See :addresses above Re: LEGACY */
+	                        NM_SETTING_PARAM_LEGACY |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIPConfig:route-metric:
@@ -3096,13 +3093,12 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * mean setting it to 1024.
 	 * For IPv4, zero is a regular value for the metric.
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_ROUTE_METRIC,
+	obj_properties[PROP_ROUTE_METRIC] =
 	     g_param_spec_int64 (NM_SETTING_IP_CONFIG_ROUTE_METRIC, "", "",
 	                         -1, G_MAXUINT32, -1,
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_CONSTRUCT |
-	                         G_PARAM_STATIC_STRINGS));
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIPConfig:route-table:
@@ -3125,13 +3121,12 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 *
 	 * Since: 1.10
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ROUTE_TABLE,
-		 g_param_spec_uint (NM_SETTING_IP_CONFIG_ROUTE_TABLE, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE |
-		                    NM_SETTING_PARAM_FUZZY_IGNORE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ROUTE_TABLE] =
+	    g_param_spec_uint (NM_SETTING_IP_CONFIG_ROUTE_TABLE, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READWRITE |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
 	/**
 	 * NMSettingIPConfig:ignore-auto-routes:
 	 *
@@ -3139,13 +3134,12 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * %TRUE, automatically configured routes are ignored and only routes
 	 * specified in the #NMSettingIPConfig:routes property, if any, are used.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_IGNORE_AUTO_ROUTES,
-		 g_param_spec_boolean (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IGNORE_AUTO_ROUTES] =
+	    g_param_spec_boolean (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIPConfig:ignore-auto-dns:
@@ -3156,13 +3150,12 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * #NMSettingIPConfig:dns and #NMSettingIPConfig:dns-search properties, if
 	 * any, are used.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_IGNORE_AUTO_DNS,
-		 g_param_spec_boolean (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IGNORE_AUTO_DNS] =
+	    g_param_spec_boolean (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIPConfig:dhcp-hostname:
@@ -3172,12 +3165,11 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * This property and #NMSettingIP4Config:dhcp-fqdn are mutually exclusive and
 	 * cannot be set at the same time.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DHCP_HOSTNAME,
-		 g_param_spec_string (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DHCP_HOSTNAME] =
+	    g_param_spec_string (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIPConfig:dhcp-send-hostname:
@@ -3188,13 +3180,12 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * #NMSettingIPConfig:dhcp-hostname property is %NULL and this property is
 	 * %TRUE, the current persistent hostname of the computer is sent.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DHCP_SEND_HOSTNAME,
-		 g_param_spec_boolean (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, "", "",
-		                       TRUE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DHCP_SEND_HOSTNAME] =
+	    g_param_spec_boolean (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, "", "",
+	                          TRUE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIPConfig:never-default:
@@ -3203,13 +3194,12 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * IP type, meaning it will never be assigned the default route by
 	 * NetworkManager.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NEVER_DEFAULT,
-		 g_param_spec_boolean (NM_SETTING_IP_CONFIG_NEVER_DEFAULT, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NEVER_DEFAULT] =
+	    g_param_spec_boolean (NM_SETTING_IP_CONFIG_NEVER_DEFAULT, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIPConfig:may-fail:
@@ -3222,13 +3212,12 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * to succeed if IPv4 configuration fails but IPv6 configuration completes
 	 * successfully.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MAY_FAIL,
-		 g_param_spec_boolean (NM_SETTING_IP_CONFIG_MAY_FAIL, "", "",
-		                       TRUE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MAY_FAIL] =
+	    g_param_spec_boolean (NM_SETTING_IP_CONFIG_MAY_FAIL, "", "",
+	                          TRUE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIPConfig:dad-timeout:
@@ -3244,25 +3233,25 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DAD_TIMEOUT,
-		 g_param_spec_int (NM_SETTING_IP_CONFIG_DAD_TIMEOUT, "", "",
-		                    -1, NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX, -1,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_FUZZY_IGNORE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DAD_TIMEOUT] =
+	    g_param_spec_int (NM_SETTING_IP_CONFIG_DAD_TIMEOUT, "", "",
+	                       -1, NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX, -1,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIPConfig:dhcp-timeout:
 	 *
 	 * A timeout for a DHCP transaction in seconds.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DHCP_TIMEOUT,
-		 g_param_spec_int (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, "", "",
-		                   0, G_MAXINT32, 0,
-		                   G_PARAM_READWRITE |
-		                   NM_SETTING_PARAM_FUZZY_IGNORE |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DHCP_TIMEOUT] =
+	    g_param_spec_int (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, "", "",
+	                      0, G_MAXINT32, 0,
+	                      G_PARAM_READWRITE |
+	                      NM_SETTING_PARAM_FUZZY_IGNORE |
+	                      G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

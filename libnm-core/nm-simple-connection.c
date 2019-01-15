@@ -22,6 +22,7 @@
 #include "nm-default.h"
 
 #include "nm-simple-connection.h"
+
 #include "nm-setting-private.h"
 
 /**
@@ -32,11 +33,15 @@
  * but might be used in the process of creating a new one.
  **/
 
+/*****************************************************************************/
+
 static void nm_simple_connection_interface_init (NMConnectionInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (NMSimpleConnection, nm_simple_connection, G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION, nm_simple_connection_interface_init);
                          )
+
+/*****************************************************************************/
 
 static void
 nm_simple_connection_init (NMSimpleConnection *self)

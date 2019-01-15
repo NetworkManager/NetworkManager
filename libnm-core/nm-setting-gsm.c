@@ -22,9 +22,10 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-gsm.h"
+
 #include <string.h>
 
-#include "nm-setting-gsm.h"
 #include "nm-utils.h"
 #include "nm-setting-private.h"
 #include "nm-core-enum-types.h"
@@ -38,9 +39,23 @@
  * networks, including those using GPRS/EDGE and UMTS/HSPA technology.
  */
 
-G_DEFINE_TYPE (NMSettingGsm, nm_setting_gsm, NM_TYPE_SETTING)
+/*****************************************************************************/
 
-#define NM_SETTING_GSM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_GSM, NMSettingGsmPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_NUMBER,
+	PROP_USERNAME,
+	PROP_PASSWORD,
+	PROP_PASSWORD_FLAGS,
+	PROP_APN,
+	PROP_NETWORK_ID,
+	PROP_PIN,
+	PROP_PIN_FLAGS,
+	PROP_HOME_ONLY,
+	PROP_DEVICE_ID,
+	PROP_SIM_ID,
+	PROP_SIM_OPERATOR_ID,
+	PROP_MTU,
+);
 
 typedef struct {
 	char *number; /* For dialing, duh */
@@ -63,37 +78,11 @@ typedef struct {
 	guint32 mtu;
 } NMSettingGsmPrivate;
 
-enum {
-	PROP_0,
-	PROP_NUMBER,
-	PROP_USERNAME,
-	PROP_PASSWORD,
-	PROP_PASSWORD_FLAGS,
-	PROP_APN,
-	PROP_NETWORK_ID,
-	PROP_PIN,
-	PROP_PIN_FLAGS,
-	PROP_HOME_ONLY,
-	PROP_DEVICE_ID,
-	PROP_SIM_ID,
-	PROP_SIM_OPERATOR_ID,
-	PROP_MTU,
+G_DEFINE_TYPE (NMSettingGsm, nm_setting_gsm, NM_TYPE_SETTING)
 
-	LAST_PROP
-};
+#define NM_SETTING_GSM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_GSM, NMSettingGsmPrivate))
 
-/**
- * nm_setting_gsm_new:
- *
- * Creates a new #NMSettingGsm object with default values.
- *
- * Returns: the new empty #NMSettingGsm object
- **/
-NMSetting *
-nm_setting_gsm_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_GSM, NULL);
-}
+/*****************************************************************************/
 
 /**
  * nm_setting_gsm_get_number:
@@ -460,27 +449,58 @@ need_secrets (NMSetting *setting)
 	return secrets;
 }
 
-static void
-nm_setting_gsm_init (NMSettingGsm *setting)
-{
-}
+/*****************************************************************************/
 
 static void
-finalize (GObject *object)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
-	NMSettingGsmPrivate *priv = NM_SETTING_GSM_GET_PRIVATE (object);
+	NMSettingGsm *setting = NM_SETTING_GSM (object);
 
-	g_free (priv->number);
-	g_free (priv->username);
-	g_free (priv->password);
-	g_free (priv->apn);
-	g_free (priv->network_id);
-	g_free (priv->pin);
-	g_free (priv->device_id);
-	g_free (priv->sim_id);
-	g_free (priv->sim_operator_id);
-
-	G_OBJECT_CLASS (nm_setting_gsm_parent_class)->finalize (object);
+	switch (prop_id) {
+	case PROP_NUMBER:
+		g_value_set_string (value, nm_setting_gsm_get_number (setting));
+		break;
+	case PROP_USERNAME:
+		g_value_set_string (value, nm_setting_gsm_get_username (setting));
+		break;
+	case PROP_PASSWORD:
+		g_value_set_string (value, nm_setting_gsm_get_password (setting));
+		break;
+	case PROP_PASSWORD_FLAGS:
+		g_value_set_flags (value, nm_setting_gsm_get_password_flags (setting));
+		break;
+	case PROP_APN:
+		g_value_set_string (value, nm_setting_gsm_get_apn (setting));
+		break;
+	case PROP_NETWORK_ID:
+		g_value_set_string (value, nm_setting_gsm_get_network_id (setting));
+		break;
+	case PROP_PIN:
+		g_value_set_string (value, nm_setting_gsm_get_pin (setting));
+		break;
+	case PROP_PIN_FLAGS:
+		g_value_set_flags (value, nm_setting_gsm_get_pin_flags (setting));
+		break;
+	case PROP_HOME_ONLY:
+		g_value_set_boolean (value, nm_setting_gsm_get_home_only (setting));
+		break;
+	case PROP_DEVICE_ID:
+		g_value_set_string (value, nm_setting_gsm_get_device_id (setting));
+		break;
+	case PROP_SIM_ID:
+		g_value_set_string (value, nm_setting_gsm_get_sim_id (setting));
+		break;
+	case PROP_SIM_OPERATOR_ID:
+		g_value_set_string (value, nm_setting_gsm_get_sim_operator_id (setting));
+		break;
+	case PROP_MTU:
+		g_value_set_uint (value, nm_setting_gsm_get_mtu (setting));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -551,56 +571,42 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingGsm *setting = NM_SETTING_GSM (object);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_NUMBER:
-		g_value_set_string (value, nm_setting_gsm_get_number (setting));
-		break;
-	case PROP_USERNAME:
-		g_value_set_string (value, nm_setting_gsm_get_username (setting));
-		break;
-	case PROP_PASSWORD:
-		g_value_set_string (value, nm_setting_gsm_get_password (setting));
-		break;
-	case PROP_PASSWORD_FLAGS:
-		g_value_set_flags (value, nm_setting_gsm_get_password_flags (setting));
-		break;
-	case PROP_APN:
-		g_value_set_string (value, nm_setting_gsm_get_apn (setting));
-		break;
-	case PROP_NETWORK_ID:
-		g_value_set_string (value, nm_setting_gsm_get_network_id (setting));
-		break;
-	case PROP_PIN:
-		g_value_set_string (value, nm_setting_gsm_get_pin (setting));
-		break;
-	case PROP_PIN_FLAGS:
-		g_value_set_flags (value, nm_setting_gsm_get_pin_flags (setting));
-		break;
-	case PROP_HOME_ONLY:
-		g_value_set_boolean (value, nm_setting_gsm_get_home_only (setting));
-		break;
-	case PROP_DEVICE_ID:
-		g_value_set_string (value, nm_setting_gsm_get_device_id (setting));
-		break;
-	case PROP_SIM_ID:
-		g_value_set_string (value, nm_setting_gsm_get_sim_id (setting));
-		break;
-	case PROP_SIM_OPERATOR_ID:
-		g_value_set_string (value, nm_setting_gsm_get_sim_operator_id (setting));
-		break;
-	case PROP_MTU:
-		g_value_set_uint (value, nm_setting_gsm_get_mtu (setting));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_gsm_init (NMSettingGsm *setting)
+{
+}
+
+/**
+ * nm_setting_gsm_new:
+ *
+ * Creates a new #NMSettingGsm object with default values.
+ *
+ * Returns: the new empty #NMSettingGsm object
+ **/
+NMSetting *
+nm_setting_gsm_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_GSM, NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingGsmPrivate *priv = NM_SETTING_GSM_GET_PRIVATE (object);
+
+	g_free (priv->number);
+	g_free (priv->username);
+	g_free (priv->password);
+	g_free (priv->apn);
+	g_free (priv->network_id);
+	g_free (priv->pin);
+	g_free (priv->device_id);
+	g_free (priv->sim_id);
+	g_free (priv->sim_operator_id);
+
+	G_OBJECT_CLASS (nm_setting_gsm_parent_class)->finalize (object);
 }
 
 static void
@@ -612,8 +618,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingGsmPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify         = verify;
@@ -628,12 +634,11 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	 *
 	 * Deprecated: 1.16: user-provided values for this setting are no longer used.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NUMBER,
-		 g_param_spec_string (NM_SETTING_GSM_NUMBER, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NUMBER] =
+	    g_param_spec_string (NM_SETTING_GSM_NUMBER, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingGsm:username:
@@ -642,12 +647,11 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	 * providers do not require a username, or accept any username.  But if a
 	 * username is required, it is specified here.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_USERNAME,
-		 g_param_spec_string (NM_SETTING_GSM_USERNAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_USERNAME] =
+	    g_param_spec_string (NM_SETTING_GSM_USERNAME, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingGsm:password:
@@ -656,26 +660,24 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	 * providers do not require a password, or accept any password.  But if a
 	 * password is required, it is specified here.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PASSWORD,
-		 g_param_spec_string (NM_SETTING_GSM_PASSWORD, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_SECRET |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PASSWORD] =
+	    g_param_spec_string (NM_SETTING_GSM_PASSWORD, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_SECRET |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingGsm:password-flags:
 	 *
 	 * Flags indicating how to handle the #NMSettingGsm:password property.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PASSWORD_FLAGS,
-		 g_param_spec_flags (NM_SETTING_GSM_PASSWORD_FLAGS, "", "",
-		                     NM_TYPE_SETTING_SECRET_FLAGS,
-		                     NM_SETTING_SECRET_FLAG_NONE,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PASSWORD_FLAGS] =
+	    g_param_spec_flags (NM_SETTING_GSM_PASSWORD_FLAGS, "", "",
+	                        NM_TYPE_SETTING_SECRET_FLAGS,
+	                        NM_SETTING_SECRET_FLAG_NONE,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingGsm:apn:
@@ -688,12 +690,11 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	 * The APN may only be composed of the characters a-z, 0-9, ., and - per GSM
 	 * 03.60 Section 14.9.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_APN,
-		 g_param_spec_string (NM_SETTING_GSM_APN, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_APN] =
+	    g_param_spec_string (NM_SETTING_GSM_APN, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingGsm:network-id:
@@ -704,12 +705,11 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	 * This can be used to ensure that the device does not roam when direct
 	 * roaming control of the device is not otherwise possible.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NETWORK_ID,
-		 g_param_spec_string (NM_SETTING_GSM_NETWORK_ID, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NETWORK_ID] =
+	    g_param_spec_string (NM_SETTING_GSM_NETWORK_ID, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingGsm:pin:
@@ -718,26 +718,24 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	 * operations are requested.  Specify the PIN here to allow operation of the
 	 * device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PIN,
-		 g_param_spec_string (NM_SETTING_GSM_PIN, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_SECRET |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PIN] =
+	    g_param_spec_string (NM_SETTING_GSM_PIN, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_SECRET |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingGsm:pin-flags:
 	 *
 	 * Flags indicating how to handle the #NMSettingGsm:pin property.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PIN_FLAGS,
-		 g_param_spec_flags (NM_SETTING_GSM_PIN_FLAGS, "", "",
-		                     NM_TYPE_SETTING_SECRET_FLAGS,
-		                     NM_SETTING_SECRET_FLAG_NONE,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PIN_FLAGS] =
+	    g_param_spec_flags (NM_SETTING_GSM_PIN_FLAGS, "", "",
+	                        NM_TYPE_SETTING_SECRET_FLAGS,
+	                        NM_SETTING_SECRET_FLAG_NONE,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingGsm:home-only:
@@ -745,12 +743,11 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	 * When %TRUE, only connections to the home network will be allowed.
 	 * Connections to roaming networks will not be made.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_HOME_ONLY,
-		 g_param_spec_boolean (NM_SETTING_GSM_HOME_ONLY, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HOME_ONLY] =
+	    g_param_spec_boolean (NM_SETTING_GSM_HOME_ONLY, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingGsm:device-id:
@@ -761,12 +758,11 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DEVICE_ID,
-		 g_param_spec_string (NM_SETTING_GSM_DEVICE_ID, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DEVICE_ID] =
+	    g_param_spec_string (NM_SETTING_GSM_DEVICE_ID, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingGsm:sim-id:
@@ -778,12 +774,11 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_SIM_ID,
-		 g_param_spec_string (NM_SETTING_GSM_SIM_ID, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SIM_ID] =
+	    g_param_spec_string (NM_SETTING_GSM_SIM_ID, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingGsm:sim-operator-id:
@@ -796,12 +791,11 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_SIM_OPERATOR_ID,
-		 g_param_spec_string (NM_SETTING_GSM_SIM_OPERATOR_ID, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SIM_OPERATOR_ID] =
+	    g_param_spec_string (NM_SETTING_GSM_SIM_OPERATOR_ID, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingGsm:mtu:
@@ -811,14 +805,13 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	 *
 	 * Since: 1.8
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MTU,
-		 g_param_spec_uint (NM_SETTING_GSM_MTU, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_FUZZY_IGNORE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MTU] =
+	    g_param_spec_uint (NM_SETTING_GSM_MTU, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/* Ignore incoming deprecated properties */
 	_properties_override_add_dbus_only (properties_override,
@@ -832,6 +825,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	                                    G_VARIANT_TYPE_INT32,
 	                                    NULL,
 	                                    NULL);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_GSM,
 	                               NULL, properties_override);

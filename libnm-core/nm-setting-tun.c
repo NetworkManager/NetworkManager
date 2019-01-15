@@ -21,10 +21,11 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-tun.h"
+
 #include <stdlib.h>
 #include <string.h>
 
-#include "nm-setting-tun.h"
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-private.h"
@@ -38,9 +39,16 @@
  * necessary for connection to TUN/TAP interfaces.
  **/
 
-G_DEFINE_TYPE (NMSettingTun, nm_setting_tun, NM_TYPE_SETTING)
+/*****************************************************************************/
 
-#define NM_SETTING_TUN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_TUN, NMSettingTunPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_MODE,
+	PROP_OWNER,
+	PROP_GROUP,
+	PROP_PI,
+	PROP_VNET_HDR,
+	PROP_MULTI_QUEUE,
+);
 
 typedef struct {
 	NMSettingTunMode mode;
@@ -51,31 +59,11 @@ typedef struct {
 	gboolean multi_queue;
 } NMSettingTunPrivate;
 
-enum {
-	PROP_0,
-	PROP_MODE,
-	PROP_OWNER,
-	PROP_GROUP,
-	PROP_PI,
-	PROP_VNET_HDR,
-	PROP_MULTI_QUEUE,
-	LAST_PROP
-};
+G_DEFINE_TYPE (NMSettingTun, nm_setting_tun, NM_TYPE_SETTING)
 
-/**
- * nm_setting_tun_new:
- *
- * Creates a new #NMSettingTun object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingTun object
- *
- * Since: 1.2
- **/
-NMSetting *
-nm_setting_tun_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_TUN, NULL);
-}
+#define NM_SETTING_TUN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_TUN, NMSettingTunPrivate))
+
+/*****************************************************************************/
 
 /**
  * nm_setting_tun_get_mode:
@@ -167,11 +155,6 @@ nm_setting_tun_get_multi_queue (NMSettingTun *setting)
 	return NM_SETTING_TUN_GET_PRIVATE (setting)->multi_queue;
 }
 
-static void
-nm_setting_tun_init (NMSettingTun *setting)
-{
-}
-
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -212,39 +195,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMSettingTun *setting = NM_SETTING_TUN (object);
-	NMSettingTunPrivate *priv = NM_SETTING_TUN_GET_PRIVATE (setting);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_MODE:
-		priv->mode = g_value_get_uint (value);
-		break;
-	case PROP_OWNER:
-		g_free (priv->owner);
-		priv->owner = g_value_dup_string (value);
-		break;
-	case PROP_GROUP:
-		g_free (priv->group);
-		priv->group = g_value_dup_string (value);
-		break;
-	case PROP_PI:
-		priv->pi = g_value_get_boolean (value);
-		break;
-	case PROP_VNET_HDR:
-		priv->vnet_hdr = g_value_get_boolean (value);
-		break;
-	case PROP_MULTI_QUEUE:
-		priv->multi_queue = g_value_get_boolean (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
@@ -278,6 +230,61 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMSettingTun *setting = NM_SETTING_TUN (object);
+	NMSettingTunPrivate *priv = NM_SETTING_TUN_GET_PRIVATE (setting);
+
+	switch (prop_id) {
+	case PROP_MODE:
+		priv->mode = g_value_get_uint (value);
+		break;
+	case PROP_OWNER:
+		g_free (priv->owner);
+		priv->owner = g_value_dup_string (value);
+		break;
+	case PROP_GROUP:
+		g_free (priv->group);
+		priv->group = g_value_dup_string (value);
+		break;
+	case PROP_PI:
+		priv->pi = g_value_get_boolean (value);
+		break;
+	case PROP_VNET_HDR:
+		priv->vnet_hdr = g_value_get_boolean (value);
+		break;
+	case PROP_MULTI_QUEUE:
+		priv->multi_queue = g_value_get_boolean (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+/*****************************************************************************/
+
+static void
+nm_setting_tun_init (NMSettingTun *setting)
+{
+}
+
+/**
+ * nm_setting_tun_new:
+ *
+ * Creates a new #NMSettingTun object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingTun object
+ *
+ * Since: 1.2
+ **/
+NMSetting *
+nm_setting_tun_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_TUN, NULL);
+}
+
+static void
 finalize (GObject *object)
 {
 	NMSettingTun *setting = NM_SETTING_TUN (object);
@@ -297,8 +304,8 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingTunPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify = verify;
@@ -313,14 +320,13 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_MODE,
-		 g_param_spec_uint (NM_SETTING_TUN_MODE, "", "",
-		                    0, G_MAXUINT, NM_SETTING_TUN_MODE_TUN,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_INFERRABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MODE] =
+	    g_param_spec_uint (NM_SETTING_TUN_MODE, "", "",
+	                       0, G_MAXUINT, NM_SETTING_TUN_MODE_TUN,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_INFERRABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTun:owner:
@@ -330,13 +336,12 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_OWNER,
-		 g_param_spec_string (NM_SETTING_TUN_OWNER, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_OWNER] =
+	    g_param_spec_string (NM_SETTING_TUN_OWNER, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTun:group:
@@ -346,13 +351,12 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_GROUP,
-		 g_param_spec_string (NM_SETTING_TUN_GROUP, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_GROUP] =
+	    g_param_spec_string (NM_SETTING_TUN_GROUP, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTun:pi:
@@ -362,13 +366,12 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_PI,
-		 g_param_spec_boolean (NM_SETTING_TUN_PI, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       NM_SETTING_PARAM_INFERRABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PI] =
+	    g_param_spec_boolean (NM_SETTING_TUN_PI, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          NM_SETTING_PARAM_INFERRABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTun:vnet-hdr:
@@ -378,13 +381,12 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_VNET_HDR,
-		 g_param_spec_boolean (NM_SETTING_TUN_VNET_HDR, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       NM_SETTING_PARAM_INFERRABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_VNET_HDR] =
+	    g_param_spec_boolean (NM_SETTING_TUN_VNET_HDR, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          NM_SETTING_PARAM_INFERRABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTun:multi-queue:
@@ -396,13 +398,14 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_MULTI_QUEUE,
-		 g_param_spec_boolean (NM_SETTING_TUN_MULTI_QUEUE, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       NM_SETTING_PARAM_INFERRABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MULTI_QUEUE] =
+	    g_param_spec_boolean (NM_SETTING_TUN_MULTI_QUEUE, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          NM_SETTING_PARAM_INFERRABLE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_TUN);
 }

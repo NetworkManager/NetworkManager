@@ -21,9 +21,10 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-adsl.h"
+
 #include <string.h>
 
-#include "nm-setting-adsl.h"
 #include "nm-setting-ppp.h"
 #include "nm-setting-private.h"
 #include "nm-utils.h"
@@ -37,9 +38,17 @@
  * properties of ADSL connections.
  */
 
-G_DEFINE_TYPE (NMSettingAdsl, nm_setting_adsl, NM_TYPE_SETTING)
+/*****************************************************************************/
 
-#define NM_SETTING_ADSL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_ADSL, NMSettingAdslPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_USERNAME,
+	PROP_PASSWORD,
+	PROP_PASSWORD_FLAGS,
+	PROP_PROTOCOL,
+	PROP_ENCAPSULATION,
+	PROP_VPI,
+	PROP_VCI,
+);
 
 typedef struct {
 	char *  username;
@@ -51,31 +60,11 @@ typedef struct {
 	guint32 vci;
 } NMSettingAdslPrivate;
 
-enum {
-	PROP_0,
-	PROP_USERNAME,
-	PROP_PASSWORD,
-	PROP_PASSWORD_FLAGS,
-	PROP_PROTOCOL,
-	PROP_ENCAPSULATION,
-	PROP_VPI,
-	PROP_VCI,
+G_DEFINE_TYPE (NMSettingAdsl, nm_setting_adsl, NM_TYPE_SETTING)
 
-	LAST_PROP
-};
+#define NM_SETTING_ADSL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_ADSL, NMSettingAdslPrivate))
 
-/**
- * nm_setting_adsl_new:
- *
- * Creates a new #NMSettingAdsl object with default values.
- *
- * Returns: the new empty #NMSettingAdsl object
- **/
-NMSetting *
-nm_setting_adsl_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_ADSL, NULL);
-}
+/*****************************************************************************/
 
 /**
  * nm_setting_adsl_get_username:
@@ -250,22 +239,40 @@ need_secrets (NMSetting *setting)
 	return secrets;
 }
 
-static void
-nm_setting_adsl_init (NMSettingAdsl *setting)
-{
-}
+/*****************************************************************************/
 
 static void
-finalize (GObject *object)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
-	NMSettingAdslPrivate *priv = NM_SETTING_ADSL_GET_PRIVATE (object);
+	NMSettingAdsl *setting = NM_SETTING_ADSL (object);
 
-	g_free (priv->username);
-	g_free (priv->password);
-	g_free (priv->protocol);
-	g_free (priv->encapsulation);
-
-	G_OBJECT_CLASS (nm_setting_adsl_parent_class)->finalize (object);
+	switch (prop_id) {
+	case PROP_USERNAME:
+		g_value_set_string (value, nm_setting_adsl_get_username (setting));
+		break;
+	case PROP_PASSWORD:
+		g_value_set_string (value, nm_setting_adsl_get_password (setting));
+		break;
+	case PROP_PASSWORD_FLAGS:
+		g_value_set_flags (value, nm_setting_adsl_get_password_flags (setting));
+		break;
+	case PROP_PROTOCOL:
+		g_value_set_string (value, nm_setting_adsl_get_protocol (setting));
+		break;
+	case PROP_ENCAPSULATION:
+		g_value_set_string (value, nm_setting_adsl_get_encapsulation (setting));
+		break;
+	case PROP_VPI:
+		g_value_set_uint (value, nm_setting_adsl_get_vpi (setting));
+		break;
+	case PROP_VCI:
+		g_value_set_uint (value, nm_setting_adsl_get_vci (setting));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -309,38 +316,37 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingAdsl *setting = NM_SETTING_ADSL (object);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_USERNAME:
-		g_value_set_string (value, nm_setting_adsl_get_username (setting));
-		break;
-	case PROP_PASSWORD:
-		g_value_set_string (value, nm_setting_adsl_get_password (setting));
-		break;
-	case PROP_PASSWORD_FLAGS:
-		g_value_set_flags (value, nm_setting_adsl_get_password_flags (setting));
-		break;
-	case PROP_PROTOCOL:
-		g_value_set_string (value, nm_setting_adsl_get_protocol (setting));
-		break;
-	case PROP_ENCAPSULATION:
-		g_value_set_string (value, nm_setting_adsl_get_encapsulation (setting));
-		break;
-	case PROP_VPI:
-		g_value_set_uint (value, nm_setting_adsl_get_vpi (setting));
-		break;
-	case PROP_VCI:
-		g_value_set_uint (value, nm_setting_adsl_get_vci (setting));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_adsl_init (NMSettingAdsl *setting)
+{
+}
+
+/**
+ * nm_setting_adsl_new:
+ *
+ * Creates a new #NMSettingAdsl object with default values.
+ *
+ * Returns: the new empty #NMSettingAdsl object
+ **/
+NMSetting *
+nm_setting_adsl_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_ADSL, NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingAdslPrivate *priv = NM_SETTING_ADSL_GET_PRIVATE (object);
+
+	g_free (priv->username);
+	g_free (priv->password);
+	g_free (priv->protocol);
+	g_free (priv->encapsulation);
+
+	G_OBJECT_CLASS (nm_setting_adsl_parent_class)->finalize (object);
 }
 
 static void
@@ -351,8 +357,8 @@ nm_setting_adsl_class_init (NMSettingAdslClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingAdslPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify         = verify;
@@ -364,86 +370,81 @@ nm_setting_adsl_class_init (NMSettingAdslClass *klass)
 	 *
 	 * Username used to authenticate with the ADSL service.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_USERNAME,
-		 g_param_spec_string (NM_SETTING_ADSL_USERNAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_USERNAME] =
+	    g_param_spec_string (NM_SETTING_ADSL_USERNAME, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingAdsl:password:
 	 *
 	 * Password used to authenticate with the ADSL service.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PASSWORD,
-		 g_param_spec_string (NM_SETTING_ADSL_PASSWORD, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_SECRET |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PASSWORD] =
+	    g_param_spec_string (NM_SETTING_ADSL_PASSWORD, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_SECRET |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingAdsl:password-flags:
 	 *
 	 * Flags indicating how to handle the #NMSettingAdsl:password property.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PASSWORD_FLAGS,
-		 g_param_spec_flags (NM_SETTING_ADSL_PASSWORD_FLAGS, "", "",
-		                     NM_TYPE_SETTING_SECRET_FLAGS,
-		                     NM_SETTING_SECRET_FLAG_NONE,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PASSWORD_FLAGS] =
+	    g_param_spec_flags (NM_SETTING_ADSL_PASSWORD_FLAGS, "", "",
+	                        NM_TYPE_SETTING_SECRET_FLAGS,
+	                        NM_SETTING_SECRET_FLAG_NONE,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingAdsl:protocol:
 	 *
 	 * ADSL connection protocol.  Can be "pppoa", "pppoe" or "ipoatm".
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PROTOCOL,
-		 g_param_spec_string (NM_SETTING_ADSL_PROTOCOL, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PROTOCOL] =
+	    g_param_spec_string (NM_SETTING_ADSL_PROTOCOL, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingAdsl:encapsulation:
 	 *
 	 * Encapsulation of ADSL connection.  Can be "vcmux" or "llc".
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ENCAPSULATION,
-		 g_param_spec_string (NM_SETTING_ADSL_ENCAPSULATION, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ENCAPSULATION] =
+	    g_param_spec_string (NM_SETTING_ADSL_ENCAPSULATION, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingAdsl:vpi:
 	 *
 	 * VPI of ADSL connection
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_VPI,
-		 g_param_spec_uint (NM_SETTING_ADSL_VPI, "", "",
-		                    0, 65536, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_VPI] =
+	    g_param_spec_uint (NM_SETTING_ADSL_VPI, "", "",
+	                       0, 65536, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingAdsl:vci:
 	 *
 	 * VCI of ADSL connection
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_VCI,
-		 g_param_spec_uint (NM_SETTING_ADSL_VCI, "", "",
-		                    0, 65536, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_VCI] =
+	    g_param_spec_uint (NM_SETTING_ADSL_VCI, "", "",
+	                       0, 65536, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_ADSL);
 }

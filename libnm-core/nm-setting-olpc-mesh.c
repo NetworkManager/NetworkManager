@@ -22,9 +22,10 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-olpc-mesh.h"
+
 #include <string.h>
 
-#include "nm-setting-olpc-mesh.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
@@ -37,11 +38,13 @@
  * necessary for connection to OLPC-Mesh devices.
  **/
 
-static void nm_setting_olpc_mesh_init (NMSettingOlpcMesh *setting);
+/*****************************************************************************/
 
-G_DEFINE_TYPE (NMSettingOlpcMesh, nm_setting_olpc_mesh, NM_TYPE_SETTING)
-
-#define NM_SETTING_OLPC_MESH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_OLPC_MESH, NMSettingOlpcMeshPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_SSID,
+	PROP_CHANNEL,
+	PROP_DHCP_ANYCAST_ADDRESS,
+);
 
 typedef struct {
 	GBytes *ssid;
@@ -49,31 +52,11 @@ typedef struct {
 	char *dhcp_anycast_addr;
 } NMSettingOlpcMeshPrivate;
 
-enum {
-	PROP_0,
-	PROP_SSID,
-	PROP_CHANNEL,
-	PROP_DHCP_ANYCAST_ADDRESS,
+G_DEFINE_TYPE (NMSettingOlpcMesh, nm_setting_olpc_mesh, NM_TYPE_SETTING)
 
-	LAST_PROP
-};
+#define NM_SETTING_OLPC_MESH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_OLPC_MESH, NMSettingOlpcMeshPrivate))
 
-/**
- * nm_setting_olpc_mesh_new:
- *
- * Creates a new #NMSettingOlpcMesh object with default values.
- *
- * Returns: the new empty #NMSettingOlpcMesh object
- **/
-NMSetting *nm_setting_olpc_mesh_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_OLPC_MESH, NULL);
-}
-
-static void
-nm_setting_olpc_mesh_init (NMSettingOlpcMesh *setting)
-{
-}
+/*****************************************************************************/
 
 /**
  * nm_setting_olpc_mesh_get_ssid:
@@ -152,16 +135,28 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
+/*****************************************************************************/
+
 static void
-finalize (GObject *object)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
-	NMSettingOlpcMeshPrivate *priv = NM_SETTING_OLPC_MESH_GET_PRIVATE (object);
+	NMSettingOlpcMesh *setting = NM_SETTING_OLPC_MESH (object);
 
-	if (priv->ssid)
-		g_bytes_unref (priv->ssid);
-	g_free (priv->dhcp_anycast_addr);
-
-	G_OBJECT_CLASS (nm_setting_olpc_mesh_parent_class)->finalize (object);
+	switch (prop_id) {
+	case PROP_SSID:
+		g_value_set_boxed (value, nm_setting_olpc_mesh_get_ssid (setting));
+		break;
+	case PROP_CHANNEL:
+		g_value_set_uint (value, nm_setting_olpc_mesh_get_channel (setting));
+		break;
+	case PROP_DHCP_ANYCAST_ADDRESS:
+		g_value_set_string (value, nm_setting_olpc_mesh_get_dhcp_anycast_address (setting));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -189,26 +184,35 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingOlpcMesh *setting = NM_SETTING_OLPC_MESH (object);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_SSID:
-		g_value_set_boxed (value, nm_setting_olpc_mesh_get_ssid (setting));
-		break;
-	case PROP_CHANNEL:
-		g_value_set_uint (value, nm_setting_olpc_mesh_get_channel (setting));
-		break;
-	case PROP_DHCP_ANYCAST_ADDRESS:
-		g_value_set_string (value, nm_setting_olpc_mesh_get_dhcp_anycast_address (setting));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_olpc_mesh_init (NMSettingOlpcMesh *setting)
+{
+}
+
+/**
+ * nm_setting_olpc_mesh_new:
+ *
+ * Creates a new #NMSettingOlpcMesh object with default values.
+ *
+ * Returns: the new empty #NMSettingOlpcMesh object
+ **/
+NMSetting *nm_setting_olpc_mesh_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_OLPC_MESH, NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingOlpcMeshPrivate *priv = NM_SETTING_OLPC_MESH_GET_PRIVATE (object);
+
+	if (priv->ssid)
+		g_bytes_unref (priv->ssid);
+	g_free (priv->dhcp_anycast_addr);
+
+	G_OBJECT_CLASS (nm_setting_olpc_mesh_parent_class)->finalize (object);
 }
 
 static void
@@ -220,8 +224,8 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingOlpcMeshPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify = verify;
@@ -231,27 +235,25 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *klass)
 	 *
 	 * SSID of the mesh network to join.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_SSID,
-		 g_param_spec_boxed (NM_SETTING_OLPC_MESH_SSID, "", "",
-		                     G_TYPE_BYTES,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SSID] =
+	    g_param_spec_boxed (NM_SETTING_OLPC_MESH_SSID, "", "",
+	                        G_TYPE_BYTES,
+	                        G_PARAM_READWRITE |
+	                        NM_SETTING_PARAM_INFERRABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingOlpcMesh:channel:
 	 *
 	 * Channel on which the mesh network to join is located.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CHANNEL,
-		 g_param_spec_uint (NM_SETTING_OLPC_MESH_CHANNEL, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_INFERRABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CHANNEL] =
+	    g_param_spec_uint (NM_SETTING_OLPC_MESH_CHANNEL, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_INFERRABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingOlpcMesh:dhcp-anycast-address:
@@ -260,19 +262,19 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *klass)
 	 * The specific anycast address used determines which DHCP server class
 	 * answers the request.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DHCP_ANYCAST_ADDRESS,
-		 g_param_spec_string (NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DHCP_ANYCAST_ADDRESS] =
+	    g_param_spec_string (NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	_properties_override_add_transform (properties_override,
-	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                  NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS),
+	                                    obj_properties[PROP_DHCP_ANYCAST_ADDRESS],
 	                                    G_VARIANT_TYPE_BYTESTRING,
 	                                    _nm_utils_hwaddr_to_dbus,
 	                                    _nm_utils_hwaddr_from_dbus);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_OLPC_MESH,
 	                               NULL, properties_override);

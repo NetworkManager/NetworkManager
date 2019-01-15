@@ -21,11 +21,12 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-bridge-port.h"
+
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
 
-#include "nm-setting-bridge-port.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-connection-private.h"
@@ -40,9 +41,13 @@
  * optional properties that apply to bridge ports.
  **/
 
-G_DEFINE_TYPE (NMSettingBridgePort, nm_setting_bridge_port, NM_TYPE_SETTING)
+/*****************************************************************************/
 
-#define NM_SETTING_BRIDGE_PORT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BRIDGE_PORT, NMSettingBridgePortPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_PRIORITY,
+	PROP_PATH_COST,
+	PROP_HAIRPIN_MODE,
+);
 
 typedef struct {
 	guint16 priority;
@@ -50,13 +55,9 @@ typedef struct {
 	gboolean hairpin_mode;
 } NMSettingBridgePortPrivate;
 
-enum {
-	PROP_0,
-	PROP_PRIORITY,
-	PROP_PATH_COST,
-	PROP_HAIRPIN_MODE,
-	LAST_PROP
-};
+G_DEFINE_TYPE (NMSettingBridgePort, nm_setting_bridge_port, NM_TYPE_SETTING)
+
+#define NM_SETTING_BRIDGE_PORT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BRIDGE_PORT, NMSettingBridgePortPrivate))
 
 /*****************************************************************************/
 
@@ -141,22 +142,26 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 /*****************************************************************************/
 
-/**
- * nm_setting_bridge_port_new:
- *
- * Creates a new #NMSettingBridgePort object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingBridgePort object
- **/
-NMSetting *
-nm_setting_bridge_port_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_BRIDGE_PORT, NULL);
-}
-
 static void
-nm_setting_bridge_port_init (NMSettingBridgePort *setting)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
+	NMSettingBridgePortPrivate *priv = NM_SETTING_BRIDGE_PORT_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_PRIORITY:
+		g_value_set_uint (value, priv->priority);
+		break;
+	case PROP_PATH_COST:
+		g_value_set_uint (value, priv->path_cost);
+		break;
+	case PROP_HAIRPIN_MODE:
+		g_value_set_boolean (value, priv->hairpin_mode);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -181,26 +186,24 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingBridgePortPrivate *priv = NM_SETTING_BRIDGE_PORT_GET_PRIVATE (object);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_PRIORITY:
-		g_value_set_uint (value, priv->priority);
-		break;
-	case PROP_PATH_COST:
-		g_value_set_uint (value, priv->path_cost);
-		break;
-	case PROP_HAIRPIN_MODE:
-		g_value_set_boolean (value, priv->hairpin_mode);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_bridge_port_init (NMSettingBridgePort *setting)
+{
+}
+
+/**
+ * nm_setting_bridge_port_new:
+ *
+ * Creates a new #NMSettingBridgePort object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingBridgePort object
+ **/
+NMSetting *
+nm_setting_bridge_port_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_BRIDGE_PORT, NULL);
 }
 
 static void
@@ -211,8 +214,8 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingBridgePortPrivate));
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 
 	setting_class->verify = verify;
 
@@ -229,14 +232,13 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 	 * description: STP priority.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_PRIORITY,
-		 g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PRIORITY, "", "",
-		                    0, NM_BR_PORT_MAX_PRIORITY, NM_BR_PORT_DEF_PRIORITY,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_INFERRABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PRIORITY] =
+	    g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PRIORITY, "", "",
+	                       0, NM_BR_PORT_MAX_PRIORITY, NM_BR_PORT_DEF_PRIORITY,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_INFERRABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingBridgePort:path-cost:
@@ -252,13 +254,12 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 	 * description: STP cost.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_PATH_COST,
-		 g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PATH_COST, "", "",
-		                    0, NM_BR_PORT_MAX_PATH_COST, 100,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PATH_COST] =
+	    g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PATH_COST, "", "",
+	                       0, NM_BR_PORT_MAX_PATH_COST, 100,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingBridgePort:hairpin-mode:
@@ -273,13 +274,14 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 	 * description: Hairpin mode of the bridge port.
 	 * ---end---
 	 */
-	g_object_class_install_property
-		(object_class, PROP_HAIRPIN_MODE,
-		 g_param_spec_boolean (NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       NM_SETTING_PARAM_INFERRABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HAIRPIN_MODE] =
+	    g_param_spec_boolean (NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          NM_SETTING_PARAM_INFERRABLE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_BRIDGE_PORT);
 }

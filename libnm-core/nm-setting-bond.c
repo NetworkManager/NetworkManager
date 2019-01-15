@@ -21,13 +21,14 @@
 
 #include "nm-default.h"
 
+#include "nm-setting-bond.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "nm-setting-bond.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-connection-private.h"
@@ -46,11 +47,9 @@
 
 /*****************************************************************************/
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBond,
 	PROP_OPTIONS,
-	LAST_PROP
-};
+);
 
 typedef struct {
 	GHashTable *options;
@@ -365,7 +364,7 @@ nm_setting_bond_add_option (NMSettingBond *setting,
 		g_hash_table_remove (priv->options, NM_SETTING_BOND_OPTION_UPDELAY);
 	}
 
-	g_object_notify (G_OBJECT (setting), NM_SETTING_BOND_OPTIONS);
+	_notify (setting, PROP_OPTIONS);
 
 	return TRUE;
 }
@@ -398,7 +397,7 @@ nm_setting_bond_remove_option (NMSettingBond *setting,
 	nm_clear_g_free (&priv->options_idx_cache);
 	found = g_hash_table_remove (priv->options, name);
 	if (found)
-		g_object_notify (G_OBJECT (setting), NM_SETTING_BOND_OPTIONS);
+		_notify (setting, PROP_OPTIONS);
 	return found;
 }
 
@@ -962,8 +961,8 @@ nm_setting_bond_class_init (NMSettingBondClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingBondPrivate));
 
-	object_class->set_property     = set_property;
 	object_class->get_property     = get_property;
+	object_class->set_property     = set_property;
 	object_class->finalize         = finalize;
 
 	setting_class->verify           = verify;
@@ -983,17 +982,15 @@ nm_setting_bond_class_init (NMSettingBondClass *klass)
 	 * example: BONDING_OPTS="miimon=100 mode=broadcast"
 	 * ---end---
 	 */
-	 g_object_class_install_property
-		 (object_class, PROP_OPTIONS,
-		 g_param_spec_boxed (NM_SETTING_BOND_OPTIONS, "", "",
-		                     G_TYPE_HASH_TABLE,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_OPTIONS] =
+	    g_param_spec_boxed (NM_SETTING_BOND_OPTIONS, "", "",
+	                        G_TYPE_HASH_TABLE,
+	                        G_PARAM_READWRITE |
+	                        NM_SETTING_PARAM_INFERRABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	_properties_override_add_transform (properties_override,
-	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                  NM_SETTING_BOND_OPTIONS),
+	                                    obj_properties[PROP_OPTIONS],
 	                                    G_VARIANT_TYPE ("a{ss}"),
 	                                    _nm_utils_strdict_to_dbus,
 	                                    _nm_utils_strdict_from_dbus);
@@ -1011,6 +1008,8 @@ nm_setting_bond_class_init (NMSettingBondClass *klass)
 	                                    G_VARIANT_TYPE_STRING,
 	                                    _nm_setting_get_deprecated_virtual_interface_name,
 	                                    NULL);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_BOND,
 	                               NULL, properties_override);

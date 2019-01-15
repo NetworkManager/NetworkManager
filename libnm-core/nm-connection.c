@@ -22,10 +22,11 @@
 
 #include "nm-default.h"
 
+#include "nm-connection.h"
+
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "nm-connection.h"
 #include "nm-connection-private.h"
 #include "nm-utils.h"
 #include "nm-setting-private.h"
@@ -50,19 +51,7 @@
  *
  */
 
-typedef struct {
-	NMConnection *self;
-
-	GHashTable *settings;
-
-	/* D-Bus path of the connection, if any */
-	char *path;
-} NMConnectionPrivate;
-
-static NMConnectionPrivate *nm_connection_get_private (NMConnection *connection);
-#define NM_CONNECTION_GET_PRIVATE(o) (nm_connection_get_private ((NMConnection *)o))
-
-G_DEFINE_INTERFACE (NMConnection, nm_connection, G_TYPE_OBJECT)
+/*****************************************************************************/
 
 enum {
 	SECRETS_UPDATED,
@@ -72,6 +61,20 @@ enum {
 };
 
 static guint signals[LAST_SIGNAL] = { 0 };
+
+typedef struct {
+	NMConnection *self;
+
+	GHashTable *settings;
+
+	/* D-Bus path of the connection, if any */
+	char *path;
+} NMConnectionPrivate;
+
+G_DEFINE_INTERFACE (NMConnection, nm_connection, G_TYPE_OBJECT)
+
+static NMConnectionPrivate *nm_connection_get_private (NMConnection *connection);
+#define NM_CONNECTION_GET_PRIVATE(o) (nm_connection_get_private ((NMConnection *)o))
 
 /*****************************************************************************/
 
@@ -3006,8 +3009,6 @@ nm_connection_get_private (NMConnection *connection)
 static void
 nm_connection_default_init (NMConnectionInterface *iface)
 {
-	/* Signals */
-
 	/**
 	 * NMConnection::secrets-updated:
 	 * @connection: the object on which the signal is emitted
@@ -3018,14 +3019,14 @@ nm_connection_default_init (NMConnectionInterface *iface)
 	 * have been changed.
 	 */
 	signals[SECRETS_UPDATED] =
-		g_signal_new (NM_CONNECTION_SECRETS_UPDATED,
-		              NM_TYPE_CONNECTION,
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMConnectionInterface, secrets_updated),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__STRING,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_STRING);
+	    g_signal_new (NM_CONNECTION_SECRETS_UPDATED,
+	                 NM_TYPE_CONNECTION,
+	                 G_SIGNAL_RUN_FIRST,
+	                 G_STRUCT_OFFSET (NMConnectionInterface, secrets_updated),
+	                 NULL, NULL,
+	                 g_cclosure_marshal_VOID__STRING,
+	                 G_TYPE_NONE, 1,
+	                 G_TYPE_STRING);
 
 	/**
 	 * NMConnection::secrets-cleared:
@@ -3035,13 +3036,13 @@ nm_connection_default_init (NMConnectionInterface *iface)
 	 * are cleared.
 	 */
 	signals[SECRETS_CLEARED] =
-		g_signal_new (NM_CONNECTION_SECRETS_CLEARED,
-		              NM_TYPE_CONNECTION,
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMConnectionInterface, secrets_cleared),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
-		              G_TYPE_NONE, 0);
+	    g_signal_new (NM_CONNECTION_SECRETS_CLEARED,
+	                 NM_TYPE_CONNECTION,
+	                 G_SIGNAL_RUN_FIRST,
+	                 G_STRUCT_OFFSET (NMConnectionInterface, secrets_cleared),
+	                 NULL, NULL,
+	                 g_cclosure_marshal_VOID__VOID,
+	                 G_TYPE_NONE, 0);
 
 	/**
 	 * NMConnection::changed:
@@ -3052,11 +3053,11 @@ nm_connection_default_init (NMConnectionInterface *iface)
 	 * or when settings are added or removed.
 	 */
 	signals[CHANGED] =
-		g_signal_new (NM_CONNECTION_CHANGED,
-		              NM_TYPE_CONNECTION,
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMConnectionInterface, changed),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
-		              G_TYPE_NONE, 0);
+	    g_signal_new (NM_CONNECTION_CHANGED,
+	                 NM_TYPE_CONNECTION,
+	                 G_SIGNAL_RUN_FIRST,
+	                 G_STRUCT_OFFSET (NMConnectionInterface, changed),
+	                 NULL, NULL,
+	                 g_cclosure_marshal_VOID__VOID,
+	                 G_TYPE_NONE, 0);
 }

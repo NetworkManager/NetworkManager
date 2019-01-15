@@ -67,12 +67,9 @@ typedef struct {
 	NMSettingPriority priority;
 } SettingInfo;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_NAME,
-
-	PROP_LAST
-};
+);
 
 typedef struct {
 	GenData *gendata;
@@ -2520,11 +2517,6 @@ _nm_setting_gendata_reset_from_hash (NMSetting *setting,
 /*****************************************************************************/
 
 static void
-nm_setting_init (NMSetting *setting)
-{
-}
-
-static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
@@ -2538,6 +2530,13 @@ get_property (GObject *object, guint prop_id,
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_setting_init (NMSetting *setting)
+{
 }
 
 static void
@@ -2593,10 +2592,11 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	 * connection.  Each setting type has a name unique to that type, for
 	 * example "ppp" or "802-11-wireless" or "802-3-ethernet".
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NAME,
-		 g_param_spec_string (NM_SETTING_NAME, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NAME] =
+	    g_param_spec_string (NM_SETTING_NAME, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
