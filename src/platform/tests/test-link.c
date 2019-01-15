@@ -2983,6 +2983,69 @@ test_sysctl_netns_switch (void)
 
 /*****************************************************************************/
 
+static gpointer
+_test_netns_mt_thread (gpointer data)
+{
+	NMPNetns *netns1 = data;
+	gs_unref_object NMPNetns *netns2 = NULL;
+	NMPNetns *netns_bottom;
+	NMPNetns *initial;
+
+	netns_bottom = nmp_netns_get_initial ();
+	g_assert (netns_bottom);
+
+	/* I don't know why, but we need to create a new netns here at least once.
+	 * Otherwise, setns(, CLONE_NEWNS) below fails with EINVAL (???).
+	 *
+	 * Something is not right here, but what?  */
+	netns2 = nmp_netns_new ();
+	nmp_netns_pop (netns2);
+	g_clear_object (&netns2);
+
+	nmp_netns_push (netns1);
+	nmp_netns_push_type (netns_bottom, CLONE_NEWNET);
+	nmp_netns_push_type (netns_bottom, CLONE_NEWNS);
+	nmp_netns_push_type (netns1, CLONE_NEWNS);
+	nmp_netns_pop (netns1);
+	nmp_netns_pop (netns_bottom);
+	nmp_netns_pop (netns_bottom);
+	nmp_netns_pop (netns1);
+
+	initial = nmp_netns_get_initial ();
+	g_assert (NMP_IS_NETNS (initial));
+	return g_object_ref (initial);
+}
+
+static void
+test_netns_mt (void)
+{
+	gs_unref_object NMPNetns *netns1 = NULL;
+	NMPNetns *initial_from_other_thread;
+	GThread *th;
+
+	if (_test_netns_check_skip ())
+		return;
+
+	netns1 = nmp_netns_new ();
+	g_assert (NMP_NETNS (netns1));
+	nmp_netns_pop (netns1);
+
+	th = g_thread_new ("nm-test-netns-mt", _test_netns_mt_thread, netns1);
+	initial_from_other_thread = g_thread_join (th);
+	g_assert (NMP_IS_NETNS (initial_from_other_thread));
+
+	if (nmtst_get_rand_bool ()) {
+		nmp_netns_push (initial_from_other_thread);
+		nmp_netns_pop (initial_from_other_thread);
+	}
+
+	g_object_add_weak_pointer (G_OBJECT (initial_from_other_thread), (gpointer *) &initial_from_other_thread);
+	g_object_unref (initial_from_other_thread);
+	g_assert (initial_from_other_thread == NULL);
+}
+
+/*****************************************************************************/
+
 static void
 ethtool_features_dump (const NMEthtoolFeatureStates *features)
 {
@@ -3136,6 +3199,8 @@ _nmtstp_setup_tests (void)
 		g_test_add_vtable ("/general/netns/set-netns", 0, NULL, _test_netns_setup, test_netns_set_netns, _test_netns_teardown);
 		g_test_add_vtable ("/general/netns/push", 0, NULL, _test_netns_setup, test_netns_push, _test_netns_teardown);
 		g_test_add_vtable ("/general/netns/bind-to-path", 0, NULL, _test_netns_setup, test_netns_bind_to_path, _test_netns_teardown);
+
+		g_test_add_func ("/general/netns/mt", test_netns_mt);
 
 		g_test_add_func ("/general/sysctl/rename", test_sysctl_rename);
 		g_test_add_func ("/general/sysctl/netns-switch", test_sysctl_netns_switch);

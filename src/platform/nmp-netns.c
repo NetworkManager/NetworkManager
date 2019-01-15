@@ -19,6 +19,7 @@
  */
 
 #include "nm-default.h"
+
 #include "nmp-netns.h"
 
 #include <fcntl.h>
@@ -26,8 +27,19 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <pthread.h>
 
-#include "NetworkManagerUtils.h"
+/*****************************************************************************/
+
+/* NOTE: NMPNetns and all code used here must be thread-safe! */
+
+/* we may not call logging functions from the main-thread alone. Hence, we
+ * require locking from nm-logging. Indicate that by setting NM_THREAD_SAFE_ON_MAIN_THREAD
+ * to zero. */
+#undef NM_THREAD_SAFE_ON_MAIN_THREAD
+#define NM_THREAD_SAFE_ON_MAIN_THREAD 0
+
+/*****************************************************************************/
 
 #define PROC_SELF_NS_MNT "/proc/self/ns/mnt"
 #define PROC_SELF_NS_NET "/proc/self/ns/net"
@@ -121,41 +133,66 @@ static NMPNetns *_netns_new (GError **error);
 
 /*****************************************************************************/
 
-static GArray *netns_stack = NULL;
+static _nm_thread_local GArray *netns_stack = NULL;
 
 static void
-_stack_ensure_init_impl (void)
+_netns_stack_clear_cb (gpointer data)
 {
-	NMPNetns *netns;
-	GError *error = NULL;
+	NetnsInfo *info = data;
 
-	nm_assert (!netns_stack);
+	nm_assert (NMP_IS_NETNS (info->netns));
+	g_object_unref (info->netns);
+}
 
-	netns_stack = g_array_new (FALSE, FALSE, sizeof (NetnsInfo));
+static GArray *
+_netns_stack_get_impl (void)
+{
+	gs_unref_object NMPNetns *netns = NULL;
+	gs_free_error GError *error = NULL;
+	pthread_key_t key;
+	GArray *s;
+
+	s = g_array_new (FALSE, FALSE, sizeof (NetnsInfo));
+	g_array_set_clear_func (s, _netns_stack_clear_cb);
+	netns_stack = s;
 
 	/* at the bottom of the stack we must try to create a netns instance
 	 * that we never pop. It's the base to which we need to return. */
-
 	netns = _netns_new (&error);
-
 	if (!netns) {
-		/* don't know how to recover from this error. Netns are not supported. */
 		_LOGE (NULL, "failed to create initial netns: %s", error->message);
-		g_clear_error (&error);
-		return;
+		return s;
 	}
 
+	/* we leak this instance inside the stack. */
 	_stack_push (netns, _CLONE_NS_ALL);
 
-	/* we leak this instance inside netns_stack. It cannot be popped. */
-	g_object_unref (netns);
+	/* finally, register a destructor function to cleanup the array. If we fail
+	 * to do so, we will leak NMPNetns instances (and their file descriptor) when the
+	 * thread exits. */
+	if (pthread_key_create (&key, (void (*) (void *)) g_array_unref) != 0)
+		_LOGE (NULL, "failure to initialize thread-local storage");
+	else if (pthread_setspecific (key, s) != 0)
+		_LOGE (NULL, "failure to set thread-local storage");
+
+	return s;
 }
+
+#define _netns_stack_get() \
+	({ \
+		GArray *_s = netns_stack; \
+		\
+		if (G_UNLIKELY (!_s)) \
+			_s = _netns_stack_get_impl (); \
+		_s; \
+	})
+
 #define _stack_ensure_init() \
 	G_STMT_START { \
-		if (G_UNLIKELY (!netns_stack)) { \
-			_stack_ensure_init_impl (); \
-		} \
+		(void) _netns_stack_get (); \
 	} G_STMT_END
+
+/*****************************************************************************/
 
 static NMPNetns *
 _stack_current_netns (int ns_types)
@@ -244,9 +281,11 @@ _stack_push (NMPNetns *netns, int ns_types)
 	g_array_set_size (netns_stack, netns_stack->len + 1);
 
 	info = &g_array_index (netns_stack, NetnsInfo, (netns_stack->len - 1));
-	info->netns = g_object_ref (netns);
-	info->ns_types = ns_types;
-	info->count = 1;
+	*info = (NetnsInfo) {
+		.netns    = g_object_ref (netns),
+		.ns_types = ns_types,
+		.count    = 1,
+	};
 }
 
 static void
@@ -261,8 +300,6 @@ _stack_pop (void)
 
 	nm_assert (NMP_IS_NETNS (info->netns));
 	nm_assert (info->count == 1);
-
-	g_object_unref (info->netns);
 
 	g_array_set_size (netns_stack, netns_stack->len - 1);
 }
