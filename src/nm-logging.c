@@ -83,6 +83,10 @@ typedef struct {
 } LogLevelDesc;
 
 typedef struct {
+	char *logging_domains_to_string;
+} GlobalMain;
+
+typedef struct {
 	NMLogLevel log_level;
 	bool uses_syslog:1;
 	bool syslog_identifier_initialized:1;
@@ -97,11 +101,13 @@ typedef struct {
 	 * Afterwards, the backend is either SYSLOG or JOURNAL. From that point, also
 	 * g_log() is redirected to this backend via a logging handler. */
 	LogBackend log_backend;
-
-	char *logging_domains_to_string;
 } Global;
 
 /*****************************************************************************/
+
+/* This data must only be accessed from the main-thread (and as
+ * such does not need any lock). */
+static GlobalMain gl_main = { };
 
 static union {
 	/* a union with an immutable and a mutable alias for the Global.
@@ -288,6 +294,8 @@ nm_logging_setup (const char  *level,
 	gboolean had_platform_debug;
 	gs_free char *domains_free = NULL;
 
+	NM_ASSERT_ON_MAIN_THREAD ();
+
 	g_return_val_if_fail (!bad_domains || !*bad_domains, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
@@ -403,7 +411,7 @@ nm_logging_setup (const char  *level,
 	}
 	g_strfreev (tmp);
 
-	g_clear_pointer (&gl.imm.logging_domains_to_string, g_free);
+	g_clear_pointer (&gl_main.logging_domains_to_string, g_free);
 
 	had_platform_debug = nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM);
 
@@ -453,10 +461,12 @@ nm_logging_all_levels_to_string (void)
 const char *
 nm_logging_domains_to_string (void)
 {
-	if (G_UNLIKELY (!gl.imm.logging_domains_to_string))
-		gl.mut.logging_domains_to_string = _domains_to_string (TRUE);
+	NM_ASSERT_ON_MAIN_THREAD ();
 
-	return gl.imm.logging_domains_to_string;
+	if (G_UNLIKELY (!gl_main.logging_domains_to_string))
+		gl_main.logging_domains_to_string = _domains_to_string (TRUE);
+
+	return gl_main.logging_domains_to_string;
 }
 
 static char *
