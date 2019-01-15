@@ -42,8 +42,6 @@
 #include "nm-utils/nm-time-utils.h"
 #include "nm-errors.h"
 
-void (*_nm_logging_clear_platform_logging_cache) (void);
-
 static void
 nm_log_handler (const char *log_domain,
                 GLogLevelFlags level,
@@ -403,7 +401,6 @@ nm_logging_setup (const char  *level,
 		_nm_logging_enabled_state[i] = new_logging[i];
 
 	if (   had_platform_debug
-	    && _nm_logging_clear_platform_logging_cache
 	    && !nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
 		/* when debug logging is enabled, platform will cache all access to
 		 * sysctl. When the user disables debug-logging, we want to clear that
