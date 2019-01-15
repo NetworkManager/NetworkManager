@@ -161,7 +161,8 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_state_to_string, NMActiveConnectionState,
 	NM_UTILS_LOOKUP_STR_ITEM (NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, "deactivating"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,  "deactivated"),
 );
-#define state_to_string(state) NM_UTILS_LOOKUP_STR (_state_to_string, state)
+
+#define state_to_string_a(state) NM_UTILS_LOOKUP_STR_A (_state_to_string, state)
 
 /* the maximum required buffer size for _state_flags_to_string(). */
 #define _NM_ACTIVATION_STATE_FLAG_TO_STRING_BUFSIZE (255)
@@ -256,8 +257,8 @@ nm_active_connection_set_state (NMActiveConnection *self,
 		return;
 
 	_LOGD ("set state %s (was %s)",
-	       state_to_string (new_state),
-	       state_to_string (priv->state));
+	       state_to_string_a (new_state),
+	       state_to_string_a (priv->state));
 
 	if (new_state > NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 		/* once we are about to deactivate, we don't need the keep-alive instance
@@ -786,11 +787,11 @@ check_master_ready (NMActiveConnection *self)
 	       signalling
 	           ? "signal"
 	           : (priv->master_ready ? "already signalled" : "not signalling"),
-	       state_to_string (priv->state),
+	       state_to_string_a (priv->state),
 	       priv->master
 	           ? nm_sprintf_bufa (128, "master %p is in state %s",
 	                              priv->master,
-	                              state_to_string (nm_active_connection_get_state (priv->master)))
+	                              state_to_string_a (nm_active_connection_get_state (priv->master)))
 	           : "no master");
 
 	if (signalling) {
@@ -854,7 +855,7 @@ nm_active_connection_set_master (NMActiveConnection *self, NMActiveConnection *m
 	_LOGD ("set master %p, %s, state %s",
 	       master,
 	       nm_active_connection_get_settings_connection_id (master),
-	       state_to_string (nm_active_connection_get_state (master)));
+	       state_to_string_a (nm_active_connection_get_state (master)));
 
 	priv->master = g_object_ref (master);
 	g_signal_connect (priv->master,

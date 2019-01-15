@@ -42,17 +42,6 @@
 #include "nm-utils/nm-time-utils.h"
 #include "nm-errors.h"
 
-/* often we have some static string where we need to know the maximum length.
- * _MAX_LEN() returns @max but adds a debugging assertion that @str is indeed
- * shorter then @mac. */
-#define _MAX_LEN(max, str) \
-	({ \
-		const char *const _str = (str); \
-		\
-		nm_assert (_str && strlen (str) < (max)); \
-		(max); \
-	})
-
 void (*_nm_logging_clear_platform_logging_cache) (void);
 
 static void
@@ -592,14 +581,25 @@ _iovec_set_format (struct iovec *iov, gpointer *iov_free, const char *format, ..
 		char *const _buf = g_alloca (_size); \
 		int _len; \
 		\
+		G_STATIC_ASSERT_EXPR ((reserve_extra) + (NM_STRLEN (format) + 3) <= 96); \
+		\
 		_len = g_snprintf (_buf, _size, ""format"", ##__VA_ARGS__);\
 		\
 		nm_assert (_len >= 0); \
-		nm_assert (_len <= _size); \
+		nm_assert (_len < _size); \
 		nm_assert (_len == strlen (_buf)); \
 		\
 		_iovec_set ((iov), _buf, _len); \
 	} G_STMT_END
+
+#define _iovec_set_format_str_a(iov, max_str_len, format, str_arg) \
+	G_STMT_START { \
+		const char *_str_arg = (str_arg); \
+		\
+		nm_assert (_str_arg && strlen (_str_arg) < (max_str_len)); \
+		_iovec_set_format_a ((iov), (max_str_len), format, str_arg); \
+	} G_STMT_END
+
 #endif
 
 void
@@ -699,7 +699,7 @@ _nm_log_impl (const char *file,
 					if (NM_FLAGS_ANY (dom, diter->num)) {
 						if (i_domain > 0) {
 							/* SYSLOG_FACILITY is specified multiple times for each domain that is actually enabled. */
-							_iovec_set_format_a (iov++, _MAX_LEN (30, diter->name), "SYSLOG_FACILITY=%s", diter->name);
+							_iovec_set_format_str_a (iov++, 30, "SYSLOG_FACILITY=%s", diter->name);
 							i_domain--;
 						}
 						dom &= ~diter->num;
@@ -710,9 +710,9 @@ _nm_log_impl (const char *file,
 				if (s_domain_all)
 					_iovec_set (iov++, s_domain_all->str, s_domain_all->len);
 				else
-					_iovec_set_format_a (iov++, _MAX_LEN (30, s_domain_1), "NM_LOG_DOMAINS=%s", s_domain_1);
+					_iovec_set_format_str_a (iov++, 30, "NM_LOG_DOMAINS=%s", s_domain_1);
 			}
-			_iovec_set_format_a (iov++, _MAX_LEN (15, global.level_desc[level].name), "NM_LOG_LEVEL=%s", global.level_desc[level].name);
+			_iovec_set_format_str_a (iov++, 15, "NM_LOG_LEVEL=%s", global.level_desc[level].name);
 			if (func)
 				_iovec_set_format (iov++, iov_free++, "CODE_FUNC=%s", func);
 			_iovec_set_format (iov++, iov_free++, "CODE_FILE=%s", file ?: "");

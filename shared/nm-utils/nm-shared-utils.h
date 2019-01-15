@@ -278,6 +278,8 @@ _nm_strndup_a_step (char *s, const char *str, gsize len)
 		char **const _out_str_free = (out_str_free); \
 		char *_s; \
 		\
+		G_STATIC_ASSERT_EXPR ((alloca_maxlen) <= 300); \
+		\
 		if (   _out_str_free \
 		    && _len >= _alloca_maxlen) { \
 			_s = g_malloc (_len + 1); \
@@ -302,6 +304,8 @@ _nm_strndup_a_step (char *s, const char *str, gsize len)
 #if _NM_CC_SUPPORT_GENERIC
 #define nm_strdup_int(val) \
 	_Generic ((val), \
+	          char:    g_strdup_printf ("%d",                (int)     (val)), \
+	          \
 	          gint8:   g_strdup_printf ("%d",                (int)     (val)), \
 	          gint16:  g_strdup_printf ("%d",                (int)     (val)), \
 	          gint32:  g_strdup_printf ("%d",                (int)     (val)), \

@@ -884,14 +884,15 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_vpn_plugin_failure_to_string, NMVpnPluginFai
 	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED, "connect-failed"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_PLUGIN_FAILURE_BAD_IP_CONFIG,  "bad-ip-config"),
 );
-#define vpn_plugin_failure_to_string(failure) NM_UTILS_LOOKUP_STR (_vpn_plugin_failure_to_string, failure)
+
+#define vpn_plugin_failure_to_string_a(failure) NM_UTILS_LOOKUP_STR_A (_vpn_plugin_failure_to_string, failure)
 
 static void
 plugin_failed (NMVpnConnection *self, guint reason)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
-	_LOGW ("VPN plugin: failed: %s (%d)", vpn_plugin_failure_to_string (reason), reason);
+	_LOGW ("VPN plugin: failed: %s (%d)", vpn_plugin_failure_to_string_a (reason), reason);
 
 	switch (reason) {
 	case NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED:
@@ -916,7 +917,8 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_vpn_service_state_to_string, NMVpnServiceSta
 	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_SERVICE_STATE_STOPPING, "stopping"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_SERVICE_STATE_STOPPED,  "stopped"),
 );
-#define vpn_service_state_to_string(state) NM_UTILS_LOOKUP_STR (_vpn_service_state_to_string, state)
+
+#define vpn_service_state_to_string_a(state) NM_UTILS_LOOKUP_STR_A (_vpn_service_state_to_string, state)
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_vpn_state_to_string, VpnState,
 	NM_UTILS_LOOKUP_DEFAULT (NULL),
@@ -932,7 +934,8 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_vpn_state_to_string, VpnState,
 	NM_UTILS_LOOKUP_STR_ITEM (STATE_DISCONNECTED,  "disconnected"),
 	NM_UTILS_LOOKUP_STR_ITEM (STATE_FAILED,        "failed"),
 );
-#define vpn_state_to_string(state) NM_UTILS_LOOKUP_STR (_vpn_state_to_string, state)
+
+#define vpn_state_to_string_a(state) NM_UTILS_LOOKUP_STR_A (_vpn_state_to_string, state)
 
 static void
 plugin_state_changed (NMVpnConnection *self, NMVpnServiceState new_service_state)
@@ -941,7 +944,7 @@ plugin_state_changed (NMVpnConnection *self, NMVpnServiceState new_service_state
 	NMVpnServiceState old_service_state = priv->service_state;
 
 	_LOGI ("VPN plugin: state changed: %s (%d)",
-	       vpn_service_state_to_string (new_service_state), new_service_state);
+	       vpn_service_state_to_string_a (new_service_state), new_service_state);
 	priv->service_state = new_service_state;
 
 	if (new_service_state == NM_VPN_SERVICE_STATE_STOPPED) {
@@ -2690,12 +2693,12 @@ plugin_interactive_secrets_required (NMVpnConnection *self,
 	if (!NM_IN_SET (priv->vpn_state, STATE_CONNECT,
 	                                 STATE_NEED_AUTH)) {
 		_LOGD ("VPN plugin: requested secrets; state %s (%d); ignore request in current state",
-		       vpn_state_to_string (priv->vpn_state), priv->vpn_state);
+		       vpn_state_to_string_a (priv->vpn_state), priv->vpn_state);
 		return;
 	}
 
 	_LOGI ("VPN plugin: requested secrets; state %s (%d)",
-	       vpn_state_to_string (priv->vpn_state), priv->vpn_state);
+	       vpn_state_to_string_a (priv->vpn_state), priv->vpn_state);
 
 	priv->secrets_idx = SECRETS_REQ_INTERACTIVE;
 	_set_vpn_state (self, STATE_NEED_AUTH, NM_ACTIVE_CONNECTION_STATE_REASON_NONE, FALSE);

@@ -93,7 +93,7 @@ _acd_event_to_string (unsigned int event)
 	return NULL;
 }
 
-#define acd_event_to_string(event) NM_UTILS_LOOKUP_STR (_acd_event_to_string, event)
+#define acd_event_to_string_a(event) NM_UTILS_LOOKUP_STR_A (_acd_event_to_string, event)
 
 static const char *
 acd_error_to_string (int error)
@@ -201,7 +201,7 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 			       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex));
 			break;
 		default:
-			_LOGD ("unhandled event '%s'", acd_event_to_string (event->event));
+			_LOGD ("unhandled event '%s'", acd_event_to_string_a (event->event));
 			break;
 		}
 

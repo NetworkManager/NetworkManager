@@ -2293,9 +2293,10 @@ link_set_option (NMPlatform *self, int ifindex, const char *category, const char
 	if (dirfd < 0)
 		return FALSE;
 
-	path = nm_sprintf_bufa (strlen (category) + strlen (option) + 2,
-	                        "%s/%s",
-	                        category, option);
+	path = nm_sprintf_buf_unsafe_a (strlen (category) + strlen (option) + 2,
+	                                "%s/%s",
+	                                category,
+	                                option);
 	return nm_platform_sysctl_set (self, NMP_SYSCTL_PATHID_NETDIR_unsafe (dirfd, ifname_verified, path), value);
 }
 
@@ -2313,9 +2314,9 @@ link_get_option (NMPlatform *self, int ifindex, const char *category, const char
 	if (dirfd < 0)
 		return NULL;
 
-	path = nm_sprintf_bufa (strlen (category) + strlen (option) + 2,
-	                        "%s/%s",
-	                        category, option);
+	path = nm_sprintf_buf_unsafe_a (strlen (category) + strlen (option) + 2,
+	                                "%s/%s",
+	                                category, option);
 	return nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_NETDIR_unsafe (dirfd, ifname_verified, path));
 }
 
