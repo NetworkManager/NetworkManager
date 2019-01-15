@@ -98,69 +98,64 @@ static struct Global {
 		LOG_BACKEND_JOURNAL,
 	} log_backend;
 	char *logging_domains_to_string;
-	const LogLevelDesc level_desc[_LOGL_N];
-
-#define _DOMAIN_DESC_LEN 39
-	/* Would be nice to use C99 flexible array member here,
-	 * but that feature doesn't seem well supported. */
-	const LogDesc domain_desc[_DOMAIN_DESC_LEN];
 } global = {
 	/* nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL); */
 	.log_level = LOGL_INFO,
 	.log_backend = LOG_BACKEND_GLIB,
 	.syslog_identifier = "SYSLOG_IDENTIFIER="G_LOG_DOMAIN,
 	.prefix = "",
-	.level_desc = {
-		[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   },
-		[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   },
-		[LOGL_INFO]  = { "INFO",  "<info>",  LOG_INFO,    G_LOG_LEVEL_INFO,    },
-		[LOGL_WARN]  = { "WARN",  "<warn>",  LOG_WARNING, G_LOG_LEVEL_MESSAGE, },
-		[LOGL_ERR]   = { "ERR",   "<error>", LOG_ERR,     G_LOG_LEVEL_MESSAGE, },
-		[_LOGL_OFF]  = { "OFF",   NULL,      0,           0,                   },
-		[_LOGL_KEEP] = { "KEEP",  NULL,      0,           0,                   },
-	},
-	.domain_desc = {
-		{ LOGD_PLATFORM,  "PLATFORM" },
-		{ LOGD_RFKILL,    "RFKILL" },
-		{ LOGD_ETHER,     "ETHER" },
-		{ LOGD_WIFI,      "WIFI" },
-		{ LOGD_BT,        "BT" },
-		{ LOGD_MB,        "MB" },
-		{ LOGD_DHCP4,     "DHCP4" },
-		{ LOGD_DHCP6,     "DHCP6" },
-		{ LOGD_PPP,       "PPP" },
-		{ LOGD_WIFI_SCAN, "WIFI_SCAN" },
-		{ LOGD_IP4,       "IP4" },
-		{ LOGD_IP6,       "IP6" },
-		{ LOGD_AUTOIP4,   "AUTOIP4" },
-		{ LOGD_DNS,       "DNS" },
-		{ LOGD_VPN,       "VPN" },
-		{ LOGD_SHARING,   "SHARING" },
-		{ LOGD_SUPPLICANT,"SUPPLICANT" },
-		{ LOGD_AGENTS,    "AGENTS" },
-		{ LOGD_SETTINGS,  "SETTINGS" },
-		{ LOGD_SUSPEND,   "SUSPEND" },
-		{ LOGD_CORE,      "CORE" },
-		{ LOGD_DEVICE,    "DEVICE" },
-		{ LOGD_OLPC,      "OLPC" },
-		{ LOGD_INFINIBAND,"INFINIBAND" },
-		{ LOGD_FIREWALL,  "FIREWALL" },
-		{ LOGD_ADSL,      "ADSL" },
-		{ LOGD_BOND,      "BOND" },
-		{ LOGD_VLAN,      "VLAN" },
-		{ LOGD_BRIDGE,    "BRIDGE" },
-		{ LOGD_DBUS_PROPS,"DBUS_PROPS" },
-		{ LOGD_TEAM,      "TEAM" },
-		{ LOGD_CONCHECK,  "CONCHECK" },
-		{ LOGD_DCB,       "DCB" },
-		{ LOGD_DISPATCH,  "DISPATCH" },
-		{ LOGD_AUDIT,     "AUDIT" },
-		{ LOGD_SYSTEMD,   "SYSTEMD" },
-		{ LOGD_VPN_PLUGIN,"VPN_PLUGIN" },
-		{ LOGD_PROXY,     "PROXY" },
-		{ 0, NULL }
-		/* keep _DOMAIN_DESC_LEN in sync */
-	},
+};
+
+static const LogLevelDesc level_desc[_LOGL_N] = {
+	[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   },
+	[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   },
+	[LOGL_INFO]  = { "INFO",  "<info>",  LOG_INFO,    G_LOG_LEVEL_INFO,    },
+	[LOGL_WARN]  = { "WARN",  "<warn>",  LOG_WARNING, G_LOG_LEVEL_MESSAGE, },
+	[LOGL_ERR]   = { "ERR",   "<error>", LOG_ERR,     G_LOG_LEVEL_MESSAGE, },
+	[_LOGL_OFF]  = { "OFF",   NULL,      0,           0,                   },
+	[_LOGL_KEEP] = { "KEEP",  NULL,      0,           0,                   },
+};
+
+static const LogDesc domain_desc[] = {
+	{ LOGD_PLATFORM,  "PLATFORM" },
+	{ LOGD_RFKILL,    "RFKILL" },
+	{ LOGD_ETHER,     "ETHER" },
+	{ LOGD_WIFI,      "WIFI" },
+	{ LOGD_BT,        "BT" },
+	{ LOGD_MB,        "MB" },
+	{ LOGD_DHCP4,     "DHCP4" },
+	{ LOGD_DHCP6,     "DHCP6" },
+	{ LOGD_PPP,       "PPP" },
+	{ LOGD_WIFI_SCAN, "WIFI_SCAN" },
+	{ LOGD_IP4,       "IP4" },
+	{ LOGD_IP6,       "IP6" },
+	{ LOGD_AUTOIP4,   "AUTOIP4" },
+	{ LOGD_DNS,       "DNS" },
+	{ LOGD_VPN,       "VPN" },
+	{ LOGD_SHARING,   "SHARING" },
+	{ LOGD_SUPPLICANT,"SUPPLICANT" },
+	{ LOGD_AGENTS,    "AGENTS" },
+	{ LOGD_SETTINGS,  "SETTINGS" },
+	{ LOGD_SUSPEND,   "SUSPEND" },
+	{ LOGD_CORE,      "CORE" },
+	{ LOGD_DEVICE,    "DEVICE" },
+	{ LOGD_OLPC,      "OLPC" },
+	{ LOGD_INFINIBAND,"INFINIBAND" },
+	{ LOGD_FIREWALL,  "FIREWALL" },
+	{ LOGD_ADSL,      "ADSL" },
+	{ LOGD_BOND,      "BOND" },
+	{ LOGD_VLAN,      "VLAN" },
+	{ LOGD_BRIDGE,    "BRIDGE" },
+	{ LOGD_DBUS_PROPS,"DBUS_PROPS" },
+	{ LOGD_TEAM,      "TEAM" },
+	{ LOGD_CONCHECK,  "CONCHECK" },
+	{ LOGD_DCB,       "DCB" },
+	{ LOGD_DISPATCH,  "DISPATCH" },
+	{ LOGD_AUDIT,     "AUDIT" },
+	{ LOGD_SYSTEMD,   "SYSTEMD" },
+	{ LOGD_VPN_PLUGIN,"VPN_PLUGIN" },
+	{ LOGD_PROXY,     "PROXY" },
+	{ 0 },
 };
 
 /* We have more then 32 logging domains. Assert that it compiles to a 64 bit sized enum */
@@ -251,8 +246,8 @@ match_log_level (const char  *level,
 {
 	int i;
 
-	for (i = 0; i < G_N_ELEMENTS (global.level_desc); i++) {
-		if (!g_ascii_strcasecmp (global.level_desc[i].name, level)) {
+	for (i = 0; i < G_N_ELEMENTS (level_desc); i++) {
+		if (!g_ascii_strcasecmp (level_desc[i].name, level)) {
 			*out_level = i;
 			return TRUE;
 		}
@@ -351,7 +346,7 @@ nm_logging_setup (const char  *level,
 			continue;
 
 		else {
-			for (diter = &global.domain_desc[0]; diter->name; diter++) {
+			for (diter = &domain_desc[0]; diter->name; diter++) {
 				if (!g_ascii_strcasecmp (diter->name, *iter)) {
 					bits = diter->num;
 					break;
@@ -417,7 +412,7 @@ nm_logging_setup (const char  *level,
 const char *
 nm_logging_level_to_string (void)
 {
-	return global.level_desc[global.log_level].name;
+	return level_desc[global.log_level].name;
 }
 
 const char *
@@ -429,10 +424,10 @@ nm_logging_all_levels_to_string (void)
 		int i;
 
 		str = g_string_new (NULL);
-		for (i = 0; i < G_N_ELEMENTS (global.level_desc); i++) {
+		for (i = 0; i < G_N_ELEMENTS (level_desc); i++) {
 			if (str->len)
 				g_string_append_c (str, ',');
-			g_string_append (str, global.level_desc[i].name);
+			g_string_append (str, level_desc[i].name);
 		}
 	}
 
@@ -460,7 +455,7 @@ _domains_to_string (gboolean include_level_override)
 	 */
 
 	str = g_string_sized_new (75);
-	for (diter = &global.domain_desc[0]; diter->name; diter++) {
+	for (diter = &domain_desc[0]; diter->name; diter++) {
 		/* If it's set for any lower level, it will also be set for LOGL_ERR */
 		if (!(diter->num & _nm_logging_enabled_state[LOGL_ERR]))
 			continue;
@@ -475,7 +470,7 @@ _domains_to_string (gboolean include_level_override)
 		/* Check if it's logging at a lower level than the default. */
 		for (i = 0; i < global.log_level; i++) {
 			if (diter->num & _nm_logging_enabled_state[i]) {
-				g_string_append_printf (str, ":%s", global.level_desc[i].name);
+				g_string_append_printf (str, ":%s", level_desc[i].name);
 				break;
 			}
 		}
@@ -483,7 +478,7 @@ _domains_to_string (gboolean include_level_override)
 		if (!(diter->num & _nm_logging_enabled_state[global.log_level])) {
 			for (i = global.log_level + 1; i < G_N_ELEMENTS (_nm_logging_enabled_state); i++) {
 				if (diter->num & _nm_logging_enabled_state[i]) {
-					g_string_append_printf (str, ":%s", global.level_desc[i].name);
+					g_string_append_printf (str, ":%s", level_desc[i].name);
 					break;
 				}
 			}
@@ -501,7 +496,7 @@ nm_logging_all_domains_to_string (void)
 		const LogDesc *diter;
 
 		str = g_string_new (LOGD_DEFAULT_STRING);
-		for (diter = &global.domain_desc[0]; diter->name; diter++) {
+		for (diter = &domain_desc[0]; diter->name; diter++) {
 			g_string_append_c (str, ',');
 			g_string_append (str, diter->name);
 			if (diter->num == LOGD_DHCP6)
@@ -638,7 +633,7 @@ _nm_log_impl (const char *file,
 #define MESSAGE_FMT "%s%-7s [%ld.%04ld] %s"
 #define MESSAGE_ARG(global, tv, msg) \
     (global).prefix, \
-    (global).level_desc[level].level_str, \
+    level_desc[level].level_str, \
     (tv).tv_sec, \
     ((tv).tv_usec / 100), \
     (msg)
@@ -663,7 +658,7 @@ _nm_log_impl (const char *file,
 			now = nm_utils_get_monotonic_timestamp_ns ();
 			boottime = nm_utils_monotonic_timestamp_as_boottime (now, 1);
 
-			_iovec_set_format_a (iov++, 30, "PRIORITY=%d", global.level_desc[level].syslog_level);
+			_iovec_set_format_a (iov++, 30, "PRIORITY=%d", level_desc[level].syslog_level);
 			_iovec_set_format (iov++, iov_free++, "MESSAGE="MESSAGE_FMT, MESSAGE_ARG (global, tv, msg));
 			_iovec_set_string (iov++, syslog_identifier_full (&global));
 			_iovec_set_format_a (iov++, 30, "SYSLOG_PID=%ld", (long) getpid ());
@@ -674,7 +669,7 @@ _nm_log_impl (const char *file,
 				NMLogDomain dom_all = domain;
 				NMLogDomain dom = dom_all & _nm_logging_enabled_state[level];
 
-				for (diter = &global.domain_desc[0]; diter->name; diter++) {
+				for (diter = &domain_desc[0]; diter->name; diter++) {
 					if (!NM_FLAGS_ANY (dom_all, diter->num))
 						continue;
 
@@ -709,7 +704,7 @@ _nm_log_impl (const char *file,
 				else
 					_iovec_set_format_str_a (iov++, 30, "NM_LOG_DOMAINS=%s", s_domain_1);
 			}
-			_iovec_set_format_str_a (iov++, 15, "NM_LOG_LEVEL=%s", global.level_desc[level].name);
+			_iovec_set_format_str_a (iov++, 15, "NM_LOG_LEVEL=%s", level_desc[level].name);
 			if (func)
 				_iovec_set_format (iov++, iov_free++, "CODE_FUNC=%s", func);
 			_iovec_set_format (iov++, iov_free++, "CODE_FILE=%s", file ?: "");
@@ -734,11 +729,11 @@ _nm_log_impl (const char *file,
 		break;
 #endif
 	case LOG_BACKEND_SYSLOG:
-		syslog (global.level_desc[level].syslog_level,
+		syslog (level_desc[level].syslog_level,
 		        MESSAGE_FMT, MESSAGE_ARG (global, tv, msg));
 		break;
 	default:
-		g_log (syslog_identifier_domain (&global), global.level_desc[level].g_log_level,
+		g_log (syslog_identifier_domain (&global), level_desc[level].g_log_level,
 		       MESSAGE_FMT, MESSAGE_ARG (global, tv, msg));
 		break;
 	}
