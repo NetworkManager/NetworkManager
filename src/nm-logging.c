@@ -42,22 +42,29 @@
 #include "nm-utils/nm-time-utils.h"
 #include "nm-errors.h"
 
-static void
-nm_log_handler (const char *log_domain,
-                GLogLevelFlags level,
-                const char *message,
-                gpointer ignored);
+/*****************************************************************************/
 
-typedef struct {
-	NMLogDomain num;
-	const char *name;
-} LogDesc;
+/* We have more then 32 logging domains. Assert that it compiles to a 64 bit sized enum */
+G_STATIC_ASSERT (sizeof (NMLogDomain) >= sizeof (guint64));
+
+/* Combined domains */
+#define LOGD_ALL_STRING     "ALL"
+#define LOGD_DEFAULT_STRING "DEFAULT"
+#define LOGD_DHCP_STRING    "DHCP"
+#define LOGD_IP_STRING      "IP"
+
+/*****************************************************************************/
 
 typedef enum {
 	LOG_BACKEND_GLIB,
 	LOG_BACKEND_SYSLOG,
 	LOG_BACKEND_JOURNAL,
 } LogBackend;
+
+typedef struct {
+	NMLogDomain num;
+	const char *name;
+} LogDesc;
 
 typedef struct {
 	const char *name;
@@ -75,17 +82,7 @@ typedef struct {
 	GLogLevelFlags g_log_level;
 } LogLevelDesc;
 
-NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL] = {
-	/* nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL);
-	 *
-	 * Note: LOGD_VPN_PLUGIN is special and must be disabled for
-	 * DEBUG and TRACE levels. */
-	[LOGL_INFO] = LOGD_DEFAULT,
-	[LOGL_WARN] = LOGD_DEFAULT,
-	[LOGL_ERR]  = LOGD_DEFAULT,
-};
-
-static struct Global {
+typedef struct {
 	NMLogLevel log_level;
 	bool uses_syslog:1;
 	bool syslog_identifier_initialized:1;
@@ -102,13 +99,29 @@ static struct Global {
 	LogBackend log_backend;
 
 	char *logging_domains_to_string;
-} global = {
+} Global;
+
+/*****************************************************************************/
+
+static Global global = {
 	/* nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL); */
 	.log_level = LOGL_INFO,
 	.log_backend = LOG_BACKEND_GLIB,
 	.syslog_identifier = "SYSLOG_IDENTIFIER="G_LOG_DOMAIN,
 	.prefix = "",
 };
+
+NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL] = {
+	/* nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL);
+	 *
+	 * Note: LOGD_VPN_PLUGIN is special and must be disabled for
+	 * DEBUG and TRACE levels. */
+	[LOGL_INFO] = LOGD_DEFAULT,
+	[LOGL_WARN] = LOGD_DEFAULT,
+	[LOGL_ERR]  = LOGD_DEFAULT,
+};
+
+/*****************************************************************************/
 
 static const LogLevelDesc level_desc[_LOGL_N] = {
 	[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   },
@@ -162,15 +175,6 @@ static const LogDesc domain_desc[] = {
 	{ 0 },
 };
 
-/* We have more then 32 logging domains. Assert that it compiles to a 64 bit sized enum */
-G_STATIC_ASSERT (sizeof (NMLogDomain) >= sizeof (guint64));
-
-/* Combined domains */
-#define LOGD_ALL_STRING     "ALL"
-#define LOGD_DEFAULT_STRING "DEFAULT"
-#define LOGD_DHCP_STRING    "DHCP"
-#define LOGD_IP_STRING      "IP"
-
 /*****************************************************************************/
 
 static char *_domains_to_string (gboolean include_level_override);
@@ -199,7 +203,7 @@ _syslog_identifier_valid_domain (const char *domain)
 }
 
 static gboolean
-_syslog_identifier_assert (const struct Global *gl)
+_syslog_identifier_assert (const Global *gl)
 {
 	g_assert (gl);
 	g_assert (gl->syslog_identifier);
@@ -209,7 +213,7 @@ _syslog_identifier_assert (const struct Global *gl)
 }
 
 static const char *
-syslog_identifier_domain (const struct Global *gl)
+syslog_identifier_domain (const Global *gl)
 {
 	nm_assert (_syslog_identifier_assert (gl));
 	return &gl->syslog_identifier[NM_STRLEN ("SYSLOG_IDENTIFIER=")];
@@ -217,7 +221,7 @@ syslog_identifier_domain (const struct Global *gl)
 
 #if SYSTEMD_JOURNAL
 static const char *
-syslog_identifier_full (const struct Global *gl)
+syslog_identifier_full (const Global *gl)
 {
 	nm_assert (_syslog_identifier_assert (gl));
 	return &gl->syslog_identifier[0];
