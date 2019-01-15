@@ -271,8 +271,6 @@ gboolean nm_logging_syslog_enabled (void);
 #define _LOG3t_err(errsv, ...) G_STMT_START { if (FALSE) { _NMLOG3_err (errsv, LOGL_TRACE, __VA_ARGS__); } } G_STMT_END
 #endif
 
-extern void (*_nm_logging_clear_platform_logging_cache) (void);
-
 /*****************************************************************************/
 
 #define __NMLOG_DEFAULT(level, domain, prefix, ...) \
@@ -291,5 +289,9 @@ extern void (*_nm_logging_clear_platform_logging_cache) (void);
 		        (self) \
 		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
 	} G_STMT_END
+
+/*****************************************************************************/
+
+extern void _nm_logging_clear_platform_logging_cache (void);
 
 #endif /* __NETWORKMANAGER_LOGGING_H__ */
