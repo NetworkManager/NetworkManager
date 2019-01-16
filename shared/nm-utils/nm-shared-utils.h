@@ -304,17 +304,19 @@ _nm_strndup_a_step (char *s, const char *str, gsize len)
 #if _NM_CC_SUPPORT_GENERIC
 #define nm_strdup_int(val) \
 	_Generic ((val), \
-	          char:    g_strdup_printf ("%d",                (int)     (val)), \
+	          char:               g_strdup_printf ("%d",   (int)                (val)), \
 	          \
-	          gint8:   g_strdup_printf ("%d",                (int)     (val)), \
-	          gint16:  g_strdup_printf ("%d",                (int)     (val)), \
-	          gint32:  g_strdup_printf ("%d",                (int)     (val)), \
-	          gint64:  g_strdup_printf ("%"G_GINT64_FORMAT,  (gint64)  (val)), \
+	          signed char:        g_strdup_printf ("%d",   (signed)             (val)), \
+	          signed short:       g_strdup_printf ("%d",   (signed)             (val)), \
+	          signed:             g_strdup_printf ("%d",   (signed)             (val)), \
+	          signed long:        g_strdup_printf ("%ld",  (signed long)        (val)), \
+	          signed long long:   g_strdup_printf ("%lld", (signed long long)   (val)), \
 	          \
-	          guint8:  g_strdup_printf ("%u",                (guint)   (val)), \
-	          guint16: g_strdup_printf ("%u",                (guint)   (val)), \
-	          guint32: g_strdup_printf ("%u",                (guint)   (val)), \
-	          guint64: g_strdup_printf ("%"G_GUINT64_FORMAT, (guint64) (val))  \
+	          unsigned char:      g_strdup_printf ("%u",   (unsigned)           (val)), \
+	          unsigned short:     g_strdup_printf ("%u",   (unsigned)           (val)), \
+	          unsigned:           g_strdup_printf ("%u",   (unsigned)           (val)), \
+	          unsigned long:      g_strdup_printf ("%lu",  (unsigned long)      (val)), \
+	          unsigned long long: g_strdup_printf ("%llu", (unsigned long long) (val))  \
 	)
 #else
 #define nm_strdup_int(val) \
