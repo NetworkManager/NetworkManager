@@ -89,7 +89,8 @@ typedef struct {
 typedef struct {
 	NMLogLevel log_level;
 	bool uses_syslog:1;
-	bool syslog_identifier_initialized:1;
+	bool init_pre_done:1;
+	bool init_done:1;
 	bool debug_stderr:1;
 	const char *prefix;
 	const char *syslog_identifier;
@@ -241,23 +242,6 @@ syslog_identifier_full (const Global *g)
 	return &g->syslog_identifier[0];
 }
 #endif
-
-void
-nm_logging_set_syslog_identifier (const char *domain)
-{
-	if (gl.imm.log_backend != LOG_BACKEND_GLIB)
-		g_return_if_reached ();
-
-	if (!_syslog_identifier_valid_domain (domain))
-		g_return_if_reached ();
-
-	if (gl.imm.syslog_identifier_initialized)
-		g_return_if_reached ();
-
-	gl.mut.syslog_identifier_initialized = TRUE;
-	gl.mut.syslog_identifier = g_strdup_printf ("SYSLOG_IDENTIFIER=%s", domain);
-	nm_assert (_syslog_identifier_assert (&gl.imm));
-}
 
 /*****************************************************************************/
 
@@ -860,41 +844,55 @@ nm_logging_syslog_enabled (void)
 }
 
 void
-nm_logging_set_prefix (const char *format, ...)
+nm_logging_init_pre (const char *syslog_identifier,
+                     char *prefix_take)
 {
-	char *prefix;
-	va_list ap;
+	/* this function may be called zero or one times, and only
+	 * - on the main thread
+	 * - not after nm_logging_init(). */
 
-	/* prefix can only be set once, to a non-empty string. Also, after
-	 * nm_logging_syslog_openlog() the prefix cannot be set either. */
-	if (gl.imm.log_backend != LOG_BACKEND_GLIB)
-		g_return_if_reached ();
-	if (gl.imm.prefix[0])
+	NM_ASSERT_ON_MAIN_THREAD ();
+
+	if (gl.imm.init_pre_done)
 		g_return_if_reached ();
 
-	va_start (ap, format);
-	prefix = g_strdup_vprintf (format, ap);
-	va_end (ap);
-
-	if (!prefix || !prefix[0])
+	if (gl.imm.init_done)
 		g_return_if_reached ();
+
+	if (!_syslog_identifier_valid_domain (syslog_identifier))
+		g_return_if_reached ();
+
+	if (!prefix_take || !prefix_take[0])
+		g_return_if_reached ();
+
+	gl.mut.init_pre_done = TRUE;
+
+	gl.mut.syslog_identifier = g_strdup_printf ("SYSLOG_IDENTIFIER=%s", syslog_identifier);
+	nm_assert (_syslog_identifier_assert (&gl.imm));
 
 	/* we pass the allocated string on and never free it. */
-	gl.mut.prefix = prefix;
+	gl.mut.prefix = prefix_take;
 }
 
 void
-nm_logging_syslog_openlog (const char *logging_backend, gboolean debug)
+nm_logging_init (const char *logging_backend, gboolean debug)
 {
 	gboolean fetch_monotonic_timestamp = FALSE;
 	gboolean obsolete_debug_backend = FALSE;
+
+	/* this function may be called zero or one times, and only on the
+	 * main thread. */
+
+	NM_ASSERT_ON_MAIN_THREAD ();
 
 	nm_assert (NM_IN_STRSET (""NM_CONFIG_DEFAULT_LOGGING_BACKEND,
 	                         NM_LOG_CONFIG_BACKEND_JOURNAL,
 	                         NM_LOG_CONFIG_BACKEND_SYSLOG));
 
-	if (gl.imm.log_backend != LOG_BACKEND_GLIB)
+	if (gl.imm.init_done)
 		g_return_if_reached ();
+
+	gl.mut.init_done = TRUE;
 
 	if (!logging_backend)
 		logging_backend = ""NM_CONFIG_DEFAULT_LOGGING_BACKEND;
