@@ -44,6 +44,32 @@
 
 /*****************************************************************************/
 
+/* Notes about thread-safety:
+ *
+ * NetworkManager generally is single-threaded and uses a (GLib) mainloop.
+ * However, nm-logging is in parts thread-safe. That means:
+ *
+ * - functions that configure logging (nm_logging_init(), nm_logging_setup()) and
+ *   most other functions MUST be called only from the main-thread. These functions
+ *   are expected to be called infrequently, so they may or may not use a mutex
+ *   (but the overhead is negligible here).
+ *
+ * - functions that do the actual logging logging (nm_log(), nm_logging_enabled()) are
+ *   thread-safe and may be used from multiple threads.
+ *    - When called from the not-main-thread, @mt_require_locking must be set to %TRUE.
+ *      In this case, a Mutex will be used for accessing the global state.
+ *    - When called from the main-thread, they may optionally pass @mt_require_locking %FALSE.
+ *      This avoids extra locking and is in particular interesting for nm_logging_enabled(),
+ *      which is expected to be called frequently and from the main-thread.
+ *
+ * Note that the logging macros honor %NM_THREAD_SAFE_ON_MAIN_THREAD define, to automatically
+ * set @mt_require_locking. That means, by default %NM_THREAD_SAFE_ON_MAIN_THREAD is "1",
+ * and code that only runs on the main-thread (which is the majority), can get away
+ * without locking.
+ */
+
+/*****************************************************************************/
+
 /* We have more then 32 logging domains. Assert that it compiles to a 64 bit sized enum */
 G_STATIC_ASSERT (sizeof (NMLogDomain) >= sizeof (guint64));
 
@@ -105,6 +131,8 @@ typedef struct {
 } Global;
 
 /*****************************************************************************/
+
+G_LOCK_DEFINE_STATIC (log);
 
 /* This data must only be accessed from the main-thread (and as
  * such does not need any lock). */
@@ -272,8 +300,10 @@ nm_logging_setup (const char  *level,
                   GError     **error)
 {
 	GString *unrecognized = NULL;
-	NMLogDomain new_logging[G_N_ELEMENTS (_nm_logging_enabled_state)];
-	NMLogLevel new_log_level = gl.imm.log_level;
+	NMLogDomain cur_log_state[_LOGL_N_REAL];
+	NMLogDomain new_log_state[_LOGL_N_REAL];
+	NMLogLevel cur_log_level;
+	NMLogLevel new_log_level;
 	char **tmp, **iter;
 	int i;
 	gboolean had_platform_debug;
@@ -284,25 +314,28 @@ nm_logging_setup (const char  *level,
 	g_return_val_if_fail (!bad_domains || !*bad_domains, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
-	/* domains */
+	cur_log_level = gl.imm.log_level;
+	memcpy (cur_log_state, _nm_logging_enabled_state, sizeof (cur_log_state));
+
+	new_log_level = cur_log_level;
+
 	if (!domains || !*domains) {
 		domains_free = _domains_to_string (FALSE,
-		                                   gl.imm.log_level,
-		                                   _nm_logging_enabled_state);
+		                                   cur_log_level,
+		                                   cur_log_state);
 		domains = domains_free;
 	}
 
-	for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
-		new_logging[i] = 0;
+	for (i = 0; i < G_N_ELEMENTS (new_log_state); i++)
+		new_log_state[i] = 0;
 
-	/* levels */
 	if (level && *level) {
 		if (!match_log_level (level, &new_log_level, error))
 			return FALSE;
 		if (new_log_level == _LOGL_KEEP) {
-			new_log_level = gl.imm.log_level;
-			for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
-				new_logging[i] = _nm_logging_enabled_state[i];
+			new_log_level = cur_log_level;
+			for (i = 0; i < G_N_ELEMENTS (new_log_state); i++)
+				new_log_state[i] = cur_log_state[i];
 		}
 	}
 
@@ -383,17 +416,17 @@ nm_logging_setup (const char  *level,
 		}
 
 		if (domain_log_level == _LOGL_KEEP) {
-			for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
-				new_logging[i] = (new_logging[i] & ~bits) | (_nm_logging_enabled_state[i] & bits);
+			for (i = 0; i < G_N_ELEMENTS (new_log_state); i++)
+				new_log_state[i] = (new_log_state[i] & ~bits) | (cur_log_state[i] & bits);
 		} else {
-			for (i = 0; i < G_N_ELEMENTS (new_logging); i++) {
+			for (i = 0; i < G_N_ELEMENTS (new_log_state); i++) {
 				if (i < domain_log_level)
-					new_logging[i] &= ~bits;
+					new_log_state[i] &= ~bits;
 				else {
-					new_logging[i] |= bits;
+					new_log_state[i] |= bits;
 					if (   (protect & bits)
 					    && i < LOGL_INFO)
-						new_logging[i] &= ~protect;
+						new_log_state[i] &= ~protect;
 				}
 			}
 		}
@@ -402,14 +435,18 @@ nm_logging_setup (const char  *level,
 
 	g_clear_pointer (&gl_main.logging_domains_to_string, g_free);
 
-	had_platform_debug = nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM);
+	had_platform_debug = _nm_logging_enabled_lockfree (LOGL_DEBUG, LOGD_PLATFORM);
+
+	G_LOCK (log);
 
 	gl.mut.log_level = new_log_level;
-	for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
-		_nm_logging_enabled_state[i] = new_logging[i];
+	for (i = 0; i < G_N_ELEMENTS (new_log_state); i++)
+		_nm_logging_enabled_state[i] = new_log_state[i];
+
+	G_UNLOCK (log);
 
 	if (   had_platform_debug
-	    && !nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
+	    && !_nm_logging_enabled_lockfree (LOGL_DEBUG, LOGD_PLATFORM)) {
 		/* when debug logging is enabled, platform will cache all access to
 		 * sysctl. When the user disables debug-logging, we want to clear that
 		 * cache right away. */
@@ -425,6 +462,8 @@ nm_logging_setup (const char  *level,
 const char *
 nm_logging_level_to_string (void)
 {
+	NM_ASSERT_ON_MAIN_THREAD ();
+
 	return level_desc[gl.imm.log_level].name;
 }
 
@@ -470,8 +509,8 @@ _domains_to_string (gboolean include_level_override,
 	GString *str;
 	int i;
 
-	/* We don't just return g_strdup (gl.imm.log_domains) because we want to expand
-	 * "DEFAULT" and "ALL".
+	/* We don't just return g_strdup() the logging domains that were set during
+	 * nm_logging_setup(), because we want to expand "DEFAULT" and "ALL".
 	 */
 
 	str = g_string_sized_new (75);
@@ -546,16 +585,29 @@ nm_logging_get_level (NMLogDomain domain)
 
 	G_STATIC_ASSERT (LOGL_TRACE == 0);
 	while (   sl > LOGL_TRACE
-	       && nm_logging_enabled (sl - 1, domain))
+	       && _nm_logging_enabled_lockfree (sl - 1, domain))
 		sl--;
 	return sl;
 }
 
 gboolean
-_nm_log_enabled (NMLogLevel level,
-                 NMLogDomain domain)
+_nm_logging_enabled_locking (NMLogLevel level,
+                             NMLogDomain domain)
 {
-	return nm_logging_enabled (level, domain);
+	gboolean v;
+
+	G_LOCK (log);
+	v = _nm_logging_enabled_lockfree (level, domain);
+	G_UNLOCK (log);
+	return v;
+}
+
+gboolean
+_nm_log_enabled_impl (gboolean mt_require_locking,
+                      NMLogLevel level,
+                      NMLogDomain domain)
+{
+	return nm_logging_enabled_mt (mt_require_locking, level, domain);
 }
 
 #if SYSTEMD_JOURNAL
@@ -618,6 +670,7 @@ void
 _nm_log_impl (const char *file,
               guint line,
               const char *func,
+              gboolean mt_require_locking,
               NMLogLevel level,
               NMLogDomain domain,
               int error,
@@ -630,12 +683,34 @@ _nm_log_impl (const char *file,
 	char *msg;
 	GTimeVal tv;
 	int errno_saved;
+	const NMLogDomain *cur_log_state;
+	NMLogDomain cur_log_state_copy[_LOGL_N_REAL];
+	Global g_copy;
+	const Global *g;
 
-	if ((guint) level >= G_N_ELEMENTS (_nm_logging_enabled_state))
-		g_return_if_reached ();
+	if (G_UNLIKELY (mt_require_locking)) {
+		G_LOCK (log);
+		/* we evaluate logging-enabled under lock. There is still a race that
+		 * we might log the message below *after* logging was disabled. That means,
+		 * when disabling logging, we might still log messages. */
+		if (!_nm_logging_enabled_lockfree (level, domain)) {
+			G_UNLOCK (log);
+			return;
+		}
+		g_copy = gl.imm;
+		memcpy (cur_log_state_copy, _nm_logging_enabled_state, sizeof (cur_log_state_copy));
+		G_UNLOCK (log);
+		g = &g_copy;
+		cur_log_state = cur_log_state_copy;
+	} else {
+		NM_ASSERT_ON_MAIN_THREAD ();
+		if (!_nm_logging_enabled_lockfree (level, domain))
+			return;
+		g = &gl.imm;
+		cur_log_state = _nm_logging_enabled_state;
+	}
 
-	if (!(_nm_logging_enabled_state[level] & domain))
-		return;
+	(void) cur_log_state;
 
 	errno_saved = errno;
 
@@ -651,8 +726,8 @@ _nm_log_impl (const char *file,
 	va_end (args);
 
 #define MESSAGE_FMT "%s%-7s [%ld.%04ld] %s"
-#define MESSAGE_ARG(g, tv, msg) \
-    (g)->prefix, \
+#define MESSAGE_ARG(prefix, tv, msg) \
+    prefix, \
     level_desc[level].level_str, \
     (tv).tv_sec, \
     ((tv).tv_usec / 100), \
@@ -660,10 +735,10 @@ _nm_log_impl (const char *file,
 
 	g_get_current_time (&tv);
 
-	if (gl.imm.debug_stderr)
-		g_printerr (MESSAGE_FMT"\n", MESSAGE_ARG (&gl.imm, tv, msg));
+	if (g->debug_stderr)
+		g_printerr (MESSAGE_FMT"\n", MESSAGE_ARG (g->prefix, tv, msg));
 
-	switch (gl.imm.log_backend) {
+	switch (g->log_backend) {
 #if SYSTEMD_JOURNAL
 	case LOG_BACKEND_JOURNAL:
 		{
@@ -679,15 +754,15 @@ _nm_log_impl (const char *file,
 			boottime = nm_utils_monotonic_timestamp_as_boottime (now, 1);
 
 			_iovec_set_format_a (iov++, 30, "PRIORITY=%d", level_desc[level].syslog_level);
-			_iovec_set_format (iov++, iov_free++, "MESSAGE="MESSAGE_FMT, MESSAGE_ARG (&gl.imm, tv, msg));
-			_iovec_set_string (iov++, syslog_identifier_full (gl.imm.syslog_identifier));
+			_iovec_set_format (iov++, iov_free++, "MESSAGE="MESSAGE_FMT, MESSAGE_ARG (g->prefix, tv, msg));
+			_iovec_set_string (iov++, syslog_identifier_full (g->syslog_identifier));
 			_iovec_set_format_a (iov++, 30, "SYSLOG_PID=%ld", (long) getpid ());
 			{
 				const LogDesc *diter;
 				int i_domain = _NUM_MAX_FIELDS_SYSLOG_FACILITY;
 				const char *s_domain_1 = NULL;
 				NMLogDomain dom_all = domain;
-				NMLogDomain dom = dom_all & _nm_logging_enabled_state[level];
+				NMLogDomain dom = dom_all & cur_log_state[level];
 
 				for (diter = &domain_desc[0]; diter->name; diter++) {
 					if (!NM_FLAGS_ANY (dom_all, diter->num))
@@ -750,11 +825,11 @@ _nm_log_impl (const char *file,
 #endif
 	case LOG_BACKEND_SYSLOG:
 		syslog (level_desc[level].syslog_level,
-		        MESSAGE_FMT, MESSAGE_ARG (&gl.imm, tv, msg));
+		        MESSAGE_FMT, MESSAGE_ARG (g->prefix, tv, msg));
 		break;
 	default:
-		g_log (syslog_identifier_domain (gl.imm.syslog_identifier), level_desc[level].g_log_level,
-		       MESSAGE_FMT, MESSAGE_ARG (&gl.imm, tv, msg));
+		g_log (syslog_identifier_domain (g->syslog_identifier), level_desc[level].g_log_level,
+		       MESSAGE_FMT, MESSAGE_ARG (g->prefix, tv, msg));
 		break;
 	}
 
@@ -770,7 +845,9 @@ _nm_utils_monotonic_timestamp_initialized (const struct timespec *tp,
                                            gint64 offset_sec,
                                            gboolean is_boottime)
 {
-	if (nm_logging_enabled (LOGL_DEBUG, LOGD_CORE)) {
+	NM_ASSERT_ON_MAIN_THREAD ();
+
+	if (_nm_logging_enabled_lockfree (LOGL_DEBUG, LOGD_CORE)) {
 		time_t now = time (NULL);
 		struct tm tm;
 		char s[255];
@@ -816,6 +893,10 @@ nm_log_handler (const char *log_domain,
 		break;
 	}
 
+	/* we don't need any locking here. The glib log handler gets only registered
+	 * once during nm_logging_init() and the global data is not modified afterwards. */
+	nm_assert (gl.imm.init_done);
+
 	if (gl.imm.debug_stderr)
 		g_printerr ("%s%s\n", gl.imm.prefix, message ?: "");
 
@@ -850,6 +931,8 @@ nm_log_handler (const char *log_domain,
 gboolean
 nm_logging_syslog_enabled (void)
 {
+	NM_ASSERT_ON_MAIN_THREAD ();
+
 	return gl.imm.uses_syslog;
 }
 
@@ -875,6 +958,8 @@ nm_logging_init_pre (const char *syslog_identifier,
 	if (!prefix_take || !prefix_take[0])
 		g_return_if_reached ();
 
+	G_LOCK (log);
+
 	gl.mut.init_pre_done = TRUE;
 
 	gl.mut.syslog_identifier = g_strdup_printf ("SYSLOG_IDENTIFIER=%s", syslog_identifier);
@@ -882,6 +967,8 @@ nm_logging_init_pre (const char *syslog_identifier,
 
 	/* we pass the allocated string on and never free it. */
 	gl.mut.prefix = prefix_take;
+
+	G_UNLOCK (log);
 }
 
 void
@@ -889,6 +976,7 @@ nm_logging_init (const char *logging_backend, gboolean debug)
 {
 	gboolean fetch_monotonic_timestamp = FALSE;
 	gboolean obsolete_debug_backend = FALSE;
+	LogBackend x_log_backend;
 
 	/* this function may be called zero or one times, and only on the
 	 * main thread. */
@@ -901,8 +989,6 @@ nm_logging_init (const char *logging_backend, gboolean debug)
 
 	if (gl.imm.init_done)
 		g_return_if_reached ();
-
-	gl.mut.init_done = TRUE;
 
 	if (!logging_backend)
 		logging_backend = ""NM_CONFIG_DEFAULT_LOGGING_BACKEND;
@@ -918,25 +1004,35 @@ nm_logging_init (const char *logging_backend, gboolean debug)
 		obsolete_debug_backend = TRUE;
 	}
 
+
+	G_LOCK (log);
+
 #if SYSTEMD_JOURNAL
 	if (!nm_streq (logging_backend, NM_LOG_CONFIG_BACKEND_SYSLOG)) {
-		gl.mut.log_backend = LOG_BACKEND_JOURNAL;
-		gl.mut.uses_syslog = TRUE;
-		gl.mut.debug_stderr = debug;
+		x_log_backend = LOG_BACKEND_JOURNAL;
+
+		/* We only log the monotonic-timestamp with structured logging (journal).
+		 * Only in this case, fetch the timestamp. */
 		fetch_monotonic_timestamp = TRUE;
 	} else
 #endif
 	{
-		gl.mut.log_backend = LOG_BACKEND_SYSLOG;
-		gl.mut.uses_syslog = TRUE;
-		gl.mut.debug_stderr = debug;
+		x_log_backend = LOG_BACKEND_SYSLOG;
 		openlog (syslog_identifier_domain (gl.imm.syslog_identifier), LOG_PID, LOG_DAEMON);
 	}
+
+	gl.mut.init_done = TRUE;
+	gl.mut.log_backend = x_log_backend;
+	gl.mut.uses_syslog = TRUE;
+	gl.mut.debug_stderr = debug;
 
 	g_log_set_handler (syslog_identifier_domain (gl.imm.syslog_identifier),
 	                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
 	                   nm_log_handler,
 	                   NULL);
+
+	G_UNLOCK (log);
+
 
 	if (fetch_monotonic_timestamp) {
 		/* ensure we read a monotonic timestamp. Reading the timestamp the first
