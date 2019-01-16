@@ -94,18 +94,20 @@ typedef enum  { /*< skip >*/
 	_LOGL_N, /* the number of logging levels including "OFF" */
 } NMLogLevel;
 
-gboolean _nm_log_enabled (NMLogLevel level,
-                          NMLogDomain domain);
+gboolean _nm_log_enabled_impl (gboolean mt_require_locking,
+                               NMLogLevel level,
+                               NMLogDomain domain);
 
 void _nm_log_impl (const char *file,
                    guint line,
                    const char *func,
+                   gboolean mt_require_locking,
                    NMLogLevel level,
                    NMLogDomain domain,
                    int error,
                    const char *ifname,
                    const char *con_uuid,
                    const char *fmt,
-                   ...) _nm_printf (9, 10);
+                   ...) _nm_printf (10, 11);
 
 #endif /* __NM_LOGGING_DEFINES_H__ */

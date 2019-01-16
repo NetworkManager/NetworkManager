@@ -49,8 +49,9 @@ nm_utils_get_monotonic_timestamp_s (void)
 NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL];
 
 gboolean
-_nm_log_enabled (NMLogLevel level,
-                 NMLogDomain domain)
+_nm_log_enabled_impl (gboolean mt_require_locking,
+                      NMLogLevel level,
+                      NMLogDomain domain)
 {
 	return FALSE;
 }
@@ -59,6 +60,7 @@ void
 _nm_log_impl (const char *file,
               guint line,
               const char *func,
+              gboolean mt_require_locking,
               NMLogLevel level,
               NMLogDomain domain,
               int error,

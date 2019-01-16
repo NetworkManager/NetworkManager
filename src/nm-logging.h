@@ -54,10 +54,12 @@ LOGD_IP_from_af (int addr_family)
 /* A wrapper for the _nm_log_impl() function that adds call site information.
  * Contrary to nm_log(), it unconditionally calls the function without
  * checking whether logging for the given level and domain is enabled. */
-#define _nm_log(level, domain, error, ifname, con_uuid, ...) \
+#define _nm_log_mt(mt_require_locking, level, domain, error, ifname, con_uuid, ...) \
     G_STMT_START { \
-        _nm_log_impl (__FILE__, __LINE__, \
+        _nm_log_impl (__FILE__, \
+                      __LINE__, \
                       _NM_LOG_FUNC, \
+                      (mt_require_locking), \
                       (level), \
                       (domain), \
                       (error), \
@@ -65,6 +67,9 @@ LOGD_IP_from_af (int addr_family)
                       (con_uuid), \
                       ""__VA_ARGS__); \
     } G_STMT_END
+
+#define _nm_log(level, domain, error, ifname, con_uuid, ...) \
+	_nm_log_mt (!(NM_THREAD_SAFE_ON_MAIN_THREAD), level, domain, error, ifname, con_uuid, __VA_ARGS__)
 
 /* nm_log() only evaluates its argument list after checking
  * whether logging for the given level/domain is enabled.  */
@@ -138,14 +143,34 @@ _nm_log_ptr_is_debug (NMLogLevel level)
 const char *nm_logging_level_to_string (void);
 const char *nm_logging_domains_to_string (void);
 
+/*****************************************************************************/
+
 extern NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL];
+
 static inline gboolean
-nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
+_nm_logging_enabled_lockfree (NMLogLevel level, NMLogDomain domain)
 {
 	nm_assert (((guint) level) < G_N_ELEMENTS (_nm_logging_enabled_state));
 	return    (((guint) level) < G_N_ELEMENTS (_nm_logging_enabled_state))
 	       && !!(_nm_logging_enabled_state[level] & domain);
 }
+
+gboolean _nm_logging_enabled_locking (NMLogLevel level, NMLogDomain domain);
+
+static inline gboolean
+nm_logging_enabled_mt (gboolean mt_require_locking, NMLogLevel level, NMLogDomain domain)
+{
+	if (mt_require_locking)
+		return _nm_logging_enabled_locking (level, domain);
+
+	NM_ASSERT_ON_MAIN_THREAD ();
+	return _nm_logging_enabled_lockfree (level, domain);
+}
+
+#define nm_logging_enabled(level, domain) \
+	nm_logging_enabled_mt (!(NM_THREAD_SAFE_ON_MAIN_THREAD), level, domain)
+
+/*****************************************************************************/
 
 NMLogLevel nm_logging_get_level (NMLogDomain domain);
 
