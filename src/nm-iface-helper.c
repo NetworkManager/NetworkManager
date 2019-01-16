@@ -397,11 +397,11 @@ main (int argc, char *argv[])
 	if (!do_early_setup (&argc, &argv))
 		return 1;
 
-	nm_logging_set_syslog_identifier ("nm-iface-helper");
-	nm_logging_set_prefix ("%s[%ld] (%s): ",
-	                       _NMLOG_PREFIX_NAME,
-	                       (long) getpid (),
-	                       global_opt.ifname ?: "???");
+	nm_logging_init_pre ("nm-iface-helper",
+	                     g_strdup_printf ("%s[%ld] (%s): ",
+	                                      _NMLOG_PREFIX_NAME,
+	                                      (long) getpid (),
+	                                      global_opt.ifname ?: "???"));
 
 	if (global_opt.g_fatal_warnings) {
 		GLogLevelFlags fatal_mask;
@@ -466,8 +466,8 @@ main (int argc, char *argv[])
 	gl.main_loop = g_main_loop_new (NULL, FALSE);
 	setup_signals ();
 
-	nm_logging_syslog_openlog (global_opt.logging_backend,
-	                           global_opt.debug);
+	nm_logging_init (global_opt.logging_backend,
+	                 global_opt.debug);
 
 	_LOGI (LOGD_CORE, "nm-iface-helper (version " NM_DIST_VERSION ") is starting...");
 
