@@ -755,6 +755,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	NMSupplicantConfigPrivate *priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 	const char *key_mgmt, *key_mgmt_conf, *auth_alg;
 	const char *psk;
+	gboolean set_pmf;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
@@ -842,13 +843,14 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 		pmf = NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE;
 
 	/* Check if we actually support PMF */
+	set_pmf = TRUE;
 	if (!priv->support_pmf) {
 		if (pmf == NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED) {
 			g_set_error_literal (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
 			                     "Supplicant does not support PMF");
 			return FALSE;
-		} else if (pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL)
-			pmf = NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE;
+		}
+		set_pmf = FALSE;
 	}
 
 	/* Only WPA-specific things when using WPA */
@@ -862,7 +864,8 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 		if (!ADD_STRING_LIST_VAL (self, setting, wireless_security, group, groups, "group", ' ', TRUE, NULL, error))
 			return FALSE;
 
-		if (   !nm_streq (key_mgmt, "wpa-none")
+		if (   set_pmf
+		    && !nm_streq (key_mgmt, "wpa-none")
 		    && NM_IN_SET (pmf,
 		                  NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE,
 		                  NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED)) {
