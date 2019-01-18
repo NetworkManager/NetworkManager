@@ -67,6 +67,28 @@
 
 /*****************************************************************************/
 
+/* most of our code is single-threaded with a mainloop. Hence, we usually don't need
+ * any thread-safety. Sometimes, we do need thread-safety (nm-logging), but we can
+ * avoid locking if we are on the main-thread by:
+ *
+ *   - modifications of shared data is done infrequently and only from the
+ *     main-thread (nm_logging_setup())
+ *   - read-only access is done frequently (nm_logging_enabled())
+ *     - from the main-thread, we can do that without locking (because
+ *       all modifications are also done on the main thread.
+ *     - from other threads, we need locking. But this is expected to be
+ *       done infrequently too. Important is the lock-free fast-path on the
+ *       main-thread.
+ *
+ * By defining NM_THREAD_SAFE_ON_MAIN_THREAD you indicate that this code runs
+ * on the main-thread. It is by default defined to "1". If you have code that
+ * is also used on another thread, redefine the define to 0 (to opt in into
+ * the slow-path).
+ */
+#define NM_THREAD_SAFE_ON_MAIN_THREAD 1
+
+/*****************************************************************************/
+
 #define NM_AUTO_DEFINE_FCN_VOID(CastType, name, func) \
 static inline void name (void *v) \
 { \
