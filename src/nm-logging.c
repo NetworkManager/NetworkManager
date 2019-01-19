@@ -192,7 +192,9 @@ static const LogDesc domain_desc[] = {
 
 /*****************************************************************************/
 
-static char *_domains_to_string (gboolean include_level_override);
+static char *_domains_to_string (gboolean include_level_override,
+                                 NMLogLevel log_level,
+                                 const NMLogDomain log_state[static _LOGL_N_REAL]);
 
 /*****************************************************************************/
 
@@ -218,28 +220,27 @@ _syslog_identifier_valid_domain (const char *domain)
 }
 
 static gboolean
-_syslog_identifier_assert (const Global *g)
+_syslog_identifier_assert (const char *syslog_identifier)
 {
-	g_assert (g);
-	g_assert (g->syslog_identifier);
-	g_assert (g_str_has_prefix (g->syslog_identifier, "SYSLOG_IDENTIFIER="));
-	g_assert (_syslog_identifier_valid_domain (&g->syslog_identifier[NM_STRLEN ("SYSLOG_IDENTIFIER=")]));
+	g_assert (syslog_identifier);
+	g_assert (g_str_has_prefix (syslog_identifier, "SYSLOG_IDENTIFIER="));
+	g_assert (_syslog_identifier_valid_domain (&syslog_identifier[NM_STRLEN ("SYSLOG_IDENTIFIER=")]));
 	return TRUE;
 }
 
 static const char *
-syslog_identifier_domain (const Global *g)
+syslog_identifier_domain (const char *syslog_identifier)
 {
-	nm_assert (_syslog_identifier_assert (g));
-	return &g->syslog_identifier[NM_STRLEN ("SYSLOG_IDENTIFIER=")];
+	nm_assert (_syslog_identifier_assert (syslog_identifier));
+	return &syslog_identifier[NM_STRLEN ("SYSLOG_IDENTIFIER=")];
 }
 
 #if SYSTEMD_JOURNAL
 static const char *
-syslog_identifier_full (const Global *g)
+syslog_identifier_full (const char *syslog_identifier)
 {
-	nm_assert (_syslog_identifier_assert (g));
-	return &g->syslog_identifier[0];
+	nm_assert (_syslog_identifier_assert (syslog_identifier));
+	return &syslog_identifier[0];
 }
 #endif
 
@@ -284,8 +285,12 @@ nm_logging_setup (const char  *level,
 	g_return_val_if_fail (!error || !*error, FALSE);
 
 	/* domains */
-	if (!domains || !*domains)
-		domains = (domains_free = _domains_to_string (FALSE));
+	if (!domains || !*domains) {
+		domains_free = _domains_to_string (FALSE,
+		                                   gl.imm.log_level,
+		                                   _nm_logging_enabled_state);
+		domains = domains_free;
+	}
 
 	for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
 		new_logging[i] = 0;
@@ -447,14 +452,19 @@ nm_logging_domains_to_string (void)
 {
 	NM_ASSERT_ON_MAIN_THREAD ();
 
-	if (G_UNLIKELY (!gl_main.logging_domains_to_string))
-		gl_main.logging_domains_to_string = _domains_to_string (TRUE);
+	if (G_UNLIKELY (!gl_main.logging_domains_to_string)) {
+		gl_main.logging_domains_to_string = _domains_to_string (TRUE,
+		                                                        gl.imm.log_level,
+		                                                        _nm_logging_enabled_state);
+	}
 
 	return gl_main.logging_domains_to_string;
 }
 
 static char *
-_domains_to_string (gboolean include_level_override)
+_domains_to_string (gboolean include_level_override,
+                    NMLogLevel log_level,
+                    const NMLogDomain log_state[static _LOGL_N_REAL])
 {
 	const LogDesc *diter;
 	GString *str;
@@ -467,7 +477,7 @@ _domains_to_string (gboolean include_level_override)
 	str = g_string_sized_new (75);
 	for (diter = &domain_desc[0]; diter->name; diter++) {
 		/* If it's set for any lower level, it will also be set for LOGL_ERR */
-		if (!(diter->num & _nm_logging_enabled_state[LOGL_ERR]))
+		if (!(diter->num & log_state[LOGL_ERR]))
 			continue;
 
 		if (str->len)
@@ -478,16 +488,16 @@ _domains_to_string (gboolean include_level_override)
 			continue;
 
 		/* Check if it's logging at a lower level than the default. */
-		for (i = 0; i < gl.imm.log_level; i++) {
-			if (diter->num & _nm_logging_enabled_state[i]) {
+		for (i = 0; i < log_level; i++) {
+			if (diter->num & log_state[i]) {
 				g_string_append_printf (str, ":%s", level_desc[i].name);
 				break;
 			}
 		}
 		/* Check if it's logging at a higher level than the default. */
-		if (!(diter->num & _nm_logging_enabled_state[gl.imm.log_level])) {
-			for (i = gl.imm.log_level + 1; i < G_N_ELEMENTS (_nm_logging_enabled_state); i++) {
-				if (diter->num & _nm_logging_enabled_state[i]) {
+		if (!(diter->num & log_state[log_level])) {
+			for (i = log_level + 1; i < _LOGL_N_REAL; i++) {
+				if (diter->num & log_state[i]) {
 					g_string_append_printf (str, ":%s", level_desc[i].name);
 					break;
 				}
@@ -670,7 +680,7 @@ _nm_log_impl (const char *file,
 
 			_iovec_set_format_a (iov++, 30, "PRIORITY=%d", level_desc[level].syslog_level);
 			_iovec_set_format (iov++, iov_free++, "MESSAGE="MESSAGE_FMT, MESSAGE_ARG (&gl.imm, tv, msg));
-			_iovec_set_string (iov++, syslog_identifier_full (&gl.imm));
+			_iovec_set_string (iov++, syslog_identifier_full (gl.imm.syslog_identifier));
 			_iovec_set_format_a (iov++, 30, "SYSLOG_PID=%ld", (long) getpid ());
 			{
 				const LogDesc *diter;
@@ -743,7 +753,7 @@ _nm_log_impl (const char *file,
 		        MESSAGE_FMT, MESSAGE_ARG (&gl.imm, tv, msg));
 		break;
 	default:
-		g_log (syslog_identifier_domain (&gl.imm), level_desc[level].g_log_level,
+		g_log (syslog_identifier_domain (gl.imm.syslog_identifier), level_desc[level].g_log_level,
 		       MESSAGE_FMT, MESSAGE_ARG (&gl.imm, tv, msg));
 		break;
 	}
@@ -820,7 +830,7 @@ nm_log_handler (const char *log_domain,
 
 			sd_journal_send ("PRIORITY=%d", syslog_priority,
 			                 "MESSAGE=%s%s", gl.imm.prefix, message ?: "",
-			                 syslog_identifier_full (&gl.imm),
+			                 syslog_identifier_full (gl.imm.syslog_identifier),
 			                 "SYSLOG_PID=%ld", (long) getpid (),
 			                 "SYSLOG_FACILITY=GLIB",
 			                 "GLIB_DOMAIN=%s", log_domain ?: "",
@@ -868,7 +878,7 @@ nm_logging_init_pre (const char *syslog_identifier,
 	gl.mut.init_pre_done = TRUE;
 
 	gl.mut.syslog_identifier = g_strdup_printf ("SYSLOG_IDENTIFIER=%s", syslog_identifier);
-	nm_assert (_syslog_identifier_assert (&gl.imm));
+	nm_assert (_syslog_identifier_assert (gl.imm.syslog_identifier));
 
 	/* we pass the allocated string on and never free it. */
 	gl.mut.prefix = prefix_take;
@@ -920,10 +930,10 @@ nm_logging_init (const char *logging_backend, gboolean debug)
 		gl.mut.log_backend = LOG_BACKEND_SYSLOG;
 		gl.mut.uses_syslog = TRUE;
 		gl.mut.debug_stderr = debug;
-		openlog (syslog_identifier_domain (&gl.imm), LOG_PID, LOG_DAEMON);
+		openlog (syslog_identifier_domain (gl.imm.syslog_identifier), LOG_PID, LOG_DAEMON);
 	}
 
-	g_log_set_handler (syslog_identifier_domain (&gl.imm),
+	g_log_set_handler (syslog_identifier_domain (gl.imm.syslog_identifier),
 	                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
 	                   nm_log_handler,
 	                   NULL);
