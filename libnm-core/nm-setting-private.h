@@ -39,6 +39,8 @@ int _nm_setting_compare_priority (gconstpointer a, gconstpointer b);
 
 /*****************************************************************************/
 
+void _nm_setting_emit_property_changed (NMSetting *setting);
+
 typedef enum NMSettingUpdateSecretResult {
 	NM_SETTING_UPDATE_SECRET_ERROR              = FALSE,
 	NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED   = TRUE,
