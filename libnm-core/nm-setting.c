@@ -1111,6 +1111,8 @@ duplicate_copy_properties (const NMSettInfoSetting *sett_info,
 	if (sett_info->detail.gendata_info) {
 		GenData *gendata = _gendata_hash (src, FALSE);
 
+		nm_assert (!_gendata_hash (dst, FALSE));
+
 		if (   gendata
 		    && g_hash_table_size (gendata->hash) > 0) {
 			GHashTableIter iter;
@@ -2322,7 +2324,7 @@ _nm_setting_gendata_notify (NMSetting *setting,
 
 	gendata = _gendata_hash (setting, FALSE);
 	if (!gendata)
-		return;
+		goto out;
 
 	nm_clear_g_free (&gendata->values);
 
@@ -2332,7 +2334,7 @@ _nm_setting_gendata_notify (NMSetting *setting,
 		nm_clear_g_free (&gendata->names);
 	}
 
-	/* Note, that currently there is now way to notify the subclass when gendata changed.
+	/* Note, currently there is no way to notify the subclass when gendata changed.
 	 * gendata is only changed in two situations:
 	 *   1) from within NMSetting itself, for example when creating a NMSetting instance
 	 *      from keyfile or a D-Bus GVariant.
@@ -2345,6 +2347,9 @@ _nm_setting_gendata_notify (NMSetting *setting,
 	 *
 	 * If we ever need it, then we would need to call a virtual function to notify the subclass
 	 * that gendata changed. */
+
+out:
+	_nm_setting_emit_property_changed (setting);
 }
 
 GVariant *
@@ -2467,7 +2472,7 @@ nm_setting_gendata_get_all_values (NMSetting *setting)
 
 void
 _nm_setting_gendata_to_gvalue (NMSetting *setting,
-                                GValue *value)
+                               GValue *value)
 {
 	GenData *gendata;
 	GHashTable *new;
