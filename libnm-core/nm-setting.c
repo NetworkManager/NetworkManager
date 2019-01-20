@@ -67,7 +67,7 @@ typedef struct {
 	NMSettingPriority priority;
 } SettingInfo;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+NM_GOBJECT_PROPERTIES_DEFINE (NMSetting,
 	PROP_NAME,
 );
 
@@ -549,6 +549,35 @@ _nm_setting_class_get_sett_info (NMSettingClass *setting_class)
 	sett_info = &_sett_info_settings[setting_class->setting_info->meta_type];
 	nm_assert (sett_info->setting_class == setting_class);
 	return sett_info;
+}
+
+/*****************************************************************************/
+
+void
+_nm_setting_emit_property_changed (NMSetting *setting)
+{
+	/* Some settings have "properties" that are not implemented as GObject properties.
+	 *
+	 * For example:
+	 *
+	 *   - gendata-base settings like NMSettingEthtool. Here properties are just
+	 *     GVariant values in the gendata hash.
+	 *
+	 *   - NMSettingWireGuard's peers are not backed by a GObject property. Instead
+	 *     there is C-API to access/modify peers.
+	 *
+	 * We still want to emit property-changed notifications for such properties,
+	 * in particular because NMConnection registers to such signals to re-emit
+	 * it as NM_CONNECTION_CHANGED signal. In fact, there are unlikely any other
+	 * uses of such a property-changed signal, because generally it doesn't make
+	 * too much sense.
+	 *
+	 * So, instead of adding yet another (artificial) signal "setting-changed",
+	 * hijack the "notify" signal and just notify about changes of the "name".
+	 * Of course, the "name" doesn't really ever change, because it's tied to
+	 * the GObject's type.
+	 */
+	_notify (setting, PROP_NAME);
 }
 
 /*****************************************************************************/
