@@ -1812,37 +1812,17 @@ nm_setting_enumerate_values (NMSetting *setting,
 	}
 }
 
-/**
- * _nm_setting_aggregate:
- * @setting: the #NMSetting to aggregate.
- * @type: the #NMConnectionAggregateType aggregate type.
- * @arg: the in/out arguments for aggregation. They depend on @type.
- *
- * This is the implementation detail of _nm_connection_aggregate(). It
- * makes no sense to call this function directly outside of _nm_connection_aggregate().
- *
- * Returns: %TRUE if afterwards the aggregation is complete. That means,
- *   the only caller _nm_connection_aggregate() will not visit other settings
- *   after a setting returns %TRUE (indicating that there is nothing further
- *   to aggregate). Note that is very different from the boolean return
- *   argument of _nm_connection_aggregate(), which serves a different purpose.
- */
-gboolean
-_nm_setting_aggregate (NMSetting *setting,
-                       NMConnectionAggregateType type,
-                       gpointer arg)
+static gboolean
+aggregate (NMSetting *setting,
+           int type_i,
+           gpointer arg)
 {
+	NMConnectionAggregateType type = type_i;
 	const NMSettInfoSetting *sett_info;
 	guint i;
 
-	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
-	g_return_val_if_fail (arg, FALSE);
-	g_return_val_if_fail (NM_IN_SET (type, NM_CONNECTION_AGGREGATE_ANY_SECRETS,
-	                                       NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS),
-	                      FALSE);
-
-	if (NM_IS_SETTING_VPN (setting))
-		return _nm_setting_vpn_aggregate (NM_SETTING_VPN (setting), type, arg);
+	nm_assert (NM_IN_SET (type, NM_CONNECTION_AGGREGATE_ANY_SECRETS,
+	                            NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS));
 
 	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
 	for (i = 0; i < sett_info->property_infos_len; i++) {
@@ -1884,6 +1864,35 @@ _nm_setting_aggregate (NMSetting *setting,
 	}
 
 	return FALSE;
+}
+
+/**
+ * _nm_setting_aggregate:
+ * @setting: the #NMSetting to aggregate.
+ * @type: the #NMConnectionAggregateType aggregate type.
+ * @arg: the in/out arguments for aggregation. They depend on @type.
+ *
+ * This is the implementation detail of _nm_connection_aggregate(). It
+ * makes no sense to call this function directly outside of _nm_connection_aggregate().
+ *
+ * Returns: %TRUE if afterwards the aggregation is complete. That means,
+ *   the only caller _nm_connection_aggregate() will not visit other settings
+ *   after a setting returns %TRUE (indicating that there is nothing further
+ *   to aggregate). Note that is very different from the boolean return
+ *   argument of _nm_connection_aggregate(), which serves a different purpose.
+ */
+gboolean
+_nm_setting_aggregate (NMSetting *setting,
+                       NMConnectionAggregateType type,
+                       gpointer arg)
+{
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (arg, FALSE);
+	g_return_val_if_fail (NM_IN_SET (type, NM_CONNECTION_AGGREGATE_ANY_SECRETS,
+	                                       NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS),
+	                      FALSE);
+
+	return NM_SETTING_GET_CLASS (setting)->aggregate (setting, type, arg);
 }
 
 static gboolean
@@ -2622,6 +2631,7 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	setting_class->clear_secrets             = clear_secrets;
 	setting_class->duplicate_copy_properties = duplicate_copy_properties;
 	setting_class->enumerate_values          = enumerate_values;
+	setting_class->aggregate                 = aggregate;
 
 	/**
 	 * NMSetting:name:

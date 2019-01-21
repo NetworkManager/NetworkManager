@@ -449,19 +449,16 @@ nm_setting_vpn_foreach_secret (NMSettingVpn *setting,
 	foreach_item_helper (setting, TRUE, func, user_data);
 }
 
-gboolean
-_nm_setting_vpn_aggregate (NMSettingVpn *setting,
-                           NMConnectionAggregateType type,
-                           gpointer arg)
+static gboolean
+aggregate (NMSetting *setting,
+           int type_i,
+           gpointer arg)
 {
-	NMSettingVpnPrivate *priv;
+	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+	NMConnectionAggregateType type = type_i;
 	NMSettingSecretFlags secret_flags;
 	const char *key_name;
 	GHashTableIter iter;
-
-	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), FALSE);
-
-	priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 
 	switch (type) {
 
@@ -984,6 +981,7 @@ nm_setting_vpn_class_init (NMSettingVpnClass *klass)
 	setting_class->need_secrets      = need_secrets;
 	setting_class->compare_property  = compare_property;
 	setting_class->clear_secrets     = clear_secrets;
+	setting_class->aggregate         = aggregate;
 
 	/**
 	 * NMSettingVpn:service-type:
