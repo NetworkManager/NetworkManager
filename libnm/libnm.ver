@@ -1536,6 +1536,7 @@ global:
 	nm_bridge_vlan_set_untagged;
 	nm_bridge_vlan_to_str;
 	nm_bridge_vlan_unref;
+	nm_lldp_neighbor_get_attr_value;
 	nm_setting_bridge_add_vlan;
 	nm_setting_bridge_clear_vlans;
 	nm_setting_bridge_get_num_vlans;

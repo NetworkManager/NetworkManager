@@ -2813,6 +2813,27 @@ nm_lldp_neighbor_get_attr_uint_value (NMLldpNeighbor *neighbor, const char *name
 }
 
 /**
+ * nm_lldp_neighbor_get_attr_value:
+ * @neighbor: the #NMLldpNeighbor
+ * @name: the attribute name
+ *
+ * Gets the value (as a GVariant) of attribute with name @name on @neighbor
+ *
+ * Returns: (transfer none): the value or %NULL if the attribute with @name was
+ * not found.
+ *
+ * Since: 1.18
+ **/
+GVariant *
+nm_lldp_neighbor_get_attr_value (NMLldpNeighbor *neighbor, const char *name)
+{
+	g_return_val_if_fail (neighbor, FALSE);
+	g_return_val_if_fail (name && name[0], FALSE);
+
+	return g_hash_table_lookup (neighbor->attrs, name);
+}
+
+/**
  * nm_lldp_neighbor_get_attr_type:
  * @neighbor: the #NMLldpNeighbor
  * @name: the attribute name
