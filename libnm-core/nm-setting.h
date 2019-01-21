@@ -248,10 +248,15 @@ typedef struct {
 	                          gpointer user_data);
 
 	/*< private >*/
+	gboolean (*aggregate) (NMSetting *setting,
+	                       int type_i,
+	                       gpointer arg);
+
+	/*< private >*/
 	const struct _NMMetaSettingInfo *setting_info;
 
 	/*< private >*/
-	gpointer padding[4];
+	gpointer padding[3];
 } NMSettingClass;
 
 GType nm_setting_get_type (void);
