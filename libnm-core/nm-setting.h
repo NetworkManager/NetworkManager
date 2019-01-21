@@ -170,6 +170,22 @@ typedef gboolean (*NMSettingClearSecretsWithFlagsFn) (NMSetting *setting,
 
 struct _NMMetaSettingInfo;
 struct _NMSettInfoSetting;
+struct _NMSettInfoProperty;
+
+/**
+ * NMSettingValueIterFn:
+ * @setting: The setting for which properties are being iterated, given to
+ * nm_setting_enumerate_values()
+ * @key: The value/property name
+ * @value: The property's value
+ * @flags: The property's flags, like %NM_SETTING_PARAM_SECRET
+ * @user_data: User data passed to nm_setting_enumerate_values()
+ */
+typedef void (*NMSettingValueIterFn) (NMSetting *setting,
+                                      const char *key,
+                                      const GValue *value,
+                                      GParamFlags flags,
+                                      gpointer user_data);
 
 typedef struct {
 	GObjectClass parent;
@@ -226,26 +242,17 @@ typedef struct {
 	                                   NMSetting *dst);
 
 	/*< private >*/
+	void (*enumerate_values) (const struct _NMSettInfoProperty *property_info,
+	                          NMSetting *setting,
+	                          NMSettingValueIterFn func,
+	                          gpointer user_data);
+
+	/*< private >*/
 	const struct _NMMetaSettingInfo *setting_info;
 
 	/*< private >*/
-	gpointer padding[5];
+	gpointer padding[4];
 } NMSettingClass;
-
-/**
- * NMSettingValueIterFn:
- * @setting: The setting for which properties are being iterated, given to
- * nm_setting_enumerate_values()
- * @key: The value/property name
- * @value: The property's value
- * @flags: The property's flags, like %NM_SETTING_PARAM_SECRET
- * @user_data: User data passed to nm_setting_enumerate_values()
- */
-typedef void (*NMSettingValueIterFn) (NMSetting *setting,
-                                      const char *key,
-                                      const GValue *value,
-                                      GParamFlags flags,
-                                      gpointer user_data);
 
 GType nm_setting_get_type (void);
 
