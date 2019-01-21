@@ -613,7 +613,8 @@ gboolean _nm_setting_sriov_sort_vfs (NMSettingSriov *setting);
 
 /*****************************************************************************/
 
-typedef struct _NMSettInfoSetting NMSettInfoSetting;
+typedef struct _NMSettInfoSetting  NMSettInfoSetting;
+typedef struct _NMSettInfoProperty NMSettInfoProperty;
 
 typedef GVariant *(*NMSettingPropertyGetFunc)           (NMSetting     *setting,
                                                          const char    *property);
@@ -637,7 +638,7 @@ typedef GVariant *(*NMSettingPropertyTransformToFunc)   (const GValue *from);
 typedef void      (*NMSettingPropertyTransformFromFunc) (GVariant *from,
                                                           GValue *to);
 
-typedef struct {
+struct _NMSettInfoProperty {
 	const char *name;
 	GParamSpec *param_spec;
 	const GVariantType *dbus_type;
@@ -649,7 +650,7 @@ typedef struct {
 
 	NMSettingPropertyTransformToFunc   to_dbus;
 	NMSettingPropertyTransformFromFunc from_dbus;
-} NMSettInfoProperty;
+};
 
 typedef struct {
 	const GVariantType *(*get_variant_type) (const struct _NMSettInfoSetting *sett_info,
