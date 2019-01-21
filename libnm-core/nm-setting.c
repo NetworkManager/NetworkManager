@@ -1729,6 +1729,27 @@ nm_setting_diff (NMSetting *a,
 	}
 }
 
+static void
+enumerate_values (const NMSettInfoProperty *property_info,
+                  NMSetting *setting,
+                  NMSettingValueIterFn func,
+                  gpointer user_data)
+{
+	GValue value = G_VALUE_INIT;
+
+	if (!property_info->param_spec)
+		return;
+
+	g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (property_info->param_spec));
+	g_object_get_property (G_OBJECT (setting), property_info->param_spec->name, &value);
+	func (setting,
+	      property_info->param_spec->name,
+	      &value,
+	      property_info->param_spec->flags,
+	      user_data);
+	g_value_unset (&value);
+}
+
 /**
  * nm_setting_enumerate_values:
  * @setting: the #NMSetting
@@ -1784,16 +1805,10 @@ nm_setting_enumerate_values (NMSetting *setting,
 	}
 
 	for (i = 0; i < sett_info->property_infos_len; i++) {
-		GParamSpec *prop_spec = _nm_sett_info_property_info_get_sorted (sett_info, i)->param_spec;
-		GValue value = G_VALUE_INIT;
-
-		if (!prop_spec)
-			continue;
-
-		g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (prop_spec));
-		g_object_get_property (G_OBJECT (setting), prop_spec->name, &value);
-		func (setting, prop_spec->name, &value, prop_spec->flags, user_data);
-		g_value_unset (&value);
+		NM_SETTING_GET_CLASS (setting)->enumerate_values (_nm_sett_info_property_info_get_sorted (sett_info, i),
+		                                                  setting,
+		                                                  func,
+		                                                  user_data);
 	}
 }
 
@@ -2606,6 +2621,7 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	setting_class->compare_property          = compare_property;
 	setting_class->clear_secrets             = clear_secrets;
 	setting_class->duplicate_copy_properties = duplicate_copy_properties;
+	setting_class->enumerate_values          = enumerate_values;
 
 	/**
 	 * NMSetting:name:
