@@ -1115,7 +1115,7 @@ add_activate_cb (GObject *object,
                  gpointer user_data)
 {
 	ActivateInfo *info = user_data;
-	gs_free GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	gboolean success;
 
 	if (info->activate_type == ACTIVATE_TYPE_ADD_AND_ACTIVATE_CONNECTION) {
