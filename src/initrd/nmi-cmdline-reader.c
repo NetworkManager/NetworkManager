@@ -81,7 +81,7 @@ get_conn (GHashTable *connections, const char *ifname, const char *type_name)
 		              NM_SETTING_CONNECTION_ID, ifname ?: "Wired Connection",
 		              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
 		              NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,
-			      NM_SETTING_CONNECTION_MULTI_CONNECT, multi_connect,
+		              NM_SETTING_CONNECTION_MULTI_CONNECT, multi_connect,
 		              NULL);
 
 		if (!type_name)
