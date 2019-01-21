@@ -2685,7 +2685,6 @@ ip_gateway_set (NMSetting  *setting,
 GArray *
 _nm_sett_info_property_override_create_array_ip_config (void)
 {
-	nm_auto_unref_gtypeclass NMSettingClass *setting_class = g_type_class_ref (NM_TYPE_SETTING_IP_CONFIG);
 	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
 	_properties_override_add_override (properties_override,
