@@ -1165,8 +1165,12 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	if (wpa_flags != NM_802_11_AP_SEC_NONE) {
 		g_string_append (security_str, "WPA1 ");
 	}
-	if (rsn_flags != NM_802_11_AP_SEC_NONE) {
+	if (   (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
+	    || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
 		g_string_append (security_str, "WPA2 ");
+	}
+	if (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE) {
+		g_string_append (security_str, "WPA3 ");
 	}
 	if (   (wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
 	    || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
