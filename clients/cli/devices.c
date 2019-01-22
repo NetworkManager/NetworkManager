@@ -44,7 +44,7 @@
 static char *
 ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
 {
-	char *flags_str[12];
+	char *flags_str[13];
 	int i = 0;
 
 	if (flags & NM_802_11_AP_SEC_PAIR_WEP40)
@@ -67,6 +67,8 @@ ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
 		flags_str[i++] = "psk";
 	if (flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
 		flags_str[i++] = "802.1X";
+	if (flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)
+		flags_str[i++] = "sae";
 	/* Make sure you grow flags_str when adding items here. */
 
 	if (i == 0)
