@@ -3612,7 +3612,7 @@ make_wpa_setting (shvarFile *ifcfg,
 	gs_unref_object NMSettingWirelessSecurity *wsec = NULL;
 	gs_free char *value = NULL;
 	const char *v;
-	gboolean wpa_psk = FALSE, wpa_eap = FALSE, ieee8021x = FALSE;
+	gboolean wpa_psk = FALSE, wpa_sae = FALSE, wpa_eap = FALSE, ieee8021x = FALSE;
 	int i_val;
 	GError *local = NULL;
 
@@ -3620,9 +3620,10 @@ make_wpa_setting (shvarFile *ifcfg,
 
 	v = svGetValueStr (ifcfg, "KEY_MGMT", &value);
 	wpa_psk = nm_streq0 (v, "WPA-PSK");
+	wpa_sae = nm_streq0 (v, "SAE");
 	wpa_eap = nm_streq0 (v, "WPA-EAP");
 	ieee8021x = nm_streq0 (v, "IEEE8021X");
-	if (!wpa_psk && !wpa_eap && !ieee8021x)
+	if (!wpa_psk && !wpa_sae && !wpa_eap && !ieee8021x)
 		return NULL; /* Not WPA or Dynamic WEP */
 
 	/* WPS */
@@ -3636,7 +3637,7 @@ make_wpa_setting (shvarFile *ifcfg,
 	              NULL);
 
 	/* Pairwise and Group ciphers (only relevant for WPA/RSN) */
-	if (wpa_psk || wpa_eap) {
+	if (wpa_psk || wpa_sae || wpa_eap) {
 		fill_wpa_ciphers (ifcfg, wsec, FALSE, adhoc);
 		fill_wpa_ciphers (ifcfg, wsec, TRUE, adhoc);
 	}
@@ -3659,7 +3660,7 @@ make_wpa_setting (shvarFile *ifcfg,
 			nm_setting_wireless_security_add_proto (wsec, "rsn");
 	}
 
-	if (wpa_psk) {
+	if (wpa_psk || wpa_sae) {
 		NMSettingSecretFlags psk_flags;
 
 		psk_flags = _secret_read_ifcfg_flags (ifcfg, "WPA_PSK_FLAGS");
@@ -3680,8 +3681,12 @@ make_wpa_setting (shvarFile *ifcfg,
 
 		if (adhoc)
 			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-none", NULL);
-		else
+		else if (wpa_psk)
 			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", NULL);
+		else if (wpa_sae)
+			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "sae", NULL);
+		else
+			g_assert_not_reached ();
 	} else if (wpa_eap || ieee8021x) {
 		/* Adhoc mode is mutually exclusive with any 802.1x-based authentication */
 		if (adhoc) {
