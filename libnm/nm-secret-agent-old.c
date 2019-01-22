@@ -51,13 +51,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSecretAgentOld,
 );
 
 typedef struct {
-	gboolean registered;
-	gboolean registering;
-	NMSecretAgentCapabilities capabilities;
-
 	GDBusConnection *bus;
-	gboolean private_bus;
-	gboolean session_bus;
 	NMDBusAgentManager *manager_proxy;
 	NMDBusSecretAgent *dbus_secret_agent;
 
@@ -65,8 +59,15 @@ typedef struct {
 	CList gsi_lst_head;
 
 	char *identifier;
-	gboolean auto_register;
-	gboolean suppress_auto;
+
+	NMSecretAgentCapabilities capabilities;
+
+	bool registered:1;
+	bool registering:1;
+	bool private_bus:1;
+	bool session_bus:1;
+	bool auto_register:1;
+	bool suppress_auto:1;
 } NMSecretAgentOldPrivate;
 
 static void nm_secret_agent_old_initable_iface_init (GInitableIface *iface);
