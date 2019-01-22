@@ -1049,8 +1049,8 @@ _ppp_manager_start (NMPPPManager *self,
 
 	_LOGI ("starting PPP connection");
 
-	_LOGD ("command line: %s", cmd_str);
-	       (cmd_str = g_strjoinv (" ", (char **) ppp_cmd->pdata));
+	_LOGD ("command line: %s",
+	       (cmd_str = g_strjoinv (" ", (char **) ppp_cmd->pdata)));
 
 	priv->pid = 0;
 	if (!g_spawn_async (NULL,
