@@ -1090,7 +1090,8 @@ void
 nm_secret_agent_simple_enable (NMSecretAgentSimple *self, const char *path)
 {
 	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (self);
-	GList *requests, *iter;
+	gs_free RequestData **requests = NULL;
+	gsize i;
 	gs_free char *path_full = NULL;
 
 	/* The path is only used to match a request_id with the current
@@ -1109,11 +1110,9 @@ nm_secret_agent_simple_enable (NMSecretAgentSimple *self, const char *path)
 	priv->enabled = TRUE;
 
 	/* Service pending secret requests. */
-	requests = g_hash_table_get_values (priv->requests);
-	for (iter = requests; iter; iter = g_list_next (iter))
-		request_secrets_from_ui (iter->data);
-
-	g_list_free (requests);
+	requests = (RequestData **) g_hash_table_get_keys_as_array (priv->requests, NULL);
+	for (i = 0; requests[i]; i++)
+		request_secrets_from_ui (requests[i]);
 }
 
 /*****************************************************************************/
