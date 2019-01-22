@@ -125,7 +125,6 @@ name_owner_changed (GObject *proxy,
 {
 	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (user_data);
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
-	GSList *iter;
 	char *owner;
 
 	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (proxy));
@@ -134,16 +133,14 @@ name_owner_changed (GObject *proxy,
 			nm_secret_agent_old_register_async (self, NULL, NULL, NULL);
 		g_free (owner);
 	} else {
-		/* Cancel any pending secrets requests */
-		for (iter = priv->pending_gets; iter; iter = g_slist_next (iter)) {
-			GetSecretsInfo *info = iter->data;
+		while (priv->pending_gets) {
+			GetSecretsInfo *info = priv->pending_gets->data;
 
+			priv->pending_gets = g_slist_remove (priv->pending_gets, info);
 			NM_SECRET_AGENT_OLD_GET_CLASS (self)->cancel_get_secrets (self,
 			                                                          info->path,
 			                                                          info->setting_name);
 		}
-		g_slist_free (priv->pending_gets);
-		priv->pending_gets = NULL;
 
 		_internal_unregister (self);
 	}
@@ -307,7 +304,6 @@ get_secrets_cb (NMSecretAgentOld *self,
 		                                       g_variant_new ("(@a{sa{sv}})", secrets));
 	}
 
-	/* Remove the request from internal tracking */
 	get_secrets_info_finalize (self, info);
 }
 
@@ -390,10 +386,12 @@ impl_secret_agent_old_cancel_get_secrets (NMSecretAgentOld *self,
 		return;
 	}
 
-	/* Send the cancel request up to the subclass and finalize it */
+	priv->pending_gets = g_slist_remove (priv->pending_gets, info);
+
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->cancel_get_secrets (self,
 	                                                          info->path,
 	                                                          info->setting_name);
+
 	g_dbus_method_invocation_return_value (context, NULL);
 }
 
