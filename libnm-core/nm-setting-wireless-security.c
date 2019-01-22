@@ -863,6 +863,15 @@ need_secrets (NMSetting *setting)
 		goto no_secrets;
 	}
 
+	/* SAE, used in MESH and WPA3-Personal */
+	if (strcmp (priv->key_mgmt, "sae") == 0) {
+		if (!priv->psk || !*priv->psk) {
+			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_PSK);
+			return secrets;
+		}
+		goto no_secrets;
+	}
+
 	/* LEAP */
 	if (   priv->auth_alg
 	    && !strcmp (priv->auth_alg, "leap")
@@ -894,7 +903,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingWirelessSecurity *self = NM_SETTING_WIRELESS_SECURITY (setting);
 	NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (self);
-	const char *valid_key_mgmt[] = { "none", "ieee8021x", "wpa-none", "wpa-psk", "wpa-eap", NULL };
+	const char *valid_key_mgmt[] = { "none", "ieee8021x", "wpa-none", "wpa-psk", "wpa-eap", "sae", NULL };
 	const char *valid_auth_algs[] = { "open", "shared", "leap", NULL };
 	const char *valid_protos[] = { "wpa", "rsn", NULL };
 	const char *valid_pairwise[] = { "tkip", "ccmp", NULL };
@@ -1072,14 +1081,12 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	if (   NM_IN_SET (priv->pmf,
 	                  NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL,
 	                  NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED)
-	    && !NM_IN_STRSET (priv->key_mgmt, "wpa-eap", "wpa-psk")) {
+	    && !NM_IN_STRSET (priv->key_mgmt, "wpa-eap", "wpa-psk", "sae")) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("'%s' can only be used with '%s=%s' or '%s=%s'"),
-		             priv->pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL ? "optional" : "required",
-		             NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-eap",
-		             NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk");
+		             _("'%s' can only be used with 'wpa-eap', 'wpa-psk' or 'sae' key management "),
+		             priv->pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL ? "optional" : "required");
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_SETTING_WIRELESS_SECURITY_PMF);
 		return FALSE;
 	}
@@ -1139,7 +1146,9 @@ verify_secrets (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 
 	/* WPA-PSK */
-	if (priv->psk && !nm_utils_wpa_psk_valid (priv->psk)) {
+	if (   priv->psk
+	    && strcmp (priv->key_mgmt, "sae") != 0
+	    && !nm_utils_wpa_psk_valid (priv->psk)) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -1447,8 +1456,8 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 *
 	 * Key management used for the connection.  One of "none" (WEP), "ieee8021x"
 	 * (Dynamic WEP), "wpa-none" (Ad-Hoc WPA-PSK), "wpa-psk" (infrastructure
-	 * WPA-PSK), or "wpa-eap" (WPA-Enterprise).  This property must be set for
-	 * any Wi-Fi connection that uses security.
+	 * WPA-PSK), "sae" (SAE) or "wpa-eap" (WPA-Enterprise).
+	 * This property must be set for any Wi-Fi connection that uses security.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: key-mgmt
@@ -1722,12 +1731,11 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	/**
 	 * NMSettingWirelessSecurity:psk:
 	 *
-	 * Pre-Shared-Key for WPA networks.  If the key is 64-characters long, it
-	 * must contain only hexadecimal characters and is interpreted as a
-	 * hexadecimal WPA key.  Otherwise, the key must be between 8 and 63 ASCII
-	 * characters (as specified in the 802.11i standard) and is interpreted as a
-	 * WPA passphrase, and is hashed to derive the actual WPA-PSK used when
-	 * connecting to the Wi-Fi network.
+	 * Pre-Shared-Key for WPA networks. For WPA-PSK, it's either an ASCII
+	 * passphrase of 8 to 63 characters that is (as specified in the 802.11i
+	 * standard) hashed to derive the actual key, or the key in form of 64
+	 * hexadecimal character. The WPA3-Personal networks use a passphrase
+	 * of any length for SAE authentication.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: psk
