@@ -138,8 +138,8 @@ name_owner_changed (GObject *proxy,
 			GetSecretsInfo *info = iter->data;
 
 			NM_SECRET_AGENT_OLD_GET_CLASS (self)->cancel_get_secrets (self,
-			                                                      info->path,
-			                                                      info->setting_name);
+			                                                          info->path,
+			                                                          info->setting_name);
 		}
 		g_slist_free (priv->pending_gets);
 		priv->pending_gets = NULL;
@@ -338,13 +338,13 @@ impl_secret_agent_old_get_secrets (NMSecretAgentOld *self,
 	priv->pending_gets = g_slist_append (priv->pending_gets, info);
 
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->get_secrets (self,
-	                                               connection,
-	                                               connection_path,
-	                                               setting_name,
-	                                               (const char **) hints,
-	                                               flags,
-	                                               get_secrets_cb,
-	                                               info);
+	                                                   connection,
+	                                                   connection_path,
+	                                                   setting_name,
+	                                                   (const char **) hints,
+	                                                   flags,
+	                                                   get_secrets_cb,
+	                                                   info);
 	g_object_unref (connection);
 }
 
@@ -391,8 +391,8 @@ impl_secret_agent_old_cancel_get_secrets (NMSecretAgentOld *self,
 
 	/* Send the cancel request up to the subclass and finalize it */
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->cancel_get_secrets (self,
-	                                                      info->path,
-	                                                      info->setting_name);
+	                                                          info->path,
+	                                                          info->setting_name);
 	g_dbus_method_invocation_return_value (context, NULL);
 }
 
@@ -427,10 +427,10 @@ impl_secret_agent_old_save_secrets (NMSecretAgentOld *self,
 	}
 
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->save_secrets (self,
-	                                                connection,
-	                                                connection_path,
-	                                                save_secrets_cb,
-	                                                context);
+	                                                    connection,
+	                                                    connection_path,
+	                                                    save_secrets_cb,
+	                                                    context);
 	g_object_unref (connection);
 }
 
@@ -465,10 +465,10 @@ impl_secret_agent_old_delete_secrets (NMSecretAgentOld *self,
 	}
 
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->delete_secrets (self,
-	                                                  connection,
-	                                                  connection_path,
-	                                                  delete_secrets_cb,
-	                                                  context);
+	                                                      connection,
+	                                                      connection_path,
+	                                                      delete_secrets_cb,
+	                                                      context);
 	g_object_unref (connection);
 }
 
@@ -916,13 +916,13 @@ nm_secret_agent_old_get_secrets (NMSecretAgentOld *self,
 	g_return_if_fail (callback != NULL);
 
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->get_secrets (self,
-	                                               connection,
-	                                               nm_connection_get_path (connection),
-	                                               setting_name,
-	                                               hints,
-	                                               flags,
-	                                               callback,
-	                                               user_data);
+	                                                   connection,
+	                                                   nm_connection_get_path (connection),
+	                                                   setting_name,
+	                                                   hints,
+	                                                   flags,
+	                                                   callback,
+	                                                   user_data);
 }
 
 /**
@@ -946,10 +946,10 @@ nm_secret_agent_old_save_secrets (NMSecretAgentOld *self,
 	g_return_if_fail (nm_connection_get_path (connection));
 
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->save_secrets (self,
-	                                                connection,
-	                                                nm_connection_get_path (connection),
-	                                                callback,
-	                                                user_data);
+	                                                    connection,
+	                                                    nm_connection_get_path (connection),
+	                                                    callback,
+	                                                    user_data);
 }
 
 /**
@@ -973,10 +973,10 @@ nm_secret_agent_old_delete_secrets (NMSecretAgentOld *self,
 	g_return_if_fail (nm_connection_get_path (connection));
 
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->delete_secrets (self,
-	                                                  connection,
-	                                                  nm_connection_get_path (connection),
-	                                                  callback,
-	                                                  user_data);
+	                                                      connection,
+	                                                      nm_connection_get_path (connection),
+	                                                      callback,
+	                                                      user_data);
 }
 
 /*****************************************************************************/
