@@ -3464,7 +3464,8 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 					/* WEP */
 					con_password = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
 				} else if (   (ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
-				           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)) {
+				           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
+				           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)) {
 					/* WPA PSK */
 					con_password = nm_setting_wireless_security_get_psk (s_wsec);
 				}
@@ -3494,7 +3495,8 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 				              wep_passphrase ? NM_WEP_KEY_TYPE_PASSPHRASE: NM_WEP_KEY_TYPE_KEY,
 				              NULL);
 			} else if (   (ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
-			           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)) {
+			           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
+			           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)) {
 				/* WPA PSK */
 				g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_PSK, password, NULL);
 			}
