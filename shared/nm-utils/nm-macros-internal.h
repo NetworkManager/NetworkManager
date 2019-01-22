@@ -1127,6 +1127,28 @@ nm_clear_g_cancellable (GCancellable **cancellable)
 	return FALSE;
 }
 
+/* If @cancellable_id is not 0, clear it and call g_cancellable_disconnect().
+ * @cancellable may be %NULL, if there is nothing to disconnect.
+ *
+ * It's like nm_clear_g_signal_handler(), except that it uses g_cancellable_disconnect()
+ * instead of g_signal_handler_disconnect().
+ *
+ * Note the warning in glib documentation about dead-lock and what g_cancellable_disconnect()
+ * actually does. */
+static inline gboolean
+nm_clear_g_cancellable_disconnect (GCancellable *cancellable, gulong *cancellable_id)
+{
+	gulong id;
+
+	if (   cancellable_id
+	    && (id = *cancellable_id) != 0) {
+		*cancellable_id = 0;
+		g_cancellable_disconnect (cancellable, id);
+		return TRUE;
+	}
+	return FALSE;
+}
+
 /*****************************************************************************/
 
 static inline GVariant *
