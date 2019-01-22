@@ -1116,7 +1116,7 @@ nm_secret_agent_simple_init (NMSecretAgentSimple *agent)
  * Returns: a new #NMSecretAgentSimple if the agent creation is successful
  * or %NULL in case of a failure.
  */
-NMSecretAgentOld *
+NMSecretAgentSimple *
 nm_secret_agent_simple_new (const char *name)
 {
 	return g_initable_new (NM_TYPE_SECRET_AGENT_SIMPLE, NULL, NULL,

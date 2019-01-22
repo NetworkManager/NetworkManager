@@ -1017,7 +1017,7 @@ nmc_cleanup (NmCli *nmc)
 		g_string_free (g_steal_pointer (&nmc->return_text), TRUE);
 
 	if (nmc->secret_agent) {
-		nm_secret_agent_old_unregister (nmc->secret_agent, NULL, NULL);
+		nm_secret_agent_old_unregister (NM_SECRET_AGENT_OLD (nmc->secret_agent), NULL, NULL);
 		g_clear_object (&nmc->secret_agent);
 	}
 

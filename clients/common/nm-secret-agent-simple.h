@@ -56,7 +56,7 @@ typedef struct _NMSecretAgentSimpleClass NMSecretAgentSimpleClass;
 
 GType nm_secret_agent_simple_get_type (void);
 
-NMSecretAgentOld *nm_secret_agent_simple_new                 (const char          *name);
+NMSecretAgentSimple *nm_secret_agent_simple_new              (const char          *name);
 
 void              nm_secret_agent_simple_response            (NMSecretAgentSimple *self,
                                                               const char          *request_id,

@@ -240,7 +240,7 @@ activate_connection (NMConnection *connection,
                      NMObject     *specific_object)
 {
 	NmtNewtForm *form;
-	gs_unref_object NMSecretAgentOld *agent = NULL;
+	gs_unref_object NMSecretAgentSimple *agent = NULL;
 	NmtNewtWidget *label;
 	NmtSyncOp op;
 	const char *specific_object_path;
@@ -257,7 +257,7 @@ activate_connection (NMConnection *connection,
 	agent = nm_secret_agent_simple_new ("nmtui");
 	if (agent) {
 		if (connection) {
-			nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (agent),
+			nm_secret_agent_simple_enable (agent,
 			                               nm_object_get_path (NM_OBJECT (connection)));
 		}
 		g_signal_connect (agent,
@@ -303,7 +303,7 @@ activate_connection (NMConnection *connection,
 	if (agent && !connection) {
 		connection = NM_CONNECTION (nm_active_connection_get_connection (ac));
 		if (connection) {
-			nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (agent),
+			nm_secret_agent_simple_enable (agent,
 			                               nm_object_get_path (NM_OBJECT (connection)));
 		}
 	}
@@ -341,7 +341,7 @@ activate_connection (NMConnection *connection,
 	g_object_unref (form);
 
 	if (agent)
-		nm_secret_agent_old_unregister (agent, NULL, NULL);
+		nm_secret_agent_old_unregister (NM_SECRET_AGENT_OLD (agent), NULL, NULL);
 }
 
 static void
