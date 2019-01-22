@@ -1894,7 +1894,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 			                                                    TRUE,
 			                                                    NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 			                                                    NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION,
-			                                                    NM_MAKE_STRV ("psk"),
+			                                                    NM_MAKE_STRV (NM_SETTING_WIRELESS_SECURITY_PSK),
 			                                                    act_psk_cb,
 			                                                    self);
 			nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
