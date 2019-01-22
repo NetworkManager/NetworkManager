@@ -1013,10 +1013,10 @@ typedef struct {
 	NMSecretAgentOld *self;
 	GCancellable *cancellable;
 	GSimpleAsyncResult *simple;
-} NMSecretAgentOldInitData;
+} InitData;
 
 static void
-init_async_complete (NMSecretAgentOldInitData *init_data, GError *error)
+init_async_complete (InitData *init_data, GError *error)
 {
 	if (!error)
 		g_simple_async_result_set_op_res_gboolean (init_data->simple, TRUE);
@@ -1027,14 +1027,14 @@ init_async_complete (NMSecretAgentOldInitData *init_data, GError *error)
 
 	g_object_unref (init_data->simple);
 	g_clear_object (&init_data->cancellable);
-	g_slice_free (NMSecretAgentOldInitData, init_data);
+	g_slice_free (InitData, init_data);
 }
 
 static void
 init_async_registered (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (object);
-	NMSecretAgentOldInitData *init_data = user_data;
+	InitData *init_data = user_data;
 	GError *error = NULL;
 
 	nm_secret_agent_old_register_finish (self, result, &error);
@@ -1044,7 +1044,7 @@ init_async_registered (GObject *object, GAsyncResult *result, gpointer user_data
 static void
 init_async_got_proxy (GObject *object, GAsyncResult *result, gpointer user_data)
 {
-	NMSecretAgentOldInitData *init_data = user_data;
+	InitData *init_data = user_data;
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (init_data->self);
 	GError *error = NULL;
 
@@ -1066,7 +1066,7 @@ init_async_got_proxy (GObject *object, GAsyncResult *result, gpointer user_data)
 static void
 init_async_got_bus (GObject *initable, GAsyncResult *result, gpointer user_data)
 {
-	NMSecretAgentOldInitData *init_data = user_data;
+	InitData *init_data = user_data;
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (init_data->self);
 	GError *error = NULL;
 
@@ -1196,10 +1196,10 @@ init_async (GAsyncInitable *initable, int io_priority,
             gpointer user_data)
 {
 	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (initable);
-	NMSecretAgentOldInitData *init_data;
+	InitData *init_data;
 
-	init_data = g_slice_new (NMSecretAgentOldInitData);
-	*init_data = (NMSecretAgentOldInitData) {
+	init_data = g_slice_new (InitData);
+	*init_data = (InitData) {
 		.self = self,
 		.cancellable = nm_g_object_ref (cancellable),
 		.simple = g_simple_async_result_new (G_OBJECT (initable),
