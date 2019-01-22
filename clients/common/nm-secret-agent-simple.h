@@ -51,13 +51,8 @@ typedef struct {
 
 #define NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS  "request-secrets"
 
-typedef struct {
-	NMSecretAgentOld parent;
-} NMSecretAgentSimple;
-
-typedef struct {
-	NMSecretAgentOldClass parent;
-} NMSecretAgentSimpleClass;
+typedef struct _NMSecretAgentSimple      NMSecretAgentSimple;
+typedef struct _NMSecretAgentSimpleClass NMSecretAgentSimpleClass;
 
 GType nm_secret_agent_simple_get_type (void);
 

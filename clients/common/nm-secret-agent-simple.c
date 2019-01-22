@@ -70,9 +70,18 @@ typedef struct {
 	gboolean enabled;
 } NMSecretAgentSimplePrivate;
 
+struct _NMSecretAgentSimple {
+	NMSecretAgentOld parent;
+	NMSecretAgentSimplePrivate _priv;
+};
+
+struct _NMSecretAgentSimpleClass {
+	NMSecretAgentOldClass parent;
+};
+
 G_DEFINE_TYPE (NMSecretAgentSimple, nm_secret_agent_simple, NM_TYPE_SECRET_AGENT_OLD)
 
-#define NM_SECRET_AGENT_SIMPLE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimplePrivate))
+#define NM_SECRET_AGENT_SIMPLE_GET_PRIVATE(self)  _NM_GET_PRIVATE (self, NMSecretAgentSimple, NM_IS_SECRET_AGENT_SIMPLE, NMSecretAgentOld)
 
 /*****************************************************************************/
 
@@ -1159,8 +1168,6 @@ nm_secret_agent_simple_class_init (NMSecretAgentSimpleClass *klass)
 {
 	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 	NMSecretAgentOldClass *agent_class = NM_SECRET_AGENT_OLD_CLASS (klass);
-
-	g_type_class_add_private (klass, sizeof (NMSecretAgentSimplePrivate));
 
 	gobject_class->finalize = nm_secret_agent_simple_finalize;
 
