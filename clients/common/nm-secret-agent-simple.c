@@ -31,26 +31,16 @@
 
 #include "nm-default.h"
 
+#include "nm-secret-agent-simple.h"
+
 #include <gio/gunixoutputstream.h>
 #include <gio/gunixinputstream.h>
 #include <string.h>
 
 #include "nm-vpn-service-plugin.h"
-
 #include "nm-vpn-helpers.h"
-#include "nm-secret-agent-simple.h"
 
-G_DEFINE_TYPE (NMSecretAgentSimple, nm_secret_agent_simple, NM_TYPE_SECRET_AGENT_OLD)
-
-#define NM_SECRET_AGENT_SIMPLE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimplePrivate))
-
-enum {
-	REQUEST_SECRETS,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
+/*****************************************************************************/
 
 typedef struct {
 	NMSecretAgentSimple           *self;
@@ -64,6 +54,14 @@ typedef struct {
 	NMSecretAgentGetSecretsFlags   flags;
 } NMSecretAgentSimpleRequest;
 
+enum {
+	REQUEST_SECRETS,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
 typedef struct {
 	/* <char *request_id, NMSecretAgentSimpleRequest *request> */
 	GHashTable *requests;
@@ -71,6 +69,12 @@ typedef struct {
 	char *path;
 	gboolean enabled;
 } NMSecretAgentSimplePrivate;
+
+G_DEFINE_TYPE (NMSecretAgentSimple, nm_secret_agent_simple, NM_TYPE_SECRET_AGENT_OLD)
+
+#define NM_SECRET_AGENT_SIMPLE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimplePrivate))
+
+/*****************************************************************************/
 
 static void
 nm_secret_agent_simple_request_free (gpointer data)
@@ -96,45 +100,7 @@ nm_secret_agent_simple_request_cancel (NMSecretAgentSimpleRequest *request,
 	g_hash_table_remove (priv->requests, request->request_id);
 }
 
-static void
-nm_secret_agent_simple_init (NMSecretAgentSimple *agent)
-{
-	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (agent);
-
-	priv->requests = g_hash_table_new_full (nm_str_hash, g_str_equal,
-	                                        g_free, nm_secret_agent_simple_request_free);
-}
-
-static void
-nm_secret_agent_simple_finalize (GObject *object)
-{
-	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (object);
-	GError *error;
-	GHashTableIter iter;
-	gpointer key;
-	gpointer value;
-
-	error = g_error_new (NM_SECRET_AGENT_ERROR,
-	                     NM_SECRET_AGENT_ERROR_AGENT_CANCELED,
-	                     "The secret agent is going away");
-
-	g_hash_table_iter_init (&iter, priv->requests);
-	while (g_hash_table_iter_next (&iter, &key, &value)) {
-		NMSecretAgentSimpleRequest *request = value;
-
-		request->callback (NM_SECRET_AGENT_OLD (object),
-		                   request->connection,
-		                   NULL, error,
-		                   request->callback_data);
-	}
-
-	g_hash_table_destroy (priv->requests);
-	g_error_free (error);
-
-	g_free (priv->path);
-
-	G_OBJECT_CLASS (nm_secret_agent_simple_parent_class)->finalize (object);
-}
+/*****************************************************************************/
 
 static gboolean
 strv_has (char **haystack,
@@ -1127,6 +1093,67 @@ nm_secret_agent_simple_enable (NMSecretAgentSimple *self, const char *path)
 	g_list_free (requests);
 }
 
+/*****************************************************************************/
+
+static void
+nm_secret_agent_simple_init (NMSecretAgentSimple *agent)
+{
+	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (agent);
+
+	priv->requests = g_hash_table_new_full (nm_str_hash, g_str_equal,
+	                                        g_free, nm_secret_agent_simple_request_free);
+}
+
+/**
+ * nm_secret_agent_simple_new:
+ * @name: the identifier of secret agent
+ *
+ * Creates a new #NMSecretAgentSimple. It does not serve any requests until
+ * nm_secret_agent_simple_enable() is called.
+ *
+ * Returns: a new #NMSecretAgentSimple if the agent creation is successful
+ * or %NULL in case of a failure.
+ */
+NMSecretAgentOld *
+nm_secret_agent_simple_new (const char *name)
+{
+	return g_initable_new (NM_TYPE_SECRET_AGENT_SIMPLE, NULL, NULL,
+	                       NM_SECRET_AGENT_OLD_IDENTIFIER, name,
+	                       NM_SECRET_AGENT_OLD_CAPABILITIES, NM_SECRET_AGENT_CAPABILITY_VPN_HINTS,
+	                       NULL);
+}
+
+static void
+nm_secret_agent_simple_finalize (GObject *object)
+{
+	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (object);
+	GError *error;
+	GHashTableIter iter;
+	gpointer key;
+	gpointer value;
+
+	error = g_error_new (NM_SECRET_AGENT_ERROR,
+	                     NM_SECRET_AGENT_ERROR_AGENT_CANCELED,
+	                     "The secret agent is going away");
+
+	g_hash_table_iter_init (&iter, priv->requests);
+	while (g_hash_table_iter_next (&iter, &key, &value)) {
+		NMSecretAgentSimpleRequest *request = value;
+
+		request->callback (NM_SECRET_AGENT_OLD (object),
+		                   request->connection,
+		                   NULL, error,
+		                   request->callback_data);
+	}
+
+	g_hash_table_destroy (priv->requests);
+	g_error_free (error);
+
+	g_free (priv->path);
+
+	G_OBJECT_CLASS (nm_secret_agent_simple_parent_class)->finalize (object);
+}
+
 void
 nm_secret_agent_simple_class_init (NMSecretAgentSimpleClass *klass)
 {
@@ -1173,23 +1200,4 @@ nm_secret_agent_simple_class_init (NMSecretAgentSimpleClass *klass)
 	                                         G_TYPE_STRING, /* title */
 	                                         G_TYPE_STRING, /* prompt */
 	                                         G_TYPE_PTR_ARRAY);
-}
-
-/**
- * nm_secret_agent_simple_new:
- * @name: the identifier of secret agent
- *
- * Creates a new #NMSecretAgentSimple. It does not serve any requests until
- * nm_secret_agent_simple_enable() is called.
- *
- * Returns: a new #NMSecretAgentSimple if the agent creation is successful
- * or %NULL in case of a failure.
- */
-NMSecretAgentOld *
-nm_secret_agent_simple_new (const char *name)
-{
-	return g_initable_new (NM_TYPE_SECRET_AGENT_SIMPLE, NULL, NULL,
-	                       NM_SECRET_AGENT_OLD_IDENTIFIER, name,
-	                       NM_SECRET_AGENT_OLD_CAPABILITIES, NM_SECRET_AGENT_CAPABILITY_VPN_HINTS,
-	                       NULL);
 }
