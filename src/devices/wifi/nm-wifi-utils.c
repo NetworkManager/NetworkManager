@@ -739,6 +739,12 @@ nm_wifi_utils_complete_connection (GBytes *ap_ssid,
 		 * setting.  Since there's so much configuration required for it, there's
 		 * no way it can be automatically completed.
 		 */
+	} else if (   (key_mgmt && !strcmp (key_mgmt, "sae"))
+	           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)) {
+		g_object_set (s_wsec,
+		              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "sae",
+		              NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open",
+		              NULL);
 	} else if (   (key_mgmt && !strcmp (key_mgmt, "wpa-psk"))
 	           || (ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
 	           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)) {
