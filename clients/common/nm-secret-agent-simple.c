@@ -111,20 +111,6 @@ _request_data_cancel (RequestData *request,
 
 /*****************************************************************************/
 
-static gboolean
-strv_has (char **haystack,
-          char   *needle)
-{
-	char **iter;
-
-	for (iter = haystack; iter && *iter; iter++) {
-		if (g_strcmp0 (*iter, needle) == 0)
-			return TRUE;
-	}
-
-	return FALSE;
-}
-
 /**
  * NMSecretAgentSimpleSecret:
  * @name: the user-visible name of the secret. Eg, "WEP Passphrase".
@@ -776,7 +762,7 @@ request_secrets_from_ui (RequestData *request)
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_GSM_SETTING_NAME)) {
 		NMSettingGsm *s_gsm = nm_connection_get_setting_gsm (request->connection);
 
-		if (strv_has (request->hints, "pin")) {
+		if (g_strv_contains (NM_CAST_STRV_CC (request->hints), "pin")) {
 			title = _("PIN code required");
 			msg = g_strdup (_("PIN code is needed for the mobile broadband device"));
 
