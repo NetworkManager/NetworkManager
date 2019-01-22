@@ -1160,21 +1160,17 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	if (   (flags & NM_802_11_AP_FLAGS_PRIVACY)
 	    && (wpa_flags == NM_802_11_AP_SEC_NONE)
 	    && (rsn_flags == NM_802_11_AP_SEC_NONE)) {
-		g_string_append (security_str, _("WEP"));
-		g_string_append_c (security_str, ' ');
+		g_string_append (security_str, "WEP ");
 	}
 	if (wpa_flags != NM_802_11_AP_SEC_NONE) {
-		g_string_append (security_str, _("WPA1"));
-		g_string_append_c (security_str, ' ');
+		g_string_append (security_str, "WPA1 ");
 	}
 	if (rsn_flags != NM_802_11_AP_SEC_NONE) {
-		g_string_append (security_str, _("WPA2"));
-		g_string_append_c (security_str, ' ');
+		g_string_append (security_str, "WPA2 ");
 	}
 	if (   (wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
 	    || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
-		g_string_append   (security_str, _("802.1X"));
-		g_string_append_c (security_str, ' ');
+		g_string_append   (security_str, "802.1X ");
 	}
 
 	if (security_str->len > 0)
