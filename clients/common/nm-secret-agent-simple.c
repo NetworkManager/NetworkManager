@@ -961,7 +961,7 @@ nm_secret_agent_simple_response (NMSecretAgentSimple *self,
 {
 	NMSecretAgentSimplePrivate *priv;
 	RequestData *request;
-	GVariant *dict = NULL;
+	gs_unref_variant GVariant *secrets_dict = NULL;
 	gs_free_error GError *error = NULL;
 	int i;
 
@@ -1018,14 +1018,14 @@ nm_secret_agent_simple_response (NMSecretAgentSimple *self,
 		g_hash_table_iter_init (&iter, settings);
 		while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &setting_builder))
 			g_variant_builder_add (&conn_builder, "{sa{sv}}", name, setting_builder);
-		dict = g_variant_builder_end (&conn_builder);
+		secrets_dict = g_variant_ref_sink (g_variant_builder_end (&conn_builder));
 		g_hash_table_destroy (settings);
 	} else {
 		error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_USER_CANCELED,
 		                     "User cancelled");
 	}
 
-	_request_data_complete (request, dict, error, NULL);
+	_request_data_complete (request, secrets_dict, error, NULL);
 }
 
 static void
