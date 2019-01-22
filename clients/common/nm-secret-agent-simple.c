@@ -92,7 +92,6 @@ _request_data_free (gpointer data)
 
 	g_free (request->request_id);
 	nm_clear_g_cancellable (&request->cancellable);
-	g_object_unref (request->self);
 	g_object_unref (request->connection);
 	g_strfreev (request->hints);
 
@@ -910,7 +909,7 @@ get_secrets (NMSecretAgentOld                 *agent,
 
 	request = g_slice_new (RequestData);
 	*request = (RequestData) {
-		.self = g_object_ref (self),
+		.self = self,
 		.connection = g_object_ref (connection),
 		.hints = g_strdupv ((char **) hints),
 		.callback = callback,
@@ -1123,7 +1122,7 @@ nm_secret_agent_simple_new (const char *name)
 }
 
 static void
-finalize (GObject *object)
+dispose (GObject *object)
 {
 	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (object);
 	gs_free_error GError *error = NULL;
@@ -1145,6 +1144,14 @@ finalize (GObject *object)
 		g_hash_table_iter_remove (&iter);
 	}
 
+	G_OBJECT_CLASS (nm_secret_agent_simple_parent_class)->dispose (object);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (object);
+
 	g_hash_table_destroy (priv->requests);
 
 	g_free (priv->path);
@@ -1158,6 +1165,7 @@ nm_secret_agent_simple_class_init (NMSecretAgentSimpleClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSecretAgentOldClass *agent_class = NM_SECRET_AGENT_OLD_CLASS (klass);
 
+	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
 	agent_class->get_secrets        = get_secrets;
