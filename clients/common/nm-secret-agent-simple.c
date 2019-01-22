@@ -1135,15 +1135,12 @@ dispose (GObject *object)
 
 	g_hash_table_iter_init (&iter, priv->requests);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &request)) {
-		if (!error) {
-			g_set_error (&error,
-			             NM_SECRET_AGENT_ERROR,
-			             NM_SECRET_AGENT_ERROR_AGENT_CANCELED,
-			             "The secret agent is going away");
-		}
+		if (!error)
+			nm_utils_error_set_cancelled (&error, TRUE, "NMSecretAgentSimple");
 		request->callback (NM_SECRET_AGENT_OLD (object),
 		                   request->connection,
-		                   NULL, error,
+		                   NULL,
+		                   error,
 		                   request->callback_data);
 		g_hash_table_iter_remove (&iter);
 	}
