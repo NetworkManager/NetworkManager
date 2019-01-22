@@ -29,6 +29,7 @@
 #include "nm-dbus-helpers.h"
 #include "nm-simple-connection.h"
 #include "nm-core-internal.h"
+#include "c-list/src/c-list.h"
 
 #include "introspection/org.freedesktop.NetworkManager.SecretAgent.h"
 #include "introspection/org.freedesktop.NetworkManager.AgentManager.h"
@@ -39,6 +40,7 @@ typedef struct {
 	char *path;
 	char *setting_name;
 	GDBusMethodInvocation *context;
+	CList gsi_lst;
 } GetSecretsInfo;
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMSecretAgentOld,
@@ -60,7 +62,7 @@ typedef struct {
 	NMDBusSecretAgent *dbus_secret_agent;
 
 	/* GetSecretsInfo structs of in-flight GetSecrets requests */
-	GSList *pending_gets;
+	CList gsi_lst_head;
 
 	char *identifier;
 	gboolean auto_register;
@@ -93,18 +95,15 @@ _internal_unregister (NMSecretAgentOld *self)
 }
 
 static void
-get_secrets_info_finalize (NMSecretAgentOld *self, GetSecretsInfo *info)
+get_secrets_info_free (GetSecretsInfo *info)
 {
-	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
+	nm_assert (info);
 
-	g_return_if_fail (info != NULL);
-
-	priv->pending_gets = g_slist_remove (priv->pending_gets, info);
+	c_list_unlink_stale (&info->gsi_lst);
 
 	g_free (info->path);
 	g_free (info->setting_name);
-	memset (info, 0, sizeof (*info));
-	g_free (info);
+	g_slice_free (GetSecretsInfo, info);
 }
 
 static inline gboolean
@@ -125,18 +124,16 @@ name_owner_changed (GObject *proxy,
 {
 	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (user_data);
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
-	char *owner;
+	gs_free char *owner = NULL;
+	GetSecretsInfo *info;
 
 	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (proxy));
-	if (owner != NULL) {
+	if (owner) {
 		if (should_auto_register (self))
 			nm_secret_agent_old_register_async (self, NULL, NULL, NULL);
-		g_free (owner);
 	} else {
-		while (priv->pending_gets) {
-			GetSecretsInfo *info = priv->pending_gets->data;
-
-			priv->pending_gets = g_slist_remove (priv->pending_gets, info);
+		while ((info = c_list_first_entry (&priv->gsi_lst_head, GetSecretsInfo, gsi_lst))) {
+			c_list_unlink (&info->gsi_lst);
 			NM_SECRET_AGENT_OLD_GET_CLASS (self)->cancel_get_secrets (self,
 			                                                          info->path,
 			                                                          info->setting_name);
@@ -304,7 +301,7 @@ get_secrets_cb (NMSecretAgentOld *self,
 		                                       g_variant_new ("(@a{sa{sv}})", secrets));
 	}
 
-	get_secrets_info_finalize (self, info);
+	get_secrets_info_free (info);
 }
 
 static void
@@ -328,11 +325,13 @@ impl_secret_agent_old_get_secrets (NMSecretAgentOld *self,
 		return;
 	}
 
-	info = g_malloc0 (sizeof (GetSecretsInfo));
-	info->path = g_strdup (connection_path);
-	info->setting_name = g_strdup (setting_name);
-	info->context = context;
-	priv->pending_gets = g_slist_append (priv->pending_gets, info);
+	info = g_slice_new (GetSecretsInfo);
+	*info = (GetSecretsInfo) {
+		.path = g_strdup (connection_path),
+		.setting_name = g_strdup (setting_name),
+		.context = context,
+	};
+	c_list_link_tail (&priv->gsi_lst_head, &info->gsi_lst);
 
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->get_secrets (self,
 	                                                   connection,
@@ -346,16 +345,16 @@ impl_secret_agent_old_get_secrets (NMSecretAgentOld *self,
 }
 
 static GetSecretsInfo *
-find_get_secrets_info (GSList *list, const char *path, const char *setting_name)
+find_get_secrets_info (NMSecretAgentOldPrivate *priv,
+                       const char *path,
+                       const char *setting_name)
 {
-	GSList *iter;
+	GetSecretsInfo *info;
 
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		GetSecretsInfo *candidate = iter->data;
-
-		if (   g_strcmp0 (path, candidate->path) == 0
-		    && g_strcmp0 (setting_name, candidate->setting_name) == 0)
-			return candidate;
+	c_list_for_each_entry (info, &priv->gsi_lst_head, gsi_lst) {
+		if (   nm_streq0 (path, info->path)
+		    && nm_streq0 (setting_name, info->setting_name))
+			return info;
 	}
 	return NULL;
 }
@@ -377,7 +376,7 @@ impl_secret_agent_old_cancel_get_secrets (NMSecretAgentOld *self,
 		return;
 	}
 
-	info = find_get_secrets_info (priv->pending_gets, connection_path, setting_name);
+	info = find_get_secrets_info (priv, connection_path, setting_name);
 	if (!info) {
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_SECRET_AGENT_ERROR,
@@ -386,7 +385,7 @@ impl_secret_agent_old_cancel_get_secrets (NMSecretAgentOld *self,
 		return;
 	}
 
-	priv->pending_gets = g_slist_remove (priv->pending_gets, info);
+	c_list_unlink (&info->gsi_lst);
 
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->cancel_get_secrets (self,
 	                                                          info->path,
@@ -1165,6 +1164,7 @@ nm_secret_agent_old_init (NMSecretAgentOld *self)
 {
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 
+	c_list_init (&priv->gsi_lst_head);
 	priv->dbus_secret_agent = nmdbus_secret_agent_skeleton_new ();
 	_nm_dbus_bind_properties (self, priv->dbus_secret_agent);
 	_nm_dbus_bind_methods (self, priv->dbus_secret_agent,
@@ -1239,14 +1239,15 @@ dispose (GObject *object)
 {
 	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (object);
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
+	GetSecretsInfo *info;
 
 	if (priv->registered)
 		nm_secret_agent_old_unregister_async (self, NULL, NULL, NULL);
 
 	g_clear_pointer (&priv->identifier, g_free);
 
-	while (priv->pending_gets)
-		get_secrets_info_finalize (self, priv->pending_gets->data);
+	while ((info = c_list_first_entry (&priv->gsi_lst_head, GetSecretsInfo, gsi_lst)))
+		get_secrets_info_free (info);
 
 	g_signal_handlers_disconnect_matched (priv->dbus_secret_agent, G_SIGNAL_MATCH_DATA,
 	                                      0, 0, NULL, NULL, self);
