@@ -1013,15 +1013,15 @@ nmc_cleanup (NmCli *nmc)
 
 	g_clear_object (&nmc->client);
 
-	g_string_free (nmc->return_text, TRUE);
+	if (nmc->return_text)
+		g_string_free (g_steal_pointer (&nmc->return_text), TRUE);
 
 	if (nmc->secret_agent) {
-		/* Destroy secret agent if we have one. */
 		nm_secret_agent_old_unregister (nmc->secret_agent, NULL, NULL);
-		g_object_unref (nmc->secret_agent);
+		g_clear_object (&nmc->secret_agent);
 	}
-	if (nmc->pwds_hash)
-		g_hash_table_destroy (nmc->pwds_hash);
+
+	nm_clear_pointer (&nmc->pwds_hash, g_hash_table_destroy);
 
 	nm_clear_g_free (&nmc->required_fields);
 
