@@ -482,30 +482,6 @@ static struct nl_sock *_genl_sock (NMLinuxPlatform *platform);
 /*****************************************************************************/
 
 static int
-_sock_addr_set_unaligned (NMSockAddrUnion *dst,
-                          gconstpointer src,
-                          gsize src_len)
-{
-	int f_expected;
-	struct sockaddr sa;
-
-	if (src_len == sizeof (struct sockaddr_in))
-		f_expected = AF_INET;
-	else if (src_len == sizeof (struct sockaddr_in6))
-		f_expected = AF_INET6;
-	else
-		return AF_UNSPEC;
-
-	memcpy (&sa.sa_family, &((struct sockaddr *) src)->sa_family, sizeof (sa.sa_family));
-	if (sa.sa_family != f_expected)
-		return AF_UNSPEC;
-	memcpy (dst, src, src_len);
-	return f_expected;
-}
-
-/*****************************************************************************/
-
-static int
 wait_for_nl_response_to_nmerr (WaitForNlResponseResult seq_result)
 {
 	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
@@ -2038,11 +2014,11 @@ _wireguard_update_from_peers_nla (CList *peers,
 			nm_explicit_bzero (nla_data (tb[WGPEER_A_PRESHARED_KEY]),
 			                   nla_len (tb[WGPEER_A_PRESHARED_KEY]));
 		}
-		if (tb[WGPEER_A_ENDPOINT]) {
-			_sock_addr_set_unaligned (&peer_c->data.endpoint,
-			                          nla_data (tb[WGPEER_A_ENDPOINT]),
-			                          nla_len (tb[WGPEER_A_ENDPOINT]));
-		}
+
+		nm_sock_addr_union_cpy_untrusted (&peer_c->data.endpoint,
+		                                  tb[WGPEER_A_ENDPOINT] ? nla_data (tb[WGPEER_A_ENDPOINT]) : NULL,
+		                                  tb[WGPEER_A_ENDPOINT] ? nla_len (tb[WGPEER_A_ENDPOINT])  : 0);
+
 		if (tb[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL])
 			peer_c->data.persistent_keepalive_interval = nla_get_u64 (tb[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL]);
 		if (tb[WGPEER_A_LAST_HANDSHAKE_TIME])
@@ -2398,6 +2374,7 @@ _wireguard_create_change_nlmsgs (NMPlatform *platform,
                                  const NMPlatformLnkWireGuard *lnk_wireguard,
                                  const NMPWireGuardPeer *peers,
                                  guint peers_len,
+                                 gboolean replace_peers,
                                  GPtrArray **out_msgs)
 {
 	gs_unref_ptrarray GPtrArray *msgs = NULL;
@@ -2446,7 +2423,9 @@ again:
 		NLA_PUT (msg, WGDEVICE_A_PRIVATE_KEY, sizeof (lnk_wireguard->private_key), lnk_wireguard->private_key);
 		NLA_PUT_U16 (msg, WGDEVICE_A_LISTEN_PORT, lnk_wireguard->listen_port);
 		NLA_PUT_U32 (msg, WGDEVICE_A_FWMARK, lnk_wireguard->fwmark);
-		NLA_PUT_U32 (msg, WGDEVICE_A_FLAGS, WGDEVICE_F_REPLACE_PEERS);
+
+		NLA_PUT_U32 (msg, WGDEVICE_A_FLAGS,
+		             replace_peers ? WGDEVICE_F_REPLACE_PEERS : ((guint32) 0u));
 	}
 
 	if (peers_len == 0)
@@ -2483,15 +2462,16 @@ again:
 			if (nla_put_uint32 (msg, WGPEER_A_FLAGS, WGPEER_F_REPLACE_ALLOWEDIPS) < 0)
 				goto toobig_peers;
 
-			g_return_val_if_fail (NM_IN_SET (p->endpoint.sa.sa_family, AF_INET, AF_INET6), -NME_BUG);
-
-			if (nla_put (msg,
-			             WGPEER_A_ENDPOINT,
-			               p->endpoint.sa.sa_family == AF_INET
-			             ? sizeof (p->endpoint.in)
-			             : sizeof (p->endpoint.in6),
-			             &p->endpoint) < 0)
-				goto toobig_peers;
+			if (NM_IN_SET (p->endpoint.sa.sa_family, AF_INET, AF_INET6)) {
+				if (nla_put (msg,
+				             WGPEER_A_ENDPOINT,
+				               p->endpoint.sa.sa_family == AF_INET
+				             ? sizeof (p->endpoint.in)
+				             : sizeof (p->endpoint.in6),
+				             &p->endpoint) < 0)
+					goto toobig_peers;
+			} else
+				nm_assert (p->endpoint.sa.sa_family == AF_UNSPEC);
 		}
 
 		if (p->allowed_ips_len > 0) {
@@ -2575,7 +2555,8 @@ link_wireguard_change (NMPlatform *platform,
                        int ifindex,
                        const NMPlatformLnkWireGuard *lnk_wireguard,
                        const NMPWireGuardPeer *peers,
-                       guint peers_len)
+                       guint peers_len,
+                       gboolean replace_peers)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	gs_unref_ptrarray GPtrArray *msgs = NULL;
@@ -2593,6 +2574,7 @@ link_wireguard_change (NMPlatform *platform,
 	                                     lnk_wireguard,
 	                                     peers,
 	                                     peers_len,
+	                                     replace_peers,
 	                                     &msgs);
 	if (r < 0) {
 		_LOGW ("wireguard: set-device, cannot construct netlink message: %s", nm_strerror (r));

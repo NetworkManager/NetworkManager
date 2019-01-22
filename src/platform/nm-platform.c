@@ -1997,8 +1997,9 @@ int
 nm_platform_link_wireguard_change (NMPlatform *self,
                                    int ifindex,
                                    const NMPlatformLnkWireGuard *lnk_wireguard,
-                                   const struct _NMPWireGuardPeer *peers,
-                                   guint peers_len)
+                                   const NMPWireGuardPeer *peers,
+                                   guint peers_len,
+                                   gboolean replace_peers)
 {
 	_CHECK_SELF (self, klass, -NME_BUG);
 
@@ -2024,18 +2025,20 @@ nm_platform_link_wireguard_change (NMPlatform *self,
 			nm_utils_strbuf_append_str (&b, &len, "}");
 		}
 
-		_LOG3D ("link: change wireguard ifindex %d, %s, %u peers%s",
+		_LOG3D ("link: change wireguard ifindex %d, %s, %u peers%s%s",
 		        ifindex,
 		        nm_platform_lnk_wireguard_to_string (lnk_wireguard, buf_lnk, sizeof (buf_lnk)),
 		        peers_len,
-		        buf_peers);
+		        buf_peers,
+		        replace_peers ? " (replace-peers)" : " (update-peers)");
 	}
 
 	return klass->link_wireguard_change (self,
 	                                     ifindex,
 	                                     lnk_wireguard,
 	                                     peers,
-	                                     peers_len);
+	                                     peers_len,
+	                                     replace_peers);
 }
 
 /*****************************************************************************/
@@ -5604,32 +5607,23 @@ nm_platform_wireguard_peer_to_string (const NMPWireGuardPeer *peer, char *buf, g
 {
 	char *buf0 = buf;
 	gs_free char *public_key_b64 = NULL;
-	char s_endpoint[NM_UTILS_INET_ADDRSTRLEN + 100];
+	char s_sockaddr[NM_UTILS_INET_ADDRSTRLEN + 100];
+	char s_endpoint[20 + sizeof (s_sockaddr)];
 	char s_addr[NM_UTILS_INET_ADDRSTRLEN];
-	char s_scope_id[40];
 	guint i;
 
 	nm_utils_to_string_buffer_init (&buf, &len);
 
-	if (peer->endpoint.sa.sa_family == AF_INET) {
+	public_key_b64 = g_base64_encode (peer->public_key, sizeof (peer->public_key));
+
+	if (peer->endpoint.sa.sa_family != AF_UNSPEC) {
 		nm_sprintf_buf (s_endpoint,
-		                " endpoint %s:%u",
-		                nm_utils_inet4_ntop (peer->endpoint.in.sin_addr.s_addr, s_addr),
-		                (guint) htons (peer->endpoint.in.sin_port));
-	} else if (peer->endpoint.sa.sa_family == AF_INET6) {
-		if (peer->endpoint.in6.sin6_scope_id != 0)
-			nm_sprintf_buf (s_scope_id, "@%u", peer->endpoint.in6.sin6_scope_id);
-		else
-			s_scope_id[0] = '\0';
-		nm_sprintf_buf (s_endpoint,
-		                " endpoint [%s]%s:%u",
-		                nm_utils_inet6_ntop (&peer->endpoint.in6.sin6_addr, s_addr),
-		                s_scope_id,
-		                (guint) htons (peer->endpoint.in6.sin6_port));
+		                " endpoint %s",
+		                nm_sock_addr_union_to_string (&peer->endpoint,
+		                                              s_sockaddr,
+		                                              sizeof (s_sockaddr)));
 	} else
 		s_endpoint[0] = '\0';
-
-	public_key_b64 = g_base64_encode (peer->public_key, sizeof (peer->public_key));
 
 	nm_utils_strbuf_append (&buf, &len,
 	                        "public-key %s"

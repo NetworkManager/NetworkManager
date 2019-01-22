@@ -48,10 +48,9 @@ typedef enum NMSettingUpdateSecretResult {
 NMSettingUpdateSecretResult _nm_setting_update_secrets (NMSetting *setting,
                                                         GVariant *secrets,
                                                         GError **error);
-gboolean _nm_setting_clear_secrets (NMSetting *setting);
-gboolean _nm_setting_clear_secrets_with_flags (NMSetting *setting,
-                                               NMSettingClearSecretsWithFlagsFn func,
-                                               gpointer user_data);
+gboolean _nm_setting_clear_secrets (NMSetting *setting,
+                                    NMSettingClearSecretsWithFlagsFn func,
+                                    gpointer user_data);
 
 /* The property of the #NMSetting should be considered during comparisons that
  * use the %NM_SETTING_COMPARE_FLAG_INFERRABLE flag. Properties that don't have

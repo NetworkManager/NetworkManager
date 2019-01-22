@@ -912,7 +912,8 @@ _test_wireguard_change (NMPlatform *platform,
 	                                       ifindex,
 	                                       &lnk_wireguard,
 	                                       (const NMPWireGuardPeer *) peers->data,
-	                                       peers->len);
+	                                       peers->len,
+	                                       TRUE);
 	g_assert (NMTST_NM_ERR_SUCCESS (r));
 }
 

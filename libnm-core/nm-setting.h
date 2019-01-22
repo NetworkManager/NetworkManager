@@ -200,10 +200,12 @@ typedef struct {
 	                                  NMSettingSecretFlags flags,
 	                                  GError **error);
 
-	gboolean    (*clear_secrets_with_flags) (NMSetting *setting,
-	                                         GParamSpec *pspec,
-	                                         NMSettingClearSecretsWithFlagsFn func,
-	                                         gpointer user_data);
+	/*< private >*/
+	gboolean    (*clear_secrets) (const struct _NMSettInfoSetting *sett_info,
+	                              guint property_idx,
+	                              NMSetting *setting,
+	                              NMSettingClearSecretsWithFlagsFn func,
+	                              gpointer user_data);
 
 	/* compare_property() returns a ternary, where DEFAULT means that the property should not
 	 * be compared due to the compare @flags. A TRUE/FALSE result means that the property is
@@ -219,10 +221,15 @@ typedef struct {
 	                                 NMSettingCompareFlags flags);
 
 	/*< private >*/
+	void (*duplicate_copy_properties) (const struct _NMSettInfoSetting *sett_info,
+	                                   NMSetting *src,
+	                                   NMSetting *dst);
+
+	/*< private >*/
 	const struct _NMMetaSettingInfo *setting_info;
 
 	/*< private >*/
-	gpointer padding[6];
+	gpointer padding[5];
 } NMSettingClass;
 
 /**
