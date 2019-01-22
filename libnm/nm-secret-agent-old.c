@@ -150,11 +150,11 @@ verify_sender (NMSecretAgentOld *self,
                GError **error)
 {
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
-	char *nm_owner;
+	gs_free char *owner = NULL;
 	const char *sender;
 	guint32 sender_uid;
-	GVariant *ret;
-	GError *local = NULL;
+	gs_unref_variant GVariant *ret = NULL;
+	gs_free_error GError *local = NULL;
 
 	g_return_val_if_fail (context != NULL, FALSE);
 
@@ -166,8 +166,8 @@ verify_sender (NMSecretAgentOld *self,
 
 	/* Verify that the sender is the same as NetworkManager's bus name owner. */
 
-	nm_owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (priv->manager_proxy));
-	if (!nm_owner) {
+	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (priv->manager_proxy));
+	if (!owner) {
 		g_set_error_literal (error,
 		                     NM_SECRET_AGENT_ERROR,
 		                     NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
@@ -181,20 +181,16 @@ verify_sender (NMSecretAgentOld *self,
 		                     NM_SECRET_AGENT_ERROR,
 		                     NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
 		                     "Failed to get request sender.");
-		g_free (nm_owner);
 		return FALSE;
 	}
 
-	/* Check that the sender matches the current NM bus name owner */
-	if (strcmp (sender, nm_owner) != 0) {
+	if (!nm_streq (sender, owner)) {
 		g_set_error_literal (error,
 		                     NM_SECRET_AGENT_ERROR,
 		                     NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
 		                     "Request sender does not match NetworkManager bus name owner.");
-		g_free (nm_owner);
 		return FALSE;
 	}
-	g_free (nm_owner);
 
 	/* If we're connected to the session bus, then this must be a test program,
 	 * so skip the UID check.
@@ -213,8 +209,9 @@ verify_sender (NMSecretAgentOld *self,
 	                                   G_DBUS_CALL_FLAGS_NONE, -1,
 	                                   NULL, &local);
 	if (!ret) {
-		char *remote_error = g_dbus_error_get_remote_error (local);
+		gs_free char *remote_error = NULL;
 
+		remote_error = g_dbus_error_get_remote_error (local);
 		g_dbus_error_strip_remote_error (local);
 		g_set_error (error,
 		             NM_SECRET_AGENT_ERROR,
@@ -222,15 +219,12 @@ verify_sender (NMSecretAgentOld *self,
 		             "Failed to request unix user: (%s) %s.",
 		             remote_error ?: "",
 		             local->message);
-		g_free (remote_error);
-		g_error_free (local);
 		return FALSE;
 	}
 	g_variant_get (ret, "(u)", &sender_uid);
-	g_variant_unref (ret);
 
 	/* We only accept requests from NM, which always runs as root */
-	if (0 != sender_uid) {
+	if (sender_uid != 0) {
 		g_set_error_literal (error,
 		                     NM_SECRET_AGENT_ERROR,
 		                     NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
@@ -249,8 +243,8 @@ verify_request (NMSecretAgentOld *self,
                 NMConnection **out_connection,
                 GError **error)
 {
-	NMConnection *connection = NULL;
-	GError *local = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_free_error GError *local = NULL;
 
 	if (!verify_sender (self, context, error))
 		return FALSE;
@@ -269,20 +263,18 @@ verify_request (NMSecretAgentOld *self,
 	}
 
 	/* Make sure the given connection is valid */
-	g_assert (out_connection);
 	connection = _nm_simple_connection_new_from_dbus (connection_dict, NM_SETTING_PARSE_FLAGS_BEST_EFFORT, &local);
-	if (connection) {
-		nm_connection_set_path (connection, connection_path);
-		*out_connection = connection;
-	} else {
+	if (!connection) {
 		g_set_error (error,
 		             NM_SECRET_AGENT_ERROR,
 		             NM_SECRET_AGENT_ERROR_INVALID_CONNECTION,
 		             "Invalid connection: %s", local->message);
-		g_clear_error (&local);
+		return FALSE;
 	}
 
-	return !!connection;
+	nm_connection_set_path (connection, connection_path);
+	NM_SET_OUT (out_connection, g_steal_pointer (&connection));
+	return TRUE;
 }
 
 static void
@@ -317,7 +309,7 @@ impl_secret_agent_old_get_secrets (NMSecretAgentOld *self,
 {
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 	GError *error = NULL;
-	NMConnection *connection = NULL;
+	gs_unref_object NMConnection *connection = NULL;
 	GetSecretsInfo *info;
 
 	/* Make sure the request comes from NetworkManager and is valid */
@@ -342,7 +334,6 @@ impl_secret_agent_old_get_secrets (NMSecretAgentOld *self,
 	                                                   flags,
 	                                                   get_secrets_cb,
 	                                                   info);
-	g_object_unref (connection);
 }
 
 static GetSecretsInfo *
@@ -416,8 +407,8 @@ impl_secret_agent_old_save_secrets (NMSecretAgentOld *self,
                                     const char *connection_path,
                                     gpointer user_data)
 {
+	gs_unref_object NMConnection *connection = NULL;
 	GError *error = NULL;
-	NMConnection *connection = NULL;
 
 	/* Make sure the request comes from NetworkManager and is valid */
 	if (!verify_request (self, context, connection_dict, connection_path, &connection, &error)) {
@@ -430,7 +421,6 @@ impl_secret_agent_old_save_secrets (NMSecretAgentOld *self,
 	                                                    connection_path,
 	                                                    save_secrets_cb,
 	                                                    context);
-	g_object_unref (connection);
 }
 
 static void
@@ -454,8 +444,8 @@ impl_secret_agent_old_delete_secrets (NMSecretAgentOld *self,
                                       const char *connection_path,
                                       gpointer user_data)
 {
+	gs_unref_object NMConnection *connection = NULL;
 	GError *error = NULL;
-	NMConnection *connection = NULL;
 
 	/* Make sure the request comes from NetworkManager and is valid */
 	if (!verify_request (self, context, connection_dict, connection_path, &connection, &error)) {
@@ -468,7 +458,6 @@ impl_secret_agent_old_delete_secrets (NMSecretAgentOld *self,
 	                                                      connection_path,
 	                                                      delete_secrets_cb,
 	                                                      context);
-	g_object_unref (connection);
 }
 
 /*****************************************************************************/
@@ -477,15 +466,13 @@ static gboolean
 check_nm_running (NMSecretAgentOld *self, GError **error)
 {
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
-	char *owner;
+	gs_free char *owner = NULL;
 
 	if (priv->private_bus)
 		return TRUE;
 	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (priv->manager_proxy));
-	if (owner) {
-		g_free (owner);
+	if (owner)
 		return TRUE;
-	}
 
 	g_set_error (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
 	             "NetworkManager is not running");
@@ -575,6 +562,7 @@ static void
 reg_result (NMSecretAgentOld *self, GSimpleAsyncResult *simple, GError *error)
 {
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
+	_nm_unused gs_unref_object GSimpleAsyncResult *simple_free = simple;
 
 	priv->registering = FALSE;
 
@@ -591,8 +579,6 @@ reg_result (NMSecretAgentOld *self, GSimpleAsyncResult *simple, GError *error)
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
 		g_simple_async_result_complete (simple);
 	}
-
-	g_object_unref (simple);
 }
 
 static void
@@ -623,6 +609,7 @@ reg_with_caps_cb (GObject *proxy,
 
 	self = NM_SECRET_AGENT_OLD (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
 	g_object_unref (self); /* drop extra ref added by get_source_object() */
+
 	priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 
 	if (nmdbus_agent_manager_call_register_with_capabilities_finish (NMDBUS_AGENT_MANAGER (proxy), result, NULL)) {
@@ -660,7 +647,7 @@ nm_secret_agent_old_register_async (NMSecretAgentOld *self,
 {
 	NMSecretAgentOldPrivate *priv;
 	NMSecretAgentOldClass *class;
-	GSimpleAsyncResult *simple;
+	gs_unref_object GSimpleAsyncResult *simple = NULL;
 	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_SECRET_AGENT_OLD (self));
@@ -686,7 +673,6 @@ nm_secret_agent_old_register_async (NMSecretAgentOld *self,
 	if (!check_nm_running (self, &error)) {
 		g_simple_async_result_take_error (simple, error);
 		g_simple_async_result_complete_in_idle (simple);
-		g_object_unref (simple);
 		return;
 	}
 
@@ -697,7 +683,6 @@ nm_secret_agent_old_register_async (NMSecretAgentOld *self,
 	                                       &error)) {
 		g_simple_async_result_take_error (simple, error);
 		g_simple_async_result_complete_in_idle (simple);
-		g_object_unref (simple);
 		return;
 	}
 
@@ -708,7 +693,8 @@ nm_secret_agent_old_register_async (NMSecretAgentOld *self,
 	                                                      priv->identifier,
 	                                                      priv->capabilities,
 	                                                      NULL,
-	                                                      reg_with_caps_cb, simple);
+	                                                      reg_with_caps_cb,
+	                                                      g_steal_pointer (&simple));
 }
 
 /**
@@ -774,7 +760,7 @@ nm_secret_agent_old_unregister (NMSecretAgentOld *self,
 static void
 unregister_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
-	GSimpleAsyncResult *simple = user_data;
+	gs_unref_object GSimpleAsyncResult *simple = user_data;
 	NMSecretAgentOld *self;
 	GError *error = NULL;
 
@@ -792,7 +778,6 @@ unregister_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	}
 
 	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
 }
 
 /**
@@ -813,7 +798,7 @@ nm_secret_agent_old_unregister_async (NMSecretAgentOld *self,
                                       gpointer user_data)
 {
 	NMSecretAgentOldPrivate *priv;
-	GSimpleAsyncResult *simple;
+	gs_unref_object GSimpleAsyncResult *simple = NULL;
 	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_SECRET_AGENT_OLD (self));
@@ -831,14 +816,15 @@ nm_secret_agent_old_unregister_async (NMSecretAgentOld *self,
 	if (!check_nm_running (self, &error)) {
 		g_simple_async_result_take_error (simple, error);
 		g_simple_async_result_complete_in_idle (simple);
-		g_object_unref (simple);
 		return;
 	}
 
 	priv->suppress_auto = TRUE;
 
-	nmdbus_agent_manager_call_unregister (priv->manager_proxy, cancellable,
-	                                      unregister_cb, simple);
+	nmdbus_agent_manager_call_unregister (priv->manager_proxy,
+	                                      cancellable,
+	                                      unregister_cb,
+	                                      g_steal_pointer (&simple));
 }
 
 /**
@@ -1213,11 +1199,15 @@ init_async (GAsyncInitable *initable, int io_priority,
 	NMSecretAgentOldInitData *init_data;
 
 	init_data = g_slice_new (NMSecretAgentOldInitData);
-	init_data->self = self;
-	init_data->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
+	*init_data = (NMSecretAgentOldInitData) {
+		.self = self,
+		.cancellable = nm_g_object_ref (cancellable),
+		.simple = g_simple_async_result_new (G_OBJECT (initable),
+		                                     callback,
+		                                     user_data,
+		                                     init_async),
+	};
 
-	init_data->simple = g_simple_async_result_new (G_OBJECT (initable), callback,
-	                                               user_data, init_async);
 	if (cancellable)
 		g_simple_async_result_set_check_cancellable (init_data->simple, cancellable);
 
@@ -1242,17 +1232,21 @@ dispose (GObject *object)
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 	GetSecretsInfo *info;
 
-	if (priv->registered)
+	if (priv->registered) {
+		priv->registered = FALSE;
 		nm_secret_agent_old_unregister_async (self, NULL, NULL, NULL);
+	}
 
-	g_clear_pointer (&priv->identifier, g_free);
+	nm_clear_g_free (&priv->identifier);
 
 	while ((info = c_list_first_entry (&priv->gsi_lst_head, GetSecretsInfo, gsi_lst)))
 		get_secrets_info_free (info);
 
-	g_signal_handlers_disconnect_matched (priv->dbus_secret_agent, G_SIGNAL_MATCH_DATA,
-	                                      0, 0, NULL, NULL, self);
-	g_object_unref (priv->dbus_secret_agent);
+	if (priv->dbus_secret_agent) {
+		g_signal_handlers_disconnect_matched (priv->dbus_secret_agent, G_SIGNAL_MATCH_DATA,
+		                                      0, 0, NULL, NULL, self);
+		g_clear_object (&priv->dbus_secret_agent);
+	}
 
 	g_clear_object (&priv->manager_proxy);
 	g_clear_object (&priv->bus);
@@ -1267,7 +1261,6 @@ nm_secret_agent_old_class_init (NMSecretAgentOldClass *class)
 
 	g_type_class_add_private (class, sizeof (NMSecretAgentOldPrivate));
 
-	/* Virtual methods */
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
