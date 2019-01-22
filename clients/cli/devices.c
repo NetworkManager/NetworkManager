@@ -1961,7 +1961,7 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 			if (nmc->secret_agent) {
 				NMRemoteConnection *connection = nm_active_connection_get_connection (active);
 
-				nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (nmc->secret_agent),
+				nm_secret_agent_simple_enable (nmc->secret_agent,
 				                               nm_connection_get_path (NM_CONNECTION (connection)));
 			}
 

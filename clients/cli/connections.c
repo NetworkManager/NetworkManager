@@ -2474,7 +2474,7 @@ check_activated (ActivateConnectionInfo *info)
 		if (nmc->secret_agent) {
 			NMRemoteConnection *connection = nm_active_connection_get_connection (info->active);
 
-			nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (nmc->secret_agent),
+			nm_secret_agent_simple_enable (nmc->secret_agent,
 			                               nm_connection_get_path (NM_CONNECTION (connection)));
 		}
 		break;
@@ -2776,7 +2776,6 @@ nmc_activate_connection (NmCli *nmc,
 		g_hash_table_destroy (nmc->pwds_hash);
 	nmc->pwds_hash = pwds_hash;
 
-	/* Create secret agent */
 	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-connect");
 	if (nmc->secret_agent) {
 		g_signal_connect (nmc->secret_agent,
@@ -6728,7 +6727,7 @@ progress_activation_editor_cb (gpointer user_data)
 		NMRemoteConnection *connection;
 
 		connection = nm_active_connection_get_connection (ac);
-		nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (info->nmc->secret_agent),
+		nm_secret_agent_simple_enable (info->nmc->secret_agent,
 		                               nm_object_get_path (NM_OBJECT (connection)));
 	}
 
