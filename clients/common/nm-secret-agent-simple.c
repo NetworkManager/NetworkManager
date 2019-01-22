@@ -99,14 +99,26 @@ _request_data_free (gpointer data)
 }
 
 static void
-_request_data_cancel (RequestData *request,
-                      GError *error)
+_request_data_complete (RequestData *request,
+                        GVariant *secrets,
+                        GError *error,
+                        GHashTableIter *iter_to_remove)
 {
-	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (request->self);
+	NMSecretAgentSimple *self = request->self;
+	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (self);
 
-	request->callback (NM_SECRET_AGENT_OLD (request->self), request->connection,
-	                   NULL, error, request->callback_data);
-	g_hash_table_remove (priv->requests, request);
+	nm_assert ((secrets != NULL) != (error != NULL));
+
+	request->callback (NM_SECRET_AGENT_OLD (request->self),
+	                   request->connection,
+	                   secrets,
+	                   error,
+	                   request->callback_data);
+
+	if (iter_to_remove)
+		g_hash_table_iter_remove (iter_to_remove);
+	else
+		g_hash_table_remove (priv->requests, request);
 }
 
 /*****************************************************************************/
@@ -516,7 +528,7 @@ out:
 	}
 
 	if (error)
-		_request_data_cancel (request, error);
+		_request_data_complete (request, NULL, error, NULL);
 	else {
 		g_signal_emit (request->self, signals[REQUEST_SECRETS], 0,
 		               request->request_id, title, message, secrets);
@@ -545,7 +557,7 @@ _auth_dialog_read_done (GObject *source_object,
 	switch (read_size) {
 	case -1:
 		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-			_request_data_cancel (data->request, error);
+			_request_data_complete (data->request, NULL, error, NULL);
 		_auth_dialog_data_free (data);
 		break;
 	case 0:
@@ -733,7 +745,7 @@ request_secrets_from_ui (RequestData *request)
 		error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
 		                     "Request for %s secrets doesn't match path %s",
 		                     request->request_id, priv->path);
-		_request_data_cancel (request, error);
+		_request_data_complete (request, NULL, error, NULL);
 		return;
 	}
 
@@ -868,7 +880,7 @@ request_secrets_from_ui (RequestData *request)
 		                     "Cannot service a secrets request %s for a %s connection",
 		                     request->request_id,
 		                     nm_connection_get_connection_type (request->connection));
-		_request_data_cancel (request, error);
+		_request_data_complete (request, NULL, error, NULL);
 		g_ptr_array_unref (secrets);
 		return;
 	}
@@ -950,7 +962,7 @@ nm_secret_agent_simple_response (NMSecretAgentSimple *self,
 	NMSecretAgentSimplePrivate *priv;
 	RequestData *request;
 	GVariant *dict = NULL;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	int i;
 
 	g_return_if_fail (NM_IS_SECRET_AGENT_SIMPLE (self));
@@ -1013,10 +1025,7 @@ nm_secret_agent_simple_response (NMSecretAgentSimple *self,
 		                     "User cancelled");
 	}
 
-	request->callback (NM_SECRET_AGENT_OLD (self), request->connection, dict, error, request->callback_data);
-
-	g_clear_error (&error);
-	g_hash_table_remove (priv->requests, request);
+	_request_data_complete (request, dict, error, NULL);
 }
 
 static void
@@ -1137,12 +1146,7 @@ dispose (GObject *object)
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &request)) {
 		if (!error)
 			nm_utils_error_set_cancelled (&error, TRUE, "NMSecretAgentSimple");
-		request->callback (NM_SECRET_AGENT_OLD (object),
-		                   request->connection,
-		                   NULL,
-		                   error,
-		                   request->callback_data);
-		g_hash_table_iter_remove (&iter);
+		_request_data_complete (request, NULL, error, &iter);
 	}
 
 	G_OBJECT_CLASS (nm_secret_agent_simple_parent_class)->dispose (object);
