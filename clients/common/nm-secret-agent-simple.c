@@ -91,7 +91,7 @@ _request_data_free (gpointer data)
 	RequestData *request = data;
 
 	g_free (request->request_id);
-	g_object_unref (request->cancellable);
+	nm_clear_g_cancellable (&request->cancellable);
 	g_object_unref (request->self);
 	g_object_unref (request->connection);
 	g_strfreev (request->hints);
