@@ -728,11 +728,11 @@ try_spawn_vpn_auth_helper (RequestData *request,
 static void
 request_secrets_from_ui (RequestData *request)
 {
-	GPtrArray *secrets;
+	gs_unref_ptrarray GPtrArray *secrets = NULL;
 	NMSecretAgentSimplePrivate *priv;
 	NMSecretAgentSimpleSecret *secret;
 	const char *title;
-	char *msg;
+	gs_free char *msg = NULL;
 	gboolean ok = TRUE;
 
 	priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (request->self);
@@ -881,7 +881,6 @@ request_secrets_from_ui (RequestData *request)
 		                     request->request_id,
 		                     nm_connection_get_connection_type (request->connection));
 		_request_data_complete (request, NULL, error, NULL);
-		g_ptr_array_unref (secrets);
 		return;
 	}
 
