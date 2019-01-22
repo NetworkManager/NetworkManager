@@ -780,7 +780,7 @@ request_secrets_from_ui (RequestData *request)
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_GSM_SETTING_NAME)) {
 		NMSettingGsm *s_gsm = nm_connection_get_setting_gsm (request->connection);
 
-		if (g_strv_contains (NM_CAST_STRV_CC (request->hints), "pin")) {
+		if (g_strv_contains (NM_CAST_STRV_CC (request->hints), NM_SETTING_GSM_PIN)) {
 			title = _("PIN code required");
 			msg = g_strdup (_("PIN code is needed for the mobile broadband device"));
 
