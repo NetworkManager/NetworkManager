@@ -43,9 +43,10 @@
 /*****************************************************************************/
 
 typedef struct {
+	char                          *request_id;
+
 	NMSecretAgentSimple           *self;
 
-	char                          *request_id;
 	NMConnection                  *connection;
 	char                         **hints;
 	NMSecretAgentOldGetSecretsFunc callback;
@@ -63,7 +64,6 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
-	/* <char *request_id, RequestData *request> */
 	GHashTable *requests;
 
 	char *path;
@@ -90,6 +90,7 @@ _request_data_free (gpointer data)
 {
 	RequestData *request = data;
 
+	g_free (request->request_id);
 	g_object_unref (request->cancellable);
 	g_object_unref (request->self);
 	g_object_unref (request->connection);
@@ -106,7 +107,7 @@ _request_data_cancel (RequestData *request,
 
 	request->callback (NM_SECRET_AGENT_OLD (request->self), request->connection,
 	                   NULL, error, request->callback_data);
-	g_hash_table_remove (priv->requests, request->request_id);
+	g_hash_table_remove (priv->requests, request);
 }
 
 /*****************************************************************************/
@@ -891,7 +892,7 @@ get_secrets (NMSecretAgentOld                 *agent,
 
 	request_id = g_strdup_printf ("%s/%s", connection_path, setting_name);
 
-	if (g_hash_table_contains (priv->requests, request_id)) {
+	if (g_hash_table_contains (priv->requests, &request_id)) {
 		/* We already have a request pending for this (connection, setting) */
 		error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
 		                     "Request for %s secrets already pending", request_id);
@@ -918,7 +919,7 @@ get_secrets (NMSecretAgentOld                 *agent,
 		.flags = flags,
 		.cancellable = g_cancellable_new (),
 	};
-	g_hash_table_replace (priv->requests, request->request_id, request);
+	g_hash_table_add (priv->requests, request);
 
 	if (priv->enabled)
 		request_secrets_from_ui (request);
@@ -952,7 +953,7 @@ nm_secret_agent_simple_response (NMSecretAgentSimple *self,
 	g_return_if_fail (NM_IS_SECRET_AGENT_SIMPLE (self));
 
 	priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (self);
-	request = g_hash_table_lookup (priv->requests, request_id);
+	request = g_hash_table_lookup (priv->requests, &request_id);
 	g_return_if_fail (request != NULL);
 
 	if (secrets) {
@@ -1012,7 +1013,7 @@ nm_secret_agent_simple_response (NMSecretAgentSimple *self,
 	request->callback (NM_SECRET_AGENT_OLD (self), request->connection, dict, error, request->callback_data);
 
 	g_clear_error (&error);
-	g_hash_table_remove (priv->requests, request_id);
+	g_hash_table_remove (priv->requests, request);
 }
 
 static void
@@ -1025,7 +1026,7 @@ cancel_get_secrets (NMSecretAgentOld *agent,
 	gs_free char *request_id = NULL;
 
 	request_id = g_strdup_printf ("%s/%s", connection_path, setting_name);
-	g_hash_table_remove (priv->requests, request_id);
+	g_hash_table_remove (priv->requests, &request_id);
 }
 
 static void
@@ -1097,8 +1098,9 @@ nm_secret_agent_simple_init (NMSecretAgentSimple *agent)
 {
 	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (agent);
 
-	priv->requests = g_hash_table_new_full (nm_str_hash, g_str_equal,
-	                                        g_free, _request_data_free);
+	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (RequestData, request_id) == 0);
+	priv->requests = g_hash_table_new_full (nm_pstr_hash, nm_pstr_equal,
+	                                        NULL, _request_data_free);
 }
 
 /**
