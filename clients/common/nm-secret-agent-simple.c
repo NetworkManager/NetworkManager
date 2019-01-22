@@ -1035,10 +1035,23 @@ cancel_get_secrets (NMSecretAgentOld *agent,
 {
 	NMSecretAgentSimple *self = NM_SECRET_AGENT_SIMPLE (agent);
 	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (self);
+	gs_free_error GError *error = NULL;
 	gs_free char *request_id = NULL;
+	RequestData *request;
 
 	request_id = g_strdup_printf ("%s/%s", connection_path, setting_name);
-	g_hash_table_remove (priv->requests, &request_id);
+	request = g_hash_table_lookup (priv->requests, &request_id);
+	if (!request) {
+		/* this is really a bug of the caller (or us?). We cannot invoke a callback,
+		 * hence the caller cannot cleanup the request. */
+		g_return_if_reached ();
+	}
+
+	g_set_error (&error,
+	             NM_SECRET_AGENT_ERROR,
+	             NM_SECRET_AGENT_ERROR_AGENT_CANCELED,
+	             "The secret agent is going away");
+	_request_data_complete (request, NULL, error, NULL);
 }
 
 static void
