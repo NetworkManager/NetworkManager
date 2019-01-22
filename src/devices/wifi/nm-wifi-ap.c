@@ -425,6 +425,8 @@ security_from_vardict (GVariant *security)
 		    g_strv_contains (array, "wpa-fils-sha256") ||
 		    g_strv_contains (array, "wpa-fils-sha384"))
 			flags |= NM_802_11_AP_SEC_KEY_MGMT_802_1X;
+		if (g_strv_contains (array, "sae"))
+			flags |= NM_802_11_AP_SEC_KEY_MGMT_SAE;
 		g_free (array);
 	}
 
@@ -1390,7 +1392,8 @@ nm_wifi_ap_class_init (NMWifiAPClass *ap_class)
 	| NM_802_11_AP_SEC_GROUP_TKIP \
 	| NM_802_11_AP_SEC_GROUP_CCMP \
 	| NM_802_11_AP_SEC_KEY_MGMT_PSK \
-	| NM_802_11_AP_SEC_KEY_MGMT_802_1X )
+	| NM_802_11_AP_SEC_KEY_MGMT_802_1X \
+	| NM_802_11_AP_SEC_KEY_MGMT_SAE )
 
 	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (ap_class);
