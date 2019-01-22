@@ -1142,6 +1142,7 @@ finalize (GObject *object)
 		                   request->connection,
 		                   NULL, error,
 		                   request->callback_data);
+		g_hash_table_iter_remove (&iter);
 	}
 
 	g_hash_table_destroy (priv->requests);
