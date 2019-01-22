@@ -573,7 +573,7 @@ _auth_dialog_write_done (GObject *source_object,
                         gpointer user_data)
 {
 	GOutputStream *auth_dialog_out = G_OUTPUT_STREAM (source_object);
-	_nm_unused nm_auto_free_gstring GString *auth_dialog_request_free = user_data;
+	_nm_unused gs_free char *auth_dialog_request_free = user_data;
 
 	/* We don't care about write errors. If there are any problems, the
 	 * reader shall notice. */
@@ -640,6 +640,8 @@ try_spawn_vpn_auth_helper (RequestData *request,
 	GInputStream *auth_dialog_out;
 	GError *error = NULL;
 	GString *auth_dialog_request;
+	char *auth_dialog_request_str;
+	gsize auth_dialog_request_len;
 	AuthDialogData *data;
 
 	plugin_info = nm_vpn_plugin_info_list_find_by_service (nm_vpn_get_plugin_infos (),
@@ -677,6 +679,9 @@ try_spawn_vpn_auth_helper (RequestData *request,
 	nm_setting_vpn_foreach_data_item (s_vpn, _add_data_item_to_string, auth_dialog_request);
 	nm_setting_vpn_foreach_secret (s_vpn, _add_secret_to_string, auth_dialog_request);
 	g_string_append (auth_dialog_request, "DONE\nQUIT\n");
+	auth_dialog_request_len = auth_dialog_request->len;
+	auth_dialog_request_str = g_string_free (auth_dialog_request, FALSE);
+
 	data = g_slice_new (AuthDialogData);
 	*data = (AuthDialogData) {
 		.auth_dialog_response = g_string_new_len (NULL, sizeof (data->read_buf)),
@@ -686,12 +691,12 @@ try_spawn_vpn_auth_helper (RequestData *request,
 	};
 
 	g_output_stream_write_async (auth_dialog_in,
-	                             auth_dialog_request->str,
-	                             auth_dialog_request->len,
+	                             auth_dialog_request_str,
+	                             auth_dialog_request_len,
 	                             G_PRIORITY_DEFAULT,
 	                             request->cancellable,
 	                             _auth_dialog_write_done,
-	                             auth_dialog_request);
+	                             auth_dialog_request_str);
 
 	g_input_stream_read_async (auth_dialog_out,
 	                           data->read_buf,
