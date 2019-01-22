@@ -348,6 +348,8 @@ typedef enum { /*< underscore_name=nm_802_11_ap_flags, flags >*/
  * supported
  * @NM_802_11_AP_SEC_KEY_MGMT_802_1X: 802.1x authentication and key management
  * is supported
+ * @NM_802_11_AP_SEC_KEY_MGMT_SAE: WPA/RSN Simultaneous Authentication of Equals is
+ * supported
  *
  * 802.11 access point security and authentication flags.  These flags describe
  * the current security requirements of an access point as determined from the
@@ -365,6 +367,7 @@ typedef enum { /*< underscore_name=nm_802_11_ap_security_flags, flags >*/
 	NM_802_11_AP_SEC_GROUP_CCMP      = 0x00000080,
 	NM_802_11_AP_SEC_KEY_MGMT_PSK    = 0x00000100,
 	NM_802_11_AP_SEC_KEY_MGMT_802_1X = 0x00000200,
+	NM_802_11_AP_SEC_KEY_MGMT_SAE    = 0x00000400,
 } NM80211ApSecurityFlags;
 
 /**
