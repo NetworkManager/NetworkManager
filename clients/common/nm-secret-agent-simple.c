@@ -422,17 +422,21 @@ add_vpn_secrets (RequestData *request,
 
 typedef struct {
 	GPid auth_dialog_pid;
-	char read_buf[5];
 	GString *auth_dialog_response;
 	RequestData *request;
 	GPtrArray *secrets;
-	guint child_watch_id;
+	GCancellable *cancellable;
 	gulong cancellable_id;
+	guint child_watch_id;
+	char read_buf[5];
 } AuthDialogData;
 
 static void
 _auth_dialog_data_free (AuthDialogData *data)
 {
+	nm_clear_g_signal_handler (data->cancellable, &data->cancellable_id);
+	g_clear_object (&data->cancellable);
+	nm_clear_g_source (&data->child_watch_id);
 	g_ptr_array_unref (data->secrets);
 	g_spawn_close_pid (data->auth_dialog_pid);
 	g_string_free (data->auth_dialog_response, TRUE);
@@ -453,7 +457,9 @@ _auth_dialog_exited (GPid pid, int status, gpointer user_data)
 	int i;
 	gs_free_error GError *error = NULL;
 
-	g_cancellable_disconnect (request->cancellable, data->cancellable_id);
+	data->child_watch_id = 0;
+
+	nm_clear_g_cancellable_disconnect (data->cancellable, &data->cancellable_id);
 
 	if (status != 0) {
 		g_set_error (&error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
@@ -522,10 +528,7 @@ out:
 static void
 _request_cancelled (GObject *object, gpointer user_data)
 {
-	AuthDialogData *data = user_data;
-
-	g_source_remove (data->child_watch_id);
-	_auth_dialog_data_free (data);
+	_auth_dialog_data_free (user_data);
 }
 
 static void
@@ -549,7 +552,8 @@ _auth_dialog_read_done (GObject *source_object,
 		/* Done reading. Let's wait for the auth dialog to exit so that we're able to collect the status.
 		 * Remember we can be cancelled in between. */
 		data->child_watch_id = g_child_watch_add (data->auth_dialog_pid, _auth_dialog_exited, data);
-		data->cancellable_id = g_cancellable_connect (data->request->cancellable,
+		data->cancellable = g_object_ref (data->request->cancellable);
+		data->cancellable_id = g_cancellable_connect (data->cancellable,
 		                                              G_CALLBACK (_request_cancelled), data, NULL);
 		break;
 	default:
