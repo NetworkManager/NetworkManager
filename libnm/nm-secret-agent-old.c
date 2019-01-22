@@ -20,10 +20,11 @@
 
 #include "nm-default.h"
 
+#include "nm-secret-agent-old.h"
+
 #include <string.h>
 
 #include "nm-dbus-interface.h"
-#include "nm-secret-agent-old.h"
 #include "nm-enum-types.h"
 #include "nm-dbus-helpers.h"
 #include "nm-simple-connection.h"
@@ -32,14 +33,23 @@
 #include "introspection/org.freedesktop.NetworkManager.SecretAgent.h"
 #include "introspection/org.freedesktop.NetworkManager.AgentManager.h"
 
-static void nm_secret_agent_old_initable_iface_init (GInitableIface *iface);
-static void nm_secret_agent_old_async_initable_iface_init (GAsyncInitableIface *iface);
-G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMSecretAgentOld, nm_secret_agent_old, G_TYPE_OBJECT,
-                                  G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_secret_agent_old_initable_iface_init);
-                                  G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_secret_agent_old_async_initable_iface_init);
-                                  )
+/*****************************************************************************/
 
-#define NM_SECRET_AGENT_OLD_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SECRET_AGENT_OLD, NMSecretAgentOldPrivate))
+typedef struct {
+	char *path;
+	char *setting_name;
+	GDBusMethodInvocation *context;
+} GetSecretsInfo;
+
+enum {
+	PROP_0,
+	PROP_IDENTIFIER,
+	PROP_AUTO_REGISTER,
+	PROP_REGISTERED,
+	PROP_CAPABILITIES,
+
+	LAST_PROP
+};
 
 typedef struct {
 	gboolean registered;
@@ -60,15 +70,15 @@ typedef struct {
 	gboolean suppress_auto;
 } NMSecretAgentOldPrivate;
 
-enum {
-	PROP_0,
-	PROP_IDENTIFIER,
-	PROP_AUTO_REGISTER,
-	PROP_REGISTERED,
-	PROP_CAPABILITIES,
+static void nm_secret_agent_old_initable_iface_init (GInitableIface *iface);
+static void nm_secret_agent_old_async_initable_iface_init (GAsyncInitableIface *iface);
 
-	LAST_PROP
-};
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMSecretAgentOld, nm_secret_agent_old, G_TYPE_OBJECT,
+                                  G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_secret_agent_old_initable_iface_init);
+                                  G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_secret_agent_old_async_initable_iface_init);
+                                  )
+
+#define NM_SECRET_AGENT_OLD_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SECRET_AGENT_OLD, NMSecretAgentOldPrivate))
 
 /*****************************************************************************/
 
@@ -84,12 +94,6 @@ _internal_unregister (NMSecretAgentOld *self)
 		g_object_notify (G_OBJECT (self), NM_SECRET_AGENT_OLD_REGISTERED);
 	}
 }
-
-typedef struct {
-	char *path;
-	char *setting_name;
-	GDBusMethodInvocation *context;
-} GetSecretsInfo;
 
 static void
 get_secrets_info_finalize (NMSecretAgentOld *self, GetSecretsInfo *info)
@@ -1007,20 +1011,7 @@ validate_identifier (const char *identifier)
 	return TRUE;
 }
 
-static void
-nm_secret_agent_old_init (NMSecretAgentOld *self)
-{
-	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
-
-	priv->dbus_secret_agent = nmdbus_secret_agent_skeleton_new ();
-	_nm_dbus_bind_properties (self, priv->dbus_secret_agent);
-	_nm_dbus_bind_methods (self, priv->dbus_secret_agent,
-	                       "GetSecrets", impl_secret_agent_old_get_secrets,
-	                       "CancelGetSecrets", impl_secret_agent_old_cancel_get_secrets,
-	                       "DeleteSecrets", impl_secret_agent_old_delete_secrets,
-	                       "SaveSecrets", impl_secret_agent_old_save_secrets,
-	                       NULL);
-}
+/*****************************************************************************/
 
 static void
 init_common (NMSecretAgentOld *self)
@@ -1035,34 +1026,6 @@ init_common (NMSecretAgentOld *self)
 		g_signal_connect (priv->manager_proxy, "notify::g-name-owner",
 		                  G_CALLBACK (name_owner_changed), self);
 	}
-}
-
-static gboolean
-init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
-{
-	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (initable);
-	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
-
-	priv->bus = _nm_dbus_new_connection (cancellable, error);
-	if (!priv->bus)
-		return FALSE;
-
-	priv->manager_proxy = nmdbus_agent_manager_proxy_new_sync (priv->bus,
-	                                                             G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
-	                                                           | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
-	                                                           NM_DBUS_SERVICE,
-	                                                           NM_DBUS_PATH_AGENT_MANAGER,
-	                                                           cancellable,
-	                                                           error);
-	if (!priv->manager_proxy)
-		return FALSE;
-
-	init_common (self);
-
-	if (priv->auto_register)
-		return nm_secret_agent_old_register (self, cancellable, error);
-	else
-		return TRUE;
 }
 
 typedef struct {
@@ -1141,36 +1104,7 @@ init_async_got_bus (GObject *initable, GAsyncResult *result, gpointer user_data)
 	                                init_async_got_proxy, init_data);
 }
 
-static void
-init_async (GAsyncInitable *initable, int io_priority,
-            GCancellable *cancellable, GAsyncReadyCallback callback,
-            gpointer user_data)
-{
-	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (initable);
-	NMSecretAgentOldInitData *init_data;
-
-	init_data = g_slice_new (NMSecretAgentOldInitData);
-	init_data->self = self;
-	init_data->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
-
-	init_data->simple = g_simple_async_result_new (G_OBJECT (initable), callback,
-	                                               user_data, init_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (init_data->simple, cancellable);
-
-	_nm_dbus_new_connection_async (cancellable, init_async_got_bus, init_data);
-}
-
-static gboolean
-init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
-{
-	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return TRUE;
-}
+/*****************************************************************************/
 
 static void
 get_property (GObject *object,
@@ -1227,6 +1161,82 @@ set_property (GObject *object,
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_secret_agent_old_init (NMSecretAgentOld *self)
+{
+	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
+
+	priv->dbus_secret_agent = nmdbus_secret_agent_skeleton_new ();
+	_nm_dbus_bind_properties (self, priv->dbus_secret_agent);
+	_nm_dbus_bind_methods (self, priv->dbus_secret_agent,
+	                       "GetSecrets", impl_secret_agent_old_get_secrets,
+	                       "CancelGetSecrets", impl_secret_agent_old_cancel_get_secrets,
+	                       "DeleteSecrets", impl_secret_agent_old_delete_secrets,
+	                       "SaveSecrets", impl_secret_agent_old_save_secrets,
+	                       NULL);
+}
+
+static gboolean
+init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
+{
+	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (initable);
+	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
+
+	priv->bus = _nm_dbus_new_connection (cancellable, error);
+	if (!priv->bus)
+		return FALSE;
+
+	priv->manager_proxy = nmdbus_agent_manager_proxy_new_sync (priv->bus,
+	                                                             G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
+	                                                           | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
+	                                                           NM_DBUS_SERVICE,
+	                                                           NM_DBUS_PATH_AGENT_MANAGER,
+	                                                           cancellable,
+	                                                           error);
+	if (!priv->manager_proxy)
+		return FALSE;
+
+	init_common (self);
+
+	if (priv->auto_register)
+		return nm_secret_agent_old_register (self, cancellable, error);
+	else
+		return TRUE;
+}
+
+static void
+init_async (GAsyncInitable *initable, int io_priority,
+            GCancellable *cancellable, GAsyncReadyCallback callback,
+            gpointer user_data)
+{
+	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (initable);
+	NMSecretAgentOldInitData *init_data;
+
+	init_data = g_slice_new (NMSecretAgentOldInitData);
+	init_data->self = self;
+	init_data->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
+
+	init_data->simple = g_simple_async_result_new (G_OBJECT (initable), callback,
+	                                               user_data, init_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (init_data->simple, cancellable);
+
+	_nm_dbus_new_connection_async (cancellable, init_async_got_bus, init_data);
+}
+
+static gboolean
+init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
+{
+	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return TRUE;
 }
 
 static void
