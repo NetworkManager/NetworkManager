@@ -41,15 +41,12 @@ typedef struct {
 	GDBusMethodInvocation *context;
 } GetSecretsInfo;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMSecretAgentOld,
 	PROP_IDENTIFIER,
 	PROP_AUTO_REGISTER,
 	PROP_REGISTERED,
 	PROP_CAPABILITIES,
-
-	LAST_PROP
-};
+);
 
 typedef struct {
 	gboolean registered;
@@ -91,7 +88,7 @@ _internal_unregister (NMSecretAgentOld *self)
 		g_dbus_interface_skeleton_unexport (G_DBUS_INTERFACE_SKELETON (priv->dbus_secret_agent));
 		priv->registered = FALSE;
 		priv->registering = FALSE;
-		g_object_notify (G_OBJECT (self), NM_SECRET_AGENT_OLD_REGISTERED);
+		_notify (self, PROP_REGISTERED);
 	}
 }
 
@@ -572,7 +569,7 @@ nm_secret_agent_old_register (NMSecretAgentOld *self,
 success:
 	priv->registering = FALSE;
 	priv->registered = TRUE;
-	g_object_notify (G_OBJECT (self), NM_SECRET_AGENT_OLD_REGISTERED);
+	_notify (self, PROP_REGISTERED);
 	return TRUE;
 }
 
@@ -591,7 +588,7 @@ reg_result (NMSecretAgentOld *self, GSimpleAsyncResult *simple, GError *error)
 		_internal_unregister (self);
 	} else {
 		priv->registered = TRUE;
-		g_object_notify (G_OBJECT (self), NM_SECRET_AGENT_OLD_REGISTERED);
+		_notify (self, PROP_REGISTERED);
 
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
 		g_simple_async_result_complete (simple);
@@ -1286,13 +1283,12 @@ nm_secret_agent_old_class_init (NMSecretAgentOldClass *class)
 	 * of 3 characters.  An example valid identifier is 'org.gnome.nm-applet'
 	 * (without quotes).
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_IDENTIFIER,
-		 g_param_spec_string (NM_SECRET_AGENT_OLD_IDENTIFIER, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IDENTIFIER] =
+	    g_param_spec_string (NM_SECRET_AGENT_OLD_IDENTIFIER, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSecretAgentOld:auto-register:
@@ -1315,39 +1311,38 @@ nm_secret_agent_old_class_init (NMSecretAgentOldClass *class)
 	 * auto-registration. This ensures that the agent remains un-registered when
 	 * you expect it to be unregistered.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_AUTO_REGISTER,
-		 g_param_spec_boolean (NM_SECRET_AGENT_OLD_AUTO_REGISTER, "", "",
-		                       TRUE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_AUTO_REGISTER] =
+	    g_param_spec_boolean (NM_SECRET_AGENT_OLD_AUTO_REGISTER, "", "",
+	                          TRUE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSecretAgentOld:registered:
 	 *
 	 * %TRUE if the agent is registered with NetworkManager, %FALSE if not.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_REGISTERED,
-		 g_param_spec_boolean (NM_SECRET_AGENT_OLD_REGISTERED, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_REGISTERED] =
+	    g_param_spec_boolean (NM_SECRET_AGENT_OLD_REGISTERED, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSecretAgentOld:capabilities:
 	 *
 	 * A bitfield of %NMSecretAgentCapabilities.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CAPABILITIES,
-		 g_param_spec_flags (NM_SECRET_AGENT_OLD_CAPABILITIES, "", "",
-		                     NM_TYPE_SECRET_AGENT_CAPABILITIES,
-		                     NM_SECRET_AGENT_CAPABILITY_NONE,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_CONSTRUCT |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CAPABILITIES] =
+	    g_param_spec_flags (NM_SECRET_AGENT_OLD_CAPABILITIES, "", "",
+	                        NM_TYPE_SECRET_AGENT_CAPABILITIES,
+	                        NM_SECRET_AGENT_CAPABILITY_NONE,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_CONSTRUCT |
+	                        G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
 
 static void
