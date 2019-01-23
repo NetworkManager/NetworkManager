@@ -3084,7 +3084,7 @@ msgstr "%s: Verbindung »%s« wird verwendet\n"
 #: ../clients/cli/devices.c:2594
 #, c-format
 msgid "%s: device created\n"
-msgstr "%s: Grerät angelegt\n"
+msgstr "%s: Gerät angelegt\n"
 
 #: ../clients/cli/devices.c:2601
 #, c-format
