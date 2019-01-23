@@ -729,24 +729,21 @@ static void
 request_secrets_from_ui (RequestData *request)
 {
 	gs_unref_ptrarray GPtrArray *secrets = NULL;
+	gs_free_error GError *error = NULL;
 	NMSecretAgentSimplePrivate *priv;
 	NMSecretAgentSimpleSecret *secret;
 	const char *title;
 	gs_free char *msg = NULL;
-	gboolean ok = TRUE;
 
 	priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (request->self);
 	g_return_if_fail (priv->enabled);
 
 	/* We only handle requests for connection with @path if set. */
 	if (priv->path && !g_str_has_prefix (request->request_id, priv->path)) {
-		gs_free_error GError *error = NULL;
-
-		error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
-		                     "Request for %s secrets doesn't match path %s",
-		                     request->request_id, priv->path);
-		_request_data_complete (request, NULL, error, NULL);
-		return;
+		g_set_error (&error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
+		             "Request for %s secrets doesn't match path %s",
+		             request->request_id, priv->path);
+		goto out_fail_error;
 	}
 
 	secrets = g_ptr_array_new_with_free_func ((GDestroyNotify) _secret_real_free);
@@ -764,19 +761,22 @@ request_secrets_from_ui (RequestData *request)
 		title = _("Authentication required by wireless network");
 		msg = g_strdup_printf (_("Passwords or encryption keys are required to access the wireless network '%s'."), ssid_utf8);
 
-		ok = add_wireless_secrets (request, secrets);
+		if (!add_wireless_secrets (request, secrets))
+			goto out_fail;
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_WIRED_SETTING_NAME)) {
 		title = _("Wired 802.1X authentication");
 		msg = g_strdup_printf (_("Secrets are required to access the wired network '%s'"),
 		                       nm_connection_get_id (request->connection));
 
-		ok = add_8021x_secrets (request, secrets);
+		if (!add_8021x_secrets (request, secrets))
+			goto out_fail;
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_PPPOE_SETTING_NAME)) {
 		title = _("DSL authentication");
 		msg = g_strdup_printf (_("Secrets are required for the DSL connection '%s'"),
 		                       nm_connection_get_id (request->connection));
 
-		ok = add_pppoe_secrets (request, secrets);
+		if (!add_pppoe_secrets (request, secrets))
+			goto out_fail;
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_GSM_SETTING_NAME)) {
 		NMSettingGsm *s_gsm = nm_connection_get_setting_gsm (request->connection);
 
@@ -818,7 +818,8 @@ request_secrets_from_ui (RequestData *request)
 			g_ptr_array_add (secrets, secret);
 		} else {
 			title = _("MACsec EAP authentication");
-			ok = add_8021x_secrets (request, secrets);
+			if (!add_8021x_secrets (request, secrets))
+				goto out_fail;
 		}
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_CDMA_SETTING_NAME)) {
 		NMSettingCdma *s_cdma = nm_connection_get_setting_cdma (request->connection);
@@ -844,48 +845,48 @@ request_secrets_from_ui (RequestData *request)
 				setting = nm_connection_get_setting_by_name (request->connection, NM_SETTING_CDMA_SETTING_NAME);
 		}
 
-		if (setting) {
-			title = _("Mobile broadband network password");
-			msg = g_strdup_printf (_("A password is required to connect to '%s'."),
-			                       nm_connection_get_id (request->connection));
+		if (!setting)
+			goto out_fail;
 
-			secret = _secret_real_new (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
-			                           _("Password"),
-			                           setting,
-			                           "password",
-			                           NULL);
-			g_ptr_array_add (secrets, secret);
-		} else
-			ok = FALSE;
+		title = _("Mobile broadband network password");
+		msg = g_strdup_printf (_("A password is required to connect to '%s'."),
+		                       nm_connection_get_id (request->connection));
+
+		secret = _secret_real_new (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+		                           _("Password"),
+		                           setting,
+		                           "password",
+		                           NULL);
+		g_ptr_array_add (secrets, secret);
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_VPN_SETTING_NAME)) {
 		title = _("VPN password required");
-		msg = NULL;
 
 		if (try_spawn_vpn_auth_helper (request, secrets)) {
 			/* This will emit REQUEST_SECRETS when ready */
 			return;
 		}
 
-		ok = add_vpn_secrets (request, secrets, &msg);
-		if (!msg)
+		if (!add_vpn_secrets (request, secrets, &msg))
+			goto out_fail;
+		if (!msg) {
 			msg = g_strdup_printf (_("A password is required to connect to '%s'."),
 			                       nm_connection_get_id (request->connection));
+		}
 	} else
-		ok = FALSE;
-
-	if (!ok) {
-		gs_free_error GError *error = NULL;
-
-		error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
-		                     "Cannot service a secrets request %s for a %s connection",
-		                     request->request_id,
-		                     nm_connection_get_connection_type (request->connection));
-		_request_data_complete (request, NULL, error, NULL);
-		return;
-	}
+		goto out_fail;
 
 	g_signal_emit (request->self, signals[REQUEST_SECRETS], 0,
 	               request->request_id, title, msg, secrets);
+	return;
+
+out_fail:
+	g_set_error (&error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
+	             "Cannot service a secrets request %s for a %s connection",
+	             request->request_id,
+	             nm_connection_get_connection_type (request->connection));
+out_fail_error:
+	_request_data_complete (request, NULL, error, NULL);
+
 }
 
 static void
