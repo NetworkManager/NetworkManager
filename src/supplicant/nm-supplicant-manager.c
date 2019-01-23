@@ -39,6 +39,7 @@ typedef struct {
 	NMSupplicantFeature pmf_support;
 	NMSupplicantFeature fils_support;
 	NMSupplicantFeature p2p_support;
+	NMSupplicantFeature mesh_support;
 	NMSupplicantFeature wfd_support;
 	NMSupplicantFeature ft_support;
 	NMSupplicantFeature sha384_support;
@@ -233,6 +234,7 @@ nm_supplicant_manager_create_interface (NMSupplicantManager *self,
 	                                     priv->pmf_support,
 	                                     priv->fils_support,
 	                                     priv->p2p_support,
+	                                     priv->mesh_support,
 	                                     priv->wfd_support,
 	                                     priv->ft_support,
 	                                     priv->sha384_support);
@@ -292,6 +294,7 @@ nm_supplicant_manager_create_interface_from_path (NMSupplicantManager *self,
 	                                     priv->pmf_support,
 	                                     priv->fils_support,
 	                                     priv->p2p_support,
+	                                     priv->mesh_support,
 	                                     priv->wfd_support,
 	                                     priv->ft_support,
 	                                     priv->sha384_support);
@@ -334,6 +337,7 @@ update_capabilities (NMSupplicantManager *self)
 	priv->p2p_support = NM_SUPPLICANT_FEATURE_NO;
 	priv->ft_support = NM_SUPPLICANT_FEATURE_NO;
 	priv->sha384_support = NM_SUPPLICANT_FEATURE_NO;
+	priv->mesh_support = NM_SUPPLICANT_FEATURE_NO;
 
 	value = g_dbus_proxy_get_cached_property (priv->proxy, "Capabilities");
 	if (value) {
@@ -345,6 +349,7 @@ update_capabilities (NMSupplicantManager *self)
 			priv->p2p_support = NM_SUPPLICANT_FEATURE_NO;
 			priv->ft_support = NM_SUPPLICANT_FEATURE_NO;
 			priv->sha384_support = NM_SUPPLICANT_FEATURE_NO;
+			priv->mesh_support = NM_SUPPLICANT_FEATURE_NO;
 			if (array) {
 				if (g_strv_contains (array, "ap"))
 					priv->ap_support = NM_SUPPLICANT_FEATURE_YES;
@@ -358,6 +363,8 @@ update_capabilities (NMSupplicantManager *self)
 					priv->ft_support = NM_SUPPLICANT_FEATURE_YES;
 				if (g_strv_contains (array, "sha384"))
 					priv->sha384_support = NM_SUPPLICANT_FEATURE_YES;
+				if (g_strv_contains (array, "mesh"))
+					priv->mesh_support = NM_SUPPLICANT_FEATURE_YES;
 				g_free (array);
 			}
 		}
@@ -372,6 +379,7 @@ update_capabilities (NMSupplicantManager *self)
 		nm_supplicant_interface_set_p2p_support (ifaces->data, priv->p2p_support);
 		nm_supplicant_interface_set_ft_support (ifaces->data, priv->ft_support);
 		nm_supplicant_interface_set_sha384_support (ifaces->data, priv->sha384_support);
+		nm_supplicant_interface_set_mesh_support (ifaces->data, priv->mesh_support);
 	}
 
 	_LOGD ("AP mode is %ssupported",
@@ -392,6 +400,9 @@ update_capabilities (NMSupplicantManager *self)
 	_LOGD ("SHA384 is %ssupported",
 	       (priv->sha384_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
 	           (priv->sha384_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
+	_LOGD ("Mesh is %ssupported",
+	       (priv->mesh_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
+	           (priv->mesh_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
 
 	/* EAP-FAST */
 	priv->fast_support = NM_SUPPLICANT_FEATURE_NO;

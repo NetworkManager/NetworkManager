@@ -67,6 +67,7 @@ typedef enum {
 #define NM_SUPPLICANT_INTERFACE_PMF_SUPPORT      "pmf-support"
 #define NM_SUPPLICANT_INTERFACE_FILS_SUPPORT     "fils-support"
 #define NM_SUPPLICANT_INTERFACE_P2P_SUPPORT      "p2p-support"
+#define NM_SUPPLICANT_INTERFACE_MESH_SUPPORT     "mesh-support"
 #define NM_SUPPLICANT_INTERFACE_WFD_SUPPORT      "wfd-support"
 #define NM_SUPPLICANT_INTERFACE_FT_SUPPORT       "ft-support"
 #define NM_SUPPLICANT_INTERFACE_SHA384_SUPPORT   "sha384-support"
@@ -97,6 +98,7 @@ NMSupplicantInterface * nm_supplicant_interface_new (const char *ifname,
                                                      NMSupplicantFeature pmf_support,
                                                      NMSupplicantFeature fils_support,
                                                      NMSupplicantFeature p2p_support,
+                                                     NMSupplicantFeature mesh_support,
                                                      NMSupplicantFeature wfd_support,
                                                      NMSupplicantFeature ft_support,
                                                      NMSupplicantFeature sha384_support);
@@ -174,6 +176,7 @@ NMSupplicantFeature nm_supplicant_interface_get_ap_support (NMSupplicantInterfac
 NMSupplicantFeature nm_supplicant_interface_get_pmf_support (NMSupplicantInterface *self);
 NMSupplicantFeature nm_supplicant_interface_get_fils_support (NMSupplicantInterface *self);
 NMSupplicantFeature nm_supplicant_interface_get_p2p_support (NMSupplicantInterface *self);
+NMSupplicantFeature nm_supplicant_interface_get_mesh_support (NMSupplicantInterface *self);
 NMSupplicantFeature nm_supplicant_interface_get_wfd_support (NMSupplicantInterface *self);
 NMSupplicantFeature nm_supplicant_interface_get_ft_support (NMSupplicantInterface *self);
 NMSupplicantFeature nm_supplicant_interface_get_sha384_support (NMSupplicantInterface *self);
@@ -192,6 +195,9 @@ void nm_supplicant_interface_set_fils_support (NMSupplicantInterface *self,
 
 void nm_supplicant_interface_set_p2p_support (NMSupplicantInterface *self,
                                               NMSupplicantFeature p2p_support);
+
+void nm_supplicant_interface_set_mesh_support (NMSupplicantInterface *self,
+                                               NMSupplicantFeature mesh_support);
 
 void nm_supplicant_interface_set_wfd_support (NMSupplicantInterface *self,
                                               NMSupplicantFeature wfd_support);

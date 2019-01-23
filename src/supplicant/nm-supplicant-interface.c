@@ -118,6 +118,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSupplicantInterface,
 	PROP_PMF_SUPPORT,
 	PROP_FILS_SUPPORT,
 	PROP_P2P_SUPPORT,
+	PROP_MESH_SUPPORT,
 	PROP_WFD_SUPPORT,
 	PROP_FT_SUPPORT,
 	PROP_SHA384_SUPPORT,
@@ -132,6 +133,7 @@ typedef struct {
 	NMSupplicantFeature pmf_support;
 	NMSupplicantFeature fils_support;
 	NMSupplicantFeature p2p_support;
+	NMSupplicantFeature mesh_support;
 	NMSupplicantFeature wfd_support;
 	NMSupplicantFeature ft_support;
 	NMSupplicantFeature sha384_support;
@@ -791,6 +793,12 @@ nm_supplicant_interface_get_p2p_support (NMSupplicantInterface *self)
 }
 
 NMSupplicantFeature
+nm_supplicant_interface_get_mesh_support (NMSupplicantInterface *self)
+{
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->mesh_support;
+}
+
+NMSupplicantFeature
 nm_supplicant_interface_get_wfd_support (NMSupplicantInterface *self)
 {
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->wfd_support;
@@ -855,6 +863,15 @@ nm_supplicant_interface_set_p2p_support (NMSupplicantInterface *self,
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	priv->p2p_support = p2p_support;
+}
+
+void
+nm_supplicant_interface_set_mesh_support (NMSupplicantInterface *self,
+                                          NMSupplicantFeature mesh_support)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	priv->mesh_support = mesh_support;
 }
 
 void
@@ -2774,6 +2791,10 @@ set_property (GObject *object,
 		/* construct-only */
 		priv->p2p_support = g_value_get_int (value);
 		break;
+	case PROP_MESH_SUPPORT:
+		/* construct-only */
+		priv->mesh_support = g_value_get_int (value);
+		break;
 	case PROP_WFD_SUPPORT:
 		/* construct-only */
 		priv->wfd_support = g_value_get_int (value);
@@ -2811,6 +2832,7 @@ nm_supplicant_interface_new (const char *ifname,
                              NMSupplicantFeature pmf_support,
                              NMSupplicantFeature fils_support,
                              NMSupplicantFeature p2p_support,
+                             NMSupplicantFeature mesh_support,
                              NMSupplicantFeature wfd_support,
                              NMSupplicantFeature ft_support,
                              NMSupplicantFeature sha384_support)
@@ -2828,6 +2850,7 @@ nm_supplicant_interface_new (const char *ifname,
 	                     NM_SUPPLICANT_INTERFACE_PMF_SUPPORT, (int) pmf_support,
 	                     NM_SUPPLICANT_INTERFACE_FILS_SUPPORT, (int) fils_support,
 	                     NM_SUPPLICANT_INTERFACE_P2P_SUPPORT, (int) p2p_support,
+	                     NM_SUPPLICANT_INTERFACE_MESH_SUPPORT, (int) mesh_support,
 	                     NM_SUPPLICANT_INTERFACE_WFD_SUPPORT, (int) wfd_support,
 	                     NM_SUPPLICANT_INTERFACE_FT_SUPPORT, (int) ft_support,
 	                     NM_SUPPLICANT_INTERFACE_SHA384_SUPPORT, (int) sha384_support,
@@ -2975,6 +2998,14 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_P2P_SUPPORT] =
 	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_P2P_SUPPORT, "", "",
+	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
+	                      NM_SUPPLICANT_FEATURE_YES,
+	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
+	                      G_PARAM_WRITABLE |
+	                      G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_MESH_SUPPORT] =
+	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_MESH_SUPPORT, "", "",
 	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
 	                      NM_SUPPLICANT_FEATURE_YES,
 	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
