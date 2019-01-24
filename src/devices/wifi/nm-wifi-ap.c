@@ -259,7 +259,8 @@ nm_wifi_ap_set_mode (NMWifiAP *ap, const NM80211Mode mode)
 
 	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
 	g_return_val_if_fail (   mode == NM_802_11_MODE_ADHOC
-	                     || mode == NM_802_11_MODE_INFRA, FALSE);
+	                      || mode == NM_802_11_MODE_INFRA
+	                      || mode == NM_802_11_MODE_MESH, FALSE);
 
 	priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
@@ -1246,6 +1247,8 @@ nm_wifi_ap_new_fake_from_connection (NMConnection *connection)
 			nm_wifi_ap_set_mode (ap, NM_802_11_MODE_INFRA);
 		else if (!strcmp (mode, "adhoc"))
 			nm_wifi_ap_set_mode (ap, NM_802_11_MODE_ADHOC);
+		else if (!strcmp (mode, "mesh"))
+			nm_wifi_ap_set_mode (ap, NM_802_11_MODE_MESH);
 		else if (!strcmp (mode, "ap")) {
 			nm_wifi_ap_set_mode (ap, NM_802_11_MODE_INFRA);
 			NM_WIFI_AP_GET_PRIVATE (ap)->hotspot = TRUE;
