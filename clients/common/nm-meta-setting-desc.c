@@ -7162,7 +7162,8 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			.values_static =            NM_MAKE_STRV (NM_SETTING_WIRELESS_MODE_INFRA,
 			                                          NM_SETTING_WIRELESS_MODE_ADHOC,
-			                                          NM_SETTING_WIRELESS_MODE_AP),
+			                                          NM_SETTING_WIRELESS_MODE_AP,
+			                                          NM_SETTING_WIRELESS_MODE_MESH),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_BAND,
