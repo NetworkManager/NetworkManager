@@ -1753,6 +1753,9 @@ settings_connection_update (NMSettingsConnection *self,
 			                                           &error);
 			if (!tmp)
 				goto error;
+
+			if (!nm_connection_verify_secrets (tmp, &error))
+				goto error;
 		}
 	}
 
