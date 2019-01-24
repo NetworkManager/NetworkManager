@@ -687,6 +687,7 @@ PRP_DEVICE_MANAGED               = "Managed"
 PRP_DEVICE_AUTOCONNECT           = "Autoconnect"
 PRP_DEVICE_DEVICE_TYPE           = "DeviceType"
 PRP_DEVICE_AVAILABLE_CONNECTIONS = "AvailableConnections"
+PRP_DEVICE_LLDP_NEIGHBORS        = "LldpNeighbors"
 
 class Device(ExportedObj):
 
@@ -719,6 +720,41 @@ class Device(ExportedObj):
             PRP_DEVICE_AUTOCONNECT:           True,
             PRP_DEVICE_DEVICE_TYPE:           dbus.UInt32(devtype),
             PRP_DEVICE_AVAILABLE_CONNECTIONS: ExportedObj.to_path_array([]),
+            PRP_DEVICE_LLDP_NEIGHBORS:        dbus.Array([
+                dbus.Dictionary({
+                    'chassis-id-type':      dbus.UInt32(6),
+                    'chassis-id':           dbus.String('00:11:22:33:44:00'),
+                    'port-id-type':         dbus.UInt32(7),
+                    'port-id':              dbus.String('Uplink port'),
+                    'port-description':     dbus.String('GigabitEthernet #1'),
+                    'system-name':          dbus.String('test1.example.com'),
+                    'system-description':   dbus.String('Test system #1'),
+                    'system-capabilities':  dbus.UInt32(20),
+                    'destination':          dbus.String('nearest-bridge'),
+                }),
+                dbus.Dictionary({
+                    'chassis-id-type':      dbus.UInt32(2),
+                    'chassis-id':           dbus.String('chassis1'),
+                    'port-id-type':         dbus.UInt32(3),
+                    'port-id':              dbus.String('44:44:44:44:44:44'),
+                    'port-description':     dbus.String('GigabitEthernet #2'),
+                    'system-name':          dbus.String('test2.example.com'),
+                    'system-description':   dbus.String('Test system #2'),
+                    'system-capabilities':  dbus.UInt32(2047),
+                    'destination':          dbus.String('nearest-non-tpmr-bridge')
+                }),
+                dbus.Dictionary({
+                    'chassis-id-type':      dbus.UInt32(6),
+                    'chassis-id':           dbus.String('00:11:22:33:44:22'),
+                    'port-id-type':         dbus.UInt32(1),
+                    'port-id':              dbus.String('port1'),
+                    'port-description':     dbus.String('GigabitEthernet #3'),
+                    'system-name':          dbus.String('test3.example.com'),
+                    'system-description':   dbus.String('Test system #3'),
+                    'system-capabilities':  dbus.UInt32(40),
+                    'destination':          dbus.String('nearest-customer-bridge'),
+                })
+            ], 'a{sv}')
         }
 
         self.dbus_interface_add(IFACE_DEVICE, props, Device.PropertiesChanged)

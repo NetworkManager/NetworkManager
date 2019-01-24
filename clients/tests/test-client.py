@@ -1097,6 +1097,9 @@ class TestNmcli(NmTestBase):
             self.call_nmcli_l(mode + ['-f', 'GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS', 'device', 'show', 'wlan0' ],
                               replace_stdout = replace_stdout)
 
+            self.call_nmcli_l(mode + ['dev', 'lldp', 'list', 'ifname', 'eth0'],
+                              replace_stdout = replace_stdout)
+
 ###############################################################################
 
 def main():
