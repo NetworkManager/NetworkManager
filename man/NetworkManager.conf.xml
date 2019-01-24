@@ -1116,7 +1116,7 @@ managed=1
           <term><varname>options</varname></term>
           <listitem>
             <para>
-             A list of of options to be passed to the hostname resolver.
+             A list of options to be passed to the hostname resolver.
            </para>
           </listitem>
         </varlistentry>
