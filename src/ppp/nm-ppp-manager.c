@@ -363,7 +363,7 @@ impl_ppp_manager_need_secrets (NMDBusObject *obj,
 	const char *username = NULL;
 	const char *password = NULL;
 	guint32 tries;
-	GPtrArray *hints = NULL;
+	gs_unref_ptrarray GPtrArray *hints = NULL;
 	GError *error = NULL;
 	NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
@@ -393,18 +393,18 @@ impl_ppp_manager_need_secrets (NMDBusObject *obj,
 	if (tries > 1)
 		flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 
+	if (hints)
+		g_ptr_array_add (hints, NULL);
+
 	priv->secrets_id = nm_act_request_get_secrets (priv->act_req,
 	                                               FALSE,
 	                                               priv->secrets_setting_name,
 	                                               flags,
-	                                               hints ? g_ptr_array_index (hints, 0) : NULL,
+	                                               hints ? (const char *const*) hints->pdata : NULL,
 	                                               ppp_secrets_cb,
 	                                               self);
 	g_object_set_qdata (G_OBJECT (applied_connection), ppp_manager_secret_tries_quark (), GUINT_TO_POINTER (++tries));
 	priv->pending_secrets_context = invocation;
-
-	if (hints)
-		g_ptr_array_free (hints, TRUE);
 }
 
 static void
