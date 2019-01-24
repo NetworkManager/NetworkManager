@@ -458,7 +458,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
                                            GError **error)
 {
 	NMSupplicantConfigPrivate *priv;
-	gboolean is_adhoc, is_ap;
+	gboolean is_adhoc, is_ap, is_mesh;
 	const char *mode, *band;
 	guint32 channel;
 	GBytes *ssid;
@@ -473,6 +473,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	mode = nm_setting_wireless_get_mode (setting);
 	is_adhoc = (mode && !strcmp (mode, "adhoc")) ? TRUE : FALSE;
 	is_ap = (mode && !strcmp (mode, "ap")) ? TRUE : FALSE;
+	is_mesh = (mode && !strcmp (mode, "mesh")) ? TRUE : FALSE;
 	if (is_adhoc || is_ap)
 		priv->ap_scan = 2;
 	else
@@ -502,7 +503,12 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 			return FALSE;
 	}
 
-	if ((is_adhoc || is_ap) && fixed_freq) {
+	if (is_mesh) {
+		if (!nm_supplicant_config_add_option (self, "mode", "5", -1, NULL, error))
+			return FALSE;
+	}
+
+	if ((is_adhoc || is_ap || is_mesh) && fixed_freq) {
 		gs_free char *str_freq = NULL;
 
 		str_freq = g_strdup_printf ("%u", fixed_freq);
@@ -510,10 +516,10 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 			return FALSE;
 	}
 
-	/* Except for Ad-Hoc and Hotspot, request that the driver probe for the
+	/* Except for Ad-Hoc, Hotspot and Mesh, request that the driver probe for the
 	 * specific SSID we want to associate with.
 	 */
-	if (!(is_adhoc || is_ap)) {
+	if (!(is_adhoc || is_ap || is_mesh)) {
 		if (!nm_supplicant_config_add_option (self, "scan_ssid", "1", -1, NULL, error))
 			return FALSE;
 	}
