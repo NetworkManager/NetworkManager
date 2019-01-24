@@ -44,43 +44,37 @@
 static char *
 ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
 {
-	char *flags_str[16]; /* Enough space for flags and terminating NULL */
-	char *ret_str;
+	char *flags_str[12];
 	int i = 0;
 
 	if (flags & NM_802_11_AP_SEC_PAIR_WEP40)
-		flags_str[i++] = g_strdup ("pair_wpe40");
+		flags_str[i++] = "pair_wpe40";
 	if (flags & NM_802_11_AP_SEC_PAIR_WEP104)
-		flags_str[i++] = g_strdup ("pair_wpe104");
+		flags_str[i++] = "pair_wpe104";
 	if (flags & NM_802_11_AP_SEC_PAIR_TKIP)
-		flags_str[i++] = g_strdup ("pair_tkip");
+		flags_str[i++] = "pair_tkip";
 	if (flags & NM_802_11_AP_SEC_PAIR_CCMP)
-		flags_str[i++] = g_strdup ("pair_ccmp");
+		flags_str[i++] = "pair_ccmp";
 	if (flags & NM_802_11_AP_SEC_GROUP_WEP40)
-		flags_str[i++] = g_strdup ("group_wpe40");
+		flags_str[i++] = "group_wpe40";
 	if (flags & NM_802_11_AP_SEC_GROUP_WEP104)
-		flags_str[i++] = g_strdup ("group_wpe104");
+		flags_str[i++] = "group_wpe104";
 	if (flags & NM_802_11_AP_SEC_GROUP_TKIP)
-		flags_str[i++] = g_strdup ("group_tkip");
+		flags_str[i++] = "group_tkip";
 	if (flags & NM_802_11_AP_SEC_GROUP_CCMP)
-		flags_str[i++] = g_strdup ("group_ccmp");
+		flags_str[i++] = "group_ccmp";
 	if (flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
-		flags_str[i++] = g_strdup ("psk");
+		flags_str[i++] = "psk";
 	if (flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
-		flags_str[i++] = g_strdup ("802.1X");
+		flags_str[i++] = "802.1X";
+	/* Make sure you grow flags_str when adding items here. */
 
 	if (i == 0)
-		flags_str[i++] = g_strdup (_("(none)"));
+		flags_str[i++] = _("(none)");
 
 	flags_str[i] = NULL;
 
-	ret_str = g_strjoinv (" ", flags_str);
-
-	i = 0;
-	while (flags_str[i])
-		g_free (flags_str[i++]);
-
-	return ret_str;
+	return g_strjoinv (" ", flags_str);
 }
 
 static NMMetaColor
