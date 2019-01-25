@@ -1130,7 +1130,7 @@ _nm_device_iwd_request_scan (NMDeviceIwd *self,
 	                       NM_DEVICE_AUTH_REQUEST,
 	                       invocation,
 	                       NULL,
-	                       NM_AUTH_PERMISSION_NETWORK_CONTROL,
+	                       NM_AUTH_PERMISSION_WIFI_SCAN,
 	                       TRUE,
 	                       dbus_request_scan_cb,
 	                       options ? g_variant_ref (options) : NULL);

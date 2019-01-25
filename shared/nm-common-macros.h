@@ -40,6 +40,7 @@
 #define NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK        "org.freedesktop.NetworkManager.checkpoint-rollback"
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_STATISTICS  "org.freedesktop.NetworkManager.enable-disable-statistics"
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK "org.freedesktop.NetworkManager.enable-disable-connectivity-check"
+#define NM_AUTH_PERMISSION_WIFI_SCAN                  "org.freedesktop.NetworkManager.wifi.scan"
 
 #define NM_CLONED_MAC_PRESERVE                          "preserve"
 #define NM_CLONED_MAC_PERMANENT                         "permanent"
