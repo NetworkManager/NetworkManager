@@ -84,10 +84,10 @@ struct NMTeamLinkWatcher {
 			int init_wait;
 			int interval;
 			int missed_max;
-			int vlanid;
 			char *target_host;
 			char *source_host;
 			NMTeamLinkWatcherArpPingFlags flags;
+			int vlanid;
 		} arp_ping;
 	};
 };
