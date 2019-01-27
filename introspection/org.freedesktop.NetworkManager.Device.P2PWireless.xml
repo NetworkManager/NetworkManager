@@ -4,6 +4,7 @@
       org.freedesktop.NetworkManager.Device.P2PWireless:
       @short_description: P2P Wi-Fi Device
 
+      Since: 1.16
   -->
   <interface name="org.freedesktop.NetworkManager.Device.P2PWireless">
     <annotation name="org.gtk.GDBus.C.Name" value="Device_P2P_Wifi"/>
@@ -12,6 +13,8 @@
         HwAddress:
 
         The active hardware address of the device.
+
+        Since: 1.16
     -->
     <property name="HwAddress" type="s" access="read"/>
 
@@ -19,6 +22,8 @@
         GroupOwner:
 
         Whether this device is currently the group owner.
+
+        Since: 1.16
     -->
     <property name="GroupOwner" type="b" access="read"/>
 
@@ -26,6 +31,8 @@
         WFDIEs:
 
         The Wi-Fi Display information elements.
+
+        Since: 1.16
     -->
     <property name="WFDIEs" type="ay" access="read">
       <!-- gdbus-codegen assumes that "ay" means "non-UTF-8 string" and
@@ -38,6 +45,8 @@
         Peers:
 
         List of object paths of peers visible to this p2p wireless device.
+
+        Since: 1.16
     -->
     <property name="Peers" type="ao" access="read"/>
 
@@ -48,6 +57,8 @@
                   30 seconds.
 
         Start a find operation for P2P peers.
+
+        Since: 1.16
     -->
     <method name="StartFind">
       <arg name="options" type="a{sv}" direction="in"/>
@@ -57,6 +68,8 @@
         StopFind:
 
         Stop an ongoing find operation again.
+
+        Since: 1.16
     -->
     <method name="StopFind">
     </method>
@@ -66,6 +79,8 @@
         @peer: The object path of the newly found access point.
 
         Emitted when a new P2P peer is found by the device.
+
+        Since: 1.16
     -->
     <signal name="PeerAdded">
       <arg name="peer" type="o"/>
@@ -76,6 +91,8 @@
         @peer: The object path of the P2P peer that has disappeared.
 
         Emitted when a P2P peer disappears from view of the device.
+
+        Since: 1.16
     -->
     <signal name="PeerRemoved">
       <arg name="peer" type="o"/>
