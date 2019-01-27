@@ -218,6 +218,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-ovs-interface.xml"/>
     <xi:include href="xml/nm-setting-ovs-patch.xml"/>
     <xi:include href="xml/nm-setting-ovs-port.xml"/>
+    <xi:include href="xml/nm-setting-p2p-wireless.xml"/>
     <xi:include href="xml/nm-setting-pppoe.xml"/>
     <xi:include href="xml/nm-setting-ppp.xml"/>
     <xi:include href="xml/nm-setting-proxy.xml"/>
@@ -260,6 +261,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-device-ovs-bridge.xml"/>
     <xi:include href="xml/nm-device-ovs-interface.xml"/>
     <xi:include href="xml/nm-device-ovs-port.xml"/>
+    <xi:include href="xml/nm-device-p2p-wifi.xml"/>
     <xi:include href="xml/nm-device-ppp.xml"/>
     <xi:include href="xml/nm-device-team.xml"/>
     <xi:include href="xml/nm-device-tun.xml"/>
@@ -273,6 +275,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-active-connection.xml"/>
     <xi:include href="xml/nm-vpn-connection.xml"/>
     <xi:include href="xml/nm-access-point.xml"/>
+    <xi:include href="xml/nm-p2p-peer.xml"/>
     <xi:include href="xml/nm-wimax-nsp.xml"/>
     <xi:include href="xml/nm-ip-config.xml"/>
     <xi:include href="xml/nm-dhcp-config.xml"/>

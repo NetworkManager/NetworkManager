@@ -82,6 +82,7 @@ libnm-core/nm-setting-ovs-interface.c
 libnm-core/nm-setting-ovs-patch.c
 libnm-core/nm-setting-ovs-port.c
 libnm-core/nm-setting-ovs-bridge.c
+libnm-core/nm-setting-p2p-wireless.c
 libnm-core/nm-setting-ppp.c
 libnm-core/nm-setting-pppoe.c
 libnm-core/nm-setting-proxy.c
@@ -151,6 +152,7 @@ libnm/nm-device-olpc-mesh.c
 libnm/nm-device-ovs-bridge.c
 libnm/nm-device-ovs-interface.c
 libnm/nm-device-ovs-port.c
+libnm/nm-device-p2p-wifi.c
 libnm/nm-device-team.c
 libnm/nm-device-vlan.c
 libnm/nm-device-vxlan.c

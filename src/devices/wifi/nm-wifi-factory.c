@@ -26,6 +26,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-olpc-mesh.h"
 #include "nm-device-wifi.h"
+#include "nm-device-p2p-wifi.h"
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-iwd.h"
 #include "settings/nm-settings-connection.h"
@@ -68,6 +69,18 @@ nm_device_factory_create (GError **error)
 
 /*****************************************************************************/
 
+static void
+p2p_device_created (NMDeviceWifi    *device,
+                    NMDeviceP2PWifi *p2p_device,
+                    NMDeviceFactory *self)
+{
+	nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
+	             "P2P Wifi device controlled by wifi interface %s created",
+	             nm_device_get_iface (NM_DEVICE (device)));
+
+	g_signal_emit_by_name (self, NM_DEVICE_FACTORY_DEVICE_ADDED, p2p_device);
+}
+
 static NMDevice *
 create_device (NMDeviceFactory *factory,
                const char *iface,
@@ -98,6 +111,7 @@ create_device (NMDeviceFactory *factory,
 	            NM_PRINT_FMT_QUOTE_STRING (backend),
 	            WITH_IWD ? " (iwd support enabled)" : "");
 	if (!backend || !strcasecmp (backend, "wpa_supplicant")) {
+		NMDevice *device;
 		NMDeviceWifiCapabilities capabilities;
 		NM80211Mode mode;
 
@@ -120,7 +134,14 @@ create_device (NMDeviceFactory *factory,
 			return NULL;
 		}
 
-		return nm_device_wifi_new (iface, capabilities);
+		device = nm_device_wifi_new (iface, capabilities);
+
+		g_signal_connect_object (device, NM_DEVICE_WIFI_P2P_DEVICE_CREATED,
+		                         G_CALLBACK (p2p_device_created),
+		                         factory,
+		                         0);
+
+		return device;
 	}
 #if WITH_IWD
 	else if (!strcasecmp (backend, "iwd"))

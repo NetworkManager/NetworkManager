@@ -40,6 +40,7 @@
 #define NM_DEVICE_WIFI_LAST_SCAN           "last-scan"
 
 #define NM_DEVICE_WIFI_SCANNING_PROHIBITED    "scanning-prohibited"
+#define NM_DEVICE_WIFI_P2P_DEVICE_CREATED     "p2p-device-created"
 
 typedef struct _NMDeviceWifi NMDeviceWifi;
 typedef struct _NMDeviceWifiClass NMDeviceWifiClass;

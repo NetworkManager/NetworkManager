@@ -1,13 +1,15 @@
 common_sources = files(
   'nm-wifi-ap.c',
+  'nm-wifi-p2p-peer.c',
   'nm-wifi-utils.c',
 )
 
 sources = common_sources + files(
-  'nm-wifi-factory.c',
-  'nm-wifi-common.c',
-  'nm-device-wifi.c',
   'nm-device-olpc-mesh.c',
+  'nm-device-p2p-wifi.c',
+  'nm-device-wifi.c',
+  'nm-wifi-common.c',
+  'nm-wifi-factory.c',
 )
 
 if enable_iwd

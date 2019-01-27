@@ -263,6 +263,8 @@
 #define DESCRIBE_DOC_NM_SETTING_OVS_PORT_LACP N_("LACP mode. One of \"active\", \"off\", or \"passive\".")
 #define DESCRIBE_DOC_NM_SETTING_OVS_PORT_TAG N_("The VLAN tag in the range 0-4095.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_PORT_VLAN_MODE N_("The VLAN mode. One of \"access\", \"native-tagged\", \"native-untagged\", \"trunk\" or unset.")
+#define DESCRIBE_DOC_NM_SETTING_P2P_WIRELESS_PEER N_("The P2P device that should be connected to. Currently this is the only way to create or join a group.")
+#define DESCRIBE_DOC_NM_SETTING_P2P_WIRELESS_WPS_METHOD N_("Flags indicating which mode of WPS is to be used. There's little point in changing the default setting as NetworkManager will automatically determine the best method to use.")
 #define DESCRIBE_DOC_NM_SETTING_PPP_BAUD N_("If non-zero, instruct pppd to set the serial port to the specified baudrate.  This value should normally be left as 0 to automatically choose the speed.")
 #define DESCRIBE_DOC_NM_SETTING_PPP_CRTSCTS N_("If TRUE, specify that pppd should set the serial port to use hardware flow control with RTS and CTS signals.  This value should normally be set to FALSE.")
 #define DESCRIBE_DOC_NM_SETTING_PPP_LCP_ECHO_FAILURE N_("If non-zero, instruct pppd to presume the connection to the peer has failed if the specified number of LCP echo-requests go unanswered by the peer.  The \"lcp-echo-interval\" property must also be set to a non-zero value if this property is used.")
