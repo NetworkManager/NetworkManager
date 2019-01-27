@@ -1131,7 +1131,7 @@ nm_device_p2p_wifi_set_mgmt_iface (NMDeviceP2PWifi *self,
 void
 nm_device_p2p_wifi_remove (NMDeviceP2PWifi* self)
 {
-      g_signal_emit_by_name (self, NM_DEVICE_REMOVED);
+	g_signal_emit_by_name (self, NM_DEVICE_REMOVED);
 }
 
 /*****************************************************************************/

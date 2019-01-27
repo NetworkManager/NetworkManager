@@ -61,10 +61,10 @@ NM_AVAILABLE_IN_1_16
 GType nm_setting_p2p_wireless_get_type (void);
 
 NM_AVAILABLE_IN_1_16
-NMSetting            *nm_setting_p2p_wireless_new (void);
+NMSetting *nm_setting_p2p_wireless_new (void);
 
 NM_AVAILABLE_IN_1_16
-const char           *nm_setting_p2p_wireless_get_peer          (NMSettingP2PWireless *setting);
+const char *nm_setting_p2p_wireless_get_peer (NMSettingP2PWireless *setting);
 
 NM_AVAILABLE_IN_1_16
 NMSettingWirelessSecurityWpsMethod nm_setting_p2p_wireless_get_wps_method (NMSettingP2PWireless *setting);
