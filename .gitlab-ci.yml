@@ -60,6 +60,21 @@ f28_rpm_meson_dbg:
   script:
     - ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w meson -w test
 
+f_latest_build_autotools:
+  <<: *fedora_install
+  image: fedora:latest
+  stage: test
+  script:
+    - CI=gitlab BUILD_TYPE=autotools contrib/scripts/nm-ci-run.sh
+
+f_rawhide_build_autotools:
+  <<: *fedora_install
+  image: fedora:rawhide
+  stage: test
+  script:
+    - CI=gitlab BUILD_TYPE=autotools contrib/scripts/nm-ci-run.sh
+  allow_failure: true
+
 pages:
   stage: deploy
   dependencies:
