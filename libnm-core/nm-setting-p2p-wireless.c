@@ -41,6 +41,8 @@
  * NMSettingP2PWireless:
  *
  * P2P Wi-Fi Settings
+ *
+ * Since: 1.16
  */
 
 /*****************************************************************************/
@@ -107,12 +109,23 @@ nm_setting_p2p_wireless_get_wps_method (NMSettingP2PWireless *setting)
 	return NM_SETTING_P2P_WIRELESS_GET_PRIVATE (setting)->wps_method;
 }
 
+/*****************************************************************************/
+
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingP2PWirelessPrivate *priv = NM_SETTING_P2P_WIRELESS_GET_PRIVATE (setting);
 
-	if (!priv->peer_mac_address || !nm_utils_hwaddr_valid (priv->peer_mac_address, ETH_ALEN)) {
+	if (!priv->peer_mac_address) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_P2P_WIRELESS_SETTING_NAME, NM_SETTING_P2P_WIRELESS_PEER);
+		return FALSE;
+	}
+
+	if (!nm_utils_hwaddr_valid (priv->peer_mac_address, ETH_ALEN)) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -209,7 +222,7 @@ nm_setting_p2p_wireless_init (NMSettingP2PWireless *setting)
 NMSetting *
 nm_setting_p2p_wireless_new (void)
 {
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_P2P_WIRELESS, NULL);
+	return g_object_new (NM_TYPE_SETTING_P2P_WIRELESS, NULL);
 }
 
 static void
@@ -228,8 +241,8 @@ nm_setting_p2p_wireless_class_init (NMSettingP2PWirelessClass *setting_p2p_wirel
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_p2p_wireless_class);
 	NMSettingClass *setting_class = NM_SETTING_CLASS (setting_p2p_wireless_class);
 
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
 	setting_class->verify      = verify;
