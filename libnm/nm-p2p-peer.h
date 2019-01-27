@@ -14,8 +14,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2011 Red Hat, Inc.
+ * Copyright 2018 - 2019 Red Hat, Inc.
  */
 
 #ifndef __NM_P2P_PEER_H__
@@ -47,21 +46,7 @@ G_BEGIN_DECLS
 #define NM_P2P_PEER_STRENGTH             "strength"
 #define NM_P2P_PEER_LAST_SEEN            "last-seen"
 
-/**
- * NMP2PPeer:
- */
-NM_AVAILABLE_IN_1_16
-struct _NMP2PPeer {
-	NMObject parent;
-};
-
-NM_AVAILABLE_IN_1_16
-typedef struct {
-	NMObjectClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMP2PPeerClass;
+typedef struct _NMP2PPeerClass NMP2PPeerClass;
 
 NM_AVAILABLE_IN_1_16
 GType nm_p2p_peer_get_type (void);

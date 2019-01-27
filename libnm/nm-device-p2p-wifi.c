@@ -14,8 +14,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2018 Red Hat, Inc.
+ * Copyright 2018 - 2019 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -35,37 +34,19 @@
 
 #include "introspection/org.freedesktop.NetworkManager.Device.P2PWireless.h"
 
-G_DEFINE_TYPE (NMDeviceP2PWifi, nm_device_p2p_wifi, NM_TYPE_DEVICE)
-
-#define NM_DEVICE_P2P_WIFI_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_P2P_WIFI, NMDeviceP2PWifiPrivate))
-
-void _nm_device_p2p_wifi_set_p2p_wireless_enabled (NMDeviceP2PWifi *device, gboolean enabled);
-static void state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data);
+/*****************************************************************************/
 
 typedef struct {
 	NMDeviceP2PWifi *device;
 	GSimpleAsyncResult *simple;
 } RequestScanInfo;
 
-typedef struct {
-	NMDBusDeviceP2PWifi *proxy;
-
-	char *hw_address;
-
-	gboolean     group_owner;
-	GByteArray  *wfd_ies;
-	GPtrArray   *peers;
-} NMDeviceP2PWifiPrivate;
-
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_HW_ADDRESS,
 	PROP_GROUP_OWNER,
 	PROP_WFDIES,
 	PROP_PEERS,
-
-	LAST_PROP
-};
+);
 
 enum {
 	PEER_ADDED,
@@ -73,7 +54,43 @@ enum {
 
 	LAST_SIGNAL
 };
+
 static guint signals[LAST_SIGNAL] = { 0 };
+
+typedef struct {
+	NMDBusDeviceP2PWifi *proxy;
+
+	char *hw_address;
+
+	GByteArray  *wfd_ies;
+	GPtrArray   *peers;
+
+	gboolean group_owner;
+} NMDeviceP2PWifiPrivate;
+
+/**
+ * NMDeviceP2PWifi:
+ *
+ * Since: 1.16
+ */
+struct _NMDeviceP2PWifi {
+	NMDevice parent;
+	NMDeviceP2PWifiPrivate _priv;
+};
+
+struct _NMDeviceP2PWifiClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceP2PWifi, nm_device_p2p_wifi, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_P2P_WIFI_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceP2PWifi, NM_IS_DEVICE_P2P_WIFI, NMDevice, NMObject)
+
+/*****************************************************************************/
+
+static void state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data);
+
+/*****************************************************************************/
 
 /**
  * nm_device_p2p_wifi_get_hw_address:
@@ -406,20 +423,15 @@ nm_device_p2p_wifi_class_init (NMDeviceP2PWifiClass *wifi_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (wifi_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (wifi_class);
 
-	g_type_class_add_private (wifi_class, sizeof (NMDeviceP2PWifiPrivate));
-
-	/* virtual methods */
 	object_class->get_property = get_property;
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
-
-	nm_object_class->init_dbus = init_dbus;
+	object_class->dispose      = dispose;
+	object_class->finalize     = finalize;
 
 	device_class->connection_compatible = connection_compatible;
-	device_class->get_setting_type = get_setting_type;
-	device_class->get_hw_address = get_hw_address;
+	device_class->get_setting_type      = get_setting_type;
+	device_class->get_hw_address        = get_hw_address;
 
-	/* properties */
+	nm_object_class->init_dbus = init_dbus;
 
 	/**
 	 * NMDeviceP2PWifi:hw-address:
@@ -428,12 +440,11 @@ nm_device_p2p_wifi_class_init (NMDeviceP2PWifiClass *wifi_class)
 	 *
 	 * Since: 1.16
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_P2P_WIFI_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HW_ADDRESS] =
+	    g_param_spec_string (NM_DEVICE_P2P_WIFI_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 
 	/**
@@ -443,12 +454,11 @@ nm_device_p2p_wifi_class_init (NMDeviceP2PWifiClass *wifi_class)
 	 *
 	 * Since: 1.16
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_GROUP_OWNER,
-		 g_param_spec_boolean (NM_DEVICE_P2P_WIFI_GROUP_OWNER, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_GROUP_OWNER] =
+	    g_param_spec_boolean (NM_DEVICE_P2P_WIFI_GROUP_OWNER, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceP2PWifi:wfd-ies:
@@ -457,13 +467,12 @@ nm_device_p2p_wifi_class_init (NMDeviceP2PWifiClass *wifi_class)
 	 *
 	 * Since: 1.16
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_WFDIES,
-	     g_param_spec_variant (NM_DEVICE_P2P_WIFI_WFDIES, "", "",
-	                           G_VARIANT_TYPE ("ay"),
-	                           NULL,
-	                           G_PARAM_READABLE |
-	                           G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WFDIES] =
+	    g_param_spec_variant (NM_DEVICE_P2P_WIFI_WFDIES, "", "",
+	                          G_VARIANT_TYPE ("ay"),
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceP2PWifi:peers: (type GPtrArray(NMP2PPeer))
@@ -472,14 +481,13 @@ nm_device_p2p_wifi_class_init (NMDeviceP2PWifiClass *wifi_class)
 	 *
 	 * Since: 1.16
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PEERS,
-		 g_param_spec_boxed (NM_DEVICE_P2P_WIFI_PEERS, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PEERS] =
+	    g_param_spec_boxed (NM_DEVICE_P2P_WIFI_PEERS, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
-	/* signals */
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	/**
 	 * NMDeviceP2PWifi::peer-added:
@@ -491,14 +499,13 @@ nm_device_p2p_wifi_class_init (NMDeviceP2PWifiClass *wifi_class)
 	 * Since: 1.16
 	 **/
 	signals[PEER_ADDED] =
-		g_signal_new ("peer-added",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMDeviceP2PWifiClass, peer_added),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new ("peer-added",
+	                 G_OBJECT_CLASS_TYPE (object_class),
+	                 G_SIGNAL_RUN_FIRST,
+	                 0, NULL, NULL,
+	                 g_cclosure_marshal_VOID__OBJECT,
+	                 G_TYPE_NONE, 1,
+	                 G_TYPE_OBJECT);
 
 	/**
 	 * NMDeviceP2PWifi::peer-removed:
@@ -510,12 +517,11 @@ nm_device_p2p_wifi_class_init (NMDeviceP2PWifiClass *wifi_class)
 	 * Since: 1.16
 	 **/
 	signals[PEER_REMOVED] =
-		g_signal_new ("peer-removed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMDeviceP2PWifiClass, peer_removed),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new ("peer-removed",
+	                 G_OBJECT_CLASS_TYPE (object_class),
+	                 G_SIGNAL_RUN_FIRST,
+	                 0, NULL, NULL,
+	                 g_cclosure_marshal_VOID__OBJECT,
+	                 G_TYPE_NONE, 1,
+	                 G_TYPE_OBJECT);
 }

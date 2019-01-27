@@ -14,8 +14,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2018 Red Hat, Inc.
+ * Copyright 2018 - 2019 Red Hat, Inc.
  */
 
 #ifndef __NM_DEVICE_P2P_WIFI_H__
@@ -41,41 +40,34 @@ G_BEGIN_DECLS
 #define NM_DEVICE_P2P_WIFI_PEERS               "peers"
 #define NM_DEVICE_P2P_WIFI_WFDIES              "wfdies"
 
-/**
- * NMDeviceP2PWifi:
- */
-struct _NMDeviceP2PWifi {
-	NMDevice parent;
-};
+typedef struct _NMDeviceP2PWifiClass NMDeviceP2PWifiClass;
 
-typedef struct {
-	NMDeviceClass parent;
-
-	/* Signals */
-	void (*peer_added) (NMDeviceP2PWifi *device, NMP2PPeer *peer);
-	void (*peer_removed) (NMDeviceP2PWifi *device, NMP2PPeer *peer);
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceP2PWifiClass;
-
+NM_AVAILABLE_IN_1_16
 GType nm_device_p2p_wifi_get_type (void);
 
+NM_AVAILABLE_IN_1_16
 const char *             nm_device_p2p_wifi_get_hw_address   (NMDeviceP2PWifi *device);
+
+NM_AVAILABLE_IN_1_16
 gboolean                 nm_device_p2p_wifi_get_group_owner  (NMDeviceP2PWifi *device);
 
 #if 0
 gboolean                 nm_device_p2p_wifi_get_wfdies  (NMDeviceP2PWifi *device);
 #endif
 
+NM_AVAILABLE_IN_1_16
 NMP2PPeer *              nm_device_p2p_wifi_get_peer_by_path (NMDeviceP2PWifi *device,
                                                               const char *path);
 
+NM_AVAILABLE_IN_1_16
 const GPtrArray *        nm_device_p2p_wifi_get_peers        (NMDeviceP2PWifi *device);
 
+NM_AVAILABLE_IN_1_16
 gboolean                 nm_device_p2p_wifi_start_find       (NMDeviceP2PWifi *device,
                                                               GCancellable *cancellable,
                                                               GError **error);
+
+NM_AVAILABLE_IN_1_16
 gboolean                 nm_device_p2p_wifi_stop_find        (NMDeviceP2PWifi *device,
                                                               GCancellable *cancellable,
                                                               GError **error);
