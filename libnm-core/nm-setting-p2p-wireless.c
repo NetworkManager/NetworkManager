@@ -134,29 +134,12 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->wps_method > NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("property is invalid"));
+	if (!_nm_utils_wps_method_validate (priv->wps_method,
+	                                    NM_SETTING_P2P_WIRELESS_SETTING_NAME,
+	                                    NM_SETTING_P2P_WIRELESS_WPS_METHOD,
+	                                    TRUE,
+	                                    error))
 		return FALSE;
-	}
-
-	if (priv->wps_method > NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("P2P connections require WPS"));
-		return FALSE;
-	}
-
-	if (priv->wps_method > NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("P2P connections require WPS"));
-		return FALSE;
-	}
 
 	return TRUE;
 }

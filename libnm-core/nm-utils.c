@@ -4311,6 +4311,46 @@ _nm_utils_hwaddr_from_dbus (GVariant *dbus_value,
 
 /*****************************************************************************/
 
+gboolean
+_nm_utils_wps_method_validate (NMSettingWirelessSecurityWpsMethod wps_method,
+                               const char *setting_name,
+                               const char *property_name,
+                               gboolean wps_required,
+                               GError **error)
+{
+	if (wps_method > NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s.%s: ", setting_name, property_name);
+		return FALSE;
+	}
+
+	if (NM_FLAGS_HAS (wps_method, NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED)) {
+		if (wps_method != NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("can't be simultaneously disabled and enabled"));
+			g_prefix_error (error, "%s.%s: ", setting_name, property_name);
+			return FALSE;
+		}
+		if (wps_required) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("WPS is required"));
+			g_prefix_error (error, "%s.%s: ", setting_name, property_name);
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+/*****************************************************************************/
+
 static char *
 _split_word (char *s)
 {
