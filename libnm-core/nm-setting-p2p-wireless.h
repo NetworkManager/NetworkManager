@@ -45,15 +45,6 @@ G_BEGIN_DECLS
  */
 #define NM_SETTING_P2P_WIRELESS_PEER        "peer"
 #define NM_SETTING_P2P_WIRELESS_WPS_METHOD  "wps-method"
-#if 0
-#define NM_SETTING_P2P_WIRELESS_WPS_PIN     "wps-pin"
-#endif
-
-#if 0
-#define NM_SETTING_P2P_WIRELESS_GO_INTENT    "go-intent"
-/* Not sure how we could even handle this, i.e. would we need to store more information? */
-#define NM_SETTING_P2P_WIRELESS_PERSISTENT   "persistent"
-#endif
 
 typedef struct _NMSettingP2PWirelessClass NMSettingP2PWirelessClass;
 
