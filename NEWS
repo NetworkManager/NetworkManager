@@ -9,6 +9,7 @@ with the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * Check connectivity per address family.
+* Allow binding a connections lifetime to the DBus client that activated it.
 
 The following changes were backported to 1.14.x releases between 1.14.0
 and 1.14.2 are also present in NetworkManager-1.14:
