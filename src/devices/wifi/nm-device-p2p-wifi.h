@@ -38,7 +38,6 @@
 
 #define NM_DEVICE_P2P_WIFI_MGMT_IFACE "mgmt-iface"
 
-
 typedef struct _NMDeviceP2PWifi NMDeviceP2PWifi;
 typedef struct _NMDeviceP2PWifiClass NMDeviceP2PWifiClass;
 

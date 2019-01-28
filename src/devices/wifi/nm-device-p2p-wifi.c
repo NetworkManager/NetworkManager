@@ -309,7 +309,7 @@ complete_connection (NMDevice *device,
 		}
 
 		setting_peer = nm_wifi_p2p_peer_get_address (peer);
-		g_assert (setting_peer);
+		g_return_val_if_fail (setting_peer, FALSE);
 	}
 
 	/* Add a P2P wifi setting if one doesn't exist yet */
@@ -1248,7 +1248,6 @@ constructed (GObject *object)
 
 	G_OBJECT_CLASS (nm_device_p2p_wifi_parent_class)->constructed (object);
 
-	/* Connect to the supplicant manager */
 	priv->sup_mgr = g_object_ref (nm_supplicant_manager_get ());
 
 	nm_device_add_pending_action (NM_DEVICE (self), NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, FALSE);

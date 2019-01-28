@@ -656,10 +656,10 @@ static const NMDBusInterfaceInfoExtended interface_info_p2p_peer = {
 };
 
 static void
-nm_wifi_p2p_peer_class_init (NMWifiP2PPeerClass *p2p_peer_class)
+nm_wifi_p2p_peer_class_init (NMWifiP2PPeerClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (p2p_peer_class);
-	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (p2p_peer_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMWifiP2PPeerPrivate));
 
@@ -667,7 +667,7 @@ nm_wifi_p2p_peer_class_init (NMWifiP2PPeerClass *p2p_peer_class)
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_p2p_peer);
 
 	object_class->get_property = get_property;
-	object_class->finalize = finalize;
+	object_class->finalize     = finalize;
 
 	obj_properties[PROP_FLAGS] =
 	    g_param_spec_uint (NM_WIFI_P2P_PEER_FLAGS, "", "",

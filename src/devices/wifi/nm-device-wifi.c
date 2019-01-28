@@ -22,13 +22,13 @@
 #include "nm-default.h"
 
 #include "nm-device-wifi.h"
-#include "nm-device-p2p-wifi.h"
 
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
 
+#include "nm-device-p2p-wifi.h"
 #include "nm-wifi-ap.h"
 #include "nm-common-macros.h"
 #include "devices/nm-device.h"
@@ -2047,8 +2047,8 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	    && new_state <= NM_SUPPLICANT_INTERFACE_STATE_COMPLETED)
 		priv->ssid_found = TRUE;
 
-	if (old_state < NM_SUPPLICANT_INTERFACE_STATE_READY &&
-	    new_state >= NM_SUPPLICANT_INTERFACE_STATE_READY)
+	if (   old_state < NM_SUPPLICANT_INTERFACE_STATE_READY
+	    && new_state >= NM_SUPPLICANT_INTERFACE_STATE_READY)
 		recheck_p2p_availability (self);
 
 	switch (new_state) {
@@ -2247,7 +2247,8 @@ recheck_p2p_availability (NMDeviceWifi *self)
 	              NULL);
 
 	if (p2p_available && !priv->p2p_device) {
-		g_autofree char *iface_name = NULL;
+		gs_free char *iface_name = NULL;
+
 		/* Create a P2P device. "p2p-dev-" is the same prefix as chosen by
 		 * wpa_supplicant internally.
 		 */
@@ -2265,8 +2266,7 @@ recheck_p2p_availability (NMDeviceWifi *self)
 	} else if (!p2p_available && priv->p2p_device) {
 		/* Destroy the P2P device. */
 		g_object_remove_weak_pointer (G_OBJECT (priv->p2p_device), (gpointer*) &priv->p2p_device);
-		nm_device_p2p_wifi_remove (priv->p2p_device);
-		priv->p2p_device = NULL;
+		nm_device_p2p_wifi_remove (g_steal_pointer (&priv->p2p_device));
 	}
 }
 
@@ -3509,7 +3509,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	    g_signal_new (NM_DEVICE_WIFI_P2P_DEVICE_CREATED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_LAST,
-	                  0,
-	                  NULL, NULL, NULL,
+	                  0, NULL, NULL,
+	                  g_cclosure_marshal_VOID__OBJECT,
 	                  G_TYPE_NONE, 1, NM_TYPE_DEVICE);
 }
