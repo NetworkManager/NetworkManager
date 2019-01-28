@@ -1122,4 +1122,10 @@ nm_strv_ptrarray_take_gstring (GPtrArray *cmd,
 
 int nm_utils_getpagesize (void);
 
+char *nm_utils_bin2hexstr_full (gconstpointer addr,
+                                gsize length,
+                                char delimiter,
+                                gboolean upper_case,
+                                char *out);
+
 #endif /* __NM_SHARED_UTILS_H__ */

@@ -2391,11 +2391,11 @@ _uuid_data_init (UuidData *uuid_data,
 	uuid_data->is_fake = is_fake;
 	if (packed) {
 		G_STATIC_ASSERT_EXPR (sizeof (uuid_data->str) >= (sizeof (*uuid) * 2 + 1));
-		_nm_utils_bin2hexstr_full (uuid,
-		                           sizeof (*uuid),
-		                           '\0',
-		                           FALSE,
-		                           uuid_data->str);
+		nm_utils_bin2hexstr_full (uuid,
+		                          sizeof (*uuid),
+		                          '\0',
+		                          FALSE,
+		                          uuid_data->str);
 	} else {
 		G_STATIC_ASSERT_EXPR (sizeof (uuid_data->str) >= 37);
 		_nm_utils_uuid_unparse (uuid, uuid_data->str);

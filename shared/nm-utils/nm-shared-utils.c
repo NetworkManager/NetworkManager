@@ -2477,3 +2477,62 @@ nm_utils_memeqzero (gconstpointer data, gsize length)
 	/* Now we know that's zero, memcmp with self. */
 	return memcmp (data, p, length) == 0;
 }
+
+/**
+ * nm_utils_bin2hexstr_full:
+ * @addr: pointer of @length bytes.
+ * @length: number of bytes in @addr
+ * @delimiter: either '\0', otherwise the output string will have the
+ *   given delimiter character between each two hex numbers.
+ * @upper_case: if TRUE, use upper case ASCII characters for hex.
+ * @out: if %NULL, the function will allocate a new buffer of
+ *   either (@length*2+1) or (@length*3) bytes, depending on whether
+ *   a @delimiter is specified. In that case, the allocated buffer will
+ *   be returned and must be freed by the caller.
+ *   If not %NULL, the buffer must already be preallocated and contain
+ *   at least (@length*2+1) or (@length*3) bytes, depending on the delimiter.
+ *
+ * Returns: the binary value converted to a hex string. If @out is given,
+ *   this always returns @out. If @out is %NULL, a newly allocated string
+ *   is returned.
+ */
+char *
+nm_utils_bin2hexstr_full (gconstpointer addr,
+                          gsize length,
+                          char delimiter,
+                          gboolean upper_case,
+                          char *out)
+{
+	const guint8 *in = addr;
+	const char *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
+	char *out0;
+
+	nm_assert (addr);
+	nm_assert (length > 0);
+
+	if (out)
+		out0 = out;
+	else {
+		out0 = out = g_new (char, delimiter == '\0'
+		                          ? length * 2 + 1
+		                          : length * 3);
+	}
+
+	/* @out must contain at least @length*3 bytes if @delimiter is set,
+	 * otherwise, @length*2+1. */
+
+	for (;;) {
+		const guint8 v = *in++;
+
+		*out++ = LOOKUP[v >> 4];
+		*out++ = LOOKUP[v & 0x0F];
+		length--;
+		if (!length)
+			break;
+		if (delimiter)
+			*out++ = delimiter;
+	}
+
+	*out = 0;
+	return out0;
+}

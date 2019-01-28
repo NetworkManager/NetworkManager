@@ -2012,11 +2012,11 @@ test_machine_id_read (void)
 	nmtst_logging_reenable (logstate);
 
 	g_assert (machine_id);
-	g_assert (_nm_utils_bin2hexstr_full (machine_id,
-	                                     sizeof (NMUuid),
-	                                     '\0',
-	                                     FALSE,
-	                                     machine_id_str) == machine_id_str);
+	g_assert (nm_utils_bin2hexstr_full (machine_id,
+	                                    sizeof (NMUuid),
+	                                    '\0',
+	                                    FALSE,
+	                                    machine_id_str) == machine_id_str);
 	g_assert (strlen (machine_id_str) == 32);
 	g_assert_cmpstr (machine_id_str, ==, nm_utils_machine_id_str ());
 
