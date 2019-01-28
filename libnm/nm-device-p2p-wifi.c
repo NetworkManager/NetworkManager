@@ -171,31 +171,18 @@ nm_device_p2p_wifi_get_peer_by_path (NMDeviceP2PWifi *device,
 }
 
 static void
-clean_up_peers (NMDeviceP2PWifi *self, gboolean in_dispose)
+clean_up_peers (NMDeviceP2PWifi *self)
 {
-	NMDeviceP2PWifiPrivate *priv;
-	GPtrArray *peers;
-	int i;
+	NMDeviceP2PWifiPrivate *priv = NM_DEVICE_P2P_WIFI_GET_PRIVATE (self);
 
-	g_return_if_fail (NM_IS_DEVICE_P2P_WIFI (self));
+	while (priv->peers->len > 0) {
+		NMP2PPeer *peer;
 
-	priv = NM_DEVICE_P2P_WIFI_GET_PRIVATE (self);
+		peer = priv->peers->pdata[priv->peers->len - 1];
+		g_ptr_array_remove_index (priv->peers, priv->peers->len - 1);
 
-	peers = priv->peers;
-
-	if (in_dispose)
-		priv->peers = NULL;
-	else {
-		priv->peers = g_ptr_array_new ();
-
-		for (i = 0; i < peers->len; i++) {
-			NMP2PPeer *peer = NM_P2P_PEER (g_ptr_array_index (peers, i));
-
-			g_signal_emit (self, signals[PEER_REMOVED], 0, peer);
-		}
+		g_signal_emit (self, signals[PEER_REMOVED], 0, peer);
 	}
-
-	g_ptr_array_unref (peers);
 }
 
 static gboolean
@@ -392,15 +379,7 @@ init_dbus (NMObject *object)
 static void
 dispose (GObject *object)
 {
-	NMDeviceP2PWifiPrivate *priv = NM_DEVICE_P2P_WIFI_GET_PRIVATE (object);
-
-	if (priv->peers)
-		clean_up_peers (NM_DEVICE_P2P_WIFI (object), TRUE);
-
-	g_clear_object (&priv->proxy);
-	if (priv->wfd_ies)
-		g_byte_array_unref (priv->wfd_ies);
-	priv->wfd_ies = NULL;
+	clean_up_peers (NM_DEVICE_P2P_WIFI (object));
 
 	G_OBJECT_CLASS (nm_device_p2p_wifi_parent_class)->dispose (object);
 }
@@ -410,7 +389,12 @@ finalize (GObject *object)
 {
 	NMDeviceP2PWifiPrivate *priv = NM_DEVICE_P2P_WIFI_GET_PRIVATE (object);
 
+	g_clear_object (&priv->proxy);
 	g_free (priv->hw_address);
+	if (priv->wfd_ies)
+		g_byte_array_unref (priv->wfd_ies);
+	if (priv->peers)
+		g_ptr_array_unref (priv->peers);
 
 	G_OBJECT_CLASS (nm_device_p2p_wifi_parent_class)->finalize (object);
 }
