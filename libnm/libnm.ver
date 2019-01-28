@@ -1454,6 +1454,10 @@ global:
 	nm_device_wifi_p2p_get_hw_address;
 	nm_device_wifi_p2p_get_peers;
 	nm_device_wifi_p2p_get_type;
+	nm_device_wifi_p2p_start_find;
+	nm_device_wifi_p2p_start_find_finish;
+	nm_device_wifi_p2p_stop_find;
+	nm_device_wifi_p2p_stop_find_finish;
 	nm_setting_wifi_p2p_get_peer;
 	nm_setting_wifi_p2p_get_type;
 	nm_setting_wifi_p2p_get_wps_method;
