@@ -88,10 +88,6 @@ G_DEFINE_TYPE (NMDeviceP2PWifi, nm_device_p2p_wifi, NM_TYPE_DEVICE)
 
 /*****************************************************************************/
 
-static void state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data);
-
-/*****************************************************************************/
-
 /**
  * nm_device_p2p_wifi_get_hw_address:
  * @device: a #NMDeviceP2PWifi
@@ -345,32 +341,7 @@ nm_device_p2p_wifi_init (NMDeviceP2PWifi *device)
 {
 	NMDeviceP2PWifiPrivate *priv = NM_DEVICE_P2P_WIFI_GET_PRIVATE (device);
 
-	g_signal_connect (device,
-	                  "notify::" NM_DEVICE_STATE,
-	                  G_CALLBACK (state_changed_cb),
-	                  NULL);
-
 	priv->peers = g_ptr_array_new ();
-}
-
-static void
-state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
-{
-#if 0
-	NMDeviceP2PWifi *self = NM_DEVICE_P2P_WIFI (device);
-
-	switch (nm_device_get_state (device)) {
-	case NM_DEVICE_STATE_UNKNOWN:
-	case NM_DEVICE_STATE_UNMANAGED:
-	case NM_DEVICE_STATE_UNAVAILABLE:
-	case NM_DEVICE_STATE_DISCONNECTED:
-	case NM_DEVICE_STATE_FAILED:
-		/* TODO: Do something? */
-		break;
-	default:
-		break;
-	}
-#endif
 }
 
 static void

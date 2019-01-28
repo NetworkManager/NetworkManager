@@ -51,10 +51,6 @@ const char *             nm_device_p2p_wifi_get_hw_address   (NMDeviceP2PWifi *d
 NM_AVAILABLE_IN_1_16
 gboolean                 nm_device_p2p_wifi_get_group_owner  (NMDeviceP2PWifi *device);
 
-#if 0
-gboolean                 nm_device_p2p_wifi_get_wfdies  (NMDeviceP2PWifi *device);
-#endif
-
 NM_AVAILABLE_IN_1_16
 NMP2PPeer *              nm_device_p2p_wifi_get_peer_by_path (NMDeviceP2PWifi *device,
                                                               const char *path);
