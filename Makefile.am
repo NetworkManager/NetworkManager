@@ -431,8 +431,6 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.Device.OvsInterface.h \
 	introspection/org.freedesktop.NetworkManager.Device.OvsPort.c \
 	introspection/org.freedesktop.NetworkManager.Device.OvsPort.h \
-	introspection/org.freedesktop.NetworkManager.Device.P2PWireless.c \
-	introspection/org.freedesktop.NetworkManager.Device.P2PWireless.h \
 	introspection/org.freedesktop.NetworkManager.Device.Ppp.c \
 	introspection/org.freedesktop.NetworkManager.Device.Ppp.h \
 	introspection/org.freedesktop.NetworkManager.Device.Statistics.c \
@@ -449,6 +447,8 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.Device.Vxlan.h \
 	introspection/org.freedesktop.NetworkManager.Device.WiMax.c \
 	introspection/org.freedesktop.NetworkManager.Device.WiMax.h \
+	introspection/org.freedesktop.NetworkManager.Device.WifiP2P.c \
+	introspection/org.freedesktop.NetworkManager.Device.WifiP2P.h \
 	introspection/org.freedesktop.NetworkManager.Device.WireGuard.c \
 	introspection/org.freedesktop.NetworkManager.Device.WireGuard.h \
 	introspection/org.freedesktop.NetworkManager.Device.Wired.c \
@@ -465,8 +465,8 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.IP4Config.h \
 	introspection/org.freedesktop.NetworkManager.IP6Config.c \
 	introspection/org.freedesktop.NetworkManager.IP6Config.h \
-	introspection/org.freedesktop.NetworkManager.P2PPeer.c \
-	introspection/org.freedesktop.NetworkManager.P2PPeer.h \
+	introspection/org.freedesktop.NetworkManager.WifiP2PPeer.c \
+	introspection/org.freedesktop.NetworkManager.WifiP2PPeer.h \
 	introspection/org.freedesktop.NetworkManager.PPP.c \
 	introspection/org.freedesktop.NetworkManager.PPP.h \
 	introspection/org.freedesktop.NetworkManager.SecretAgent.c \
@@ -508,7 +508,6 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.OvsBridge.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.OvsInterface.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.OvsPort.xml \
-	docs/api/dbus-org.freedesktop.NetworkManager.Device.P2PWireless.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Ppp.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Statistics.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Team.xml \
@@ -517,6 +516,7 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Vlan.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Vxlan.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.WiMax.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.WifiP2P.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.WireGuard.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Wired.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Wireless.xml \
@@ -525,13 +525,13 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.DnsManager.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.IP4Config.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.IP6Config.xml \
-	docs/api/dbus-org.freedesktop.NetworkManager.P2PPeer.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.PPP.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.SecretAgent.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Settings.Connection.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Settings.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.VPN.Connection.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.VPN.Plugin.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.WifiP2PPeer.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.xml \
 	$(NULL)
 
@@ -554,27 +554,27 @@ dbusinterfacesdir = $(datadir)/dbus-1/interfaces
 
 dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.AccessPoint.xml \
-	introspection/org.freedesktop.NetworkManager.Connection.Active.xml \
 	introspection/org.freedesktop.NetworkManager.AgentManager.xml \
 	introspection/org.freedesktop.NetworkManager.Checkpoint.xml \
+	introspection/org.freedesktop.NetworkManager.Connection.Active.xml \
+	introspection/org.freedesktop.NetworkManager.DHCP4Config.xml \
+	introspection/org.freedesktop.NetworkManager.DHCP6Config.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Adsl.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Bluetooth.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Bond.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Bridge.xml \
-	introspection/org.freedesktop.NetworkManager.Device.Bluetooth.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Dummy.xml \
-	introspection/org.freedesktop.NetworkManager.Device.Wired.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Generic.xml \
-	introspection/org.freedesktop.NetworkManager.Device.Infiniband.xml \
 	introspection/org.freedesktop.NetworkManager.Device.IPTunnel.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Infiniband.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Lowpan.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Macsec.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Macvlan.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Modem.xml \
 	introspection/org.freedesktop.NetworkManager.Device.OlpcMesh.xml \
+	introspection/org.freedesktop.NetworkManager.Device.OvsBridge.xml \
 	introspection/org.freedesktop.NetworkManager.Device.OvsInterface.xml \
 	introspection/org.freedesktop.NetworkManager.Device.OvsPort.xml \
-	introspection/org.freedesktop.NetworkManager.Device.OvsBridge.xml \
-	introspection/org.freedesktop.NetworkManager.Device.P2PWireless.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Ppp.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Statistics.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Team.xml \
@@ -582,25 +582,26 @@ dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.Device.Veth.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Vlan.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Vxlan.xml \
-	introspection/org.freedesktop.NetworkManager.Device.WireGuard.xml \
-	introspection/org.freedesktop.NetworkManager.Device.Wireless.xml \
 	introspection/org.freedesktop.NetworkManager.Device.WiMax.xml \
+	introspection/org.freedesktop.NetworkManager.Device.WifiP2P.xml \
+	introspection/org.freedesktop.NetworkManager.Device.WireGuard.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Wired.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Wireless.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Wpan.xml \
 	introspection/org.freedesktop.NetworkManager.Device.xml \
-	introspection/org.freedesktop.NetworkManager.DHCP4Config.xml \
-	introspection/org.freedesktop.NetworkManager.DHCP6Config.xml \
 	introspection/org.freedesktop.NetworkManager.DnsManager.xml \
 	introspection/org.freedesktop.NetworkManager.IP4Config.xml \
 	introspection/org.freedesktop.NetworkManager.IP6Config.xml \
-	introspection/org.freedesktop.NetworkManager.xml \
-	introspection/org.freedesktop.NetworkManager.P2PPeer.xml \
 	introspection/org.freedesktop.NetworkManager.PPP.xml \
 	introspection/org.freedesktop.NetworkManager.SecretAgent.xml \
 	introspection/org.freedesktop.NetworkManager.Settings.Connection.xml \
 	introspection/org.freedesktop.NetworkManager.Settings.xml \
 	introspection/org.freedesktop.NetworkManager.VPN.Connection.xml \
 	introspection/org.freedesktop.NetworkManager.VPN.Plugin.xml \
-	introspection/org.freedesktop.NetworkManager.WiMax.Nsp.xml
+	introspection/org.freedesktop.NetworkManager.WiMax.Nsp.xml \
+	introspection/org.freedesktop.NetworkManager.WifiP2PPeer.xml \
+	introspection/org.freedesktop.NetworkManager.xml \
+	$(NULL)
 
 CLEANFILES += $(introspection_sources)
 CLEANFILES += $(DBUS_INTERFACE_DOCS)

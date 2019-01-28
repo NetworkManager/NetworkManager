@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <node name="/">
   <!--
-      org.freedesktop.NetworkManager.P2PPeer:
-      @short_description: P2P Wi-Fi Peer
+      org.freedesktop.NetworkManager.WifiP2PPeer:
+      @short_description: Wi-Fi P2P Peer
 
       Since: 1.16
   -->
-  <interface name="org.freedesktop.NetworkManager.P2PPeer">
-    <annotation name="org.gtk.GDBus.C.Name" value="P2P_Peer"/>
+  <interface name="org.freedesktop.NetworkManager.WifiP2PPeer">
+    <annotation name="org.gtk.GDBus.C.Name" value="Wifi_P2P_Peer"/>
 
     <!--
         Flags:
@@ -23,7 +23,7 @@
     <!--
         Manufacturer:
 
-        The manufacturer of the P2P peer.
+        The manufacturer of the Wi-Fi P2P peer.
 
         Since: 1.16
     -->
@@ -32,7 +32,7 @@
     <!--
         Model:
 
-        The model of the P2P peer.
+        The model of the Wi-Fi P2P peer.
 
         Since: 1.16
     -->
@@ -41,7 +41,7 @@
     <!--
         ModelNumber:
 
-        The model number of the P2P peer.
+        The model number of the Wi-Fi P2P peer.
 
         Since: 1.16
     -->
@@ -50,16 +50,16 @@
     <!--
         Serial:
 
-        The serial number of the P2P peer.
+        The serial number of the Wi-Fi P2P peer.
 
         Since: 1.16
     -->
     <property name="Serial" type="s" access="read"/>
 
     <!--
-        Wfdies:
+        WfdIEs:
 
-        The Wi-Fi Display Information Elements of the P2P peer.
+        The Wi-Fi Display Information Elements of the Wi-Fi P2P peer.
 
         Since: 1.16
     -->

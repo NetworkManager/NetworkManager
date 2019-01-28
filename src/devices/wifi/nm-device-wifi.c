@@ -127,7 +127,7 @@ typedef struct {
 
 	NMSettingWirelessWakeOnWLan wowlan_restore;
 
-	NMDeviceP2PWifi  *p2p_device;
+	NMDeviceWifiP2P  *p2p_device;
 } NMDeviceWifiPrivate;
 
 struct _NMDeviceWifi
@@ -363,7 +363,7 @@ supplicant_interface_release (NMDeviceWifi *self)
 
 	if (priv->p2p_device) {
 		/* Signal to P2P device to also release its reference */
-		nm_device_p2p_wifi_set_mgmt_iface (priv->p2p_device, NULL);
+		nm_device_wifi_p2p_set_mgmt_iface (priv->p2p_device, NULL);
 	}
 
 	_notify_scanning (self);
@@ -2239,7 +2239,7 @@ static void
 recheck_p2p_availability (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	NMDeviceP2PWifi *p2p_device;
+	NMDeviceWifiP2P *p2p_device;
 	gboolean p2p_available;
 
 	g_object_get (priv->sup_iface,
@@ -2253,7 +2253,7 @@ recheck_p2p_availability (NMDeviceWifi *self)
 		 * wpa_supplicant internally.
 		 */
 		iface_name = g_strconcat ("p2p-dev-", nm_device_get_iface (NM_DEVICE (self)), NULL);
-		p2p_device = NM_DEVICE_P2P_WIFI (nm_device_p2p_wifi_new (priv->sup_iface, iface_name));
+		p2p_device = NM_DEVICE_WIFI_P2P (nm_device_wifi_p2p_new (priv->sup_iface, iface_name));
 		priv->p2p_device = p2p_device;
 
 		g_signal_emit (self, signals[P2P_DEVICE_CREATED], 0, priv->p2p_device);
@@ -2261,12 +2261,12 @@ recheck_p2p_availability (NMDeviceWifi *self)
 		g_object_unref (p2p_device);
 
 	} else if (p2p_available && priv->p2p_device) {
-		nm_device_p2p_wifi_set_mgmt_iface (priv->p2p_device, priv->sup_iface);
+		nm_device_wifi_p2p_set_mgmt_iface (priv->p2p_device, priv->sup_iface);
 
 	} else if (!p2p_available && priv->p2p_device) {
 		/* Destroy the P2P device. */
 		g_object_remove_weak_pointer (G_OBJECT (priv->p2p_device), (gpointer*) &priv->p2p_device);
-		nm_device_p2p_wifi_remove (g_steal_pointer (&priv->p2p_device));
+		nm_device_wifi_p2p_remove (g_steal_pointer (&priv->p2p_device));
 	}
 }
 

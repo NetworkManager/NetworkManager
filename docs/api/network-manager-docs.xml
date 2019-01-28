@@ -182,14 +182,13 @@
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Statistics.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Adsl.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Bluetooth.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Bond.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Bridge.xml"/>
-      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Bluetooth.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Dummy.xml"/>
-      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Wired.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Generic.xml"/>
-      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Infiniband.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.IPTunnel.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Infiniband.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Lowpan.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Macsec.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Macvlan.xml"/>
@@ -204,9 +203,10 @@
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Veth.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Vlan.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Vxlan.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.WifiP2P.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.WireGuard.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Wired.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Wireless.xml"/>
-      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.P2PWireless.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Wpan.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.PPP.xml"/>
     </chapter>
@@ -248,10 +248,10 @@
       <xi:include href="dbus-org.freedesktop.NetworkManager.AccessPoint.xml"/>
     </chapter>
 
-    <chapter id="ref-dbus-p2p-peers">
-      <title>The <literal>/org/freedesktop/NetworkManager/P2PPeer/*</literal> objects</title>
+    <chapter id="ref-dbus-wifi-p2p-peers">
+      <title>The <literal>/org.freedesktop.NetworkManager.WifiP2PPeer/*</literal> objects</title>
       <!-- TODO: Describe the objects here -->
-      <xi:include href="dbus-org.freedesktop.NetworkManager.P2PPeer.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.WifiP2PPeer.xml"/>
     </chapter>
 
     <chapter id="ref-dbus-checkpoint">

@@ -17,8 +17,8 @@
  * Copyright 2019 Red Hat, Inc.
  */
 
-#ifndef __NM_SETTING_P2P_WIRELESS_H__
-#define __NM_SETTING_P2P_WIRELESS_H__
+#ifndef __NM_SETTING_WIFI_P2P_H__
+#define __NM_SETTING_WIFI_P2P_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -29,37 +29,37 @@
 
 G_BEGIN_DECLS
 
-#define NM_TYPE_SETTING_P2P_WIRELESS            (nm_setting_p2p_wireless_get_type ())
-#define NM_SETTING_P2P_WIRELESS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_P2P_WIRELESS, NMSettingP2PWireless))
-#define NM_SETTING_P2P_WIRELESS_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SETTING_P2P_WIRELESS, NMSettingP2PWirelessClass))
-#define NM_IS_SETTING_P2P_WIRELESS(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SETTING_P2P_WIRELESS))
-#define NM_IS_SETTING_P2P_WIRELESS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SETTING_P2P_WIRELESS))
-#define NM_SETTING_P2P_WIRELESS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTING_P2P_WIRELESS, NMSettingP2PWirelessClass))
+#define NM_TYPE_SETTING_WIFI_P2P            (nm_setting_wifi_p2p_get_type ())
+#define NM_SETTING_WIFI_P2P(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_WIFI_P2P, NMSettingWifiP2P))
+#define NM_SETTING_WIFI_P2P_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SETTING_WIFI_P2P, NMSettingWifiP2PClass))
+#define NM_IS_SETTING_WIFI_P2P(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SETTING_WIFI_P2P))
+#define NM_IS_SETTING_WIFI_P2P_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SETTING_WIFI_P2P))
+#define NM_SETTING_WIFI_P2P_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTING_WIFI_P2P, NMSettingWifiP2PClass))
 
-#define NM_SETTING_P2P_WIRELESS_SETTING_NAME "p2p-wireless"
+#define NM_SETTING_WIFI_P2P_SETTING_NAME "wifi-p2p"
 
 /**
- * NM_SETTING_P2P_WIRELESS_PEER:
+ * NM_SETTING_WIFI_P2P_PEER:
  *
  * The mac address of the peer to connect to.
  */
-#define NM_SETTING_P2P_WIRELESS_PEER        "peer"
-#define NM_SETTING_P2P_WIRELESS_WPS_METHOD  "wps-method"
+#define NM_SETTING_WIFI_P2P_PEER        "peer"
+#define NM_SETTING_WIFI_P2P_WPS_METHOD  "wps-method"
 
-typedef struct _NMSettingP2PWirelessClass NMSettingP2PWirelessClass;
-
-NM_AVAILABLE_IN_1_16
-GType nm_setting_p2p_wireless_get_type (void);
+typedef struct _NMSettingWifiP2PClass NMSettingWifiP2PClass;
 
 NM_AVAILABLE_IN_1_16
-NMSetting *nm_setting_p2p_wireless_new (void);
+GType nm_setting_wifi_p2p_get_type (void);
 
 NM_AVAILABLE_IN_1_16
-const char *nm_setting_p2p_wireless_get_peer (NMSettingP2PWireless *setting);
+NMSetting *nm_setting_wifi_p2p_new (void);
 
 NM_AVAILABLE_IN_1_16
-NMSettingWirelessSecurityWpsMethod nm_setting_p2p_wireless_get_wps_method (NMSettingP2PWireless *setting);
+const char *nm_setting_wifi_p2p_get_peer (NMSettingWifiP2P *setting);
+
+NM_AVAILABLE_IN_1_16
+NMSettingWirelessSecurityWpsMethod nm_setting_wifi_p2p_get_wps_method (NMSettingWifiP2P *setting);
 
 G_END_DECLS
 
-#endif /* __NM_SETTING_P2P_WIRELESS_H__ */
+#endif /* __NM_SETTING_WIFI_P2P_H__ */

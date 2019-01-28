@@ -306,12 +306,6 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
 		.setting_name =             NM_SETTING_OVS_PORT_SETTING_NAME,
 		.get_setting_gtype =        nm_setting_ovs_port_get_type,
 	},
-	[NM_META_SETTING_TYPE_P2P_WIRELESS] = {
-		.meta_type =                NM_META_SETTING_TYPE_P2P_WIRELESS,
-		.setting_priority =         NM_SETTING_PRIORITY_HW_BASE,
-		.setting_name =             NM_SETTING_P2P_WIRELESS_SETTING_NAME,
-		.get_setting_gtype =        nm_setting_p2p_wireless_get_type,
-	},
 	[NM_META_SETTING_TYPE_PPPOE] = {
 		.meta_type =                NM_META_SETTING_TYPE_PPPOE,
 		.setting_priority =         NM_SETTING_PRIORITY_AUX,
@@ -389,6 +383,12 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
 		.setting_priority =         NM_SETTING_PRIORITY_HW_BASE,
 		.setting_name =             NM_SETTING_VXLAN_SETTING_NAME,
 		.get_setting_gtype =        nm_setting_vxlan_get_type,
+	},
+	[NM_META_SETTING_TYPE_WIFI_P2P] = {
+		.meta_type =                NM_META_SETTING_TYPE_WIFI_P2P,
+		.setting_priority =         NM_SETTING_PRIORITY_HW_BASE,
+		.setting_name =             NM_SETTING_WIFI_P2P_SETTING_NAME,
+		.get_setting_gtype =        nm_setting_wifi_p2p_get_type,
 	},
 	[NM_META_SETTING_TYPE_WIMAX] = {
 		.meta_type =                NM_META_SETTING_TYPE_WIMAX,

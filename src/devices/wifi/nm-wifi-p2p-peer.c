@@ -1,4 +1,4 @@
-/* NetworkManager -- P2P Wi-Fi Peer
+/* NetworkManager -- Wi-Fi P2P Peer
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -565,7 +565,7 @@ nm_wifi_p2p_peer_check_compatible (NMWifiP2PPeer *self,
                                    NMConnection *connection)
 {
 	NMWifiP2PPeerPrivate *priv;
-	NMSettingP2PWireless *s_p2p_wireless;
+	NMSettingWifiP2P *s_wifi_p2p;
 	const char *hwaddr;
 
 	g_return_val_if_fail (NM_IS_WIFI_P2P_PEER (self), FALSE);
@@ -573,11 +573,11 @@ nm_wifi_p2p_peer_check_compatible (NMWifiP2PPeer *self,
 
 	priv = NM_WIFI_P2P_PEER_GET_PRIVATE (self);
 
-	s_p2p_wireless = NM_SETTING_P2P_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_P2P_WIRELESS));
-	if (s_p2p_wireless == NULL)
+	s_wifi_p2p = NM_SETTING_WIFI_P2P (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIFI_P2P));
+	if (s_wifi_p2p == NULL)
 		return FALSE;
 
-	hwaddr = nm_setting_p2p_wireless_get_peer (s_p2p_wireless);
+	hwaddr = nm_setting_wifi_p2p_get_peer (s_wifi_p2p);
 	if (   hwaddr
 	    && (   !priv->address
 	        || !nm_utils_hwaddr_matches (hwaddr, -1, priv->address, -1)))
@@ -702,7 +702,7 @@ finalize (GObject *object)
 
 static const NMDBusInterfaceInfoExtended interface_info_p2p_peer = {
 	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
-		NM_DBUS_INTERFACE_P2P_PEER,
+		NM_DBUS_INTERFACE_WIFI_P2P_PEER,
 		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE ("Flags",        "u",  NM_WIFI_P2P_PEER_FLAGS),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE ("Name",         "s",  NM_WIFI_P2P_PEER_NAME),
@@ -728,7 +728,7 @@ nm_wifi_p2p_peer_class_init (NMWifiP2PPeerClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMWifiP2PPeerPrivate));
 
-	dbus_object_class->export_path = NM_DBUS_EXPORT_PATH_NUMBERED (NM_DBUS_PATH_P2P_PEER);
+	dbus_object_class->export_path = NM_DBUS_EXPORT_PATH_NUMBERED (NM_DBUS_PATH_WIFI_P2P_PEER);
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_p2p_peer);
 
 	object_class->get_property = get_property;

@@ -64,8 +64,8 @@ content_files = \
 	dbus-org.freedesktop.NetworkManager.Device.Veth.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Vlan.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Vxlan.xml \
+	dbus-org.freedesktop.NetworkManager.Device.WifiP2P.xml \
 	dbus-org.freedesktop.NetworkManager.Device.WireGuard.xml \
-	dbus-org.freedesktop.NetworkManager.Device.P2PWireless.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Wired.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Wireless.xml \
 	dbus-org.freedesktop.NetworkManager.Device.xml \

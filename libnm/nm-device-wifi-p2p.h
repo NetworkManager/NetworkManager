@@ -17,8 +17,8 @@
  * Copyright 2018 - 2019 Red Hat, Inc.
  */
 
-#ifndef __NM_DEVICE_P2P_WIFI_H__
-#define __NM_DEVICE_P2P_WIFI_H__
+#ifndef __NM_DEVICE_WIFI_P2P_H__
+#define __NM_DEVICE_WIFI_P2P_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -28,36 +28,36 @@
 
 G_BEGIN_DECLS
 
-#define NM_TYPE_DEVICE_P2P_WIFI            (nm_device_p2p_wifi_get_type ())
-#define NM_DEVICE_P2P_WIFI(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_P2P_WIFI, NMDeviceP2PWifi))
-#define NM_DEVICE_P2P_WIFI_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DEVICE_P2P_WIFI, NMDeviceP2PWifiClass))
-#define NM_IS_DEVICE_P2P_WIFI(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DEVICE_P2P_WIFI))
-#define NM_IS_DEVICE_P2P_WIFI_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_P2P_WIFI))
-#define NM_DEVICE_P2P_WIFI_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_P2P_WIFI, NMDeviceP2PWifiClass))
+#define NM_TYPE_DEVICE_WIFI_P2P            (nm_device_wifi_p2p_get_type ())
+#define NM_DEVICE_WIFI_P2P(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_WIFI_P2P, NMDeviceWifiP2P))
+#define NM_DEVICE_WIFI_P2P_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DEVICE_WIFI_P2P, NMDeviceWifiP2PClass))
+#define NM_IS_DEVICE_WIFI_P2P(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DEVICE_WIFI_P2P))
+#define NM_IS_DEVICE_WIFI_P2P_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_WIFI_P2P))
+#define NM_DEVICE_WIFI_P2P_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_WIFI_P2P, NMDeviceWifiP2PClass))
 
-#define NM_DEVICE_P2P_WIFI_HW_ADDRESS          "hw-address"
-#define NM_DEVICE_P2P_WIFI_GROUP_OWNER         "group-owner"
-#define NM_DEVICE_P2P_WIFI_PEERS               "peers"
-#define NM_DEVICE_P2P_WIFI_WFDIES              "wfdies"
+#define NM_DEVICE_WIFI_P2P_HW_ADDRESS          "hw-address"
+#define NM_DEVICE_WIFI_P2P_GROUP_OWNER         "group-owner"
+#define NM_DEVICE_WIFI_P2P_PEERS               "peers"
+#define NM_DEVICE_WIFI_P2P_WFDIES              "wfdies"
 
-typedef struct _NMDeviceP2PWifiClass NMDeviceP2PWifiClass;
-
-NM_AVAILABLE_IN_1_16
-GType nm_device_p2p_wifi_get_type (void);
+typedef struct _NMDeviceWifiP2PClass NMDeviceWifiP2PClass;
 
 NM_AVAILABLE_IN_1_16
-const char *             nm_device_p2p_wifi_get_hw_address   (NMDeviceP2PWifi *device);
+GType nm_device_wifi_p2p_get_type (void);
 
 NM_AVAILABLE_IN_1_16
-gboolean                 nm_device_p2p_wifi_get_group_owner  (NMDeviceP2PWifi *device);
+const char *             nm_device_wifi_p2p_get_hw_address   (NMDeviceWifiP2P *device);
 
 NM_AVAILABLE_IN_1_16
-NMP2PPeer *              nm_device_p2p_wifi_get_peer_by_path (NMDeviceP2PWifi *device,
+gboolean                 nm_device_wifi_p2p_get_group_owner  (NMDeviceWifiP2P *device);
+
+NM_AVAILABLE_IN_1_16
+NMWifiP2PPeer *          nm_device_wifi_p2p_get_peer_by_path (NMDeviceWifiP2P *device,
                                                               const char *path);
 
 NM_AVAILABLE_IN_1_16
-const GPtrArray *        nm_device_p2p_wifi_get_peers        (NMDeviceP2PWifi *device);
+const GPtrArray *        nm_device_wifi_p2p_get_peers        (NMDeviceWifiP2P *device);
 
 G_END_DECLS
 
-#endif /* __NM_DEVICE_P2P_WIFI_H__ */
+#endif /* __NM_DEVICE_WIFI_P2P_H__ */

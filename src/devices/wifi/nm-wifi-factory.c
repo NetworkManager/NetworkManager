@@ -71,11 +71,11 @@ nm_device_factory_create (GError **error)
 
 static void
 p2p_device_created (NMDeviceWifi    *device,
-                    NMDeviceP2PWifi *p2p_device,
+                    NMDeviceWifiP2P *p2p_device,
                     NMDeviceFactory *self)
 {
 	nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
-	             "P2P Wifi device controlled by wifi interface %s created",
+	             "Wi-Fi P2P device controlled by interface %s created",
 	             nm_device_get_iface (NM_DEVICE (device)));
 
 	g_signal_emit_by_name (self, NM_DEVICE_FACTORY_DEVICE_ADDED, p2p_device);

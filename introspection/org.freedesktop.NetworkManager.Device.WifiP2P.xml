@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <node name="/">
   <!--
-      org.freedesktop.NetworkManager.Device.P2PWireless:
-      @short_description: P2P Wi-Fi Device
+      org.freedesktop.NetworkManager.Device.WifiP2P:
+      @short_description: Wi-Fi P2P Device
 
       Since: 1.16
   -->
-  <interface name="org.freedesktop.NetworkManager.Device.P2PWireless">
-    <annotation name="org.gtk.GDBus.C.Name" value="Device_P2P_Wifi"/>
+  <interface name="org.freedesktop.NetworkManager.Device.WifiP2P">
+    <annotation name="org.gtk.GDBus.C.Name" value="Device_Wifi_P2P"/>
 
     <!--
         HwAddress:
@@ -44,7 +44,7 @@
     <!--
         Peers:
 
-        List of object paths of peers visible to this p2p wireless device.
+        List of object paths of peers visible to this Wi-Fi P2P device.
 
         Since: 1.16
     -->
@@ -56,7 +56,7 @@
                   in the range of 1-600 seconds is supported. The default is
                   30 seconds.
 
-        Start a find operation for P2P peers.
+        Start a find operation for Wi-Fi P2P peers.
 
         Since: 1.16
     -->
@@ -78,7 +78,7 @@
         PeerAdded:
         @peer: The object path of the newly found access point.
 
-        Emitted when a new P2P peer is found by the device.
+        Emitted when a new Wi-Fi P2P peer is found by the device.
 
         Since: 1.16
     -->
@@ -88,9 +88,9 @@
 
     <!--
         PeerRemoved:
-        @peer: The object path of the P2P peer that has disappeared.
+        @peer: The object path of the Wi-Fi P2P peer that has disappeared.
 
-        Emitted when a P2P peer disappears from view of the device.
+        Emitted when a Wi-Fi P2P peer disappears from view of the device.
 
         Since: 1.16
     -->
