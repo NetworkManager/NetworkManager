@@ -58,16 +58,6 @@ NMP2PPeer *              nm_device_p2p_wifi_get_peer_by_path (NMDeviceP2PWifi *d
 NM_AVAILABLE_IN_1_16
 const GPtrArray *        nm_device_p2p_wifi_get_peers        (NMDeviceP2PWifi *device);
 
-NM_AVAILABLE_IN_1_16
-gboolean                 nm_device_p2p_wifi_start_find       (NMDeviceP2PWifi *device,
-                                                              GCancellable *cancellable,
-                                                              GError **error);
-
-NM_AVAILABLE_IN_1_16
-gboolean                 nm_device_p2p_wifi_stop_find        (NMDeviceP2PWifi *device,
-                                                              GCancellable *cancellable,
-                                                              GError **error);
-
 G_END_DECLS
 
 #endif /* __NM_DEVICE_P2P_WIFI_H__ */
