@@ -28,7 +28,7 @@ typedef enum {
 } NMSecretAgentSecretType;
 
 typedef struct {
-	const NMSecretAgentSecretType secret_type;
+	NMSecretAgentSecretType secret_type;
 	const char *pretty_name;
 	const char *entry_id;
 	char *value;
