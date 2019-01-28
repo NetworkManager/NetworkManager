@@ -19,15 +19,15 @@
 
 #include "nm-default.h"
 
-#include "nm-device-p2p-wifi.h"
+#include "nm-device-wifi-p2p.h"
 
 #include <string.h>
 
 #include "nm-setting-connection.h"
-#include "nm-setting-p2p-wireless.h"
+#include "nm-setting-wifi-p2p.h"
 #include "nm-utils.h"
 
-#include "nm-p2p-peer.h"
+#include "nm-wifi-p2p-peer.h"
 #include "nm-object-private.h"
 #include "nm-core-internal.h"
 #include "nm-dbus-helpers.h"

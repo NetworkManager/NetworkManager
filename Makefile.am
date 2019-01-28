@@ -653,7 +653,6 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-ovs-interface.h \
 	libnm-core/nm-setting-ovs-patch.h \
 	libnm-core/nm-setting-ovs-port.h \
-	libnm-core/nm-setting-p2p-wireless.h \
 	libnm-core/nm-setting-ppp.h \
 	libnm-core/nm-setting-pppoe.h \
 	libnm-core/nm-setting-proxy.h \
@@ -667,6 +666,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-vlan.h \
 	libnm-core/nm-setting-vpn.h \
 	libnm-core/nm-setting-vxlan.h \
+	libnm-core/nm-setting-wifi-p2p.h \
 	libnm-core/nm-setting-wimax.h \
 	libnm-core/nm-setting-wired.h \
 	libnm-core/nm-setting-wireless-security.h \
@@ -722,7 +722,6 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-ovs-interface.c \
 	libnm-core/nm-setting-ovs-patch.c \
 	libnm-core/nm-setting-ovs-port.c \
-	libnm-core/nm-setting-p2p-wireless.c \
 	libnm-core/nm-setting-ppp.c \
 	libnm-core/nm-setting-pppoe.c \
 	libnm-core/nm-setting-proxy.c \
@@ -736,6 +735,7 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-vlan.c \
 	libnm-core/nm-setting-vpn.c \
 	libnm-core/nm-setting-vxlan.c \
+	libnm-core/nm-setting-wifi-p2p.c \
 	libnm-core/nm-setting-wimax.c \
 	libnm-core/nm-setting-wired.c \
 	libnm-core/nm-setting-wireless-security.c \
@@ -1041,15 +1041,15 @@ libnm_lib_h_pub_real = \
 	libnm/nm-device-macvlan.h \
 	libnm/nm-device-modem.h \
 	libnm/nm-device-olpc-mesh.h \
+	libnm/nm-device-ovs-bridge.h \
 	libnm/nm-device-ovs-interface.h \
 	libnm/nm-device-ovs-port.h \
-	libnm/nm-device-ovs-bridge.h \
-	libnm/nm-device-p2p-wifi.h \
 	libnm/nm-device-ppp.h \
 	libnm/nm-device-team.h \
 	libnm/nm-device-tun.h \
 	libnm/nm-device-vlan.h \
 	libnm/nm-device-vxlan.h \
+	libnm/nm-device-wifi-p2p.h \
 	libnm/nm-device-wifi.h \
 	libnm/nm-device-wimax.h \
 	libnm/nm-device-wireguard.h \
@@ -1058,7 +1058,6 @@ libnm_lib_h_pub_real = \
 	libnm/nm-dhcp-config.h \
 	libnm/nm-ip-config.h \
 	libnm/nm-object.h \
-	libnm/nm-p2p-peer.h \
 	libnm/nm-remote-connection.h \
 	libnm/nm-secret-agent-old.h \
 	libnm/nm-types.h \
@@ -1066,6 +1065,7 @@ libnm_lib_h_pub_real = \
 	libnm/nm-vpn-editor.h \
 	libnm/nm-vpn-plugin-old.h \
 	libnm/nm-vpn-service-plugin.h \
+	libnm/nm-wifi-p2p-peer.h \
 	libnm/nm-wimax-nsp.h
 libnm_lib_h_pub_mkenums = \
 	libnm/nm-enum-types.h
@@ -1102,15 +1102,15 @@ libnm_lib_c_real = \
 	libnm/nm-device-macvlan.c \
 	libnm/nm-device-modem.c \
 	libnm/nm-device-olpc-mesh.c \
+	libnm/nm-device-ovs-bridge.c \
 	libnm/nm-device-ovs-interface.c \
 	libnm/nm-device-ovs-port.c \
-	libnm/nm-device-ovs-bridge.c \
-	libnm/nm-device-p2p-wifi.c \
 	libnm/nm-device-ppp.c \
 	libnm/nm-device-team.c \
 	libnm/nm-device-tun.c \
 	libnm/nm-device-vlan.c \
 	libnm/nm-device-vxlan.c \
+	libnm/nm-device-wifi-p2p.c \
 	libnm/nm-device-wifi.c \
 	libnm/nm-device-wimax.c \
 	libnm/nm-device-wireguard.c \
@@ -1125,14 +1125,14 @@ libnm_lib_c_real = \
 	libnm/nm-ip6-config.c \
 	libnm/nm-manager.c \
 	libnm/nm-object.c \
-	libnm/nm-p2p-peer.c \
 	libnm/nm-remote-connection.c \
 	libnm/nm-remote-settings.c \
 	libnm/nm-secret-agent-old.c \
 	libnm/nm-vpn-connection.c \
-	libnm/nm-vpn-plugin-old.c \
 	libnm/nm-vpn-editor.c \
+	libnm/nm-vpn-plugin-old.c \
 	libnm/nm-vpn-service-plugin.c \
+	libnm/nm-wifi-p2p-peer.c \
 	libnm/nm-wimax-nsp.c
 libnm_lib_c_mkenums = \
 	libnm/nm-enum-types.c
@@ -3256,8 +3256,8 @@ core_plugins += src/devices/wifi/libnm-device-plugin-wifi.la
 src_devices_wifi_libnm_device_plugin_wifi_la_SOURCES = \
 	src/devices/wifi/nm-device-olpc-mesh.c \
 	src/devices/wifi/nm-device-olpc-mesh.h \
-	src/devices/wifi/nm-device-p2p-wifi.c \
-	src/devices/wifi/nm-device-p2p-wifi.h \
+	src/devices/wifi/nm-device-wifi-p2p.c \
+	src/devices/wifi/nm-device-wifi-p2p.h \
 	src/devices/wifi/nm-device-wifi.c \
 	src/devices/wifi/nm-device-wifi.h \
 	src/devices/wifi/nm-wifi-ap.c \

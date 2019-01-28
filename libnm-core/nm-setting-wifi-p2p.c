@@ -19,7 +19,7 @@
 
 #include "nm-default.h"
 
-#include "nm-setting-p2p-wireless.h"
+#include "nm-setting-wifi-p2p.h"
 
 #include <string.h>
 #include <net/ethernet.h>
@@ -30,7 +30,7 @@
 #include "nm-setting-private.h"
 
 /**
- * SECTION:nm-setting-p2p-wireless
+ * SECTION:nm-setting-wifi-p2p
  * @short_description: Describes connection properties for 802.11 Wi-Fi P2P networks
  *
  * The #NMSettingP2PWireless object is a #NMSetting subclass that describes properties

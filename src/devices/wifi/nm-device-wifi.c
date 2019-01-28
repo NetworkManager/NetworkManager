@@ -28,7 +28,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "nm-device-p2p-wifi.h"
+#include "nm-device-wifi-p2p.h"
 #include "nm-wifi-ap.h"
 #include "nm-common-macros.h"
 #include "devices/nm-device.h"

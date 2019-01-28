@@ -26,7 +26,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-olpc-mesh.h"
 #include "nm-device-wifi.h"
-#include "nm-device-p2p-wifi.h"
+#include "nm-device-wifi-p2p.h"
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-iwd.h"
 #include "settings/nm-settings-connection.h"

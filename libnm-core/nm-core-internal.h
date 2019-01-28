@@ -37,6 +37,8 @@
 
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
+#include "nm-core-types-internal.h"
+#include "nm-meta-setting.h"
 #include "nm-setting-6lowpan.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-adsl.h"
@@ -52,7 +54,6 @@
 #include "nm-setting-gsm.h"
 #include "nm-setting-infiniband.h"
 #include "nm-setting-ip-tunnel.h"
-#include "nm-setting-proxy.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-macsec.h"
@@ -63,9 +64,9 @@
 #include "nm-setting-ovs-interface.h"
 #include "nm-setting-ovs-patch.h"
 #include "nm-setting-ovs-port.h"
-#include "nm-setting-p2p-wireless.h"
 #include "nm-setting-ppp.h"
 #include "nm-setting-pppoe.h"
+#include "nm-setting-proxy.h"
 #include "nm-setting-serial.h"
 #include "nm-setting-sriov.h"
 #include "nm-setting-tc-config.h"
@@ -75,6 +76,7 @@
 #include "nm-setting-vlan.h"
 #include "nm-setting-vpn.h"
 #include "nm-setting-vxlan.h"
+#include "nm-setting-wifi-p2p.h"
 #include "nm-setting-wimax.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless-security.h"
@@ -84,9 +86,7 @@
 #include "nm-simple-connection.h"
 #include "nm-utils.h"
 #include "nm-vpn-dbus-interface.h"
-#include "nm-core-types-internal.h"
 #include "nm-vpn-editor-plugin.h"
-#include "nm-meta-setting.h"
 
 /* IEEE 802.1D-1998 timer values */
 #define NM_BR_MIN_HELLO_TIME    1

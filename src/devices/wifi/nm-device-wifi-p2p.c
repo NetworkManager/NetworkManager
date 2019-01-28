@@ -20,7 +20,7 @@
 
 #include "nm-default.h"
 
-#include "nm-device-p2p-wifi.h"
+#include "nm-device-wifi-p2p.h"
 
 #include <sys/socket.h>
 
@@ -33,7 +33,7 @@
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-private.h"
 #include "settings/nm-settings.h"
-#include "nm-setting-p2p-wireless.h"
+#include "nm-setting-wifi-p2p.h"
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
 #include "platform/nm-platform.h"
