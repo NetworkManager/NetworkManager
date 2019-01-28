@@ -43,23 +43,12 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMWifiP2PPeer,
 	PROP_MODEL,
 	PROP_MODEL_NUMBER,
 	PROP_SERIAL,
-	//PROP_PRIMARY_DEVICE_TYPE, { "PrimaryDeviceType", WPAS_DBUS_NEW_IFACE_P2P_PEER, "ay",
-	// "devicecapability", WPAS_DBUS_NEW_IFACE_P2P_PEER, "y",
-	// "groupcapability", WPAS_DBUS_NEW_IFACE_P2P_PEER, "y",
-	// "SecondaryDeviceTypes", WPAS_DBUS_NEW_IFACE_P2P_PEER, "aay",
-	// "VendorExtension", WPAS_DBUS_NEW_IFACE_P2P_PEER, "aay",
 	PROP_WFD_IES,
 	PROP_GROUPS,
-
 	PROP_HW_ADDRESS,
-	//PROP_MODE,
 	PROP_STRENGTH,
 	PROP_LAST_SEEN,
-
-	//PROP_MAX_BITRATE,
-	// One of the following (FLAGS would simply mirror/use the same as AP flags)
 	PROP_FLAGS,
-	//PROP_CONFIG_METHOD,
 );
 
 struct _NMWifiP2PPeerPrivate {

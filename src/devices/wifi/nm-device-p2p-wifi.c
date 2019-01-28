@@ -48,8 +48,6 @@ _LOG_DECLARE_SELF(NMDeviceP2PWifi);
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceP2PWifi,
 	PROP_GROUP_OWNER,
-	//PROP_SSID,
-	//PROP_BSSID,
 	PROP_PEERS,
 	PROP_WFDIES, /* TODO: Make this a property of the setting and Find feature
 	              * making the device stateless.
@@ -57,14 +55,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceP2PWifi,
 
 	PROP_MGMT_IFACE,
 );
-
-enum {
-	SCANNING_PROHIBITED,
-
-	LAST_SIGNAL
-};
-
-//static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	NMSupplicantManager *sup_mgr;
@@ -554,12 +544,6 @@ peer_add_remove (NMDeviceP2PWifi *self,
 	}
 
 	update_disconnect_on_connection_peer_missing (self);
-
-#if 0
-	nm_device_emit_recheck_auto_activate (NM_DEVICE (self));
-	if (recheck_available_connections)
-		nm_device_recheck_available_connections (NM_DEVICE (self));
-#endif
 }
 
 static void
@@ -961,11 +945,6 @@ device_state_changed (NMDevice *device,
 	NMDeviceP2PWifi *self = NM_DEVICE_P2P_WIFI (device);
 	NMDeviceP2PWifiPrivate *priv = NM_DEVICE_P2P_WIFI_GET_PRIVATE (self);
 
-#if 0
-	if (new_state > NM_DEVICE_STATE_ACTIVATED)
-		wifi_secrets_cancel (self);
-#endif
-
 	update_disconnect_on_connection_peer_missing (self);
 
 	if (new_state <= NM_DEVICE_STATE_UNAVAILABLE) {
@@ -1355,12 +1334,6 @@ nm_device_p2p_wifi_class_init (NMDeviceP2PWifiClass *klass)
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
-
-	/* obj_properties[PROP_SCANNING] = */
-	/*     g_param_spec_boolean (NM_DEVICE_WIFI_SCANNING, "", "", */
-	/*                           FALSE, */
-	/*                           G_PARAM_READABLE | */
-	/*                           G_PARAM_STATIC_STRINGS); */
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
