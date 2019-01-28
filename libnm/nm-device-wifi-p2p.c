@@ -184,6 +184,151 @@ nm_device_wifi_p2p_get_peer_by_path (NMDeviceWifiP2P *device,
 }
 
 static void
+start_find_finished_cb (GObject      *obj,
+                        GAsyncResult *res,
+                        gpointer user_data)
+{
+	NMDBusDeviceWifiP2P *proxy = (NMDBusDeviceWifiP2P*) obj;
+	GTask *task = G_TASK (user_data);
+	GError *error = NULL;
+	gboolean success;
+
+	success = nmdbus_device_wifi_p2p_call_start_find_finish (proxy, res, &error);
+	if (!success)
+		g_task_return_error (task, error);
+	else
+		g_task_return_boolean (task, TRUE);
+
+	g_object_unref (task);
+}
+
+/**
+ * nm_device_wifi_p2p_start_find:
+ * @device: a #NMDeviceWifiP2P
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: a #GAsyncReadyCallback, or %NULL
+ * @user_data: user_data for @callback
+ *
+ * Request NM to search for Wi-Fi P2P peers on @device. Note that the call
+ * returns immediately after requesting the find, and it may take some time
+ * after that for peers to be found.
+ *
+ * The find operation will run for 30s by default. You can stop it earlier
+ * using nm_device_p2p_wifi_stop_find().
+ *
+ * Since: 1.16
+ **/
+void
+nm_device_wifi_p2p_start_find (NMDeviceWifiP2P     *device,
+                               GCancellable        *cancellable,
+                               GAsyncReadyCallback  callback,
+                               gpointer             user_data)
+{
+	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (device);
+	GVariant *options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
+	GTask *task;
+
+	g_return_if_fail (NM_IS_DEVICE_WIFI_P2P (device));
+
+	task = g_task_new (device, cancellable, callback, user_data);
+
+	nmdbus_device_wifi_p2p_call_start_find (priv->proxy,
+	                                        options,
+	                                        cancellable,
+	                                        start_find_finished_cb,
+	                                        task);
+}
+
+/**
+ * nm_device_wifi_p2p_start_find_finish:
+ * @device: a #NMDeviceWifiP2P
+ * @result: the #GAsyncResult
+ * @error: #GError return address
+ *
+ * Finish an operation started by nm_device_wifi_p2p_start_find().
+ *
+ * Returns: %TRUE if the call was successful
+ *
+ * Since: 1.16
+ **/
+gboolean
+nm_device_wifi_p2p_start_find_finish (NMDeviceWifiP2P  *device,
+                                      GAsyncResult     *result,
+                                      GError          **error)
+{
+	return g_task_propagate_boolean (G_TASK (result), error);
+}
+
+static void
+stop_find_finished_cb (GObject      *obj,
+                       GAsyncResult *res,
+                       gpointer user_data)
+{
+	NMDBusDeviceWifiP2P *proxy = (NMDBusDeviceWifiP2P*) obj;
+	GTask *task = G_TASK (user_data);
+	GError *error = NULL;
+	gboolean success;
+
+	success = nmdbus_device_wifi_p2p_call_stop_find_finish (proxy, res, &error);
+	if (!success)
+		g_task_return_error (task, error);
+	else
+		g_task_return_boolean (task, TRUE);
+
+	g_object_unref (task);
+}
+
+/**
+ * nm_device_wifi_p2p_stop_find:
+ * @device: a #NMDeviceWifiP2P
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: a #GAsyncReadyCallback, or %NULL
+ * @user_data: user_data for @callback
+ *
+ * Request NM to stop any ongoing find operation for Wi-Fi P2P peers on @device.
+ *
+ * Since: 1.16
+ **/
+void
+nm_device_wifi_p2p_stop_find (NMDeviceWifiP2P     *device,
+                              GCancellable        *cancellable,
+                              GAsyncReadyCallback  callback,
+                              gpointer             user_data)
+{
+	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (device);
+	GTask *task;
+
+	g_return_if_fail (NM_IS_DEVICE_WIFI_P2P (device));
+
+	task = g_task_new (device, cancellable, callback, user_data);
+
+	nmdbus_device_wifi_p2p_call_stop_find (priv->proxy,
+	                                       cancellable,
+	                                       stop_find_finished_cb,
+	                                       task);
+}
+
+/**
+ * nm_device_wifi_p2p_stop_find_finish:
+ * @device: a #NMDeviceWifiP2P
+ * @result: the #GAsyncResult
+ * @error: #GError return address
+ *
+ * Finish an operation started by nm_device_wifi_p2p_stop_find().
+ *
+ * Returns: %TRUE if the call was successful
+ *
+ * Since: 1.16
+ **/
+gboolean
+nm_device_wifi_p2p_stop_find_finish (NMDeviceWifiP2P  *device,
+                                      GAsyncResult     *result,
+                                      GError          **error)
+{
+	return g_task_propagate_boolean (G_TASK (result), error);
+}
+
+static void
 clean_up_peers (NMDeviceWifiP2P *self)
 {
 	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
