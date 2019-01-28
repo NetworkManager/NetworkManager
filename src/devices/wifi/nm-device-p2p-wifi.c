@@ -985,7 +985,8 @@ device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_UNMANAGED:
 		break;
 	case NM_DEVICE_STATE_UNAVAILABLE:
-		if (!priv->mgmt_iface || nm_supplicant_interface_get_state (priv->mgmt_iface) < NM_SUPPLICANT_INTERFACE_STATE_READY)
+		if (   !priv->mgmt_iface
+		    || nm_supplicant_interface_get_state (priv->mgmt_iface) < NM_SUPPLICANT_INTERFACE_STATE_READY)
 			nm_device_add_pending_action (device, NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, FALSE);
 
 		break;
@@ -1107,7 +1108,7 @@ nm_device_p2p_wifi_set_mgmt_iface (NMDeviceP2PWifi *self,
 
 	/* We are not waiting on the supplicant anymore if the state is ready. */
 	if (nm_supplicant_interface_get_state (priv->mgmt_iface) >= NM_SUPPLICANT_INTERFACE_STATE_READY)
-		nm_device_remove_pending_action (NM_DEVICE (self), NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, TRUE);
+		nm_device_remove_pending_action (NM_DEVICE (self), NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, FALSE);
 
 	g_signal_connect_object (priv->mgmt_iface, NM_SUPPLICANT_INTERFACE_STATE,
 	                         G_CALLBACK (supplicant_iface_state_cb),
