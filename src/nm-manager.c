@@ -5312,10 +5312,10 @@ activation_add_done (NMSettings *settings,
 		                                 nm_dbus_object_get_path (NM_DBUS_OBJECT (new_connection)),
 		                                 nm_dbus_object_get_path (NM_DBUS_OBJECT (active)));
 	} else {
-		result_floating = g_variant_new ("(ooa{sv})",
+		result_floating = g_variant_new ("(oo@a{sv})",
 		                                 nm_dbus_object_get_path (NM_DBUS_OBJECT (new_connection)),
 		                                 nm_dbus_object_get_path (NM_DBUS_OBJECT (active)),
-		                                 g_variant_new_array (G_VARIANT_TYPE ("a{sv}"), NULL, 0));
+		                                 g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0));
 	}
 	g_dbus_method_invocation_return_value (context, result_floating);
 
