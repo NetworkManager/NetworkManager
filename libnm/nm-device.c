@@ -2675,9 +2675,15 @@ static NMLldpNeighbor *
 nm_lldp_neighbor_dup (NMLldpNeighbor *neighbor)
 {
 	NMLldpNeighbor *copy;
+	GHashTableIter iter;
+	const char *key;
+	GVariant *value;
 
 	copy = nm_lldp_neighbor_new ();
-	copy->attrs = g_hash_table_ref (neighbor->attrs);
+
+	g_hash_table_iter_init (&iter, neighbor->attrs);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value))
+		g_hash_table_insert (copy->attrs, g_strdup (key), g_variant_ref (value));
 
 	return copy;
 }
