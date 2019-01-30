@@ -813,7 +813,7 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 			                       g_variant_builder_end (&builder2));
 			break;
 		}
-		default:
+		case LLDP_ATTR_TYPE_NONE:
 			break;
 		}
 	}
