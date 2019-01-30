@@ -634,6 +634,15 @@ NM_AUTO_DEFINE_FCN_VOID0 (NMSockAddrEndpoint *, _nm_auto_unref_sockaddrendpoint,
 
 /*****************************************************************************/
 
+NMSockAddrEndpoint *_nm_wireguard_peer_get_endpoint (const NMWireGuardPeer *self);
+void _nm_wireguard_peer_set_endpoint (NMWireGuardPeer *self,
+                                      NMSockAddrEndpoint *endpoint);
+
+void _nm_wireguard_peer_set_public_key_bin (NMWireGuardPeer *self,
+                                            const guint8 public_key[static NM_WIREGUARD_PUBLIC_KEY_LEN]);
+
+/*****************************************************************************/
+
 typedef struct _NMSettInfoSetting  NMSettInfoSetting;
 typedef struct _NMSettInfoProperty NMSettInfoProperty;
 
@@ -768,6 +777,9 @@ gboolean _nm_connection_find_secret (NMConnection *self,
                                      gpointer callback_data);
 
 /*****************************************************************************/
+
+#define nm_auto_unref_wgpeer nm_auto(_nm_auto_unref_wgpeer)
+NM_AUTO_DEFINE_FCN_VOID0 (NMWireGuardPeer *, _nm_auto_unref_wgpeer, nm_wireguard_peer_unref)
 
 gboolean _nm_utils_wireguard_decode_key (const char *base64_key,
                                          gsize required_key_len,
