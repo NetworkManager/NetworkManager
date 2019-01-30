@@ -616,7 +616,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 			continue;
 
 		/* skip over leading TLV, OUI and subtype */
-#ifdef WITH_MORE_ASSERTS
+#if NM_MORE_ASSERTS > 5
 		{
 			guint8 check_hdr[] = {
 				0xfe | (((len - 2) >> 8) & 0x01), ((len - 2) & 0xFF),
