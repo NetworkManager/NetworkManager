@@ -449,7 +449,7 @@ NM_G_ERROR_MSG (GError *error)
 /*****************************************************************************/
 
 /* macro to return strlen() of a compile time string. */
-#define NM_STRLEN(str)     ( sizeof ("" str) - 1 )
+#define NM_STRLEN(str)     ( sizeof (""str"") - 1 )
 
 /* returns the length of a NULL terminated array of pointers,
  * like g_strv_length() does. The difference is:
@@ -865,6 +865,17 @@ fcn (void) \
 
 #define NM_STR_HAS_PREFIX(str, prefix) \
 	(strncmp ((str), ""prefix"", NM_STRLEN (prefix)) == 0)
+
+#define NM_STR_HAS_SUFFIX(str, suffix) \
+	({ \
+		const char *_str = (str); \
+		gsize _l = strlen (_str); \
+		\
+		(   (_l >= NM_STRLEN (suffix)) \
+		 && (memcmp (&_str[_l - NM_STRLEN (suffix)], \
+		             ""suffix"", \
+		             NM_STRLEN (suffix)) == 0)); \
+	})
 
 /*****************************************************************************/
 
