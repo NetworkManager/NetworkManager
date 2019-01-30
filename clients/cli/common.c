@@ -685,6 +685,8 @@ get_secrets_from_user (const NmcConfig *nmc_config,
 			pwd = g_strdup (pwd);
 		} else {
 			if (ask) {
+				gboolean echo_on;
+
 				if (secret->value) {
 					if (!g_strcmp0 (secret->vpn_type, NM_DBUS_INTERFACE ".openconnect")) {
 						/* Do not present and ask user for openconnect secrets, we already have them */
@@ -697,11 +699,16 @@ get_secrets_from_user (const NmcConfig *nmc_config,
 				}
 				if (msg)
 					g_print ("%s\n", msg);
-				pwd = nmc_readline_echo (nmc_config,
-				                         secret->is_secret
-				                         ? nmc_config->show_secrets
-				                         : TRUE,
-				                         "%s (%s): ", secret->pretty_name, secret->entry_id);
+
+				echo_on = secret->is_secret
+				          ? nmc_config->show_secrets
+				          : TRUE;
+
+				if (secret->no_prompt_entry_id)
+					pwd = nmc_readline_echo (nmc_config, echo_on, "%s: ", secret->pretty_name);
+				else
+					pwd = nmc_readline_echo (nmc_config, echo_on, "%s (%s): ", secret->pretty_name, secret->entry_id);
+
 				if (!pwd)
 					pwd = g_strdup ("");
 			} else {
