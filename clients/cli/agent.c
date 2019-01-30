@@ -104,7 +104,10 @@ get_secrets_from_user (const NmcConfig *nmc_config,
 			rl_startup_hook = set_deftext;
 			pre_input_deftext = g_strdup (secret->value);
 		}
-		pwd = nmc_readline (nmc_config, "%s (%s): ", secret->pretty_name, secret->entry_id);
+		if (secret->no_prompt_entry_id)
+			pwd = nmc_readline (nmc_config, "%s: ", secret->pretty_name);
+		else
+			pwd = nmc_readline (nmc_config, "%s (%s): ", secret->pretty_name, secret->entry_id);
 
 		/* No password provided, cancel the secrets. */
 		if (!pwd)
