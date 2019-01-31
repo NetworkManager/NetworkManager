@@ -710,7 +710,7 @@ nm_utils_error_set_literal (GError **error, int error_code, const char *literal)
 	                            \
 	                            (  _errsv >= 0 \
 	                             ? _errsv \
-	                             : (  (_errsv == G_MININT) \
+	                             : (  G_UNLIKELY (_errsv == G_MININT) \
 	                                ? G_MAXINT \
 	                                : -errsv)); \
 	                          })))
