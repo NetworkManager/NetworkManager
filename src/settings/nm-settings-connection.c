@@ -279,11 +279,12 @@ for_each_secret (NMConnection *self,
 				g_variant_builder_init (&vpn_secrets_builder, G_VARIANT_TYPE ("a{ss}"));
 				g_variant_iter_init (&vpn_secrets_iter, val);
 				while (g_variant_iter_next (&vpn_secrets_iter, "{&s&s}", &vpn_secret_name, &secret)) {
-					if (!nm_setting_get_secret_flags (setting, vpn_secret_name, &secret_flags, NULL)) {
-						if (!remove_non_secrets)
-							g_variant_builder_add (&vpn_secrets_builder, "{ss}", vpn_secret_name, secret);
-						continue;
-					}
+
+					/* we ignore the return value of get_secret_flags. The function may determine
+					 * that this is not a secret, based on having not secret-flags and no secrets.
+					 * But we have the secret at hand. We know it would be a valid secret, if we
+					 * only would add it to the VPN settings. */
+					nm_setting_get_secret_flags (setting, vpn_secret_name, &secret_flags, NULL);
 
 					if (callback (secret_flags, callback_data))
 						g_variant_builder_add (&vpn_secrets_builder, "{ss}", vpn_secret_name, secret);
