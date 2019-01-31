@@ -327,7 +327,7 @@ typedef enum {
 typedef enum {
 	/* Negative values are errors from kernel. Add dummy member to
 	 * make enum signed. */
-	_WAIT_FOR_NL_RESPONSE_RESULT_SYSTEM_ERROR = -1,
+	_WAIT_FOR_NL_RESPONSE_RESULT_SYSTEM_ERROR = G_MININT,
 
 	WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN = 0,
 	WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK,
@@ -7794,7 +7794,7 @@ continue_reading:
 				err = -NME_NL_MSG_TRUNC;
 				abort_parsing = TRUE;
 			} else if (e->error) {
-				int errsv = e->error > 0 ? e->error : -e->error;
+				int errsv = nm_errno_native (e->error);
 
 				if (   NM_FLAGS_HAS (hdr->nlmsg_flags, NLM_F_ACK_TLVS)
 				    && hdr->nlmsg_len >= sizeof (*e) + e->msg.nlmsg_len) {
@@ -7819,7 +7819,7 @@ continue_reading:
 				       errsv,
 				       NM_PRINT_FMT_QUOTED (extack_msg, " \"", extack_msg, "\"", ""),
 				       nlmsg_hdr (msg)->nlmsg_seq);
-				seq_result = -errsv;
+				seq_result = -NM_ERRNO_NATIVE (errsv);
 			} else
 				seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
 		} else

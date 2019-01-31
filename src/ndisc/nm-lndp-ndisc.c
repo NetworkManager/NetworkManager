@@ -32,6 +32,7 @@
 #include "NetworkManagerUtils.h"
 #include "platform/nm-platform.h"
 #include "platform/nmp-netns.h"
+#include "nm-utils/nm-errno.h"
 
 #define _NMLOG_PREFIX_NAME                "ndisc-lndp"
 
@@ -72,7 +73,6 @@ send_rs (NMNDisc *ndisc, GError **error)
 
 	errsv = ndp_msg_new (&msg, NDP_MSG_RS);
 	if (errsv) {
-		errsv = errsv > 0 ? errsv : -errsv;
 		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		                     "cannot create router solicitation");
 		return FALSE;
@@ -82,7 +82,7 @@ send_rs (NMNDisc *ndisc, GError **error)
 	errsv = ndp_msg_send (priv->ndp, msg);
 	ndp_msg_destroy (msg);
 	if (errsv) {
-		errsv = errsv > 0 ? errsv : -errsv;
+		errsv = nm_errno_native (errsv);
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "%s (%d)",
 		             g_strerror (errsv), errsv);
@@ -360,7 +360,6 @@ send_ra (NMNDisc *ndisc, GError **error)
 
 	errsv = ndp_msg_new (&msg, NDP_MSG_RA);
 	if (errsv) {
-		errsv = errsv > 0 ? errsv : -errsv;
 		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		                     "cannot create a router advertisement");
 		return FALSE;
@@ -468,7 +467,7 @@ send_ra (NMNDisc *ndisc, GError **error)
 
 	ndp_msg_destroy (msg);
 	if (errsv) {
-		errsv = errsv > 0 ? errsv : -errsv;
+		errsv = nm_errno_native (errsv);
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "%s (%d)",
 		             g_strerror (errsv), errsv);
@@ -599,7 +598,7 @@ nm_lndp_ndisc_new (NMPlatform *platform,
 	errsv = ndp_open (&priv->ndp);
 
 	if (errsv != 0) {
-		errsv = errsv > 0 ? errsv : -errsv;
+		errsv = nm_errno_native (errsv);
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "failure creating libndp socket: %s (%d)",
 		             g_strerror (errsv), errsv);
