@@ -26,7 +26,6 @@
 
 #include "nms-ifupdown-plugin.h"
 
-#include <string.h>
 #include <arpa/inet.h>
 #include <gmodule.h>
 

@@ -22,8 +22,6 @@
 
 #include "nm-audit-manager.h"
 
-#include <errno.h>
-#include <string.h>
 #if HAVE_LIBAUDIT
 #include <libaudit.h>
 #endif

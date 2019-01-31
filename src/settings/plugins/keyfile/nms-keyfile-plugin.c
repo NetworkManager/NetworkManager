@@ -26,8 +26,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <string.h>
-
 #include <glib/gstdio.h>
 
 #include "nm-connection.h"

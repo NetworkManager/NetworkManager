@@ -23,9 +23,6 @@
 
 #include "nm-dispatcher.h"
 
-#include <string.h>
-#include <errno.h>
-
 #include "nm-dispatcher-api.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"

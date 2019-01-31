@@ -22,7 +22,6 @@
 
 #include "nm-iwd-manager.h"
 
-#include <string.h>
 #include <net/if.h>
 
 #include "nm-logging.h"

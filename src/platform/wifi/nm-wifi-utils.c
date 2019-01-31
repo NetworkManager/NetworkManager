@@ -25,7 +25,6 @@
 
 #include <sys/stat.h>
 #include <stdio.h>
-#include <string.h>
 #include <fcntl.h>
 
 #include "nm-wifi-utils-private.h"

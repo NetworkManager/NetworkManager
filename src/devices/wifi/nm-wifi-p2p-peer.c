@@ -22,7 +22,6 @@
 
 #include "nm-wifi-p2p-peer.h"
 
-#include <string.h>
 #include <stdlib.h>
 
 #include "nm-setting-wireless.h"

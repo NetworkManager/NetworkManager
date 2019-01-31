@@ -23,14 +23,12 @@
 
 #include <getopt.h>
 #include <locale.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <string.h>
 #include <sys/resource.h>
 
 #include "main-utils.h"

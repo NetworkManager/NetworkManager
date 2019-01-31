@@ -28,9 +28,8 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nmt-newt-container.h"
+
 #include "nmt-newt-component.h"
 
 G_DEFINE_ABSTRACT_TYPE (NmtNewtContainer, nmt_newt_container, NMT_TYPE_NEWT_WIDGET)

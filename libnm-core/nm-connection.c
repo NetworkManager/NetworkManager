@@ -24,7 +24,6 @@
 
 #include "nm-connection.h"
 
-#include <string.h>
 #include <arpa/inet.h>
 
 #include "nm-connection-private.h"

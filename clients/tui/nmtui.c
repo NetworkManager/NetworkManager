@@ -26,14 +26,14 @@
 
 #include "nm-default.h"
 
+#include "nmtui.h"
+
 #include <locale.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "nmt-newt.h"
 #include "nm-editor-bindings.h"
 
-#include "nmtui.h"
 #include "nmtui-edit.h"
 #include "nmtui-connect.h"
 #include "nmtui-hostname.h"

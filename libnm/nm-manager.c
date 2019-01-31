@@ -23,8 +23,6 @@
 
 #include "nm-manager.h"
 
-#include <string.h>
-
 #include "nm-utils.h"
 #include "nm-checkpoint.h"
 #include "nm-common-macros.h"

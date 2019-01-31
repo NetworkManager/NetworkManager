@@ -23,13 +23,11 @@
 #include "nm-platform.h"
 
 #include <stdlib.h>
-#include <errno.h>
 #include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <string.h>
 #include <linux/ip.h>
 #include <linux/if.h>
 #include <linux/if_tun.h>

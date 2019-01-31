@@ -24,7 +24,6 @@
 
 #include "nm-setting-ip-config.h"
 
-#include <string.h>
 #include <arpa/inet.h>
 
 #include "nm-setting-ip4-config.h"

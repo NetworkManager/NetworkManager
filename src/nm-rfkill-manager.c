@@ -22,7 +22,6 @@
 
 #include "nm-rfkill-manager.h"
 
-#include <string.h>
 #include <libudev.h>
 
 #include "nm-utils/nm-udev-utils.h"

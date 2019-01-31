@@ -31,8 +31,6 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nmt-newt-stack.h"
 
 G_DEFINE_TYPE (NmtNewtStack, nmt_newt_stack, NMT_TYPE_NEWT_CONTAINER)

@@ -21,8 +21,6 @@
 
 #include "nm-sleep-monitor.h"
 
-#include <errno.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <gio/gunixfdlist.h>
 

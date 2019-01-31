@@ -23,7 +23,6 @@
 #include "nms-ifcfg-rh-utils.h"
 
 #include <stdlib.h>
-#include <string.h>
 
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"

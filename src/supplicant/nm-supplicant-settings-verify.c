@@ -24,8 +24,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <errno.h>
 
 struct Opt {
 	const char *     key;

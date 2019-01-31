@@ -25,8 +25,6 @@
 
 #include "nm-vpn-helpers.h"
 
-#include <string.h>
-
 #include "nm-utils.h"
 
 /*****************************************************************************/

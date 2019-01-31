@@ -22,7 +22,6 @@
 
 #include "nm-wifi-utils.h"
 
-#include <string.h>
 #include <stdlib.h>
 
 #include "nm-utils.h"

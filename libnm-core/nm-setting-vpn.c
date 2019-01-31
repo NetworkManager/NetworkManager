@@ -23,8 +23,6 @@
 
 #include "nm-setting-vpn.h"
 
-#include <string.h>
-#include <errno.h>
 #include <stdlib.h>
 
 #include "nm-utils/nm-secret-utils.h"

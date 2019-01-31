@@ -23,8 +23,6 @@
 
 #include "nm-keep-alive.h"
 
-#include <string.h>
-
 #include "settings/nm-settings-connection.h"
 
 /*****************************************************************************/

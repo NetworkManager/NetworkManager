@@ -24,7 +24,6 @@
 
 #include "nms-ifupdown-connection.h"
 
-#include <string.h>
 #include <glib/gstdio.h>
 
 #include "nm-dbus-interface.h"

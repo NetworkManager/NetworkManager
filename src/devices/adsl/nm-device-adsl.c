@@ -25,12 +25,10 @@
 #include <sys/socket.h>
 #include <linux/atmdev.h>
 #include <linux/atmbr2684.h>
-#include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "devices/nm-device-private.h"
 #include "platform/nm-platform.h"

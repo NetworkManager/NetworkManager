@@ -23,10 +23,7 @@
 
 #include "nm-device-adsl.h"
 
-#include <string.h>
-
 #include "nm-object-private.h"
-
 #include "nm-setting-adsl.h"
 #include "nm-setting-connection.h"
 

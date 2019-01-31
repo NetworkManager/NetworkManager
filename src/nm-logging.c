@@ -28,11 +28,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <errno.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <strings.h>
-#include <string.h>
 
 #if SYSTEMD_JOURNAL
 #define SD_JOURNAL_SUPPRESS_LOCATION

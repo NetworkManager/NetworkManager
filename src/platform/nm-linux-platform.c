@@ -23,7 +23,6 @@
 
 #include <poll.h>
 #include <endian.h>
-#include <errno.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>

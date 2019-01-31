@@ -24,8 +24,6 @@
 
 #include "nm-setting-wireless-security.h"
 
-#include <string.h>
-
 #include "nm-setting-8021x.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"

@@ -23,8 +23,6 @@
 
 #include "nm-config-data.h"
 
-#include <string.h>
-
 #include "nm-config.h"
 #include "devices/nm-device.h"
 #include "nm-core-internal.h"

@@ -20,7 +20,6 @@
 #include "nm-default.h"
 
 #include <linux/pkt_sched.h>
-#include <string.h>
 
 #include "nm-utils.h"
 #include "nm-utils-private.h"

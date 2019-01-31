@@ -24,7 +24,6 @@
 
 #include "nm-setting-bluetooth.h"
 
-#include <string.h>
 #include <net/ethernet.h>
 
 #include "nm-connection-private.h"

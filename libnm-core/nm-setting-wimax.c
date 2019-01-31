@@ -24,7 +24,6 @@
 
 #include "nm-setting-wimax.h"
 
-#include <string.h>
 #include <net/ethernet.h>
 
 #include "nm-setting-private.h"

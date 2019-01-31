@@ -20,7 +20,6 @@
 
 #include "nm-default.h"
 
-#include <string.h>
 #include <gmodule.h>
 #include <libudev.h>
 

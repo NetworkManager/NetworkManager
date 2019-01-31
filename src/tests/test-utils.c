@@ -20,8 +20,6 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-#include <errno.h>
 #include <arpa/inet.h>
 
 #include "nm-test-utils-core.h"

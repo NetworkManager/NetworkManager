@@ -24,7 +24,6 @@
 #include "nm-setting-vxlan.h"
 
 #include <stdlib.h>
-#include <string.h>
 
 #include "nm-utils.h"
 #include "nm-setting-private.h"

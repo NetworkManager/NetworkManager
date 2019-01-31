@@ -21,14 +21,12 @@
 
 #include "nm-default.h"
 
-#include <string.h>
+#include "nm-device-ethernet.h"
 
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-pppoe.h"
 #include "nm-utils.h"
-
-#include "nm-device-ethernet.h"
 #include "nm-object-private.h"
 
 G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)

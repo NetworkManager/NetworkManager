@@ -22,8 +22,6 @@
 
 #include "nm-dhcp4-config.h"
 
-#include <string.h>
-
 #include "nm-dbus-interface.h"
 #include "nm-utils.h"
 #include "nm-dbus-object.h"

@@ -23,7 +23,6 @@
 
 #include "nm-config.h"
 
-#include <string.h>
 #include <stdio.h>
 
 #include "nm-utils.h"

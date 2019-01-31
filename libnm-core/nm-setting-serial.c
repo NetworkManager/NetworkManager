@@ -24,8 +24,6 @@
 
 #include "nm-setting-serial.h"
 
-#include <string.h>
-
 #include "nm-setting-private.h"
 
 /**

@@ -24,8 +24,6 @@
 
 #include "nm-setting-connection.h"
 
-#include <string.h>
-
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-core-enum-types.h"

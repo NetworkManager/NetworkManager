@@ -21,7 +21,6 @@
 #include "nm-default.h"
 
 #include <sys/wait.h>
-#include <string.h>
 
 #include "nm-dcb.h"
 #include "platform/nm-platform.h"

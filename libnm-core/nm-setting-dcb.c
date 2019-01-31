@@ -23,8 +23,6 @@
 
 #include "nm-setting-dcb.h"
 
-#include <string.h>
-
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"

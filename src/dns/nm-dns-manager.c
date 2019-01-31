@@ -23,7 +23,6 @@
 
 #include "nm-default.h"
 
-#include <errno.h>
 #include <fcntl.h>
 #include <resolv.h>
 #include <stdlib.h>

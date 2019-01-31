@@ -24,8 +24,6 @@
 
 #include "nm-connectivity.h"
 
-#include <string.h>
-
 #if WITH_CONCHECK
 #include <curl/curl.h>
 #endif

@@ -23,7 +23,6 @@
 
 #include "nm-shared-utils.h"
 
-#include <errno.h>
 #include <arpa/inet.h>
 #include <poll.h>
 #include <fcntl.h>

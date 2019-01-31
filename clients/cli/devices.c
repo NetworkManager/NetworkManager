@@ -22,9 +22,7 @@
 #include "devices.h"
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <readline/readline.h>
 
 #include "nm-secret-agent-simple.h"

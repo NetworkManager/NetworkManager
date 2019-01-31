@@ -21,6 +21,7 @@
 #include "nm-default.h"
 
 #include "nm-dhcp4-config.h"
+
 #include "nm-object-private.h"
 
 G_DEFINE_TYPE (NMDhcp4Config, nm_dhcp4_config, NM_TYPE_DHCP_CONFIG)

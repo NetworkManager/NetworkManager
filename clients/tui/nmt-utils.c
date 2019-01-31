@@ -23,8 +23,6 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nmt-utils.h"
 
 /**

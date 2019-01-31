@@ -24,8 +24,6 @@
 #include "nm-session-monitor.h"
 
 #include <pwd.h>
-#include <errno.h>
-#include <string.h>
 #include <sys/stat.h>
 
 #if SESSION_TRACKING_SYSTEMD && SESSION_TRACKING_ELOGIND

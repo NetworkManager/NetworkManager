@@ -23,8 +23,6 @@
 
 #include "nm-utils.h"
 
-#include <string.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <netinet/ether.h>
 #include <arpa/inet.h>

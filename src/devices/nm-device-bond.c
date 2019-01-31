@@ -22,7 +22,6 @@
 
 #include "nm-device-bond.h"
 
-#include <errno.h>
 #include <stdlib.h>
 
 #include "NetworkManagerUtils.h"

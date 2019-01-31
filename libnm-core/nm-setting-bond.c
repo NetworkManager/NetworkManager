@@ -23,9 +23,7 @@
 
 #include "nm-setting-bond.h"
 
-#include <string.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 

@@ -27,7 +27,6 @@
 #include <net/ethernet.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <errno.h>
 #include <fcntl.h>
 
 #include "nm-bluez5-dun.h"

@@ -23,7 +23,6 @@
 
 #include "nm-setting-ip6-config.h"
 
-#include <string.h>
 #include <arpa/inet.h>
 
 #include "nm-setting-private.h"

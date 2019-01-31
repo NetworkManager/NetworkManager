@@ -21,14 +21,12 @@
 
 #include "nm-default.h"
 
-#include <string.h>
+#include "nm-remote-connection.h"
 
 #include "nm-dbus-interface.h"
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
 #include "nm-core-internal.h"
-
-#include "nm-remote-connection.h"
 #include "nm-remote-connection-private.h"
 #include "nm-object-private.h"
 #include "nm-dbus-helpers.h"
