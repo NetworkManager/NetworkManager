@@ -28,8 +28,6 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nmt-newt-entry.h"
 #include "nmt-newt-form.h"
 #include "nmt-newt-hacks.h"

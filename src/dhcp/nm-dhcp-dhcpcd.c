@@ -24,9 +24,7 @@
 
 #if WITH_DHCPCD
 
-#include <string.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <netinet/in.h>

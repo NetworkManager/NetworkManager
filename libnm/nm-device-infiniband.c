@@ -20,13 +20,11 @@
 
 #include "nm-default.h"
 
-#include <string.h>
+#include "nm-device-infiniband.h"
 
 #include "nm-setting-connection.h"
 #include "nm-setting-infiniband.h"
 #include "nm-utils.h"
-
-#include "nm-device-infiniband.h"
 #include "nm-object-private.h"
 
 G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE)

@@ -26,8 +26,6 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <errno.h>
-#include <string.h>
 
 #include "nm-keyfile-internal.h"
 

@@ -20,9 +20,8 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nm-device-macsec.h"
+
 #include "nm-device-private.h"
 #include "nm-object-private.h"
 #include "nm-utils.h"

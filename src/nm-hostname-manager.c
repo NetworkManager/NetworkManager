@@ -23,8 +23,6 @@
 #include "nm-hostname-manager.h"
 
 #include <sys/stat.h>
-#include <errno.h>
-#include <string.h>
 
 #if HAVE_SELINUX
 #include <selinux/selinux.h>

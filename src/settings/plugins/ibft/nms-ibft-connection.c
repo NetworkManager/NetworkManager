@@ -22,7 +22,6 @@
 
 #include "nms-ibft-connection.h"
 
-#include <string.h>
 #include <net/ethernet.h>
 #include <netinet/ether.h>
 #include <glib/gstdio.h>

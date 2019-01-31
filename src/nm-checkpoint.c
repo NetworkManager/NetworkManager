@@ -22,8 +22,6 @@
 
 #include "nm-checkpoint.h"
 
-#include <string.h>
-
 #include "nm-active-connection.h"
 #include "nm-act-request.h"
 #include "nm-auth-subject.h"

@@ -24,8 +24,6 @@
 
 #include "nm-setting-8021x.h"
 
-#include <string.h>
-
 #include "nm-utils/nm-secret-utils.h"
 #include "nm-utils.h"
 #include "nm-crypto.h"

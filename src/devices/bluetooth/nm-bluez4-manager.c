@@ -24,7 +24,6 @@
 #include "nm-bluez4-manager.h"
 
 #include <signal.h>
-#include <string.h>
 #include <stdlib.h>
 
 #include "nm-bluez4-adapter.h"

@@ -22,7 +22,6 @@
 
 #include "nm-modem-broadband.h"
 
-#include <string.h>
 #include <arpa/inet.h>
 #include <libmm-glib.h>
 

@@ -22,13 +22,11 @@
 #include "nm-initrd-generator.h"
 
 #include <stdlib.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <sys/inotify.h>
-#include <errno.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 

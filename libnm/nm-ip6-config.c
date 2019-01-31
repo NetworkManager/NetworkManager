@@ -21,6 +21,7 @@
 #include "nm-default.h"
 
 #include "nm-ip6-config.h"
+
 #include "nm-object-private.h"
 
 G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, NM_TYPE_IP_CONFIG)

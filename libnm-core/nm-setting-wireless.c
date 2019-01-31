@@ -24,7 +24,6 @@
 
 #include "nm-setting-wireless.h"
 
-#include <string.h>
 #include <net/ethernet.h>
 
 #include "nm-utils.h"

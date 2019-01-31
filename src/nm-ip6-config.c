@@ -23,7 +23,6 @@
 
 #include "nm-ip6-config.h"
 
-#include <string.h>
 #include <arpa/inet.h>
 #include <resolv.h>
 #include <linux/rtnetlink.h>

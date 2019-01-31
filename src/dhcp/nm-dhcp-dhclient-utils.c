@@ -21,7 +21,6 @@
 
 #include "nm-dhcp-dhclient-utils.h"
 
-#include <string.h>
 #include <ctype.h>
 #include <arpa/inet.h>
 #include <net/if.h>

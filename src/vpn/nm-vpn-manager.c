@@ -23,8 +23,6 @@
 
 #include "nm-vpn-manager.h"
 
-#include <string.h>
-
 #include "nm-vpn-plugin-info.h"
 #include "nm-vpn-connection.h"
 #include "nm-setting-vpn.h"

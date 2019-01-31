@@ -21,13 +21,10 @@
 
 #include "nm-wifi-p2p-peer.h"
 
-#include <string.h>
-
 #include "nm-connection.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wifi-p2p.h"
 #include "nm-utils.h"
-
 #include "nm-dbus-interface.h"
 #include "nm-object-private.h"
 

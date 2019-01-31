@@ -36,12 +36,12 @@
 
 #include "nm-default.h"
 
-#include <string.h>
+#include "nmt-device-entry.h"
+
 #include <sys/socket.h>
 #include <linux/if_arp.h>
 
 #include "nmtui.h"
-#include "nmt-device-entry.h"
 
 G_DEFINE_TYPE (NmtDeviceEntry, nmt_device_entry, NMT_TYPE_EDITOR_GRID)
 

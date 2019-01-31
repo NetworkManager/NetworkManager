@@ -23,7 +23,6 @@
 
 #include "nm-default.h"
 
-#include <errno.h>
 #include <stdarg.h>
 #include <unistd.h>
 #include <sys/wait.h>

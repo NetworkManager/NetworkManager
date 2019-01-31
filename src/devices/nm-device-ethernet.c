@@ -24,10 +24,8 @@
 #include "nm-device-ethernet.h"
 
 #include <netinet/in.h>
-#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <errno.h>
 #include <libudev.h>
 
 #include "nm-device-private.h"

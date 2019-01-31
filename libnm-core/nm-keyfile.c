@@ -23,14 +23,12 @@
 
 #include "nm-keyfile-internal.h"
 
-#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
-#include <string.h>
 #include <linux/pkt_sched.h>
 
 #include "nm-utils/nm-secret-utils.h"

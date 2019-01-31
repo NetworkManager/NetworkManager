@@ -23,7 +23,6 @@
 #include "nm-setting-macsec.h"
 
 #include <stdlib.h>
-#include <string.h>
 
 #include "nm-utils/nm-secret-utils.h"
 

@@ -27,9 +27,7 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <signal.h>
-#include <string.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>

@@ -24,9 +24,7 @@
 #include "nm-device.h"
 
 #include <netinet/in.h>
-#include <string.h>
 #include <unistd.h>
-#include <errno.h>
 #include <sys/ioctl.h>
 #include <signal.h>
 #include <sys/types.h>

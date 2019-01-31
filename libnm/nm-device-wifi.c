@@ -23,13 +23,10 @@
 
 #include "nm-device-wifi.h"
 
-#include <string.h>
-
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-utils.h"
-
 #include "nm-access-point.h"
 #include "nm-object-private.h"
 #include "nm-core-internal.h"

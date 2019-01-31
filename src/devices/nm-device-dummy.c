@@ -17,7 +17,6 @@
 #include "nm-device-dummy.h"
 
 #include <stdlib.h>
-#include <string.h>
 #include <sys/types.h>
 
 #include "nm-act-request.h"

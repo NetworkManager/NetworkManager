@@ -22,7 +22,6 @@
 
 #include "nm-device-ip-tunnel.h"
 
-#include <string.h>
 #include <netinet/in.h>
 #include <linux/if.h>
 #include <linux/ip.h>

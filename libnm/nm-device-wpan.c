@@ -19,9 +19,8 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nm-device-wpan.h"
+
 #include "nm-object-private.h"
 #include "nm-setting-wpan.h"
 #include "nm-setting-connection.h"

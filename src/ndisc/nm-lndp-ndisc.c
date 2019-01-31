@@ -22,7 +22,6 @@
 
 #include "nm-lndp-ndisc.h"
 
-#include <string.h>
 #include <arpa/inet.h>
 #include <netinet/icmp6.h>
 /* stdarg.h included because of a bug in ndp.h */

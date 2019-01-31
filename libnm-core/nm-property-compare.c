@@ -22,10 +22,9 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-#include <netinet/in.h>
-
 #include "nm-property-compare.h"
+
+#include <netinet/in.h>
 
 static int
 _nm_property_compare_collection (GVariant *value1, GVariant *value2)

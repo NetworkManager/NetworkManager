@@ -20,9 +20,7 @@
 
 #include "nm-default.h"
 
-#include <errno.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "nm-device-veth.h"
 #include "nm-device-private.h"

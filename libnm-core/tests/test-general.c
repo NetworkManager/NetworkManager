@@ -23,8 +23,6 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nm-utils/c-list-util.h"
 #include "nm-utils/nm-enum-utils.h"
 

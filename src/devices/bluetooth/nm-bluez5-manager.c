@@ -25,7 +25,6 @@
 #include "nm-bluez5-manager.h"
 
 #include <signal.h>
-#include <string.h>
 #include <stdlib.h>
 
 #include "nm-core-internal.h"

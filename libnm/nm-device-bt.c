@@ -21,13 +21,11 @@
 
 #include "nm-default.h"
 
-#include <string.h>
+#include "nm-device-bt.h"
 
 #include "nm-setting-connection.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-utils.h"
-
-#include "nm-device-bt.h"
 #include "nm-object-private.h"
 #include "nm-enum-types.h"
 

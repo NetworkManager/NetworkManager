@@ -23,8 +23,6 @@
 
 #include "nm-setting-cdma.h"
 
-#include <string.h>
-
 #include "nm-utils.h"
 #include "nm-setting-private.h"
 #include "nm-core-enum-types.h"

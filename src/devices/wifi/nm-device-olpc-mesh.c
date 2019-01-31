@@ -29,13 +29,11 @@
 #include "nm-device-olpc-mesh.h"
 
 #include <netinet/in.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
-#include <errno.h>
 
 #include "devices/nm-device.h"
 #include "nm-device-wifi.h"

@@ -21,6 +21,7 @@
 #include "nm-default.h"
 
 #include "nm-dhcp6-config.h"
+
 #include "nm-object-private.h"
 
 G_DEFINE_TYPE (NMDhcp6Config, nm_dhcp6_config, NM_TYPE_DHCP_CONFIG)

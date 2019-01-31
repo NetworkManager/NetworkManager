@@ -25,10 +25,8 @@
 
 #include "nms-ifupdown-parser.h"
 
-#include <string.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <ctype.h>
 
 #include "nm-core-internal.h"

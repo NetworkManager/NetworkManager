@@ -23,9 +23,7 @@
 #include "nm-inotify-helper.h"
 
 #include <unistd.h>
-#include <string.h>
 #include <sys/inotify.h>
-#include <errno.h>
 
 #include "NetworkManagerUtils.h"
 

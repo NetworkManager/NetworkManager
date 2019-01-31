@@ -24,7 +24,6 @@
 
 #include "nm-modem-manager.h"
 
-#include <string.h>
 #include <libmm-glib.h>
 
 #if HAVE_LIBSYSTEMD

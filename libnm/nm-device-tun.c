@@ -20,14 +20,13 @@
 
 #include "nm-default.h"
 
-#include <string.h>
+#include "nm-device-tun.h"
+
 #include <arpa/inet.h>
 
 #include "nm-setting-connection.h"
 #include "nm-setting-tun.h"
 #include "nm-utils.h"
-
-#include "nm-device-tun.h"
 #include "nm-object-private.h"
 
 G_DEFINE_TYPE (NMDeviceTun, nm_device_tun, NM_TYPE_DEVICE)

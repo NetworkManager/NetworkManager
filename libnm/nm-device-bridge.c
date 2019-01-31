@@ -20,12 +20,10 @@
 
 #include "nm-default.h"
 
-#include <string.h>
+#include "nm-setting-bridge.h"
 
 #include "nm-setting-connection.h"
-#include "nm-setting-bridge.h"
 #include "nm-utils.h"
-
 #include "nm-device-bridge.h"
 #include "nm-object-private.h"
 #include "nm-core-internal.h"

@@ -22,10 +22,8 @@
 #include "connections.h"
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <errno.h>
 #include <signal.h>
 #include <netinet/ether.h>
 #include <readline/readline.h>

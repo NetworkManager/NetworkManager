@@ -24,7 +24,6 @@
 
 #include <stdlib.h>
 #include <arpa/inet.h>
-#include <string.h>
 
 #include "nm-setting-ip6-config.h"
 

@@ -22,7 +22,6 @@
 
 #include "nm-fake-ndisc.h"
 
-#include <string.h>
 #include <arpa/inet.h>
 
 #include "nm-ndisc-private.h"

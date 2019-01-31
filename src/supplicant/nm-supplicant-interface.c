@@ -25,7 +25,6 @@
 #include "nm-supplicant-manager.h"
 
 #include <stdio.h>
-#include <string.h>
 
 #include "NetworkManagerUtils.h"
 #include "nm-supplicant-config.h"

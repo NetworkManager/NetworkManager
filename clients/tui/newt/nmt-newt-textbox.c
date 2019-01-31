@@ -26,9 +26,8 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nmt-newt-textbox.h"
+
 #include "nmt-newt-utils.h"
 
 G_DEFINE_TYPE (NmtNewtTextbox, nmt_newt_textbox, NMT_TYPE_NEWT_COMPONENT)

@@ -37,9 +37,8 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nmt-newt-section.h"
+
 #include "nmt-newt-grid.h"
 #include "nmt-newt-label.h"
 #include "nmt-newt-utils.h"

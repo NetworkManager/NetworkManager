@@ -27,9 +27,8 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nmt-newt-label.h"
+
 #include "nmt-newt-utils.h"
 
 G_DEFINE_TYPE (NmtNewtLabel, nmt_newt_label, NMT_TYPE_NEWT_COMPONENT)

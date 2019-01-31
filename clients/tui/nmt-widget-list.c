@@ -32,12 +32,12 @@
 
 #include "nm-default.h"
 
+#include "nmt-widget-list.h"
+
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include "nmt-widget-list.h"
 #include "nmt-newt.h"
 
 G_DEFINE_TYPE (NmtWidgetList, nmt_widget_list, NMT_TYPE_NEWT_GRID)

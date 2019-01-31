@@ -21,12 +21,9 @@
 
 #include "nm-device-wifi-p2p.h"
 
-#include <string.h>
-
 #include "nm-setting-connection.h"
 #include "nm-setting-wifi-p2p.h"
 #include "nm-utils.h"
-
 #include "nm-wifi-p2p-peer.h"
 #include "nm-object-private.h"
 #include "nm-core-internal.h"

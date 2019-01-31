@@ -20,7 +20,6 @@
 
 #include "nm-default.h"
 
-#include <string.h>
 #include <sys/wait.h>
 
 #include "NetworkManager.h"

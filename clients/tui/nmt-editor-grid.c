@@ -39,8 +39,6 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nmt-editor-grid.h"
 
 G_DEFINE_TYPE (NmtEditorGrid, nmt_editor_grid, NMT_TYPE_NEWT_CONTAINER)

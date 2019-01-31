@@ -22,7 +22,6 @@
 
 #include "nm-device-macvlan.h"
 
-#include <string.h>
 #include <linux/if_link.h>
 
 #include "nm-device-private.h"

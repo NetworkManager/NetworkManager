@@ -23,7 +23,6 @@
 #include "nm-lldp-listener.h"
 
 #include <net/ethernet.h>
-#include <errno.h>
 
 #include "platform/nm-platform.h"
 #include "nm-utils.h"

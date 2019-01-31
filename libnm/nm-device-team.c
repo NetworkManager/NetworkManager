@@ -20,13 +20,11 @@
 
 #include "nm-default.h"
 
-#include <string.h>
+#include "nm-device-team.h"
 
 #include "nm-setting-connection.h"
 #include "nm-setting-team.h"
 #include "nm-utils.h"
-
-#include "nm-device-team.h"
 #include "nm-object-private.h"
 #include "nm-core-internal.h"
 

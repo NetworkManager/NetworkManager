@@ -2,7 +2,6 @@
 
 #include "nm-sd-adapt-core.h"
 
-#include <errno.h>
 
 #include "event-source.h"
 #include "event-util.h"

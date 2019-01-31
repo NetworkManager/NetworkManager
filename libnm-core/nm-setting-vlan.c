@@ -24,7 +24,6 @@
 #include "nm-setting-vlan.h"
 
 #include <stdlib.h>
-#include <string.h>
 
 #include "nm-utils.h"
 #include "nm-core-types-internal.h"

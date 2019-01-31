@@ -21,9 +21,8 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nm-dhcp-config.h"
+
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"
 #include "nm-dbus-interface.h"

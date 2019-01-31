@@ -26,7 +26,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "nm-crypto-impl.h"
 #include "nm-utils.h"

@@ -20,12 +20,10 @@
 
 #include "nm-default.h"
 
-#include <string.h>
+#include "nm-device-olpc-mesh.h"
 
 #include "nm-setting-connection.h"
 #include "nm-setting-olpc-mesh.h"
-
-#include "nm-device-olpc-mesh.h"
 #include "nm-object-private.h"
 #include "nm-device-wifi.h"
 

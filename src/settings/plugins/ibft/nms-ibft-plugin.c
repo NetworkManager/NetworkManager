@@ -22,9 +22,7 @@
 
 #include "nms-ibft-plugin.h"
 
-#include <string.h>
 #include <unistd.h>
-#include <errno.h>
 #include <gmodule.h>
 
 #include "nm-setting-connection.h"

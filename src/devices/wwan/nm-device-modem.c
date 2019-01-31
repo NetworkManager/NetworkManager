@@ -22,8 +22,6 @@
 
 #include "nm-device-modem.h"
 
-#include <string.h>
-
 #include "nm-modem.h"
 #include "devices/nm-device-private.h"
 #include "nm-rfkill-manager.h"

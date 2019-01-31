@@ -23,8 +23,6 @@
 
 #include "nm-wifi-utils-wext.h"
 
-#include <errno.h>
-#include <string.h>
 #include <sys/ioctl.h>
 #include <net/ethernet.h>
 #include <unistd.h>

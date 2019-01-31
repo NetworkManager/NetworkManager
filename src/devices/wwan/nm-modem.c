@@ -24,7 +24,6 @@
 #include "nm-modem.h"
 
 #include <fcntl.h>
-#include <string.h>
 #include <termios.h>
 #include <linux/rtnetlink.h>
 

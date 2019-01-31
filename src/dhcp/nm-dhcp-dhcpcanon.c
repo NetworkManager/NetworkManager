@@ -22,9 +22,7 @@
 
 #if WITH_DHCPCANON
 
-#include <string.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <unistd.h>
 
 #include "nm-utils.h"
