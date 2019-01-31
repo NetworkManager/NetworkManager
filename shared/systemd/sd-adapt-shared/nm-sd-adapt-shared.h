@@ -16,8 +16,8 @@
  * Copyright (C) 2014 - 2018 Red Hat, Inc.
  */
 
-#ifndef __NM_SD_ADAPT_BASIC_H__
-#define __NM_SD_ADAPT_BASIC_H__
+#ifndef __NM_SD_ADAPT_SHARED_H__
+#define __NM_SD_ADAPT_SHARED_H__
 
 #include "nm-default.h"
 
@@ -30,8 +30,8 @@
 static inline NMLogLevel
 _slog_level_to_nm (int slevel)
 {
-    switch (LOG_PRI (slevel)) {
-    case LOG_DEBUG:   return LOGL_DEBUG;
+	switch (LOG_PRI (slevel)) {
+	case LOG_DEBUG:   return LOGL_DEBUG;
 	case LOG_WARNING: return LOGL_WARN;
 	case LOG_CRIT:
 	case LOG_ERR:     return LOGL_ERR;
@@ -130,4 +130,4 @@ static inline pid_t gettid(void) {
 
 /*****************************************************************************/
 
-#endif /* __NM_SD_ADAPT_BASIC_H__ */
+#endif /* __NM_SD_ADAPT_SHARED_H__ */
