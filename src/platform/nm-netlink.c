@@ -25,8 +25,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "nm-utils/nm-errno.h"
-
 /*****************************************************************************/
 
 #ifndef SOL_NETLINK

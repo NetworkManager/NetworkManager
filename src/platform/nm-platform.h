@@ -29,7 +29,6 @@
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-ip-tunnel.h"
-#include "nm-utils/nm-errno.h"
 
 #define NM_TYPE_PLATFORM            (nm_platform_get_type ())
 #define NM_PLATFORM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PLATFORM, NMPlatform))
