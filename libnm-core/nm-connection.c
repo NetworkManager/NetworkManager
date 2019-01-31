@@ -1875,7 +1875,7 @@ nm_connection_clear_secrets_with_flags (NMConnection *connection,
 
 /*****************************************************************************/
 
-/* Returns always a non-NULL, non-floating variant that must
+/* Returns always a non-NULL, floating variant that must
  * be unrefed by the caller. */
 GVariant *
 _nm_connection_for_each_secret (NMConnection *self,
@@ -1884,8 +1884,10 @@ _nm_connection_for_each_secret (NMConnection *self,
                                 NMConnectionForEachSecretFunc callback,
                                 gpointer callback_data)
 {
-	GVariantBuilder secrets_builder, setting_builder;
-	GVariantIter secrets_iter, *setting_iter;
+	GVariantBuilder secrets_builder;
+	GVariantBuilder setting_builder;
+	GVariantIter secrets_iter;
+	GVariantIter *setting_iter;
 	const char *setting_name;
 
 	/* This function, given a dict of dicts representing new secrets of
@@ -1909,18 +1911,18 @@ _nm_connection_for_each_secret (NMConnection *self,
 	g_variant_iter_init (&secrets_iter, secrets);
 	g_variant_builder_init (&secrets_builder, NM_VARIANT_TYPE_CONNECTION);
 	while (g_variant_iter_next (&secrets_iter, "{&sa{sv}}", &setting_name, &setting_iter)) {
+		_nm_unused nm_auto_free_variant_iter GVariantIter *setting_iter_free = setting_iter;
 		NMSetting *setting;
 		const char *secret_name;
 		GVariant *val;
 
 		setting = nm_connection_get_setting_by_name (self, setting_name);
-		if (setting == NULL) {
-			g_variant_iter_free (setting_iter);
+		if (!setting)
 			continue;
-		}
 
 		g_variant_builder_init (&setting_builder, NM_VARIANT_TYPE_SETTING);
 		while (g_variant_iter_next (setting_iter, "{&sv}", &secret_name, &val)) {
+			_nm_unused gs_unref_variant GVariant *val_free = val;
 			NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
 			/* VPN secrets need slightly different treatment here since the
@@ -1959,20 +1961,17 @@ _nm_connection_for_each_secret (NMConnection *self,
 				if (!nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL)) {
 					if (!remove_non_secrets)
 						g_variant_builder_add (&setting_builder, "{sv}", secret_name, val);
-					g_variant_unref (val);
 					continue;
 				}
 				if (callback (secret_flags, callback_data))
 					g_variant_builder_add (&setting_builder, "{sv}", secret_name, val);
 			}
-			g_variant_unref (val);
 		}
 
-		g_variant_iter_free (setting_iter);
 		g_variant_builder_add (&secrets_builder, "{sa{sv}}", setting_name, &setting_builder);
 	}
 
-	return g_variant_ref_sink (g_variant_builder_end (&secrets_builder));
+	return g_variant_builder_end (&secrets_builder);
 }
 
 /*****************************************************************************/
@@ -2000,15 +1999,14 @@ _nm_connection_find_secret (NMConnection *self,
                             NMConnectionFindSecretFunc callback,
                             gpointer callback_data)
 {
-	FindSecretData data;
-	GVariant *dummy;
-
-	data.find_func = callback;
-	data.find_func_data = callback_data;
-	data.found = FALSE;
+	gs_unref_variant GVariant *dummy = NULL;
+	FindSecretData data = {
+		.find_func      = callback,
+		.find_func_data = callback_data,
+		.found          = FALSE,
+	};
 
 	dummy = _nm_connection_for_each_secret (self, secrets, FALSE, find_secret_for_each_func, &data);
-	g_variant_unref (dummy);
 	return data.found;
 }
 
