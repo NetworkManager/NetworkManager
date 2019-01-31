@@ -344,7 +344,7 @@ init_auditd (NMAuditManager *self)
 			priv->auditd_fd = audit_open ();
 			if (priv->auditd_fd < 0) {
 				errsv = errno;
-				_LOGE (LOGD_CORE, "failed to open auditd socket: %s", strerror (errsv));
+				_LOGE (LOGD_CORE, "failed to open auditd socket: %s", nm_strerror_native (errsv));
 			} else
 				_LOGD (LOGD_CORE, "socket created");
 		}

@@ -212,7 +212,7 @@ ck_update_cache (NMSessionMonitor *monitor)
 	/* Check the database file */
 	if (stat (CKDB_PATH, &statbuf) != 0) {
 		errsv = errno;
-		_LOGE ("failed to check ConsoleKit timestamp: %s", strerror (errsv));
+		_LOGE ("failed to check ConsoleKit timestamp: %s", nm_strerror_native (errsv));
 		return FALSE;
 	}
 	if (statbuf.st_mtime == monitor->ck.timestamp)

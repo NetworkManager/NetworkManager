@@ -514,7 +514,7 @@ settings_set_hostname_cb (const char *hostname,
 		if (ret != 0) {
 			errsv = errno;
 			_LOGW (LOGD_DNS, "set-hostname: couldn't set the system hostname to '%s': (%d) %s",
-			       hostname, errsv, strerror (errsv));
+			       hostname, errsv, nm_strerror_native (errsv));
 			if (errsv == EPERM)
 				_LOGW (LOGD_DNS, "set-hostname: you should use hostnamed when systemd hardening is in effect!");
 		}

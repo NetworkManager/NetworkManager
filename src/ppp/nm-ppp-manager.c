@@ -194,7 +194,7 @@ monitor_cb (gpointer user_data)
 		if (ioctl (priv->monitor_fd, SIOCGPPPSTATS, &req) < 0) {
 			errsv = errno;
 			if (errsv != ENODEV)
-				_LOGW ("could not read ppp stats: %s", strerror (errsv));
+				_LOGW ("could not read ppp stats: %s", nm_strerror_native (errsv));
 		} else {
 			g_signal_emit (self, signals[STATS], 0,
 			               (guint) stats.p.ppp_ibytes,
@@ -218,7 +218,7 @@ monitor_stats (NMPPPManager *self)
 	priv->monitor_fd = socket (AF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 	if (priv->monitor_fd < 0) {
 		errsv = errno;
-		_LOGW ("could not monitor PPP stats: %s", strerror (errsv));
+		_LOGW ("could not monitor PPP stats: %s", nm_strerror_native (errsv));
 		return;
 	}
 

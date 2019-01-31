@@ -4050,10 +4050,10 @@ sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 			errsv = errno;
 			if (errsv == ENOENT) {
 				_LOGD ("sysctl: failed to open '%s': (%d) %s",
-				       pathid, errsv, strerror (errsv));
+				       pathid, errsv, nm_strerror_native (errsv));
 			} else {
 				_LOGE ("sysctl: failed to open '%s': (%d) %s",
-				       pathid, errsv, strerror (errsv));
+				       pathid, errsv, nm_strerror_native (errsv));
 			}
 			errno = errsv;
 			return FALSE;
@@ -4064,10 +4064,10 @@ sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 			errsv = errno;
 			if (errsv == ENOENT) {
 				_LOGD ("sysctl: failed to openat '%s': (%d) %s",
-				       pathid, errsv, strerror (errsv));
+				       pathid, errsv, nm_strerror_native (errsv));
 			} else {
 				_LOGE ("sysctl: failed to openat '%s': (%d) %s",
-				       pathid, errsv, strerror (errsv));
+				       pathid, errsv, nm_strerror_native (errsv));
 			}
 			errno = errsv;
 			return FALSE;
@@ -4117,7 +4117,7 @@ sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 		}
 
 		_NMLOG (level, "sysctl: failed to set '%s' to '%s': (%d) %s",
-		        path, value, errsv, strerror (errsv));
+		        path, value, errsv, nm_strerror_native (errsv));
 	} else if (nwrote < len - 1) {
 		_LOGE ("sysctl: failed to set '%s' to '%s' after three attempts",
 		       path, value);
@@ -6113,7 +6113,7 @@ link_set_sriov_params (NMPlatform *platform,
 		                                                      "device/sriov_numvfs"),
 		                             "0")) {
 			errsv = errno;
-			_LOGW ("link: couldn't reset SR-IOV num_vfs: %s", strerror (errsv));
+			_LOGW ("link: couldn't reset SR-IOV num_vfs: %s", nm_strerror_native (errsv));
 			return FALSE;
 		}
 	}
@@ -6129,7 +6129,7 @@ link_set_sriov_params (NMPlatform *platform,
 	                                                          "device/sriov_drivers_autoprobe"),
 	                                nm_sprintf_buf (buf, "%d", (int) autoprobe))) {
 		errsv = errno;
-		_LOGW ("link: couldn't set SR-IOV drivers-autoprobe to %d: %s", (int) autoprobe, strerror (errsv));
+		_LOGW ("link: couldn't set SR-IOV drivers-autoprobe to %d: %s", (int) autoprobe, nm_strerror_native (errsv));
 		return FALSE;
 	}
 
@@ -6139,7 +6139,7 @@ link_set_sriov_params (NMPlatform *platform,
 	                                                       "device/sriov_numvfs"),
 	                             nm_sprintf_buf (buf, "%u", num_vfs))) {
 		errsv = errno;
-		_LOGW ("link: couldn't set SR-IOV num_vfs to %d: %s", num_vfs, strerror (errsv));
+		_LOGW ("link: couldn't set SR-IOV num_vfs to %d: %s", num_vfs, nm_strerror_native (errsv));
 		return FALSE;
 	}
 
@@ -7814,7 +7814,7 @@ continue_reading:
 
 				/* Error message reported back from kernel. */
 				_LOGD ("netlink: recvmsg: error message from kernel: %s (%d)%s%s%s for request %d",
-				       strerror (errsv),
+				       nm_strerror_native (errsv),
 				       errsv,
 				       NM_PRINT_FMT_QUOTED (extack_msg, " \"", extack_msg, "\"", ""),
 				       nlmsg_hdr (msg)->nlmsg_seq);
@@ -7977,7 +7977,7 @@ after_read:
 			int errsv = errno;
 
 			if (errsv != EINTR) {
-				_LOGE ("netlink: read: poll failed with %s", strerror (errsv));
+				_LOGE ("netlink: read: poll failed with %s", nm_strerror_native (errsv));
 				delayed_action_wait_for_nl_response_complete_all (platform, WAIT_FOR_NL_RESPONSE_RESULT_FAILED_POLL);
 				return any;
 			}

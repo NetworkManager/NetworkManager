@@ -253,7 +253,7 @@ wifi_wext_get_freq (NMWifiUtils *data)
 	if (ioctl (wext->fd, SIOCGIWFREQ, &wrq) < 0) {
 		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
 		       "(%s): error getting frequency: %s",
-		       ifname, strerror (errno));
+		       ifname, nm_strerror_native (errno));
 		return 0;
 	}
 
@@ -291,7 +291,7 @@ wifi_wext_get_bssid (NMWifiUtils *data, guint8 *out_bssid)
 	if (ioctl (wext->fd, SIOCGIWAP, &wrq) < 0) {
 		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
 		       "(%s): error getting associated BSSID: %s",
-		       ifname, strerror (errno));
+		       ifname, nm_strerror_native (errno));
 		return FALSE;
 	}
 	memcpy (out_bssid, &(wrq.u.ap_addr.sa_data), ETH_ALEN);
@@ -429,7 +429,7 @@ wifi_wext_get_qual (NMWifiUtils *data)
 	if (ioctl (wext->fd, SIOCGIWSTATS, &wrq) < 0) {
 		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
 		       "(%s): error getting signal strength: %s",
-		       ifname, strerror (errno));
+		       ifname, nm_strerror_native (errno));
 		return -1;
 	}
 
@@ -476,7 +476,7 @@ wifi_wext_set_mesh_channel (NMWifiUtils *data, guint32 channel)
 	if (ioctl (wext->fd, SIOCSIWFREQ, &wrq) < 0) {
 		_LOGE (LOGD_PLATFORM | LOGD_WIFI | LOGD_OLPC,
 		       "(%s): error setting channel to %d: %s",
-		       ifname, channel, strerror (errno));
+		       ifname, channel, nm_strerror_native (errno));
 		return FALSE;
 	}
 
@@ -514,7 +514,7 @@ wifi_wext_set_mesh_ssid (NMWifiUtils *data, const guint8 *ssid, gsize len)
 		       "(%s): error setting SSID to %s: %s",
 		       ifname,
 		       (ssid_str = _nm_utils_ssid_to_string_arr (ssid, len)),
-		       strerror (errsv));
+		       nm_strerror_native (errsv));
 	}
 
 	return FALSE;

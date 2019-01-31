@@ -1060,7 +1060,7 @@ nmtst_reexec_sudo (void)
 	execvp (__nmtst_internal.sudo_cmd, argv);
 
 	errsv = errno;
-	g_error (">> exec %s failed: %d - %s", __nmtst_internal.sudo_cmd, errsv, strerror (errsv));
+	g_error (">> exec %s failed: %d - %s", __nmtst_internal.sudo_cmd, errsv, nm_strerror_native (errsv));
 }
 
 /*****************************************************************************/
@@ -1370,7 +1370,7 @@ nmtst_file_unlink_if_exists (const char *name)
 	if (unlink (name) != 0) {
 		errsv = errno;
 		if (errsv != ENOENT)
-			g_error ("nmtst_file_unlink_if_exists(%s): failed with %s", name, strerror (errsv));
+			g_error ("nmtst_file_unlink_if_exists(%s): failed with %s", name, nm_strerror_native (errsv));
 	}
 }
 
@@ -1383,7 +1383,7 @@ nmtst_file_unlink (const char *name)
 
 	if (unlink (name) != 0) {
 		errsv = errno;
-		g_error ("nmtst_file_unlink(%s): failed with %s", name, strerror (errsv));
+		g_error ("nmtst_file_unlink(%s): failed with %s", name, nm_strerror_native (errsv));
 	}
 }
 

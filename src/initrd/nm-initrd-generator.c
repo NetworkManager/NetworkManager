@@ -123,7 +123,7 @@ main (int argc, char *argv[])
 
 	if (connections_dir && g_mkdir_with_parents (connections_dir, 0755) != 0) {
 		errsv = errno;
-		_LOGW (LOGD_CORE, "%s: %s", connections_dir, strerror (errsv));
+		_LOGW (LOGD_CORE, "%s: %s", connections_dir, nm_strerror_native (errsv));
 		return 1;
 	}
 

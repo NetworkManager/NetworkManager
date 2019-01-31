@@ -69,7 +69,7 @@ dun_connect (NMBluez5DunContext *context)
 		errsv = errno;
 		error = g_error_new (NM_BT_ERROR, NM_BT_ERROR_DUN_CONNECT_FAILED,
 		                     "Failed to create RFCOMM socket: (%d) %s",
-		                     errsv, strerror (errsv));
+		                     errsv, nm_strerror_native (errsv));
 		goto done;
 	}
 
@@ -81,7 +81,7 @@ dun_connect (NMBluez5DunContext *context)
 		errsv = errno;
 		error = g_error_new (NM_BT_ERROR, NM_BT_ERROR_DUN_CONNECT_FAILED,
 		                     "Failed to bind socket: (%d) %s",
-		                     errsv, strerror (errsv));
+		                     errsv, nm_strerror_native (errsv));
 		goto done;
 	}
 
@@ -91,7 +91,7 @@ dun_connect (NMBluez5DunContext *context)
 		errsv = errno;
 		error = g_error_new (NM_BT_ERROR, NM_BT_ERROR_DUN_CONNECT_FAILED,
 		                     "Failed to connect to remote device: (%d) %s",
-		                     errsv, strerror (errsv));
+		                     errsv, nm_strerror_native (errsv));
 		goto done;
 	}
 
@@ -106,7 +106,7 @@ dun_connect (NMBluez5DunContext *context)
 		errsv = errno;
 		error = g_error_new (NM_BT_ERROR, NM_BT_ERROR_DUN_CONNECT_FAILED,
 		                     "Failed to create rfcomm device: (%d) %s",
-		                     errsv, strerror (errsv));
+		                     errsv, nm_strerror_native (errsv));
 		goto done;
 	}
 	context->rfcomm_id = devid;
@@ -271,7 +271,7 @@ sdp_connect_watch (GIOChannel *channel, GIOCondition condition, gpointer user_da
 	if (err != 0) {
 		error = g_error_new (NM_BT_ERROR, NM_BT_ERROR_DUN_CONNECT_FAILED,
 		                     "Error on Service Discovery socket: (%d) %s",
-		                     err, strerror (err));
+		                     err, nm_strerror_native (err));
 		goto done;
 	}
 
@@ -298,7 +298,7 @@ sdp_connect_watch (GIOChannel *channel, GIOCondition condition, gpointer user_da
 		error = g_error_new (NM_BT_ERROR,
 		                     NM_BT_ERROR_DUN_CONNECT_FAILED,
 		                     "Error starting Service Discovery: (%d) %s",
-		                     err, strerror (err));
+		                     err, nm_strerror_native (err));
 	}
 
 	sdp_list_free (attrs, NULL);
@@ -359,7 +359,7 @@ nm_bluez5_dun_connect (NMBluez5DunContext *context,
 
 		error = g_error_new (NM_BT_ERROR, NM_BT_ERROR_DUN_CONNECT_FAILED,
 		                     "Failed to connect to the SDP server: (%d) %s",
-		                      err, strerror (err));
+		                      err, nm_strerror_native (err));
 		/* FIXME: don't invoke the callback synchronously. */
 		context->callback (context, NULL, error, context->user_data);
 		return;

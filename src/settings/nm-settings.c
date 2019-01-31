@@ -636,7 +636,7 @@ add_plugin_load_file (NMSettings *self, const char *pname, GError **error)
 
 	if (stat (path, &st) != 0) {
 		errsv = errno;
-		_LOGW ("could not load plugin '%s' from file '%s': %s", pname, path, strerror (errsv));
+		_LOGW ("could not load plugin '%s' from file '%s': %s", pname, path, nm_strerror_native (errsv));
 		return TRUE;
 	}
 	if (!S_ISREG (st.st_mode)) {
