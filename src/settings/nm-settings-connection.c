@@ -803,8 +803,8 @@ typedef struct {
 } ForEachSecretFlags;
 
 static gboolean
-validate_secret_flags (NMSettingSecretFlags flags,
-                       gpointer user_data)
+validate_secret_flags_cb (NMSettingSecretFlags flags,
+                          gpointer user_data)
 {
 	ForEachSecretFlags *cmp_flags = user_data;
 
@@ -813,6 +813,18 @@ validate_secret_flags (NMSettingSecretFlags flags,
 	if (NM_FLAGS_ANY (flags, cmp_flags->forbidden))
 		return FALSE;
 	return TRUE;
+}
+
+static GVariant *
+validate_secret_flags (NMConnection *connection,
+                       GVariant *secrets,
+                       ForEachSecretFlags *cmp_flags)
+{
+	return g_variant_ref_sink (_nm_connection_for_each_secret (connection,
+	                                                           secrets,
+	                                                           TRUE,
+	                                                           validate_secret_flags_cb,
+	                                                           cmp_flags));
 }
 
 static gboolean
@@ -1016,14 +1028,14 @@ get_secrets_done_cb (NMAgentManager *manager,
 	/* Update the connection with our existing secrets from backing storage */
 	nm_connection_clear_secrets (nm_settings_connection_get_connection (self));
 	if (!dict || nm_connection_update_secrets (nm_settings_connection_get_connection (self), setting_name, dict, &local)) {
-		GVariant *filtered_secrets;
+		gs_unref_variant GVariant *filtered_secrets = NULL;
 
 		/* Update the connection with the agent's secrets; by this point if any
 		 * system-owned secrets exist in 'secrets' the agent that provided them
 		 * will have been authenticated, so those secrets can replace the existing
 		 * system secrets.
 		 */
-		filtered_secrets = _nm_connection_for_each_secret (nm_settings_connection_get_connection (self), secrets, TRUE, validate_secret_flags, &cmp_flags);
+		filtered_secrets = validate_secret_flags (nm_settings_connection_get_connection (self), secrets, &cmp_flags);
 		if (nm_connection_update_secrets (nm_settings_connection_get_connection (self), setting_name, filtered_secrets, &local)) {
 			/* Now that all secrets are updated, copy and cache new secrets,
 			 * then save them to backing storage.
@@ -1059,7 +1071,6 @@ get_secrets_done_cb (NMAgentManager *manager,
 			       call_id,
 			       local->message);
 		}
-		g_variant_unref (filtered_secrets);
 	} else {
 		_LOGD ("(%s:%p) failed to update with existing secrets: %s",
 		       setting_name,
@@ -1083,11 +1094,10 @@ get_secrets_done_cb (NMAgentManager *manager,
 		nm_connection_clear_secrets (applied_connection);
 
 		if (!dict || nm_connection_update_secrets (applied_connection, setting_name, dict, NULL)) {
-			GVariant *filtered_secrets;
+			gs_unref_variant GVariant *filtered_secrets = NULL;
 
-			filtered_secrets = _nm_connection_for_each_secret (applied_connection, secrets, TRUE, validate_secret_flags, &cmp_flags);
+			filtered_secrets = validate_secret_flags (applied_connection, secrets, &cmp_flags);
 			nm_connection_update_secrets (applied_connection, setting_name, filtered_secrets, NULL);
-			g_variant_unref (filtered_secrets);
 		}
 	}
 
