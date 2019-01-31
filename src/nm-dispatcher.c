@@ -962,7 +962,7 @@ dispatcher_dir_changed (GFileMonitor *monitor,
 		else if (errsv == 0)
 			_LOGD ("%s script directory '%s' has no scripts", item->description, item->dir);
 		else {
-			_LOGD ("%s script directory '%s' error reading (%s)", item->description, item->dir, strerror (errsv));
+			_LOGD ("%s script directory '%s' error reading (%s)", item->description, item->dir, nm_strerror_native (errsv));
 			item->has_scripts = TRUE;
 		}
 	} else {

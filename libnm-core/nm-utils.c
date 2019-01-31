@@ -3105,7 +3105,7 @@ _nm_utils_check_file (const char *filename,
 		g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_FAILED,
-		             _("failed stat file %s: %s"), filename, strerror (errsv));
+		             _("failed stat file %s: %s"), filename, nm_strerror_native (errsv));
 		return FALSE;
 	}
 

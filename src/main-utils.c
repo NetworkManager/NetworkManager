@@ -97,20 +97,20 @@ nm_main_utils_write_pidfile (const char *pidfile)
 
 	if ((fd = open (pidfile, O_CREAT | O_WRONLY | O_TRUNC | O_CLOEXEC, 00644)) < 0) {
 		errsv = errno;
-		fprintf (stderr, _("Opening %s failed: %s\n"), pidfile, strerror (errsv));
+		fprintf (stderr, _("Opening %s failed: %s\n"), pidfile, nm_strerror_native (errsv));
 		return FALSE;
 	}
 
 	g_snprintf (pid, sizeof (pid), "%d", getpid ());
 	if (write (fd, pid, strlen (pid)) < 0) {
 		errsv = errno;
-		fprintf (stderr, _("Writing to %s failed: %s\n"), pidfile, strerror (errsv));
+		fprintf (stderr, _("Writing to %s failed: %s\n"), pidfile, nm_strerror_native (errsv));
 	} else
 		success = TRUE;
 
 	if (nm_close (fd)) {
 		errsv = errno;
-		fprintf (stderr, _("Closing %s failed: %s\n"), pidfile, strerror (errsv));
+		fprintf (stderr, _("Closing %s failed: %s\n"), pidfile, nm_strerror_native (errsv));
 	}
 
 	return success;

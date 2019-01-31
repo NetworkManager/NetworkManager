@@ -569,7 +569,7 @@ again:
 		errsv = errno;
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 		             "Error waiting for netconfig to exit: %s",
-		             strerror (errsv));
+		             nm_strerror_native (errsv));
 		return SR_ERROR;
 	}
 	if (!WIFEXITED (status) || WEXITSTATUS (status) != EXIT_SUCCESS) {

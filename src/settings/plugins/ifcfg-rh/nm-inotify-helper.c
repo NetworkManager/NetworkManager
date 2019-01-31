@@ -146,7 +146,7 @@ init_inotify (NMInotifyHelper *self)
 	priv->ifd = inotify_init1 (IN_CLOEXEC);
 	if (priv->ifd == -1) {
 		errsv = errno;
-		nm_log_warn (LOGD_SETTINGS, "couldn't initialize inotify: %s (%d)", strerror (errsv), errsv);
+		nm_log_warn (LOGD_SETTINGS, "couldn't initialize inotify: %s (%d)", nm_strerror_native (errsv), errsv);
 		return FALSE;
 	}
 

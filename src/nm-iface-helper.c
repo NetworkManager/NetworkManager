@@ -425,7 +425,7 @@ main (int argc, char *argv[])
 	gl.ifindex = nmp_utils_if_nametoindex (global_opt.ifname);
 	if (gl.ifindex <= 0) {
 		errsv = errno;
-		fprintf (stderr, _("Failed to find interface index for %s (%s)\n"), global_opt.ifname, strerror (errsv));
+		fprintf (stderr, _("Failed to find interface index for %s (%s)\n"), global_opt.ifname, nm_strerror_native (errsv));
 		return 1;
 	}
 	pidfile = g_strdup_printf (NMIH_PID_FILE_FMT, gl.ifindex);

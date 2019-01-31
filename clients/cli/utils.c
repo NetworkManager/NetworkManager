@@ -1434,12 +1434,12 @@ pager_fallback (void)
 			errsv = errno;
 			if (errsv == EINTR)
 				continue;
-			g_printerr (_("Error reading nmcli output: %s\n"), strerror (errsv));
+			g_printerr (_("Error reading nmcli output: %s\n"), nm_strerror_native (errsv));
 			_exit(EXIT_FAILURE);
 		}
 		if (write (STDOUT_FILENO, buf, rb) == -1) {
 			errsv = errno;
-			g_printerr (_("Error writing nmcli output: %s\n"), strerror (errsv));
+			g_printerr (_("Error writing nmcli output: %s\n"), nm_strerror_native (errsv));
 			_exit(EXIT_FAILURE);
 		}
 	} while (rb > 0);
@@ -1465,7 +1465,7 @@ nmc_terminal_spawn_pager (const NmcConfig *nmc_config)
 
 	if (pipe (fd) == -1) {
 		errsv = errno;
-		g_printerr (_("Failed to create pager pipe: %s\n"), strerror (errsv));
+		g_printerr (_("Failed to create pager pipe: %s\n"), nm_strerror_native (errsv));
 		return 0;
 	}
 
@@ -1474,7 +1474,7 @@ nmc_terminal_spawn_pager (const NmcConfig *nmc_config)
 	pager_pid = fork ();
 	if (pager_pid == -1) {
 		errsv = errno;
-		g_printerr (_("Failed to fork pager: %s\n"), strerror (errsv));
+		g_printerr (_("Failed to fork pager: %s\n"), nm_strerror_native (errsv));
 		nm_close (fd[0]);
 		nm_close (fd[1]);
 		return 0;
@@ -1521,11 +1521,11 @@ nmc_terminal_spawn_pager (const NmcConfig *nmc_config)
 	/* Return in the parent */
 	if (dup2 (fd[1], STDOUT_FILENO) < 0) {
 		errsv = errno;
-		g_printerr (_("Failed to duplicate pager pipe: %s\n"), strerror (errsv));
+		g_printerr (_("Failed to duplicate pager pipe: %s\n"), nm_strerror_native (errsv));
 	}
 	if (dup2 (fd[1], STDERR_FILENO) < 0) {
 		errsv = errno;
-		g_printerr (_("Failed to duplicate pager pipe: %s\n"), strerror (errsv));
+		g_printerr (_("Failed to duplicate pager pipe: %s\n"), nm_strerror_native (errsv));
 	}
 
 	nm_close (fd[0]);

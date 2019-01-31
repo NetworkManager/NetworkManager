@@ -813,7 +813,7 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 
 		g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (errsv),
 		             "Could not read file '%s': %s",
-		             name, strerror (errsv));
+		             name, nm_strerror_native (errsv));
 		return NULL;
 	}
 
@@ -1324,14 +1324,14 @@ svWriteFile (shvarFile *s, int mode, GError **error)
 			errsv = errno;
 			g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (errsv),
 			             "Could not open file '%s' for writing: %s",
-			             s->fileName, strerror (errsv));
+			             s->fileName, nm_strerror_native (errsv));
 			return FALSE;
 		}
 		if (ftruncate (s->fd, 0) < 0) {
 			errsv = errno;
 			g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (errsv),
 			             "Could not overwrite file '%s': %s",
-			             s->fileName, strerror (errsv));
+			             s->fileName, nm_strerror_native (errsv));
 			return FALSE;
 		}
 
@@ -1340,7 +1340,7 @@ svWriteFile (shvarFile *s, int mode, GError **error)
 			errsv = errno;
 			g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (errsv),
 			             "Internal error writing file '%s': %s",
-			             s->fileName, strerror (errsv));
+			             s->fileName, nm_strerror_native (errsv));
 			return FALSE;
 		}
 		f = fdopen (tmpfd, "w");

@@ -157,7 +157,7 @@ ethtool_call_handle (SocketHandle *shandle, gpointer edata)
 		              shandle->ifindex,
 		              _ethtool_data_to_string (edata, sbuf, sizeof (sbuf)),
 		              shandle->ifname,
-		              strerror (errsv));
+		              nm_strerror_native (errsv));
 		return -NM_ERRNO_NATIVE (errsv);
 	}
 
@@ -1059,7 +1059,7 @@ nmp_utils_mii_supports_carrier_detect (int ifindex)
 
 	if (ioctl (shandle.fd, SIOCGMIIPHY, &ifr) < 0) {
 		errsv = errno;
-		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIPHY failed: %s", ifindex, shandle.ifname, strerror (errsv));
+		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIPHY failed: %s", ifindex, shandle.ifname, nm_strerror_native (errsv));
 		return FALSE;
 	}
 
@@ -1069,7 +1069,7 @@ nmp_utils_mii_supports_carrier_detect (int ifindex)
 
 	if (ioctl (shandle.fd, SIOCGMIIREG, &ifr) != 0) {
 		errsv = errno;
-		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIREG failed: %s", ifindex, shandle.ifname, strerror (errsv));
+		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIREG failed: %s", ifindex, shandle.ifname, nm_strerror_native (errsv));
 		return FALSE;
 	}
 
