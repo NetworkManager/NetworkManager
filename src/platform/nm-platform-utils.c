@@ -84,7 +84,7 @@ socket_handle_init (SocketHandle *shandle, int ifindex)
 	shandle->fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 	if (shandle->fd < 0) {
 		shandle->ifindex = 0;
-		return -errno;
+		return -NM_ERRNO_NATIVE (errno);
 	}
 
 	shandle->ifindex = ifindex;
@@ -158,7 +158,7 @@ ethtool_call_handle (SocketHandle *shandle, gpointer edata)
 		              _ethtool_data_to_string (edata, sbuf, sizeof (sbuf)),
 		              shandle->ifname,
 		              strerror (errsv));
-		return -errsv;
+		return -NM_ERRNO_NATIVE (errsv);
 	}
 
 	nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s, %s: success",

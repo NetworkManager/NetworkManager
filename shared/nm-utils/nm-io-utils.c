@@ -29,6 +29,7 @@
 
 #include "nm-shared-utils.h"
 #include "nm-secret-utils.h"
+#include "nm-errno.h"
 
 /*****************************************************************************/
 
@@ -36,11 +37,7 @@ _nm_printf (3, 4)
 static int
 _get_contents_error (GError **error, int errsv, const char *format, ...)
 {
-	if (errsv < 0) {
-		errsv =   errsv == G_MININT
-		        ? G_MAXINT
-		        : -errsv;
-	}
+	nm_assert (NM_ERRNO_NATIVE (errsv));
 
 	if (error) {
 		char *msg;
@@ -306,7 +303,7 @@ nm_utils_file_get_contents (int dirfd,
 			             "Failed to open file \"%s\" with openat: %s",
 			             filename,
 			             g_strerror (errsv));
-			return -errsv;
+			return -NM_ERRNO_NATIVE (errsv);
 		}
 	} else {
 		fd = open (filename, O_RDONLY | O_CLOEXEC);
@@ -319,7 +316,7 @@ nm_utils_file_get_contents (int dirfd,
 			             "Failed to open file \"%s\": %s",
 			             filename,
 			             g_strerror (errsv));
-			return -errsv;
+			return -NM_ERRNO_NATIVE (errsv);
 		}
 	}
 	return nm_utils_fd_get_contents (fd,

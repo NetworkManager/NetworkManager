@@ -28,6 +28,8 @@
 #include <fcntl.h>
 #include <sys/syscall.h>
 
+#include "nm-errno.h"
+
 /*****************************************************************************/
 
 const void *const _NM_PTRARRAY_EMPTY[1] = { NULL };
@@ -1742,7 +1744,7 @@ nm_utils_fd_wait_for_event (int fd, int event, gint64 timeout_ns)
 
 	r = ppoll (&pollfd, 1, pts, NULL);
 	if (r < 0)
-		return -errno;
+		return -NM_ERRNO_NATIVE (errno);
 	if (r == 0)
 		return 0;
 	return pollfd.revents;
@@ -1784,7 +1786,7 @@ nm_utils_fd_read_loop (int fd, void *buf, size_t nbytes, bool do_poll)
 				continue;
 			}
 
-			return n > 0 ? n : -errsv;
+			return n > 0 ? n : -NM_ERRNO_NATIVE (errsv);
 		}
 
 		if (k == 0)
