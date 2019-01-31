@@ -127,15 +127,17 @@ wifi_wext_get_mode_ifname (NMWifiUtils *data, const char *ifname)
 {
 	NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
 	struct iwreq wrq;
+	int errsv;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
 	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 
 	if (ioctl (wext->fd, SIOCGIWMODE, &wrq) < 0) {
-		if (errno != ENODEV) {
+		errsv = errno;
+		if (errsv != ENODEV) {
 			_LOGW (LOGD_PLATFORM | LOGD_WIFI,
 			       "(%s): error %d getting card mode",
-			       ifname, errno);
+			       ifname, errsv);
 		}
 		return NM_802_11_MODE_UNKNOWN;
 	}
@@ -504,10 +506,10 @@ wifi_wext_set_mesh_ssid (NMWifiUtils *data, const guint8 *ssid, gsize len)
 	if (ioctl (wext->fd, SIOCSIWESSID, &wrq) == 0)
 		return TRUE;
 
-	if (errno != ENODEV) {
+	errsv = errno;
+	if (errsv != ENODEV) {
 		gs_free char *ssid_str = NULL;
 
-		errsv = errno;
 		_LOGE (LOGD_PLATFORM | LOGD_WIFI | LOGD_OLPC,
 		       "(%s): error setting SSID to %s: %s",
 		       ifname,
@@ -543,6 +545,7 @@ wext_get_range_ifname (NMWifiUtilsWext *wext,
 	int i = 26;
 	gboolean success = FALSE;
 	struct iwreq wrq;
+	int errsv;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
 	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
@@ -559,11 +562,14 @@ wext_get_range_ifname (NMWifiUtilsWext *wext,
 				*response_len = wrq.u.data.length;
 			success = TRUE;
 			break;
-		} else if (errno != EAGAIN) {
-			_LOGE (LOGD_PLATFORM | LOGD_WIFI,
-			       "(%s): couldn't get driver range information (%d).",
-			       ifname, errno);
-			break;
+		} else {
+			errsv = errno;
+			if (errsv != EAGAIN) {
+				_LOGE (LOGD_PLATFORM | LOGD_WIFI,
+				       "(%s): couldn't get driver range information (%d).",
+				       ifname, errsv);
+				break;
+			}
 		}
 
 		g_usleep (G_USEC_PER_SEC / 4);

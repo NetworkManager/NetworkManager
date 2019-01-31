@@ -4991,7 +4991,7 @@ _nl_send_nlmsghdr (NMPlatform *platform,
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	guint32 seq;
-	int nle;
+	int errsv;
 
 	nm_assert (nlhdr);
 
@@ -5020,13 +5020,13 @@ _nl_send_nlmsghdr (NMPlatform *platform,
 
 		try_count = 0;
 again:
-		nle = sendmsg (nl_socket_get_fd (priv->nlh), &msg, 0);
-		if (nle < 0) {
-			nle = errno;
-			if (nle == EINTR && try_count++ < 100)
+		errsv = sendmsg (nl_socket_get_fd (priv->nlh), &msg, 0);
+		if (errsv < 0) {
+			errsv = errno;
+			if (errsv == EINTR && try_count++ < 100)
 				goto again;
-			_LOGD ("netlink: nl-send-nlmsghdr: failed sending message: %s (%d)", g_strerror (nle), nle);
-			return -nle;
+			_LOGD ("netlink: nl-send-nlmsghdr: failed sending message: %s (%d)", g_strerror (errsv), errsv);
+			return -nm_errno_from_native (errsv);
 		}
 	}
 
@@ -6065,6 +6065,7 @@ link_set_sriov_params (NMPlatform *platform,
 	gint64 current_num;
 	char ifname[IFNAMSIZ];
 	char buf[64];
+	int errsv;
 
 	if (!nm_platform_netns_push (platform, &netns))
 		return FALSE;
@@ -6112,7 +6113,8 @@ link_set_sriov_params (NMPlatform *platform,
 		                                                       ifname,
 		                                                      "device/sriov_numvfs"),
 		                             "0")) {
-			_LOGW ("link: couldn't reset SR-IOV num_vfs: %s", strerror (errno));
+			errsv = errno;
+			_LOGW ("link: couldn't reset SR-IOV num_vfs: %s", strerror (errsv));
 			return FALSE;
 		}
 	}
@@ -6127,7 +6129,8 @@ link_set_sriov_params (NMPlatform *platform,
 	                                                          ifname,
 	                                                          "device/sriov_drivers_autoprobe"),
 	                                nm_sprintf_buf (buf, "%d", (int) autoprobe))) {
-		_LOGW ("link: couldn't set SR-IOV drivers-autoprobe to %d: %s", (int) autoprobe, strerror (errno));
+		errsv = errno;
+		_LOGW ("link: couldn't set SR-IOV drivers-autoprobe to %d: %s", (int) autoprobe, strerror (errsv));
 		return FALSE;
 	}
 
@@ -6136,7 +6139,8 @@ link_set_sriov_params (NMPlatform *platform,
 	                                                       ifname,
 	                                                       "device/sriov_numvfs"),
 	                             nm_sprintf_buf (buf, "%u", num_vfs))) {
-		_LOGW ("link: couldn't set SR-IOV num_vfs to %d: %s", num_vfs, strerror (errno));
+		errsv = errno;
+		_LOGW ("link: couldn't set SR-IOV num_vfs to %d: %s", num_vfs, strerror (errsv));
 		return FALSE;
 	}
 

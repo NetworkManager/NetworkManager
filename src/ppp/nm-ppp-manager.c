@@ -180,6 +180,7 @@ monitor_cb (gpointer user_data)
 	NMPPPManager *self = NM_PPP_MANAGER (user_data);
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
 	const char *ifname;
+	int errsv;
 
 	ifname = nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex);
 
@@ -191,8 +192,9 @@ monitor_cb (gpointer user_data)
 
 		nm_utils_ifname_cpy (req.ifr_name, ifname);
 		if (ioctl (priv->monitor_fd, SIOCGPPPSTATS, &req) < 0) {
-			if (errno != ENODEV)
-				_LOGW ("could not read ppp stats: %s", strerror (errno));
+			errsv = errno;
+			if (errsv != ENODEV)
+				_LOGW ("could not read ppp stats: %s", strerror (errsv));
 		} else {
 			g_signal_emit (self, signals[STATS], 0,
 			               (guint) stats.p.ppp_ibytes,
@@ -207,19 +209,23 @@ static void
 monitor_stats (NMPPPManager *self)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
+	int errsv;
 
 	/* already monitoring */
 	if (priv->monitor_fd >= 0)
 		return;
 
 	priv->monitor_fd = socket (AF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
-	if (priv->monitor_fd >= 0) {
-		g_warn_if_fail (priv->monitor_id == 0);
-		if (priv->monitor_id)
-			g_source_remove (priv->monitor_id);
-		priv->monitor_id = g_timeout_add_seconds (5, monitor_cb, self);
-	} else
-		_LOGW ("could not monitor PPP stats: %s", strerror (errno));
+	if (priv->monitor_fd < 0) {
+		errsv = errno;
+		_LOGW ("could not monitor PPP stats: %s", strerror (errsv));
+		return;
+	}
+
+	g_warn_if_fail (priv->monitor_id == 0);
+	if (priv->monitor_id)
+		g_source_remove (priv->monitor_id);
+	priv->monitor_id = g_timeout_add_seconds (5, monitor_cb, self);
 }
 
 /*****************************************************************************/

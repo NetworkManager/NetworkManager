@@ -56,6 +56,7 @@ dun_connect (NMBluez5DunContext *context)
 	char tty[100];
 	const int ttylen = sizeof (tty) - 1;
 	GError *error = NULL;
+	int errsv;
 
 	struct rfcomm_dev_req req = {
 		.flags = (1 << RFCOMM_REUSE_DLC) | (1 << RFCOMM_RELEASE_ONHUP),
@@ -65,7 +66,7 @@ dun_connect (NMBluez5DunContext *context)
 
 	context->rfcomm_fd = socket (AF_BLUETOOTH, SOCK_STREAM | SOCK_CLOEXEC, BTPROTO_RFCOMM);
 	if (context->rfcomm_fd < 0) {
-		int errsv = errno;
+		errsv = errno;
 		error = g_error_new (NM_BT_ERROR, NM_BT_ERROR_DUN_CONNECT_FAILED,
 		                     "Failed to create RFCOMM socket: (%d) %s",
 		                     errsv, strerror (errsv));
@@ -77,7 +78,7 @@ dun_connect (NMBluez5DunContext *context)
 	sa.rc_channel = 0;
 	memcpy (&sa.rc_bdaddr, &context->src, ETH_ALEN);
 	if (bind (context->rfcomm_fd, (struct sockaddr *) &sa, sizeof(sa))) {
-		int errsv = errno;
+		errsv = errno;
 		error = g_error_new (NM_BT_ERROR, NM_BT_ERROR_DUN_CONNECT_FAILED,
 		                     "Failed to bind socket: (%d) %s",
 		                     errsv, strerror (errsv));
@@ -87,7 +88,7 @@ dun_connect (NMBluez5DunContext *context)
 	sa.rc_channel = context->rfcomm_channel;
 	memcpy (&sa.rc_bdaddr, &context->dst, ETH_ALEN);
 	if (connect (context->rfcomm_fd, (struct sockaddr *) &sa, sizeof (sa)) ) {
-		int errsv = errno;
+		errsv = errno;
 		error = g_error_new (NM_BT_ERROR, NM_BT_ERROR_DUN_CONNECT_FAILED,
 		                     "Failed to connect to remote device: (%d) %s",
 		                     errsv, strerror (errsv));
@@ -102,7 +103,7 @@ dun_connect (NMBluez5DunContext *context)
 	memcpy (&req.dst, &context->dst, ETH_ALEN);
 	devid = ioctl (context->rfcomm_fd, RFCOMMCREATEDEV, &req);
 	if (devid < 0) {
-		int errsv = errno;
+		errsv = errno;
 		error = g_error_new (NM_BT_ERROR, NM_BT_ERROR_DUN_CONNECT_FAILED,
 		                     "Failed to create rfcomm device: (%d) %s",
 		                     errsv, strerror (errsv));
@@ -249,7 +250,8 @@ sdp_connect_watch (GIOChannel *channel, GIOCondition condition, gpointer user_da
 	sdp_list_t *search, *attrs;
 	uuid_t svclass;
 	uint16_t attr;
-	int fd, err, fd_err = 0;
+	int fd, fd_err = 0;
+	int err;
 	socklen_t len = sizeof (fd_err);
 	GError *error = NULL;
 
@@ -257,13 +259,13 @@ sdp_connect_watch (GIOChannel *channel, GIOCondition condition, gpointer user_da
 
 	fd = g_io_channel_unix_get_fd (channel);
 	if (getsockopt (fd, SOL_SOCKET, SO_ERROR, &fd_err, &len) < 0) {
-		nm_log_dbg (LOGD_BT, "(%s -> %s): getsockopt error=%d",
-		            context->src_str, context->dst_str, errno);
 		err = errno;
+		nm_log_dbg (LOGD_BT, "(%s -> %s): getsockopt error=%d",
+		            context->src_str, context->dst_str, err);
 	} else {
+		err = fd_err;
 		nm_log_dbg (LOGD_BT, "(%s -> %s): SO_ERROR error=%d",
 		            context->src_str, context->dst_str, fd_err);
-		err = fd_err;
 	}
 
 	if (err != 0) {

@@ -7184,10 +7184,10 @@ rfkill_change (NMManager *self, const char *desc, RfKillType rtype, gboolean ena
 	int fd;
 	struct rfkill_event event;
 	ssize_t len;
+	int errsv;
 
 	g_return_if_fail (rtype == RFKILL_TYPE_WLAN || rtype == RFKILL_TYPE_WWAN);
 
-	errno = 0;
 	fd = open ("/dev/rfkill", O_RDWR | O_CLOEXEC);
 	if (fd < 0) {
 		if (errno == EACCES)
@@ -7218,8 +7218,9 @@ rfkill_change (NMManager *self, const char *desc, RfKillType rtype, gboolean ena
 
 	len = write (fd, &event, sizeof (event));
 	if (len < 0) {
+		errsv = errno;
 		_LOGW (LOGD_RFKILL, "rfkill: (%s): failed to change Wi-Fi killswitch state: (%d) %s",
-		       desc, errno, g_strerror (errno));
+		       desc, errsv, g_strerror (errsv));
 	} else if (len == sizeof (event)) {
 		_LOGI (LOGD_RFKILL, "rfkill: %s hardware radio set %s",
 		       desc, enabled ? "enabled" : "disabled");

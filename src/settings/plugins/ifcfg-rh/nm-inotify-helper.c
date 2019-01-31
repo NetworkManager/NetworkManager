@@ -141,11 +141,11 @@ init_inotify (NMInotifyHelper *self)
 {
 	NMInotifyHelperPrivate *priv = NM_INOTIFY_HELPER_GET_PRIVATE (self);
 	GIOChannel *channel;
+	int errsv;
 
 	priv->ifd = inotify_init1 (IN_CLOEXEC);
 	if (priv->ifd == -1) {
-		int errsv = errno;
-
+		errsv = errno;
 		nm_log_warn (LOGD_SETTINGS, "couldn't initialize inotify: %s (%d)", strerror (errsv), errsv);
 		return FALSE;
 	}

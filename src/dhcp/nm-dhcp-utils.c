@@ -544,7 +544,7 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 
 		errno = 0;
 		int_mtu = strtol (str, NULL, 10);
-		if ((errno == EINVAL) || (errno == ERANGE))
+		if (NM_IN_SET (errno, EINVAL, ERANGE))
 			goto error;
 
 		if (int_mtu > 576)

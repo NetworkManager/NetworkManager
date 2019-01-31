@@ -1043,6 +1043,7 @@ nmp_utils_mii_supports_carrier_detect (int ifindex)
 	int r;
 	struct ifreq ifr;
 	struct mii_ioctl_data *mii;
+	int errsv;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
@@ -1057,7 +1058,8 @@ nmp_utils_mii_supports_carrier_detect (int ifindex)
 	memcpy (ifr.ifr_name, shandle.ifname, IFNAMSIZ);
 
 	if (ioctl (shandle.fd, SIOCGMIIPHY, &ifr) < 0) {
-		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIPHY failed: %s", ifindex, shandle.ifname, strerror (errno));
+		errsv = errno;
+		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIPHY failed: %s", ifindex, shandle.ifname, strerror (errsv));
 		return FALSE;
 	}
 
@@ -1066,7 +1068,8 @@ nmp_utils_mii_supports_carrier_detect (int ifindex)
 	mii->reg_num = MII_BMSR;
 
 	if (ioctl (shandle.fd, SIOCGMIIREG, &ifr) != 0) {
-		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIREG failed: %s", ifindex, shandle.ifname, strerror (errno));
+		errsv = errno;
+		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIREG failed: %s", ifindex, shandle.ifname, strerror (errsv));
 		return FALSE;
 	}
 

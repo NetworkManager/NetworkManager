@@ -2614,11 +2614,16 @@ NMTST_DEFINE ();
 
 int main (int argc, char **argv)
 {
+	int errsv;
+
 	_nm_utils_set_testing (NM_UTILS_TEST_NO_KEYFILE_OWNER_CHECK);
+
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
-	if (g_mkdir_with_parents (TEST_SCRATCH_DIR, 0755) != 0)
-		g_error ("failure to create test directory \"%s\": %s", TEST_SCRATCH_DIR, g_strerror (errno));
+	if (g_mkdir_with_parents (TEST_SCRATCH_DIR, 0755) != 0) {
+		errsv = errno;
+		g_error ("failure to create test directory \"%s\": %s", TEST_SCRATCH_DIR, g_strerror (errsv));
+	}
 
 	/* The tests */
 	g_test_add_func ("/keyfile/test_read_valid_wired_connection", test_read_valid_wired_connection);

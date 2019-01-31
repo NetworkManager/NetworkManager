@@ -680,7 +680,7 @@ _nm_log_impl (const char *file,
 	va_list args;
 	char *msg;
 	GTimeVal tv;
-	int errno_saved;
+	int errsv;
 	const NMLogDomain *cur_log_state;
 	NMLogDomain cur_log_state_copy[_LOGL_N_REAL];
 	Global g_copy;
@@ -710,7 +710,7 @@ _nm_log_impl (const char *file,
 
 	(void) cur_log_state;
 
-	errno_saved = errno;
+	errsv = errno;
 
 	/* Make sure that %m maps to the specified error */
 	if (error != 0) {
@@ -833,7 +833,7 @@ _nm_log_impl (const char *file,
 
 	g_free (msg);
 
-	errno = errno_saved;
+	errno = errsv;
 }
 
 /*****************************************************************************/

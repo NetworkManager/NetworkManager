@@ -1426,19 +1426,20 @@ pager_fallback (void)
 {
 	char buf[64];
 	int rb;
+	int errsv;
 
 	do {
 		rb = read (STDIN_FILENO, buf, sizeof (buf));
 		if (rb == -1) {
-			if (errno == EINTR) {
+			errsv = errno;
+			if (errsv == EINTR)
 				continue;
-			} else {
-				g_printerr (_("Error reading nmcli output: %s\n"), strerror (errno));
-				_exit(EXIT_FAILURE);
-			}
+			g_printerr (_("Error reading nmcli output: %s\n"), strerror (errsv));
+			_exit(EXIT_FAILURE);
 		}
 		if (write (STDOUT_FILENO, buf, rb) == -1) {
-			g_printerr (_("Error writing nmcli output: %s\n"), strerror (errno));
+			errsv = errno;
+			g_printerr (_("Error writing nmcli output: %s\n"), strerror (errsv));
 			_exit(EXIT_FAILURE);
 		}
 	} while (rb > 0);
@@ -1453,6 +1454,7 @@ nmc_terminal_spawn_pager (const NmcConfig *nmc_config)
 	pid_t pager_pid;
 	pid_t parent_pid;
 	int fd[2];
+	int errsv;
 
 	if (   nmc_config->in_editor
 	    || nmc_config->print_output == NMC_PRINT_TERSE
@@ -1462,7 +1464,8 @@ nmc_terminal_spawn_pager (const NmcConfig *nmc_config)
 		return 0;
 
 	if (pipe (fd) == -1) {
-		g_printerr (_("Failed to create pager pipe: %s\n"), strerror (errno));
+		errsv = errno;
+		g_printerr (_("Failed to create pager pipe: %s\n"), strerror (errsv));
 		return 0;
 	}
 
@@ -1470,7 +1473,8 @@ nmc_terminal_spawn_pager (const NmcConfig *nmc_config)
 
 	pager_pid = fork ();
 	if (pager_pid == -1) {
-		g_printerr (_("Failed to fork pager: %s\n"), strerror (errno));
+		errsv = errno;
+		g_printerr (_("Failed to fork pager: %s\n"), strerror (errsv));
 		nm_close (fd[0]);
 		nm_close (fd[1]);
 		return 0;
@@ -1515,10 +1519,14 @@ nmc_terminal_spawn_pager (const NmcConfig *nmc_config)
 	}
 
 	/* Return in the parent */
-	if (dup2 (fd[1], STDOUT_FILENO) < 0)
-		g_printerr (_("Failed to duplicate pager pipe: %s\n"), strerror (errno));
-	if (dup2 (fd[1], STDERR_FILENO) < 0)
-		g_printerr (_("Failed to duplicate pager pipe: %s\n"), strerror (errno));
+	if (dup2 (fd[1], STDOUT_FILENO) < 0) {
+		errsv = errno;
+		g_printerr (_("Failed to duplicate pager pipe: %s\n"), strerror (errsv));
+	}
+	if (dup2 (fd[1], STDERR_FILENO) < 0) {
+		errsv = errno;
+		g_printerr (_("Failed to duplicate pager pipe: %s\n"), strerror (errsv));
+	}
 
 	nm_close (fd[0]);
 	nm_close (fd[1]);
