@@ -684,6 +684,57 @@ update_one_secret (NMSetting *setting, const char *key, GVariant *value, GError 
 	return success;
 }
 
+static void
+for_each_secret (NMSetting *setting,
+                 const char *secret_name,
+                 GVariant *val,
+                 gboolean remove_non_secrets,
+                 _NMConnectionForEachSecretFunc callback,
+                 gpointer callback_data,
+                 GVariantBuilder *setting_builder)
+{
+	GVariantBuilder vpn_secrets_builder;
+	GVariantIter vpn_secrets_iter;
+	const char *vpn_secret_name;
+	const char *secret;
+
+	if (!nm_streq (secret_name, NM_SETTING_VPN_SECRETS)) {
+		NM_SETTING_CLASS (nm_setting_vpn_parent_class)->for_each_secret (setting,
+		                                                                 secret_name,
+		                                                                 val,
+		                                                                 remove_non_secrets,
+		                                                                 callback,
+		                                                                 callback_data,
+		                                                                 setting_builder);
+		return;
+	}
+
+	if (!g_variant_is_of_type (val, G_VARIANT_TYPE ("a{ss}"))) {
+		/* invalid type. Silently ignore the secrets as we cannot find out the
+		 * secret-flags. */
+		return;
+	}
+
+	/* Iterate through each secret from the VPN dict in the overall secrets dict */
+	g_variant_builder_init (&vpn_secrets_builder, G_VARIANT_TYPE ("a{ss}"));
+	g_variant_iter_init (&vpn_secrets_iter, val);
+	while (g_variant_iter_next (&vpn_secrets_iter, "{&s&s}", &vpn_secret_name, &secret)) {
+		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+
+		/* we ignore the return value of get_secret_flags. The function may determine
+		 * that this is not a secret, based on having not secret-flags and no secrets.
+		 * But we have the secret at hand. We know it would be a valid secret, if we
+		 * only add it to the VPN settings. */
+		nm_setting_get_secret_flags (setting, vpn_secret_name, &secret_flags, NULL);
+
+		if (callback (secret_flags, callback_data))
+			g_variant_builder_add (&vpn_secrets_builder, "{ss}", vpn_secret_name, secret);
+	}
+
+	g_variant_builder_add (setting_builder, "{sv}",
+	                       secret_name, g_variant_builder_end (&vpn_secrets_builder));
+}
+
 static gboolean
 get_secret_flags (NMSetting *setting,
                   const char *secret_name,
@@ -976,6 +1027,7 @@ nm_setting_vpn_class_init (NMSettingVpnClass *klass)
 
 	setting_class->verify            = verify;
 	setting_class->update_one_secret = update_one_secret;
+	setting_class->for_each_secret   = for_each_secret;
 	setting_class->get_secret_flags  = get_secret_flags;
 	setting_class->set_secret_flags  = set_secret_flags;
 	setting_class->need_secrets      = need_secrets;

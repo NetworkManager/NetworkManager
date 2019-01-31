@@ -733,14 +733,10 @@ GBytes *_nm_setting_802_1x_cert_value_to_bytes (NMSetting8021xCKScheme scheme,
 
 /*****************************************************************************/
 
-/* Return TRUE to keep (copy to the result), FALSE to drop. */
-typedef gboolean (*NMConnectionForEachSecretFunc) (NMSettingSecretFlags flags,
-                                                   gpointer user_data);
-
 GVariant *_nm_connection_for_each_secret (NMConnection *self,
                                           GVariant *secrets,
                                           gboolean remove_non_secrets,
-                                          NMConnectionForEachSecretFunc callback,
+                                          _NMConnectionForEachSecretFunc callback,
                                           gpointer callback_data);
 
 typedef gboolean (*NMConnectionFindSecretFunc) (NMSettingSecretFlags flags,
