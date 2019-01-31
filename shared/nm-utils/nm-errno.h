@@ -118,9 +118,9 @@ nm_errno_from_native (int errsv)
 	 * are coerced to the special value NME_NATIVE_ERRNO, as they cannot
 	 * otherwise be represented in nm-error number domain. */
 	if (errsv < 0) {
-		return   G_UNLIKELY (errsv == G_MININT)
-		       ? NME_NATIVE_ERRNO
-		       : -errsv;
+		if (G_UNLIKELY (errsv == G_MININT))
+			return NME_NATIVE_ERRNO;
+		errsv = -errsv;
 	}
 	return   G_UNLIKELY (   errsv >= _NM_ERRNO_RESERVED_FIRST
 	                     && errsv <= _NM_ERRNO_RESERVED_LAST)
