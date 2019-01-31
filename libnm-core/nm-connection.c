@@ -1873,6 +1873,147 @@ nm_connection_clear_secrets_with_flags (NMConnection *connection,
 	g_signal_emit (connection, signals[SECRETS_CLEARED], 0);
 }
 
+/*****************************************************************************/
+
+/* Returns always a non-NULL, non-floating variant that must
+ * be unrefed by the caller. */
+GVariant *
+_nm_connection_for_each_secret (NMConnection *self,
+                                GVariant *secrets,
+                                gboolean remove_non_secrets,
+                                NMConnectionForEachSecretFunc callback,
+                                gpointer callback_data)
+{
+	GVariantBuilder secrets_builder, setting_builder;
+	GVariantIter secrets_iter, *setting_iter;
+	const char *setting_name;
+
+	/* This function, given a dict of dicts representing new secrets of
+	 * an NMConnection, walks through each toplevel dict (which represents a
+	 * NMSetting), and for each setting, walks through that setting dict's
+	 * properties.  For each property that's a secret, it will check that
+	 * secret's flags in the backing NMConnection object, and call a supplied
+	 * callback.
+	 *
+	 * The one complexity is that the VPN setting's 'secrets' property is
+	 * *also* a dict (since the key/value pairs are arbitrary and known
+	 * only to the VPN plugin itself).  That means we have three levels of
+	 * dicts that we potentially have to traverse here.  When we hit the
+	 * VPN setting's 'secrets' property, we special-case that and iterate over
+	 * each item in that 'secrets' dict, calling the supplied callback
+	 * each time.
+	 */
+
+	g_return_val_if_fail (callback, NULL);
+
+	g_variant_iter_init (&secrets_iter, secrets);
+	g_variant_builder_init (&secrets_builder, NM_VARIANT_TYPE_CONNECTION);
+	while (g_variant_iter_next (&secrets_iter, "{&sa{sv}}", &setting_name, &setting_iter)) {
+		NMSetting *setting;
+		const char *secret_name;
+		GVariant *val;
+
+		setting = nm_connection_get_setting_by_name (self, setting_name);
+		if (setting == NULL) {
+			g_variant_iter_free (setting_iter);
+			continue;
+		}
+
+		g_variant_builder_init (&setting_builder, NM_VARIANT_TYPE_SETTING);
+		while (g_variant_iter_next (setting_iter, "{&sv}", &secret_name, &val)) {
+			NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+
+			/* VPN secrets need slightly different treatment here since the
+			 * "secrets" property is actually a hash table of secrets.
+			 */
+			if (NM_IS_SETTING_VPN (setting) && !g_strcmp0 (secret_name, NM_SETTING_VPN_SECRETS)) {
+				GVariantBuilder vpn_secrets_builder;
+				GVariantIter vpn_secrets_iter;
+				const char *vpn_secret_name, *secret;
+
+				if (!g_variant_is_of_type (val, G_VARIANT_TYPE ("a{ss}"))) {
+					/* invalid type. Silently ignore the secrets as we cannot find out the
+					 * secret-flags. */
+					g_variant_unref (val);
+					continue;
+				}
+
+				/* Iterate through each secret from the VPN dict in the overall secrets dict */
+				g_variant_builder_init (&vpn_secrets_builder, G_VARIANT_TYPE ("a{ss}"));
+				g_variant_iter_init (&vpn_secrets_iter, val);
+				while (g_variant_iter_next (&vpn_secrets_iter, "{&s&s}", &vpn_secret_name, &secret)) {
+
+					/* we ignore the return value of get_secret_flags. The function may determine
+					 * that this is not a secret, based on having not secret-flags and no secrets.
+					 * But we have the secret at hand. We know it would be a valid secret, if we
+					 * only would add it to the VPN settings. */
+					nm_setting_get_secret_flags (setting, vpn_secret_name, &secret_flags, NULL);
+
+					if (callback (secret_flags, callback_data))
+						g_variant_builder_add (&vpn_secrets_builder, "{ss}", vpn_secret_name, secret);
+				}
+
+				g_variant_builder_add (&setting_builder, "{sv}",
+				                       secret_name, g_variant_builder_end (&vpn_secrets_builder));
+			} else {
+				if (!nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL)) {
+					if (!remove_non_secrets)
+						g_variant_builder_add (&setting_builder, "{sv}", secret_name, val);
+					g_variant_unref (val);
+					continue;
+				}
+				if (callback (secret_flags, callback_data))
+					g_variant_builder_add (&setting_builder, "{sv}", secret_name, val);
+			}
+			g_variant_unref (val);
+		}
+
+		g_variant_iter_free (setting_iter);
+		g_variant_builder_add (&secrets_builder, "{sa{sv}}", setting_name, &setting_builder);
+	}
+
+	return g_variant_ref_sink (g_variant_builder_end (&secrets_builder));
+}
+
+/*****************************************************************************/
+
+typedef struct {
+	NMConnectionFindSecretFunc find_func;
+	gpointer find_func_data;
+	gboolean found;
+} FindSecretData;
+
+static gboolean
+find_secret_for_each_func (NMSettingSecretFlags flags,
+                           gpointer user_data)
+{
+	FindSecretData *data = user_data;
+
+	if (!data->found)
+		data->found = data->find_func (flags, data->find_func_data);
+	return FALSE;
+}
+
+gboolean
+_nm_connection_find_secret (NMConnection *self,
+                            GVariant *secrets,
+                            NMConnectionFindSecretFunc callback,
+                            gpointer callback_data)
+{
+	FindSecretData data;
+	GVariant *dummy;
+
+	data.find_func = callback;
+	data.find_func_data = callback_data;
+	data.found = FALSE;
+
+	dummy = _nm_connection_for_each_secret (self, secrets, FALSE, find_secret_for_each_func, &data);
+	g_variant_unref (dummy);
+	return data.found;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_connection_to_dbus:
  * @connection: the #NMConnection
