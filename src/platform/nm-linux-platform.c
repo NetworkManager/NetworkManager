@@ -43,7 +43,6 @@
 #include "nm-core-internal.h"
 #include "nm-setting-vlan.h"
 
-#include "nm-utils/nm-errno.h"
 #include "nm-utils/nm-secret-utils.h"
 #include "nm-netlink.h"
 #include "nm-core-utils.h"

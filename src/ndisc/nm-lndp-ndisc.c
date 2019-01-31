@@ -32,7 +32,6 @@
 #include "NetworkManagerUtils.h"
 #include "platform/nm-platform.h"
 #include "platform/nmp-netns.h"
-#include "nm-utils/nm-errno.h"
 
 #define _NMLOG_PREFIX_NAME                "ndisc-lndp"
 

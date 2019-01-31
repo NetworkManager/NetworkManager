@@ -30,7 +30,6 @@
 #include <linux/nl80211.h>
 #include <linux/if.h>
 
-#include "nm-utils/nm-errno.h"
 #include "platform/nm-netlink.h"
 #include "nm-wifi-utils-private.h"
 #include "platform/nm-platform.h"
