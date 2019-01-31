@@ -230,6 +230,7 @@ main (int argc, char *argv[])
 	guint sd_id = 0;
 	GError *error_invalid_logging_config = NULL;
 	const char *const *warnings;
+	int errsv;
 
 	/* Known to cause a possible deadlock upon GDBus initialization:
 	 * https://bugzilla.gnome.org/show_bug.cgi?id=674885 */
@@ -331,12 +332,10 @@ main (int argc, char *argv[])
 
 	if (global_opt.become_daemon && !nm_config_get_is_debug (config)) {
 		if (daemon (0, 0) < 0) {
-			int saved_errno;
-
-			saved_errno = errno;
+			errsv = errno;
 			fprintf (stderr, _("Could not daemonize: %s [error %u]\n"),
-			         g_strerror (saved_errno),
-			         saved_errno);
+			         g_strerror (errsv),
+			         errsv);
 			exit (1);
 		}
 		wrote_pidfile = nm_main_utils_write_pidfile (global_opt.pidfile);

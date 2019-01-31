@@ -204,13 +204,15 @@ static gboolean
 ck_update_cache (NMSessionMonitor *monitor)
 {
 	struct stat statbuf;
+	int errsv;
 
 	if (!monitor->ck.cache)
 		return FALSE;
 
 	/* Check the database file */
 	if (stat (CKDB_PATH, &statbuf) != 0) {
-		_LOGE ("failed to check ConsoleKit timestamp: %s", strerror (errno));
+		errsv = errno;
+		_LOGE ("failed to check ConsoleKit timestamp: %s", strerror (errsv));
 		return FALSE;
 	}
 	if (statbuf.st_mtime == monitor->ck.timestamp)

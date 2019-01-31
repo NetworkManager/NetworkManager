@@ -506,13 +506,13 @@ settings_set_hostname_cb (const char *hostname,
 	NMPolicy *self = NM_POLICY (user_data);
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	int ret = 0;
+	int errsv;
 
 	if (!result) {
 		_LOGT (LOGD_DNS, "set-hostname: hostname set via dbus failed, fallback to \"sethostname\"");
 		ret = sethostname (hostname, strlen (hostname));
 		if (ret != 0) {
-			int errsv = errno;
-
+			errsv = errno;
 			_LOGW (LOGD_DNS, "set-hostname: couldn't set the system hostname to '%s': (%d) %s",
 			       hostname, errsv, strerror (errsv));
 			if (errsv == EPERM)
@@ -533,6 +533,7 @@ _get_hostname (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	char *hostname = NULL;
+	int errsv;
 
 	/* If there is an in-progress hostname change, return
 	 * the last hostname set as would be set soon...
@@ -551,8 +552,7 @@ _get_hostname (NMPolicy *self)
 	/* ...or retrieve it by yourself */
 	hostname = g_malloc (HOST_NAME_BUFSIZE);
 	if (gethostname (hostname, HOST_NAME_BUFSIZE -1) != 0) {
-		int errsv = errno;
-
+		errsv = errno;
 		_LOGT (LOGD_DNS, "get-hostname: couldn't get the system hostname: (%d) %s",
 		       errsv, g_strerror (errsv));
 		g_free (hostname);

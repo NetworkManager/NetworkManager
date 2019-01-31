@@ -535,6 +535,7 @@ dispatch_netconfig (NMDnsManager *self,
 {
 	GPid pid;
 	int fd;
+	int errsv;
 	int status;
 	gssize l;
 	nm_auto_free_gstring GString *str = NULL;
@@ -565,8 +566,7 @@ again:
 
 	/* Wait until the process exits */
 	if (!nm_utils_kill_child_sync (pid, 0, LOGD_DNS, "netconfig", &status, 1000, 0)) {
-		int errsv = errno;
-
+		errsv = errno;
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 		             "Error waiting for netconfig to exit: %s",
 		             strerror (errsv));
@@ -708,7 +708,8 @@ dispatch_resolvconf (NMDnsManager *self,
 	gs_free char *cmd = NULL;
 	FILE *f;
 	gboolean success = FALSE;
-	int errnosv, err;
+	int errsv;
+	int err;
 	char *argv[] = { RESOLVCONF_PATH, "-d", "NetworkManager", NULL };
 	int status;
 
@@ -742,12 +743,13 @@ dispatch_resolvconf (NMDnsManager *self,
 
 	cmd = g_strconcat (RESOLVCONF_PATH, " -a ", "NetworkManager", NULL);
 	if ((f = popen (cmd, "w")) == NULL) {
+		errsv = errno;
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
 		             "Could not write to %s: %s",
 		             RESOLVCONF_PATH,
-		             g_strerror (errno));
+		             g_strerror (errsv));
 		return SR_ERROR;
 	}
 
@@ -758,10 +760,10 @@ dispatch_resolvconf (NMDnsManager *self,
 	                             error);
 	err = pclose (f);
 	if (err < 0) {
-		errnosv = errno;
+		errsv = errno;
 		g_clear_error (error);
-		g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errnosv),
-		             "Failed to close pipe to resolvconf: %d", errnosv);
+		g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
+		             "Failed to close pipe to resolvconf: %d", errsv);
 		return SR_ERROR;
 	} else if (err > 0) {
 		_LOGW ("resolvconf failed with status %d", err);
@@ -924,7 +926,7 @@ update_resolv_conf (NMDnsManager *self,
 		             NM_MANAGER_ERROR_FAILED,
 		             "Could not replace %s: %s",
 		             MY_RESOLV_CONF,
-		             g_strerror (errno));
+		             g_strerror (errsv));
 		_LOGT ("update-resolv-conf: failed to rename temporary file %s to %s (%s)",
 		       MY_RESOLV_CONF_TMP, MY_RESOLV_CONF, g_strerror (errsv));
 		return SR_ERROR;

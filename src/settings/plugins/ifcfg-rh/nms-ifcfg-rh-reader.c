@@ -3949,9 +3949,8 @@ make_wireless_setting (shvarFile *ifcfg,
 
 	value = svGetValueStr_cp (ifcfg, "CHANNEL");
 	if (value) {
-		errno = 0;
 		chan = _nm_utils_ascii_str_to_int64 (value, 10, 1, 196, 0);
-		if (errno || (chan == 0)) {
+		if (chan == 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid wireless channel '%s'", value);
 			g_free (value);

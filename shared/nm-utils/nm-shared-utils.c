@@ -1769,10 +1769,12 @@ nm_utils_fd_read_loop (int fd, void *buf, size_t nbytes, bool do_poll)
 
 		k = read (fd, p, nbytes);
 		if (k < 0) {
-			if (errno == EINTR)
+			int errsv = errno;
+
+			if (errsv == EINTR)
 				continue;
 
-			if (errno == EAGAIN && do_poll) {
+			if (errsv == EAGAIN && do_poll) {
 
 				/* We knowingly ignore any return value here,
 				 * and expect that any error/EOF is reported
@@ -1782,7 +1784,7 @@ nm_utils_fd_read_loop (int fd, void *buf, size_t nbytes, bool do_poll)
 				continue;
 			}
 
-			return n > 0 ? n : -errno;
+			return n > 0 ? n : -errsv;
 		}
 
 		if (k == 0)
