@@ -204,7 +204,7 @@ stop (NMDhcpClient *client, gboolean release)
 	if (priv->pid_file) {
 		if (remove (priv->pid_file) == -1) {
 			errsv = errno;
-			_LOGD ("could not remove dhcp pid file \"%s\": %d (%s)", priv->pid_file, errsv, g_strerror (errsv));
+			_LOGD ("could not remove dhcp pid file \"%s\": %d (%s)", priv->pid_file, errsv, nm_strerror_native (errsv));
 		}
 	}
 

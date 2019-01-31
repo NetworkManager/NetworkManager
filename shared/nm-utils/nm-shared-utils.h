@@ -705,7 +705,7 @@ nm_utils_error_set_literal (GError **error, int error_code, const char *literal)
 	             NM_UTILS_ERROR_UNKNOWN, \
 	             fmt, \
 	             ##__VA_ARGS__, \
-	             g_strerror (({ \
+	             nm_strerror_native (({ \
 	                            const int _errsv = (errsv); \
 	                            \
 	                            (  _errsv >= 0 \

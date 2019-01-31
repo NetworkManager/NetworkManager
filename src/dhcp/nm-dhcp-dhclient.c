@@ -598,12 +598,12 @@ stop (NMDhcpClient *client, gboolean release)
 	if (priv->conf_file)
 		if (remove (priv->conf_file) == -1) {
 			errsv = errno;
-			_LOGD ("could not remove dhcp config file \"%s\": %d (%s)", priv->conf_file, errsv, g_strerror (errsv));
+			_LOGD ("could not remove dhcp config file \"%s\": %d (%s)", priv->conf_file, errsv, nm_strerror_native (errsv));
 		}
 	if (priv->pid_file) {
 		if (remove (priv->pid_file) == -1) {
 			errsv = errno;
-			_LOGD ("could not remove dhcp pid file \"%s\": %s (%d)", priv->pid_file, g_strerror (errsv), errsv);
+			_LOGD ("could not remove dhcp pid file \"%s\": %s (%d)", priv->pid_file, nm_strerror_native (errsv), errsv);
 		}
 		nm_clear_g_free (&priv->pid_file);
 	}

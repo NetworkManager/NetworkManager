@@ -554,7 +554,7 @@ _get_hostname (NMPolicy *self)
 	if (gethostname (hostname, HOST_NAME_BUFSIZE -1) != 0) {
 		errsv = errno;
 		_LOGT (LOGD_DNS, "get-hostname: couldn't get the system hostname: (%d) %s",
-		       errsv, g_strerror (errsv));
+		       errsv, nm_strerror_native (errsv));
 		g_free (hostname);
 		return NULL;
 	}
