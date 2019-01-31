@@ -268,6 +268,13 @@ for_each_secret (NMConnection *self,
 				GVariantIter vpn_secrets_iter;
 				const char *vpn_secret_name, *secret;
 
+				if (!g_variant_is_of_type (val, G_VARIANT_TYPE ("a{ss}"))) {
+					/* invalid type. Silently ignore the secrets as we cannot find out the
+					 * secret-flags. */
+					g_variant_unref (val);
+					continue;
+				}
+
 				/* Iterate through each secret from the VPN dict in the overall secrets dict */
 				g_variant_builder_init (&vpn_secrets_builder, G_VARIANT_TYPE ("a{ss}"));
 				g_variant_iter_init (&vpn_secrets_iter, val);
