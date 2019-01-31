@@ -187,6 +187,10 @@ typedef void (*NMSettingValueIterFn) (NMSetting *setting,
                                       GParamFlags flags,
                                       gpointer user_data);
 
+/*< private >*/
+typedef gboolean (*_NMConnectionForEachSecretFunc) (NMSettingSecretFlags flags,
+                                                    gpointer user_data);
+
 typedef struct {
 	GObjectClass parent;
 
@@ -253,10 +257,19 @@ typedef struct {
 	                       gpointer arg);
 
 	/*< private >*/
-	const struct _NMMetaSettingInfo *setting_info;
+	void (*for_each_secret) (NMSetting *setting,
+	                         const char *secret_name,
+	                         GVariant *val,
+	                         gboolean remove_non_secrets,
+	                         _NMConnectionForEachSecretFunc callback,
+	                         gpointer callback_data,
+	                         GVariantBuilder *setting_builder);
 
 	/*< private >*/
-	gpointer padding[3];
+	gpointer padding[2];
+
+	/*< private >*/
+	const struct _NMMetaSettingInfo *setting_info;
 } NMSettingClass;
 
 GType nm_setting_get_type (void);

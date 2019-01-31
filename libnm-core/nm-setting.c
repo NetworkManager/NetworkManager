@@ -2095,6 +2095,26 @@ _nm_setting_update_secrets (NMSetting *setting, GVariant *secrets, GError **erro
 }
 
 static void
+for_each_secret (NMSetting *setting,
+                 const char *secret_name,
+                 GVariant *val,
+                 gboolean remove_non_secrets,
+                 _NMConnectionForEachSecretFunc callback,
+                 gpointer callback_data,
+                 GVariantBuilder *setting_builder)
+{
+	NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+
+	if (!nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL)) {
+		if (!remove_non_secrets)
+			g_variant_builder_add (setting_builder, "{sv}", secret_name, val);
+		return;
+	}
+	if (callback (secret_flags, callback_data))
+		g_variant_builder_add (setting_builder, "{sv}", secret_name, val);
+}
+
+static void
 _set_error_secret_property_not_found (GError **error,
                                       NMSetting *setting,
                                       const char *secret_name)
@@ -2629,6 +2649,7 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	setting_class->set_secret_flags          = set_secret_flags;
 	setting_class->compare_property          = compare_property;
 	setting_class->clear_secrets             = clear_secrets;
+	setting_class->for_each_secret           = for_each_secret;
 	setting_class->duplicate_copy_properties = duplicate_copy_properties;
 	setting_class->enumerate_values          = enumerate_values;
 	setting_class->aggregate                 = aggregate;
