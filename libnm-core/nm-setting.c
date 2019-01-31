@@ -32,15 +32,6 @@
 #include "nm-utils-private.h"
 #include "nm-property-compare.h"
 
-#include "nm-setting-connection.h"
-#include "nm-setting-bond.h"
-#include "nm-setting-bridge.h"
-#include "nm-setting-bridge-port.h"
-#include "nm-setting-pppoe.h"
-#include "nm-setting-team.h"
-#include "nm-setting-team-port.h"
-#include "nm-setting-vpn.h"
-
 /**
  * SECTION:nm-setting
  * @short_description: Describes related configuration information
