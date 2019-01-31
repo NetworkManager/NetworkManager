@@ -4994,7 +4994,7 @@ handle_bridge_option (NMSetting *setting,
 			} else {
 				v = _nm_utils_ascii_str_to_int64 (value, 10, 0, 1, -1);
 				if (v == -1) {
-					error_message = g_strerror (errno);
+					error_message = nm_strerror_native (errno);
 					goto warn;
 				}
 			}
@@ -5006,7 +5006,7 @@ handle_bridge_option (NMSetting *setting,
 		case G_TYPE_UINT:
 			v = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT, -1);
 			if (v == -1) {
-				error_message = g_strerror (errno);
+				error_message = nm_strerror_native (errno);
 				goto warn;
 			}
 			if (!nm_g_object_set_property_uint (G_OBJECT (setting), m[i].property_name, v, NULL)) {

@@ -50,7 +50,7 @@ _get_contents_error (GError **error, int errsv, const char *format, ...)
 		             G_FILE_ERROR,
 		             g_file_error_from_errno (errsv),
 		             "%s: %s",
-		             msg, g_strerror (errsv));
+		             msg, nm_strerror_native (errsv));
 		g_free (msg);
 	}
 	return -errsv;
@@ -302,7 +302,7 @@ nm_utils_file_get_contents (int dirfd,
 			             g_file_error_from_errno (errsv),
 			             "Failed to open file \"%s\" with openat: %s",
 			             filename,
-			             g_strerror (errsv));
+			             nm_strerror_native (errsv));
 			return -NM_ERRNO_NATIVE (errsv);
 		}
 	} else {
@@ -315,7 +315,7 @@ nm_utils_file_get_contents (int dirfd,
 			             g_file_error_from_errno (errsv),
 			             "Failed to open file \"%s\": %s",
 			             filename,
-			             g_strerror (errsv));
+			             nm_strerror_native (errsv));
 			return -NM_ERRNO_NATIVE (errsv);
 		}
 	}
@@ -364,7 +364,7 @@ nm_utils_file_set_contents (const char *filename,
 		             g_file_error_from_errno (errsv),
 		             "failed to create file %s: %s",
 		             tmp_name,
-		             g_strerror (errsv));
+		             nm_strerror_native (errsv));
 		return FALSE;
 	}
 
@@ -383,7 +383,7 @@ nm_utils_file_set_contents (const char *filename,
 			             g_file_error_from_errno (errsv),
 			             "failed to write to file %s: %s",
 			             tmp_name,
-			             g_strerror (errsv));
+			             nm_strerror_native (errsv));
 			return FALSE;
 		}
 
@@ -412,7 +412,7 @@ nm_utils_file_set_contents (const char *filename,
 			             g_file_error_from_errno (errsv),
 			             "failed to fsync %s: %s",
 			             tmp_name,
-			             g_strerror (errsv));
+			             nm_strerror_native (errsv));
 			return FALSE;
 		}
 	}
@@ -428,7 +428,7 @@ nm_utils_file_set_contents (const char *filename,
 		             "failed to rename %s to %s: %s",
 		             tmp_name,
 		             filename,
-		             g_strerror (errsv));
+		             nm_strerror_native (errsv));
 		return FALSE;
 	}
 

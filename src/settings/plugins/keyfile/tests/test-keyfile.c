@@ -2622,7 +2622,7 @@ int main (int argc, char **argv)
 
 	if (g_mkdir_with_parents (TEST_SCRATCH_DIR, 0755) != 0) {
 		errsv = errno;
-		g_error ("failure to create test directory \"%s\": %s", TEST_SCRATCH_DIR, g_strerror (errsv));
+		g_error ("failure to create test directory \"%s\": %s", TEST_SCRATCH_DIR, nm_strerror_native (errsv));
 	}
 
 	/* The tests */

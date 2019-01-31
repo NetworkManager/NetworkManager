@@ -99,7 +99,7 @@ static const char *
 acd_error_to_string (int error)
 {
 	if (error < 0)
-		return g_strerror (-error);
+		return nm_strerror_native (-error);
 
 	switch (error) {
 	case _N_ACD_E_SUCCESS:

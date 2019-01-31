@@ -7220,7 +7220,7 @@ rfkill_change (NMManager *self, const char *desc, RfKillType rtype, gboolean ena
 	if (len < 0) {
 		errsv = errno;
 		_LOGW (LOGD_RFKILL, "rfkill: (%s): failed to change Wi-Fi killswitch state: (%d) %s",
-		       desc, errsv, g_strerror (errsv));
+		       desc, errsv, nm_strerror_native (errsv));
 	} else if (len == sizeof (event)) {
 		_LOGI (LOGD_RFKILL, "rfkill: %s hardware radio set %s",
 		       desc, enabled ? "enabled" : "disabled");

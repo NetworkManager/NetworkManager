@@ -84,7 +84,7 @@ send_rs (NMNDisc *ndisc, GError **error)
 		errsv = nm_errno_native (errsv);
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "%s (%d)",
-		             g_strerror (errsv), errsv);
+		             nm_strerror_native (errsv), errsv);
 		return FALSE;
 	}
 
@@ -469,7 +469,7 @@ send_ra (NMNDisc *ndisc, GError **error)
 		errsv = nm_errno_native (errsv);
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "%s (%d)",
-		             g_strerror (errsv), errsv);
+		             nm_strerror_native (errsv), errsv);
 		return FALSE;
 	}
 
@@ -600,7 +600,7 @@ nm_lndp_ndisc_new (NMPlatform *platform,
 		errsv = nm_errno_native (errsv);
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "failure creating libndp socket: %s (%d)",
-		             g_strerror (errsv), errsv);
+		             nm_strerror_native (errsv), errsv);
 		g_object_unref (ndisc);
 		return NULL;
 	}

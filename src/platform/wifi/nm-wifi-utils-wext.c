@@ -115,7 +115,7 @@ get_ifname (int ifindex, char *buffer, const char *op)
 		errsv = errno;
 		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
 		       "error getting interface name for ifindex %d, operation '%s': %s (%d)",
-		       ifindex, op, g_strerror (errsv), errsv);
+		       ifindex, op, nm_strerror_native (errsv), errsv);
 		return FALSE;
 	}
 

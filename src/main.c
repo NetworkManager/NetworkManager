@@ -334,7 +334,7 @@ main (int argc, char *argv[])
 		if (daemon (0, 0) < 0) {
 			errsv = errno;
 			fprintf (stderr, _("Could not daemonize: %s [error %u]\n"),
-			         g_strerror (errsv),
+			         nm_strerror_native (errsv),
 			         errsv);
 			exit (1);
 		}

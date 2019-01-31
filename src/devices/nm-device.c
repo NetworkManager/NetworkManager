@@ -10172,9 +10172,9 @@ share_init (NMDevice *self, GError **error)
 	} else if (!nm_platform_sysctl_set (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_forward"), "1")) {
 		errsv = errno;
 		_LOGD (LOGD_SHARING, "share: error enabling IPv4 forwarding: (%d) %s",
-		       errsv, g_strerror (errsv));
+		       errsv, nm_strerror_native (errsv));
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "cannot set ipv4/ip_forward: %s", g_strerror (errsv));
+		             "cannot set ipv4/ip_forward: %s", nm_strerror_native (errsv));
 		return FALSE;
 	}
 

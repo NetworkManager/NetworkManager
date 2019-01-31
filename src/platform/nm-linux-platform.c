@@ -459,7 +459,7 @@ G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
             _LOG_print (__level, __domain, __errsv, self, \
                         _NM_UTILS_MACRO_FIRST (__VA_ARGS__) ": %s (%d)" \
                         _NM_UTILS_MACRO_REST (__VA_ARGS__), \
-                        g_strerror (__errsv), __errsv); \
+                        nm_strerror_native (__errsv), __errsv); \
         } \
     } G_STMT_END
 
@@ -510,7 +510,7 @@ wait_for_nl_response_to_string (WaitForNlResponseResult seq_result,
 		if (seq_result < 0) {
 			nm_utils_strbuf_append (&buf, &buf_size, "failure %d (%s%s%s)",
 			                        -((int) seq_result),
-			                        g_strerror (-((int) seq_result)),
+			                        nm_strerror_native (-((int) seq_result)),
 			                        errmsg ? " - " : "",
 			                        errmsg ?: "");
 		}
@@ -5055,7 +5055,7 @@ again:
 			errsv = errno;
 			if (errsv == EINTR && try_count++ < 100)
 				goto again;
-			_LOGD ("netlink: nl-send-nlmsghdr: failed sending message: %s (%d)", g_strerror (errsv), errsv);
+			_LOGD ("netlink: nl-send-nlmsghdr: failed sending message: %s (%d)", nm_strerror_native (errsv), errsv);
 			return -nm_errno_from_native (errsv);
 		}
 	}
@@ -7580,7 +7580,7 @@ ip_route_get (NMPlatform *platform,
 		nle = _nl_send_nlmsghdr (platform, &req.n, &seq_result, NULL, DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET, &route);
 		if (nle < 0) {
 			_LOGE ("get-route: failure sending netlink request \"%s\" (%d)",
-			       g_strerror (-nle), -nle);
+			       nm_strerror_native (-nle), -nle);
 			return -NME_UNSPEC;
 		}
 
