@@ -288,6 +288,7 @@ for_each_secret (NMConnection *self,
 				if (!nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL)) {
 					if (!remove_non_secrets)
 						g_variant_builder_add (&setting_builder, "{sv}", secret_name, val);
+					g_variant_unref (val);
 					continue;
 				}
 				if (callback (secret_flags, callback_data))
