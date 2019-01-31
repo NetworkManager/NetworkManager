@@ -173,4 +173,11 @@ const char *nm_strerror (int nmerr);
 
 /*****************************************************************************/
 
+#define NM_STRERROR_BUFSIZE 1024
+
+const char *nm_strerror_native_r (int errsv, char *buf, gsize buf_size);
+const char *nm_strerror_native (int errsv);
+
+/*****************************************************************************/
+
 #endif /* __NM_ERRNO_H__ */
