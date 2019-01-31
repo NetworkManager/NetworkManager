@@ -92,7 +92,7 @@ struct _NMConnectivityCheckHandle {
 		struct curl_slist *request_headers;
 		struct curl_slist *hosts;
 
-		GString *recv_msg;
+		gsize response_good_cnt;
 
 		guint curl_timer;
 		int ch_ifindex;
@@ -271,8 +271,6 @@ cb_data_complete (NMConnectivityCheckHandle *cb_data,
 
 #if WITH_CONCHECK
 	_con_config_unref (cb_data->concheck.con_config);
-	if (cb_data->concheck.recv_msg)
-		g_string_free (cb_data->concheck.recv_msg, TRUE);
 #endif
 	g_free (cb_data->ifspec);
 	if (cb_data->completed_log_message_free)
@@ -342,6 +340,7 @@ _con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 	}
 
 	while ((msg = curl_multi_info_read (mhandle, &m_left))) {
+		const char *response;
 
 		if (msg->msg != CURLMSG_DONE)
 			continue;
@@ -370,25 +369,44 @@ _con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 			                         g_strdup_printf ("check failed: (%d) %s",
 			                                          msg->data.result,
 			                                          curl_easy_strerror (msg->data.result)));
-		} else if (   !((_con_config_get_response (cb_data->concheck.con_config))[0])
-		           && (curl_easy_getinfo (msg->easy_handle, CURLINFO_RESPONSE_CODE, &response_code) == CURLE_OK)
-		           && response_code == 204) {
-			/* If we got a 204 response code (no content) and we actually
-			 * requested no content, report full connectivity. */
-			cb_data_queue_completed (cb_data,
-			                         NM_CONNECTIVITY_FULL,
-			                         "no content, as expected",
-			                         NULL);
-		} else {
-			/* If we get here, it means that easy_write_cb() didn't read enough
-			 * bytes to be able to do a match, or that we were asking for no content
-			 * (204 response code) and we actually got some. Either way, that is
-			 * an indication of a captive portal */
-			cb_data_queue_completed (cb_data,
-			                         NM_CONNECTIVITY_PORTAL,
-			                         "unexpected short response",
-			                         NULL);
+			continue;
 		}
+
+		response = _con_config_get_response (cb_data->concheck.con_config);
+
+		if (   response[0] == '\0'
+		    && (curl_easy_getinfo (msg->easy_handle, CURLINFO_RESPONSE_CODE, &response_code) == CURLE_OK)) {
+
+			if (response_code == 204) {
+				/* We expected an empty response, and we got a 204 response code (no content).
+				 * We may or may not have received any content (we would ignore it).
+				 * Anyway, the response_code 204 means we are good. */
+				cb_data_queue_completed (cb_data,
+				                         NM_CONNECTIVITY_FULL,
+				                         "no content, as expected",
+				                         NULL);
+				continue;
+			}
+
+			if (   response_code == 200
+			    && cb_data->concheck.response_good_cnt == 0) {
+				/* we expected no response, and indeed we got an empty reply (with status code 200) */
+				cb_data_queue_completed (cb_data,
+				                         NM_CONNECTIVITY_FULL,
+				                         "empty response, as expected",
+				                         NULL);
+				continue;
+			}
+		}
+
+		/* If we get here, it means that easy_write_cb() didn't read enough
+		 * bytes to be able to do a match, or that we were asking for no content
+		 * (204 response code) and we actually got some. Either way, that is
+		 * an indication of a captive portal */
+		cb_data_queue_completed (cb_data,
+		                         NM_CONNECTIVITY_PORTAL,
+		                         "unexpected short response",
+		                         NULL);
 	}
 
 	/* if we return a failure, we don't know what went wrong. It's likely serious, because
@@ -540,6 +558,8 @@ easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 {
 	NMConnectivityCheckHandle *cb_data = userdata;
 	size_t len = size * nmemb;
+	size_t response_len;
+	size_t check_len;
 	const char *response;
 
 	if (cb_data->completed_state != NM_CONNECTIVITY_UNKNOWN) {
@@ -547,26 +567,68 @@ easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 		return 0;
 	}
 
-	if (!cb_data->concheck.recv_msg)
-		cb_data->concheck.recv_msg = g_string_sized_new (len + 10);
-
-	g_string_append_len (cb_data->concheck.recv_msg, buffer, len);
+	if (len == 0) {
+		/* no data. That can happen, it's fine. */
+		return len;
+	}
 
 	response = _con_config_get_response (cb_data->concheck.con_config);;
-	if (   response
-	    && cb_data->concheck.recv_msg->len >= strlen (response)) {
-		/* We already have enough data -- check response */
-		if (g_str_has_prefix (cb_data->concheck.recv_msg->str, response)) {
-			cb_data_queue_completed (cb_data,
-			                         NM_CONNECTIVITY_FULL,
-			                         "expected response",
-			                         NULL);
-		} else {
+
+	if (response[0] == '\0') {
+		/* no response expected. We are however graceful and accept any
+		 * extra response that we might receive. We determine the empty
+		 * response based on the status code 204.
+		 *
+		 * Continue receiving... */
+		cb_data->concheck.response_good_cnt += len;
+
+		if (cb_data->concheck.response_good_cnt > (gsize) (100 * 1024)) {
+			/* we expect an empty response. We accept either
+			 * 1) status code 204 and any response
+			 * 2) status code 200 and an empty reponse.
+			 *
+			 * Here, we want to continue receiving data, to see whether we have
+			 * case 1). Arguably, the server shouldn't send us 204 with a non-empty
+			 * response, but we accept that also with a non-empty response, so
+			 * keep receiving.
+			 *
+			 * However, if we get an excessive amound of data, we put a stop on it
+			 * and fail. */
 			cb_data_queue_completed (cb_data,
 			                         NM_CONNECTIVITY_PORTAL,
-			                         "unexpected response",
+			                         "unexpected non-empty response",
 			                         NULL);
+			return 0;
 		}
+
+		return len;
+	}
+
+	nm_assert (cb_data->concheck.response_good_cnt < strlen (response));
+
+	response_len = strlen (response);
+
+	check_len = NM_MIN (len,
+	                    response_len - cb_data->concheck.response_good_cnt);
+
+	if (strncmp (&response[cb_data->concheck.response_good_cnt],
+	             buffer,
+	             check_len) != 0) {
+		cb_data_queue_completed (cb_data,
+		                         NM_CONNECTIVITY_PORTAL,
+		                         "unexpected response",
+		                         NULL);
+		return 0;
+	}
+
+	cb_data->concheck.response_good_cnt += len;
+
+	if (cb_data->concheck.response_good_cnt >= response_len) {
+		/* We already have enough data, and it matched. */
+		cb_data_queue_completed (cb_data,
+		                         NM_CONNECTIVITY_FULL,
+		                         "expected response",
+		                         NULL);
 		return 0;
 	}
 
