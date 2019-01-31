@@ -2183,7 +2183,7 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 		strv = nm_utils_strsplit_set (value, " \t,"); \
 		if (strv) { \
 			for (i = 0; strv[i]; i++) \
-				set_func (NM_SETTING_802_1X (setting), strv[i++]); \
+				set_func (NM_SETTING_802_1X (setting), strv[i]); \
 		} \
 		return TRUE; \
 	}
