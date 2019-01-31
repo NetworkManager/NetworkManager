@@ -80,6 +80,12 @@ nm_logging_setup (const char  *level,
 	return TRUE;
 }
 
+const char *
+nm_strerror_native (int errsv)
+{
+	return g_strerror (errsv);
+}
+
 /*****************************************************************************/
 
 static void

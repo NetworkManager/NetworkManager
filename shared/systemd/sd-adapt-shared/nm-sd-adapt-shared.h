@@ -27,6 +27,11 @@
 
 /*****************************************************************************/
 
+/* strerror() is not thread-safe. Patch systemd-sources via a define. */
+#define strerror(errsv) nm_strerror_native (errsv)
+
+/*****************************************************************************/
+
 static inline NMLogLevel
 _slog_level_to_nm (int slevel)
 {
