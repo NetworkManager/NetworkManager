@@ -762,6 +762,7 @@ class Device(ExportedObj):
                             'flags':        dbus.UInt32(0x31),
                         }, signature = 'sv'),
                     ]),
+
                 }),
                 dbus.Dictionary({
                     'chassis-id-type':      dbus.UInt32(6),
@@ -787,7 +788,17 @@ class Device(ExportedObj):
                             'interface-number':         dbus.UInt32(1),
                             'interface-number-subtype': dbus.UInt32(2),
                         }, signature = 'sv'),
-                    ])
+                    ]),
+                    'ieee-802-3-mac-phy-conf': dbus.Dictionary({
+                        'autoneg':              dbus.UInt32(3),
+                        'pmd-autoneg-cap':      dbus.UInt32(0xfe),
+                        'operational-mau-type': dbus.UInt32(5),
+                    }, signature = 'sv'),
+                    'ieee-802-3-power-via-mdi': dbus.Dictionary({
+                        'mdi-power-support':    dbus.UInt32(7),
+                        'pse-power-pair':       dbus.UInt32(6),
+                        'power-class':          dbus.UInt32(1),
+                    }, signature = 'sv'),
                 })
             ], 'a{sv}')
         }

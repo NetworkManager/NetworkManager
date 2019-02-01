@@ -244,7 +244,7 @@ _test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 	                              SD_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS, "00:01:30:F9:AD:A0",
 	                              SD_LLDP_PORT_SUBTYPE_INTERFACE_NAME, "1/1");
 	g_assert (neighbor);
-	g_assert_cmpint (g_variant_n_children (neighbor), ==, 4 + 13);
+	g_assert_cmpint (g_variant_n_children (neighbor), ==, 4 + 16);
 
 	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_DESTINATION, G_VARIANT_TYPE_STRING);
 	nmtst_assert_variant_string (attr, NM_LLDP_DEST_NEAREST_BRIDGE);
@@ -287,10 +287,34 @@ _test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 	nm_clear_g_variant (&child);
 	nm_clear_g_variant (&attr);
 
-	/* unsupported: IEEE 802.3 - Power Via MDI */
-	/* unsupported: IEEE 802.3 - MAC/PHY Configuration/Status */
+	/* IEEE 802.3 - Power Via MDI */
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_IEEE_802_3_POWER_VIA_MDI, G_VARIANT_TYPE_VARDICT);
+	g_assert (attr);
+	g_variant_lookup (attr, "mdi-power-support", "u", &v_uint);
+	g_assert_cmpint (v_uint, ==, 7);
+	g_variant_lookup (attr, "pse-power-pair", "u", &v_uint);
+	g_assert_cmpint (v_uint, ==, 1);
+	g_variant_lookup (attr, "power-class", "u", &v_uint);
+	g_assert_cmpint (v_uint, ==, 0);
+	nm_clear_g_variant (&attr);
+
+	/* IEEE 802.3 - MAC/PHY Configuration/Status */
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_IEEE_802_3_MAC_PHY_CONF, G_VARIANT_TYPE_VARDICT);
+	g_assert (attr);
+	g_variant_lookup (attr, "autoneg", "u", &v_uint);
+	g_assert_cmpint (v_uint, ==, 3);
+	g_variant_lookup (attr, "pmd-autoneg-cap", "u", &v_uint);
+	g_assert_cmpint (v_uint, ==, 0x6c00);
+	g_variant_lookup (attr, "operational-mau-type", "u", &v_uint);
+	g_assert_cmpint (v_uint, ==, 16);
+	nm_clear_g_variant (&attr);
+
 	/* unsupported: IEEE 802.3 - Link Aggregation */
-	/* unsupported: IEEE 802.3 - Maximum Frame Size*/
+
+	/* Maximum Frame Size */
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_IEEE_802_3_MAX_FRAME_SIZE, G_VARIANT_TYPE_UINT32);
+	nmtst_assert_variant_uint32 (attr, 1522);
+	nm_clear_g_variant (&attr);
 
 	/* IEEE 802.1 - Port VLAN ID */
 	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_PVID, G_VARIANT_TYPE_UINT32);
