@@ -6020,15 +6020,15 @@ _nm_utils_team_link_watchers_to_variant (GPtrArray *link_watchers)
 
 		name = nm_team_link_watcher_get_name (watcher);
 		g_variant_builder_add (&watcher_builder, "{sv}",
-				       "name",
-				       g_variant_new_string (name));
+		                       "name",
+		                       g_variant_new_string (name));
 
-		if nm_streq (name, NM_TEAM_LINK_WATCHER_ETHTOOL) {
+		if (nm_streq (name, NM_TEAM_LINK_WATCHER_ETHTOOL)) {
 			int_val = nm_team_link_watcher_get_delay_up (watcher);
 			if (int_val) {
 				g_variant_builder_add (&watcher_builder, "{sv}",
-						       "delay-up",
-						       g_variant_new_int32 (int_val));
+				                       "delay-up",
+				                       g_variant_new_int32 (int_val));
 			}
 			int_val = nm_team_link_watcher_get_delay_down (watcher);
 			if (int_val) {
@@ -6063,7 +6063,7 @@ _nm_utils_team_link_watchers_to_variant (GPtrArray *link_watchers)
 		                       "target-host",
 		                       g_variant_new_string (nm_team_link_watcher_get_target_host (watcher)));
 
-		if nm_streq (name, NM_TEAM_LINK_WATCHER_NSNA_PING) {
+		if (nm_streq (name, NM_TEAM_LINK_WATCHER_NSNA_PING)) {
 			g_variant_builder_add (&builder, "a{sv}", &watcher_builder);
 			continue;
 		}
@@ -6155,7 +6155,7 @@ _nm_utils_team_link_watchers_from_variant (GVariant *value)
 				val2 = 0;
 			if (!g_variant_lookup (watcher_var, "missed-max", "i", &val3))
 				val3 = 3;
-			if nm_streq (name, NM_TEAM_LINK_WATCHER_ARP_PING) {
+			if (nm_streq (name, NM_TEAM_LINK_WATCHER_ARP_PING)) {
 				if (!g_variant_lookup (watcher_var, "vlanid", "i", &val4))
 					val4 = -1;
 				if (!g_variant_lookup (watcher_var, "source-host", "&s", &source_host))
