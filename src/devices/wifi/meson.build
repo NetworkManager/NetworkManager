@@ -6,7 +6,7 @@ common_sources = files(
 
 sources = common_sources + files(
   'nm-device-olpc-mesh.c',
-  'nm-device-p2p-wifi.c',
+  'nm-device-wifi-p2p.c',
   'nm-device-wifi.c',
   'nm-wifi-common.c',
   'nm-wifi-factory.c',

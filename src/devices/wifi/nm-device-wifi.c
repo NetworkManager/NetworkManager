@@ -22,13 +22,13 @@
 #include "nm-default.h"
 
 #include "nm-device-wifi.h"
-#include "nm-device-p2p-wifi.h"
 
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
 
+#include "nm-device-wifi-p2p.h"
 #include "nm-wifi-ap.h"
 #include "nm-common-macros.h"
 #include "devices/nm-device.h"
@@ -127,7 +127,7 @@ typedef struct {
 
 	NMSettingWirelessWakeOnWLan wowlan_restore;
 
-	NMDeviceP2PWifi  *p2p_device;
+	NMDeviceWifiP2P  *p2p_device;
 } NMDeviceWifiPrivate;
 
 struct _NMDeviceWifi
@@ -363,7 +363,7 @@ supplicant_interface_release (NMDeviceWifi *self)
 
 	if (priv->p2p_device) {
 		/* Signal to P2P device to also release its reference */
-		nm_device_p2p_wifi_set_mgmt_iface (priv->p2p_device, NULL);
+		nm_device_wifi_p2p_set_mgmt_iface (priv->p2p_device, NULL);
 	}
 
 	_notify_scanning (self);
@@ -2047,8 +2047,8 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	    && new_state <= NM_SUPPLICANT_INTERFACE_STATE_COMPLETED)
 		priv->ssid_found = TRUE;
 
-	if (old_state < NM_SUPPLICANT_INTERFACE_STATE_READY &&
-	    new_state >= NM_SUPPLICANT_INTERFACE_STATE_READY)
+	if (   old_state < NM_SUPPLICANT_INTERFACE_STATE_READY
+	    && new_state >= NM_SUPPLICANT_INTERFACE_STATE_READY)
 		recheck_p2p_availability (self);
 
 	switch (new_state) {
@@ -2239,7 +2239,7 @@ static void
 recheck_p2p_availability (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	NMDeviceP2PWifi *p2p_device;
+	NMDeviceWifiP2P *p2p_device;
 	gboolean p2p_available;
 
 	g_object_get (priv->sup_iface,
@@ -2247,12 +2247,13 @@ recheck_p2p_availability (NMDeviceWifi *self)
 	              NULL);
 
 	if (p2p_available && !priv->p2p_device) {
-		g_autofree char *iface_name = NULL;
+		gs_free char *iface_name = NULL;
+
 		/* Create a P2P device. "p2p-dev-" is the same prefix as chosen by
 		 * wpa_supplicant internally.
 		 */
 		iface_name = g_strconcat ("p2p-dev-", nm_device_get_iface (NM_DEVICE (self)), NULL);
-		p2p_device = NM_DEVICE_P2P_WIFI (nm_device_p2p_wifi_new (priv->sup_iface, iface_name));
+		p2p_device = NM_DEVICE_WIFI_P2P (nm_device_wifi_p2p_new (priv->sup_iface, iface_name));
 		priv->p2p_device = p2p_device;
 
 		g_signal_emit (self, signals[P2P_DEVICE_CREATED], 0, priv->p2p_device);
@@ -2260,13 +2261,12 @@ recheck_p2p_availability (NMDeviceWifi *self)
 		g_object_unref (p2p_device);
 
 	} else if (p2p_available && priv->p2p_device) {
-		nm_device_p2p_wifi_set_mgmt_iface (priv->p2p_device, priv->sup_iface);
+		nm_device_wifi_p2p_set_mgmt_iface (priv->p2p_device, priv->sup_iface);
 
 	} else if (!p2p_available && priv->p2p_device) {
 		/* Destroy the P2P device. */
 		g_object_remove_weak_pointer (G_OBJECT (priv->p2p_device), (gpointer*) &priv->p2p_device);
-		nm_device_p2p_wifi_remove (priv->p2p_device);
-		priv->p2p_device = NULL;
+		nm_device_wifi_p2p_remove (g_steal_pointer (&priv->p2p_device));
 	}
 }
 
@@ -3509,7 +3509,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	    g_signal_new (NM_DEVICE_WIFI_P2P_DEVICE_CREATED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_LAST,
-	                  0,
-	                  NULL, NULL, NULL,
+	                  0, NULL, NULL,
+	                  g_cclosure_marshal_VOID__OBJECT,
 	                  G_TYPE_NONE, 1, NM_TYPE_DEVICE);
 }

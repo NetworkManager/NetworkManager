@@ -1,4 +1,4 @@
-/* NetworkManager -- P2P Wi-Fi Peer
+/* NetworkManager -- Wi-Fi P2P Peer
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,23 +43,12 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMWifiP2PPeer,
 	PROP_MODEL,
 	PROP_MODEL_NUMBER,
 	PROP_SERIAL,
-	//PROP_PRIMARY_DEVICE_TYPE, { "PrimaryDeviceType", WPAS_DBUS_NEW_IFACE_P2P_PEER, "ay",
-	// "devicecapability", WPAS_DBUS_NEW_IFACE_P2P_PEER, "y",
-	// "groupcapability", WPAS_DBUS_NEW_IFACE_P2P_PEER, "y",
-	// "SecondaryDeviceTypes", WPAS_DBUS_NEW_IFACE_P2P_PEER, "aay",
-	// "VendorExtension", WPAS_DBUS_NEW_IFACE_P2P_PEER, "aay",
 	PROP_WFD_IES,
 	PROP_GROUPS,
-
 	PROP_HW_ADDRESS,
-	//PROP_MODE,
 	PROP_STRENGTH,
 	PROP_LAST_SEEN,
-
-	//PROP_MAX_BITRATE,
-	// One of the following (FLAGS would simply mirror/use the same as AP flags)
 	PROP_FLAGS,
-	//PROP_CONFIG_METHOD,
 );
 
 struct _NMWifiP2PPeerPrivate {
@@ -94,6 +83,82 @@ struct _NMWifiP2PPeerClass {
 G_DEFINE_TYPE (NMWifiP2PPeer, nm_wifi_p2p_peer, NM_TYPE_DBUS_OBJECT)
 
 #define NM_WIFI_P2P_PEER_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMWifiP2PPeer, NM_IS_WIFI_P2P_PEER)
+
+/*****************************************************************************/
+
+const char **
+nm_wifi_p2p_peers_get_paths (const CList *peers_lst_head)
+{
+	NMWifiP2PPeer *peer;
+	const char **list;
+	const char *path;
+	gsize i, n;
+
+	n = c_list_length (peers_lst_head);
+	list = g_new (const char *, n + 1);
+
+	i = 0;
+	if (n > 0) {
+		c_list_for_each_entry (peer, peers_lst_head, peers_lst) {
+			nm_assert (i < n);
+			path = nm_dbus_object_get_path (NM_DBUS_OBJECT (peer));
+			nm_assert (path);
+
+			list[i++] = path;
+		}
+		nm_assert (i <= n);
+	}
+	list[i] = NULL;
+	return list;
+}
+
+NMWifiP2PPeer *
+nm_wifi_p2p_peers_find_first_compatible (const CList *peers_lst_head,
+                                         NMConnection *connection)
+{
+	NMWifiP2PPeer *peer;
+
+	g_return_val_if_fail (connection, NULL);
+
+	c_list_for_each_entry (peer, peers_lst_head, peers_lst) {
+		if (nm_wifi_p2p_peer_check_compatible (peer, connection))
+			return peer;
+	}
+	return NULL;
+}
+
+NMWifiP2PPeer *
+nm_wifi_p2p_peers_find_by_supplicant_path (const CList *peers_lst_head, const char *path)
+{
+	NMWifiP2PPeer *peer;
+
+	g_return_val_if_fail (path != NULL, NULL);
+
+	c_list_for_each_entry (peer, peers_lst_head, peers_lst) {
+		if (nm_streq0 (path, nm_wifi_p2p_peer_get_supplicant_path (peer)))
+			return peer;
+	}
+	return NULL;
+}
+
+/*****************************************************************************/
+
+NMWifiP2PPeer *
+nm_wifi_p2p_peer_lookup_for_device (NMDevice *device, const char *exported_path)
+{
+	NMWifiP2PPeer *peer;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	peer = (NMWifiP2PPeer *) nm_dbus_manager_lookup_object (nm_dbus_object_get_manager (NM_DBUS_OBJECT (device)),
+	                                                        exported_path);
+	if (   !peer
+	    || !NM_IS_WIFI_P2P_PEER (peer)
+	    || peer->wifi_device != device)
+		return NULL;
+
+	return peer;
+}
 
 /*****************************************************************************/
 
@@ -500,7 +565,7 @@ nm_wifi_p2p_peer_check_compatible (NMWifiP2PPeer *self,
                                    NMConnection *connection)
 {
 	NMWifiP2PPeerPrivate *priv;
-	NMSettingP2PWireless *s_p2p_wireless;
+	NMSettingWifiP2P *s_wifi_p2p;
 	const char *hwaddr;
 
 	g_return_val_if_fail (NM_IS_WIFI_P2P_PEER (self), FALSE);
@@ -508,11 +573,11 @@ nm_wifi_p2p_peer_check_compatible (NMWifiP2PPeer *self,
 
 	priv = NM_WIFI_P2P_PEER_GET_PRIVATE (self);
 
-	s_p2p_wireless = NM_SETTING_P2P_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_P2P_WIRELESS));
-	if (s_p2p_wireless == NULL)
+	s_wifi_p2p = NM_SETTING_WIFI_P2P (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIFI_P2P));
+	if (s_wifi_p2p == NULL)
 		return FALSE;
 
-	hwaddr = nm_setting_p2p_wireless_get_peer (s_p2p_wireless);
+	hwaddr = nm_setting_wifi_p2p_get_peer (s_wifi_p2p);
 	if (   hwaddr
 	    && (   !priv->address
 	        || !nm_utils_hwaddr_matches (hwaddr, -1, priv->address, -1)))
@@ -637,7 +702,7 @@ finalize (GObject *object)
 
 static const NMDBusInterfaceInfoExtended interface_info_p2p_peer = {
 	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
-		NM_DBUS_INTERFACE_P2P_PEER,
+		NM_DBUS_INTERFACE_WIFI_P2P_PEER,
 		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE ("Flags",        "u",  NM_WIFI_P2P_PEER_FLAGS),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE ("Name",         "s",  NM_WIFI_P2P_PEER_NAME),
@@ -656,18 +721,18 @@ static const NMDBusInterfaceInfoExtended interface_info_p2p_peer = {
 };
 
 static void
-nm_wifi_p2p_peer_class_init (NMWifiP2PPeerClass *p2p_peer_class)
+nm_wifi_p2p_peer_class_init (NMWifiP2PPeerClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (p2p_peer_class);
-	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (p2p_peer_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMWifiP2PPeerPrivate));
 
-	dbus_object_class->export_path = NM_DBUS_EXPORT_PATH_NUMBERED (NM_DBUS_PATH_P2P_PEER);
+	dbus_object_class->export_path = NM_DBUS_EXPORT_PATH_NUMBERED (NM_DBUS_PATH_WIFI_P2P_PEER);
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_p2p_peer);
 
 	object_class->get_property = get_property;
-	object_class->finalize = finalize;
+	object_class->finalize     = finalize;
 
 	obj_properties[PROP_FLAGS] =
 	    g_param_spec_uint (NM_WIFI_P2P_PEER_FLAGS, "", "",
@@ -729,80 +794,4 @@ nm_wifi_p2p_peer_class_init (NMWifiP2PPeerClass *p2p_peer_class)
 	                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-}
-
-/*****************************************************************************/
-
-const char **
-nm_wifi_p2p_peers_get_paths (const CList *peers_lst_head)
-{
-	NMWifiP2PPeer *peer;
-	const char **list;
-	const char *path;
-	gsize i, n;
-
-	n = c_list_length (peers_lst_head);
-	list = g_new (const char *, n + 1);
-
-	i = 0;
-	if (n > 0) {
-		c_list_for_each_entry (peer, peers_lst_head, peers_lst) {
-			nm_assert (i < n);
-			path = nm_dbus_object_get_path (NM_DBUS_OBJECT (peer));
-			nm_assert (path);
-
-			list[i++] = path;
-		}
-		nm_assert (i <= n);
-	}
-	list[i] = NULL;
-	return list;
-}
-
-NMWifiP2PPeer *
-nm_wifi_p2p_peers_find_first_compatible (const CList *peers_lst_head,
-                                         NMConnection *connection)
-{
-	NMWifiP2PPeer *peer;
-
-	g_return_val_if_fail (connection, NULL);
-
-	c_list_for_each_entry (peer, peers_lst_head, peers_lst) {
-		if (nm_wifi_p2p_peer_check_compatible (peer, connection))
-			return peer;
-	}
-	return NULL;
-}
-
-NMWifiP2PPeer *
-nm_wifi_p2p_peers_find_by_supplicant_path (const CList *peers_lst_head, const char *path)
-{
-	NMWifiP2PPeer *peer;
-
-	g_return_val_if_fail (path != NULL, NULL);
-
-	c_list_for_each_entry (peer, peers_lst_head, peers_lst) {
-		if (nm_streq0 (path, nm_wifi_p2p_peer_get_supplicant_path (peer)))
-			return peer;
-	}
-	return NULL;
-}
-
-/*****************************************************************************/
-
-NMWifiP2PPeer *
-nm_wifi_p2p_peer_lookup_for_device (NMDevice *device, const char *exported_path)
-{
-	NMWifiP2PPeer *peer;
-
-	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
-
-	peer = (NMWifiP2PPeer *) nm_dbus_manager_lookup_object (nm_dbus_object_get_manager (NM_DBUS_OBJECT (device)),
-	                                                        exported_path);
-	if (   !peer
-	    || !NM_IS_WIFI_P2P_PEER (peer)
-	    || peer->wifi_device != device)
-		return NULL;
-
-	return peer;
 }

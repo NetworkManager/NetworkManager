@@ -1084,24 +1084,12 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	/* WPS */
-	if (priv->wps_method > NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("property is invalid"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_SETTING_WIRELESS_SECURITY_WPS_METHOD);
+	if (!_nm_utils_wps_method_validate (priv->wps_method,
+	                                    NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	                                    NM_SETTING_WIRELESS_SECURITY_WPS_METHOD,
+	                                    FALSE,
+	                                    error))
 		return FALSE;
-	}
-
-	if (priv->wps_method & NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED && priv->wps_method != NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("can't be simultaneously disabled and enabled"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_SETTING_WIRELESS_SECURITY_WPS_METHOD);
-		return FALSE;
-	}
 
 	return TRUE;
 }

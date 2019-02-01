@@ -5171,6 +5171,19 @@ static const NMMetaPropertyType _pt_ethtool = {
 			), \
 		),
 
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_6LOWPAN
+static const NMMetaPropertyInfo *const property_infos_6LOWPAN[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_6LOWPAN_PARENT,
+		.is_cli_option =                TRUE,
+		.property_alias =               "dev",
+		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+		.prompt =                       N_("IEEE 802.15.4 (WPAN) parent device or connection UUID"),
+		.property_type =                &_pt_gobject_string,
+	),
+	NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_802_1X
 static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_EAP,
@@ -6620,41 +6633,6 @@ static const NMMetaPropertyInfo *const property_infos_OLPC_MESH[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
-#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_PPPOE
-static const NMMetaPropertyInfo *const property_infos_PPPOE[] = {
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_PPPOE_PARENT,
-		.is_cli_option =                TRUE,
-		.property_alias =               "parent",
-		.prompt =                       N_("PPPoE parent device"),
-		.property_type =                &_pt_gobject_string,
-	),
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_PPPOE_SERVICE,
-		.is_cli_option =                TRUE,
-		.property_alias =               "service",
-		.prompt =                       N_("Service [none]"),
-		.property_type =                &_pt_gobject_string,
-	),
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_PPPOE_USERNAME,
-		.is_cli_option =                TRUE,
-		.property_alias =               "username",
-		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
-		.prompt =                       N_("PPPoE username"),
-		.property_type =                &_pt_gobject_string,
-	),
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_PPPOE_PASSWORD,
-		.is_cli_option =                TRUE,
-		.property_alias =               "password",
-		.prompt =                       N_("Password [none]"),
-		.is_secret =                    TRUE,
-		.property_type =                &_pt_gobject_string,
-	),
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_PPPOE_PASSWORD_FLAGS,
-		.property_type =                &_pt_gobject_secret_flags,
-	),
-	NULL
-};
-
-#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_OVS_BRIDGE
 static const NMMetaPropertyInfo *const property_infos_OVS_BRIDGE[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_BRIDGE_FAIL_MODE,
@@ -6793,6 +6771,41 @@ static const NMMetaPropertyInfo *const property_infos_PPP[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_PPPOE
+static const NMMetaPropertyInfo *const property_infos_PPPOE[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_PPPOE_PARENT,
+		.is_cli_option =                TRUE,
+		.property_alias =               "parent",
+		.prompt =                       N_("PPPoE parent device"),
+		.property_type =                &_pt_gobject_string,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_PPPOE_SERVICE,
+		.is_cli_option =                TRUE,
+		.property_alias =               "service",
+		.prompt =                       N_("Service [none]"),
+		.property_type =                &_pt_gobject_string,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_PPPOE_USERNAME,
+		.is_cli_option =                TRUE,
+		.property_alias =               "username",
+		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+		.prompt =                       N_("PPPoE username"),
+		.property_type =                &_pt_gobject_string,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_PPPOE_PASSWORD,
+		.is_cli_option =                TRUE,
+		.property_alias =               "password",
+		.prompt =                       N_("Password [none]"),
+		.is_secret =                    TRUE,
+		.property_type =                &_pt_gobject_string,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_PPPOE_PASSWORD_FLAGS,
+		.property_type =                &_pt_gobject_secret_flags,
+	),
+	NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_PROXY
 static const NMMetaPropertyInfo *const property_infos_PROXY[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_PROXY_METHOD,
@@ -6829,6 +6842,78 @@ static const NMMetaPropertyInfo *const property_infos_PROXY[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_string,
 			.validate_fcn =             _validate_fcn_proxy_pac_script,
 		),
+	),
+	NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_SERIAL
+static const NMMetaPropertyInfo *const property_infos_SERIAL[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_SERIAL_BAUD,
+		.property_type =                &_pt_gobject_int,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_SERIAL_BITS,
+		.property_type =                &_pt_gobject_int,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_SERIAL_PARITY,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.value_infos =          ENUM_VALUE_INFOS (
+					{
+						.value = NM_SETTING_SERIAL_PARITY_EVEN,
+						.nick = "E",
+					},
+					{
+						.value = NM_SETTING_SERIAL_PARITY_EVEN,
+						.nick = "e",
+					},
+					{
+						.value = NM_SETTING_SERIAL_PARITY_ODD,
+						.nick = "O",
+					},
+					{
+						.value = NM_SETTING_SERIAL_PARITY_ODD,
+						.nick = "o",
+					},
+					{
+						.value = NM_SETTING_SERIAL_PARITY_NONE,
+						.nick = "N",
+					},
+					{
+						.value = NM_SETTING_SERIAL_PARITY_NONE,
+						.nick = "n",
+					}
+				),
+			),
+			.typ_flags =                  NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT
+			                            | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT,
+		),
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_SERIAL_STOPBITS,
+		.property_type =                &_pt_gobject_int,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_SERIAL_SEND_DELAY,
+		.property_type =                &_pt_gobject_int,
+	),
+	NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_SRIOV
+static const NMMetaPropertyInfo *const property_infos_SRIOV[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_SRIOV_TOTAL_VFS,
+		.property_type =                &_pt_gobject_int,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_SRIOV_VFS,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_sriov_vfs,
+			.set_fcn =                  _set_fcn_sriov_vfs,
+			.remove_fcn =               _remove_fcn_sriov_vfs,
+		),
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_SRIOV_AUTOPROBE_DRIVERS,
+		.property_type =                &_pt_gobject_enum,
 	),
 	NULL
 };
@@ -7074,78 +7159,6 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
-#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_SERIAL
-static const NMMetaPropertyInfo *const property_infos_SERIAL[] = {
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_SERIAL_BAUD,
-		.property_type =                &_pt_gobject_int,
-	),
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_SERIAL_BITS,
-		.property_type =                &_pt_gobject_int,
-	),
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_SERIAL_PARITY,
-		.property_type =                &_pt_gobject_enum,
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
-				.value_infos =          ENUM_VALUE_INFOS (
-					{
-						.value = NM_SETTING_SERIAL_PARITY_EVEN,
-						.nick = "E",
-					},
-					{
-						.value = NM_SETTING_SERIAL_PARITY_EVEN,
-						.nick = "e",
-					},
-					{
-						.value = NM_SETTING_SERIAL_PARITY_ODD,
-						.nick = "O",
-					},
-					{
-						.value = NM_SETTING_SERIAL_PARITY_ODD,
-						.nick = "o",
-					},
-					{
-						.value = NM_SETTING_SERIAL_PARITY_NONE,
-						.nick = "N",
-					},
-					{
-						.value = NM_SETTING_SERIAL_PARITY_NONE,
-						.nick = "n",
-					}
-				),
-			),
-			.typ_flags =                  NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT
-			                            | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT,
-		),
-	),
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_SERIAL_STOPBITS,
-		.property_type =                &_pt_gobject_int,
-	),
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_SERIAL_SEND_DELAY,
-		.property_type =                &_pt_gobject_int,
-	),
-	NULL
-};
-
-#undef  _CURRENT_NM_META_SETTING_TYPE
-#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_SRIOV
-static const NMMetaPropertyInfo *const property_infos_SRIOV[] = {
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_SRIOV_TOTAL_VFS,
-		.property_type =                &_pt_gobject_int,
-	),
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_SRIOV_VFS,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_sriov_vfs,
-			.set_fcn =                  _set_fcn_sriov_vfs,
-			.remove_fcn =               _remove_fcn_sriov_vfs,
-		),
-	),
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_SRIOV_AUTOPROBE_DRIVERS,
-		.property_type =                &_pt_gobject_enum,
-	),
-	NULL
-};
-
-#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_TUN
 static const NMMetaPropertyInfo *const property_infos_TUN[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TUN_MODE,
@@ -7360,6 +7373,27 @@ static const NMMetaPropertyInfo *const property_infos_VXLAN[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_VXLAN_L3_MISS,
 		.property_type =                &_pt_gobject_bool,
+	),
+	NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_WIFI_P2P
+static const NMMetaPropertyInfo *const property_infos_WIFI_P2P[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIFI_P2P_PEER,
+		.is_cli_option =                TRUE,
+		.property_alias =               "peer",
+		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+		.prompt =                       N_("Peer"),
+		.property_type =                &_pt_gobject_mac,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_WPS_METHOD,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.get_gtype =            nm_setting_wireless_security_wps_method_get_type,
+			),
+		),
 	),
 	NULL
 };
@@ -7830,40 +7864,6 @@ static const NMMetaPropertyInfo *const property_infos_WPAN[] = {
 	NULL
 };
 
-#undef  _CURRENT_NM_META_SETTING_TYPE
-#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_6LOWPAN
-static const NMMetaPropertyInfo *const property_infos_6LOWPAN[] = {
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_6LOWPAN_PARENT,
-		.is_cli_option =                TRUE,
-		.property_alias =               "dev",
-		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
-		.prompt =                       N_("IEEE 802.15.4 (WPAN) parent device or connection UUID"),
-		.property_type =                &_pt_gobject_string,
-	),
-	NULL
-};
-
-#undef  _CURRENT_NM_META_SETTING_TYPE
-#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_P2P_WIRELESS
-static const NMMetaPropertyInfo *const property_infos_P2P_WIRELESS[] = {
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_P2P_WIRELESS_PEER,
-		.is_cli_option =                TRUE,
-		.property_alias =               "peer",
-		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
-		.prompt =                       N_("Peer"),
-		.property_type =                &_pt_gobject_mac,
-	),
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_WPS_METHOD,
-		.property_type =                &_pt_gobject_enum,
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
-				.get_gtype =            nm_setting_wireless_security_wps_method_get_type,
-			),
-		),
-	),
-	NULL
-};
-
 /*****************************************************************************/
 
 static void
@@ -7985,6 +7985,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 
 /*****************************************************************************/
 
+#define SETTING_PRETTY_NAME_6LOWPAN             N_("6LOWPAN settings")
 #define SETTING_PRETTY_NAME_802_1X              N_("802-1x settings")
 #define SETTING_PRETTY_NAME_ADSL                N_("ADSL connection")
 #define SETTING_PRETTY_NAME_BLUETOOTH           N_("bluetooth connection")
@@ -8023,13 +8024,12 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_VLAN                N_("VLAN connection")
 #define SETTING_PRETTY_NAME_VPN                 N_("VPN connection")
 #define SETTING_PRETTY_NAME_VXLAN               N_("VXLAN connection")
+#define SETTING_PRETTY_NAME_WIFI_P2P            N_("Wi-Fi P2P connection")
 #define SETTING_PRETTY_NAME_WIMAX               N_("WiMAX connection")
 #define SETTING_PRETTY_NAME_WIRED               N_("Wired Ethernet")
 #define SETTING_PRETTY_NAME_WIRELESS            N_("Wi-Fi connection")
 #define SETTING_PRETTY_NAME_WIRELESS_SECURITY   N_("Wi-Fi security settings")
 #define SETTING_PRETTY_NAME_WPAN                N_("WPAN settings")
-#define SETTING_PRETTY_NAME_6LOWPAN             N_("6LOWPAN settings")
-#define SETTING_PRETTY_NAME_P2P_WIRELESS        N_("P2P Wi-Fi connection")
 
 #define NM_META_SETTING_VALID_PARTS(...) \
 	((const NMMetaSettingValidPartItem *const[]) { __VA_ARGS__  NULL })
@@ -8267,6 +8267,12 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 	),
+	SETTING_INFO (WIFI_P2P,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIFI_P2P,              TRUE),
+		),
+	),
 	SETTING_INFO (WIMAX,
 		.valid_parts = NM_META_SETTING_VALID_PARTS (
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
@@ -8302,12 +8308,6 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 		.valid_parts = NM_META_SETTING_VALID_PARTS (
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (WPAN,                  TRUE),
-		),
-	),
-	SETTING_INFO (P2P_WIRELESS,
-		.valid_parts = NM_META_SETTING_VALID_PARTS (
-			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
-			NM_META_SETTING_VALID_PART_ITEM (P2P_WIRELESS,          TRUE),
 		),
 	),
 };
