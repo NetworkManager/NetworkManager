@@ -89,12 +89,11 @@ sources = files(
   'nm-utils.c',
   'nm-value-transforms.c',
 )
-sources += shared_files_libnm_util
 
 deps = [
   dbus_dep,
   dbus_glib_dep,
-  shared_dep,
+  shared_nm_utils_base_dep,
   uuid_dep,
 ]
 
@@ -202,7 +201,7 @@ sources = files(
 )
 
 deps = [
-  shared_dep,
+  shared_nm_utils_base_dep,
 ]
 
 libtest_crypto = static_library(

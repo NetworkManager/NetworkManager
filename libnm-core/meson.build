@@ -140,9 +140,11 @@ libnm_core_enum = gnome.mkenums(
 deps = [
   dl_dep,
   libudev_dep,
-  shared_dep,
   uuid_dep,
+  glib_dep,
   shared_c_siphash_dep,
+  shared_nm_utils_base_dep,
+  shared_nm_utils_udev_dep,
 ]
 
 cflags = [
@@ -185,7 +187,6 @@ libnm_core_sources_all =  libnm_core_sources
 libnm_core_sources_all += libnm_core_enum
 libnm_core_sources_all += shared_nm_meta_setting_c
 libnm_core_sources_all += shared_nm_ethtool_utils_c
-libnm_core_sources_all += shared_files_libnm_core
 libnm_core_sources_all += [version_header]
 
 libnm_core = static_library(
@@ -200,7 +201,7 @@ nm_core_dep = declare_dependency(
   sources: libnm_core_enum[1],
   include_directories: libnm_core_inc,
   dependencies: [
-    shared_dep,
+    shared_nm_utils_base_dep,
     shared_c_siphash_dep,
     libnm_systemd_shared_dep,
   ],

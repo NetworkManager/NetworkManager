@@ -5,7 +5,7 @@ dbus_binding_tool = find_program('dbus-binding-tool')
 common_deps = [
   dbus_dep,
   dbus_glib_dep,
-  shared_dep,
+  shared_nm_utils_base_dep,
 ]
 
 common_cflags = [
@@ -91,8 +91,6 @@ libnm_glib_vpn_enum = gnome.mkenums(
   install_dir: libnm_glib_pkgincludedir,
 )
 
-deps = common_deps + [libnm_util_dep]
-
 linker_script = join_paths(meson.current_source_dir(), 'libnm-glib-vpn.ver')
 
 libnm_glib_vpn = shared_library(
@@ -110,7 +108,7 @@ libnm_glib_vpn = shared_library(
     ),
   ] + libnm_glib_vpn_enum,
   version: libnm_glib_vpn_version,
-  dependencies: deps,
+  dependencies: common_deps + [libnm_util_dep],
   c_args: cflags,
   link_args: [
     '-Wl,--version-script,@0@'.format(linker_script),
@@ -135,7 +133,7 @@ pkg.generate(
   variables: 'exec_prefix=${prefix}',
 )
 
-libnm_glib_sources = shared_files_libnm_glib + files(
+libnm_glib_sources = files(
   'nm-access-point.c',
   'nm-active-connection.c',
   'nm-client.c',
@@ -189,18 +187,17 @@ libnm_glib_enum = gnome.mkenums(
   install_dir: libnm_glib_pkgincludedir,
 )
 
-deps = common_deps + [
-  libnm_util_dep,
-  libudev_dep,
-]
-
 linker_script = join_paths(meson.current_source_dir(), 'libnm-glib.ver')
 
 libnm_glib = shared_library(
   'nm-glib',
   sources: libnm_glib_sources + libnm_glib_enum + [nm_secret_agent_glue],
   version: libnm_glib_version,
-  dependencies: deps,
+  dependencies: common_deps + [
+    libnm_util_dep,
+    libudev_dep,
+    shared_nm_utils_udev_dep,
+  ],
   c_args: cflags,
   link_whole: libdeprecated_nm_glib,
   link_args: [
@@ -229,27 +226,23 @@ pkg.generate(
 if enable_introspection
   gir_sources = libnm_glib_sources + headers + libnm_glib_enum
 
-  deps = [
-    dbus_glib_dep,
-    libnm_glib_dep,
-    libnm_util_gir_dep,
-  ]
-
-  gir_includes = [
-    'DBusGLib-1.0',
-    'Gio-2.0',
-  ]
-
   libnm_glib_gir = gnome.generate_gir(
     libnm_glib,
     sources: gir_sources,
-    dependencies: deps,
+    dependencies: [
+      dbus_glib_dep,
+      libnm_glib_dep,
+      libnm_util_gir_dep,
+    ],
     nsversion: nm_gir_version,
     namespace: 'NMClient',
     identifier_prefix: nm_id_prefix,
     symbol_prefix: nm_id_prefix.to_lower(),
     export_packages: [libnm_glib_name, libnm_glib_vpn_name],
-    includes: gir_includes,
+    includes: [
+      'DBusGLib-1.0',
+      'Gio-2.0',
+    ],
     extra_args: cflags + [
       '--include-uninstalled=' + libnm_util_gir[0].full_path(),
     ],
@@ -259,12 +252,10 @@ endif
 
 name = libnm_glib_name + '-test'
 
-deps = common_deps + [libnm_util_dep]
-
 executable(
   name,
   name + '.c',
-  dependencies: deps,
+  dependencies: common_deps + [libnm_util_dep],
   c_args: cflags,
   link_with: libnm_glib,
 )

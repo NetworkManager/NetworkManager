@@ -13,7 +13,7 @@ cflags = clients_cflags + [
 
 libnmc_base = static_library(
   'nmc-base',
-  sources: shared_files_clients_common + files(
+  sources: files(
     'nm-client-utils.c',
     'nm-secret-agent-simple.c',
     'nm-vpn-helpers.c',

@@ -81,37 +81,37 @@ shared_nm_test_utils_impl_c = files('nm-test-utils-impl.c')
 
 shared_nm_utils_nm_vpn_plugin_utils_c = files('nm-utils/nm-vpn-plugin-utils.c')
 
-shared_files_time_utils = files('nm-utils/nm-time-utils.c')
+###############################################################################
 
-shared_files_libnm_core = files('''
-    nm-utils/c-list-util.c
-    nm-utils/nm-dedup-multi.c
-    nm-utils/nm-enum-utils.c
-    nm-utils/nm-errno.c
-    nm-utils/nm-hash-utils.c
-    nm-utils/nm-io-utils.c
-    nm-utils/nm-random-utils.c
-    nm-utils/nm-secret-utils.c
-    nm-utils/nm-shared-utils.c
-    nm-utils/nm-udev-utils.c
-'''.split())
+shared_nm_utils_c_args = [
+    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
+    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
+]
 
-shared_files_clients_common = files('''
-    nm-utils/nm-enum-utils.c
-    nm-utils/nm-hash-utils.c
-    nm-utils/nm-random-utils.c
-    nm-utils/nm-shared-utils.c
-'''.split())
+shared_nm_utils_base = static_library(
+    'nm-utils-base',
+    sources: files('nm-utils/c-list-util.c',
+                   'nm-utils/nm-dedup-multi.c',
+                   'nm-utils/nm-enum-utils.c',
+                   'nm-utils/nm-errno.c',
+                   'nm-utils/nm-hash-utils.c',
+                   'nm-utils/nm-io-utils.c',
+                   'nm-utils/nm-random-utils.c',
+                   'nm-utils/nm-secret-utils.c',
+                   'nm-utils/nm-shared-utils.c',
+                   'nm-utils/nm-time-utils.c'),
+    c_args: shared_nm_utils_c_args,
+    include_directories: [
+        top_inc,
+        shared_inc,
+    ],
+    dependencies: [
+        glib_dep,
+    ],
+)
 
-shared_files_libnm_util = files('''
-    nm-utils/nm-shared-utils.c
-'''.split())
-
-shared_files_libnm_glib = files('''
-    nm-utils/nm-udev-utils.c
-'''.split())
-
-shared_dep = declare_dependency(
+shared_nm_utils_base_dep = declare_dependency(
+    link_with: shared_nm_utils_base,
     include_directories: [
         top_inc,
         shared_inc,
@@ -119,26 +119,44 @@ shared_dep = declare_dependency(
     dependencies: glib_dep,
 )
 
+shared_nm_utils_udev = static_library(
+    'nm-utils-udev',
+    sources: files('nm-utils/nm-udev-utils.c'),
+    c_args: shared_nm_utils_c_args,
+    include_directories: [
+        top_inc,
+        shared_inc,
+    ],
+    dependencies: [
+        glib_dep,
+        shared_nm_utils_base_dep,
+        libudev_dep,
+    ],
+)
+
+shared_nm_utils_udev_dep = declare_dependency(
+    link_with: shared_nm_utils_udev,
+    include_directories: [
+        top_inc,
+        shared_inc,
+    ],
+    dependencies: [
+        glib_dep,
+        shared_nm_utils_base_dep,
+        libudev_dep,
+    ],
+)
+
 ###############################################################################
 
 test_shared_general = executable(
   'nm-utils/tests/test-shared-general',
-  [ 'nm-utils/tests/test-shared-general.c',
-    'nm-utils/c-list-util.c',
-    'nm-utils/nm-dedup-multi.c',
-    'nm-utils/nm-enum-utils.c',
-    'nm-utils/nm-hash-utils.c',
-    'nm-utils/nm-io-utils.c',
-    'nm-utils/nm-random-utils.c',
-    'nm-utils/nm-secret-utils.c',
-    'nm-utils/nm-shared-utils.c',
-    'nm-utils/nm-time-utils.c',
-  ],
+  [ 'nm-utils/tests/test-shared-general.c', ],
   c_args: [
       '-DNETWORKMANAGER_COMPILATION_TEST',
       '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)',
     ],
-  dependencies: shared_dep,
+  dependencies: shared_nm_utils_base_dep,
   link_with: shared_c_siphash,
 )
 test(
@@ -188,7 +206,7 @@ libnm_systemd_shared = static_library(
     'systemd/sd-adapt-shared',
     'systemd/src/basic',
   ),
-  dependencies: shared_dep,
+  dependencies: shared_nm_utils_base_dep,
   c_args: [
     '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED',
     '-DG_LOG_DOMAIN="libnm"',
@@ -201,7 +219,7 @@ libnm_systemd_shared_dep = declare_dependency(
     'systemd/src/basic',
   ),
   dependencies: [
-    shared_dep,
+    shared_nm_utils_base_dep,
   ],
   link_with: [
     libnm_systemd_shared,
@@ -217,7 +235,7 @@ libnm_systemd_logging_stub = static_library(
     'systemd/sd-adapt-shared',
     'systemd/src/basic',
   ),
-  dependencies: shared_dep,
+  dependencies: shared_nm_utils_base_dep,
   c_args: [
     '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED',
     '-DG_LOG_DOMAIN="libnm"',
