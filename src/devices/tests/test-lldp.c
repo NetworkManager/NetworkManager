@@ -244,7 +244,7 @@ _test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 	                              SD_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS, "00:01:30:F9:AD:A0",
 	                              SD_LLDP_PORT_SUBTYPE_INTERFACE_NAME, "1/1");
 	g_assert (neighbor);
-	g_assert_cmpint (g_variant_n_children (neighbor), ==, 4 + 12);
+	g_assert_cmpint (g_variant_n_children (neighbor), ==, 4 + 13);
 
 	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_DESTINATION, G_VARIANT_TYPE_STRING);
 	nmtst_assert_variant_string (attr, NM_LLDP_DEST_NEAREST_BRIDGE);
@@ -303,6 +303,18 @@ _test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 	nm_clear_g_variant (&attr);
 	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS, G_VARIANT_TYPE_UINT32);
 	nmtst_assert_variant_uint32 (attr, 1);
+	nm_clear_g_variant (&attr);
+
+	/* new PPVID attributes */
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_PPVIDS, G_VARIANT_TYPE ("aa{sv}"));
+	g_assert_cmpuint (g_variant_n_children (attr), ==, 1);
+	child = g_variant_get_child_value (attr, 0);
+	g_assert (child);
+	g_variant_lookup (child, "ppvid", "u", &v_uint);
+	g_assert_cmpint (v_uint, ==, 0);
+	g_variant_lookup (child, "flags", "u", &v_uint);
+	g_assert_cmpint (v_uint, ==, 1);
+	nm_clear_g_variant (&child);
 	nm_clear_g_variant (&attr);
 
 	/* IEEE 802.1 - VLAN Name */

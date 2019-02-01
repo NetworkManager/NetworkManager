@@ -752,6 +752,16 @@ class Device(ExportedObj):
                             'name':         dbus.String('My VLAN'),
                         }, signature = 'sv'),
                     ]),
+                    'ieee-802-1-ppvids':    dbus.Array([
+                        dbus.Dictionary({
+                            'ppvid':        dbus.UInt32(4),
+                            'flags':        dbus.UInt32(0x12),
+                        }, signature = 'sv'),
+                        dbus.Dictionary({
+                            'ppvid':        dbus.UInt32(10),
+                            'flags':        dbus.UInt32(0x31),
+                        }, signature = 'sv'),
+                    ]),
                 }),
                 dbus.Dictionary({
                     'chassis-id-type':      dbus.UInt32(6),

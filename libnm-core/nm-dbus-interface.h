@@ -838,15 +838,20 @@ typedef enum /*< flags >*/ {
 #define NM_LLDP_ATTR_SYSTEM_DESCRIPTION      "system-description"
 #define NM_LLDP_ATTR_SYSTEM_CAPABILITIES     "system-capabilities"
 #define NM_LLDP_ATTR_MANAGEMENT_ADDRESSES    "management-addresses"
+
 #define NM_LLDP_ATTR_IEEE_802_1_PVID         "ieee-802-1-pvid"
-#define NM_LLDP_ATTR_IEEE_802_1_PPVID        "ieee-802-1-ppvid"
-#define NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS  "ieee-802-1-ppvid-flags"
 #define NM_LLDP_ATTR_IEEE_802_1_VLANS        "ieee-802-1-vlans"
+#define NM_LLDP_ATTR_IEEE_802_1_PPVIDS       "ieee-802-1-ppvids"
 
 /* These are deprecated in favor of NM_LLDP_ATTR_IEEE_802_1_VLANS,
  * which can report multiple VLANs */
 #define NM_LLDP_ATTR_IEEE_802_1_VID          "ieee-802-1-vid"
 #define NM_LLDP_ATTR_IEEE_802_1_VLAN_NAME    "ieee-802-1-vlan-name"
+
+/* These are deprecated in favor of NM_LLDP_ATTR_IEEE_802_1_PPVIDS,
+ * which can report multiple PPVIDs */
+#define NM_LLDP_ATTR_IEEE_802_1_PPVID        "ieee-802-1-ppvid"
+#define NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS  "ieee-802-1-ppvid-flags"
 
 #define NM_LLDP_DEST_NEAREST_BRIDGE          "nearest-bridge"
 #define NM_LLDP_DEST_NEAREST_NON_TPMR_BRIDGE "nearest-non-tpmr-bridge"
