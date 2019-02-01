@@ -40,8 +40,9 @@ _get_contents_error (GError **error, int errsv, const char *format, ...)
 	nm_assert (NM_ERRNO_NATIVE (errsv));
 
 	if (error) {
-		char *msg;
+		gs_free char *msg = NULL;
 		va_list args;
+		char bstrerr[NM_STRERROR_BUFSIZE];
 
 		va_start (args, format);
 		msg = g_strdup_vprintf (format, args);
@@ -50,8 +51,8 @@ _get_contents_error (GError **error, int errsv, const char *format, ...)
 		             G_FILE_ERROR,
 		             g_file_error_from_errno (errsv),
 		             "%s: %s",
-		             msg, nm_strerror_native (errsv));
-		g_free (msg);
+		             msg,
+		             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
 	}
 	return -errsv;
 }
@@ -289,6 +290,7 @@ nm_utils_file_get_contents (int dirfd,
 {
 	int fd;
 	int errsv;
+	char bstrerr[NM_STRERROR_BUFSIZE];
 
 	g_return_val_if_fail (filename && filename[0], -EINVAL);
 
@@ -302,7 +304,7 @@ nm_utils_file_get_contents (int dirfd,
 			             g_file_error_from_errno (errsv),
 			             "Failed to open file \"%s\" with openat: %s",
 			             filename,
-			             nm_strerror_native (errsv));
+			             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
 			return -NM_ERRNO_NATIVE (errsv);
 		}
 	} else {
@@ -315,7 +317,7 @@ nm_utils_file_get_contents (int dirfd,
 			             g_file_error_from_errno (errsv),
 			             "Failed to open file \"%s\": %s",
 			             filename,
-			             nm_strerror_native (errsv));
+			             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
 			return -NM_ERRNO_NATIVE (errsv);
 		}
 	}
@@ -346,6 +348,7 @@ nm_utils_file_set_contents (const char *filename,
 	int errsv;
 	gssize s;
 	int fd;
+	char bstrerr[NM_STRERROR_BUFSIZE];
 
 	g_return_val_if_fail (filename, FALSE);
 	g_return_val_if_fail (contents || !length, FALSE);
@@ -364,7 +367,7 @@ nm_utils_file_set_contents (const char *filename,
 		             g_file_error_from_errno (errsv),
 		             "failed to create file %s: %s",
 		             tmp_name,
-		             nm_strerror_native (errsv));
+		             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
 		return FALSE;
 	}
 
@@ -383,7 +386,7 @@ nm_utils_file_set_contents (const char *filename,
 			             g_file_error_from_errno (errsv),
 			             "failed to write to file %s: %s",
 			             tmp_name,
-			             nm_strerror_native (errsv));
+			             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
 			return FALSE;
 		}
 
@@ -412,7 +415,7 @@ nm_utils_file_set_contents (const char *filename,
 			             g_file_error_from_errno (errsv),
 			             "failed to fsync %s: %s",
 			             tmp_name,
-			             nm_strerror_native (errsv));
+			             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
 			return FALSE;
 		}
 	}
@@ -428,7 +431,7 @@ nm_utils_file_set_contents (const char *filename,
 		             "failed to rename %s to %s: %s",
 		             tmp_name,
 		             filename,
-		             nm_strerror_native (errsv));
+		             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
 		return FALSE;
 	}
 
