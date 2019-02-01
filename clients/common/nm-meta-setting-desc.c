@@ -117,7 +117,6 @@ _parse_ip_route (int family,
 {
 	const int MAX_PREFIX = (family == AF_INET) ? 32 : 128;
 	const char *next_hop = NULL;
-	const char *canon_dest;
 	int prefix;
 	NMIPRoute *route = NULL;
 	GError *local = NULL;
@@ -226,18 +225,6 @@ _parse_ip_route (int family,
 		g_set_error (error, 1, 0,
 		             _("invalid route: %s. %s"), local->message, ROUTE_SYNTAX);
 		g_clear_error (&local);
-		return NULL;
-	}
-
-	/* We don't accept default routes as NetworkManager handles it
-	 * itself. But we have to check this after @route has normalized the
-	 * dest string.
-	 */
-	canon_dest = nm_ip_route_get_dest (route);
-	if (!strcmp (canon_dest, "0.0.0.0") || !strcmp (canon_dest, "::")) {
-		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-		                     _("default route cannot be added (NetworkManager handles it by itself)"));
-		g_clear_pointer (&route, nm_ip_route_unref);
 		return NULL;
 	}
 
