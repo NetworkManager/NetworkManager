@@ -150,9 +150,9 @@ fi
 AC_DEFUN([NM_LTO],
 [AC_ARG_ENABLE(lto, AS_HELP_STRING([--enable-lto], [Enable Link Time Optimization for smaller size (default: no)]))
 if (test "${enable_lto}" = "yes"); then
-	CC_CHECK_FLAG_APPEND([lto_flags], [CFLAGS], [-flto])
+	CC_CHECK_FLAG_APPEND([lto_flags], [CFLAGS], [-flto -flto-partition=none])
 	if (test -n "${lto_flags}"); then
-		CFLAGS="-flto $CFLAGS"
+		CFLAGS="-flto -flto-partition=none $CFLAGS"
 	else
 		AC_MSG_ERROR([Link Time Optimization -flto is not supported.])
 	fi

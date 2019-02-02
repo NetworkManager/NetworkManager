@@ -1245,7 +1245,7 @@ fcn_name (lookup_type val) \
 
 #define _NM_BACKPORT_SYMBOL_IMPL(version, return_type, orig_func, versioned_func, args_typed, args) \
 return_type versioned_func args_typed; \
-return_type versioned_func args_typed \
+__attribute__ ((externally_visible)) return_type versioned_func args_typed \
 { \
     return orig_func args; \
 } \

@@ -147,6 +147,15 @@ if enable_ld_gc
   common_ldflags += test_ldflags
 endif
 
+enable_lto = get_option('b_lto')
+if enable_lto
+  # meson already adds '-flto'
+  lto_flag = '-flto-partition=none'
+  assert(cc.has_argument(lto_flag), '-flto-partition=none not supported. Disable link-time optimization with -Db_lto=false.')
+  common_flags += lto_flag
+  common_ldflags += lto_flag
+endif
+
 if nm_debug
   common_flags += cc.get_supported_arguments([
     '-fno-strict-aliasing',
@@ -986,7 +995,7 @@ if enable_valgrind
 endif
 output += '\n'
 output += '  code coverage: ' + get_option('b_coverage').to_string() + '\n'
-output += '  LTO: ' + get_option('b_lto').to_string() + '\n'
+output += '  LTO: ' + enable_lto.to_string() + '\n'
 output += '  Linker garbage collection: ' + enable_ld_gc.to_string() + '\n'
 output += '  JSON validation for libnm: ' + enable_json_validation.to_string() + '\n'
 output += '  crypto: ' + crypto + ' (have-gnutls: ' + crypto_gnutls_dep.found().to_string() + ', have-nss: ' + crypto_nss_dep.found().to_string() + ')\n'
