@@ -729,15 +729,23 @@ add_ip4_vpn_gateway_route (NMIP4Config *config,
 		const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (route_resolved);
 
 		if (r->ifindex == ifindex) {
+			const NMPObject *obj;
+
 			/* `ip route get` always resolves the route, even if the destination is unreachable.
 			 * In which case, it pretends the destination is directly reachable.
 			 *
-			 * So, only accept direct routes, if @vpn_gw is a private network. */
-			if (   nm_platform_route_table_is_main (r->table_coerced)
-			    && (   r->gateway
-			        || nm_utils_ip_is_site_local (AF_INET, &vpn_gw))) {
-				parent_gw = r->gateway;
-				has_parent_gw = TRUE;
+			 * So, only accept direct routes if @vpn_gw is a private network
+			 * or if the parent device also has a direct default route */
+			if (nm_platform_route_table_is_main (r->table_coerced)) {
+				if (r->gateway) {
+					parent_gw = r->gateway;
+					has_parent_gw = TRUE;
+				} else if (nm_utils_ip_is_site_local (AF_INET, &vpn_gw)) {
+					has_parent_gw = TRUE;
+				} else if (   (obj = nm_device_get_best_default_route (parent_device, AF_INET))
+				           && !NMP_OBJECT_CAST_IP4_ROUTE (obj)->gateway) {
+					has_parent_gw = TRUE;
+				}
 			}
 		}
 	}
@@ -803,15 +811,23 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 		const NMPlatformIP6Route *r = NMP_OBJECT_CAST_IP6_ROUTE (route_resolved);
 
 		if (r->ifindex == ifindex) {
+			const NMPObject *obj;
+
 			/* `ip route get` always resolves the route, even if the destination is unreachable.
 			 * In which case, it pretends the destination is directly reachable.
 			 *
-			 * So, only accept direct routes, if @vpn_gw is a private network. */
-			if (   nm_platform_route_table_is_main (r->table_coerced)
-			    && (   !IN6_IS_ADDR_UNSPECIFIED (&r->gateway)
-			        || nm_utils_ip_is_site_local (AF_INET6, &vpn_gw))) {
-				parent_gw = &r->gateway;
-				has_parent_gw = TRUE;
+			 * So, only accept direct routes if @vpn_gw is a private network
+			 * or if the parent device also has a direct default route */
+			if (nm_platform_route_table_is_main (r->table_coerced)) {
+				if (!IN6_IS_ADDR_UNSPECIFIED (&r->gateway)) {
+					parent_gw = &r->gateway;
+					has_parent_gw = TRUE;
+				} else if (nm_utils_ip_is_site_local (AF_INET6, &vpn_gw)) {
+					has_parent_gw = TRUE;
+				} else if (   (obj = nm_device_get_best_default_route (parent_device, AF_INET6))
+				           && IN6_IS_ADDR_UNSPECIFIED (&NMP_OBJECT_CAST_IP6_ROUTE (obj)->gateway)) {
+					has_parent_gw = TRUE;
+				}
 			}
 		}
 	}
