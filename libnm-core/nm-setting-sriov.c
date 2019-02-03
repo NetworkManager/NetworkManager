@@ -919,7 +919,7 @@ vfs_to_dbus (NMSetting *setting, const char *property)
 			GVariantBuilder vf_builder;
 			const guint *vlan_ids;
 			const char **name;
-			guint num_vlans;
+			guint num_vlans = 0;
 
 			g_variant_builder_init (&vf_builder, G_VARIANT_TYPE_VARDICT);
 			g_variant_builder_add (&vf_builder, "{sv}", "index",

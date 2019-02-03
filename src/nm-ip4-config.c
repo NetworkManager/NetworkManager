@@ -2153,7 +2153,7 @@ nm_ip4_config_get_first_address (const NMIP4Config *self)
 const NMPlatformIP4Address *
 _nmtst_ip4_config_get_address (const NMIP4Config *self, guint i)
 {
-	NMDedupMultiIter iter;
+	NMDedupMultiIter iter = { };
 	const NMPlatformIP4Address *a = NULL;
 	guint j;
 

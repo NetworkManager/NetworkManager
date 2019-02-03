@@ -5643,7 +5643,6 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 	NMDeviceClass *klass;
 	const char *const *patterns;
 	NMSettingMatch *s_match;
-	guint num_patterns;
 
 	klass = NM_DEVICE_GET_CLASS (self);
 	if (klass->connection_type_check_compatible) {
@@ -5684,6 +5683,8 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 	s_match = (NMSettingMatch *) nm_connection_get_setting (connection,
 	                                                        NM_TYPE_SETTING_MATCH);
 	if (s_match) {
+		guint num_patterns = 0;
+
 		patterns = nm_setting_match_get_interface_names (s_match, &num_patterns);
 		if (!nm_wildcard_match_check (device_iface, patterns, num_patterns)) {
 			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
