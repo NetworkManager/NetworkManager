@@ -28,6 +28,10 @@ _is_true() {
     esac
 }
 
+if which ccache &>/dev/null; then
+    export PATH="/usr/lib64/ccache:/usr/lib/ccache${PATH:+:${PATH}}"
+fi
+
 ###############################################################################
 
 if [ "$BUILD_TYPE" == meson ]; then
