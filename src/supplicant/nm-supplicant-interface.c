@@ -2482,7 +2482,6 @@ nm_supplicant_interface_p2p_start_find (NMSupplicantInterface *self,
 
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	/* Find parameters */
 	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_add (&builder, "{sv}", "Timeout", g_variant_new_int32 (timeout));
 
