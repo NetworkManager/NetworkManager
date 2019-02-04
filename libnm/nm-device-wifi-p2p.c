@@ -189,7 +189,7 @@ start_find_finished_cb (GObject      *obj,
                         gpointer user_data)
 {
 	NMDBusDeviceWifiP2P *proxy = (NMDBusDeviceWifiP2P*) obj;
-	GTask *task = G_TASK (user_data);
+	gs_unref_object GTask *task = G_TASK (user_data);
 	GError *error = NULL;
 	gboolean success;
 
@@ -198,8 +198,6 @@ start_find_finished_cb (GObject      *obj,
 		g_task_return_error (task, error);
 	else
 		g_task_return_boolean (task, TRUE);
-
-	g_object_unref (task);
 }
 
 /**
@@ -225,13 +223,14 @@ nm_device_wifi_p2p_start_find (NMDeviceWifiP2P     *device,
                                gpointer             user_data)
 {
 	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (device);
-	GVariant *options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
+	GVariant *options;
 	GTask *task;
 
 	g_return_if_fail (NM_IS_DEVICE_WIFI_P2P (device));
 
 	task = g_task_new (device, cancellable, callback, user_data);
 
+	options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
 	nmdbus_device_wifi_p2p_call_start_find (priv->proxy,
 	                                        options,
 	                                        cancellable,
@@ -265,7 +264,7 @@ stop_find_finished_cb (GObject      *obj,
                        gpointer user_data)
 {
 	NMDBusDeviceWifiP2P *proxy = (NMDBusDeviceWifiP2P*) obj;
-	GTask *task = G_TASK (user_data);
+	gs_unref_object GTask *task = G_TASK (user_data);
 	GError *error = NULL;
 	gboolean success;
 
@@ -274,8 +273,6 @@ stop_find_finished_cb (GObject      *obj,
 		g_task_return_error (task, error);
 	else
 		g_task_return_boolean (task, TRUE);
-
-	g_object_unref (task);
 }
 
 /**
