@@ -1006,11 +1006,11 @@ impl_device_wifi_p2p_start_find (NMDBusObject *obj,
 	NMDeviceWifiP2P *self = NM_DEVICE_WIFI_P2P (obj);
 	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
 	gs_unref_variant GVariant *options = NULL;
-	int timeout;
+	gint32 timeout;
 
 	g_variant_get (parameters, "(@a{sv})", &options);
 
-	if (!g_variant_lookup (options, "Timeout", "^ai", &timeout)) {
+	if (!g_variant_lookup (options, "Timeout", "i", &timeout)) {
 		/* Default to running a find for 30s. */
 		timeout = 30;
 	}
