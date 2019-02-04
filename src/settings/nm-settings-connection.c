@@ -208,141 +208,6 @@ nm_settings_connection_get_last_secret_agent_version_id (NMSettingsConnection *s
 
 /*****************************************************************************/
 
-/* Return TRUE to keep, FALSE to drop */
-typedef gboolean (*ForEachSecretFunc) (NMSettingSecretFlags flags,
-                                       gpointer user_data);
-
-/* Returns always a non-NULL, non-floating variant that must
- * be unrefed by the caller. */
-static GVariant *
-for_each_secret (NMConnection *self,
-                 GVariant *secrets,
-                 gboolean remove_non_secrets,
-                 ForEachSecretFunc callback,
-                 gpointer callback_data)
-{
-	GVariantBuilder secrets_builder, setting_builder;
-	GVariantIter secrets_iter, *setting_iter;
-	const char *setting_name;
-
-	/* This function, given a dict of dicts representing new secrets of
-	 * an NMConnection, walks through each toplevel dict (which represents a
-	 * NMSetting), and for each setting, walks through that setting dict's
-	 * properties.  For each property that's a secret, it will check that
-	 * secret's flags in the backing NMConnection object, and call a supplied
-	 * callback.
-	 *
-	 * The one complexity is that the VPN setting's 'secrets' property is
-	 * *also* a dict (since the key/value pairs are arbitrary and known
-	 * only to the VPN plugin itself).  That means we have three levels of
-	 * dicts that we potentially have to traverse here.  When we hit the
-	 * VPN setting's 'secrets' property, we special-case that and iterate over
-	 * each item in that 'secrets' dict, calling the supplied callback
-	 * each time.
-	 */
-
-	g_return_val_if_fail (callback, NULL);
-
-	g_variant_iter_init (&secrets_iter, secrets);
-	g_variant_builder_init (&secrets_builder, NM_VARIANT_TYPE_CONNECTION);
-	while (g_variant_iter_next (&secrets_iter, "{&sa{sv}}", &setting_name, &setting_iter)) {
-		NMSetting *setting;
-		const char *secret_name;
-		GVariant *val;
-
-		setting = nm_connection_get_setting_by_name (self, setting_name);
-		if (setting == NULL) {
-			g_variant_iter_free (setting_iter);
-			continue;
-		}
-
-		g_variant_builder_init (&setting_builder, NM_VARIANT_TYPE_SETTING);
-		while (g_variant_iter_next (setting_iter, "{&sv}", &secret_name, &val)) {
-			NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
-
-			/* VPN secrets need slightly different treatment here since the
-			 * "secrets" property is actually a hash table of secrets.
-			 */
-			if (NM_IS_SETTING_VPN (setting) && !g_strcmp0 (secret_name, NM_SETTING_VPN_SECRETS)) {
-				GVariantBuilder vpn_secrets_builder;
-				GVariantIter vpn_secrets_iter;
-				const char *vpn_secret_name, *secret;
-
-				/* Iterate through each secret from the VPN dict in the overall secrets dict */
-				g_variant_builder_init (&vpn_secrets_builder, G_VARIANT_TYPE ("a{ss}"));
-				g_variant_iter_init (&vpn_secrets_iter, val);
-				while (g_variant_iter_next (&vpn_secrets_iter, "{&s&s}", &vpn_secret_name, &secret)) {
-					if (!nm_setting_get_secret_flags (setting, vpn_secret_name, &secret_flags, NULL)) {
-						if (!remove_non_secrets)
-							g_variant_builder_add (&vpn_secrets_builder, "{ss}", vpn_secret_name, secret);
-						continue;
-					}
-
-					if (callback (secret_flags, callback_data))
-						g_variant_builder_add (&vpn_secrets_builder, "{ss}", vpn_secret_name, secret);
-				}
-
-				g_variant_builder_add (&setting_builder, "{sv}",
-				                       secret_name, g_variant_builder_end (&vpn_secrets_builder));
-			} else {
-				if (!nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL)) {
-					if (!remove_non_secrets)
-						g_variant_builder_add (&setting_builder, "{sv}", secret_name, val);
-					continue;
-				}
-				if (callback (secret_flags, callback_data))
-					g_variant_builder_add (&setting_builder, "{sv}", secret_name, val);
-			}
-			g_variant_unref (val);
-		}
-
-		g_variant_iter_free (setting_iter);
-		g_variant_builder_add (&secrets_builder, "{sa{sv}}", setting_name, &setting_builder);
-	}
-
-	return g_variant_ref_sink (g_variant_builder_end (&secrets_builder));
-}
-
-typedef gboolean (*FindSecretFunc) (NMSettingSecretFlags flags,
-                                    gpointer user_data);
-
-typedef struct {
-	FindSecretFunc find_func;
-	gpointer find_func_data;
-	gboolean found;
-} FindSecretData;
-
-static gboolean
-find_secret_for_each_func (NMSettingSecretFlags flags,
-                           gpointer user_data)
-{
-	FindSecretData *data = user_data;
-
-	if (!data->found)
-		data->found = data->find_func (flags, data->find_func_data);
-	return FALSE;
-}
-
-static gboolean
-find_secret (NMConnection *self,
-             GVariant *secrets,
-             FindSecretFunc callback,
-             gpointer callback_data)
-{
-	FindSecretData data;
-	GVariant *dummy;
-
-	data.find_func = callback;
-	data.find_func_data = callback_data;
-	data.found = FALSE;
-
-	dummy = for_each_secret (self, secrets, FALSE, find_secret_for_each_func, &data);
-	g_variant_unref (dummy);
-	return data.found;
-}
-
-/*****************************************************************************/
-
 static void
 set_visible (NMSettingsConnection *self, gboolean new_visible)
 {
@@ -938,8 +803,8 @@ typedef struct {
 } ForEachSecretFlags;
 
 static gboolean
-validate_secret_flags (NMSettingSecretFlags flags,
-                       gpointer user_data)
+validate_secret_flags_cb (NMSettingSecretFlags flags,
+                          gpointer user_data)
 {
 	ForEachSecretFlags *cmp_flags = user_data;
 
@@ -948,6 +813,18 @@ validate_secret_flags (NMSettingSecretFlags flags,
 	if (NM_FLAGS_ANY (flags, cmp_flags->forbidden))
 		return FALSE;
 	return TRUE;
+}
+
+static GVariant *
+validate_secret_flags (NMConnection *connection,
+                       GVariant *secrets,
+                       ForEachSecretFlags *cmp_flags)
+{
+	return g_variant_ref_sink (_nm_connection_for_each_secret (connection,
+	                                                           secrets,
+	                                                           TRUE,
+	                                                           validate_secret_flags_cb,
+	                                                           cmp_flags));
 }
 
 static gboolean
@@ -992,7 +869,7 @@ get_cmp_flags (NMSettingsConnection *self, /* only needed for logging */
 		 * save those system-owned secrets.  If not, discard them and use the
 		 * existing secrets, or fail the connection.
 		 */
-		*agent_had_system = find_secret (connection, secrets, secret_is_system_owned, NULL);
+		*agent_had_system = _nm_connection_find_secret (connection, secrets, secret_is_system_owned, NULL);
 		if (*agent_had_system) {
 			if (flags == NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE) {
 				/* No user interaction was allowed when requesting secrets; the
@@ -1151,14 +1028,14 @@ get_secrets_done_cb (NMAgentManager *manager,
 	/* Update the connection with our existing secrets from backing storage */
 	nm_connection_clear_secrets (nm_settings_connection_get_connection (self));
 	if (!dict || nm_connection_update_secrets (nm_settings_connection_get_connection (self), setting_name, dict, &local)) {
-		GVariant *filtered_secrets;
+		gs_unref_variant GVariant *filtered_secrets = NULL;
 
 		/* Update the connection with the agent's secrets; by this point if any
 		 * system-owned secrets exist in 'secrets' the agent that provided them
 		 * will have been authenticated, so those secrets can replace the existing
 		 * system secrets.
 		 */
-		filtered_secrets = for_each_secret (nm_settings_connection_get_connection (self), secrets, TRUE, validate_secret_flags, &cmp_flags);
+		filtered_secrets = validate_secret_flags (nm_settings_connection_get_connection (self), secrets, &cmp_flags);
 		if (nm_connection_update_secrets (nm_settings_connection_get_connection (self), setting_name, filtered_secrets, &local)) {
 			/* Now that all secrets are updated, copy and cache new secrets,
 			 * then save them to backing storage.
@@ -1194,7 +1071,6 @@ get_secrets_done_cb (NMAgentManager *manager,
 			       call_id,
 			       local->message);
 		}
-		g_variant_unref (filtered_secrets);
 	} else {
 		_LOGD ("(%s:%p) failed to update with existing secrets: %s",
 		       setting_name,
@@ -1218,11 +1094,10 @@ get_secrets_done_cb (NMAgentManager *manager,
 		nm_connection_clear_secrets (applied_connection);
 
 		if (!dict || nm_connection_update_secrets (applied_connection, setting_name, dict, NULL)) {
-			GVariant *filtered_secrets;
+			gs_unref_variant GVariant *filtered_secrets = NULL;
 
-			filtered_secrets = for_each_secret (applied_connection, secrets, TRUE, validate_secret_flags, &cmp_flags);
+			filtered_secrets = validate_secret_flags (applied_connection, secrets, &cmp_flags);
 			nm_connection_update_secrets (applied_connection, setting_name, filtered_secrets, NULL);
-			g_variant_unref (filtered_secrets);
 		}
 	}
 

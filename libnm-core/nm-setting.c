@@ -32,15 +32,6 @@
 #include "nm-utils-private.h"
 #include "nm-property-compare.h"
 
-#include "nm-setting-connection.h"
-#include "nm-setting-bond.h"
-#include "nm-setting-bridge.h"
-#include "nm-setting-bridge-port.h"
-#include "nm-setting-pppoe.h"
-#include "nm-setting-team.h"
-#include "nm-setting-team-port.h"
-#include "nm-setting-vpn.h"
-
 /**
  * SECTION:nm-setting
  * @short_description: Describes related configuration information
@@ -67,7 +58,7 @@ typedef struct {
 	NMSettingPriority priority;
 } SettingInfo;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+NM_GOBJECT_PROPERTIES_DEFINE (NMSetting,
 	PROP_NAME,
 );
 
@@ -549,6 +540,35 @@ _nm_setting_class_get_sett_info (NMSettingClass *setting_class)
 	sett_info = &_sett_info_settings[setting_class->setting_info->meta_type];
 	nm_assert (sett_info->setting_class == setting_class);
 	return sett_info;
+}
+
+/*****************************************************************************/
+
+void
+_nm_setting_emit_property_changed (NMSetting *setting)
+{
+	/* Some settings have "properties" that are not implemented as GObject properties.
+	 *
+	 * For example:
+	 *
+	 *   - gendata-base settings like NMSettingEthtool. Here properties are just
+	 *     GVariant values in the gendata hash.
+	 *
+	 *   - NMSettingWireGuard's peers are not backed by a GObject property. Instead
+	 *     there is C-API to access/modify peers.
+	 *
+	 * We still want to emit property-changed notifications for such properties,
+	 * in particular because NMConnection registers to such signals to re-emit
+	 * it as NM_CONNECTION_CHANGED signal. In fact, there are unlikely any other
+	 * uses of such a property-changed signal, because generally it doesn't make
+	 * too much sense.
+	 *
+	 * So, instead of adding yet another (artificial) signal "setting-changed",
+	 * hijack the "notify" signal and just notify about changes of the "name".
+	 * Of course, the "name" doesn't really ever change, because it's tied to
+	 * the GObject's type.
+	 */
+	_notify (setting, PROP_NAME);
 }
 
 /*****************************************************************************/
@@ -1081,6 +1101,8 @@ duplicate_copy_properties (const NMSettInfoSetting *sett_info,
 {
 	if (sett_info->detail.gendata_info) {
 		GenData *gendata = _gendata_hash (src, FALSE);
+
+		nm_assert (!_gendata_hash (dst, FALSE));
 
 		if (   gendata
 		    && g_hash_table_size (gendata->hash) > 0) {
@@ -1698,6 +1720,27 @@ nm_setting_diff (NMSetting *a,
 	}
 }
 
+static void
+enumerate_values (const NMSettInfoProperty *property_info,
+                  NMSetting *setting,
+                  NMSettingValueIterFn func,
+                  gpointer user_data)
+{
+	GValue value = G_VALUE_INIT;
+
+	if (!property_info->param_spec)
+		return;
+
+	g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (property_info->param_spec));
+	g_object_get_property (G_OBJECT (setting), property_info->param_spec->name, &value);
+	func (setting,
+	      property_info->param_spec->name,
+	      &value,
+	      property_info->param_spec->flags,
+	      user_data);
+	g_value_unset (&value);
+}
+
 /**
  * nm_setting_enumerate_values:
  * @setting: the #NMSetting
@@ -1753,50 +1796,24 @@ nm_setting_enumerate_values (NMSetting *setting,
 	}
 
 	for (i = 0; i < sett_info->property_infos_len; i++) {
-		GParamSpec *prop_spec = _nm_sett_info_property_info_get_sorted (sett_info, i)->param_spec;
-		GValue value = G_VALUE_INIT;
-
-		if (!prop_spec)
-			continue;
-
-		g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (prop_spec));
-		g_object_get_property (G_OBJECT (setting), prop_spec->name, &value);
-		func (setting, prop_spec->name, &value, prop_spec->flags, user_data);
-		g_value_unset (&value);
+		NM_SETTING_GET_CLASS (setting)->enumerate_values (_nm_sett_info_property_info_get_sorted (sett_info, i),
+		                                                  setting,
+		                                                  func,
+		                                                  user_data);
 	}
 }
 
-/**
- * _nm_setting_aggregate:
- * @setting: the #NMSetting to aggregate.
- * @type: the #NMConnectionAggregateType aggregate type.
- * @arg: the in/out arguments for aggregation. They depend on @type.
- *
- * This is the implementation detail of _nm_connection_aggregate(). It
- * makes no sense to call this function directly outside of _nm_connection_aggregate().
- *
- * Returns: %TRUE if afterwards the aggregation is complete. That means,
- *   the only caller _nm_connection_aggregate() will not visit other settings
- *   after a setting returns %TRUE (indicating that there is nothing further
- *   to aggregate). Note that is very different from the boolean return
- *   argument of _nm_connection_aggregate(), which serves a different purpose.
- */
-gboolean
-_nm_setting_aggregate (NMSetting *setting,
-                       NMConnectionAggregateType type,
-                       gpointer arg)
+static gboolean
+aggregate (NMSetting *setting,
+           int type_i,
+           gpointer arg)
 {
+	NMConnectionAggregateType type = type_i;
 	const NMSettInfoSetting *sett_info;
 	guint i;
 
-	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
-	g_return_val_if_fail (arg, FALSE);
-	g_return_val_if_fail (NM_IN_SET (type, NM_CONNECTION_AGGREGATE_ANY_SECRETS,
-	                                       NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS),
-	                      FALSE);
-
-	if (NM_IS_SETTING_VPN (setting))
-		return _nm_setting_vpn_aggregate (NM_SETTING_VPN (setting), type, arg);
+	nm_assert (NM_IN_SET (type, NM_CONNECTION_AGGREGATE_ANY_SECRETS,
+	                            NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS));
 
 	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
 	for (i = 0; i < sett_info->property_infos_len; i++) {
@@ -1838,6 +1855,35 @@ _nm_setting_aggregate (NMSetting *setting,
 	}
 
 	return FALSE;
+}
+
+/**
+ * _nm_setting_aggregate:
+ * @setting: the #NMSetting to aggregate.
+ * @type: the #NMConnectionAggregateType aggregate type.
+ * @arg: the in/out arguments for aggregation. They depend on @type.
+ *
+ * This is the implementation detail of _nm_connection_aggregate(). It
+ * makes no sense to call this function directly outside of _nm_connection_aggregate().
+ *
+ * Returns: %TRUE if afterwards the aggregation is complete. That means,
+ *   the only caller _nm_connection_aggregate() will not visit other settings
+ *   after a setting returns %TRUE (indicating that there is nothing further
+ *   to aggregate). Note that is very different from the boolean return
+ *   argument of _nm_connection_aggregate(), which serves a different purpose.
+ */
+gboolean
+_nm_setting_aggregate (NMSetting *setting,
+                       NMConnectionAggregateType type,
+                       gpointer arg)
+{
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (arg, FALSE);
+	g_return_val_if_fail (NM_IN_SET (type, NM_CONNECTION_AGGREGATE_ANY_SECRETS,
+	                                       NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS),
+	                      FALSE);
+
+	return NM_SETTING_GET_CLASS (setting)->aggregate (setting, type, arg);
 }
 
 static gboolean
@@ -2037,6 +2083,26 @@ _nm_setting_update_secrets (NMSetting *setting, GVariant *secrets, GError **erro
 	}
 
 	return result;
+}
+
+static void
+for_each_secret (NMSetting *setting,
+                 const char *secret_name,
+                 GVariant *val,
+                 gboolean remove_non_secrets,
+                 _NMConnectionForEachSecretFunc callback,
+                 gpointer callback_data,
+                 GVariantBuilder *setting_builder)
+{
+	NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+
+	if (!nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL)) {
+		if (!remove_non_secrets)
+			g_variant_builder_add (setting_builder, "{sv}", secret_name, val);
+		return;
+	}
+	if (callback (secret_flags, callback_data))
+		g_variant_builder_add (setting_builder, "{sv}", secret_name, val);
 }
 
 static void
@@ -2293,7 +2359,7 @@ _nm_setting_gendata_notify (NMSetting *setting,
 
 	gendata = _gendata_hash (setting, FALSE);
 	if (!gendata)
-		return;
+		goto out;
 
 	nm_clear_g_free (&gendata->values);
 
@@ -2303,7 +2369,7 @@ _nm_setting_gendata_notify (NMSetting *setting,
 		nm_clear_g_free (&gendata->names);
 	}
 
-	/* Note, that currently there is now way to notify the subclass when gendata changed.
+	/* Note, currently there is no way to notify the subclass when gendata changed.
 	 * gendata is only changed in two situations:
 	 *   1) from within NMSetting itself, for example when creating a NMSetting instance
 	 *      from keyfile or a D-Bus GVariant.
@@ -2316,6 +2382,9 @@ _nm_setting_gendata_notify (NMSetting *setting,
 	 *
 	 * If we ever need it, then we would need to call a virtual function to notify the subclass
 	 * that gendata changed. */
+
+out:
+	_nm_setting_emit_property_changed (setting);
 }
 
 GVariant *
@@ -2438,7 +2507,7 @@ nm_setting_gendata_get_all_values (NMSetting *setting)
 
 void
 _nm_setting_gendata_to_gvalue (NMSetting *setting,
-                                GValue *value)
+                               GValue *value)
 {
 	GenData *gendata;
 	GHashTable *new;
@@ -2571,7 +2640,10 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	setting_class->set_secret_flags          = set_secret_flags;
 	setting_class->compare_property          = compare_property;
 	setting_class->clear_secrets             = clear_secrets;
+	setting_class->for_each_secret           = for_each_secret;
 	setting_class->duplicate_copy_properties = duplicate_copy_properties;
+	setting_class->enumerate_values          = enumerate_values;
+	setting_class->aggregate                 = aggregate;
 
 	/**
 	 * NMSetting:name:

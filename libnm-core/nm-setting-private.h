@@ -39,6 +39,8 @@ int _nm_setting_compare_priority (gconstpointer a, gconstpointer b);
 
 /*****************************************************************************/
 
+void _nm_setting_emit_property_changed (NMSetting *setting);
+
 typedef enum NMSettingUpdateSecretResult {
 	NM_SETTING_UPDATE_SECRET_ERROR              = FALSE,
 	NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED   = TRUE,
@@ -99,9 +101,6 @@ gboolean _nm_setting_verify_secret_string (const char *str,
 gboolean _nm_setting_aggregate (NMSetting *setting,
                                 NMConnectionAggregateType type,
                                 gpointer arg);
-gboolean _nm_setting_vpn_aggregate (NMSettingVpn *setting,
-                                    NMConnectionAggregateType type,
-                                    gpointer arg);
 
 gboolean _nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_type);
 

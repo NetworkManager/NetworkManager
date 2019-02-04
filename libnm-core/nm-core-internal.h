@@ -614,7 +614,8 @@ gboolean _nm_setting_sriov_sort_vfs (NMSettingSriov *setting);
 
 /*****************************************************************************/
 
-typedef struct _NMSettInfoSetting NMSettInfoSetting;
+typedef struct _NMSettInfoSetting  NMSettInfoSetting;
+typedef struct _NMSettInfoProperty NMSettInfoProperty;
 
 typedef GVariant *(*NMSettingPropertyGetFunc)           (NMSetting     *setting,
                                                          const char    *property);
@@ -638,7 +639,7 @@ typedef GVariant *(*NMSettingPropertyTransformToFunc)   (const GValue *from);
 typedef void      (*NMSettingPropertyTransformFromFunc) (GVariant *from,
                                                           GValue *to);
 
-typedef struct {
+struct _NMSettInfoProperty {
 	const char *name;
 	GParamSpec *param_spec;
 	const GVariantType *dbus_type;
@@ -650,7 +651,7 @@ typedef struct {
 
 	NMSettingPropertyTransformToFunc   to_dbus;
 	NMSettingPropertyTransformFromFunc from_dbus;
-} NMSettInfoProperty;
+};
 
 typedef struct {
 	const GVariantType *(*get_variant_type) (const struct _NMSettInfoSetting *sett_info,
@@ -729,6 +730,22 @@ GBytes *_nm_setting_802_1x_cert_value_to_bytes (NMSetting8021xCKScheme scheme,
                                                 const guint8 *val_bin,
                                                 gssize val_len,
                                                 GError **error);
+
+/*****************************************************************************/
+
+GVariant *_nm_connection_for_each_secret (NMConnection *self,
+                                          GVariant *secrets,
+                                          gboolean remove_non_secrets,
+                                          _NMConnectionForEachSecretFunc callback,
+                                          gpointer callback_data);
+
+typedef gboolean (*NMConnectionFindSecretFunc) (NMSettingSecretFlags flags,
+                                                gpointer user_data);
+
+gboolean _nm_connection_find_secret (NMConnection *self,
+                                     GVariant *secrets,
+                                     NMConnectionFindSecretFunc callback,
+                                     gpointer callback_data);
 
 /*****************************************************************************/
 

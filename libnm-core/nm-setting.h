@@ -170,6 +170,26 @@ typedef gboolean (*NMSettingClearSecretsWithFlagsFn) (NMSetting *setting,
 
 struct _NMMetaSettingInfo;
 struct _NMSettInfoSetting;
+struct _NMSettInfoProperty;
+
+/**
+ * NMSettingValueIterFn:
+ * @setting: The setting for which properties are being iterated, given to
+ * nm_setting_enumerate_values()
+ * @key: The value/property name
+ * @value: The property's value
+ * @flags: The property's flags, like %NM_SETTING_PARAM_SECRET
+ * @user_data: User data passed to nm_setting_enumerate_values()
+ */
+typedef void (*NMSettingValueIterFn) (NMSetting *setting,
+                                      const char *key,
+                                      const GValue *value,
+                                      GParamFlags flags,
+                                      gpointer user_data);
+
+/*< private >*/
+typedef gboolean (*_NMConnectionForEachSecretFunc) (NMSettingSecretFlags flags,
+                                                    gpointer user_data);
 
 typedef struct {
 	GObjectClass parent;
@@ -226,26 +246,31 @@ typedef struct {
 	                                   NMSetting *dst);
 
 	/*< private >*/
-	const struct _NMMetaSettingInfo *setting_info;
+	void (*enumerate_values) (const struct _NMSettInfoProperty *property_info,
+	                          NMSetting *setting,
+	                          NMSettingValueIterFn func,
+	                          gpointer user_data);
 
 	/*< private >*/
-	gpointer padding[5];
-} NMSettingClass;
+	gboolean (*aggregate) (NMSetting *setting,
+	                       int type_i,
+	                       gpointer arg);
 
-/**
- * NMSettingValueIterFn:
- * @setting: The setting for which properties are being iterated, given to
- * nm_setting_enumerate_values()
- * @key: The value/property name
- * @value: The property's value
- * @flags: The property's flags, like %NM_SETTING_PARAM_SECRET
- * @user_data: User data passed to nm_setting_enumerate_values()
- */
-typedef void (*NMSettingValueIterFn) (NMSetting *setting,
-                                      const char *key,
-                                      const GValue *value,
-                                      GParamFlags flags,
-                                      gpointer user_data);
+	/*< private >*/
+	void (*for_each_secret) (NMSetting *setting,
+	                         const char *secret_name,
+	                         GVariant *val,
+	                         gboolean remove_non_secrets,
+	                         _NMConnectionForEachSecretFunc callback,
+	                         gpointer callback_data,
+	                         GVariantBuilder *setting_builder);
+
+	/*< private >*/
+	gpointer padding[2];
+
+	/*< private >*/
+	const struct _NMMetaSettingInfo *setting_info;
+} NMSettingClass;
 
 GType nm_setting_get_type (void);
 
