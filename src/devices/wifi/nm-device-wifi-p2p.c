@@ -1010,7 +1010,7 @@ impl_device_wifi_p2p_start_find (NMDBusObject *obj,
 
 	g_variant_get (parameters, "(@a{sv})", &options);
 
-	if (!g_variant_lookup (options, "Timeout", "i", &timeout)) {
+	if (!g_variant_lookup (options, "timeout", "i", &timeout)) {
 		/* Default to running a find for 30s. */
 		timeout = 30;
 	}
