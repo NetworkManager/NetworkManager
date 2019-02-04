@@ -1371,6 +1371,14 @@ nm_strcmp_p (gconstpointer a, gconstpointer b)
 		 : _b); \
 	})
 
+/* evaluates to (void) if _A or _B are not constant or of different types */
+#define NM_CONST_MAX(_A, _B) \
+	(__builtin_choose_expr ((   __builtin_constant_p (_A) \
+	                         && __builtin_constant_p (_B) \
+	                         && __builtin_types_compatible_p (typeof (_A), typeof (_B))), \
+	                        ((_A) > (_B)) ? (_A) : (_B),                            \
+	                        ((void)  0)))
+
 /*****************************************************************************/
 
 static inline guint
