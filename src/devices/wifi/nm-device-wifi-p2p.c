@@ -1006,22 +1006,43 @@ impl_device_wifi_p2p_start_find (NMDBusObject *obj,
 	NMDeviceWifiP2P *self = NM_DEVICE_WIFI_P2P (obj);
 	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
 	gs_unref_variant GVariant *options = NULL;
-	gint32 timeout;
+	const char *opts_key;
+	GVariant *opts_val;
+	GVariantIter iter;
+	gint32 timeout = 30;
 
 	g_variant_get (parameters, "(@a{sv})", &options);
 
-	if (!g_variant_lookup (options, "timeout", "i", &timeout)) {
-		/* Default to running a find for 30s. */
-		timeout = 30;
-	}
+	g_variant_iter_init (&iter, options);
+	while (g_variant_iter_next (&iter, "{&sv}", &opts_key, &opts_val)) {
+		_nm_unused gs_unref_variant GVariant *opts_val_free = opts_val;
 
-	/* Reject unreasonable timeout values. */
-	if (timeout <= 0 || timeout > 600) {
-		g_dbus_method_invocation_return_error_literal (invocation,
-		                                               NM_DEVICE_ERROR,
-		                                               NM_DEVICE_ERROR_NOT_ALLOWED,
-		                                               "The timeout for a find operation needs to be in the range of 1-600s.");
+		if (nm_streq (opts_key, "timeout")) {
+			if (!g_variant_is_of_type (opts_val, G_VARIANT_TYPE_INT32)) {
+				g_dbus_method_invocation_return_error_literal (invocation,
+				                                               NM_DEVICE_ERROR,
+				                                               NM_DEVICE_ERROR_INVALID_ARGUMENT,
+				                                               "\"timeout\" must be an integer \"i\"");
+				return;
+			}
 
+			timeout = g_variant_get_int32 (opts_val);
+			if (timeout <= 0 || timeout > 600) {
+				g_dbus_method_invocation_return_error_literal (invocation,
+				                                               NM_DEVICE_ERROR,
+				                                               NM_DEVICE_ERROR_NOT_ALLOWED,
+				                                               "The timeout for a find operation needs to be in the range of 1-600s.");
+				return;
+			}
+
+			continue;
+		}
+
+		g_dbus_method_invocation_return_error (invocation,
+		                                       NM_DEVICE_ERROR,
+		                                       NM_DEVICE_ERROR_INVALID_ARGUMENT,
+		                                       "Unsupported options key \"%s\"",
+		                                       opts_key);
 		return;
 	}
 
@@ -1030,7 +1051,6 @@ impl_device_wifi_p2p_start_find (NMDBusObject *obj,
 		                                               NM_DEVICE_ERROR,
 		                                               NM_DEVICE_ERROR_NOT_ACTIVE,
 		                                               "WPA Supplicant management interface is currently unavailable.");
-
 		return;
 	}
 
