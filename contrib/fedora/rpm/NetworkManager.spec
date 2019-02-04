@@ -58,6 +58,7 @@
 %bcond_without regen_docs
 %bcond_with    debug
 %bcond_with    test
+%bcond_with    lto
 %bcond_with    sanitizer
 %if 0%{?fedora} > 28 || 0%{?rhel} > 7
 %bcond_with libnm_glib
@@ -490,6 +491,11 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	-Dmore_asserts=0 \
 %endif
 	-Dld_gc=true \
+%if %{with lto}
+	-D b_lto=true \
+%else
+	-D b_lto=false \
+%endif
 	-Dlibaudit=yes-disabled-by-default \
 %if 0%{?with_modem_manager_1}
 	-Dmodem_manager=true \
@@ -601,6 +607,11 @@ intltoolize --automake --copy --force
 	--without-more-asserts \
 %endif
 	--enable-ld-gc \
+%if %{with lto}
+	--enable-lto \
+%else
+	--disable-lto \
+%endif
 	--with-libaudit=yes-disabled-by-default \
 %if 0%{?with_modem_manager_1}
 	--with-modem-manager-1=yes \

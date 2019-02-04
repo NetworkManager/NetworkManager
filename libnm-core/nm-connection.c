@@ -674,8 +674,10 @@ _nm_connection_find_base_type_setting (NMConnection *connection)
 {
 	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
 	GHashTableIter iter;
-	NMSetting *setting = NULL, *s_iter;
-	NMSettingPriority setting_prio, s_iter_prio;
+	NMSetting *setting = NULL;
+	NMSetting *s_iter;
+	NMSettingPriority setting_prio = NM_SETTING_PRIORITY_USER;
+	NMSettingPriority s_iter_prio;
 
 	g_hash_table_iter_init (&iter, priv->settings);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &s_iter)) {

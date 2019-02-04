@@ -1243,17 +1243,17 @@ fcn_name (lookup_type val) \
 
 /*****************************************************************************/
 
-#define _NM_BACKPORT_SYMBOL_IMPL(VERSION, RETURN_TYPE, ORIG_FUNC, VERSIONED_FUNC, ARGS_TYPED, ARGS) \
-RETURN_TYPE VERSIONED_FUNC ARGS_TYPED; \
-RETURN_TYPE VERSIONED_FUNC ARGS_TYPED \
+#define _NM_BACKPORT_SYMBOL_IMPL(version, return_type, orig_func, versioned_func, args_typed, args) \
+return_type versioned_func args_typed; \
+__attribute__ ((externally_visible)) return_type versioned_func args_typed \
 { \
-    return ORIG_FUNC ARGS; \
+    return orig_func args; \
 } \
-RETURN_TYPE ORIG_FUNC ARGS_TYPED; \
-__asm__(".symver "G_STRINGIFY(VERSIONED_FUNC)", "G_STRINGIFY(ORIG_FUNC)"@"G_STRINGIFY(VERSION))
+return_type orig_func args_typed; \
+__asm__(".symver "G_STRINGIFY(versioned_func)", "G_STRINGIFY(orig_func)"@"G_STRINGIFY(version))
 
-#define NM_BACKPORT_SYMBOL(VERSION, RETURN_TYPE, FUNC, ARGS_TYPED, ARGS) \
-_NM_BACKPORT_SYMBOL_IMPL(VERSION, RETURN_TYPE, FUNC, _##FUNC##_##VERSION, ARGS_TYPED, ARGS)
+#define NM_BACKPORT_SYMBOL(version, return_type, func, args_typed, args) \
+_NM_BACKPORT_SYMBOL_IMPL(version, return_type, func, _##func##_##version, args_typed, args)
 
 /*****************************************************************************/
 
@@ -1370,6 +1370,14 @@ nm_strcmp_p (gconstpointer a, gconstpointer b)
 		 ? _a \
 		 : _b); \
 	})
+
+/* evaluates to (void) if _A or _B are not constant or of different types */
+#define NM_CONST_MAX(_A, _B) \
+	(__builtin_choose_expr ((   __builtin_constant_p (_A) \
+	                         && __builtin_constant_p (_B) \
+	                         && __builtin_types_compatible_p (typeof (_A), typeof (_B))), \
+	                        ((_A) > (_B)) ? (_A) : (_B),                            \
+	                        ((void)  0)))
 
 /*****************************************************************************/
 
