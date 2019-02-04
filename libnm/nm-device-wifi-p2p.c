@@ -203,6 +203,7 @@ start_find_finished_cb (GObject      *obj,
 /**
  * nm_device_wifi_p2p_start_find:
  * @device: a #NMDeviceWifiP2P
+ * @options: (allow-none): optional options passed to StartFind.
  * @cancellable: a #GCancellable, or %NULL
  * @callback: a #GAsyncReadyCallback, or %NULL
  * @user_data: user_data for @callback
@@ -218,19 +219,20 @@ start_find_finished_cb (GObject      *obj,
  **/
 void
 nm_device_wifi_p2p_start_find (NMDeviceWifiP2P     *device,
+                               GVariant            *options,
                                GCancellable        *cancellable,
                                GAsyncReadyCallback  callback,
                                gpointer             user_data)
 {
 	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (device);
-	GVariant *options;
 	GTask *task;
 
 	g_return_if_fail (NM_IS_DEVICE_WIFI_P2P (device));
 
 	task = g_task_new (device, cancellable, callback, user_data);
 
-	options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
+	if (!options)
+		options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
 	nmdbus_device_wifi_p2p_call_start_find (priv->proxy,
 	                                        options,
 	                                        cancellable,

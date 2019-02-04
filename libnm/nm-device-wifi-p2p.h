@@ -60,6 +60,7 @@ const GPtrArray *        nm_device_wifi_p2p_get_peers        (NMDeviceWifiP2P *d
 
 NM_AVAILABLE_IN_1_16
 void                     nm_device_wifi_p2p_start_find        (NMDeviceWifiP2P     *device,
+                                                               GVariant            *options,
                                                                GCancellable        *cancellable,
                                                                GAsyncReadyCallback  callback,
                                                                gpointer             user_data);
