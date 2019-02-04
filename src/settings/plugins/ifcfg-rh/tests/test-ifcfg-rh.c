@@ -123,7 +123,7 @@ _assert_reread_same_FIXME (NMConnection *connection, NMConnection *reread)
 
 /* dummy path for an "expected" file, meaning: don't check for expected
  * written ifcfg file. */
-static const char const NO_EXPECTED[1];
+static const char NO_EXPECTED[1];
 
 static void
 _assert_expected_content (NMConnection *connection, const char *filename, const char *expected)
