@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Arguments via environment variables:
+#  - CI
+#  - CC
+#  - BUILD_TYPE
+#  - CFLAGS
+
 set -exv
 
 die() {
@@ -16,7 +22,7 @@ elif [ "$BUILD_TYPE" == autotools ]; then
     _TRUE=yes
     _FALSE=no
 else
-    die "invalid BUILD_TYPE \"$BUILD_TYPE\""
+    die "invalid \$BUILD_TYPE \"$BUILD_TYPE\""
 fi
 
 _WITH_CRYPTO="gnutls"
@@ -24,14 +30,16 @@ _WITH_MORE_WARNINGS="error"
 _WITH_LIBTEAM="$_TRUE"
 _WITH_DOCS="$_TRUE"
 _WITH_SYSTEMD_LOGIND="$_TRUE"
+
 if [ "$CI" == travis ]; then
     _WITH_MORE_WARNINGS="no"
     _WITH_LIBTEAM="$_FALSE"
     _WITH_DOCS="$_FALSE"
     _WITH_SYSTEMD_LOGIND="$_FALSE"
-fi
-if [ "$CI" == gitlab ]; then
+elif [ "$CI" == gitlab ]; then
     :
+else
+   die "invalid \$CI \"$CI\""
 fi
 if [ "$CC" != gcc ]; then
     _WITH_CRYPTO=nss
