@@ -1549,11 +1549,11 @@ error:
  * DBus interface has appeared already.  If so proceed to call Start or
  * StartOpen on that interface.
  */
-static void act_check_interface (NMDeviceIwd *self)
+static void
+act_check_interface (NMDeviceIwd *self)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
-	gs_free_error GError *error = NULL;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
 	GDBusProxy *proxy = NULL;
