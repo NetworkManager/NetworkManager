@@ -807,11 +807,23 @@ class TestNmcli(NmTestBase):
                            iface = 'wlan1')
 
         self.srv.op_AddObj('WifiAp',
-                           device = 'wlan0')
+                           device = 'wlan0',
+                           rsnf = 0x0)
+
         self.srv.op_AddObj('WifiAp',
                            device = 'wlan0')
+
+        NM_AP_FLAGS = getattr(NM, '80211ApSecurityFlags')
+        rsnf = 0x0
+        rsnf = rsnf | NM_AP_FLAGS.PAIR_TKIP
+        rsnf = rsnf | NM_AP_FLAGS.PAIR_CCMP
+        rsnf = rsnf | NM_AP_FLAGS.GROUP_TKIP
+        rsnf = rsnf | NM_AP_FLAGS.GROUP_CCMP
+        rsnf = rsnf | NM_AP_FLAGS.KEY_MGMT_SAE
         self.srv.op_AddObj('WifiAp',
-                           device = 'wlan0')
+                           device = 'wlan0',
+                           wpaf = 0x0,
+                           rsnf = rsnf)
 
         self.srv.op_AddObj('WifiAp',
                            device = 'wlan1')

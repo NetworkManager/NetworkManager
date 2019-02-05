@@ -603,6 +603,10 @@ write_wireless_security_setting (NMConnection *connection,
 		svSetValueStr (ifcfg, "KEY_MGMT", "WPA-PSK");
 		wpa = TRUE;
 		*no_8021x = TRUE;
+	} else if (!strcmp (key_mgmt, "sae")) {
+		svSetValueStr (ifcfg, "KEY_MGMT", "SAE");
+		wpa = TRUE;
+		*no_8021x = TRUE;
 	} else if (!strcmp (key_mgmt, "ieee8021x")) {
 		svSetValueStr (ifcfg, "KEY_MGMT", "IEEE8021X");
 		dynamic_wep = TRUE;

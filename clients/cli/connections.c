@@ -4834,6 +4834,17 @@ add_new_connection (gboolean persistent,
                     GAsyncReadyCallback callback,
                     gpointer user_data)
 {
+	GError *error = NULL;
+
+	if (   !nm_connection_verify (connection, &error)
+	    || !nm_connection_verify_secrets (connection, &error)) {
+                g_simple_async_report_take_gerror_in_idle (G_OBJECT (client),
+		                                           callback,
+		                                           user_data,
+		                                           error);
+                return;
+        }
+
 	nm_client_add_connection_async (client, connection, persistent,
 	                                NULL, callback, user_data);
 }
@@ -4844,6 +4855,18 @@ update_connection (gboolean persistent,
                    GAsyncReadyCallback callback,
                    gpointer user_data)
 {
+	GError *error = NULL;
+
+	if (   !nm_connection_verify (NM_CONNECTION (connection), &error)
+	    || !nm_connection_verify_secrets (NM_CONNECTION (connection), &error)) {
+                g_simple_async_report_take_gerror_in_idle (G_OBJECT (connection),
+		                                           callback,
+		                                           user_data,
+		                                           error);
+                return;
+        }
+
+
 	nm_remote_connection_commit_changes_async (connection, persistent,
 	                                           NULL, callback, user_data);
 }

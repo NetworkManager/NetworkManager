@@ -389,6 +389,76 @@ test_wifi_wpa_psk (const char *detail,
 }
 
 static void
+test_wifi_sae_psk (const char *psk)
+{
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_variant GVariant *config_dict = NULL;
+	NMSettingWirelessSecurity *s_wsec;
+	gboolean success;
+	GError *error = NULL;
+	const unsigned char ssid_data[] = { 0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44 };
+	gs_unref_bytes GBytes *ssid = g_bytes_new (ssid_data, sizeof (ssid_data));
+	const char *bssid_str = "11:22:33:44:55:66";
+	int short_psk = strlen (psk) < 8;
+
+	connection = new_basic_connection ("Test Wifi SAE", ssid, bssid_str);
+
+	/* Wifi Security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "sae",
+	              NM_SETTING_WIRELESS_SECURITY_PSK, psk,
+	              NULL);
+	nm_setting_wireless_security_add_proto (s_wsec, "rsn");
+	nm_setting_wireless_security_add_pairwise (s_wsec, "tkip");
+	nm_setting_wireless_security_add_pairwise (s_wsec, "ccmp");
+	nm_setting_wireless_security_add_group (s_wsec, "tkip");
+	nm_setting_wireless_security_add_group (s_wsec, "ccmp");
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	NMTST_EXPECT_NM_INFO ("Config: added 'ssid' value 'Test SSID'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'scan_ssid' value '1'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'bssid' value '11:22:33:44:55:66'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'freq_list' value *");
+	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'SAE'");
+	if (short_psk)
+		NMTST_EXPECT_NM_INFO ("Config: added 'sae_password' value *");
+	else
+		NMTST_EXPECT_NM_INFO ("Config: added 'psk' value *");
+	NMTST_EXPECT_NM_INFO ("Config: added 'proto' value 'RSN'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'pairwise' value 'TKIP CCMP'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'group' value 'TKIP CCMP'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'ieee80211w' value '0'");
+	config_dict = build_supplicant_config (connection, 1500, 0, TRUE, TRUE);
+
+	g_test_assert_expected_messages ();
+	g_assert (config_dict);
+
+	validate_opt ("wifi-sae", config_dict, "scan_ssid", TYPE_INT, GINT_TO_POINTER (1));
+	validate_opt ("wifi-sae", config_dict, "ssid", TYPE_BYTES, ssid);
+	validate_opt ("wifi-sae", config_dict, "bssid", TYPE_KEYWORD, bssid_str);
+	validate_opt ("wifi-sae", config_dict, "key_mgmt", TYPE_KEYWORD, "SAE");
+	validate_opt ("wifi-sae", config_dict, "proto", TYPE_KEYWORD, "RSN");
+	validate_opt ("wifi-sae", config_dict, "pairwise", TYPE_KEYWORD, "TKIP CCMP");
+	validate_opt ("wifi-sae", config_dict, "group", TYPE_KEYWORD, "TKIP CCMP");
+	if (short_psk)
+		validate_opt ("wifi-sae", config_dict, "sae_password", TYPE_KEYWORD, psk);
+	else
+		validate_opt ("wifi-sae", config_dict, "psk", TYPE_KEYWORD, psk);
+}
+
+static void
+test_wifi_sae (void)
+{
+	test_wifi_sae_psk ("Moo");
+	test_wifi_sae_psk ("Hello World!");
+}
+
+static void
 test_wifi_wpa_psk_types (void)
 {
 	const char *key1 = "d4721e911461d3cdef9793858e977fcda091779243abb7316c2f11605a160893";
@@ -580,6 +650,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/supplicant-config/wifi-eap/locked-bssid", test_wifi_eap_locked_bssid);
 	g_test_add_func ("/supplicant-config/wifi-eap/unlocked-bssid", test_wifi_eap_unlocked_bssid);
 	g_test_add_func ("/supplicant-config/wifi-eap/fils-disabled", test_wifi_eap_fils_disabled);
+	g_test_add_func ("/supplicant-config/wifi-sae", test_wifi_sae);
 
 	return g_test_run ();
 }

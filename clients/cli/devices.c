@@ -44,43 +44,39 @@
 static char *
 ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
 {
-	char *flags_str[16]; /* Enough space for flags and terminating NULL */
-	char *ret_str;
+	char *flags_str[13];
 	int i = 0;
 
 	if (flags & NM_802_11_AP_SEC_PAIR_WEP40)
-		flags_str[i++] = g_strdup ("pair_wpe40");
+		flags_str[i++] = "pair_wpe40";
 	if (flags & NM_802_11_AP_SEC_PAIR_WEP104)
-		flags_str[i++] = g_strdup ("pair_wpe104");
+		flags_str[i++] = "pair_wpe104";
 	if (flags & NM_802_11_AP_SEC_PAIR_TKIP)
-		flags_str[i++] = g_strdup ("pair_tkip");
+		flags_str[i++] = "pair_tkip";
 	if (flags & NM_802_11_AP_SEC_PAIR_CCMP)
-		flags_str[i++] = g_strdup ("pair_ccmp");
+		flags_str[i++] = "pair_ccmp";
 	if (flags & NM_802_11_AP_SEC_GROUP_WEP40)
-		flags_str[i++] = g_strdup ("group_wpe40");
+		flags_str[i++] = "group_wpe40";
 	if (flags & NM_802_11_AP_SEC_GROUP_WEP104)
-		flags_str[i++] = g_strdup ("group_wpe104");
+		flags_str[i++] = "group_wpe104";
 	if (flags & NM_802_11_AP_SEC_GROUP_TKIP)
-		flags_str[i++] = g_strdup ("group_tkip");
+		flags_str[i++] = "group_tkip";
 	if (flags & NM_802_11_AP_SEC_GROUP_CCMP)
-		flags_str[i++] = g_strdup ("group_ccmp");
+		flags_str[i++] = "group_ccmp";
 	if (flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
-		flags_str[i++] = g_strdup ("psk");
+		flags_str[i++] = "psk";
 	if (flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
-		flags_str[i++] = g_strdup ("802.1X");
+		flags_str[i++] = "802.1X";
+	if (flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)
+		flags_str[i++] = "sae";
+	/* Make sure you grow flags_str when adding items here. */
 
 	if (i == 0)
-		flags_str[i++] = g_strdup (_("(none)"));
+		flags_str[i++] = _("(none)");
 
 	flags_str[i] = NULL;
 
-	ret_str = g_strjoinv (" ", flags_str);
-
-	i = 0;
-	while (flags_str[i])
-		g_free (flags_str[i++]);
-
-	return ret_str;
+	return g_strjoinv (" ", flags_str);
 }
 
 static NMMetaColor
@@ -1164,21 +1160,21 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	if (   (flags & NM_802_11_AP_FLAGS_PRIVACY)
 	    && (wpa_flags == NM_802_11_AP_SEC_NONE)
 	    && (rsn_flags == NM_802_11_AP_SEC_NONE)) {
-		g_string_append (security_str, _("WEP"));
-		g_string_append_c (security_str, ' ');
+		g_string_append (security_str, "WEP ");
 	}
 	if (wpa_flags != NM_802_11_AP_SEC_NONE) {
-		g_string_append (security_str, _("WPA1"));
-		g_string_append_c (security_str, ' ');
+		g_string_append (security_str, "WPA1 ");
 	}
-	if (rsn_flags != NM_802_11_AP_SEC_NONE) {
-		g_string_append (security_str, _("WPA2"));
-		g_string_append_c (security_str, ' ');
+	if (   (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
+	    || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
+		g_string_append (security_str, "WPA2 ");
+	}
+	if (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE) {
+		g_string_append (security_str, "WPA3 ");
 	}
 	if (   (wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
 	    || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
-		g_string_append   (security_str, _("802.1X"));
-		g_string_append_c (security_str, ' ');
+		g_string_append   (security_str, "802.1X ");
 	}
 
 	if (security_str->len > 0)
@@ -3468,7 +3464,8 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 					/* WEP */
 					con_password = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
 				} else if (   (ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
-				           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)) {
+				           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
+				           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)) {
 					/* WPA PSK */
 					con_password = nm_setting_wireless_security_get_psk (s_wsec);
 				}
@@ -3498,7 +3495,8 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 				              wep_passphrase ? NM_WEP_KEY_TYPE_PASSPHRASE: NM_WEP_KEY_TYPE_KEY,
 				              NULL);
 			} else if (   (ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
-			           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)) {
+			           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
+			           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)) {
 				/* WPA PSK */
 				g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_PSK, password, NULL);
 			}
