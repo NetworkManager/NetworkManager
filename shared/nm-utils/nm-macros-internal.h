@@ -45,6 +45,18 @@
 #define nm_auto(fcn)         __attribute__ ((__cleanup__(fcn)))
 
 
+/* This is required to make LTO working.
+ *
+ * See https://gitlab.freedesktop.org/NetworkManager/NetworkManager/merge_requests/76#note_112694
+ *     https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48200#c28
+ */
+#ifndef __clang__
+#define _nm_externally_visible __attribute__ ((__externally_visible__))
+#else
+#define _nm_externally_visible
+#endif
+
+
 #if __GNUC__ >= 7
 #define _nm_fallthrough      __attribute__ ((__fallthrough__))
 #else
@@ -1289,7 +1301,7 @@ fcn_name (lookup_type val) \
 
 #define _NM_BACKPORT_SYMBOL_IMPL(version, return_type, orig_func, versioned_func, args_typed, args) \
 return_type versioned_func args_typed; \
-__attribute__ ((externally_visible)) return_type versioned_func args_typed \
+_nm_externally_visible return_type versioned_func args_typed \
 { \
     return orig_func args; \
 } \
