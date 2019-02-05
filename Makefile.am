@@ -2767,8 +2767,8 @@ EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Bridge_Component.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Permissions.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Proxy_Basic.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Team_Port.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Team_Infiniband_Port.cexpected \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Team_Port.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_VLAN_reorder_hdr.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_WiFi_Band_A.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_WiFi_Hidden.cexpected \
@@ -2862,6 +2862,7 @@ EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-long-hex \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-quoted \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-sae \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-104-ascii \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-40-ascii \
@@ -2879,8 +2880,8 @@ EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted2 \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-802-1X-subj-matches \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-802-1x-ttls-eapgtc \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-802-1x-password-raw \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-802-1x-ttls-eapgtc \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-peap-mschapv2 \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-tls-agent \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-tls-always \
@@ -2927,6 +2928,7 @@ EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test_write_wired_auto_negotiate_on.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-dynamic-wep-leap \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-leap \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-sae \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-104-ascii \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-40-ascii \
