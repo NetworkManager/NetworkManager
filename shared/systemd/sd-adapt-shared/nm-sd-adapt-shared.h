@@ -54,10 +54,10 @@ _nm_log_get_max_level_realm (void)
 	const int _nm_e = (error); \
 	const NMLogLevel _nm_l = _slog_level_to_nm ((level)); \
 	\
-	if (_nm_log_enabled (_nm_l, LOGD_SYSTEMD)) { \
+	if (_nm_log_enabled_impl (!(NM_THREAD_SAFE_ON_MAIN_THREAD), _nm_l, LOGD_SYSTEMD)) { \
 		const char *_nm_location = strrchr ((""file), '/'); \
 		\
-		_nm_log_impl (_nm_location ? _nm_location + 1 : (""file), (line), (func), _nm_l, LOGD_SYSTEMD, _nm_e, NULL, NULL, ("%s"format), "libsystemd: ", ## __VA_ARGS__); \
+		_nm_log_impl (_nm_location ? _nm_location + 1 : (""file), (line), (func), !(NM_THREAD_SAFE_ON_MAIN_THREAD), _nm_l, LOGD_SYSTEMD, _nm_e, NULL, NULL, ("%s"format), "libsystemd: ", ## __VA_ARGS__); \
 	} \
 	(_nm_e > 0 ? -_nm_e : _nm_e); \
 })

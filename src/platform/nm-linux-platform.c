@@ -4146,8 +4146,8 @@ sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 
 static GSList *sysctl_clear_cache_list;
 
-static void
-_nm_logging_clear_platform_logging_cache_impl (void)
+void
+_nm_logging_clear_platform_logging_cache (void)
 {
 	while (sysctl_clear_cache_list) {
 		NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (sysctl_clear_cache_list->data);
@@ -4167,7 +4167,6 @@ _log_dbg_sysctl_get_impl (NMPlatform *platform, const char *pathid, const char *
 	const char *prev_value = NULL;
 
 	if (!priv->sysctl_get_prev_values) {
-		_nm_logging_clear_platform_logging_cache = _nm_logging_clear_platform_logging_cache_impl;
 		sysctl_clear_cache_list = g_slist_prepend (sysctl_clear_cache_list, platform);
 		priv->sysctl_get_prev_values = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 	} else

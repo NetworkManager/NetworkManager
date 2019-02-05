@@ -26,7 +26,6 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <pthread.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -355,7 +354,7 @@ main (int argc, char *argv[])
 		                              NM_CONFIG_KEYFILE_GROUP_LOGGING,
 		                              NM_CONFIG_KEYFILE_KEY_LOGGING_BACKEND,
 		                              NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
-		nm_logging_syslog_openlog (v, nm_config_get_is_debug (config));
+		nm_logging_init (v, nm_config_get_is_debug (config));
 	}
 
 	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting... (%s)",

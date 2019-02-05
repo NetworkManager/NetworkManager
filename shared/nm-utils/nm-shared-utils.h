@@ -26,6 +26,18 @@
 
 /*****************************************************************************/
 
+pid_t nm_utils_gettid (void);
+
+gboolean _nm_assert_on_main_thread (void);
+
+#if NM_MORE_ASSERTS > 5
+#define NM_ASSERT_ON_MAIN_THREAD() G_STMT_START { nm_assert (_nm_assert_on_main_thread ()); } G_STMT_END
+#else
+#define NM_ASSERT_ON_MAIN_THREAD() G_STMT_START {                                         ; } G_STMT_END
+#endif
+
+/*****************************************************************************/
+
 static inline gboolean
 _NM_INT_NOT_NEGATIVE (gssize val)
 {

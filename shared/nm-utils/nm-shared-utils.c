@@ -27,6 +27,7 @@
 #include <arpa/inet.h>
 #include <poll.h>
 #include <fcntl.h>
+#include <sys/syscall.h>
 
 /*****************************************************************************/
 
@@ -35,6 +36,57 @@ const void *const _NM_PTRARRAY_EMPTY[1] = { NULL };
 /*****************************************************************************/
 
 const NMIPAddr nm_ip_addr_zero = { 0 };
+
+/*****************************************************************************/
+
+pid_t
+nm_utils_gettid (void)
+{
+	return (pid_t) syscall (SYS_gettid);
+}
+
+/* Used for asserting that this function is called on the main-thread.
+ * The main-thread is determined by remembering the thread-id
+ * of when the function was called the first time.
+ *
+ * When forking, the thread-id is again reset upon first call. */
+gboolean
+_nm_assert_on_main_thread (void)
+{
+	G_LOCK_DEFINE_STATIC (lock);
+	static pid_t seen_tid;
+	static pid_t seen_pid;
+	pid_t tid;
+	pid_t pid;
+	gboolean success = FALSE;
+
+	tid = nm_utils_gettid ();
+	nm_assert (tid != 0);
+
+	G_LOCK (lock);
+
+	if (G_LIKELY (tid == seen_tid)) {
+		/* we don't care about false positives (when the process forked, and the thread-id
+		 * is accidentally re-used) . It's for assertions only. */
+		success = TRUE;
+	} else {
+		pid = getpid ();
+		nm_assert (pid != 0);
+
+		if (   seen_tid == 0
+			|| seen_pid != pid) {
+			/* either this is the first time we call the function, or the process
+			 * forked. In both cases, remember the thread-id. */
+			seen_tid = tid;
+			seen_pid = pid;
+			success = TRUE;
+		}
+	}
+
+	G_UNLOCK (lock);
+
+	return success;
+}
 
 /*****************************************************************************/
 
