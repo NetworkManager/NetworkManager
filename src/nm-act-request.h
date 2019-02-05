@@ -69,7 +69,7 @@ NMActRequestGetSecretsCallId *nm_act_request_get_secrets (NMActRequest *req,
                                                           gboolean take_ref,
                                                           const char *setting_name,
                                                           NMSecretAgentGetSecretsFlags flags,
-                                                          const char *hint,
+                                                          const char *const*hints,
                                                           NMActRequestSecretsFunc callback,
                                                           gpointer callback_data);
 

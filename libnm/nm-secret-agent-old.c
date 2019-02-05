@@ -20,55 +20,65 @@
 
 #include "nm-default.h"
 
+#include "nm-secret-agent-old.h"
+
 #include <string.h>
 
 #include "nm-dbus-interface.h"
-#include "nm-secret-agent-old.h"
 #include "nm-enum-types.h"
 #include "nm-dbus-helpers.h"
 #include "nm-simple-connection.h"
 #include "nm-core-internal.h"
+#include "c-list/src/c-list.h"
 
 #include "introspection/org.freedesktop.NetworkManager.SecretAgent.h"
 #include "introspection/org.freedesktop.NetworkManager.AgentManager.h"
 
+/*****************************************************************************/
+
+typedef struct {
+	char *path;
+	char *setting_name;
+	GDBusMethodInvocation *context;
+	CList gsi_lst;
+} GetSecretsInfo;
+
+NM_GOBJECT_PROPERTIES_DEFINE (NMSecretAgentOld,
+	PROP_IDENTIFIER,
+	PROP_AUTO_REGISTER,
+	PROP_REGISTERED,
+	PROP_CAPABILITIES,
+);
+
+typedef struct {
+	GDBusConnection *bus;
+	NMDBusAgentManager *manager_proxy;
+	NMDBusSecretAgent *dbus_secret_agent;
+
+	/* GetSecretsInfo structs of in-flight GetSecrets requests */
+	CList gsi_lst_head;
+
+	char *identifier;
+
+	NMSecretAgentCapabilities capabilities;
+
+	bool registered:1;
+	bool registering:1;
+	bool private_bus:1;
+	bool session_bus:1;
+	bool auto_register:1;
+	bool suppress_auto:1;
+} NMSecretAgentOldPrivate;
+
 static void nm_secret_agent_old_initable_iface_init (GInitableIface *iface);
 static void nm_secret_agent_old_async_initable_iface_init (GAsyncInitableIface *iface);
+
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMSecretAgentOld, nm_secret_agent_old, G_TYPE_OBJECT,
                                   G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_secret_agent_old_initable_iface_init);
                                   G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_secret_agent_old_async_initable_iface_init);
                                   )
 
 #define NM_SECRET_AGENT_OLD_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SECRET_AGENT_OLD, NMSecretAgentOldPrivate))
-
-typedef struct {
-	gboolean registered;
-	gboolean registering;
-	NMSecretAgentCapabilities capabilities;
-
-	GDBusConnection *bus;
-	gboolean private_bus;
-	gboolean session_bus;
-	NMDBusAgentManager *manager_proxy;
-	NMDBusSecretAgent *dbus_secret_agent;
-
-	/* GetSecretsInfo structs of in-flight GetSecrets requests */
-	GSList *pending_gets;
-
-	char *identifier;
-	gboolean auto_register;
-	gboolean suppress_auto;
-} NMSecretAgentOldPrivate;
-
-enum {
-	PROP_0,
-	PROP_IDENTIFIER,
-	PROP_AUTO_REGISTER,
-	PROP_REGISTERED,
-	PROP_CAPABILITIES,
-
-	LAST_PROP
-};
 
 /*****************************************************************************/
 
@@ -81,29 +91,20 @@ _internal_unregister (NMSecretAgentOld *self)
 		g_dbus_interface_skeleton_unexport (G_DBUS_INTERFACE_SKELETON (priv->dbus_secret_agent));
 		priv->registered = FALSE;
 		priv->registering = FALSE;
-		g_object_notify (G_OBJECT (self), NM_SECRET_AGENT_OLD_REGISTERED);
+		_notify (self, PROP_REGISTERED);
 	}
 }
 
-typedef struct {
-	char *path;
-	char *setting_name;
-	GDBusMethodInvocation *context;
-} GetSecretsInfo;
-
 static void
-get_secrets_info_finalize (NMSecretAgentOld *self, GetSecretsInfo *info)
+get_secrets_info_free (GetSecretsInfo *info)
 {
-	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
+	nm_assert (info);
 
-	g_return_if_fail (info != NULL);
-
-	priv->pending_gets = g_slist_remove (priv->pending_gets, info);
+	c_list_unlink_stale (&info->gsi_lst);
 
 	g_free (info->path);
 	g_free (info->setting_name);
-	memset (info, 0, sizeof (*info));
-	g_free (info);
+	g_slice_free (GetSecretsInfo, info);
 }
 
 static inline gboolean
@@ -124,25 +125,20 @@ name_owner_changed (GObject *proxy,
 {
 	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (user_data);
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
-	GSList *iter;
-	char *owner;
+	gs_free char *owner = NULL;
+	GetSecretsInfo *info;
 
 	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (proxy));
-	if (owner != NULL) {
+	if (owner) {
 		if (should_auto_register (self))
 			nm_secret_agent_old_register_async (self, NULL, NULL, NULL);
-		g_free (owner);
 	} else {
-		/* Cancel any pending secrets requests */
-		for (iter = priv->pending_gets; iter; iter = g_slist_next (iter)) {
-			GetSecretsInfo *info = iter->data;
-
+		while ((info = c_list_first_entry (&priv->gsi_lst_head, GetSecretsInfo, gsi_lst))) {
+			c_list_unlink (&info->gsi_lst);
 			NM_SECRET_AGENT_OLD_GET_CLASS (self)->cancel_get_secrets (self,
-			                                                      info->path,
-			                                                      info->setting_name);
+			                                                          info->path,
+			                                                          info->setting_name);
 		}
-		g_slist_free (priv->pending_gets);
-		priv->pending_gets = NULL;
 
 		_internal_unregister (self);
 	}
@@ -154,11 +150,11 @@ verify_sender (NMSecretAgentOld *self,
                GError **error)
 {
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
-	char *nm_owner;
+	gs_free char *owner = NULL;
 	const char *sender;
 	guint32 sender_uid;
-	GVariant *ret;
-	GError *local = NULL;
+	gs_unref_variant GVariant *ret = NULL;
+	gs_free_error GError *local = NULL;
 
 	g_return_val_if_fail (context != NULL, FALSE);
 
@@ -170,8 +166,8 @@ verify_sender (NMSecretAgentOld *self,
 
 	/* Verify that the sender is the same as NetworkManager's bus name owner. */
 
-	nm_owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (priv->manager_proxy));
-	if (!nm_owner) {
+	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (priv->manager_proxy));
+	if (!owner) {
 		g_set_error_literal (error,
 		                     NM_SECRET_AGENT_ERROR,
 		                     NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
@@ -185,20 +181,16 @@ verify_sender (NMSecretAgentOld *self,
 		                     NM_SECRET_AGENT_ERROR,
 		                     NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
 		                     "Failed to get request sender.");
-		g_free (nm_owner);
 		return FALSE;
 	}
 
-	/* Check that the sender matches the current NM bus name owner */
-	if (strcmp (sender, nm_owner) != 0) {
+	if (!nm_streq (sender, owner)) {
 		g_set_error_literal (error,
 		                     NM_SECRET_AGENT_ERROR,
 		                     NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
 		                     "Request sender does not match NetworkManager bus name owner.");
-		g_free (nm_owner);
 		return FALSE;
 	}
-	g_free (nm_owner);
 
 	/* If we're connected to the session bus, then this must be a test program,
 	 * so skip the UID check.
@@ -217,8 +209,9 @@ verify_sender (NMSecretAgentOld *self,
 	                                   G_DBUS_CALL_FLAGS_NONE, -1,
 	                                   NULL, &local);
 	if (!ret) {
-		char *remote_error = g_dbus_error_get_remote_error (local);
+		gs_free char *remote_error = NULL;
 
+		remote_error = g_dbus_error_get_remote_error (local);
 		g_dbus_error_strip_remote_error (local);
 		g_set_error (error,
 		             NM_SECRET_AGENT_ERROR,
@@ -226,15 +219,12 @@ verify_sender (NMSecretAgentOld *self,
 		             "Failed to request unix user: (%s) %s.",
 		             remote_error ?: "",
 		             local->message);
-		g_free (remote_error);
-		g_error_free (local);
 		return FALSE;
 	}
 	g_variant_get (ret, "(u)", &sender_uid);
-	g_variant_unref (ret);
 
 	/* We only accept requests from NM, which always runs as root */
-	if (0 != sender_uid) {
+	if (sender_uid != 0) {
 		g_set_error_literal (error,
 		                     NM_SECRET_AGENT_ERROR,
 		                     NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
@@ -253,8 +243,8 @@ verify_request (NMSecretAgentOld *self,
                 NMConnection **out_connection,
                 GError **error)
 {
-	NMConnection *connection = NULL;
-	GError *local = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_free_error GError *local = NULL;
 
 	if (!verify_sender (self, context, error))
 		return FALSE;
@@ -273,20 +263,18 @@ verify_request (NMSecretAgentOld *self,
 	}
 
 	/* Make sure the given connection is valid */
-	g_assert (out_connection);
 	connection = _nm_simple_connection_new_from_dbus (connection_dict, NM_SETTING_PARSE_FLAGS_BEST_EFFORT, &local);
-	if (connection) {
-		nm_connection_set_path (connection, connection_path);
-		*out_connection = connection;
-	} else {
+	if (!connection) {
 		g_set_error (error,
 		             NM_SECRET_AGENT_ERROR,
 		             NM_SECRET_AGENT_ERROR_INVALID_CONNECTION,
 		             "Invalid connection: %s", local->message);
-		g_clear_error (&local);
+		return FALSE;
 	}
 
-	return !!connection;
+	nm_connection_set_path (connection, connection_path);
+	NM_SET_OUT (out_connection, g_steal_pointer (&connection));
+	return TRUE;
 }
 
 static void
@@ -306,8 +294,7 @@ get_secrets_cb (NMSecretAgentOld *self,
 		                                       g_variant_new ("(@a{sa{sv}})", secrets));
 	}
 
-	/* Remove the request from internal tracking */
-	get_secrets_info_finalize (self, info);
+	get_secrets_info_free (info);
 }
 
 static void
@@ -322,7 +309,7 @@ impl_secret_agent_old_get_secrets (NMSecretAgentOld *self,
 {
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 	GError *error = NULL;
-	NMConnection *connection = NULL;
+	gs_unref_object NMConnection *connection = NULL;
 	GetSecretsInfo *info;
 
 	/* Make sure the request comes from NetworkManager and is valid */
@@ -331,34 +318,35 @@ impl_secret_agent_old_get_secrets (NMSecretAgentOld *self,
 		return;
 	}
 
-	info = g_malloc0 (sizeof (GetSecretsInfo));
-	info->path = g_strdup (connection_path);
-	info->setting_name = g_strdup (setting_name);
-	info->context = context;
-	priv->pending_gets = g_slist_append (priv->pending_gets, info);
+	info = g_slice_new (GetSecretsInfo);
+	*info = (GetSecretsInfo) {
+		.path = g_strdup (connection_path),
+		.setting_name = g_strdup (setting_name),
+		.context = context,
+	};
+	c_list_link_tail (&priv->gsi_lst_head, &info->gsi_lst);
 
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->get_secrets (self,
-	                                               connection,
-	                                               connection_path,
-	                                               setting_name,
-	                                               (const char **) hints,
-	                                               flags,
-	                                               get_secrets_cb,
-	                                               info);
-	g_object_unref (connection);
+	                                                   connection,
+	                                                   connection_path,
+	                                                   setting_name,
+	                                                   (const char **) hints,
+	                                                   flags,
+	                                                   get_secrets_cb,
+	                                                   info);
 }
 
 static GetSecretsInfo *
-find_get_secrets_info (GSList *list, const char *path, const char *setting_name)
+find_get_secrets_info (NMSecretAgentOldPrivate *priv,
+                       const char *path,
+                       const char *setting_name)
 {
-	GSList *iter;
+	GetSecretsInfo *info;
 
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		GetSecretsInfo *candidate = iter->data;
-
-		if (   g_strcmp0 (path, candidate->path) == 0
-		    && g_strcmp0 (setting_name, candidate->setting_name) == 0)
-			return candidate;
+	c_list_for_each_entry (info, &priv->gsi_lst_head, gsi_lst) {
+		if (   nm_streq0 (path, info->path)
+		    && nm_streq0 (setting_name, info->setting_name))
+			return info;
 	}
 	return NULL;
 }
@@ -380,7 +368,7 @@ impl_secret_agent_old_cancel_get_secrets (NMSecretAgentOld *self,
 		return;
 	}
 
-	info = find_get_secrets_info (priv->pending_gets, connection_path, setting_name);
+	info = find_get_secrets_info (priv, connection_path, setting_name);
 	if (!info) {
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_SECRET_AGENT_ERROR,
@@ -389,10 +377,12 @@ impl_secret_agent_old_cancel_get_secrets (NMSecretAgentOld *self,
 		return;
 	}
 
-	/* Send the cancel request up to the subclass and finalize it */
+	c_list_unlink (&info->gsi_lst);
+
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->cancel_get_secrets (self,
-	                                                      info->path,
-	                                                      info->setting_name);
+	                                                          info->path,
+	                                                          info->setting_name);
+
 	g_dbus_method_invocation_return_value (context, NULL);
 }
 
@@ -417,8 +407,8 @@ impl_secret_agent_old_save_secrets (NMSecretAgentOld *self,
                                     const char *connection_path,
                                     gpointer user_data)
 {
+	gs_unref_object NMConnection *connection = NULL;
 	GError *error = NULL;
-	NMConnection *connection = NULL;
 
 	/* Make sure the request comes from NetworkManager and is valid */
 	if (!verify_request (self, context, connection_dict, connection_path, &connection, &error)) {
@@ -427,11 +417,10 @@ impl_secret_agent_old_save_secrets (NMSecretAgentOld *self,
 	}
 
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->save_secrets (self,
-	                                                connection,
-	                                                connection_path,
-	                                                save_secrets_cb,
-	                                                context);
-	g_object_unref (connection);
+	                                                    connection,
+	                                                    connection_path,
+	                                                    save_secrets_cb,
+	                                                    context);
 }
 
 static void
@@ -455,8 +444,8 @@ impl_secret_agent_old_delete_secrets (NMSecretAgentOld *self,
                                       const char *connection_path,
                                       gpointer user_data)
 {
+	gs_unref_object NMConnection *connection = NULL;
 	GError *error = NULL;
-	NMConnection *connection = NULL;
 
 	/* Make sure the request comes from NetworkManager and is valid */
 	if (!verify_request (self, context, connection_dict, connection_path, &connection, &error)) {
@@ -465,11 +454,10 @@ impl_secret_agent_old_delete_secrets (NMSecretAgentOld *self,
 	}
 
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->delete_secrets (self,
-	                                                  connection,
-	                                                  connection_path,
-	                                                  delete_secrets_cb,
-	                                                  context);
-	g_object_unref (connection);
+	                                                      connection,
+	                                                      connection_path,
+	                                                      delete_secrets_cb,
+	                                                      context);
 }
 
 /*****************************************************************************/
@@ -478,15 +466,13 @@ static gboolean
 check_nm_running (NMSecretAgentOld *self, GError **error)
 {
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
-	char *owner;
+	gs_free char *owner = NULL;
 
 	if (priv->private_bus)
 		return TRUE;
 	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (priv->manager_proxy));
-	if (owner) {
-		g_free (owner);
+	if (owner)
 		return TRUE;
-	}
 
 	g_set_error (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
 	             "NetworkManager is not running");
@@ -568,7 +554,7 @@ nm_secret_agent_old_register (NMSecretAgentOld *self,
 success:
 	priv->registering = FALSE;
 	priv->registered = TRUE;
-	g_object_notify (G_OBJECT (self), NM_SECRET_AGENT_OLD_REGISTERED);
+	_notify (self, PROP_REGISTERED);
 	return TRUE;
 }
 
@@ -576,6 +562,7 @@ static void
 reg_result (NMSecretAgentOld *self, GSimpleAsyncResult *simple, GError *error)
 {
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
+	_nm_unused gs_unref_object GSimpleAsyncResult *simple_free = simple;
 
 	priv->registering = FALSE;
 
@@ -587,13 +574,11 @@ reg_result (NMSecretAgentOld *self, GSimpleAsyncResult *simple, GError *error)
 		_internal_unregister (self);
 	} else {
 		priv->registered = TRUE;
-		g_object_notify (G_OBJECT (self), NM_SECRET_AGENT_OLD_REGISTERED);
+		_notify (self, PROP_REGISTERED);
 
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
 		g_simple_async_result_complete (simple);
 	}
-
-	g_object_unref (simple);
 }
 
 static void
@@ -624,6 +609,7 @@ reg_with_caps_cb (GObject *proxy,
 
 	self = NM_SECRET_AGENT_OLD (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
 	g_object_unref (self); /* drop extra ref added by get_source_object() */
+
 	priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 
 	if (nmdbus_agent_manager_call_register_with_capabilities_finish (NMDBUS_AGENT_MANAGER (proxy), result, NULL)) {
@@ -661,7 +647,7 @@ nm_secret_agent_old_register_async (NMSecretAgentOld *self,
 {
 	NMSecretAgentOldPrivate *priv;
 	NMSecretAgentOldClass *class;
-	GSimpleAsyncResult *simple;
+	gs_unref_object GSimpleAsyncResult *simple = NULL;
 	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_SECRET_AGENT_OLD (self));
@@ -687,7 +673,6 @@ nm_secret_agent_old_register_async (NMSecretAgentOld *self,
 	if (!check_nm_running (self, &error)) {
 		g_simple_async_result_take_error (simple, error);
 		g_simple_async_result_complete_in_idle (simple);
-		g_object_unref (simple);
 		return;
 	}
 
@@ -698,7 +683,6 @@ nm_secret_agent_old_register_async (NMSecretAgentOld *self,
 	                                       &error)) {
 		g_simple_async_result_take_error (simple, error);
 		g_simple_async_result_complete_in_idle (simple);
-		g_object_unref (simple);
 		return;
 	}
 
@@ -709,7 +693,8 @@ nm_secret_agent_old_register_async (NMSecretAgentOld *self,
 	                                                      priv->identifier,
 	                                                      priv->capabilities,
 	                                                      NULL,
-	                                                      reg_with_caps_cb, simple);
+	                                                      reg_with_caps_cb,
+	                                                      g_steal_pointer (&simple));
 }
 
 /**
@@ -775,7 +760,7 @@ nm_secret_agent_old_unregister (NMSecretAgentOld *self,
 static void
 unregister_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
-	GSimpleAsyncResult *simple = user_data;
+	gs_unref_object GSimpleAsyncResult *simple = user_data;
 	NMSecretAgentOld *self;
 	GError *error = NULL;
 
@@ -793,7 +778,6 @@ unregister_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	}
 
 	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
 }
 
 /**
@@ -814,7 +798,7 @@ nm_secret_agent_old_unregister_async (NMSecretAgentOld *self,
                                       gpointer user_data)
 {
 	NMSecretAgentOldPrivate *priv;
-	GSimpleAsyncResult *simple;
+	gs_unref_object GSimpleAsyncResult *simple = NULL;
 	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_SECRET_AGENT_OLD (self));
@@ -832,14 +816,15 @@ nm_secret_agent_old_unregister_async (NMSecretAgentOld *self,
 	if (!check_nm_running (self, &error)) {
 		g_simple_async_result_take_error (simple, error);
 		g_simple_async_result_complete_in_idle (simple);
-		g_object_unref (simple);
 		return;
 	}
 
 	priv->suppress_auto = TRUE;
 
-	nmdbus_agent_manager_call_unregister (priv->manager_proxy, cancellable,
-	                                      unregister_cb, simple);
+	nmdbus_agent_manager_call_unregister (priv->manager_proxy,
+	                                      cancellable,
+	                                      unregister_cb,
+	                                      g_steal_pointer (&simple));
 }
 
 /**
@@ -916,13 +901,13 @@ nm_secret_agent_old_get_secrets (NMSecretAgentOld *self,
 	g_return_if_fail (callback != NULL);
 
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->get_secrets (self,
-	                                               connection,
-	                                               nm_connection_get_path (connection),
-	                                               setting_name,
-	                                               hints,
-	                                               flags,
-	                                               callback,
-	                                               user_data);
+	                                                   connection,
+	                                                   nm_connection_get_path (connection),
+	                                                   setting_name,
+	                                                   hints,
+	                                                   flags,
+	                                                   callback,
+	                                                   user_data);
 }
 
 /**
@@ -946,10 +931,10 @@ nm_secret_agent_old_save_secrets (NMSecretAgentOld *self,
 	g_return_if_fail (nm_connection_get_path (connection));
 
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->save_secrets (self,
-	                                                connection,
-	                                                nm_connection_get_path (connection),
-	                                                callback,
-	                                                user_data);
+	                                                    connection,
+	                                                    nm_connection_get_path (connection),
+	                                                    callback,
+	                                                    user_data);
 }
 
 /**
@@ -973,10 +958,10 @@ nm_secret_agent_old_delete_secrets (NMSecretAgentOld *self,
 	g_return_if_fail (nm_connection_get_path (connection));
 
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->delete_secrets (self,
-	                                                  connection,
-	                                                  nm_connection_get_path (connection),
-	                                                  callback,
-	                                                  user_data);
+	                                                      connection,
+	                                                      nm_connection_get_path (connection),
+	                                                      callback,
+	                                                      user_data);
 }
 
 /*****************************************************************************/
@@ -1007,20 +992,7 @@ validate_identifier (const char *identifier)
 	return TRUE;
 }
 
-static void
-nm_secret_agent_old_init (NMSecretAgentOld *self)
-{
-	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
-
-	priv->dbus_secret_agent = nmdbus_secret_agent_skeleton_new ();
-	_nm_dbus_bind_properties (self, priv->dbus_secret_agent);
-	_nm_dbus_bind_methods (self, priv->dbus_secret_agent,
-	                       "GetSecrets", impl_secret_agent_old_get_secrets,
-	                       "CancelGetSecrets", impl_secret_agent_old_cancel_get_secrets,
-	                       "DeleteSecrets", impl_secret_agent_old_delete_secrets,
-	                       "SaveSecrets", impl_secret_agent_old_save_secrets,
-	                       NULL);
-}
+/*****************************************************************************/
 
 static void
 init_common (NMSecretAgentOld *self)
@@ -1037,42 +1009,14 @@ init_common (NMSecretAgentOld *self)
 	}
 }
 
-static gboolean
-init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
-{
-	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (initable);
-	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
-
-	priv->bus = _nm_dbus_new_connection (cancellable, error);
-	if (!priv->bus)
-		return FALSE;
-
-	priv->manager_proxy = nmdbus_agent_manager_proxy_new_sync (priv->bus,
-	                                                             G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
-	                                                           | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
-	                                                           NM_DBUS_SERVICE,
-	                                                           NM_DBUS_PATH_AGENT_MANAGER,
-	                                                           cancellable,
-	                                                           error);
-	if (!priv->manager_proxy)
-		return FALSE;
-
-	init_common (self);
-
-	if (priv->auto_register)
-		return nm_secret_agent_old_register (self, cancellable, error);
-	else
-		return TRUE;
-}
-
 typedef struct {
 	NMSecretAgentOld *self;
 	GCancellable *cancellable;
 	GSimpleAsyncResult *simple;
-} NMSecretAgentOldInitData;
+} InitData;
 
 static void
-init_async_complete (NMSecretAgentOldInitData *init_data, GError *error)
+init_async_complete (InitData *init_data, GError *error)
 {
 	if (!error)
 		g_simple_async_result_set_op_res_gboolean (init_data->simple, TRUE);
@@ -1083,14 +1027,14 @@ init_async_complete (NMSecretAgentOldInitData *init_data, GError *error)
 
 	g_object_unref (init_data->simple);
 	g_clear_object (&init_data->cancellable);
-	g_slice_free (NMSecretAgentOldInitData, init_data);
+	g_slice_free (InitData, init_data);
 }
 
 static void
 init_async_registered (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (object);
-	NMSecretAgentOldInitData *init_data = user_data;
+	InitData *init_data = user_data;
 	GError *error = NULL;
 
 	nm_secret_agent_old_register_finish (self, result, &error);
@@ -1100,7 +1044,7 @@ init_async_registered (GObject *object, GAsyncResult *result, gpointer user_data
 static void
 init_async_got_proxy (GObject *object, GAsyncResult *result, gpointer user_data)
 {
-	NMSecretAgentOldInitData *init_data = user_data;
+	InitData *init_data = user_data;
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (init_data->self);
 	GError *error = NULL;
 
@@ -1122,7 +1066,7 @@ init_async_got_proxy (GObject *object, GAsyncResult *result, gpointer user_data)
 static void
 init_async_got_bus (GObject *initable, GAsyncResult *result, gpointer user_data)
 {
-	NMSecretAgentOldInitData *init_data = user_data;
+	InitData *init_data = user_data;
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (init_data->self);
 	GError *error = NULL;
 
@@ -1141,36 +1085,7 @@ init_async_got_bus (GObject *initable, GAsyncResult *result, gpointer user_data)
 	                                init_async_got_proxy, init_data);
 }
 
-static void
-init_async (GAsyncInitable *initable, int io_priority,
-            GCancellable *cancellable, GAsyncReadyCallback callback,
-            gpointer user_data)
-{
-	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (initable);
-	NMSecretAgentOldInitData *init_data;
-
-	init_data = g_slice_new (NMSecretAgentOldInitData);
-	init_data->self = self;
-	init_data->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
-
-	init_data->simple = g_simple_async_result_new (G_OBJECT (initable), callback,
-	                                               user_data, init_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (init_data->simple, cancellable);
-
-	_nm_dbus_new_connection_async (cancellable, init_async_got_bus, init_data);
-}
-
-static gboolean
-init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
-{
-	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return TRUE;
-}
+/*****************************************************************************/
 
 static void
 get_property (GObject *object,
@@ -1229,23 +1144,109 @@ set_property (GObject *object,
 	}
 }
 
+/*****************************************************************************/
+
+static void
+nm_secret_agent_old_init (NMSecretAgentOld *self)
+{
+	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
+
+	c_list_init (&priv->gsi_lst_head);
+	priv->dbus_secret_agent = nmdbus_secret_agent_skeleton_new ();
+	_nm_dbus_bind_properties (self, priv->dbus_secret_agent);
+	_nm_dbus_bind_methods (self, priv->dbus_secret_agent,
+	                       "GetSecrets", impl_secret_agent_old_get_secrets,
+	                       "CancelGetSecrets", impl_secret_agent_old_cancel_get_secrets,
+	                       "DeleteSecrets", impl_secret_agent_old_delete_secrets,
+	                       "SaveSecrets", impl_secret_agent_old_save_secrets,
+	                       NULL);
+}
+
+static gboolean
+init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
+{
+	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (initable);
+	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
+
+	priv->bus = _nm_dbus_new_connection (cancellable, error);
+	if (!priv->bus)
+		return FALSE;
+
+	priv->manager_proxy = nmdbus_agent_manager_proxy_new_sync (priv->bus,
+	                                                             G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
+	                                                           | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
+	                                                           NM_DBUS_SERVICE,
+	                                                           NM_DBUS_PATH_AGENT_MANAGER,
+	                                                           cancellable,
+	                                                           error);
+	if (!priv->manager_proxy)
+		return FALSE;
+
+	init_common (self);
+
+	if (priv->auto_register)
+		return nm_secret_agent_old_register (self, cancellable, error);
+	else
+		return TRUE;
+}
+
+static void
+init_async (GAsyncInitable *initable, int io_priority,
+            GCancellable *cancellable, GAsyncReadyCallback callback,
+            gpointer user_data)
+{
+	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (initable);
+	InitData *init_data;
+
+	init_data = g_slice_new (InitData);
+	*init_data = (InitData) {
+		.self = self,
+		.cancellable = nm_g_object_ref (cancellable),
+		.simple = g_simple_async_result_new (G_OBJECT (initable),
+		                                     callback,
+		                                     user_data,
+		                                     init_async),
+	};
+
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (init_data->simple, cancellable);
+
+	_nm_dbus_new_connection_async (cancellable, init_async_got_bus, init_data);
+}
+
+static gboolean
+init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
+{
+	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return TRUE;
+}
+
 static void
 dispose (GObject *object)
 {
 	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (object);
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
+	GetSecretsInfo *info;
 
-	if (priv->registered)
+	if (priv->registered) {
+		priv->registered = FALSE;
 		nm_secret_agent_old_unregister_async (self, NULL, NULL, NULL);
+	}
 
-	g_clear_pointer (&priv->identifier, g_free);
+	nm_clear_g_free (&priv->identifier);
 
-	while (priv->pending_gets)
-		get_secrets_info_finalize (self, priv->pending_gets->data);
+	while ((info = c_list_first_entry (&priv->gsi_lst_head, GetSecretsInfo, gsi_lst)))
+		get_secrets_info_free (info);
 
-	g_signal_handlers_disconnect_matched (priv->dbus_secret_agent, G_SIGNAL_MATCH_DATA,
-	                                      0, 0, NULL, NULL, self);
-	g_object_unref (priv->dbus_secret_agent);
+	if (priv->dbus_secret_agent) {
+		g_signal_handlers_disconnect_matched (priv->dbus_secret_agent, G_SIGNAL_MATCH_DATA,
+		                                      0, 0, NULL, NULL, self);
+		g_clear_object (&priv->dbus_secret_agent);
+	}
 
 	g_clear_object (&priv->manager_proxy);
 	g_clear_object (&priv->bus);
@@ -1260,7 +1261,6 @@ nm_secret_agent_old_class_init (NMSecretAgentOldClass *class)
 
 	g_type_class_add_private (class, sizeof (NMSecretAgentOldPrivate));
 
-	/* Virtual methods */
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
@@ -1276,13 +1276,12 @@ nm_secret_agent_old_class_init (NMSecretAgentOldClass *class)
 	 * of 3 characters.  An example valid identifier is 'org.gnome.nm-applet'
 	 * (without quotes).
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_IDENTIFIER,
-		 g_param_spec_string (NM_SECRET_AGENT_OLD_IDENTIFIER, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IDENTIFIER] =
+	    g_param_spec_string (NM_SECRET_AGENT_OLD_IDENTIFIER, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSecretAgentOld:auto-register:
@@ -1305,39 +1304,38 @@ nm_secret_agent_old_class_init (NMSecretAgentOldClass *class)
 	 * auto-registration. This ensures that the agent remains un-registered when
 	 * you expect it to be unregistered.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_AUTO_REGISTER,
-		 g_param_spec_boolean (NM_SECRET_AGENT_OLD_AUTO_REGISTER, "", "",
-		                       TRUE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_AUTO_REGISTER] =
+	    g_param_spec_boolean (NM_SECRET_AGENT_OLD_AUTO_REGISTER, "", "",
+	                          TRUE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSecretAgentOld:registered:
 	 *
 	 * %TRUE if the agent is registered with NetworkManager, %FALSE if not.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_REGISTERED,
-		 g_param_spec_boolean (NM_SECRET_AGENT_OLD_REGISTERED, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_REGISTERED] =
+	    g_param_spec_boolean (NM_SECRET_AGENT_OLD_REGISTERED, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSecretAgentOld:capabilities:
 	 *
 	 * A bitfield of %NMSecretAgentCapabilities.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CAPABILITIES,
-		 g_param_spec_flags (NM_SECRET_AGENT_OLD_CAPABILITIES, "", "",
-		                     NM_TYPE_SECRET_AGENT_CAPABILITIES,
-		                     NM_SECRET_AGENT_CAPABILITY_NONE,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_CONSTRUCT |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CAPABILITIES] =
+	    g_param_spec_flags (NM_SECRET_AGENT_OLD_CAPABILITIES, "", "",
+	                        NM_TYPE_SECRET_AGENT_CAPABILITIES,
+	                        NM_SECRET_AGENT_CAPABILITY_NONE,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_CONSTRUCT |
+	                        G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
 
 static void

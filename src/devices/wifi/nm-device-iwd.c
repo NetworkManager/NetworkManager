@@ -1380,7 +1380,7 @@ wifi_secrets_get_one (NMDeviceIwd *self,
 	                                                    TRUE,
 	                                                    setting_name,
 	                                                    flags,
-	                                                    setting_key,
+	                                                    NM_MAKE_STRV (setting_key),
 	                                                    wifi_secrets_cb,
 	                                                    nm_utils_user_data_pack (self, invocation));
 }
@@ -1894,7 +1894,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 			                                                    TRUE,
 			                                                    NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 			                                                    NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION,
-			                                                    "psk",
+			                                                    NM_MAKE_STRV (NM_SETTING_WIRELESS_SECURITY_PSK),
 			                                                    act_psk_cb,
 			                                                    self);
 			nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);

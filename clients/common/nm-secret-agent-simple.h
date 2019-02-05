@@ -21,26 +21,6 @@
 
 #include "nm-secret-agent-old.h"
 
-#define NM_TYPE_SECRET_AGENT_SIMPLE            (nm_secret_agent_simple_get_type ())
-#define NM_SECRET_AGENT_SIMPLE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimple))
-#define NM_SECRET_AGENT_SIMPLE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimpleClass))
-#define NM_IS_SECRET_AGENT_SIMPLE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SECRET_AGENT_SIMPLE))
-#define NM_IS_SECRET_AGENT_SIMPLE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SECRET_AGENT_SIMPLE))
-#define NM_SECRET_AGENT_SIMPLE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimpleClass))
-
-/* Signals */
-#define NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS  "request-secrets"
-
-typedef struct {
-	NMSecretAgentOld parent;
-
-} NMSecretAgentSimple;
-
-typedef struct {
-	NMSecretAgentOldClass parent;
-
-} NMSecretAgentSimpleClass;
-
 typedef enum {
 	NM_SECRET_AGENT_SECRET_TYPE_PROPERTY,
 	NM_SECRET_AGENT_SECRET_TYPE_SECRET,
@@ -60,9 +40,23 @@ typedef struct {
 
 #define NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT  NM_DBUS_INTERFACE".openconnect"
 
+/*****************************************************************************/
+
+#define NM_TYPE_SECRET_AGENT_SIMPLE            (nm_secret_agent_simple_get_type ())
+#define NM_SECRET_AGENT_SIMPLE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimple))
+#define NM_SECRET_AGENT_SIMPLE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimpleClass))
+#define NM_IS_SECRET_AGENT_SIMPLE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SECRET_AGENT_SIMPLE))
+#define NM_IS_SECRET_AGENT_SIMPLE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SECRET_AGENT_SIMPLE))
+#define NM_SECRET_AGENT_SIMPLE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimpleClass))
+
+#define NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS  "request-secrets"
+
+typedef struct _NMSecretAgentSimple      NMSecretAgentSimple;
+typedef struct _NMSecretAgentSimpleClass NMSecretAgentSimpleClass;
+
 GType nm_secret_agent_simple_get_type (void);
 
-NMSecretAgentOld *nm_secret_agent_simple_new                 (const char          *name);
+NMSecretAgentSimple *nm_secret_agent_simple_new              (const char          *name);
 
 void              nm_secret_agent_simple_response            (NMSecretAgentSimple *self,
                                                               const char          *request_id,

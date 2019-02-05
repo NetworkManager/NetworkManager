@@ -166,7 +166,7 @@ nm_act_request_get_secrets (NMActRequest *self,
                             gboolean ref_self,
                             const char *setting_name,
                             NMSecretAgentGetSecretsFlags flags,
-                            const char *hint,
+                            const char *const*hints,
                             NMActRequestSecretsFunc callback,
                             gpointer callback_data)
 {
@@ -175,7 +175,6 @@ nm_act_request_get_secrets (NMActRequest *self,
 	NMSettingsConnectionCallId *call_id_s;
 	NMSettingsConnection *settings_connection;
 	NMConnection *applied_connection;
-	const char *hints[2] = { hint, NULL };
 
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (self), NULL);
 
