@@ -254,16 +254,21 @@ get_bearer_ip_method (MMBearerIpConfig *config)
 static MMSimpleConnectProperties *
 create_cdma_connect_properties (NMConnection *connection)
 {
-	NMSettingCdma *setting;
 	MMSimpleConnectProperties *properties;
-	const char *str;
 
-	setting = nm_connection_get_setting_cdma (connection);
 	properties = mm_simple_connect_properties_new ();
 
-	str = nm_setting_cdma_get_number (setting);
-	if (str)
-		mm_simple_connect_properties_set_number (properties, str);
+#if !MM_CHECK_VERSION (1, 9, 1)
+	{
+		NMSettingCdma *setting;
+		const char *str;
+
+		setting = nm_connection_get_setting_cdma (connection);
+		str = nm_setting_cdma_get_number (setting);
+		if (str)
+			mm_simple_connect_properties_set_number (properties, str);
+	}
+#endif
 
 	return properties;
 }
