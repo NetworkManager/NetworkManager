@@ -1060,6 +1060,15 @@ managed=1
     checking functionality.  This allows NetworkManager to detect
     whether or not the system can actually access the internet or
     whether it is behind a captive portal.</para>
+    <para>Connectivity checking serves two purposes. For one, it exposes
+    a connectivity state on D-Bus, which other applications may use. For example,
+    Gnome's portal helper uses this as signal to show a captive portal login
+    page.
+    The other use is that default-route of devices without global connectivity
+    get a penalty of +20000 to the route-metric. This has the purpose to give a
+    better default-route to devices that have global connectivity. For example,
+    when being connected to WWAN and to a Wi-Fi network which is behind a captive
+    portal, WWAN still gets preferred until login.</para>
 
     <para>
       <variablelist>
