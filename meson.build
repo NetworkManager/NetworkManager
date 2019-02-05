@@ -374,6 +374,8 @@ elif session_tracking == 'elogind'
   config_h.set10('SESSION_TRACKING_SYSTEMD', false)
   config_h.set10('SESSION_TRACKING_ELOGIND', true)
 else
+  config_h.set10('SESSION_TRACKING_SYSTEMD', false)
+  config_h.set10('SESSION_TRACKING_ELOGIND', false)
   logind_dep = dependency('', required:false)
 endif
 
