@@ -376,8 +376,8 @@ typedef struct {
 
 	bool pruning[_DELAYED_ACTION_IDX_REFRESH_ALL_NUM];
 
-	bool sysctl_get_warned;
 	GHashTable *sysctl_get_prev_values;
+	CList sysctl_list;
 
 	NMUdevClient *udev_client;
 
@@ -4156,41 +4156,72 @@ _nm_logging_clear_platform_logging_cache (void)
 
 		g_hash_table_destroy (priv->sysctl_get_prev_values);
 		priv->sysctl_get_prev_values = NULL;
-		priv->sysctl_get_warned = FALSE;
 	}
+}
+
+typedef struct {
+	const char *path;
+	CList lst;
+	char *value;
+	char path_data[];
+} SysctlCacheEntry;
+
+static void
+sysctl_cache_entry_free (SysctlCacheEntry *entry)
+{
+	c_list_unlink_stale (&entry->lst);
+	g_free (entry->value);
+	g_free (entry);
 }
 
 static void
 _log_dbg_sysctl_get_impl (NMPlatform *platform, const char *pathid, const char *contents)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	const char *prev_value = NULL;
+	SysctlCacheEntry *entry = NULL;
 
 	if (!priv->sysctl_get_prev_values) {
 		sysctl_clear_cache_list = g_slist_prepend (sysctl_clear_cache_list, platform);
-		priv->sysctl_get_prev_values = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
+		c_list_init (&priv->sysctl_list);
+		priv->sysctl_get_prev_values = g_hash_table_new_full (nm_pstr_hash,
+		                                                      nm_pstr_equal,
+		                                                      (GDestroyNotify) sysctl_cache_entry_free,
+		                                                      NULL);
 	} else
-		prev_value = g_hash_table_lookup (priv->sysctl_get_prev_values, pathid);
+		entry = g_hash_table_lookup (priv->sysctl_get_prev_values, &pathid);
 
-	if (prev_value) {
-		if (strcmp (prev_value, contents) != 0) {
+	if (entry) {
+		if (!nm_streq (entry->value, contents)) {
 			gs_free char *contents_escaped = g_strescape (contents, NULL);
-			gs_free char *prev_value_escaped = g_strescape (prev_value, NULL);
+			gs_free char *prev_value_escaped = g_strescape (entry->value, NULL);
 
 			_LOGD ("sysctl: reading '%s': '%s' (changed from '%s' on last read)", pathid, contents_escaped, prev_value_escaped);
-			g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (pathid), g_strdup (contents));
+			g_free (entry->value);
+			entry->value = g_strdup (contents);
 		}
+		c_list_unlink_stale (&entry->lst);
+		c_list_link_front (&priv->sysctl_list, &entry->lst);
 	} else {
 		gs_free char *contents_escaped = g_strescape (contents, NULL);
+		SysctlCacheEntry *old;
+		size_t len;
+
+		len = strlen (pathid);
+		entry = g_malloc (sizeof (SysctlCacheEntry) + len + 1);
+		entry->value = g_strdup (contents);
+		entry->path = entry->path_data;
+		memcpy (entry->path_data, pathid, len + 1);
+
+		/* Remove oldest entry when the cache becomes too big */
+		if (g_hash_table_size (priv->sysctl_get_prev_values) > 1000) {
+			old = c_list_last_entry (&priv->sysctl_list, SysctlCacheEntry, lst);
+			g_hash_table_remove (priv->sysctl_get_prev_values, old);
+		}
 
 		_LOGD ("sysctl: reading '%s': '%s'", pathid, contents_escaped);
-		g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (pathid), g_strdup (contents));
 
-		if (   !priv->sysctl_get_warned
-		    && g_hash_table_size (priv->sysctl_get_prev_values) > 50000) {
-			_LOGW ("sysctl: the internal cache for debug-logging of sysctl values grew pretty large. You can clear it by disabling debug-logging: `nmcli general logging level KEEP domains PLATFORM:INFO`.");
-			priv->sysctl_get_warned = TRUE;
-		}
+		g_hash_table_add (priv->sysctl_get_prev_values, entry);
+		c_list_link_front (&priv->sysctl_list, &entry->lst);
 	}
 }
 
