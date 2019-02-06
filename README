@@ -37,9 +37,9 @@ REQUIREMENTS:
             pkg-config >= 0.29
 
 INSTALL:
-        The meson build-system is used for c-siphash. Contact upstream
+        The meson build-system is used for this project. Contact upstream
         documentation for detailed help. In most situations the following
-        commands are sufficient to build and install c-siphash from source:
+        commands are sufficient to build and install from source:
 
             $ mkdir build
             $ cd build

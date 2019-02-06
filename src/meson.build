@@ -31,7 +31,7 @@ libcsiphash_shared = shared_library(
 libcsiphash_dep = declare_dependency(
         include_directories: include_directories('.'),
         link_with: libcsiphash_private,
-        version: meson.project_version()
+        version: meson.project_version(),
 )
 
 if not meson.is_subproject()
@@ -42,7 +42,7 @@ if not meson.is_subproject()
                 version: meson.project_version(),
                 name: 'libcsiphash',
                 filebase: 'libcsiphash',
-                description: 'Streaming-capable SipHash Implementation',
+                description: project_description,
         )
 endif
 
@@ -53,5 +53,5 @@ endif
 test_api = executable('test-api', ['test-api.c'], link_with: libcsiphash_shared)
 test('API Symbol Visibility', test_api)
 
-test_basic = executable('test-basic', ['test-basic.c'], link_with: libcsiphash_private)
+test_basic = executable('test-basic', ['test-basic.c'], dependencies: libcsiphash_dep)
 test('Basic API Behavior', test_basic)

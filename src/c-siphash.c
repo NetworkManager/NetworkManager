@@ -55,7 +55,7 @@ static inline void c_siphash_sipround(CSipHash *state) {
  * @seed:               128bit seed
  *
  * This initializes the siphash state context. Once initialized, it can be used
- * to hash arbitary input. To feed data into it, use c_siphash_append(). To get
+ * to hash arbitrary input. To feed data into it, use c_siphash_append(). To get
  * the final hash, use c_siphash_finalize().
  *
  * Note that the siphash context does not allocate state. There is no need to
@@ -134,7 +134,7 @@ _public_ void c_siphash_append(CSipHash *state, const uint8_t *bytes, size_t n_b
         end -= (state->n_bytes % sizeof(uint64_t));
 
         /*
-         * We are now guaranteed to be at a 64bit state boudary. Hence, we can
+         * We are now guaranteed to be at a 64bit state boundary. Hence, we can
          * operate in 64bit chunks on all input. This is much faster than the
          * one-byte-at-a-time loop.
          */
