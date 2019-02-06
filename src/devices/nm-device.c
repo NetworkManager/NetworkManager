@@ -9517,7 +9517,7 @@ restore_ip6_properties (NMDevice *self)
 	}
 }
 
-static inline void
+static void
 set_disable_ipv6 (NMDevice *self, const char *value)
 {
 	/* We only touch disable_ipv6 when NM is not managing the IPv6LL address */
@@ -9525,7 +9525,7 @@ set_disable_ipv6 (NMDevice *self, const char *value)
 		nm_device_sysctl_ip_conf_set (self, AF_INET6, "disable_ipv6", value);
 }
 
-static inline void
+static void
 set_nm_ipv6ll (NMDevice *self, gboolean enable)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);

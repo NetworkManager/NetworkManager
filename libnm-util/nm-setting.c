@@ -650,7 +650,7 @@ nm_setting_compare (NMSetting *a,
 	return same;
 }
 
-static inline gboolean
+static gboolean
 should_compare_prop (NMSetting *setting,
                      const char *prop_name,
                      NMSettingCompareFlags comp_flags,

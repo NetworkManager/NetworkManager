@@ -71,7 +71,7 @@ NM_CACHED_QUARK_FCN ("nm-supplicant-error-quark", nm_supplicant_error_quark)
 
 /*****************************************************************************/
 
-static inline gboolean
+static gboolean
 die_count_exceeded (guint32 count)
 {
 	return count > 2;

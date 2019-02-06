@@ -107,7 +107,7 @@ get_secrets_info_free (GetSecretsInfo *info)
 	g_slice_free (GetSecretsInfo, info);
 }
 
-static inline gboolean
+static gboolean
 should_auto_register (NMSecretAgentOld *self)
 {
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);

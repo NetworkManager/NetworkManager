@@ -709,7 +709,7 @@ nm_utils_kill_child_async (pid_t pid, int sig, NMLogDomain log_domain,
 	g_child_watch_add (pid, _kc_cb_watch_child, data);
 }
 
-static inline gulong
+static gulong
 _sleep_duration_convert_ms_to_us (guint32 sleep_duration_msec)
 {
 	if (sleep_duration_msec > 0) {

@@ -1545,13 +1545,13 @@ _vt_cmd_plobj_id_hash_update (tfilter, NMPlatformTfilter, {
 	                     obj->handle);
 })
 
-static inline void
+static void
 _vt_cmd_plobj_hash_update_ip4_route (const NMPlatformObject *obj, NMHashState *h)
 {
 	return nm_platform_ip4_route_hash_update ((const NMPlatformIP4Route *) obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL, h);
 }
 
-static inline void
+static void
 _vt_cmd_plobj_hash_update_ip6_route (const NMPlatformObject *obj, NMHashState *h)
 {
 	return nm_platform_ip6_route_hash_update ((const NMPlatformIP6Route *) obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL, h);

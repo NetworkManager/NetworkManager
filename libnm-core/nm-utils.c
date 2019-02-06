@@ -5356,7 +5356,7 @@ _json_find_object (json_t *json,
 	return json_element;
 }
 
-static inline void
+static void
 _json_delete_object_on_int_match (json_t *json,
                                   const char *key1,
                                   const char *key2,
@@ -5372,7 +5372,7 @@ _json_delete_object_on_int_match (json_t *json,
 		_json_del_object (json, key1, key2, key3);
 }
 
-static inline void
+static void
 _json_delete_object_on_bool_match (json_t *json,
                                    const char *key1,
                                    const char *key2,
@@ -5388,7 +5388,7 @@ _json_delete_object_on_bool_match (json_t *json,
 		_json_del_object (json, key1, key2, key3);
 }
 
-static inline void
+static void
 _json_delete_object_on_string_match (json_t *json,
                                      const char *key1,
                                      const char *key2,

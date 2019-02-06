@@ -461,7 +461,7 @@ again:
 	return FALSE;
 }
 
-static inline gboolean
+static gboolean
 check_permissions (struct stat *s, const char **out_error_msg)
 {
 	g_return_val_if_fail (s != NULL, FALSE);

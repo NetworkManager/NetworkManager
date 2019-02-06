@@ -802,7 +802,7 @@ nm_setting_dcb_init (NMSettingDcb *setting)
 {
 }
 
-static inline void
+static void
 set_uint_array (const GValue *v, uint *a, size_t len)
 {
 	GArray *src = g_value_get_boxed (v);

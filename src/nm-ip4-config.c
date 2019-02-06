@@ -2901,7 +2901,7 @@ nm_ip4_config_nmpobj_remove (NMIP4Config *self,
 
 /*****************************************************************************/
 
-static inline void
+static void
 hash_u32 (GChecksum *sum, guint32 n)
 {
 	g_checksum_update (sum, (const guint8 *) &n, sizeof (n));

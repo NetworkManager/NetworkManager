@@ -495,7 +495,7 @@ nm_dhcp_dhclient_escape_duid (GBytes *duid)
 	return escaped;
 }
 
-static inline gboolean
+static gboolean
 isoctal (const guint8 *p)
 {
 	return (   p[0] >= '0' && p[0] <= '3'

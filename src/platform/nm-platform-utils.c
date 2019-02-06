@@ -894,7 +894,7 @@ nmp_utils_ethtool_get_link_settings (int ifindex,
                          | ADVERTISED_1000baseT_Full \
                          | ADVERTISED_10000baseT_Full )
 
-static inline guint32
+static guint32
 get_baset_mode (guint32 speed, NMPlatformLinkDuplexType duplex)
 {
 	if (duplex == NM_PLATFORM_LINK_DUPLEX_UNKNOWN)

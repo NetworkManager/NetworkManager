@@ -254,7 +254,7 @@ nm_setting_bridge_get_ageing_time (NMSettingBridge *setting)
 #define BR_MIN_AGEING_TIME   0
 #define BR_MAX_AGEING_TIME   1000000
 
-static inline gboolean
+static gboolean
 check_range (guint32 val,
              guint32 min,
              guint32 max,

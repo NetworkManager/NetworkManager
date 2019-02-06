@@ -536,7 +536,7 @@ start (NMNDisc *ndisc)
 
 /*****************************************************************************/
 
-static inline int
+static int
 ipv6_sysctl_get (NMPlatform *platform, const char *ifname, const char *property, int min, int max, int defval)
 {
 	return nm_platform_sysctl_ip_conf_get_int_checked (platform,
