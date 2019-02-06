@@ -16,7 +16,7 @@ if not meson.is_subproject()
                 version: meson.project_version(),
                 name: 'libclist',
                 filebase: 'libclist',
-                description: 'Circular Intrusive Double Linked List Collection in ISO-C11',
+                description: project_description,
         )
 endif
 
