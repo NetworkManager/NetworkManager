@@ -20,7 +20,7 @@ endforeach
 
 resource = 'typelibs'
 
-sources += gnome.compile_resources(
+libnm_utils_sources += gnome.compile_resources(
   resource,
   resource + '.gresource.xml',
   source_dir: '.',

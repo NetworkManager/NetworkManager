@@ -1,15 +1,15 @@
 libnm_inc = include_directories('.')
 
-sources = files('nm-libnm-utils.c')
+cflags = [
+  '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
+  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM',
+]
+
+libnm_utils_sources = files('nm-libnm-utils.c')
 
 deps = [
   libnmdbus_dep,
   shared_nm_utils_base_dep,
-]
-
-cflags = [
-  '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM',
 ]
 
 if have_fake_typelibs
@@ -19,7 +19,7 @@ endif
 
 libnm_utils = static_library(
   'nm-utils',
-  sources: sources,
+  sources: libnm_utils_sources,
   include_directories: libnm_core_inc,
   dependencies: deps,
   c_args: cflags,
@@ -146,14 +146,6 @@ libnm_sources = files(
   'nm-wimax-nsp.c',
 )
 
-deps = [
-  dl_dep,
-  libudev_dep,
-  shared_nm_utils_base_dep,
-  uuid_dep,
-  libnm_systemd_shared_no_logging_dep,
-]
-
 linker_script = join_paths(meson.current_source_dir(), 'libnm.ver')
 
 
@@ -162,7 +154,13 @@ libnm = shared_library(
   sources: libnm_sources + libnm_enum,
   version: libnm_version,
   include_directories: libnm_core_inc,
-  dependencies: deps,
+  dependencies: [
+    dl_dep,
+    libudev_dep,
+    shared_nm_utils_base_dep,
+    uuid_dep,
+    libnm_systemd_shared_no_logging_dep,
+  ],
   c_args: cflags,
   link_with: libnm_utils,
   link_whole: libnm_core,
