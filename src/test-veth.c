@@ -1,7 +1,7 @@
 /*
  * Test on a veth link
  *
- * This essentially mimics a real nework with two peers.
+ * This essentially mimics a real network with two peers.
  *
  * Run one ACD context on each end of the tunnel. On one end probe for N,
  * addresses on the other end pre-configure N/3 of the same addresses and probe

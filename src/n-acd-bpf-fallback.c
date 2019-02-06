@@ -1,7 +1,7 @@
 /*
  * A noop implementation of eBPF filter for IPv4 Address Conflict Detection
  *
- * These are a collection of dummy funcitons that have no effect, but allows
+ * These are a collection of dummy functions that have no effect, but allows
  * n-acd to compile without eBPF support.
  *
  * See n-acd-bpf.c for documentation.
