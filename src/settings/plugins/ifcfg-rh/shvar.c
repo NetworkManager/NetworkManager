@@ -215,9 +215,9 @@ _escape_ansic (const char *source)
 
 /*****************************************************************************/
 
-#define _char_req_escape(ch)        NM_IN_SET (ch,      '\"', '\\',       '$', '`')
-#define _char_req_escape_old(ch)    NM_IN_SET (ch,      '\"', '\\', '\'', '$', '`', '~')
-#define _char_req_quotes(ch)        NM_IN_SET (ch, ' ',             '\'',           '~', '\t', '|', '&', ';', '(', ')', '<', '>')
+#define _char_req_escape(ch)        NM_IN_SET (ch,      '"', '\\',       '$', '`')
+#define _char_req_escape_old(ch)    NM_IN_SET (ch,      '"', '\\', '\'', '$', '`', '~')
+#define _char_req_quotes(ch)        NM_IN_SET (ch, ' ',            '\'',           '~', '\t', '|', '&', ';', '(', ')', '<', '>')
 
 const char *
 svEscape (const char *s, char **to_free)

@@ -803,7 +803,7 @@ test_write_duid (void)
 static void
 test_write_existing_duid (void)
 {
-	const guint8 duid[] = { 000, 001, 000, 001, 023, 'o', 023, 'n', 000, '\"', 0372, 0214, 0326, 0302 };
+	const guint8 duid[] = { 000, 001, 000, 001, 023, 'o', 023, 'n', 000, '"', 0372, 0214, 0326, 0302 };
 	const char *original_contents = "default-duid \"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n";
 	const char *expected_contents = "default-duid \"\\000\\001\\000\\001\\023o\\023n\\000\\\"\\372\\214\\326\\302\";\n";
 	GError *error = NULL;
@@ -825,7 +825,7 @@ test_write_existing_duid (void)
 	g_assert_cmpstr (expected_contents, ==, contents);
 }
 
-static const guint8 DUID_BIN[] = { 000, 001, 000, 001, 023, 'o', 023, 'n', 000, '\"', 0372, 0214, 0326, 0302 };
+static const guint8 DUID_BIN[] = { 000, 001, 000, 001, 023, 'o', 023, 'n', 000, '"', 0372, 0214, 0326, 0302 };
 #define DUID "\\000\\001\\000\\001\\023o\\023n\\000\\\"\\372\\214\\326\\302"
 
 static void
