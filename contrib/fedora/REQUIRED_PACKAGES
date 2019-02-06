@@ -55,6 +55,7 @@ install \
     ppp-devel \
     pygobject3-base \
     python3-dbus \
+    python3-gobject \
     qt-devel \
     readline-devel \
     rpm-build \
