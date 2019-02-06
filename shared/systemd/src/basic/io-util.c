@@ -10,8 +10,10 @@
 #include <unistd.h>
 
 #include "io-util.h"
+#include "string-util.h"
 #include "time-util.h"
 
+#if 0 /* NM_IGNORED */
 int flush_fd(int fd) {
         struct pollfd pollfd = {
                 .fd = fd,
@@ -55,6 +57,7 @@ int flush_fd(int fd) {
                 count += (int) l;
         }
 }
+#endif /* NM_IGNORED */
 
 ssize_t loop_read(int fd, void *buf, size_t nbytes, bool do_poll) {
         uint8_t *p = buf;
@@ -115,6 +118,7 @@ int loop_read_exact(int fd, void *buf, size_t nbytes, bool do_poll) {
         return 0;
 }
 
+#if 0 /* NM_IGNORED */
 int loop_write(int fd, const void *buf, size_t nbytes, bool do_poll) {
         const uint8_t *p = buf;
 
@@ -173,6 +177,7 @@ int pipe_eof(int fd) {
 
         return pollfd.revents & POLLHUP;
 }
+#endif /* NM_IGNORED */
 
 int fd_wait_for_event(int fd, int event, usec_t t) {
 
@@ -193,6 +198,7 @@ int fd_wait_for_event(int fd, int event, usec_t t) {
         return pollfd.revents;
 }
 
+#if 0 /* NM_IGNORED */
 static size_t nul_length(const uint8_t *p, size_t sz) {
         size_t n = 0;
 
@@ -254,3 +260,13 @@ ssize_t sparse_write(int fd, const void *p, size_t sz, size_t run_length) {
 
         return q - (const uint8_t*) p;
 }
+
+char* set_iovec_string_field(struct iovec *iovec, size_t *n_iovec, const char *field, const char *value) {
+        char *x;
+
+        x = strappend(field, value);
+        if (x)
+                iovec[(*n_iovec)++] = IOVEC_MAKE_STRING(x);
+        return x;
+}
+#endif /* NM_IGNORED */

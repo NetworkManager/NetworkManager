@@ -500,9 +500,8 @@ int in_addr_parse_prefixlen(int family, const char *p, unsigned char *ret) {
         return 0;
 }
 
-int in_addr_prefix_from_string_internal(
+int in_addr_prefix_from_string(
                 const char *p,
-                bool use_default_prefixlen,
                 int family,
                 union in_addr_union *ret_prefix,
                 unsigned char *ret_prefixlen) {
@@ -536,13 +535,6 @@ int in_addr_prefix_from_string_internal(
                 r = in_addr_parse_prefixlen(family, e+1, &k);
                 if (r < 0)
                         return r;
-        } else if (use_default_prefixlen) {
-                if (family == AF_INET) {
-                        r = in4_addr_default_prefixlen(&buffer.in, &k);
-                        if (r < 0)
-                                return r;
-                } else
-                        k = 0;
         } else
                 k = FAMILY_ADDRESS_SIZE(family) * 8;
 
@@ -556,7 +548,7 @@ int in_addr_prefix_from_string_internal(
 
 int in_addr_prefix_from_string_auto_internal(
                 const char *p,
-                bool use_default_prefixlen,
+                InAddrPrefixLenMode mode,
                 int *ret_family,
                 union in_addr_union *ret_prefix,
                 unsigned char *ret_prefixlen) {
@@ -587,15 +579,24 @@ int in_addr_prefix_from_string_auto_internal(
                 r = in_addr_parse_prefixlen(family, e+1, &k);
                 if (r < 0)
                         return r;
-        } else if (use_default_prefixlen) {
-                if (family == AF_INET) {
-                        r = in4_addr_default_prefixlen(&buffer.in, &k);
-                        if (r < 0)
-                                return r;
-                } else
-                        k = 0;
         } else
-                k = FAMILY_ADDRESS_SIZE(family) * 8;
+                switch (mode) {
+                case PREFIXLEN_FULL:
+                        k = FAMILY_ADDRESS_SIZE(family) * 8;
+                        break;
+                case PREFIXLEN_REFUSE:
+                        return -ENOANO; /* To distinguish this error from others. */
+                case PREFIXLEN_LEGACY:
+                        if (family == AF_INET) {
+                                r = in4_addr_default_prefixlen(&buffer.in, &k);
+                                if (r < 0)
+                                        return r;
+                        } else
+                                k = 0;
+                        break;
+                default:
+                        assert_not_reached("Invalid prefixlen mode");
+                }
 
         if (ret_family)
                 *ret_family = family;

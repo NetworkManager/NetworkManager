@@ -1632,6 +1632,7 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/macro.h \
 	shared/systemd/src/basic/mempool.c \
 	shared/systemd/src/basic/mempool.h \
+	shared/systemd/src/basic/missing_fcntl.h \
 	shared/systemd/src/basic/missing_type.h \
 	shared/systemd/src/basic/parse-util.c \
 	shared/systemd/src/basic/parse-util.h \

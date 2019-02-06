@@ -342,7 +342,6 @@ char **strv_env_unset(char **l, const char *p) {
 }
 
 char **strv_env_unset_many(char **l, ...) {
-
         char **f, **t;
 
         if (!l)
@@ -411,7 +410,6 @@ int strv_env_replace(char ***l, char *p) {
 }
 
 char **strv_env_set(char **x, const char *p) {
-
         _cleanup_strv_free_ char **ret = NULL;
         size_t n, m;
         char **k;
