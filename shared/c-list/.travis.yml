@@ -5,7 +5,7 @@ language: c
 services:
   - docker
 
-install:
+before_install:
   - curl -O -L "https://raw.githubusercontent.com/cherry-pick/cherry-images/v1/scripts/vmrun"
   - curl -O -L "https://raw.githubusercontent.com/cherry-pick/cherry-ci/v1/scripts/cherryci"
   - chmod +x "./vmrun" "./cherryci"
