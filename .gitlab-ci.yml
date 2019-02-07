@@ -11,9 +11,24 @@ stages:
 .fedora_install: &fedora_install
   before_script:
     - NM_INSTALL="dnf install -y" ./contrib/fedora/REQUIRED_PACKAGES
-    - dnf install -y glibc-langpack-pl
+    - dnf install -y glibc-langpack-pl ccache clang
     - locale -a
     - contrib/scripts/nm-ci-patch-gtkdoc.sh || true
+
+.fedora_script: &fedora_script
+  stage: test
+  script:
+    - CI=gitlab BUILD_TYPE=autotools CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
+    - mv build/INST/share/gtk-doc/html /tmp/docs-html
+    - git clean -fdx
+    - CI=gitlab BUILD_TYPE=autotools CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
+    - git clean -fdx
+    - CI=gitlab BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
+    - git clean -fdx
+    - CI=gitlab BUILD_TYPE=meson     CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
+    - git clean -fdx
+    - ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test
+    - ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
 
 checkpatch:
   image: fedora:28
@@ -27,58 +42,30 @@ checkpatch:
     paths:
       - checkpatch-out.txt
 
-f28_build_autotools:
+f28_build:
   <<: *fedora_install
   image: fedora:28
-  stage: test
-  script:
-    - CI=gitlab BUILD_TYPE=autotools contrib/scripts/nm-ci-run.sh
-    - mv build/INST/share/gtk-doc/html docs-html
+  <<: *fedora_script
   artifacts:
     expire_in: 1 day
     paths:
-      - docs-html
+      - /tmp/docs-html
 
-f28_build_meson:
-  <<: *fedora_install
-  image: fedora:28
-  stage: test
-  script:
-    - CI=gitlab BUILD_TYPE=meson contrib/scripts/nm-ci-run.sh
-
-f28_rpm_autotools_dbg:
-  <<: *fedora_install
-  image: fedora:28
-  stage: test
-  script:
-    - ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test
-
-f28_rpm_meson_dbg:
-  <<: *fedora_install
-  image: fedora:28
-  stage: test
-  script:
-    - ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w meson -w test
-
-f_latest_build_autotools:
+f_latest_build:
   <<: *fedora_install
   image: fedora:latest
-  stage: test
-  script:
-    - CI=gitlab BUILD_TYPE=autotools contrib/scripts/nm-ci-run.sh
+  <<: *fedora_script
 
-f_rawhide_build_autotools:
+f_rawhide_build:
   <<: *fedora_install
   image: fedora:rawhide
-  stage: test
-  script:
-    - CI=gitlab BUILD_TYPE=autotools contrib/scripts/nm-ci-run.sh
+  <<: *fedora_script
   allow_failure: true
 
 pages:
   stage: deploy
   dependencies:
-    - f28_build_autotools
+    - f28_build
   script:
     - mv docs-html public
   artifacts:

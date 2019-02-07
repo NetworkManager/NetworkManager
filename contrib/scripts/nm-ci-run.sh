@@ -5,6 +5,7 @@
 #  - CC
 #  - BUILD_TYPE
 #  - CFLAGS
+#  - WITH_DOCS
 
 set -exv
 
@@ -12,6 +13,24 @@ die() {
     printf "%s\n" "$@"
     exit 1
 }
+
+_is_true() {
+    case "$1" in
+        1|y|yes|YES|Yes|on)
+            return 0
+            ;;
+        0|n|no|NO|No|off)
+            return 1
+            ;;
+        *)
+            die "not a boolean argument \"$1\""
+            ;;
+    esac
+}
+
+if which ccache &>/dev/null; then
+    export PATH="/usr/lib64/ccache:/usr/lib/ccache${PATH:+:${PATH}}"
+fi
 
 ###############################################################################
 
@@ -43,6 +62,14 @@ else
 fi
 if [ "$CC" != gcc ]; then
     _WITH_CRYPTO=nss
+fi
+
+if [ "$WITH_DOCS" != "" ]; then
+    if _is_true "$WITH_DOCS"; then
+        _WITH_DOCS="$_TRUE"
+    else
+        _WITH_DOCS="$_FALSE"
+    fi
 fi
 
 ###############################################################################

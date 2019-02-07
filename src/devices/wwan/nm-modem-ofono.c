@@ -214,7 +214,6 @@ disconnect (NMModem *modem,
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
 	DisconnectContext *ctx;
 	NMModemState state = nm_modem_get_state (NM_MODEM (self));
-	gs_free_error GError *error = NULL;
 
 	_LOGD ("warn: %s modem_state: %s",
 	       warn ? "TRUE" : "FALSE",
