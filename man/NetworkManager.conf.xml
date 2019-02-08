@@ -1056,10 +1056,12 @@ managed=1
 
   <refsect1>
     <title><literal>connectivity</literal> section</title>
+
     <para>This section controls NetworkManager's optional connectivity
     checking functionality.  This allows NetworkManager to detect
     whether or not the system can actually access the internet or
     whether it is behind a captive portal.</para>
+
     <para>Connectivity checking serves two purposes. For one, it exposes
     a connectivity state on D-Bus, which other applications may use. For example,
     Gnome's portal helper uses this as signal to show a captive portal login
@@ -1069,6 +1071,12 @@ managed=1
     better default-route to devices that have global connectivity. For example,
     when being connected to WWAN and to a Wi-Fi network which is behind a captive
     portal, WWAN still gets preferred until login.</para>
+
+    <para>Note that your distribution might set <literal>/proc/sys/net/ipv4/conf/*/rp_filter</literal> to
+    strict filtering. That works badly with per-device connectivity checking,
+    which uses SO_BINDDEVICE to send requests on all devices. A strict rp_filter
+    setting will reject any response and the connectivity check on all but the
+    best route will fail.</para>
 
     <para>
       <variablelist>
