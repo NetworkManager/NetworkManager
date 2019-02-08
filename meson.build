@@ -158,7 +158,6 @@ endif
 
 if nm_debug
   common_flags += cc.get_supported_arguments([
-    '-fno-strict-aliasing',
     '-Wdeclaration-after-statement',
     '-Wfloat-equal',
     '-Wimplicit-fallthrough',
@@ -169,6 +168,7 @@ if nm_debug
     '-Wmissing-prototypes',
     '-Wno-duplicate-decl-specifier',
     '-Wno-format-truncation',
+    '-Wno-gnu-variable-sized-type-not-at-end',
     '-Wno-missing-braces',
     '-Wno-missing-field-initializers',
     '-Wno-pragmas',
@@ -181,6 +181,7 @@ if nm_debug
     '-Wtypedef-redefinition',
     '-Wundef',
     '-Wunknown-attributes',
+    '-fno-strict-aliasing',
   ])
 endif
 
