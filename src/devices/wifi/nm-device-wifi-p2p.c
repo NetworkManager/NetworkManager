@@ -1111,22 +1111,18 @@ nm_device_wifi_p2p_set_mgmt_iface (NMDeviceWifiP2P *self,
 	if (nm_supplicant_interface_get_state (priv->mgmt_iface) >= NM_SUPPLICANT_INTERFACE_STATE_READY)
 		nm_device_remove_pending_action (NM_DEVICE (self), NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, FALSE);
 
-	g_signal_connect_object (priv->mgmt_iface, NM_SUPPLICANT_INTERFACE_STATE,
-	                         G_CALLBACK (supplicant_iface_state_cb),
-	                         self,
-	                         0);
-	g_signal_connect_object (priv->mgmt_iface, NM_SUPPLICANT_INTERFACE_PEER_UPDATED,
-	                         G_CALLBACK (supplicant_iface_peer_updated_cb),
-	                         self,
-	                         0);
-	g_signal_connect_object (priv->mgmt_iface, NM_SUPPLICANT_INTERFACE_PEER_REMOVED,
-	                         G_CALLBACK (supplicant_iface_peer_removed_cb),
-	                         self,
-	                         0);
-	g_signal_connect_object (priv->mgmt_iface, NM_SUPPLICANT_INTERFACE_GROUP_STARTED,
-	                         G_CALLBACK (supplicant_iface_group_started_cb),
-	                         self,
-	                         0);
+	g_signal_connect (priv->mgmt_iface, NM_SUPPLICANT_INTERFACE_STATE,
+	                  G_CALLBACK (supplicant_iface_state_cb),
+	                  self);
+	g_signal_connect (priv->mgmt_iface, NM_SUPPLICANT_INTERFACE_PEER_UPDATED,
+	                  G_CALLBACK (supplicant_iface_peer_updated_cb),
+	                  self);
+	g_signal_connect (priv->mgmt_iface, NM_SUPPLICANT_INTERFACE_PEER_REMOVED,
+	                  G_CALLBACK (supplicant_iface_peer_removed_cb),
+	                  self);
+	g_signal_connect (priv->mgmt_iface, NM_SUPPLICANT_INTERFACE_GROUP_STARTED,
+	                  G_CALLBACK (supplicant_iface_group_started_cb),
+	                  self);
 }
 
 void
