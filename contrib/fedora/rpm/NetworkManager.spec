@@ -475,6 +475,10 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %build
 %if %{with meson}
 %meson \
+	--warnlevel 2 \
+%if %{with test}
+	--werror \
+%endif
 	-Ddhcpcanon=no \
 	-Ddhcpcd=no \
 	-Dconfig_dhcp_default=%{dhcp_default} \
