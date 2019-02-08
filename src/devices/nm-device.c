@@ -397,6 +397,8 @@ typedef struct _NMDevicePrivate {
 	bool            ndisc_started:1;
 	bool            device_link_changed_down:1;
 
+	bool            concheck_rp_filter_checked:1;
+
 	/* Generic DHCP stuff */
 	char *          dhcp_anycast_address;
 
@@ -3042,6 +3044,7 @@ concheck_start (NMDevice *self,
 	static guint64 seq_counter = 0;
 	NMDevicePrivate *priv;
 	NMDeviceConnectivityHandle *handle;
+	const char *ifname;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
@@ -3063,6 +3066,39 @@ concheck_start (NMDevice *self,
 	       nm_utils_addr_family_to_char (addr_family),
 	       (long long unsigned) handle->seq,
 	       is_periodic ? ", periodic-check" : "");
+
+	if (   addr_family == AF_INET
+	    && !priv->concheck_rp_filter_checked) {
+
+		if ((ifname = nm_device_get_ip_iface_from_platform (self))) {
+			int val, val_all;
+
+			val = nm_platform_sysctl_ip_conf_get_int_checked (nm_device_get_platform (self),
+			                                                  AF_INET,
+			                                                  ifname,
+			                                                  "rp_filter",
+			                                                  10, 0, 2, 3);
+			if (val < 2) {
+				val_all = nm_platform_sysctl_ip_conf_get_int_checked (nm_device_get_platform (self),
+				                                                      AF_INET,
+				                                                      "all",
+				                                                      "rp_filter",
+				                                                      10, 0, 2, val);
+				if (val_all > val) {
+					val = val_all;
+					ifname = "all";
+				}
+			}
+
+			if (val == 1) {
+				_LOGW (LOGD_CONCHECK, "connectivity: \"/proc/sys/net/ipv4/conf/%s/rp_filter\" is set to \"1\". "
+				       "This might break connectivity checking for IPv4 on this device", ifname);
+			}
+		}
+
+		/* we only check once per device. It's a warning after all.  */
+		priv->concheck_rp_filter_checked = TRUE;
+	}
 
 	handle->c_handle = nm_connectivity_check_start (concheck_get_mgr (self),
 	                                                handle->addr_family,
