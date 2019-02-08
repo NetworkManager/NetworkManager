@@ -169,7 +169,6 @@ if nm_debug
     '-Wno-duplicate-decl-specifier',
     '-Wno-format-truncation',
     '-Wno-gnu-variable-sized-type-not-at-end',
-    '-Wno-missing-braces',
     '-Wno-missing-field-initializers',
     '-Wno-pragmas',
     '-Wno-sign-compare',

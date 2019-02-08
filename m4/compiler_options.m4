@@ -124,12 +124,6 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		[int f () { int i = yolo; yolo; return i; }]
 	)
 
-	dnl clang 3.9 would like to see "{ { 0 } }" here, but that does not
-	dnl look too wise.
-	NM_COMPILER_WARNING([$1], [missing-braces],
-		[union { int a[1]; int b[2]; } c = { 0 }]
-	)
-
 	dnl a new warning in gcc 8, glib 2.55 doesn't play nice yet
 	dnl https://bugzilla.gnome.org/show_bug.cgi?id=793272
 	NM_COMPILER_WARNING([$1], [cast-function-type],
