@@ -1666,7 +1666,7 @@ test_duplicate_decl_specifier (void)
 	/* have some static variables, so that the result is certainly not optimized out. */
 	static const int v_const[1] = { 1 };
 	static int v_result[1] = { };
-	const const int v2 = 3;
+	const int v2 = 3;
 
 	/* Test that we don't get a compiler warning about duplicate const specifier.
 	 * C99 allows that and it can easily happen in macros. */
