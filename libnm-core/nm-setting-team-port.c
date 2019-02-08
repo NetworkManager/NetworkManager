@@ -42,7 +42,6 @@
 
 /*****************************************************************************/
 
-/* Keep aligned with _prop_to_keys[] */
 NM_GOBJECT_PROPERTIES_DEFINE (NMSettingTeamPort,
 	PROP_CONFIG,
 	PROP_QUEUE_ID,
@@ -53,15 +52,14 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingTeamPort,
 	PROP_LINK_WATCHERS,
 );
 
-/* Keep aligned with team-port properties enum */
 static const _NMUtilsTeamPropertyKeys _prop_to_keys[_PROPERTY_ENUMS_LAST] = {
-	[PROP_CONFIG] =        { NULL, NULL, NULL, 0 },
-	[PROP_QUEUE_ID] =      { "queue_id", NULL, NULL, NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT },
-	[PROP_PRIO] =          { "prio", NULL, NULL, 0 },
-	[PROP_STICKY] =        { "sticky", NULL, NULL, 0 },
-	[PROP_LACP_PRIO] =     { "lacp_prio", NULL, NULL, NM_SETTING_TEAM_PORT_LACP_PRIO_DEFAULT },
-	[PROP_LACP_KEY] =      { "lacp_key", NULL, NULL, 0 },
-	[PROP_LINK_WATCHERS] = { "link_watch", NULL, NULL, 0 }
+	[PROP_CONFIG] =        { },
+	[PROP_QUEUE_ID] =      { .key1 = "queue_id",   .default_int = NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT, },
+	[PROP_PRIO] =          { .key1 = "prio",       },
+	[PROP_STICKY] =        { .key1 = "sticky",     },
+	[PROP_LACP_PRIO] =     { .key1 = "lacp_prio",  .default_int = NM_SETTING_TEAM_PORT_LACP_PRIO_DEFAULT, },
+	[PROP_LACP_KEY] =      { .key1 = "lacp_key",   },
+	[PROP_LINK_WATCHERS] = { .key1 = "link_watch", },
 };
 
 typedef struct {

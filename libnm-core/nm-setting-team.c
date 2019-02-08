@@ -625,7 +625,6 @@ nm_team_link_watcher_get_flags (NMTeamLinkWatcher *watcher)
 
 /*****************************************************************************/
 
-/* Keep aligned with _prop_to_keys[] */
 NM_GOBJECT_PROPERTIES_DEFINE (NMSettingTeam,
 	PROP_CONFIG,
 	PROP_NOTIFY_PEERS_COUNT,
@@ -645,25 +644,23 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingTeam,
 	PROP_LINK_WATCHERS,
 );
 
-/* Keep aligned with team properties enum */
 static const _NMUtilsTeamPropertyKeys _prop_to_keys[_PROPERTY_ENUMS_LAST] = {
-	[PROP_CONFIG] =                      { NULL, NULL, NULL, 0 },
-	[PROP_NOTIFY_PEERS_COUNT] =          { "notify_peers", "count", NULL, 0 },
-	[PROP_NOTIFY_PEERS_INTERVAL] =       { "notify_peers", "interval", NULL, 0 },
-	[PROP_MCAST_REJOIN_COUNT] =          { "mcast_rejoin", "count", NULL, 0 },
-	[PROP_MCAST_REJOIN_INTERVAL] =       { "mcast_rejoin", "interval", NULL, 0 },
-	[PROP_RUNNER] =                      { "runner", "name", NULL,
-	                                       {.default_str = NM_SETTING_TEAM_RUNNER_DEFAULT} },
-	[PROP_RUNNER_HWADDR_POLICY] =        { "runner", "hwaddr_policy", NULL, 0 },
-	[PROP_RUNNER_TX_HASH] =              { "runner", "tx_hash", NULL, 0 },
-	[PROP_RUNNER_TX_BALANCER] =          { "runner", "tx_balancer", "name", 0 },
-	[PROP_RUNNER_TX_BALANCER_INTERVAL] = { "runner", "tx_balancer", "balancing_interval", -1 },
-	[PROP_RUNNER_ACTIVE] =               { "runner", "active", NULL, 0 },
-	[PROP_RUNNER_FAST_RATE] =            { "runner", "fast_rate", NULL, 0 },
-	[PROP_RUNNER_SYS_PRIO] =             { "runner", "sys_prio", NULL, -1 },
-	[PROP_RUNNER_MIN_PORTS] =            { "runner", "min_ports", NULL, -1 },
-	[PROP_RUNNER_AGG_SELECT_POLICY] =    { "runner", "agg_select_policy", NULL, 0 },
-	[PROP_LINK_WATCHERS] =               { "link_watch", NULL, NULL, 0 }
+	[PROP_CONFIG] =                      { },
+	[PROP_NOTIFY_PEERS_COUNT] =          { .key1 = "notify_peers", .key2 = "count",                                           },
+	[PROP_NOTIFY_PEERS_INTERVAL] =       { .key1 = "notify_peers", .key2 = "interval",                                        },
+	[PROP_MCAST_REJOIN_COUNT] =          { .key1 = "mcast_rejoin", .key2 = "count",                                           },
+	[PROP_MCAST_REJOIN_INTERVAL] =       { .key1 = "mcast_rejoin", .key2 = "interval",                                        },
+	[PROP_RUNNER] =                      { .key1 = "runner",       .key2 = "name",                                            .default_str = NM_SETTING_TEAM_RUNNER_DEFAULT, },
+	[PROP_RUNNER_HWADDR_POLICY] =        { .key1 = "runner",       .key2 = "hwaddr_policy",                                   },
+	[PROP_RUNNER_TX_HASH] =              { .key1 = "runner",       .key2 = "tx_hash",                                         },
+	[PROP_RUNNER_TX_BALANCER] =          { .key1 = "runner",       .key2 = "tx_balancer",       .key3 = "name", },
+	[PROP_RUNNER_TX_BALANCER_INTERVAL] = { .key1 = "runner",       .key2 = "tx_balancer",       .key3 = "balancing_interval", .default_int = -1 },
+	[PROP_RUNNER_ACTIVE] =               { .key1 = "runner",       .key2 = "active",                                          },
+	[PROP_RUNNER_FAST_RATE] =            { .key1 = "runner",       .key2 = "fast_rate",                                       },
+	[PROP_RUNNER_SYS_PRIO] =             { .key1 = "runner",       .key2 = "sys_prio",                                        .default_int = -1, },
+	[PROP_RUNNER_MIN_PORTS] =            { .key1 = "runner",       .key2 = "min_ports",                                       .default_int = -1, },
+	[PROP_RUNNER_AGG_SELECT_POLICY] =    { .key1 = "runner",       .key2 = "agg_select_policy",                               },
+	[PROP_LINK_WATCHERS] =               { .key1 = "link_watch",                                                              },
 };
 
 typedef struct {
