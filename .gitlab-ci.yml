@@ -18,17 +18,14 @@ stages:
 .fedora_script: &fedora_script
   stage: test
   script:
-    - CI=gitlab BUILD_TYPE=autotools CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
-    - mv build/INST/share/gtk-doc/html /tmp/docs-html
-    - git clean -fdx
-    - CI=gitlab BUILD_TYPE=autotools CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
-    - git clean -fdx
-    - CI=gitlab BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
-    - git clean -fdx
-    - CI=gitlab BUILD_TYPE=meson     CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
-    - git clean -fdx
+    - git clean -fdx ; CI=gitlab BUILD_TYPE=autotools CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
+    - mv build/INST/share/gtk-doc/html .git/docs-html
+    - git clean -fdx ; CI=gitlab BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
+    - git clean -fdx ; CI=gitlab BUILD_TYPE=autotools CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
+    - git clean -fdx ; CI=gitlab BUILD_TYPE=meson     CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
     - ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test
     - ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
+    - mv .git/docs-html .
 
 checkpatch:
   image: fedora:28
@@ -49,7 +46,7 @@ f28_build:
   artifacts:
     expire_in: 1 day
     paths:
-      - /tmp/docs-html
+      - docs-html
 
 f_latest_build:
   <<: *fedora_install
