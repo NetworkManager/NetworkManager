@@ -5889,7 +5889,7 @@ __test_uuid (const char *expected_uuid, const char *str, gssize slen, char *uuid
 static void
 test_nm_utils_uuid_generate_from_strings (void)
 {
-	const NMUuid uuid0 = { 0 };
+	const NMUuid uuid0 = { };
 
 	g_assert_cmpmem (&uuid0, sizeof (uuid0), _uuid ("00000000-0000-0000-0000-000000000000"), 16);
 
