@@ -39,7 +39,7 @@ checkpatch:
     paths:
       - checkpatch-out.txt
 
-f28_build:
+build_f28:
   <<: *fedora_install
   image: fedora:28
   <<: *fedora_script
@@ -48,12 +48,12 @@ f28_build:
     paths:
       - docs-html
 
-f_latest_build:
+build_f_latest:
   <<: *fedora_install
   image: fedora:latest
   <<: *fedora_script
 
-f_rawhide_build:
+build_f_rawhide:
   <<: *fedora_install
   image: fedora:rawhide
   <<: *fedora_script
@@ -62,7 +62,7 @@ f_rawhide_build:
 pages:
   stage: deploy
   dependencies:
-    - f28_build
+    - build_f28
   script:
     - mv docs-html public
   artifacts:
