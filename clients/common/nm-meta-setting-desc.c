@@ -5099,8 +5099,8 @@ static const NMMetaPropertyType _pt_ethtool = {
 #define PROPERTY_INFO_WITH_DESC(name, ...) \
 	PROPERTY_INFO (name, DESCRIBE_DOC_##name, ##__VA_ARGS__)
 
-#define ENUM_VALUE_INFOS(...)  (((const NMUtilsEnumValueInfo []) { __VA_ARGS__, { 0 } }))
-#define INT_VALUE_INFOS(...)  (((const NMMetaUtilsIntValueInfo []) { __VA_ARGS__, { 0 } }))
+#define ENUM_VALUE_INFOS(...)  (((const NMUtilsEnumValueInfo    []) { __VA_ARGS__ { .nick = NULL, }, }))
+#define INT_VALUE_INFOS(...)   (((const NMMetaUtilsIntValueInfo []) { __VA_ARGS__ { .nick = NULL, }, }))
 
 #define GET_FCN_WITH_DEFAULT(type, func) \
 	/* macro that returns @func as const (gboolean(*)(NMSetting*)) type, but checks
@@ -5142,9 +5142,9 @@ static const NMMetaPropertyType _pt_ethtool = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int, \
 			.value_infos =              INT_VALUE_INFOS ( \
 				{ \
-					.value = -1, \
+					.value.i64 = -1, \
 					.nick = "unset", \
-				} \
+				}, \
 			), \
 		),
 
@@ -5669,13 +5669,13 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = -1,
+					.value.i64 = -1,
 					.nick = "default",
 				},
 				{
-					.value = 0,
+					.value.i64 = 0,
 					.nick = "forever",
-				}
+				},
 			),
 		),
 	),
@@ -5779,7 +5779,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 					{
 						.value = NM_SETTING_CONNECTION_LLDP_ENABLE_RX,
 						.nick = "enable",
-					}
+					},
 				),
 			),
 			.typ_flags =                  NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT
@@ -6162,15 +6162,15 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTE_TABLE, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_ROUTE_TABLE,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-			.value_infos = INT_VALUE_INFOS (
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = 0,
+					.value.i64 = 0,
 					.nick = "unspec",
 				},
 				{
-					.value = 254,
+					.value.i64 = 254,
 					.nick = "main",
-				}
+				},
 			),
 		),
 	),
@@ -6186,15 +6186,15 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DHCP_TIMEOUT,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-			.value_infos =          INT_VALUE_INFOS (
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = 0,
+					.value.i64 = 0,
 					.nick = "default",
 				},
 				{
-					.value = G_MAXINT32,
+					.value.i64 = G_MAXINT32,
 					.nick = "infinity",
-				}
+				},
 			),
 		),
 	),
@@ -6218,13 +6218,13 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = -1,
+					.value.i64 = -1,
 					.nick = "default",
 				},
 				{
-					.value = 0,
+					.value.i64 = 0,
 					.nick = "off",
-				}
+				},
 			),
 		),
 	),
@@ -6325,15 +6325,15 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTE_TABLE, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_ROUTE_TABLE,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-			.value_infos =          INT_VALUE_INFOS (
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = 0,
+					.value.i64 = 0,
 					.nick = "unspec",
 				},
 				{
-					.value = 254,
+					.value.i64 = 254,
 					.nick = "main",
-				}
+				},
 			),
 		),
 	),
@@ -6360,7 +6360,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 				{
 					.value = NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
 					.nick = "enabled, prefer temporary IP",
-				}
+				},
 			),
 		),
 	),
@@ -6860,7 +6860,7 @@ static const NMMetaPropertyInfo *const property_infos_SERIAL[] = {
 					{
 						.value = NM_SETTING_SERIAL_PARITY_NONE,
 						.nick = "n",
-					}
+					},
 				),
 			),
 			.typ_flags =                  NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT
@@ -6931,44 +6931,44 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-		        .value_infos =          INT_VALUE_INFOS (
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = 0,
+					.value.i64 = 0,
 					.nick = "disabled",
-				}
+				},
 			),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_NOTIFY_PEERS_INTERVAL,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-		        .value_infos =          INT_VALUE_INFOS (
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = 0,
+					.value.i64 = 0,
 					.nick = "default",
-				}
+				},
 			),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_MCAST_REJOIN_COUNT,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-		        .value_infos =          INT_VALUE_INFOS (
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = 0,
+					.value.i64 = 0,
 					.nick = "disabled",
-				}
+				},
 			),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_MCAST_REJOIN_INTERVAL,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-		        .value_infos =          INT_VALUE_INFOS (
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = 0,
+					.value.i64 = 0,
 					.nick = "default",
-				}
+				},
 			),
 		),
 	),
@@ -7007,11 +7007,11 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-		        .value_infos =          INT_VALUE_INFOS (
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT,
+					.value.i64 = NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT,
 					.nick = "default",
-				}
+				},
 			),
 		),
 	),
@@ -7024,22 +7024,22 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_RUNNER_SYS_PRIO,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-		        .value_infos =          INT_VALUE_INFOS (
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT,
+					.value.i64 = NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT,
 					.nick = "default",
-				}
+				},
 			),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_RUNNER_MIN_PORTS,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-		        .value_infos =          INT_VALUE_INFOS (
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = 0,
+					.value.i64 = 0,
 					.nick = "default",
-				}
+				},
 			),
 		),
 	),
@@ -7080,22 +7080,22 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_PORT_QUEUE_ID,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-			.value_infos =          INT_VALUE_INFOS (
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT,
+					.value.i64 = NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT,
 					.nick = "default",
-				}
+				},
 			),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_PORT_PRIO,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-			.value_infos =          INT_VALUE_INFOS (
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = 0,
+					.value.i64 = 0,
 					.nick = "default",
-				}
+				},
 			),
 		),
 	),
@@ -7105,22 +7105,22 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_PORT_LACP_PRIO,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-			.value_infos =          INT_VALUE_INFOS (
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = NM_SETTING_TEAM_PORT_LACP_PRIO_DEFAULT,
+					.value.i64 = NM_SETTING_TEAM_PORT_LACP_PRIO_DEFAULT,
 					.nick = "default",
-				}
+				},
 			),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_PORT_LACP_KEY,
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-			.value_infos =          INT_VALUE_INFOS (
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = 0,
+					.value.i64 = 0,
 					.nick = "default",
-				}
+				},
 			),
 		),
 	),
@@ -7491,7 +7491,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
 					{
 						.value = NM_SETTING_WIRED_WAKE_ON_LAN_NONE,
 						.nick = "disabled",
-					}
+					},
 				),
 			),
 			.typ_flags =                  NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT
@@ -7620,7 +7620,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
 					{
 						.value = NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE,
 						.nick = "disabled",
-					}
+					},
 				),
 			),
 		),
@@ -7782,12 +7782,12 @@ static const NMMetaPropertyInfo *const property_infos_WPAN[] = {
 		.prompt =                       N_("Short address (<0x0000-0xffff>)"),
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int, \
-			.base =			16,
-			.value_infos =          INT_VALUE_INFOS (
+			.base =                     16,
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = G_MAXUINT16,
+					.value.i64 = G_MAXUINT16,
 					.nick = "unset",
-				}
+				},
 			),
 		),
 	),
@@ -7798,12 +7798,12 @@ static const NMMetaPropertyInfo *const property_infos_WPAN[] = {
 		.prompt =                       N_("PAN Identifier (<0x0000-0xffff>)"),
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int, \
-			.base =			16,
-			.value_infos =          INT_VALUE_INFOS (
+			.base =                     16,
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = G_MAXUINT16,
+					.value.i64 = G_MAXUINT16,
 					.nick = "unset",
-				}
+				},
 			),
 		),
 	),
@@ -7813,11 +7813,11 @@ static const NMMetaPropertyInfo *const property_infos_WPAN[] = {
 		.prompt =                       N_("Page (<default|0-31>)"),
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int, \
-			.value_infos =          INT_VALUE_INFOS (
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = NM_SETTING_WPAN_PAGE_DEFAULT,
+					.value.i64 = NM_SETTING_WPAN_PAGE_DEFAULT,
 					.nick = "default",
-				}
+				},
 			),
 		),
 	),
@@ -7827,11 +7827,11 @@ static const NMMetaPropertyInfo *const property_infos_WPAN[] = {
 		.prompt =                       N_("Channel (<default|0-26>)"),
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int, \
-			.value_infos =          INT_VALUE_INFOS (
+			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value = NM_SETTING_WPAN_CHANNEL_DEFAULT,
+					.value.i64 = NM_SETTING_WPAN_CHANNEL_DEFAULT,
 					.nick = "default",
-				}
+				},
 			),
 		),
 	),
