@@ -2237,7 +2237,6 @@ static void
 recheck_p2p_availability (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	NMDeviceWifiP2P *p2p_device;
 	gboolean p2p_available;
 
 	g_object_get (priv->sup_iface,
@@ -2251,20 +2250,27 @@ recheck_p2p_availability (NMDeviceWifi *self)
 		 * wpa_supplicant internally.
 		 */
 		iface_name = g_strconcat ("p2p-dev-", nm_device_get_iface (NM_DEVICE (self)), NULL);
-		p2p_device = NM_DEVICE_WIFI_P2P (nm_device_wifi_p2p_new (priv->sup_iface, iface_name));
-		priv->p2p_device = p2p_device;
 
-		g_signal_emit (self, signals[P2P_DEVICE_CREATED], 0, priv->p2p_device);
-		g_object_add_weak_pointer (G_OBJECT (p2p_device), (gpointer*) &priv->p2p_device);
-		g_object_unref (p2p_device);
+		priv->p2p_device = nm_device_wifi_p2p_new (iface_name);
 
-	} else if (p2p_available && priv->p2p_device) {
 		nm_device_wifi_p2p_set_mgmt_iface (priv->p2p_device, priv->sup_iface);
 
-	} else if (!p2p_available && priv->p2p_device) {
+		g_signal_emit (self, signals[P2P_DEVICE_CREATED], 0, priv->p2p_device);
+		g_object_add_weak_pointer (G_OBJECT (priv->p2p_device), (gpointer*) &priv->p2p_device);
+		g_object_unref (priv->p2p_device);
+		return;
+	}
+
+	if (p2p_available && priv->p2p_device) {
+		nm_device_wifi_p2p_set_mgmt_iface (priv->p2p_device, priv->sup_iface);
+		return;
+	}
+
+	if (!p2p_available && priv->p2p_device) {
 		/* Destroy the P2P device. */
 		g_object_remove_weak_pointer (G_OBJECT (priv->p2p_device), (gpointer*) &priv->p2p_device);
 		nm_device_wifi_p2p_remove (g_steal_pointer (&priv->p2p_device));
+		return;
 	}
 }
 

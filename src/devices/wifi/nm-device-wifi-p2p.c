@@ -52,8 +52,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceWifiP2P,
 	PROP_WFDIES, /* TODO: Make this a property of the setting and Find feature
 	              * making the device stateless.
 	              */
-
-	PROP_MGMT_IFACE,
 );
 
 typedef struct {
@@ -1192,9 +1190,6 @@ get_property (GObject *object, guint prop_id,
 	const char **list;
 
 	switch (prop_id) {
-	case PROP_MGMT_IFACE:
-		g_value_set_object (value, priv->mgmt_iface);
-		break;
 	case PROP_GROUP_OWNER:
 		g_value_set_boolean (value, priv->group_owner);
 		break;
@@ -1211,30 +1206,16 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMDeviceWifiP2P *self = NM_DEVICE_WIFI_P2P (object);
-
-	switch (prop_id) {
-	case PROP_MGMT_IFACE:
-		/* construct-only */
-		nm_device_wifi_p2p_set_mgmt_iface (self, g_value_get_object (value));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
 /*****************************************************************************/
 
 static void
 nm_device_wifi_p2p_init (NMDeviceWifiP2P * self)
 {
 	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
+
 	c_list_init (&priv->peers_lst_head);
+
+	priv->sup_mgr = g_object_ref (nm_supplicant_manager_get ());
 }
 
 static void
@@ -1245,13 +1226,11 @@ constructed (GObject *object)
 
 	G_OBJECT_CLASS (nm_device_wifi_p2p_parent_class)->constructed (object);
 
-	priv->sup_mgr = g_object_ref (nm_supplicant_manager_get ());
-
 	nm_device_add_pending_action (NM_DEVICE (self), NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, FALSE);
 }
 
-NMDevice*
-nm_device_wifi_p2p_new (NMSupplicantInterface *mgmt_iface, const char *iface)
+NMDeviceWifiP2P *
+nm_device_wifi_p2p_new (const char *iface)
 {
 	return g_object_new (NM_TYPE_DEVICE_WIFI_P2P,
 	                     NM_DEVICE_IFACE, iface,
@@ -1259,7 +1238,6 @@ nm_device_wifi_p2p_new (NMSupplicantInterface *mgmt_iface, const char *iface)
 	                     NM_DEVICE_DEVICE_TYPE, NM_TYPE_DEVICE_WIFI_P2P,
 	                     NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_WIFI,
 	                     NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WLAN,
-	                     NM_DEVICE_WIFI_P2P_MGMT_IFACE, mgmt_iface,
 	                     NULL);
 }
 
@@ -1298,7 +1276,6 @@ nm_device_wifi_p2p_class_init (NMDeviceWifiP2PClass *klass)
 
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
-	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
@@ -1345,13 +1322,6 @@ nm_device_wifi_p2p_class_init (NMDeviceWifiP2PClass *klass)
 	                          NULL,
 	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
-
-	obj_properties[PROP_MGMT_IFACE] =
-	    g_param_spec_object (NM_DEVICE_WIFI_P2P_MGMT_IFACE, "", "",
-	                         NM_TYPE_SUPPLICANT_INTERFACE,
-	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT_ONLY |
-	                         G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
