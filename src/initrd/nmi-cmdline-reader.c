@@ -518,8 +518,8 @@ parse_rd_route (GHashTable *connections, char *argument)
 	const char *gateway;
 	const char *interface;
 	int family = AF_UNSPEC;
-	NMIPAddr net_addr = { 0, };
-	NMIPAddr gateway_addr = { 0, };
+	NMIPAddr net_addr = { };
+	NMIPAddr gateway_addr = { };
 	int net_prefix = -1;
 	NMIPRoute *route;
 	NMSettingIPConfig *s_ip;

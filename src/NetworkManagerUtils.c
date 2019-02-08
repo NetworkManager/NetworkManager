@@ -380,7 +380,8 @@ route_compare (NMIPRoute *route1, NMIPRoute *route2, gint64 default_metric)
 	gint64 r, metric1, metric2;
 	int family;
 	guint plen;
-	NMIPAddr a1 = { 0 }, a2 = { 0 };
+	NMIPAddr a1;
+	NMIPAddr a2;
 
 	family = nm_ip_route_get_family (route1);
 	r = family - nm_ip_route_get_family (route2);
@@ -408,7 +409,7 @@ route_compare (NMIPRoute *route1, NMIPRoute *route2, gint64 default_metric)
 	inet_pton (family, nm_ip_route_get_dest (route2), &a2);
 	nm_utils_ipx_address_clear_host_address (family, &a1, &a1, plen);
 	nm_utils_ipx_address_clear_host_address (family, &a2, &a2, plen);
-	r = memcmp (&a1, &a2, sizeof (a1));
+	r = memcmp (&a1, &a2, nm_utils_addr_family_to_size (family));
 	if (r)
 		return r;
 
