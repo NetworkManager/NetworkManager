@@ -45,13 +45,13 @@ else
 fi
 
 _WITH_CRYPTO="gnutls"
-_WITH_MORE_WARNINGS="error"
+_WITH_WERROR=1
 _WITH_LIBTEAM="$_TRUE"
 _WITH_DOCS="$_TRUE"
 _WITH_SYSTEMD_LOGIND="$_TRUE"
 
 if [ "$CI" == travis ]; then
-    _WITH_MORE_WARNINGS="no"
+    _WITH_WERROR=0
     _WITH_LIBTEAM="$_FALSE"
     _WITH_DOCS="$_FALSE"
     _WITH_SYSTEMD_LOGIND="$_FALSE"
@@ -83,13 +83,18 @@ _autotools_test_print_logs() {
 run_autotools() {
     NOCONFIGURE=1 ./autogen.sh
     mkdir ./build
+    if [ "$_WITH_WERROR" == 1 ]; then
+        _WITH_WERROR_VAL="error"
+    else
+        _WITH_WERROR_VAL="yes"
+    fi
     pushd ./build
         ../configure \
             --prefix="$PWD/INST" \
             --enable-introspection=$_WITH_DOCS \
             --enable-gtk-doc=$_WITH_DOCS \
             --with-systemd-logind=$_WITH_SYSTEMD_LOGIND \
-            --enable-more-warnings=$_WITH_MORE_WARNINGS \
+            --enable-more-warnings="$_WITH_WERROR_VAL" \
             --enable-tests=yes \
             --with-crypto=$_WITH_CRYPTO \
             \
@@ -139,7 +144,15 @@ run_autotools() {
 ###############################################################################
 
 run_meson() {
+    if [ "$_WITH_WERROR" == 1 ]; then
+        _WITH_WERROR_VAL="--werror"
+    else
+        _WITH_WERROR_VAL=""
+    fi
     meson build \
+        \
+        --warnlevel 2 \
+        $_WITH_WERROR_VAL \
         \
         -D ld_gc=false \
         -D session_tracking=no \
