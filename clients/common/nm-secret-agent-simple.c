@@ -874,6 +874,9 @@ request_secrets_from_ui (RequestData *request)
 	} else
 		goto out_fail;
 
+	if (secrets->len == 0)
+		goto out_fail;
+
 	g_signal_emit (request->self, signals[REQUEST_SECRETS], 0,
 	               request->request_id, title, msg, secrets);
 	return;
