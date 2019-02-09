@@ -860,9 +860,9 @@ _test_wireguard_change (NMPlatform *platform,
 			if ((i % 2) == 1) {
 				endpoint = (NMSockAddrUnion) {
 					.in = {
-						.sin_family = AF_INET,
-						.sin_addr   = nmtst_inet4_from_string (nm_sprintf_buf (s_addr, "192.168.7.%d", i)),
-						.sin_port   = htons (14000 + i),
+						.sin_family      = AF_INET,
+						.sin_addr.s_addr = nmtst_inet4_from_string (nm_sprintf_buf (s_addr, "192.168.7.%d", i)),
+						.sin_port        = htons (14000 + i),
 					},
 				};
 			} else {

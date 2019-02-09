@@ -504,7 +504,7 @@ resolve_color_alias (const char *color)
 	static const struct {
 		const char *name;
 		const char *alias;
-	} const aliases[] = {
+	} aliases[] = {
 		{ "reset",        "0" },
 		{ "bold",         "1" },
 		{ "white",        "1;37" },

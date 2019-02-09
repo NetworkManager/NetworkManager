@@ -767,7 +767,7 @@ test_ip (gconstpointer test_data)
 	const int EX_ = -1;
 	struct {
 		int ifindex;
-	} iface_data[10] = { 0 };
+	} iface_data[10] = { { 0 }, };
 	int order_idx[G_N_ELEMENTS (iface_data)] = { 0 };
 	guint order_len;
 	guint try;

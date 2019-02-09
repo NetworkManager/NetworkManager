@@ -90,7 +90,7 @@ const NMEthtoolData *const nm_ethtool_data[_NM_ETHTOOL_ID_NUM + 1] = {
 	[_NM_ETHTOOL_ID_NUM] = NULL,
 };
 
-const guint8 const _by_name[_NM_ETHTOOL_ID_NUM] = {
+static const guint8 _by_name[_NM_ETHTOOL_ID_NUM] = {
 	/* sorted by optname. */
 	NM_ETHTOOL_ID_FEATURE_ESP_HW_OFFLOAD,
 	NM_ETHTOOL_ID_FEATURE_ESP_TX_CSUM_HW_OFFLOAD,

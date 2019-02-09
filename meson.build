@@ -8,7 +8,7 @@ project(
   license: 'GPL2+',
   default_options: [
     'buildtype=debugoptimized',
-    'c_std=gnu99',
+    'c_std=gnu11',
   ],
   meson_version: '>= 0.44.0',
 )
@@ -158,7 +158,6 @@ endif
 
 if nm_debug
   common_flags += cc.get_supported_arguments([
-    '-fno-strict-aliasing',
     '-Wdeclaration-after-statement',
     '-Wfloat-equal',
     '-Wimplicit-fallthrough',
@@ -169,7 +168,7 @@ if nm_debug
     '-Wmissing-prototypes',
     '-Wno-duplicate-decl-specifier',
     '-Wno-format-truncation',
-    '-Wno-missing-braces',
+    '-Wno-gnu-variable-sized-type-not-at-end',
     '-Wno-missing-field-initializers',
     '-Wno-pragmas',
     '-Wno-sign-compare',
@@ -181,6 +180,7 @@ if nm_debug
     '-Wtypedef-redefinition',
     '-Wundef',
     '-Wunknown-attributes',
+    '-fno-strict-aliasing',
   ])
 endif
 

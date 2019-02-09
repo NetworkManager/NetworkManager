@@ -2401,7 +2401,7 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 	gboolean powered;
 	NMDeviceWifiCapabilities capabilities;
 
-	if (!nm_g_object_ref_set ((GObject **) &priv->dbus_obj, (GObject *) object))
+	if (!nm_g_object_ref_set (&priv->dbus_obj, object))
 		return;
 
 	if (priv->dbus_device_proxy) {

@@ -149,9 +149,13 @@ update_properties_from_ifindex (NMDevice *device, int ifindex)
 	NMDeviceIPTunnel *self = NM_DEVICE_IP_TUNNEL (device);
 	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (self);
 	int parent_ifindex = 0;
-	in_addr_t local4 = 0, remote4 = 0;
-	struct in6_addr local6 = { 0 }, remote6 = { 0 };
-	guint8 ttl = 0, tos = 0, encap_limit = 0;
+	in_addr_t local4 = 0;
+	in_addr_t remote4 = 0;
+	struct in6_addr local6 = IN6ADDR_ANY_INIT;
+	struct in6_addr remote6 = IN6ADDR_ANY_INIT;
+	guint8 ttl = 0;
+	guint8 tos = 0;
+	guint8 encap_limit = 0;
 	gboolean pmtud = FALSE;
 	guint32 flow_label = 0;
 	NMIPTunnelFlags flags = NM_IP_TUNNEL_FLAG_NONE;

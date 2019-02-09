@@ -2892,7 +2892,7 @@ nm_utils_uuid_generate_from_string_bin (NMUuid *uuid, const char *s, gssize slen
 		break;
 	case NM_UTILS_UUID_TYPE_VERSION3:
 	case NM_UTILS_UUID_TYPE_VERSION5: {
-		NMUuid ns_uuid = { 0 };
+		NMUuid ns_uuid = { };
 
 		if (type_args) {
 			/* type_args can be a name space UUID. Interpret it as (char *) */
