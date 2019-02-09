@@ -47,6 +47,7 @@ typedef struct {
 	NMSecretAgentSimple           *self;
 
 	NMConnection                  *connection;
+	const char                    *setting_name;
 	char                         **hints;
 	NMSecretAgentOldGetSecretsFunc callback;
 	gpointer                       callback_data;
@@ -902,6 +903,7 @@ get_secrets (NMSecretAgentOld                 *agent,
 	RequestData *request;
 	gs_free_error GError *error = NULL;
 	gs_free char *request_id = NULL;
+	const char *request_id_setting_name;
 
 	request_id = g_strdup_printf ("%s/%s", connection_path, setting_name);
 
@@ -921,10 +923,15 @@ get_secrets (NMSecretAgentOld                 *agent,
 		return;
 	}
 
+	nm_assert (g_str_has_suffix (request_id, setting_name));
+	request_id_setting_name = &request_id[strlen (request_id) - strlen (setting_name)];
+	nm_assert (nm_streq (request_id_setting_name, setting_name));
+
 	request = g_slice_new (RequestData);
 	*request = (RequestData) {
 		.self = self,
 		.connection = g_object_ref (connection),
+		.setting_name = request_id_setting_name,
 		.hints = g_strdupv ((char **) hints),
 		.callback = callback,
 		.callback_data = callback_data,
