@@ -4309,6 +4309,62 @@ _nm_utils_hwaddr_from_dbus (GVariant *dbus_value,
 
 /*****************************************************************************/
 
+/* Validate secret-flags. Most settings don't validate them, which is a bug.
+ * But we possibly cannot enforce a strict validation now.
+ *
+ * For new settings, they shall validate the secret-flags strictly. */
+gboolean
+_nm_utils_secret_flags_validate (NMSettingSecretFlags secret_flags,
+                                 const char *setting_name,
+                                 const char *property_name,
+                                 NMSettingSecretFlags disallowed_flags,
+                                 GError **error)
+{
+	if (secret_flags == NM_SETTING_SECRET_FLAG_NONE)
+		return TRUE;
+
+	if (NM_FLAGS_ANY (secret_flags, ~NM_SETTING_SECRET_FLAG_ALL)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("unknown secret flags"));
+		if (setting_name)
+			g_prefix_error (error, "%s.%s: ", setting_name, property_name);
+		return FALSE;
+	}
+
+	if (!nm_utils_is_power_of_two (secret_flags)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("conflicting secret flags"));
+		if (setting_name)
+			g_prefix_error (error, "%s.%s: ", setting_name, property_name);
+		return FALSE;
+	}
+
+	if (NM_FLAGS_ANY (secret_flags, disallowed_flags)) {
+		if (NM_FLAGS_HAS (secret_flags, NM_SETTING_SECRET_FLAG_NOT_REQUIRED)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("secret flags must not be \"not-required\""));
+			if (setting_name)
+				g_prefix_error (error, "%s.%s: ", setting_name, property_name);
+			return FALSE;
+		}
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("unsupported secret flags"));
+		if (setting_name)
+			g_prefix_error (error, "%s.%s: ", setting_name, property_name);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 gboolean
 _nm_utils_wps_method_validate (NMSettingWirelessSecurityWpsMethod wps_method,
                                const char *setting_name,
