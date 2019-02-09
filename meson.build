@@ -8,7 +8,7 @@ project(
   license: 'GPL2+',
   default_options: [
     'buildtype=debugoptimized',
-    'c_std=gnu99',
+    'c_std=gnu11',
   ],
   meson_version: '>= 0.44.0',
 )
