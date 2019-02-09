@@ -763,7 +763,7 @@ get_secret_flags (NMSetting *setting,
 		return TRUE;
 	}
 
-	i64 = _nm_utils_ascii_str_to_int64 (flags_val, 10, 0, NM_SETTING_SECRET_FLAGS_ALL, -1);
+	i64 = _nm_utils_ascii_str_to_int64 (flags_val, 10, 0, NM_SETTING_SECRET_FLAG_ALL, -1);
 	if (   i64 == -1
 	    || !_nm_setting_secret_flags_valid (i64)) {
 		/* The flags keys is set to an unexpected value. That is a configuration

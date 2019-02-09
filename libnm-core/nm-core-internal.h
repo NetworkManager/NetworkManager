@@ -129,7 +129,7 @@
 
 /*****************************************************************************/
 
-#define NM_SETTING_SECRET_FLAGS_ALL \
+#define NM_SETTING_SECRET_FLAG_ALL \
 	((NMSettingSecretFlags) (  NM_SETTING_SECRET_FLAG_NONE \
 	                         | NM_SETTING_SECRET_FLAG_AGENT_OWNED \
 	                         | NM_SETTING_SECRET_FLAG_NOT_SAVED \
@@ -138,7 +138,7 @@
 static inline gboolean
 _nm_setting_secret_flags_valid (NMSettingSecretFlags flags)
 {
-	return !NM_FLAGS_ANY (flags, ~NM_SETTING_SECRET_FLAGS_ALL);
+	return !NM_FLAGS_ANY (flags, ~NM_SETTING_SECRET_FLAG_ALL);
 }
 
 /*****************************************************************************/
