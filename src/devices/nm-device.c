@@ -6501,6 +6501,7 @@ activate_stage2_device_config (NMDevice *self)
 		if (!tc_commit (self)) {
 			_LOGW (LOGD_IP6, "failed applying traffic control rules");
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+			return;
 		}
 
 		if (!nm_device_bring_up (self, FALSE, &no_firmware)) {
