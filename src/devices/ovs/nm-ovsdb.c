@@ -1309,6 +1309,7 @@ ovsdb_disconnect (NMOvsdb *self, gboolean is_disposing)
 	g_clear_object (&priv->client);
 	g_clear_object (&priv->conn);
 	g_clear_pointer (&priv->db_uuid, g_free);
+	nm_clear_g_cancellable (&priv->cancellable);
 }
 
 static void
@@ -1540,9 +1541,6 @@ dispose (GObject *object)
 	g_clear_pointer (&priv->bridges, g_hash_table_destroy);
 	g_clear_pointer (&priv->ports, g_hash_table_destroy);
 	g_clear_pointer (&priv->interfaces, g_hash_table_destroy);
-
-	g_cancellable_cancel (priv->cancellable);
-	g_clear_object (&priv->cancellable);
 
 	G_OBJECT_CLASS (nm_ovsdb_parent_class)->dispose (object);
 }
