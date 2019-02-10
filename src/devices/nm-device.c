@@ -6492,18 +6492,18 @@ activate_stage2_device_config (NMDevice *self)
 
 	nm_device_state_changed (self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
-	/* Assumed connections were already set up outside NetworkManager */
-	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
-		NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
-
+	if (!nm_device_sys_iface_state_is_external_or_assume (self))
 		_ethtool_state_set (self);
 
+	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
 		if (!tc_commit (self)) {
 			_LOGW (LOGD_IP6, "failed applying traffic control rules");
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 			return;
 		}
+	}
 
+	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
 		if (!nm_device_bring_up (self, FALSE, &no_firmware)) {
 			if (no_firmware)
 				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_FIRMWARE_MISSING);
@@ -6511,15 +6511,19 @@ activate_stage2_device_config (NMDevice *self)
 				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 			return;
 		}
+	}
+
+	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
+		NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
 
 		ret = NM_DEVICE_GET_CLASS (self)->act_stage2_config (self, &failure_reason);
 		if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
 			return;
-		else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+		if (ret != NM_ACT_STAGE_RETURN_SUCCESS) {
+			nm_assert (ret == NM_ACT_STAGE_RETURN_FAILURE);
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, failure_reason);
 			return;
 		}
-		g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
 	}
 
 	/* If we have slaves that aren't yet enslaved, do that now */
@@ -6536,6 +6540,7 @@ activate_stage2_device_config (NMDevice *self)
 	}
 
 	lldp_init (self, TRUE);
+
 	nm_device_activate_schedule_stage3_ip_config_start (self);
 }
 
