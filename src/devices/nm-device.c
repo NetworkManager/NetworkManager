@@ -6486,6 +6486,7 @@ static void
 activate_stage2_device_config (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDeviceClass *klass;
 	NMActStageReturn ret;
 	gboolean no_firmware = FALSE;
 	CList *iter;
@@ -6513,10 +6514,12 @@ activate_stage2_device_config (NMDevice *self)
 		}
 	}
 
-	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
+	klass = NM_DEVICE_GET_CLASS (self);
+	if (   klass->act_stage2_config_also_for_external_or_assume
+	    || !nm_device_sys_iface_state_is_external_or_assume (self)) {
 		NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
 
-		ret = NM_DEVICE_GET_CLASS (self)->act_stage2_config (self, &failure_reason);
+		ret = klass->act_stage2_config (self, &failure_reason);
 		if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
 			return;
 		if (ret != NM_ACT_STAGE_RETURN_SUCCESS) {

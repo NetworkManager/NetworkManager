@@ -456,6 +456,11 @@ typedef struct _NMDeviceClass {
 
 	guint32         (* get_dhcp_timeout) (NMDevice *self,
 	                                      int addr_family);
+
+	/* Controls, whether to call act_stage2_config() callback also for assuming
+	 * a device or for external activations. In this case, act_stage2_config() must
+	 * take care not to touch the device's configuration. */
+	bool act_stage2_config_also_for_external_or_assume:1;
 } NMDeviceClass;
 
 typedef void (*NMDeviceAuthRequestFunc) (NMDevice *device,
