@@ -349,14 +349,14 @@ _insert_interface (json_t *params, NMConnection *interface)
 	if (s_ovs_iface)
 		type = nm_setting_ovs_interface_get_interface_type (s_ovs_iface);
 
-	json_array_append (options, json_string ("map"));
+	json_array_append_new (options, json_string ("map"));
 	s_ovs_patch = nm_connection_get_setting_ovs_patch (interface);
 	if (s_ovs_patch) {
-		json_array_append (options, json_pack ("[[s, s]]",
+		json_array_append_new (options, json_pack ("[[s, s]]",
 		                                       "peer",
 		                                        nm_setting_ovs_patch_get_peer (s_ovs_patch)));
 	} else {
-		json_array_append (options, json_array ());
+		json_array_append_new (options, json_array ());
 	}
 
 	json_array_append_new (params,
@@ -607,7 +607,8 @@ _delete_interface (NMOvsdb *self, json_t *params, const char *ifname)
 	OpenvswitchBridge *ovs_bridge;
 	OpenvswitchPort *ovs_port;
 	OpenvswitchInterface *ovs_interface;
-	json_t *bridges, *new_bridges;
+	nm_auto_decref_json json_t *bridges = NULL;
+	nm_auto_decref_json json_t *new_bridges = NULL;
 	gboolean bridges_changed;
 	gboolean ports_changed;
 	gboolean interfaces_changed;
