@@ -913,7 +913,7 @@ _test_wireguard_change (NMPlatform *platform,
 	                                       &lnk_wireguard,
 	                                       (const NMPWireGuardPeer *) peers->data,
 	                                       peers->len,
-	                                       TRUE);
+	                                       NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS);
 	g_assert (NMTST_NM_ERR_SUCCESS (r));
 }
 

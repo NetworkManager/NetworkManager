@@ -1996,7 +1996,7 @@ nm_platform_link_wireguard_change (NMPlatform *self,
                                    const NMPlatformLnkWireGuard *lnk_wireguard,
                                    const NMPWireGuardPeer *peers,
                                    guint peers_len,
-                                   gboolean replace_peers)
+                                   NMPlatformWireGuardChangeFlags change_flags)
 {
 	_CHECK_SELF (self, klass, -NME_BUG);
 
@@ -2027,7 +2027,9 @@ nm_platform_link_wireguard_change (NMPlatform *self,
 		        nm_platform_lnk_wireguard_to_string (lnk_wireguard, buf_lnk, sizeof (buf_lnk)),
 		        peers_len,
 		        buf_peers,
-		        replace_peers ? " (replace-peers)" : " (update-peers)");
+		          NM_FLAGS_HAS (change_flags, NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS)
+		        ? " (replace-peers)"
+		        : " (update-peers)");
 	}
 
 	return klass->link_wireguard_change (self,
@@ -2035,7 +2037,7 @@ nm_platform_link_wireguard_change (NMPlatform *self,
 	                                     lnk_wireguard,
 	                                     peers,
 	                                     peers_len,
-	                                     replace_peers);
+	                                     change_flags);
 }
 
 /*****************************************************************************/

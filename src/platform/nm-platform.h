@@ -753,6 +753,11 @@ typedef enum {
 	NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF                         = (1LL <<  2),
 } NMPlatformKernelSupportFlags;
 
+typedef enum {
+	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_NONE                      = 0,
+	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS             = (1LL << 0),
+} NMPlatformWireGuardChangeFlags;
+
 /*****************************************************************************/
 
 struct _NMPlatformPrivate;
@@ -831,7 +836,7 @@ typedef struct {
 	                              const NMPlatformLnkWireGuard *lnk_wireguard,
 	                              const struct _NMPWireGuardPeer *peers,
 	                              guint peers_len,
-	                              gboolean replace_peers);
+	                              NMPlatformWireGuardChangeFlags change_flags);
 
 	gboolean (*vlan_add) (NMPlatform *, const char *name, int parent, int vlanid, guint32 vlanflags, const NMPlatformLink **out_link);
 	gboolean (*link_vlan_change) (NMPlatform *self,
@@ -1394,7 +1399,7 @@ int nm_platform_link_wireguard_change (NMPlatform *self,
                                        const NMPlatformLnkWireGuard *lnk_wireguard,
                                        const struct _NMPWireGuardPeer *peers,
                                        guint peers_len,
-                                       gboolean replace_peers);
+                                       NMPlatformWireGuardChangeFlags change_flags);
 
 const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address);
 
