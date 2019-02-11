@@ -2418,15 +2418,19 @@ again:
 	NLA_PUT_U32 (msg, WGDEVICE_A_IFINDEX, (guint32) ifindex);
 
 	if (idx_peer_curr == IDX_NIL) {
-		NLA_PUT (msg, WGDEVICE_A_PRIVATE_KEY, sizeof (lnk_wireguard->private_key), lnk_wireguard->private_key);
-		NLA_PUT_U16 (msg, WGDEVICE_A_LISTEN_PORT, lnk_wireguard->listen_port);
-		NLA_PUT_U32 (msg, WGDEVICE_A_FWMARK, lnk_wireguard->fwmark);
+		guint32 flags;
 
-		NLA_PUT_U32 (msg,
-		             WGDEVICE_A_FLAGS,
-		               NM_FLAGS_HAS (change_flags, NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS)
-		             ? WGDEVICE_F_REPLACE_PEERS
-		             : ((guint32) 0u));
+		if (NM_FLAGS_HAS (change_flags, NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_PRIVATE_KEY))
+			NLA_PUT (msg, WGDEVICE_A_PRIVATE_KEY, sizeof (lnk_wireguard->private_key), lnk_wireguard->private_key);
+		if (NM_FLAGS_HAS (change_flags, NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_LISTEN_PORT))
+			NLA_PUT_U16 (msg, WGDEVICE_A_LISTEN_PORT, lnk_wireguard->listen_port);
+		if (NM_FLAGS_HAS (change_flags, NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_FWMARK))
+			NLA_PUT_U32 (msg, WGDEVICE_A_FWMARK, lnk_wireguard->fwmark);
+
+		flags = 0;
+		if (NM_FLAGS_HAS (change_flags, NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS))
+			flags |= WGDEVICE_F_REPLACE_PEERS;
+		NLA_PUT_U32 (msg, WGDEVICE_A_FLAGS, flags);
 	}
 
 	if (peers_len == 0)

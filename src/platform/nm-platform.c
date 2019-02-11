@@ -1982,6 +1982,14 @@ nm_platform_link_get_lnk_wireguard (NMPlatform *self, int ifindex, const NMPlatf
 
 /*****************************************************************************/
 
+NM_UTILS_FLAGS2STR_DEFINE_STATIC (_wireguard_change_flags_to_string, NMPlatformWireGuardChangeFlags,
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_FLAG_NONE,            "none"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS,   "replace-peers"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_PRIVATE_KEY, "has-private-key"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_LISTEN_PORT, "has-listen-port"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_FWMARK,      "has-fwmark"),
+);
+
 int
 nm_platform_link_wireguard_add (NMPlatform *self,
                                 const char *name,
@@ -2005,6 +2013,7 @@ nm_platform_link_wireguard_change (NMPlatform *self,
 	if (_LOGD_ENABLED ()) {
 		char buf_lnk[256];
 		char buf_peers[512];
+		char buf_change_flags[100];
 
 		buf_peers[0] = '\0';
 		if (peers_len > 0) {
@@ -2022,14 +2031,12 @@ nm_platform_link_wireguard_change (NMPlatform *self,
 			nm_utils_strbuf_append_str (&b, &len, "}");
 		}
 
-		_LOG3D ("link: change wireguard ifindex %d, %s, %u peers%s%s",
+		_LOG3D ("link: change wireguard ifindex %d, %s, (%s), %u peers%s",
 		        ifindex,
 		        nm_platform_lnk_wireguard_to_string (lnk_wireguard, buf_lnk, sizeof (buf_lnk)),
+		        _wireguard_change_flags_to_string (change_flags, buf_change_flags, sizeof (buf_change_flags)),
 		        peers_len,
-		        buf_peers,
-		          NM_FLAGS_HAS (change_flags, NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS)
-		        ? " (replace-peers)"
-		        : " (update-peers)");
+		        buf_peers);
 	}
 
 	return klass->link_wireguard_change (self,
