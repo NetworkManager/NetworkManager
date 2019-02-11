@@ -756,6 +756,9 @@ typedef enum {
 typedef enum {
 	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_NONE                      = 0,
 	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS             = (1LL << 0),
+	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_PRIVATE_KEY           = (1LL << 1),
+	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_LISTEN_PORT           = (1LL << 2),
+	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_FWMARK                = (1LL << 3),
 } NMPlatformWireGuardChangeFlags;
 
 /*****************************************************************************/
