@@ -1303,6 +1303,9 @@ ovsdb_disconnect (NMOvsdb *self, gboolean is_disposing)
 	gpointer user_data;
 	gs_free_error GError *error = NULL;
 
+	if (!priv->client)
+		return;
+
 	_LOGD ("disconnecting from ovsdb");
 	nm_utils_error_set_cancelled (&error, is_disposing, "NMOvsdb");
 
@@ -1539,11 +1542,14 @@ dispose (GObject *object)
 
 	ovsdb_disconnect (self, TRUE);
 
-	g_string_free (priv->input, TRUE);
-	priv->input = NULL;
-	g_string_free (priv->output, TRUE);
-	priv->output = NULL;
-
+	if (priv->input) {
+		g_string_free (priv->input, TRUE);
+		priv->input = NULL;
+	}
+	if (priv->output) {
+		g_string_free (priv->output, TRUE);
+		priv->output = NULL;
+	}
 	if (priv->calls) {
 		g_array_free (priv->calls, TRUE);
 		priv->calls = NULL;
