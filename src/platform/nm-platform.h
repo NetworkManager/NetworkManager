@@ -748,18 +748,34 @@ typedef enum {
 } NMPlatformLinkDuplexType;
 
 typedef enum {
-	NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS               = (1LL <<  0),
-	NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL                      = (1LL <<  1),
-	NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF                         = (1LL <<  2),
+	NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS                 = (1LL <<  0),
+	NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL                        = (1LL <<  1),
+	NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF                           = (1LL <<  2),
 } NMPlatformKernelSupportFlags;
 
 typedef enum {
-	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_NONE                      = 0,
-	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS             = (1LL << 0),
-	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_PRIVATE_KEY           = (1LL << 1),
-	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_LISTEN_PORT           = (1LL << 2),
-	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_FWMARK                = (1LL << 3),
+	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_NONE                        = 0,
+	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS               = (1LL << 0),
+	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_PRIVATE_KEY             = (1LL << 1),
+	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_LISTEN_PORT             = (1LL << 2),
+	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_FWMARK                  = (1LL << 3),
 } NMPlatformWireGuardChangeFlags;
+
+typedef enum {
+	NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_NONE                   = 0,
+	NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_REMOVE_ME              = (1LL << 0),
+	NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_PRESHARED_KEY      = (1LL << 1),
+	NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_KEEPALIVE_INTERVAL = (1LL << 2),
+	NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_ENDPOINT           = (1LL << 3),
+	NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_ALLOWEDIPS         = (1LL << 4),
+	NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_REPLACE_ALLOWEDIPS     = (1LL << 5),
+
+	NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_DEFAULT =   NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_PRESHARED_KEY
+	                                                 | NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_KEEPALIVE_INTERVAL
+	                                                 | NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_ENDPOINT
+	                                                 | NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_ALLOWEDIPS,
+
+} NMPlatformWireGuardChangePeerFlags;
 
 /*****************************************************************************/
 
@@ -838,6 +854,7 @@ typedef struct {
 	                              int ifindex,
 	                              const NMPlatformLnkWireGuard *lnk_wireguard,
 	                              const struct _NMPWireGuardPeer *peers,
+	                              const NMPlatformWireGuardChangePeerFlags *peer_flags,
 	                              guint peers_len,
 	                              NMPlatformWireGuardChangeFlags change_flags);
 
@@ -1401,6 +1418,7 @@ int nm_platform_link_wireguard_change (NMPlatform *self,
                                        int ifindex,
                                        const NMPlatformLnkWireGuard *lnk_wireguard,
                                        const struct _NMPWireGuardPeer *peers,
+                                       const NMPlatformWireGuardChangePeerFlags *peer_flags,
                                        guint peers_len,
                                        NMPlatformWireGuardChangeFlags change_flags);
 

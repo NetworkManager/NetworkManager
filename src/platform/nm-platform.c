@@ -1990,6 +1990,16 @@ NM_UTILS_FLAGS2STR_DEFINE_STATIC (_wireguard_change_flags_to_string, NMPlatformW
 	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_FWMARK,      "has-fwmark"),
 );
 
+NM_UTILS_FLAGS2STR_DEFINE_STATIC (_wireguard_change_peer_flags_to_string, NMPlatformWireGuardChangePeerFlags,
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_NONE,                   "none"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_REMOVE_ME,              "remove"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_PRESHARED_KEY,      "psk"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_KEEPALIVE_INTERVAL, "ka"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_ENDPOINT,           "ep"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_ALLOWEDIPS,         "aips"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_REPLACE_ALLOWEDIPS,     "remove-aips"),
+);
+
 int
 nm_platform_link_wireguard_add (NMPlatform *self,
                                 const char *name,
@@ -2003,6 +2013,7 @@ nm_platform_link_wireguard_change (NMPlatform *self,
                                    int ifindex,
                                    const NMPlatformLnkWireGuard *lnk_wireguard,
                                    const NMPWireGuardPeer *peers,
+                                   const NMPlatformWireGuardChangePeerFlags *peer_flags,
                                    guint peers_len,
                                    NMPlatformWireGuardChangeFlags change_flags)
 {
@@ -2026,6 +2037,11 @@ nm_platform_link_wireguard_change (NMPlatform *self,
 				nm_utils_strbuf_append_str (&b, &len, " { ");
 				nm_platform_wireguard_peer_to_string (&peers[i], b, len);
 				nm_utils_strbuf_seek_end (&b, &len);
+				if (peer_flags) {
+					nm_utils_strbuf_append (&b, &len,
+					                       " (%s)",
+					                       _wireguard_change_peer_flags_to_string (peer_flags[i], buf_change_flags, sizeof (buf_change_flags)));
+				}
 				nm_utils_strbuf_append_str (&b, &len, " } ");
 			}
 			nm_utils_strbuf_append_str (&b, &len, "}");
@@ -2043,6 +2059,7 @@ nm_platform_link_wireguard_change (NMPlatform *self,
 	                                     ifindex,
 	                                     lnk_wireguard,
 	                                     peers,
+	                                     peer_flags,
 	                                     peers_len,
 	                                     change_flags);
 }
