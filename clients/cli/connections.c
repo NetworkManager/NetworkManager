@@ -3306,7 +3306,7 @@ get_valid_properties_string (const NMMetaSettingValidPartItem *const*array,
 	str = g_string_sized_new (1024);
 
 	for (i = 0; i < 2; i++, iter = array_slv) {
-		for(; !full_match && iter && *iter; iter++) {
+		for (; !full_match && iter && *iter; iter++) {
 			const NMMetaSettingInfoEditor *setting_info = (*iter)->setting_info;
 
 			if (   !(g_str_has_prefix (setting_info->general->setting_name, prefix))

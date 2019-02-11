@@ -63,7 +63,7 @@ _ifupdownplugin_guess_connection_type (if_block *block)
 {
 	const char *ret_type = NULL;
 
-	if(nm_streq0 (ifparser_getkey (block, "inet"), "ppp"))
+	if (nm_streq0 (ifparser_getkey (block, "inet"), "ppp"))
 		ret_type = NM_SETTING_PPP_SETTING_NAME;
 	else {
 		if_data *ifb;
@@ -75,7 +75,7 @@ _ifupdownplugin_guess_connection_type (if_block *block)
 				break;
 			}
 		}
-		if(!ret_type)
+		if (!ret_type)
 			ret_type = NM_SETTING_WIRED_SETTING_NAME;
 	}
 
