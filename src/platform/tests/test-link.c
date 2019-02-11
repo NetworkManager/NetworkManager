@@ -912,6 +912,7 @@ _test_wireguard_change (NMPlatform *platform,
 	                                       ifindex,
 	                                       &lnk_wireguard,
 	                                       (const NMPWireGuardPeer *) peers->data,
+	                                       NULL,
 	                                       peers->len,
 	                                         NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_PRIVATE_KEY
 	                                       | NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_LISTEN_PORT
