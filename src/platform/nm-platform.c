@@ -5633,6 +5633,7 @@ nm_platform_wireguard_peer_to_string (const NMPWireGuardPeer *peer, char *buf, g
 	char s_sockaddr[NM_UTILS_INET_ADDRSTRLEN + 100];
 	char s_endpoint[20 + sizeof (s_sockaddr)];
 	char s_addr[NM_UTILS_INET_ADDRSTRLEN];
+	char s_keepalive[100];
 	guint i;
 
 	nm_utils_to_string_buffer_init (&buf, &len);
@@ -5650,10 +5651,11 @@ nm_platform_wireguard_peer_to_string (const NMPWireGuardPeer *peer, char *buf, g
 
 	nm_utils_strbuf_append (&buf, &len,
 	                        "public-key %s"
-	                        "%s" /* preshared-key */
-	                        "%s" /* endpoint */
+	                        "%s"  /* preshared-key */
+	                        "%s"  /* endpoint */
 	                        " rx %"G_GUINT64_FORMAT
 	                        " tx %"G_GUINT64_FORMAT
+	                        "%s"  /* persistent-keepalive */
 	                        "%s", /* allowed-ips */
 	                        public_key_b64,
 	                        nm_utils_memeqzero (peer->preshared_key, sizeof (peer->preshared_key))
@@ -5662,6 +5664,9 @@ nm_platform_wireguard_peer_to_string (const NMPWireGuardPeer *peer, char *buf, g
 	                        s_endpoint,
 	                        peer->rx_bytes,
 	                        peer->tx_bytes,
+	                        peer->persistent_keepalive_interval > 0
+	                          ? nm_sprintf_buf (s_keepalive, " keepalive %u", (guint) peer->persistent_keepalive_interval)
+	                          : "",
 	                        peer->allowed_ips_len > 0
 	                          ? " allowed-ips"
 	                          : "");
