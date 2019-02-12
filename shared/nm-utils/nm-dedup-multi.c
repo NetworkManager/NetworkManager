@@ -24,6 +24,7 @@
 #include "nm-dedup-multi.h"
 
 #include "nm-hash-utils.h"
+#include "nm-c-list.h"
 
 /*****************************************************************************/
 
@@ -260,44 +261,27 @@ _add (NMDedupMultiIndex *self,
 		nm_dedup_multi_entry_set_dirty (entry, FALSE);
 
 		nm_assert (!head_existing || entry->head == head_existing);
-
-		if (entry_order) {
-			nm_assert (entry_order->head == entry->head);
-			nm_assert (c_list_contains (&entry->lst_entries, &entry_order->lst_entries));
-			nm_assert (c_list_contains (&entry_order->lst_entries, &entry->lst_entries));
-		}
+		nm_assert (!entry_order || entry_order->head == entry->head);
+		nm_assert (!entry_order || c_list_contains (&entry->lst_entries, &entry_order->lst_entries));
+		nm_assert (!entry_order || c_list_contains (&entry_order->lst_entries, &entry->lst_entries));
 
 		switch (mode) {
 		case NM_DEDUP_MULTI_IDX_MODE_PREPEND_FORCE:
 			if (entry_order) {
-				if (   entry_order != entry
-				    && entry->lst_entries.next != &entry_order->lst_entries) {
-					c_list_unlink_stale (&entry->lst_entries);
-					c_list_link_before ((CList *) &entry_order->lst_entries, &entry->lst_entries);
+				if (nm_c_list_move_before ((CList *) &entry_order->lst_entries, &entry->lst_entries))
 					changed = TRUE;
-				}
 			} else {
-				if (entry->lst_entries.prev != &entry->head->lst_entries_head) {
-					c_list_unlink_stale (&entry->lst_entries);
-					c_list_link_front ((CList *) &entry->head->lst_entries_head, &entry->lst_entries);
+				if (nm_c_list_move_front ((CList *) &entry->head->lst_entries_head, &entry->lst_entries))
 					changed = TRUE;
-				}
 			}
 			break;
 		case NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE:
 			if (entry_order) {
-				if (   entry_order != entry
-				    && entry->lst_entries.prev != &entry_order->lst_entries) {
-					c_list_unlink_stale (&entry->lst_entries);
-					c_list_link_after ((CList *) &entry_order->lst_entries, &entry->lst_entries);
+				if (nm_c_list_move_after ((CList *) &entry_order->lst_entries, &entry->lst_entries))
 					changed = TRUE;
-				}
 			} else {
-				if (entry->lst_entries.next != &entry->head->lst_entries_head) {
-					c_list_unlink_stale (&entry->lst_entries);
-					c_list_link_tail ((CList *) &entry->head->lst_entries_head, &entry->lst_entries);
+				if (nm_c_list_move_tail ((CList *) &entry->head->lst_entries_head, &entry->lst_entries))
 					changed = TRUE;
-				}
 			}
 			break;
 		case NM_DEDUP_MULTI_IDX_MODE_PREPEND:
@@ -1022,33 +1006,20 @@ nm_dedup_multi_entry_reorder (const NMDedupMultiEntry *entry,
 	if (!entry_order) {
 		const NMDedupMultiHeadEntry *head_entry = entry->head;
 
-		nm_assert (c_list_contains (&head_entry->lst_entries_head, &entry->lst_entries));
 		if (order_after) {
-			if (head_entry->lst_entries_head.prev != &entry->lst_entries) {
-				c_list_unlink_stale ((CList *) &entry->lst_entries);
-				c_list_link_tail ((CList *) &head_entry->lst_entries_head, (CList *) &entry->lst_entries);
+			if (nm_c_list_move_tail ((CList *) &head_entry->lst_entries_head, (CList *) &entry->lst_entries))
 				return TRUE;
-			}
 		} else {
-			if (head_entry->lst_entries_head.next != &entry->lst_entries) {
-				c_list_unlink_stale ((CList *) &entry->lst_entries);
-				c_list_link_front ((CList *) &head_entry->lst_entries_head, (CList *) &entry->lst_entries);
+			if (nm_c_list_move_front ((CList *) &head_entry->lst_entries_head, (CList *) &entry->lst_entries))
 				return TRUE;
-			}
 		}
-	} else if (entry != entry_order) {
+	} else {
 		if (order_after) {
-			if (entry_order->lst_entries.next != &entry->lst_entries) {
-				c_list_unlink_stale ((CList *) &entry->lst_entries);
-				c_list_link_after ((CList *) &entry_order->lst_entries, (CList *) &entry->lst_entries);
+			if (nm_c_list_move_after ((CList *) &entry_order->lst_entries, (CList *) &entry->lst_entries))
 				return TRUE;
-			}
 		} else {
-			if (entry_order->lst_entries.prev != &entry->lst_entries) {
-				c_list_unlink_stale ((CList *) &entry->lst_entries);
-				c_list_link_before ((CList *) &entry_order->lst_entries, (CList *) &entry->lst_entries);
+			if (nm_c_list_move_before ((CList *) &entry_order->lst_entries, (CList *) &entry->lst_entries))
 				return TRUE;
-			}
 		}
 	}
 

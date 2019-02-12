@@ -44,6 +44,7 @@
 #include "nm-setting-vlan.h"
 
 #include "nm-utils/nm-secret-utils.h"
+#include "nm-utils/nm-c-list.h"
 #include "nm-netlink.h"
 #include "nm-core-utils.h"
 #include "nmp-object.h"
@@ -4237,8 +4238,7 @@ _log_dbg_sysctl_get_impl (NMPlatform *platform, const char *pathid, const char *
 			g_free (entry->value);
 			entry->value = g_strdup (contents);
 		}
-		c_list_unlink_stale (&entry->lst);
-		c_list_link_front (&priv->sysctl_list, &entry->lst);
+		nm_c_list_move_front (&priv->sysctl_list, &entry->lst);
 	} else {
 		gs_free char *contents_escaped = g_strescape (contents, NULL);
 		SysctlCacheEntry *old;
