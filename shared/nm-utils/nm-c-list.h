@@ -78,4 +78,40 @@ nm_c_list_elem_free_all (CList *head, GDestroyNotify free_fcn)
 	}
 }
 
+/*****************************************************************************/
+
+static inline gboolean
+nm_c_list_move_before (CList *lst, CList *elem)
+{
+	nm_assert (lst);
+	nm_assert (elem);
+	nm_assert (c_list_contains (lst, elem));
+
+	if (   lst != elem
+	    && lst->prev != elem) {
+		c_list_unlink_stale (elem);
+		c_list_link_before (lst, elem);
+		return TRUE;
+	}
+	return FALSE;
+}
+#define nm_c_list_move_tail(lst, elem) nm_c_list_move_before (lst, elem)
+
+static inline gboolean
+nm_c_list_move_after (CList *lst, CList *elem)
+{
+	nm_assert (lst);
+	nm_assert (elem);
+	nm_assert (c_list_contains (lst, elem));
+
+	if (   lst != elem
+	    && lst->next != elem) {
+		c_list_unlink_stale (elem);
+		c_list_link_after (lst, elem);
+		return TRUE;
+	}
+	return FALSE;
+}
+#define nm_c_list_move_front(lst, elem) nm_c_list_move_after (lst, elem)
+
 #endif /* __NM_C_LIST_H__ */
