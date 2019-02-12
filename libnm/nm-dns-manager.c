@@ -22,11 +22,8 @@
 
 #include "nm-dns-manager.h"
 
-#include <string.h>
-
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
-
 #include "nm-client.h"
 #include "nm-object-private.h"
 #include "nm-dbus-helpers.h"

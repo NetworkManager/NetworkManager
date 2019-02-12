@@ -21,9 +21,8 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nm-vpn-connection.h"
+
 #include "nm-dbus-interface.h"
 #include "nm-utils.h"
 #include "nm-object-private.h"

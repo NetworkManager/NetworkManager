@@ -700,20 +700,26 @@ nm_utils_error_set_literal (GError **error, int error_code, const char *literal)
 	g_set_error ((error), NM_UTILS_ERROR, error_code, __VA_ARGS__)
 
 #define nm_utils_error_set_errno(error, errsv, fmt, ...) \
-	g_set_error ((error), \
-	             NM_UTILS_ERROR, \
-	             NM_UTILS_ERROR_UNKNOWN, \
-	             fmt, \
-	             ##__VA_ARGS__, \
-	             g_strerror (({ \
-	                            const int _errsv = (errsv); \
-	                            \
-	                            (  _errsv >= 0 \
-	                             ? _errsv \
-	                             : (  (_errsv == G_MININT) \
-	                                ? G_MAXINT \
-	                                : -errsv)); \
-	                          })))
+	G_STMT_START { \
+		char _bstrerr[NM_STRERROR_BUFSIZE]; \
+		\
+		g_set_error ((error), \
+		             NM_UTILS_ERROR, \
+		             NM_UTILS_ERROR_UNKNOWN, \
+		             fmt, \
+		             ##__VA_ARGS__, \
+		             nm_strerror_native_r (({ \
+		                                      const int _errsv = (errsv); \
+		                                      \
+		                                      (  _errsv >= 0 \
+		                                       ? _errsv \
+		                                       : (  G_UNLIKELY (_errsv == G_MININT) \
+		                                          ? G_MAXINT \
+		                                          : -errsv)); \
+		                                   }), \
+		                                   _bstrerr, \
+		                                   sizeof (_bstrerr))); \
+	} G_STMT_END
 
 /*****************************************************************************/
 

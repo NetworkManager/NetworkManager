@@ -22,9 +22,7 @@
 
 #include "nm-platform-utils.h"
 
-#include <string.h>
 #include <unistd.h>
-#include <errno.h>
 #include <sys/ioctl.h>
 #include <linux/ethtool.h>
 #include <linux/sockios.h>
@@ -86,7 +84,7 @@ socket_handle_init (SocketHandle *shandle, int ifindex)
 	shandle->fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 	if (shandle->fd < 0) {
 		shandle->ifindex = 0;
-		return -errno;
+		return -NM_ERRNO_NATIVE (errno);
 	}
 
 	shandle->ifindex = ifindex;
@@ -159,8 +157,8 @@ ethtool_call_handle (SocketHandle *shandle, gpointer edata)
 		              shandle->ifindex,
 		              _ethtool_data_to_string (edata, sbuf, sizeof (sbuf)),
 		              shandle->ifname,
-		              strerror (errsv));
-		return -errsv;
+		              nm_strerror_native (errsv));
+		return -NM_ERRNO_NATIVE (errsv);
 	}
 
 	nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s, %s: success",
@@ -183,7 +181,7 @@ ethtool_call_ifindex (int ifindex, gpointer edata)
 		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failed creating ethtool socket: %s",
 		              ifindex,
 		              _ethtool_data_to_string (edata, sbuf, sizeof (sbuf)),
-		              g_strerror (-r));
+		              nm_strerror_native (-r));
 		return r;
 	}
 
@@ -489,7 +487,7 @@ nmp_utils_ethtool_get_features (int ifindex)
 		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failed creating ethtool socket: %s",
 		              ifindex,
 		              "get-features",
-		              g_strerror (-r));
+		              nm_strerror_native (-r));
 		return FALSE;
 	}
 
@@ -620,7 +618,7 @@ nmp_utils_ethtool_set_features (int ifindex,
 		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failed creating ethtool socket: %s",
 		              ifindex,
 		              "set-features",
-		              g_strerror (-r));
+		              nm_strerror_native (-r));
 		return FALSE;
 	}
 
@@ -656,7 +654,7 @@ nmp_utils_ethtool_set_features (int ifindex,
 		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failure setting features (%s)",
 		              ifindex,
 		              "set-features",
-		              g_strerror (-r));
+		              nm_strerror_native (-r));
 		return FALSE;
 	}
 
@@ -766,7 +764,7 @@ nmp_utils_ethtool_supports_vlans (int ifindex)
 		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failed creating ethtool socket: %s",
 		              ifindex,
 		              "support-vlans",
-		              g_strerror (-r));
+		              nm_strerror_native (-r));
 		return FALSE;
 	}
 
@@ -805,7 +803,7 @@ nmp_utils_ethtool_get_peer_ifindex (int ifindex)
 		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failed creating ethtool socket: %s",
 		              ifindex,
 		              "get-peer-ifindex",
-		              g_strerror (-r));
+		              nm_strerror_native (-r));
 		return FALSE;
 	}
 
@@ -1045,13 +1043,14 @@ nmp_utils_mii_supports_carrier_detect (int ifindex)
 	int r;
 	struct ifreq ifr;
 	struct mii_ioctl_data *mii;
+	int errsv;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
 	if ((r = socket_handle_init (&shandle, ifindex)) < 0) {
 		nm_log_trace (LOGD_PLATFORM, "mii[%d]: carrier-detect no: failed creating ethtool socket: %s",
 		              ifindex,
-		              g_strerror (-r));
+		              nm_strerror_native (-r));
 		return FALSE;
 	}
 
@@ -1059,7 +1058,8 @@ nmp_utils_mii_supports_carrier_detect (int ifindex)
 	memcpy (ifr.ifr_name, shandle.ifname, IFNAMSIZ);
 
 	if (ioctl (shandle.fd, SIOCGMIIPHY, &ifr) < 0) {
-		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIPHY failed: %s", ifindex, shandle.ifname, strerror (errno));
+		errsv = errno;
+		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIPHY failed: %s", ifindex, shandle.ifname, nm_strerror_native (errsv));
 		return FALSE;
 	}
 
@@ -1068,7 +1068,8 @@ nmp_utils_mii_supports_carrier_detect (int ifindex)
 	mii->reg_num = MII_BMSR;
 
 	if (ioctl (shandle.fd, SIOCGMIIREG, &ifr) != 0) {
-		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIREG failed: %s", ifindex, shandle.ifname, strerror (errno));
+		errsv = errno;
+		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIREG failed: %s", ifindex, shandle.ifname, nm_strerror_native (errsv));
 		return FALSE;
 	}
 

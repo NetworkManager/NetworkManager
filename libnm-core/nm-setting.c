@@ -24,8 +24,6 @@
 
 #include "nm-setting.h"
 
-#include <string.h>
-
 #include "nm-setting-private.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"

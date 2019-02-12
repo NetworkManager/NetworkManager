@@ -23,11 +23,8 @@
 
 #include "nm-remote-settings.h"
 
-#include <string.h>
-
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
-
 #include "nm-client.h"
 #include "nm-remote-connection.h"
 #include "nm-remote-connection-private.h"

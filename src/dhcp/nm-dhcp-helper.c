@@ -22,7 +22,6 @@
 
 #include <unistd.h>
 #include <stdlib.h>
-#include <string.h>
 #include <signal.h>
 
 #include "nm-utils/nm-vpn-plugin-macros.h"

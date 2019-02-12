@@ -27,11 +27,9 @@
 
 #include "shvar.h"
 
-#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -815,7 +813,7 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 
 		g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (errsv),
 		             "Could not read file '%s': %s",
-		             name, strerror (errsv));
+		             name, nm_strerror_native (errsv));
 		return NULL;
 	}
 
@@ -1317,34 +1315,32 @@ svWriteFile (shvarFile *s, int mode, GError **error)
 	FILE *f;
 	int tmpfd;
 	CList *current;
+	int errsv;
 
 	if (s->modified) {
 		if (s->fd == -1)
 			s->fd = open (s->fileName, O_WRONLY | O_CREAT | O_CLOEXEC, mode);
 		if (s->fd == -1) {
-			int errsv = errno;
-
+			errsv = errno;
 			g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (errsv),
 			             "Could not open file '%s' for writing: %s",
-			             s->fileName, strerror (errsv));
+			             s->fileName, nm_strerror_native (errsv));
 			return FALSE;
 		}
 		if (ftruncate (s->fd, 0) < 0) {
-			int errsv = errno;
-
+			errsv = errno;
 			g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (errsv),
 			             "Could not overwrite file '%s': %s",
-			             s->fileName, strerror (errsv));
+			             s->fileName, nm_strerror_native (errsv));
 			return FALSE;
 		}
 
 		tmpfd = fcntl (s->fd, F_DUPFD_CLOEXEC, 0);
 		if (tmpfd == -1) {
-			int errsv = errno;
-
+			errsv = errno;
 			g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (errsv),
 			             "Internal error writing file '%s': %s",
-			             s->fileName, strerror (errsv));
+			             s->fileName, nm_strerror_native (errsv));
 			return FALSE;
 		}
 		f = fdopen (tmpfd, "w");

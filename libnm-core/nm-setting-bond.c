@@ -23,9 +23,7 @@
 
 #include "nm-setting-bond.h"
 
-#include <string.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
@@ -177,19 +175,14 @@ nm_setting_bond_get_option (NMSettingBond *setting,
 static gboolean
 validate_int (const char *name, const char *value, const BondDefault *def)
 {
-	long num;
-	guint i;
+	guint64 num;
 
-	for (i = 0; i < strlen (value); i++) {
-		if (!g_ascii_isdigit (value[i]) && value[i] != '-')
-			return FALSE;
-	}
-
-	errno = 0;
-	num = strtol (value, NULL, 10);
-	if (errno)
+	if (!NM_STRCHAR_ALL (value, ch, g_ascii_isdigit (ch)))
 		return FALSE;
-	if (num < def->min || num > def->max)
+
+	num = _nm_utils_ascii_str_to_uint64 (value, 10, def->min, def->max, G_MAXUINT64);
+	if (   num == G_MAXUINT64
+	    && errno != 0)
 		return FALSE;
 
 	return TRUE;

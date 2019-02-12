@@ -23,7 +23,6 @@
 
 #include "nm-vpn-service-plugin.h"
 
-#include <errno.h>
 #include <signal.h>
 #include <stdlib.h>
 
@@ -808,7 +807,6 @@ nm_vpn_service_plugin_read_vpn_details (int fd,
 	while (1) {
 		ssize_t nr;
 
-		errno = 0;
 		nr = read (fd, &c, 1);
 		if (nr < 0) {
 			if (errno == EAGAIN) {

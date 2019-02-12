@@ -20,8 +20,6 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nm-core-internal.h"
 
 typedef struct {

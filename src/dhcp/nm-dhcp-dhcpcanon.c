@@ -22,9 +22,7 @@
 
 #if WITH_DHCPCANON
 
-#include <string.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <unistd.h>
 
 #include "nm-utils.h"
@@ -205,12 +203,15 @@ stop (NMDhcpClient *client, gboolean release)
 {
 	NMDhcpDhcpcanon *self = NM_DHCP_DHCPCANON (client);
 	NMDhcpDhcpcanonPrivate *priv = NM_DHCP_DHCPCANON_GET_PRIVATE (self);
+	int errsv;
 
 	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhcpcanon_parent_class)->stop (client, release);
 
 	if (priv->pid_file) {
-		if (remove (priv->pid_file) == -1)
-			_LOGD ("could not remove dhcp pid file \"%s\": %d (%s)", priv->pid_file, errno, g_strerror (errno));
+		if (remove (priv->pid_file) == -1) {
+			errsv = errno;
+			_LOGD ("could not remove dhcp pid file \"%s\": %d (%s)", priv->pid_file, errsv, nm_strerror_native (errsv));
+		}
 		g_free (priv->pid_file);
 		priv->pid_file = NULL;
 	}

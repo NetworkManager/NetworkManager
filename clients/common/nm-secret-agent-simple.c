@@ -35,7 +35,6 @@
 
 #include <gio/gunixoutputstream.h>
 #include <gio/gunixinputstream.h>
-#include <string.h>
 
 #include "nm-vpn-service-plugin.h"
 #include "nm-vpn-helpers.h"

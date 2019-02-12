@@ -23,8 +23,6 @@
 
 #include "nm-setting-ip4-config.h"
 
-#include <string.h>
-
 #include "nm-setting-private.h"
 
 /**

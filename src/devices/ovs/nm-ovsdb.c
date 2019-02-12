@@ -21,7 +21,6 @@
 
 #include "nm-ovsdb.h"
 
-#include <string.h>
 #include <gmodule.h>
 #include <gio/gunixsocketaddress.h>
 

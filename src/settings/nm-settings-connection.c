@@ -23,8 +23,6 @@
 
 #include "nm-settings-connection.h"
 
-#include <string.h>
-
 #include "c-list/src/c-list.h"
 
 #include "nm-common-macros.h"

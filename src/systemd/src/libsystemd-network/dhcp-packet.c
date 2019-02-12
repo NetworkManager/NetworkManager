@@ -5,7 +5,6 @@
 
 #include "nm-sd-adapt-core.h"
 
-#include <errno.h>
 #include <net/ethernet.h>
 #include <net/if_arp.h>
 #include <string.h>

@@ -23,7 +23,6 @@
 #include "nms-keyfile-reader.h"
 
 #include <sys/stat.h>
-#include <string.h>
 
 #include "nm-keyfile-internal.h"
 

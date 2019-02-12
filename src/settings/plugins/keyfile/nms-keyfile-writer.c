@@ -26,8 +26,6 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <errno.h>
-#include <string.h>
 
 #include "nm-keyfile-internal.h"
 
@@ -300,7 +298,7 @@ _internal_write_connection (NMConnection *connection,
 		errsv = errno;
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "error chowning '%s': %s (%d)",
-		             path, g_strerror (errsv), errsv);
+		             path, nm_strerror_native (errsv), errsv);
 		unlink (path);
 		return FALSE;
 	}

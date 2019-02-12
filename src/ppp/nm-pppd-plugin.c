@@ -22,7 +22,6 @@
 #include <config.h>
 #define ___CONFIG_H__
 
-#include <string.h>
 #include <pppd/pppd.h>
 #include <pppd/fsm.h>
 #include <pppd/ipcp.h>

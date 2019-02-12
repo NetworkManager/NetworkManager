@@ -30,12 +30,12 @@
 
 #include "nm-default.h"
 
+#include "nmt-address-list.h"
+
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include "nmt-address-list.h"
 #include "nmt-ip-entry.h"
 
 G_DEFINE_TYPE (NmtAddressList, nmt_address_list, NMT_TYPE_WIDGET_LIST)

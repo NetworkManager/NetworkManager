@@ -42,8 +42,6 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nmt-newt-grid.h"
 
 G_DEFINE_TYPE (NmtNewtGrid, nmt_newt_grid, NMT_TYPE_NEWT_CONTAINER)

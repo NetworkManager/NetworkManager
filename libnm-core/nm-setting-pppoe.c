@@ -24,8 +24,6 @@
 
 #include "nm-setting-pppoe.h"
 
-#include <string.h>
-
 #include "nm-setting-ppp.h"
 #include "nm-setting-private.h"
 #include "nm-core-enum-types.h"

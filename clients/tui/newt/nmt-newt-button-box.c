@@ -31,9 +31,8 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nmt-newt-button-box.h"
+
 #include "nmt-newt-button.h"
 
 G_DEFINE_TYPE (NmtNewtButtonBox, nmt_newt_button_box, NMT_TYPE_NEWT_CONTAINER)

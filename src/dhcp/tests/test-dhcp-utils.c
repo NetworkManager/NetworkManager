@@ -21,7 +21,6 @@
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <string.h>
 #include <linux/rtnetlink.h>
 
 #include "nm-utils/nm-dedup-multi.h"

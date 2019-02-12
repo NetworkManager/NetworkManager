@@ -23,7 +23,6 @@
 #include "nm-device-bt.h"
 
 #include <stdio.h>
-#include <string.h>
 
 #include "nm-bluez-common.h"
 #include "nm-bluez-device.h"

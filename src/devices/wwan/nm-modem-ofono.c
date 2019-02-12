@@ -22,8 +22,6 @@
 
 #include "nm-modem-ofono.h"
 
-#include <string.h>
-
 #include "nm-core-internal.h"
 #include "devices/nm-device-private.h"
 #include "nm-modem.h"

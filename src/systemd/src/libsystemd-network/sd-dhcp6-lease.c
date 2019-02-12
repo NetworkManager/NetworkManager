@@ -5,7 +5,6 @@
 
 #include "nm-sd-adapt-core.h"
 
-#include <errno.h>
 
 #include "alloc-util.h"
 #include "dhcp6-lease-internal.h"

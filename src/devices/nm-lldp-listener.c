@@ -23,7 +23,6 @@
 #include "nm-lldp-listener.h"
 
 #include <net/ethernet.h>
-#include <errno.h>
 
 #include "platform/nm-platform.h"
 #include "nm-utils.h"
@@ -384,7 +383,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	                                     &chassis_id, &chassis_id_len);
 	if (r < 0) {
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "failed reading chassis-id: %s", g_strerror (-r));
+		             "failed reading chassis-id: %s", nm_strerror_native (-r));
 		return NULL;
 	}
 	if (chassis_id_len < 1) {
@@ -397,7 +396,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	                                  &port_id, &port_id_len);
 	if (r < 0) {
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "failed reading port-id: %s", g_strerror (-r));
+		             "failed reading port-id: %s", nm_strerror_native (-r));
 		return NULL;
 	}
 	if (port_id_len < 1) {
@@ -413,7 +412,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	r = sd_lldp_neighbor_get_destination_address (neighbor_sd, &neigh->destination_address);
 	if (r < 0) {
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "failed getting destination address: %s", g_strerror (-r));
+		             "failed getting destination address: %s", nm_strerror_native (-r));
 		goto out;
 	}
 
@@ -464,7 +463,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	r = sd_lldp_neighbor_tlv_rewind (neighbor_sd);
 	if (r < 0) {
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "failed reading tlv (rewind): %s", g_strerror (-r));
+		             "failed reading tlv (rewind): %s", nm_strerror_native (-r));
 		goto out;
 	}
 	do {
@@ -476,7 +475,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 			if (r == -ENXIO)
 				continue;
 			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-			             "failed reading tlv: %s", g_strerror (-r));
+			             "failed reading tlv: %s", nm_strerror_native (-r));
 			goto out;
 		}
 

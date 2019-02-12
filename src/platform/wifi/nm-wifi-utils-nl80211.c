@@ -24,15 +24,12 @@
 
 #include "nm-wifi-utils-nl80211.h"
 
-#include <errno.h>
-#include <string.h>
 #include <sys/ioctl.h>
 #include <net/ethernet.h>
 #include <unistd.h>
 #include <linux/nl80211.h>
 #include <linux/if.h>
 
-#include "nm-utils/nm-errno.h"
 #include "platform/nm-netlink.h"
 #include "nm-wifi-utils-private.h"
 #include "platform/nm-platform.h"

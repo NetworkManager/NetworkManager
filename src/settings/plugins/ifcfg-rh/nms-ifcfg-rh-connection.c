@@ -22,7 +22,6 @@
 
 #include "nms-ifcfg-rh-connection.h"
 
-#include <string.h>
 #include <sys/inotify.h>
 #include <glib/gstdio.h>
 

@@ -23,7 +23,6 @@
 
 #include "nms-keyfile-connection.h"
 
-#include <string.h>
 #include <glib/gstdio.h>
 
 #include "nm-dbus-interface.h"

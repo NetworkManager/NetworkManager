@@ -21,11 +21,11 @@
 
 #include "nm-default.h"
 
-#include <string.h>
+#include "nm-client.h"
+
 #include <libudev.h>
 
 #include "nm-utils.h"
-#include "nm-client.h"
 #include "nm-manager.h"
 #include "nm-dns-manager.h"
 #include "nm-remote-settings.h"

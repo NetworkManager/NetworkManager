@@ -25,12 +25,10 @@
 #include <sys/socket.h>
 #include <linux/atmdev.h>
 #include <linux/atmbr2684.h>
-#include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "devices/nm-device-private.h"
 #include "platform/nm-platform.h"
@@ -371,8 +369,8 @@ br2684_create_iface (NMDeviceAdsl *self,
 			priv->nas_update_id = g_timeout_add (100, nas_update_cb, self);
 			return NM_ACT_STAGE_RETURN_POSTPONE;
 		}
-		if (errno != EEXIST) {
-			errsv = errno;
+		errsv = errno;
+		if (errsv != EEXIST) {
 			_LOGW (LOGD_ADSL, "failed to create br2684 interface (%d)", errsv);
 			break;
 		}

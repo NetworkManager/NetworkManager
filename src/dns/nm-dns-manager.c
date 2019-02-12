@@ -23,7 +23,6 @@
 
 #include "nm-default.h"
 
-#include <errno.h>
 #include <fcntl.h>
 #include <resolv.h>
 #include <stdlib.h>
@@ -536,6 +535,7 @@ dispatch_netconfig (NMDnsManager *self,
 {
 	GPid pid;
 	int fd;
+	int errsv;
 	int status;
 	gssize l;
 	nm_auto_free_gstring GString *str = NULL;
@@ -566,11 +566,10 @@ again:
 
 	/* Wait until the process exits */
 	if (!nm_utils_kill_child_sync (pid, 0, LOGD_DNS, "netconfig", &status, 1000, 0)) {
-		int errsv = errno;
-
+		errsv = errno;
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 		             "Error waiting for netconfig to exit: %s",
-		             strerror (errsv));
+		             nm_strerror_native (errsv));
 		return SR_ERROR;
 	}
 	if (!WIFEXITED (status) || WEXITSTATUS (status) != EXIT_SUCCESS) {
@@ -678,7 +677,7 @@ write_resolv_conf_contents (FILE *f,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
 		             "Could not write " _PATH_RESCONF ": %s",
-		             g_strerror (errsv));
+		             nm_strerror_native (errsv));
 		errno = errsv;
 		return FALSE;
 	}
@@ -709,7 +708,8 @@ dispatch_resolvconf (NMDnsManager *self,
 	gs_free char *cmd = NULL;
 	FILE *f;
 	gboolean success = FALSE;
-	int errnosv, err;
+	int errsv;
+	int err;
 	char *argv[] = { RESOLVCONF_PATH, "-d", "NetworkManager", NULL };
 	int status;
 
@@ -743,12 +743,13 @@ dispatch_resolvconf (NMDnsManager *self,
 
 	cmd = g_strconcat (RESOLVCONF_PATH, " -a ", "NetworkManager", NULL);
 	if ((f = popen (cmd, "w")) == NULL) {
+		errsv = errno;
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
 		             "Could not write to %s: %s",
 		             RESOLVCONF_PATH,
-		             g_strerror (errno));
+		             nm_strerror_native (errsv));
 		return SR_ERROR;
 	}
 
@@ -759,10 +760,10 @@ dispatch_resolvconf (NMDnsManager *self,
 	                             error);
 	err = pclose (f);
 	if (err < 0) {
-		errnosv = errno;
+		errsv = errno;
 		g_clear_error (error);
-		g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errnosv),
-		             "Failed to close pipe to resolvconf: %d", errnosv);
+		g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
+		             "Failed to close pipe to resolvconf: %d", errsv);
 		return SR_ERROR;
 	} else if (err > 0) {
 		_LOGW ("resolvconf failed with status %d", err);
@@ -886,9 +887,9 @@ update_resolv_conf (NMDnsManager *self,
 		             NM_MANAGER_ERROR_FAILED,
 		             "Could not open %s: %s",
 		             MY_RESOLV_CONF_TMP,
-		             g_strerror (errsv));
+		             nm_strerror_native (errsv));
 		_LOGT ("update-resolv-conf: open temporary file %s failed (%s)",
-		       MY_RESOLV_CONF_TMP, g_strerror (errsv));
+		       MY_RESOLV_CONF_TMP, nm_strerror_native (errsv));
 		return SR_ERROR;
 	}
 
@@ -896,7 +897,7 @@ update_resolv_conf (NMDnsManager *self,
 	if (!success) {
 		errsv = errno;
 		_LOGT ("update-resolv-conf: write temporary file %s failed (%s)",
-		       MY_RESOLV_CONF_TMP, g_strerror (errsv));
+		       MY_RESOLV_CONF_TMP, nm_strerror_native (errsv));
 	}
 
 	if (fclose (f) < 0) {
@@ -910,9 +911,9 @@ update_resolv_conf (NMDnsManager *self,
 			             NM_MANAGER_ERROR_FAILED,
 			             "Could not close %s: %s",
 			             MY_RESOLV_CONF_TMP,
-			             g_strerror (errsv));
+			             nm_strerror_native (errsv));
 			_LOGT ("update-resolv-conf: close temporary file %s failed (%s)",
-			       MY_RESOLV_CONF_TMP, g_strerror (errsv));
+			       MY_RESOLV_CONF_TMP, nm_strerror_native (errsv));
 		}
 		return SR_ERROR;
 	} else if (!success)
@@ -925,9 +926,9 @@ update_resolv_conf (NMDnsManager *self,
 		             NM_MANAGER_ERROR_FAILED,
 		             "Could not replace %s: %s",
 		             MY_RESOLV_CONF,
-		             g_strerror (errno));
+		             nm_strerror_native (errsv));
 		_LOGT ("update-resolv-conf: failed to rename temporary file %s to %s (%s)",
-		       MY_RESOLV_CONF_TMP, MY_RESOLV_CONF, g_strerror (errsv));
+		       MY_RESOLV_CONF_TMP, MY_RESOLV_CONF, nm_strerror_native (errsv));
 		return SR_ERROR;
 	}
 
@@ -962,10 +963,10 @@ update_resolv_conf (NMDnsManager *self,
 		             NM_MANAGER_ERROR_FAILED,
 		             "Could not unlink %s: %s",
 		             RESOLV_CONF_TMP,
-		             g_strerror (errsv));
+		             nm_strerror_native (errsv));
 		_LOGT ("update-resolv-conf: write internal file %s succeeded "
 		       "but canot delete temporary file %s: %s",
-		       MY_RESOLV_CONF, RESOLV_CONF_TMP, g_strerror (errsv));
+		       MY_RESOLV_CONF, RESOLV_CONF_TMP, nm_strerror_native (errsv));
 		return SR_ERROR;
 	}
 
@@ -977,10 +978,10 @@ update_resolv_conf (NMDnsManager *self,
 		             "Could not create symlink %s pointing to %s: %s",
 		             RESOLV_CONF_TMP,
 		             MY_RESOLV_CONF,
-		             g_strerror (errsv));
+		             nm_strerror_native (errsv));
 		_LOGT ("update-resolv-conf: write internal file %s succeeded "
 		       "but failed to symlink %s: %s",
-		       MY_RESOLV_CONF, RESOLV_CONF_TMP, g_strerror (errsv));
+		       MY_RESOLV_CONF, RESOLV_CONF_TMP, nm_strerror_native (errsv));
 		return SR_ERROR;
 	}
 
@@ -992,10 +993,10 @@ update_resolv_conf (NMDnsManager *self,
 		             "Could not rename %s to %s: %s",
 		             RESOLV_CONF_TMP,
 		             _PATH_RESCONF,
-		             g_strerror (errsv));
+		             nm_strerror_native (errsv));
 		_LOGT ("update-resolv-conf: write internal file %s succeeded "
 		       "but failed to rename temporary symlink %s to %s: %s",
-		       MY_RESOLV_CONF, RESOLV_CONF_TMP, _PATH_RESCONF, g_strerror (errsv));
+		       MY_RESOLV_CONF, RESOLV_CONF_TMP, _PATH_RESCONF, nm_strerror_native (errsv));
 		return SR_ERROR;
 	}
 

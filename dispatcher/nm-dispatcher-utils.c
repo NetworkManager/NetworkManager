@@ -20,7 +20,7 @@
 
 #include "nm-default.h"
 
-#include <string.h>
+#include "nm-dispatcher-utils.h"
 
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
@@ -30,8 +30,6 @@
 
 #include "nm-dispatcher-api.h"
 #include "nm-utils.h"
-
-#include "nm-dispatcher-utils.h"
 
 /*****************************************************************************/
 

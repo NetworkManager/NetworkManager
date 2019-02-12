@@ -22,8 +22,6 @@
 
 #include "nm-device-iwd.h"
 
-#include <string.h>
-
 #include "nm-common-macros.h"
 #include "devices/nm-device.h"
 #include "devices/nm-device-private.h"

@@ -23,11 +23,9 @@
 #include <glib-unix.h>
 #include <getopt.h>
 #include <locale.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <string.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <signal.h>
@@ -389,6 +387,7 @@ main (int argc, char *argv[])
 	gs_unref_bytes GBytes *client_id = NULL;
 	gs_free NMUtilsIPv6IfaceId *iid = NULL;
 	guint sd_id;
+	int errsv;
 
 	c_list_init (&gl.dad_failed_lst_head);
 
@@ -425,7 +424,8 @@ main (int argc, char *argv[])
 
 	gl.ifindex = nmp_utils_if_nametoindex (global_opt.ifname);
 	if (gl.ifindex <= 0) {
-		fprintf (stderr, _("Failed to find interface index for %s (%s)\n"), global_opt.ifname, strerror (errno));
+		errsv = errno;
+		fprintf (stderr, _("Failed to find interface index for %s (%s)\n"), global_opt.ifname, nm_strerror_native (errsv));
 		return 1;
 	}
 	pidfile = g_strdup_printf (NMIH_PID_FILE_FMT, gl.ifindex);
@@ -450,12 +450,10 @@ main (int argc, char *argv[])
 
 	if (global_opt.become_daemon && !global_opt.debug) {
 		if (daemon (0, 0) < 0) {
-			int saved_errno;
-
-			saved_errno = errno;
+			errsv = errno;
 			fprintf (stderr, _("Could not daemonize: %s [error %u]\n"),
-			         g_strerror (saved_errno),
-			         saved_errno);
+			         nm_strerror_native (errsv),
+			         errsv);
 			return 1;
 		}
 		if (nm_main_utils_write_pidfile (pidfile))

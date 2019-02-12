@@ -21,10 +21,9 @@
 
 #include "nm-default.h"
 
-#include <string.h>
+#include "nm-active-connection.h"
 
 #include "nm-dbus-interface.h"
-#include "nm-active-connection.h"
 #include "nm-object-private.h"
 #include "nm-core-internal.h"
 #include "nm-device.h"

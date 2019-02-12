@@ -1840,7 +1840,7 @@ nmtstp_namespace_create (int unshare_flags, GError **error)
 	if (e != 0) {
 		errsv = errno;
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "pipe() failed with %d (%s)", errsv, strerror (errsv));
+		             "pipe() failed with %d (%s)", errsv, nm_strerror_native (errsv));
 		return FALSE;
 	}
 
@@ -1848,7 +1848,7 @@ nmtstp_namespace_create (int unshare_flags, GError **error)
 	if (e != 0) {
 		errsv = errno;
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "pipe() failed with %d (%s)", errsv, strerror (errsv));
+		             "pipe() failed with %d (%s)", errsv, nm_strerror_native (errsv));
 		nm_close (pipefd_c2p[0]);
 		nm_close (pipefd_c2p[1]);
 		return FALSE;
@@ -1858,7 +1858,7 @@ nmtstp_namespace_create (int unshare_flags, GError **error)
 	if (pid < 0) {
 		errsv = errno;
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "fork() failed with %d (%s)", errsv, strerror (errsv));
+		             "fork() failed with %d (%s)", errsv, nm_strerror_native (errsv));
 		nm_close (pipefd_c2p[0]);
 		nm_close (pipefd_c2p[1]);
 		nm_close (pipefd_p2c[0]);
@@ -1919,7 +1919,7 @@ nmtstp_namespace_create (int unshare_flags, GError **error)
 			             "child process failed for unknown reason");
 		} else {
 			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-			             "child process signaled failure %d (%s)", errsv, strerror (errsv));
+			             "child process signaled failure %d (%s)", errsv, nm_strerror_native (errsv));
 		}
 		nm_close (pipefd_p2c[1]);
 		kill (pid, SIGKILL);
@@ -2074,14 +2074,14 @@ main (int argc, char **argv)
 
 		if (unshare (CLONE_NEWNET | CLONE_NEWNS) != 0) {
 			errsv = errno;
-			g_error ("unshare(CLONE_NEWNET|CLONE_NEWNS) failed with %s (%d)", strerror (errsv), errsv);
+			g_error ("unshare(CLONE_NEWNET|CLONE_NEWNS) failed with %s (%d)", nm_strerror_native (errsv), errsv);
 		}
 
 		/* We need a read-only /sys so that the platform knows there's no udev. */
 		mount (NULL, "/sys", "sysfs", MS_SLAVE, NULL);
 		if (mount ("sys", "/sys", "sysfs", MS_RDONLY, NULL) != 0) {
 			errsv = errno;
-			g_error ("mount(\"/sys\") failed with %s (%d)", strerror (errsv), errsv);
+			g_error ("mount(\"/sys\") failed with %s (%d)", nm_strerror_native (errsv), errsv);
 		}
 	}
 

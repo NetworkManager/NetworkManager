@@ -23,7 +23,6 @@
 
 #include "nm-setting-team.h"
 
-#include <string.h>
 #include <stdlib.h>
 
 #include "nm-utils.h"

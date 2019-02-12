@@ -20,7 +20,6 @@
 
 #include "nm-default.h"
 
-#include <string.h>
 #include <syslog.h>
 
 #include "ndisc/nm-ndisc.h"

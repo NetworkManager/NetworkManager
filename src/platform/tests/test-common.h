@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <syslog.h>
-#include <string.h>
 #include <arpa/inet.h>
 #include <linux/if.h>
 #include <linux/if_link.h>

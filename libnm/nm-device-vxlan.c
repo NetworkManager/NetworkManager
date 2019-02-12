@@ -20,13 +20,11 @@
 
 #include "nm-default.h"
 
-#include <string.h>
+#include "nm-device-vxlan.h"
 
 #include "nm-setting-connection.h"
 #include "nm-setting-vxlan.h"
 #include "nm-utils.h"
-
-#include "nm-device-vxlan.h"
 #include "nm-object-private.h"
 
 G_DEFINE_TYPE (NMDeviceVxlan, nm_device_vxlan, NM_TYPE_DEVICE)

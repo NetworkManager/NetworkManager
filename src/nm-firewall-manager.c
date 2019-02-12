@@ -22,8 +22,6 @@
 
 #include "nm-firewall-manager.h"
 
-#include <string.h>
-
 #include "NetworkManagerUtils.h"
 #include "c-list/src/c-list.h"
 

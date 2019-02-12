@@ -24,8 +24,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <errno.h>
 
 struct Opt {
 	const char *     key;
@@ -159,23 +157,13 @@ validate_type_int (const struct Opt * opt,
                    const char * value,
                    const guint32 len)
 {
-	long int intval;
+	gint64 v;
 
 	g_return_val_if_fail (opt != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
 
-	errno = 0;
-	intval = strtol (value, NULL, 10);
-	if (errno != 0)
-		return FALSE;
-
-	/* strtol returns a long, but we are dealing with ints */
-	if (intval > INT_MAX || intval < INT_MIN)
-		return FALSE;
-	if (intval > opt->int_high || intval < opt->int_low)
-		return FALSE;
-
-	return TRUE;
+	v = _nm_utils_ascii_str_to_int64 (value, 10, opt->int_low, opt->int_high, G_MININT64);
+	return v != G_MININT64 || errno == 0;
 }
 
 static gboolean

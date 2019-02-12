@@ -23,13 +23,11 @@
 #include "nms-ifcfg-rh-reader.h"
 
 #include <stdlib.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <sys/inotify.h>
-#include <errno.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
@@ -3951,9 +3949,8 @@ make_wireless_setting (shvarFile *ifcfg,
 
 	value = svGetValueStr_cp (ifcfg, "CHANNEL");
 	if (value) {
-		errno = 0;
 		chan = _nm_utils_ascii_str_to_int64 (value, 10, 1, 196, 0);
-		if (errno || (chan == 0)) {
+		if (chan == 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid wireless channel '%s'", value);
 			g_free (value);
@@ -4997,7 +4994,7 @@ handle_bridge_option (NMSetting *setting,
 			} else {
 				v = _nm_utils_ascii_str_to_int64 (value, 10, 0, 1, -1);
 				if (v == -1) {
-					error_message = g_strerror (errno);
+					error_message = nm_strerror_native (errno);
 					goto warn;
 				}
 			}
@@ -5009,7 +5006,7 @@ handle_bridge_option (NMSetting *setting,
 		case G_TYPE_UINT:
 			v = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT, -1);
 			if (v == -1) {
-				error_message = g_strerror (errno);
+				error_message = nm_strerror_native (errno);
 				goto warn;
 			}
 			if (!nm_g_object_set_property_uint (G_OBJECT (setting), m[i].property_name, v, NULL)) {

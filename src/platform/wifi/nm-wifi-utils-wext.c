@@ -23,8 +23,6 @@
 
 #include "nm-wifi-utils-wext.h"
 
-#include <errno.h>
-#include <string.h>
 #include <sys/ioctl.h>
 #include <net/ethernet.h>
 #include <unistd.h>
@@ -117,7 +115,7 @@ get_ifname (int ifindex, char *buffer, const char *op)
 		errsv = errno;
 		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
 		       "error getting interface name for ifindex %d, operation '%s': %s (%d)",
-		       ifindex, op, g_strerror (errsv), errsv);
+		       ifindex, op, nm_strerror_native (errsv), errsv);
 		return FALSE;
 	}
 
@@ -129,15 +127,17 @@ wifi_wext_get_mode_ifname (NMWifiUtils *data, const char *ifname)
 {
 	NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
 	struct iwreq wrq;
+	int errsv;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
 	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 
 	if (ioctl (wext->fd, SIOCGIWMODE, &wrq) < 0) {
-		if (errno != ENODEV) {
+		errsv = errno;
+		if (errsv != ENODEV) {
 			_LOGW (LOGD_PLATFORM | LOGD_WIFI,
 			       "(%s): error %d getting card mode",
-			       ifname, errno);
+			       ifname, errsv);
 		}
 		return NM_802_11_MODE_UNKNOWN;
 	}
@@ -253,7 +253,7 @@ wifi_wext_get_freq (NMWifiUtils *data)
 	if (ioctl (wext->fd, SIOCGIWFREQ, &wrq) < 0) {
 		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
 		       "(%s): error getting frequency: %s",
-		       ifname, strerror (errno));
+		       ifname, nm_strerror_native (errno));
 		return 0;
 	}
 
@@ -291,7 +291,7 @@ wifi_wext_get_bssid (NMWifiUtils *data, guint8 *out_bssid)
 	if (ioctl (wext->fd, SIOCGIWAP, &wrq) < 0) {
 		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
 		       "(%s): error getting associated BSSID: %s",
-		       ifname, strerror (errno));
+		       ifname, nm_strerror_native (errno));
 		return FALSE;
 	}
 	memcpy (out_bssid, &(wrq.u.ap_addr.sa_data), ETH_ALEN);
@@ -429,7 +429,7 @@ wifi_wext_get_qual (NMWifiUtils *data)
 	if (ioctl (wext->fd, SIOCGIWSTATS, &wrq) < 0) {
 		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
 		       "(%s): error getting signal strength: %s",
-		       ifname, strerror (errno));
+		       ifname, nm_strerror_native (errno));
 		return -1;
 	}
 
@@ -476,7 +476,7 @@ wifi_wext_set_mesh_channel (NMWifiUtils *data, guint32 channel)
 	if (ioctl (wext->fd, SIOCSIWFREQ, &wrq) < 0) {
 		_LOGE (LOGD_PLATFORM | LOGD_WIFI | LOGD_OLPC,
 		       "(%s): error setting channel to %d: %s",
-		       ifname, channel, strerror (errno));
+		       ifname, channel, nm_strerror_native (errno));
 		return FALSE;
 	}
 
@@ -506,15 +506,15 @@ wifi_wext_set_mesh_ssid (NMWifiUtils *data, const guint8 *ssid, gsize len)
 	if (ioctl (wext->fd, SIOCSIWESSID, &wrq) == 0)
 		return TRUE;
 
-	if (errno != ENODEV) {
+	errsv = errno;
+	if (errsv != ENODEV) {
 		gs_free char *ssid_str = NULL;
 
-		errsv = errno;
 		_LOGE (LOGD_PLATFORM | LOGD_WIFI | LOGD_OLPC,
 		       "(%s): error setting SSID to %s: %s",
 		       ifname,
 		       (ssid_str = _nm_utils_ssid_to_string_arr (ssid, len)),
-		       strerror (errsv));
+		       nm_strerror_native (errsv));
 	}
 
 	return FALSE;
@@ -545,6 +545,7 @@ wext_get_range_ifname (NMWifiUtilsWext *wext,
 	int i = 26;
 	gboolean success = FALSE;
 	struct iwreq wrq;
+	int errsv;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
 	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
@@ -561,11 +562,14 @@ wext_get_range_ifname (NMWifiUtilsWext *wext,
 				*response_len = wrq.u.data.length;
 			success = TRUE;
 			break;
-		} else if (errno != EAGAIN) {
-			_LOGE (LOGD_PLATFORM | LOGD_WIFI,
-			       "(%s): couldn't get driver range information (%d).",
-			       ifname, errno);
-			break;
+		} else {
+			errsv = errno;
+			if (errsv != EAGAIN) {
+				_LOGE (LOGD_PLATFORM | LOGD_WIFI,
+				       "(%s): couldn't get driver range information (%d).",
+				       ifname, errsv);
+				break;
+			}
 		}
 
 		g_usleep (G_USEC_PER_SEC / 4);

@@ -20,10 +20,7 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "devices/wifi/nm-wifi-utils.h"
-
 #include "nm-core-internal.h"
 
 #include "nm-test-utils-core.h"

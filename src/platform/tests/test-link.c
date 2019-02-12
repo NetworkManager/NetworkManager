@@ -2393,7 +2393,7 @@ _test_netns_check_skip (void)
 			support_errsv = errno;
 	}
 	if (!support) {
-		_LOGD ("setns() failed with \"%s\". This indicates missing support (valgrind?)", g_strerror (support_errsv));
+		_LOGD ("setns() failed with \"%s\". This indicates missing support (valgrind?)", nm_strerror_native (support_errsv));
 		g_test_skip ("No netns support (setns failed)");
 		return TRUE;
 	}

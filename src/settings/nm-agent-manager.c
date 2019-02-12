@@ -22,7 +22,6 @@
 
 #include "nm-agent-manager.h"
 
-#include <string.h>
 #include <pwd.h>
 
 #include "nm-common-macros.h"

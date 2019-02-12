@@ -23,8 +23,6 @@
 
 #include "nm-setting-adsl.h"
 
-#include <string.h>
-
 #include "nm-setting-ppp.h"
 #include "nm-setting-private.h"
 #include "nm-utils.h"

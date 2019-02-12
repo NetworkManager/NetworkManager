@@ -23,7 +23,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
-#include <string.h>
 #include <linux/pkt_sched.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -10020,10 +10019,14 @@ NMTST_DEFINE ();
 
 int main (int argc, char **argv)
 {
+	int errsv;
+
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
-	if (g_mkdir_with_parents (TEST_SCRATCH_DIR_TMP, 0755) != 0)
-		g_error ("failure to create test directory \"%s\": %s", TEST_SCRATCH_DIR_TMP, g_strerror (errno));
+	if (g_mkdir_with_parents (TEST_SCRATCH_DIR_TMP, 0755) != 0) {
+		errsv = errno;
+		g_error ("failure to create test directory \"%s\": %s", TEST_SCRATCH_DIR_TMP, nm_strerror_native (errsv));
+	}
 
 	g_test_add_func (TPATH "svUnescape", test_svUnescape);
 

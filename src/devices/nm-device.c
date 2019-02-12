@@ -24,9 +24,7 @@
 #include "nm-device.h"
 
 #include <netinet/in.h>
-#include <string.h>
 #include <unistd.h>
-#include <errno.h>
 #include <sys/ioctl.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -10174,9 +10172,9 @@ share_init (NMDevice *self, GError **error)
 	} else if (!nm_platform_sysctl_set (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_forward"), "1")) {
 		errsv = errno;
 		_LOGD (LOGD_SHARING, "share: error enabling IPv4 forwarding: (%d) %s",
-		       errsv, g_strerror (errsv));
+		       errsv, nm_strerror_native (errsv));
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "cannot set ipv4/ip_forward: %s", g_strerror (errsv));
+		             "cannot set ipv4/ip_forward: %s", nm_strerror_native (errsv));
 		return FALSE;
 	}
 
@@ -10185,7 +10183,7 @@ share_init (NMDevice *self, GError **error)
 	} else if (!nm_platform_sysctl_set (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_dynaddr"), "1")) {
 		errsv = errno;
 		_LOGD (LOGD_SHARING, "share: error enabling dynamic addresses: (%d) %s",
-		       errsv, strerror (errsv));
+		       errsv, nm_strerror_native (errsv));
 	}
 
 	for (iter = modules; *iter; iter++)
@@ -10571,7 +10569,7 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 		if (nm_streq (method, NM_SETTING_IP6_CONFIG_METHOD_SHARED)) {
 			if (!nm_platform_sysctl_set (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv6/conf/all/forwarding"), "1")) {
 				errsv = errno;
-				_LOGE (LOGD_SHARING, "share: error enabling IPv6 forwarding: (%d) %s", errsv, strerror (errsv));
+				_LOGE (LOGD_SHARING, "share: error enabling IPv6 forwarding: (%d) %s", errsv, nm_strerror_native (errsv));
 				nm_device_ip_method_failed (self, AF_INET6, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
 			}
 		}

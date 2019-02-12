@@ -22,7 +22,6 @@
 
 #include "nm-iwd-manager.h"
 
-#include <string.h>
 #include <net/if.h>
 
 #include "nm-logging.h"
@@ -137,6 +136,7 @@ agent_dbus_method_cb (GDBusConnection *connection,
 	int ifindex;
 	NMDevice *device;
 	gs_free char *name_owner = NULL;
+	int errsv;
 
 	/* Be paranoid and check the sender address */
 	name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager));
@@ -172,8 +172,9 @@ agent_dbus_method_cb (GDBusConnection *connection,
 
 	ifindex = if_nametoindex (ifname);
 	if (!ifindex) {
+		errsv = errno;
 		_LOGD ("agent-request: if_nametoindex failed for Name %s for Device at %s: %i",
-		       ifname, device_path, errno);
+		       ifname, device_path, errsv);
 		goto return_error;
 	}
 
@@ -339,6 +340,7 @@ set_device_dbus_object (NMIwdManager *self, GDBusProxy *proxy,
 	const char *ifname;
 	int ifindex;
 	NMDevice *device;
+	int errsv;
 
 	ifname = get_property_string_or_null (proxy, "Name");
 	if (!ifname) {
@@ -350,8 +352,9 @@ set_device_dbus_object (NMIwdManager *self, GDBusProxy *proxy,
 	ifindex = if_nametoindex (ifname);
 
 	if (!ifindex) {
+		errsv = errno;
 		_LOGE ("if_nametoindex failed for Name %s for Device at %s: %i",
-		       ifname, g_dbus_proxy_get_object_path (proxy), errno);
+		       ifname, g_dbus_proxy_get_object_path (proxy), errsv);
 		return;
 	}
 

@@ -23,11 +23,12 @@
 
 #include "nm-shared-utils.h"
 
-#include <errno.h>
 #include <arpa/inet.h>
 #include <poll.h>
 #include <fcntl.h>
 #include <sys/syscall.h>
+
+#include "nm-errno.h"
 
 /*****************************************************************************/
 
@@ -1743,7 +1744,7 @@ nm_utils_fd_wait_for_event (int fd, int event, gint64 timeout_ns)
 
 	r = ppoll (&pollfd, 1, pts, NULL);
 	if (r < 0)
-		return -errno;
+		return -NM_ERRNO_NATIVE (errno);
 	if (r == 0)
 		return 0;
 	return pollfd.revents;
@@ -1770,10 +1771,12 @@ nm_utils_fd_read_loop (int fd, void *buf, size_t nbytes, bool do_poll)
 
 		k = read (fd, p, nbytes);
 		if (k < 0) {
-			if (errno == EINTR)
+			int errsv = errno;
+
+			if (errsv == EINTR)
 				continue;
 
-			if (errno == EAGAIN && do_poll) {
+			if (errsv == EAGAIN && do_poll) {
 
 				/* We knowingly ignore any return value here,
 				 * and expect that any error/EOF is reported
@@ -1783,7 +1786,7 @@ nm_utils_fd_read_loop (int fd, void *buf, size_t nbytes, bool do_poll)
 				continue;
 			}
 
-			return n > 0 ? n : -errno;
+			return n > 0 ? n : -NM_ERRNO_NATIVE (errsv);
 		}
 
 		if (k == 0)

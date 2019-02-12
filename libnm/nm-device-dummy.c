@@ -20,9 +20,8 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nm-device-dummy.h"
+
 #include "nm-object-private.h"
 #include "nm-setting-dummy.h"
 #include "nm-setting-connection.h"

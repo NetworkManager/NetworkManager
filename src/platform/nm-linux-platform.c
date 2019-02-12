@@ -23,7 +23,6 @@
 
 #include <poll.h>
 #include <endian.h>
-#include <errno.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -44,7 +43,6 @@
 #include "nm-core-internal.h"
 #include "nm-setting-vlan.h"
 
-#include "nm-utils/nm-errno.h"
 #include "nm-utils/nm-secret-utils.h"
 #include "nm-netlink.h"
 #include "nm-core-utils.h"
@@ -328,7 +326,7 @@ typedef enum {
 typedef enum {
 	/* Negative values are errors from kernel. Add dummy member to
 	 * make enum signed. */
-	_WAIT_FOR_NL_RESPONSE_RESULT_SYSTEM_ERROR = -1,
+	_WAIT_FOR_NL_RESPONSE_RESULT_SYSTEM_ERROR = G_MININT,
 
 	WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN = 0,
 	WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK,
@@ -461,7 +459,7 @@ G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
             _LOG_print (__level, __domain, __errsv, self, \
                         _NM_UTILS_MACRO_FIRST (__VA_ARGS__) ": %s (%d)" \
                         _NM_UTILS_MACRO_REST (__VA_ARGS__), \
-                        g_strerror (__errsv), __errsv); \
+                        nm_strerror_native (__errsv), __errsv); \
         } \
     } G_STMT_END
 
@@ -512,7 +510,7 @@ wait_for_nl_response_to_string (WaitForNlResponseResult seq_result,
 		if (seq_result < 0) {
 			nm_utils_strbuf_append (&buf, &buf_size, "failure %d (%s%s%s)",
 			                        -((int) seq_result),
-			                        g_strerror (-((int) seq_result)),
+			                        nm_strerror_native (-((int) seq_result)),
 			                        errmsg ? " - " : "",
 			                        errmsg ?: "");
 		}
@@ -4052,10 +4050,10 @@ sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 			errsv = errno;
 			if (errsv == ENOENT) {
 				_LOGD ("sysctl: failed to open '%s': (%d) %s",
-				       pathid, errsv, strerror (errsv));
+				       pathid, errsv, nm_strerror_native (errsv));
 			} else {
 				_LOGE ("sysctl: failed to open '%s': (%d) %s",
-				       pathid, errsv, strerror (errsv));
+				       pathid, errsv, nm_strerror_native (errsv));
 			}
 			errno = errsv;
 			return FALSE;
@@ -4066,10 +4064,10 @@ sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 			errsv = errno;
 			if (errsv == ENOENT) {
 				_LOGD ("sysctl: failed to openat '%s': (%d) %s",
-				       pathid, errsv, strerror (errsv));
+				       pathid, errsv, nm_strerror_native (errsv));
 			} else {
 				_LOGE ("sysctl: failed to openat '%s': (%d) %s",
-				       pathid, errsv, strerror (errsv));
+				       pathid, errsv, nm_strerror_native (errsv));
 			}
 			errno = errsv;
 			return FALSE;
@@ -4119,7 +4117,7 @@ sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 		}
 
 		_NMLOG (level, "sysctl: failed to set '%s' to '%s': (%d) %s",
-		        path, value, errsv, strerror (errsv));
+		        path, value, errsv, nm_strerror_native (errsv));
 	} else if (nwrote < len - 1) {
 		_LOGE ("sysctl: failed to set '%s' to '%s' after three attempts",
 		       path, value);
@@ -5023,7 +5021,7 @@ _nl_send_nlmsghdr (NMPlatform *platform,
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	guint32 seq;
-	int nle;
+	int errsv;
 
 	nm_assert (nlhdr);
 
@@ -5052,13 +5050,13 @@ _nl_send_nlmsghdr (NMPlatform *platform,
 
 		try_count = 0;
 again:
-		nle = sendmsg (nl_socket_get_fd (priv->nlh), &msg, 0);
-		if (nle < 0) {
-			nle = errno;
-			if (nle == EINTR && try_count++ < 100)
+		errsv = sendmsg (nl_socket_get_fd (priv->nlh), &msg, 0);
+		if (errsv < 0) {
+			errsv = errno;
+			if (errsv == EINTR && try_count++ < 100)
 				goto again;
-			_LOGD ("netlink: nl-send-nlmsghdr: failed sending message: %s (%d)", g_strerror (nle), nle);
-			return -nle;
+			_LOGD ("netlink: nl-send-nlmsghdr: failed sending message: %s (%d)", nm_strerror_native (errsv), errsv);
+			return -nm_errno_from_native (errsv);
 		}
 	}
 
@@ -6097,6 +6095,7 @@ link_set_sriov_params (NMPlatform *platform,
 	gint64 current_num;
 	char ifname[IFNAMSIZ];
 	char buf[64];
+	int errsv;
 
 	if (!nm_platform_netns_push (platform, &netns))
 		return FALSE;
@@ -6144,7 +6143,8 @@ link_set_sriov_params (NMPlatform *platform,
 		                                                       ifname,
 		                                                      "device/sriov_numvfs"),
 		                             "0")) {
-			_LOGW ("link: couldn't reset SR-IOV num_vfs: %s", strerror (errno));
+			errsv = errno;
+			_LOGW ("link: couldn't reset SR-IOV num_vfs: %s", nm_strerror_native (errsv));
 			return FALSE;
 		}
 	}
@@ -6159,7 +6159,8 @@ link_set_sriov_params (NMPlatform *platform,
 	                                                          ifname,
 	                                                          "device/sriov_drivers_autoprobe"),
 	                                nm_sprintf_buf (buf, "%d", (int) autoprobe))) {
-		_LOGW ("link: couldn't set SR-IOV drivers-autoprobe to %d: %s", (int) autoprobe, strerror (errno));
+		errsv = errno;
+		_LOGW ("link: couldn't set SR-IOV drivers-autoprobe to %d: %s", (int) autoprobe, nm_strerror_native (errsv));
 		return FALSE;
 	}
 
@@ -6168,7 +6169,8 @@ link_set_sriov_params (NMPlatform *platform,
 	                                                       ifname,
 	                                                       "device/sriov_numvfs"),
 	                             nm_sprintf_buf (buf, "%u", num_vfs))) {
-		_LOGW ("link: couldn't set SR-IOV num_vfs to %d: %s", num_vfs, strerror (errno));
+		errsv = errno;
+		_LOGW ("link: couldn't set SR-IOV num_vfs to %d: %s", num_vfs, nm_strerror_native (errsv));
 		return FALSE;
 	}
 
@@ -7578,7 +7580,7 @@ ip_route_get (NMPlatform *platform,
 		nle = _nl_send_nlmsghdr (platform, &req.n, &seq_result, NULL, DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET, &route);
 		if (nle < 0) {
 			_LOGE ("get-route: failure sending netlink request \"%s\" (%d)",
-			       g_strerror (-nle), -nle);
+			       nm_strerror_native (-nle), -nle);
 			return -NME_UNSPEC;
 		}
 
@@ -7822,7 +7824,7 @@ continue_reading:
 				err = -NME_NL_MSG_TRUNC;
 				abort_parsing = TRUE;
 			} else if (e->error) {
-				int errsv = e->error > 0 ? e->error : -e->error;
+				int errsv = nm_errno_native (e->error);
 
 				if (   NM_FLAGS_HAS (hdr->nlmsg_flags, NLM_F_ACK_TLVS)
 				    && hdr->nlmsg_len >= sizeof (*e) + e->msg.nlmsg_len) {
@@ -7843,11 +7845,11 @@ continue_reading:
 
 				/* Error message reported back from kernel. */
 				_LOGD ("netlink: recvmsg: error message from kernel: %s (%d)%s%s%s for request %d",
-				       strerror (errsv),
+				       nm_strerror_native (errsv),
 				       errsv,
 				       NM_PRINT_FMT_QUOTED (extack_msg, " \"", extack_msg, "\"", ""),
 				       nlmsg_hdr (msg)->nlmsg_seq);
-				seq_result = -errsv;
+				seq_result = -NM_ERRNO_NATIVE (errsv);
 			} else
 				seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
 		} else
@@ -8006,7 +8008,7 @@ after_read:
 			int errsv = errno;
 
 			if (errsv != EINTR) {
-				_LOGE ("netlink: read: poll failed with %s", strerror (errsv));
+				_LOGE ("netlink: read: poll failed with %s", nm_strerror_native (errsv));
 				delayed_action_wait_for_nl_response_complete_all (platform, WAIT_FOR_NL_RESPONSE_RESULT_FAILED_POLL);
 				return any;
 			}

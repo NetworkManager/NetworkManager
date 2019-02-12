@@ -20,8 +20,6 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nm-dcb.h"
 
 #include "nm-test-utils-core.h"

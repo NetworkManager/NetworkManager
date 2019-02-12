@@ -16,14 +16,19 @@
  * Copyright (C) 2014 - 2018 Red Hat, Inc.
  */
 
-#ifndef __NM_SD_ADAPT_BASIC_H__
-#define __NM_SD_ADAPT_BASIC_H__
+#ifndef __NM_SD_ADAPT_SHARED_H__
+#define __NM_SD_ADAPT_SHARED_H__
 
 #include "nm-default.h"
 
 #include <syslog.h>
 
 #include "nm-utils/nm-logging-fwd.h"
+
+/*****************************************************************************/
+
+/* strerror() is not thread-safe. Patch systemd-sources via a define. */
+#define strerror(errsv) nm_strerror_native (errsv)
 
 /*****************************************************************************/
 
@@ -130,4 +135,4 @@ static inline pid_t gettid(void) {
 
 /*****************************************************************************/
 
-#endif /* __NM_SD_ADAPT_BASIC_H__ */
+#endif /* __NM_SD_ADAPT_SHARED_H__ */

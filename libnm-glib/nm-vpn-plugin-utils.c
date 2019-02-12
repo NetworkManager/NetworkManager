@@ -20,7 +20,6 @@
 
 #include "nm-default.h"
 
-#include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -83,7 +82,6 @@ nm_vpn_plugin_utils_read_vpn_details (int fd,
 		ssize_t nr;
 		GHashTable *hash = NULL;
 
-		errno = 0;
 		nr = read (fd, &c, 1);
 		if (nr == -1) {
 			if (errno == EAGAIN) {

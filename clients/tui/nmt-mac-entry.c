@@ -30,8 +30,6 @@
 
 #include "nmt-mac-entry.h"
 
-#include <string.h>
-
 #include "nm-common-macros.h"
 
 G_DEFINE_TYPE (NmtMacEntry, nmt_mac_entry, NMT_TYPE_NEWT_ENTRY)

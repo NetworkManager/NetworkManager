@@ -92,6 +92,7 @@ main (int argc, char *argv[])
 	};
 	GOptionContext *option_context;
 	GError *error = NULL;
+	int errsv;
 
 	option_context = g_option_context_new ("-- [ip=...] [rd.route=...] [bridge=...] [bond=...] [team=...] [vlan=...] "
 	                                       "[bootdev=...] [nameserver=...] [rd.peerdns=...] [rd.bootif=...] [BOOTIF=...] ... ");
@@ -121,7 +122,8 @@ main (int argc, char *argv[])
 		g_clear_pointer (&connections_dir, g_free);
 
 	if (connections_dir && g_mkdir_with_parents (connections_dir, 0755) != 0) {
-		_LOGW (LOGD_CORE, "%s: %s", connections_dir, strerror (errno));
+		errsv = errno;
+		_LOGW (LOGD_CORE, "%s: %s", connections_dir, nm_strerror_native (errsv));
 		return 1;
 	}
 

@@ -22,8 +22,6 @@
 
 #include "nm-vpn-plugin-info.h"
 
-#include <string.h>
-#include <errno.h>
 #include <sys/stat.h>
 
 #include "nm-errors.h"

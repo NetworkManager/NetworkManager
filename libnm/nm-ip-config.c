@@ -21,9 +21,8 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
 #include "nm-ip-config.h"
+
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-setting-ip-config.h"

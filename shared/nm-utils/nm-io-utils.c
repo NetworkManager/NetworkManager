@@ -29,6 +29,7 @@
 
 #include "nm-shared-utils.h"
 #include "nm-secret-utils.h"
+#include "nm-errno.h"
 
 /*****************************************************************************/
 
@@ -36,14 +37,12 @@ _nm_printf (3, 4)
 static int
 _get_contents_error (GError **error, int errsv, const char *format, ...)
 {
-	if (errsv < 0)
-		errsv = -errsv;
-	else if (!errsv)
-		errsv = errno;
+	nm_assert (NM_ERRNO_NATIVE (errsv));
 
 	if (error) {
-		char *msg;
+		gs_free char *msg = NULL;
 		va_list args;
+		char bstrerr[NM_STRERROR_BUFSIZE];
 
 		va_start (args, format);
 		msg = g_strdup_vprintf (format, args);
@@ -52,11 +51,17 @@ _get_contents_error (GError **error, int errsv, const char *format, ...)
 		             G_FILE_ERROR,
 		             g_file_error_from_errno (errsv),
 		             "%s: %s",
-		             msg, g_strerror (errsv));
-		g_free (msg);
+		             msg,
+		             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
 	}
 	return -errsv;
 }
+#define _get_contents_error_errno(error, ...) \
+	({ \
+		int _errsv = (errno); \
+		\
+		_get_contents_error (error, _errsv, __VA_ARGS__); \
+	})
 
 static char *
 _mem_realloc (char *old, gboolean do_bzero_mem, gsize cur_len, gsize new_len)
@@ -127,13 +132,14 @@ nm_utils_fd_get_contents (int fd,
 	struct stat stat_buf;
 	gs_free char *str = NULL;
 	const bool do_bzero_mem = NM_FLAGS_HAS (flags, NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET);
+	int errsv;
 
 	g_return_val_if_fail (fd >= 0, -EINVAL);
 	g_return_val_if_fail (contents, -EINVAL);
 	g_return_val_if_fail (!error || !*error, -EINVAL);
 
 	if (fstat (fd, &stat_buf) < 0)
-		return _get_contents_error (error, 0, "failure during fstat");
+		return _get_contents_error_errno (error, "failure during fstat");
 
 	if (!max_length) {
 		/* default to a very large size, but not extreme */
@@ -156,7 +162,7 @@ nm_utils_fd_get_contents (int fd,
 		if (n_read < 0) {
 			if (do_bzero_mem)
 				nm_explicit_bzero (str, n_stat);
-			return _get_contents_error (error, n_read, "error reading %zu bytes from file descriptor", n_stat);
+			return _get_contents_error (error, -n_read, "error reading %zu bytes from file descriptor", n_stat);
 		}
 		str[n_read] = '\0';
 
@@ -176,19 +182,19 @@ nm_utils_fd_get_contents (int fd,
 		else {
 			fd2 = fcntl (fd, F_DUPFD_CLOEXEC, 0);
 			if (fd2 < 0)
-				return _get_contents_error (error, 0, "error during dup");
+				return _get_contents_error_errno (error, "error during dup");
 		}
 
 		if (!(f = fdopen (fd2, "r"))) {
+			errsv = errno;
 			nm_close (fd2);
-			return _get_contents_error (error, 0, "failure during fdopen");
+			return _get_contents_error (error, errsv, "failure during fdopen");
 		}
 
 		n_have = 0;
 		n_alloc = 0;
 
 		while (!feof (f)) {
-			int errsv;
 			gsize n_read;
 
 			n_read = fread (buf, 1, sizeof (buf), f);
@@ -284,6 +290,7 @@ nm_utils_file_get_contents (int dirfd,
 {
 	int fd;
 	int errsv;
+	char bstrerr[NM_STRERROR_BUFSIZE];
 
 	g_return_val_if_fail (filename && filename[0], -EINVAL);
 
@@ -297,8 +304,8 @@ nm_utils_file_get_contents (int dirfd,
 			             g_file_error_from_errno (errsv),
 			             "Failed to open file \"%s\" with openat: %s",
 			             filename,
-			             g_strerror (errsv));
-			return -errsv;
+			             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
+			return -NM_ERRNO_NATIVE (errsv);
 		}
 	} else {
 		fd = open (filename, O_RDONLY | O_CLOEXEC);
@@ -310,8 +317,8 @@ nm_utils_file_get_contents (int dirfd,
 			             g_file_error_from_errno (errsv),
 			             "Failed to open file \"%s\": %s",
 			             filename,
-			             g_strerror (errsv));
-			return -errsv;
+			             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
+			return -NM_ERRNO_NATIVE (errsv);
 		}
 	}
 	return nm_utils_fd_get_contents (fd,
@@ -341,6 +348,7 @@ nm_utils_file_set_contents (const char *filename,
 	int errsv;
 	gssize s;
 	int fd;
+	char bstrerr[NM_STRERROR_BUFSIZE];
 
 	g_return_val_if_fail (filename, FALSE);
 	g_return_val_if_fail (contents || !length, FALSE);
@@ -359,7 +367,7 @@ nm_utils_file_set_contents (const char *filename,
 		             g_file_error_from_errno (errsv),
 		             "failed to create file %s: %s",
 		             tmp_name,
-		             g_strerror (errsv));
+		             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
 		return FALSE;
 	}
 
@@ -378,7 +386,7 @@ nm_utils_file_set_contents (const char *filename,
 			             g_file_error_from_errno (errsv),
 			             "failed to write to file %s: %s",
 			             tmp_name,
-			             g_strerror (errsv));
+			             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
 			return FALSE;
 		}
 
@@ -395,20 +403,21 @@ nm_utils_file_set_contents (const char *filename,
 	 * guarantee the data is written to the disk before the metadata.)
 	 */
 	if (   lstat (filename, &statbuf) == 0
-	    && statbuf.st_size > 0
-	    && fsync (fd) != 0) {
-		errsv = errno;
+	    && statbuf.st_size > 0) {
+		if (fsync (fd) != 0) {
+			errsv = errno;
 
-		nm_close (fd);
-		unlink (tmp_name);
+			nm_close (fd);
+			unlink (tmp_name);
 
-		g_set_error (error,
-		             G_FILE_ERROR,
-		             g_file_error_from_errno (errsv),
-		             "failed to fsync %s: %s",
-		             tmp_name,
-		             g_strerror (errsv));
-		return FALSE;
+			g_set_error (error,
+			             G_FILE_ERROR,
+			             g_file_error_from_errno (errsv),
+			             "failed to fsync %s: %s",
+			             tmp_name,
+			             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
+			return FALSE;
+		}
 	}
 
 	nm_close (fd);
@@ -422,7 +431,7 @@ nm_utils_file_set_contents (const char *filename,
 		             "failed to rename %s to %s: %s",
 		             tmp_name,
 		             filename,
-		             g_strerror (errsv));
+		             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
 		return FALSE;
 	}
 

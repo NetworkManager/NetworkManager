@@ -21,10 +21,8 @@
 
 #include "nm-dhcp-client.h"
 
-#include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -627,7 +625,7 @@ out:
 		int errsv = errno;
 
 		nm_log_dbg (LOGD_DHCP, "dhcp: could not remove pid file \"%s\": %s (%d)",
-		            pid_file, g_strerror (errsv), errsv);
+		            pid_file, nm_strerror_native (errsv), errsv);
 	}
 }
 

@@ -23,7 +23,6 @@
 #include "nms-keyfile-utils.h"
 
 #include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 
 #include "nm-keyfile-internal.h"
@@ -277,14 +276,14 @@ nms_keyfile_utils_check_file_permissions (NMSKeyfileFiletype filetype,
 		if (stat (filename, &st) != 0) {
 			errsv = errno;
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "cannot access file: %s", g_strerror (errsv));
+			             "cannot access file: %s", nm_strerror_native (errsv));
 			return FALSE;
 		}
 	} else if (filetype == NMS_KEYFILE_FILETYPE_NMLOADED) {
 		if (lstat (filename, &st) != 0) {
 			errsv = errno;
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "cannot access file: %s", g_strerror (errsv));
+			             "cannot access file: %s", nm_strerror_native (errsv));
 			return FALSE;
 		}
 	} else

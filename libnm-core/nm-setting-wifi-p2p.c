@@ -21,7 +21,6 @@
 
 #include "nm-setting-wifi-p2p.h"
 
-#include <string.h>
 #include <net/ethernet.h>
 
 #include "nm-utils.h"

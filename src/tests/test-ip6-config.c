@@ -20,7 +20,6 @@
 
 #include "nm-default.h"
 
-#include <string.h>
 #include <arpa/inet.h>
 #include <linux/if_addr.h>
 

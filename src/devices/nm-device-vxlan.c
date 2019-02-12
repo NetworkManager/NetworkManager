@@ -22,8 +22,6 @@
 
 #include "nm-device-vxlan.h"
 
-#include <string.h>
-
 #include "nm-device-private.h"
 #include "nm-manager.h"
 #include "platform/nm-platform.h"

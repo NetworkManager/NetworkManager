@@ -21,13 +21,11 @@
 
 #include "nm-default.h"
 
-#include <string.h>
+#include "nm-device-modem.h"
 
 #include "nm-setting-connection.h"
 #include "nm-setting-gsm.h"
 #include "nm-setting-cdma.h"
-
-#include "nm-device-modem.h"
 #include "nm-object-private.h"
 #include "nm-enum-types.h"
 

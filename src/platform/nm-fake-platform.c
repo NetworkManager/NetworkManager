@@ -22,7 +22,6 @@
 
 #include "nm-fake-platform.h"
 
-#include <errno.h>
 #include <unistd.h>
 #include <netinet/icmp6.h>
 #include <netinet/in.h>

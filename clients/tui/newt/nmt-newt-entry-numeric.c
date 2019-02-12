@@ -127,8 +127,8 @@ newt_entry_numeric_validate (NmtNewtEntry *entry,
 	if (!*text)
 		return priv->optional ? TRUE : FALSE;
 
-	val = _nm_utils_ascii_str_to_int64 (text, 10, priv->min, priv->max, 0);
-	return val != 0 || errno == 0;
+	val = _nm_utils_ascii_str_to_int64 (text, 10, priv->min, priv->max, G_MAXINT64);
+	return val != G_MAXINT64 || errno == 0;
 }
 
 static void

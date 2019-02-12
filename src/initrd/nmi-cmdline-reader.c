@@ -19,11 +19,9 @@
  */
 
 #include "nm-default.h"
+
 #include "nm-core-internal.h"
-
 #include "nm-initrd-generator.h"
-
-#include <string.h>
 
 /*****************************************************************************/
 

@@ -23,7 +23,6 @@
 
 #include "nm-wifi-ap.h"
 
-#include <string.h>
 #include <stdlib.h>
 
 #include "nm-setting-wireless.h"

@@ -23,7 +23,6 @@
 #include "nmp-netns.h"
 
 #include <fcntl.h>
-#include <errno.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -333,7 +332,7 @@ _netns_new (GError **error)
 		errsv = errno;
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "Failed opening netns: %s",
-		             g_strerror (errsv));
+		             nm_strerror_native (errsv));
 		errno = errsv;
 		return NULL;
 	}
@@ -343,7 +342,7 @@ _netns_new (GError **error)
 		errsv = errno;
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "Failed opening mntns: %s",
-		             g_strerror (errsv));
+		             nm_strerror_native (errsv));
 		nm_close (fd_net);
 		errno = errsv;
 		return NULL;
@@ -386,14 +385,14 @@ _netns_switch_push (GArray *netns_stack,
 	    && !_stack_current_ns_types (netns_stack, self, CLONE_NEWNET)
 	    && _setns (self, CLONE_NEWNET) != 0) {
 		errsv = errno;
-		_LOGE (self, "failed to switch netns: %s", g_strerror (errsv));
+		_LOGE (self, "failed to switch netns: %s", nm_strerror_native (errsv));
 		return FALSE;
 	}
 	if (   NM_FLAGS_HAS (ns_types, CLONE_NEWNS)
 	    && !_stack_current_ns_types (netns_stack, self, CLONE_NEWNS)
 	    && _setns (self, CLONE_NEWNS) != 0) {
 		errsv = errno;
-		_LOGE (self, "failed to switch mntns: %s", g_strerror (errsv));
+		_LOGE (self, "failed to switch mntns: %s", nm_strerror_native (errsv));
 
 		/* try to fix the mess by returning to the previous netns. */
 		if (   NM_FLAGS_HAS (ns_types, CLONE_NEWNET)
@@ -402,7 +401,7 @@ _netns_switch_push (GArray *netns_stack,
 			if (   self
 			    && _setns (self, CLONE_NEWNET) != 0) {
 				errsv = errno;
-				_LOGE (self, "failed to restore netns: %s", g_strerror (errsv));
+				_LOGE (self, "failed to restore netns: %s", nm_strerror_native (errsv));
 			}
 		}
 		return FALSE;
@@ -429,7 +428,7 @@ _netns_switch_pop (GArray *netns_stack,
 			success = FALSE;
 		} else if (_setns (current, CLONE_NEWNET) != 0) {
 			errsv = errno;
-			_LOGE (self, "failed to switch netns: %s", g_strerror (errsv));
+			_LOGE (self, "failed to switch netns: %s", nm_strerror_native (errsv));
 			success = FALSE;
 		}
 	}
@@ -441,7 +440,7 @@ _netns_switch_pop (GArray *netns_stack,
 			success = FALSE;
 		} else if (_setns (current, CLONE_NEWNS) != 0) {
 			errsv = errno;
-			_LOGE (self, "failed to switch mntns: %s", g_strerror (errsv));
+			_LOGE (self, "failed to switch mntns: %s", nm_strerror_native (errsv));
 			success = FALSE;
 		}
 	}
@@ -535,19 +534,19 @@ nmp_netns_new (void)
 
 	if (unshare (_CLONE_NS_ALL) != 0) {
 		errsv = errno;
-		_LOGE (NULL, "failed to create new net and mnt namespace: %s", g_strerror (errsv));
+		_LOGE (NULL, "failed to create new net and mnt namespace: %s", nm_strerror_native (errsv));
 		return NULL;
 	}
 
 	if (mount ("", "/", "none", MS_SLAVE | MS_REC, NULL) != 0) {
 		errsv = errno;
-		_LOGE (NULL, "failed mount --make-rslave: %s", g_strerror (errsv));
+		_LOGE (NULL, "failed mount --make-rslave: %s", nm_strerror_native (errsv));
 		goto err_out;
 	}
 
 	if (umount2 ("/sys", MNT_DETACH) != 0) {
 		errsv = errno;
-		_LOGE (NULL, "failed umount /sys: %s", g_strerror (errsv));
+		_LOGE (NULL, "failed umount /sys: %s", nm_strerror_native (errsv));
 		goto err_out;
 	}
 
@@ -556,7 +555,7 @@ nmp_netns_new (void)
 
 	if (mount ("sysfs", "/sys", "sysfs", mountflags, NULL) != 0) {
 		errsv = errno;
-		_LOGE (NULL, "failed mount /sys: %s", g_strerror (errsv));
+		_LOGE (NULL, "failed mount /sys: %s", nm_strerror_native (errsv));
 		goto err_out;
 	}
 
@@ -654,7 +653,7 @@ nmp_netns_bind_to_path (NMPNetns *self, const char *filename, int *out_fd)
 		errsv = errno;
 		if (errsv != EEXIST) {
 			_LOGE (self, "bind: failed to create directory %s: %s",
-			       dirname, g_strerror (errsv));
+			       dirname, nm_strerror_native (errsv));
 			return FALSE;
 		}
 	}
@@ -662,7 +661,7 @@ nmp_netns_bind_to_path (NMPNetns *self, const char *filename, int *out_fd)
 	if ((fd = creat (filename, S_IRUSR | S_IRGRP | S_IROTH)) == -1) {
 		errsv = errno;
 		_LOGE (self, "bind: failed to create %s: %s",
-		       filename, g_strerror (errsv));
+		       filename, nm_strerror_native (errsv));
 		return FALSE;
 	}
 	nm_close (fd);
@@ -670,7 +669,7 @@ nmp_netns_bind_to_path (NMPNetns *self, const char *filename, int *out_fd)
 	if (mount (PROC_SELF_NS_NET, filename, "none", MS_BIND, NULL) != 0) {
 		errsv = errno;
 		_LOGE (self, "bind: failed to mount %s to %s: %s",
-		       PROC_SELF_NS_NET, filename, g_strerror (errsv));
+		       PROC_SELF_NS_NET, filename, nm_strerror_native (errsv));
 		unlink (filename);
 		return FALSE;
 	}
@@ -678,7 +677,7 @@ nmp_netns_bind_to_path (NMPNetns *self, const char *filename, int *out_fd)
 	if (out_fd) {
 		if ((fd = open (filename, O_RDONLY | O_CLOEXEC)) == -1) {
 			errsv = errno;
-			_LOGE (self, "bind: failed to open %s: %s", filename, g_strerror (errsv));
+			_LOGE (self, "bind: failed to open %s: %s", filename, nm_strerror_native (errsv));
 			umount2 (filename, MNT_DETACH);
 			unlink (filename);
 			return FALSE;
@@ -699,12 +698,12 @@ nmp_netns_bind_to_path_destroy (NMPNetns *self, const char *filename)
 
 	if (umount2 (filename, MNT_DETACH) != 0) {
 		errsv = errno;
-		_LOGE (self, "bind: failed to unmount2 %s: %s", filename, g_strerror (errsv));
+		_LOGE (self, "bind: failed to unmount2 %s: %s", filename, nm_strerror_native (errsv));
 		return FALSE;
 	}
 	if (unlink (filename) != 0) {
 		errsv = errno;
-		_LOGE (self, "bind: failed to unlink %s: %s", filename, g_strerror (errsv));
+		_LOGE (self, "bind: failed to unlink %s: %s", filename, nm_strerror_native (errsv));
 		return FALSE;
 	}
 	return TRUE;

@@ -23,7 +23,6 @@
 
 #include "nm-device.h"
 
-#include <string.h>
 #include <libudev.h>
 
 #include "nm-libnm-utils.h"

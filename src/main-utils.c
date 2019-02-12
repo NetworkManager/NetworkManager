@@ -22,7 +22,6 @@
 #include "nm-default.h"
 
 #include <stdio.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -93,21 +92,26 @@ nm_main_utils_write_pidfile (const char *pidfile)
 {
 	char pid[16];
 	int fd;
+	int errsv;
 	gboolean success = FALSE;
 
 	if ((fd = open (pidfile, O_CREAT | O_WRONLY | O_TRUNC | O_CLOEXEC, 00644)) < 0) {
-		fprintf (stderr, _("Opening %s failed: %s\n"), pidfile, strerror (errno));
+		errsv = errno;
+		fprintf (stderr, _("Opening %s failed: %s\n"), pidfile, nm_strerror_native (errsv));
 		return FALSE;
 	}
 
 	g_snprintf (pid, sizeof (pid), "%d", getpid ());
-	if (write (fd, pid, strlen (pid)) < 0)
-		fprintf (stderr, _("Writing to %s failed: %s\n"), pidfile, strerror (errno));
-	else
+	if (write (fd, pid, strlen (pid)) < 0) {
+		errsv = errno;
+		fprintf (stderr, _("Writing to %s failed: %s\n"), pidfile, nm_strerror_native (errsv));
+	} else
 		success = TRUE;
 
-	if (nm_close (fd))
-		fprintf (stderr, _("Closing %s failed: %s\n"), pidfile, strerror (errno));
+	if (nm_close (fd)) {
+		errsv = errno;
+		fprintf (stderr, _("Closing %s failed: %s\n"), pidfile, nm_strerror_native (errsv));
+	}
 
 	return success;
 }
@@ -126,13 +130,13 @@ nm_main_utils_ensure_statedir ()
 	    && parent[1] != '\0'
 	    && g_mkdir_with_parents (parent, 0755) != 0) {
 		errsv = errno;
-		fprintf (stderr, "Cannot create parents for '%s': %s", NMSTATEDIR, g_strerror (errsv));
+		fprintf (stderr, "Cannot create parents for '%s': %s", NMSTATEDIR, nm_strerror_native (errsv));
 		exit (1);
 	}
 	/* Ensure state directory exists */
 	if (g_mkdir_with_parents (NMSTATEDIR, 0700) != 0) {
 		errsv = errno;
-		fprintf (stderr, "Cannot create '%s': %s", NMSTATEDIR, g_strerror (errsv));
+		fprintf (stderr, "Cannot create '%s': %s", NMSTATEDIR, nm_strerror_native (errsv));
 		exit (1);
 	}
 }
@@ -145,7 +149,7 @@ nm_main_utils_ensure_rundir ()
 	/* Setup runtime directory */
 	if (g_mkdir_with_parents (NMRUNDIR, 0755) != 0) {
 		errsv = errno;
-		fprintf (stderr, _("Cannot create '%s': %s"), NMRUNDIR, g_strerror (errsv));
+		fprintf (stderr, _("Cannot create '%s': %s"), NMRUNDIR, nm_strerror_native (errsv));
 		exit (1);
 	}
 
@@ -156,7 +160,7 @@ nm_main_utils_ensure_rundir ()
 	if (g_mkdir (NM_CONFIG_DEVICE_STATE_DIR, 0755) != 0) {
 		errsv = errno;
 		if (errsv != EEXIST) {
-			fprintf (stderr, _("Cannot create '%s': %s"), NM_CONFIG_DEVICE_STATE_DIR, g_strerror (errsv));
+			fprintf (stderr, _("Cannot create '%s': %s"), NM_CONFIG_DEVICE_STATE_DIR, nm_strerror_native (errsv));
 			exit (1);
 		}
 	}

@@ -30,7 +30,6 @@
 
 #include "nm-auth-subject.h"
 
-#include <string.h>
 #include <stdlib.h>
 
 #include "nm-dbus-manager.h"

@@ -5,7 +5,6 @@
 
 #include "nm-sd-adapt-core.h"
 
-#include <errno.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <linux/if_infiniband.h>

@@ -23,9 +23,7 @@
 #include "nm-inotify-helper.h"
 
 #include <unistd.h>
-#include <string.h>
 #include <sys/inotify.h>
-#include <errno.h>
 
 #include "NetworkManagerUtils.h"
 
@@ -143,12 +141,12 @@ init_inotify (NMInotifyHelper *self)
 {
 	NMInotifyHelperPrivate *priv = NM_INOTIFY_HELPER_GET_PRIVATE (self);
 	GIOChannel *channel;
+	int errsv;
 
 	priv->ifd = inotify_init1 (IN_CLOEXEC);
 	if (priv->ifd == -1) {
-		int errsv = errno;
-
-		nm_log_warn (LOGD_SETTINGS, "couldn't initialize inotify: %s (%d)", strerror (errsv), errsv);
+		errsv = errno;
+		nm_log_warn (LOGD_SETTINGS, "couldn't initialize inotify: %s (%d)", nm_strerror_native (errsv), errsv);
 		return FALSE;
 	}
 

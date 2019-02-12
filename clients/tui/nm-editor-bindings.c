@@ -27,12 +27,11 @@
 
 #include "nm-default.h"
 
+#include "nm-editor-bindings.h"
+
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdlib.h>
-#include <string.h>
-
-#include "nm-editor-bindings.h"
 
 static void
 value_transform_string_int (const GValue *src_value,

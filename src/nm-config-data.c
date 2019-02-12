@@ -23,8 +23,6 @@
 
 #include "nm-config-data.h"
 
-#include <string.h>
-
 #include "nm-config.h"
 #include "devices/nm-device.h"
 #include "nm-core-internal.h"
@@ -218,7 +216,6 @@ nm_config_data_get_value_int64 (const NMConfigData *self, const char *group, con
 	str = nm_config_keyfile_get_value (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, NM_CONFIG_GET_VALUE_NONE);
 	val = _nm_utils_ascii_str_to_int64 (str, base, min, max, fallback);
 	if (str) {
-		/* preserve errno from the parsing. */
 		errsv = errno;
 		g_free (str);
 		errno = errsv;

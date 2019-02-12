@@ -23,7 +23,6 @@
 
 #include <linux/if.h>
 
-#include "nm-utils/nm-errno.h"
 #include "platform/linux/nl802154.h"
 #include "platform/nm-netlink.h"
 #include "platform/nm-platform-utils.h"

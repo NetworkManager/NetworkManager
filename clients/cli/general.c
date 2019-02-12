@@ -21,7 +21,6 @@
 
 #include "general.h"
 
-#include <string.h>
 #include <stdlib.h>
 
 #include "nm-common-macros.h"

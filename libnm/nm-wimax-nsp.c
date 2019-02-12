@@ -20,13 +20,11 @@
 
 #include "nm-default.h"
 
-#include <string.h>
+#include "nm-wimax-nsp.h"
 
 #include "nm-connection.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wimax.h"
-
-#include "nm-wimax-nsp.h"
 #include "nm-dbus-interface.h"
 #include "nm-object-private.h"
 #include "nm-enum-types.h"

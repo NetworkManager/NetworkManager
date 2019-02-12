@@ -25,8 +25,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "nm-utils/nm-errno.h"
-
 /*****************************************************************************/
 
 #ifndef SOL_NETLINK
@@ -1333,6 +1331,7 @@ nl_recv (struct nl_sock *sk,
 	struct ucred tmpcreds;
 	gboolean tmpcreds_has = FALSE;
 	int retval;
+	int errsv;
 
 	nm_assert (nla);
 	nm_assert (buf && !*buf);
@@ -1361,10 +1360,10 @@ retry:
 	}
 
 	if (n < 0) {
-		if (errno == EINTR)
+		errsv = errno;
+		if (errsv == EINTR)
 			goto retry;
-
-		retval = -nm_errno_from_native (errno);
+		retval = -nm_errno_from_native (errsv);
 		goto abort;
 	}
 

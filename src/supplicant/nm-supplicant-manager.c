@@ -23,8 +23,6 @@
 
 #include "nm-supplicant-manager.h"
 
-#include <string.h>
-
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-types.h"
 #include "nm-core-internal.h"

@@ -26,8 +26,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <errno.h>
-#include <string.h>
 
 #include "c-list/src/c-list.h"
 #include "nm-dbus-interface.h"

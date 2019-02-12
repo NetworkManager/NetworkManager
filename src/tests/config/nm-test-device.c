@@ -22,8 +22,6 @@
 
 #include "nm-test-device.h"
 
-#include <string.h>
-
 #include "devices/nm-device-private.h"
 #include "nm-utils.h"
 
