@@ -162,6 +162,8 @@ nm_errno_from_native (int errsv)
 	case 0:                  return NME_ERRNO_SUCCESS;
 	case G_MININT:           return NME_ERRNO_OUT_OF_RANGE;
 	default:
+		if (errsv < 0)
+			errsv = -errsv;
 		return   G_UNLIKELY (   errsv >= _NM_ERRNO_RESERVED_FIRST
 		                     && errsv <= _NM_ERRNO_RESERVED_LAST)
 		       ? NME_NATIVE_ERRNO

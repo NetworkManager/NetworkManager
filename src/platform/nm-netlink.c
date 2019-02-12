@@ -1059,7 +1059,7 @@ do { \
 		nmerr = _cb->type##_cb ((msg), _cb->type##_arg); \
 		switch (nmerr) { \
 		case NL_OK: \
-			nmerr = 0; \
+			nm_assert (nmerr == 0); \
 			break; \
 		case NL_SKIP: \
 			goto skip; \
@@ -1204,6 +1204,7 @@ skip:
 		/* Multipart message not yet complete, continue reading */
 		nm_clear_g_free (&buf);
 
+		nmerr = 0;
 		goto continue_reading;
 	}
 
