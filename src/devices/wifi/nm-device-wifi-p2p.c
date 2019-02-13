@@ -72,6 +72,7 @@ typedef struct {
 	guint peer_dump_id;
 	guint peer_missing_id;
 
+	/* FIXME: group-owner is not properly set. */
 	bool group_owner:1;
 
 	bool is_waiting_for_supplicant:1;
