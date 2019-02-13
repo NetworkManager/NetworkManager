@@ -36,15 +36,12 @@
 #define NM_DEVICE_WIFI_P2P_GROUPS      "groups"
 #define NM_DEVICE_WIFI_P2P_WFDIES      "WFDIEs"
 
-#define NM_DEVICE_WIFI_P2P_MGMT_IFACE "mgmt-iface"
-
 typedef struct _NMDeviceWifiP2P NMDeviceWifiP2P;
 typedef struct _NMDeviceWifiP2PClass NMDeviceWifiP2PClass;
 
 GType nm_device_wifi_p2p_get_type (void);
 
-NMDevice* nm_device_wifi_p2p_new (NMSupplicantInterface *mgmt_iface,
-                                  const char* iface);
+NMDeviceWifiP2P *nm_device_wifi_p2p_new (const char *iface);
 
 NMSupplicantInterface * nm_device_wifi_p2p_get_mgmt_iface (NMDeviceWifiP2P *self);
 void                    nm_device_wifi_p2p_set_mgmt_iface (NMDeviceWifiP2P *self,
