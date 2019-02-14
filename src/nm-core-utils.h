@@ -485,4 +485,8 @@ const char *nm_activation_type_to_string (NMActivationType activation_type);
 
 const char *nm_utils_parse_dns_domain (const char *domain, gboolean *is_routing);
 
+/*****************************************************************************/
+
+#define NM_VPN_ROUTE_METRIC_DEFAULT     50
+
 #endif /* __NM_CORE_UTILS_H__ */

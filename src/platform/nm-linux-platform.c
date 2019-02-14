@@ -2371,8 +2371,9 @@ _wireguard_create_change_nlmsgs (NMPlatform *platform,
                                  int wireguard_family_id,
                                  const NMPlatformLnkWireGuard *lnk_wireguard,
                                  const NMPWireGuardPeer *peers,
+                                 const NMPlatformWireGuardChangePeerFlags *peer_flags,
                                  guint peers_len,
-                                 gboolean replace_peers,
+                                 NMPlatformWireGuardChangeFlags change_flags,
                                  GPtrArray **out_msgs)
 {
 	gs_unref_ptrarray GPtrArray *msgs = NULL;
@@ -2384,6 +2385,7 @@ _wireguard_create_change_nlmsgs (NMPlatform *platform,
 	struct nlattr *nest_curr_peer;
 	struct nlattr *nest_allowed_ips;
 	struct nlattr *nest_curr_allowed_ip;
+	NMPlatformWireGuardChangePeerFlags p_flags = NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_DEFAULT;
 
 #define _nla_nest_end(msg, nest_start) \
 	G_STMT_START { \
@@ -2418,12 +2420,19 @@ again:
 	NLA_PUT_U32 (msg, WGDEVICE_A_IFINDEX, (guint32) ifindex);
 
 	if (idx_peer_curr == IDX_NIL) {
-		NLA_PUT (msg, WGDEVICE_A_PRIVATE_KEY, sizeof (lnk_wireguard->private_key), lnk_wireguard->private_key);
-		NLA_PUT_U16 (msg, WGDEVICE_A_LISTEN_PORT, lnk_wireguard->listen_port);
-		NLA_PUT_U32 (msg, WGDEVICE_A_FWMARK, lnk_wireguard->fwmark);
+		guint32 flags;
 
-		NLA_PUT_U32 (msg, WGDEVICE_A_FLAGS,
-		             replace_peers ? WGDEVICE_F_REPLACE_PEERS : ((guint32) 0u));
+		if (NM_FLAGS_HAS (change_flags, NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_PRIVATE_KEY))
+			NLA_PUT (msg, WGDEVICE_A_PRIVATE_KEY, sizeof (lnk_wireguard->private_key), lnk_wireguard->private_key);
+		if (NM_FLAGS_HAS (change_flags, NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_LISTEN_PORT))
+			NLA_PUT_U16 (msg, WGDEVICE_A_LISTEN_PORT, lnk_wireguard->listen_port);
+		if (NM_FLAGS_HAS (change_flags, NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_FWMARK))
+			NLA_PUT_U32 (msg, WGDEVICE_A_FWMARK, lnk_wireguard->fwmark);
+
+		flags = 0;
+		if (NM_FLAGS_HAS (change_flags, NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS))
+			flags |= WGDEVICE_F_REPLACE_PEERS;
+		NLA_PUT_U32 (msg, WGDEVICE_A_FLAGS, flags);
 	}
 
 	if (peers_len == 0)
@@ -2442,6 +2451,21 @@ again:
 	for (; idx_peer_curr < peers_len; idx_peer_curr++) {
 		const NMPWireGuardPeer *p = &peers[idx_peer_curr];
 
+		if (peer_flags) {
+			p_flags = peer_flags[idx_peer_curr];
+			if (!NM_FLAGS_ANY (p_flags,   NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_REMOVE_ME
+			                            | NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_PRESHARED_KEY
+			                            | NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_KEEPALIVE_INTERVAL
+			                            | NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_ENDPOINT
+			                            | NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_ALLOWEDIPS
+			                            | NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_REPLACE_ALLOWEDIPS)) {
+				/* no flags set. We take that as indication to skip configuring the peer
+				 * entirely. */
+				nm_assert (p_flags == NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_NONE);
+				continue;
+			}
+		}
+
 		nest_curr_peer = nla_nest_start (msg, 0);
 		if (!nest_curr_peer)
 			goto toobig_peers;
@@ -2449,63 +2473,77 @@ again:
 		if (nla_put (msg, WGPEER_A_PUBLIC_KEY, NMP_WIREGUARD_PUBLIC_KEY_LEN, p->public_key) < 0)
 			goto toobig_peers;
 
-		if (idx_allowed_ips_curr == IDX_NIL) {
-
-			if (nla_put (msg, WGPEER_A_PRESHARED_KEY, sizeof (p->preshared_key), p->preshared_key) < 0)
+		if (NM_FLAGS_HAS (p_flags, NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_REMOVE_ME)) {
+			/* all other p_flags are silently ignored. */
+			if (nla_put_uint32 (msg, WGPEER_A_FLAGS, WGPEER_F_REMOVE_ME) < 0)
 				goto toobig_peers;
+		} else {
 
-			if (nla_put_uint16 (msg, WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL, p->persistent_keepalive_interval) < 0)
-				goto toobig_peers;
-
-			if (nla_put_uint32 (msg, WGPEER_A_FLAGS, WGPEER_F_REPLACE_ALLOWEDIPS) < 0)
-				goto toobig_peers;
-
-			if (NM_IN_SET (p->endpoint.sa.sa_family, AF_INET, AF_INET6)) {
-				if (nla_put (msg,
-				             WGPEER_A_ENDPOINT,
-				               p->endpoint.sa.sa_family == AF_INET
-				             ? sizeof (p->endpoint.in)
-				             : sizeof (p->endpoint.in6),
-				             &p->endpoint) < 0)
+			if (idx_allowed_ips_curr == IDX_NIL) {
+				if (   NM_FLAGS_HAS (p_flags, NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_PRESHARED_KEY)
+				    && nla_put (msg, WGPEER_A_PRESHARED_KEY, sizeof (p->preshared_key), p->preshared_key) < 0)
 					goto toobig_peers;
-			} else
-				nm_assert (p->endpoint.sa.sa_family == AF_UNSPEC);
-		}
 
-		if (p->allowed_ips_len > 0) {
-			if (idx_allowed_ips_curr == IDX_NIL)
-				idx_allowed_ips_curr = 0;
+				if (   NM_FLAGS_HAS (p_flags, NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_KEEPALIVE_INTERVAL)
+				    && nla_put_uint16 (msg, WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL, p->persistent_keepalive_interval) < 0)
+					goto toobig_peers;
 
-			nest_allowed_ips = nla_nest_start (msg, WGPEER_A_ALLOWEDIPS);
-			if (!nest_allowed_ips)
-				goto toobig_allowedips;
+				if (   NM_FLAGS_HAS (p_flags, NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_REPLACE_ALLOWEDIPS)
+				    && nla_put_uint32 (msg, WGPEER_A_FLAGS, WGPEER_F_REPLACE_ALLOWEDIPS) < 0)
+					goto toobig_peers;
 
-			for (; idx_allowed_ips_curr < p->allowed_ips_len; idx_allowed_ips_curr++) {
-				const NMPWireGuardAllowedIP *aip = &p->allowed_ips[idx_allowed_ips_curr];
-
-				nest_curr_allowed_ip = nla_nest_start (msg, 0);
-				if (!nest_curr_allowed_ip)
-					goto toobig_allowedips;
-
-				g_return_val_if_fail (NM_IN_SET (aip->family, AF_INET, AF_INET6), -NME_BUG);
-
-				if (nla_put_uint16 (msg, WGALLOWEDIP_A_FAMILY, aip->family) < 0)
-					goto toobig_allowedips;
-				if (nla_put (msg,
-				             WGALLOWEDIP_A_IPADDR,
-				             nm_utils_addr_family_to_size (aip->family),
-				             &aip->addr) < 0)
-					goto toobig_allowedips;
-				if (nla_put_uint8 (msg, WGALLOWEDIP_A_CIDR_MASK, aip->mask) < 0)
-					goto toobig_allowedips;
-
-				_nla_nest_end (msg, nest_curr_allowed_ip);
-				nest_curr_allowed_ip = NULL;
+				if (NM_FLAGS_HAS (p_flags, NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_ENDPOINT)) {
+					if (NM_IN_SET (p->endpoint.sa.sa_family, AF_INET, AF_INET6)) {
+						if (nla_put (msg,
+						             WGPEER_A_ENDPOINT,
+						               p->endpoint.sa.sa_family == AF_INET
+						             ? sizeof (p->endpoint.in)
+						             : sizeof (p->endpoint.in6),
+						             &p->endpoint) < 0)
+							goto toobig_peers;
+					} else {
+						/* I think there is no way to clear an endpoint, though there shold be. */
+						nm_assert (p->endpoint.sa.sa_family == AF_UNSPEC);
+					}
+				}
 			}
-			idx_allowed_ips_curr = IDX_NIL;
 
-			_nla_nest_end (msg, nest_allowed_ips);
-			nest_allowed_ips = NULL;
+			if (   NM_FLAGS_HAS (p_flags, NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_ALLOWEDIPS)
+			    && p->allowed_ips_len > 0) {
+				if (idx_allowed_ips_curr == IDX_NIL)
+					idx_allowed_ips_curr = 0;
+
+				nest_allowed_ips = nla_nest_start (msg, WGPEER_A_ALLOWEDIPS);
+				if (!nest_allowed_ips)
+					goto toobig_allowedips;
+
+				for (; idx_allowed_ips_curr < p->allowed_ips_len; idx_allowed_ips_curr++) {
+					const NMPWireGuardAllowedIP *aip = &p->allowed_ips[idx_allowed_ips_curr];
+
+					nest_curr_allowed_ip = nla_nest_start (msg, 0);
+					if (!nest_curr_allowed_ip)
+						goto toobig_allowedips;
+
+					g_return_val_if_fail (NM_IN_SET (aip->family, AF_INET, AF_INET6), -NME_BUG);
+
+					if (nla_put_uint16 (msg, WGALLOWEDIP_A_FAMILY, aip->family) < 0)
+						goto toobig_allowedips;
+					if (nla_put (msg,
+					             WGALLOWEDIP_A_IPADDR,
+					             nm_utils_addr_family_to_size (aip->family),
+					             &aip->addr) < 0)
+						goto toobig_allowedips;
+					if (nla_put_uint8 (msg, WGALLOWEDIP_A_CIDR_MASK, aip->mask) < 0)
+						goto toobig_allowedips;
+
+					_nla_nest_end (msg, nest_curr_allowed_ip);
+					nest_curr_allowed_ip = NULL;
+				}
+				idx_allowed_ips_curr = IDX_NIL;
+
+				_nla_nest_end (msg, nest_allowed_ips);
+				nest_allowed_ips = NULL;
+			}
 		}
 
 		_nla_nest_end (msg, nest_curr_peer);
@@ -2553,8 +2591,9 @@ link_wireguard_change (NMPlatform *platform,
                        int ifindex,
                        const NMPlatformLnkWireGuard *lnk_wireguard,
                        const NMPWireGuardPeer *peers,
+                       const NMPlatformWireGuardChangePeerFlags *peer_flags,
                        guint peers_len,
-                       gboolean replace_peers)
+                       NMPlatformWireGuardChangeFlags change_flags)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	gs_unref_ptrarray GPtrArray *msgs = NULL;
@@ -2571,8 +2610,9 @@ link_wireguard_change (NMPlatform *platform,
 	                                     wireguard_family_id,
 	                                     lnk_wireguard,
 	                                     peers,
+	                                     peer_flags,
 	                                     peers_len,
-	                                     replace_peers,
+	                                     change_flags,
 	                                     &msgs);
 	if (r < 0) {
 		_LOGW ("wireguard: set-device, cannot construct netlink message: %s", nm_strerror (r));

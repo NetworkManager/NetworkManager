@@ -129,7 +129,7 @@
 
 /*****************************************************************************/
 
-#define NM_SETTING_SECRET_FLAGS_ALL \
+#define NM_SETTING_SECRET_FLAG_ALL \
 	((NMSettingSecretFlags) (  NM_SETTING_SECRET_FLAG_NONE \
 	                         | NM_SETTING_SECRET_FLAG_AGENT_OWNED \
 	                         | NM_SETTING_SECRET_FLAG_NOT_SAVED \
@@ -138,7 +138,7 @@
 static inline gboolean
 _nm_setting_secret_flags_valid (NMSettingSecretFlags flags)
 {
-	return !NM_FLAGS_ANY (flags, ~NM_SETTING_SECRET_FLAGS_ALL);
+	return !NM_FLAGS_ANY (flags, ~NM_SETTING_SECRET_FLAG_ALL);
 }
 
 /*****************************************************************************/
@@ -611,6 +611,25 @@ gboolean _nm_utils_dhcp_duid_valid (const char *duid, GBytes **out_duid_bin);
 /*****************************************************************************/
 
 gboolean _nm_setting_sriov_sort_vfs (NMSettingSriov *setting);
+
+/*****************************************************************************/
+
+typedef struct _NMSockAddrEndpoint NMSockAddrEndpoint;
+
+NMSockAddrEndpoint *nm_sock_addr_endpoint_new (const char *endpoint);
+
+NMSockAddrEndpoint *nm_sock_addr_endpoint_ref (NMSockAddrEndpoint *self);
+void nm_sock_addr_endpoint_unref (NMSockAddrEndpoint *self);
+
+const char *nm_sock_addr_endpoint_get_endpoint (NMSockAddrEndpoint *self);
+const char *nm_sock_addr_endpoint_get_host (NMSockAddrEndpoint *self);
+gint32 nm_sock_addr_endpoint_get_port (NMSockAddrEndpoint *self);
+
+gboolean nm_sock_addr_endpoint_get_fixed_sockaddr (NMSockAddrEndpoint *self,
+                                                   gpointer sockaddr);
+
+#define nm_auto_unref_sockaddrendpoint nm_auto(_nm_auto_unref_sockaddrendpoint)
+NM_AUTO_DEFINE_FCN_VOID0 (NMSockAddrEndpoint *, _nm_auto_unref_sockaddrendpoint, nm_sock_addr_endpoint_unref)
 
 /*****************************************************************************/
 

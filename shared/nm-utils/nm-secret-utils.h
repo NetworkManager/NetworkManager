@@ -76,6 +76,19 @@ typedef struct {
 } NMSecretPtr;
 
 static inline void
+nm_secret_ptr_bzero (NMSecretPtr *secret)
+{
+	if (secret) {
+		if (secret->len > 0) {
+			if (secret->ptr)
+				nm_explicit_bzero (secret->ptr, secret->len);
+		}
+	}
+}
+
+#define nm_auto_bzero_secret_ptr nm_auto(nm_secret_ptr_bzero)
+
+static inline void
 nm_secret_ptr_clear (NMSecretPtr *secret)
 {
 	if (secret) {
@@ -90,10 +103,22 @@ nm_secret_ptr_clear (NMSecretPtr *secret)
 
 #define nm_auto_clear_secret_ptr nm_auto(nm_secret_ptr_clear)
 
+#define NM_SECRET_PTR_INIT() \
+	((const NMSecretPtr) { \
+		.len = 0, \
+		.ptr = NULL, \
+	})
+
 #define NM_SECRET_PTR_STATIC(_len) \
 	((const NMSecretPtr) { \
 		.len = _len, \
 		.ptr = ((guint8 [_len]) { }), \
+	})
+
+#define NM_SECRET_PTR_ARRAY(_arr) \
+	((const NMSecretPtr) { \
+		.len = G_N_ELEMENTS (_arr) * sizeof ((_arr)[0]), \
+		.ptr = &((_arr)[0]), \
 	})
 
 static inline void

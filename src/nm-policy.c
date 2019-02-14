@@ -149,6 +149,25 @@ static NMDevice *get_default_device (NMPolicy *self, int addr_family);
 
 /*****************************************************************************/
 
+static void
+_dns_manager_set_ip_config (NMDnsManager *dns_manager,
+                            NMIPConfig *ip_config,
+                            NMDnsIPConfigType ip_config_type,
+                            NMDevice *device)
+{
+	if (   NM_IN_SET (ip_config_type, NM_DNS_IP_CONFIG_TYPE_DEFAULT,
+	                                  NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE)
+	    && device
+	    && nm_device_get_route_metric_default (nm_device_get_device_type (device)) == NM_VPN_ROUTE_METRIC_DEFAULT) {
+		/* some device types are inherently VPN. */
+		ip_config_type = NM_DNS_IP_CONFIG_TYPE_VPN;
+	}
+
+	nm_dns_manager_set_ip_config (dns_manager, ip_config, ip_config_type);
+}
+
+/*****************************************************************************/
+
 typedef struct {
 	NMPlatformIP6Address prefix;
 	NMDevice *device;             /* The requesting ("uplink") device */
@@ -1090,19 +1109,21 @@ update_ip_dns (NMPolicy *self, int addr_family)
 	gpointer ip_config;
 	const char *ip_iface = NULL;
 	NMVpnConnection *vpn = NULL;
+	NMDevice *device = NULL;
 
 	nm_assert_addr_family (addr_family);
 
-	ip_config = get_best_ip_config (self, addr_family, &ip_iface, NULL, NULL, &vpn);
+	ip_config = get_best_ip_config (self, addr_family, &ip_iface, NULL, &device, &vpn);
 	if (ip_config) {
 		/* Tell the DNS manager this config is preferred by re-adding it with
 		 * a different IP config type.
 		 */
-		nm_dns_manager_set_ip_config (NM_POLICY_GET_PRIVATE (self)->dns_manager,
-		                              ip_config,
-		                              vpn
-		                                ? NM_DNS_IP_CONFIG_TYPE_VPN
-		                                : NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE);
+		_dns_manager_set_ip_config (NM_POLICY_GET_PRIVATE (self)->dns_manager,
+		                            ip_config,
+		                            vpn
+		                            ? NM_DNS_IP_CONFIG_TYPE_VPN
+		                            : NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE,
+		                            device);
 	}
 
 	if (addr_family == AF_INET6)
@@ -1849,10 +1870,10 @@ device_state_changed (NMDevice *device,
 
 		ip4_config = nm_device_get_ip4_config (device);
 		if (ip4_config)
-			nm_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (ip4_config), NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+			_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (ip4_config), NM_DNS_IP_CONFIG_TYPE_DEFAULT, device);
 		ip6_config = nm_device_get_ip6_config (device);
 		if (ip6_config)
-			nm_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (ip6_config), NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+			_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (ip6_config), NM_DNS_IP_CONFIG_TYPE_DEFAULT, device);
 
 		update_routing_and_dns (self, FALSE);
 
@@ -1979,7 +2000,7 @@ device_ip_config_changed (NMDevice *device,
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
 		if (old_config != new_config) {
 			if (new_config)
-				nm_dns_manager_set_ip_config (priv->dns_manager, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+				_dns_manager_set_ip_config (priv->dns_manager, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT, device);
 			if (old_config)
 				nm_dns_manager_set_ip_config (priv->dns_manager, old_config, NM_DNS_IP_CONFIG_TYPE_REMOVED);
 		}

@@ -1982,6 +1982,24 @@ nm_platform_link_get_lnk_wireguard (NMPlatform *self, int ifindex, const NMPlatf
 
 /*****************************************************************************/
 
+NM_UTILS_FLAGS2STR_DEFINE_STATIC (_wireguard_change_flags_to_string, NMPlatformWireGuardChangeFlags,
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_FLAG_NONE,            "none"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS,   "replace-peers"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_PRIVATE_KEY, "has-private-key"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_LISTEN_PORT, "has-listen-port"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_FWMARK,      "has-fwmark"),
+);
+
+NM_UTILS_FLAGS2STR_DEFINE_STATIC (_wireguard_change_peer_flags_to_string, NMPlatformWireGuardChangePeerFlags,
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_NONE,                   "none"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_REMOVE_ME,              "remove"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_PRESHARED_KEY,      "psk"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_KEEPALIVE_INTERVAL, "ka"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_ENDPOINT,           "ep"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_ALLOWEDIPS,         "aips"),
+	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_REPLACE_ALLOWEDIPS,     "remove-aips"),
+);
+
 int
 nm_platform_link_wireguard_add (NMPlatform *self,
                                 const char *name,
@@ -1995,8 +2013,9 @@ nm_platform_link_wireguard_change (NMPlatform *self,
                                    int ifindex,
                                    const NMPlatformLnkWireGuard *lnk_wireguard,
                                    const NMPWireGuardPeer *peers,
+                                   const NMPlatformWireGuardChangePeerFlags *peer_flags,
                                    guint peers_len,
-                                   gboolean replace_peers)
+                                   NMPlatformWireGuardChangeFlags change_flags)
 {
 	_CHECK_SELF (self, klass, -NME_BUG);
 
@@ -2005,6 +2024,7 @@ nm_platform_link_wireguard_change (NMPlatform *self,
 	if (_LOGD_ENABLED ()) {
 		char buf_lnk[256];
 		char buf_peers[512];
+		char buf_change_flags[100];
 
 		buf_peers[0] = '\0';
 		if (peers_len > 0) {
@@ -2017,25 +2037,31 @@ nm_platform_link_wireguard_change (NMPlatform *self,
 				nm_utils_strbuf_append_str (&b, &len, " { ");
 				nm_platform_wireguard_peer_to_string (&peers[i], b, len);
 				nm_utils_strbuf_seek_end (&b, &len);
+				if (peer_flags) {
+					nm_utils_strbuf_append (&b, &len,
+					                       " (%s)",
+					                       _wireguard_change_peer_flags_to_string (peer_flags[i], buf_change_flags, sizeof (buf_change_flags)));
+				}
 				nm_utils_strbuf_append_str (&b, &len, " } ");
 			}
 			nm_utils_strbuf_append_str (&b, &len, "}");
 		}
 
-		_LOG3D ("link: change wireguard ifindex %d, %s, %u peers%s%s",
+		_LOG3D ("link: change wireguard ifindex %d, %s, (%s), %u peers%s",
 		        ifindex,
 		        nm_platform_lnk_wireguard_to_string (lnk_wireguard, buf_lnk, sizeof (buf_lnk)),
+		        _wireguard_change_flags_to_string (change_flags, buf_change_flags, sizeof (buf_change_flags)),
 		        peers_len,
-		        buf_peers,
-		        replace_peers ? " (replace-peers)" : " (update-peers)");
+		        buf_peers);
 	}
 
 	return klass->link_wireguard_change (self,
 	                                     ifindex,
 	                                     lnk_wireguard,
 	                                     peers,
+	                                     peer_flags,
 	                                     peers_len,
-	                                     replace_peers);
+	                                     change_flags);
 }
 
 /*****************************************************************************/
@@ -5607,6 +5633,7 @@ nm_platform_wireguard_peer_to_string (const NMPWireGuardPeer *peer, char *buf, g
 	char s_sockaddr[NM_UTILS_INET_ADDRSTRLEN + 100];
 	char s_endpoint[20 + sizeof (s_sockaddr)];
 	char s_addr[NM_UTILS_INET_ADDRSTRLEN];
+	char s_keepalive[100];
 	guint i;
 
 	nm_utils_to_string_buffer_init (&buf, &len);
@@ -5624,10 +5651,11 @@ nm_platform_wireguard_peer_to_string (const NMPWireGuardPeer *peer, char *buf, g
 
 	nm_utils_strbuf_append (&buf, &len,
 	                        "public-key %s"
-	                        "%s" /* preshared-key */
-	                        "%s" /* endpoint */
+	                        "%s"  /* preshared-key */
+	                        "%s"  /* endpoint */
 	                        " rx %"G_GUINT64_FORMAT
 	                        " tx %"G_GUINT64_FORMAT
+	                        "%s"  /* persistent-keepalive */
 	                        "%s", /* allowed-ips */
 	                        public_key_b64,
 	                        nm_utils_memeqzero (peer->preshared_key, sizeof (peer->preshared_key))
@@ -5636,6 +5664,9 @@ nm_platform_wireguard_peer_to_string (const NMPWireGuardPeer *peer, char *buf, g
 	                        s_endpoint,
 	                        peer->rx_bytes,
 	                        peer->tx_bytes,
+	                        peer->persistent_keepalive_interval > 0
+	                          ? nm_sprintf_buf (s_keepalive, " keepalive %u", (guint) peer->persistent_keepalive_interval)
+	                          : "",
 	                        peer->allowed_ips_len > 0
 	                          ? " allowed-ips"
 	                          : "");

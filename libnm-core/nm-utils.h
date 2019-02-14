@@ -40,6 +40,8 @@
 
 G_BEGIN_DECLS
 
+/*****************************************************************************/
+
 typedef struct _NMVariantAttributeSpec NMVariantAttributeSpec;
 
 /* SSID helpers */

@@ -59,6 +59,277 @@
  * access points and devices, among other things.
  */
 
+/*****************************************************************************/
+
+struct _NMSockAddrEndpoint {
+	const char *host;
+	guint16 port;
+	guint refcount;
+	char endpoint[];
+};
+
+static gboolean
+NM_IS_SOCK_ADDR_ENDPOINT (const NMSockAddrEndpoint *self)
+{
+	return self && self->refcount > 0;
+}
+
+static const char *
+_parse_endpoint (char *str,
+                 guint16 *out_port)
+{
+	char *s;
+	const char *s_port;
+	gint16 port;
+
+	/* Like
+	 * - https://git.zx2c4.com/WireGuard/tree/src/tools/config.c?id=5e99a6d43fe2351adf36c786f5ea2086a8fe7ab8#n192
+	 * - https://github.com/systemd/systemd/blob/911649fdd43f3a9158b847947724a772a5a45c34/src/network/netdev/wireguard.c#L614
+	 */
+
+	g_strstrip (str);
+
+	if (!str[0])
+		return NULL;
+
+	if (str[0] == '[') {
+		str++;
+		s = strchr (str, ']');
+		if (!s)
+			return NULL;
+		if (s == str)
+			return NULL;
+		if (s[1] != ':')
+			return NULL;
+		if (!s[2])
+			return NULL;
+		*s = '\0';
+		s_port = &s[2];
+	} else {
+		s = strrchr (str, ':');
+		if (!s)
+			return NULL;
+		if (s == str)
+			return NULL;
+		if (!s[1])
+			return NULL;
+		*s = '\0';
+		s_port = &s[1];
+	}
+
+	if (!NM_STRCHAR_ALL (s_port, ch, (ch >= '0' && ch <= '9')))
+		return NULL;
+
+	port = _nm_utils_ascii_str_to_int64 (s_port, 10, 1, G_MAXUINT16, 0);
+	if (port == 0)
+		return NULL;
+
+	*out_port = port;
+	return str;
+}
+
+/**
+ * nm_sock_addr_endpoint_new:
+ * @endpoint: the endpoint string.
+ *
+ * This function cannot fail, even if the @endpoint is invalid.
+ * The reason is to allow NMSockAddrEndpoint also to be used
+ * for tracking invalid endpoints. Use nm_sock_addr_endpoint_get_host()
+ * to determine whether the endpoint is valid.
+ *
+ * Returns: (transfer full): the new #NMSockAddrEndpoint endpoint.
+ */
+NMSockAddrEndpoint *
+nm_sock_addr_endpoint_new (const char *endpoint)
+{
+	NMSockAddrEndpoint *ep;
+	gsize l_endpoint;
+	gsize l_host = 0;
+	gsize i;
+	gs_free char *host_clone = NULL;
+	const char *host;
+	guint16 port;
+
+	g_return_val_if_fail (endpoint, NULL);
+
+	l_endpoint = strlen (endpoint) + 1;
+
+	host = _parse_endpoint (nm_strndup_a (200, endpoint, l_endpoint - 1, &host_clone),
+	                        &port);
+
+	if (host)
+		l_host = strlen (host) + 1;
+
+	ep = g_malloc (sizeof (NMSockAddrEndpoint) + l_endpoint + l_host);
+	ep->refcount = 1;
+	memcpy (ep->endpoint, endpoint, l_endpoint);
+	if (host) {
+		i = l_endpoint;
+		memcpy (&ep->endpoint[i], host, l_host);
+		ep->host = &ep->endpoint[i];
+		ep->port = port;
+	} else {
+		ep->host = NULL;
+		ep->port = 0;
+	}
+	return ep;
+}
+
+/**
+ * nm_sock_addr_endpoint_ref:
+ * @self: (allow-none): the #NMSockAddrEndpoint
+ */
+NMSockAddrEndpoint *
+nm_sock_addr_endpoint_ref (NMSockAddrEndpoint *self)
+{
+	if (!self)
+		return NULL;
+
+	g_return_val_if_fail (NM_IS_SOCK_ADDR_ENDPOINT (self), NULL);
+
+	nm_assert (self->refcount < G_MAXUINT);
+
+	self->refcount++;
+	return self;
+}
+
+/**
+ * nm_sock_addr_endpoint_unref:
+ * @self: (allow-none): the #NMSockAddrEndpoint
+ */
+void
+nm_sock_addr_endpoint_unref (NMSockAddrEndpoint *self)
+{
+	if (!self)
+		return;
+
+	g_return_if_fail (NM_IS_SOCK_ADDR_ENDPOINT (self));
+
+	if (--self->refcount == 0)
+		g_free (self);
+}
+
+/**
+ * nm_sock_addr_endpoint_get_endpoint:
+ * @self: the #NMSockAddrEndpoint
+ *
+ * Gives the endpoint string. Since #NMSockAddrEndpoint's only
+ * information is the endpoint string, this can be used for comparing
+ * to instances for equality and order them lexically.
+ *
+ * Returns: (transfer none): the endpoint.
+ */
+const char *
+nm_sock_addr_endpoint_get_endpoint (NMSockAddrEndpoint *self)
+{
+	g_return_val_if_fail (NM_IS_SOCK_ADDR_ENDPOINT (self), NULL);
+
+	return self->endpoint;
+}
+
+/**
+ * nm_sock_addr_endpoint_get_host:
+ * @self: the #NMSockAddrEndpoint
+ *
+ * Returns: (transfer none): the parsed host part of the endpoint.
+ *   If the endpoint is invalid, %NULL will be returned.
+ */
+const char *
+nm_sock_addr_endpoint_get_host (NMSockAddrEndpoint *self)
+{
+	g_return_val_if_fail (NM_IS_SOCK_ADDR_ENDPOINT (self), NULL);
+
+	return self->host;
+}
+
+/**
+ * nm_sock_addr_endpoint_get_port:
+ * @self: the #NMSockAddrEndpoint
+ *
+ * Returns: the parsed port part of the endpoint (the service).
+ *   If the endpoint is invalid, -1 will be returned.
+ */
+gint32
+nm_sock_addr_endpoint_get_port (NMSockAddrEndpoint *self)
+{
+	g_return_val_if_fail (NM_IS_SOCK_ADDR_ENDPOINT (self), -1);
+
+	return self->host ? (int) self->port : -1;
+}
+
+gboolean
+nm_sock_addr_endpoint_get_fixed_sockaddr (NMSockAddrEndpoint *self,
+                                          gpointer sockaddr)
+{
+	int addr_family;
+	NMIPAddr addrbin;
+	const char *s;
+	guint scope_id = 0;
+
+	g_return_val_if_fail (NM_IS_SOCK_ADDR_ENDPOINT (self), FALSE);
+	g_return_val_if_fail (sockaddr, FALSE);
+
+	if (!self->host)
+		return FALSE;
+
+	if (nm_utils_parse_inaddr_bin (AF_UNSPEC, self->host, &addr_family, &addrbin))
+		goto good;
+
+	/* See if there is an IPv6 scope-id...
+	 *
+	 * Note that it does not make sense to persist connection profiles to disk,
+	 * that refenrence a scope-id (because the interface's ifindex changes on
+	 * reboot). However, we also support runtime only changes like `nmcli device modify`
+	 * where nothing is persisted to disk. At least in that case, passing a scope-id
+	 * might be reasonable. So, parse that too. */
+	s = strchr (self->host, '%');
+	if (!s)
+		return FALSE;
+
+	if (   s[1] == '\0'
+	    || !NM_STRCHAR_ALL (&s[1], ch, (ch >= '0' && ch <= '9')))
+		return FALSE;
+
+	scope_id = _nm_utils_ascii_str_to_int64 (&s[1], 10, 0, G_MAXINT32, G_MAXUINT);
+	if (scope_id == G_MAXUINT && errno)
+		return FALSE;
+
+	{
+		gs_free char *tmp_str = NULL;
+		const char *host_part;
+
+		host_part = nm_strndup_a (200, self->host, s - self->host, &tmp_str);
+		if (nm_utils_parse_inaddr_bin (AF_INET6, host_part, &addr_family, &addrbin))
+			goto good;
+	}
+
+	return FALSE;
+
+good:
+	switch (addr_family) {
+	case AF_INET:
+		*((struct sockaddr_in *) sockaddr) = (struct sockaddr_in) {
+			.sin_family = AF_INET,
+			.sin_addr   = addrbin.addr4_struct,
+			.sin_port   = htons (self->port),
+		};
+		return TRUE;
+	case AF_INET6:
+		*((struct sockaddr_in6 *) sockaddr) = (struct sockaddr_in6) {
+			.sin6_family   = AF_INET6,
+			.sin6_addr     = addrbin.addr6,
+			.sin6_port     = htons (self->port),
+			.sin6_scope_id = scope_id,
+			.sin6_flowinfo = 0,
+		};
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+/*****************************************************************************/
+
 struct IsoLangToEncodings
 {
 	const char *lang;
@@ -4309,6 +4580,62 @@ _nm_utils_hwaddr_from_dbus (GVariant *dbus_value,
 
 /*****************************************************************************/
 
+/* Validate secret-flags. Most settings don't validate them, which is a bug.
+ * But we possibly cannot enforce a strict validation now.
+ *
+ * For new settings, they shall validate the secret-flags strictly. */
+gboolean
+_nm_utils_secret_flags_validate (NMSettingSecretFlags secret_flags,
+                                 const char *setting_name,
+                                 const char *property_name,
+                                 NMSettingSecretFlags disallowed_flags,
+                                 GError **error)
+{
+	if (secret_flags == NM_SETTING_SECRET_FLAG_NONE)
+		return TRUE;
+
+	if (NM_FLAGS_ANY (secret_flags, ~NM_SETTING_SECRET_FLAG_ALL)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("unknown secret flags"));
+		if (setting_name)
+			g_prefix_error (error, "%s.%s: ", setting_name, property_name);
+		return FALSE;
+	}
+
+	if (!nm_utils_is_power_of_two (secret_flags)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("conflicting secret flags"));
+		if (setting_name)
+			g_prefix_error (error, "%s.%s: ", setting_name, property_name);
+		return FALSE;
+	}
+
+	if (NM_FLAGS_ANY (secret_flags, disallowed_flags)) {
+		if (NM_FLAGS_HAS (secret_flags, NM_SETTING_SECRET_FLAG_NOT_REQUIRED)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("secret flags must not be \"not-required\""));
+			if (setting_name)
+				g_prefix_error (error, "%s.%s: ", setting_name, property_name);
+			return FALSE;
+		}
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("unsupported secret flags"));
+		if (setting_name)
+			g_prefix_error (error, "%s.%s: ", setting_name, property_name);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 gboolean
 _nm_utils_wps_method_validate (NMSettingWirelessSecurityWpsMethod wps_method,
                                const char *setting_name,
@@ -6020,15 +6347,15 @@ _nm_utils_team_link_watchers_to_variant (GPtrArray *link_watchers)
 
 		name = nm_team_link_watcher_get_name (watcher);
 		g_variant_builder_add (&watcher_builder, "{sv}",
-				       "name",
-				       g_variant_new_string (name));
+		                       "name",
+		                       g_variant_new_string (name));
 
-		if nm_streq (name, NM_TEAM_LINK_WATCHER_ETHTOOL) {
+		if (nm_streq (name, NM_TEAM_LINK_WATCHER_ETHTOOL)) {
 			int_val = nm_team_link_watcher_get_delay_up (watcher);
 			if (int_val) {
 				g_variant_builder_add (&watcher_builder, "{sv}",
-						       "delay-up",
-						       g_variant_new_int32 (int_val));
+				                       "delay-up",
+				                       g_variant_new_int32 (int_val));
 			}
 			int_val = nm_team_link_watcher_get_delay_down (watcher);
 			if (int_val) {
@@ -6063,7 +6390,7 @@ _nm_utils_team_link_watchers_to_variant (GPtrArray *link_watchers)
 		                       "target-host",
 		                       g_variant_new_string (nm_team_link_watcher_get_target_host (watcher)));
 
-		if nm_streq (name, NM_TEAM_LINK_WATCHER_NSNA_PING) {
+		if (nm_streq (name, NM_TEAM_LINK_WATCHER_NSNA_PING)) {
 			g_variant_builder_add (&builder, "a{sv}", &watcher_builder);
 			continue;
 		}
@@ -6155,7 +6482,7 @@ _nm_utils_team_link_watchers_from_variant (GVariant *value)
 				val2 = 0;
 			if (!g_variant_lookup (watcher_var, "missed-max", "i", &val3))
 				val3 = 3;
-			if nm_streq (name, NM_TEAM_LINK_WATCHER_ARP_PING) {
+			if (nm_streq (name, NM_TEAM_LINK_WATCHER_ARP_PING)) {
 				if (!g_variant_lookup (watcher_var, "vlanid", "i", &val4))
 					val4 = -1;
 				if (!g_variant_lookup (watcher_var, "source-host", "&s", &source_host))

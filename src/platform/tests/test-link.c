@@ -912,8 +912,12 @@ _test_wireguard_change (NMPlatform *platform,
 	                                       ifindex,
 	                                       &lnk_wireguard,
 	                                       (const NMPWireGuardPeer *) peers->data,
+	                                       NULL,
 	                                       peers->len,
-	                                       TRUE);
+	                                         NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_PRIVATE_KEY
+	                                       | NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_LISTEN_PORT
+	                                       | NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_FWMARK
+	                                       | NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS);
 	g_assert (NMTST_NM_ERR_SUCCESS (r));
 }
 

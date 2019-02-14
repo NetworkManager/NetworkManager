@@ -28,12 +28,13 @@ typedef enum {
 } NMSecretAgentSecretType;
 
 typedef struct {
-	const NMSecretAgentSecretType secret_type;
+	NMSecretAgentSecretType secret_type;
 	const char *pretty_name;
 	const char *entry_id;
 	char *value;
 	const char *vpn_type;
-	gboolean is_secret;
+	bool is_secret:1;
+	bool no_prompt_entry_id:1;
 } NMSecretAgentSimpleSecret;
 
 #define NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "vpn.secrets."
