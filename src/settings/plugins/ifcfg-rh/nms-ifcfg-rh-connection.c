@@ -41,7 +41,6 @@
 #include "nms-ifcfg-rh-reader.h"
 #include "nms-ifcfg-rh-writer.h"
 #include "nms-ifcfg-rh-utils.h"
-#include "nm-inotify-helper.h"
 
 /*****************************************************************************/
 
@@ -50,34 +49,12 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_UNRECOGNIZED_SPEC,
 );
 
-enum {
-	IFCFG_CHANGED,
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
-
 typedef struct {
-	gulong ih_event_id;
-
-	int file_wd;
-
-	char *keyfile;
-	int keyfile_wd;
-
-	char *routefile;
-	int routefile_wd;
-
-	char *route6file;
-	int route6file_wd;
-
 	char *unmanaged_spec;
 	char *unrecognized_spec;
 
 	gulong devtimeout_link_changed_handler;
 	guint devtimeout_timeout_id;
-
-	NMInotifyHelper *inotify_helper;
 } NMIfcfgConnectionPrivate;
 
 struct _NMIfcfgConnection {
@@ -193,76 +170,6 @@ nm_ifcfg_connection_check_devtimeout (NMIfcfgConnection *self)
 	priv->devtimeout_timeout_id = g_timeout_add_seconds (devtimeout, devtimeout_expired, self);
 }
 
-static void
-files_changed_cb (NMInotifyHelper *ih,
-                  struct inotify_event *evt,
-                  const char *path,
-                  gpointer user_data)
-{
-	NMIfcfgConnection *self = NM_IFCFG_CONNECTION (user_data);
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (self);
-
-	if (   (evt->wd != priv->file_wd)
-	    && (evt->wd != priv->keyfile_wd)
-	    && (evt->wd != priv->routefile_wd)
-	    && (evt->wd != priv->route6file_wd))
-		return;
-
-	/* push the event up to the plugin */
-	g_signal_emit (self, signals[IFCFG_CHANGED], 0);
-}
-
-static void
-path_watch_stop (NMIfcfgConnection *self)
-{
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (self);
-
-	nm_clear_g_signal_handler (priv->inotify_helper, &priv->ih_event_id);
-
-	nm_inotify_helper_clear_watch (priv->inotify_helper, &priv->file_wd);
-	nm_inotify_helper_clear_watch (priv->inotify_helper, &priv->keyfile_wd);
-	nm_inotify_helper_clear_watch (priv->inotify_helper, &priv->routefile_wd);
-	nm_inotify_helper_clear_watch (priv->inotify_helper, &priv->route6file_wd);
-
-	nm_clear_g_free (&priv->keyfile);
-	nm_clear_g_free (&priv->routefile);
-	nm_clear_g_free (&priv->route6file);
-}
-
-static void
-filename_changed (GObject *object,
-                  GParamSpec *pspec,
-                  gpointer user_data)
-{
-	NMIfcfgConnection *self = NM_IFCFG_CONNECTION (object);
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (self);
-	const char *ifcfg_path;
-
-	path_watch_stop (self);
-
-	ifcfg_path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (self));
-	if (!ifcfg_path)
-		return;
-
-	priv->keyfile = utils_get_keys_path (ifcfg_path);
-	priv->routefile = utils_get_route_path (ifcfg_path);
-	priv->route6file = utils_get_route6_path (ifcfg_path);
-
-	if (nm_config_get_monitor_connection_files (nm_config_get ())) {
-		NMInotifyHelper *ih;
-
-		if (!priv->inotify_helper)
-			priv->inotify_helper = g_object_ref (nm_inotify_helper_get ());
-		ih = priv->inotify_helper;
-
-		priv->ih_event_id = g_signal_connect (ih, "event", G_CALLBACK (files_changed_cb), self);
-		priv->file_wd = nm_inotify_helper_add_watch (ih, ifcfg_path);
-		priv->keyfile_wd = nm_inotify_helper_add_watch (ih, priv->keyfile);
-		priv->routefile_wd = nm_inotify_helper_add_watch (ih, priv->routefile);
-		priv->route6file_wd = nm_inotify_helper_add_watch (ih, priv->route6file);
-	}
-}
-
 const char *
 nm_ifcfg_connection_get_unmanaged_spec (NMIfcfgConnection *self)
 {
@@ -326,18 +233,21 @@ static gboolean
 delete (NMSettingsConnection *connection,
         GError **error)
 {
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE ((NMIfcfgConnection *) connection);
 	const char *filename;
 
 	filename = nm_settings_connection_get_filename (connection);
 	if (filename) {
+		gs_free char *keyfile = utils_get_keys_path (filename);
+		gs_free char *routefile = utils_get_route_path (filename);
+		gs_free char *route6file = utils_get_route6_path (filename);
+
 		g_unlink (filename);
-		if (priv->keyfile)
-			g_unlink (priv->keyfile);
-		if (priv->routefile)
-			g_unlink (priv->routefile);
-		if (priv->route6file)
-			g_unlink (priv->route6file);
+		if (keyfile)
+			g_unlink (keyfile);
+		if (routefile)
+			g_unlink (routefile);
+		if (route6file)
+			g_unlink (route6file);
 	}
 
 	return TRUE;
@@ -386,17 +296,8 @@ set_property (GObject *object, guint prop_id,
 /*****************************************************************************/
 
 static void
-nm_ifcfg_connection_init (NMIfcfgConnection *connection)
+nm_ifcfg_connection_init (NMIfcfgConnection *self)
 {
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
-
-	priv->file_wd = -1;
-	priv->keyfile_wd = -1;
-	priv->routefile_wd = -1;
-	priv->route6file_wd = -1;
-
-	g_signal_connect (connection, "notify::" NM_SETTINGS_CONNECTION_FILENAME,
-	                  G_CALLBACK (filename_changed), NULL);
 }
 
 NMIfcfgConnection *
@@ -460,12 +361,8 @@ dispose (GObject *object)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE ((NMIfcfgConnection *) object);
 
-	path_watch_stop (NM_IFCFG_CONNECTION (object));
-
 	nm_clear_g_signal_handler (NM_PLATFORM_GET, &priv->devtimeout_link_changed_handler);
 	nm_clear_g_source (&priv->devtimeout_timeout_id);
-
-	g_clear_object (&priv->inotify_helper);
 
 	g_clear_pointer (&priv->unmanaged_spec, g_free);
 	g_clear_pointer (&priv->unrecognized_spec, g_free);
@@ -499,13 +396,4 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 	                          G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	signals[IFCFG_CHANGED] =
-	    g_signal_new ("ifcfg-changed",
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_LAST,
-	                  0, NULL, NULL,
-	                  g_cclosure_marshal_VOID__VOID,
-	                  G_TYPE_NONE, 0);
 }
-

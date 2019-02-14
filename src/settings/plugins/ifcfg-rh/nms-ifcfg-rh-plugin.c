@@ -61,10 +61,8 @@ typedef struct {
 	} dbus;
 
 	GHashTable *connections;  /* uuid::connection */
-	gboolean initialized;
 
-	GFileMonitor *ifcfg_monitor;
-	gulong ifcfg_monitor_id;
+	bool initialized:1;
 } SettingsPluginIfcfgPrivate;
 
 struct _SettingsPluginIfcfg {
@@ -108,26 +106,6 @@ static NMIfcfgConnection *update_connection (SettingsPluginIfcfg *plugin,
                                              GError **error);
 
 /*****************************************************************************/
-
-static void
-connection_ifcfg_changed (NMIfcfgConnection *connection, gpointer user_data)
-{
-	SettingsPluginIfcfg *self = SETTINGS_PLUGIN_IFCFG (user_data);
-	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
-	const char *path;
-
-	path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection));
-	g_return_if_fail (path != NULL);
-
-	if (!priv->ifcfg_monitor) {
-		_LOGD ("connection_ifcfg_changed("NM_IFCFG_CONNECTION_LOG_FMTD"): %s", NM_IFCFG_CONNECTION_LOG_ARGD (connection), "ignore event");
-		return;
-	}
-
-	_LOGD ("connection_ifcfg_changed("NM_IFCFG_CONNECTION_LOG_FMTD"): %s", NM_IFCFG_CONNECTION_LOG_ARGD (connection), "reload");
-
-	update_connection (self, NULL, path, connection, TRUE, NULL, NULL);
-}
 
 static void
 connection_removed_cb (NMSettingsConnection *obj, gpointer user_data)
@@ -386,10 +364,6 @@ update_connection (SettingsPluginIfcfg *self,
 		} else if (nm_ifcfg_connection_get_unrecognized_spec (connection_new))
 			_LOGW ("Ignoring connection "NM_IFCFG_CONNECTION_LOG_FMT" of unrecognized type.", NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
 
-		/* watch changes of ifcfg hardlinks */
-		g_signal_connect (G_OBJECT (connection_new), "ifcfg-changed",
-		                  G_CALLBACK (connection_ifcfg_changed), self);
-
 		if (!source) {
 			/* Only raise the signal if we were called without source, i.e. if we read the connection from file.
 			 * Otherwise, we were called by add_connection() which does not expect the signal. */
@@ -403,59 +377,6 @@ update_connection (SettingsPluginIfcfg *self,
 			}
 		}
 		return connection_new;
-	}
-}
-
-static void
-ifcfg_dir_changed (GFileMonitor *monitor,
-                   GFile *file,
-                   GFile *other_file,
-                   GFileMonitorEvent event_type,
-                   gpointer user_data)
-{
-	SettingsPluginIfcfg *plugin = SETTINGS_PLUGIN_IFCFG (user_data);
-	char *path, *ifcfg_path;
-	NMIfcfgConnection *connection;
-
-	path = g_file_get_path (file);
-
-	ifcfg_path = utils_detect_ifcfg_path (path, FALSE);
-	_LOGD ("ifcfg_dir_changed(%s) = %d // %s", path, event_type, ifcfg_path ?: "(none)");
-	if (ifcfg_path) {
-		connection = find_by_path (plugin, ifcfg_path);
-		switch (event_type) {
-		case G_FILE_MONITOR_EVENT_DELETED:
-			if (connection)
-				remove_connection (plugin, connection);
-			break;
-		case G_FILE_MONITOR_EVENT_CREATED:
-		case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
-			/* Update or new */
-			update_connection (plugin, NULL, ifcfg_path, connection, TRUE, NULL, NULL);
-			break;
-		default:
-			break;
-		}
-		g_free (ifcfg_path);
-	}
-	g_free (path);
-}
-
-static void
-setup_ifcfg_monitoring (SettingsPluginIfcfg *plugin)
-{
-	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (plugin);
-	GFile *file;
-	GFileMonitor *monitor;
-
-	file = g_file_new_for_path (IFCFG_DIR "/");
-	monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
-	g_object_unref (file);
-
-	if (monitor) {
-		priv->ifcfg_monitor_id = g_signal_connect (monitor, "changed",
-		                                           G_CALLBACK (ifcfg_dir_changed), plugin);
-		priv->ifcfg_monitor = monitor;
 	}
 }
 
@@ -578,8 +499,6 @@ get_connections (NMSettingsPlugin *config)
 	NMIfcfgConnection *connection;
 
 	if (!priv->initialized) {
-		if (nm_config_get_monitor_connection_files (nm_config_get ()))
-			setup_ifcfg_monitoring (plugin);
 		read_connections (plugin);
 		priv->initialized = TRUE;
 	}
@@ -1039,14 +958,6 @@ dispose (GObject *object)
 	if (priv->connections) {
 		g_hash_table_destroy (priv->connections);
 		priv->connections = NULL;
-	}
-
-	if (priv->ifcfg_monitor) {
-		if (priv->ifcfg_monitor_id)
-			g_signal_handler_disconnect (priv->ifcfg_monitor, priv->ifcfg_monitor_id);
-
-		g_file_monitor_cancel (priv->ifcfg_monitor);
-		g_object_unref (priv->ifcfg_monitor);
 	}
 
 	G_OBJECT_CLASS (settings_plugin_ifcfg_parent_class)->dispose (object);

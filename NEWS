@@ -16,6 +16,10 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   configuration file.
 * Added support for configuring fq_codel line discipline and mirred action.
 * Added a possibility for distributions to ship dispatcher scripts in /usr/lib.
+* Drop deprecated setting "main.monitor-connection-files" in NetworkManager.conf.
+  This setting has no more effect and was disabled by default for a long time.
+  Instead, after changes load files explicitly with `nmcli connection load` and
+  `nmcli connection reload`.
 
 =============================================
 NetworkManager-1.18
