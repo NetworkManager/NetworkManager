@@ -427,6 +427,25 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 		}
 		return 1;
 
+	case NMP_CACHE_ID_TYPE_OBJECT_BY_ADDR_FAMILY:
+		obj_type = NMP_OBJECT_GET_TYPE (obj_a);
+		/* currently, only routing rules are supported for this cache-id-type. */
+		if (   obj_type != NMP_OBJECT_TYPE_ROUTING_RULE
+		    || !NM_IN_SET (obj_a->routing_rule.addr_family, AF_INET, AF_INET6)) {
+			if (h)
+				nm_hash_update_val (h, obj_a);
+			return 0;
+		}
+		if (obj_b) {
+			return    NMP_OBJECT_GET_TYPE (obj_b) == NMP_OBJECT_TYPE_ROUTING_RULE
+			       && obj_a->routing_rule.addr_family == obj_b->routing_rule.addr_family;
+		}
+		if (h) {
+			nm_hash_update_vals (h, idx_type->cache_id_type,
+			                        obj_a->routing_rule.addr_family);
+		}
+		return 1;
+
 	case NMP_CACHE_ID_TYPE_NONE:
 	case __NMP_CACHE_ID_TYPE_MAX:
 		break;
@@ -1359,6 +1378,10 @@ _vt_cmd_plobj_id_copy (ip6_route, NMPlatformIP6Route, {
 	*dst = *src;
 	nm_assert (nm_platform_ip6_route_cmp (dst, src, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) == 0);
 });
+_vt_cmd_plobj_id_copy (routing_rule, NMPlatformRoutingRule, {
+	*dst = *src;
+	nm_assert (nm_platform_routing_rule_cmp (dst, src, NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID) == 0);
+});
 
 /* Uses internally nmp_object_copy(), hence it also violates the const
  * promise for @obj.
@@ -1459,6 +1482,12 @@ _vt_cmd_plobj_id_cmp_ip6_route (const NMPlatformObject *obj1, const NMPlatformOb
 	return nm_platform_ip6_route_cmp ((NMPlatformIP6Route *) obj1, (NMPlatformIP6Route *) obj2, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID);
 }
 
+static int
+_vt_cmd_plobj_id_cmp_routing_rule (const NMPlatformObject *obj1, const NMPlatformObject *obj2)
+{
+	return nm_platform_routing_rule_cmp ((NMPlatformRoutingRule *) obj1, (NMPlatformRoutingRule *) obj2, NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID);
+}
+
 void
 nmp_object_id_hash_update (const NMPObject *obj, NMHashState *h)
 {
@@ -1524,6 +1553,9 @@ _vt_cmd_plobj_id_hash_update (ip4_route, NMPlatformIP4Route, {
 _vt_cmd_plobj_id_hash_update (ip6_route, NMPlatformIP6Route, {
 	nm_platform_ip6_route_hash_update (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID, h);
 })
+_vt_cmd_plobj_id_hash_update (routing_rule, NMPlatformRoutingRule, {
+	nm_platform_routing_rule_hash_update (obj, NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID, h);
+})
 _vt_cmd_plobj_id_hash_update (qdisc, NMPlatformQdisc, {
 	nm_hash_update_vals (h,
 	                     obj->ifindex,
@@ -1545,6 +1577,12 @@ static void
 _vt_cmd_plobj_hash_update_ip6_route (const NMPlatformObject *obj, NMHashState *h)
 {
 	return nm_platform_ip6_route_hash_update ((const NMPlatformIP6Route *) obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL, h);
+}
+
+static void
+_vt_cmd_plobj_hash_update_routing_rule (const NMPlatformObject *obj, NMHashState *h)
+{
+	return nm_platform_routing_rule_hash_update ((const NMPlatformRoutingRule *) obj, NM_PLATFORM_ROUTING_RULE_CMP_TYPE_FULL, h);
 }
 
 gboolean
@@ -1594,6 +1632,12 @@ _vt_cmd_obj_is_alive_ipx_route (const NMPObject *obj)
 	 **/
 	return    NMP_OBJECT_CAST_IP_ROUTE (obj)->ifindex > 0
 	       && !NM_FLAGS_HAS (obj->ip_route.r_rtm_flags, RTM_F_CLONED);
+}
+
+static gboolean
+_vt_cmd_obj_is_alive_routing_rule (const NMPObject *obj)
+{
+	return NM_IN_SET (obj->routing_rule.addr_family, AF_INET, AF_INET6);
 }
 
 static gboolean
@@ -1660,6 +1704,12 @@ static const guint8 _supported_cache_ids_ipx_route[] = {
 	NMP_CACHE_ID_TYPE_OBJECT_BY_IFINDEX,
 	NMP_CACHE_ID_TYPE_DEFAULT_ROUTES,
 	NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID,
+	0,
+};
+
+static const guint8 _supported_cache_ids_routing_rules[] = {
+	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+	NMP_CACHE_ID_TYPE_OBJECT_BY_ADDR_FAMILY,
 	0,
 };
 
@@ -1940,6 +1990,7 @@ nmp_lookup_init_obj_type (NMPLookup *lookup,
 	case NMP_OBJECT_TYPE_IP6_ADDRESS:
 	case NMP_OBJECT_TYPE_IP4_ROUTE:
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
+	case NMP_OBJECT_TYPE_ROUTING_RULE:
 	case NMP_OBJECT_TYPE_QDISC:
 	case NMP_OBJECT_TYPE_TFILTER:
 		_nmp_object_stackinit_from_type (&lookup->selector_obj, obj_type);
@@ -2085,6 +2136,23 @@ nmp_lookup_init_ip6_route_by_weak_id (NMPLookup *lookup,
 		o->ip6_route.src = *src;
 	o->ip6_route.src_plen = src_plen;
 	lookup->cache_id_type = NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID;
+	return _L (lookup);
+}
+
+const NMPLookup *
+nmp_lookup_init_object_by_addr_family (NMPLookup *lookup,
+                                       NMPObjectType obj_type,
+                                       int addr_family)
+{
+	NMPObject *o;
+
+	nm_assert (lookup);
+	nm_assert_addr_family (addr_family);
+	nm_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_ROUTING_RULE));
+
+	o = _nmp_object_stackinit_from_type (&lookup->selector_obj, obj_type);
+	NMP_OBJECT_CAST_ROUTING_RULE (o)->addr_family = addr_family;
+	lookup->cache_id_type = NMP_CACHE_ID_TYPE_OBJECT_BY_ADDR_FAMILY;
 	return _L (lookup);
 }
 
@@ -3076,6 +3144,25 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_ip6_route_to_string,
 		.cmd_plobj_hash_update              = _vt_cmd_plobj_hash_update_ip6_route,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip6_route_cmp_full,
+	},
+	[NMP_OBJECT_TYPE_ROUTING_RULE - 1] = {
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.obj_type                           = NMP_OBJECT_TYPE_ROUTING_RULE,
+		.sizeof_data                        = sizeof (NMPObjectRoutingRule),
+		.sizeof_public                      = sizeof (NMPlatformRoutingRule),
+		.obj_type_name                      = "routing-rule",
+		.rtm_gettype                        = RTM_GETRULE,
+		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_ROUTING_RULE,
+		.signal_type                        = NM_PLATFORM_SIGNAL_ROUTING_RULE_CHANGED,
+		.supported_cache_ids                = _supported_cache_ids_routing_rules,
+		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_routing_rule,
+		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_routing_rule,
+		.cmd_plobj_id_cmp                   = _vt_cmd_plobj_id_cmp_routing_rule,
+		.cmd_plobj_id_hash_update           = _vt_cmd_plobj_id_hash_update_routing_rule,
+		.cmd_plobj_to_string_id             = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_routing_rule_to_string,
+		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_routing_rule_to_string,
+		.cmd_plobj_hash_update              = _vt_cmd_plobj_hash_update_routing_rule,
+		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_routing_rule_cmp_full,
 	},
 	[NMP_OBJECT_TYPE_QDISC - 1] = {
 		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),

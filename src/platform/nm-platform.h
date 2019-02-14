@@ -152,6 +152,14 @@ typedef enum {
 } NMPlatformIPRouteCmpType;
 
 typedef enum {
+	NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID,
+
+	NM_PLATFORM_ROUTING_RULE_CMP_TYPE_SEMANTICALLY,
+
+	NM_PLATFORM_ROUTING_RULE_CMP_TYPE_FULL,
+} NMPlatformRoutingRuleCmpType;
+
+typedef enum {
 
 	/* match-flags are strictly inclusive. That means,
 	 * by default nothing is matched, but if you enable a particular
@@ -256,6 +264,7 @@ typedef enum { /*< skip >*/
 	NM_PLATFORM_SIGNAL_ID_IP6_ADDRESS,
 	NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,
 	NM_PLATFORM_SIGNAL_ID_IP6_ROUTE,
+	NM_PLATFORM_SIGNAL_ID_ROUTING_RULE,
 	NM_PLATFORM_SIGNAL_ID_QDISC,
 	NM_PLATFORM_SIGNAL_ID_TFILTER,
 	_NM_PLATFORM_SIGNAL_ID_LAST,
@@ -544,6 +553,48 @@ typedef union {
 } NMPlatformIPXRoute;
 
 #undef __NMPlatformIPRoute_COMMON
+
+typedef struct {
+	/* struct fib_rule_uid_range */
+	guint32 start;
+	guint32 end;
+} NMFibRuleUidRange;
+
+typedef struct {
+	/* struct fib_rule_port_range */
+	guint16 start;
+	guint16 end;
+} NMFibRulePortRange;
+
+typedef struct {
+	NMIPAddr src;                        /* FRA_SRC */
+	NMIPAddr dst;                        /* FRA_DST */
+	guint64  tun_id;                     /* betoh64(FRA_TUN_ID) */
+	guint32  table;                      /* (struct fib_rule_hdr).table, FRA_TABLE */
+	guint32  flags;                      /* (struct fib_rule_hdr).flags */
+	guint32  priority;                   /* RA_PRIORITY */
+	guint32  fwmark;                     /* FRA_FWMARK */
+	guint32  fwmask;                     /* FRA_FWMASK */
+	guint32  goto_target;                /* FRA_GOTO */
+	guint32  flow;                       /* FRA_FLOW */
+	guint32  suppress_prefixlen_inverse; /* ~(FRA_SUPPRESS_PREFIXLEN) */
+	guint32  suppress_ifgroup_inverse;   /* ~(FRA_SUPPRESS_IFGROUP) */
+	NMFibRuleUidRange uid_range;         /* FRA_UID_RANGE */
+	NMFibRulePortRange sport_range;      /* FRA_SPORT_RANGE */
+	NMFibRulePortRange dport_range;      /* FRA_DPORT_RANGE */
+	char     iifname[NMP_IFNAMSIZ];      /* FRA_IIFNAME */
+	char     oifname[NMP_IFNAMSIZ];      /* FRA_OIFNAME */
+	guint8   addr_family;                /* (struct fib_rule_hdr).family */
+	guint8   action;                     /* (struct fib_rule_hdr).action */
+	guint8   tos;                        /* (struct fib_rule_hdr).tos */
+	guint8   src_len;                    /* (struct fib_rule_hdr).src_len */
+	guint8   dst_len;                    /* (struct fib_rule_hdr).dst_len */
+	guint8   l3mdev;                     /* FRA_L3MDEV */
+	guint8   protocol;                   /* FRA_PROTOCOL */
+	guint8   ip_proto;                   /* FRA_IP_PROTO */
+
+	bool     uid_range_has:1;            /* has(FRA_UID_RANGE) */
+} NMPlatformRoutingRule;
 
 typedef struct {
 	__NMPlatformObjWithIfindex_COMMON;
@@ -1012,6 +1063,7 @@ typedef struct {
 #define NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED "ip6-address-changed"
 #define NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED "ip4-route-changed"
 #define NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED "ip6-route-changed"
+#define NM_PLATFORM_SIGNAL_ROUTING_RULE_CHANGED "routing-rule-changed"
 #define NM_PLATFORM_SIGNAL_QDISC_CHANGED "qdisc-changed"
 #define NM_PLATFORM_SIGNAL_TFILTER_CHANGED "tfilter-changed"
 
@@ -1521,6 +1573,7 @@ const char *nm_platform_ip4_address_to_string (const NMPlatformIP4Address *addre
 const char *nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *buf, gsize len);
 const char *nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsize len);
 const char *nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsize len);
+const char *nm_platform_routing_rule_to_string (const NMPlatformRoutingRule *routing_rule, char *buf, gsize len);
 const char *nm_platform_qdisc_to_string (const NMPlatformQdisc *qdisc, char *buf, gsize len);
 const char *nm_platform_tfilter_to_string (const NMPlatformTfilter *tfilter, char *buf, gsize len);
 const char *nm_platform_vf_to_string (const NMPlatformVF *vf, char *buf, gsize len);
@@ -1565,6 +1618,14 @@ nm_platform_ip6_route_cmp_full (const NMPlatformIP6Route *a, const NMPlatformIP6
 	return nm_platform_ip6_route_cmp (a, b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
 }
 
+int nm_platform_routing_rule_cmp (const NMPlatformRoutingRule *a, const NMPlatformRoutingRule *b, NMPlatformRoutingRuleCmpType cmp_type);
+
+static inline int
+nm_platform_routing_rule_cmp_full (const NMPlatformRoutingRule *a, const NMPlatformRoutingRule *b)
+{
+	return nm_platform_routing_rule_cmp (a, b, NM_PLATFORM_ROUTING_RULE_CMP_TYPE_FULL);
+}
+
 int nm_platform_qdisc_cmp (const NMPlatformQdisc *a, const NMPlatformQdisc *b);
 int nm_platform_tfilter_cmp (const NMPlatformTfilter *a, const NMPlatformTfilter *b);
 
@@ -1573,6 +1634,7 @@ void nm_platform_ip4_address_hash_update (const NMPlatformIP4Address *obj, NMHas
 void nm_platform_ip6_address_hash_update (const NMPlatformIP6Address *obj, NMHashState *h);
 void nm_platform_ip4_route_hash_update (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpType cmp_type, NMHashState *h);
 void nm_platform_ip6_route_hash_update (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpType cmp_type, NMHashState *h);
+void nm_platform_routing_rule_hash_update (const NMPlatformRoutingRule *obj, NMPlatformRoutingRuleCmpType cmp_type, NMHashState *h);
 void nm_platform_lnk_gre_hash_update (const NMPlatformLnkGre *obj, NMHashState *h);
 void nm_platform_lnk_infiniband_hash_update (const NMPlatformLnkInfiniband *obj, NMHashState *h);
 void nm_platform_lnk_ip6tnl_hash_update (const NMPlatformLnkIp6Tnl *obj, NMHashState *h);

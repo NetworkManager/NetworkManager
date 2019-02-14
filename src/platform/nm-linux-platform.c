@@ -26,6 +26,7 @@
 #include <endian.h>
 #include <fcntl.h>
 #include <libudev.h>
+#include <linux/fib_rules.h>
 #include <linux/ip.h>
 #include <linux/if_arp.h>
 #include <linux/if_link.h>
@@ -164,6 +165,19 @@ G_STATIC_ASSERT (RTA_MAX == (__RTA_MAX - 1));
 
 /*****************************************************************************/
 
+#define FRA_TUN_ID              12
+#define FRA_SUPPRESS_IFGROUP    13
+#define FRA_SUPPRESS_PREFIXLEN  14
+#define FRA_PAD                 18
+#define FRA_L3MDEV              19
+#define FRA_UID_RANGE           20
+#define FRA_PROTOCOL            21
+#define FRA_IP_PROTO            22
+#define FRA_SPORT_RANGE         23
+#define FRA_DPORT_RANGE         24
+
+/*****************************************************************************/
+
 #define IFLA_MACSEC_UNSPEC              0
 #define IFLA_MACSEC_SCI                 1
 #define IFLA_MACSEC_PORT                2
@@ -291,8 +305,10 @@ typedef enum {
 	REFRESH_ALL_TYPE_IP6_ADDRESSES     = 2,
 	REFRESH_ALL_TYPE_IP4_ROUTES        = 3,
 	REFRESH_ALL_TYPE_IP6_ROUTES        = 4,
-	REFRESH_ALL_TYPE_QDISCS            = 5,
-	REFRESH_ALL_TYPE_TFILTERS          = 6,
+	REFRESH_ALL_TYPE_ROUTING_RULES_IP4 = 5,
+	REFRESH_ALL_TYPE_ROUTING_RULES_IP6 = 6,
+	REFRESH_ALL_TYPE_QDISCS            = 7,
+	REFRESH_ALL_TYPE_TFILTERS          = 8,
 
 	_REFRESH_ALL_TYPE_NUM,
 } RefreshAllType;
@@ -313,22 +329,28 @@ typedef enum {
 	DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES     = 1 << F (2, REFRESH_ALL_TYPE_IP6_ADDRESSES),
 	DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES        = 1 << F (3, REFRESH_ALL_TYPE_IP4_ROUTES),
 	DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES        = 1 << F (4, REFRESH_ALL_TYPE_IP6_ROUTES),
-	DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS            = 1 << F (5, REFRESH_ALL_TYPE_QDISCS),
-	DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS          = 1 << F (6, REFRESH_ALL_TYPE_TFILTERS),
+	DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP4 = 1 << F (5, REFRESH_ALL_TYPE_ROUTING_RULES_IP4),
+	DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP6 = 1 << F (6, REFRESH_ALL_TYPE_ROUTING_RULES_IP6),
+	DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS            = 1 << F (7, REFRESH_ALL_TYPE_QDISCS),
+	DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS          = 1 << F (8, REFRESH_ALL_TYPE_TFILTERS),
 #undef F
 
-	DELAYED_ACTION_TYPE_REFRESH_LINK                  = 1 <<  7,
-	DELAYED_ACTION_TYPE_MASTER_CONNECTED              = 1 <<  8,
-	DELAYED_ACTION_TYPE_READ_NETLINK                  = 1 <<  9,
-	DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE          = 1 << 10,
+	DELAYED_ACTION_TYPE_REFRESH_LINK                  = 1 <<  9,
+	DELAYED_ACTION_TYPE_MASTER_CONNECTED              = 1 << 10,
+	DELAYED_ACTION_TYPE_READ_NETLINK                  = 1 << 11,
+	DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE          = 1 << 12,
 
 	__DELAYED_ACTION_TYPE_MAX,
+
+	DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL = DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP4 |
+	                                                    DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP6,
 
 	DELAYED_ACTION_TYPE_REFRESH_ALL                   = DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS |
 	                                                    DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES |
 	                                                    DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES |
 	                                                    DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
 	                                                    DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES |
+	                                                    DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL |
 	                                                    DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS |
 	                                                    DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,
 
@@ -3355,6 +3377,165 @@ rta_multipath_done:
 }
 
 static NMPObject *
+_new_from_nl_routing_rule (struct nlmsghdr *nlh, gboolean id_only)
+{
+	static const struct nla_policy policy[] = {
+		[FRA_UNSPEC]             = { },
+		[FRA_DST]                = { /* struct in_addr, struct in6_addr */ },
+		[FRA_SRC]                = { /* struct in_addr, struct in6_addr */ },
+		[FRA_IIFNAME]            = { .type   = NLA_STRING,
+		                             .maxlen = IFNAMSIZ, },
+		[FRA_GOTO]               = { .type   = NLA_U32, },
+		[FRA_UNUSED2]            = { },
+		[FRA_PRIORITY]           = { .type   = NLA_U32, },
+		[FRA_UNUSED3]            = { },
+		[FRA_UNUSED4]            = { },
+		[FRA_UNUSED5]            = { },
+		[FRA_FWMARK]             = { .type   = NLA_U32, },
+		[FRA_FLOW]               = { .type   = NLA_U32, },
+		[FRA_TUN_ID]             = { .type   = NLA_U64, },
+		[FRA_SUPPRESS_IFGROUP]   = { .type   = NLA_U32, },
+		[FRA_SUPPRESS_PREFIXLEN] = { .type   = NLA_U32, },
+		[FRA_TABLE]              = { .type   = NLA_U32, },
+		[FRA_FWMASK]             = { .type   = NLA_U32, },
+		[FRA_OIFNAME]            = { .type   = NLA_STRING,
+		                             .maxlen = IFNAMSIZ, },
+		[FRA_PAD]                = { .type   = NLA_U32, },
+		[FRA_L3MDEV]             = { .type   = NLA_U8, },
+		[FRA_UID_RANGE]          = { .minlen = sizeof(NMFibRuleUidRange),
+		                             .maxlen = sizeof(NMFibRuleUidRange), },
+		[FRA_PROTOCOL]           = { .type   = NLA_U8, },
+		[FRA_IP_PROTO]           = { .type   = NLA_U8, },
+		[FRA_SPORT_RANGE]        = { .minlen = sizeof(NMFibRulePortRange),
+		                             .maxlen = sizeof(NMFibRulePortRange), },
+		[FRA_DPORT_RANGE]        = { .minlen = sizeof(NMFibRulePortRange),
+		                             .maxlen = sizeof(NMFibRulePortRange), },
+	};
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
+	const struct fib_rule_hdr *frh;
+	NMPlatformRoutingRule *props;
+	nm_auto_nmpobj NMPObject *obj = NULL;
+	int addr_family;
+	guint8 addr_size;
+
+	if (nlmsg_parse_arr (nlh, sizeof (*frh), tb, policy) < 0)
+		return NULL;
+
+	frh = nlmsg_data (nlh);
+
+	addr_family = frh->family;
+
+	if (!NM_IN_SET (addr_family, AF_INET, AF_INET6)) {
+		/* we don't care about other address families. */
+		return NULL;
+	}
+
+	addr_size = nm_utils_addr_family_to_size (addr_family);
+
+	obj = nmp_object_new (NMP_OBJECT_TYPE_ROUTING_RULE, NULL);
+	props = &obj->routing_rule;
+
+	props->addr_family = addr_family;
+	props->action      = frh->action;
+	props->flags       = frh->flags;
+	props->tos         = frh->tos;
+
+	props->table =   tb[FRA_TABLE]
+	               ? nla_get_u32 (tb[FRA_TABLE])
+	               : frh->table;
+
+	if (tb[FRA_SUPPRESS_PREFIXLEN])
+		props->suppress_prefixlen_inverse = ~nla_get_u32 (tb[FRA_SUPPRESS_PREFIXLEN]);
+
+	if (tb[FRA_SUPPRESS_IFGROUP])
+		props->suppress_ifgroup_inverse = ~nla_get_u32 (tb[FRA_SUPPRESS_IFGROUP]);
+
+	if (tb[FRA_IIFNAME])
+		nla_strlcpy (props->iifname, tb[FRA_IIFNAME], sizeof (props->iifname));
+
+	if (tb[FRA_OIFNAME])
+		nla_strlcpy (props->oifname, tb[FRA_OIFNAME], sizeof (props->oifname));
+
+	if (tb[FRA_PRIORITY])
+		props->priority = nla_get_u32 (tb[FRA_PRIORITY]);
+
+	if (tb[FRA_FWMARK])
+		props->fwmark = nla_get_u32 (tb[FRA_FWMARK]);
+
+	if (tb[FRA_FWMASK])
+		props->fwmask = nla_get_u32 (tb[FRA_FWMASK]);
+
+	if (tb[FRA_GOTO])
+		props->goto_target = nla_get_u32 (tb[FRA_GOTO]);
+
+	props->src_len = frh->src_len;
+	if (props->src_len > addr_size * 8)
+		return NULL;
+	if (!tb[FRA_SRC]) {
+		if (props->src_len > 0)
+			return NULL;
+	} else if (!nm_ip_addr_set_from_untrusted (addr_family,
+	                                           &props->src,
+	                                           nla_data (tb[FRA_SRC]),
+	                                           nla_len (tb[FRA_SRC]),
+	                                           NULL))
+		return NULL;
+
+	props->dst_len = frh->dst_len;
+	if (props->dst_len > addr_size * 8)
+		return NULL;
+	if (!tb[FRA_DST]) {
+		if (props->dst_len > 0)
+			return NULL;
+	} else if (!nm_ip_addr_set_from_untrusted (addr_family,
+	                                           &props->dst,
+	                                           nla_data (tb[FRA_DST]),
+	                                           nla_len (tb[FRA_DST]),
+	                                           NULL))
+		return NULL;
+
+	if (tb[FRA_FLOW])
+		props->flow = nla_get_u32 (tb[FRA_FLOW]);
+
+	if (tb[FRA_TUN_ID])
+		props->tun_id = nla_get_be64 (tb[FRA_TUN_ID]);
+
+	if (tb[FRA_L3MDEV]) {
+		/* actually, kernel only allows this attribute to be missing or
+		 * "1". Still, encode it as full uint8.
+		 *
+		 * Note that FRA_L3MDEV and FRA_TABLE are mutally exclusive. */
+		props->l3mdev = nla_get_u8 (tb[FRA_L3MDEV]);
+	}
+
+	if (tb[FRA_PROTOCOL])
+		props->protocol = nla_get_u8 (tb[FRA_PROTOCOL]);
+	else
+		nm_assert (props->protocol == RTPROT_UNSPEC);
+
+	if (tb[FRA_IP_PROTO])
+		props->ip_proto = nla_get_u8 (tb[FRA_IP_PROTO]);
+
+	G_STATIC_ASSERT_EXPR (sizeof (NMFibRulePortRange) == 4);
+	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMFibRulePortRange, start) == 0);
+	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMFibRulePortRange, end)   == 2);
+
+	nla_memcpy_checked_size (&props->sport_range, tb[FRA_SPORT_RANGE], sizeof (props->sport_range));
+	nla_memcpy_checked_size (&props->dport_range, tb[FRA_DPORT_RANGE], sizeof (props->dport_range));
+
+	G_STATIC_ASSERT_EXPR (sizeof (NMFibRuleUidRange) == 8);
+	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMFibRuleUidRange, start) == 0);
+	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMFibRuleUidRange, end) == 4);
+
+	if (tb[FRA_UID_RANGE]) {
+		nla_memcpy_checked_size (&props->uid_range, tb[FRA_UID_RANGE], sizeof (props->uid_range));
+		props->uid_range_has = TRUE;
+	}
+
+	return g_steal_pointer (&obj);
+}
+
+static NMPObject *
 _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 {
 	static const struct nla_policy policy[] = {
@@ -3453,6 +3634,10 @@ nmp_object_new_from_nl (NMPlatform *platform, const NMPCache *cache, struct nl_m
 	case RTM_DELROUTE:
 	case RTM_GETROUTE:
 		return _new_from_nl_route (msghdr, id_only);
+	case RTM_NEWRULE:
+	case RTM_DELRULE:
+	case RTM_GETRULE:
+		return _new_from_nl_routing_rule (msghdr, id_only);
 	case RTM_NEWQDISC:
 	case RTM_DELQDISC:
 	case RTM_GETQDISC:
@@ -4372,6 +4557,8 @@ refresh_all_type_get_info (RefreshAllType refresh_all_type)
 		R (REFRESH_ALL_TYPE_IP6_ADDRESSES,     NMP_OBJECT_TYPE_IP6_ADDRESS,  AF_UNSPEC),
 		R (REFRESH_ALL_TYPE_IP4_ROUTES,        NMP_OBJECT_TYPE_IP4_ROUTE,    AF_UNSPEC),
 		R (REFRESH_ALL_TYPE_IP6_ROUTES,        NMP_OBJECT_TYPE_IP6_ROUTE,    AF_UNSPEC),
+		R (REFRESH_ALL_TYPE_ROUTING_RULES_IP4, NMP_OBJECT_TYPE_ROUTING_RULE, AF_INET),
+		R (REFRESH_ALL_TYPE_ROUTING_RULES_IP6, NMP_OBJECT_TYPE_ROUTING_RULE, AF_INET6),
 		R (REFRESH_ALL_TYPE_QDISCS,            NMP_OBJECT_TYPE_QDISC,        AF_UNSPEC),
 		R (REFRESH_ALL_TYPE_TFILTERS,          NMP_OBJECT_TYPE_TFILTER,      AF_UNSPEC),
 #undef R
@@ -4391,6 +4578,8 @@ _NM_UTILS_LOOKUP_DEFINE (static, delayed_action_type_to_refresh_all_type, Delaye
 	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES,     REFRESH_ALL_TYPE_IP6_ADDRESSES),
 	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES,        REFRESH_ALL_TYPE_IP4_ROUTES),
 	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,        REFRESH_ALL_TYPE_IP6_ROUTES),
+	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP4, REFRESH_ALL_TYPE_ROUTING_RULES_IP4),
+	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP6, REFRESH_ALL_TYPE_ROUTING_RULES_IP6),
 	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS,            REFRESH_ALL_TYPE_QDISCS),
 	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,          REFRESH_ALL_TYPE_TFILTERS),
 	NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER (),
@@ -4410,7 +4599,7 @@ delayed_action_type_from_refresh_all_type (RefreshAllType refresh_all_type)
 	return t;
 }
 
-static DelayedActionType
+static RefreshAllType
 refresh_all_type_from_needle_object (const NMPObject *obj_needle)
 {
 	switch (NMP_OBJECT_GET_TYPE (obj_needle)) {
@@ -4421,6 +4610,13 @@ refresh_all_type_from_needle_object (const NMPObject *obj_needle)
 	case NMP_OBJECT_TYPE_IP6_ROUTE:   return REFRESH_ALL_TYPE_IP6_ROUTES;
 	case NMP_OBJECT_TYPE_QDISC:       return REFRESH_ALL_TYPE_QDISCS;
 	case NMP_OBJECT_TYPE_TFILTER:     return REFRESH_ALL_TYPE_TFILTERS;
+	case NMP_OBJECT_TYPE_ROUTING_RULE:
+		switch (NMP_OBJECT_CAST_ROUTING_RULE (obj_needle)->addr_family) {
+		case AF_INET:  return REFRESH_ALL_TYPE_ROUTING_RULES_IP4;
+		case AF_INET6: return REFRESH_ALL_TYPE_ROUTING_RULES_IP6;
+		}
+		nm_assert_not_reached ();
+		return 0;
 	default:
 		nm_assert_not_reached ();
 		return 0;
@@ -4438,6 +4634,12 @@ refresh_all_type_init_lookup (RefreshAllType refresh_all_type,
 	refresh_all_info = refresh_all_type_get_info (refresh_all_type);
 
 	nm_assert (refresh_all_info);
+
+	if (NM_IN_SET (refresh_all_info->obj_type, NMP_OBJECT_TYPE_ROUTING_RULE)) {
+		return nmp_lookup_init_object_by_addr_family (lookup,
+		                                              refresh_all_info->obj_type,
+		                                              refresh_all_info->addr_family);
+	}
 
 	/* not yet implemented. */
 	nm_assert (refresh_all_info->addr_family == AF_UNSPEC);
@@ -4459,6 +4661,8 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (delayed_action_to_string, DelayedActionType,
 	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES,     "refresh-all-ip6-addresses"),
 	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES,        "refresh-all-ip4-routes"),
 	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,        "refresh-all-ip6-routes"),
+	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP4, "refresh-all-routing-rules-ip4"),
+	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP6, "refresh-all-routing-rules-ip6"),
 	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS,            "refresh-all-qdiscs"),
 	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,          "refresh-all-tfilters"),
 	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_LINK,                  "refresh-link"),
@@ -4467,6 +4671,7 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (delayed_action_to_string, DelayedActionType,
 	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE,          "wait-for-nl-response"),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (DELAYED_ACTION_TYPE_NONE),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (DELAYED_ACTION_TYPE_REFRESH_ALL),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (__DELAYED_ACTION_TYPE_MAX),
 );
 
@@ -4955,6 +5160,7 @@ cache_on_change (NMPlatform *platform,
 				                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES |
 				                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
 				                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES |
+				                         DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL |
 				                         DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS |
 				                         DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,
 				                         NULL);
@@ -5313,6 +5519,7 @@ _nl_msg_new_dump (NMPObjectType obj_type,
 	case NMP_OBJECT_TYPE_IP6_ADDRESS:
 	case NMP_OBJECT_TYPE_IP4_ROUTE:
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
+	case NMP_OBJECT_TYPE_ROUTING_RULE:
 		{
 			const struct rtgenmsg gmsg = {
 				.rtgen_family = preferred_addr_family,
@@ -5333,12 +5540,30 @@ static void
 do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType action_type)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	DelayedActionType action_type_prune;
 	DelayedActionType iflags;
 
 	nm_assert (!NM_FLAGS_ANY (action_type, ~DELAYED_ACTION_TYPE_REFRESH_ALL));
 	action_type &= DELAYED_ACTION_TYPE_REFRESH_ALL;
 
-	FOR_EACH_DELAYED_ACTION (iflags, action_type) {
+	action_type_prune = action_type;
+
+	/* calling nmp_cache_dirty_set_all_main() with a non-main lookup-index requires an extra
+	 * cache lookup for every entry.
+	 *
+	 * Avoid that, by special casing routing-rules here. */
+	if (NM_FLAGS_ALL (action_type_prune, DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL)) {
+		NMPLookup lookup;
+
+		priv->pruning[REFRESH_ALL_TYPE_ROUTING_RULES_IP4] += 1;
+		priv->pruning[REFRESH_ALL_TYPE_ROUTING_RULES_IP6] += 1;
+		nmp_lookup_init_obj_type (&lookup, NMP_OBJECT_TYPE_ROUTING_RULE);
+		nmp_cache_dirty_set_all_main (nm_platform_get_cache (platform),
+		                              &lookup);
+		action_type_prune &= ~DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL;
+	}
+
+	FOR_EACH_DELAYED_ACTION (iflags, action_type_prune) {
 		RefreshAllType refresh_all_type = delayed_action_type_to_refresh_all_type (iflags);
 		NMPLookup lookup;
 
@@ -5495,6 +5720,7 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 	if (NM_IN_SET (msghdr->nlmsg_type, RTM_DELLINK,
 	                                   RTM_DELADDR,
 	                                   RTM_DELROUTE,
+	                                   RTM_DELRULE,
 	                                   RTM_DELQDISC,
 	                                   RTM_DELTFILTER)) {
 		/* The event notifies about a deleted object. We don't need to initialize all
@@ -5513,6 +5739,7 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 	    && NM_IN_SET (msghdr->nlmsg_type, RTM_NEWADDR,
 	                                      RTM_NEWLINK,
 	                                      RTM_NEWROUTE,
+	                                      RTM_NEWRULE,
 	                                      RTM_NEWQDISC,
 	                                      RTM_NEWTFILTER)) {
 		is_dump = delayed_action_refresh_all_in_progress (platform,
@@ -5532,10 +5759,11 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 
 		switch (msghdr->nlmsg_type) {
 
-		case RTM_NEWLINK:
-		case RTM_NEWADDR:
 		case RTM_GETLINK:
+		case RTM_NEWADDR:
+		case RTM_NEWLINK:
 		case RTM_NEWQDISC:
+		case RTM_NEWRULE:
 		case RTM_NEWTFILTER:
 			cache_op = nmp_cache_update_netlink (cache, obj, is_dump, &obj_old, &obj_new);
 			if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
@@ -5630,10 +5858,11 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 			break;
 		}
 
-		case RTM_DELLINK:
 		case RTM_DELADDR:
-		case RTM_DELROUTE:
+		case RTM_DELLINK:
 		case RTM_DELQDISC:
+		case RTM_DELROUTE:
+		case RTM_DELRULE:
 		case RTM_DELTFILTER:
 			cache_op = nmp_cache_remove_netlink (cache, obj, &obj_old, &obj_new);
 			if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
@@ -7817,7 +8046,8 @@ qdisc_add (NMPlatform *platform,
 
 	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
 		return 0;
-
+	if (seq_result < 0)
+		return seq_result;
 	return -NME_UNSPEC;
 }
 
@@ -8134,6 +8364,7 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 					                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES |
 					                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
 					                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES |
+					                         DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL |
 					                         DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS |
 					                         DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,
 					                         NULL);
@@ -8399,9 +8630,13 @@ constructed (GObject *_object)
 	g_assert (!nle);
 
 	nle = nl_socket_add_memberships (priv->nlh,
+	                                 RTNLGRP_IPV4_IFADDR,
+	                                 RTNLGRP_IPV4_ROUTE,
+	                                 RTNLGRP_IPV4_RULE,
+	                                 RTNLGRP_IPV6_RULE,
+	                                 RTNLGRP_IPV6_IFADDR,
+	                                 RTNLGRP_IPV6_ROUTE,
 	                                 RTNLGRP_LINK,
-	                                 RTNLGRP_IPV4_IFADDR, RTNLGRP_IPV6_IFADDR,
-	                                 RTNLGRP_IPV4_ROUTE,  RTNLGRP_IPV6_ROUTE,
 	                                 RTNLGRP_TC,
 	                                 0);
 	g_assert (!nle);
@@ -8428,6 +8663,7 @@ constructed (GObject *_object)
 	                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES |
 	                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
 	                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES |
+	                         DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL |
 	                         DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS |
 	                         DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,
 	                         NULL);

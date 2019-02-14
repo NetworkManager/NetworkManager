@@ -174,6 +174,11 @@ typedef enum { /*< skip >*/
 	 * cache-resync. */
 	NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID,
 
+	/* a filter for objects that track an explicit address family.
+	 *
+	 * Note that currently on NMPObjectRoutingRule is indexed by this filter. */
+	NMP_CACHE_ID_TYPE_OBJECT_BY_ADDR_FAMILY,
+
 	__NMP_CACHE_ID_TYPE_MAX,
 	NMP_CACHE_ID_TYPE_MAX = __NMP_CACHE_ID_TYPE_MAX - 1,
 } NMPCacheIdType;
@@ -325,6 +330,10 @@ typedef struct {
 } NMPObjectIP6Route;
 
 typedef struct {
+	NMPlatformRoutingRule _public;
+} NMPObjectRoutingRule;
+
+typedef struct {
 	NMPlatformQdisc _public;
 } NMPObjectQdisc;
 
@@ -391,6 +400,9 @@ struct _NMPObject {
 		NMPlatformIP6Route      ip6_route;
 		NMPObjectIP4Route       _ip4_route;
 		NMPObjectIP6Route       _ip6_route;
+
+		NMPlatformRoutingRule   routing_rule;
+		NMPObjectRoutingRule    _routing_rule;
 
 		NMPlatformQdisc         qdisc;
 		NMPObjectQdisc          _qdisc;
@@ -595,6 +607,14 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX (NMPObjectType obj_type)
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ip6_route : NULL; \
 	})
 
+#define NMP_OBJECT_CAST_ROUTING_RULE(obj) \
+	({ \
+		typeof (obj) _obj = (obj); \
+		\
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_ROUTING_RULE); \
+		_obj ? &NM_CONSTCAST (NMPObject, _obj)->routing_rule : NULL; \
+	})
+
 #define NMP_OBJECT_CAST_QDISC(obj) \
 	({ \
 		typeof (obj) _obj = (obj); \
@@ -764,6 +784,9 @@ const NMPLookup *nmp_lookup_init_ip6_route_by_weak_id (NMPLookup *lookup,
                                                        guint32 metric,
                                                        const struct in6_addr *src,
                                                        guint8 src_plen);
+const NMPLookup *nmp_lookup_init_object_by_addr_family (NMPLookup *lookup,
+                                                        NMPObjectType obj_type,
+                                                        int addr_family);
 
 GArray *nmp_cache_lookup_to_array (const NMDedupMultiHeadEntry *head_entry,
                                    NMPObjectType obj_type,
