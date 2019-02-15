@@ -2333,7 +2333,7 @@ powered_changed (NMDeviceIwd *self, gboolean new_powered)
 			value = g_dbus_proxy_get_cached_property (priv->dbus_device_proxy, "State");
 			if (value) {
 				g_variant_unref (value);
-				interface = g_object_ref (priv->dbus_device_proxy);
+				interface = g_object_ref (G_DBUS_INTERFACE (priv->dbus_device_proxy));
 			} else {
 				_LOGE (LOGD_WIFI, "Interface %s not found on obj %s",
 				       NM_IWD_STATION_INTERFACE,
