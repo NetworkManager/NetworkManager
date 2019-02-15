@@ -21,23 +21,23 @@
 
 #include "nm-linux-platform.h"
 
-#include <poll.h>
-#include <endian.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <fcntl.h>
-#include <dlfcn.h>
 #include <arpa/inet.h>
-#include <netinet/icmp6.h>
-#include <netinet/in.h>
+#include <dlfcn.h>
+#include <endian.h>
+#include <fcntl.h>
+#include <libudev.h>
 #include <linux/ip.h>
 #include <linux/if_arp.h>
 #include <linux/if_link.h>
 #include <linux/if_tun.h>
 #include <linux/if_tunnel.h>
 #include <linux/ip6_tunnel.h>
-#include <libudev.h>
+#include <netinet/icmp6.h>
+#include <netinet/in.h>
+#include <poll.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 #include "nm-utils.h"
 #include "nm-core-internal.h"
