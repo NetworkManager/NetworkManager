@@ -733,7 +733,7 @@ _genl_parse_getfamily (struct nl_msg *msg, void *arg)
 	struct nlmsghdr *nlh = nlmsg_hdr (msg);
 	gint32 *response_data = arg;
 
-	if (genlmsg_parse (nlh, 0, tb, CTRL_ATTR_MAX, ctrl_policy))
+	if (genlmsg_parse (nlh, 0, tb, CTRL_ATTR_MAX, ctrl_policy) < 0)
 		return NL_SKIP;
 
 	if (tb[CTRL_ATTR_FAMILY_ID])
