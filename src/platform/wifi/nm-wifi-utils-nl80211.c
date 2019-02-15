@@ -181,8 +181,10 @@ nl80211_iface_info_handler (struct nl_msg *msg, void *arg)
 	struct genlmsghdr *gnlh = nlmsg_data (nlmsg_hdr (msg));
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 
-	if (nla_parse (tb, NL80211_ATTR_MAX, genlmsg_attrdata (gnlh, 0),
-	               genlmsg_attrlen (gnlh, 0), NULL) < 0)
+	if (nla_parse_arr (tb,
+	                   genlmsg_attrdata (gnlh, 0),
+	                   genlmsg_attrlen (gnlh, 0),
+	                   NULL) < 0)
 		return NL_SKIP;
 
 	if (!tb[NL80211_ATTR_IFTYPE])
@@ -276,16 +278,18 @@ nl80211_get_wake_on_wlan_handler (struct nl_msg *msg, void *arg)
 	struct nlattr *trig[NUM_NL80211_WOWLAN_TRIG];
 	struct genlmsghdr *gnlh = nlmsg_data (nlmsg_hdr (msg));
 
-	nla_parse (attrs, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-	           genlmsg_attrlen(gnlh, 0), NULL);
+	nla_parse_arr (attrs,
+	               genlmsg_attrdata(gnlh, 0),
+	               genlmsg_attrlen(gnlh, 0),
+	               NULL);
 
 	if (!attrs[NL80211_ATTR_WOWLAN_TRIGGERS])
 		return NL_SKIP;
 
-	nla_parse (trig, MAX_NL80211_WOWLAN_TRIG,
-	           nla_data (attrs[NL80211_ATTR_WOWLAN_TRIGGERS]),
-	           nla_len (attrs[NL80211_ATTR_WOWLAN_TRIGGERS]),
-	           NULL);
+	nla_parse_arr (trig,
+	               nla_data (attrs[NL80211_ATTR_WOWLAN_TRIGGERS]),
+	               nla_len (attrs[NL80211_ATTR_WOWLAN_TRIGGERS]),
+	               NULL);
 
 	*wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE;
 	if (trig[NL80211_WOWLAN_TRIG_ANY])
@@ -412,33 +416,35 @@ find_ssid (guint8 *ies, guint32 ies_len,
 static int
 nl80211_bss_dump_handler (struct nl_msg *msg, void *arg)
 {
+	static const struct nla_policy bss_policy[] = {
+		[NL80211_BSS_TSF]                  = { .type = NLA_U64 },
+		[NL80211_BSS_FREQUENCY]            = { .type = NLA_U32 },
+		[NL80211_BSS_BSSID]                = { .minlen = ETH_ALEN },
+		[NL80211_BSS_BEACON_INTERVAL]      = { .type = NLA_U16 },
+		[NL80211_BSS_CAPABILITY]           = { .type = NLA_U16 },
+		[NL80211_BSS_INFORMATION_ELEMENTS] = { },
+		[NL80211_BSS_SIGNAL_MBM]           = { .type = NLA_U32 },
+		[NL80211_BSS_SIGNAL_UNSPEC]        = { .type = NLA_U8 },
+		[NL80211_BSS_STATUS]               = { .type = NLA_U32 },
+	};
 	struct nl80211_bss_info *info = arg;
 	struct genlmsghdr *gnlh = nlmsg_data (nlmsg_hdr (msg));
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
-	struct nlattr *bss[NL80211_BSS_MAX + 1];
-	static const struct nla_policy bss_policy[NL80211_BSS_MAX + 1] = {
-		[NL80211_BSS_TSF] = { .type = NLA_U64 },
-		[NL80211_BSS_FREQUENCY] = { .type = NLA_U32 },
-		[NL80211_BSS_BSSID] = { .minlen = ETH_ALEN },
-		[NL80211_BSS_BEACON_INTERVAL] = { .type = NLA_U16 },
-		[NL80211_BSS_CAPABILITY] = { .type = NLA_U16 },
-		[NL80211_BSS_INFORMATION_ELEMENTS] = { },
-		[NL80211_BSS_SIGNAL_MBM] = { .type = NLA_U32 },
-		[NL80211_BSS_SIGNAL_UNSPEC] = { .type = NLA_U8 },
-		[NL80211_BSS_STATUS] = { .type = NLA_U32 },
-	};
+	struct nlattr *bss[G_N_ELEMENTS (bss_policy)];
 	guint32 status;
 
-	if (nla_parse (tb, NL80211_ATTR_MAX, genlmsg_attrdata (gnlh, 0),
-	               genlmsg_attrlen (gnlh, 0), NULL) < 0)
+	if (nla_parse_arr (tb,
+	                   genlmsg_attrdata (gnlh, 0),
+	                   genlmsg_attrlen (gnlh, 0),
+	                   NULL) < 0)
 		return NL_SKIP;
 
 	if (tb[NL80211_ATTR_BSS] == NULL)
 		return NL_SKIP;
 
-	if (nla_parse_nested (bss, NL80211_BSS_MAX,
-	                      tb[NL80211_ATTR_BSS],
-	                      bss_policy))
+	if (nla_parse_nested_arr (bss,
+	                          tb[NL80211_ATTR_BSS],
+	                          bss_policy))
 		return NL_SKIP;
 
 	if (bss[NL80211_BSS_STATUS] == NULL)
@@ -547,49 +553,50 @@ struct nl80211_station_info {
 static int
 nl80211_station_handler (struct nl_msg *msg, void *arg)
 {
+	static const struct nla_policy stats_policy[] = {
+		[NL80211_STA_INFO_INACTIVE_TIME] = { .type = NLA_U32 },
+		[NL80211_STA_INFO_RX_BYTES]      = { .type = NLA_U32 },
+		[NL80211_STA_INFO_TX_BYTES]      = { .type = NLA_U32 },
+		[NL80211_STA_INFO_RX_PACKETS]    = { .type = NLA_U32 },
+		[NL80211_STA_INFO_TX_PACKETS]    = { .type = NLA_U32 },
+		[NL80211_STA_INFO_SIGNAL]        = { .type = NLA_U8 },
+		[NL80211_STA_INFO_TX_BITRATE]    = { .type = NLA_NESTED },
+		[NL80211_STA_INFO_LLID]          = { .type = NLA_U16 },
+		[NL80211_STA_INFO_PLID]          = { .type = NLA_U16 },
+		[NL80211_STA_INFO_PLINK_STATE]   = { .type = NLA_U8 },
+	};
+	static const struct nla_policy rate_policy[] = {
+		[NL80211_RATE_INFO_BITRATE]      = { .type = NLA_U16 },
+		[NL80211_RATE_INFO_MCS]          = { .type = NLA_U8 },
+		[NL80211_RATE_INFO_40_MHZ_WIDTH] = { .type = NLA_FLAG },
+		[NL80211_RATE_INFO_SHORT_GI]     = { .type = NLA_FLAG },
+	};
+	struct nlattr *rinfo[G_N_ELEMENTS (rate_policy)];
+	struct nlattr *sinfo[G_N_ELEMENTS (stats_policy)];
 	struct nl80211_station_info *info = arg;
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct genlmsghdr *gnlh = nlmsg_data (nlmsg_hdr (msg));
-	struct nlattr *sinfo[NL80211_STA_INFO_MAX + 1];
-	struct nlattr *rinfo[NL80211_RATE_INFO_MAX + 1];
-	static const struct nla_policy stats_policy[NL80211_STA_INFO_MAX + 1] = {
-		[NL80211_STA_INFO_INACTIVE_TIME] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_RX_BYTES] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_TX_BYTES] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_RX_PACKETS] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_TX_PACKETS] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_SIGNAL] = { .type = NLA_U8 },
-		[NL80211_STA_INFO_TX_BITRATE] = { .type = NLA_NESTED },
-		[NL80211_STA_INFO_LLID] = { .type = NLA_U16 },
-		[NL80211_STA_INFO_PLID] = { .type = NLA_U16 },
-		[NL80211_STA_INFO_PLINK_STATE] = { .type = NLA_U8 },
-	};
 
-	static const struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
-		[NL80211_RATE_INFO_BITRATE] = { .type = NLA_U16 },
-		[NL80211_RATE_INFO_MCS] = { .type = NLA_U8 },
-		[NL80211_RATE_INFO_40_MHZ_WIDTH] = { .type = NLA_FLAG },
-		[NL80211_RATE_INFO_SHORT_GI] = { .type = NLA_FLAG },
-	};
-
-	if (nla_parse (tb, NL80211_ATTR_MAX, genlmsg_attrdata (gnlh, 0),
-	               genlmsg_attrlen (gnlh, 0), NULL) < 0)
+	if (nla_parse_arr (tb,
+	                   genlmsg_attrdata (gnlh, 0),
+	                   genlmsg_attrlen (gnlh, 0),
+	                   NULL) < 0)
 		return NL_SKIP;
 
 	if (tb[NL80211_ATTR_STA_INFO] == NULL)
 		return NL_SKIP;
 
-	if (nla_parse_nested (sinfo, NL80211_STA_INFO_MAX,
-	                      tb[NL80211_ATTR_STA_INFO],
-	                      stats_policy))
+	if (nla_parse_nested_arr (sinfo,
+	                          tb[NL80211_ATTR_STA_INFO],
+	                          stats_policy))
 		return NL_SKIP;
 
 	if (sinfo[NL80211_STA_INFO_TX_BITRATE] == NULL)
 		return NL_SKIP;
 
-	if (nla_parse_nested (rinfo, NL80211_RATE_INFO_MAX,
-	                      sinfo[NL80211_STA_INFO_TX_BITRATE],
-	                      rate_policy))
+	if (nla_parse_nested_arr (rinfo,
+	                          sinfo[NL80211_STA_INFO_TX_BITRATE],
+	                          rate_policy))
 		return NL_SKIP;
 
 	if (rinfo[NL80211_RATE_INFO_BITRATE] == NULL)
@@ -714,37 +721,40 @@ struct nl80211_device_info {
 
 static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 {
+	static const struct nla_policy freq_policy[] = {
+		[NL80211_FREQUENCY_ATTR_FREQ]         = { .type = NLA_U32 },
+		[NL80211_FREQUENCY_ATTR_DISABLED]     = { .type = NLA_FLAG },
+#ifdef NL80211_FREQUENCY_ATTR_NO_IR
+		[NL80211_FREQUENCY_ATTR_NO_IR]        = { .type = NLA_FLAG },
+#else
+		[NL80211_FREQUENCY_ATTR_PASSIVE_SCAN] = { .type = NLA_FLAG },
+		[NL80211_FREQUENCY_ATTR_NO_IBSS]      = { .type = NLA_FLAG },
+#endif
+		[NL80211_FREQUENCY_ATTR_RADAR]        = { .type = NLA_FLAG },
+		[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] = { .type = NLA_U32 },
+	};
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct genlmsghdr *gnlh = nlmsg_data (nlmsg_hdr (msg));
 	struct nl80211_device_info *info = arg;
 	NMWifiUtilsNl80211 *self = info->self;
 	struct nlattr *tb_band[NL80211_BAND_ATTR_MAX + 1];
-	struct nlattr *tb_freq[NL80211_FREQUENCY_ATTR_MAX + 1];
+	struct nlattr *tb_freq[G_N_ELEMENTS (freq_policy)];
 	struct nlattr *nl_band;
 	struct nlattr *nl_freq;
 	int rem_freq;
 	int rem_band;
 	int freq_idx;
-	static const struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
-		[NL80211_FREQUENCY_ATTR_FREQ] = { .type = NLA_U32 },
-		[NL80211_FREQUENCY_ATTR_DISABLED] = { .type = NLA_FLAG },
+
 #ifdef NL80211_FREQUENCY_ATTR_NO_IR
-		[NL80211_FREQUENCY_ATTR_NO_IR] = { .type = NLA_FLAG },
+	G_STATIC_ASSERT_EXPR (NL80211_FREQUENCY_ATTR_PASSIVE_SCAN == NL80211_FREQUENCY_ATTR_NO_IR && NL80211_FREQUENCY_ATTR_NO_IBSS == NL80211_FREQUENCY_ATTR_NO_IR);
 #else
-		[NL80211_FREQUENCY_ATTR_PASSIVE_SCAN] = { .type = NLA_FLAG },
-		[NL80211_FREQUENCY_ATTR_NO_IBSS] = { .type = NLA_FLAG },
-#endif
-		[NL80211_FREQUENCY_ATTR_RADAR] = { .type = NLA_FLAG },
-		[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] = { .type = NLA_U32 },
-	};
-#ifdef NL80211_FREQUENCY_ATTR_NO_IR
-	G_STATIC_ASSERT (NL80211_FREQUENCY_ATTR_PASSIVE_SCAN == NL80211_FREQUENCY_ATTR_NO_IR && NL80211_FREQUENCY_ATTR_NO_IBSS == NL80211_FREQUENCY_ATTR_NO_IR);
-#else
-	G_STATIC_ASSERT (NL80211_FREQUENCY_ATTR_PASSIVE_SCAN != NL80211_FREQUENCY_ATTR_NO_IBSS);
+	G_STATIC_ASSERT_EXPR (NL80211_FREQUENCY_ATTR_PASSIVE_SCAN != NL80211_FREQUENCY_ATTR_NO_IBSS);
 #endif
 
-	if (nla_parse (tb, NL80211_ATTR_MAX, genlmsg_attrdata (gnlh, 0),
-	               genlmsg_attrlen (gnlh, 0), NULL) < 0)
+	if (nla_parse_arr (tb,
+	                   genlmsg_attrdata (gnlh, 0),
+	                   genlmsg_attrlen (gnlh, 0),
+	                   NULL) < 0)
 		return NL_SKIP;
 
 	if (   tb[NL80211_ATTR_WIPHY] == NULL
@@ -790,14 +800,17 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 	info->num_freqs = 0;
 
 	nla_for_each_nested (nl_band, tb[NL80211_ATTR_WIPHY_BANDS], rem_band) {
-		if (nla_parse_nested (tb_band, NL80211_BAND_ATTR_MAX, nl_band,
-		                      NULL) < 0)
+		if (nla_parse_nested_arr (tb_band,
+		                          nl_band,
+		                          NULL) < 0)
 			return NL_SKIP;
 
-		nla_for_each_nested (nl_freq, tb_band[NL80211_BAND_ATTR_FREQS],
+		nla_for_each_nested (nl_freq,
+		                     tb_band[NL80211_BAND_ATTR_FREQS],
 		                     rem_freq) {
-			if (nla_parse_nested (tb_freq, NL80211_FREQUENCY_ATTR_MAX,
-			                      nl_freq, freq_policy) < 0)
+			if (nla_parse_nested_arr (tb_freq,
+			                          nl_freq,
+			                          freq_policy) < 0)
 				continue;
 
 			if (!tb_freq[NL80211_FREQUENCY_ATTR_FREQ])
@@ -812,21 +825,22 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 
 	freq_idx = 0;
 	nla_for_each_nested (nl_band, tb[NL80211_ATTR_WIPHY_BANDS], rem_band) {
-		if (nla_parse_nested (tb_band, NL80211_BAND_ATTR_MAX, nl_band,
-		                      NULL) < 0)
+		if (nla_parse_nested_arr (tb_band,
+		                          nl_band,
+		                          NULL) < 0)
 			return NL_SKIP;
 
 		nla_for_each_nested (nl_freq, tb_band[NL80211_BAND_ATTR_FREQS],
 		                    rem_freq) {
-			if (nla_parse_nested (tb_freq, NL80211_FREQUENCY_ATTR_MAX,
-			                      nl_freq, freq_policy) < 0)
+			if (nla_parse_nested_arr (tb_freq,
+			                          nl_freq,
+			                          freq_policy) < 0)
 				continue;
 
 			if (!tb_freq[NL80211_FREQUENCY_ATTR_FREQ])
 				continue;
 
-			info->freqs[freq_idx] =
-				nla_get_u32 (tb_freq[NL80211_FREQUENCY_ATTR_FREQ]);
+			info->freqs[freq_idx] = nla_get_u32 (tb_freq[NL80211_FREQUENCY_ATTR_FREQ]);
 
 			info->caps |= NM_WIFI_DEVICE_CAP_FREQ_VALID;
 

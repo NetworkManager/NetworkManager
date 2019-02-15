@@ -1153,7 +1153,7 @@ _parse_af_inet6 (NMPlatform *platform,
                  guint8 *out_addr_gen_mode_inv,
                  gboolean *out_addr_gen_mode_valid)
 {
-	static const struct nla_policy policy[IFLA_INET6_MAX+1] = {
+	static const struct nla_policy policy[] = {
 		[IFLA_INET6_FLAGS]              = { .type = NLA_U32 },
 		[IFLA_INET6_CACHEINFO]          = { .minlen = nm_offsetofend (struct ifla_cacheinfo, retrans_time) },
 		[IFLA_INET6_CONF]               = { .minlen = 4 },
@@ -1162,15 +1162,13 @@ _parse_af_inet6 (NMPlatform *platform,
 		[IFLA_INET6_TOKEN]              = { .minlen = sizeof(struct in6_addr) },
 		[IFLA_INET6_ADDR_GEN_MODE]      = { .type = NLA_U8 },
 	};
-	struct nlattr *tb[IFLA_INET6_MAX+1];
-	int err;
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	struct in6_addr i6_token;
 	gboolean token_valid = FALSE;
 	gboolean addr_gen_mode_valid = FALSE;
 	guint8 i6_addr_gen_mode_inv = 0;
 
-	err = nla_parse_nested (tb, IFLA_INET6_MAX, attr, policy);
-	if (err < 0)
+	if (nla_parse_nested_arr (tb, attr, policy) < 0)
 		return FALSE;
 
 	if (tb[IFLA_INET6_CONF] && nla_len(tb[IFLA_INET6_CONF]) % 4)
@@ -1217,7 +1215,7 @@ _parse_af_inet6 (NMPlatform *platform,
 static NMPObject *
 _parse_lnk_gre (const char *kind, struct nlattr *info_data)
 {
-	static const struct nla_policy policy[IFLA_GRE_MAX + 1] = {
+	static const struct nla_policy policy[] = {
 		[IFLA_GRE_LINK]     = { .type = NLA_U32 },
 		[IFLA_GRE_IFLAGS]   = { .type = NLA_U16 },
 		[IFLA_GRE_OFLAGS]   = { .type = NLA_U16 },
@@ -1229,13 +1227,13 @@ _parse_lnk_gre (const char *kind, struct nlattr *info_data)
 		[IFLA_GRE_TOS]      = { .type = NLA_U8 },
 		[IFLA_GRE_PMTUDISC] = { .type = NLA_U8 },
 	};
-	struct nlattr *tb[IFLA_GRE_MAX + 1];
-	int err;
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	NMPObject *obj;
 	NMPlatformLnkGre *props;
 	gboolean is_tap;
 
-	if (!info_data || !kind)
+	if (   !info_data
+	    || !kind)
 		return NULL;
 
 	if (nm_streq (kind, "gretap"))
@@ -1245,8 +1243,7 @@ _parse_lnk_gre (const char *kind, struct nlattr *info_data)
 	else
 		return NULL;
 
-	err = nla_parse_nested (tb, IFLA_GRE_MAX, info_data, policy);
-	if (err < 0)
+	if (nla_parse_nested_arr (tb, info_data, policy) < 0)
 		return NULL;
 
 	obj = nmp_object_new (is_tap ? NMP_OBJECT_TYPE_LNK_GRETAP : NMP_OBJECT_TYPE_LNK_GRE, NULL);
@@ -1286,25 +1283,25 @@ _parse_lnk_gre (const char *kind, struct nlattr *info_data)
 static NMPObject *
 _parse_lnk_infiniband (const char *kind, struct nlattr *info_data)
 {
-	static const struct nla_policy policy[IFLA_IPOIB_MAX + 1] = {
+	static const struct nla_policy policy[] = {
 		[IFLA_IPOIB_PKEY]   = { .type = NLA_U16 },
 		[IFLA_IPOIB_MODE]   = { .type = NLA_U16 },
 		[IFLA_IPOIB_UMCAST] = { .type = NLA_U16 },
 	};
-	struct nlattr *tb[IFLA_IPOIB_MAX + 1];
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	NMPlatformLnkInfiniband *info;
 	NMPObject *obj;
-	int err;
 	const char *mode;
 
-	if (!info_data || g_strcmp0 (kind, "ipoib"))
+	if (   !info_data
+	    || !nm_streq0 (kind, "ipoib"))
 		return NULL;
 
-	err = nla_parse_nested (tb, IFLA_IPOIB_MAX, info_data, policy);
-	if (err < 0)
+	if (nla_parse_nested_arr (tb, info_data, policy) < 0)
 		return NULL;
 
-	if (!tb[IFLA_IPOIB_PKEY] || !tb[IFLA_IPOIB_MODE])
+	if (   !tb[IFLA_IPOIB_PKEY]
+	    || !tb[IFLA_IPOIB_MODE])
 		return NULL;
 
 	switch (nla_get_u16 (tb[IFLA_IPOIB_MODE])) {
@@ -1332,7 +1329,7 @@ _parse_lnk_infiniband (const char *kind, struct nlattr *info_data)
 static NMPObject *
 _parse_lnk_ip6tnl (const char *kind, struct nlattr *info_data)
 {
-	static const struct nla_policy policy[IFLA_IPTUN_MAX + 1] = {
+	static const struct nla_policy policy[] = {
 		[IFLA_IPTUN_LINK]        = { .type = NLA_U32 },
 		[IFLA_IPTUN_LOCAL]       = { .type = NLA_UNSPEC,
 		                             .minlen = sizeof (struct in6_addr)},
@@ -1344,17 +1341,16 @@ _parse_lnk_ip6tnl (const char *kind, struct nlattr *info_data)
 		[IFLA_IPTUN_PROTO]       = { .type = NLA_U8 },
 		[IFLA_IPTUN_FLAGS]       = { .type = NLA_U32 },
 	};
-	struct nlattr *tb[IFLA_IPTUN_MAX + 1];
-	int err;
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	NMPObject *obj;
 	NMPlatformLnkIp6Tnl *props;
 	guint32 flowinfo;
 
-	if (!info_data || g_strcmp0 (kind, "ip6tnl"))
+	if (   !info_data
+	    || !nm_streq0 (kind, "ip6tnl"))
 		return NULL;
 
-	err = nla_parse_nested (tb, IFLA_IPTUN_MAX, info_data, policy);
-	if (err < 0)
+	if (nla_parse_nested_arr (tb, info_data, policy) < 0)
 		return NULL;
 
 	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_IP6TNL, NULL);
@@ -1386,23 +1382,22 @@ _parse_lnk_ip6tnl (const char *kind, struct nlattr *info_data)
 static NMPObject *
 _parse_lnk_ip6gre (const char *kind, struct nlattr *info_data)
 {
-	static const struct nla_policy policy[IFLA_GRE_MAX + 1] = {
+	static const struct nla_policy policy[] = {
 		[IFLA_GRE_LINK]        = { .type = NLA_U32 },
 		[IFLA_GRE_IFLAGS]      = { .type = NLA_U16 },
 		[IFLA_GRE_OFLAGS]      = { .type = NLA_U16 },
 		[IFLA_GRE_IKEY]        = { .type = NLA_U32 },
 		[IFLA_GRE_OKEY]        = { .type = NLA_U32 },
 		[IFLA_GRE_LOCAL]       = { .type = NLA_UNSPEC,
-		                             .minlen = sizeof (struct in6_addr)},
+		                           .minlen = sizeof (struct in6_addr)},
 		[IFLA_GRE_REMOTE]      = { .type = NLA_UNSPEC,
-		                             .minlen = sizeof (struct in6_addr)},
+		                           .minlen = sizeof (struct in6_addr)},
 		[IFLA_GRE_TTL]         = { .type = NLA_U8 },
 		[IFLA_GRE_ENCAP_LIMIT] = { .type = NLA_U8 },
 		[IFLA_GRE_FLOWINFO]    = { .type = NLA_U32 },
 		[IFLA_GRE_FLAGS]       = { .type = NLA_U32 },
 	};
-	struct nlattr *tb[IFLA_GRE_MAX + 1];
-	int err;
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	NMPObject *obj;
 	NMPlatformLnkIp6Tnl *props;
 	guint32 flowinfo;
@@ -1418,8 +1413,7 @@ _parse_lnk_ip6gre (const char *kind, struct nlattr *info_data)
 	else
 		return NULL;
 
-	err = nla_parse_nested (tb, IFLA_GRE_MAX, info_data, policy);
-	if (err < 0)
+	if (nla_parse_nested_arr (tb, info_data, policy) < 0)
 		return NULL;
 
 	obj = nmp_object_new (is_tap ? NMP_OBJECT_TYPE_LNK_IP6GRETAP : NMP_OBJECT_TYPE_LNK_IP6GRE, NULL);
@@ -1461,7 +1455,7 @@ _parse_lnk_ip6gre (const char *kind, struct nlattr *info_data)
 static NMPObject *
 _parse_lnk_ipip (const char *kind, struct nlattr *info_data)
 {
-	static const struct nla_policy policy[IFLA_IPTUN_MAX + 1] = {
+	static const struct nla_policy policy[] = {
 		[IFLA_IPTUN_LINK]     = { .type = NLA_U32 },
 		[IFLA_IPTUN_LOCAL]    = { .type = NLA_U32 },
 		[IFLA_IPTUN_REMOTE]   = { .type = NLA_U32 },
@@ -1469,16 +1463,15 @@ _parse_lnk_ipip (const char *kind, struct nlattr *info_data)
 		[IFLA_IPTUN_TOS]      = { .type = NLA_U8 },
 		[IFLA_IPTUN_PMTUDISC] = { .type = NLA_U8 },
 	};
-	struct nlattr *tb[IFLA_IPTUN_MAX + 1];
-	int err;
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	NMPObject *obj;
 	NMPlatformLnkIpIp *props;
 
-	if (!info_data || g_strcmp0 (kind, "ipip"))
+	if (   !info_data
+	    || !nm_streq0 (kind, "ipip"))
 		return NULL;
 
-	err = nla_parse_nested (tb, IFLA_IPTUN_MAX, info_data, policy);
-	if (err < 0)
+	if (nla_parse_nested_arr (tb, info_data, policy) < 0)
 		return NULL;
 
 	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_IPIP, NULL);
@@ -1499,28 +1492,27 @@ _parse_lnk_ipip (const char *kind, struct nlattr *info_data)
 static NMPObject *
 _parse_lnk_macvlan (const char *kind, struct nlattr *info_data)
 {
-	static const struct nla_policy policy[IFLA_MACVLAN_MAX + 1] = {
+	static const struct nla_policy policy[] = {
 		[IFLA_MACVLAN_MODE]  = { .type = NLA_U32 },
 		[IFLA_MACVLAN_FLAGS] = { .type = NLA_U16 },
 	};
 	NMPlatformLnkMacvlan *props;
-	struct nlattr *tb[IFLA_MACVLAN_MAX + 1];
-	int err;
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	NMPObject *obj;
 	gboolean tap;
 
-	if (!info_data)
+	if (   !info_data
+	    || !kind)
 		return NULL;
 
-	if (!g_strcmp0 (kind, "macvlan"))
+	if (nm_streq (kind, "macvlan"))
 		tap = FALSE;
-	else if (!g_strcmp0 (kind, "macvtap"))
+	else if (nm_streq (kind, "macvtap"))
 		tap = TRUE;
 	else
 		return NULL;
 
-	err = nla_parse_nested (tb, IFLA_MACVLAN_MAX, info_data, policy);
-	if (err < 0)
+	if (nla_parse_nested_arr (tb, info_data, policy) < 0)
 		return NULL;
 
 	if (!tb[IFLA_MACVLAN_MODE])
@@ -1542,7 +1534,7 @@ _parse_lnk_macvlan (const char *kind, struct nlattr *info_data)
 static NMPObject *
 _parse_lnk_macsec (const char *kind, struct nlattr *info_data)
 {
-	static const struct nla_policy policy[__IFLA_MACSEC_MAX] = {
+	static const struct nla_policy policy[] = {
 		[IFLA_MACSEC_SCI]            = { .type = NLA_U64 },
 		[IFLA_MACSEC_ICV_LEN]        = { .type = NLA_U8 },
 		[IFLA_MACSEC_CIPHER_SUITE]   = { .type = NLA_U64 },
@@ -1556,16 +1548,15 @@ _parse_lnk_macsec (const char *kind, struct nlattr *info_data)
 		[IFLA_MACSEC_REPLAY_PROTECT] = { .type = NLA_U8 },
 		[IFLA_MACSEC_VALIDATION]     = { .type = NLA_U8 },
 	};
-	struct nlattr *tb[__IFLA_MACSEC_MAX];
-	int err;
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	NMPObject *obj;
 	NMPlatformLnkMacsec *props;
 
-	if (!info_data || !nm_streq0 (kind, "macsec"))
+	if (   !info_data
+	    || !nm_streq0 (kind, "macsec"))
 		return NULL;
 
-	err = nla_parse_nested (tb, __IFLA_MACSEC_MAX - 1, info_data, policy);
-	if (err < 0)
+	if (nla_parse_nested_arr (tb, info_data, policy) < 0)
 		return NULL;
 
 	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_MACSEC, NULL);
@@ -1592,7 +1583,7 @@ _parse_lnk_macsec (const char *kind, struct nlattr *info_data)
 static NMPObject *
 _parse_lnk_sit (const char *kind, struct nlattr *info_data)
 {
-	static const struct nla_policy policy[IFLA_IPTUN_MAX + 1] = {
+	static const struct nla_policy policy[] = {
 		[IFLA_IPTUN_LINK]     = { .type = NLA_U32 },
 		[IFLA_IPTUN_LOCAL]    = { .type = NLA_U32 },
 		[IFLA_IPTUN_REMOTE]   = { .type = NLA_U32 },
@@ -1602,16 +1593,15 @@ _parse_lnk_sit (const char *kind, struct nlattr *info_data)
 		[IFLA_IPTUN_FLAGS]    = { .type = NLA_U16 },
 		[IFLA_IPTUN_PROTO]    = { .type = NLA_U8 },
 	};
-	struct nlattr *tb[IFLA_IPTUN_MAX + 1];
-	int err;
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	NMPObject *obj;
 	NMPlatformLnkSit *props;
 
-	if (!info_data || g_strcmp0 (kind, "sit"))
+	if (   !info_data
+	    || !nm_streq0 (kind, "sit"))
 		return NULL;
 
-	err = nla_parse_nested (tb, IFLA_IPTUN_MAX, info_data, policy);
-	if (err < 0)
+	if (nla_parse_nested_arr (tb, info_data, policy) < 0)
 		return NULL;
 
 	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_SIT, NULL);
@@ -1634,7 +1624,7 @@ _parse_lnk_sit (const char *kind, struct nlattr *info_data)
 static NMPObject *
 _parse_lnk_tun (const char *kind, struct nlattr *info_data)
 {
-	static const struct nla_policy policy[IFLA_TUN_MAX + 1] = {
+	static const struct nla_policy policy[] = {
 		[IFLA_TUN_OWNER]               = { .type = NLA_U32 },
 		[IFLA_TUN_GROUP]               = { .type = NLA_U32 },
 		[IFLA_TUN_TYPE]                = { .type = NLA_U8 },
@@ -1645,22 +1635,19 @@ _parse_lnk_tun (const char *kind, struct nlattr *info_data)
 		[IFLA_TUN_NUM_QUEUES]          = { .type = NLA_U32 },
 		[IFLA_TUN_NUM_DISABLED_QUEUES] = { .type = NLA_U32 },
 	};
-	struct nlattr *tb[IFLA_TUN_MAX + 1];
-	int err;
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	NMPObject *obj;
 	NMPlatformLnkTun *props;
 
-	if (!info_data || !nm_streq0 (kind, "tun"))
+	if (   !info_data
+	    || !nm_streq0 (kind, "tun"))
 		return NULL;
 
-	err = nla_parse_nested (tb, IFLA_TUN_MAX, info_data, policy);
-	if (err < 0)
+	if (nla_parse_nested_arr (tb, info_data, policy) < 0)
 		return NULL;
 
-	if (!tb[IFLA_TUN_TYPE]) {
-		/* we require at least a type. */
+	if (!tb[IFLA_TUN_TYPE])
 		return NULL;
-	}
 
 	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_TUN, NULL);
 	props = &obj->lnk_tun;
@@ -1748,22 +1735,22 @@ _vlan_qos_mapping_from_nla (struct nlattr *nlattr,
 static NMPObject *
 _parse_lnk_vlan (const char *kind, struct nlattr *info_data)
 {
-	static const struct nla_policy policy[IFLA_VLAN_MAX+1] = {
+	static const struct nla_policy policy[] = {
 		[IFLA_VLAN_ID]          = { .type = NLA_U16 },
 		[IFLA_VLAN_FLAGS]       = { .minlen = nm_offsetofend (struct ifla_vlan_flags, flags) },
 		[IFLA_VLAN_INGRESS_QOS] = { .type = NLA_NESTED },
 		[IFLA_VLAN_EGRESS_QOS]  = { .type = NLA_NESTED },
 		[IFLA_VLAN_PROTOCOL]    = { .type = NLA_U16 },
 	};
-	struct nlattr *tb[IFLA_VLAN_MAX+1];
-	int err;
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	nm_auto_nmpobj NMPObject *obj = NULL;
 	NMPObject *obj_result;
 
-	if (!info_data || g_strcmp0 (kind, "vlan"))
+	if (   !info_data
+	    || !nm_streq0 (kind, "vlan"))
 		return NULL;
 
-	if ((err = nla_parse_nested (tb, IFLA_VLAN_MAX, info_data, policy)) < 0)
+	if (nla_parse_nested_arr (tb, info_data, policy) < 0)
 		return NULL;
 
 	if (!tb[IFLA_VLAN_ID])
@@ -1833,7 +1820,7 @@ struct nm_ifla_vxlan_port_range {
 static NMPObject *
 _parse_lnk_vxlan (const char *kind, struct nlattr *info_data)
 {
-	static const struct nla_policy policy[IFLA_VXLAN_MAX + 1] = {
+	static const struct nla_policy policy[] = {
 		[IFLA_VXLAN_ID]         = { .type = NLA_U32 },
 		[IFLA_VXLAN_GROUP]      = { .type = NLA_U32 },
 		[IFLA_VXLAN_GROUP6]     = { .type = NLA_UNSPEC,
@@ -1856,16 +1843,15 @@ _parse_lnk_vxlan (const char *kind, struct nlattr *info_data)
 		[IFLA_VXLAN_PORT]       = { .type = NLA_U16 },
 	};
 	NMPlatformLnkVxlan *props;
-	struct nlattr *tb[IFLA_VXLAN_MAX + 1];
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	struct nm_ifla_vxlan_port_range *range;
-	int err;
 	NMPObject *obj;
 
-	if (!info_data || g_strcmp0 (kind, "vxlan"))
+	if (   !info_data
+	    || !nm_streq0 (kind, "vxlan"))
 		return NULL;
 
-	err = nla_parse_nested (tb, IFLA_VXLAN_MAX, info_data, policy);
-	if (err < 0)
+	if (nla_parse_nested_arr (tb, info_data, policy) < 0)
 		return NULL;
 
 	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_VXLAN, NULL);
@@ -1923,16 +1909,16 @@ static gboolean
 _wireguard_update_from_allowed_ips_nla (NMPWireGuardAllowedIP *allowed_ip,
                                         struct nlattr *nlattr)
 {
-	static const struct nla_policy policy[WGALLOWEDIP_A_MAX + 1] = {
+	static const struct nla_policy policy[] = {
 		[WGALLOWEDIP_A_FAMILY]    = { .type = NLA_U16 },
 		[WGALLOWEDIP_A_IPADDR]    = { .minlen = sizeof (struct in_addr) },
 		[WGALLOWEDIP_A_CIDR_MASK] = { .type = NLA_U8 },
 	};
-	struct nlattr *tb[WGALLOWEDIP_A_MAX + 1];
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	int family;
 	int addr_len;
 
-	if (nla_parse_nested (tb, WGALLOWEDIP_A_MAX, nlattr, policy) < 0)
+	if (nla_parse_nested_arr (tb, nlattr, policy) < 0)
 		return FALSE;
 
 	if (!tb[WGALLOWEDIP_A_FAMILY])
@@ -1972,7 +1958,7 @@ _wireguard_update_from_peers_nla (CList *peers,
                                   GArray **p_allowed_ips,
                                   struct nlattr *peer_attr)
 {
-	static const struct nla_policy policy[WGPEER_A_MAX + 1] = {
+	static const struct nla_policy policy[] = {
 		[WGPEER_A_PUBLIC_KEY]                    = { .minlen = NMP_WIREGUARD_PUBLIC_KEY_LEN },
 		[WGPEER_A_PRESHARED_KEY]                 = { },
 		[WGPEER_A_FLAGS]                         = { .type = NLA_U32 },
@@ -1983,10 +1969,10 @@ _wireguard_update_from_peers_nla (CList *peers,
 		[WGPEER_A_TX_BYTES]                      = { .type = NLA_U64 },
 		[WGPEER_A_ALLOWEDIPS]                    = { .type = NLA_NESTED },
 	};
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	WireGuardPeerConstruct *peer_c;
-	struct nlattr *tb[WGPEER_A_MAX + 1];
 
-	if (nla_parse_nested (tb, WGPEER_A_MAX, peer_attr, policy) < 0)
+	if (nla_parse_nested_arr (tb, peer_attr, policy) < 0)
 		return FALSE;
 
 	if (!tb[WGPEER_A_PUBLIC_KEY])
@@ -2069,7 +2055,7 @@ typedef struct {
 static int
 _wireguard_get_device_cb (struct nl_msg *msg, void *arg)
 {
-	static const struct nla_policy policy[WGDEVICE_A_MAX + 1] = {
+	static const struct nla_policy policy[] = {
 		[WGDEVICE_A_IFINDEX]     = { .type = NLA_U32 },
 		[WGDEVICE_A_IFNAME]      = { .type = NLA_NUL_STRING, .maxlen = IFNAMSIZ },
 		[WGDEVICE_A_PRIVATE_KEY] = { },
@@ -2079,12 +2065,10 @@ _wireguard_get_device_cb (struct nl_msg *msg, void *arg)
 		[WGDEVICE_A_FWMARK]      = { .type = NLA_U32 },
 		[WGDEVICE_A_PEERS]       = { .type = NLA_NESTED },
 	};
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	WireGuardParseData *parse_data = arg;
-	struct nlattr *tb[WGDEVICE_A_MAX + 1];
-	int nlerr;
 
-	nlerr = genlmsg_parse (nlmsg_hdr (msg), 0, tb, WGDEVICE_A_MAX, policy);
-	if (nlerr < 0)
+	if (genlmsg_parse_arr (nlmsg_hdr (msg), 0, tb, policy) < 0)
 		return NL_SKIP;
 
 	if (tb[WGDEVICE_A_IFINDEX]) {
@@ -2649,7 +2633,7 @@ link_wireguard_change (NMPlatform *platform,
 static NMPObject *
 _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr *nlh, gboolean id_only)
 {
-	static const struct nla_policy policy[IFLA_MAX+1] = {
+	static const struct nla_policy policy[] = {
 		[IFLA_IFNAME]           = { .type = NLA_STRING,
 		                            .maxlen = IFNAMSIZ },
 		[IFLA_MTU]              = { .type = NLA_U32 },
@@ -2676,18 +2660,12 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		[IFLA_PHYS_PORT_ID]     = { .type = NLA_UNSPEC },
 		[IFLA_NET_NS_PID]       = { .type = NLA_U32 },
 		[IFLA_NET_NS_FD]        = { .type = NLA_U32 },
-	};
-	static const struct nla_policy policy_link_info[IFLA_INFO_MAX+1] = {
-		[IFLA_INFO_KIND]        = { .type = NLA_STRING },
-		[IFLA_INFO_DATA]        = { .type = NLA_NESTED },
-		[IFLA_INFO_XSTATS]      = { .type = NLA_NESTED },
+		[IFLA_LINK_NETNSID]     = { },
 	};
 	const struct ifinfomsg *ifi;
-	struct nlattr *tb[IFLA_MAX+1];
-	struct nlattr *li[IFLA_INFO_MAX+1];
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	struct nlattr *nl_info_data = NULL;
 	const char *nl_info_kind = NULL;
-	int err;
 	nm_auto_nmpobj NMPObject *obj = NULL;
 	gboolean completed_from_cache_val = FALSE;
 	gboolean *completed_from_cache = cache ? &completed_from_cache_val : NULL;
@@ -2701,6 +2679,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 
 	if (!nlmsg_valid_hdr (nlh, sizeof (*ifi)))
 		return NULL;
+
 	ifi = nlmsg_data (nlh);
 
 	if (ifi->ifi_family != AF_UNSPEC)
@@ -2713,8 +2692,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	if (id_only)
 		return g_steal_pointer (&obj);
 
-	err = nlmsg_parse (nlh, sizeof (*ifi), tb, IFLA_MAX, policy);
-	if (err < 0)
+	if (nlmsg_parse_arr (nlh, sizeof (*ifi), tb, policy) < 0)
 		return NULL;
 
 	if (!tb[IFLA_IFNAME])
@@ -2741,8 +2719,14 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	obj->link.mtu = nla_get_u32 (tb[IFLA_MTU]);
 
 	if (tb[IFLA_LINKINFO]) {
-		err = nla_parse_nested (li, IFLA_INFO_MAX, tb[IFLA_LINKINFO], policy_link_info);
-		if (err < 0)
+		static const struct nla_policy policy_link_info[] = {
+			[IFLA_INFO_KIND]        = { .type = NLA_STRING },
+			[IFLA_INFO_DATA]        = { .type = NLA_NESTED },
+			[IFLA_INFO_XSTATS]      = { .type = NLA_NESTED },
+		};
+		struct nlattr *li[G_N_ELEMENTS (policy_link_info)];
+
+		if (nla_parse_nested_arr (li, tb[IFLA_LINKINFO], policy_link_info) < 0)
 			return NULL;
 
 		if (li[IFLA_INFO_KIND])
@@ -2991,14 +2975,14 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 static NMPObject *
 _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 {
-	static const struct nla_policy policy[IFA_MAX+1] = {
+	static const struct nla_policy policy[] = {
 		[IFA_LABEL]     = { .type = NLA_STRING,
-		                     .maxlen = IFNAMSIZ },
+		                    .maxlen = IFNAMSIZ },
 		[IFA_CACHEINFO] = { .minlen = nm_offsetofend (struct ifa_cacheinfo, tstamp) },
+		[IFA_FLAGS]     = { },
 	};
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	const struct ifaddrmsg *ifa;
-	struct nlattr *tb[IFA_MAX+1];
-	int err;
 	gboolean is_v4;
 	nm_auto_nmpobj NMPObject *obj = NULL;
 	int addr_len;
@@ -3006,14 +2990,15 @@ _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 
 	if (!nlmsg_valid_hdr (nlh, sizeof (*ifa)))
 		return NULL;
-	ifa = nlmsg_data(nlh);
+
+	ifa = nlmsg_data (nlh);
 
 	if (!NM_IN_SET (ifa->ifa_family, AF_INET, AF_INET6))
 		return NULL;
+
 	is_v4 = ifa->ifa_family == AF_INET;
 
-	err = nlmsg_parse (nlh, sizeof(*ifa), tb, IFA_MAX, policy);
-	if (err < 0)
+	if (nlmsg_parse_arr (nlh, sizeof(*ifa), tb, policy) < 0)
 		return NULL;
 
 	addr_len = is_v4
@@ -3102,7 +3087,7 @@ _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 static NMPObject *
 _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 {
-	static const struct nla_policy policy[RTA_MAX+1] = {
+	static const struct nla_policy policy[] = {
 		[RTA_TABLE]     = { .type = NLA_U32 },
 		[RTA_IIF]       = { .type = NLA_U32 },
 		[RTA_OIF]       = { .type = NLA_U32 },
@@ -3114,8 +3099,7 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 		[RTA_MULTIPATH] = { .type = NLA_NESTED },
 	};
 	const struct rtmsg *rtm;
-	struct nlattr *tb[RTA_MAX + 1];
-	int err;
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	gboolean is_v4;
 	nm_auto_nmpobj NMPObject *obj = NULL;
 	int addr_len;
@@ -3125,11 +3109,17 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 		NMIPAddr gateway;
 	} nh;
 	guint32 mss;
-	guint32 window = 0, cwnd = 0, initcwnd = 0, initrwnd = 0, mtu = 0, lock = 0;
+	guint32 window = 0;
+	guint32 cwnd = 0;
+	guint32 initcwnd = 0;
+	guint32 initrwnd = 0;
+	guint32 mtu = 0;
+	guint32 lock = 0;
 
 	if (!nlmsg_valid_hdr (nlh, sizeof (*rtm)))
 		return NULL;
-	rtm = nlmsg_data(nlh);
+
+	rtm = nlmsg_data (nlh);
 
 	/*****************************************************************
 	 * only handle ~normal~ routes.
@@ -3141,8 +3131,10 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	if (rtm->rtm_type != RTN_UNICAST)
 		return NULL;
 
-	err = nlmsg_parse (nlh, sizeof (struct rtmsg), tb, RTA_MAX, policy);
-	if (err < 0)
+	if (nlmsg_parse_arr (nlh,
+	                     sizeof (struct rtmsg),
+	                     tb,
+	                     policy) < 0)
 		return NULL;
 
 	/*****************************************************************/
@@ -3176,13 +3168,12 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 			nh.ifindex = rtnh->rtnh_ifindex;
 
 			if (rtnh->rtnh_len > sizeof(*rtnh)) {
-				struct nlattr *ntb[RTA_MAX + 1];
+				struct nlattr *ntb[G_N_ELEMENTS (policy)];
 
-				err = nla_parse (ntb, RTA_MAX, (struct nlattr *)
-				                 RTNH_DATA(rtnh),
-				                 rtnh->rtnh_len - sizeof (*rtnh),
-				                 policy);
-				if (err < 0)
+				if (nla_parse_arr (ntb,
+				                   (struct nlattr *) RTNH_DATA (rtnh),
+				                   rtnh->rtnh_len - sizeof (*rtnh),
+				                   policy) < 0)
 					return NULL;
 
 				if (_check_addr_or_return_null (ntb, RTA_GATEWAY, addr_len))
@@ -3225,8 +3216,7 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 
 	mss = 0;
 	if (tb[RTA_METRICS]) {
-		struct nlattr *mtb[RTAX_MAX + 1];
-		static const struct nla_policy rtax_policy[RTAX_MAX + 1] = {
+		static const struct nla_policy rtax_policy[] = {
 			[RTAX_LOCK]        = { .type = NLA_U32 },
 			[RTAX_ADVMSS]      = { .type = NLA_U32 },
 			[RTAX_WINDOW]      = { .type = NLA_U32 },
@@ -3235,9 +3225,9 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 			[RTAX_INITRWND]    = { .type = NLA_U32 },
 			[RTAX_MTU]         = { .type = NLA_U32 },
 		};
+		struct nlattr *mtb[G_N_ELEMENTS (rtax_policy)];
 
-		err = nla_parse_nested (mtb, RTAX_MAX, tb[RTA_METRICS], rtax_policy);
-		if (err < 0)
+		if (nla_parse_nested_arr (mtb, tb[RTA_METRICS], rtax_policy) < 0)
 			return NULL;
 
 		if (mtb[RTAX_LOCK])
@@ -3329,24 +3319,23 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 static NMPObject *
 _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 {
-	NMPObject *obj = NULL;
-	const struct tcmsg *tcm;
-	struct nlattr *tb[TCA_MAX + 1];
-	int err;
-	static const struct nla_policy policy[TCA_MAX + 1] = {
+	static const struct nla_policy policy[] = {
 		[TCA_KIND] = { .type = NLA_STRING },
 	};
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
+	const struct tcmsg *tcm;
+	NMPObject *obj;
 
-	if (!nlmsg_valid_hdr (nlh, sizeof (*tcm)))
-		return NULL;
-	tcm = nlmsg_data (nlh);
-
-	err = nlmsg_parse (nlh, sizeof (*tcm), tb, TCA_MAX, policy);
-	if (err < 0)
+	if (nlmsg_parse_arr (nlh,
+	                     sizeof (*tcm),
+	                     tb,
+	                     policy) < 0)
 		return NULL;
 
 	if (!tb[TCA_KIND])
 		return NULL;
+
+	tcm = nlmsg_data (nlh);
 
 	obj = nmp_object_new (NMP_OBJECT_TYPE_QDISC, NULL);
 
@@ -3363,24 +3352,20 @@ _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 static NMPObject *
 _new_from_nl_tfilter (struct nlmsghdr *nlh, gboolean id_only)
 {
-	NMPObject *obj = NULL;
-	const struct tcmsg *tcm;
-	struct nlattr *tb[TCA_MAX + 1];
-	int err;
-	static const struct nla_policy policy[TCA_MAX + 1] = {
+	static const struct nla_policy policy[] = {
 		[TCA_KIND] = { .type = NLA_STRING },
 	};
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
+	NMPObject *obj = NULL;
+	const struct tcmsg *tcm;
 
-	if (!nlmsg_valid_hdr (nlh, sizeof (*tcm)))
-		return NULL;
-	tcm = nlmsg_data (nlh);
-
-	err = nlmsg_parse (nlh, sizeof (*tcm), tb, TCA_MAX, policy);
-	if (err < 0)
+	if (nlmsg_parse_arr (nlh, sizeof (*tcm), tb, policy) < 0)
 		return NULL;
 
 	if (!tb[TCA_KIND])
 		return NULL;
+
+	tcm = nlmsg_data (nlh);
 
 	obj = nmp_object_new (NMP_OBJECT_TYPE_TFILTER, NULL);
 
@@ -7878,16 +7863,18 @@ continue_reading:
 
 				if (   NM_FLAGS_HAS (hdr->nlmsg_flags, NLM_F_ACK_TLVS)
 				    && hdr->nlmsg_len >= sizeof (*e) + e->msg.nlmsg_len) {
-					static const struct nla_policy policy[NLMSGERR_ATTR_MAX + 1] = {
+					static const struct nla_policy policy[] = {
 						[NLMSGERR_ATTR_MSG]     = { .type = NLA_STRING },
 						[NLMSGERR_ATTR_OFFS]    = { .type = NLA_U32 },
 					};
-					struct nlattr *tb[NLMSGERR_ATTR_MAX + 1];
+					struct nlattr *tb[G_N_ELEMENTS (policy)];
 					struct nlattr *tlvs;
 
 					tlvs = (struct nlattr *) ((char *) e + sizeof (*e) + e->msg.nlmsg_len - NLMSG_HDRLEN);
-					if (!nla_parse (tb, NLMSGERR_ATTR_MAX, tlvs,
-					                hdr->nlmsg_len - sizeof (*e) - e->msg.nlmsg_len, policy)) {
+					if (nla_parse_arr (tb,
+					                   tlvs,
+					                   hdr->nlmsg_len - sizeof (*e) - e->msg.nlmsg_len,
+					                   policy) >= 0) {
 						if (tb[NLMSGERR_ATTR_MSG])
 							extack_msg = nla_get_string (tb[NLMSGERR_ATTR_MSG]);
 					}

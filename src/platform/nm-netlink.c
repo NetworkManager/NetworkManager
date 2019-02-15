@@ -717,21 +717,21 @@ genlmsg_parse (struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
 static int
 _genl_parse_getfamily (struct nl_msg *msg, void *arg)
 {
-	static const struct nla_policy ctrl_policy[CTRL_ATTR_MAX+1] = {
+	static const struct nla_policy ctrl_policy[] = {
 		[CTRL_ATTR_FAMILY_ID]    = { .type = NLA_U16 },
 		[CTRL_ATTR_FAMILY_NAME]  = { .type = NLA_STRING,
-		                            .maxlen = GENL_NAMSIZ },
+		                             .maxlen = GENL_NAMSIZ },
 		[CTRL_ATTR_VERSION]      = { .type = NLA_U32 },
 		[CTRL_ATTR_HDRSIZE]      = { .type = NLA_U32 },
 		[CTRL_ATTR_MAXATTR]      = { .type = NLA_U32 },
 		[CTRL_ATTR_OPS]          = { .type = NLA_NESTED },
 		[CTRL_ATTR_MCAST_GROUPS] = { .type = NLA_NESTED },
 	};
-	struct nlattr *tb[CTRL_ATTR_MAX+1];
+	struct nlattr *tb[G_N_ELEMENTS (ctrl_policy)];
 	struct nlmsghdr *nlh = nlmsg_hdr (msg);
 	gint32 *response_data = arg;
 
-	if (genlmsg_parse (nlh, 0, tb, CTRL_ATTR_MAX, ctrl_policy) < 0)
+	if (genlmsg_parse_arr (nlh, 0, tb, ctrl_policy) < 0)
 		return NL_SKIP;
 
 	if (tb[CTRL_ATTR_FAMILY_ID])
