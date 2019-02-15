@@ -87,6 +87,24 @@ struct nla_policy {
 
 /*****************************************************************************/
 
+/* static asserts that @tb and @policy are suitable arguments to nla_parse(). */
+#define _nl_static_assert_tb(tb, policy) \
+	G_STMT_START { \
+		\
+		G_STATIC_ASSERT_EXPR (G_N_ELEMENTS (tb) > 0); \
+		\
+		/* we allow @policy to be either NULL or a C array. */ \
+		G_STATIC_ASSERT_EXPR (   sizeof (policy) == sizeof (NULL) \
+		                      || G_N_ELEMENTS (tb) == (sizeof (policy) / sizeof (struct nla_policy))); \
+		\
+		/* For above check to work, we don't support policy being an array with same size as
+		 * sizeof(NULL), otherwise, the compile time check breaks down. */ \
+		G_STATIC_ASSERT_EXPR (sizeof (NULL) != G_N_ELEMENTS (tb) * sizeof (struct nla_policy)); \
+		\
+	} G_STMT_END
+
+/*****************************************************************************/
+
 static inline int
 nla_attr_size(int payload)
 {
@@ -274,15 +292,34 @@ void nla_nest_cancel (struct nl_msg *msg, const struct nlattr *attr);
 struct nlattr *nla_nest_start (struct nl_msg *msg, int attrtype);
 int nla_nest_end (struct nl_msg *msg, struct nlattr *start);
 
-int nla_parse (struct nlattr *tb[], int maxtype, struct nlattr *head, int len,
+int nla_parse (struct nlattr *tb[],
+               int maxtype,
+               struct nlattr *head,
+               int len,
                const struct nla_policy *policy);
 
+#define nla_parse_arr(tb, head, len, policy) \
+	({ \
+		_nl_static_assert_tb ((tb), (policy)); \
+		\
+		nla_parse ((tb), G_N_ELEMENTS (tb) - 1, (head), (len), (policy)); \
+	})
+
 static inline int
-nla_parse_nested (struct nlattr *tb[], int maxtype, struct nlattr *nla,
+nla_parse_nested (struct nlattr *tb[],
+                  int maxtype,
+                  struct nlattr *nla,
                   const struct nla_policy *policy)
 {
 	return nla_parse (tb, maxtype, nla_data(nla), nla_len(nla), policy);
 }
+
+#define nla_parse_nested_arr(tb, nla, policy) \
+	({ \
+		_nl_static_assert_tb ((tb), (policy)); \
+		\
+		nla_parse_nested ((tb), G_N_ELEMENTS (tb) - 1, (nla), (policy)); \
+	})
 
 /*****************************************************************************/
 
@@ -396,8 +433,19 @@ nlmsg_find_attr (struct nlmsghdr *nlh, int hdrlen, int attrtype)
 	                 attrtype);
 }
 
-int nlmsg_parse (struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
-                 int maxtype, const struct nla_policy *policy);
+int nlmsg_parse (struct nlmsghdr *nlh,
+                 int hdrlen,
+                 struct nlattr *tb[],
+                 int maxtype,
+                 const struct nla_policy *policy);
+
+#define nlmsg_parse_arr(nlh, hdrlen, tb, policy) \
+	({ \
+		_nl_static_assert_tb ((tb), (policy)); \
+		G_STATIC_ASSERT_EXPR ((hdrlen) >= 0); \
+		\
+		nlmsg_parse ((nlh), (hdrlen), (tb), G_N_ELEMENTS (tb) - 1, (policy)); \
+	})
 
 struct nlmsghdr *nlmsg_put (struct nl_msg *n, uint32_t pid, uint32_t seq,
                             int type, int payload, int flags);
@@ -499,8 +547,20 @@ struct nlattr *genlmsg_attrdata (const struct genlmsghdr *gnlh, int hdrlen);
 int genlmsg_len (const struct genlmsghdr *gnlh);
 int genlmsg_attrlen (const struct genlmsghdr *gnlh, int hdrlen);
 int genlmsg_valid_hdr (struct nlmsghdr *nlh, int hdrlen);
-int genlmsg_parse (struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
-                   int maxtype, const struct nla_policy *policy);
+
+int genlmsg_parse (struct nlmsghdr *nlh,
+                   int hdrlen,
+                   struct nlattr *tb[],
+                   int maxtype,
+                   const struct nla_policy *policy);
+
+#define genlmsg_parse_arr(nlh, hdrlen, tb, policy) \
+	({ \
+		_nl_static_assert_tb ((tb), (policy)); \
+		G_STATIC_ASSERT_EXPR ((hdrlen) >= 0); \
+		\
+		genlmsg_parse ((nlh), (hdrlen), (tb), G_N_ELEMENTS (tb) - 1, (policy)); \
+	})
 
 int genl_ctrl_resolve (struct nl_sock *sk, const char *name);
 
