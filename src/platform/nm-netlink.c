@@ -572,15 +572,13 @@ nla_parse (struct nlattr *tb[], int maxtype, struct nlattr *head, int len,
 		if (policy) {
 			nmerr = validate_nla (nla, maxtype, policy);
 			if (nmerr < 0)
-				goto errout;
+				return nmerr;
 		}
 
 		tb[type] = nla;
 	}
 
-	nmerr = 0;
-errout:
-	return nmerr;
+	return 0;
 }
 
 /*****************************************************************************/
