@@ -94,9 +94,9 @@ void         nm_ip_route_unref               (NMIPRoute  *route);
 gboolean     nm_ip_route_equal               (NMIPRoute  *route,
                                               NMIPRoute  *other);
 
-enum {
+enum { /*< flags >*/
 	NM_IP_ROUTE_EQUAL_CMP_FLAGS_NONE         = 0,
-	NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS   = (1LL <<  0),
+	NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS   = 0x1,
 };
 
 NM_AVAILABLE_IN_1_10

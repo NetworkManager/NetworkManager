@@ -981,13 +981,13 @@ typedef enum { /*< flags >*/
 typedef enum { /*< flags >*/
 	NM_ACTIVATION_STATE_FLAG_NONE                                 = 0,
 
-	NM_ACTIVATION_STATE_FLAG_IS_MASTER                            = (1LL <<  0),
-	NM_ACTIVATION_STATE_FLAG_IS_SLAVE                             = (1LL <<  1),
-	NM_ACTIVATION_STATE_FLAG_LAYER2_READY                         = (1LL <<  2),
-	NM_ACTIVATION_STATE_FLAG_IP4_READY                            = (1LL <<  3),
-	NM_ACTIVATION_STATE_FLAG_IP6_READY                            = (1LL <<  4),
-	NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES                    = (1LL <<  5),
-	NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY = (1LL <<  6),
+	NM_ACTIVATION_STATE_FLAG_IS_MASTER                            = 0x1,
+	NM_ACTIVATION_STATE_FLAG_IS_SLAVE                             = 0x2,
+	NM_ACTIVATION_STATE_FLAG_LAYER2_READY                         = 0x4,
+	NM_ACTIVATION_STATE_FLAG_IP4_READY                            = 0x8,
+	NM_ACTIVATION_STATE_FLAG_IP6_READY                            = 0x10,
+	NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES                    = 0x20,
+	NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY = 0x40,
 } NMActivationStateFlags;
 
 /**
@@ -1026,12 +1026,12 @@ typedef enum { /*< flags >*/
  */
 typedef enum { /*< flags >*/
 	NM_SETTINGS_UPDATE2_FLAG_NONE                       = 0,
-	NM_SETTINGS_UPDATE2_FLAG_TO_DISK                    = (1LL <<  0),
-	NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY                  = (1LL <<  1),
-	NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED         = (1LL <<  2),
-	NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY             = (1LL <<  3),
-	NM_SETTINGS_UPDATE2_FLAG_VOLATILE                   = (1LL <<  4),
-	NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT          = (1LL <<  5),
+	NM_SETTINGS_UPDATE2_FLAG_TO_DISK                    = 0x1,
+	NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY                  = 0x2,
+	NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED         = 0x4,
+	NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY             = 0x8,
+	NM_SETTINGS_UPDATE2_FLAG_VOLATILE                   = 0x10,
+	NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT          = 0x20,
 } NMSettingsUpdate2Flags;
 
 /**

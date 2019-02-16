@@ -90,12 +90,11 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_ck_scheme >*/
  */
 typedef enum { /*< underscore_name=nm_setting_802_1x_auth_flags >*/
 	NM_SETTING_802_1X_AUTH_FLAGS_NONE                = 0,
-	NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE     = (1 << 0),
-	NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE     = (1 << 1),
-	NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_2_DISABLE     = (1 << 2),
+	NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE     = 0x1,
+	NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE     = 0x2,
+	NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_2_DISABLE     = 0x4,
 
-	_NM_SETTING_802_1X_AUTH_FLAGS_LAST, /*< skip >*/
-	NM_SETTING_802_1X_AUTH_FLAGS_ALL                 = (((_NM_SETTING_802_1X_AUTH_FLAGS_LAST - 1) << 1) - 1),
+	NM_SETTING_802_1X_AUTH_FLAGS_ALL                 = 0x7,
 } NMSetting8021xAuthFlags;
 
 #define NM_TYPE_SETTING_802_1X            (nm_setting_802_1x_get_type ())
