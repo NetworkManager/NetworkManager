@@ -377,22 +377,47 @@ nla_get_u64 (const struct nlattr *nla)
 }
 
 size_t
-nla_strlcpy (char *dst, const struct nlattr *nla, size_t dstsize)
+nla_strlcpy (char *dst,
+             const struct nlattr *nla,
+             size_t dstsize)
 {
-	size_t srclen = nla_len (nla);
-	const char *src = nla_data (nla);
+	const char *src;
+	size_t srclen;
+	size_t len;
 
-	if (srclen > 0 && src[srclen - 1] == '\0')
-		srclen--;
+	/* - Always writes @dstsize bytes to @dst
+	 * - Copies the first non-NUL characters to @dst.
+	 *   Any characters after the first NUL bytes in @nla are ignored.
+	 * - If the string @nla is longer than @dstsize, the string
+	 *   gets truncated. @dst will always be NUL terminated. */
 
-	if (dstsize > 0) {
-		size_t len = (srclen >= dstsize) ? dstsize - 1 : srclen;
-
-		memset (dst, 0, dstsize);
-		memcpy (dst, src, len);
+	if (G_UNLIKELY (dstsize <= 1)) {
+		if (dstsize == 1)
+			dst[0] = '\0';
+		if (   nla
+		    && (srclen = nla_len (nla)) > 0)
+			return strnlen (nla_data (nla), srclen);
+		return 0;
 	}
 
-	return srclen;
+	nm_assert (dst);
+
+	if (nla) {
+		srclen = nla_len (nla);
+		if (srclen > 0) {
+			src = nla_data (nla);
+			srclen = strnlen (src, srclen);
+			if (srclen > 0) {
+				len = NM_MIN (dstsize - 1, srclen);
+				memcpy (dst, src, len);
+				memset (&dst[len], 0, dstsize - len);
+				return srclen;
+			}
+		}
+	}
+
+	memset (dst, 0, dstsize);
+	return 0;
 }
 
 int
