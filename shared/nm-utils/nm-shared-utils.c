@@ -38,6 +38,64 @@ const void *const _NM_PTRARRAY_EMPTY[1] = { NULL };
 
 const NMIPAddr nm_ip_addr_zero = { };
 
+/* this initializes a struct in_addr/in6_addr and allows for untrusted
+ * arguments (like unsuitable @addr_family or @src_len). It's almost safe
+ * in the sense that it verifies input arguments strictly. Also, it
+ * uses memcpy() to access @src, so alignment is not an issue.
+ *
+ * Only potential pitfalls:
+ *
+ * - it allows for @addr_family to be AF_UNSPEC. If that is the case (and the
+ *   caller allows for that), the caller MUST provide @out_addr_family.
+ * - when setting @dst to an IPv4 address, the trailing bytes are not touched.
+ *   Meaning, if @dst is an NMIPAddr union, only the first bytes will be set.
+ *   If that matter to you, clear @dst before. */
+gboolean
+nm_ip_addr_set_from_untrusted (int addr_family,
+                               gpointer dst,
+                               gconstpointer src,
+                               gsize src_len,
+                               int *out_addr_family)
+{
+	nm_assert (dst);
+
+	switch (addr_family) {
+	case AF_UNSPEC:
+		if (!out_addr_family) {
+			/* when the callers allow undefined @addr_family, they must provide
+			 * an @out_addr_family argument. */
+			nm_assert_not_reached ();
+			return FALSE;
+		}
+		switch (src_len) {
+		case sizeof (struct in_addr):  addr_family = AF_INET;  break;
+		case sizeof (struct in6_addr): addr_family = AF_INET6; break;
+		default:
+			return FALSE;
+		}
+		break;
+	case AF_INET:
+		if (src_len != sizeof (struct in_addr))
+			return FALSE;
+		break;
+	case AF_INET6:
+		if (src_len != sizeof (struct in6_addr))
+			return FALSE;
+		break;
+	default:
+		/* when the callers allow undefined @addr_family, they must provide
+		 * an @out_addr_family argument. */
+		nm_assert (out_addr_family);
+		return FALSE;
+	}
+
+	nm_assert (src);
+
+	memcpy (dst, src, src_len);
+	NM_SET_OUT (out_addr_family, addr_family);
+	return TRUE;
+}
+
 /*****************************************************************************/
 
 pid_t
