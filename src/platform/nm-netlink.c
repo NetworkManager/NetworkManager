@@ -259,11 +259,12 @@ nlmsg_alloc_size (size_t len)
 	if (len < sizeof (struct nlmsghdr))
 		len = sizeof (struct nlmsghdr);
 
-	nm = g_slice_new0 (struct nl_msg);
-
-	nm->nm_protocol = -1;
-	nm->nm_size = len;
-	nm->nm_nlh = g_malloc0 (len);
+	nm = g_slice_new (struct nl_msg);
+	*nm = (struct nl_msg) {
+		.nm_protocol = -1,
+		.nm_size = len,
+		.nm_nlh = g_malloc0 (len),
+	};
 	nm->nm_nlh->nlmsg_len = nlmsg_total_size (0);
 	return nm;
 }
@@ -370,7 +371,8 @@ nla_get_u64 (const struct nlattr *nla)
 {
 	uint64_t tmp = 0;
 
-	if (nla && nla_len (nla) >= sizeof (tmp))
+	if (   nla
+	    && nla_len (nla) >= sizeof (tmp))
 		memcpy (&tmp, nla_data (nla), sizeof (tmp));
 
 	return tmp;
