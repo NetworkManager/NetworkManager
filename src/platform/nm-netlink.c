@@ -420,18 +420,33 @@ nla_strlcpy (char *dst,
 	return 0;
 }
 
-int
-nla_memcpy (void *dest, const struct nlattr *src, int count)
+size_t
+nla_memcpy (void *dst, const struct nlattr *nla, size_t dstsize)
 {
-	int minlen;
+	size_t len;
+	int srclen;
 
-	if (!src)
+	if (!nla)
 		return 0;
 
-	minlen = NM_MIN (count, (int) nla_len (src));
-	memcpy (dest, nla_data (src), minlen);
+	srclen = nla_len (nla);
 
-	return minlen;
+	if (srclen <= 0) {
+		nm_assert (srclen == 0);
+		return 0;
+	}
+
+	len = NM_MIN ((size_t) srclen, dstsize);
+	if (len > 0) {
+		/* there is a crucial difference between nla_strlcpy() and nla_memcpy().
+		 * The former always write @dstsize bytes (akin to strncpy()), here, we only
+		 * write the bytes that we actually have (leaving the remainder undefined). */
+		memcpy (dst,
+		        nla_data (nla),
+		        len);
+	}
+
+	return srclen;
 }
 
 int
