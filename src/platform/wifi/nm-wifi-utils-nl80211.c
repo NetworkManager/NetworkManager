@@ -464,21 +464,22 @@ nl80211_bss_dump_handler (struct nl_msg *msg, void *arg)
 		info->freq = nla_get_u32 (bss[NL80211_BSS_FREQUENCY]);
 
 	if (bss[NL80211_BSS_SIGNAL_UNSPEC])
-		info->beacon_signal =
-			nla_get_u8 (bss[NL80211_BSS_SIGNAL_UNSPEC]);
+		info->beacon_signal = nla_get_u8 (bss[NL80211_BSS_SIGNAL_UNSPEC]);
 
 	if (bss[NL80211_BSS_SIGNAL_MBM])
-		info->beacon_signal =
-			nl80211_xbm_to_percent (nla_get_u32 (bss[NL80211_BSS_SIGNAL_MBM]), 100);
+		info->beacon_signal = nl80211_xbm_to_percent (nla_get_u32 (bss[NL80211_BSS_SIGNAL_MBM]), 100);
 
 	if (bss[NL80211_BSS_INFORMATION_ELEMENTS]) {
 		guint8 *ssid;
 		guint32 ssid_len;
 
 		find_ssid (nla_data (bss[NL80211_BSS_INFORMATION_ELEMENTS]),
-			  nla_len (bss[NL80211_BSS_INFORMATION_ELEMENTS]),
-			  &ssid, &ssid_len);
-		if (ssid && ssid_len && ssid_len <= sizeof (info->ssid)) {
+		           nla_len (bss[NL80211_BSS_INFORMATION_ELEMENTS]),
+		           &ssid,
+		           &ssid_len);
+		if (   ssid
+		    && ssid_len
+		    && ssid_len <= sizeof (info->ssid)) {
 			memcpy (info->ssid, ssid, ssid_len);
 			info->ssid_len = ssid_len;
 		}
