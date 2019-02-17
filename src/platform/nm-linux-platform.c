@@ -3107,7 +3107,9 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 		gboolean is_present;
 		int ifindex;
 		NMIPAddr gateway;
-	} nh;
+	} nh = {
+		.is_present = FALSE,
+	};
 	guint32 mss;
 	guint32 window = 0;
 	guint32 cwnd = 0;
@@ -3150,8 +3152,6 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	/*****************************************************************
 	 * parse nexthops. Only handle routes with one nh.
 	 *****************************************************************/
-
-	memset (&nh, 0, sizeof (nh));
 
 	if (tb[RTA_MULTIPATH]) {
 		struct rtnexthop *rtnh = nla_data (tb[RTA_MULTIPATH]);
