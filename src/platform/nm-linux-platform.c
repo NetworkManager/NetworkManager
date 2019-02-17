@@ -2736,18 +2736,12 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	}
 
 	if (tb[IFLA_STATS64]) {
-		/* tb[IFLA_STATS64] is only guaranteed to be 32bit-aligned,
-		 * so in general we can't access the rtnl_link_stats64 struct
-		 * members directly on 64bit architectures. */
-		char *stats = nla_data (tb[IFLA_STATS64]);
+		const char *stats = nla_data (tb[IFLA_STATS64]);
 
-#define READ_STAT64(member) \
-	unaligned_read_ne64 (stats + offsetof (struct rtnl_link_stats64, member))
-
-		obj->link.rx_packets = READ_STAT64 (rx_packets);
-		obj->link.rx_bytes   = READ_STAT64 (rx_bytes);
-		obj->link.tx_packets = READ_STAT64 (tx_packets);
-		obj->link.tx_bytes   = READ_STAT64 (tx_bytes);
+		obj->link.rx_packets = unaligned_read_ne64 (&stats[G_STRUCT_OFFSET (struct rtnl_link_stats64, rx_packets)]);
+		obj->link.rx_bytes   = unaligned_read_ne64 (&stats[G_STRUCT_OFFSET (struct rtnl_link_stats64, rx_bytes)]);
+		obj->link.tx_packets = unaligned_read_ne64 (&stats[G_STRUCT_OFFSET (struct rtnl_link_stats64, tx_packets)]);
+		obj->link.tx_bytes   = unaligned_read_ne64 (&stats[G_STRUCT_OFFSET (struct rtnl_link_stats64, tx_bytes)]);
 	}
 
 	obj->link.n_ifi_flags = ifi->ifi_flags;
