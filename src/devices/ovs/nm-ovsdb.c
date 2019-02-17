@@ -349,14 +349,14 @@ _insert_interface (json_t *params, NMConnection *interface)
 	if (s_ovs_iface)
 		type = nm_setting_ovs_interface_get_interface_type (s_ovs_iface);
 
-	json_array_append (options, json_string ("map"));
+	json_array_append_new (options, json_string ("map"));
 	s_ovs_patch = nm_connection_get_setting_ovs_patch (interface);
 	if (s_ovs_patch) {
-		json_array_append (options, json_pack ("[[s, s]]",
+		json_array_append_new (options, json_pack ("[[s, s]]",
 		                                       "peer",
 		                                        nm_setting_ovs_patch_get_peer (s_ovs_patch)));
 	} else {
-		json_array_append (options, json_array ());
+		json_array_append_new (options, json_array ());
 	}
 
 	json_array_append_new (params,
@@ -504,12 +504,15 @@ _add_interface (NMOvsdb *self, json_t *params,
 	OpenvswitchBridge *ovs_bridge = NULL;
 	OpenvswitchPort *ovs_port = NULL;
 	OpenvswitchInterface *ovs_interface = NULL;
+	nm_auto_decref_json json_t *bridges = NULL;
+	nm_auto_decref_json json_t *new_bridges = NULL;
+	nm_auto_decref_json json_t *ports = NULL;
+	nm_auto_decref_json json_t *new_ports = NULL;
+	nm_auto_decref_json json_t *interfaces = NULL;
+	nm_auto_decref_json json_t *new_interfaces = NULL;
+	gboolean has_interface = FALSE;
 	int pi;
 	int ii;
-	json_t *bridges, *new_bridges;
-	json_t *ports, *new_ports;
-	json_t *interfaces, *new_interfaces;
-	gboolean has_interface = FALSE;
 
 	bridges = json_array ();
 	ports = json_array ();
@@ -585,14 +588,6 @@ _add_interface (NMOvsdb *self, json_t *params,
 		_insert_interface (params, interface);
 		json_array_append_new (new_interfaces, json_pack ("[s, s]", "named-uuid", "rowInterface"));
 	}
-
-	json_decref (interfaces);
-	json_decref (ports);
-	json_decref (bridges);
-
-	json_decref (new_interfaces);
-	json_decref (new_ports);
-	json_decref (new_bridges);
 }
 
 /**
@@ -612,14 +607,13 @@ _delete_interface (NMOvsdb *self, json_t *params, const char *ifname)
 	OpenvswitchBridge *ovs_bridge;
 	OpenvswitchPort *ovs_port;
 	OpenvswitchInterface *ovs_interface;
-	int pi;
-	int ii;
-	json_t *bridges, *new_bridges;
-	json_t *ports, *new_ports;
-	json_t *interfaces, *new_interfaces;
+	nm_auto_decref_json json_t *bridges = NULL;
+	nm_auto_decref_json json_t *new_bridges = NULL;
 	gboolean bridges_changed;
 	gboolean ports_changed;
 	gboolean interfaces_changed;
+	int pi;
+	int ii;
 
 	bridges = json_array ();
 	new_bridges = json_array ();
@@ -627,20 +621,26 @@ _delete_interface (NMOvsdb *self, json_t *params, const char *ifname)
 
 	g_hash_table_iter_init (&iter, priv->bridges);
 	while (g_hash_table_iter_next (&iter, (gpointer) &bridge_uuid, (gpointer) &ovs_bridge)) {
-		json_array_append_new (bridges, json_pack ("[s,s]", "uuid", bridge_uuid));
+		nm_auto_decref_json json_t *ports = NULL;
+		nm_auto_decref_json json_t *new_ports = NULL;
 
 		ports = json_array ();
 		new_ports = json_array ();
 		ports_changed = FALSE;
 
+		json_array_append_new (bridges, json_pack ("[s,s]", "uuid", bridge_uuid));
+
 		for (pi = 0; pi < ovs_bridge->ports->len; pi++) {
+			nm_auto_decref_json json_t *interfaces = NULL;
+			nm_auto_decref_json json_t *new_interfaces = NULL;
+
+			interfaces = json_array ();
+			new_interfaces = json_array ();
 			port_uuid = g_ptr_array_index (ovs_bridge->ports, pi);
 			ovs_port = g_hash_table_lookup (priv->ports, port_uuid);
 
 			json_array_append_new (ports, json_pack ("[s,s]", "uuid", port_uuid));
 
-			interfaces = json_array ();
-			new_interfaces = json_array ();
 			interfaces_changed = FALSE;
 
 			for (ii = 0; ii < ovs_port->interfaces->len; ii++) {
@@ -667,9 +667,6 @@ _delete_interface (NMOvsdb *self, json_t *params, const char *ifname)
 				}
 				json_array_append_new (new_ports, json_pack ("[s,s]", "uuid", port_uuid));
 			}
-
-			json_decref (interfaces);
-			json_decref (new_interfaces);
 		}
 
 		if (json_array_size (new_ports) == 0) {
@@ -681,9 +678,6 @@ _delete_interface (NMOvsdb *self, json_t *params, const char *ifname)
 			}
 			json_array_append_new (new_bridges, json_pack ("[s,s]", "uuid", bridge_uuid));
 		}
-
-		json_decref (ports);
-		json_decref (new_ports);
 	}
 
 	if (bridges_changed) {
@@ -708,7 +702,7 @@ ovsdb_next_command (NMOvsdb *self)
 	NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE (self);
 	OvsdbMethodCall *call = NULL;
 	char *cmd;
-	json_t *msg = NULL;
+	nm_auto_decref_json json_t *msg = NULL;
 	json_t *params;
 
 	if (!priv->conn)
@@ -764,7 +758,6 @@ ovsdb_next_command (NMOvsdb *self)
 	cmd = json_dumps (msg, 0);
 
 	g_string_append (priv->output, cmd);
-	json_decref (msg);
 	free (cmd);
 
 	ovsdb_write (self);
@@ -1041,7 +1034,7 @@ static void
 ovsdb_got_echo (NMOvsdb *self, json_int_t id, json_t *data)
 {
 	NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE (self);
-	json_t *msg;
+	nm_auto_decref_json json_t *msg = NULL;
 	char *reply;
 	gboolean output_was_empty;
 
@@ -1050,7 +1043,6 @@ ovsdb_got_echo (NMOvsdb *self, json_int_t id, json_t *data)
 	msg = json_pack ("{s:I, s:O}", "id", id, "result", data);
 	reply = json_dumps (msg, 0);
 	g_string_append (priv->output, reply);
-	json_decref (msg);
 	free (reply);
 
 	if (output_was_empty)
@@ -1300,6 +1292,9 @@ ovsdb_disconnect (NMOvsdb *self, gboolean is_disposing)
 	gpointer user_data;
 	gs_free_error GError *error = NULL;
 
+	if (!priv->client)
+		return;
+
 	_LOGD ("disconnecting from ovsdb");
 	nm_utils_error_set_cancelled (&error, is_disposing, "NMOvsdb");
 
@@ -1317,6 +1312,7 @@ ovsdb_disconnect (NMOvsdb *self, gboolean is_disposing)
 	g_clear_object (&priv->client);
 	g_clear_object (&priv->conn);
 	g_clear_pointer (&priv->db_uuid, g_free);
+	nm_clear_g_cancellable (&priv->cancellable);
 }
 
 static void
@@ -1535,11 +1531,14 @@ dispose (GObject *object)
 
 	ovsdb_disconnect (self, TRUE);
 
-	g_string_free (priv->input, TRUE);
-	priv->input = NULL;
-	g_string_free (priv->output, TRUE);
-	priv->output = NULL;
-
+	if (priv->input) {
+		g_string_free (priv->input, TRUE);
+		priv->input = NULL;
+	}
+	if (priv->output) {
+		g_string_free (priv->output, TRUE);
+		priv->output = NULL;
+	}
 	if (priv->calls) {
 		g_array_free (priv->calls, TRUE);
 		priv->calls = NULL;
@@ -1548,9 +1547,6 @@ dispose (GObject *object)
 	g_clear_pointer (&priv->bridges, g_hash_table_destroy);
 	g_clear_pointer (&priv->ports, g_hash_table_destroy);
 	g_clear_pointer (&priv->interfaces, g_hash_table_destroy);
-
-	g_cancellable_cancel (priv->cancellable);
-	g_clear_object (&priv->cancellable);
 
 	G_OBJECT_CLASS (nm_ovsdb_parent_class)->dispose (object);
 }
