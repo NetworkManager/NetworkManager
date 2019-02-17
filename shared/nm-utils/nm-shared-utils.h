@@ -140,6 +140,12 @@ nm_ip_addr_set (int addr_family, gpointer dst, gconstpointer src)
 	          : sizeof (struct in6_addr));
 }
 
+gboolean nm_ip_addr_set_from_untrusted (int addr_family,
+                                        gpointer dst,
+                                        gconstpointer src,
+                                        gsize src_len,
+                                        int *out_addr_family);
+
 static inline gboolean
 nm_ip4_addr_is_localhost (in_addr_t addr4)
 {
