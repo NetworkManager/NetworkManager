@@ -195,7 +195,24 @@ nla_get_string (const struct nlattr *nla)
 
 size_t nla_strlcpy (char *dst, const struct nlattr *nla, size_t dstsize);
 
-int nla_memcpy (void *dest, const struct nlattr *src, int count);
+size_t nla_memcpy (void *dst, const struct nlattr *nla, size_t dstsize);
+
+#define nla_memcpy_checked_size(dst, nla, dstsize) \
+	G_STMT_START { \
+		void *const _dst = (dst); \
+		const struct nlattr *const _nla = (nla); \
+		const size_t _dstsize = (dstsize); \
+		size_t _srcsize; \
+		\
+		/* assert that, if @nla is given, that it has the exact expected
+		 * size. This implies that the caller previously verified the length
+		 * of the attribute (via minlen/maxlen at nla_parse()). */ \
+		\
+		if (_nla) { \
+			_srcsize = nla_memcpy (_dst, _nla, _dstsize); \
+			nm_assert (_srcsize == _dstsize); \
+		} \
+	} G_STMT_END
 
 int nla_put (struct nl_msg *msg, int attrtype, int datalen, const void *data);
 
