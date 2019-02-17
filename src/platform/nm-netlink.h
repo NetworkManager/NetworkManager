@@ -106,7 +106,7 @@ struct nla_policy {
 /*****************************************************************************/
 
 static inline int
-nla_attr_size(int payload)
+nla_attr_size (int payload)
 {
 	nm_assert (payload >= 0);
 
@@ -122,7 +122,7 @@ nla_total_size (int payload)
 static inline int
 nla_padlen (int payload)
 {
-	return nla_total_size(payload) - nla_attr_size(payload);
+	return nla_total_size (payload) - nla_attr_size (payload);
 }
 
 struct nlattr *nla_reserve (struct nl_msg *msg, int attrtype, int attrlen);
@@ -174,13 +174,13 @@ nla_get_u16 (const struct nlattr *nla)
 }
 
 static inline uint32_t
-nla_get_u32(const struct nlattr *nla)
+nla_get_u32 (const struct nlattr *nla)
 {
 	return *(const uint32_t *) nla_data (nla);
 }
 
 static inline int32_t
-nla_get_s32(const struct nlattr *nla)
+nla_get_s32 (const struct nlattr *nla)
 {
 	return *(const int32_t *) nla_data (nla);
 }
@@ -202,7 +202,7 @@ int nla_put (struct nl_msg *msg, int attrtype, int datalen, const void *data);
 static inline int
 nla_put_string (struct nl_msg *msg, int attrtype, const char *str)
 {
-	return nla_put(msg, attrtype, strlen(str) + 1, str);
+	return nla_put (msg, attrtype, strlen (str) + 1, str);
 }
 
 static inline int
@@ -225,54 +225,54 @@ nla_put_uint32 (struct nl_msg *msg, int attrtype, uint32_t val)
 
 #define NLA_PUT(msg, attrtype, attrlen, data) \
 	G_STMT_START { \
-		if (nla_put(msg, attrtype, attrlen, data) < 0) \
+		if (nla_put (msg, attrtype, attrlen, data) < 0) \
 			goto nla_put_failure; \
 	} G_STMT_END
 
 #define NLA_PUT_TYPE(msg, type, attrtype, value) \
 	G_STMT_START { \
 		type __nla_tmp = value; \
-		NLA_PUT(msg, attrtype, sizeof(type), &__nla_tmp); \
+		NLA_PUT (msg, attrtype, sizeof (type), &__nla_tmp); \
 	} G_STMT_END
 
 #define NLA_PUT_U8(msg, attrtype, value) \
-	NLA_PUT_TYPE(msg, uint8_t, attrtype, value)
+	NLA_PUT_TYPE (msg, uint8_t, attrtype, value)
 
 #define NLA_PUT_S8(msg, attrtype, value) \
-	NLA_PUT_TYPE(msg, int8_t, attrtype, value)
+	NLA_PUT_TYPE (msg, int8_t, attrtype, value)
 
 #define NLA_PUT_U16(msg, attrtype, value) \
-	NLA_PUT_TYPE(msg, uint16_t, attrtype, value)
+	NLA_PUT_TYPE (msg, uint16_t, attrtype, value)
 
 #define NLA_PUT_U32(msg, attrtype, value) \
-	NLA_PUT_TYPE(msg, uint32_t, attrtype, value)
+	NLA_PUT_TYPE (msg, uint32_t, attrtype, value)
 
 #define NLA_PUT_S32(msg, attrtype, value) \
-	NLA_PUT_TYPE(msg, int32_t, attrtype, value)
+	NLA_PUT_TYPE (msg, int32_t, attrtype, value)
 
 #define NLA_PUT_U64(msg, attrtype, value) \
-	NLA_PUT_TYPE(msg, uint64_t, attrtype, value)
+	NLA_PUT_TYPE (msg, uint64_t, attrtype, value)
 
 #define NLA_PUT_STRING(msg, attrtype, value) \
-	NLA_PUT(msg, attrtype, (int) strlen(value) + 1, value)
+	NLA_PUT (msg, attrtype, (int) strlen (value) + 1, value)
 
 #define NLA_PUT_FLAG(msg, attrtype) \
-	NLA_PUT(msg, attrtype, 0, NULL)
+	NLA_PUT (msg, attrtype, 0, NULL)
 
 struct nlattr *nla_find (const struct nlattr *head, int len, int attrtype);
 
 static inline int
 nla_ok (const struct nlattr *nla, int remaining)
 {
-	return remaining >= (int) sizeof(*nla) &&
-	       nla->nla_len >= sizeof(*nla) &&
+	return remaining >= (int) sizeof (*nla) &&
+	       nla->nla_len >= sizeof (*nla) &&
 	       nla->nla_len <= remaining;
 }
 
 static inline struct nlattr *
-nla_next(const struct nlattr *nla, int *remaining)
+nla_next (const struct nlattr *nla, int *remaining)
 {
-	int totlen = NLA_ALIGN(nla->nla_len);
+	int totlen = NLA_ALIGN (nla->nla_len);
 
 	*remaining -= totlen;
 	return (struct nlattr *) ((char *) nla + totlen);
@@ -280,13 +280,13 @@ nla_next(const struct nlattr *nla, int *remaining)
 
 #define nla_for_each_attr(pos, head, len, rem) \
 	for (pos = head, rem = len; \
-	     nla_ok(pos, rem); \
-	     pos = nla_next(pos, &(rem)))
+	     nla_ok (pos, rem); \
+	     pos = nla_next (pos, &(rem)))
 
 #define nla_for_each_nested(pos, nla, rem) \
-	for (pos = (struct nlattr *) nla_data(nla), rem = nla_len(nla); \
-	     nla_ok(pos, rem); \
-	     pos = nla_next(pos, &(rem)))
+	for (pos = (struct nlattr *) nla_data (nla), rem = nla_len (nla); \
+	     nla_ok (pos, rem); \
+	     pos = nla_next (pos, &(rem)))
 
 void nla_nest_cancel (struct nl_msg *msg, const struct nlattr *attr);
 struct nlattr *nla_nest_start (struct nl_msg *msg, int attrtype);
@@ -311,7 +311,7 @@ nla_parse_nested (struct nlattr *tb[],
                   struct nlattr *nla,
                   const struct nla_policy *policy)
 {
-	return nla_parse (tb, maxtype, nla_data(nla), nla_len(nla), policy);
+	return nla_parse (tb, maxtype, nla_data (nla), nla_len (nla), policy);
 }
 
 #define nla_parse_nested_arr(tb, nla, policy) \
@@ -353,15 +353,15 @@ nlmsg_total_size (int payload)
 static inline int
 nlmsg_ok (const struct nlmsghdr *nlh, int remaining)
 {
-	return (remaining >= (int)sizeof(struct nlmsghdr) &&
-	       nlh->nlmsg_len >= sizeof(struct nlmsghdr) &&
+	return (remaining >= (int) sizeof (struct nlmsghdr) &&
+	       nlh->nlmsg_len >= sizeof (struct nlmsghdr) &&
 	       nlh->nlmsg_len <= remaining);
 }
 
 static inline struct nlmsghdr *
 nlmsg_next (struct nlmsghdr *nlh, int *remaining)
 {
-	int totlen = NLMSG_ALIGN(nlh->nlmsg_len);
+	int totlen = NLMSG_ALIGN (nlh->nlmsg_len);
 
 	*remaining -= totlen;
 
@@ -381,7 +381,7 @@ _nm_auto_nl_msg_cleanup (struct nl_msg **ptr)
 {
 	nlmsg_free (*ptr);
 }
-#define nm_auto_nlmsg nm_auto(_nm_auto_nl_msg_cleanup)
+#define nm_auto_nlmsg nm_auto (_nm_auto_nl_msg_cleanup)
 
 static inline void *
 nlmsg_data (const struct nlmsghdr *nlh)
@@ -392,13 +392,13 @@ nlmsg_data (const struct nlmsghdr *nlh)
 static inline void *
 nlmsg_tail (const struct nlmsghdr *nlh)
 {
-	return (unsigned char *) nlh + NLMSG_ALIGN(nlh->nlmsg_len);
+	return (unsigned char *) nlh + NLMSG_ALIGN (nlh->nlmsg_len);
 }
 
 struct nlmsghdr *nlmsg_hdr (struct nl_msg *n);
 
 static inline int
-nlmsg_valid_hdr(const struct nlmsghdr *nlh, int hdrlen)
+nlmsg_valid_hdr (const struct nlmsghdr *nlh, int hdrlen)
 {
 	if (nlh->nlmsg_len < nlmsg_size (hdrlen))
 		return 0;
@@ -421,8 +421,8 @@ nlmsg_attrlen (const struct nlmsghdr *nlh, int hdrlen)
 static inline struct nlattr *
 nlmsg_attrdata (const struct nlmsghdr *nlh, int hdrlen)
 {
-	unsigned char *data = nlmsg_data(nlh);
-	return (struct nlattr *) (data + NLMSG_ALIGN(hdrlen));
+	unsigned char *data = nlmsg_data (nlh);
+	return (struct nlattr *) (data + NLMSG_ALIGN (hdrlen));
 }
 
 static inline struct nlattr *

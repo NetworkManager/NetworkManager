@@ -1099,7 +1099,7 @@ _linktype_get_type (NMPlatform *platform,
  ******************************************************************/
 
 #define NLMSG_TAIL(nmsg) \
-    ((struct rtattr *) (((char *) (nmsg)) + NLMSG_ALIGN((nmsg)->nlmsg_len)))
+    ((struct rtattr *) (((char *) (nmsg)) + NLMSG_ALIGN ((nmsg)->nlmsg_len)))
 
 /* copied from iproute2's addattr_l(). */
 static gboolean
@@ -1159,7 +1159,7 @@ _parse_af_inet6 (NMPlatform *platform,
 		[IFLA_INET6_CONF]               = { .minlen = 4 },
 		[IFLA_INET6_STATS]              = { .minlen = 8 },
 		[IFLA_INET6_ICMP6STATS]         = { .minlen = 8 },
-		[IFLA_INET6_TOKEN]              = { .minlen = sizeof(struct in6_addr) },
+		[IFLA_INET6_TOKEN]              = { .minlen = sizeof (struct in6_addr) },
 		[IFLA_INET6_ADDR_GEN_MODE]      = { .type = NLA_U8 },
 	};
 	struct nlattr *tb[G_N_ELEMENTS (policy)];
@@ -1171,11 +1171,11 @@ _parse_af_inet6 (NMPlatform *platform,
 	if (nla_parse_nested_arr (tb, attr, policy) < 0)
 		return FALSE;
 
-	if (tb[IFLA_INET6_CONF] && nla_len(tb[IFLA_INET6_CONF]) % 4)
+	if (tb[IFLA_INET6_CONF] && nla_len (tb[IFLA_INET6_CONF]) % 4)
 		return FALSE;
-	if (tb[IFLA_INET6_STATS] && nla_len(tb[IFLA_INET6_STATS]) % 8)
+	if (tb[IFLA_INET6_STATS] && nla_len (tb[IFLA_INET6_STATS]) % 8)
 		return FALSE;
-	if (tb[IFLA_INET6_ICMP6STATS] && nla_len(tb[IFLA_INET6_ICMP6STATS]) % 8)
+	if (tb[IFLA_INET6_ICMP6STATS] && nla_len (tb[IFLA_INET6_ICMP6STATS]) % 8)
 		return FALSE;
 
 	if (_check_addr_or_return_val (tb, IFLA_INET6_TOKEN, sizeof (struct in6_addr), FALSE)) {
@@ -1694,7 +1694,7 @@ _vlan_qos_mapping_from_nla (struct nlattr *nlattr,
 
 	array = g_ptr_array_new ();
 	nla_for_each_nested (nla, nlattr, remaining) {
-		if (nla_len (nla) < sizeof(NMVlanQosMapping))
+		if (nla_len (nla) < sizeof (NMVlanQosMapping))
 			return FALSE;
 		g_ptr_array_add (array, nla_data (nla));
 	}
@@ -1762,7 +1762,7 @@ _parse_lnk_vlan (const char *kind, struct nlattr *info_data)
 	if (tb[IFLA_VLAN_FLAGS]) {
 		struct ifla_vlan_flags flags;
 
-		nla_memcpy (&flags, tb[IFLA_VLAN_FLAGS], sizeof(flags));
+		nla_memcpy (&flags, tb[IFLA_VLAN_FLAGS], sizeof (flags));
 
 		obj->lnk_vlan.flags = flags.flags;
 	}
@@ -2697,7 +2697,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 
 	if (!tb[IFLA_IFNAME])
 		return NULL;
-	nla_strlcpy(obj->link.name, tb[IFLA_IFNAME], IFNAMSIZ);
+	nla_strlcpy (obj->link.name, tb[IFLA_IFNAME], IFNAMSIZ);
 	if (!obj->link.name[0])
 		return NULL;
 
@@ -2998,7 +2998,7 @@ _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 
 	is_v4 = ifa->ifa_family == AF_INET;
 
-	if (nlmsg_parse_arr (nlh, sizeof(*ifa), tb, policy) < 0)
+	if (nlmsg_parse_arr (nlh, sizeof (*ifa), tb, policy) < 0)
 		return NULL;
 
 	addr_len = is_v4
@@ -3067,7 +3067,7 @@ _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 	timestamp = 0;
 	/* IPv6 only */
 	if (tb[IFA_CACHEINFO]) {
-		const struct ifa_cacheinfo *ca = nla_data(tb[IFA_CACHEINFO]);
+		const struct ifa_cacheinfo *ca = nla_data (tb[IFA_CACHEINFO]);
 
 		lifetime = ca->ifa_valid;
 		preferred = ca->ifa_prefered;
@@ -3155,9 +3155,10 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 
 	if (tb[RTA_MULTIPATH]) {
 		struct rtnexthop *rtnh = nla_data (tb[RTA_MULTIPATH]);
-		size_t tlen = nla_len(tb[RTA_MULTIPATH]);
+		size_t tlen = nla_len (tb[RTA_MULTIPATH]);
 
-		while (tlen >= sizeof(*rtnh) && tlen >= rtnh->rtnh_len) {
+		while (   tlen >= sizeof (*rtnh)
+		       && tlen >= rtnh->rtnh_len) {
 
 			if (nh.is_present) {
 				/* we don't support multipath routes. */
@@ -3167,7 +3168,7 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 
 			nh.ifindex = rtnh->rtnh_ifindex;
 
-			if (rtnh->rtnh_len > sizeof(*rtnh)) {
+			if (rtnh->rtnh_len > sizeof (*rtnh)) {
 				struct nlattr *ntb[G_N_ELEMENTS (policy)];
 
 				if (nla_parse_arr (ntb,
@@ -3180,8 +3181,8 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 					memcpy (&nh.gateway, nla_data (ntb[RTA_GATEWAY]), addr_len);
 			}
 
-			tlen -= RTNH_ALIGN(rtnh->rtnh_len);
-			rtnh = RTNH_NEXT(rtnh);
+			tlen -= RTNH_ALIGN (rtnh->rtnh_len);
+			rtnh = RTNH_NEXT (rtnh);
 		}
 	}
 
@@ -3262,7 +3263,7 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	obj->ip_route.plen = rtm->rtm_dst_len;
 
 	if (tb[RTA_PRIORITY])
-		obj->ip_route.metric = nla_get_u32(tb[RTA_PRIORITY]);
+		obj->ip_route.metric = nla_get_u32 (tb[RTA_PRIORITY]);
 
 	if (is_v4)
 		obj->ip4_route.gateway = nh.gateway.addr4;
@@ -3599,7 +3600,7 @@ _nl_msg_new_link_set_linkinfo_vlan (struct nl_msg *msg,
 		for (i = 0; i < egress_qos_len; i++) {
 			if (VLAN_XGRESS_PRIO_VALID (egress_qos[i].to)) {
 				if (!qos) {
-					if (!(qos = nla_nest_start(msg, IFLA_VLAN_EGRESS_QOS)))
+					if (!(qos = nla_nest_start (msg, IFLA_VLAN_EGRESS_QOS)))
 						goto nla_put_failure;
 				}
 				NLA_PUT (msg, i, sizeof (egress_qos[i]), &egress_qos[i]);
@@ -3607,7 +3608,7 @@ _nl_msg_new_link_set_linkinfo_vlan (struct nl_msg *msg,
 		}
 
 		if (qos)
-			nla_nest_end(msg, qos);
+			nla_nest_end (msg, qos);
 	}
 
 	nla_nest_end (msg, data);
@@ -3722,7 +3723,7 @@ _nl_msg_new_address (int nlmsg_type,
 			.ifa_prefered = preferred,
 		};
 
-		NLA_PUT (msg, IFA_CACHEINFO, sizeof(ca), &ca);
+		NLA_PUT (msg, IFA_CACHEINFO, sizeof (ca), &ca);
 	}
 
 	if (flags & ~((guint32) 0xFF)) {
@@ -3848,7 +3849,7 @@ _nl_msg_new_route (int nlmsg_type,
 		if (lock)
 			NLA_PUT_U32 (msg, RTAX_LOCK, lock);
 
-		nla_nest_end(msg, metrics);
+		nla_nest_end (msg, metrics);
 	}
 
 	/* We currently don't have need for multi-hop routes... */
@@ -5063,7 +5064,7 @@ _nl_send_nlmsghdr (NMPlatform *platform,
 		};
 		struct msghdr msg = {
 			.msg_name = &nladdr,
-			.msg_namelen = sizeof(nladdr),
+			.msg_namelen = sizeof (nladdr),
 			.msg_iov = &iov,
 			.msg_iovlen = 1,
 		};
