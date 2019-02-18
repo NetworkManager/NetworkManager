@@ -409,8 +409,6 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
-	/* TODO: Set WFD IEs on supplicant manager here! */
-
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
@@ -462,7 +460,9 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMDeviceWifiP2P *self = NM_DEVICE_WIFI_P2P (device);
 	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
 	NMConnection *connection;
+	NMSettingWifiP2P *s_wifi_p2p;
 	NMWifiP2PPeer *peer;
+	GBytes *wfd_ies;
 
 	nm_clear_g_source (&priv->sup_timeout_id);
 
@@ -477,6 +477,11 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_PEER_NOT_FOUND);
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
+
+	/* Set the WFD IEs before trying to establish the connection. */
+	s_wifi_p2p = NM_SETTING_WIFI_P2P (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIFI_P2P));
+	wfd_ies = nm_setting_wifi_p2p_get_wfd_ies (s_wifi_p2p);
+	nm_supplicant_manager_set_wfd_ies (priv->sup_mgr, wfd_ies);
 
 	/* TODO: Grab secrets if we don't have them yet! */
 
@@ -934,6 +939,8 @@ supplicant_interfaces_release (NMDeviceWifiP2P *self, gboolean set_is_waiting)
 	if (priv->mgmt_iface) {
 		_LOGD (LOGD_DEVICE | LOGD_WIFI, "P2P: Releasing WPA supplicant interface.");
 
+		nm_supplicant_manager_set_wfd_ies (priv->sup_mgr, NULL);
+
 		g_signal_handlers_disconnect_by_data (priv->mgmt_iface, self);
 
 		g_clear_object (&priv->mgmt_iface);
@@ -995,10 +1002,12 @@ device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_FAILED:
 		/* Clear any critical protocol notification in the wifi stack.
 		 * At this point the IP device may have been removed already. */
+		nm_supplicant_manager_set_wfd_ies (priv->sup_mgr, NULL);
 		if (nm_device_get_ip_ifindex (device) > 0)
 			nm_platform_wifi_indicate_addressing_running (nm_device_get_platform (device), nm_device_get_ip_ifindex (device), FALSE);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
+		nm_supplicant_manager_set_wfd_ies (priv->sup_mgr, NULL);
 		break;
 	default:
 		break;
