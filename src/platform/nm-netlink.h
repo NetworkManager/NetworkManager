@@ -134,7 +134,7 @@ nla_get_u8 (const struct nlattr *nla)
 	return *(const uint8_t *) nla_data (nla);
 }
 
-static inline uint8_t
+static inline int8_t
 nla_get_s8 (const struct nlattr *nla)
 {
 	return *(const int8_t *) nla_data (nla);
