@@ -154,6 +154,20 @@ nla_data (const struct nlattr *nla)
 	return &(((char *) nla)[NLA_HDRLEN]);
 }
 
+#define nla_data_as(type, nla) \
+	({ \
+		const struct nlattr *_nla = (nla); \
+		\
+		nm_assert (nla_len (_nla) >= sizeof (type)); \
+		\
+		/* note that casting the pointer is undefined behavior in C, if
+		 * the data has wrong alignment. Netlink data is aligned to 4 bytes,
+		 * that means, if the alignment is larger than 4, this is invalid. */ \
+		G_STATIC_ASSERT_EXPR (_nm_alignof (type) <= NLA_ALIGNTO); \
+		\
+		(type *) nla_data (_nla); \
+	})
+
 static inline uint8_t
 nla_get_u8 (const struct nlattr *nla)
 {
