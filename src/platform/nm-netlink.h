@@ -130,32 +130,42 @@ struct nlattr *nla_reserve (struct nl_msg *msg, int attrtype, int attrlen);
 static inline int
 nla_len (const struct nlattr *nla)
 {
-	return nla->nla_len - NLA_HDRLEN;
+	nm_assert (nla);
+	nm_assert (nla->nla_len >= NLA_HDRLEN);
+
+	return ((int) nla->nla_len) - NLA_HDRLEN;
 }
 
 static inline int
 nla_type (const struct nlattr *nla)
 {
+	nm_assert (nla_len (nla) >= 0);
+
 	return nla->nla_type & NLA_TYPE_MASK;
 }
 
 static inline void *
 nla_data (const struct nlattr *nla)
 {
-	nm_assert (nla);
-	return (char *) nla + NLA_HDRLEN;
+	nm_assert (nla_len (nla) >= 0);
+
+	return &(((char *) nla)[NLA_HDRLEN]);
 }
 
 static inline uint8_t
 nla_get_u8 (const struct nlattr *nla)
 {
-	return *(const uint8_t *) nla_data (nla);
+	nm_assert (nla_len (nla) >= sizeof (uint8_t));
+
+	return *((const uint8_t *) nla_data (nla));
 }
 
 static inline int8_t
 nla_get_s8 (const struct nlattr *nla)
 {
-	return *(const int8_t *) nla_data (nla);
+	nm_assert (nla_len (nla) >= sizeof (int8_t));
+
+	return *((const int8_t *) nla_data (nla));
 }
 
 static inline uint8_t
@@ -170,19 +180,25 @@ nla_get_u8_cond (/*const*/ struct nlattr *const*tb, int attr, uint8_t default_va
 static inline uint16_t
 nla_get_u16 (const struct nlattr *nla)
 {
-	return *(const uint16_t *) nla_data (nla);
+	nm_assert (nla_len (nla) >= sizeof (uint16_t));
+
+	return *((const uint16_t *) nla_data (nla));
 }
 
 static inline uint32_t
 nla_get_u32 (const struct nlattr *nla)
 {
-	return *(const uint32_t *) nla_data (nla);
+	nm_assert (nla_len (nla) >= sizeof (uint32_t));
+
+	return *((const uint32_t *) nla_data (nla));
 }
 
 static inline int32_t
 nla_get_s32 (const struct nlattr *nla)
 {
-	return *(const int32_t *) nla_data (nla);
+	nm_assert (nla_len (nla) >= sizeof (int32_t));
+
+	return *((const int32_t *) nla_data (nla));
 }
 
 uint64_t nla_get_u64 (const struct nlattr *nla);
@@ -190,6 +206,8 @@ uint64_t nla_get_u64 (const struct nlattr *nla);
 static inline char *
 nla_get_string (const struct nlattr *nla)
 {
+	nm_assert (nla_len (nla) >= 0);
+
 	return (char *) nla_data (nla);
 }
 
@@ -219,6 +237,8 @@ int nla_put (struct nl_msg *msg, int attrtype, int datalen, const void *data);
 static inline int
 nla_put_string (struct nl_msg *msg, int attrtype, const char *str)
 {
+	nm_assert (str);
+
 	return nla_put (msg, attrtype, strlen (str) + 1, str);
 }
 
