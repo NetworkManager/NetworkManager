@@ -366,18 +366,6 @@ nlmsg_put (struct nl_msg *n, uint32_t pid, uint32_t seq,
 	return nlh;
 }
 
-uint64_t
-nla_get_u64 (const struct nlattr *nla)
-{
-	uint64_t tmp = 0;
-
-	if (   nla
-	    && nla_len (nla) >= sizeof (tmp))
-		memcpy (&tmp, nla_data (nla), sizeof (tmp));
-
-	return tmp;
-}
-
 size_t
 nla_strlcpy (char *dst,
              const struct nlattr *nla,

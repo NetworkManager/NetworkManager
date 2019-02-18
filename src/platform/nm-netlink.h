@@ -25,6 +25,8 @@
 #include <linux/rtnetlink.h>
 #include <linux/genetlink.h>
 
+#include "nm-utils/unaligned.h"
+
 /*****************************************************************************/
 
 #define NLMSGERR_ATTR_UNUSED            0
@@ -201,7 +203,13 @@ nla_get_s32 (const struct nlattr *nla)
 	return *((const int32_t *) nla_data (nla));
 }
 
-uint64_t nla_get_u64 (const struct nlattr *nla);
+static inline uint64_t
+nla_get_u64 (const struct nlattr *nla)
+{
+	nm_assert (nla_len (nla) >= sizeof (uint64_t));
+
+	return unaligned_read_ne64 (nla_data (nla));
+}
 
 static inline char *
 nla_get_string (const struct nlattr *nla)
