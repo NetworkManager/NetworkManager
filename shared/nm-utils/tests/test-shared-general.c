@@ -23,6 +23,7 @@
 
 #include "nm-utils/nm-time-utils.h"
 #include "nm-utils/nm-random-utils.h"
+#include "nm-utils/unaligned.h"
 
 #include "nm-utils/nm-test-utils.h"
 
@@ -217,6 +218,36 @@ test_nm_ip4_addr_is_localhost (void)
 
 /*****************************************************************************/
 
+static void
+test_unaligned (void)
+{
+	int shift;
+
+	for (shift = 0; shift <= 32; shift++) {
+		guint8 buf[100] = { };
+		guint8 val = 0;
+
+		while (val == 0)
+			val = nmtst_get_rand_int () % 256;
+
+		buf[shift] = val;
+
+		g_assert_cmpint (unaligned_read_le64 (&buf[shift]), ==, (guint64) val);
+		g_assert_cmpint (unaligned_read_be64 (&buf[shift]), ==, ((guint64) val) << 56);
+		g_assert_cmpint (unaligned_read_ne64 (&buf[shift]), !=, 0);
+
+		g_assert_cmpint (unaligned_read_le32 (&buf[shift]), ==, (guint32) val);
+		g_assert_cmpint (unaligned_read_be32 (&buf[shift]), ==, ((guint32) val) << 24);
+		g_assert_cmpint (unaligned_read_ne32 (&buf[shift]), !=, 0);
+
+		g_assert_cmpint (unaligned_read_le16 (&buf[shift]), ==, (guint16) val);
+		g_assert_cmpint (unaligned_read_be16 (&buf[shift]), ==, ((guint16) val) << 8);
+		g_assert_cmpint (unaligned_read_ne16 (&buf[shift]), !=, 0);
+	}
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -229,6 +260,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/general/test_nm_strdup_int", test_nm_strdup_int);
 	g_test_add_func ("/general/test_nm_strndup_a", test_nm_strndup_a);
 	g_test_add_func ("/general/test_nm_ip4_addr_is_localhost", test_nm_ip4_addr_is_localhost);
+	g_test_add_func ("/general/test_unaligned", test_unaligned);
 
 	return g_test_run ();
 }
