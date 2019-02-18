@@ -1562,7 +1562,7 @@ _parse_lnk_macsec (const char *kind, struct nlattr *info_data)
 	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_MACSEC, NULL);
 	props = &obj->lnk_macsec;
 
-	props->sci = tb[IFLA_MACSEC_SCI] ? be64toh (nla_get_u64 (tb[IFLA_MACSEC_SCI])) : 0;
+	props->sci = tb[IFLA_MACSEC_SCI] ? nla_get_be64 (tb[IFLA_MACSEC_SCI]) : 0;
 	props->icv_length = tb[IFLA_MACSEC_ICV_LEN] ? nla_get_u8 (tb[IFLA_MACSEC_ICV_LEN]) : 0;
 	props->cipher_suite = tb [IFLA_MACSEC_CIPHER_SUITE] ? nla_get_u64 (tb[IFLA_MACSEC_CIPHER_SUITE]) : 0;
 	props->window = tb [IFLA_MACSEC_WINDOW] ? nla_get_u32 (tb[IFLA_MACSEC_WINDOW]) : 0;
