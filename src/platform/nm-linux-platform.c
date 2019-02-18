@@ -1562,18 +1562,18 @@ _parse_lnk_macsec (const char *kind, struct nlattr *info_data)
 	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_MACSEC, NULL);
 	props = &obj->lnk_macsec;
 
-	props->sci = tb[IFLA_MACSEC_SCI] ? nla_get_be64 (tb[IFLA_MACSEC_SCI]) : 0;
-	props->icv_length = tb[IFLA_MACSEC_ICV_LEN] ? nla_get_u8 (tb[IFLA_MACSEC_ICV_LEN]) : 0;
-	props->cipher_suite = tb [IFLA_MACSEC_CIPHER_SUITE] ? nla_get_u64 (tb[IFLA_MACSEC_CIPHER_SUITE]) : 0;
-	props->window = tb [IFLA_MACSEC_WINDOW] ? nla_get_u32 (tb[IFLA_MACSEC_WINDOW]) : 0;
-	props->encoding_sa = tb[IFLA_MACSEC_ENCODING_SA] ? !!nla_get_u8 (tb[IFLA_MACSEC_ENCODING_SA]) : 0;
-	props->encrypt = tb[IFLA_MACSEC_ENCRYPT] ? !!nla_get_u8 (tb[IFLA_MACSEC_ENCRYPT]) : 0;
-	props->protect = tb[IFLA_MACSEC_PROTECT] ? !!nla_get_u8 (tb[IFLA_MACSEC_PROTECT]) : 0;
-	props->include_sci = tb[IFLA_MACSEC_INC_SCI] ? !!nla_get_u8 (tb[IFLA_MACSEC_INC_SCI]) : 0;
-	props->es = tb[IFLA_MACSEC_ES] ? !!nla_get_u8 (tb[IFLA_MACSEC_ES]) : 0;
-	props->scb = tb[IFLA_MACSEC_SCB] ? !!nla_get_u8 (tb[IFLA_MACSEC_SCB]) : 0;
-	props->replay_protect = tb[IFLA_MACSEC_REPLAY_PROTECT] ? !!nla_get_u8 (tb[IFLA_MACSEC_REPLAY_PROTECT]) : 0;
-	props->validation = tb[IFLA_MACSEC_VALIDATION] ? nla_get_u8 (tb[IFLA_MACSEC_VALIDATION]) : 0;
+	if (tb[IFLA_MACSEC_SCI])            { props->sci            =   nla_get_be64 (tb[IFLA_MACSEC_SCI]);            }
+	if (tb[IFLA_MACSEC_ICV_LEN])        { props->icv_length     =   nla_get_u8   (tb[IFLA_MACSEC_ICV_LEN]);        }
+	if (tb[IFLA_MACSEC_CIPHER_SUITE])   { props->cipher_suite   =   nla_get_u64  (tb[IFLA_MACSEC_CIPHER_SUITE]);   }
+	if (tb[IFLA_MACSEC_WINDOW])         { props->window         =   nla_get_u32  (tb[IFLA_MACSEC_WINDOW]);         }
+	if (tb[IFLA_MACSEC_ENCODING_SA])    { props->encoding_sa    = !!nla_get_u8   (tb[IFLA_MACSEC_ENCODING_SA]);    }
+	if (tb[IFLA_MACSEC_ENCRYPT])        { props->encrypt        = !!nla_get_u8   (tb[IFLA_MACSEC_ENCRYPT]);        }
+	if (tb[IFLA_MACSEC_PROTECT])        { props->protect        = !!nla_get_u8   (tb[IFLA_MACSEC_PROTECT]);        }
+	if (tb[IFLA_MACSEC_INC_SCI])        { props->include_sci    = !!nla_get_u8   (tb[IFLA_MACSEC_INC_SCI]);        }
+	if (tb[IFLA_MACSEC_ES])             { props->es             = !!nla_get_u8   (tb[IFLA_MACSEC_ES]);             }
+	if (tb[IFLA_MACSEC_SCB])            { props->scb            = !!nla_get_u8   (tb[IFLA_MACSEC_SCB]);            }
+	if (tb[IFLA_MACSEC_REPLAY_PROTECT]) { props->replay_protect = !!nla_get_u8   (tb[IFLA_MACSEC_REPLAY_PROTECT]); }
+	if (tb[IFLA_MACSEC_VALIDATION])     { props->validation     =   nla_get_u8   (tb[IFLA_MACSEC_VALIDATION]);     }
 
 	return obj;
 }
