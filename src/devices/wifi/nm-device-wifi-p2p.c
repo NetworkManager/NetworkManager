@@ -49,9 +49,6 @@ _LOG_DECLARE_SELF(NMDeviceWifiP2P);
 NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceWifiP2P,
 	PROP_GROUP_OWNER,
 	PROP_PEERS,
-	PROP_WFDIES, /* TODO: Make this a property of the setting and Find feature
-	              * making the device stateless.
-	              */
 );
 
 typedef struct {
@@ -66,7 +63,6 @@ typedef struct {
 	NMSupplicantInterface *group_iface;
 
 	CList peers_lst_head;
-	GBytes *wfd_ies;
 
 	guint sup_timeout_id;
 	guint peer_dump_id;
@@ -1198,7 +1194,6 @@ static const NMDBusInterfaceInfoExtended interface_info_device_wifi_p2p = {
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE ("HwAddress",  "s",  NM_DEVICE_HW_ADDRESS),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE ("GroupOwner", "b",  NM_DEVICE_WIFI_P2P_GROUP_OWNER),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE ("Peers",      "ao", NM_DEVICE_WIFI_P2P_PEERS),
-			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE ("WFDIEs",     "ay", NM_DEVICE_WIFI_P2P_WFDIES),
 		),
 	),
 	.legacy_property_changed = FALSE,
@@ -1221,9 +1216,6 @@ get_property (GObject *object, guint prop_id,
 	case PROP_PEERS:
 		list = nm_wifi_p2p_peers_get_paths (&priv->peers_lst_head);
 		g_value_take_boxed (value, nm_utils_strv_make_deep_copied (list));
-		break;
-	case PROP_WFDIES:
-		g_value_take_variant (value, nm_utils_gbytes_to_variant_ay (priv->wfd_ies));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1286,8 +1278,6 @@ finalize (GObject *object)
 
 	nm_assert (c_list_is_empty (&priv->peers_lst_head));
 
-	g_bytes_unref (priv->wfd_ies);
-
 	G_OBJECT_CLASS (nm_device_wifi_p2p_parent_class)->finalize (object);
 }
 
@@ -1337,13 +1327,6 @@ nm_device_wifi_p2p_class_init (NMDeviceWifiP2PClass *klass)
 	                        G_TYPE_STRV,
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
-
-	obj_properties[PROP_WFDIES] =
-	    g_param_spec_variant (NM_DEVICE_WIFI_P2P_WFDIES, "", "",
-	                          G_VARIANT_TYPE ("ay"),
-	                          NULL,
-	                          G_PARAM_READABLE |
-	                          G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

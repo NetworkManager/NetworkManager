@@ -28,20 +28,6 @@
     <property name="GroupOwner" type="b" access="read"/>
 
     <!--
-        WFDIEs:
-
-        The Wi-Fi Display information elements.
-
-        Since: 1.16
-    -->
-    <property name="WFDIEs" type="ay" access="read">
-      <!-- gdbus-codegen assumes that "ay" means "non-UTF-8 string" and
-           won't deal with '\0' bytes correctly.
-      -->
-      <annotation name="org.gtk.GDBus.C.ForceGVariant" value="1"/>
-    </property>
-
-    <!--
         Peers:
 
         List of object paths of peers visible to this Wi-Fi P2P device.
