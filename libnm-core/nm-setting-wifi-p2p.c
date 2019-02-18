@@ -258,7 +258,7 @@ nm_setting_wifi_p2p_class_init (NMSettingWifiP2PClass *setting_wifi_p2p_class)
 	 * Since: 1.16
 	 */
 	obj_properties[PROP_WPS_METHOD] =
-	    g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_WPS_METHOD, "", "",
+	    g_param_spec_uint (NM_SETTING_WIFI_P2P_WPS_METHOD, "", "",
 	                       0,
 	                       G_MAXUINT32,
 	                       NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT,
