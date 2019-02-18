@@ -49,10 +49,12 @@
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_PEER,
 	PROP_WPS_METHOD,
+	PROP_WFD_IES,
 );
 
 typedef struct {
 	char *peer_mac_address;
+	GBytes *wfd_ies;
 
 	NMSettingWirelessSecurityWpsMethod wps_method;
 } NMSettingWifiP2PPrivate;
@@ -102,6 +104,22 @@ nm_setting_wifi_p2p_get_wps_method (NMSettingWifiP2P *setting)
 	g_return_val_if_fail (NM_IS_SETTING_WIFI_P2P (setting), NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT);
 
 	return NM_SETTING_WIFI_P2P_GET_PRIVATE (setting)->wps_method;
+}
+
+/**
+ * nm_setting_wifi_p2p_get_wfd_ies:
+ * @setting: the #NMSettingWiFiP2P
+ *
+ * Returns: (transfer none): the #NMSettingWiFiP2P:wfd-ies property of the setting
+ *
+ * Since: 1.16
+ **/
+GBytes *
+nm_setting_wifi_p2p_get_wfd_ies (NMSettingWifiP2P *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIFI_P2P (setting), NULL);
+
+	return NM_SETTING_WIFI_P2P_GET_PRIVATE (setting)->wfd_ies;
 }
 
 /*****************************************************************************/
@@ -154,6 +172,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_WPS_METHOD:
 		g_value_set_uint (value, nm_setting_wifi_p2p_get_wps_method (setting));
 		break;
+	case PROP_WFD_IES:
+		g_value_set_boxed (value, nm_setting_wifi_p2p_get_wfd_ies (setting));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -174,6 +195,10 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_WPS_METHOD:
 		priv->wps_method = g_value_get_uint (value);
+		break;
+	case PROP_WFD_IES:
+		g_clear_pointer (&priv->wfd_ies, g_bytes_unref);
+		priv->wfd_ies = g_value_dup_boxed (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -209,6 +234,7 @@ finalize (GObject *object)
 	NMSettingWifiP2PPrivate *priv = NM_SETTING_WIFI_P2P_GET_PRIVATE (object);
 
 	g_free (priv->peer_mac_address);
+	g_bytes_unref (priv->wfd_ies);
 
 	G_OBJECT_CLASS (nm_setting_wifi_p2p_parent_class)->finalize (object);
 }
@@ -265,6 +291,25 @@ nm_setting_wifi_p2p_class_init (NMSettingWifiP2PClass *setting_wifi_p2p_class)
 	                       G_PARAM_READWRITE |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingWifiP2P:wfd-ies:
+	 *
+	 * The Wi-Fi Display (WFD) Information Elements (IEs) to set.
+	 *
+	 * Wi-Fi Display requires a protocol specific information element to be
+	 * set in certain Wi-Fi frames. These can be specified here for the
+	 * purpose of establishing a connection.
+	 * This setting is only useful when implementing a Wi-Fi Display client.
+	 *
+	 * Since: 1.16
+	 */
+	obj_properties[PROP_WFD_IES] =
+	    g_param_spec_boxed (NM_SETTING_WIFI_P2P_WFD_IES, "", "",
+	                        G_TYPE_BYTES,
+	                        G_PARAM_READWRITE |
+	                        NM_SETTING_PARAM_FUZZY_IGNORE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
