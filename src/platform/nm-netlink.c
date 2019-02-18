@@ -102,21 +102,30 @@ nl_nlmsghdr_to_str (const struct nlmsghdr *hdr, char *buf, gsize len)
 	b = buf;
 
 	switch (hdr->nlmsg_type) {
-	case RTM_NEWLINK:    s = "RTM_NEWLINK";  break;
-	case RTM_DELLINK:    s = "RTM_DELLINK";  break;
-	case RTM_NEWADDR:    s = "RTM_NEWADDR";  break;
-	case RTM_DELADDR:    s = "RTM_DELADDR";  break;
-	case RTM_NEWROUTE:   s = "RTM_NEWROUTE"; break;
-	case RTM_DELROUTE:   s = "RTM_DELROUTE"; break;
-	case RTM_NEWQDISC:   s = "RTM_NEWQDISC"; break;
-	case RTM_DELQDISC:   s = "RTM_DELQDISC"; break;
-	case RTM_NEWTFILTER: s = "RTM_NEWTFILTER"; break;
-	case RTM_DELTFILTER: s = "RTM_DELTFILTER"; break;
-	case NLMSG_NOOP:     s = "NLMSG_NOOP"; break;
-	case NLMSG_ERROR:    s = "NLMSG_ERROR"; break;
-	case NLMSG_DONE:     s = "NLMSG_DONE"; break;
-	case NLMSG_OVERRUN:  s = "NLMSG_OVERRUN"; break;
-	default:             s = NULL;       break;
+	case RTM_GETLINK:    s = "RTM_GETLINK";     break;
+	case RTM_NEWLINK:    s = "RTM_NEWLINK";     break;
+	case RTM_DELLINK:    s = "RTM_DELLINK";     break;
+	case RTM_SETLINK:    s = "RTM_SETLINK";     break;
+	case RTM_GETADDR:    s = "RTM_GETADDR";     break;
+	case RTM_NEWADDR:    s = "RTM_NEWADDR";     break;
+	case RTM_DELADDR:    s = "RTM_DELADDR";     break;
+	case RTM_GETROUTE:   s = "RTM_GETROUTE";    break;
+	case RTM_NEWROUTE:   s = "RTM_NEWROUTE";    break;
+	case RTM_DELROUTE:   s = "RTM_DELROUTE";    break;
+	case RTM_GETRULE:    s = "RTM_GETRULE";     break;
+	case RTM_NEWRULE:    s = "RTM_NEWRULE";     break;
+	case RTM_DELRULE:    s = "RTM_DELRULE";     break;
+	case RTM_GETQDISC:   s = "RTM_GETQDISC";    break;
+	case RTM_NEWQDISC:   s = "RTM_NEWQDISC";    break;
+	case RTM_DELQDISC:   s = "RTM_DELQDISC";    break;
+	case RTM_GETTFILTER: s = "RTM_GETTFILTER";  break;
+	case RTM_NEWTFILTER: s = "RTM_NEWTFILTER";  break;
+	case RTM_DELTFILTER: s = "RTM_DELTFILTER";  break;
+	case NLMSG_NOOP:     s = "NLMSG_NOOP";      break;
+	case NLMSG_ERROR:    s = "NLMSG_ERROR";     break;
+	case NLMSG_DONE:     s = "NLMSG_DONE";      break;
+	case NLMSG_OVERRUN:  s = "NLMSG_OVERRUN";   break;
+	default:             s = NULL;              break;
 	}
 
 	if (s)
