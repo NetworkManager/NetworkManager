@@ -3483,14 +3483,14 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 	NLA_PUT_STRING (msg, IFLA_INFO_KIND, kind);
 
 	if (veth_peer) {
-		struct ifinfomsg ifi = { };
+		const struct ifinfomsg ifi = { };
 		struct nlattr *data, *info_peer;
 
 		if (!(data = nla_nest_start (msg, IFLA_INFO_DATA)))
 			goto nla_put_failure;
 		if (!(info_peer = nla_nest_start (msg, 1 /*VETH_INFO_PEER*/)))
 			goto nla_put_failure;
-		if (nlmsg_append (msg, &ifi, sizeof (ifi), NLMSG_ALIGNTO) < 0)
+		if (nlmsg_append_struct (msg, &ifi) < 0)
 			goto nla_put_failure;
 		NLA_PUT_STRING (msg, IFLA_IFNAME, veth_peer);
 		nla_nest_end (msg, info_peer);
@@ -3622,7 +3622,7 @@ _nl_msg_new_link (int nlmsg_type,
                   unsigned flags_set)
 {
 	struct nl_msg *msg;
-	struct ifinfomsg ifi = {
+	const struct ifinfomsg ifi = {
 		.ifi_change = flags_mask,
 		.ifi_flags = flags_set,
 		.ifi_index = ifindex,
@@ -3632,7 +3632,7 @@ _nl_msg_new_link (int nlmsg_type,
 
 	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags);
 
-	if (nlmsg_append (msg, &ifi, sizeof (ifi), NLMSG_ALIGNTO) < 0)
+	if (nlmsg_append_struct (msg, &ifi) < 0)
 		goto nla_put_failure;
 
 	if (ifname)
@@ -3686,7 +3686,7 @@ _nl_msg_new_address (int nlmsg_type,
 
 	addr_len = family == AF_INET ? sizeof (in_addr_t) : sizeof (struct in6_addr);
 
-	if (nlmsg_append (msg, &am, sizeof (am), NLMSG_ALIGNTO) < 0)
+	if (nlmsg_append_struct (msg, &am) < 0)
 		goto nla_put_failure;
 
 	if (address)
@@ -3758,7 +3758,7 @@ _nl_msg_new_route (int nlmsg_type,
 	gboolean is_v4 = klass->addr_family == AF_INET;
 	const guint32 lock = ip_route_get_lock_flag (NMP_OBJECT_CAST_IP_ROUTE (obj));
 	const guint32 table = nm_platform_route_table_uncoerce (NMP_OBJECT_CAST_IP_ROUTE (obj)->table_coerced, TRUE);
-	struct rtmsg rtmsg = {
+	const struct rtmsg rtmsg = {
 		.rtm_family = klass->addr_family,
 		.rtm_tos = is_v4
 		           ? obj->ip4_route.tos
@@ -3785,7 +3785,7 @@ _nl_msg_new_route (int nlmsg_type,
 
 	msg = nlmsg_alloc_simple (nlmsg_type, (int) nlmsgflags);
 
-	if (nlmsg_append (msg, &rtmsg, sizeof (rtmsg), NLMSG_ALIGNTO) < 0)
+	if (nlmsg_append_struct (msg, &rtmsg) < 0)
 		goto nla_put_failure;
 
 	addr_len = is_v4
@@ -3872,7 +3872,7 @@ _nl_msg_new_qdisc (int nlmsg_type,
                    const NMPlatformQdisc *qdisc)
 {
 	struct nl_msg *msg;
-	struct tcmsg tcm = {
+	const struct tcmsg tcm = {
 		.tcm_family = qdisc->addr_family,
 		.tcm_ifindex = qdisc->ifindex,
 		.tcm_handle = qdisc->handle,
@@ -3882,7 +3882,7 @@ _nl_msg_new_qdisc (int nlmsg_type,
 
 	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags);
 
-	if (nlmsg_append (msg, &tcm, sizeof (tcm), NLMSG_ALIGNTO) < 0)
+	if (nlmsg_append_struct (msg, &tcm) < 0)
 		goto nla_put_failure;
 
 	NLA_PUT_STRING (msg, TCA_KIND, qdisc->kind);
@@ -3946,7 +3946,7 @@ _nl_msg_new_tfilter (int nlmsg_type,
 	struct nl_msg *msg;
 	struct nlattr *tc_options;
 	struct nlattr *act_tab;
-	struct tcmsg tcm = {
+	const struct tcmsg tcm = {
 		.tcm_family = tfilter->addr_family,
 		.tcm_ifindex = tfilter->ifindex,
 		.tcm_handle = tfilter->handle,
@@ -3956,7 +3956,7 @@ _nl_msg_new_tfilter (int nlmsg_type,
 
 	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags);
 
-	if (nlmsg_append (msg, &tcm, sizeof (tcm), NLMSG_ALIGNTO) < 0)
+	if (nlmsg_append_struct (msg, &tcm) < 0)
 		goto nla_put_failure;
 
 	NLA_PUT_STRING (msg, TCA_KIND, tfilter->kind);
@@ -5216,17 +5216,26 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 		 */
 		nlmsg = nlmsg_alloc_simple (klass->rtm_gettype, NLM_F_DUMP);
 
-		if (   klass->obj_type == NMP_OBJECT_TYPE_QDISC
-		    || klass->obj_type == NMP_OBJECT_TYPE_TFILTER) {
-			struct tcmsg tcmsg = {
-				.tcm_family = AF_UNSPEC,
-			};
-			nle = nlmsg_append (nlmsg, &tcmsg, sizeof (tcmsg), NLMSG_ALIGNTO);
-		} else {
-			struct rtgenmsg gmsg = {
-				.rtgen_family = klass->addr_family,
-			};
-			nle = nlmsg_append (nlmsg, &gmsg, sizeof (gmsg), NLMSG_ALIGNTO);
+		switch (klass->obj_type) {
+		case NMP_OBJECT_TYPE_QDISC:
+		case NMP_OBJECT_TYPE_TFILTER:
+			{
+				const struct tcmsg tcmsg = {
+					.tcm_family = AF_UNSPEC,
+				};
+
+				nle = nlmsg_append_struct (nlmsg, &tcmsg);
+			}
+			break;
+		default:
+			{
+				const struct rtgenmsg gmsg = {
+					.rtgen_family = klass->addr_family,
+				};
+
+				nle = nlmsg_append_struct (nlmsg, &gmsg);
+			}
+			break;
 		}
 
 		if (nle < 0)
