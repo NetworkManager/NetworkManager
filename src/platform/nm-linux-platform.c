@@ -5350,9 +5350,9 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 	NMPCacheOpsType cache_op;
 	struct nlmsghdr *msghdr;
 	char buf_nlmsghdr[400];
-	gboolean id_only = FALSE;
+	gboolean is_del = FALSE;
+	gboolean is_dump = FALSE;
 	NMPCache *cache = nm_platform_get_cache (platform);
-	gboolean is_dump;
 
 	msghdr = nlmsg_hdr (msg);
 
@@ -5363,37 +5363,36 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 	if (!handle_events)
 		return;
 
-	if (NM_IN_SET (msghdr->nlmsg_type, RTM_DELLINK, RTM_DELADDR, RTM_DELROUTE)) {
+	if (NM_IN_SET (msghdr->nlmsg_type, RTM_DELLINK,
+	                                   RTM_DELADDR,
+	                                   RTM_DELROUTE)) {
 		/* The event notifies about a deleted object. We don't need to initialize all
 		 * fields of the object. */
-		id_only = TRUE;
+		is_del = TRUE;
 	}
 
-	obj = nmp_object_new_from_nl (platform, cache, msg, id_only);
+	obj = nmp_object_new_from_nl (platform, cache, msg, is_del);
 	if (!obj) {
 		_LOGT ("event-notification: %s: ignore",
 		       nl_nlmsghdr_to_str (msghdr, buf_nlmsghdr, sizeof (buf_nlmsghdr)));
 		return;
 	}
 
-	switch (msghdr->nlmsg_type) {
-	case RTM_NEWADDR:
-	case RTM_NEWLINK:
-	case RTM_NEWROUTE:
-	case RTM_NEWQDISC:
-	case RTM_NEWTFILTER:
+	if (   !is_del
+	    && NM_IN_SET (msghdr->nlmsg_type, RTM_NEWADDR,
+	                                      RTM_NEWLINK,
+	                                      RTM_NEWROUTE,
+	                                      RTM_NEWQDISC,
+	                                      RTM_NEWTFILTER)) {
 		is_dump = delayed_action_refresh_all_in_progress (platform,
 		                                                  delayed_action_refresh_from_object_type (NMP_OBJECT_GET_TYPE (obj)));
-		break;
-	default:
-		is_dump = FALSE;
 	}
 
 	_LOGT ("event-notification: %s%s: %s",
 	       nl_nlmsghdr_to_str (msghdr, buf_nlmsghdr, sizeof (buf_nlmsghdr)),
 	       is_dump ? ", in-dump" : "",
 	       nmp_object_to_string (obj,
-	                             id_only ? NMP_OBJECT_TO_STRING_ID : NMP_OBJECT_TO_STRING_PUBLIC,
+	                             is_del ? NMP_OBJECT_TO_STRING_ID : NMP_OBJECT_TO_STRING_PUBLIC,
 	                             NULL, 0));
 
 	{
