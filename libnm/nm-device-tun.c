@@ -267,6 +267,7 @@ finalize (GObject *object)
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (object);
 
 	g_free (priv->mode);
+	g_free (priv->hw_address);
 
 	G_OBJECT_CLASS (nm_device_tun_parent_class)->finalize (object);
 }
