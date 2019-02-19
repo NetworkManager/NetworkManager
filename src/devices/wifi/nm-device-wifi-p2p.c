@@ -945,6 +945,10 @@ supplicant_interfaces_release (NMDeviceWifiP2P *self, gboolean set_is_waiting)
 
 	supplicant_group_interface_release (self);
 
+	nm_device_state_changed (NM_DEVICE (self),
+	                         NM_DEVICE_STATE_UNAVAILABLE,
+	                         NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+
 	if (set_is_waiting)
 		_set_is_waiting_for_supplicant (self, TRUE);
 }
