@@ -400,7 +400,13 @@ struct nl_msg *nlmsg_alloc_simple (int nlmsgtype, int flags);
 
 void *nlmsg_reserve (struct nl_msg *n, size_t len, int pad);
 
-int nlmsg_append (struct nl_msg *n, void *data, size_t len, int pad);
+int nlmsg_append (struct nl_msg *n,
+                  const void *data,
+                  size_t len,
+                  int pad);
+
+#define nlmsg_append_struct(n, data) \
+	nlmsg_append (n, (data), sizeof (*(data)), NLMSG_ALIGNTO)
 
 void nlmsg_free (struct nl_msg *msg);
 

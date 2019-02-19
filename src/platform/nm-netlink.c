@@ -214,6 +214,8 @@ nlmsg_reserve (struct nl_msg *n, size_t len, int pad)
 	size_t nlmsg_len = n->nm_nlh->nlmsg_len;
 	size_t tlen;
 
+	nm_assert (pad >= 0);
+
 	if (len > n->nm_size)
 		return NULL;
 
@@ -328,9 +330,17 @@ void nlmsg_free (struct nl_msg *msg)
 /*****************************************************************************/
 
 int
-nlmsg_append (struct nl_msg *n, void *data, size_t len, int pad)
+nlmsg_append (struct nl_msg *n,
+              const void *data,
+              size_t len,
+              int pad)
 {
 	void *tmp;
+
+	nm_assert (n);
+	nm_assert (data);
+	nm_assert (len > 0);
+	nm_assert (pad >= 0);
 
 	tmp = nlmsg_reserve (n, len, pad);
 	if (tmp == NULL)
