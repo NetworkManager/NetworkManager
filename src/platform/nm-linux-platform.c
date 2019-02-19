@@ -3621,7 +3621,7 @@ _nl_msg_new_link (int nlmsg_type,
                   unsigned flags_mask,
                   unsigned flags_set)
 {
-	struct nl_msg *msg;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	const struct ifinfomsg ifi = {
 		.ifi_change = flags_mask,
 		.ifi_flags = flags_set,
@@ -3638,9 +3638,9 @@ _nl_msg_new_link (int nlmsg_type,
 	if (ifname)
 		NLA_PUT_STRING (msg, IFLA_IFNAME, ifname);
 
-	return msg;
+	return g_steal_pointer (&msg);
+
 nla_put_failure:
-	nlmsg_free (msg);
 	g_return_val_if_reached (NULL);
 }
 
@@ -3659,7 +3659,7 @@ _nl_msg_new_address (int nlmsg_type,
                      guint32 preferred,
                      const char *label)
 {
-	struct nl_msg *msg;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	struct ifaddrmsg am = {
 		.ifa_family = family,
 		.ifa_index = ifindex,
@@ -3730,10 +3730,9 @@ _nl_msg_new_address (int nlmsg_type,
 		NLA_PUT_U32 (msg, IFA_FLAGS, flags);
 	}
 
-	return msg;
+	return g_steal_pointer (&msg);
 
 nla_put_failure:
-	nlmsg_free (msg);
 	g_return_val_if_reached (NULL);
 }
 
@@ -3753,7 +3752,7 @@ _nl_msg_new_route (int nlmsg_type,
                    guint16 nlmsgflags,
                    const NMPObject *obj)
 {
-	struct nl_msg *msg;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	const NMPClass *klass = NMP_OBJECT_GET_CLASS (obj);
 	gboolean is_v4 = klass->addr_family == AF_INET;
 	const guint32 lock = ip_route_get_lock_flag (NMP_OBJECT_CAST_IP_ROUTE (obj));
@@ -3859,10 +3858,9 @@ _nl_msg_new_route (int nlmsg_type,
 	    && obj->ip6_route.rt_pref != NM_ICMPV6_ROUTER_PREF_MEDIUM)
 		NLA_PUT_U8 (msg, RTA_PREF, obj->ip6_route.rt_pref);
 
-	return msg;
+	return g_steal_pointer (&msg);
 
 nla_put_failure:
-	nlmsg_free (msg);
 	g_return_val_if_reached (NULL);
 }
 
@@ -3871,7 +3869,7 @@ _nl_msg_new_qdisc (int nlmsg_type,
                    int nlmsg_flags,
                    const NMPlatformQdisc *qdisc)
 {
-	struct nl_msg *msg;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	const struct tcmsg tcm = {
 		.tcm_family = qdisc->addr_family,
 		.tcm_ifindex = qdisc->ifindex,
@@ -3887,9 +3885,9 @@ _nl_msg_new_qdisc (int nlmsg_type,
 
 	NLA_PUT_STRING (msg, TCA_KIND, qdisc->kind);
 
-	return msg;
+	return g_steal_pointer (&msg);
+
 nla_put_failure:
-	nlmsg_free (msg);
 	g_return_val_if_reached (NULL);
 }
 
@@ -3943,7 +3941,7 @@ _nl_msg_new_tfilter (int nlmsg_type,
                      int nlmsg_flags,
                      const NMPlatformTfilter *tfilter)
 {
-	struct nl_msg *msg;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	struct nlattr *tc_options;
 	struct nlattr *act_tab;
 	const struct tcmsg tcm = {
@@ -3974,9 +3972,9 @@ _nl_msg_new_tfilter (int nlmsg_type,
 
 	nla_nest_end (msg, act_tab);
 
-	return msg;
+	return g_steal_pointer (&msg);
+
 nla_put_failure:
-	nlmsg_free (msg);
 	g_return_val_if_reached (NULL);
 }
 
