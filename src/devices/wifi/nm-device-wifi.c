@@ -3396,6 +3396,12 @@ dispose (GObject *object)
 
 	remove_all_aps (self);
 
+	if (priv->p2p_device) {
+		/* Destroy the P2P device. */
+		g_object_remove_weak_pointer (G_OBJECT (priv->p2p_device), (gpointer*) &priv->p2p_device);
+		nm_device_wifi_p2p_remove (g_steal_pointer (&priv->p2p_device));
+	}
+
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->dispose (object);
 }
 
