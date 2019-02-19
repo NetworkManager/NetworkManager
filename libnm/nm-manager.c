@@ -1622,7 +1622,7 @@ nm_manager_checkpoint_rollback_finish (NMManager *manager,
 	if (g_simple_async_result_propagate_error (simple, error))
 		return NULL;
 	else
-		return g_simple_async_result_get_op_res_gpointer (simple);
+		return g_hash_table_ref (g_simple_async_result_get_op_res_gpointer (simple));
 }
 
 static void
