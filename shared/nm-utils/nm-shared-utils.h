@@ -795,6 +795,11 @@ GParamSpec *nm_g_object_class_find_property_from_gtype (GType gtype,
 
 /*****************************************************************************/
 
+GType nm_g_type_find_implementing_class_for_property (GType gtype,
+                                                      const char *pname);
+
+/*****************************************************************************/
+
 typedef enum {
 	NM_UTILS_STR_UTF8_SAFE_FLAG_NONE                = 0,
 	NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL         = 0x0001,

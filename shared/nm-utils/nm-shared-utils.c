@@ -1413,6 +1413,53 @@ nm_g_object_class_find_property_from_gtype (GType gtype,
 
 /*****************************************************************************/
 
+/**
+ * nm_g_type_find_implementing_class_for_property:
+ * @gtype: the GObject type which has a property @pname
+ * @pname: the name of the property to look up
+ *
+ * This is only a helper function for printf debugging. It's not
+ * used in actual code. Hence, the function just asserts that
+ * @pname and @gtype arguments are suitable. It cannot fail.
+ *
+ * Returns: the most ancestor type of @gtype, that
+ *   implements the property @pname. It means, it
+ *   searches the type hierarchy to find the type
+ *   that added @pname.
+ */
+GType
+nm_g_type_find_implementing_class_for_property (GType gtype,
+                                                const char *pname)
+{
+	nm_auto_unref_gtypeclass GObjectClass *klass = NULL;
+	GParamSpec *pspec;
+
+	g_return_val_if_fail (pname, G_TYPE_INVALID);
+
+	klass = g_type_class_ref (gtype);
+	g_return_val_if_fail (G_IS_OBJECT_CLASS (klass), G_TYPE_INVALID);
+
+	pspec = g_object_class_find_property (klass, pname);
+	g_return_val_if_fail (pspec, G_TYPE_INVALID);
+
+	gtype = G_TYPE_FROM_CLASS (klass);
+
+	while (TRUE) {
+		nm_auto_unref_gtypeclass GObjectClass *k = NULL;
+
+		k = g_type_class_ref (g_type_parent (gtype));
+
+		g_return_val_if_fail (G_IS_OBJECT_CLASS (k), G_TYPE_INVALID);
+
+		if (g_object_class_find_property (k, pname) != pspec)
+			return gtype;
+
+		gtype = G_TYPE_FROM_CLASS (k);
+	}
+}
+
+/*****************************************************************************/
+
 static void
 _str_append_escape (GString *s, char ch)
 {
