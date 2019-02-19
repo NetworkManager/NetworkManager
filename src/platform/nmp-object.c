@@ -2977,7 +2977,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.sizeof_data                        = sizeof (NMPObjectLink),
 		.sizeof_public                      = sizeof (NMPlatformLink),
 		.obj_type_name                      = "link",
-		.addr_family                        = AF_UNSPEC,
 		.rtm_gettype                        = RTM_GETLINK,
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_LINK,
 		.signal_type                        = NM_PLATFORM_SIGNAL_LINK_CHANGED,
