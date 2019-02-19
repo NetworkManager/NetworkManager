@@ -1137,6 +1137,10 @@ nm_device_wifi_p2p_set_mgmt_iface (NMDeviceWifiP2P *self,
 	                  G_CALLBACK (supplicant_iface_group_started_cb),
 	                  self);
 
+	nm_device_queue_recheck_available (NM_DEVICE (self),
+	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
+	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+
 done:
 	_set_is_waiting_for_supplicant (self,
 	                                   !priv->mgmt_iface
