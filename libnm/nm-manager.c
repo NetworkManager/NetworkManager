@@ -1816,6 +1816,8 @@ dispose (GObject *object)
 		priv->all_devices = NULL;
 	}
 
+	nm_clear_pointer (&priv->checkpoints, g_ptr_array_unref);
+
 	free_active_connections (manager);
 	g_clear_object (&priv->primary_connection);
 	g_clear_object (&priv->activating_connection);
