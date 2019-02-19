@@ -122,6 +122,9 @@ nm_hash_update (NMHashState *state, const void *ptr, gsize n)
 		nm_hash_update ((state), &_val, sizeof (_val)); \
 	} G_STMT_END
 
+#define nm_hash_update_valp(state, val) \
+	nm_hash_update ((state), (val), sizeof (*(val))) \
+
 static inline void
 nm_hash_update_bool (NMHashState *state, bool val)
 {
