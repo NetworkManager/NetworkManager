@@ -186,12 +186,13 @@ void nm_ip4_config_subtract (NMIP4Config *dst,
                              guint32 default_route_metric_penalty);
 void nm_ip4_config_intersect (NMIP4Config *dst,
                               const NMIP4Config *src,
+                              gboolean intersect_routes,
                               guint32 default_route_metric_penalty);
 NMIP4Config *nm_ip4_config_intersect_alloc (const NMIP4Config *a,
                                             const NMIP4Config *b,
+                                            gboolean intersect_routes,
                                             guint32 default_route_metric_penalty);
 gboolean nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relevant_changes);
-void nm_ip4_config_dump (const NMIP4Config *self, const char *detail);
 
 const NMPObject *nm_ip4_config_best_default_route_get (const NMIP4Config *self);
 const NMPObject *_nm_ip4_config_best_default_route_find (const NMIP4Config *self);
@@ -290,6 +291,11 @@ void nm_ip4_config_hash (const NMIP4Config *self, GChecksum *sum, gboolean dns_o
 gboolean nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b);
 
 gboolean _nm_ip_config_check_and_add_domain (GPtrArray *array, const char *domain);
+
+void nm_ip_config_dump (const NMIPConfig *self,
+                        const char *detail,
+                        NMLogLevel level,
+                        NMLogDomain domain);
 
 /*****************************************************************************/
 
@@ -531,11 +537,13 @@ nm_ip_config_best_default_route_get (const NMIPConfig *self)
 static inline void
 nm_ip_config_intersect (NMIPConfig *dst,
                         const NMIPConfig *src,
+                        gboolean intersect_routes,
                         guint32 default_route_metric_penalty)
 {
 	_NM_IP_CONFIG_DISPATCH_SET_OP (, dst, src,
 	                               nm_ip4_config_intersect,
 	                               nm_ip6_config_intersect,
+	                               intersect_routes,
 	                               default_route_metric_penalty);
 }
 
@@ -577,18 +585,21 @@ nm_ip_config_replace (NMIPConfig *dst,
 static inline NMIPConfig *
 nm_ip_config_intersect_alloc (const NMIPConfig *a,
                               const NMIPConfig *b,
+                              gboolean intersect_routes,
                               guint32 default_route_metric_penalty)
 {
 	if (NM_IS_IP4_CONFIG (a)) {
 		nm_assert (NM_IS_IP4_CONFIG (b));
 		return (NMIPConfig *) nm_ip4_config_intersect_alloc ((const NMIP4Config *) a,
 		                                                     (const NMIP4Config *) b,
+		                                                     intersect_routes,
 		                                                     default_route_metric_penalty);
 	} else {
 		nm_assert (NM_IS_IP6_CONFIG (a));
 		nm_assert (NM_IS_IP6_CONFIG (b));
 		return (NMIPConfig *) nm_ip6_config_intersect_alloc ((const NMIP6Config *) a,
 		                                                     (const NMIP6Config *) b,
+		                                                     intersect_routes,
 		                                                     default_route_metric_penalty);
 	}
 }
