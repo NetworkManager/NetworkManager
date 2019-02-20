@@ -3725,6 +3725,25 @@ nm_utils_wifi_freq_to_channel (guint32 freq)
 }
 
 /**
+ * nm_utils_wifi_freq_to_band:
+ * @freq: frequency
+ *
+ * Utility function to translate a Wi-Fi frequency to its corresponding band.
+ *
+ * Returns: the band containing the frequency or NULL if freq is invalid
+ **/
+const char *
+nm_utils_wifi_freq_to_band (guint32 freq)
+{
+	if (freq >= 4915 && freq <= 5825)
+		return "a";
+	else if (freq >= 2412 && freq <= 2484)
+		return "bg";
+
+	return NULL;
+}
+
+/**
  * nm_utils_wifi_channel_to_freq:
  * @channel: channel
  * @band: frequency band for wireless ("a" or "bg")
