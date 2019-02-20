@@ -817,6 +817,8 @@ nm_wifi_ap_update_from_properties (NMWifiAP *ap,
 			changed |= nm_wifi_ap_set_mode (ap, NM_802_11_MODE_INFRA);
 		else if (!g_strcmp0 (s, "ad-hoc"))
 			changed |= nm_wifi_ap_set_mode (ap, NM_802_11_MODE_ADHOC);
+		else if (!g_strcmp0 (s, "mesh"))
+			changed |= nm_wifi_ap_set_mode (ap, NM_802_11_MODE_MESH);
 	}
 
 	if (g_variant_lookup (properties, "Signal", "n", &i16))
@@ -1009,7 +1011,9 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 	                        ? '#'
 	                        : (priv->fake
 	                               ? 'f'
-	                               : 'a'))),
+	                               : (priv->mode == NM_802_11_MODE_MESH
+	                                      ? 'm'
+	                                      : 'a')))),
 	            chan,
 	            priv->strength,
 	            priv->flags & NM_802_11_AP_FLAGS_PRIVACY ? 'P' : '_',
@@ -1073,6 +1077,8 @@ nm_wifi_ap_check_compatible (NMWifiAP *self,
 			return FALSE;
 		if (   !strcmp (mode, "ap")
 		    && (priv->mode != NM_802_11_MODE_INFRA || priv->hotspot != TRUE))
+			return FALSE;
+		if (!strcmp (mode, "mesh") && (priv->mode != NM_802_11_MODE_MESH))
 			return FALSE;
 	}
 
