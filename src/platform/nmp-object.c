@@ -2920,15 +2920,15 @@ nmp_cache_update_link_master_connected (NMPCache *cache,
 /*****************************************************************************/
 
 void
-nmp_cache_dirty_set_all (NMPCache *cache, NMPObjectType obj_type)
+nmp_cache_dirty_set_all (NMPCache *cache,
+                         const NMPLookup *lookup)
 {
-	NMPObject obj_needle;
-
 	nm_assert (cache);
+	nm_assert (lookup);
 
 	nm_dedup_multi_index_dirty_set_head (cache->multi_idx,
-	                                     _idx_type_get (cache, NMP_CACHE_ID_TYPE_OBJECT_TYPE),
-	                                     _nmp_object_stackinit_from_type (&obj_needle, obj_type));
+	                                     _idx_type_get (cache, lookup->cache_id_type),
+	                                     &lookup->selector_obj);
 }
 
 /*****************************************************************************/
