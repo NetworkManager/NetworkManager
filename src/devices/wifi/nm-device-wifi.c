@@ -806,12 +806,13 @@ check_connection_available (NMDevice *device,
 		return TRUE;
 	}
 
-	/* Ad-Hoc and AP connections are always available because they may be
+	/* Ad-Hoc, AP and Mesh connections are always available because they may be
 	 * started at any time.
 	 */
 	mode = nm_setting_wireless_get_mode (s_wifi);
 	if (   g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC) == 0
-	    || g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_AP) == 0)
+	    || g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_AP) == 0
+	    || g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_MESH) == 0)
 		return TRUE;
 
 	/* Hidden SSIDs obviously don't always appear in the scan list either.
@@ -1022,7 +1023,8 @@ can_auto_connect (NMDevice *device,
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	NMWifiAP *ap;
-	const char *method, *mode;
+	const char *method6, *mode;
+	gboolean auto4, auto6;
 	guint64 timestamp = 0;
 
 	nm_assert (!specific_object || !*specific_object);
@@ -1035,13 +1037,20 @@ can_auto_connect (NMDevice *device,
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wifi, FALSE);
 
-	/* Always allow autoconnect for AP and non-autoconf Ad-Hoc */
-	method = nm_utils_get_ip_config_method (connection, AF_INET);
+	/* Always allow autoconnect for AP and non-autoconf Ad-Hoc or Mesh */
+	auto4 = nm_streq0 (nm_utils_get_ip_config_method (connection, AF_INET),
+	                   NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	method6 = nm_utils_get_ip_config_method (connection, AF_INET6);
+	auto6 =    nm_streq0 (method6, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
+	        || nm_streq0 (method6, NM_SETTING_IP6_CONFIG_METHOD_DHCP);
+
 	mode = nm_setting_wireless_get_mode (s_wifi);
+
 	if (nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_AP))
 		return TRUE;
-	else if (   nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC)
-	         && !nm_streq0 (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
+	else if (!auto4 && nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC))
+		return TRUE;
+	else if (!auto4 && !auto6 && nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_MESH))
 		return TRUE;
 
 	/* Don't autoconnect to networks that have been tried at least once
