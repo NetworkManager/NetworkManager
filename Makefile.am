@@ -1701,6 +1701,7 @@ src_libnm_systemd_core_la_SOURCES = \
 	src/systemd/nm-sd.h \
 	src/systemd/sd-adapt-core/condition.h \
 	src/systemd/sd-adapt-core/conf-parser.h \
+	src/systemd/sd-adapt-core/device-util.h \
 	src/systemd/sd-adapt-core/khash.h \
 	src/systemd/sd-adapt-core/nm-sd-adapt-core.c \
 	src/systemd/sd-adapt-core/nm-sd-adapt-core.h \
