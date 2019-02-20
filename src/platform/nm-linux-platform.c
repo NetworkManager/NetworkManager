@@ -5195,6 +5195,59 @@ do_request_link (NMPlatform *platform, int ifindex, const char *name)
 	delayed_action_handle_all (platform, FALSE);
 }
 
+static struct nl_msg *
+_nl_msg_new_dump (NMPObjectType obj_type,
+                  int preferred_addr_family)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	const NMPClass *klass;
+
+	klass = nmp_class_from_type (obj_type);
+
+	nm_assert (klass);
+	nm_assert (klass->rtm_gettype > 0);
+
+	nlmsg = nlmsg_alloc_simple (klass->rtm_gettype, NLM_F_DUMP);
+
+	if (klass->addr_family != AF_UNSPEC) {
+		/* if the class specifies a particular address family, then it is preferred. */
+		nm_assert (NM_IN_SET (preferred_addr_family, AF_UNSPEC, klass->addr_family));
+		preferred_addr_family = klass->addr_family;
+	}
+
+	switch (klass->obj_type) {
+	case NMP_OBJECT_TYPE_QDISC:
+	case NMP_OBJECT_TYPE_TFILTER:
+		{
+			const struct tcmsg tcmsg = {
+				.tcm_family = preferred_addr_family,
+			};
+
+			if (nlmsg_append_struct (nlmsg, &tcmsg) < 0)
+				g_return_val_if_reached (NULL);
+		}
+		break;
+	case NMP_OBJECT_TYPE_LINK:
+	case NMP_OBJECT_TYPE_IP4_ADDRESS:
+	case NMP_OBJECT_TYPE_IP6_ADDRESS:
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
+		{
+			const struct rtgenmsg gmsg = {
+				.rtgen_family = preferred_addr_family,
+			};
+
+			if (nlmsg_append_struct (nlmsg, &gmsg) < 0)
+				g_return_val_if_reached (NULL);
+		}
+		break;
+	default:
+		g_return_val_if_reached (NULL);
+	}
+
+	return g_steal_pointer (&nlmsg);
+}
+
 static void
 do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType action_type)
 {
@@ -5216,9 +5269,7 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 
 	FOR_EACH_DELAYED_ACTION (iflags, action_type) {
 		NMPObjectType obj_type = delayed_action_refresh_to_object_type (iflags);
-		const NMPClass *klass = nmp_class_from_type (obj_type);
 		nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-		int nle;
 		int *out_refresh_all_in_progress;
 
 		out_refresh_all_in_progress = &priv->delayed_action.refresh_all_in_progress[delayed_action_refresh_all_to_idx (iflags)];
@@ -5236,35 +5287,8 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 
 		event_handler_read_netlink (platform, FALSE);
 
-		/* reimplement
-		 *   nl_rtgen_request (sk, klass->rtm_gettype, klass->addr_family, NLM_F_DUMP);
-		 * because we need the sequence number.
-		 */
-		nlmsg = nlmsg_alloc_simple (klass->rtm_gettype, NLM_F_DUMP);
-
-		switch (klass->obj_type) {
-		case NMP_OBJECT_TYPE_QDISC:
-		case NMP_OBJECT_TYPE_TFILTER:
-			{
-				const struct tcmsg tcmsg = {
-					.tcm_family = AF_UNSPEC,
-				};
-
-				nle = nlmsg_append_struct (nlmsg, &tcmsg);
-			}
-			break;
-		default:
-			{
-				const struct rtgenmsg gmsg = {
-					.rtgen_family = klass->addr_family,
-				};
-
-				nle = nlmsg_append_struct (nlmsg, &gmsg);
-			}
-			break;
-		}
-
-		if (nle < 0)
+		nlmsg = _nl_msg_new_dump (obj_type, AF_UNSPEC);
+		if (!nlmsg)
 			goto next_after_fail;
 
 		if (_nl_send_nlmsg (platform,
