@@ -1425,8 +1425,8 @@ make_user_setting (shvarFile *ifcfg)
 			has_user_data = TRUE;
 	}
 
-	return has_user_data
-	       ? g_steal_pointer (&s_user)
+	return   has_user_data
+	       ? NM_SETTING (g_steal_pointer (&s_user))
 	       : NULL;
 }
 
@@ -1611,7 +1611,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	              NULL);
 
 	if (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
-		return g_steal_pointer (&s_ip4);
+		return NM_SETTING (g_steal_pointer (&s_ip4));
 
 	/* Handle DHCP settings */
 	nm_clear_g_free (&value);
@@ -1802,7 +1802,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	}
 	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DAD_TIMEOUT, (int) timeout, NULL);
 
-	return g_steal_pointer (&s_ip4);
+	return NM_SETTING (g_steal_pointer (&s_ip4));
 }
 
 static void
@@ -2944,7 +2944,7 @@ make_wep_setting (shvarFile *ifcfg,
 		return NULL;
 	}
 
-	return g_steal_pointer (&s_wsec);
+	return NM_SETTING (g_steal_pointer (&s_wsec));
 }
 
 static gboolean
@@ -5386,7 +5386,7 @@ make_vlan_setting (shvarFile *ifcfg,
 	parse_prio_map_list (s_vlan, ifcfg, "VLAN_INGRESS_PRIORITY_MAP", NM_VLAN_INGRESS_MAP);
 	parse_prio_map_list (s_vlan, ifcfg, "VLAN_EGRESS_PRIORITY_MAP", NM_VLAN_EGRESS_MAP);
 
-	return g_steal_pointer (&s_vlan);
+	return NM_SETTING (g_steal_pointer (&s_vlan));
 }
 
 static NMConnection *
