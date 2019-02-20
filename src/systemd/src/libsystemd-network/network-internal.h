@@ -42,7 +42,11 @@ int net_get_unique_predictable_data(sd_device *device, uint64_t *result);
 const char *net_get_name(sd_device *device);
 #endif /* NM_IGNORED */
 
-void serialize_in_addrs(FILE *f, const struct in_addr *addresses, size_t size);
+size_t serialize_in_addrs(FILE *f,
+                          const struct in_addr *addresses,
+                          size_t size,
+                          bool with_leading_space,
+                          bool (*predicate)(const struct in_addr *addr));
 int deserialize_in_addrs(struct in_addr **addresses, const char *string);
 void serialize_in6_addrs(FILE *f, const struct in6_addr *addresses,
                          size_t size);

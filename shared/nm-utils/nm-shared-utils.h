@@ -140,6 +140,12 @@ nm_ip_addr_set (int addr_family, gpointer dst, gconstpointer src)
 	          : sizeof (struct in6_addr));
 }
 
+static inline gboolean
+nm_ip4_addr_is_localhost (in_addr_t addr4)
+{
+	return (addr4 & htonl (0xFF000000u)) == htonl (0x7F000000u);
+}
+
 /*****************************************************************************/
 
 #define NM_CMP_RETURN(c) \
