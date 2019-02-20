@@ -424,11 +424,13 @@ g_steal_pointer (gpointer pp)
 
 	return ref;
 }
-
-/* type safety */
-#define g_steal_pointer(pp) \
-  (0 ? (*(pp)) : (g_steal_pointer) (pp))
 #endif
+
+#ifdef g_steal_pointer
+#undef g_steal_pointer
+#endif
+#define g_steal_pointer(pp) \
+	((typeof (*(pp))) g_steal_pointer (pp))
 
 /*****************************************************************************/
 
