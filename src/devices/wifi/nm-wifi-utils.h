@@ -36,6 +36,7 @@ typedef enum {
 gboolean nm_wifi_utils_complete_connection (GBytes *ssid,
                                             const char *bssid,
                                             NM80211Mode mode,
+                                            guint32 ap_freq,
                                             guint32 flags,
                                             guint32 wpa_flags,
                                             guint32 rsn_flags,
