@@ -5365,7 +5365,9 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 
 	if (NM_IN_SET (msghdr->nlmsg_type, RTM_DELLINK,
 	                                   RTM_DELADDR,
-	                                   RTM_DELROUTE)) {
+	                                   RTM_DELROUTE,
+	                                   RTM_DELQDISC,
+	                                   RTM_DELTFILTER)) {
 		/* The event notifies about a deleted object. We don't need to initialize all
 		 * fields of the object. */
 		is_del = TRUE;
