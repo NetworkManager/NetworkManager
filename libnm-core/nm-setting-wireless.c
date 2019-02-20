@@ -830,6 +830,16 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
+	if ((g_strcmp0 (priv->mode, NM_SETTING_WIRELESS_MODE_MESH) == 0) && !(priv->channel && priv->band)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_MISSING_PROPERTY,
+		             _("'%s' requires '%s' and '%s' property"),
+		             priv->mode, NM_SETTING_WIRELESS_BAND, NM_SETTING_WIRELESS_CHANNEL);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_MODE);
+		return FALSE;
+	}
+
 	if (priv->bssid && !nm_utils_hwaddr_valid (priv->bssid, ETH_ALEN)) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
