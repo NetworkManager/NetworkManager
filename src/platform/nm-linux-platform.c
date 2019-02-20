@@ -321,8 +321,22 @@ typedef enum {
 } DelayedActionType;
 
 #define FOR_EACH_DELAYED_ACTION(iflags, flags_all) \
-	for ((iflags) = (DelayedActionType) 0x1LL; (iflags) <= DELAYED_ACTION_TYPE_MAX; (iflags) <<= 1) \
-		if (NM_FLAGS_ANY (flags_all, iflags))
+	for ((iflags) = (DelayedActionType) 0x1LL; \
+	     ({ \
+	         gboolean _good = FALSE; \
+	         \
+	         nm_assert (nm_utils_is_power_of_two (iflags)); \
+	         \
+	         while ((iflags) <= DELAYED_ACTION_TYPE_MAX) { \
+	             if (NM_FLAGS_ANY ((flags_all), (iflags))) { \
+	                 _good = TRUE; \
+	                 break; \
+	             } \
+	             (iflags) <<= 1; \
+	         } \
+	         _good; \
+	     }); \
+	     (iflags) <<= 1)
 
 typedef enum {
 	/* Negative values are errors from kernel. Add dummy member to
@@ -4633,9 +4647,8 @@ delayed_action_handle_one (NMPlatform *platform)
 		priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_ALL;
 
 		if (_LOGt_ENABLED ()) {
-			FOR_EACH_DELAYED_ACTION (iflags, flags) {
+			FOR_EACH_DELAYED_ACTION (iflags, flags)
 				_LOGt_delayed_action (iflags, NULL, "handle");
-			}
 		}
 
 		delayed_action_handle_REFRESH_ALL (platform, flags);
@@ -4719,9 +4732,8 @@ delayed_action_schedule (NMPlatform *platform, DelayedActionType action_type, gp
 	priv->delayed_action.flags |= action_type;
 
 	if (_LOGt_ENABLED ()) {
-		FOR_EACH_DELAYED_ACTION (iflags, action_type) {
+		FOR_EACH_DELAYED_ACTION (iflags, action_type)
 			_LOGt_delayed_action (iflags, user_data, "schedule");
-		}
 	}
 }
 
