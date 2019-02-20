@@ -5248,13 +5248,23 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 			};
 			nle = nlmsg_append (nlmsg, &gmsg, sizeof (gmsg), NLMSG_ALIGNTO);
 		}
-		if (nle < 0)
-			continue;
 
-		if (_nl_send_nlmsg (platform, nlmsg, NULL, NULL, DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS, out_refresh_all_in_progress) < 0) {
-			nm_assert (*out_refresh_all_in_progress > 0);
-			*out_refresh_all_in_progress -= 1;
-		}
+		if (nle < 0)
+			goto next_after_fail;
+
+		if (_nl_send_nlmsg (platform,
+		                    nlmsg,
+		                    NULL,
+		                    NULL,
+		                    DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS,
+		                    out_refresh_all_in_progress) < 0)
+			goto next_after_fail;
+
+		continue;
+
+next_after_fail:
+		nm_assert (*out_refresh_all_in_progress > 0);
+		*out_refresh_all_in_progress -= 1;
 	}
 }
 
