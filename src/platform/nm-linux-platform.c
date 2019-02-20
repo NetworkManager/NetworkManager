@@ -5205,9 +5205,13 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 	action_type &= DELAYED_ACTION_TYPE_REFRESH_ALL;
 
 	FOR_EACH_DELAYED_ACTION (iflags, action_type) {
+		NMPLookup lookup;
+
 		priv->pruning[delayed_action_refresh_all_to_idx (iflags)] = TRUE;
+		nmp_lookup_init_obj_type (&lookup,
+		                          delayed_action_refresh_to_object_type (iflags));
 		nmp_cache_dirty_set_all (nm_platform_get_cache (platform),
-		                         delayed_action_refresh_to_object_type (iflags));
+		                         &lookup);
 	}
 
 	FOR_EACH_DELAYED_ACTION (iflags, action_type) {

@@ -771,7 +771,8 @@ NMPCacheOpsType nmp_cache_update_link_master_connected (NMPCache *cache,
                                                         const NMPObject **out_obj_old,
                                                         const NMPObject **out_obj_new);
 
-void nmp_cache_dirty_set_all (NMPCache *cache, NMPObjectType obj_type);
+void nmp_cache_dirty_set_all (NMPCache *cache,
+                              const NMPLookup *lookup);
 
 NMPCache *nmp_cache_new (NMDedupMultiIndex *multi_idx, gboolean use_udev);
 void nmp_cache_free (NMPCache *cache);
