@@ -3148,18 +3148,25 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	 *****************************************************************/
 
 	if (tb[RTA_MULTIPATH]) {
-		struct rtnexthop *rtnh = nla_data (tb[RTA_MULTIPATH]);
 		size_t tlen = nla_len (tb[RTA_MULTIPATH]);
+		struct rtnexthop *rtnh;
 
-		while (   tlen >= sizeof (*rtnh)
-		       && tlen >= rtnh->rtnh_len) {
+		if (tlen < sizeof (*rtnh))
+			goto rta_multipath_done;
+
+		rtnh = nla_data_as (struct rtnexthop, tb[RTA_MULTIPATH]);
+
+		if (tlen < rtnh->rtnh_len)
+			goto rta_multipath_done;
+
+		while (TRUE) {
 
 			if (nh.is_present) {
 				/* we don't support multipath routes. */
 				return NULL;
 			}
-			nh.is_present = TRUE;
 
+			nh.is_present = TRUE;
 			nh.ifindex = rtnh->rtnh_ifindex;
 
 			if (rtnh->rtnh_len > sizeof (*rtnh)) {
@@ -3175,9 +3182,14 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 					memcpy (&nh.gateway, nla_data (ntb[RTA_GATEWAY]), addr_len);
 			}
 
+			if (tlen < RTNH_ALIGN (rtnh->rtnh_len) + sizeof (*rtnh))
+				goto rta_multipath_done;
+
 			tlen -= RTNH_ALIGN (rtnh->rtnh_len);
 			rtnh = RTNH_NEXT (rtnh);
 		}
+rta_multipath_done:
+		;
 	}
 
 	if (   tb[RTA_OIF]
