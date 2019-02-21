@@ -1189,21 +1189,6 @@ nm_platform_link_supports_slaves (NMPlatform *self, int ifindex)
 }
 
 /**
- * nm_platform_refresh_all:
- * @self: platform instance
- * @obj_type: The object type to request.
- *
- * Resync and re-request all objects from kernel of a certain @obj_type.
- */
-void
-nm_platform_refresh_all (NMPlatform *self, NMPObjectType obj_type)
-{
-	_CHECK_SELF_VOID (self, klass);
-
-	klass->refresh_all (self, obj_type);
-}
-
-/**
  * nm_platform_link_refresh:
  * @self: platform instance
  * @ifindex: Interface index

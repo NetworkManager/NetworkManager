@@ -5896,12 +5896,6 @@ link_refresh (NMPlatform *platform, int ifindex)
 	return !!nm_platform_link_get_obj (platform, ifindex, TRUE);
 }
 
-static void
-refresh_all (NMPlatform *platform, NMPObjectType obj_type)
-{
-	do_request_one_type (platform, obj_type);
-}
-
 static gboolean
 link_set_netns (NMPlatform *platform,
                 int ifindex,
@@ -8462,7 +8456,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_add = link_add;
 	platform_class->link_delete = link_delete;
 
-	platform_class->refresh_all = refresh_all;
 	platform_class->link_refresh = link_refresh;
 
 	platform_class->link_set_netns = link_set_netns;

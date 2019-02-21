@@ -806,8 +806,6 @@ typedef struct {
 	gboolean (*sysctl_set) (NMPlatform *, const char *pathid, int dirfd, const char *path, const char *value);
 	char * (*sysctl_get) (NMPlatform *, const char *pathid, int dirfd, const char *path);
 
-	void (*refresh_all) (NMPlatform *self, NMPObjectType obj_type);
-
 	int (*link_add) (NMPlatform *,
 	                 const char *name,
 	                 NMLinkType type,
@@ -1179,8 +1177,6 @@ gboolean nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe (NMPlatform *self,
 
 const char *nm_platform_if_indextoname (NMPlatform *self, int ifindex, char *out_ifname/* of size IFNAMSIZ */);
 int nm_platform_if_nametoindex (NMPlatform *self, const char *ifname);
-
-void nm_platform_refresh_all (NMPlatform *self, NMPObjectType obj_type);
 
 const NMPObject *nm_platform_link_get_obj (NMPlatform *self,
                                            int ifindex,
