@@ -1941,25 +1941,36 @@ nmc_util_is_domain (const char *domain)
 }
 
 static gboolean
-nmc_property_set_bytes (NMSetting *setting, const char *prop, const char *value, GError **error)
+_set_fcn_gobject_bytes (ARGS_SET_FCN)
 {
-	gs_free char *val_strip = NULL;
+	gs_free char *val_strip_free = NULL;
 	gs_free const char **strv = NULL;
+	const char *val_strip;
 	const char **iter;
 	gs_unref_bytes GBytes *bytes = NULL;
 	GByteArray *array;
 
 	nm_assert (!error || !*error);
 
-	val_strip = g_strstrip (g_strdup (value));
+	val_strip = nm_strstrip_avoid_copy (value, &val_strip_free);
 
 	/* First try hex string in the format of AAbbCCDd */
 	bytes = nm_utils_hexstr2bin (val_strip);
 	if (bytes)
 		goto done;
 
+	if (   !property_info->property_typ_data
+	    || !property_info->property_typ_data->subtype.gobject_bytes.legacy_format) {
+		if (value && value[0]) {
+			g_set_error_literal (error, 1, 0, _("not a valid hex-string"));
+			return FALSE;
+		}
+		/* accept the emtpy word to reset the property to %NULL. */
+		goto done;
+	}
+
 	/* Otherwise, consider the following format: AA b 0xCc D */
-	strv = nm_utils_strsplit_set (val_strip, " \t", FALSE);
+	strv = nm_utils_strsplit_set (value, " \t", FALSE);
 	array = g_byte_array_sized_new (NM_PTRARRAY_LEN (strv));
 	for (iter = strv; iter && *iter; iter++) {
 		int v;
@@ -1977,7 +1988,7 @@ nmc_property_set_bytes (NMSetting *setting, const char *prop, const char *value,
 	bytes = g_byte_array_free_to_bytes (array);
 
 done:
-	g_object_set (setting, prop, bytes, NULL);
+	g_object_set (setting, property_info->property_name, bytes, NULL);
 	return TRUE;
 }
 
@@ -2094,14 +2105,16 @@ _get_fcn_802_1x_phase2_client_cert (ARGS_GET_FCN)
 }
 
 static gconstpointer
-_get_fcn_802_1x_password_raw (ARGS_GET_FCN)
+_get_fcn_gobject_bytes (ARGS_GET_FCN)
 {
-	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
+	gs_unref_bytes GBytes *bytes = NULL;
 	char *str;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
-	str = bytes_to_string (nm_setting_802_1x_get_password_raw (s_8021X));
+	g_object_get (setting, property_info->property_name, &bytes, NULL);
+
+	str = bytes_to_string (bytes);
 	NM_SET_OUT (out_is_default, !str || !str[0]);
 	RETURN_STR_TO_FREE (str);
 }
@@ -2318,12 +2331,6 @@ DEFINE_SETTER_PRIV_KEY (_set_fcn_802_1x_private_key,
 DEFINE_SETTER_PRIV_KEY (_set_fcn_802_1x_phase2_private_key,
                         nm_setting_802_1x_get_phase2_private_key_password,
                         nm_setting_802_1x_set_phase2_private_key)
-
-static gboolean
-_set_fcn_802_1x_password_raw (ARGS_SET_FCN)
-{
-	return nmc_property_set_bytes (setting, property_info->property_name, value, error);
-}
 
 static gconstpointer
 _get_fcn_bond_options (ARGS_GET_FCN)
@@ -5047,6 +5054,11 @@ static const NMMetaPropertyType _pt_gobject_mtu = {
 	.set_fcn =                      _set_fcn_gobject_mtu,
 };
 
+static const NMMetaPropertyType _pt_gobject_bytes = {
+	.get_fcn =                     _get_fcn_gobject_bytes,
+	.set_fcn =                     _set_fcn_gobject_bytes,
+};
+
 static const NMMetaPropertyType _pt_gobject_mac = {
 	.get_fcn =                      _get_fcn_gobject,
 	.set_fcn =                      _set_fcn_gobject_mac,
@@ -5342,9 +5354,9 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 		       "(with optional 0x/0X prefix, and optional leading 0).\n\n"
 		       "Examples: ab0455a6ea3a74C2\n"
 		       "          ab 4 55 0xa6 ea 3a 74 C2\n"),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_802_1x_password_raw,
-			.set_fcn =                  _set_fcn_802_1x_password_raw,
+		.property_type =                 &_pt_gobject_bytes,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_bytes,
+			.legacy_format =            TRUE,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PASSWORD_RAW_FLAGS,
