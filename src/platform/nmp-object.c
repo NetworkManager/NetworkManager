@@ -2911,15 +2911,25 @@ nmp_cache_update_link_master_connected (NMPCache *cache,
 /*****************************************************************************/
 
 void
-nmp_cache_dirty_set_all (NMPCache *cache,
-                         const NMPLookup *lookup)
+nmp_cache_dirty_set_all_main (NMPCache *cache,
+                              const NMPLookup *lookup)
 {
+	const NMDedupMultiHeadEntry *head_entry;
+	NMDedupMultiIter iter;
+
 	nm_assert (cache);
 	nm_assert (lookup);
 
-	nm_dedup_multi_index_dirty_set_head (cache->multi_idx,
-	                                     _idx_type_get (cache, lookup->cache_id_type),
-	                                     &lookup->selector_obj);
+	head_entry = nmp_cache_lookup (cache, lookup);
+
+	nm_dedup_multi_iter_init (&iter, head_entry);
+	while (nm_dedup_multi_iter_next (&iter)) {
+		const NMDedupMultiEntry *main_entry;
+
+		main_entry = nmp_cache_reresolve_main_entry (cache, iter.current, lookup);
+
+		nm_dedup_multi_entry_set_dirty (main_entry, TRUE);
+	}
 }
 
 /*****************************************************************************/

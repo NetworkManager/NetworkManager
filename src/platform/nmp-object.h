@@ -853,8 +853,34 @@ NMPCacheOpsType nmp_cache_update_link_master_connected (NMPCache *cache,
                                                         const NMPObject **out_obj_old,
                                                         const NMPObject **out_obj_new);
 
-void nmp_cache_dirty_set_all (NMPCache *cache,
-                              const NMPLookup *lookup);
+static inline const NMDedupMultiEntry *
+nmp_cache_reresolve_main_entry (NMPCache *cache,
+                                const NMDedupMultiEntry *entry,
+                                const NMPLookup *lookup)
+{
+	const NMDedupMultiEntry *main_entry;
+
+	nm_assert (cache);
+	nm_assert (entry);
+	nm_assert (lookup);
+
+	if (lookup->cache_id_type == NMP_CACHE_ID_TYPE_OBJECT_TYPE) {
+		nm_assert (entry == nmp_cache_lookup_entry (cache, entry->obj));
+		return entry;
+	}
+
+	/* we only track the dirty flag for the OBJECT-TYPE index. That means,
+	 * for other lookup types we need to check the dirty flag of the main-entry. */
+	main_entry = nmp_cache_lookup_entry (cache, entry->obj);
+
+	nm_assert (main_entry);
+	nm_assert (main_entry->obj == entry->obj);
+
+	return main_entry;
+}
+
+void nmp_cache_dirty_set_all_main (NMPCache *cache,
+                                   const NMPLookup *lookup);
 
 NMPCache *nmp_cache_new (NMDedupMultiIndex *multi_idx, gboolean use_udev);
 void nmp_cache_free (NMPCache *cache);

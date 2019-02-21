@@ -283,41 +283,56 @@ typedef struct {
 	};
 } ChangeLinkData;
 
-enum {
-	REFRESH_ALL_TYPE_LINKS,
-	REFRESH_ALL_TYPE_IP4_ADDRESSES,
-	REFRESH_ALL_TYPE_IP6_ADDRESSES,
-	REFRESH_ALL_TYPE_IP4_ROUTES,
-	REFRESH_ALL_TYPE_IP6_ROUTES,
-	REFRESH_ALL_TYPE_QDISCS,
-	REFRESH_ALL_TYPE_TFILTERS,
+typedef enum {
+	_REFRESH_ALL_TYPE_FIRST            = 0,
+
+	REFRESH_ALL_TYPE_LINKS             = 0,
+	REFRESH_ALL_TYPE_IP4_ADDRESSES     = 1,
+	REFRESH_ALL_TYPE_IP6_ADDRESSES     = 2,
+	REFRESH_ALL_TYPE_IP4_ROUTES        = 3,
+	REFRESH_ALL_TYPE_IP6_ROUTES        = 4,
+	REFRESH_ALL_TYPE_QDISCS            = 5,
+	REFRESH_ALL_TYPE_TFILTERS          = 6,
+
 	_REFRESH_ALL_TYPE_NUM,
-};
+} RefreshAllType;
+
+typedef struct {
+	NMPObjectType obj_type;
+
+	/* for NLM_F_DUMP, which address family to request. */
+	int addr_family;
+} RefreshAllInfo;
 
 typedef enum {
-	DELAYED_ACTION_TYPE_NONE                        = 0,
-	DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS           = (1LL << /* 0 */ REFRESH_ALL_TYPE_LINKS),
-	DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES   = (1LL << /* 1 */ REFRESH_ALL_TYPE_IP4_ADDRESSES),
-	DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES   = (1LL << /* 2 */ REFRESH_ALL_TYPE_IP6_ADDRESSES),
-	DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES      = (1LL << /* 3 */ REFRESH_ALL_TYPE_IP4_ROUTES),
-	DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES      = (1LL << /* 4 */ REFRESH_ALL_TYPE_IP6_ROUTES),
-	DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS          = (1LL << /* 5 */ REFRESH_ALL_TYPE_QDISCS),
-	DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS        = (1LL << /* 6 */ REFRESH_ALL_TYPE_TFILTERS),
-	DELAYED_ACTION_TYPE_REFRESH_LINK                = (1LL <<    7),
-	DELAYED_ACTION_TYPE_MASTER_CONNECTED            = (1LL <<   11),
-	DELAYED_ACTION_TYPE_READ_NETLINK                = (1LL <<   12),
-	DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE        = (1LL <<   13),
+	DELAYED_ACTION_TYPE_NONE                          = 0,
+
+#define F(val, name) ((sizeof (char[(((val)) == (name)) ? 1 : -1]) * 0) + (val))
+	DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS             = 1 << F (0, REFRESH_ALL_TYPE_LINKS),
+	DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES     = 1 << F (1, REFRESH_ALL_TYPE_IP4_ADDRESSES),
+	DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES     = 1 << F (2, REFRESH_ALL_TYPE_IP6_ADDRESSES),
+	DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES        = 1 << F (3, REFRESH_ALL_TYPE_IP4_ROUTES),
+	DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES        = 1 << F (4, REFRESH_ALL_TYPE_IP6_ROUTES),
+	DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS            = 1 << F (5, REFRESH_ALL_TYPE_QDISCS),
+	DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS          = 1 << F (6, REFRESH_ALL_TYPE_TFILTERS),
+#undef F
+
+	DELAYED_ACTION_TYPE_REFRESH_LINK                  = 1 <<  7,
+	DELAYED_ACTION_TYPE_MASTER_CONNECTED              = 1 <<  8,
+	DELAYED_ACTION_TYPE_READ_NETLINK                  = 1 <<  9,
+	DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE          = 1 << 10,
+
 	__DELAYED_ACTION_TYPE_MAX,
 
-	DELAYED_ACTION_TYPE_REFRESH_ALL                 = DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS |
-	                                                  DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES |
-	                                                  DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES |
-	                                                  DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
-	                                                  DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES |
-	                                                  DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS |
-	                                                  DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,
+	DELAYED_ACTION_TYPE_REFRESH_ALL                   = DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS |
+	                                                    DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES |
+	                                                    DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES |
+	                                                    DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
+	                                                    DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES |
+	                                                    DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS |
+	                                                    DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,
 
-	DELAYED_ACTION_TYPE_MAX                         = __DELAYED_ACTION_TYPE_MAX -1,
+	DELAYED_ACTION_TYPE_MAX                           = __DELAYED_ACTION_TYPE_MAX -1,
 } DelayedActionType;
 
 #define FOR_EACH_DELAYED_ACTION(iflags, flags_all) \
@@ -387,7 +402,7 @@ typedef struct {
 	GIOChannel *event_channel;
 	guint event_id;
 
-	bool pruning[_REFRESH_ALL_TYPE_NUM];
+	guint32 pruning[_REFRESH_ALL_TYPE_NUM];
 
 	GHashTable *sysctl_get_prev_values;
 	CList sysctl_list;
@@ -4347,55 +4362,109 @@ process_events (NMPlatform *platform)
 
 /*****************************************************************************/
 
-_NM_UTILS_LOOKUP_DEFINE (static, delayed_action_refresh_from_object_type, NMPObjectType, DelayedActionType,
-	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT (DELAYED_ACTION_TYPE_NONE),
-	NM_UTILS_LOOKUP_ITEM (NMP_OBJECT_TYPE_LINK,        DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS),
-	NM_UTILS_LOOKUP_ITEM (NMP_OBJECT_TYPE_IP4_ADDRESS, DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES),
-	NM_UTILS_LOOKUP_ITEM (NMP_OBJECT_TYPE_IP6_ADDRESS, DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES),
-	NM_UTILS_LOOKUP_ITEM (NMP_OBJECT_TYPE_IP4_ROUTE,   DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES),
-	NM_UTILS_LOOKUP_ITEM (NMP_OBJECT_TYPE_IP6_ROUTE,   DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES),
-	NM_UTILS_LOOKUP_ITEM (NMP_OBJECT_TYPE_QDISC,       DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS),
-	NM_UTILS_LOOKUP_ITEM (NMP_OBJECT_TYPE_TFILTER,     DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS),
-	NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER (),
-);
+static const RefreshAllInfo *
+refresh_all_type_get_info (RefreshAllType refresh_all_type)
+{
+	static const RefreshAllInfo infos[] = {
+#define R(_refresh_all_type, _obj_type, _addr_family) [_refresh_all_type] = { .obj_type = _obj_type, .addr_family = _addr_family, }
+		R (REFRESH_ALL_TYPE_LINKS,             NMP_OBJECT_TYPE_LINK,         AF_UNSPEC),
+		R (REFRESH_ALL_TYPE_IP4_ADDRESSES,     NMP_OBJECT_TYPE_IP4_ADDRESS,  AF_UNSPEC),
+		R (REFRESH_ALL_TYPE_IP6_ADDRESSES,     NMP_OBJECT_TYPE_IP6_ADDRESS,  AF_UNSPEC),
+		R (REFRESH_ALL_TYPE_IP4_ROUTES,        NMP_OBJECT_TYPE_IP4_ROUTE,    AF_UNSPEC),
+		R (REFRESH_ALL_TYPE_IP6_ROUTES,        NMP_OBJECT_TYPE_IP6_ROUTE,    AF_UNSPEC),
+		R (REFRESH_ALL_TYPE_QDISCS,            NMP_OBJECT_TYPE_QDISC,        AF_UNSPEC),
+		R (REFRESH_ALL_TYPE_TFILTERS,          NMP_OBJECT_TYPE_TFILTER,      AF_UNSPEC),
+#undef R
+	};
 
-_NM_UTILS_LOOKUP_DEFINE (static, delayed_action_refresh_to_object_type, DelayedActionType, NMPObjectType,
-	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT (NMP_OBJECT_TYPE_UNKNOWN),
-	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS,         NMP_OBJECT_TYPE_LINK),
-	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES, NMP_OBJECT_TYPE_IP4_ADDRESS),
-	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES, NMP_OBJECT_TYPE_IP6_ADDRESS),
-	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES,    NMP_OBJECT_TYPE_IP4_ROUTE),
-	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,    NMP_OBJECT_TYPE_IP6_ROUTE),
-	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS,        NMP_OBJECT_TYPE_QDISC),
-	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,      NMP_OBJECT_TYPE_TFILTER),
-	NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER (),
-);
+	nm_assert (_NM_INT_NOT_NEGATIVE (refresh_all_type));
+	nm_assert (refresh_all_type < G_N_ELEMENTS (infos));
+	nm_assert (nmp_class_from_type (infos[refresh_all_type].obj_type));
 
-_NM_UTILS_LOOKUP_DEFINE (static, delayed_action_refresh_all_to_idx, DelayedActionType, guint,
+	return &infos[refresh_all_type];
+}
+
+_NM_UTILS_LOOKUP_DEFINE (static, delayed_action_type_to_refresh_all_type, DelayedActionType, RefreshAllType,
 	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT (0),
-	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS,         REFRESH_ALL_TYPE_LINKS),
-	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES, REFRESH_ALL_TYPE_IP4_ADDRESSES),
-	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES, REFRESH_ALL_TYPE_IP6_ADDRESSES),
-	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES,    REFRESH_ALL_TYPE_IP4_ROUTES),
-	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,    REFRESH_ALL_TYPE_IP6_ROUTES),
-	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS,        REFRESH_ALL_TYPE_QDISCS),
-	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,      REFRESH_ALL_TYPE_TFILTERS),
+	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS,             REFRESH_ALL_TYPE_LINKS),
+	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES,     REFRESH_ALL_TYPE_IP4_ADDRESSES),
+	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES,     REFRESH_ALL_TYPE_IP6_ADDRESSES),
+	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES,        REFRESH_ALL_TYPE_IP4_ROUTES),
+	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,        REFRESH_ALL_TYPE_IP6_ROUTES),
+	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS,            REFRESH_ALL_TYPE_QDISCS),
+	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,          REFRESH_ALL_TYPE_TFILTERS),
 	NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER (),
 );
+
+static DelayedActionType
+delayed_action_type_from_refresh_all_type (RefreshAllType refresh_all_type)
+{
+	DelayedActionType t;
+
+	nm_assert (refresh_all_type_get_info (refresh_all_type));
+
+	t = (((DelayedActionType) 1) << refresh_all_type);
+
+	nm_assert (refresh_all_type == delayed_action_type_to_refresh_all_type (t));
+
+	return t;
+}
+
+static DelayedActionType
+refresh_all_type_from_needle_object (const NMPObject *obj_needle)
+{
+	switch (NMP_OBJECT_GET_TYPE (obj_needle)) {
+	case NMP_OBJECT_TYPE_LINK:        return REFRESH_ALL_TYPE_LINKS;
+	case NMP_OBJECT_TYPE_IP4_ADDRESS: return REFRESH_ALL_TYPE_IP4_ADDRESSES;
+	case NMP_OBJECT_TYPE_IP6_ADDRESS: return REFRESH_ALL_TYPE_IP6_ADDRESSES;
+	case NMP_OBJECT_TYPE_IP4_ROUTE:   return REFRESH_ALL_TYPE_IP4_ROUTES;
+	case NMP_OBJECT_TYPE_IP6_ROUTE:   return REFRESH_ALL_TYPE_IP6_ROUTES;
+	case NMP_OBJECT_TYPE_QDISC:       return REFRESH_ALL_TYPE_QDISCS;
+	case NMP_OBJECT_TYPE_TFILTER:     return REFRESH_ALL_TYPE_TFILTERS;
+	default:
+		nm_assert_not_reached ();
+		return 0;
+	}
+}
+
+static const NMPLookup *
+refresh_all_type_init_lookup (RefreshAllType refresh_all_type,
+                              NMPLookup *lookup)
+{
+	const RefreshAllInfo *refresh_all_info;
+
+	nm_assert (lookup);
+
+	refresh_all_info = refresh_all_type_get_info (refresh_all_type);
+
+	nm_assert (refresh_all_info);
+
+	/* not yet implemented. */
+	nm_assert (refresh_all_info->addr_family == AF_UNSPEC);
+
+	return nmp_lookup_init_obj_type (lookup,
+	                                 refresh_all_info->obj_type);
+}
+
+static DelayedActionType
+delayed_action_refresh_from_needle_object (const NMPObject *obj_needle)
+{
+	return delayed_action_type_from_refresh_all_type (refresh_all_type_from_needle_object (obj_needle));
+}
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (delayed_action_to_string, DelayedActionType,
 	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT ("unknown"),
-	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS,         "refresh-all-links"),
-	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES, "refresh-all-ip4-addresses"),
-	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES, "refresh-all-ip6-addresses"),
-	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES,    "refresh-all-ip4-routes"),
-	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,    "refresh-all-ip6-routes"),
-	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS,        "refresh-all-qdiscs"),
-	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,      "refresh-all-tfilters"),
-	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_LINK,              "refresh-link"),
-	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_MASTER_CONNECTED,          "master-connected"),
-	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_READ_NETLINK,              "read-netlink"),
-	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE,      "wait-for-nl-response"),
+	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS,             "refresh-all-links"),
+	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES,     "refresh-all-ip4-addresses"),
+	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES,     "refresh-all-ip6-addresses"),
+	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES,        "refresh-all-ip4-routes"),
+	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,        "refresh-all-ip6-routes"),
+	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS,            "refresh-all-qdiscs"),
+	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,          "refresh-all-tfilters"),
+	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_LINK,                  "refresh-link"),
+	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_MASTER_CONNECTED,              "master-connected"),
+	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_READ_NETLINK,                  "read-netlink"),
+	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE,          "wait-for-nl-response"),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (DELAYED_ACTION_TYPE_NONE),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (DELAYED_ACTION_TYPE_REFRESH_ALL),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (__DELAYED_ACTION_TYPE_MAX),
@@ -4455,6 +4524,7 @@ static gboolean
 delayed_action_refresh_all_in_progress (NMPlatform *platform, DelayedActionType action_type)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	RefreshAllType refresh_all_type;
 
 	nm_assert (nm_utils_is_power_of_two (action_type));
 	nm_assert (NM_FLAGS_ANY (action_type, DELAYED_ACTION_TYPE_REFRESH_ALL));
@@ -4463,10 +4533,8 @@ delayed_action_refresh_all_in_progress (NMPlatform *platform, DelayedActionType 
 	if (NM_FLAGS_ANY (priv->delayed_action.flags, action_type))
 		return TRUE;
 
-	if (priv->delayed_action.refresh_all_in_progress[delayed_action_refresh_all_to_idx (action_type)] > 0)
-		return TRUE;
-
-	return FALSE;
+	refresh_all_type = delayed_action_type_to_refresh_all_type (action_type);
+	return (priv->delayed_action.refresh_all_in_progress[refresh_all_type] > 0);
 }
 
 static void
@@ -4764,25 +4832,33 @@ delayed_action_schedule_WAIT_FOR_NL_RESPONSE (NMPlatform *platform,
 /*****************************************************************************/
 
 static void
-cache_prune_one_type (NMPlatform *platform, NMPObjectType obj_type)
+cache_prune_one_type (NMPlatform *platform,
+                      const NMPLookup *lookup)
 {
 	NMDedupMultiIter iter;
 	const NMPObject *obj;
 	NMPCacheOpsType cache_op;
-	NMPLookup lookup;
 	NMPCache *cache = nm_platform_get_cache (platform);
 
-	nmp_lookup_init_obj_type (&lookup,
-	                          obj_type);
 	nm_dedup_multi_iter_init (&iter,
 	                          nmp_cache_lookup (cache,
-	                                            &lookup));
+	                                            lookup));
 	while (nm_dedup_multi_iter_next (&iter)) {
-		if (iter.current->dirty) {
+		const NMDedupMultiEntry *main_entry;
+
+		/* we only track the dirty flag for the OBJECT-TYPE index. That means,
+		 * for other lookup types we need to check the dirty flag of the main-entry. */
+		main_entry = nmp_cache_reresolve_main_entry (cache, iter.current, lookup);
+		if (!main_entry->dirty)
+			continue;
+
+		obj = main_entry->obj;
+
+		_LOGt ("cache-prune: prune %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+
+		{
 			nm_auto_nmpobj const NMPObject *obj_old = NULL;
 
-			obj = iter.current->obj;
-			_LOGt ("cache-prune: prune %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
 			cache_op = nmp_cache_remove (cache, obj, TRUE, TRUE, &obj_old);
 			nm_assert (cache_op == NMP_CACHE_OPS_REMOVED);
 			cache_on_change (platform, cache_op, obj_old, NULL);
@@ -4795,16 +4871,19 @@ static void
 cache_prune_all (NMPlatform *platform)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	DelayedActionType iflags, action_type;
+	RefreshAllType refresh_all_type;
 
-	action_type = DELAYED_ACTION_TYPE_REFRESH_ALL;
-	FOR_EACH_DELAYED_ACTION (iflags, action_type) {
-		bool *p = &priv->pruning[delayed_action_refresh_all_to_idx (iflags)];
+	for (refresh_all_type = _REFRESH_ALL_TYPE_FIRST; refresh_all_type < _REFRESH_ALL_TYPE_NUM; refresh_all_type++) {
+		NMPLookup lookup;
 
-		if (*p) {
-			*p = FALSE;
-			cache_prune_one_type (platform, delayed_action_refresh_to_object_type (iflags));
-		}
+		if (priv->pruning[refresh_all_type] == 0)
+			continue;
+		priv->pruning[refresh_all_type] -= 1;
+		if (priv->pruning[refresh_all_type] > 0)
+			continue;
+		refresh_all_type_init_lookup (refresh_all_type,
+		                              &lookup);
+		cache_prune_one_type (platform, &lookup);
 	}
 }
 
@@ -5166,7 +5245,7 @@ do_request_link_no_delayed_actions (NMPlatform *platform, int ifindex, const cha
 
 		entry = nmp_cache_lookup_entry_link (nm_platform_get_cache (platform), ifindex);
 		if (entry) {
-			priv->pruning[REFRESH_ALL_TYPE_LINKS] = TRUE;
+			priv->pruning[REFRESH_ALL_TYPE_LINKS] += 1;
 			nm_dedup_multi_entry_set_dirty (entry, TRUE);
 		}
 	}
@@ -5260,21 +5339,23 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 	action_type &= DELAYED_ACTION_TYPE_REFRESH_ALL;
 
 	FOR_EACH_DELAYED_ACTION (iflags, action_type) {
+		RefreshAllType refresh_all_type = delayed_action_type_to_refresh_all_type (iflags);
 		NMPLookup lookup;
 
-		priv->pruning[delayed_action_refresh_all_to_idx (iflags)] = TRUE;
-		nmp_lookup_init_obj_type (&lookup,
-		                          delayed_action_refresh_to_object_type (iflags));
-		nmp_cache_dirty_set_all (nm_platform_get_cache (platform),
-		                         &lookup);
+		priv->pruning[refresh_all_type] += 1;
+		refresh_all_type_init_lookup (refresh_all_type,
+		                              &lookup);
+		nmp_cache_dirty_set_all_main (nm_platform_get_cache (platform),
+		                              &lookup);
 	}
 
 	FOR_EACH_DELAYED_ACTION (iflags, action_type) {
-		NMPObjectType obj_type = delayed_action_refresh_to_object_type (iflags);
+		RefreshAllType refresh_all_type = delayed_action_type_to_refresh_all_type (iflags);
+		const RefreshAllInfo *refresh_all_info = refresh_all_type_get_info (refresh_all_type);
 		nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 		int *out_refresh_all_in_progress;
 
-		out_refresh_all_in_progress = &priv->delayed_action.refresh_all_in_progress[delayed_action_refresh_all_to_idx (iflags)];
+		out_refresh_all_in_progress = &priv->delayed_action.refresh_all_in_progress[refresh_all_type];
 		nm_assert (*out_refresh_all_in_progress >= 0);
 		*out_refresh_all_in_progress += 1;
 
@@ -5282,7 +5363,7 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 		priv->delayed_action.flags &= ~iflags;
 		_LOGt_delayed_action (iflags, NULL, "handle (do-request-all)");
 
-		if (obj_type == NMP_OBJECT_TYPE_LINK) {
+		if (refresh_all_type == REFRESH_ALL_TYPE_LINKS) {
 			nm_assert (   (priv->delayed_action.list_refresh_link->len > 0)
 			           == NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_REFRESH_LINK));
 			if (NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_REFRESH_LINK)) {
@@ -5294,7 +5375,8 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 
 		event_handler_read_netlink (platform, FALSE);
 
-		nlmsg = _nl_msg_new_dump (obj_type, AF_UNSPEC);
+		nlmsg = _nl_msg_new_dump (refresh_all_info->obj_type,
+		                          refresh_all_info->addr_family);
 		if (!nlmsg)
 			goto next_after_fail;
 
@@ -5315,9 +5397,9 @@ next_after_fail:
 }
 
 static void
-do_request_one_type (NMPlatform *platform, NMPObjectType obj_type)
+do_request_one_type_by_needle_object (NMPlatform *platform, const NMPObject *obj_needle)
 {
-	do_request_all_no_delayed_actions (platform, delayed_action_refresh_from_object_type (obj_type));
+	do_request_all_no_delayed_actions (platform, delayed_action_refresh_from_needle_object (obj_needle));
 	delayed_action_handle_all (platform, FALSE);
 }
 
@@ -5434,7 +5516,7 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 	                                      RTM_NEWQDISC,
 	                                      RTM_NEWTFILTER)) {
 		is_dump = delayed_action_refresh_all_in_progress (platform,
-		                                                  delayed_action_refresh_from_object_type (NMP_OBJECT_GET_TYPE (obj)));
+		                                                  delayed_action_refresh_from_needle_object (obj));
 	}
 
 	_LOGT ("event-notification: %s%s: %s",
@@ -5542,7 +5624,7 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 				 * netlink events. This needs investigation. */
 				_LOGT ("schedule resync of routes after RTM_NEWROUTE");
 				delayed_action_schedule (platform,
-				                         delayed_action_refresh_from_object_type (NMP_OBJECT_GET_TYPE (obj)),
+				                         delayed_action_refresh_from_needle_object (obj),
 				                         NULL);
 			}
 			break;
@@ -5662,7 +5744,7 @@ do_add_addrroute (NMPlatform *platform,
 		 *
 		 * rh#1484434 */
 		if (!nmp_cache_lookup_obj (nm_platform_get_cache (platform), obj_id))
-			do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id));
+			do_request_one_type_by_needle_object (platform, obj_id);
 	}
 
 	return wait_for_nl_response_to_nmerr (seq_result);
@@ -5727,7 +5809,7 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 		 *
 		 * rh#1484434 */
 		if (nmp_cache_lookup_obj (nm_platform_get_cache (platform), obj_id))
-			do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id));
+			do_request_one_type_by_needle_object (platform, obj_id);
 	}
 
 	return success;
