@@ -2428,14 +2428,14 @@ again:
 		if (   nm_utils_file_get_contents (-1, "/etc/machine-id", 100*1024, 0, &content, NULL, NULL) >= 0
 		    || nm_utils_file_get_contents (-1, LOCALSTATEDIR"/lib/dbus/machine-id", 100*1024, 0, &content, NULL, NULL) >= 0) {
 			g_strstrip (content);
-			if (_nm_utils_hexstr2bin_full (content,
-			                               FALSE,
-			                               FALSE,
-			                               NULL,
-			                               16,
-			                               (guint8 *) &uuid,
-			                               sizeof (uuid),
-			                               NULL)) {
+			if (nm_utils_hexstr2bin_full (content,
+			                              FALSE,
+			                              FALSE,
+			                              NULL,
+			                              16,
+			                              (guint8 *) &uuid,
+			                              sizeof (uuid),
+			                              NULL)) {
 				if (!nm_utils_uuid_is_null (&uuid)) {
 					/* an all-zero machine-id is not valid. */
 					is_fake = FALSE;
