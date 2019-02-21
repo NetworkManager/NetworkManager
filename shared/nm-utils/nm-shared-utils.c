@@ -2538,8 +2538,10 @@ nm_utils_memeqzero (gconstpointer data, gsize length)
 
 /**
  * nm_utils_bin2hexstr_full:
- * @addr: pointer of @length bytes.
- * @length: number of bytes in @addr
+ * @addr: pointer of @length bytes. If @length is zero, this may
+ *   also be %NULL.
+ * @length: number of bytes in @addr. May also be zero, in which
+ *   case this will return an empty string.
  * @delimiter: either '\0', otherwise the output string will have the
  *   given delimiter character between each two hex numbers.
  * @upper_case: if TRUE, use upper case ASCII characters for hex.
@@ -2565,9 +2567,6 @@ nm_utils_bin2hexstr_full (gconstpointer addr,
 	const char *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
 	char *out0;
 
-	nm_assert (addr);
-	nm_assert (length > 0);
-
 	if (out)
 		out0 = out;
 	else {
@@ -2579,19 +2578,22 @@ nm_utils_bin2hexstr_full (gconstpointer addr,
 	/* @out must contain at least @length*3 bytes if @delimiter is set,
 	 * otherwise, @length*2+1. */
 
-	for (;;) {
-		const guint8 v = *in++;
+	if (length > 0) {
+		nm_assert (in);
+		for (;;) {
+			const guint8 v = *in++;
 
-		*out++ = LOOKUP[v >> 4];
-		*out++ = LOOKUP[v & 0x0F];
-		length--;
-		if (!length)
-			break;
-		if (delimiter)
-			*out++ = delimiter;
+			*out++ = LOOKUP[v >> 4];
+			*out++ = LOOKUP[v & 0x0F];
+			length--;
+			if (!length)
+				break;
+			if (delimiter)
+				*out++ = delimiter;
+		}
 	}
 
-	*out = 0;
+	*out = '\0';
 	return out0;
 }
 
