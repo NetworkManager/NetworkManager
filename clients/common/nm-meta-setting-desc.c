@@ -7364,7 +7364,7 @@ static const NMMetaPropertyInfo *const property_infos_WIFI_P2P[] = {
 		.prompt =                       N_("Peer"),
 		.property_type =                &_pt_gobject_mac,
 	),
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_WPS_METHOD,
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIFI_P2P_WPS_METHOD,
 		.property_type =                &_pt_gobject_enum,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
