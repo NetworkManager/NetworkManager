@@ -5281,10 +5281,15 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 		/* clear any delayed action that request a refresh of this object type. */
 		priv->delayed_action.flags &= ~iflags;
 		_LOGt_delayed_action (iflags, NULL, "handle (do-request-all)");
+
 		if (obj_type == NMP_OBJECT_TYPE_LINK) {
-			priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_LINK;
-			g_ptr_array_set_size (priv->delayed_action.list_refresh_link, 0);
-			_LOGt_delayed_action (DELAYED_ACTION_TYPE_REFRESH_LINK, NULL, "clear (do-request-all)");
+			nm_assert (   (priv->delayed_action.list_refresh_link->len > 0)
+			           == NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_REFRESH_LINK));
+			if (NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_REFRESH_LINK)) {
+				_LOGt_delayed_action (DELAYED_ACTION_TYPE_REFRESH_LINK, NULL, "clear (do-request-all)");
+				priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_LINK;
+				g_ptr_array_set_size (priv->delayed_action.list_refresh_link, 0);
+			}
 		}
 
 		event_handler_read_netlink (platform, FALSE);
