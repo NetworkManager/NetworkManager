@@ -151,7 +151,7 @@ nm_supplicant_manager_set_wfd_ies (NMSupplicantManager *self,
                                    GBytes *wfd_ies)
 {
 	NMSupplicantManagerPrivate *priv;
-	GVariantBuilder params = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE ("(ssv)"));
+	GVariantBuilder params;
 	GVariant *val;
 
 	g_return_if_fail (NM_IS_SUPPLICANT_MANAGER (self));
@@ -168,6 +168,8 @@ nm_supplicant_manager_set_wfd_ies (NMSupplicantManager *self,
 	else
 		val = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
 		                                 NULL, 0, sizeof (guint8));
+
+	g_variant_builder_init (&params, G_VARIANT_TYPE ("(ssv)"));
 
 	g_variant_builder_add (&params, "s", g_dbus_proxy_get_interface_name (priv->proxy));
 	g_variant_builder_add (&params, "s", "WFDIEs");
