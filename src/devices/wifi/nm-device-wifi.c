@@ -544,6 +544,60 @@ wake_on_wlan_restore (NMDeviceWifi *self)
 }
 
 static void
+disconnect_cb (NMSupplicantInterface *iface, GError *error, gpointer user_data)
+{
+	gs_unref_object NMDeviceWifi *self = NULL;
+	NMDeviceDeactivateCallback callback;
+	gpointer callback_user_data;
+
+	nm_utils_user_data_unpack (user_data, &self, &callback, &callback_user_data);
+
+	/* error will be freed by sup_iface */
+	callback (NM_DEVICE (self), error, callback_user_data);
+}
+
+static void
+disconnect_cb_on_idle (gpointer user_data,
+                       GCancellable *cancellable)
+{
+	gs_unref_object NMDeviceWifi *self = NULL;
+	NMDeviceDeactivateCallback callback;
+	gpointer callback_user_data;
+	gs_free_error GError *cancelled_error = NULL;
+
+	nm_utils_user_data_unpack (user_data, &self, &callback, &callback_user_data);
+
+	g_cancellable_set_error_if_cancelled (cancellable, &cancelled_error);
+	callback (NM_DEVICE (self), cancelled_error, callback_user_data);
+}
+
+static void
+deactivate_async (NMDevice *device,
+                  GCancellable *cancellable,
+                  NMDeviceDeactivateCallback callback,
+                  gpointer callback_user_data) {
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	gpointer user_data;
+
+	nm_assert (G_IS_CANCELLABLE (cancellable));
+	nm_assert (callback);
+
+	user_data = nm_utils_user_data_pack (g_object_ref (self), callback, callback_user_data);
+	if (!priv->sup_iface) {
+		nm_utils_invoke_on_idle (disconnect_cb_on_idle, user_data, cancellable);
+		return;
+	}
+
+	cleanup_association_attempt (self, FALSE);
+
+	nm_supplicant_interface_disconnect_async (priv->sup_iface,
+	                                          cancellable,
+	                                          disconnect_cb,
+	                                          user_data);
+}
+
+static void
 deactivate (NMDevice *device)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
@@ -3372,6 +3426,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	device_class->get_configured_mtu = get_configured_mtu;
 	device_class->act_stage3_ip_config_start = act_stage3_ip_config_start;
 	device_class->act_stage4_ip_config_timeout = act_stage4_ip_config_timeout;
+	device_class->deactivate_async = deactivate_async;
 	device_class->deactivate = deactivate;
 	device_class->deactivate_reset_hw_addr = deactivate_reset_hw_addr;
 	device_class->unmanaged_on_quit = unmanaged_on_quit;
