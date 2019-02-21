@@ -3200,6 +3200,7 @@ find_slave_info (NMDevice *self, NMDevice *slave)
 static gboolean
 nm_device_master_enslave_slave (NMDevice *self, NMDevice *slave, NMConnection *connection)
 {
+	NMDevicePrivate *priv;
 	SlaveInfo *info;
 	gboolean success = FALSE;
 	gboolean configure;
@@ -3208,6 +3209,7 @@ nm_device_master_enslave_slave (NMDevice *self, NMDevice *slave, NMConnection *c
 	g_return_val_if_fail (slave != NULL, FALSE);
 	g_return_val_if_fail (NM_DEVICE_GET_CLASS (self)->enslave_slave != NULL, FALSE);
 
+	priv = NM_DEVICE_GET_PRIVATE (self);
 	info = find_slave_info (self, slave);
 	if (!info)
 		return FALSE;
@@ -3230,15 +3232,20 @@ nm_device_master_enslave_slave (NMDevice *self, NMDevice *slave, NMConnection *c
 	 */
 	nm_device_update_hw_address (self);
 
+	/* Send ARP announcements if did not yet and have addresses. */
+	if (   priv->ip4_state == IP_DONE
+	    && !priv->acd.announcing)
+		nm_device_arp_announce (self);
+
 	/* Restart IP configuration if we're waiting for slaves.  Do this
 	 * after updating the hardware address as IP config may need the
 	 * new address.
 	 */
 	if (success) {
-		if (NM_DEVICE_GET_PRIVATE (self)->ip4_state == IP_WAIT)
+		if (priv->ip4_state == IP_WAIT)
 			nm_device_activate_stage3_ip4_start (self);
 
-		if (NM_DEVICE_GET_PRIVATE (self)->ip6_state == IP_WAIT)
+		if (priv->ip6_state == IP_WAIT)
 			nm_device_activate_stage3_ip6_start (self);
 	}
 
@@ -10377,6 +10384,7 @@ activate_stage5_ip4_config_result (NMDevice *self)
 	NMActRequest *req;
 	const char *method;
 	int ip_ifindex;
+	gboolean do_announce = FALSE;
 
 	req = nm_device_get_act_request (self);
 	g_assert (req);
@@ -10419,7 +10427,31 @@ activate_stage5_ip4_config_result (NMDevice *self)
 		                           NULL, NULL, NULL);
 	}
 
-	nm_device_arp_announce (self);
+	/* Send ARP announcements */
+
+	if (nm_device_is_master (self)) {
+		CList *iter;
+		SlaveInfo *info;
+
+		/* Skip announcement if there are no device enslaved, for two reasons:
+		 * 1) the master has a temporary MAC address until the first slave comes
+		 * 2) announcements are going to be dropped anyway without slaves
+		 */
+		do_announce = FALSE;
+
+		c_list_for_each (iter, &priv->slaves) {
+			info = c_list_entry (iter, SlaveInfo, lst_slave);
+			if (info->slave_is_enslaved) {
+				do_announce = TRUE;
+				break;
+			}
+		}
+	} else
+		do_announce = TRUE;
+
+	if (do_announce)
+		nm_device_arp_announce (self);
+
 	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP4, FALSE);
 
 	/* Enter the IP_CHECK state if this is the first method to complete */
