@@ -856,11 +856,10 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 
 	/* Read security/encryption support */
 	if (tb[NL80211_ATTR_CIPHER_SUITES]) {
-		int num;
-		int i;
-		__u32 *ciphers = nla_data (tb[NL80211_ATTR_CIPHER_SUITES]);
+		guint32 *ciphers = nla_data (tb[NL80211_ATTR_CIPHER_SUITES]);
+		guint i, num;
 
-		num = nla_len (tb[NL80211_ATTR_CIPHER_SUITES]) / sizeof (__u32);
+		num = nla_len (tb[NL80211_ATTR_CIPHER_SUITES]) / sizeof (guint32);
 		for (i = 0; i < num; i++) {
 			switch (ciphers[i]) {
 			case WLAN_CIPHER_SUITE_WEP40:
