@@ -419,7 +419,7 @@ nl80211_bss_dump_handler (struct nl_msg *msg, void *arg)
 	static const struct nla_policy bss_policy[NL80211_BSS_MAX + 1] = {
 		[NL80211_BSS_TSF] = { .type = NLA_U64 },
 		[NL80211_BSS_FREQUENCY] = { .type = NLA_U32 },
-		[NL80211_BSS_BSSID] = { },
+		[NL80211_BSS_BSSID] = { .minlen = ETH_ALEN },
 		[NL80211_BSS_BEACON_INTERVAL] = { .type = NLA_U16 },
 		[NL80211_BSS_CAPABILITY] = { .type = NLA_U16 },
 		[NL80211_BSS_INFORMATION_ELEMENTS] = { },
