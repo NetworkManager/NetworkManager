@@ -47,7 +47,6 @@ _LOG_DECLARE_SELF(NMDeviceWifiP2P);
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceWifiP2P,
-	PROP_GROUP_OWNER,
 	PROP_PEERS,
 );
 
@@ -67,9 +66,6 @@ typedef struct {
 	guint sup_timeout_id;
 	guint peer_dump_id;
 	guint peer_missing_id;
-
-	/* FIXME: group-owner is not properly set. */
-	bool group_owner:1;
 
 	bool is_waiting_for_supplicant:1;
 } NMDeviceWifiP2PPrivate;
@@ -591,8 +587,6 @@ act_stage3_ip4_config_start (NMDevice *device,
                              NMIP4Config **out_config,
                              NMDeviceStateReason *out_failure_reason)
 {
-	NMDeviceWifiP2P *self = NM_DEVICE_WIFI_P2P (device);
-	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip4;
 	const char *method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
@@ -605,8 +599,7 @@ act_stage3_ip4_config_start (NMDevice *device,
 		method = nm_setting_ip_config_get_method (s_ip4);
 
 	/* Indicate that a critical protocol is about to start */
-	if (   !priv->group_owner
-	    && nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
+	if (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
 		nm_platform_wifi_indicate_addressing_running (nm_device_get_platform (device), nm_device_get_ip_ifindex (device), TRUE);
 
 	return NM_DEVICE_CLASS (nm_device_wifi_p2p_parent_class)->act_stage3_ip4_config_start (device, out_config, out_failure_reason);
@@ -1201,7 +1194,6 @@ static const NMDBusInterfaceInfoExtended interface_info_device_wifi_p2p = {
 		),
 		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE ("HwAddress",  "s",  NM_DEVICE_HW_ADDRESS),
-			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE ("GroupOwner", "b",  NM_DEVICE_WIFI_P2P_GROUP_OWNER),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE ("Peers",      "ao", NM_DEVICE_WIFI_P2P_PEERS),
 		),
 	),
@@ -1219,9 +1211,6 @@ get_property (GObject *object, guint prop_id,
 	const char **list;
 
 	switch (prop_id) {
-	case PROP_GROUP_OWNER:
-		g_value_set_boolean (value, priv->group_owner);
-		break;
 	case PROP_PEERS:
 		list = nm_wifi_p2p_peers_get_paths (&priv->peers_lst_head);
 		g_value_take_boxed (value, nm_utils_strv_make_deep_copied (list));
@@ -1324,12 +1313,6 @@ nm_device_wifi_p2p_class_init (NMDeviceWifiP2PClass *klass)
 	device_class->unmanaged_on_quit = unmanaged_on_quit;
 
 	device_class->state_changed = device_state_changed;
-
-	obj_properties[PROP_GROUP_OWNER] =
-	    g_param_spec_boolean (NM_DEVICE_WIFI_P2P_GROUP_OWNER, "", "",
-	                          FALSE,
-	                          G_PARAM_READABLE |
-	                          G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_PEERS] =
 	    g_param_spec_boxed (NM_DEVICE_WIFI_P2P_PEERS, "", "",

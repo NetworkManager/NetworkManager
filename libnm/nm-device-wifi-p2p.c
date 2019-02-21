@@ -40,7 +40,6 @@ typedef struct {
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_HW_ADDRESS,
-	PROP_GROUP_OWNER,
 	PROP_PEERS,
 );
 
@@ -59,8 +58,6 @@ typedef struct {
 	char *hw_address;
 
 	GPtrArray   *peers;
-
-	gboolean group_owner;
 } NMDeviceWifiP2PPrivate;
 
 /**
@@ -100,25 +97,6 @@ nm_device_wifi_p2p_get_hw_address (NMDeviceWifiP2P *device)
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI_P2P (device), NULL);
 
 	return nm_str_not_empty (NM_DEVICE_WIFI_P2P_GET_PRIVATE (device)->hw_address);
-}
-
-/**
- * nm_device_wifi_p2p_get_group_owner:
- * @device: a #NMDeviceWifiP2P
- *
- * Gets whether the device is currently the P2P group owner. This is only
- * valid when a connection is established.
- *
- * Returns: Whether the device is the P2P group owner.
- *
- * Since: 1.16
- **/
-gboolean
-nm_device_wifi_p2p_get_group_owner (NMDeviceWifiP2P *device)
-{
-	g_return_val_if_fail (NM_IS_DEVICE_WIFI_P2P (device), FALSE);
-
-	return NM_DEVICE_WIFI_P2P_GET_PRIVATE (device)->group_owner;
 }
 
 /**
@@ -378,9 +356,6 @@ get_property (GObject *object,
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, nm_device_wifi_p2p_get_hw_address (self));
 		break;
-	case PROP_GROUP_OWNER:
-		g_value_set_enum (value, nm_device_wifi_p2p_get_group_owner (self));
-		break;
 	case PROP_PEERS:
 		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_device_wifi_p2p_get_peers (self)));
 		break;
@@ -404,7 +379,6 @@ init_dbus (NMObject *object)
 	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DEVICE_WIFI_P2P_HW_ADDRESS,           &priv->hw_address },
-		{ NM_DEVICE_WIFI_P2P_GROUP_OWNER,          &priv->group_owner },
 		{ NM_DEVICE_WIFI_P2P_PEERS,                &priv->peers, NULL, NM_TYPE_WIFI_P2P_PEER, "peer" },
 		{ NULL },
 	};
@@ -467,20 +441,6 @@ nm_device_wifi_p2p_class_init (NMDeviceWifiP2PClass *wifi_class)
 	                         NULL,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
-
-
-	/**
-	 * NMDeviceWifiP2P:group-owner:
-	 *
-	 * Whether the device is currently the group owner.
-	 *
-	 * Since: 1.16
-	 **/
-	obj_properties[PROP_GROUP_OWNER] =
-	    g_param_spec_boolean (NM_DEVICE_WIFI_P2P_GROUP_OWNER, "", "",
-	                          FALSE,
-	                          G_PARAM_READABLE |
-	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWifiP2P:peers: (type GPtrArray(NMWifiP2PPeer))

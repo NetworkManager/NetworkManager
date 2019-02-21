@@ -36,7 +36,6 @@ G_BEGIN_DECLS
 #define NM_DEVICE_WIFI_P2P_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_WIFI_P2P, NMDeviceWifiP2PClass))
 
 #define NM_DEVICE_WIFI_P2P_HW_ADDRESS          "hw-address"
-#define NM_DEVICE_WIFI_P2P_GROUP_OWNER         "group-owner"
 #define NM_DEVICE_WIFI_P2P_PEERS               "peers"
 #define NM_DEVICE_WIFI_P2P_WFDIES              "wfdies"
 
@@ -47,9 +46,6 @@ GType nm_device_wifi_p2p_get_type (void);
 
 NM_AVAILABLE_IN_1_16
 const char *             nm_device_wifi_p2p_get_hw_address   (NMDeviceWifiP2P *device);
-
-NM_AVAILABLE_IN_1_16
-gboolean                 nm_device_wifi_p2p_get_group_owner  (NMDeviceWifiP2P *device);
 
 NM_AVAILABLE_IN_1_16
 NMWifiP2PPeer *          nm_device_wifi_p2p_get_peer_by_path (NMDeviceWifiP2P *device,

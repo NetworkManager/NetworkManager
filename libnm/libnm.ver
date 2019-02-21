@@ -1450,7 +1450,6 @@ global:
 	nm_client_add_and_activate_connection2;
 	nm_client_add_and_activate_connection2_finish;
 	nm_device_get_connectivity;
-	nm_device_wifi_p2p_get_group_owner;
 	nm_device_wifi_p2p_get_hw_address;
 	nm_device_wifi_p2p_get_peers;
 	nm_device_wifi_p2p_get_type;

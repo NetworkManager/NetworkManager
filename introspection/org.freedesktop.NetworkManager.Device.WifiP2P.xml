@@ -19,15 +19,6 @@
     <property name="HwAddress" type="s" access="read"/>
 
     <!--
-        GroupOwner:
-
-        Whether this device is currently the group owner.
-
-        Since: 1.16
-    -->
-    <property name="GroupOwner" type="b" access="read"/>
-
-    <!--
         Peers:
 
         List of object paths of peers visible to this Wi-Fi P2P device.

@@ -31,7 +31,6 @@
 #define NM_IS_DEVICE_WIFI_P2P_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE_WIFI_P2P))
 #define NM_DEVICE_WIFI_P2P_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_WIFI_P2P, NMDeviceWifiP2PClass))
 
-#define NM_DEVICE_WIFI_P2P_GROUP_OWNER "group-owner"
 #define NM_DEVICE_WIFI_P2P_PEERS       "peers"
 #define NM_DEVICE_WIFI_P2P_GROUPS      "groups"
 
