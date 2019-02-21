@@ -1331,10 +1331,8 @@ _parse_lnk_ip6tnl (const char *kind, struct nlattr *info_data)
 {
 	static const struct nla_policy policy[] = {
 		[IFLA_IPTUN_LINK]        = { .type = NLA_U32 },
-		[IFLA_IPTUN_LOCAL]       = { .type = NLA_UNSPEC,
-		                             .minlen = sizeof (struct in6_addr)},
-		[IFLA_IPTUN_REMOTE]      = { .type = NLA_UNSPEC,
-		                             .minlen = sizeof (struct in6_addr)},
+		[IFLA_IPTUN_LOCAL]       = { .minlen = sizeof (struct in6_addr)},
+		[IFLA_IPTUN_REMOTE]      = { .minlen = sizeof (struct in6_addr)},
 		[IFLA_IPTUN_TTL]         = { .type = NLA_U8 },
 		[IFLA_IPTUN_ENCAP_LIMIT] = { .type = NLA_U8 },
 		[IFLA_IPTUN_FLOWINFO]    = { .type = NLA_U32 },
@@ -1359,9 +1357,9 @@ _parse_lnk_ip6tnl (const char *kind, struct nlattr *info_data)
 	if (tb[IFLA_IPTUN_LINK])
 		props->parent_ifindex = nla_get_u32 (tb[IFLA_IPTUN_LINK]);
 	if (tb[IFLA_IPTUN_LOCAL])
-		memcpy (&props->local, nla_data (tb[IFLA_IPTUN_LOCAL]), sizeof (props->local));
+		props->local = *nla_data_as (struct in6_addr, tb[IFLA_IPTUN_LOCAL]);
 	if (tb[IFLA_IPTUN_REMOTE])
-		memcpy (&props->remote, nla_data (tb[IFLA_IPTUN_REMOTE]), sizeof (props->remote));
+		props->remote = *nla_data_as (struct in6_addr, tb[IFLA_IPTUN_REMOTE]);
 	if (tb[IFLA_IPTUN_TTL])
 		props->ttl = nla_get_u8 (tb[IFLA_IPTUN_TTL]);
 	if (tb[IFLA_IPTUN_ENCAP_LIMIT])
@@ -1432,9 +1430,9 @@ _parse_lnk_ip6gre (const char *kind, struct nlattr *info_data)
 	if (tb[IFLA_GRE_OKEY])
 		props->output_key = ntohl (nla_get_u32 (tb[IFLA_GRE_OKEY]));
 	if (tb[IFLA_GRE_LOCAL])
-		memcpy (&props->local, nla_data (tb[IFLA_GRE_LOCAL]), sizeof (props->local));
+		props->local = *nla_data_as (struct in6_addr, tb[IFLA_GRE_LOCAL]);
 	if (tb[IFLA_GRE_REMOTE])
-		memcpy (&props->remote, nla_data (tb[IFLA_GRE_REMOTE]), sizeof (props->remote));
+		props->remote = *nla_data_as (struct in6_addr, tb[IFLA_GRE_REMOTE]);
 	if (tb[IFLA_GRE_TTL])
 		props->ttl = nla_get_u8 (tb[IFLA_GRE_TTL]);
 	if (tb[IFLA_GRE_ENCAP_LIMIT])
@@ -1844,7 +1842,6 @@ _parse_lnk_vxlan (const char *kind, struct nlattr *info_data)
 	};
 	NMPlatformLnkVxlan *props;
 	struct nlattr *tb[G_N_ELEMENTS (policy)];
-	struct nm_ifla_vxlan_port_range *range;
 	NMPObject *obj;
 
 	if (   !info_data
@@ -1866,10 +1863,10 @@ _parse_lnk_vxlan (const char *kind, struct nlattr *info_data)
 		props->group = nla_get_u32 (tb[IFLA_VXLAN_GROUP]);
 	if (tb[IFLA_VXLAN_LOCAL])
 		props->local = nla_get_u32 (tb[IFLA_VXLAN_LOCAL]);
-	if (tb[IFLA_VXLAN_GROUP6])
-		memcpy (&props->group6, nla_data (tb[IFLA_VXLAN_GROUP6]), sizeof (props->group6));
 	if (tb[IFLA_VXLAN_LOCAL6])
-		memcpy (&props->local6, nla_data (tb[IFLA_VXLAN_LOCAL6]), sizeof (props->local6));
+		props->local6 = *nla_data_as (struct in6_addr, tb[IFLA_VXLAN_LOCAL6]);
+	if (tb[IFLA_VXLAN_GROUP6])
+		props->group6 = *nla_data_as (struct in6_addr, tb[IFLA_VXLAN_GROUP6]);
 
 	if (tb[IFLA_VXLAN_AGEING])
 		props->ageing = nla_get_u32 (tb[IFLA_VXLAN_AGEING]);
@@ -1884,7 +1881,9 @@ _parse_lnk_vxlan (const char *kind, struct nlattr *info_data)
 		props->dst_port = ntohs (nla_get_u16 (tb[IFLA_VXLAN_PORT]));
 
 	if (tb[IFLA_VXLAN_PORT_RANGE]) {
-		range = nla_data (tb[IFLA_VXLAN_PORT_RANGE]);
+		struct nm_ifla_vxlan_port_range *range;
+
+		range = nla_data_as (struct nm_ifla_vxlan_port_range, tb[IFLA_VXLAN_PORT_RANGE]);
 		props->src_port_min = ntohs (range->low);
 		props->src_port_max = ntohs (range->high);
 	}
@@ -2002,7 +2001,7 @@ _wireguard_update_from_peers_nla (CList *peers,
 
 		nm_sock_addr_union_cpy_untrusted (&peer_c->data.endpoint,
 		                                  tb[WGPEER_A_ENDPOINT] ? nla_data (tb[WGPEER_A_ENDPOINT]) : NULL,
-		                                  tb[WGPEER_A_ENDPOINT] ? nla_len (tb[WGPEER_A_ENDPOINT])  : 0);
+		                                  tb[WGPEER_A_ENDPOINT] ? nla_len  (tb[WGPEER_A_ENDPOINT]) : 0);
 
 		if (tb[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL])
 			peer_c->data.persistent_keepalive_interval = nla_get_u16 (tb[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL]);
@@ -3061,8 +3060,9 @@ _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 	timestamp = 0;
 	/* IPv6 only */
 	if (tb[IFA_CACHEINFO]) {
-		const struct ifa_cacheinfo *ca = nla_data (tb[IFA_CACHEINFO]);
+		const struct ifa_cacheinfo *ca;
 
+		ca = nla_data_as (struct ifa_cacheinfo, tb[IFA_CACHEINFO]);
 		lifetime = ca->ifa_valid;
 		preferred = ca->ifa_prefered;
 		timestamp = ca->tstamp;
