@@ -1460,6 +1460,7 @@ global:
 	nm_device_wifi_p2p_stop_find_finish;
 	nm_setting_wifi_p2p_get_peer;
 	nm_setting_wifi_p2p_get_type;
+	nm_setting_wifi_p2p_get_wfd_ies;
 	nm_setting_wifi_p2p_get_wps_method;
 	nm_setting_wifi_p2p_new;
 	nm_team_link_watcher_get_vlanid;

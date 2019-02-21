@@ -41,7 +41,6 @@ typedef struct {
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_HW_ADDRESS,
 	PROP_GROUP_OWNER,
-	PROP_WFDIES,
 	PROP_PEERS,
 );
 
@@ -59,7 +58,6 @@ typedef struct {
 
 	char *hw_address;
 
-	GByteArray  *wfd_ies;
 	GPtrArray   *peers;
 
 	gboolean group_owner;
@@ -366,18 +364,6 @@ get_hw_address (NMDevice *device)
 	return nm_device_wifi_p2p_get_hw_address (NM_DEVICE_WIFI_P2P (device));
 }
 
-static GVariant *
-nm_device_wifi_p2p_get_wfdies_as_variant (const NMDeviceWifiP2P *self)
-{
-	const NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
-
-	if (priv->wfd_ies) {
-		return g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-		                                  priv->wfd_ies->data, priv->wfd_ies->len, 1);
-	} else
-		return g_variant_new_array (G_VARIANT_TYPE_BYTE, NULL, 0);
-}
-
 /*****************************************************************************/
 
 static void
@@ -394,9 +380,6 @@ get_property (GObject *object,
 		break;
 	case PROP_GROUP_OWNER:
 		g_value_set_enum (value, nm_device_wifi_p2p_get_group_owner (self));
-		break;
-	case PROP_WFDIES:
-		g_value_take_variant (value, nm_device_wifi_p2p_get_wfdies_as_variant (self));
 		break;
 	case PROP_PEERS:
 		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_device_wifi_p2p_get_peers (self)));
@@ -422,7 +405,6 @@ init_dbus (NMObject *object)
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DEVICE_WIFI_P2P_HW_ADDRESS,           &priv->hw_address },
 		{ NM_DEVICE_WIFI_P2P_GROUP_OWNER,          &priv->group_owner },
-		{ NM_DEVICE_WIFI_P2P_WFDIES,               &priv->wfd_ies },
 		{ NM_DEVICE_WIFI_P2P_PEERS,                &priv->peers, NULL, NM_TYPE_WIFI_P2P_PEER, "peer" },
 		{ NULL },
 	};
@@ -450,8 +432,6 @@ finalize (GObject *object)
 
 	g_clear_object (&priv->proxy);
 	g_free (priv->hw_address);
-	if (priv->wfd_ies)
-		g_byte_array_unref (priv->wfd_ies);
 	if (priv->peers)
 		g_ptr_array_unref (priv->peers);
 
@@ -499,20 +479,6 @@ nm_device_wifi_p2p_class_init (NMDeviceWifiP2PClass *wifi_class)
 	obj_properties[PROP_GROUP_OWNER] =
 	    g_param_spec_boolean (NM_DEVICE_WIFI_P2P_GROUP_OWNER, "", "",
 	                          FALSE,
-	                          G_PARAM_READABLE |
-	                          G_PARAM_STATIC_STRINGS);
-
-	/**
-	 * NMDeviceWifiP2P:wfd-ies:
-	 *
-	 * Whether the device is currently the group owner.
-	 *
-	 * Since: 1.16
-	 **/
-	obj_properties[PROP_WFDIES] =
-	    g_param_spec_variant (NM_DEVICE_WIFI_P2P_WFDIES, "", "",
-	                          G_VARIANT_TYPE ("ay"),
-	                          NULL,
 	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
 

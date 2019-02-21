@@ -34,7 +34,6 @@
 #define NM_DEVICE_WIFI_P2P_GROUP_OWNER "group-owner"
 #define NM_DEVICE_WIFI_P2P_PEERS       "peers"
 #define NM_DEVICE_WIFI_P2P_GROUPS      "groups"
-#define NM_DEVICE_WIFI_P2P_WFDIES      "WFDIEs"
 
 typedef struct _NMDeviceWifiP2P NMDeviceWifiP2P;
 typedef struct _NMDeviceWifiP2PClass NMDeviceWifiP2PClass;

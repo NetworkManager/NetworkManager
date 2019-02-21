@@ -49,9 +49,6 @@ _LOG_DECLARE_SELF(NMDeviceWifiP2P);
 NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceWifiP2P,
 	PROP_GROUP_OWNER,
 	PROP_PEERS,
-	PROP_WFDIES, /* TODO: Make this a property of the setting and Find feature
-	              * making the device stateless.
-	              */
 );
 
 typedef struct {
@@ -66,7 +63,6 @@ typedef struct {
 	NMSupplicantInterface *group_iface;
 
 	CList peers_lst_head;
-	GBytes *wfd_ies;
 
 	guint sup_timeout_id;
 	guint peer_dump_id;
@@ -413,8 +409,6 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
-	/* TODO: Set WFD IEs on supplicant manager here! */
-
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
@@ -466,7 +460,9 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMDeviceWifiP2P *self = NM_DEVICE_WIFI_P2P (device);
 	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
 	NMConnection *connection;
+	NMSettingWifiP2P *s_wifi_p2p;
 	NMWifiP2PPeer *peer;
+	GBytes *wfd_ies;
 
 	nm_clear_g_source (&priv->sup_timeout_id);
 
@@ -481,6 +477,11 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_PEER_NOT_FOUND);
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
+
+	/* Set the WFD IEs before trying to establish the connection. */
+	s_wifi_p2p = NM_SETTING_WIFI_P2P (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIFI_P2P));
+	wfd_ies = nm_setting_wifi_p2p_get_wfd_ies (s_wifi_p2p);
+	nm_supplicant_manager_set_wfd_ies (priv->sup_mgr, wfd_ies);
 
 	/* TODO: Grab secrets if we don't have them yet! */
 
@@ -938,6 +939,8 @@ supplicant_interfaces_release (NMDeviceWifiP2P *self, gboolean set_is_waiting)
 	if (priv->mgmt_iface) {
 		_LOGD (LOGD_DEVICE | LOGD_WIFI, "P2P: Releasing WPA supplicant interface.");
 
+		nm_supplicant_manager_set_wfd_ies (priv->sup_mgr, NULL);
+
 		g_signal_handlers_disconnect_by_data (priv->mgmt_iface, self);
 
 		g_clear_object (&priv->mgmt_iface);
@@ -999,10 +1002,12 @@ device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_FAILED:
 		/* Clear any critical protocol notification in the wifi stack.
 		 * At this point the IP device may have been removed already. */
+		nm_supplicant_manager_set_wfd_ies (priv->sup_mgr, NULL);
 		if (nm_device_get_ip_ifindex (device) > 0)
 			nm_platform_wifi_indicate_addressing_running (nm_device_get_platform (device), nm_device_get_ip_ifindex (device), FALSE);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
+		nm_supplicant_manager_set_wfd_ies (priv->sup_mgr, NULL);
 		break;
 	default:
 		break;
@@ -1198,7 +1203,6 @@ static const NMDBusInterfaceInfoExtended interface_info_device_wifi_p2p = {
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE ("HwAddress",  "s",  NM_DEVICE_HW_ADDRESS),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE ("GroupOwner", "b",  NM_DEVICE_WIFI_P2P_GROUP_OWNER),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE ("Peers",      "ao", NM_DEVICE_WIFI_P2P_PEERS),
-			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE ("WFDIEs",     "ay", NM_DEVICE_WIFI_P2P_WFDIES),
 		),
 	),
 	.legacy_property_changed = FALSE,
@@ -1221,9 +1225,6 @@ get_property (GObject *object, guint prop_id,
 	case PROP_PEERS:
 		list = nm_wifi_p2p_peers_get_paths (&priv->peers_lst_head);
 		g_value_take_boxed (value, nm_utils_strv_make_deep_copied (list));
-		break;
-	case PROP_WFDIES:
-		g_value_take_variant (value, nm_utils_gbytes_to_variant_ay (priv->wfd_ies));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1286,8 +1287,6 @@ finalize (GObject *object)
 
 	nm_assert (c_list_is_empty (&priv->peers_lst_head));
 
-	g_bytes_unref (priv->wfd_ies);
-
 	G_OBJECT_CLASS (nm_device_wifi_p2p_parent_class)->finalize (object);
 }
 
@@ -1337,13 +1336,6 @@ nm_device_wifi_p2p_class_init (NMDeviceWifiP2PClass *klass)
 	                        G_TYPE_STRV,
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
-
-	obj_properties[PROP_WFDIES] =
-	    g_param_spec_variant (NM_DEVICE_WIFI_P2P_WFDIES, "", "",
-	                          G_VARIANT_TYPE ("ay"),
-	                          NULL,
-	                          G_PARAM_READABLE |
-	                          G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
