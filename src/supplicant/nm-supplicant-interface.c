@@ -80,6 +80,12 @@ typedef struct _AddNetworkData {
 	AssocData *assoc_data;
 } AddNetworkData;
 
+typedef struct {
+	NMSupplicantInterface *self;
+	NMSupplicantInterfaceDisconnectCb callback;
+	gpointer user_data;
+} DisconnectData;
+
 enum {
 	STATE,                   /* change in the interface's state */
 	REMOVED,                 /* interface was removed by the supplicant */
@@ -2148,6 +2154,60 @@ nm_supplicant_interface_disconnect (NMSupplicantInterface * self)
 
 	/* Cancel any WPS enrollment, if any */
 	nm_supplicant_interface_cancel_wps (self);
+}
+
+static void
+disconnect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+{
+	DisconnectData *disconnect_data = user_data;
+	gs_unref_object NMSupplicantInterface *self = disconnect_data->self;
+	gs_unref_variant GVariant *reply = NULL;
+	gs_free_error GError *error = NULL;
+
+	reply = g_dbus_proxy_call_finish (proxy, result, &error);
+
+	/* an already disconnected interface is not an error*/
+	if (   !reply
+	    && !strstr (error->message, "fi.w1.wpa_supplicant1.NotConnected")) {
+		g_clear_error(&error);
+	}
+
+	disconnect_data->callback(self, error, disconnect_data->user_data);
+	g_slice_free (DisconnectData, disconnect_data);
+}
+
+void
+nm_supplicant_interface_disconnect_async ( NMSupplicantInterface * self,
+                                           GCancellable * cancellable,
+                                           NMSupplicantInterfaceDisconnectCb callback,
+                                           gpointer user_data)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	DisconnectData *disconnect_data;
+
+	/* Don't do anything if there is no connection to the supplicant yet. */
+	if (!priv->iface_proxy)
+		return;
+
+	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
+	g_return_if_fail (NULL != callback);
+
+	disconnect_data = g_slice_new0(DisconnectData);
+
+	/* Keep interface alive until disconnect finishes */
+	disconnect_data->self = g_object_ref (self);
+	disconnect_data->callback = callback;
+	disconnect_data->user_data = user_data;
+
+	/* Disconnect the interface */
+	g_dbus_proxy_call (priv->iface_proxy,
+	                   "Disconnect",
+	                   NULL,
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   cancellable,
+	                   (GAsyncReadyCallback) disconnect_cb,
+	                   disconnect_data);
 }
 
 static void

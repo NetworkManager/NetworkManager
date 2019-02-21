@@ -116,6 +116,16 @@ nm_supplicant_interface_assoc (NMSupplicantInterface *self,
 
 void nm_supplicant_interface_disconnect (NMSupplicantInterface * iface);
 
+typedef void (*NMSupplicantInterfaceDisconnectCb) (NMSupplicantInterface *iface,
+                                                   GError *error,
+                                                   gpointer user_data);
+
+void
+nm_supplicant_interface_disconnect_async (NMSupplicantInterface * self,
+                                          GCancellable * cancellable,
+                                          NMSupplicantInterfaceDisconnectCb callback,
+                                          gpointer user_data);
+
 const char *nm_supplicant_interface_get_object_path (NMSupplicantInterface * iface);
 
 void nm_supplicant_interface_request_scan (NMSupplicantInterface *self,
