@@ -586,7 +586,11 @@ validate_nla (const struct nlattr *nla, int maxtype,
 		return -NME_UNSPEC;
 
 	if (pt->type == NLA_STRING) {
-		const char *data = nla_data (nla);
+		const char *data;
+
+		nm_assert (minlen > 0);
+
+		data = nla_data (nla);
 		if (data[nla_len (nla) - 1] != '\0')
 			return -NME_UNSPEC;
 	}
