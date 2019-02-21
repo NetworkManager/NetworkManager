@@ -1513,18 +1513,16 @@ bytes_to_string (GBytes *bytes)
 {
 	const guint8 *data;
 	gsize len;
-	GString *cert = NULL;
-	int i;
 
 	if (!bytes)
 		return NULL;
+
 	data = g_bytes_get_data (bytes, &len);
-
-	cert = g_string_new (NULL);
-	for (i = 0; i < len; i++)
-		g_string_append_printf (cert, "%02X", data[i]);
-
-	return g_string_free (cert, FALSE);
+	return nm_utils_bin2hexstr_full (data,
+	                                 len,
+	                                 '\0',
+	                                 TRUE,
+	                                 NULL);
 }
 
 static char *
