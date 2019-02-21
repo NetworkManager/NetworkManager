@@ -358,6 +358,7 @@
 #define DESCRIBE_DOC_NM_SETTING_VXLAN_TOS N_("Specifies the TOS value to use in outgoing packets.")
 #define DESCRIBE_DOC_NM_SETTING_VXLAN_TTL N_("Specifies the time-to-live value to use in outgoing packets.")
 #define DESCRIBE_DOC_NM_SETTING_WIFI_P2P_PEER N_("The P2P device that should be connected to. Currently this is the only way to create or join a group.")
+#define DESCRIBE_DOC_NM_SETTING_WIFI_P2P_WFD_IES N_("The Wi-Fi Display (WFD) Information Elements (IEs) to set. Wi-Fi Display requires a protocol specific information element to be set in certain Wi-Fi frames. These can be specified here for the purpose of establishing a connection. This setting is only useful when implementing a Wi-Fi Display client.")
 #define DESCRIBE_DOC_NM_SETTING_WIFI_P2P_WPS_METHOD N_("Flags indicating which mode of WPS is to be used. There's little point in changing the default setting as NetworkManager will automatically determine the best method to use.")
 #define DESCRIBE_DOC_NM_SETTING_WIMAX_MAC_ADDRESS N_("If specified, this connection will only apply to the WiMAX device whose MAC address matches. This property does not change the MAC address of the device (known as MAC spoofing). Deprecated: 1")
 #define DESCRIBE_DOC_NM_SETTING_WIMAX_NETWORK_NAME N_("Network Service Provider (NSP) name of the WiMAX network this connection should use. Deprecated: 1")
