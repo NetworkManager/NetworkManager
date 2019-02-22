@@ -918,6 +918,8 @@ activate_info_complete (ActivateInfo *info,
                         NMActiveConnection *active,
                         GError *error)
 {
+	nm_assert ((!error) != (!active));
+
 	nm_clear_g_signal_handler (info->cancellable, &info->cancelled_id);
 
 	c_list_unlink_stale (&info->lst);
@@ -1118,6 +1120,10 @@ add_activate_cb (GObject *object,
 	gs_free_error GError *error = NULL;
 	gboolean success;
 
+	nm_assert (info);
+	nm_assert (!info->active_path);
+	nm_assert (!info->add_and_activate_output);
+
 	if (info->activate_type == ACTIVATE_TYPE_ADD_AND_ACTIVATE_CONNECTION) {
 		success = nmdbus_manager_call_add_and_activate_connection_finish (NMDBUS_MANAGER (object),
 		                                                                  NULL,
@@ -1209,12 +1215,12 @@ nm_manager_add_and_activate_connection_async (NMManager *manager,
 		                                                  info);
 	} else {
 		nmdbus_manager_call_add_and_activate_connection (priv->proxy,
-		                                                  dict,
-		                                                  nm_object_get_path (NM_OBJECT (device)),
-		                                                  specific_object ?: "/",
-		                                                  cancellable,
-		                                                  add_activate_cb,
-		                                                  info);
+		                                                 dict,
+		                                                 nm_object_get_path (NM_OBJECT (device)),
+		                                                 specific_object ?: "/",
+		                                                 cancellable,
+		                                                 add_activate_cb,
+		                                                 info);
 	}
 }
 

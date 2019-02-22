@@ -1168,7 +1168,7 @@ add_activate_cb (GObject *object,
 {
 	gs_unref_object GSimpleAsyncResult *simple = user_data;
 	gs_unref_variant GVariant *result_data = NULL;
-	NMActiveConnection *ac;
+	gs_unref_object NMActiveConnection *ac = NULL;
 	GError *error = NULL;
 
 	ac = nm_manager_add_and_activate_connection_finish (NM_MANAGER (object), result, &result_data, &error);
