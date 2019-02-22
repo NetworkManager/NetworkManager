@@ -1101,8 +1101,8 @@ nm_connectivity_init (NMConnectivity *self)
 #if WITH_CONCHECK
 	ret = curl_global_init (CURL_GLOBAL_ALL);
 	if (ret != CURLE_OK) {
-		 _LOGE ("unable to init cURL, connectivity check will not work: (%d) %s",
-		        ret, curl_easy_strerror (ret));
+		_LOGE ("unable to init cURL, connectivity check will not work: (%d) %s",
+		       ret, curl_easy_strerror (ret));
 	}
 #endif
 
