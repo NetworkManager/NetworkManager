@@ -9597,7 +9597,7 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 		_LOGD (LOGD_IP6, "will %s userland IPv6LL", detail);
 		r = nm_platform_link_set_user_ipv6ll_enabled (nm_device_get_platform (self), ifindex, enable);
 		if (r < 0) {
-			_NMLOG (  NM_IN_SET (r, -NME_PL_NOT_FOUND
+			_NMLOG (  NM_IN_SET (r, -NME_PL_NOT_FOUND,
 			                        -NME_PL_OPNOTSUPP)
 			        ? LOGL_DEBUG
 			        : LOGL_WARN,
