@@ -41,6 +41,11 @@
 
 /*****************************************************************************/
 
+G_STATIC_ASSERT (NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS == (  NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT
+                                                                  | NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE));
+
+/*****************************************************************************/
+
 NM_GOBJECT_PROPERTIES_DEFINE (NMSettingWired,
 	PROP_PORT,
 	PROP_SPEED,

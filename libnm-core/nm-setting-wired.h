@@ -75,8 +75,7 @@ typedef enum { /*< flags >*/
 
 	NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT         = 0x1,
 	NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE          = 0x8000,
-	NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS =   NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT
-	                                               | NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE, /*< skip >*/
+	NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS = 0x8001, /*< skip >*/
 } NMSettingWiredWakeOnLan;
 
 #define NM_SETTING_WIRED_PORT "port"
