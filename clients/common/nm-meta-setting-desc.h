@@ -269,6 +269,9 @@ struct _NMMetaPropertyTypData {
 			const char *(*validate_fcn) (const char *value, char **out_to_free, GError **error);
 		} gobject_string;
 		struct {
+			bool legacy_format:1;
+		} gobject_bytes;
+		struct {
 			guint32 (*get_fcn) (NMSetting *setting);
 		} mtu;
 		struct {

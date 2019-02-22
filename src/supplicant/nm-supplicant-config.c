@@ -403,11 +403,11 @@ nm_supplicant_config_add_setting_macsec (NMSupplicantConfig * self,
 
 		value = nm_setting_macsec_get_mka_cak (setting);
 		if (   !value
-		    || !_nm_utils_hexstr2bin_buf (value,
-		                                  FALSE,
-		                                  FALSE,
-		                                  NULL,
-		                                  buffer_cak)) {
+		    || !nm_utils_hexstr2bin_buf (value,
+		                                 FALSE,
+		                                 FALSE,
+		                                 NULL,
+		                                 buffer_cak)) {
 			g_set_error_literal (error,
 			                     NM_SUPPLICANT_ERROR,
 			                     NM_SUPPLICANT_ERROR_CONFIG,
@@ -424,11 +424,11 @@ nm_supplicant_config_add_setting_macsec (NMSupplicantConfig * self,
 
 		value = nm_setting_macsec_get_mka_ckn (setting);
 		if (   !value
-		    || !_nm_utils_hexstr2bin_buf (value,
-		                                  FALSE,
-		                                  FALSE,
-		                                  NULL,
-		                                  buffer_ckn)) {
+		    || !nm_utils_hexstr2bin_buf (value,
+		                                 FALSE,
+		                                 FALSE,
+		                                 NULL,
+		                                 buffer_ckn)) {
 			g_set_error_literal (error,
 			                     NM_SUPPLICANT_ERROR,
 			                     NM_SUPPLICANT_ERROR_CONFIG,
@@ -704,14 +704,14 @@ add_wep_key (NMSupplicantConfig *self,
 		if ((key_len == 10) || (key_len == 26)) {
 			guint8 buffer[26/2];
 
-			if (!_nm_utils_hexstr2bin_full (key,
-			                                FALSE,
-			                                FALSE,
-			                                NULL,
-			                                key_len / 2,
-			                                buffer,
-			                                sizeof (buffer),
-			                                NULL)) {
+			if (!nm_utils_hexstr2bin_full (key,
+			                               FALSE,
+			                               FALSE,
+			                               NULL,
+			                               key_len / 2,
+			                               buffer,
+			                               sizeof (buffer),
+			                               NULL)) {
 				g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
 				             "cannot add wep-key %s to suplicant config because key is not hex",
 				             name);
@@ -825,11 +825,11 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 			guint8 buffer[32];
 
 			/* Hex PSK */
-			if (!_nm_utils_hexstr2bin_buf (psk,
-			                               FALSE,
-			                               FALSE,
-			                               NULL,
-			                               buffer)) {
+			if (!nm_utils_hexstr2bin_buf (psk,
+			                              FALSE,
+			                              FALSE,
+			                              NULL,
+			                              buffer)) {
 				g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
 				             "Cannot add psk to supplicant config due to invalid hex");
 				return FALSE;

@@ -1128,10 +1128,31 @@ nm_strv_ptrarray_take_gstring (GPtrArray *cmd,
 
 int nm_utils_getpagesize (void);
 
+/*****************************************************************************/
+
 char *nm_utils_bin2hexstr_full (gconstpointer addr,
                                 gsize length,
                                 char delimiter,
                                 gboolean upper_case,
                                 char *out);
+
+guint8 *nm_utils_hexstr2bin_full (const char *hexstr,
+                                  gboolean allow_0x_prefix,
+                                  gboolean delimiter_required,
+                                  const char *delimiter_candidates,
+                                  gsize required_len,
+                                  guint8 *buffer,
+                                  gsize buffer_len,
+                                  gsize *out_len);
+
+#define nm_utils_hexstr2bin_buf(hexstr, allow_0x_prefix, delimiter_required, delimiter_candidates, buffer) \
+    nm_utils_hexstr2bin_full ((hexstr), (allow_0x_prefix), (delimiter_required), (delimiter_candidates), G_N_ELEMENTS (buffer), (buffer), G_N_ELEMENTS (buffer), NULL)
+
+guint8 *nm_utils_hexstr2bin_alloc (const char *hexstr,
+                                   gboolean allow_0x_prefix,
+                                   gboolean delimiter_required,
+                                   const char *delimiter_candidates,
+                                   gsize required_len,
+                                   gsize *out_len);
 
 #endif /* __NM_SHARED_UTILS_H__ */

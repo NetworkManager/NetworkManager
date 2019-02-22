@@ -2538,8 +2538,10 @@ nm_utils_memeqzero (gconstpointer data, gsize length)
 
 /**
  * nm_utils_bin2hexstr_full:
- * @addr: pointer of @length bytes.
- * @length: number of bytes in @addr
+ * @addr: pointer of @length bytes. If @length is zero, this may
+ *   also be %NULL.
+ * @length: number of bytes in @addr. May also be zero, in which
+ *   case this will return an empty string.
  * @delimiter: either '\0', otherwise the output string will have the
  *   given delimiter character between each two hex numbers.
  * @upper_case: if TRUE, use upper case ASCII characters for hex.
@@ -2565,9 +2567,6 @@ nm_utils_bin2hexstr_full (gconstpointer addr,
 	const char *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
 	char *out0;
 
-	nm_assert (addr);
-	nm_assert (length > 0);
-
 	if (out)
 		out0 = out;
 	else {
@@ -2579,18 +2578,162 @@ nm_utils_bin2hexstr_full (gconstpointer addr,
 	/* @out must contain at least @length*3 bytes if @delimiter is set,
 	 * otherwise, @length*2+1. */
 
-	for (;;) {
-		const guint8 v = *in++;
+	if (length > 0) {
+		nm_assert (in);
+		for (;;) {
+			const guint8 v = *in++;
 
-		*out++ = LOOKUP[v >> 4];
-		*out++ = LOOKUP[v & 0x0F];
-		length--;
-		if (!length)
-			break;
-		if (delimiter)
-			*out++ = delimiter;
+			*out++ = LOOKUP[v >> 4];
+			*out++ = LOOKUP[v & 0x0F];
+			length--;
+			if (!length)
+				break;
+			if (delimiter)
+				*out++ = delimiter;
+		}
 	}
 
-	*out = 0;
+	*out = '\0';
 	return out0;
+}
+
+guint8 *
+nm_utils_hexstr2bin_full (const char *hexstr,
+                          gboolean allow_0x_prefix,
+                          gboolean delimiter_required,
+                          const char *delimiter_candidates,
+                          gsize required_len,
+                          guint8 *buffer,
+                          gsize buffer_len,
+                          gsize *out_len)
+{
+	const char *in = hexstr;
+	guint8 *out = buffer;
+	gboolean delimiter_has = TRUE;
+	guint8 delimiter = '\0';
+	gsize len;
+
+	nm_assert (hexstr);
+	nm_assert (buffer);
+	nm_assert (required_len > 0 || out_len);
+
+	if (   allow_0x_prefix
+	    && in[0] == '0'
+	    && in[1] == 'x')
+		in += 2;
+
+	while (TRUE) {
+		const guint8 d1 = in[0];
+		guint8 d2;
+		int i1, i2;
+
+		i1 = nm_utils_hexchar_to_int (d1);
+		if (i1 < 0)
+			goto fail;
+
+		/* If there's no leading zero (ie "aa:b:cc") then fake it */
+		d2 = in[1];
+		if (   d2
+		    && (i2 = nm_utils_hexchar_to_int (d2)) >= 0) {
+			*out++ = (i1 << 4) + i2;
+			d2 = in[2];
+			if (!d2)
+				break;
+			in += 2;
+		} else {
+			/* Fake leading zero */
+			*out++ = i1;
+			if (!d2) {
+				if (!delimiter_has) {
+					/* when using no delimiter, there must be pairs of hex chars */
+					goto fail;
+				}
+				break;
+			}
+			in += 1;
+		}
+
+		if (--buffer_len == 0)
+			goto fail;
+
+		if (delimiter_has) {
+			if (d2 != delimiter) {
+				if (delimiter)
+					goto fail;
+				if (delimiter_candidates) {
+					while (delimiter_candidates[0]) {
+						if (delimiter_candidates++[0] == d2)
+							delimiter = d2;
+					}
+				}
+				if (!delimiter) {
+					if (delimiter_required)
+						goto fail;
+					delimiter_has = FALSE;
+					continue;
+				}
+			}
+			in++;
+		}
+	}
+
+	len = out - buffer;
+	if (   required_len == 0
+	    || len == required_len) {
+		NM_SET_OUT (out_len, len);
+		return buffer;
+	}
+
+fail:
+	NM_SET_OUT (out_len, 0);
+	return NULL;
+}
+
+guint8 *
+nm_utils_hexstr2bin_alloc (const char *hexstr,
+                           gboolean allow_0x_prefix,
+                           gboolean delimiter_required,
+                           const char *delimiter_candidates,
+                           gsize required_len,
+                           gsize *out_len)
+{
+	guint8 *buffer;
+	gsize buffer_len, len;
+
+	g_return_val_if_fail (hexstr, NULL);
+
+	nm_assert (required_len > 0 || out_len);
+
+	if (   allow_0x_prefix
+	    && hexstr[0] == '0'
+	    && hexstr[1] == 'x')
+		hexstr += 2;
+
+	if (!hexstr[0])
+		goto fail;
+
+	if (required_len > 0)
+		buffer_len = required_len;
+	else
+		buffer_len = strlen (hexstr) / 2 + 3;
+
+	buffer = g_malloc (buffer_len);
+
+	if (nm_utils_hexstr2bin_full (hexstr,
+	                              FALSE,
+	                              delimiter_required,
+	                              delimiter_candidates,
+	                              required_len,
+	                              buffer,
+	                              buffer_len,
+	                              &len)) {
+		NM_SET_OUT (out_len, len);
+		return buffer;
+	}
+
+	g_free (buffer);
+
+fail:
+	NM_SET_OUT (out_len, 0);
+	return NULL;
 }
