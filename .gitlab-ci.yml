@@ -17,6 +17,9 @@ stages:
     # to generate proper documentation.
     - date '+%Y%m%d-%H%M%S'; dnf reinstall -y --setopt='tsflags=' glib2-doc
 
+    - date '+%Y%m%d-%H%M%S'; dnf install -y python3-dnf-plugins-core
+    - date '+%Y%m%d-%H%M%S'; dnf debuginfo-install -y glib2
+
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-ci-patch-gtkdoc.sh || true
 
 .debian_install: &debian_install
@@ -27,6 +30,7 @@ stages:
     - date '+%Y%m%d-%H%M%S'; sed -i 's/^# \(pl_PL.UTF-8 .*\)$/\1/p' /etc/locale.gen ; true
     - date '+%Y%m%d-%H%M%S'; locale-gen pl_PL.UTF-8
     - date '+%Y%m%d-%H%M%S'; pip3 install meson
+    - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-ci-install-valgrind-in-ubuntu1604.sh
 
 .do_build: &do_build
   stage: test
@@ -37,9 +41,9 @@ stages:
     - date '+%Y%m%d-%H%M%S'; meson --version
     - date '+%Y%m%d-%H%M%S'; ! which dnf  || dnf list --installed
     - date '+%Y%m%d-%H%M%S'; ! which dpkg || dpkg -l
-    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=autotools CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=autotools CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
     - date '+%Y%m%d-%H%M%S'; rm -rf /tmp/nm-docs-html; mv build/INST/share/gtk-doc/html /tmp/nm-docs-html
-    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
     - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=autotools CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
     - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=meson     CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
     - date '+%Y%m%d-%H%M%S'; git clean -fdx ; ! grep -q '^NAME=Fedora' /etc/os-release || ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test
