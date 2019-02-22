@@ -13,13 +13,13 @@ test_units = [
 
 foreach test_unit: test_units
   exe = executable(
-    'platform-' + test_unit[0],
+    test_unit[0],
     test_unit[1],
     dependencies: test_unit[2],
   )
 
   test(
-    'platform/' + test_unit[0],
+    test_unit[0],
     test_script,
     timeout: test_unit[3],
     args: test_args + [exe.full_path()],
