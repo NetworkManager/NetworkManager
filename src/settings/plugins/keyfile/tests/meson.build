@@ -12,4 +12,5 @@ test(
   'keyfile/' + test_unit,
   test_script,
   args: test_args + [exe.full_path()],
+  timeout: default_test_timeout,
 )

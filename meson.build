@@ -98,6 +98,8 @@ set_defines = [
   ['VERSION', nm_version],
 ]
 
+default_test_timeout = 90
+
 foreach define: set_defines
   config_h.set_quoted(define[0], define[1])
 endforeach
