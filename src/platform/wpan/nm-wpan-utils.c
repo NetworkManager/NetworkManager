@@ -153,17 +153,19 @@ struct nl802154_interface {
 static int
 nl802154_get_interface_handler (struct nl_msg *msg, void *arg)
 {
+	static const struct nla_policy nl802154_policy[] = {
+		[NL802154_ATTR_PAN_ID]     = { .type = NLA_U16 },
+		[NL802154_ATTR_SHORT_ADDR] = { .type = NLA_U16 },
+	};
+	struct nlattr *tb[G_N_ELEMENTS (nl802154_policy)];
 	struct nl802154_interface *info = arg;
 	struct genlmsghdr *gnlh = nlmsg_data (nlmsg_hdr (msg));
-	struct nlattr *tb[NL802154_ATTR_MAX + 1] = { 0, };
-	static const struct nla_policy nl802154_policy[NL802154_ATTR_MAX + 1] = {
-		[NL802154_ATTR_PAN_ID] =            { .type = NLA_U16 },
-		[NL802154_ATTR_SHORT_ADDR] =        { .type = NLA_U16 },
-	};
 
-	if (nla_parse (tb, NL802154_ATTR_MAX, genlmsg_attrdata (gnlh, 0),
-	               genlmsg_attrlen (gnlh, 0), nl802154_policy) < 0)
-	return NL_SKIP;
+	if (nla_parse_arr (tb,
+	                   genlmsg_attrdata (gnlh, 0),
+	                   genlmsg_attrlen (gnlh, 0),
+	                   nl802154_policy) < 0)
+		return NL_SKIP;
 
 	if (tb[NL802154_ATTR_PAN_ID])
 		info->pan_id = le16toh (nla_get_u16 (tb[NL802154_ATTR_PAN_ID]));

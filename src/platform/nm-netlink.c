@@ -102,21 +102,30 @@ nl_nlmsghdr_to_str (const struct nlmsghdr *hdr, char *buf, gsize len)
 	b = buf;
 
 	switch (hdr->nlmsg_type) {
-	case RTM_NEWLINK:    s = "RTM_NEWLINK";  break;
-	case RTM_DELLINK:    s = "RTM_DELLINK";  break;
-	case RTM_NEWADDR:    s = "RTM_NEWADDR";  break;
-	case RTM_DELADDR:    s = "RTM_DELADDR";  break;
-	case RTM_NEWROUTE:   s = "RTM_NEWROUTE"; break;
-	case RTM_DELROUTE:   s = "RTM_DELROUTE"; break;
-	case RTM_NEWQDISC:   s = "RTM_NEWQDISC"; break;
-	case RTM_DELQDISC:   s = "RTM_DELQDISC"; break;
-	case RTM_NEWTFILTER: s = "RTM_NEWTFILTER"; break;
-	case RTM_DELTFILTER: s = "RTM_DELTFILTER"; break;
-	case NLMSG_NOOP:     s = "NLMSG_NOOP"; break;
-	case NLMSG_ERROR:    s = "NLMSG_ERROR"; break;
-	case NLMSG_DONE:     s = "NLMSG_DONE"; break;
-	case NLMSG_OVERRUN:  s = "NLMSG_OVERRUN"; break;
-	default:             s = NULL;       break;
+	case RTM_GETLINK:    s = "RTM_GETLINK";     break;
+	case RTM_NEWLINK:    s = "RTM_NEWLINK";     break;
+	case RTM_DELLINK:    s = "RTM_DELLINK";     break;
+	case RTM_SETLINK:    s = "RTM_SETLINK";     break;
+	case RTM_GETADDR:    s = "RTM_GETADDR";     break;
+	case RTM_NEWADDR:    s = "RTM_NEWADDR";     break;
+	case RTM_DELADDR:    s = "RTM_DELADDR";     break;
+	case RTM_GETROUTE:   s = "RTM_GETROUTE";    break;
+	case RTM_NEWROUTE:   s = "RTM_NEWROUTE";    break;
+	case RTM_DELROUTE:   s = "RTM_DELROUTE";    break;
+	case RTM_GETRULE:    s = "RTM_GETRULE";     break;
+	case RTM_NEWRULE:    s = "RTM_NEWRULE";     break;
+	case RTM_DELRULE:    s = "RTM_DELRULE";     break;
+	case RTM_GETQDISC:   s = "RTM_GETQDISC";    break;
+	case RTM_NEWQDISC:   s = "RTM_NEWQDISC";    break;
+	case RTM_DELQDISC:   s = "RTM_DELQDISC";    break;
+	case RTM_GETTFILTER: s = "RTM_GETTFILTER";  break;
+	case RTM_NEWTFILTER: s = "RTM_NEWTFILTER";  break;
+	case RTM_DELTFILTER: s = "RTM_DELTFILTER";  break;
+	case NLMSG_NOOP:     s = "NLMSG_NOOP";      break;
+	case NLMSG_ERROR:    s = "NLMSG_ERROR";     break;
+	case NLMSG_DONE:     s = "NLMSG_DONE";      break;
+	case NLMSG_OVERRUN:  s = "NLMSG_OVERRUN";   break;
+	default:             s = NULL;              break;
 	}
 
 	if (s)
@@ -205,6 +214,8 @@ nlmsg_reserve (struct nl_msg *n, size_t len, int pad)
 	size_t nlmsg_len = n->nm_nlh->nlmsg_len;
 	size_t tlen;
 
+	nm_assert (pad >= 0);
+
 	if (len > n->nm_size)
 		return NULL;
 
@@ -259,11 +270,12 @@ nlmsg_alloc_size (size_t len)
 	if (len < sizeof (struct nlmsghdr))
 		len = sizeof (struct nlmsghdr);
 
-	nm = g_slice_new0 (struct nl_msg);
-
-	nm->nm_protocol = -1;
-	nm->nm_size = len;
-	nm->nm_nlh = g_malloc0 (len);
+	nm = g_slice_new (struct nl_msg);
+	*nm = (struct nl_msg) {
+		.nm_protocol = -1,
+		.nm_size = len,
+		.nm_nlh = g_malloc0 (len),
+	};
 	nm->nm_nlh->nlmsg_len = nlmsg_total_size (0);
 	return nm;
 }
@@ -318,9 +330,17 @@ void nlmsg_free (struct nl_msg *msg)
 /*****************************************************************************/
 
 int
-nlmsg_append (struct nl_msg *n, void *data, size_t len, int pad)
+nlmsg_append (struct nl_msg *n,
+              const void *data,
+              size_t len,
+              int pad)
 {
 	void *tmp;
+
+	nm_assert (n);
+	nm_assert (data);
+	nm_assert (len > 0);
+	nm_assert (pad >= 0);
 
 	tmp = nlmsg_reserve (n, len, pad);
 	if (tmp == NULL)
@@ -365,48 +385,77 @@ nlmsg_put (struct nl_msg *n, uint32_t pid, uint32_t seq,
 	return nlh;
 }
 
-uint64_t
-nla_get_u64 (const struct nlattr *nla)
+size_t
+nla_strlcpy (char *dst,
+             const struct nlattr *nla,
+             size_t dstsize)
 {
-	uint64_t tmp = 0;
+	const char *src;
+	size_t srclen;
+	size_t len;
 
-	if (nla && nla_len (nla) >= sizeof (tmp))
-		memcpy (&tmp, nla_data (nla), sizeof (tmp));
+	/* - Always writes @dstsize bytes to @dst
+	 * - Copies the first non-NUL characters to @dst.
+	 *   Any characters after the first NUL bytes in @nla are ignored.
+	 * - If the string @nla is longer than @dstsize, the string
+	 *   gets truncated. @dst will always be NUL terminated. */
 
-	return tmp;
+	if (G_UNLIKELY (dstsize <= 1)) {
+		if (dstsize == 1)
+			dst[0] = '\0';
+		if (   nla
+		    && (srclen = nla_len (nla)) > 0)
+			return strnlen (nla_data (nla), srclen);
+		return 0;
+	}
+
+	nm_assert (dst);
+
+	if (nla) {
+		srclen = nla_len (nla);
+		if (srclen > 0) {
+			src = nla_data (nla);
+			srclen = strnlen (src, srclen);
+			if (srclen > 0) {
+				len = NM_MIN (dstsize - 1, srclen);
+				memcpy (dst, src, len);
+				memset (&dst[len], 0, dstsize - len);
+				return srclen;
+			}
+		}
+	}
+
+	memset (dst, 0, dstsize);
+	return 0;
 }
 
 size_t
-nla_strlcpy (char *dst, const struct nlattr *nla, size_t dstsize)
+nla_memcpy (void *dst, const struct nlattr *nla, size_t dstsize)
 {
-	size_t srclen = nla_len (nla);
-	const char *src = nla_data (nla);
+	size_t len;
+	int srclen;
 
-	if (srclen > 0 && src[srclen - 1] == '\0')
-		srclen--;
+	if (!nla)
+		return 0;
 
-	if (dstsize > 0) {
-		size_t len = (srclen >= dstsize) ? dstsize - 1 : srclen;
+	srclen = nla_len (nla);
 
-		memset (dst, 0, dstsize);
-		memcpy (dst, src, len);
+	if (srclen <= 0) {
+		nm_assert (srclen == 0);
+		return 0;
+	}
+
+	len = NM_MIN ((size_t) srclen, dstsize);
+	if (len > 0) {
+		/* there is a crucial difference between nla_strlcpy() and nla_memcpy().
+		 * The former always write @dstsize bytes (akin to strncpy()), here, we only
+		 * write the bytes that we actually have (leaving the remainder undefined). */
+		memcpy (dst,
+		        nla_data (nla),
+		        len);
 	}
 
 	return srclen;
-}
-
-int
-nla_memcpy (void *dest, const struct nlattr *src, int count)
-{
-	int minlen;
-
-	if (!src)
-		return 0;
-
-	minlen = NM_MIN (count, (int) nla_len (src));
-	memcpy (dest, nla_data (src), minlen);
-
-	return minlen;
 }
 
 int
@@ -546,7 +595,11 @@ validate_nla (const struct nlattr *nla, int maxtype,
 		return -NME_UNSPEC;
 
 	if (pt->type == NLA_STRING) {
-		const char *data = nla_data (nla);
+		const char *data;
+
+		nm_assert (minlen > 0);
+
+		data = nla_data (nla);
 		if (data[nla_len (nla) - 1] != '\0')
 			return -NME_UNSPEC;
 	}
@@ -572,15 +625,13 @@ nla_parse (struct nlattr *tb[], int maxtype, struct nlattr *head, int len,
 		if (policy) {
 			nmerr = validate_nla (nla, maxtype, policy);
 			if (nmerr < 0)
-				goto errout;
+				return nmerr;
 		}
 
 		tb[type] = nla;
 	}
 
-	nmerr = 0;
-errout:
-	return nmerr;
+	return 0;
 }
 
 /*****************************************************************************/
@@ -719,21 +770,21 @@ genlmsg_parse (struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
 static int
 _genl_parse_getfamily (struct nl_msg *msg, void *arg)
 {
-	static const struct nla_policy ctrl_policy[CTRL_ATTR_MAX+1] = {
+	static const struct nla_policy ctrl_policy[] = {
 		[CTRL_ATTR_FAMILY_ID]    = { .type = NLA_U16 },
 		[CTRL_ATTR_FAMILY_NAME]  = { .type = NLA_STRING,
-		                            .maxlen = GENL_NAMSIZ },
+		                             .maxlen = GENL_NAMSIZ },
 		[CTRL_ATTR_VERSION]      = { .type = NLA_U32 },
 		[CTRL_ATTR_HDRSIZE]      = { .type = NLA_U32 },
 		[CTRL_ATTR_MAXATTR]      = { .type = NLA_U32 },
 		[CTRL_ATTR_OPS]          = { .type = NLA_NESTED },
 		[CTRL_ATTR_MCAST_GROUPS] = { .type = NLA_NESTED },
 	};
-	struct nlattr *tb[CTRL_ATTR_MAX+1];
+	struct nlattr *tb[G_N_ELEMENTS (ctrl_policy)];
 	struct nlmsghdr *nlh = nlmsg_hdr (msg);
 	gint32 *response_data = arg;
 
-	if (genlmsg_parse (nlh, 0, tb, CTRL_ATTR_MAX, ctrl_policy))
+	if (genlmsg_parse_arr (nlh, 0, tb, ctrl_policy) < 0)
 		return NL_SKIP;
 
 	if (tb[CTRL_ATTR_FAMILY_ID])

@@ -2920,15 +2920,15 @@ nmp_cache_update_link_master_connected (NMPCache *cache,
 /*****************************************************************************/
 
 void
-nmp_cache_dirty_set_all (NMPCache *cache, NMPObjectType obj_type)
+nmp_cache_dirty_set_all (NMPCache *cache,
+                         const NMPLookup *lookup)
 {
-	NMPObject obj_needle;
-
 	nm_assert (cache);
+	nm_assert (lookup);
 
 	nm_dedup_multi_index_dirty_set_head (cache->multi_idx,
-	                                     _idx_type_get (cache, NMP_CACHE_ID_TYPE_OBJECT_TYPE),
-	                                     _nmp_object_stackinit_from_type (&obj_needle, obj_type));
+	                                     _idx_type_get (cache, lookup->cache_id_type),
+	                                     &lookup->selector_obj);
 }
 
 /*****************************************************************************/
@@ -2977,7 +2977,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.sizeof_data                        = sizeof (NMPObjectLink),
 		.sizeof_public                      = sizeof (NMPlatformLink),
 		.obj_type_name                      = "link",
-		.addr_family                        = AF_UNSPEC,
 		.rtm_gettype                        = RTM_GETLINK,
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_LINK,
 		.signal_type                        = NM_PLATFORM_SIGNAL_LINK_CHANGED,
