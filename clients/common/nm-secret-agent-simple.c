@@ -214,6 +214,32 @@ _secret_real_new_vpn_secret (const char *pretty_name,
 	return &real->base;
 }
 
+static NMSecretAgentSimpleSecret *
+_secret_real_new_wireguard_peer_psk (NMSettingWireGuard *s_wg,
+                                     const char *public_key,
+                                     const char *preshared_key)
+{
+	SecretReal *real;
+
+	nm_assert (NM_IS_SETTING_WIREGUARD (s_wg));
+	nm_assert (public_key);
+
+	real = g_slice_new (SecretReal);
+	*real = (SecretReal) {
+		.base.secret_type        = NM_SECRET_AGENT_SECRET_TYPE_WIREGUARD_PEER_PSK,
+		.base.pretty_name        = g_strdup_printf (_("Preshared-key for %s"),
+		                                            public_key),
+		.base.entry_id           = g_strdup_printf (NM_SETTING_WIREGUARD_SETTING_NAME"."NM_SETTING_WIREGUARD_PEERS".%s."NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY,
+		                                            public_key),
+		.base.value              = g_strdup (preshared_key),
+		.base.is_secret          = TRUE,
+		.base.no_prompt_entry_id = TRUE,
+		.setting                 = NM_SETTING (g_object_ref (s_wg)),
+		.property                = g_strdup (public_key),
+	};
+	return &real->base;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -405,8 +431,8 @@ add_vpn_secret_helper (GPtrArray *secrets, NMSettingVpn *s_vpn, const char *name
 
 static gboolean
 add_vpn_secrets (RequestData *request,
-                 GPtrArray                  *secrets,
-                 char                       **msg)
+                 GPtrArray *secrets,
+                 char **msg)
 {
 	NMSettingVpn *s_vpn = nm_connection_get_setting_vpn (request->connection);
 	const VpnPasswordName *secret_names, *p;
@@ -432,6 +458,74 @@ add_vpn_secrets (RequestData *request,
 		p++;
 	}
 
+	return TRUE;
+}
+
+static gboolean
+add_wireguard_secrets (RequestData *request,
+                       GPtrArray *secrets,
+                       char **msg,
+                       GError **error)
+{
+	NMSettingWireGuard *s_wg;
+	NMSecretAgentSimpleSecret *secret;
+	guint i;
+
+	s_wg = NM_SETTING_WIREGUARD (nm_connection_get_setting (request->connection, NM_TYPE_SETTING_WIREGUARD));
+	if (!s_wg) {
+		g_set_error (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
+		             "Cannot service a WireGuard secrets request %s for a connection without WireGuard settings",
+		             request->request_id);
+		return FALSE;
+	}
+
+	if (   !request->hints
+	    || !request->hints[0]
+	    || g_strv_contains (NM_CAST_STRV_CC (request->hints), NM_SETTING_WIREGUARD_PRIVATE_KEY)) {
+		secret = _secret_real_new_plain (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+		                                 _("WireGuard private-key"),
+		                                 NM_SETTING (s_wg),
+		                                 NM_SETTING_WIREGUARD_PRIVATE_KEY);
+		g_ptr_array_add (secrets, secret);
+	}
+
+	if (request->hints) {
+
+		for (i = 0; request->hints[i]; i++) {
+			NMWireGuardPeer *peer;
+			const char *name = request->hints[i];
+			gs_free char *public_key = NULL;
+
+			if (nm_streq (name, NM_SETTING_WIREGUARD_PRIVATE_KEY))
+				continue;
+
+			if (NM_STR_HAS_PREFIX (name, NM_SETTING_WIREGUARD_PEERS".")) {
+				const char *tmp;
+
+				tmp = &name[NM_STRLEN (NM_SETTING_WIREGUARD_PEERS".")];
+				if (NM_STR_HAS_SUFFIX (tmp, "."NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY)) {
+					public_key = g_strndup (tmp,
+					                       strlen (tmp) - NM_STRLEN ("."NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY));
+				}
+			}
+
+			if (!public_key)
+				continue;
+
+			peer = nm_setting_wireguard_get_peer_by_public_key (s_wg, public_key, NULL);
+
+			g_ptr_array_add (secrets, _secret_real_new_wireguard_peer_psk (s_wg,
+			                                                               (  peer
+			                                                                ? nm_wireguard_peer_get_public_key (peer)
+			                                                                : public_key),
+			                                                               (  peer
+			                                                                ? nm_wireguard_peer_get_preshared_key (peer)
+			                                                                : NULL)));
+		}
+	}
+
+	*msg = g_strdup_printf (_("Secrets are required to connect WireGuard VPN '%s'"),
+	                        nm_connection_get_id (request->connection));
 	return TRUE;
 }
 
@@ -820,6 +914,10 @@ request_secrets_from_ui (RequestData *request)
 			if (!add_8021x_secrets (request, secrets))
 				goto out_fail;
 		}
+	} else if (nm_connection_is_type (request->connection, NM_SETTING_WIREGUARD_SETTING_NAME)) {
+		title = _("WireGuard VPN secret");
+		if (!add_wireguard_secrets (request, secrets, &msg, &error))
+			goto out_fail_error;
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_CDMA_SETTING_NAME)) {
 		NMSettingCdma *s_cdma = nm_connection_get_setting_cdma (request->connection);
 
@@ -980,10 +1078,13 @@ nm_secret_agent_simple_response (NMSecretAgentSimple *self,
 	if (secrets) {
 		GVariantBuilder conn_builder, *setting_builder;
 		GVariantBuilder vpn_secrets_builder;
+		GVariantBuilder wg_secrets_builder;
+		GVariantBuilder wg_peer_builder;
 		GHashTable *settings;
 		GHashTableIter iter;
 		const char *name;
 		gboolean has_vpn = FALSE;
+		gboolean has_wg = FALSE;
 
 		settings = g_hash_table_new (nm_str_hash, g_str_equal);
 		for (i = 0; i < secrets->len; i++) {
@@ -1011,6 +1112,19 @@ nm_secret_agent_simple_response (NMSecretAgentSimple *self,
 				g_variant_builder_add (&vpn_secrets_builder, "{ss}",
 				                       secret->property, secret->base.value);
 				break;
+			case NM_SECRET_AGENT_SECRET_TYPE_WIREGUARD_PEER_PSK:
+				if (!has_wg) {
+					g_variant_builder_init (&wg_secrets_builder, G_VARIANT_TYPE ("aa{sv}"));
+					has_wg = TRUE;
+				}
+				g_variant_builder_init (&wg_peer_builder, G_VARIANT_TYPE ("a{sv}"));
+				g_variant_builder_add (&wg_peer_builder, "{sv}",
+				                       NM_WIREGUARD_PEER_ATTR_PUBLIC_KEY, g_variant_new_string (secret->property));
+				g_variant_builder_add (&wg_peer_builder, "{sv}",
+				                       NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY, g_variant_new_string (secret->base.value));
+				g_variant_builder_add (&wg_secrets_builder, "a{sv}",
+				                       &wg_peer_builder);
+				break;
 			}
 		}
 
@@ -1018,6 +1132,12 @@ nm_secret_agent_simple_response (NMSecretAgentSimple *self,
 			g_variant_builder_add (setting_builder, "{sv}",
 			                       "secrets",
 			                       g_variant_builder_end (&vpn_secrets_builder));
+		}
+
+		if (has_wg) {
+			g_variant_builder_add (setting_builder, "{sv}",
+			                       NM_SETTING_WIREGUARD_PEERS,
+			                       g_variant_builder_end (&wg_secrets_builder));
 		}
 
 		g_variant_builder_init (&conn_builder, NM_VARIANT_TYPE_CONNECTION);

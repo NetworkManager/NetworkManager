@@ -25,7 +25,8 @@
 #error Cannot use this header.
 #endif
 
-#define NM_KEYFILE_GROUP_VPN_SECRETS "vpn-secrets"
+#define NM_KEYFILE_GROUP_VPN_SECRETS          "vpn-secrets"
+#define NM_KEYFILE_GROUPPREFIX_WIREGUARD_PEER "wireguard-peer."
 
 const char *nm_keyfile_plugin_get_alias_for_setting_name (const char *setting_name);
 

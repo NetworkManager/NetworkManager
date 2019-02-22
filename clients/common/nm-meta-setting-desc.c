@@ -7505,6 +7505,28 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_WIREGUARD
+static const NMMetaPropertyInfo *const property_infos_WIREGUARD[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_PRIVATE_KEY,
+		.is_secret =                    TRUE,
+		.property_type =                &_pt_gobject_string,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS,
+		.property_type =                &_pt_gobject_secret_flags,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_LISTEN_PORT,
+		.property_type =                &_pt_gobject_int,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_FWMARK,
+		.property_type =                &_pt_gobject_int,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int, \
+			.base =                     16,
+		),
+	),
+	NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_WIRELESS
 static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SSID,
@@ -8001,6 +8023,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_WIFI_P2P            N_("Wi-Fi P2P connection")
 #define SETTING_PRETTY_NAME_WIMAX               N_("WiMAX connection")
 #define SETTING_PRETTY_NAME_WIRED               N_("Wired Ethernet")
+#define SETTING_PRETTY_NAME_WIREGUARD           N_("WireGuard VPN settings")
 #define SETTING_PRETTY_NAME_WIRELESS            N_("Wi-Fi connection")
 #define SETTING_PRETTY_NAME_WIRELESS_SECURITY   N_("Wi-Fi security settings")
 #define SETTING_PRETTY_NAME_WPAN                N_("WPAN settings")
@@ -8262,6 +8285,12 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (DCB,                   FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (SRIOV,                 FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
+		),
+	),
+	SETTING_INFO (WIREGUARD,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIREGUARD,             TRUE),
 		),
 	),
 	SETTING_INFO (WIRELESS,

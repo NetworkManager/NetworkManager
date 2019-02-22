@@ -2067,7 +2067,7 @@ _nm_setting_update_secrets (NMSetting *setting, GVariant *secrets, GError **erro
 		int success;
 
 		success = NM_SETTING_GET_CLASS (setting)->update_one_secret (setting, secret_key, secret_value, &tmp_error);
-		g_assert (!((success == NM_SETTING_UPDATE_SECRET_ERROR) ^ (!!tmp_error)));
+		nm_assert (!((success == NM_SETTING_UPDATE_SECRET_ERROR) ^ (!!tmp_error)));
 
 		g_variant_unref (secret_value);
 

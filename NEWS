@@ -14,6 +14,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Use a new type of secret-keys that combines the secret value with /etc/machine-id.
   This way when cloning a VM it suffices to change machine-id to generate different
   addresses.
+* Add support for WireGuard VPN tunnels to NetworkManager. D-Bus API and libnm
+  support all options. nmcli supports creating and managing WireGuard profiles,
+  with the exception of configuring and showing peers.
 
 The following changes were backported to 1.14.x releases between 1.14.0
 and 1.14.2 are also present in NetworkManager-1.14:
