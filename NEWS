@@ -34,6 +34,10 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Warn about invalid settings in "NetworkManager.conf".
 * Support announcing "ANDROID_METERED" DHCP option for shared mode.
 * Support SAE authentication as used for 802.11s Meshing and WPA3-Personal.
+* NetworkManager is no longer installed as D-Bus activatable service.
+* Mark docker bridges as unmanaged via udev rule.
+* Add new PolicyKit permission "org.freedesktop.NetworkManager.wifi.scan" for controlling
+  Wi-Fi scanning.
 
 The following changes were backported to 1.14.x releases between 1.14.0
 and 1.14.6 are also present in NetworkManager-1.14:
