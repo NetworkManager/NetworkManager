@@ -9,11 +9,31 @@ with the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * Check connectivity per address family.
+* Support "main.systemd-resolved" to let NetworkManager configure DNS settings
+  in systemd-resolved without making it the main DNS plugin of NetworkManager.
+* Write "/var/run/NetworkManager/no-stub-resolv.conf" with original nameservers.
+  That is useful with caching DNS plugins like "systemd-resolved" or "dnsmasq" where
+  "/var/run/NetworkManager/resolv.conf" refers to localhost.
+* Change default "ipv4.dhcp-client-id" setting for the internal DHCP plugin from
+  "duid" to "mac". This is a change in behavior on upgrade when using the internal
+  DHCP plugin (unless the default is overwritten in "NetworkManager.conf" or specified
+  per connnection profile).
+* Improve handling of DHCP router options with internal DHCP plugin. For one, accept
+  multiple routers and add a default-route to each. On D-Bus expose the original DNS
+  and NTP servers without cleaning up local nameservers.
 * Allow binding a connections lifetime to the DBus client that activated it.
 * Add support for establishing Wi-Fi Direct connections (Wi-Fi P2P).
 * Add support for WireGuard VPN tunnels to NetworkManager. D-Bus API and libnm
   support all options. nmcli supports creating and managing WireGuard profiles,
   with the exception of configuring and showing peers.
+* Add initrd generator to be used by dracut and use it as new way of handling
+  iBFT.
+* Deprected "plugins.monitor-connection-files" setting in NetworkManager.conf.
+  This option will have no effect in future versions.
+* Add AP and Ad-hoc support for iwd Wi-Fi backend.
+* Warn about invalid settings in "NetworkManager.conf".
+* Support announcing "ANDROID_METERED" DHCP option for shared mode.
+* Support SAE authentication as used for 802.11s Meshing and WPA3-Personal.
 
 The following changes were backported to 1.14.x releases between 1.14.0
 and 1.14.6 are also present in NetworkManager-1.14:
