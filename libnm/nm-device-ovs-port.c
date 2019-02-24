@@ -75,6 +75,7 @@ get_type_description (NMDevice *device)
 {
 	return "ovs-port";
 }
+
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {

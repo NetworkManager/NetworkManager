@@ -1154,6 +1154,14 @@ nm_device_wifi_p2p_remove (NMDeviceWifiP2P* self)
 
 /*****************************************************************************/
 
+static const char *
+get_type_description (NMDevice *device)
+{
+	return "wifi-p2p";
+}
+
+/*****************************************************************************/
+
 static const GDBusSignalInfo nm_signal_info_wifi_p2p_peer_added = NM_DEFINE_GDBUS_SIGNAL_INFO_INIT (
 	"PeerAdded",
 	.args = NM_DEFINE_GDBUS_ARG_INFOS (
@@ -1286,33 +1294,34 @@ nm_device_wifi_p2p_class_init (NMDeviceWifiP2PClass *klass)
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	object_class->constructed = constructed;
+	object_class->constructed  = constructed;
 	object_class->get_property = get_property;
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
+	object_class->dispose      = dispose;
+	object_class->finalize     = finalize;
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_wifi_p2p);
 
-	device_class->connection_type_supported = NM_SETTING_WIFI_P2P_SETTING_NAME;
+	device_class->connection_type_supported        = NM_SETTING_WIFI_P2P_SETTING_NAME;
 	device_class->connection_type_check_compatible = NM_SETTING_WIFI_P2P_SETTING_NAME;
-	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_WIFI_P2P);
+	device_class->link_types                       = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_WIFI_P2P);
+	device_class->get_type_description             = get_type_description;
 
 	/* Do we need compatibility checking or is the default good enough? */
-	device_class->is_available = is_available;
-	device_class->check_connection_compatible = check_connection_compatible;
-	device_class->complete_connection = complete_connection;
+	device_class->is_available                     = is_available;
+	device_class->check_connection_compatible      = check_connection_compatible;
+	device_class->complete_connection              = complete_connection;
 
-	device_class->act_stage1_prepare = act_stage1_prepare;
-	device_class->act_stage2_config = act_stage2_config;
-	device_class->get_configured_mtu = get_configured_mtu;
-	device_class->get_auto_ip_config_method = get_auto_ip_config_method;
-	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
-	device_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
+	device_class->act_stage1_prepare               = act_stage1_prepare;
+	device_class->act_stage2_config                = act_stage2_config;
+	device_class->get_configured_mtu               = get_configured_mtu;
+	device_class->get_auto_ip_config_method        = get_auto_ip_config_method;
+	device_class->act_stage3_ip4_config_start      = act_stage3_ip4_config_start;
+	device_class->act_stage3_ip6_config_start      = act_stage3_ip6_config_start;
 
-	device_class->deactivate = deactivate;
-	device_class->unmanaged_on_quit = unmanaged_on_quit;
+	device_class->deactivate                       = deactivate;
+	device_class->unmanaged_on_quit                = unmanaged_on_quit;
 
-	device_class->state_changed = device_state_changed;
+	device_class->state_changed                    = device_state_changed;
 
 	obj_properties[PROP_PEERS] =
 	    g_param_spec_boxed (NM_DEVICE_WIFI_P2P_PEERS, "", "",
