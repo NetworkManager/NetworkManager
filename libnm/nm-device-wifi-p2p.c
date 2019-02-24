@@ -342,6 +342,12 @@ get_hw_address (NMDevice *device)
 	return nm_device_wifi_p2p_get_hw_address (NM_DEVICE_WIFI_P2P (device));
 }
 
+static const char *
+get_type_description (NMDevice *device)
+{
+	return "wifi-p2p";
+}
+
 /*****************************************************************************/
 
 static void
@@ -426,6 +432,7 @@ nm_device_wifi_p2p_class_init (NMDeviceWifiP2PClass *wifi_class)
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
 	device_class->get_hw_address        = get_hw_address;
+	device_class->get_type_description  = get_type_description;
 
 	nm_object_class->init_dbus = init_dbus;
 
