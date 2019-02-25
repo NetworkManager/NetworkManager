@@ -12285,7 +12285,7 @@ msgid "the script lacks FindProxyForURL function"
 msgstr "il manque à ce script la fonction FindProxyForURL"
 
 #: ../libnm-core/nm-setting-sriov.c:1086
-#, c-format
+#, fuzzy, c-format
 msgid "VF with index %u, but the total number of VFs is %u"
 msgstr "VF avec indice %u, mais le nombre total de VF est "
 
@@ -14156,7 +14156,7 @@ msgid "(%s): Invalid IID %s\n"
 msgstr "(%s): IID non valide %s\n"
 
 #: ../src/nm-iface-helper.c:496
-#, c-format
+#, fuzzy, c-format
 msgid "(%s): Invalid DHCP client-id %s\n"
 msgstr "(%s) : id-client DHCP non valide\n"
 

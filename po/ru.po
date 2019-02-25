@@ -1201,7 +1201,7 @@ msgid "Error: Failed to add '%s' connection: %s"
 msgstr "Ошибка. Не удалось добавить соединение «%s»: %s"
 
 #: ../clients/cli/connections.c:4810
-#, c-format
+#, fuzzy, c-format
 msgid ""
 "Warning: There is another connection with the name '%1$s'. Reference the "
 "connection by its uuid '%2$s'\n"

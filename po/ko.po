@@ -1001,7 +1001,7 @@ msgid "Hint: use '%s' to get more details."
 msgstr ""
 
 #: ../clients/cli/connections.c:2455
-#, c-format
+#, fuzzy, c-format
 msgid "Connection successfully activated (%s) (D-Bus active path: %s)\n"
 msgstr "연결이 성공적으로 활성화되었습니다 (D-Bus 활성 경로: %s)\n"
 
@@ -1206,7 +1206,7 @@ msgid "Error: Failed to add '%s' connection: %s"
 msgstr "오류: '%s' 연결 추가 실패: %s"
 
 #: ../clients/cli/connections.c:4810
-#, c-format
+#, fuzzy, c-format
 msgid ""
 "Warning: There is another connection with the name '%1$s'. Reference the "
 "connection by its uuid '%2$s'\n"
@@ -1249,7 +1249,7 @@ msgstr ""
 
 #. Ask for optional arguments.
 #: ../clients/cli/connections.c:5061
-#, c-format
+#, fuzzy, c-format
 msgid "There is %d optional setting for %s.\n"
 msgid_plural "There are %d optional settings for %s.\n"
 msgstr[0] "'%d' 연결 유형에는 1 개의 옵션 인수가 있습니다.\n"
@@ -9366,7 +9366,7 @@ msgid "IP tunnel"
 msgstr "IP 터널"
 
 #: ../clients/tui/nm-editor-utils.c:227
-#, c-format
+#, fuzzy, c-format
 msgid "IP tunnel connection %d"
 msgstr "IP 터널 연결"
 
@@ -9649,7 +9649,7 @@ msgid "(No custom routes)"
 msgstr "(사용자 설정 라우트가 없음)"
 
 #: ../clients/tui/nmt-page-ip4.c:85 ../clients/tui/nmt-page-ip6.c:85
-#, c-format
+#, fuzzy, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
 msgstr[0] " 개의 사용자 지정 경로 "
@@ -10020,7 +10020,7 @@ msgid "openconnect failed with signal %d"
 msgstr "openconnect에 실패했습니다(신호 %d)."
 
 #: ../clients/tui/nmtui-connect.c:183
-#, c-format
+#, fuzzy, c-format
 msgid "Activation failed: %s"
 msgstr "활성화 실패"
 
@@ -10995,7 +10995,7 @@ msgstr ""
 "'%s'입니다"
 
 #: ../libnm-core/nm-setting-bridge.c:229 ../libnm-util/nm-setting-bridge.c:268
-#, c-format
+#, fuzzy, c-format
 msgid "value '%d' is out of range <%d-%d>"
 msgstr "'%d' 값은 %d 범위 밖에 있습니다"
 
@@ -11876,7 +11876,7 @@ msgid "'%s' can only be used with '%s=%s' (WEP)"
 msgstr "'%s'은 '%s=%s'와 함께만 사용할 수 있습니다 (WEP)"
 
 #: ../libnm-core/nm-setting-wireless-security.c:1090
-#, c-format
+#, fuzzy, c-format
 msgid "'%s' can only be used with '%s=%s' or '%s=%s'"
 msgstr "'%s'은 '%s=%s'와 함께만 사용할 수 있습니다 (WEP)"
 
@@ -12455,7 +12455,7 @@ msgid "The connection and device differ in S390 subchannels."
 msgstr "S390 하위 채널에서 연결과 장치가 다릅니다."
 
 #: ../libnm/nm-device-ethernet.c:236
-#, c-format
+#, fuzzy, c-format
 msgid "Invalid device MAC address %s."
 msgstr "잘못된 장치 MAC 주소입니다."
 
