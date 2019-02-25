@@ -618,12 +618,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4621
+size: 4623
 location: clients/tests/test-client.py:1025:test_004()/22
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4475 bytes
+stdout: 4477 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -714,7 +714,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          0 - nieznane
+VPN.VPN-STATE:                          0 — nieznane
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
@@ -822,12 +822,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4631
+size: 4633
 location: clients/tests/test-client.py:1036:test_004()/24
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4485 bytes
+stdout: 4487 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -918,7 +918,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.VPN-STATE:                          5 — Połączono z VPN
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
@@ -1026,12 +1026,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4631
+size: 4633
 location: clients/tests/test-client.py:1038:test_004()/26
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4485 bytes
+stdout: 4487 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1122,7 +1122,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.VPN-STATE:                          5 — Połączono z VPN
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
@@ -3724,12 +3724,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4643
+size: 4645
 location: clients/tests/test-client.py:1036:test_004()/70
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4485 bytes
+stdout: 4487 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -3820,7 +3820,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.VPN-STATE:                          5 — Połączono z VPN
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
@@ -3928,12 +3928,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4643
+size: 4645
 location: clients/tests/test-client.py:1038:test_004()/72
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4485 bytes
+stdout: 4487 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4024,7 +4024,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.VPN-STATE:                          5 — Połączono z VPN
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
@@ -6639,12 +6639,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5665
+size: 5667
 location: clients/tests/test-client.py:1036:test_004()/116
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5509 bytes
+stdout: 5511 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -6747,7 +6747,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.VPN-STATE:                          5 — Połączono z VPN
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
@@ -6869,12 +6869,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5665
+size: 5667
 location: clients/tests/test-client.py:1038:test_004()/118
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5509 bytes
+stdout: 5511 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -6977,7 +6977,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.VPN-STATE:                          5 — Połączono z VPN
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
@@ -10143,12 +10143,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5677
+size: 5679
 location: clients/tests/test-client.py:1036:test_004()/162
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5509 bytes
+stdout: 5511 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -10251,7 +10251,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.VPN-STATE:                          5 — Połączono z VPN
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
@@ -10373,12 +10373,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5677
+size: 5679
 location: clients/tests/test-client.py:1038:test_004()/164
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5509 bytes
+stdout: 5511 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -10481,7 +10481,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.VPN-STATE:                          5 — Połączono z VPN
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
@@ -19305,12 +19305,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 2999
+size: 3001
 location: clients/tests/test-client.py:1036:test_004()/300
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2837 bytes
+stdout: 2839 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
@@ -19331,7 +19331,7 @@ GROUP    NAME       UUID                                  DEVICES  STATE       D
 GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE            CFG                                     
-VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
+VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
 size: 2978
@@ -19363,12 +19363,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 2999
+size: 3001
 location: clients/tests/test-client.py:1038:test_004()/302
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2837 bytes
+stdout: 2839 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
@@ -19389,7 +19389,7 @@ GROUP    NAME       UUID                                  DEVICES  STATE       D
 GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE            CFG                                     
-VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
+VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
 size: 2246
@@ -20793,12 +20793,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3011
+size: 3013
 location: clients/tests/test-client.py:1036:test_004()/346
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2837 bytes
+stdout: 2839 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
@@ -20819,7 +20819,7 @@ GROUP    NAME       UUID                                  DEVICES  STATE       D
 GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE            CFG                                     
-VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
+VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
 size: 2990
@@ -20851,12 +20851,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3011
+size: 3013
 location: clients/tests/test-client.py:1038:test_004()/348
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2837 bytes
+stdout: 2839 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
@@ -20877,7 +20877,7 @@ GROUP    NAME       UUID                                  DEVICES  STATE       D
 GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE            CFG                                     
-VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
+VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
 size: 2258
@@ -22294,12 +22294,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4796
+size: 4798
 location: clients/tests/test-client.py:1036:test_004()/392
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4625 bytes
+stdout: 4627 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -22333,7 +22333,7 @@ GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  n
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE            CFG                                     
 ----------------------------------------------------------------------------------------------------------------------------------
-VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
+VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
 size: 4742
@@ -22378,12 +22378,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4796
+size: 4798
 location: clients/tests/test-client.py:1038:test_004()/394
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4625 bytes
+stdout: 4627 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -22417,7 +22417,7 @@ GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  n
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE            CFG                                     
 ----------------------------------------------------------------------------------------------------------------------------------
-VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
+VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
 size: 3428
@@ -24370,12 +24370,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4808
+size: 4810
 location: clients/tests/test-client.py:1036:test_004()/438
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4625 bytes
+stdout: 4627 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -24409,7 +24409,7 @@ GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  n
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE            CFG                                     
 ----------------------------------------------------------------------------------------------------------------------------------
-VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
+VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
 size: 4754
@@ -24454,12 +24454,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4808
+size: 4810
 location: clients/tests/test-client.py:1038:test_004()/440
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4625 bytes
+stdout: 4627 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -24493,7 +24493,7 @@ GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  n
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE            CFG                                     
 ----------------------------------------------------------------------------------------------------------------------------------
-VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
+VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
 size: 3440
@@ -28210,12 +28210,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4649
+size: 4651
 location: clients/tests/test-client.py:1036:test_004()/576
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4485 bytes
+stdout: 4487 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -28306,7 +28306,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.VPN-STATE:                          5 — Połączono z VPN
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
@@ -28414,12 +28414,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4649
+size: 4651
 location: clients/tests/test-client.py:1038:test_004()/578
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4485 bytes
+stdout: 4487 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -28510,7 +28510,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.VPN-STATE:                          5 — Połączono z VPN
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
@@ -31602,12 +31602,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4661
+size: 4663
 location: clients/tests/test-client.py:1036:test_004()/622
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4485 bytes
+stdout: 4487 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -31698,7 +31698,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.VPN-STATE:                          5 — Połączono z VPN
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
@@ -31806,12 +31806,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4661
+size: 4663
 location: clients/tests/test-client.py:1038:test_004()/624
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4485 bytes
+stdout: 4487 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -31902,7 +31902,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.VPN-STATE:                          5 — Połączono z VPN
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
@@ -35007,12 +35007,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5682
+size: 5684
 location: clients/tests/test-client.py:1036:test_004()/668
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5509 bytes
+stdout: 5511 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -35115,7 +35115,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.VPN-STATE:                          5 — Połączono z VPN
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
@@ -35237,12 +35237,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5682
+size: 5684
 location: clients/tests/test-client.py:1038:test_004()/670
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5509 bytes
+stdout: 5511 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -35345,7 +35345,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.VPN-STATE:                          5 — Połączono z VPN
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
@@ -39031,12 +39031,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5694
+size: 5696
 location: clients/tests/test-client.py:1036:test_004()/714
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5509 bytes
+stdout: 5511 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -39139,7 +39139,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.VPN-STATE:                          5 — Połączono z VPN
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
@@ -39261,12 +39261,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5694
+size: 5696
 location: clients/tests/test-client.py:1038:test_004()/716
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5509 bytes
+stdout: 5511 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -39369,7 +39369,7 @@ VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
 VPN.BANNER:                             *** VPN connection con-vpn-1 ***
-VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.VPN-STATE:                          5 — Połączono z VPN
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3

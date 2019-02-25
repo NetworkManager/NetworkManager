@@ -12432,12 +12432,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 3550
+size: 3552
 location: clients/tests/test-client.py:983:test_003()/249
 cmd: $NMCLI -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3399 bytes
+stdout: 3401 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -12495,7 +12495,7 @@ DHCP6.OPTION[4]:                        dhcp-6-opt-8 = val-8
 CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1
 CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
-CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
+CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <niewidoczne> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
 size: 2351
@@ -12682,12 +12682,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 3562
+size: 3564
 location: clients/tests/test-client.py:983:test_003()/259
 cmd: $NMCLI --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3399 bytes
+stdout: 3401 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -12745,7 +12745,7 @@ DHCP6.OPTION[4]:                        dhcp-6-opt-8 = val-8
 CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1
 CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
-CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
+CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <niewidoczne> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
 size: 2555
@@ -12973,12 +12973,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkMa
 -------------------------------------------------------------------------------
 
 <<<
-size: 4416
+size: 4418
 location: clients/tests/test-client.py:983:test_003()/269
 cmd: $NMCLI --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4256 bytes
+stdout: 4258 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -13046,7 +13046,7 @@ DHCP6.OPTION[4]:                        dhcp-6-opt-8 = val-8
 CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1
 CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
-CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
+CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <niewidoczne> | /org/freedesktop/NetworkManager/Settings/Connection/4
 -------------------------------------------------------------------------------
 
 <<<
@@ -13275,12 +13275,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkMa
 -------------------------------------------------------------------------------
 
 <<<
-size: 4428
+size: 4430
 location: clients/tests/test-client.py:983:test_003()/279
 cmd: $NMCLI --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4256 bytes
+stdout: 4258 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -13348,7 +13348,7 @@ DHCP6.OPTION[4]:                        dhcp-6-opt-8 = val-8
 CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1
 CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
-CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
+CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <niewidoczne> | /org/freedesktop/NetworkManager/Settings/Connection/4
 -------------------------------------------------------------------------------
 
 <<<
@@ -13976,12 +13976,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
-size: 3042
+size: 3046
 location: clients/tests/test-client.py:983:test_003()/309
 cmd: $NMCLI --mode tabular -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2876 bytes
+stdout: 2880 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
 GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
@@ -14004,8 +14004,8 @@ IP6    2001:a::29c0:62b9:2e01:30a/69 | 2001:a::6433:6420:34f9:3801/115 | 2001:a:
 GROUP  OPTION                                                                                    
 DHCP6  dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-6-opt-8 = val-8 
 
-NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILABLE-CONNECTIONS                                                                                                                                               
-CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
+NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILABLE-CONNECTIONS                                                                                                                                                 
+CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <niewidoczne> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
 size: 2366
@@ -14140,12 +14140,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
-size: 3054
+size: 3058
 location: clients/tests/test-client.py:983:test_003()/319
 cmd: $NMCLI --mode tabular --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2876 bytes
+stdout: 2880 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
 GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
@@ -14168,8 +14168,8 @@ IP6    2001:a::29c0:62b9:2e01:30a/69 | 2001:a::6433:6420:34f9:3801/115 | 2001:a:
 GROUP  OPTION                                                                                    
 DHCP6  dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-6-opt-8 = val-8 
 
-NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILABLE-CONNECTIONS                                                                                                                                               
-CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
+NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILABLE-CONNECTIONS                                                                                                                                                 
+CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <niewidoczne> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
 size: 2570
@@ -14345,12 +14345,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
-size: 4596
+size: 4602
 location: clients/tests/test-client.py:983:test_003()/329
 cmd: $NMCLI --mode tabular --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4421 bytes
+stdout: 4427 bytes
 >>>
 ==================================
   Informacje o urządzeniu (eth0)
@@ -14383,9 +14383,9 @@ GROUP  OPTION
 --------------------------------------------------------------------------------------------------
 DHCP6  dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-6-opt-8 = val-8 
 
-NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILABLE-CONNECTIONS                                                                                                                                               
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
+NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILABLE-CONNECTIONS                                                                                                                                                 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <niewidoczne> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
 size: 2852
@@ -14561,12 +14561,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
-size: 4608
+size: 4614
 location: clients/tests/test-client.py:983:test_003()/339
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4421 bytes
+stdout: 4427 bytes
 >>>
 ==================================
   Informacje o urządzeniu (eth0)
@@ -14599,9 +14599,9 @@ GROUP  OPTION
 --------------------------------------------------------------------------------------------------
 DHCP6  dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-6-opt-8 = val-8 
 
-NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILABLE-CONNECTIONS                                                                                                                                               
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
+NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILABLE-CONNECTIONS                                                                                                                                                 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <niewidoczne> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
 size: 1176
@@ -15182,12 +15182,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 3567
+size: 3569
 location: clients/tests/test-client.py:983:test_003()/369
 cmd: $NMCLI --mode multiline -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3399 bytes
+stdout: 3401 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -15245,7 +15245,7 @@ DHCP6.OPTION[4]:                        dhcp-6-opt-8 = val-8
 CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1
 CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
-CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
+CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <niewidoczne> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
 size: 4476
@@ -15574,12 +15574,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 3579
+size: 3581
 location: clients/tests/test-client.py:983:test_003()/379
 cmd: $NMCLI --mode multiline --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3399 bytes
+stdout: 3401 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -15637,7 +15637,7 @@ DHCP6.OPTION[4]:                        dhcp-6-opt-8 = val-8
 CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1
 CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
-CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
+CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <niewidoczne> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
 size: 4820
@@ -16019,12 +16019,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkMa
 -------------------------------------------------------------------------------
 
 <<<
-size: 4433
+size: 4435
 location: clients/tests/test-client.py:983:test_003()/389
 cmd: $NMCLI --mode multiline --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4256 bytes
+stdout: 4258 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -16092,7 +16092,7 @@ DHCP6.OPTION[4]:                        dhcp-6-opt-8 = val-8
 CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1
 CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
-CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
+CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <niewidoczne> | /org/freedesktop/NetworkManager/Settings/Connection/4
 -------------------------------------------------------------------------------
 
 <<<
@@ -16475,12 +16475,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkMa
 -------------------------------------------------------------------------------
 
 <<<
-size: 4445
+size: 4447
 location: clients/tests/test-client.py:983:test_003()/399
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4256 bytes
+stdout: 4258 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -16548,7 +16548,7 @@ DHCP6.OPTION[4]:                        dhcp-6-opt-8 = val-8
 CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1
 CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
-CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
+CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <niewidoczne> | /org/freedesktop/NetworkManager/Settings/Connection/4
 -------------------------------------------------------------------------------
 
 <<<
