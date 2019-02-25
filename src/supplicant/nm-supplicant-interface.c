@@ -1638,6 +1638,21 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   NULL,
 	                   NULL);
 
+	/* Check whether NetworkReply and AP mode are supported.
+	 * ready_count was initialized to 1 in interface_add_done().
+	 */
+	g_dbus_proxy_call (priv->iface_proxy,
+	                   "NetworkReply",
+	                   g_variant_new ("(oss)",
+	                                  "/fff",
+	                                  "foobar",
+	                                  "foobar"),
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   priv->init_cancellable,
+	                   (GAsyncReadyCallback) iface_check_netreply_cb,
+	                   self);
+
 	/* Initialize global PMF setting to 'optional' */
 	priv->ready_count++;
 	g_dbus_proxy_call (priv->iface_proxy,
@@ -1650,19 +1665,6 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   -1,
 	                   priv->init_cancellable,
 	                   (GAsyncReadyCallback) iface_set_pmf_cb,
-	                   self);
-
-	/* Check whether NetworkReply and AP mode are supported */
-	g_dbus_proxy_call (priv->iface_proxy,
-	                   "NetworkReply",
-	                   g_variant_new ("(oss)",
-	                                  "/fff",
-	                                  "foobar",
-	                                  "foobar"),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   priv->init_cancellable,
-	                   (GAsyncReadyCallback) iface_check_netreply_cb,
 	                   self);
 
 	if (priv->ap_support == NM_SUPPLICANT_FEATURE_UNKNOWN) {
