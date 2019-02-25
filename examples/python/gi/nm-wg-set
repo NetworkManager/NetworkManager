@@ -103,6 +103,11 @@ def connection_to_str(conn):
 
     return '"%s" (%s%s)' % (conn.get_id(), conn.get_uuid(), extra)
 
+def connections_wg(connections):
+    l = list([c for c in connections if connection_is_wireguard(c)])
+    l.sort(key = connection_to_str)
+    return l
+
 def connections_find(connections, con_spec, con_id):
     connections = list(sorted(connections, key=connection_to_str))
     l = []
@@ -123,7 +128,18 @@ def connections_find(connections, con_spec, con_id):
             if con_id == c.get_uuid():
                 if c not in l:
                     l.append(c)
+    l.sort(key = connection_to_str)
     return l
+
+
+def print_hint(nm_client):
+    print('Maybe you want to create a profile first with')
+    print('  nmcli connection add type wireguard ifname wg0 $MORE_ARGS')
+    connections = connections_wg(nm_client.get_connections())
+    if connections:
+        print('Or edit one of the following WireGuard profiles:')
+        for c in connections:
+            print ('  - %s' % (connection_to_str(c)))
 
 ###############################################################################
 
@@ -379,6 +395,8 @@ def do_set(nm_client, conn, argv):
 
 if __name__ == '__main__':
 
+    nm_client = NM.Client.new(None)
+
     argv = sys.argv
     del argv[0]
 
@@ -387,22 +405,19 @@ if __name__ == '__main__':
         if argv[0] in [ 'id', 'uuid', 'interface' ]:
             con_spec = argv[0]
             del argv[0]
+
     if len(argv) < 1:
         print('Requires an existing NetworkManager connection profile as first argument')
         print('Select it based on the connection ID, UUID, or interface-name (optionally qualify the selection with [id|uuid|interface])')
-        print('Maybe you want to create one first with')
-        print('  nmcli connection add type wireguard ifname wg0 $MORE_ARGS')
+        print_hint(nm_client)
         sys.exit(1)
     con_id = argv[0]
     del argv[0]
 
-    nm_client = NM.Client.new(None)
-
     connections = connections_find(nm_client.get_connections(), con_spec, con_id)
     if len(connections) == 0:
         print('No matching connection %s\"%s\" found.' % ((con_spec+' ' if con_spec else ''), con_id))
-        print('Maybe you want to create one first with')
-        print('  nmcli connection add type wireguard ifname wg0 $MORE_ARGS')
+        print_hint(nm_client)
         sys.exit(1)
     if len(connections) > 1:
         print("Connection %s\"%s\" is not unique (%s)" % ((con_spec+' ' if con_spec else ''), con_id, ', '.join(['['+connection_to_str(c)+']' for c in connections])))
