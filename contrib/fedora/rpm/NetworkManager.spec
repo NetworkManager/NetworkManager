@@ -178,7 +178,11 @@ BuildRequires: gtk-doc
 %endif
 BuildRequires: libudev-devel
 BuildRequires: libuuid-devel
+%if 0%{?fedora} >= 30
+BuildRequires: vala
+%else
 BuildRequires: vala-tools
+%endif
 BuildRequires: iptables
 BuildRequires: libxslt
 %if %{with bluetooth}
