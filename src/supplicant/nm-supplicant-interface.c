@@ -728,9 +728,8 @@ iface_set_pmf_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 
-	/* This can fail if the supplicant doesn't support PMF */
 	if (error)
-		_LOGD ("failed to set Pmf=1: %s", error->message);
+		_LOGW ("failed to set Pmf=1: %s", error->message);
 
 	iface_check_ready (self);
 }
@@ -1638,21 +1637,9 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   NULL,
 	                   NULL);
 
-	/* Initialize global PMF setting to 'optional' */
-	priv->ready_count++;
-	g_dbus_proxy_call (priv->iface_proxy,
-	                   DBUS_INTERFACE_PROPERTIES ".Set",
-	                   g_variant_new ("(ssv)",
-	                                  WPAS_DBUS_IFACE_INTERFACE,
-	                                  "Pmf",
-	                                  g_variant_new_string ("1")),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   priv->init_cancellable,
-	                   (GAsyncReadyCallback) iface_set_pmf_cb,
-	                   self);
-
-	/* Check whether NetworkReply and AP mode are supported */
+	/* Check whether NetworkReply and AP mode are supported.
+	 * ready_count was initialized to 1 in interface_add_done().
+	 */
 	g_dbus_proxy_call (priv->iface_proxy,
 	                   "NetworkReply",
 	                   g_variant_new ("(oss)",
@@ -1664,6 +1651,22 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   priv->init_cancellable,
 	                   (GAsyncReadyCallback) iface_check_netreply_cb,
 	                   self);
+
+	if (priv->pmf_support == NM_SUPPLICANT_FEATURE_YES) {
+		/* Initialize global PMF setting to 'optional' */
+		priv->ready_count++;
+		g_dbus_proxy_call (priv->iface_proxy,
+		                   DBUS_INTERFACE_PROPERTIES ".Set",
+		                   g_variant_new ("(ssv)",
+		                                  WPAS_DBUS_IFACE_INTERFACE,
+		                                  "Pmf",
+		                                  g_variant_new_string ("1")),
+		                   G_DBUS_CALL_FLAGS_NONE,
+		                   -1,
+		                   priv->init_cancellable,
+		                   (GAsyncReadyCallback) iface_set_pmf_cb,
+		                   self);
+	}
 
 	if (priv->ap_support == NM_SUPPLICANT_FEATURE_UNKNOWN) {
 		/* If the global supplicant capabilities property is not present, we can
