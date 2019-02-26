@@ -71,6 +71,7 @@
 
 import sys
 import re
+import os
 
 import gi
 gi.require_version('NM', '1.0')
@@ -226,6 +227,13 @@ def secret_flags_to_string(flags):
         return num
     return '%s (%s)' % (num, nick)
 
+def secret_to_string(secret):
+    if os.environ.get('WG_HIDE_KEYS', '') != 'never':
+        return '(hidden)'
+    if not secret:
+        return ''
+    return secret
+
 ###############################################################################
 
 def wg_read_private_key(privkey_file):
@@ -261,14 +269,14 @@ def do_get(nm_client, connection):
     print('interface:                    %s' % (s_con.get_interface_name()))
     print('uuid:                         %s' % (conn.get_uuid()))
     print('id:                           %s' % (conn.get_id()))
-    print('private-key:                  %s' % ('<hidden>'))
+    print('private-key:                  %s' % (secret_to_string(s_wg.get_private_key())))
     print('private-key-flags:            %s' % (secret_flags_to_string(s_wg.get_private_key_flags())))
     print('listen-port:                  %s' % (s_wg.get_listen_port()))
     print('fwmark:                       0x%x' % (s_wg.get_fwmark()))
     for i in range(s_wg.get_peers_len()):
         peer = s_wg.get_peer(i)
         print('peer[%d].public-key:           %s' % (i, peer.get_public_key()))
-        print('peer[%d].preshared-key:        %s' % (i, '<hidden>' if peer.get_preshared_key_flags() != NM.SettingSecretFlags.NOT_REQUIRED else ''))
+        print('peer[%d].preshared-key:        %s' % (i, secret_to_string(peer.get_preshared_key())))
         print('peer[%d].preshared-key-flags:  %s' % (i, secret_flags_to_string(peer.get_preshared_key_flags())))
         print('peer[%d].endpoint:             %s' % (i, peer.get_endpoint() if peer.get_endpoint() else ''))
         print('peer[%d].persistent-keepalive: %s' % (i, peer.get_persistent_keepalive()))
@@ -430,6 +438,13 @@ if __name__ == '__main__':
         print('Connection %s is not a WireGuard profile' % (connection_to_str(conn)))
         print('See available profiles with `nmcli connection show`')
         sys.exit(1)
+
+    try:
+        secrets = conn.get_secrets(NM.SETTING_WIREGUARD_SETTING_NAME)
+        if secrets:
+            conn.update_secrets(NM.SETTING_WIREGUARD_SETTING_NAME, secrets)
+    except:
+        pass
 
     if not argv:
         do_get(nm_client, conn)
