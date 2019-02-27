@@ -632,9 +632,11 @@ nmp_object_ref (const NMPObject *obj)
 static inline void
 nmp_object_unref (const NMPObject *obj)
 {
-	nm_assert (!obj || NMP_OBJECT_IS_VALID (obj));
+	if (obj) {
+		nm_assert (NMP_OBJECT_IS_VALID (obj));
 
-	nm_dedup_multi_obj_unref ((const NMDedupMultiObj *) obj);
+		nm_dedup_multi_obj_unref ((const NMDedupMultiObj *) obj);
+	}
 }
 
 #define nm_clear_nmp_object(ptr) \
