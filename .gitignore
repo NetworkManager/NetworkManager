@@ -192,6 +192,7 @@ test-*.trs
 /libnm/tests/test-secret-agent
 
 /m4/codeset.m4
+/m4/fcntl-o.m4
 /m4/gettext.m4
 /m4/glibc2.m4
 /m4/glibc21.m4
@@ -219,6 +220,7 @@ test-*.trs
 /m4/progtest.m4
 /m4/size_max.m4
 /m4/stdint_h.m4
+/m4/threadlib.m4
 /m4/uintmax_t.m4
 /m4/visibility.m4
 /m4/wchar_t.m4
@@ -241,6 +243,7 @@ test-*.trs
 /po/en@quot.header
 /po/insert-header.sin
 /po/quot.sed
+/po/remove-potcdate.sed
 /po/remove-potcdate.sin
 
 /src/NetworkManager

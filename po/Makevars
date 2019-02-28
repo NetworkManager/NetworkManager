@@ -1,0 +1,9 @@
+DOMAIN = $(PACKAGE)
+
+subdir = po
+top_builddir = ..
+
+XGETTEXT_OPTIONS = --from-code=UTF-8 --keyword=_ --keyword=N_ --keyword=C_:1c,2 --keyword=NC_:1c,2 --keyword=g_dngettext:2,3 --add-comments
+COPYRIGHT_HOLDER = $(PACKAGE) authors
+MSGID_BUGS_ADDRESS = https://gitlab.freedesktop.org/NetworkManager/$(PACKAGE)/
+EXTRA_LOCALE_CATEGORIES =

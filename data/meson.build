@@ -72,7 +72,7 @@ if enable_polkit
     policy,
     input: policy_in,
     output: policy,
-    command: intltool_xml_cmd,
+    command: msgfmt_xml_cmd,
     install: true,
     install_dir: polkit_dir,
   )
