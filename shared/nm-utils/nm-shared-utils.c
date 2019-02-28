@@ -672,6 +672,8 @@ nm_utils_parse_inaddr_prefix_bin (int addr_family,
 		return FALSE;
 
 	if (slash) {
+		/* For IPv4, `ip addr add` supports the prefix-length as a netmask. We don't
+		 * do that. */
 		prefix = _nm_utils_ascii_str_to_int64 (slash + 1, 10,
 		                                       0,
 		                                       addr_family == AF_INET ? 32 : 128,
