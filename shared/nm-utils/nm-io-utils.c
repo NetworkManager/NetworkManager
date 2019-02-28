@@ -268,8 +268,8 @@ nm_utils_fd_get_contents (int fd,
  * @flags: %NMUtilsFileGetContentsFlags for reading the file.
  * @contents: the output buffer with the file read. It is always
  *   NUL terminated. The buffer is at most @max_length long, including
- *  the NUL byte. That is, it reads only files up to a length of
- *  @max_length - 1 bytes.
+ *   the NUL byte. That is, it reads only files up to a length of
+ *   @max_length - 1 bytes.
  * @length: optional output argument of the read file size.
  *
  * A reimplementation of g_file_get_contents() with a few differences:
