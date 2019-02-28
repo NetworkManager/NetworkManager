@@ -6707,11 +6707,6 @@ _nm_utils_wireguard_decode_key (const char *base64_key,
 		return FALSE;
 	}
 
-	if (nm_utils_memeqzero (bin_arr, required_key_len)) {
-		/* an all zero key is not valid either. That is used to represet an unset key */
-		return FALSE;
-	}
-
 	if (out_key)
 		memcpy (out_key, bin_arr, required_key_len);
 
