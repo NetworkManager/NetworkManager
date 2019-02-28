@@ -17,6 +17,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2018 Red Hat, Inc.
+ * (C) Copyright 2015 - 2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #include "nm-default.h"
@@ -131,4 +132,30 @@ nm_secret_buf_to_gbytes_take (NMSecretBuf *secret, gssize actual_len)
 	                                   actual_len >= 0 ? (gsize) actual_len : secret->len,
 	                                   _secret_buf_free,
 	                                   secret);
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_utils_memeqzero_secret:
+ * @data: the data pointer to check (may be %NULL if @length is zero).
+ * @length: the number of bytes to check.
+ *
+ * Checks that all bytes are zero. This always takes the same amount
+ * of time to prevent timing attacks.
+ *
+ * Returns: whether all bytes are zero.
+ */
+gboolean
+nm_utils_memeqzero_secret (gconstpointer data, gsize length)
+{
+	const guint8 *const key = data;
+	volatile guint8 acc = 0;
+	gsize i;
+
+	for (i = 0; i < length; i++) {
+		acc |= key[i];
+		asm volatile("" : "=r"(acc) : "0"(acc));
+	}
+	return 1 & ((acc - 1) >> 8);
 }
