@@ -173,4 +173,6 @@ GBytes *nm_secret_buf_to_gbytes_take (NMSecretBuf *secret, gssize actual_len);
 
 /*****************************************************************************/
 
+gboolean nm_utils_memeqzero_secret (gconstpointer data, gsize length);
+
 #endif /* __NM_SECRET_UTILS_H__ */
