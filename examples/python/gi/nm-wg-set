@@ -343,7 +343,7 @@ def do_set(nm_client, conn, argv):
                 else:
                     peer_idx = None
                     peer = NM.WireGuardPeer()
-                    peer.set_public_key(public_key)
+                    peer.set_public_key(public_key, True)
                     wg_peer_is_valid(peer, 'public key "%s" is invalid' % (public_key))
                 peer_remove = False
                 idx += 2

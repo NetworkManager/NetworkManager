@@ -2929,7 +2929,7 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 		             info->group);
 		return;
 	}
-	nm_wireguard_peer_set_public_key (peer, cstr);
+	nm_wireguard_peer_set_public_key (peer, cstr, TRUE);
 	nm_clear_g_free (&str);
 
 	key = NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY;

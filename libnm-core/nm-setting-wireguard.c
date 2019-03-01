@@ -280,34 +280,48 @@ nm_wireguard_peer_get_public_key (const NMWireGuardPeer *self)
  * @self: the unsealed #NMWireGuardPeer instance
  * @public_key: (allow-none) (transfer none): the new public
  *   key or %NULL to clear the public key.
+ * @accept_invalid: if %TRUE and @public_key is not %NULL and
+ *   invalid, then do not modify the instance.
  *
  * Reset the public key. Note that if the public key is valid, it
  * will be normalized (which may or may not modify the set value).
  *
  * It is a bug trying to modify a sealed #NMWireGuardPeer instance.
  *
+ * Returns: %TRUE if the key was valid or %NULL. Returns
+ *   %FALSE for invalid keys. Depending on @accept_invalid
+ *   will an invalid key be set or not.
+ *
  * Since: 1.16
  */
-void
+gboolean
 nm_wireguard_peer_set_public_key (NMWireGuardPeer *self,
-                                  const char *public_key)
+                                  const char *public_key,
+                                  gboolean accept_invalid)
 {
 	char *public_key_normalized = NULL;
+	gboolean is_valid;
 
-	g_return_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE));
+	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE), FALSE);
 
 	if (!public_key) {
 		nm_clear_g_free (&self->public_key);
-		return;
+		return TRUE;
 	}
 
-	self->public_key_valid = _nm_utils_wireguard_normalize_key (public_key,
-	                                                            NM_WIREGUARD_PUBLIC_KEY_LEN,
-	                                                            &public_key_normalized);
-	nm_assert (self->public_key_valid == (public_key_normalized != NULL));
+	is_valid = _nm_utils_wireguard_normalize_key (public_key,
+	                                              NM_WIREGUARD_PUBLIC_KEY_LEN,
+	                                              &public_key_normalized);
+	nm_assert (is_valid == (public_key_normalized != NULL));
 
+	if (   !is_valid
+	    && !accept_invalid)
+		return FALSE;
+
+	self->public_key_valid = is_valid;
 	g_free (self->public_key);
 	self->public_key = public_key_normalized ?: g_strdup (public_key);
+	return is_valid;
 }
 
 void
@@ -1532,8 +1546,7 @@ _peers_dbus_only_set (NMSetting     *setting,
 		}
 
 		peer = nm_wireguard_peer_new ();
-		nm_wireguard_peer_set_public_key (peer, cstr);
-		if (!peer->public_key_valid) {
+		if (!nm_wireguard_peer_set_public_key (peer, cstr, TRUE)) {
 			if (NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
 				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY,
 				             _("peer #%u has invalid public-key"),
