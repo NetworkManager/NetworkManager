@@ -113,14 +113,6 @@ typedef enum {
 	CLEANUP_TYPE_DECONFIGURE,
 } CleanupType;
 
-typedef enum {
-	NM_DEVICE_IP_STATE_NONE = 0,
-	NM_DEVICE_IP_STATE_WAIT,
-	NM_DEVICE_IP_STATE_CONF,
-	NM_DEVICE_IP_STATE_DONE,
-	NM_DEVICE_IP_STATE_FAIL
-} NMDeviceIPState;
-
 typedef struct {
 	CList lst_slave;
 	NMDevice *slave;
@@ -416,10 +408,6 @@ typedef struct _NMDevicePrivate {
 		NMIPConfig *ip_config_x[2];
 	};
 
-	union {
-		const NMDeviceIPState   ip_state_4;
-		NMDeviceIPState         ip_state_4_;
-	};
 	AppliedConfig   dev_ip4_config; /* Config from DHCP, PPP, LLv4, etc */
 
 	/* config from the setting */
@@ -500,9 +488,16 @@ typedef struct _NMDevicePrivate {
 	} acd;
 
 	union {
-		const NMDeviceIPState   ip_state_6;
-		NMDeviceIPState         ip_state_6_;
+		struct {
+			const NMDeviceIPState   ip_state_6;
+			const NMDeviceIPState   ip_state_4;
+		};
+		union {
+			const NMDeviceIPState   ip_state_x[2];
+			NMDeviceIPState         ip_state_x_[2];
+		};
 	};
+
 	AppliedConfig  ac_ip6_config;  /* config from IPv6 autoconfiguration */
 	NMIP6Config *  ext_ip6_config_captured; /* Configuration captured from platform. */
 	NMIP6Config *  dad6_ip6_config;
@@ -1350,32 +1345,30 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_ip_state_to_string, NMDeviceIPState,
 static void
 _set_ip_state (NMDevice *self, int addr_family, NMDeviceIPState new_state)
 {
-	NMDeviceIPState *p;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
 
 	nm_assert_addr_family (addr_family);
 
-	p =   (addr_family == AF_INET)
-	    ? &priv->ip_state_4_
-	    : &priv->ip_state_6_;
+	if (priv->ip_state_x[IS_IPv4] == new_state)
+		return;
 
-	if (*p != new_state) {
-		_LOGT (LOGD_DEVICE, "ip%c-state: set to %d (%s)",
-		       nm_utils_addr_family_to_char (addr_family),
-		       (int) new_state,
-		       _ip_state_to_string (new_state));
-		*p = new_state;
+	_LOGT (LOGD_DEVICE, "ip%c-state: set to %d (%s)",
+	       nm_utils_addr_family_to_char (addr_family),
+	       (int) new_state,
+	       _ip_state_to_string (new_state));
 
-		if (new_state == NM_DEVICE_IP_STATE_DONE) {
-			/* we only set the IPx_READY flag once we reach NM_DEVICE_IP_STATE_DONE state. We don't
-			 * ever clear it, even if we later enter NM_DEVICE_IP_STATE_FAIL state.
-			 *
-			 * This is not documented/guaranteed behavior, but seems to make sense for now. */
-			_active_connection_set_state_flags (self,
-			                                    addr_family == AF_INET
-			                                      ? NM_ACTIVATION_STATE_FLAG_IP4_READY
-			                                      : NM_ACTIVATION_STATE_FLAG_IP6_READY);
-		}
+	priv->ip_state_x_[IS_IPv4] = new_state;
+
+	if (new_state == NM_DEVICE_IP_STATE_DONE) {
+		/* we only set the IPx_READY flag once we reach NM_DEVICE_IP_STATE_DONE state. We don't
+		 * ever clear it, even if we later enter NM_DEVICE_IP_STATE_FAIL state.
+		 *
+		 * This is not documented/guaranteed behavior, but seems to make sense for now. */
+		_active_connection_set_state_flags (self,
+		                                    addr_family == AF_INET
+		                                      ? NM_ACTIVATION_STATE_FLAG_IP4_READY
+		                                      : NM_ACTIVATION_STATE_FLAG_IP6_READY);
 	}
 }
 
@@ -10461,25 +10454,16 @@ nm_device_activate_schedule_ip_config_result (NMDevice *self,
 	activation_source_schedule (self, activate_stage5_ip_config_result_x[IS_IPv4], addr_family);
 }
 
-gboolean
-nm_device_activate_ip4_state_in_conf (NMDevice *self)
+NMDeviceIPState
+nm_device_activate_get_ip_state (NMDevice *self,
+                                 int addr_family)
 {
-	g_return_val_if_fail (self != NULL, FALSE);
-	return NM_DEVICE_GET_PRIVATE (self)->ip_state_4 == NM_DEVICE_IP_STATE_CONF;
-}
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
 
-gboolean
-nm_device_activate_ip4_state_in_wait (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, FALSE);
-	return NM_DEVICE_GET_PRIVATE (self)->ip_state_4 == NM_DEVICE_IP_STATE_WAIT;
-}
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_DEVICE_IP_STATE_NONE);
+	g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), NM_DEVICE_IP_STATE_NONE);
 
-gboolean
-nm_device_activate_ip4_state_done (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, FALSE);
-	return NM_DEVICE_GET_PRIVATE (self)->ip_state_4 == NM_DEVICE_IP_STATE_DONE;
+	return NM_DEVICE_GET_PRIVATE (self)->ip_state_x[IS_IPv4];
 }
 
 static void
@@ -10628,27 +10612,6 @@ activate_stage5_ip_config_result_6 (NMDevice *self)
 		_LOGW (LOGD_DEVICE | LOGD_IP6, "Activation: Stage 5 of 5 (IPv6 Commit) failed");
 		nm_device_ip_method_failed (self, AF_INET6, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 	}
-}
-
-gboolean
-nm_device_activate_ip6_state_in_conf (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, FALSE);
-	return NM_DEVICE_GET_PRIVATE (self)->ip_state_6 == NM_DEVICE_IP_STATE_CONF;
-}
-
-gboolean
-nm_device_activate_ip6_state_in_wait (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, FALSE);
-	return NM_DEVICE_GET_PRIVATE (self)->ip_state_6 == NM_DEVICE_IP_STATE_WAIT;
-}
-
-gboolean
-nm_device_activate_ip6_state_done (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, FALSE);
-	return NM_DEVICE_GET_PRIVATE (self)->ip_state_6 == NM_DEVICE_IP_STATE_DONE;
 }
 
 /*****************************************************************************/
