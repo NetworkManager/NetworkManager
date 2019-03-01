@@ -87,8 +87,9 @@ void nm_wireguard_peer_set_persistent_keepalive (NMWireGuardPeer *self,
 NM_AVAILABLE_IN_1_16
 const char *nm_wireguard_peer_get_endpoint (const NMWireGuardPeer *self);
 NM_AVAILABLE_IN_1_16
-void nm_wireguard_peer_set_endpoint (NMWireGuardPeer *self,
-                                     const char *endpoint);
+gboolean nm_wireguard_peer_set_endpoint (NMWireGuardPeer *self,
+                                         const char *endpoint,
+                                         gboolean allow_invalid);
 
 NM_AVAILABLE_IN_1_16
 guint nm_wireguard_peer_get_allowed_ips_len (const NMWireGuardPeer *self);
