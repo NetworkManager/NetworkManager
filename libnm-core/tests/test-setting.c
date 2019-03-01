@@ -2065,7 +2065,8 @@ _rndt_wg_peers_create (void)
 		s_endpoint = _create_random_ipaddr (AF_UNSPEC, TRUE);
 
 		peer = nm_wireguard_peer_new ();
-		nm_wireguard_peer_set_public_key (peer, public_key);
+		if (!nm_wireguard_peer_set_public_key (peer, public_key, TRUE))
+			g_assert_not_reached ();
 
 		if (!nm_wireguard_peer_set_preshared_key (peer, nmtst_rand_select (NULL, preshared_key), TRUE))
 			g_assert_not_reached ();
