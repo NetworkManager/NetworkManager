@@ -8888,8 +8888,11 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 	}
 
 	while (argc > 0) {
-		if (argc == 1 && nmc->complete)
-			nmc_complete_strings (*argv, "type", "file", NULL);
+		if (argc == 1 && nmc->complete) {
+			nmc_complete_strings (*argv,
+			                      type ? NULL : "type",
+			                      filename ? NULL : "file");
+		}
 
 		if (strcmp (*argv, "type") == 0) {
 			argc--;
