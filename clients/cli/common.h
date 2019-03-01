@@ -88,7 +88,9 @@ typedef struct {
 
 void nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char **argv);
 
-void nmc_complete_strings (const char *prefix, ...) G_GNUC_NULL_TERMINATED;
+void nmc_complete_strv (const char *prefix, gssize nargs, const char *const*args);
+
+#define nmc_complete_strings(prefix, ...) nmc_complete_strv ((prefix), NM_NARG (__VA_ARGS__), (const char *const[]) { __VA_ARGS__ })
 
 void nmc_complete_bool (const char *prefix);
 
