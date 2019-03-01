@@ -2067,7 +2067,8 @@ _rndt_wg_peers_create (void)
 		peer = nm_wireguard_peer_new ();
 		nm_wireguard_peer_set_public_key (peer, public_key);
 
-		nm_wireguard_peer_set_preshared_key (peer, nmtst_rand_select (NULL, preshared_key));
+		if (!nm_wireguard_peer_set_preshared_key (peer, nmtst_rand_select (NULL, preshared_key), TRUE))
+			g_assert_not_reached ();
 
 		nm_wireguard_peer_set_preshared_key_flags (peer, nmtst_rand_select (NM_SETTING_SECRET_FLAG_NONE,
 		                                                                    NM_SETTING_SECRET_FLAG_NOT_SAVED,
@@ -2245,7 +2246,8 @@ _rndt_wg_peers_fix_secrets (NMSettingWireGuard *s_wg,
 			g_assert (NM_IN_SET (nm_wireguard_peer_get_preshared_key_flags (a), NM_SETTING_SECRET_FLAG_AGENT_OWNED,
 			                                                                    NM_SETTING_SECRET_FLAG_NOT_SAVED));
 			b_clone = nm_wireguard_peer_new_clone (b, TRUE);
-			nm_wireguard_peer_set_preshared_key (b_clone, nm_wireguard_peer_get_preshared_key (a));
+			if (!nm_wireguard_peer_set_preshared_key (b_clone, nm_wireguard_peer_get_preshared_key (a), TRUE))
+				g_assert_not_reached ();
 			nm_setting_wireguard_set_peer (s_wg, b_clone, i);
 			b = nm_setting_wireguard_get_peer (s_wg, i);
 			g_assert (b == b_clone);
