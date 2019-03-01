@@ -524,26 +524,50 @@ _nm_wireguard_peer_set_endpoint (NMWireGuardPeer *self,
  * nm_wireguard_peer_set_endpoint:
  * @self: the unsealed #NMWireGuardPeer instance
  * @endpoint: the socket address endpoint to set or %NULL.
+ * @allow_invalid: if %TRUE, also invalid values are set.
+ *   If %FALSE, the function does nothing for invalid @endpoint
+ *   arguments.
  *
  * Sets or clears the endpoint of @self.
  *
  * It is a bug trying to modify a sealed #NMWireGuardPeer instance.
  *
+ * Returns: %TRUE if the endpoint is %NULL or valid. For an
+ *   invalid @endpoint argument, %FALSE is returned. Depending
+ *   on @allow_invalid, the instance will be modified.
+ *
  * Since: 1.16
  */
-void
+gboolean
 nm_wireguard_peer_set_endpoint (NMWireGuardPeer *self,
-                                const char *endpoint)
+                                const char *endpoint,
+                                gboolean allow_invalid)
 {
 	NMSockAddrEndpoint *old;
+	NMSockAddrEndpoint *new;
+	gboolean is_valid;
 
-	g_return_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE));
+	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE), FALSE);
+
+	if (!endpoint) {
+		nm_clear_pointer (&self->endpoint, nm_sock_addr_endpoint_unref);
+		return TRUE;
+	}
+
+	new = nm_sock_addr_endpoint_new (endpoint);
+
+	is_valid = (nm_sock_addr_endpoint_get_host (new) != NULL);
+
+	if (   !allow_invalid
+	    && !is_valid) {
+		nm_sock_addr_endpoint_unref (new);
+		return FALSE;
+	}
 
 	old = self->endpoint;
-	self->endpoint =   endpoint
-	                 ? nm_sock_addr_endpoint_new (endpoint)
-	                 : NULL;
+	self->endpoint = new;
 	nm_sock_addr_endpoint_unref (old);
+	return is_valid;
 }
 
 /**

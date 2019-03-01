@@ -2078,7 +2078,8 @@ _rndt_wg_peers_create (void)
 		nm_wireguard_peer_set_persistent_keepalive (peer,
 		                                            nmtst_rand_select ((guint32) 0, nmtst_get_rand_int ()));
 
-		nm_wireguard_peer_set_endpoint (peer, nmtst_rand_select (s_endpoint, NULL));
+		if (!nm_wireguard_peer_set_endpoint (peer, nmtst_rand_select (s_endpoint, NULL), TRUE))
+			g_assert_not_reached ();
 
 		n_aip = nmtst_rand_select (0, nmtst_get_rand_int () % 10);
 		for (i_aip = 0; i_aip < n_aip; i_aip++) {

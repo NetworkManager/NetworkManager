@@ -2972,16 +2972,12 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 	key = NM_WIREGUARD_PEER_ATTR_ENDPOINT;
 	str = nm_keyfile_plugin_kf_get_string (info->keyfile, info->group, key, NULL);
 	if (str && str[0]) {
-		nm_auto_unref_sockaddrendpoint NMSockAddrEndpoint *ep = NULL;
-
-		ep = nm_sock_addr_endpoint_new (str);
-		if (!nm_sock_addr_endpoint_get_host (ep)) {
+		if (!nm_wireguard_peer_set_endpoint (peer, str, FALSE)) {
 			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("key '%s.%s' is not not a valid endpoint"),
 			                  info->group, key))
 				return;
-		} else
-			_nm_wireguard_peer_set_endpoint (peer, ep);
+		}
 	}
 	nm_clear_g_free (&str);
 
