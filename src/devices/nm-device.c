@@ -417,8 +417,8 @@ typedef struct _NMDevicePrivate {
 	};
 
 	union {
-		const NMDeviceIPState   ip4_state;
-		NMDeviceIPState         ip4_state_;
+		const NMDeviceIPState   ip_state_4;
+		NMDeviceIPState         ip_state_4_;
 	};
 	AppliedConfig   dev_ip4_config; /* Config from DHCP, PPP, LLv4, etc */
 
@@ -500,8 +500,8 @@ typedef struct _NMDevicePrivate {
 	} acd;
 
 	union {
-		const NMDeviceIPState   ip6_state;
-		NMDeviceIPState         ip6_state_;
+		const NMDeviceIPState   ip_state_6;
+		NMDeviceIPState         ip_state_6_;
 	};
 	AppliedConfig  ac_ip6_config;  /* config from IPv6 autoconfiguration */
 	NMIP6Config *  ext_ip6_config_captured; /* Configuration captured from platform. */
@@ -1356,8 +1356,8 @@ _set_ip_state (NMDevice *self, int addr_family, NMDeviceIPState new_state)
 	nm_assert_addr_family (addr_family);
 
 	p =   (addr_family == AF_INET)
-	    ? &priv->ip4_state_
-	    : &priv->ip6_state_;
+	    ? &priv->ip_state_4_
+	    : &priv->ip_state_6_;
 
 	if (*p != new_state) {
 		_LOGT (LOGD_DEVICE, "ip%c-state: set to %d (%s)",
@@ -3249,7 +3249,7 @@ nm_device_master_enslave_slave (NMDevice *self, NMDevice *slave, NMConnection *c
 	nm_device_update_hw_address (self);
 
 	/* Send ARP announcements if did not yet and have addresses. */
-	if (   priv->ip4_state == NM_DEVICE_IP_STATE_DONE
+	if (   priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE
 	    && !priv->acd.announcing)
 		nm_device_arp_announce (self);
 
@@ -3258,10 +3258,10 @@ nm_device_master_enslave_slave (NMDevice *self, NMDevice *slave, NMConnection *c
 	 * new address.
 	 */
 	if (success) {
-		if (priv->ip4_state == NM_DEVICE_IP_STATE_WAIT)
+		if (priv->ip_state_4 == NM_DEVICE_IP_STATE_WAIT)
 			nm_device_activate_stage3_ip4_start (self);
 
-		if (priv->ip6_state == NM_DEVICE_IP_STATE_WAIT)
+		if (priv->ip_state_6 == NM_DEVICE_IP_STATE_WAIT)
 			nm_device_activate_stage3_ip6_start (self);
 	}
 
@@ -3884,11 +3884,11 @@ device_link_changed (NMDevice *self)
 	if (priv->up && (!was_up || seen_down)) {
 		/* the link was down and just came up. That happens for example, while changing MTU.
 		 * We must restore IP configuration. */
-		if (priv->ip4_state == NM_DEVICE_IP_STATE_DONE) {
+		if (priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE) {
 			if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
 				_LOGW (LOGD_IP4, "failed applying IP4 config after link comes up again");
 		}
-		if (priv->ip6_state == NM_DEVICE_IP_STATE_DONE) {
+		if (priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE) {
 			if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
 				_LOGW (LOGD_IP6, "failed applying IP6 config after link comes up again");
 		}
@@ -4958,15 +4958,15 @@ check_ip_state (NMDevice *self, gboolean may_fail, gboolean full_state_update)
 	                        NM_SETTING_IP6_CONFIG_METHOD_IGNORE))
 		ip6_ignore = TRUE;
 
-	if (   priv->ip4_state == NM_DEVICE_IP_STATE_DONE
-	    && priv->ip6_state == NM_DEVICE_IP_STATE_DONE) {
+	if (   priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE
+	    && priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE) {
 		/* Both method completed (or disabled), proceed with activation */
 		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
 		return;
 	}
 
-	if (   (priv->ip4_state == NM_DEVICE_IP_STATE_FAIL || (ip4_disabled && priv->ip4_state == NM_DEVICE_IP_STATE_DONE))
-	    && (priv->ip6_state == NM_DEVICE_IP_STATE_FAIL || (ip6_ignore && priv->ip6_state == NM_DEVICE_IP_STATE_DONE))) {
+	if (   (priv->ip_state_4 == NM_DEVICE_IP_STATE_FAIL || (ip4_disabled && priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE))
+	    && (priv->ip_state_6 == NM_DEVICE_IP_STATE_FAIL || (ip6_ignore && priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE))) {
 		/* Either both methods failed, or only one failed and the other is
 		 * disabled */
 		if (nm_device_sys_iface_state_is_external_or_assume (self)) {
@@ -4996,14 +4996,14 @@ check_ip_state (NMDevice *self, gboolean may_fail, gboolean full_state_update)
 	}
 
 	/* If a method is still pending but required, wait */
-	if (priv->ip4_state != NM_DEVICE_IP_STATE_DONE && !get_ip_config_may_fail (self, AF_INET))
+	if (priv->ip_state_4 != NM_DEVICE_IP_STATE_DONE && !get_ip_config_may_fail (self, AF_INET))
 		return;
-	if (priv->ip6_state != NM_DEVICE_IP_STATE_DONE && !get_ip_config_may_fail (self, AF_INET6))
+	if (priv->ip_state_6 != NM_DEVICE_IP_STATE_DONE && !get_ip_config_may_fail (self, AF_INET6))
 		return;
 
 	/* If at least a method has completed, proceed with activation */
-	if (   (priv->ip4_state == NM_DEVICE_IP_STATE_DONE && !ip4_disabled)
-	    || (priv->ip6_state == NM_DEVICE_IP_STATE_DONE && !ip6_ignore)) {
+	if (   (priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE && !ip4_disabled)
+	    || (priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE && !ip6_ignore)) {
 		if (full_state_update)
 			nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
 		return;
@@ -6688,7 +6688,7 @@ ipv4_manual_method_apply (NMDevice *self, NMIP4Config **configs, gboolean succes
 		empty = _ip4_config_new (self);
 		nm_device_activate_schedule_ip_config_result (self, AF_INET, NM_IP_CONFIG_CAST (empty));
 	} else {
-		if (NM_DEVICE_GET_PRIVATE (self)->ip4_state != NM_DEVICE_IP_STATE_DONE)
+		if (NM_DEVICE_GET_PRIVATE (self)->ip_state_4 != NM_DEVICE_IP_STATE_DONE)
 			ip_config_merge_and_apply (self, AF_INET, TRUE);
 	}
 }
@@ -6903,10 +6903,10 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 			return;
 		}
 
-		if (priv->ip4_state == NM_DEVICE_IP_STATE_CONF) {
+		if (priv->ip_state_4 == NM_DEVICE_IP_STATE_CONF) {
 			nm_clear_g_source (&priv->ipv4ll_timeout);
 			nm_device_activate_schedule_ip_config_result (self, AF_INET, NM_IP_CONFIG_CAST (config));
-		} else if (priv->ip4_state == NM_DEVICE_IP_STATE_DONE) {
+		} else if (priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE) {
 			applied_config_init (&priv->dev_ip4_config, config);
 			if (!ip_config_merge_and_apply (self, AF_INET, TRUE)) {
 				_LOGE (LOGD_AUTOIP4, "failed to update IP4 config for autoip change.");
@@ -6934,7 +6934,7 @@ ipv4ll_timeout_cb (gpointer user_data)
 		priv->ipv4ll_timeout = 0;
 		ipv4ll_cleanup (self);
 
-		if (priv->ip4_state == NM_DEVICE_IP_STATE_CONF)
+		if (priv->ip_state_4 == NM_DEVICE_IP_STATE_CONF)
 			nm_device_activate_schedule_ip_config_timeout (self, AF_INET);
 	}
 
@@ -7334,13 +7334,13 @@ dhcp4_fail (NMDevice *self, NMDhcpState dhcp_state)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	_LOGD (LOGD_DHCP4, "DHCPv4 failed (ip_state %s, was_active %d)",
-	       _ip_state_to_string (priv->ip4_state),
+	       _ip_state_to_string (priv->ip_state_4),
 	       priv->dhcp4.was_active);
 
 	/* Keep client running if there are static addresses configured
 	 * on the interface.
 	 */
-	if (   priv->ip4_state == NM_DEVICE_IP_STATE_DONE
+	if (   priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE
 	    && priv->con_ip_config_4
 	    && nm_ip4_config_get_num_addresses (priv->con_ip_config_4) > 0)
 		goto clear_config;
@@ -7352,7 +7352,7 @@ dhcp4_fail (NMDevice *self, NMDhcpState dhcp_state)
 	 *    not active before.
 	 */
 	if (   dhcp_state == NM_DHCP_STATE_TERMINATED
-	    || (!priv->dhcp4.was_active && priv->ip4_state == NM_DEVICE_IP_STATE_CONF)) {
+	    || (!priv->dhcp4.was_active && priv->ip_state_4 == NM_DEVICE_IP_STATE_CONF)) {
 		dhcp4_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 		nm_device_activate_schedule_ip_config_timeout (self, AF_INET);
 		return;
@@ -7424,7 +7424,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 		/* After some failures, we have been able to renew the lease:
 		 * update the ip state
 		 */
-		if (priv->ip4_state == NM_DEVICE_IP_STATE_FAIL)
+		if (priv->ip_state_4 == NM_DEVICE_IP_STATE_FAIL)
 			_set_ip_state (self, AF_INET, NM_DEVICE_IP_STATE_CONF);
 
 		g_free (priv->dhcp4.pac_url);
@@ -7437,7 +7437,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 		nm_dhcp4_config_set_options (priv->dhcp4.config, options);
 		_notify (self, PROP_DHCP4_CONFIG);
 
-		if (priv->ip4_state == NM_DEVICE_IP_STATE_CONF) {
+		if (priv->ip_state_4 == NM_DEVICE_IP_STATE_CONF) {
 			connection = nm_device_get_applied_connection (self);
 			g_assert (connection);
 
@@ -7454,7 +7454,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 			configs[1] = g_object_ref (ip4_config);
 
 			ipv4_dad_start (self, configs, dhcp4_dad_cb);
-		} else if (priv->ip4_state == NM_DEVICE_IP_STATE_DONE) {
+		} else if (priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE) {
 			if (dhcp4_lease_change (self, ip4_config))
 				nm_device_update_metered (self);
 			else
@@ -7466,7 +7466,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 		break;
 	case NM_DHCP_STATE_EXPIRE:
 		/* Ignore expiry before we even have a lease (NAK, old lease, etc) */
-		if (priv->ip4_state == NM_DEVICE_IP_STATE_CONF)
+		if (priv->ip_state_4 == NM_DEVICE_IP_STATE_CONF)
 			break;
 		/* fall through */
 	case NM_DHCP_STATE_DONE:
@@ -8073,7 +8073,7 @@ dhcp6_fail (NMDevice *self, NMDhcpState dhcp_state)
 	gboolean is_dhcp_managed;
 
 	_LOGD (LOGD_DHCP6, "DHCPv6 failed (ip_state %s, was_active %d)",
-	       _ip_state_to_string (priv->ip6_state),
+	       _ip_state_to_string (priv->ip_state_6),
 	       priv->dhcp6.was_active);
 
 	is_dhcp_managed = (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_MANAGED);
@@ -8082,7 +8082,7 @@ dhcp6_fail (NMDevice *self, NMDhcpState dhcp_state)
 		/* Keep client running if there are static addresses configured
 		 * on the interface.
 		 */
-		if (   priv->ip6_state == NM_DEVICE_IP_STATE_DONE
+		if (   priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE
 		    && priv->con_ip_config_6
 		    && nm_ip6_config_get_num_addresses (priv->con_ip_config_6))
 			goto clear_config;
@@ -8094,7 +8094,7 @@ dhcp6_fail (NMDevice *self, NMDhcpState dhcp_state)
 		 *    not active before.
 		 */
 		if (   dhcp_state == NM_DHCP_STATE_TERMINATED
-		    || (!priv->dhcp6.was_active && priv->ip6_state == NM_DEVICE_IP_STATE_CONF)) {
+		    || (!priv->dhcp6.was_active && priv->ip_state_6 == NM_DEVICE_IP_STATE_CONF)) {
 			dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 			nm_device_activate_schedule_ip_config_timeout (self, AF_INET6);
 			return;
@@ -8116,7 +8116,7 @@ dhcp6_fail (NMDevice *self, NMDhcpState dhcp_state)
 	} else {
 		/* not a hard failure; just live with the RA info */
 		dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
-		if (priv->ip6_state == NM_DEVICE_IP_STATE_CONF)
+		if (priv->ip_state_6 == NM_DEVICE_IP_STATE_CONF)
 			nm_device_activate_schedule_ip_config_result (self, AF_INET6, NULL);
 	}
 	return;
@@ -8176,16 +8176,16 @@ dhcp6_state_changed (NMDhcpClient *client,
 		/* After long time we have been able to renew the lease:
 		 * update the ip state
 		 */
-		if (priv->ip6_state == NM_DEVICE_IP_STATE_FAIL)
+		if (priv->ip_state_6 == NM_DEVICE_IP_STATE_FAIL)
 			_set_ip_state (self, AF_INET6, NM_DEVICE_IP_STATE_CONF);
 
-		if (priv->ip6_state == NM_DEVICE_IP_STATE_CONF) {
+		if (priv->ip_state_6 == NM_DEVICE_IP_STATE_CONF) {
 			if (!applied_config_get_current (&priv->dhcp6.ip6_config)) {
 				nm_device_ip_method_failed (self, AF_INET6, NM_DEVICE_STATE_REASON_DHCP_FAILED);
 				break;
 			}
 			nm_device_activate_schedule_ip_config_result (self, AF_INET6, NULL);
-		} else if (priv->ip6_state == NM_DEVICE_IP_STATE_DONE)
+		} else if (priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE)
 			if (!dhcp6_lease_change (self))
 				dhcp6_fail (self, state);
 		break;
@@ -8195,13 +8195,13 @@ dhcp6_state_changed (NMDhcpClient *client,
 		else {
 			/* not a hard failure; just live with the RA info */
 			dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
-			if (priv->ip6_state == NM_DEVICE_IP_STATE_CONF)
+			if (priv->ip_state_6 == NM_DEVICE_IP_STATE_CONF)
 				nm_device_activate_schedule_ip_config_result (self, AF_INET6, NULL);
 		}
 		break;
 	case NM_DHCP_STATE_EXPIRE:
 		/* Ignore expiry before we even have a lease (NAK, old lease, etc) */
-		if (priv->ip6_state != NM_DEVICE_IP_STATE_CONF)
+		if (priv->ip_state_6 != NM_DEVICE_IP_STATE_CONF)
 			dhcp6_fail (self, state);
 		break;
 	case NM_DHCP_STATE_TERMINATED:
@@ -9354,7 +9354,7 @@ ndisc_ra_timeout (NMNDisc *ndisc, NMDevice *self)
 	 */
 
 	_LOGD (LOGD_IP6, "timed out waiting for IPv6 router advertisement");
-	if (priv->ip6_state == NM_DEVICE_IP_STATE_CONF) {
+	if (priv->ip_state_6 == NM_DEVICE_IP_STATE_CONF) {
 		/* If RA is our only source of addressing information and we don't
 		 * ever receive one, then time out IPv6.  But if there is other
 		 * IPv6 configuration, like manual IPv6 addresses or external IPv6
@@ -9842,7 +9842,7 @@ nm_device_activate_stage3_ip4_start (NMDevice *self)
 	NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
 	gs_unref_object NMIP4Config *ip4_config = NULL;
 
-	g_assert (priv->ip4_state == NM_DEVICE_IP_STATE_WAIT);
+	g_assert (priv->ip_state_4 == NM_DEVICE_IP_STATE_WAIT);
 
 	if (nm_device_sys_iface_state_is_external (self)) {
 		_set_ip_state (self, AF_INET, NM_DEVICE_IP_STATE_DONE);
@@ -9888,7 +9888,7 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 	NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
 	NMIP6Config *ip6_config = NULL;
 
-	g_assert (priv->ip6_state == NM_DEVICE_IP_STATE_WAIT);
+	g_assert (priv->ip_state_6 == NM_DEVICE_IP_STATE_WAIT);
 
 	if (nm_device_sys_iface_state_is_external (self)) {
 		_set_ip_state (self, AF_INET6, NM_DEVICE_IP_STATE_DONE);
@@ -9992,7 +9992,7 @@ fw_change_zone_cb (NMFirewallManager *firewall_manager,
 		break;
 	case FIREWALL_STATE_WAIT_IP_CONFIG:
 		priv->fw_state = FIREWALL_STATE_INITIALIZED;
-		if (priv->ip4_state == NM_DEVICE_IP_STATE_DONE || priv->ip6_state == NM_DEVICE_IP_STATE_DONE)
+		if (priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE || priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE)
 			nm_device_start_ip_check (self);
 		break;
 	case FIREWALL_STATE_INITIALIZED:
@@ -10454,7 +10454,7 @@ nm_device_activate_schedule_ip_config_result (NMDevice *self,
 		/* If IP had previously failed, move it back to NM_DEVICE_IP_STATE_CONF since we
 		 * clearly now have configuration.
 		 */
-		if (priv->ip6_state == NM_DEVICE_IP_STATE_FAIL)
+		if (priv->ip_state_6 == NM_DEVICE_IP_STATE_FAIL)
 			_set_ip_state (self, AF_INET6, NM_DEVICE_IP_STATE_CONF);
 	}
 
@@ -10465,21 +10465,21 @@ gboolean
 nm_device_activate_ip4_state_in_conf (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
-	return NM_DEVICE_GET_PRIVATE (self)->ip4_state == NM_DEVICE_IP_STATE_CONF;
+	return NM_DEVICE_GET_PRIVATE (self)->ip_state_4 == NM_DEVICE_IP_STATE_CONF;
 }
 
 gboolean
 nm_device_activate_ip4_state_in_wait (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
-	return NM_DEVICE_GET_PRIVATE (self)->ip4_state == NM_DEVICE_IP_STATE_WAIT;
+	return NM_DEVICE_GET_PRIVATE (self)->ip_state_4 == NM_DEVICE_IP_STATE_WAIT;
 }
 
 gboolean
 nm_device_activate_ip4_state_done (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
-	return NM_DEVICE_GET_PRIVATE (self)->ip4_state == NM_DEVICE_IP_STATE_DONE;
+	return NM_DEVICE_GET_PRIVATE (self)->ip_state_4 == NM_DEVICE_IP_STATE_DONE;
 }
 
 static void
@@ -10583,7 +10583,7 @@ activate_stage5_ip_config_result_6 (NMDevice *self)
 
 	if (ip_config_merge_and_apply (self, AF_INET6, TRUE)) {
 		if (   priv->dhcp6.mode != NM_NDISC_DHCP_LEVEL_NONE
-		    && priv->ip6_state == NM_DEVICE_IP_STATE_CONF) {
+		    && priv->ip_state_6 == NM_DEVICE_IP_STATE_CONF) {
 			if (applied_config_get_current (&priv->dhcp6.ip6_config)) {
 				/* If IPv6 wasn't the first IP to complete, and DHCP was used,
 				 * then ensure dispatcher scripts get the DHCP lease information.
@@ -10611,7 +10611,7 @@ activate_stage5_ip_config_result_6 (NMDevice *self)
 		}
 
 		/* Check if we have to wait for DAD */
-		if (priv->ip6_state == NM_DEVICE_IP_STATE_CONF && !priv->dad6_ip6_config) {
+		if (priv->ip_state_6 == NM_DEVICE_IP_STATE_CONF && !priv->dad6_ip6_config) {
 			if (!priv->carrier && priv->ignore_carrier && get_ip_config_may_fail (self, AF_INET6))
 				_LOGI (LOGD_DEVICE | LOGD_IP6, "IPv6 DAD: carrier missing and ignored, not delaying activation");
 			else
@@ -10634,21 +10634,21 @@ gboolean
 nm_device_activate_ip6_state_in_conf (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
-	return NM_DEVICE_GET_PRIVATE (self)->ip6_state == NM_DEVICE_IP_STATE_CONF;
+	return NM_DEVICE_GET_PRIVATE (self)->ip_state_6 == NM_DEVICE_IP_STATE_CONF;
 }
 
 gboolean
 nm_device_activate_ip6_state_in_wait (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
-	return NM_DEVICE_GET_PRIVATE (self)->ip6_state == NM_DEVICE_IP_STATE_WAIT;
+	return NM_DEVICE_GET_PRIVATE (self)->ip_state_6 == NM_DEVICE_IP_STATE_WAIT;
 }
 
 gboolean
 nm_device_activate_ip6_state_done (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
-	return NM_DEVICE_GET_PRIVATE (self)->ip6_state == NM_DEVICE_IP_STATE_DONE;
+	return NM_DEVICE_GET_PRIVATE (self)->ip_state_6 == NM_DEVICE_IP_STATE_DONE;
 }
 
 /*****************************************************************************/
@@ -10918,7 +10918,7 @@ nm_device_reactivate_ip4_config (NMDevice *self,
 	g_return_if_fail (NM_IS_DEVICE (self));
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->ip4_state != NM_DEVICE_IP_STATE_NONE) {
+	if (priv->ip_state_4 != NM_DEVICE_IP_STATE_NONE) {
 		g_clear_object (&priv->con_ip_config_4);
 		g_clear_object (&priv->ext_ip_config_4);
 		g_clear_object (&priv->dev_ip4_config.current);
@@ -10990,7 +10990,7 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 	g_return_if_fail (NM_IS_DEVICE (self));
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->ip6_state != NM_DEVICE_IP_STATE_NONE) {
+	if (priv->ip_state_6 != NM_DEVICE_IP_STATE_NONE) {
 		g_clear_object (&priv->con_ip_config_6);
 		g_clear_object (&priv->ext_ip_config_6);
 		g_clear_object (&priv->ac_ip6_config.current);
@@ -12502,7 +12502,7 @@ nm_device_start_ip_check (NMDevice *self)
 	g_return_if_fail (!priv->gw_ping.watch);
 	g_return_if_fail (!priv->gw_ping.timeout);
 	g_return_if_fail (!priv->gw_ping.pid);
-	g_return_if_fail (priv->ip4_state == NM_DEVICE_IP_STATE_DONE || priv->ip6_state == NM_DEVICE_IP_STATE_DONE);
+	g_return_if_fail (priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE || priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE);
 
 	connection = nm_device_get_applied_connection (self);
 	g_assert (connection);
@@ -12515,14 +12515,14 @@ nm_device_start_ip_check (NMDevice *self)
 	if (timeout) {
 		const NMPObject *gw;
 
-		if (priv->ip_config_4 && priv->ip4_state == NM_DEVICE_IP_STATE_DONE) {
+		if (priv->ip_config_4 && priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE) {
 			gw = nm_ip4_config_best_default_route_get (priv->ip_config_4);
 			if (gw) {
 				nm_utils_inet4_ntop (NMP_OBJECT_CAST_IP4_ROUTE (gw)->gateway, buf);
 				ping_binary = nm_utils_find_helper ("ping", "/usr/bin/ping", NULL);
 				log_domain = LOGD_IP4;
 			}
-		} else if (priv->ip_config_6 && priv->ip6_state == NM_DEVICE_IP_STATE_DONE) {
+		} else if (priv->ip_config_6 && priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE) {
 			gw = nm_ip6_config_best_default_route_get (priv->ip_config_6);
 			if (gw) {
 				nm_utils_inet6_ntop (&NMP_OBJECT_CAST_IP6_ROUTE (gw)->gateway, buf);
@@ -12662,11 +12662,11 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	_update_ip4_address (self);
 
 	/* when the link comes up, we must restore IP configuration if necessary. */
-	if (priv->ip4_state == NM_DEVICE_IP_STATE_DONE) {
+	if (priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE) {
 		if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
 			_LOGW (LOGD_IP4, "failed applying IP4 config after bringing link up");
 	}
-	if (priv->ip6_state == NM_DEVICE_IP_STATE_DONE) {
+	if (priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE) {
 		if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
 			_LOGW (LOGD_IP6, "failed applying IP6 config after bringing link up");
 	}
@@ -13011,7 +13011,7 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 
 	if (!IS_IPv4) {
 		/* Check if DAD is still pending */
-		if (   priv->ip6_state == NM_DEVICE_IP_STATE_CONF
+		if (   priv->ip_state_6 == NM_DEVICE_IP_STATE_CONF
 		    && priv->dad6_ip6_config
 		    && priv->ext_ip6_config_captured
 		    && !nm_ip6_config_has_any_dad_pending (priv->ext_ip6_config_captured,
@@ -13693,7 +13693,7 @@ nm_device_update_metered (NMDevice *self)
 	/* Try to guess a value using the metered flag in IP configuration */
 	if (value == NM_METERED_INVALID) {
 		if (   priv->ip_config_4
-		    && priv->ip4_state == NM_DEVICE_IP_STATE_DONE
+		    && priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE
 		    && nm_ip4_config_get_metered (priv->ip_config_4))
 			value = NM_METERED_GUESS_YES;
 	}
