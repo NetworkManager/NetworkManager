@@ -16,6 +16,7 @@
 
 #include "nm-device-ppp.h"
 
+#include "nm-ip4-config.h"
 #include "nm-act-request.h"
 #include "nm-device-factory.h"
 #include "nm-device-private.h"
@@ -106,7 +107,7 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG) {
 		if (nm_device_activate_ip4_state_in_conf (device)) {
-			nm_device_activate_schedule_ip4_config_result (device, config);
+			nm_device_activate_schedule_ip_config_result (device, AF_INET, NM_IP_CONFIG_CAST (config));
 			return;
 		}
 	} else {

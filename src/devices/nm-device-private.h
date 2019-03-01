@@ -75,11 +75,12 @@ void nm_device_set_firmware_missing (NMDevice *self, gboolean missing);
 void nm_device_activate_schedule_stage1_device_prepare (NMDevice *device);
 void nm_device_activate_schedule_stage2_device_config (NMDevice *device);
 
-void nm_device_activate_schedule_ip4_config_result(NMDevice *device, NMIP4Config *config);
-void nm_device_activate_schedule_ip4_config_timeout (NMDevice *device);
+void nm_device_activate_schedule_ip_config_result (NMDevice *device,
+                                                   int addr_family,
+                                                   NMIPConfig *config);
 
-void nm_device_activate_schedule_ip6_config_result (NMDevice *device);
-void nm_device_activate_schedule_ip6_config_timeout (NMDevice *device);
+void nm_device_activate_schedule_ip_config_timeout (NMDevice *device,
+                                                    int addr_family);
 
 gboolean nm_device_activate_ip4_state_in_conf (NMDevice *device);
 gboolean nm_device_activate_ip4_state_in_wait (NMDevice *device);
