@@ -67,8 +67,9 @@ void nm_wireguard_peer_set_public_key (NMWireGuardPeer *self,
 NM_AVAILABLE_IN_1_16
 const char *nm_wireguard_peer_get_preshared_key (const NMWireGuardPeer *self);
 NM_AVAILABLE_IN_1_16
-void nm_wireguard_peer_set_preshared_key (NMWireGuardPeer *self,
-                                          const char *preshared_key);
+gboolean nm_wireguard_peer_set_preshared_key (NMWireGuardPeer *self,
+                                              const char *preshared_key,
+                                              gboolean accept_invalid);
 
 NM_AVAILABLE_IN_1_16
 NMSettingSecretFlags nm_wireguard_peer_get_preshared_key_flags (const NMWireGuardPeer *self);
