@@ -648,6 +648,22 @@ static void concheck_update_state (NMDevice *self,
                                    NMConnectivityState state,
                                    gboolean is_periodic);
 
+static void activate_stage4_ip_config_timeout_4 (NMDevice *self);
+static void activate_stage4_ip_config_timeout_6 (NMDevice *self);
+
+static void (*const activate_stage4_ip_config_timeout_x[2]) (NMDevice *self) = {
+	activate_stage4_ip_config_timeout_6,
+	activate_stage4_ip_config_timeout_4,
+};
+
+static void activate_stage5_ip_config_result_4 (NMDevice *self);
+static void activate_stage5_ip_config_result_6 (NMDevice *self);
+
+static void (*const activate_stage5_ip_config_result_x[2]) (NMDevice *self) = {
+	activate_stage5_ip_config_result_6,
+	activate_stage5_ip_config_result_4,
+};
+
 /*****************************************************************************/
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (queued_state_to_string, NMDeviceState,
@@ -905,6 +921,12 @@ applied_config_clear (AppliedConfig *config)
 static void
 applied_config_init (AppliedConfig *config, gpointer ip_config)
 {
+	nm_assert (   !ip_config
+	           || (!config->orig && !config->current)
+	           || nm_ip_config_get_addr_family (ip_config) == nm_ip_config_get_addr_family (config->orig ?: config->current));
+	nm_assert (   !ip_config
+	           || NM_IS_IP_CONFIG (ip_config, AF_UNSPEC));
+
 	nm_g_object_ref (ip_config);
 	applied_config_clear (config);
 	config->orig = ip_config;
@@ -6646,7 +6668,6 @@ ipv4_manual_method_apply (NMDevice *self, NMIP4Config **configs, gboolean succes
 {
 	NMConnection *connection;
 	const char *method;
-	NMIP4Config *empty;
 
 	connection = nm_device_get_applied_connection (self);
 	nm_assert (connection);
@@ -6662,9 +6683,10 @@ ipv4_manual_method_apply (NMDevice *self, NMIP4Config **configs, gboolean succes
 	}
 
 	if (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
+		gs_unref_object NMIP4Config *empty = NULL;
+
 		empty = _ip4_config_new (self);
-		nm_device_activate_schedule_ip4_config_result (self, empty);
-		g_object_unref (empty);
+		nm_device_activate_schedule_ip_config_result (self, AF_INET, NM_IP_CONFIG_CAST (empty));
 	} else {
 		if (NM_DEVICE_GET_PRIVATE (self)->ip4_state != IP_DONE)
 			ip_config_merge_and_apply (self, AF_INET, TRUE);
@@ -6883,7 +6905,7 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 
 		if (priv->ip4_state == IP_CONF) {
 			nm_clear_g_source (&priv->ipv4ll_timeout);
-			nm_device_activate_schedule_ip4_config_result (self, config);
+			nm_device_activate_schedule_ip_config_result (self, AF_INET, NM_IP_CONFIG_CAST (config));
 		} else if (priv->ip4_state == IP_DONE) {
 			applied_config_init (&priv->dev_ip4_config, config);
 			if (!ip_config_merge_and_apply (self, AF_INET, TRUE)) {
@@ -6913,7 +6935,7 @@ ipv4ll_timeout_cb (gpointer user_data)
 		ipv4ll_cleanup (self);
 
 		if (priv->ip4_state == IP_CONF)
-			nm_device_activate_schedule_ip4_config_timeout (self);
+			nm_device_activate_schedule_ip_config_timeout (self, AF_INET);
 	}
 
 	return FALSE;
@@ -7332,7 +7354,7 @@ dhcp4_fail (NMDevice *self, NMDhcpState dhcp_state)
 	if (   dhcp_state == NM_DHCP_STATE_TERMINATED
 	    || (!priv->dhcp4.was_active && priv->ip4_state == IP_CONF)) {
 		dhcp4_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
-		nm_device_activate_schedule_ip4_config_timeout (self);
+		nm_device_activate_schedule_ip_config_timeout (self, AF_INET);
 		return;
 	}
 
@@ -7364,7 +7386,7 @@ static void
 dhcp4_dad_cb (NMDevice *self, NMIP4Config **configs, gboolean success)
 {
 	if (success)
-		nm_device_activate_schedule_ip4_config_result (self, configs[1]);
+		nm_device_activate_schedule_ip_config_result (self, AF_INET, NM_IP_CONFIG_CAST (configs[1]));
 	else {
 		nm_device_ip_method_failed (self, AF_INET,
 		                            NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE);
@@ -8074,7 +8096,7 @@ dhcp6_fail (NMDevice *self, NMDhcpState dhcp_state)
 		if (   dhcp_state == NM_DHCP_STATE_TERMINATED
 		    || (!priv->dhcp6.was_active && priv->ip6_state == IP_CONF)) {
 			dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
-			nm_device_activate_schedule_ip6_config_timeout (self);
+			nm_device_activate_schedule_ip_config_timeout (self, AF_INET6);
 			return;
 		}
 
@@ -8095,7 +8117,7 @@ dhcp6_fail (NMDevice *self, NMDhcpState dhcp_state)
 		/* not a hard failure; just live with the RA info */
 		dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 		if (priv->ip6_state == IP_CONF)
-			nm_device_activate_schedule_ip6_config_result (self);
+			nm_device_activate_schedule_ip_config_result (self, AF_INET6, NULL);
 	}
 	return;
 
@@ -8162,7 +8184,7 @@ dhcp6_state_changed (NMDhcpClient *client,
 				nm_device_ip_method_failed (self, AF_INET6, NM_DEVICE_STATE_REASON_DHCP_FAILED);
 				break;
 			}
-			nm_device_activate_schedule_ip6_config_result (self);
+			nm_device_activate_schedule_ip_config_result (self, AF_INET6, NULL);
 		} else if (priv->ip6_state == IP_DONE)
 			if (!dhcp6_lease_change (self))
 				dhcp6_fail (self, state);
@@ -8174,7 +8196,7 @@ dhcp6_state_changed (NMDhcpClient *client,
 			/* not a hard failure; just live with the RA info */
 			dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 			if (priv->ip6_state == IP_CONF)
-				nm_device_activate_schedule_ip6_config_result (self);
+				nm_device_activate_schedule_ip_config_result (self, AF_INET6, NULL);
 		}
 		break;
 	case NM_DHCP_STATE_EXPIRE:
@@ -8755,7 +8777,7 @@ linklocal6_failed (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	nm_clear_g_source (&priv->linklocal6_timeout_id);
-	nm_device_activate_schedule_ip6_config_timeout (self);
+	nm_device_activate_schedule_ip_config_timeout (self, AF_INET6);
 }
 
 static gboolean
@@ -8803,10 +8825,10 @@ linklocal6_check_complete (NMDevice *self)
 	else if (nm_streq (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
 		if (!dhcp6_start_with_link_ready (self, connection)) {
 			/* Time out IPv6 instead of failing the entire activation */
-			nm_device_activate_schedule_ip6_config_timeout (self);
+			nm_device_activate_schedule_ip_config_timeout (self, AF_INET6);
 		}
 	} else if (nm_streq (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
-		nm_device_activate_schedule_ip6_config_result (self);
+		nm_device_activate_schedule_ip_config_result (self, AF_INET6, NULL);
 	else
 		g_return_if_fail (FALSE);
 }
@@ -9318,7 +9340,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 		}
 	}
 
-	nm_device_activate_schedule_ip6_config_result (self);
+	nm_device_activate_schedule_ip_config_result (self, AF_INET6, NULL);
 }
 
 static void
@@ -9345,9 +9367,9 @@ ndisc_ra_timeout (NMNDisc *ndisc, NMDevice *self)
 		    && nm_ip6_config_find_first_address (priv->ip_config_6,
 		                                           NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL
 		                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY))
-			nm_device_activate_schedule_ip6_config_result (self);
+			nm_device_activate_schedule_ip_config_result (self, AF_INET6, NULL);
 		else
-			nm_device_activate_schedule_ip6_config_timeout (self);
+			nm_device_activate_schedule_ip_config_timeout (self, AF_INET6);
 	}
 }
 
@@ -9384,7 +9406,7 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	case NM_NDISC_NODE_TYPE_ROUTER:
 		/* We're the router. */
 		nm_device_sysctl_ip_conf_set (self, AF_INET6, "forwarding", "1");
-		nm_device_activate_schedule_ip6_config_result (self);
+		nm_device_activate_schedule_ip_config_result (self, AF_INET6, NULL);
 		priv->needs_ip6_subnet = TRUE;
 		g_signal_emit (self, signals[IP6_SUBNET_NEEDED], 0);
 		break;
@@ -9818,7 +9840,7 @@ nm_device_activate_stage3_ip4_start (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActStageReturn ret;
 	NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
-	NMIP4Config *ip4_config = NULL;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 
 	g_assert (priv->ip4_state == IP_WAIT);
 
@@ -9833,8 +9855,7 @@ nm_device_activate_stage3_ip4_start (NMDevice *self)
 	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
 		if (!ip4_config)
 			ip4_config = _ip4_config_new (self);
-		nm_device_activate_schedule_ip4_config_result (self, ip4_config);
-		g_object_unref (ip4_config);
+		nm_device_activate_schedule_ip_config_result (self, AF_INET, NM_IP_CONFIG_CAST (ip4_config));
 	} else if (ret == NM_ACT_STAGE_RETURN_IP_DONE) {
 		_set_ip_state (self, AF_INET, IP_DONE);
 		check_ip_state (self, FALSE, TRUE);
@@ -9885,7 +9906,7 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 		 */
 		nm_assert (!applied_config_get_current (&priv->ac_ip6_config));
 		applied_config_init (&priv->ac_ip6_config, ip6_config);
-		nm_device_activate_schedule_ip6_config_result (self);
+		nm_device_activate_schedule_ip_config_result (self, AF_INET6, NULL);
 	} else if (ret == NM_ACT_STAGE_RETURN_IP_DONE) {
 		_set_ip_state (self, AF_INET6, IP_DONE);
 		check_ip_state (self, FALSE, TRUE);
@@ -10064,7 +10085,7 @@ act_stage4_ip4_config_timeout (NMDevice *self, NMDeviceStateReason *out_failure_
  *
  */
 static void
-activate_stage4_ip4_config_timeout (NMDevice *self)
+activate_stage4_ip_config_timeout_4 (NMDevice *self)
 {
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
@@ -10083,23 +10104,21 @@ activate_stage4_ip4_config_timeout (NMDevice *self)
 	check_ip_state (self, FALSE, TRUE);
 }
 
-/*
- * nm_device_activate_schedule_ip4_config_timeout
- *
- * Deal with a timeout of the IPv4 configuration
- *
- */
 void
-nm_device_activate_schedule_ip4_config_timeout (NMDevice *self)
+nm_device_activate_schedule_ip_config_timeout (NMDevice *self,
+                                               int addr_family)
 {
 	NMDevicePrivate *priv;
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
 
 	g_return_if_fail (NM_IS_DEVICE (self));
+	g_return_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
+
 	g_return_if_fail (priv->act_request.obj);
 
-	activation_source_schedule (self, activate_stage4_ip4_config_timeout, AF_INET);
+	activation_source_schedule (self, activate_stage4_ip_config_timeout_x[IS_IPv4], addr_family);
 }
 
 static NMActStageReturn
@@ -10113,14 +10132,8 @@ act_stage4_ip6_config_timeout (NMDevice *self, NMDeviceStateReason *out_failure_
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
-/*
- * activate_stage4_ip6_config_timeout
- *
- * Time out on retrieving the IPv6 config.
- *
- */
 static void
-activate_stage4_ip6_config_timeout (NMDevice *self)
+activate_stage4_ip_config_timeout_6 (NMDevice *self)
 {
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
@@ -10137,25 +10150,6 @@ activate_stage4_ip6_config_timeout (NMDevice *self)
 	_set_ip_state (self, AF_INET6, IP_FAIL);
 
 	check_ip_state (self, FALSE, TRUE);
-}
-
-/*
- * nm_device_activate_schedule_ip6_config_timeout
- *
- * Deal with a timeout of the IPv6 configuration
- *
- */
-void
-nm_device_activate_schedule_ip6_config_timeout (NMDevice *self)
-{
-	NMDevicePrivate *priv;
-
-	g_return_if_fail (NM_IS_DEVICE (self));
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	g_return_if_fail (priv->act_request.obj);
-
-	activation_source_schedule (self, activate_stage4_ip6_config_timeout, AF_INET6);
 }
 
 static gboolean
@@ -10357,7 +10351,7 @@ nm_device_arp_announce (NMDevice *self)
 }
 
 static void
-activate_stage5_ip4_config_result (NMDevice *self)
+activate_stage5_ip_config_result_4 (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActRequest *req;
@@ -10439,15 +10433,32 @@ activate_stage5_ip4_config_result (NMDevice *self)
 }
 
 void
-nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *config)
+nm_device_activate_schedule_ip_config_result (NMDevice *self,
+                                              int addr_family,
+                                              NMIPConfig *config)
 {
 	NMDevicePrivate *priv;
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
 
 	g_return_if_fail (NM_IS_DEVICE (self));
+	g_return_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+	g_return_if_fail (   !config
+	                  || (   addr_family == AF_INET
+	                      && nm_ip_config_get_addr_family (config) == AF_INET));
+
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	applied_config_init (&priv->dev_ip4_config, config);
-	activation_source_schedule (self, activate_stage5_ip4_config_result, AF_INET);
+	if (IS_IPv4) {
+		applied_config_init (&priv->dev_ip4_config, config);
+	} else {
+		/* If IP had previously failed, move it back to IP_CONF since we
+		 * clearly now have configuration.
+		 */
+		if (priv->ip6_state == IP_FAIL)
+			_set_ip_state (self, AF_INET6, IP_CONF);
+	}
+
+	activation_source_schedule (self, activate_stage5_ip_config_result_x[IS_IPv4], addr_family);
 }
 
 gboolean
@@ -10549,7 +10560,7 @@ dad6_get_pending_addresses (NMDevice *self)
 }
 
 static void
-activate_stage5_ip6_config_commit (NMDevice *self)
+activate_stage5_ip_config_result_6 (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActRequest *req;
@@ -10617,22 +10628,6 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 		_LOGW (LOGD_DEVICE | LOGD_IP6, "Activation: Stage 5 of 5 (IPv6 Commit) failed");
 		nm_device_ip_method_failed (self, AF_INET6, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 	}
-}
-
-void
-nm_device_activate_schedule_ip6_config_result (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	g_return_if_fail (NM_IS_DEVICE (self));
-
-	/* If IP had previously failed, move it back to IP_CONF since we
-	 * clearly now have configuration.
-	 */
-	if (priv->ip6_state == IP_FAIL)
-		_set_ip_state (self, AF_INET6, IP_CONF);
-
-	activation_source_schedule (self, activate_stage5_ip6_config_commit, AF_INET6);
 }
 
 gboolean
@@ -11551,7 +11546,7 @@ _rt6_temporary_not_available_timeout (gpointer user_data)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	priv->rt6_temporary_not_available_id = 0;
-	nm_device_activate_schedule_ip6_config_result (self);
+	nm_device_activate_schedule_ip_config_result (self, AF_INET6, NULL);
 
 	return G_SOURCE_REMOVE;
 }
@@ -12947,9 +12942,7 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 	 * update in such case.
 	 */
 	if (activation_source_is_scheduled (self,
-	                                    IS_IPv4
-	                                      ? activate_stage5_ip4_config_result
-	                                      : activate_stage5_ip6_config_commit,
+	                                    activate_stage5_ip_config_result_x[IS_IPv4],
 	                                    addr_family))
 		return G_SOURCE_CONTINUE;
 
@@ -13028,7 +13021,7 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 			_set_ip_state (self, addr_family, IP_DONE);
 			check_ip_state (self, FALSE, TRUE);
 			if (priv->rt6_temporary_not_available)
-				nm_device_activate_schedule_ip6_config_result (self);
+				nm_device_activate_schedule_ip_config_result (self, AF_INET6, NULL);
 		}
 	}
 
@@ -16056,10 +16049,10 @@ _activation_func_to_string (ActivationHandleFunc func)
 	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage1_device_prepare);
 	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage2_device_config);
 	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage3_ip_config_start);
-	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage4_ip4_config_timeout);
-	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage4_ip6_config_timeout);
-	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage5_ip4_config_result);
-	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage5_ip6_config_commit);
+	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage4_ip_config_timeout_4);
+	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage4_ip_config_timeout_6);
+	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage5_ip_config_result_4);
+	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage5_ip_config_result_6);
 	g_return_val_if_reached ("unknown");
 }
 

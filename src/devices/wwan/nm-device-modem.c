@@ -83,9 +83,9 @@ ppp_failed (NMModem *modem,
 	case NM_DEVICE_STATE_SECONDARIES:
 	case NM_DEVICE_STATE_ACTIVATED:
 		if (nm_device_activate_ip4_state_in_conf (device))
-			nm_device_activate_schedule_ip4_config_timeout (device);
+			nm_device_activate_schedule_ip_config_timeout (device, AF_INET);
 		else if (nm_device_activate_ip6_state_in_conf (device))
-			nm_device_activate_schedule_ip6_config_timeout (device);
+			nm_device_activate_schedule_ip_config_timeout (device, AF_INET6);
 		else if (nm_device_activate_ip4_state_done (device)) {
 			nm_device_ip_method_failed (device,
 			                            AF_INET,
@@ -212,7 +212,7 @@ modem_ip4_config_result (NMModem *modem,
 		                            NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 	} else {
 		nm_device_set_wwan_ip4_config (device, config);
-		nm_device_activate_schedule_ip4_config_result (device, NULL);
+		nm_device_activate_schedule_ip_config_result (device, AF_INET, NULL);
 	}
 }
 
@@ -249,7 +249,7 @@ modem_ip6_config_result (NMModem *modem,
 
 	if (do_slaac == FALSE) {
 		if (got_config)
-			nm_device_activate_schedule_ip6_config_result (device);
+			nm_device_activate_schedule_ip_config_result (device, AF_INET6, NULL);
 		else {
 			_LOGW (LOGD_MB | LOGD_IP6, "retrieving IPv6 configuration failed: SLAAC not requested and no addresses");
 			nm_device_ip_method_failed (device,
@@ -268,7 +268,7 @@ modem_ip6_config_result (NMModem *modem,
 		break;
 	case NM_ACT_STAGE_RETURN_IP_FAIL:
 		/* all done */
-		nm_device_activate_schedule_ip6_config_result (device);
+		nm_device_activate_schedule_ip_config_result (device, AF_INET6, NULL);
 		break;
 	case NM_ACT_STAGE_RETURN_POSTPONE:
 		/* let SLAAC run */
