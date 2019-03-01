@@ -473,11 +473,6 @@ check_connection_available (NMDevice *device,
 	}
 
 	state = nm_modem_get_state (priv->modem);
-	if (state <= NM_MODEM_STATE_INITIALIZING) {
-		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-		                            "modem not initialized");
-		return FALSE;
-	}
 
 	if (state == NM_MODEM_STATE_LOCKED) {
 		if (!nm_connection_get_setting_gsm (connection)) {
@@ -485,6 +480,12 @@ check_connection_available (NMDevice *device,
 			                            "modem is locked without pin available");
 			return FALSE;
 		}
+	}
+
+	if (state < NM_MODEM_STATE_REGISTERED) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "modem not registered");
+		return FALSE;
 	}
 
 	return TRUE;
@@ -658,7 +659,7 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 
 	g_assert (priv->modem);
 	modem_state = nm_modem_get_state (priv->modem);
-	if (modem_state <= NM_MODEM_STATE_INITIALIZING)
+	if (modem_state < NM_MODEM_STATE_REGISTERED)
 		return FALSE;
 
 	return TRUE;
