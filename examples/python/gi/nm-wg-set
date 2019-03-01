@@ -369,7 +369,7 @@ def do_set(nm_client, conn, argv):
                 idx += 2
                 continue
             if peer and argv[idx] == 'endpoint':
-                peer.set_endpoint(argv_get_one(argv, idx + 1, None, idx))
+                peer.set_endpoint(argv_get_one(argv, idx + 1, None, idx), True)
                 idx += 2
                 continue
             if peer and argv[idx] == 'persistent-keepalive':
