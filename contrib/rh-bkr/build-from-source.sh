@@ -18,6 +18,12 @@ if [ -z "$SUDO" ]; then
     unset SUDO
 fi
 
+YUM_ARGS=()
+
+if grep -q --quiet Ootpa /etc/redhat-release; then
+    YUM_ARGS+=("--enablerepo=rhel-8-buildroot")
+fi
+
 $SUDO yum install \
     'perl(XML::Parser)' \
     'perl(YAML)' \
@@ -65,7 +71,8 @@ $SUDO yum install \
     vala-tools \
     valgrind \
     wireless-tools-devel \
-    --enablerepo=* --skip-broken \
+    "${YUM_ARGS[@]}" \
+    --skip-broken \
     -y
 
 # for the tests, let's pre-load some modules:
