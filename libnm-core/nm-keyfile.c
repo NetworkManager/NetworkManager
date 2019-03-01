@@ -2935,13 +2935,12 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 	key = NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY;
 	str = nm_keyfile_plugin_kf_get_string (info->keyfile, info->group, key, NULL);
 	if (str) {
-		if (!_nm_utils_wireguard_decode_key (str, NM_WIREGUARD_SYMMETRIC_KEY_LEN, NULL)) {
+		if (!nm_wireguard_peer_set_preshared_key (peer, str, FALSE)) {
 			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("key '%s.%s' is not not a valid 256 bit key in base64 encoding"),
 			                  info->group, key))
 				return;
-		} else
-			nm_wireguard_peer_set_preshared_key (peer, str);
+		}
 		nm_clear_g_free (&str);
 	}
 

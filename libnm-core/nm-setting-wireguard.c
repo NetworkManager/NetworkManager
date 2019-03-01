@@ -346,6 +346,9 @@ nm_wireguard_peer_get_preshared_key (const NMWireGuardPeer *self)
  * @self: the unsealed #NMWireGuardPeer instance
  * @preshared_key: (allow-none) (transfer none): the new preshared
  *   key or %NULL to clear the preshared key.
+ * @accept_invalid: whether to allow setting the key to an invalid
+ *   value. If %FALSE, @self is unchanged if the key is invalid
+ *   and if %FALSE is returned.
  *
  * Reset the preshared key. Note that if the preshared key is valid, it
  * will be normalized (which may or may not modify the set value).
@@ -358,28 +361,41 @@ nm_wireguard_peer_get_preshared_key (const NMWireGuardPeer *self)
  *
  * It is a bug trying to modify a sealed #NMWireGuardPeer instance.
  *
+ * Returns: %TRUE if the preshared-key is valid, otherwise %FALSE.
+ *   %NULL is considered a valid value.
+ *   If the key is invalid, it depends on @accept_invalid whether the
+ *   previous value was reset.
+ *
  * Since: 1.16
  */
-void
+gboolean
 nm_wireguard_peer_set_preshared_key (NMWireGuardPeer *self,
-                                     const char *preshared_key)
+                                     const char *preshared_key,
+                                     gboolean accept_invalid)
 {
 	char *preshared_key_normalized = NULL;
+	gboolean is_valid;
 
-	g_return_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE));
+	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE), FALSE);
 
 	if (!preshared_key) {
 		nm_clear_pointer (&self->preshared_key, nm_free_secret);
-		return;
+		return TRUE;
 	}
 
-	self->preshared_key_valid = _nm_utils_wireguard_normalize_key (preshared_key,
-	                                                               NM_WIREGUARD_SYMMETRIC_KEY_LEN,
-	                                                               &preshared_key_normalized);
-	nm_assert (self->preshared_key_valid == (preshared_key_normalized != NULL));
+	is_valid = _nm_utils_wireguard_normalize_key (preshared_key,
+	                                              NM_WIREGUARD_SYMMETRIC_KEY_LEN,
+	                                              &preshared_key_normalized);
+	nm_assert (is_valid == (preshared_key_normalized != NULL));
 
+	if (   !is_valid
+	    && !accept_invalid)
+		return FALSE;
+
+	self->preshared_key_valid = is_valid;
 	nm_free_secret (self->preshared_key);
 	self->preshared_key = preshared_key_normalized ?: g_strdup (preshared_key);
+	return is_valid;
 }
 
 /**
@@ -1543,7 +1559,7 @@ _peers_dbus_only_set (NMSetting     *setting,
 		}
 
 		if (g_variant_lookup (peer_var, NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY, "&s", &cstr))
-			nm_wireguard_peer_set_preshared_key (peer, cstr);
+			nm_wireguard_peer_set_preshared_key (peer, cstr, TRUE);
 
 		if (g_variant_lookup (peer_var, NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY_FLAGS, "u", &u32))
 			nm_wireguard_peer_set_preshared_key_flags (peer, u32);
@@ -1873,7 +1889,7 @@ update_one_secret (NMSetting *setting,
 			continue;
 
 		peer = nm_wireguard_peer_new_clone (pd->peer, FALSE);
-		nm_wireguard_peer_set_preshared_key (peer, cstr);
+		nm_wireguard_peer_set_preshared_key (peer, cstr, TRUE);
 
 		if (!_peers_set (priv, peer, pd->idx, FALSE))
 			nm_assert_not_reached ();

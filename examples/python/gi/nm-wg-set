@@ -355,11 +355,11 @@ def do_set(nm_client, conn, argv):
             if peer and argv[idx] == 'preshared-key':
                 psk = argv_get_one(argv, idx + 1, None, idx)
                 if psk == '':
-                    peer.set_preshared_key(None)
+                    peer.set_preshared_key(None, True)
                     if peer_secret_flags is not None:
                         peer_secret_flags = NM.SettingSecretFlags.NOT_REQUIRED
                 else:
-                    peer.set_preshared_key(wg_read_private_key(psk))
+                    peer.set_preshared_key(wg_read_private_key(psk), True)
                     if peer_secret_flags is not None:
                         peer_secret_flags = NM.SettingSecretFlags.NONE
                 idx += 2
