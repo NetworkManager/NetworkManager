@@ -2152,9 +2152,7 @@ nm_device_get_route_metric (NMDevice *self,
 
 	connection = nm_device_get_applied_connection (self);
 	if (connection) {
-		s_ip = addr_family == AF_INET
-		       ? nm_connection_get_setting_ip4_config (connection)
-		       : nm_connection_get_setting_ip6_config (connection);
+		s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
 
 		/* Slave interfaces don't have IP settings, but we may get here when
 		 * external changes are made or when noticing IP changes when starting
@@ -2259,11 +2257,7 @@ nm_device_get_route_table (NMDevice *self,
 
 	connection = nm_device_get_applied_connection (self);
 	if (connection) {
-		if (addr_family == AF_INET)
-			s_ip = nm_connection_get_setting_ip4_config (connection);
-		else
-			s_ip = nm_connection_get_setting_ip6_config (connection);
-
+		s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
 		if (s_ip)
 			route_table = nm_setting_ip_config_get_route_table (s_ip);
 
@@ -4894,21 +4888,11 @@ static gboolean
 get_ip_config_may_fail (NMDevice *self, int addr_family)
 {
 	NMConnection *connection;
-	NMSettingIPConfig *s_ip = NULL;
+	NMSettingIPConfig *s_ip;
 
 	connection = nm_device_get_applied_connection (self);
 
-	/* Fail the connection if the failed IP method is required to complete */
-	switch (addr_family) {
-	case AF_INET:
-		s_ip = nm_connection_get_setting_ip4_config (connection);
-		break;
-	case AF_INET6:
-		s_ip = nm_connection_get_setting_ip6_config (connection);
-		break;
-	default:
-		nm_assert_not_reached ();
-	}
+	s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
 
 	return !s_ip || nm_setting_ip_config_get_may_fail (s_ip);
 }
@@ -7094,10 +7078,9 @@ ip_config_merge_and_apply (NMDevice *self,
 
 	/* Apply ignore-auto-routes and ignore-auto-dns settings */
 	if (connection) {
-		NMSettingIPConfig *s_ip =   IS_IPv4
-		                          ? nm_connection_get_setting_ip4_config (connection)
-		                          : nm_connection_get_setting_ip6_config (connection);
+		NMSettingIPConfig *s_ip;
 
+		s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
 		if (s_ip) {
 			ignore_auto_routes = nm_setting_ip_config_get_ignore_auto_routes (s_ip);
 			ignore_auto_dns = nm_setting_ip_config_get_ignore_auto_dns (s_ip);
@@ -7487,10 +7470,7 @@ get_dhcp_timeout (NMDevice *self, int addr_family)
 
 	connection = nm_device_get_applied_connection (self);
 
-	if (addr_family == AF_INET)
-		s_ip = nm_connection_get_setting_ip4_config (connection);
-	else
-		s_ip = nm_connection_get_setting_ip6_config (connection);
+	s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
 
 	timeout = nm_setting_ip_config_get_dhcp_timeout (s_ip);
 	if (timeout)
@@ -14566,7 +14546,7 @@ nm_device_spawn_iface_helper (NMDevice *self)
 		NMSettingIPConfig *s_ip4;
 
 		s_ip4 = nm_connection_get_setting_ip4_config (connection);
-		g_assert (s_ip4);
+		nm_assert (s_ip4);
 
 		g_ptr_array_add (argv, g_strdup ("--priority4"));
 		g_ptr_array_add (argv, g_strdup_printf ("%u", nm_device_get_route_metric (self, AF_INET)));
