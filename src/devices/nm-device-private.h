@@ -146,8 +146,9 @@ void nm_device_queue_recheck_available (NMDevice *device,
                                         NMDeviceStateReason available_reason,
                                         NMDeviceStateReason unavailable_reason);
 
-void nm_device_set_wwan_ip4_config (NMDevice *device, NMIP4Config *config);
-void nm_device_set_wwan_ip6_config (NMDevice *device, NMIP6Config *config);
+void nm_device_set_wwan_ip_config (NMDevice *device,
+                                   int addr_family,
+                                   NMIPConfig *config);
 
 gboolean nm_device_hw_addr_is_explict (NMDevice *device);
 
