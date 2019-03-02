@@ -1466,6 +1466,7 @@ global:
 	nm_setting_wireguard_clear_peers;
 	nm_setting_wireguard_get_fwmark;
 	nm_setting_wireguard_get_listen_port;
+	nm_setting_wireguard_get_mtu;
 	nm_setting_wireguard_get_peer;
 	nm_setting_wireguard_get_peer_by_public_key;
 	nm_setting_wireguard_get_peers_len;
