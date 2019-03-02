@@ -583,50 +583,30 @@ remove_all_peers (NMDeviceWifiP2P *self)
 
 
 static NMActStageReturn
-act_stage3_ip4_config_start (NMDevice *device,
-                             NMIP4Config **out_config,
-                             NMDeviceStateReason *out_failure_reason)
+act_stage3_ip_config_start (NMDevice *device,
+                            int addr_family,
+                            gpointer *out_config,
+                            NMDeviceStateReason *out_failure_reason)
 {
+	gboolean indicate_addressing_running;
 	NMConnection *connection;
-	NMSettingIPConfig *s_ip4;
-	const char *method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+	const char *method;
 
 	connection = nm_device_get_applied_connection (device);
-	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
-	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	if (s_ip4)
-		method = nm_setting_ip_config_get_method (s_ip4);
+	method = nm_utils_get_ip_config_method (connection, addr_family);
 
-	/* Indicate that a critical protocol is about to start */
-	if (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
+	if (addr_family == AF_INET)
+		indicate_addressing_running = NM_IN_STRSET (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	else {
+		indicate_addressing_running = NM_IN_STRSET (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+		                                                    NM_SETTING_IP6_CONFIG_METHOD_DHCP);
+	}
+
+	if (indicate_addressing_running)
 		nm_platform_wifi_indicate_addressing_running (nm_device_get_platform (device), nm_device_get_ip_ifindex (device), TRUE);
 
-	return NM_DEVICE_CLASS (nm_device_wifi_p2p_parent_class)->act_stage3_ip4_config_start (device, out_config, out_failure_reason);
-}
-
-static NMActStageReturn
-act_stage3_ip6_config_start (NMDevice *device,
-                             NMIP6Config **out_config,
-                             NMDeviceStateReason *out_failure_reason)
-{
-	NMConnection *connection;
-	NMSettingIPConfig *s_ip6;
-	const char *method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
-
-	connection = nm_device_get_applied_connection (device);
-	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
-
-	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	if (s_ip6)
-		method = nm_setting_ip_config_get_method (s_ip6);
-
-	/* Indicate that a critical protocol is about to start */
-	if (NM_IN_STRSET (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO
-	                          NM_SETTING_IP6_CONFIG_METHOD_DHCP))
-		nm_platform_wifi_indicate_addressing_running (nm_device_get_platform (device), nm_device_get_ip_ifindex (device), TRUE);
-
-	return NM_DEVICE_CLASS (nm_device_wifi_p2p_parent_class)->act_stage3_ip6_config_start (device, out_config, out_failure_reason);
+	return NM_DEVICE_CLASS (nm_device_wifi_p2p_parent_class)->act_stage3_ip_config_start (device, addr_family, out_config, out_failure_reason);
 }
 
 static void
@@ -1315,8 +1295,7 @@ nm_device_wifi_p2p_class_init (NMDeviceWifiP2PClass *klass)
 	device_class->act_stage2_config                = act_stage2_config;
 	device_class->get_configured_mtu               = get_configured_mtu;
 	device_class->get_auto_ip_config_method        = get_auto_ip_config_method;
-	device_class->act_stage3_ip4_config_start      = act_stage3_ip4_config_start;
-	device_class->act_stage3_ip6_config_start      = act_stage3_ip6_config_start;
+	device_class->act_stage3_ip_config_start      = act_stage3_ip_config_start;
 
 	device_class->deactivate                       = deactivate;
 	device_class->unmanaged_on_quit                = unmanaged_on_quit;
