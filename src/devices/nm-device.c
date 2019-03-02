@@ -12190,13 +12190,25 @@ nm_device_replace_vpn4_config (NMDevice *self, NMIP4Config *old, NMIP4Config *co
 }
 
 void
-nm_device_set_wwan_ip4_config (NMDevice *self, NMIP4Config *config)
+nm_device_set_wwan_ip_config (NMDevice *self,
+                              int addr_family,
+                              NMIPConfig *config)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv;
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
 
-	applied_config_init (&priv->wwan_ip_config_4, config);
-	if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
-		_LOGW (LOGD_IP4, "failed to set WWAN IPv4 configuration");
+	g_return_if_fail (NM_IS_DEVICE (self));
+	g_return_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+	g_return_if_fail (   !config
+	                  || nm_ip_config_get_addr_family (config) == addr_family);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	applied_config_init (&priv->wwan_ip_config_x[IS_IPv4], config);
+	if (!ip_config_merge_and_apply (self, addr_family, TRUE)) {
+		_LOGW (LOGD_IP, "failed to set WWAN IPv%c configuration",
+		       nm_utils_addr_family_to_char (addr_family));
+	}
 }
 
 void
@@ -12215,16 +12227,6 @@ nm_device_replace_vpn6_config (NMDevice *self, NMIP6Config *old, NMIP6Config *co
 	/* NULL to use existing configs */
 	if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
 		_LOGW (LOGD_IP6, "failed to set VPN routes for device");
-}
-
-void
-nm_device_set_wwan_ip6_config (NMDevice *self, NMIP6Config *config)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	applied_config_init (&priv->wwan_ip_config_6, config);
-	if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
-		_LOGW (LOGD_IP6, "failed to set WWAN IPv6 configuration");
 }
 
 NMDhcp6Config *
