@@ -146,7 +146,7 @@ void nm_device_queue_recheck_available (NMDevice *device,
                                         NMDeviceStateReason available_reason,
                                         NMDeviceStateReason unavailable_reason);
 
-void nm_device_set_wwan_ip_config (NMDevice *device,
+void nm_device_set_dev2_ip_config (NMDevice *device,
                                    int addr_family,
                                    NMIPConfig *config);
 
