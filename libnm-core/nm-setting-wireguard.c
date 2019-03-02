@@ -647,6 +647,7 @@ _peer_append_allowed_ip (NMWireGuardPeer *self,
 	int prefix;
 	NMIPAddr addrbin;
 	char *str;
+	gboolean is_valid = TRUE;
 
 	nm_assert (NM_IS_WIREGUARD_PEER (self, FALSE));
 	nm_assert (allowed_ip);
@@ -662,6 +663,7 @@ _peer_append_allowed_ip (NMWireGuardPeer *self,
 			return FALSE;
 		/* mark the entry as invalid by having a "X" prefix. */
 		str = g_strconcat (ALLOWED_IP_INVALID_X_STR, allowed_ip, NULL);
+		is_valid = FALSE;
 	} else {
 		char addrstr[NM_UTILS_INET_ADDRSTRLEN];
 
@@ -679,7 +681,7 @@ _peer_append_allowed_ip (NMWireGuardPeer *self,
 		self->allowed_ips = g_ptr_array_new_with_free_func (g_free);
 
 	g_ptr_array_add (self->allowed_ips, str);
-	return TRUE;
+	return is_valid;
 }
 
 /**
