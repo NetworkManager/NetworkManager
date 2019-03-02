@@ -2920,7 +2920,7 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 
 	nm_assert (g_str_has_prefix (info->group, NM_KEYFILE_GROUPPREFIX_WIREGUARD_PEER));
 	cstr = &info->group[NM_STRLEN (NM_KEYFILE_GROUPPREFIX_WIREGUARD_PEER)];
-	if (   !_nm_utils_wireguard_normalize_key (cstr, NM_WIREGUARD_PUBLIC_KEY_LEN, &str)
+	if (   !nm_utils_base64secret_normalize (cstr, NM_WIREGUARD_PUBLIC_KEY_LEN, &str)
 	    || !nm_streq0 (str, cstr)) {
 		/* the group name must be identical to the normalized(!) key, so that it
 		 * is uniquely identified. */

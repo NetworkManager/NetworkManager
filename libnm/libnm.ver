@@ -1479,6 +1479,7 @@ global:
 	nm_setting_wireguard_set_peer;
 	nm_team_link_watcher_get_vlanid;
 	nm_team_link_watcher_new_arp_ping2;
+	nm_utils_base64secret_decode;
 	nm_wifi_p2p_peer_connection_valid;
 	nm_wifi_p2p_peer_filter_connections;
 	nm_wifi_p2p_peer_get_flags;

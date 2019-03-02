@@ -729,9 +729,9 @@ _peers_get_platform_list (NMDeviceWireGuardPrivate *priv,
 		NMPWireGuardPeer *plp = &plpeers[i_good];
 		NMSettingSecretFlags psk_secret_flags;
 
-		if (!_nm_utils_wireguard_decode_key (nm_wireguard_peer_get_public_key (peer_data->peer),
-		                                     sizeof (plp->public_key),
-		                                     plp->public_key))
+		if (!nm_utils_base64secret_decode (nm_wireguard_peer_get_public_key (peer_data->peer),
+		                                   sizeof (plp->public_key),
+		                                   plp->public_key))
 			continue;
 
 		*plf = NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_NONE;
@@ -754,9 +754,9 @@ _peers_get_platform_list (NMDeviceWireGuardPrivate *priv,
 		                            LINK_CONFIG_MODE_REAPPLY)) {
 			psk_secret_flags = nm_wireguard_peer_get_preshared_key_flags (peer_data->peer);
 			if (!NM_FLAGS_HAS (psk_secret_flags, NM_SETTING_SECRET_FLAG_NOT_REQUIRED)) {
-				if (   !_nm_utils_wireguard_decode_key (nm_wireguard_peer_get_preshared_key (peer_data->peer),
-				                                        sizeof (plp->preshared_key),
-				                                        plp->preshared_key)
+				if (   !nm_utils_base64secret_decode (nm_wireguard_peer_get_preshared_key (peer_data->peer),
+				                                      sizeof (plp->preshared_key),
+				                                      plp->preshared_key)
 				    && config_mode == LINK_CONFIG_MODE_FULL)
 					goto skip;
 			}
@@ -1128,9 +1128,9 @@ link_config (NMDeviceWireGuard *self,
 		wg_lnk.fwmark = nm_setting_wireguard_get_fwmark (s_wg),
 		wg_change_flags |= NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_FWMARK;
 
-		if (_nm_utils_wireguard_decode_key (nm_setting_wireguard_get_private_key (s_wg),
-		                                    sizeof (wg_lnk.private_key),
-		                                    wg_lnk.private_key)) {
+		if (nm_utils_base64secret_decode (nm_setting_wireguard_get_private_key (s_wg),
+		                                  sizeof (wg_lnk.private_key),
+		                                  wg_lnk.private_key)) {
 			wg_lnk_clear_private_key = NM_SECRET_PTR_ARRAY (wg_lnk.private_key);
 			wg_change_flags |= NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_PRIVATE_KEY;
 		} else {
