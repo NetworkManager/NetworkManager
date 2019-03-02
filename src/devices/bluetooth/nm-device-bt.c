@@ -899,33 +899,29 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 }
 
 static NMActStageReturn
-act_stage3_ip4_config_start (NMDevice *device,
-                             NMIP4Config **out_config,
-                             NMDeviceStateReason *out_failure_reason)
+act_stage3_ip_config_start (NMDevice *device,
+                            int addr_family,
+                            gpointer *out_config,
+                            NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) device);
+
+	nm_assert_addr_family (addr_family);
 
 	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
-		return nm_modem_stage3_ip4_config_start (priv->modem,
-		                                         device,
-		                                         NM_DEVICE_CLASS (nm_device_bt_parent_class),
-		                                         out_failure_reason);
+		if (addr_family == AF_INET) {
+			return nm_modem_stage3_ip4_config_start (priv->modem,
+			                                         device,
+			                                         NM_DEVICE_CLASS (nm_device_bt_parent_class),
+			                                         out_failure_reason);
+		} else {
+			return nm_modem_stage3_ip6_config_start (priv->modem,
+			                                         device,
+			                                         out_failure_reason);
+		}
 	}
 
-	return NM_DEVICE_CLASS (nm_device_bt_parent_class)->act_stage3_ip4_config_start (device, out_config, out_failure_reason);
-}
-
-static NMActStageReturn
-act_stage3_ip6_config_start (NMDevice *device,
-                             NMIP6Config **out_config,
-                             NMDeviceStateReason *out_failure_reason)
-{
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) device);
-
-	if (priv->bt_type == NM_BT_CAPABILITY_DUN)
-		return nm_modem_stage3_ip6_config_start (priv->modem, device, out_failure_reason);
-
-	return NM_DEVICE_CLASS (nm_device_bt_parent_class)->act_stage3_ip6_config_start (device, out_config, out_failure_reason);
+	return NM_DEVICE_CLASS (nm_device_bt_parent_class)->act_stage3_ip_config_start (device, addr_family, out_config, out_failure_reason);
 }
 
 static void
@@ -1204,8 +1200,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	device_class->can_auto_connect = can_auto_connect;
 	device_class->deactivate = deactivate;
 	device_class->act_stage2_config = act_stage2_config;
-	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
-	device_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
+	device_class->act_stage3_ip_config_start = act_stage3_ip_config_start;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;

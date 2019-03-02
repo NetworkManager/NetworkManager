@@ -369,16 +369,13 @@ typedef struct _NMDeviceClass {
 	                                             NMDeviceStateReason *out_failure_reason);
 	NMActStageReturn    (* act_stage2_config)   (NMDevice *self,
 	                                             NMDeviceStateReason *out_failure_reason);
-	NMActStageReturn    (* act_stage3_ip4_config_start) (NMDevice *self,
-	                                                     NMIP4Config **out_config,
-	                                                     NMDeviceStateReason *out_failure_reason);
-	NMActStageReturn    (* act_stage3_ip6_config_start) (NMDevice *self,
-	                                                     NMIP6Config **out_config,
-	                                                     NMDeviceStateReason *out_failure_reason);
-	NMActStageReturn    (* act_stage4_ip4_config_timeout)   (NMDevice *self,
-	                                                         NMDeviceStateReason *out_failure_reason);
-	NMActStageReturn    (* act_stage4_ip6_config_timeout)   (NMDevice *self,
-	                                                         NMDeviceStateReason *out_failure_reason);
+	NMActStageReturn    (* act_stage3_ip_config_start) (NMDevice *self,
+	                                                    int addr_family,
+	                                                    gpointer *out_config,
+	                                                    NMDeviceStateReason *out_failure_reason);
+	NMActStageReturn    (* act_stage4_ip_config_timeout)   (NMDevice *self,
+	                                                        int addr_family,
+	                                                        NMDeviceStateReason *out_failure_reason);
 
 	void                (* ip4_config_pre_commit) (NMDevice *self, NMIP4Config *config);
 
