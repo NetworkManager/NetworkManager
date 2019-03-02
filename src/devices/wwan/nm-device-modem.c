@@ -212,7 +212,7 @@ modem_ip4_config_result (NMModem *modem,
 		                            AF_INET,
 		                            NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 	} else {
-		nm_device_set_wwan_ip_config (device, AF_INET, NM_IP_CONFIG_CAST (config));
+		nm_device_set_dev2_ip_config (device, AF_INET, NM_IP_CONFIG_CAST (config));
 		nm_device_activate_schedule_ip_config_result (device, AF_INET, NULL);
 	}
 }
@@ -246,7 +246,7 @@ modem_ip6_config_result (NMModem *modem,
 	nm_device_sysctl_ip_conf_set (device, AF_INET6, "disable_ipv6", "0");
 
 	if (config)
-		nm_device_set_wwan_ip_config (device, AF_INET6, NM_IP_CONFIG_CAST (config));
+		nm_device_set_dev2_ip_config (device, AF_INET6, NM_IP_CONFIG_CAST (config));
 
 	if (do_slaac == FALSE) {
 		if (got_config)
