@@ -212,10 +212,7 @@ nm_utils_connection_has_default_route (NMConnection *connection,
 	if (!connection)
 		goto out;
 
-	if (addr_family == AF_INET)
-		s_ip = nm_connection_get_setting_ip4_config (connection);
-	else
-		s_ip = nm_connection_get_setting_ip6_config (connection);
+	s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
 	if (!s_ip)
 		goto out;
 	if (nm_setting_ip_config_get_never_default (s_ip)) {
