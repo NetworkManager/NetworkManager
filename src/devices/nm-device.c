@@ -6676,12 +6676,9 @@ ipv4_manual_method_apply (NMDevice *self, NMIP4Config **configs, gboolean succes
 		return;
 	}
 
-	if (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
-		gs_unref_object NMIP4Config *empty = NULL;
-
-		empty = _ip4_config_new (self);
-		nm_device_activate_schedule_ip_config_result (self, AF_INET, NM_IP_CONFIG_CAST (empty));
-	} else {
+	if (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL))
+		nm_device_activate_schedule_ip_config_result (self, AF_INET, NULL);
+	else {
 		if (NM_DEVICE_GET_PRIVATE (self)->ip_state_4 != NM_DEVICE_IP_STATE_DONE)
 			ip_config_merge_and_apply (self, AF_INET, TRUE);
 	}
@@ -9846,11 +9843,9 @@ nm_device_activate_stage3_ip4_start (NMDevice *self)
 
 	_set_ip_state (self, AF_INET, NM_DEVICE_IP_STATE_CONF);
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip4_config_start (self, &ip4_config, &failure_reason);
-	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
-		if (!ip4_config)
-			ip4_config = _ip4_config_new (self);
+	if (ret == NM_ACT_STAGE_RETURN_SUCCESS)
 		nm_device_activate_schedule_ip_config_result (self, AF_INET, NM_IP_CONFIG_CAST (ip4_config));
-	} else if (ret == NM_ACT_STAGE_RETURN_IP_DONE) {
+	else if (ret == NM_ACT_STAGE_RETURN_IP_DONE) {
 		_set_ip_state (self, AF_INET, NM_DEVICE_IP_STATE_DONE);
 		check_ip_state (self, FALSE, TRUE);
 	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
