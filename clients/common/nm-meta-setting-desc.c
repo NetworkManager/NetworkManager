@@ -7536,6 +7536,9 @@ static const NMMetaPropertyInfo *const property_infos_WIREGUARD[] = {
 			.base =                     16,
 		),
 	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_MTU,
+		.property_type =                &_pt_gobject_mtu,
+	),
 	NULL
 };
 

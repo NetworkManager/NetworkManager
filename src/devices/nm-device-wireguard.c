@@ -1247,6 +1247,35 @@ act_stage2_config (NMDevice *device,
 	return NM_ACT_STAGE_RETURN_FAILURE;
 }
 
+static guint32
+get_configured_mtu (NMDevice *device, NMDeviceMtuSource *out_source)
+{
+	/* When "MTU" for `wg-quick` is unset, it calls `ip route get` for
+	 * each configured endpoint, to determine MTU how to reach each endpoint.
+	 * That means to either get the MTU configured with the route itself,
+	 * or to find the interface that is used for the endpoint and lookup
+	 * the MTU of that interface.
+	 * For `wg-quick` this works very well, because whenever the script runs it
+	 * determines the best MTU at that point in time. It's simply not concerned
+	 * with what happens later.
+	 *
+	 * NetworkManager sticks around, so the right MTU would need to be re-determined
+	 * whenever anything relevant changes. Which basically means, to re-evaluate whenever
+	 * something related to addresses or routing changes (which happens all the time).
+	 *
+	 * The correct MTU indeed depends on the MTU that is configured on other interfaces.
+	 * But it's still odd, that activating/deactivating a seemingly unrelated interface
+	 * would trigger an MTU change. It's odd to explain/document and odd to implemented
+	 * -- despite this being the reality.
+	 *
+	 * For now, only support configuring an explicit MUT, or leave the setting untouched.
+	 *
+	 * The same limitiation also applies to other "ip-tunnel" types. */
+	return nm_device_get_configured_mtu_from_connection (device,
+	                                                     NM_TYPE_SETTING_WIREGUARD,
+	                                                     out_source);
+}
+
 static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
@@ -1275,8 +1304,17 @@ can_reapply_change (NMDevice *device,
                     GError **error)
 {
 	if (nm_streq (setting_name, NM_SETTING_WIREGUARD_SETTING_NAME)) {
-		/* we allow reapplying all WireGuard settings. */
-		return TRUE;
+		/* Most, but not all WireGuard settings can be reapplied. Whitelist.
+		 *
+		 * MTU cannot be reapplied. */
+		return nm_device_hash_check_invalid_keys (diffs,
+		                                          NM_SETTING_WIREGUARD_SETTING_NAME,
+		                                          error,
+		                                          NM_SETTING_WIREGUARD_FWMARK,
+		                                          NM_SETTING_WIREGUARD_LISTEN_PORT,
+		                                          NM_SETTING_WIREGUARD_PEERS,
+		                                          NM_SETTING_WIREGUARD_PRIVATE_KEY,
+		                                          NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS);
 	}
 
 	return NM_DEVICE_CLASS (nm_device_wireguard_parent_class)->can_reapply_change (device,
@@ -1451,6 +1489,7 @@ nm_device_wireguard_class_init (NMDeviceWireGuardClass *klass)
 	device_class->update_connection = update_connection;
 	device_class->can_reapply_change = can_reapply_change;
 	device_class->reapply_connection = reapply_connection;
+	device_class->get_configured_mtu = get_configured_mtu;
 
 	obj_properties[PROP_PUBLIC_KEY] =
 	    g_param_spec_variant (NM_DEVICE_WIREGUARD_PUBLIC_KEY,

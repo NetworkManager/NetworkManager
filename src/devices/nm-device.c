@@ -8871,6 +8871,10 @@ nm_device_get_configured_mtu_from_connection (NMDevice *self,
 		if (setting)
 			mtu = nm_setting_ip_tunnel_get_mtu (NM_SETTING_IP_TUNNEL (setting));
 		global_property_name = NM_CON_DEFAULT ("ip-tunnel.mtu");
+	} else if (setting_type == NM_TYPE_SETTING_WIREGUARD) {
+		if (setting)
+			mtu = nm_setting_wireguard_get_mtu (NM_SETTING_WIREGUARD (setting));
+		global_property_name = NM_CON_DEFAULT ("wireguard.mtu");
 	} else
 		g_return_val_if_reached (0);
 
