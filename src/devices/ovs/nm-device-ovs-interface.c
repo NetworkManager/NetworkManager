@@ -131,39 +131,22 @@ _is_internal_interface (NMDevice *device)
 }
 
 static NMActStageReturn
-act_stage3_ip4_config_start (NMDevice *device,
-                             NMIP4Config **out_config,
-                             NMDeviceStateReason *out_failure_reason)
+act_stage3_ip_config_start (NMDevice *device,
+                            int addr_family,
+                            gpointer *out_config,
+                            NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE (device);
 
 	if (!_is_internal_interface (device))
 		return NM_ACT_STAGE_RETURN_IP_FAIL;
 
-	if (!nm_device_get_ip_ifindex (device)) {
+	if (nm_device_get_ip_ifindex (device) <= 0) {
 		priv->waiting_for_interface = TRUE;
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
-	return NM_DEVICE_CLASS (nm_device_ovs_interface_parent_class)->act_stage3_ip4_config_start (device, out_config, out_failure_reason);
-}
-
-static NMActStageReturn
-act_stage3_ip6_config_start (NMDevice *device,
-                             NMIP6Config **out_config,
-                             NMDeviceStateReason *out_failure_reason)
-{
-	NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE (device);
-
-	if (!_is_internal_interface (device))
-		return NM_ACT_STAGE_RETURN_IP_FAIL;
-
-	if (!nm_device_get_ip_ifindex (device)) {
-		priv->waiting_for_interface = TRUE;
-		return NM_ACT_STAGE_RETURN_POSTPONE;
-	}
-
-	return NM_DEVICE_CLASS (nm_device_ovs_interface_parent_class)->act_stage3_ip6_config_start (device, out_config, out_failure_reason);
+	return NM_DEVICE_CLASS (nm_device_ovs_interface_parent_class)->act_stage3_ip_config_start (device, addr_family, out_config, out_failure_reason);
 }
 
 static gboolean
@@ -207,7 +190,6 @@ nm_device_ovs_interface_class_init (NMDeviceOvsInterfaceClass *klass)
 	device_class->is_available = is_available;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->link_changed = link_changed;
-	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
-	device_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
+	device_class->act_stage3_ip_config_start = act_stage3_ip_config_start;
 	device_class->can_unmanaged_external_down = can_unmanaged_external_down;
 }

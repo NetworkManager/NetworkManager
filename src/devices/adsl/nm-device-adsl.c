@@ -518,6 +518,18 @@ act_stage3_ip4_config_start (NMDevice *device,
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
+static NMActStageReturn
+act_stage3_ip_config_start (NMDevice *device,
+                            int addr_family,
+                            gpointer *out_config,
+                            NMDeviceStateReason *out_failure_reason)
+{
+	if (addr_family == AF_INET)
+		return act_stage3_ip4_config_start (device, (NMIP4Config **) out_config, out_failure_reason);
+
+	return NM_DEVICE_CLASS (nm_device_adsl_parent_class)->act_stage3_ip_config_start (device, addr_family, out_config, out_failure_reason);
+}
+
 static void
 adsl_cleanup (NMDeviceAdsl *self)
 {
@@ -687,7 +699,7 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 	device_class->complete_connection = complete_connection;
 
 	device_class->act_stage2_config = act_stage2_config;
-	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	device_class->act_stage3_ip_config_start = act_stage3_ip_config_start;
 	device_class->deactivate = deactivate;
 
 	obj_properties[PROP_ATM_INDEX] =
