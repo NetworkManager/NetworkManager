@@ -309,9 +309,9 @@ nm_wireguard_peer_set_public_key (NMWireGuardPeer *self,
 		return TRUE;
 	}
 
-	is_valid = _nm_utils_wireguard_normalize_key (public_key,
-	                                              NM_WIREGUARD_PUBLIC_KEY_LEN,
-	                                              &public_key_normalized);
+	is_valid = nm_utils_base64secret_normalize (public_key,
+	                                            NM_WIREGUARD_PUBLIC_KEY_LEN,
+	                                            &public_key_normalized);
 	nm_assert (is_valid == (public_key_normalized != NULL));
 
 	if (   !is_valid
@@ -397,9 +397,9 @@ nm_wireguard_peer_set_preshared_key (NMWireGuardPeer *self,
 		return TRUE;
 	}
 
-	is_valid = _nm_utils_wireguard_normalize_key (preshared_key,
-	                                              NM_WIREGUARD_SYMMETRIC_KEY_LEN,
-	                                              &preshared_key_normalized);
+	is_valid = nm_utils_base64secret_normalize (preshared_key,
+	                                            NM_WIREGUARD_SYMMETRIC_KEY_LEN,
+	                                            &preshared_key_normalized);
 	nm_assert (is_valid == (preshared_key_normalized != NULL));
 
 	if (   !is_valid
@@ -1128,9 +1128,9 @@ again:
 		return pd;
 	}
 	if (   try_with_normalized_key
-	    && _nm_utils_wireguard_normalize_key (public_key,
-	                                          NM_WIREGUARD_PUBLIC_KEY_LEN,
-	                                          &public_key_normalized)) {
+	    && nm_utils_base64secret_normalize (public_key,
+	                                        NM_WIREGUARD_PUBLIC_KEY_LEN,
+	                                        &public_key_normalized)) {
 		public_key = public_key_normalized;
 		try_with_normalized_key = FALSE;
 		goto again;
@@ -2299,9 +2299,9 @@ set_property (GObject *object, guint prop_id,
 		nm_clear_pointer (&priv->private_key, nm_free_secret);
 		str = g_value_get_string (value);
 		if (str) {
-			if (_nm_utils_wireguard_normalize_key (str,
-		                                           NM_WIREGUARD_PUBLIC_KEY_LEN,
-		                                           &priv->private_key))
+			if (nm_utils_base64secret_normalize (str,
+			                                     NM_WIREGUARD_PUBLIC_KEY_LEN,
+			                                     &priv->private_key))
 				priv->private_key_valid = TRUE;
 			else {
 				priv->private_key = g_strdup (str);

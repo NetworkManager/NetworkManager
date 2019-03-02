@@ -263,6 +263,10 @@ NMSriovVF *nm_utils_sriov_vf_from_str (const char *str, GError **error);
 NM_AVAILABLE_IN_1_12
 gint64 nm_utils_get_timestamp_msec         (void);
 
+NM_AVAILABLE_IN_1_16
+gboolean nm_utils_base64secret_decode (const char *base64_key,
+                                       gsize required_key_len,
+                                       guint8 *out_key);
 
 G_END_DECLS
 

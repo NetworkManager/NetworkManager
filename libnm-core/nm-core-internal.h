@@ -765,13 +765,9 @@ gboolean _nm_connection_find_secret (NMConnection *self,
 #define nm_auto_unref_wgpeer nm_auto(_nm_auto_unref_wgpeer)
 NM_AUTO_DEFINE_FCN_VOID0 (NMWireGuardPeer *, _nm_auto_unref_wgpeer, nm_wireguard_peer_unref)
 
-gboolean _nm_utils_wireguard_decode_key (const char *base64_key,
-                                         gsize required_key_len,
-                                         guint8 *out_key);
-
-gboolean _nm_utils_wireguard_normalize_key (const char *base64_key,
-                                            gsize required_key_len,
-                                            char **out_base64_key_norm);
+gboolean nm_utils_base64secret_normalize (const char *base64_key,
+                                          gsize required_key_len,
+                                          char **out_base64_key_norm);
 
 /*****************************************************************************/
 
