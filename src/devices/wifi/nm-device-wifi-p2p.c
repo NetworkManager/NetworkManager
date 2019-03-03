@@ -462,6 +462,11 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
 	nm_clear_g_source (&priv->sup_timeout_id);
 
+	if (!priv->mgmt_iface) {
+		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
 	connection = nm_device_get_applied_connection (device);
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -685,11 +690,10 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 			_set_is_waiting_for_supplicant (self, FALSE);
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_DOWN:
+		supplicant_interfaces_release (self, TRUE);
 		nm_device_queue_recheck_available (device,
 		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
 		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-
-		supplicant_interfaces_release (self, TRUE);
 		break;
 	default:
 		break;
@@ -911,19 +915,13 @@ supplicant_interfaces_release (NMDeviceWifiP2P *self, gboolean set_is_waiting)
 
 	if (priv->mgmt_iface) {
 		_LOGD (LOGD_DEVICE | LOGD_WIFI, "P2P: Releasing WPA supplicant interface.");
-
 		nm_supplicant_manager_set_wfd_ies (priv->sup_mgr, NULL);
-
 		g_signal_handlers_disconnect_by_data (priv->mgmt_iface, self);
-
 		g_clear_object (&priv->mgmt_iface);
+		nm_clear_g_source (&priv->sup_timeout_id);
 	}
 
 	supplicant_group_interface_release (self);
-
-	nm_device_state_changed (NM_DEVICE (self),
-	                         NM_DEVICE_STATE_UNAVAILABLE,
-	                         NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 
 	if (set_is_waiting)
 		_set_is_waiting_for_supplicant (self, TRUE);
@@ -950,8 +948,7 @@ device_state_changed (NMDevice *device,
 			supplicant_interfaces_release (self, TRUE);
 
 		/* TODO: More cleanup needed? */
-	} else
-		nm_assert (priv->mgmt_iface != NULL);
+	}
 
 	switch (new_state) {
 	case NM_DEVICE_STATE_UNMANAGED:
@@ -1064,6 +1061,14 @@ impl_device_wifi_p2p_stop_find (NMDBusObject *obj,
 	NMDeviceWifiP2P *self = NM_DEVICE_WIFI_P2P (obj);
 	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
 
+	if (!priv->mgmt_iface) {
+		g_dbus_method_invocation_return_error_literal (invocation,
+		                                               NM_DEVICE_ERROR,
+		                                               NM_DEVICE_ERROR_NOT_ACTIVE,
+		                                               "WPA Supplicant management interface is currently unavailable.");
+		return;
+	}
+
 	nm_supplicant_interface_p2p_stop_find (priv->mgmt_iface);
 
 	g_dbus_method_invocation_return_value (invocation, NULL);
@@ -1098,7 +1103,8 @@ nm_device_wifi_p2p_set_mgmt_iface (NMDeviceWifiP2P *self,
 	if (!iface)
 		goto done;
 
-	_LOGD (LOGD_DEVICE | LOGD_WIFI, "P2P: WPA supplicant management interface changed to %s.", nm_supplicant_interface_get_object_path (iface));
+	_LOGD (LOGD_DEVICE | LOGD_WIFI, "P2P: WPA supplicant management interface changed to %s.",
+	       nm_supplicant_interface_get_object_path (iface));
 
 	priv->mgmt_iface = g_object_ref (iface);
 
@@ -1114,12 +1120,10 @@ nm_device_wifi_p2p_set_mgmt_iface (NMDeviceWifiP2P *self,
 	g_signal_connect (priv->mgmt_iface, NM_SUPPLICANT_INTERFACE_GROUP_STARTED,
 	                  G_CALLBACK (supplicant_iface_group_started_cb),
 	                  self);
-
+done:
 	nm_device_queue_recheck_available (NM_DEVICE (self),
 	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
 	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-
-done:
 	_set_is_waiting_for_supplicant (self,
 	                                   !priv->mgmt_iface
 	                                || (  nm_supplicant_interface_get_state (priv->mgmt_iface)
