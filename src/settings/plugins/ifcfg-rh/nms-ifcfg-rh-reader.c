@@ -5231,16 +5231,14 @@ is_vlan_device (const char *name, shvarFile *parsed)
 static gboolean
 is_wifi_device (const char *name, shvarFile *parsed)
 {
-	int ifindex;
+	const NMPlatformLink *pllink;
 
 	g_return_val_if_fail (name != NULL, FALSE);
 	g_return_val_if_fail (parsed != NULL, FALSE);
 
-	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, name);
-	if (ifindex == 0)
-		return FALSE;
-
-	return nm_platform_link_get_type (NM_PLATFORM_GET, ifindex) == NM_LINK_TYPE_WIFI;
+	pllink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, name);
+	return    pllink
+	       && pllink->type == NM_LINK_TYPE_WIFI;
 }
 
 static void
