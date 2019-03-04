@@ -600,12 +600,15 @@ _auth_dialog_exited (GPid pid, int status, gpointer user_data)
 		goto out;
 
 	for (i = 1; groups[i]; i++) {
+		gs_free char *pretty_name = NULL;
+
 		if (!g_key_file_get_boolean (keyfile, groups[i], "IsSecret", NULL))
 			continue;
 		if (!g_key_file_get_boolean (keyfile, groups[i], "ShouldAsk", NULL))
 			continue;
 
-		g_ptr_array_add (secrets, _secret_real_new_vpn_secret (g_key_file_get_string (keyfile, groups[i], "Label", NULL),
+		pretty_name = g_key_file_get_string (keyfile, groups[i], "Label", NULL);
+		g_ptr_array_add (secrets, _secret_real_new_vpn_secret (pretty_name,
 		                                                       NM_SETTING (s_vpn),
 		                                                       groups[i],
 		                                                       nm_setting_vpn_get_service_type (s_vpn)));
