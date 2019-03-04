@@ -1469,6 +1469,7 @@ global:
 	nm_setting_wireguard_get_mtu;
 	nm_setting_wireguard_get_peer;
 	nm_setting_wireguard_get_peer_by_public_key;
+	nm_setting_wireguard_get_peer_routes;
 	nm_setting_wireguard_get_peers_len;
 	nm_setting_wireguard_get_private_key;
 	nm_setting_wireguard_get_private_key_flags;
