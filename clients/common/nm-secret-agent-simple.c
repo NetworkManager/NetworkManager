@@ -1095,7 +1095,10 @@ nm_secret_agent_simple_response (NMSecretAgentSimple *self,
 		gboolean has_vpn = FALSE;
 		gboolean has_wg = FALSE;
 
-		settings = g_hash_table_new (nm_str_hash, g_str_equal);
+		settings = g_hash_table_new_full (nm_str_hash,
+		                                  g_str_equal,
+		                                  NULL,
+		                                  (GDestroyNotify) g_variant_builder_unref);
 		for (i = 0; i < secrets->len; i++) {
 			SecretReal *secret = secrets->pdata[i];
 
