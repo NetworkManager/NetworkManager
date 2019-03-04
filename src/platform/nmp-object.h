@@ -397,12 +397,25 @@ struct _NMPObject {
 	};
 };
 
+/*****************************************************************************/
+
 static inline gboolean
 NMP_CLASS_IS_VALID (const NMPClass *klass)
 {
 	return klass >= &_nmp_classes[0]
 	    && klass <= &_nmp_classes[G_N_ELEMENTS (_nmp_classes)]
 	    && ((((char *) klass) - ((char *) _nmp_classes)) % (sizeof (_nmp_classes[0]))) == 0;
+}
+
+static inline const NMPClass *
+nmp_class_from_type (NMPObjectType obj_type)
+{
+	nm_assert (obj_type > 0);
+	nm_assert (obj_type <= G_N_ELEMENTS (_nmp_classes));
+	nm_assert (_nmp_classes[obj_type - 1].obj_type == obj_type);
+	nm_assert (NMP_CLASS_IS_VALID (&_nmp_classes[obj_type - 1]));
+
+	return &_nmp_classes[obj_type - 1];
 }
 
 static inline NMPObject *
@@ -541,8 +554,6 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_TFILTER); \
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->tfilter : NULL; \
 	})
-
-const NMPClass *nmp_class_from_type (NMPObjectType obj_type);
 
 static inline const NMPObject *
 nmp_object_ref (const NMPObject *obj)

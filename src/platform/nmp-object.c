@@ -712,16 +712,6 @@ _nmp_object_fixup_link_master_connected (NMPObject **obj_new, NMPObject *obj_ori
 
 /*****************************************************************************/
 
-const NMPClass *
-nmp_class_from_type (NMPObjectType obj_type)
-{
-	g_return_val_if_fail (obj_type > NMP_OBJECT_TYPE_UNKNOWN && obj_type <= NMP_OBJECT_TYPE_MAX, NULL);
-
-	return &_nmp_classes[obj_type - 1];
-}
-
-/*****************************************************************************/
-
 static void
 _vt_cmd_obj_dispose_link (NMPObject *obj)
 {
