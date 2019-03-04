@@ -4264,14 +4264,13 @@ nm_platform_ip_route_sync (NMPlatform *self,
 	gboolean success = TRUE;
 	char sbuf1[sizeof (_nm_utils_to_string_buffer)];
 	char sbuf2[sizeof (_nm_utils_to_string_buffer)];
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
 
 	nm_assert (NM_IS_PLATFORM (self));
 	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 	nm_assert (ifindex > 0);
 
-	vt = addr_family == AF_INET
-	     ? &nm_platform_vtable_route_v4
-	     : &nm_platform_vtable_route_v6;
+	vt = &nm_platform_vtable_route.vx[IS_IPv4];
 
 	for (i_type = 0; routes && i_type < 2; i_type++) {
 		for (i = 0; i < routes->len; i++) {
@@ -7261,24 +7260,25 @@ _vtr_v4_metric_normalize (guint32 metric)
 
 /*****************************************************************************/
 
-const NMPlatformVTableRoute nm_platform_vtable_route_v4 = {
-	.is_ip4                         = TRUE,
-	.obj_type                       = NMP_OBJECT_TYPE_IP4_ROUTE,
-	.addr_family                    = AF_INET,
-	.sizeof_route                   = sizeof (NMPlatformIP4Route),
-	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type)) nm_platform_ip4_route_cmp,
-	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip4_route_to_string,
-	.metric_normalize               = _vtr_v4_metric_normalize,
-};
-
-const NMPlatformVTableRoute nm_platform_vtable_route_v6 = {
-	.is_ip4                         = FALSE,
-	.obj_type                       = NMP_OBJECT_TYPE_IP6_ROUTE,
-	.addr_family                    = AF_INET6,
-	.sizeof_route                   = sizeof (NMPlatformIP6Route),
-	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type)) nm_platform_ip6_route_cmp,
-	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip6_route_to_string,
-	.metric_normalize               = nm_utils_ip6_route_metric_normalize,
+const _NMPlatformVTableRouteUnion nm_platform_vtable_route = {
+	.v4 = {
+		.is_ip4                         = TRUE,
+		.obj_type                       = NMP_OBJECT_TYPE_IP4_ROUTE,
+		.addr_family                    = AF_INET,
+		.sizeof_route                   = sizeof (NMPlatformIP4Route),
+		.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type)) nm_platform_ip4_route_cmp,
+		.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip4_route_to_string,
+		.metric_normalize               = _vtr_v4_metric_normalize,
+	},
+	.v6 = {
+		.is_ip4                         = FALSE,
+		.obj_type                       = NMP_OBJECT_TYPE_IP6_ROUTE,
+		.addr_family                    = AF_INET6,
+		.sizeof_route                   = sizeof (NMPlatformIP6Route),
+		.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type)) nm_platform_ip6_route_cmp,
+		.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip6_route_to_string,
+		.metric_normalize               = nm_utils_ip6_route_metric_normalize,
+	},
 };
 
 /*****************************************************************************/

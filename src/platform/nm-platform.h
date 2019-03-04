@@ -583,8 +583,15 @@ typedef struct {
 	guint32 (*metric_normalize) (guint32 metric);
 } NMPlatformVTableRoute;
 
-extern const NMPlatformVTableRoute nm_platform_vtable_route_v4;
-extern const NMPlatformVTableRoute nm_platform_vtable_route_v6;
+typedef union {
+	struct {
+		NMPlatformVTableRoute v6;
+		NMPlatformVTableRoute v4;
+	};
+	NMPlatformVTableRoute vx[2];
+} _NMPlatformVTableRouteUnion;
+
+extern const _NMPlatformVTableRouteUnion nm_platform_vtable_route;
 
 typedef struct {
 	guint16 id;
