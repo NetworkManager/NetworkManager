@@ -340,6 +340,8 @@ struct _NMPObject {
 	union {
 		NMPlatformObject        object;
 
+		NMPlatformObjWithIfindex obj_with_ifindex;
+
 		NMPlatformLink          link;
 		NMPObjectLink           _link;
 
@@ -466,6 +468,60 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 
 	return obj ? obj->_class->obj_type : NMP_OBJECT_TYPE_UNKNOWN;
 }
+
+static inline gboolean
+_NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX (NMPObjectType obj_type)
+{
+	switch (obj_type) {
+	case NMP_OBJECT_TYPE_LINK:
+	case NMP_OBJECT_TYPE_IP4_ADDRESS:
+	case NMP_OBJECT_TYPE_IP6_ADDRESS:
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
+
+	case NMP_OBJECT_TYPE_QDISC:
+
+	case NMP_OBJECT_TYPE_TFILTER:
+
+	case NMP_OBJECT_TYPE_LNK_GRE:
+	case NMP_OBJECT_TYPE_LNK_GRETAP:
+	case NMP_OBJECT_TYPE_LNK_INFINIBAND:
+	case NMP_OBJECT_TYPE_LNK_IP6TNL:
+	case NMP_OBJECT_TYPE_LNK_IP6GRE:
+	case NMP_OBJECT_TYPE_LNK_IP6GRETAP:
+	case NMP_OBJECT_TYPE_LNK_IPIP:
+	case NMP_OBJECT_TYPE_LNK_MACSEC:
+	case NMP_OBJECT_TYPE_LNK_MACVLAN:
+	case NMP_OBJECT_TYPE_LNK_MACVTAP:
+	case NMP_OBJECT_TYPE_LNK_SIT:
+	case NMP_OBJECT_TYPE_LNK_TUN:
+	case NMP_OBJECT_TYPE_LNK_VLAN:
+	case NMP_OBJECT_TYPE_LNK_VXLAN:
+	case NMP_OBJECT_TYPE_LNK_WIREGUARD:
+		return TRUE;
+	default:
+		nm_assert (nmp_class_from_type (obj_type));
+		return FALSE;
+	}
+}
+
+#define NMP_OBJECT_CAST_OBJECT(obj) \
+	({ \
+		typeof (obj) _obj = (obj); \
+		\
+		nm_assert (   !_obj \
+		           || nmp_class_from_type (NMP_OBJECT_GET_TYPE (_obj)))); \
+		_obj ? &NM_CONSTCAST (NMPObject, _obj)->object : NULL; \
+	})
+
+#define NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj) \
+	({ \
+		typeof (obj) _obj = (obj); \
+		\
+		nm_assert (   !_obj \
+		           || _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX (NMP_OBJECT_GET_TYPE (_obj))); \
+		_obj ? &NM_CONSTCAST (NMPObject, _obj)->obj_with_ifindex : NULL; \
+	})
 
 #define NMP_OBJECT_CAST_LINK(obj) \
 	({ \

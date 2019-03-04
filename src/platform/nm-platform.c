@@ -4577,7 +4577,7 @@ _ip_route_add (NMPlatform *self,
 	nm_assert (route);
 	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
-	ifindex = ((NMPlatformObject *)route)->ifindex;
+	ifindex = ((const NMPlatformIPRoute *) route)->ifindex;
 	_LOG3D ("route: %-10s IPv%c route: %s",
 	        _nmp_nlm_flag_to_string (flags & NMP_NLM_FLAG_FMASK),
 	        nm_utils_addr_family_to_char (addr_family),
@@ -4629,7 +4629,8 @@ gboolean
 nm_platform_object_delete (NMPlatform *self,
                            const NMPObject *obj)
 {
-	int ifindex = obj->object.ifindex;
+	int ifindex;
+
 	_CHECK_SELF (self, klass, FALSE);
 
 	if (!NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
@@ -4637,6 +4638,8 @@ nm_platform_object_delete (NMPlatform *self,
 	                                           NMP_OBJECT_TYPE_QDISC,
 	                                           NMP_OBJECT_TYPE_TFILTER))
 		g_return_val_if_reached (FALSE);
+
+	ifindex = NMP_OBJECT_CAST_OBJ_WITH_IFINDEX (obj)->ifindex;
 
 	_LOG3D ("%s: delete %s",
 	        NMP_OBJECT_GET_CLASS (obj)->obj_type_name,
@@ -7195,7 +7198,8 @@ nm_platform_cache_update_emit_signal (NMPlatform *self,
 		return;
 	}
 
-	ifindex = o->object.ifindex;
+	ifindex = NMP_OBJECT_CAST_OBJ_WITH_IFINDEX (o)->ifindex;
+
 	klass = NMP_OBJECT_GET_CLASS (o);
 
 	if (   klass->obj_type == NMP_OBJECT_TYPE_IP4_ROUTE
@@ -7213,7 +7217,7 @@ nm_platform_cache_update_emit_signal (NMPlatform *self,
 	               _nm_platform_signal_id_get (klass->signal_type_id),
 	               0,
 	               (int) klass->obj_type,
-	               o->object.ifindex,
+	               ifindex,
 	               &o->object,
 	               (int) cache_op);
 	nmp_object_unref (o);

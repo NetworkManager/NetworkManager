@@ -223,7 +223,7 @@ _nmp_cache_update_netlink (NMPCache *cache, NMPObject *obj, const NMPObject **ou
 	g_assert (cache);
 	g_assert (NMP_OBJECT_IS_VALID (obj));
 
-	obj_prev = nmp_cache_lookup_link (cache, obj->object.ifindex);
+	obj_prev = nmp_cache_lookup_link (cache, NMP_OBJECT_CAST_LINK (obj)->ifindex);
 	obj_new_expected = nmp_object_clone (obj, FALSE);
 	if (obj_prev && obj_prev->_link.udev.device)
 		obj_new_expected->_link.udev.device = udev_device_ref (obj_prev->_link.udev.device);

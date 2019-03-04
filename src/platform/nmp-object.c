@@ -389,16 +389,16 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 				nm_hash_update_val (h, obj_a);
 			return 0;
 		}
-		nm_assert (obj_a->object.ifindex > 0);
+		nm_assert (NMP_OBJECT_CAST_OBJ_WITH_IFINDEX (obj_a)->ifindex > 0);
 		if (obj_b) {
 			return    NMP_OBJECT_GET_TYPE (obj_a) == NMP_OBJECT_GET_TYPE (obj_b)
-			       && obj_a->object.ifindex == obj_b->object.ifindex
+			       && NMP_OBJECT_CAST_OBJ_WITH_IFINDEX (obj_a)->ifindex == NMP_OBJECT_CAST_OBJ_WITH_IFINDEX (obj_b)->ifindex
 			       && nmp_object_is_visible (obj_b);
 		}
 		if (h) {
 			nm_hash_update_vals (h,
 			                     idx_type->cache_id_type,
-			                     obj_a->object.ifindex);
+			                     NMP_OBJECT_CAST_OBJ_WITH_IFINDEX (obj_a)->ifindex);
 		}
 		return 1;
 
@@ -406,14 +406,14 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 		obj_type = NMP_OBJECT_GET_TYPE (obj_a);
 		if (   !NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ROUTE,
 		                             NMP_OBJECT_TYPE_IP6_ROUTE)
-		    || obj_a->object.ifindex <= 0) {
+		    || NMP_OBJECT_CAST_IP_ROUTE (obj_a)->ifindex <= 0) {
 			if (h)
 				nm_hash_update_val (h, obj_a);
 			return 0;
 		}
 		if (obj_b) {
 			return    obj_type == NMP_OBJECT_GET_TYPE (obj_b)
-			       && obj_b->object.ifindex > 0
+			       && NMP_OBJECT_CAST_IP_ROUTE (obj_b)->ifindex > 0
 			       && (obj_type == NMP_OBJECT_TYPE_IP4_ROUTE
 			           ? (nm_platform_ip4_route_cmp (&obj_a->ip4_route, &obj_b->ip4_route, NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID) == 0)
 			           : (nm_platform_ip6_route_cmp (&obj_a->ip6_route, &obj_b->ip6_route, NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID) == 0));
@@ -1564,13 +1564,14 @@ nmp_object_is_alive (const NMPObject *obj)
 static gboolean
 _vt_cmd_obj_is_alive_link (const NMPObject *obj)
 {
-	return obj->object.ifindex > 0 && (obj->_link.netlink.is_in_netlink || obj->_link.udev.device);
+	return    NMP_OBJECT_CAST_LINK (obj)->ifindex > 0
+	       && (obj->_link.netlink.is_in_netlink || obj->_link.udev.device);
 }
 
 static gboolean
 _vt_cmd_obj_is_alive_ipx_address (const NMPObject *obj)
 {
-	return obj->object.ifindex > 0;
+	return NMP_OBJECT_CAST_IP_ADDRESS (obj)->ifindex > 0;
 }
 
 static gboolean
@@ -1591,20 +1592,20 @@ _vt_cmd_obj_is_alive_ipx_route (const NMPObject *obj)
 	 * Instead we create a dead object, and nmp_cache_update_netlink()
 	 * will remove the old version of the update.
 	 **/
-	return    obj->object.ifindex > 0
+	return    NMP_OBJECT_CAST_IP_ROUTE (obj)->ifindex > 0
 	       && !NM_FLAGS_HAS (obj->ip_route.r_rtm_flags, RTM_F_CLONED);
 }
 
 static gboolean
 _vt_cmd_obj_is_alive_qdisc (const NMPObject *obj)
 {
-	return obj->object.ifindex > 0;
+	return NMP_OBJECT_CAST_QDISC (obj)->ifindex > 0;
 }
 
 static gboolean
 _vt_cmd_obj_is_alive_tfilter (const NMPObject *obj)
 {
-	return obj->object.ifindex > 0;
+	return NMP_OBJECT_CAST_TFILTER (obj)->ifindex > 0;
 }
 
 gboolean
@@ -1988,7 +1989,7 @@ nmp_lookup_init_object (NMPLookup *lookup,
 	}
 
 	o = _nmp_object_stackinit_from_type (&lookup->selector_obj, obj_type);
-	o->object.ifindex = ifindex;
+	o->obj_with_ifindex.ifindex = ifindex;
 	lookup->cache_id_type = NMP_CACHE_ID_TYPE_OBJECT_BY_IFINDEX;
 	return _L (lookup);
 }
@@ -2004,7 +2005,7 @@ nmp_lookup_init_route_default (NMPLookup *lookup,
 	                                NMP_OBJECT_TYPE_IP6_ROUTE));
 
 	o = _nmp_object_stackinit_from_type (&lookup->selector_obj, obj_type);
-	o->object.ifindex = 1;
+	o->ip_route.ifindex = 1;
 	lookup->cache_id_type = NMP_CACHE_ID_TYPE_DEFAULT_ROUTES;
 	return _L (lookup);
 }
@@ -2052,9 +2053,9 @@ nmp_lookup_init_ip4_route_by_weak_id (NMPLookup *lookup,
 	nm_assert (lookup);
 
 	o = _nmp_object_stackinit_from_type (&lookup->selector_obj, NMP_OBJECT_TYPE_IP4_ROUTE);
-	o->object.ifindex = 1;
-	o->ip_route.plen = plen;
-	o->ip_route.metric = metric;
+	o->ip4_route.ifindex = 1;
+	o->ip4_route.plen = plen;
+	o->ip4_route.metric = metric;
 	if (network)
 		o->ip4_route.network = network;
 	o->ip4_route.tos = tos;
@@ -2075,9 +2076,9 @@ nmp_lookup_init_ip6_route_by_weak_id (NMPLookup *lookup,
 	nm_assert (lookup);
 
 	o = _nmp_object_stackinit_from_type (&lookup->selector_obj, NMP_OBJECT_TYPE_IP6_ROUTE);
-	o->object.ifindex = 1;
-	o->ip_route.plen = plen;
-	o->ip_route.metric = metric;
+	o->ip6_route.ifindex = 1;
+	o->ip6_route.plen = plen;
+	o->ip6_route.metric = metric;
 	if (network)
 		o->ip6_route.network = *network;
 	if (src)

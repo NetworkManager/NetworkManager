@@ -181,12 +181,22 @@ typedef enum {
 
 #define NM_PLATFORM_LINK_OTHER_NETNS    (-1)
 
-#define __NMPlatformObject_COMMON \
+struct _NMPlatformObject {
+	/* the object type has no fields of its own, it is only used to having
+	 * a special pointer type that can be used to indicate "any" type. */
+	char _dummy_don_t_use_me;
+};
+
+#define __NMPlatformObjWithIfindex_COMMON \
 	int ifindex; \
 	;
 
+struct _NMPlatformObjWithIfindex {
+	__NMPlatformObjWithIfindex_COMMON;
+};
+
 struct _NMPlatformLink {
-	__NMPlatformObject_COMMON;
+	__NMPlatformObjWithIfindex_COMMON;
 	char name[NMP_IFNAMSIZ];
 	NMLinkType type;
 
@@ -260,15 +270,11 @@ typedef enum {
 	NM_PLATFORM_SIGNAL_REMOVED,
 } NMPlatformSignalChangeType;
 
-struct _NMPlatformObject {
-	__NMPlatformObject_COMMON;
-};
-
 #define NM_PLATFORM_IP_ADDRESS_CAST(address) \
 	NM_CONSTCAST (NMPlatformIPAddress, (address), NMPlatformIPXAddress, NMPlatformIP4Address, NMPlatformIP6Address)
 
 #define __NMPlatformIPAddress_COMMON \
-	__NMPlatformObject_COMMON; \
+	__NMPlatformObjWithIfindex_COMMON; \
 	NMIPConfigSource addr_source; \
 	\
 	/* Timestamp in seconds in the reference system of nm_utils_get_monotonic_timestamp_*().
@@ -370,7 +376,7 @@ typedef union {
 #define NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE 0
 
 #define __NMPlatformIPRoute_COMMON \
-	__NMPlatformObject_COMMON; \
+	__NMPlatformObjWithIfindex_COMMON; \
 	\
 	/* The NMIPConfigSource. For routes that we receive from cache this corresponds
 	 * to the rtm_protocol field (and is one of the NM_IP_CONFIG_SOURCE_RTPROT_* values).
@@ -540,7 +546,7 @@ typedef union {
 #undef __NMPlatformIPRoute_COMMON
 
 typedef struct {
-	__NMPlatformObject_COMMON;
+	__NMPlatformObjWithIfindex_COMMON;
 	const char *kind;
 	int addr_family;
 	guint32 handle;
@@ -562,7 +568,7 @@ typedef struct {
 #define NM_PLATFORM_ACTION_KIND_SIMPLE "simple"
 
 typedef struct {
-	__NMPlatformObject_COMMON;
+	__NMPlatformObjWithIfindex_COMMON;
 	const char *kind;
 	int addr_family;
 	guint32 handle;
@@ -571,7 +577,7 @@ typedef struct {
 	NMPlatformAction action;
 } NMPlatformTfilter;
 
-#undef __NMPlatformObject_COMMON
+#undef __NMPlatformObjWithIfindex_COMMON
 
 typedef struct {
 	gboolean is_ip4;
