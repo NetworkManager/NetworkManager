@@ -537,6 +537,8 @@ typedef struct {
 	GCancellable *cancellable;
 	gulong cancellable_id;
 	guint child_watch_id;
+	GInputStream *input_stream;
+	GOutputStream *output_stream;
 	char read_buf[5];
 } AuthDialogData;
 
@@ -549,6 +551,8 @@ _auth_dialog_data_free (AuthDialogData *data)
 	g_ptr_array_unref (data->secrets);
 	g_spawn_close_pid (data->auth_dialog_pid);
 	g_string_free (data->auth_dialog_response, TRUE);
+	g_object_unref (data->input_stream);
+	g_object_unref (data->output_stream);
 	g_slice_free (AuthDialogData, data);
 }
 
@@ -803,6 +807,8 @@ try_spawn_vpn_auth_helper (RequestData *request,
 		.auth_dialog_pid = auth_dialog_pid,
 		.request = request,
 		.secrets = g_ptr_array_ref (secrets),
+		.input_stream = auth_dialog_out,
+		.output_stream = auth_dialog_in,
 	};
 
 	g_output_stream_write_async (auth_dialog_in,
