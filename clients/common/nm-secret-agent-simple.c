@@ -799,7 +799,7 @@ try_spawn_vpn_auth_helper (RequestData *request,
 		.auth_dialog_response = g_string_new_len (NULL, sizeof (data->read_buf)),
 		.auth_dialog_pid = auth_dialog_pid,
 		.request = request,
-		.secrets = secrets,
+		.secrets = g_ptr_array_ref (secrets),
 	};
 
 	g_output_stream_write_async (auth_dialog_in,
