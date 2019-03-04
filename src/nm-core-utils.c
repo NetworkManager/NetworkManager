@@ -244,16 +244,20 @@ nm_ethernet_address_is_valid (gconstpointer addr, gssize len)
 gconstpointer
 nm_utils_ipx_address_clear_host_address (int family, gpointer dst, gconstpointer src, guint8 plen)
 {
-	g_return_val_if_fail (src, NULL);
 	g_return_val_if_fail (dst, NULL);
 
 	switch (family) {
 	case AF_INET:
 		g_return_val_if_fail (plen <= 32, NULL);
+
+		if (!src) {
+			/* allow "self-assignment", by specifying %NULL as source. */
+			src = dst;
+		}
+
 		*((guint32 *) dst) = nm_utils_ip4_address_clear_host_address (*((guint32 *) src), plen);
 		break;
 	case AF_INET6:
-		g_return_val_if_fail (plen <= 128, NULL);
 		nm_utils_ip6_address_clear_host_address (dst, src, plen);
 		break;
 	default:
@@ -4017,7 +4021,7 @@ nm_utils_get_reverse_dns_domains_ip6 (const struct in6_addr *ip, guint8 plen, GP
 		return;
 
 	memcpy (&addr, ip, sizeof (struct in6_addr));
-	nm_utils_ip6_address_clear_host_address (&addr, &addr, plen);
+	nm_utils_ip6_address_clear_host_address (&addr, NULL, plen);
 
 	/* Number of nibbles to include in domains */
 	nibbles = (plen - 1) / 4 + 1;
