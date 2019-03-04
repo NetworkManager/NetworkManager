@@ -458,7 +458,7 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 	({ \
 		typeof (obj) _obj = (obj); \
 		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_LINK); \
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_LINK); \
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->link : NULL; \
 	})
 
@@ -482,7 +482,7 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 	({ \
 		typeof (obj) _obj = (obj); \
 		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_IP4_ADDRESS); \
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP4_ADDRESS); \
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ip4_address : NULL; \
 	})
 
@@ -490,7 +490,7 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 	({ \
 		typeof (obj) _obj = (obj); \
 		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_IP6_ADDRESS); \
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP6_ADDRESS); \
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ip6_address : NULL; \
 	})
 
@@ -514,7 +514,7 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 	({ \
 		typeof (obj) _obj = (obj); \
 		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_IP4_ROUTE); \
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP4_ROUTE); \
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ip4_route : NULL; \
 	})
 
@@ -522,7 +522,7 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 	({ \
 		typeof (obj) _obj = (obj); \
 		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_IP6_ROUTE); \
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP6_ROUTE); \
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ip6_route : NULL; \
 	})
 
@@ -530,7 +530,7 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 	({ \
 		typeof (obj) _obj = (obj); \
 		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_QDISC); \
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_QDISC); \
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->qdisc : NULL; \
 	})
 
@@ -538,7 +538,7 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 	({ \
 		typeof (obj) _obj = (obj); \
 		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_TFILTER); \
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_TFILTER); \
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->tfilter : NULL; \
 	})
 
