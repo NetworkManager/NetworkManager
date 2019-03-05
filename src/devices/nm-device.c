@@ -128,6 +128,15 @@ typedef struct {
 	int ifindex;
 } DeleteOnDeactivateData;
 
+typedef struct {
+	NMDevice *device;
+	GCancellable *cancellable;
+	NMPlatformAsyncCallback callback;
+	gpointer callback_data;
+	guint num_vfs;
+	NMTernary autoprobe;
+} SriovOp;
+
 typedef void (*AcdCallback) (NMDevice *, NMIP4Config **, gboolean);
 
 typedef struct {
@@ -572,6 +581,12 @@ typedef struct _NMDevicePrivate {
 	} concheck_x[2];
 
 	guint check_delete_unrealized_id;
+	guint deactivate_pending_count;
+
+	struct {
+		SriovOp *pending;    /* SR-IOV operation currently running */
+		SriovOp *next;       /* next SR-IOV operation scheduled */
+	} sriov;
 
 	struct {
 		guint timeout_id;
@@ -579,7 +594,6 @@ typedef struct _NMDevicePrivate {
 		guint64 tx_bytes;
 		guint64 rx_bytes;
 	} stats;
-
 } NMDevicePrivate;
 
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_DBUS_OBJECT)
@@ -4190,6 +4204,85 @@ nm_device_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink
 	}
 }
 
+static void sriov_op_cb (GError *error, gpointer user_data);
+
+static void
+sriov_op_start (NMDevice *self, SriovOp *op)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	nm_assert (!priv->sriov.pending);
+
+	op->cancellable = g_cancellable_new ();
+	op->device = g_object_ref (self);
+	priv->sriov.pending = op;
+
+	nm_platform_link_set_sriov_params_async (nm_device_get_platform (self),
+	                                         priv->ifindex,
+	                                         op->num_vfs,
+	                                         op->autoprobe,
+	                                         sriov_op_cb,
+	                                         op,
+	                                         op->cancellable);
+}
+
+static void
+sriov_op_cb (GError *error, gpointer user_data)
+{
+	SriovOp *op = user_data;
+	gs_unref_object NMDevice *self = op->device;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	nm_assert (op == priv->sriov.pending);
+
+	if (op->callback)
+		op->callback (error, op->callback_data);
+
+	nm_clear_g_cancellable (&op->cancellable);
+	g_slice_free (SriovOp, op);
+	priv->sriov.pending = NULL;
+
+	if (priv->sriov.next) {
+		sriov_op_start (self, priv->sriov.next);
+		priv->sriov.next = NULL;
+	}
+}
+
+static void
+sriov_op_queue (NMDevice *self,
+                guint num_vfs,
+                NMTernary autoprobe,
+                NMPlatformAsyncCallback callback,
+                gpointer callback_data)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	GError *error = NULL;
+	SriovOp *op;
+
+	op = g_slice_new0 (SriovOp);
+	op->num_vfs = num_vfs;
+	op->autoprobe = autoprobe;
+	op->callback = callback;
+	op->callback_data = callback_data;
+
+	if (priv->sriov.next) {
+		/* Cancel the next operation immediately */
+		if (priv->sriov.next->callback) {
+			nm_utils_error_set_cancelled (&error, FALSE, NULL);
+			priv->sriov.next->callback (error, priv->sriov.next->callback_data);
+			g_clear_error (&error);
+		}
+		g_slice_free (SriovOp, priv->sriov.next);
+		priv->sriov.next = NULL;
+	}
+
+	if (priv->sriov.pending) {
+		priv->sriov.next = op;
+		g_cancellable_cancel (priv->sriov.pending->cancellable);
+	} else
+		sriov_op_start (self, op);
+}
+
 static void
 device_init_static_sriov_num_vfs (NMDevice *self)
 {
@@ -4204,10 +4297,8 @@ device_init_static_sriov_num_vfs (NMDevice *self)
 		                                          self,
 		                                          NULL);
 		num_vfs = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT32, -1);
-		if (num_vfs >= 0) {
-			nm_platform_link_set_sriov_params (nm_device_get_platform (self),
-			                                   priv->ifindex, num_vfs, NM_TERNARY_DEFAULT);
-		}
+		if (num_vfs >= 0)
+			sriov_op_queue (self, num_vfs, NM_TERNARY_DEFAULT, NULL, NULL);
 	}
 }
 
@@ -4221,11 +4312,11 @@ config_changed (NMConfig *config,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (   priv->state <= NM_DEVICE_STATE_DISCONNECTED
-	    || priv->state > NM_DEVICE_STATE_ACTIVATED)
+	    || priv->state > NM_DEVICE_STATE_ACTIVATED) {
 		priv->ignore_carrier = nm_config_data_get_ignore_carrier (config_data, self);
-
-	if (NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_VALUES))
-		device_init_static_sriov_num_vfs (self);
+		if (NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_VALUES))
+			device_init_static_sriov_num_vfs (self);
+	}
 }
 
 static void
@@ -6263,6 +6354,41 @@ sriov_vf_config_to_platform (NMDevice *self,
 	return g_steal_pointer (&plat_vf);
 }
 
+static void
+sriov_params_cb (GError *error, gpointer data)
+{
+	NMDevice *self;
+	NMDevicePrivate *priv;
+	nm_auto_freev NMPlatformVF **plat_vfs = NULL;
+
+	nm_utils_user_data_unpack (data, &self, &plat_vfs);
+
+	if (nm_utils_error_is_cancelled (error, TRUE))
+		return;
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (error) {
+		_LOGE (LOGD_DEVICE, "failed to set SR-IOV parameters: %s", error->message);
+		nm_device_state_changed (self,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED);
+		return;
+	}
+
+	if (!nm_platform_link_set_sriov_vfs (nm_device_get_platform (self),
+	                                     priv->ifindex,
+	                                     (const NMPlatformVF *const *) plat_vfs)) {
+		_LOGE (LOGD_DEVICE, "failed to apply SR-IOV VFs");
+		nm_device_state_changed (self,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED);
+		return;
+	}
+
+	nm_device_activate_schedule_stage2_device_config (self);
+}
+
 static NMActStageReturn
 act_stage1_prepare (NMDevice *self, NMDeviceStateReason *out_failure_reason)
 {
@@ -6277,6 +6403,7 @@ act_stage1_prepare (NMDevice *self, NMDeviceStateReason *out_failure_reason)
 		gs_free_error GError *error = NULL;
 		NMSriovVF *vf;
 		NMTernary autoprobe;
+		gpointer *data;
 
 		autoprobe = nm_setting_sriov_get_autoprobe_drivers (s_sriov);
 		if (autoprobe == NM_TERNARY_DEFAULT) {
@@ -6303,24 +6430,19 @@ act_stage1_prepare (NMDevice *self, NMDeviceStateReason *out_failure_reason)
 			}
 		}
 
-		if (!nm_platform_link_set_sriov_params (nm_device_get_platform (self),
-		                                        priv->ifindex,
-		                                        nm_setting_sriov_get_total_vfs (s_sriov),
-		                                        autoprobe)) {
-			_LOGE (LOGD_DEVICE, "failed to apply SR-IOV parameters");
-			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED);
-			return NM_ACT_STAGE_RETURN_FAILURE;
-		}
-
-		if (!nm_platform_link_set_sriov_vfs (nm_device_get_platform (self),
-		                                     priv->ifindex,
-		                                     (const NMPlatformVF *const *) plat_vfs)) {
-			_LOGE (LOGD_DEVICE, "failed to apply SR-IOV VFs");
-			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED);
-			return NM_ACT_STAGE_RETURN_FAILURE;
-		}
+		/* When changing the number of VFs the kernel can block
+		 * for very long time in the write to sysfs, especially
+		 * if autoprobe-drivers is enabled. Do it asynchronously
+		 * to avoid blocking the entire NM process.
+		 */
+		data = nm_utils_user_data_pack (self, g_steal_pointer (&plat_vfs));
+		sriov_op_queue (self,
+		                nm_setting_sriov_get_total_vfs (s_sriov),
+		                autoprobe,
+		                sriov_params_cb,
+		                data);
+		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
-
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
@@ -14799,6 +14921,30 @@ ip6_managed_setup (NMDevice *self)
 }
 
 static void
+deactivate_ready (NMDevice *self, NMDeviceStateReason reason)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	nm_assert (priv->deactivate_pending_count > 0);
+
+	if (--priv->deactivate_pending_count == 0)
+		nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, reason);
+}
+
+static void
+sriov_deactivate_cb (GError *error, gpointer user_data)
+{
+	NMDevice *self;
+	gpointer reason;
+
+	if (nm_utils_error_is_cancelled (error, TRUE))
+		return;
+
+	nm_utils_user_data_unpack (user_data, &self, &reason);
+	deactivate_ready (self, (NMDeviceStateReason) reason);
+}
+
+static void
 deactivate_async_ready (NMDevice *self,
                         GError *error,
                         gpointer user_data)
@@ -14818,7 +14964,8 @@ deactivate_async_ready (NMDevice *self,
 		_LOGW (LOGD_DEVICE, "Deactivation failed: %s",
 		       error->message);
 	}
-	nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, reason);
+
+	deactivate_ready (self, reason);
 }
 
 static void
@@ -14831,7 +14978,7 @@ deactivate_dispatcher_complete (guint call_id, gpointer user_data)
 	g_return_if_fail (call_id == priv->dispatcher.call_id);
 	g_return_if_fail (priv->dispatcher.post_state == NM_DEVICE_STATE_DISCONNECTED);
 
-	reason = priv->dispatcher.post_state_reason;
+	reason = priv->state_reason;
 
 	priv->dispatcher.call_id = 0;
 	priv->dispatcher.post_state = NM_DEVICE_STATE_UNKNOWN;
@@ -14847,7 +14994,7 @@ deactivate_dispatcher_complete (guint call_id, gpointer user_data)
 		                                              deactivate_async_ready,
 		                                              GUINT_TO_POINTER (reason));
 	} else
-		nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, reason);
+		deactivate_ready (self, reason);
 }
 
 static void
@@ -15060,12 +15207,6 @@ _set_state_full (NMDevice *self,
 		}
 		break;
 	case NM_DEVICE_STATE_DEACTIVATING:
-		if (   (s_sriov = nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))
-		    && priv->ifindex > 0) {
-			nm_platform_link_set_sriov_params (nm_device_get_platform (self),
-			                                   priv->ifindex, 0, NM_TERNARY_TRUE);
-		}
-
 		_cancel_activation (self);
 
 		/* We cache the ignore_carrier state to not react on config-reloads while the connection
@@ -15078,6 +15219,7 @@ _set_state_full (NMDevice *self,
 		} else {
 			priv->dispatcher.post_state = NM_DEVICE_STATE_DISCONNECTED;
 			priv->dispatcher.post_state_reason = reason;
+			priv->deactivate_pending_count = 1;
 			if (!nm_dispatcher_call_device (NM_DISPATCHER_ACTION_PRE_DOWN,
 			                                self,
 			                                req,
@@ -15086,6 +15228,16 @@ _set_state_full (NMDevice *self,
 			                                &priv->dispatcher.call_id)) {
 				/* Just proceed on errors */
 				deactivate_dispatcher_complete (0, self);
+			}
+
+			if (   priv->ifindex > 0
+			    && (s_sriov = nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))) {
+				priv->deactivate_pending_count++;
+				sriov_op_queue (self,
+				                0,
+				                NM_TERNARY_TRUE,
+				                sriov_deactivate_cb,
+				                nm_utils_user_data_pack (self, (gpointer) reason));
 			}
 		}
 
