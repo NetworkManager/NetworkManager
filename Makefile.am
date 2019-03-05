@@ -3880,6 +3880,7 @@ clients_nm_online_LDADD = \
 	$(GLIB_LIBS)
 
 $(clients_nm_online_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(clients_nm_online_OBJECTS): $(libnm_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
 	clients/meson.build
