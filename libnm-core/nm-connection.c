@@ -230,6 +230,18 @@ nm_connection_get_setting (NMConnection *connection, GType setting_type)
 	return _connection_get_setting_check (connection, setting_type);
 }
 
+NMSettingIPConfig *
+nm_connection_get_setting_ip_config (NMConnection *connection,
+                                     int addr_family)
+{
+	nm_assert_addr_family (addr_family);
+
+	return NM_SETTING_IP_CONFIG (_connection_get_setting (connection,
+	                                                        (addr_family == AF_INET)
+	                                                      ? NM_TYPE_SETTING_IP4_CONFIG
+	                                                      : NM_TYPE_SETTING_IP6_CONFIG));
+}
+
 /**
  * nm_connection_get_setting_by_name:
  * @connection: a #NMConnection

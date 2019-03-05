@@ -982,9 +982,8 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 	NMDevice *device = NM_DEVICE (user_data);
 
 	/* Ignore PPP IP4 events that come in after initial configuration */
-	if (nm_device_activate_ip4_state_in_conf (device)) {
-		nm_device_activate_schedule_ip4_config_result (device, config);
-	}
+	if (nm_device_activate_ip4_state_in_conf (device))
+		nm_device_activate_schedule_ip_config_result (device, AF_INET, NM_IP_CONFIG_CAST (config));
 }
 
 static NMActStageReturn
@@ -1315,22 +1314,25 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 }
 
 static NMActStageReturn
-act_stage3_ip4_config_start (NMDevice *device,
-                             NMIP4Config **out_config,
-                             NMDeviceStateReason *out_failure_reason)
+act_stage3_ip_config_start (NMDevice *device,
+                            int addr_family,
+                            gpointer *out_config,
+                            NMDeviceStateReason *out_failure_reason)
 {
 	NMSettingConnection *s_con;
 	const char *connection_type;
 
-	s_con = nm_device_get_applied_setting (device, NM_TYPE_SETTING_CONNECTION);
+	if (addr_family == AF_INET) {
+		s_con = nm_device_get_applied_setting (device, NM_TYPE_SETTING_CONNECTION);
 
-	g_return_val_if_fail (s_con, NM_ACT_STAGE_RETURN_FAILURE);
+		g_return_val_if_fail (s_con, NM_ACT_STAGE_RETURN_FAILURE);
 
-	connection_type = nm_setting_connection_get_connection_type (s_con);
-	if (!strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
-		return pppoe_stage3_ip4_config_start (NM_DEVICE_ETHERNET (device), out_failure_reason);
+		connection_type = nm_setting_connection_get_connection_type (s_con);
+		if (!strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
+			return pppoe_stage3_ip4_config_start (NM_DEVICE_ETHERNET (device), out_failure_reason);
+	}
 
-	return NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage3_ip4_config_start (device, out_config, out_failure_reason);
+	return NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage3_ip_config_start (device, addr_family, out_config, out_failure_reason);
 }
 
 static guint32
@@ -1792,7 +1794,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->act_stage2_config = act_stage2_config;
-	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	device_class->act_stage3_ip_config_start = act_stage3_ip_config_start;
 	device_class->get_configured_mtu = get_configured_mtu;
 	device_class->deactivate = deactivate;
 	device_class->get_s390_subchannels = get_s390_subchannels;

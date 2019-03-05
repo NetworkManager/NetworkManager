@@ -728,7 +728,7 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 		break;
 	case NM_MODEM_IP_METHOD_AUTO:
 		_LOGD ("MODEM_IP_METHOD_AUTO");
-		ret = device_class->act_stage3_ip4_config_start (device, NULL, out_failure_reason);
+		ret = device_class->act_stage3_ip_config_start (device, AF_INET, NULL, out_failure_reason);
 		break;
 	default:
 		_LOGI ("IPv4 configuration disabled");

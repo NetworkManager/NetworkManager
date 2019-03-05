@@ -26,6 +26,14 @@
 
 /* This file should only be used by subclasses of NMDevice */
 
+typedef enum {
+	NM_DEVICE_IP_STATE_NONE,
+	NM_DEVICE_IP_STATE_WAIT,
+	NM_DEVICE_IP_STATE_CONF,
+	NM_DEVICE_IP_STATE_DONE,
+	NM_DEVICE_IP_STATE_FAIL,
+} NMDeviceIPState;
+
 enum NMActStageReturn {
 	NM_ACT_STAGE_RETURN_FAILURE = 0, /* Hard failure of activation */
 	NM_ACT_STAGE_RETURN_SUCCESS,     /* Activation stage done */
@@ -75,19 +83,51 @@ void nm_device_set_firmware_missing (NMDevice *self, gboolean missing);
 void nm_device_activate_schedule_stage1_device_prepare (NMDevice *device);
 void nm_device_activate_schedule_stage2_device_config (NMDevice *device);
 
-void nm_device_activate_schedule_ip4_config_result(NMDevice *device, NMIP4Config *config);
-void nm_device_activate_schedule_ip4_config_timeout (NMDevice *device);
+void nm_device_activate_schedule_ip_config_result (NMDevice *device,
+                                                   int addr_family,
+                                                   NMIPConfig *config);
 
-void nm_device_activate_schedule_ip6_config_result (NMDevice *device);
-void nm_device_activate_schedule_ip6_config_timeout (NMDevice *device);
+void nm_device_activate_schedule_ip_config_timeout (NMDevice *device,
+                                                    int addr_family);
 
-gboolean nm_device_activate_ip4_state_in_conf (NMDevice *device);
-gboolean nm_device_activate_ip4_state_in_wait (NMDevice *device);
-gboolean nm_device_activate_ip4_state_done (NMDevice *device);
+NMDeviceIPState nm_device_activate_get_ip_state (NMDevice *self,
+                                                 int addr_family);
 
-gboolean nm_device_activate_ip6_state_in_conf (NMDevice *device);
-gboolean nm_device_activate_ip6_state_in_wait (NMDevice *device);
-gboolean nm_device_activate_ip6_state_done (NMDevice *device);
+static inline gboolean
+nm_device_activate_ip4_state_in_conf (NMDevice *self)
+{
+	return nm_device_activate_get_ip_state (self, AF_INET) == NM_DEVICE_IP_STATE_CONF;
+}
+
+static inline gboolean
+nm_device_activate_ip4_state_in_wait (NMDevice *self)
+{
+	return nm_device_activate_get_ip_state (self, AF_INET) == NM_DEVICE_IP_STATE_WAIT;
+}
+
+static inline gboolean
+nm_device_activate_ip4_state_done (NMDevice *self)
+{
+	return nm_device_activate_get_ip_state (self, AF_INET) == NM_DEVICE_IP_STATE_DONE;
+}
+
+static inline gboolean
+nm_device_activate_ip6_state_in_conf (NMDevice *self)
+{
+	return nm_device_activate_get_ip_state (self, AF_INET6) == NM_DEVICE_IP_STATE_CONF;
+}
+
+static inline gboolean
+nm_device_activate_ip6_state_in_wait (NMDevice *self)
+{
+	return nm_device_activate_get_ip_state (self, AF_INET6) == NM_DEVICE_IP_STATE_WAIT;
+}
+
+static inline gboolean
+nm_device_activate_ip6_state_done (NMDevice *self)
+{
+	return nm_device_activate_get_ip_state (self, AF_INET6) == NM_DEVICE_IP_STATE_DONE;
+}
 
 void nm_device_set_dhcp_anycast_address (NMDevice *device, const char *addr);
 
@@ -106,8 +146,9 @@ void nm_device_queue_recheck_available (NMDevice *device,
                                         NMDeviceStateReason available_reason,
                                         NMDeviceStateReason unavailable_reason);
 
-void nm_device_set_wwan_ip4_config (NMDevice *device, NMIP4Config *config);
-void nm_device_set_wwan_ip6_config (NMDevice *device, NMIP6Config *config);
+void nm_device_set_dev2_ip_config (NMDevice *device,
+                                   int addr_family,
+                                   NMIPConfig *config);
 
 gboolean nm_device_hw_addr_is_explict (NMDevice *device);
 
@@ -117,6 +158,12 @@ gboolean nm_device_sysctl_ip_conf_set (NMDevice *self,
                                        int addr_family,
                                        const char *property,
                                        const char *value);
+
+NMIP4Config *nm_device_ip4_config_new (NMDevice *self);
+
+NMIP6Config *nm_device_ip6_config_new (NMDevice *self);
+
+NMIPConfig *nm_device_ip_config_new (NMDevice *self, int addr_family);
 
 /*****************************************************************************/
 

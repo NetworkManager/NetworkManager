@@ -1247,6 +1247,159 @@ act_stage2_config (NMDevice *device,
 	return NM_ACT_STAGE_RETURN_FAILURE;
 }
 
+static NMIPConfig *
+_get_dev2_ip_config (NMDeviceWireGuard *self,
+                     int addr_family)
+{
+	gs_unref_object NMIPConfig *ip_config = NULL;
+	NMConnection *connection;
+	NMSettingWireGuard *s_wg;
+	guint n_peers;
+	guint i;
+	int ip_ifindex;
+	guint32 route_metric;
+	guint32 route_table_coerced;
+
+	connection = nm_device_get_applied_connection (NM_DEVICE (self));
+
+	s_wg = NM_SETTING_WIREGUARD (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIREGUARD));
+
+	/* Differences to `wg-quick`.
+	 *
+	 * `wg-quick` supports the "Table" setting with 3 modes:
+	 *
+	 * a1) "off": this is what we do with "peer-routes" disabled.
+	 *
+	 * a2) an explicit routing table. This is our behavior with "peer-routes" on. In this case
+	 *   we honor the "ipv4.route-table" and "ipv6.route-table" settings. One difference is that
+	 *   `wg-quick` would resolve table names from /etc/iproute2/rt_tables. Our connection profiles
+	 *   only contain table numbers, so that conversion from name to table must have happend
+	 *   before already.
+	 *
+	 * a3) "auto" (the default). In this case, `wg-quick` would only add the route to the
+	 *   main table, if the AllowedIP range is not yet reachable on the link. With "peer-routes"
+	 *   enabled, we don't check for that and always add the routes to the main-table
+	 *   (with 'ipv4.route-table' and 'ipv6.route-table' set to zero or RT_TABLE_MAIN (254)).
+	 *
+	 *   Also, in "auto" mode, `wg-quick` would add special handling for /0 routes and pick
+	 *   an empty table to configure policy routing to avoid routing loops. This handling
+	 *   of routing-loops via policy routing is not yet done, and requires a separate solution
+	 *   from constructing the peer-routes here.
+	 */
+	if (!nm_setting_wireguard_get_peer_routes (s_wg))
+		return NULL;
+
+	ip_ifindex = nm_device_get_ip_ifindex (NM_DEVICE (self));
+
+	if (ip_ifindex <= 0)
+		return NULL;
+
+	route_metric = nm_device_get_route_metric (NM_DEVICE (self), addr_family);
+
+	route_table_coerced = nm_platform_route_table_coerce (nm_device_get_route_table (NM_DEVICE (self), addr_family, TRUE));
+
+	n_peers = nm_setting_wireguard_get_peers_len (s_wg);
+	for (i = 0; i < n_peers; i++) {
+		NMWireGuardPeer *peer = nm_setting_wireguard_get_peer (s_wg, i);
+		guint n_aips;
+		guint j;
+
+		n_aips = nm_wireguard_peer_get_allowed_ips_len (peer);
+		for (j = 0; j < n_aips; j++) {
+			NMPlatformIPXRoute rt;
+			NMIPAddr addrbin;
+			const char *aip;
+			gboolean valid;
+			int prefix;
+
+			aip = nm_wireguard_peer_get_allowed_ip (peer, j, &valid);
+
+			if (   !valid
+			    || !nm_utils_parse_inaddr_prefix_bin (addr_family,
+			                                          aip,
+			                                          NULL,
+			                                          &addrbin,
+			                                          &prefix))
+				continue;
+
+			if (prefix < 0)
+				prefix = (addr_family == AF_INET) ? 32 : 128;
+
+			if (!ip_config)
+				ip_config = nm_device_ip_config_new (NM_DEVICE (self), addr_family);
+
+			nm_utils_ipx_address_clear_host_address (addr_family, &addrbin, NULL, prefix);
+
+			if (addr_family == AF_INET) {
+				rt.r4 = (NMPlatformIP4Route) {
+					.network       = addrbin.addr4,
+					.plen          = prefix,
+					.ifindex       = ip_ifindex,
+					.rt_source     = NM_IP_CONFIG_SOURCE_USER,
+					.table_coerced = route_table_coerced,
+					.metric        = route_metric,
+				};
+			} else {
+				rt.r6 = (NMPlatformIP6Route) {
+					.network       = addrbin.addr6,
+					.plen          = prefix,
+					.ifindex       = ip_ifindex,
+					.rt_source     = NM_IP_CONFIG_SOURCE_USER,
+					.table_coerced = route_table_coerced,
+					.metric        = route_metric,
+				};
+			}
+
+			nm_ip_config_add_route (ip_config, &rt.rx, NULL);
+		}
+	}
+
+	return g_steal_pointer (&ip_config);
+}
+
+static NMActStageReturn
+act_stage3_ip_config_start (NMDevice *device,
+                            int addr_family,
+                            gpointer *out_config,
+                            NMDeviceStateReason *out_failure_reason)
+{
+	gs_unref_object NMIPConfig *ip_config = NULL;
+
+	ip_config = _get_dev2_ip_config (NM_DEVICE_WIREGUARD (device), addr_family);
+
+	nm_device_set_dev2_ip_config (device, addr_family, ip_config);
+
+	return NM_DEVICE_CLASS (nm_device_wireguard_parent_class)->act_stage3_ip_config_start (device, addr_family, out_config, out_failure_reason);
+}
+
+static guint32
+get_configured_mtu (NMDevice *device, NMDeviceMtuSource *out_source)
+{
+	/* When "MTU" for `wg-quick up` is unset, it calls `ip route get` for
+	 * each configured endpoint, to determine the suitable MTU how to reach
+	 * each endpoint.
+	 * For `wg-quick` this works very well, because whenever the script runs it
+	 * determines the best setting at that point in time. It's simply not concerned
+	 * with what happens later (and it's not around anyway).
+	 *
+	 * NetworkManager sticks around, so the right MTU would need to be re-determined
+	 * whenever anything relevant changes. Which basically means, to re-evaluate whenever
+	 * something related to addresses or routing changes (which happens all the time).
+	 *
+	 * The correct MTU indeed depends on the MTU setting of other interfaces (or routes).
+	 * But it's still odd, that activating/deactivating a seemingly unrelated interface
+	 * would trigger an MTU change. It's odd to explain/document and odd to implemented
+	 * -- despite this being the reality.
+	 *
+	 * For now, only support configuring an explicit MTU, or leave the setting untouched.
+	 * The same limitiation also applies to other "ip-tunnel" types, where we could use
+	 * similar smarts for autodetecting the MTU.
+	 */
+	return nm_device_get_configured_mtu_from_connection (device,
+	                                                     NM_TYPE_SETTING_WIREGUARD,
+	                                                     out_source);
+}
+
 static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
@@ -1275,8 +1428,18 @@ can_reapply_change (NMDevice *device,
                     GError **error)
 {
 	if (nm_streq (setting_name, NM_SETTING_WIREGUARD_SETTING_NAME)) {
-		/* we allow reapplying all WireGuard settings. */
-		return TRUE;
+		/* Most, but not all WireGuard settings can be reapplied. Whitelist.
+		 *
+		 * MTU cannot be reapplied. */
+		return nm_device_hash_check_invalid_keys (diffs,
+		                                          NM_SETTING_WIREGUARD_SETTING_NAME,
+		                                          error,
+		                                          NM_SETTING_WIREGUARD_FWMARK,
+		                                          NM_SETTING_WIREGUARD_LISTEN_PORT,
+		                                          NM_SETTING_WIREGUARD_PEERS,
+		                                          NM_SETTING_WIREGUARD_PEER_ROUTES,
+		                                          NM_SETTING_WIREGUARD_PRIVATE_KEY,
+		                                          NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS);
 	}
 
 	return NM_DEVICE_CLASS (nm_device_wireguard_parent_class)->can_reapply_change (device,
@@ -1292,6 +1455,16 @@ reapply_connection (NMDevice *device,
                     NMConnection *con_old,
                     NMConnection *con_new)
 {
+	NMDeviceWireGuard *self = NM_DEVICE_WIREGUARD (device);
+	gs_unref_object NMIPConfig *ip4_config = NULL;
+	gs_unref_object NMIPConfig *ip6_config = NULL;
+
+	ip4_config = _get_dev2_ip_config (self, AF_INET);
+	ip6_config = _get_dev2_ip_config (self, AF_INET6);
+
+	nm_device_set_dev2_ip_config (device, AF_INET, ip4_config);
+	nm_device_set_dev2_ip_config (device, AF_INET6, ip6_config);
+
 	NM_DEVICE_CLASS (nm_device_wireguard_parent_class)->reapply_connection (device,
 	                                                                        con_old,
 	                                                                        con_new);
@@ -1446,11 +1619,13 @@ nm_device_wireguard_class_init (NMDeviceWireGuardClass *klass)
 	device_class->create_and_realize = create_and_realize;
 	device_class->act_stage2_config = act_stage2_config;
 	device_class->act_stage2_config_also_for_external_or_assume = TRUE;
+	device_class->act_stage3_ip_config_start = act_stage3_ip_config_start;
 	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->link_changed = link_changed;
 	device_class->update_connection = update_connection;
 	device_class->can_reapply_change = can_reapply_change;
 	device_class->reapply_connection = reapply_connection;
+	device_class->get_configured_mtu = get_configured_mtu;
 
 	obj_properties[PROP_PUBLIC_KEY] =
 	    g_param_spec_variant (NM_DEVICE_WIREGUARD_PUBLIC_KEY,
