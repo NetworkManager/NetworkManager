@@ -481,6 +481,40 @@ nm_platform_sysctl_set (NMPlatform *self, const char *pathid, int dirfd, const c
 	return klass->sysctl_set (self, pathid, dirfd, path, value);
 }
 
+/**
+ * nm_platform_sysctl_set_async:
+ * @self: platform instance
+ * @pathid: if @dirfd is present, this must be the full path that is looked up
+ * @dirfd: optional file descriptor for parent directory for openat()
+ * @path: absolute option path
+ * @values: NULL-terminated array of strings to be written
+ * @callback: function called on termination
+ * @data: data passed to callback function
+ * @cancellable: to cancel the operation
+ *
+ * This function is intended to be used for writing values to sysctl-style
+ * virtual runtime configuration files. This includes not only /proc/sys
+ * but also for example /sys/class. The function does not block and returns
+ * immediately. The callback is always invoked, and asynchronously. The file
+ * is closed after writing each value and reopened to write the next one so
+ * that the function can be used safely on all /proc and /sys files,
+ * independently of how /proc/sys/kernel/sysctl_writes_strict is configured.
+ */
+void nm_platform_sysctl_set_async (NMPlatform *self,
+                                   const char *pathid,
+                                   int dirfd,
+                                   const char *path,
+                                   const char *const *values,
+                                   NMPlatformAsyncCallback callback,
+                                   gpointer data,
+                                   GCancellable *cancellable)
+{
+	_CHECK_SELF_VOID (self, klass);
+
+	klass->sysctl_set_async (self, pathid, dirfd, path, values, callback, data, cancellable);
+}
+
+
 gboolean
 nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe (NMPlatform *self,
                                                     const char *iface,
