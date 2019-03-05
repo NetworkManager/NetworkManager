@@ -20,6 +20,7 @@
 #include "nm-default.h"
 
 #include <linux/rtnetlink.h>
+#include <linux/fib_rules.h>
 
 #include "nm-core-utils.h"
 #include "platform/nm-platform-utils.h"
@@ -873,6 +874,743 @@ again_find_idx:
 
 /*****************************************************************************/
 
+#define FRA_SUPPRESS_IFGROUP         13
+#define FRA_SUPPRESS_PREFIXLEN       14
+#define FRA_L3MDEV                   19
+#define FRA_UID_RANGE                20
+#define FRA_PROTOCOL                 21
+#define FRA_IP_PROTO                 22
+#define FRA_SPORT_RANGE              23
+#define FRA_DPORT_RANGE              24
+
+static const NMPObject *
+_rule_find_by_priority (NMPlatform *platform,
+                        guint32 priority)
+{
+	const NMDedupMultiHeadEntry *head_entry;
+	NMDedupMultiIter iter;
+	const NMPObject *o;
+	const NMPObject *obj = NULL;
+	NMPLookup lookup;
+
+	nmp_lookup_init_obj_type (&lookup, NMP_OBJECT_TYPE_ROUTING_RULE);
+	head_entry = nm_platform_lookup (platform, &lookup);
+	nmp_cache_iter_for_each (&iter, head_entry, &o) {
+		if (NMP_OBJECT_CAST_ROUTING_RULE (o)->priority != priority)
+			continue;
+		g_assert (!obj);
+		obj = o;
+	}
+	return obj;
+}
+
+static const NMPObject *
+_rule_check_kernel_support_one (NMPlatform *platform,
+                                const NMPlatformRoutingRule *rr)
+{
+	nm_auto_nmpobj const NMPObject *obj = NULL;
+	int r;
+
+	g_assert (!_rule_find_by_priority (platform, rr->priority));
+
+	r = nm_platform_routing_rule_add (platform, NMP_NLM_FLAG_ADD, rr);
+	g_assert_cmpint (r, ==, 0);
+
+	obj = nmp_object_ref (_rule_find_by_priority (platform, rr->priority));
+	g_assert (obj);
+
+	r = nm_platform_object_delete (platform, obj);
+	g_assert_cmpint (r, ==, TRUE);
+
+	g_assert (!_rule_find_by_priority (platform, rr->priority));
+
+	return g_steal_pointer (&obj);
+}
+
+static gboolean
+_rule_check_kernel_support (NMPlatform *platform,
+                            int attribute)
+{
+	static int support[] = {
+		[FRA_SUPPRESS_IFGROUP]   = 0,
+		[FRA_SUPPRESS_PREFIXLEN] = 0,
+		[FRA_L3MDEV]             = 0,
+		[FRA_UID_RANGE]          = 0,
+		[FRA_PROTOCOL]           = 0,
+		[FRA_IP_PROTO]           = 0,
+		[FRA_SPORT_RANGE]        = 0,
+		[FRA_DPORT_RANGE]        = 0,
+	};
+	const guint32 PROBE_PRORITY = 12033;
+	gboolean sup;
+
+	g_assert (NM_IS_PLATFORM (platform));
+	g_assert (attribute >= 0 && attribute < G_N_ELEMENTS (support));
+
+	if (support[attribute] != 0)
+		return support[attribute] >= 0;
+
+	switch (attribute) {
+	case FRA_SUPPRESS_IFGROUP: {
+		nm_auto_nmpobj const NMPObject *obj = NULL;
+		const NMPlatformRoutingRule rr = {
+			.addr_family              = AF_INET,
+			.priority                 = PROBE_PRORITY,
+			.suppress_ifgroup_inverse = ~((guint32) 1245),
+		};
+
+		obj = _rule_check_kernel_support_one (platform, &rr);
+
+		sup = NMP_OBJECT_CAST_ROUTING_RULE (obj)->suppress_prefixlen_inverse == rr.suppress_ifgroup_inverse;
+		break;
+	}
+	case FRA_SUPPRESS_PREFIXLEN: {
+		nm_auto_nmpobj const NMPObject *obj = NULL;
+		const NMPlatformRoutingRule rr = {
+			.addr_family                = AF_INET,
+			.priority                   = PROBE_PRORITY,
+			.suppress_prefixlen_inverse = ~((guint32) 1245),
+		};
+
+		obj = _rule_check_kernel_support_one (platform, &rr);
+
+		sup = NMP_OBJECT_CAST_ROUTING_RULE (obj)->suppress_prefixlen_inverse == rr.suppress_prefixlen_inverse;
+		break;
+	}
+	case FRA_L3MDEV: {
+		nm_auto_nmpobj const NMPObject *obj = NULL;
+		const NMPlatformRoutingRule rr = {
+			.addr_family = AF_INET,
+			.priority    = PROBE_PRORITY,
+			.l3mdev      = TRUE,
+		};
+
+		obj = _rule_check_kernel_support_one (platform, &rr);
+
+		sup = NMP_OBJECT_CAST_ROUTING_RULE (obj)->l3mdev != 0;
+		break;
+	}
+	case FRA_UID_RANGE: {
+		nm_auto_nmpobj const NMPObject *obj = NULL;
+		const NMPlatformRoutingRule rr = {
+			.addr_family  = AF_INET,
+			.priority     = PROBE_PRORITY,
+			.uid_range    = {
+				.start = 0,
+				.end   = 0,
+			},
+			.uid_range_has = TRUE,
+		};
+
+		obj = _rule_check_kernel_support_one (platform, &rr);
+
+		sup = NMP_OBJECT_CAST_ROUTING_RULE (obj)->uid_range_has;
+		break;
+	}
+	case FRA_PROTOCOL: {
+		nm_auto_nmpobj const NMPObject *obj = NULL;
+		const NMPlatformRoutingRule rr = {
+			.addr_family = AF_INET,
+			.priority    = PROBE_PRORITY,
+			.protocol    = 30,
+		};
+
+		obj = _rule_check_kernel_support_one (platform, &rr);
+
+		sup = NMP_OBJECT_CAST_ROUTING_RULE (obj)->protocol == 30;
+		break;
+	}
+	case FRA_IP_PROTO: {
+		nm_auto_nmpobj const NMPObject *obj = NULL;
+		const NMPlatformRoutingRule rr = {
+			.addr_family = AF_INET,
+			.priority    = PROBE_PRORITY,
+			.ip_proto    = 30,
+		};
+
+		obj = _rule_check_kernel_support_one (platform, &rr);
+
+		sup = NMP_OBJECT_CAST_ROUTING_RULE (obj)->ip_proto == 30;
+		break;
+	}
+	case FRA_SPORT_RANGE:
+	case FRA_DPORT_RANGE:
+		/* these were added at the same time as FRA_IP_PROTO. */
+		sup = _rule_check_kernel_support (platform, FRA_IP_PROTO);
+		break;
+	default:
+		g_assert_not_reached ();
+		return FALSE;
+	}
+
+	support[attribute] = sup ? 1 : -1;
+
+	_LOGD ("kernel support for routing rule attribute #%d %s", attribute, sup ? "detected" : "not detected");
+	return sup;
+}
+
+static const NMPObject *
+_platform_has_routing_rule (NMPlatform *platform,
+                            const NMPObject *obj)
+{
+	const NMPObject *o;
+
+	g_assert (NM_IS_PLATFORM (platform));
+	g_assert (NMP_OBJECT_IS_VALID (obj));
+	g_assert (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_ROUTING_RULE);
+
+	o = nm_platform_lookup_obj (platform, NMP_CACHE_ID_TYPE_OBJECT_TYPE, obj);
+	if (o)
+		g_assert (nm_platform_routing_rule_cmp (NMP_OBJECT_CAST_ROUTING_RULE (obj), NMP_OBJECT_CAST_ROUTING_RULE (o), NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID) == 0);
+
+	return o;
+}
+
+static const NMPObject *
+_rule_create_random (NMPlatform *platform)
+{
+	NMPObject *obj;
+	NMPlatformRoutingRule *rr;
+	guint32 p;
+	int addr_size;
+	guint i;
+	char saddr[NM_UTILS_INET_ADDRSTRLEN];
+	static struct {
+		guint32 uid;
+		guint32 euid;
+		bool initialized;
+	} uids;
+
+	if (G_UNLIKELY (!uids.initialized)) {
+		uids.uid = getuid ();
+		uids.euid = geteuid ();
+		uids.initialized = TRUE;
+	}
+
+	obj = nmp_object_new (NMP_OBJECT_TYPE_ROUTING_RULE, NULL);
+	rr = NMP_OBJECT_CAST_ROUTING_RULE (obj);
+
+	rr->addr_family = nmtst_rand_select (AF_INET, AF_INET6);
+
+	addr_size = nm_utils_addr_family_to_size (rr->addr_family);
+
+	p = nmtst_get_rand_int () % 1000u;
+	if (p < 250)
+		rr->priority = 10000 + (p / 50);
+
+	p = nmtst_get_rand_int () % 1000u;
+	if (p < 60)
+		nm_sprintf_buf (rr->iifname, "t-iif-%u", p / 20);
+	else if (p < 120)
+		nm_sprintf_buf (rr->iifname, "%s", DEVICE_NAME);
+
+	p = nmtst_get_rand_int () % 1000u;
+	if (p < 60)
+		nm_sprintf_buf (rr->oifname, "t-oif-%d", p / 20);
+	else if (p < 120)
+		nm_sprintf_buf (rr->oifname, "%s", DEVICE_NAME);
+
+	p = nmtst_get_rand_int () % 1000u;
+	if (p < 60)
+		nm_sprintf_buf (rr->iifname, "t-iif-%d", p / 20);
+	else if (p < 120)
+		nm_sprintf_buf (rr->iifname, "%s", DEVICE_NAME);
+
+	for (i = 0; i < 2; i++) {
+		NMIPAddr *p_addr = i ? &rr->src     : &rr->dst;
+		guint8 *p_len    = i ? &rr->src_len : &rr->dst_len;
+
+		p = nmtst_get_rand_int () % 1000u;
+		if (p < 300) {
+			/* if we set src_len/dst_len to zero, the src/dst is actually ignored.
+			 *
+			 * For fuzzying, still set the address. It shall have no further effect.
+			 * */
+			*p_len = p % (addr_size * 8 + 1);
+			p = nmtst_get_rand_int () % 750;
+			if (p <= 255) {
+				if (rr->addr_family == AF_INET)
+					p_addr->addr4 = nmtst_inet4_from_string (nm_sprintf_buf (saddr, "192.192.5.%u", p));
+				else
+					p_addr->addr6 = *nmtst_inet6_from_string (nm_sprintf_buf (saddr, "1:2:3:4::f:%02x", p));
+			} else if (p <= 512)
+				nmtst_rand_buf (NULL, p_addr, addr_size);
+		}
+	}
+
+	p = nmtst_get_rand_int () % 1000u;
+	if (p < 50)
+		rr->tun_id = 10000 + p;
+
+again_action:
+	p = nmtst_get_rand_int () % 1000u;
+	if (p < 300)
+		rr->action = FR_ACT_UNSPEC;
+	else if (p < 700)
+		rr->action = p % 12;
+	else
+		rr->action = p % 0xFF;
+
+	rr->priority = nmtst_rand_select (0,
+	                                  nmtst_get_rand_int () % 100,
+	                                  nmtst_get_rand_int ());
+	if (   rr->action == FR_ACT_GOTO
+	    && rr->priority == G_MAXINT32)
+		goto again_action;
+
+again_goto_target:
+	rr->goto_target = nmtst_rand_select (0,
+	                                     nmtst_get_rand_int () % 100,
+	                                     nmtst_get_rand_int (),
+	                                     rr->priority + 1);
+	if (   rr->action == FR_ACT_GOTO
+	    && rr->goto_target <= rr->priority)
+		goto again_goto_target;
+
+	p = nmtst_get_rand_int () % 1000u;
+	if (p < 50) {
+		if (_rule_check_kernel_support (platform, FRA_L3MDEV)) {
+			rr->l3mdev = TRUE;
+			rr->table = RT_TABLE_UNSPEC;
+		}
+	}
+
+again_table:
+	if (!rr->l3mdev) {
+		rr->table = nmtst_rand_select (RT_TABLE_UNSPEC,
+		                               RT_TABLE_MAIN,
+		                               10000 + nmtst_get_rand_int () % 10);
+		if (   rr->action == FR_ACT_TO_TBL
+		    && rr->table == RT_TABLE_UNSPEC)
+			goto again_table;
+	}
+
+	rr->fwmark = nmtst_rand_select (0,
+	                                nmtst_get_rand_int () % 100,
+	                                nmtst_get_rand_int ());
+	rr->fwmask = nmtst_rand_select (0u,
+	                                0xFFFFFFFFu,
+	                                nmtst_get_rand_int () % 100,
+	                                nmtst_get_rand_int ());
+
+	rr->flow = nmtst_rand_select (0u,
+	                              0xFFFFFFFFu,
+	                              nmtst_get_rand_int () % 100,
+	                              nmtst_get_rand_int ());
+
+	if (_rule_check_kernel_support (platform, FRA_PROTOCOL)) {
+		rr->protocol = nmtst_rand_select (0u,
+		                                  255u,
+		                                  nmtst_get_rand_int () % 256);
+	}
+
+#define IPTOS_TOS_MASK 0x1E
+
+again_tos:
+	rr->tos = nmtst_rand_select (0u,
+	                             255u,
+	                             nmtst_get_rand_int () % 256);
+	if (   rr->addr_family == AF_INET
+	    && rr->tos & ~IPTOS_TOS_MASK)
+		goto again_tos;
+
+	if (_rule_check_kernel_support (platform, FRA_IP_PROTO)) {
+		rr->ip_proto = nmtst_rand_select (0u,
+		                                  255u,
+		                                  nmtst_get_rand_int () % 256);
+	}
+
+	if (_rule_check_kernel_support (platform, FRA_SUPPRESS_PREFIXLEN)) {
+		rr->suppress_prefixlen_inverse = ~((guint32) nmtst_rand_select (0u,
+		                                                                0xFFFFFFFFu,
+		                                                                nmtst_get_rand_int () % 100,
+		                                                                nmtst_get_rand_int ()));
+	}
+
+	if (_rule_check_kernel_support (platform, FRA_SUPPRESS_IFGROUP)) {
+		rr->suppress_ifgroup_inverse = ~((guint32) nmtst_rand_select (0u,
+		                                                              0xFFFFFFFFu,
+		                                                              nmtst_get_rand_int () % 100,
+		                                                              nmtst_get_rand_int ()));
+	}
+
+again_uid_range:
+	p = nmtst_get_rand_int () % 1000u;
+	if (p < 100) {
+		if (_rule_check_kernel_support (platform, FRA_UID_RANGE))
+			rr->uid_range_has = TRUE;
+	}
+
+	rr->uid_range.start = nmtst_rand_select (0u, uids.uid, uids.euid);
+	rr->uid_range.end   = nmtst_rand_select (0u, uids.uid, uids.euid);
+	if (rr->uid_range.end < rr->uid_range.start)
+		NMTST_SWAP (rr->uid_range.start, rr->uid_range.end);
+
+	if (   rr->uid_range.start == ((guint32) -1)
+	    || rr->uid_range.end   == ((guint32) -1))
+		goto again_uid_range;
+
+	for (i = 0; i < 2; i++) {
+		NMFibRulePortRange *range = i ? &rr->sport_range : &rr->dport_range;
+		int attribute             = i ? FRA_SPORT_RANGE  : FRA_DPORT_RANGE;
+
+		if (!_rule_check_kernel_support (platform, attribute))
+			continue;
+
+		p = nmtst_get_rand_int ();
+		if ((p % 1000u) < 100) {
+			while (range->start == 0) {
+				p = p ^ nmtst_get_rand_int ();
+				range->start = nmtst_rand_select (1u, 0xFFFEu, ((p      ) % 0xFFFEu) + 1);
+				range->end   = nmtst_rand_select (1u, 0xFFFEu, ((p >> 16) % 0xFFFEu) + 1, range->start);
+				if (range->end < range->start)
+					NMTST_SWAP (range->start, range->end);
+			}
+		}
+	}
+
+	p = nmtst_get_rand_int () % 1000u;
+	if (p < 100)
+		rr->flags |= FIB_RULE_INVERT;
+
+	return obj;
+}
+
+static gboolean
+_rule_fuzzy_equal (const NMPObject *obj,
+                   const NMPObject *obj_comp,
+                   int op_type)
+{
+	const NMPlatformRoutingRule *rr = NMP_OBJECT_CAST_ROUTING_RULE (obj);
+	NMPlatformRoutingRule rr_co = *NMP_OBJECT_CAST_ROUTING_RULE (obj_comp);
+
+	switch (op_type) {
+	case RTM_NEWRULE:
+		/* when adding rules with RTM_NEWRULE, kernel checks whether an existing
+		 * rule already exists and may fail with EEXIST. This check has issues
+		 * and reject legitimate rules (rh#1686075).
+		 *
+		 * Work around that. */
+		if (rr->src_len == 0)
+			rr_co.src_len = 0;
+		if (rr->dst_len == 0)
+			rr_co.dst_len = 0;
+		if (rr->flow == 0)
+			rr_co.flow = 0;
+		if (rr->tos == 0)
+			rr_co.tos = 0;
+		break;
+	case RTM_DELRULE:
+		/* when deleting a rule with RTM_DELRULE, kernel tries to find the
+		 * cadidate to delete. It might delete the wrong rule (rh#1685816). */
+		if (rr->action == FR_ACT_UNSPEC)
+			rr_co.action = FR_ACT_UNSPEC;
+		if (rr->iifname[0] == '\0')
+			rr_co.iifname[0] = '\0';
+		if (rr->oifname[0] == '\0')
+			rr_co.oifname[0] = '\0';
+		if (rr->src_len == 0)
+			rr_co.src_len = 0;
+		if (rr->dst_len == 0)
+			rr_co.dst_len = 0;
+		if (rr->tun_id == 0)
+			rr_co.tun_id = 0;
+		if (rr->fwmark == 0)
+			rr_co.fwmark = 0;
+		if (rr->fwmask == 0)
+			rr_co.fwmask = 0;
+		if (rr->flow == 0)
+			rr_co.flow = 0;
+		if (rr->protocol == 0)
+			rr_co.protocol = 0;
+		if (rr->table == RT_TABLE_UNSPEC)
+			rr_co.table = RT_TABLE_UNSPEC;
+		if (rr->l3mdev == 0)
+			rr_co.l3mdev = 0;
+		if (rr->tos == 0)
+			rr_co.tos = 0;
+		if (rr->ip_proto == 0)
+			rr_co.ip_proto = 0;
+		if (rr->suppress_prefixlen_inverse == 0)
+			rr_co.suppress_prefixlen_inverse = 0;
+		if (rr->suppress_ifgroup_inverse == 0)
+			rr_co.suppress_ifgroup_inverse = 0;
+		if (!rr->uid_range_has)
+			rr_co.uid_range_has = FALSE;
+		if (rr->sport_range.start == 0 && rr->sport_range.end == 0) {
+			rr_co.sport_range.start = 0;
+			rr_co.sport_range.end   = 0;
+		}
+		if (rr->dport_range.start == 0 && rr->dport_range.end == 0) {
+			rr_co.dport_range.start = 0;
+			rr_co.dport_range.end   = 0;
+		}
+		if (!NM_FLAGS_HAS (rr->flags, FIB_RULE_INVERT))
+			rr_co.flags &= ~((guint32) FIB_RULE_INVERT);
+		else
+			rr_co.flags |= ((guint32) FIB_RULE_INVERT);
+		break;
+	default:
+		g_assert_not_reached ();
+		break;
+	}
+
+	return nm_platform_routing_rule_cmp (rr, &rr_co, NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID) == 0;
+}
+
+static void
+test_rule (gconstpointer test_data)
+{
+	const int TEST_IDX = GPOINTER_TO_INT (test_data);
+	gs_unref_ptrarray GPtrArray *objs = NULL;
+	gs_unref_ptrarray GPtrArray *objs_initial = NULL;
+	NMPlatform *platform = NM_PLATFORM_GET;
+	guint i, j, n;
+	int r;
+
+	nm_platform_process_events (platform);
+
+	objs_initial = nmtstp_platform_routing_rules_get_all (platform, AF_UNSPEC);
+	g_assert (objs_initial);
+	g_assert_cmpint (objs_initial->len, ==, 5);
+
+	nmtstp_run_command_check ("ip rule add table 766");
+	nm_platform_process_events (platform);
+
+	for (i = 6; i > 0; i--) {
+		gs_unref_ptrarray GPtrArray *objs_extern = NULL;
+		const NMPObject *obj;
+
+		objs_extern = nmtstp_platform_routing_rules_get_all (platform, AF_UNSPEC);
+
+		g_assert (objs_extern);
+		g_assert_cmpint (objs_extern->len, ==, i);
+
+		if (TEST_IDX != 1)
+			nmtst_rand_perm (NULL, objs_extern->pdata, NULL, sizeof (gpointer), objs_extern->len);
+
+		obj = objs_extern->pdata[0];
+
+		r = nm_platform_object_delete (platform, obj);
+		g_assert_cmpint (r, ==, TRUE);
+
+		g_assert (!_platform_has_routing_rule (platform, obj));
+	}
+
+	g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, 0);
+
+#define RR(...) \
+	nmp_object_new (NMP_OBJECT_TYPE_ROUTING_RULE, \
+	                (const NMPlatformObject *) &((NMPlatformRoutingRule) { \
+	                  __VA_ARGS__ \
+	                }))
+
+	objs = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
+
+	g_ptr_array_add (objs, RR (
+		.addr_family = AF_INET,
+		.priority    = 10,
+	));
+
+	g_ptr_array_add (objs, RR (
+		.addr_family = AF_INET,
+		.priority    = 400,
+		.action      = FR_ACT_GOTO,
+		.goto_target = 10000,
+	));
+
+	g_ptr_array_add (objs, RR (
+		.addr_family = AF_INET6,
+	));
+
+	g_ptr_array_add (objs, RR (
+		.addr_family = AF_INET6,
+		.action      = FR_ACT_TO_TBL,
+		.table       = RT_TABLE_MAIN,
+	));
+
+	g_ptr_array_add (objs, RR (
+		.addr_family = AF_INET6,
+		.priority    = 30,
+	));
+
+	g_ptr_array_add (objs, RR (
+		.addr_family = AF_INET6,
+		.priority    = 50,
+		.iifname     = "t-iif-1",
+	));
+
+	g_ptr_array_add (objs, RR (
+		.addr_family = AF_INET6,
+		.priority    = 50,
+		.iifname     = "t-oif-1",
+	));
+
+	g_ptr_array_add (objs, RR (
+		.addr_family = AF_INET,
+		.priority    = 50,
+		.iifname     = "t-oif-2",
+	));
+
+	g_ptr_array_add (objs, RR (
+		.addr_family = AF_INET,
+		.priority    = 51,
+		.iifname     = DEVICE_NAME,
+	));
+
+	if (TEST_IDX == 1) {
+		g_ptr_array_add (objs, RR (
+			.addr_family = AF_INET,
+			.table       = 10000,
+		));
+	}
+
+	if (TEST_IDX != 1) {
+		nmtst_rand_perm (NULL, objs->pdata, NULL, sizeof (gpointer), objs->len);
+		g_ptr_array_set_size (objs, nmtst_get_rand_int () % (objs->len + 1));
+	}
+
+	n = (TEST_IDX != 1) ? nmtst_get_rand_int () % 50u : 0u;
+	for (i = 0; i < n; i++) {
+		nm_auto_nmpobj const NMPObject *o = NULL;
+		guint try = 0;
+
+again:
+		o = _rule_create_random (platform);
+		for (j = 0; j < objs->len; j++) {
+			if (nm_platform_routing_rule_cmp (NMP_OBJECT_CAST_ROUTING_RULE (o),
+			                                  NMP_OBJECT_CAST_ROUTING_RULE (objs->pdata[j]),
+			                                  NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID) == 0)  {
+				try++;
+				g_assert (try < 200);
+				nm_clear_pointer (&o, nmp_object_unref);
+				goto again;
+			}
+		}
+		g_ptr_array_add (objs, (gpointer) g_steal_pointer (&o));
+	}
+
+	if (TEST_IDX != 1)
+		nmtst_rand_perm (NULL, objs->pdata, NULL, sizeof (gpointer), objs->len);
+
+	for (i = 0; i < objs->len;) {
+		const NMPObject *obj = objs->pdata[i];
+
+		for (j = 0; j < objs->len; j++)
+			g_assert ((j < i) == (!!_platform_has_routing_rule (platform, objs->pdata[j])));
+
+		r = nm_platform_routing_rule_add (platform, NMP_NLM_FLAG_ADD, NMP_OBJECT_CAST_ROUTING_RULE (obj));
+
+		if (r == -EEXIST) {
+			g_assert (!_platform_has_routing_rule (platform, obj));
+			/* this should not happen, but there are bugs in kernel (rh#1686075). */
+			for (j = 0; j < i; j++) {
+				const NMPObject *obj2 = objs->pdata[j];
+
+				g_assert (_platform_has_routing_rule (platform, obj2));
+
+				if (_rule_fuzzy_equal (obj, obj2, RTM_NEWRULE)) {
+					r = 0;
+					break;
+				}
+			}
+			if (r == 0) {
+				/* OK, the rule is shadowed by another rule, and kernel does not allow
+				 * us to add this one (rh#1686075). Drop this from the test. */
+				g_ptr_array_remove_index (objs, i);
+				continue;
+			}
+		}
+
+		if (r != 0) {
+			g_print (">>> failing...\n");
+			nmtstp_run_command_check ("ip rule");
+			nmtstp_run_command_check ("ip -6 rule");
+			g_assert_cmpint (r, ==, 0);
+		}
+
+		g_assert (_platform_has_routing_rule (platform, obj));
+
+		g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, i + 1);
+
+		i++;
+	}
+
+	if (TEST_IDX != 1)
+		nmtst_rand_perm (NULL, objs->pdata, NULL, sizeof (gpointer), objs->len);
+
+	if (_LOGD_ENABLED ()) {
+		nmtstp_run_command_check ("ip rule");
+		nmtstp_run_command_check ("ip -6 rule");
+	}
+
+	for (i = 0; i < objs->len; i++) {
+		const NMPObject *obj = objs->pdata[i];
+		const NMPObject *obj2;
+
+		for (j = 0; j < objs->len; j++)
+			g_assert ((j < i) == (!_platform_has_routing_rule (platform, objs->pdata[j])));
+
+		g_assert (_platform_has_routing_rule (platform, obj));
+
+		r = nm_platform_object_delete (platform, obj);
+		g_assert_cmpint (r, ==, TRUE);
+
+		obj2 = _platform_has_routing_rule (platform, obj);
+
+		if (obj2) {
+			guint k;
+
+			/* When deleting a rule, kernel does a fuzzy match, ignoring for example:
+			 *  - action, if it is FR_ACT_UNSPEC
+			 *  - iifname,oifname if it is unspecified
+			 * rh#1685816
+			 *
+			 * That means, we may have deleted the wrong rule. Which one? */
+			k = i;
+			for (j = i + 1; j < objs->len; j++) {
+				if (!_platform_has_routing_rule (platform, objs->pdata[j])) {
+					g_assert_cmpint (k, ==, i);
+					k = j;
+				}
+			}
+			g_assert_cmpint (k, >, i);
+
+			if (!_rule_fuzzy_equal (obj, objs->pdata[k], RTM_DELRULE)) {
+				g_print (">>> failing...\n");
+				g_print (">>> no fuzzy match between: %s\n", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+				g_print (">>>                    and: %s\n", nmp_object_to_string (objs->pdata[k], NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+				g_assert_not_reached ();
+			}
+
+			objs->pdata[i] = objs->pdata[k];
+			objs->pdata[k] = (gpointer) obj;
+			obj2 = NULL;
+		}
+
+		g_assert (!obj2);
+
+		g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, objs->len -i - 1);
+	}
+
+	g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, 0);
+
+	for (i = 0; i < objs_initial->len; i++) {
+		const NMPObject *obj = objs_initial->pdata[i];
+
+		for (j = 0; j < objs_initial->len; j++)
+			g_assert ((j < i) == (!!_platform_has_routing_rule (platform, objs_initial->pdata[j])));
+
+		r = nm_platform_routing_rule_add (platform, NMP_NLM_FLAG_ADD, NMP_OBJECT_CAST_ROUTING_RULE (obj));
+		g_assert_cmpint (r, ==, 0);
+	}
+	for (j = 0; j < objs_initial->len; j++)
+		g_assert (_platform_has_routing_rule (platform, objs_initial->pdata[j]));
+	g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, objs_initial->len);
+}
+
+/*****************************************************************************/
+
 NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;
 
 void
@@ -901,5 +1639,11 @@ _nmtstp_setup_tests (void)
 		add_test_func ("/route/ip4_route_get", test_ip4_route_get);
 		add_test_func ("/route/ip6_route_get", test_ip6_route_get);
 		add_test_func ("/route/ip4_zero_gateway", test_ip4_zero_gateway);
+	}
+
+	if (nmtstp_is_root_test ()) {
+		add_test_func_data ("/route/rule/1", test_rule, GINT_TO_POINTER (1));
+		add_test_func_data ("/route/rule/2", test_rule, GINT_TO_POINTER (2));
+		add_test_func_data ("/route/rule/3", test_rule, GINT_TO_POINTER (3));
 	}
 }

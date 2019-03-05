@@ -273,6 +273,58 @@ nmtstp_ip6_route_get_all (NMPlatform *platform,
 GArray *nmtstp_platform_ip4_address_get_all (NMPlatform *self, int ifindex);
 GArray *nmtstp_platform_ip6_address_get_all (NMPlatform *self, int ifindex);
 
+/*****************************************************************************/
+
+static inline gboolean
+_nmtstp_platform_routing_rules_get_all_predicate (const NMPObject *obj,
+                                                  gpointer user_data)
+{
+	int addr_family = GPOINTER_TO_INT (user_data);
+
+	g_assert (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_ROUTING_RULE);
+
+	return    addr_family == AF_UNSPEC
+	       || NMP_OBJECT_CAST_ROUTING_RULE (obj)->addr_family == addr_family;
+}
+
+static inline GPtrArray *
+nmtstp_platform_routing_rules_get_all (NMPlatform *platform, int addr_family)
+{
+	NMPLookup lookup;
+
+	g_assert (NM_IS_PLATFORM (platform));
+	g_assert (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET, AF_INET6));
+
+	nmp_lookup_init_obj_type (&lookup, NMP_OBJECT_TYPE_ROUTING_RULE);
+	return nm_platform_lookup_clone (platform,
+	                                 &lookup,
+	                                 _nmtstp_platform_routing_rules_get_all_predicate,
+	                                 GINT_TO_POINTER (addr_family));
+}
+
+static inline guint
+nmtstp_platform_routing_rules_get_count (NMPlatform *platform, int addr_family)
+{
+	const NMDedupMultiHeadEntry *head_entry;
+	NMDedupMultiIter iter;
+	const NMPObject *obj;
+	NMPLookup lookup;
+	guint n;
+
+	g_assert (NM_IS_PLATFORM (platform));
+	g_assert (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET, AF_INET6));
+
+	nmp_lookup_init_obj_type (&lookup, NMP_OBJECT_TYPE_ROUTING_RULE);
+	head_entry = nm_platform_lookup (platform, &lookup);
+
+	n = 0;
+	nmp_cache_iter_for_each (&iter, head_entry, &obj) {
+		if (_nmtstp_platform_routing_rules_get_all_predicate (obj, GINT_TO_POINTER (addr_family)))
+			n++;
+	}
+	return n;
+}
+
 gboolean nmtstp_platform_ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, guint8 plen, guint32 metric);
 gboolean nmtstp_platform_ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, guint8 plen, guint32 metric);
 
