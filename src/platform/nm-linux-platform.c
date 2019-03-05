@@ -6814,35 +6814,74 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
-static gboolean
-link_set_sriov_params (NMPlatform *platform,
-                       int ifindex,
-                       guint num_vfs,
-                       NMTernary autoprobe)
+static void
+sriov_idle_cb (gpointer user_data,
+               GCancellable *cancellable)
+{
+	gs_unref_object NMPlatform *platform = NULL;
+	gs_free_error GError *cancelled_error = NULL;
+	gs_free_error GError *error = NULL;
+	NMPlatformAsyncCallback callback;
+	gpointer callback_data;
+
+	g_cancellable_set_error_if_cancelled (cancellable, &cancelled_error);
+	nm_utils_user_data_unpack (user_data, &platform, &error, &callback, &callback_data);
+	callback (cancelled_error ?: error, callback_data);
+}
+
+static void
+link_set_sriov_params_async (NMPlatform *platform,
+                             int ifindex,
+                             guint num_vfs,
+                             NMTernary autoprobe,
+                             NMPlatformAsyncCallback callback,
+                             gpointer data,
+                             GCancellable *cancellable)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
+	gs_free_error GError *error = NULL;
 	nm_auto_close int dirfd = -1;
 	int current_autoprobe;
-	guint total;
+	guint i, total;
 	gint64 current_num;
 	char ifname[IFNAMSIZ];
+	gpointer packed;
+	const char *values[3];
 	char buf[64];
-	int errsv;
 
-	if (!nm_platform_netns_push (platform, &netns))
-		return FALSE;
+	g_return_if_fail (callback || !data);
+	g_return_if_fail (cancellable);
+
+	if (!nm_platform_netns_push (platform, &netns)) {
+		g_set_error_literal (&error,
+		                     NM_UTILS_ERROR,
+		                     NM_UTILS_ERROR_UNKNOWN,
+		                     "couldn't change namespace");
+		goto out_idle;
+	}
 
 	dirfd = nm_platform_sysctl_open_netdir (platform, ifindex, ifname);
-	if (!dirfd)
-		return FALSE;
+	if (!dirfd) {
+		g_set_error_literal (&error,
+		                     NM_UTILS_ERROR,
+		                     NM_UTILS_ERROR_UNKNOWN,
+		                     "couldn't open netdir");
+		goto out_idle;
+	}
 
 	total = nm_platform_sysctl_get_int_checked (platform,
 	                                            NMP_SYSCTL_PATHID_NETDIR (dirfd,
 	                                                                      ifname,
 	                                                                      "device/sriov_totalvfs"),
 	                                            10, 0, G_MAXUINT, 0);
-	if (errno)
-		return FALSE;
+	if (errno) {
+		g_set_error (&error,
+		             NM_UTILS_ERROR,
+		             NM_UTILS_ERROR_UNKNOWN,
+		             "failed reading sriov_totalvfs value: %s",
+		             nm_strerror_native (errno));
+		goto out_idle;
+	}
 	if (num_vfs > total) {
 		_LOGW ("link: %d only supports %u VFs (requested %u)", ifindex, total, num_vfs);
 		num_vfs = total;
@@ -6874,23 +6913,7 @@ link_set_sriov_params (NMPlatform *platform,
 
 	if (   current_num == num_vfs
 	    && (autoprobe == NM_TERNARY_DEFAULT || current_autoprobe == autoprobe))
-		return TRUE;
-
-	if (current_num != 0) {
-		/* We need to destroy all other VFs before changing any value */
-		if (!nm_platform_sysctl_set (NM_PLATFORM_GET,
-		                             NMP_SYSCTL_PATHID_NETDIR (dirfd,
-		                                                       ifname,
-		                                                      "device/sriov_numvfs"),
-		                             "0")) {
-			errsv = errno;
-			_LOGW ("link: couldn't reset SR-IOV num_vfs: %s", nm_strerror_native (errsv));
-			return FALSE;
-		}
-	}
-
-	if (num_vfs == 0)
-		return TRUE;
+		goto out_idle;
 
 	if (   NM_IN_SET (autoprobe, NM_TERNARY_TRUE, NM_TERNARY_FALSE)
 	    && current_autoprobe != autoprobe
@@ -6899,22 +6922,40 @@ link_set_sriov_params (NMPlatform *platform,
 	                                                          ifname,
 	                                                          "device/sriov_drivers_autoprobe"),
 	                                nm_sprintf_buf (buf, "%d", (int) autoprobe))) {
-		errsv = errno;
-		_LOGW ("link: couldn't set SR-IOV drivers-autoprobe to %d: %s", (int) autoprobe, nm_strerror_native (errsv));
-		return FALSE;
+		g_set_error (&error,
+		             NM_UTILS_ERROR,
+		             NM_UTILS_ERROR_UNKNOWN,
+		             "couldn't set SR-IOV drivers-autoprobe to %d: %s",
+		            (int) autoprobe, nm_strerror_native (errno));
+		goto out_idle;
 	}
 
-	if (!nm_platform_sysctl_set (NM_PLATFORM_GET,
-	                             NMP_SYSCTL_PATHID_NETDIR (dirfd,
-	                                                       ifname,
-	                                                       "device/sriov_numvfs"),
-	                             nm_sprintf_buf (buf, "%u", num_vfs))) {
-		errsv = errno;
-		_LOGW ("link: couldn't set SR-IOV num_vfs to %d: %s", num_vfs, nm_strerror_native (errsv));
-		return FALSE;
-	}
+	if (current_num == 0 && num_vfs == 0)
+		goto out_idle;
 
-	return TRUE;
+	i = 0;
+	if (current_num != 0)
+		values[i++] = "0";
+	if (num_vfs != 0)
+		values[i++] = nm_sprintf_bufa (32, "%u", num_vfs);
+	values[i++] = NULL;
+
+	sysctl_set_async (platform,
+	                  NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname, "device/sriov_numvfs"),
+	                  values,
+	                  callback,
+	                  data,
+	                  cancellable);
+	return;
+
+out_idle:
+	if (callback) {
+		packed = nm_utils_user_data_pack (g_object_ref (platform),
+		                                  g_steal_pointer (&error),
+		                                  callback,
+		                                  data);
+		nm_utils_invoke_on_idle (sriov_idle_cb, packed, cancellable);
+	}
 }
 
 static gboolean
@@ -9223,7 +9264,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_get_permanent_address = link_get_permanent_address;
 	platform_class->link_set_mtu = link_set_mtu;
 	platform_class->link_set_name = link_set_name;
-	platform_class->link_set_sriov_params = link_set_sriov_params;
+	platform_class->link_set_sriov_params_async = link_set_sriov_params_async;
 	platform_class->link_set_sriov_vfs = link_set_sriov_vfs;
 	platform_class->link_set_bridge_vlans = link_set_bridge_vlans;
 

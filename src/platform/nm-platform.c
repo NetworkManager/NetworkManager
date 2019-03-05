@@ -1587,19 +1587,35 @@ nm_platform_link_supports_sriov (NMPlatform *self, int ifindex)
  * @num_vfs: the number of VFs to create
  * @autoprobe: the new autoprobe-drivers value (pass
  *     %NM_TERNARY_DEFAULT to keep current value)
+ * @callback: called when the operation finishes
+ * @callback_data: data passed to @callback
+ * @cancellable: cancellable to abort the operation
+ *
+ * Sets SR-IOV parameters asynchronously without
+ * blocking the main thread. The callback function is
+ * always invoked, and asynchronously.
  */
-gboolean
-nm_platform_link_set_sriov_params (NMPlatform *self,
-                                   int ifindex,
-                                   guint num_vfs,
-                                   NMTernary autoprobe)
+void
+nm_platform_link_set_sriov_params_async (NMPlatform *self,
+                                         int ifindex,
+                                         guint num_vfs,
+                                         NMTernary autoprobe,
+                                         NMPlatformAsyncCallback callback,
+                                         gpointer callback_data,
+                                         GCancellable *cancellable)
 {
-	_CHECK_SELF (self, klass, FALSE);
+	_CHECK_SELF_VOID (self, klass);
 
-	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_if_fail (ifindex > 0);
 
 	_LOG3D ("link: setting %u total VFs and autoprobe %d", num_vfs, (int) autoprobe);
-	return klass->link_set_sriov_params (self, ifindex, num_vfs, autoprobe);
+	klass->link_set_sriov_params_async (self,
+	                                    ifindex,
+	                                    num_vfs,
+	                                    autoprobe,
+	                                    callback,
+	                                    callback_data,
+	                                    cancellable);
 }
 
 gboolean
