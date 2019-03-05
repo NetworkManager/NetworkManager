@@ -7,8 +7,6 @@
 # Note that it contains __PLACEHOLDERS__ that will be replaced by the accompanying 'build.sh' script.
 
 
-%global dbus_glib_version 0.100
-
 %global wireless_tools_version 1:28-0pre9
 
 %global wpa_supplicant_version 1:1.1
@@ -60,11 +58,6 @@
 %bcond_with    test
 %bcond_with    lto
 %bcond_with    sanitizer
-%if 0%{?fedora} > 28 || 0%{?rhel} > 7
-%bcond_with libnm_glib
-%else
-%bcond_without libnm_glib
-%endif
 %if 0%{?fedora}
 %bcond_without connectivity_fedora
 %else
@@ -156,7 +149,6 @@ BuildRequires: intltool
 BuildRequires: gettext-devel
 
 BuildRequires: dbus-devel >= %{dbus_version}
-BuildRequires: dbus-glib-devel >= %{dbus_glib_version}
 %if 0%{?fedora}
 BuildRequires: wireless-tools-devel >= %{wireless_tools_version}
 %endif
@@ -342,37 +334,6 @@ Obsoletes: NetworkManager < %{obsoletes_ppp_plugin}
 %description ppp
 This package contains NetworkManager support for PPP.
 %endif
-
-
-%package glib
-Summary: Libraries for adding NetworkManager support to applications (old API).
-Group: Development/Libraries
-Requires: dbus >= %{dbus_version}
-Requires: dbus-glib >= %{dbus_glib_version}
-Conflicts: NetworkManager-libnm < %{epoch}:%{version}-%{release}
-
-%description glib
-This package contains the libraries that make it easier to use some
-NetworkManager functionality from applications that use glib.  This is
-the older NetworkManager API. See also NetworkManager-libnm.
-
-
-%package glib-devel
-Summary: Header files for adding NetworkManager support to applications (old API).
-Group: Development/Libraries
-Requires: %{name}-glib%{?_isa} = %{epoch}:%{version}-%{release}
-Requires: glib2-devel
-Requires: pkgconfig
-Requires: dbus-glib-devel >= %{dbus_glib_version}
-Provides: %{name}-devel = %{epoch}:%{version}-%{release}
-Provides: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
-Obsoletes: %{name}-devel < %{epoch}:%{version}-%{release}
-
-%description glib-devel
-This package contains the header and pkg-config files for development
-applications using NetworkManager functionality from applications that
-use glib.
-This is the older NetworkManager API.  See also NetworkManager-libnm-devel.
 
 
 %package libnm
@@ -566,12 +527,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	-Dconfig_plugins_default='ifcfg-rh' \
 	-Dconfig_dns_rc_manager_default=symlink \
 	-Dconfig_logging_backend_default=journal \
-	-Djson_validation=true \
-%if %{with libnm_glib}
-	-Dlibnm_glib=true
-%else
-	-Dlibnm_glib=false
-%endif
+	-Djson_validation=true
 
 %meson_build
 
@@ -687,12 +643,7 @@ intltoolize --automake --copy --force
 	--with-config-plugins-default='ifcfg-rh' \
 	--with-config-dns-rc-manager-default=symlink \
 	--with-config-logging-backend-default=journal \
-	--enable-json-validation \
-%if %{with libnm_glib}
-	--with-libnm-glib
-%else
-	--without-libnm-glib
-%endif
+	--enable-json-validation
 
 make %{?_smp_mflags}
 
@@ -802,9 +753,6 @@ fi
 
 
 %if 0%{?fedora} < 28
-%post   glib -p /sbin/ldconfig
-%postun glib -p /sbin/ldconfig
-
 %post   libnm -p /sbin/ldconfig
 %postun libnm -p /sbin/ldconfig
 %endif
@@ -910,47 +858,6 @@ fi
 %files ppp
 %{_libdir}/pppd/%{ppp_version}/nm-pppd-plugin.so
 %{nmplugindir}/libnm-ppp-plugin.so
-%endif
-
-
-%if %{with libnm_glib}
-%files glib -f %{name}.lang
-%{_libdir}/libnm-glib.so.*
-%{_libdir}/libnm-glib-vpn.so.*
-%{_libdir}/libnm-util.so.*
-%{_libdir}/girepository-1.0/NetworkManager-1.0.typelib
-%{_libdir}/girepository-1.0/NMClient-1.0.typelib
-%endif
-
-
-%if %{with libnm_glib}
-%files glib-devel
-%dir %{_includedir}/libnm-glib
-%dir %{_includedir}/%{name}
-%{_includedir}/libnm-glib/*.h
-%{_includedir}/%{name}/%{name}.h
-%{_includedir}/%{name}/NetworkManagerVPN.h
-%{_includedir}/%{name}/nm-setting*.h
-%{_includedir}/%{name}/nm-connection.h
-%{_includedir}/%{name}/nm-utils-enum-types.h
-%{_includedir}/%{name}/nm-utils.h
-%{_includedir}/%{name}/nm-version.h
-%{_includedir}/%{name}/nm-version-macros.h
-%{_libdir}/pkgconfig/libnm-glib.pc
-%{_libdir}/pkgconfig/libnm-glib-vpn.pc
-%{_libdir}/pkgconfig/libnm-util.pc
-%{_libdir}/pkgconfig/%{name}.pc
-%{_libdir}/libnm-glib.so
-%{_libdir}/libnm-glib-vpn.so
-%{_libdir}/libnm-util.so
-%{_datadir}/gir-1.0/NetworkManager-1.0.gir
-%{_datadir}/gir-1.0/NMClient-1.0.gir
-%dir %{_datadir}/gtk-doc/html/libnm-glib
-%{_datadir}/gtk-doc/html/libnm-glib/*
-%dir %{_datadir}/gtk-doc/html/libnm-util
-%{_datadir}/gtk-doc/html/libnm-util/*
-%{_datadir}/vala/vapi/libnm-*.deps
-%{_datadir}/vala/vapi/libnm-*.vapi
 %endif
 
 

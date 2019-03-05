@@ -197,9 +197,6 @@
 /* Define if you have dhcpcd */
 #mesondefine WITH_DHCPCD
 
-/* Define for libnm to prevent GIR from loading libnm-glib */
-#mesondefine WITH_FAKE_TYPELIBS
-
 /* Define if JANSSON is enabled */
 #mesondefine WITH_JANSSON
 
