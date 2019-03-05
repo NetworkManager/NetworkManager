@@ -192,7 +192,7 @@ TEST_NAME="${TEST##*/}"
 
 if [ -z "${NMTST_LAUNCH_DBUS}" ]; then
     # autodetect whether to launch D-Bus based on the test path.
-    if [[ $TEST_PATH == */libnm/tests || $TEST_PATH == */libnm-glib/tests ]]; then
+    if [[ $TEST_PATH == */libnm/tests ]]; then
         NMTST_LAUNCH_DBUS=1
     else
         NMTST_LAUNCH_DBUS=0

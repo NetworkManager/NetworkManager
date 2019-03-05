@@ -8,6 +8,9 @@ The API is subject to change and not guaranteed to be compatible
 with the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* The libnm-glib library, deprecated in favor of libnm since NetworkManager 1.0,
+  and disabled by default since NetworkManager 1.12 has now been removed.
+
 =============================================
 NetworkManager-1.18
 Overview of changes since NetworkManager-1.16

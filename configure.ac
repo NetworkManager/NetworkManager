@@ -257,34 +257,6 @@ AC_SUBST(GLIB_LIBS)
 
 GOBJECT_INTROSPECTION_CHECK([0.9.6])
 
-AC_ARG_WITH(libnm-glib,
-            AS_HELP_STRING([--with-libnm-glib],
-                           [build legacy libraries]))
-fake_typelibs=no
-if test "$with_libnm_glib" == "yes"; then
-	PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.1 dbus-glib-1 >= 0.94, :,
-	                  [AC_MSG_FAILURE([$DBUS_PKG_ERRORS
-
-Configure with --without-libnm-glib if you do not need the legacy libraries])
-	                  ])
-
-	if test "${found_introspection}" = "yes"; then
-		AC_PATH_PROG(GLIB_COMPILE_RESOURCES, glib-compile-resources)
-		if ! test x"$GLIB_COMPILE_RESOURCES" = x""; then
-			fake_typelibs=yes
-		fi
-	fi
-else
-	with_libnm_glib=no
-fi
-AM_CONDITIONAL(WITH_LEGACY_LIBRARIES, test "$with_libnm_glib" == "yes")
-if test "$fake_typelibs" = "yes"; then
-	AC_DEFINE(WITH_FAKE_TYPELIBS, 1, [Define for libnm to prevent GIR from loading libnm-glib])
-else
-	AC_DEFINE(WITH_FAKE_TYPELIBS, 0, [Define for libnm to prevent GIR from loading libnm-glib])
-fi
-AM_CONDITIONAL(WITH_FAKE_TYPELIBS, test "${fake_typelibs}" = "yes")
-
 PKG_CHECK_MODULES([LIBUDEV], [libudev >= 175])
 
 # Qt4
@@ -1276,17 +1248,10 @@ AC_CONFIG_FILES([
 Makefile
 shared/nm-version-macros.h
 libnm/libnm.pc
-libnm-util/libnm-util.pc
-libnm-glib/libnm-glib.pc
-libnm-glib/libnm-glib-vpn.pc
 po/Makefile.in
 data/org.freedesktop.NetworkManager.policy.in
 docs/api/Makefile
 docs/api/version.xml
-docs/libnm-glib/Makefile
-docs/libnm-glib/version.xml
-docs/libnm-util/Makefile
-docs/libnm-util/version.xml
 docs/libnm/Makefile
 docs/libnm/version.xml
 NetworkManager.pc
@@ -1335,7 +1300,6 @@ echo "  ofono: $with_ofono"
 echo "  concheck: $enable_concheck"
 echo "  libteamdctl: $enable_teamdctl"
 echo "  ovs: $enable_ovs"
-echo "  libnm-glib: $with_libnm_glib"
 echo "  nmcli: $build_nmcli"
 echo "  nmtui: $build_nmtui"
 echo "  iwd: $ac_with_iwd"

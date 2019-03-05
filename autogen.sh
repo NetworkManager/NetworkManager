@@ -28,5 +28,5 @@ AUTOPOINT='intltoolize --automake --copy' autoreconf --force --install --verbose
 
 cd $olddir
 if test -z "$NOCONFIGURE"; then
-	exec $srcdir/configure --enable-maintainer-mode --enable-more-warnings=error --enable-gtk-doc --enable-introspection --with-libnm-glib "$@"
+	exec $srcdir/configure --enable-maintainer-mode --enable-more-warnings=error --enable-gtk-doc --enable-introspection "$@"
 fi
