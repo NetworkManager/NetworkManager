@@ -590,7 +590,7 @@ _support_kernel_extended_ifa_flags_detect (struct nl_msg *msg)
 
 	/* IFA_FLAGS is set for IPv4 and IPv6 addresses. It was added first to IPv6,
 	 * but if we encounter an IPv4 address with IFA_FLAGS, we surely have support. */
-	if (NM_IN_SET (((struct ifaddrmsg *) nlmsg_data (msg_hdr))->ifa_family, AF_INET, AF_INET6))
+	if (!NM_IN_SET (((struct ifaddrmsg *) nlmsg_data (msg_hdr))->ifa_family, AF_INET, AF_INET6))
 		return;
 
 	/* see if the nl_msg contains the IFA_FLAGS attribute. If it does,
