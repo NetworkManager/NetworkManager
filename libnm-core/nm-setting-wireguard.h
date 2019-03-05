@@ -126,19 +126,22 @@ int nm_wireguard_peer_cmp (const NMWireGuardPeer *a,
 
 #define NM_SETTING_WIREGUARD_SETTING_NAME "wireguard"
 
+#define NM_SETTING_WIREGUARD_FWMARK            "fwmark"
+#define NM_SETTING_WIREGUARD_LISTEN_PORT       "listen-port"
 #define NM_SETTING_WIREGUARD_PRIVATE_KEY       "private-key"
 #define NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS "private-key-flags"
-#define NM_SETTING_WIREGUARD_LISTEN_PORT       "listen-port"
-#define NM_SETTING_WIREGUARD_FWMARK            "fwmark"
 
 #define NM_SETTING_WIREGUARD_PEERS             "peers"
 
-#define NM_WIREGUARD_PEER_ATTR_PUBLIC_KEY           "public-key"
+#define NM_SETTING_WIREGUARD_MTU               "mtu"
+#define NM_SETTING_WIREGUARD_PEER_ROUTES       "peer-routes"
+
+#define NM_WIREGUARD_PEER_ATTR_ALLOWED_IPS          "allowed-ips"
 #define NM_WIREGUARD_PEER_ATTR_ENDPOINT             "endpoint"
+#define NM_WIREGUARD_PEER_ATTR_PERSISTENT_KEEPALIVE "persistent-keepalive"
 #define NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY        "preshared-key"
 #define NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY_FLAGS  "preshared-key-flags"
-#define NM_WIREGUARD_PEER_ATTR_ALLOWED_IPS          "allowed-ips"
-#define NM_WIREGUARD_PEER_ATTR_PERSISTENT_KEEPALIVE "persistent-keepalive"
+#define NM_WIREGUARD_PEER_ATTR_PUBLIC_KEY           "public-key"
 
 /*****************************************************************************/
 
@@ -193,6 +196,12 @@ gboolean nm_setting_wireguard_remove_peer (NMSettingWireGuard *self,
 
 NM_AVAILABLE_IN_1_16
 guint nm_setting_wireguard_clear_peers (NMSettingWireGuard *self);
+
+NM_AVAILABLE_IN_1_16
+gboolean nm_setting_wireguard_get_peer_routes (NMSettingWireGuard *self);
+
+NM_AVAILABLE_IN_1_16
+guint32 nm_setting_wireguard_get_mtu (NMSettingWireGuard *self);
 
 /*****************************************************************************/
 

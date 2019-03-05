@@ -212,10 +212,7 @@ nm_utils_connection_has_default_route (NMConnection *connection,
 	if (!connection)
 		goto out;
 
-	if (addr_family == AF_INET)
-		s_ip = nm_connection_get_setting_ip4_config (connection);
-	else
-		s_ip = nm_connection_get_setting_ip6_config (connection);
+	s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
 	if (!s_ip)
 		goto out;
 	if (nm_setting_ip_config_get_never_default (s_ip)) {
@@ -404,8 +401,8 @@ route_compare (NMIPRoute *route1, NMIPRoute *route2, gint64 default_metric)
 		nm_assert_not_reached ();
 	if (!inet_pton (family, nm_ip_route_get_dest (route2), &a2))
 		nm_assert_not_reached ();
-	nm_utils_ipx_address_clear_host_address (family, &a1, &a1, plen);
-	nm_utils_ipx_address_clear_host_address (family, &a2, &a2, plen);
+	nm_utils_ipx_address_clear_host_address (family, &a1, NULL, plen);
+	nm_utils_ipx_address_clear_host_address (family, &a2, NULL, plen);
 	NM_CMP_DIRECT_MEMCMP (&a1, &a2, nm_utils_addr_family_to_size (family));
 
 	return 0;

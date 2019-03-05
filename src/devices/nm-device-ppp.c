@@ -16,6 +16,7 @@
 
 #include "nm-device-ppp.h"
 
+#include "nm-ip4-config.h"
 #include "nm-act-request.h"
 #include "nm-device-factory.h"
 #include "nm-device-private.h"
@@ -106,7 +107,7 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG) {
 		if (nm_device_activate_ip4_state_in_conf (device)) {
-			nm_device_activate_schedule_ip4_config_result (device, config);
+			nm_device_activate_schedule_ip_config_result (device, AF_INET, NM_IP_CONFIG_CAST (config));
 			return;
 		}
 	} else {
@@ -172,23 +173,31 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 }
 
 static NMActStageReturn
-act_stage3_ip4_config_start (NMDevice *device,
-                             NMIP4Config **out_config,
-                             NMDeviceStateReason *out_failure_reason)
+act_stage3_ip_config_start (NMDevice *device,
+                            int addr_family,
+                            gpointer *out_config,
+                            NMDeviceStateReason *out_failure_reason)
 {
-	NMDevicePpp *self = NM_DEVICE_PPP (device);
-	NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE (self);
+	if (addr_family == AF_INET) {
+		NMDevicePpp *self = NM_DEVICE_PPP (device);
+		NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE (self);
 
-	if (priv->ip4_config) {
-		if (out_config)
-			*out_config = g_steal_pointer (&priv->ip4_config);
-		else
-			g_clear_object (&priv->ip4_config);
-		return NM_ACT_STAGE_RETURN_SUCCESS;
+		if (priv->ip4_config) {
+			if (out_config)
+				*out_config = g_steal_pointer (&priv->ip4_config);
+			else
+				g_clear_object (&priv->ip4_config);
+			return NM_ACT_STAGE_RETURN_SUCCESS;
+		}
+
+		/* Wait IPCP termination */
+		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
-	/* Wait IPCP termination */
-	return NM_ACT_STAGE_RETURN_POSTPONE;
+	return NM_DEVICE_CLASS (nm_device_ppp_parent_class)->act_stage3_ip_config_start (device,
+	                                                                                 addr_family,
+	                                                                                 out_config,
+	                                                                                 out_failure_reason);
 }
 
 static gboolean
@@ -270,7 +279,7 @@ nm_device_ppp_class_init (NMDevicePppClass *klass)
 	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_PPP);
 
 	device_class->act_stage2_config = act_stage2_config;
-	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	device_class->act_stage3_ip_config_start = act_stage3_ip_config_start;
 	device_class->create_and_realize = create_and_realize;
 	device_class->deactivate = deactivate;
 	device_class->get_generic_capabilities = get_generic_capabilities;

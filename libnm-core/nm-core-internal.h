@@ -449,6 +449,11 @@ gboolean _nm_utils_generate_mac_address_mask_parse (const char *value,
 
 /*****************************************************************************/
 
+NMSettingIPConfig *nm_connection_get_setting_ip_config (NMConnection *connection,
+                                                        int addr_family);
+
+/*****************************************************************************/
+
 typedef enum {
 	NM_BOND_OPTION_TYPE_INT,
 	NM_BOND_OPTION_TYPE_STRING,

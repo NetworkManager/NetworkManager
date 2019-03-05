@@ -2874,52 +2874,29 @@ out:
 }
 
 static NMActStageReturn
-act_stage3_ip4_config_start (NMDevice *device,
-                             NMIP4Config **out_config,
-                             NMDeviceStateReason *out_failure_reason)
+act_stage3_ip_config_start (NMDevice *device,
+                            int addr_family,
+                            gpointer *out_config,
+                            NMDeviceStateReason *out_failure_reason)
 {
+	gboolean indicate_addressing_running;
 	NMConnection *connection;
-	NMSettingIPConfig *s_ip4;
-	const char *method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+	const char *method;
 
 	connection = nm_device_get_applied_connection (device);
 
-	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
+	method = nm_utils_get_ip_config_method (connection, addr_family);
+	if (addr_family == AF_INET)
+		indicate_addressing_running = NM_IN_STRSET (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	else {
+		indicate_addressing_running = NM_IN_STRSET (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+		                                                    NM_SETTING_IP6_CONFIG_METHOD_DHCP);
+	}
 
-	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	if (s_ip4)
-		method = nm_setting_ip_config_get_method (s_ip4);
+	if (indicate_addressing_running)
+		nm_platform_wifi_indicate_addressing_running (nm_device_get_platform (device), nm_device_get_ip_ifindex (device), TRUE);
 
-	/* Indicate that a critical protocol is about to start */
-	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0)
-		nm_platform_wifi_indicate_addressing_running (nm_device_get_platform (device), nm_device_get_ifindex (device), TRUE);
-
-	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage3_ip4_config_start (device, out_config, out_failure_reason);
-}
-
-static NMActStageReturn
-act_stage3_ip6_config_start (NMDevice *device,
-                             NMIP6Config **out_config,
-                             NMDeviceStateReason *out_failure_reason)
-{
-	NMConnection *connection;
-	NMSettingIPConfig *s_ip6;
-	const char *method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
-
-	connection = nm_device_get_applied_connection (device);
-
-	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
-
-	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	if (s_ip6)
-		method = nm_setting_ip_config_get_method (s_ip6);
-
-	/* Indicate that a critical protocol is about to start */
-	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0 ||
-	    strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0)
-		nm_platform_wifi_indicate_addressing_running (nm_device_get_platform (device), nm_device_get_ifindex (device), TRUE);
-
-	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage3_ip6_config_start (device, out_config, out_failure_reason);
+	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage3_ip_config_start (device, addr_family, out_config, out_failure_reason);
 }
 
 static guint32
@@ -2954,19 +2931,27 @@ is_static_wep (NMConnection *connection)
 }
 
 static NMActStageReturn
-handle_ip_config_timeout (NMDeviceWifi *self,
-                          NMConnection *connection,
-                          gboolean may_fail,
-                          gboolean *chain_up,
-                          NMDeviceStateReason *out_failure_reason)
+act_stage4_ip_config_timeout (NMDevice *device,
+                              int addr_family,
+                              NMDeviceStateReason *out_failure_reason)
 {
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	NMConnection *connection;
+	NMSettingIPConfig *s_ip;
+	gboolean may_fail;
 
-	g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	connection = nm_device_get_applied_connection (device);
+	s_ip = nm_connection_get_setting_ip4_config (connection);
+	may_fail = nm_setting_ip_config_get_may_fail (s_ip);
 
-	if (NM_DEVICE_WIFI_GET_PRIVATE (self)->mode == NM_802_11_MODE_AP) {
-		*chain_up = TRUE;
-		return NM_ACT_STAGE_RETURN_FAILURE;
+	if (priv->mode == NM_802_11_MODE_AP)
+		goto call_parent;
+
+	if (   may_fail
+	    && !is_static_wep (connection)) {
+		/* Not static WEP or failure allowed; let superclass handle it */
+		goto call_parent;
 	}
 
 	/* If IP configuration times out and it's a static WEP connection, that
@@ -2975,71 +2960,23 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 	 * to wait for DHCP to fail to figure it out.  For all other Wi-Fi security
 	 * types (open, WPA, 802.1x, etc) if the secrets/certs were wrong the
 	 * connection would have failed before IP configuration.
-	 */
-	if (!may_fail && is_static_wep (connection)) {
-		/* Activation failed, we must have bad encryption key */
-		_LOGW (LOGD_DEVICE | LOGD_WIFI,
-		       "Activation: (wifi) could not get IP configuration for connection '%s'.",
-		       nm_connection_get_id (connection));
+	 *
+	* Activation failed, we must have bad encryption key */
+	_LOGW (LOGD_DEVICE | LOGD_WIFI,
+	       "Activation: (wifi) could not get IP configuration for connection '%s'.",
+	       nm_connection_get_id (connection));
 
-		if (handle_auth_or_fail (self, NULL, TRUE)) {
-			_LOGI (LOGD_DEVICE | LOGD_WIFI,
-			       "Activation: (wifi) asking for new secrets");
-			ret = NM_ACT_STAGE_RETURN_POSTPONE;
-		} else {
-			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
-			ret = NM_ACT_STAGE_RETURN_FAILURE;
-		}
-	} else {
-		/* Not static WEP or failure allowed; let superclass handle it */
-		*chain_up = TRUE;
+	if (!handle_auth_or_fail (self, NULL, TRUE)) {
+		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
+		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
-	return ret;
-}
+	_LOGI (LOGD_DEVICE | LOGD_WIFI,
+	       "Activation: (wifi) asking for new secrets");
+	return NM_ACT_STAGE_RETURN_POSTPONE;
 
-static NMActStageReturn
-act_stage4_ip4_config_timeout (NMDevice *device, NMDeviceStateReason *out_failure_reason)
-{
-	NMConnection *connection;
-	NMSettingIPConfig *s_ip4;
-	gboolean may_fail = FALSE, chain_up = FALSE;
-	NMActStageReturn ret;
-
-	connection = nm_device_get_applied_connection (device);
-
-	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
-
-	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	may_fail = nm_setting_ip_config_get_may_fail (s_ip4);
-
-	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (device), connection, may_fail, &chain_up, out_failure_reason);
-	if (chain_up)
-		ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip4_config_timeout (device, out_failure_reason);
-
-	return ret;
-}
-
-static NMActStageReturn
-act_stage4_ip6_config_timeout (NMDevice *device, NMDeviceStateReason *out_failure_reason)
-{
-	NMConnection *connection;
-	NMSettingIPConfig *s_ip6;
-	gboolean may_fail = FALSE, chain_up = FALSE;
-	NMActStageReturn ret;
-
-	connection = nm_device_get_applied_connection (device);
-
-	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
-
-	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	may_fail = nm_setting_ip_config_get_may_fail (s_ip6);
-
-	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (device), connection, may_fail, &chain_up, out_failure_reason);
-	if (chain_up)
-		ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip6_config_timeout (device, out_failure_reason);
-
-	return ret;
+call_parent:
+	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip_config_timeout (device, addr_family, out_failure_reason);
 }
 
 static void
@@ -3447,10 +3384,8 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->act_stage2_config = act_stage2_config;
 	device_class->get_configured_mtu = get_configured_mtu;
-	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
-	device_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
-	device_class->act_stage4_ip4_config_timeout = act_stage4_ip4_config_timeout;
-	device_class->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
+	device_class->act_stage3_ip_config_start = act_stage3_ip_config_start;
+	device_class->act_stage4_ip_config_timeout = act_stage4_ip_config_timeout;
 	device_class->deactivate = deactivate;
 	device_class->deactivate_reset_hw_addr = deactivate_reset_hw_addr;
 	device_class->unmanaged_on_quit = unmanaged_on_quit;

@@ -827,6 +827,9 @@ ipv6.ip6-privacy=0
         <varlistentry>
           <term><varname>wifi.wake-on-wlan</varname></term>
         </varlistentry>
+        <varlistentry>
+          <term><varname>wireguard.mtu</varname></term>
+        </varlistentry>
       </variablelist>
       <!-- The following comment is used by check-config-options.sh, don't remove it. -->
       <!-- end connection defaults -->
