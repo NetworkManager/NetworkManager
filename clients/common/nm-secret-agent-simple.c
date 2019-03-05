@@ -537,6 +537,8 @@ typedef struct {
 	GCancellable *cancellable;
 	gulong cancellable_id;
 	guint child_watch_id;
+	GInputStream *input_stream;
+	GOutputStream *output_stream;
 	char read_buf[5];
 } AuthDialogData;
 
@@ -549,6 +551,8 @@ _auth_dialog_data_free (AuthDialogData *data)
 	g_ptr_array_unref (data->secrets);
 	g_spawn_close_pid (data->auth_dialog_pid);
 	g_string_free (data->auth_dialog_response, TRUE);
+	g_object_unref (data->input_stream);
+	g_object_unref (data->output_stream);
 	g_slice_free (AuthDialogData, data);
 }
 
@@ -600,12 +604,15 @@ _auth_dialog_exited (GPid pid, int status, gpointer user_data)
 		goto out;
 
 	for (i = 1; groups[i]; i++) {
+		gs_free char *pretty_name = NULL;
+
 		if (!g_key_file_get_boolean (keyfile, groups[i], "IsSecret", NULL))
 			continue;
 		if (!g_key_file_get_boolean (keyfile, groups[i], "ShouldAsk", NULL))
 			continue;
 
-		g_ptr_array_add (secrets, _secret_real_new_vpn_secret (g_key_file_get_string (keyfile, groups[i], "Label", NULL),
+		pretty_name = g_key_file_get_string (keyfile, groups[i], "Label", NULL);
+		g_ptr_array_add (secrets, _secret_real_new_vpn_secret (pretty_name,
 		                                                       NM_SETTING (s_vpn),
 		                                                       groups[i],
 		                                                       nm_setting_vpn_get_service_type (s_vpn)));
@@ -799,7 +806,9 @@ try_spawn_vpn_auth_helper (RequestData *request,
 		.auth_dialog_response = g_string_new_len (NULL, sizeof (data->read_buf)),
 		.auth_dialog_pid = auth_dialog_pid,
 		.request = request,
-		.secrets = secrets,
+		.secrets = g_ptr_array_ref (secrets),
+		.input_stream = auth_dialog_out,
+		.output_stream = auth_dialog_in,
 	};
 
 	g_output_stream_write_async (auth_dialog_in,
@@ -1086,7 +1095,10 @@ nm_secret_agent_simple_response (NMSecretAgentSimple *self,
 		gboolean has_vpn = FALSE;
 		gboolean has_wg = FALSE;
 
-		settings = g_hash_table_new (nm_str_hash, g_str_equal);
+		settings = g_hash_table_new_full (nm_str_hash,
+		                                  g_str_equal,
+		                                  NULL,
+		                                  (GDestroyNotify) g_variant_builder_unref);
 		for (i = 0; i < secrets->len; i++) {
 			SecretReal *secret = secrets->pdata[i];
 
