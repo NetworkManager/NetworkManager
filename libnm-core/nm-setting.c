@@ -2612,21 +2612,6 @@ static void
 nm_setting_class_init (NMSettingClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	GModule *self_module;
-	gpointer func;
-
-	/* loading libnm and legacy libraries libnm-util/libnm-glib at the same
-	 * time is not supported. The reason is, that both libraries use the same
-	 * glib type names ("NMSetting"), and glib does not support namespacing
-	 * to allow for that.
-	 *
-	 * Arbitrarily, add a check here, see whether a known symbol from libnm-util
-	 * is present. If it is, it indicates that the process is borked and we
-	 * abort. */
-	self_module = g_module_open (NULL, 0);
-	if (g_module_symbol (self_module, "nm_util_get_private", &func))
-		g_error ("libnm-util symbols detected; Mixing libnm with libnm-util/libnm-glib is not supported");
-	g_module_close (self_module);
 
 	g_type_class_add_private (setting_class, sizeof (NMSettingPrivate));
 
