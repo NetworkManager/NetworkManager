@@ -4093,6 +4093,119 @@ nla_put_failure:
 }
 
 static struct nl_msg *
+_nl_msg_new_routing_rule (int nlmsg_type,
+                          int nlmsg_flags,
+                          const NMPlatformRoutingRule *routing_rule)
+{
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
+	const guint8 addr_size = nm_utils_addr_family_to_size (routing_rule->addr_family);
+	guint32 table;
+
+	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags);
+
+	table = routing_rule->table;
+
+	if (   NM_IN_SET (routing_rule->addr_family, AF_INET, AF_INET6)
+	    && routing_rule->action == FR_ACT_TO_TBL
+	    && routing_rule->l3mdev == 0
+	    && table == RT_TABLE_UNSPEC) {
+		/* for IPv6, this setting is invalid and rejected by kernel. That's fine.
+		 *
+		 * for IPv4, kernel will automatically assign an unused table. That's not
+		 * fine, because we don't know what we will get.
+		 *
+		 * The caller must not allow that to happen. */
+		nm_assert_not_reached ();
+	}
+
+	{
+		const struct fib_rule_hdr frh = {
+			.family  = routing_rule->addr_family,
+			.src_len = routing_rule->src_len,
+			.dst_len = routing_rule->dst_len,
+			.tos     = routing_rule->tos,
+			.table   = table,
+			.action  = routing_rule->action,
+
+			/* we only allow setting the "not" flag. */
+			.flags   = routing_rule->flags & ((guint32) FIB_RULE_INVERT),
+		};
+
+		if (nlmsg_append_struct (msg, &frh) < 0)
+			goto nla_put_failure;
+	}
+
+	if (table > G_MAXINT8)
+		NLA_PUT_U32 (msg, FRA_TABLE, table);
+
+	if (routing_rule->suppress_prefixlen_inverse != 0)
+		NLA_PUT_U32 (msg, FRA_SUPPRESS_PREFIXLEN, ~routing_rule->suppress_prefixlen_inverse);
+
+	if (routing_rule->suppress_ifgroup_inverse != 0)
+		NLA_PUT_U32 (msg, FRA_SUPPRESS_IFGROUP, ~routing_rule->suppress_ifgroup_inverse);
+
+	if (routing_rule->iifname[0] != '\0')
+		NLA_PUT_STRING (msg, FRA_IIFNAME, routing_rule->iifname);
+
+	if (routing_rule->oifname[0] != '\0')
+		NLA_PUT_STRING (msg, FRA_OIFNAME, routing_rule->oifname);
+
+	/* we always set the priority and don't support letting kernel pick one. */
+	NLA_PUT_U32 (msg, FRA_PRIORITY, routing_rule->priority);
+
+	if (   routing_rule->fwmark != 0
+	    || routing_rule->fwmask != 0) {
+		NLA_PUT_U32 (msg, FRA_FWMARK, routing_rule->fwmark);
+		NLA_PUT_U32 (msg, FRA_FWMASK, routing_rule->fwmask);
+	}
+
+	if (routing_rule->src_len > 0)
+		NLA_PUT (msg, FRA_SRC, addr_size, &routing_rule->src);
+
+	if (routing_rule->dst_len > 0)
+		NLA_PUT (msg, FRA_DST, addr_size, &routing_rule->dst);
+
+	if (routing_rule->flow != 0) {
+		/* only relevant for IPv4. */
+		NLA_PUT_U32 (msg, FRA_FLOW, routing_rule->flow);
+	}
+
+	if (routing_rule->tun_id != 0)
+		NLA_PUT_U64 (msg, FRA_TUN_ID, htobe64 (routing_rule->tun_id));
+
+	if (routing_rule->l3mdev)
+		NLA_PUT_U8 (msg, FRA_L3MDEV, routing_rule->l3mdev);
+
+	if (routing_rule->protocol != RTPROT_UNSPEC)
+		NLA_PUT_U8 (msg, FRA_PROTOCOL, routing_rule->protocol);
+
+	if (routing_rule->ip_proto != 0)
+		NLA_PUT_U8 (msg, FRA_IP_PROTO, routing_rule->ip_proto);
+
+	if (   routing_rule->sport_range.start
+	    || routing_rule->sport_range.end)
+		NLA_PUT (msg, FRA_SPORT_RANGE, sizeof (routing_rule->sport_range), &routing_rule->sport_range);
+
+	if (   routing_rule->dport_range.start
+	    || routing_rule->dport_range.end)
+		NLA_PUT (msg, FRA_DPORT_RANGE, sizeof (routing_rule->dport_range), &routing_rule->dport_range);
+
+	if (routing_rule->uid_range_has)
+		NLA_PUT (msg, FRA_UID_RANGE, sizeof (routing_rule->uid_range), &routing_rule->uid_range);
+
+	switch (routing_rule->action) {
+	case FR_ACT_GOTO:
+		NLA_PUT_U32 (msg, FRA_GOTO, routing_rule->goto_target);
+		break;
+	}
+
+	return g_steal_pointer (&msg);
+
+nla_put_failure:
+	g_return_val_if_reached (NULL);
+}
+
+static struct nl_msg *
 _nl_msg_new_qdisc (int nlmsg_type,
                    int nlmsg_flags,
                    const NMPlatformQdisc *qdisc)
@@ -7916,6 +8029,9 @@ object_delete (NMPlatform *platform,
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
 		nlmsg = _nl_msg_new_route (RTM_DELROUTE, 0, obj);
 		break;
+	case NMP_OBJECT_TYPE_ROUTING_RULE:
+		nlmsg = _nl_msg_new_routing_rule (RTM_DELRULE, 0, NMP_OBJECT_CAST_ROUTING_RULE (obj));
+		break;
 	case NMP_OBJECT_TYPE_QDISC:
 		nlmsg = _nl_msg_new_qdisc (RTM_DELQDISC, 0, NMP_OBJECT_CAST_QDISC (obj));
 		break;
@@ -8007,6 +8123,47 @@ ip_route_get (NMPlatform *platform,
 		seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN;
 	}
 
+	return -NME_UNSPEC;
+}
+
+/*****************************************************************************/
+
+static int
+routing_rule_add (NMPlatform *platform,
+                  NMPNlmFlags flags,
+                  const NMPlatformRoutingRule *routing_rule)
+{
+	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
+	gs_free char *errmsg = NULL;
+	char s_buf[256];
+	int nle;
+
+	msg = _nl_msg_new_routing_rule (RTM_NEWRULE, flags, routing_rule);
+
+	event_handler_read_netlink (platform, FALSE);
+
+	nle = _nl_send_nlmsg (platform, msg, &seq_result, &errmsg, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
+	if (nle < 0) {
+		_LOGE ("do-add-rule: failed sending netlink request \"%s\" (%d)",
+		      nm_strerror (nle), -nle);
+		return -NME_PL_NETLINK;
+	}
+
+	delayed_action_handle_all (platform, FALSE);
+
+	nm_assert (seq_result);
+
+	_NMLOG (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK
+	            ? LOGL_DEBUG
+	            : LOGL_WARN,
+	        "do-add-rule: %s",
+	        wait_for_nl_response_to_string (seq_result, errmsg, s_buf, sizeof (s_buf)));
+
+	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
+		return 0;
+	if (seq_result < 0)
+		return seq_result;
 	return -NME_UNSPEC;
 }
 
@@ -8858,6 +9015,8 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->ip_route_add = ip_route_add;
 	platform_class->ip_route_get = ip_route_get;
+
+	platform_class->routing_rule_add = routing_rule_add;
 
 	platform_class->qdisc_add = qdisc_add;
 	platform_class->tfilter_add = tfilter_add;

@@ -1035,6 +1035,10 @@ typedef struct {
 	                     int oif_ifindex,
 	                     NMPObject **out_route);
 
+	int (*routing_rule_add) (NMPlatform *self,
+	                         NMPNlmFlags flags,
+	                         const NMPlatformRoutingRule *routing_rule);
+
 	int (*qdisc_add)   (NMPlatform *self,
 	                    NMPNlmFlags flags,
 	                    const NMPlatformQdisc *qdisc);
@@ -1542,6 +1546,10 @@ int nm_platform_ip_route_get (NMPlatform *self,
                               gconstpointer address,
                               int oif_ifindex,
                               NMPObject **out_route);
+
+int nm_platform_routing_rule_add (NMPlatform *self,
+                                  NMPNlmFlags flags,
+                                  const NMPlatformRoutingRule *routing_rule);
 
 int nm_platform_qdisc_add   (NMPlatform *self,
                              NMPNlmFlags flags,

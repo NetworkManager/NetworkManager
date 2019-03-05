@@ -4619,17 +4619,24 @@ nm_platform_object_delete (NMPlatform *self,
 
 	_CHECK_SELF (self, klass, FALSE);
 
-	if (!NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
-	                                           NMP_OBJECT_TYPE_IP6_ROUTE,
-	                                           NMP_OBJECT_TYPE_QDISC,
-	                                           NMP_OBJECT_TYPE_TFILTER))
+	switch (NMP_OBJECT_GET_TYPE (obj)) {
+	case NMP_OBJECT_TYPE_ROUTING_RULE:
+		_LOGD ("%s: delete %s",
+		       NMP_OBJECT_GET_CLASS (obj)->obj_type_name,
+		       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+		break;
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
+	case NMP_OBJECT_TYPE_QDISC:
+	case NMP_OBJECT_TYPE_TFILTER:
+		ifindex = NMP_OBJECT_CAST_OBJ_WITH_IFINDEX (obj)->ifindex;
+		_LOG3D ("%s: delete %s",
+		        NMP_OBJECT_GET_CLASS (obj)->obj_type_name,
+		        nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+		break;
+	default:
 		g_return_val_if_reached (FALSE);
-
-	ifindex = NMP_OBJECT_CAST_OBJ_WITH_IFINDEX (obj)->ifindex;
-
-	_LOG3D ("%s: delete %s",
-	        NMP_OBJECT_GET_CLASS (obj)->obj_type_name,
-	        nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+	}
 
 	return klass->object_delete (self, obj);
 }
@@ -4954,6 +4961,21 @@ nm_platform_ip4_dev_route_blacklist_set (NMPlatform *self,
 
 	if (needs_check)
 		_ip4_dev_route_blacklist_check_schedule (self);
+}
+
+/*****************************************************************************/
+
+int
+nm_platform_routing_rule_add (NMPlatform *self,
+                              NMPNlmFlags flags,
+                              const NMPlatformRoutingRule *routing_rule)
+{
+	_CHECK_SELF (self, klass, -NME_BUG);
+
+	g_return_val_if_fail (routing_rule, -NME_BUG);
+
+	_LOGD ("routing-rule: adding or updating: %s", nm_platform_routing_rule_to_string (routing_rule, NULL, 0));
+	return klass->routing_rule_add (self, flags, routing_rule);
 }
 
 /*****************************************************************************/
