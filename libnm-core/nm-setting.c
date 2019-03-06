@@ -2185,7 +2185,7 @@ out_zero:
 /**
  * nm_setting_gendata_get_all_names:
  * @setting: the #NMSetting
- * @out_len: (allow-none): (out):
+ * @out_len: (allow-none) (out):
  *
  * Gives the number of generic data elements and optionally returns all their
  * key names and values. This API is low level access and unless you know what you

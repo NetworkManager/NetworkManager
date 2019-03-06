@@ -148,7 +148,7 @@ nm_vpn_plugin_info_check_file_full (const char *filename,
  *   other users.
  * @check_file: pass a callback to do your own validation.
  * @user_data: user data for @check_file.
- * @error: (allow-none): (out): the error reason if the check fails.
+ * @error: (allow-none) (out): the error reason if the check fails.
  *
  * Check whether the file exists and is a valid name file (in keyfile format).
  * Additionally, also check for file permissions.

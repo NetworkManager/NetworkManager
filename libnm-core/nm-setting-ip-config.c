@@ -1123,7 +1123,7 @@ _nm_ip_route_get_attributes_direct (NMIPRoute *route)
  * @route: the #NMIPRoute
  * @sorted: whether to sort the names. Otherwise, their order is
  *   undefined and unstable.
- * @out_length: (allow-none): (out): the number of elements
+ * @out_length: (allow-none) (out): the number of elements
  *
  * Gets an array of attribute names defined on @route.
  *

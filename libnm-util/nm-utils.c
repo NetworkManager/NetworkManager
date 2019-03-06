@@ -1736,7 +1736,7 @@ nm_utils_file_is_pkcs12 (const char *filename)
  * @predicate: (scope call): if given, pass the file name to this function
  *   for additional checks. This check is performed after the check for
  *   @file_test_flags. You cannot omit both @file_test_flags and @predicate.
- * @user_data: (closure): (allow-none): user data for @predicate function.
+ * @user_data: (closure) (allow-none): user data for @predicate function.
  * @error: (allow-none): on failure, set a "not found" error %G_IO_ERROR %G_IO_ERROR_NOT_FOUND.
  *
  * Searches for a @progname file in a list of search @paths.

@@ -1939,7 +1939,7 @@ _for_each_sort (NMSetting **p_a, NMSetting **p_b, void *unused)
 /**
  * nm_connection_get_settings:
  * @connection: the #NMConnection instance
- * @out_length: (allow-none): (out): the length of the returned array
+ * @out_length: (allow-none) (out): the length of the returned array
  *
  * Retrieves the settings in @connection.
  *

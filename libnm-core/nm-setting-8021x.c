@@ -202,7 +202,7 @@ G_DEFINE_TYPE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING)
  * nm_setting_802_1x_check_cert_scheme:
  * @pdata: (allow-none): the data pointer
  * @length: the length of the data
- * @error: (allow-none): (out): validation reason
+ * @error: (allow-none) (out): validation reason
  *
  * Determines and verifies the blob type.
  * When setting certificate properties of NMSetting8021x
