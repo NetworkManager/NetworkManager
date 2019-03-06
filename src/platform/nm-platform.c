@@ -2916,7 +2916,7 @@ nm_platform_link_veth_get_properties (NMPlatform *self, int ifindex, int *out_pe
  * nm_platform_link_tun_get_properties:
  * @self: the #NMPlatform instance
  * @ifindex: the ifindex to look up
- * @out_properties: (out): (allow-none): return the read properties
+ * @out_properties: (out) (allow-none): return the read properties
  *
  * Only recent versions of kernel export tun properties via netlink.
  * So, if that's the case, then we have the NMPlatformLnkTun instance
@@ -4241,7 +4241,7 @@ nm_platform_ip_route_get_prune_list (NMPlatform *self,
  *   at the end of the operation. Note that if @routes contains
  *   the same route, then it will not be deleted. @routes overrules
  *   @routes_prune list.
- * @out_temporary_not_available: (allow-none): (out): routes that could
+ * @out_temporary_not_available: (allow-none) (out): routes that could
  *   currently not be synced. The caller shall keep them and try later again.
  *
  * Returns: %TRUE on success.

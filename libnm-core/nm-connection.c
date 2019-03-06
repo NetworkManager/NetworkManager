@@ -1868,7 +1868,7 @@ nm_connection_clear_secrets (NMConnection *connection)
 /**
  * nm_connection_clear_secrets_with_flags:
  * @connection: the #NMConnection
- * @func: (scope call): (allow-none): function to be called to determine whether a
+ * @func: (scope call) (allow-none): function to be called to determine whether a
  *     specific secret should be cleared or not. If %NULL, all secrets are cleared.
  * @user_data: caller-supplied data passed to @func
  *
@@ -2080,7 +2080,7 @@ _for_each_sort (NMSetting **p_a, NMSetting **p_b, void *unused)
 /**
  * nm_connection_get_settings:
  * @connection: the #NMConnection instance
- * @out_length: (allow-none): (out): the length of the returned array
+ * @out_length: (allow-none) (out): the length of the returned array
  *
  * Retrieves the settings in @connection.
  *

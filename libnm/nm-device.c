@@ -2132,7 +2132,7 @@ nm_device_reapply_finish (NMDevice *device,
  * nm_device_get_applied_connection:
  * @device: a #NMDevice
  * @flags: the flags argument. Currently this value must always be zero.
- * @version_id: (out): (allow-none): returns the current version id of
+ * @version_id: (out) (allow-none): returns the current version id of
  *   the applied connection
  * @cancellable: a #GCancellable, or %NULL
  * @error: location for a #GError, or %NULL
@@ -2266,7 +2266,7 @@ nm_device_get_applied_connection_async  (NMDevice *device,
  * nm_device_get_applied_connection_finish:
  * @device: a #NMDevice
  * @result: the result passed to the #GAsyncReadyCallback
- * @version_id: (out): (allow-none): the current version id of the applied
+ * @version_id: (out) (allow-none): the current version id of the applied
  *   connection.
  * @error: location for a #GError, or %NULL
  *

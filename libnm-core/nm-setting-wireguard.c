@@ -278,7 +278,7 @@ nm_wireguard_peer_get_public_key (const NMWireGuardPeer *self)
 /**
  * nm_wireguard_peer_set_public_key:
  * @self: the unsealed #NMWireGuardPeer instance
- * @public_key: (allow-none): (transfer none): the new public
+ * @public_key: (allow-none) (transfer none): the new public
  *   key or %NULL to clear the public key.
  *
  * Reset the public key. Note that if the public key is valid, it
@@ -344,7 +344,7 @@ nm_wireguard_peer_get_preshared_key (const NMWireGuardPeer *self)
 /**
  * nm_wireguard_peer_set_preshared_key:
  * @self: the unsealed #NMWireGuardPeer instance
- * @preshared_key: (allow-none): (transfer none): the new preshared
+ * @preshared_key: (allow-none) (transfer none): the new preshared
  *   key or %NULL to clear the preshared key.
  *
  * Reset the preshared key. Note that if the preshared key is valid, it
@@ -1149,7 +1149,7 @@ nm_setting_wireguard_get_peer (NMSettingWireGuard *self,
  * @self: the #NMSettingWireGuard instance
  * @public_key: the public key for looking up the
  *   peer.
- * @out_idx: (out): (allow-none): optional output argument
+ * @out_idx: (out) (allow-none): optional output argument
  *   for the index of the found peer. If no index is found,
  *   this is set to the nm_setting_wireguard_get_peers_len().
  *
