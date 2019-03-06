@@ -368,7 +368,7 @@ _clear_connections_cached_list (NMSettingsPrivate *priv)
 /**
  * nm_settings_get_connections:
  * @self: the #NMSettings
- * @out_len: (out): (allow-none): returns the number of returned
+ * @out_len: (out) (allow-none): returns the number of returned
  *   connections.
  *
  * Returns: (transfer-none): a list of NMSettingsConnections. The list is

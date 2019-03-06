@@ -2236,7 +2236,7 @@ _add_route (NMIP4Config *self,
  * nm_ip4_config_add_route:
  * @self: the #NMIP4Config
  * @new: the new route to add to @self
- * @out_obj_new: (allow-none): (out): the added route object. Must be unrefed
+ * @out_obj_new: (allow-none) (out): the added route object. Must be unrefed
  *   by caller.
  *
  * Adds the new route to @self.  If a route with the same basic properties

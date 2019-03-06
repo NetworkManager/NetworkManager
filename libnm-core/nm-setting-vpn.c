@@ -218,7 +218,7 @@ nm_setting_vpn_get_data_item (NMSettingVpn *setting, const char *key)
 /**
  * nm_setting_vpn_get_data_keys:
  * @setting: the #NMSettingVpn
- * @out_length: (allow-none): (out): the length of the returned array
+ * @out_length: (allow-none) (out): the length of the returned array
  *
  * Retrieves every data key inside @setting, as an array.
  *
@@ -395,7 +395,7 @@ nm_setting_vpn_get_secret (NMSettingVpn *setting, const char *key)
 /**
  * nm_setting_vpn_get_secret_keys:
  * @setting: the #NMSettingVpn
- * @out_length: (allow-none): (out): the length of the returned array
+ * @out_length: (allow-none) (out): the length of the returned array
  *
  * Retrieves every secret key inside @setting, as an array.
  *
