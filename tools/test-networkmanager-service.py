@@ -296,7 +296,7 @@ class Util:
                 if val.signature == 'y':
                     return GLib.Variant('ay', [int(x) for x in val])
                 if val.signature == 'u':
-                    return GLib.Variant('au', [Util.variant_from_dbus(x) for x in val])
+                    return GLib.Variant('au', [int(x) for x in val])
                 if val.signature == 'ay':
                     return GLib.Variant('aay', [Util.variant_from_dbus(x) for x in val])
                 if val.signature == 'au':
