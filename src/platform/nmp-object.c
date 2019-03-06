@@ -2519,10 +2519,10 @@ nmp_cache_remove_netlink (NMPCache *cache,
  *    afterwards. Hence, during a dump, every update should move the object to the
  *    end of the list, to obtain the correct order. That means, to use NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE,
  *    instead of NM_DEDUP_MULTI_IDX_MODE_APPEND.
- * @out_obj_old: (allow-none): (out): return the object with same ID as @obj_hand_over,
+ * @out_obj_old: (allow-none) (out): return the object with same ID as @obj_hand_over,
  *    that was in the cache before update. If an object is returned, the caller must
  *    unref it afterwards.
- * @out_obj_new: (allow-none): (out): return the object from the cache after update.
+ * @out_obj_new: (allow-none) (out): return the object from the cache after update.
  *    The caller must unref this object.
  *
  * Returns: how the cache changed.
