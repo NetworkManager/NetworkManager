@@ -4004,6 +4004,13 @@ clients_common_tests_test_general_LDADD = \
 
 $(clients_common_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
+EXTRA_DIST += \
+	clients/common/tests/wg-test0.conf \
+	clients/common/tests/wg-test1.conf \
+	clients/common/tests/wg-test2.conf \
+	clients/common/tests/wg-test3.conf \
+	$(NULL)
+
 ###############################################################################
 # clients/cli
 ###############################################################################
