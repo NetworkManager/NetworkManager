@@ -75,6 +75,7 @@ nm_test_device_new (const char *hwaddr)
 	return g_object_new (NM_TYPE_TEST_DEVICE,
 	                     NM_DEVICE_IFACE, "dummy",
 	                     NM_DEVICE_PERM_HW_ADDRESS, hwaddr,
+	                     NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
 	                     NULL);
 }
 
