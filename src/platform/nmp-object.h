@@ -31,6 +31,18 @@ struct udev_device;
 
 /*****************************************************************************/
 
+/* "struct __kernel_timespec" uses "long long", but we use gint64. In practice,
+ * these are the same types. */
+G_STATIC_ASSERT (sizeof (long long) == sizeof (gint64));
+
+typedef struct {
+	/* like "struct __kernel_timespec". */
+	gint64 tv_sec;
+	gint64 tv_nsec;
+} NMPTimespec64;
+
+/*****************************************************************************/
+
 typedef union {
 	struct sockaddr     sa;
 	struct sockaddr_in  in;
@@ -72,7 +84,8 @@ typedef struct {
 typedef struct _NMPWireGuardPeer {
 	NMSockAddrUnion endpoint;
 
-	struct timespec last_handshake_time;
+	NMPTimespec64 last_handshake_time;
+
 	guint64 rx_bytes;
 	guint64 tx_bytes;
 

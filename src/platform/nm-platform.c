@@ -39,6 +39,7 @@
 #include "nm-core-internal.h"
 #include "nm-utils/nm-dedup-multi.h"
 #include "nm-utils/nm-udev-utils.h"
+#include "nm-utils/nm-secret-utils.h"
 
 #include "nm-core-utils.h"
 #include "nm-platform-utils.h"
@@ -5658,7 +5659,7 @@ nm_platform_wireguard_peer_to_string (const NMPWireGuardPeer *peer, char *buf, g
 	                        "%s"  /* persistent-keepalive */
 	                        "%s", /* allowed-ips */
 	                        public_key_b64,
-	                        nm_utils_memeqzero (peer->preshared_key, sizeof (peer->preshared_key))
+	                        nm_utils_memeqzero_secret (peer->preshared_key, sizeof (peer->preshared_key))
 	                          ? ""
 	                          : " preshared-key (hidden)",
 	                        s_endpoint,
@@ -5704,7 +5705,7 @@ nm_platform_lnk_wireguard_to_string (const NMPlatformLnkWireGuard *lnk, char *bu
 	              ? " public-key "
 	              : "",
 	            public_b64 ?: "",
-	            nm_utils_memeqzero (lnk->private_key, sizeof (lnk->private_key))
+	            nm_utils_memeqzero_secret (lnk->private_key, sizeof (lnk->private_key))
 	              ? ""
 	              : " private-key (hidden)",
 	            lnk->listen_port,

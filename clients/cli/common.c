@@ -1349,23 +1349,39 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 /**
  * nmc_complete_strings:
  * @prefix: a string to match
- * @...: a %NULL-terminated list of candidate strings
+ * @nargs: the number of elements in @args. Or -1 if @args is a NULL terminated
+ *   strv array.
+ * @args: the argument list. If @nargs is not -1, then some elements may
+ *   be %NULL to indicate to silently skip the values.
  *
  * Prints all the matching candidates for completion. Useful when there's
  * no better way to suggest completion other than a hardcoded string list.
  */
 void
-nmc_complete_strings (const char *prefix, ...)
+nmc_complete_strv (const char *prefix, gssize nargs, const char *const*args)
 {
-	va_list args;
-	const char *candidate;
+	gsize i, n;
 
-	va_start (args, prefix);
-	while ((candidate = va_arg (args, const char *))) {
-		if (!*prefix || matches (prefix, candidate))
-			g_print ("%s\n", candidate);
+	if (prefix && !prefix[0])
+		prefix = NULL;
+
+	if (nargs < 0) {
+		nm_assert (nargs == -1);
+		n = NM_PTRARRAY_LEN (args);
+	} else
+		n = (gsize) nargs;
+
+	for (i = 0; i < n; i++) {
+		const char *candidate = args[i];
+
+		if (!candidate)
+			continue;
+		if (   prefix
+		    && !matches (prefix, candidate))
+			continue;
+
+		g_print ("%s\n", candidate);
 	}
-	va_end (args);
 }
 
 /**

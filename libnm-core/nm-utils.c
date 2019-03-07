@@ -6673,21 +6673,23 @@ nm_utils_version (void)
 /*****************************************************************************/
 
 /**
- * _nm_utils_wireguard_decode_key:
+ * nm_utils_base64secret_decode:
  * @base64_key: the (possibly invalid) base64 encode key.
  * @required_key_len: the expected (binary) length of the key after
  *   decoding. If the length does not match, the validation fails.
- * @out_key: (allow-none): an optional output buffer for the binary
+ * @out_key: (allow-none): (out): an optional output buffer for the binary
  *   key. If given, it will be filled with exactly @required_key_len
  *   bytes.
  *
  * Returns: %TRUE if the input key is a valid base64 encoded key
  *   with @required_key_len bytes.
+ *
+ * Since: 1.16
  */
 gboolean
-_nm_utils_wireguard_decode_key (const char *base64_key,
-                                gsize required_key_len,
-                                guint8 *out_key)
+nm_utils_base64secret_decode (const char *base64_key,
+                              gsize required_key_len,
+                              guint8 *out_key)
 {
 	gs_free guint8 *bin_arr = NULL;
 	gsize base64_key_len;
@@ -6707,11 +6709,6 @@ _nm_utils_wireguard_decode_key (const char *base64_key,
 		return FALSE;
 	}
 
-	if (nm_utils_memeqzero (bin_arr, required_key_len)) {
-		/* an all zero key is not valid either. That is used to represet an unset key */
-		return FALSE;
-	}
-
 	if (out_key)
 		memcpy (out_key, bin_arr, required_key_len);
 
@@ -6720,9 +6717,9 @@ _nm_utils_wireguard_decode_key (const char *base64_key,
 }
 
 gboolean
-_nm_utils_wireguard_normalize_key (const char *base64_key,
-                                   gsize required_key_len,
-                                   char **out_base64_key_norm)
+nm_utils_base64secret_normalize (const char *base64_key,
+                                 gsize required_key_len,
+                                 char **out_base64_key_norm)
 {
 	gs_free guint8 *buf_free = NULL;
 	guint8 buf_static[200];
@@ -6734,7 +6731,7 @@ _nm_utils_wireguard_normalize_key (const char *base64_key,
 	} else
 		buf = buf_static;
 
-	if (!_nm_utils_wireguard_decode_key (base64_key, required_key_len, buf)) {
+	if (!nm_utils_base64secret_decode (base64_key, required_key_len, buf)) {
 		NM_SET_OUT (out_base64_key_norm, NULL);
 		return FALSE;
 	}

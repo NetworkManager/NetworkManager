@@ -8888,8 +8888,11 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 	}
 
 	while (argc > 0) {
-		if (argc == 1 && nmc->complete)
-			nmc_complete_strings (*argv, "type", "file", NULL);
+		if (argc == 1 && nmc->complete) {
+			nmc_complete_strings (*argv,
+			                      type ? NULL : "type",
+			                      filename ? NULL : "file");
+		}
 
 		if (strcmp (*argv, "type") == 0) {
 			argc--;
@@ -8899,8 +8902,13 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 				NMC_RETURN (nmc, NMC_RESULT_ERROR_USER_INPUT);
 			}
 
-			if (argc == 1 && nmc->complete)
-				complete_option ((const NMMetaAbstractInfo *) nm_meta_property_info_vpn_service_type, *argv, NULL);
+			if (   argc == 1
+			    && nmc->complete) {
+				nmc_complete_strings (*argv, "wireguard");
+				complete_option ((const NMMetaAbstractInfo *) nm_meta_property_info_vpn_service_type,
+				                 *argv,
+				                 NULL);
+			}
 
 			if (!type)
 				type = *argv;
@@ -8940,21 +8948,26 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 		NMC_RETURN (nmc, NMC_RESULT_ERROR_USER_INPUT);
 	}
 
-	service_type = nm_vpn_plugin_info_list_find_service_type (nm_vpn_get_plugin_infos (), type);
-	if (!service_type) {
-		g_string_printf (nmc->return_text, _("Error: failed to find VPN plugin for %s."), type);
-		NMC_RETURN (nmc, NMC_RESULT_ERROR_UNKNOWN);
+	if (nm_streq (type, "wireguard"))
+		connection = nm_vpn_wireguard_import (filename, &error);
+	else {
+		service_type = nm_vpn_plugin_info_list_find_service_type (nm_vpn_get_plugin_infos (), type);
+		if (!service_type) {
+			g_string_printf (nmc->return_text, _("Error: failed to find VPN plugin for %s."), type);
+			NMC_RETURN (nmc, NMC_RESULT_ERROR_UNKNOWN);
+		}
+
+		/* Import VPN configuration */
+		plugin = nm_vpn_get_editor_plugin (service_type, &error);
+		if (!plugin) {
+			g_string_printf (nmc->return_text, _("Error: failed to load VPN plugin: %s."),
+			                 error->message);
+			NMC_RETURN (nmc, NMC_RESULT_ERROR_UNKNOWN);
+		}
+
+		connection = nm_vpn_editor_plugin_import (plugin, filename, &error);
 	}
 
-	/* Import VPN configuration */
-	plugin = nm_vpn_get_editor_plugin (service_type, &error);
-	if (!plugin) {
-		g_string_printf (nmc->return_text, _("Error: failed to load VPN plugin: %s."),
-		                 error->message);
-		NMC_RETURN (nmc, NMC_RESULT_ERROR_UNKNOWN);
-	}
-
-	connection = nm_vpn_editor_plugin_import (plugin, filename, &error);
 	if (!connection) {
 		g_string_printf (nmc->return_text, _("Error: failed to import '%s': %s."),
 		                 filename, error->message);
