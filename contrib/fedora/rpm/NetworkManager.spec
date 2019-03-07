@@ -801,15 +801,11 @@ fi
 %systemd_postun
 
 
-%if 0%{?fedora} >= 30
-%ldconfig_scriptlets   glib
-%ldconfig_scriptlets   libnm
-%else
 %post   glib -p /sbin/ldconfig
 %postun glib -p /sbin/ldconfig
+
 %post   libnm -p /sbin/ldconfig
 %postun libnm -p /sbin/ldconfig
-%endif
 
 
 %files
