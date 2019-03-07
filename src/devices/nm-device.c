@@ -16344,6 +16344,8 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		nm_assert (priv->type == NM_DEVICE_TYPE_UNKNOWN);
 		priv->type = g_value_get_uint (value);
+		nm_assert (priv->type > NM_DEVICE_TYPE_UNKNOWN);
+		nm_assert (priv->type <= NM_DEVICE_TYPE_WIFI_P2P);
 		break;
 	case PROP_LINK_TYPE:
 		/* construct-only */
