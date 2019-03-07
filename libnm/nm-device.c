@@ -356,7 +356,7 @@ get_property (GObject *object,
 
 	switch (prop_id) {
 	case PROP_DEVICE_TYPE:
-		g_value_set_enum (value, coerce_type (nm_device_get_device_type (device)));
+		g_value_set_enum (value, nm_device_get_device_type (device));
 		break;
 	case PROP_UDI:
 		g_value_set_string (value, nm_device_get_udi (device));
@@ -937,7 +937,7 @@ nm_device_get_device_type (NMDevice *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), NM_DEVICE_TYPE_UNKNOWN);
 
-	return NM_DEVICE_GET_PRIVATE (self)->device_type;
+	return coerce_type (NM_DEVICE_GET_PRIVATE (self)->device_type);
 }
 
 /**
