@@ -103,12 +103,6 @@
 %global dhcp_default internal
 %endif
 
-%if 0%{?fedora} >= 30
-%global group_tag 0
-%else
-%global group_tag 1
-%endif
-
 ###############################################################################
 
 Name: NetworkManager
@@ -116,9 +110,7 @@ Summary: Network connection manager and user applications
 Epoch: %{epoch_version}
 Version: %{rpm_version}
 Release: %{release_version}%{?snap}%{?dist}
-%if %{group_tag}
 Group: System Environment/Base
-%endif
 License: GPLv2+
 URL: http://www.gnome.org/projects/NetworkManager/
 
@@ -186,11 +178,7 @@ BuildRequires: gtk-doc
 %endif
 BuildRequires: libudev-devel
 BuildRequires: libuuid-devel
-%if 0%{?fedora} >= 30
-BuildRequires: vala
-%else
-BuildRequires: vala-tools
-%endif
+BuildRequires: /usr/bin/valac
 BuildRequires: iptables
 BuildRequires: libxslt
 %if %{with bluetooth}
@@ -252,9 +240,7 @@ services.
 %if %{with adsl}
 %package adsl
 Summary: ADSL device plugin for NetworkManager
-%if %{group_tag}
 Group: System Environment/Base
-%endif
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 Obsoletes: NetworkManager-atm
@@ -267,9 +253,7 @@ This package contains NetworkManager support for ADSL devices.
 %if %{with bluetooth}
 %package bluetooth
 Summary: Bluetooth device plugin for NetworkManager
-%if %{group_tag}
 Group: System Environment/Base
-%endif
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: NetworkManager-wwan = %{epoch}:%{version}-%{release}
 Requires: bluez >= 4.101-5
@@ -284,9 +268,7 @@ This package contains NetworkManager support for Bluetooth devices.
 %if %{with team}
 %package team
 Summary: Team device plugin for NetworkManager
-%if %{group_tag}
 Group: System Environment/Base
-%endif
 BuildRequires: teamd-devel
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
@@ -301,9 +283,7 @@ This package contains NetworkManager support for team devices.
 %if %{with wifi}
 %package wifi
 Summary: Wifi plugin for NetworkManager
-%if %{group_tag}
 Group: System Environment/Base
-%endif
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 
 %if %{with iwd} && (0%{?fedora} > 24 || 0%{?rhel} > 7)
@@ -325,9 +305,7 @@ This package contains NetworkManager support for Wifi and OLPC devices.
 %if %{with wwan}
 %package wwan
 Summary: Mobile broadband device plugin for NetworkManager
-%if %{group_tag}
 Group: System Environment/Base
-%endif
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: ModemManager
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
@@ -341,9 +319,7 @@ devices.
 %if %{with ovs}
 %package ovs
 Summary: Open vSwitch device plugin for NetworkManager
-%if %{group_tag}
 Group: System Environment/Base
-%endif
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 %if 0%{?rhel} == 0
 Requires: openvswitch
@@ -357,9 +333,7 @@ This package contains NetworkManager support for Open vSwitch bridges.
 %if %{with ppp}
 %package ppp
 Summary: PPP plugin for NetworkManager
-%if %{group_tag}
 Group: System Environment/Base
-%endif
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: ppp = %{ppp_version}
 Requires: NetworkManager = %{epoch}:%{version}-%{release}
@@ -372,9 +346,7 @@ This package contains NetworkManager support for PPP.
 
 %package glib
 Summary: Libraries for adding NetworkManager support to applications (old API).
-%if %{group_tag}
 Group: Development/Libraries
-%endif
 Requires: dbus >= %{dbus_version}
 Requires: dbus-glib >= %{dbus_glib_version}
 Conflicts: NetworkManager-libnm < %{epoch}:%{version}-%{release}
@@ -387,9 +359,7 @@ the older NetworkManager API. See also NetworkManager-libnm.
 
 %package glib-devel
 Summary: Header files for adding NetworkManager support to applications (old API).
-%if %{group_tag}
 Group: Development/Libraries
-%endif
 Requires: %{name}-glib%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: glib2-devel
 Requires: pkgconfig
@@ -407,9 +377,7 @@ This is the older NetworkManager API.  See also NetworkManager-libnm-devel.
 
 %package libnm
 Summary: Libraries for adding NetworkManager support to applications (new API).
-%if %{group_tag}
 Group: Development/Libraries
-%endif
 Conflicts: NetworkManager-glib < %{epoch}:%{version}-%{release}
 
 %description libnm
@@ -420,9 +388,7 @@ NetworkManager API.  See also NetworkManager-glib.
 
 %package libnm-devel
 Summary: Header files for adding NetworkManager support to applications (new API).
-%if %{group_tag}
 Group: Development/Libraries
-%endif
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: glib2-devel
 Requires: pkgconfig
@@ -436,9 +402,7 @@ is the new NetworkManager API. See also NetworkManager-glib-devel.
 %if %{with connectivity_fedora}
 %package config-connectivity-fedora
 Summary: NetworkManager config file for connectivity checking via Fedora servers
-%if %{group_tag}
 Group: System Environment/Base
-%endif
 BuildArch: noarch
 Provides: NetworkManager-config-connectivity = %{epoch}:%{version}-%{release}
 
@@ -451,9 +415,7 @@ via Fedora infrastructure.
 %if %{with connectivity_redhat}
 %package config-connectivity-redhat
 Summary: NetworkManager config file for connectivity checking via Red Hat servers
-%if %{group_tag}
 Group: System Environment/Base
-%endif
 BuildArch: noarch
 Provides: NetworkManager-config-connectivity = %{epoch}:%{version}-%{release}
 
@@ -465,9 +427,7 @@ via Red Hat infrastructure.
 
 %package config-server
 Summary: NetworkManager config file for "server-like" defaults
-%if %{group_tag}
 Group: System Environment/Base
-%endif
 BuildArch: noarch
 
 %description config-server
@@ -483,9 +443,7 @@ deployments.
 
 %package dispatcher-routing-rules
 Summary: NetworkManager dispatcher file for advanced routing rules
-%if %{group_tag}
 Group: System Environment/Base
-%endif
 BuildArch: noarch
 Provides: %{name}-config-routing-rules = %{epoch}:%{version}-%{release}
 Obsoletes: %{name}-config-routing-rules < %{epoch}:%{version}-%{release}
@@ -499,9 +457,7 @@ configurations using "/etc/sysconfig/network-scripts/rule-NAME" files
 %if 0%{with_nmtui}
 %package tui
 Summary: NetworkManager curses-based UI
-%if %{group_tag}
 Group: System Environment/Base
-%endif
 Requires: %{name} = %{epoch}:%{version}-%{release}
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 
@@ -845,12 +801,10 @@ fi
 %systemd_postun
 
 
-%if 0%{?fedora} >= 30
-%ldconfig_scriptlets   glib
-%ldconfig_scriptlets   libnm
-%else
+%if 0%{?fedora} < 28
 %post   glib -p /sbin/ldconfig
 %postun glib -p /sbin/ldconfig
+
 %post   libnm -p /sbin/ldconfig
 %postun libnm -p /sbin/ldconfig
 %endif
