@@ -222,6 +222,7 @@ typedef enum {
  * @NM_DEVICE_TYPE_WPAN: a IEEE 802.15.4 (WPAN) MAC Layer Device
  * @NM_DEVICE_TYPE_6LOWPAN: 6LoWPAN interface
  * @NM_DEVICE_TYPE_WIREGUARD: a WireGuard interface
+ * @NM_DEVICE_TYPE_WIFI_P2P: an 802.11 Wi-Fi P2P device (Since: 1.16)
  *
  * #NMDeviceType values indicate the type of hardware represented by a
  * device object.
@@ -257,6 +258,7 @@ typedef enum {
 	NM_DEVICE_TYPE_WPAN          = 27,
 	NM_DEVICE_TYPE_6LOWPAN       = 28,
 	NM_DEVICE_TYPE_WIREGUARD     = 29,
+	NM_DEVICE_TYPE_WIFI_P2P      = 30,
 } NMDeviceType;
 
 /**
