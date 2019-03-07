@@ -2920,7 +2920,7 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 
 	nm_assert (g_str_has_prefix (info->group, NM_KEYFILE_GROUPPREFIX_WIREGUARD_PEER));
 	cstr = &info->group[NM_STRLEN (NM_KEYFILE_GROUPPREFIX_WIREGUARD_PEER)];
-	if (   !_nm_utils_wireguard_normalize_key (cstr, NM_WIREGUARD_PUBLIC_KEY_LEN, &str)
+	if (   !nm_utils_base64secret_normalize (cstr, NM_WIREGUARD_PUBLIC_KEY_LEN, &str)
 	    || !nm_streq0 (str, cstr)) {
 		/* the group name must be identical to the normalized(!) key, so that it
 		 * is uniquely identified. */
@@ -2929,19 +2929,18 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 		             info->group);
 		return;
 	}
-	nm_wireguard_peer_set_public_key (peer, cstr);
+	nm_wireguard_peer_set_public_key (peer, cstr, TRUE);
 	nm_clear_g_free (&str);
 
 	key = NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY;
 	str = nm_keyfile_plugin_kf_get_string (info->keyfile, info->group, key, NULL);
 	if (str) {
-		if (!_nm_utils_wireguard_decode_key (str, NM_WIREGUARD_SYMMETRIC_KEY_LEN, NULL)) {
+		if (!nm_wireguard_peer_set_preshared_key (peer, str, FALSE)) {
 			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("key '%s.%s' is not not a valid 256 bit key in base64 encoding"),
 			                  info->group, key))
 				return;
-		} else
-			nm_wireguard_peer_set_preshared_key (peer, str);
+		}
 		nm_clear_g_free (&str);
 	}
 
@@ -2973,16 +2972,12 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 	key = NM_WIREGUARD_PEER_ATTR_ENDPOINT;
 	str = nm_keyfile_plugin_kf_get_string (info->keyfile, info->group, key, NULL);
 	if (str && str[0]) {
-		nm_auto_unref_sockaddrendpoint NMSockAddrEndpoint *ep = NULL;
-
-		ep = nm_sock_addr_endpoint_new (str);
-		if (!nm_sock_addr_endpoint_get_host (ep)) {
+		if (!nm_wireguard_peer_set_endpoint (peer, str, FALSE)) {
 			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("key '%s.%s' is not not a valid endpoint"),
 			                  info->group, key))
 				return;
-		} else
-			_nm_wireguard_peer_set_endpoint (peer, ep);
+		}
 	}
 	nm_clear_g_free (&str);
 

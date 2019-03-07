@@ -37,9 +37,6 @@ _LOG_DECLARE_SELF(NMDeviceWireGuard);
 
 /*****************************************************************************/
 
-/* TODO: ensure externally-managed works. Both after start of NM and
- *   when adding a wg link with NM running. */
-
 /* TODO: activate profile with peer preshared-key-flags=2. On first activation, the secret is
  *   requested (good). Enter it and connect. Reactivate the profile, now there is no password
  *   prompt, as the secret is cached (good??). */
@@ -47,7 +44,15 @@ _LOG_DECLARE_SELF(NMDeviceWireGuard);
 /* TODO: unlike for other VPNs, we don't inject a direct route to the peers. That means,
  *   you might get a routing sceneraio where the peer (VPN server) is reachable via the VPN.
  *   How we handle adding routes to external gateway for other peers, has severe issues
-*    as well. I think the only solution is https://www.wireguard.com/netns/#improving-the-classic-solutions */
+ *   as well. We may use policy-routing like wg-quick does. See also disussions at
+ *   https://www.wireguard.com/netns/#improving-the-classic-solutions */
+
+/* TODO: honor the TTL of DNS to determine when to retry resolving endpoints. */
+
+/* TODO: when we get multiple IP addresses when resolving a peer endpoint. We currently
+ *   just take the first from GAI. We should only accept AAAA/IPv6 if we also have a suitable
+ *   IPv6 address. The problem is, that we have to recheck that when IP addressing on other
+ *   interfaces changes. This makes it almost too cumbersome to implement. */
 
 /*****************************************************************************/
 
@@ -729,9 +734,9 @@ _peers_get_platform_list (NMDeviceWireGuardPrivate *priv,
 		NMPWireGuardPeer *plp = &plpeers[i_good];
 		NMSettingSecretFlags psk_secret_flags;
 
-		if (!_nm_utils_wireguard_decode_key (nm_wireguard_peer_get_public_key (peer_data->peer),
-		                                     sizeof (plp->public_key),
-		                                     plp->public_key))
+		if (!nm_utils_base64secret_decode (nm_wireguard_peer_get_public_key (peer_data->peer),
+		                                   sizeof (plp->public_key),
+		                                   plp->public_key))
 			continue;
 
 		*plf = NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_NONE;
@@ -754,9 +759,9 @@ _peers_get_platform_list (NMDeviceWireGuardPrivate *priv,
 		                            LINK_CONFIG_MODE_REAPPLY)) {
 			psk_secret_flags = nm_wireguard_peer_get_preshared_key_flags (peer_data->peer);
 			if (!NM_FLAGS_HAS (psk_secret_flags, NM_SETTING_SECRET_FLAG_NOT_REQUIRED)) {
-				if (   !_nm_utils_wireguard_decode_key (nm_wireguard_peer_get_preshared_key (peer_data->peer),
-				                                        sizeof (plp->preshared_key),
-				                                        plp->preshared_key)
+				if (   !nm_utils_base64secret_decode (nm_wireguard_peer_get_preshared_key (peer_data->peer),
+				                                      sizeof (plp->preshared_key),
+				                                      plp->preshared_key)
 				    && config_mode == LINK_CONFIG_MODE_FULL)
 					goto skip;
 			}
@@ -1128,9 +1133,9 @@ link_config (NMDeviceWireGuard *self,
 		wg_lnk.fwmark = nm_setting_wireguard_get_fwmark (s_wg),
 		wg_change_flags |= NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_FWMARK;
 
-		if (_nm_utils_wireguard_decode_key (nm_setting_wireguard_get_private_key (s_wg),
-		                                    sizeof (wg_lnk.private_key),
-		                                    wg_lnk.private_key)) {
+		if (nm_utils_base64secret_decode (nm_setting_wireguard_get_private_key (s_wg),
+		                                  sizeof (wg_lnk.private_key),
+		                                  wg_lnk.private_key)) {
 			wg_lnk_clear_private_key = NM_SECRET_PTR_ARRAY (wg_lnk.private_key);
 			wg_change_flags |= NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_PRIVATE_KEY;
 		} else {

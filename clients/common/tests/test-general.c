@@ -20,6 +20,7 @@
 #include "nm-default.h"
 
 #include "nm-meta-setting-access.h"
+#include "nm-vpn-helpers.h"
 
 #include "nm-utils/nm-test-utils.h"
 
@@ -145,6 +146,96 @@ test_client_meta_check (void)
 
 /*****************************************************************************/
 
+static void
+test_client_import_wireguard_test0 (void)
+{
+	gs_unref_object NMConnection *connection;
+	NMSettingWireGuard *s_wg;
+	NMWireGuardPeer *peer;
+	gs_free_error GError *error = NULL;
+
+	connection = nm_vpn_wireguard_import (NM_BUILD_SRCDIR"/clients/common/tests/wg-test0.conf",
+	                                      &error);
+
+	g_assert_no_error (error);
+
+	g_assert_cmpstr (nm_connection_get_id (connection), ==, "wg-test0");
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "wg-test0");
+	g_assert_cmpstr (nm_connection_get_connection_type (connection), ==, NM_SETTING_WIREGUARD_SETTING_NAME);
+
+	s_wg = NM_SETTING_WIREGUARD (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIREGUARD));
+
+	g_assert_cmpint (nm_setting_wireguard_get_listen_port (s_wg), ==, 51820);
+	g_assert_cmpstr (nm_setting_wireguard_get_private_key (s_wg), ==, "yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=");
+
+	g_assert_cmpint (nm_setting_wireguard_get_peers_len (s_wg), ==, 3);
+
+	peer = nm_setting_wireguard_get_peer (s_wg, 0);
+	g_assert_cmpstr (nm_wireguard_peer_get_public_key (peer), ==, "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=");
+	g_assert_cmpstr (nm_wireguard_peer_get_endpoint (peer), ==, "192.95.5.67:1234");
+	g_assert_cmpint (nm_wireguard_peer_get_allowed_ips_len (peer), ==, 2);
+	g_assert_cmpstr (nm_wireguard_peer_get_allowed_ip (peer, 0, NULL), ==, "10.192.122.3/32");
+	g_assert_cmpstr (nm_wireguard_peer_get_allowed_ip (peer, 1, NULL), ==, "10.192.124.1/24");
+
+	peer = nm_setting_wireguard_get_peer (s_wg, 1);
+	g_assert_cmpstr (nm_wireguard_peer_get_public_key (peer), ==, "TrMvSoP4jYQlY6RIzBgbssQqY3vxI2Pi+y71lOWWXX0=");
+	g_assert_cmpstr (nm_wireguard_peer_get_endpoint (peer), ==, "[2607:5300:60:6b0::c05f:543]:2468");
+	g_assert_cmpint (nm_wireguard_peer_get_allowed_ips_len (peer), ==, 2);
+	g_assert_cmpstr (nm_wireguard_peer_get_allowed_ip (peer, 0, NULL), ==, "10.192.122.4/32");
+	g_assert_cmpstr (nm_wireguard_peer_get_allowed_ip (peer, 1, NULL), ==, "192.168.0.0/16");
+
+	peer = nm_setting_wireguard_get_peer (s_wg, 2);
+	g_assert_cmpstr (nm_wireguard_peer_get_public_key (peer), ==, "gN65BkIKy1eCE9pP1wdc8ROUtkHLF2PfAqYdyYBz6EA=");
+	g_assert_cmpstr (nm_wireguard_peer_get_endpoint (peer), ==, "test.wireguard.com:18981");
+	g_assert_cmpint (nm_wireguard_peer_get_allowed_ips_len (peer), ==, 1);
+	g_assert_cmpstr (nm_wireguard_peer_get_allowed_ip (peer, 0, NULL), ==, "10.10.10.230/32");
+}
+
+static void
+test_client_import_wireguard_test1 (void)
+{
+	gs_free_error GError *error = NULL;
+
+	nm_vpn_wireguard_import (NM_BUILD_SRCDIR"/clients/common/tests/wg-test1.conf", &error);
+	g_assert_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT);
+	g_assert (g_str_has_prefix (error->message, "invalid secret 'PrivateKey'"));
+	g_assert (g_str_has_suffix (error->message, "wg-test1.conf:2"));
+}
+
+static void
+test_client_import_wireguard_test2 (void)
+{
+	gs_free_error GError *error = NULL;
+
+	nm_vpn_wireguard_import (NM_BUILD_SRCDIR"/clients/common/tests/wg-test2.conf", &error);
+
+	g_assert_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT);
+	g_assert (g_str_has_prefix (error->message, "unrecognized line at"));
+	g_assert (g_str_has_suffix (error->message, "wg-test2.conf:5"));
+}
+
+static void
+test_client_import_wireguard_test3 (void)
+{
+	gs_free_error GError *error = NULL;
+
+	nm_vpn_wireguard_import (NM_BUILD_SRCDIR"/clients/common/tests/wg-test3.conf", &error);
+	g_assert_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT);
+	g_assert (g_str_has_prefix (error->message, "invalid value for 'ListenPort'"));
+	g_assert (g_str_has_suffix (error->message, "wg-test3.conf:3"));
+}
+
+static void
+test_client_import_wireguard_missing (void)
+{
+	gs_free_error GError *error = NULL;
+
+	nm_vpn_wireguard_import (NM_BUILD_SRCDIR"/clients/common/tests/wg-missing.conf", &error);
+	g_assert_error (error, G_FILE_ERROR, G_FILE_ERROR_NOENT);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -153,6 +244,11 @@ main (int argc, char **argv)
 	nmtst_init (&argc, &argv, TRUE);
 
 	g_test_add_func ("/client/meta/check", test_client_meta_check);
+	g_test_add_func ("/client/import/wireguard/test0", test_client_import_wireguard_test0);
+	g_test_add_func ("/client/import/wireguard/test1", test_client_import_wireguard_test1);
+	g_test_add_func ("/client/import/wireguard/test2", test_client_import_wireguard_test2);
+	g_test_add_func ("/client/import/wireguard/test3", test_client_import_wireguard_test3);
+	g_test_add_func ("/client/import/wireguard/missing", test_client_import_wireguard_missing);
 
 	return g_test_run ();
 }

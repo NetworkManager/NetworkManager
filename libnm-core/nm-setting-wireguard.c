@@ -280,34 +280,48 @@ nm_wireguard_peer_get_public_key (const NMWireGuardPeer *self)
  * @self: the unsealed #NMWireGuardPeer instance
  * @public_key: (allow-none) (transfer none): the new public
  *   key or %NULL to clear the public key.
+ * @accept_invalid: if %TRUE and @public_key is not %NULL and
+ *   invalid, then do not modify the instance.
  *
  * Reset the public key. Note that if the public key is valid, it
  * will be normalized (which may or may not modify the set value).
  *
  * It is a bug trying to modify a sealed #NMWireGuardPeer instance.
  *
+ * Returns: %TRUE if the key was valid or %NULL. Returns
+ *   %FALSE for invalid keys. Depending on @accept_invalid
+ *   will an invalid key be set or not.
+ *
  * Since: 1.16
  */
-void
+gboolean
 nm_wireguard_peer_set_public_key (NMWireGuardPeer *self,
-                                  const char *public_key)
+                                  const char *public_key,
+                                  gboolean accept_invalid)
 {
 	char *public_key_normalized = NULL;
+	gboolean is_valid;
 
-	g_return_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE));
+	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE), FALSE);
 
 	if (!public_key) {
 		nm_clear_g_free (&self->public_key);
-		return;
+		return TRUE;
 	}
 
-	self->public_key_valid = _nm_utils_wireguard_normalize_key (public_key,
-	                                                            NM_WIREGUARD_PUBLIC_KEY_LEN,
-	                                                            &public_key_normalized);
-	nm_assert (self->public_key_valid == (public_key_normalized != NULL));
+	is_valid = nm_utils_base64secret_normalize (public_key,
+	                                            NM_WIREGUARD_PUBLIC_KEY_LEN,
+	                                            &public_key_normalized);
+	nm_assert (is_valid == (public_key_normalized != NULL));
 
+	if (   !is_valid
+	    && !accept_invalid)
+		return FALSE;
+
+	self->public_key_valid = is_valid;
 	g_free (self->public_key);
 	self->public_key = public_key_normalized ?: g_strdup (public_key);
+	return is_valid;
 }
 
 void
@@ -346,6 +360,9 @@ nm_wireguard_peer_get_preshared_key (const NMWireGuardPeer *self)
  * @self: the unsealed #NMWireGuardPeer instance
  * @preshared_key: (allow-none) (transfer none): the new preshared
  *   key or %NULL to clear the preshared key.
+ * @accept_invalid: whether to allow setting the key to an invalid
+ *   value. If %FALSE, @self is unchanged if the key is invalid
+ *   and if %FALSE is returned.
  *
  * Reset the preshared key. Note that if the preshared key is valid, it
  * will be normalized (which may or may not modify the set value).
@@ -358,28 +375,41 @@ nm_wireguard_peer_get_preshared_key (const NMWireGuardPeer *self)
  *
  * It is a bug trying to modify a sealed #NMWireGuardPeer instance.
  *
+ * Returns: %TRUE if the preshared-key is valid, otherwise %FALSE.
+ *   %NULL is considered a valid value.
+ *   If the key is invalid, it depends on @accept_invalid whether the
+ *   previous value was reset.
+ *
  * Since: 1.16
  */
-void
+gboolean
 nm_wireguard_peer_set_preshared_key (NMWireGuardPeer *self,
-                                     const char *preshared_key)
+                                     const char *preshared_key,
+                                     gboolean accept_invalid)
 {
 	char *preshared_key_normalized = NULL;
+	gboolean is_valid;
 
-	g_return_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE));
+	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE), FALSE);
 
 	if (!preshared_key) {
 		nm_clear_pointer (&self->preshared_key, nm_free_secret);
-		return;
+		return TRUE;
 	}
 
-	self->preshared_key_valid = _nm_utils_wireguard_normalize_key (preshared_key,
-	                                                               NM_WIREGUARD_SYMMETRIC_KEY_LEN,
-	                                                               &preshared_key_normalized);
-	nm_assert (self->preshared_key_valid == (preshared_key_normalized != NULL));
+	is_valid = nm_utils_base64secret_normalize (preshared_key,
+	                                            NM_WIREGUARD_SYMMETRIC_KEY_LEN,
+	                                            &preshared_key_normalized);
+	nm_assert (is_valid == (preshared_key_normalized != NULL));
 
+	if (   !is_valid
+	    && !accept_invalid)
+		return FALSE;
+
+	self->preshared_key_valid = is_valid;
 	nm_free_secret (self->preshared_key);
 	self->preshared_key = preshared_key_normalized ?: g_strdup (preshared_key);
+	return is_valid;
 }
 
 /**
@@ -494,26 +524,50 @@ _nm_wireguard_peer_set_endpoint (NMWireGuardPeer *self,
  * nm_wireguard_peer_set_endpoint:
  * @self: the unsealed #NMWireGuardPeer instance
  * @endpoint: the socket address endpoint to set or %NULL.
+ * @allow_invalid: if %TRUE, also invalid values are set.
+ *   If %FALSE, the function does nothing for invalid @endpoint
+ *   arguments.
  *
  * Sets or clears the endpoint of @self.
  *
  * It is a bug trying to modify a sealed #NMWireGuardPeer instance.
  *
+ * Returns: %TRUE if the endpoint is %NULL or valid. For an
+ *   invalid @endpoint argument, %FALSE is returned. Depending
+ *   on @allow_invalid, the instance will be modified.
+ *
  * Since: 1.16
  */
-void
+gboolean
 nm_wireguard_peer_set_endpoint (NMWireGuardPeer *self,
-                                const char *endpoint)
+                                const char *endpoint,
+                                gboolean allow_invalid)
 {
 	NMSockAddrEndpoint *old;
+	NMSockAddrEndpoint *new;
+	gboolean is_valid;
 
-	g_return_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE));
+	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE), FALSE);
+
+	if (!endpoint) {
+		nm_clear_pointer (&self->endpoint, nm_sock_addr_endpoint_unref);
+		return TRUE;
+	}
+
+	new = nm_sock_addr_endpoint_new (endpoint);
+
+	is_valid = (nm_sock_addr_endpoint_get_host (new) != NULL);
+
+	if (   !allow_invalid
+	    && !is_valid) {
+		nm_sock_addr_endpoint_unref (new);
+		return FALSE;
+	}
 
 	old = self->endpoint;
-	self->endpoint =   endpoint
-	                 ? nm_sock_addr_endpoint_new (endpoint)
-	                 : NULL;
+	self->endpoint = new;
 	nm_sock_addr_endpoint_unref (old);
+	return is_valid;
 }
 
 /**
@@ -593,6 +647,7 @@ _peer_append_allowed_ip (NMWireGuardPeer *self,
 	int prefix;
 	NMIPAddr addrbin;
 	char *str;
+	gboolean is_valid = TRUE;
 
 	nm_assert (NM_IS_WIREGUARD_PEER (self, FALSE));
 	nm_assert (allowed_ip);
@@ -608,6 +663,7 @@ _peer_append_allowed_ip (NMWireGuardPeer *self,
 			return FALSE;
 		/* mark the entry as invalid by having a "X" prefix. */
 		str = g_strconcat (ALLOWED_IP_INVALID_X_STR, allowed_ip, NULL);
+		is_valid = FALSE;
 	} else {
 		char addrstr[NM_UTILS_INET_ADDRSTRLEN];
 
@@ -625,7 +681,7 @@ _peer_append_allowed_ip (NMWireGuardPeer *self,
 		self->allowed_ips = g_ptr_array_new_with_free_func (g_free);
 
 	g_ptr_array_add (self->allowed_ips, str);
-	return TRUE;
+	return is_valid;
 }
 
 /**
@@ -1072,9 +1128,9 @@ again:
 		return pd;
 	}
 	if (   try_with_normalized_key
-	    && _nm_utils_wireguard_normalize_key (public_key,
-	                                          NM_WIREGUARD_PUBLIC_KEY_LEN,
-	                                          &public_key_normalized)) {
+	    && nm_utils_base64secret_normalize (public_key,
+	                                        NM_WIREGUARD_PUBLIC_KEY_LEN,
+	                                        &public_key_normalized)) {
 		public_key = public_key_normalized;
 		try_with_normalized_key = FALSE;
 		goto again;
@@ -1516,8 +1572,7 @@ _peers_dbus_only_set (NMSetting     *setting,
 		}
 
 		peer = nm_wireguard_peer_new ();
-		nm_wireguard_peer_set_public_key (peer, cstr);
-		if (!peer->public_key_valid) {
+		if (!nm_wireguard_peer_set_public_key (peer, cstr, TRUE)) {
 			if (NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
 				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY,
 				             _("peer #%u has invalid public-key"),
@@ -1543,7 +1598,7 @@ _peers_dbus_only_set (NMSetting     *setting,
 		}
 
 		if (g_variant_lookup (peer_var, NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY, "&s", &cstr))
-			nm_wireguard_peer_set_preshared_key (peer, cstr);
+			nm_wireguard_peer_set_preshared_key (peer, cstr, TRUE);
 
 		if (g_variant_lookup (peer_var, NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY_FLAGS, "u", &u32))
 			nm_wireguard_peer_set_preshared_key_flags (peer, u32);
@@ -1873,7 +1928,7 @@ update_one_secret (NMSetting *setting,
 			continue;
 
 		peer = nm_wireguard_peer_new_clone (pd->peer, FALSE);
-		nm_wireguard_peer_set_preshared_key (peer, cstr);
+		nm_wireguard_peer_set_preshared_key (peer, cstr, TRUE);
 
 		if (!_peers_set (priv, peer, pd->idx, FALSE))
 			nm_assert_not_reached ();
@@ -2244,9 +2299,9 @@ set_property (GObject *object, guint prop_id,
 		nm_clear_pointer (&priv->private_key, nm_free_secret);
 		str = g_value_get_string (value);
 		if (str) {
-			if (_nm_utils_wireguard_normalize_key (str,
-		                                           NM_WIREGUARD_PUBLIC_KEY_LEN,
-		                                           &priv->private_key))
+			if (nm_utils_base64secret_normalize (str,
+			                                     NM_WIREGUARD_PUBLIC_KEY_LEN,
+			                                     &priv->private_key))
 				priv->private_key_valid = TRUE;
 			else {
 				priv->private_key = g_strdup (str);

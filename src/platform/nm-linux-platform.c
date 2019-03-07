@@ -2019,8 +2019,10 @@ _wireguard_update_from_peers_nla (CList *peers,
 
 		if (tb[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL])
 			peer_c->data.persistent_keepalive_interval = nla_get_u16 (tb[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL]);
-		if (tb[WGPEER_A_LAST_HANDSHAKE_TIME])
-			nla_memcpy (&peer_c->data.last_handshake_time, tb[WGPEER_A_LAST_HANDSHAKE_TIME], sizeof (peer_c->data.last_handshake_time));
+		if (tb[WGPEER_A_LAST_HANDSHAKE_TIME]) {
+			if (nla_len (tb[WGPEER_A_LAST_HANDSHAKE_TIME]) >= sizeof (peer_c->data.last_handshake_time))
+				nla_memcpy (&peer_c->data.last_handshake_time, tb[WGPEER_A_LAST_HANDSHAKE_TIME], sizeof (peer_c->data.last_handshake_time));
+		}
 		if (tb[WGPEER_A_RX_BYTES])
 			peer_c->data.rx_bytes = nla_get_u64 (tb[WGPEER_A_RX_BYTES]);
 		if (tb[WGPEER_A_TX_BYTES])
