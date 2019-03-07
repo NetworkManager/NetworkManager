@@ -178,7 +178,7 @@ BuildRequires: gtk-doc
 %endif
 BuildRequires: libudev-devel
 BuildRequires: libuuid-devel
-BuildRequires: vala-tools
+BuildRequires: /usr/bin/valac
 BuildRequires: iptables
 BuildRequires: libxslt
 %if %{with bluetooth}
