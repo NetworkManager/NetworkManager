@@ -49,6 +49,7 @@ chomp;
 
 our $is_patch;
 our $is_file;
+our $is_commit_message;
 
 our $seen_error;
 our $line;		# Current line
@@ -97,6 +98,22 @@ sub complain
 	$seen_error = 1;
 }
 
+sub check_commit
+{
+	my $commit = shift;
+	$commit =~ /^([0-9a-f]{5,})/;
+	my $commit_id = $1;
+	my $commit_message;
+
+	if ($commit_id and not system 'git rev-parse --git-dir >/dev/null 2>/dev/null') {
+		$commit_message = `git log --abbrev=12 --pretty=format:"%h ('%s')" -1 $commit_id 2>/dev/null`;
+		complain "Commit '$commit_id' does not seem to exist" unless $commit_message;
+	}
+
+	$commit_message //= "<12 hex digits> ('<commit subject>')";
+	complain "Refer to the commit id properly: $commit_message" unless $commit =~ /^[0-9a-f]{12} \('/;
+}
+
 if ($is_patch) {
 	# This is a line of an unified diff
 	if (/^@@.*\+(\d+)/) {
@@ -118,13 +135,26 @@ if ($is_patch) {
 	# This is a line from full C file
 	$check_line = 1;
 	$line = $_;
+} elsif ($is_commit_message) {
+	$line_no++;
+	$filename = '(commit message)';
+	$check_line = 1;
+	$line = $_;
+	/^---$/ and $is_commit_message = 0;
+	/^Fixes: *(.*)/ and check_commit ($1);
+	/This reverts commit/ and next;
+	/cherry picked from/ and next;
+	/\bcommit (.*)/ and check_commit ($1);
+	next;
 } else {
 	# We don't handle these yet
 	/^diff --cc/ and exit 0;
-	# We don't know if we're dealing with a patch or a C file yet
-	/^#/ and $is_file = 1;
-	/^---/ and $is_patch = 1;
 	$filename = '';
+	$line_no = 1;
+	# We don't know if we're dealing with a patch or a C file yet
+	$is_commit_message = 1 if /^From \S/;
+	$is_file = 1 if /^#/;
+	$is_patch = 1 if /^---/;
 	next;
 }
 
