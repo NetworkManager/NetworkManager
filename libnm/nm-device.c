@@ -294,6 +294,7 @@ coerce_type (NMDeviceType type)
 	case NM_DEVICE_TYPE_WPAN:
 	case NM_DEVICE_TYPE_6LOWPAN:
 	case NM_DEVICE_TYPE_WIREGUARD:
+	case NM_DEVICE_TYPE_WIFI_P2P:
 		return type;
 	}
 	return NM_DEVICE_TYPE_UNKNOWN;
@@ -355,7 +356,7 @@ get_property (GObject *object,
 
 	switch (prop_id) {
 	case PROP_DEVICE_TYPE:
-		g_value_set_enum (value, coerce_type (nm_device_get_device_type (device)));
+		g_value_set_enum (value, nm_device_get_device_type (device));
 		break;
 	case PROP_UDI:
 		g_value_set_string (value, nm_device_get_udi (device));
@@ -936,7 +937,7 @@ nm_device_get_device_type (NMDevice *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), NM_DEVICE_TYPE_UNKNOWN);
 
-	return NM_DEVICE_GET_PRIVATE (self)->device_type;
+	return coerce_type (NM_DEVICE_GET_PRIVATE (self)->device_type);
 }
 
 /**
@@ -1427,6 +1428,8 @@ get_type_name (NMDevice *device)
 		return _("6LoWPAN");
 	case NM_DEVICE_TYPE_WIREGUARD:
 		return _("WireGuard");
+	case NM_DEVICE_TYPE_WIFI_P2P:
+		return _("Wi-Fi P2P");
 	case NM_DEVICE_TYPE_GENERIC:
 	case NM_DEVICE_TYPE_UNUSED1:
 	case NM_DEVICE_TYPE_UNUSED2:
