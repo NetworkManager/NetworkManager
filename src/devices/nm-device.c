@@ -2114,6 +2114,7 @@ nm_device_get_route_metric_default (NMDeviceType device_type)
 		return 800;
 	case NM_DEVICE_TYPE_WPAN:
 		return 850;
+	case NM_DEVICE_TYPE_WIFI_P2P:
 	case NM_DEVICE_TYPE_GENERIC:
 		return 950;
 	case NM_DEVICE_TYPE_UNKNOWN:
