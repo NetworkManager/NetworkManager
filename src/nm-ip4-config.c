@@ -1599,12 +1599,12 @@ _nm_ip4_config_intersect_helper (NMIP4Config *dst,
 		_notify (dst, PROP_GATEWAY);
 	}
 
-skip_routes:
 	if (changed) {
 		_notify_routes (dst);
 		result = TRUE;
 	}
 
+skip_routes:
 	/* ignore domains */
 	/* ignore dns searches */
 	/* ignore dns options */
