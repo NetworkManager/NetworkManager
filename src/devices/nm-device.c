@@ -3884,6 +3884,8 @@ device_link_changed (NMDevice *self)
 			if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
 				_LOGW (LOGD_IP4, "failed applying IP4 config after link comes up again");
 		}
+
+		priv->linklocal6_dad_counter = 0;
 		if (priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE) {
 			if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
 				_LOGW (LOGD_IP6, "failed applying IP6 config after link comes up again");
