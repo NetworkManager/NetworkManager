@@ -664,7 +664,7 @@ handle_connman_iface (NMModemOfono *self, gboolean found)
 		                          OFONO_DBUS_INTERFACE_CONNECTION_MANAGER,
 		                          priv->connman_proxy_cancellable,
 		                          _connman_proxy_new_cb,
-		                          NULL);
+		                          self);
 	}
 }
 
