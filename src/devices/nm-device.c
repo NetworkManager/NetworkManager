@@ -12784,17 +12784,17 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean intersect_config
 				 * by the user. */
 				if (priv->con_ip_config_6) {
 					nm_ip6_config_intersect (priv->con_ip_config_6, priv->ext_ip_config_6,
-					                         TRUE,
+					                         is_up,
 					                         is_up,
 					                         default_route_metric_penalty_get (self, AF_INET6));
 				}
 
-				intersect_ext_config (self, &priv->ac_ip6_config, TRUE, is_up);
-				intersect_ext_config (self, &priv->dhcp6.ip6_config, TRUE, is_up);
-				intersect_ext_config (self, &priv->dev2_ip_config_6, TRUE, is_up);
+				intersect_ext_config (self, &priv->ac_ip6_config, is_up, is_up);
+				intersect_ext_config (self, &priv->dhcp6.ip6_config, is_up, is_up);
+				intersect_ext_config (self, &priv->dev2_ip_config_6, is_up, is_up);
 
 				for (iter = priv->vpn_configs_6; iter; iter = iter->next)
-					nm_ip6_config_intersect (iter->data, priv->ext_ip_config_6, TRUE, is_up, 0);
+					nm_ip6_config_intersect (iter->data, priv->ext_ip_config_6, is_up, is_up, 0);
 
 				if (   priv->ipv6ll_has
 				    && !nm_ip6_config_lookup_address (priv->ext_ip_config_6, &priv->ipv6ll_addr))
