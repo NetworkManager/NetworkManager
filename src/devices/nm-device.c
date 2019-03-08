@@ -12892,6 +12892,7 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 	if (!IS_IPv4) {
 		NMPlatform *platform;
 		GSList *dad6_failed_addrs, *iter;
+		const NMPlatformLink *pllink;
 
 		dad6_failed_addrs = g_steal_pointer (&priv->dad6_failed_addrs);
 
@@ -12900,7 +12901,8 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 		    && priv->ifindex > 0
 		    && !nm_device_sys_iface_state_is_external (self)
 		    && (platform = nm_device_get_platform (self))
-		    && nm_platform_link_get (platform, priv->ifindex)) {
+		    && (pllink = nm_platform_link_get (platform, priv->ifindex))
+		    && (pllink->n_ifi_flags & IFF_UP)) {
 			gboolean need_ipv6ll = FALSE;
 			NMNDiscConfigMap ndisc_config_changed = NM_NDISC_CONFIG_NONE;
 
