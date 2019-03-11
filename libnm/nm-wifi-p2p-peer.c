@@ -217,7 +217,7 @@ nm_wifi_p2p_peer_get_wfd_ies (NMWifiP2PPeer *peer)
  *
  * Gets the hardware address of the P2P peer.
  *
- * Returns: the hardware adress
+ * Returns: the hardware address
  *
  * Since: 1.16
  **/

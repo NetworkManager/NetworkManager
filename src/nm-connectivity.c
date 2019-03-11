@@ -583,14 +583,14 @@ easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 		if (cb_data->concheck.response_good_cnt > (gsize) (100 * 1024)) {
 			/* we expect an empty response. We accept either
 			 * 1) status code 204 and any response
-			 * 2) status code 200 and an empty reponse.
+			 * 2) status code 200 and an empty response.
 			 *
 			 * Here, we want to continue receiving data, to see whether we have
 			 * case 1). Arguably, the server shouldn't send us 204 with a non-empty
 			 * response, but we accept that also with a non-empty response, so
 			 * keep receiving.
 			 *
-			 * However, if we get an excessive amound of data, we put a stop on it
+			 * However, if we get an excessive amount of data, we put a stop on it
 			 * and fail. */
 			cb_data_queue_completed (cb_data,
 			                         NM_CONNECTIVITY_PORTAL,

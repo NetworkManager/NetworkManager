@@ -528,7 +528,7 @@ nm_vpn_wireguard_import (const char *filename,
 
 				/* wg-quick accepts the "MTU" value, but it also fetches routes to
 				 * autodetect it. NetworkManager won't do that, we can only configure
-				 * an explict MTU or no autodetection will be performed. */
+				 * an explicit MTU or no autodetection will be performed. */
 				data_mtu = i64;
 				continue;
 			}
@@ -581,7 +581,7 @@ nm_vpn_wireguard_import (const char *filename,
 			    || line_match (line, "PreDown", &matched_key, &value)
 			    || line_match (line, "PostUp", &matched_key, &value)
 			    || line_match (line, "PostDown", &matched_key, &value)) {
-				/* we don't run any scripts. Silently ignore these paramters. */
+				/* we don't run any scripts. Silently ignore these parameters. */
 				continue;
 			}
 

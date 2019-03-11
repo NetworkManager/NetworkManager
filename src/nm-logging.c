@@ -139,7 +139,7 @@ static GlobalMain gl_main = { };
 static union {
 	/* a union with an immutable and a mutable alias for the Global.
 	 * Since nm-logging must be thread-safe, we must take care at which
-	 * places we only read value ("imm") and where we modifiy them ("mut"). */
+	 * places we only read value ("imm") and where we modify them ("mut"). */
 	Global       mut;
 	const Global imm;
 } gl = {

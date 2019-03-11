@@ -1965,7 +1965,7 @@ _set_fcn_gobject_bytes (ARGS_SET_FCN)
 			g_set_error_literal (error, 1, 0, _("not a valid hex-string"));
 			return FALSE;
 		}
-		/* accept the emtpy word to reset the property to %NULL. */
+		/* accept the empty word to reset the property to %NULL. */
 		goto done;
 	}
 

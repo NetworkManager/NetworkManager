@@ -35,7 +35,7 @@
 # after activating the profile. Use `nmcli connection up` for that.
 #
 # The example script does not support creating or deleting the WireGuard profile itself. It also
-# does not support modifying other settings of the connection profile, like the IP address configuation.
+# does not support modifying other settings of the connection profile, like the IP address configuration.
 # For that also use nmcli. For example:
 #
 #       PROFILE=wg0

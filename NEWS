@@ -24,7 +24,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Change default "ipv4.dhcp-client-id" setting for the internal DHCP plugin from
   "duid" to "mac". This is a change in behavior on upgrade when using the internal
   DHCP plugin (unless the default is overwritten in "NetworkManager.conf" or specified
-  per connnection profile).
+  per connection profile).
 * Improve handling of DHCP router options with internal DHCP plugin. For one, accept
   multiple routers and add a default-route to each. On D-Bus expose the original DNS
   and NTP servers without cleaning up local nameservers.
@@ -35,7 +35,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
   with the exception of configuring and showing peers.
 * Add initrd generator to be used by dracut and use it as new way of handling
   iBFT.
-* Deprected "plugins.monitor-connection-files" setting in NetworkManager.conf.
+* Deprecated "plugins.monitor-connection-files" setting in NetworkManager.conf.
   This option will have no effect in future versions.
 * Add AP and Ad-hoc support for iwd Wi-Fi backend.
 * Warn about invalid settings in "NetworkManager.conf".
@@ -47,7 +47,7 @@ and 1.14.6 are also present in NetworkManager-1.14:
 
 - 1.14.6:
 * Fix memory corruption in internal DHCPv6 client (CVE-2018-15688).
-* No longer limit number of search entires in resolv.conf to 6.
+* No longer limit number of search entries in resolv.conf to 6.
 * Support restricting NetworkManager.conf device configuration based on used DHCP
   plugin.
 * Add "${MAC}" specifier for connection.stable-id. This uses the current MAC
@@ -60,7 +60,7 @@ and 1.14.6 are also present in NetworkManager-1.14:
   systemd-networkd does by default.
 * Support and use a new kind of secret-key in "/var/lib/NetworkManager/secret_key".
   The secret-key represents the identity of the machine that is used for various
-  purposes like generating IPv6 stable privacy addesses. It is now combined
+  purposes like generating IPv6 stable privacy addresses. It is now combined
   with "/etc/machine-id" so that changing only the machine-id results in new identifiers.
   That matters for example when cloning a virtual machine. Previously, the user
   hard to prune NetworkManager's secret-key to get a new identity, now regenerating
