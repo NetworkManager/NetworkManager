@@ -194,9 +194,10 @@ sd_notify (int unset_environment, const char *state)
 #include "async.h"
 #include "util.h"
 
-static inline pid_t gettid(void) {
+static inline pid_t _nm_gettid(void) {
         return (pid_t) syscall(SYS_gettid);
 }
+#define gettid() _nm_gettid ()
 
 #endif /* (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_SYSTEMD */
 
