@@ -122,7 +122,7 @@
 %endif
 
 %if 0%{?fedora}
-# Altough eBPF would be available on Fedora's kernel, it seems
+# Although eBPF would be available on Fedora's kernel, it seems
 # we often get SELinux denials (rh#1651654). But even aside them,
 # bpf(BPF_MAP_CREATE, ...) randomly fails with EPERM. That might
 # be related to `ulimit -l`. Anyway, this is not usable at the
