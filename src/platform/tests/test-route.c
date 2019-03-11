@@ -24,6 +24,7 @@
 
 #include "nm-core-utils.h"
 #include "platform/nm-platform-utils.h"
+#include "platform/nmp-rules-manager.h"
 
 #include "test-common.h"
 
@@ -1362,6 +1363,7 @@ static void
 test_rule (gconstpointer test_data)
 {
 	const int TEST_IDX = GPOINTER_TO_INT (test_data);
+	const gboolean TEST_SYNC = (TEST_IDX == 4);
 	gs_unref_ptrarray GPtrArray *objs = NULL;
 	gs_unref_ptrarray GPtrArray *objs_initial = NULL;
 	NMPlatform *platform = NM_PLATFORM_GET;
@@ -1493,104 +1495,182 @@ again:
 	if (TEST_IDX != 1)
 		nmtst_rand_perm (NULL, objs->pdata, NULL, sizeof (gpointer), objs->len);
 
-	for (i = 0; i < objs->len;) {
-		const NMPObject *obj = objs->pdata[i];
+	if (TEST_SYNC) {
+		gs_unref_hashtable GHashTable *unique_priorities = g_hash_table_new (NULL, NULL);
+		nm_auto_unref_rules_manager NMPRulesManager *rules_manager = nmp_rules_manager_new (platform, FALSE);
+		gs_unref_ptrarray GPtrArray *objs_sync = NULL;
+		gconstpointer USER_TAG_1 = &platform;
+		gconstpointer USER_TAG_2 = &unique_priorities;
 
-		for (j = 0; j < objs->len; j++)
-			g_assert ((j < i) == (!!_platform_has_routing_rule (platform, objs->pdata[j])));
+		objs_sync = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
 
-		r = nm_platform_routing_rule_add (platform, NMP_NLM_FLAG_ADD, NMP_OBJECT_CAST_ROUTING_RULE (obj));
+		/* ensure that priorities are unique. Otherwise it confuses the test, because
+		 * kernel may wrongly be unable to add/delete routes based on a wrong match
+		 * (rh#1685816, rh#1685816). */
+		for (i = 0; i < objs->len; i++) {
+			const NMPObject *obj = objs->pdata[i];
+			guint32 prio = NMP_OBJECT_CAST_ROUTING_RULE (obj)->priority;
 
-		if (r == -EEXIST) {
-			g_assert (!_platform_has_routing_rule (platform, obj));
-			/* this should not happen, but there are bugs in kernel (rh#1686075). */
-			for (j = 0; j < i; j++) {
-				const NMPObject *obj2 = objs->pdata[j];
-
-				g_assert (_platform_has_routing_rule (platform, obj2));
-
-				if (_rule_fuzzy_equal (obj, obj2, RTM_NEWRULE)) {
-					r = 0;
-					break;
-				}
-			}
-			if (r == 0) {
-				/* OK, the rule is shadowed by another rule, and kernel does not allow
-				 * us to add this one (rh#1686075). Drop this from the test. */
-				g_ptr_array_remove_index (objs, i);
-				continue;
+			if (   !NM_IN_SET (prio, 0, 32766, 32767)
+			    && !g_hash_table_contains (unique_priorities, GUINT_TO_POINTER (prio))) {
+				g_hash_table_add (unique_priorities, GUINT_TO_POINTER (prio));
+				g_ptr_array_add (objs_sync, (gpointer) nmp_object_ref (obj));
 			}
 		}
 
-		if (r != 0) {
-			g_print (">>> failing...\n");
+		for (i = 0; i < objs_sync->len; i++) {
+			nmp_rules_manager_track (rules_manager,
+			                         NMP_OBJECT_CAST_ROUTING_RULE (objs_sync->pdata[i]),
+			                         1,
+			                         USER_TAG_1);
+			if (nmtst_get_rand_bool ()) {
+				/* this has no effect, because a negative priority (of same absolute value)
+				 * has lower priority than the positive priority above. */
+				nmp_rules_manager_track (rules_manager,
+				                         NMP_OBJECT_CAST_ROUTING_RULE (objs_sync->pdata[i]),
+				                         -1,
+				                         USER_TAG_2);
+			}
+			if (nmtst_get_rand_int () % objs_sync->len == 0) {
+				nmp_rules_manager_sync (rules_manager);
+				g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, i + 1);
+			}
+		}
+
+		nmp_rules_manager_sync (rules_manager);
+		g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, objs_sync->len);
+
+		for (i = 0; i < objs_sync->len; i++) {
+			switch (nmtst_get_rand_int () % 3) {
+			case 0:
+				nmp_rules_manager_untrack (rules_manager,
+				                           NMP_OBJECT_CAST_ROUTING_RULE (objs_sync->pdata[i]),
+				                           USER_TAG_1);
+				nmp_rules_manager_untrack (rules_manager,
+				                           NMP_OBJECT_CAST_ROUTING_RULE (objs_sync->pdata[i]),
+				                           USER_TAG_1);
+				break;
+			case 1:
+				nmp_rules_manager_track (rules_manager,
+				                         NMP_OBJECT_CAST_ROUTING_RULE (objs_sync->pdata[i]),
+				                         -1,
+				                         USER_TAG_1);
+				break;
+			case 2:
+				nmp_rules_manager_track (rules_manager,
+				                         NMP_OBJECT_CAST_ROUTING_RULE (objs_sync->pdata[i]),
+				                         -2,
+				                         USER_TAG_2);
+				break;
+			}
+			if (nmtst_get_rand_int () % objs_sync->len == 0) {
+				nmp_rules_manager_sync (rules_manager);
+				g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, objs_sync->len - i - 1);
+			}
+		}
+
+		nmp_rules_manager_sync (rules_manager);
+
+	} else {
+		for (i = 0; i < objs->len;) {
+			const NMPObject *obj = objs->pdata[i];
+
+			for (j = 0; j < objs->len; j++)
+				g_assert ((j < i) == (!!_platform_has_routing_rule (platform, objs->pdata[j])));
+
+			r = nm_platform_routing_rule_add (platform, NMP_NLM_FLAG_ADD, NMP_OBJECT_CAST_ROUTING_RULE (obj));
+
+			if (r == -EEXIST) {
+				g_assert (!_platform_has_routing_rule (platform, obj));
+				/* this should not happen, but there are bugs in kernel (rh#1686075). */
+				for (j = 0; j < i; j++) {
+					const NMPObject *obj2 = objs->pdata[j];
+
+					g_assert (_platform_has_routing_rule (platform, obj2));
+
+					if (_rule_fuzzy_equal (obj, obj2, RTM_NEWRULE)) {
+						r = 0;
+						break;
+					}
+				}
+				if (r == 0) {
+					/* OK, the rule is shadowed by another rule, and kernel does not allow
+					 * us to add this one (rh#1686075). Drop this from the test. */
+					g_ptr_array_remove_index (objs, i);
+					continue;
+				}
+			}
+
+			if (r != 0) {
+				g_print (">>> failing...\n");
+				nmtstp_run_command_check ("ip rule");
+				nmtstp_run_command_check ("ip -6 rule");
+				g_assert_cmpint (r, ==, 0);
+			}
+
+			g_assert (_platform_has_routing_rule (platform, obj));
+
+			g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, i + 1);
+
+			i++;
+		}
+
+		if (TEST_IDX != 1)
+			nmtst_rand_perm (NULL, objs->pdata, NULL, sizeof (gpointer), objs->len);
+
+		if (_LOGD_ENABLED ()) {
 			nmtstp_run_command_check ("ip rule");
 			nmtstp_run_command_check ("ip -6 rule");
-			g_assert_cmpint (r, ==, 0);
 		}
 
-		g_assert (_platform_has_routing_rule (platform, obj));
+		for (i = 0; i < objs->len; i++) {
+			const NMPObject *obj = objs->pdata[i];
+			const NMPObject *obj2;
 
-		g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, i + 1);
+			for (j = 0; j < objs->len; j++)
+				g_assert ((j < i) == (!_platform_has_routing_rule (platform, objs->pdata[j])));
 
-		i++;
-	}
+			g_assert (_platform_has_routing_rule (platform, obj));
 
-	if (TEST_IDX != 1)
-		nmtst_rand_perm (NULL, objs->pdata, NULL, sizeof (gpointer), objs->len);
+			r = nm_platform_object_delete (platform, obj);
+			g_assert_cmpint (r, ==, TRUE);
 
-	if (_LOGD_ENABLED ()) {
-		nmtstp_run_command_check ("ip rule");
-		nmtstp_run_command_check ("ip -6 rule");
-	}
+			obj2 = _platform_has_routing_rule (platform, obj);
 
-	for (i = 0; i < objs->len; i++) {
-		const NMPObject *obj = objs->pdata[i];
-		const NMPObject *obj2;
+			if (obj2) {
+				guint k;
 
-		for (j = 0; j < objs->len; j++)
-			g_assert ((j < i) == (!_platform_has_routing_rule (platform, objs->pdata[j])));
-
-		g_assert (_platform_has_routing_rule (platform, obj));
-
-		r = nm_platform_object_delete (platform, obj);
-		g_assert_cmpint (r, ==, TRUE);
-
-		obj2 = _platform_has_routing_rule (platform, obj);
-
-		if (obj2) {
-			guint k;
-
-			/* When deleting a rule, kernel does a fuzzy match, ignoring for example:
-			 *  - action, if it is FR_ACT_UNSPEC
-			 *  - iifname,oifname if it is unspecified
-			 * rh#1685816
-			 *
-			 * That means, we may have deleted the wrong rule. Which one? */
-			k = i;
-			for (j = i + 1; j < objs->len; j++) {
-				if (!_platform_has_routing_rule (platform, objs->pdata[j])) {
-					g_assert_cmpint (k, ==, i);
-					k = j;
+				/* When deleting a rule, kernel does a fuzzy match, ignoring for example:
+				 *  - action, if it is FR_ACT_UNSPEC
+				 *  - iifname,oifname if it is unspecified
+				 * rh#1685816
+				 *
+				 * That means, we may have deleted the wrong rule. Which one? */
+				k = i;
+				for (j = i + 1; j < objs->len; j++) {
+					if (!_platform_has_routing_rule (platform, objs->pdata[j])) {
+						g_assert_cmpint (k, ==, i);
+						k = j;
+					}
 				}
-			}
-			g_assert_cmpint (k, >, i);
+				g_assert_cmpint (k, >, i);
 
-			if (!_rule_fuzzy_equal (obj, objs->pdata[k], RTM_DELRULE)) {
-				g_print (">>> failing...\n");
-				g_print (">>> no fuzzy match between: %s\n", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
-				g_print (">>>                    and: %s\n", nmp_object_to_string (objs->pdata[k], NMP_OBJECT_TO_STRING_ALL, NULL, 0));
-				g_assert_not_reached ();
+				if (!_rule_fuzzy_equal (obj, objs->pdata[k], RTM_DELRULE)) {
+					g_print (">>> failing...\n");
+					g_print (">>> no fuzzy match between: %s\n", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+					g_print (">>>                    and: %s\n", nmp_object_to_string (objs->pdata[k], NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+					g_assert_not_reached ();
+				}
+
+				objs->pdata[i] = objs->pdata[k];
+				objs->pdata[k] = (gpointer) obj;
+				obj2 = NULL;
 			}
 
-			objs->pdata[i] = objs->pdata[k];
-			objs->pdata[k] = (gpointer) obj;
-			obj2 = NULL;
+			g_assert (!obj2);
+
+			g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, objs->len -i - 1);
 		}
-
-		g_assert (!obj2);
-
-		g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, objs->len -i - 1);
 	}
 
 	g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, 0);
@@ -1645,5 +1725,6 @@ _nmtstp_setup_tests (void)
 		add_test_func_data ("/route/rule/1", test_rule, GINT_TO_POINTER (1));
 		add_test_func_data ("/route/rule/2", test_rule, GINT_TO_POINTER (2));
 		add_test_func_data ("/route/rule/3", test_rule, GINT_TO_POINTER (3));
+		add_test_func_data ("/route/rule/4", test_rule, GINT_TO_POINTER (4));
 	}
 }

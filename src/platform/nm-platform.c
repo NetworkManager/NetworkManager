@@ -7787,8 +7787,9 @@ constructor (GType type,
 
 	priv->multi_idx = nm_dedup_multi_index_new ();
 
-	priv->cache = nmp_cache_new (nm_platform_get_multi_idx (self),
+	priv->cache = nmp_cache_new (priv->multi_idx,
 	                             priv->use_udev);
+
 	return object;
 }
 
