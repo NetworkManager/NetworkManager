@@ -343,8 +343,8 @@ pushd "$DIRNAME"
     git init .
     # if you have a local clone of upstream, symlink it as ../.git/local.
     if [[ "$BUILD_TYPE" == "NetworkManager" ]]; then
-        git remote add origin "git://anongit.freedesktop.org/NetworkManager/NetworkManager"
-        git remote 'set-url' --push origin "ssh://$USER@git.freedesktop.org/git/NetworkManager/NetworkManager"
+        git remote add origin "https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git"
+        git remote 'set-url' --push origin "git@gitlab.freedesktop.org:NetworkManager/NetworkManager.git"
         git config notes.displayRef refs/notes/bugs
         git config --add remote.origin.fetch refs/tags/*:refs/tags/*
         git config --add remote.origin.fetch refs/notes/bugs:refs/notes/bugs
