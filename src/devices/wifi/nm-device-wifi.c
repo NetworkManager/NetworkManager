@@ -2225,7 +2225,7 @@ supplicant_iface_notify_current_bss (NMSupplicantInterface *iface,
 	}
 }
 
-/* We bind the existance of the P2P device to a wifi device that is being
+/* We bind the existence of the P2P device to a wifi device that is being
  * managed by NetworkManager and is capable of P2P operation.
  * Note that some care must be taken here, because we don't want to re-create
  * the device every time the supplicant interface is destroyed (e.g. due to

@@ -1184,7 +1184,7 @@ link_config_delayed (NMDeviceWireGuard *self,
 	if (priv->link_config_last_at != 0) {
 		now = nm_utils_get_monotonic_timestamp_ns ();
 		if (now < priv->link_config_last_at + LINK_CONFIG_RATE_LIMIT_NSEC) {
-			/* we ratelimit calls to link_config(), because we call this whenver a resolver
+			/* we ratelimit calls to link_config(), because we call this whenever a resolver
 			 * completes. */
 			_LOGT (LOGD_DEVICE, "wireguard link config (%s) (postponed)", reason);
 			priv->link_config_delayed_id = g_timeout_add (NM_MAX ((priv->link_config_last_at + LINK_CONFIG_RATE_LIMIT_NSEC - now) / NM_UTILS_NS_PER_MSEC,
@@ -1278,7 +1278,7 @@ _get_dev2_ip_config (NMDeviceWireGuard *self,
 	 * a2) an explicit routing table. This is our behavior with "peer-routes" on. In this case
 	 *   we honor the "ipv4.route-table" and "ipv6.route-table" settings. One difference is that
 	 *   `wg-quick` would resolve table names from /etc/iproute2/rt_tables. Our connection profiles
-	 *   only contain table numbers, so that conversion from name to table must have happend
+	 *   only contain table numbers, so that conversion from name to table must have happened
 	 *   before already.
 	 *
 	 * a3) "auto" (the default). In this case, `wg-quick` would only add the route to the
@@ -1397,7 +1397,7 @@ get_configured_mtu (NMDevice *device, NMDeviceMtuSource *out_source)
 	 * -- despite this being the reality.
 	 *
 	 * For now, only support configuring an explicit MTU, or leave the setting untouched.
-	 * The same limitiation also applies to other "ip-tunnel" types, where we could use
+	 * The same limitation also applies to other "ip-tunnel" types, where we could use
 	 * similar smarts for autodetecting the MTU.
 	 */
 	return nm_device_get_configured_mtu_from_connection (device,
