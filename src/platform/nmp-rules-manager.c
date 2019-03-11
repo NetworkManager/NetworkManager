@@ -81,7 +81,7 @@ typedef struct {
 	 * But it will not remove or add them otherwise.
 	 *
 	 * Otherwise, the track_priority_val goes together with track_priority_present.
-	 * In case of one rule being tracked multile times (with different priorities),
+	 * In case of one rule being tracked multiple times (with different priorities),
 	 * the one with higher priority wins. See _rules_obj_get_best_data().
 	 * Then, the winning present state either enforces that the rule is present
 	 * or absent.

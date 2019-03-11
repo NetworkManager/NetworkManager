@@ -208,7 +208,7 @@ _value_strsplit (const char *value,
 	gsize len;
 
 	/* FIXME: some modes should support backslash escaping.
-	 * In particular, to distingish from _value_str_as_index_list(), which
+	 * In particular, to distinguish from _value_str_as_index_list(), which
 	 * does not accept '\\'. */
 
 	/* note that all modes remove empty tokens (",", "a,,b", ",,"). */
@@ -3398,7 +3398,7 @@ _objlist_set_fcn_ip_config_routing_rules (NMSetting *setting,
 		return FALSE;
 
 	/* also for @do_add, we first always search whether such a rule already exist
-	 * and remove the first occurance.
+	 * and remove the first occurrence.
 	 *
 	 * The effect is, that we don't add multiple times the same rule,
 	 * and that if the rule already exists, it gets moved to the end (append).

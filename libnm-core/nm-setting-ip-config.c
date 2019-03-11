@@ -1627,7 +1627,7 @@ nm_ip_routing_rule_is_sealed (const NMIPRoutingRule *self)
  * @self: the #NMIPRoutingRule instance
  *
  * Seals the routing rule. Afterwards, the instance can no longer be
- * modfied, and it is a bug to call any of the accessors that would
+ * modified, and it is a bug to call any of the accessors that would
  * modify the rule. If @self was already sealed, this has no effect.
  *
  * Since: 1.18
@@ -2214,7 +2214,7 @@ nm_ip_routing_rule_get_xifname_bin (const NMIPRoutingRule *self,
  * The name supports C backslash escaping for non-UTF-8 characters.
  * Note that nm_ip_routing_rule_from_string() too uses backslash
  * escaping when tokenizing the words by whitespace. So, in string
- * representation you'd get double backslashs.
+ * representation you'd get double backslashes.
  *
  * Since: 1.18
  */
@@ -2251,7 +2251,7 @@ nm_ip_routing_rule_get_oifname (const NMIPRoutingRule *self)
  * The name supports C backslash escaping for non-UTF-8 characters.
  * Note that nm_ip_routing_rule_from_string() too uses backslash
  * escaping when tokenizing the words by whitespace. So, in string
- * representation you'd get double backslashs.
+ * representation you'd get double backslashes.
  *
  * Since: 1.18
  */
