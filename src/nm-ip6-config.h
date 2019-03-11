@@ -130,10 +130,12 @@ void nm_ip6_config_subtract (NMIP6Config *dst,
                              guint32 default_route_metric_penalty);
 void nm_ip6_config_intersect (NMIP6Config *dst,
                               const NMIP6Config *src,
+                              gboolean intersect_addresses,
                               gboolean intersect_routes,
                               guint32 default_route_metric_penalty);
 NMIP6Config *nm_ip6_config_intersect_alloc (const NMIP6Config *a,
                                             const NMIP6Config *b,
+                                            gboolean intersect_addresses,
                                             gboolean intersect_routes,
                                             guint32 default_route_metric_penalty);
 gboolean nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relevant_changes);

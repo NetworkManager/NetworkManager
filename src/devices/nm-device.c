@@ -3884,6 +3884,8 @@ device_link_changed (NMDevice *self)
 			if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
 				_LOGW (LOGD_IP4, "failed applying IP4 config after link comes up again");
 		}
+
+		priv->linklocal6_dad_counter = 0;
 		if (priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE) {
 			if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
 				_LOGW (LOGD_IP6, "failed applying IP6 config after link comes up again");
@@ -12667,6 +12669,7 @@ nm_device_get_firmware_missing (NMDevice *self)
 static void
 intersect_ext_config (NMDevice *self,
                       AppliedConfig *config,
+                      gboolean intersect_addresses,
                       gboolean intersect_routes)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -12683,11 +12686,16 @@ intersect_ext_config (NMDevice *self,
 	      ? (NMIPConfig *) priv->ext_ip_config_4
 	      : (NMIPConfig *) priv->ext_ip_config_6;
 
-	if (config->current)
-		nm_ip_config_intersect (config->current, ext, intersect_routes, penalty);
-	else {
+	if (config->current) {
+		nm_ip_config_intersect (config->current,
+		                        ext,
+		                        intersect_addresses,
+		                        intersect_routes,
+		                        penalty);
+	} else {
 		config->current = nm_ip_config_intersect_alloc (config->orig,
 		                                                ext,
+		                                                intersect_addresses,
 		                                                intersect_routes,
 		                                                penalty);
 	}
@@ -12723,15 +12731,16 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean intersect_config
 				 * by the user. */
 				if (priv->con_ip_config_4) {
 					nm_ip4_config_intersect (priv->con_ip_config_4, priv->ext_ip_config_4,
+					                         TRUE,
 					                         is_up,
 					                         default_route_metric_penalty_get (self, AF_INET));
 				}
 
-				intersect_ext_config (self, &priv->dev_ip_config_4, is_up);
-				intersect_ext_config (self, &priv->dev2_ip_config_4, is_up);
+				intersect_ext_config (self, &priv->dev_ip_config_4, TRUE, is_up);
+				intersect_ext_config (self, &priv->dev2_ip_config_4, TRUE, is_up);
 
 				for (iter = priv->vpn_configs_4; iter; iter = iter->next)
-					nm_ip4_config_intersect (iter->data, priv->ext_ip_config_4, is_up, 0);
+					nm_ip4_config_intersect (iter->data, priv->ext_ip_config_4, TRUE, is_up, 0);
 			}
 
 			/* Remove parts from ext_ip_config_4 to only contain the information that
@@ -12776,15 +12785,16 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean intersect_config
 				if (priv->con_ip_config_6) {
 					nm_ip6_config_intersect (priv->con_ip_config_6, priv->ext_ip_config_6,
 					                         is_up,
+					                         is_up,
 					                         default_route_metric_penalty_get (self, AF_INET6));
 				}
 
-				intersect_ext_config (self, &priv->ac_ip6_config, is_up);
-				intersect_ext_config (self, &priv->dhcp6.ip6_config, is_up);
-				intersect_ext_config (self, &priv->dev2_ip_config_6, is_up);
+				intersect_ext_config (self, &priv->ac_ip6_config, is_up, is_up);
+				intersect_ext_config (self, &priv->dhcp6.ip6_config, is_up, is_up);
+				intersect_ext_config (self, &priv->dev2_ip_config_6, is_up, is_up);
 
 				for (iter = priv->vpn_configs_6; iter; iter = iter->next)
-					nm_ip6_config_intersect (iter->data, priv->ext_ip_config_6, is_up, 0);
+					nm_ip6_config_intersect (iter->data, priv->ext_ip_config_6, is_up, is_up, 0);
 
 				if (   priv->ipv6ll_has
 				    && !nm_ip6_config_lookup_address (priv->ext_ip_config_6, &priv->ipv6ll_addr))
@@ -12892,6 +12902,7 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 	if (!IS_IPv4) {
 		NMPlatform *platform;
 		GSList *dad6_failed_addrs, *iter;
+		const NMPlatformLink *pllink;
 
 		dad6_failed_addrs = g_steal_pointer (&priv->dad6_failed_addrs);
 
@@ -12900,7 +12911,8 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 		    && priv->ifindex > 0
 		    && !nm_device_sys_iface_state_is_external (self)
 		    && (platform = nm_device_get_platform (self))
-		    && nm_platform_link_get (platform, priv->ifindex)) {
+		    && (pllink = nm_platform_link_get (platform, priv->ifindex))
+		    && (pllink->n_ifi_flags & IFF_UP)) {
 			gboolean need_ipv6ll = FALSE;
 			NMNDiscConfigMap ndisc_config_changed = NM_NDISC_CONFIG_NONE;
 
