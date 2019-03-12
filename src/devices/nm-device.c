@@ -14219,6 +14219,7 @@ static void
 _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	int ifindex;
 
 	priv->v4_commit_first_time = TRUE;
 	priv->v6_commit_first_time = TRUE;
@@ -14283,7 +14284,9 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 		/* Check if the device was deactivated, and if so, delete_link.
 		 * Don't call delete_link synchronously because we are currently
 		 * handling a state change -- which is not reentrant. */
-		delete_on_deactivate_check_and_schedule (self, nm_device_get_ip_ifindex (self));
+		ifindex = nm_device_get_ip_ifindex (self);
+		if (ifindex > 0)
+			delete_on_deactivate_check_and_schedule (self, ifindex);
 	}
 
 	/* ip_iface should be cleared after flushing all routes and addresses, since
