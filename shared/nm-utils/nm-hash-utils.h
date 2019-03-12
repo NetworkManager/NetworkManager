@@ -83,7 +83,11 @@ nm_hash_complete_u64 (NMHashState *state)
 	 * from nm_hash_complete() in two ways:
 	 *
 	 * - the type, guint64 vs. guint.
-	 * - nm_hash_complete() never returns zero. */
+	 * - nm_hash_complete() never returns zero.
+	 *
+	 * In practice, nm_hash*() API is implemented via siphash24, so this returns
+	 * the siphash24 value. But that is not guaranteed by the API, and if you need
+	 * siphash24 directly, use c_siphash_*() and nm_hash_siphash42*() API. */
 	return c_siphash_finalize (&state->_state);
 }
 
@@ -284,6 +288,27 @@ guint nm_str_hash (gconstpointer str);
 guint nm_pstr_hash (gconstpointer p);
 
 gboolean nm_pstr_equal (gconstpointer a, gconstpointer b);
+
+/*****************************************************************************/
+
+#define NM_HASH_OBFUSCATE_PTR_FMT "%016llx"
+
+/* sometimes we want to log a pointer directly, for providing context/information about
+ * the message that get logged. Logging pointer values directly defeats ASLR, so we should
+ * not do that. This returns a "unsigned long long" value that can be used
+ * instead.
+ *
+ * Note that there is a chance that two different pointer values hash to the same obfuscated
+ * value. So beware of that when reviewing logs. However, such a collision is very unlikely. */
+#define nm_hash_obfuscate_ptr(static_seed, val) \
+	({ \
+		NMHashState _h; \
+		const void *_val_obf_ptr = (val); \
+		\
+		nm_hash_init (&_h, (static_seed)); \
+		nm_hash_update_val (&_h, _val_obf_ptr); \
+		(unsigned long long) nm_hash_complete_u64 (&_h); \
+	})
 
 /*****************************************************************************/
 
