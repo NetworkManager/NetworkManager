@@ -37,6 +37,9 @@ NM_AUTO_DEFINE_FCN0 (NMIPAddress *, _nm_ip_address_unref, nm_ip_address_unref)
 #define nm_auto_unref_ip_route nm_auto (_nm_auto_unref_ip_route)
 NM_AUTO_DEFINE_FCN0 (NMIPRoute *, _nm_auto_unref_ip_route, nm_ip_route_unref)
 
+#define nm_auto_unref_ip_routing_rule nm_auto(_nm_auto_unref_ip_routing_rule)
+NM_AUTO_DEFINE_FCN0 (NMIPRoutingRule *, _nm_auto_unref_ip_routing_rule, nm_ip_routing_rule_unref)
+
 #define nm_auto_unref_sriov_vf nm_auto (_nm_auto_unref_sriov_vf)
 NM_AUTO_DEFINE_FCN0 (NMSriovVF *, _nm_auto_unref_sriov_vf, nm_sriov_vf_unref)
 

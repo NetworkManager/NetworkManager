@@ -611,6 +611,47 @@ void _nm_wireguard_peer_set_public_key_bin (NMWireGuardPeer *self,
 
 /*****************************************************************************/
 
+const NMIPAddr *nm_ip_routing_rule_get_from_bin (const NMIPRoutingRule *self);
+void nm_ip_routing_rule_set_from_bin (NMIPRoutingRule *self,
+                                      gconstpointer from,
+                                      guint8 len);
+
+const NMIPAddr *nm_ip_routing_rule_get_to_bin (const NMIPRoutingRule *self);
+void nm_ip_routing_rule_set_to_bin (NMIPRoutingRule *self,
+                                    gconstpointer to,
+                                    guint8 len);
+
+gboolean nm_ip_routing_rule_get_xifname_bin (const NMIPRoutingRule *self,
+                                             gboolean iif /* or else oif */,
+                                             char out_xifname[static 16]);
+
+#define NM_IP_ROUTING_RULE_ATTR_ACTION      "action"
+#define NM_IP_ROUTING_RULE_ATTR_DPORT_END   "dport-end"
+#define NM_IP_ROUTING_RULE_ATTR_DPORT_START "dport-start"
+#define NM_IP_ROUTING_RULE_ATTR_FAMILY      "family"
+#define NM_IP_ROUTING_RULE_ATTR_FROM        "from"
+#define NM_IP_ROUTING_RULE_ATTR_FROM_LEN    "from-len"
+#define NM_IP_ROUTING_RULE_ATTR_FWMARK      "fwmark"
+#define NM_IP_ROUTING_RULE_ATTR_FWMASK      "fwmask"
+#define NM_IP_ROUTING_RULE_ATTR_IIFNAME     "iifname"
+#define NM_IP_ROUTING_RULE_ATTR_INVERT      "invert"
+#define NM_IP_ROUTING_RULE_ATTR_IPPROTO     "ipproto"
+#define NM_IP_ROUTING_RULE_ATTR_OIFNAME     "oifname"
+#define NM_IP_ROUTING_RULE_ATTR_PRIORITY    "priority"
+#define NM_IP_ROUTING_RULE_ATTR_SPORT_END   "sport-end"
+#define NM_IP_ROUTING_RULE_ATTR_SPORT_START "sport-start"
+#define NM_IP_ROUTING_RULE_ATTR_TABLE       "table"
+#define NM_IP_ROUTING_RULE_ATTR_TO          "to"
+#define NM_IP_ROUTING_RULE_ATTR_TOS         "tos"
+#define NM_IP_ROUTING_RULE_ATTR_TO_LEN      "to-len"
+
+NMIPRoutingRule *nm_ip_routing_rule_from_dbus (GVariant *variant,
+                                               gboolean strict,
+                                               GError **error);
+GVariant *nm_ip_routing_rule_to_dbus (const NMIPRoutingRule *self);
+
+/*****************************************************************************/
+
 typedef struct _NMSettInfoSetting  NMSettInfoSetting;
 typedef struct _NMSettInfoProperty NMSettInfoProperty;
 
