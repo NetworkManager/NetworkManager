@@ -527,7 +527,7 @@ nm_utils_inet6_ntop_dup (const struct in6_addr *addr)
 }
 
 static inline char *
-nm_utils_inet_ntop_dup (int addr_family, const struct in6_addr *addr)
+nm_utils_inet_ntop_dup (int addr_family, gconstpointer addr)
 {
 	char buf[NM_UTILS_INET_ADDRSTRLEN];
 
