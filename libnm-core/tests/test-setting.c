@@ -20,6 +20,7 @@
 #include "nm-default.h"
 
 #include <linux/pkt_sched.h>
+#include <net/if.h>
 
 #include "nm-utils.h"
 #include "nm-utils-private.h"
@@ -2675,6 +2676,203 @@ test_roundtrip_conversion (gconstpointer test_data)
 
 /*****************************************************************************/
 
+static NMIPRoutingRule *
+_rr_from_str_get_impl (const char *str, const char *const*aliases)
+{
+	nm_auto_unref_ip_routing_rule NMIPRoutingRule *rr = NULL;
+	gs_free_error GError *error = NULL;
+	gboolean vbool;
+	int addr_family;
+	int i;
+	NMIPRoutingRuleAsStringFlags to_string_flags;
+
+	rr = nm_ip_routing_rule_from_string (str,
+	                                     NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE,
+	                                     NULL,
+	                                     &error);
+	nmtst_assert_success (rr, error);
+
+	addr_family = nm_ip_routing_rule_get_addr_family (rr);
+	g_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+
+	if (addr_family == AF_INET)
+		to_string_flags = NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET;
+	else
+		to_string_flags = NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET6;
+
+	for (i = 0; TRUE; i++) {
+		nm_auto_unref_ip_routing_rule NMIPRoutingRule *rr2 = NULL;
+		gs_free char *str1 = NULL;
+		gs_unref_variant GVariant *variant1 = NULL;
+		const char *cstr1;
+
+		switch (i) {
+		case 0:
+			rr2 = nm_ip_routing_rule_ref (rr);
+			break;
+
+		case 1:
+			rr2 = nm_ip_routing_rule_from_string (str,
+			                                        NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE
+			                                      | (nmtst_get_rand_bool () ? to_string_flags : NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE),
+			                                      NULL,
+			                                      &error);
+			nmtst_assert_success (rr, error);
+			break;
+
+		case 2:
+			str1 = nm_ip_routing_rule_to_string (rr,
+			                                       NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE
+			                                      | (nmtst_get_rand_bool () ? to_string_flags : NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE),
+			                                     NULL,
+			                                     &error);
+			nmtst_assert_success (str1 && str1[0], error);
+
+			g_assert_cmpstr (str, ==, str1);
+
+			rr2 = nm_ip_routing_rule_from_string (str1,
+			                                        NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE
+			                                      | (nmtst_get_rand_bool () ? to_string_flags : NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE),
+			                                      NULL,
+			                                      &error);
+			nmtst_assert_success (rr, error);
+			break;
+
+		case 3:
+			variant1 = nm_ip_routing_rule_to_dbus (rr);
+			g_assert (variant1);
+			g_assert (g_variant_is_floating (variant1));
+			g_assert (g_variant_is_of_type (variant1, G_VARIANT_TYPE_VARDICT));
+
+			rr2 = nm_ip_routing_rule_from_dbus (variant1,
+			                                    TRUE,
+			                                    &error);
+			nmtst_assert_success (rr, error);
+			break;
+
+		default:
+			if (!aliases || !aliases[0])
+				goto done;
+			cstr1 = (aliases++)[0];
+			rr2 = nm_ip_routing_rule_from_string (cstr1,
+			                                        NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE
+			                                      | (nmtst_get_rand_bool () ? to_string_flags : NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE),
+			                                      NULL,
+			                                      &error);
+			nmtst_assert_success (rr, error);
+			break;
+		}
+
+		g_assert (rr2);
+		vbool = nm_ip_routing_rule_validate (rr, &error);
+		nmtst_assert_success (vbool, error);
+		vbool = nm_ip_routing_rule_validate (rr2, &error);
+		nmtst_assert_success (vbool, error);
+
+		g_assert_cmpint (nm_ip_routing_rule_cmp (rr, rr2), ==, 0);
+		g_assert_cmpint (nm_ip_routing_rule_cmp (rr2, rr), ==, 0);
+	}
+
+done:
+	return g_steal_pointer (&rr);
+}
+#define _rr_from_str_get(a, ...) _rr_from_str_get_impl (a, &(NM_MAKE_STRV (NULL, ##__VA_ARGS__))[1])
+
+#define _rr_from_str(...) \
+	G_STMT_START { \
+		nm_auto_unref_ip_routing_rule NMIPRoutingRule *_rr = NULL; \
+		\
+		_rr = _rr_from_str_get (__VA_ARGS__); \
+		g_assert (_rr); \
+	} G_STMT_END
+
+static void
+test_routing_rule (gconstpointer test_data)
+{
+	nm_auto_unref_ip_routing_rule NMIPRoutingRule *rr1 = NULL;
+	gboolean success;
+	char ifname_buf[16];
+
+	_rr_from_str ("priority 5 from 0.0.0.0 table 1",
+	              "  from 0.0.0\\.0  \\priority  5 lookup 1 ");
+	_rr_from_str ("priority 5 from 0.0.0.0/0 table 4");
+	_rr_from_str ("priority 5 to 0.0.0.0 table 6");
+	_rr_from_str ("priority 5 to 0.0.0.0 table 254",
+	              "priority 5 to 0.0.0.0/32");
+	_rr_from_str ("priority 5 from 1.2.3.4 table 15",
+	              "priority 5 from 1.2.3.4/32 table  0xF ",
+	              "priority 5 from 1.2.3.4/32 to 0.0.0.0/0 lookup 15 ");
+	_rr_from_str ("priority 5 from 1.2.3.4 to 0.0.0.0 table 8");
+	_rr_from_str ("priority 5 to a:b:c:: tos 0x16 table 25",
+	              "priority 5 to a:b:c::/128 table 0x19 tos 16",
+	              "priority 5 to a:b:c::/128 lookup 0x19 dsfield 16",
+	              "priority 5 to a:b:c::/128 lookup 0x19 dsfield 16 fwmark 0/0x00",
+	              "priority 5 to a:b:c:: from all lookup 0x19 dsfield 16 fwmark 0x0/0");
+	_rr_from_str ("priority 5 from :: fwmark 0 table 25",
+	              "priority 5 from ::/128 to all table 0x19 fwmark 0/0xFFFFFFFF",
+	              "priority 5 from :: to ::/0 table 0x19 fwmark 0x00/4294967295");
+	_rr_from_str ("priority 5 from :: iif aab table 25");
+	_rr_from_str ("priority 5 from :: iif aab oif er table 25",
+	              "priority 5 from :: table 0x19 dev \\a\\a\\b oif er");
+	_rr_from_str ("priority 5 from :: iif a\\\\303b table 25");
+	_rr_from_str ("priority 5 to 0.0.0.0 sport 10 table 6",
+	              "priority 5 to 0.0.0.0 sport 10-10 table 6");
+	_rr_from_str ("not priority 5 to 0.0.0.0 dport 10-133 table 6",
+	              "priority 5 to 0.0.0.0 not dport 10-133 not table 6",
+	              "priority 5 to 0.0.0.0 not dport 10-\\ 133 not table 6");
+	_rr_from_str ("priority 5 to 0.0.0.0 ipproto 10 sport 10 table 6");
+
+	rr1 = _rr_from_str_get ("priority 5 from :: iif aab table 25");
+	g_assert_cmpstr (nm_ip_routing_rule_get_iifname (rr1), ==, "aab");
+	success = nm_ip_routing_rule_get_xifname_bin (rr1, FALSE, ifname_buf);
+	g_assert (!success);
+	success = nm_ip_routing_rule_get_xifname_bin (rr1, TRUE, ifname_buf);
+	g_assert_cmpstr (ifname_buf, ==, "aab");
+	g_assert (success);
+
+	rr1 = _rr_from_str_get ("priority 5 from :: iif a\\\\303\\\\261xb table 254");
+	g_assert_cmpstr (nm_ip_routing_rule_get_iifname (rr1), ==, "a\\303\\261xb");
+	success = nm_ip_routing_rule_get_xifname_bin (rr1, FALSE, ifname_buf);
+	g_assert (!success);
+	success = nm_ip_routing_rule_get_xifname_bin (rr1, TRUE, ifname_buf);
+	g_assert_cmpstr (ifname_buf, ==, "a\303\261xb");
+	g_assert (success);
+	nm_clear_pointer (&rr1, nm_ip_routing_rule_unref);
+
+	rr1 = _rr_from_str_get ("priority 5 from :: oif \\\\101=\\\\303\\\\261xb table 7");
+	g_assert_cmpstr (nm_ip_routing_rule_get_oifname (rr1), ==, "\\101=\\303\\261xb");
+	success = nm_ip_routing_rule_get_xifname_bin (rr1, FALSE, ifname_buf);
+	g_assert_cmpstr (ifname_buf, ==, "A=\303\261xb");
+	g_assert (success);
+	success = nm_ip_routing_rule_get_xifname_bin (rr1, TRUE, ifname_buf);
+	g_assert (!success);
+	nm_clear_pointer (&rr1, nm_ip_routing_rule_unref);
+
+	rr1 = _rr_from_str_get ("priority 5 to 0.0.0.0 tos 0x10 table 7");
+	g_assert_cmpstr (NULL, ==, nm_ip_routing_rule_get_from (rr1));
+	g_assert (!nm_ip_routing_rule_get_from_bin (rr1));
+	g_assert_cmpint (0, ==, nm_ip_routing_rule_get_from_len (rr1));
+	g_assert_cmpstr ("0.0.0.0", ==, nm_ip_routing_rule_get_to (rr1));
+	g_assert (nm_ip_addr_is_null (AF_INET, nm_ip_routing_rule_get_to_bin (rr1)));
+	g_assert_cmpint (32, ==, nm_ip_routing_rule_get_to_len (rr1));
+	g_assert_cmpint (7, ==, nm_ip_routing_rule_get_table (rr1));
+	g_assert_cmpint (0x10, ==, nm_ip_routing_rule_get_tos (rr1));
+	nm_clear_pointer (&rr1, nm_ip_routing_rule_unref);
+
+	rr1 = _rr_from_str_get ("priority 5 from :: iif a\\\\303\\\\261\\,x\\;b table 254",
+	                        "priority 5 from :: iif a\\\\303\\\\261,x;b table 254");
+	g_assert_cmpstr (nm_ip_routing_rule_get_iifname (rr1), ==, "a\\303\\261,x;b");
+	success = nm_ip_routing_rule_get_xifname_bin (rr1, FALSE, ifname_buf);
+	g_assert (!success);
+	success = nm_ip_routing_rule_get_xifname_bin (rr1, TRUE, ifname_buf);
+	g_assert_cmpstr (ifname_buf, ==, "a\303\261,x;b");
+	g_assert (success);
+	nm_clear_pointer (&rr1, nm_ip_routing_rule_unref);
+
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -2756,6 +2954,8 @@ main (int argc, char **argv)
 	g_test_add_data_func ("/libnm/settings/roundtrip-conversion/general/0", GINT_TO_POINTER (0), test_roundtrip_conversion);
 	g_test_add_data_func ("/libnm/settings/roundtrip-conversion/wireguard/1", GINT_TO_POINTER (1), test_roundtrip_conversion);
 	g_test_add_data_func ("/libnm/settings/roundtrip-conversion/wireguard/2", GINT_TO_POINTER (2), test_roundtrip_conversion);
+
+	g_test_add_data_func ("/libnm/settings/routing-rule/1", GINT_TO_POINTER (0), test_routing_rule);
 
 	return g_test_run ();
 }

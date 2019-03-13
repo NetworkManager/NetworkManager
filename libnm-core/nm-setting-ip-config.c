@@ -25,6 +25,7 @@
 #include "nm-setting-ip-config.h"
 
 #include <arpa/inet.h>
+#include <linux/fib_rules.h>
 
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
@@ -1380,6 +1381,2125 @@ _nm_ip_route_attribute_validate_all (const NMIPRoute *route)
 			return FALSE;
 	}
 	return TRUE;
+}
+
+/*****************************************************************************/
+
+struct NMIPRoutingRule {
+	NMIPAddr from_bin;
+	NMIPAddr to_bin;
+	char *from_str;
+	char *to_str;
+	char *iifname;
+	char *oifname;
+	guint ref_count;
+	guint32 priority;
+	guint32 table;
+	guint32 fwmark;
+	guint32 fwmask;
+	guint16 sport_start;
+	guint16 sport_end;
+	guint16 dport_start;
+	guint16 dport_end;
+	guint8 action;
+	guint8 from_len;
+	guint8 to_len;
+	guint8 tos;
+	guint8 ipproto;
+	bool is_v4:1;
+	bool sealed:1;
+	bool priority_has:1;
+	bool from_has:1;
+	bool from_valid:1;
+	bool to_has:1;
+	bool to_valid:1;
+	bool invert:1;
+};
+
+static NMIPRoutingRule *_ip_routing_rule_dup (const NMIPRoutingRule *rule);
+
+G_DEFINE_BOXED_TYPE (NMIPRoutingRule, nm_ip_routing_rule, _ip_routing_rule_dup, nm_ip_routing_rule_unref)
+
+static gboolean
+NM_IS_IP_ROUTING_RULE (const NMIPRoutingRule *self,
+                       gboolean also_sealed)
+{
+	return    self
+	       && self->ref_count > 0
+	       && (   also_sealed
+	           || !self->sealed);
+}
+
+static int
+_ip_routing_rule_get_addr_family (const NMIPRoutingRule *self)
+{
+	nm_assert (NM_IS_IP_ROUTING_RULE (self, TRUE));
+
+	return self->is_v4 ? AF_INET : AF_INET6;
+}
+
+static int
+_ip_routing_rule_get_addr_size (const NMIPRoutingRule *self)
+{
+	nm_assert (NM_IS_IP_ROUTING_RULE (self, TRUE));
+
+	return self->is_v4 ? sizeof (struct in_addr) : sizeof (struct in6_addr);
+}
+
+static NMIPRoutingRule *
+_ip_routing_rule_dup (const NMIPRoutingRule *rule)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (rule, TRUE), NULL);
+
+	if (rule->sealed)
+		return nm_ip_routing_rule_ref ((NMIPRoutingRule *) rule);
+	return nm_ip_routing_rule_new_clone (rule);
+}
+
+/**
+ * nm_ip_routing_rule_new:
+ * @addr_family: the address family of the routing rule. Must be either
+ *   %AF_INET (2) or %AF_INET6 (10).
+ *
+ * Returns: (transfer full): a newly created rule instance with the
+ *   provided address family. The instance is unsealed.
+ *
+ * Since: 1.18
+ */
+NMIPRoutingRule *
+nm_ip_routing_rule_new (int addr_family)
+{
+	NMIPRoutingRule *self;
+
+	g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), NULL);
+
+	self = g_slice_new (NMIPRoutingRule);
+	*self = (NMIPRoutingRule) {
+		.ref_count    = 1,
+		.is_v4        = (addr_family == AF_INET),
+		.action       = FR_ACT_TO_TBL,
+		.table        = RT_TABLE_MAIN,
+	};
+	return self;
+}
+
+/**
+ * nm_ip_routing_rule_new_clone:
+ * @rule: the #NMIPRoutingRule to clone.
+ *
+ * Returns: (transfer full): a newly created rule instance with
+ *   the same settings as @rule. Note that the instance will
+ *   always be unsealred.
+ *
+ * Since: 1.18
+ */
+NMIPRoutingRule *
+nm_ip_routing_rule_new_clone (const NMIPRoutingRule *rule)
+{
+	NMIPRoutingRule *self;
+
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (rule, TRUE), NULL);
+
+	self = g_slice_new (NMIPRoutingRule);
+	*self = (NMIPRoutingRule) {
+		.ref_count    = 1,
+		.sealed       = FALSE,
+		.is_v4        = rule->is_v4,
+
+		.priority     = rule->priority,
+		.priority_has = rule->priority_has,
+
+		.invert       = rule->invert,
+
+		.tos          = rule->tos,
+
+		.fwmark       = rule->fwmark,
+		.fwmask       = rule->fwmask,
+
+		.sport_start  = rule->sport_start,
+		.sport_end    = rule->sport_end,
+		.dport_start  = rule->dport_start,
+		.dport_end    = rule->dport_end,
+
+		.ipproto      = rule->ipproto,
+
+		.from_len     = rule->from_len,
+		.from_bin     = rule->from_bin,
+		.from_str     =   (   rule->from_has
+		                   && !rule->from_valid)
+		                ? g_strdup (rule->from_str)
+		                : NULL,
+		.from_has     = rule->from_has,
+		.from_valid   = rule->from_valid,
+
+		.to_len       = rule->to_len,
+		.to_bin       = rule->to_bin,
+		.to_str       =   (   rule->to_has
+		                   && !rule->to_valid)
+		                ? g_strdup (rule->to_str)
+		                : NULL,
+		.to_has       = rule->to_has,
+		.to_valid     = rule->to_valid,
+
+		.iifname      = g_strdup (rule->iifname),
+		.oifname      = g_strdup (rule->oifname),
+
+		.action       = rule->action,
+		.table        = rule->table,
+	};
+	return self;
+}
+
+/**
+ * nm_ip_routing_rule_ref:
+ * @self: (allow-none): the #NMIPRoutingRule instance
+ *
+ * Increases the reference count of the instance.
+ * This is not thread-safe.
+ *
+ * Returns: (transfer full): the @self argument with incremented
+ *  reference count.
+ *
+ * Since: 1.18
+ */
+NMIPRoutingRule *
+nm_ip_routing_rule_ref (NMIPRoutingRule *self)
+{
+	if (!self)
+		return NULL;
+
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), NULL);
+
+	nm_assert (self->ref_count < G_MAXUINT);
+	self->ref_count++;
+	return self;
+}
+
+/**
+ * nm_ip_routing_rule_unref:
+ * @self: (allow-none): the #NMIPRoutingRule instance
+ *
+ * Decreases the reference count of the instance and destroys
+ * the instance if the reference count reaches zero.
+ * This is not thread-safe.
+ *
+ * Since: 1.18
+ */
+void
+nm_ip_routing_rule_unref (NMIPRoutingRule *self)
+{
+	if (!self)
+		return;
+
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE));
+
+	if (--self->ref_count > 0)
+		return;
+
+	g_free (self->from_str);
+	g_free (self->to_str);
+	g_free (self->iifname);
+	g_free (self->oifname);
+
+	g_slice_free (NMIPRoutingRule, self);
+}
+
+/**
+ * nm_ip_routing_rule_is_sealed:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: whether @self is sealed. Once sealed, an instance
+ *   cannot be modified nor unsealed.
+ *
+ * Since: 1.18
+ */
+gboolean
+nm_ip_routing_rule_is_sealed (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), FALSE);
+
+	return self->sealed;
+}
+
+/**
+ * nm_ip_routing_rule_seal:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Seals the routing rule. Afterwards, the instance can no longer be
+ * modfied, and it is a bug to call any of the accessors that would
+ * modify the rule. If @self was already sealed, this has no effect.
+ *
+ * Since: 1.18
+ */
+void
+nm_ip_routing_rule_seal (NMIPRoutingRule *self)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE));
+
+	self->sealed = TRUE;
+}
+
+/**
+ * nm_ip_routing_rule_get_addr_family:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: the address family of the rule. Either %AF_INET or %AF_INET6.
+ *
+ * Since: 1.18
+ */
+int
+nm_ip_routing_rule_get_addr_family (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), AF_UNSPEC);
+
+	return _ip_routing_rule_get_addr_family (self);
+}
+
+/**
+ * nm_ip_routing_rule_get_priority:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: the priority. A valid priority is in the range from
+ *   0 to %G_MAXUINT32. If unset, -1 is returned.
+ *
+ * Since: 1.18
+ */
+gint64
+nm_ip_routing_rule_get_priority (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), -1);
+
+	return   self->priority_has
+	       ? (gint64) self->priority
+	       : (gint64) -1;
+}
+
+/**
+ * nm_ip_routing_rule_set_priority:
+ * @self: the #NMIPRoutingRule instance
+ * @priority: the priority to set
+ *
+ * A valid priority ranges from 0 to %G_MAXUINT32. "-1" is also allowed
+ * to reset the priority. It is a bug calling this function with any
+ * other value.
+ *
+ * Since: 1.18
+ */
+void
+nm_ip_routing_rule_set_priority (NMIPRoutingRule *self, gint64 priority)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, FALSE));
+
+	if (   priority >= 0
+	    && priority <= (gint64) G_MAXUINT32) {
+		self->priority = (guint32) priority;
+		self->priority_has = TRUE;
+	} else {
+		g_return_if_fail (priority == -1);
+		self->priority = 0;
+		self->priority_has = FALSE;
+	}
+}
+
+/**
+ * nm_ip_routing_rule_get_invert:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: the "invert" setting of the rule.
+ *
+ * Since: 1.18
+ */
+gboolean
+nm_ip_routing_rule_get_invert (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), FALSE);
+
+	return self->invert;
+}
+
+/**
+ * nm_ip_routing_rule_set_invert:
+ * @self: the #NMIPRoutingRule instance
+ * @invert: the new value to set
+ *
+ * Since: 1.18
+ */
+void
+nm_ip_routing_rule_set_invert (NMIPRoutingRule *self, gboolean invert)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, FALSE));
+
+	self->invert = invert;
+}
+
+/**
+ * nm_ip_routing_rule_get_from_len:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: the set prefix length for the from/src parameter.
+ *
+ * Since: 1.18
+ */
+guint8
+nm_ip_routing_rule_get_from_len (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), 0);
+
+	return self->from_len;
+}
+
+/**
+ * nm_ip_routing_rule_get_from:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: (transfer none): the set from/src parameter or
+ *   %NULL, if no value is set.
+ *
+ * Since: 1.18
+ */
+const char *
+nm_ip_routing_rule_get_from (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), NULL);
+
+	if (!self->from_has)
+		return NULL;
+	if (!self->from_str) {
+		nm_assert (self->from_valid);
+		((NMIPRoutingRule *) self)->from_str = nm_utils_inet_ntop_dup (_ip_routing_rule_get_addr_family (self),
+		                                                               &self->from_bin);
+	}
+	return self->from_str;
+}
+
+const NMIPAddr *
+nm_ip_routing_rule_get_from_bin (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), NULL);
+
+	return   (   self->from_has
+	          && self->from_valid)
+	       ? &self->from_bin
+	       : NULL;
+}
+
+void
+nm_ip_routing_rule_set_from_bin (NMIPRoutingRule *self,
+                                 gconstpointer from,
+                                 guint8 len)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, FALSE));
+
+	nm_clear_g_free (&self->from_str);
+
+	if (!from) {
+		self->from_has = FALSE;
+		self->from_len = len;
+		return;
+	}
+
+	self->from_has = TRUE;
+	self->from_len = len;
+	self->from_valid = TRUE;
+	nm_ip_addr_set (_ip_routing_rule_get_addr_family (self),
+	                &self->from_bin,
+	                from);
+}
+
+/**
+ * nm_ip_routing_rule_set_from:
+ * @self: the #NMIPRoutingRule instance
+ * @from: (allow-none): the from/src address to set.
+ *   The address family must match.
+ * @len: the corresponding prefix length of the address.
+ *
+ * Setting invalid values is accepted, but will later fail
+ * during nm_ip_routing_rule_validate().
+ *
+ * Since: 1.18
+ */
+void
+nm_ip_routing_rule_set_from (NMIPRoutingRule *self,
+                             const char *from,
+                             guint8 len)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, FALSE));
+
+	if (!from) {
+		nm_clear_g_free (&self->from_str);
+		self->from_has = FALSE;
+		self->from_len = len;
+		return;
+	}
+
+	nm_clear_g_free (&self->from_str);
+	self->from_has = TRUE;
+	self->from_len = len;
+	self->from_valid = nm_utils_parse_inaddr_bin (_ip_routing_rule_get_addr_family (self),
+	                                              from,
+	                                              NULL,
+	                                              &self->from_bin);
+	if (!self->from_valid)
+		self->from_str = g_strdup (from);
+}
+
+/**
+ * nm_ip_routing_rule_get_to_len:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: the set prefix length for the to/dst parameter.
+ *
+ * Since: 1.18
+ */
+guint8
+nm_ip_routing_rule_get_to_len (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), 0);
+
+	return self->to_len;
+}
+
+/**
+ * nm_ip_routing_rule_get_to:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: (transfer none): the set to/dst parameter or
+ *   %NULL, if no value is set.
+ *
+ * Since: 1.18
+ */
+const char *
+nm_ip_routing_rule_get_to (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), NULL);
+
+	if (!self->to_has)
+		return NULL;
+	if (!self->to_str) {
+		nm_assert (self->to_valid);
+		((NMIPRoutingRule *) self)->to_str = nm_utils_inet_ntop_dup (_ip_routing_rule_get_addr_family (self),
+		                                                             &self->to_bin);
+	}
+	return self->to_str;
+}
+
+const NMIPAddr *
+nm_ip_routing_rule_get_to_bin (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), NULL);
+
+	return   (   self->to_has
+	          && self->to_valid)
+	       ? &self->to_bin
+	       : NULL;
+}
+
+void
+nm_ip_routing_rule_set_to_bin (NMIPRoutingRule *self,
+                               gconstpointer to,
+                               guint8 len)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, FALSE));
+
+	nm_clear_g_free (&self->to_str);
+
+	if (!to) {
+		self->to_has = FALSE;
+		self->to_len = len;
+		return;
+	}
+
+	self->to_has = TRUE;
+	self->to_len = len;
+	self->to_valid = TRUE;
+	nm_ip_addr_set (_ip_routing_rule_get_addr_family (self),
+	                &self->to_bin,
+	                to);
+}
+
+/**
+ * nm_ip_routing_rule_set_to:
+ * @self: the #NMIPRoutingRule instance
+ * @to: (allow-none): the to/dst address to set.
+ *   The address family must match.
+ * @len: the corresponding prefix length of the address.
+ *   If @to is %NULL, this valid is ignored.
+ *
+ * Setting invalid values is accepted, but will later fail
+ * during nm_ip_routing_rule_validate().
+ *
+ * Since: 1.18
+ */
+void
+nm_ip_routing_rule_set_to (NMIPRoutingRule *self,
+                           const char *to,
+                           guint8 len)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, FALSE));
+
+	if (!to) {
+		nm_clear_g_free (&self->to_str);
+		self->to_has = FALSE;
+		self->to_len = len;
+		return;
+	}
+
+	nm_clear_g_free (&self->to_str);
+	self->to_has = TRUE;
+	self->to_len = len;
+	self->to_valid = nm_utils_parse_inaddr_bin (_ip_routing_rule_get_addr_family (self),
+	                                            to,
+	                                            NULL,
+	                                            &self->to_bin);
+	if (!self->to_valid)
+		self->to_str = g_strdup (to);
+}
+
+/**
+ * nm_ip_routing_rule_get_tos:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: the tos of the rule.
+ *
+ * Since: 1.18
+ */
+guint8
+nm_ip_routing_rule_get_tos (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), 0);
+
+	return self->tos;
+}
+
+/**
+ * nm_ip_routing_rule_set_tos:
+ * @self: the #NMIPRoutingRule instance
+ * @tos: the tos to set
+ *
+ * Since: 1.18
+ */
+void
+nm_ip_routing_rule_set_tos (NMIPRoutingRule *self, guint8 tos)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, FALSE));
+
+	self->tos = tos;
+}
+
+/**
+ * nm_ip_routing_rule_get_ipproto:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: the ipproto of the rule.
+ *
+ * Since: 1.18
+ */
+guint8
+nm_ip_routing_rule_get_ipproto (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), 0);
+
+	return self->ipproto;
+}
+
+/**
+ * nm_ip_routing_rule_set_ipproto:
+ * @self: the #NMIPRoutingRule instance
+ * @ipproto: the ipproto to set
+ *
+ * Since: 1.18
+ */
+void
+nm_ip_routing_rule_set_ipproto (NMIPRoutingRule *self, guint8 ipproto)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, FALSE));
+
+	self->ipproto = ipproto;
+}
+
+/**
+ * nm_ip_routing_rule_get_source_port_start:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: the source port start setting.
+ *
+ * Since: 1.18
+ */
+guint16
+nm_ip_routing_rule_get_source_port_start (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), 0);
+
+	return self->sport_start;
+}
+
+/**
+ * nm_ip_routing_rule_get_source_port_end:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: the source port end setting.
+ *
+ * Since: 1.18
+ */
+guint16
+nm_ip_routing_rule_get_source_port_end (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), 0);
+
+	return self->sport_end;
+}
+
+/**
+ * nm_ip_routing_rule_set_source_port:
+ * @self: the #NMIPRoutingRule instance
+ * @start: the start port to set.
+ * @end: the end port to set.
+ *
+ * Since: 1.18
+ */
+void
+nm_ip_routing_rule_set_source_port (NMIPRoutingRule *self, guint16 start, guint16 end)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, FALSE));
+
+	self->sport_start = start;
+	self->sport_end   = end;
+}
+
+/**
+ * nm_ip_routing_rule_get_destination_port_start:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: the destination port start setting.
+ *
+ * Since: 1.18
+ */
+guint16
+nm_ip_routing_rule_get_destination_port_start (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), 0);
+
+	return self->dport_start;
+}
+
+/**
+ * nm_ip_routing_rule_get_destination_port_end:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: the destination port end setting.
+ *
+ * Since: 1.18
+ */
+guint16
+nm_ip_routing_rule_get_destination_port_end (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), 0);
+
+	return self->dport_end;
+}
+
+/**
+ * nm_ip_routing_rule_set_destination_port:
+ * @self: the #NMIPRoutingRule instance
+ * @start: the start port to set.
+ * @end: the end port to set.
+ *
+ * Since: 1.18
+ */
+void
+nm_ip_routing_rule_set_destination_port (NMIPRoutingRule *self, guint16 start, guint16 end)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, FALSE));
+
+	self->dport_start = start;
+	self->dport_end   = end;
+}
+
+/**
+ * nm_ip_routing_rule_get_fwmark:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: the fwmark setting.
+ *
+ * Since: 1.18
+ */
+guint32
+nm_ip_routing_rule_get_fwmark (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), 0);
+
+	return self->fwmark;
+}
+
+/**
+ * nm_ip_routing_rule_get_fwmask:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: the fwmask setting.
+ *
+ * Since: 1.18
+ */
+guint32
+nm_ip_routing_rule_get_fwmask (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), 0);
+
+	return self->fwmask;
+}
+
+/**
+ * nm_ip_routing_rule_set_fwmark:
+ * @self: the #NMIPRoutingRule instance
+ * @fwmark: the fwmark
+ * @fwmask: the fwmask
+ *
+ * Since: 1.18
+ */
+void
+nm_ip_routing_rule_set_fwmark (NMIPRoutingRule *self, guint32 fwmark, guint32 fwmask)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, FALSE));
+
+	self->fwmark = fwmark;
+	self->fwmask = fwmask;
+}
+
+/**
+ * nm_ip_routing_rule_get_iifname:
+ * @self: the #NMIPRoutingRule instance.
+ *
+ * Returns: (transfer none): the set iifname or %NULL if unset.
+ *
+ * Since: 1.18
+ */
+const char *
+nm_ip_routing_rule_get_iifname (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), NULL);
+
+	return self->iifname;
+}
+
+gboolean
+nm_ip_routing_rule_get_xifname_bin (const NMIPRoutingRule *self,
+                                    gboolean iif /* or else oif */,
+                                    char out_xifname[static 16 /* IFNAMSIZ */])
+{
+	gs_free gpointer bin_to_free = NULL;
+	const char *xifname;
+	gconstpointer bin;
+	gsize len;
+
+	nm_assert (NM_IS_IP_ROUTING_RULE (self, TRUE));
+	nm_assert (out_xifname);
+
+	xifname = iif ? self->iifname : self->oifname;
+
+	if (!xifname)
+		return FALSE;
+
+	bin = nm_utils_buf_utf8safe_unescape (xifname, &len, &bin_to_free);
+
+	strncpy (out_xifname, bin, 16 /* IFNAMSIZ */);
+	out_xifname[15] = '\0';
+	return TRUE;
+}
+
+/**
+ * nm_ip_routing_rule_set_iifname:
+ * @self: the #NMIPRoutingRule instance.
+ * @iifname: (allow-none): the iifname to set or %NULL to unset.
+ *
+ * The name supports C backslash escaping for non-UTF-8 characters.
+ * Note that nm_ip_routing_rule_from_string() too uses backslash
+ * escaping when tokenizing the words by whitespace. So, in string
+ * representation you'd get double backslashs.
+ *
+ * Since: 1.18
+ */
+void
+nm_ip_routing_rule_set_iifname (NMIPRoutingRule *self, const char *iifname)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, FALSE));
+
+	g_free (self->iifname);
+	self->iifname = g_strdup (iifname);
+}
+
+/**
+ * nm_ip_routing_rule_get_oifname:
+ * @self: the #NMIPRoutingRule instance.
+ *
+ * Returns: (transfer none): the set oifname or %NULL if unset.
+ *
+ * Since: 1.18
+ */
+const char *
+nm_ip_routing_rule_get_oifname (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), NULL);
+
+	return self->oifname;
+}
+
+/**
+ * nm_ip_routing_rule_set_oifname:
+ * @self: the #NMIPRoutingRule instance.
+ * @oifname: (allow-none): the oifname to set or %NULL to unset.
+ *
+ * The name supports C backslash escaping for non-UTF-8 characters.
+ * Note that nm_ip_routing_rule_from_string() too uses backslash
+ * escaping when tokenizing the words by whitespace. So, in string
+ * representation you'd get double backslashs.
+ *
+ * Since: 1.18
+ */
+void
+nm_ip_routing_rule_set_oifname (NMIPRoutingRule *self, const char *oifname)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, FALSE));
+
+	g_free (self->oifname);
+	self->oifname = g_strdup (oifname);
+}
+
+/**
+ * nm_ip_routing_rule_get_action:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: the set action.
+ *
+ * Since: 1.18
+ */
+guint8
+nm_ip_routing_rule_get_action (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), 0);
+
+	return self->action;
+}
+
+/**
+ * nm_ip_routing_rule_set_action:
+ * @self: the #NMIPRoutingRule instance
+ * @action: the action to set
+ *
+ * Note that currently only certain actions are allowed. nm_ip_routing_rule_validate()
+ * will reject unsupported actions as invalid.
+ *
+ * Since: 1.18
+ */
+void
+nm_ip_routing_rule_set_action (NMIPRoutingRule *self, guint8 action)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, FALSE));
+
+	self->action = action;
+}
+
+/**
+ * nm_ip_routing_rule_get_table:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: the set table.
+ *
+ * Since: 1.18
+ */
+guint32
+nm_ip_routing_rule_get_table (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), 0);
+
+	return self->table;
+}
+
+/**
+ * nm_ip_routing_rule_set_table:
+ * @self: the #NMIPRoutingRule instance
+ * @table: the table to set
+ *
+ * Since: 1.18
+ */
+void
+nm_ip_routing_rule_set_table (NMIPRoutingRule *self, guint32 table)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, FALSE));
+
+	self->table = table;
+}
+
+/**
+ * nm_ip_routing_rule_cmp:
+ * @rule: (allow-none): the #NMIPRoutingRule instance to compare
+ * @other: (allow-none): the other #NMIPRoutingRule instance to compare
+ *
+ * Returns: zero, a positive, or a negative integer to indicate
+ *   equality or how the arguments compare.
+ *
+ * Since: 1.18
+ */
+int
+nm_ip_routing_rule_cmp (const NMIPRoutingRule *rule,
+                        const NMIPRoutingRule *other)
+{
+	NM_CMP_SELF (rule, other);
+
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (rule, TRUE), 0);
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (other, TRUE), 0);
+
+	NM_CMP_FIELD_UNSAFE (rule, other, priority_has);
+	if (rule->priority_has)
+		NM_CMP_FIELD (rule, other, priority);
+
+	NM_CMP_FIELD_UNSAFE (rule, other, is_v4);
+
+	NM_CMP_FIELD_UNSAFE (rule, other, invert);
+
+	NM_CMP_FIELD (rule, other, tos);
+
+	NM_CMP_FIELD (rule, other, fwmark);
+	NM_CMP_FIELD (rule, other, fwmask);
+
+	NM_CMP_FIELD (rule, other, action);
+
+	NM_CMP_FIELD (rule, other, table);
+
+	NM_CMP_FIELD (rule, other, sport_start);
+	NM_CMP_FIELD (rule, other, sport_end);
+	NM_CMP_FIELD (rule, other, dport_start);
+	NM_CMP_FIELD (rule, other, dport_end);
+
+	NM_CMP_FIELD (rule, other, ipproto);
+
+	/* We compare the plain strings, not the binary values after utf8safe unescaping.
+	 *
+	 * The reason is, that the rules differ already when the direct strings differ, not
+	 * only when the unescaped names differ. */
+	NM_CMP_FIELD_STR0 (rule, other, iifname);
+	NM_CMP_FIELD_STR0 (rule, other, oifname);
+
+	NM_CMP_FIELD (rule, other, from_len);
+
+	NM_CMP_FIELD_UNSAFE (rule, other, from_has);
+	if (rule->from_has) {
+		NM_CMP_FIELD_UNSAFE (rule, other, from_valid);
+		if (rule->from_valid) {
+			NM_CMP_RETURN (memcmp (&rule->from_bin,
+			                       &other->from_bin,
+			                       _ip_routing_rule_get_addr_size (rule)));
+		} else
+			NM_CMP_FIELD_STR (rule, other, from_str);
+	}
+
+	NM_CMP_FIELD (rule, other, to_len);
+
+	NM_CMP_FIELD_UNSAFE (rule, other, to_has);
+	if (rule->to_has) {
+		NM_CMP_FIELD_UNSAFE (rule, other, to_valid);
+		if (rule->to_valid) {
+			NM_CMP_RETURN (memcmp (&rule->to_bin,
+			                       &other->to_bin,
+			                       _ip_routing_rule_get_addr_size (rule)));
+		} else
+			NM_CMP_FIELD_STR (rule, other, to_str);
+	}
+
+	return 0;
+}
+
+static gboolean
+_rr_xport_range_valid (guint16 xport_start, guint16 xport_end)
+{
+	if (xport_start == 0)
+		return (xport_end == 0);
+
+	return    xport_start <= xport_end
+	       && xport_end < 0xFFFFu;
+}
+
+static gboolean
+_rr_xport_range_parse (char *str, gint64 *out_start, guint16 *out_end)
+{
+	guint16 start, end;
+	gint64 i64;
+	char *s;
+
+	s = strchr (str, '-');
+	if (s)
+		*(s++) = '\0';
+
+	i64 = _nm_utils_ascii_str_to_int64 (str, 10, 0, 0xFFFF, -1);
+	if (i64 == -1)
+		return FALSE;
+
+	start = i64;
+	if (s) {
+		i64 = _nm_utils_ascii_str_to_int64 (s, 10, 0, 0xFFFF, -1);
+		if (i64 == -1)
+			return FALSE;
+		end = i64;
+	} else
+		end = start;
+
+	*out_start = start;
+	*out_end = end;
+	return TRUE;
+}
+
+/**
+ * nm_ip_routing_rule_validate:
+ * @self: the #NMIPRoutingRule instance to validate
+ * @error: (allow-none) (out): the error result if validation fails.
+ *
+ * Returns: %TRUE if the rule validates.
+ *
+ * Since: 1.18
+ */
+gboolean
+nm_ip_routing_rule_validate (const NMIPRoutingRule *self,
+                             GError **error)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	/* Kernel may be more flexible about validating. We do a strict validation
+	 * here and reject certain settings eagerly. We can always relax it later. */
+
+	if (!self->priority_has) {
+		/* iproute2 accepts not specifying the priority, in which case kernel will select
+		 * an unused priority. We don't allow for that, and will always require the user to
+		 * select a priority.
+		 *
+		 * Note that if the user selects priority 0 or a non-unique priority, this is problematic
+		 * due to kernel bugs rh#1685816 and rh#1685816. It may result in NetworkManager wrongly being
+		 * unable to add a rule or deleting the wrong rule.
+		 * This problem is not at all specific to the priority, it affects all rules that
+		 * have default values which confuse kernel. But setting a unique priority avoids
+		 * this problem nicely. */
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("invalid priority"));
+		return FALSE;
+	}
+
+	if (NM_IN_SET (self->action, FR_ACT_TO_TBL)) {
+		if (self->table == 0) {
+			/* with IPv4, kernel allows a table (in RTM_NEWRULE) of zero to automatically select
+			 * an unused table. We don't. The user needs to specify the table.
+			 *
+			 * For IPv6, kernel doesn't allow a table of zero, so we are consistent here. */
+			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("missing table"));
+			return FALSE;
+		}
+	} else {
+		/* whitelist the actions that we currently. */
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("invalid action"));
+		return FALSE;
+	}
+
+	if (self->from_len == 0) {
+		if (self->from_has) {
+			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("has from/src but the prefix-length is zero"));
+			return FALSE;
+		}
+	} else if (   self->from_len > 0
+	           && self->from_len <= 8 * _ip_routing_rule_get_addr_size (self)) {
+		if (!self->from_has) {
+			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("missing from/src for a non zero prefix-length"));
+			return FALSE;
+		}
+		if (!self->from_valid) {
+			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("invalid from/src"));
+			return FALSE;
+		}
+	} else {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("invalid prefix length for from/src"));
+		return FALSE;
+	}
+
+	if (self->to_len == 0) {
+		if (self->to_has) {
+			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("has to/dst but the prefix-length is zero"));
+			return FALSE;
+		}
+	} else if (   self->to_len > 0
+	           && self->to_len <= 8 * _ip_routing_rule_get_addr_size (self)) {
+		if (!self->to_has) {
+			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("missing to/dst for a non zero prefix-length"));
+			return FALSE;
+		}
+		if (!self->to_valid) {
+			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("invalid to/dst"));
+			return FALSE;
+		}
+	} else {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("invalid prefix length for to/dst"));
+		return FALSE;
+	}
+
+	if (   self->iifname
+	    && (   !g_utf8_validate (self->iifname, -1, NULL)
+	        || !nm_utils_is_valid_iface_name_utf8safe (self->iifname))) {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("invalid iifname"));
+		return FALSE;
+	}
+
+	if (   self->oifname
+	    && (   !g_utf8_validate (self->oifname, -1, NULL)
+	        || !nm_utils_is_valid_iface_name_utf8safe (self->oifname))) {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("invalid oifname"));
+		return FALSE;
+	}
+
+	if (!_rr_xport_range_valid (self->sport_start, self->sport_end)) {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("invalid source port range"));
+		return FALSE;
+	}
+
+	if (!_rr_xport_range_valid (self->dport_start, self->dport_end)) {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("invalid destination port range"));
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+/*****************************************************************************/
+
+typedef enum {
+	RR_DBUS_ATTR_ACTION,
+	RR_DBUS_ATTR_DPORT_END,
+	RR_DBUS_ATTR_DPORT_START,
+	RR_DBUS_ATTR_FAMILY,
+	RR_DBUS_ATTR_FROM,
+	RR_DBUS_ATTR_FROM_LEN,
+	RR_DBUS_ATTR_FWMARK,
+	RR_DBUS_ATTR_FWMASK,
+	RR_DBUS_ATTR_IIFNAME,
+	RR_DBUS_ATTR_INVERT,
+	RR_DBUS_ATTR_IPPROTO,
+	RR_DBUS_ATTR_OIFNAME,
+	RR_DBUS_ATTR_PRIORITY,
+	RR_DBUS_ATTR_SPORT_END,
+	RR_DBUS_ATTR_SPORT_START,
+	RR_DBUS_ATTR_TABLE,
+	RR_DBUS_ATTR_TO,
+	RR_DBUS_ATTR_TOS,
+	RR_DBUS_ATTR_TO_LEN,
+
+	_RR_DBUS_ATTR_NUM,
+} RRDbusAttr;
+
+typedef struct {
+	const char *name;
+	const GVariantType *dbus_type;
+} RRDbusData;
+
+static const RRDbusData rr_dbus_data[_RR_DBUS_ATTR_NUM] = {
+#define _D(attr, _name, type) [attr] = { .name = _name, .dbus_type = type, }
+	_D (RR_DBUS_ATTR_ACTION,      NM_IP_ROUTING_RULE_ATTR_ACTION,      G_VARIANT_TYPE_BYTE),
+	_D (RR_DBUS_ATTR_DPORT_END,   NM_IP_ROUTING_RULE_ATTR_DPORT_END,   G_VARIANT_TYPE_UINT16),
+	_D (RR_DBUS_ATTR_DPORT_START, NM_IP_ROUTING_RULE_ATTR_DPORT_START, G_VARIANT_TYPE_UINT16),
+	_D (RR_DBUS_ATTR_FAMILY,      NM_IP_ROUTING_RULE_ATTR_FAMILY,      G_VARIANT_TYPE_INT32),
+	_D (RR_DBUS_ATTR_FROM,        NM_IP_ROUTING_RULE_ATTR_FROM,        G_VARIANT_TYPE_STRING),
+	_D (RR_DBUS_ATTR_FROM_LEN,    NM_IP_ROUTING_RULE_ATTR_FROM_LEN,    G_VARIANT_TYPE_BYTE),
+	_D (RR_DBUS_ATTR_FWMARK,      NM_IP_ROUTING_RULE_ATTR_FWMARK,      G_VARIANT_TYPE_UINT32),
+	_D (RR_DBUS_ATTR_FWMASK,      NM_IP_ROUTING_RULE_ATTR_FWMASK,      G_VARIANT_TYPE_UINT32),
+	_D (RR_DBUS_ATTR_IIFNAME,     NM_IP_ROUTING_RULE_ATTR_IIFNAME,     G_VARIANT_TYPE_STRING),
+	_D (RR_DBUS_ATTR_INVERT,      NM_IP_ROUTING_RULE_ATTR_INVERT,      G_VARIANT_TYPE_BOOLEAN),
+	_D (RR_DBUS_ATTR_IPPROTO,     NM_IP_ROUTING_RULE_ATTR_IPPROTO,     G_VARIANT_TYPE_BYTE),
+	_D (RR_DBUS_ATTR_OIFNAME,     NM_IP_ROUTING_RULE_ATTR_OIFNAME,     G_VARIANT_TYPE_STRING),
+	_D (RR_DBUS_ATTR_PRIORITY,    NM_IP_ROUTING_RULE_ATTR_PRIORITY,    G_VARIANT_TYPE_UINT32),
+	_D (RR_DBUS_ATTR_SPORT_END,   NM_IP_ROUTING_RULE_ATTR_SPORT_END,   G_VARIANT_TYPE_UINT16),
+	_D (RR_DBUS_ATTR_SPORT_START, NM_IP_ROUTING_RULE_ATTR_SPORT_START, G_VARIANT_TYPE_UINT16),
+	_D (RR_DBUS_ATTR_TABLE,       NM_IP_ROUTING_RULE_ATTR_TABLE,       G_VARIANT_TYPE_UINT32),
+	_D (RR_DBUS_ATTR_TO,          NM_IP_ROUTING_RULE_ATTR_TO,          G_VARIANT_TYPE_STRING),
+	_D (RR_DBUS_ATTR_TOS,         NM_IP_ROUTING_RULE_ATTR_TOS,         G_VARIANT_TYPE_BYTE),
+	_D (RR_DBUS_ATTR_TO_LEN,      NM_IP_ROUTING_RULE_ATTR_TO_LEN,      G_VARIANT_TYPE_BYTE),
+#undef _D
+};
+
+static void
+_rr_variants_free (GVariant *(*p_variants)[])
+{
+	int i;
+
+	for (i = 0; i < _RR_DBUS_ATTR_NUM; i++) {
+		if ((*p_variants)[i])
+			g_variant_unref ((*p_variants)[i]);
+	}
+}
+
+NMIPRoutingRule *
+nm_ip_routing_rule_from_dbus (GVariant *variant,
+                              gboolean strict,
+                              GError **error)
+{
+	nm_auto (_rr_variants_free) GVariant *variants[_RR_DBUS_ATTR_NUM] = { };
+	nm_auto_unref_ip_routing_rule NMIPRoutingRule *self = NULL;
+	RRDbusAttr attr;
+	GVariantIter iter;
+	const char *iter_key;
+	GVariant *iter_val;
+	int addr_family;
+	int i;
+
+	g_variant_iter_init (&iter, variant);
+
+#if NM_MORE_ASSERTS > 10
+	for (attr = 0; attr < _RR_DBUS_ATTR_NUM; attr++) {
+		nm_assert (rr_dbus_data[attr].name);
+		nm_assert (g_variant_type_string_is_valid ((const char *) rr_dbus_data[attr].dbus_type));
+	}
+#endif
+
+	while (g_variant_iter_next (&iter, "{&sv}", &iter_key, &iter_val)) {
+		gs_unref_variant GVariant *iter_val2 = iter_val;
+
+		for (attr = 0; attr < _RR_DBUS_ATTR_NUM; attr++) {
+			if (nm_streq (iter_key, rr_dbus_data[attr].name)) {
+				if (variants[attr]) {
+					if (strict) {
+						g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+						             _("duplicate key %s"),
+						             iter_key);
+						return NULL;
+					}
+					g_variant_unref (variants[attr]);
+				}
+				variants[attr] = g_steal_pointer (&iter_val2);
+				break;
+			}
+		}
+
+		if (   attr >= _RR_DBUS_ATTR_NUM
+		    && strict) {
+			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("invalid key \"%s\""),
+			             iter_key);
+			return NULL;
+		}
+	}
+
+	for (attr = 0; attr < _RR_DBUS_ATTR_NUM; attr++) {
+		if (!variants[attr])
+			continue;
+		if (!g_variant_is_of_type (variants[attr], rr_dbus_data[attr].dbus_type)) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("invalid variant type '%s' for \"%s\""),
+			             (const char *) rr_dbus_data[attr].dbus_type,
+			             rr_dbus_data[attr].name);
+			return NULL;
+		}
+	}
+
+	if (!variants[RR_DBUS_ATTR_FAMILY]) {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("missing \""NM_IP_ROUTING_RULE_ATTR_FAMILY"\""));
+		return NULL;
+	}
+	addr_family = g_variant_get_int32 (variants[RR_DBUS_ATTR_FAMILY]);
+	if (!NM_IN_SET (addr_family, AF_INET, AF_INET6)) {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("invalid \""NM_IP_ROUTING_RULE_ATTR_FAMILY"\""));
+		return NULL;
+	}
+
+	self = nm_ip_routing_rule_new (addr_family);
+
+	if (variants[RR_DBUS_ATTR_PRIORITY])
+		nm_ip_routing_rule_set_priority (self, g_variant_get_uint32 (variants[RR_DBUS_ATTR_PRIORITY]));
+
+	if (variants[RR_DBUS_ATTR_INVERT])
+		nm_ip_routing_rule_set_invert (self, g_variant_get_boolean (variants[RR_DBUS_ATTR_INVERT]));
+
+	if (variants[RR_DBUS_ATTR_TOS])
+		nm_ip_routing_rule_set_tos (self, g_variant_get_byte (variants[RR_DBUS_ATTR_TOS]));
+
+	if (variants[RR_DBUS_ATTR_IPPROTO])
+		nm_ip_routing_rule_set_ipproto (self, g_variant_get_byte (variants[RR_DBUS_ATTR_IPPROTO]));
+
+	for (i = 0; i < 2; i++) {
+		GVariant *v_start = variants[i ? RR_DBUS_ATTR_SPORT_START : RR_DBUS_ATTR_DPORT_START];
+		GVariant *v_end   = variants[i ? RR_DBUS_ATTR_SPORT_END   : RR_DBUS_ATTR_DPORT_END];
+		guint16 start, end;
+
+		if (!v_start && !v_end)
+			continue;
+
+		/* if start or end is missing, it defaults to the other parameter, respectively. */
+		if (v_start)
+			start = g_variant_get_uint16 (v_start);
+		else
+			start = g_variant_get_uint16 (v_end);
+		if (v_end)
+			end = g_variant_get_uint16 (v_end);
+		else
+			end = g_variant_get_uint16 (v_start);
+
+		if (i)
+			nm_ip_routing_rule_set_source_port (self, start, end);
+		else
+			nm_ip_routing_rule_set_destination_port (self, start, end);
+	}
+
+	if (   variants[RR_DBUS_ATTR_FWMARK]
+	    || variants[RR_DBUS_ATTR_FWMASK]) {
+		nm_ip_routing_rule_set_fwmark (self,
+		                               variants[RR_DBUS_ATTR_FWMARK] ? g_variant_get_uint32 (variants[RR_DBUS_ATTR_FWMARK]) : 0u,
+		                               variants[RR_DBUS_ATTR_FWMASK] ? g_variant_get_uint32 (variants[RR_DBUS_ATTR_FWMASK]) : 0u);
+	}
+
+	if (   variants[RR_DBUS_ATTR_FROM]
+	    || variants[RR_DBUS_ATTR_FROM_LEN]) {
+		nm_ip_routing_rule_set_from (self,
+		                             variants[RR_DBUS_ATTR_FROM]     ? g_variant_get_string (variants[RR_DBUS_ATTR_FROM], NULL) : NULL,
+		                             variants[RR_DBUS_ATTR_FROM_LEN] ? g_variant_get_byte   (variants[RR_DBUS_ATTR_FROM_LEN])   : 0u);
+	}
+
+	if (   variants[RR_DBUS_ATTR_TO]
+	    || variants[RR_DBUS_ATTR_TO_LEN]) {
+		nm_ip_routing_rule_set_to (self,
+		                           variants[RR_DBUS_ATTR_TO]     ? g_variant_get_string (variants[RR_DBUS_ATTR_TO], NULL) : NULL,
+		                           variants[RR_DBUS_ATTR_TO_LEN] ? g_variant_get_byte   (variants[RR_DBUS_ATTR_TO_LEN])   : 0u);
+	}
+
+	if (variants[RR_DBUS_ATTR_IIFNAME])
+		nm_ip_routing_rule_set_iifname (self, g_variant_get_string (variants[RR_DBUS_ATTR_IIFNAME], NULL));
+
+	if (variants[RR_DBUS_ATTR_OIFNAME])
+		nm_ip_routing_rule_set_oifname (self, g_variant_get_string (variants[RR_DBUS_ATTR_OIFNAME], NULL));
+
+	if (variants[RR_DBUS_ATTR_ACTION])
+		nm_ip_routing_rule_set_action (self, g_variant_get_byte (variants[RR_DBUS_ATTR_ACTION]));
+
+	if (variants[RR_DBUS_ATTR_TABLE])
+		nm_ip_routing_rule_set_table (self, g_variant_get_uint32 (variants[RR_DBUS_ATTR_TABLE]));
+
+	if (   strict
+	    && !nm_ip_routing_rule_validate (self, error))
+		return NULL;
+
+	return g_steal_pointer (&self);
+}
+
+static void
+_rr_to_dbus_add (GVariantBuilder *builder,
+                 RRDbusAttr attr,
+                 GVariant *value)
+{
+	nm_assert (builder);
+	nm_assert (value);
+	nm_assert (g_variant_is_floating (value));
+	nm_assert (g_variant_is_of_type (value, rr_dbus_data[attr].dbus_type));
+
+	g_variant_builder_add (builder,
+	                       "{sv}",
+	                       rr_dbus_data[attr].name,
+	                       value);
+}
+
+GVariant *
+nm_ip_routing_rule_to_dbus (const NMIPRoutingRule *self)
+{
+	GVariantBuilder builder;
+	char addr_str[NM_UTILS_INET_ADDRSTRLEN];
+
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), NULL);
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+
+	_rr_to_dbus_add (&builder, RR_DBUS_ATTR_FAMILY, g_variant_new_int32 (_ip_routing_rule_get_addr_family (self)));
+
+	if (self->invert)
+		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_INVERT, g_variant_new_boolean (TRUE));
+
+	if (self->priority_has)
+		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_PRIORITY, g_variant_new_uint32 (self->priority));
+
+	if (self->tos != 0)
+		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_TOS, g_variant_new_byte (self->tos));
+
+	if (self->ipproto != 0)
+		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_IPPROTO, g_variant_new_byte (self->ipproto));
+
+	if (self->fwmark != 0)
+		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_FWMARK, g_variant_new_uint32 (self->fwmark));
+
+	if (self->fwmask != 0)
+		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_FWMASK, g_variant_new_uint32 (self->fwmask));
+
+	if (   self->sport_start != 0
+	    || self->sport_end != 0) {
+		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_SPORT_START, g_variant_new_uint16 (self->sport_start));
+		if (self->sport_start != self->sport_end)
+			_rr_to_dbus_add (&builder, RR_DBUS_ATTR_SPORT_END, g_variant_new_uint16 (self->sport_end));
+	}
+
+	if (   self->dport_start != 0
+	    || self->dport_end != 0) {
+		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_DPORT_START, g_variant_new_uint16 (self->dport_start));
+		if (self->dport_start != self->dport_end)
+			_rr_to_dbus_add (&builder, RR_DBUS_ATTR_DPORT_END, g_variant_new_uint16 (self->dport_end));
+	}
+
+	if (   self->from_has
+	    || self->from_len != 0) {
+		_rr_to_dbus_add (&builder,
+		                 RR_DBUS_ATTR_FROM,
+		                 g_variant_new_string (   self->from_str
+		                                       ?: nm_utils_inet_ntop (_ip_routing_rule_get_addr_family (self),
+		                                                              &self->from_bin,
+		                                                              addr_str)));
+		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_FROM_LEN, g_variant_new_byte (self->from_len));
+	}
+
+	if (   self->to_has
+	    || self->to_len != 0) {
+		_rr_to_dbus_add (&builder,
+		                 RR_DBUS_ATTR_TO,
+		                 g_variant_new_string (   self->to_str
+		                                       ?: nm_utils_inet_ntop (_ip_routing_rule_get_addr_family (self),
+		                                                              &self->to_bin,
+		                                                              addr_str)));
+		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_TO_LEN, g_variant_new_byte (self->to_len));
+	}
+
+	if (self->iifname)
+		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_IIFNAME, g_variant_new_string (self->iifname));
+
+	if (self->oifname)
+		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_OIFNAME, g_variant_new_string (self->oifname));
+
+	if (self->action != FR_ACT_TO_TBL)
+		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_ACTION, g_variant_new_byte (self->action));
+
+	if (self->table != 0)
+		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_TABLE, g_variant_new_uint32 (self->table));
+
+	return g_variant_builder_end (&builder);;
+}
+
+/*****************************************************************************/
+
+static gboolean
+_rr_string_validate (gboolean for_from /* or else to-string */,
+                     NMIPRoutingRuleAsStringFlags to_string_flags,
+                     GHashTable *extra_args,
+                     GError **error)
+{
+	if (NM_FLAGS_ANY (to_string_flags, ~(  NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET
+	                                     | NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET6
+	                                     | NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE))) {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		                     _("Unsupported to-string-flags argument"));
+		return FALSE;
+	}
+
+	if (   extra_args
+	    && g_hash_table_size (extra_args) > 0) {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		                     _("Unsupported extra-argument"));
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static int
+_rr_string_addr_family_from_flags (NMIPRoutingRuleAsStringFlags to_string_flags)
+{
+	if (NM_FLAGS_HAS (to_string_flags, NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET)) {
+		if (!NM_FLAGS_HAS (to_string_flags, NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET6))
+			return AF_INET;
+	} else if (NM_FLAGS_HAS (to_string_flags, NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET6))
+		return AF_INET6;
+	return AF_UNSPEC;
+}
+
+/**
+ * nm_ip_routing_rule_from_string:
+ * @str: the string representation to convert to an #NMIPRoutingRule
+ * @to_string_flags: #NMIPRoutingRuleAsStringFlags for controlling the
+ *   string conversion.
+ * @extra_args: (allow-none): extra arguments for controlling the string
+ *   conversion. Currently not extra arguments are supported.
+ * @error: (allow-none) (out): the error reason.
+ *
+ * Returns: (transfer full): the new #NMIPRoutingRule or %NULL on error.
+ *
+ * Since: 1.18
+ */
+NMIPRoutingRule *
+nm_ip_routing_rule_from_string (const char *str,
+                                NMIPRoutingRuleAsStringFlags to_string_flags,
+                                GHashTable *extra_args,
+                                GError **error)
+{
+	nm_auto_unref_ip_routing_rule NMIPRoutingRule *self = NULL;
+	gs_free char *str_clone = NULL;
+	char *str_remainder;
+	char *str_word;
+	gboolean any_words = FALSE;
+	char *word0 = NULL;
+	char *word1 = NULL;
+	char *word_from = NULL;
+	char *word_to = NULL;
+	char *word_iifname = NULL;
+	char *word_oifname = NULL;
+	gint64 i64_priority = -1;
+	gint64 i64_table = -1;
+	gint64 i64_tos = -1;
+	gint64 i64_fwmark = -1;
+	gint64 i64_fwmask = -1;
+	gint64 i64_sport_start = -1;
+	gint64 i64_ipproto = -1;
+	guint16 sport_end = 0;
+	gint64 i64_dport_start = -1;
+	guint16 dport_end = 0;
+	gboolean val_invert = FALSE;
+	int addr_family = AF_UNSPEC;
+	NMIPAddr val_from = { };
+	NMIPAddr val_to = { };
+	int val_from_len = -1;
+	int val_to_len = -1;
+	char *s;
+
+	g_return_val_if_fail (str, NULL);
+
+	if (!_rr_string_validate (TRUE, to_string_flags, extra_args, error))
+		return NULL;
+
+	/* NM_IP_ROUTING_RULE_TO_STRING_TYPE_IPROUTE gives a string representation that is
+	 * partly compatibly with iproute2. That is, the part after `ip -[46] rule add $ARGS`.
+	 * There are differences though:
+	 *
+	 * - trying to convert an invalid rule to string may not be possible. The reason is for
+	 *   example that an invalid rule can have nm_ip_routing_rule_get_from() like "bogus",
+	 *   but we don't write that as "from bogus". In general, if you try to convert an invalid
+	 *   rule to string, the operation may fail or the result may itself not be parsable.
+	 *   Of course, valid rules can be converted to string and read back the same (round-trip).
+	 *
+	 * - iproute2 in may regards is flexible about the command lines. For example
+	 *   - for tables it accepts table names from /etc/iproute2/rt_tables
+	 *   - key names like "preference" can be abbreviated to "prefe", we don't do that.
+	 *   - the "preference"/"priority" may be unspecified, in which kernel automatically
+	 *     chooses an unused priority (during `ip rule add`). We don't allow for that, the
+	 *     priority must be explicitly set.
+	 *
+	 * - iproute2 does not support any escaping. Well, it's the shell that supports quoting
+	 *   and escaping and splits the command line. We need to split the command line ourself,
+	 *   but we don't support full shell quotation.
+	 *   from-string tokenizes words at (ASCII) whitespaces (removing the whitespaces).
+	 *   It also supports backslash escaping (e.g. to contain whitespace), but it does
+	 *   not support special escape sequences. Values are taken literally, meaning
+	 *   "\n\ \111" gives results in "n 111".
+	 *   The strings really shouldn't contain any special characters that require escaping,
+	 *   but that's the rule.
+	 *   This also goes together with the @allow_escaping parameter of nm_utils_strsplit_set().
+	 *   If you concatenate multiple rule expressions with a delimiter, the delimiter inside
+	 *   each word can be backslash escaped, and nm_utils_strsplit_set(allow_escaping=TRUE) will
+	 *   properly split the words, preserving the backslashes, which then will be removed by
+	 *   nm_ip_routing_rule_from_string().
+	 */
+
+	addr_family = _rr_string_addr_family_from_flags (to_string_flags);
+
+	str_clone = g_strdup (str);
+	str_remainder = str_clone;
+
+	while ((str_word = nm_utils_str_simpletokens_extract_next (&str_remainder))) {
+
+		any_words = TRUE;
+		if (!word0)
+			word0 = str_word;
+		else {
+			nm_assert (!word1);
+			word1 = str_word;
+		}
+
+		/* iproute2 matches keywords with any partial prefix. We don't allow
+		 * for that flexiblity. */
+
+		if (NM_IN_STRSET (word0, "from")) {
+			if (!word1)
+				continue;
+			if (word_from)
+				goto next_fail_word0_duplicate_key;
+			word_from = word1;
+			goto next_words_consumed;
+		}
+		if (NM_IN_STRSET (word0, "to")) {
+			if (!word1)
+				continue;
+			if (word_to)
+				goto next_fail_word0_duplicate_key;
+			word_to = word1;
+			goto next_words_consumed;
+		}
+		if (NM_IN_STRSET (word0, "not")) {
+			/* we accept multiple "not" specifiers. */
+			val_invert = TRUE;
+			goto next_words_consumed;
+		}
+		if (NM_IN_STRSET (word0, "priority",
+		                         "order",
+		                         "pref",
+		                         "preference")) {
+			if (!word1)
+				continue;
+			if (i64_priority != -1)
+				goto next_fail_word0_duplicate_key;
+			i64_priority = _nm_utils_ascii_str_to_int64 (word1, 0, 0, G_MAXUINT32, -1);
+			if (i64_priority == -1)
+				goto next_fail_word1_invalid_value;
+			goto next_words_consumed;
+		}
+		if (NM_IN_STRSET (word0, "table",
+		                         "lookup")) {
+			if (!word1)
+				continue;
+			if (i64_table != -1)
+				goto next_fail_word0_duplicate_key;
+			i64_table = _nm_utils_ascii_str_to_int64 (word1, 0, 1, G_MAXUINT32, -1);
+			if (i64_table == -1)
+				goto next_fail_word1_invalid_value;
+			goto next_words_consumed;
+		}
+		if (NM_IN_STRSET (word0, "tos",
+		                         "dsfield")) {
+			if (!word1)
+				continue;
+			if (i64_tos != -1)
+				goto next_fail_word0_duplicate_key;
+			i64_tos = _nm_utils_ascii_str_to_int64 (word1, 16, 0, G_MAXUINT8, -1);
+			if (i64_tos == -1)
+				goto next_fail_word1_invalid_value;
+			goto next_words_consumed;
+		}
+		if (NM_IN_STRSET (word0, "ipproto")) {
+			if (!word1)
+				continue;
+			if (i64_ipproto != -1)
+				goto next_fail_word0_duplicate_key;
+			i64_ipproto = _nm_utils_ascii_str_to_int64 (word1, 10, 0, G_MAXUINT8, -1);
+			if (i64_ipproto == -1)
+				goto next_fail_word1_invalid_value;
+			goto next_words_consumed;
+		}
+		if (NM_IN_STRSET (word0, "sport")) {
+			if (!word1)
+				continue;
+			if (i64_sport_start != -1)
+				goto next_fail_word0_duplicate_key;
+			if (!_rr_xport_range_parse (word1, &i64_sport_start, &sport_end))
+				goto next_fail_word1_invalid_value;
+			goto next_words_consumed;
+		}
+		if (NM_IN_STRSET (word0, "dport")) {
+			if (!word1)
+				continue;
+			if (i64_dport_start != -1)
+				goto next_fail_word0_duplicate_key;
+			if (!_rr_xport_range_parse (word1, &i64_dport_start, &dport_end))
+				goto next_fail_word1_invalid_value;
+			goto next_words_consumed;
+		}
+		if (NM_IN_STRSET (word0, "fwmark")) {
+			if (!word1)
+				continue;
+			if (i64_fwmark != -1)
+				goto next_fail_word0_duplicate_key;
+			s = strchr (word1, '/');
+			if (s)
+				*(s++) = '\0';
+			i64_fwmark = _nm_utils_ascii_str_to_int64 (word1, 0, 0, G_MAXUINT32, -1);
+			if (i64_fwmark == -1)
+				goto next_fail_word1_invalid_value;
+			if (s) {
+				i64_fwmask = _nm_utils_ascii_str_to_int64 (s, 0, 0, G_MAXUINT32, -1);
+				if (i64_fwmask == -1)
+					goto next_fail_word1_invalid_value;
+			} else
+				i64_fwmask = 0xFFFFFFFFu;
+			goto next_words_consumed;
+		}
+		if (NM_IN_STRSET (word0, "iif",
+		                         "dev")) {
+			if (!word1)
+				continue;
+			if (word_iifname)
+				goto next_fail_word0_duplicate_key;
+			word_iifname = word1;
+			goto next_words_consumed;
+		}
+		if (NM_IN_STRSET (word0, "oif")) {
+			if (!word1)
+				continue;
+			if (word_oifname)
+				goto next_fail_word0_duplicate_key;
+			word_oifname = word1;
+			goto next_words_consumed;
+		}
+
+		/* also the action is still unsupported. For the moment, we only support
+		 * FR_ACT_TO_TBL, which is the default (by not expressing it on the command
+		 * line). */
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("unsupported key \"%s\""),
+		             word0);
+		return FALSE;
+next_fail_word0_duplicate_key:
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("duplicate key \"%s\""),
+		             word0);
+		return FALSE;
+next_fail_word1_invalid_value:
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("invalid value for \"%s\""),
+		             word0);
+		return FALSE;
+next_words_consumed:
+		word0 = NULL;
+		word1 = NULL;
+	}
+
+	if (!any_words) {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		                     _("empty text does not describe a rule"));
+		return FALSE;
+	}
+
+	if (word0) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("missing argument for \"%s\""),
+		             word0);
+		return FALSE;
+	}
+
+	if (!NM_IN_STRSET (word_from, NULL, "all")) {
+		if (!nm_utils_parse_inaddr_prefix_bin (addr_family,
+		                                       word_from,
+		                                       &addr_family,
+		                                       &val_from,
+		                                       &val_from_len)) {
+			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+			                     _("invalid \"from\" part"));
+			return FALSE;
+		}
+		if (val_from_len == -1)
+			val_from_len = nm_utils_addr_family_to_size (addr_family) * 8;
+	}
+
+	if (!NM_IN_STRSET (word_to, NULL, "all")) {
+		if (!nm_utils_parse_inaddr_prefix_bin (addr_family,
+		                                       word_to,
+		                                       &addr_family,
+		                                       &val_to,
+		                                       &val_to_len)) {
+			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+			                     _("invalid \"to\" part"));
+			return FALSE;
+		}
+		if (val_to_len == -1)
+			val_to_len = nm_utils_addr_family_to_size (addr_family) * 8;
+	}
+
+	if (!NM_IN_SET (addr_family, AF_INET, AF_INET6)) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("cannot detect address family for rule"));
+		return FALSE;
+	}
+
+	self = nm_ip_routing_rule_new (addr_family);
+
+	if (val_invert)
+		self->invert = TRUE;
+
+	if (i64_priority != -1)
+		nm_ip_routing_rule_set_priority (self, i64_priority);
+
+	if (i64_tos != -1)
+		nm_ip_routing_rule_set_tos (self, i64_tos);
+
+	if (i64_ipproto != -1)
+		nm_ip_routing_rule_set_ipproto (self, i64_ipproto);
+
+	if (i64_fwmark != -1)
+		nm_ip_routing_rule_set_fwmark (self, i64_fwmark, i64_fwmask);
+
+	if (i64_sport_start != -1)
+		nm_ip_routing_rule_set_source_port (self, i64_sport_start, sport_end);
+
+	if (i64_dport_start != -1)
+		nm_ip_routing_rule_set_destination_port (self, i64_dport_start, dport_end);
+
+	if (   val_from_len > 0
+	    || (   val_from_len == 0
+	        && !nm_ip_addr_is_null (addr_family, &val_from))) {
+		nm_ip_routing_rule_set_from_bin (self,
+		                                 &val_from,
+		                                 val_from_len);
+	}
+
+	if (   val_to_len > 0
+	    || (   val_to_len == 0
+	        && !nm_ip_addr_is_null (addr_family, &val_to))) {
+		nm_ip_routing_rule_set_to_bin (self,
+		                               &val_to,
+		                               val_to_len);
+	}
+
+	if (word_iifname)
+		nm_ip_routing_rule_set_iifname (self, word_iifname);
+
+	if (word_oifname)
+		nm_ip_routing_rule_set_oifname (self, word_oifname);
+
+	if (i64_table != -1)
+		nm_ip_routing_rule_set_table (self, i64_table);
+
+	if (NM_FLAGS_HAS (to_string_flags, NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE)) {
+		gs_free_error GError *local = NULL;
+
+		if (!nm_ip_routing_rule_validate (self, &local)) {
+			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+			             _("rule is invalid: %s"),
+			             local->message);
+			return NULL;
+		}
+	}
+
+	return g_steal_pointer (&self);
+}
+
+static void
+_rr_string_append_inet_addr (GString *str,
+                             gboolean is_from /* or else is-to */,
+                             gboolean required,
+                             int addr_family,
+                             const NMIPAddr *addr_bin,
+                             guint8 addr_len)
+{
+	char addr_str[NM_UTILS_INET_ADDRSTRLEN];
+
+	if (addr_len == 0) {
+		if (required) {
+			g_string_append_printf (nm_gstring_add_space_delimiter (str),
+			                        "%s %s/0",
+			                        is_from ? "from" : "to",
+			                          (addr_family == AF_INET)
+			                        ? "0.0.0.0"
+			                        : "::");
+		}
+		return;
+	}
+
+	g_string_append_printf (nm_gstring_add_space_delimiter (str),
+	                        "%s %s",
+	                        is_from ? "from" : "to",
+	                        nm_utils_inet_ntop (addr_family,
+	                                            addr_bin,
+	                                            addr_str));
+	if (addr_len != nm_utils_addr_family_to_size (addr_family) * 8) {
+		g_string_append_printf (str,
+		                        "/%u",
+		                        addr_len);
+	}
+}
+
+static void
+_rr_string_append_escaped (GString *str,
+                           const char *s)
+{
+	for (; s[0]; s++) {
+		/* We need to escape spaces and '\\', because that
+		 * is what nm_utils_str_simpletokens_extract_next() uses to split
+		 * words.
+		 * We also escape ',' because nmcli uses that to concatenate values.
+		 * We also escape ';', in case somebody wants to use ';' instead of ','.
+		 */
+		if (   NM_IN_SET (s[0], '\\', ',', ';')
+		    || g_ascii_isspace (s[0]))
+			g_string_append_c (str, '\\');
+		g_string_append_c (str, s[0]);
+	}
+}
+
+/**
+ * nm_ip_routing_rule_to_string:
+ * @self: the #NMIPRoutingRule instance to convert to string.
+ * @to_string_flags: #NMIPRoutingRuleAsStringFlags for controlling the
+ *   string conversion.
+ * @extra_args: (allow-none): extra arguments for controlling the string
+ *   conversion. Currently not extra arguments are supported.
+ * @error: (allow-none) (out): the error reason.
+ *
+ * Returns: (transfer full): the string representation or %NULL on error.
+ *
+ * Since: 1.18
+ */
+char *
+nm_ip_routing_rule_to_string (const NMIPRoutingRule *self,
+                              NMIPRoutingRuleAsStringFlags to_string_flags,
+                              GHashTable *extra_args,
+                              GError **error)
+{
+	nm_auto_free_gstring GString *str = NULL;
+	int addr_family;
+
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), NULL);
+
+	if (!_rr_string_validate (FALSE, to_string_flags, extra_args, error))
+		return NULL;
+
+	addr_family = nm_ip_routing_rule_get_addr_family (self);
+
+	if (!NM_IN_SET (_rr_string_addr_family_from_flags (to_string_flags),
+	                AF_UNSPEC,
+	                addr_family)) {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		                     _("invalid address family"));
+		return NULL;
+	}
+
+	/* It is only guaranteed that valid rules can be expressed as string.
+	 *
+	 * Still, unless requested proceed to convert to string without validating and
+	 * hope for the best.
+	 *
+	 * That is, because self->from_str might contain an invalid IP address (indicated
+	 * by self->from_valid). But we don't support serializing such arbitrary strings
+	 * as "from %s". */
+	if (NM_FLAGS_HAS (to_string_flags, NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE)) {
+		gs_free_error GError *local = NULL;
+
+		if (!nm_ip_routing_rule_validate (self, &local)) {
+			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+			             _("rule is invalid: %s"),
+			             local->message);
+			return NULL;
+		}
+	}
+
+	str = g_string_sized_new (30);
+
+	if (self->invert)
+		g_string_append (str, "not");
+
+	if (self->priority_has) {
+		g_string_append_printf (nm_gstring_add_space_delimiter (str),
+		                        "priority %u",
+		                        (guint) self->priority);
+	}
+
+	_rr_string_append_inet_addr (str,
+	                             TRUE,
+	                             (   !self->to_has
+	                              || !self->to_valid),
+	                             addr_family,
+	                             &self->from_bin,
+	                               (self->from_has && self->from_valid)
+	                             ? self->from_len
+	                             : 0);
+
+	_rr_string_append_inet_addr (str,
+	                             FALSE,
+	                             FALSE,
+	                             addr_family,
+	                             &self->to_bin,
+	                               (self->to_has && self->to_valid)
+	                             ? self->to_len
+	                             : 0);
+
+	if (self->tos != 0) {
+		g_string_append_printf (nm_gstring_add_space_delimiter (str),
+		                        "tos 0x%02x",
+		                        (guint) self->tos);
+	}
+
+	if (self->ipproto != 0) {
+		g_string_append_printf (nm_gstring_add_space_delimiter (str),
+		                        "ipproto %u",
+		                        (guint) self->ipproto);
+	}
+
+	if (   self->fwmark != 0
+	    || self->fwmask != 0) {
+		if (self->fwmark != 0) {
+			g_string_append_printf (nm_gstring_add_space_delimiter (str),
+			                        "fwmark 0x%x",
+			                        self->fwmark);
+		} else {
+			g_string_append_printf (nm_gstring_add_space_delimiter (str),
+			                        "fwmark 0");
+		}
+		if (self->fwmask != 0xFFFFFFFFu) {
+			if (self->fwmask != 0)
+				g_string_append_printf (str, "/0x%x", self->fwmask);
+			else
+				g_string_append_printf (str, "/0");
+		}
+	}
+
+	if (   self->sport_start != 0
+	    || self->sport_end != 0) {
+		g_string_append_printf (nm_gstring_add_space_delimiter (str),
+		                        "sport %u",
+		                        self->sport_start);
+		if (self->sport_start != self->sport_end) {
+			g_string_append_printf (str,
+			                        "-%u",
+			                        self->sport_end);
+		}
+	}
+
+	if (   self->dport_start != 0
+	    || self->dport_end != 0) {
+		g_string_append_printf (nm_gstring_add_space_delimiter (str),
+		                        "dport %u",
+		                        self->dport_start);
+		if (self->dport_start != self->dport_end) {
+			g_string_append_printf (str,
+			                        "-%u",
+			                        self->dport_end);
+		}
+	}
+
+	if (self->iifname) {
+		g_string_append (nm_gstring_add_space_delimiter (str),
+		                 "iif ");
+		_rr_string_append_escaped (str, self->iifname);
+	}
+
+	if (self->oifname) {
+		g_string_append (nm_gstring_add_space_delimiter (str),
+		                 "oif ");
+		_rr_string_append_escaped (str, self->oifname);
+	}
+
+	if (self->table != 0) {
+		g_string_append_printf (nm_gstring_add_space_delimiter (str),
+		                        "table %u",
+		                        (guint) self->table);
+	}
+
+	return g_string_free (g_steal_pointer (&str), FALSE);
 }
 
 /*****************************************************************************/
