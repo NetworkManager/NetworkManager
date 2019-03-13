@@ -614,7 +614,7 @@ gboolean nm_sock_addr_endpoint_get_fixed_sockaddr (NMSockAddrEndpoint *self,
                                                    gpointer sockaddr);
 
 #define nm_auto_unref_sockaddrendpoint nm_auto(_nm_auto_unref_sockaddrendpoint)
-NM_AUTO_DEFINE_FCN_VOID0 (NMSockAddrEndpoint *, _nm_auto_unref_sockaddrendpoint, nm_sock_addr_endpoint_unref)
+NM_AUTO_DEFINE_FCN0 (NMSockAddrEndpoint *, _nm_auto_unref_sockaddrendpoint, nm_sock_addr_endpoint_unref)
 
 /*****************************************************************************/
 
@@ -763,7 +763,7 @@ gboolean _nm_connection_find_secret (NMConnection *self,
 /*****************************************************************************/
 
 #define nm_auto_unref_wgpeer nm_auto(_nm_auto_unref_wgpeer)
-NM_AUTO_DEFINE_FCN_VOID0 (NMWireGuardPeer *, _nm_auto_unref_wgpeer, nm_wireguard_peer_unref)
+NM_AUTO_DEFINE_FCN0 (NMWireGuardPeer *, _nm_auto_unref_wgpeer, nm_wireguard_peer_unref)
 
 gboolean nm_utils_base64secret_normalize (const char *base64_key,
                                           gsize required_key_len,
