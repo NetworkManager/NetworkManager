@@ -174,6 +174,11 @@ typedef enum { /*< skip >*/
 	 * cache-resync. */
 	NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID,
 
+	/* a filter for objects that track an explicit address family.
+	 *
+	 * Note that currently on NMPObjectRoutingRule is indexed by this filter. */
+	NMP_CACHE_ID_TYPE_OBJECT_BY_ADDR_FAMILY,
+
 	__NMP_CACHE_ID_TYPE_MAX,
 	NMP_CACHE_ID_TYPE_MAX = __NMP_CACHE_ID_TYPE_MAX - 1,
 } NMPCacheIdType;
@@ -325,6 +330,10 @@ typedef struct {
 } NMPObjectIP6Route;
 
 typedef struct {
+	NMPlatformRoutingRule _public;
+} NMPObjectRoutingRule;
+
+typedef struct {
 	NMPlatformQdisc _public;
 } NMPObjectQdisc;
 
@@ -339,6 +348,8 @@ struct _NMPObject {
 	};
 	union {
 		NMPlatformObject        object;
+
+		NMPlatformObjWithIfindex obj_with_ifindex;
 
 		NMPlatformLink          link;
 		NMPObjectLink           _link;
@@ -390,6 +401,9 @@ struct _NMPObject {
 		NMPObjectIP4Route       _ip4_route;
 		NMPObjectIP6Route       _ip6_route;
 
+		NMPlatformRoutingRule   routing_rule;
+		NMPObjectRoutingRule    _routing_rule;
+
 		NMPlatformQdisc         qdisc;
 		NMPObjectQdisc          _qdisc;
 		NMPlatformTfilter       tfilter;
@@ -397,12 +411,25 @@ struct _NMPObject {
 	};
 };
 
+/*****************************************************************************/
+
 static inline gboolean
 NMP_CLASS_IS_VALID (const NMPClass *klass)
 {
 	return klass >= &_nmp_classes[0]
 	    && klass <= &_nmp_classes[G_N_ELEMENTS (_nmp_classes)]
 	    && ((((char *) klass) - ((char *) _nmp_classes)) % (sizeof (_nmp_classes[0]))) == 0;
+}
+
+static inline const NMPClass *
+nmp_class_from_type (NMPObjectType obj_type)
+{
+	nm_assert (obj_type > 0);
+	nm_assert (obj_type <= G_N_ELEMENTS (_nmp_classes));
+	nm_assert (_nmp_classes[obj_type - 1].obj_type == obj_type);
+	nm_assert (NMP_CLASS_IS_VALID (&_nmp_classes[obj_type - 1]));
+
+	return &_nmp_classes[obj_type - 1];
 }
 
 static inline NMPObject *
@@ -454,11 +481,65 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 	return obj ? obj->_class->obj_type : NMP_OBJECT_TYPE_UNKNOWN;
 }
 
+static inline gboolean
+_NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX (NMPObjectType obj_type)
+{
+	switch (obj_type) {
+	case NMP_OBJECT_TYPE_LINK:
+	case NMP_OBJECT_TYPE_IP4_ADDRESS:
+	case NMP_OBJECT_TYPE_IP6_ADDRESS:
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
+
+	case NMP_OBJECT_TYPE_QDISC:
+
+	case NMP_OBJECT_TYPE_TFILTER:
+
+	case NMP_OBJECT_TYPE_LNK_GRE:
+	case NMP_OBJECT_TYPE_LNK_GRETAP:
+	case NMP_OBJECT_TYPE_LNK_INFINIBAND:
+	case NMP_OBJECT_TYPE_LNK_IP6TNL:
+	case NMP_OBJECT_TYPE_LNK_IP6GRE:
+	case NMP_OBJECT_TYPE_LNK_IP6GRETAP:
+	case NMP_OBJECT_TYPE_LNK_IPIP:
+	case NMP_OBJECT_TYPE_LNK_MACSEC:
+	case NMP_OBJECT_TYPE_LNK_MACVLAN:
+	case NMP_OBJECT_TYPE_LNK_MACVTAP:
+	case NMP_OBJECT_TYPE_LNK_SIT:
+	case NMP_OBJECT_TYPE_LNK_TUN:
+	case NMP_OBJECT_TYPE_LNK_VLAN:
+	case NMP_OBJECT_TYPE_LNK_VXLAN:
+	case NMP_OBJECT_TYPE_LNK_WIREGUARD:
+		return TRUE;
+	default:
+		nm_assert (nmp_class_from_type (obj_type));
+		return FALSE;
+	}
+}
+
+#define NMP_OBJECT_CAST_OBJECT(obj) \
+	({ \
+		typeof (obj) _obj = (obj); \
+		\
+		nm_assert (   !_obj \
+		           || nmp_class_from_type (NMP_OBJECT_GET_TYPE (_obj)))); \
+		_obj ? &NM_CONSTCAST (NMPObject, _obj)->object : NULL; \
+	})
+
+#define NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj) \
+	({ \
+		typeof (obj) _obj = (obj); \
+		\
+		nm_assert (   !_obj \
+		           || _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX (NMP_OBJECT_GET_TYPE (_obj))); \
+		_obj ? &NM_CONSTCAST (NMPObject, _obj)->obj_with_ifindex : NULL; \
+	})
+
 #define NMP_OBJECT_CAST_LINK(obj) \
 	({ \
 		typeof (obj) _obj = (obj); \
 		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_LINK); \
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_LINK); \
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->link : NULL; \
 	})
 
@@ -482,7 +563,7 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 	({ \
 		typeof (obj) _obj = (obj); \
 		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_IP4_ADDRESS); \
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP4_ADDRESS); \
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ip4_address : NULL; \
 	})
 
@@ -490,7 +571,7 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 	({ \
 		typeof (obj) _obj = (obj); \
 		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_IP6_ADDRESS); \
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP6_ADDRESS); \
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ip6_address : NULL; \
 	})
 
@@ -514,7 +595,7 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 	({ \
 		typeof (obj) _obj = (obj); \
 		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_IP4_ROUTE); \
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP4_ROUTE); \
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ip4_route : NULL; \
 	})
 
@@ -522,15 +603,23 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 	({ \
 		typeof (obj) _obj = (obj); \
 		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_IP6_ROUTE); \
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP6_ROUTE); \
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ip6_route : NULL; \
+	})
+
+#define NMP_OBJECT_CAST_ROUTING_RULE(obj) \
+	({ \
+		typeof (obj) _obj = (obj); \
+		\
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_ROUTING_RULE); \
+		_obj ? &NM_CONSTCAST (NMPObject, _obj)->routing_rule : NULL; \
 	})
 
 #define NMP_OBJECT_CAST_QDISC(obj) \
 	({ \
 		typeof (obj) _obj = (obj); \
 		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_QDISC); \
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_QDISC); \
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->qdisc : NULL; \
 	})
 
@@ -538,11 +627,9 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 	({ \
 		typeof (obj) _obj = (obj); \
 		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_TFILTER); \
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_TFILTER); \
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->tfilter : NULL; \
 	})
-
-const NMPClass *nmp_class_from_type (NMPObjectType obj_type);
 
 static inline const NMPObject *
 nmp_object_ref (const NMPObject *obj)
@@ -565,9 +652,11 @@ nmp_object_ref (const NMPObject *obj)
 static inline void
 nmp_object_unref (const NMPObject *obj)
 {
-	nm_assert (!obj || NMP_OBJECT_IS_VALID (obj));
+	if (obj) {
+		nm_assert (NMP_OBJECT_IS_VALID (obj));
 
-	nm_dedup_multi_obj_unref ((const NMDedupMultiObj *) obj);
+		nm_dedup_multi_obj_unref ((const NMDedupMultiObj *) obj);
+	}
 }
 
 #define nm_clear_nmp_object(ptr) \
@@ -695,6 +784,9 @@ const NMPLookup *nmp_lookup_init_ip6_route_by_weak_id (NMPLookup *lookup,
                                                        guint32 metric,
                                                        const struct in6_addr *src,
                                                        guint8 src_plen);
+const NMPLookup *nmp_lookup_init_object_by_addr_family (NMPLookup *lookup,
+                                                        NMPObjectType obj_type,
+                                                        int addr_family);
 
 GArray *nmp_cache_lookup_to_array (const NMDedupMultiHeadEntry *head_entry,
                                    NMPObjectType obj_type,
@@ -784,8 +876,34 @@ NMPCacheOpsType nmp_cache_update_link_master_connected (NMPCache *cache,
                                                         const NMPObject **out_obj_old,
                                                         const NMPObject **out_obj_new);
 
-void nmp_cache_dirty_set_all (NMPCache *cache,
-                              const NMPLookup *lookup);
+static inline const NMDedupMultiEntry *
+nmp_cache_reresolve_main_entry (NMPCache *cache,
+                                const NMDedupMultiEntry *entry,
+                                const NMPLookup *lookup)
+{
+	const NMDedupMultiEntry *main_entry;
+
+	nm_assert (cache);
+	nm_assert (entry);
+	nm_assert (lookup);
+
+	if (lookup->cache_id_type == NMP_CACHE_ID_TYPE_OBJECT_TYPE) {
+		nm_assert (entry == nmp_cache_lookup_entry (cache, entry->obj));
+		return entry;
+	}
+
+	/* we only track the dirty flag for the OBJECT-TYPE index. That means,
+	 * for other lookup types we need to check the dirty flag of the main-entry. */
+	main_entry = nmp_cache_lookup_entry (cache, entry->obj);
+
+	nm_assert (main_entry);
+	nm_assert (main_entry->obj == entry->obj);
+
+	return main_entry;
+}
+
+void nmp_cache_dirty_set_all_main (NMPCache *cache,
+                                   const NMPLookup *lookup);
 
 NMPCache *nmp_cache_new (NMDedupMultiIndex *multi_idx, gboolean use_udev);
 void nmp_cache_free (NMPCache *cache);

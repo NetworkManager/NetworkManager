@@ -38,7 +38,7 @@ NM-colorize() {
         GREP_COLOR='01;31' grep -a --color=always '^\|^\(.* \)\?<\(warn> \|error>\) \[[0-9.]*\]' | \
         GREP_COLOR='01;33' grep -a --color=always '^\|^\(.* \)\?<info>  \[[0-9.]*\]\( .*\<is starting\>.*$\)\?' | \
         GREP_COLOR='01;37' grep -a --color=always '^\|\<platform:\( (.*)\)\? signal: .*$' | \
-        GREP_COLOR='01;34' grep -a --color=always '^\|\<platform\(-linux\)\?:\( (.*)\)\? link: \(add\|adding\|change\|setting\|deleting\)\>\|\<platform:\( (.*)\)\? address: \(deleting\|adding or updating\) IPv. address:\? \|\<platform:\( (.*)\)\? \(route\|ip4-route\|ip6-route\|qdisc\|tfilter\): \([a-z]\+\|adding or updating\|new\[0x[0-9A-Za-z]*\]\) \|\<platform-linux: sysctl: setting ' | \
+        GREP_COLOR='01;34' grep -a --color=always '^\|\<platform\(-linux\)\?:\( (.*)\)\? link: \(add\|adding\|change\|setting\|deleting\)\>\|\<platform: routing-rule: \(adding or updating:\|delete \)\|\<platform:\( (.*)\)\? address: \(deleting\|adding or updating\) IPv. address:\? \|\<platform:\( (.*)\)\? \(route\|ip4-route\|ip6-route\|qdisc\|tfilter\): \([a-z]\+\|adding or updating\|new\[0x[0-9A-Za-z]*\]\) \|\<platform-linux: sysctl: setting ' | \
         GREP_COLOR='01;35' grep -a --color=always '^\|\<audit: .*$' | \
         GREP_COLOR='01;32' grep -a --color=always '^\|\<device (.*): state change: ' |
         if [[ "$NM_LOG_GREP" != "" ]]; then
@@ -77,7 +77,7 @@ NM-log() {
         fi
     ) | \
         NM_LOG_GREP="$NM_LOG_GREP" NM-colorize | \
-        LESS=FRSXM less -R
+        LESS=FRSXM less -R --shift=5
 }
 
 if [[ "$NM_not_sourced" != "" ]]; then
