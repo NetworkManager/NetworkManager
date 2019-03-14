@@ -3533,6 +3533,7 @@ typedef struct {
 	int dns_priority;
 	GPtrArray *addresses;  /* array of NMIPAddress */
 	GPtrArray *routes;     /* array of NMIPRoute */
+	GPtrArray *routing_rules;
 	gint64 route_metric;
 	guint32 route_table;
 	char *gateway;
@@ -4434,6 +4435,225 @@ nm_setting_ip_config_get_route_table (NMSettingIPConfig *setting)
 	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->route_table;
 }
 
+/*****************************************************************************/
+
+static void
+_routing_rules_notify (NMSettingIPConfig *setting)
+{
+	_nm_setting_emit_property_changed (NM_SETTING (setting));
+}
+
+/**
+ * nm_setting_ip_config_get_num_routing_rules:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns: the number of configured routing rules
+ *
+ * Since: 1.18
+ **/
+guint
+nm_setting_ip_config_get_num_routing_rules (NMSettingIPConfig *setting)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), 0);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	return priv->routing_rules ? priv->routing_rules->len : 0u;
+}
+
+/**
+ * nm_setting_ip_config_get_routing_rule:
+ * @setting: the #NMSettingIPConfig
+ * @idx: index number of the routing_rule to return
+ *
+ * Returns: (transfer none): the routing rule at index @idx
+ *
+ * Since: 1.18
+ **/
+NMIPRoutingRule *
+nm_setting_ip_config_get_routing_rule (NMSettingIPConfig *setting, guint idx)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+
+	g_return_val_if_fail (priv->routing_rules && idx < priv->routing_rules->len, NULL);
+
+	return priv->routing_rules->pdata[idx];
+}
+
+/**
+ * nm_setting_ip_config_add_routing_rule:
+ * @setting: the #NMSettingIPConfig
+ * @routing_rule: the #NMIPRoutingRule to add. The address family
+ *   of the added rule must be compatible with the setting.
+ *
+ * Appends a new routing-rule and associated information to the setting. The
+ * given routing rules gets sealed and the reference count is incremented.
+ * The function does not check whether an identical rule already exists
+ * and always appends the rule to the end of the list.
+ *
+ * Since: 1.18
+ **/
+void
+nm_setting_ip_config_add_routing_rule (NMSettingIPConfig *setting,
+                                       NMIPRoutingRule *routing_rule)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (routing_rule, TRUE));
+	g_return_if_fail (_ip_routing_rule_get_addr_family (routing_rule) == NM_SETTING_IP_CONFIG_GET_FAMILY (setting));
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+
+	if (!priv->routing_rules)
+		priv->routing_rules = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_routing_rule_unref);
+
+	nm_ip_routing_rule_seal (routing_rule);
+	g_ptr_array_add (priv->routing_rules, nm_ip_routing_rule_ref (routing_rule));
+	_routing_rules_notify (setting);
+}
+
+/**
+ * nm_setting_ip_config_remove_routing_rule:
+ * @setting: the #NMSettingIPConfig
+ * @idx: index number of the routing_rule
+ *
+ * Removes the routing_rule at index @idx.
+ *
+ * Since: 1.18
+ **/
+void
+nm_setting_ip_config_remove_routing_rule (NMSettingIPConfig *setting,
+                                          guint idx)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	g_return_if_fail (priv->routing_rules && idx < priv->routing_rules->len);
+
+	g_ptr_array_remove_index (priv->routing_rules, idx);
+	_routing_rules_notify (setting);
+}
+
+/**
+ * nm_setting_ip_config_clear_routing_rules:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Removes all configured routing rules.
+ *
+ * Since: 1.18
+ **/
+void
+nm_setting_ip_config_clear_routing_rules (NMSettingIPConfig *setting)
+{
+	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+
+	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
+
+	if (   priv->routing_rules
+	    && priv->routing_rules->len > 0) {
+		g_ptr_array_set_size (priv->routing_rules, 0);
+		_routing_rules_notify (setting);
+	}
+}
+
+static GVariant *
+_routing_rules_dbus_only_synth (const NMSettInfoSetting *sett_info,
+                                guint property_idx,
+                                NMConnection *connection,
+                                NMSetting *setting,
+                                NMConnectionSerializationFlags flags)
+{
+	NMSettingIPConfig *self = NM_SETTING_IP_CONFIG (setting);
+	NMSettingIPConfigPrivate *priv;
+	GVariantBuilder builder;
+	gboolean any = FALSE;
+	guint i;
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (self);
+
+	if (   !priv->routing_rules
+	    || priv->routing_rules->len == 0)
+		return NULL;
+
+	for (i = 0; i < priv->routing_rules->len; i++) {
+		GVariant *variant;
+
+		variant = nm_ip_routing_rule_to_dbus (priv->routing_rules->pdata[i]);
+		if (!variant)
+			continue;
+
+		if (!any) {
+			any = TRUE;
+			g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
+		}
+		g_variant_builder_add (&builder, "@a{sv}", variant);
+	}
+
+	return any ? g_variant_builder_end (&builder) : NULL;
+}
+
+static gboolean
+_routing_rules_dbus_only_set (NMSetting     *setting,
+                              GVariant      *connection_dict,
+                              const char    *property,
+                              GVariant      *value,
+                              NMSettingParseFlags parse_flags,
+                              GError       **error)
+{
+	GVariantIter iter_rules;
+	GVariant *rule_var;
+	guint i_rule;
+	gboolean success = FALSE;
+	gboolean rules_changed = FALSE;
+
+	nm_assert (g_variant_is_of_type (value, G_VARIANT_TYPE ("aa{sv}")));
+
+	g_variant_iter_init (&iter_rules, value);
+
+	i_rule = 0;
+	while (g_variant_iter_next (&iter_rules, "@a{sv}", &rule_var)) {
+		_nm_unused gs_unref_variant GVariant *rule_var_unref = rule_var;
+		nm_auto_unref_ip_routing_rule NMIPRoutingRule *rule = NULL;
+		gs_free_error GError *local = NULL;
+
+		i_rule++;
+
+		rule = nm_ip_routing_rule_from_dbus (rule_var,
+		                                     NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT),
+		                                     &local);
+		if (!rule) {
+			if (NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
+				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY,
+				             _("rule #%u is invalid: %s"),
+				             i_rule,
+				             local->message);
+				goto out;
+			}
+			continue;
+		}
+
+		nm_setting_ip_config_add_routing_rule (NM_SETTING_IP_CONFIG (setting), rule);
+		rules_changed = TRUE;
+	}
+
+	success = TRUE;
+
+out:
+	if (rules_changed)
+		_routing_rules_notify (NM_SETTING_IP_CONFIG (setting));
+	return success;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_setting_ip_config_get_ignore_auto_routes:
  * @setting: the #NMSettingIPConfig
@@ -4720,6 +4940,33 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
+	if (priv->routing_rules) {
+		for (i = 0; i < priv->routing_rules->len; i++) {
+			NMIPRoutingRule *rule = priv->routing_rules->pdata[i];
+			gs_free_error GError *local = NULL;
+
+			if (_ip_routing_rule_get_addr_family (rule) != NM_SETTING_IP_CONFIG_GET_FAMILY (setting)) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("%u. rule has wrong address-family"),
+				             i + 1);
+				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_ROUTING_RULES);
+				return FALSE;
+			}
+			if (!nm_ip_routing_rule_validate (rule, &local)) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("%u. rule is invalid: %s"),
+				             i + 1,
+				             local->message);
+				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_ROUTES);
+				return FALSE;
+			}
+		}
+	}
+
 	if (priv->gateway && priv->never_default) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
@@ -4774,11 +5021,95 @@ compare_property (const NMSettInfoSetting *sett_info,
 		return TRUE;
 	}
 
+	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_IP_CONFIG_ROUTING_RULES)) {
+		if (other) {
+			guint n;
+
+			a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+			b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (other);
+
+			n = (a_priv->routing_rules) ? a_priv->routing_rules->len : 0u;
+			if (n != (b_priv->routing_rules ? b_priv->routing_rules->len : 0u))
+				return FALSE;
+			for (i = 0; i < n; i++) {
+				if (nm_ip_routing_rule_cmp (a_priv->routing_rules->pdata[i], b_priv->routing_rules->pdata[i]) != 0)
+					return FALSE;
+			}
+		}
+		return TRUE;
+	}
+
 	return NM_SETTING_CLASS (nm_setting_ip_config_parent_class)->compare_property (sett_info,
 	                                                                               property_idx,
 	                                                                               setting,
 	                                                                               other,
 	                                                                               flags);
+}
+
+static void
+duplicate_copy_properties (const NMSettInfoSetting *sett_info,
+                           NMSetting *src,
+                           NMSetting *dst)
+{
+	NMSettingIPConfigPrivate *priv_src = NM_SETTING_IP_CONFIG_GET_PRIVATE (src);
+	NMSettingIPConfigPrivate *priv_dst = NM_SETTING_IP_CONFIG_GET_PRIVATE (dst);
+	guint i;
+	gboolean changed = FALSE;
+
+	NM_SETTING_CLASS (nm_setting_ip_config_parent_class)->duplicate_copy_properties (sett_info,
+	                                                                                 src,
+	                                                                                 dst);
+
+	if (   priv_dst->routing_rules
+	    && priv_dst->routing_rules->len > 0) {
+		changed = TRUE;
+		g_ptr_array_set_size (priv_dst->routing_rules, 0);
+	}
+	if (   priv_src->routing_rules
+	    && priv_src->routing_rules->len > 0) {
+		changed = TRUE;
+		if (!priv_dst->routing_rules)
+			priv_dst->routing_rules = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_routing_rule_unref);
+		for (i = 0; i < priv_src->routing_rules->len; i++) {
+			g_ptr_array_add (priv_dst->routing_rules,
+			                 nm_ip_routing_rule_ref (priv_src->routing_rules->pdata[i]));
+		}
+	}
+	if (changed)
+		_routing_rules_notify (NM_SETTING_IP_CONFIG (dst));
+}
+
+static void
+enumerate_values (const NMSettInfoProperty *property_info,
+                  NMSetting *setting,
+                  NMSettingValueIterFn func,
+                  gpointer user_data)
+{
+	if (nm_streq (property_info->name, NM_SETTING_IP_CONFIG_ROUTING_RULES)) {
+		NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+		nm_auto_unset_gvalue GValue value = G_VALUE_INIT;
+		GPtrArray *ptr = NULL;
+		guint i;
+
+		if (priv->routing_rules && priv->routing_rules->len > 0) {
+			ptr = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_routing_rule_unref);
+			for (i = 0; i < priv->routing_rules->len; i++)
+				g_ptr_array_add (ptr, nm_ip_routing_rule_ref (priv->routing_rules->pdata[i]));
+		}
+		g_value_init (&value, G_TYPE_PTR_ARRAY);
+		g_value_take_boxed (&value, ptr);
+		func (setting,
+		      property_info->name,
+		      &value,
+		      0,
+		      user_data);
+		return;
+	}
+
+	NM_SETTING_CLASS (nm_setting_ip_config_parent_class)->enumerate_values (property_info,
+	                                                                        setting,
+	                                                                        func,
+	                                                                        user_data);
 }
 
 /*****************************************************************************/
@@ -4812,6 +5143,18 @@ _nm_sett_info_property_override_create_array_ip_config (void)
 	                                   NULL,
 	                                   ip_gateway_set,
 	                                   NULL);
+
+	/* ---dbus---
+	 * property: routing-rules
+	 * format: array of 'a{sv}'
+	 * description: Array of dictionaries for routing rules.
+	 * ---end---
+	 */
+	_properties_override_add_dbus_only (properties_override,
+	                                    NM_SETTING_IP_CONFIG_ROUTING_RULES,
+	                                    G_VARIANT_TYPE ("aa{sv}"),
+	                                    _routing_rules_dbus_only_synth,
+	                                    _routing_rules_dbus_only_set);
 
 	return properties_override;
 }
@@ -5020,6 +5363,8 @@ finalize (GObject *object)
 		g_ptr_array_unref (priv->dns_options);
 	g_ptr_array_unref (priv->addresses);
 	g_ptr_array_unref (priv->routes);
+	if (priv->routing_rules)
+		g_ptr_array_unref (priv->routing_rules);
 
 	G_OBJECT_CLASS (nm_setting_ip_config_parent_class)->finalize (object);
 }
@@ -5036,8 +5381,10 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
-	setting_class->verify           = verify;
-	setting_class->compare_property = compare_property;
+	setting_class->verify                    = verify;
+	setting_class->compare_property          = compare_property;
+	setting_class->duplicate_copy_properties = duplicate_copy_properties;
+	setting_class->enumerate_values          = enumerate_values;
 
 	/**
 	 * NMSettingIPConfig:method:

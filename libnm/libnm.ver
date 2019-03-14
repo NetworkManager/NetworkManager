@@ -1595,4 +1595,9 @@ global:
 	nm_setting_bridge_port_remove_vlan_by_vid;
 	nm_setting_bridge_remove_vlan;
 	nm_setting_bridge_remove_vlan_by_vid;
+	nm_setting_ip_config_add_routing_rule;
+	nm_setting_ip_config_clear_routing_rules;
+	nm_setting_ip_config_get_num_routing_rules;
+	nm_setting_ip_config_get_routing_rule;
+	nm_setting_ip_config_remove_routing_rule;
 } libnm_1_16_0;

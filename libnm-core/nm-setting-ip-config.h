@@ -334,6 +334,9 @@ char *nm_ip_routing_rule_to_string (const NMIPRoutingRule *self,
 #define NM_SETTING_IP_CONFIG_DAD_TIMEOUT        "dad-timeout"
 #define NM_SETTING_IP_CONFIG_DHCP_TIMEOUT       "dhcp-timeout"
 
+/* these are not real GObject properties. */
+#define NM_SETTING_IP_CONFIG_ROUTING_RULES      "routing-rules"
+
 #define NM_SETTING_DNS_OPTION_DEBUG                     "debug"
 #define NM_SETTING_DNS_OPTION_NDOTS                     "ndots"
 #define NM_SETTING_DNS_OPTION_TIMEOUT                   "timeout"
@@ -435,6 +438,20 @@ gint64        nm_setting_ip_config_get_route_metric           (NMSettingIPConfig
 
 NM_AVAILABLE_IN_1_10
 guint32       nm_setting_ip_config_get_route_table            (NMSettingIPConfig *setting);
+
+NM_AVAILABLE_IN_1_18
+guint         nm_setting_ip_config_get_num_routing_rules      (NMSettingIPConfig *setting);
+NM_AVAILABLE_IN_1_18
+NMIPRoutingRule *nm_setting_ip_config_get_routing_rule        (NMSettingIPConfig *setting,
+                                                               guint              idx);
+NM_AVAILABLE_IN_1_18
+void          nm_setting_ip_config_add_routing_rule           (NMSettingIPConfig *setting,
+                                                               NMIPRoutingRule   *routing_rule);
+NM_AVAILABLE_IN_1_18
+void          nm_setting_ip_config_remove_routing_rule        (NMSettingIPConfig *setting,
+                                                               guint              idx);
+NM_AVAILABLE_IN_1_18
+void          nm_setting_ip_config_clear_routing_rules        (NMSettingIPConfig *setting);
 
 gboolean      nm_setting_ip_config_get_ignore_auto_routes     (NMSettingIPConfig *setting);
 gboolean      nm_setting_ip_config_get_ignore_auto_dns        (NMSettingIPConfig *setting);
