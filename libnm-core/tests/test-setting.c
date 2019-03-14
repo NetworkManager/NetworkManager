@@ -2305,7 +2305,16 @@ test_roundtrip_conversion (gconstpointer test_data)
 	NMSettingConnection *s_con = NULL;
 	NMSettingWired *s_eth = NULL;
 	NMSettingWireGuard *s_wg = NULL;
+	union {
+		struct {
+			NMSettingIPConfig  *s_6;
+			NMSettingIPConfig  *s_4;
+		};
+		NMSettingIPConfig *s_x[2];
+	} s_ip;
+	int is_ipv4;
 	guint i;
+	gboolean success;
 
 	switch (MODE) {
 	case 0:
@@ -2490,6 +2499,89 @@ test_roundtrip_conversion (gconstpointer test_data)
 		                     _rndt_wg_peers_to_keyfile (wg_peers, TRUE, &tmp_str)));
 
 		_rndt_wg_peers_assert_equal (s_wg, wg_peers, TRUE, TRUE, FALSE);
+		break;
+
+	case 3:
+		con = nmtst_create_minimal_connection (ID, UUID, NM_SETTING_WIRED_SETTING_NAME, &s_con);
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_INTERFACE_NAME,
+		              INTERFACE_NAME,
+		              NULL);
+		nmtst_connection_normalize (con);
+
+		s_eth = NM_SETTING_WIRED (nm_connection_get_setting (con, NM_TYPE_SETTING_WIRED));
+		g_assert (NM_IS_SETTING_WIRED (s_eth));
+
+		g_object_set (s_eth,
+		              NM_SETTING_WIRED_MTU,
+		              ETH_MTU,
+		              NULL);
+
+		s_ip.s_4 = NM_SETTING_IP_CONFIG (nm_connection_get_setting (con, NM_TYPE_SETTING_IP4_CONFIG));
+		g_assert (NM_IS_SETTING_IP4_CONFIG (s_ip.s_4));
+
+		s_ip.s_6 = NM_SETTING_IP_CONFIG (nm_connection_get_setting (con, NM_TYPE_SETTING_IP6_CONFIG));
+		g_assert (NM_IS_SETTING_IP6_CONFIG (s_ip.s_6));
+
+		for (is_ipv4 = 0; is_ipv4 < 2; is_ipv4++) {
+			g_assert (NM_IS_SETTING_IP_CONFIG (s_ip.s_x[is_ipv4]));
+			for (i = 0; i < 3; i++) {
+				char addrstr[NM_UTILS_INET_ADDRSTRLEN];
+
+				nm_auto_unref_ip_routing_rule NMIPRoutingRule *rr = NULL;
+
+				rr = nm_ip_routing_rule_new (is_ipv4 ? AF_INET : AF_INET6);
+				nm_ip_routing_rule_set_priority (rr, i + 1);
+				if (i > 0) {
+					if (is_ipv4)
+						nm_sprintf_buf (addrstr, "192.168.%u.0", i);
+					else
+						nm_sprintf_buf (addrstr, "1:2:3:%x::", 10 + i);
+					nm_ip_routing_rule_set_from (rr, addrstr, is_ipv4 ? 24 + i : 64 + i);
+				}
+				nm_ip_routing_rule_set_table (rr, 1000 + i);
+
+				success = nm_ip_routing_rule_validate (rr, &error);
+				nmtst_assert_success (success, error);
+
+				nm_setting_ip_config_add_routing_rule (s_ip.s_x[is_ipv4], rr);
+			}
+		}
+
+		g_ptr_array_add (kf_data_arr,
+		    g_strdup_printf ("[connection]\n"
+		                     "id=%s\n"
+		                     "uuid=%s\n"
+		                     "type=ethernet\n"
+		                     "interface-name=%s\n"
+		                     "permissions=\n"
+		                     "\n"
+		                     "[ethernet]\n"
+		                     "mac-address-blacklist=\n"
+		                     "%s" /* mtu */
+		                     "\n"
+		                     "[ipv4]\n"
+		                     "dns-search=\n"
+		                     "method=auto\n"
+		                     "routing-rule1=priority 1 from 0.0.0.0/0 table 1000\n"
+		                     "routing-rule2=priority 2 from 192.168.1.0/25 table 1001\n"
+		                     "routing-rule3=priority 3 from 192.168.2.0/26 table 1002\n"
+		                     "\n"
+		                     "[ipv6]\n"
+		                     "addr-gen-mode=stable-privacy\n"
+		                     "dns-search=\n"
+		                     "method=auto\n"
+		                     "routing-rule1=priority 1 from ::/0 table 1000\n"
+		                     "routing-rule2=priority 2 from 1:2:3:b::/65 table 1001\n"
+		                     "routing-rule3=priority 3 from 1:2:3:c::/66 table 1002\n"
+		                     "",
+		                     ID,
+		                     UUID,
+		                     INTERFACE_NAME,
+		                       (ETH_MTU != 0)
+		                     ? nm_sprintf_bufa (100, "mtu=%u\n", ETH_MTU)
+		                     : ""));
+
 		break;
 
 	default:
@@ -2892,9 +2984,10 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/settings/team-port/sycn_from_config_full", test_team_port_full_config);
 #endif
 
-	g_test_add_data_func ("/libnm/settings/roundtrip-conversion/general/0", GINT_TO_POINTER (0), test_roundtrip_conversion);
+	g_test_add_data_func ("/libnm/settings/roundtrip-conversion/general/0",   GINT_TO_POINTER (0), test_roundtrip_conversion);
 	g_test_add_data_func ("/libnm/settings/roundtrip-conversion/wireguard/1", GINT_TO_POINTER (1), test_roundtrip_conversion);
 	g_test_add_data_func ("/libnm/settings/roundtrip-conversion/wireguard/2", GINT_TO_POINTER (2), test_roundtrip_conversion);
+	g_test_add_data_func ("/libnm/settings/roundtrip-conversion/general/3",   GINT_TO_POINTER (3), test_roundtrip_conversion);
 
 	g_test_add_data_func ("/libnm/settings/routing-rule/1", GINT_TO_POINTER (0), test_routing_rule);
 

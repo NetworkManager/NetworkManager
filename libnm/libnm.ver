@@ -1564,4 +1564,9 @@ libnm_1_18_0 {
 	nm_ip_routing_rule_to_string;
 	nm_ip_routing_rule_unref;
 	nm_ip_routing_rule_validate;
+	nm_setting_ip_config_add_routing_rule;
+	nm_setting_ip_config_clear_routing_rules;
+	nm_setting_ip_config_get_num_routing_rules;
+	nm_setting_ip_config_get_routing_rule;
+	nm_setting_ip_config_remove_routing_rule;
 } libnm_1_16_0;

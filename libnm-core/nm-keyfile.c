@@ -541,6 +541,7 @@ typedef struct {
 typedef enum {
 	BUILD_LIST_TYPE_ADDRESSES,
 	BUILD_LIST_TYPE_ROUTES,
+	BUILD_LIST_TYPE_ROUTING_RULES,
 } BuildListType;
 
 static int
@@ -661,6 +662,12 @@ _build_list_create (GKeyFile *keyfile,
 			else
 				continue;
 			break;
+		case BUILD_LIST_TYPE_ROUTING_RULES:
+			if (_build_list_match_key_w_name (s_key, "routing-rule", &key_idx))
+				key_type = 0;
+			else
+				continue;
+			break;
 		default:
 			nm_assert_not_reached ();
 			break;
@@ -757,6 +764,63 @@ ip_address_or_route_parser (KeyfileReaderInfo *info, NMSetting *setting, const c
 
 	if (gateway)
 		g_object_set (setting, "gateway", gateway, NULL);
+}
+
+static void
+ip_routing_rule_parser_full (KeyfileReaderInfo *info,
+                             const NMMetaSettingInfo *setting_info,
+                             const NMSettInfoProperty *property_info,
+                             const ParseInfoProperty *pip,
+                             NMSetting *setting)
+{
+	const char *setting_name = nm_setting_get_name (setting);
+	gboolean is_ipv6 = nm_streq (setting_name, "ipv6");
+	gs_strfreev char **keys = NULL;
+	gs_free BuildListData *build_list = NULL;
+	gsize i_build_list, build_list_len = 0;
+
+	build_list = _build_list_create (info->keyfile,
+	                                 setting_name,
+	                                 BUILD_LIST_TYPE_ROUTING_RULES,
+	                                 &build_list_len,
+	                                 &keys);
+	if (!build_list)
+		return;
+
+	for (i_build_list = 0; i_build_list < build_list_len; i_build_list++) {
+		nm_auto_unref_ip_routing_rule NMIPRoutingRule *rule = NULL;
+		gs_free char *value = NULL;
+		gs_free_error GError *local = NULL;
+
+		if (_build_list_data_is_shadowed (build_list, build_list_len, i_build_list))
+			continue;
+
+		value = nm_keyfile_plugin_kf_get_string (info->keyfile,
+		                                         setting_name,
+		                                         build_list[i_build_list].s_key,
+		                                         NULL);
+		if (!value)
+			continue;
+
+		rule = nm_ip_routing_rule_from_string (value,
+		                                       (  NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE
+		                                        | (  is_ipv6
+		                                           ? NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET6
+		                                           : NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET)),
+		                                       NULL,
+		                                       &local);
+		if (!rule) {
+			handle_warn (info, property_info->name, NM_KEYFILE_WARN_SEVERITY_WARN,
+			             _("invalid value for \"%s\": %s"),
+			             build_list[i_build_list].s_key,
+			             local->message);
+			if (info->error)
+				return;
+			continue;
+		}
+
+		nm_setting_ip_config_add_routing_rule (NM_SETTING_IP_CONFIG (setting), rule);
+	}
 }
 
 static void
@@ -1888,6 +1952,40 @@ route_writer (KeyfileWriterInfo *info,
 }
 
 static void
+ip_routing_rule_writer_full (KeyfileWriterInfo *info,
+                             const NMMetaSettingInfo *setting_info,
+                             const NMSettInfoProperty *property_info,
+                             const ParseInfoProperty *pip,
+                             NMSetting *setting)
+{
+	const char *setting_name = nm_setting_get_name (setting);
+	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
+	guint i, j, n;
+	char key_name_full[100] = "routing-rule";
+	char *key_name_num = &key_name_full[NM_STRLEN ("routing-rule")];
+
+	n = nm_setting_ip_config_get_num_routing_rules (s_ip);
+	j = 0;
+	for (i = 0; i < n; i++) {
+		NMIPRoutingRule *rule = nm_setting_ip_config_get_routing_rule (s_ip, i);
+		gs_free char *str = NULL;
+
+		str = nm_ip_routing_rule_to_string (rule,
+		                                    NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE,
+		                                    NULL,
+		                                    NULL);
+		if (!str)
+			continue;
+
+		sprintf (key_name_num, "%u", ++j);
+		nm_keyfile_plugin_kf_set_string (info->keyfile,
+		                                 setting_name,
+		                                 key_name_full,
+		                                 str);
+	}
+}
+
+static void
 qdisc_writer (KeyfileWriterInfo *info,
               NMSetting *setting,
               const char *key,
@@ -2374,6 +2472,13 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
 				.parser        = ip_address_or_route_parser,
 				.writer        = route_writer,
 			),
+			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_ROUTING_RULES,
+				.parser_no_check_key = TRUE,
+				.parser_full   = ip_routing_rule_parser_full,
+				.writer_full   = ip_routing_rule_writer_full,
+				.has_parser_full = TRUE,
+				.has_writer_full = TRUE,
+			),
 		),
 	),
 	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_IP6_CONFIG,
@@ -2401,6 +2506,13 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
 				.parser_no_check_key = TRUE,
 				.parser        = ip_address_or_route_parser,
 				.writer        = route_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_ROUTING_RULES,
+				.parser_no_check_key = TRUE,
+				.parser_full   = ip_routing_rule_parser_full,
+				.writer_full   = ip_routing_rule_writer_full,
+				.has_parser_full = TRUE,
+				.has_writer_full = TRUE,
 			),
 		),
 	),
