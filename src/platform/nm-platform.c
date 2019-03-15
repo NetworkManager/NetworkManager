@@ -28,6 +28,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <linux/fib_rules.h>
 #include <linux/ip.h>
 #include <linux/if.h>
 #include <linux/if_tun.h>
@@ -1186,21 +1187,6 @@ gboolean
 nm_platform_link_supports_slaves (NMPlatform *self, int ifindex)
 {
 	return (nm_platform_link_get_type (self, ifindex) & 0x20000);
-}
-
-/**
- * nm_platform_refresh_all:
- * @self: platform instance
- * @obj_type: The object type to request.
- *
- * Resync and re-request all objects from kernel of a certain @obj_type.
- */
-void
-nm_platform_refresh_all (NMPlatform *self, NMPObjectType obj_type)
-{
-	_CHECK_SELF_VOID (self, klass);
-
-	klass->refresh_all (self, obj_type);
 }
 
 /**
@@ -4264,14 +4250,13 @@ nm_platform_ip_route_sync (NMPlatform *self,
 	gboolean success = TRUE;
 	char sbuf1[sizeof (_nm_utils_to_string_buffer)];
 	char sbuf2[sizeof (_nm_utils_to_string_buffer)];
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
 
 	nm_assert (NM_IS_PLATFORM (self));
 	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 	nm_assert (ifindex > 0);
 
-	vt = addr_family == AF_INET
-	     ? &nm_platform_vtable_route_v4
-	     : &nm_platform_vtable_route_v6;
+	vt = &nm_platform_vtable_route.vx[IS_IPv4];
 
 	for (i_type = 0; routes && i_type < 2; i_type++) {
 		for (i = 0; i < routes->len; i++) {
@@ -4578,7 +4563,7 @@ _ip_route_add (NMPlatform *self,
 	nm_assert (route);
 	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
-	ifindex = ((NMPlatformObject *)route)->ifindex;
+	ifindex = ((const NMPlatformIPRoute *) route)->ifindex;
 	_LOG3D ("route: %-10s IPv%c route: %s",
 	        _nmp_nlm_flag_to_string (flags & NMP_NLM_FLAG_FMASK),
 	        nm_utils_addr_family_to_char (addr_family),
@@ -4630,18 +4615,28 @@ gboolean
 nm_platform_object_delete (NMPlatform *self,
                            const NMPObject *obj)
 {
-	int ifindex = obj->object.ifindex;
+	int ifindex;
+
 	_CHECK_SELF (self, klass, FALSE);
 
-	if (!NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
-	                                           NMP_OBJECT_TYPE_IP6_ROUTE,
-	                                           NMP_OBJECT_TYPE_QDISC,
-	                                           NMP_OBJECT_TYPE_TFILTER))
+	switch (NMP_OBJECT_GET_TYPE (obj)) {
+	case NMP_OBJECT_TYPE_ROUTING_RULE:
+		_LOGD ("%s: delete %s",
+		       NMP_OBJECT_GET_CLASS (obj)->obj_type_name,
+		       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+		break;
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
+	case NMP_OBJECT_TYPE_QDISC:
+	case NMP_OBJECT_TYPE_TFILTER:
+		ifindex = NMP_OBJECT_CAST_OBJ_WITH_IFINDEX (obj)->ifindex;
+		_LOG3D ("%s: delete %s",
+		        NMP_OBJECT_GET_CLASS (obj)->obj_type_name,
+		        nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+		break;
+	default:
 		g_return_val_if_reached (FALSE);
-
-	_LOG3D ("%s: delete %s",
-	        NMP_OBJECT_GET_CLASS (obj)->obj_type_name,
-	        nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+	}
 
 	return klass->object_delete (self, obj);
 }
@@ -4966,6 +4961,21 @@ nm_platform_ip4_dev_route_blacklist_set (NMPlatform *self,
 
 	if (needs_check)
 		_ip4_dev_route_blacklist_check_schedule (self);
+}
+
+/*****************************************************************************/
+
+int
+nm_platform_routing_rule_add (NMPlatform *self,
+                              NMPNlmFlags flags,
+                              const NMPlatformRoutingRule *routing_rule)
+{
+	_CHECK_SELF (self, klass, -NME_BUG);
+
+	g_return_val_if_fail (routing_rule, -NME_BUG);
+
+	_LOGD ("routing-rule: adding or updating: %s", nm_platform_routing_rule_to_string (routing_rule, NULL, 0));
+	return klass->routing_rule_add (self, flags, routing_rule);
 }
 
 /*****************************************************************************/
@@ -6076,6 +6086,253 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	return buf;
 }
 
+static void
+_routing_rule_addr_to_string (char **buf,
+                              gsize *len,
+                              int addr_family,
+                              const NMIPAddr *addr,
+                              guint8 plen,
+                              gboolean is_src)
+{
+	char s_addr[NM_UTILS_INET_ADDRSTRLEN];
+	gboolean is_zero;
+	gsize addr_size;
+
+	nm_assert_addr_family (addr_family);
+	nm_assert (addr);
+
+	addr_size = nm_utils_addr_family_to_size (addr_family);
+
+	is_zero = nm_utils_memeqzero (addr, addr_size);
+
+	if (   plen == 0
+	    && is_zero) {
+		if (is_src)
+			nm_utils_strbuf_append_str (buf, len, " from all");
+		else
+			nm_utils_strbuf_append_str (buf, len, "");
+		return;
+	}
+
+	nm_utils_strbuf_append_str (buf, len, is_src ? " from " : " to ");
+
+	nm_utils_strbuf_append_str (buf, len, nm_utils_inet_ntop (addr_family, addr, s_addr));
+
+	if (plen != (addr_size * 8))
+		nm_utils_strbuf_append (buf, len, "/%u", plen);
+}
+
+static void
+_routing_rule_port_range_to_string (char **buf,
+                                    gsize *len,
+                                    const NMFibRulePortRange *port_range,
+                                    const char *name)
+{
+	if (   port_range->start == 0
+	    && port_range->end == 0)
+		nm_utils_strbuf_append_str (buf, len, "");
+	else {
+		nm_utils_strbuf_append (buf, len, " %s %u", name, port_range->start);
+		if (port_range->start != port_range->end)
+			nm_utils_strbuf_append (buf, len, "-%u", port_range->end);
+	}
+}
+
+const char *
+nm_platform_routing_rule_to_string (const NMPlatformRoutingRule *routing_rule, char *buf, gsize len)
+{
+	const char *buf0;
+	guint32 rr_flags;
+
+	if (!nm_utils_to_string_buffer_init_null (routing_rule, &buf, &len))
+		return buf;
+
+	if (!NM_IN_SET (routing_rule->addr_family, AF_INET, AF_INET6)) {
+		/* invalid addr-family. The other fields are undefined. */
+		if (routing_rule->addr_family == AF_UNSPEC)
+			g_snprintf (buf, len, "[routing-rule]");
+		else
+			g_snprintf (buf, len, "[routing-rule family:%u]", routing_rule->addr_family);
+		return buf;
+	}
+
+	buf0 = buf;
+
+	rr_flags = routing_rule->flags;
+
+	rr_flags = NM_FLAGS_UNSET (rr_flags, FIB_RULE_INVERT);
+	nm_utils_strbuf_append (&buf, &len,
+	                        "[%c] " /* addr-family */
+	                        "%u:"  /* priority */
+	                        "%s",   /* not/FIB_RULE_INVERT */
+	                        nm_utils_addr_family_to_char (routing_rule->addr_family),
+	                        routing_rule->priority,
+	                        (  NM_FLAGS_HAS (routing_rule->flags, FIB_RULE_INVERT)
+	                         ? " not"
+	                         : ""));
+
+	_routing_rule_addr_to_string (&buf, &len,
+	                              routing_rule->addr_family,
+	                              &routing_rule->src,
+	                              routing_rule->src_len,
+	                              TRUE);
+
+	_routing_rule_addr_to_string (&buf, &len,
+	                              routing_rule->addr_family,
+	                              &routing_rule->dst,
+	                              routing_rule->dst_len,
+	                              FALSE);
+
+	if (routing_rule->tos)
+		nm_utils_strbuf_append (&buf, &len, " tos 0x%02x", routing_rule->tos);
+
+	if (   routing_rule->fwmark != 0
+	    || routing_rule->fwmask != 0) {
+		nm_utils_strbuf_append (&buf, &len, " fwmark %#x", (unsigned) routing_rule->fwmark);
+		if (routing_rule->fwmark != 0xFFFFFFFFu)
+			nm_utils_strbuf_append (&buf, &len, "/%#x", (unsigned) routing_rule->fwmask);
+	}
+
+	if (routing_rule->iifname[0]) {
+		nm_utils_strbuf_append (&buf, &len, " iif %s", routing_rule->iifname);
+		rr_flags = NM_FLAGS_UNSET (rr_flags, FIB_RULE_IIF_DETACHED);
+		if (NM_FLAGS_HAS (routing_rule->flags, FIB_RULE_IIF_DETACHED))
+			nm_utils_strbuf_append_str (&buf, &len, " [detached]");
+	}
+
+	if (routing_rule->oifname[0]) {
+		nm_utils_strbuf_append (&buf, &len, " oif %s", routing_rule->oifname);
+		rr_flags = NM_FLAGS_UNSET (rr_flags, FIB_RULE_OIF_DETACHED);
+		if (NM_FLAGS_HAS (routing_rule->flags, FIB_RULE_OIF_DETACHED))
+			nm_utils_strbuf_append_str (&buf, &len, " [detached]");
+	}
+
+	if (routing_rule->l3mdev != 0) {
+		if (routing_rule->l3mdev == 1)
+			nm_utils_strbuf_append_str (&buf, &len, " lookup [l3mdev-table]");
+		else {
+			nm_utils_strbuf_append (&buf, &len, " lookup [l3mdev-table/%u]", (unsigned) routing_rule->l3mdev);
+		}
+	}
+
+	if (   routing_rule->uid_range_has
+	    || routing_rule->uid_range.start
+	    || routing_rule->uid_range.end) {
+		nm_utils_strbuf_append (&buf, &len,
+		                        " uidrange %u-%u%s",
+		                        routing_rule->uid_range.start,
+		                        routing_rule->uid_range.end,
+		                        routing_rule->uid_range_has ? "" : "(?)");
+	}
+
+	if (routing_rule->ip_proto != 0) {
+		/* we don't call getprotobynumber(), just print the numeric value.
+		 * This differs from what ip-rule prints. */
+		nm_utils_strbuf_append (&buf, &len,
+		                        " ipproto %u",
+		                        routing_rule->ip_proto);
+	}
+
+	_routing_rule_port_range_to_string (&buf, &len,
+	                                    &routing_rule->sport_range,
+	                                    "sport");
+
+	_routing_rule_port_range_to_string (&buf, &len,
+	                                    &routing_rule->dport_range,
+	                                    "dport");
+
+	if (routing_rule->tun_id != 0) {
+		nm_utils_strbuf_append (&buf, &len,
+		                        " tun_id %"G_GUINT64_FORMAT,
+		                        routing_rule->tun_id);
+	}
+
+	if (routing_rule->table != 0) {
+		nm_utils_strbuf_append (&buf, &len,
+		                        " lookup %u",
+		                        routing_rule->table);
+	}
+
+	if (routing_rule->suppress_prefixlen_inverse != 0) {
+		nm_utils_strbuf_append (&buf, &len,
+		                        " suppress_prefixlen %d",
+		                        (int) (~routing_rule->suppress_prefixlen_inverse));
+	}
+
+	if (routing_rule->suppress_ifgroup_inverse != 0) {
+		nm_utils_strbuf_append (&buf, &len,
+		                        " suppress_ifgroup %d",
+		                        (int) (~routing_rule->suppress_ifgroup_inverse));
+	}
+
+	if (routing_rule->flow) {
+		/* FRA_FLOW is only for IPv4, but we want to print the value for all address-families,
+		 * to see when it is set. In practice, this should not be set except for IPv4.
+		 *
+		 * We don't follow the style how ip-rule prints flow/realms. It's confusing. Just
+		 * print the value hex. */
+		nm_utils_strbuf_append (&buf, &len,
+		                        " realms 0x%08x",
+		                        routing_rule->flow);
+	}
+
+	if (routing_rule->action == RTN_NAT) {
+		G_STATIC_ASSERT_EXPR (RTN_NAT == 10);
+
+		/* NAT is deprecated for many years. We don't support RTA_GATEWAY/FRA_UNUSED2
+		 * for the gateway, and so do recent kernels ignore that parameter. */
+		nm_utils_strbuf_append_str (&buf, &len, " masquerade");
+	} else if (routing_rule->action == FR_ACT_GOTO) {
+		if (routing_rule->goto_target != 0)
+			nm_utils_strbuf_append (&buf, &len, " goto %u", routing_rule->goto_target);
+		else
+			nm_utils_strbuf_append_str (&buf, &len, " goto none");
+		rr_flags = NM_FLAGS_UNSET (rr_flags, FIB_RULE_UNRESOLVED);
+		if (NM_FLAGS_HAS (routing_rule->flags, FIB_RULE_UNRESOLVED))
+			nm_utils_strbuf_append_str (&buf, &len, " unresolved");
+	} else if (routing_rule->action != FR_ACT_TO_TBL) {
+		const char *ss;
+		char ss_buf[60];
+
+#define _V(v1, v2) ((sizeof (char[(((int) (v1)) == ((int) (v2))) ? 1 : -1]) * 0) + (v1))
+		switch (routing_rule->action) {
+		case _V (FR_ACT_UNSPEC,      RTN_UNSPEC)      : ss = "none";        break;
+		case _V (FR_ACT_TO_TBL,      RTN_UNICAST)     : ss = "unicast";     break;
+		case _V (FR_ACT_GOTO,        RTN_LOCAL)       : ss = "local";       break;
+		case _V (FR_ACT_NOP,         RTN_BROADCAST)   : ss = "nop";         break;
+		case _V (FR_ACT_RES3,        RTN_ANYCAST)     : ss = "anycast";     break;
+		case _V (FR_ACT_RES4,        RTN_MULTICAST)   : ss = "multicast";   break;
+		case _V (FR_ACT_BLACKHOLE,   RTN_BLACKHOLE)   : ss = "blackhole";   break;
+		case _V (FR_ACT_UNREACHABLE, RTN_UNREACHABLE) : ss = "unreachable"; break;
+		case _V (FR_ACT_PROHIBIT,    RTN_PROHIBIT)    : ss = "prohibit";    break;
+		case RTN_THROW                                : ss = "throw";       break;
+		case RTN_NAT                                  : ss = "nat";         break;
+		case RTN_XRESOLVE                             : ss = "xresolve";    break;
+		default:
+			ss = nm_sprintf_buf (ss_buf, "action-%u", routing_rule->action);
+			break;
+		}
+#undef _V
+		nm_utils_strbuf_append (&buf, &len, " %s", ss);
+	}
+
+	if (routing_rule->protocol != RTPROT_UNSPEC)
+		nm_utils_strbuf_append (&buf, &len, " protocol %u", routing_rule->protocol);
+
+	if (   routing_rule->goto_target != 0
+	    && routing_rule->action != FR_ACT_GOTO) {
+		/* a trailing target is set for an unexpected action. Print it. */
+		nm_utils_strbuf_append (&buf, &len, " goto-target %u", routing_rule->goto_target);
+	}
+
+	if (rr_flags != 0) {
+		/* we have some flags we didn't print about yet. */
+		nm_utils_strbuf_append (&buf, &len, " remaining-flags %x", rr_flags);
+	}
+
+	return buf0;
+}
+
 const char *
 nm_platform_qdisc_to_string (const NMPlatformQdisc *qdisc, char *buf, gsize len)
 {
@@ -7034,6 +7291,186 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 	return 0;
 }
 
+#define _ROUTING_RULE_FLAGS_IGNORE (  FIB_RULE_UNRESOLVED \
+                                    | FIB_RULE_IIF_DETACHED \
+                                    | FIB_RULE_OIF_DETACHED)
+
+void
+nm_platform_routing_rule_hash_update (const NMPlatformRoutingRule *obj,
+                                      NMPlatformRoutingRuleCmpType cmp_type,
+                                      NMHashState *h)
+{
+	gboolean cmp_full = TRUE;
+	gsize addr_size;
+	guint32 flags_mask = G_MAXUINT32;
+
+	if (G_UNLIKELY (!NM_IN_SET (obj->addr_family, AF_INET, AF_INET6))) {
+		/* the address family is not one of the supported ones. That means, the
+		 * instance will only compare equal to itself (pointer-equality). */
+		nm_hash_update_val (h, (gconstpointer) obj);
+		return;
+	}
+
+	switch (cmp_type) {
+
+	case NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID:
+
+		flags_mask &= ~_ROUTING_RULE_FLAGS_IGNORE;
+
+		/* fall-through */
+	case NM_PLATFORM_ROUTING_RULE_CMP_TYPE_SEMANTICALLY:
+
+		cmp_full = FALSE;
+
+		/* fall-through */
+	case NM_PLATFORM_ROUTING_RULE_CMP_TYPE_FULL:
+
+
+		nm_hash_update_vals (h,
+		                     obj->addr_family,
+		                     obj->tun_id,
+		                     obj->table,
+		                     obj->flags & flags_mask,
+		                     obj->priority,
+		                     obj->fwmark,
+		                     obj->fwmask,
+		                     (  (   cmp_full
+		                         || (   cmp_type == NM_PLATFORM_ROUTING_RULE_CMP_TYPE_SEMANTICALLY
+		                             && obj->action == FR_ACT_GOTO))
+		                      ? obj->goto_target
+		                      : (guint32) 0u),
+		                     (  (   cmp_full
+		                         || obj->addr_family == AF_INET)
+		                      ? obj->flow
+		                      : (guint32) 0u),
+		                     NM_HASH_COMBINE_BOOLS (guint8,
+		                                            obj->uid_range_has),
+		                     obj->suppress_prefixlen_inverse,
+		                     obj->suppress_ifgroup_inverse,
+		                     (  cmp_full
+		                      ? obj->l3mdev
+		                      : (guint8) !!obj->l3mdev),
+		                     obj->action,
+		                     obj->tos,
+		                     obj->src_len,
+		                     obj->dst_len,
+		                     obj->protocol,
+		                     obj->ip_proto);
+		addr_size = nm_utils_addr_family_to_size (obj->addr_family);
+		if (cmp_full || obj->src_len > 0)
+			nm_hash_update (h, &obj->src, addr_size);
+		if (cmp_full || obj->dst_len > 0)
+			nm_hash_update (h, &obj->dst, addr_size);
+		if (cmp_full || obj->uid_range_has)
+			nm_hash_update_valp (h, &obj->uid_range);
+		nm_hash_update_valp (h, &obj->sport_range);
+		nm_hash_update_valp (h, &obj->dport_range);
+		nm_hash_update_str (h, obj->iifname);
+		nm_hash_update_str (h, obj->oifname);
+		return;
+	}
+
+	nm_assert_not_reached ();
+}
+
+int
+nm_platform_routing_rule_cmp (const NMPlatformRoutingRule *a,
+                              const NMPlatformRoutingRule *b,
+                              NMPlatformRoutingRuleCmpType cmp_type)
+{
+	gboolean cmp_full = TRUE;
+	gsize addr_size;
+	bool valid;
+	guint32 flags_mask = G_MAXUINT32;
+
+	NM_CMP_SELF (a, b);
+
+	valid = NM_IN_SET (a->addr_family, AF_INET, AF_INET6);
+	NM_CMP_DIRECT (valid,
+	               (bool) NM_IN_SET (b->addr_family, AF_INET, AF_INET6));
+
+	if (G_UNLIKELY (!valid)) {
+		/* the address family is not one of the supported ones. That means, the
+		 * instance will only compare equal to itself. */
+		NM_CMP_DIRECT ((uintptr_t) a, (uintptr_t) b);
+		nm_assert_not_reached ();
+		return 0;
+	}
+
+	switch (cmp_type) {
+
+	case NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID:
+
+		flags_mask &= ~_ROUTING_RULE_FLAGS_IGNORE;
+
+		/* fall-through */
+	case NM_PLATFORM_ROUTING_RULE_CMP_TYPE_SEMANTICALLY:
+
+		cmp_full = FALSE;
+
+		/* fall-through */
+	case NM_PLATFORM_ROUTING_RULE_CMP_TYPE_FULL:
+		NM_CMP_FIELD (a, b, addr_family);
+		NM_CMP_FIELD (a, b, action);
+		NM_CMP_FIELD (a, b, priority);
+		NM_CMP_FIELD (a, b, tun_id);
+
+		if (cmp_full)
+			NM_CMP_FIELD (a, b, l3mdev);
+		else
+			NM_CMP_FIELD_BOOL (a, b, l3mdev);
+
+		if (cmp_full || !a->l3mdev)
+			NM_CMP_FIELD (a, b, table);
+
+		NM_CMP_DIRECT (a->flags & flags_mask, b->flags & flags_mask);
+
+		NM_CMP_FIELD (a, b, fwmark);
+		NM_CMP_FIELD (a, b, fwmask);
+
+		if (   cmp_full
+		    || (   cmp_type == NM_PLATFORM_ROUTING_RULE_CMP_TYPE_SEMANTICALLY
+		        && a->action == FR_ACT_GOTO))
+			NM_CMP_FIELD (a, b, goto_target);
+
+		NM_CMP_FIELD (a, b, suppress_prefixlen_inverse);
+		NM_CMP_FIELD (a, b, suppress_ifgroup_inverse);
+		NM_CMP_FIELD (a, b, tos);
+
+		if (cmp_full || a->addr_family == AF_INET)
+			NM_CMP_FIELD (a, b, flow);
+
+		NM_CMP_FIELD (a, b, protocol);
+		NM_CMP_FIELD (a, b, ip_proto);
+		addr_size = nm_utils_addr_family_to_size (a->addr_family);
+
+		NM_CMP_FIELD (a, b, src_len);
+		if (cmp_full || a->src_len > 0)
+			NM_CMP_FIELD_MEMCMP_LEN (a, b, src, addr_size);
+
+		NM_CMP_FIELD (a, b, dst_len);
+		if (cmp_full || a->dst_len > 0)
+			NM_CMP_FIELD_MEMCMP_LEN (a, b, dst, addr_size);
+
+		NM_CMP_FIELD_UNSAFE (a, b, uid_range_has);
+		if (cmp_full || a->uid_range_has) {
+			NM_CMP_FIELD (a, b, uid_range.start);
+			NM_CMP_FIELD (a, b, uid_range.end);
+		}
+
+		NM_CMP_FIELD (a, b, sport_range.start);
+		NM_CMP_FIELD (a, b, sport_range.end);
+		NM_CMP_FIELD (a, b, dport_range.start);
+		NM_CMP_FIELD (a, b, dport_range.end);
+		NM_CMP_FIELD_STR (a, b, iifname);
+		NM_CMP_FIELD_STR (a, b, oifname);
+		return 0;
+	}
+
+	nm_assert_not_reached ();
+	return 0;
+}
+
 /**
  * nm_platform_ip_address_cmp_expiry:
  * @a: a NMPlatformIPAddress to compare
@@ -7131,6 +7568,13 @@ log_ip6_route (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatform
 }
 
 static void
+log_routing_rule (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformRoutingRule *routing_rule, NMPlatformSignalChangeType change_type, gpointer user_data)
+{
+	/* routing rules don't have an ifindex. We probably should refactor the signals that are emitted for platform changes. */
+	_LOG3D ("signal: rt-rule %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_routing_rule_to_string (routing_rule, NULL, 0));
+}
+
+static void
 log_qdisc (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformQdisc *qdisc, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
 	_LOG3D ("signal: qdisc %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_qdisc_to_string (qdisc, NULL, 0));
@@ -7196,8 +7640,12 @@ nm_platform_cache_update_emit_signal (NMPlatform *self,
 		return;
 	}
 
-	ifindex = o->object.ifindex;
 	klass = NMP_OBJECT_GET_CLASS (o);
+
+	if (klass->obj_type == NMP_OBJECT_TYPE_ROUTING_RULE)
+		ifindex = 0;
+	else
+		ifindex = NMP_OBJECT_CAST_OBJ_WITH_IFINDEX (o)->ifindex;
 
 	if (   klass->obj_type == NMP_OBJECT_TYPE_IP4_ROUTE
 	    && NM_PLATFORM_GET_PRIVATE (self)->ip4_dev_route_blacklist_gc_timeout_id
@@ -7214,7 +7662,7 @@ nm_platform_cache_update_emit_signal (NMPlatform *self,
 	               _nm_platform_signal_id_get (klass->signal_type_id),
 	               0,
 	               (int) klass->obj_type,
-	               o->object.ifindex,
+	               ifindex,
 	               &o->object,
 	               (int) cache_op);
 	nmp_object_unref (o);
@@ -7261,24 +7709,25 @@ _vtr_v4_metric_normalize (guint32 metric)
 
 /*****************************************************************************/
 
-const NMPlatformVTableRoute nm_platform_vtable_route_v4 = {
-	.is_ip4                         = TRUE,
-	.obj_type                       = NMP_OBJECT_TYPE_IP4_ROUTE,
-	.addr_family                    = AF_INET,
-	.sizeof_route                   = sizeof (NMPlatformIP4Route),
-	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type)) nm_platform_ip4_route_cmp,
-	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip4_route_to_string,
-	.metric_normalize               = _vtr_v4_metric_normalize,
-};
-
-const NMPlatformVTableRoute nm_platform_vtable_route_v6 = {
-	.is_ip4                         = FALSE,
-	.obj_type                       = NMP_OBJECT_TYPE_IP6_ROUTE,
-	.addr_family                    = AF_INET6,
-	.sizeof_route                   = sizeof (NMPlatformIP6Route),
-	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type)) nm_platform_ip6_route_cmp,
-	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip6_route_to_string,
-	.metric_normalize               = nm_utils_ip6_route_metric_normalize,
+const _NMPlatformVTableRouteUnion nm_platform_vtable_route = {
+	.v4 = {
+		.is_ip4                         = TRUE,
+		.obj_type                       = NMP_OBJECT_TYPE_IP4_ROUTE,
+		.addr_family                    = AF_INET,
+		.sizeof_route                   = sizeof (NMPlatformIP4Route),
+		.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type)) nm_platform_ip4_route_cmp,
+		.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip4_route_to_string,
+		.metric_normalize               = _vtr_v4_metric_normalize,
+	},
+	.v6 = {
+		.is_ip4                         = FALSE,
+		.obj_type                       = NMP_OBJECT_TYPE_IP6_ROUTE,
+		.addr_family                    = AF_INET6,
+		.sizeof_route                   = sizeof (NMPlatformIP6Route),
+		.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type)) nm_platform_ip6_route_cmp,
+		.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip6_route_to_string,
+		.metric_normalize               = nm_utils_ip6_route_metric_normalize,
+	},
 };
 
 /*****************************************************************************/
@@ -7338,8 +7787,9 @@ constructor (GType type,
 
 	priv->multi_idx = nm_dedup_multi_index_new ();
 
-	priv->cache = nmp_cache_new (nm_platform_get_multi_idx (self),
+	priv->cache = nmp_cache_new (priv->multi_idx,
 	                             priv->use_udev);
+
 	return object;
 }
 
@@ -7411,11 +7861,12 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 	} G_STMT_END
 
 	/* Signals */
-	SIGNAL (NM_PLATFORM_SIGNAL_ID_LINK,        NM_PLATFORM_SIGNAL_LINK_CHANGED,        log_link);
-	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP4_ADDRESS, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, log_ip4_address);
-	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP6_ADDRESS, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, log_ip6_address);
-	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,   NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,   log_ip4_route);
-	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP6_ROUTE,   NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,   log_ip6_route);
-	SIGNAL (NM_PLATFORM_SIGNAL_ID_QDISC,       NM_PLATFORM_SIGNAL_QDISC_CHANGED,       log_qdisc);
-	SIGNAL (NM_PLATFORM_SIGNAL_ID_TFILTER,     NM_PLATFORM_SIGNAL_TFILTER_CHANGED,     log_tfilter);
+	SIGNAL (NM_PLATFORM_SIGNAL_ID_LINK,         NM_PLATFORM_SIGNAL_LINK_CHANGED,         log_link);
+	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP4_ADDRESS,  NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED,  log_ip4_address);
+	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP6_ADDRESS,  NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,  log_ip6_address);
+	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,    NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,    log_ip4_route);
+	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP6_ROUTE,    NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,    log_ip6_route);
+	SIGNAL (NM_PLATFORM_SIGNAL_ID_ROUTING_RULE, NM_PLATFORM_SIGNAL_ROUTING_RULE_CHANGED, log_routing_rule);
+	SIGNAL (NM_PLATFORM_SIGNAL_ID_QDISC,        NM_PLATFORM_SIGNAL_QDISC_CHANGED,        log_qdisc);
+	SIGNAL (NM_PLATFORM_SIGNAL_ID_TFILTER,      NM_PLATFORM_SIGNAL_TFILTER_CHANGED,      log_tfilter);
 }

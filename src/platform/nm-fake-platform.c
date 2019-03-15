@@ -1119,7 +1119,7 @@ ipx_route_delete (NMPlatform *platform,
 		g_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
 		                                                NMP_OBJECT_TYPE_IP6_ROUTE));
 		g_assert (ifindex == -1);
-		ifindex = obj->object.ifindex;
+		ifindex = NMP_OBJECT_CAST_IP_ROUTE (obj)->ifindex;
 		obj_type = NMP_OBJECT_GET_TYPE (obj);
 	} else {
 		g_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));

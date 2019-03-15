@@ -115,13 +115,13 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
 	if (!obj_new) {
 		nm_assert (pl_new);
 		obj_new = nmp_object_stackinit (&obj_new_stackinit, idx_type->obj_type, pl_new);
-		obj_new_stackinit.object.ifindex = ifindex;
+		NMP_OBJECT_CAST_OBJ_WITH_IFINDEX (&obj_new_stackinit)->ifindex = ifindex;
 	} else {
 		nm_assert (!pl_new);
 		nm_assert (NMP_OBJECT_GET_TYPE (obj_new) == idx_type->obj_type);
-		if (obj_new->object.ifindex != ifindex) {
+		if (NMP_OBJECT_CAST_OBJ_WITH_IFINDEX (obj_new)->ifindex != ifindex) {
 			obj_new = nmp_object_stackinit_obj (&obj_new_stackinit, obj_new);
-			obj_new_stackinit.object.ifindex = ifindex;
+			NMP_OBJECT_CAST_OBJ_WITH_IFINDEX (&obj_new_stackinit)->ifindex = ifindex;
 		}
 	}
 	nm_assert (NMP_OBJECT_GET_TYPE (obj_new) == idx_type->obj_type);

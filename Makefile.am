@@ -1795,6 +1795,8 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/platform/nm-platform-private.h \
 	src/platform/nm-linux-platform.c \
 	src/platform/nm-linux-platform.h \
+	src/platform/nmp-rules-manager.c \
+	src/platform/nmp-rules-manager.h \
 	src/platform/wifi/nm-wifi-utils-nl80211.c \
 	src/platform/wifi/nm-wifi-utils-nl80211.h \
 	src/platform/wifi/nm-wifi-utils-private.h \
