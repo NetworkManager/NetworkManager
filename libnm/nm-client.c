@@ -3701,15 +3701,10 @@ nm_client_class_init (NMClientClass *client_class)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient:dns-configuration: (type GPtrArray(GVariant))
+	 * NMClient:dns-configuration: (type GPtrArray(NMDnsEntry))
 	 *
-	 * The current DNS configuration represented as an array of
-	 * dictionaries.  Each dictionary has the "nameservers",
-	 * "priority" keys and, optionally, "interface" and "vpn".
-	 * "nameservers" is the list of DNS servers, "priority" their
-	 * relative priority, "interface" the interface on which these
-	 * servers are contacted, "vpn" a boolean telling whether the
-	 * configuration was obtained from a VPN connection.
+	 * The current DNS configuration, represented as an array
+	 * of #NMDnsEntry objects.
 	 *
 	 * Since: 1.6
 	 **/
