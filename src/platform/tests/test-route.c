@@ -1300,6 +1300,10 @@ _rule_fuzzy_equal (const NMPObject *obj,
 			rr_co.flow = 0;
 		if (rr->tos == 0)
 			rr_co.tos = 0;
+		if (!NM_FLAGS_HAS (rr->flags, FIB_RULE_INVERT))
+			rr_co.flags &= ~((guint32) FIB_RULE_INVERT);
+		else
+			rr_co.flags |= ((guint32) FIB_RULE_INVERT);
 		break;
 	case RTM_DELRULE:
 		/* when deleting a rule with RTM_DELRULE, kernel tries to find the
