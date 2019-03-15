@@ -38,11 +38,13 @@
 
 typedef struct {
 	char *original_dev_path;
+	char *original_dev_name;
 	NMDevice *device;
 	NMConnection *applied_connection;
 	NMConnection *settings_connection;
 	guint64 ac_version_id;
 	NMDeviceState state;
+	bool is_software:1;
 	bool realized:1;
 	bool activation_lifetime_bound_to_profile_visiblity:1;
 	NMUnmanFlagOp unmanaged_explicit;
@@ -225,7 +227,7 @@ nm_checkpoint_rollback (NMCheckpoint *self)
 		guint32 result = NM_ROLLBACK_RESULT_OK;
 
 		_LOGD ("rollback: restoring device %s (state %d, realized %d, explicitly unmanaged %d)",
-		       nm_device_get_iface (device),
+		       dev_checkpoint->original_dev_name,
 		       (int) dev_checkpoint->state,
 		       dev_checkpoint->realized,
 		       dev_checkpoint->unmanaged_explicit);
@@ -241,7 +243,7 @@ nm_checkpoint_rollback (NMCheckpoint *self)
 			}
 		} else {
 			if (dev_checkpoint->realized) {
-				if (nm_device_is_software (device)) {
+				if (dev_checkpoint->is_software) {
 					/* try to recreate software device */
 					_LOGD ("rollback: software device not realized, will re-activate");
 					goto activate;
@@ -430,7 +432,9 @@ device_checkpoint_create (NMCheckpoint *checkpoint, NMDevice *device)
 	dev_checkpoint = g_slice_new0 (DeviceCheckpoint);
 	dev_checkpoint->device = g_object_ref (device);
 	dev_checkpoint->original_dev_path = g_strdup (path);
+	dev_checkpoint->original_dev_name = g_strdup (nm_device_get_iface (device));
 	dev_checkpoint->state = nm_device_get_state (device);
+	dev_checkpoint->is_software = nm_device_is_software (device);
 	dev_checkpoint->realized = nm_device_is_real (device);
 	dev_checkpoint->dev_exported_change_id = g_signal_connect (device,
 	                                                           NM_DBUS_OBJECT_EXPORTED_CHANGED,
@@ -469,6 +473,7 @@ device_checkpoint_destroy (gpointer data)
 	g_clear_object (&dev_checkpoint->settings_connection);
 	g_clear_object (&dev_checkpoint->device);
 	g_free (dev_checkpoint->original_dev_path);
+	g_free (dev_checkpoint->original_dev_name);
 
 	g_slice_free (DeviceCheckpoint, dev_checkpoint);
 }
