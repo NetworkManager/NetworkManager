@@ -4808,6 +4808,12 @@ static const NMMetaPropertyInfo *const property_infos_BRIDGE[] = {
 		.prompt =                       N_("Enable IGMP snooping [no]"),
 		.property_type =                &_pt_gobject_bool,
 	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_VLAN_FILTERING,
+		.property_type =                &_pt_gobject_bool,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID,
+		.property_type =                &_pt_gobject_int,
+	),
 	NULL
 };
 

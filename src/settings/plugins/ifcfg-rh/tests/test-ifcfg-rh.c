@@ -7507,6 +7507,8 @@ test_read_bridge_main (void)
 	g_assert_cmpuint (nm_setting_bridge_get_ageing_time (s_bridge), ==, 235352);
 	g_assert_cmpuint (nm_setting_bridge_get_group_forward_mask (s_bridge), ==, 24);
 	g_assert (!nm_setting_bridge_get_multicast_snooping (s_bridge));
+	g_assert_cmpint (nm_setting_bridge_get_vlan_filtering (s_bridge), ==, TRUE);
+	g_assert_cmpint (nm_setting_bridge_get_vlan_default_pvid (s_bridge), ==, 99);
 
 	/* MAC address */
 	s_wired = nm_connection_get_setting_wired (connection);
@@ -7554,6 +7556,8 @@ test_write_bridge_main (void)
 	g_object_set (s_bridge,
 	              NM_SETTING_BRIDGE_MAC_ADDRESS, mac,
 	              NM_SETTING_BRIDGE_GROUP_FORWARD_MASK, 19008,
+	              NM_SETTING_BRIDGE_VLAN_FILTERING, TRUE,
+	              NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID, 4000,
 	              NULL);
 
 	/* IP4 setting */

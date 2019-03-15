@@ -48,6 +48,8 @@ G_BEGIN_DECLS
 #define NM_SETTING_BRIDGE_AGEING_TIME    "ageing-time"
 #define NM_SETTING_BRIDGE_GROUP_FORWARD_MASK "group-forward-mask"
 #define NM_SETTING_BRIDGE_MULTICAST_SNOOPING "multicast-snooping"
+#define NM_SETTING_BRIDGE_VLAN_FILTERING     "vlan-filtering"
+#define NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID  "vlan-default-pvid"
 
 /**
  * NMSettingBridge:
@@ -86,6 +88,10 @@ NM_AVAILABLE_IN_1_10
 guint16      nm_setting_bridge_get_group_forward_mask (NMSettingBridge *setting);
 
 gboolean     nm_setting_bridge_get_multicast_snooping (NMSettingBridge *setting);
+NM_AVAILABLE_IN_1_18
+gboolean     nm_setting_bridge_get_vlan_filtering (NMSettingBridge *setting);
+NM_AVAILABLE_IN_1_18
+guint16      nm_setting_bridge_get_vlan_default_pvid (NMSettingBridge *setting);
 
 G_END_DECLS
 

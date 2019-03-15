@@ -37,6 +37,7 @@ _LOG_DECLARE_SELF(NMDeviceBridge);
 
 struct _NMDeviceBridge {
 	NMDevice parent;
+	bool vlan_configured:1;
 };
 
 struct _NMDeviceBridgeClass {
@@ -268,16 +269,6 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 }
 
 static void
-commit_master_options (NMDevice *device, NMSettingBridge *setting)
-{
-	const Option *option;
-	NMSetting *s = NM_SETTING (setting);
-
-	for (option = master_options; option->name; option++)
-		commit_option (device, s, option, FALSE);
-}
-
-static void
 commit_slave_options (NMDevice *device, NMSettingBridgePort *setting)
 {
 	const Option *option;
@@ -396,22 +387,97 @@ master_update_slave_connection (NMDevice *device,
 	return TRUE;
 }
 
+static gboolean
+bridge_set_vlan_options (NMDevice *device, NMSettingBridge *s_bridge)
+{
+	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
+	gconstpointer hwaddr;
+	size_t length;
+	gboolean enabled;
+	guint16 pvid;
+	NMPlatform *plat;
+	int ifindex;
+
+	if (self->vlan_configured)
+		return TRUE;
+
+	plat = nm_device_get_platform (device);
+	ifindex = nm_device_get_ifindex (device);
+	enabled = nm_setting_bridge_get_vlan_filtering (s_bridge);
+
+	if (!enabled) {
+		nm_platform_sysctl_master_set_option (plat, ifindex, "vlan_filtering", "0");
+		nm_platform_sysctl_master_set_option (plat, ifindex, "default_pvid", "1");
+		return TRUE;
+	}
+
+	hwaddr = nm_platform_link_get_address (plat, ifindex, &length);
+	g_return_val_if_fail (length == ETH_ALEN, FALSE);
+	if (nm_utils_hwaddr_matches (hwaddr, ETH_ALEN, nm_ip_addr_zero.addr_eth, ETH_ALEN)) {
+		/* We need a non-zero MAC address to set the default pvid.
+		 * Retry later. */
+		return TRUE;
+	}
+
+	self->vlan_configured = TRUE;
+
+	/* Filtering must be disabled to change the default PVID */
+	if (!nm_platform_sysctl_master_set_option (plat, ifindex, "vlan_filtering", "0"))
+		return FALSE;
+
+	/* Clear the default PVID so that we later can force the re-creation of
+	 * default PVID VLANs by writing the option again. */
+	if (!nm_platform_sysctl_master_set_option (plat, ifindex, "default_pvid", "0"))
+		return FALSE;
+
+	/* Now set the default PVID. After this point the kernel creates
+	 * a PVID VLAN on each port, including the bridge itself. */
+	pvid = nm_setting_bridge_get_vlan_default_pvid (s_bridge);
+	if (pvid) {
+		char value[32];
+
+		nm_sprintf_buf (value, "%u", pvid);
+		if (!nm_platform_sysctl_master_set_option (plat, ifindex, "default_pvid", value))
+			return FALSE;
+	}
+
+	if (!nm_platform_sysctl_master_set_option (plat, ifindex, "vlan_filtering", "1"))
+		return FALSE;
+
+	return TRUE;
+}
+
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMActStageReturn ret;
-	NMConnection *connection = nm_device_get_applied_connection (device);
+	NMConnection *connection;
+	NMSetting *s_bridge;
+	const Option *option;
 
-	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
+	NM_DEVICE_BRIDGE (device)->vlan_configured = FALSE;
 
 	ret = NM_DEVICE_CLASS (nm_device_bridge_parent_class)->act_stage1_prepare (device, out_failure_reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
-	if (!nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE))
-		return NM_ACT_STAGE_RETURN_FAILURE;
+	connection = nm_device_get_applied_connection (device);
+	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
+	s_bridge = (NMSetting *) nm_connection_get_setting_bridge (connection);
+	g_return_val_if_fail (s_bridge, NM_ACT_STAGE_RETURN_FAILURE);
 
-	commit_master_options (device, nm_connection_get_setting_bridge (connection));
+	if (!nm_device_hw_addr_set_cloned (device, connection, FALSE)) {
+		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
+	for (option = master_options; option->name; option++)
+		commit_option (device, s_bridge, option, FALSE);
+
+	if (!bridge_set_vlan_options (device, (NMSettingBridge *) s_bridge)) {
+		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
@@ -457,12 +523,22 @@ enslave_slave (NMDevice *device,
                gboolean configure)
 {
 	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
+	NMConnection *master_connection;
+	NMSettingBridge *s_bridge;
+	NMSettingBridgePort *s_port;
 
 	if (configure) {
 		if (!nm_platform_link_enslave (nm_device_get_platform (device), nm_device_get_ip_ifindex (device), nm_device_get_ip_ifindex (slave)))
 			return FALSE;
 
-		commit_slave_options (slave, nm_connection_get_setting_bridge_port (connection));
+		master_connection = nm_device_get_applied_connection (device);
+		nm_assert (master_connection);
+		s_bridge = nm_connection_get_setting_bridge (master_connection);
+		nm_assert (s_bridge);
+		s_port = nm_connection_get_setting_bridge_port (connection);
+
+		bridge_set_vlan_options (device, s_bridge);
+		commit_slave_options (slave, s_port);
 
 		_LOGI (LOGD_BRIDGE, "attached bridge port %s",
 		       nm_device_get_ip_iface (slave));

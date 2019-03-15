@@ -1518,3 +1518,9 @@ global:
 	nm_wireguard_peer_set_public_key;
 	nm_wireguard_peer_unref;
 } libnm_1_14_0;
+
+libnm_1_18_0 {
+global:
+	nm_setting_bridge_get_vlan_filtering;
+	nm_setting_bridge_get_vlan_default_pvid;
+} libnm_1_16_0;

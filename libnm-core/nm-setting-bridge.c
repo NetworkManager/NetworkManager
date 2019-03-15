@@ -50,6 +50,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_AGEING_TIME,
 	PROP_GROUP_FORWARD_MASK,
 	PROP_MULTICAST_SNOOPING,
+	PROP_VLAN_FILTERING,
+	PROP_VLAN_DEFAULT_PVID,
 );
 
 typedef struct {
@@ -62,6 +64,8 @@ typedef struct {
 	guint32  ageing_time;
 	guint16  group_forward_mask;
 	gboolean multicast_snooping;
+	gboolean vlan_filtering;
+	guint16  vlan_default_pvid;
 } NMSettingBridgePrivate;
 
 G_DEFINE_TYPE (NMSettingBridge, nm_setting_bridge, NM_TYPE_SETTING)
@@ -200,6 +204,38 @@ nm_setting_bridge_get_multicast_snooping (NMSettingBridge *setting)
 	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_snooping;
 }
 
+/**
+ * nm_setting_bridge_get_vlan_filtering:
+ * @setting: the #NMSettingBridge
+ *
+ * Returns: the #NMSettingBridge:vlan-filtering property of the setting
+ *
+ * Since: 1.18
+ **/
+gboolean
+nm_setting_bridge_get_vlan_filtering (NMSettingBridge *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), FALSE);
+
+	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->vlan_filtering;
+}
+
+/**
+ * nm_setting_bridge_get_vlan_default_pvid:
+ * @setting: the #NMSettingBridge
+ *
+ * Returns: the #NMSettingBridge:vlan-default-pvid property of the setting
+ *
+ * Since: 1.18
+ **/
+guint16
+nm_setting_bridge_get_vlan_default_pvid (NMSettingBridge *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), 1);
+
+	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->vlan_default_pvid;
+}
+
 static gboolean
 check_range (guint32 val,
              guint32 min,
@@ -318,6 +354,12 @@ get_property (GObject *object, guint prop_id,
 	case PROP_MULTICAST_SNOOPING:
 		g_value_set_boolean (value, priv->multicast_snooping);
 		break;
+	case PROP_VLAN_FILTERING:
+		g_value_set_boolean (value, priv->vlan_filtering);
+		break;
+	case PROP_VLAN_DEFAULT_PVID:
+		g_value_set_uint (value, priv->vlan_default_pvid);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -359,6 +401,12 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_MULTICAST_SNOOPING:
 		priv->multicast_snooping = g_value_get_boolean (value);
+		break;
+	case PROP_VLAN_FILTERING:
+		priv->vlan_filtering = g_value_get_boolean (value);
+		break;
+	case PROP_VLAN_DEFAULT_PVID:
+		priv->vlan_default_pvid = g_value_get_uint (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -626,6 +674,53 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	                          G_PARAM_CONSTRUCT |
 	                          NM_SETTING_PARAM_INFERRABLE |
 	                          G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingBridge:vlan-filtering:
+	 *
+	 * Control whether VLAN filtering is enabled on the bridge.
+	 *
+	 * Since: 1.18
+	 **/
+	/* ---ifcfg-rh---
+	 * property: vlan-filtering
+	 * variable: BRIDGING_OPTS: vlan_filtering=
+	 * values: 0 or 1
+	 * default: 0
+	 * description: VLAN filtering support.
+	 * ---end---
+	 */
+	obj_properties[PROP_VLAN_FILTERING] =
+	    g_param_spec_boolean (NM_SETTING_BRIDGE_VLAN_FILTERING, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          NM_SETTING_PARAM_INFERRABLE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingBridge:vlan-default-pvid:
+	 *
+	 * The default PVID for the ports of the bridge, that is the VLAN id
+	 * assigned to incoming untagged frames.
+	 *
+	 * Since: 1.18
+	 **/
+	/* ---ifcfg-rh---
+	 * property: vlan-default-pvid
+	 * variable: BRIDGING_OPTS: default_pvid=
+	 * values: 0 - 4094
+	 * default: 1
+	 * description: default VLAN PVID.
+	 * ---end---
+	 */
+	obj_properties[PROP_VLAN_DEFAULT_PVID] =
+	    g_param_spec_uint (NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID, "", "",
+	                       0, 4094, 1,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_INFERRABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/* ---dbus---
 	 * property: interface-name
