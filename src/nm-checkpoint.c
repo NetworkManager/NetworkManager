@@ -253,7 +253,6 @@ nm_checkpoint_rollback (NMCheckpoint *self)
 			goto next_dev;
 		}
 
-activate:
 		/* Manage the device again if needed */
 		if (   nm_device_get_unmanaged_flags (device, NM_UNMANAGED_USER_EXPLICIT)
 		    && dev_checkpoint->unmanaged_explicit != NM_UNMAN_FLAG_OP_SET_UNMANAGED) {
@@ -276,6 +275,7 @@ activate:
 			goto next_dev;
 		}
 
+activate:
 		if (dev_checkpoint->applied_connection) {
 			gboolean need_update, need_activation;
 
