@@ -3369,6 +3369,65 @@ _is_default_func_ip_config_dns_options (NMSetting *setting)
 	       && !nm_setting_ip_config_get_num_dns_options (NM_SETTING_IP_CONFIG (setting));
 }
 
+static void
+_objlist_obj_to_str_fcn_ip_config_routing_rules (NMMetaAccessorGetType get_type,
+                                                 NMSetting *setting,
+                                                 guint idx,
+                                                 GString *str)
+{
+	NMIPRoutingRule *rule;
+	gs_free char *s = NULL;
+
+	rule = nm_setting_ip_config_get_routing_rule (NM_SETTING_IP_CONFIG (setting), idx);
+	s = nm_ip_routing_rule_to_string (rule,
+	                                  NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE,
+	                                  NULL,
+	                                  NULL);
+	if (s)
+		g_string_append (str, s);
+}
+
+static gboolean
+_objlist_set_fcn_ip_config_routing_rules (NMSetting *setting,
+                                          gboolean do_add,
+                                          const char *str,
+                                          GError **error)
+{
+	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
+	nm_auto_unref_ip_routing_rule NMIPRoutingRule *rule = NULL;
+	guint i, n;
+
+	rule = nm_ip_routing_rule_from_string (str,
+	                                       (  NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE
+	                                        | (  NM_IS_SETTING_IP4_CONFIG (setting)
+	                                           ? NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET
+	                                           : NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET6)),
+	                                       NULL,
+	                                       error);
+	if (!rule)
+		return FALSE;
+
+	/* also for @do_add, we first always search whether such a rule already exist
+	 * and remove the first occurance.
+	 *
+	 * The effect is, that we don't add multiple times the same rule,
+	 * and that if the rule already exists, it gets moved to the end (append).
+	 */
+	n = nm_setting_ip_config_get_num_routing_rules (s_ip);
+	for (i = 0; i < n; i++) {
+		NMIPRoutingRule *rr;
+
+		rr = nm_setting_ip_config_get_routing_rule (s_ip, i);
+		if (nm_ip_routing_rule_cmp (rule, rr) == 0) {
+			nm_setting_ip_config_remove_routing_rule (s_ip, i);
+			break;
+		}
+	}
+	if (do_add)
+		nm_setting_ip_config_add_routing_rule (s_ip, rule);
+	return TRUE;
+}
+
 static gconstpointer
 _get_fcn_match_interface_name (ARGS_GET_FCN)
 {
@@ -5583,6 +5642,23 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 			),
 		),
 	),
+	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTING_RULES, NULL,
+		.describe_message =
+		    N_("Enter a list of IPv4 routing rules formatted as:\n"
+		       "  priority [prio] [from [src]] [to [dst]], ,...\n"
+		       "\n"),
+		.property_type =                &_pt_objlist,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (objlist,
+				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_routing_rules),
+				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingIPConfig, nm_setting_ip_config_clear_routing_rules),
+				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routing_rules,
+				.set_fcn =              _objlist_set_fcn_ip_config_routing_rules,
+				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingIPConfig, nm_setting_ip_config_remove_routing_rule),
+				.strsplit_with_escape = TRUE,
+			),
+		),
+	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES,
 		.property_type =                &_pt_gobject_bool,
 	),
@@ -5771,6 +5847,23 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 					.value.i64 = 254,
 					.nick = "main",
 				},
+			),
+		),
+	),
+	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTING_RULES, NULL,
+		.describe_message =
+		    N_("Enter a list of IPv6 routing rules formatted as:\n"
+		       "  priority [prio] [from [src]] [to [dst]], ,...\n"
+		       "\n"),
+		.property_type =                &_pt_objlist,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (objlist,
+				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_routing_rules),
+				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingIPConfig, nm_setting_ip_config_clear_routing_rules),
+				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routing_rules,
+				.set_fcn =              _objlist_set_fcn_ip_config_routing_rules,
+				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingIPConfig, nm_setting_ip_config_remove_routing_rule),
+				.strsplit_with_escape = TRUE,
 			),
 		),
 	),
