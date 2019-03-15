@@ -1067,6 +1067,28 @@ _platform_has_routing_rule (NMPlatform *platform,
 	return o;
 }
 
+static guint32
+_rr_rand_choose_u32 (guint32 p)
+{
+	/* mostly, we just return zero. We want that each rule only has few
+	 * fields set -- having most fields at zero. */
+	if ((p % 10000u) < 7500u)
+		return 0;
+
+	/* give 0xFFFFFFFFu extra probability. */
+	if ((p % 10000u) < 8250u)
+		return 0xFFFFFFFFu;
+
+	/* choose a small number. */
+	if ((p % 10000u) < 9125u)
+		return (~p) % 10;
+
+	/* finally, full random number. */
+	return ~p;
+}
+
+#define _rr_rand_choose_u8(p)  ((guint8) _rr_rand_choose_u32 ((p)))
+
 static const NMPObject *
 _rule_create_random (NMPlatform *platform)
 {
@@ -1095,81 +1117,74 @@ _rule_create_random (NMPlatform *platform)
 
 	addr_size = nm_utils_addr_family_to_size (rr->addr_family);
 
-	p = nmtst_get_rand_int () % 1000u;
-	if (p < 250)
-		rr->priority = 10000 + (p / 50);
+	p = nmtst_get_rand_int ();
+	if ((p % 1000u) < 50)
+		rr->priority = 10000 + ((~p) % 20u);
 
-	p = nmtst_get_rand_int () % 1000u;
-	if (p < 60)
-		nm_sprintf_buf (rr->iifname, "t-iif-%u", p / 20);
-	else if (p < 120)
+	p = nmtst_get_rand_int ();
+	if ((p % 1000u) < 40)
+		nm_sprintf_buf (rr->iifname, "t-iif-%u", (~p) % 20);
+	else if ((p % 1000u) < 80)
 		nm_sprintf_buf (rr->iifname, "%s", DEVICE_NAME);
 
-	p = nmtst_get_rand_int () % 1000u;
-	if (p < 60)
-		nm_sprintf_buf (rr->oifname, "t-oif-%d", p / 20);
-	else if (p < 120)
+	p = nmtst_get_rand_int ();
+	if ((p % 1000u) < 40)
+		nm_sprintf_buf (rr->oifname, "t-oif-%d", (~p) % 20);
+	else if ((p % 1000u) < 80)
 		nm_sprintf_buf (rr->oifname, "%s", DEVICE_NAME);
-
-	p = nmtst_get_rand_int () % 1000u;
-	if (p < 60)
-		nm_sprintf_buf (rr->iifname, "t-iif-%d", p / 20);
-	else if (p < 120)
-		nm_sprintf_buf (rr->iifname, "%s", DEVICE_NAME);
 
 	for (i = 0; i < 2; i++) {
 		NMIPAddr *p_addr = i ? &rr->src     : &rr->dst;
 		guint8 *p_len    = i ? &rr->src_len : &rr->dst_len;
 
-		p = nmtst_get_rand_int () % 1000u;
-		if (p < 300) {
+		p = nmtst_get_rand_int ();
+		if ((p % 1000u) < 100) {
 			/* if we set src_len/dst_len to zero, the src/dst is actually ignored.
 			 *
 			 * For fuzzying, still set the address. It shall have no further effect.
 			 * */
-			*p_len = p % (addr_size * 8 + 1);
-			p = nmtst_get_rand_int () % 750;
-			if (p <= 255) {
+			*p_len = (~p) % (addr_size * 8 + 1);
+			p = nmtst_get_rand_int ();
+			if ((p % 3u) == 0) {
 				if (rr->addr_family == AF_INET)
-					p_addr->addr4 = nmtst_inet4_from_string (nm_sprintf_buf (saddr, "192.192.5.%u", p));
+					p_addr->addr4 = nmtst_inet4_from_string (nm_sprintf_buf (saddr, "192.192.5.%u", (~p) % 256u));
 				else
-					p_addr->addr6 = *nmtst_inet6_from_string (nm_sprintf_buf (saddr, "1:2:3:4::f:%02x", p));
-			} else if (p <= 512)
+					p_addr->addr6 = *nmtst_inet6_from_string (nm_sprintf_buf (saddr, "1:2:3:4::f:%02x", (~p) % 256u));
+			} else if ((p % 3u) == 1)
 				nmtst_rand_buf (NULL, p_addr, addr_size);
 		}
 	}
 
-	p = nmtst_get_rand_int () % 1000u;
-	if (p < 50)
-		rr->tun_id = 10000 + p;
+	p = nmtst_get_rand_int ();
+	if ((p % 1000u) < 50)
+		rr->tun_id = 10000 + ((~p) % 20);
 
 again_action:
-	p = nmtst_get_rand_int () % 1000u;
-	if (p < 300)
+	p = nmtst_get_rand_int ();
+	if ((p % 1000u) < 500)
 		rr->action = FR_ACT_UNSPEC;
-	else if (p < 700)
-		rr->action = p % 12;
+	else if ((p % 1000u) < 750)
+		rr->action = (~p) % 12u;
 	else
-		rr->action = p % 0xFF;
+		rr->action = (~p) % 0x100u;
 
-	rr->priority = nmtst_rand_select (0,
-	                                  nmtst_get_rand_int () % 100,
-	                                  nmtst_get_rand_int ());
+	rr->priority = _rr_rand_choose_u32 (nmtst_get_rand_int ());
+
 	if (   rr->action == FR_ACT_GOTO
 	    && rr->priority == G_MAXINT32)
 		goto again_action;
 
-again_goto_target:
-	rr->goto_target = nmtst_rand_select (0,
-	                                     nmtst_get_rand_int () % 100,
-	                                     nmtst_get_rand_int (),
-	                                     rr->priority + 1);
+	p = nmtst_get_rand_int ();
+	if ((p % 10000u) < 100)
+		rr->goto_target = rr->priority + 1;
+	else
+		rr->goto_target = _rr_rand_choose_u32 (nmtst_get_rand_int ());
 	if (   rr->action == FR_ACT_GOTO
 	    && rr->goto_target <= rr->priority)
-		goto again_goto_target;
+		goto again_action;
 
-	p = nmtst_get_rand_int () % 1000u;
-	if (p < 50) {
+	p = nmtst_get_rand_int ();
+	if ((p % 1000u) < 25) {
 		if (_rule_check_kernel_support (platform, FRA_L3MDEV)) {
 			rr->l3mdev = TRUE;
 			rr->table = RT_TABLE_UNSPEC;
@@ -1178,78 +1193,58 @@ again_goto_target:
 
 again_table:
 	if (!rr->l3mdev) {
-		rr->table = nmtst_rand_select (RT_TABLE_UNSPEC,
-		                               RT_TABLE_MAIN,
-		                               10000 + nmtst_get_rand_int () % 10);
+		p = nmtst_get_rand_int ();
+		if ((p % 1000u) < 700)
+			rr->table = RT_TABLE_UNSPEC;
+		else if ((p % 1000u) < 850)
+			rr->table = RT_TABLE_MAIN;
+		else
+			rr->table = 10000 + ((~p) % 10);
 		if (   rr->action == FR_ACT_TO_TBL
 		    && rr->table == RT_TABLE_UNSPEC)
 			goto again_table;
 	}
 
-	rr->fwmark = nmtst_rand_select (0,
-	                                nmtst_get_rand_int () % 100,
-	                                nmtst_get_rand_int ());
-	rr->fwmask = nmtst_rand_select (0u,
-	                                0xFFFFFFFFu,
-	                                nmtst_get_rand_int () % 100,
-	                                nmtst_get_rand_int ());
+	rr->fwmark = _rr_rand_choose_u32 (nmtst_get_rand_int ());
+	rr->fwmask = _rr_rand_choose_u32 (nmtst_get_rand_int ());
 
-	rr->flow = nmtst_rand_select (0u,
-	                              0xFFFFFFFFu,
-	                              nmtst_get_rand_int () % 100,
-	                              nmtst_get_rand_int ());
+	rr->flow = _rr_rand_choose_u32 (nmtst_get_rand_int ());
 
-	if (_rule_check_kernel_support (platform, FRA_PROTOCOL)) {
-		rr->protocol = nmtst_rand_select (0u,
-		                                  255u,
-		                                  nmtst_get_rand_int () % 256);
-	}
+	if (_rule_check_kernel_support (platform, FRA_PROTOCOL))
+		rr->protocol = _rr_rand_choose_u8 (nmtst_get_rand_int ());
 
 #define IPTOS_TOS_MASK 0x1E
 
 again_tos:
-	rr->tos = nmtst_rand_select (0u,
-	                             255u,
-	                             nmtst_get_rand_int () % 256);
+	rr->tos = _rr_rand_choose_u8 (nmtst_get_rand_int ());
 	if (   rr->addr_family == AF_INET
 	    && rr->tos & ~IPTOS_TOS_MASK)
 		goto again_tos;
 
-	if (_rule_check_kernel_support (platform, FRA_IP_PROTO)) {
-		rr->ip_proto = nmtst_rand_select (0u,
-		                                  255u,
-		                                  nmtst_get_rand_int () % 256);
-	}
+	if (_rule_check_kernel_support (platform, FRA_IP_PROTO))
+		rr->ip_proto = _rr_rand_choose_u8 (nmtst_get_rand_int ());
 
-	if (_rule_check_kernel_support (platform, FRA_SUPPRESS_PREFIXLEN)) {
-		rr->suppress_prefixlen_inverse = ~((guint32) nmtst_rand_select (0u,
-		                                                                0xFFFFFFFFu,
-		                                                                nmtst_get_rand_int () % 100,
-		                                                                nmtst_get_rand_int ()));
-	}
+	if (_rule_check_kernel_support (platform, FRA_SUPPRESS_PREFIXLEN))
+		rr->suppress_prefixlen_inverse = ~_rr_rand_choose_u32 (nmtst_get_rand_int ());
 
-	if (_rule_check_kernel_support (platform, FRA_SUPPRESS_IFGROUP)) {
-		rr->suppress_ifgroup_inverse = ~((guint32) nmtst_rand_select (0u,
-		                                                              0xFFFFFFFFu,
-		                                                              nmtst_get_rand_int () % 100,
-		                                                              nmtst_get_rand_int ()));
+	if (_rule_check_kernel_support (platform, FRA_SUPPRESS_IFGROUP))
+		rr->suppress_ifgroup_inverse = ~_rr_rand_choose_u32 (nmtst_get_rand_int ());
+
+	if (_rule_check_kernel_support (platform, FRA_UID_RANGE)) {
+		p = nmtst_get_rand_int ();
+		rr->uid_range_has = (p % 10000u) < 200;
 	}
 
 again_uid_range:
-	p = nmtst_get_rand_int () % 1000u;
-	if (p < 100) {
-		if (_rule_check_kernel_support (platform, FRA_UID_RANGE))
-			rr->uid_range_has = TRUE;
-	}
-
 	rr->uid_range.start = nmtst_rand_select (0u, uids.uid, uids.euid);
 	rr->uid_range.end   = nmtst_rand_select (0u, uids.uid, uids.euid);
-	if (rr->uid_range.end < rr->uid_range.start)
-		NMTST_SWAP (rr->uid_range.start, rr->uid_range.end);
-
-	if (   rr->uid_range.start == ((guint32) -1)
-	    || rr->uid_range.end   == ((guint32) -1))
-		goto again_uid_range;
+	if (rr->uid_range_has) {
+		if (rr->uid_range.end < rr->uid_range.start)
+			NMTST_SWAP (rr->uid_range.start, rr->uid_range.end);
+		if (   rr->uid_range.start == ((guint32) -1)
+		    || rr->uid_range.end   == ((guint32) -1))
+			goto again_uid_range;
+	}
 
 	for (i = 0; i < 2; i++) {
 		NMFibRulePortRange *range = i ? &rr->sport_range : &rr->dport_range;
@@ -1259,7 +1254,7 @@ again_uid_range:
 			continue;
 
 		p = nmtst_get_rand_int ();
-		if ((p % 1000u) < 100) {
+		if ((p % 10000u) < 300) {
 			while (range->start == 0) {
 				p = p ^ nmtst_get_rand_int ();
 				range->start = nmtst_rand_select (1u, 0xFFFEu, ((p      ) % 0xFFFEu) + 1);
