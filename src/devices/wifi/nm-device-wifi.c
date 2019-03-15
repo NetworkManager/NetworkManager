@@ -2942,14 +2942,14 @@ act_stage4_ip_config_timeout (NMDevice *device,
 	gboolean may_fail;
 
 	connection = nm_device_get_applied_connection (device);
-	s_ip = nm_connection_get_setting_ip4_config (connection);
+	s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
 	may_fail = nm_setting_ip_config_get_may_fail (s_ip);
 
 	if (priv->mode == NM_802_11_MODE_AP)
 		goto call_parent;
 
 	if (   may_fail
-	    && !is_static_wep (connection)) {
+	    || !is_static_wep (connection)) {
 		/* Not static WEP or failure allowed; let superclass handle it */
 		goto call_parent;
 	}
@@ -2961,7 +2961,7 @@ act_stage4_ip_config_timeout (NMDevice *device,
 	 * types (open, WPA, 802.1x, etc) if the secrets/certs were wrong the
 	 * connection would have failed before IP configuration.
 	 *
-	* Activation failed, we must have bad encryption key */
+	 * Activation failed, we must have bad encryption key */
 	_LOGW (LOGD_DEVICE | LOGD_WIFI,
 	       "Activation: (wifi) could not get IP configuration for connection '%s'.",
 	       nm_connection_get_id (connection));
