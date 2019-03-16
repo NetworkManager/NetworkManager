@@ -116,38 +116,87 @@ get_max_prio (NMVlanPriorityMap map, gboolean from)
 	g_assert_not_reached ();
 }
 
+static gboolean
+priority_map_parse_str (NMVlanPriorityMap map_type,
+                        const char *str,
+                        gboolean allow_wildcard_to,
+                        guint32 *out_from,
+                        guint32 *out_to,
+                        gboolean *out_has_wildcard_to)
+{
+	const char *s2;
+	gint64 v1, v2;
+
+	nm_assert (str);
+
+	s2 = strchr (str, ':');
+
+	if (!s2) {
+		if (!allow_wildcard_to)
+			return FALSE;
+		v1 = _nm_utils_ascii_str_to_int64 (str, 10, 0, G_MAXUINT32, -1);
+		v2 = -1;
+	} else {
+		gs_free char *s1_free = NULL;
+		gsize s1_len = (s2 - str);
+
+		s2 = nm_str_skip_leading_spaces (&s2[1]);
+		if (   s2[0] == '\0'
+		    || (   s2[0] == '*'
+		        && NM_STRCHAR_ALL (&s2[1], ch, g_ascii_isspace (ch)))) {
+			if (!allow_wildcard_to)
+				return FALSE;
+			v2 = -1;
+		} else {
+			v2 = _nm_utils_ascii_str_to_int64 (s2, 10, 0, G_MAXUINT32, -1);
+			if (   v2 < 0
+			    || v2 > get_max_prio (map_type, FALSE))
+				return FALSE;
+		}
+
+		v1 = _nm_utils_ascii_str_to_int64 (nm_strndup_a (100, str, s1_len, &s1_free),
+		                                   10, 0, G_MAXUINT32, -1);
+	}
+
+	if (   v1 < 0
+	    || v1 > get_max_prio (map_type, TRUE))
+		return FALSE;
+
+	NM_SET_OUT (out_from, v1);
+	NM_SET_OUT (out_to,   v2 < 0
+	                    ? 0u
+	                    : (guint) v2);
+	NM_SET_OUT (out_has_wildcard_to, v2 < 0);
+	return TRUE;
+}
+
+static NMVlanQosMapping *
+priority_map_new (guint32 from, guint32 to)
+{
+	NMVlanQosMapping *mapping;
+
+	mapping = g_new (NMVlanQosMapping, 1);
+	*mapping = (NMVlanQosMapping) {
+		.from = from,
+		.to   = to,
+	};
+	return mapping;
+}
+
 static NMVlanQosMapping *
 priority_map_new_from_str (NMVlanPriorityMap map, const char *str)
 {
-	NMVlanQosMapping *p = NULL;
-	char **t = NULL;
-	guint32 len;
-	guint64 from, to;
+	guint32 from, to;
 
-	g_return_val_if_fail (str && str[0], NULL);
-
-	t = g_strsplit (str, ":", 0);
-	len = g_strv_length (t);
-	if (len == 2) {
-		from = g_ascii_strtoull (t[0], NULL, 10);
-		to = g_ascii_strtoull (t[1], NULL, 10);
-
-		if ((from <= get_max_prio (map, TRUE)) && (to <= get_max_prio (map, FALSE))) {
-			G_STATIC_ASSERT (sizeof (*p) == sizeof (p->from) + sizeof (p->to));
-			p = g_malloc (sizeof (NMVlanQosMapping));
-			p->from = from;
-			p->to = to;
-		}
-	}
-
-	g_strfreev (t);
-	return p;
+	if (!priority_map_parse_str (map, str, FALSE, &from, &to, NULL))
+		return NULL;
+	return priority_map_new (from, to);
 }
 
 static void
 priority_map_free (NMVlanQosMapping *map)
 {
-	g_return_if_fail (map != NULL);
+	nm_assert (map);
 	g_free (map);
 }
 
