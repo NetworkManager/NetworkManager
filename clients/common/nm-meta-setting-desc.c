@@ -1714,6 +1714,16 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		return TRUE; \
 	})
 
+#define DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC(def_func, s_macro, num_func, rem_func_idx, values_static, rem_func_val) \
+	_DEFINE_REMOVER_INDEX_OR_VALUE (def_func, s_macro, num_func, rem_func_idx, { \
+		value = nmc_string_is_valid (value, values_static, error); \
+		if (!value) \
+			return FALSE; \
+		\
+		rem_func_val (s_macro (setting), value); \
+		return TRUE; \
+	})
+
 #define DEFINE_REMOVER_OPTION(def_func, s_macro, rem_func) \
 	static gboolean \
 	def_func (ARGS_REMOVE_FCN) \
@@ -4549,29 +4559,12 @@ _set_fcn_wireless_security_proto (ARGS_SET_FCN)
 	return check_and_add_wifi_sec_proto (setting, property_info->property_name, value, wifi_sec_valid_protos, error);
 }
 
-static gboolean
-_validate_and_remove_wifi_sec_proto (NMSettingWirelessSecurity *setting,
-                                     const char *proto,
-                                     GError **error)
-{
-	gboolean ret;
-	const char *valid;
-
-	valid = nmc_string_is_valid (proto, wifi_sec_valid_protos, error);
-	if (!valid)
-		return FALSE;
-
-	ret = nm_setting_wireless_security_remove_proto_by_value (setting, proto);
-	if (!ret)
-		g_set_error (error, 1, 0,
-		             _("the property doesn't contain protocol '%s'"), proto);
-	return ret;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_wireless_security_proto,
-                               NM_SETTING_WIRELESS_SECURITY,
-                               nm_setting_wireless_security_get_num_protos,
-                               nm_setting_wireless_security_remove_proto,
-                               _validate_and_remove_wifi_sec_proto)
+DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC (_remove_fcn_wireless_security_proto,
+                                                 NM_SETTING_WIRELESS_SECURITY,
+                                                 nm_setting_wireless_security_get_num_protos,
+                                                 nm_setting_wireless_security_remove_proto,
+                                                 wifi_sec_valid_protos,
+                                                 nm_setting_wireless_security_remove_proto_by_value)
 
 static const char *wifi_sec_valid_pairwises[] = { "tkip", "ccmp", NULL };
 
@@ -4585,29 +4578,12 @@ _set_fcn_wireless_security_pairwise (ARGS_SET_FCN)
 	return check_and_add_wifi_sec_pairwise (setting, property_info->property_name, value, wifi_sec_valid_pairwises, error);
 }
 
-static gboolean
-_validate_and_remove_wifi_sec_pairwise (NMSettingWirelessSecurity *setting,
-                                        const char *pairwise,
-                                        GError **error)
-{
-	gboolean ret;
-	const char *valid;
-
-	valid = nmc_string_is_valid (pairwise, wifi_sec_valid_pairwises, error);
-	if (!valid)
-		return FALSE;
-
-	ret = nm_setting_wireless_security_remove_pairwise_by_value (setting, pairwise);
-	if (!ret)
-		g_set_error (error, 1, 0,
-		             _("the property doesn't contain protocol '%s'"), pairwise);
-	return ret;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_wireless_security_pairwise,
-                               NM_SETTING_WIRELESS_SECURITY,
-                               nm_setting_wireless_security_get_num_pairwise,
-                               nm_setting_wireless_security_remove_pairwise,
-                               _validate_and_remove_wifi_sec_pairwise)
+DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC (_remove_fcn_wireless_security_pairwise,
+                                                 NM_SETTING_WIRELESS_SECURITY,
+                                                 nm_setting_wireless_security_get_num_pairwise,
+                                                 nm_setting_wireless_security_remove_pairwise,
+                                                 wifi_sec_valid_pairwises,
+                                                 nm_setting_wireless_security_remove_pairwise_by_value)
 
 static const char *wifi_sec_valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
 
@@ -4621,29 +4597,12 @@ _set_fcn_wireless_security_group (ARGS_SET_FCN)
 	return check_and_add_wifi_sec_group (setting, property_info->property_name, value, wifi_sec_valid_groups, error);
 }
 
-static gboolean
-_validate_and_remove_wifi_sec_group (NMSettingWirelessSecurity *setting,
-                                     const char *group,
-                                     GError **error)
-{
-	gboolean ret;
-	const char *valid;
-
-	valid = nmc_string_is_valid (group, wifi_sec_valid_groups, error);
-	if (!valid)
-		return FALSE;
-
-	ret = nm_setting_wireless_security_remove_group_by_value (setting, group);
-	if (!ret)
-		g_set_error (error, 1, 0,
-		             _("the property doesn't contain protocol '%s'"), group);
-	return ret;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_wireless_security_group,
-                               NM_SETTING_WIRELESS_SECURITY,
-                               nm_setting_wireless_security_get_num_groups,
-                               nm_setting_wireless_security_remove_group,
-                               _validate_and_remove_wifi_sec_group)
+DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC (_remove_fcn_wireless_security_group,
+                                                 NM_SETTING_WIRELESS_SECURITY,
+                                                 nm_setting_wireless_security_get_num_groups,
+                                                 nm_setting_wireless_security_remove_group,
+                                                 wifi_sec_valid_groups,
+                                                 nm_setting_wireless_security_remove_group_by_value)
 
 static gboolean
 _set_fcn_wireless_wep_key (ARGS_SET_FCN)
