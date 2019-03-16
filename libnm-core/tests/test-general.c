@@ -809,54 +809,54 @@ test_setting_vpn_items (void)
 	nm_setting_vpn_remove_data_item (s_vpn, "foobar4-flags");
 
 	/* Try to add some blank values and make sure they are rejected */
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key != NULL));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_data_item (s_vpn, NULL, NULL);
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (strlen (key) > 0));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_data_item (s_vpn, "", "");
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (item != NULL));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (item && item[0]));
 	nm_setting_vpn_add_data_item (s_vpn, "foobar1", NULL);
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (strlen (item) > 0));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (item && item[0]));
 	nm_setting_vpn_add_data_item (s_vpn, "foobar1", "");
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key != NULL));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_data_item (s_vpn, NULL, "blahblah1");
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (strlen (key) > 0));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_data_item (s_vpn, "", "blahblah1");
 	g_test_assert_expected_messages ();
 
 	nm_setting_vpn_foreach_data_item (s_vpn, vpn_check_empty_func, NULL);
 
 	/* Try to add some blank secrets and make sure they are rejected */
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key != NULL));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_secret (s_vpn, NULL, NULL);
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (strlen (key) > 0));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_secret (s_vpn, "", "");
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (secret != NULL));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (secret && secret[0]));
 	nm_setting_vpn_add_secret (s_vpn, "foobar1", NULL);
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (strlen (secret) > 0));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (secret && secret[0]));
 	nm_setting_vpn_add_secret (s_vpn, "foobar1", "");
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key != NULL));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_secret (s_vpn, NULL, "blahblah1");
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (strlen (key) > 0));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_secret (s_vpn, "", "blahblah1");
 	g_test_assert_expected_messages ();
 
@@ -2347,7 +2347,7 @@ test_setting_connection_permissions_helpers (void)
 	g_assert (!success);
 
 	/* Ensure a bad [type] is rejected */
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (ptype));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (ptype && ptype[0]));
 	success = nm_setting_connection_add_permission (s_con, NULL, "blah", NULL);
 	g_test_assert_expected_messages ();
 	g_assert (!success);

@@ -892,8 +892,7 @@ nm_secret_agent_old_get_secrets (NMSecretAgentOld *self,
 	g_return_if_fail (NM_IS_SECRET_AGENT_OLD (self));
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 	g_return_if_fail (nm_connection_get_path (connection));
-	g_return_if_fail (setting_name != NULL);
-	g_return_if_fail (strlen (setting_name) > 0);
+	g_return_if_fail (setting_name && setting_name[0]);
 	g_return_if_fail (!(flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM));
 	g_return_if_fail (!(flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_NO_ERRORS));
 	g_return_if_fail (callback != NULL);

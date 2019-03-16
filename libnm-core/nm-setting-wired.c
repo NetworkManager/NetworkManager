@@ -483,8 +483,7 @@ nm_setting_wired_get_s390_option_by_key (NMSettingWired *setting,
                                          const char *key)
 {
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
-	g_return_val_if_fail (key != NULL, NULL);
-	g_return_val_if_fail (strlen (key), NULL);
+	g_return_val_if_fail (key && key[0], NULL);
 
 	return g_hash_table_lookup (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options, key);
 }
@@ -511,8 +510,7 @@ nm_setting_wired_add_s390_option (NMSettingWired *setting,
 	size_t value_len;
 
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
-	g_return_val_if_fail (key != NULL, FALSE);
-	g_return_val_if_fail (strlen (key), FALSE);
+	g_return_val_if_fail (key && key[0], FALSE);
 	g_return_val_if_fail (g_strv_contains (valid_s390_opts, key), FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
 
@@ -544,8 +542,7 @@ nm_setting_wired_remove_s390_option (NMSettingWired *setting,
 	gboolean found;
 
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
-	g_return_val_if_fail (key != NULL, FALSE);
-	g_return_val_if_fail (strlen (key), FALSE);
+	g_return_val_if_fail (key && key[0], FALSE);
 
 	found = g_hash_table_remove (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options, key);
 	if (found)
