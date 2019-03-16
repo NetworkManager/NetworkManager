@@ -1690,6 +1690,30 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		return TRUE; \
 	}
 
+#define _DEFINE_REMOVER_INDEX_OR_VALUE(def_func, s_macro, num_func, rem_func_idx, rem_func_cmd) \
+	static gboolean \
+	def_func (ARGS_REMOVE_FCN) \
+	{ \
+		guint32 num; \
+		\
+		if (!value) { \
+			num = num_func (s_macro (setting)); \
+			if (idx < num) \
+				rem_func_idx (s_macro (setting), idx); \
+			return TRUE; \
+		} \
+		rem_func_cmd \
+	}
+
+#define DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
+	_DEFINE_REMOVER_INDEX_OR_VALUE (def_func, s_macro, num_func, rem_func_idx, { \
+		gs_free char *value_to_free = NULL; \
+		\
+		rem_func_val (s_macro (setting), \
+		              nm_strstrip_avoid_copy (value, &value_to_free)); \
+		return TRUE; \
+	})
+
 #define DEFINE_REMOVER_OPTION(def_func, s_macro, rem_func) \
 	static gboolean \
 	def_func (ARGS_REMOVE_FCN) \
@@ -2233,47 +2257,21 @@ _set_fcn_802_1x_eap (ARGS_SET_FCN)
 	                                 error);
 }
 
-static gboolean
-_validate_and_remove_eap_method (NMSetting8021x *setting,
-                                 const char *eap,
-                                 GError **error)
-{
-	gboolean ret;
-
-	ret = nm_setting_802_1x_remove_eap_method_by_value (setting, eap);
-	if (!ret)
-		g_set_error (error, 1, 0, _("the property doesn't contain EAP method '%s'"), eap);
-	return ret;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_802_1x_eap,
-                               NM_SETTING_802_1X,
-                               nm_setting_802_1x_get_num_eap_methods,
-                               nm_setting_802_1x_remove_eap_method,
-                               _validate_and_remove_eap_method)
+DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_802_1x_eap,
+                                      NM_SETTING_802_1X,
+                                      nm_setting_802_1x_get_num_eap_methods,
+                                      nm_setting_802_1x_remove_eap_method,
+                                      nm_setting_802_1x_remove_eap_method_by_value)
 
 DEFINE_SETTER_CERT (_set_fcn_802_1x_ca_cert, nm_setting_802_1x_set_ca_cert)
 
 DEFINE_SETTER_STR_LIST (_set_fcn_802_1x_altsubject_matches, nm_setting_802_1x_add_altsubject_match)
 
-static gboolean
-_validate_and_remove_altsubject_match (NMSetting8021x *setting,
-                                       const char *altsubject_match,
-                                       GError **error)
-{
-	gboolean ret;
-
-	ret = nm_setting_802_1x_remove_altsubject_match_by_value (setting, altsubject_match);
-	if (!ret)
-		g_set_error (error, 1, 0,
-		             _("the property doesn't contain alternative subject match '%s'"),
-		             altsubject_match);
-	return ret;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_802_1x_altsubject_matches,
-                               NM_SETTING_802_1X,
-                               nm_setting_802_1x_get_num_altsubject_matches,
-                               nm_setting_802_1x_remove_altsubject_match,
-                               _validate_and_remove_altsubject_match)
+DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_802_1x_altsubject_matches,
+                                      NM_SETTING_802_1X,
+                                      nm_setting_802_1x_get_num_altsubject_matches,
+                                      nm_setting_802_1x_remove_altsubject_match,
+                                      nm_setting_802_1x_remove_altsubject_match_by_value)
 
 DEFINE_SETTER_CERT (_set_fcn_802_1x_client_cert, nm_setting_802_1x_set_client_cert)
 
@@ -2281,25 +2279,11 @@ DEFINE_SETTER_CERT (_set_fcn_802_1x_phase2_ca_cert, nm_setting_802_1x_set_phase2
 
 DEFINE_SETTER_STR_LIST (_set_fcn_802_1x_phase2_altsubject_matches, nm_setting_802_1x_add_phase2_altsubject_match)
 
-static gboolean
-_validate_and_remove_phase2_altsubject_match (NMSetting8021x *setting,
-                                              const char *phase2_altsubject_match,
-                                              GError **error)
-{
-	gboolean ret;
-
-	ret = nm_setting_802_1x_remove_phase2_altsubject_match_by_value (setting, phase2_altsubject_match);
-	if (!ret)
-		g_set_error (error, 1, 0,
-		             _("the property doesn't contain \"phase2\" alternative subject match '%s'"),
-		             phase2_altsubject_match);
-	return ret;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_802_1x_phase2_altsubject_matches,
-                               NM_SETTING_802_1X,
-                               nm_setting_802_1x_get_num_phase2_altsubject_matches,
-                               nm_setting_802_1x_remove_phase2_altsubject_match,
-                               _validate_and_remove_phase2_altsubject_match)
+DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_802_1x_phase2_altsubject_matches,
+                                      NM_SETTING_802_1X,
+                                      nm_setting_802_1x_get_num_phase2_altsubject_matches,
+                                      nm_setting_802_1x_remove_phase2_altsubject_match,
+                                      nm_setting_802_1x_remove_phase2_altsubject_match_by_value)
 
 DEFINE_SETTER_CERT (_set_fcn_802_1x_phase2_client_cert, nm_setting_802_1x_set_phase2_client_cert)
 
@@ -2564,23 +2548,11 @@ _set_fcn_connection_permissions (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static gboolean
-_validate_and_remove_connection_permission (NMSettingConnection *setting,
-                                            const char *perm,
-                                            GError **error)
-{
-	gboolean ret;
-
-	ret = nm_setting_connection_remove_permission_by_value (setting, "user", perm, NULL);
-	if (!ret)
-		g_set_error (error, 1, 0, _("the property doesn't contain permission '%s'"), perm);
-	return ret;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_connection_permissions,
-                               NM_SETTING_CONNECTION,
-                               nm_setting_connection_get_num_permissions,
-                               nm_setting_connection_remove_permission,
-                               _validate_and_remove_connection_permission)
+DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_connection_permissions,
+                                      NM_SETTING_CONNECTION,
+                                      nm_setting_connection_get_num_permissions,
+                                      nm_setting_connection_remove_permission,
+                                      nm_setting_connection_remove_permission_user)
 
 static gboolean
 _set_fcn_connection_master (ARGS_SET_FCN)
@@ -3339,25 +3311,11 @@ _set_fcn_ip_config_dns_search (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static gboolean
-_validate_and_remove_ip_dns_search (NMSettingIPConfig *setting,
-                                    const char *dns_search,
-                                    GError **error)
-{
-	gboolean ret;
-
-	ret = nm_setting_ip_config_remove_dns_search_by_value (setting, dns_search);
-	if (!ret)
-		g_set_error (error, 1, 0,
-		             _("the property doesn't contain DNS search domain '%s'"),
-		             dns_search);
-	return ret;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ip_config_dns_search,
-                               NM_SETTING_IP_CONFIG,
-                               nm_setting_ip_config_get_num_dns_searches,
-                               nm_setting_ip_config_remove_dns_search,
-                               _validate_and_remove_ip_dns_search)
+DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_ip_config_dns_search,
+                                      NM_SETTING_IP_CONFIG,
+                                      nm_setting_ip_config_get_num_dns_searches,
+                                      nm_setting_ip_config_remove_dns_search,
+                                      nm_setting_ip_config_remove_dns_search_by_value)
 
 static gboolean
 _set_fcn_ip_config_dns_options (ARGS_SET_FCN)
@@ -3379,25 +3337,11 @@ _set_fcn_ip_config_dns_options (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static gboolean
-_validate_and_remove_ip_dns_option (NMSettingIPConfig *setting,
-                                    const char *dns_option,
-                                    GError **error)
-{
-	gboolean ret;
-
-	ret = nm_setting_ip_config_remove_dns_option_by_value (setting, dns_option);
-	if (!ret)
-		g_set_error (error, 1, 0,
-		             _("the property doesn't contain DNS option '%s'"),
-		             dns_option);
-	return ret;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ip_config_dns_options,
-                               NM_SETTING_IP_CONFIG,
-                               nm_setting_ip_config_get_num_dns_options,
-                               nm_setting_ip_config_remove_dns_option,
-                               _validate_and_remove_ip_dns_option)
+DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_ip_config_dns_options,
+                                      NM_SETTING_IP_CONFIG,
+                                      nm_setting_ip_config_get_num_dns_options,
+                                      nm_setting_ip_config_remove_dns_option,
+                                      nm_setting_ip_config_remove_dns_option_by_value)
 
 static gboolean
 _set_fcn_ip4_config_addresses (ARGS_SET_FCN)
@@ -3718,25 +3662,11 @@ _set_fcn_match_interface_name (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static gboolean
-_validate_and_remove_match_interface_name (NMSettingMatch *setting,
-                                           const char *interface_name,
-                                           GError **error)
-{
-	gboolean ret;
-
-	ret = nm_setting_match_remove_interface_name_by_value (setting, interface_name);
-	if (!ret)
-		g_set_error (error, 1, 0,
-		             _("the property doesn't contain interface name '%s'"),
-		             interface_name);
-	return ret;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_match_interface_name,
-                               NM_SETTING_MATCH,
-                               nm_setting_match_get_num_interface_names,
-                               nm_setting_match_remove_interface_name,
-                               _validate_and_remove_match_interface_name)
+DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_match_interface_name,
+                                      NM_SETTING_MATCH,
+                                      nm_setting_match_get_num_interface_names,
+                                      nm_setting_match_remove_interface_name,
+                                      nm_setting_match_remove_interface_name_by_value)
 
 static gconstpointer
 _get_fcn_olpc_mesh_ssid (ARGS_GET_FCN)
@@ -4067,25 +3997,11 @@ _set_fcn_team_runner_tx_hash (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static gboolean
-_validate_and_remove_team_runner_tx_hash (NMSettingTeam *setting,
-                                         const char *tx_hash,
-                                         GError **error)
-{
-	if (!nm_setting_team_remove_runner_tx_hash_by_value (setting, tx_hash)) {
-		g_set_error (error, 1, 0,
-		             _("the property doesn't contain string '%s'"),
-		             tx_hash);
-		return FALSE;
-	}
-
-	return TRUE;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_team_runner_tx_hash,
-                               NM_SETTING_TEAM,
-                               nm_setting_team_get_num_runner_tx_hash,
-                               nm_setting_team_remove_runner_tx_hash,
-                               _validate_and_remove_team_runner_tx_hash)
+DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_team_runner_tx_hash,
+                                      NM_SETTING_TEAM,
+                                      nm_setting_team_get_num_runner_tx_hash,
+                                      nm_setting_team_remove_runner_tx_hash,
+                                      nm_setting_team_remove_runner_tx_hash_by_value)
 
 static gconstpointer
 _get_fcn_team_link_watchers (ARGS_GET_FCN)
