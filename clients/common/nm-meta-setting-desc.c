@@ -4166,19 +4166,17 @@ _remove_vlan_xgress_priority_map (const NMMetaEnvironment *environment,
 
 	if (value) {
 		gs_strfreev char **prio_map = NULL;
+		gsize i;
 
 		prio_map = _parse_vlan_priority_maps (value, map_type, TRUE, error);
 		if (!prio_map)
 			return FALSE;
-		if (prio_map[1]) {
-			_env_warn_fcn (environment, environment_user_data,
-			               NM_META_ENV_WARN_LEVEL_WARN,
-			               N_("only one mapping at a time is supported; taking the first one (%s)"),
-			               prio_map[0]);
+
+		for (i = 0; prio_map[i]; i++) {
+			nm_setting_vlan_remove_priority_str_by_value (NM_SETTING_VLAN (setting),
+			                                              map_type,
+			                                              prio_map[i]);
 		}
-		nm_setting_vlan_remove_priority_str_by_value (NM_SETTING_VLAN (setting),
-		                                              map_type,
-		                                              prio_map[0]);
 		return TRUE;
 	}
 
