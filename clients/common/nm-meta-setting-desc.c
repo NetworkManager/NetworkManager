@@ -408,6 +408,7 @@ _parse_team_link_watcher (const char *str,
 static char **
 _parse_vlan_priority_maps (const char *priority_map,
                            NMVlanPriorityMap map_type,
+                           gboolean allow_wildcard_to,
                            GError **error)
 {
 	gs_strfreev char **mapping = NULL;
@@ -420,7 +421,7 @@ _parse_vlan_priority_maps (const char *priority_map,
 	for (iter = mapping; *iter; iter++) {
 		if (!nm_utils_vlan_priority_map_parse_str (map_type,
 		                                           *iter,
-		                                           FALSE,
+		                                           allow_wildcard_to,
 		                                           NULL,
 		                                           NULL,
 		                                           NULL)) {
@@ -4279,7 +4280,7 @@ _set_vlan_xgress_priority_map (NMSetting *setting,
 {
 	char **prio_map, **p;
 
-	prio_map = _parse_vlan_priority_maps (value, map_type, error);
+	prio_map = _parse_vlan_priority_maps (value, map_type, FALSE, error);
 	if (!prio_map)
 		return FALSE;
 
@@ -4320,7 +4321,7 @@ _remove_vlan_xgress_priority_map (const NMMetaEnvironment *environment,
 		char **prio_map;
 		gs_free char *v = g_strdup (value);
 
-		prio_map = _parse_vlan_priority_maps (v, map_type, error);
+		prio_map = _parse_vlan_priority_maps (v, map_type, TRUE, error);
 		if (!prio_map)
 			return FALSE;
 		if (prio_map[1]) {
