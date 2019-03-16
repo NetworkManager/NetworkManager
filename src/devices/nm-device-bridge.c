@@ -268,11 +268,39 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 		nm_platform_sysctl_master_set_option (nm_device_get_platform (device), ifindex, option->sysname, value);
 }
 
-static void
+static NMPlatformBridgeVlan **
+setting_vlans_to_platform (GPtrArray *array)
+{
+	GPtrArray *plat_vlans;
+	guint i;
+
+	if (!array || !array->len)
+		return NULL;
+
+	plat_vlans = g_ptr_array_sized_new (array->len + 1);
+
+	for (i = 0; i < array->len; i++) {
+		NMBridgeVlan *vlan = array->pdata[i];
+		NMPlatformBridgeVlan *plat_vlan;
+
+		plat_vlan = g_new0 (NMPlatformBridgeVlan, 1);
+		plat_vlan->vid = nm_bridge_vlan_get_vid (vlan);
+		plat_vlan->pvid = nm_bridge_vlan_is_pvid (vlan);
+		plat_vlan->untagged = nm_bridge_vlan_is_untagged (vlan);
+
+		g_ptr_array_add (plat_vlans, plat_vlan);
+	}
+	g_ptr_array_add (plat_vlans, NULL);
+
+	return (NMPlatformBridgeVlan **) g_ptr_array_free (plat_vlans, FALSE);
+}
+
+static gboolean
 commit_slave_options (NMDevice *device, NMSettingBridgePort *setting)
 {
 	const Option *option;
-	NMSetting *s, *s_clear = NULL;
+	NMSetting *s;
+	gs_unref_object NMSetting *s_clear = NULL;
 
 	if (setting)
 		s = NM_SETTING (setting);
@@ -282,7 +310,7 @@ commit_slave_options (NMDevice *device, NMSettingBridgePort *setting)
 	for (option = slave_options; option->name; option++)
 		commit_option (device, s, option, TRUE);
 
-	g_clear_object (&s_clear);
+	return TRUE;
 }
 
 static void
@@ -397,6 +425,8 @@ bridge_set_vlan_options (NMDevice *device, NMSettingBridge *s_bridge)
 	guint16 pvid;
 	NMPlatform *plat;
 	int ifindex;
+	gs_unref_ptrarray GPtrArray *vlans = NULL;
+	nm_auto_freev NMPlatformBridgeVlan **plat_vlans = NULL;
 
 	if (self->vlan_configured)
 		return TRUE;
@@ -408,6 +438,7 @@ bridge_set_vlan_options (NMDevice *device, NMSettingBridge *s_bridge)
 	if (!enabled) {
 		nm_platform_sysctl_master_set_option (plat, ifindex, "vlan_filtering", "0");
 		nm_platform_sysctl_master_set_option (plat, ifindex, "default_pvid", "1");
+		nm_platform_link_set_bridge_vlans (plat, ifindex, FALSE, NULL);
 		return TRUE;
 	}
 
@@ -430,6 +461,10 @@ bridge_set_vlan_options (NMDevice *device, NMSettingBridge *s_bridge)
 	if (!nm_platform_sysctl_master_set_option (plat, ifindex, "default_pvid", "0"))
 		return FALSE;
 
+	/* Clear all existing VLANs */
+	if (!nm_platform_link_set_bridge_vlans (plat, ifindex, FALSE, NULL))
+		return FALSE;
+
 	/* Now set the default PVID. After this point the kernel creates
 	 * a PVID VLAN on each port, including the bridge itself. */
 	pvid = nm_setting_bridge_get_vlan_default_pvid (s_bridge);
@@ -440,6 +475,15 @@ bridge_set_vlan_options (NMDevice *device, NMSettingBridge *s_bridge)
 		if (!nm_platform_sysctl_master_set_option (plat, ifindex, "default_pvid", value))
 			return FALSE;
 	}
+
+	/* Create VLANs only after setting the default PVID, so that
+	 * any PVID VLAN overrides the bridge's default PVID. */
+	g_object_get (s_bridge, NM_SETTING_BRIDGE_VLANS, &vlans, NULL);
+	plat_vlans = setting_vlans_to_platform (vlans);
+	if (   plat_vlans
+	    && !nm_platform_link_set_bridge_vlans (plat, ifindex, FALSE,
+	                                           (const NMPlatformBridgeVlan *const *) plat_vlans))
+		return FALSE;
 
 	if (!nm_platform_sysctl_master_set_option (plat, ifindex, "vlan_filtering", "1"))
 		return FALSE;
@@ -526,6 +570,8 @@ enslave_slave (NMDevice *device,
 	NMConnection *master_connection;
 	NMSettingBridge *s_bridge;
 	NMSettingBridgePort *s_port;
+	gs_unref_ptrarray GPtrArray *vlans = NULL;
+	nm_auto_freev NMPlatformBridgeVlan **plat_vlans = NULL;
 
 	if (configure) {
 		if (!nm_platform_link_enslave (nm_device_get_platform (device), nm_device_get_ip_ifindex (device), nm_device_get_ip_ifindex (slave)))
@@ -538,7 +584,25 @@ enslave_slave (NMDevice *device,
 		s_port = nm_connection_get_setting_bridge_port (connection);
 
 		bridge_set_vlan_options (device, s_bridge);
-		commit_slave_options (slave, s_port);
+
+		if (nm_setting_bridge_get_vlan_filtering (s_bridge)) {
+			if (s_port)
+				g_object_get (s_port, NM_SETTING_BRIDGE_PORT_VLANS, &vlans, NULL);
+			plat_vlans = setting_vlans_to_platform (vlans);
+
+			/* Since the link was just enslaved, there are no existing VLANs
+			 * (except for the default one) and so there's no need to flush. */
+
+			if (   plat_vlans
+			    && !nm_platform_link_set_bridge_vlans (nm_device_get_platform (slave),
+			                                           nm_device_get_ifindex (slave),
+			                                           TRUE,
+			                                           (const NMPlatformBridgeVlan *const *) plat_vlans))
+				return FALSE;
+		}
+
+		if (!commit_slave_options (slave, s_port))
+			return FALSE;
 
 		_LOGI (LOGD_BRIDGE, "attached bridge port %s",
 		       nm_device_get_ip_iface (slave));
