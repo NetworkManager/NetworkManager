@@ -3842,15 +3842,17 @@ nla_put_failure:
 }
 
 static struct nl_msg *
-_nl_msg_new_link (int nlmsg_type,
-                  int nlmsg_flags,
-                  int ifindex,
-                  const char *ifname,
-                  unsigned flags_mask,
-                  unsigned flags_set)
+_nl_msg_new_link_full (int nlmsg_type,
+                       int nlmsg_flags,
+                       int ifindex,
+                       const char *ifname,
+                       guint8 family,
+                       unsigned flags_mask,
+                       unsigned flags_set)
 {
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	const struct ifinfomsg ifi = {
+		.ifi_family = family,
 		.ifi_change = flags_mask,
 		.ifi_flags = flags_set,
 		.ifi_index = ifindex,
@@ -3870,6 +3872,15 @@ _nl_msg_new_link (int nlmsg_type,
 
 nla_put_failure:
 	g_return_val_if_reached (NULL);
+}
+
+static struct nl_msg *
+_nl_msg_new_link (int nlmsg_type,
+                  int nlmsg_flags,
+                  int ifindex,
+                  const char *ifname)
+{
+	return _nl_msg_new_link_full (nlmsg_type, nlmsg_flags, ifindex, ifname, AF_UNSPEC, 0, 0);
 }
 
 /* Copied and modified from libnl3's build_addr_msg(). */
@@ -5574,9 +5585,7 @@ do_request_link_no_delayed_actions (NMPlatform *platform, int ifindex, const cha
 	nlmsg = _nl_msg_new_link (RTM_GETLINK,
 	                          0,
 	                          ifindex,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (nlmsg) {
 		nle = _nl_send_nlmsg (platform, nlmsg, NULL, NULL, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 		if (nle < 0) {
@@ -6274,9 +6283,7 @@ link_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return -NME_UNSPEC;
 
@@ -6305,9 +6312,7 @@ link_delete (NMPlatform *platform, int ifindex)
 	nlmsg = _nl_msg_new_link (RTM_DELLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 
 	nmp_object_stackinit_id_link (&obj_id, ifindex);
 	return do_delete_object (platform, &obj_id, nlmsg);
@@ -6330,9 +6335,7 @@ link_set_netns (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 	if (!nlmsg)
 		return FALSE;
 
@@ -6359,12 +6362,13 @@ link_change_flags (NMPlatform *platform,
 	       nm_platform_link_flags2str (flags_set, s_flags, sizeof (s_flags)),
 	       nm_platform_link_flags2str (flags_mask, NULL, 0));
 
-	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          0,
-	                          ifindex,
-	                          NULL,
-	                          flags_mask,
-	                          flags_set);
+	nlmsg = _nl_msg_new_link_full (RTM_NEWLINK,
+	                               0,
+	                               ifindex,
+	                               NULL,
+	                               AF_UNSPEC,
+	                               flags_mask,
+	                               flags_set);
 	if (!nlmsg)
 		return -NME_UNSPEC;
 	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL);
@@ -6428,9 +6432,7 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 	if (   !nlmsg
 	    || !_nl_msg_new_link_set_afspec (nlmsg, mode, NULL))
 		g_return_val_if_reached (-NME_BUG);
@@ -6447,7 +6449,7 @@ link_set_token (NMPlatform *platform, int ifindex, NMUtilsIPv6IfaceId iid)
 	_LOGD ("link: change %d: token: set IPv6 address generation token to %s",
 	       ifindex, nm_utils_inet6_interface_identifier_to_token (iid, sbuf));
 
-	nlmsg = _nl_msg_new_link (RTM_NEWLINK, 0, ifindex, NULL, 0, 0);
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK, 0, ifindex, NULL);
 	if (!nlmsg || !_nl_msg_new_link_set_afspec (nlmsg, -1, &iid))
 		g_return_val_if_reached (FALSE);
 
@@ -6528,9 +6530,7 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 	if (!nlmsg)
 		g_return_val_if_reached (-NME_BUG);
 
@@ -6549,9 +6549,7 @@ link_set_name (NMPlatform *platform, int ifindex, const char *name)
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 	if (!nlmsg)
 		g_return_val_if_reached (-NME_BUG);
 
@@ -6584,9 +6582,7 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 	if (!nlmsg)
 		return FALSE;
 
@@ -6702,9 +6698,7 @@ link_set_sriov_vfs (NMPlatform *platform, int ifindex, const NMPlatformVF *const
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 	if (!nlmsg)
 		g_return_val_if_reached (-NME_BUG);
 
@@ -6832,9 +6826,7 @@ vlan_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -6868,9 +6860,7 @@ link_gre_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -6920,9 +6910,7 @@ link_ip6tnl_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -6976,9 +6964,7 @@ link_ip6gre_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -7035,9 +7021,7 @@ link_ipip_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -7079,9 +7063,7 @@ link_macsec_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -7136,9 +7118,7 @@ link_macvlan_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -7178,9 +7158,7 @@ link_sit_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -7280,9 +7258,7 @@ link_vxlan_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -7346,9 +7322,7 @@ link_6lowpan_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -7496,9 +7470,7 @@ link_vlan_change (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 	if (   !nlmsg
 	    || !_nl_msg_new_link_set_linkinfo_vlan (nlmsg,
 	                                            -1,
@@ -7522,9 +7494,7 @@ link_enslave (NMPlatform *platform, int master, int slave)
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 	if (!nlmsg)
 		return FALSE;
 
