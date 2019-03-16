@@ -73,4 +73,11 @@ gboolean nm_utils_vlan_priority_map_parse_str (NMVlanPriorityMap map_type,
                                                guint32 *out_to,
                                                gboolean *out_has_wildcard_to);
 
+static inline void
+nm_setting_connection_remove_permission_user (NMSettingConnection *setting,
+                                              const char *user)
+{
+	nm_setting_connection_remove_permission_by_value (setting, "user", user, NULL);
+}
+
 #endif /* __NM_LIBNM_SHARED_UTILS_H__ */
