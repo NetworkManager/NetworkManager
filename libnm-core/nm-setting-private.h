@@ -26,6 +26,7 @@
 #endif
 
 #include "nm-setting.h"
+#include "nm-setting-bridge.h"
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
 
@@ -203,6 +204,9 @@ gboolean _nm_setting_should_compare_secret_property (NMSetting *setting,
                                                      NMSetting *other,
                                                      const char *secret_name,
                                                      NMSettingCompareFlags flags);
+
+NMBridgeVlan *_nm_bridge_vlan_dup (const NMBridgeVlan *vlan);
+NMBridgeVlan *_nm_bridge_vlan_dup_and_seal (const NMBridgeVlan *vlan);
 
 /*****************************************************************************/
 

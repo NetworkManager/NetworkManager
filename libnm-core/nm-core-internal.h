@@ -578,6 +578,7 @@ gboolean _nm_utils_dhcp_duid_valid (const char *duid, GBytes **out_duid_bin);
 /*****************************************************************************/
 
 gboolean _nm_setting_sriov_sort_vfs (NMSettingSriov *setting);
+gboolean _nm_setting_bridge_port_sort_vlans (NMSettingBridgePort *setting);
 
 /*****************************************************************************/
 

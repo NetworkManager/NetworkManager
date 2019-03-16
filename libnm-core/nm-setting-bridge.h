@@ -51,6 +51,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_BRIDGE_VLAN_FILTERING     "vlan-filtering"
 #define NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID  "vlan-default-pvid"
 
+#define NM_BRIDGE_VLAN_VID_MIN            1
+#define NM_BRIDGE_VLAN_VID_MAX            4094
+
 /**
  * NMSettingBridge:
  *
@@ -92,6 +95,35 @@ NM_AVAILABLE_IN_1_18
 gboolean     nm_setting_bridge_get_vlan_filtering (NMSettingBridge *setting);
 NM_AVAILABLE_IN_1_18
 guint16      nm_setting_bridge_get_vlan_default_pvid (NMSettingBridge *setting);
+
+typedef struct _NMBridgeVlan NMBridgeVlan;
+
+NM_AVAILABLE_IN_1_18
+GType          nm_bridge_vlan_get_type (void);
+NM_AVAILABLE_IN_1_18
+NMBridgeVlan * nm_bridge_vlan_new (guint16 vid);
+NM_AVAILABLE_IN_1_18
+NMBridgeVlan * nm_bridge_vlan_ref (NMBridgeVlan *vlan);
+NM_AVAILABLE_IN_1_18
+void           nm_bridge_vlan_unref (NMBridgeVlan *vlan);
+NM_AVAILABLE_IN_1_18
+NMBridgeVlan * nm_bridge_vlan_new_clone (const NMBridgeVlan *vlan);
+NM_AVAILABLE_IN_1_18
+int            nm_bridge_vlan_cmp (const NMBridgeVlan *a, const NMBridgeVlan *b);
+NM_AVAILABLE_IN_1_18
+void           nm_bridge_vlan_seal (NMBridgeVlan *vlan);
+NM_AVAILABLE_IN_1_18
+gboolean       nm_bridge_vlan_is_sealed (const NMBridgeVlan *vlan);
+NM_AVAILABLE_IN_1_18
+void           nm_bridge_vlan_set_untagged (NMBridgeVlan *vlan, gboolean value);
+NM_AVAILABLE_IN_1_18
+void           nm_bridge_vlan_set_pvid (NMBridgeVlan *vlan, gboolean value);
+NM_AVAILABLE_IN_1_18
+guint16        nm_bridge_vlan_get_vid (const NMBridgeVlan *vlan);
+NM_AVAILABLE_IN_1_18
+gboolean       nm_bridge_vlan_is_untagged (const NMBridgeVlan *vlan);
+NM_AVAILABLE_IN_1_18
+gboolean       nm_bridge_vlan_is_pvid (const NMBridgeVlan *vlan);
 
 G_END_DECLS
 

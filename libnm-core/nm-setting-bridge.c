@@ -74,6 +74,291 @@ G_DEFINE_TYPE (NMSettingBridge, nm_setting_bridge, NM_TYPE_SETTING)
 
 /*****************************************************************************/
 
+G_DEFINE_BOXED_TYPE (NMBridgeVlan, nm_bridge_vlan, _nm_bridge_vlan_dup, nm_bridge_vlan_unref)
+
+struct _NMBridgeVlan {
+	guint refcount;
+	guint16 vid;
+	bool untagged:1;
+	bool pvid:1;
+	bool sealed:1;
+};
+
+static gboolean
+NM_IS_BRIDGE_VLAN (const NMBridgeVlan *self, gboolean also_sealed)
+{
+	return    self
+	       && self->refcount > 0
+	       && (also_sealed || !self->sealed);
+}
+
+/**
+ * nm_bridge_vlan_new:
+ * @vid: the VLAN id, must be between 1 and 4094.
+ *
+ * Creates a new #NMBridgeVlan object.
+ *
+ * Returns: (transfer full): the new #NMBridgeVlan object.
+ *
+ * Since: 1.18
+ **/
+NMBridgeVlan *
+nm_bridge_vlan_new (guint16 vid)
+{
+	NMBridgeVlan *vlan;
+
+	g_return_val_if_fail (vid >= NM_BRIDGE_VLAN_VID_MIN, NULL);
+	g_return_val_if_fail (vid <= NM_BRIDGE_VLAN_VID_MAX, NULL);
+
+	vlan = g_slice_new0 (NMBridgeVlan);
+	vlan->refcount = 1;
+	vlan->vid = vid;
+
+	return vlan;
+}
+
+/**
+ * nm_bridge_vlan_ref:
+ * @vlan: the #NMBridgeVlan
+ *
+ * Increases the reference count of the object.
+ *
+ * Returns: the input argument @vlan object.
+ *
+ * Since: 1.18
+ **/
+NMBridgeVlan *
+nm_bridge_vlan_ref (NMBridgeVlan *vlan)
+{
+	g_return_val_if_fail (NM_IS_BRIDGE_VLAN (vlan, TRUE), NULL);
+
+	nm_assert (vlan->refcount < G_MAXUINT);
+
+	vlan->refcount++;
+	return vlan;
+}
+
+/**
+ * nm_bridge_vlan_unref:
+ * @vlan: the #NMBridgeVlan
+ *
+ * Decreases the reference count of the object.  If the reference count
+ * reaches zero the object will be destroyed.
+ *
+ * Since: 1.18
+ **/
+void
+nm_bridge_vlan_unref (NMBridgeVlan *vlan)
+{
+	g_return_if_fail (NM_IS_BRIDGE_VLAN (vlan, TRUE));
+
+	if (--vlan->refcount == 0)
+		g_slice_free (NMBridgeVlan, vlan);
+}
+
+/**
+ * nm_bridge_vlan_cmp:
+ * @a: a #NMBridgeVlan
+ * @b: another #NMBridgeVlan
+ *
+ * Compare two bridge VLAN objects.
+ *
+ * Returns: zero of the two instances are equivalent or
+ *   a non-zero integer otherwise. This defines a total ordering
+ *   over the VLANs. Whether a VLAN is sealed or not does not
+ *   affect the comparison.
+ *
+ * Since: 1.18
+ **/
+int
+nm_bridge_vlan_cmp (const NMBridgeVlan *a, const NMBridgeVlan *b)
+{
+	g_return_val_if_fail (NM_IS_BRIDGE_VLAN (a, TRUE), 0);
+	g_return_val_if_fail (NM_IS_BRIDGE_VLAN (b, TRUE), 0);
+
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, vid);
+	NM_CMP_FIELD_BOOL (a, b, untagged);
+	NM_CMP_FIELD_BOOL (a, b, pvid);
+
+	return 0;
+}
+
+NMBridgeVlan *
+_nm_bridge_vlan_dup (const NMBridgeVlan *vlan)
+{
+	g_return_val_if_fail (NM_IS_BRIDGE_VLAN (vlan, TRUE), NULL);
+
+	if (vlan->sealed) {
+		nm_bridge_vlan_ref ((NMBridgeVlan *) vlan);
+		return (NMBridgeVlan *) vlan;
+	}
+
+	return nm_bridge_vlan_new_clone (vlan);
+}
+
+NMBridgeVlan *
+_nm_bridge_vlan_dup_and_seal (const NMBridgeVlan *vlan)
+{
+	NMBridgeVlan *new;
+
+	g_return_val_if_fail (NM_IS_BRIDGE_VLAN (vlan, TRUE), NULL);
+
+	new = _nm_bridge_vlan_dup (vlan);
+	nm_bridge_vlan_seal (new);
+
+	return new;
+}
+
+/**
+ * nm_bridge_vlan_get_vid:
+ * @vlan: the #NMBridgeVlan
+ *
+ * Gets the VLAN id of the object.
+ *
+ * Returns: the VLAN id
+ *
+ * Since: 1.18
+ **/
+guint16
+nm_bridge_vlan_get_vid (const NMBridgeVlan *vlan)
+{
+	g_return_val_if_fail (NM_IS_BRIDGE_VLAN (vlan, TRUE), 0);
+
+	return vlan->vid;
+}
+
+/**
+ * nm_bridge_vlan_is_untagged:
+ * @vlan: the #NMBridgeVlan
+ *
+ * Returns whether the VLAN is untagged.
+ *
+ * Returns: %TRUE if the VLAN is untagged, %FALSE otherwise
+ *
+ * Since: 1.18
+ **/
+gboolean
+nm_bridge_vlan_is_untagged (const NMBridgeVlan *vlan)
+{
+	g_return_val_if_fail (NM_IS_BRIDGE_VLAN (vlan, TRUE), FALSE);
+
+	return vlan->untagged;
+}
+
+/**
+ * nm_bridge_vlan_is_pvid:
+ * @vlan: the #NMBridgeVlan
+ *
+ * Returns whether the VLAN is the PVID for the port.
+ *
+ * Returns: %TRUE if the VLAN is the PVID
+ *
+ * Since: 1.18
+ **/
+gboolean
+nm_bridge_vlan_is_pvid (const NMBridgeVlan *vlan)
+{
+	g_return_val_if_fail (NM_IS_BRIDGE_VLAN (vlan, TRUE), FALSE);
+
+	return vlan->pvid;
+}
+
+/**
+ * nm_bridge_vlan_set_untagged:
+ * @vlan: the #NMBridgeVlan
+ * @value: the new value
+ *
+ * Change the value of the untagged property of the VLAN.
+ *
+ * Since: 1.18
+ **/
+void
+nm_bridge_vlan_set_untagged (NMBridgeVlan *vlan, gboolean value)
+{
+	g_return_if_fail (NM_IS_BRIDGE_VLAN (vlan, FALSE));
+
+	vlan->untagged = value;
+}
+
+/**
+ * nm_bridge_vlan_set_pvid:
+ * @vlan: the #NMBridgeVlan
+ * @value: the new value
+ *
+ * Change the value of the PVID property of the VLAN.
+ *
+ * Since: 1.18
+ **/
+void
+nm_bridge_vlan_set_pvid (NMBridgeVlan *vlan, gboolean value)
+{
+	g_return_if_fail (NM_IS_BRIDGE_VLAN (vlan, FALSE));
+
+	vlan->pvid = value;
+}
+
+/**
+ * nm_bridge_vlan_is_sealed:
+ * @vlan: the #NMBridgeVlan instance
+ *
+ * Returns: whether @self is sealed or not.
+ *
+ * Since: 1.18
+ */
+gboolean
+nm_bridge_vlan_is_sealed (const NMBridgeVlan *vlan)
+{
+	g_return_val_if_fail (NM_IS_BRIDGE_VLAN (vlan, TRUE), FALSE);
+
+	return vlan->sealed;
+}
+
+/**
+ * nm_bridge_vlan_seal:
+ * @vlan: the #NMBridgeVlan instance
+ *
+ * Seal the #NMBridgeVlan instance. Afterwards, it is a bug
+ * to call all functions that modify the instance (except ref/unref).
+ * A sealed instance cannot be unsealed again, but you can create
+ * an unsealed copy with nm_bridge_vlan_new_clone().
+ *
+ * Since: 1.18
+ */
+void
+nm_bridge_vlan_seal (NMBridgeVlan *vlan)
+{
+	g_return_if_fail (NM_IS_BRIDGE_VLAN (vlan, TRUE));
+
+	vlan->sealed = TRUE;
+}
+
+/**
+ * nm_bridge_vlan_new_clone:
+ * @vlan: the #NMBridgeVlan instance to copy
+ *
+ * Returns: (transfer full): a clone of @vlan. This instance
+ *   is always unsealed.
+ *
+ * Since: 1.18
+ */
+NMBridgeVlan *
+nm_bridge_vlan_new_clone (const NMBridgeVlan *vlan)
+{
+	NMBridgeVlan *copy;
+
+	g_return_val_if_fail (NM_IS_BRIDGE_VLAN (vlan, TRUE), NULL);
+
+	copy = nm_bridge_vlan_new (vlan->vid);
+	copy->untagged = vlan->untagged;
+	copy->pvid = vlan->pvid;
+
+	return copy;
+}
+
+/*****************************************************************************/
+
+
 /**
  * nm_setting_bridge_get_mac_address:
  * @setting: the #NMSettingBridge
@@ -716,7 +1001,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_VLAN_DEFAULT_PVID] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID, "", "",
-	                       0, 4094, 1,
+	                       0, NM_BRIDGE_VLAN_VID_MAX, 1,
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_INFERRABLE |

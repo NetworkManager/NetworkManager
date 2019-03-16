@@ -103,6 +103,19 @@ void        _nm_utils_format_variant_attributes_full (GString *str,
                                                       char key_value_separator);
 gboolean    _nm_sriov_vf_parse_vlans (NMSriovVF *vf, const char *str, GError **error);
 
+GVariant *  _nm_utils_bridge_vlans_to_dbus (NMSetting *setting, const char *property);
+gboolean    _nm_utils_bridge_vlans_from_dbus (NMSetting *setting,
+                                              GVariant *connection_dict,
+                                              const char *property,
+                                              GVariant *value,
+                                              NMSettingParseFlags parse_flags,
+                                              GError **error);
+gboolean    _nm_utils_bridge_vlan_verify_list (GPtrArray *vlans,
+                                               gboolean check_normalizable,
+                                               GError **error,
+                                               const char *setting,
+                                               const char *property);
+
 /* JSON to GValue conversion macros */
 
 static inline void

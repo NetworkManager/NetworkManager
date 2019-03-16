@@ -1298,6 +1298,18 @@ _normalize_sriov_vf_order (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
+_normalize_bridge_port_vlan_order (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingBridgePort *s_port;
+
+	s_port = nm_connection_get_setting_bridge_port (self);
+	if (!s_port)
+		return FALSE;
+
+	return _nm_setting_bridge_port_sort_vlans (s_port);
+}
+
+static gboolean
 _normalize_required_settings (NMConnection *self, GHashTable *parameters)
 {
 	NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth (self);
@@ -1645,6 +1657,7 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_ovs_interface_type (connection, parameters);
 	was_modified |= _normalize_ip_tunnel_wired_setting (connection, parameters);
 	was_modified |= _normalize_sriov_vf_order (connection, parameters);
+	was_modified |= _normalize_bridge_port_vlan_order (connection, parameters);
 
 	/* Verify anew. */
 	success = _nm_connection_verify (connection, error);
