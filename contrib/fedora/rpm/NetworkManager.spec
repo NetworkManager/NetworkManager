@@ -179,7 +179,6 @@ BuildRequires: meson
 BuildRequires: automake
 BuildRequires: autoconf
 %endif
-BuildRequires: intltool
 BuildRequires: gettext-devel
 
 BuildRequires: dbus-devel >= %{dbus_version}
@@ -597,7 +596,6 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 gtkdocize
 %endif
 autoreconf --install --force
-intltoolize --automake --copy --force
 %configure \
 	--disable-silent-rules \
 	--disable-static \

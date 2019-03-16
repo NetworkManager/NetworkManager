@@ -68,11 +68,11 @@ if enable_polkit
     configuration: data_conf,
   )
 
-  custom_target(
+  i18n.merge_file(
     policy,
     input: policy_in,
     output: policy,
-    command: intltool_xml_cmd,
+    po_dir: po_dir,
     install: true,
     install_dir: polkit_dir,
   )

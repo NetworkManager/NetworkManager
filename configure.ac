@@ -106,10 +106,8 @@ AC_CHECK_DECLS([getrandom],
 dnl
 dnl translation support
 dnl
-IT_PROG_INTLTOOL([0.40.0])
-
 AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION([0.17])
+AM_GNU_GETTEXT_VERSION([0.19.8])
 
 GETTEXT_PACKAGE=NetworkManager
 AC_SUBST(GETTEXT_PACKAGE)
