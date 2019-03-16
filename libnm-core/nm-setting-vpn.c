@@ -173,10 +173,8 @@ nm_setting_vpn_add_data_item (NMSettingVpn *setting,
                               const char *item)
 {
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
-	g_return_if_fail (key != NULL);
-	g_return_if_fail (strlen (key) > 0);
-	g_return_if_fail (item != NULL);
-	g_return_if_fail (strlen (item) > 0);
+	g_return_if_fail (key && key[0]);
+	g_return_if_fail (item && item[0]);
 
 	g_hash_table_insert (NM_SETTING_VPN_GET_PRIVATE (setting)->data,
 	                     g_strdup (key), g_strdup (item));
@@ -242,6 +240,7 @@ nm_setting_vpn_remove_data_item (NMSettingVpn *setting, const char *key)
 	gboolean found;
 
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), FALSE);
+	g_return_val_if_fail (key, FALSE);
 
 	found = g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key);
 	if (found)
@@ -350,10 +349,8 @@ nm_setting_vpn_add_secret (NMSettingVpn *setting,
                            const char *secret)
 {
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
-	g_return_if_fail (key != NULL);
-	g_return_if_fail (strlen (key) > 0);
-	g_return_if_fail (secret != NULL);
-	g_return_if_fail (strlen (secret) > 0);
+	g_return_if_fail (key && key[0]);
+	g_return_if_fail (secret && secret[0]);
 
 	g_hash_table_insert (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets,
 	                     g_strdup (key), g_strdup (secret));
@@ -419,6 +416,7 @@ nm_setting_vpn_remove_secret (NMSettingVpn *setting, const char *key)
 	gboolean found;
 
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), FALSE);
+	g_return_val_if_fail (key, FALSE);
 
 	found = g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, key);
 	if (found)
