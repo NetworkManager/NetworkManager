@@ -1518,6 +1518,28 @@ nm_platform_link_set_sriov_vfs (NMPlatform *self, int ifindex, const NMPlatformV
 	return klass->link_set_sriov_vfs (self, ifindex, vfs);
 }
 
+gboolean
+nm_platform_link_set_bridge_vlans (NMPlatform *self, int ifindex, gboolean on_master, const NMPlatformBridgeVlan *const *vlans)
+{
+	guint i;
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	_LOG3D ("link: %s bridge VLANs on %s",
+	        vlans ? "setting" : "clearing",
+	        on_master ? "master" : "self");
+	if (vlans) {
+		for (i = 0; vlans[i]; i++) {
+			const NMPlatformBridgeVlan *vlan = vlans[i];
+
+			_LOG3D ("link:   bridge VLAN %s", nm_platform_bridge_vlan_to_string (vlan, NULL, 0));
+		}
+	}
+
+	return klass->link_set_bridge_vlans (self, ifindex, on_master, vlans);
+}
+
 /**
  * nm_platform_link_set_up:
  * @self: platform instance
@@ -6502,6 +6524,24 @@ nm_platform_vf_to_string (const NMPlatformVF *vf, char *buf, gsize len)
 	            vf->min_tx_rate ? nm_sprintf_buf (str_min_tx_rate, " min_tx_rate %u", (unsigned) vf->min_tx_rate) : "",
 	            vf->max_tx_rate ? nm_sprintf_buf (str_max_tx_rate, " max_tx_rate %u", (unsigned) vf->max_tx_rate) : "",
 	            gstr_vlans ? gstr_vlans->str : "");
+
+	return buf;
+}
+
+
+const char *
+nm_platform_bridge_vlan_to_string (const NMPlatformBridgeVlan *vlan, char *buf, gsize len)
+{
+	if (!nm_utils_to_string_buffer_init_null (vlan, &buf, &len))
+		return buf;
+
+	g_snprintf (buf, len,
+	            "%u"
+	            "%s"
+	            "%s",
+	            vlan->vid,
+	            vlan->pvid ? " PVID" : "",
+	            vlan->untagged ? " untagged" : "");
 
 	return buf;
 }

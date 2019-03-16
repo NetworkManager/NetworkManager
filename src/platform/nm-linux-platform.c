@@ -29,6 +29,7 @@
 #include <linux/fib_rules.h>
 #include <linux/ip.h>
 #include <linux/if_arp.h>
+#include <linux/if_bridge.h>
 #include <linux/if_link.h>
 #include <linux/if_tun.h>
 #include <linux/if_tunnel.h>
@@ -274,6 +275,14 @@ struct _ifla_vf_vlan_info {
 	guint32 qos;
 	guint16 vlan_proto; /* VLAN protocol, either 802.1Q or 802.1ad */
 };
+
+/*****************************************************************************/
+
+/* Appeared in in kernel 4.0 dated April 12, 2015 */
+#ifndef BRIDGE_VLAN_INFO_RANGE_BEGIN
+#define BRIDGE_VLAN_INFO_RANGE_BEGIN    (1 << 3) /* VLAN is start of vlan range */
+#define BRIDGE_VLAN_INFO_RANGE_END      (1 << 4) /* VLAN is end of vlan range */
+#endif
 
 /*****************************************************************************/
 
@@ -3858,7 +3867,7 @@ _nl_msg_new_link_full (int nlmsg_type,
 		.ifi_index = ifindex,
 	};
 
-	nm_assert (NM_IN_SET (nlmsg_type, RTM_DELLINK, RTM_NEWLINK, RTM_GETLINK));
+	nm_assert (NM_IN_SET (nlmsg_type, RTM_DELLINK, RTM_NEWLINK, RTM_GETLINK, RTM_SETLINK));
 
 	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags);
 
@@ -6781,6 +6790,67 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
+static gboolean
+link_set_bridge_vlans (NMPlatform *platform,
+                       int ifindex,
+                       gboolean on_master,
+                       const NMPlatformBridgeVlan *const *vlans)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	struct nlattr *list;
+	struct bridge_vlan_info vinfo = { };
+	guint i;
+
+	nlmsg = _nl_msg_new_link_full (vlans ? RTM_SETLINK : RTM_DELLINK,
+	                               0,
+	                               ifindex,
+	                               NULL,
+	                               AF_BRIDGE,
+	                               0,
+	                               0);
+	if (!nlmsg)
+		g_return_val_if_reached (-NME_BUG);
+
+	if (!(list = nla_nest_start (nlmsg, IFLA_AF_SPEC)))
+		goto nla_put_failure;
+
+	NLA_PUT_U16 (nlmsg,
+	             IFLA_BRIDGE_FLAGS,
+	             on_master ? BRIDGE_FLAGS_MASTER : BRIDGE_FLAGS_SELF);
+
+	if (vlans) {
+		/* Add VLANs */
+		for (i = 0; vlans[i]; i++) {
+			const NMPlatformBridgeVlan *vlan = vlans[i];
+
+			vinfo.vid = vlan->vid;
+			vinfo.flags = 0;
+
+			if (vlan->untagged)
+				vinfo.flags |= BRIDGE_VLAN_INFO_UNTAGGED;
+			if (vlan->pvid)
+				vinfo.flags |= BRIDGE_VLAN_INFO_PVID;
+
+			NLA_PUT (nlmsg, IFLA_BRIDGE_VLAN_INFO, sizeof (vinfo), &vinfo);
+		}
+	} else {
+		/* Flush existing VLANs */
+		vinfo.vid = 1;
+		vinfo.flags = BRIDGE_VLAN_INFO_RANGE_BEGIN;
+		NLA_PUT (nlmsg, IFLA_BRIDGE_VLAN_INFO, sizeof (vinfo), &vinfo);
+
+		vinfo.vid = 4094;
+		vinfo.flags = BRIDGE_VLAN_INFO_RANGE_END;
+		NLA_PUT (nlmsg, IFLA_BRIDGE_VLAN_INFO, sizeof (vinfo), &vinfo);
+	}
+
+	nla_nest_end (nlmsg, list);
+
+	return (do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) >= 0);
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
 static char *
 link_get_physical_port_id (NMPlatform *platform, int ifindex)
 {
@@ -8921,6 +8991,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_set_name = link_set_name;
 	platform_class->link_set_sriov_params = link_set_sriov_params;
 	platform_class->link_set_sriov_vfs = link_set_sriov_vfs;
+	platform_class->link_set_bridge_vlans = link_set_bridge_vlans;
 
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;
 	platform_class->link_get_dev_id = link_get_dev_id;
