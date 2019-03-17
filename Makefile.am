@@ -669,6 +669,7 @@ libnm_core_lib_h_pub_mkenums = \
 	libnm-core/nm-core-enum-types.h
 libnm_core_lib_h_priv = \
 	shared/nm-ethtool-utils.h \
+	shared/nm-libnm-core-utils.h \
 	shared/nm-meta-setting.h \
 	libnm-core/nm-crypto.h \
 	libnm-core/nm-crypto-impl.h \
@@ -731,6 +732,7 @@ libnm_core_lib_c_settings_real = \
 libnm_core_lib_c_real = \
 	$(libnm_core_lib_c_settings_real) \
 	shared/nm-ethtool-utils.c \
+	shared/nm-libnm-core-utils.c \
 	shared/nm-meta-setting.c \
 	libnm-core/nm-crypto.c \
 	libnm-core/nm-connection.c \
@@ -3914,6 +3916,8 @@ clients_common_libnmc_la_SOURCES = \
 	\
 	shared/nm-ethtool-utils.c \
 	shared/nm-ethtool-utils.h \
+	shared/nm-libnm-core-utils.c \
+	shared/nm-libnm-core-utils.h \
 	\
 	clients/common/nm-meta-setting-desc.c \
 	clients/common/nm-meta-setting-desc.h \
