@@ -82,6 +82,10 @@ nmc_string_to_uint_base (const char *str,
 	char *end;
 	unsigned long int tmp;
 
+	if (!str || !str[0])
+		return FALSE;
+
+	/* FIXME: don't use this function, replace by _nm_utils_ascii_str_to_int64() */
 	errno = 0;
 	tmp = strtoul (str, &end, base);
 	if (errno || *end != '\0' || (range_check && (tmp < min || tmp > max))) {
