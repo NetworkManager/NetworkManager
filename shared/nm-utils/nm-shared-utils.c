@@ -635,8 +635,16 @@ nm_utils_parse_inaddr (int addr_family,
 	NMIPAddr addrbin;
 	char addrstr_buf[MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
 
-	if (!nm_utils_parse_inaddr_bin (addr_family, text, &addr_family, &addrbin))
+	g_return_val_if_fail (text, FALSE);
+
+	if (addr_family == AF_UNSPEC)
+		addr_family = strchr (text, ':') ? AF_INET6 : AF_INET;
+	else
+		g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), FALSE);
+
+	if (inet_pton (addr_family, text, &addrbin) != 1)
 		return FALSE;
+
 	NM_SET_OUT (out_addr, g_strdup (inet_ntop (addr_family, &addrbin, addrstr_buf, sizeof (addrstr_buf))));
 	return TRUE;
 }
