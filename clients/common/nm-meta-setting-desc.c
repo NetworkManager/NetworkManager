@@ -26,6 +26,7 @@
 
 #include "nm-common-macros.h"
 #include "nm-utils/nm-enum-utils.h"
+#include "nm-libnm-core-utils.h"
 
 #include "nm-vpn-helpers.h"
 #include "nm-client-utils.h"
@@ -409,48 +410,25 @@ _parse_vlan_priority_maps (const char *priority_map,
                            NMVlanPriorityMap map_type,
                            GError **error)
 {
-	char **mapping = NULL, **iter;
-	unsigned long from, to, from_max, to_max;
+	gs_strfreev char **mapping = NULL;
+	char **iter;
 
-	g_return_val_if_fail (priority_map != NULL, NULL);
-	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
-
-	if (map_type == NM_VLAN_INGRESS_MAP) {
-		from_max = MAX_8021P_PRIO;
-		to_max = MAX_SKB_PRIO;
-	} else {
-		from_max = MAX_SKB_PRIO;
-		to_max = MAX_8021P_PRIO;
-	}
+	nm_assert (priority_map);
+	nm_assert (!error || !*error);
 
 	mapping = g_strsplit (priority_map, ",", 0);
-	for (iter = mapping; iter && *iter; iter++) {
-		char *left, *right;
-
-		left = g_strstrip (*iter);
-		right = strchr (left, ':');
-		if (!right) {
+	for (iter = mapping; *iter; iter++) {
+		if (!nm_utils_vlan_priority_map_parse_str (map_type,
+		                                           *iter,
+		                                           FALSE,
+		                                           NULL,
+		                                           NULL,
+		                                           NULL)) {
 			g_set_error (error, 1, 0, _("invalid priority map '%s'"), *iter);
-			g_strfreev (mapping);
 			return NULL;
 		}
-		*right++ = '\0';
-
-		if (!nmc_string_to_uint (left, TRUE, 0, from_max, &from)) {
-			g_set_error (error, 1, 0, _("priority '%s' is not valid (<0-%ld>)"),
-			             left, from_max);
-			g_strfreev (mapping);
-			return NULL;
-		}
-		if (!nmc_string_to_uint (right, TRUE, 0, to_max, &to)) {
-			g_set_error (error, 1, 0, _("priority '%s' is not valid (<0-%ld>)"),
-			             right, to_max);
-			g_strfreev (mapping);
-			return NULL;
-		}
-		*(right-1) = ':'; /* Put back ':' */
 	}
-	return mapping;
+	return g_steal_pointer (&mapping);
 }
 
 /*
