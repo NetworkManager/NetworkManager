@@ -189,6 +189,7 @@ libnm_core_sources_all =  libnm_core_sources
 libnm_core_sources_all += libnm_core_enum
 libnm_core_sources_all += shared_nm_meta_setting_c
 libnm_core_sources_all += shared_nm_ethtool_utils_c
+libnm_core_sources_all += shared_nm_libnm_core_utils_c
 libnm_core_sources_all += [version_header]
 
 libnm_core = static_library(
