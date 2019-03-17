@@ -20,4 +20,27 @@
 
 /****************************************************************************/
 
+#include "nm-setting-vlan.h"
+
+static inline guint32
+nm_utils_vlan_priority_map_get_max_prio (NMVlanPriorityMap map, gboolean from)
+{
+	if (map == NM_VLAN_INGRESS_MAP) {
+		return   from
+		       ? 7u /* MAX_8021P_PRIO */
+		       : (guint32) G_MAXUINT32 /* MAX_SKB_PRIO */;
+	}
+	nm_assert (map == NM_VLAN_EGRESS_MAP);
+	return   from
+	       ? (guint32) G_MAXUINT32 /* MAX_SKB_PRIO */
+	       : 7u /* MAX_8021P_PRIO */;
+}
+
+gboolean nm_utils_vlan_priority_map_parse_str (NMVlanPriorityMap map_type,
+                                               const char *str,
+                                               gboolean allow_wildcard_to,
+                                               guint32 *out_from,
+                                               guint32 *out_to,
+                                               gboolean *out_has_wildcard_to);
+
 #endif /* __NM_LIBNM_SHARED_UTILS_H__ */
