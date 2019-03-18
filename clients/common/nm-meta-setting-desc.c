@@ -1698,11 +1698,15 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		                     error); \
 	})
 
-#define DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC(def_func, s_macro, num_func, rem_func_idx, values_static, rem_func_val) \
+#define DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
 	_DEFINE_REMOVER_INDEX_OR_VALUE (def_func, s_macro, num_func, rem_func_idx, { \
-		value = nmc_string_is_valid (value, values_static, error); \
-		if (!value) \
-			return FALSE; \
+		if (property_info->property_typ_data->values_static) { \
+			value = nmc_string_is_valid (value, \
+			                             (const char **) property_info->property_typ_data->values_static, \
+			                             error); \
+			if (!value) \
+				return FALSE; \
+		} \
 		\
 		rem_func_val (s_macro (setting), value); \
 		return TRUE; \
@@ -4400,8 +4404,6 @@ _get_fcn_wireless_security_wep_key (ARGS_GET_FCN)
 	RETURN_STR_TO_FREE (key);
 }
 
-static const char *wifi_sec_valid_protos[] = { "wpa", "rsn", NULL };
-
 DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_wireless_security_proto,
                               NM_SETTING_WIRELESS_SECURITY,
                               nm_setting_wireless_security_add_proto);
@@ -4410,10 +4412,7 @@ DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC (_remove_fcn_wireless_security_p
                                                  NM_SETTING_WIRELESS_SECURITY,
                                                  nm_setting_wireless_security_get_num_protos,
                                                  nm_setting_wireless_security_remove_proto,
-                                                 wifi_sec_valid_protos,
                                                  nm_setting_wireless_security_remove_proto_by_value)
-
-static const char *wifi_sec_valid_pairwises[] = { "tkip", "ccmp", NULL };
 
 DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_wireless_security_pairwise,
                               NM_SETTING_WIRELESS_SECURITY,
@@ -4423,10 +4422,7 @@ DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC (_remove_fcn_wireless_security_p
                                                  NM_SETTING_WIRELESS_SECURITY,
                                                  nm_setting_wireless_security_get_num_pairwise,
                                                  nm_setting_wireless_security_remove_pairwise,
-                                                 wifi_sec_valid_pairwises,
                                                  nm_setting_wireless_security_remove_pairwise_by_value)
-
-static const char *wifi_sec_valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
 
 DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_wireless_security_group,
                               NM_SETTING_WIRELESS_SECURITY,
@@ -4436,7 +4432,6 @@ DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC (_remove_fcn_wireless_security_g
                                                  NM_SETTING_WIRELESS_SECURITY,
                                                  nm_setting_wireless_security_get_num_groups,
                                                  nm_setting_wireless_security_remove_group,
-                                                 wifi_sec_valid_groups,
                                                  nm_setting_wireless_security_remove_group_by_value)
 
 static gboolean
@@ -7381,7 +7376,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 			.remove_fcn =               _remove_fcn_wireless_security_proto,
 		),
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            wifi_sec_valid_protos,
+			.values_static =            NM_MAKE_STRV ("wpa", "rsn"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_PAIRWISE,
@@ -7391,7 +7386,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 			.remove_fcn =               _remove_fcn_wireless_security_pairwise,
 		),
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            wifi_sec_valid_pairwises,
+			.values_static =            NM_MAKE_STRV ("tkip", "ccmp"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_GROUP,
@@ -7401,7 +7396,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 			.remove_fcn =               _remove_fcn_wireless_security_group,
 		),
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            wifi_sec_valid_groups,
+			.values_static =            NM_MAKE_STRV ("wep40", "wep104", "tkip", "ccmp"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_PMF,
