@@ -2942,7 +2942,7 @@ dcb_check_feature_enabled (const NMMetaEnvironment *environment, gpointer *envir
 }
 
 static gboolean
-_set_fcn_dcb_priority_group_id (ARGS_SET_FCN)
+_set_fcn_dcb (ARGS_SET_FCN)
 {
 	guint i = 0;
 	guint nums[8] = { 0, };
@@ -2950,56 +2950,29 @@ _set_fcn_dcb_priority_group_id (ARGS_SET_FCN)
 	if (_SET_FCN_DO_RESET_DEFAULT (value))
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
-	if (!dcb_parse_uint_array (value, 7, 15, nums, error))
+	if (!dcb_parse_uint_array (value,
+	                           property_info->property_typ_data->subtype.dcb.max,
+	                           property_info->property_typ_data->subtype.dcb.other,
+	                           nums,
+	                           error))
 		return FALSE;
 
-	for (i = 0; i < 8; i++)
-		nm_setting_dcb_set_priority_group_id (NM_SETTING_DCB (setting), i, nums[i]);
+	if (property_info->property_typ_data->subtype.dcb.is_percent) {
+		guint sum = 0;
 
-	dcb_check_feature_enabled (environment, environment_user_data, NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
-	return TRUE;
-}
-
-static gboolean
-_set_fcn_dcb_priority_group_bandwidth (ARGS_SET_FCN)
-{
-	guint i = 0, sum = 0;
-	guint nums[8] = { 0, };
-
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	if (!dcb_parse_uint_array (value, 100, 0, nums, error))
-		return FALSE;
-
-	for (i = 0; i < 8; i++)
-		sum += nums[i];
-	if (sum != 100) {
-		g_set_error_literal (error, 1, 0, _("bandwidth percentages must total 100%%"));
-		return FALSE;
+		for (i = 0; i < 8; i++) {
+			sum += nums[i];
+			if (nums[i] > 100 || sum > 100)
+				break;
+		}
+		if (sum != 100) {
+			g_set_error_literal (error, 1, 0, _("bandwidth percentages must total 100%%"));
+			return FALSE;
+		}
 	}
 
 	for (i = 0; i < 8; i++)
-		nm_setting_dcb_set_priority_group_bandwidth (NM_SETTING_DCB (setting), i, nums[i]);
-
-	dcb_check_feature_enabled (environment, environment_user_data, NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
-	return TRUE;
-}
-
-static gboolean
-_set_fcn_dcb_priority_bandwidth (ARGS_SET_FCN)
-{
-	guint i = 0;
-	guint nums[8] = { 0, };
-
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	if (!dcb_parse_uint_array (value, 100, 0, nums, error))
-		return FALSE;
-
-	for (i = 0; i < 8; i++)
-		nm_setting_dcb_set_priority_bandwidth (NM_SETTING_DCB (setting), i, nums[i]);
+		property_info->property_typ_data->subtype.dcb.set_fcn (NM_SETTING_DCB (setting), i, nums[i]);
 
 	dcb_check_feature_enabled (environment, environment_user_data, NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
 	return TRUE;
@@ -3052,25 +3025,6 @@ _set_fcn_dcb_bool (ARGS_SET_FCN)
 	                           (  property_info->property_typ_data->subtype.dcb_bool.with_flow_control_flags
 	                            ? NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS
 	                            : NM_SETTING_DCB_PRIORITY_GROUP_FLAGS));
-	return TRUE;
-}
-
-static gboolean
-_set_fcn_dcb_priority_traffic_class (ARGS_SET_FCN)
-{
-	guint i = 0;
-	guint nums[8] = { 0, };
-
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	if (!dcb_parse_uint_array (value, 7, 0, nums, error))
-		return FALSE;
-
-	for (i = 0; i < 8; i++)
-		nm_setting_dcb_set_priority_traffic_class (NM_SETTING_DCB (setting), i, nums[i]);
-
-	dcb_check_feature_enabled (environment, environment_user_data, NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
 	return TRUE;
 }
 
@@ -4849,6 +4803,11 @@ static const NMMetaPropertyType _pt_dcb_bool = {
 	.set_fcn =                      _set_fcn_dcb_bool,
 };
 
+static const NMMetaPropertyType _pt_dcb = {
+	.get_fcn =                      _get_fcn_dcb,
+	.set_fcn =                      _set_fcn_dcb,
+};
+
 static const NMMetaPropertyType _pt_ethtool = {
 	.get_fcn =                      _get_fcn_ethtool,
 	.set_fcn =                      _set_fcn_ethtool,
@@ -5646,30 +5605,31 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 		.property_type =                &_pt_dcb_flags,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_PRIORITY_GROUP_ID,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_dcb,
-			.set_fcn =                  _set_fcn_dcb_priority_group_id,
-		),
+		.property_type =                &_pt_dcb,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (dcb,
 			.get_fcn =                  nm_setting_dcb_get_priority_group_id,
+			.set_fcn =                  nm_setting_dcb_set_priority_group_id,
+			.max =                      7,
+			.other =                    15,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_dcb,
-			.set_fcn =                  _set_fcn_dcb_priority_group_bandwidth,
-		),
+		.property_type =                &_pt_dcb,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (dcb,
 			.get_fcn =                  nm_setting_dcb_get_priority_group_bandwidth,
+			.set_fcn =                  nm_setting_dcb_set_priority_group_bandwidth,
+			.max =                      100,
+			.other =                    0,
+			.is_percent =               TRUE,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_PRIORITY_BANDWIDTH,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_dcb,
-			.set_fcn =                  _set_fcn_dcb_priority_bandwidth,
-		),
+		.property_type =                &_pt_dcb,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (dcb,
 			.get_fcn =                  nm_setting_dcb_get_priority_bandwidth,
+			.set_fcn =                  nm_setting_dcb_set_priority_bandwidth,
+			.max =                      100,
+			.other =                    0,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH,
@@ -5680,12 +5640,12 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_dcb,
-			.set_fcn =                  _set_fcn_dcb_priority_traffic_class,
-		),
+		.property_type =                &_pt_dcb,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (dcb,
 			.get_fcn =                  nm_setting_dcb_get_priority_traffic_class,
+			.set_fcn =                  nm_setting_dcb_set_priority_traffic_class,
+			.max =                      7,
+			.other =                    0,
 		),
 	),
 	NULL

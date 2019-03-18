@@ -286,6 +286,12 @@ struct _NMMetaPropertyTypData {
 		struct {
 			guint (*get_fcn) (NMSettingDcb *setting,
 			                  guint user_priority);
+			void (*set_fcn) (NMSettingDcb *setting,
+			                 guint id,
+			                 guint value);
+			guint max;
+			guint other;
+			bool is_percent:1;
 		} dcb;
 		struct {
 			gboolean (*get_fcn) (NMSettingDcb *s_dcb,
