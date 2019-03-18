@@ -987,6 +987,8 @@ comp_l:
  *   The strings to which the result strv array points to are allocated
  *   after the returned result itself. Don't free the strings themself,
  *   but free everything with g_free().
+ *   It is however safe and allowed to modify the indiviual strings,
+ *   like "g_strstrip((char *) iter[0])".
  */
 const char **
 nm_utils_strsplit_set (const char *str, const char *delimiters, gboolean allow_escaping)
