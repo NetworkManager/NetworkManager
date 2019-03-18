@@ -3749,8 +3749,10 @@ _set_fcn_sriov_vfs (ARGS_SET_FCN)
 	for (iter = strv; strv && *iter; iter++) {
 		vf = nm_utils_sriov_vf_from_str (*iter, &local);
 		if (!vf) {
-			g_set_error (error, 1, 0, "%s. %s", local->message,
-			             _("The valid syntax is: vf [attribute=value]... [,vf [attribute=value]...]"));
+			nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
+			                    "%s. %s",
+			                    local->message,
+			                    _("The valid syntax is: vf [attribute=value]... [,vf [attribute=value]...]"));
 			return FALSE;
 		}
 		nm_setting_sriov_add_vf (NM_SETTING_SRIOV (setting), vf);
@@ -3864,8 +3866,10 @@ _set_fcn_tc_config_tfilters (ARGS_SET_FCN)
 	for (iter = strv; strv && *iter; iter++) {
 		tc_tfilter = nm_utils_tc_tfilter_from_str (*iter, &local);
 		if (!tc_tfilter) {
-			g_set_error (error, 1, 0, "%s %s", local->message,
-			             _("The valid syntax is: '[root | parent <handle>] [handle <handle>] <tfilter>'"));
+			nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
+			                    "%s %s",
+			                    local->message,
+			                    _("The valid syntax is: '[root | parent <handle>] [handle <handle>] <tfilter>'"));
 			return FALSE;
 		}
 		nm_setting_tc_config_add_tfilter (NM_SETTING_TC_CONFIG (setting), tc_tfilter);
