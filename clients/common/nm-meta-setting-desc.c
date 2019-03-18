@@ -1799,13 +1799,6 @@ _remove_fcn_multilist (ARGS_REMOVE_FCN)
 		return TRUE; \
 	}
 
-#define DEFINE_ALLOWED_VAL_FUNC(def_func, valid_values) \
-	static const char *const* \
-	def_func (NMSetting *setting, const char *prop) \
-	{ \
-		return valid_values; \
-	}
-
 #define DEFINE_SETTER_MAC_BLACKLIST(def_func, s_macro, add_func) \
 	static gboolean \
 	def_func (ARGS_SET_FCN) \
