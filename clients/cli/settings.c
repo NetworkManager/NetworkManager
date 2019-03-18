@@ -539,40 +539,39 @@ nmc_setting_set_property (NMClient *client, NMSetting *setting, const char *prop
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop))) {
+	if (!(property_info = nm_meta_property_info_find_by_setting (setting, prop)))
+		goto out_fail_read_only;
 
-		if (!value) {
-			/* No value argument sets default value */
-			nmc_property_set_default_value (setting, prop);
-			return TRUE;
-		}
-
-		if (property_info->property_type->set_fcn) {
-			switch (property_info->setting_info->general->meta_type) {
-			case NM_META_SETTING_TYPE_CONNECTION:
-				if (nm_streq (property_info->property_name, NM_SETTING_CONNECTION_SECONDARIES)) {
-					gs_free char *value_coerced = NULL;
-
-					if (!_set_fcn_precheck_connection_secondaries (client, value, &value_coerced, error))
-						return FALSE;
-
-					return _set_fcn_call (property_info,
-					                      setting,
-					                      value_coerced ?: value,
-					                      error);
-				}
-				break;
-			default:
-				break;
-			}
-			return _set_fcn_call (property_info,
-			                      setting,
-			                      value,
-			                      error);
-		}
+	if (!value) {
+		/* No value argument sets default value */
+		nmc_property_set_default_value (setting, prop);
+		return TRUE;
 	}
 
-	g_set_error_literal (error, 1, 0, _("the property can't be changed"));
+	if (property_info->property_type->set_fcn) {
+		gs_free char *value_to_free = NULL;
+
+		switch (property_info->setting_info->general->meta_type) {
+		case NM_META_SETTING_TYPE_CONNECTION:
+			if (nm_streq (property_info->property_name, NM_SETTING_CONNECTION_SECONDARIES)) {
+				if (!_set_fcn_precheck_connection_secondaries (client, value, &value_to_free, error))
+					return FALSE;
+				if (value_to_free)
+					value = value_to_free;
+			}
+			break;
+		default:
+			break;
+		}
+
+		return _set_fcn_call (property_info,
+		                      setting,
+		                      value,
+		                      error);
+	}
+
+out_fail_read_only:
+	nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN, _("the property can't be changed"));
 	return FALSE;
 }
 
@@ -588,34 +587,6 @@ nmc_property_set_default_value (NMSetting *setting, const char *prop)
 		g_param_value_set_default (param_spec, &value);
 		g_object_set_property (G_OBJECT (setting), prop, &value);
 	}
-}
-
-/*
- * Generic function for resetting (single value) properties.
- *
- * The function resets the property value to the default one. It respects
- * nmcli restrictions for changing properties. So if 'set_func' is NULL,
- * resetting the value is denied.
- *
- * Returns: TRUE on success; FALSE on failure and sets error
- */
-gboolean
-nmc_setting_reset_property (NMSetting *setting, const char *prop, GError **error)
-{
-	const NMMetaPropertyInfo *property_info;
-
-	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop))) {
-		if (property_info->property_type->set_fcn) {
-			nmc_property_set_default_value (setting, prop);
-			return TRUE;
-		}
-	}
-
-	g_set_error_literal (error, 1, 0, _("the property can't be changed"));
-	return FALSE;
 }
 
 gboolean

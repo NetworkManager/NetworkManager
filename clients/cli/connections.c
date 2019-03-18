@@ -3988,7 +3988,7 @@ set_property (NMClient *client,
 			 * so make a copy if we are going to free it.
 			 */
 			value = value_free = g_strdup (value);
-			nmc_setting_reset_property (setting, property_name, NULL);
+			nmc_setting_reset_property (client, setting, property_name, NULL);
 		}
 		if (!nmc_setting_set_property (client, setting, property_name, value, &local)) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -4013,7 +4013,7 @@ set_property (NMClient *client,
 				return FALSE;
 			}
 		} else
-			nmc_setting_reset_property (setting, property_name, NULL);
+			nmc_setting_reset_property (client, setting, property_name, NULL);
 	}
 
 	/* Don't ask for this property in interactive mode. */
@@ -6999,7 +6999,7 @@ property_edit_submenu (NmCli *nmc,
 					g_clear_error (&tmp_err);
 				}
 			} else {
-				if (!nmc_setting_reset_property (curr_setting, prop_name, &tmp_err)) {
+				if (!nmc_setting_reset_property (nmc->client, curr_setting, prop_name, &tmp_err)) {
 					g_print (_("Error: failed to remove value of '%s': %s\n"), prop_name,
 					         tmp_err->message);
 					g_clear_error (&tmp_err);
@@ -7513,8 +7513,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					if (!prop_name)
 						break;
 
-					/* Delete property value */
-					if (!nmc_setting_reset_property (menu_ctx.curr_setting, prop_name, &tmp_err)) {
+					if (!nmc_setting_reset_property (nmc->client, menu_ctx.curr_setting, prop_name, &tmp_err)) {
 						g_print (_("Error: failed to remove value of '%s': %s\n"), prop_name,
 						         tmp_err->message);
 						g_clear_error (&tmp_err);
@@ -7564,8 +7563,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 					prop_name = is_property_valid (ss, cmd_arg_p, &tmp_err);
 					if (prop_name) {
-						/* Delete property value */
-						if (!nmc_setting_reset_property (ss, prop_name, &tmp_err)) {
+						if (!nmc_setting_reset_property (nmc->client, ss, prop_name, &tmp_err)) {
 							g_print (_("Error: failed to remove value of '%s': %s\n"), prop_name,
 							         tmp_err->message);
 							g_clear_error (&tmp_err);
