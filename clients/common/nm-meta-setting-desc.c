@@ -3331,24 +3331,25 @@ _set_fcn_ip4_config_addresses (ARGS_SET_FCN)
 }
 
 static gboolean
-_validate_and_remove_ipv4_address (NMSettingIPConfig *setting,
-                                   const char *address,
-                                   GError **error)
+_validate_and_remove_ip_address (NMSettingIPConfig *setting,
+                                 const char *value,
+                                 GError **error)
 {
 	nm_auto_unref_ip_address NMIPAddress *addr = NULL;
+	int addr_family = nm_setting_ip_config_get_addr_family (NM_SETTING_IP_CONFIG (setting));
 
-	addr = _parse_ip_address (AF_INET, address, error);
+	addr = _parse_ip_address (addr_family, value, error);
 	if (!addr)
 		return FALSE;
 
 	nm_setting_ip_config_remove_address_by_value (setting, addr);
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ipv4_config_addresses,
+DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ip_config_addresses,
                                        NM_SETTING_IP_CONFIG,
                                        nm_setting_ip_config_get_num_addresses,
                                        nm_setting_ip_config_remove_address,
-                                       _validate_and_remove_ipv4_address)
+                                       _validate_and_remove_ip_address)
 
 static gboolean
 _set_fcn_ip4_config_gateway (ARGS_SET_FCN)
@@ -3440,26 +3441,6 @@ _set_fcn_ip6_config_addresses (ARGS_SET_FCN)
 	}
 	return TRUE;
 }
-
-static gboolean
-_validate_and_remove_ipv6_address (NMSettingIPConfig *setting,
-                                   const char *value,
-                                   GError **error)
-{
-	nm_auto_unref_ip_address NMIPAddress *addr = NULL;
-
-	addr = _parse_ip_address (AF_INET6, value, error);
-	if (!addr)
-		return FALSE;
-
-	nm_setting_ip_config_remove_address_by_value (setting, addr);
-	return TRUE;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ipv6_config_addresses,
-                                       NM_SETTING_IP_CONFIG,
-                                       nm_setting_ip_config_get_num_addresses,
-                                       nm_setting_ip_config_remove_address,
-                                       _validate_and_remove_ipv6_address)
 
 static gboolean
 _set_fcn_ip6_config_gateway (ARGS_SET_FCN)
@@ -5818,7 +5799,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_ip_config_addresses,
 			.set_fcn =                  _set_fcn_ip4_config_addresses,
-			.remove_fcn =               _remove_fcn_ipv4_config_addresses,
+			.remove_fcn =               _remove_fcn_ip_config_addresses,
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_GATEWAY, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_GATEWAY,
@@ -5986,7 +5967,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_ip_config_addresses,
 			.set_fcn =                  _set_fcn_ip6_config_addresses,
-			.remove_fcn =               _remove_fcn_ipv6_config_addresses,
+			.remove_fcn =               _remove_fcn_ip_config_addresses,
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_GATEWAY, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_GATEWAY,
