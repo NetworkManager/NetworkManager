@@ -628,7 +628,7 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, const char *value, GError **error
 
 #define ARGS_REMOVE_FCN \
-	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, const char *value, guint32 idx, GError **error
+	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, const char *value, GError **error
 
 #define ARGS_COMPLETE_FCN \
 	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, const NMMetaOperationContext *operation_context, const char *text, char ***out_to_free
@@ -1669,9 +1669,11 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 	static gboolean \
 	def_func (ARGS_REMOVE_FCN) \
 	{ \
-		guint32 num; \
+		gint64 idx; \
+		gint64 num; \
 		\
-		if (!value) { \
+		idx = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT64, -1); \
+		if (idx != -1) { \
 			num = num_func (s_macro (setting)); \
 			if (idx < num) \
 				rem_func_idx (s_macro (setting), idx); \
@@ -4158,31 +4160,36 @@ _remove_vlan_xgress_priority_map (const NMMetaEnvironment *environment,
                                   NMSetting *setting,
                                   const NMMetaPropertyInfo *property_info,
                                   const char *value,
-                                  guint32 idx,
                                   NMVlanPriorityMap map_type,
                                   GError **error)
 {
+	gs_strfreev char **prio_map = NULL;
 	guint32 num;
+	gint64 idx;
+	gsize i;
 
-	if (value) {
-		gs_strfreev char **prio_map = NULL;
-		gsize i;
-
-		prio_map = _parse_vlan_priority_maps (value, map_type, TRUE, error);
-		if (!prio_map)
-			return FALSE;
-
-		for (i = 0; prio_map[i]; i++) {
-			nm_setting_vlan_remove_priority_str_by_value (NM_SETTING_VLAN (setting),
-			                                              map_type,
-			                                              prio_map[i]);
-		}
+	idx = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT64, -1);
+	if (idx != -1) {
+		/* FIXME: this is ugly, if the caller only provides one number, we accept it as
+		 * index to remove.
+		 * The ugly-ness comes from the fact, that
+		 *   " -vlan.ingress-priority-map 0,1,2"
+		 * cannot be used to remove the first 3 elements. */
+		num = nm_setting_vlan_get_num_priorities (NM_SETTING_VLAN (setting), map_type);
+		if (idx < (gint64) num)
+			nm_setting_vlan_remove_priority (NM_SETTING_VLAN (setting), map_type, idx);
 		return TRUE;
 	}
 
-	num = nm_setting_vlan_get_num_priorities (NM_SETTING_VLAN (setting), map_type);
-	if (idx < num)
-		nm_setting_vlan_remove_priority (NM_SETTING_VLAN (setting), map_type, idx);
+	prio_map = _parse_vlan_priority_maps (value, map_type, TRUE, error);
+	if (!prio_map)
+		return FALSE;
+
+	for (i = 0; prio_map[i]; i++) {
+		nm_setting_vlan_remove_priority_str_by_value (NM_SETTING_VLAN (setting),
+		                                              map_type,
+		                                              prio_map[i]);
+	}
 	return TRUE;
 }
 
@@ -4194,7 +4201,6 @@ _remove_fcn_vlan_ingress_priority_map (ARGS_REMOVE_FCN)
 	                                         setting,
 	                                         property_info,
 	                                         value,
-	                                         idx,
 	                                         NM_VLAN_INGRESS_MAP,
 	                                         error);
 }
@@ -4207,7 +4213,6 @@ _remove_fcn_vlan_egress_priority_map (ARGS_REMOVE_FCN)
 	                                         setting,
 	                                         property_info,
 	                                         value,
-	                                         idx,
 	                                         NM_VLAN_EGRESS_MAP,
 	                                         error);
 }
