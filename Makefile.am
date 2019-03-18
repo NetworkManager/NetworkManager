@@ -3315,7 +3315,10 @@ src_devices_wwan_libnm_wwan_la_SOURCES = \
 	src/devices/wwan/nm-modem-manager.c \
 	src/devices/wwan/nm-modem-manager.h \
 	src/devices/wwan/nm-modem.c \
-	src/devices/wwan/nm-modem.h
+	src/devices/wwan/nm-modem.h \
+	src/devices/wwan/nm-service-providers.c \
+	src/devices/wwan/nm-service-providers.h \
+	$(NULL)
 
 if WITH_OFONO
 src_devices_wwan_libnm_wwan_la_SOURCES += \
