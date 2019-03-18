@@ -3219,25 +3219,32 @@ _set_fcn_ip4_config_method (ARGS_SET_FCN)
 }
 
 static gboolean
-_set_fcn_ip4_config_dns (ARGS_SET_FCN)
+_set_fcn_ip_config_dns (ARGS_SET_FCN)
 {
-	const char **strv = NULL;
+	gs_free const char **strv = NULL;
 	const char *const*iter;
-	in_addr_t ip4_addr;
 
 	if (_SET_FCN_DO_RESET_DEFAULT (value))
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
-	for (iter = strv; iter && *iter; iter++) {
-		const char *addr;
+	if (strv) {
+		int addr_family = nm_setting_ip_config_get_addr_family (NM_SETTING_IP_CONFIG (setting));
 
-		addr = g_strstrip ((char *) *iter);
-		if (inet_pton (AF_INET, addr, &ip4_addr) < 1) {
-			g_set_error (error, 1, 0, _("invalid IPv4 address '%s'"), addr);
-			return FALSE;
+		for (iter = strv; *iter; iter++) {
+			const char *addr;
+
+			addr = g_strstrip ((char *) *iter);
+
+			if (!nm_utils_parse_inaddr (addr_family, addr, NULL)) {
+				nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
+				                    _("invalid IPv%c address '%s'"),
+				                    nm_utils_addr_family_to_char (addr_family),
+				                    addr);
+				return FALSE;
+			}
+			nm_setting_ip_config_add_dns (NM_SETTING_IP_CONFIG (setting), addr);
 		}
-		nm_setting_ip_config_add_dns (NM_SETTING_IP_CONFIG (setting), addr);
 	}
 	return TRUE;
 }
@@ -3443,31 +3450,6 @@ _set_fcn_ip6_config_method (ARGS_SET_FCN)
 		value = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 
 	return check_and_set_string (setting, property_info->property_name, value, ipv6_valid_methods, error);
-}
-
-static gboolean
-_set_fcn_ip6_config_dns (ARGS_SET_FCN)
-{
-	gs_free const char **strv = NULL;
-	const char *const*iter;
-	struct in6_addr ip6_addr;
-
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
-	for (iter = strv; iter && *iter; iter++) {
-		const char *addr;
-
-		addr = g_strstrip ((char *) *iter);
-
-		if (inet_pton (AF_INET6, addr, &ip6_addr) < 1) {
-			g_set_error (error, 1, 0, _("invalid IPv6 address '%s'"), addr);
-			return FALSE;
-		}
-		nm_setting_ip_config_add_dns (NM_SETTING_IP_CONFIG (setting), addr);
-	}
-	return TRUE;
 }
 
 static gboolean
@@ -5834,7 +5816,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		       "Example: 8.8.8.8, 8.8.4.4\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_ip4_config_dns,
+			.set_fcn =                  _set_fcn_ip_config_dns,
 			.remove_fcn =               _remove_fcn_ip_config_dns,
 		),
 	),
@@ -5997,7 +5979,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		       "Example: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_ip6_config_dns,
+			.set_fcn =                  _set_fcn_ip_config_dns,
 			.remove_fcn =               _remove_fcn_ip_config_dns,
 		),
 	),
