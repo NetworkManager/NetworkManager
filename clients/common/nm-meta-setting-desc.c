@@ -3371,9 +3371,8 @@ _set_fcn_ip4_config_gateway (ARGS_SET_FCN)
 }
 
 static gboolean
-_set_fcn_ip4_config_routes (ARGS_SET_FCN)
+_set_fcn_ip_config_routes (ARGS_SET_FCN)
 {
-	nm_auto_unref_ip_route NMIPRoute *ip4route = NULL;
 	gs_free const char **strv = NULL;
 	const char *const*iter;
 
@@ -3383,13 +3382,22 @@ _set_fcn_ip4_config_routes (ARGS_SET_FCN)
 	}
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
-	for (iter = strv; *iter; iter++) {
-		nm_auto_unref_ip_route NMIPRoute *route = NULL;
+	if (strv) {
+		int addr_family = nm_setting_ip_config_get_addr_family (NM_SETTING_IP_CONFIG (setting));
 
-		route = _parse_ip_route (AF_INET, *iter, error);
-		if (!route)
-			return FALSE;
-		nm_setting_ip_config_add_route (NM_SETTING_IP_CONFIG (setting), route);
+		for (iter = strv; *iter; iter++) {
+			nm_auto_unref_ip_route NMIPRoute *route = NULL;
+
+			g_strstrip ((char *) *iter);
+
+			if ((*iter)[0] == '\0')
+				continue;
+
+			route = _parse_ip_route (addr_family, *iter, error);
+			if (!route)
+				return FALSE;
+			nm_setting_ip_config_add_route (NM_SETTING_IP_CONFIG (setting), route);
+		}
 	}
 	return TRUE;
 }
@@ -3461,27 +3469,6 @@ _set_fcn_ip6_config_gateway (ARGS_SET_FCN)
 	}
 
 	g_object_set (setting, property_info->property_name, value, NULL);
-	return TRUE;
-}
-
-static gboolean
-_set_fcn_ip6_config_routes (ARGS_SET_FCN)
-{
-	gs_free const char **strv = NULL;
-	const char *const*iter;
-
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	strv = nm_utils_strsplit_set (value, ",", FALSE);
-	for (iter = strv; strv && *iter; iter++) {
-		nm_auto_unref_ip_route NMIPRoute *route = NULL;
-
-		route = _parse_ip_route (AF_INET6, *iter, error);
-		if (!route)
-			return FALSE;
-		nm_setting_ip_config_add_route (NM_SETTING_IP_CONFIG (setting), route);
-	}
 	return TRUE;
 }
 
@@ -5803,7 +5790,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		       "          10.1.2.0/24\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_ip_config_routes,
-			.set_fcn =                  _set_fcn_ip4_config_routes,
+			.set_fcn =                  _set_fcn_ip_config_routes,
 			.remove_fcn =               _remove_fcn_ip_config_routes,
 		),
 	),
@@ -5971,7 +5958,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		       "          abbe::/64 55\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_ip_config_routes,
-			.set_fcn =                  _set_fcn_ip6_config_routes,
+			.set_fcn =                  _set_fcn_ip_config_routes,
 			.remove_fcn =               _remove_fcn_ip_config_routes,
 		),
 	),
