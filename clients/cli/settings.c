@@ -527,28 +527,16 @@ nmc_setting_set_property (NMClient *client,
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 	g_return_val_if_fail (NM_IN_SET (modifier, '\0', '-', '+'), FALSE);
+	g_return_val_if_fail (value || modifier == '\0', FALSE);
 
 	if (!(property_info = nm_meta_property_info_find_by_setting (setting, prop)))
 		goto out_fail_read_only;
 	if (!property_info->property_type->set_fcn)
 		goto out_fail_read_only;
 
-	if (!value) {
-		nm_auto_unset_gvalue GValue gvalue = G_VALUE_INIT;
-
-		g_return_val_if_fail (modifier == '\0', TRUE);
-
-		param_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
-		if (param_spec) {
-			g_value_init (&gvalue, G_PARAM_SPEC_VALUE_TYPE (param_spec));
-			g_param_value_set_default (param_spec, &gvalue);
-			g_object_set_property (G_OBJECT (setting), prop, &gvalue);
-		}
-		return TRUE;
-	}
-
 	if (modifier == '-') {
-		if (property_info->property_type->remove_fcn) {
+		if (   value
+		    && property_info->property_type->remove_fcn) {
 			return property_info->property_type->remove_fcn (property_info,
 			                                                 nmc_meta_environment,
 			                                                 nmc_meta_environment_arg,
@@ -559,21 +547,25 @@ nmc_setting_set_property (NMClient *client,
 		return TRUE;
 	}
 
-	switch (property_info->setting_info->general->meta_type) {
-	case NM_META_SETTING_TYPE_CONNECTION:
-		if (nm_streq (property_info->property_name, NM_SETTING_CONNECTION_SECONDARIES)) {
-			if (!_set_fcn_precheck_connection_secondaries (client, value, &value_to_free, error))
-				return FALSE;
-			if (value_to_free)
-				value = value_to_free;
+	if (value) {
+		switch (property_info->setting_info->general->meta_type) {
+		case NM_META_SETTING_TYPE_CONNECTION:
+			if (nm_streq (property_info->property_name, NM_SETTING_CONNECTION_SECONDARIES)) {
+				if (!_set_fcn_precheck_connection_secondaries (client, value, &value_to_free, error))
+					return FALSE;
+				if (value_to_free)
+					value = value_to_free;
+			}
+			break;
+		default:
+			break;
 		}
-		break;
-	default:
-		break;
 	}
 
-	if (modifier == '\0') {
+	if (   modifier == '\0'
+	    || value == NULL) {
 		/* FIXME: reset the value. By default, "set_fcn" adds values (don't ask). */
+
 		param_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
 		if (param_spec) {
 			nm_auto_unset_gvalue GValue gvalue = G_VALUE_INIT;
@@ -581,26 +573,33 @@ nmc_setting_set_property (NMClient *client,
 			/* get the current value, to restore it on failure below. */
 			g_value_init (&gvalue_old, G_PARAM_SPEC_VALUE_TYPE (param_spec));
 			g_object_get_property (G_OBJECT (setting), prop, &gvalue_old);
+		}
 
-			g_value_init (&gvalue, G_PARAM_SPEC_VALUE_TYPE (param_spec));
-			g_param_value_set_default (param_spec, &gvalue);
-			g_object_set_property (G_OBJECT (setting), prop, &gvalue);
+		if (!property_info->property_type->set_fcn (property_info,
+		                                            nmc_meta_environment,
+		                                            nmc_meta_environment_arg,
+		                                            setting,
+		                                            NULL,
+		                                            error)) {
+			return FALSE;
 		}
 	}
 
-	if (!property_info->property_type->set_fcn (property_info,
-	                                            nmc_meta_environment,
-	                                            nmc_meta_environment_arg,
-	                                            setting,
-	                                            value,
-	                                            error)) {
-		if (   modifier == '\0'
-		    && param_spec) {
-			/* restore the previous value. */
-			g_object_set_property (G_OBJECT (setting), prop, &gvalue_old);
-		}
+	if (value) {
+		if (!property_info->property_type->set_fcn (property_info,
+		                                            nmc_meta_environment,
+		                                            nmc_meta_environment_arg,
+		                                            setting,
+		                                            value,
+		                                            error)) {
+			if (   modifier == '\0'
+			    && param_spec) {
+				/* restore the previous value. */
+				g_object_set_property (G_OBJECT (setting), prop, &gvalue_old);
+			}
 
-		return FALSE;
+			return FALSE;
+		}
 	}
 
 	return TRUE;

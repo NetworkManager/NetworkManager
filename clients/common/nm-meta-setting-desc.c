@@ -639,6 +639,9 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 #define ARGS_SETTING_INIT_FCN \
 	const NMMetaSettingInfoEditor *setting_info, NMSetting *setting, NMMetaAccessorSettingInitType init_type
 
+#define _SET_FCN_DO_RESET_DEFAULT(value) \
+	((value) == NULL)
+
 #define RETURN_UNSUPPORTED_GET_TYPE() \
 	G_STMT_START { \
 		if (!NM_IN_SET (get_type, \
@@ -656,7 +659,7 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 	} G_STMT_END
 
 static gboolean
-property_is_default (NMSetting *setting, const char *prop_name)
+_gobject_property_is_default (NMSetting *setting, const char *prop_name)
 {
 	nm_auto_unset_gvalue GValue v = G_VALUE_INIT;
 	GParamSpec *pspec;
@@ -682,6 +685,23 @@ property_is_default (NMSetting *setting, const char *prop_name)
 	return g_param_value_defaults (pspec, &v);
 }
 
+static gboolean
+_gobject_property_reset_default (NMSetting *setting, const char *prop_name)
+{
+	nm_auto_unset_gvalue GValue v = G_VALUE_INIT;
+	GParamSpec *pspec;
+
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)),
+	                                      prop_name);
+	if (!G_IS_PARAM_SPEC (pspec))
+		g_return_val_if_reached (FALSE);
+
+	g_value_init (&v, pspec->value_type);
+	g_param_value_defaults (pspec, &v);
+	g_object_set_property (G_OBJECT (setting), prop_name, &v);
+	return TRUE;
+}
+
 static gconstpointer
 _get_fcn_nmc_with_default (ARGS_GET_FCN)
 {
@@ -690,7 +710,7 @@ _get_fcn_nmc_with_default (ARGS_GET_FCN)
 	GValue val = G_VALUE_INIT;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
-	NM_SET_OUT (out_is_default, property_is_default (setting, property_info->property_name));
+	NM_SET_OUT (out_is_default, _gobject_property_is_default (setting, property_info->property_name));
 
 	if (property_info->property_typ_data->subtype.get_with_default.fcn (setting)) {
 		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
@@ -723,7 +743,7 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 	nm_auto_unset_gvalue GValue val = G_VALUE_INIT;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
-	NM_SET_OUT (out_is_default, property_is_default (setting, property_info->property_name));
+	NM_SET_OUT (out_is_default, _gobject_property_is_default (setting, property_info->property_name));
 
 	gtype_prop = _gobject_property_get_gtype (G_OBJECT (setting), property_info->property_name);
 
@@ -1011,6 +1031,9 @@ _set_fcn_gobject_string (ARGS_SET_FCN)
 {
 	gs_free char *to_free = NULL;
 
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
+
 	if (property_info->property_typ_data) {
 		if (property_info->property_typ_data->subtype.gobject_string.validate_fcn) {
 			value = property_info->property_typ_data->subtype.gobject_string.validate_fcn (value, &to_free, error);
@@ -1033,6 +1056,9 @@ _set_fcn_gobject_bool (ARGS_SET_FCN)
 {
 	gboolean val_bool;
 
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
+
 	if (!nmc_string_to_bool (value, &val_bool, error))
 		return FALSE;
 
@@ -1053,6 +1079,9 @@ _set_fcn_gobject_int (ARGS_SET_FCN)
 	NMMetaSignUnsignInt64 max = { 0 };
 	guint base = 10;
 	const NMMetaUtilsIntValueInfo *value_infos;
+
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), property_info->property_name);
 	if (!G_IS_PARAM_SPEC (pspec))
@@ -1190,7 +1219,10 @@ _set_fcn_gobject_mtu (ARGS_SET_FCN)
 	const GParamSpec *pspec;
 	gint64 v;
 
-	if (nm_streq0 (value, "auto"))
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
+
+	if (nm_streq (value, "auto"))
 		value = "0";
 
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)),
@@ -1228,6 +1260,9 @@ _set_fcn_gobject_mac (ARGS_SET_FCN)
 	NMMetaPropertyTypeMacMode mode;
 	gboolean valid;
 
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
+
 	if (property_info->property_typ_data)
 		mode = property_info->property_typ_data->subtype.mac.mode;
 	else
@@ -1262,6 +1297,9 @@ _set_fcn_gobject_enum (ARGS_SET_FCN)
 	nm_auto_unref_gtypeclass GTypeClass *gtype_class = NULL;
 	gboolean is_flags;
 	int v;
+
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	if (property_info->property_typ_data) {
 		if (property_info->property_typ_data->subtype.gobject_enum.get_gtype) {
@@ -1600,6 +1638,9 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		gs_free const char **strv = NULL; \
 		gsize i; \
 		\
+		if (_SET_FCN_DO_RESET_DEFAULT (value)) \
+			return _gobject_property_reset_default (setting, property_info->property_name); \
+		\
 		strv = nm_utils_strsplit_set (value, " \t,", FALSE); \
 		if (strv) { \
 			for (i = 0; strv[i]; i++) { \
@@ -1628,6 +1669,9 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		const char *opt_name, *opt_val; \
 		\
 		nm_assert (!error || !*error); \
+		\
+		if (_SET_FCN_DO_RESET_DEFAULT (value)) \
+			return _gobject_property_reset_default (setting, property_info->property_name); \
 		\
 		strv = nm_utils_strsplit_set (value, ",", FALSE); \
 		for (iter = strv; iter && *iter; iter++) { \
@@ -1733,7 +1777,8 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		gs_free const char **strv = NULL; \
 		const char *const*iter; \
 		\
-		nm_assert (!error || !*error); \
+		if (_SET_FCN_DO_RESET_DEFAULT (value)) \
+			return _gobject_property_reset_default (setting, property_info->property_name); \
 		\
 		strv = nm_utils_strsplit_set (value, " \t,", FALSE); \
 		for (iter = strv; strv && *iter; iter++) { \
@@ -1841,7 +1886,8 @@ _set_fcn_gobject_flags (ARGS_SET_FCN)
 {
 	unsigned long val_int;
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	if (!nmc_string_to_uint (value, TRUE, 0, G_MAXUINT, &val_int)) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid number (or out of range)"), value);
@@ -1861,7 +1907,8 @@ _set_fcn_gobject_ssid (ARGS_SET_FCN)
 {
 	gs_unref_bytes GBytes *ssid = NULL;
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	if (strlen (value) > 32) {
 		g_set_error (error, 1, 0, _("'%s' is not valid"), value);
@@ -1876,7 +1923,8 @@ _set_fcn_gobject_ssid (ARGS_SET_FCN)
 static gboolean
 _set_fcn_gobject_ifname (ARGS_SET_FCN)
 {
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	if (!nm_utils_is_valid_iface_name (value, error))
 		return FALSE;
@@ -1888,6 +1936,9 @@ static gboolean
 _set_fcn_vpn_service_type (ARGS_SET_FCN)
 {
 	gs_free char *service_name = NULL;
+
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	service_name = nm_vpn_plugin_info_list_find_service_type (nm_vpn_get_plugin_infos (), value);
 	g_object_set (setting, property_info->property_name, service_name ?: value, NULL);
@@ -1943,6 +1994,9 @@ _set_fcn_gobject_bytes (ARGS_SET_FCN)
 	const char **iter;
 	gs_unref_bytes GBytes *bytes = NULL;
 	GByteArray *array;
+
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	val_strip = nm_strstrip_avoid_copy (value, &val_strip_free);
 
@@ -2176,7 +2230,8 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 		const char **strv = NULL; \
 		gsize i; \
 		\
-		nm_assert (error == NULL || *error == NULL); \
+		if (_SET_FCN_DO_RESET_DEFAULT (value)) \
+			return _gobject_property_reset_default (setting, property_info->property_name); \
 		\
 		strv = nm_utils_strsplit_set (value, " \t,", FALSE); \
 		if (strv) { \
@@ -2192,6 +2247,9 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 	{ \
 		gs_free char *value_to_free = NULL; \
 		NMSetting8021xCKScheme scheme = NM_SETTING_802_1X_CK_SCHEME_PATH; \
+		\
+		if (_SET_FCN_DO_RESET_DEFAULT (value)) \
+			return _gobject_property_reset_default (setting, property_info->property_name); \
 		\
 		value = nm_strstrip_avoid_copy (value, &value_to_free); \
 		\
@@ -2211,6 +2269,9 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 		gs_free char *password_free = NULL; \
 		char *password; \
 		NMSetting8021xCKScheme scheme = NM_SETTING_802_1X_CK_SCHEME_PATH; \
+		\
+		if (_SET_FCN_DO_RESET_DEFAULT (value)) \
+			return _gobject_property_reset_default (setting, property_info->property_name); \
 		\
 		value = nm_str_skip_leading_spaces (value); \
 		\
@@ -2232,7 +2293,7 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 
 DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_802_1x_eap,
                               NM_SETTING_802_1X,
-                              nm_setting_802_1x_add_eap_method);
+                              nm_setting_802_1x_add_eap_method)
 
 DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_802_1x_eap,
                                       NM_SETTING_802_1X,
@@ -2435,6 +2496,11 @@ _set_fcn_connection_type (ARGS_SET_FCN)
 		return FALSE;
 	}
 
+	if (_SET_FCN_DO_RESET_DEFAULT (value)) {
+		g_object_set (G_OBJECT (setting), property_info->property_name, NULL, NULL);
+		return TRUE;
+	}
+
 	uuid = nm_utils_uuid_generate ();
 	g_object_set (G_OBJECT (setting),
 	              NM_SETTING_CONNECTION_UUID, uuid,
@@ -2508,7 +2574,8 @@ _set_fcn_connection_permissions (ARGS_SET_FCN)
 	gs_free const char **strv = NULL;
 	gsize i;
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
 	if (!verify_string_list (strv, property_info->property_name, permissions_valid, error))
@@ -2536,8 +2603,8 @@ _set_fcn_connection_master (ARGS_SET_FCN)
 {
 	nm_assert (!error || !*error);
 
-	if (!value)
-		;
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		value = NULL;
 	else if (!*value)
 		value = NULL;
 	else if (   !nm_utils_is_valid_iface_name (value, NULL)
@@ -2623,6 +2690,9 @@ _set_fcn_connection_secondaries (ARGS_SET_FCN)
 	gs_free const char **strv = NULL;
 	const char *const*iter;
 
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
+
 	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
 	if (strv) {
 		for (iter = strv; *iter; iter++)
@@ -2683,6 +2753,9 @@ _set_fcn_connection_metered (ARGS_SET_FCN)
 {
 	NMMetered metered;
 	NMTernary ts_val;
+
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	if (!nmc_string_to_ternary (value, &ts_val, error))
 		return FALSE;
@@ -2813,7 +2886,8 @@ _set_fcn_dcb_flags (ARGS_SET_FCN)
 	NMSettingDcbFlags flags = NM_SETTING_DCB_FLAG_NONE;
 	long int t;
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	/* Check for overall hex numeric value */
 	t = _nm_utils_ascii_str_to_int64 (value, 0, 0, DCB_ALL_FLAGS, -1);
@@ -2921,7 +2995,8 @@ _set_fcn_dcb_priority_flow_control (ARGS_SET_FCN)
 	guint i = 0;
 	guint nums[8] = { 0, };
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	if (!dcb_parse_uint_array (value, 1, 0, nums, error))
 		return FALSE;
@@ -2939,7 +3014,8 @@ _set_fcn_dcb_priority_group_id (ARGS_SET_FCN)
 	guint i = 0;
 	guint nums[8] = { 0, };
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	if (!dcb_parse_uint_array (value, 7, 15, nums, error))
 		return FALSE;
@@ -2957,7 +3033,8 @@ _set_fcn_dcb_priority_group_bandwidth (ARGS_SET_FCN)
 	guint i = 0, sum = 0;
 	guint nums[8] = { 0, };
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	if (!dcb_parse_uint_array (value, 100, 0, nums, error))
 		return FALSE;
@@ -2982,7 +3059,8 @@ _set_fcn_dcb_priority_bandwidth (ARGS_SET_FCN)
 	guint i = 0;
 	guint nums[8] = { 0, };
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	if (!dcb_parse_uint_array (value, 100, 0, nums, error))
 		return FALSE;
@@ -3000,7 +3078,8 @@ _set_fcn_dcb_priority_strict (ARGS_SET_FCN)
 	guint i = 0;
 	guint nums[8] = { 0, };
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	if (!dcb_parse_uint_array (value, 1, 0, nums, error))
 		return FALSE;
@@ -3018,7 +3097,8 @@ _set_fcn_dcb_priority_traffic_class (ARGS_SET_FCN)
 	guint i = 0;
 	guint nums[8] = { 0, };
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	if (!dcb_parse_uint_array (value, 7, 0, nums, error))
 		return FALSE;
@@ -3035,9 +3115,10 @@ _set_fcn_gsm_sim_operator_id (ARGS_SET_FCN)
 {
 	const char *p = value;
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
-	if (strlen (value) != 5 && strlen (value) != 6) {
+	if (!NM_IN_SET (strlen (value), 5, 6)) {
 		g_set_error_literal (error, 1, 0, _("SIM operator ID must be a 5 or 6 number MCCMNC code"));
 		return FALSE;
 	}
@@ -3058,16 +3139,16 @@ _set_fcn_gsm_sim_operator_id (ARGS_SET_FCN)
 static gboolean
 _set_fcn_infiniband_p_key (ARGS_SET_FCN)
 {
-	const gint64 INVALID = G_MININT64;
 	gint64 p_key;
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	if (nm_streq (value, "default"))
 		p_key = -1;
 	else {
-		p_key = _nm_utils_ascii_str_to_int64 (value, 0, -1, G_MAXUINT16, INVALID);
-		if (p_key == INVALID) {
+		p_key = _nm_utils_ascii_str_to_int64 (value, 0, -1, G_MAXUINT16, -2);
+		if (p_key == -2) {
 			g_set_error (error, 1, 0, _("'%s' is not a valid IBoIP P_Key"), value);
 			return FALSE;
 		}
@@ -3209,8 +3290,11 @@ static const char *ipv4_valid_methods[] = {
 static gboolean
 _set_fcn_ip4_config_method (ARGS_SET_FCN)
 {
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
+
 	/* Silently accept "static" and convert to "manual" */
-	if (value && strlen (value) > 1 && matches (value, "static"))
+	if (strlen (value) > 1 && matches (value, "static"))
 		value = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
 
 	return check_and_set_string (setting, property_info->property_name, value, ipv4_valid_methods, error);
@@ -3223,7 +3307,8 @@ _set_fcn_ip4_config_dns (ARGS_SET_FCN)
 	const char *const*iter;
 	in_addr_t ip4_addr;
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
 	for (iter = strv; iter && *iter; iter++) {
@@ -3265,7 +3350,8 @@ _set_fcn_ip_config_dns_search (ARGS_SET_FCN)
 	gs_free const char **strv = NULL;
 	gsize i;
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
 	if (!verify_string_list (strv, property_info->property_name, nmc_util_is_domain, error))
@@ -3288,11 +3374,11 @@ static gboolean
 _set_fcn_ip_config_dns_options (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
-	NMSettingIPConfig *s_ip;
+	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	gsize i;
 
-	nm_assert (!error || !*error);
-	s_ip = NM_SETTING_IP_CONFIG (setting);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
 	if (strv) {
@@ -3315,6 +3401,9 @@ _set_fcn_ip4_config_addresses (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	const char *const*iter;
+
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; *iter; iter++) {
@@ -3353,6 +3442,9 @@ _set_fcn_ip4_config_gateway (ARGS_SET_FCN)
 {
 	gs_free char *value_to_free = NULL;
 
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
+
 	value = nm_strstrip_avoid_copy (value, &value_to_free);
 
 	if (!nm_utils_ipaddr_valid (AF_INET, value)) {
@@ -3367,8 +3459,14 @@ _set_fcn_ip4_config_gateway (ARGS_SET_FCN)
 static gboolean
 _set_fcn_ip4_config_routes (ARGS_SET_FCN)
 {
+	nm_auto_unref_ip_route NMIPRoute *ip4route = NULL;
 	gs_free const char **strv = NULL;
 	const char *const*iter;
+
+	if (_SET_FCN_DO_RESET_DEFAULT (value)) {
+		nm_setting_ip_config_clear_routes (NM_SETTING_IP_CONFIG (setting));
+		return TRUE;
+	}
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; *iter; iter++) {
@@ -3415,8 +3513,11 @@ static const char *ipv6_valid_methods[] = {
 static gboolean
 _set_fcn_ip6_config_method (ARGS_SET_FCN)
 {
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
+
 	/* Silently accept "static" and convert to "manual" */
-	if (value && strlen (value) > 1 && matches (value, "static"))
+	if (strlen (value) > 1 && matches (value, "static"))
 		value = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 
 	return check_and_set_string (setting, property_info->property_name, value, ipv6_valid_methods, error);
@@ -3429,7 +3530,8 @@ _set_fcn_ip6_config_dns (ARGS_SET_FCN)
 	const char *const*iter;
 	struct in6_addr ip6_addr;
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
 	for (iter = strv; iter && *iter; iter++) {
@@ -3479,6 +3581,9 @@ _set_fcn_ip6_config_addresses (ARGS_SET_FCN)
 	gs_free const char **strv = NULL;
 	const char *const*iter;
 
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
+
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
 		nm_auto_unref_ip_address NMIPAddress *addr = NULL;
@@ -3516,6 +3621,9 @@ _set_fcn_ip6_config_gateway (ARGS_SET_FCN)
 {
 	gs_free char *value_to_free = NULL;
 
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
+
 	value = nm_strstrip_avoid_copy (value, &value_to_free);
 
 	if (!nm_utils_ipaddr_valid (AF_INET6, value)) {
@@ -3534,6 +3642,9 @@ _set_fcn_ip6_config_routes (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	const char *const*iter;
+
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
@@ -3597,7 +3708,8 @@ _set_fcn_match_interface_name (ARGS_SET_FCN)
 	gs_free const char **strv = NULL;
 	gsize i;
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	strv = nm_utils_strsplit_set (value, " \t", TRUE);
 	if (strv) {
@@ -3639,7 +3751,8 @@ _set_fcn_olpc_mesh_channel (ARGS_SET_FCN)
 {
 	unsigned long chan_int;
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	if (!nmc_string_to_uint (value, TRUE, 1, 13, &chan_int)) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid channel; use <1-13>"), value);
@@ -3727,6 +3840,9 @@ _set_fcn_sriov_vfs (ARGS_SET_FCN)
 	const char *const*iter;
 	gs_free_error GError *local = NULL;
 
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
+
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
 		nm_auto_unref_sriov_vf NMSriovVF *vf = NULL;
@@ -3750,6 +3866,9 @@ _set_fcn_tc_config_qdiscs (ARGS_SET_FCN)
 	gs_free const char **strv = NULL;
 	const char *const*iter;
 	gs_free_error GError *local = NULL;
+
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
@@ -3844,6 +3963,9 @@ _set_fcn_tc_config_tfilters (ARGS_SET_FCN)
 	const char *const*iter;
 	gs_free_error GError *local = NULL;
 
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
+
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
 		nm_auto_unref_tc_tfilter NMTCTfilter *tc_tfilter = NULL;
@@ -3914,7 +4036,8 @@ _set_fcn_team_runner_tx_hash (ARGS_SET_FCN)
 	gs_free const char **strv = NULL;
 	const char *const*iter;
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
@@ -3973,6 +4096,9 @@ _set_fcn_team_link_watchers (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	const char *const*iter;
+
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
@@ -4041,6 +4167,9 @@ _set_fcn_team_port_link_watchers (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	const char *const*iter;
+
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
@@ -4119,6 +4248,9 @@ _set_fcn_vlan_xgress_priority_map (ARGS_SET_FCN)
 	gs_strfreev char **prio_map = NULL;
 	char **p;
 	NMVlanPriorityMap map_type = _vlan_priority_map_type_from_property_info (property_info);
+
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	prio_map = _parse_vlan_priority_maps (value, map_type, FALSE, error);
 	if (!prio_map)
@@ -4255,6 +4387,9 @@ _set_fcn_wired_s390_subchannels (ARGS_SET_FCN)
 	gs_free const char **strv = NULL;
 	gsize len;
 
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
+
 	strv = nm_utils_strsplit_set (value, " ,\t", FALSE);
 	len = NM_PTRARRAY_LEN (strv);
 	if (len != 2 && len != 3) {
@@ -4335,7 +4470,8 @@ _set_fcn_wireless_channel (ARGS_SET_FCN)
 {
 	unsigned long chan_int;
 
-	nm_assert (!error || !*error);
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	if (!nmc_string_to_uint (value, FALSE, 0, 0, &chan_int)) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid channel"), value);
@@ -4400,7 +4536,7 @@ _get_fcn_wireless_security_wep_key (ARGS_GET_FCN)
 
 DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_wireless_security_proto,
                               NM_SETTING_WIRELESS_SECURITY,
-                              nm_setting_wireless_security_add_proto);
+                              nm_setting_wireless_security_add_proto)
 
 DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_wireless_security_proto,
                                       NM_SETTING_WIRELESS_SECURITY,
@@ -4410,7 +4546,7 @@ DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_wireless_security_proto,
 
 DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_wireless_security_pairwise,
                               NM_SETTING_WIRELESS_SECURITY,
-                              nm_setting_wireless_security_add_pairwise);
+                              nm_setting_wireless_security_add_pairwise)
 
 DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_wireless_security_pairwise,
                                       NM_SETTING_WIRELESS_SECURITY,
@@ -4420,7 +4556,7 @@ DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_wireless_security_pairwise,
 
 DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_wireless_security_group,
                               NM_SETTING_WIRELESS_SECURITY,
-                              nm_setting_wireless_security_add_group);
+                              nm_setting_wireless_security_add_group)
 
 DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_wireless_security_group,
                                       NM_SETTING_WIRELESS_SECURITY,
@@ -4436,6 +4572,11 @@ _set_fcn_wireless_wep_key (ARGS_SET_FCN)
 	guint32 prev_idx, idx;
 
 	nm_assert (!error || !*error);
+
+	if (_SET_FCN_DO_RESET_DEFAULT (value)) {
+		g_object_set (setting, property_info->property_name, NULL, NULL);
+		return TRUE;
+	}
 
 	/* Get currently set type */
 	type = nm_setting_wireless_security_get_wep_key_type (NM_SETTING_WIRELESS_SECURITY (setting));
@@ -4552,6 +4693,11 @@ _set_fcn_ethtool (ARGS_SET_FCN)
 	NMTernary val;
 	NMEthtoolID ethtool_id = property_info->property_typ_data->subtype.ethtool.ethtool_id;
 
+	if (_SET_FCN_DO_RESET_DEFAULT (value)) {
+		val = NM_TERNARY_DEFAULT;
+		goto set;
+	}
+
 	value = nm_strstrip_avoid_copy (value, &value_to_free);
 
 	if (NM_IN_STRSET (value, "1", "yes", "true", "on"))
@@ -4567,6 +4713,7 @@ _set_fcn_ethtool (ARGS_SET_FCN)
 		return FALSE;
 	}
 
+set:
 	nm_setting_ethtool_set_feature (NM_SETTING_ETHTOOL (setting),
 	                                nm_ethtool_data[ethtool_id]->optname,
 	                                val);
