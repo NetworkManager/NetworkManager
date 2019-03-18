@@ -1665,31 +1665,6 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		return TRUE; \
 	}
 
-#define DEFINE_REMOVER_INDEX_OR_VALUE(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
-	static gboolean \
-	def_func (ARGS_REMOVE_FCN) \
-	{ \
-		guint32 num; \
-		if (value) { \
-			gboolean ret; \
-			char *value_stripped = g_strstrip (g_strdup (value)); \
-			ret = rem_func_val (s_macro (setting), value_stripped, error); \
-			g_free (value_stripped); \
-			return ret; \
-		} \
-		num = num_func (s_macro (setting)); \
-		if (num == 0) { \
-			g_set_error_literal (error, 1, 0, _("no item to remove")); \
-			return FALSE; \
-		} \
-		if (idx >= num) { \
-			g_set_error (error, 1, 0, _("index '%d' is not in range <0-%d>"), idx, num - 1); \
-			return FALSE; \
-		} \
-		rem_func_idx (s_macro (setting), idx); \
-		return TRUE; \
-	}
-
 #define _DEFINE_REMOVER_INDEX_OR_VALUE(def_func, s_macro, num_func, rem_func_idx, rem_func_cmd) \
 	static gboolean \
 	def_func (ARGS_REMOVE_FCN) \
@@ -1732,6 +1707,9 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		rem_func_val (s_macro (setting), value); \
 		return TRUE; \
 	})
+
+#define DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
+	DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (def_func, s_macro, num_func, rem_func_idx, rem_func_val)
 
 #define DEFINE_REMOVER_OPTION(def_func, s_macro, rem_func) \
 	static gboolean \
@@ -3376,26 +3354,20 @@ _validate_and_remove_ipv4_address (NMSettingIPConfig *setting,
                                    const char *address,
                                    GError **error)
 {
-	NMIPAddress *ip4addr;
-	gboolean ret;
+	nm_auto_unref_ip_address NMIPAddress *ip4addr = NULL;
 
 	ip4addr = _parse_ip_address (AF_INET, address, error);
 	if (!ip4addr)
 		return FALSE;
 
-	ret = nm_setting_ip_config_remove_address_by_value (setting, ip4addr);
-	if (!ret) {
-		g_set_error (error, 1, 0,
-		             _("the property doesn't contain IP address '%s'"), address);
-	}
-	nm_ip_address_unref (ip4addr);
-	return ret;
+	nm_setting_ip_config_remove_address_by_value (setting, ip4addr);
+	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv4_config_addresses,
-                               NM_SETTING_IP_CONFIG,
-                               nm_setting_ip_config_get_num_addresses,
-                               nm_setting_ip_config_remove_address,
-                               _validate_and_remove_ipv4_address)
+DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ipv4_config_addresses,
+                                       NM_SETTING_IP_CONFIG,
+                                       nm_setting_ip_config_get_num_addresses,
+                                       nm_setting_ip_config_remove_address,
+                                       _validate_and_remove_ipv4_address)
 
 static gboolean
 _set_fcn_ip4_config_gateway (ARGS_SET_FCN)
@@ -3433,27 +3405,23 @@ _set_fcn_ip4_config_routes (ARGS_SET_FCN)
 
 static gboolean
 _validate_and_remove_ipv4_route (NMSettingIPConfig *setting,
-                                 const char *route,
+                                 const char *value,
                                  GError **error)
 {
-	NMIPRoute *ip4route;
-	gboolean ret;
+	nm_auto_unref_ip_route NMIPRoute *route = NULL;
 
-	ip4route = _parse_ip_route (AF_INET, route, error);
-	if (!ip4route)
+	route = _parse_ip_route (AF_INET, value, error);
+	if (!route)
 		return FALSE;
 
-	ret = nm_setting_ip_config_remove_route_by_value (setting, ip4route);
-	if (!ret)
-		g_set_error (error, 1, 0, _("the property doesn't contain route '%s'"), route);
-	nm_ip_route_unref (ip4route);
-	return ret;
+	nm_setting_ip_config_remove_route_by_value (setting, route);
+	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv4_config_routes,
-                               NM_SETTING_IP_CONFIG,
-                               nm_setting_ip_config_get_num_routes,
-                               nm_setting_ip_config_remove_route,
-                               _validate_and_remove_ipv4_route)
+DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ipv4_config_routes,
+                                       NM_SETTING_IP_CONFIG,
+                                       nm_setting_ip_config_get_num_routes,
+                                       nm_setting_ip_config_remove_route,
+                                       _validate_and_remove_ipv4_route)
 
 static const char *ipv6_valid_methods[] = {
 	NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
@@ -3544,27 +3512,23 @@ _set_fcn_ip6_config_addresses (ARGS_SET_FCN)
 
 static gboolean
 _validate_and_remove_ipv6_address (NMSettingIPConfig *setting,
-                                   const char *address,
+                                   const char *value,
                                    GError **error)
 {
-	NMIPAddress *ip6addr;
-	gboolean ret;
+	nm_auto_unref_ip_address NMIPAddress *addr = NULL;
 
-	ip6addr = _parse_ip_address (AF_INET6, address, error);
-	if (!ip6addr)
+	addr = _parse_ip_address (AF_INET6, value, error);
+	if (!addr)
 		return FALSE;
 
-	ret = nm_setting_ip_config_remove_address_by_value (setting, ip6addr);
-	if (!ret)
-		g_set_error (error, 1, 0, _("the property doesn't contain IP address '%s'"), address);
-	nm_ip_address_unref (ip6addr);
-	return ret;
+	nm_setting_ip_config_remove_address_by_value (setting, addr);
+	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv6_config_addresses,
-                               NM_SETTING_IP_CONFIG,
-                               nm_setting_ip_config_get_num_addresses,
-                               nm_setting_ip_config_remove_address,
-                               _validate_and_remove_ipv6_address)
+DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ipv6_config_addresses,
+                                       NM_SETTING_IP_CONFIG,
+                                       nm_setting_ip_config_get_num_addresses,
+                                       nm_setting_ip_config_remove_address,
+                                       _validate_and_remove_ipv6_address)
 
 static gboolean
 _set_fcn_ip6_config_gateway (ARGS_SET_FCN)
@@ -3604,27 +3568,23 @@ _set_fcn_ip6_config_routes (ARGS_SET_FCN)
 
 static gboolean
 _validate_and_remove_ipv6_route (NMSettingIPConfig *setting,
-                                 const char *route,
+                                 const char *value,
                                  GError **error)
 {
-	NMIPRoute *ip6route;
-	gboolean ret;
+	nm_auto_unref_ip_route NMIPRoute *route = NULL;
 
-	ip6route = _parse_ip_route (AF_INET6, route, error);
-	if (!ip6route)
+	route = _parse_ip_route (AF_INET6, value, error);
+	if (!route)
 		return FALSE;
 
-	ret = nm_setting_ip_config_remove_route_by_value (setting, ip6route);
-	if (!ret)
-		g_set_error (error, 1, 0, _("the property doesn't contain route '%s'"), route);
-	nm_ip_route_unref (ip6route);
-	return ret;
+	nm_setting_ip_config_remove_route_by_value (setting, route);
+	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv6_config_routes,
-                               NM_SETTING_IP_CONFIG,
-                               nm_setting_ip_config_get_num_routes,
-                               nm_setting_ip_config_remove_route,
-                               _validate_and_remove_ipv6_route)
+DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ipv6_config_routes,
+                                       NM_SETTING_IP_CONFIG,
+                                       nm_setting_ip_config_get_num_routes,
+                                       nm_setting_ip_config_remove_route,
+                                       _validate_and_remove_ipv6_route)
 
 static gconstpointer
 _get_fcn_match_interface_name (ARGS_GET_FCN)
@@ -3807,11 +3767,12 @@ _set_fcn_tc_config_qdiscs (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	const char *const*iter;
-	NMTCQdisc *tc_qdisc;
 	gs_free_error GError *local = NULL;
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
+		nm_auto_unref_tc_qdisc NMTCQdisc *tc_qdisc = NULL;
+
 		tc_qdisc = nm_utils_tc_qdisc_from_str (*iter, &local);
 		if (!tc_qdisc) {
 			g_set_error (error, 1, 0, "%s %s", local->message,
@@ -3819,7 +3780,6 @@ _set_fcn_tc_config_qdiscs (ARGS_SET_FCN)
 			return FALSE;
 		}
 		nm_setting_tc_config_add_qdisc (NM_SETTING_TC_CONFIG (setting), tc_qdisc);
-		nm_tc_qdisc_unref (tc_qdisc);
 	}
 	return TRUE;
 }
@@ -3829,52 +3789,40 @@ _validate_and_remove_sriov_vf (NMSettingSriov *setting,
                                const char *value,
                                GError **error)
 {
-	NMSriovVF *vf;
-	gboolean ret;
+	nm_auto_unref_sriov_vf NMSriovVF *vf = NULL;
 
 	vf = nm_utils_sriov_vf_from_str (value, error);
 	if (!vf)
 		return FALSE;
 
-	ret = nm_setting_sriov_remove_vf_by_index (setting, nm_sriov_vf_get_index (vf));
-	if (!ret) {
-		g_set_error (error, 1, 0,
-		             _("the property doesn't contain vf with index %u"),
-		             nm_sriov_vf_get_index (vf));
-	}
-	nm_sriov_vf_unref (vf);
-	return ret;
+	nm_setting_sriov_remove_vf_by_index (setting, nm_sriov_vf_get_index (vf));
+	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_sriov_vfs,
-                               NM_SETTING_SRIOV,
-                               nm_setting_sriov_get_num_vfs,
-                               nm_setting_sriov_remove_vf,
-                               _validate_and_remove_sriov_vf)
-
+DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_sriov_vfs,
+                                       NM_SETTING_SRIOV,
+                                       nm_setting_sriov_get_num_vfs,
+                                       nm_setting_sriov_remove_vf,
+                                       _validate_and_remove_sriov_vf)
 
 static gboolean
 _validate_and_remove_tc_qdisc (NMSettingTCConfig *setting,
                                const char *value,
                                GError **error)
 {
-	NMTCQdisc *qdisc;
-	gboolean ret;
+	nm_auto_unref_tc_qdisc NMTCQdisc *qdisc = NULL;
 
 	qdisc = nm_utils_tc_qdisc_from_str (value, error);
 	if (!qdisc)
 		return FALSE;
 
-	ret = nm_setting_tc_config_remove_qdisc_by_value (setting, qdisc);
-	if (!ret)
-		g_set_error (error, 1, 0, _("the property doesn't contain qdisc '%s'"), value);
-	nm_tc_qdisc_unref (qdisc);
-	return ret;
+	nm_setting_tc_config_remove_qdisc_by_value (setting, qdisc);
+	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_tc_config_qdiscs,
-                               NM_SETTING_TC_CONFIG,
-                               nm_setting_tc_config_get_num_qdiscs,
-                               nm_setting_tc_config_remove_qdisc,
-                               _validate_and_remove_tc_qdisc)
+DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_tc_config_qdiscs,
+                                       NM_SETTING_TC_CONFIG,
+                                       nm_setting_tc_config_get_num_qdiscs,
+                                       nm_setting_tc_config_remove_qdisc,
+                                       _validate_and_remove_tc_qdisc)
 
 static gconstpointer
 _get_fcn_tc_config_tfilters (ARGS_GET_FCN)
@@ -3934,24 +3882,20 @@ _validate_and_remove_tc_tfilter (NMSettingTCConfig *setting,
                                const char *value,
                                GError **error)
 {
-	NMTCTfilter *tfilter;
-	gboolean ret;
+	nm_auto_unref_tc_tfilter NMTCTfilter *tfilter = NULL;
 
 	tfilter = nm_utils_tc_tfilter_from_str (value, error);
 	if (!tfilter)
 		return FALSE;
 
-	ret = nm_setting_tc_config_remove_tfilter_by_value (setting, tfilter);
-	if (!ret)
-		g_set_error (error, 1, 0, _("the property doesn't contain tfilter '%s'"), value);
-	nm_tc_tfilter_unref (tfilter);
-	return ret;
+	nm_setting_tc_config_remove_tfilter_by_value (setting, tfilter);
+	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_tc_config_tfilters,
-                               NM_SETTING_TC_CONFIG,
-                               nm_setting_tc_config_get_num_tfilters,
-                               nm_setting_tc_config_remove_tfilter,
-                               _validate_and_remove_tc_tfilter)
+DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_tc_config_tfilters,
+                                       NM_SETTING_TC_CONFIG,
+                                       nm_setting_tc_config_get_num_tfilters,
+                                       nm_setting_tc_config_remove_tfilter,
+                                       _validate_and_remove_tc_tfilter)
 
 static const char *
 _validate_fcn_team_config (const char *value, char **out_to_free, GError **error)
@@ -4058,29 +4002,23 @@ _set_fcn_team_link_watchers (ARGS_SET_FCN)
 
 static gboolean
 _validate_and_remove_team_link_watcher (NMSettingTeam *setting,
-                                        const char *watcher_str,
+                                        const char *value,
                                         GError **error)
 {
-	NMTeamLinkWatcher *watcher;
-	gboolean ret;
+	nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher = NULL;
 
-	watcher = _parse_team_link_watcher (watcher_str, error);
+	watcher = _parse_team_link_watcher (value, error);
 	if (!watcher)
 		return FALSE;
 
-	ret = nm_setting_team_remove_link_watcher_by_value (setting, watcher);
-	if (!ret) {
-		g_set_error (error, 1, 0, _("the property doesn't contain link watcher '%s'"),
-		             watcher_str);
-	}
-	nm_team_link_watcher_unref (watcher);
-	return ret;
+	nm_setting_team_remove_link_watcher_by_value (setting, watcher);
+	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_team_link_watchers,
-                               NM_SETTING_TEAM,
-                               nm_setting_team_get_num_link_watchers,
-                               nm_setting_team_remove_link_watcher,
-                               _validate_and_remove_team_link_watcher)
+DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_team_link_watchers,
+                                       NM_SETTING_TEAM,
+                                       nm_setting_team_get_num_link_watchers,
+                                       nm_setting_team_remove_link_watcher,
+                                       _validate_and_remove_team_link_watcher)
 
 static gconstpointer
 _get_fcn_team_port_link_watchers (ARGS_GET_FCN)
@@ -4131,29 +4069,23 @@ _set_fcn_team_port_link_watchers (ARGS_SET_FCN)
 
 static gboolean
 _validate_and_remove_team_port_link_watcher (NMSettingTeamPort *setting,
-                                             const char *watcher_str,
+                                             const char *value,
                                              GError **error)
 {
-	NMTeamLinkWatcher *watcher;
-	gboolean ret;
+	nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher = NULL;
 
-	watcher = _parse_team_link_watcher (watcher_str, error);
+	watcher = _parse_team_link_watcher (value, error);
 	if (!watcher)
 		return FALSE;
 
-	ret = nm_setting_team_port_remove_link_watcher_by_value (setting, watcher);
-	if (!ret) {
-		g_set_error (error, 1, 0, _("the property doesn't contain link watcher '%s'"),
-		             watcher_str);
-	}
-	nm_team_link_watcher_unref (watcher);
-	return ret;
+	nm_setting_team_port_remove_link_watcher_by_value (setting, watcher);
+	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_team_port_link_watchers,
-                               NM_SETTING_TEAM_PORT,
-                               nm_setting_team_port_get_num_link_watchers,
-                               nm_setting_team_port_remove_link_watcher,
-                               _validate_and_remove_team_port_link_watcher)
+DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_team_port_link_watchers,
+                                       NM_SETTING_TEAM_PORT,
+                                       nm_setting_team_port_get_num_link_watchers,
+                                       nm_setting_team_port_remove_link_watcher,
+                                       _validate_and_remove_team_port_link_watcher)
 
 static gconstpointer
 _get_fcn_vlan_flags (ARGS_GET_FCN)
