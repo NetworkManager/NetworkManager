@@ -284,6 +284,14 @@ struct _NMMetaPropertyTypData {
 			NMMetaPropertyTypeMacMode mode;
 		} mac;
 		struct {
+			gboolean (*get_fcn) (NMSettingDcb *s_dcb,
+			                     guint priority);
+			void (*set_fcn) (NMSettingDcb *setting,
+			                 guint user_priority,
+			                 gboolean enabled);
+			bool with_flow_control_flags:1;
+		} dcb_bool;
+		struct {
 			NMEthtoolID ethtool_id;
 		} ethtool;
 	} subtype;
