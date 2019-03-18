@@ -47,13 +47,20 @@ gboolean    nmc_setting_set_property (NMClient *client,
                                       const char *prop,
                                       const char *val,
                                       GError **error);
-gboolean    nmc_setting_reset_property (NMSetting *setting,
-                                        const char *prop,
-                                        GError **error);
+static inline gboolean
+nmc_setting_reset_property (NMClient *client,
+                            NMSetting *setting,
+                            const char *prop,
+                            GError **error)
+{
+	return nmc_setting_set_property (client, setting, prop, NULL, error);
+}
+
 gboolean    nmc_setting_remove_property_option (NMSetting *setting,
                                                 const char *prop,
                                                 const char *value,
                                                 GError **error);
+
 void nmc_property_set_default_value (NMSetting *setting, const char *prop);
 
 gboolean nmc_property_get_gvalue (NMSetting *setting, const char *prop, GValue *value);
