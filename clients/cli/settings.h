@@ -61,8 +61,6 @@ gboolean    nmc_setting_remove_property_option (NMSetting *setting,
                                                 const char *value,
                                                 GError **error);
 
-void nmc_property_set_default_value (NMSetting *setting, const char *prop);
-
 gboolean nmc_property_get_gvalue (NMSetting *setting, const char *prop, GValue *value);
 gboolean nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value);
 
