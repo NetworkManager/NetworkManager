@@ -124,7 +124,8 @@ _parse_ip_route (int family,
 	gint64 metric = -1;
 	guint i;
 	gs_free const char **routev = NULL;
-	gs_free char *str_clean = NULL;
+	gs_free char *str_clean_free = NULL;
+	const char *str_clean;
 	gs_free char *dest_clone = NULL;
 	const char *dest;
 	const char *plen;
@@ -136,7 +137,7 @@ _parse_ip_route (int family,
 	nm_assert (str);
 	nm_assert (!error || !*error);
 
-	str_clean = g_strstrip (g_strdup (str));
+	str_clean = nm_strstrip_avoid_copy (str, &str_clean_free);
 	routev = nm_utils_strsplit_set (str_clean, " \t", FALSE);
 	if (!routev) {
 		g_set_error (error, 1, 0,
@@ -299,7 +300,8 @@ _parse_team_link_watcher (const char *str,
                           GError **error)
 {
 	gs_free const char **watcherv = NULL;
-	gs_free char *str_clean = NULL;
+	gs_free char *str_clean_free = NULL;
+	const char *str_clean;
 	guint i;
 	gs_free const char *name = NULL;
 	int val1 = 0, val2 = 0, val3 = 3, val4 = -1;
@@ -310,7 +312,7 @@ _parse_team_link_watcher (const char *str,
 	nm_assert (str);
 	nm_assert (!error || !*error);
 
-	str_clean = g_strstrip (g_strdup (str));
+	str_clean = nm_strstrip_avoid_copy (str, &str_clean_free);
 	watcherv = nm_utils_strsplit_set (str_clean, " \t", FALSE);
 	if (!watcherv) {
 		g_set_error (error, 1, 0, "'%s' is not valid", str);
@@ -1064,14 +1066,10 @@ _set_fcn_gobject_int (ARGS_SET_FCN)
 	if (property_info->property_typ_data) {
 		if (   value
 		    && (value_infos = property_info->property_typ_data->subtype.gobject_int.value_infos)) {
-			gs_free char *vv_stripped = NULL;
-			const char *vv = nm_str_skip_leading_spaces (value);
+			gs_free char *vv_free = NULL;
+			const char *vv;
 
-			if (vv[0] && g_ascii_isspace (vv[strlen (vv) - 1])) {
-				vv_stripped = g_strstrip (g_strdup (vv));
-				vv = vv_stripped;
-			}
-
+			vv = nm_strstrip_avoid_copy (value, &vv_free);
 			for (; value_infos->nick; value_infos++) {
 				if (nm_streq (value_infos->nick, vv)) {
 					v = value_infos->value;
@@ -1636,9 +1634,12 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		\
 		strv = nm_utils_strsplit_set (value, ",", FALSE); \
 		for (iter = strv; iter && *iter; iter++) { \
-			gs_free char *left_clone = g_strstrip (g_strdup (*iter)); \
-			char *left = left_clone; \
-			char *right = strchr (left, '='); \
+			char *left; \
+			char *right; \
+			\
+			left = g_strstrip ((char *) *iter); \
+			right = strchr (left, '='); \
+			\
 			if (!right) { \
 				g_set_error (error, 1, 0, _("'%s' is not valid; use <option>=<value>"), *iter); \
 				return FALSE; \
@@ -1947,8 +1948,6 @@ _set_fcn_gobject_bytes (ARGS_SET_FCN)
 	gs_unref_bytes GBytes *bytes = NULL;
 	GByteArray *array;
 
-	nm_assert (!error || !*error);
-
 	val_strip = nm_strstrip_avoid_copy (value, &val_strip_free);
 
 	/* First try hex string in the format of AAbbCCDd */
@@ -2195,19 +2194,17 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 	static gboolean \
 	def_func (ARGS_SET_FCN) \
 	{ \
-		char *val_strip = g_strstrip (g_strdup (value)); \
-		char *p = val_strip; \
+		gs_free char *value_to_free = NULL; \
 		NMSetting8021xCKScheme scheme = NM_SETTING_802_1X_CK_SCHEME_PATH; \
-		gboolean success; \
 		\
-		if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11)) == 0) \
+		value = nm_strstrip_avoid_copy (value, &value_to_free); \
+		\
+		if (strncmp (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11)) == 0) \
 			scheme = NM_SETTING_802_1X_CK_SCHEME_PKCS11; \
-		else if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0) \
-			p += NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH); \
+		else if (strncmp (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0) \
+			value += NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH); \
 		\
-		success = set_func (NM_SETTING_802_1X (setting), p, scheme, NULL, error); \
-		g_free (val_strip); \
-		return success; \
+		return set_func (NM_SETTING_802_1X (setting), value, scheme, NULL, error); \
 	}
 
 #define DEFINE_SETTER_PRIV_KEY(def_func, pwd_func, set_func) \
@@ -3246,8 +3243,9 @@ _set_fcn_ip4_config_dns (ARGS_SET_FCN)
 
 	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
 	for (iter = strv; iter && *iter; iter++) {
-		gs_free char *addr = g_strstrip (g_strdup (*iter));
+		const char *addr;
 
+		addr = g_strstrip ((char *) *iter);
 		if (inet_pton (AF_INET, addr, &ip4_addr) < 1) {
 			g_set_error (error, 1, 0, _("invalid IPv4 address '%s'"), addr);
 			return FALSE;
@@ -3369,16 +3367,16 @@ DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ipv4_config_addresses,
 static gboolean
 _set_fcn_ip4_config_gateway (ARGS_SET_FCN)
 {
-	gs_free char *addr = NULL;
+	gs_free char *value_to_free = NULL;
 
-	addr = g_strstrip (g_strdup (value));
+	value = nm_strstrip_avoid_copy (value, &value_to_free);
 
-	if (!nm_utils_ipaddr_valid (AF_INET, addr)) {
+	if (!nm_utils_ipaddr_valid (AF_INET, value)) {
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
 	                 _("invalid gateway address '%s'"), value);
 		return FALSE;
 	}
-	g_object_set (setting, property_info->property_name, addr, NULL);
+	g_object_set (setting, property_info->property_name, value, NULL);
 	return TRUE;
 }
 
@@ -3451,7 +3449,9 @@ _set_fcn_ip6_config_dns (ARGS_SET_FCN)
 
 	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
 	for (iter = strv; iter && *iter; iter++) {
-		gs_free char *addr  = g_strstrip (g_strdup (*iter));
+		const char *addr;
+
+		addr = g_strstrip ((char *) *iter);
 
 		if (inet_pton (AF_INET6, addr, &ip6_addr) < 1) {
 			g_set_error (error, 1, 0, _("invalid IPv6 address '%s'"), addr);
@@ -3530,18 +3530,18 @@ DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ipv6_config_addresses,
 static gboolean
 _set_fcn_ip6_config_gateway (ARGS_SET_FCN)
 {
-	gs_free char *addr = NULL;
+	gs_free char *value_to_free = NULL;
 
-	addr = g_strstrip (g_strdup (value));
+	value = nm_strstrip_avoid_copy (value, &value_to_free);
 
-	if (!nm_utils_ipaddr_valid (AF_INET6, addr)) {
+	if (!nm_utils_ipaddr_valid (AF_INET6, value)) {
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
 		             _("invalid gateway address '%s'"),
-		             addr);
+		             value);
 		return FALSE;
 	}
 
-	g_object_set (setting, property_info->property_name, addr, NULL);
+	g_object_set (setting, property_info->property_name, value, NULL);
 	return TRUE;
 }
 
@@ -4629,11 +4629,11 @@ _get_fcn_ethtool (ARGS_GET_FCN)
 static gboolean
 _set_fcn_ethtool (ARGS_SET_FCN)
 {
-	gs_free char *value_clone = NULL;
+	gs_free char *value_to_free = NULL;
 	NMTernary val;
 	NMEthtoolID ethtool_id = property_info->property_typ_data->subtype.ethtool.ethtool_id;
 
-	value = nm_strstrip_avoid_copy (value, &value_clone);
+	value = nm_strstrip_avoid_copy (value, &value_to_free);
 
 	if (NM_IN_STRSET (value, "1", "yes", "true", "on"))
 		val = NM_TERNARY_TRUE;
