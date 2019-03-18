@@ -4164,13 +4164,10 @@ _remove_vlan_xgress_priority_map (const NMMetaEnvironment *environment,
 {
 	guint32 num;
 
-	/* If value != NULL, remove by value */
 	if (value) {
-		gboolean ret;
-		char **prio_map;
-		gs_free char *v = g_strdup (value);
+		gs_strfreev char **prio_map = NULL;
 
-		prio_map = _parse_vlan_priority_maps (v, map_type, TRUE, error);
+		prio_map = _parse_vlan_priority_maps (value, map_type, TRUE, error);
 		if (!prio_map)
 			return FALSE;
 		if (prio_map[1]) {
@@ -4179,29 +4176,15 @@ _remove_vlan_xgress_priority_map (const NMMetaEnvironment *environment,
 			               N_("only one mapping at a time is supported; taking the first one (%s)"),
 			               prio_map[0]);
 		}
-		ret = nm_setting_vlan_remove_priority_str_by_value (NM_SETTING_VLAN (setting),
-		                                                    map_type,
-		                                                    prio_map[0]);
-
-		if (!ret)
-			g_set_error (error, 1, 0, _("the property doesn't contain mapping '%s'"), prio_map[0]);
-		g_strfreev (prio_map);
-		return ret;
+		nm_setting_vlan_remove_priority_str_by_value (NM_SETTING_VLAN (setting),
+		                                              map_type,
+		                                              prio_map[0]);
+		return TRUE;
 	}
 
-	/* Else remove by index */
 	num = nm_setting_vlan_get_num_priorities (NM_SETTING_VLAN (setting), map_type);
-	if (num == 0) {
-		g_set_error_literal (error, 1, 0, _("no priority to remove"));
-		return FALSE;
-	}
-	if (idx >= num) {
-		g_set_error (error, 1, 0, _("index '%d' is not in the range of <0-%d>"),
-		             idx, num - 1);
-		return FALSE;
-	}
-
-	nm_setting_vlan_remove_priority (NM_SETTING_VLAN (setting), map_type, idx);
+	if (idx < num)
+		nm_setting_vlan_remove_priority (NM_SETTING_VLAN (setting), map_type, idx);
 	return TRUE;
 }
 
