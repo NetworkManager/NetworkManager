@@ -1637,32 +1637,63 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 	g_string_append_printf (ret_str, "%s = %s", key, value);
 }
 
-#define DEFINE_SETTER_STR_LIST_MULTI(def_func, s_macro, set_func) \
-	static gboolean \
-	def_func (ARGS_SET_FCN) \
-	{ \
-		gs_free const char **strv = NULL; \
-		gsize i; \
-		\
-		if (_SET_FCN_DO_RESET_DEFAULT (value)) \
-			return _gobject_property_reset_default (setting, property_info->property_name); \
-		\
-		strv = nm_utils_strsplit_set (value, " \t,", FALSE); \
-		if (strv) { \
-			for (i = 0; strv[i]; i++) { \
-				const char *item; \
-				\
-				item = nmc_string_is_valid (strv[i], \
-				                            (const char **) property_info->property_typ_data->values_static, \
-				                            error); \
-				if (!item) \
-					return FALSE; \
-				\
-				set_func (s_macro (setting), item); \
-			} \
-		} \
-		return TRUE; \
+static gboolean
+_set_fcn_multilist (ARGS_SET_FCN)
+{
+	gs_free const char **strv = NULL;
+	gsize i;
+
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
+
+	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
+	if (strv) {
+		for (i = 0; strv[i]; i++) {
+			const char *item = strv[i];
+
+			if (property_info->property_typ_data->values_static) {
+				item = nmc_string_is_valid (item,
+				                            (const char **) property_info->property_typ_data->values_static,
+				                            error);
+				if (!item)
+					return FALSE;
+			}
+
+			property_info->property_typ_data->subtype.multilist.add_fcn (setting, item);
+		}
 	}
+	return TRUE;
+}
+
+static gboolean
+_remove_fcn_multilist (ARGS_REMOVE_FCN)
+{
+	gs_free char *value_to_free = NULL;
+	gint64 idx;
+
+	idx = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT64, -1);
+	if (idx != -1) {
+		guint num;
+
+		num = property_info->property_typ_data->subtype.multilist.get_num_fcn (setting);
+		if (idx < (gint64) num)
+			property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn (setting, idx);
+		return TRUE;
+	}
+
+	value = nm_strstrip_avoid_copy (value, &value_to_free);
+
+	if (property_info->property_typ_data->values_static) {
+		value = nmc_string_is_valid (value,
+		                             (const char **) property_info->property_typ_data->values_static,
+		                             error);
+		if (!value)
+			return FALSE;
+	}
+
+	property_info->property_typ_data->subtype.multilist.remove_by_value_fcn (setting, value);
+	return TRUE;
+}
 
 #define DEFINE_SETTER_OPTIONS(def_func, s_macro, s_type, add_func, valid_func1, valid_func2) \
 	static gboolean \
@@ -2296,16 +2327,6 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 			password = password_free = g_strdup (pwd_func (NM_SETTING_802_1X (setting))); \
 		return set_func (NM_SETTING_802_1X (setting), path, password, scheme, NULL, error); \
 	}
-
-DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_802_1x_eap,
-                              NM_SETTING_802_1X,
-                              nm_setting_802_1x_add_eap_method)
-
-DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_802_1x_eap,
-                                      NM_SETTING_802_1X,
-                                      nm_setting_802_1x_get_num_eap_methods,
-                                      nm_setting_802_1x_remove_eap_method,
-                                      nm_setting_802_1x_remove_eap_method_by_value)
 
 DEFINE_SETTER_CERT (_set_fcn_802_1x_ca_cert, nm_setting_802_1x_set_ca_cert)
 
@@ -4540,36 +4561,6 @@ _get_fcn_wireless_security_wep_key (ARGS_GET_FCN)
 	RETURN_STR_TO_FREE (key);
 }
 
-DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_wireless_security_proto,
-                              NM_SETTING_WIRELESS_SECURITY,
-                              nm_setting_wireless_security_add_proto)
-
-DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_wireless_security_proto,
-                                      NM_SETTING_WIRELESS_SECURITY,
-                                      nm_setting_wireless_security_get_num_protos,
-                                      nm_setting_wireless_security_remove_proto,
-                                      nm_setting_wireless_security_remove_proto_by_value)
-
-DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_wireless_security_pairwise,
-                              NM_SETTING_WIRELESS_SECURITY,
-                              nm_setting_wireless_security_add_pairwise)
-
-DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_wireless_security_pairwise,
-                                      NM_SETTING_WIRELESS_SECURITY,
-                                      nm_setting_wireless_security_get_num_pairwise,
-                                      nm_setting_wireless_security_remove_pairwise,
-                                      nm_setting_wireless_security_remove_pairwise_by_value)
-
-DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_wireless_security_group,
-                              NM_SETTING_WIRELESS_SECURITY,
-                              nm_setting_wireless_security_add_group)
-
-DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_wireless_security_group,
-                                      NM_SETTING_WIRELESS_SECURITY,
-                                      nm_setting_wireless_security_get_num_groups,
-                                      nm_setting_wireless_security_remove_group,
-                                      nm_setting_wireless_security_remove_group_by_value)
-
 static gboolean
 _set_fcn_wireless_wep_key (ARGS_SET_FCN)
 {
@@ -4917,6 +4908,17 @@ static const NMMetaPropertyType _pt_ethtool = {
 	.complete_fcn =                 _complete_fcn_ethtool,
 };
 
+#define MULTILIST_GET_NUM_FCN(type, func)         (((func) == ((guint32  (*) (type *              )) (func))) ? ((guint32  (*) (NMSetting *              )) (func)) : NULL)
+#define MULTILIST_ADD_FCN(type, func)             (((func) == ((gboolean (*) (type *, const char *)) (func))) ? ((gboolean (*) (NMSetting *, const char *)) (func)) : NULL)
+#define MULTILIST_REMOVE_BY_IDX_FCN(type, func)   (((func) == ((void     (*) (type *, guint32     )) (func))) ? ((void     (*) (NMSetting *, guint32     )) (func)) : NULL)
+#define MULTILIST_REMOVE_BY_VALUE_FCN(type, func) (((func) == ((gboolean (*) (type *, const char *)) (func))) ? ((gboolean (*) (NMSetting *, const char *)) (func)) : NULL)
+
+static const NMMetaPropertyType _pt_multilist = {
+	.get_fcn =                      _get_fcn_gobject,
+	.set_fcn =                      _set_fcn_multilist,
+	.remove_fcn =                   _remove_fcn_multilist,
+};
+
 /*****************************************************************************/
 
 #include "settings-docs.h"
@@ -5003,12 +5005,14 @@ static const NMMetaPropertyInfo *const property_infos_6LOWPAN[] = {
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_802_1X
 static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_EAP,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_802_1x_eap,
-			.remove_fcn =               _remove_fcn_802_1x_eap,
-		),
+		.property_type =                &_pt_multilist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn =          MULTILIST_GET_NUM_FCN         (NMSetting8021x, nm_setting_802_1x_get_num_eap_methods),
+				.add_fcn =              MULTILIST_ADD_FCN             (NMSetting8021x, nm_setting_802_1x_add_eap_method),
+				.remove_by_idx_fcn =    MULTILIST_REMOVE_BY_IDX_FCN   (NMSetting8021x, nm_setting_802_1x_remove_eap_method),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSetting8021x, nm_setting_802_1x_remove_eap_method_by_value),
+			),
 			.values_static =            NM_MAKE_STRV ("leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd"),
 		),
 	),
@@ -7517,32 +7521,38 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_PROTO,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_wireless_security_proto,
-			.remove_fcn =               _remove_fcn_wireless_security_proto,
-		),
+		.property_type =                &_pt_multilist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn =          MULTILIST_GET_NUM_FCN         (NMSettingWirelessSecurity, nm_setting_wireless_security_get_num_protos),
+				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingWirelessSecurity, nm_setting_wireless_security_add_proto),
+				.remove_by_idx_fcn =    MULTILIST_REMOVE_BY_IDX_FCN   (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_proto),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_proto_by_value),
+			),
 			.values_static =            NM_MAKE_STRV ("wpa", "rsn"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_PAIRWISE,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_wireless_security_pairwise,
-			.remove_fcn =               _remove_fcn_wireless_security_pairwise,
-		),
+		.property_type =                &_pt_multilist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn =          MULTILIST_GET_NUM_FCN         (NMSettingWirelessSecurity, nm_setting_wireless_security_get_num_pairwise),
+				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingWirelessSecurity, nm_setting_wireless_security_add_pairwise),
+				.remove_by_idx_fcn =    MULTILIST_REMOVE_BY_IDX_FCN   (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_pairwise),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_pairwise_by_value),
+			),
 			.values_static =            NM_MAKE_STRV ("tkip", "ccmp"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_GROUP,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_wireless_security_group,
-			.remove_fcn =               _remove_fcn_wireless_security_group,
-		),
+		.property_type =                &_pt_multilist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn =          MULTILIST_GET_NUM_FCN         (NMSettingWirelessSecurity, nm_setting_wireless_security_get_num_groups),
+				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingWirelessSecurity, nm_setting_wireless_security_add_group),
+				.remove_by_idx_fcn =    MULTILIST_REMOVE_BY_IDX_FCN   (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_group),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_group_by_value),
+			),
 			.values_static =            NM_MAKE_STRV ("wep40", "wep104", "tkip", "ccmp"),
 		),
 	),
