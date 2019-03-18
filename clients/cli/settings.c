@@ -89,7 +89,7 @@ ipv4_addresses_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_dat
 static void
 ipv4_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-	static GValue value = G_VALUE_INIT;
+	static GPtrArray *old_value = NULL;
 	static gboolean answered = FALSE;
 	static gboolean answer = FALSE;
 
@@ -103,17 +103,17 @@ ipv4_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 				answer = get_answer ("ipv4.addresses", NULL);
 			}
 			if (answer) {
-				if (G_IS_VALUE (&value))
-					g_value_unset (&value);
-				nmc_property_get_gvalue (NM_SETTING (object), NM_SETTING_IP_CONFIG_ADDRESSES, &value);
+				nm_clear_pointer (&old_value, g_ptr_array_unref);
+				g_object_get (object, NM_SETTING_IP_CONFIG_ADDRESSES, &old_value, NULL);
 				g_object_set (object, NM_SETTING_IP_CONFIG_ADDRESSES, NULL, NULL);
 			}
 		}
 	} else {
 		answered = FALSE;
-		if (G_IS_VALUE (&value)) {
-			nmc_property_set_gvalue (NM_SETTING (object), NM_SETTING_IP_CONFIG_ADDRESSES, &value);
-			g_value_unset (&value);
+		if (old_value) {
+			gs_unref_ptrarray GPtrArray *v = g_steal_pointer (&old_value);
+
+			g_object_set (object, NM_SETTING_IP_CONFIG_ADDRESSES, v, NULL);
 		}
 	}
 
@@ -152,7 +152,7 @@ ipv6_addresses_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_dat
 static void
 ipv6_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-	static GValue value = G_VALUE_INIT;
+	static GPtrArray *old_value = NULL;
 	static gboolean answered = FALSE;
 	static gboolean answer = FALSE;
 
@@ -166,17 +166,17 @@ ipv6_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 				answer = get_answer ("ipv6.addresses", NULL);
 			}
 			if (answer) {
-				if (G_IS_VALUE (&value))
-					g_value_unset (&value);
-				nmc_property_get_gvalue (NM_SETTING (object), NM_SETTING_IP_CONFIG_ADDRESSES, &value);
+				nm_clear_pointer (&old_value, g_ptr_array_unref);
+				g_object_get (object, NM_SETTING_IP_CONFIG_ADDRESSES, &old_value, NULL);
 				g_object_set (object, NM_SETTING_IP_CONFIG_ADDRESSES, NULL, NULL);
 			}
 		}
 	} else {
 		answered = FALSE;
-		if (G_IS_VALUE (&value)) {
-			nmc_property_set_gvalue (NM_SETTING (object), NM_SETTING_IP_CONFIG_ADDRESSES, &value);
-			g_value_unset (&value);
+		if (old_value) {
+			gs_unref_ptrarray GPtrArray *v = g_steal_pointer (&old_value);
+
+			g_object_set (object, NM_SETTING_IP_CONFIG_ADDRESSES, v, NULL);
 		}
 	}
 
