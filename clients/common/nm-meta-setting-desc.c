@@ -130,7 +130,6 @@ _parse_ip_route (int family,
 	const char *dest;
 	const char *plen;
 	gs_unref_hashtable GHashTable *attrs = NULL;
-	GHashTable *tmp_attrs;
 #define ROUTE_SYNTAX _("The valid syntax is: 'ip[/prefix] [next-hop] [metric] [attribute=val]... [,ip[/prefix] ...]'")
 
 	nm_assert (NM_IN_SET (family, AF_INET, AF_INET6));
@@ -184,6 +183,7 @@ _parse_ip_route (int family,
 			GHashTableIter iter;
 			char *iter_key;
 			GVariant *iter_value;
+			gs_unref_hashtable GHashTable *tmp_attrs = NULL;
 
 			tmp_attrs = nm_utils_parse_variant_attributes (routev[i], ' ', '=', FALSE,
 			                                               nm_ip_route_get_variant_attribute_spec(),
@@ -209,13 +209,11 @@ _parse_ip_route (int family,
 
 				if (!nm_ip_route_attribute_validate (iter_key, iter_value, family, NULL, error)) {
 					g_prefix_error (error, "%s: ", iter_key);
-					g_hash_table_unref (tmp_attrs);
 					return NULL;
 				}
 				g_hash_table_insert (attrs, iter_key, iter_value);
 				g_hash_table_iter_steal (&iter);
 			}
-			g_hash_table_unref (tmp_attrs);
 		} else {
 			g_set_error (error, 1, 0, "%s", ROUTE_SYNTAX);
 			return NULL;
@@ -823,10 +821,9 @@ _get_fcn_gobject_int (ARGS_GET_FCN)
 		for (; value_infos->nick; value_infos++) {
 			if (   ( is_uint64 && value_infos->value.u64 == v.u64)
 			    || (!is_uint64 && value_infos->value.i64 == v.i64)) {
-				char *old_str = return_str;
+				gs_free char *old_str = return_str;
 
 				return_str = g_strdup_printf ("%s (%s)", old_str, value_infos->nick);
-				g_free (old_str);
 				break;
 			}
 		}
@@ -1809,11 +1806,13 @@ validate_flags (NMSetting *setting, const char* prop, guint val, GError **error)
 
 	if (g_param_value_validate (pspec, &value)) {
 		GParamSpecFlags *pspec_flags = (GParamSpecFlags *) pspec;
-		char *flag_values = flag_values_to_string (pspec_flags->flags_class->values,
-		                                           pspec_flags->flags_class->n_values);
+		gs_free char *flag_values = NULL;
+
+		flag_values = flag_values_to_string (pspec_flags->flags_class->values,
+		                                     pspec_flags->flags_class->n_values);
+
 		g_set_error (error, 1, 0, _("'%u' flags are not valid; use combination of %s"),
 		             val, flag_values);
-		g_free (flag_values);
 		success = FALSE;
 	}
 	g_value_unset (&value);
@@ -1862,7 +1861,7 @@ _set_fcn_gobject_flags (ARGS_SET_FCN)
 static gboolean
 _set_fcn_gobject_ssid (ARGS_SET_FCN)
 {
-	GBytes *ssid;
+	gs_unref_bytes GBytes *ssid = NULL;
 
 	nm_assert (!error || !*error);
 
@@ -1873,7 +1872,6 @@ _set_fcn_gobject_ssid (ARGS_SET_FCN)
 
 	ssid = g_bytes_new (value, strlen (value));
 	g_object_set (setting, property_info->property_name, ssid, NULL);
-	g_bytes_unref (ssid);
 	return TRUE;
 }
 
@@ -3331,15 +3329,15 @@ _set_fcn_ip4_config_addresses (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	const char *const*iter;
-	NMIPAddress *ip4addr;
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; *iter; iter++) {
-		ip4addr = _parse_ip_address (AF_INET, *iter, error);
-		if (!ip4addr)
+		nm_auto_unref_ip_address NMIPAddress *addr = NULL;
+
+		addr = _parse_ip_address (AF_INET, *iter, error);
+		if (!addr)
 			return FALSE;
-		nm_setting_ip_config_add_address (NM_SETTING_IP_CONFIG (setting), ip4addr);
-		nm_ip_address_unref (ip4addr);
+		nm_setting_ip_config_add_address (NM_SETTING_IP_CONFIG (setting), addr);
 	}
 	return TRUE;
 }
@@ -3349,13 +3347,13 @@ _validate_and_remove_ipv4_address (NMSettingIPConfig *setting,
                                    const char *address,
                                    GError **error)
 {
-	nm_auto_unref_ip_address NMIPAddress *ip4addr = NULL;
+	nm_auto_unref_ip_address NMIPAddress *addr = NULL;
 
-	ip4addr = _parse_ip_address (AF_INET, address, error);
-	if (!ip4addr)
+	addr = _parse_ip_address (AF_INET, address, error);
+	if (!addr)
 		return FALSE;
 
-	nm_setting_ip_config_remove_address_by_value (setting, ip4addr);
+	nm_setting_ip_config_remove_address_by_value (setting, addr);
 	return TRUE;
 }
 DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ipv4_config_addresses,
@@ -3385,15 +3383,15 @@ _set_fcn_ip4_config_routes (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	const char *const*iter;
-	NMIPRoute *ip4route;
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; *iter; iter++) {
-		ip4route = _parse_ip_route (AF_INET, *iter, error);
-		if (!ip4route)
+		nm_auto_unref_ip_route NMIPRoute *route = NULL;
+
+		route = _parse_ip_route (AF_INET, *iter, error);
+		if (!route)
 			return FALSE;
-		nm_setting_ip_config_add_route (NM_SETTING_IP_CONFIG (setting), ip4route);
-		nm_ip_route_unref (ip4route);
+		nm_setting_ip_config_add_route (NM_SETTING_IP_CONFIG (setting), route);
 	}
 	return TRUE;
 }
@@ -3494,15 +3492,15 @@ _set_fcn_ip6_config_addresses (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	const char *const*iter;
-	NMIPAddress *ip6addr;
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
-		ip6addr = _parse_ip_address (AF_INET6, *iter, error);
-		if (!ip6addr)
+		nm_auto_unref_ip_address NMIPAddress *addr = NULL;
+
+		addr = _parse_ip_address (AF_INET6, *iter, error);
+		if (!addr)
 			return FALSE;
-		nm_setting_ip_config_add_address (NM_SETTING_IP_CONFIG (setting), ip6addr);
-		nm_ip_address_unref (ip6addr);
+		nm_setting_ip_config_add_address (NM_SETTING_IP_CONFIG (setting), addr);
 	}
 	return TRUE;
 }
@@ -3550,15 +3548,15 @@ _set_fcn_ip6_config_routes (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	const char *const*iter;
-	NMIPRoute *ip6route;
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
-		ip6route = _parse_ip_route (AF_INET6, *iter, error);
-		if (!ip6route)
+		nm_auto_unref_ip_route NMIPRoute *route = NULL;
+
+		route = _parse_ip_route (AF_INET6, *iter, error);
+		if (!route)
 			return FALSE;
-		nm_setting_ip_config_add_route (NM_SETTING_IP_CONFIG (setting), ip6route);
-		nm_ip_route_unref (ip6route);
+		nm_setting_ip_config_add_route (NM_SETTING_IP_CONFIG (setting), route);
 	}
 	return TRUE;
 }
@@ -3681,8 +3679,6 @@ _get_fcn_sriov_vfs (ARGS_GET_FCN)
 	NMSettingSriov *s_sriov = NM_SETTING_SRIOV (setting);
 	GString *printable;
 	guint num_vfs, i;
-	NMSriovVF *vf;
-	char *str;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
@@ -3690,16 +3686,17 @@ _get_fcn_sriov_vfs (ARGS_GET_FCN)
 
 	num_vfs = nm_setting_sriov_get_num_vfs (s_sriov);
 	for (i = 0; i < num_vfs; i++) {
+		gs_free char *str = NULL;
+		NMSriovVF *vf;
+
 		vf = nm_setting_sriov_get_vf (s_sriov, i);
+		str = nm_utils_sriov_vf_to_str (vf, FALSE, NULL);
+		if (!str)
+			continue;
 
 		if (printable->len > 0)
 			g_string_append (printable, ", ");
-
-		str = nm_utils_sriov_vf_to_str (vf, FALSE, NULL);
-		if (str) {
-			g_string_append (printable, str);
-			g_free (str);
-		}
+		g_string_append (printable, str);
 	}
 
 	NM_SET_OUT (out_is_default, num_vfs == 0);
@@ -3712,8 +3709,6 @@ _get_fcn_tc_config_qdiscs (ARGS_GET_FCN)
 	NMSettingTCConfig *s_tc = NM_SETTING_TC_CONFIG (setting);
 	GString *printable;
 	guint num_qdiscs, i;
-	NMTCQdisc *qdisc;
-	char *str;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
@@ -3721,16 +3716,18 @@ _get_fcn_tc_config_qdiscs (ARGS_GET_FCN)
 
 	num_qdiscs = nm_setting_tc_config_get_num_qdiscs (s_tc);
 	for (i = 0; i < num_qdiscs; i++) {
+		gs_free char *str = NULL;
+		NMTCQdisc *qdisc;
+
 		qdisc = nm_setting_tc_config_get_qdisc (s_tc, i);
+
+		str = nm_utils_tc_qdisc_to_str (qdisc, NULL);
+		if (!str)
+			continue;
 
 		if (printable->len > 0)
 			g_string_append (printable, ", ");
-
-		str = nm_utils_tc_qdisc_to_str (qdisc, NULL);
-		if (str) {
-			g_string_append (printable, str);
-			g_free (str);
-		}
+		g_string_append (printable, str);
 	}
 
 	NM_SET_OUT (out_is_default, num_qdiscs == 0);
@@ -3742,11 +3739,12 @@ _set_fcn_sriov_vfs (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	const char *const*iter;
-	NMSriovVF *vf;
 	gs_free_error GError *local = NULL;
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
+		nm_auto_unref_sriov_vf NMSriovVF *vf = NULL;
+
 		vf = nm_utils_sriov_vf_from_str (*iter, &local);
 		if (!vf) {
 			nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
@@ -3756,7 +3754,6 @@ _set_fcn_sriov_vfs (ARGS_SET_FCN)
 			return FALSE;
 		}
 		nm_setting_sriov_add_vf (NM_SETTING_SRIOV (setting), vf);
-		nm_sriov_vf_unref (vf);
 	}
 	return TRUE;
 }
@@ -3829,8 +3826,6 @@ _get_fcn_tc_config_tfilters (ARGS_GET_FCN)
 	NMSettingTCConfig *s_tc = NM_SETTING_TC_CONFIG (setting);
 	GString *printable;
 	guint num_tfilters, i;
-	NMTCTfilter *tfilter;
-	char *str;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
@@ -3838,16 +3833,18 @@ _get_fcn_tc_config_tfilters (ARGS_GET_FCN)
 
 	num_tfilters = nm_setting_tc_config_get_num_tfilters (s_tc);
 	for (i = 0; i < num_tfilters; i++) {
+		NMTCTfilter *tfilter;
+		gs_free char *str = NULL;
+
 		tfilter = nm_setting_tc_config_get_tfilter (s_tc, i);
+
+		str = nm_utils_tc_tfilter_to_str (tfilter, NULL);
+		if (!str)
+			continue;
 
 		if (printable->len > 0)
 			g_string_append (printable, ", ");
-
-		str = nm_utils_tc_tfilter_to_str (tfilter, NULL);
-		if (str) {
-			g_string_append (printable, str);
-			g_free (str);
-		}
+		g_string_append (printable, str);
 	}
 
 	NM_SET_OUT (out_is_default, num_tfilters == 0);
@@ -3859,11 +3856,12 @@ _set_fcn_tc_config_tfilters (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	const char *const*iter;
-	NMTCTfilter *tc_tfilter;
 	gs_free_error GError *local = NULL;
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
+		nm_auto_unref_tc_tfilter NMTCTfilter *tc_tfilter = NULL;
+
 		tc_tfilter = nm_utils_tc_tfilter_from_str (*iter, &local);
 		if (!tc_tfilter) {
 			nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
@@ -3873,7 +3871,6 @@ _set_fcn_tc_config_tfilters (ARGS_SET_FCN)
 			return FALSE;
 		}
 		nm_setting_tc_config_add_tfilter (NM_SETTING_TC_CONFIG (setting), tc_tfilter);
-		nm_tc_tfilter_unref (tc_tfilter);
 	}
 	return TRUE;
 }
@@ -3960,8 +3957,6 @@ _get_fcn_team_link_watchers (ARGS_GET_FCN)
 	NMSettingTeam *s_team = NM_SETTING_TEAM (setting);
 	GString *printable;
 	guint num_watchers, i;
-	NMTeamLinkWatcher *watcher;
-	char *watcher_str;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
@@ -3969,14 +3964,18 @@ _get_fcn_team_link_watchers (ARGS_GET_FCN)
 
 	num_watchers = nm_setting_team_get_num_link_watchers (s_team);
 	for (i = 0; i < num_watchers; i++) {
+		NMTeamLinkWatcher *watcher;
+		gs_free char *str = NULL;
+
 		watcher = nm_setting_team_get_link_watcher (s_team, i);
-		watcher_str = _dump_team_link_watcher (watcher);
-		if (watcher_str) {
-			if (printable->len > 0)
-				g_string_append (printable, ", ");
-			g_string_append (printable, watcher_str);
-			g_free (watcher_str);
-		}
+
+		str = _dump_team_link_watcher (watcher);
+		if (!str)
+			continue;
+
+		if (printable->len > 0)
+			g_string_append (printable, ", ");
+		g_string_append (printable, str);
 	}
 
 	NM_SET_OUT (out_is_default, num_watchers == 0);
@@ -3988,15 +3987,15 @@ _set_fcn_team_link_watchers (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	const char *const*iter;
-	NMTeamLinkWatcher *watcher;
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
+		nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher = NULL;
+
 		watcher = _parse_team_link_watcher (*iter, error);
 		if (!watcher)
 			return FALSE;
 		nm_setting_team_add_link_watcher (NM_SETTING_TEAM (setting), watcher);
-		nm_team_link_watcher_unref (watcher);
 	}
 	return TRUE;
 }
@@ -4027,8 +4026,6 @@ _get_fcn_team_port_link_watchers (ARGS_GET_FCN)
 	NMSettingTeamPort *s_team_port = NM_SETTING_TEAM_PORT (setting);
 	GString *printable;
 	guint num_watchers, i;
-	NMTeamLinkWatcher *watcher;
-	char *watcher_str;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
@@ -4036,14 +4033,17 @@ _get_fcn_team_port_link_watchers (ARGS_GET_FCN)
 
 	num_watchers = nm_setting_team_port_get_num_link_watchers (s_team_port);
 	for (i = 0; i < num_watchers; i++) {
+		NMTeamLinkWatcher *watcher;
+		gs_free char *str = NULL;
+
 		watcher = nm_setting_team_port_get_link_watcher (s_team_port, i);
-		watcher_str = _dump_team_link_watcher (watcher);
-		if (watcher_str) {
-			if (printable->len > 0)
-				g_string_append (printable, ", ");
-			g_string_append (printable, watcher_str);
-			g_free (watcher_str);
-		}
+		str = _dump_team_link_watcher (watcher);
+		if (!str)
+			continue;
+
+		if (printable->len > 0)
+			g_string_append (printable, ", ");
+		g_string_append (printable, str);
 	}
 
 	NM_SET_OUT (out_is_default, num_watchers == 0);
@@ -4055,15 +4055,15 @@ _set_fcn_team_port_link_watchers (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	const char *const*iter;
-	NMTeamLinkWatcher *watcher;
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
+		nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher = NULL;
+
 		watcher = _parse_team_link_watcher (*iter, error);
 		if (!watcher)
 			return FALSE;
 		nm_setting_team_port_add_link_watcher (NM_SETTING_TEAM_PORT (setting), watcher);
-		nm_team_link_watcher_unref (watcher);
 	}
 	return TRUE;
 }
