@@ -3206,7 +3206,7 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 	if (str) {
 		if (!nm_wireguard_peer_set_preshared_key (peer, str, FALSE)) {
 			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-			                  _("key '%s.%s' is not not a valid 256 bit key in base64 encoding"),
+			                  _("key '%s.%s' is not a valid 256 bit key in base64 encoding"),
 			                  info->group, key))
 				return;
 		}
@@ -3219,7 +3219,7 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 		if (   i64 == -1
 		    || !_nm_setting_secret_flags_valid (i64)) {
 			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-			                  _("key '%s.%s' is not not a valid secret flag"),
+			                  _("key '%s.%s' is not a valid secret flag"),
 			                  info->group, key))
 				return;
 		} else
@@ -3231,7 +3231,7 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 	if (errno != ENODATA) {
 		if (i64 == -1) {
 			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-			                  _("key '%s.%s' is not not a integer in range 0 to 2^32"),
+			                  _("key '%s.%s' is not a integer in range 0 to 2^32"),
 			                  info->group, key))
 				return;
 		} else
@@ -3243,7 +3243,7 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 	if (str && str[0]) {
 		if (!nm_wireguard_peer_set_endpoint (peer, str, FALSE)) {
 			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-			                  _("key '%s.%s' is not not a valid endpoint"),
+			                  _("key '%s.%s' is not a valid endpoint"),
 			                  info->group, key))
 				return;
 		}
