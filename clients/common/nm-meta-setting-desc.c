@@ -2792,29 +2792,6 @@ dcb_flags_to_string (NMSettingDcbFlags flags)
 	return g_string_free (flag_str, FALSE);
 }
 
-#define DEFINE_DCB_BOOL_GETTER(func_name, getter_func_name) \
-	static gconstpointer \
-	func_name (ARGS_GET_FCN) \
-	{ \
-		NMSettingDcb *s_dcb = NM_SETTING_DCB (setting); \
-		GString *str; \
-		guint i; \
-		\
-		RETURN_UNSUPPORTED_GET_TYPE (); \
-		\
-		str = g_string_new (NULL); \
-		for (i = 0; i < 8; i++) { \
-			if (getter_func_name (s_dcb,  i)) \
-				g_string_append_c (str, '1'); \
-			else \
-				g_string_append_c (str, '0'); \
-			if (i < 7) \
-				g_string_append_c (str, ','); \
-		} \
-		\
-		RETURN_STR_TO_FREE (g_string_free (str, FALSE)); \
-	}
-
 #define DEFINE_DCB_UINT_GETTER(func_name, getter_func_name) \
 	static gconstpointer \
 	func_name (ARGS_GET_FCN) \
@@ -2835,12 +2812,9 @@ dcb_flags_to_string (NMSettingDcbFlags flags)
 		RETURN_STR_TO_FREE (g_string_free (str, FALSE)); \
 	}
 
-DEFINE_DCB_BOOL_GETTER (_get_fcn_dcb_priority_flow_control, nm_setting_dcb_get_priority_flow_control)
-
 DEFINE_DCB_UINT_GETTER (_get_fcn_dcb_priority_group_id, nm_setting_dcb_get_priority_group_id)
 DEFINE_DCB_UINT_GETTER (_get_fcn_dcb_priority_group_bandwidth, nm_setting_dcb_get_priority_group_bandwidth)
 DEFINE_DCB_UINT_GETTER (_get_fcn_dcb_priority_bandwidth, nm_setting_dcb_get_priority_bandwidth)
-DEFINE_DCB_BOOL_GETTER (_get_fcn_dcb_priority_strict, nm_setting_dcb_get_priority_strict_bandwidth)
 DEFINE_DCB_UINT_GETTER (_get_fcn_dcb_priority_traffic_class, nm_setting_dcb_get_priority_traffic_class)
 
 #define DCB_ALL_FLAGS (NM_SETTING_DCB_FLAG_ENABLE | NM_SETTING_DCB_FLAG_ADVERTISE | NM_SETTING_DCB_FLAG_WILLING)
@@ -2970,25 +2944,6 @@ dcb_check_feature_enabled (const NMMetaEnvironment *environment, gpointer *envir
 }
 
 static gboolean
-_set_fcn_dcb_priority_flow_control (ARGS_SET_FCN)
-{
-	guint i = 0;
-	guint nums[8] = { 0, };
-
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	if (!dcb_parse_uint_array (value, 1, 0, nums, error))
-		return FALSE;
-
-	for (i = 0; i < 8; i++)
-		nm_setting_dcb_set_priority_flow_control (NM_SETTING_DCB (setting), i, !!nums[i]);
-
-	dcb_check_feature_enabled (environment, environment_user_data, NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS);
-	return TRUE;
-}
-
-static gboolean
 _set_fcn_dcb_priority_group_id (ARGS_SET_FCN)
 {
 	guint i = 0;
@@ -3052,8 +3007,31 @@ _set_fcn_dcb_priority_bandwidth (ARGS_SET_FCN)
 	return TRUE;
 }
 
+static gconstpointer
+_get_fcn_dcb_bool (ARGS_GET_FCN)
+{
+	NMSettingDcb *s_dcb = NM_SETTING_DCB (setting);
+	GString *str;
+	guint i;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
+	str = g_string_new (NULL);
+	for (i = 0; i < 8; i++) {
+		gboolean v;
+
+		v = property_info->property_typ_data->subtype.dcb_bool.get_fcn (s_dcb, i);
+
+		if (i > 0)
+			g_string_append_c (str, ',');
+		g_string_append_c (str, v ? '1': '0');
+	}
+
+	RETURN_STR_TO_FREE (g_string_free (str, FALSE));
+}
+
 static gboolean
-_set_fcn_dcb_priority_strict (ARGS_SET_FCN)
+_set_fcn_dcb_bool (ARGS_SET_FCN)
 {
 	guint i = 0;
 	guint nums[8] = { 0, };
@@ -3064,10 +3042,18 @@ _set_fcn_dcb_priority_strict (ARGS_SET_FCN)
 	if (!dcb_parse_uint_array (value, 1, 0, nums, error))
 		return FALSE;
 
-	for (i = 0; i < 8; i++)
-		nm_setting_dcb_set_priority_strict_bandwidth (NM_SETTING_DCB (setting), i, !!nums[i]);
+	for (i = 0; i < 8; i++) {
+		property_info->property_typ_data->subtype.dcb_bool.set_fcn (NM_SETTING_DCB (setting),
+		                                                            i,
+		                                                            !!nums[i]);
+	}
 
-	dcb_check_feature_enabled (environment, environment_user_data, NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
+	dcb_check_feature_enabled (environment,
+	                           environment_user_data,
+	                           NM_SETTING_DCB (setting),
+	                           (  property_info->property_typ_data->subtype.dcb_bool.with_flow_control_flags
+	                            ? NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS
+	                            : NM_SETTING_DCB_PRIORITY_GROUP_FLAGS));
 	return TRUE;
 }
 
@@ -4860,6 +4846,11 @@ static const NMMetaPropertyType _pt_dcb_flags = {
 	.set_fcn =                      _set_fcn_dcb_flags,
 };
 
+static const NMMetaPropertyType _pt_dcb_bool = {
+	.get_fcn =                      _get_fcn_dcb_bool,
+	.set_fcn =                      _set_fcn_dcb_bool,
+};
+
 static const NMMetaPropertyType _pt_ethtool = {
 	.get_fcn =                      _get_fcn_ethtool,
 	.set_fcn =                      _set_fcn_ethtool,
@@ -5646,9 +5637,11 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 		.property_type =                &_pt_dcb_flags,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_dcb_priority_flow_control,
-			.set_fcn =                  _set_fcn_dcb_priority_flow_control,
+		.property_type =                &_pt_dcb_bool,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (dcb_bool,
+			.get_fcn                    = nm_setting_dcb_get_priority_flow_control,
+			.set_fcn                    = nm_setting_dcb_set_priority_flow_control,
+			.with_flow_control_flags    = TRUE,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_PRIORITY_GROUP_FLAGS,
@@ -5673,9 +5666,10 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_dcb_priority_strict,
-			.set_fcn =                  _set_fcn_dcb_priority_strict,
+		.property_type =                &_pt_dcb_bool,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (dcb_bool,
+			.get_fcn                    = nm_setting_dcb_get_priority_strict_bandwidth,
+			.set_fcn                    = nm_setting_dcb_set_priority_strict_bandwidth,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS,
