@@ -2260,24 +2260,6 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 	RETURN_STR_TO_FREE (key_str);
 }
 
-#define DEFINE_SETTER_STR_LIST(def_func, set_func) \
-	static gboolean \
-	def_func (ARGS_SET_FCN) \
-	{ \
-		const char **strv = NULL; \
-		gsize i; \
-		\
-		if (_SET_FCN_DO_RESET_DEFAULT (value)) \
-			return _gobject_property_reset_default (setting, property_info->property_name); \
-		\
-		strv = nm_utils_strsplit_set (value, " \t,", FALSE); \
-		if (strv) { \
-			for (i = 0; strv[i]; i++) \
-				set_func (NM_SETTING_802_1X (setting), strv[i]); \
-		} \
-		return TRUE; \
-	}
-
 #define DEFINE_SETTER_CERT(def_func, set_func) \
 	static gboolean \
 	def_func (ARGS_SET_FCN) \
@@ -2330,25 +2312,9 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 
 DEFINE_SETTER_CERT (_set_fcn_802_1x_ca_cert, nm_setting_802_1x_set_ca_cert)
 
-DEFINE_SETTER_STR_LIST (_set_fcn_802_1x_altsubject_matches, nm_setting_802_1x_add_altsubject_match)
-
-DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_802_1x_altsubject_matches,
-                                      NM_SETTING_802_1X,
-                                      nm_setting_802_1x_get_num_altsubject_matches,
-                                      nm_setting_802_1x_remove_altsubject_match,
-                                      nm_setting_802_1x_remove_altsubject_match_by_value)
-
 DEFINE_SETTER_CERT (_set_fcn_802_1x_client_cert, nm_setting_802_1x_set_client_cert)
 
 DEFINE_SETTER_CERT (_set_fcn_802_1x_phase2_ca_cert, nm_setting_802_1x_set_phase2_ca_cert)
-
-DEFINE_SETTER_STR_LIST (_set_fcn_802_1x_phase2_altsubject_matches, nm_setting_802_1x_add_phase2_altsubject_match)
-
-DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_802_1x_phase2_altsubject_matches,
-                                      NM_SETTING_802_1X,
-                                      nm_setting_802_1x_get_num_phase2_altsubject_matches,
-                                      nm_setting_802_1x_remove_phase2_altsubject_match,
-                                      nm_setting_802_1x_remove_phase2_altsubject_match_by_value)
 
 DEFINE_SETTER_CERT (_set_fcn_802_1x_phase2_client_cert, nm_setting_802_1x_set_phase2_client_cert)
 
@@ -5050,10 +5016,14 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 		.property_type =                &_pt_gobject_string,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_ALTSUBJECT_MATCHES,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_802_1x_altsubject_matches,
-			.remove_fcn =               _remove_fcn_802_1x_altsubject_matches,
+		.property_type =                &_pt_multilist,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn =          MULTILIST_GET_NUM_FCN         (NMSetting8021x, nm_setting_802_1x_get_num_altsubject_matches),
+				.add_fcn =              MULTILIST_ADD_FCN             (NMSetting8021x, nm_setting_802_1x_add_altsubject_match),
+				.remove_by_idx_fcn =    MULTILIST_REMOVE_BY_IDX_FCN   (NMSetting8021x, nm_setting_802_1x_remove_altsubject_match),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSetting8021x, nm_setting_802_1x_remove_altsubject_match_by_value),
+			),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_DOMAIN_SUFFIX_MATCH,
@@ -5142,10 +5112,14 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 		.property_type =                &_pt_gobject_string,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_802_1x_phase2_altsubject_matches,
-			.remove_fcn =               _remove_fcn_802_1x_phase2_altsubject_matches,
+		.property_type =                &_pt_multilist,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn =          MULTILIST_GET_NUM_FCN         (NMSetting8021x, nm_setting_802_1x_get_num_phase2_altsubject_matches),
+				.add_fcn =              MULTILIST_ADD_FCN             (NMSetting8021x, nm_setting_802_1x_add_phase2_altsubject_match),
+				.remove_by_idx_fcn =    MULTILIST_REMOVE_BY_IDX_FCN   (NMSetting8021x, nm_setting_802_1x_remove_phase2_altsubject_match),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSetting8021x, nm_setting_802_1x_remove_phase2_altsubject_match_by_value),
+			),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_DOMAIN_SUFFIX_MATCH,
