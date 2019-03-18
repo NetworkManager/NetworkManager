@@ -3310,7 +3310,7 @@ DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_ip_config_dns_options,
                                       nm_setting_ip_config_remove_dns_option_by_value)
 
 static gboolean
-_set_fcn_ip4_config_addresses (ARGS_SET_FCN)
+_set_fcn_ip_config_addresses (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	const char *const*iter;
@@ -3319,13 +3319,21 @@ _set_fcn_ip4_config_addresses (ARGS_SET_FCN)
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
-	for (iter = strv; *iter; iter++) {
-		nm_auto_unref_ip_address NMIPAddress *addr = NULL;
+	if (strv) {
+		int addr_family = nm_setting_ip_config_get_addr_family (NM_SETTING_IP_CONFIG (setting));
 
-		addr = _parse_ip_address (AF_INET, *iter, error);
-		if (!addr)
-			return FALSE;
-		nm_setting_ip_config_add_address (NM_SETTING_IP_CONFIG (setting), addr);
+		for (iter = strv; *iter; iter++) {
+			nm_auto_unref_ip_address NMIPAddress *addr = NULL;
+
+			g_strstrip ((char *) *iter);
+			if ((*iter)[0] == '\0')
+				continue;
+
+			addr = _parse_ip_address (addr_family, *iter, error);
+			if (!addr)
+				return FALSE;
+			nm_setting_ip_config_add_address (NM_SETTING_IP_CONFIG (setting), addr);
+		}
 	}
 	return TRUE;
 }
@@ -3428,27 +3436,6 @@ _dns_options_is_default (NMSettingIPConfig *setting)
 {
 	return    nm_setting_ip_config_has_dns_options (setting)
 	       && !nm_setting_ip_config_get_num_dns_options (setting);
-}
-
-static gboolean
-_set_fcn_ip6_config_addresses (ARGS_SET_FCN)
-{
-	gs_free const char **strv = NULL;
-	const char *const*iter;
-
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	strv = nm_utils_strsplit_set (value, ",", FALSE);
-	for (iter = strv; strv && *iter; iter++) {
-		nm_auto_unref_ip_address NMIPAddress *addr = NULL;
-
-		addr = _parse_ip_address (AF_INET6, *iter, error);
-		if (!addr)
-			return FALSE;
-		nm_setting_ip_config_add_address (NM_SETTING_IP_CONFIG (setting), addr);
-	}
-	return TRUE;
 }
 
 static gboolean
@@ -5766,7 +5753,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		       "Example: 192.168.1.5/24, 10.0.0.11/24\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_ip_config_addresses,
-			.set_fcn =                  _set_fcn_ip4_config_addresses,
+			.set_fcn =                  _set_fcn_ip_config_addresses,
 			.remove_fcn =               _remove_fcn_ip_config_addresses,
 		),
 	),
@@ -5934,7 +5921,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		       "Example: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_ip_config_addresses,
-			.set_fcn =                  _set_fcn_ip6_config_addresses,
+			.set_fcn =                  _set_fcn_ip_config_addresses,
 			.remove_fcn =               _remove_fcn_ip_config_addresses,
 		),
 	),
