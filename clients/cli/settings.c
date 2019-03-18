@@ -543,8 +543,18 @@ nmc_setting_set_property (NMClient *client, NMSetting *setting, const char *prop
 		goto out_fail_read_only;
 
 	if (!value) {
+		nm_auto_unset_gvalue GValue gvalue = G_VALUE_INIT;
+		GParamSpec *param_spec;
+
 		/* No value argument sets default value */
-		nmc_property_set_default_value (setting, prop);
+
+		/* FIXME: this only works with GObject based properties. */
+		param_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
+		if (param_spec) {
+			g_value_init (&gvalue, G_PARAM_SPEC_VALUE_TYPE (param_spec));
+			g_param_value_set_default (param_spec, &gvalue);
+			g_object_set_property (G_OBJECT (setting), prop, &gvalue);
+		}
 		return TRUE;
 	}
 
@@ -573,20 +583,6 @@ nmc_setting_set_property (NMClient *client, NMSetting *setting, const char *prop
 out_fail_read_only:
 	nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN, _("the property can't be changed"));
 	return FALSE;
-}
-
-void
-nmc_property_set_default_value (NMSetting *setting, const char *prop)
-{
-	GValue value = G_VALUE_INIT;
-	GParamSpec *param_spec;
-
-	param_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
-	if (param_spec) {
-		g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (param_spec));
-		g_param_value_set_default (param_spec, &value);
-		g_object_set_property (G_OBJECT (setting), prop, &value);
-	}
 }
 
 gboolean

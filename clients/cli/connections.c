@@ -6954,7 +6954,7 @@ property_edit_submenu (NmCli *nmc,
 			 */
 			if (cmdsub == NMC_EDITOR_SUB_CMD_SET) {
 				nmc_property_get_gvalue (curr_setting, prop_name, &prop_g_value);
-				nmc_property_set_default_value (curr_setting, prop_name);
+				nmc_setting_reset_property (nmc->client, curr_setting, prop_name, NULL);
 			}
 
 			set_result = nmc_setting_set_property (nmc->client, curr_setting, prop_name, prop_val_user, &tmp_err);
@@ -6978,7 +6978,7 @@ property_edit_submenu (NmCli *nmc,
 			                              prop_name);
 
 			nmc_property_get_gvalue (curr_setting, prop_name, &prop_g_value);
-			nmc_property_set_default_value (curr_setting, prop_name);
+			nmc_setting_reset_property (nmc->client, curr_setting, prop_name, NULL);
 
 			if (!nmc_setting_set_property (nmc->client, curr_setting, prop_name, prop_val_user, &tmp_err)) {
 				g_print (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
