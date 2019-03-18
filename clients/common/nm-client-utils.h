@@ -23,13 +23,7 @@
 #include "nm-meta-setting.h"
 #include "nm-active-connection.h"
 #include "nm-device.h"
-
-
-#define nm_auto_unref_ip_address nm_auto (_nm_ip_address_unref)
-NM_AUTO_DEFINE_FCN0 (NMIPAddress *, _nm_ip_address_unref, nm_ip_address_unref)
-
-#define nm_auto_unref_wgpeer nm_auto (_nm_auto_unref_wgpeer)
-NM_AUTO_DEFINE_FCN0 (NMWireGuardPeer *, _nm_auto_unref_wgpeer, nm_wireguard_peer_unref)
+#include "nm-libnm-core-utils.h"
 
 const NMObject **nmc_objects_sort_by_path (const NMObject *const*objs, gssize len);
 

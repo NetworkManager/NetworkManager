@@ -88,6 +88,7 @@
 #include "nm-utils.h"
 #include "nm-vpn-dbus-interface.h"
 #include "nm-vpn-editor-plugin.h"
+#include "nm-libnm-core-utils.h"
 
 /* IEEE 802.1D-1998 timer values */
 #define NM_BR_MIN_HELLO_TIME    1
@@ -263,14 +264,6 @@ GHashTable *_nm_ip_route_get_attributes_direct (NMIPRoute *route);
 
 NMSriovVF *_nm_utils_sriov_vf_from_strparts (const char *index, const char *detail, gboolean ignore_unknown, GError **error);
 gboolean _nm_sriov_vf_attribute_validate_all (const NMSriovVF *vf, GError **error);
-
-static inline void
-_nm_auto_ip_route_unref (NMIPRoute **v)
-{
-	if (*v)
-		nm_ip_route_unref (*v);
-}
-#define nm_auto_ip_route_unref nm_auto (_nm_auto_ip_route_unref)
 
 GPtrArray *_nm_utils_copy_array (const GPtrArray *array,
                                  NMUtilsCopyFunc copy_func,
@@ -762,9 +755,6 @@ gboolean _nm_connection_find_secret (NMConnection *self,
                                      gpointer callback_data);
 
 /*****************************************************************************/
-
-#define nm_auto_unref_wgpeer nm_auto(_nm_auto_unref_wgpeer)
-NM_AUTO_DEFINE_FCN0 (NMWireGuardPeer *, _nm_auto_unref_wgpeer, nm_wireguard_peer_unref)
 
 gboolean nm_utils_base64secret_normalize (const char *base64_key,
                                           gsize required_key_len,

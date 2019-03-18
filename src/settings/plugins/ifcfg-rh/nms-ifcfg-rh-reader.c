@@ -820,7 +820,7 @@ parse_route_line (const char *line,
                   NMIPRoute **out_route,
                   GError **error)
 {
-	nm_auto_ip_route_unref NMIPRoute *route = NULL;
+	nm_auto_unref_ip_route NMIPRoute *route = NULL;
 	gs_free const char **words_free = NULL;
 	const char *const*words;
 	const char *s;
@@ -1284,7 +1284,7 @@ read_route_file (int addr_family,
 	for (line = strtok_r (contents, "\n", &contents_rest);
 	     line;
 	     line = strtok_r (NULL, "\n", &contents_rest)) {
-		nm_auto_ip_route_unref NMIPRoute *route = NULL;
+		nm_auto_unref_ip_route NMIPRoute *route = NULL;
 		gs_free_error GError *local = NULL;
 		int e;
 
