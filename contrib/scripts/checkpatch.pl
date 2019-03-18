@@ -101,12 +101,18 @@ sub complain
 sub check_commit
 {
 	my $commit = shift;
-	$commit =~ /^([0-9a-f]{5,})/;
-	my $commit_id = $1;
+	my $required = shift;
+	my $commit_id;
 	my $commit_message;
 
+	if ($commit =~ /^([0-9a-f]{5,})$/) {
+		$commit_id = $1;
+	} else {
+		return unless $required;
+	}
+
 	if ($commit_id and not system 'git rev-parse --git-dir >/dev/null 2>/dev/null') {
-		$commit_message = `git log --abbrev=12 --pretty=format:"%h ('%s')" -1 $commit_id 2>/dev/null`;
+		$commit_message = `git log --abbrev=12 --pretty=format:"%h ('%s')" -1 "$commit_id" 2>/dev/null`;
 		complain "Commit '$commit_id' does not seem to exist" unless $commit_message;
 	}
 
@@ -141,10 +147,10 @@ if ($is_patch) {
 	$check_line = 1;
 	$line = $_;
 	/^---$/ and $is_commit_message = 0;
-	/^Fixes: *(.*)/ and check_commit ($1);
+	/^Fixes: *(.*)/ and check_commit ($1, 1);
 	/This reverts commit/ and next;
 	/cherry picked from/ and next;
-	/\bcommit (.*)/ and check_commit ($1);
+	/\bcommit (.*)/ and check_commit ($1, 0);
 	next;
 } else {
 	# We don't handle these yet
