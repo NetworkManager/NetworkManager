@@ -3959,11 +3959,12 @@ set_property (NMClient *client,
               char modifier,
               GError **error)
 {
-	gs_free char *property_name = NULL, *value_free = NULL;
+	gs_free char *property_name = NULL;
+	gs_free_error GError *local = NULL;
 	NMSetting *setting;
-	GError *local = NULL;
 
-	g_assert (setting_name && setting_name[0]);
+	nm_assert (setting_name && setting_name[0]);
+	nm_assert (NM_IN_SET (modifier, '\0', '+', '-'));
 
 	setting = nm_connection_get_setting_by_name (connection, setting_name);
 	if (!setting) {
@@ -3977,43 +3978,26 @@ set_property (NMClient *client,
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 		             _("Error: invalid property '%s': %s."),
 		             property, local->message);
-		g_clear_error (&local);
 		return FALSE;
 	}
 
-	if (modifier != '-') {
-		/* Set/add value */
-		if (modifier != '+') {
-			/* We allow the existing property value to be passed as parameter,
-			 * so make a copy if we are going to free it.
-			 */
-			value = value_free = g_strdup (value);
-			nmc_setting_reset_property (client, setting, property_name, NULL);
-		}
-		if (!nmc_setting_set_property (client, setting, property_name, value, &local)) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("Error: failed to modify %s.%s: %s."),
-			             setting_name, property, local->message);
-			g_clear_error (&local);
-			return FALSE;
-		}
-	} else {
-		/* Remove value
-		 * - either empty: remove whole value
-		 * - or specified by index <0-n>: remove item at the index
-		 * - or option name: remove item with the option name
-		 */
-		if (value) {
-			nmc_setting_remove_property_option (setting, property_name, value, &local);
-			if (local) {
-				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-				             _("Error: failed to remove a value from %s.%s: %s."),
-				             setting_name, property,  local->message);
-				g_clear_error (&local);
-				return FALSE;
-			}
-		} else
-			nmc_setting_reset_property (client, setting, property_name, NULL);
+	if (!nmc_setting_set_property (client,
+	                               setting,
+	                               property_name,
+	                               (  (modifier == '-' && !value)
+	                                ? '\0'
+	                                : modifier),
+	                               value,
+	                               &local)) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("Error: failed to %s %s.%s: %s."),
+		             (  modifier != '-'
+		              ? "modify"
+		              : "remove a value from"),
+		             setting_name,
+		             property,
+		             local->message);
+		return FALSE;
 	}
 
 	/* Don't ask for this property in interactive mode. */
@@ -6899,7 +6883,6 @@ property_edit_submenu (NmCli *nmc,
 		gs_free char *cmd_property_user = NULL;
 		gs_free char *cmd_property_arg = NULL;
 		gs_free char *prop_val_user = NULL;
-		nm_auto_unset_gvalue GValue prop_g_value = G_VALUE_INIT;
 		gboolean removed;
 		gboolean dirty;
 
@@ -6949,24 +6932,17 @@ property_edit_submenu (NmCli *nmc,
 			} else
 				prop_val_user = g_strdup (cmd_property_arg);
 
-			/* nmc_setting_set_property() only adds new value, thus we have to
-			 * remove the original value and save it for error cases.
-			 */
-			if (cmdsub == NMC_EDITOR_SUB_CMD_SET) {
-				nmc_property_get_gvalue (curr_setting, prop_name, &prop_g_value);
-				nmc_setting_reset_property (nmc->client, curr_setting, prop_name, NULL);
-			}
-
-			set_result = nmc_setting_set_property (nmc->client, curr_setting, prop_name, prop_val_user, &tmp_err);
+			set_result = nmc_setting_set_property (nmc->client,
+			                                       curr_setting,
+			                                       prop_name,
+			                                         (cmdsub == NMC_EDITOR_SUB_CMD_SET)
+			                                       ? '\0'
+			                                       : '+',
+			                                       prop_val_user,
+			                                       &tmp_err);
 			if (!set_result) {
 				g_print (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
 				g_clear_error (&tmp_err);
-				if (cmdsub == NMC_EDITOR_SUB_CMD_SET) {
-					/* Block change signals and restore original value */
-					g_signal_handlers_block_matched (curr_setting, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, NULL);
-					nmc_property_set_gvalue (curr_setting, prop_name, &prop_g_value);
-					g_signal_handlers_unblock_matched (curr_setting, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, NULL);
-				}
 			}
 			break;
 
@@ -6977,33 +6953,23 @@ property_edit_submenu (NmCli *nmc,
 			                              _("Edit '%s' value: "),
 			                              prop_name);
 
-			nmc_property_get_gvalue (curr_setting, prop_name, &prop_g_value);
-			nmc_setting_reset_property (nmc->client, curr_setting, prop_name, NULL);
-
-			if (!nmc_setting_set_property (nmc->client, curr_setting, prop_name, prop_val_user, &tmp_err)) {
+			if (!nmc_setting_set_property (nmc->client, curr_setting, prop_name, '\0', prop_val_user, &tmp_err)) {
 				g_print (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
 				g_clear_error (&tmp_err);
-				g_signal_handlers_block_matched (curr_setting, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, NULL);
-				nmc_property_set_gvalue (curr_setting, prop_name, &prop_g_value);
-				g_signal_handlers_unblock_matched (curr_setting, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, NULL);
 			}
 			break;
 
 		case NMC_EDITOR_SUB_CMD_REMOVE:
-			if (cmd_property_arg) {
-				if (!nmc_setting_remove_property_option (curr_setting,
-				                                         prop_name,
-				                                         cmd_property_arg,
-				                                         &tmp_err)) {
-					g_print (_("Error: %s\n"), tmp_err->message);
-					g_clear_error (&tmp_err);
-				}
-			} else {
-				if (!nmc_setting_reset_property (nmc->client, curr_setting, prop_name, &tmp_err)) {
-					g_print (_("Error: failed to remove value of '%s': %s\n"), prop_name,
-					         tmp_err->message);
-					g_clear_error (&tmp_err);
-				}
+			if (!nmc_setting_set_property (nmc->client,
+			                               curr_setting,
+			                               prop_name,
+			                               (  cmd_property_arg
+			                                ? '-'
+			                                : '\0'),
+			                               cmd_property_arg,
+			                               &tmp_err)) {
+				g_print (_("Error: %s\n"), tmp_err->message);
+				g_clear_error (&tmp_err);
 			}
 			break;
 
@@ -7354,8 +7320,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					                              _("Enter '%s' value: "),
 					                              prop_name);
 
-					/* Set property value */
-					if (!nmc_setting_set_property (nmc->client, menu_ctx.curr_setting, prop_name, prop_val_user, &tmp_err)) {
+					if (!nmc_setting_set_property (nmc->client, menu_ctx.curr_setting, prop_name, '+', prop_val_user, &tmp_err)) {
 						g_print (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
 						g_clear_error (&tmp_err);
 					}
@@ -7415,8 +7380,12 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					                          prop_name);
 				}
 
-				/* Set property value */
-				if (!nmc_setting_set_property (nmc->client, ss, prop_name, cmd_arg_v, &tmp_err)) {
+				if (!nmc_setting_set_property (nmc->client,
+				                               ss,
+				                               prop_name,
+				                               cmd_arg_v ? '+' : '\0',
+				                               cmd_arg_v,
+				                               &tmp_err)) {
 					g_print (_("Error: failed to set '%s' property: %s\n"),
 					         prop_name, tmp_err->message);
 					g_clear_error (&tmp_err);
@@ -7513,7 +7482,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					if (!prop_name)
 						break;
 
-					if (!nmc_setting_reset_property (nmc->client, menu_ctx.curr_setting, prop_name, &tmp_err)) {
+					if (!nmc_setting_set_property (nmc->client, menu_ctx.curr_setting, prop_name, '\0', NULL, &tmp_err)) {
 						g_print (_("Error: failed to remove value of '%s': %s\n"), prop_name,
 						         tmp_err->message);
 						g_clear_error (&tmp_err);
@@ -7563,7 +7532,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 					prop_name = is_property_valid (ss, cmd_arg_p, &tmp_err);
 					if (prop_name) {
-						if (!nmc_setting_reset_property (nmc->client, ss, prop_name, &tmp_err)) {
+						if (!nmc_setting_set_property (nmc->client, ss, prop_name, '\0', NULL, &tmp_err)) {
 							g_print (_("Error: failed to remove value of '%s': %s\n"), prop_name,
 							         tmp_err->message);
 							g_clear_error (&tmp_err);
