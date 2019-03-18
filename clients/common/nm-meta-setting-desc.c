@@ -3360,20 +3360,23 @@ DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ip_config_addresses,
                                        _validate_and_remove_ip_address)
 
 static gboolean
-_set_fcn_ip4_config_gateway (ARGS_SET_FCN)
+_set_fcn_ip_config_gateway (ARGS_SET_FCN)
 {
 	gs_free char *value_to_free = NULL;
+	int addr_family = nm_setting_ip_config_get_addr_family (NM_SETTING_IP_CONFIG (setting));
 
 	if (_SET_FCN_DO_RESET_DEFAULT (value))
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	value = nm_strstrip_avoid_copy (value, &value_to_free);
 
-	if (!nm_utils_ipaddr_valid (AF_INET, value)) {
+	if (!nm_utils_ipaddr_valid (addr_family, value)) {
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-	                 _("invalid gateway address '%s'"), value);
+		             _("invalid gateway address '%s'"),
+		             value);
 		return FALSE;
 	}
+
 	g_object_set (setting, property_info->property_name, value, NULL);
 	return TRUE;
 }
@@ -3436,27 +3439,6 @@ _dns_options_is_default (NMSettingIPConfig *setting)
 {
 	return    nm_setting_ip_config_has_dns_options (setting)
 	       && !nm_setting_ip_config_get_num_dns_options (setting);
-}
-
-static gboolean
-_set_fcn_ip6_config_gateway (ARGS_SET_FCN)
-{
-	gs_free char *value_to_free = NULL;
-
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	value = nm_strstrip_avoid_copy (value, &value_to_free);
-
-	if (!nm_utils_ipaddr_valid (AF_INET6, value)) {
-		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-		             _("invalid gateway address '%s'"),
-		             value);
-		return FALSE;
-	}
-
-	g_object_set (setting, property_info->property_name, value, NULL);
-	return TRUE;
 }
 
 static gconstpointer
@@ -5763,7 +5745,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		.prompt =                       N_("IPv4 gateway [none]"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_ip4_config_gateway,
+			.set_fcn =                  _set_fcn_ip_config_gateway,
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTES, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_ROUTES,
@@ -5931,7 +5913,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		.prompt =                       N_("IPv6 gateway [none]"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_ip6_config_gateway,
+			.set_fcn =                  _set_fcn_ip_config_gateway,
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTES, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_ROUTES,
