@@ -215,8 +215,7 @@ struct _NMMetaPropertyType {
 	                        const NMMetaEnvironment *environment,
 	                        gpointer environment_user_data,
 	                        NMSetting *setting,
-	                        const char *option,
-	                        guint32 idx,
+	                        const char *value,
 	                        GError **error);
 
 	const char *const*(*values_fcn) (const NMMetaPropertyInfo *property_info,

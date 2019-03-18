@@ -4004,12 +4004,7 @@ set_property (NMClient *client,
 		 * - or option name: remove item with the option name
 		 */
 		if (value) {
-			unsigned long idx;
-
-			if (nmc_string_to_uint (value, TRUE, 0, G_MAXUINT32, &idx))
-				nmc_setting_remove_property_option (setting, property_name, NULL, idx, &local);
-			else
-				nmc_setting_remove_property_option (setting, property_name, value, 0, &local);
+			nmc_setting_remove_property_option (setting, property_name, value, &local);
 			if (local) {
 				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 				             _("Error: failed to remove a value from %s.%s: %s."),
@@ -6996,17 +6991,9 @@ property_edit_submenu (NmCli *nmc,
 
 		case NMC_EDITOR_SUB_CMD_REMOVE:
 			if (cmd_property_arg) {
-				unsigned long val_int = G_MAXUINT32;
-				gs_free char *option = NULL;
-
-				if (!nmc_string_to_uint (cmd_property_arg, TRUE, 0, G_MAXUINT32, &val_int)) {
-					option = g_strdup (cmd_property_arg);
-					g_strstrip (option);
-				}
-
-				if (!nmc_setting_remove_property_option (curr_setting, prop_name,
-				                                         option,
-				                                         (guint32) val_int,
+				if (!nmc_setting_remove_property_option (curr_setting,
+				                                         prop_name,
+				                                         cmd_property_arg,
 				                                         &tmp_err)) {
 					g_print (_("Error: %s\n"), tmp_err->message);
 					g_clear_error (&tmp_err);

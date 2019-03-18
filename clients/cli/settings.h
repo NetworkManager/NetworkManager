@@ -52,8 +52,7 @@ gboolean    nmc_setting_reset_property (NMSetting *setting,
                                         GError **error);
 gboolean    nmc_setting_remove_property_option (NMSetting *setting,
                                                 const char *prop,
-                                                const char *option,
-                                                guint32 idx,
+                                                const char *value,
                                                 GError **error);
 void nmc_property_set_default_value (NMSetting *setting, const char *prop);
 

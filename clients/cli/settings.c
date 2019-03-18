@@ -618,26 +618,17 @@ nmc_setting_reset_property (NMSetting *setting, const char *prop, GError **error
 	return FALSE;
 }
 
-/*
- * Generic function for removing items for collection-type properties.
- *
- * If 'option' is not NULL, it tries to remove it, otherwise 'idx' is used.
- * For single-value properties (not having specialized remove function) this
- * function does nothing and just returns TRUE.
- *
- * Returns: TRUE on success; FALSE on failure and sets error
- */
 gboolean
 nmc_setting_remove_property_option (NMSetting *setting,
                                     const char *prop,
-                                    const char *option,
-                                    guint32 idx,
+                                    const char *value,
                                     GError **error)
 {
 	const NMMetaPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+	g_return_val_if_fail (value, FALSE);
 
 	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop))) {
 		if (property_info->property_type->remove_fcn) {
@@ -645,8 +636,7 @@ nmc_setting_remove_property_option (NMSetting *setting,
 			                                                 nmc_meta_environment,
 			                                                 nmc_meta_environment_arg,
 			                                                 setting,
-			                                                 option,
-			                                                 idx,
+			                                                 value,
 			                                                 error);
 		}
 	}
