@@ -679,19 +679,6 @@ complete_connection (NMModem *_self,
 	}
 
 	if (MODEM_CAPS_3GPP (modem_caps)) {
-		NMSettingGsm *s_gsm;
-
-		s_gsm = nm_connection_get_setting_gsm (connection);
-		if (!s_gsm) {
-			/* Need a GSM setting at least */
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_MISSING_SETTING,
-			                     _("GSM mobile broadband connection requires a 'gsm' setting"));
-			g_prefix_error (error, "%s: ", NM_SETTING_GSM_SETTING_NAME);
-			return FALSE;
-		}
-
 		nm_utils_complete_generic (NM_PLATFORM_GET,
 		                           connection,
 		                           NM_SETTING_GSM_SETTING_NAME,
