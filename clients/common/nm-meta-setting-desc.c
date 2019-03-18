@@ -2792,30 +2792,28 @@ dcb_flags_to_string (NMSettingDcbFlags flags)
 	return g_string_free (flag_str, FALSE);
 }
 
-#define DEFINE_DCB_UINT_GETTER(func_name, getter_func_name) \
-	static gconstpointer \
-	func_name (ARGS_GET_FCN) \
-	{ \
-		NMSettingDcb *s_dcb = NM_SETTING_DCB (setting); \
-		GString *str; \
-		guint i; \
-		\
-		RETURN_UNSUPPORTED_GET_TYPE (); \
-		\
-		str = g_string_new (NULL); \
-		for (i = 0; i < 8; i++) { \
-			g_string_append_printf (str, "%u", getter_func_name (s_dcb, i)); \
-			if (i < 7) \
-				g_string_append_c (str, ','); \
-		} \
-		\
-		RETURN_STR_TO_FREE (g_string_free (str, FALSE)); \
+static gconstpointer
+_get_fcn_dcb (ARGS_GET_FCN)
+{
+	NMSettingDcb *s_dcb = NM_SETTING_DCB (setting);
+	GString *str;
+	guint i;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
+	str = g_string_new (NULL);
+	for (i = 0; i < 8; i++) {
+		guint v;
+
+		v = property_info->property_typ_data->subtype.dcb.get_fcn (s_dcb, i);
+
+		if (i > 0)
+			g_string_append_c (str, ',');
+		g_string_append_printf (str, "%u", v);
 	}
 
-DEFINE_DCB_UINT_GETTER (_get_fcn_dcb_priority_group_id, nm_setting_dcb_get_priority_group_id)
-DEFINE_DCB_UINT_GETTER (_get_fcn_dcb_priority_group_bandwidth, nm_setting_dcb_get_priority_group_bandwidth)
-DEFINE_DCB_UINT_GETTER (_get_fcn_dcb_priority_bandwidth, nm_setting_dcb_get_priority_bandwidth)
-DEFINE_DCB_UINT_GETTER (_get_fcn_dcb_priority_traffic_class, nm_setting_dcb_get_priority_traffic_class)
+	RETURN_STR_TO_FREE (g_string_free (str, FALSE));
+}
 
 #define DCB_ALL_FLAGS (NM_SETTING_DCB_FLAG_ENABLE | NM_SETTING_DCB_FLAG_ADVERTISE | NM_SETTING_DCB_FLAG_WILLING)
 
@@ -5649,20 +5647,29 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_PRIORITY_GROUP_ID,
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_dcb_priority_group_id,
+			.get_fcn =                  _get_fcn_dcb,
 			.set_fcn =                  _set_fcn_dcb_priority_group_id,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (dcb,
+			.get_fcn =                  nm_setting_dcb_get_priority_group_id,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH,
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_dcb_priority_group_bandwidth,
+			.get_fcn =                  _get_fcn_dcb,
 			.set_fcn =                  _set_fcn_dcb_priority_group_bandwidth,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (dcb,
+			.get_fcn =                  nm_setting_dcb_get_priority_group_bandwidth,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_PRIORITY_BANDWIDTH,
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_dcb_priority_bandwidth,
+			.get_fcn =                  _get_fcn_dcb,
 			.set_fcn =                  _set_fcn_dcb_priority_bandwidth,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (dcb,
+			.get_fcn =                  nm_setting_dcb_get_priority_bandwidth,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH,
@@ -5674,8 +5681,11 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS,
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_dcb_priority_traffic_class,
+			.get_fcn =                  _get_fcn_dcb,
 			.set_fcn =                  _set_fcn_dcb_priority_traffic_class,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (dcb,
+			.get_fcn =                  nm_setting_dcb_get_priority_traffic_class,
 		),
 	),
 	NULL

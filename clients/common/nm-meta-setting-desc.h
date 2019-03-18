@@ -284,6 +284,10 @@ struct _NMMetaPropertyTypData {
 			NMMetaPropertyTypeMacMode mode;
 		} mac;
 		struct {
+			guint (*get_fcn) (NMSettingDcb *setting,
+			                  guint user_priority);
+		} dcb;
+		struct {
 			gboolean (*get_fcn) (NMSettingDcb *s_dcb,
 			                     guint priority);
 			void (*set_fcn) (NMSettingDcb *setting,
