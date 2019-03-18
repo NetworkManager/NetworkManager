@@ -3243,24 +3243,28 @@ _set_fcn_ip4_config_dns (ARGS_SET_FCN)
 }
 
 static gboolean
-_validate_and_remove_ipv4_dns (NMSettingIPConfig *setting,
+_validate_and_remove_ip_dns (NMSettingIPConfig *setting,
                                const char *dns,
                                GError **error)
 {
-	if (!nm_utils_parse_inaddr (AF_INET, dns, NULL)) {
+	int addr_family = nm_setting_ip_config_get_addr_family (setting);
+
+	if (!nm_utils_parse_inaddr (addr_family, dns, NULL)) {
 		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
-		                    _("invalid IPv4 address '%s'"), dns);
+		                    _("invalid IPv%c address '%s'"),
+		                    nm_utils_addr_family_to_char (addr_family),
+		                    dns);
 		return FALSE;
 	}
 
 	nm_setting_ip_config_remove_dns_by_value (setting, dns);
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (_remove_fcn_ipv4_config_dns,
+DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (_remove_fcn_ip_config_dns,
                                           NM_SETTING_IP_CONFIG,
                                           nm_setting_ip_config_get_num_dns,
                                           nm_setting_ip_config_remove_dns,
-                                          _validate_and_remove_ipv4_dns)
+                                          _validate_and_remove_ip_dns)
 
 static gboolean
 _set_fcn_ip_config_dns_search (ARGS_SET_FCN)
@@ -3465,26 +3469,6 @@ _set_fcn_ip6_config_dns (ARGS_SET_FCN)
 	}
 	return TRUE;
 }
-
-static gboolean
-_validate_and_remove_ipv6_dns (NMSettingIPConfig *setting,
-                               const char *dns,
-                               GError **error)
-{
-	if (!nm_utils_parse_inaddr (AF_INET6, dns, NULL)) {
-		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
-		                    _("invalid IPv6 address '%s'"), dns);
-		return FALSE;
-	}
-
-	nm_setting_ip_config_remove_dns_by_value (setting, dns);
-	return TRUE;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (_remove_fcn_ipv6_config_dns,
-                                          NM_SETTING_IP_CONFIG,
-                                          nm_setting_ip_config_get_num_dns,
-                                          nm_setting_ip_config_remove_dns,
-                                          _validate_and_remove_ipv6_dns)
 
 static gboolean
 _dns_options_is_default (NMSettingIPConfig *setting)
@@ -5851,7 +5835,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_ip4_config_dns,
-			.remove_fcn =               _remove_fcn_ipv4_config_dns,
+			.remove_fcn =               _remove_fcn_ip_config_dns,
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_SEARCH, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DNS_SEARCH,
@@ -6014,7 +5998,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_ip6_config_dns,
-			.remove_fcn =               _remove_fcn_ipv6_config_dns,
+			.remove_fcn =               _remove_fcn_ip_config_dns,
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_SEARCH, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DNS_SEARCH,
