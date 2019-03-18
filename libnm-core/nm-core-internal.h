@@ -546,18 +546,6 @@ gboolean _nm_utils_team_config_set (char **conf,
 
 /*****************************************************************************/
 
-static inline int
-nm_setting_ip_config_get_addr_family (NMSettingIPConfig *s_ip)
-{
-	if (NM_IS_SETTING_IP4_CONFIG (s_ip))
-		return AF_INET;
-	if (NM_IS_SETTING_IP6_CONFIG (s_ip))
-		return AF_INET6;
-	g_return_val_if_reached (AF_UNSPEC);
-}
-
-/*****************************************************************************/
-
 guint32 _nm_utils_parse_tc_handle                (const char *str,
                                                   GError **error);
 void _nm_utils_string_append_tc_parent           (GString *string,
