@@ -1595,22 +1595,22 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 
 #define DEFINE_SETTER_STR_LIST_MULTI(def_func, s_macro, set_func) \
 	static gboolean \
-	def_func (NMSetting *setting, \
-	          const char *prop, \
-	          const char *value, \
-	          const char **valid_strv, \
-	          GError **error) \
+	def_func (ARGS_SET_FCN) \
 	{ \
 		gs_free const char **strv = NULL; \
 		gsize i; \
-		const char *item; \
-		nm_assert (!error || !*error); \
+		\
 		strv = nm_utils_strsplit_set (value, " \t,", FALSE); \
 		if (strv) { \
 			for (i = 0; strv[i]; i++) { \
-				if (!(item = nmc_string_is_valid (strv[i], valid_strv, error))) { \
+				const char *item; \
+				\
+				item = nmc_string_is_valid (strv[i], \
+				                            (const char **) property_info->property_typ_data->values_static, \
+				                            error); \
+				if (!item) \
 					return FALSE; \
-				} \
+				\
 				set_func (s_macro (setting), item); \
 			} \
 		} \
@@ -2232,19 +2232,9 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 		return set_func (NM_SETTING_802_1X (setting), path, password, scheme, NULL, error); \
 	}
 
-DEFINE_SETTER_STR_LIST_MULTI (check_and_add_eap_method,
+DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_802_1x_eap,
                               NM_SETTING_802_1X,
-                              nm_setting_802_1x_add_eap_method)
-
-static gboolean
-_set_fcn_802_1x_eap (ARGS_SET_FCN)
-{
-	return check_and_add_eap_method (setting,
-	                                 property_info->property_name,
-	                                 value,
-	                                 (const char **) property_info->property_typ_data->values_static,
-	                                 error);
-}
+                              nm_setting_802_1x_add_eap_method);
 
 DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_802_1x_eap,
                                       NM_SETTING_802_1X,
@@ -4412,15 +4402,9 @@ _get_fcn_wireless_security_wep_key (ARGS_GET_FCN)
 
 static const char *wifi_sec_valid_protos[] = { "wpa", "rsn", NULL };
 
-DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_proto,
+DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_wireless_security_proto,
                               NM_SETTING_WIRELESS_SECURITY,
-                              nm_setting_wireless_security_add_proto)
-
-static gboolean
-_set_fcn_wireless_security_proto (ARGS_SET_FCN)
-{
-	return check_and_add_wifi_sec_proto (setting, property_info->property_name, value, wifi_sec_valid_protos, error);
-}
+                              nm_setting_wireless_security_add_proto);
 
 DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC (_remove_fcn_wireless_security_proto,
                                                  NM_SETTING_WIRELESS_SECURITY,
@@ -4431,15 +4415,9 @@ DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC (_remove_fcn_wireless_security_p
 
 static const char *wifi_sec_valid_pairwises[] = { "tkip", "ccmp", NULL };
 
-DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_pairwise,
+DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_wireless_security_pairwise,
                               NM_SETTING_WIRELESS_SECURITY,
-                              nm_setting_wireless_security_add_pairwise)
-
-static gboolean
-_set_fcn_wireless_security_pairwise (ARGS_SET_FCN)
-{
-	return check_and_add_wifi_sec_pairwise (setting, property_info->property_name, value, wifi_sec_valid_pairwises, error);
-}
+                              nm_setting_wireless_security_add_pairwise);
 
 DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC (_remove_fcn_wireless_security_pairwise,
                                                  NM_SETTING_WIRELESS_SECURITY,
@@ -4450,15 +4428,9 @@ DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC (_remove_fcn_wireless_security_p
 
 static const char *wifi_sec_valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
 
-DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_group,
+DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_wireless_security_group,
                               NM_SETTING_WIRELESS_SECURITY,
-                              nm_setting_wireless_security_add_group)
-
-static gboolean
-_set_fcn_wireless_security_group (ARGS_SET_FCN)
-{
-	return check_and_add_wifi_sec_group (setting, property_info->property_name, value, wifi_sec_valid_groups, error);
-}
+                              nm_setting_wireless_security_add_group);
 
 DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC (_remove_fcn_wireless_security_group,
                                                  NM_SETTING_WIRELESS_SECURITY,
