@@ -2873,14 +2873,12 @@ static gboolean
 dcb_parse_uint_array (const char *val,
                       guint max,
                       guint other,
-                      guint *out_array,
+                      guint out_array[static 8],
                       GError **error)
 {
 	gs_strfreev char **items = NULL;
 	char **iter;
 	gsize i;
-
-	nm_assert (out_array);
 
 	items = g_strsplit_set (val, ",", -1);
 	if (g_strv_length (items) != 8) {
@@ -2933,7 +2931,7 @@ static gboolean
 _set_fcn_dcb_priority_flow_control (ARGS_SET_FCN)
 {
 	guint i = 0;
-	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	guint nums[8] = { 0, };
 
 	nm_assert (!error || !*error);
 
@@ -2951,7 +2949,7 @@ static gboolean
 _set_fcn_dcb_priority_group_id (ARGS_SET_FCN)
 {
 	guint i = 0;
-	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	guint nums[8] = { 0, };
 
 	nm_assert (!error || !*error);
 
@@ -2969,7 +2967,7 @@ static gboolean
 _set_fcn_dcb_priority_group_bandwidth (ARGS_SET_FCN)
 {
 	guint i = 0, sum = 0;
-	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	guint nums[8] = { 0, };
 
 	nm_assert (!error || !*error);
 
@@ -2994,7 +2992,7 @@ static gboolean
 _set_fcn_dcb_priority_bandwidth (ARGS_SET_FCN)
 {
 	guint i = 0;
-	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	guint nums[8] = { 0, };
 
 	nm_assert (!error || !*error);
 
@@ -3012,7 +3010,7 @@ static gboolean
 _set_fcn_dcb_priority_strict (ARGS_SET_FCN)
 {
 	guint i = 0;
-	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	guint nums[8] = { 0, };
 
 	nm_assert (!error || !*error);
 
@@ -3030,7 +3028,7 @@ static gboolean
 _set_fcn_dcb_priority_traffic_class (ARGS_SET_FCN)
 {
 	guint i = 0;
-	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	guint nums[8] = { 0, };
 
 	nm_assert (!error || !*error);
 
