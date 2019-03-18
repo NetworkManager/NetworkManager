@@ -2240,11 +2240,11 @@ DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_802_1x_eap,
                               NM_SETTING_802_1X,
                               nm_setting_802_1x_add_eap_method);
 
-DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_802_1x_eap,
-                                      NM_SETTING_802_1X,
-                                      nm_setting_802_1x_get_num_eap_methods,
-                                      nm_setting_802_1x_remove_eap_method,
-                                      nm_setting_802_1x_remove_eap_method_by_value)
+DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC (_remove_fcn_802_1x_eap,
+                                                 NM_SETTING_802_1X,
+                                                 nm_setting_802_1x_get_num_eap_methods,
+                                                 nm_setting_802_1x_remove_eap_method,
+                                                 nm_setting_802_1x_remove_eap_method_by_value)
 
 DEFINE_SETTER_CERT (_set_fcn_802_1x_ca_cert, nm_setting_802_1x_set_ca_cert)
 
