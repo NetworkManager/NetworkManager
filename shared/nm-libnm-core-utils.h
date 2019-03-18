@@ -22,6 +22,8 @@
 
 #include "nm-setting-connection.h"
 #include "nm-setting-ip-config.h"
+#include "nm-setting-ip4-config.h"
+#include "nm-setting-ip6-config.h"
 #include "nm-setting-sriov.h"
 #include "nm-setting-team.h"
 #include "nm-setting-vlan.h"
@@ -78,6 +80,18 @@ nm_setting_connection_remove_permission_user (NMSettingConnection *setting,
                                               const char *user)
 {
 	nm_setting_connection_remove_permission_by_value (setting, "user", user, NULL);
+}
+
+/*****************************************************************************/
+
+static inline int
+nm_setting_ip_config_get_addr_family (NMSettingIPConfig *s_ip)
+{
+	if (NM_IS_SETTING_IP4_CONFIG (s_ip))
+		return AF_INET;
+	if (NM_IS_SETTING_IP6_CONFIG (s_ip))
+		return AF_INET6;
+	g_return_val_if_reached (AF_UNSPEC);
 }
 
 #endif /* __NM_LIBNM_SHARED_UTILS_H__ */
