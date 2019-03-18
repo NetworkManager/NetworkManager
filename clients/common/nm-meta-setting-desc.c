@@ -1714,6 +1714,15 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		return TRUE; \
 	})
 
+#define DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
+	_DEFINE_REMOVER_INDEX_OR_VALUE (def_func, s_macro, num_func, rem_func_idx, { \
+		gs_free char *value_to_free = NULL; \
+		\
+		return rem_func_val (s_macro (setting), \
+		                     nm_strstrip_avoid_copy (value, &value_to_free), \
+		                     error); \
+	})
+
 #define DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC(def_func, s_macro, num_func, rem_func_idx, values_static, rem_func_val) \
 	_DEFINE_REMOVER_INDEX_OR_VALUE (def_func, s_macro, num_func, rem_func_idx, { \
 		value = nmc_string_is_valid (value, values_static, error); \
@@ -2669,25 +2678,20 @@ _validate_and_remove_connection_secondary (NMSettingConnection *setting,
                                            const char *secondary_uuid,
                                            GError **error)
 {
-	gboolean ret;
-
 	if (!nm_utils_is_uuid (secondary_uuid)) {
-		g_set_error (error, 1, 0,
-		             _("the value '%s' is not a valid UUID"), secondary_uuid);
+		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		                    _("the value '%s' is not a valid UUID"), secondary_uuid);
 		return FALSE;
 	}
 
-	ret = nm_setting_connection_remove_secondary_by_value (setting, secondary_uuid);
-	if (!ret)
-		g_set_error (error, 1, 0,
-		             _("the property doesn't contain UUID '%s'"), secondary_uuid);
-	return ret;
+	nm_setting_connection_remove_secondary_by_value (setting, secondary_uuid);
+	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_connection_secondaries,
-                               NM_SETTING_CONNECTION,
-                               nm_setting_connection_get_num_secondaries,
-                               nm_setting_connection_remove_secondary,
-                               _validate_and_remove_connection_secondary)
+DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (_remove_fcn_connection_secondaries,
+                                          NM_SETTING_CONNECTION,
+                                          nm_setting_connection_get_num_secondaries,
+                                          nm_setting_connection_remove_secondary,
+                                          _validate_and_remove_connection_secondary)
 
 static gconstpointer
 _get_fcn_connection_metered (ARGS_GET_FCN)
@@ -3283,24 +3287,20 @@ _validate_and_remove_ipv4_dns (NMSettingIPConfig *setting,
                                const char *dns,
                                GError **error)
 {
-	guint32 ip4_addr;
-	gboolean ret;
-
-	if (inet_pton (AF_INET, dns, &ip4_addr) < 1) {
-		g_set_error (error, 1, 0, _("invalid IPv4 address '%s'"), dns);
+	if (!nm_utils_parse_inaddr (AF_INET, dns, NULL)) {
+		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		                    _("invalid IPv4 address '%s'"), dns);
 		return FALSE;
 	}
 
-	ret = nm_setting_ip_config_remove_dns_by_value (setting, dns);
-	if (!ret)
-		g_set_error (error, 1, 0, _("the property doesn't contain DNS server '%s'"), dns);
-	return ret;
+	nm_setting_ip_config_remove_dns_by_value (setting, dns);
+	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv4_config_dns,
-                               NM_SETTING_IP_CONFIG,
-                               nm_setting_ip_config_get_num_dns,
-                               nm_setting_ip_config_remove_dns,
-                               _validate_and_remove_ipv4_dns)
+DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (_remove_fcn_ipv4_config_dns,
+                                          NM_SETTING_IP_CONFIG,
+                                          nm_setting_ip_config_get_num_dns,
+                                          nm_setting_ip_config_remove_dns,
+                                          _validate_and_remove_ipv4_dns)
 
 static gboolean
 _set_fcn_ip_config_dns_search (ARGS_SET_FCN)
@@ -3502,24 +3502,20 @@ _validate_and_remove_ipv6_dns (NMSettingIPConfig *setting,
                                const char *dns,
                                GError **error)
 {
-	struct in6_addr ip6_addr;
-	gboolean ret;
-
-	if (inet_pton (AF_INET6, dns, &ip6_addr) < 1) {
-		g_set_error (error, 1, 0, _("invalid IPv6 address '%s'"), dns);
+	if (!nm_utils_parse_inaddr (AF_INET6, dns, NULL)) {
+		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		                    _("invalid IPv6 address '%s'"), dns);
 		return FALSE;
 	}
 
-	ret = nm_setting_ip_config_remove_dns_by_value (setting, dns);
-	if (!ret)
-		g_set_error (error, 1, 0, _("the property doesn't contain DNS server '%s'"), dns);
-	return ret;
+	nm_setting_ip_config_remove_dns_by_value (setting, dns);
+	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv6_config_dns,
-                               NM_SETTING_IP_CONFIG,
-                               nm_setting_ip_config_get_num_dns,
-                               nm_setting_ip_config_remove_dns,
-                               _validate_and_remove_ipv6_dns)
+DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (_remove_fcn_ipv6_config_dns,
+                                          NM_SETTING_IP_CONFIG,
+                                          nm_setting_ip_config_get_num_dns,
+                                          nm_setting_ip_config_remove_dns,
+                                          _validate_and_remove_ipv6_dns)
 
 static gboolean
 _dns_options_is_default (NMSettingIPConfig *setting)
@@ -4377,24 +4373,22 @@ _validate_and_remove_wired_mac_blacklist_item (NMSettingWired *setting,
                                               const char *mac,
                                               GError **error)
 {
-	gboolean ret;
 	guint8 buf[32];
 
 	if (!nm_utils_hwaddr_aton (mac, buf, ETH_ALEN)) {
-		g_set_error (error, 1, 0, _("'%s' is not a valid MAC address"), mac);
-                return FALSE;
+		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		                    _("'%s' is not a valid MAC address"), mac);
+		return FALSE;
 	}
 
-	ret = nm_setting_wired_remove_mac_blacklist_item_by_value (setting, mac);
-	if (!ret)
-		g_set_error (error, 1, 0, _("the property doesn't contain MAC address '%s'"), mac);
-	return ret;
+	nm_setting_wired_remove_mac_blacklist_item_by_value (setting, mac);
+	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_wired_mac_address_blacklist,
-                               NM_SETTING_WIRED,
-                               nm_setting_wired_get_num_mac_blacklist_items,
-                               nm_setting_wired_remove_mac_blacklist_item,
-                               _validate_and_remove_wired_mac_blacklist_item)
+DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (_remove_fcn_wired_mac_address_blacklist,
+                                          NM_SETTING_WIRED,
+                                          nm_setting_wired_get_num_mac_blacklist_items,
+                                          nm_setting_wired_remove_mac_blacklist_item,
+                                          _validate_and_remove_wired_mac_blacklist_item)
 
 static gboolean
 _set_fcn_wired_s390_subchannels (ARGS_SET_FCN)
@@ -4508,24 +4502,22 @@ _validate_and_remove_wifi_mac_blacklist_item (NMSettingWireless *setting,
                                               const char *mac,
                                               GError **error)
 {
-	gboolean ret;
 	guint8 buf[32];
 
 	if (!nm_utils_hwaddr_aton (mac, buf, ETH_ALEN)) {
-		g_set_error (error, 1, 0, _("'%s' is not a valid MAC address"), mac);
-                return FALSE;
+		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		                    _("'%s' is not a valid MAC address"), mac);
+		return FALSE;
 	}
 
-	ret = nm_setting_wireless_remove_mac_blacklist_item_by_value (setting, mac);
-	if (!ret)
-		g_set_error (error, 1, 0, _("the property doesn't contain MAC address '%s'"), mac);
-	return ret;
+	nm_setting_wireless_remove_mac_blacklist_item_by_value (setting, mac);
+	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_wireless_mac_address_blacklist,
-                               NM_SETTING_WIRELESS,
-                               nm_setting_wireless_get_num_mac_blacklist_items,
-                               nm_setting_wireless_remove_mac_blacklist_item,
-                               _validate_and_remove_wifi_mac_blacklist_item)
+DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (_remove_fcn_wireless_mac_address_blacklist,
+                                          NM_SETTING_WIRELESS,
+                                          nm_setting_wireless_get_num_mac_blacklist_items,
+                                          nm_setting_wireless_remove_mac_blacklist_item,
+                                          _validate_and_remove_wifi_mac_blacklist_item)
 
 static gconstpointer
 _get_fcn_wireless_security_wep_key (ARGS_GET_FCN)
