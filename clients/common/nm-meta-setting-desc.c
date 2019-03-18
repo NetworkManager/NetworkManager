@@ -1893,25 +1893,6 @@ validate_flags (NMSetting *setting, const char* prop, guint val, GError **error)
 }
 
 static gboolean
-check_and_set_string (NMSetting *setting,
-                      const char *prop,
-                      const char *val,
-                      const char **valid_strv,
-                      GError **error)
-{
-	const char *checked_val;
-
-	nm_assert (!error || !*error);
-
-	checked_val = nmc_string_is_valid (val, valid_strv, error);
-	if (!checked_val)
-		return FALSE;
-
-	g_object_set (setting, prop, checked_val, NULL);
-	return TRUE;
-}
-
-static gboolean
 _set_fcn_gobject_flags (ARGS_SET_FCN)
 {
 	unsigned long val_int;
@@ -3196,26 +3177,29 @@ _get_fcn_ip_config_routes (ARGS_GET_FCN)
 	RETURN_STR_TO_FREE (g_string_free (printable, FALSE));
 }
 
-static const char *ipv4_valid_methods[] = {
-	NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-	NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
-	NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
-	NM_SETTING_IP4_CONFIG_METHOD_SHARED,
-	NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
-	NULL
-};
-
 static gboolean
-_set_fcn_ip4_config_method (ARGS_SET_FCN)
+_set_fcn_ip_config_method (ARGS_SET_FCN)
 {
 	if (_SET_FCN_DO_RESET_DEFAULT (value))
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	/* Silently accept "static" and convert to "manual" */
-	if (strlen (value) > 1 && matches (value, "static"))
-		value = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
+	if (   strlen (value) > 1
+	    && matches (value, "static")) {
+		if (nm_setting_ip_config_get_addr_family (NM_SETTING_IP_CONFIG (setting)) == AF_INET)
+			value = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
+		else
+			value = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
+	}
 
-	return check_and_set_string (setting, property_info->property_name, value, ipv4_valid_methods, error);
+	value = nmc_string_is_valid (value,
+	                             (const char **) property_info->property_typ_data->values_static,
+	                             error);
+	if (!value)
+		return FALSE;
+
+	g_object_set (setting, property_info->property_name, value, NULL);
+	return TRUE;
 }
 
 static gboolean
@@ -3428,29 +3412,6 @@ DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ipv4_config_routes,
                                        nm_setting_ip_config_get_num_routes,
                                        nm_setting_ip_config_remove_route,
                                        _validate_and_remove_ipv4_route)
-
-static const char *ipv6_valid_methods[] = {
-	NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	NM_SETTING_IP6_CONFIG_METHOD_AUTO,
-	NM_SETTING_IP6_CONFIG_METHOD_DHCP,
-	NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
-	NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
-	NM_SETTING_IP6_CONFIG_METHOD_SHARED,
-	NULL
-};
-
-static gboolean
-_set_fcn_ip6_config_method (ARGS_SET_FCN)
-{
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	/* Silently accept "static" and convert to "manual" */
-	if (strlen (value) > 1 && matches (value, "static"))
-		value = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
-
-	return check_and_set_string (setting, property_info->property_name, value, ipv6_valid_methods, error);
-}
 
 static gboolean
 _dns_options_is_default (NMSettingIPConfig *setting)
@@ -5804,10 +5765,14 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_METHOD, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_METHOD,
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_ip4_config_method,
+			.set_fcn =                  _set_fcn_ip_config_method,
 		),
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            ipv4_valid_methods,
+			.values_static =            NM_MAKE_STRV (NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+			                                          NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
+			                                          NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+			                                          NM_SETTING_IP4_CONFIG_METHOD_SHARED,
+			                                          NM_SETTING_IP4_CONFIG_METHOD_DISABLED),
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DNS,
@@ -5961,10 +5926,15 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_METHOD, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_METHOD,
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_ip6_config_method,
+			.set_fcn =                  _set_fcn_ip_config_method,
 		),
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            ipv6_valid_methods,
+			.values_static =            NM_MAKE_STRV (NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+			                                          NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+			                                          NM_SETTING_IP6_CONFIG_METHOD_DHCP,
+			                                          NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+			                                          NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+			                                          NM_SETTING_IP6_CONFIG_METHOD_SHARED),
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DNS,
