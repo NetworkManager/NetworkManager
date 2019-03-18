@@ -73,6 +73,9 @@
 /* Define to path of the kernel firmware directory */
 #mesondefine KERNEL_FIRMWARE_DIR
 
+/* Mobile Broadband Service Provider Information Database location */
+#mesondefine MOBILE_BROADBAND_PROVIDER_INFO_DATABASE
+
 /* Path to netconfig */
 #mesondefine NETCONFIG_PATH
 

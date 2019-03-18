@@ -7,6 +7,7 @@
 #include "nm-default.h"
 
 #include "nm-modem-broadband.h"
+#include "nm-service-providers.h"
 
 #include <arpa/inet.h>
 #include <libmm-glib.h>
@@ -261,7 +262,10 @@ create_cdma_connect_properties (NMConnection *connection)
 }
 
 static MMSimpleConnectProperties *
-create_gsm_connect_properties (NMConnection *connection)
+create_gsm_connect_properties (NMConnection *connection,
+                               const char *apn,
+                               const char *username,
+                               const char *password)
 {
 	NMSettingGsm *setting;
 	NMSettingPpp *s_ppp;
@@ -269,11 +273,14 @@ create_gsm_connect_properties (NMConnection *connection)
 	const char *str;
 
 	setting = nm_connection_get_setting_gsm (connection);
+
 	properties = mm_simple_connect_properties_new ();
 
-	/* Blank APN ("") means the default subscription APN */
-	str = nm_setting_gsm_get_apn (setting);
-	mm_simple_connect_properties_set_apn (properties, str ?: "");
+	mm_simple_connect_properties_set_apn (properties, apn ?: "");
+	if (username)
+		mm_simple_connect_properties_set_user (properties, username);
+	if (password)
+		mm_simple_connect_properties_set_password (properties, password);
 
 	str = nm_setting_gsm_get_network_id (setting);
 	if (str)
@@ -282,14 +289,6 @@ create_gsm_connect_properties (NMConnection *connection)
 	str = nm_setting_gsm_get_pin (setting);
 	if (str)
 		mm_simple_connect_properties_set_pin (properties, str);
-
-	str = nm_setting_gsm_get_username (setting);
-	if (str)
-		mm_simple_connect_properties_set_user (properties, str);
-
-	str = nm_setting_gsm_get_password (setting);
-	if (str)
-		mm_simple_connect_properties_set_password (properties, str);
 
 	/* Roaming */
 	if (nm_setting_gsm_get_home_only (setting))
@@ -444,6 +443,95 @@ send_pin_ready (MMSim *sim, GAsyncResult *result, NMModemBroadband *self)
 }
 
 static void
+find_gsm_apn_cb (const char *apn,
+                 const char *username,
+                 const char *password,
+                 const char *gateway,
+                 const char *auth_method,
+                 const GSList *dns,
+                 GError *error,
+                 gpointer user_data)
+{
+	NMModemBroadband *self = user_data;
+	NMModemBroadbandPrivate *priv = NM_MODEM_BROADBAND_GET_PRIVATE (self);
+	ConnectContext *ctx = priv->ctx;
+
+	if (error) {
+		_LOGW ("failed to connect '%s': APN not found: %s",
+		       nm_connection_get_id (ctx->connection), error->message);
+
+		nm_modem_emit_prepare_result (NM_MODEM (self), FALSE, NM_DEVICE_STATE_REASON_GSM_APN_FAILED);
+		connect_context_clear (self);
+		return;
+	}
+
+	/* Blank APN ("") means the default subscription APN */
+	ctx->connect_properties = create_gsm_connect_properties (ctx->connection,
+	                                                         apn,
+	                                                         username,
+	                                                         password);
+	g_return_if_fail (ctx->connect_properties);
+	connect_context_step (self);
+}
+
+static gboolean
+try_create_connect_properties (NMModemBroadband *self)
+{
+	NMModemBroadbandPrivate *priv = NM_MODEM_BROADBAND_GET_PRIVATE (self);
+	ConnectContext *ctx = priv->ctx;
+
+	if (MODEM_CAPS_3GPP (ctx->caps)) {
+		NMSettingGsm *s_gsm = nm_connection_get_setting_gsm (ctx->connection);
+
+		if (!s_gsm || nm_setting_gsm_get_auto_config (s_gsm)) {
+			gs_unref_object MMModem3gpp *modem_3gpp = NULL;
+			const char *network_id = NULL;
+
+			s_gsm = nm_connection_get_setting_gsm (ctx->connection);
+			if (s_gsm)
+				network_id = nm_setting_gsm_get_network_id (s_gsm);
+			if (!network_id) {
+				if (mm_modem_get_state (self->_priv.modem_iface) < MM_MODEM_STATE_REGISTERED)
+					return FALSE;
+				modem_3gpp = mm_object_get_modem_3gpp (priv->modem_object);
+				network_id = mm_modem_3gpp_get_operator_code (modem_3gpp);
+			}
+			if (!network_id) {
+				_LOGW ("failed to connect '%s': unable to determine the network id",
+				       nm_connection_get_id (ctx->connection));
+				goto out;
+			}
+
+			nm_service_providers_find_gsm_apn (MOBILE_BROADBAND_PROVIDER_INFO_DATABASE,
+			                                   network_id,
+			                                   ctx->cancellable,
+			                                   find_gsm_apn_cb,
+			                                   self);
+		} else {
+			ctx->connect_properties = create_gsm_connect_properties (ctx->connection,
+			                                                         nm_setting_gsm_get_apn (s_gsm),
+			                                                         nm_setting_gsm_get_username (s_gsm),
+			                                                         nm_setting_gsm_get_password (s_gsm));
+			g_return_val_if_fail (ctx->connect_properties, TRUE);
+		}
+
+		return TRUE;
+	} else if (MODEM_CAPS_3GPP2 (ctx->caps)) {
+		ctx->connect_properties = create_cdma_connect_properties (ctx->connection);
+		g_return_val_if_fail (ctx->connect_properties, FALSE);
+		return TRUE;
+	} else {
+		_LOGW ("failed to connect '%s': not a mobile broadband modem",
+		       nm_connection_get_id (ctx->connection));
+	}
+
+out:
+	nm_modem_emit_prepare_result (NM_MODEM (self), FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+	connect_context_clear (self);
+	return TRUE;
+}
+
+static void
 connect_context_step (NMModemBroadband *self)
 {
 	ConnectContext *ctx = self->_priv.ctx;
@@ -487,23 +575,8 @@ connect_context_step (NMModemBroadband *self)
 		if (mm_modem_get_state (self->_priv.modem_iface) <= MM_MODEM_STATE_LOCKED)
 			break;
 
-		g_return_if_fail (!ctx->connect_properties);
-
-		/* Create core connect properties based on the modem capabilities */
-		if (MODEM_CAPS_3GPP (ctx->caps))
-			ctx->connect_properties = create_gsm_connect_properties (ctx->connection);
-		else if (MODEM_CAPS_3GPP2 (ctx->caps))
-			ctx->connect_properties = create_cdma_connect_properties (ctx->connection);
-		else {
-			_LOGW ("failed to connect '%s': not a mobile broadband modem",
-			       nm_connection_get_id (ctx->connection));
-
-			nm_modem_emit_prepare_result (NM_MODEM (self), FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
-			connect_context_clear (self);
+		if (!try_create_connect_properties (self))
 			break;
-		}
-
-		g_return_if_fail (ctx->connect_properties);
 
 		/* Build up list of IP types that we need to use in the retries */
 		ctx->ip_types = nm_modem_get_connection_ip_type (NM_MODEM (self), ctx->connection, &error);
@@ -522,6 +595,9 @@ connect_context_step (NMModemBroadband *self)
 	}
 		/* fall through */
 	case CONNECT_STEP_CONNECT:
+		if (!ctx->connect_properties)
+			break;
+
 		if (ctx->ip_types_i < ctx->ip_types->len) {
 			NMModemIPType current;
 
@@ -677,6 +753,9 @@ complete_connection (NMModem *modem,
 		if (!s_gsm) {
 			s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
 			nm_connection_add_setting (connection, NM_SETTING (s_gsm));
+			g_object_set (G_OBJECT (s_gsm),
+			              NM_SETTING_GSM_AUTO_CONFIG, TRUE,
+			              NULL);
 		}
 
 		if (!nm_setting_gsm_get_device_id (s_gsm)) {

@@ -502,6 +502,9 @@ config_h.set10('WITH_PPP', enable_ppp)
 enable_modem_manager = get_option('modem_manager')
 if enable_modem_manager
   mm_glib_dep = dependency('mm-glib', version: '>= 0.7.991')
+
+  service_provider_db = dependency('mobile-broadband-provider-info').get_pkgconfig_variable('database')
+  config_h.set_quoted('MOBILE_BROADBAND_PROVIDER_INFO_DATABASE', service_provider_db)
 endif
 
 # Bluez5 DUN support

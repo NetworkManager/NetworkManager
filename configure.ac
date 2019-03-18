@@ -747,9 +747,19 @@ if (test "${with_modem_manager_1}" != "no"); then
 		fi
 	else
 		with_modem_manager_1="yes"
+
+		PKG_CHECK_MODULES(MOBILE_BROADBAND_PROVIDER_INFO, [mobile-broadband-provider-info],
+		                  [MOBILE_BROADBAND_PROVIDER_INFO_DATABASE=`$PKG_CONFIG --variable=database mobile-broadband-provider-info`],
+		                  [MOBILE_BROADBAND_PROVIDER_INFO_DATABASE="$prefix/share/mobile-broadband-provider-info/serviceproviders.xml"])
+		AC_DEFINE_UNQUOTED([MOBILE_BROADBAND_PROVIDER_INFO_DATABASE],
+		                   ["$MOBILE_BROADBAND_PROVIDER_INFO_DATABASE"],
+		                   [Mobile Broadband Service Provider Information Database location])
 	fi
 fi
 AM_CONDITIONAL(WITH_MODEM_MANAGER_1, test "${with_modem_manager_1}" = "yes")
+
+
+
 
 # Bluez5 DUN support
 PKG_CHECK_MODULES(BLUEZ5, [bluez >= 5], [have_bluez5=yes],[have_bluez5=no])
