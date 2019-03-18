@@ -1680,15 +1680,6 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		rem_func_cmd \
 	}
 
-#define DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
-	_DEFINE_REMOVER_INDEX_OR_VALUE (def_func, s_macro, num_func, rem_func_idx, { \
-		gs_free char *value_to_free = NULL; \
-		\
-		rem_func_val (s_macro (setting), \
-		              nm_strstrip_avoid_copy (value, &value_to_free)); \
-		return TRUE; \
-	})
-
 #define DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
 	_DEFINE_REMOVER_INDEX_OR_VALUE (def_func, s_macro, num_func, rem_func_idx, { \
 		gs_free char *value_to_free = NULL; \
@@ -1698,8 +1689,11 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		                     error); \
 	})
 
-#define DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
+#define DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
 	_DEFINE_REMOVER_INDEX_OR_VALUE (def_func, s_macro, num_func, rem_func_idx, { \
+		gs_free char *value_to_free = NULL; \
+		\
+		value = nm_strstrip_avoid_copy (value, &value_to_free); \
 		if (property_info->property_typ_data->values_static) { \
 			value = nmc_string_is_valid (value, \
 			                             (const char **) property_info->property_typ_data->values_static, \
@@ -2240,11 +2234,11 @@ DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_802_1x_eap,
                               NM_SETTING_802_1X,
                               nm_setting_802_1x_add_eap_method);
 
-DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC (_remove_fcn_802_1x_eap,
-                                                 NM_SETTING_802_1X,
-                                                 nm_setting_802_1x_get_num_eap_methods,
-                                                 nm_setting_802_1x_remove_eap_method,
-                                                 nm_setting_802_1x_remove_eap_method_by_value)
+DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_802_1x_eap,
+                                      NM_SETTING_802_1X,
+                                      nm_setting_802_1x_get_num_eap_methods,
+                                      nm_setting_802_1x_remove_eap_method,
+                                      nm_setting_802_1x_remove_eap_method_by_value)
 
 DEFINE_SETTER_CERT (_set_fcn_802_1x_ca_cert, nm_setting_802_1x_set_ca_cert)
 
@@ -4408,31 +4402,31 @@ DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_wireless_security_proto,
                               NM_SETTING_WIRELESS_SECURITY,
                               nm_setting_wireless_security_add_proto);
 
-DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC (_remove_fcn_wireless_security_proto,
-                                                 NM_SETTING_WIRELESS_SECURITY,
-                                                 nm_setting_wireless_security_get_num_protos,
-                                                 nm_setting_wireless_security_remove_proto,
-                                                 nm_setting_wireless_security_remove_proto_by_value)
+DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_wireless_security_proto,
+                                      NM_SETTING_WIRELESS_SECURITY,
+                                      nm_setting_wireless_security_get_num_protos,
+                                      nm_setting_wireless_security_remove_proto,
+                                      nm_setting_wireless_security_remove_proto_by_value)
 
 DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_wireless_security_pairwise,
                               NM_SETTING_WIRELESS_SECURITY,
                               nm_setting_wireless_security_add_pairwise);
 
-DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC (_remove_fcn_wireless_security_pairwise,
-                                                 NM_SETTING_WIRELESS_SECURITY,
-                                                 nm_setting_wireless_security_get_num_pairwise,
-                                                 nm_setting_wireless_security_remove_pairwise,
-                                                 nm_setting_wireless_security_remove_pairwise_by_value)
+DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_wireless_security_pairwise,
+                                      NM_SETTING_WIRELESS_SECURITY,
+                                      nm_setting_wireless_security_get_num_pairwise,
+                                      nm_setting_wireless_security_remove_pairwise,
+                                      nm_setting_wireless_security_remove_pairwise_by_value)
 
 DEFINE_SETTER_STR_LIST_MULTI (_set_fcn_wireless_security_group,
                               NM_SETTING_WIRELESS_SECURITY,
                               nm_setting_wireless_security_add_group);
 
-DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING_STATIC (_remove_fcn_wireless_security_group,
-                                                 NM_SETTING_WIRELESS_SECURITY,
-                                                 nm_setting_wireless_security_get_num_groups,
-                                                 nm_setting_wireless_security_remove_group,
-                                                 nm_setting_wireless_security_remove_group_by_value)
+DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_wireless_security_group,
+                                      NM_SETTING_WIRELESS_SECURITY,
+                                      nm_setting_wireless_security_get_num_groups,
+                                      nm_setting_wireless_security_remove_group,
+                                      nm_setting_wireless_security_remove_group_by_value)
 
 static gboolean
 _set_fcn_wireless_wep_key (ARGS_SET_FCN)
@@ -5965,7 +5959,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 			.remove_fcn =               _remove_fcn_ip_config_dns_options,
 		),
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (get_with_default,
-			.fcn =     GET_FCN_WITH_DEFAULT (NMSettingIPConfig, _dns_options_is_default),
+			.fcn =                      GET_FCN_WITH_DEFAULT (NMSettingIPConfig, _dns_options_is_default),
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_PRIORITY, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DNS_PRIORITY,
