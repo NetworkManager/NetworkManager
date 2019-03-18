@@ -4099,39 +4099,38 @@ _get_fcn_vlan_flags (ARGS_GET_FCN)
 	RETURN_STR_TO_FREE (vlan_flags_to_string (flags, get_type));
 }
 
-static gconstpointer
-_get_fcn_vlan_ingress_priority_map (ARGS_GET_FCN)
+static NMVlanPriorityMap
+_vlan_priority_map_type_from_property_info (const NMMetaPropertyInfo *property_info)
 {
-	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
-	char *str;
+	nm_assert (property_info);
+	nm_assert (property_info->setting_info == &nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_VLAN]);
+	nm_assert (NM_IN_STRSET (property_info->property_name, NM_SETTING_VLAN_INGRESS_PRIORITY_MAP,
+	                                                       NM_SETTING_VLAN_EGRESS_PRIORITY_MAP));
 
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	str = vlan_priorities_to_string (s_vlan, NM_VLAN_INGRESS_MAP);
-	NM_SET_OUT (out_is_default, !str || !str[0]);
-	RETURN_STR_TO_FREE (str);
+	return   nm_streq (property_info->property_name, NM_SETTING_VLAN_INGRESS_PRIORITY_MAP)
+	       ? NM_VLAN_INGRESS_MAP
+	       : NM_VLAN_EGRESS_MAP;
 }
 
 static gconstpointer
-_get_fcn_vlan_egress_priority_map (ARGS_GET_FCN)
+_get_fcn_vlan_xgress_priority_map (ARGS_GET_FCN)
 {
 	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
 	char *str;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
-	str = vlan_priorities_to_string (s_vlan, NM_VLAN_EGRESS_MAP);
+	str = vlan_priorities_to_string (s_vlan, _vlan_priority_map_type_from_property_info (property_info));
 	NM_SET_OUT (out_is_default, !str || !str[0]);
 	RETURN_STR_TO_FREE (str);
 }
 
 static gboolean
-_set_vlan_xgress_priority_map (NMSetting *setting,
-                               const char *value,
-                               NMVlanPriorityMap map_type,
-                               GError **error)
+_set_fcn_vlan_xgress_priority_map (ARGS_SET_FCN)
 {
-	char **prio_map, **p;
+	gs_strfreev char **prio_map = NULL;
+	char **p;
+	NMVlanPriorityMap map_type = _vlan_priority_map_type_from_property_info (property_info);
 
 	prio_map = _parse_vlan_priority_maps (value, map_type, FALSE, error);
 	if (!prio_map)
@@ -4139,36 +4138,17 @@ _set_vlan_xgress_priority_map (NMSetting *setting,
 
 	for (p = prio_map; p && *p; p++)
 		nm_setting_vlan_add_priority_str (NM_SETTING_VLAN (setting), map_type, *p);
-
-	g_strfreev (prio_map);
 	return TRUE;
 }
 
 static gboolean
-_set_fcn_vlan_ingress_priority_map (ARGS_SET_FCN)
-{
-	return _set_vlan_xgress_priority_map (setting, value, NM_VLAN_INGRESS_MAP, error);
-}
-
-static gboolean
-_set_fcn_vlan_egress_priority_map (ARGS_SET_FCN)
-{
-	return _set_vlan_xgress_priority_map (setting, value, NM_VLAN_EGRESS_MAP, error);
-}
-
-static gboolean
-_remove_vlan_xgress_priority_map (const NMMetaEnvironment *environment,
-                                  gpointer environment_user_data,
-                                  NMSetting *setting,
-                                  const NMMetaPropertyInfo *property_info,
-                                  const char *value,
-                                  NMVlanPriorityMap map_type,
-                                  GError **error)
+_remove_fcn_vlan_xgress_priority_map (ARGS_REMOVE_FCN)
 {
 	gs_strfreev char **prio_map = NULL;
 	guint32 num;
 	gint64 idx;
 	gsize i;
+	NMVlanPriorityMap map_type = _vlan_priority_map_type_from_property_info (property_info);
 
 	idx = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT64, -1);
 	if (idx != -1) {
@@ -4193,30 +4173,6 @@ _remove_vlan_xgress_priority_map (const NMMetaEnvironment *environment,
 		                                              prio_map[i]);
 	}
 	return TRUE;
-}
-
-static gboolean
-_remove_fcn_vlan_ingress_priority_map (ARGS_REMOVE_FCN)
-{
-	return _remove_vlan_xgress_priority_map (environment,
-	                                         environment_user_data,
-	                                         setting,
-	                                         property_info,
-	                                         value,
-	                                         NM_VLAN_INGRESS_MAP,
-	                                         error);
-}
-
-static gboolean
-_remove_fcn_vlan_egress_priority_map (ARGS_REMOVE_FCN)
-{
-	return _remove_vlan_xgress_priority_map (environment,
-	                                         environment_user_data,
-	                                         setting,
-	                                         property_info,
-	                                         value,
-	                                         NM_VLAN_EGRESS_MAP,
-	                                         error);
 }
 
 static gconstpointer
@@ -6983,9 +6939,9 @@ static const NMMetaPropertyInfo *const property_infos_VLAN[] = {
 		.property_alias =               "ingress",
 		.prompt =                       N_("Ingress priority maps [none]"),
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_vlan_ingress_priority_map,
-			.set_fcn =                  _set_fcn_vlan_ingress_priority_map,
-			.remove_fcn =               _remove_fcn_vlan_ingress_priority_map,
+			.get_fcn =                  _get_fcn_vlan_xgress_priority_map,
+			.set_fcn =                  _set_fcn_vlan_xgress_priority_map,
+			.remove_fcn =               _remove_fcn_vlan_xgress_priority_map,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP,
@@ -6993,9 +6949,9 @@ static const NMMetaPropertyInfo *const property_infos_VLAN[] = {
 		.property_alias =               "egress",
 		.prompt =                       N_("Egress priority maps [none]"),
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_vlan_egress_priority_map,
-			.set_fcn =                  _set_fcn_vlan_egress_priority_map,
-			.remove_fcn =               _remove_fcn_vlan_egress_priority_map,
+			.get_fcn =                  _get_fcn_vlan_xgress_priority_map,
+			.set_fcn =                  _set_fcn_vlan_xgress_priority_map,
+			.remove_fcn =               _remove_fcn_vlan_xgress_priority_map,
 		),
 	),
 	NULL
