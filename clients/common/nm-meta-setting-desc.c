@@ -759,6 +759,12 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 			s_c = b ? "yes" : "no";
 		return s_c;
 	} else {
+		/* Note that we register certain transform functions in nmc_value_transforms_register().
+		 * This makes G_TYPE_STRV working.
+		 *
+		 * FIXME: that is particularly ugly because it's non-obvious which code relies
+		 * on nmc_value_transforms_register(). Also, nmc_value_transforms_register() is
+		 * in clients/cli, while we are here in clients/common. */
 		g_value_init (&val, G_TYPE_STRING);
 		g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
 		s = g_value_dup_string (&val);
