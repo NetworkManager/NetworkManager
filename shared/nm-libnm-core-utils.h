@@ -20,7 +20,37 @@
 
 /****************************************************************************/
 
+#include "nm-setting-connection.h"
+#include "nm-setting-ip-config.h"
+#include "nm-setting-sriov.h"
+#include "nm-setting-team.h"
 #include "nm-setting-vlan.h"
+#include "nm-setting-wireguard.h"
+
+/****************************************************************************/
+
+#define nm_auto_unref_ip_address nm_auto (_nm_ip_address_unref)
+NM_AUTO_DEFINE_FCN0 (NMIPAddress *, _nm_ip_address_unref, nm_ip_address_unref)
+
+#define nm_auto_unref_ip_route nm_auto (_nm_auto_unref_ip_route)
+NM_AUTO_DEFINE_FCN0 (NMIPRoute *, _nm_auto_unref_ip_route, nm_ip_route_unref)
+
+#define nm_auto_unref_sriov_vf nm_auto (_nm_auto_unref_sriov_vf)
+NM_AUTO_DEFINE_FCN0 (NMSriovVF *, _nm_auto_unref_sriov_vf, nm_sriov_vf_unref)
+
+#define nm_auto_unref_tc_qdisc nm_auto (_nm_auto_unref_tc_qdisc)
+NM_AUTO_DEFINE_FCN0 (NMTCQdisc *, _nm_auto_unref_tc_qdisc, nm_tc_qdisc_unref)
+
+#define nm_auto_unref_tc_tfilter nm_auto (_nm_auto_unref_tc_tfilter)
+NM_AUTO_DEFINE_FCN0 (NMTCTfilter *, _nm_auto_unref_tc_tfilter, nm_tc_tfilter_unref)
+
+#define nm_auto_unref_team_link_watcher nm_auto (_nm_auto_unref_team_link_watcher)
+NM_AUTO_DEFINE_FCN0 (NMTeamLinkWatcher *, _nm_auto_unref_team_link_watcher, nm_team_link_watcher_unref)
+
+#define nm_auto_unref_wgpeer nm_auto (_nm_auto_unref_wgpeer)
+NM_AUTO_DEFINE_FCN0 (NMWireGuardPeer *, _nm_auto_unref_wgpeer, nm_wireguard_peer_unref)
+
+/****************************************************************************/
 
 static inline guint32
 nm_utils_vlan_priority_map_get_max_prio (NMVlanPriorityMap map, gboolean from)
