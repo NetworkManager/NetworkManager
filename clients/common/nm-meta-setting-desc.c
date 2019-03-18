@@ -3395,24 +3395,25 @@ _set_fcn_ip4_config_routes (ARGS_SET_FCN)
 }
 
 static gboolean
-_validate_and_remove_ipv4_route (NMSettingIPConfig *setting,
+_validate_and_remove_ip_route (NMSettingIPConfig *setting,
                                  const char *value,
                                  GError **error)
 {
 	nm_auto_unref_ip_route NMIPRoute *route = NULL;
+	int addr_family = nm_setting_ip_config_get_addr_family (NM_SETTING_IP_CONFIG (setting));
 
-	route = _parse_ip_route (AF_INET, value, error);
+	route = _parse_ip_route (addr_family, value, error);
 	if (!route)
 		return FALSE;
 
 	nm_setting_ip_config_remove_route_by_value (setting, route);
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ipv4_config_routes,
+DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ip_config_routes,
                                        NM_SETTING_IP_CONFIG,
                                        nm_setting_ip_config_get_num_routes,
                                        nm_setting_ip_config_remove_route,
-                                       _validate_and_remove_ipv4_route)
+                                       _validate_and_remove_ip_route)
 
 static gboolean
 _dns_options_is_default (NMSettingIPConfig *setting)
@@ -3483,26 +3484,6 @@ _set_fcn_ip6_config_routes (ARGS_SET_FCN)
 	}
 	return TRUE;
 }
-
-static gboolean
-_validate_and_remove_ipv6_route (NMSettingIPConfig *setting,
-                                 const char *value,
-                                 GError **error)
-{
-	nm_auto_unref_ip_route NMIPRoute *route = NULL;
-
-	route = _parse_ip_route (AF_INET6, value, error);
-	if (!route)
-		return FALSE;
-
-	nm_setting_ip_config_remove_route_by_value (setting, route);
-	return TRUE;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ipv6_config_routes,
-                                       NM_SETTING_IP_CONFIG,
-                                       nm_setting_ip_config_get_num_routes,
-                                       nm_setting_ip_config_remove_route,
-                                       _validate_and_remove_ipv6_route)
 
 static gconstpointer
 _get_fcn_match_interface_name (ARGS_GET_FCN)
@@ -5823,7 +5804,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_ip_config_routes,
 			.set_fcn =                  _set_fcn_ip4_config_routes,
-			.remove_fcn =               _remove_fcn_ipv4_config_routes,
+			.remove_fcn =               _remove_fcn_ip_config_routes,
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTE_METRIC, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_ROUTE_METRIC,
@@ -5991,7 +5972,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_ip_config_routes,
 			.set_fcn =                  _set_fcn_ip6_config_routes,
-			.remove_fcn =               _remove_fcn_ipv6_config_routes,
+			.remove_fcn =               _remove_fcn_ip_config_routes,
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTE_METRIC, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_ROUTE_METRIC,
