@@ -1715,14 +1715,9 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 	static gboolean \
 	def_func (ARGS_REMOVE_FCN) \
 	{ \
-		gboolean success = FALSE; \
-		if (value && *value) { \
-			success = rem_func (s_macro (setting), value); \
-			if (!success) \
-				g_set_error (error, 1, 0, _("invalid option '%s'"), value); \
-		} else \
-			g_set_error_literal (error, 1, 0, _("missing option")); \
-		return success; \
+		if (value && *value) \
+			rem_func (s_macro (setting), value); \
+		return TRUE; \
 	}
 
 #define DEFINE_ALLOWED_VAL_FUNC(def_func, valid_values) \
