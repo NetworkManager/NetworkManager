@@ -1631,6 +1631,30 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 	g_string_append_printf (ret_str, "%s = %s", key, value);
 }
 
+static const char *
+_multilist_do_validate (const NMMetaPropertyInfo *property_info,
+                        gboolean for_set /* else for remove */,
+                        NMSetting *setting,
+                        const char *item,
+                        GError **error)
+{
+	if (property_info->property_typ_data->values_static) {
+		nm_assert (!property_info->property_typ_data->subtype.multilist.validate_fcn);
+		return nmc_string_is_valid (item,
+		                            (const char **) property_info->property_typ_data->values_static,
+		                            error);
+	}
+	if (   property_info->property_typ_data->subtype.multilist.validate_fcn
+	    && !(  for_set
+	         ? property_info->property_typ_data->subtype.multilist.no_validate_add
+	         : property_info->property_typ_data->subtype.multilist.no_validate_remove_by_value)) {
+		return property_info->property_typ_data->subtype.multilist.validate_fcn (item,
+		                                                                         error);
+	}
+
+	return item;
+}
+
 static gboolean
 _set_fcn_multilist (ARGS_SET_FCN)
 {
@@ -1645,18 +1669,15 @@ _set_fcn_multilist (ARGS_SET_FCN)
 		for (i = 0; strv[i]; i++) {
 			const char *item = strv[i];
 
-			if (property_info->property_typ_data->values_static) {
-				item = nmc_string_is_valid (item,
-				                            (const char **) property_info->property_typ_data->values_static,
-				                            error);
-				if (!item)
-					return FALSE;
-			} else if (property_info->property_typ_data->subtype.multilist.validate_fcn) {
-				item = property_info->property_typ_data->subtype.multilist.validate_fcn (item,
-				                                                                         error);
-				if (!item)
-					return FALSE;
-			}
+			item = nm_str_skip_leading_spaces (item);
+			if (item[0] == '\0')
+				continue;
+
+			g_strchomp ((char *) item);
+
+			item = _multilist_do_validate (property_info, TRUE, setting, item, error);
+			if (!item)
+				return FALSE;
 
 			property_info->property_typ_data->subtype.multilist.add_fcn (setting, item);
 		}
@@ -1690,13 +1711,9 @@ _remove_fcn_multilist (ARGS_REMOVE_FCN)
 
 	value = nm_strstrip_avoid_copy (value, &value_to_free);
 
-	if (property_info->property_typ_data->values_static) {
-		value = nmc_string_is_valid (value,
-		                             (const char **) property_info->property_typ_data->values_static,
-		                             error);
-		if (!value)
-			return FALSE;
-	}
+	value = _multilist_do_validate (property_info, FALSE, setting, value, error);
+	if (!value)
+		return FALSE;
 
 	property_info->property_typ_data->subtype.multilist.remove_by_value_fcn (setting, value);
 	return TRUE;
@@ -5534,6 +5551,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns_search),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_search_by_value),
 				.validate_fcn =         _multilist_validate_fcn_is_domain,
+				.no_validate_remove_by_value = TRUE,
 			),
 		),
 	),
@@ -5709,6 +5727,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns_search),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_search_by_value),
 				.validate_fcn =         _multilist_validate_fcn_is_domain,
+				.no_validate_remove_by_value = TRUE,
 			),
 		),
 	),
