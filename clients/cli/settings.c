@@ -530,16 +530,11 @@ nmc_setting_set_property (NMClient *client,
 	if (!property_info->property_type->set_fcn)
 		goto out_fail_read_only;
 
-	if (modifier == '-') {
-		if (   value
-		    && property_info->property_type->remove_fcn) {
-			return property_info->property_type->remove_fcn (property_info,
-			                                                 nmc_meta_environment,
-			                                                 nmc_meta_environment_arg,
-			                                                 setting,
-			                                                 value,
-			                                                 error);
-		}
+	if (   modifier == '-'
+	    && !property_info->property_type->set_supports_remove) {
+		/* The property is a plain property. It does not support '-'.
+		 *
+		 * Maybe we should fail, but just return silently. */
 		return TRUE;
 	}
 

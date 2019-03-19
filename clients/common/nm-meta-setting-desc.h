@@ -212,12 +212,6 @@ struct _NMMetaPropertyType {
 	                     char modifier,
 	                     const char *value,
 	                     GError **error);
-	gboolean (*remove_fcn) (const NMMetaPropertyInfo *property_info,
-	                        const NMMetaEnvironment *environment,
-	                        gpointer environment_user_data,
-	                        NMSetting *setting,
-	                        const char *value,
-	                        GError **error);
 
 	const char *const*(*values_fcn) (const NMMetaPropertyInfo *property_info,
 	                                 char ***out_to_free);
@@ -228,6 +222,10 @@ struct _NMMetaPropertyType {
 	                                   const NMMetaOperationContext *operation_context,
 	                                   const char *text,
 	                                   char ***out_to_free);
+
+	/* Whether set_fcn() supports the '-' modifier. That is, whether the property
+	 * is a list type. */
+	bool set_supports_remove:1;
 };
 
 struct _NMUtilsEnumValueInfo;
@@ -307,13 +305,10 @@ struct _NMMetaPropertyTypData {
 			bool delimit_pretty_with_semicolon:1;
 		} objlist;
 		struct {
-			gboolean (*add_fcn) (NMSetting *setting,
+			gboolean (*set_fcn) (NMSetting *setting,
 			                     const char *option,
 			                     const char *value,
 			                     GError **error);
-			void (*add2_fcn)    (NMSetting *setting,
-			                     const char *option,
-			                     const char *value);
 			bool no_empty_value:1;
 		} optionlist;
 		struct {
