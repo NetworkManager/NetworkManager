@@ -1823,25 +1823,31 @@ _set_fcn_optionlist (ARGS_SET_FCN)
 	return TRUE;
 }
 
-#define DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
-	static gboolean \
-	def_func (ARGS_REMOVE_FCN) \
-	{ \
-		gs_free char *value_to_free = NULL; \
-		gint64 idx; \
-		gint64 num; \
-		\
-		idx = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT64, -1); \
-		if (idx != -1) { \
-			num = num_func (s_macro (setting)); \
-			if (idx < num) \
-				rem_func_idx (s_macro (setting), idx); \
-			return TRUE; \
-		} \
-		return rem_func_val (s_macro (setting), \
-		                     nm_strstrip_avoid_copy (value, &value_to_free), \
-		                     error); \
+static gboolean
+_remove_fcn_objlist (ARGS_REMOVE_FCN)
+{
+	gs_free char *value_to_free = NULL;
+	gint64 idx;
+	gint64 num;
+
+	idx = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT64, -1);
+	if (idx != -1) {
+		num = property_info->property_typ_data->subtype.objlist.get_num_fcn (setting);
+		if (idx < num) {
+			if (property_info->property_typ_data->subtype.objlist.remove_by_idx_fcn_u)
+				property_info->property_typ_data->subtype.objlist.remove_by_idx_fcn_u (setting, idx);
+			else
+				property_info->property_typ_data->subtype.objlist.remove_by_idx_fcn_s (setting, idx);
+		}
+		return TRUE;
 	}
+
+	value = nm_strstrip_avoid_copy (value, &value_to_free);
+
+	return property_info->property_typ_data->subtype.objlist.remove_by_value_fcn (setting,
+	                                                                              value,
+	                                                                              error);
+}
 
 static char *
 flag_values_to_string (GFlagsValue *array, guint n)
@@ -3098,9 +3104,9 @@ _objlist_add_fcn_ip_config_addresses (NMSetting *setting,
 }
 
 static gboolean
-_validate_and_remove_ip_address (NMSettingIPConfig *setting,
-                                 const char *value,
-                                 GError **error)
+_objlist_remove_by_value_fcn_ip_config_addresses (NMSetting *setting,
+                                                  const char *value,
+                                                  GError **error)
 {
 	nm_auto_unref_ip_address NMIPAddress *addr = NULL;
 	int addr_family = nm_setting_ip_config_get_addr_family (NM_SETTING_IP_CONFIG (setting));
@@ -3108,15 +3114,9 @@ _validate_and_remove_ip_address (NMSettingIPConfig *setting,
 	addr = _parse_ip_address (addr_family, value, error);
 	if (!addr)
 		return FALSE;
-
-	nm_setting_ip_config_remove_address_by_value (setting, addr);
+	nm_setting_ip_config_remove_address_by_value (NM_SETTING_IP_CONFIG (setting), addr);
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ip_config_addresses,
-                                       NM_SETTING_IP_CONFIG,
-                                       nm_setting_ip_config_get_num_addresses,
-                                       nm_setting_ip_config_remove_address,
-                                       _validate_and_remove_ip_address)
 
 static gboolean
 _set_fcn_ip_config_gateway (ARGS_SET_FCN)
@@ -3156,9 +3156,9 @@ _objlist_add_fcn_ip_config_routes (NMSetting *setting,
 }
 
 static gboolean
-_validate_and_remove_ip_route (NMSettingIPConfig *setting,
-                                 const char *value,
-                                 GError **error)
+_objlist_remove_by_value_fcn_ip_config_routes (NMSetting *setting,
+                                               const char *value,
+                                               GError **error)
 {
 	nm_auto_unref_ip_route NMIPRoute *route = NULL;
 	int addr_family = nm_setting_ip_config_get_addr_family (NM_SETTING_IP_CONFIG (setting));
@@ -3166,15 +3166,9 @@ _validate_and_remove_ip_route (NMSettingIPConfig *setting,
 	route = _parse_ip_route (addr_family, value, error);
 	if (!route)
 		return FALSE;
-
-	nm_setting_ip_config_remove_route_by_value (setting, route);
+	nm_setting_ip_config_remove_route_by_value (NM_SETTING_IP_CONFIG (setting), route);
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ip_config_routes,
-                                       NM_SETTING_IP_CONFIG,
-                                       nm_setting_ip_config_get_num_routes,
-                                       nm_setting_ip_config_remove_route,
-                                       _validate_and_remove_ip_route)
 
 static gboolean
 _is_default_func_ip_config_dns_options (NMSetting *setting)
@@ -3323,44 +3317,32 @@ _objlist_add_fcn_tc_config_qdiscs (NMSetting *setting,
 }
 
 static gboolean
-_validate_and_remove_sriov_vf (NMSettingSriov *setting,
-                               const char *value,
-                               GError **error)
+_objlist_remove_by_value_fcn_sriov_vfs (NMSetting *setting,
+                                        const char *value,
+                                        GError **error)
 {
 	nm_auto_unref_sriov_vf NMSriovVF *vf = NULL;
 
 	vf = nm_utils_sriov_vf_from_str (value, error);
 	if (!vf)
 		return FALSE;
-
-	nm_setting_sriov_remove_vf_by_index (setting, nm_sriov_vf_get_index (vf));
+	nm_setting_sriov_remove_vf_by_index (NM_SETTING_SRIOV (setting), nm_sriov_vf_get_index (vf));
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_sriov_vfs,
-                                       NM_SETTING_SRIOV,
-                                       nm_setting_sriov_get_num_vfs,
-                                       nm_setting_sriov_remove_vf,
-                                       _validate_and_remove_sriov_vf)
 
 static gboolean
-_validate_and_remove_tc_qdisc (NMSettingTCConfig *setting,
-                               const char *value,
-                               GError **error)
+_objlist_remove_by_value_fcn_tc_config_qdiscs (NMSetting *setting,
+                                               const char *value,
+                                               GError **error)
 {
 	nm_auto_unref_tc_qdisc NMTCQdisc *qdisc = NULL;
 
 	qdisc = nm_utils_tc_qdisc_from_str (value, error);
 	if (!qdisc)
 		return FALSE;
-
-	nm_setting_tc_config_remove_qdisc_by_value (setting, qdisc);
+	nm_setting_tc_config_remove_qdisc_by_value (NM_SETTING_TC_CONFIG (setting), qdisc);
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_tc_config_qdiscs,
-                                       NM_SETTING_TC_CONFIG,
-                                       nm_setting_tc_config_get_num_qdiscs,
-                                       nm_setting_tc_config_remove_qdisc,
-                                       _validate_and_remove_tc_qdisc)
 
 static void
 _objlist_obj_to_str_fcn_tc_config_tfilters (NMMetaAccessorGetType get_type,
@@ -3398,24 +3380,18 @@ _objlist_add_fcn_tc_config_tfilters (NMSetting *setting,
 }
 
 static gboolean
-_validate_and_remove_tc_tfilter (NMSettingTCConfig *setting,
-                               const char *value,
-                               GError **error)
+_objlist_remove_by_value_fcn_tc_config_tfilters (NMSetting *setting,
+                                                 const char *value,
+                                                 GError **error)
 {
 	nm_auto_unref_tc_tfilter NMTCTfilter *tfilter = NULL;
 
 	tfilter = nm_utils_tc_tfilter_from_str (value, error);
 	if (!tfilter)
 		return FALSE;
-
-	nm_setting_tc_config_remove_tfilter_by_value (setting, tfilter);
+	nm_setting_tc_config_remove_tfilter_by_value (NM_SETTING_TC_CONFIG (setting), tfilter);
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_tc_config_tfilters,
-                                       NM_SETTING_TC_CONFIG,
-                                       nm_setting_tc_config_get_num_tfilters,
-                                       nm_setting_tc_config_remove_tfilter,
-                                       _validate_and_remove_tc_tfilter)
 
 static const char *
 _validate_fcn_team_config (const char *value, char **out_to_free, GError **error)
@@ -3487,44 +3463,32 @@ _objlist_add_fcn_team_port_link_watchers (NMSetting *setting,
 }
 
 static gboolean
-_validate_and_remove_team_link_watcher (NMSettingTeam *setting,
-                                        const char *value,
-                                        GError **error)
+_objlist_remove_by_value_fcn_team_link_watchers (NMSetting *setting,
+                                                 const char *value,
+                                                 GError **error)
 {
 	nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher = NULL;
 
 	watcher = _parse_team_link_watcher (value, error);
 	if (!watcher)
 		return FALSE;
-
-	nm_setting_team_remove_link_watcher_by_value (setting, watcher);
+	nm_setting_team_remove_link_watcher_by_value (NM_SETTING_TEAM (setting), watcher);
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_team_link_watchers,
-                                       NM_SETTING_TEAM,
-                                       nm_setting_team_get_num_link_watchers,
-                                       nm_setting_team_remove_link_watcher,
-                                       _validate_and_remove_team_link_watcher)
 
 static gboolean
-_validate_and_remove_team_port_link_watcher (NMSettingTeamPort *setting,
-                                             const char *value,
-                                             GError **error)
+_objlist_remove_by_value_fcn_team_port_link_watchers (NMSetting *setting,
+                                                      const char *value,
+                                                      GError **error)
 {
 	nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher = NULL;
 
 	watcher = _parse_team_link_watcher (value, error);
 	if (!watcher)
 		return FALSE;
-
-	nm_setting_team_port_remove_link_watcher_by_value (setting, watcher);
+	nm_setting_team_port_remove_link_watcher_by_value (NM_SETTING_TEAM_PORT (setting), watcher);
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_team_port_link_watchers,
-                                       NM_SETTING_TEAM_PORT,
-                                       nm_setting_team_port_get_num_link_watchers,
-                                       nm_setting_team_port_remove_link_watcher,
-                                       _validate_and_remove_team_port_link_watcher)
 
 static gconstpointer
 _get_fcn_vlan_flags (ARGS_GET_FCN)
@@ -4170,6 +4134,18 @@ static const NMMetaPropertyType _pt_ethtool = {
 	.complete_fcn =                 _complete_fcn_ethtool,
 };
 
+static const NMMetaPropertyType _pt_multilist = {
+	.get_fcn =                      _get_fcn_gobject,
+	.set_fcn =                      _set_fcn_multilist,
+	.remove_fcn =                   _remove_fcn_multilist,
+};
+
+static const NMMetaPropertyType _pt_objlist = {
+	.get_fcn =                  _get_fcn_objlist,
+	.set_fcn =                  _set_fcn_objlist,
+	.remove_fcn =               _remove_fcn_objlist,
+};
+
 #define MULTILIST_GET_NUM_FCN_U32(type, func)       (((func) == ((guint32  (*) (type *              )) (func))) ? ((guint32  (*) (NMSetting *              )) (func)) : NULL)
 #define MULTILIST_GET_NUM_FCN_U(type, func)         (((func) == ((guint    (*) (type *              )) (func))) ? ((guint    (*) (NMSetting *              )) (func)) : NULL)
 #define MULTILIST_ADD_FCN(type, func)               (((func) == ((gboolean (*) (type *, const char *)) (func))) ? ((gboolean (*) (NMSetting *, const char *)) (func)) : NULL)
@@ -4181,12 +4157,8 @@ static const NMMetaPropertyType _pt_ethtool = {
 
 #define OBJLIST_GET_NUM_FCN(type, func)             (((func) == ((guint    (*) (type *              )) (func))) ? ((guint    (*) (NMSetting *              )) (func)) : NULL)
 #define OBJLIST_CLEAR_ALL_FCN(type, func)           (((func) == ((void     (*) (type *              )) (func))) ? ((void     (*) (NMSetting *              )) (func)) : NULL)
-
-static const NMMetaPropertyType _pt_multilist = {
-	.get_fcn =                      _get_fcn_gobject,
-	.set_fcn =                      _set_fcn_multilist,
-	.remove_fcn =                   _remove_fcn_multilist,
-};
+#define OBJLIST_REMOVE_BY_IDX_FCN_U(type, func)     (((func) == ((void     (*) (type *, guint       )) (func))) ? ((void     (*) (NMSetting *, guint       )) (func)) : NULL)
+#define OBJLIST_REMOVE_BY_IDX_FCN_S(type, func)     (((func) == ((void     (*) (type *, int         )) (func))) ? ((void     (*) (NMSetting *, int         )) (func)) : NULL)
 
 #define OPTIONLIST_ADD2_FCN(type, func)             (((func) == ((void (*) (type *, const char *, const char *)) (func))) ? ((void (*) (NMSetting *, const char *, const char *)) (func)) : NULL)
 
@@ -5279,17 +5251,15 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		       "  ip[/prefix], ip[/prefix],...\n"
 		       "Missing prefix is regarded as prefix of 32.\n\n"
 		       "Example: 192.168.1.5/24, 10.0.0.11/24\n"),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_objlist,
-			.set_fcn =                  _set_fcn_objlist,
-			.remove_fcn =               _remove_fcn_ip_config_addresses,
-		),
+		.property_type =                &_pt_objlist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_addresses),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingIPConfig, nm_setting_ip_config_clear_addresses),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_addresses,
 				.add_fcn =              _objlist_add_fcn_ip_config_addresses,
+				.remove_by_idx_fcn_s =  OBJLIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_address),
+				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_ip_config_addresses,
 			),
 		),
 	),
@@ -5311,17 +5281,15 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		       "Missing metric means default (NM/kernel will set a default value).\n\n"
 		       "Examples: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 		       "          10.1.2.0/24\n"),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_objlist,
-			.set_fcn =                  _set_fcn_objlist,
-			.remove_fcn =               _remove_fcn_ip_config_routes,
-		),
+		.property_type =                &_pt_objlist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_routes),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingIPConfig, nm_setting_ip_config_clear_routes),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routes,
 				.add_fcn =              _objlist_add_fcn_ip_config_routes,
+				.remove_by_idx_fcn_s =  OBJLIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_route),
+				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_ip_config_routes,
 				.delimit_pretty_with_semicolon = TRUE,
 			),
 		),
@@ -5477,17 +5445,15 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		       "  ip[/prefix], ip[/prefix],...\n"
 		       "Missing prefix is regarded as prefix of 128.\n\n"
 		       "Example: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_objlist,
-			.set_fcn =                  _set_fcn_objlist,
-			.remove_fcn =               _remove_fcn_ip_config_addresses,
-		),
+		.property_type =                &_pt_objlist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_addresses),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingIPConfig, nm_setting_ip_config_clear_addresses),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_addresses,
 				.add_fcn =              _objlist_add_fcn_ip_config_addresses,
+				.remove_by_idx_fcn_s =  OBJLIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_address),
+				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_ip_config_addresses,
 			),
 		),
 	),
@@ -5509,17 +5475,15 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		       "Missing metric means default (NM/kernel will set a default value).\n\n"
 		       "Examples: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:db8:beef::3 2\n"
 		       "          abbe::/64 55\n"),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_objlist,
-			.set_fcn =                  _set_fcn_objlist,
-			.remove_fcn =               _remove_fcn_ip_config_routes,
-		),
+		.property_type =                &_pt_objlist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_routes),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingIPConfig, nm_setting_ip_config_clear_routes),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routes,
 				.add_fcn =              _objlist_add_fcn_ip_config_routes,
+				.remove_by_idx_fcn_s =  OBJLIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_route),
+				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_ip_config_routes,
 				.delimit_pretty_with_semicolon = TRUE,
 			),
 		),
@@ -6097,17 +6061,15 @@ static const NMMetaPropertyInfo *const property_infos_SRIOV[] = {
 		.property_type =                &_pt_gobject_int,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_SRIOV_VFS,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_objlist,
-			.set_fcn =                  _set_fcn_objlist,
-			.remove_fcn =               _remove_fcn_sriov_vfs,
-		),
+		.property_type =                &_pt_objlist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingSriov, nm_setting_sriov_get_num_vfs),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingSriov, nm_setting_sriov_clear_vfs),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_sriov_vfs,
 				.add_fcn =              _objlist_add_fcn_sriov_vfs,
+				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingSriov, nm_setting_sriov_remove_vf),
+				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_sriov_vfs,
 			),
 		),
 	),
@@ -6121,32 +6083,28 @@ static const NMMetaPropertyInfo *const property_infos_SRIOV[] = {
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_TC_CONFIG
 static const NMMetaPropertyInfo *const property_infos_TC_CONFIG[] = {
 	PROPERTY_INFO (NM_SETTING_TC_CONFIG_QDISCS, DESCRIBE_DOC_NM_SETTING_TC_CONFIG_QDISCS,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_objlist,
-			.set_fcn =                  _set_fcn_objlist,
-			.remove_fcn =               _remove_fcn_tc_config_qdiscs,
-		),
+		.property_type =                &_pt_objlist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTCConfig, nm_setting_tc_config_get_num_qdiscs),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingTCConfig, nm_setting_tc_config_clear_qdiscs),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_tc_config_qdiscs,
 				.add_fcn =              _objlist_add_fcn_tc_config_qdiscs,
+				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingTCConfig, nm_setting_tc_config_remove_qdisc),
+				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_tc_config_qdiscs,
 			),
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_TC_CONFIG_TFILTERS, DESCRIBE_DOC_NM_SETTING_TC_CONFIG_TFILTERS,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_objlist,
-			.set_fcn =                  _set_fcn_objlist,
-			.remove_fcn =               _remove_fcn_tc_config_tfilters,
-		),
+		.property_type =                &_pt_objlist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTCConfig, nm_setting_tc_config_get_num_tfilters),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingTCConfig, nm_setting_tc_config_clear_tfilters),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_tc_config_tfilters,
 				.add_fcn =              _objlist_add_fcn_tc_config_tfilters,
+				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingTCConfig, nm_setting_tc_config_remove_tfilter),
+				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_tc_config_tfilters,
 			),
 		),
 	),
@@ -6300,17 +6258,15 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_LINK_WATCHERS,
 		.describe_message =             TEAM_LINK_WATCHERS_DESCRIBE_MESSAGE,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_objlist,
-			.set_fcn =                  _set_fcn_objlist,
-			.remove_fcn =               _remove_fcn_team_link_watchers,
-		),
+		.property_type =                &_pt_objlist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTeam, nm_setting_team_get_num_link_watchers),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingTeam, nm_setting_team_clear_link_watchers),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_team_link_watchers,
 				.add_fcn =              _objlist_add_fcn_team_link_watchers,
+				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingTeam, nm_setting_team_remove_link_watcher),
+				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_team_link_watchers,
 			),
 		),
 	),
@@ -6379,17 +6335,15 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_PORT_LINK_WATCHERS,
 		.describe_message =             TEAM_LINK_WATCHERS_DESCRIBE_MESSAGE,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_objlist,
-			.set_fcn =                  _set_fcn_objlist,
-			.remove_fcn =               _remove_fcn_team_port_link_watchers,
-		),
+		.property_type =                &_pt_objlist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTeamPort, nm_setting_team_port_get_num_link_watchers),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingTeamPort, nm_setting_team_port_clear_link_watchers),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_team_port_link_watchers,
 				.add_fcn =              _objlist_add_fcn_team_port_link_watchers,
+				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingTeamPort, nm_setting_team_port_remove_link_watcher),
+				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_team_port_link_watchers,
 			),
 		),
 	),
