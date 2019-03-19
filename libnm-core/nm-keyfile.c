@@ -1522,16 +1522,16 @@ static void
 qdisc_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
 	const char *setting_name = nm_setting_get_name (setting);
-	GPtrArray *qdiscs;
+	gs_unref_ptrarray GPtrArray *qdiscs = NULL;
 	gs_strfreev char **keys = NULL;
 	gsize n_keys = 0;
 	int i;
 
-	qdiscs = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_qdisc_unref);
-
 	keys = nm_keyfile_plugin_kf_get_keys (info->keyfile, setting_name, &n_keys, NULL);
 	if (n_keys == 0)
 		return;
+
+	qdiscs = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_qdisc_unref);
 
 	for (i = 0; i < n_keys; i++) {
 		NMTCQdisc *qdisc;
@@ -1562,24 +1562,22 @@ qdisc_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 
 	if (qdiscs->len >= 1)
 		g_object_set (setting, key, qdiscs, NULL);
-
-	g_ptr_array_unref (qdiscs);
 }
 
 static void
 tfilter_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
 	const char *setting_name = nm_setting_get_name (setting);
-	GPtrArray *tfilters;
+	gs_unref_ptrarray GPtrArray *tfilters = NULL;
 	gs_strfreev char **keys = NULL;
 	gsize n_keys = 0;
 	int i;
 
-	tfilters = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_tfilter_unref);
-
 	keys = nm_keyfile_plugin_kf_get_keys (info->keyfile, setting_name, &n_keys, NULL);
 	if (n_keys == 0)
 		return;
+
+	tfilters = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_tfilter_unref);
 
 	for (i = 0; i < n_keys; i++) {
 		NMTCTfilter *tfilter;
@@ -1610,8 +1608,6 @@ tfilter_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 
 	if (tfilters->len >= 1)
 		g_object_set (setting, key, tfilters, NULL);
-
-	g_ptr_array_unref (tfilters);
 }
 
 /*****************************************************************************/
