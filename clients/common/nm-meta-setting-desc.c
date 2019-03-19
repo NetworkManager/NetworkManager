@@ -1667,13 +1667,15 @@ static gboolean
 _set_fcn_multilist (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
-	gsize i;
+	gsize i, j;
 
 	if (_SET_FCN_DO_RESET_DEFAULT (value))
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
 	if (strv) {
+
+		j = 0;
 		for (i = 0; strv[i]; i++) {
 			const char *item = strv[i];
 
@@ -1687,8 +1689,12 @@ _set_fcn_multilist (ARGS_SET_FCN)
 			if (!item)
 				return FALSE;
 
-			property_info->property_typ_data->subtype.multilist.add_fcn (setting, item);
+			strv[j++] = item;
 		}
+		strv[j] = NULL;
+
+		for (i = 0; strv[i]; i++)
+			property_info->property_typ_data->subtype.multilist.add_fcn (setting, strv[i]);
 	}
 	return TRUE;
 }
