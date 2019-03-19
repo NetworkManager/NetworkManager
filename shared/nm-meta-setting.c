@@ -82,6 +82,7 @@ const NMSetting8021xSchemeVtable nm_setting_8021x_scheme_vtable[] = {
 		.uri_func               = nm_setting_802_1x_get_ca_cert_uri,
 		.passwd_func            = nm_setting_802_1x_get_ca_cert_password,
 		.pwflag_func            = nm_setting_802_1x_get_ca_cert_password_flags,
+		.set_cert_func          = nm_setting_802_1x_set_ca_cert,
 		.file_suffix            = "ca-cert",
 	},
 
@@ -94,6 +95,7 @@ const NMSetting8021xSchemeVtable nm_setting_8021x_scheme_vtable[] = {
 		.uri_func               = nm_setting_802_1x_get_phase2_ca_cert_uri,
 		.passwd_func            = nm_setting_802_1x_get_phase2_ca_cert_password,
 		.pwflag_func            = nm_setting_802_1x_get_phase2_ca_cert_password_flags,
+		.set_cert_func          = nm_setting_802_1x_set_phase2_ca_cert,
 		.file_suffix            = "inner-ca-cert",
 	},
 
@@ -106,6 +108,7 @@ const NMSetting8021xSchemeVtable nm_setting_8021x_scheme_vtable[] = {
 		.uri_func               = nm_setting_802_1x_get_client_cert_uri,
 		.passwd_func            = nm_setting_802_1x_get_client_cert_password,
 		.pwflag_func            = nm_setting_802_1x_get_client_cert_password_flags,
+		.set_cert_func          = nm_setting_802_1x_set_client_cert,
 		.file_suffix            = "client-cert",
 	},
 
@@ -118,6 +121,7 @@ const NMSetting8021xSchemeVtable nm_setting_8021x_scheme_vtable[] = {
 		.uri_func               = nm_setting_802_1x_get_phase2_client_cert_uri,
 		.passwd_func            = nm_setting_802_1x_get_phase2_client_cert_password,
 		.pwflag_func            = nm_setting_802_1x_get_phase2_client_cert_password_flags,
+		.set_cert_func          = nm_setting_802_1x_set_phase2_client_cert,
 		.file_suffix            = "inner-client-cert",
 	},
 
@@ -130,7 +134,9 @@ const NMSetting8021xSchemeVtable nm_setting_8021x_scheme_vtable[] = {
 		.uri_func               = nm_setting_802_1x_get_private_key_uri,
 		.passwd_func            = nm_setting_802_1x_get_private_key_password,
 		.pwflag_func            = nm_setting_802_1x_get_private_key_password_flags,
+		.set_private_key_func   = nm_setting_802_1x_set_private_key,
 		.file_suffix            = "private-key",
+		.is_secret              = TRUE,
 	},
 
 	[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY] = {
@@ -142,7 +148,9 @@ const NMSetting8021xSchemeVtable nm_setting_8021x_scheme_vtable[] = {
 		.uri_func               = nm_setting_802_1x_get_phase2_private_key_uri,
 		.passwd_func            = nm_setting_802_1x_get_phase2_private_key_password,
 		.pwflag_func            = nm_setting_802_1x_get_phase2_private_key_password_flags,
+		.set_private_key_func   = nm_setting_802_1x_set_phase2_private_key,
 		.file_suffix            = "inner-private-key",
+		.is_secret              = TRUE,
 	},
 
 	[NM_SETTING_802_1X_SCHEME_TYPE_UNKNOWN] = { NULL },
