@@ -2146,69 +2146,6 @@ _get_fcn_gobject_bytes (ARGS_GET_FCN)
 }
 
 static gconstpointer
-_get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
-{
-	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	char *key_str = NULL;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	switch (nm_setting_802_1x_get_phase2_private_key_scheme (s_8021X)) {
-	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		if (NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
-			key_str = bytes_to_string (nm_setting_802_1x_get_phase2_private_key_blob (s_8021X));
-		else
-			return _get_text_hidden (get_type);
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_PATH:
-		key_str = g_strdup (nm_setting_802_1x_get_phase2_private_key_path (s_8021X));
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
-		key_str = g_strdup (nm_setting_802_1x_get_phase2_private_key_uri (s_8021X));
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
-		break;
-	}
-
-	NM_SET_OUT (out_is_default, !key_str || !key_str[0]);
-	RETURN_STR_TO_FREE (key_str);
-}
-
-#define DEFINE_SETTER_PRIV_KEY(def_func, pwd_func, set_func) \
-	static gboolean \
-	def_func (ARGS_SET_FCN) \
-	{ \
-		gs_free char *path = NULL; \
-		gs_free char *password_free = NULL; \
-		char *password; \
-		NMSetting8021xCKScheme scheme = NM_SETTING_802_1X_CK_SCHEME_PATH; \
-		\
-		if (_SET_FCN_DO_RESET_DEFAULT (value)) \
-			return _gobject_property_reset_default (setting, property_info->property_name); \
-		\
-		value = nm_str_skip_leading_spaces (value); \
-		\
-		if (strncmp (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11)) == 0) \
-			scheme = NM_SETTING_802_1X_CK_SCHEME_PKCS11; \
-		else if (strncmp (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0) \
-			value += NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH); \
-		\
-		path = g_strdup (value); \
-		password = path + strcspn (path, " \t"); \
-		if (password[0] != '\0') { \
-			password[0] = '\0'; \
-			while (nm_utils_is_separator (password[0])) \
-				password++; \
-		} else \
-			password = password_free = g_strdup (pwd_func (NM_SETTING_802_1X (setting))); \
-		return set_func (NM_SETTING_802_1X (setting), path, password, scheme, NULL, error); \
-	}
-
-DEFINE_SETTER_PRIV_KEY (_set_fcn_802_1x_phase2_private_key,
-                        nm_setting_802_1x_get_phase2_private_key_password,
-                        nm_setting_802_1x_set_phase2_private_key)
-
-static gconstpointer
 _get_fcn_bond_options (ARGS_GET_FCN)
 {
 	NMSettingBond *s_bond = NM_SETTING_BOND (setting);
@@ -4895,9 +4832,9 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 		       "  [file://]<file path> [<password>]\n"
 		       "Note that nmcli does not support specifying private key as raw blob data.\n"
 		       "Example: /home/cimrman/jara-priv-key Dardanely\n"),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_802_1x_phase2_private_key,
-			.set_fcn =                  _set_fcn_802_1x_phase2_private_key,
+		.property_type =                &_pt_cert_8021x,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (cert_8021x,
+			.scheme_type =              NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD,
