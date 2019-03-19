@@ -1820,31 +1820,6 @@ _set_fcn_optionlist (ARGS_SET_FCN)
 #define DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
 	DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (def_func, s_macro, num_func, rem_func_idx, rem_func_val)
 
-#define DEFINE_SETTER_MAC_BLACKLIST(def_func, s_macro, add_func) \
-	static gboolean \
-	def_func (ARGS_SET_FCN) \
-	{ \
-		guint8 buf[32]; \
-		gs_free const char **strv = NULL; \
-		const char *const*iter; \
-		\
-		if (_SET_FCN_DO_RESET_DEFAULT (value)) \
-			return _gobject_property_reset_default (setting, property_info->property_name); \
-		\
-		strv = nm_utils_strsplit_set (value, " \t,", FALSE); \
-		for (iter = strv; strv && *iter; iter++) { \
-			if (!nm_utils_hwaddr_aton (*iter, buf, ETH_ALEN)) { \
-				g_set_error (error, 1, 0, _("'%s' is not a valid MAC"), *iter); \
-				return FALSE; \
-			} \
-		} \
-		\
-		for (iter = strv; strv && *iter; iter++) \
-			add_func (s_macro (setting), *iter); \
-		\
-		return TRUE; \
-	}
-
 static gboolean
 verify_string_list (const char *const*strv,
                     const char *prop,
@@ -4117,9 +4092,39 @@ _remove_fcn_vpn_secrets (ARGS_REMOVE_FCN)
 	return TRUE;
 }
 
-DEFINE_SETTER_MAC_BLACKLIST (_set_fcn_wired_mac_address_blacklist,
-                             NM_SETTING_WIRED,
-                             nm_setting_wired_add_mac_blacklist_item)
+static gboolean
+_set_fcn_xxx_mac_address_blacklist (ARGS_SET_FCN)
+{
+	gs_free const char **strv = NULL;
+
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
+
+	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
+	if (strv) {
+		gboolean is_wifi;
+		gsize i;
+
+		for (i = 0; strv[i]; i++) {
+			guint8 buf[ETH_ALEN];
+
+			if (!nm_utils_hwaddr_aton (strv[i], buf, ETH_ALEN)) {
+				g_set_error (error, 1, 0, _("'%s' is not a valid MAC"), strv[i]);
+				return FALSE;
+			}
+		}
+
+		is_wifi = NM_IS_SETTING_WIRELESS (setting);
+
+		for (i = 0; strv[i]; i++) {
+			if (is_wifi)
+				nm_setting_wireless_add_mac_blacklist_item (NM_SETTING_WIRELESS (setting), strv[i]);
+			else
+				nm_setting_wired_add_mac_blacklist_item (NM_SETTING_WIRED (setting), strv[i]);
+		}
+	}
+	return TRUE;
+}
 
 static gboolean
 _validate_and_remove_wired_mac_blacklist_item (NMSettingWired *setting,
@@ -4247,10 +4252,6 @@ _set_fcn_wireless_channel (ARGS_SET_FCN)
 	g_object_set (setting, property_info->property_name, chan_int, NULL);
 	return TRUE;
 }
-
-DEFINE_SETTER_MAC_BLACKLIST (_set_fcn_wireless_mac_address_blacklist,
-                             NM_SETTING_WIRELESS,
-                             nm_setting_wireless_add_mac_blacklist_item)
 
 static gboolean
 _validate_and_remove_wifi_mac_blacklist_item (NMSettingWireless *setting,
@@ -7062,7 +7063,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST,
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_wired_mac_address_blacklist,
+			.set_fcn =                  _set_fcn_xxx_mac_address_blacklist,
 			.remove_fcn =               _remove_fcn_wired_mac_address_blacklist,
 		),
 	),
@@ -7230,7 +7231,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST,
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_wireless_mac_address_blacklist,
+			.set_fcn =                  _set_fcn_xxx_mac_address_blacklist,
 			.remove_fcn =               _remove_fcn_wireless_mac_address_blacklist,
 		),
 	),
