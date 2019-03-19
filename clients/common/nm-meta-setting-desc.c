@@ -3103,30 +3103,18 @@ DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (_remove_fcn_ip_config_dns,
                                           _validate_and_remove_ip_dns)
 
 static gboolean
-_set_fcn_ip_config_dns_options (ARGS_SET_FCN)
+_multilist_add_fcn_ip_config_dns_options (NMSetting *setting,
+                                          const char *item)
 {
-	gs_free const char **strv = NULL;
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
-	gsize i;
 
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
-	if (strv) {
-		for (i = 0; strv[i]; i++) {
-			nm_setting_ip_config_remove_dns_option_by_value (s_ip, strv[i]);
-			nm_setting_ip_config_add_dns_option (s_ip, strv[i]);
-		}
+	if (!nm_setting_ip_config_add_dns_option (s_ip, item)) {
+		/* maybe it failed, because the element already existed. *sigh*. */
+		nm_setting_ip_config_remove_dns_option_by_value (s_ip, item);
+		return nm_setting_ip_config_add_dns_option (s_ip, item);
 	}
 	return TRUE;
 }
-
-DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_ip_config_dns_options,
-                                      NM_SETTING_IP_CONFIG,
-                                      nm_setting_ip_config_get_num_dns_options,
-                                      nm_setting_ip_config_remove_dns_option,
-                                      nm_setting_ip_config_remove_dns_option_by_value)
 
 static gboolean
 _set_fcn_ip_config_addresses (ARGS_SET_FCN)
@@ -5550,12 +5538,14 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_OPTIONS, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DNS_OPTIONS,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_ip_config_dns_options,
-			.remove_fcn =               _remove_fcn_ip_config_dns_options,
-		),
+		.property_type =                &_pt_multilist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn_u =        MULTILIST_GET_NUM_FCN_U       (NMSettingIPConfig, nm_setting_ip_config_get_num_dns_options),
+				.add_fcn =              _multilist_add_fcn_ip_config_dns_options,
+				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns_option),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_option_by_value),
+			),
 			.is_default_fcn =           _is_default_func_ip_config_dns_options,
 		),
 	),
@@ -5723,12 +5713,14 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_OPTIONS, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DNS_OPTIONS,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_ip_config_dns_options,
-			.remove_fcn =               _remove_fcn_ip_config_dns_options,
-		),
+		.property_type =                &_pt_multilist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn_u =        MULTILIST_GET_NUM_FCN_U       (NMSettingIPConfig, nm_setting_ip_config_get_num_dns_options),
+				.add_fcn =              _multilist_add_fcn_ip_config_dns_options,
+				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns_option),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_option_by_value),
+			),
 			.is_default_fcn =           _is_default_func_ip_config_dns_options,
 		),
 	),
