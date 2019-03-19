@@ -517,12 +517,8 @@ nmc_setting_set_property (NMClient *client,
                           const char *value,
                           GError **error)
 {
-	nm_auto_unset_gvalue GValue gvalue_old = G_VALUE_INIT;
 	const NMMetaPropertyInfo *property_info;
 	gs_free char *value_to_free = NULL;
-	/* FIXME: any mentioning of GParamSpec only works for GObject base properties. That is
-	 * wrong, the property meta-data must handle all properties. */
-	GParamSpec *param_spec = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -562,47 +558,13 @@ nmc_setting_set_property (NMClient *client,
 		}
 	}
 
-	if (   modifier == '\0'
-	    || value == NULL) {
-		/* FIXME: reset the value. By default, "set_fcn" adds values (don't ask). */
-
-		param_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
-		if (param_spec) {
-			nm_auto_unset_gvalue GValue gvalue = G_VALUE_INIT;
-
-			/* get the current value, to restore it on failure below. */
-			g_value_init (&gvalue_old, G_PARAM_SPEC_VALUE_TYPE (param_spec));
-			g_object_get_property (G_OBJECT (setting), prop, &gvalue_old);
-		}
-
-		if (!property_info->property_type->set_fcn (property_info,
-		                                            nmc_meta_environment,
-		                                            nmc_meta_environment_arg,
-		                                            setting,
-		                                            NULL,
-		                                            error)) {
-			return FALSE;
-		}
-	}
-
-	if (value) {
-		if (!property_info->property_type->set_fcn (property_info,
-		                                            nmc_meta_environment,
-		                                            nmc_meta_environment_arg,
-		                                            setting,
-		                                            value,
-		                                            error)) {
-			if (   modifier == '\0'
-			    && param_spec) {
-				/* restore the previous value. */
-				g_object_set_property (G_OBJECT (setting), prop, &gvalue_old);
-			}
-
-			return FALSE;
-		}
-	}
-
-	return TRUE;
+	return property_info->property_type->set_fcn (property_info,
+	                                              nmc_meta_environment,
+	                                              nmc_meta_environment_arg,
+	                                              setting,
+	                                              modifier,
+	                                              value,
+	                                              error);
 
 out_fail_read_only:
 	nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN, _("the property can't be changed"));

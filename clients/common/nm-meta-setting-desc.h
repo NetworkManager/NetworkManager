@@ -209,6 +209,7 @@ struct _NMMetaPropertyType {
 	                     const NMMetaEnvironment *environment,
 	                     gpointer environment_user_data,
 	                     NMSetting *setting,
+	                     char modifier,
 	                     const char *value,
 	                     GError **error);
 	gboolean (*remove_fcn) (const NMMetaPropertyInfo *property_info,
