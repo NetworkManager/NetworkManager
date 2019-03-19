@@ -291,6 +291,9 @@ struct _NMMetaPropertyTypData {
 			guint32 (*get_fcn) (NMSetting *setting);
 		} mtu;
 		struct {
+			NMSetting8021xSchemeType scheme_type;
+		} cert_8021x;
+		struct {
 			NMMetaPropertyTypeMacMode mode;
 		} mac;
 		struct {
