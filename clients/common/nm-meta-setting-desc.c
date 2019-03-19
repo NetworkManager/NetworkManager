@@ -1829,7 +1829,7 @@ _set_fcn_optionlist (ARGS_SET_FCN)
 		rem_func_cmd \
 	}
 
-#define DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
+#define DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
 	_DEFINE_REMOVER_INDEX_OR_VALUE (def_func, s_macro, num_func, rem_func_idx, { \
 		gs_free char *value_to_free = NULL; \
 		\
@@ -1854,9 +1854,6 @@ _set_fcn_optionlist (ARGS_SET_FCN)
 		rem_func_val (s_macro (setting), value); \
 		return TRUE; \
 	})
-
-#define DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
-	DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (def_func, s_macro, num_func, rem_func_idx, rem_func_val)
 
 static gboolean
 verify_string_list (const char *const*strv,
@@ -2527,42 +2524,20 @@ _complete_fcn_connection_master (ARGS_COMPLETE_FCN)
 	return (const char *const*) (*out_to_free = result);
 }
 
-static gboolean
-_set_fcn_connection_secondaries (ARGS_SET_FCN)
+static const char *
+_multilist_validate2_fcn_uuid (NMSetting *setting,
+                               const char *item,
+                               GError **error)
 {
-	gs_free const char **strv = NULL;
-	const char *const*iter;
-
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
-	if (strv) {
-		for (iter = strv; *iter; iter++)
-			nm_setting_connection_add_secondary (NM_SETTING_CONNECTION (setting), *iter);
-	}
-	return TRUE;
-}
-
-static gboolean
-_validate_and_remove_connection_secondary (NMSettingConnection *setting,
-                                           const char *secondary_uuid,
-                                           GError **error)
-{
-	if (!nm_utils_is_uuid (secondary_uuid)) {
+	if (!nm_utils_is_uuid (item)) {
 		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
-		                    _("the value '%s' is not a valid UUID"), secondary_uuid);
-		return FALSE;
+		                    _("the value '%s' is not a valid UUID"),
+		                    item);
+		return NULL;
 	}
 
-	nm_setting_connection_remove_secondary_by_value (setting, secondary_uuid);
-	return TRUE;
+	return item;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (_remove_fcn_connection_secondaries,
-                                          NM_SETTING_CONNECTION,
-                                          nm_setting_connection_get_num_secondaries,
-                                          nm_setting_connection_remove_secondary,
-                                          _validate_and_remove_connection_secondary)
 
 static gconstpointer
 _get_fcn_connection_metered (ARGS_GET_FCN)
@@ -5102,10 +5077,16 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 		       "VPNs as secondary connections at the moment.\n"
 		       "The items can be separated by commas or spaces.\n\n"
 		       "Example: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_connection_secondaries,
-			.remove_fcn =               _remove_fcn_connection_secondaries,
+		.property_type =                &_pt_multilist,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn_u32 =      MULTILIST_GET_NUM_FCN_U32     (NMSettingConnection, nm_setting_connection_get_num_secondaries),
+				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingConnection, nm_setting_connection_add_secondary),
+				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingConnection, nm_setting_connection_remove_secondary),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingConnection, nm_setting_connection_remove_secondary_by_value),
+				.validate2_fcn =        _multilist_validate2_fcn_uuid,
+				.no_validate_add =      TRUE,
+			),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT,
