@@ -507,15 +507,10 @@ nm_setting_wired_add_s390_option (NMSettingWired *setting,
                                   const char *key,
                                   const char *value)
 {
-	size_t value_len;
-
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
 	g_return_val_if_fail (key && key[0], FALSE);
 	g_return_val_if_fail (g_strv_contains (valid_s390_opts, key), FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
-
-	value_len = strlen (value);
-	g_return_val_if_fail (value_len > 0 && value_len < 200, FALSE);
 
 	g_hash_table_insert (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options,
 	                     g_strdup (key),
@@ -680,7 +675,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	g_hash_table_iter_init (&iter, priv->s390_options);
 	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value)) {
 		if (   !g_strv_contains (valid_s390_opts, key)
-		    || !strlen (value)
+		    || value[0] == '\0'
 		    || (strlen (value) > 200)) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
