@@ -1651,6 +1651,14 @@ _multilist_do_validate (const NMMetaPropertyInfo *property_info,
 		return property_info->property_typ_data->subtype.multilist.validate_fcn (item,
 		                                                                         error);
 	}
+	if (   property_info->property_typ_data->subtype.multilist.validate2_fcn
+	    && !(  for_set
+	         ? property_info->property_typ_data->subtype.multilist.no_validate_add
+	         : property_info->property_typ_data->subtype.multilist.no_validate_remove_by_value)) {
+		return property_info->property_typ_data->subtype.multilist.validate2_fcn (setting,
+		                                                                          item,
+		                                                                          error);
+	}
 
 	return item;
 }
@@ -3064,60 +3072,23 @@ _set_fcn_ip_config_method (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static gboolean
-_set_fcn_ip_config_dns (ARGS_SET_FCN)
+static const char *
+_multilist_validate2_fcn_ip_config_dns (NMSetting *setting,
+                                        const char *value,
+                                        GError **error)
 {
-	gs_free const char **strv = NULL;
-	const char *const*iter;
+	int addr_family = nm_setting_ip_config_get_addr_family (NM_SETTING_IP_CONFIG (setting));
 
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
-	if (strv) {
-		int addr_family = nm_setting_ip_config_get_addr_family (NM_SETTING_IP_CONFIG (setting));
-
-		for (iter = strv; *iter; iter++) {
-			const char *addr;
-
-			addr = g_strstrip ((char *) *iter);
-
-			if (!nm_utils_parse_inaddr (addr_family, addr, NULL)) {
-				nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
-				                    _("invalid IPv%c address '%s'"),
-				                    nm_utils_addr_family_to_char (addr_family),
-				                    addr);
-				return FALSE;
-			}
-			nm_setting_ip_config_add_dns (NM_SETTING_IP_CONFIG (setting), addr);
-		}
-	}
-	return TRUE;
-}
-
-static gboolean
-_validate_and_remove_ip_dns (NMSettingIPConfig *setting,
-                               const char *dns,
-                               GError **error)
-{
-	int addr_family = nm_setting_ip_config_get_addr_family (setting);
-
-	if (!nm_utils_parse_inaddr (addr_family, dns, NULL)) {
+	if (!nm_utils_parse_inaddr (addr_family, value, NULL)) {
 		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
 		                    _("invalid IPv%c address '%s'"),
 		                    nm_utils_addr_family_to_char (addr_family),
-		                    dns);
-		return FALSE;
+		                    value);
+		return NULL;
 	}
 
-	nm_setting_ip_config_remove_dns_by_value (setting, dns);
-	return TRUE;
+	return value;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (_remove_fcn_ip_config_dns,
-                                          NM_SETTING_IP_CONFIG,
-                                          nm_setting_ip_config_get_num_dns,
-                                          nm_setting_ip_config_remove_dns,
-                                          _validate_and_remove_ip_dns)
 
 static gboolean
 _multilist_add_fcn_ip_config_dns_options (NMSetting *setting,
@@ -5536,10 +5507,15 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		.describe_message =
 		    N_("Enter a list of IPv4 addresses of DNS servers.\n\n"
 		       "Example: 8.8.8.8, 8.8.4.4\n"),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_ip_config_dns,
-			.remove_fcn =               _remove_fcn_ip_config_dns,
+		.property_type =                &_pt_multilist,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn_u =        MULTILIST_GET_NUM_FCN_U       (NMSettingIPConfig, nm_setting_ip_config_get_num_dns),
+				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingIPConfig, nm_setting_ip_config_add_dns),
+				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_by_value),
+				.validate2_fcn =        _multilist_validate2_fcn_ip_config_dns,
+			),
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_SEARCH, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DNS_SEARCH,
@@ -5712,10 +5688,15 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		       "all other IPv6 configuration methods, these DNS "
 		       "servers are used as the only DNS servers for this connection.\n\n"
 		       "Example: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_ip_config_dns,
-			.remove_fcn =               _remove_fcn_ip_config_dns,
+		.property_type =                &_pt_multilist,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn_u =        MULTILIST_GET_NUM_FCN_U       (NMSettingIPConfig, nm_setting_ip_config_get_num_dns),
+				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingIPConfig, nm_setting_ip_config_add_dns),
+				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_by_value),
+				.validate2_fcn =        _multilist_validate2_fcn_ip_config_dns,
+			),
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_SEARCH, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DNS_SEARCH,
