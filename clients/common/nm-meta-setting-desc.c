@@ -2061,6 +2061,9 @@ _get_fcn_cert_8021x (ARGS_GET_FCN)
 
 	switch (vtable->scheme_func (s_8021X)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
+		if (   vtable->is_secret
+		    && !NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
+			return _get_text_hidden (get_type);
 		str = bytes_to_string (vtable->blob_func (s_8021X));
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
@@ -2140,35 +2143,6 @@ _get_fcn_gobject_bytes (ARGS_GET_FCN)
 	str = bytes_to_string (bytes);
 	NM_SET_OUT (out_is_default, !str || !str[0]);
 	RETURN_STR_TO_FREE (str);
-}
-
-static gconstpointer
-_get_fcn_802_1x_private_key (ARGS_GET_FCN)
-{
-	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	char *key_str = NULL;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	switch (nm_setting_802_1x_get_private_key_scheme (s_8021X)) {
-	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		if (NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
-			key_str = bytes_to_string (nm_setting_802_1x_get_private_key_blob (s_8021X));
-		else
-			return _get_text_hidden (get_type);
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_PATH:
-		key_str = g_strdup (nm_setting_802_1x_get_private_key_path (s_8021X));
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
-		key_str = g_strdup (nm_setting_802_1x_get_private_key_uri (s_8021X));
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
-		break;
-	}
-
-	NM_SET_OUT (out_is_default, !key_str || !key_str[0]);
-	RETURN_STR_TO_FREE (key_str);
 }
 
 static gconstpointer
@@ -4903,10 +4877,7 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 		       "  [file://]<file path> [<password>]\n"
 		       "Note that nmcli does not support specifying private key as raw blob data.\n"
 		       "Example: /home/cimrman/jara-priv-key Dardanely\n"),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_802_1x_private_key,
-			.set_fcn =                  _set_fcn_cert_8021x,
-		),
+		.property_type =                &_pt_cert_8021x,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (cert_8021x,
 			.scheme_type =              NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY,
 		),
