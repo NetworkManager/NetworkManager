@@ -282,6 +282,10 @@ struct _NMMetaPropertyTypData {
 			                     const char *option,
 			                     const char *value,
 			                     GError **error);
+			void (*add2_fcn)    (NMSetting *setting,
+			                     const char *option,
+			                     const char *value);
+			bool no_empty_value:1;
 		} optionlist;
 		struct {
 			guint32 (*get_fcn) (NMSetting *setting);

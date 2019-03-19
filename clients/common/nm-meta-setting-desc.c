@@ -1709,6 +1709,7 @@ _set_fcn_optionlist (ARGS_SET_FCN)
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; iter && *iter; iter++) {
 		const char *opt_name;
+		const char *opt_value;
 		char *left;
 		char *right;
 
@@ -1717,10 +1718,14 @@ _set_fcn_optionlist (ARGS_SET_FCN)
 		/* FIXME: support backslash escaping for the option list. */
 		right = strchr (left, '=');
 
-		if (!right) {
-			g_set_error (error, 1, 0, _("'%s' is not valid; use <option>=<value>"), *iter);
+		if (   !right
+		    || left == right) {
+			nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
+			                    _("'%s' is not valid; use <option>=<value>"),
+			                    left);
 			return FALSE;
 		}
+
 		*right++ = '\0';
 		right = nm_str_skip_leading_spaces (right);
 
@@ -1744,11 +1749,27 @@ _set_fcn_optionlist (ARGS_SET_FCN)
 		} else
 			opt_name = left;
 
-		if (!property_info->property_typ_data->subtype.optionlist.add_fcn (setting,
-		                                                                   opt_name,
-		                                                                   right,
-		                                                                   error))
+		opt_value = right;
+
+		if (   opt_value[0] == '\0'
+		    && property_info->property_typ_data->subtype.optionlist.no_empty_value) {
+			nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
+			                    _("cannot set empty \"%s\" option"),
+			                    opt_name);
 			return FALSE;
+		}
+
+		if (property_info->property_typ_data->subtype.optionlist.add_fcn) {
+			if (!property_info->property_typ_data->subtype.optionlist.add_fcn (setting,
+			                                                                   opt_name,
+			                                                                   opt_value,
+			                                                                   error))
+				return FALSE;
+		} else {
+			property_info->property_typ_data->subtype.optionlist.add2_fcn (setting,
+			                                                               opt_name,
+			                                                               opt_value);
+		}
 	}
 	return TRUE;
 }
@@ -4141,13 +4162,6 @@ _validate_vpn_hash_value (const char *option, const char *value, GError **error)
 	return value;
 }
 
-DEFINE_SETTER_OPTIONS (_set_fcn_vpn_data,
-                       NM_SETTING_VPN,
-                       NMSettingVpn,
-                       nm_setting_vpn_add_data_item,
-                       NULL,
-                       _validate_vpn_hash_value)
-
 static gboolean
 _remove_fcn_vpn_data (ARGS_REMOVE_FCN)
 {
@@ -4727,6 +4741,8 @@ static const NMMetaPropertyType _pt_multilist = {
 	.set_fcn =                      _set_fcn_multilist,
 	.remove_fcn =                   _remove_fcn_multilist,
 };
+
+#define OPTIONLIST_ADD2_FCN(type, func)             (((func) == ((void (*) (type *, const char *, const char *)) (func))) ? ((void (*) (NMSetting *, const char *, const char *)) (func)) : NULL)
 
 /*****************************************************************************/
 
@@ -6929,8 +6945,12 @@ static const NMMetaPropertyInfo *const property_infos_VPN[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_VPN_DATA,
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_vpn_data,
-			.set_fcn =                  _set_fcn_vpn_data,
+			.set_fcn =                  _set_fcn_optionlist,
 			.remove_fcn =               _remove_fcn_vpn_data,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (optionlist,
+			.add2_fcn =                 OPTIONLIST_ADD2_FCN (NMSettingVpn, nm_setting_vpn_add_data_item),
+			.no_empty_value =           TRUE,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_VPN_SECRETS,
