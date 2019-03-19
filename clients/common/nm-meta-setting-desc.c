@@ -2052,7 +2052,7 @@ _get_fcn_cert_8021x (ARGS_GET_FCN)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	const NMSetting8021xSchemeVtable *vtable;
-	char *ca_cert_str = NULL;
+	char *str = NULL;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
@@ -2060,20 +2060,20 @@ _get_fcn_cert_8021x (ARGS_GET_FCN)
 
 	switch (vtable->scheme_func (s_8021X)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		ca_cert_str = bytes_to_string (vtable->blob_func (s_8021X));
+		str = bytes_to_string (vtable->blob_func (s_8021X));
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
-		ca_cert_str = g_strdup (vtable->path_func (s_8021X));
+		str = g_strdup (vtable->path_func (s_8021X));
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
-		ca_cert_str = g_strdup (vtable->uri_func (s_8021X));
+		str = g_strdup (vtable->uri_func (s_8021X));
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
 		break;
 	}
 
-	NM_SET_OUT (out_is_default, !ca_cert_str || !ca_cert_str[0]);
-	RETURN_STR_TO_FREE (ca_cert_str);
+	NM_SET_OUT (out_is_default, !str || !str[0]);
+	RETURN_STR_TO_FREE (str);
 }
 
 static gboolean
@@ -2100,90 +2100,6 @@ _set_fcn_cert_8021x (ARGS_SET_FCN)
 	                              scheme,
 	                              NULL,
 	                              error);
-}
-
-static gconstpointer
-_get_fcn_802_1x_client_cert (ARGS_GET_FCN)
-{
-	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	char *cert_str = NULL;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	switch (nm_setting_802_1x_get_client_cert_scheme (s_8021X)) {
-	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		if (NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
-			cert_str = bytes_to_string (nm_setting_802_1x_get_client_cert_blob (s_8021X));
-		else
-			return _get_text_hidden (get_type);
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_PATH:
-		cert_str = g_strdup (nm_setting_802_1x_get_client_cert_path (s_8021X));
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
-		cert_str = g_strdup (nm_setting_802_1x_get_client_cert_uri (s_8021X));
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
-		break;
-	}
-
-	NM_SET_OUT (out_is_default, !cert_str || !cert_str[0]);
-	RETURN_STR_TO_FREE (cert_str);
-}
-
-static gconstpointer
-_get_fcn_802_1x_phase2_ca_cert (ARGS_GET_FCN)
-{
-	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	char *phase2_ca_cert_str = NULL;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	switch (nm_setting_802_1x_get_phase2_ca_cert_scheme (s_8021X)) {
-	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		phase2_ca_cert_str = bytes_to_string (nm_setting_802_1x_get_phase2_ca_cert_blob (s_8021X));
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_PATH:
-		phase2_ca_cert_str = g_strdup (nm_setting_802_1x_get_phase2_ca_cert_path (s_8021X));
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
-		phase2_ca_cert_str = g_strdup (nm_setting_802_1x_get_phase2_ca_cert_uri (s_8021X));
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
-		break;
-	}
-
-	NM_SET_OUT (out_is_default, !phase2_ca_cert_str || !phase2_ca_cert_str[0]);
-	RETURN_STR_TO_FREE (phase2_ca_cert_str);
-}
-
-static gconstpointer
-_get_fcn_802_1x_phase2_client_cert (ARGS_GET_FCN)
-{
-	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	char *cert_str = NULL;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	switch (nm_setting_802_1x_get_phase2_client_cert_scheme (s_8021X)) {
-	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		if (NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
-			cert_str = bytes_to_string (nm_setting_802_1x_get_phase2_client_cert_blob (s_8021X));
-		else
-			return _get_text_hidden (get_type);
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_PATH:
-		cert_str = g_strdup (nm_setting_802_1x_get_phase2_client_cert_path (s_8021X));
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
-		cert_str = g_strdup (nm_setting_802_1x_get_phase2_client_cert_uri (s_8021X));
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
-		break;
-	}
-
-	NM_SET_OUT (out_is_default, !cert_str || !cert_str[0]);
-	RETURN_STR_TO_FREE (cert_str);
 }
 
 static gconstpointer
@@ -2259,26 +2175,6 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 	RETURN_STR_TO_FREE (key_str);
 }
 
-#define DEFINE_SETTER_CERT(def_func, set_func) \
-	static gboolean \
-	def_func (ARGS_SET_FCN) \
-	{ \
-		gs_free char *value_to_free = NULL; \
-		NMSetting8021xCKScheme scheme = NM_SETTING_802_1X_CK_SCHEME_PATH; \
-		\
-		if (_SET_FCN_DO_RESET_DEFAULT (value)) \
-			return _gobject_property_reset_default (setting, property_info->property_name); \
-		\
-		value = nm_strstrip_avoid_copy (value, &value_to_free); \
-		\
-		if (strncmp (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11)) == 0) \
-			scheme = NM_SETTING_802_1X_CK_SCHEME_PKCS11; \
-		else if (strncmp (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0) \
-			value += NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH); \
-		\
-		return set_func (NM_SETTING_802_1X (setting), value, scheme, NULL, error); \
-	}
-
 #define DEFINE_SETTER_PRIV_KEY(def_func, pwd_func, set_func) \
 	static gboolean \
 	def_func (ARGS_SET_FCN) \
@@ -2308,12 +2204,6 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 			password = password_free = g_strdup (pwd_func (NM_SETTING_802_1X (setting))); \
 		return set_func (NM_SETTING_802_1X (setting), path, password, scheme, NULL, error); \
 	}
-
-DEFINE_SETTER_CERT (_set_fcn_802_1x_client_cert, nm_setting_802_1x_set_client_cert)
-
-DEFINE_SETTER_CERT (_set_fcn_802_1x_phase2_ca_cert, nm_setting_802_1x_set_phase2_ca_cert)
-
-DEFINE_SETTER_CERT (_set_fcn_802_1x_phase2_client_cert, nm_setting_802_1x_set_phase2_client_cert)
 
 DEFINE_SETTER_PRIV_KEY (_set_fcn_802_1x_private_key,
                         nm_setting_802_1x_get_private_key_password,
@@ -4852,9 +4742,9 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 		       "  [file://]<file path>\n"
 		       "Note that nmcli does not support specifying certificates as raw blob data.\n"
 		       "Example: /home/cimrman/jara.crt\n"),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_802_1x_client_cert,
-			.set_fcn =                  _set_fcn_802_1x_client_cert,
+		.property_type =                &_pt_cert_8021x,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (cert_8021x,
+			.scheme_type =              NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_CLIENT_CERT_PASSWORD,
@@ -4910,9 +4800,9 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 		       "  [file://]<file path>\n"
 		       "Note that nmcli does not support specifying certificates as raw blob data.\n"
 		       "Example: /home/cimrman/ca-zweite-phase.crt\n"),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_802_1x_phase2_ca_cert,
-			.set_fcn =                  _set_fcn_802_1x_phase2_ca_cert,
+		.property_type =                &_pt_cert_8021x,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (cert_8021x,
+			.scheme_type =              NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD,
@@ -4949,9 +4839,9 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 		       "  [file://]<file path>\n"
 		       "Note that nmcli does not support specifying certificates as raw blob data.\n"
 		       "Example: /home/cimrman/jara-zweite-phase.crt\n"),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_802_1x_phase2_client_cert,
-			.set_fcn =                  _set_fcn_802_1x_phase2_client_cert,
+		.property_type =                &_pt_cert_8021x,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (cert_8021x,
+			.scheme_type =              NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD,
