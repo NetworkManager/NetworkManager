@@ -244,9 +244,6 @@ typedef struct {
 struct _NMMetaPropertyTypData {
 	union {
 		struct {
-			gboolean (*fcn) (NMSetting *setting);
-		} get_with_default;
-		struct {
 			GType (*get_gtype) (void);
 			int min;
 			int max;
@@ -321,6 +318,7 @@ struct _NMMetaPropertyTypData {
 			NMEthtoolID ethtool_id;
 		} ethtool;
 	} subtype;
+	gboolean (*is_default_fcn) (NMSetting *setting);
 	const char *const*values_static;
 	const NMMetaPropertyTypDataNested *nested;
 	NMMetaPropertyTypFlags typ_flags;
