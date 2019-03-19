@@ -704,47 +704,26 @@ _gobject_property_reset_default (NMSetting *setting, const char *prop_name)
 }
 
 static gconstpointer
-_get_fcn_nmc_with_default (ARGS_GET_FCN)
-{
-	const char *s;
-	char *s_full;
-	GValue val = G_VALUE_INIT;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-	NM_SET_OUT (out_is_default, _gobject_property_is_default (setting, property_info->property_name));
-
-	if (property_info->property_typ_data->subtype.get_with_default.fcn (setting)) {
-		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
-			return _("(default)");
-		return "";
-	}
-
-	g_value_init (&val, G_TYPE_STRING);
-	g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
-	s = g_value_get_string (&val);
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
-		s_full = s ? g_strdup_printf ("\"%s\"", s) : g_strdup ("");
-	else
-		s_full = g_strdup (s && *s ? s : " ");
-	g_value_unset (&val);
-
-	RETURN_STR_TO_FREE (s_full);
-}
-
-static gconstpointer
 _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
                        NMSetting *setting,
                        NMMetaAccessorGetType get_type,
                        gboolean *out_is_default,
                        gpointer *out_to_free)
 {
-	char *s;
-	const char *s_c;
+	const char *cstr;
 	GType gtype_prop;
 	nm_auto_unset_gvalue GValue val = G_VALUE_INIT;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 	NM_SET_OUT (out_is_default, _gobject_property_is_default (setting, property_info->property_name));
+
+	if (   property_info->property_typ_data
+	    && property_info->property_typ_data->is_default_fcn
+	    && property_info->property_typ_data->is_default_fcn (setting)) {
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+			return _("(default)");
+		return "";
+	}
 
 	gtype_prop = _gobject_property_get_gtype (G_OBJECT (setting), property_info->property_name);
 
@@ -755,11 +734,13 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 		g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
 		b = g_value_get_boolean (&val);
 		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
-			s_c = b ? _("yes") : _("no");
+			cstr = b ? _("yes") : _("no");
 		else
-			s_c = b ? "yes" : "no";
-		return s_c;
+			cstr = b ? "yes" : "no";
+		return cstr;
 	} else {
+		char *str;
+
 		/* Note that we register certain transform functions in nmc_value_transforms_register().
 		 * This makes G_TYPE_STRV working.
 		 *
@@ -768,8 +749,20 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 		 * in clients/cli, while we are here in clients/common. */
 		g_value_init (&val, G_TYPE_STRING);
 		g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
-		s = g_value_dup_string (&val);
-		RETURN_STR_TO_FREE (s);
+		cstr = g_value_get_string (&val);
+
+		if (   property_info->property_typ_data
+		    && property_info->property_typ_data->is_default_fcn) {
+			if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY) {
+				str =   cstr
+				      ? g_strdup_printf ("\"%s\"", cstr)
+				      : g_strdup ("");
+			} else
+				str = g_strdup (cstr && cstr[0] ? cstr : " ");
+		} else
+			str = cstr ? g_strdup (cstr) : NULL;
+
+		RETURN_STR_TO_FREE (str);
 	}
 }
 
@@ -3261,10 +3254,10 @@ DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_ip_config_routes,
                                        _validate_and_remove_ip_route)
 
 static gboolean
-_dns_options_is_default (NMSettingIPConfig *setting)
+_is_default_func_ip_config_dns_options (NMSetting *setting)
 {
-	return    nm_setting_ip_config_has_dns_options (setting)
-	       && !nm_setting_ip_config_get_num_dns_options (setting);
+	return    nm_setting_ip_config_has_dns_options (NM_SETTING_IP_CONFIG (setting))
+	       && !nm_setting_ip_config_get_num_dns_options (NM_SETTING_IP_CONFIG (setting));
 }
 
 static gconstpointer
@@ -4537,11 +4530,6 @@ static const NMMetaPropertyType _pt_multilist = {
 #define ENUM_VALUE_INFOS(...)  (((const NMUtilsEnumValueInfo    []) { __VA_ARGS__ { .nick = NULL, }, }))
 #define INT_VALUE_INFOS(...)   (((const NMMetaUtilsIntValueInfo []) { __VA_ARGS__ { .nick = NULL, }, }))
 
-#define GET_FCN_WITH_DEFAULT(type, func) \
-	/* macro that returns @func as const (gboolean(*)(NMSetting*)) type, but checks
-	 * that the actual type is (gboolean(*)(type *)). */ \
-	((gboolean (*) (NMSetting *)) ((sizeof (func == ((gboolean (*) (type *)) func))) ? func : func) )
-
 #define MTU_GET_FCN(type, func) \
 	/* macro that returns @func as const (guint32(*)(NMSetting*)) type, but checks
 	 * that the actual type is (guint32(*)(type *)). */ \
@@ -5563,12 +5551,12 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_OPTIONS, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DNS_OPTIONS,
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_nmc_with_default,
+			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_ip_config_dns_options,
 			.remove_fcn =               _remove_fcn_ip_config_dns_options,
 		),
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (get_with_default,
-			.fcn =                      GET_FCN_WITH_DEFAULT (NMSettingIPConfig, _dns_options_is_default),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			.is_default_fcn =           _is_default_func_ip_config_dns_options,
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_PRIORITY, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DNS_PRIORITY,
@@ -5736,12 +5724,12 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_OPTIONS, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DNS_OPTIONS,
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_nmc_with_default,
+			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_ip_config_dns_options,
 			.remove_fcn =               _remove_fcn_ip_config_dns_options,
 		),
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (get_with_default,
-			.fcn =                      GET_FCN_WITH_DEFAULT (NMSettingIPConfig, _dns_options_is_default),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			.is_default_fcn =           _is_default_func_ip_config_dns_options,
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_PRIORITY, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DNS_PRIORITY,
