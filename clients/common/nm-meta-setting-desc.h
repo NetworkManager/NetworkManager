@@ -278,6 +278,12 @@ struct _NMMetaPropertyTypData {
 			gboolean (*remove_by_value_fcn) (NMSetting *setting, const char *item);
 		} multilist;
 		struct {
+			gboolean (*add_fcn) (NMSetting *setting,
+			                     const char *option,
+			                     const char *value,
+			                     GError **error);
+		} optionlist;
+		struct {
 			guint32 (*get_fcn) (NMSetting *setting);
 		} mtu;
 		struct {
