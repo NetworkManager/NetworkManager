@@ -3904,62 +3904,6 @@ _remove_fcn_vpn_secrets (ARGS_REMOVE_FCN)
 }
 
 static gboolean
-_set_fcn_xxx_mac_address_blacklist (ARGS_SET_FCN)
-{
-	gs_free const char **strv = NULL;
-
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
-	if (strv) {
-		gboolean is_wifi;
-		gsize i;
-
-		for (i = 0; strv[i]; i++) {
-			guint8 buf[ETH_ALEN];
-
-			if (!nm_utils_hwaddr_aton (strv[i], buf, ETH_ALEN)) {
-				g_set_error (error, 1, 0, _("'%s' is not a valid MAC"), strv[i]);
-				return FALSE;
-			}
-		}
-
-		is_wifi = NM_IS_SETTING_WIRELESS (setting);
-
-		for (i = 0; strv[i]; i++) {
-			if (is_wifi)
-				nm_setting_wireless_add_mac_blacklist_item (NM_SETTING_WIRELESS (setting), strv[i]);
-			else
-				nm_setting_wired_add_mac_blacklist_item (NM_SETTING_WIRED (setting), strv[i]);
-		}
-	}
-	return TRUE;
-}
-
-static gboolean
-_validate_and_remove_wired_mac_blacklist_item (NMSettingWired *setting,
-                                              const char *mac,
-                                              GError **error)
-{
-	guint8 buf[32];
-
-	if (!nm_utils_hwaddr_aton (mac, buf, ETH_ALEN)) {
-		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
-		                    _("'%s' is not a valid MAC address"), mac);
-		return FALSE;
-	}
-
-	nm_setting_wired_remove_mac_blacklist_item_by_value (setting, mac);
-	return TRUE;
-}
-DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (_remove_fcn_wired_mac_address_blacklist,
-                                          NM_SETTING_WIRED,
-                                          nm_setting_wired_get_num_mac_blacklist_items,
-                                          nm_setting_wired_remove_mac_blacklist_item,
-                                          _validate_and_remove_wired_mac_blacklist_item)
-
-static gboolean
 _set_fcn_wired_s390_subchannels (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
@@ -4064,27 +4008,21 @@ _set_fcn_wireless_channel (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static gboolean
-_validate_and_remove_wifi_mac_blacklist_item (NMSettingWireless *setting,
-                                              const char *mac,
-                                              GError **error)
+static const char *
+_multilist_validate2_fcn_mac_addr (NMSetting *setting,
+                                   const char *item,
+                                   GError **error)
 {
-	guint8 buf[32];
+	guint8 buf[ETH_ALEN];
 
-	if (!nm_utils_hwaddr_aton (mac, buf, ETH_ALEN)) {
+	if (!nm_utils_hwaddr_aton (item, buf, ETH_ALEN)) {
 		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
-		                    _("'%s' is not a valid MAC address"), mac);
-		return FALSE;
+		                    _("'%s' is not a valid MAC address"), item);
+		return NULL;
 	}
 
-	nm_setting_wireless_remove_mac_blacklist_item_by_value (setting, mac);
-	return TRUE;
+	return item;
 }
-DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (_remove_fcn_wireless_mac_address_blacklist,
-                                          NM_SETTING_WIRELESS,
-                                          nm_setting_wireless_get_num_mac_blacklist_items,
-                                          nm_setting_wireless_remove_mac_blacklist_item,
-                                          _validate_and_remove_wifi_mac_blacklist_item)
 
 static gconstpointer
 _get_fcn_wireless_security_wep_key (ARGS_GET_FCN)
@@ -6900,10 +6838,15 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
 		.property_type =                &_pt_gobject_string,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_xxx_mac_address_blacklist,
-			.remove_fcn =               _remove_fcn_wired_mac_address_blacklist,
+		.property_type =                &_pt_multilist,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn_u32 =      MULTILIST_GET_NUM_FCN_U32     (NMSettingWired, nm_setting_wired_get_num_mac_blacklist_items),
+				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingWired, nm_setting_wired_add_mac_blacklist_item),
+				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingWired, nm_setting_wired_remove_mac_blacklist_item),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingWired, nm_setting_wired_remove_mac_blacklist_item_by_value),
+				.validate2_fcn =        _multilist_validate2_fcn_mac_addr,
+			),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_MTU,
@@ -7068,10 +7011,15 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
 		.property_type =                &_pt_gobject_string,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_xxx_mac_address_blacklist,
-			.remove_fcn =               _remove_fcn_wireless_mac_address_blacklist,
+		.property_type =                &_pt_multilist,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn_u32 =      MULTILIST_GET_NUM_FCN_U32     (NMSettingWireless, nm_setting_wireless_get_num_mac_blacklist_items),
+				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingWireless, nm_setting_wireless_add_mac_blacklist_item),
+				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingWireless, nm_setting_wireless_remove_mac_blacklist_item),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingWireless, nm_setting_wireless_remove_mac_blacklist_item_by_value),
+				.validate2_fcn =        _multilist_validate2_fcn_mac_addr,
+			),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION,
