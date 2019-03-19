@@ -3871,7 +3871,7 @@ _set_fcn_sriov_vfs (ARGS_SET_FCN)
 	gs_free const char **strv = NULL;
 	const char *const*iter;
 	NMSriovVF *vf;
-	GError *local = NULL;
+	gs_free_error GError *local = NULL;
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
@@ -3893,7 +3893,7 @@ _set_fcn_tc_config_qdiscs (ARGS_SET_FCN)
 	gs_free const char **strv = NULL;
 	const char *const*iter;
 	NMTCQdisc *tc_qdisc;
-	GError *local = NULL;
+	gs_free_error GError *local = NULL;
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
@@ -3998,7 +3998,7 @@ _set_fcn_tc_config_tfilters (ARGS_SET_FCN)
 	gs_free const char **strv = NULL;
 	const char *const*iter;
 	NMTCTfilter *tc_tfilter;
-	GError *local = NULL;
+	gs_free_error GError *local = NULL;
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	for (iter = strv; strv && *iter; iter++) {
