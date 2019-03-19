@@ -26,6 +26,7 @@
 
 #include "nm-common-macros.h"
 #include "nm-utils/nm-enum-utils.h"
+#include "nm-utils/nm-secret-utils.h"
 #include "nm-libnm-core-utils.h"
 
 #include "nm-vpn-helpers.h"
@@ -2095,11 +2096,35 @@ _set_fcn_cert_8021x (ARGS_SET_FCN)
 
 	vtable = &nm_setting_8021x_scheme_vtable[property_info->property_typ_data->subtype.cert_8021x.scheme_type];
 
-	return vtable->set_cert_func (NM_SETTING_802_1X (setting),
-	                              value,
-	                              scheme,
-	                              NULL,
-	                              error);
+	if (vtable->is_secret) {
+		gs_free char *path = NULL;
+		nm_auto_free_secret char *password_free = NULL;
+		char *password;
+
+		path = g_strdup (value);
+		password = path + strcspn (path, " \t");
+		if (password[0] != '\0') {
+			password[0] = '\0';
+			while (nm_utils_is_separator (password[0]))
+				password++;
+		} else {
+			password_free = g_strdup (vtable->passwd_func (NM_SETTING_802_1X (setting)));
+			password = password_free;
+		}
+
+		return vtable->set_private_key_func (NM_SETTING_802_1X (setting),
+		                                     path,
+		                                     password,
+		                                     scheme,
+		                                     NULL,
+		                                     error);
+	} else {
+		return vtable->set_cert_func (NM_SETTING_802_1X (setting),
+		                              value,
+		                              scheme,
+		                              NULL,
+		                              error);
+	}
 }
 
 static gconstpointer
@@ -2204,10 +2229,6 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 			password = password_free = g_strdup (pwd_func (NM_SETTING_802_1X (setting))); \
 		return set_func (NM_SETTING_802_1X (setting), path, password, scheme, NULL, error); \
 	}
-
-DEFINE_SETTER_PRIV_KEY (_set_fcn_802_1x_private_key,
-                        nm_setting_802_1x_get_private_key_password,
-                        nm_setting_802_1x_set_private_key)
 
 DEFINE_SETTER_PRIV_KEY (_set_fcn_802_1x_phase2_private_key,
                         nm_setting_802_1x_get_phase2_private_key_password,
@@ -4884,7 +4905,10 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 		       "Example: /home/cimrman/jara-priv-key Dardanely\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_802_1x_private_key,
-			.set_fcn =                  _set_fcn_802_1x_private_key,
+			.set_fcn =                  _set_fcn_cert_8021x,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (cert_8021x,
+			.scheme_type =              NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD,
