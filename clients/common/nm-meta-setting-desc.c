@@ -1855,32 +1855,6 @@ _set_fcn_optionlist (ARGS_SET_FCN)
 		return TRUE; \
 	})
 
-static gboolean
-verify_string_list (const char *const*strv,
-                    const char *prop,
-                    gboolean (*validate_func) (const char *),
-                    GError **error)
-{
-	const char *const*iter;
-
-	nm_assert (!error || !*error);
-
-	if (strv) {
-		for (iter = strv; *iter; iter++) {
-			if (**iter == '\0')
-				continue;
-			if (validate_func) {
-				if (!validate_func (*iter)) {
-					g_set_error (error, 1, 0, _("'%s' is not valid"),
-					             *iter);
-					return FALSE;
-				}
-			}
-		}
-	}
-	return TRUE;
-}
-
 static char *
 flag_values_to_string (GFlagsValue *array, guint n)
 {
@@ -2389,56 +2363,55 @@ _complete_fcn_connection_type (ARGS_COMPLETE_FCN)
 	return (const char *const*) (*out_to_free = result);
 }
 
-/* define from libnm-core/nm-setting-connection.c */
 #define PERM_USER_PREFIX  "user:"
 
-static gboolean
-permissions_valid (const char *perm)
+static const char *
+_sanitize_connection_permission_user (const char *perm)
 {
-	if (!perm || perm[0] == '\0')
-		return FALSE;
+	if (NM_STR_HAS_PREFIX (perm, PERM_USER_PREFIX))
+		perm += NM_STRLEN (PERM_USER_PREFIX);
 
-	if (strncmp (perm, PERM_USER_PREFIX, strlen (PERM_USER_PREFIX)) == 0) {
-		if (   strlen (perm) <= strlen (PERM_USER_PREFIX)
-		    || strchr (perm + strlen (PERM_USER_PREFIX), ':'))
-			return  FALSE;
-	} else {
-		if (strchr (perm, ':'))
-			return  FALSE;
+	if (perm[0] == '\0')
+		return NULL;
+	if (!g_utf8_validate (perm, -1, NULL))
+		return NULL;
+
+	return perm;
+}
+
+static const char *
+_multilist_validate2_fcn_connection_permissions (NMSetting *setting,
+                                                 const char *item,
+                                                 GError **error)
+{
+	if (!_sanitize_connection_permission_user (item)) {
+		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		                    _("invalid permission \"%s\""),
+		                    item);
+		return NULL;
 	}
+	return item;
+}
 
+static gboolean
+_multilist_set_fcn_connection_permissions (NMSetting *setting,
+                                           const char *item)
+{
+	item = _sanitize_connection_permission_user (item);
+	nm_setting_connection_add_permission (NM_SETTING_CONNECTION (setting), "user", item, NULL);
 	return TRUE;
 }
 
 static gboolean
-_set_fcn_connection_permissions (ARGS_SET_FCN)
+_multilist_remove_by_value_fcn_connection_permissions (NMSetting *setting,
+                                                       const char *item)
 {
-	gs_free const char **strv = NULL;
-	gsize i;
+	const char *sanitized;
 
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
-	if (!verify_string_list (strv, property_info->property_name, permissions_valid, error))
-		return FALSE;
-
-	for (i = 0; strv && strv[i]; i++) {
-		const char *user = strv[i];
-
-		if (strncmp (user, PERM_USER_PREFIX, NM_STRLEN (PERM_USER_PREFIX)) == 0)
-			user += NM_STRLEN (PERM_USER_PREFIX);
-		nm_setting_connection_add_permission (NM_SETTING_CONNECTION (setting), "user", user, NULL);
-	}
-
+	sanitized = _sanitize_connection_permission_user (item);
+	nm_setting_connection_remove_permission_by_value (NM_SETTING_CONNECTION (setting), "user", sanitized ?: item, NULL);
 	return TRUE;
 }
-
-DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_connection_permissions,
-                                      NM_SETTING_CONNECTION,
-                                      nm_setting_connection_get_num_permissions,
-                                      nm_setting_connection_remove_permission,
-                                      nm_setting_connection_remove_permission_user)
 
 static gboolean
 _set_fcn_connection_master (ARGS_SET_FCN)
@@ -5037,8 +5010,17 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 		        "Example: alice bob charlie\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_connection_permissions,
-			.set_fcn =                  _set_fcn_connection_permissions,
-			.remove_fcn =               _remove_fcn_connection_permissions,
+			.set_fcn =                  _set_fcn_multilist,
+			.remove_fcn =               _remove_fcn_multilist,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn_u32 =      MULTILIST_GET_NUM_FCN_U32     (NMSettingConnection, nm_setting_connection_get_num_permissions),
+				.add_fcn =              _multilist_set_fcn_connection_permissions,
+				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingConnection, nm_setting_connection_remove_permission),
+				.remove_by_value_fcn =  _multilist_remove_by_value_fcn_connection_permissions,
+				.validate2_fcn =        _multilist_validate2_fcn_connection_permissions,
+			),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_ZONE,

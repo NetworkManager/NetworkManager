@@ -471,6 +471,7 @@ nm_setting_connection_remove_permission_by_value (NMSettingConnection *setting,
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), FALSE);
 	g_return_val_if_fail (ptype && ptype[0], FALSE);
 	g_return_val_if_fail (detail == NULL, FALSE);
+	g_return_val_if_fail (pitem != NULL, FALSE);
 
 	/* Only "user" for now... */
 	g_return_val_if_fail (strcmp (ptype, "user") == 0, FALSE);
