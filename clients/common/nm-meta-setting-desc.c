@@ -2297,25 +2297,27 @@ _get_fcn_connection_permissions (ARGS_GET_FCN)
 	GString *perm = NULL;
 	const char *perm_item;
 	const char *perm_type;
-	int i;
+	guint i, n;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
-	perm = g_string_new (NULL);
-	for (i = 0; i < nm_setting_connection_get_num_permissions (s_con); i++) {
-		if (nm_setting_connection_get_permission (s_con, i, &perm_type, &perm_item, NULL))
-			g_string_append_printf (perm, "%s:%s,", perm_type, perm_item);
+	n = nm_setting_connection_get_num_permissions (s_con);
+	for (i = 0; i < n; i++) {
+		if (!nm_setting_connection_get_permission (s_con, i, &perm_type, &perm_item, NULL))
+			continue;
+
+		if (!perm)
+			perm = g_string_new (NULL);
+		else
+			g_string_append_c (perm, ',');
+		g_string_append_printf (perm, "%s:%s", perm_type, perm_item);
 	}
 
-	NM_SET_OUT (out_is_default, perm->len == 0);
+	NM_SET_OUT (out_is_default, !perm);
 
-	if (perm->len > 0) {
-		g_string_truncate (perm, perm->len-1); /* remove trailing , */
+	if (perm)
 		RETURN_STR_TO_FREE (g_string_free (perm, FALSE));
-	}
 
-	/* No value from get_permission */
-	g_string_free (perm, TRUE);
 	return NULL;
 }
 
