@@ -1672,7 +1672,11 @@ _set_fcn_multilist (ARGS_SET_FCN)
 	if (_SET_FCN_DO_RESET_DEFAULT (value))
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
-	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
+	if (property_info->property_typ_data->subtype.multilist.with_escaped_spaces)
+		strv = nm_utils_strsplit_set (value, " \t", TRUE);
+	else
+		strv = nm_utils_strsplit_set (value, " \t,", FALSE);
+
 	if (strv) {
 
 		j = 0;
@@ -1683,7 +1687,10 @@ _set_fcn_multilist (ARGS_SET_FCN)
 			if (item[0] == '\0')
 				continue;
 
-			g_strchomp ((char *) item);
+			if (property_info->property_typ_data->subtype.multilist.with_escaped_spaces)
+				_nm_utils_unescape_spaces ((char *) item, TRUE);
+			else
+				g_strchomp ((char *) item);
 
 			item = _multilist_do_validate (property_info, TRUE, setting, item, error);
 			if (!item)
@@ -1693,8 +1700,12 @@ _set_fcn_multilist (ARGS_SET_FCN)
 		}
 		strv[j] = NULL;
 
-		for (i = 0; strv[i]; i++)
-			property_info->property_typ_data->subtype.multilist.add_fcn (setting, strv[i]);
+		for (i = 0; strv[i]; i++) {
+			if (property_info->property_typ_data->subtype.multilist.add2_fcn)
+				property_info->property_typ_data->subtype.multilist.add2_fcn (setting, strv[i]);
+			else
+				property_info->property_typ_data->subtype.multilist.add_fcn (setting, strv[i]);
+		}
 	}
 	return TRUE;
 }
@@ -3216,31 +3227,6 @@ _get_fcn_match_interface_name (ARGS_GET_FCN)
 	RETURN_STR_TO_FREE (g_string_free (str, FALSE));
 }
 
-static gboolean
-_set_fcn_match_interface_name (ARGS_SET_FCN)
-{
-	gs_free const char **strv = NULL;
-	gsize i;
-
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	strv = nm_utils_strsplit_set (value, " \t", TRUE);
-	if (strv) {
-		for (i = 0; strv[i]; i++) {
-			nm_setting_match_add_interface_name (NM_SETTING_MATCH (setting),
-			                                     _nm_utils_unescape_spaces ((char *) strv[i], TRUE));
-		}
-	}
-	return TRUE;
-}
-
-DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_match_interface_name,
-                                      NM_SETTING_MATCH,
-                                      nm_setting_match_get_num_interface_names,
-                                      nm_setting_match_remove_interface_name,
-                                      nm_setting_match_remove_interface_name_by_value)
-
 static gconstpointer
 _get_fcn_olpc_mesh_ssid (ARGS_GET_FCN)
 {
@@ -4364,6 +4350,7 @@ static const NMMetaPropertyType _pt_ethtool = {
 #define MULTILIST_GET_NUM_FCN_U32(type, func)       (((func) == ((guint32  (*) (type *              )) (func))) ? ((guint32  (*) (NMSetting *              )) (func)) : NULL)
 #define MULTILIST_GET_NUM_FCN_U(type, func)         (((func) == ((guint    (*) (type *              )) (func))) ? ((guint    (*) (NMSetting *              )) (func)) : NULL)
 #define MULTILIST_ADD_FCN(type, func)               (((func) == ((gboolean (*) (type *, const char *)) (func))) ? ((gboolean (*) (NMSetting *, const char *)) (func)) : NULL)
+#define MULTILIST_ADD2_FCN(type, func)              (((func) == ((void     (*) (type *, const char *)) (func))) ? ((void     (*) (NMSetting *, const char *)) (func)) : NULL)
 #define MULTILIST_REMOVE_BY_IDX_FCN_U32(type, func) (((func) == ((void     (*) (type *, guint32     )) (func))) ? ((void     (*) (NMSetting *, guint32     )) (func)) : NULL)
 #define MULTILIST_REMOVE_BY_IDX_FCN_S(type, func)   (((func) == ((void     (*) (type *, int         )) (func))) ? ((void     (*) (NMSetting *, int         )) (func)) : NULL)
 #define MULTILIST_REMOVE_BY_VALUE_FCN(type, func)   (((func) == ((gboolean (*) (type *, const char *)) (func))) ? ((gboolean (*) (NMSetting *, const char *)) (func)) : NULL)
@@ -5928,8 +5915,17 @@ static const NMMetaPropertyInfo *const property_infos_MATCH[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_MATCH_INTERFACE_NAME,
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_match_interface_name,
-			.set_fcn =                  _set_fcn_match_interface_name,
-			.remove_fcn =               _remove_fcn_match_interface_name,
+			.set_fcn =                  _set_fcn_multilist,
+			.remove_fcn =               _remove_fcn_multilist,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn_u   =      MULTILIST_GET_NUM_FCN_U       (NMSettingMatch, nm_setting_match_get_num_interface_names),
+				.add2_fcn =             MULTILIST_ADD2_FCN            (NMSettingMatch, nm_setting_match_add_interface_name),
+				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingMatch, nm_setting_match_remove_interface_name),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingMatch, nm_setting_match_remove_interface_name_by_value),
+				.with_escaped_spaces =  TRUE,
+			),
 		),
 	),
 	NULL

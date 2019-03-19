@@ -272,6 +272,8 @@ struct _NMMetaPropertyTypData {
 			guint (*get_num_fcn_u) (NMSetting *setting);
 			gboolean (*add_fcn) (NMSetting *setting,
 			                     const char *item);
+			void (*add2_fcn) (NMSetting *setting,
+			                  const char *item);
 			const char *(*validate_fcn) (const char *item, GError **error);
 			const char *(*validate2_fcn) (NMSetting *setting, const char *item, GError **error);
 			void (*remove_by_idx_fcn_u32) (NMSetting *setting, guint32 idx);
@@ -283,6 +285,9 @@ struct _NMMetaPropertyTypData {
 
 			/* if TRUE, validate_fcn() is ignored for remove_by_value(). */
 			bool no_validate_remove_by_value:1;
+
+			/* if true, separate the list by space and allow backslash escaping. */
+			bool with_escaped_spaces:1;
 		} multilist;
 		struct {
 			gboolean (*add_fcn) (NMSetting *setting,
