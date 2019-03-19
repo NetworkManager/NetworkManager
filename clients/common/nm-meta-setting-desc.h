@@ -277,6 +277,7 @@ struct _NMMetaPropertyTypData {
 			const char *(*validate_fcn) (const char *item, GError **error);
 			const char *(*validate2_fcn) (NMSetting *setting, const char *item, GError **error);
 			void (*remove_by_idx_fcn_u32) (NMSetting *setting, guint32 idx);
+			void (*remove_by_idx_fcn_u) (NMSetting *setting, guint idx);
 			void (*remove_by_idx_fcn_s) (NMSetting *setting, int idx);
 			gboolean (*remove_by_value_fcn) (NMSetting *setting, const char *item);
 

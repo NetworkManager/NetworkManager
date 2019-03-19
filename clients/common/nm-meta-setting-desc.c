@@ -1638,26 +1638,24 @@ _multilist_do_validate (const NMMetaPropertyInfo *property_info,
                         const char *item,
                         GError **error)
 {
-	if (property_info->property_typ_data->values_static) {
-		nm_assert (!property_info->property_typ_data->subtype.multilist.validate_fcn);
-		return nmc_string_is_valid (item,
-		                            (const char **) property_info->property_typ_data->values_static,
-		                            error);
-	}
-	if (   property_info->property_typ_data->subtype.multilist.validate_fcn
-	    && !(  for_set
-	         ? property_info->property_typ_data->subtype.multilist.no_validate_add
-	         : property_info->property_typ_data->subtype.multilist.no_validate_remove_by_value)) {
-		return property_info->property_typ_data->subtype.multilist.validate_fcn (item,
-		                                                                         error);
-	}
-	if (   property_info->property_typ_data->subtype.multilist.validate2_fcn
-	    && !(  for_set
-	         ? property_info->property_typ_data->subtype.multilist.no_validate_add
-	         : property_info->property_typ_data->subtype.multilist.no_validate_remove_by_value)) {
-		return property_info->property_typ_data->subtype.multilist.validate2_fcn (setting,
-		                                                                          item,
-		                                                                          error);
+	if (  for_set
+	    ? property_info->property_typ_data->subtype.multilist.no_validate_add
+	    : property_info->property_typ_data->subtype.multilist.no_validate_remove_by_value) {
+		if (property_info->property_typ_data->values_static) {
+			nm_assert (!property_info->property_typ_data->subtype.multilist.validate_fcn);
+			return nmc_string_is_valid (item,
+			                            (const char **) property_info->property_typ_data->values_static,
+			                            error);
+		}
+		if (property_info->property_typ_data->subtype.multilist.validate_fcn) {
+			return property_info->property_typ_data->subtype.multilist.validate_fcn (item,
+			                                                                         error);
+		}
+		if (property_info->property_typ_data->subtype.multilist.validate2_fcn) {
+			return property_info->property_typ_data->subtype.multilist.validate2_fcn (setting,
+			                                                                          item,
+			                                                                          error);
+		}
 	}
 
 	return item;
@@ -1728,8 +1726,10 @@ _remove_fcn_multilist (ARGS_REMOVE_FCN)
 		if (idx < (gint64) num) {
 			if (property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn_u32)
 				property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn_u32 (setting, idx);
-			else
+			else if (property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn_s)
 				property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn_s (setting, idx);
+			else
+				property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn_u (setting, idx);
 		}
 		return TRUE;
 	}
@@ -1823,10 +1823,11 @@ _set_fcn_optionlist (ARGS_SET_FCN)
 	return TRUE;
 }
 
-#define _DEFINE_REMOVER_INDEX_OR_VALUE(def_func, s_macro, num_func, rem_func_idx, rem_func_cmd) \
+#define DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
 	static gboolean \
 	def_func (ARGS_REMOVE_FCN) \
 	{ \
+		gs_free char *value_to_free = NULL; \
 		gint64 idx; \
 		gint64 num; \
 		\
@@ -1837,34 +1838,10 @@ _set_fcn_optionlist (ARGS_SET_FCN)
 				rem_func_idx (s_macro (setting), idx); \
 			return TRUE; \
 		} \
-		rem_func_cmd \
-	}
-
-#define DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
-	_DEFINE_REMOVER_INDEX_OR_VALUE (def_func, s_macro, num_func, rem_func_idx, { \
-		gs_free char *value_to_free = NULL; \
-		\
 		return rem_func_val (s_macro (setting), \
 		                     nm_strstrip_avoid_copy (value, &value_to_free), \
 		                     error); \
-	})
-
-#define DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
-	_DEFINE_REMOVER_INDEX_OR_VALUE (def_func, s_macro, num_func, rem_func_idx, { \
-		gs_free char *value_to_free = NULL; \
-		\
-		value = nm_strstrip_avoid_copy (value, &value_to_free); \
-		if (property_info->property_typ_data->values_static) { \
-			value = nmc_string_is_valid (value, \
-			                             (const char **) property_info->property_typ_data->values_static, \
-			                             error); \
-			if (!value) \
-				return FALSE; \
-		} \
-		\
-		rem_func_val (s_macro (setting), value); \
-		return TRUE; \
-	})
+	}
 
 static char *
 flag_values_to_string (GFlagsValue *array, guint n)
@@ -3513,53 +3490,6 @@ _validate_fcn_team_config (const char *value, char **out_to_free, GError **error
 	RETURN_STR_TO_FREE (json);
 }
 
-static gboolean
-_is_valid_team_runner_tx_hash_element (const char *tx_hash_element,
-                                       GError **error)
-{
-	nm_assert (!error || !*error);
-
-	if (NM_IN_STRSET (tx_hash_element,
-	                  "eth", "vlan", "ipv4", "ipv6", "ip",
-	                  "l3", "tcp", "udp", "sctp", "l4")) {
-		return TRUE;
-	}
-
-	g_set_error (error, 1, 0, "'%s' is not valid. %s", tx_hash_element,
-	             "Valid tx-hashes: [eth, vlan, ipv4, ipv6, ip, l3, tcp, udp, sctp, l4]");
-	return FALSE;
-}
-
-static gboolean
-_set_fcn_team_runner_tx_hash (ARGS_SET_FCN)
-{
-	gs_free const char **strv = NULL;
-	const char *const*iter;
-
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
-	for (iter = strv; strv && *iter; iter++) {
-		if (!_is_valid_team_runner_tx_hash_element (*iter, error))
-			return FALSE;
-	}
-
-	while (nm_setting_team_get_num_runner_tx_hash (NM_SETTING_TEAM (setting)))
-		nm_setting_team_remove_runner_tx_hash (NM_SETTING_TEAM (setting), 0);
-
-	for (iter = strv; strv && *iter; iter++)
-		nm_setting_team_add_runner_tx_hash (NM_SETTING_TEAM (setting), *iter);
-
-	return TRUE;
-}
-
-DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_team_runner_tx_hash,
-                                      NM_SETTING_TEAM,
-                                      nm_setting_team_get_num_runner_tx_hash,
-                                      nm_setting_team_remove_runner_tx_hash,
-                                      nm_setting_team_remove_runner_tx_hash_by_value)
-
 static gconstpointer
 _get_fcn_team_link_watchers (ARGS_GET_FCN)
 {
@@ -4353,6 +4283,7 @@ static const NMMetaPropertyType _pt_ethtool = {
 #define MULTILIST_ADD2_FCN(type, func)              (((func) == ((void     (*) (type *, const char *)) (func))) ? ((void     (*) (NMSetting *, const char *)) (func)) : NULL)
 #define MULTILIST_REMOVE_BY_IDX_FCN_U32(type, func) (((func) == ((void     (*) (type *, guint32     )) (func))) ? ((void     (*) (NMSetting *, guint32     )) (func)) : NULL)
 #define MULTILIST_REMOVE_BY_IDX_FCN_S(type, func)   (((func) == ((void     (*) (type *, int         )) (func))) ? ((void     (*) (NMSetting *, int         )) (func)) : NULL)
+#define MULTILIST_REMOVE_BY_IDX_FCN_U(type, func)   (((func) == ((void     (*) (type *, guint       )) (func))) ? ((void     (*) (NMSetting *, guint       )) (func)) : NULL)
 #define MULTILIST_REMOVE_BY_VALUE_FCN(type, func)   (((func) == ((gboolean (*) (type *, const char *)) (func))) ? ((gboolean (*) (NMSetting *, const char *)) (func)) : NULL)
 
 static const NMMetaPropertyType _pt_multilist = {
@@ -6345,10 +6276,17 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_RUNNER_TX_HASH,
-		.property_type =  DEFINE_PROPERTY_TYPE (
-			.get_fcn =                   _get_fcn_gobject,
-			.set_fcn =                   _set_fcn_team_runner_tx_hash,
-			.remove_fcn =                _remove_fcn_team_runner_tx_hash,
+		.property_type =                &_pt_multilist,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn_u =        MULTILIST_GET_NUM_FCN_U       (NMSettingTeam, nm_setting_team_get_num_runner_tx_hash),
+				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingTeam, nm_setting_team_add_runner_tx_hash),
+				.remove_by_idx_fcn_u =  MULTILIST_REMOVE_BY_IDX_FCN_U (NMSettingTeam, nm_setting_team_remove_runner_tx_hash),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingTeam, nm_setting_team_remove_runner_tx_hash_by_value),
+				.no_validate_remove_by_value = TRUE,
+			),
+			.values_static =            NM_MAKE_STRV ("eth", "vlan", "ipv4", "ipv6", "ip",
+			                                          "l3", "tcp", "udp", "sctp", "l4"),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_RUNNER_TX_BALANCER,
