@@ -752,4 +752,8 @@ gboolean nm_utils_base64secret_normalize (const char *base64_key,
 
 /*****************************************************************************/
 
+void _nm_bridge_vlan_str_append_rest (const NMBridgeVlan *vlan,
+                                      GString *string,
+                                      gboolean leading_space);
+
 #endif

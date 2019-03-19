@@ -358,6 +358,124 @@ nm_bridge_vlan_new_clone (const NMBridgeVlan *vlan)
 	return copy;
 }
 
+void
+_nm_bridge_vlan_str_append_rest (const NMBridgeVlan *vlan,
+                                 GString *string,
+                                 gboolean leading_space)
+{
+	if (nm_bridge_vlan_is_pvid (vlan)) {
+		if (leading_space)
+			g_string_append_c (string, ' ');
+		g_string_append (string, "pvid");
+		leading_space = TRUE;
+	}
+	if (nm_bridge_vlan_is_untagged (vlan)) {
+		if (leading_space)
+			g_string_append_c (string, ' ');
+		g_string_append (string, "untagged");
+		leading_space = TRUE;
+	}
+}
+
+/**
+ * nm_bridge_vlan_to_str:
+ * @vlan: the %NMBridgeVlan
+ * @error: location of the error
+ *
+ * Convert a %NMBridgeVlan to a string.
+ *
+ * Returns: formatted string or %NULL
+ *
+ * Since: 1.18
+ */
+char *
+nm_bridge_vlan_to_str (const NMBridgeVlan *vlan, GError **error)
+{
+	GString *string;
+
+	g_return_val_if_fail (vlan, NULL);
+	g_return_val_if_fail (!error || !*error, NULL);
+
+	/* The function never fails at the moment, but it might in the
+	 * future if more parameters are added to the object that could
+	 * make it invalid. */
+
+	string = g_string_sized_new (20);
+
+	g_string_append_printf (string, "%u", nm_bridge_vlan_get_vid (vlan));
+	_nm_bridge_vlan_str_append_rest (vlan, string, TRUE);
+
+	return g_string_free (string, FALSE);
+}
+
+/**
+ * nm_bridge_vlan_from_str:
+ * @str: the string representation of a bridge VLAN
+ * @error: location of the error
+ *
+ * Parses the string representation of the queueing
+ * discipline to a %NMBridgeVlan instance.
+ *
+ * Returns: the %NMBridgeVlan or %NULL
+ *
+ * Since: 1.18
+ */
+NMBridgeVlan *
+nm_bridge_vlan_from_str (const char *str, GError **error)
+{
+	NMBridgeVlan *vlan = NULL;
+	gs_unref_hashtable GHashTable *ht = NULL;
+	gs_free const char **tokens = NULL;
+	guint i, vid;
+	gboolean pvid = FALSE;
+	gboolean untagged = FALSE;
+
+	g_return_val_if_fail (str, NULL);
+	g_return_val_if_fail (!error || !*error, NULL);
+
+	tokens = nm_utils_strsplit_set (str, " ", FALSE);
+	if (!tokens || !tokens[0]) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_FAILED,
+		                     "missing VLAN id");
+		return NULL;
+	}
+
+	vid = _nm_utils_ascii_str_to_uint64 (tokens[0],
+	                                     10,
+	                                     NM_BRIDGE_VLAN_VID_MIN,
+	                                     NM_BRIDGE_VLAN_VID_MAX,
+	                                     G_MAXUINT);
+	if (vid == G_MAXUINT) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_FAILED,
+		             "invalid VLAN id '%s', must be in [1,4094]", tokens[0]);
+		return NULL;
+	}
+
+	for (i = 1; tokens[i]; i++) {
+		if (nm_streq (tokens[i], "pvid"))
+			pvid = TRUE;
+		else if (nm_streq (tokens[i], "untagged"))
+			untagged = TRUE;
+		else {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_FAILED,
+			             "invalid option '%s'", tokens[i]);
+			return NULL;
+		}
+	}
+
+	vlan = nm_bridge_vlan_new (vid);
+	nm_bridge_vlan_set_pvid (vlan, pvid);
+	nm_bridge_vlan_set_untagged (vlan, untagged);
+
+	return vlan;
+}
+
 /*****************************************************************************/
 
 static int

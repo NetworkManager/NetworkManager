@@ -6849,4 +6849,3 @@ _nm_utils_bridge_vlan_verify_list (GPtrArray *vlans,
 
 	return TRUE;
 }
-

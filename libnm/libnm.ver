@@ -1522,6 +1522,7 @@ global:
 libnm_1_18_0 {
 global:
 	nm_bridge_vlan_cmp;
+	nm_bridge_vlan_from_str;
 	nm_bridge_vlan_get_type;
 	nm_bridge_vlan_get_vid;
 	nm_bridge_vlan_is_pvid;
@@ -1533,6 +1534,7 @@ global:
 	nm_bridge_vlan_seal;
 	nm_bridge_vlan_set_pvid;
 	nm_bridge_vlan_set_untagged;
+	nm_bridge_vlan_to_str;
 	nm_bridge_vlan_unref;
 	nm_setting_bridge_add_vlan;
 	nm_setting_bridge_clear_vlans;

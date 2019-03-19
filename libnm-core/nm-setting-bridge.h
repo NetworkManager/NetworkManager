@@ -139,6 +139,11 @@ gboolean       nm_bridge_vlan_is_untagged (const NMBridgeVlan *vlan);
 NM_AVAILABLE_IN_1_18
 gboolean       nm_bridge_vlan_is_pvid (const NMBridgeVlan *vlan);
 
+NM_AVAILABLE_IN_1_18
+char         * nm_bridge_vlan_to_str (const NMBridgeVlan *vlan, GError **error);
+NM_AVAILABLE_IN_1_18
+NMBridgeVlan * nm_bridge_vlan_from_str (const char *str, GError **error);
+
 G_END_DECLS
 
 #endif /* __NM_SETTING_BRIDGE_H__ */
