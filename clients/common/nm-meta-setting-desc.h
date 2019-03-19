@@ -271,10 +271,13 @@ struct _NMMetaPropertyTypData {
 			bool legacy_format:1;
 		} gobject_bytes;
 		struct {
-			guint32 (*get_num_fcn) (NMSetting *setting);
+			guint32 (*get_num_fcn_u32) (NMSetting *setting);
+			guint (*get_num_fcn_u) (NMSetting *setting);
 			gboolean (*add_fcn) (NMSetting *setting,
 			                     const char *item);
-			void (*remove_by_idx_fcn) (NMSetting *setting, guint32 idx);
+			const char *(*validate_fcn) (const char *item, GError **error);
+			void (*remove_by_idx_fcn_u32) (NMSetting *setting, guint32 idx);
+			void (*remove_by_idx_fcn_s) (NMSetting *setting, int idx);
 			gboolean (*remove_by_value_fcn) (NMSetting *setting, const char *item);
 		} multilist;
 		struct {
