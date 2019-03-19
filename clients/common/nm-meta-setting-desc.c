@@ -1774,55 +1774,6 @@ _set_fcn_optionlist (ARGS_SET_FCN)
 	return TRUE;
 }
 
-#define DEFINE_SETTER_OPTIONS(def_func, s_macro, s_type, add_func, valid_func1, valid_func2) \
-	static gboolean \
-	def_func (ARGS_SET_FCN) \
-	{ \
-		gs_free const char **strv = NULL; \
-		const char **iter; \
-		const char **(*valid_func1_p) (s_type *) = valid_func1; \
-		const char * (*valid_func2_p) (const char *, const char *, GError **) = valid_func2; \
-		const char *opt_name, *opt_val; \
-		\
-		nm_assert (!error || !*error); \
-		\
-		if (_SET_FCN_DO_RESET_DEFAULT (value)) \
-			return _gobject_property_reset_default (setting, property_info->property_name); \
-		\
-		strv = nm_utils_strsplit_set (value, ",", FALSE); \
-		for (iter = strv; iter && *iter; iter++) { \
-			char *left; \
-			char *right; \
-			\
-			left = g_strstrip ((char *) *iter); \
-			right = strchr (left, '='); \
-			\
-			if (!right) { \
-				g_set_error (error, 1, 0, _("'%s' is not valid; use <option>=<value>"), *iter); \
-				return FALSE; \
-			} \
-			*right++ = '\0'; \
-			g_strchomp (left); \
-			\
-			if (valid_func1_p) { \
-				const char **valid_options = valid_func1_p (s_macro (setting)); \
-				if (!(opt_name = nmc_string_is_valid (left, valid_options, error))) { \
-					return FALSE; \
-				} \
-			} else \
-				opt_name = left;\
-			\
-			opt_val = g_strchug (right); \
-			if (valid_func2_p) { \
-				if (!(opt_val = valid_func2_p ((const char *) left, (const char *) opt_val, error))) { \
-					return FALSE; \
-				}\
-			}\
-			add_func (s_macro (setting), opt_name, opt_val); \
-		} \
-		return TRUE; \
-	}
-
 #define _DEFINE_REMOVER_INDEX_OR_VALUE(def_func, s_macro, num_func, rem_func_idx, rem_func_cmd) \
 	static gboolean \
 	def_func (ARGS_REMOVE_FCN) \
@@ -4213,28 +4164,21 @@ _set_fcn_wired_s390_subchannels (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static const char *
-_validate_s390_option_value (const char *option, const char *value, GError **error)
-{
-	/*  nm_setting_wired_add_s390_option() requires value len in <1,199> interval */
-	if (!value || !*value || strlen (value) >= 200) {
-		g_set_error (error, 1, 0, _("'%s' string value should consist of 1 - 199 characters"), option);
-		return NULL;
-	}
-	return value;
-}
-DEFINE_SETTER_OPTIONS (_set_fcn_wired_s390_options,
-                       NM_SETTING_WIRED,
-                       NMSettingWired,
-                       nm_setting_wired_add_s390_option,
-                       nm_setting_wired_get_valid_s390_options,
-                       _validate_s390_option_value)
-
 static gboolean
 _remove_fcn_wired_s390_options (ARGS_REMOVE_FCN)
 {
 	if (value && *value)
 		nm_setting_wired_remove_s390_option (NM_SETTING_WIRED (setting), value);
+	return TRUE;
+}
+
+static gboolean
+_optionlist_add_fcn_wired_s390_options (NMSetting *setting,
+                                        const char *name,
+                                        const char *value,
+                                        GError **error)
+{
+	nm_setting_wired_add_s390_option (NM_SETTING_WIRED (setting), name, value);
 	return TRUE;
 }
 
@@ -7150,9 +7094,13 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.describe_fcn =             _describe_fcn_wired_s390_options,
 			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_wired_s390_options,
+			.set_fcn =                  _set_fcn_optionlist,
 			.remove_fcn =               _remove_fcn_wired_s390_options,
 			.values_fcn =               _values_fcn_wired_s390_options,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (optionlist,
+			.add_fcn =                  _optionlist_add_fcn_wired_s390_options,
+			.no_empty_value =           TRUE,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_WAKE_ON_LAN,
