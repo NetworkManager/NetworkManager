@@ -1790,15 +1790,6 @@ _remove_fcn_multilist (ARGS_REMOVE_FCN)
 #define DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
 	DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (def_func, s_macro, num_func, rem_func_idx, rem_func_val)
 
-#define DEFINE_REMOVER_OPTION(def_func, s_macro, rem_func) \
-	static gboolean \
-	def_func (ARGS_REMOVE_FCN) \
-	{ \
-		if (value && *value) \
-			rem_func (s_macro (setting), value); \
-		return TRUE; \
-	}
-
 #define DEFINE_SETTER_MAC_BLACKLIST(def_func, s_macro, add_func) \
 	static gboolean \
 	def_func (ARGS_SET_FCN) \
@@ -2333,22 +2324,6 @@ _get_fcn_bond_options (ARGS_GET_FCN)
 	RETURN_STR_TO_FREE (g_string_free (bond_options_s, FALSE));
 }
 
-/*  example: miimon=100,mode=balance-rr, updelay=5 */
-static gboolean
-_validate_and_remove_bond_option (NMSettingBond *setting, const char *option)
-{
-	const char *opt;
-	const char **valid_options;
-
-	valid_options = nm_setting_bond_get_valid_options (setting);
-	opt = nmc_string_is_valid (option, valid_options, NULL);
-
-	if (opt)
-		return nm_setting_bond_remove_option (setting, opt);
-	else
-		return FALSE;
-}
-
 static const char *
 _validate_bond_option_value (const char *option, const char *value, GError **error)
 {
@@ -2382,9 +2357,24 @@ DEFINE_SETTER_OPTIONS (_set_fcn_bond_options,
                        _bond_add_option,
                        nm_setting_bond_get_valid_options,
                        _validate_bond_option_value)
-DEFINE_REMOVER_OPTION (_remove_fcn_bond_options,
-                       NM_SETTING_BOND,
-                       _validate_and_remove_bond_option)
+
+static gboolean
+_remove_fcn_bond_options (ARGS_REMOVE_FCN)
+{
+	const char **valid_options;
+
+	if (!value || !*value)
+		return TRUE;
+
+	valid_options = nm_setting_bond_get_valid_options (NM_SETTING_BOND (setting));
+
+	value = nmc_string_is_valid (value, valid_options, error);
+	if (!value)
+		return FALSE;
+
+	nm_setting_bond_remove_option (NM_SETTING_BOND (setting), value);
+	return TRUE;
+}
 
 static const char *
 _describe_fcn_bond_options (ARGS_DESCRIBE_FCN)
@@ -4104,9 +4094,14 @@ DEFINE_SETTER_OPTIONS (_set_fcn_vpn_data,
                        nm_setting_vpn_add_data_item,
                        NULL,
                        _validate_vpn_hash_value)
-DEFINE_REMOVER_OPTION (_remove_fcn_vpn_data,
-                       NM_SETTING_VPN,
-                       nm_setting_vpn_remove_data_item)
+
+static gboolean
+_remove_fcn_vpn_data (ARGS_REMOVE_FCN)
+{
+	if (value && *value)
+		nm_setting_vpn_remove_data_item (NM_SETTING_VPN (setting), value);
+	return TRUE;
+}
 
 DEFINE_SETTER_OPTIONS (_set_fcn_vpn_secrets,
                        NM_SETTING_VPN,
@@ -4114,9 +4109,14 @@ DEFINE_SETTER_OPTIONS (_set_fcn_vpn_secrets,
                        nm_setting_vpn_add_secret,
                        NULL,
                        _validate_vpn_hash_value)
-DEFINE_REMOVER_OPTION (_remove_fcn_vpn_secrets,
-                       NM_SETTING_VPN,
-                       nm_setting_vpn_remove_secret)
+
+static gboolean
+_remove_fcn_vpn_secrets (ARGS_REMOVE_FCN)
+{
+	if (value && *value)
+		nm_setting_vpn_remove_secret (NM_SETTING_VPN (setting), value);
+	return TRUE;
+}
 
 DEFINE_SETTER_MAC_BLACKLIST (_set_fcn_wired_mac_address_blacklist,
                              NM_SETTING_WIRED,
@@ -4181,9 +4181,14 @@ DEFINE_SETTER_OPTIONS (_set_fcn_wired_s390_options,
                        nm_setting_wired_add_s390_option,
                        nm_setting_wired_get_valid_s390_options,
                        _validate_s390_option_value)
-DEFINE_REMOVER_OPTION (_remove_fcn_wired_s390_options,
-                       NM_SETTING_WIRED,
-                       nm_setting_wired_remove_s390_option)
+
+static gboolean
+_remove_fcn_wired_s390_options (ARGS_REMOVE_FCN)
+{
+	if (value && *value)
+		nm_setting_wired_remove_s390_option (NM_SETTING_WIRED (setting), value);
+	return TRUE;
+}
 
 static const char *const*
 _values_fcn__wired_s390_options (ARGS_VALUES_FCN)
