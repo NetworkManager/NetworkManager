@@ -1003,6 +1003,7 @@ nm_setting_team_get_runner_tx_hash (NMSettingTeam *setting, guint idx)
 	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
 
 	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), NULL);
+	g_return_val_if_fail (priv->runner_tx_hash, NULL);
 	g_return_val_if_fail (idx < priv->runner_tx_hash->len, NULL);
 
 	return priv->runner_tx_hash->pdata[idx];
@@ -1023,6 +1024,7 @@ nm_setting_team_remove_runner_tx_hash (NMSettingTeam *setting, guint idx)
 	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
 
 	g_return_if_fail (NM_IS_SETTING_TEAM (setting));
+	g_return_if_fail (priv->runner_tx_hash);
 	g_return_if_fail (idx < priv->runner_tx_hash->len);
 
 	g_ptr_array_remove_index (priv->runner_tx_hash, idx);
