@@ -4150,18 +4150,6 @@ _get_fcn_vpn_secrets (ARGS_GET_FCN)
 	RETURN_STR_TO_FREE (g_string_free (secret_str, FALSE));
 }
 
-static const char *
-_validate_vpn_hash_value (const char *option, const char *value, GError **error)
-{
-	/* nm_setting_vpn_add_data_item() and nm_setting_vpn_add_secret() does not
-	 * allow empty strings */
-	if (!value || !*value) {
-		g_set_error (error, 1, 0, _("'%s' cannot be empty"), option);
-		return NULL;
-	}
-	return value;
-}
-
 static gboolean
 _remove_fcn_vpn_data (ARGS_REMOVE_FCN)
 {
@@ -4169,13 +4157,6 @@ _remove_fcn_vpn_data (ARGS_REMOVE_FCN)
 		nm_setting_vpn_remove_data_item (NM_SETTING_VPN (setting), value);
 	return TRUE;
 }
-
-DEFINE_SETTER_OPTIONS (_set_fcn_vpn_secrets,
-                       NM_SETTING_VPN,
-                       NMSettingVpn,
-                       nm_setting_vpn_add_secret,
-                       NULL,
-                       _validate_vpn_hash_value)
 
 static gboolean
 _remove_fcn_vpn_secrets (ARGS_REMOVE_FCN)
@@ -6957,8 +6938,12 @@ static const NMMetaPropertyInfo *const property_infos_VPN[] = {
 		.is_secret =                    TRUE,
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_vpn_secrets,
-			.set_fcn =                  _set_fcn_vpn_secrets,
+			.set_fcn =                  _set_fcn_optionlist,
 			.remove_fcn =               _remove_fcn_vpn_secrets,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (optionlist,
+			.add2_fcn =                 OPTIONLIST_ADD2_FCN (NMSettingVpn, nm_setting_vpn_add_secret),
+			.no_empty_value =           TRUE,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_VPN_PERSISTENT,
