@@ -1085,7 +1085,7 @@ void _nm_utils_user_data_unpack (gpointer user_data, int nargs, ...);
 /*****************************************************************************/
 
 const char *_nm_utils_escape_spaces (const char *str, char **to_free);
-char *_nm_utils_unescape_spaces (char *str);
+char *_nm_utils_unescape_spaces (char *str, gboolean do_strip);
 
 /*****************************************************************************/
 
