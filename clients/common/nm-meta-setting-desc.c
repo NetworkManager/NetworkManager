@@ -3229,7 +3229,7 @@ _set_fcn_match_interface_name (ARGS_SET_FCN)
 	if (strv) {
 		for (i = 0; strv[i]; i++) {
 			nm_setting_match_add_interface_name (NM_SETTING_MATCH (setting),
-			                                     _nm_utils_unescape_spaces ((char *) strv[i]));
+			                                     _nm_utils_unescape_spaces ((char *) strv[i], TRUE));
 		}
 	}
 	return TRUE;

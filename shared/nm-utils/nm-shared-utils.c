@@ -2407,19 +2407,35 @@ _nm_utils_escape_spaces (const char *str, char **to_free)
 }
 
 char *
-_nm_utils_unescape_spaces (char *str)
+_nm_utils_unescape_spaces (char *str, gboolean do_strip)
 {
-	guint i, j = 0;
+	gsize i = 0;
+	gsize j = 0;
+	gsize preserve_space_at = 0;
 
 	if (!str)
 		return NULL;
 
-	for (i = 0; str[i]; i++) {
-		if (str[i] == '\\' && IS_SPACE (str[i+1]))
+	if (do_strip) {
+		while (str[i] && IS_SPACE (str[i]))
 			i++;
+	}
+
+	for (; str[i]; i++) {
+		if (   str[i] == '\\'
+		    && IS_SPACE (str[i+1])) {
+			preserve_space_at = j;
+			i++;
+		}
 		str[j++] = str[i];
 	}
 	str[j] = '\0';
+
+	if (do_strip && j > 0) {
+		while (   --j > preserve_space_at
+		       && IS_SPACE (str[j]))
+			str[j] = '\0';
+	}
 
 	return str;
 }

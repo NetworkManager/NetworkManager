@@ -7734,23 +7734,72 @@ test_nm_utils_escape_spaces (void)
 }
 
 static void
+_do_test_unescape_spaces (const char *in, const char *out)
+{
+	nm_auto_free_gstring GString *str_out = g_string_new (NULL);
+	nm_auto_free_gstring GString *str_in = g_string_new (NULL);
+	guint i;
+
+	for (i = 0; i < 10; i++) {
+
+		g_string_set_size (str_in, 0);
+
+		g_string_append (str_in, in);
+
+		if (i == 0)
+			g_assert_cmpstr (_nm_utils_unescape_spaces (str_in->str, FALSE), ==, out);
+		else if (i == 1)
+			g_assert_cmpstr (_nm_utils_unescape_spaces (str_in->str, TRUE), ==, out);
+		else {
+			bool do_strip = nmtst_get_rand_bool ();
+			guint n = nmtst_get_rand_int () % 20;
+			guint j;
+
+			g_string_set_size (str_out, 0);
+			if (!do_strip)
+				g_string_append (str_out, out);
+
+			for (j = 0; j < n; j++) {
+				gboolean append = nmtst_get_rand_bool ();
+				char ch = nmtst_rand_select (' ', '\t');
+
+				if (append && out[strlen (out) - 1] == '\\')
+					append = FALSE;
+
+				g_string_insert_c (str_in, append ? -1 : 0, ch);
+				if (!do_strip)
+					g_string_insert_c (str_out, append ? -1 : 0, ch);
+			}
+
+			if (do_strip)
+				g_assert_cmpstr (_nm_utils_unescape_spaces (str_in->str, TRUE), ==, out);
+			else
+				g_assert_cmpstr (_nm_utils_unescape_spaces (str_in->str, FALSE), ==, str_out->str);
+		}
+	}
+}
+
+static void
 test_nm_utils_unescape_spaces (void)
 {
-#define CHECK_STR(in, out) \
-	G_STMT_START { \
-		gs_free char *str = g_strdup (in); \
-		\
-		g_assert_cmpstr (_nm_utils_unescape_spaces (str), ==, out); \
-	} G_STMT_END
-
-	CHECK_STR ("\\a", "\\a");
-	CHECK_STR ("foobar", "foobar");
-	CHECK_STR ("foo bar", "foo bar");
-	CHECK_STR ("foo\\ bar", "foo bar");
-	CHECK_STR ("foo\\", "foo\\");
-	CHECK_STR ("\\\\\t", "\\\t");
-
-#undef CHECK_STR
+	_do_test_unescape_spaces ("", "");
+	_do_test_unescape_spaces ("\\", "\\");
+	_do_test_unescape_spaces ("\\ ", " ");
+	_do_test_unescape_spaces ("\\\t", "\t");
+	_do_test_unescape_spaces ("a", "a");
+	_do_test_unescape_spaces ("\\a", "\\a");
+	_do_test_unescape_spaces ("foobar", "foobar");
+	_do_test_unescape_spaces ("foo bar", "foo bar");
+	_do_test_unescape_spaces ("foo\\ bar", "foo bar");
+	_do_test_unescape_spaces ("foo\\", "foo\\");
+	_do_test_unescape_spaces ("\\\\", "\\\\");
+	_do_test_unescape_spaces ("foo   bar", "foo   bar");
+	_do_test_unescape_spaces ("\\ foo   bar", " foo   bar");
+	_do_test_unescape_spaces ("\\ foo   bar\\ ", " foo   bar ");
+	_do_test_unescape_spaces ("\\\tfoo   bar\\\t", "\tfoo   bar\t");
+	_do_test_unescape_spaces ("\\\tfoo   bar  \\\t", "\tfoo   bar  \t");
+	_do_test_unescape_spaces ("\\\t", "\t");
+	_do_test_unescape_spaces ("\\\t \\ ", "\t  ");
 }
 
 /*****************************************************************************/

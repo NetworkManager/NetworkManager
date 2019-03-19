@@ -1449,7 +1449,7 @@ make_match_setting (shvarFile *ifcfg)
 			if (!s_match)
 				s_match = (NMSettingMatch *) nm_setting_match_new ();
 			nm_setting_match_add_interface_name (s_match,
-			                                     _nm_utils_unescape_spaces ((char *) strv[i]));
+			                                     _nm_utils_unescape_spaces ((char *) strv[i], TRUE));
 		}
 	}
 
