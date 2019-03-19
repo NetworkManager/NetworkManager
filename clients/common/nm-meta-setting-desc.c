@@ -3058,8 +3058,13 @@ _set_fcn_ip_config_addresses (ARGS_SET_FCN)
 	gs_free const char **strv = NULL;
 	const char *const*iter;
 
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
+	if (_SET_FCN_DO_RESET_DEFAULT (value)) {
+		if (property_info->property_typ_data->subtype.objlist.clear_all_fcn) {
+			property_info->property_typ_data->subtype.objlist.clear_all_fcn (setting);
+			return TRUE;
+		}
 		return _gobject_property_reset_default (setting, property_info->property_name);
+	}
 
 	strv = nm_utils_strsplit_set (value, ",", FALSE);
 	if (strv) {
@@ -4214,6 +4219,7 @@ static const NMMetaPropertyType _pt_ethtool = {
 #define MULTILIST_REMOVE_BY_VALUE_FCN(type, func)   (((func) == ((gboolean (*) (type *, const char *)) (func))) ? ((gboolean (*) (NMSetting *, const char *)) (func)) : NULL)
 
 #define OBJLIST_GET_NUM_FCN(type, func)             (((func) == ((guint    (*) (type *              )) (func))) ? ((guint    (*) (NMSetting *              )) (func)) : NULL)
+#define OBJLIST_CLEAR_ALL_FCN(type, func)           (((func) == ((void     (*) (type *              )) (func))) ? ((void     (*) (NMSetting *              )) (func)) : NULL)
 
 static const NMMetaPropertyType _pt_multilist = {
 	.get_fcn =                      _get_fcn_gobject,
@@ -5320,6 +5326,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_addresses),
+				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingIPConfig, nm_setting_ip_config_clear_addresses),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_addresses,
 			),
 		),
@@ -5350,6 +5357,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_routes),
+				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingIPConfig, nm_setting_ip_config_clear_routes),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routes,
 				.delimit_pretty_with_semicolon = TRUE,
 			),
@@ -5514,6 +5522,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_addresses),
+				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingIPConfig, nm_setting_ip_config_clear_addresses),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_addresses,
 			),
 		),
@@ -5544,6 +5553,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_routes),
+				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingIPConfig, nm_setting_ip_config_clear_routes),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routes,
 				.delimit_pretty_with_semicolon = TRUE,
 			),
@@ -6130,6 +6140,7 @@ static const NMMetaPropertyInfo *const property_infos_SRIOV[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingSriov, nm_setting_sriov_get_num_vfs),
+				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingSriov, nm_setting_sriov_clear_vfs),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_sriov_vfs,
 			),
 		),
@@ -6152,6 +6163,7 @@ static const NMMetaPropertyInfo *const property_infos_TC_CONFIG[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTCConfig, nm_setting_tc_config_get_num_qdiscs),
+				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingTCConfig, nm_setting_tc_config_clear_qdiscs),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_tc_config_qdiscs,
 			),
 		),
@@ -6165,6 +6177,7 @@ static const NMMetaPropertyInfo *const property_infos_TC_CONFIG[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTCConfig, nm_setting_tc_config_get_num_tfilters),
+				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingTCConfig, nm_setting_tc_config_clear_tfilters),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_tc_config_tfilters,
 			),
 		),
@@ -6327,6 +6340,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTeam, nm_setting_team_get_num_link_watchers),
+				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingTeam, nm_setting_team_clear_link_watchers),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_team_link_watchers,
 			),
 		),
@@ -6404,6 +6418,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTeamPort, nm_setting_team_port_get_num_link_watchers),
+				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingTeamPort, nm_setting_team_port_clear_link_watchers),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_team_port_link_watchers,
 			),
 		),

@@ -296,6 +296,7 @@ struct _NMMetaPropertyTypData {
 			                        NMSetting *setting,
 			                        guint idx,
 			                        GString *str);
+			void (*clear_all_fcn) (NMSetting *setting);
 			bool delimit_pretty_with_semicolon:1;
 		} objlist;
 		struct {
