@@ -1695,6 +1695,64 @@ _remove_fcn_multilist (ARGS_REMOVE_FCN)
 	return TRUE;
 }
 
+static gboolean
+_set_fcn_optionlist (ARGS_SET_FCN)
+{
+	gs_free const char **strv = NULL;
+	const char **iter;
+
+	nm_assert (!error || !*error);
+
+	if (_SET_FCN_DO_RESET_DEFAULT (value))
+		return _gobject_property_reset_default (setting, property_info->property_name);
+
+	strv = nm_utils_strsplit_set (value, ",", FALSE);
+	for (iter = strv; iter && *iter; iter++) {
+		const char *opt_name;
+		char *left;
+		char *right;
+
+		left = (char *) nm_str_skip_leading_spaces (*iter);
+
+		/* FIXME: support backslash escaping for the option list. */
+		right = strchr (left, '=');
+
+		if (!right) {
+			g_set_error (error, 1, 0, _("'%s' is not valid; use <option>=<value>"), *iter);
+			return FALSE;
+		}
+		*right++ = '\0';
+		right = nm_str_skip_leading_spaces (right);
+
+		/* FIXME: support backslash escaping for the option list. */
+		g_strchomp (right);
+		g_strchomp (left);
+
+		if (   property_info->property_type->values_fcn
+		    || property_info->property_typ_data->values_static) {
+			gs_strfreev char **valid_options_to_free = NULL;
+			const char *const*valid_options;
+
+			if (property_info->property_type->values_fcn)
+				valid_options = property_info->property_type->values_fcn (property_info, &valid_options_to_free);
+			else
+				valid_options = property_info->property_typ_data->values_static;
+
+			opt_name = nmc_string_is_valid (left, (const char **) valid_options, error);
+			if (!opt_name)
+				return FALSE;
+		} else
+			opt_name = left;
+
+		if (!property_info->property_typ_data->subtype.optionlist.add_fcn (setting,
+		                                                                   opt_name,
+		                                                                   right,
+		                                                                   error))
+			return FALSE;
+	}
+	return TRUE;
+}
+
 #define DEFINE_SETTER_OPTIONS(def_func, s_macro, s_type, add_func, valid_func1, valid_func2) \
 	static gboolean \
 	def_func (ARGS_SET_FCN) \
@@ -2324,39 +2382,34 @@ _get_fcn_bond_options (ARGS_GET_FCN)
 	RETURN_STR_TO_FREE (g_string_free (bond_options_s, FALSE));
 }
 
-static const char *
-_validate_bond_option_value (const char *option, const char *value, GError **error)
-{
-	if (!g_strcmp0 (option, NM_SETTING_BOND_OPTION_MODE))
-		return nmc_bond_validate_mode (value, error);
-
-	return value;
-}
-
 static gboolean
-_bond_add_option (NMSettingBond *setting,
-                  const char *name,
-                  const char *value)
+_optionlist_add_fcn_bond_options (NMSetting *setting,
+                                  const char *name,
+                                  const char *value,
+                                  GError **error)
 {
 	gs_free char *tmp_value = NULL;
 	char *p;
 
-	if (nm_streq0 (name, NM_SETTING_BOND_OPTION_ARP_IP_TARGET)) {
+	if (nm_streq (name, NM_SETTING_BOND_OPTION_MODE)) {
+		value = nmc_bond_validate_mode (value, error);
+		if (!value)
+			return FALSE;
+	} else if (nm_streq (name, NM_SETTING_BOND_OPTION_ARP_IP_TARGET)) {
 		value = tmp_value = g_strdup (value);
 		for (p = tmp_value; p && *p; p++)
 			if (*p == ' ')
 				*p = ',';
 	}
 
-	return nm_setting_bond_add_option (setting, name, value);
+	if (!nm_setting_bond_add_option (NM_SETTING_BOND (setting), name, value)) {
+		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		                    _("failed to set bond option \"%s\""),
+		                    name);
+		return FALSE;
+	}
+	return TRUE;
 }
-
-DEFINE_SETTER_OPTIONS (_set_fcn_bond_options,
-                       NM_SETTING_BOND,
-                       NMSettingBond,
-                       _bond_add_option,
-                       nm_setting_bond_get_valid_options,
-                       _validate_bond_option_value)
 
 static gboolean
 _remove_fcn_bond_options (ARGS_REMOVE_FCN)
@@ -2366,7 +2419,7 @@ _remove_fcn_bond_options (ARGS_REMOVE_FCN)
 	if (!value || !*value)
 		return TRUE;
 
-	valid_options = nm_setting_bond_get_valid_options (NM_SETTING_BOND (setting));
+	valid_options = nm_setting_bond_get_valid_options (NULL);
 
 	value = nmc_string_is_valid (value, valid_options, error);
 	if (!value)
@@ -4191,7 +4244,7 @@ _remove_fcn_wired_s390_options (ARGS_REMOVE_FCN)
 }
 
 static const char *const*
-_values_fcn__wired_s390_options (ARGS_VALUES_FCN)
+_values_fcn_wired_s390_options (ARGS_VALUES_FCN)
 {
 	return nm_setting_wired_get_valid_s390_options (NULL);
 }
@@ -5095,11 +5148,14 @@ static const NMMetaPropertyInfo property_info_BOND_OPTIONS =
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.describe_fcn =             _describe_fcn_bond_options,
 			.get_fcn =                  _get_fcn_bond_options,
-			.set_fcn =                  _set_fcn_bond_options,
+			.set_fcn =                  _set_fcn_optionlist,
 			.remove_fcn =               _remove_fcn_bond_options,
 			.values_fcn =               _values_fcn_bond_options,
 		),
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (optionlist,
+				.add_fcn =              _optionlist_add_fcn_bond_options,
+			),
 			.nested =                   &nm_meta_property_typ_data_bond,
 		),
 	);
@@ -7091,7 +7147,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_wired_s390_options,
 			.remove_fcn =               _remove_fcn_wired_s390_options,
-			.values_fcn =               _values_fcn__wired_s390_options,
+			.values_fcn =               _values_fcn_wired_s390_options,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_WAKE_ON_LAN,
