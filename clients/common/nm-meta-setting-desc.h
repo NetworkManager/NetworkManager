@@ -291,6 +291,14 @@ struct _NMMetaPropertyTypData {
 			bool with_escaped_spaces:1;
 		} multilist;
 		struct {
+			guint (*get_num_fcn) (NMSetting *setting);
+			void (*obj_to_str_fcn) (NMMetaAccessorGetType get_type,
+			                        NMSetting *setting,
+			                        guint idx,
+			                        GString *str);
+			bool delimit_pretty_with_semicolon:1;
+		} objlist;
+		struct {
 			gboolean (*add_fcn) (NMSetting *setting,
 			                     const char *option,
 			                     const char *value,
