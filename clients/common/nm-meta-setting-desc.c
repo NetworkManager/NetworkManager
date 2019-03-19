@@ -2892,103 +2892,107 @@ _get_fcn_infiniband_p_key (ARGS_GET_FCN)
 }
 
 static gconstpointer
-_get_fcn_ip_config_addresses (ARGS_GET_FCN)
+_get_fcn_objlist (ARGS_GET_FCN)
 {
-	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
-	GString *printable;
-	guint num_addresses, i;
-	NMIPAddress *addr;
+	GString *str = NULL;
+	guint num;
+	guint idx;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
-	printable = g_string_new (NULL);
+	num = property_info->property_typ_data->subtype.objlist.get_num_fcn (setting);
 
-	num_addresses = NM_MIN ((guint) G_MAXINT, nm_setting_ip_config_get_num_addresses (s_ip));
-	for (i = 0; i < num_addresses; i++) {
-		addr = nm_setting_ip_config_get_address (s_ip, i);
+	for (idx = 0; idx < num; idx++) {
+		if (!str)
+			str = g_string_new (NULL);
+		else if (str->len > 0) {
+			if (   get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY
+			    && property_info->property_typ_data->subtype.objlist.delimit_pretty_with_semicolon)
+				g_string_append (str, "; ");
+			else
+				g_string_append (str, ", ");
+		}
 
-		if (printable->len > 0)
-			g_string_append (printable, ", ");
-
-		g_string_append_printf (printable, "%s/%u",
-		                        nm_ip_address_get_address (addr),
-		                        nm_ip_address_get_prefix (addr));
+		property_info->property_typ_data->subtype.objlist.obj_to_str_fcn (get_type,
+		                                                                  setting,
+		                                                                  idx,
+		                                                                  str);
 	}
 
-	NM_SET_OUT (out_is_default, num_addresses == 0);
-	RETURN_STR_TO_FREE (g_string_free (printable, FALSE));
+	NM_SET_OUT (out_is_default, num == 0);
+	if (str)
+		RETURN_STR_TO_FREE (g_string_free (str, FALSE));
+	return NULL;
 }
 
-static gconstpointer
-_get_fcn_ip_config_routes (ARGS_GET_FCN)
+static void
+_objlist_obj_to_str_fcn_ip_config_addresses (NMMetaAccessorGetType get_type,
+                                             NMSetting *setting,
+                                             guint idx,
+                                             GString *str)
 {
-	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
-	GString *printable;
-	guint num_routes, i;
+	NMIPAddress *obj;
+
+	obj = nm_setting_ip_config_get_address (NM_SETTING_IP_CONFIG (setting),
+	                                        idx);
+	g_string_append_printf (str,
+	                        "%s/%u",
+	                        nm_ip_address_get_address (obj),
+	                        nm_ip_address_get_prefix (obj));
+}
+
+static void
+_objlist_obj_to_str_fcn_ip_config_routes (NMMetaAccessorGetType get_type,
+                                          NMSetting *setting,
+                                          guint idx,
+                                          GString *str)
+{
 	NMIPRoute *route;
+	gs_free char *attr_str = NULL;
+	gs_strfreev char **attr_names = NULL;
+	gs_unref_hashtable GHashTable *hash = g_hash_table_new (nm_str_hash, g_str_equal);
+	int j;
 
-	RETURN_UNSUPPORTED_GET_TYPE ();
+	route = nm_setting_ip_config_get_route (NM_SETTING_IP_CONFIG (setting), idx);
 
-	printable = g_string_new (NULL);
-
-	num_routes = NM_MIN ((guint) G_MAXINT, nm_setting_ip_config_get_num_routes (s_ip));
-	for (i = 0; i < num_routes; i++) {
-		gs_free char *attr_str = NULL;
-		gs_strfreev char **attr_names = NULL;
-		gs_unref_hashtable GHashTable *hash = g_hash_table_new (nm_str_hash, g_str_equal);
-		int j;
-
-		route = nm_setting_ip_config_get_route (s_ip, i);
-
-		attr_names = nm_ip_route_get_attribute_names (route);
-		for (j = 0; attr_names && attr_names[j]; j++) {
-			g_hash_table_insert (hash, attr_names[j],
-			                     nm_ip_route_get_attribute (route, attr_names[j]));
-		}
-
-		attr_str = nm_utils_format_variant_attributes (hash, ' ', '=');
-
-		if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY) {
-			if (printable->len > 0)
-				g_string_append (printable, ", ");
-
-			g_string_append_printf (printable, "%s/%u",
-			                        nm_ip_route_get_dest (route),
-			                        nm_ip_route_get_prefix (route));
-
-			if (nm_ip_route_get_next_hop (route))
-				g_string_append_printf (printable, " %s", nm_ip_route_get_next_hop (route));
-			if (nm_ip_route_get_metric (route) != -1)
-				g_string_append_printf (printable, " %u", (guint32) nm_ip_route_get_metric (route));
-			if (attr_str)
-				g_string_append_printf (printable, " %s", attr_str);
-		} else {
-
-			if (printable->len > 0)
-				g_string_append (printable, "; ");
-
-			g_string_append (printable, "{ ");
-
-			g_string_append_printf (printable, "ip = %s/%u",
-			                        nm_ip_route_get_dest (route),
-			                        nm_ip_route_get_prefix (route));
-
-			if (nm_ip_route_get_next_hop (route)) {
-				g_string_append_printf (printable, ", nh = %s",
-				                        nm_ip_route_get_next_hop (route));
-			}
-
-			if (nm_ip_route_get_metric (route) != -1)
-				g_string_append_printf (printable, ", mt = %u", (guint32) nm_ip_route_get_metric (route));
-			if (attr_str)
-				g_string_append_printf (printable, " %s", attr_str);
-
-			g_string_append (printable, " }");
-		}
+	attr_names = nm_ip_route_get_attribute_names (route);
+	for (j = 0; attr_names && attr_names[j]; j++) {
+		g_hash_table_insert (hash, attr_names[j],
+		                     nm_ip_route_get_attribute (route, attr_names[j]));
 	}
 
-	NM_SET_OUT (out_is_default, num_routes == 0);
-	RETURN_STR_TO_FREE (g_string_free (printable, FALSE));
+	attr_str = nm_utils_format_variant_attributes (hash, ' ', '=');
+
+	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY) {
+		g_string_append_printf (str, "%s/%u",
+		                        nm_ip_route_get_dest (route),
+		                        nm_ip_route_get_prefix (route));
+
+		if (nm_ip_route_get_next_hop (route))
+			g_string_append_printf (str, " %s", nm_ip_route_get_next_hop (route));
+		if (nm_ip_route_get_metric (route) != -1)
+			g_string_append_printf (str, " %u", (guint32) nm_ip_route_get_metric (route));
+		if (attr_str)
+			g_string_append_printf (str, " %s", attr_str);
+	} else {
+		g_string_append (str, "{ ");
+
+		g_string_append_printf (str, "ip = %s/%u",
+		                        nm_ip_route_get_dest (route),
+		                        nm_ip_route_get_prefix (route));
+
+		if (nm_ip_route_get_next_hop (route)) {
+			g_string_append_printf (str, ", nh = %s",
+			                        nm_ip_route_get_next_hop (route));
+		}
+
+		if (nm_ip_route_get_metric (route) != -1)
+			g_string_append_printf (str, ", mt = %u", (guint32) nm_ip_route_get_metric (route));
+		if (attr_str)
+			g_string_append_printf (str, " %s", attr_str);
+
+		g_string_append (str, " }");
+	}
 }
 
 static gboolean
@@ -3249,65 +3253,34 @@ _validate_fcn_proxy_pac_script (const char *value, char **out_to_free, GError **
 	RETURN_STR_TO_FREE (script);
 }
 
-static gconstpointer
-_get_fcn_sriov_vfs (ARGS_GET_FCN)
+static void
+_objlist_obj_to_str_fcn_sriov_vfs (NMMetaAccessorGetType get_type,
+                                   NMSetting *setting,
+                                   guint idx,
+                                   GString *str)
 {
-	NMSettingSriov *s_sriov = NM_SETTING_SRIOV (setting);
-	GString *printable;
-	guint num_vfs, i;
+	gs_free char *s = NULL;
+	NMSriovVF *vf;
 
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	printable = g_string_new (NULL);
-
-	num_vfs = nm_setting_sriov_get_num_vfs (s_sriov);
-	for (i = 0; i < num_vfs; i++) {
-		gs_free char *str = NULL;
-		NMSriovVF *vf;
-
-		vf = nm_setting_sriov_get_vf (s_sriov, i);
-		str = nm_utils_sriov_vf_to_str (vf, FALSE, NULL);
-		if (!str)
-			continue;
-
-		if (printable->len > 0)
-			g_string_append (printable, ", ");
-		g_string_append (printable, str);
-	}
-
-	NM_SET_OUT (out_is_default, num_vfs == 0);
-	RETURN_STR_TO_FREE (g_string_free (printable, FALSE));
+	vf = nm_setting_sriov_get_vf (NM_SETTING_SRIOV (setting), idx);
+	s = nm_utils_sriov_vf_to_str (vf, FALSE, NULL);
+	if (s)
+		g_string_append (str, s);
 }
 
-static gconstpointer
-_get_fcn_tc_config_qdiscs (ARGS_GET_FCN)
+static void
+_objlist_obj_to_str_fcn_tc_config_qdiscs (NMMetaAccessorGetType get_type,
+                                          NMSetting *setting,
+                                          guint idx,
+                                          GString *str)
 {
-	NMSettingTCConfig *s_tc = NM_SETTING_TC_CONFIG (setting);
-	GString *printable;
-	guint num_qdiscs, i;
+	gs_free char *s = NULL;
+	NMTCQdisc *qdisc;
 
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	printable = g_string_new (NULL);
-
-	num_qdiscs = nm_setting_tc_config_get_num_qdiscs (s_tc);
-	for (i = 0; i < num_qdiscs; i++) {
-		gs_free char *str = NULL;
-		NMTCQdisc *qdisc;
-
-		qdisc = nm_setting_tc_config_get_qdisc (s_tc, i);
-
-		str = nm_utils_tc_qdisc_to_str (qdisc, NULL);
-		if (!str)
-			continue;
-
-		if (printable->len > 0)
-			g_string_append (printable, ", ");
-		g_string_append (printable, str);
-	}
-
-	NM_SET_OUT (out_is_default, num_qdiscs == 0);
-	RETURN_STR_TO_FREE (g_string_free (printable, FALSE));
+	qdisc = nm_setting_tc_config_get_qdisc (NM_SETTING_TC_CONFIG (setting), idx);
+	s = nm_utils_tc_qdisc_to_str (qdisc, NULL);
+	if (s)
+		g_string_append (str, s);
 }
 
 static gboolean
@@ -3402,35 +3375,19 @@ DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_tc_config_qdiscs,
                                        nm_setting_tc_config_remove_qdisc,
                                        _validate_and_remove_tc_qdisc)
 
-static gconstpointer
-_get_fcn_tc_config_tfilters (ARGS_GET_FCN)
+static void
+_objlist_obj_to_str_fcn_tc_config_tfilters (NMMetaAccessorGetType get_type,
+                                            NMSetting *setting,
+                                            guint idx,
+                                            GString *str)
 {
-	NMSettingTCConfig *s_tc = NM_SETTING_TC_CONFIG (setting);
-	GString *printable;
-	guint num_tfilters, i;
+	NMTCTfilter *tfilter;
+	gs_free char *s = NULL;
 
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	printable = g_string_new (NULL);
-
-	num_tfilters = nm_setting_tc_config_get_num_tfilters (s_tc);
-	for (i = 0; i < num_tfilters; i++) {
-		NMTCTfilter *tfilter;
-		gs_free char *str = NULL;
-
-		tfilter = nm_setting_tc_config_get_tfilter (s_tc, i);
-
-		str = nm_utils_tc_tfilter_to_str (tfilter, NULL);
-		if (!str)
-			continue;
-
-		if (printable->len > 0)
-			g_string_append (printable, ", ");
-		g_string_append (printable, str);
-	}
-
-	NM_SET_OUT (out_is_default, num_tfilters == 0);
-	RETURN_STR_TO_FREE (g_string_free (printable, FALSE));
+	tfilter = nm_setting_tc_config_get_tfilter (NM_SETTING_TC_CONFIG (setting), idx);
+	s = nm_utils_tc_tfilter_to_str (tfilter, NULL);
+	if (s)
+		g_string_append (str, s);
 }
 
 static gboolean
@@ -3490,35 +3447,35 @@ _validate_fcn_team_config (const char *value, char **out_to_free, GError **error
 	RETURN_STR_TO_FREE (json);
 }
 
-static gconstpointer
-_get_fcn_team_link_watchers (ARGS_GET_FCN)
+static void
+_team_link_watcher_obj_to_str (NMTeamLinkWatcher *watcher,
+                               GString *str)
 {
-	NMSettingTeam *s_team = NM_SETTING_TEAM (setting);
-	GString *printable;
-	guint num_watchers, i;
+	gs_free char *s = NULL;
 
-	RETURN_UNSUPPORTED_GET_TYPE ();
+	s = _dump_team_link_watcher (watcher);
+	if (s)
+		g_string_append (str, s);
+}
 
-	printable = g_string_new (NULL);
+static void
+_objlist_obj_to_str_fcn_team_link_watchers (NMMetaAccessorGetType get_type,
+                                            NMSetting *setting,
+                                            guint idx,
+                                            GString *str)
+{
+	_team_link_watcher_obj_to_str (nm_setting_team_get_link_watcher (NM_SETTING_TEAM (setting), idx),
+	                               str);
+}
 
-	num_watchers = nm_setting_team_get_num_link_watchers (s_team);
-	for (i = 0; i < num_watchers; i++) {
-		NMTeamLinkWatcher *watcher;
-		gs_free char *str = NULL;
-
-		watcher = nm_setting_team_get_link_watcher (s_team, i);
-
-		str = _dump_team_link_watcher (watcher);
-		if (!str)
-			continue;
-
-		if (printable->len > 0)
-			g_string_append (printable, ", ");
-		g_string_append (printable, str);
-	}
-
-	NM_SET_OUT (out_is_default, num_watchers == 0);
-	RETURN_STR_TO_FREE (g_string_free (printable, FALSE));
+static void
+_objlist_obj_to_str_fcn_team_port_link_watchers (NMMetaAccessorGetType get_type,
+                                                 NMSetting *setting,
+                                                 guint idx,
+                                                 GString *str)
+{
+	_team_link_watcher_obj_to_str (nm_setting_team_port_get_link_watcher (NM_SETTING_TEAM_PORT (setting), idx),
+	                               str);
 }
 
 static gboolean
@@ -3561,36 +3518,6 @@ DEFINE_REMOVER_INDEX_OR_VALUE_COMPLEX (_remove_fcn_team_link_watchers,
                                        nm_setting_team_get_num_link_watchers,
                                        nm_setting_team_remove_link_watcher,
                                        _validate_and_remove_team_link_watcher)
-
-static gconstpointer
-_get_fcn_team_port_link_watchers (ARGS_GET_FCN)
-{
-	NMSettingTeamPort *s_team_port = NM_SETTING_TEAM_PORT (setting);
-	GString *printable;
-	guint num_watchers, i;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	printable = g_string_new (NULL);
-
-	num_watchers = nm_setting_team_port_get_num_link_watchers (s_team_port);
-	for (i = 0; i < num_watchers; i++) {
-		NMTeamLinkWatcher *watcher;
-		gs_free char *str = NULL;
-
-		watcher = nm_setting_team_port_get_link_watcher (s_team_port, i);
-		str = _dump_team_link_watcher (watcher);
-		if (!str)
-			continue;
-
-		if (printable->len > 0)
-			g_string_append (printable, ", ");
-		g_string_append (printable, str);
-	}
-
-	NM_SET_OUT (out_is_default, num_watchers == 0);
-	RETURN_STR_TO_FREE (g_string_free (printable, FALSE));
-}
 
 static gboolean
 _set_fcn_team_port_link_watchers (ARGS_SET_FCN)
@@ -4285,6 +4212,8 @@ static const NMMetaPropertyType _pt_ethtool = {
 #define MULTILIST_REMOVE_BY_IDX_FCN_S(type, func)   (((func) == ((void     (*) (type *, int         )) (func))) ? ((void     (*) (NMSetting *, int         )) (func)) : NULL)
 #define MULTILIST_REMOVE_BY_IDX_FCN_U(type, func)   (((func) == ((void     (*) (type *, guint       )) (func))) ? ((void     (*) (NMSetting *, guint       )) (func)) : NULL)
 #define MULTILIST_REMOVE_BY_VALUE_FCN(type, func)   (((func) == ((gboolean (*) (type *, const char *)) (func))) ? ((gboolean (*) (NMSetting *, const char *)) (func)) : NULL)
+
+#define OBJLIST_GET_NUM_FCN(type, func)             (((func) == ((guint    (*) (type *              )) (func))) ? ((guint    (*) (NMSetting *              )) (func)) : NULL)
 
 static const NMMetaPropertyType _pt_multilist = {
 	.get_fcn =                      _get_fcn_gobject,
@@ -5384,9 +5313,15 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		       "Missing prefix is regarded as prefix of 32.\n\n"
 		       "Example: 192.168.1.5/24, 10.0.0.11/24\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_ip_config_addresses,
+			.get_fcn =                  _get_fcn_objlist,
 			.set_fcn =                  _set_fcn_ip_config_addresses,
 			.remove_fcn =               _remove_fcn_ip_config_addresses,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (objlist,
+				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_addresses),
+				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_addresses,
+			),
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_GATEWAY, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_GATEWAY,
@@ -5408,9 +5343,16 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		       "Examples: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 		       "          10.1.2.0/24\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_ip_config_routes,
+			.get_fcn =                  _get_fcn_objlist,
 			.set_fcn =                  _set_fcn_ip_config_routes,
 			.remove_fcn =               _remove_fcn_ip_config_routes,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (objlist,
+				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_routes),
+				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routes,
+				.delimit_pretty_with_semicolon = TRUE,
+			),
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTE_METRIC, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_ROUTE_METRIC,
@@ -5565,9 +5507,15 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		       "Missing prefix is regarded as prefix of 128.\n\n"
 		       "Example: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_ip_config_addresses,
+			.get_fcn =                  _get_fcn_objlist,
 			.set_fcn =                  _set_fcn_ip_config_addresses,
 			.remove_fcn =               _remove_fcn_ip_config_addresses,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (objlist,
+				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_addresses),
+				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_addresses,
+			),
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_GATEWAY, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_GATEWAY,
@@ -5589,9 +5537,16 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		       "Examples: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:db8:beef::3 2\n"
 		       "          abbe::/64 55\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_ip_config_routes,
+			.get_fcn =                  _get_fcn_objlist,
 			.set_fcn =                  _set_fcn_ip_config_routes,
 			.remove_fcn =               _remove_fcn_ip_config_routes,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (objlist,
+				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_routes),
+				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routes,
+				.delimit_pretty_with_semicolon = TRUE,
+			),
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTE_METRIC, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_ROUTE_METRIC,
@@ -6168,9 +6123,15 @@ static const NMMetaPropertyInfo *const property_infos_SRIOV[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_SRIOV_VFS,
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_sriov_vfs,
+			.get_fcn =                  _get_fcn_objlist,
 			.set_fcn =                  _set_fcn_sriov_vfs,
 			.remove_fcn =               _remove_fcn_sriov_vfs,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (objlist,
+				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingSriov, nm_setting_sriov_get_num_vfs),
+				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_sriov_vfs,
+			),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_SRIOV_AUTOPROBE_DRIVERS,
@@ -6184,16 +6145,28 @@ static const NMMetaPropertyInfo *const property_infos_SRIOV[] = {
 static const NMMetaPropertyInfo *const property_infos_TC_CONFIG[] = {
 	PROPERTY_INFO (NM_SETTING_TC_CONFIG_QDISCS, DESCRIBE_DOC_NM_SETTING_TC_CONFIG_QDISCS,
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_tc_config_qdiscs,
+			.get_fcn =                  _get_fcn_objlist,
 			.set_fcn =                  _set_fcn_tc_config_qdiscs,
 			.remove_fcn =               _remove_fcn_tc_config_qdiscs,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (objlist,
+				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTCConfig, nm_setting_tc_config_get_num_qdiscs),
+				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_tc_config_qdiscs,
+			),
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_TC_CONFIG_TFILTERS, DESCRIBE_DOC_NM_SETTING_TC_CONFIG_TFILTERS,
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_tc_config_tfilters,
+			.get_fcn =                  _get_fcn_objlist,
 			.set_fcn =                  _set_fcn_tc_config_tfilters,
 			.remove_fcn =               _remove_fcn_tc_config_tfilters,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (objlist,
+				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTCConfig, nm_setting_tc_config_get_num_tfilters),
+				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_tc_config_tfilters,
+			),
 		),
 	),
 	NULL
@@ -6347,9 +6320,15 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_LINK_WATCHERS,
 		.describe_message =             TEAM_LINK_WATCHERS_DESCRIBE_MESSAGE,
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_team_link_watchers,
+			.get_fcn =                  _get_fcn_objlist,
 			.set_fcn =                  _set_fcn_team_link_watchers,
 			.remove_fcn =               _remove_fcn_team_link_watchers,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (objlist,
+				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTeam, nm_setting_team_get_num_link_watchers),
+				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_team_link_watchers,
+			),
 		),
 	),
 	NULL
@@ -6418,9 +6397,15 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_PORT_LINK_WATCHERS,
 		.describe_message =             TEAM_LINK_WATCHERS_DESCRIBE_MESSAGE,
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_team_port_link_watchers,
+			.get_fcn =                  _get_fcn_objlist,
 			.set_fcn =                  _set_fcn_team_port_link_watchers,
 			.remove_fcn =               _remove_fcn_team_port_link_watchers,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (objlist,
+				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTeamPort, nm_setting_team_port_get_num_link_watchers),
+				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_team_port_link_watchers,
+			),
 		),
 	),
 	NULL
