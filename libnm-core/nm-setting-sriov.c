@@ -94,7 +94,7 @@ _vf_vlan_create_hash (void)
 }
 
 /**
- * nm_srio_vf_new:
+ * nm_sriov_vf_new:
  * @index: the VF index
  *
  * Creates a new #NMSriovVF object.

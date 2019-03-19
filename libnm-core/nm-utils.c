@@ -2439,7 +2439,7 @@ _tc_read_common_opts (const char *str,
  * @str: the string representation of a qdisc
  * @error: location of the error
  *
- * Parces the tc style string qdisc representation of the queueing
+ * Parses the tc style string qdisc representation of the queueing
  * discipline to a %NMTCQdisc instance. Supports a subset of the tc language.
  *
  * Returns: the %NMTCQdisc or %NULL
@@ -2554,7 +2554,7 @@ nm_utils_tc_action_to_str (NMTCAction *action, GError **error)
  * @str: the string representation of a action
  * @error: location of the error
  *
- * Parces the tc style string action representation of the queueing
+ * Parses the tc style string action representation of the queueing
  * discipline to a %NMTCAction instance. Supports a subset of the tc language.
  *
  * Returns: the %NMTCAction or %NULL
@@ -2707,7 +2707,7 @@ static const NMVariantAttributeSpec * const tc_tfilter_attribute_spec[] = {
  * @str: the string representation of a tfilter
  * @error: location of the error
  *
- * Parces the tc style string tfilter representation of the queueing
+ * Parses the tc style string tfilter representation of the queueing
  * discipline to a %NMTCTfilter instance. Supports a subset of the tc language.
  *
  * Returns: the %NMTCTfilter or %NULL
