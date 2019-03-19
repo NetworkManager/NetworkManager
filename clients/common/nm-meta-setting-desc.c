@@ -1658,6 +1658,11 @@ _set_fcn_multilist (ARGS_SET_FCN)
 				                            error);
 				if (!item)
 					return FALSE;
+			} else if (property_info->property_typ_data->subtype.multilist.validate_fcn) {
+				item = property_info->property_typ_data->subtype.multilist.validate_fcn (item,
+				                                                                         error);
+				if (!item)
+					return FALSE;
 			}
 
 			property_info->property_typ_data->subtype.multilist.add_fcn (setting, item);
@@ -1676,9 +1681,17 @@ _remove_fcn_multilist (ARGS_REMOVE_FCN)
 	if (idx != -1) {
 		guint num;
 
-		num = property_info->property_typ_data->subtype.multilist.get_num_fcn (setting);
-		if (idx < (gint64) num)
-			property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn (setting, idx);
+		if (property_info->property_typ_data->subtype.multilist.get_num_fcn_u32)
+			num = property_info->property_typ_data->subtype.multilist.get_num_fcn_u32 (setting);
+		else
+			num = property_info->property_typ_data->subtype.multilist.get_num_fcn_u (setting);
+
+		if (idx < (gint64) num) {
+			if (property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn_u32)
+				property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn_u32 (setting, idx);
+			else
+				property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn_s (setting, idx);
+		}
 		return TRUE;
 	}
 
@@ -1986,11 +1999,11 @@ _complete_fcn_vpn_service_type (ARGS_COMPLETE_FCN)
 	return (const char *const*) (*out_to_free = values);
 }
 
-static gboolean
-nmc_util_is_domain (const char *domain)
+static const char *
+_multilist_validate_fcn_is_domain (const char *domain, GError **error)
 {
 	//FIXME: implement
-	return TRUE;
+	return domain;
 }
 
 static gboolean
@@ -3095,32 +3108,6 @@ DEFINE_REMOVER_INDEX_OR_VALUE_VALIDATING (_remove_fcn_ip_config_dns,
                                           nm_setting_ip_config_get_num_dns,
                                           nm_setting_ip_config_remove_dns,
                                           _validate_and_remove_ip_dns)
-
-static gboolean
-_set_fcn_ip_config_dns_search (ARGS_SET_FCN)
-{
-	gs_free const char **strv = NULL;
-	gsize i;
-
-	if (_SET_FCN_DO_RESET_DEFAULT (value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
-
-	strv = nm_utils_strsplit_set (value, " \t,", FALSE);
-	if (!verify_string_list (strv, property_info->property_name, nmc_util_is_domain, error))
-		return FALSE;
-
-	if (strv) {
-		for (i = 0; strv[i]; i++)
-			nm_setting_ip_config_add_dns_search (NM_SETTING_IP_CONFIG (setting), strv[i]);
-	}
-	return TRUE;
-}
-
-DEFINE_REMOVER_INDEX_OR_VALUE_DIRECT (_remove_fcn_ip_config_dns_search,
-                                      NM_SETTING_IP_CONFIG,
-                                      nm_setting_ip_config_get_num_dns_searches,
-                                      nm_setting_ip_config_remove_dns_search,
-                                      nm_setting_ip_config_remove_dns_search_by_value)
 
 static gboolean
 _set_fcn_ip_config_dns_options (ARGS_SET_FCN)
@@ -4511,10 +4498,12 @@ static const NMMetaPropertyType _pt_ethtool = {
 	.complete_fcn =                 _complete_fcn_ethtool,
 };
 
-#define MULTILIST_GET_NUM_FCN(type, func)         (((func) == ((guint32  (*) (type *              )) (func))) ? ((guint32  (*) (NMSetting *              )) (func)) : NULL)
-#define MULTILIST_ADD_FCN(type, func)             (((func) == ((gboolean (*) (type *, const char *)) (func))) ? ((gboolean (*) (NMSetting *, const char *)) (func)) : NULL)
-#define MULTILIST_REMOVE_BY_IDX_FCN(type, func)   (((func) == ((void     (*) (type *, guint32     )) (func))) ? ((void     (*) (NMSetting *, guint32     )) (func)) : NULL)
-#define MULTILIST_REMOVE_BY_VALUE_FCN(type, func) (((func) == ((gboolean (*) (type *, const char *)) (func))) ? ((gboolean (*) (NMSetting *, const char *)) (func)) : NULL)
+#define MULTILIST_GET_NUM_FCN_U32(type, func)       (((func) == ((guint32  (*) (type *              )) (func))) ? ((guint32  (*) (NMSetting *              )) (func)) : NULL)
+#define MULTILIST_GET_NUM_FCN_U(type, func)         (((func) == ((guint    (*) (type *              )) (func))) ? ((guint    (*) (NMSetting *              )) (func)) : NULL)
+#define MULTILIST_ADD_FCN(type, func)               (((func) == ((gboolean (*) (type *, const char *)) (func))) ? ((gboolean (*) (NMSetting *, const char *)) (func)) : NULL)
+#define MULTILIST_REMOVE_BY_IDX_FCN_U32(type, func) (((func) == ((void     (*) (type *, guint32     )) (func))) ? ((void     (*) (NMSetting *, guint32     )) (func)) : NULL)
+#define MULTILIST_REMOVE_BY_IDX_FCN_S(type, func)   (((func) == ((void     (*) (type *, int         )) (func))) ? ((void     (*) (NMSetting *, int         )) (func)) : NULL)
+#define MULTILIST_REMOVE_BY_VALUE_FCN(type, func)   (((func) == ((gboolean (*) (type *, const char *)) (func))) ? ((gboolean (*) (NMSetting *, const char *)) (func)) : NULL)
 
 static const NMMetaPropertyType _pt_multilist = {
 	.get_fcn =                      _get_fcn_gobject,
@@ -4613,9 +4602,9 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 		.property_type =                &_pt_multilist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (multilist,
-				.get_num_fcn =          MULTILIST_GET_NUM_FCN         (NMSetting8021x, nm_setting_802_1x_get_num_eap_methods),
+				.get_num_fcn_u32 =      MULTILIST_GET_NUM_FCN_U32     (NMSetting8021x, nm_setting_802_1x_get_num_eap_methods),
 				.add_fcn =              MULTILIST_ADD_FCN             (NMSetting8021x, nm_setting_802_1x_add_eap_method),
-				.remove_by_idx_fcn =    MULTILIST_REMOVE_BY_IDX_FCN   (NMSetting8021x, nm_setting_802_1x_remove_eap_method),
+				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSetting8021x, nm_setting_802_1x_remove_eap_method),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSetting8021x, nm_setting_802_1x_remove_eap_method_by_value),
 			),
 			.values_static =            NM_MAKE_STRV ("leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd"),
@@ -4658,9 +4647,9 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 		.property_type =                &_pt_multilist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (multilist,
-				.get_num_fcn =          MULTILIST_GET_NUM_FCN         (NMSetting8021x, nm_setting_802_1x_get_num_altsubject_matches),
+				.get_num_fcn_u32 =      MULTILIST_GET_NUM_FCN_U32     (NMSetting8021x, nm_setting_802_1x_get_num_altsubject_matches),
 				.add_fcn =              MULTILIST_ADD_FCN             (NMSetting8021x, nm_setting_802_1x_add_altsubject_match),
-				.remove_by_idx_fcn =    MULTILIST_REMOVE_BY_IDX_FCN   (NMSetting8021x, nm_setting_802_1x_remove_altsubject_match),
+				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSetting8021x, nm_setting_802_1x_remove_altsubject_match),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSetting8021x, nm_setting_802_1x_remove_altsubject_match_by_value),
 			),
 		),
@@ -4754,9 +4743,9 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 		.property_type =                &_pt_multilist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (multilist,
-				.get_num_fcn =          MULTILIST_GET_NUM_FCN         (NMSetting8021x, nm_setting_802_1x_get_num_phase2_altsubject_matches),
+				.get_num_fcn_u32 =      MULTILIST_GET_NUM_FCN_U32     (NMSetting8021x, nm_setting_802_1x_get_num_phase2_altsubject_matches),
 				.add_fcn =              MULTILIST_ADD_FCN             (NMSetting8021x, nm_setting_802_1x_add_phase2_altsubject_match),
-				.remove_by_idx_fcn =    MULTILIST_REMOVE_BY_IDX_FCN   (NMSetting8021x, nm_setting_802_1x_remove_phase2_altsubject_match),
+				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSetting8021x, nm_setting_802_1x_remove_phase2_altsubject_match),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSetting8021x, nm_setting_802_1x_remove_phase2_altsubject_match_by_value),
 			),
 		),
@@ -5561,10 +5550,15 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_SEARCH, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DNS_SEARCH,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_ip_config_dns_search,
-			.remove_fcn =               _remove_fcn_ip_config_dns_search,
+		.property_type =                &_pt_multilist,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn_u =        MULTILIST_GET_NUM_FCN_U       (NMSettingIPConfig, nm_setting_ip_config_get_num_dns_searches),
+				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingIPConfig, nm_setting_ip_config_add_dns_search),
+				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns_search),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_search_by_value),
+				.validate_fcn =         _multilist_validate_fcn_is_domain,
+			),
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_OPTIONS, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DNS_OPTIONS,
@@ -5729,10 +5723,15 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_SEARCH, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DNS_SEARCH,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_ip_config_dns_search,
-			.remove_fcn =               _remove_fcn_ip_config_dns_search,
+		.property_type =                &_pt_multilist,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (multilist,
+				.get_num_fcn_u =        MULTILIST_GET_NUM_FCN_U       (NMSettingIPConfig, nm_setting_ip_config_get_num_dns_searches),
+				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingIPConfig, nm_setting_ip_config_add_dns_search),
+				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns_search),
+				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_search_by_value),
+				.validate_fcn =         _multilist_validate_fcn_is_domain,
+			),
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_OPTIONS, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DNS_OPTIONS,
@@ -7162,9 +7161,9 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 		.property_type =                &_pt_multilist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (multilist,
-				.get_num_fcn =          MULTILIST_GET_NUM_FCN         (NMSettingWirelessSecurity, nm_setting_wireless_security_get_num_protos),
+				.get_num_fcn_u32 =      MULTILIST_GET_NUM_FCN_U32     (NMSettingWirelessSecurity, nm_setting_wireless_security_get_num_protos),
 				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingWirelessSecurity, nm_setting_wireless_security_add_proto),
-				.remove_by_idx_fcn =    MULTILIST_REMOVE_BY_IDX_FCN   (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_proto),
+				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_proto),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_proto_by_value),
 			),
 			.values_static =            NM_MAKE_STRV ("wpa", "rsn"),
@@ -7174,9 +7173,9 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 		.property_type =                &_pt_multilist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (multilist,
-				.get_num_fcn =          MULTILIST_GET_NUM_FCN         (NMSettingWirelessSecurity, nm_setting_wireless_security_get_num_pairwise),
+				.get_num_fcn_u32 =      MULTILIST_GET_NUM_FCN_U32     (NMSettingWirelessSecurity, nm_setting_wireless_security_get_num_pairwise),
 				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingWirelessSecurity, nm_setting_wireless_security_add_pairwise),
-				.remove_by_idx_fcn =    MULTILIST_REMOVE_BY_IDX_FCN   (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_pairwise),
+				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_pairwise),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_pairwise_by_value),
 			),
 			.values_static =            NM_MAKE_STRV ("tkip", "ccmp"),
@@ -7186,9 +7185,9 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 		.property_type =                &_pt_multilist,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (multilist,
-				.get_num_fcn =          MULTILIST_GET_NUM_FCN         (NMSettingWirelessSecurity, nm_setting_wireless_security_get_num_groups),
+				.get_num_fcn_u32 =      MULTILIST_GET_NUM_FCN_U32     (NMSettingWirelessSecurity, nm_setting_wireless_security_get_num_groups),
 				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingWirelessSecurity, nm_setting_wireless_security_add_group),
-				.remove_by_idx_fcn =    MULTILIST_REMOVE_BY_IDX_FCN   (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_group),
+				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_group),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_group_by_value),
 			),
 			.values_static =            NM_MAKE_STRV ("wep40", "wep104", "tkip", "ccmp"),
