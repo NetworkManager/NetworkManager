@@ -1084,8 +1084,20 @@ void _nm_utils_user_data_unpack (gpointer user_data, int nargs, ...);
 
 /*****************************************************************************/
 
-const char *_nm_utils_escape_spaces (const char *str, char **to_free);
-char *_nm_utils_unescape_spaces (char *str, gboolean do_strip);
+const char *_nm_utils_escape_plain (const char *str, const char *candidates, char **to_free);
+char *_nm_utils_unescape_plain (char *str, const char *candidates, gboolean do_strip);
+
+static  inline const char *
+_nm_utils_escape_spaces (const char *str, char **to_free)
+{
+	return _nm_utils_escape_plain (str, NM_ASCII_SPACES, to_free);
+}
+
+static inline char *
+_nm_utils_unescape_spaces (char *str, gboolean do_strip)
+{
+	return _nm_utils_unescape_plain (str, NM_ASCII_SPACES, do_strip);
+}
 
 /*****************************************************************************/
 
