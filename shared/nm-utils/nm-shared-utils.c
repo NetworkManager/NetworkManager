@@ -962,6 +962,15 @@ comp_l:
 
 /*****************************************************************************/
 
+static void
+_char_lookup_table_init (guint8 lookup[static 256],
+                         const char *candidates)
+{
+	memset (lookup, 0, 256);
+	while (candidates[0] != '\0')
+		lookup[(guint8) ((candidates++)[0])] = 1;
+}
+
 /**
  * nm_utils_strsplit_set:
  * @str: the string to split.
@@ -1007,9 +1016,8 @@ nm_utils_strsplit_set (const char *str, const char *delimiters, gboolean allow_e
 	/* initialize lookup table for delimiter */
 	if (!delimiters)
 		delimiters = " \t\n";
-	memset (delimiters_table, 0, sizeof (delimiters_table));
-	for (i = 0; delimiters[i]; i++)
-		delimiters_table[(guint8) delimiters[i]] = 1;
+
+	_char_lookup_table_init (delimiters_table, delimiters);
 
 #define _is_delimiter(ch, delimiters_table, allow_esc, esc) \
 	((delimiters_table)[(guint8) (ch)] != 0 && (!allow_esc || !esc))
@@ -2371,21 +2379,26 @@ _nm_utils_user_data_unpack (gpointer user_data, int nargs, ...)
 
 /*****************************************************************************/
 
+#define _CH_LOOKUP(ch_lookup, ch) (!!((ch_lookup)[(guint8) (ch)]))
+
 const char *
-_nm_utils_escape_spaces (const char *str, char **to_free)
+_nm_utils_escape_plain (const char *str, const char *candidates, char **to_free)
 {
 	const char *ptr = str;
 	char *ret, *r;
+	guint8 ch_lookup[256];
 
 	*to_free = NULL;
 
 	if (!str)
 		return NULL;
 
+	_char_lookup_table_init (ch_lookup, candidates ?: NM_ASCII_SPACES);
+
 	while (TRUE) {
 		if (!*ptr)
 			return str;
-		if (g_ascii_isspace (*ptr))
+		if (_CH_LOOKUP (ch_lookup, *ptr))
 			break;
 		ptr++;
 	}
@@ -2395,7 +2408,7 @@ _nm_utils_escape_spaces (const char *str, char **to_free)
 	r = ret;
 	*to_free = ret;
 	while (*ptr) {
-		if (g_ascii_isspace (*ptr))
+		if (_CH_LOOKUP (ch_lookup, *ptr))
 			*r++ = '\\';
 		*r++ = *ptr++;
 	}
@@ -2405,23 +2418,26 @@ _nm_utils_escape_spaces (const char *str, char **to_free)
 }
 
 char *
-_nm_utils_unescape_spaces (char *str, gboolean do_strip)
+_nm_utils_unescape_plain (char *str, const char *candidates, gboolean do_strip)
 {
 	gsize i = 0;
 	gsize j = 0;
 	gsize preserve_space_at = 0;
+	guint8 ch_lookup[256];
 
 	if (!str)
 		return NULL;
 
+	_char_lookup_table_init (ch_lookup, candidates ?: NM_ASCII_SPACES);
+
 	if (do_strip) {
-		while (str[i] && g_ascii_isspace (str[i]))
+		while (str[i] && _CH_LOOKUP (ch_lookup, str[i]))
 			i++;
 	}
 
 	for (; str[i]; i++) {
 		if (   str[i] == '\\'
-		    && g_ascii_isspace (str[i+1])) {
+		    && _CH_LOOKUP (ch_lookup, str[i+1])) {
 			preserve_space_at = j;
 			i++;
 		}
@@ -2431,7 +2447,7 @@ _nm_utils_unescape_spaces (char *str, gboolean do_strip)
 
 	if (do_strip && j > 0) {
 		while (   --j > preserve_space_at
-		       && g_ascii_isspace (str[j]))
+		       && _CH_LOOKUP (ch_lookup, str[j]))
 			str[j] = '\0';
 	}
 
