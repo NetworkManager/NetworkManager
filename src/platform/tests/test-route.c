@@ -1601,7 +1601,24 @@ again:
 			}
 
 			if (r != 0) {
-				g_print (">>> failing...\n");
+				NMPLookup lookup;
+				const NMDedupMultiHeadEntry *head_entry;
+				NMDedupMultiIter iter;
+				const NMPObject *o;
+
+				g_print (">>> failing... errno=%d, rule=%s\n", r, nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+
+				nmp_lookup_init_obj_type (&lookup, NMP_OBJECT_TYPE_ROUTING_RULE);
+				head_entry = nm_platform_lookup (platform, &lookup);
+				nmp_cache_iter_for_each (&iter, head_entry, &o) {
+					char ch = ' ';
+
+					if (   NMP_OBJECT_CAST_ROUTING_RULE (o)->addr_family == NMP_OBJECT_CAST_ROUTING_RULE (obj)->addr_family
+					    && NMP_OBJECT_CAST_ROUTING_RULE (o)->priority == NMP_OBJECT_CAST_ROUTING_RULE (obj)->priority)
+						ch = '*';
+					g_print (">>> existing rule: %c %s\n", ch, nmp_object_to_string (o, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+				}
+
 				nmtstp_run_command_check ("ip rule");
 				nmtstp_run_command_check ("ip -6 rule");
 				g_assert_cmpint (r, ==, 0);
