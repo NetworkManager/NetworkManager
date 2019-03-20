@@ -3115,24 +3115,18 @@ _set_fcn_objlist (ARGS_SET_FCN)
 	}
 
 	for (i = 0; i < nstrv; i++) {
-		/* FIXME: merge add_fcn() and remove_by_value_fcn() in one. */
-		if (_SET_FCN_DO_REMOVE (modifier, value)) {
-			if (!property_info->property_typ_data->subtype.objlist.remove_by_value_fcn (setting,
-			                                                                            strv[i],
-			                                                                            error))
-				return FALSE;
-		} else {
-			if (!property_info->property_typ_data->subtype.objlist.add_fcn (setting,
-			                                                                strv[i],
-			                                                                error))
-				return FALSE;
-		}
+		if (!property_info->property_typ_data->subtype.objlist.set_fcn (setting,
+		                                                                !_SET_FCN_DO_REMOVE (modifier, value),
+		                                                                strv[i],
+		                                                                error))
+			return FALSE;
 	}
 	return TRUE;
 }
 
 static gboolean
-_objlist_add_fcn_ip_config_addresses (NMSetting *setting,
+_objlist_set_fcn_ip_config_addresses (NMSetting *setting,
+                                      gboolean do_add,
                                       const char *value,
                                       GError **error)
 {
@@ -3142,22 +3136,10 @@ _objlist_add_fcn_ip_config_addresses (NMSetting *setting,
 	addr = _parse_ip_address (addr_family, value, error);
 	if (!addr)
 		return FALSE;
-	nm_setting_ip_config_add_address (NM_SETTING_IP_CONFIG (setting), addr);
-	return TRUE;
-}
-
-static gboolean
-_objlist_remove_by_value_fcn_ip_config_addresses (NMSetting *setting,
-                                                  const char *value,
-                                                  GError **error)
-{
-	nm_auto_unref_ip_address NMIPAddress *addr = NULL;
-	int addr_family = nm_setting_ip_config_get_addr_family (NM_SETTING_IP_CONFIG (setting));
-
-	addr = _parse_ip_address (addr_family, value, error);
-	if (!addr)
-		return FALSE;
-	nm_setting_ip_config_remove_address_by_value (NM_SETTING_IP_CONFIG (setting), addr);
+	if (do_add)
+		nm_setting_ip_config_add_address (NM_SETTING_IP_CONFIG (setting), addr);
+	else
+		nm_setting_ip_config_remove_address_by_value (NM_SETTING_IP_CONFIG (setting), addr);
 	return TRUE;
 }
 
@@ -3184,7 +3166,8 @@ _set_fcn_ip_config_gateway (ARGS_SET_FCN)
 }
 
 static gboolean
-_objlist_add_fcn_ip_config_routes (NMSetting *setting,
+_objlist_set_fcn_ip_config_routes (NMSetting *setting,
+                                   gboolean do_add,
                                    const char *value,
                                    GError **error)
 {
@@ -3194,22 +3177,10 @@ _objlist_add_fcn_ip_config_routes (NMSetting *setting,
 	route = _parse_ip_route (addr_family, value, error);
 	if (!route)
 		return FALSE;
-	nm_setting_ip_config_add_route (NM_SETTING_IP_CONFIG (setting), route);
-	return TRUE;
-}
-
-static gboolean
-_objlist_remove_by_value_fcn_ip_config_routes (NMSetting *setting,
-                                               const char *value,
-                                               GError **error)
-{
-	nm_auto_unref_ip_route NMIPRoute *route = NULL;
-	int addr_family = nm_setting_ip_config_get_addr_family (NM_SETTING_IP_CONFIG (setting));
-
-	route = _parse_ip_route (addr_family, value, error);
-	if (!route)
-		return FALSE;
-	nm_setting_ip_config_remove_route_by_value (NM_SETTING_IP_CONFIG (setting), route);
+	if (do_add)
+		nm_setting_ip_config_add_route (NM_SETTING_IP_CONFIG (setting), route);
+	else
+		nm_setting_ip_config_remove_route_by_value (NM_SETTING_IP_CONFIG (setting), route);
 	return TRUE;
 }
 
@@ -3320,7 +3291,8 @@ _objlist_obj_to_str_fcn_tc_config_qdiscs (NMMetaAccessorGetType get_type,
 }
 
 static gboolean
-_objlist_add_fcn_sriov_vfs (NMSetting *setting,
+_objlist_set_fcn_sriov_vfs (NMSetting *setting,
+                            gboolean do_add,
                             const char *value,
                             GError **error)
 {
@@ -3335,12 +3307,16 @@ _objlist_add_fcn_sriov_vfs (NMSetting *setting,
 		                    _("The valid syntax is: vf [attribute=value]... [,vf [attribute=value]...]"));
 		return FALSE;
 	}
-	nm_setting_sriov_add_vf (NM_SETTING_SRIOV (setting), vf);
+	if (do_add)
+		nm_setting_sriov_add_vf (NM_SETTING_SRIOV (setting), vf);
+	else
+		nm_setting_sriov_remove_vf_by_index (NM_SETTING_SRIOV (setting), nm_sriov_vf_get_index (vf));
 	return TRUE;
 }
 
 static gboolean
-_objlist_add_fcn_tc_config_qdiscs (NMSetting *setting,
+_objlist_set_fcn_tc_config_qdiscs (NMSetting *setting,
+                                   gboolean do_add,
                                    const char *value,
                                    GError **error)
 {
@@ -3355,35 +3331,10 @@ _objlist_add_fcn_tc_config_qdiscs (NMSetting *setting,
 		                    _("The valid syntax is: '[root | parent <handle>] [handle <handle>] <qdisc>'"));
 		return FALSE;
 	}
-	nm_setting_tc_config_add_qdisc (NM_SETTING_TC_CONFIG (setting), tc_qdisc);
-	return TRUE;
-}
-
-static gboolean
-_objlist_remove_by_value_fcn_sriov_vfs (NMSetting *setting,
-                                        const char *value,
-                                        GError **error)
-{
-	nm_auto_unref_sriov_vf NMSriovVF *vf = NULL;
-
-	vf = nm_utils_sriov_vf_from_str (value, error);
-	if (!vf)
-		return FALSE;
-	nm_setting_sriov_remove_vf_by_index (NM_SETTING_SRIOV (setting), nm_sriov_vf_get_index (vf));
-	return TRUE;
-}
-
-static gboolean
-_objlist_remove_by_value_fcn_tc_config_qdiscs (NMSetting *setting,
-                                               const char *value,
-                                               GError **error)
-{
-	nm_auto_unref_tc_qdisc NMTCQdisc *qdisc = NULL;
-
-	qdisc = nm_utils_tc_qdisc_from_str (value, error);
-	if (!qdisc)
-		return FALSE;
-	nm_setting_tc_config_remove_qdisc_by_value (NM_SETTING_TC_CONFIG (setting), qdisc);
+	if (do_add)
+		nm_setting_tc_config_add_qdisc (NM_SETTING_TC_CONFIG (setting), tc_qdisc);
+	else
+		nm_setting_tc_config_remove_qdisc_by_value (NM_SETTING_TC_CONFIG (setting), tc_qdisc);
 	return TRUE;
 }
 
@@ -3403,7 +3354,8 @@ _objlist_obj_to_str_fcn_tc_config_tfilters (NMMetaAccessorGetType get_type,
 }
 
 static gboolean
-_objlist_add_fcn_tc_config_tfilters (NMSetting *setting,
+_objlist_set_fcn_tc_config_tfilters (NMSetting *setting,
+                                     gboolean do_add,
                                      const char *value,
                                      GError **error)
 {
@@ -3418,21 +3370,10 @@ _objlist_add_fcn_tc_config_tfilters (NMSetting *setting,
 		                    _("The valid syntax is: '[root | parent <handle>] [handle <handle>] <tfilter>'"));
 		return FALSE;
 	}
-	nm_setting_tc_config_add_tfilter (NM_SETTING_TC_CONFIG (setting), tc_tfilter);
-	return TRUE;
-}
-
-static gboolean
-_objlist_remove_by_value_fcn_tc_config_tfilters (NMSetting *setting,
-                                                 const char *value,
-                                                 GError **error)
-{
-	nm_auto_unref_tc_tfilter NMTCTfilter *tfilter = NULL;
-
-	tfilter = nm_utils_tc_tfilter_from_str (value, error);
-	if (!tfilter)
-		return FALSE;
-	nm_setting_tc_config_remove_tfilter_by_value (NM_SETTING_TC_CONFIG (setting), tfilter);
+	if (do_add)
+		nm_setting_tc_config_add_tfilter (NM_SETTING_TC_CONFIG (setting), tc_tfilter);
+	else
+		nm_setting_tc_config_remove_tfilter_by_value (NM_SETTING_TC_CONFIG (setting), tc_tfilter);
 	return TRUE;
 }
 
@@ -3447,38 +3388,27 @@ _validate_fcn_team_config (const char *value, char **out_to_free, GError **error
 }
 
 static void
-_team_link_watcher_obj_to_str (NMTeamLinkWatcher *watcher,
-                               GString *str)
+_objlist_obj_to_str_fcn_team_link_watchers (NMMetaAccessorGetType get_type,
+                                            NMSetting *setting,
+                                            guint idx,
+                                            GString *str)
 {
+	NMTeamLinkWatcher *watcher;
 	gs_free char *s = NULL;
+
+	if (NM_IS_SETTING_TEAM (setting))
+		watcher = nm_setting_team_get_link_watcher (NM_SETTING_TEAM (setting), idx);
+	else
+		watcher = nm_setting_team_port_get_link_watcher (NM_SETTING_TEAM_PORT (setting), idx);
 
 	s = _dump_team_link_watcher (watcher);
 	if (s)
 		g_string_append (str, s);
 }
 
-static void
-_objlist_obj_to_str_fcn_team_link_watchers (NMMetaAccessorGetType get_type,
-                                            NMSetting *setting,
-                                            guint idx,
-                                            GString *str)
-{
-	_team_link_watcher_obj_to_str (nm_setting_team_get_link_watcher (NM_SETTING_TEAM (setting), idx),
-	                               str);
-}
-
-static void
-_objlist_obj_to_str_fcn_team_port_link_watchers (NMMetaAccessorGetType get_type,
-                                                 NMSetting *setting,
-                                                 guint idx,
-                                                 GString *str)
-{
-	_team_link_watcher_obj_to_str (nm_setting_team_port_get_link_watcher (NM_SETTING_TEAM_PORT (setting), idx),
-	                               str);
-}
-
 static gboolean
-_objlist_add_fcn_team_link_watchers (NMSetting *setting,
+_objlist_set_fcn_team_link_watchers (NMSetting *setting,
+                                     gboolean do_add,
                                      const char *value,
                                      GError **error)
 {
@@ -3487,49 +3417,17 @@ _objlist_add_fcn_team_link_watchers (NMSetting *setting,
 	watcher = _parse_team_link_watcher (value, error);
 	if (!watcher)
 		return FALSE;
-	nm_setting_team_add_link_watcher (NM_SETTING_TEAM (setting), watcher);
-	return TRUE;
-}
-
-static gboolean
-_objlist_add_fcn_team_port_link_watchers (NMSetting *setting,
-                                          const char *value,
-                                          GError **error)
-{
-	nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher = NULL;
-
-	watcher = _parse_team_link_watcher (value, error);
-	if (!watcher)
-		return FALSE;
-	nm_setting_team_port_add_link_watcher (NM_SETTING_TEAM_PORT (setting), watcher);
-	return TRUE;
-}
-
-static gboolean
-_objlist_remove_by_value_fcn_team_link_watchers (NMSetting *setting,
-                                                 const char *value,
-                                                 GError **error)
-{
-	nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher = NULL;
-
-	watcher = _parse_team_link_watcher (value, error);
-	if (!watcher)
-		return FALSE;
-	nm_setting_team_remove_link_watcher_by_value (NM_SETTING_TEAM (setting), watcher);
-	return TRUE;
-}
-
-static gboolean
-_objlist_remove_by_value_fcn_team_port_link_watchers (NMSetting *setting,
-                                                      const char *value,
-                                                      GError **error)
-{
-	nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher = NULL;
-
-	watcher = _parse_team_link_watcher (value, error);
-	if (!watcher)
-		return FALSE;
-	nm_setting_team_port_remove_link_watcher_by_value (NM_SETTING_TEAM_PORT (setting), watcher);
+	if (NM_IS_SETTING_TEAM (setting)) {
+		if (do_add)
+			nm_setting_team_add_link_watcher (NM_SETTING_TEAM (setting), watcher);
+		else
+			nm_setting_team_remove_link_watcher_by_value (NM_SETTING_TEAM (setting), watcher);
+	} else {
+		if (do_add)
+			nm_setting_team_port_add_link_watcher (NM_SETTING_TEAM_PORT (setting), watcher);
+		else
+			nm_setting_team_port_remove_link_watcher_by_value (NM_SETTING_TEAM_PORT (setting), watcher);
+	}
 	return TRUE;
 }
 
@@ -5286,9 +5184,8 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_addresses),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingIPConfig, nm_setting_ip_config_clear_addresses),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_addresses,
-				.add_fcn =              _objlist_add_fcn_ip_config_addresses,
+				.set_fcn =              _objlist_set_fcn_ip_config_addresses,
 				.remove_by_idx_fcn_s =  OBJLIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_address),
-				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_ip_config_addresses,
 			),
 		),
 	),
@@ -5316,9 +5213,8 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_routes),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingIPConfig, nm_setting_ip_config_clear_routes),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routes,
-				.add_fcn =              _objlist_add_fcn_ip_config_routes,
+				.set_fcn =              _objlist_set_fcn_ip_config_routes,
 				.remove_by_idx_fcn_s =  OBJLIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_route),
-				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_ip_config_routes,
 				.delimit_pretty_with_semicolon = TRUE,
 			),
 		),
@@ -5480,9 +5376,8 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_addresses),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingIPConfig, nm_setting_ip_config_clear_addresses),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_addresses,
-				.add_fcn =              _objlist_add_fcn_ip_config_addresses,
+				.set_fcn =              _objlist_set_fcn_ip_config_addresses,
 				.remove_by_idx_fcn_s =  OBJLIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_address),
-				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_ip_config_addresses,
 			),
 		),
 	),
@@ -5510,9 +5405,8 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_routes),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingIPConfig, nm_setting_ip_config_clear_routes),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routes,
-				.add_fcn =              _objlist_add_fcn_ip_config_routes,
+				.set_fcn =              _objlist_set_fcn_ip_config_routes,
 				.remove_by_idx_fcn_s =  OBJLIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_route),
-				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_ip_config_routes,
 				.delimit_pretty_with_semicolon = TRUE,
 			),
 		),
@@ -6096,9 +5990,8 @@ static const NMMetaPropertyInfo *const property_infos_SRIOV[] = {
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingSriov, nm_setting_sriov_get_num_vfs),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingSriov, nm_setting_sriov_clear_vfs),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_sriov_vfs,
-				.add_fcn =              _objlist_add_fcn_sriov_vfs,
+				.set_fcn =              _objlist_set_fcn_sriov_vfs,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingSriov, nm_setting_sriov_remove_vf),
-				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_sriov_vfs,
 			),
 		),
 	),
@@ -6118,9 +6011,8 @@ static const NMMetaPropertyInfo *const property_infos_TC_CONFIG[] = {
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTCConfig, nm_setting_tc_config_get_num_qdiscs),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingTCConfig, nm_setting_tc_config_clear_qdiscs),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_tc_config_qdiscs,
-				.add_fcn =              _objlist_add_fcn_tc_config_qdiscs,
+				.set_fcn =              _objlist_set_fcn_tc_config_qdiscs,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingTCConfig, nm_setting_tc_config_remove_qdisc),
-				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_tc_config_qdiscs,
 			),
 		),
 	),
@@ -6131,9 +6023,8 @@ static const NMMetaPropertyInfo *const property_infos_TC_CONFIG[] = {
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTCConfig, nm_setting_tc_config_get_num_tfilters),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingTCConfig, nm_setting_tc_config_clear_tfilters),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_tc_config_tfilters,
-				.add_fcn =              _objlist_add_fcn_tc_config_tfilters,
+				.set_fcn =              _objlist_set_fcn_tc_config_tfilters,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingTCConfig, nm_setting_tc_config_remove_tfilter),
-				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_tc_config_tfilters,
 			),
 		),
 	),
@@ -6293,9 +6184,8 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTeam, nm_setting_team_get_num_link_watchers),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingTeam, nm_setting_team_clear_link_watchers),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_team_link_watchers,
-				.add_fcn =              _objlist_add_fcn_team_link_watchers,
+				.set_fcn =              _objlist_set_fcn_team_link_watchers,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingTeam, nm_setting_team_remove_link_watcher),
-				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_team_link_watchers,
 			),
 		),
 	),
@@ -6369,10 +6259,9 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTeamPort, nm_setting_team_port_get_num_link_watchers),
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingTeamPort, nm_setting_team_port_clear_link_watchers),
-				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_team_port_link_watchers,
-				.add_fcn =              _objlist_add_fcn_team_port_link_watchers,
+				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_team_link_watchers,
+				.set_fcn =              _objlist_set_fcn_team_link_watchers,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingTeamPort, nm_setting_team_port_remove_link_watcher),
-				.remove_by_value_fcn =  _objlist_remove_by_value_fcn_team_port_link_watchers,
 			),
 		),
 	),
