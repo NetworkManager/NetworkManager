@@ -62,7 +62,6 @@ struct _NMCheckpointPrivate {
 	guint32 rollback_timeout_s;
 	guint timeout_id;
 	/* private members */
-	/* private members */
 	NMManager *manager;
 	NMCheckpointCreateFlags flags;
 	GHashTable *connection_uuids;
