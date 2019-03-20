@@ -4556,7 +4556,6 @@ EXTRA_DIST += \
 	tools/test-sudo-wrapper.sh \
 	tools/enums-to-docbook.pl \
 	\
-	src/settings/plugins/README \
 	src/settings/plugins/meson.build \
 	\
 	$(NULL)
