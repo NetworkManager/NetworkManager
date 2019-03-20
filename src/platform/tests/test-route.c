@@ -1307,6 +1307,8 @@ _rule_fuzzy_equal (const NMPObject *obj,
 			rr_co.flow = 0;
 		if (rr->tos == 0)
 			rr_co.tos = 0;
+		rr_co.suppress_prefixlen_inverse = rr->suppress_prefixlen_inverse;
+		rr_co.suppress_ifgroup_inverse = rr->suppress_ifgroup_inverse;
 		if (!NM_FLAGS_HAS (rr->flags, FIB_RULE_INVERT))
 			rr_co.flags &= ~((guint32) FIB_RULE_INVERT);
 		else
