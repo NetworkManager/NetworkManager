@@ -280,12 +280,6 @@ struct _NMMetaPropertyTypData {
 			void (*remove_by_idx_fcn_s) (NMSetting *setting, int idx);
 			gboolean (*remove_by_value_fcn) (NMSetting *setting, const char *item);
 
-			/* if TRUE, validate_fcn() is ignored for add_fcn(). */
-			bool no_validate_add:1;
-
-			/* if TRUE, validate_fcn() is ignored for remove_by_value(). */
-			bool no_validate_remove_by_value:1;
-
 			/* if true, separate the list by space and allow backslash escaping. */
 			bool with_escaped_spaces:1;
 		} multilist;
