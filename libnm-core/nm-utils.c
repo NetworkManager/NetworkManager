@@ -2962,8 +2962,7 @@ nm_utils_sriov_vf_from_str (const char *str, GError **error)
 
 	detail = strchr (str, ' ');
 	if (detail) {
-		index_free = g_strndup (str, detail - str);
-		str = index_free;
+		str = nm_strndup_a (200, str, detail - str, &index_free);
 		detail++;
 	}
 
