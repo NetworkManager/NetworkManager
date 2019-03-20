@@ -6112,8 +6112,6 @@ static const NMMetaPropertyInfo *const property_infos_SRIOV[] = {
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingSriov, nm_setting_sriov_clear_vfs),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_sriov_vfs,
 				.set_fcn =              _objlist_set_fcn_sriov_vfs,
-				/* FIXME: removing by index is ambigous and should maybe be prevented. */
-				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingSriov, nm_setting_sriov_remove_vf),
 			),
 		),
 	),
