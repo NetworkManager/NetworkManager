@@ -2371,8 +2371,6 @@ _nm_utils_user_data_unpack (gpointer user_data, int nargs, ...)
 
 /*****************************************************************************/
 
-#define IS_SPACE(c) NM_IN_SET ((c), ' ', '\t')
-
 const char *
 _nm_utils_escape_spaces (const char *str, char **to_free)
 {
@@ -2387,7 +2385,7 @@ _nm_utils_escape_spaces (const char *str, char **to_free)
 	while (TRUE) {
 		if (!*ptr)
 			return str;
-		if (IS_SPACE (*ptr))
+		if (g_ascii_isspace (*ptr))
 			break;
 		ptr++;
 	}
@@ -2397,7 +2395,7 @@ _nm_utils_escape_spaces (const char *str, char **to_free)
 	r = ret;
 	*to_free = ret;
 	while (*ptr) {
-		if (IS_SPACE (*ptr))
+		if (g_ascii_isspace (*ptr))
 			*r++ = '\\';
 		*r++ = *ptr++;
 	}
@@ -2417,13 +2415,13 @@ _nm_utils_unescape_spaces (char *str, gboolean do_strip)
 		return NULL;
 
 	if (do_strip) {
-		while (str[i] && IS_SPACE (str[i]))
+		while (str[i] && g_ascii_isspace (str[i]))
 			i++;
 	}
 
 	for (; str[i]; i++) {
 		if (   str[i] == '\\'
-		    && IS_SPACE (str[i+1])) {
+		    && g_ascii_isspace (str[i+1])) {
 			preserve_space_at = j;
 			i++;
 		}
@@ -2433,14 +2431,12 @@ _nm_utils_unescape_spaces (char *str, gboolean do_strip)
 
 	if (do_strip && j > 0) {
 		while (   --j > preserve_space_at
-		       && IS_SPACE (str[j]))
+		       && g_ascii_isspace (str[j]))
 			str[j] = '\0';
 	}
 
 	return str;
 }
-
-#undef IS_SPACE
 
 /*****************************************************************************/
 
