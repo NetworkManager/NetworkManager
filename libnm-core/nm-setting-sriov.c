@@ -894,8 +894,10 @@ _nm_setting_sriov_sort_vfs (NMSettingSriov *setting)
 		}
 	}
 
-	if (need_sort)
+	if (need_sort) {
 		g_ptr_array_sort (setting->vfs, vf_index_compare);
+		_notify (setting, PROP_VFS);
+	}
 
 	return need_sort;
 }
