@@ -852,7 +852,9 @@ _gobject_property_is_default (NMSetting *setting, const char *prop_name)
 }
 
 static gboolean
-_gobject_property_reset_default (NMSetting *setting, const char *prop_name)
+_gobject_property_reset (NMSetting *setting,
+                         const char *prop_name,
+                         gboolean reset_default)
 {
 	nm_auto_unset_gvalue GValue v = G_VALUE_INIT;
 	GParamSpec *pspec;
@@ -863,9 +865,16 @@ _gobject_property_reset_default (NMSetting *setting, const char *prop_name)
 		g_return_val_if_reached (FALSE);
 
 	g_value_init (&v, pspec->value_type);
-	g_param_value_defaults (pspec, &v);
+	if (reset_default)
+		g_param_value_defaults (pspec, &v);
 	g_object_set_property (G_OBJECT (setting), prop_name, &v);
 	return TRUE;
+}
+
+static gboolean
+_gobject_property_reset_default (NMSetting *setting, const char *prop_name)
+{
+	return _gobject_property_reset (setting, prop_name, TRUE);
 }
 
 static gconstpointer
@@ -1889,7 +1898,7 @@ _set_fcn_multilist (ARGS_SET_FCN)
 	nstrv = j;
 
 	if (_SET_FCN_DO_SET_ALL (modifier, value))
-		_gobject_property_reset_default (setting, property_info->property_name);
+		_gobject_property_reset (setting, property_info->property_name, FALSE);
 
 	for (i = 0; i < nstrv; i++) {
 		if (_SET_FCN_DO_REMOVE (modifier, value)) {
@@ -1980,7 +1989,7 @@ _set_fcn_optionlist (ARGS_SET_FCN)
 	}
 
 	if (_SET_FCN_DO_SET_ALL (modifier, value))
-		_gobject_property_reset_default (setting, property_info->property_name);
+		_gobject_property_reset (setting, property_info->property_name, FALSE);
 
 	for (i = 0; i < nstrv; i++) {
 		if (!property_info->property_typ_data->subtype.optionlist.set_fcn (setting,
@@ -3233,7 +3242,7 @@ _set_fcn_objlist (ARGS_SET_FCN)
 		if (property_info->property_typ_data->subtype.objlist.clear_all_fcn)
 			property_info->property_typ_data->subtype.objlist.clear_all_fcn (setting);
 		else
-			_gobject_property_reset_default (setting, property_info->property_name);
+			_gobject_property_reset (setting, property_info->property_name, FALSE);
 	}
 
 	for (i = 0; i < nstrv; i++) {
