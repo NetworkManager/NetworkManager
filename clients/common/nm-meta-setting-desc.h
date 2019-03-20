@@ -295,13 +295,13 @@ struct _NMMetaPropertyTypData {
 			                        NMSetting *setting,
 			                        guint idx,
 			                        GString *str);
-			gboolean (*add_fcn) (NMSetting *setting,
+			gboolean (*set_fcn) (NMSetting *setting,
+			                     gboolean do_add /* or else remove. */,
 			                     const char *value,
 			                     GError **error);
 			void (*clear_all_fcn) (NMSetting *setting);
 			void (*remove_by_idx_fcn_u) (NMSetting *setting, guint idx);
 			void (*remove_by_idx_fcn_s) (NMSetting *setting, int idx);
-			gboolean (*remove_by_value_fcn) (NMSetting *setting, const char *item, GError **error);
 			bool delimit_pretty_with_semicolon:1;
 		} objlist;
 		struct {
