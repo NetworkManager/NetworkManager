@@ -76,6 +76,67 @@ _gtype_property_get_gtype (GType gtype, const char *property_name)
 
 /*****************************************************************************/
 
+typedef enum {
+	VALUE_STRSPLIT_MODE_OBJLIST,
+	VALUE_STRSPLIT_MODE_MULTILIST,
+	VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE,
+} ValueStrsplitMode;
+
+static const char **
+_value_strsplit (const char *value,
+                 ValueStrsplitMode split_mode,
+                 gsize *out_len)
+{
+	gs_free const char **strv = NULL;
+	gsize i;
+	gsize len;
+
+	/* FIXME: some modes should support backslash escaping.
+	 * In particular, to distingish from _value_str_as_index_list(), which
+	 * does not accept '\\'. */
+
+	/* note that all modes remove empty tokens (",", "a,,b", ",,"). */
+	switch (split_mode) {
+	case VALUE_STRSPLIT_MODE_OBJLIST:
+		strv = nm_utils_strsplit_set (value, ",", FALSE);
+		break;
+	case VALUE_STRSPLIT_MODE_MULTILIST:
+		strv = nm_utils_strsplit_set (value, " \t,", FALSE);
+		break;
+	case VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE:
+		strv = nm_utils_strsplit_set (value, " \t", TRUE);
+		break;
+	default:
+		nm_assert_not_reached ();
+		break;
+	}
+
+	NM_SET_OUT (out_len, 0);
+
+	if (!strv)
+		return NULL;
+
+	len = 0;
+	for (i = 0; strv[i]; i++) {
+		const char *s = strv[i];
+
+		s = nm_str_skip_leading_spaces (s);
+		if (s[0] == '\0')
+			continue;
+
+		if (split_mode == VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE)
+			_nm_utils_unescape_spaces ((char *) s, TRUE);
+		else
+			g_strchomp ((char *) s);
+
+		strv[len++] = s;
+	}
+	strv[len] = NULL;
+
+	NM_SET_OUT (out_len, len);
+	return g_steal_pointer (&strv);
+}
+
 static NMIPAddress *
 _parse_ip_address (int family, const char *address, GError **error)
 {
@@ -1702,7 +1763,7 @@ static gboolean
 _set_fcn_multilist (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
-	gsize i, nstrv;
+	gsize i, j, nstrv;
 
 	if (_SET_FCN_DO_RESET_DEFAULT_WITH_SUPPORTS_REMOVE (property_info, modifier, value))
 		return _gobject_property_reset_default (setting, property_info->property_name);
@@ -1732,37 +1793,27 @@ _set_fcn_multilist (ARGS_SET_FCN)
 		}
 	}
 
-	if (property_info->property_typ_data->subtype.multilist.with_escaped_spaces)
-		strv = nm_utils_strsplit_set (value, " \t", TRUE);
-	else
-		strv = nm_utils_strsplit_set (value, " \t,", FALSE);
+	strv = _value_strsplit (value,
+	                          property_info->property_typ_data->subtype.multilist.with_escaped_spaces
+	                        ? VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE
+	                        : VALUE_STRSPLIT_MODE_MULTILIST,
+	                        &nstrv);
 
-	nstrv = 0;
-	if (strv) {
-		for (i = 0; strv[i]; i++) {
-			const char *item = strv[i];
+	j = 0;
+	for (i = 0; i < nstrv; i++) {
+		const char *item = strv[i];
 
-			item = nm_str_skip_leading_spaces (item);
-			if (item[0] == '\0')
-				continue;
-
-			if (property_info->property_typ_data->subtype.multilist.with_escaped_spaces)
-				_nm_utils_unescape_spaces ((char *) item, TRUE);
-			else
-				g_strchomp ((char *) item);
-
-			/* FIXME: don't validate differently for remove/add. */
-			item = _multilist_do_validate (property_info,
-			                               !_SET_FCN_DO_REMOVE (modifier, value),
-			                               setting,
-			                               item,
-			                               error);
-			if (!item)
-				return FALSE;
-
-			strv[nstrv++] = item;
-		}
+		/* FIXME: don't validate differently for remove/add. */
+		item = _multilist_do_validate (property_info,
+		                               !_SET_FCN_DO_REMOVE (modifier, value),
+		                               setting,
+		                               item,
+		                               error);
+		if (!item)
+			return FALSE;
+		strv[j++] = item;
 	}
+	nstrv = j;
 
 	if (_SET_FCN_DO_SET_ALL (modifier, value))
 		_gobject_property_reset_default (setting, property_info->property_name);
@@ -3095,17 +3146,9 @@ _set_fcn_objlist (ARGS_SET_FCN)
 		}
 	}
 
-	/* FIXME: support escaping */
-	strv = nm_utils_strsplit_set (value, ",", FALSE);
-	nstrv = 0;
-	if (strv) {
-		for (i = 0; strv[i]; i++) {
-			g_strstrip ((char *) strv[i]);
-			if (strv[i][0] == '\0')
-				continue;
-			strv[nstrv++] = strv[i];
-		}
-	}
+	strv = _value_strsplit (value,
+	                        VALUE_STRSPLIT_MODE_OBJLIST,
+	                        &nstrv);
 
 	if (_SET_FCN_DO_SET_ALL (modifier, value)) {
 		if (property_info->property_typ_data->subtype.objlist.clear_all_fcn)
