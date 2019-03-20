@@ -76,6 +76,95 @@ _gtype_property_get_gtype (GType gtype, const char *property_name)
 
 /*****************************************************************************/
 
+static int
+_int64_cmp_desc (gconstpointer a,
+                 gconstpointer b,
+                 gpointer user_data)
+{
+	NM_CMP_DIRECT (*((const gint64 *) b), *((const gint64 *) a));
+	return 0;
+}
+
+static gint64 *
+_value_str_as_index_list (const char *value, gsize *out_len)
+{
+	gs_free char *str_clone_free = NULL;
+	gboolean str_cloned = FALSE;
+	char *str;
+	gsize i, j;
+	gsize n_alloc;
+	gsize len;
+	gs_free gint64 *arr = NULL;
+
+	*out_len = 0;
+
+	if (!value)
+		return NULL;
+
+	str = (char *) value;
+	n_alloc = 0;
+	len = 0;
+	while (TRUE) {
+		gint64 i64;
+		const char *s;
+		gsize good;
+
+		good = strcspn (str, ","NM_ASCII_SPACES);
+		if (good == 0) {
+			if (str[0] == '\0')
+				break;
+			str++;
+			continue;
+		}
+		if (str[good] == '\0') {
+			s = str;
+			str += good;
+		} else {
+			if (!str_cloned) {
+				str_cloned = TRUE;
+				str = nm_strndup_a (200, str, strlen (str), &str_clone_free);
+			}
+			s = str;
+			str[good] = '\0';
+			str += good + 1;
+		}
+
+		i64 = _nm_utils_ascii_str_to_int64 (s, 10, 0, G_MAXINT64, -1);
+		if (i64 == -1)
+			return NULL;
+
+		if (len >= n_alloc) {
+			if (n_alloc > 0) {
+				n_alloc = n_alloc * 2;
+				arr = g_realloc (arr, n_alloc * sizeof (gint64));
+			} else {
+				n_alloc = 4;
+				arr = g_new (gint64, n_alloc);
+			}
+		}
+		arr[len++] = i64;
+	}
+
+	if (len > 1) {
+		/* sort the list of indexes descendingly, and drop duplicates. */
+		g_qsort_with_data (arr,
+		                   len,
+		                   sizeof (gint64),
+		                   _int64_cmp_desc,
+		                   NULL);
+		j = 1;
+		for (i = 1; i < len; i++) {
+			nm_assert (arr[i - 1] >= arr[i]);
+			if (arr[i - 1] > arr[i])
+				arr[j++] = arr[i];
+		}
+		len = j;
+	}
+
+	*out_len = len;
+	return g_steal_pointer (&arr);
+}
+
 typedef enum {
 	VALUE_STRSPLIT_MODE_STRIPPED,
 	VALUE_STRSPLIT_MODE_OBJLIST,
@@ -1738,20 +1827,26 @@ _set_fcn_multilist (ARGS_SET_FCN)
 	if (_SET_FCN_DO_RESET_DEFAULT_WITH_SUPPORTS_REMOVE (property_info, modifier, value))
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
-	if (_SET_FCN_DO_REMOVE (modifier, value)) {
-		gint64 idx;
+	if (   _SET_FCN_DO_REMOVE (modifier, value)
+	    && (   property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn_u32
+	        || property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn_s
+	        || property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn_u)) {
+		gs_free gint64 *indexes = NULL;
 
-		/* FIXME: support a list of numbers. */
-		idx = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT64, -1);
-		if (idx != -1) {
-			guint num;
+		indexes = _value_str_as_index_list (value, &nstrv);
+		if (indexes) {
+			gint64 num;
 
 			if (property_info->property_typ_data->subtype.multilist.get_num_fcn_u32)
 				num = property_info->property_typ_data->subtype.multilist.get_num_fcn_u32 (setting);
 			else
 				num = property_info->property_typ_data->subtype.multilist.get_num_fcn_u (setting);
+			for (i = 0; i < nstrv; i++) {
+				gint64 idx = indexes[i];
 
-			if (idx < (gint64) num) {
+				if (idx >= num)
+					continue;
+
 				if (property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn_u32)
 					property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn_u32 (setting, idx);
 				else if (property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn_s)
@@ -3098,15 +3193,21 @@ _set_fcn_objlist (ARGS_SET_FCN)
 		return _gobject_property_reset_default (setting, property_info->property_name);
 	}
 
-	if (_SET_FCN_DO_REMOVE (modifier, value)) {
-		gint64 idx;
-		gint64 num;
+	if (   _SET_FCN_DO_REMOVE (modifier, value)
+	    && (   property_info->property_typ_data->subtype.objlist.remove_by_idx_fcn_u
+	        || property_info->property_typ_data->subtype.objlist.remove_by_idx_fcn_s)) {
+		gs_free gint64 *indexes = NULL;
 
-		/* FIXME: support list of values. */
-		idx = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT64, -1);
-		if (idx != -1) {
+		indexes = _value_str_as_index_list (value, &nstrv);
+		if (indexes) {
+			gint64 num;
+
 			num = property_info->property_typ_data->subtype.objlist.get_num_fcn (setting);
-			if (idx < num) {
+			for (i = 0; i < nstrv; i++) {
+				gint64 idx = indexes[i];
+
+				if (idx >= num)
+					continue;
 				if (property_info->property_typ_data->subtype.objlist.remove_by_idx_fcn_u)
 					property_info->property_typ_data->subtype.objlist.remove_by_idx_fcn_u (setting, idx);
 				else
@@ -6011,6 +6112,7 @@ static const NMMetaPropertyInfo *const property_infos_SRIOV[] = {
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingSriov, nm_setting_sriov_clear_vfs),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_sriov_vfs,
 				.set_fcn =              _objlist_set_fcn_sriov_vfs,
+				/* FIXME: removing by index is ambigous and should maybe be prevented. */
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingSriov, nm_setting_sriov_remove_vf),
 			),
 		),
