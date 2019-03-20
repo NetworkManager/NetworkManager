@@ -1807,29 +1807,24 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 
 static const char *
 _multilist_do_validate (const NMMetaPropertyInfo *property_info,
-                        gboolean for_set /* else for remove */,
                         NMSetting *setting,
                         const char *item,
                         GError **error)
 {
-	if (  for_set
-	    ? property_info->property_typ_data->subtype.multilist.no_validate_add
-	    : property_info->property_typ_data->subtype.multilist.no_validate_remove_by_value) {
-		if (property_info->property_typ_data->values_static) {
-			nm_assert (!property_info->property_typ_data->subtype.multilist.validate_fcn);
-			return nmc_string_is_valid (item,
-			                            (const char **) property_info->property_typ_data->values_static,
-			                            error);
-		}
-		if (property_info->property_typ_data->subtype.multilist.validate_fcn) {
-			return property_info->property_typ_data->subtype.multilist.validate_fcn (item,
-			                                                                         error);
-		}
-		if (property_info->property_typ_data->subtype.multilist.validate2_fcn) {
-			return property_info->property_typ_data->subtype.multilist.validate2_fcn (setting,
-			                                                                          item,
-			                                                                          error);
-		}
+	if (property_info->property_typ_data->values_static) {
+		nm_assert (!property_info->property_typ_data->subtype.multilist.validate_fcn);
+		return nmc_string_is_valid (item,
+		                            (const char **) property_info->property_typ_data->values_static,
+		                            error);
+	}
+	if (property_info->property_typ_data->subtype.multilist.validate_fcn) {
+		return property_info->property_typ_data->subtype.multilist.validate_fcn (item,
+		                                                                         error);
+	}
+	if (property_info->property_typ_data->subtype.multilist.validate2_fcn) {
+		return property_info->property_typ_data->subtype.multilist.validate2_fcn (setting,
+		                                                                          item,
+		                                                                          error);
 	}
 
 	return item;
@@ -1885,9 +1880,7 @@ _set_fcn_multilist (ARGS_SET_FCN)
 	for (i = 0; i < nstrv; i++) {
 		const char *item = strv[i];
 
-		/* FIXME: don't validate differently for remove/add. */
 		item = _multilist_do_validate (property_info,
-		                               !_SET_FCN_DO_REMOVE (modifier, value),
 		                               setting,
 		                               item,
 		                               error);
@@ -4920,7 +4913,6 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingConnection, nm_setting_connection_remove_secondary),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingConnection, nm_setting_connection_remove_secondary_by_value),
 				.validate2_fcn =        _multilist_validate2_fcn_uuid,
-				.no_validate_add =      TRUE,
 			),
 		),
 	),
@@ -5287,7 +5279,6 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns_search),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_search_by_value),
 				.validate_fcn =         _multilist_validate_fcn_is_domain,
-				.no_validate_remove_by_value = TRUE,
 			),
 		),
 	),
@@ -5479,7 +5470,6 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns_search),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_search_by_value),
 				.validate_fcn =         _multilist_validate_fcn_is_domain,
-				.no_validate_remove_by_value = TRUE,
 			),
 		),
 	),
@@ -6252,7 +6242,6 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingTeam, nm_setting_team_add_runner_tx_hash),
 				.remove_by_idx_fcn_u =  MULTILIST_REMOVE_BY_IDX_FCN_U (NMSettingTeam, nm_setting_team_remove_runner_tx_hash),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingTeam, nm_setting_team_remove_runner_tx_hash_by_value),
-				.no_validate_remove_by_value = TRUE,
 			),
 			.values_static =            NM_MAKE_STRV ("eth", "vlan", "ipv4", "ipv6", "ip",
 			                                          "l3", "tcp", "udp", "sctp", "l4"),
