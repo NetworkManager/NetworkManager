@@ -165,12 +165,20 @@ _value_str_as_index_list (const char *value, gsize *out_len)
 	return g_steal_pointer (&arr);
 }
 
+#define MULTILIST_WITH_ESCAPE_CHARS     NM_ASCII_SPACES","
+
 typedef enum {
 	VALUE_STRSPLIT_MODE_STRIPPED,
 	VALUE_STRSPLIT_MODE_OBJLIST,
 	VALUE_STRSPLIT_MODE_MULTILIST,
 	VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE,
 } ValueStrsplitMode;
+
+static const char *
+_value_strescape (const char *str, char **out_to_free)
+{
+	return _nm_utils_escape_plain (str, MULTILIST_WITH_ESCAPE_CHARS, out_to_free);
+}
 
 static const char **
 _value_strsplit (const char *value,
@@ -197,7 +205,7 @@ _value_strsplit (const char *value,
 		strv = nm_utils_strsplit_set (value, " \t,", FALSE);
 		break;
 	case VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE:
-		strv = nm_utils_strsplit_set (value, " \t", TRUE);
+		strv = nm_utils_strsplit_set (value, MULTILIST_WITH_ESCAPE_CHARS, TRUE);
 		break;
 	default:
 		nm_assert_not_reached ();
@@ -218,7 +226,7 @@ _value_strsplit (const char *value,
 			continue;
 
 		if (split_mode == VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE)
-			_nm_utils_unescape_spaces ((char *) s, TRUE);
+			_nm_utils_unescape_plain ((char *) s, MULTILIST_WITH_ESCAPE_CHARS, TRUE);
 		else
 			g_strchomp ((char *) s);
 
@@ -3324,7 +3332,7 @@ _get_fcn_match_interface_name (ARGS_GET_FCN)
 		else
 			g_string_append_c (str, ' ');
 		name = nm_setting_match_get_interface_name (s_match, i);
-		g_string_append (str, _nm_utils_escape_spaces (name, &to_free));
+		g_string_append (str, _value_strescape (name, &to_free));
 	}
 	RETURN_STR_TO_FREE (g_string_free (str, FALSE));
 }
