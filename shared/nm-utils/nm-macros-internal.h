@@ -1334,6 +1334,9 @@ _NM_BACKPORT_SYMBOL_IMPL(version, return_type, func, _##func##_##version, args_t
 
 /*****************************************************************************/
 
+/* mirrors g_ascii_isspace() and what we consider spaces in general. */
+#define NM_ASCII_SPACES "\t\n\f\r "
+
 #define nm_str_skip_leading_spaces(str) \
 	({ \
 		typeof (*(str)) *_str = (str); \

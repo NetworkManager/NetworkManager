@@ -80,6 +80,29 @@ G_STATIC_ASSERT (sizeof (bool) <= sizeof (int));
 
 /*****************************************************************************/
 
+static void
+test_nm_ascii_spaces (void)
+{
+	int i;
+	const char *const S = NM_ASCII_SPACES;
+
+	for (i = 0; S[i]; i++)
+		g_assert (!strchr (&S[i + 1], S[i]));
+
+	for (i = 0; S[i] != '\0'; i++)
+		g_assert (g_ascii_isspace (S[i]));
+
+	g_assert (!g_ascii_isspace ((char) 0));
+	for (i = 1; i < 0x100; i++) {
+		if (g_ascii_isspace ((char) i))
+			g_assert (strchr (S, (char) i));
+		else
+			g_assert (!strchr (S, (char) i));
+	}
+}
+
+/*****************************************************************************/
+
 typedef struct _nm_packed {
 	int v0;
 	char v1;
@@ -7810,6 +7833,7 @@ int main (int argc, char **argv)
 {
 	nmtst_init (&argc, &argv, TRUE);
 
+	g_test_add_func ("/core/general/test_nm_ascii_spaces", test_nm_ascii_spaces);
 	g_test_add_func ("/core/general/test_nm_hash", test_nm_hash);
 	g_test_add_func ("/core/general/test_nm_g_slice_free_fcn", test_nm_g_slice_free_fcn);
 	g_test_add_func ("/core/general/test_c_list_sort", test_c_list_sort);
