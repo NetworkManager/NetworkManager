@@ -534,13 +534,18 @@ typedef struct {
 	const char *s_key;
 	gint32 key_idx;
 	gint8 key_type;
-} IPAddrRouteBuildListData;
+} BuildListData;
+
+typedef enum {
+	BUILD_LIST_TYPE_ADDRESSES,
+	BUILD_LIST_TYPE_ROUTES,
+} BuildListType;
 
 static int
-_ip_addrroute_build_lst_data_cmp (gconstpointer p_a, gconstpointer p_b, gpointer user_data)
+_build_list_data_cmp (gconstpointer p_a, gconstpointer p_b, gpointer user_data)
 {
-	const IPAddrRouteBuildListData *a = p_a;
-	const IPAddrRouteBuildListData *b = p_b;
+	const BuildListData *a = p_a;
+	const BuildListData *b = p_b;
 
 	NM_CMP_FIELD (a, b, key_idx);
 	NM_CMP_FIELD (a, b, key_type);
@@ -549,10 +554,25 @@ _ip_addrroute_build_lst_data_cmp (gconstpointer p_a, gconstpointer p_b, gpointer
 }
 
 static gboolean
-ip_addrroute_match_key_w_name_ (const char *key,
-                                const char *base_name,
-                                gsize base_name_l,
-                                gint32 *out_key_idx)
+_build_list_data_is_shadowed (const BuildListData *build_list,
+                              gsize build_list_len,
+                              gsize idx)
+{
+	/* the keyfile contains duplicate keys, which are both returned
+	 * by g_key_file_get_keys() (WHY??).
+	 *
+	 * Skip the earlier one. */
+	return    idx + 1 < build_list_len
+	       && build_list[idx].key_idx == build_list[idx + 1].key_idx
+	       && build_list[idx].key_type == build_list[idx + 1].key_type
+	       && nm_streq (build_list[idx].s_key, build_list[idx + 1].s_key);
+}
+
+static gboolean
+_build_list_match_key_w_name_impl (const char *key,
+                                   const char *base_name,
+                                   gsize base_name_l,
+                                   gint32 *out_key_idx)
 {
 	gint64 v;
 
@@ -595,31 +615,79 @@ ip_addrroute_match_key_w_name_ (const char *key,
 	return TRUE;
 }
 
-static gboolean
-ip_addrroute_match_key (const char *key,
-                        gboolean is_routes,
-                        gint32 *out_key_idx,
-                        gint8 *out_key_type)
-{
-#define ip_addrroute_match_key_w_name(key, base_name, out_key_idx) \
-	ip_addrroute_match_key_w_name_ (key, base_name, NM_STRLEN (base_name), out_key_idx)
+#define _build_list_match_key_w_name(key, base_name, out_key_idx) \
+	_build_list_match_key_w_name_impl (key, base_name, NM_STRLEN (base_name), out_key_idx)
 
-	if (is_routes) {
-		if (ip_addrroute_match_key_w_name (key, "route", out_key_idx))
-			NM_SET_OUT (out_key_type, 0);
-		else if (ip_addrroute_match_key_w_name (key, "routes", out_key_idx))
-			NM_SET_OUT (out_key_type, 1);
-		else
-			return FALSE;
-	} else {
-		if (ip_addrroute_match_key_w_name (key, "address", out_key_idx))
-			NM_SET_OUT (out_key_type, 0);
-		else if (ip_addrroute_match_key_w_name (key, "addresses", out_key_idx))
-			NM_SET_OUT (out_key_type, 1);
-		else
-			return FALSE;
+static BuildListData *
+_build_list_create (GKeyFile *keyfile,
+                    const char *group_name,
+                    BuildListType build_list_type,
+                    gsize *out_build_list_len,
+                    char ***out_keys_strv)
+{
+	gs_strfreev char **keys = NULL;
+	gsize i_keys, n_keys;
+	gs_free BuildListData *build_list = NULL;
+	gsize build_list_len = 0;
+
+	nm_assert (out_build_list_len && *out_build_list_len == 0);
+	nm_assert (out_keys_strv && !*out_keys_strv);
+
+	keys = nm_keyfile_plugin_kf_get_keys (keyfile, group_name, &n_keys, NULL);
+	if (n_keys == 0)
+		return NULL;
+
+	for (i_keys = 0; i_keys < n_keys; i_keys++) {
+		const char *s_key = keys[i_keys];
+		gint32 key_idx;
+		gint8 key_type;
+
+		switch (build_list_type) {
+		case BUILD_LIST_TYPE_ROUTES:
+			if (_build_list_match_key_w_name (s_key, "route", &key_idx))
+				key_type = 0;
+			else if (_build_list_match_key_w_name (s_key, "routes", &key_idx))
+				key_type = 1;
+			else
+				continue;
+			break;
+		case BUILD_LIST_TYPE_ADDRESSES:
+			if (_build_list_match_key_w_name (s_key, "address", &key_idx))
+				key_type = 0;
+			else if (_build_list_match_key_w_name (s_key, "addresses", &key_idx))
+				key_type = 1;
+			else
+				continue;
+			break;
+		default:
+			nm_assert_not_reached ();
+			break;
+		}
+
+		if (G_UNLIKELY (!build_list))
+			build_list = g_new (BuildListData, n_keys - i_keys);
+
+		build_list[build_list_len++] = (BuildListData) {
+			.s_key    = s_key,
+			.key_idx  = key_idx,
+			.key_type = key_type,
+		};
 	}
-	return TRUE;
+
+	if (build_list_len == 0)
+		return NULL;
+
+	if (build_list_len > 1) {
+		g_qsort_with_data (build_list,
+		                   build_list_len,
+		                   sizeof (BuildListData),
+		                   _build_list_data_cmp,
+		                   NULL);
+	}
+
+	*out_build_list_len = build_list_len;
+	*out_keys_strv = g_steal_pointer (&keys);
+	return g_steal_pointer (&build_list);
 }
 
 static void
@@ -631,64 +699,35 @@ ip_address_or_route_parser (KeyfileReaderInfo *info, NMSetting *setting, const c
 	gs_free char *gateway = NULL;
 	gs_unref_ptrarray GPtrArray *list = NULL;
 	gs_strfreev char **keys = NULL;
-	gsize i_keys, n_keys;
-	gs_free IPAddrRouteBuildListData *build_list = NULL;
+	gs_free BuildListData *build_list = NULL;
 	gsize i_build_list, build_list_len = 0;
 
-	keys = nm_keyfile_plugin_kf_get_keys (info->keyfile, setting_name, &n_keys, NULL);
-	if (n_keys == 0)
+	build_list = _build_list_create (info->keyfile,
+	                                 setting_name,
+	                                   is_routes
+	                                 ? BUILD_LIST_TYPE_ROUTES
+	                                 : BUILD_LIST_TYPE_ADDRESSES,
+	                                 &build_list_len,
+	                                 &keys);
+	if (!build_list)
 		return;
-
-	/* first create a list of all relevant keys, and sort them. */
-	for (i_keys = 0; i_keys < n_keys; i_keys++) {
-		const char *s_key = keys[i_keys];
-		gint32 key_idx;
-		gint8 key_type;
-
-		if (!ip_addrroute_match_key (s_key, is_routes, &key_idx, &key_type))
-			continue;
-
-		if (G_UNLIKELY (!build_list))
-			build_list = g_new (IPAddrRouteBuildListData, n_keys - i_keys);
-
-		build_list[build_list_len].s_key = s_key;
-		build_list[build_list_len].key_idx = key_idx;
-		build_list[build_list_len].key_type = key_type;
-		build_list_len++;
-	}
-
-	if (build_list_len == 0)
-		return;
-
-	g_qsort_with_data (build_list,
-	                   build_list_len,
-	                   sizeof (IPAddrRouteBuildListData),
-	                   _ip_addrroute_build_lst_data_cmp,
-	                   NULL);
 
 	list = g_ptr_array_new_with_free_func (is_routes
 	                                       ? (GDestroyNotify) nm_ip_route_unref
 	                                       : (GDestroyNotify) nm_ip_address_unref);
 
 	for (i_build_list = 0; i_build_list < build_list_len; i_build_list++) {
-		const IPAddrRouteBuildListData *build_data = &build_list[i_build_list];
+		const char *s_key;
 		gpointer item;
 
-		if (   i_build_list + 1 < build_list_len
-		    && build_data->key_idx == build_data[1].key_idx
-		    && build_data->key_type == build_data[1].key_type
-		    && nm_streq (build_data->s_key, build_data[1].s_key)) {
-			/* the keyfile contains duplicate keys, which are both returned
-			 * by g_key_file_get_keys() (WHY??).
-			 *
-			 * Skip the earlier one. */
+		if (_build_list_data_is_shadowed (build_list, build_list_len, i_build_list))
 			continue;
-		}
 
+		s_key = build_list[i_build_list].s_key;
 		item = read_one_ip_address_or_route (info,
 		                                     setting_key,
 		                                     setting_name,
-		                                     build_data->s_key,
+		                                     s_key,
 		                                     is_ipv6,
 		                                     is_routes,
 		                                     gateway ? NULL : &gateway,
@@ -696,7 +735,7 @@ ip_address_or_route_parser (KeyfileReaderInfo *info, NMSetting *setting, const c
 		if (item && is_routes) {
 			char options_key[128];
 
-			nm_sprintf_buf (options_key, "%s_options", build_data->s_key);
+			nm_sprintf_buf (options_key, "%s_options", s_key);
 			fill_route_attributes (info->keyfile,
 			                       item,
 			                       setting_name,
