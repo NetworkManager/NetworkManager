@@ -944,8 +944,20 @@ _rule_check_kernel_support (NMPlatform *platform,
 	};
 	const guint32 PROBE_PRORITY = 12033;
 	gboolean sup;
+	int i;
 
 	g_assert (NM_IS_PLATFORM (platform));
+
+	if (attribute == -1) {
+		for (i = 0; i < G_N_ELEMENTS (support); i++) {
+			if (support[i] < 0) {
+				/* indicate that some test was skipped. */
+				return FALSE;
+			}
+		}
+		return TRUE;
+	}
+
 	g_assert (attribute >= 0 && attribute < G_N_ELEMENTS (support));
 
 	if (support[attribute] != 0)
@@ -1368,6 +1380,7 @@ test_rule (gconstpointer test_data)
 	NMPlatform *platform = NM_PLATFORM_GET;
 	guint i, j, n;
 	int r;
+	gboolean had_an_issue_exist = FALSE;
 
 	nm_platform_process_events (platform);
 
@@ -1596,6 +1609,7 @@ again:
 					/* OK, the rule is shadowed by another rule, and kernel does not allow
 					 * us to add this one (rh#1686075). Drop this from the test. */
 					g_ptr_array_remove_index (objs, i);
+					had_an_issue_exist = TRUE;
 					continue;
 				}
 			}
@@ -1703,6 +1717,13 @@ again:
 	for (j = 0; j < objs_initial->len; j++)
 		g_assert (_platform_has_routing_rule (platform, objs_initial->pdata[j]));
 	g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, objs_initial->len);
+
+	/* the tests passed as good as we could (as good as we implemented workarounds for them).
+	 * Still, with this kernel, not all features were fully tested. Mark the test as skipped. */
+	if (had_an_issue_exist)
+		g_test_skip ("adding a rule failed with EEXIST although it should not (rh#1686075)");
+	else if (!_rule_check_kernel_support (platform, -1))
+		g_test_skip ("some kernel features were not available and skipped for the test");
 }
 
 /*****************************************************************************/
