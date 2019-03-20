@@ -77,6 +77,7 @@ _gtype_property_get_gtype (GType gtype, const char *property_name)
 /*****************************************************************************/
 
 typedef enum {
+	VALUE_STRSPLIT_MODE_STRIPPED,
 	VALUE_STRSPLIT_MODE_OBJLIST,
 	VALUE_STRSPLIT_MODE_MULTILIST,
 	VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE,
@@ -97,6 +98,9 @@ _value_strsplit (const char *value,
 
 	/* note that all modes remove empty tokens (",", "a,,b", ",,"). */
 	switch (split_mode) {
+	case VALUE_STRSPLIT_MODE_STRIPPED:
+		strv = nm_utils_strsplit_set (value, NM_ASCII_SPACES",", FALSE);
+		break;
 	case VALUE_STRSPLIT_MODE_OBJLIST:
 		strv = nm_utils_strsplit_set (value, ",", FALSE);
 		break;
@@ -459,40 +463,6 @@ _parse_team_link_watcher (const char *str,
 /* Max priority values from libnm-core/nm-setting-vlan.c */
 #define MAX_SKB_PRIO   G_MAXUINT32
 #define MAX_8021P_PRIO 7  /* Max 802.1p priority */
-
-/*
- * Parse VLAN priority mappings from the following format: 2:1,3:4,7:3
- * and verify if the priority numbers are valid
- *
- * Return: string array with split maps, or NULL on error
- * Caller is responsible for freeing the array.
- */
-static char **
-_parse_vlan_priority_maps (const char *priority_map,
-                           NMVlanPriorityMap map_type,
-                           gboolean allow_wildcard_to,
-                           GError **error)
-{
-	gs_strfreev char **mapping = NULL;
-	char **iter;
-
-	nm_assert (priority_map);
-	nm_assert (!error || !*error);
-
-	mapping = g_strsplit (priority_map, ",", 0);
-	for (iter = mapping; *iter; iter++) {
-		if (!nm_utils_vlan_priority_map_parse_str (map_type,
-		                                           *iter,
-		                                           allow_wildcard_to,
-		                                           NULL,
-		                                           NULL,
-		                                           NULL)) {
-			g_set_error (error, 1, 0, _("invalid priority map '%s'"), *iter);
-			return NULL;
-		}
-	}
-	return g_steal_pointer (&mapping);
-}
 
 /*
  * nmc_proxy_check_script:
@@ -3517,25 +3487,32 @@ static gboolean
 _set_fcn_vlan_xgress_priority_map (ARGS_SET_FCN)
 {
 	NMVlanPriorityMap map_type = _vlan_priority_map_type_from_property_info (property_info);
-	gs_strfreev char **prio_map = NULL;
-	gsize i;
+	gs_free const char **prio_map = NULL;
+	gsize i, len;
 
 	if (_SET_FCN_DO_RESET_DEFAULT_WITH_SUPPORTS_REMOVE (property_info, modifier, value)) {
 		nm_setting_vlan_clear_priorities (NM_SETTING_VLAN (setting), map_type);
 		return TRUE;
 	}
 
-	prio_map = _parse_vlan_priority_maps (value,
-	                                      map_type,
-	                                      _SET_FCN_DO_REMOVE (modifier, value),
-	                                      error);
-	if (!prio_map)
-		return FALSE;
+	prio_map = _value_strsplit (value, VALUE_STRSPLIT_MODE_STRIPPED, &len);
+
+	for (i = 0; i < len; i++) {
+		if (!nm_utils_vlan_priority_map_parse_str (map_type,
+		                                           prio_map[i],
+		                                           _SET_FCN_DO_REMOVE (modifier, value),
+		                                           NULL,
+		                                           NULL,
+		                                           NULL)) {
+			g_set_error (error, 1, 0, _("invalid priority map '%s'"), prio_map[i]);
+			return FALSE;
+		}
+	}
 
 	if (_SET_FCN_DO_SET_ALL (modifier, value))
 		nm_setting_vlan_clear_priorities (NM_SETTING_VLAN (setting), map_type);
 
-	for (i = 0; prio_map[i]; i++) {
+	for (i = 0; i < len; i++) {
 		if (_SET_FCN_DO_REMOVE (modifier, value)) {
 			nm_setting_vlan_remove_priority_str_by_value (NM_SETTING_VLAN (setting),
 			                                              map_type,
