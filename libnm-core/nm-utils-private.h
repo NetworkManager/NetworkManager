@@ -134,7 +134,8 @@ _nm_utils_json_extract_int (char *conf,
 	nm_auto_unset_and_free_gvalue GValue *t_value = NULL;
 
 	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, is_port);
-	if (!t_value)
+	if (   !t_value
+	    || !G_VALUE_HOLDS_INT (t_value))
 		return key.default_int;
 	return g_value_get_int (t_value);
 }
@@ -147,7 +148,8 @@ _nm_utils_json_extract_boolean (char *conf,
 	nm_auto_unset_and_free_gvalue GValue *t_value = NULL;
 
 	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, is_port);
-	if (!t_value)
+	if (   !t_value
+	    || !G_VALUE_HOLDS_BOOLEAN (t_value))
 		return key.default_bool;
 	return g_value_get_boolean (t_value);
 }
@@ -160,7 +162,8 @@ _nm_utils_json_extract_string (char *conf,
 	nm_auto_unset_and_free_gvalue GValue *t_value = NULL;
 
 	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, is_port);
-	if (!t_value)
+	if (   !t_value
+	    || !G_VALUE_HOLDS_STRING (t_value))
 		return g_strdup (key.default_str);
 	return g_value_dup_string (t_value);
 }
@@ -173,7 +176,8 @@ _nm_utils_json_extract_strv (char *conf,
 	nm_auto_unset_and_free_gvalue GValue *t_value = NULL;
 
 	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, is_port);
-	if (!t_value)
+	if (   !t_value
+	    || !G_TYPE_CHECK_VALUE_TYPE (t_value, G_TYPE_STRV))
 		return NULL;
 	return g_strdupv (g_value_get_boxed (t_value));
 }
@@ -190,7 +194,8 @@ _nm_utils_json_extract_ptr_array (char *conf,
 	ret = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_team_link_watcher_unref);
 
 	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, is_port);
-	if (!t_value)
+	if (   !t_value
+	    || !G_TYPE_CHECK_VALUE_TYPE (t_value, G_TYPE_PTR_ARRAY))
 		return ret;
 
 	data = g_value_get_boxed (t_value);
