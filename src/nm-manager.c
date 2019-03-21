@@ -303,6 +303,8 @@ static const GDBusSignalInfo signal_info_state_changed;
 static const GDBusSignalInfo signal_info_device_added;
 static const GDBusSignalInfo signal_info_device_removed;
 
+static void update_connectivity_value (NMManager *self);
+
 static gboolean add_device (NMManager *self, NMDevice *device, GError **error);
 
 static void _emit_device_added_removed (NMManager *self,
@@ -1700,6 +1702,8 @@ remove_device (NMManager *self,
 	g_signal_emit (self, signals[INTERNAL_DEVICE_REMOVED], 0, device);
 	_notify (self, PROP_ALL_DEVICES);
 
+	update_connectivity_value (self);
+
 	nm_dbus_object_clear_and_unexport (&device);
 
 	check_if_startup_complete (self);
@@ -2923,6 +2927,12 @@ static void
 device_connectivity_changed (NMDevice *device,
                              GParamSpec *pspec,
                              NMManager *self)
+{
+	update_connectivity_value (self);
+}
+
+static void
+update_connectivity_value (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMConnectivityState best_state;
