@@ -929,13 +929,14 @@ nm_setting_team_remove_runner_tx_hash_by_value (NMSettingTeam *setting,
 
 	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), FALSE);
 	g_return_val_if_fail (txhash != NULL, FALSE);
-	g_return_val_if_fail (txhash[0] != '\0', FALSE);
 
-	for (i = 0; i < priv->runner_tx_hash->len; i++) {
-		if (nm_streq (txhash, priv->runner_tx_hash->pdata[i])) {
-			g_ptr_array_remove_index (priv->runner_tx_hash, i);
-			_notify (setting, PROP_RUNNER_TX_HASH);
-			return TRUE;
+	if (priv->runner_tx_hash) {
+		for (i = 0; i < priv->runner_tx_hash->len; i++) {
+			if (nm_streq (txhash, priv->runner_tx_hash->pdata[i])) {
+				g_ptr_array_remove_index (priv->runner_tx_hash, i);
+				_notify (setting, PROP_RUNNER_TX_HASH);
+				return TRUE;
+			}
 		}
 	}
 	return FALSE;
