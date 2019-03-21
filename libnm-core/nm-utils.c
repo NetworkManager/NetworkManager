@@ -5406,11 +5406,11 @@ _json_team_add_defaults (json_t *json,
 
 	if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP)) {
 		_json_add_object (json, "notify_peers", "count", NULL,
-				  json_integer (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT_ACTIVEBACKUP_DEFAULT));
+		                  json_integer (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT_ACTIVEBACKUP_DEFAULT));
 		_json_add_object (json, "mcast_rejoin", "count", NULL,
-				  json_integer (NM_SETTING_TEAM_NOTIFY_MCAST_COUNT_ACTIVEBACKUP_DEFAULT));
+		                  json_integer (NM_SETTING_TEAM_NOTIFY_MCAST_COUNT_ACTIVEBACKUP_DEFAULT));
 	} else if (   nm_streq (runner, NM_SETTING_TEAM_RUNNER_LOADBALANCE)
-		   || nm_streq (runner, NM_SETTING_TEAM_RUNNER_LACP)) {
+	           || nm_streq (runner, NM_SETTING_TEAM_RUNNER_LACP)) {
 		json_element = json_array ();
 		json_array_append_new (json_element, json_string ("eth"));
 		json_array_append_new (json_element, json_string ("ipv4"));

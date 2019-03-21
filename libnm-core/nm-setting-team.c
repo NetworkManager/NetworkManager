@@ -1240,9 +1240,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 		if (!name) {
 			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING,
-				     _("missing link watcher name"));
+			             _("missing link watcher name"));
 			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting),
-					NM_SETTING_TEAM_LINK_WATCHERS);
+			                NM_SETTING_TEAM_LINK_WATCHERS);
 			return FALSE;
 		}
 		if (!NM_IN_STRSET (name,
@@ -1250,9 +1250,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		                   NM_TEAM_LINK_WATCHER_ARP_PING,
 		                   NM_TEAM_LINK_WATCHER_NSNA_PING)) {
 			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING,
-				     _("unknown link watcher \"%s\""), name);
+			             _("unknown link watcher \"%s\""), name);
 			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting),
-					NM_SETTING_TEAM_LINK_WATCHERS);
+			                NM_SETTING_TEAM_LINK_WATCHERS);
 			return FALSE;
 		}
 
@@ -1261,17 +1261,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		                  NM_TEAM_LINK_WATCHER_NSNA_PING)
 		    && !nm_team_link_watcher_get_target_host (link_watcher)) {
 			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING,
-				     _("missing target host"));
+			             _("missing target host"));
 			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting),
-					NM_SETTING_TEAM_LINK_WATCHERS);
+			                NM_SETTING_TEAM_LINK_WATCHERS);
 			return FALSE;
 		}
 		if (nm_streq (name, NM_TEAM_LINK_WATCHER_ARP_PING)
 		    && !nm_team_link_watcher_get_source_host (link_watcher)) {
 			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING,
-				     _("missing source address"));
+			             _("missing source address"));
 			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting),
-					NM_SETTING_TEAM_LINK_WATCHERS);
+			                NM_SETTING_TEAM_LINK_WATCHERS);
 			return FALSE;
 		}
 	}
@@ -1373,10 +1373,8 @@ _align_team_properties (NMSettingTeam *setting)
 	priv->runner_tx_balancer =       JSON_TO_VAL (string, PROP_RUNNER_TX_BALANCER);
 	priv->runner_agg_select_policy = JSON_TO_VAL (string, PROP_RUNNER_AGG_SELECT_POLICY);
 
-	if (priv->runner_tx_hash) {
-		g_ptr_array_unref (priv->runner_tx_hash);
-		priv->runner_tx_hash = NULL;
-	}
+	nm_clear_pointer (&priv->runner_tx_hash, g_ptr_array_unref);
+
 	strv = JSON_TO_VAL (strv, PROP_RUNNER_TX_HASH);
 	if (strv) {
 		for (i = 0; strv[i]; i++)
@@ -1420,8 +1418,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_team_get_runner_hwaddr_policy (setting));
 		break;
 	case PROP_RUNNER_TX_HASH:
-		g_value_take_boxed (value, priv->runner_tx_hash ?
-		                    _nm_utils_ptrarray_to_strv (priv->runner_tx_hash): NULL);
+		g_value_take_boxed (value,
+		                      priv->runner_tx_hash
+		                    ? _nm_utils_ptrarray_to_strv (priv->runner_tx_hash)
+		                    : NULL);
 		break;
 	case PROP_RUNNER_TX_BALANCER:
 		g_value_set_string (value, nm_setting_team_get_runner_tx_balancer (setting));
@@ -1773,9 +1773,9 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	obj_properties[PROP_RUNNER_TX_HASH] =
 	    g_param_spec_boxed (NM_SETTING_TEAM_RUNNER_TX_HASH, "", "",
 	                        G_TYPE_STRV,
-	                             G_PARAM_READWRITE |
+	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_INFERRABLE |
-	                             G_PARAM_STATIC_STRINGS);
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTeam:runner-tx-balancer:
