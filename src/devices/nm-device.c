@@ -2822,7 +2822,8 @@ concheck_update_state (NMDevice *self, int addr_family,
 				state = NM_CONNECTIVITY_LIMITED;
 		} else
 			state = NM_CONNECTIVITY_NONE;
-	}
+	} else if (state == NM_CONNECTIVITY_LIMITED && priv->state <= NM_DEVICE_STATE_DISCONNECTED)
+		state = NM_CONNECTIVITY_NONE;
 
 	if (priv->concheck_x[IS_IPv4].state == state) {
 		/* we got a connectivty update, but the state didn't change. If we were probing,
