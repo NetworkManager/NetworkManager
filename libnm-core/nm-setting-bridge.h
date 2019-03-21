@@ -50,6 +50,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_BRIDGE_MULTICAST_SNOOPING "multicast-snooping"
 #define NM_SETTING_BRIDGE_VLAN_FILTERING     "vlan-filtering"
 #define NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID  "vlan-default-pvid"
+#define NM_SETTING_BRIDGE_VLANS              "vlans"
 
 #define NM_BRIDGE_VLAN_VID_MIN            1
 #define NM_BRIDGE_VLAN_VID_MAX            4094
@@ -69,6 +70,8 @@ typedef struct {
 	/*< private >*/
 	gpointer padding[4];
 } NMSettingBridgeClass;
+
+typedef struct _NMBridgeVlan NMBridgeVlan;
 
 GType nm_setting_bridge_get_type (void);
 
@@ -95,8 +98,19 @@ NM_AVAILABLE_IN_1_18
 gboolean     nm_setting_bridge_get_vlan_filtering (NMSettingBridge *setting);
 NM_AVAILABLE_IN_1_18
 guint16      nm_setting_bridge_get_vlan_default_pvid (NMSettingBridge *setting);
-
-typedef struct _NMBridgeVlan NMBridgeVlan;
+NM_AVAILABLE_IN_1_18
+void          nm_setting_bridge_add_vlan (NMSettingBridge *setting,
+                                          NMBridgeVlan *vlan);
+NM_AVAILABLE_IN_1_18
+guint         nm_setting_bridge_get_num_vlans (NMSettingBridge *setting);
+NM_AVAILABLE_IN_1_18
+NMBridgeVlan *nm_setting_bridge_get_vlan (NMSettingBridge *setting, guint idx);
+NM_AVAILABLE_IN_1_18
+void          nm_setting_bridge_remove_vlan (NMSettingBridge *setting, guint idx);
+NM_AVAILABLE_IN_1_18
+gboolean      nm_setting_bridge_remove_vlan_by_vid (NMSettingBridge *setting, guint16 vid);
+NM_AVAILABLE_IN_1_18
+void          nm_setting_bridge_clear_vlans (NMSettingBridge *setting);
 
 NM_AVAILABLE_IN_1_18
 GType          nm_bridge_vlan_get_type (void);

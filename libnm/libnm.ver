@@ -1534,6 +1534,10 @@ global:
 	nm_bridge_vlan_set_pvid;
 	nm_bridge_vlan_set_untagged;
 	nm_bridge_vlan_unref;
+	nm_setting_bridge_add_vlan;
+	nm_setting_bridge_clear_vlans;
+	nm_setting_bridge_get_num_vlans;
+	nm_setting_bridge_get_vlan;
 	nm_setting_bridge_get_vlan_filtering;
 	nm_setting_bridge_get_vlan_default_pvid;
 	nm_setting_bridge_port_add_vlan;
@@ -1542,4 +1546,6 @@ global:
 	nm_setting_bridge_port_get_vlan;
 	nm_setting_bridge_port_remove_vlan;
 	nm_setting_bridge_port_remove_vlan_by_vid;
+	nm_setting_bridge_remove_vlan;
+	nm_setting_bridge_remove_vlan_by_vid;
 } libnm_1_16_0;

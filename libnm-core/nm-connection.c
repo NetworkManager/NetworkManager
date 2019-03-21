@@ -1298,6 +1298,18 @@ _normalize_sriov_vf_order (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
+_normalize_bridge_vlan_order (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingBridge *s_bridge;
+
+	s_bridge = nm_connection_get_setting_bridge (self);
+	if (!s_bridge)
+		return FALSE;
+
+	return _nm_setting_bridge_sort_vlans (s_bridge);
+}
+
+static gboolean
 _normalize_bridge_port_vlan_order (NMConnection *self, GHashTable *parameters)
 {
 	NMSettingBridgePort *s_port;
@@ -1657,6 +1669,7 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_ovs_interface_type (connection, parameters);
 	was_modified |= _normalize_ip_tunnel_wired_setting (connection, parameters);
 	was_modified |= _normalize_sriov_vf_order (connection, parameters);
+	was_modified |= _normalize_bridge_vlan_order (connection, parameters);
 	was_modified |= _normalize_bridge_port_vlan_order (connection, parameters);
 
 	/* Verify anew. */
