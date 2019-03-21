@@ -1365,7 +1365,7 @@ _align_team_properties (NMSettingTeam *setting)
 {
 	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
 	char **strv;
-	int i;
+	gsize i;
 
 	priv->notify_peers_count =          JSON_TO_VAL (int, PROP_NOTIFY_PEERS_COUNT);
 	priv->notify_peers_interval =       JSON_TO_VAL (int, PROP_NOTIFY_PEERS_INTERVAL);
@@ -1387,14 +1387,24 @@ _align_team_properties (NMSettingTeam *setting)
 	priv->runner_tx_balancer =       JSON_TO_VAL (string, PROP_RUNNER_TX_BALANCER);
 	priv->runner_agg_select_policy = JSON_TO_VAL (string, PROP_RUNNER_AGG_SELECT_POLICY);
 
-	nm_clear_pointer (&priv->runner_tx_hash, g_ptr_array_unref);
-
 	strv = JSON_TO_VAL (strv, PROP_RUNNER_TX_HASH);
-	if (strv) {
-		for (i = 0; strv[i]; i++)
-			nm_setting_team_add_runner_tx_hash (setting, strv[i]);
-		g_strfreev (strv);
+	if (_nm_utils_strv_cmp_n ((  priv->runner_tx_hash
+	                           ? (const char *const*) priv->runner_tx_hash->pdata
+	                           : NULL),
+	                          (  priv->runner_tx_hash
+	                           ? (gssize) priv->runner_tx_hash->len
+	                           : (gssize) -1),
+	                          NM_CAST_STRV_CC (strv),
+	                          -1) != 0) {
+		nm_clear_pointer (&priv->runner_tx_hash, g_ptr_array_unref);
+		if (strv && strv[0]) {
+			priv->runner_tx_hash = g_ptr_array_new_full (NM_PTRARRAY_LEN (strv), g_free);
+			for (i = 0; strv[i]; i++)
+				g_ptr_array_add (priv->runner_tx_hash, strv[i]);
+			nm_clear_g_free (&strv);
+		}
 	}
+	nm_clear_pointer (&strv, g_strfreev);
 
 	g_ptr_array_unref (priv->link_watchers);
 	priv->link_watchers = JSON_TO_VAL (ptr_array, PROP_LINK_WATCHERS);
