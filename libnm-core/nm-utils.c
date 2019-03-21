@@ -5924,14 +5924,15 @@ _nm_utils_team_config_set (char **conf,
                            const char *key3,
                            const GValue *value)
 {
-	json_t *json, *json_element, *json_link, *json_value = NULL;
+	nm_auto_decref_json json_t *json = NULL;
+	json_t *json_element, *json_link, *json_value = NULL;
 	json_error_t jerror;
-	gboolean updated = FALSE;
 	char **strv;
 	GPtrArray *array;
 	const char *iter_key = key;
 	int i;
 	NMTeamLinkWatcher *watcher;
+	gs_free char *conf_new = NULL;
 
 	g_return_val_if_fail (key, FALSE);
 
@@ -5942,14 +5943,12 @@ _nm_utils_team_config_set (char **conf,
 	if (!json)
 		return FALSE;
 
-	/* no new value? delete element */
 	if (!value) {
-		updated = _json_del_object (json, key, key2, key3);
+		if (!_json_del_object (json, key, key2, key3))
+			return FALSE;
 		goto done;
 	}
 
-	/* insert new value */
-	updated = TRUE;
 	if (G_VALUE_HOLDS_STRING (value))
 		json_value = json_string (g_value_get_string (value));
 	else if (G_VALUE_HOLDS_INT (value))
@@ -5959,10 +5958,8 @@ _nm_utils_team_config_set (char **conf,
 	else if (G_VALUE_HOLDS_BOXED (value)) {
 		if (nm_streq (key, "link_watch")) {
 			array = g_value_get_boxed (value);
-			if (!array || !array->len) {
-				updated = FALSE;
-				goto done;
-			}
+			if (!array || !array->len)
+				return FALSE;
 
 			/*
 			 * json_value:   will hold the final link_watcher json (array) object
@@ -5990,21 +5987,18 @@ _nm_utils_team_config_set (char **conf,
 		} else if (   nm_streq (key, "runner")
 		           && nm_streq0 (key2, "tx_hash")) {
 			strv = g_value_get_boxed (value);
-			if (!strv) {
-				updated = FALSE;
-				goto done;
-			}
+			if (!strv)
+				return FALSE;
+
 			json_value = json_array ();
 			for (i = 0; strv[i]; i++)
 				json_array_append_new (json_value, json_string (strv[i]));
-		} else {
-			updated = FALSE;
-			goto done;
-		}
+		} else
+			return FALSE;
+
 	} else {  /* G_VALUE_HOLDS_? */
-		g_assert_not_reached ();
-		updated = FALSE;
-		goto done;
+		nm_assert_not_reached ();
+		return FALSE;
 	}
 
 	/* Simplest case: first level key only */
@@ -6033,19 +6027,14 @@ _nm_utils_team_config_set (char **conf,
 	json_object_set_new (json_element, iter_key, json_value);
 
 done:
-	if (updated) {
-		_json_team_normalize_defaults (json, (   nm_streq0 (key, "runner")
-		                                      && nm_streq0 (key2, "name")));
-		g_free (*conf);
-		*conf = json_dumps (json, JSON_PRESERVE_ORDER);
-		/* Don't save an empty config */
-		if (nm_streq0 (*conf, "{}")) {
-			g_free (*conf);
-			*conf = NULL;
-		}
-	}
-	json_decref (json);
-	return updated;
+	_json_team_normalize_defaults (json, (   nm_streq0 (key, "runner")
+	                                      && nm_streq0 (key2, "name")));
+	conf_new = json_dumps (json, JSON_PRESERVE_ORDER);
+	if (nm_streq0 (conf_new, "{}"))
+		nm_clear_g_free (&conf_new);
+	g_free (*conf);
+	*conf = g_steal_pointer (&conf_new);
+	return TRUE;
 }
 
 #else /* !WITH_JSON_VALIDATION */
