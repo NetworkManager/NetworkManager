@@ -105,6 +105,16 @@ gboolean    _nm_sriov_vf_parse_vlans (NMSriovVF *vf, const char *str, GError **e
 
 /* JSON to GValue conversion macros */
 
+static inline void
+_nm_auto_unset_and_free_gvalue (GValue **ptr)
+{
+	if (*ptr) {
+		g_value_unset (*ptr);
+		g_free (*ptr);
+	}
+}
+#define nm_auto_unset_and_free_gvalue nm_auto(_nm_auto_unset_and_free_gvalue)
+
 typedef struct {
 	const char *key1;
 	const char *key2;
@@ -121,16 +131,12 @@ _nm_utils_json_extract_int (char *conf,
                             _NMUtilsTeamPropertyKeys key,
                             gboolean is_port)
 {
-	gs_free GValue *t_value = NULL;
-	int ret;
+	nm_auto_unset_and_free_gvalue GValue *t_value = NULL;
 
 	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, is_port);
 	if (!t_value)
 		return key.default_int;
-
-	ret = g_value_get_int (t_value);
-	g_value_unset (t_value);
-	return ret;
+	return g_value_get_int (t_value);
 }
 
 static inline gboolean
@@ -138,16 +144,12 @@ _nm_utils_json_extract_boolean (char *conf,
                                 _NMUtilsTeamPropertyKeys key,
                                 gboolean is_port)
 {
-	gs_free GValue *t_value = NULL;
-	gboolean ret;
+	nm_auto_unset_and_free_gvalue GValue *t_value = NULL;
 
 	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, is_port);
 	if (!t_value)
 		return key.default_bool;
-
-	ret = g_value_get_boolean (t_value);
-	g_value_unset (t_value);
-	return ret;
+	return g_value_get_boolean (t_value);
 }
 
 static inline char *
@@ -155,16 +157,12 @@ _nm_utils_json_extract_string (char *conf,
                                _NMUtilsTeamPropertyKeys key,
                                gboolean is_port)
 {
-	gs_free GValue *t_value = NULL;
-	char *ret;
+	nm_auto_unset_and_free_gvalue GValue *t_value = NULL;
 
 	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, is_port);
 	if (!t_value)
 		return g_strdup (key.default_str);
-
-	ret = g_value_dup_string (t_value);
-	g_value_unset (t_value);
-	return ret;
+	return g_value_dup_string (t_value);
 }
 
 static inline char **
@@ -172,28 +170,25 @@ _nm_utils_json_extract_strv (char *conf,
                              _NMUtilsTeamPropertyKeys key,
                              gboolean is_port)
 {
-	gs_free GValue *t_value = NULL;
-	char **ret;
+	nm_auto_unset_and_free_gvalue GValue *t_value = NULL;
 
 	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, is_port);
 	if (!t_value)
 		return NULL;
-
-	ret = g_strdupv (g_value_get_boxed (t_value));
-	g_value_unset (t_value);
-	return ret;
+	return g_strdupv (g_value_get_boxed (t_value));
 }
 
 static inline GPtrArray *
 _nm_utils_json_extract_ptr_array (char *conf,
-                             _NMUtilsTeamPropertyKeys key,
-                             gboolean is_port)
+                                  _NMUtilsTeamPropertyKeys key,
+                                  gboolean is_port)
 {
-	gs_free GValue *t_value = NULL;
+	nm_auto_unset_and_free_gvalue GValue *t_value = NULL;
 	GPtrArray *data, *ret;
 	guint i;
 
 	ret = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_team_link_watcher_unref);
+
 	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, is_port);
 	if (!t_value)
 		return ret;
@@ -201,10 +196,8 @@ _nm_utils_json_extract_ptr_array (char *conf,
 	data = g_value_get_boxed (t_value);
 	if (!data)
 		return ret;
-
 	for (i = 0; i < data->len; i++)
 		g_ptr_array_add (ret, nm_team_link_watcher_dup (data->pdata[i]));
-	g_value_unset (t_value);
 	return ret;
 }
 
