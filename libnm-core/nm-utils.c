@@ -5925,13 +5925,11 @@ _nm_utils_team_config_set (char **conf,
                            const GValue *value)
 {
 	nm_auto_decref_json json_t *json = NULL;
-	json_t *json_element, *json_link, *json_value = NULL;
+	nm_auto_decref_json json_t *json_value = NULL;
+	json_t *json_element;
+	json_t *json_link;
 	json_error_t jerror;
-	char **strv;
-	GPtrArray *array;
 	const char *iter_key = key;
-	int i;
-	NMTeamLinkWatcher *watcher;
 	gs_free char *conf_new = NULL;
 
 	g_return_val_if_fail (key, FALSE);
@@ -5957,35 +5955,41 @@ _nm_utils_team_config_set (char **conf,
 		json_value = json_boolean (g_value_get_boolean (value));
 	else if (G_VALUE_HOLDS_BOXED (value)) {
 		if (nm_streq (key, "link_watch")) {
+			gboolean has_array = FALSE;
+			GPtrArray *array;
+			guint i;
+
 			array = g_value_get_boxed (value);
 			if (!array || !array->len)
 				return FALSE;
 
-			/*
-			 * json_value:   will hold the final link_watcher json (array) object
-			 * json_element: is the next link_watcher to append to json_value
-			 * json_link:    used to transit the json_value from a single link_watcher
-			 *               object to an array of link watcher objects
-			 */
-			json_value = NULL;
 			for (i = 0; i < array->len; i++) {
-				watcher = array->pdata[i];
-				json_element = _nm_utils_team_link_watcher_to_json (watcher);
-				if (!json_element)
+				json_t *el;
+
+				el = _nm_utils_team_link_watcher_to_json (array->pdata[i]);
+				if (!el)
 					continue;
+				/* if there is only one watcher, it is added as-is. If there
+				 * are multiple watchers, they are added in an array. */
 				if (!json_value) {
-					json_value = json_element;
+					json_value = el;
 					continue;
 				}
-				if (!json_is_array (json_value)) {
-					json_link = json_value;
-					json_value = json_array ();
-					json_array_append_new (json_value, json_link);
+				if (!has_array) {
+					json_t *el_arr;
+
+					has_array = TRUE;
+					el_arr = json_array();
+					json_array_append_new (el_arr, json_value);
+					json_value = el_arr;
 				}
-				json_array_append_new (json_value, json_element);
+				json_array_append_new (json_value, el);
 			}
 		} else if (   nm_streq (key, "runner")
 		           && nm_streq0 (key2, "tx_hash")) {
+			const char *const*strv;
+			gsize i;
+
 			strv = g_value_get_boxed (value);
 			if (!strv)
 				return FALSE;
@@ -5993,8 +5997,10 @@ _nm_utils_team_config_set (char **conf,
 			json_value = json_array ();
 			for (i = 0; strv[i]; i++)
 				json_array_append_new (json_value, json_string (strv[i]));
-		} else
+		} else {
+			nm_assert_not_reached ();
 			return FALSE;
+		}
 
 	} else {  /* G_VALUE_HOLDS_? */
 		nm_assert_not_reached ();
@@ -6024,7 +6030,7 @@ _nm_utils_team_config_set (char **conf,
 		iter_key = key3;
 	}
 
-	json_object_set_new (json_element, iter_key, json_value);
+	json_object_set_new (json_element, iter_key, g_steal_pointer (&json_value));
 
 done:
 	_json_team_normalize_defaults (json, (   nm_streq0 (key, "runner")
