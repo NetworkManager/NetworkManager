@@ -396,31 +396,18 @@ compare_property (const NMSettInfoSetting *sett_info,
 {
 	NMSettingTeamPortPrivate *a_priv;
 	NMSettingTeamPortPrivate *b_priv;
-	guint i, j;
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TEAM_PORT_LINK_WATCHERS)) {
 
 		if (NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
 			return NM_TERNARY_DEFAULT;
-
-		if (other) {
-			a_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
-			b_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (other);
-
-			if (a_priv->link_watchers->len != b_priv->link_watchers->len)
-				return FALSE;
-			for (i = 0; i < a_priv->link_watchers->len; i++) {
-				for (j = 0; j < b_priv->link_watchers->len; j++) {
-					if (nm_team_link_watcher_equal (a_priv->link_watchers->pdata[i],
-					                                b_priv->link_watchers->pdata[j])) {
-						break;
-					}
-				}
-				if (j == b_priv->link_watchers->len)
-					return FALSE;
-			}
-		}
-		return TRUE;
+		if (!other)
+			return TRUE;
+		a_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
+		b_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (other);
+		return _nm_team_link_watchers_equal (a_priv->link_watchers,
+		                                     b_priv->link_watchers,
+		                                     TRUE);
 	}
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TEAM_PORT_CONFIG)) {

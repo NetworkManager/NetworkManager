@@ -396,6 +396,34 @@ nm_team_link_watcher_equal (NMTeamLinkWatcher *watcher, NMTeamLinkWatcher *other
 	return TRUE;
 }
 
+gboolean
+_nm_team_link_watchers_equal (GPtrArray *a, GPtrArray *b, gboolean ignore_order)
+{
+	guint i, j;
+
+	if (a->len != b->len)
+		return FALSE;
+	if (ignore_order) {
+		/* FIXME: comparing this way is O(n^2). Don't do that, instead
+		 *        add nm_team_link_watcher_cmp(), sort both lists, and
+		 *        compare step by step. */
+		for (i = 0; i < a->len; i++) {
+			for (j = 0; j < b->len; j++) {
+				if (nm_team_link_watcher_equal (a->pdata[i], b->pdata[j]))
+					break;
+			}
+			if (j == b->len)
+				return FALSE;
+		}
+	} else {
+		for (i = 0; i < a->len; i++) {
+			if (!nm_team_link_watcher_equal (a->pdata[i], b->pdata[i]))
+				return FALSE;
+		}
+	}
+	return TRUE;
+}
+
 /**
  * nm_team_link_watcher_dup:
  * @watcher: the #NMTeamLinkWatcher
@@ -1289,31 +1317,17 @@ compare_property (const NMSettInfoSetting *sett_info,
                   NMSettingCompareFlags flags)
 {
 	NMSettingTeamPrivate *a_priv, *b_priv;
-	guint i, j;
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TEAM_LINK_WATCHERS)) {
-
 		if (NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
 			return NM_TERNARY_DEFAULT;
-
-		if (other) {
-			a_priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
-			b_priv = NM_SETTING_TEAM_GET_PRIVATE (other);
-
-			if (a_priv->link_watchers->len != b_priv->link_watchers->len)
-				return FALSE;
-			for (i = 0; i < a_priv->link_watchers->len; i++) {
-				for (j = 0; j < b_priv->link_watchers->len; j++) {
-					if (nm_team_link_watcher_equal (a_priv->link_watchers->pdata[i],
-					                                b_priv->link_watchers->pdata[j])) {
-						break;
-					}
-				}
-				if (j == b_priv->link_watchers->len)
-					return FALSE;
-			}
-		}
-		return TRUE;
+		if (!other)
+			return TRUE;
+		a_priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
+		b_priv = NM_SETTING_TEAM_GET_PRIVATE (other);
+		return _nm_team_link_watchers_equal (a_priv->link_watchers,
+		                                     b_priv->link_watchers,
+		                                     TRUE);
 	}
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TEAM_CONFIG)) {
