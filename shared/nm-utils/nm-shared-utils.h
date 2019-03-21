@@ -941,6 +941,18 @@ gboolean nm_utils_hash_table_equal (const GHashTable *a,
 void _nm_utils_strv_sort (const char **strv, gssize len);
 #define nm_utils_strv_sort(strv, len) _nm_utils_strv_sort (NM_CAST_STRV_MC (strv), len)
 
+int _nm_utils_strv_cmp_n (const char *const*strv1,
+                          gssize len1,
+                          const char *const*strv2,
+                          gssize len2);
+
+static inline gboolean
+_nm_utils_strv_equal (char **strv1, char **strv2)
+{
+	return _nm_utils_strv_cmp_n ((const char *const*) strv1, -1,
+	                             (const char *const*) strv2, -1) == 0;
+}
+
 /*****************************************************************************/
 
 #define NM_UTILS_NS_PER_SECOND   ((gint64) 1000000000)

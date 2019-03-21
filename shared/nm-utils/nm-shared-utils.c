@@ -2318,6 +2318,57 @@ _nm_utils_strv_sort (const char **strv, gssize len)
 	                   NULL);
 }
 
+/**
+ * _nm_utils_strv_cmp_n:
+ * @strv1: a string array
+ * @len1: the length of @strv1, or -1 for NULL terminated array.
+ * @strv2: a string array
+ * @len2: the length of @strv2, or -1 for NULL terminated array.
+ *
+ * Note that
+ *   - len == -1 && strv == NULL
+ * is treated like a %NULL argument and compares differently from
+ * other arrays.
+ *
+ * Note that an empty array can be represented as
+ *   - len == -1 &&  strv && !strv[0]
+ *   - len ==  0 && !strv
+ *   - len ==  0 &&  strv
+ * These 3 forms all compare equal.
+ * It also means, if length is 0, then it is permissible for strv to be %NULL.
+ *
+ * The strv arrays may contain %NULL strings (if len is positive).
+ *
+ * Returns: 0 if the arrays are equal (using strcmp).
+ **/
+int
+_nm_utils_strv_cmp_n (const char *const*strv1,
+                      gssize len1,
+                      const char *const*strv2,
+                      gssize len2)
+{
+	gsize n, n2;
+
+	if (len1 < 0) {
+		if (!strv1)
+			return (len2 < 0 && !strv2) ? 0 : -1;
+		n = NM_PTRARRAY_LEN (strv1);
+	} else
+		n = len1;
+
+	if (len2 < 0) {
+		if (!strv2)
+			return 1;
+		n2 = NM_PTRARRAY_LEN (strv2);
+	} else
+		n2 = len2;
+
+	NM_CMP_DIRECT (n, n2);
+	for (; n > 0; n--, strv1++, strv2++)
+		NM_CMP_DIRECT_STRCMP0 (*strv1, *strv2);
+	return 0;
+}
+
 /*****************************************************************************/
 
 gpointer

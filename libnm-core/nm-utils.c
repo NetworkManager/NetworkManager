@@ -1034,30 +1034,6 @@ _nm_utils_ptrarray_to_strv (GPtrArray *ptrarray)
 	return strv;
 }
 
-/**
- * _nm_utils_strv_equal:
- * @strv1: a string array
- * @strv2: a string array
- *
- * Compare NULL-terminated string arrays for equality.
- *
- * Returns: %TRUE if the arrays are equal, %FALSE otherwise.
- **/
-gboolean
-_nm_utils_strv_equal (char **strv1, char **strv2)
-{
-	if (strv1 == strv2)
-		return TRUE;
-
-	if (!strv1 || !strv2)
-		return FALSE;
-
-	for ( ; *strv1 && *strv2 && !strcmp (*strv1, *strv2); strv1++, strv2++)
-		;
-
-	return !*strv1 && !*strv2;
-}
-
 static gboolean
 device_supports_ap_ciphers (guint32 dev_caps,
                             guint32 ap_flags,
