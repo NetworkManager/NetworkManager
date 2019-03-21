@@ -6032,6 +6032,8 @@ done:
 	conf_new = json_dumps (json, JSON_PRESERVE_ORDER);
 	if (nm_streq0 (conf_new, "{}"))
 		nm_clear_g_free (&conf_new);
+	if (nm_streq0 (conf_new, *conf))
+		return FALSE;
 	g_free (*conf);
 	*conf = g_steal_pointer (&conf_new);
 	return TRUE;
