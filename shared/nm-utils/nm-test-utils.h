@@ -1136,12 +1136,13 @@ nmtst_uuid_generate (void)
 
 #endif
 
-#define NMTST_SWAP(x,y) \
+#define NMTST_SWAP(x, y) \
 	G_STMT_START { \
-		char __nmtst_swap_temp[sizeof(x) == sizeof(y) ? (signed) sizeof(x) : -1]; \
-		memcpy(__nmtst_swap_temp, &y, sizeof(x)); \
-		memcpy(&y,                &x, sizeof(x)); \
-		memcpy(&x, __nmtst_swap_temp, sizeof(x)); \
+		char __nmtst_swap_temp[sizeof((x)) == sizeof((y)) ? (signed) sizeof((x)) : -1]; \
+		\
+		memcpy(__nmtst_swap_temp, &(y),              sizeof (__nmtst_swap_temp)); \
+		memcpy(&(y),              &(x),              sizeof (__nmtst_swap_temp)); \
+		memcpy(&(x),              __nmtst_swap_temp, sizeof (__nmtst_swap_temp)); \
 	} G_STMT_END
 
 #define nmtst_assert_str_has_substr(str, substr) \
