@@ -41,6 +41,8 @@
 
 /*****************************************************************************/
 
+typedef struct _ParseInfoProperty ParseInfoProperty;
+
 typedef struct {
 	NMConnection *connection;
 	GKeyFile *keyfile;
@@ -2271,24 +2273,32 @@ cert_writer (KeyfileWriterInfo *info,
 
 /*****************************************************************************/
 
-typedef struct {
+struct _ParseInfoProperty {
 	const char *property_name;
 	void (*parser) (KeyfileReaderInfo *info,
 	                NMSetting *setting,
 	                const char *key);
-	void (*writer) (KeyfileWriterInfo *info,
-	                NMSetting *setting,
-	                const char *key,
-	                const GValue *value);
+	union {
+		void (*writer) (KeyfileWriterInfo *info,
+		                NMSetting *setting,
+		                const char *key,
+		                const GValue *value);
+		void (*writer_full) (KeyfileWriterInfo *info,
+		                     const NMMetaSettingInfo *setting_info,
+		                     const NMSettInfoProperty *property_info,
+		                     const ParseInfoProperty *pip,
+		                     NMSetting *setting);
+	};
 	bool parser_skip;
 	bool parser_no_check_key:1;
 	bool writer_skip:1;
+	bool has_writer_full:1;
 
 	/* usually, we skip to write values that have their
 	 * default value. By setting this flag to TRUE, also
 	 * default values are written. */
 	bool writer_persist_default:1;
-} ParseInfoProperty;
+};
 
 #define PARSE_INFO_PROPERTY(_property_name, ...) \
 	(&((const ParseInfoProperty) { \
@@ -3343,32 +3353,36 @@ write_setting_value (KeyfileWriterInfo *info,
 	nm_assert (   !property_info->param_spec
 	           || nm_streq (property_info->param_spec->name, property_info->name));
 
-	if (!property_info->param_spec)
-		return;
-
-	key = property_info->param_spec->name;
+	key = property_info->name;
 
 	pip = _parse_info_find (setting, key, &setting_info);
 
-	if (!setting_info) {
-		/* the setting type is unknown. That is highly unexpected
-		 * (and as this is currently only called from NetworkManager
-		 * daemon, not possible).
-		 *
-		 * Still, handle it gracefully, because later keyfile writer will become
-		 * public API of libnm, where @setting is (untrusted) user input.
-		 *
-		 * Gracefully here just means: ignore the setting. */
-		return;
+	if (!pip) {
+		if (!setting_info) {
+			/* the setting type is unknown. That is highly unexpected
+			 * (and as this is currently only called from NetworkManager
+			 * daemon, not possible).
+			 *
+			 * Still, handle it gracefully, because later keyfile writer will become
+			 * public API of libnm, where @setting is (untrusted) user input.
+			 *
+			 * Gracefully here just means: ignore the setting. */
+			return;
+		}
+		if (!property_info->param_spec)
+			return;
+		if (nm_streq (key, NM_SETTING_NAME))
+			return;
+	} else {
+		if (pip->has_writer_full) {
+			pip->writer_full (info, setting_info, property_info, pip, setting);
+			return;
+		}
+		if (pip->writer_skip)
+			return;
 	}
 
-	if (   !pip
-	    && nm_streq (key, NM_SETTING_NAME))
-		return;
-
-	if (   pip
-	    && pip->writer_skip)
-		return;
+	nm_assert (property_info->param_spec);
 
 	/* Don't write secrets that are owned by user secret agents or aren't
 	 * supposed to be saved.  VPN secrets are handled specially though since
