@@ -2200,9 +2200,16 @@ cert_writer (KeyfileWriterInfo *info,
 
 struct _ParseInfoProperty {
 	const char *property_name;
-	void (*parser) (KeyfileReaderInfo *info,
-	                NMSetting *setting,
-	                const char *key);
+	union {
+		void (*parser) (KeyfileReaderInfo *info,
+		                NMSetting *setting,
+		                const char *key);
+		void (*parser_full) (KeyfileReaderInfo *info,
+		                     const NMMetaSettingInfo *setting_info,
+		                     const NMSettInfoProperty *property_info,
+		                     const ParseInfoProperty *pip,
+		                     NMSetting *setting);
+	};
 	union {
 		void (*writer) (KeyfileWriterInfo *info,
 		                NMSetting *setting,
@@ -2218,6 +2225,7 @@ struct _ParseInfoProperty {
 	bool parser_no_check_key:1;
 	bool writer_skip:1;
 	bool has_writer_full:1;
+	bool has_parser_full:1;
 
 	/* usually, we skip to write values that have their
 	 * default value. By setting this flag to TRUE, also
@@ -2653,23 +2661,33 @@ read_one_setting_value (KeyfileReaderInfo *info,
 	gint64 i64;
 
 	nm_assert (!info->error);
-	nm_assert (property_info->param_spec);
+	nm_assert (   !property_info->param_spec
+	           || nm_streq (property_info->param_spec->name, property_info->name));
 
-	if ((property_info->param_spec->flags & (G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY)) != G_PARAM_WRITABLE)
-		return;
-
-	key = property_info->param_spec->name;
+	key = property_info->name;
 
 	pip = _parse_info_find (setting, key, &setting_info);
 
 	nm_assert (setting_info);
 
-	if (   !pip
-	    && nm_streq (key, NM_SETTING_NAME))
-		return;
+	if (!pip) {
+		if (nm_streq (key, NM_SETTING_NAME))
+			return;
+		if (!property_info->param_spec)
+			return;
+		if ((property_info->param_spec->flags & (G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY)) != G_PARAM_WRITABLE)
+			return;
+	} else {
+		if (pip->parser_skip)
+			return;
+		if (pip->has_parser_full) {
+			pip->parser_full (info, setting_info, property_info, pip, setting);
+			return;
+		}
+	}
 
-	if (pip && pip->parser_skip)
-		return;
+	nm_assert (property_info->param_spec);
+	nm_assert ((property_info->param_spec->flags & (G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY)) == G_PARAM_WRITABLE);
 
 	/* Check for the exact key in the GKeyFile if required.  Most setting
 	 * properties map 1:1 to a key in the GKeyFile, but for those properties
@@ -2688,7 +2706,8 @@ read_one_setting_value (KeyfileReaderInfo *info,
 		return;
 	}
 
-	if (pip && pip->parser) {
+	if (   pip
+	    && pip->parser) {
 		pip->parser (info, setting, key);
 		return;
 	}
@@ -2938,13 +2957,11 @@ _read_setting (KeyfileReaderInfo *info)
 	}
 
 	for (i = 0; i < sett_info->property_infos_len; i++) {
-		const NMSettInfoProperty *property_info = &sett_info->property_infos[i];
-
-		if (property_info->param_spec) {
-			read_one_setting_value (info, setting, property_info);
-			if (info->error)
-				goto out;
-		}
+		read_one_setting_value (info,
+		                        setting,
+		                        &sett_info->property_infos[i]);
+		if (info->error)
+			goto out;
 	}
 
 out:
