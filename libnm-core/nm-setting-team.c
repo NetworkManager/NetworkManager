@@ -1397,7 +1397,7 @@ _align_team_properties (NMSettingTeam *setting)
 	                          NM_CAST_STRV_CC (strv),
 	                          -1) != 0) {
 		nm_clear_pointer (&priv->runner_tx_hash, g_ptr_array_unref);
-		if (strv && strv[0]) {
+		if (strv) {
 			priv->runner_tx_hash = g_ptr_array_new_full (NM_PTRARRAY_LEN (strv), g_free);
 			for (i = 0; strv[i]; i++)
 				g_ptr_array_add (priv->runner_tx_hash, strv[i]);

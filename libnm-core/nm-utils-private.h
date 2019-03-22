@@ -179,7 +179,8 @@ _nm_utils_json_extract_strv (char *conf,
 	if (   !t_value
 	    || !G_TYPE_CHECK_VALUE_TYPE (t_value, G_TYPE_STRV))
 		return NULL;
-	return g_strdupv (g_value_get_boxed (t_value));
+	return    g_strdupv (g_value_get_boxed (t_value))
+	       ?: g_new0 (char *, 1);
 }
 
 static inline GPtrArray *

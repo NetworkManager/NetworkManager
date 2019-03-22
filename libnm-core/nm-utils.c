@@ -5898,11 +5898,9 @@ _nm_utils_team_config_get (const char *conf,
 				if (json_is_string (str_element))
 					g_ptr_array_add (data, g_strdup (json_string_value (str_element)));
 			}
-			if (data->len) {
-				g_value_init (value, G_TYPE_STRV);
-				g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (data));
-			}
-			g_ptr_array_free (data, TRUE);
+			g_ptr_array_add (data, NULL);
+			g_value_init (value, G_TYPE_STRV);
+			g_value_take_boxed (value, g_ptr_array_free (data, FALSE));
 		} else {
 			g_assert_not_reached ();
 			g_free (value);
