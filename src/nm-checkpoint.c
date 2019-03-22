@@ -38,15 +38,18 @@
 
 typedef struct {
 	char *original_dev_path;
+	char *original_dev_name;
 	NMDevice *device;
 	NMConnection *applied_connection;
 	NMConnection *settings_connection;
 	guint64 ac_version_id;
 	NMDeviceState state;
+	bool is_software:1;
 	bool realized:1;
 	bool activation_lifetime_bound_to_profile_visiblity:1;
 	NMUnmanFlagOp unmanaged_explicit;
 	NMActivationReason activation_reason;
+	gulong dev_exported_change_id;
 } DeviceCheckpoint;
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMCheckpoint,
@@ -61,7 +64,6 @@ struct _NMCheckpointPrivate {
 	gint64 created_at_ms;
 	guint32 rollback_timeout_s;
 	guint timeout_id;
-	/* private members */
 	/* private members */
 	NMManager *manager;
 	NMCheckpointCreateFlags flags;
@@ -225,7 +227,7 @@ nm_checkpoint_rollback (NMCheckpoint *self)
 		guint32 result = NM_ROLLBACK_RESULT_OK;
 
 		_LOGD ("rollback: restoring device %s (state %d, realized %d, explicitly unmanaged %d)",
-		       nm_device_get_iface (device),
+		       dev_checkpoint->original_dev_name,
 		       (int) dev_checkpoint->state,
 		       dev_checkpoint->realized,
 		       dev_checkpoint->unmanaged_explicit);
@@ -241,7 +243,7 @@ nm_checkpoint_rollback (NMCheckpoint *self)
 			}
 		} else {
 			if (dev_checkpoint->realized) {
-				if (nm_device_is_software (device)) {
+				if (dev_checkpoint->is_software) {
 					/* try to recreate software device */
 					_LOGD ("rollback: software device not realized, will re-activate");
 					goto activate;
@@ -253,7 +255,6 @@ nm_checkpoint_rollback (NMCheckpoint *self)
 			goto next_dev;
 		}
 
-activate:
 		/* Manage the device again if needed */
 		if (   nm_device_get_unmanaged_flags (device, NM_UNMANAGED_USER_EXPLICIT)
 		    && dev_checkpoint->unmanaged_explicit != NM_UNMAN_FLAG_OP_SET_UNMANAGED) {
@@ -276,6 +277,7 @@ activate:
 			goto next_dev;
 		}
 
+activate:
 		if (dev_checkpoint->applied_connection) {
 			gboolean need_update, need_activation;
 
@@ -406,8 +408,15 @@ next_dev:
 	return g_variant_new ("(a{su})", &builder);
 }
 
+static void
+_dev_exported_changed (NMDBusObject *obj,
+                       NMCheckpoint *checkpoint)
+{
+	_notify (checkpoint, PROP_DEVICES);
+}
+
 static DeviceCheckpoint *
-device_checkpoint_create (NMDevice *device)
+device_checkpoint_create (NMCheckpoint *checkpoint, NMDevice *device)
 {
 	DeviceCheckpoint *dev_checkpoint;
 	NMConnection *applied_connection;
@@ -423,8 +432,14 @@ device_checkpoint_create (NMDevice *device)
 	dev_checkpoint = g_slice_new0 (DeviceCheckpoint);
 	dev_checkpoint->device = g_object_ref (device);
 	dev_checkpoint->original_dev_path = g_strdup (path);
+	dev_checkpoint->original_dev_name = g_strdup (nm_device_get_iface (device));
 	dev_checkpoint->state = nm_device_get_state (device);
+	dev_checkpoint->is_software = nm_device_is_software (device);
 	dev_checkpoint->realized = nm_device_is_real (device);
+	dev_checkpoint->dev_exported_change_id = g_signal_connect (device,
+	                                                           NM_DBUS_OBJECT_EXPORTED_CHANGED,
+	                                                           G_CALLBACK (_dev_exported_changed),
+	                                                           checkpoint);
 
 	if (nm_device_get_unmanaged_mask (device, NM_UNMANAGED_USER_EXPLICIT)) {
 		dev_checkpoint->unmanaged_explicit = !!nm_device_get_unmanaged_flags (device,
@@ -453,10 +468,12 @@ device_checkpoint_destroy (gpointer data)
 {
 	DeviceCheckpoint *dev_checkpoint = data;
 
+	nm_clear_g_signal_handler (dev_checkpoint->device, &dev_checkpoint->dev_exported_change_id);
 	g_clear_object (&dev_checkpoint->applied_connection);
 	g_clear_object (&dev_checkpoint->settings_connection);
 	g_clear_object (&dev_checkpoint->device);
 	g_free (dev_checkpoint->original_dev_path);
+	g_free (dev_checkpoint->original_dev_name);
 
 	g_slice_free (DeviceCheckpoint, dev_checkpoint);
 }
@@ -598,13 +615,12 @@ nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_time
 	for (i = 0; i < devices->len; i++) {
 		NMDevice *device = devices->pdata[i];
 
-		/* FIXME: as long as the check point instance exists, it won't let go
-		 *        of the device. That is a bug, for example, if you have a ethernet
-		 *        device that gets removed (rmmod), the checkpoint will reference
-		 *        a non-existing D-Bus path of a device. */
+		/* As long as the check point instance exists, it will keep a reference
+		 * to the device also if the device gets removed (by rmmod or by deleting
+		 * a connection profile for a software device). */
 		g_hash_table_insert (priv->devices,
 		                     device,
-		                     device_checkpoint_create (device));
+		                     device_checkpoint_create (self, device));
 	}
 
 	return self;
