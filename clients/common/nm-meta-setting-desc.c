@@ -3248,6 +3248,17 @@ _set_fcn_objlist (ARGS_SET_FCN)
 	}
 
 	for (i = 0; i < nstrv; i++) {
+		/* FIXME: there is the problem here that set_fcn() might succed on the first item
+		 * (modifying it), and fail to parse the second one.
+		 *
+		 * Optimally, we would first parse all input strings before starting the
+		 * modify the setting. The setting should only be modified if (and only if)
+		 * the entire operation succeeds to set all items.
+		 *
+		 * Currently, in interactive mode this leads to odd behavior.
+		 *
+		 * This does not only affect objlist.set_fcn() or _pt_objlist properties.
+		 * E.g. we also call _gobject_property_reset() before validating the input. */
 		if (!property_info->property_typ_data->subtype.objlist.set_fcn (setting,
 		                                                                !_SET_FCN_DO_REMOVE (modifier, value),
 		                                                                strv[i],
