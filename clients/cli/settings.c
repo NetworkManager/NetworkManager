@@ -538,6 +538,7 @@ nmc_setting_set_property (NMClient *client,
 {
 	const NMMetaPropertyInfo *property_info;
 	gs_free char *value_to_free = NULL;
+	gboolean success;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -572,13 +573,16 @@ nmc_setting_set_property (NMClient *client,
 		}
 	}
 
-	return property_info->property_type->set_fcn (property_info,
-	                                              nmc_meta_environment,
-	                                              nmc_meta_environment_arg,
-	                                              setting,
-	                                              modifier,
-	                                              value,
-	                                              error);
+	g_object_freeze_notify (G_OBJECT (setting));
+	success = property_info->property_type->set_fcn (property_info,
+	                                                 nmc_meta_environment,
+	                                                 nmc_meta_environment_arg,
+	                                                 setting,
+	                                                 modifier,
+	                                                 value,
+	                                                 error);
+	g_object_thaw_notify (G_OBJECT (setting));
+	return success;
 
 out_fail_read_only:
 	nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN, _("the property can't be changed"));
