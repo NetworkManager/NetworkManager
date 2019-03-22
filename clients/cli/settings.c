@@ -142,6 +142,25 @@ ipv6_addresses_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_dat
 		}
 	} else {
 		answered = FALSE;
+		/* FIXME: editor_init_existing_connection() and registering handlers is not the
+		 *  right approach.
+		 *
+		 * This only happens to work because in nmcli's edit mode
+		 * tends to append addresses -- instead of setting them.
+		 * If we would change that (to behavior I'd expect), we'd get:
+		 *
+		 *   nmcli> set ipv6.addresses fc01::1:5/68
+		 *   Do you also want to set 'ipv6.method' to 'manual'? [yes]: y
+		 *   nmcli> set ipv6.addresses fc01::1:6/68
+		 *   Do you also want to set 'ipv6.method' to 'manual'? [yes]:
+		 *
+		 * That's because nmc_setting_set_property() calls set_fcn(). With modifier '\0'
+		 * (set), it would first clear all addresses before adding the address. Thereby
+		 * emitting multiple property changed signals.
+		 *
+		 * That can be avoided by freezing/thawing the signals, but this solution
+		 * here is ugly in general.
+		 */
 		if (!g_strcmp0 (nm_setting_ip_config_get_method (NM_SETTING_IP_CONFIG (object)), NM_SETTING_IP6_CONFIG_METHOD_MANUAL))
 			g_object_set (object, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
 	}
