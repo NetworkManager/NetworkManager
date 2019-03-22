@@ -40,6 +40,8 @@ typedef enum {
 	SV_KEY_TYPE_TC                      = (1LL << 3),
 	SV_KEY_TYPE_USER                    = (1LL << 4),
 	SV_KEY_TYPE_SRIOV_VF                = (1LL << 5),
+	SV_KEY_TYPE_ROUTING_RULE4           = (1LL << 6),
+	SV_KEY_TYPE_ROUTING_RULE6           = (1LL << 7),
 } SvKeyType;
 
 const char *svFileGetName (const shvarFile *s);
@@ -67,7 +69,13 @@ char *svGetValueStr_cp (shvarFile *s, const char *key);
 
 int svParseBoolean (const char *value, int def);
 
+gint64 svNumberedParseKey (const char *key);
+
 GHashTable *svGetKeys (shvarFile *s, SvKeyType match_key_type);
+
+const char **svGetKeysSorted (shvarFile *s,
+                              SvKeyType match_key_type,
+                              guint *out_len);
 
 /* return TRUE if <key> resolves to any truth value (e.g. "yes", "y", "true")
  * return FALSE if <key> resolves to any non-truth value (e.g. "no", "n", "false")
