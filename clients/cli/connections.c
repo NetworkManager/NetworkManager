@@ -7380,6 +7380,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					                          prop_name);
 				}
 
+				/* setting a value in edit mode "appends". That seems unexpected behavior. */
 				if (!nmc_setting_set_property (nmc->client,
 				                               ss,
 				                               prop_name,
@@ -8101,6 +8102,9 @@ editor_init_existing_connection (NMConnection *connection)
 	NMSettingProxy *s_proxy;
 	NMSettingWireless *s_wireless;
 	NMSettingConnection *s_con;
+
+	/* FIXME: this approach of connecting handlers to do something is fundamentally
+	 * flawed. See the comment in nmc_setting_ip6_connect_handlers(). */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
