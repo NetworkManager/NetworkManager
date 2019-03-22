@@ -2889,6 +2889,52 @@ write_ip6_setting (NMConnection *connection,
 	return TRUE;
 }
 
+static void
+write_ip_routing_rules (NMConnection *connection,
+                        shvarFile *ifcfg,
+                        gboolean route_ignore)
+{
+	gsize idx;
+	int is_ipv4;
+
+	svUnsetAll (ifcfg, SV_KEY_TYPE_ROUTING_RULE4 | SV_KEY_TYPE_ROUTING_RULE6);
+
+	if (route_ignore)
+		return;
+
+	idx = 0;
+
+	for (is_ipv4 = 1; is_ipv4 >= 0; is_ipv4--) {
+		const int addr_family = is_ipv4 ? AF_INET : AF_INET6;
+		NMSettingIPConfig *s_ip;
+		guint i, num;
+
+		s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
+		if (!s_ip)
+			continue;
+
+		num = nm_setting_ip_config_get_num_routing_rules (s_ip);
+		for (i = 0; i < num; i++) {
+			NMIPRoutingRule *rule = nm_setting_ip_config_get_routing_rule (s_ip, i);
+			gs_free const char *s = NULL;
+			char key[64];
+
+			s = nm_ip_routing_rule_to_string (rule,
+			                                  NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE,
+			                                  NULL,
+			                                  NULL);
+			if (!s)
+				continue;
+
+			if (is_ipv4)
+				numbered_tag (key, "ROUTING_RULE_", ++idx);
+			else
+				numbered_tag (key, "ROUTING_RULE6_", ++idx);
+			svSetValueStr (ifcfg, key, s);
+		}
+	}
+}
+
 static char *
 escape_id (const char *id)
 {
@@ -3111,6 +3157,15 @@ do_write_construct (NMConnection *connection,
 			             has_complex_routes_v4 ? "" : "6");
 			return FALSE;
 		}
+		if (   (   s_ip4
+		        && nm_setting_ip_config_get_num_routing_rules (s_ip4) > 0)
+		    || (   s_ip6
+		        && nm_setting_ip_config_get_num_routing_rules (s_ip6) > 0)) {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+			             "Cannot configure routing rules on a connection that has an associated 'rule%s-' file",
+			             has_complex_routes_v4 ? "" : "6");
+			return FALSE;
+		}
 		route_ignore = TRUE;
 	} else
 		route_ignore = FALSE;
@@ -3127,6 +3182,10 @@ do_write_construct (NMConnection *connection,
 	                        !route_ignore ? &route6_content : NULL,
 	                        error))
 		return FALSE;
+
+	write_ip_routing_rules (connection,
+	                        ifcfg,
+	                        route_ignore);
 
 	write_connection_setting (s_con, ifcfg);
 

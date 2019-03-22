@@ -879,10 +879,25 @@ _is_all_digits (const char *str)
 
 #define IS_NUMBERED_TAG(key, tab_name) \
 	({ \
-		const char *_key = (key); \
+		const char *_key2 = (key); \
 		\
-		(   (strncmp (_key, tab_name, NM_STRLEN (tab_name)) == 0) \
-		 && _is_all_digits (&_key[NM_STRLEN (tab_name)])); \
+		(   (strncmp (_key2, tab_name, NM_STRLEN (tab_name)) == 0) \
+		 && _is_all_digits (&_key2[NM_STRLEN (tab_name)])); \
+	})
+
+#define IS_NUMBERED_TAG_PARSE(key, tab_name, out_idx) \
+	({ \
+		const char *_key = (key); \
+		gint64 _idx; \
+		gboolean _good = FALSE; \
+		gint64 *_out_idx = (out_idx); \
+		\
+		if (    IS_NUMBERED_TAG (_key, ""tab_name"") \
+		    && (_idx = _nm_utils_ascii_str_to_int64 (&_key[NM_STRLEN (tab_name)], 10, 0, G_MAXINT64, -1)) != -1) { \
+			NM_SET_OUT (_out_idx, _idx); \
+			_good = TRUE; \
+		} \
+		_good; \
 	})
 
 static gboolean
@@ -919,8 +934,28 @@ _svKeyMatchesType (const char *key, SvKeyType match_key_type)
 		if (IS_NUMBERED_TAG (key, "SRIOV_VF"))
 			return TRUE;
 	}
+	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ROUTING_RULE4)) {
+		if (IS_NUMBERED_TAG_PARSE (key, "ROUTING_RULE_", NULL))
+			return TRUE;
+	}
+	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ROUTING_RULE6)) {
+		if (IS_NUMBERED_TAG_PARSE (key, "ROUTING_RULE6_", NULL))
+			return TRUE;
+	}
 
 	return FALSE;
+}
+
+gint64
+svNumberedParseKey (const char *key)
+{
+	gint64 idx;
+
+	if (IS_NUMBERED_TAG_PARSE (key, "ROUTING_RULE_", &idx))
+		return idx;
+	if (IS_NUMBERED_TAG_PARSE (key, "ROUTING_RULE6_", &idx))
+		return idx;
+	return -1;
 }
 
 GHashTable *
@@ -945,6 +980,42 @@ svGetKeys (shvarFile *s, SvKeyType match_key_type)
 		}
 	}
 	return keys;
+}
+
+static int
+_get_keys_sorted_cmp (gconstpointer a,
+                      gconstpointer b,
+                      gpointer user_data)
+{
+	const char *k_a = *((const char *const*) a);
+	const char *k_b = *((const char *const*) b);
+	gint64 n_a;
+	gint64 n_b;
+
+	n_a = svNumberedParseKey (k_a);
+	n_b = svNumberedParseKey (k_b);
+	NM_CMP_DIRECT (n_a, n_b);
+	NM_CMP_RETURN (strcmp (k_a, k_b));
+	nm_assert_not_reached ();
+	return 0;
+}
+
+const char **
+svGetKeysSorted (shvarFile *s,
+                 SvKeyType match_key_type,
+                 guint *out_len)
+{
+	gs_unref_hashtable GHashTable *keys_hash = NULL;
+
+	keys_hash = svGetKeys (s, match_key_type);
+	if (!keys_hash) {
+		NM_SET_OUT (out_len, 0);
+		return NULL;
+	}
+	return (const char **) nm_utils_hash_keys_to_array (keys_hash,
+	                                                    _get_keys_sorted_cmp,
+	                                                    NULL,
+	                                                    out_len);
 }
 
 /*****************************************************************************/
