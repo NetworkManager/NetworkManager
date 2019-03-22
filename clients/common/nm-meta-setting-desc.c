@@ -1836,8 +1836,13 @@ _set_fcn_multilist (ARGS_SET_FCN)
 	gs_free const char **strv = NULL;
 	gsize i, j, nstrv;
 
-	if (_SET_FCN_DO_RESET_DEFAULT_WITH_SUPPORTS_REMOVE (property_info, modifier, value))
-		return _gobject_property_reset_default (setting, property_info->property_name);
+	if (_SET_FCN_DO_RESET_DEFAULT_WITH_SUPPORTS_REMOVE (property_info, modifier, value)) {
+		if (property_info->property_typ_data->subtype.multilist.clear_all_fcn) {
+			property_info->property_typ_data->subtype.multilist.clear_all_fcn (setting);
+			return TRUE;
+		}
+		return _gobject_property_reset (setting, property_info->property_name, FALSE);
+	}
 
 	if (   _SET_FCN_DO_REMOVE (modifier, value)
 	    && (   property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn_u32
@@ -1890,8 +1895,12 @@ _set_fcn_multilist (ARGS_SET_FCN)
 	}
 	nstrv = j;
 
-	if (_SET_FCN_DO_SET_ALL (modifier, value))
-		_gobject_property_reset (setting, property_info->property_name, FALSE);
+	if (_SET_FCN_DO_SET_ALL (modifier, value)) {
+		if (property_info->property_typ_data->subtype.multilist.clear_all_fcn)
+			property_info->property_typ_data->subtype.multilist.clear_all_fcn (setting);
+		else
+			_gobject_property_reset (setting, property_info->property_name, FALSE);
+	}
 
 	for (i = 0; i < nstrv; i++) {
 		if (_SET_FCN_DO_REMOVE (modifier, value)) {
