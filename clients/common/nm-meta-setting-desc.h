@@ -269,6 +269,7 @@ struct _NMMetaPropertyTypData {
 		struct {
 			guint32 (*get_num_fcn_u32) (NMSetting *setting);
 			guint (*get_num_fcn_u) (NMSetting *setting);
+			void (*clear_all_fcn) (NMSetting *setting);
 			gboolean (*add_fcn) (NMSetting *setting,
 			                     const char *item);
 			void (*add2_fcn) (NMSetting *setting,
