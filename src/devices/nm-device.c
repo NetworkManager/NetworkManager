@@ -5081,6 +5081,11 @@ nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason reason)
 			reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
 			master_status = "deactivated by user request";
 			break;
+		case NM_DEVICE_STATE_REASON_CONNECTION_REMOVED:
+			new_state = NM_DEVICE_STATE_DEACTIVATING;
+			reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
+			master_status = "deactivated because master was removed";
+			break;
 		default:
 			new_state = NM_DEVICE_STATE_DISCONNECTED;
 			master_status = "deactivated";
