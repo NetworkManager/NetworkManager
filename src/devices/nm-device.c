@@ -47,6 +47,7 @@
 #include "nm-manager.h"
 #include "platform/nm-platform.h"
 #include "platform/nmp-object.h"
+#include "platform/nmp-rules-manager.h"
 #include "ndisc/nm-ndisc.h"
 #include "ndisc/nm-lndp-ndisc.h"
 #include "dhcp/nm-dhcp-manager.h"
@@ -6403,6 +6404,84 @@ lldp_init (NMDevice *self, gboolean restart)
 	}
 }
 
+/* set-mode can be:
+ *  - TRUE: sync with new rules.
+ *  - FALSE: sync, but remove all rules (== flush)
+ *  - DEFAULT: forget about all the rules that we previously tracked,
+ *       but don't actually remove them. This is when quitting NM
+ *       we want to keep the rules.
+ *       The problem is, after restart of NM, the rule manager will
+ *       no longer remember that NM added these rules and treat them
+ *       as externally added ones. Don't restart NetworkManager if
+ *       you care about that.
+ */
+static void
+_routing_rules_sync (NMDevice *self,
+                     NMTernary set_mode)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMPRulesManager *rules_manager = nm_netns_get_rules_manager (nm_device_get_netns (self));
+	gboolean untrack_only_dirty = FALSE;
+	gboolean keep_deleted_rules;
+	gpointer user_tag;
+
+	user_tag = priv;
+
+	if (set_mode == NM_TERNARY_TRUE) {
+		NMConnection *applied_connection;
+		NMSettingIPConfig *s_ip;
+		guint i, num;
+		int is_ipv4;
+
+		untrack_only_dirty = TRUE;
+		nmp_rules_manager_set_dirty (rules_manager, user_tag);
+
+		applied_connection = nm_device_get_applied_connection (self);
+
+		for (is_ipv4 = 0; applied_connection && is_ipv4 < 2; is_ipv4++) {
+			int addr_family = is_ipv4 ? AF_INET : AF_INET6;
+
+			s_ip = nm_connection_get_setting_ip_config (applied_connection, addr_family);
+			if (!s_ip)
+				continue;
+
+			num = nm_setting_ip_config_get_num_routing_rules (s_ip);
+			for (i = 0; i < num; i++) {
+				NMPlatformRoutingRule plrule;
+				NMIPRoutingRule *rule;
+
+				rule = nm_setting_ip_config_get_routing_rule (s_ip, i);
+				nm_ip_routing_rule_to_platform (rule, &plrule);
+				nmp_rules_manager_track (rules_manager,
+				                         &plrule,
+				                         10,
+				                         user_tag);
+			}
+		}
+	}
+
+	nmp_rules_manager_untrack_all (rules_manager, user_tag, !untrack_only_dirty);
+
+	keep_deleted_rules = FALSE;
+	if (set_mode == NM_TERNARY_DEFAULT) {
+		/* when exiting NM, we leave the device up and the rules configured.
+		 * We just all nmp_rules_manager_sync() to forget about the synced rules,
+		 * but we don't actually delete them.
+		 *
+		 * FIXME: that is a problem after restart of NetworkManager, because these
+		 * rules will look like externally added, and NM will no longer remove
+		 * them.
+		 * To fix that, we could during "assume" mark the rules of the profile
+		 * as owned (and "added" by the device). The problem with that is that it
+		 * wouldn't cover rules that devices add by internal decision (not because
+		 * of a setting in the profile, e.g. WireGuard could setup policy routing).
+		 * Maybe it would be better to remember these orphaned rules at exit in a
+		 * file and track them after restart again. */
+		keep_deleted_rules = TRUE;
+	}
+	nmp_rules_manager_sync (rules_manager, keep_deleted_rules);
+}
+
 static gboolean
 tc_commit (NMDevice *self)
 {
@@ -6513,6 +6592,8 @@ activate_stage2_device_config (NMDevice *self)
 			return;
 		}
 	}
+
+	_routing_rules_sync (self, NM_TERNARY_TRUE);
 
 	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
 		if (!nm_device_bring_up (self, FALSE, &no_firmware)) {
@@ -14344,6 +14425,11 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 			nm_platform_qdisc_sync (platform, ifindex, NULL);
 		}
 	}
+
+	_routing_rules_sync (self,
+	                       cleanup_type == CLEANUP_TYPE_KEEP
+	                     ? NM_TERNARY_DEFAULT
+	                     : NM_TERNARY_FALSE);
 
 	if (ifindex > 0)
 		nm_platform_ip4_dev_route_blacklist_set (nm_device_get_platform (self), ifindex, NULL);

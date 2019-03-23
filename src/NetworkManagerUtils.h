@@ -24,6 +24,9 @@
 
 #include "nm-core-utils.h"
 
+#include "nm-setting-ip-config.h"
+#include "platform/nm-platform.h"
+
 /*****************************************************************************/
 
 const char *nm_utils_get_ip_config_method (NMConnection *connection,
@@ -57,6 +60,11 @@ int nm_match_spec_device_by_pllink (const NMPlatformLink *pllink,
                                     const GSList *specs,
                                     int no_match_value);
 
+
+/*****************************************************************************/
+
+NMPlatformRoutingRule *nm_ip_routing_rule_to_platform (const NMIPRoutingRule *rule,
+                                                       NMPlatformRoutingRule *out_pl);
 
 /*****************************************************************************/
 
