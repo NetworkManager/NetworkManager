@@ -1393,6 +1393,13 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 *
 	 * Since: 1.18
 	 **/
+	/* ---ifcfg-rh---
+	 * property: vlans
+	 * variable: BRIDGE_VLANS
+	 * description: List of VLANs on the bridge
+	 * example: BRIDGE_VLANS="1 pvid untagged,20,40 untagged"
+	 * ---end---
+	 */
 	obj_properties[PROP_VLANS] =
 	    g_param_spec_boxed (NM_SETTING_BRIDGE_VLANS, "", "",
 	                        G_TYPE_PTR_ARRAY,

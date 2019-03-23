@@ -7533,6 +7533,8 @@ test_write_bridge_main (void)
 	NMIPAddress *addr;
 	static const char *mac = "31:33:33:37:be:cd";
 	GError *error = NULL;
+	gs_unref_ptrarray GPtrArray *vlans = NULL;
+	NMBridgeVlan *vlan;
 
 	connection = nm_simple_connection_new ();
 	g_assert (connection);
@@ -7553,11 +7555,23 @@ test_write_bridge_main (void)
 	s_bridge = (NMSettingBridge *) nm_setting_bridge_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_bridge));
 
+	vlans = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
+	vlan = nm_bridge_vlan_new (11);
+	nm_bridge_vlan_set_untagged (vlan, TRUE);
+	g_ptr_array_add (vlans, vlan);
+	vlan = nm_bridge_vlan_new (22);
+	nm_bridge_vlan_set_pvid (vlan, TRUE);
+	nm_bridge_vlan_set_untagged (vlan, TRUE);
+	g_ptr_array_add (vlans, vlan);
+	vlan = nm_bridge_vlan_new (44);
+	g_ptr_array_add (vlans, vlan);
+
 	g_object_set (s_bridge,
 	              NM_SETTING_BRIDGE_MAC_ADDRESS, mac,
 	              NM_SETTING_BRIDGE_GROUP_FORWARD_MASK, 19008,
 	              NM_SETTING_BRIDGE_VLAN_FILTERING, TRUE,
 	              NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID, 4000,
+	              NM_SETTING_BRIDGE_VLANS, vlans,
 	              NULL);
 
 	/* IP4 setting */
@@ -7635,6 +7649,8 @@ test_write_bridge_component (void)
 	NMSetting *s_port;
 	static const char *mac = "31:33:33:37:be:cd";
 	guint32 mtu = 1492;
+	gs_unref_ptrarray GPtrArray *vlans = NULL;
+	NMBridgeVlan *vlan;
 
 	connection = nm_simple_connection_new ();
 	g_assert (connection);
@@ -7662,11 +7678,23 @@ test_write_bridge_component (void)
 	              NULL);
 
 	/* Bridge port */
+	vlans = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
+	vlan = nm_bridge_vlan_new (1);
+	nm_bridge_vlan_set_untagged (vlan, TRUE);
+	g_ptr_array_add (vlans, vlan);
+	vlan = nm_bridge_vlan_new (2);
+	nm_bridge_vlan_set_pvid (vlan, TRUE);
+	nm_bridge_vlan_set_untagged (vlan, TRUE);
+	g_ptr_array_add (vlans, vlan);
+	vlan = nm_bridge_vlan_new (4);
+	g_ptr_array_add (vlans, vlan);
+
 	s_port = nm_setting_bridge_port_new ();
 	nm_connection_add_setting (connection, s_port);
 	g_object_set (s_port,
 	              NM_SETTING_BRIDGE_PORT_PRIORITY, 50,
 	              NM_SETTING_BRIDGE_PORT_PATH_COST, 33,
+	              NM_SETTING_BRIDGE_PORT_VLANS, vlans,
 	              NULL);
 
 	nmtst_assert_connection_verifies (connection);
