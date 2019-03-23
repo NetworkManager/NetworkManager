@@ -1546,12 +1546,12 @@ again:
 				                         USER_TAG_2);
 			}
 			if (nmtst_get_rand_int () % objs_sync->len == 0) {
-				nmp_rules_manager_sync (rules_manager);
+				nmp_rules_manager_sync (rules_manager, FALSE);
 				g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, i + 1);
 			}
 		}
 
-		nmp_rules_manager_sync (rules_manager);
+		nmp_rules_manager_sync (rules_manager, FALSE);
 		g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, objs_sync->len);
 
 		for (i = 0; i < objs_sync->len; i++) {
@@ -1578,12 +1578,12 @@ again:
 				break;
 			}
 			if (nmtst_get_rand_int () % objs_sync->len == 0) {
-				nmp_rules_manager_sync (rules_manager);
+				nmp_rules_manager_sync (rules_manager, FALSE);
 				g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, objs_sync->len - i - 1);
 			}
 		}
 
-		nmp_rules_manager_sync (rules_manager);
+		nmp_rules_manager_sync (rules_manager, FALSE);
 
 	} else {
 		for (i = 0; i < objs->len;) {

@@ -471,7 +471,8 @@ nmp_rules_manager_untrack_all (NMPRulesManager *self,
 }
 
 void
-nmp_rules_manager_sync (NMPRulesManager *self)
+nmp_rules_manager_sync (NMPRulesManager *self,
+                        gboolean keep_deleted_rules)
 {
 	const NMDedupMultiHeadEntry *pl_head_entry;
 	NMDedupMultiIter pl_iter;
@@ -486,7 +487,7 @@ nmp_rules_manager_sync (NMPRulesManager *self)
 	if (!self->by_data)
 		return;
 
-	_LOGD ("sync");
+	_LOGD ("sync%s", keep_deleted_rules ? " (don't remove any rules)" : "");
 
 	pl_head_entry = nm_platform_lookup_obj_type (self->platform, NMP_OBJECT_TYPE_ROUTING_RULE);
 	if (pl_head_entry) {
@@ -506,6 +507,11 @@ nmp_rules_manager_sync (NMPRulesManager *self)
 				if (_rules_obj_get_best_data (obj_data)->priority_present)
 					continue;
 				obj_data->added_by_us = FALSE;
+			}
+
+			if (keep_deleted_rules) {
+				_LOGD ("forget/leak rule added by us: %s", nmp_object_to_string (plobj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+				continue;
 			}
 
 			if (!rules_to_delete)

@@ -54,7 +54,8 @@ void nmp_rules_manager_untrack_all (NMPRulesManager *self,
                                     gconstpointer user_tag,
                                     gboolean all /* or only dirty */);
 
-void nmp_rules_manager_sync (NMPRulesManager *self);
+void nmp_rules_manager_sync (NMPRulesManager *self,
+                             gboolean keep_deleted_rules);
 
 /*****************************************************************************/
 
