@@ -4540,6 +4540,29 @@ _nm_utils_generate_mac_address_mask_parse (const char *value,
 
 /*****************************************************************************/
 
+gboolean
+nm_utils_is_valid_iface_name_utf8safe (const char *utf8safe_name)
+{
+	gs_free gpointer bin_to_free = NULL;
+	gconstpointer bin;
+	gsize len;
+
+	g_return_val_if_fail (utf8safe_name, FALSE);
+
+	bin = nm_utils_buf_utf8safe_unescape (utf8safe_name, &len, &bin_to_free);
+
+	if (bin_to_free) {
+		/* some unescaping happened... */
+
+		if (len != strlen (bin)) {
+			/* there are embedded NUL chars. Invalid. */
+			return FALSE;
+		}
+	}
+
+	return nm_utils_is_valid_iface_name (bin, NULL);
+}
+
 /**
  * nm_utils_is_valid_iface_name:
  * @name: Name of interface
