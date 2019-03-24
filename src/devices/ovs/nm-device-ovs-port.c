@@ -139,13 +139,6 @@ del_iface_cb (GError *error, gpointer user_data)
 static void
 release_slave (NMDevice *device, NMDevice *slave, gboolean configure)
 {
-	/* Dissociate the platform link from the device -- openvswitch is going
-	 * to remove the link, not us. We shouldn't care about whatever happen to it.
-	 * In particular, we don't want to alter the NMDevice state if we see the
-	 * link go away, because the device may already have another activation
-	 * enqueued. */
-	nm_device_update_from_platform_link (slave, NULL);
-
 	nm_ovsdb_del_interface (nm_ovsdb_get (), nm_device_get_iface (slave),
 	                        del_iface_cb, g_object_ref (slave));
 }
