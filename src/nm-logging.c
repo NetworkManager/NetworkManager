@@ -157,9 +157,9 @@ NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL] = {
 	 *
 	 * Note: LOGD_VPN_PLUGIN is special and must be disabled for
 	 * DEBUG and TRACE levels. */
-	[LOGL_INFO] = LOGD_DEFAULT,
-	[LOGL_WARN] = LOGD_DEFAULT,
-	[LOGL_ERR]  = LOGD_DEFAULT,
+	[LOGL_INFO] = LOGD_ALL,
+	[LOGL_WARN] = LOGD_ALL,
+	[LOGL_ERR]  = LOGD_ALL,
 };
 
 /*****************************************************************************/
