@@ -284,7 +284,6 @@ char **     _nm_utils_slist_to_strv (GSList *slist, gboolean deep_copy);
 
 GPtrArray * _nm_utils_strv_to_ptrarray (char **strv);
 char **     _nm_utils_ptrarray_to_strv (GPtrArray *ptrarray);
-gboolean    _nm_utils_strv_equal (char **strv1, char **strv2);
 
 gboolean _nm_utils_check_file (const char *filename,
                                gint64 check_owner,
@@ -537,6 +536,8 @@ nm_utils_inet_ntop_dup (int addr_family, gconstpointer addr)
 gboolean _nm_utils_inet6_is_token (const struct in6_addr *in6addr);
 
 /*****************************************************************************/
+
+gboolean _nm_team_link_watchers_equal (GPtrArray *a, GPtrArray *b, gboolean ignore_order);
 
 gboolean _nm_utils_team_config_equal (const char *conf1, const char *conf2, gboolean port);
 GValue *_nm_utils_team_config_get (const char *conf,

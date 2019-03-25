@@ -1034,30 +1034,6 @@ _nm_utils_ptrarray_to_strv (GPtrArray *ptrarray)
 	return strv;
 }
 
-/**
- * _nm_utils_strv_equal:
- * @strv1: a string array
- * @strv2: a string array
- *
- * Compare NULL-terminated string arrays for equality.
- *
- * Returns: %TRUE if the arrays are equal, %FALSE otherwise.
- **/
-gboolean
-_nm_utils_strv_equal (char **strv1, char **strv2)
-{
-	if (strv1 == strv2)
-		return TRUE;
-
-	if (!strv1 || !strv2)
-		return FALSE;
-
-	for ( ; *strv1 && *strv2 && !strcmp (*strv1, *strv2); strv1++, strv2++)
-		;
-
-	return !*strv1 && !*strv2;
-}
-
 static gboolean
 device_supports_ap_ciphers (guint32 dev_caps,
                             guint32 ap_flags,
@@ -5430,11 +5406,11 @@ _json_team_add_defaults (json_t *json,
 
 	if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP)) {
 		_json_add_object (json, "notify_peers", "count", NULL,
-				  json_integer (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT_ACTIVEBACKUP_DEFAULT));
+		                  json_integer (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT_ACTIVEBACKUP_DEFAULT));
 		_json_add_object (json, "mcast_rejoin", "count", NULL,
-				  json_integer (NM_SETTING_TEAM_NOTIFY_MCAST_COUNT_ACTIVEBACKUP_DEFAULT));
+		                  json_integer (NM_SETTING_TEAM_NOTIFY_MCAST_COUNT_ACTIVEBACKUP_DEFAULT));
 	} else if (   nm_streq (runner, NM_SETTING_TEAM_RUNNER_LOADBALANCE)
-		   || nm_streq (runner, NM_SETTING_TEAM_RUNNER_LACP)) {
+	           || nm_streq (runner, NM_SETTING_TEAM_RUNNER_LACP)) {
 		json_element = json_array ();
 		json_array_append_new (json_element, json_string ("eth"));
 		json_array_append_new (json_element, json_string ("ipv4"));
@@ -5922,11 +5898,9 @@ _nm_utils_team_config_get (const char *conf,
 				if (json_is_string (str_element))
 					g_ptr_array_add (data, g_strdup (json_string_value (str_element)));
 			}
-			if (data->len) {
-				g_value_init (value, G_TYPE_STRV);
-				g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (data));
-			}
-			g_ptr_array_free (data, TRUE);
+			g_ptr_array_add (data, NULL);
+			g_value_init (value, G_TYPE_STRV);
+			g_value_take_boxed (value, g_ptr_array_free (data, FALSE));
 		} else {
 			g_assert_not_reached ();
 			g_free (value);
@@ -5948,14 +5922,13 @@ _nm_utils_team_config_set (char **conf,
                            const char *key3,
                            const GValue *value)
 {
-	json_t *json, *json_element, *json_link, *json_value = NULL;
+	nm_auto_decref_json json_t *json = NULL;
+	nm_auto_decref_json json_t *json_value = NULL;
+	json_t *json_element;
+	json_t *json_link;
 	json_error_t jerror;
-	gboolean updated = FALSE;
-	char **strv;
-	GPtrArray *array;
 	const char *iter_key = key;
-	int i;
-	NMTeamLinkWatcher *watcher;
+	gs_free char *conf_new = NULL;
 
 	g_return_val_if_fail (key, FALSE);
 
@@ -5966,14 +5939,12 @@ _nm_utils_team_config_set (char **conf,
 	if (!json)
 		return FALSE;
 
-	/* no new value? delete element */
 	if (!value) {
-		updated = _json_del_object (json, key, key2, key3);
+		if (!_json_del_object (json, key, key2, key3))
+			return FALSE;
 		goto done;
 	}
 
-	/* insert new value */
-	updated = TRUE;
 	if (G_VALUE_HOLDS_STRING (value))
 		json_value = json_string (g_value_get_string (value));
 	else if (G_VALUE_HOLDS_INT (value))
@@ -5982,53 +5953,56 @@ _nm_utils_team_config_set (char **conf,
 		json_value = json_boolean (g_value_get_boolean (value));
 	else if (G_VALUE_HOLDS_BOXED (value)) {
 		if (nm_streq (key, "link_watch")) {
-			array = g_value_get_boxed (value);
-			if (!array || !array->len) {
-				updated = FALSE;
-				goto done;
-			}
+			gboolean has_array = FALSE;
+			GPtrArray *array;
+			guint i;
 
-			/*
-			 * json_value:   will hold the final link_watcher json (array) object
-			 * json_element: is the next link_watcher to append to json_value
-			 * json_link:    used to transit the json_value from a single link_watcher
-			 *               object to an array of link watcher objects
-			 */
-			json_value = NULL;
+			array = g_value_get_boxed (value);
+			if (!array || !array->len)
+				return FALSE;
+
 			for (i = 0; i < array->len; i++) {
-				watcher = array->pdata[i];
-				json_element = _nm_utils_team_link_watcher_to_json (watcher);
-				if (!json_element)
+				json_t *el;
+
+				el = _nm_utils_team_link_watcher_to_json (array->pdata[i]);
+				if (!el)
 					continue;
+				/* if there is only one watcher, it is added as-is. If there
+				 * are multiple watchers, they are added in an array. */
 				if (!json_value) {
-					json_value = json_element;
+					json_value = el;
 					continue;
 				}
-				if (!json_is_array (json_value)) {
-					json_link = json_value;
-					json_value = json_array ();
-					json_array_append_new (json_value, json_link);
+				if (!has_array) {
+					json_t *el_arr;
+
+					has_array = TRUE;
+					el_arr = json_array();
+					json_array_append_new (el_arr, json_value);
+					json_value = el_arr;
 				}
-				json_array_append_new (json_value, json_element);
+				json_array_append_new (json_value, el);
 			}
 		} else if (   nm_streq (key, "runner")
 		           && nm_streq0 (key2, "tx_hash")) {
+			const char *const*strv;
+			gsize i;
+
 			strv = g_value_get_boxed (value);
-			if (!strv) {
-				updated = FALSE;
-				goto done;
-			}
+			if (!strv)
+				return FALSE;
+
 			json_value = json_array ();
 			for (i = 0; strv[i]; i++)
 				json_array_append_new (json_value, json_string (strv[i]));
 		} else {
-			updated = FALSE;
-			goto done;
+			nm_assert_not_reached ();
+			return FALSE;
 		}
+
 	} else {  /* G_VALUE_HOLDS_? */
-		g_assert_not_reached ();
-		updated = FALSE;
-		goto done;
+		nm_assert_not_reached ();
+		return FALSE;
 	}
 
 	/* Simplest case: first level key only */
@@ -6054,22 +6028,19 @@ _nm_utils_team_config_set (char **conf,
 		iter_key = key3;
 	}
 
-	json_object_set_new (json_element, iter_key, json_value);
+	json_object_set_new (json_element, iter_key, g_steal_pointer (&json_value));
 
 done:
-	if (updated) {
-		_json_team_normalize_defaults (json, (   nm_streq0 (key, "runner")
-		                                      && nm_streq0 (key2, "name")));
-		g_free (*conf);
-		*conf = json_dumps (json, JSON_PRESERVE_ORDER);
-		/* Don't save an empty config */
-		if (nm_streq0 (*conf, "{}")) {
-			g_free (*conf);
-			*conf = NULL;
-		}
-	}
-	json_decref (json);
-	return updated;
+	_json_team_normalize_defaults (json, (   nm_streq0 (key, "runner")
+	                                      && nm_streq0 (key2, "name")));
+	conf_new = json_dumps (json, JSON_PRESERVE_ORDER);
+	if (nm_streq0 (conf_new, "{}"))
+		nm_clear_g_free (&conf_new);
+	if (nm_streq0 (conf_new, *conf))
+		return FALSE;
+	g_free (*conf);
+	*conf = g_steal_pointer (&conf_new);
+	return TRUE;
 }
 
 #else /* !WITH_JSON_VALIDATION */

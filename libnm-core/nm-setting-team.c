@@ -396,6 +396,34 @@ nm_team_link_watcher_equal (NMTeamLinkWatcher *watcher, NMTeamLinkWatcher *other
 	return TRUE;
 }
 
+gboolean
+_nm_team_link_watchers_equal (GPtrArray *a, GPtrArray *b, gboolean ignore_order)
+{
+	guint i, j;
+
+	if (a->len != b->len)
+		return FALSE;
+	if (ignore_order) {
+		/* FIXME: comparing this way is O(n^2). Don't do that, instead
+		 *        add nm_team_link_watcher_cmp(), sort both lists, and
+		 *        compare step by step. */
+		for (i = 0; i < a->len; i++) {
+			for (j = 0; j < b->len; j++) {
+				if (nm_team_link_watcher_equal (a->pdata[i], b->pdata[j]))
+					break;
+			}
+			if (j == b->len)
+				return FALSE;
+		}
+	} else {
+		for (i = 0; i < a->len; i++) {
+			if (!nm_team_link_watcher_equal (a->pdata[i], b->pdata[i]))
+				return FALSE;
+		}
+	}
+	return TRUE;
+}
+
 /**
  * nm_team_link_watcher_dup:
  * @watcher: the #NMTeamLinkWatcher
@@ -929,13 +957,14 @@ nm_setting_team_remove_runner_tx_hash_by_value (NMSettingTeam *setting,
 
 	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), FALSE);
 	g_return_val_if_fail (txhash != NULL, FALSE);
-	g_return_val_if_fail (txhash[0] != '\0', FALSE);
 
-	for (i = 0; i < priv->runner_tx_hash->len; i++) {
-		if (nm_streq (txhash, priv->runner_tx_hash->pdata[i])) {
-			g_ptr_array_remove_index (priv->runner_tx_hash, i);
-			_notify (setting, PROP_RUNNER_TX_HASH);
-			return TRUE;
+	if (priv->runner_tx_hash) {
+		for (i = 0; i < priv->runner_tx_hash->len; i++) {
+			if (nm_streq (txhash, priv->runner_tx_hash->pdata[i])) {
+				g_ptr_array_remove_index (priv->runner_tx_hash, i);
+				_notify (setting, PROP_RUNNER_TX_HASH);
+				return TRUE;
+			}
 		}
 	}
 	return FALSE;
@@ -1239,9 +1268,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 		if (!name) {
 			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING,
-				     _("missing link watcher name"));
+			             _("missing link watcher name"));
 			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting),
-					NM_SETTING_TEAM_LINK_WATCHERS);
+			                NM_SETTING_TEAM_LINK_WATCHERS);
 			return FALSE;
 		}
 		if (!NM_IN_STRSET (name,
@@ -1249,9 +1278,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		                   NM_TEAM_LINK_WATCHER_ARP_PING,
 		                   NM_TEAM_LINK_WATCHER_NSNA_PING)) {
 			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING,
-				     _("unknown link watcher \"%s\""), name);
+			             _("unknown link watcher \"%s\""), name);
 			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting),
-					NM_SETTING_TEAM_LINK_WATCHERS);
+			                NM_SETTING_TEAM_LINK_WATCHERS);
 			return FALSE;
 		}
 
@@ -1260,17 +1289,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		                  NM_TEAM_LINK_WATCHER_NSNA_PING)
 		    && !nm_team_link_watcher_get_target_host (link_watcher)) {
 			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING,
-				     _("missing target host"));
+			             _("missing target host"));
 			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting),
-					NM_SETTING_TEAM_LINK_WATCHERS);
+			                NM_SETTING_TEAM_LINK_WATCHERS);
 			return FALSE;
 		}
 		if (nm_streq (name, NM_TEAM_LINK_WATCHER_ARP_PING)
 		    && !nm_team_link_watcher_get_source_host (link_watcher)) {
 			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING,
-				     _("missing source address"));
+			             _("missing source address"));
 			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting),
-					NM_SETTING_TEAM_LINK_WATCHERS);
+			                NM_SETTING_TEAM_LINK_WATCHERS);
 			return FALSE;
 		}
 	}
@@ -1288,31 +1317,17 @@ compare_property (const NMSettInfoSetting *sett_info,
                   NMSettingCompareFlags flags)
 {
 	NMSettingTeamPrivate *a_priv, *b_priv;
-	guint i, j;
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TEAM_LINK_WATCHERS)) {
-
 		if (NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
 			return NM_TERNARY_DEFAULT;
-
-		if (other) {
-			a_priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
-			b_priv = NM_SETTING_TEAM_GET_PRIVATE (other);
-
-			if (a_priv->link_watchers->len != b_priv->link_watchers->len)
-				return FALSE;
-			for (i = 0; i < a_priv->link_watchers->len; i++) {
-				for (j = 0; j < b_priv->link_watchers->len; j++) {
-					if (nm_team_link_watcher_equal (a_priv->link_watchers->pdata[i],
-					                                b_priv->link_watchers->pdata[j])) {
-						break;
-					}
-				}
-				if (j == b_priv->link_watchers->len)
-					return FALSE;
-			}
-		}
-		return TRUE;
+		if (!other)
+			return TRUE;
+		a_priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
+		b_priv = NM_SETTING_TEAM_GET_PRIVATE (other);
+		return _nm_team_link_watchers_equal (a_priv->link_watchers,
+		                                     b_priv->link_watchers,
+		                                     TRUE);
 	}
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TEAM_CONFIG)) {
@@ -1350,7 +1365,7 @@ _align_team_properties (NMSettingTeam *setting)
 {
 	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
 	char **strv;
-	int i;
+	gsize i;
 
 	priv->notify_peers_count =          JSON_TO_VAL (int, PROP_NOTIFY_PEERS_COUNT);
 	priv->notify_peers_interval =       JSON_TO_VAL (int, PROP_NOTIFY_PEERS_INTERVAL);
@@ -1372,16 +1387,24 @@ _align_team_properties (NMSettingTeam *setting)
 	priv->runner_tx_balancer =       JSON_TO_VAL (string, PROP_RUNNER_TX_BALANCER);
 	priv->runner_agg_select_policy = JSON_TO_VAL (string, PROP_RUNNER_AGG_SELECT_POLICY);
 
-	if (priv->runner_tx_hash) {
-		g_ptr_array_unref (priv->runner_tx_hash);
-		priv->runner_tx_hash = NULL;
-	}
 	strv = JSON_TO_VAL (strv, PROP_RUNNER_TX_HASH);
-	if (strv) {
-		for (i = 0; strv[i]; i++)
-			nm_setting_team_add_runner_tx_hash (setting, strv[i]);
-		g_strfreev (strv);
+	if (_nm_utils_strv_cmp_n ((  priv->runner_tx_hash
+	                           ? (const char *const*) priv->runner_tx_hash->pdata
+	                           : NULL),
+	                          (  priv->runner_tx_hash
+	                           ? (gssize) priv->runner_tx_hash->len
+	                           : (gssize) -1),
+	                          NM_CAST_STRV_CC (strv),
+	                          -1) != 0) {
+		nm_clear_pointer (&priv->runner_tx_hash, g_ptr_array_unref);
+		if (strv) {
+			priv->runner_tx_hash = g_ptr_array_new_full (NM_PTRARRAY_LEN (strv), g_free);
+			for (i = 0; strv[i]; i++)
+				g_ptr_array_add (priv->runner_tx_hash, strv[i]);
+			nm_clear_g_free (&strv);
+		}
 	}
+	nm_clear_pointer (&strv, g_strfreev);
 
 	g_ptr_array_unref (priv->link_watchers);
 	priv->link_watchers = JSON_TO_VAL (ptr_array, PROP_LINK_WATCHERS);
@@ -1419,8 +1442,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_team_get_runner_hwaddr_policy (setting));
 		break;
 	case PROP_RUNNER_TX_HASH:
-		g_value_take_boxed (value, priv->runner_tx_hash ?
-		                    _nm_utils_ptrarray_to_strv (priv->runner_tx_hash): NULL);
+		g_value_take_boxed (value,
+		                      priv->runner_tx_hash
+		                    ? _nm_utils_ptrarray_to_strv (priv->runner_tx_hash)
+		                    : NULL);
 		break;
 	case PROP_RUNNER_TX_BALANCER:
 		g_value_set_string (value, nm_setting_team_get_runner_tx_balancer (setting));
@@ -1772,9 +1797,9 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	obj_properties[PROP_RUNNER_TX_HASH] =
 	    g_param_spec_boxed (NM_SETTING_TEAM_RUNNER_TX_HASH, "", "",
 	                        G_TYPE_STRV,
-	                             G_PARAM_READWRITE |
+	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_INFERRABLE |
-	                             G_PARAM_STATIC_STRINGS);
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingTeam:runner-tx-balancer:

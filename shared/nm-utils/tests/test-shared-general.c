@@ -248,6 +248,150 @@ test_unaligned (void)
 
 /*****************************************************************************/
 
+static void
+_strv_cmp_fuzz_input (const char *const*in,
+                      gssize l,
+                      const char ***out_strv_free_shallow,
+                      char ***out_strv_free_deep,
+                      const char *const* *out_s1,
+                      const char *const* *out_s2)
+{
+	const char **strv;
+	gsize i;
+
+	/* Fuzz the input argument. It will return two output arrays that are semantically
+	 * equal the input. */
+
+	if (nmtst_get_rand_bool ()) {
+		char **ss;
+
+		if (l < 0)
+			ss = g_strdupv ((char **) in);
+		else if (l == 0) {
+			ss =   nmtst_get_rand_bool ()
+			     ? NULL
+			     : g_new0 (char *, 1);
+		} else {
+			ss = nm_memdup (in, sizeof (const char *) * l);
+			for (i = 0; i < (gsize) l; i++)
+				ss[i] = g_strdup (ss[i]);
+		}
+		strv = (const char **) ss;
+		*out_strv_free_deep = ss;
+	} else {
+		if (l < 0) {
+			strv =   in
+			       ? nm_memdup (in, sizeof (const char *) * (NM_PTRARRAY_LEN (in) + 1))
+			       : NULL;
+		} else if (l == 0) {
+			strv =   nmtst_get_rand_bool ()
+			       ? NULL
+			       : g_new0 (const char *, 1);
+		} else
+			strv = nm_memdup (in, sizeof (const char *) * l);
+		*out_strv_free_shallow = strv;
+	}
+
+	*out_s1 = in;
+	*out_s2 = strv;
+
+	if (nmtst_get_rand_bool ()) {
+		/* randomly swap the original and the clone. That means, out_s1 is either
+		 * the input argument (as-is) or the sementically equal clone. */
+		NMTST_SWAP (*out_s1, *out_s2);
+	}
+	if (nmtst_get_rand_bool ()) {
+		/* randomly make s1 and s2 the same. This is for testing that
+		 * comparing two identical pointers yields the same result. */
+		*out_s2 = *out_s1;
+	}
+}
+
+static void
+_strv_cmp_free_deep (char **strv,
+                     gssize len)
+{
+	gssize i;
+
+	if (strv) {
+		if (len < 0)
+			g_strfreev (strv);
+		else {
+			for (i = 0; i < len; i++)
+				g_free (strv[i]);
+			g_free (strv);
+		}
+	}
+}
+
+static void
+test_strv_cmp (void)
+{
+	const char *const strv0[1] = { };
+	const char *const strv1[2] = { "", };
+
+#define _STRV_CMP(a1, l1, a2, l2, equal) \
+	G_STMT_START { \
+		gssize _l1 = (l1); \
+		gssize _l2 = (l2); \
+		const char *const*_a1; \
+		const char *const*_a2; \
+		const char *const*_a1x; \
+		const char *const*_a2x; \
+		char **_a1_free_deep = NULL; \
+		char **_a2_free_deep = NULL; \
+		gs_free const char **_a1_free_shallow = NULL; \
+		gs_free const char **_a2_free_shallow = NULL; \
+		int _c1, _c2; \
+		\
+		_strv_cmp_fuzz_input ((a1), _l1, &_a1_free_shallow, &_a1_free_deep, &_a1, &_a1x); \
+		_strv_cmp_fuzz_input ((a2), _l2, &_a2_free_shallow, &_a2_free_deep, &_a2, &_a2x); \
+		\
+		_c1 = _nm_utils_strv_cmp_n (_a1, _l1, _a2, _l2); \
+		_c2 = _nm_utils_strv_cmp_n (_a2, _l2, _a1, _l1); \
+		if (equal) { \
+			g_assert_cmpint (_c1, ==, 0); \
+			g_assert_cmpint (_c2, ==, 0); \
+		} else { \
+			g_assert_cmpint (_c1, ==, -1); \
+			g_assert_cmpint (_c2, ==, 1); \
+		} \
+		\
+		/* Compare with self. _strv_cmp_fuzz_input() randomly swapped the arguments (_a1 and _a1x).
+		 * Either way, the arrays must compare equal to their semantically equal alternative. */ \
+		g_assert_cmpint (_nm_utils_strv_cmp_n (_a1, _l1, _a1x, _l1), ==, 0); \
+		g_assert_cmpint (_nm_utils_strv_cmp_n (_a2, _l2, _a2x, _l2), ==, 0); \
+		\
+		_strv_cmp_free_deep (_a1_free_deep, _l1); \
+		_strv_cmp_free_deep (_a2_free_deep, _l2); \
+	} G_STMT_END
+
+	_STRV_CMP (NULL,  -1, NULL,  -1, TRUE);
+
+	_STRV_CMP (NULL,  -1, NULL,   0, FALSE);
+	_STRV_CMP (NULL,  -1, strv0,  0, FALSE);
+	_STRV_CMP (NULL,  -1, strv0, -1, FALSE);
+
+	_STRV_CMP (NULL,   0, NULL,   0, TRUE);
+	_STRV_CMP (NULL,   0, strv0,  0, TRUE);
+	_STRV_CMP (NULL,   0, strv0, -1, TRUE);
+	_STRV_CMP (strv0,  0, strv0,  0, TRUE);
+	_STRV_CMP (strv0,  0, strv0, -1, TRUE);
+	_STRV_CMP (strv0, -1, strv0, -1, TRUE);
+
+	_STRV_CMP (NULL,   0, strv1, -1, FALSE);
+	_STRV_CMP (NULL,   0, strv1,  1, FALSE);
+	_STRV_CMP (strv0,  0, strv1, -1, FALSE);
+	_STRV_CMP (strv0,  0, strv1,  1, FALSE);
+	_STRV_CMP (strv0, -1, strv1, -1, FALSE);
+	_STRV_CMP (strv0, -1, strv1,  1, FALSE);
+
+	_STRV_CMP (strv1, -1, strv1,  1, TRUE);
+	_STRV_CMP (strv1,  1, strv1,  1, TRUE);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -261,6 +405,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/general/test_nm_strndup_a", test_nm_strndup_a);
 	g_test_add_func ("/general/test_nm_ip4_addr_is_localhost", test_nm_ip4_addr_is_localhost);
 	g_test_add_func ("/general/test_unaligned", test_unaligned);
+	g_test_add_func ("/general/test_strv_cmp", test_strv_cmp);
 
 	return g_test_run ();
 }
