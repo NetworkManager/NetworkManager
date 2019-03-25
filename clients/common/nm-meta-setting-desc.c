@@ -170,6 +170,7 @@ _value_str_as_index_list (const char *value, gsize *out_len)
 typedef enum {
 	VALUE_STRSPLIT_MODE_STRIPPED,
 	VALUE_STRSPLIT_MODE_OBJLIST,
+	VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE,
 	VALUE_STRSPLIT_MODE_MULTILIST,
 	VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE,
 } ValueStrsplitMode;
@@ -201,6 +202,9 @@ _value_strsplit (const char *value,
 	case VALUE_STRSPLIT_MODE_OBJLIST:
 		strv = nm_utils_strsplit_set (value, ",", FALSE);
 		break;
+	case VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE:
+		strv = nm_utils_strsplit_set (value, ",", TRUE);
+		break;
 	case VALUE_STRSPLIT_MODE_MULTILIST:
 		strv = nm_utils_strsplit_set (value, " \t,", FALSE);
 		break;
@@ -227,6 +231,8 @@ _value_strsplit (const char *value,
 
 		if (split_mode == VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE)
 			_nm_utils_unescape_plain ((char *) s, MULTILIST_WITH_ESCAPE_CHARS, TRUE);
+		else if (split_mode == VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE)
+			_nm_utils_unescape_plain ((char *) s, ",", TRUE);
 		else
 			g_strchomp ((char *) s);
 
@@ -1876,7 +1882,7 @@ _set_fcn_multilist (ARGS_SET_FCN)
 	}
 
 	strv = _value_strsplit (value,
-	                          property_info->property_typ_data->subtype.multilist.with_escaped_spaces
+	                          property_info->property_typ_data->subtype.multilist.strsplit_with_escape
 	                        ? VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE
 	                        : VALUE_STRSPLIT_MODE_MULTILIST,
 	                        &nstrv);
@@ -3049,6 +3055,10 @@ _get_fcn_objlist (ARGS_GET_FCN)
 	num = property_info->property_typ_data->subtype.objlist.get_num_fcn (setting);
 
 	for (idx = 0; idx < num; idx++) {
+#if NM_MORE_ASSERTS
+		gsize start_offset;
+#endif
+
 		if (!str)
 			str = g_string_new (NULL);
 		else if (str->len > 0) {
@@ -3059,10 +3069,32 @@ _get_fcn_objlist (ARGS_GET_FCN)
 				g_string_append (str, ", ");
 		}
 
+#if NM_MORE_ASSERTS
+		start_offset = str->len;
+#endif
+
 		property_info->property_typ_data->subtype.objlist.obj_to_str_fcn (get_type,
 		                                                                  setting,
 		                                                                  idx,
 		                                                                  str);
+
+#if NM_MORE_ASSERTS
+		nm_assert (start_offset < str->len);
+		if (   property_info->property_typ_data->subtype.objlist.strsplit_with_escape
+		    && get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY) {
+			/* if the strsplit is done with VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE, then the appended
+			 * value must have no unescaped ','. */
+			for (; start_offset < str->len; ) {
+				if (str->str[start_offset] == '\\') {
+					start_offset++;
+					nm_assert (start_offset < str->len);
+					nm_assert (!NM_IN_SET (str->str[start_offset], '\0'));
+				} else
+					nm_assert (!NM_IN_SET (str->str[start_offset], '\0', ','));
+				start_offset++;
+			}
+		}
+#endif
 	}
 
 	NM_SET_OUT (out_is_default, num == 0);
@@ -3237,7 +3269,9 @@ _set_fcn_objlist (ARGS_SET_FCN)
 	}
 
 	strv = _value_strsplit (value,
-	                        VALUE_STRSPLIT_MODE_OBJLIST,
+	                          property_info->property_typ_data->subtype.objlist.strsplit_with_escape
+	                        ? VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE
+	                        : VALUE_STRSPLIT_MODE_OBJLIST,
 	                        &nstrv);
 
 	if (_SET_FCN_DO_SET_ALL (modifier, value)) {
@@ -5983,7 +6017,7 @@ static const NMMetaPropertyInfo *const property_infos_MATCH[] = {
 				.add2_fcn =             MULTILIST_ADD2_FCN            (NMSettingMatch, nm_setting_match_add_interface_name),
 				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingMatch, nm_setting_match_remove_interface_name),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingMatch, nm_setting_match_remove_interface_name_by_value),
-				.with_escaped_spaces =  TRUE,
+				.strsplit_with_escape = TRUE,
 			),
 		),
 	),
