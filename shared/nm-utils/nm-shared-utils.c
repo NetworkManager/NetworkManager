@@ -635,8 +635,16 @@ nm_utils_parse_inaddr (int addr_family,
 	NMIPAddr addrbin;
 	char addrstr_buf[MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
 
-	if (!nm_utils_parse_inaddr_bin (addr_family, text, &addr_family, &addrbin))
+	g_return_val_if_fail (text, FALSE);
+
+	if (addr_family == AF_UNSPEC)
+		addr_family = strchr (text, ':') ? AF_INET6 : AF_INET;
+	else
+		g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), FALSE);
+
+	if (inet_pton (addr_family, text, &addrbin) != 1)
 		return FALSE;
+
 	NM_SET_OUT (out_addr, g_strdup (inet_ntop (addr_family, &addrbin, addrstr_buf, sizeof (addrstr_buf))));
 	return TRUE;
 }
@@ -954,6 +962,15 @@ comp_l:
 
 /*****************************************************************************/
 
+static void
+_char_lookup_table_init (guint8 lookup[static 256],
+                         const char *candidates)
+{
+	memset (lookup, 0, 256);
+	while (candidates[0] != '\0')
+		lookup[(guint8) ((candidates++)[0])] = 1;
+}
+
 /**
  * nm_utils_strsplit_set:
  * @str: the string to split.
@@ -979,6 +996,8 @@ comp_l:
  *   The strings to which the result strv array points to are allocated
  *   after the returned result itself. Don't free the strings themself,
  *   but free everything with g_free().
+ *   It is however safe and allowed to modify the indiviual strings,
+ *   like "g_strstrip((char *) iter[0])".
  */
 const char **
 nm_utils_strsplit_set (const char *str, const char *delimiters, gboolean allow_escaping)
@@ -997,9 +1016,8 @@ nm_utils_strsplit_set (const char *str, const char *delimiters, gboolean allow_e
 	/* initialize lookup table for delimiter */
 	if (!delimiters)
 		delimiters = " \t\n";
-	memset (delimiters_table, 0, sizeof (delimiters_table));
-	for (i = 0; delimiters[i]; i++)
-		delimiters_table[(guint8) delimiters[i]] = 1;
+
+	_char_lookup_table_init (delimiters_table, delimiters);
 
 #define _is_delimiter(ch, delimiters_table, allow_esc, esc) \
 	((delimiters_table)[(guint8) (ch)] != 0 && (!allow_esc || !esc))
@@ -2412,23 +2430,26 @@ _nm_utils_user_data_unpack (gpointer user_data, int nargs, ...)
 
 /*****************************************************************************/
 
-#define IS_SPACE(c) NM_IN_SET ((c), ' ', '\t')
+#define _CH_LOOKUP(ch_lookup, ch) (!!((ch_lookup)[(guint8) (ch)]))
 
 const char *
-_nm_utils_escape_spaces (const char *str, char **to_free)
+_nm_utils_escape_plain (const char *str, const char *candidates, char **to_free)
 {
 	const char *ptr = str;
 	char *ret, *r;
+	guint8 ch_lookup[256];
 
 	*to_free = NULL;
 
 	if (!str)
 		return NULL;
 
+	_char_lookup_table_init (ch_lookup, candidates ?: NM_ASCII_SPACES);
+
 	while (TRUE) {
 		if (!*ptr)
 			return str;
-		if (IS_SPACE (*ptr))
+		if (_CH_LOOKUP (ch_lookup, *ptr))
 			break;
 		ptr++;
 	}
@@ -2438,7 +2459,7 @@ _nm_utils_escape_spaces (const char *str, char **to_free)
 	r = ret;
 	*to_free = ret;
 	while (*ptr) {
-		if (IS_SPACE (*ptr))
+		if (_CH_LOOKUP (ch_lookup, *ptr))
 			*r++ = '\\';
 		*r++ = *ptr++;
 	}
@@ -2448,24 +2469,41 @@ _nm_utils_escape_spaces (const char *str, char **to_free)
 }
 
 char *
-_nm_utils_unescape_spaces (char *str)
+_nm_utils_unescape_plain (char *str, const char *candidates, gboolean do_strip)
 {
-	guint i, j = 0;
+	gsize i = 0;
+	gsize j = 0;
+	gsize preserve_space_at = 0;
+	guint8 ch_lookup[256];
 
 	if (!str)
 		return NULL;
 
-	for (i = 0; str[i]; i++) {
-		if (str[i] == '\\' && IS_SPACE (str[i+1]))
+	_char_lookup_table_init (ch_lookup, candidates ?: NM_ASCII_SPACES);
+
+	if (do_strip) {
+		while (str[i] && _CH_LOOKUP (ch_lookup, str[i]))
 			i++;
+	}
+
+	for (; str[i]; i++) {
+		if (   str[i] == '\\'
+		    && _CH_LOOKUP (ch_lookup, str[i+1])) {
+			preserve_space_at = j;
+			i++;
+		}
 		str[j++] = str[i];
 	}
 	str[j] = '\0';
 
+	if (do_strip && j > 0) {
+		while (   --j > preserve_space_at
+		       && _CH_LOOKUP (ch_lookup, str[j]))
+			str[j] = '\0';
+	}
+
 	return str;
 }
-
-#undef IS_SPACE
 
 /*****************************************************************************/
 

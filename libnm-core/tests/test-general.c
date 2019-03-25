@@ -80,6 +80,29 @@ G_STATIC_ASSERT (sizeof (bool) <= sizeof (int));
 
 /*****************************************************************************/
 
+static void
+test_nm_ascii_spaces (void)
+{
+	int i;
+	const char *const S = NM_ASCII_SPACES;
+
+	for (i = 0; S[i]; i++)
+		g_assert (!strchr (&S[i + 1], S[i]));
+
+	for (i = 0; S[i] != '\0'; i++)
+		g_assert (g_ascii_isspace (S[i]));
+
+	g_assert (!g_ascii_isspace ((char) 0));
+	for (i = 1; i < 0x100; i++) {
+		if (g_ascii_isspace ((char) i))
+			g_assert (strchr (S, (char) i));
+		else
+			g_assert (!strchr (S, (char) i));
+	}
+}
+
+/*****************************************************************************/
+
 typedef struct _nm_packed {
 	int v0;
 	char v1;
@@ -809,54 +832,54 @@ test_setting_vpn_items (void)
 	nm_setting_vpn_remove_data_item (s_vpn, "foobar4-flags");
 
 	/* Try to add some blank values and make sure they are rejected */
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key != NULL));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_data_item (s_vpn, NULL, NULL);
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (strlen (key) > 0));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_data_item (s_vpn, "", "");
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (item != NULL));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (item && item[0]));
 	nm_setting_vpn_add_data_item (s_vpn, "foobar1", NULL);
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (strlen (item) > 0));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (item && item[0]));
 	nm_setting_vpn_add_data_item (s_vpn, "foobar1", "");
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key != NULL));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_data_item (s_vpn, NULL, "blahblah1");
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (strlen (key) > 0));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_data_item (s_vpn, "", "blahblah1");
 	g_test_assert_expected_messages ();
 
 	nm_setting_vpn_foreach_data_item (s_vpn, vpn_check_empty_func, NULL);
 
 	/* Try to add some blank secrets and make sure they are rejected */
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key != NULL));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_secret (s_vpn, NULL, NULL);
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (strlen (key) > 0));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_secret (s_vpn, "", "");
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (secret != NULL));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (secret && secret[0]));
 	nm_setting_vpn_add_secret (s_vpn, "foobar1", NULL);
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (strlen (secret) > 0));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (secret && secret[0]));
 	nm_setting_vpn_add_secret (s_vpn, "foobar1", "");
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key != NULL));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_secret (s_vpn, NULL, "blahblah1");
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (strlen (key) > 0));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_secret (s_vpn, "", "blahblah1");
 	g_test_assert_expected_messages ();
 
@@ -2347,7 +2370,7 @@ test_setting_connection_permissions_helpers (void)
 	g_assert (!success);
 
 	/* Ensure a bad [type] is rejected */
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (ptype));
+	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (ptype && ptype[0]));
 	success = nm_setting_connection_add_permission (s_con, NULL, "blah", NULL);
 	g_test_assert_expected_messages ();
 	g_assert (!success);
@@ -7734,23 +7757,72 @@ test_nm_utils_escape_spaces (void)
 }
 
 static void
+_do_test_unescape_spaces (const char *in, const char *out)
+{
+	nm_auto_free_gstring GString *str_out = g_string_new (NULL);
+	nm_auto_free_gstring GString *str_in = g_string_new (NULL);
+	guint i;
+
+	for (i = 0; i < 10; i++) {
+
+		g_string_set_size (str_in, 0);
+
+		g_string_append (str_in, in);
+
+		if (i == 0)
+			g_assert_cmpstr (_nm_utils_unescape_spaces (str_in->str, FALSE), ==, out);
+		else if (i == 1)
+			g_assert_cmpstr (_nm_utils_unescape_spaces (str_in->str, TRUE), ==, out);
+		else {
+			bool do_strip = nmtst_get_rand_bool ();
+			guint n = nmtst_get_rand_int () % 20;
+			guint j;
+
+			g_string_set_size (str_out, 0);
+			if (!do_strip)
+				g_string_append (str_out, out);
+
+			for (j = 0; j < n; j++) {
+				gboolean append = nmtst_get_rand_bool ();
+				char ch = nmtst_rand_select (' ', '\t');
+
+				if (append && out[strlen (out) - 1] == '\\')
+					append = FALSE;
+
+				g_string_insert_c (str_in, append ? -1 : 0, ch);
+				if (!do_strip)
+					g_string_insert_c (str_out, append ? -1 : 0, ch);
+			}
+
+			if (do_strip)
+				g_assert_cmpstr (_nm_utils_unescape_spaces (str_in->str, TRUE), ==, out);
+			else
+				g_assert_cmpstr (_nm_utils_unescape_spaces (str_in->str, FALSE), ==, str_out->str);
+		}
+	}
+}
+
+static void
 test_nm_utils_unescape_spaces (void)
 {
-#define CHECK_STR(in, out) \
-	G_STMT_START { \
-		gs_free char *str = g_strdup (in); \
-		\
-		g_assert_cmpstr (_nm_utils_unescape_spaces (str), ==, out); \
-	} G_STMT_END
-
-	CHECK_STR ("\\a", "\\a");
-	CHECK_STR ("foobar", "foobar");
-	CHECK_STR ("foo bar", "foo bar");
-	CHECK_STR ("foo\\ bar", "foo bar");
-	CHECK_STR ("foo\\", "foo\\");
-	CHECK_STR ("\\\\\t", "\\\t");
-
-#undef CHECK_STR
+	_do_test_unescape_spaces ("", "");
+	_do_test_unescape_spaces ("\\", "\\");
+	_do_test_unescape_spaces ("\\ ", " ");
+	_do_test_unescape_spaces ("\\\t", "\t");
+	_do_test_unescape_spaces ("a", "a");
+	_do_test_unescape_spaces ("\\a", "\\a");
+	_do_test_unescape_spaces ("foobar", "foobar");
+	_do_test_unescape_spaces ("foo bar", "foo bar");
+	_do_test_unescape_spaces ("foo\\ bar", "foo bar");
+	_do_test_unescape_spaces ("foo\\", "foo\\");
+	_do_test_unescape_spaces ("\\\\", "\\\\");
+	_do_test_unescape_spaces ("foo   bar", "foo   bar");
+	_do_test_unescape_spaces ("\\ foo   bar", " foo   bar");
+	_do_test_unescape_spaces ("\\ foo   bar\\ ", " foo   bar ");
+	_do_test_unescape_spaces ("\\\tfoo   bar\\\t", "\tfoo   bar\t");
+	_do_test_unescape_spaces ("\\\tfoo   bar  \\\t", "\tfoo   bar  \t");
+	_do_test_unescape_spaces ("\\\t", "\t");
+	_do_test_unescape_spaces ("\\\t \\ ", "\t  ");
 }
 
 /*****************************************************************************/
@@ -7761,6 +7833,7 @@ int main (int argc, char **argv)
 {
 	nmtst_init (&argc, &argv, TRUE);
 
+	g_test_add_func ("/core/general/test_nm_ascii_spaces", test_nm_ascii_spaces);
 	g_test_add_func ("/core/general/test_nm_hash", test_nm_hash);
 	g_test_add_func ("/core/general/test_nm_g_slice_free_fcn", test_nm_g_slice_free_fcn);
 	g_test_add_func ("/core/general/test_c_list_sort", test_c_list_sort);

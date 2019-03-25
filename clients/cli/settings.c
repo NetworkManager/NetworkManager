@@ -89,7 +89,7 @@ ipv4_addresses_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_dat
 static void
 ipv4_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-	static GValue value = G_VALUE_INIT;
+	static GPtrArray *old_value = NULL;
 	static gboolean answered = FALSE;
 	static gboolean answer = FALSE;
 
@@ -103,17 +103,17 @@ ipv4_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 				answer = get_answer ("ipv4.addresses", NULL);
 			}
 			if (answer) {
-				if (G_IS_VALUE (&value))
-					g_value_unset (&value);
-				nmc_property_get_gvalue (NM_SETTING (object), NM_SETTING_IP_CONFIG_ADDRESSES, &value);
+				nm_clear_pointer (&old_value, g_ptr_array_unref);
+				g_object_get (object, NM_SETTING_IP_CONFIG_ADDRESSES, &old_value, NULL);
 				g_object_set (object, NM_SETTING_IP_CONFIG_ADDRESSES, NULL, NULL);
 			}
 		}
 	} else {
 		answered = FALSE;
-		if (G_IS_VALUE (&value)) {
-			nmc_property_set_gvalue (NM_SETTING (object), NM_SETTING_IP_CONFIG_ADDRESSES, &value);
-			g_value_unset (&value);
+		if (old_value) {
+			gs_unref_ptrarray GPtrArray *v = g_steal_pointer (&old_value);
+
+			g_object_set (object, NM_SETTING_IP_CONFIG_ADDRESSES, v, NULL);
 		}
 	}
 
@@ -142,6 +142,25 @@ ipv6_addresses_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_dat
 		}
 	} else {
 		answered = FALSE;
+		/* FIXME: editor_init_existing_connection() and registering handlers is not the
+		 *  right approach.
+		 *
+		 * This only happens to work because in nmcli's edit mode
+		 * tends to append addresses -- instead of setting them.
+		 * If we would change that (to behavior I'd expect), we'd get:
+		 *
+		 *   nmcli> set ipv6.addresses fc01::1:5/68
+		 *   Do you also want to set 'ipv6.method' to 'manual'? [yes]: y
+		 *   nmcli> set ipv6.addresses fc01::1:6/68
+		 *   Do you also want to set 'ipv6.method' to 'manual'? [yes]:
+		 *
+		 * That's because nmc_setting_set_property() calls set_fcn(). With modifier '\0'
+		 * (set), it would first clear all addresses before adding the address. Thereby
+		 * emitting multiple property changed signals.
+		 *
+		 * That can be avoided by freezing/thawing the signals, but this solution
+		 * here is ugly in general.
+		 */
 		if (!g_strcmp0 (nm_setting_ip_config_get_method (NM_SETTING_IP_CONFIG (object)), NM_SETTING_IP6_CONFIG_METHOD_MANUAL))
 			g_object_set (object, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
 	}
@@ -152,7 +171,7 @@ ipv6_addresses_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_dat
 static void
 ipv6_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-	static GValue value = G_VALUE_INIT;
+	static GPtrArray *old_value = NULL;
 	static gboolean answered = FALSE;
 	static gboolean answer = FALSE;
 
@@ -166,17 +185,17 @@ ipv6_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 				answer = get_answer ("ipv6.addresses", NULL);
 			}
 			if (answer) {
-				if (G_IS_VALUE (&value))
-					g_value_unset (&value);
-				nmc_property_get_gvalue (NM_SETTING (object), NM_SETTING_IP_CONFIG_ADDRESSES, &value);
+				nm_clear_pointer (&old_value, g_ptr_array_unref);
+				g_object_get (object, NM_SETTING_IP_CONFIG_ADDRESSES, &old_value, NULL);
 				g_object_set (object, NM_SETTING_IP_CONFIG_ADDRESSES, NULL, NULL);
 			}
 		}
 	} else {
 		answered = FALSE;
-		if (G_IS_VALUE (&value)) {
-			nmc_property_set_gvalue (NM_SETTING (object), NM_SETTING_IP_CONFIG_ADDRESSES, &value);
-			g_value_unset (&value);
+		if (old_value) {
+			gs_unref_ptrarray GPtrArray *v = g_steal_pointer (&old_value);
+
+			g_object_set (object, NM_SETTING_IP_CONFIG_ADDRESSES, v, NULL);
 		}
 	}
 
@@ -509,149 +528,65 @@ nmc_setting_get_property_parsable (NMSetting *setting, const char *prop, GError 
 	return get_property_val (setting, prop, NM_META_ACCESSOR_GET_TYPE_PARSABLE, TRUE, error);
 }
 
-static gboolean
-_set_fcn_call (const NMMetaPropertyInfo *property_info,
-               NMSetting *setting,
-               const char *value,
-               GError **error)
-{
-	return property_info->property_type->set_fcn (property_info,
-	                                              nmc_meta_environment,
-	                                              nmc_meta_environment_arg,
-	                                              setting,
-	                                              value,
-	                                              error);
-}
-
-/*
- * Generic function for setting property value.
- *
- * Sets property=value in setting by calling specialized functions.
- * If value is NULL then default property value is set.
- *
- * Returns: TRUE on success; FALSE on failure and sets error
- */
 gboolean
-nmc_setting_set_property (NMClient *client, NMSetting *setting, const char *prop, const char *value, GError **error)
+nmc_setting_set_property (NMClient *client,
+                          NMSetting *setting,
+                          const char *prop,
+                          char modifier,
+                          const char *value,
+                          GError **error)
 {
 	const NMMetaPropertyInfo *property_info;
+	gs_free char *value_to_free = NULL;
+	gboolean success;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	g_return_val_if_fail (NM_IN_SET (modifier, '\0', '-', '+'), FALSE);
+	g_return_val_if_fail (value || modifier == '\0', FALSE);
 
-	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop))) {
+	if (!(property_info = nm_meta_property_info_find_by_setting (setting, prop)))
+		goto out_fail_read_only;
+	if (!property_info->property_type->set_fcn)
+		goto out_fail_read_only;
 
-		if (!value) {
-			/* No value argument sets default value */
-			nmc_property_set_default_value (setting, prop);
-			return TRUE;
-		}
+	if (   modifier == '-'
+	    && !property_info->property_type->set_supports_remove) {
+		/* The property is a plain property. It does not support '-'.
+		 *
+		 * Maybe we should fail, but just return silently. */
+		return TRUE;
+	}
 
-		if (property_info->property_type->set_fcn) {
-			switch (property_info->setting_info->general->meta_type) {
-			case NM_META_SETTING_TYPE_CONNECTION:
-				if (nm_streq (property_info->property_name, NM_SETTING_CONNECTION_SECONDARIES)) {
-					gs_free char *value_coerced = NULL;
-
-					if (!_set_fcn_precheck_connection_secondaries (client, value, &value_coerced, error))
-						return FALSE;
-
-					return _set_fcn_call (property_info,
-					                      setting,
-					                      value_coerced ?: value,
-					                      error);
-				}
-				break;
-			default:
-				break;
+	if (value) {
+		switch (property_info->setting_info->general->meta_type) {
+		case NM_META_SETTING_TYPE_CONNECTION:
+			if (nm_streq (property_info->property_name, NM_SETTING_CONNECTION_SECONDARIES)) {
+				if (!_set_fcn_precheck_connection_secondaries (client, value, &value_to_free, error))
+					return FALSE;
+				if (value_to_free)
+					value = value_to_free;
 			}
-			return _set_fcn_call (property_info,
-			                      setting,
-			                      value,
-			                      error);
+			break;
+		default:
+			break;
 		}
 	}
 
-	g_set_error_literal (error, 1, 0, _("the property can't be changed"));
+	g_object_freeze_notify (G_OBJECT (setting));
+	success = property_info->property_type->set_fcn (property_info,
+	                                                 nmc_meta_environment,
+	                                                 nmc_meta_environment_arg,
+	                                                 setting,
+	                                                 modifier,
+	                                                 value,
+	                                                 error);
+	g_object_thaw_notify (G_OBJECT (setting));
+	return success;
+
+out_fail_read_only:
+	nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN, _("the property can't be changed"));
 	return FALSE;
-}
-
-void
-nmc_property_set_default_value (NMSetting *setting, const char *prop)
-{
-	GValue value = G_VALUE_INIT;
-	GParamSpec *param_spec;
-
-	param_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
-	if (param_spec) {
-		g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (param_spec));
-		g_param_value_set_default (param_spec, &value);
-		g_object_set_property (G_OBJECT (setting), prop, &value);
-	}
-}
-
-/*
- * Generic function for resetting (single value) properties.
- *
- * The function resets the property value to the default one. It respects
- * nmcli restrictions for changing properties. So if 'set_func' is NULL,
- * resetting the value is denied.
- *
- * Returns: TRUE on success; FALSE on failure and sets error
- */
-gboolean
-nmc_setting_reset_property (NMSetting *setting, const char *prop, GError **error)
-{
-	const NMMetaPropertyInfo *property_info;
-
-	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop))) {
-		if (property_info->property_type->set_fcn) {
-			nmc_property_set_default_value (setting, prop);
-			return TRUE;
-		}
-	}
-
-	g_set_error_literal (error, 1, 0, _("the property can't be changed"));
-	return FALSE;
-}
-
-/*
- * Generic function for removing items for collection-type properties.
- *
- * If 'option' is not NULL, it tries to remove it, otherwise 'idx' is used.
- * For single-value properties (not having specialized remove function) this
- * function does nothing and just returns TRUE.
- *
- * Returns: TRUE on success; FALSE on failure and sets error
- */
-gboolean
-nmc_setting_remove_property_option (NMSetting *setting,
-                                    const char *prop,
-                                    const char *option,
-                                    guint32 idx,
-                                    GError **error)
-{
-	const NMMetaPropertyInfo *property_info;
-
-	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop))) {
-		if (property_info->property_type->remove_fcn) {
-			return property_info->property_type->remove_fcn (property_info,
-			                                                 nmc_meta_environment,
-			                                                 nmc_meta_environment_arg,
-			                                                 setting,
-			                                                 option,
-			                                                 idx,
-			                                                 error);
-		}
-	}
-
-	return TRUE;
 }
 
 /*
@@ -747,41 +682,6 @@ nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 	                        setting_desc ?: "",
 	                        nmcli_nl, nmcli_desc_title, nmcli_nl,
 	                        nmcli_desc ?: "");
-}
-
-/*
- * Gets setting:prop property value and returns it in 'value'.
- * Caller is responsible for freeing the GValue resources using g_value_unset()
- */
-gboolean
-nmc_property_get_gvalue (NMSetting *setting, const char *prop, GValue *value)
-{
-	GParamSpec *param_spec;
-
-	param_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
-	if (param_spec) {
-		memset (value, 0, sizeof (GValue));
-		g_value_init (value, G_PARAM_SPEC_VALUE_TYPE (param_spec));
-		g_object_get_property (G_OBJECT (setting), prop, value);
-		return TRUE;
-	}
-	return FALSE;
-}
-
-/*
- * Sets setting:prop property value from 'value'.
- */
-gboolean
-nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value)
-{
-	GParamSpec *param_spec;
-
-	param_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
-	if (param_spec && G_VALUE_TYPE (value) == G_PARAM_SPEC_VALUE_TYPE (param_spec)) {
-		g_object_set_property (G_OBJECT (setting), prop, value);
-		return TRUE;
-	}
-	return FALSE;
 }
 
 /*****************************************************************************/

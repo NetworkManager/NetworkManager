@@ -45,20 +45,9 @@ char       *nmc_setting_get_property_parsable (NMSetting *setting,
 gboolean    nmc_setting_set_property (NMClient *client,
                                       NMSetting *setting,
                                       const char *prop,
+                                      char modifier,
                                       const char *val,
                                       GError **error);
-gboolean    nmc_setting_reset_property (NMSetting *setting,
-                                        const char *prop,
-                                        GError **error);
-gboolean    nmc_setting_remove_property_option (NMSetting *setting,
-                                                const char *prop,
-                                                const char *option,
-                                                guint32 idx,
-                                                GError **error);
-void nmc_property_set_default_value (NMSetting *setting, const char *prop);
-
-gboolean nmc_property_get_gvalue (NMSetting *setting, const char *prop, GValue *value);
-gboolean nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value);
 
 gboolean setting_details (const NmcConfig *nmc_config, NMSetting *setting, const char *one_prop);
 

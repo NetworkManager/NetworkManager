@@ -55,7 +55,7 @@ libnmc = static_library(
   sources: files(
     'nm-meta-setting-access.c',
     'nm-meta-setting-desc.c',
-  ) + shared_nm_meta_setting_c + shared_nm_ethtool_utils_c + [settings_docs_source],
+  ) + shared_nm_meta_setting_c + shared_nm_ethtool_utils_c + shared_nm_libnm_core_utils_c + [settings_docs_source],
   dependencies: deps,
   c_args: cflags,
   link_with: libnmc_base,
