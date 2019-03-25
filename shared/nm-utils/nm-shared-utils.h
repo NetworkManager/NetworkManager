@@ -446,6 +446,8 @@ int nm_utils_dbus_path_cmp (const char *dbus_path_a, const char *dbus_path_b);
 
 const char **nm_utils_strsplit_set (const char *str, const char *delimiters, gboolean allow_escaping);
 
+char *nm_utils_str_simpletokens_extract_next (char **p_line_start);
+
 gssize nm_utils_strv_find_first (char **list, gssize len, const char *needle);
 
 char **_nm_utils_strv_cleanup (char **strv,
