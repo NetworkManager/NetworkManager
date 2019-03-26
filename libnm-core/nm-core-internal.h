@@ -578,6 +578,8 @@ gboolean _nm_utils_dhcp_duid_valid (const char *duid, GBytes **out_duid_bin);
 /*****************************************************************************/
 
 gboolean _nm_setting_sriov_sort_vfs (NMSettingSriov *setting);
+gboolean _nm_setting_bridge_port_sort_vlans (NMSettingBridgePort *setting);
+gboolean _nm_setting_bridge_sort_vlans (NMSettingBridge *setting);
 
 /*****************************************************************************/
 
@@ -749,5 +751,9 @@ gboolean nm_utils_base64secret_normalize (const char *base64_key,
                                           char **out_base64_key_norm);
 
 /*****************************************************************************/
+
+void _nm_bridge_vlan_str_append_rest (const NMBridgeVlan *vlan,
+                                      GString *string,
+                                      gboolean leading_space);
 
 #endif

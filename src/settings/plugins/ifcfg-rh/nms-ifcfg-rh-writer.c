@@ -1464,6 +1464,43 @@ get_setting_default_boolean (NMSetting *setting, const char *prop)
 }
 
 static gboolean
+write_bridge_vlans (NMSetting *setting,
+                    const char *property_name,
+                    shvarFile *ifcfg,
+                    const char *key,
+                    GError **error)
+{
+	gs_unref_ptrarray GPtrArray *vlans = NULL;
+	NMBridgeVlan *vlan;
+	GString *string;
+	guint i;
+
+	g_object_get (setting, property_name, &vlans, NULL);
+
+	if (!vlans || !vlans->len) {
+		svUnsetValue (ifcfg, key);
+		return TRUE;
+	}
+
+	string = g_string_new ("");
+	for (i = 0; i < vlans->len; i++) {
+		gs_free char *vlan_str = NULL;
+
+		vlan = vlans->pdata[i];
+		vlan_str = nm_bridge_vlan_to_str (vlan, error);
+		if (!vlan_str)
+			return FALSE;
+		if (string->len > 0)
+			g_string_append (string, ", ");
+		g_string_append (string, vlan_str);
+	}
+
+	svSetValueStr (ifcfg, key, string->str);
+	g_string_free (string, TRUE);
+	return TRUE;
+}
+
+static gboolean
 write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired, GError **error)
 {
 	NMSettingBridge *s_bridge;
@@ -1534,9 +1571,30 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 		g_string_append_printf (opts, "multicast_snooping=%u", (guint32) b);
 	}
 
+	b = nm_setting_bridge_get_vlan_filtering (s_bridge);
+	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_VLAN_FILTERING)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "vlan_filtering=%u", (guint32) b);
+	}
+
+	i = nm_setting_bridge_get_vlan_default_pvid (s_bridge);
+	if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "default_pvid=%u", i);
+	}
+
 	if (opts->len)
 		svSetValueStr (ifcfg, "BRIDGING_OPTS", opts->str);
 	g_string_free (opts, TRUE);
+
+	if (!write_bridge_vlans ((NMSetting *) s_bridge,
+	                         NM_SETTING_BRIDGE_VLANS,
+	                         ifcfg,
+	                         "BRIDGE_VLANS",
+	                         error))
+		return FALSE;
 
 	svSetValueStr (ifcfg, "TYPE", TYPE_BRIDGE);
 
@@ -1550,7 +1608,7 @@ write_bridge_port_setting (NMConnection *connection, shvarFile *ifcfg, GError **
 {
 	NMSettingBridgePort *s_port;
 	guint32 i;
-	GString *opts;
+	GString *string;
 
 	s_port = nm_connection_get_setting_bridge_port (connection);
 	if (!s_port)
@@ -1559,28 +1617,35 @@ write_bridge_port_setting (NMConnection *connection, shvarFile *ifcfg, GError **
 	svUnsetValue (ifcfg, "BRIDGING_OPTS");
 
 	/* Bridge options */
-	opts = g_string_sized_new (32);
+	string = g_string_sized_new (32);
 
 	i = nm_setting_bridge_port_get_priority (s_port);
 	if (i != get_setting_default_uint (NM_SETTING (s_port), NM_SETTING_BRIDGE_PORT_PRIORITY))
-		g_string_append_printf (opts, "priority=%u", i);
+		g_string_append_printf (string, "priority=%u", i);
 
 	i = nm_setting_bridge_port_get_path_cost (s_port);
 	if (i != get_setting_default_uint (NM_SETTING (s_port), NM_SETTING_BRIDGE_PORT_PATH_COST)) {
-		if (opts->len)
-			g_string_append_c (opts, ' ');
-		g_string_append_printf (opts, "path_cost=%u", i);
+		if (string->len)
+			g_string_append_c (string, ' ');
+		g_string_append_printf (string, "path_cost=%u", i);
 	}
 
 	if (nm_setting_bridge_port_get_hairpin_mode (s_port)) {
-		if (opts->len)
-			g_string_append_c (opts, ' ');
-		g_string_append_printf (opts, "hairpin_mode=1");
+		if (string->len)
+			g_string_append_c (string, ' ');
+		g_string_append_printf (string, "hairpin_mode=1");
 	}
 
-	if (opts->len)
-		svSetValueStr (ifcfg, "BRIDGING_OPTS", opts->str);
-	g_string_free (opts, TRUE);
+	if (string->len)
+		svSetValueStr (ifcfg, "BRIDGING_OPTS", string->str);
+	g_string_free (string, TRUE);
+
+	if (!write_bridge_vlans ((NMSetting *) s_port,
+	                         NM_SETTING_BRIDGE_PORT_VLANS,
+	                         ifcfg,
+	                         "BRIDGE_PORT_VLANS",
+	                         error))
+		return FALSE;
 
 	return TRUE;
 }

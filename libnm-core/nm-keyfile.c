@@ -1519,19 +1519,70 @@ team_config_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key
 }
 
 static void
-qdisc_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
+bridge_vlan_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
 	const char *setting_name = nm_setting_get_name (setting);
-	GPtrArray *qdiscs;
+	gs_unref_ptrarray GPtrArray *vlans = NULL;
 	gs_strfreev char **keys = NULL;
 	gsize n_keys = 0;
 	int i;
 
-	qdiscs = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_qdisc_unref);
+	keys = nm_keyfile_plugin_kf_get_keys (info->keyfile, setting_name, &n_keys, NULL);
+	if (n_keys == 0)
+		return;
+
+	vlans = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
+
+	for (i = 0; i < n_keys; i++) {
+		NMBridgeVlan *vlan;
+		const char *index;
+		gs_free char *vlan_rest = NULL;
+		gs_free char *vlan_str = NULL;
+		gs_free_error GError *err = NULL;
+
+		if (!g_str_has_prefix (keys[i], "vlan."))
+			continue;
+
+		index = keys[i] + NM_STRLEN("vlan.");
+
+		if (index[0] == '\0')
+			continue;
+		if (index[0] == '0' && index[1] != '\0')
+			continue;
+		if (!NM_STRCHAR_ALL (index, ch, g_ascii_isdigit (ch)))
+			continue;
+
+		vlan_rest = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, keys[i], NULL);
+		vlan_str = g_strdup_printf ("%s %s", index, vlan_rest);
+
+		vlan = nm_bridge_vlan_from_str (vlan_str, &err);
+		if (!vlan) {
+			handle_warn (info, keys[i], NM_KEYFILE_WARN_SEVERITY_WARN,
+			             _("invalid bridge vlan: %s"),
+			             err->message);
+			continue;
+		}
+		g_ptr_array_add (vlans, vlan);
+	}
+
+	if (vlans->len >= 1)
+		g_object_set (setting, key, vlans, NULL);
+}
+
+static void
+qdisc_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
+{
+	const char *setting_name = nm_setting_get_name (setting);
+	gs_unref_ptrarray GPtrArray *qdiscs = NULL;
+	gs_strfreev char **keys = NULL;
+	gsize n_keys = 0;
+	int i;
 
 	keys = nm_keyfile_plugin_kf_get_keys (info->keyfile, setting_name, &n_keys, NULL);
 	if (n_keys == 0)
 		return;
+
+	qdiscs = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_qdisc_unref);
 
 	for (i = 0; i < n_keys; i++) {
 		NMTCQdisc *qdisc;
@@ -1562,24 +1613,22 @@ qdisc_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 
 	if (qdiscs->len >= 1)
 		g_object_set (setting, key, qdiscs, NULL);
-
-	g_ptr_array_unref (qdiscs);
 }
 
 static void
 tfilter_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
 	const char *setting_name = nm_setting_get_name (setting);
-	GPtrArray *tfilters;
+	gs_unref_ptrarray GPtrArray *tfilters = NULL;
 	gs_strfreev char **keys = NULL;
 	gsize n_keys = 0;
 	int i;
 
-	tfilters = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_tfilter_unref);
-
 	keys = nm_keyfile_plugin_kf_get_keys (info->keyfile, setting_name, &n_keys, NULL);
 	if (n_keys == 0)
 		return;
+
+	tfilters = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_tfilter_unref);
 
 	for (i = 0; i < n_keys; i++) {
 		NMTCTfilter *tfilter;
@@ -1610,8 +1659,6 @@ tfilter_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 
 	if (tfilters->len >= 1)
 		g_object_set (setting, key, tfilters, NULL);
-
-	g_ptr_array_unref (tfilters);
 }
 
 /*****************************************************************************/
@@ -1844,6 +1891,34 @@ route_writer (KeyfileWriterInfo *info,
 	array = (GPtrArray *) g_value_get_boxed (value);
 	if (array && array->len)
 		write_ip_values (info->keyfile, setting_name, array, NULL, TRUE);
+}
+
+static void
+bridge_vlan_writer (KeyfileWriterInfo *info,
+                    NMSetting *setting,
+                    const char *key,
+                    const GValue *value)
+{
+	gsize i;
+	GPtrArray *array;
+	nm_auto_free_gstring GString *value_str = NULL;
+
+	array = (GPtrArray *) g_value_get_boxed (value);
+	if (!array || !array->len)
+		return;
+
+	for (i = 0; i < array->len; i++) {
+		NMBridgeVlan *vlan = array->pdata[i];
+		char key_name[32];
+
+		nm_sprintf_buf (key_name, "vlan.%u", nm_bridge_vlan_get_vid (vlan));
+		nm_gstring_prepare (&value_str);
+		_nm_bridge_vlan_str_append_rest (vlan, value_str, FALSE);
+		nm_keyfile_plugin_kf_set_string (info->keyfile,
+		                                 nm_setting_get_name (setting),
+		                                 key_name,
+		                                 value_str->str);
+	}
 }
 
 static void
@@ -2275,6 +2350,20 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_BRIDGE_MAC_ADDRESS,
 				.parser        = mac_address_parser_ETHER,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_BRIDGE_VLANS,
+				.parser_no_check_key = TRUE,
+				.parser        = bridge_vlan_parser,
+				.writer        = bridge_vlan_writer,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_META_SETTING_TYPE_BRIDGE_PORT,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_BRIDGE_PORT_VLANS,
+				.parser_no_check_key = TRUE,
+				.parser        = bridge_vlan_parser,
+				.writer        = bridge_vlan_writer,
 			),
 		),
 	),

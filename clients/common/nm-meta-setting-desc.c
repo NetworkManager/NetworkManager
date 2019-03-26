@@ -3434,6 +3434,25 @@ _objlist_obj_to_str_fcn_tc_config_qdiscs (NMMetaAccessorGetType get_type,
 		g_string_append (str, s);
 }
 
+static void
+_objlist_obj_to_str_fcn_bridge_vlans (NMMetaAccessorGetType get_type,
+                                      NMSetting *setting,
+                                      guint idx,
+                                      GString *str)
+{
+	gs_free char *s = NULL;
+	NMBridgeVlan *vlan;
+
+	if (NM_IS_SETTING_BRIDGE (setting))
+		vlan = nm_setting_bridge_get_vlan (NM_SETTING_BRIDGE (setting), idx);
+	else
+		vlan = nm_setting_bridge_port_get_vlan (NM_SETTING_BRIDGE_PORT (setting), idx);
+
+	s = nm_bridge_vlan_to_str (vlan, NULL);
+	if (s)
+		g_string_append (str, s);
+}
+
 static gboolean
 _objlist_set_fcn_sriov_vfs (NMSetting *setting,
                             gboolean do_add,
@@ -3479,6 +3498,43 @@ _objlist_set_fcn_tc_config_qdiscs (NMSetting *setting,
 		nm_setting_tc_config_add_qdisc (NM_SETTING_TC_CONFIG (setting), tc_qdisc);
 	else
 		nm_setting_tc_config_remove_qdisc_by_value (NM_SETTING_TC_CONFIG (setting), tc_qdisc);
+	return TRUE;
+}
+
+static gboolean
+_objlist_set_fcn_bridge_vlans (NMSetting *setting,
+                               gboolean do_add,
+                               const char *value,
+                               GError **error)
+{
+	nm_auto_unref_bridge_vlan NMBridgeVlan *vlan = NULL;
+	gs_free_error GError *local = NULL;
+
+	vlan = nm_bridge_vlan_from_str (value, &local);
+	if (!vlan) {
+		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		                    "%s %s",
+		                    local->message,
+		                    _("The valid syntax is: '<vid> [pvid] [untagged]"));
+		return FALSE;
+	}
+
+	if (NM_IS_SETTING_BRIDGE (setting)) {
+		if (do_add)
+			nm_setting_bridge_add_vlan (NM_SETTING_BRIDGE (setting), vlan);
+		else {
+			nm_setting_bridge_remove_vlan_by_vid (NM_SETTING_BRIDGE (setting),
+			                                      nm_bridge_vlan_get_vid (vlan));
+		}
+	} else {
+		if (do_add)
+			nm_setting_bridge_port_add_vlan (NM_SETTING_BRIDGE_PORT (setting), vlan);
+		else {
+			nm_setting_bridge_port_remove_vlan_by_vid (NM_SETTING_BRIDGE_PORT (setting),
+			                                           nm_bridge_vlan_get_vid (vlan));
+		}
+	}
+
 	return TRUE;
 }
 
@@ -4808,6 +4864,23 @@ static const NMMetaPropertyInfo *const property_infos_BRIDGE[] = {
 		.prompt =                       N_("Enable IGMP snooping [no]"),
 		.property_type =                &_pt_gobject_bool,
 	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_VLAN_FILTERING,
+		.property_type =                &_pt_gobject_bool,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID,
+		.property_type =                &_pt_gobject_int,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_VLANS,
+		.property_type =                &_pt_objlist,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (objlist,
+				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingBridge, nm_setting_bridge_get_num_vlans),
+				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingBridge, nm_setting_bridge_clear_vlans),
+				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_bridge_vlans,
+				.set_fcn =              _objlist_set_fcn_bridge_vlans,
+			),
+		),
+	),
 	NULL
 };
 
@@ -4831,6 +4904,17 @@ static const NMMetaPropertyInfo *const property_infos_BRIDGE_PORT[] = {
 		.property_alias =               "hairpin",
 		.prompt =                       N_("Hairpin [no]"),
 		.property_type =                &_pt_gobject_bool,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_PORT_VLANS,
+		.property_type =                &_pt_objlist,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (objlist,
+				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingBridgePort, nm_setting_bridge_port_get_num_vlans),
+				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingBridgePort, nm_setting_bridge_port_clear_vlans),
+				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_bridge_vlans,
+				.set_fcn =              _objlist_set_fcn_bridge_vlans,
+			),
+		),
 	),
 	NULL
 };

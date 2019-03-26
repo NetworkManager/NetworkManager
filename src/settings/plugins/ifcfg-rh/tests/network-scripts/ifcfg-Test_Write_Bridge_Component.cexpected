@@ -2,6 +2,7 @@ HWADDR=31:33:33:37:BE:CD
 MTU=1492
 TYPE=Ethernet
 BRIDGING_OPTS="priority=50 path_cost=33"
+BRIDGE_PORT_VLANS="1 untagged, 2 pvid untagged, 4"
 NAME="Test Write Bridge Component"
 UUID=${UUID}
 ONBOOT=yes

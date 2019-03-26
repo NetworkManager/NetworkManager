@@ -29,6 +29,7 @@
 #include <linux/fib_rules.h>
 #include <linux/ip.h>
 #include <linux/if_arp.h>
+#include <linux/if_bridge.h>
 #include <linux/if_link.h>
 #include <linux/if_tun.h>
 #include <linux/if_tunnel.h>
@@ -274,6 +275,14 @@ struct _ifla_vf_vlan_info {
 	guint32 qos;
 	guint16 vlan_proto; /* VLAN protocol, either 802.1Q or 802.1ad */
 };
+
+/*****************************************************************************/
+
+/* Appeared in in kernel 4.0 dated April 12, 2015 */
+#ifndef BRIDGE_VLAN_INFO_RANGE_BEGIN
+#define BRIDGE_VLAN_INFO_RANGE_BEGIN    (1 << 3) /* VLAN is start of vlan range */
+#define BRIDGE_VLAN_INFO_RANGE_END      (1 << 4) /* VLAN is end of vlan range */
+#endif
 
 /*****************************************************************************/
 
@@ -3842,21 +3851,23 @@ nla_put_failure:
 }
 
 static struct nl_msg *
-_nl_msg_new_link (int nlmsg_type,
-                  int nlmsg_flags,
-                  int ifindex,
-                  const char *ifname,
-                  unsigned flags_mask,
-                  unsigned flags_set)
+_nl_msg_new_link_full (int nlmsg_type,
+                       int nlmsg_flags,
+                       int ifindex,
+                       const char *ifname,
+                       guint8 family,
+                       unsigned flags_mask,
+                       unsigned flags_set)
 {
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	const struct ifinfomsg ifi = {
+		.ifi_family = family,
 		.ifi_change = flags_mask,
 		.ifi_flags = flags_set,
 		.ifi_index = ifindex,
 	};
 
-	nm_assert (NM_IN_SET (nlmsg_type, RTM_DELLINK, RTM_NEWLINK, RTM_GETLINK));
+	nm_assert (NM_IN_SET (nlmsg_type, RTM_DELLINK, RTM_NEWLINK, RTM_GETLINK, RTM_SETLINK));
 
 	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags);
 
@@ -3870,6 +3881,15 @@ _nl_msg_new_link (int nlmsg_type,
 
 nla_put_failure:
 	g_return_val_if_reached (NULL);
+}
+
+static struct nl_msg *
+_nl_msg_new_link (int nlmsg_type,
+                  int nlmsg_flags,
+                  int ifindex,
+                  const char *ifname)
+{
+	return _nl_msg_new_link_full (nlmsg_type, nlmsg_flags, ifindex, ifname, AF_UNSPEC, 0, 0);
 }
 
 /* Copied and modified from libnl3's build_addr_msg(). */
@@ -5574,9 +5594,7 @@ do_request_link_no_delayed_actions (NMPlatform *platform, int ifindex, const cha
 	nlmsg = _nl_msg_new_link (RTM_GETLINK,
 	                          0,
 	                          ifindex,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (nlmsg) {
 		nle = _nl_send_nlmsg (platform, nlmsg, NULL, NULL, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 		if (nle < 0) {
@@ -6274,9 +6292,7 @@ link_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return -NME_UNSPEC;
 
@@ -6305,9 +6321,7 @@ link_delete (NMPlatform *platform, int ifindex)
 	nlmsg = _nl_msg_new_link (RTM_DELLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 
 	nmp_object_stackinit_id_link (&obj_id, ifindex);
 	return do_delete_object (platform, &obj_id, nlmsg);
@@ -6330,9 +6344,7 @@ link_set_netns (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 	if (!nlmsg)
 		return FALSE;
 
@@ -6359,12 +6371,13 @@ link_change_flags (NMPlatform *platform,
 	       nm_platform_link_flags2str (flags_set, s_flags, sizeof (s_flags)),
 	       nm_platform_link_flags2str (flags_mask, NULL, 0));
 
-	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          0,
-	                          ifindex,
-	                          NULL,
-	                          flags_mask,
-	                          flags_set);
+	nlmsg = _nl_msg_new_link_full (RTM_NEWLINK,
+	                               0,
+	                               ifindex,
+	                               NULL,
+	                               AF_UNSPEC,
+	                               flags_mask,
+	                               flags_set);
 	if (!nlmsg)
 		return -NME_UNSPEC;
 	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL);
@@ -6428,9 +6441,7 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 	if (   !nlmsg
 	    || !_nl_msg_new_link_set_afspec (nlmsg, mode, NULL))
 		g_return_val_if_reached (-NME_BUG);
@@ -6447,7 +6458,7 @@ link_set_token (NMPlatform *platform, int ifindex, NMUtilsIPv6IfaceId iid)
 	_LOGD ("link: change %d: token: set IPv6 address generation token to %s",
 	       ifindex, nm_utils_inet6_interface_identifier_to_token (iid, sbuf));
 
-	nlmsg = _nl_msg_new_link (RTM_NEWLINK, 0, ifindex, NULL, 0, 0);
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK, 0, ifindex, NULL);
 	if (!nlmsg || !_nl_msg_new_link_set_afspec (nlmsg, -1, &iid))
 		g_return_val_if_reached (FALSE);
 
@@ -6528,9 +6539,7 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 	if (!nlmsg)
 		g_return_val_if_reached (-NME_BUG);
 
@@ -6549,9 +6558,7 @@ link_set_name (NMPlatform *platform, int ifindex, const char *name)
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 	if (!nlmsg)
 		g_return_val_if_reached (-NME_BUG);
 
@@ -6584,9 +6591,7 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 	if (!nlmsg)
 		return FALSE;
 
@@ -6702,9 +6707,7 @@ link_set_sriov_vfs (NMPlatform *platform, int ifindex, const NMPlatformVF *const
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 	if (!nlmsg)
 		g_return_val_if_reached (-NME_BUG);
 
@@ -6787,6 +6790,67 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
+static gboolean
+link_set_bridge_vlans (NMPlatform *platform,
+                       int ifindex,
+                       gboolean on_master,
+                       const NMPlatformBridgeVlan *const *vlans)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	struct nlattr *list;
+	struct bridge_vlan_info vinfo = { };
+	guint i;
+
+	nlmsg = _nl_msg_new_link_full (vlans ? RTM_SETLINK : RTM_DELLINK,
+	                               0,
+	                               ifindex,
+	                               NULL,
+	                               AF_BRIDGE,
+	                               0,
+	                               0);
+	if (!nlmsg)
+		g_return_val_if_reached (-NME_BUG);
+
+	if (!(list = nla_nest_start (nlmsg, IFLA_AF_SPEC)))
+		goto nla_put_failure;
+
+	NLA_PUT_U16 (nlmsg,
+	             IFLA_BRIDGE_FLAGS,
+	             on_master ? BRIDGE_FLAGS_MASTER : BRIDGE_FLAGS_SELF);
+
+	if (vlans) {
+		/* Add VLANs */
+		for (i = 0; vlans[i]; i++) {
+			const NMPlatformBridgeVlan *vlan = vlans[i];
+
+			vinfo.vid = vlan->vid;
+			vinfo.flags = 0;
+
+			if (vlan->untagged)
+				vinfo.flags |= BRIDGE_VLAN_INFO_UNTAGGED;
+			if (vlan->pvid)
+				vinfo.flags |= BRIDGE_VLAN_INFO_PVID;
+
+			NLA_PUT (nlmsg, IFLA_BRIDGE_VLAN_INFO, sizeof (vinfo), &vinfo);
+		}
+	} else {
+		/* Flush existing VLANs */
+		vinfo.vid = 1;
+		vinfo.flags = BRIDGE_VLAN_INFO_RANGE_BEGIN;
+		NLA_PUT (nlmsg, IFLA_BRIDGE_VLAN_INFO, sizeof (vinfo), &vinfo);
+
+		vinfo.vid = 4094;
+		vinfo.flags = BRIDGE_VLAN_INFO_RANGE_END;
+		NLA_PUT (nlmsg, IFLA_BRIDGE_VLAN_INFO, sizeof (vinfo), &vinfo);
+	}
+
+	nla_nest_end (nlmsg, list);
+
+	return (do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) >= 0);
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
 static char *
 link_get_physical_port_id (NMPlatform *platform, int ifindex)
 {
@@ -6832,9 +6896,7 @@ vlan_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -6868,9 +6930,7 @@ link_gre_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -6920,9 +6980,7 @@ link_ip6tnl_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -6976,9 +7034,7 @@ link_ip6gre_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -7035,9 +7091,7 @@ link_ipip_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -7079,9 +7133,7 @@ link_macsec_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -7136,9 +7188,7 @@ link_macvlan_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -7178,9 +7228,7 @@ link_sit_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -7280,9 +7328,7 @@ link_vxlan_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -7346,9 +7392,7 @@ link_6lowpan_add (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
-	                          name,
-	                          0,
-	                          0);
+	                          name);
 	if (!nlmsg)
 		return FALSE;
 
@@ -7496,9 +7540,7 @@ link_vlan_change (NMPlatform *platform,
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 	if (   !nlmsg
 	    || !_nl_msg_new_link_set_linkinfo_vlan (nlmsg,
 	                                            -1,
@@ -7522,9 +7564,7 @@ link_enslave (NMPlatform *platform, int master, int slave)
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
-	                          NULL,
-	                          0,
-	                          0);
+	                          NULL);
 	if (!nlmsg)
 		return FALSE;
 
@@ -8951,6 +8991,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_set_name = link_set_name;
 	platform_class->link_set_sriov_params = link_set_sriov_params;
 	platform_class->link_set_sriov_vfs = link_set_sriov_vfs;
+	platform_class->link_set_bridge_vlans = link_set_bridge_vlans;
 
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;
 	platform_class->link_get_dev_id = link_get_dev_id;

@@ -4958,6 +4958,8 @@ handle_bridge_option (NMSetting *setting,
 		{ "max_age",            NM_SETTING_BRIDGE_MAX_AGE,            BRIDGE_OPT_TYPE_OPTION, .only_with_stp = TRUE },
 		{ "ageing_time",        NM_SETTING_BRIDGE_AGEING_TIME,        BRIDGE_OPT_TYPE_OPTION },
 		{ "multicast_snooping", NM_SETTING_BRIDGE_MULTICAST_SNOOPING, BRIDGE_OPT_TYPE_OPTION },
+		{ "vlan_filtering",     NM_SETTING_BRIDGE_VLAN_FILTERING,     BRIDGE_OPT_TYPE_OPTION },
+		{ "default_pvid",       NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID,  BRIDGE_OPT_TYPE_OPTION },
 		{ "group_fwd_mask",     NM_SETTING_BRIDGE_GROUP_FORWARD_MASK, BRIDGE_OPT_TYPE_OPTION },
 		{ "priority",           NM_SETTING_BRIDGE_PORT_PRIORITY,      BRIDGE_OPT_TYPE_PORT_OPTION },
 		{ "path_cost",          NM_SETTING_BRIDGE_PORT_PATH_COST,     BRIDGE_OPT_TYPE_PORT_OPTION },
@@ -5052,6 +5054,43 @@ handle_bridging_opts (NMSetting *setting,
 	}
 }
 
+static void
+read_bridge_vlans (shvarFile *ifcfg,
+                   const char *key,
+                   NMSetting *setting,
+                   const char *property)
+{
+	gs_unref_ptrarray GPtrArray *array = NULL;
+	gs_free char *value_to_free = NULL;
+	const char *value;
+
+	value = svGetValueStr (ifcfg, key, &value_to_free);
+	if (value) {
+		gs_free const char **strv = NULL;
+		const char *const *iter;
+		GError *local = NULL;
+		NMBridgeVlan *vlan;
+
+		array = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
+
+		strv = nm_utils_strsplit_set (value, ",", FALSE);
+		if (strv) {
+			for (iter = strv; *iter; iter++) {
+				vlan = nm_bridge_vlan_from_str (*iter, &local);
+				if (!vlan) {
+					PARSE_WARNING ("invalid bridge VLAN: %s", local->message);
+					g_clear_error (&local);
+					continue;
+				}
+				g_ptr_array_add (array, vlan);
+			}
+		}
+		nm_clear_g_free (&value_to_free);
+	}
+
+	g_object_set (setting, property, array, NULL);
+}
+
 static NMSetting *
 make_bridge_setting (shvarFile *ifcfg,
                      const char *file,
@@ -5109,6 +5148,11 @@ make_bridge_setting (shvarFile *ifcfg,
 		handle_bridging_opts (NM_SETTING (s_bridge), stp, value, handle_bridge_option, BRIDGE_OPT_TYPE_OPTION);
 		nm_clear_g_free (&value_to_free);
 	}
+
+	read_bridge_vlans (ifcfg,
+	                   "BRIDGE_VLANS",
+	                   NM_SETTING (s_bridge),
+	                   NM_SETTING_BRIDGE_VLANS);
 
 	return (NMSetting *) g_steal_pointer (&s_bridge);
 }
@@ -5179,6 +5223,11 @@ make_bridge_port_setting (shvarFile *ifcfg)
 			handle_bridging_opts (s_port, FALSE, value, handle_bridge_option, BRIDGE_OPT_TYPE_PORT_OPTION);
 			nm_clear_g_free (&value_to_free);
 		}
+
+		read_bridge_vlans (ifcfg,
+		                   "BRIDGE_PORT_VLANS",
+		                   s_port,
+		                   NM_SETTING_BRIDGE_PORT_VLANS);
 	}
 
 	return s_port;

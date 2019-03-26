@@ -1658,6 +1658,63 @@ test_sriov_parse_vlans (void)
 	test_sriov_parse_vlan_one ("1.2.ad;2.0.q;5;3", TRUE, {1, 2, 1}, {2, 0, 0}, {3, 0, 0}, {5, 0, 0});
 }
 
+static void
+test_bridge_vlans (void)
+{
+	NMBridgeVlan *v1, *v2;
+	GError *error = NULL;
+	char *str;
+
+	v1 = nm_bridge_vlan_from_str ("1 foobar", &error);
+	nmtst_assert_no_success (v1, error);
+	g_clear_error (&error);
+
+	v1 = nm_bridge_vlan_from_str ("4095", &error);
+	nmtst_assert_no_success (v1, error);
+	g_clear_error (&error);
+
+	/* test comparison (1) */
+	v1 = nm_bridge_vlan_from_str ("10 untagged", &error);
+	nmtst_assert_success (v1, error);
+
+	g_assert_cmpuint (nm_bridge_vlan_get_vid (v1), ==, 10);
+	g_assert_cmpint (nm_bridge_vlan_is_sealed (v1), ==, FALSE);
+	g_assert_cmpint (nm_bridge_vlan_is_pvid (v1), ==, FALSE);
+	g_assert_cmpint (nm_bridge_vlan_is_untagged (v1), ==, TRUE);
+
+	nm_bridge_vlan_set_pvid (v1, TRUE);
+	nm_bridge_vlan_set_untagged (v1, FALSE);
+	nm_bridge_vlan_seal (v1);
+
+	g_assert_cmpint (nm_bridge_vlan_is_sealed (v1), ==, TRUE);
+	g_assert_cmpint (nm_bridge_vlan_is_pvid (v1), ==, TRUE);
+	g_assert_cmpint (nm_bridge_vlan_is_untagged (v1), ==, FALSE);
+
+	str = nm_bridge_vlan_to_str (v1, &error);
+	nmtst_assert_success (str, error);
+	g_assert_cmpstr (str, ==, "10 pvid");
+	g_clear_pointer (&str, g_free);
+
+	v2 = nm_bridge_vlan_from_str ("  10  pvid  ", &error);
+	nmtst_assert_success (v2, error);
+
+	g_assert_cmpint (nm_bridge_vlan_cmp (v1, v2), ==, 0);
+
+	nm_bridge_vlan_unref (v1);
+	nm_bridge_vlan_unref (v2);
+
+	/* test comparison (2) */
+	v1 = nm_bridge_vlan_from_str ("10", &error);
+	nmtst_assert_success (v1, error);
+	v2 = nm_bridge_vlan_from_str ("20", &error);
+	nmtst_assert_success (v2, error);
+
+	g_assert_cmpint (nm_bridge_vlan_cmp (v1, v2), <, 0);
+
+	nm_bridge_vlan_unref (v1);
+	nm_bridge_vlan_unref (v2);
+}
+
 /*****************************************************************************/
 
 static void
@@ -2662,6 +2719,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/settings/tc_config/setting/valid", test_tc_config_setting_valid);
 	g_test_add_func ("/libnm/settings/tc_config/setting/duplicates", test_tc_config_setting_duplicates);
 	g_test_add_func ("/libnm/settings/tc_config/dbus", test_tc_config_dbus);
+
+	g_test_add_func ("/libnm/settings/bridge/vlans", test_bridge_vlans);
 
 #if WITH_JSON_VALIDATION
 	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_roundrobin",

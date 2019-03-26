@@ -671,6 +671,12 @@ typedef struct {
 } NMPlatformVF;
 
 typedef struct {
+	guint16 vid;
+	bool untagged:1;
+	bool pvid:1;
+} NMPlatformBridgeVlan;
+
+typedef struct {
 	in_addr_t local;
 	in_addr_t remote;
 	int parent_ifindex;
@@ -893,6 +899,7 @@ typedef struct {
 	gboolean (*link_set_name) (NMPlatform *, int ifindex, const char *name);
 	gboolean (*link_set_sriov_params) (NMPlatform *, int ifindex, guint num_vfs, int autoprobe);
 	gboolean (*link_set_sriov_vfs) (NMPlatform *self, int ifindex, const NMPlatformVF *const *vfs);
+	gboolean (*link_set_bridge_vlans) (NMPlatform *self, int ifindex, gboolean on_master, const NMPlatformBridgeVlan *const *vlans);
 
 	char *   (*link_get_physical_port_id) (NMPlatform *, int ifindex);
 	guint    (*link_get_dev_id) (NMPlatform *, int ifindex);
@@ -1326,6 +1333,7 @@ int nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu);
 gboolean nm_platform_link_set_name (NMPlatform *self, int ifindex, const char *name);
 gboolean nm_platform_link_set_sriov_params (NMPlatform *self, int ifindex, guint num_vfs, int autoprobe);
 gboolean nm_platform_link_set_sriov_vfs (NMPlatform *self, int ifindex, const NMPlatformVF *const *vfs);
+gboolean nm_platform_link_set_bridge_vlans (NMPlatform *self, int ifindex, gboolean on_master, const NMPlatformBridgeVlan *const *vlans);
 
 char    *nm_platform_link_get_physical_port_id (NMPlatform *self, int ifindex);
 guint    nm_platform_link_get_dev_id (NMPlatform *self, int ifindex);
@@ -1585,6 +1593,7 @@ const char *nm_platform_routing_rule_to_string (const NMPlatformRoutingRule *rou
 const char *nm_platform_qdisc_to_string (const NMPlatformQdisc *qdisc, char *buf, gsize len);
 const char *nm_platform_tfilter_to_string (const NMPlatformTfilter *tfilter, char *buf, gsize len);
 const char *nm_platform_vf_to_string (const NMPlatformVF *vf, char *buf, gsize len);
+const char *nm_platform_bridge_vlan_to_string (const NMPlatformBridgeVlan *vlan, char *buf, gsize len);
 
 const char *nm_platform_vlan_qos_mapping_to_string (const char *name,
                                                     const NMVlanQosMapping *map,
