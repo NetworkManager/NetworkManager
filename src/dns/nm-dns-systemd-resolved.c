@@ -122,7 +122,7 @@ static void
 call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 {
 	GVariant *v;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	NMDnsSystemdResolved *self = (NMDnsSystemdResolved *) user_data;
 
 	v = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), r, &error);
@@ -130,7 +130,6 @@ call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 		if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 			return;
 		_LOGW ("Failed: %s", error->message);
-		g_error_free (error);
 	}
 }
 
