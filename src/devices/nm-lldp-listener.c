@@ -25,6 +25,7 @@
 #include <net/ethernet.h>
 
 #include "platform/nm-platform.h"
+#include "nm-utils/unaligned.h"
 #include "nm-utils.h"
 
 #include "systemd/nm-sd.h"
@@ -153,21 +154,6 @@ ether_addr_equal (const struct ether_addr *a1, const struct ether_addr *a2)
 
 	G_STATIC_ASSERT_EXPR (sizeof (*a1) == ETH_ALEN);
 	return memcmp (a1, a2, ETH_ALEN) == 0;
-}
-
-static guint32
-_access_uint8 (const void *data)
-{
-	return *((const guint8 *) data);
-}
-
-static guint32
-_access_uint16 (const void *data)
-{
-	guint16 v;
-
-	memcpy (&v, data, sizeof (v));
-	return ntohs (v);
 }
 
 /*****************************************************************************/
@@ -514,15 +500,15 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 				if (len != 2)
 					continue;
 				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_PVID,
-				                       _access_uint16 (data8));
+				                       unaligned_read_be16 (data8));
 				break;
 			case SD_LLDP_OUI_802_1_SUBTYPE_PORT_PROTOCOL_VLAN_ID:
 				if (len != 3)
 					continue;
 				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,
-				                       _access_uint8 (&data8[0]));
+				                       data8[0]);
 				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_PPVID,
-				                       _access_uint16 (&data8[1]));
+				                       unaligned_read_be16 (&data8[1]));
 				break;
 			case SD_LLDP_OUI_802_1_SUBTYPE_VLAN_NAME: {
 				int l;
@@ -537,7 +523,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 					continue;
 
 				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_VID,
-				                       _access_uint16 (&data8[0]));
+				                       unaligned_read_be16 (&data8[0]));
 				_lldp_attr_set_str_ptr (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,
 				                        &data8[3], l);
 				break;
