@@ -25,6 +25,8 @@
 #include <net/ethernet.h>
 
 #include "platform/nm-platform.h"
+#include "nm-utils/unaligned.h"
+#include "nm-utils/nm-c-list.h"
 #include "nm-utils.h"
 
 #include "systemd/nm-sd.h"
@@ -40,6 +42,8 @@ typedef enum {
 	LLDP_ATTR_TYPE_NONE,
 	LLDP_ATTR_TYPE_UINT32,
 	LLDP_ATTR_TYPE_STRING,
+	LLDP_ATTR_TYPE_VARDICT,
+	LLDP_ATTR_TYPE_ARRAY_OF_VARDICTS,
 } LldpAttrType;
 
 typedef enum {
@@ -49,12 +53,18 @@ typedef enum {
 	LLDP_ATTR_ID_SYSTEM_NAME,
 	LLDP_ATTR_ID_SYSTEM_DESCRIPTION,
 	LLDP_ATTR_ID_SYSTEM_CAPABILITIES,
+	LLDP_ATTR_ID_MANAGEMENT_ADDRESSES,
 	LLDP_ATTR_ID_IEEE_802_1_PVID,
 	LLDP_ATTR_ID_IEEE_802_1_PPVID,
 	LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,
+	LLDP_ATTR_ID_IEEE_802_1_PPVIDS,
 	LLDP_ATTR_ID_IEEE_802_1_VID,
 	LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,
-	_LLDP_PROP_ID_COUNT,
+	LLDP_ATTR_ID_IEEE_802_1_VLANS,
+	LLDP_ATTR_ID_IEEE_802_3_MAC_PHY_CONF,
+	LLDP_ATTR_ID_IEEE_802_3_POWER_VIA_MDI,
+	LLDP_ATTR_ID_IEEE_802_3_MAX_FRAME_SIZE,
+	_LLDP_ATTR_ID_COUNT,
 } LldpAttrId;
 
 typedef struct {
@@ -62,6 +72,8 @@ typedef struct {
 	union {
 		guint32 v_uint32;
 		char *v_string;
+		GVariant *v_variant;
+		CList v_variant_list;
 	};
 } LldpAttrData;
 
@@ -109,7 +121,7 @@ typedef struct {
 
 	bool valid:1;
 
-	LldpAttrData attrs[_LLDP_PROP_ID_COUNT];
+	LldpAttrData attrs[_LLDP_ATTR_ID_COUNT];
 
 	GVariant *variant;
 } LldpNeighbor;
@@ -155,35 +167,26 @@ ether_addr_equal (const struct ether_addr *a1, const struct ether_addr *a2)
 	return memcmp (a1, a2, ETH_ALEN) == 0;
 }
 
-static guint32
-_access_uint8 (const void *data)
-{
-	return *((const guint8 *) data);
-}
-
-static guint32
-_access_uint16 (const void *data)
-{
-	guint16 v;
-
-	memcpy (&v, data, sizeof (v));
-	return ntohs (v);
-}
-
 /*****************************************************************************/
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_lldp_attr_id_to_name, LldpAttrId,
 	NM_UTILS_LOOKUP_DEFAULT_WARN (NULL),
-	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_PORT_DESCRIPTION,        NM_LLDP_ATTR_PORT_DESCRIPTION),
-	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_SYSTEM_NAME,             NM_LLDP_ATTR_SYSTEM_NAME),
-	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_SYSTEM_DESCRIPTION,      NM_LLDP_ATTR_SYSTEM_DESCRIPTION),
-	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_SYSTEM_CAPABILITIES,     NM_LLDP_ATTR_SYSTEM_CAPABILITIES),
-	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_PVID,         NM_LLDP_ATTR_IEEE_802_1_PVID),
-	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_PPVID,        NM_LLDP_ATTR_IEEE_802_1_PPVID),
-	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,  NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS),
-	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_VID,          NM_LLDP_ATTR_IEEE_802_1_VID),
-	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,    NM_LLDP_ATTR_IEEE_802_1_VLAN_NAME),
-	NM_UTILS_LOOKUP_ITEM_IGNORE (_LLDP_PROP_ID_COUNT),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_PORT_DESCRIPTION,         NM_LLDP_ATTR_PORT_DESCRIPTION),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_SYSTEM_NAME,              NM_LLDP_ATTR_SYSTEM_NAME),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_SYSTEM_DESCRIPTION,       NM_LLDP_ATTR_SYSTEM_DESCRIPTION),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_SYSTEM_CAPABILITIES,      NM_LLDP_ATTR_SYSTEM_CAPABILITIES),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_MANAGEMENT_ADDRESSES,     NM_LLDP_ATTR_MANAGEMENT_ADDRESSES),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_PVID,          NM_LLDP_ATTR_IEEE_802_1_PVID),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_PPVID,         NM_LLDP_ATTR_IEEE_802_1_PPVID),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,   NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_PPVIDS,        NM_LLDP_ATTR_IEEE_802_1_PPVIDS),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_VID,           NM_LLDP_ATTR_IEEE_802_1_VID),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,     NM_LLDP_ATTR_IEEE_802_1_VLAN_NAME),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_VLANS,         NM_LLDP_ATTR_IEEE_802_1_VLANS),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_3_MAC_PHY_CONF,  NM_LLDP_ATTR_IEEE_802_3_MAC_PHY_CONF),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_3_POWER_VIA_MDI, NM_LLDP_ATTR_IEEE_802_3_POWER_VIA_MDI),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_3_MAX_FRAME_SIZE,NM_LLDP_ATTR_IEEE_802_3_MAX_FRAME_SIZE),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (_LLDP_ATTR_ID_COUNT),
 );
 
 _NM_UTILS_LOOKUP_DEFINE (static, _lldp_attr_id_to_type, LldpAttrId, LldpAttrType,
@@ -192,12 +195,18 @@ _NM_UTILS_LOOKUP_DEFINE (static, _lldp_attr_id_to_type, LldpAttrId, LldpAttrType
 	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_SYSTEM_NAME,                 LLDP_ATTR_TYPE_STRING),
 	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_SYSTEM_DESCRIPTION,          LLDP_ATTR_TYPE_STRING),
 	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_SYSTEM_CAPABILITIES,         LLDP_ATTR_TYPE_UINT32),
+	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_MANAGEMENT_ADDRESSES,        LLDP_ATTR_TYPE_ARRAY_OF_VARDICTS),
 	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_PVID,             LLDP_ATTR_TYPE_UINT32),
 	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_PPVID,            LLDP_ATTR_TYPE_UINT32),
 	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,      LLDP_ATTR_TYPE_UINT32),
+	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_PPVIDS,           LLDP_ATTR_TYPE_ARRAY_OF_VARDICTS),
 	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_VID,              LLDP_ATTR_TYPE_UINT32),
 	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,        LLDP_ATTR_TYPE_STRING),
-	NM_UTILS_LOOKUP_ITEM_IGNORE (_LLDP_PROP_ID_COUNT),
+	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_VLANS,            LLDP_ATTR_TYPE_ARRAY_OF_VARDICTS),
+	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_3_MAC_PHY_CONF,     LLDP_ATTR_TYPE_VARDICT),
+	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_3_POWER_VIA_MDI,    LLDP_ATTR_TYPE_VARDICT),
+	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_3_MAX_FRAME_SIZE,   LLDP_ATTR_TYPE_UINT32),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (_LLDP_ATTR_ID_COUNT),
 );
 
 static void
@@ -216,13 +225,8 @@ _lldp_attr_set_str (LldpAttrData *pdata, LldpAttrId attr_id, const char *v_strin
 }
 
 static void
-_lldp_attr_set_str_ptr (LldpAttrData *pdata, LldpAttrId attr_id, const void *str, gsize len)
+_lldp_attr_take_str_ptr (LldpAttrData *pdata, LldpAttrId attr_id, char *str)
 {
-	const char *s = str;
-	const char *tmp;
-	gsize len0 = len;
-	gs_free char *str_free = NULL;
-
 	nm_assert (pdata);
 	nm_assert (_lldp_attr_id_to_type (attr_id) == LLDP_ATTR_TYPE_STRING);
 
@@ -233,23 +237,7 @@ _lldp_attr_set_str_ptr (LldpAttrData *pdata, LldpAttrId attr_id, const void *str
 		return;
 
 	pdata->attr_type = LLDP_ATTR_TYPE_STRING;
-
-	/* truncate at first NUL, including removing trailing NULs*/
-	tmp = memchr (s, '\0', len);
-	if (tmp)
-		len = tmp - s;
-
-	if (!len) {
-		pdata->v_string = g_strdup ("");
-		return;
-	}
-
-	if (len0 <= len || s[len] != '\0') {
-		/* hmpf, g_strescape needs a trailing NUL. Need to clone */
-		s = str_free = g_strndup (s, len);
-	}
-
-	pdata->v_string = g_strescape (s, NULL);
+	pdata->v_string = str;
 }
 
 static void
@@ -265,6 +253,44 @@ _lldp_attr_set_uint32 (LldpAttrData *pdata, LldpAttrId attr_id, guint32 v_uint32
 		return;
 	pdata->attr_type = LLDP_ATTR_TYPE_UINT32;
 	pdata->v_uint32 = v_uint32;
+}
+
+static void
+_lldp_attr_set_vardict (LldpAttrData *pdata, LldpAttrId attr_id, GVariant *variant)
+{
+
+	nm_assert (pdata);
+	nm_assert (_lldp_attr_id_to_type (attr_id) == LLDP_ATTR_TYPE_VARDICT);
+
+	pdata = &pdata[attr_id];
+
+	/* we ignore duplicate fields silently */
+	if (pdata->attr_type != LLDP_ATTR_TYPE_NONE) {
+		if (g_variant_is_floating (variant))
+			g_variant_unref (variant);
+		return;
+	}
+
+	pdata->attr_type = LLDP_ATTR_TYPE_VARDICT;
+	pdata->v_variant = g_variant_ref_sink (variant);
+}
+
+static void
+_lldp_attr_add_vardict (LldpAttrData *pdata, LldpAttrId attr_id, GVariant *variant)
+{
+	nm_assert (pdata);
+	nm_assert (_lldp_attr_id_to_type (attr_id) == LLDP_ATTR_TYPE_ARRAY_OF_VARDICTS);
+
+	g_variant_ref_sink (variant);
+	pdata = &pdata[attr_id];
+
+	if (pdata->attr_type == LLDP_ATTR_TYPE_NONE) {
+		c_list_init (&pdata->v_variant_list);
+		pdata->attr_type = LLDP_ATTR_TYPE_ARRAY_OF_VARDICTS;
+	} else
+		nm_assert (pdata->attr_type == LLDP_ATTR_TYPE_ARRAY_OF_VARDICTS);
+
+	c_list_link_tail (&pdata->v_variant_list, &nm_c_list_elem_new_stale (variant)->lst);
 }
 
 /*****************************************************************************/
@@ -312,13 +338,28 @@ static void
 lldp_neighbor_free (LldpNeighbor *neighbor)
 {
 	LldpAttrId attr_id;
+	LldpAttrType attr_type;
 
 	if (neighbor) {
 		g_free (neighbor->chassis_id);
 		g_free (neighbor->port_id);
-		for (attr_id = 0; attr_id < _LLDP_PROP_ID_COUNT; attr_id++) {
-			if (neighbor->attrs[attr_id].attr_type == LLDP_ATTR_TYPE_STRING)
+		for (attr_id = 0; attr_id < _LLDP_ATTR_ID_COUNT; attr_id++) {
+			attr_type = neighbor->attrs[attr_id].attr_type;
+
+			switch (attr_type) {
+			case LLDP_ATTR_TYPE_STRING:
 				g_free (neighbor->attrs[attr_id].v_string);
+				break;
+			case LLDP_ATTR_TYPE_VARDICT:
+				g_variant_unref (neighbor->attrs[attr_id].v_variant);
+				break;
+			case LLDP_ATTR_TYPE_ARRAY_OF_VARDICTS:
+				nm_c_list_elem_free_all (&neighbor->attrs[attr_id].v_variant_list,
+				                         (GDestroyNotify) g_variant_unref);
+				break;
+			default:
+				;
+			}
 		}
 		g_clear_pointer (&neighbor->variant, g_variant_unref);
 		g_slice_free (LldpNeighbor, neighbor);
@@ -346,7 +387,7 @@ lldp_neighbor_equal (LldpNeighbor *a, LldpNeighbor *b)
 	    || !nm_streq0 (a->port_id, b->port_id))
 		return FALSE;
 
-	for (attr_id = 0; attr_id < _LLDP_PROP_ID_COUNT; attr_id++) {
+	for (attr_id = 0; attr_id < _LLDP_ATTR_ID_COUNT; attr_id++) {
 		if (a->attrs[attr_id].attr_type != b->attrs[attr_id].attr_type)
 			return FALSE;
 		switch (a->attrs[attr_id].attr_type) {
@@ -365,6 +406,75 @@ lldp_neighbor_equal (LldpNeighbor *a, LldpNeighbor *b)
 	}
 
 	return TRUE;
+}
+
+static GVariant *
+parse_management_address_tlv (uint8_t *data, gsize len)
+{
+	GVariantDict dict;
+	GVariant *variant;
+	gsize addr_len, oid_len;
+
+	/* 802.1AB-2009 - Figure 8-11
+	 *
+	 * - TLV type / length        (2 bytes)
+	 * - address string length    (1 byte)
+	 * - address subtype          (1 byte)
+	 * - address                  (1 to 31 bytes)
+	 * - interface number subtype (1 byte)
+	 * - interface number         (4 bytes)
+	 * - OID string length        (1 byte)
+	 * - OID                      (0 to 128 bytes)
+	 */
+
+	if (len < 11)
+		goto err;
+
+	nm_assert ((data[0] >> 1) == SD_LLDP_TYPE_MGMT_ADDRESS);
+	nm_assert ((((data[0] & 1) << 8) + data[1]) + 2 == len);
+
+	data += 2;
+	len -= 2;
+	addr_len = *data; /* length of (address subtype + address) */
+
+	if (addr_len < 2 || addr_len > 32)
+		goto err;
+	if (len < (  1         /* address stringth length */
+	           + addr_len  /* address subtype + address */
+	           + 5         /* interface */
+	           + 1))       /* oid */
+		goto err;
+
+	g_variant_dict_init (&dict, NULL);
+
+	data++;
+	len--;
+	g_variant_dict_insert (&dict, "address-subtype", "u", (guint32) *data);
+	variant = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, data + 1, addr_len - 1, 1);
+	g_variant_dict_insert_value (&dict, "address", variant);
+
+	data += addr_len;
+	len -= addr_len;
+	g_variant_dict_insert (&dict, "interface-number-subtype", "u", (guint32) *data);
+
+	data++;
+	len--;
+	g_variant_dict_insert (&dict, "interface-number", "u", unaligned_read_be32 (data));
+
+	data += 4;
+	len -= 4;
+	oid_len = *data;
+
+	if (len < (1 + oid_len))
+		goto err;
+
+	data++;
+	variant = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, data, oid_len, 1);
+	g_variant_dict_insert_value (&dict, "object-id", variant);
+	return g_variant_dict_end (&dict);
+err:
+	g_variant_dict_clear (&dict);
+	return NULL;
 }
 
 static LldpNeighbor *
@@ -468,7 +578,29 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	}
 	do {
 		guint8 oui[3];
-		guint8 subtype;
+		guint8 type, subtype;
+		GVariant *variant;
+
+		if (sd_lldp_neighbor_tlv_get_type (neighbor_sd, &type) < 0)
+			continue;
+
+		if (sd_lldp_neighbor_tlv_get_raw (neighbor_sd, (void *) &data8, &len) < 0)
+			continue;
+
+		switch (type) {
+		case SD_LLDP_TYPE_MGMT_ADDRESS:
+			variant = parse_management_address_tlv (data8, len);
+			if (variant) {
+				_lldp_attr_add_vardict (neigh->attrs,
+				                        LLDP_ATTR_ID_MANAGEMENT_ADDRESSES,
+				                        variant);
+			}
+			continue;
+		case SD_LLDP_TYPE_PRIVATE:
+			break;
+		default:
+			continue;
+		}
 
 		r = sd_lldp_neighbor_tlv_get_oui (neighbor_sd, oui, &subtype);
 		if (r < 0) {
@@ -479,18 +611,12 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 			goto out;
 		}
 
-		if (!(   memcmp (oui, SD_LLDP_OUI_802_1, sizeof (oui)) == 0
-		      && NM_IN_SET (subtype,
-		                    SD_LLDP_OUI_802_1_SUBTYPE_PORT_PROTOCOL_VLAN_ID,
-		                    SD_LLDP_OUI_802_1_SUBTYPE_PORT_VLAN_ID,
-		                    SD_LLDP_OUI_802_1_SUBTYPE_VLAN_NAME)))
-			continue;
-
-		if (sd_lldp_neighbor_tlv_get_raw (neighbor_sd, (void *) &data8, &len) < 0)
+		if (   memcmp (oui, SD_LLDP_OUI_802_1, sizeof (oui)) != 0
+		    && memcmp (oui, SD_LLDP_OUI_802_3, sizeof (oui)) != 0)
 			continue;
 
 		/* skip over leading TLV, OUI and subtype */
-#ifdef WITH_MORE_ASSERTS
+#if NM_MORE_ASSERTS > 5
 		{
 			guint8 check_hdr[] = {
 				0xfe | (((len - 2) >> 8) & 0x01), ((len - 2) & 0xFF),
@@ -507,25 +633,37 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 		data8 += 6;
 		len -= 6;
 
-		/*if (memcmp (oui, SD_LLDP_OUI_802_1, sizeof (oui)) == 0)*/
-		{
+		if (memcmp (oui, SD_LLDP_OUI_802_1, sizeof (oui)) == 0) {
+			GVariantDict dict;
+
 			switch (subtype) {
 			case SD_LLDP_OUI_802_1_SUBTYPE_PORT_VLAN_ID:
 				if (len != 2)
 					continue;
 				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_PVID,
-				                       _access_uint16 (data8));
+				                       unaligned_read_be16 (data8));
 				break;
 			case SD_LLDP_OUI_802_1_SUBTYPE_PORT_PROTOCOL_VLAN_ID:
 				if (len != 3)
 					continue;
 				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,
-				                       _access_uint8 (&data8[0]));
+				                       data8[0]);
 				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_PPVID,
-				                       _access_uint16 (&data8[1]));
+				                       unaligned_read_be16 (&data8[1]));
+
+				g_variant_dict_init (&dict, NULL);
+				g_variant_dict_insert (&dict, "ppvid", "u", (guint32) unaligned_read_be16 (&data8[1]));
+				g_variant_dict_insert (&dict, "flags", "u", (guint32) data8[0]);
+
+				_lldp_attr_add_vardict (neigh->attrs,
+				                        LLDP_ATTR_ID_IEEE_802_1_PPVIDS,
+				                        g_variant_dict_end (&dict));
 				break;
 			case SD_LLDP_OUI_802_1_SUBTYPE_VLAN_NAME: {
 				int l;
+				guint32 vid;
+				const char *name;
+				char *name_to_free;
 
 				if (len <= 3)
 					continue;
@@ -536,14 +674,62 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 				if (l > 32)
 					continue;
 
-				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_VID,
-				                       _access_uint16 (&data8[0]));
-				_lldp_attr_set_str_ptr (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,
-				                        &data8[3], l);
+				name = nm_utils_buf_utf8safe_escape (&data8[3], l, 0, &name_to_free);
+				vid = unaligned_read_be16 (&data8[0]);
+
+				g_variant_dict_init (&dict, NULL);
+				g_variant_dict_insert (&dict, "vid", "u", vid);
+				g_variant_dict_insert (&dict, "name", "s", name);
+
+				_lldp_attr_add_vardict (neigh->attrs,
+				                        LLDP_ATTR_ID_IEEE_802_1_VLANS,
+				                        g_variant_dict_end (&dict));
+
+				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_VID, vid);
+				_lldp_attr_take_str_ptr (neigh->attrs,
+				                         LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,
+				                         name_to_free ?: g_strdup (name));
 				break;
 			}
 			default:
-				g_assert_not_reached ();
+				continue;
+			}
+		} else if (memcmp (oui, SD_LLDP_OUI_802_3, sizeof (oui)) == 0) {
+			GVariantDict dict;
+
+			switch (subtype) {
+			case SD_LLDP_OUI_802_3_SUBTYPE_MAC_PHY_CONFIG_STATUS:
+				if (len != 5)
+					continue;
+
+				g_variant_dict_init (&dict, NULL);
+				g_variant_dict_insert (&dict, "autoneg", "u", (guint32) data8[0]);
+				g_variant_dict_insert (&dict, "pmd-autoneg-cap", "u", (guint32) unaligned_read_be16 (&data8[1]));
+				g_variant_dict_insert (&dict, "operational-mau-type", "u", (guint32) unaligned_read_be16 (&data8[3]));
+
+				_lldp_attr_set_vardict (neigh->attrs,
+				                        LLDP_ATTR_ID_IEEE_802_3_MAC_PHY_CONF,
+				                        g_variant_dict_end (&dict));
+				break;
+			case SD_LLDP_OUI_802_3_SUBTYPE_POWER_VIA_MDI:
+				if (len != 3)
+					continue;
+
+				g_variant_dict_init (&dict, NULL);
+				g_variant_dict_insert (&dict, "mdi-power-support", "u", (guint32) data8[0]);
+				g_variant_dict_insert (&dict, "pse-power-pair", "u", (guint32) data8[1]);
+				g_variant_dict_insert (&dict, "power-class", "u", (guint32) data8[2]);
+
+				_lldp_attr_set_vardict (neigh->attrs,
+				                        LLDP_ATTR_ID_IEEE_802_3_POWER_VIA_MDI,
+				                        g_variant_dict_end (&dict));
+				break;
+			case SD_LLDP_OUI_802_3_SUBTYPE_MAXIMUM_FRAME_SIZE:
+				if (len != 2)
+					continue;
+				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_3_MAX_FRAME_SIZE,
+				                       unaligned_read_be16 (data8));
+				break;
 			}
 		}
 	} while (sd_lldp_neighbor_tlv_next (neighbor_sd) > 0);
@@ -593,7 +779,7 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 		                       g_variant_new_string (dest_str));
 	}
 
-	for (attr_id = 0; attr_id < _LLDP_PROP_ID_COUNT; attr_id++) {
+	for (attr_id = 0; attr_id < _LLDP_ATTR_ID_COUNT; attr_id++) {
 		const LldpAttrData *data = &neigh->attrs[attr_id];
 
 		nm_assert (NM_IN_SET (data->attr_type, _lldp_attr_id_to_type (attr_id), LLDP_ATTR_TYPE_NONE));
@@ -608,7 +794,26 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 			                       _lldp_attr_id_to_name (attr_id),
 			                       g_variant_new_string (data->v_string));
 			break;
-		default:
+		case LLDP_ATTR_TYPE_VARDICT:
+			g_variant_builder_add (&builder, "{sv}",
+			                       _lldp_attr_id_to_name (attr_id),
+			                       data->v_variant);
+			break;
+		case LLDP_ATTR_TYPE_ARRAY_OF_VARDICTS: {
+			NMCListElem *elem;
+			GVariantBuilder builder2;
+
+			g_variant_builder_init (&builder2, G_VARIANT_TYPE ("aa{sv}"));
+
+			c_list_for_each_entry (elem, &data->v_variant_list, lst)
+				g_variant_builder_add_value (&builder2, elem->data);
+
+			g_variant_builder_add (&builder, "{sv}",
+			                       _lldp_attr_id_to_name (attr_id),
+			                       g_variant_builder_end (&builder2));
+			break;
+		}
+		case LLDP_ATTR_TYPE_NONE:
 			break;
 		}
 	}

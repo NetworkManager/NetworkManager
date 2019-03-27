@@ -687,6 +687,7 @@ PRP_DEVICE_MANAGED               = "Managed"
 PRP_DEVICE_AUTOCONNECT           = "Autoconnect"
 PRP_DEVICE_DEVICE_TYPE           = "DeviceType"
 PRP_DEVICE_AVAILABLE_CONNECTIONS = "AvailableConnections"
+PRP_DEVICE_LLDP_NEIGHBORS        = "LldpNeighbors"
 
 class Device(ExportedObj):
 
@@ -719,6 +720,87 @@ class Device(ExportedObj):
             PRP_DEVICE_AUTOCONNECT:           True,
             PRP_DEVICE_DEVICE_TYPE:           dbus.UInt32(devtype),
             PRP_DEVICE_AVAILABLE_CONNECTIONS: ExportedObj.to_path_array([]),
+            PRP_DEVICE_LLDP_NEIGHBORS:        dbus.Array([
+                dbus.Dictionary({
+                    'chassis-id-type':      dbus.UInt32(6),
+                    'chassis-id':           dbus.String('00:11:22:33:44:00'),
+                    'port-id-type':         dbus.UInt32(7),
+                    'port-id':              dbus.String('Uplink port'),
+                    'port-description':     dbus.String('GigabitEthernet #1'),
+                    'system-name':          dbus.String('test1.example.com'),
+                    'system-description':   dbus.String('Test system #1'),
+                    'system-capabilities':  dbus.UInt32(20),
+                    'destination':          dbus.String('nearest-bridge'),
+                }),
+                dbus.Dictionary({
+                    'chassis-id-type':      dbus.UInt32(2),
+                    'chassis-id':           dbus.String('chassis1'),
+                    'port-id-type':         dbus.UInt32(3),
+                    'port-id':              dbus.String('44:44:44:44:44:44'),
+                    'port-description':     dbus.String('GigabitEthernet #2'),
+                    'system-name':          dbus.String('test2.example.com'),
+                    'system-description':   dbus.String('Test system #2'),
+                    'system-capabilities':  dbus.UInt32(2047),
+                    'destination':          dbus.String('nearest-non-tpmr-bridge'),
+                    'ieee-802-1-vlans':     dbus.Array([
+                        dbus.Dictionary({
+                            'vid':          dbus.UInt32(80),
+                            'name':         dbus.String('vlan80'),
+                        }, signature = 'sv'),
+                        dbus.Dictionary({
+                            'vid':          dbus.UInt32(4000),
+                            'name':         dbus.String('My VLAN'),
+                        }, signature = 'sv'),
+                    ]),
+                    'ieee-802-1-ppvids':    dbus.Array([
+                        dbus.Dictionary({
+                            'ppvid':        dbus.UInt32(4),
+                            'flags':        dbus.UInt32(0x12),
+                        }, signature = 'sv'),
+                        dbus.Dictionary({
+                            'ppvid':        dbus.UInt32(10),
+                            'flags':        dbus.UInt32(0x31),
+                        }, signature = 'sv'),
+                    ]),
+
+                }),
+                dbus.Dictionary({
+                    'chassis-id-type':      dbus.UInt32(6),
+                    'chassis-id':           dbus.String('00:11:22:33:44:22'),
+                    'port-id-type':         dbus.UInt32(1),
+                    'port-id':              dbus.String('port1'),
+                    'port-description':     dbus.String('GigabitEthernet #3'),
+                    'system-name':          dbus.String('test3.example.com'),
+                    'system-description':   dbus.String('Test system #3'),
+                    'system-capabilities':  dbus.UInt32(40),
+                    'destination':          dbus.String('nearest-customer-bridge'),
+                    'management-addresses': dbus.Array([
+                        dbus.Dictionary({
+                            'address-subtype':          dbus.UInt32(1),
+                            'address':                  dbus.ByteArray(b'\xc0\xa8\x01\x01'),
+                            'interface-number':         dbus.UInt32(4),
+                            'interface-number-subtype': dbus.UInt32(3),
+                            'object-id':                dbus.ByteArray(b'\x01\x02\x03\x04')
+                        }, signature = 'sv'),
+                        dbus.Dictionary({
+                            'address-subtype':          dbus.UInt32(2),
+                            'address':                  dbus.ByteArray(b'\xfd\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x12\x34\x56\x78'),
+                            'interface-number':         dbus.UInt32(1),
+                            'interface-number-subtype': dbus.UInt32(2),
+                        }, signature = 'sv'),
+                    ]),
+                    'ieee-802-3-mac-phy-conf': dbus.Dictionary({
+                        'autoneg':              dbus.UInt32(3),
+                        'pmd-autoneg-cap':      dbus.UInt32(0xfe),
+                        'operational-mau-type': dbus.UInt32(5),
+                    }, signature = 'sv'),
+                    'ieee-802-3-power-via-mdi': dbus.Dictionary({
+                        'mdi-power-support':    dbus.UInt32(7),
+                        'pse-power-pair':       dbus.UInt32(6),
+                        'power-class':          dbus.UInt32(1),
+                    }, signature = 'sv'),
+                })
+            ], 'a{sv}')
         }
 
         self.dbus_interface_add(IFACE_DEVICE, props, Device.PropertiesChanged)
