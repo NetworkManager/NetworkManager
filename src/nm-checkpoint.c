@@ -39,6 +39,7 @@
 typedef struct {
 	char *original_dev_path;
 	char *original_dev_name;
+	NMDeviceType dev_type;
 	NMDevice *device;
 	NMConnection *applied_connection;
 	NMConnection *settings_connection;
@@ -61,6 +62,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMCheckpoint,
 struct _NMCheckpointPrivate {
 	/* properties */
 	GHashTable *devices;
+	GPtrArray *removed_devices;
 	gint64 created_at_ms;
 	guint32 rollback_timeout_s;
 	guint timeout_id;
@@ -68,6 +70,7 @@ struct _NMCheckpointPrivate {
 	NMManager *manager;
 	NMCheckpointCreateFlags flags;
 	GHashTable *connection_uuids;
+	gulong dev_removed_id;
 
 	NMCheckpointTimeoutCallback timeout_cb;
 	gpointer timeout_data;
@@ -245,6 +248,15 @@ restore_and_activate_connection (NMCheckpoint *self,
 			g_clear_error (&local_error);
 			return FALSE;
 		}
+
+		/* If the device is software, a brand new NMDevice may have been created */
+		if (   dev_checkpoint->is_software
+		    && !dev_checkpoint->device) {
+			dev_checkpoint->device = nm_manager_get_device (priv->manager,
+			                                                dev_checkpoint->original_dev_name,
+			                                                dev_checkpoint->dev_type);
+			nm_g_object_ref (dev_checkpoint->device);
+		}
 		need_activation = TRUE;
 	}
 
@@ -294,9 +306,30 @@ nm_checkpoint_rollback (NMCheckpoint *self)
 	GHashTableIter iter;
 	NMDevice *device;
 	GVariantBuilder builder;
+	uint i;
 
 	_LOGI ("rollback of %s", nm_dbus_object_get_path (NM_DBUS_OBJECT (self)));
 	 g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{su}"));
+
+	/* Start creating removed devices (if any and if possible) */
+	if (priv->removed_devices) {
+		for (i = 0; i < priv->removed_devices->len; i++) {
+			guint32 result = NM_ROLLBACK_RESULT_OK;
+
+			dev_checkpoint = priv->removed_devices->pdata[i];
+			_LOGD ("rollback: restoring removed device %s (state %d, realized %d, explicitly unmanaged %d)",
+			       dev_checkpoint->original_dev_name,
+			       (int) dev_checkpoint->state,
+			       dev_checkpoint->realized,
+			       dev_checkpoint->unmanaged_explicit);
+
+			if (dev_checkpoint->applied_connection) {
+				if (!restore_and_activate_connection (self, dev_checkpoint))
+					result = NM_ROLLBACK_RESULT_ERR_FAILED;
+			}
+			g_variant_builder_add (&builder, "{su}", dev_checkpoint->original_dev_path, result);
+		}
+	}
 
 	/* Start rolling-back each device */
 	g_hash_table_iter_init (&iter, priv->devices);
@@ -379,7 +412,6 @@ next_dev:
 	if (NM_FLAGS_HAS (priv->flags, NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS)) {
 		NMSettingsConnection *con;
 		gs_free NMSettingsConnection **list = NULL;
-		guint i;
 
 		g_return_val_if_fail (priv->connection_uuids, NULL);
 		list = nm_settings_get_connections_clone (nm_settings_get (), NULL,
@@ -420,10 +452,51 @@ next_dev:
 }
 
 static void
+device_checkpoint_destroy (gpointer data)
+{
+	DeviceCheckpoint *dev_checkpoint = data;
+
+	nm_clear_g_signal_handler (dev_checkpoint->device, &dev_checkpoint->dev_exported_change_id);
+	g_clear_object (&dev_checkpoint->applied_connection);
+	g_clear_object (&dev_checkpoint->settings_connection);
+	g_clear_object (&dev_checkpoint->device);
+	g_free (dev_checkpoint->original_dev_path);
+	g_free (dev_checkpoint->original_dev_name);
+
+	g_slice_free (DeviceCheckpoint, dev_checkpoint);
+}
+
+static void
+_move_dev_to_removed_devices (NMDevice *device,
+                              NMCheckpoint *checkpoint)
+{
+	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (checkpoint);
+	DeviceCheckpoint *dev_checkpoint;
+
+	g_return_if_fail (device);
+
+	dev_checkpoint = g_hash_table_lookup (priv->devices, device);
+	if (!dev_checkpoint)
+		return;
+
+	g_hash_table_steal (priv->devices, dev_checkpoint->device);
+	nm_clear_g_signal_handler (dev_checkpoint->device,
+	                           &dev_checkpoint->dev_exported_change_id);
+	g_clear_object (&dev_checkpoint->device);
+
+	if (!priv->removed_devices)
+		priv->removed_devices = g_ptr_array_new_with_free_func ((GDestroyNotify) device_checkpoint_destroy);
+	g_ptr_array_add (priv->removed_devices, dev_checkpoint);
+
+	_notify (checkpoint, PROP_DEVICES);
+}
+
+static void
 _dev_exported_changed (NMDBusObject *obj,
                        NMCheckpoint *checkpoint)
 {
-	_notify (checkpoint, PROP_DEVICES);
+
+	_move_dev_to_removed_devices (NM_DEVICE (obj), checkpoint);
 }
 
 static DeviceCheckpoint *
@@ -444,6 +517,7 @@ device_checkpoint_create (NMCheckpoint *checkpoint, NMDevice *device)
 	dev_checkpoint->device = g_object_ref (device);
 	dev_checkpoint->original_dev_path = g_strdup (path);
 	dev_checkpoint->original_dev_name = g_strdup (nm_device_get_iface (device));
+	dev_checkpoint->dev_type = nm_device_get_device_type (device);
 	dev_checkpoint->state = nm_device_get_state (device);
 	dev_checkpoint->is_software = nm_device_is_software (device);
 	dev_checkpoint->realized = nm_device_is_real (device);
@@ -472,21 +546,6 @@ device_checkpoint_create (NMCheckpoint *checkpoint, NMDevice *device)
 	}
 
 	return dev_checkpoint;
-}
-
-static void
-device_checkpoint_destroy (gpointer data)
-{
-	DeviceCheckpoint *dev_checkpoint = data;
-
-	nm_clear_g_signal_handler (dev_checkpoint->device, &dev_checkpoint->dev_exported_change_id);
-	g_clear_object (&dev_checkpoint->applied_connection);
-	g_clear_object (&dev_checkpoint->settings_connection);
-	g_clear_object (&dev_checkpoint->device);
-	g_free (dev_checkpoint->original_dev_path);
-	g_free (dev_checkpoint->original_dev_name);
-
-	g_slice_free (DeviceCheckpoint, dev_checkpoint);
 }
 
 static gboolean
@@ -586,6 +645,12 @@ nm_checkpoint_init (NMCheckpoint *self)
 	                                       NULL, device_checkpoint_destroy);
 }
 
+static void
+_device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
+{
+	_move_dev_to_removed_devices (device, NM_CHECKPOINT (user_data));
+}
+
 NMCheckpoint *
 nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_timeout_s,
                    NMCheckpointCreateFlags flags)
@@ -634,6 +699,10 @@ nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_time
 		                     device_checkpoint_create (self, device));
 	}
 
+	priv->dev_removed_id = g_signal_connect (priv->manager,
+	                                         NM_MANAGER_DEVICE_REMOVED,
+	                                         G_CALLBACK (_device_removed),
+	                                         self);
 	return self;
 }
 
@@ -647,6 +716,9 @@ dispose (GObject *object)
 
 	g_clear_pointer (&priv->devices, g_hash_table_unref);
 	g_clear_pointer (&priv->connection_uuids, g_hash_table_unref);
+	nm_clear_pointer (&priv->removed_devices, g_ptr_array_unref);
+
+	nm_clear_g_signal_handler (priv->manager, &priv->dev_removed_id);
 
 	nm_clear_g_source (&priv->timeout_id);
 
