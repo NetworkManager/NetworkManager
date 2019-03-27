@@ -4465,6 +4465,101 @@ test_write_wired_dhcp (void)
 	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 }
 
+static NMIPRoutingRule *
+_ip_routing_rule_new (int addr_family,
+                      const char *str)
+{
+	NMIPRoutingRuleAsStringFlags flags = NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE;
+	gs_free_error GError *local = NULL;
+	NMIPRoutingRule *rule;
+
+	if (addr_family != AF_UNSPEC) {
+		if (addr_family == AF_INET)
+			flags = NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET;
+		else {
+			g_assert (addr_family == AF_INET6);
+			flags = NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET6;
+		}
+	}
+
+	rule = nm_ip_routing_rule_from_string (str,
+	                                         NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE
+	                                       | flags,
+	                                       NULL,
+	                                       nmtst_get_rand_bool () ? &local : NULL);
+	nmtst_assert_success (rule, local);
+
+	if (addr_family != AF_UNSPEC)
+		g_assert_cmpint (nm_ip_routing_rule_get_addr_family (rule), ==, addr_family);
+	return rule;
+}
+
+static void
+_ip_routing_rule_add_to_setting (NMSettingIPConfig *s_ip,
+                                 const char *str)
+{
+	nm_auto_unref_ip_routing_rule NMIPRoutingRule *rule = NULL;
+
+	rule = _ip_routing_rule_new (nm_setting_ip_config_get_addr_family (s_ip), str);
+	nm_setting_ip_config_add_routing_rule (s_ip, rule);
+}
+
+static void
+test_write_routing_rules (void)
+{
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
+
+	connection = nm_simple_connection_new ();
+
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Routing Rules",
+	              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NULL);
+
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NULL);
+
+	_ip_routing_rule_add_to_setting (s_ip4, "pref 10 from 0.0.0.0/0 table 1");
+	_ip_routing_rule_add_to_setting (s_ip4, "priority 10 to 192.167.8.0/24 table 2");
+	_ip_routing_rule_add_to_setting (s_ip6, "pref 10 from ::/0 table 10");
+	_ip_routing_rule_add_to_setting (s_ip6, "pref 10 from ::/0 to 1:2:3::5/24 table 22");
+	_ip_routing_rule_add_to_setting (s_ip6, "pref 10 from ::/0 to 1:3:3::5/128 table 55");
+
+	nmtst_assert_connection_verifies (connection);
+
+	_writer_new_connec_exp (connection,
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_Write_Routing_Rules.cexpected",
+	                        &testfile);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
+}
+
 static void
 test_write_wired_match (void)
 {
@@ -10200,6 +10295,7 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "wired/write-dhcp-plus-ip", test_write_wired_dhcp_plus_ip);
 	g_test_add_func (TPATH "wired/write/dhcp-8021x-peap-mschapv2", test_write_wired_dhcp_8021x_peap_mschapv2);
 	g_test_add_func (TPATH "wired/write/match", test_write_wired_match);
+	g_test_add_func (TPATH "wired/write/routing-rules", test_write_routing_rules);
 
 #define _add_test_write_wired_8021x_tls(testpath, scheme, flags) \
 	nmtst_add_test_func (testpath, test_write_wired_8021x_tls, GINT_TO_POINTER (scheme), GINT_TO_POINTER (flags))

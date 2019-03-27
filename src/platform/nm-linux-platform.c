@@ -4144,7 +4144,7 @@ _nl_msg_new_routing_rule (int nlmsg_type,
 			.src_len = routing_rule->src_len,
 			.dst_len = routing_rule->dst_len,
 			.tos     = routing_rule->tos,
-			.table   = table,
+			.table   = table < 0x100u ? (guint8) table : (guint8) RT_TABLE_UNSPEC,
 			.action  = routing_rule->action,
 
 			/* we only allow setting the "not" flag. */

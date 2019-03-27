@@ -2505,6 +2505,59 @@ _nm_utils_unescape_plain (char *str, const char *candidates, gboolean do_strip)
 	return str;
 }
 
+char *
+nm_utils_str_simpletokens_extract_next (char **p_line_start)
+{
+	char *s_next;
+	char *s_start;
+	gsize j;
+
+	s_start = *p_line_start;
+	if (!s_start)
+		return NULL;
+
+	s_start = nm_str_skip_leading_spaces (s_start);
+
+	if (s_start[0] == '\0') {
+		*p_line_start = s_start;
+		return NULL;
+	}
+
+	s_next = s_start;
+	j = 0;
+	while (TRUE) {
+		if (s_next[0] == '\0') {
+			s_start[j] = '\0';
+			*p_line_start = s_next;
+			return s_start;
+		}
+		if (s_next[0] == '\\') {
+			s_next++;
+			if (s_next[0] == '\0') {
+				/* trailing backslash at end of word. That's an error,
+				 * but we silently drop the backslash and signal success. */
+				*p_line_start = s_next;
+				if (j == 0)
+					return NULL;
+				s_start[j] = '\0';
+				return s_start;
+			}
+
+			s_start[j++] = (s_next++)[0];
+			continue;
+		}
+		if (!g_ascii_isspace (s_next[0])) {
+			s_start[j++] = (s_next++)[0];
+			continue;
+		}
+
+		nm_assert (j > 0);
+		s_start[j] = '\0';
+		*p_line_start = nm_str_skip_leading_spaces (&s_next[1]);
+		return s_start;
+	}
+}
+
 /*****************************************************************************/
 
 typedef struct {

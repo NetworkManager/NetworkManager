@@ -2083,7 +2083,7 @@ make_ip6_setting (shvarFile *ifcfg,
 		g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, v, NULL);
 
 	g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME,
-		      svGetValueBoolean (ifcfg, "DHCPV6_SEND_HOSTNAME", TRUE), NULL);
+	              svGetValueBoolean (ifcfg, "DHCPV6_SEND_HOSTNAME", TRUE), NULL);
 
 	/* Read static IP addresses.
 	 * Read them even for AUTO and DHCP methods - in this case the addresses are
@@ -4316,6 +4316,84 @@ parse_ethtool_option (const char *value,
 	}
 }
 
+static GPtrArray *
+read_routing_rules_parse (shvarFile *ifcfg,
+                          gboolean routes_read)
+{
+	gs_unref_ptrarray GPtrArray *arr = NULL;
+	gs_free const char **keys = NULL;
+	guint i, len;
+
+	keys = svGetKeysSorted (ifcfg, SV_KEY_TYPE_ROUTING_RULE4 | SV_KEY_TYPE_ROUTING_RULE6, &len);
+	if (len == 0)
+		return NULL;
+
+	if (!routes_read) {
+		PARSE_WARNING ("'rule-' or 'rule6-' files are present; Policy routing rules (ROUTING_RULE*) settings are ignored");
+		return NULL;
+	}
+
+	arr = g_ptr_array_new_full (len, (GDestroyNotify) nm_ip_routing_rule_unref);
+	for (i = 0; i < len; i++) {
+		const char *key = keys[i];
+		nm_auto_unref_ip_routing_rule NMIPRoutingRule *rule = NULL;
+		gs_free_error GError *local = NULL;
+		gs_free char *value_to_free = NULL;
+		const char *value;
+		gboolean key_is_ipv4;
+
+		key_is_ipv4 = (key[NM_STRLEN ("ROUTING_RULE")] == '_');
+		nm_assert ( key_is_ipv4 == NM_STR_HAS_PREFIX (key, "ROUTING_RULE_"));
+		nm_assert (!key_is_ipv4 == NM_STR_HAS_PREFIX (key, "ROUTING_RULE6_"));
+
+		value = svGetValueStr (ifcfg, key, &value_to_free);
+		if (!value)
+			continue;
+
+		rule = nm_ip_routing_rule_from_string (value,
+		                                       NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE
+		                                       | (key_is_ipv4
+		                                          ? NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET
+		                                          : NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET6),
+		                                       NULL,
+		                                       &local);
+		if (!rule) {
+			PARSE_WARNING ("invalid routing rule %s=\"%s\": %s", key, value, local->message);
+			continue;
+		}
+
+		g_ptr_array_add (arr, g_steal_pointer (&rule));
+	}
+
+	if (arr->len == 0)
+		return NULL;
+
+	return g_steal_pointer (&arr);
+}
+
+static void
+read_routing_rules (shvarFile *ifcfg,
+                    gboolean routes_read,
+                    NMSettingIPConfig *s_ip4,
+                    NMSettingIPConfig *s_ip6)
+{
+	gs_unref_ptrarray GPtrArray *routing_rules = NULL;
+	guint i;
+
+	routing_rules = read_routing_rules_parse (ifcfg, routes_read);
+	if (!routing_rules)
+		return;
+
+	for (i = 0; i < routing_rules->len; i++) {
+		NMIPRoutingRule *rule = routing_rules->pdata[i];
+
+		nm_setting_ip_config_add_routing_rule (  (nm_ip_routing_rule_get_addr_family (rule) == AF_INET)
+		                                       ? s_ip4
+		                                       : s_ip6,
+		                                       rule);
+	}
+}
+
 static void
 parse_ethtool_options (shvarFile *ifcfg, NMConnection *connection)
 {
@@ -5817,8 +5895,7 @@ connection_from_file_full (const char *filename,
 	                          error);
 	if (!s_ip6)
 		return NULL;
-	else
-		nm_connection_add_setting (connection, s_ip6);
+	nm_connection_add_setting (connection, s_ip6);
 
 	s_ip4 = make_ip4_setting (main_ifcfg,
 	                          network_ifcfg,
@@ -5827,12 +5904,15 @@ connection_from_file_full (const char *filename,
 	                          error);
 	if (!s_ip4)
 		return NULL;
-	else {
-		read_aliases (NM_SETTING_IP_CONFIG (s_ip4),
-		              !has_ip4_defroute && !nm_setting_ip_config_get_gateway (NM_SETTING_IP_CONFIG (s_ip4)),
-		              filename);
-		nm_connection_add_setting (connection, s_ip4);
-	}
+	read_aliases (NM_SETTING_IP_CONFIG (s_ip4),
+	              !has_ip4_defroute && !nm_setting_ip_config_get_gateway (NM_SETTING_IP_CONFIG (s_ip4)),
+	              filename);
+	nm_connection_add_setting (connection, s_ip4);
+
+	read_routing_rules (main_ifcfg,
+	                    !has_complex_routes_v4 && !has_complex_routes_v6,
+	                    NM_SETTING_IP_CONFIG (s_ip4),
+	                    NM_SETTING_IP_CONFIG (s_ip6));
 
 	s_sriov = make_sriov_setting (main_ifcfg);
 	if (s_sriov)

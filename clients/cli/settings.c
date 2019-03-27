@@ -543,12 +543,17 @@ nmc_setting_set_property (NMClient *client,
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 	g_return_val_if_fail (NM_IN_SET (modifier, '\0', '-', '+'), FALSE);
-	g_return_val_if_fail (value || modifier == '\0', FALSE);
 
 	if (!(property_info = nm_meta_property_info_find_by_setting (setting, prop)))
 		goto out_fail_read_only;
 	if (!property_info->property_type->set_fcn)
 		goto out_fail_read_only;
+
+	if (   NM_IN_SET (modifier, '+', '-')
+	    && !value) {
+		/* nothing to do. */
+		return TRUE;
+	}
 
 	if (   modifier == '-'
 	    && !property_info->property_type->set_supports_remove) {

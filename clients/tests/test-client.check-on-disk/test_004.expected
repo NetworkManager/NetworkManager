@@ -58,12 +58,12 @@ location: clients/tests/test-client.py:1001:test_004()/7
 cmd: $NMCLI connection mod con-xx1 ipv4.addresses 192.168.77.5/24 ipv4.routes '2.3.4.5/32 192.168.77.1' ipv6.addresses 1:2:3:4::6/64 ipv6.routes 1:2:3:4:5:6::5/128
 lang: C
 returncode: 0
-size: 4048
+size: 4134
 location: clients/tests/test-client.py:1003:test_004()/8
 cmd: $NMCLI con s con-xx1
 lang: C
 returncode: 0
-stdout: 3915 bytes
+stdout: 4001 bytes
 >>>
 connection.id:                          con-xx1
 connection.uuid:                        UUID-con-xx1-REPLACED-REPLACED-REPLA
@@ -115,6 +115,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            { ip = 2.3.4.5/32, nh = 192.168.77.1 }
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -135,6 +136,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            { ip = 1:2:3:4:5:6:0:5/128 }
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -151,12 +153,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4076
+size: 4162
 location: clients/tests/test-client.py:1003:test_004()/9
 cmd: $NMCLI con s con-xx1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3933 bytes
+stdout: 4019 bytes
 >>>
 connection.id:                          con-xx1
 connection.uuid:                        UUID-con-xx1-REPLACED-REPLACED-REPLA
@@ -208,6 +210,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            { ip = 2.3.4.5/32, nh = 192.168.77.1 }
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -228,6 +231,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            { ip = 1:2:3:4:5:6:0:5/128 }
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -280,12 +284,12 @@ con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  vpn       --
 con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      --     
 
 <<<
-size: 3515
+size: 3601
 location: clients/tests/test-client.py:1015:test_004()/13
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3379 bytes
+stdout: 3465 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -320,6 +324,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -340,6 +345,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -362,12 +368,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 3535
+size: 3621
 location: clients/tests/test-client.py:1015:test_004()/14
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3389 bytes
+stdout: 3475 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -402,6 +408,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -422,6 +429,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -516,12 +524,12 @@ con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      wlan0
 con-1      5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  --     
 
 <<<
-size: 4597
+size: 4683
 location: clients/tests/test-client.py:1025:test_004()/21
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4461 bytes
+stdout: 4547 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -556,6 +564,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -576,6 +585,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -618,12 +628,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4623
+size: 4709
 location: clients/tests/test-client.py:1025:test_004()/22
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4477 bytes
+stdout: 4563 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -658,6 +668,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -678,6 +689,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -720,12 +732,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4603
+size: 4689
 location: clients/tests/test-client.py:1036:test_004()/23
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4467 bytes
+stdout: 4553 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -760,6 +772,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -780,6 +793,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -822,12 +836,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4633
+size: 4719
 location: clients/tests/test-client.py:1036:test_004()/24
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4487 bytes
+stdout: 4573 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -862,6 +876,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -882,6 +897,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -924,12 +940,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4603
+size: 4689
 location: clients/tests/test-client.py:1038:test_004()/25
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4467 bytes
+stdout: 4553 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -964,6 +980,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -984,6 +1001,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -1026,12 +1044,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4633
+size: 4719
 location: clients/tests/test-client.py:1038:test_004()/26
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4487 bytes
+stdout: 4573 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1066,6 +1084,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -1086,6 +1105,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -1128,12 +1148,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 3522
+size: 3608
 location: clients/tests/test-client.py:1041:test_004()/27
 cmd: $NMCLI -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3379 bytes
+stdout: 3465 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1168,6 +1188,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -1188,6 +1209,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -1210,12 +1232,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 3542
+size: 3628
 location: clients/tests/test-client.py:1041:test_004()/28
 cmd: $NMCLI -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3389 bytes
+stdout: 3475 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1250,6 +1272,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -1270,6 +1293,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -3682,12 +3706,12 @@ NEIGHBOR[2].SYSTEM-DESCRIPTION:         Test system #3
 NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 
 <<<
-size: 4615
+size: 4701
 location: clients/tests/test-client.py:1036:test_004()/71
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4467 bytes
+stdout: 4553 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -3722,6 +3746,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -3742,6 +3767,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -3784,12 +3810,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4645
+size: 4731
 location: clients/tests/test-client.py:1036:test_004()/72
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4487 bytes
+stdout: 4573 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -3824,6 +3850,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -3844,6 +3871,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -3886,12 +3914,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4615
+size: 4701
 location: clients/tests/test-client.py:1038:test_004()/73
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4467 bytes
+stdout: 4553 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -3926,6 +3954,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -3946,6 +3975,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -3988,12 +4018,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4645
+size: 4731
 location: clients/tests/test-client.py:1038:test_004()/74
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4487 bytes
+stdout: 4573 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4028,6 +4058,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -4048,6 +4079,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -4090,12 +4122,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 3534
+size: 3620
 location: clients/tests/test-client.py:1041:test_004()/75
 cmd: $NMCLI --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3379 bytes
+stdout: 3465 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4130,6 +4162,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -4150,6 +4183,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -4172,12 +4206,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 3554
+size: 3640
 location: clients/tests/test-client.py:1041:test_004()/76
 cmd: $NMCLI --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3389 bytes
+stdout: 3475 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4212,6 +4246,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -4232,6 +4267,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -6644,12 +6680,12 @@ NEIGHBOR[2].SYSTEM-DESCRIPTION:         Test system #3
 NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 
 <<<
-size: 5625
+size: 5711
 location: clients/tests/test-client.py:1036:test_004()/119
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5479 bytes
+stdout: 5565 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -6688,6 +6724,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -6709,6 +6746,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -6759,12 +6797,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5667
+size: 5753
 location: clients/tests/test-client.py:1036:test_004()/120
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5511 bytes
+stdout: 5597 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -6803,6 +6841,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -6824,6 +6863,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -6874,12 +6914,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5625
+size: 5711
 location: clients/tests/test-client.py:1038:test_004()/121
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5479 bytes
+stdout: 5565 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -6918,6 +6958,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -6939,6 +6980,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -6989,12 +7031,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5667
+size: 5753
 location: clients/tests/test-client.py:1038:test_004()/122
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5511 bytes
+stdout: 5597 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -7033,6 +7075,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -7054,6 +7097,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -7104,12 +7148,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 4151
+size: 4237
 location: clients/tests/test-client.py:1041:test_004()/123
 cmd: $NMCLI --pretty -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3998 bytes
+stdout: 4084 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -7148,6 +7192,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -7169,6 +7214,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -7194,12 +7240,12 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4176
+size: 4262
 location: clients/tests/test-client.py:1041:test_004()/124
 cmd: $NMCLI --pretty -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4013 bytes
+stdout: 4099 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -7238,6 +7284,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -7259,6 +7306,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -10220,12 +10268,12 @@ NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 -------------------------------------------------------------------------------
 
 <<<
-size: 5637
+size: 5723
 location: clients/tests/test-client.py:1036:test_004()/167
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5479 bytes
+stdout: 5565 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -10264,6 +10312,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -10285,6 +10334,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -10335,12 +10385,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5679
+size: 5765
 location: clients/tests/test-client.py:1036:test_004()/168
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5511 bytes
+stdout: 5597 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -10379,6 +10429,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -10400,6 +10451,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -10450,12 +10502,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5637
+size: 5723
 location: clients/tests/test-client.py:1038:test_004()/169
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5479 bytes
+stdout: 5565 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -10494,6 +10546,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -10515,6 +10568,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -10565,12 +10619,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5679
+size: 5765
 location: clients/tests/test-client.py:1038:test_004()/170
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5511 bytes
+stdout: 5597 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -10609,6 +10663,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -10630,6 +10685,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -10680,12 +10736,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 4163
+size: 4249
 location: clients/tests/test-client.py:1041:test_004()/171
 cmd: $NMCLI --pretty --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3998 bytes
+stdout: 4084 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -10724,6 +10780,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -10745,6 +10802,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -10770,12 +10828,12 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4188
+size: 4274
 location: clients/tests/test-client.py:1041:test_004()/172
 cmd: $NMCLI --pretty --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4013 bytes
+stdout: 4099 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -10814,6 +10872,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -10835,6 +10894,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -13796,12 +13856,12 @@ NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 -------------------------------------------------------------------------------
 
 <<<
-size: 2323
+size: 2363
 location: clients/tests/test-client.py:1036:test_004()/215
 cmd: $NMCLI --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2178 bytes
+stdout: 2218 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -13836,6 +13896,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -13856,6 +13917,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -13898,12 +13960,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2333
+size: 2373
 location: clients/tests/test-client.py:1036:test_004()/216
 cmd: $NMCLI --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2178 bytes
+stdout: 2218 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -13938,6 +14000,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -13958,6 +14021,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -14000,12 +14064,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2323
+size: 2363
 location: clients/tests/test-client.py:1038:test_004()/217
 cmd: $NMCLI --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2178 bytes
+stdout: 2218 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -14040,6 +14104,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -14060,6 +14125,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -14102,12 +14168,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2333
+size: 2373
 location: clients/tests/test-client.py:1038:test_004()/218
 cmd: $NMCLI --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2178 bytes
+stdout: 2218 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -14142,6 +14208,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -14162,6 +14229,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -14204,12 +14272,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 1771
+size: 1811
 location: clients/tests/test-client.py:1041:test_004()/219
 cmd: $NMCLI --terse -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1619 bytes
+stdout: 1659 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -14244,6 +14312,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -14264,6 +14333,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -14286,12 +14356,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 1781
+size: 1821
 location: clients/tests/test-client.py:1041:test_004()/220
 cmd: $NMCLI --terse -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1619 bytes
+stdout: 1659 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -14326,6 +14396,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -14346,6 +14417,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -16728,12 +16800,12 @@ NEIGHBOR[2].SYSTEM-DESCRIPTION:Test system #3
 NEIGHBOR[2].SYSTEM-CAPABILITIES:40 (wlan-access-point,telephone)
 
 <<<
-size: 2335
+size: 2375
 location: clients/tests/test-client.py:1036:test_004()/263
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2178 bytes
+stdout: 2218 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -16768,6 +16840,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -16788,6 +16861,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -16830,12 +16904,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2345
+size: 2385
 location: clients/tests/test-client.py:1036:test_004()/264
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2178 bytes
+stdout: 2218 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -16870,6 +16944,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -16890,6 +16965,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -16932,12 +17008,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2335
+size: 2375
 location: clients/tests/test-client.py:1038:test_004()/265
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2178 bytes
+stdout: 2218 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -16972,6 +17048,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -16992,6 +17069,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -17034,12 +17112,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2345
+size: 2385
 location: clients/tests/test-client.py:1038:test_004()/266
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2178 bytes
+stdout: 2218 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -17074,6 +17152,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -17094,6 +17173,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -17136,12 +17216,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 1783
+size: 1823
 location: clients/tests/test-client.py:1041:test_004()/267
 cmd: $NMCLI --terse --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1619 bytes
+stdout: 1659 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -17176,6 +17256,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -17196,6 +17277,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -17218,12 +17300,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 1793
+size: 1833
 location: clients/tests/test-client.py:1041:test_004()/268
 cmd: $NMCLI --terse --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1619 bytes
+stdout: 1659 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -17258,6 +17340,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -17278,6 +17361,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -19660,21 +19744,21 @@ NEIGHBOR[2].SYSTEM-DESCRIPTION:Test system #3
 NEIGHBOR[2].SYSTEM-CAPABILITIES:40 (wlan-access-point,telephone)
 
 <<<
-size: 2978
+size: 3038
 location: clients/tests/test-client.py:1036:test_004()/311
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2826 bytes
+stdout: 2886 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -19689,21 +19773,21 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3001
+size: 3061
 location: clients/tests/test-client.py:1036:test_004()/312
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2839 bytes
+stdout: 2899 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -19718,21 +19802,21 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 2978
+size: 3038
 location: clients/tests/test-client.py:1038:test_004()/313
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2826 bytes
+stdout: 2886 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -19747,21 +19831,21 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3001
+size: 3061
 location: clients/tests/test-client.py:1038:test_004()/314
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2839 bytes
+stdout: 2899 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -19776,21 +19860,21 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 2246
+size: 2306
 location: clients/tests/test-client.py:1041:test_004()/315
 cmd: $NMCLI --mode tabular -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2087 bytes
+stdout: 2147 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -19800,21 +19884,21 @@ proxy  none    no            --       --
 
 
 <<<
-size: 2258
+size: 2318
 location: clients/tests/test-client.py:1041:test_004()/316
 cmd: $NMCLI --mode tabular -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2089 bytes
+stdout: 2149 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -21174,21 +21258,21 @@ eth0    chassis1           44:44:44:44:44:44  GigabitEthernet #2  test2.example.
 eth0    00:11:22:33:44:22  port1              GigabitEthernet #3  test3.example.com  Test system #3      40 (wlan-access-point,telephone)                                                                                                            
 
 <<<
-size: 2990
+size: 3050
 location: clients/tests/test-client.py:1036:test_004()/359
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2826 bytes
+stdout: 2886 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -21203,21 +21287,21 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3013
+size: 3073
 location: clients/tests/test-client.py:1036:test_004()/360
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2839 bytes
+stdout: 2899 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -21232,21 +21316,21 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 2990
+size: 3050
 location: clients/tests/test-client.py:1038:test_004()/361
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2826 bytes
+stdout: 2886 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -21261,21 +21345,21 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3013
+size: 3073
 location: clients/tests/test-client.py:1038:test_004()/362
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2839 bytes
+stdout: 2899 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -21290,21 +21374,21 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 2258
+size: 2318
 location: clients/tests/test-client.py:1041:test_004()/363
 cmd: $NMCLI --mode tabular --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2087 bytes
+stdout: 2147 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -21314,21 +21398,21 @@ proxy  none    no            --       --
 
 
 <<<
-size: 2270
+size: 2330
 location: clients/tests/test-client.py:1041:test_004()/364
 cmd: $NMCLI --mode tabular --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2089 bytes
+stdout: 2149 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -22688,12 +22772,12 @@ eth0    chassis1           44:44:44:44:44:44  GigabitEthernet #2  test2.example.
 eth0    00:11:22:33:44:22  port1              GigabitEthernet #3  test3.example.com  Test system #3      40 (wlan-access-point,telephone)                                                                                                            
 
 <<<
-size: 4742
+size: 4832
 location: clients/tests/test-client.py:1036:test_004()/407
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4581 bytes
+stdout: 4671 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -22702,13 +22786,13 @@ name        id         uuid                                  stable-id  type  in
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -22730,12 +22814,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4798
+size: 4888
 location: clients/tests/test-client.py:1036:test_004()/408
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4627 bytes
+stdout: 4717 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -22744,13 +22828,13 @@ name        id         uuid                                  stable-id  type  in
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -22772,12 +22856,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4742
+size: 4832
 location: clients/tests/test-client.py:1038:test_004()/409
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4581 bytes
+stdout: 4671 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -22786,13 +22870,13 @@ name        id         uuid                                  stable-id  type  in
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -22814,12 +22898,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4798
+size: 4888
 location: clients/tests/test-client.py:1038:test_004()/410
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4627 bytes
+stdout: 4717 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -22828,13 +22912,13 @@ name        id         uuid                                  stable-id  type  in
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -22856,12 +22940,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3428
+size: 3518
 location: clients/tests/test-client.py:1041:test_004()/411
 cmd: $NMCLI --mode tabular --pretty -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3260 bytes
+stdout: 3350 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -22870,13 +22954,13 @@ name        id         uuid                                  stable-id  type  in
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -22888,12 +22972,12 @@ proxy  none    no            --       --
 
 
 <<<
-size: 3451
+size: 3541
 location: clients/tests/test-client.py:1041:test_004()/412
 cmd: $NMCLI --mode tabular --pretty -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3273 bytes
+stdout: 3363 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -22902,13 +22986,13 @@ name        id         uuid                                  stable-id  type  in
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -24798,12 +24882,12 @@ eth0    chassis1           44:44:44:44:44:44  GigabitEthernet #2  test2.example.
 eth0    00:11:22:33:44:22  port1              GigabitEthernet #3  test3.example.com  Test system #3      40 (wlan-access-point,telephone)                                                                                                            
 
 <<<
-size: 4754
+size: 4844
 location: clients/tests/test-client.py:1036:test_004()/455
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4581 bytes
+stdout: 4671 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -24812,13 +24896,13 @@ name        id         uuid                                  stable-id  type  in
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -24840,12 +24924,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4810
+size: 4900
 location: clients/tests/test-client.py:1036:test_004()/456
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4627 bytes
+stdout: 4717 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -24854,13 +24938,13 @@ name        id         uuid                                  stable-id  type  in
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -24882,12 +24966,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4754
+size: 4844
 location: clients/tests/test-client.py:1038:test_004()/457
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4581 bytes
+stdout: 4671 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -24896,13 +24980,13 @@ name        id         uuid                                  stable-id  type  in
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -24924,12 +25008,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4810
+size: 4900
 location: clients/tests/test-client.py:1038:test_004()/458
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4627 bytes
+stdout: 4717 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -24938,13 +25022,13 @@ name        id         uuid                                  stable-id  type  in
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -24966,12 +25050,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3440
+size: 3530
 location: clients/tests/test-client.py:1041:test_004()/459
 cmd: $NMCLI --mode tabular --pretty --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3260 bytes
+stdout: 3350 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -24980,13 +25064,13 @@ name        id         uuid                                  stable-id  type  in
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -24998,12 +25082,12 @@ proxy  none    no            --       --
 
 
 <<<
-size: 3463
+size: 3553
 location: clients/tests/test-client.py:1041:test_004()/460
 cmd: $NMCLI --mode tabular --pretty --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3273 bytes
+stdout: 3363 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -25012,13 +25096,13 @@ name        id         uuid                                  stable-id  type  in
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -26908,94 +26992,94 @@ eth0    chassis1           44:44:44:44:44:44  GigabitEthernet #2  test2.example.
 eth0    00:11:22:33:44:22  port1              GigabitEthernet #3  test3.example.com  Test system #3      40 (wlan-access-point,telephone)                                                                                                            
 
 <<<
-size: 791
+size: 793
 location: clients/tests/test-client.py:1036:test_004()/503
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 632 bytes
+stdout: 634 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 801
+size: 803
 location: clients/tests/test-client.py:1036:test_004()/504
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 632 bytes
+stdout: 634 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 791
+size: 793
 location: clients/tests/test-client.py:1038:test_004()/505
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 632 bytes
+stdout: 634 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 801
+size: 803
 location: clients/tests/test-client.py:1038:test_004()/506
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 632 bytes
+stdout: 634 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 504
+size: 506
 location: clients/tests/test-client.py:1041:test_004()/507
 cmd: $NMCLI --mode tabular --terse -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 338 bytes
+stdout: 340 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
 <<<
-size: 514
+size: 516
 location: clients/tests/test-client.py:1041:test_004()/508
 cmd: $NMCLI --mode tabular --terse -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 338 bytes
+stdout: 340 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
@@ -27784,94 +27868,94 @@ eth0:chassis1:44\:44\:44\:44\:44\:44:GigabitEthernet #2:test2.example.com:Test s
 eth0:00\:11\:22\:33\:44\:22:port1:GigabitEthernet #3:test3.example.com:Test system #3:40 (wlan-access-point,telephone)
 
 <<<
-size: 803
+size: 805
 location: clients/tests/test-client.py:1036:test_004()/551
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 632 bytes
+stdout: 634 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 813
+size: 815
 location: clients/tests/test-client.py:1036:test_004()/552
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 632 bytes
+stdout: 634 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 803
+size: 805
 location: clients/tests/test-client.py:1038:test_004()/553
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 632 bytes
+stdout: 634 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 813
+size: 815
 location: clients/tests/test-client.py:1038:test_004()/554
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 632 bytes
+stdout: 634 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 516
+size: 518
 location: clients/tests/test-client.py:1041:test_004()/555
 cmd: $NMCLI --mode tabular --terse --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 338 bytes
+stdout: 340 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
 <<<
-size: 526
+size: 528
 location: clients/tests/test-client.py:1041:test_004()/556
 cmd: $NMCLI --mode tabular --terse --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 338 bytes
+stdout: 340 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
@@ -28660,12 +28744,12 @@ eth0:chassis1:44\:44\:44\:44\:44\:44:GigabitEthernet #2:test2.example.com:Test s
 eth0:00\:11\:22\:33\:44\:22:port1:GigabitEthernet #3:test3.example.com:Test system #3:40 (wlan-access-point,telephone)
 
 <<<
-size: 4621
+size: 4707
 location: clients/tests/test-client.py:1036:test_004()/599
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4467 bytes
+stdout: 4553 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -28700,6 +28784,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -28720,6 +28805,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -28762,12 +28848,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4651
+size: 4737
 location: clients/tests/test-client.py:1036:test_004()/600
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4487 bytes
+stdout: 4573 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -28802,6 +28888,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -28822,6 +28909,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -28864,12 +28952,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4621
+size: 4707
 location: clients/tests/test-client.py:1038:test_004()/601
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4467 bytes
+stdout: 4553 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -28904,6 +28992,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -28924,6 +29013,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -28966,12 +29056,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4651
+size: 4737
 location: clients/tests/test-client.py:1038:test_004()/602
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4487 bytes
+stdout: 4573 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -29006,6 +29096,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -29026,6 +29117,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -29068,12 +29160,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 3540
+size: 3626
 location: clients/tests/test-client.py:1041:test_004()/603
 cmd: $NMCLI --mode multiline -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3379 bytes
+stdout: 3465 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -29108,6 +29200,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -29128,6 +29221,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -29150,12 +29244,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 3560
+size: 3646
 location: clients/tests/test-client.py:1041:test_004()/604
 cmd: $NMCLI --mode multiline -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3389 bytes
+stdout: 3475 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -29190,6 +29284,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -29210,6 +29305,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -32112,12 +32208,12 @@ NEIGHBOR[2].SYSTEM-DESCRIPTION:         Test system #3
 NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 
 <<<
-size: 4633
+size: 4719
 location: clients/tests/test-client.py:1036:test_004()/647
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4467 bytes
+stdout: 4553 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32152,6 +32248,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -32172,6 +32269,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -32214,12 +32312,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4663
+size: 4749
 location: clients/tests/test-client.py:1036:test_004()/648
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4487 bytes
+stdout: 4573 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32254,6 +32352,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -32274,6 +32373,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -32316,12 +32416,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4633
+size: 4719
 location: clients/tests/test-client.py:1038:test_004()/649
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4467 bytes
+stdout: 4553 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32356,6 +32456,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -32376,6 +32477,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -32418,12 +32520,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4663
+size: 4749
 location: clients/tests/test-client.py:1038:test_004()/650
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4487 bytes
+stdout: 4573 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32458,6 +32560,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -32478,6 +32581,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -32520,12 +32624,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 3552
+size: 3638
 location: clients/tests/test-client.py:1041:test_004()/651
 cmd: $NMCLI --mode multiline --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3379 bytes
+stdout: 3465 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32560,6 +32664,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -32580,6 +32685,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -32602,12 +32708,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 3572
+size: 3658
 location: clients/tests/test-client.py:1041:test_004()/652
 cmd: $NMCLI --mode multiline --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3389 bytes
+stdout: 3475 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32642,6 +32748,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -32662,6 +32769,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -35564,12 +35672,12 @@ NEIGHBOR[2].SYSTEM-DESCRIPTION:         Test system #3
 NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 
 <<<
-size: 5642
+size: 5728
 location: clients/tests/test-client.py:1036:test_004()/695
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5479 bytes
+stdout: 5565 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -35608,6 +35716,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -35629,6 +35738,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -35679,12 +35789,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5684
+size: 5770
 location: clients/tests/test-client.py:1036:test_004()/696
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5511 bytes
+stdout: 5597 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -35723,6 +35833,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -35744,6 +35855,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -35794,12 +35906,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5642
+size: 5728
 location: clients/tests/test-client.py:1038:test_004()/697
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5479 bytes
+stdout: 5565 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -35838,6 +35950,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -35859,6 +35972,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -35909,12 +36023,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5684
+size: 5770
 location: clients/tests/test-client.py:1038:test_004()/698
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5511 bytes
+stdout: 5597 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -35953,6 +36067,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -35974,6 +36089,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -36024,12 +36140,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 4168
+size: 4254
 location: clients/tests/test-client.py:1041:test_004()/699
 cmd: $NMCLI --mode multiline --pretty -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3998 bytes
+stdout: 4084 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -36068,6 +36184,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -36089,6 +36206,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -36114,12 +36232,12 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4193
+size: 4279
 location: clients/tests/test-client.py:1041:test_004()/700
 cmd: $NMCLI --mode multiline --pretty -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4013 bytes
+stdout: 4099 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -36158,6 +36276,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -36179,6 +36298,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -39660,12 +39780,12 @@ NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 -------------------------------------------------------------------------------
 
 <<<
-size: 5654
+size: 5740
 location: clients/tests/test-client.py:1036:test_004()/743
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5479 bytes
+stdout: 5565 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -39704,6 +39824,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -39725,6 +39846,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -39775,12 +39897,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5696
+size: 5782
 location: clients/tests/test-client.py:1036:test_004()/744
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5511 bytes
+stdout: 5597 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -39819,6 +39941,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -39840,6 +39963,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -39890,12 +40014,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5654
+size: 5740
 location: clients/tests/test-client.py:1038:test_004()/745
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5479 bytes
+stdout: 5565 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -39934,6 +40058,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -39955,6 +40080,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -40005,12 +40131,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5696
+size: 5782
 location: clients/tests/test-client.py:1038:test_004()/746
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5511 bytes
+stdout: 5597 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -40049,6 +40175,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -40070,6 +40197,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -40120,12 +40248,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 4180
+size: 4266
 location: clients/tests/test-client.py:1041:test_004()/747
 cmd: $NMCLI --mode multiline --pretty --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3998 bytes
+stdout: 4084 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -40164,6 +40292,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -40185,6 +40314,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -40210,12 +40340,12 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4205
+size: 4291
 location: clients/tests/test-client.py:1041:test_004()/748
 cmd: $NMCLI --mode multiline --pretty --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4013 bytes
+stdout: 4099 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -40254,6 +40384,7 @@ ipv4.gateway:                           --
 ipv4.routes:                            --
 ipv4.route-metric:                      -1
 ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
 ipv4.ignore-auto-routes:                nie
 ipv4.ignore-auto-dns:                   nie
 ipv4.dhcp-client-id:                    --
@@ -40275,6 +40406,7 @@ ipv6.gateway:                           --
 ipv6.routes:                            --
 ipv6.route-metric:                      -1
 ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
 ipv6.ignore-auto-routes:                nie
 ipv6.ignore-auto-dns:                   nie
 ipv6.never-default:                     nie
@@ -43756,12 +43888,12 @@ NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 -------------------------------------------------------------------------------
 
 <<<
-size: 2340
+size: 2380
 location: clients/tests/test-client.py:1036:test_004()/791
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2178 bytes
+stdout: 2218 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -43796,6 +43928,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -43816,6 +43949,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -43858,12 +43992,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2350
+size: 2390
 location: clients/tests/test-client.py:1036:test_004()/792
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2178 bytes
+stdout: 2218 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -43898,6 +44032,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -43918,6 +44053,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -43960,12 +44096,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2340
+size: 2380
 location: clients/tests/test-client.py:1038:test_004()/793
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2178 bytes
+stdout: 2218 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -44000,6 +44136,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -44020,6 +44157,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -44062,12 +44200,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2350
+size: 2390
 location: clients/tests/test-client.py:1038:test_004()/794
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2178 bytes
+stdout: 2218 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -44102,6 +44240,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -44122,6 +44261,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -44164,12 +44304,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 1788
+size: 1828
 location: clients/tests/test-client.py:1041:test_004()/795
 cmd: $NMCLI --mode multiline --terse -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1619 bytes
+stdout: 1659 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -44204,6 +44344,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -44224,6 +44365,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -44246,12 +44388,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 1798
+size: 1838
 location: clients/tests/test-client.py:1041:test_004()/796
 cmd: $NMCLI --mode multiline --terse -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1619 bytes
+stdout: 1659 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -44286,6 +44428,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -44306,6 +44449,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -47208,12 +47352,12 @@ NEIGHBOR[2].SYSTEM-DESCRIPTION:Test system #3
 NEIGHBOR[2].SYSTEM-CAPABILITIES:40 (wlan-access-point,telephone)
 
 <<<
-size: 2352
+size: 2392
 location: clients/tests/test-client.py:1036:test_004()/839
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2178 bytes
+stdout: 2218 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -47248,6 +47392,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -47268,6 +47413,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -47310,12 +47456,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2362
+size: 2402
 location: clients/tests/test-client.py:1036:test_004()/840
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2178 bytes
+stdout: 2218 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -47350,6 +47496,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -47370,6 +47517,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -47412,12 +47560,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2352
+size: 2392
 location: clients/tests/test-client.py:1038:test_004()/841
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2178 bytes
+stdout: 2218 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -47452,6 +47600,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -47472,6 +47621,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -47514,12 +47664,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2362
+size: 2402
 location: clients/tests/test-client.py:1038:test_004()/842
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2178 bytes
+stdout: 2218 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -47554,6 +47704,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -47574,6 +47725,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -47616,12 +47768,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 1800
+size: 1840
 location: clients/tests/test-client.py:1041:test_004()/843
 cmd: $NMCLI --mode multiline --terse --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1619 bytes
+stdout: 1659 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -47656,6 +47808,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -47676,6 +47829,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no
@@ -47698,12 +47852,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 1810
+size: 1850
 location: clients/tests/test-client.py:1041:test_004()/844
 cmd: $NMCLI --mode multiline --terse --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1619 bytes
+stdout: 1659 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -47738,6 +47892,7 @@ ipv4.gateway:
 ipv4.routes:
 ipv4.route-metric:-1
 ipv4.route-table:0
+ipv4.routing-rules:
 ipv4.ignore-auto-routes:no
 ipv4.ignore-auto-dns:no
 ipv4.dhcp-client-id:
@@ -47758,6 +47913,7 @@ ipv6.gateway:
 ipv6.routes:
 ipv6.route-metric:-1
 ipv6.route-table:0
+ipv6.routing-rules:
 ipv6.ignore-auto-routes:no
 ipv6.ignore-auto-dns:no
 ipv6.never-default:no

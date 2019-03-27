@@ -250,6 +250,8 @@ guint nm_setting_ethtool_init_features (NMSettingEthtool *setting,
 guint8 *_nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize buffer_length, gsize *out_length);
 const char *nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_case, char *buf, gsize buf_len);
 
+gboolean nm_utils_is_valid_iface_name_utf8safe (const char *utf8safe_name);
+
 GSList *    _nm_utils_hash_values_to_slist (GHashTable *hash);
 
 GHashTable *_nm_utils_copy_strdict (GHashTable *strdict);
@@ -608,6 +610,47 @@ void _nm_wireguard_peer_set_endpoint (NMWireGuardPeer *self,
 
 void _nm_wireguard_peer_set_public_key_bin (NMWireGuardPeer *self,
                                             const guint8 public_key[static NM_WIREGUARD_PUBLIC_KEY_LEN]);
+
+/*****************************************************************************/
+
+const NMIPAddr *nm_ip_routing_rule_get_from_bin (const NMIPRoutingRule *self);
+void nm_ip_routing_rule_set_from_bin (NMIPRoutingRule *self,
+                                      gconstpointer from,
+                                      guint8 len);
+
+const NMIPAddr *nm_ip_routing_rule_get_to_bin (const NMIPRoutingRule *self);
+void nm_ip_routing_rule_set_to_bin (NMIPRoutingRule *self,
+                                    gconstpointer to,
+                                    guint8 len);
+
+gboolean nm_ip_routing_rule_get_xifname_bin (const NMIPRoutingRule *self,
+                                             gboolean iif /* or else oif */,
+                                             char out_xifname[static 16]);
+
+#define NM_IP_ROUTING_RULE_ATTR_ACTION      "action"
+#define NM_IP_ROUTING_RULE_ATTR_DPORT_END   "dport-end"
+#define NM_IP_ROUTING_RULE_ATTR_DPORT_START "dport-start"
+#define NM_IP_ROUTING_RULE_ATTR_FAMILY      "family"
+#define NM_IP_ROUTING_RULE_ATTR_FROM        "from"
+#define NM_IP_ROUTING_RULE_ATTR_FROM_LEN    "from-len"
+#define NM_IP_ROUTING_RULE_ATTR_FWMARK      "fwmark"
+#define NM_IP_ROUTING_RULE_ATTR_FWMASK      "fwmask"
+#define NM_IP_ROUTING_RULE_ATTR_IIFNAME     "iifname"
+#define NM_IP_ROUTING_RULE_ATTR_INVERT      "invert"
+#define NM_IP_ROUTING_RULE_ATTR_IPPROTO     "ipproto"
+#define NM_IP_ROUTING_RULE_ATTR_OIFNAME     "oifname"
+#define NM_IP_ROUTING_RULE_ATTR_PRIORITY    "priority"
+#define NM_IP_ROUTING_RULE_ATTR_SPORT_END   "sport-end"
+#define NM_IP_ROUTING_RULE_ATTR_SPORT_START "sport-start"
+#define NM_IP_ROUTING_RULE_ATTR_TABLE       "table"
+#define NM_IP_ROUTING_RULE_ATTR_TO          "to"
+#define NM_IP_ROUTING_RULE_ATTR_TOS         "tos"
+#define NM_IP_ROUTING_RULE_ATTR_TO_LEN      "to-len"
+
+NMIPRoutingRule *nm_ip_routing_rule_from_dbus (GVariant *variant,
+                                               gboolean strict,
+                                               GError **error);
+GVariant *nm_ip_routing_rule_to_dbus (const NMIPRoutingRule *self);
 
 /*****************************************************************************/
 

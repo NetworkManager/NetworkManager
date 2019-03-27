@@ -170,6 +170,7 @@ _value_str_as_index_list (const char *value, gsize *out_len)
 typedef enum {
 	VALUE_STRSPLIT_MODE_STRIPPED,
 	VALUE_STRSPLIT_MODE_OBJLIST,
+	VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE,
 	VALUE_STRSPLIT_MODE_MULTILIST,
 	VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE,
 } ValueStrsplitMode;
@@ -201,6 +202,9 @@ _value_strsplit (const char *value,
 	case VALUE_STRSPLIT_MODE_OBJLIST:
 		strv = nm_utils_strsplit_set (value, ",", FALSE);
 		break;
+	case VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE:
+		strv = nm_utils_strsplit_set (value, ",", TRUE);
+		break;
 	case VALUE_STRSPLIT_MODE_MULTILIST:
 		strv = nm_utils_strsplit_set (value, " \t,", FALSE);
 		break;
@@ -227,6 +231,8 @@ _value_strsplit (const char *value,
 
 		if (split_mode == VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE)
 			_nm_utils_unescape_plain ((char *) s, MULTILIST_WITH_ESCAPE_CHARS, TRUE);
+		else if (split_mode == VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE)
+			_nm_utils_unescape_plain ((char *) s, ",", TRUE);
 		else
 			g_strchomp ((char *) s);
 
@@ -1876,7 +1882,7 @@ _set_fcn_multilist (ARGS_SET_FCN)
 	}
 
 	strv = _value_strsplit (value,
-	                          property_info->property_typ_data->subtype.multilist.with_escaped_spaces
+	                          property_info->property_typ_data->subtype.multilist.strsplit_with_escape
 	                        ? VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE
 	                        : VALUE_STRSPLIT_MODE_MULTILIST,
 	                        &nstrv);
@@ -3049,6 +3055,10 @@ _get_fcn_objlist (ARGS_GET_FCN)
 	num = property_info->property_typ_data->subtype.objlist.get_num_fcn (setting);
 
 	for (idx = 0; idx < num; idx++) {
+#if NM_MORE_ASSERTS
+		gsize start_offset;
+#endif
+
 		if (!str)
 			str = g_string_new (NULL);
 		else if (str->len > 0) {
@@ -3059,10 +3069,32 @@ _get_fcn_objlist (ARGS_GET_FCN)
 				g_string_append (str, ", ");
 		}
 
+#if NM_MORE_ASSERTS
+		start_offset = str->len;
+#endif
+
 		property_info->property_typ_data->subtype.objlist.obj_to_str_fcn (get_type,
 		                                                                  setting,
 		                                                                  idx,
 		                                                                  str);
+
+#if NM_MORE_ASSERTS
+		nm_assert (start_offset < str->len);
+		if (   property_info->property_typ_data->subtype.objlist.strsplit_with_escape
+		    && get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY) {
+			/* if the strsplit is done with VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE, then the appended
+			 * value must have no unescaped ','. */
+			for (; start_offset < str->len; ) {
+				if (str->str[start_offset] == '\\') {
+					start_offset++;
+					nm_assert (start_offset < str->len);
+					nm_assert (!NM_IN_SET (str->str[start_offset], '\0'));
+				} else
+					nm_assert (!NM_IN_SET (str->str[start_offset], '\0', ','));
+				start_offset++;
+			}
+		}
+#endif
 	}
 
 	NM_SET_OUT (out_is_default, num == 0);
@@ -3237,7 +3269,9 @@ _set_fcn_objlist (ARGS_SET_FCN)
 	}
 
 	strv = _value_strsplit (value,
-	                        VALUE_STRSPLIT_MODE_OBJLIST,
+	                          property_info->property_typ_data->subtype.objlist.strsplit_with_escape
+	                        ? VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE
+	                        : VALUE_STRSPLIT_MODE_OBJLIST,
 	                        &nstrv);
 
 	if (_SET_FCN_DO_SET_ALL (modifier, value)) {
@@ -3333,6 +3367,65 @@ _is_default_func_ip_config_dns_options (NMSetting *setting)
 {
 	return    nm_setting_ip_config_has_dns_options (NM_SETTING_IP_CONFIG (setting))
 	       && !nm_setting_ip_config_get_num_dns_options (NM_SETTING_IP_CONFIG (setting));
+}
+
+static void
+_objlist_obj_to_str_fcn_ip_config_routing_rules (NMMetaAccessorGetType get_type,
+                                                 NMSetting *setting,
+                                                 guint idx,
+                                                 GString *str)
+{
+	NMIPRoutingRule *rule;
+	gs_free char *s = NULL;
+
+	rule = nm_setting_ip_config_get_routing_rule (NM_SETTING_IP_CONFIG (setting), idx);
+	s = nm_ip_routing_rule_to_string (rule,
+	                                  NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE,
+	                                  NULL,
+	                                  NULL);
+	if (s)
+		g_string_append (str, s);
+}
+
+static gboolean
+_objlist_set_fcn_ip_config_routing_rules (NMSetting *setting,
+                                          gboolean do_add,
+                                          const char *str,
+                                          GError **error)
+{
+	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
+	nm_auto_unref_ip_routing_rule NMIPRoutingRule *rule = NULL;
+	guint i, n;
+
+	rule = nm_ip_routing_rule_from_string (str,
+	                                       (  NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE
+	                                        | (  NM_IS_SETTING_IP4_CONFIG (setting)
+	                                           ? NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET
+	                                           : NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET6)),
+	                                       NULL,
+	                                       error);
+	if (!rule)
+		return FALSE;
+
+	/* also for @do_add, we first always search whether such a rule already exist
+	 * and remove the first occurance.
+	 *
+	 * The effect is, that we don't add multiple times the same rule,
+	 * and that if the rule already exists, it gets moved to the end (append).
+	 */
+	n = nm_setting_ip_config_get_num_routing_rules (s_ip);
+	for (i = 0; i < n; i++) {
+		NMIPRoutingRule *rr;
+
+		rr = nm_setting_ip_config_get_routing_rule (s_ip, i);
+		if (nm_ip_routing_rule_cmp (rule, rr) == 0) {
+			nm_setting_ip_config_remove_routing_rule (s_ip, i);
+			break;
+		}
+	}
+	if (do_add)
+		nm_setting_ip_config_add_routing_rule (s_ip, rule);
+	return TRUE;
 }
 
 static gconstpointer
@@ -5549,6 +5642,23 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 			),
 		),
 	),
+	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTING_RULES, NULL,
+		.describe_message =
+		    N_("Enter a list of IPv4 routing rules formatted as:\n"
+		       "  priority [prio] [from [src]] [to [dst]], ,...\n"
+		       "\n"),
+		.property_type =                &_pt_objlist,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (objlist,
+				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_routing_rules),
+				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingIPConfig, nm_setting_ip_config_clear_routing_rules),
+				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routing_rules,
+				.set_fcn =              _objlist_set_fcn_ip_config_routing_rules,
+				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingIPConfig, nm_setting_ip_config_remove_routing_rule),
+				.strsplit_with_escape = TRUE,
+			),
+		),
+	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES,
 		.property_type =                &_pt_gobject_bool,
 	),
@@ -5737,6 +5847,23 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 					.value.i64 = 254,
 					.nick = "main",
 				},
+			),
+		),
+	),
+	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTING_RULES, NULL,
+		.describe_message =
+		    N_("Enter a list of IPv6 routing rules formatted as:\n"
+		       "  priority [prio] [from [src]] [to [dst]], ,...\n"
+		       "\n"),
+		.property_type =                &_pt_objlist,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (objlist,
+				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingIPConfig, nm_setting_ip_config_get_num_routing_rules),
+				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingIPConfig, nm_setting_ip_config_clear_routing_rules),
+				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routing_rules,
+				.set_fcn =              _objlist_set_fcn_ip_config_routing_rules,
+				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingIPConfig, nm_setting_ip_config_remove_routing_rule),
+				.strsplit_with_escape = TRUE,
 			),
 		),
 	),
@@ -5983,7 +6110,7 @@ static const NMMetaPropertyInfo *const property_infos_MATCH[] = {
 				.add2_fcn =             MULTILIST_ADD2_FCN            (NMSettingMatch, nm_setting_match_add_interface_name),
 				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingMatch, nm_setting_match_remove_interface_name),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingMatch, nm_setting_match_remove_interface_name_by_value),
-				.with_escaped_spaces =  TRUE,
+				.strsplit_with_escape = TRUE,
 			),
 		),
 	),

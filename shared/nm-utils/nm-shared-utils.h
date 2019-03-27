@@ -126,6 +126,16 @@ typedef struct {
 
 extern const NMIPAddr nm_ip_addr_zero;
 
+static inline gboolean
+nm_ip_addr_is_null (int addr_family, gconstpointer addr)
+{
+	nm_assert (addr);
+	if (addr_family == AF_INET6)
+		return IN6_IS_ADDR_UNSPECIFIED ((const struct in6_addr *) addr);
+	nm_assert (addr_family == AF_INET);
+	return ((const struct in_addr *) addr)->s_addr == 0;
+}
+
 static inline void
 nm_ip_addr_set (int addr_family, gpointer dst, gconstpointer src)
 {
@@ -435,6 +445,8 @@ int nm_utils_dbus_path_cmp (const char *dbus_path_a, const char *dbus_path_b);
 /*****************************************************************************/
 
 const char **nm_utils_strsplit_set (const char *str, const char *delimiters, gboolean allow_escaping);
+
+char *nm_utils_str_simpletokens_extract_next (char **p_line_start);
 
 gssize nm_utils_strv_find_first (char **list, gssize len, const char *needle);
 

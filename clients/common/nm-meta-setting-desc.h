@@ -280,9 +280,7 @@ struct _NMMetaPropertyTypData {
 			void (*remove_by_idx_fcn_u) (NMSetting *setting, guint idx);
 			void (*remove_by_idx_fcn_s) (NMSetting *setting, int idx);
 			gboolean (*remove_by_value_fcn) (NMSetting *setting, const char *item);
-
-			/* if true, separate the list by space and allow backslash escaping. */
-			bool with_escaped_spaces:1;
+			bool strsplit_with_escape:1;
 		} multilist;
 		struct {
 			guint (*get_num_fcn) (NMSetting *setting);
@@ -298,6 +296,7 @@ struct _NMMetaPropertyTypData {
 			void (*remove_by_idx_fcn_u) (NMSetting *setting, guint idx);
 			void (*remove_by_idx_fcn_s) (NMSetting *setting, int idx);
 			bool delimit_pretty_with_semicolon:1;
+			bool strsplit_with_escape:1;
 		} objlist;
 		struct {
 			gboolean (*set_fcn) (NMSetting *setting,

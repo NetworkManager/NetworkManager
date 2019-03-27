@@ -159,6 +159,153 @@ gboolean     nm_ip_route_attribute_validate  (const char *name,
 #define NM_IP_ROUTE_ATTRIBUTE_LOCK_INITRWND  "lock-initrwnd"
 #define NM_IP_ROUTE_ATTRIBUTE_LOCK_MTU       "lock-mtu"
 
+/*****************************************************************************/
+
+typedef struct NMIPRoutingRule NMIPRoutingRule;
+
+NM_AVAILABLE_IN_1_18
+GType nm_ip_routing_rule_get_type (void);
+
+NM_AVAILABLE_IN_1_18
+NMIPRoutingRule *nm_ip_routing_rule_new (int addr_family);
+
+NM_AVAILABLE_IN_1_18
+NMIPRoutingRule *nm_ip_routing_rule_new_clone (const NMIPRoutingRule *rule);
+
+NM_AVAILABLE_IN_1_18
+NMIPRoutingRule *nm_ip_routing_rule_ref (NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+void nm_ip_routing_rule_unref (NMIPRoutingRule *self);
+
+NM_AVAILABLE_IN_1_18
+gboolean nm_ip_routing_rule_is_sealed (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+void nm_ip_routing_rule_seal (NMIPRoutingRule *self);
+
+NM_AVAILABLE_IN_1_18
+int nm_ip_routing_rule_get_addr_family (const NMIPRoutingRule *self);
+
+NM_AVAILABLE_IN_1_18
+gboolean nm_ip_routing_rule_get_invert (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+void nm_ip_routing_rule_set_invert (NMIPRoutingRule *self, gboolean invert);
+
+NM_AVAILABLE_IN_1_18
+gint64 nm_ip_routing_rule_get_priority (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+void nm_ip_routing_rule_set_priority (NMIPRoutingRule *self, gint64 priority);
+
+NM_AVAILABLE_IN_1_18
+guint8 nm_ip_routing_rule_get_tos (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+void nm_ip_routing_rule_set_tos (NMIPRoutingRule *self, guint8 tos);
+
+NM_AVAILABLE_IN_1_18
+guint8 nm_ip_routing_rule_get_ipproto (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+void nm_ip_routing_rule_set_ipproto (NMIPRoutingRule *self, guint8 ipproto);
+
+NM_AVAILABLE_IN_1_18
+guint16 nm_ip_routing_rule_get_source_port_start (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+guint16 nm_ip_routing_rule_get_source_port_end (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+void nm_ip_routing_rule_set_source_port (NMIPRoutingRule *self, guint16 start, guint16 end);
+
+NM_AVAILABLE_IN_1_18
+guint16 nm_ip_routing_rule_get_destination_port_start (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+guint16 nm_ip_routing_rule_get_destination_port_end (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+void nm_ip_routing_rule_set_destination_port (NMIPRoutingRule *self, guint16 start, guint16 end);
+
+NM_AVAILABLE_IN_1_18
+guint32 nm_ip_routing_rule_get_fwmark (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+guint32 nm_ip_routing_rule_get_fwmask (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+void nm_ip_routing_rule_set_fwmark (NMIPRoutingRule *self, guint32 fwmark, guint32 fwmask);
+
+NM_AVAILABLE_IN_1_18
+guint8 nm_ip_routing_rule_get_from_len (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+const char *nm_ip_routing_rule_get_from (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+void nm_ip_routing_rule_set_from (NMIPRoutingRule *self,
+                                  const char *from,
+                                  guint8 len);
+
+NM_AVAILABLE_IN_1_18
+guint8 nm_ip_routing_rule_get_to_len (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+const char *nm_ip_routing_rule_get_to (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+void nm_ip_routing_rule_set_to (NMIPRoutingRule *self,
+                                const char *to,
+                                guint8 len);
+
+NM_AVAILABLE_IN_1_18
+const char *nm_ip_routing_rule_get_iifname (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+void nm_ip_routing_rule_set_iifname (NMIPRoutingRule *self, const char *iifname);
+
+NM_AVAILABLE_IN_1_18
+const char *nm_ip_routing_rule_get_oifname (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+void nm_ip_routing_rule_set_oifname (NMIPRoutingRule *self, const char *oifname);
+
+NM_AVAILABLE_IN_1_18
+guint8 nm_ip_routing_rule_get_action (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+void nm_ip_routing_rule_set_action (NMIPRoutingRule *self, guint8 action);
+
+NM_AVAILABLE_IN_1_18
+guint32 nm_ip_routing_rule_get_table (const NMIPRoutingRule *self);
+NM_AVAILABLE_IN_1_18
+void nm_ip_routing_rule_set_table (NMIPRoutingRule *self, guint32 table);
+
+NM_AVAILABLE_IN_1_18
+int nm_ip_routing_rule_cmp (const NMIPRoutingRule *rule,
+                            const NMIPRoutingRule *other);
+
+NM_AVAILABLE_IN_1_18
+gboolean nm_ip_routing_rule_validate (const NMIPRoutingRule *self,
+                                      GError **error);
+
+/**
+ * NMIPRoutingRuleAsStringFlags:
+ * @NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE: no flags selected.
+ * @NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET: whether to allow parsing
+ *   IPv4 addresses.
+ * @NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET6: whether to allow parsing
+ *   IPv6 addresses. If both @NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET and
+ *   @NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET6 are unset, it's the same
+ *   as setting them both.
+ * @NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE: if set, ensure that the
+ *   rule verfies or fail.
+ *
+ * Since: 1.18
+ */
+typedef enum { /*< flags >*/
+	NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE     = 0,
+
+	NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET  = 0x1,
+	NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET6 = 0x2,
+	NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE = 0x4,
+} NMIPRoutingRuleAsStringFlags;
+
+NMIPRoutingRule *nm_ip_routing_rule_from_string (const char *str,
+                                                 NMIPRoutingRuleAsStringFlags to_string_flags,
+                                                 GHashTable *extra_args,
+                                                 GError **error);
+
+char *nm_ip_routing_rule_to_string (const NMIPRoutingRule *self,
+                                    NMIPRoutingRuleAsStringFlags to_string_flags,
+                                    GHashTable *extra_args,
+                                    GError **error);
+
+/*****************************************************************************/
+
 #define NM_TYPE_SETTING_IP_CONFIG            (nm_setting_ip_config_get_type ())
 #define NM_SETTING_IP_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_IP_CONFIG, NMSettingIPConfig))
 #define NM_SETTING_IP_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SETTING_IPCONFIG, NMSettingIPConfigClass))
@@ -186,6 +333,9 @@ gboolean     nm_ip_route_attribute_validate  (const char *name,
 #define NM_SETTING_IP_CONFIG_MAY_FAIL           "may-fail"
 #define NM_SETTING_IP_CONFIG_DAD_TIMEOUT        "dad-timeout"
 #define NM_SETTING_IP_CONFIG_DHCP_TIMEOUT       "dhcp-timeout"
+
+/* these are not real GObject properties. */
+#define NM_SETTING_IP_CONFIG_ROUTING_RULES      "routing-rules"
 
 #define NM_SETTING_DNS_OPTION_DEBUG                     "debug"
 #define NM_SETTING_DNS_OPTION_NDOTS                     "ndots"
@@ -288,6 +438,20 @@ gint64        nm_setting_ip_config_get_route_metric           (NMSettingIPConfig
 
 NM_AVAILABLE_IN_1_10
 guint32       nm_setting_ip_config_get_route_table            (NMSettingIPConfig *setting);
+
+NM_AVAILABLE_IN_1_18
+guint         nm_setting_ip_config_get_num_routing_rules      (NMSettingIPConfig *setting);
+NM_AVAILABLE_IN_1_18
+NMIPRoutingRule *nm_setting_ip_config_get_routing_rule        (NMSettingIPConfig *setting,
+                                                               guint              idx);
+NM_AVAILABLE_IN_1_18
+void          nm_setting_ip_config_add_routing_rule           (NMSettingIPConfig *setting,
+                                                               NMIPRoutingRule   *routing_rule);
+NM_AVAILABLE_IN_1_18
+void          nm_setting_ip_config_remove_routing_rule        (NMSettingIPConfig *setting,
+                                                               guint              idx);
+NM_AVAILABLE_IN_1_18
+void          nm_setting_ip_config_clear_routing_rules        (NMSettingIPConfig *setting);
 
 gboolean      nm_setting_ip_config_get_ignore_auto_routes     (NMSettingIPConfig *setting);
 gboolean      nm_setting_ip_config_get_ignore_auto_dns        (NMSettingIPConfig *setting);
