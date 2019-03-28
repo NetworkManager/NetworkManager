@@ -1138,7 +1138,7 @@ pk_add_cb (NMAuthChain *chain,
 	NMAuthCallResult result;
 	GError *error = NULL;
 	NMConnection *connection = NULL;
-	NMSettingsConnection *added = NULL;
+	gs_unref_object NMSettingsConnection *added = NULL;
 	NMSettingsAddCallback callback;
 	gpointer callback_data;
 	NMAuthSubject *subject;
@@ -1169,6 +1169,12 @@ pk_add_cb (NMAuthChain *chain,
 
 		save_to_disk = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "save-to-disk"));
 		added = nm_settings_add_connection (self, connection, save_to_disk, &error);
+
+		/* The callback may remove the connection from the settings manager (e.g.
+		 * because it's found to be incompatible with the device on AddAndActivate).
+		 * But we need to keep it alive for a bit longer, precisely to check wehther
+		 * it's still known to the setting manager. */
+		g_object_ref (added);
 	}
 
 	callback = nm_auth_chain_get_data (chain, "callback");
