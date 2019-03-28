@@ -424,7 +424,6 @@ NMBridgeVlan *
 nm_bridge_vlan_from_str (const char *str, GError **error)
 {
 	NMBridgeVlan *vlan = NULL;
-	gs_unref_hashtable GHashTable *ht = NULL;
 	gs_free const char **tokens = NULL;
 	guint i, vid;
 	gboolean pvid = FALSE;
