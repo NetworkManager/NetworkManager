@@ -240,8 +240,9 @@ AM_CONDITIONAL(WITH_IWD, test x"${ac_with_iwd}" = x"yes")
 dnl
 dnl Checks for libdl - on certain platforms its part of libc
 dnl
-AC_SEARCH_LIBS([dlopen], [dl dld], [], [ac_cv_search_dlopen=])
-AC_SUBST([DL_LIBS], "$ac_cv_search_dlopen")
+AC_SEARCH_LIBS([dlopen], [dl dld],
+	[test "$ac_cv_search_dlopen" = "none required" || AC_SUBST([DL_LIBS], "$ac_cv_search_dlopen"]),
+	[])
 
 PKG_CHECK_MODULES(GLIB, [gio-unix-2.0 >= 2.37.6 gmodule-2.0],
                   [AC_SUBST(LOG_DRIVER, '$(top_srcdir)/build-aux/tap-driver.sh')
