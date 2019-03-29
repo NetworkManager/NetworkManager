@@ -6781,7 +6781,7 @@ _nm_utils_bridge_vlans_from_dbus (NMSetting *setting,
 	vlans = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
 	g_variant_iter_init (&vlan_iter, value);
 	while (g_variant_iter_next (&vlan_iter, "@a{sv}", &vlan_var)) {
-		gs_unref_variant GVariant *var_unref = vlan_var;
+		_nm_unused gs_unref_variant GVariant *var_unref = vlan_var;
 		NMBridgeVlan *vlan;
 		guint16 vid;
 		gboolean pvid = FALSE, untagged = FALSE;
