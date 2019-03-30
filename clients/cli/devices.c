@@ -3888,6 +3888,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 	info->nmc = nmc;
 	info->device = device;
 	info->hotspot = TRUE;
+	info->create = TRUE;
 
 	nm_client_add_and_activate_connection_async (nmc->client,
 	                                             connection,
