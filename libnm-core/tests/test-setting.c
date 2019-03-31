@@ -2921,6 +2921,7 @@ test_routing_rule (gconstpointer test_data)
 	success = nm_ip_routing_rule_get_xifname_bin (rr1, TRUE, ifname_buf);
 	g_assert_cmpstr (ifname_buf, ==, "aab");
 	g_assert (success);
+	nm_clear_pointer (&rr1, nm_ip_routing_rule_unref);
 
 	rr1 = _rr_from_str_get ("priority 5 from :: iif a\\\\303\\\\261xb table 254");
 	g_assert_cmpstr (nm_ip_routing_rule_get_iifname (rr1), ==, "a\\303\\261xb");
