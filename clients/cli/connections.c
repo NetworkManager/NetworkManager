@@ -1276,12 +1276,18 @@ static void
 update_secrets_in_connection (NMRemoteConnection *remote, NMConnection *local)
 {
 	GetSecretsData data = { 0, };
+	GType setting_type;
 	int i;
 
 	data.local = local;
 	data.loop = g_main_loop_new (NULL, FALSE);
 
 	for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
+		setting_type = nm_meta_setting_infos[i].get_setting_gtype();
+		if (!nm_connection_get_setting (NM_CONNECTION (remote), setting_type))
+			continue;
+		if (!nm_meta_setting_info_editor_has_secrets (nm_meta_setting_info_editor_find_by_gtype (setting_type)))
+			continue;
 		data.setting_name = nm_meta_setting_infos[i].setting_name;
 		nm_remote_connection_get_secrets_async (remote,
 		                                        nm_meta_setting_infos[i].setting_name,
