@@ -4212,6 +4212,7 @@ clients_tui_nmtui_LDADD = \
 	libnm/libnm.la \
 	clients/tui/newt/libnmt-newt.a \
 	clients/common/libnmc-base.la \
+	clients/common/libnmc.la \
 	$(GLIB_LIBS) \
 	$(NEWT_LIBS) \
 	$(NULL)

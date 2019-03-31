@@ -56,6 +56,7 @@ sources = files(
 
 deps += [
   libnm_dep,
+  libnmc_dep,
   libnmc_base_dep,
   libnmt_newt_dep,
 ]

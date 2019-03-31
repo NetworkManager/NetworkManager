@@ -53,6 +53,8 @@
 #include "nmt-page-vlan.h"
 #include "nmt-page-wifi.h"
 
+#include "nm-meta-setting-access.h"
+
 G_DEFINE_TYPE (NmtEditor, nmt_editor, NMT_TYPE_NEWT_FORM)
 
 #define NMT_EDITOR_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_EDITOR, NmtEditorPrivate))
@@ -230,6 +232,8 @@ build_edit_connection (NMConnection *orig_connection)
 	settings = nm_connection_to_dbus (orig_connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
 	g_variant_iter_init (&iter, settings);
 	while (g_variant_iter_next (&iter, "{&s@a{sv}}", &setting_name, NULL)) {
+		if (!nm_meta_setting_info_editor_has_secrets (nm_meta_setting_info_editor_find_by_name (setting_name, FALSE)))
+			continue;
 		nmt_sync_op_init (&op);
 		nm_remote_connection_get_secrets_async (NM_REMOTE_CONNECTION (orig_connection),
 		                                        setting_name, NULL, got_secrets, &op);
