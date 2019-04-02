@@ -743,7 +743,6 @@ try_spawn_vpn_auth_helper (RequestData *request,
 	NMSettingVpn *s_vpn = nm_connection_get_setting_vpn (request->connection);
 	gs_unref_ptrarray GPtrArray *auth_dialog_argv = NULL;
 	NMVpnPluginInfo *plugin_info;
-	gboolean supports_external;
 	const char *s;
 	GPid auth_dialog_pid;
 	int auth_dialog_in_fd;
@@ -762,8 +761,7 @@ try_spawn_vpn_auth_helper (RequestData *request,
 		return FALSE;
 
 	s = nm_vpn_plugin_info_lookup_property (plugin_info, "GNOME", "supports-external-ui-mode");
-	supports_external = _nm_utils_ascii_str_to_bool (s, FALSE);
-	if (!supports_external)
+	if (!_nm_utils_ascii_str_to_bool (s, FALSE))
 		return FALSE;
 
 	auth_dialog_argv = g_ptr_array_new ();
