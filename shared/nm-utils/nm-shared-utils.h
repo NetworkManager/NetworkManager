@@ -314,23 +314,23 @@ _nm_strndup_a_step (char *s, const char *str, gsize len)
  * NUL character and then filled with NUL characters. */
 #define nm_strndup_a(alloca_maxlen, str, len, out_str_free) \
 	({ \
-		const gsize _alloca_maxlen = (alloca_maxlen); \
-		const char *const _str = (str); \
-		const gsize _len = (len); \
-		char **const _out_str_free = (out_str_free); \
-		char *_s; \
+		const gsize _alloca_maxlen_snd = (alloca_maxlen); \
+		const char *const _str_snd = (str); \
+		const gsize _len_snd = (len); \
+		char **const _out_str_free_snd = (out_str_free); \
+		char *_s_snd; \
 		\
 		G_STATIC_ASSERT_EXPR ((alloca_maxlen) <= 300); \
 		\
-		if (   _out_str_free \
-		    && _len >= _alloca_maxlen) { \
-			_s = g_malloc (_len + 1); \
-			*_out_str_free = _s; \
+		if (   _out_str_free_snd \
+		    && _len_snd >= _alloca_maxlen_snd) { \
+			_s_snd = g_malloc (_len_snd + 1); \
+			*_out_str_free_snd = _s_snd; \
 		} else { \
-			g_assert (_len < _alloca_maxlen); \
-			_s = g_alloca (_len + 1); \
+			g_assert (_len_snd < _alloca_maxlen_snd); \
+			_s_snd = g_alloca (_len_snd + 1); \
 		} \
-		_nm_strndup_a_step (_s, _str, _len); \
+		_nm_strndup_a_step (_s_snd, _str_snd, _len_snd); \
 	})
 
 /*****************************************************************************/

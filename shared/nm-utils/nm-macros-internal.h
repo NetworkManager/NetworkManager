@@ -1342,14 +1342,14 @@ _NM_BACKPORT_SYMBOL_IMPL(version, return_type, func, _##func##_##version, args_t
 
 #define nm_str_skip_leading_spaces(str) \
 	({ \
-		typeof (*(str)) *_str = (str); \
-		_nm_unused const char *_str_type_check = _str; \
+		typeof (*(str)) *_str_sls = (str); \
+		_nm_unused const char *const _str_type_check = _str_sls; \
 		\
-		if (_str) { \
-			while (g_ascii_isspace (_str[0])) \
-				_str++; \
+		if (_str_sls) { \
+			while (g_ascii_isspace (_str_sls[0])) \
+				_str_sls++; \
 		} \
-		_str; \
+		_str_sls; \
 	})
 
 static inline char *
