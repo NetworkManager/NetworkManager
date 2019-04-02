@@ -1386,6 +1386,34 @@ nm_strstrip_avoid_copy (const char *str, char **str_free)
 	return s;
 }
 
+#define nm_strstrip_avoid_copy_a(alloca_maxlen, str, out_str_free) \
+	({ \
+		const char *_str_ssac = (str); \
+		char **_out_str_free_ssac = (out_str_free); \
+		\
+		G_STATIC_ASSERT_EXPR ((alloca_maxlen) > 0); \
+		\
+		nm_assert ( _out_str_free_ssac || ((alloca_maxlen) > (str ? strlen (str) : 0u))); \
+		nm_assert (!_out_str_free_ssac || !*_out_str_free_ssac); \
+		\
+		if (_str_ssac) { \
+			_str_ssac = nm_str_skip_leading_spaces (_str_ssac); \
+			if (_str_ssac[0] != '\0') { \
+				gsize _l = strlen (_str_ssac); \
+				\
+				if (g_ascii_isspace (_str_ssac[--_l])) { \
+					while (   _l > 0 \
+					       && g_ascii_isspace (_str_ssac[_l - 1])) { \
+						_l--; \
+					} \
+					_str_ssac = nm_strndup_a ((alloca_maxlen), _str_ssac, _l, _out_str_free_ssac); \
+				} \
+			} \
+		} \
+		\
+		_str_ssac; \
+	})
+
 /* g_ptr_array_sort()'s compare function takes pointers to the
  * value. Thus, you cannot use strcmp directly. You can use
  * nm_strcmp_p().

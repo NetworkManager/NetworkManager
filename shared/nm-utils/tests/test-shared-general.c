@@ -392,6 +392,57 @@ test_strv_cmp (void)
 
 /*****************************************************************************/
 
+static void
+_do_strstrip_avoid_copy (const char *str)
+{
+	gs_free char *str1 = g_strdup (str);
+	gs_free char *str2 = g_strdup (str);
+	gs_free char *str3 = NULL;
+	gs_free char *str4 = NULL;
+	const char *s3;
+	const char *s4;
+
+	if (str1)
+		g_strstrip (str1);
+
+	nm_strstrip (str2);
+
+	g_assert_cmpstr (str1, ==, str2);
+
+	s3 = nm_strstrip_avoid_copy (str, &str3);
+	g_assert_cmpstr (str1, ==, s3);
+
+	s4 = nm_strstrip_avoid_copy_a (10, str, &str4);
+	g_assert_cmpstr (str1, ==, s4);
+	g_assert (!str == !s4);
+	g_assert (!s4 || strlen (s4) <= strlen (str));
+	if (s4 && s4 == &str[strlen (str) - strlen (s4)]) {
+		g_assert (!str4);
+		g_assert (s3 == s4);
+	} else if (s4 && strlen (s4) >= 10) {
+		g_assert (str4);
+		g_assert (s4 == str4);
+	} else
+		g_assert (!str4);
+
+	if (!nm_streq0 (str1, str))
+		_do_strstrip_avoid_copy (str1);
+}
+
+static void
+test_strstrip_avoid_copy (void)
+{
+	_do_strstrip_avoid_copy (NULL);
+	_do_strstrip_avoid_copy ("");
+	_do_strstrip_avoid_copy (" ");
+	_do_strstrip_avoid_copy (" a ");
+	_do_strstrip_avoid_copy (" 012345678 ");
+	_do_strstrip_avoid_copy (" 0123456789 ");
+	_do_strstrip_avoid_copy (" 01234567890 ");
+	_do_strstrip_avoid_copy (" 012345678901 ");
+}
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -406,6 +457,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/general/test_nm_ip4_addr_is_localhost", test_nm_ip4_addr_is_localhost);
 	g_test_add_func ("/general/test_unaligned", test_unaligned);
 	g_test_add_func ("/general/test_strv_cmp", test_strv_cmp);
+	g_test_add_func ("/general/test_strstrip_avoid_copy", test_strstrip_avoid_copy);
 
 	return g_test_run ();
 }
