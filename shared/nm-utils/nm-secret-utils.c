@@ -30,15 +30,22 @@ void
 nm_explicit_bzero (void *s, gsize n)
 {
 	/* gracefully handle n == 0. This is important, callers rely on it. */
-	if (n > 0) {
-		nm_assert (s);
+	if (n == 0)
+		return;
+
+	nm_assert (s);
+
 #if defined (HAVE_DECL_EXPLICIT_BZERO) && HAVE_DECL_EXPLICIT_BZERO
-		explicit_bzero (s, n);
+	explicit_bzero (s, n);
 #else
-		/* don't bother with a workaround. Use a reasonable glibc. */
-		memset (s, 0, n);
-#endif
+	{
+		volatile guint8 *p = s;
+
+		memset (s, '\0', n);
+		while (n-- > 0)
+			*(p++) = '\0';
 	}
+#endif
 }
 
 /*****************************************************************************/
