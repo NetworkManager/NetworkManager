@@ -6843,7 +6843,8 @@ ipv4_dad_start (NMDevice *self, NMIP4Config **configs, AcdCallback cb)
 	NMDedupMultiIter ipconf_iter;
 	AcdData *data;
 	guint timeout;
-	gboolean ret, addr_found;
+	gboolean addr_found;
+	int r;
 	const guint8 *hwaddr_arr;
 	size_t length;
 	guint i;
@@ -6897,9 +6898,8 @@ ipv4_dad_start (NMDevice *self, NMIP4Config **configs, AcdCallback cb)
 			nm_acd_manager_add_address (acd_manager, address->address);
 	}
 
-	ret = nm_acd_manager_start_probe (acd_manager, timeout);
-
-	if (!ret) {
+	r = nm_acd_manager_start_probe (acd_manager, timeout);
+	if (r < 0) {
 		_LOGW (LOGD_DEVICE, "acd probe failed");
 
 		/* DAD could not be started, signal success */

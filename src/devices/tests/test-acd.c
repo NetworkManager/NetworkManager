@@ -120,6 +120,7 @@ test_acd_common (test_fixture *fixture, TestInfo *info)
 		.probe_terminated_callback = acd_manager_probe_terminated,
 		.user_data_destroy         = (GDestroyNotify) g_main_loop_unref,
 	};
+	int r;
 
 	if (_skip_acd_test ())
 		return;
@@ -148,7 +149,8 @@ again:
 		                        24, 0, 3600, 1800, 0, NULL);
 	}
 
-	g_assert (nm_acd_manager_start_probe (manager, wait_time));
+	r = nm_acd_manager_start_probe (manager, wait_time);
+	g_assert_cmpint (r, ==, 0);
 	g_assert (nmtst_main_loop_run (loop, 2000));
 	g_main_loop_unref (loop);
 
