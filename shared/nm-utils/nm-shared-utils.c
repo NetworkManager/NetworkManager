@@ -1181,31 +1181,27 @@ int
 _nm_utils_ascii_str_to_bool (const char *str,
                              int default_value)
 {
-	gsize len;
-	char *s = NULL;
+	gs_free char *str_free = NULL;
 
 	if (!str)
 		return default_value;
 
-	while (str[0] && g_ascii_isspace (str[0]))
-		str++;
-
-	if (!str[0])
+	str = nm_strstrip_avoid_copy_a (300, str, &str_free);
+	if (str[0] == '\0')
 		return default_value;
 
-	len = strlen (str);
-	if (g_ascii_isspace (str[len - 1])) {
-		s = g_strdup (str);
-		g_strchomp (s);
-		str = s;
-	}
+	if (   !g_ascii_strcasecmp (str, "true")
+	    || !g_ascii_strcasecmp (str, "yes")
+	    || !g_ascii_strcasecmp (str, "on")
+	    || !g_ascii_strcasecmp (str, "1"))
+		return TRUE;
 
-	if (!g_ascii_strcasecmp (str, "true") || !g_ascii_strcasecmp (str, "yes") || !g_ascii_strcasecmp (str, "on") || !g_ascii_strcasecmp (str, "1"))
-		default_value = TRUE;
-	else if (!g_ascii_strcasecmp (str, "false") || !g_ascii_strcasecmp (str, "no") || !g_ascii_strcasecmp (str, "off") || !g_ascii_strcasecmp (str, "0"))
-		default_value = FALSE;
-	if (s)
-		g_free (s);
+	if (   !g_ascii_strcasecmp (str, "false")
+	    || !g_ascii_strcasecmp (str, "no")
+	    || !g_ascii_strcasecmp (str, "off")
+	    || !g_ascii_strcasecmp (str, "0"))
+		return FALSE;
+
 	return default_value;
 }
 
