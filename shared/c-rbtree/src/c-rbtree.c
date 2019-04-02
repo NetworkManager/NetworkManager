@@ -460,6 +460,7 @@ _public_ void c_rbtree_move(CRBTree *to, CRBTree *from) {
         if (from->root) {
                 t = c_rbnode_pop_root(from->root);
                 assert(t == from);
+                (void)t;
 
                 to->root = from->root;
                 from->root = NULL;

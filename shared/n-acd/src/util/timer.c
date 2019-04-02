@@ -44,6 +44,7 @@ void timer_now(Timer *timer, uint64_t *nowp) {
 
         r = clock_gettime(timer->clock, &ts);
         assert(r >= 0);
+        (void)r;
 
         *nowp = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec;
 }
@@ -74,6 +75,7 @@ void timer_rearm(Timer *timer) {
                                     },
                                     NULL);
                 assert(r >= 0);
+                (void)r;
 
                 timer->scheduled_timeout = time;
         }
