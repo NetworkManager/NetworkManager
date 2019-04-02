@@ -741,16 +741,9 @@ try_spawn_vpn_auth_helper (RequestData *request,
                            GPtrArray *secrets)
 {
 	NMSettingVpn *s_vpn = nm_connection_get_setting_vpn (request->connection);
-        NMVpnPluginInfo *plugin_info;
+	gs_unref_ptrarray GPtrArray *auth_dialog_argv = NULL;
+	NMVpnPluginInfo *plugin_info;
 	gboolean supports_external;
-	const char *auth_dialog_argv[] = { NULL,
-		"-u", nm_connection_get_uuid (request->connection),
-		"-n", nm_connection_get_id (request->connection),
-		"-s", nm_setting_vpn_get_service_type (s_vpn),
-		"--external-ui-mode",
-		"-i",
-		NULL, /* [9], slot for "-r" */
-		NULL };
 	const char *s;
 	GPid auth_dialog_pid;
 	int auth_dialog_in_fd;
@@ -773,13 +766,26 @@ try_spawn_vpn_auth_helper (RequestData *request,
 	if (!supports_external)
 		return FALSE;
 
-	auth_dialog_argv[0] = nm_vpn_plugin_info_lookup_property (plugin_info, "GNOME", "auth-dialog");
-	g_return_val_if_fail (auth_dialog_argv[0], FALSE);
+	auth_dialog_argv = g_ptr_array_new ();
+
+	s = nm_vpn_plugin_info_lookup_property (plugin_info, "GNOME", "auth-dialog");
+	g_return_val_if_fail (s, FALSE);
+	g_ptr_array_add (auth_dialog_argv, (gpointer) s);
+
+	g_ptr_array_add (auth_dialog_argv, "-u");
+	g_ptr_array_add (auth_dialog_argv, (gpointer) nm_connection_get_uuid (request->connection));
+	g_ptr_array_add (auth_dialog_argv, "-n");
+	g_ptr_array_add (auth_dialog_argv, (gpointer) nm_connection_get_id (request->connection));
+	g_ptr_array_add (auth_dialog_argv, "-s");
+	g_ptr_array_add (auth_dialog_argv, (gpointer) nm_setting_vpn_get_service_type (s_vpn));
+	g_ptr_array_add (auth_dialog_argv, "--external-ui-mode");
+	g_ptr_array_add (auth_dialog_argv, "-i");
 
 	if (request->flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW)
-		auth_dialog_argv[9] = "-r";
+		g_ptr_array_add (auth_dialog_argv, "-r");
 
-	if (!g_spawn_async_with_pipes (NULL, (char **)auth_dialog_argv, NULL,
+	g_ptr_array_add (auth_dialog_argv, NULL);
+	if (!g_spawn_async_with_pipes (NULL, (char **) auth_dialog_argv->pdata, NULL,
 	                               G_SPAWN_DO_NOT_REAP_CHILD,
 	                               NULL, NULL,
 	                               &auth_dialog_pid,
