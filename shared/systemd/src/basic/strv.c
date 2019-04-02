@@ -13,9 +13,10 @@
 #include "escape.h"
 #include "extract-word.h"
 #include "fileio.h"
+#include "nulstr-util.h"
+#include "sort-util.h"
 #include "string-util.h"
 #include "strv.h"
-#include "util.h"
 
 char *strv_find(char **l, const char *name) {
         char **i;
@@ -651,6 +652,7 @@ char **strv_parse_nulstr(const char *s, size_t l) {
         return v;
 }
 
+#if 0 /* NM_IGNORED */
 char **strv_split_nulstr(const char *s) {
         const char *i;
         char **r = NULL;
@@ -666,6 +668,7 @@ char **strv_split_nulstr(const char *s) {
 
         return r;
 }
+#endif /* NM_IGNORED */
 
 int strv_make_nulstr(char **l, char **p, size_t *q) {
         /* A valid nulstr with two NULs at the end will be created, but
@@ -722,6 +725,7 @@ bool strv_overlap(char **a, char **b) {
         return false;
 }
 
+#if 0 /* NM_IGNORED */
 static int str_compare(char * const *a, char * const *b) {
         return strcmp(*a, *b);
 }
@@ -730,6 +734,7 @@ char **strv_sort(char **l) {
         typesafe_qsort(l, strv_length(l), str_compare);
         return l;
 }
+#endif /* NM_IGNORED */
 
 bool strv_equal(char **a, char **b) {
 

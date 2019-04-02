@@ -120,6 +120,19 @@ int log_internalv_realm(
         log_internalv_realm(LOG_REALM_PLUS_LEVEL(LOG_REALM, (level)), __VA_ARGS__)
 
 /* Realm is fixed to LOG_REALM_SYSTEMD for those */
+int log_object_internalv(
+                int level,
+                int error,
+                const char *file,
+                int line,
+                const char *func,
+                const char *object_field,
+                const char *object,
+                const char *extra_field,
+                const char *extra,
+                const char *format,
+                va_list ap) _printf_(10,0);
+
 int log_object_internal(
                 int level,
                 int error,
@@ -145,7 +158,12 @@ int log_oom_internal(
                 const char *file,
                 int line,
                 const char *func);
+#endif /* NM_IGNORED */
+#define log_oom_internal(realm, file, line, func) \
+    log_internal_realm (LOG_REALM_PLUS_LEVEL (realm, LOG_ERR), \
+                        ENOMEM, file, line, func, "Out of memory.")
 
+#if 0 /* NM_IGNORED */
 int log_format_iovec(
                 struct iovec *iovec,
                 size_t iovec_len,
@@ -315,7 +333,7 @@ int log_syntax_invalid_utf8_internal(
                 int _level = (level), _e = (error);                     \
                 (log_get_max_level() >= LOG_PRI(_level))                \
                         ? log_syntax_internal(unit, _level, config_file, config_line, _e, __FILE__, __LINE__, __func__, __VA_ARGS__) \
-                        : -abs(_e);                                     \
+                        : -ERRNO_VALUE(_e);                             \
         })
 
 #define log_syntax_invalid_utf8(unit, level, config_file, config_line, rvalue) \

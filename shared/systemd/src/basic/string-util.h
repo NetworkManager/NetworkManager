@@ -165,8 +165,6 @@ char *cellescape(char *buf, size_t len, const char *s);
 /* This limit is arbitrary, enough to give some idea what the string contains */
 #define CELLESCAPE_DEFAULT_LENGTH 64
 
-bool nulstr_contains(const char *nulstr, const char *needle);
-
 char* strshorten(char *s, size_t l);
 
 char *strreplace(const char *text, const char *old_string, const char *new_string);
@@ -182,33 +180,12 @@ char *strrep(const char *s, unsigned n);
 int split_pair(const char *s, const char *sep, char **l, char **r);
 
 int free_and_strdup(char **p, const char *s);
+static inline int free_and_strdup_warn(char **p, const char *s) {
+        if (free_and_strdup(p, s) < 0)
+                return log_oom();
+        return 0;
+}
 int free_and_strndup(char **p, const char *s, size_t l);
-
-/* Normal memmem() requires haystack to be nonnull, which is annoying for zero-length buffers */
-static inline void *memmem_safe(const void *haystack, size_t haystacklen, const void *needle, size_t needlelen) {
-
-        if (needlelen <= 0)
-                return (void*) haystack;
-
-        if (haystacklen < needlelen)
-                return NULL;
-
-        assert(haystack);
-        assert(needle);
-
-        return memmem(haystack, haystacklen, needle, needlelen);
-}
-
-#if HAVE_EXPLICIT_BZERO
-static inline void* explicit_bzero_safe(void *p, size_t l) {
-        if (l > 0)
-                explicit_bzero(p, l);
-
-        return p;
-}
-#else
-void *explicit_bzero_safe(void *p, size_t l);
-#endif
 
 char *string_erase(char *x);
 

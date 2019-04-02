@@ -8,6 +8,10 @@
 
 #include "macro.h"
 
+#if HAS_FEATURE_MEMORY_SANITIZER
+#  include <sanitizer/msan_interface.h>
+#endif
+
 typedef void (*free_func_t)(void *p);
 
 /* If for some reason more than 4M are allocated on the stack, let's abort immediately. It's better than
@@ -152,11 +156,17 @@ void* greedy_realloc0(void **p, size_t *allocated, size_t need, size_t size);
                 (void*)memset(_new_, 0, _xsize_);                       \
         })
 
-/* Takes inspiration from Rusts's Option::take() method: reads and returns a pointer, but at the same time resets it to
- * NULL. See: https://doc.rust-lang.org/std/option/enum.Option.html#method.take */
+/* Takes inspiration from Rust's Option::take() method: reads and returns a pointer, but at the same time
+ * resets it to NULL. See: https://doc.rust-lang.org/std/option/enum.Option.html#method.take */
 #define TAKE_PTR(ptr)                           \
         ({                                      \
                 typeof(ptr) _ptr_ = (ptr);      \
                 (ptr) = NULL;                   \
                 _ptr_;                          \
         })
+
+#if HAS_FEATURE_MEMORY_SANITIZER
+#  define msan_unpoison(r, s) __msan_unpoison(r, s)
+#else
+#  define msan_unpoison(r, s)
+#endif
