@@ -280,7 +280,7 @@ initialize (NMSettingsPlugin *plugin)
 		GHashTableIter iter;
 
 		g_hash_table_iter_init (&iter, priv->eni_ifaces);
-		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) conn)) {
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &conn)) {
 			if (conn) {
 				_nm_settings_plugin_emit_signal_connection_added (NM_SETTINGS_PLUGIN (self),
 				                                                  NM_SETTINGS_CONNECTION (conn));
