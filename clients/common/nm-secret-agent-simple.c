@@ -754,6 +754,7 @@ try_spawn_vpn_auth_helper (RequestData *request,
 	char *auth_dialog_request_str;
 	gsize auth_dialog_request_len;
 	AuthDialogData *data;
+	int i;
 
 	plugin_info = nm_vpn_plugin_info_list_find_by_service (nm_vpn_get_plugin_infos (),
 	                                                       nm_setting_vpn_get_service_type (s_vpn));
@@ -781,6 +782,14 @@ try_spawn_vpn_auth_helper (RequestData *request,
 
 	if (request->flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW)
 		g_ptr_array_add (auth_dialog_argv, "-r");
+
+	s = nm_vpn_plugin_info_lookup_property (plugin_info, "GNOME", "supports-hints");
+	if (_nm_utils_ascii_str_to_bool (s, FALSE)) {
+		for (i = 0; request->hints[i]; i++) {
+			g_ptr_array_add (auth_dialog_argv, "-t");
+			g_ptr_array_add (auth_dialog_argv, request->hints[i]);
+		}
+	}
 
 	g_ptr_array_add (auth_dialog_argv, NULL);
 	if (!g_spawn_async_with_pipes (NULL, (char **) auth_dialog_argv->pdata, NULL,
