@@ -305,7 +305,7 @@ _parse_ip_route (int family,
 	nm_assert (str);
 	nm_assert (!error || !*error);
 
-	str_clean = nm_strstrip_avoid_copy (str, &str_clean_free);
+	str_clean = nm_strstrip_avoid_copy_a (300, str, &str_clean_free);
 	routev = nm_utils_strsplit_set (str_clean, " \t", FALSE);
 	if (!routev) {
 		g_set_error (error, 1, 0,
@@ -479,7 +479,7 @@ _parse_team_link_watcher (const char *str,
 	nm_assert (str);
 	nm_assert (!error || !*error);
 
-	str_clean = nm_strstrip_avoid_copy (str, &str_clean_free);
+	str_clean = nm_strstrip_avoid_copy_a (300, str, &str_clean_free);
 	watcherv = nm_utils_strsplit_set (str_clean, " \t", FALSE);
 	if (!watcherv) {
 		g_set_error (error, 1, 0, "'%s' is not valid", str);
@@ -1275,7 +1275,7 @@ _set_fcn_gobject_int (ARGS_SET_FCN)
 			gs_free char *vv_free = NULL;
 			const char *vv;
 
-			vv = nm_strstrip_avoid_copy (value, &vv_free);
+			vv = nm_strstrip_avoid_copy_a (300, value, &vv_free);
 			for (; value_infos->nick; value_infos++) {
 				if (nm_streq (value_infos->nick, vv)) {
 					v = value_infos->value;
@@ -2169,7 +2169,7 @@ _set_fcn_gobject_bytes (ARGS_SET_FCN)
 	if (_SET_FCN_DO_RESET_DEFAULT (property_info, modifier, value))
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
-	val_strip = nm_strstrip_avoid_copy (value, &val_strip_free);
+	val_strip = nm_strstrip_avoid_copy_a (300, value, &val_strip_free);
 
 	/* First try hex string in the format of AAbbCCDd */
 	bytes = nm_utils_hexstr2bin (val_strip);
@@ -2253,7 +2253,7 @@ _set_fcn_cert_8021x (ARGS_SET_FCN)
 	if (_SET_FCN_DO_RESET_DEFAULT (property_info, modifier, value))
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
-	value = nm_strstrip_avoid_copy (value, &value_to_free);
+	value = nm_strstrip_avoid_copy_a (300, value, &value_to_free);
 
 	if (strncmp (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11)) == 0)
 		scheme = NM_SETTING_802_1X_CK_SCHEME_PKCS11;
@@ -3330,7 +3330,7 @@ _set_fcn_ip_config_gateway (ARGS_SET_FCN)
 	if (_SET_FCN_DO_RESET_DEFAULT (property_info, modifier, value))
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
-	value = nm_strstrip_avoid_copy (value, &value_to_free);
+	value = nm_strstrip_avoid_copy_a (300, value, &value_to_free);
 
 	if (!nm_utils_ipaddr_valid (addr_family, value)) {
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
@@ -4209,7 +4209,7 @@ _set_fcn_ethtool (ARGS_SET_FCN)
 		goto set;
 	}
 
-	value = nm_strstrip_avoid_copy (value, &value_to_free);
+	value = nm_strstrip_avoid_copy_a (300, value, &value_to_free);
 
 	if (NM_IN_STRSET (value, "1", "yes", "true", "on"))
 		val = NM_TERNARY_TRUE;
