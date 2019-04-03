@@ -561,3 +561,85 @@ nm_utils_fixup_product_string (const char *desc)
 
 	return desc_full;
 }
+
+#if WITH_FAKE_TYPELIBS
+
+/*
+ * Here we register empty "NMClient" and "NetworkManager" GIR modules as soon
+ * as we are loaded (if gnome-introspection is being used). This prevents the
+ * real modules from being loaded because they would in turn load libnm-glib
+ * and abort() and crash.
+ *
+ * For the high level languages that utilize GIR the crash is highly inconvenient
+ * while the inability to resolve any methods and attributes is potentially
+ * recoverable.
+ */
+
+#include <girepository.h>
+
+GResource *typelibs_get_resource (void);
+void typelibs_register_resource (void);
+
+static void __attribute__((constructor))
+_nm_libnm_utils_init (void)
+{
+	GITypelib *typelib;
+	GBytes *data;
+	const char *namespace;
+	GModule *self;
+	GITypelib *(*_g_typelib_new_from_const_memory) (const guint8 *memory,
+	                                                gsize len,
+	                                                GError **error) = NULL;
+	const char *(*_g_irepository_load_typelib) (GIRepository *repository,
+	                                            GITypelib *typelib,
+	                                            GIRepositoryLoadFlags flags,
+	                                            GError **error) = NULL;
+	const char *names[] = { "/org/freedesktop/libnm/fake-typelib/NetworkManager.typelib",
+	                        "/org/freedesktop/libnm/fake-typelib/NMClient.typelib" };
+	int i;
+
+	self = g_module_open (NULL, 0);
+	if (!self)
+		return;
+	g_module_symbol (self, "g_typelib_new_from_const_memory",
+	                 (gpointer *) &_g_typelib_new_from_const_memory);
+	if (_g_typelib_new_from_const_memory) {
+		g_module_symbol (self, "g_irepository_load_typelib",
+		                 (gpointer *) &_g_irepository_load_typelib);
+	}
+	g_module_close (self);
+
+	if (!_g_typelib_new_from_const_memory || !_g_irepository_load_typelib)
+		return;
+
+	typelibs_register_resource ();
+
+	for (i = 0; i < 2; i++) {
+		gs_free_error GError *error = NULL;
+
+		data = g_resource_lookup_data (typelibs_get_resource (),
+		                               names[i],
+		                               G_RESOURCE_LOOKUP_FLAGS_NONE,
+		                               &error);
+		if (!data) {
+			g_warning ("Fake typelib %s could not be loaded: %s", names[i], error->message);
+			return;
+		}
+
+		typelib = _g_typelib_new_from_const_memory (g_bytes_get_data (data, NULL),
+		                                            g_bytes_get_size (data),
+		                                            &error);
+		if (!typelib) {
+			g_warning ("Could not create fake typelib instance %s: %s", names[i], error->message);
+			return;
+		}
+
+		namespace = _g_irepository_load_typelib (NULL, typelib, 0, &error);
+		if (!namespace) {
+			g_warning ("Could not load fake typelib %s: %s", names[i], error->message);
+			return;
+		}
+	}
+}
+
+#endif /* WITH_FAKE_TYPELIBS */

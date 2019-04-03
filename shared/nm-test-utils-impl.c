@@ -56,6 +56,24 @@ name_exists (GDBusConnection *c, const char *name)
 	return exists;
 }
 
+#if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_GLIB
+static DBusGProxy *
+_libdbus_create_proxy_test (DBusGConnection *bus)
+{
+	DBusGProxy *proxy;
+
+	proxy = dbus_g_proxy_new_for_name (bus,
+	                                   NM_DBUS_SERVICE,
+	                                   NM_DBUS_PATH,
+	                                   "org.freedesktop.NetworkManager.LibnmGlibTest");
+	g_assert (proxy);
+
+	dbus_g_proxy_set_default_timeout (proxy, G_MAXINT);
+
+	return proxy;
+}
+#endif
+
 typedef struct {
 	GMainLoop *mainloop;
 	GDBusConnection *bus;
@@ -183,6 +201,11 @@ nmtstc_service_init (void)
 	                                     NULL, &error);
 	g_assert_no_error (error);
 
+#if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_GLIB
+	info->libdbus.bus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+	g_assert_no_error (error);
+	g_assert (info->libdbus.bus);
+#endif
 	return info;
 }
 
@@ -199,6 +222,10 @@ nmtstc_service_cleanup (NMTstcServiceInfo *info)
 	nm_close (nm_steal_fd (&info->keepalive_fd));
 
 	g_clear_object (&info->proxy);
+
+#if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_GLIB
+	g_clear_pointer (&info->libdbus.bus, dbus_g_connection_unref);
+#endif
 
 	if (info->pid != NM_PID_T_INVAL) {
 		kill (info->pid, SIGTERM);
@@ -228,6 +255,7 @@ again_wait:
 	g_free (info);
 }
 
+#if !((NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_GLIB)
 typedef struct {
 	GMainLoop *loop;
 	const char *ifname;
@@ -340,6 +368,7 @@ nmtstc_service_add_wired_device (NMTstcServiceInfo *sinfo, NMClient *client,
 {
 	return add_device_common (sinfo, client, "AddWiredDevice", ifname, hwaddr, subchannels);
 }
+#endif
 
 void
 nmtstc_service_add_connection (NMTstcServiceInfo *sinfo,
@@ -347,10 +376,41 @@ nmtstc_service_add_connection (NMTstcServiceInfo *sinfo,
                                gboolean verify_connection,
                                char **out_path)
 {
+#if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_GLIB
+	gs_unref_hashtable GHashTable *new_settings = NULL;
+	gboolean success;
+	gs_free_error GError *error = NULL;
+	gs_free char *path = NULL;
+	gs_unref_object DBusGProxy *proxy = NULL;
+
+	g_assert (sinfo);
+	g_assert (NM_IS_CONNECTION (connection));
+
+	new_settings = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+
+	proxy = _libdbus_create_proxy_test (sinfo->libdbus.bus);
+
+	success = dbus_g_proxy_call (proxy,
+	                             "AddConnection",
+	                             &error,
+	                             DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, new_settings,
+	                             G_TYPE_BOOLEAN, verify_connection,
+	                             G_TYPE_INVALID,
+	                             DBUS_TYPE_G_OBJECT_PATH, &path,
+	                             G_TYPE_INVALID);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	g_assert (path && *path);
+
+	if (out_path)
+		*out_path = g_strdup (path);
+#else
 	nmtstc_service_add_connection_variant (sinfo,
 	                                       nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL),
 	                                       verify_connection,
 	                                       out_path);
+#endif
 }
 
 void
@@ -390,10 +450,37 @@ nmtstc_service_update_connection (NMTstcServiceInfo *sinfo,
 		path = nm_connection_get_path (connection);
 	g_assert (path);
 
+#if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_GLIB
+	{
+		gs_unref_hashtable GHashTable *new_settings = NULL;
+		gboolean success;
+		gs_free_error GError *error = NULL;
+		gs_unref_object DBusGProxy *proxy = NULL;
+
+		g_assert (sinfo);
+		g_assert (NM_IS_CONNECTION (connection));
+
+		new_settings = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+
+		proxy = _libdbus_create_proxy_test (sinfo->libdbus.bus);
+
+		success = dbus_g_proxy_call (proxy,
+		                             "UpdateConnection",
+		                             &error,
+		                             DBUS_TYPE_G_OBJECT_PATH, path,
+		                             DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, new_settings,
+		                             G_TYPE_BOOLEAN, verify_connection,
+		                             G_TYPE_INVALID,
+		                             G_TYPE_INVALID);
+		g_assert_no_error (error);
+		g_assert (success);
+	}
+#else
 	nmtstc_service_update_connection_variant (sinfo,
 	                                          path,
 	                                          nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL),
 	                                          verify_connection);
+#endif
 }
 
 void
@@ -421,3 +508,55 @@ nmtstc_service_update_connection_variant (NMTstcServiceInfo *sinfo,
 	g_assert (g_variant_is_of_type (result, G_VARIANT_TYPE ("()")));
 	g_variant_unref (result);
 }
+
+/*****************************************************************************/
+
+#if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_GLIB
+NMClient *
+nmtstc_nm_client_new (void)
+{
+	NMClient *client;
+	DBusGConnection *bus;
+	GError *error = NULL;
+	gboolean success;
+
+	bus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+	g_assert_no_error (error);
+	g_assert (bus);
+
+	client = g_object_new (NM_TYPE_CLIENT,
+	                       NM_OBJECT_DBUS_CONNECTION, bus,
+	                       NM_OBJECT_DBUS_PATH, NM_DBUS_PATH,
+	                       NULL);
+	g_assert (client != NULL);
+
+	dbus_g_connection_unref (bus);
+
+	success = g_initable_init (G_INITABLE (client), NULL, &error);
+	g_assert_no_error (error);
+	g_assert (success == TRUE);
+
+	return client;
+}
+
+NMRemoteSettings *
+nmtstc_nm_remote_settings_new (void)
+{
+	NMRemoteSettings *settings;
+	DBusGConnection *bus;
+	GError *error = NULL;
+
+	bus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+	g_assert_no_error (error);
+	g_assert (bus);
+
+	settings = nm_remote_settings_new (bus);
+	g_assert (settings);
+
+	dbus_g_connection_unref (bus);
+
+	return settings;
+}
+#endif
+
+/*****************************************************************************/

@@ -13,6 +13,11 @@ deps = [
   nm_core_dep,
 ]
 
+if have_fake_typelibs
+  deps += gir_dep
+  subdir('fake-typelib')
+endif
+
 libnm_utils = static_library(
   'nm-utils',
   sources: libnm_utils_sources,

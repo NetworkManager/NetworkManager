@@ -34,6 +34,7 @@ option('ofono', type: 'boolean', value: false, description: 'Enable oFono suppor
 option('concheck', type: 'boolean', value: true, description: 'enable connectivity checking support')
 option('teamdctl', type: 'boolean', value: false, description: 'enable Teamd control support')
 option('ovs', type: 'boolean', value: true, description: 'enable Open vSwitch support')
+option('libnm_glib', type: 'boolean', value: false, description: 'build legacy libraries')
 option('nmcli', type: 'boolean', value: true, description: 'Build nmcli')
 option('nmtui', type: 'boolean', value: true, description: 'Build nmtui')
 option('bluez5_dun', type: 'boolean', value: false, description: 'enable Bluez5 DUN support')

@@ -98,6 +98,7 @@ run_autotools() {
             --enable-tests=yes \
             --with-crypto=$_WITH_CRYPTO \
             \
+            --with-libnm-glib=yes \
             --with-iwd=yes \
             --with-ofono=yes \
             --enable-teamdctl=$_WITH_LIBTEAM \
@@ -166,6 +167,7 @@ run_meson() {
         -D crypto=$_WITH_CRYPTO \
         -D docs=$_WITH_DOCS \
         \
+        -D libnm_glib=true \
         -D iwd=true \
         -D ofono=true \
         -D teamdctl=$_WITH_LIBTEAM \

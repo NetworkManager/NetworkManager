@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libnm-glib-vpn
+Description: Convenience library for NetworkManager VPN plugins
+Version: @VERSION@
+Requires: NetworkManager >= @VERSION@ glib-2.0 dbus-glib-1
+Cflags: -I${includedir}/libnm-glib
+Libs: -L${libdir} -lnm-glib-vpn
+
+

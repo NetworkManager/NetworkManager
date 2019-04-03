@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+	<gresource prefix="/org/freedesktop/libnm/fake-typelib">
+		<file>NetworkManager.typelib</file>
+		<file>NMClient.typelib</file>
+	</gresource>
+</gresources>

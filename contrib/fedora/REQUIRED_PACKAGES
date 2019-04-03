@@ -28,6 +28,7 @@ install \
     bzip2 \
     cscope \
     dbus-devel \
+    dbus-glib-devel \
     dbus-python \
     dbus-x11 \
     dhclient \

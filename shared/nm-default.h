@@ -30,6 +30,8 @@
 #define NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE           (1 <<  5)
 #define NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE_INTERNAL  (1 <<  6)
 #define NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE_PRIVATE   (1 <<  7)
+#define NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_UTIL           (1 <<  8)
+#define NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_GLIB           (1 <<  9)
 #define NM_NETWORKMANAGER_COMPILATION_WITH_DAEMON               (1 << 10)
 #define NM_NETWORKMANAGER_COMPILATION_WITH_SYSTEMD              (1 << 11)
 
@@ -48,6 +50,17 @@
                                                      | NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_PRIVATE \
                                                      | NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE \
                                                      | NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE_INTERNAL \
+                                                     )
+
+#define NM_NETWORKMANAGER_COMPILATION_LIBNM_UTIL     ( 0 \
+                                                     | NM_NETWORKMANAGER_COMPILATION_WITH_GLIB \
+                                                     | NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB \
+                                                     | NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_UTIL \
+                                                     )
+
+#define NM_NETWORKMANAGER_COMPILATION_LIBNM_GLIB     ( 0 \
+                                                     | NM_NETWORKMANAGER_COMPILATION_LIBNM_UTIL \
+                                                     | NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_GLIB \
                                                      )
 
 #define NM_NETWORKMANAGER_COMPILATION_CLIENT         ( 0 \
@@ -280,11 +293,16 @@ _nm_g_return_if_fail_warning (const char *log_domain,
 #include "nm-utils/nm-macros-internal.h"
 #include "nm-utils/nm-shared-utils.h"
 #include "nm-utils/nm-errno.h"
+
+#if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_UTIL
+/* no hash-utils in legacy code. */
+#else
 #include "nm-utils/nm-hash-utils.h"
+#endif
 
 /*****************************************************************************/
 
-#if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE
+#if (NETWORKMANAGER_COMPILATION) & (NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE | NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_UTIL)
 #include "nm-version.h"
 #endif
 
