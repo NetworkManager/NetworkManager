@@ -334,12 +334,24 @@ int nm_utils_dbus_path_cmp (const char *dbus_path_a, const char *dbus_path_b);
 
 typedef enum {
 	NM_UTILS_STRSPLIT_SET_FLAGS_NONE           = 0,
-	NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING = (1u << 0),
+	NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY = (1u << 0),
+	NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING = (1u << 1),
 } NMUtilsStrsplitSetFlags;
 
 const char **nm_utils_strsplit_set_full (const char *str,
                                          const char *delimiter,
                                          NMUtilsStrsplitSetFlags flags);
+
+static inline const char **
+nm_utils_strsplit_set_with_empty (const char *str,
+                                  const char *delimiters)
+{
+	/* this returns the same result as g_strsplit_set(str, delimiters, -1), except
+	 * it does not deep-clone the strv array.
+	 * Also, for @str == "", this returns %NULL while g_strsplit_set() would return
+	 * an empty strv array. */
+	return nm_utils_strsplit_set_full (str, delimiters, NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY);
+}
 
 static inline const char **
 nm_utils_strsplit_set (const char *str,
