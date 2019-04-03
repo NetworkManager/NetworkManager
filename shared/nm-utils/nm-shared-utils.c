@@ -989,17 +989,26 @@ _char_lookup_has (const guint8 lookup[static 256],
  * each word once (the entire strv array), but instead copies it once
  * and all words point into that internal copy.
  *
- * Another difference from g_strsplit_set() is that this never returns
- * empty words. Multiple delimiters are combined and treated as one.
+ * Note that for @str %NULL and "", this always returns %NULL too. That differs
+ * from g_strsplit_set(), which would return an empty strv array for "".
+ *
+ * Note that g_strsplit_set() returns empty words as well. By default,
+ * nm_utils_strsplit_set_full() strips all empty tokens (that is, repeated
+ * delimiters. With %NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, empty tokens
+ * are not removed.
  *
  * If @flags has %NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING, delimiters prefixed
  * by a backslash are not treated as a separator. Such delimiters and their escape
- * character are copied to the current word without unescaping them.
+ * character are copied to the current word without unescaping them. In general,
+ * nm_utils_strsplit_set_full() does not remove any backslash escape characters
+ * and does not unescaping. It only considers them for skipping to split at
+ * an escaped delimiter.
  *
- * Returns: %NULL if @str is %NULL or contains only delimiters.
- *   Otherwise, a %NULL terminated strv array containing non-empty
- *   words, split at the delimiter characters (delimiter characters
- *   are removed).
+ * Returns: %NULL if @str is %NULL or "".
+ *   If @str only contains delimiters and %NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY
+ *   is not set, it also returns %NULL.
+ *   Otherwise, a %NULL terminated strv array containing the split words.
+ *   (delimiter characters are removed).
  *   The strings to which the result strv array points to are allocated
  *   after the returned result itself. Don't free the strings themself,
  *   but free everything with g_free().
@@ -1012,12 +1021,15 @@ nm_utils_strsplit_set_full (const char *str,
                             NMUtilsStrsplitSetFlags flags)
 {
 	const char **ptr, **ptr0;
-	gsize alloc_size, plen, i;
+	gsize alloc_size;
+	gsize plen;
+	gsize i;
 	gsize str_len;
 	char *s0;
 	char *s;
 	guint8 ch_lookup[256];
 	const gboolean f_allow_escaping = NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
+	const gboolean f_preseve_empty = NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY);
 
 	if (!str)
 		return NULL;
@@ -1031,11 +1043,18 @@ nm_utils_strsplit_set_full (const char *str,
 	nm_assert (   !f_allow_escaping
 	           || !_char_lookup_has (ch_lookup, '\\'));
 
-	while (_char_lookup_has (ch_lookup, str[0]))
-		str++;
+	if (!f_preseve_empty) {
+		while (_char_lookup_has (ch_lookup, str[0]))
+			str++;
+	}
 
-	if (!str[0])
+	if (!str[0]) {
+		/* We return %NULL here, also with NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY.
+		 * That makes nm_utils_strsplit_set_full() with NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY
+		 * different from g_strsplit_set(), which would in this case return an empty array.
+		 * If you need to handle %NULL, and "" specially, then check the input string first. */
 		return NULL;
+	}
 
 	str_len = strlen (str) + 1;
 	alloc_size = 8;
@@ -1065,7 +1084,12 @@ nm_utils_strsplit_set_full (const char *str,
 
 		ptr[plen++] = s;
 
-		nm_assert (s[0] && !_char_lookup_has (ch_lookup, s[0]));
+		if (s[0] == '\0') {
+			nm_assert (f_preseve_empty);
+			goto done;
+		}
+		nm_assert (   f_preseve_empty
+		           || !_char_lookup_has (ch_lookup, s[0]));
 
 		while (!_char_lookup_has (ch_lookup, s[0])) {
 			if (G_UNLIKELY (   s[0] == '\\'
@@ -1083,10 +1107,12 @@ nm_utils_strsplit_set_full (const char *str,
 		nm_assert (_char_lookup_has (ch_lookup, s[0]));
 		s[0] = '\0';
 		s++;
-		while (_char_lookup_has (ch_lookup, s[0]))
-			s++;
-		if (s[0] == '\0')
-			goto done;
+		if (!f_preseve_empty) {
+			while (_char_lookup_has (ch_lookup, s[0]))
+				s++;
+			if (s[0] == '\0')
+				goto done;
+		}
 	}
 
 done:
