@@ -508,7 +508,8 @@ nmc_string_to_arg_array (const char *line, const char *delim, gboolean unquote,
 	gs_free const char **arr0 = NULL;
 	char **arr;
 
-	arr0 = nm_utils_strsplit_set (line ?: "", delim ?: " \t", FALSE);
+	arr0 = nm_utils_strsplit_set (line ?: "",
+	                              delim ?: " \t");
 	if (!arr0)
 		arr = g_new0 (char *, 1);
 	else

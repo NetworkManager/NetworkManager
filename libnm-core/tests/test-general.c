@@ -276,7 +276,15 @@ _do_test_nm_utils_strsplit_set (gboolean escape, const char *str, ...)
 
 	args = (const char *const*) args_array->pdata;
 
-	words = nm_utils_strsplit_set (str, " \t\n", escape);
+	if (!escape && nmtst_get_rand_bool ())
+		words = nm_utils_strsplit_set (str, " \t\n");
+	else {
+		words = nm_utils_strsplit_set_full (str,
+		                                    " \t\n",
+		                                      escape
+		                                    ? NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING
+		                                    : NM_UTILS_STRSPLIT_SET_FLAGS_NONE);
+	}
 
 	if (!args[0]) {
 		g_assert (!words);

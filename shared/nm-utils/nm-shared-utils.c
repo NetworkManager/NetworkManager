@@ -972,11 +972,11 @@ _char_lookup_table_init (guint8 lookup[static 256],
 }
 
 /**
- * nm_utils_strsplit_set:
+ * nm_utils_strsplit_set_full:
  * @str: the string to split.
  * @delimiters: the set of delimiters. If %NULL, defaults to " \t\n",
  *   like bash's $IFS.
- * @allow_escaping: whether delimiters can be escaped by a backslash
+ * @flags: additional flags for controlling the operation.
  *
  * This is a replacement for g_strsplit_set() which avoids copying
  * each word once (the entire strv array), but instead copies it once
@@ -985,8 +985,8 @@ _char_lookup_table_init (guint8 lookup[static 256],
  * Another difference from g_strsplit_set() is that this never returns
  * empty words. Multiple delimiters are combined and treated as one.
  *
- * If @allow_escaping is %TRUE, delimiters prefixed by a backslash are
- * not treated as a separator. Such delimiters and their escape
+ * If @flags has %NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING, delimiters prefixed
+ * by a backslash are not treated as a separator. Such delimiters and their escape
  * character are copied to the current word without unescaping them.
  *
  * Returns: %NULL if @str is %NULL or contains only delimiters.
@@ -1000,7 +1000,9 @@ _char_lookup_table_init (guint8 lookup[static 256],
  *   like "g_strstrip((char *) iter[0])".
  */
 const char **
-nm_utils_strsplit_set (const char *str, const char *delimiters, gboolean allow_escaping)
+nm_utils_strsplit_set_full (const char *str,
+                            const char *delimiters,
+                            NMUtilsStrsplitSetFlags flags)
 {
 	const char **ptr, **ptr0;
 	gsize alloc_size, plen, i;
@@ -1009,6 +1011,7 @@ nm_utils_strsplit_set (const char *str, const char *delimiters, gboolean allow_e
 	char *s;
 	guint8 delimiters_table[256];
 	gboolean escaped = FALSE;
+	const gboolean f_allow_escaping = NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
 
 	if (!str)
 		return NULL;
@@ -1033,7 +1036,7 @@ nm_utils_strsplit_set (const char *str, const char *delimiters, gboolean allow_e
 
 	/* skip initial delimiters, and return of the remaining string is
 	 * empty. */
-	while (_is_delimiter (str[0], delimiters_table, allow_escaping, escaped))
+	while (_is_delimiter (str[0], delimiters_table, f_allow_escaping, escaped))
 		next_char (str, escaped);
 
 	if (!str[0])
@@ -1067,11 +1070,11 @@ nm_utils_strsplit_set (const char *str, const char *delimiters, gboolean allow_e
 
 		ptr[plen++] = s;
 
-		nm_assert (s[0] && !_is_delimiter (s[0], delimiters_table, allow_escaping, escaped));
+		nm_assert (s[0] && !_is_delimiter (s[0], delimiters_table, f_allow_escaping, escaped));
 
 		while (TRUE) {
 			next_char (s, escaped);
-			if (_is_delimiter (s[0], delimiters_table, allow_escaping, escaped))
+			if (_is_delimiter (s[0], delimiters_table, f_allow_escaping, escaped))
 				break;
 			if (s[0] == '\0')
 				goto done;
@@ -1079,7 +1082,7 @@ nm_utils_strsplit_set (const char *str, const char *delimiters, gboolean allow_e
 
 		s[0] = '\0';
 		next_char (s, escaped);
-		while (_is_delimiter (s[0], delimiters_table, allow_escaping, escaped))
+		while (_is_delimiter (s[0], delimiters_table, f_allow_escaping, escaped))
 			next_char (s, escaped);
 		if (s[0] == '\0')
 			break;
@@ -2272,7 +2275,7 @@ nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid)
 
 	state = p[0];
 
-	tokens = nm_utils_strsplit_set (p, " ", FALSE);
+	tokens = nm_utils_strsplit_set (p, " ");
 
 	if (NM_PTRARRAY_LEN (tokens) < 20)
 		goto fail;

@@ -197,19 +197,19 @@ _value_strsplit (const char *value,
 	/* note that all modes remove empty tokens (",", "a,,b", ",,"). */
 	switch (split_mode) {
 	case VALUE_STRSPLIT_MODE_STRIPPED:
-		strv = nm_utils_strsplit_set (value, NM_ASCII_SPACES",", FALSE);
+		strv = nm_utils_strsplit_set (value, NM_ASCII_SPACES",");
 		break;
 	case VALUE_STRSPLIT_MODE_OBJLIST:
-		strv = nm_utils_strsplit_set (value, ",", FALSE);
+		strv = nm_utils_strsplit_set (value, ",");
 		break;
 	case VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE:
-		strv = nm_utils_strsplit_set (value, ",", TRUE);
+		strv = nm_utils_strsplit_set_full (value, ",", NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
 		break;
 	case VALUE_STRSPLIT_MODE_MULTILIST:
-		strv = nm_utils_strsplit_set (value, " \t,", FALSE);
+		strv = nm_utils_strsplit_set (value, " \t,");
 		break;
 	case VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE:
-		strv = nm_utils_strsplit_set (value, MULTILIST_WITH_ESCAPE_CHARS, TRUE);
+		strv = nm_utils_strsplit_set_full (value, MULTILIST_WITH_ESCAPE_CHARS, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
 		break;
 	default:
 		nm_assert_not_reached ();
@@ -306,7 +306,7 @@ _parse_ip_route (int family,
 	nm_assert (!error || !*error);
 
 	str_clean = nm_strstrip_avoid_copy_a (300, str, &str_clean_free);
-	routev = nm_utils_strsplit_set (str_clean, " \t", FALSE);
+	routev = nm_utils_strsplit_set (str_clean, " \t");
 	if (!routev) {
 		g_set_error (error, 1, 0,
 		             "'%s' is not valid. %s",
@@ -480,7 +480,7 @@ _parse_team_link_watcher (const char *str,
 	nm_assert (!error || !*error);
 
 	str_clean = nm_strstrip_avoid_copy_a (300, str, &str_clean_free);
-	watcherv = nm_utils_strsplit_set (str_clean, " \t", FALSE);
+	watcherv = nm_utils_strsplit_set (str_clean, " \t");
 	if (!watcherv) {
 		g_set_error (error, 1, 0, "'%s' is not valid", str);
 		return NULL;
@@ -489,7 +489,7 @@ _parse_team_link_watcher (const char *str,
 	for (i = 0; watcherv[i]; i++) {
 		gs_free const char **pair = NULL;
 
-		pair = nm_utils_strsplit_set (watcherv[i], "=", FALSE);
+		pair = nm_utils_strsplit_set (watcherv[i], "=");
 		if (!pair) {
 			g_set_error (error, 1, 0, "'%s' is not valid: %s", watcherv[i],
 			             "properties should be specified as 'key=value'");
@@ -1935,7 +1935,7 @@ _set_fcn_optionlist (ARGS_SET_FCN)
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	nstrv = 0;
-	strv = nm_utils_strsplit_set (value, ",", FALSE);
+	strv = nm_utils_strsplit_set (value, ",");
 	if (strv) {
 		strv_val = g_new (const char *, NM_PTRARRAY_LEN (strv));
 		for (i = 0; strv[i]; i++) {
@@ -2187,7 +2187,7 @@ _set_fcn_gobject_bytes (ARGS_SET_FCN)
 	}
 
 	/* Otherwise, consider the following format: AA b 0xCc D */
-	strv = nm_utils_strsplit_set (value, " \t", FALSE);
+	strv = nm_utils_strsplit_set (value, " \t");
 	array = g_byte_array_sized_new (NM_PTRARRAY_LEN (strv));
 	for (iter = strv; iter && *iter; iter++) {
 		int v;
@@ -2797,7 +2797,7 @@ _set_fcn_dcb_flags (ARGS_SET_FCN)
 		const char *const*iter;
 
 		/* Check for individual flag numbers */
-		strv = nm_utils_strsplit_set (value, " \t,", FALSE);
+		strv = nm_utils_strsplit_set (value, " \t,");
 		for (iter = strv; iter && *iter; iter++) {
 			t = _nm_utils_ascii_str_to_int64 (*iter, 0, 0, DCB_ALL_FLAGS, -1);
 
@@ -3948,7 +3948,7 @@ _set_fcn_wired_s390_subchannels (ARGS_SET_FCN)
 	if (_SET_FCN_DO_RESET_DEFAULT (property_info, modifier, value))
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
-	strv = nm_utils_strsplit_set (value, " ,\t", FALSE);
+	strv = nm_utils_strsplit_set (value, " ,\t");
 	len = NM_PTRARRAY_LEN (strv);
 	if (len != 2 && len != 3) {
 		g_set_error (error, 1, 0, _("'%s' is not valid; 2 or 3 strings should be provided"),
