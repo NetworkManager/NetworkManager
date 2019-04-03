@@ -974,8 +974,7 @@ _char_lookup_table_init (guint8 lookup[static 256],
 /**
  * nm_utils_strsplit_set_full:
  * @str: the string to split.
- * @delimiters: the set of delimiters. If %NULL, defaults to " \t\n",
- *   like bash's $IFS.
+ * @delimiters: the set of delimiters.
  * @flags: additional flags for controlling the operation.
  *
  * This is a replacement for g_strsplit_set() which avoids copying
@@ -1017,8 +1016,10 @@ nm_utils_strsplit_set_full (const char *str,
 		return NULL;
 
 	/* initialize lookup table for delimiter */
-	if (!delimiters)
+	if (!delimiters) {
+		nm_assert_not_reached ();
 		delimiters = " \t\n";
+	}
 
 	_char_lookup_table_init (delimiters_table, delimiters);
 

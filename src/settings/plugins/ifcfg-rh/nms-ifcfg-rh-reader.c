@@ -4147,7 +4147,7 @@ parse_ethtool_option (const char *value,
 	gs_free const char **words = NULL;
 	guint i;
 
-	words = nm_utils_strsplit_set (value, NULL);
+	words = nm_utils_strsplit_set (value, " \t\n");
 	if (!words)
 		return;
 
