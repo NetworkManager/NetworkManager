@@ -1017,36 +1017,22 @@ nm_utils_strsplit_set_full (const char *str,
 	char *s0;
 	char *s;
 	guint8 ch_lookup[256];
-	gboolean escaped = FALSE;
 	const gboolean f_allow_escaping = NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
 
 	if (!str)
 		return NULL;
 
-	/* initialize lookup table for delimiter */
 	if (!delimiters) {
 		nm_assert_not_reached ();
 		delimiters = " \t\n";
 	}
-
 	_char_lookup_table_init (ch_lookup, delimiters);
 
-#define _is_delimiter(ch_lookup, ch, allow_esc, esc) \
-    (_char_lookup_has ((ch_lookup), (ch)) && (!allow_esc || !esc))
+	nm_assert (   !f_allow_escaping
+	           || !_char_lookup_has (ch_lookup, '\\'));
 
-#define next_char(p, esc) \
-	G_STMT_START { \
-		if (esc) \
-			esc = FALSE; \
-		else \
-			esc = p[0] == '\\'; \
-		p++; \
-	} G_STMT_END
-
-	/* skip initial delimiters, and return of the remaining string is
-	 * empty. */
-	while (_is_delimiter (ch_lookup, str[0], f_allow_escaping, escaped))
-		next_char (str, escaped);
+	while (_char_lookup_has (ch_lookup, str[0]))
+		str++;
 
 	if (!str[0])
 		return NULL;
@@ -1079,23 +1065,30 @@ nm_utils_strsplit_set_full (const char *str,
 
 		ptr[plen++] = s;
 
-		nm_assert (s[0] && !_is_delimiter (ch_lookup, s[0], f_allow_escaping, escaped));
+		nm_assert (s[0] && !_char_lookup_has (ch_lookup, s[0]));
 
-		while (TRUE) {
-			next_char (s, escaped);
-			if (_is_delimiter (ch_lookup, s[0], f_allow_escaping, escaped))
-				break;
-			if (s[0] == '\0')
+		while (!_char_lookup_has (ch_lookup, s[0])) {
+			if (G_UNLIKELY (   s[0] == '\\'
+			                && f_allow_escaping)) {
+				s++;
+				if (s[0] == '\0')
+					goto done;
+				s++;
+			} else if (s[0] == '\0')
 				goto done;
+			else
+				s++;
 		}
 
+		nm_assert (_char_lookup_has (ch_lookup, s[0]));
 		s[0] = '\0';
-		next_char (s, escaped);
-		while (_is_delimiter (ch_lookup, s[0], f_allow_escaping, escaped))
-			next_char (s, escaped);
+		s++;
+		while (_char_lookup_has (ch_lookup, s[0]))
+			s++;
 		if (s[0] == '\0')
-			break;
+			goto done;
 	}
+
 done:
 	ptr[plen] = NULL;
 
