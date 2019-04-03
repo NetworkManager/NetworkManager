@@ -332,7 +332,21 @@ int nm_utils_dbus_path_cmp (const char *dbus_path_a, const char *dbus_path_b);
 
 /*****************************************************************************/
 
-const char **nm_utils_strsplit_set (const char *str, const char *delimiters, gboolean allow_escaping);
+typedef enum {
+	NM_UTILS_STRSPLIT_SET_FLAGS_NONE           = 0,
+	NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING = (1u << 0),
+} NMUtilsStrsplitSetFlags;
+
+const char **nm_utils_strsplit_set_full (const char *str,
+                                         const char *delimiter,
+                                         NMUtilsStrsplitSetFlags flags);
+
+static inline const char **
+nm_utils_strsplit_set (const char *str,
+                       const char *delimiters)
+{
+	return nm_utils_strsplit_set_full (str, delimiters, NM_UTILS_STRSPLIT_SET_FLAGS_NONE);
+}
 
 char *nm_utils_str_simpletokens_extract_next (char **p_line_start);
 

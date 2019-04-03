@@ -432,7 +432,7 @@ nm_bridge_vlan_from_str (const char *str, GError **error)
 	g_return_val_if_fail (str, NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
 
-	tokens = nm_utils_strsplit_set (str, " ", FALSE);
+	tokens = nm_utils_strsplit_set (str, " ");
 	if (!tokens || !tokens[0]) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,

@@ -2849,7 +2849,7 @@ _nm_sriov_vf_parse_vlans (NMSriovVF *vf, const char *str, GError **error)
 	gs_free const char **vlans = NULL;
 	guint i;
 
-	vlans = nm_utils_strsplit_set (str, ";", FALSE);
+	vlans = nm_utils_strsplit_set (str, ";");
 	if (!vlans) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
