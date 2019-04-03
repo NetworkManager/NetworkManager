@@ -475,6 +475,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %build
 %if %{with meson}
 %meson \
+	-Db_ndebug=false \
 	--warnlevel 2 \
 %if %{with test}
 	--werror \
