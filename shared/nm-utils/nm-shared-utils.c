@@ -971,6 +971,14 @@ _char_lookup_table_init (guint8 lookup[static 256],
 		lookup[(guint8) ((candidates++)[0])] = 1;
 }
 
+static gboolean
+_char_lookup_has (const guint8 lookup[static 256],
+                  char ch)
+{
+	nm_assert (lookup[(guint8) '\0'] == 0);
+	return lookup[(guint8) ch] != 0;
+}
+
 /**
  * nm_utils_strsplit_set_full:
  * @str: the string to split.
@@ -1008,7 +1016,7 @@ nm_utils_strsplit_set_full (const char *str,
 	gsize str_len;
 	char *s0;
 	char *s;
-	guint8 delimiters_table[256];
+	guint8 ch_lookup[256];
 	gboolean escaped = FALSE;
 	const gboolean f_allow_escaping = NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
 
@@ -1021,10 +1029,10 @@ nm_utils_strsplit_set_full (const char *str,
 		delimiters = " \t\n";
 	}
 
-	_char_lookup_table_init (delimiters_table, delimiters);
+	_char_lookup_table_init (ch_lookup, delimiters);
 
-#define _is_delimiter(ch, delimiters_table, allow_esc, esc) \
-	((delimiters_table)[(guint8) (ch)] != 0 && (!allow_esc || !esc))
+#define _is_delimiter(ch_lookup, ch, allow_esc, esc) \
+    (_char_lookup_has ((ch_lookup), (ch)) && (!allow_esc || !esc))
 
 #define next_char(p, esc) \
 	G_STMT_START { \
@@ -1037,7 +1045,7 @@ nm_utils_strsplit_set_full (const char *str,
 
 	/* skip initial delimiters, and return of the remaining string is
 	 * empty. */
-	while (_is_delimiter (str[0], delimiters_table, f_allow_escaping, escaped))
+	while (_is_delimiter (ch_lookup, str[0], f_allow_escaping, escaped))
 		next_char (str, escaped);
 
 	if (!str[0])
@@ -1071,11 +1079,11 @@ nm_utils_strsplit_set_full (const char *str,
 
 		ptr[plen++] = s;
 
-		nm_assert (s[0] && !_is_delimiter (s[0], delimiters_table, f_allow_escaping, escaped));
+		nm_assert (s[0] && !_is_delimiter (ch_lookup, s[0], f_allow_escaping, escaped));
 
 		while (TRUE) {
 			next_char (s, escaped);
-			if (_is_delimiter (s[0], delimiters_table, f_allow_escaping, escaped))
+			if (_is_delimiter (ch_lookup, s[0], f_allow_escaping, escaped))
 				break;
 			if (s[0] == '\0')
 				goto done;
@@ -1083,7 +1091,7 @@ nm_utils_strsplit_set_full (const char *str,
 
 		s[0] = '\0';
 		next_char (s, escaped);
-		while (_is_delimiter (s[0], delimiters_table, f_allow_escaping, escaped))
+		while (_is_delimiter (ch_lookup, s[0], f_allow_escaping, escaped))
 			next_char (s, escaped);
 		if (s[0] == '\0')
 			break;
@@ -2430,8 +2438,6 @@ _nm_utils_user_data_unpack (gpointer user_data, int nargs, ...)
 
 /*****************************************************************************/
 
-#define _CH_LOOKUP(ch_lookup, ch) (!!((ch_lookup)[(guint8) (ch)]))
-
 const char *
 _nm_utils_escape_plain (const char *str, const char *candidates, char **to_free)
 {
@@ -2449,7 +2455,7 @@ _nm_utils_escape_plain (const char *str, const char *candidates, char **to_free)
 	while (TRUE) {
 		if (!*ptr)
 			return str;
-		if (_CH_LOOKUP (ch_lookup, *ptr))
+		if (_char_lookup_has (ch_lookup, *ptr))
 			break;
 		ptr++;
 	}
@@ -2459,7 +2465,7 @@ _nm_utils_escape_plain (const char *str, const char *candidates, char **to_free)
 	r = ret;
 	*to_free = ret;
 	while (*ptr) {
-		if (_CH_LOOKUP (ch_lookup, *ptr))
+		if (_char_lookup_has (ch_lookup, *ptr))
 			*r++ = '\\';
 		*r++ = *ptr++;
 	}
@@ -2482,13 +2488,13 @@ _nm_utils_unescape_plain (char *str, const char *candidates, gboolean do_strip)
 	_char_lookup_table_init (ch_lookup, candidates ?: NM_ASCII_SPACES);
 
 	if (do_strip) {
-		while (str[i] && _CH_LOOKUP (ch_lookup, str[i]))
+		while (str[i] && _char_lookup_has (ch_lookup, str[i]))
 			i++;
 	}
 
 	for (; str[i]; i++) {
 		if (   str[i] == '\\'
-		    && _CH_LOOKUP (ch_lookup, str[i+1])) {
+		    && _char_lookup_has (ch_lookup, str[i+1])) {
 			preserve_space_at = j;
 			i++;
 		}
@@ -2498,7 +2504,7 @@ _nm_utils_unescape_plain (char *str, const char *candidates, gboolean do_strip)
 
 	if (do_strip && j > 0) {
 		while (   --j > preserve_space_at
-		       && _CH_LOOKUP (ch_lookup, str[j]))
+		       && _char_lookup_has (ch_lookup, str[j]))
 			str[j] = '\0';
 	}
 
