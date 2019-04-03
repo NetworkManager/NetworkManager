@@ -5425,7 +5425,6 @@ static const NMMetaPropertyInfo *const property_infos_GSM[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_GSM_APN,
 		.is_cli_option =                TRUE,
 		.property_alias =               "apn",
-		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
 		.prompt =                       N_("APN"),
 		.property_type =                &_pt_gobject_string,
 	),
