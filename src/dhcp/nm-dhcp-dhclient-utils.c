@@ -50,10 +50,10 @@
 static void
 add_request (GPtrArray *array, const char *item)
 {
-	int i;
+	guint i;
 
 	for (i = 0; i < array->len; i++) {
-		if (!strcmp (g_ptr_array_index (array, i), item))
+		if (nm_streq (array->pdata[i], item))
 			return;
 	}
 	g_ptr_array_add (array, g_strdup (item));
@@ -289,8 +289,9 @@ nm_dhcp_dhclient_create_config (const char *interface,
                                 const char *orig_contents,
                                 GBytes **out_new_client_id)
 {
-	GString *new_contents;
-	GPtrArray *fqdn_opts, *reqs;
+	nm_auto_free_gstring GString *new_contents = NULL;
+	gs_unref_ptrarray GPtrArray *fqdn_opts = NULL;
+	gs_unref_ptrarray GPtrArray *reqs = NULL;
 	gboolean reset_reqlist = FALSE;
 	int i;
 
@@ -299,11 +300,11 @@ nm_dhcp_dhclient_create_config (const char *interface,
 	nm_assert (!out_new_client_id || !*out_new_client_id);
 
 	new_contents = g_string_new (_("# Created by NetworkManager\n"));
-	fqdn_opts = g_ptr_array_sized_new (5);
 	reqs = g_ptr_array_new_full (5, g_free);
 
 	if (orig_contents) {
-		char **lines, **line;
+		gs_free const char **lines = NULL;
+		gsize line_i;
 		int nest = 0;
 		gboolean in_alsoreq = FALSE;
 		gboolean in_req = FALSE;
@@ -312,19 +313,23 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		g_string_append_printf (new_contents, _("# Merged from %s\n\n"), orig_path);
 		intf[0] = '\0';
 
-		lines = g_strsplit_set (orig_contents, "\n\r", 0);
-		for (line = lines; lines && *line; line++) {
-			char *p = *line;
+		lines = nm_utils_strsplit_set (orig_contents, "\n\r");
+		for (line_i = 0; lines && lines[line_i]; line_i++) {
+			const char *line = nm_str_skip_leading_spaces (lines[line_i]);
+			const char *p;
 
-			if (!strlen (g_strstrip (p)))
+			if (line[0] == '\0')
 				continue;
 
+			g_strchomp ((char *) line);
+
+			p = line;
 			if (in_req) {
 				/* pass */
 			} else if (strchr (p, '{')) {
 				nest++;
 				if (   !intf[0]
-				    && g_str_has_prefix (p, "interface"))
+				    && NM_STR_HAS_PREFIX (p, "interface"))
 					if (read_interface (p, intf, sizeof (intf)))
 						continue;
 			} else if (strchr (p, '}')) {
@@ -374,6 +379,8 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			 * default ones set by NM, add them later
 			 */
 			if (!strncmp (p, FQDN_TAG_PREFIX, NM_STRLEN (FQDN_TAG_PREFIX))) {
+				if (!fqdn_opts)
+					fqdn_opts = g_ptr_array_new_full (5, g_free);
 				g_ptr_array_add (fqdn_opts, g_strdup (p + NM_STRLEN (FQDN_TAG_PREFIX)));
 				continue;
 			}
@@ -408,12 +415,9 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			}
 
 			/* Existing configuration line is OK, add it to new configuration */
-			g_string_append (new_contents, *line);
+			g_string_append (new_contents, line);
 			g_string_append_c (new_contents, '\n');
 		}
-
-		if (lines)
-			g_strfreev (lines);
 	} else
 		g_string_append_c (new_contents, '\n');
 
@@ -447,17 +451,16 @@ nm_dhcp_dhclient_create_config (const char *interface,
 	/* And add it to the dhclient configuration */
 	for (i = 0; i < reqs->len; i++)
 		g_string_append_printf (new_contents, "also request %s;\n", (char *) reqs->pdata[i]);
-	g_ptr_array_free (reqs, TRUE);
 
-	for (i = 0; i < fqdn_opts->len; i++) {
-		char *t = g_ptr_array_index (fqdn_opts, i);
+	if (fqdn_opts) {
+		for (i = 0; i < fqdn_opts->len; i++) {
+			const char *t = fqdn_opts->pdata[i];
 
-		if (i == 0)
-			g_string_append_printf (new_contents, "\n# FQDN options from %s\n", orig_path);
-		g_string_append_printf (new_contents, FQDN_TAG_PREFIX "%s\n", t);
-		g_free (t);
+			if (i == 0)
+				g_string_append_printf (new_contents, "\n# FQDN options from %s\n", orig_path);
+			g_string_append_printf (new_contents, FQDN_TAG_PREFIX "%s\n", t);
+		}
 	}
-	g_ptr_array_free (fqdn_opts, TRUE);
 
 	g_string_append_c (new_contents, '\n');
 
@@ -469,7 +472,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		                        interface, anycast_addr);
 	}
 
-	return g_string_free (new_contents, FALSE);
+	return g_string_free (g_steal_pointer (&new_contents), FALSE);
 }
 
 /* Roughly follow what dhclient's quotify_buf() and pretty_escape() functions do */
