@@ -4548,22 +4548,23 @@ make_wired_setting (shvarFile *ifcfg,
 
 	value = svGetValueStr_cp (ifcfg, "OPTIONS");
 	if (value) {
-		char **options, **iter;
+		gs_free const char **options = NULL;
+		gsize i;
 
-		iter = options = g_strsplit_set (value, " ", 0);
-		while (iter && *iter) {
-			char *equals = strchr (*iter, '=');
+		options = nm_utils_strsplit_set_with_empty (value, " ");
+		for (i = 0; options && options[i]; i++) {
+			const char *line = options[i];
+			const char *equals;
 			gboolean valid = FALSE;
 
+			equals = strchr (line, '=');
 			if (equals) {
-				*equals = '\0';
-				valid = nm_setting_wired_add_s390_option (s_wired, *iter, equals + 1);
+				((char *) equals)[0] = '\0';
+				valid = nm_setting_wired_add_s390_option (s_wired, line, equals + 1);
 			}
 			if (!valid)
-				PARSE_WARNING ("invalid s390 OPTION '%s'", *iter);
-			iter++;
+				PARSE_WARNING ("invalid s390 OPTION '%s'", line);
 		}
-		g_strfreev (options);
 		nm_clear_g_free (&value);
 	}
 
