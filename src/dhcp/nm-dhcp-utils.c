@@ -100,67 +100,56 @@ out:
 	return have_routes;
 }
 
-static const char **
-process_dhclient_rfc3442_route (const char **octets,
-                                NMPlatformIP4Route *route,
-                                gboolean *success)
+static gboolean
+process_dhclient_rfc3442_route (const char *const**p_octets,
+                                NMPlatformIP4Route *route)
 {
-	const char **o = octets;
-	int addr_len = 0, i = 0;
-	long int tmp;
-	char *next_hop;
-	guint32 tmp_addr;
+	const char *const*o = *p_octets;
+	gs_free char *next_hop = NULL;
+	int addr_len;
+	int v_plen;
+	in_addr_t tmp_addr;
+	in_addr_t v_network = 0;
 
-	*success = FALSE;
-
-	if (!*o)
-		return o; /* no prefix */
-
-	tmp = strtol (*o, NULL, 10);
-	if (tmp < 0 || tmp > 32)  /* 32 == max IP4 prefix length */
-		return o;
-
-	memset (route, 0, sizeof (*route));
-	route->plen = tmp;
+	v_plen = _nm_utils_ascii_str_to_int64 (*o, 10, 0, 32, -1);
+	if (v_plen == -1)
+		return FALSE;
 	o++;
 
-	if (tmp > 0)
-		addr_len = ((tmp - 1) / 8) + 1;
+	addr_len =   v_plen > 0
+	           ? ((v_plen - 1) / 8) + 1
+	           : 0;
 
 	/* ensure there's at least the address + next hop left */
-	if (g_strv_length ((char **) o) < addr_len + 4)
-		goto error;
+	if (NM_PTRARRAY_LEN (o) < addr_len + 4)
+		return FALSE;
 
-	if (tmp) {
+	if (v_plen > 0) {
 		const char *addr[4] = { "0", "0", "0", "0" };
-		char *str_addr;
+		gs_free char *str_addr = NULL;
+		int i;
 
 		for (i = 0; i < addr_len; i++)
 			addr[i] = *o++;
 
 		str_addr = g_strjoin (".", addr[0], addr[1], addr[2], addr[3], NULL);
-		if (inet_pton (AF_INET, str_addr, &tmp_addr) <= 0) {
-			g_free (str_addr);
-			goto error;
-		}
-		g_free (str_addr);
-		route->network = nm_utils_ip4_address_clear_host_address (tmp_addr, tmp);
+		if (inet_pton (AF_INET, str_addr, &tmp_addr) <= 0)
+			return FALSE;
+		v_network = nm_utils_ip4_address_clear_host_address (tmp_addr, v_plen);
 	}
 
-	/* Handle next hop */
 	next_hop = g_strjoin (".", o[0], o[1], o[2], o[3], NULL);
-	if (inet_pton (AF_INET, next_hop, &tmp_addr) <= 0) {
-		g_free (next_hop);
-		goto error;
-	}
-	route->gateway = tmp_addr;
-	g_free (next_hop);
+	o += 4;
+	if (inet_pton (AF_INET, next_hop, &tmp_addr) <= 0)
+		return FALSE;
 
-	*success = TRUE;
-	return o + 4; /* advance to past the next hop */
-
-error:
-	return o;
+	*route = (NMPlatformIP4Route) {
+		.network = v_network,
+		.plen    = v_plen,
+		.gateway = tmp_addr,
+	};
+	*p_octets = o;
+	return TRUE;
 }
 
 static gboolean
@@ -171,23 +160,23 @@ ip4_process_dhclient_rfc3442_routes (const char *iface,
                                      NMIP4Config *ip4_config,
                                      guint32 *gwaddr)
 {
-	char **octets, **o;
+	gs_free const char **octets = NULL;
+	const char *const*o;
 	gboolean have_routes = FALSE;
-	NMPlatformIP4Route route;
-	gboolean success;
 
-	o = octets = g_strsplit_set (str, " .", 0);
-	if (g_strv_length (octets) < 5) {
+	octets = nm_utils_strsplit_set_with_empty (str, " .");
+	if (NM_PTRARRAY_LEN (octets) < 5) {
 		_LOG2W (LOGD_DHCP4, iface, "ignoring invalid classless static routes '%s'", str);
-		goto out;
+		return FALSE;
 	}
 
+	o = octets;
 	while (*o) {
-		memset (&route, 0, sizeof (route));
-		o = (char **) process_dhclient_rfc3442_route ((const char **) o, &route, &success);
-		if (!success) {
+		NMPlatformIP4Route route;
+
+		if (!process_dhclient_rfc3442_route (&o, &route)) {
 			_LOG2W (LOGD_DHCP4, iface, "ignoring invalid classless static routes");
-			break;
+			return have_routes;
 		}
 
 		have_routes = TRUE;
@@ -211,8 +200,6 @@ ip4_process_dhclient_rfc3442_routes (const char *iface,
 		}
 	}
 
-out:
-	g_strfreev (octets);
 	return have_routes;
 }
 
