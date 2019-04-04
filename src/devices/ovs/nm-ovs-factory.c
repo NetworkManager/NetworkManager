@@ -132,7 +132,7 @@ ovsdb_device_removed (NMOvsdb *ovsdb, const char *name, NMDeviceType device_type
 	    && device_state < NM_DEVICE_STATE_DEACTIVATING) {
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_DEACTIVATING,
-		                         NM_DEVICE_STATE_REASON_REMOVED);
+		                         NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
 	} else if (device_state == NM_DEVICE_STATE_UNMANAGED) {
 		nm_device_unrealize (device, TRUE, NULL);
 	}
