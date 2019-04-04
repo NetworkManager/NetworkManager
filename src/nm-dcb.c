@@ -37,9 +37,11 @@ do_helper (const char *iface,
            const char *fmt,
            ...)
 {
-	char **argv = NULL, **split = NULL, *cmdline, *errmsg = NULL;
-	gboolean success = FALSE;
-	guint i, u;
+	gs_free const char **split = NULL;
+	gs_free char *cmdline = NULL;
+	gs_free const char **argv = NULL;
+	gsize i;
+	gsize u;
 	va_list args;
 
 	g_return_val_if_fail (fmt != NULL, FALSE);
@@ -48,35 +50,31 @@ do_helper (const char *iface,
 	cmdline = g_strdup_vprintf (fmt, args);
 	va_end (args);
 
-	split = g_strsplit_set (cmdline, " ", 0);
+	split = nm_utils_strsplit_set_with_empty (cmdline, " ");
 	if (!split) {
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 		             "failure parsing %s command line", helper_names[which]);
-		goto out;
+		return FALSE;
 	}
 
 	/* Allocate space for path, custom arg, interface name, arguments, and NULL */
-	i = u = 0;
-	argv = g_new0 (char *, g_strv_length (split) + 4);
+	i = 0;
+	argv = g_new (const char *, NM_PTRARRAY_LEN (split) + 4);
 	argv[i++] = NULL;  /* Placeholder for dcbtool path */
 	if (which == DCBTOOL) {
 		argv[i++] = "sc";
 		argv[i++] = (char *) iface;
 	}
-	while (u < g_strv_length (split))
-		argv[i++] = split[u++];
+	for (u = 0; split[u]; u++)
+		argv[i++] = split[u];
 	argv[i++] = NULL;
-	success = run_func (argv, which, user_data, error);
-	if (!success && error)
-		g_assert (*error);
 
-out:
-	if (split)
-		g_strfreev (split);
-	g_free (argv);
-	g_free (cmdline);
-	g_free (errmsg);
-	return success;
+	if (!run_func ((char **) argv, which, user_data, error)) {
+		g_assert (!error || !*error);
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 gboolean
