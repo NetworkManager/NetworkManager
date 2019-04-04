@@ -6662,6 +6662,14 @@ link_set_sriov_params (NMPlatform *platform,
 	                                                                                  ifname,
 	                                                                                  "device/sriov_drivers_autoprobe"),
 	                                                        10, 0, 1, -1);
+
+	if (   current_autoprobe == -1
+	    && errno == ENOENT) {
+		/* older kernel versions don't have this sysctl. Assume the value is
+		 * "1". */
+		current_autoprobe = 1;
+	}
+
 	if (   current_num == num_vfs
 	    && (autoprobe == NM_TERNARY_DEFAULT || current_autoprobe == autoprobe))
 		return TRUE;
