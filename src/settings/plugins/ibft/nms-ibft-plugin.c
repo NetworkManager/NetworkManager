@@ -64,31 +64,30 @@ static void
 read_connections (NMSIbftPlugin *self)
 {
 	NMSIbftPluginPrivate *priv = NMS_IBFT_PLUGIN_GET_PRIVATE (self);
-	GSList *blocks = NULL, *iter;
-	GError *error = NULL;
+	nm_auto_free_ibft_blocks GSList *blocks = NULL;
+	GSList *iter;
+	gs_free_error GError *error = NULL;
 	NMSIbftConnection *connection;
 
 	if (!nms_ibft_reader_load_blocks ("/sbin/iscsiadm", &blocks, &error)) {
 		nm_log_dbg (LOGD_SETTINGS, "ibft: failed to read iscsiadm records: %s", error->message);
-		g_error_free (error);
 		return;
 	}
 
 	for (iter = blocks; iter; iter = iter->next) {
 		connection = nms_ibft_connection_new (iter->data, &error);
-		if (connection) {
-			nm_log_info (LOGD_SETTINGS, "ibft: read connection '%s'",
-			             nm_settings_connection_get_id (NM_SETTINGS_CONNECTION (connection)));
-			g_hash_table_insert (priv->connections,
-			                     g_strdup (nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (connection))),
-			                     connection);
-		} else {
+		if (!connection) {
 			nm_log_warn (LOGD_SETTINGS, "ibft: failed to read iscsiadm record: %s", error->message);
 			g_clear_error (&error);
+			continue;
 		}
-	}
 
-	g_slist_free_full (blocks, (GDestroyNotify) g_ptr_array_unref);
+		nm_log_info (LOGD_SETTINGS, "ibft: read connection '%s'",
+		             nm_settings_connection_get_id (NM_SETTINGS_CONNECTION (connection)));
+		g_hash_table_insert (priv->connections,
+		                     g_strdup (nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (connection))),
+		                     connection);
+	}
 }
 
 static GSList *

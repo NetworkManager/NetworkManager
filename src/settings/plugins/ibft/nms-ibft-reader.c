@@ -46,8 +46,7 @@ remove_most_whitespace (const char *src)
 	char *s_new, *s2;
 	const char *svalue;
 
-	while (*src && g_ascii_isspace (*src))
-		src++;
+	src = nm_str_skip_leading_spaces (src);
 
 	svalue = strchr (src, '=');
 	if (!svalue || svalue == src)
@@ -94,24 +93,25 @@ nms_ibft_reader_load_blocks (const char *iscsiadm_path,
 {
 	const char *argv[4] = { iscsiadm_path, "-m", "fw", NULL };
 	const char *envp[1] = { NULL };
-	GSList *blocks = NULL;
-	char *out = NULL, *err = NULL;
-	int status = 0;
-	char **lines = NULL, **iter;
+	nm_auto_free_ibft_blocks GSList *blocks = NULL;
+	gs_free char *out = NULL;
+	gs_free char *err = NULL;
+	gs_free const char **lines = NULL;
 	GPtrArray *block_lines = NULL;
-	gboolean success = FALSE;
+	gsize i;
+	int status = 0;
 
 	g_return_val_if_fail (iscsiadm_path != NULL, FALSE);
 	g_return_val_if_fail (out_blocks != NULL && *out_blocks == NULL, FALSE);
 
 	if (!g_spawn_sync ("/", (char **) argv, (char **) envp, 0,
 	                   NULL, NULL, &out, &err, &status, error))
-		goto done;
+		return FALSE;
 
 	if (!WIFEXITED (status)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "iBFT: %s exited abnormally.", iscsiadm_path);
-		goto done;
+		return FALSE;
 	}
 
 	if (WEXITSTATUS (status) != 0) {
@@ -127,59 +127,47 @@ nms_ibft_reader_load_blocks (const char *iscsiadm_path,
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "iBFT: %s exited with error %d.  Message: '%s'",
 		             iscsiadm_path, WEXITSTATUS (status), err ?: "(none)");
-		goto done;
+		return FALSE;
 	}
 
 	nm_log_dbg (LOGD_SETTINGS, "iBFT records:\n%s", out);
 
-	lines = g_strsplit_set (out, "\n\r", -1);
-	for (iter = lines; iter && *iter; iter++) {
-		if (!*iter[0])
-			continue;
+	lines = nm_utils_strsplit_set (out, "\n\r");
+	for (i = 0; lines && lines[i]; i++) {
+		const char *ss = lines[i];
 
-		if (!g_ascii_strncasecmp (*iter, TAG_BEGIN, NM_STRLEN (TAG_BEGIN))) {
+		if (!g_ascii_strncasecmp (ss, TAG_BEGIN, NM_STRLEN (TAG_BEGIN))) {
 			if (block_lines) {
 				PARSE_WARNING ("malformed iscsiadm record: missing END RECORD.");
-				g_ptr_array_unref (block_lines);
+				nm_clear_pointer (&block_lines, g_ptr_array_unref);
 			}
 			/* Start new record */
 			block_lines = g_ptr_array_new_full (15, g_free);
-		} else if (!g_ascii_strncasecmp (*iter, TAG_END, NM_STRLEN (TAG_END))) {
+		} else if (!g_ascii_strncasecmp (ss, TAG_END, NM_STRLEN (TAG_END))) {
 			if (block_lines) {
 				if (block_lines->len)
-					blocks = g_slist_prepend (blocks, block_lines);
+					blocks = g_slist_prepend (blocks, g_steal_pointer (&block_lines));
 				else
-					g_ptr_array_unref (block_lines);
-				block_lines = NULL;
+					g_ptr_array_unref (g_steal_pointer (&block_lines));
 			}
 		} else if (block_lines) {
-			char *s = remove_most_whitespace (*iter);
+			char *s = remove_most_whitespace (ss);
 
-			if (s)
+			if (!s) {
+				PARSE_WARNING ("malformed iscsiadm record: no = in '%s'.", ss);
+				nm_clear_pointer (&block_lines, g_ptr_array_unref);
+			} else
 				g_ptr_array_add (block_lines, s);
-			else {
-				PARSE_WARNING ("malformed iscsiadm record: no = in '%s'.", *iter);
-				g_clear_pointer (&block_lines, g_ptr_array_unref);
-			}
 		}
 	}
 
 	if (block_lines) {
 		PARSE_WARNING ("malformed iscsiadm record: missing # END RECORD.");
-		g_clear_pointer (&block_lines, g_ptr_array_unref);
+		nm_clear_pointer (&block_lines, g_ptr_array_unref);
 	}
-	success = TRUE;
 
-done:
-	if (lines)
-		g_strfreev (lines);
-	g_free (out);
-	g_free (err);
-	if (success)
-		*out_blocks = blocks;
-	else
-		g_slist_free_full (blocks, (GDestroyNotify) g_ptr_array_unref);
-	return success;
+	*out_blocks = g_steal_pointer (&blocks);
+	return TRUE;
 }
 
 #define ISCSI_HWADDR_TAG     "iface.hwaddress"
