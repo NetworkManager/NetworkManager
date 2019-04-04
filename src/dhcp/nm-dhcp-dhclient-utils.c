@@ -590,14 +590,12 @@ nm_dhcp_dhclient_save_duid (const char *leasefile,
                             GError **error)
 {
 	gs_free char *escaped_duid = NULL;
-	gs_strfreev char **lines = NULL;
-	char **iter, *l;
-	GString *s;
-	gboolean success;
+	gs_free const char **lines = NULL;
+	nm_auto_free_gstring GString *s = NULL;
+	const char *const*iter;
 	gsize len = 0;
 
 	g_return_val_if_fail (leasefile != NULL, FALSE);
-
 	if (!duid) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN,
 		                            "missing duid");
@@ -605,19 +603,17 @@ nm_dhcp_dhclient_save_duid (const char *leasefile,
 	}
 
 	escaped_duid = nm_dhcp_dhclient_escape_duid (duid);
-	g_return_val_if_fail (escaped_duid != NULL, FALSE);
+	nm_assert (escaped_duid);
 
 	if (g_file_test (leasefile, G_FILE_TEST_EXISTS)) {
-		char *contents = NULL;
+		gs_free char *contents = NULL;
 
 		if (!g_file_get_contents (leasefile, &contents, &len, error)) {
 			g_prefix_error (error, "failed to read lease file %s: ", leasefile);
 			return FALSE;
 		}
 
-		g_assert (contents);
-		lines = g_strsplit_set (contents, "\n\r", -1);
-		g_free (contents);
+		lines = nm_utils_strsplit_set_with_empty (contents, "\n\r");
 	}
 
 	s = g_string_sized_new (len + 50);
@@ -625,37 +621,38 @@ nm_dhcp_dhclient_save_duid (const char *leasefile,
 
 	/* Preserve existing leasefile contents */
 	if (lines) {
-		for (iter = lines; iter && *iter; iter++) {
-			l = *iter;
-			while (g_ascii_isspace (*l))
-				l++;
+		for (iter = lines; *iter; iter++) {
+			const char *str = *iter;
+			const char *l;
+
 			/* If we find an uncommented DUID in the file, check if
 			 * equal to the one we are going to write: if so, no need
 			 * to update the lease file, otherwise skip the old DUID.
 			 */
+			l = nm_str_skip_leading_spaces (str);
 			if (g_str_has_prefix (l, DUID_PREFIX)) {
 				gs_strfreev char **split = NULL;
 
 				split = g_strsplit (l, "\"", -1);
-				if (nm_streq0 (split[1], escaped_duid)) {
-					g_string_free (s, TRUE);
+				if (   split[0]
+				    && nm_streq0 (split[1], escaped_duid))
 					return TRUE;
-				}
+
 				continue;
 			}
 
-			if (*iter[0])
-				g_string_append (s, *iter);
+			if (str)
+				g_string_append (s, str);
 			/* avoid to add an extra '\n' at the end of file */
 			if ((iter[1]) != NULL)
 				g_string_append_c (s, '\n');
 		}
 	}
 
-	success = g_file_set_contents (leasefile, s->str, -1, error);
-	if (!success)
+	if (!g_file_set_contents (leasefile, s->str, -1, error)) {
 		g_prefix_error (error, "failed to set DUID in lease file %s: ", leasefile);
+		return FALSE;
+	}
 
-	g_string_free (s, TRUE);
-	return success;
+	return TRUE;
 }
