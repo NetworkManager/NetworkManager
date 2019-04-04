@@ -2963,6 +2963,37 @@ test_sysctl_netns_switch (void)
 	g_assert_cmpint (ifindex, ==, (gint32) nm_platform_sysctl_get_int32 (PL, NMP_SYSCTL_PATHID_NETDIR (dirfd, s ?: "<unknown>", "ifindex"), -1));
 	g_assert_cmpint (ifindex, ==, (gint32) nm_platform_sysctl_get_int32 (PL, NMP_SYSCTL_PATHID_ABSOLUTE (nm_sprintf_bufa (100, "/sys/class/net/%s/ifindex", IFNAME)), -1));
 
+	/* also test that nm_platform_sysctl_get() sets errno to ENOENT for non-existing paths. */
+	{
+		gint64 i64;
+		int errsv;
+		char *v;
+
+		errno = ESRCH;
+		v = nm_platform_sysctl_get (PL, NMP_SYSCTL_PATHID_ABSOLUTE ("/sys/devices/virtual/net/not-existing/ifindex"));
+		errsv = errno;
+		g_assert (!v);
+		g_assert_cmpint (errsv, ==, ENOENT);
+
+		errno = ESRCH;
+		i64 = nm_platform_sysctl_get_int_checked (PL, NMP_SYSCTL_PATHID_ABSOLUTE ("/sys/devices/virtual/net/not-existing/ifindex"), 10, 1, G_MAXINT, -1);
+		errsv = errno;
+		g_assert_cmpint (i64, ==, -1);
+		g_assert_cmpint (errsv, ==, ENOENT);
+
+		errno = ESRCH;
+		v = nm_platform_sysctl_get (PL, NMP_SYSCTL_PATHID_ABSOLUTE ("/sys/devices/virtual/net/lo/not-existing"));
+		errsv = errno;
+		g_assert (!v);
+		g_assert_cmpint (errsv, ==, ENOENT);
+
+		errno = ESRCH;
+		i64 = nm_platform_sysctl_get_int_checked (PL, NMP_SYSCTL_PATHID_ABSOLUTE ("/sys/devices/virtual/net/lo/not-existing"), 10, 1, G_MAXINT, -1);
+		errsv = errno;
+		g_assert_cmpint (i64, ==, -1);
+		g_assert_cmpint (errsv, ==, ENOENT);
+	}
+
 	/* accessing the path directly, only succeeds iff the current namespace happens to be the namespace
 	 * in which we created the link. */
 	{
