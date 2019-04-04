@@ -40,16 +40,16 @@
 static GPtrArray *
 read_block (const char *iscsiadm_path, const char *expected_mac)
 {
-	GSList *blocks = NULL, *iter;
+	nm_auto_free_ibft_blocks GSList *blocks = NULL;
+	GSList *iter;
 	GPtrArray *block = NULL;
 	GError *error = NULL;
 	gboolean success;
 
 	success = nms_ibft_reader_load_blocks (iscsiadm_path, &blocks, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (blocks);
+	nmtst_assert_success (success, error);
 
+	g_assert (blocks);
 	for (iter = blocks; iter; iter = iter->next) {
 		const char *s_hwaddr = NULL;
 
@@ -63,7 +63,6 @@ read_block (const char *iscsiadm_path, const char *expected_mac)
 	}
 	g_assert (block);
 
-	g_slist_free_full (blocks, (GDestroyNotify) g_ptr_array_unref);
 	return block;
 }
 
@@ -176,7 +175,7 @@ static void
 test_read_ibft_malformed (gconstpointer user_data)
 {
 	const char *iscsiadm_path = user_data;
-	GSList *blocks = NULL;
+	nm_auto_free_ibft_blocks GSList *blocks = NULL;
 	GError *error = NULL;
 	gboolean success;
 
@@ -185,9 +184,9 @@ test_read_ibft_malformed (gconstpointer user_data)
 	NMTST_EXPECT_NM_WARN ("*malformed iscsiadm record*");
 
 	success = nms_ibft_reader_load_blocks (iscsiadm_path, &blocks, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (blocks == NULL);
+	nmtst_assert_success (success, error);
+
+	g_assert (!blocks);
 
 	g_test_assert_expected_messages ();
 }
