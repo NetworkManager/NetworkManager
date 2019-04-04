@@ -203,7 +203,7 @@ nm_vpn_openconnect_authenticate_helper (const char *host,
                                         int *status,
                                         GError **error)
 {
-	char *output = NULL;
+	gs_free char *output = NULL;
 	gboolean ret;
 	char **strv = NULL, **iter;
 	char *argv[4];
