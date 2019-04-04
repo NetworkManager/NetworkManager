@@ -5075,7 +5075,6 @@ nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection = nm_device_get_applied_connection (self);
-	NMDeviceState new_state;
 	const char *master_status;
 
 	g_return_if_fail (priv->master);
@@ -5084,21 +5083,17 @@ nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason reason)
 	    && priv->state <= NM_DEVICE_STATE_ACTIVATED) {
 		switch (nm_device_state_reason_check (reason)) {
 		case NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED:
-			new_state = NM_DEVICE_STATE_FAILED;
 			master_status = "failed";
 			break;
 		case NM_DEVICE_STATE_REASON_USER_REQUESTED:
-			new_state = NM_DEVICE_STATE_DEACTIVATING;
 			reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
 			master_status = "deactivated by user request";
 			break;
 		case NM_DEVICE_STATE_REASON_CONNECTION_REMOVED:
-			new_state = NM_DEVICE_STATE_DEACTIVATING;
 			reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
 			master_status = "deactivated because master was removed";
 			break;
 		default:
-			new_state = NM_DEVICE_STATE_DISCONNECTED;
 			master_status = "deactivated";
 			break;
 		}
@@ -5109,7 +5104,7 @@ nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason reason)
 
 		/* Cancel any pending activation sources */
 		_cancel_activation (self);
-		nm_device_queue_state (self, new_state, reason);
+		nm_device_queue_state (self, NM_DEVICE_STATE_DEACTIVATING, reason);
 	} else
 		_LOGI (LOGD_DEVICE, "released from master device %s", nm_device_get_iface (priv->master));
 
