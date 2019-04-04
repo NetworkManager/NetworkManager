@@ -668,7 +668,7 @@ nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_time
 	self = g_object_new (NM_TYPE_CHECKPOINT, NULL);
 
 	priv = NM_CHECKPOINT_GET_PRIVATE (self);
-	priv->manager = manager;
+	priv->manager = g_object_ref (manager);
 	priv->rollback_timeout_s = rollback_timeout_s;
 	priv->created_at_ms = nm_utils_get_monotonic_timestamp_ms ();
 	priv->flags = flags;
@@ -719,6 +719,7 @@ dispose (GObject *object)
 	nm_clear_pointer (&priv->removed_devices, g_ptr_array_unref);
 
 	nm_clear_g_signal_handler (priv->manager, &priv->dev_removed_id);
+	g_clear_object (&priv->manager);
 
 	nm_clear_g_source (&priv->timeout_id);
 
