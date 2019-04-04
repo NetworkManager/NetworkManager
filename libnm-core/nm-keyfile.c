@@ -643,7 +643,7 @@ _build_list_create (GKeyFile *keyfile,
 	for (i_keys = 0; i_keys < n_keys; i_keys++) {
 		const char *s_key = keys[i_keys];
 		gint32 key_idx;
-		gint8 key_type;
+		gint8 key_type = 0;
 
 		switch (build_list_type) {
 		case BUILD_LIST_TYPE_ROUTES:
