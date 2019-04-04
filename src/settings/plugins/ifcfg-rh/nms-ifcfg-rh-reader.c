@@ -82,7 +82,8 @@ static char *
 get_full_file_path (const char *ifcfg_path, const char *file_path)
 {
 	const char *base = file_path;
-	char *p, *ret, *dirname;
+	gs_free char *dirname = NULL;
+	char *p;
 
 	g_return_val_if_fail (ifcfg_path != NULL, NULL);
 	g_return_val_if_fail (file_path != NULL, NULL);
@@ -95,9 +96,7 @@ get_full_file_path (const char *ifcfg_path, const char *file_path)
 		base = p + 1;
 
 	dirname = g_path_get_dirname (ifcfg_path);
-	ret = g_build_path ("/", dirname, base, NULL);
-	g_free (dirname);
-	return ret;
+	return g_build_path ("/", dirname, base, NULL);
 }
 
 /*****************************************************************************/
@@ -379,7 +378,7 @@ make_connection_setting (const char *file,
 	NMSettingConnection *s_con;
 	NMSettingConnectionLldp lldp;
 	const char *ifcfg_name = NULL;
-	char *new_id;
+	gs_free char *new_id = NULL;
 	const char *uuid;
 	gs_free char *uuid_free = NULL;
 	gs_free char *value = NULL;
@@ -396,7 +395,6 @@ make_connection_setting (const char *file,
 
 	new_id = make_connection_name (ifcfg, ifcfg_name, suggested, prefix);
 	g_object_set (s_con, NM_SETTING_CONNECTION_ID, new_id, NULL);
-	g_free (new_id);
 
 	/* Try for a UUID key before falling back to hashing the file name */
 	uuid = svGetValueStr (ifcfg, "UUID", &uuid_free);
@@ -1809,7 +1807,8 @@ static void
 read_aliases (NMSettingIPConfig *s_ip4, gboolean read_defroute, const char *filename)
 {
 	GDir *dir;
-	char *dirname, *base;
+	gs_free char *dirname  = NULL;
+	gs_free char *base  = NULL;
 	NMIPAddress *base_addr = NULL;
 	GError *err = NULL;
 
@@ -1820,9 +1819,9 @@ read_aliases (NMSettingIPConfig *s_ip4, gboolean read_defroute, const char *file
 		base_addr = nm_setting_ip_config_get_address (s_ip4, 0);
 
 	dirname = g_path_get_dirname (filename);
-	g_return_if_fail (dirname != NULL);
+	nm_assert (dirname != NULL);
 	base = g_path_get_basename (filename);
-	g_return_if_fail (base != NULL);
+	nm_assert (base != NULL);
 
 	dir = g_dir_open (dirname, 0, &err);
 	if (dir) {
@@ -1911,9 +1910,6 @@ read_aliases (NMSettingIPConfig *s_ip4, gboolean read_defroute, const char *file
 		PARSE_WARNING ("can not read directory '%s': %s", dirname, err->message);
 		g_error_free (err);
 	}
-
-	g_free (base);
-	g_free (dirname);
 }
 
 static NMSetting *
@@ -1922,10 +1918,9 @@ make_ip6_setting (shvarFile *ifcfg,
                   gboolean routes_read,
                   GError **error)
 {
-	NMSettingIPConfig *s_ip6 = NULL;
+	gs_unref_object NMSettingIPConfig *s_ip6 = NULL;
 	const char *v;
 	gs_free char *value = NULL;
-	char *route6_path = NULL;
 	gboolean ipv6init, ipv6forwarding, dhcp6 = FALSE;
 	char *method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 	const char *ipv6addr, *ipv6addr_secondaries;
@@ -2060,7 +2055,7 @@ make_ip6_setting (shvarFile *ifcfg,
 
 	/* Don't bother to read IP, DNS and routes when IPv6 is disabled */
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0)
-		return NM_SETTING (s_ip6);
+		return NM_SETTING (g_steal_pointer (&s_ip6));
 
 	nm_clear_g_free (&value);
 	v = svGetValueStr (ifcfg, "DHCPV6_DUID", &value);
@@ -2104,7 +2099,7 @@ make_ip6_setting (shvarFile *ifcfg,
 		NMIPAddress *addr = NULL;
 
 		if (!parse_full_ip6_address (ifcfg, *iter, i, &addr, error))
-			goto error;
+			return NULL;
 
 		if (!nm_setting_ip_config_add_address (s_ip6, addr))
 			PARSE_WARNING ("duplicate IP6 address");
@@ -2129,7 +2124,7 @@ make_ip6_setting (shvarFile *ifcfg,
 			if (!nm_utils_ipaddr_valid (AF_INET6, v)) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IP6 address '%s'", v);
-				goto error;
+				return NULL;
 			}
 
 			g_object_set (s_ip6, NM_SETTING_IP_CONFIG_GATEWAY, v, NULL);
@@ -2172,18 +2167,19 @@ make_ip6_setting (shvarFile *ifcfg,
 			/* Ignore IPv4 addresses */
 		} else {
 			PARSE_WARNING ("invalid DNS server address %s", v);
-			goto error;
+			return NULL;
 		}
 	}
 
 	if (!routes_read) {
 		/* NOP */
 	} else {
+		gs_free char *route6_path = NULL;
+
 		/* Read static routes from route6-<interface> file */
 		route6_path = utils_get_route6_path (svFileGetName (ifcfg));
 		if (!read_route_file (AF_INET6, route6_path, s_ip6, error))
-			goto error;
-		g_free (route6_path);
+			return NULL;
 	}
 
 	/* DNS searches */
@@ -2212,12 +2208,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	              priority,
 	              NULL);
 
-	return NM_SETTING (s_ip6);
-
-error:
-	g_free (route6_path);
-	g_object_unref (s_ip6);
-	return NULL;
+	return NM_SETTING (g_steal_pointer (&s_ip6));
 }
 
 static NMSetting *
@@ -2588,10 +2579,9 @@ make_dcb_setting (shvarFile *ifcfg,
                   NMSetting **out_setting,
                   GError **error)
 {
-	NMSettingDcb *s_dcb = NULL;
+	gs_unref_object NMSettingDcb *s_dcb = NULL;
 	gboolean dcb_on;
 	NMSettingDcbFlags flags = NM_SETTING_DCB_FLAG_NONE;
-	char *val;
 
 	g_return_val_if_fail (out_setting != NULL, FALSE);
 
@@ -2600,31 +2590,28 @@ make_dcb_setting (shvarFile *ifcfg,
 		return TRUE;
 
 	s_dcb = (NMSettingDcb *) nm_setting_dcb_new ();
-	g_assert (s_dcb);
 
 	/* FCOE */
 	if (!read_dcb_app (ifcfg, s_dcb, "FCOE",
 	                   &dcb_flags_props[DCB_APP_FCOE_FLAGS],
 	                   NM_SETTING_DCB_APP_FCOE_PRIORITY,
 	                   error)) {
-		g_object_unref (s_dcb);
 		return FALSE;
 	}
 	if (nm_setting_dcb_get_app_fcoe_flags (s_dcb) & NM_SETTING_DCB_FLAG_ENABLE) {
+		gs_free char *val = NULL;
+
 		val = svGetValueStr_cp (ifcfg, KEY_DCB_APP_FCOE_MODE);
 		if (val) {
-			if (strcmp (val, NM_SETTING_DCB_FCOE_MODE_FABRIC) == 0 ||
-			    strcmp (val, NM_SETTING_DCB_FCOE_MODE_VN2VN) == 0)
+			if (NM_IN_STRSET (val, NM_SETTING_DCB_FCOE_MODE_FABRIC,
+			                       NM_SETTING_DCB_FCOE_MODE_VN2VN))
 				g_object_set (G_OBJECT (s_dcb), NM_SETTING_DCB_APP_FCOE_MODE, val, NULL);
 			else {
 				PARSE_WARNING ("invalid FCoE mode '%s'", val);
 				g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				                     "invalid FCoE mode");
-				g_free (val);
-				g_object_unref (s_dcb);
 				return FALSE;
 			}
-			g_free (val);
 		}
 	}
 
@@ -2633,7 +2620,6 @@ make_dcb_setting (shvarFile *ifcfg,
 	                   &dcb_flags_props[DCB_APP_ISCSI_FLAGS],
 	                   NM_SETTING_DCB_APP_ISCSI_PRIORITY,
 	                   error)) {
-		g_object_unref (s_dcb);
 		return FALSE;
 	}
 
@@ -2642,7 +2628,6 @@ make_dcb_setting (shvarFile *ifcfg,
 	                   &dcb_flags_props[DCB_APP_FIP_FLAGS],
 	                   NM_SETTING_DCB_APP_FIP_PRIORITY,
 	                   error)) {
-		g_object_unref (s_dcb);
 		return FALSE;
 	}
 
@@ -2657,7 +2642,6 @@ make_dcb_setting (shvarFile *ifcfg,
 	                          "PFC",
 	                          nm_setting_dcb_set_priority_flow_control,
 	                          error)) {
-		g_object_unref (s_dcb);
 		return FALSE;
 	}
 
@@ -2673,7 +2657,6 @@ make_dcb_setting (shvarFile *ifcfg,
 	                          TRUE,
 	                          nm_setting_dcb_set_priority_group_id,
 	                          error)) {
-		g_object_unref (s_dcb);
 		return FALSE;
 	}
 
@@ -2686,7 +2669,6 @@ make_dcb_setting (shvarFile *ifcfg,
 	                             TRUE,
 	                             nm_setting_dcb_set_priority_group_bandwidth,
 	                             error)) {
-		g_object_unref (s_dcb);
 		return FALSE;
 	}
 
@@ -2699,7 +2681,6 @@ make_dcb_setting (shvarFile *ifcfg,
 	                             FALSE,
 	                             nm_setting_dcb_set_priority_bandwidth,
 	                             error)) {
-		g_object_unref (s_dcb);
 		return FALSE;
 	}
 
@@ -2711,7 +2692,6 @@ make_dcb_setting (shvarFile *ifcfg,
 	                          "STRICT",
 	                          nm_setting_dcb_set_priority_strict_bandwidth,
 	                          error)) {
-		g_object_unref (s_dcb);
 		return FALSE;
 	}
 
@@ -2723,11 +2703,10 @@ make_dcb_setting (shvarFile *ifcfg,
 	                          FALSE,
 	                          nm_setting_dcb_set_priority_traffic_class,
 	                          error)) {
-		g_object_unref (s_dcb);
 		return FALSE;
 	}
 
-	*out_setting = NM_SETTING (s_dcb);
+	*out_setting = NM_SETTING (g_steal_pointer (&s_dcb));
 	return TRUE;
 }
 
@@ -2834,7 +2813,7 @@ make_wep_setting (shvarFile *ifcfg,
                   GError **error)
 {
 	gs_unref_object NMSettingWirelessSecurity *s_wsec = NULL;
-	char *value;
+	gs_free char *value = NULL;
 	shvarFile *keys_ifcfg = NULL;
 	int default_key_idx = 0;
 	gboolean has_default_key = FALSE;
@@ -2849,13 +2828,12 @@ make_wep_setting (shvarFile *ifcfg,
 		if (default_key_idx == 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid default WEP key '%s'", value);
-			g_free (value);
 			return NULL;
 		}
 		has_default_key = TRUE;
 		default_key_idx--;  /* convert to [0...3] */
 		g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, (guint) default_key_idx, NULL);
-		g_free (value);
+		nm_clear_g_free (&value);
 	}
 
 	/* Read WEP key flags */
@@ -2902,23 +2880,21 @@ make_wep_setting (shvarFile *ifcfg,
 
 	value = svGetValueStr_cp (ifcfg, "SECURITYMODE");
 	if (value) {
-		char *lcase;
+		gs_free char *lcase = NULL;
 
 		lcase = g_ascii_strdown (value, -1);
-		g_free (value);
+		nm_clear_g_free (&value);
 
-		if (!strcmp (lcase, "open")) {
+		if (nm_streq (lcase, "open")) {
 			g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", NULL);
-		} else if (!strcmp (lcase, "restricted")) {
+		} else if (nm_streq (lcase, "restricted")) {
 			g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "shared", NULL);
 		} else {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid WEP authentication algorithm '%s'",
 			             lcase);
-			g_free (lcase);
 			return NULL;
 		}
-		g_free (lcase);
 	}
 
 	/* If no WEP keys were given, and the keys are not agent-owned, and no
