@@ -202,6 +202,7 @@ test_acd_announce (test_fixture *fixture, gconstpointer user_data)
 {
 	nm_auto_free_acdmgr NMAcdManager *manager = NULL;
 	nm_auto_unref_gmainloop GMainLoop *loop = NULL;
+	int r;
 
 	if (_skip_acd_test ())
 		return;
@@ -217,7 +218,8 @@ test_acd_announce (test_fixture *fixture, gconstpointer user_data)
 	g_assert (nm_acd_manager_add_address (manager, ADDR2));
 
 	loop = g_main_loop_new (NULL, FALSE);
-	nm_acd_manager_announce_addresses (manager);
+	r = nm_acd_manager_announce_addresses (manager);
+	g_assert_cmpint (r, ==, 0);
 	g_assert (!nmtst_main_loop_run (loop, 200));
 }
 
