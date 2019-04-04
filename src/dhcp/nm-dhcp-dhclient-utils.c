@@ -564,9 +564,9 @@ error:
 GBytes *
 nm_dhcp_dhclient_read_duid (const char *leasefile, GError **error)
 {
-	GBytes *duid = NULL;
-	char *contents;
-	char **line, **split, *p, *e;
+	gs_free char *contents = NULL;
+	gs_free const char **contents_v = NULL;
+	gsize i;
 
 	if (!g_file_test (leasefile, G_FILE_TEST_EXISTS))
 		return NULL;
@@ -574,25 +574,29 @@ nm_dhcp_dhclient_read_duid (const char *leasefile, GError **error)
 	if (!g_file_get_contents (leasefile, &contents, NULL, error))
 		return NULL;
 
-	split = g_strsplit_set (contents, "\n\r", -1);
-	for (line = split; line && *line && (duid == NULL); line++) {
-		p = g_strstrip (*line);
-		if (g_str_has_prefix (p, DUID_PREFIX)) {
-			p += strlen (DUID_PREFIX);
+	contents_v = nm_utils_strsplit_set (contents, "\n\r");
+	for (i = 0; contents_v && contents_v[i]; i++) {
+		const char *p = nm_str_skip_leading_spaces (contents_v[i]);
+		GBytes *duid;
 
-			/* look for trailing "; */
-			e = p + strlen (p) - 2;
-			if (strcmp (e, "\";") != 0)
-				continue;
-			*e = '\0';
+		if (!NM_STR_HAS_PREFIX (p, DUID_PREFIX))
+			continue;
 
-			duid = nm_dhcp_dhclient_unescape_duid (p);
-		}
+		p += NM_STRLEN (DUID_PREFIX);
+
+		g_strchomp ((char *) p);
+
+		if (!NM_STR_HAS_SUFFIX (p, "\";"))
+			continue;
+
+		((char *) p)[strlen (p) - 2] = '\0';
+
+		duid = nm_dhcp_dhclient_unescape_duid (p);
+		if (duid)
+			return duid;
 	}
-	g_free (contents);
-	g_strfreev (split);
 
-	return duid;
+	return NULL;
 }
 
 gboolean
