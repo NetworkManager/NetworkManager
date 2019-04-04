@@ -4631,11 +4631,11 @@ sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 		NMLogLevel log_level = LOGL_ERR;
 		int errsv = EBUSY;
 
-		if (   g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)
-		    || g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NODEV)) {
+		if (g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
 			errsv = ENOENT;
 			log_level = LOGL_DEBUG;
-		} else if (g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_FAILED)) {
+		} else if (   g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NODEV)
+		           || g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_FAILED)) {
 			/* We assume FAILED means EOPNOTSUP and don't log a error message. */
 			log_level = LOGL_DEBUG;
 		}
