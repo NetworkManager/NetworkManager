@@ -1528,15 +1528,12 @@ split_required_fields_for_con_show (const char *input,
                                     char **active_flds,
                                     GError **error)
 {
-	char **fields, **iter;
-	char *dot;
-	GString *str1, *str2;
-	gboolean found;
+	gs_free const char **fields = NULL;
+	const char *const*iter;
+	nm_auto_free_gstring GString *str1 = NULL;
+	nm_auto_free_gstring GString *str2 = NULL;
 	gboolean group_profile = FALSE;
 	gboolean group_active = FALSE;
-	gboolean success = TRUE;
-	gboolean is_all, is_common;
-	int i;
 
 	if (!input) {
 		*profile_flds = NULL;
@@ -1547,25 +1544,30 @@ split_required_fields_for_con_show (const char *input,
 	str1 = g_string_new (NULL);
 	str2 = g_string_new (NULL);
 
-	/* Split supplied fields string */
-	fields = g_strsplit_set (input, ",", -1);
+	fields = nm_utils_strsplit_set_with_empty (input, ",");
 	for (iter = fields; iter && *iter; iter++) {
-		g_strstrip (*iter);
-		dot = strchr (*iter, '.');
+		char *s_mutable = (char *) (*iter);
+		char *dot;
+		gboolean is_all;
+		gboolean is_common;
+		gboolean found;
+		int i;
+
+		g_strstrip (s_mutable);
+		dot = strchr (s_mutable, '.');
 		if (dot)
 			*dot = '\0';
 
-		is_all = !dot && strcasecmp (*iter, "all") == 0;
-		is_common = !dot && strcasecmp (*iter, "common") == 0;
+		is_all = !dot && strcasecmp (s_mutable, "all") == 0;
+		is_common = !dot && strcasecmp (s_mutable, "common") == 0;
 
 		found = FALSE;
-
 		for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
 			if (   is_all || is_common
-			    || !strcasecmp (*iter, nm_meta_setting_infos[i].setting_name)) {
+			    || !strcasecmp (s_mutable, nm_meta_setting_infos[i].setting_name)) {
 				if (dot)
 					*dot = '.';
-				g_string_append (str1, *iter);
+				g_string_append (str1, s_mutable);
 				g_string_append_c (str1, ',');
 				found = TRUE;
 				break;
@@ -1573,12 +1575,13 @@ split_required_fields_for_con_show (const char *input,
 		}
 		if (found)
 			continue;
+
 		for (i = 0; nmc_fields_con_active_details_groups[i]; i++) {
 			if (   is_all || is_common
-			    || !strcasecmp (*iter, nmc_fields_con_active_details_groups[i]->name)) {
+			    || !strcasecmp (s_mutable, nmc_fields_con_active_details_groups[i]->name)) {
 				if (dot)
 					*dot = '.';
-				g_string_append (str2, *iter);
+				g_string_append (str2, s_mutable);
 				g_string_append_c (str2, ',');
 				found = TRUE;
 				break;
@@ -1587,55 +1590,46 @@ split_required_fields_for_con_show (const char *input,
 		if (!found) {
 			if (dot)
 				*dot = '.';
-			if (!strcasecmp (*iter, CON_SHOW_DETAIL_GROUP_PROFILE))
+			if (!strcasecmp (s_mutable, CON_SHOW_DETAIL_GROUP_PROFILE))
 				group_profile = TRUE;
-			else if (!strcasecmp (*iter, CON_SHOW_DETAIL_GROUP_ACTIVE))
+			else if (!strcasecmp (s_mutable, CON_SHOW_DETAIL_GROUP_ACTIVE))
 				group_active = TRUE;
 			else {
-				char *allowed1 = nm_meta_abstract_infos_get_names_str ((const NMMetaAbstractInfo *const*) nm_meta_setting_infos_editor_p (), NULL);
-				char *allowed2 = nm_meta_abstract_infos_get_names_str ((const NMMetaAbstractInfo *const*) nmc_fields_con_active_details_groups, NULL);
+				gs_free char *allowed1 = nm_meta_abstract_infos_get_names_str ((const NMMetaAbstractInfo *const*) nm_meta_setting_infos_editor_p (), NULL);
+				gs_free char *allowed2 = nm_meta_abstract_infos_get_names_str ((const NMMetaAbstractInfo *const*) nmc_fields_con_active_details_groups, NULL);
+
 				g_set_error (error, NMCLI_ERROR, 0, _("invalid field '%s'; allowed fields: %s and %s, or %s,%s"),
-				             *iter, allowed1, allowed2, CON_SHOW_DETAIL_GROUP_PROFILE, CON_SHOW_DETAIL_GROUP_ACTIVE);
-				g_free (allowed1);
-				g_free (allowed2);
-				success = FALSE;
-				break;
+				             s_mutable, allowed1, allowed2, CON_SHOW_DETAIL_GROUP_PROFILE, CON_SHOW_DETAIL_GROUP_ACTIVE);
+				return FALSE;
 			}
 		}
 	}
-	if (fields)
-		g_strfreev (fields);
 
 	/* Handle pseudo groups: profile, active */
-	if (success && group_profile) {
+	if (group_profile) {
 		if (str1->len > 0) {
 			g_set_error (error, NMCLI_ERROR, 0, _("'%s' has to be alone"),
 			             CON_SHOW_DETAIL_GROUP_PROFILE);
-			success = FALSE;
-		} else
-			g_string_assign (str1, "all,");
+			return FALSE;
+		}
+		g_string_assign (str1, "all,");
 	}
-	if (success && group_active) {
+	if (group_active) {
 		if (str2->len > 0) {
 			g_set_error (error, NMCLI_ERROR, 0, _("'%s' has to be alone"),
 			             CON_SHOW_DETAIL_GROUP_ACTIVE);
-			success = FALSE;
-		} else
-			g_string_assign (str2, "all,");
+			return FALSE;
+		}
+		g_string_assign (str2, "all,");
 	}
 
-	if (success) {
-		if (str1->len > 0)
-			g_string_truncate (str1, str1->len - 1);
-		if (str2->len > 0)
-			g_string_truncate (str2, str2->len - 1);
-		*profile_flds = g_string_free (str1, str1->len == 0);
-		*active_flds = g_string_free (str2, str2->len == 0);
-	} else {
-		g_string_free (str1, TRUE);
-		g_string_free (str2, TRUE);
-	}
-	return success;
+	if (str1->len > 0)
+		g_string_truncate (str1, str1->len - 1);
+	if (str2->len > 0)
+		g_string_truncate (str2, str2->len - 1);
+	*profile_flds = g_string_free (g_steal_pointer (&str1), str1->len == 0);
+	*active_flds =  g_string_free (g_steal_pointer (&str2), str2->len == 0);
+	return TRUE;
 }
 
 typedef enum {
