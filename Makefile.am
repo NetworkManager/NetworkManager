@@ -1587,15 +1587,17 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/sd-adapt-shared/locale-util.h \
 	shared/systemd/sd-adapt-shared/memfd-util.h \
 	shared/systemd/sd-adapt-shared/missing.h \
-	shared/systemd/sd-adapt-shared/missing_socket.h \
 	shared/systemd/sd-adapt-shared/missing_syscall.h \
 	shared/systemd/sd-adapt-shared/missing_timerfd.h \
 	shared/systemd/sd-adapt-shared/mkdir.h \
+	shared/systemd/sd-adapt-shared/namespace-util.h \
 	shared/systemd/sd-adapt-shared/nm-sd-adapt-shared.h \
 	shared/systemd/sd-adapt-shared/nm-sd-adapt-shared.h \
+	shared/systemd/sd-adapt-shared/nulstr-util.h \
 	shared/systemd/sd-adapt-shared/procfs-util.h \
 	shared/systemd/sd-adapt-shared/raw-clone.h \
 	shared/systemd/sd-adapt-shared/rlimit-util.h \
+	shared/systemd/sd-adapt-shared/strxcpyx.h \
 	shared/systemd/sd-adapt-shared/terminal-util.h \
 	shared/systemd/sd-adapt-shared/unaligned.h \
 	shared/systemd/sd-adapt-shared/user-util.h \
@@ -1607,6 +1609,7 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/env-file.h \
 	shared/systemd/src/basic/env-util.c \
 	shared/systemd/src/basic/env-util.h \
+	shared/systemd/src/basic/errno-util.h \
 	shared/systemd/src/basic/escape.c \
 	shared/systemd/src/basic/escape.h \
 	shared/systemd/src/basic/ether-addr-util.c \
@@ -1634,9 +1637,13 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/list.h \
 	shared/systemd/src/basic/log.h \
 	shared/systemd/src/basic/macro.h \
+	shared/systemd/src/basic/memory-util.c \
+	shared/systemd/src/basic/memory-util.h \
 	shared/systemd/src/basic/mempool.c \
 	shared/systemd/src/basic/mempool.h \
 	shared/systemd/src/basic/missing_fcntl.h \
+	shared/systemd/src/basic/missing_socket.h \
+	shared/systemd/src/basic/missing_stat.h \
 	shared/systemd/src/basic/missing_type.h \
 	shared/systemd/src/basic/parse-util.c \
 	shared/systemd/src/basic/parse-util.h \
@@ -1648,12 +1655,12 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/process-util.h \
 	shared/systemd/src/basic/random-util.c \
 	shared/systemd/src/basic/random-util.h \
-	shared/systemd/src/basic/refcnt.h \
 	shared/systemd/src/basic/set.h \
 	shared/systemd/src/basic/signal-util.h \
 	shared/systemd/src/basic/siphash24.h \
 	shared/systemd/src/basic/socket-util.c \
 	shared/systemd/src/basic/socket-util.h \
+	shared/systemd/src/basic/sort-util.h \
 	shared/systemd/src/basic/sparse-endian.h \
 	shared/systemd/src/basic/stat-util.c \
 	shared/systemd/src/basic/stat-util.h \
@@ -1711,7 +1718,7 @@ src_libnm_systemd_core_la_SOURCES = \
 	src/systemd/sd-adapt-core/nm-sd-adapt-core.h \
 	src/systemd/sd-adapt-core/sd-daemon.h \
 	src/systemd/sd-adapt-core/sd-device.h \
-	src/systemd/sd-adapt-core/stat-util.h \
+	src/systemd/sd-adapt-core/udev-util.h \
 	src/systemd/src/libsystemd-network/arp-util.c \
 	src/systemd/src/libsystemd-network/arp-util.h \
 	src/systemd/src/libsystemd-network/dhcp-identifier.c \

@@ -17,6 +17,7 @@
 #include "hashmap.h"
 #include "list.h"
 #include "macro.h"
+#include "memory-util.h"
 #include "missing.h"
 #include "prioq.h"
 #include "process-util.h"
@@ -25,7 +26,6 @@
 #include "string-table.h"
 #include "string-util.h"
 #include "time-util.h"
-#include "util.h"
 
 #define DEFAULT_ACCURACY_USEC (250 * USEC_PER_MSEC)
 
@@ -3120,7 +3120,7 @@ _public_ int sd_event_wait(sd_event *e, uint64_t timeout) {
                 timeout = 0;
 
         m = epoll_wait(e->epoll_fd, ev_queue, ev_queue_max,
-                       timeout == (uint64_t) -1 ? -1 : (int) ((timeout + USEC_PER_MSEC - 1) / USEC_PER_MSEC));
+                       timeout == (uint64_t) -1 ? -1 : (int) DIV_ROUND_UP(timeout, USEC_PER_MSEC));
         if (m < 0) {
                 if (errno == EINTR) {
                         e->state = SD_EVENT_PENDING;

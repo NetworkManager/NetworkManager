@@ -187,6 +187,7 @@ libnm_systemd_shared = static_library(
     'systemd/src/basic/hostname-util.c',
     'systemd/src/basic/in-addr-util.c',
     'systemd/src/basic/io-util.c',
+    'systemd/src/basic/memory-util.c',
     'systemd/src/basic/mempool.c',
     'systemd/src/basic/parse-util.c',
     'systemd/src/basic/path-util.c',

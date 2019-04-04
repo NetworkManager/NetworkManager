@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <linux/falloc.h>
 #include <linux/magic.h>
 #include <time.h>
 #include <unistd.h>
@@ -219,64 +220,109 @@ int readlink_and_make_absolute(const char *p, char **r) {
 int chmod_and_chown(const char *path, mode_t mode, uid_t uid, gid_t gid) {
         char fd_path[STRLEN("/proc/self/fd/") + DECIMAL_STR_MAX(int) + 1];
         _cleanup_close_ int fd = -1;
+        bool st_valid = false;
+        struct stat st;
+        int r;
+
         assert(path);
 
-        /* Under the assumption that we are running privileged we first change the access mode and only then hand out
-         * ownership to avoid a window where access is too open. */
+        /* Under the assumption that we are running privileged we first change the access mode and only then
+         * hand out ownership to avoid a window where access is too open. */
 
-        fd = open(path, O_PATH|O_CLOEXEC|O_NOFOLLOW); /* Let's acquire an O_PATH fd, as precaution to change mode/owner
-                                                       * on the same file */
+        fd = open(path, O_PATH|O_CLOEXEC|O_NOFOLLOW); /* Let's acquire an O_PATH fd, as precaution to change
+                                                       * mode/owner on the same file */
         if (fd < 0)
                 return -errno;
 
         xsprintf(fd_path, "/proc/self/fd/%i", fd);
 
         if (mode != MODE_INVALID) {
-
                 if ((mode & S_IFMT) != 0) {
-                        struct stat st;
 
                         if (stat(fd_path, &st) < 0)
                                 return -errno;
 
                         if ((mode & S_IFMT) != (st.st_mode & S_IFMT))
                                 return -EINVAL;
+
+                        st_valid = true;
                 }
 
-                if (chmod(fd_path, mode & 07777) < 0)
-                        return -errno;
+                if (chmod(fd_path, mode & 07777) < 0) {
+                        r = -errno;
+
+                        if (!st_valid && stat(fd_path, &st) < 0)
+                                return -errno;
+
+                        if ((mode & 07777) != (st.st_mode & 07777))
+                                return r;
+
+                        st_valid = true;
+                }
         }
 
-        if (uid != UID_INVALID || gid != GID_INVALID)
-                if (chown(fd_path, uid, gid) < 0)
-                        return -errno;
+        if (uid != UID_INVALID || gid != GID_INVALID) {
+                if (chown(fd_path, uid, gid) < 0) {
+                        r = -errno;
+
+                        if (!st_valid && stat(fd_path, &st) < 0)
+                                return -errno;
+
+                        if (uid != UID_INVALID && st.st_uid != uid)
+                                return r;
+                        if (gid != GID_INVALID && st.st_gid != gid)
+                                return r;
+                }
+        }
 
         return 0;
 }
 
 int fchmod_and_chown(int fd, mode_t mode, uid_t uid, gid_t gid) {
+        bool st_valid = false;
+        struct stat st;
+        int r;
+
         /* Under the assumption that we are running privileged we first change the access mode and only then hand out
          * ownership to avoid a window where access is too open. */
 
         if (mode != MODE_INVALID) {
-
                 if ((mode & S_IFMT) != 0) {
-                        struct stat st;
 
                         if (fstat(fd, &st) < 0)
                                 return -errno;
 
                         if ((mode & S_IFMT) != (st.st_mode & S_IFMT))
                                 return -EINVAL;
+
+                        st_valid = true;
                 }
 
-                if (fchmod(fd, mode & 0777) < 0)
-                        return -errno;
+                if (fchmod(fd, mode & 07777) < 0) {
+                        r = -errno;
+
+                        if (!st_valid && fstat(fd, &st) < 0)
+                                return -errno;
+
+                        if ((mode & 07777) != (st.st_mode & 07777))
+                                return r;
+
+                        st_valid = true;
+                }
         }
 
         if (uid != UID_INVALID || gid != GID_INVALID)
-                if (fchown(fd, uid, gid) < 0)
-                        return -errno;
+                if (fchown(fd, uid, gid) < 0) {
+                        r = -errno;
+
+                        if (!st_valid && fstat(fd, &st) < 0)
+                                return -errno;
+
+                        if (uid != UID_INVALID && st.st_uid != uid)
+                                return r;
+                        if (gid != GID_INVALID && st.st_gid != gid)
+                                return r;
+                }
 
         return 0;
 }
@@ -313,6 +359,10 @@ int fd_warn_permissions(const char *path, int fd) {
 
         if (fstat(fd, &st) < 0)
                 return -errno;
+
+        /* Don't complain if we are reading something that is not a file, for example /dev/null */
+        if (!S_ISREG(st.st_mode))
+                return 0;
 
         if (st.st_mode & 0111)
                 log_warning("Configuration file %s is marked executable. Please remove executable permission bits. Proceeding anyway.", path);
@@ -934,6 +984,7 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
                 if (fstat(child, &st) < 0)
                         return -errno;
                 if ((flags & CHASE_SAFE) &&
+                    (empty_or_root(root) || (size_t)(todo - buffer) > strlen(root)) &&
                     unsafe_transition(&previous_stat, &st))
                         return log_unsafe_transition(fd, child, path, flags);
 
@@ -1338,6 +1389,21 @@ int fsync_path_at(int at_fd, const char *path) {
         return 0;
 }
 
+int syncfs_path(int atfd, const char *path) {
+        _cleanup_close_ int fd = -1;
+
+        assert(path);
+
+        fd = openat(atfd, path, O_CLOEXEC|O_RDONLY|O_NONBLOCK);
+        if (fd < 0)
+                return -errno;
+
+        if (syncfs(fd) < 0)
+                return -errno;
+
+        return 0;
+}
+
 int open_parent(const char *path, int flags, mode_t mode) {
         _cleanup_free_ char *parent = NULL;
         int fd;
@@ -1354,9 +1420,9 @@ int open_parent(const char *path, int flags, mode_t mode) {
         /* Let's insist on O_DIRECTORY since the parent of a file or directory is a directory. Except if we open an
          * O_TMPFILE file, because in that case we are actually create a regular file below the parent directory. */
 
-        if ((flags & O_PATH) == O_PATH)
+        if (FLAGS_SET(flags, O_PATH))
                 flags |= O_DIRECTORY;
-        else if ((flags & O_TMPFILE) != O_TMPFILE)
+        else if (!FLAGS_SET(flags, O_TMPFILE))
                 flags |= O_DIRECTORY|O_RDONLY;
 
         fd = open(parent, flags, mode);
