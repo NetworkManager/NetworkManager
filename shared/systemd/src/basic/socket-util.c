@@ -21,6 +21,7 @@
 #include "format-util.h"
 #include "log.h"
 #include "macro.h"
+#include "memory-util.h"
 #include "missing.h"
 #include "parse-util.h"
 #include "path-util.h"
@@ -31,7 +32,6 @@
 #include "strv.h"
 #include "user-util.h"
 #include "utf8.h"
-#include "util.h"
 
 #if ENABLE_IDN
 #  define IDN_FLAGS NI_IDN
@@ -235,22 +235,31 @@ int socket_address_parse_and_warn(SocketAddress *a, const char *s) {
 }
 
 int socket_address_parse_netlink(SocketAddress *a, const char *s) {
-        int family;
+        _cleanup_free_ char *word = NULL;
         unsigned group = 0;
-        _cleanup_free_ char *sfamily = NULL;
+        int family, r;
+
         assert(a);
         assert(s);
 
         zero(*a);
         a->type = SOCK_RAW;
 
-        errno = 0;
-        if (sscanf(s, "%ms %u", &sfamily, &group) < 1)
-                return errno > 0 ? -errno : -EINVAL;
+        r = extract_first_word(&s, &word, NULL, 0);
+        if (r < 0)
+                return r;
+        if (r == 0)
+                return -EINVAL;
 
-        family = netlink_family_from_string(sfamily);
+        family = netlink_family_from_string(word);
         if (family < 0)
                 return -EINVAL;
+
+        if (!isempty(s)) {
+                r = safe_atou(s, &group);
+                if (r < 0)
+                        return r;
+        }
 
         a->sockaddr.nl.nl_family = AF_NETLINK;
         a->sockaddr.nl.nl_groups = group;
@@ -1344,4 +1353,40 @@ int sockaddr_un_set_path(struct sockaddr_un *ret, const char *path) {
                 memcpy(ret->sun_path, path, l + 1); /* copy *with* trailing NUL byte */
                 return (int) (offsetof(struct sockaddr_un, sun_path) + l + 1); /* include trailing NUL in size */
         }
+}
+
+int socket_bind_to_ifname(int fd, const char *ifname) {
+        assert(fd >= 0);
+
+        /* Call with NULL to drop binding */
+
+        if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, ifname, strlen_ptr(ifname)) < 0)
+                return -errno;
+
+        return 0;
+}
+
+int socket_bind_to_ifindex(int fd, int ifindex) {
+        char ifname[IFNAMSIZ] = "";
+
+        assert(fd >= 0);
+
+        if (ifindex <= 0) {
+                /* Drop binding */
+                if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, NULL, 0) < 0)
+                        return -errno;
+
+                return 0;
+        }
+
+        if (setsockopt(fd, SOL_SOCKET, SO_BINDTOIFINDEX, &ifindex, sizeof(ifindex)) >= 0)
+                return 0;
+        if (errno != ENOPROTOOPT)
+                return -errno;
+
+        /* Fall back to SO_BINDTODEVICE on kernels < 5.0 which didn't have SO_BINDTOIFINDEX */
+        if (!if_indextoname(ifindex, ifname))
+                return -errno;
+
+        return socket_bind_to_ifname(fd, ifname);
 }
