@@ -2837,12 +2837,12 @@ dcb_parse_uint_array (const char *val,
                       guint out_array[static 8],
                       GError **error)
 {
-	gs_strfreev char **items = NULL;
-	char **iter;
+	gs_free const char **items = NULL;
+	const char *const*iter;
 	gsize i;
 
-	items = g_strsplit_set (val, ",", -1);
-	if (g_strv_length (items) != 8) {
+	items = nm_utils_strsplit_set_with_empty (val, ",");
+	if (NM_PTRARRAY_LEN (items) != 8) {
 		g_set_error_literal (error, 1, 0, _("must contain 8 comma-separated numbers"));
 		return FALSE;
 	}
@@ -2850,8 +2850,6 @@ dcb_parse_uint_array (const char *val,
 	i = 0;
 	for (iter = items; *iter; iter++) {
 		gint64 num;
-
-		*iter = g_strstrip (*iter);
 
 		num = _nm_utils_ascii_str_to_int64 (*iter, 10, 0, other ?: max, -1);
 
