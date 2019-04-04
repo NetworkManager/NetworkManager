@@ -323,6 +323,9 @@ _nm_auto_protect_errno (int *p_saved_errno)
 NM_AUTO_DEFINE_FCN0 (GSource *, _nm_auto_unref_gsource, g_source_unref);
 #define nm_auto_unref_gsource nm_auto(_nm_auto_unref_gsource)
 
+NM_AUTO_DEFINE_FCN0 (GMainLoop *, _nm_auto_unref_gmainloop, g_main_loop_unref);
+#define nm_auto_unref_gmainloop nm_auto(_nm_auto_unref_gmainloop)
+
 static inline void
 _nm_auto_freev (gpointer ptr)
 {

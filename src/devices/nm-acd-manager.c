@@ -113,6 +113,30 @@ acd_error_to_string (int error)
 	g_return_val_if_reached (NULL);
 }
 
+static int
+acd_error_to_nmerr (int error, gboolean always_fail)
+{
+	if (error < 0)
+		return -nm_errno_native (error);
+
+	if (always_fail) {
+		if (NM_IN_SET (error, N_ACD_E_PREEMPTED,
+		                      N_ACD_E_INVALID_ARGUMENT))
+			return -NME_UNSPEC;
+		g_return_val_if_reached (-NME_UNSPEC);
+	}
+
+	/* so, @error is either zero (indicating success) or one
+	 * of the special status codes like N_ACD_E_*. In both cases,
+	 * return the positive value here. */
+	if (NM_IN_SET (error, _N_ACD_E_SUCCESS,
+	                      N_ACD_E_PREEMPTED,
+	                      N_ACD_E_INVALID_ARGUMENT))
+		return error;
+
+	g_return_val_if_reached (error);
+}
+
 /*****************************************************************************/
 
 /**
@@ -291,9 +315,9 @@ acd_init (NMAcdManager *self)
  * Start probing IP addresses for duplicates; when the probe terminates a
  * PROBE_TERMINATED signal is emitted.
  *
- * Returns: %TRUE if at least one probe could be started, %FALSE otherwise
+ * Returns: 0 on success or a negative NetworkManager error code (NME_*).
  */
-gboolean
+int
 nm_acd_manager_start_probe (NMAcdManager *self, guint timeout)
 {
 	GHashTableIter iter;
@@ -309,7 +333,7 @@ nm_acd_manager_start_probe (NMAcdManager *self, guint timeout)
 		_LOGW ("couldn't init ACD for probing on interface '%s': %s",
 		       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex),
 		       acd_error_to_string (r));
-		return FALSE;
+		return acd_error_to_nmerr (r, TRUE);
 	}
 
 	self->completed = 0;
@@ -325,7 +349,7 @@ nm_acd_manager_start_probe (NMAcdManager *self, guint timeout)
 	self->channel = g_io_channel_unix_new (fd);
 	self->event_id = g_io_add_watch (self->channel, G_IO_IN, acd_event, self);
 
-	return success;
+	return success ? 0 : -NME_UNSPEC;
 }
 
 /**
@@ -357,20 +381,23 @@ nm_acd_manager_check_address (NMAcdManager *self, in_addr_t address)
  * @self: a #NMAcdManager
  *
  * Start announcing addresses.
+ *
+ * Returns: a negative NetworkManager error number or zero on success.
  */
-void
+int
 nm_acd_manager_announce_addresses (NMAcdManager *self)
 {
 	GHashTableIter iter;
 	AddressInfo *info;
 	int r;
+	gboolean success = TRUE;
 
 	r = acd_init (self);
 	if (r) {
 		_LOGW ("couldn't init ACD for announcing addresses on interface '%s': %s",
 		       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex),
 		       acd_error_to_string (r));
-		return;
+		return acd_error_to_nmerr (r, TRUE);
 	}
 
 	if (self->state == STATE_INIT) {
@@ -378,8 +405,10 @@ nm_acd_manager_announce_addresses (NMAcdManager *self)
 		 * start a fake probe with zero timeout and then perform
 		 * the announcement. */
 		g_hash_table_iter_init (&iter, self->addresses);
-		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info))
-			acd_probe_add (self, info, 0);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info)) {
+			if (!acd_probe_add (self, info, 0))
+				success = FALSE;
+		}
 		self->state = STATE_ANNOUNCING;
 	} else if (self->state == STATE_ANNOUNCING) {
 		char sbuf[NM_UTILS_INET_ADDRSTRLEN];
@@ -394,10 +423,13 @@ nm_acd_manager_announce_addresses (NMAcdManager *self)
 				       nm_utils_inet4_ntop (info->address, sbuf),
 				       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex),
 				       acd_error_to_string (r));
+				success = FALSE;
 			} else
 				_LOGD ("announcing address %s", nm_utils_inet4_ntop (info->address, sbuf));
 		}
 	}
+
+	return success ? 0 : -NME_UNSPEC;
 }
 
 static void

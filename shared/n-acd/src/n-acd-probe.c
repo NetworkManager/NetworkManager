@@ -215,6 +215,7 @@ static void n_acd_probe_unlink(NAcdProbe *probe) {
         if (n_acd_probe_is_unique(probe)) {
                 r = n_acd_bpf_map_remove(probe->acd->fd_bpf_map, &probe->ip);
                 assert(r >= 0);
+                (void)r;
                 --probe->acd->n_bpf_map;
         }
         c_rbnode_unlink(&probe->ip_node);
