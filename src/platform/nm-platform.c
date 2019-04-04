@@ -469,6 +469,8 @@ nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe (NMPlatform *self,
  * @path: Absolute path to sysctl
  *
  * Returns: (transfer full): Contents of the virtual sysctl file.
+ *
+ * If the path does not exist, %NULL is returned and %errno set to %ENOENT.
  */
 char *
 nm_platform_sysctl_get (NMPlatform *self, const char *pathid, int dirfd, const char *path)
@@ -518,6 +520,8 @@ nm_platform_sysctl_get_int32 (NMPlatform *self, const char *pathid, int dirfd, c
  * value. On success, %errno will be set to zero. The returned value
  * will always be in the range between @min and @max
  * (inclusive) or @fallback.
+ * If the file does not exist, the fallback is returned and %errno
+ * is set to ENOENT.
  */
 gint64
 nm_platform_sysctl_get_int_checked (NMPlatform *self,
@@ -537,11 +541,17 @@ nm_platform_sysctl_get_int_checked (NMPlatform *self,
 
 	g_return_val_if_fail (path, fallback);
 
-	if (path)
-		value = nm_platform_sysctl_get (self, pathid, dirfd, path);
-
-	if (!value) {
+	if (!path) {
 		errno = EINVAL;
+		return fallback;
+	}
+
+	value = nm_platform_sysctl_get (self, pathid, dirfd, path);
+	if (!value) {
+		/* nm_platform_sysctl_get() set errno to ENOENT if the file does not exist.
+		 * Propagate/preserve that. */
+		if (errno != ENOENT)
+			errno = EINVAL;
 		return fallback;
 	}
 

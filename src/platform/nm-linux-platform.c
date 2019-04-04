@@ -4618,22 +4618,31 @@ sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 	ASSERT_SYSCTL_ARGS (pathid, dirfd, path);
 
 	if (dirfd < 0) {
-		if (!nm_platform_netns_push (platform, &netns))
+		if (!nm_platform_netns_push (platform, &netns)) {
+			errno = EBUSY;
 			return NULL;
+		}
 		pathid = path;
 	}
 
 	if (nm_utils_file_get_contents (dirfd, path, 1*1024*1024,
 	                                NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
 	                                &contents, NULL, &error) < 0) {
-		/* We assume FAILED means EOPNOTSUP */
-		if (   g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)
-		    || g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NODEV)
-		    || g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_FAILED))
-			_LOGD ("error reading %s: %s", pathid, error->message);
-		else
-			_LOGE ("error reading %s: %s", pathid, error->message);
+		NMLogLevel log_level = LOGL_ERR;
+		int errsv = EBUSY;
+
+		if (g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
+			errsv = ENOENT;
+			log_level = LOGL_DEBUG;
+		} else if (   g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NODEV)
+		           || g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_FAILED)) {
+			/* We assume FAILED means EOPNOTSUP and don't log a error message. */
+			log_level = LOGL_DEBUG;
+		}
+
+		_NMLOG (log_level, "error reading %s: %s", pathid, error->message);
 		g_clear_error (&error);
+		errno = errsv;
 		return NULL;
 	}
 
@@ -4641,6 +4650,7 @@ sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 
 	_log_dbg_sysctl_get (platform, pathid, contents);
 
+	/* errno is left undefined (as we don't return NULL). */
 	return contents;
 }
 
@@ -6652,6 +6662,14 @@ link_set_sriov_params (NMPlatform *platform,
 	                                                                                  ifname,
 	                                                                                  "device/sriov_drivers_autoprobe"),
 	                                                        10, 0, 1, -1);
+
+	if (   current_autoprobe == -1
+	    && errno == ENOENT) {
+		/* older kernel versions don't have this sysctl. Assume the value is
+		 * "1". */
+		current_autoprobe = 1;
+	}
+
 	if (   current_num == num_vfs
 	    && (autoprobe == NM_TERNARY_DEFAULT || current_autoprobe == autoprobe))
 		return TRUE;

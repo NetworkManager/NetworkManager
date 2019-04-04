@@ -154,10 +154,17 @@ static char *
 sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *path)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
+	const char *v;
 
 	ASSERT_SYSCTL_ARGS (pathid, dirfd, path);
 
-	return g_strdup (g_hash_table_lookup (priv->options, path));
+	v = g_hash_table_lookup (priv->options, path);
+	if (!v) {
+		errno = ENOENT;
+		return NULL;
+	}
+
+	return g_strdup (v);
 }
 
 static NMFakePlatformLink *
