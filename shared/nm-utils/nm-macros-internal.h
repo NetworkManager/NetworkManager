@@ -1342,14 +1342,14 @@ _NM_BACKPORT_SYMBOL_IMPL(version, return_type, func, _##func##_##version, args_t
 
 #define nm_str_skip_leading_spaces(str) \
 	({ \
-		typeof (*(str)) *_str = (str); \
-		_nm_unused const char *_str_type_check = _str; \
+		typeof (*(str)) *_str_sls = (str); \
+		_nm_unused const char *const _str_type_check = _str_sls; \
 		\
-		if (_str) { \
-			while (g_ascii_isspace (_str[0])) \
-				_str++; \
+		if (_str_sls) { \
+			while (g_ascii_isspace (_str_sls[0])) \
+				_str_sls++; \
 		} \
-		_str; \
+		_str_sls; \
 	})
 
 static inline char *
@@ -1385,6 +1385,34 @@ nm_strstrip_avoid_copy (const char *str, char **str_free)
 	*str_free = s;
 	return s;
 }
+
+#define nm_strstrip_avoid_copy_a(alloca_maxlen, str, out_str_free) \
+	({ \
+		const char *_str_ssac = (str); \
+		char **_out_str_free_ssac = (out_str_free); \
+		\
+		G_STATIC_ASSERT_EXPR ((alloca_maxlen) > 0); \
+		\
+		nm_assert ( _out_str_free_ssac || ((alloca_maxlen) > (str ? strlen (str) : 0u))); \
+		nm_assert (!_out_str_free_ssac || !*_out_str_free_ssac); \
+		\
+		if (_str_ssac) { \
+			_str_ssac = nm_str_skip_leading_spaces (_str_ssac); \
+			if (_str_ssac[0] != '\0') { \
+				gsize _l = strlen (_str_ssac); \
+				\
+				if (g_ascii_isspace (_str_ssac[--_l])) { \
+					while (   _l > 0 \
+					       && g_ascii_isspace (_str_ssac[_l - 1])) { \
+						_l--; \
+					} \
+					_str_ssac = nm_strndup_a ((alloca_maxlen), _str_ssac, _l, _out_str_free_ssac); \
+				} \
+			} \
+		} \
+		\
+		_str_ssac; \
+	})
 
 /* g_ptr_array_sort()'s compare function takes pointers to the
  * value. Thus, you cannot use strcmp directly. You can use
@@ -1461,6 +1489,118 @@ nm_strcmp_p (gconstpointer a, gconstpointer b)
 	                         && __builtin_types_compatible_p (typeof (_A), typeof (_B))), \
 	                        ((_A) > (_B)) ? (_A) : (_B),                            \
 	                        ((void)  0)))
+
+/*****************************************************************************/
+
+/* like g_memdup(). The difference is that the @size argument is of type
+ * gsize, while g_memdup() has type guint. Since, the size of container types
+ * like GArray is guint as well, this means trying to g_memdup() an
+ * array,
+ *    g_memdup (array->data, array->len * sizeof (ElementType))
+ * will lead to integer overflow, if there are more than G_MAXUINT/sizeof(ElementType)
+ * bytes. That seems unnecessarily dangerous to me.
+ * nm_memdup() avoids that, because its size argument is always large enough
+ * to contain all data that a GArray can hold.
+ *
+ * Another minor difference to g_memdup() is that the glib version also
+ * returns %NULL if @data is %NULL. E.g. g_memdup(NULL, 1)
+ * gives %NULL, but nm_memdup(NULL, 1) crashes. I think that
+ * is desirable, because @size MUST be correct at all times. @size
+ * may be zero, but one must not claim to have non-zero bytes when
+ * passing a %NULL @data pointer.
+ */
+static inline gpointer
+nm_memdup (gconstpointer data, gsize size)
+{
+	gpointer p;
+
+	if (size == 0)
+		return NULL;
+	p = g_malloc (size);
+	memcpy (p, data, size);
+	return p;
+}
+
+static inline char *
+_nm_strndup_a_step (char *s, const char *str, gsize len)
+{
+	NM_PRAGMA_WARNING_DISABLE ("-Wstringop-truncation");
+	if (len > 0)
+		strncpy (s, str, len);
+	s[len] = '\0';
+	return s;
+	NM_PRAGMA_WARNING_REENABLE;
+}
+
+/* Similar to g_strndup(), however, if the string (including the terminating
+ * NUL char) fits into alloca_maxlen, this will alloca() the memory.
+ *
+ * It's a mix of strndup() and strndupa(), but deciding based on @alloca_maxlen
+ * which one to use.
+ *
+ * In case malloc() is necessary, @out_str_free will be set (this string
+ * must be freed afterwards). It is permissible to pass %NULL as @out_str_free,
+ * if you ensure that len < alloca_maxlen.
+ *
+ * Note that just like g_strndup(), this always returns a buffer with @len + 1
+ * bytes, even if strlen(@str) is shorter than that (NUL terminated early). We fill
+ * the buffer with strncpy(), which means, that @str is copied up to the first
+ * NUL character and then filled with NUL characters. */
+#define nm_strndup_a(alloca_maxlen, str, len, out_str_free) \
+	({ \
+		const gsize _alloca_maxlen_snd = (alloca_maxlen); \
+		const char *const _str_snd = (str); \
+		const gsize _len_snd = (len); \
+		char **const _out_str_free_snd = (out_str_free); \
+		char *_s_snd; \
+		\
+		G_STATIC_ASSERT_EXPR ((alloca_maxlen) <= 300); \
+		\
+		if (   _out_str_free_snd \
+		    && _len_snd >= _alloca_maxlen_snd) { \
+			_s_snd = g_malloc (_len_snd + 1); \
+			*_out_str_free_snd = _s_snd; \
+		} else { \
+			g_assert (_len_snd < _alloca_maxlen_snd); \
+			_s_snd = g_alloca (_len_snd + 1); \
+		} \
+		_nm_strndup_a_step (_s_snd, _str_snd, _len_snd); \
+	})
+
+/*****************************************************************************/
+
+/* generic macro to convert an int to a (heap allocated) string.
+ *
+ * Usually, an inline function nm_strdup_int64() would be enough. However,
+ * that cannot be used for guint64. So, we would also need nm_strdup_uint64().
+ * This causes subtle error potential, because the caller needs to ensure to
+ * use the right one (and compiler isn't going to help as it silently casts).
+ *
+ * Instead, this generic macro is supposed to handle all integers correctly. */
+#if _NM_CC_SUPPORT_GENERIC
+#define nm_strdup_int(val) \
+	_Generic ((val), \
+	          char:               g_strdup_printf ("%d",   (int)                (val)), \
+	          \
+	          signed char:        g_strdup_printf ("%d",   (signed)             (val)), \
+	          signed short:       g_strdup_printf ("%d",   (signed)             (val)), \
+	          signed:             g_strdup_printf ("%d",   (signed)             (val)), \
+	          signed long:        g_strdup_printf ("%ld",  (signed long)        (val)), \
+	          signed long long:   g_strdup_printf ("%lld", (signed long long)   (val)), \
+	          \
+	          unsigned char:      g_strdup_printf ("%u",   (unsigned)           (val)), \
+	          unsigned short:     g_strdup_printf ("%u",   (unsigned)           (val)), \
+	          unsigned:           g_strdup_printf ("%u",   (unsigned)           (val)), \
+	          unsigned long:      g_strdup_printf ("%lu",  (unsigned long)      (val)), \
+	          unsigned long long: g_strdup_printf ("%llu", (unsigned long long) (val))  \
+	)
+#else
+#define nm_strdup_int(val) \
+	(  (   sizeof (val) == sizeof (guint64) \
+	    && ((typeof (val)) -1) > 0) \
+	 ? g_strdup_printf ("%"G_GUINT64_FORMAT, (guint64) (val)) \
+	 : g_strdup_printf ("%"G_GINT64_FORMAT, (gint64) (val)))
+#endif
 
 /*****************************************************************************/
 
