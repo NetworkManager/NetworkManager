@@ -62,37 +62,48 @@ add_request (GPtrArray *array, const char *item)
 static gboolean
 grab_request_options (GPtrArray *store, const char* line)
 {
-	char **areq, **aiter;
-	gboolean end = FALSE;
+	gs_free const char **line_v = NULL;
+	gsize i;
 
 	/* Grab each 'request' or 'also request'  option and save for later */
-	areq = g_strsplit_set (line, "\t ,", -1);
-	for (aiter = areq; aiter && *aiter; aiter++) {
-		if (!strlen (g_strstrip (*aiter)))
-			continue;
+	line_v = nm_utils_strsplit_set (line, "\t ,");
+	for (i = 0; line_v && line_v[i]; i++) {
+		const char *ss = nm_str_skip_leading_spaces (line_v[i]);
+		gsize l;
+		gboolean end = FALSE;
 
-		if (*aiter[0] == ';') {
+		if (!ss[0])
+			continue;
+		if (ss[0] == ';') {
 			/* all done */
-			end = TRUE;
-			break;
+			return TRUE;
 		}
 
-		if (!g_ascii_isalnum ((*aiter)[0]))
+		if (!g_ascii_isalnum (ss[0]))
 			continue;
 
-		if ((*aiter)[strlen (*aiter) - 1] == ';') {
+		l = strlen (ss);
+
+		while (   l > 0
+		       && g_ascii_isspace (ss[l - 1])) {
+			((char *) ss)[l - 1] = '\0';
+			l--;
+		}
+		if (   l > 0
+		    && ss[l - 1] == ';') {
 			/* Remove the EOL marker */
-			(*aiter)[strlen (*aiter) - 1] = '\0';
+			((char *) ss)[l - 1] = '\0';
 			end = TRUE;
 		}
 
-		add_request (store, *aiter);
+		if (ss[0])
+			add_request (store, ss);
+
+		if (end)
+			return TRUE;
 	}
 
-	if (areq)
-		g_strfreev (areq);
-
-	return end;
+	return FALSE;
 }
 
 static void
