@@ -260,6 +260,11 @@ restore_and_activate_connection (NMCheckpoint *self,
 		need_activation = TRUE;
 	}
 
+	if (!dev_checkpoint->device) {
+		_LOGD ("rollback: device cannot be restored");
+		return FALSE;
+	}
+
 	if (need_activation) {
 		_LOGD ("rollback: reactivating connection %s",
 		       nm_settings_connection_get_uuid (connection));
