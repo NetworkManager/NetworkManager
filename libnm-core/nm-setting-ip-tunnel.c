@@ -60,7 +60,7 @@ typedef struct {
 	char *output_key;
 	guint encapsulation_limit;
 	guint flow_label;
-	guint mtu;
+	guint32 mtu;
 	guint32 flags;
 } NMSettingIPTunnelPrivate;
 
@@ -819,7 +819,7 @@ nm_setting_ip_tunnel_class_init (NMSettingIPTunnelClass *klass)
 	 **/
 	obj_properties[PROP_MTU] =
 	    g_param_spec_uint (NM_SETTING_IP_TUNNEL_MTU, "", "",
-	                       0, G_MAXUINT, 0,
+	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
