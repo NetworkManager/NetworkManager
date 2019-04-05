@@ -8549,7 +8549,7 @@ delete_cb (GObject *con, GAsyncResult *result, gpointer user_data)
 		if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 			return;
 		g_string_printf (info->nmc->return_text, _("Error: not all connections deleted."));
-		g_printerr (_("Error: Connection deletion failed: %s"),
+		g_printerr (_("Error: Connection deletion failed: %s\n"),
 		            error->message);
 		g_error_free (error);
 		info->nmc->return_value = NMC_RESULT_ERROR_CON_DEL;
