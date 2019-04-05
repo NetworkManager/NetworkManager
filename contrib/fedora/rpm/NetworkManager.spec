@@ -718,6 +718,12 @@ cp %{SOURCE4} %{buildroot}%{nmlibdir}/conf.d/
 cp %{SOURCE5} %{buildroot}%{nmlibdir}/conf.d/
 %endif
 
+%if %{with wifi}
+%if 0%{?fedora} < 28
+cp examples/nm-conf.d/10-no-wifi-scan-rand-mac-address.conf %{buildroot}%{nmlibdir}/conf.d/
+%endif
+%endif
+
 cp examples/dispatcher/10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/
 ln -s ../no-wait.d/10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d/
 ln -s ../10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/no-wait.d/
@@ -889,6 +895,9 @@ fi
 %if %{with wifi}
 %files wifi
 %{nmplugindir}/libnm-device-plugin-wifi.so
+%if 0%{?fedora}
+%{nmlibdir}/conf.d/10-no-wifi-scan-rand-mac-address.conf
+%endif
 %endif
 
 
