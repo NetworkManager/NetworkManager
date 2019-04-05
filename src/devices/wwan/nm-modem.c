@@ -885,7 +885,7 @@ nm_modem_get_configured_mtu (NMDevice *self, NMDeviceMtuSource *out_source)
 		}
 
 		property_name = NM_IS_SETTING_GSM (setting) ? "gsm.mtu" : "cdma.mtu";
-		mtu_default = nm_device_get_configured_mtu_from_connection_default (self, property_name);
+		mtu_default = nm_device_get_configured_mtu_from_connection_default (self, property_name, G_MAXUINT32);
 		if (mtu_default >= 0) {
 			*out_source = NM_DEVICE_MTU_SOURCE_CONNECTION;
 			return (guint32) mtu_default;
