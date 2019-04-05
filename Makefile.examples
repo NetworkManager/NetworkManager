@@ -147,8 +147,8 @@ EXTRA_DIST += \
 	examples/lua/lgi/change-vpn-username.lua \
 	examples/lua/lgi/deactivate-all.lua \
 	\
+	examples/nm-conf.d/10-no-wifi-scan-rand-mac-address.conf \
 	examples/nm-conf.d/30-anon.conf \
-	examples/nm-conf.d/31-mac-addr-change.conf \
 	\
 	examples/python/dbus/nm-state.py \
 	examples/python/dbus/add-connection.py \
