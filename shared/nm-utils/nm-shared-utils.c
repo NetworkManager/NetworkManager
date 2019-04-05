@@ -1020,12 +1020,11 @@ nm_utils_strsplit_set_full (const char *str,
                             const char *delimiters,
                             NMUtilsStrsplitSetFlags flags)
 {
-	const char **ptr, **ptr0;
-	gsize alloc_size;
-	gsize plen;
-	gsize i;
-	gsize str_len;
-	char *s0;
+	const char **ptr;
+	gsize num_tokens;
+	gsize i_token;
+	gsize str_len_p1;
+	const char *c_str;
 	char *s;
 	guint8 ch_lookup[256];
 	const gboolean f_allow_escaping = NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
@@ -1056,37 +1055,68 @@ nm_utils_strsplit_set_full (const char *str,
 		return NULL;
 	}
 
-	str_len = strlen (str) + 1;
-	alloc_size = 8;
 
-	/* we allocate the buffer larger, so to copy @str at the
-	 * end of it as @s0. */
-	ptr0 = g_malloc ((sizeof (const char *) * (alloc_size + 1)) + str_len);
-	s0 = (char *) &ptr0[alloc_size + 1];
-	memcpy (s0, str, str_len);
-
-	plen = 0;
-	s = s0;
-	ptr = ptr0;
-
+	num_tokens = 1;
+	c_str = str;
 	while (TRUE) {
-		if (plen >= alloc_size) {
-			const char **ptr_old = ptr;
 
-			/* reallocate the buffer. Note that for now the string
-			 * continues to be in ptr0/s0. We fix that at the end. */
-			alloc_size *= 2;
-			ptr = g_malloc ((sizeof (const char *) * (alloc_size + 1)) + str_len);
-			memcpy (ptr, ptr_old, sizeof (const char *) * plen);
-			if (ptr_old != ptr0)
-				g_free (ptr_old);
+		while (G_LIKELY (!_char_lookup_has (ch_lookup, c_str[0]))) {
+			if (c_str[0] == '\0')
+				goto done1;
+			c_str++;
 		}
 
-		ptr[plen++] = s;
+		/* we assume escapings are not frequent. After we found
+		 * this delimiter, check whether it was escaped by counting
+		 * the backslashed before. */
+		if (f_allow_escaping) {
+			const char *c2 = c_str;
+
+			while (   c2 > str
+			       && c2[-1] == '\\')
+				c2--;
+			if (((c_str - c2) % 2) != 0) {
+				/* the delimiter is escaped. This was not an accepted delimiter. */
+				c_str++;
+				continue;
+			}
+		}
+
+		c_str++;
+
+		/* if we drop empty tokens, then we now skip over all consecutive delimiters. */
+		if (!f_preseve_empty) {
+			while (_char_lookup_has (ch_lookup, c_str[0]))
+				c_str++;
+			if (c_str[0] == '\0')
+				break;
+		}
+
+		num_tokens++;
+	}
+
+done1:
+
+	nm_assert (c_str[0] == '\0');
+
+	str_len_p1 = (c_str - str) + 1;
+
+	nm_assert (str[str_len_p1 - 1] == '\0');
+
+	ptr = g_malloc ((sizeof (const char *) * (num_tokens + 1)) + str_len_p1);
+	s = (char *) &ptr[num_tokens + 1];
+	memcpy (s, str, str_len_p1);
+
+	i_token = 0;
+
+	while (TRUE) {
+
+		nm_assert (i_token < num_tokens);
+		ptr[i_token++] = s;
 
 		if (s[0] == '\0') {
 			nm_assert (f_preseve_empty);
-			goto done;
+			goto done2;
 		}
 		nm_assert (   f_preseve_empty
 		           || !_char_lookup_has (ch_lookup, s[0]));
@@ -1096,10 +1126,10 @@ nm_utils_strsplit_set_full (const char *str,
 			                && f_allow_escaping)) {
 				s++;
 				if (s[0] == '\0')
-					goto done;
+					goto done2;
 				s++;
 			} else if (s[0] == '\0')
-				goto done;
+				goto done2;
 			else
 				s++;
 		}
@@ -1107,26 +1137,18 @@ nm_utils_strsplit_set_full (const char *str,
 		nm_assert (_char_lookup_has (ch_lookup, s[0]));
 		s[0] = '\0';
 		s++;
+
 		if (!f_preseve_empty) {
 			while (_char_lookup_has (ch_lookup, s[0]))
 				s++;
 			if (s[0] == '\0')
-				goto done;
+				goto done2;
 		}
 	}
 
-done:
-	ptr[plen] = NULL;
-
-	if (ptr != ptr0) {
-		/* we reallocated the buffer. We must copy over the
-		 * string @s0 and adjust the pointers. */
-		s = (char *) &ptr[alloc_size + 1];
-		memcpy (s, s0, str_len);
-		for (i = 0; i < plen; i++)
-			ptr[i] = &s[ptr[i] - s0];
-		g_free (ptr0);
-	}
+done2:
+	nm_assert (i_token == num_tokens);
+	ptr[i_token] = NULL;
 
 	return ptr;
 }
