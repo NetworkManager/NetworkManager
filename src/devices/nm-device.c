@@ -8926,12 +8926,13 @@ linklocal6_start (NMDevice *self)
 
 gint64
 nm_device_get_configured_mtu_from_connection_default (NMDevice *self,
-                                                      const char *property_name)
+                                                      const char *property_name,
+                                                      guint32 max_mtu)
 {
 	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
 	                                                    property_name,
 	                                                    self,
-	                                                    0, G_MAXUINT32, -1);
+	                                                    0, max_mtu, -1);
 }
 
 guint32
@@ -8944,6 +8945,7 @@ nm_device_get_configured_mtu_from_connection (NMDevice *self,
 	NMSetting *setting;
 	gint64 mtu_default;
 	guint32 mtu = 0;
+	guint32 max_mtu = G_MAXUINT32;
 
 	nm_assert (NM_IS_DEVICE (self));
 	nm_assert (out_source);
@@ -8966,6 +8968,7 @@ nm_device_get_configured_mtu_from_connection (NMDevice *self,
 		if (setting)
 			mtu = nm_setting_infiniband_get_mtu (NM_SETTING_INFINIBAND (setting));
 		global_property_name = NM_CON_DEFAULT ("infiniband.mtu");
+		max_mtu = NM_INFINIBAND_MAX_MTU;
 	} else if (setting_type == NM_TYPE_SETTING_IP_TUNNEL) {
 		if (setting)
 			mtu = nm_setting_ip_tunnel_get_mtu (NM_SETTING_IP_TUNNEL (setting));
@@ -8977,13 +8980,12 @@ nm_device_get_configured_mtu_from_connection (NMDevice *self,
 	} else
 		g_return_val_if_reached (0);
 
-
 	if (mtu) {
 		*out_source = NM_DEVICE_MTU_SOURCE_CONNECTION;
 		return mtu;
 	}
 
-	mtu_default = nm_device_get_configured_mtu_from_connection_default (self, global_property_name);
+	mtu_default = nm_device_get_configured_mtu_from_connection_default (self, global_property_name, max_mtu);
 	if (mtu_default >= 0) {
 		*out_source = NM_DEVICE_MTU_SOURCE_CONNECTION;
 		return (guint32) mtu_default;

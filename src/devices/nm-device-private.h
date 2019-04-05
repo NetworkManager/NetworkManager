@@ -168,7 +168,8 @@ NMIPConfig *nm_device_ip_config_new (NMDevice *self, int addr_family);
 /*****************************************************************************/
 
 gint64 nm_device_get_configured_mtu_from_connection_default (NMDevice *self,
-                                                             const char *property_name);
+                                                             const char *property_name,
+                                                             guint32 max_mtu);
 
 guint32 nm_device_get_configured_mtu_from_connection (NMDevice *device,
                                                       GType setting_type,
