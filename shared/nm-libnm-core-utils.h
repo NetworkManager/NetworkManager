@@ -94,4 +94,20 @@ nm_setting_ip_config_get_addr_family (NMSettingIPConfig *s_ip)
 	g_return_val_if_reached (AF_UNSPEC);
 }
 
+/*****************************************************************************/
+
+/* The maximum MTU for infiniband.
+ *
+ * This is both in transport-mode "datagram" and "connected"
+ * and they both have the same maximum define.
+ *
+ * Note that in the past, MTU in "datagram" mode was restricted
+ * to 2044 bytes. That is no longer the case and we accept large
+ * MTUs.
+ *
+ * This define is the maxiumum for the MTU in a connection profile (the
+ * setting). Whether large MTUs can be configured later (at activation time)
+ * depends on other factors. */
+#define NM_INFINIBAND_MAX_MTU ((guint) 65520)
+
 #endif /* __NM_LIBNM_SHARED_UTILS_H__ */
