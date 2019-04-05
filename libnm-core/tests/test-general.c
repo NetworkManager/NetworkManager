@@ -4737,6 +4737,7 @@ test_connection_normalize_infiniband_mtu (void)
 {
 	gs_unref_object NMConnection *con = NULL;
 	NMSettingInfiniband *s_infini;
+	guint mtu_regular = nmtst_rand_select (2044, 2045, 65520);
 
 	con = nmtst_create_minimal_connection ("test_connection_normalize_infiniband_mtu", NULL,
 	                                       NM_SETTING_INFINIBAND_SETTING_NAME, NULL);
@@ -4749,26 +4750,26 @@ test_connection_normalize_infiniband_mtu (void)
 
 	g_object_set (s_infini,
 	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
-	              NM_SETTING_INFINIBAND_MTU, (guint) 2044,
+	              NM_SETTING_INFINIBAND_MTU, (guint) mtu_regular,
 	              NULL);
 	nmtst_assert_connection_verifies_and_normalizable (con);
 	nmtst_connection_normalize (con);
-	g_assert_cmpint (2044, ==, nm_setting_infiniband_get_mtu (s_infini));
+	g_assert_cmpint (mtu_regular, ==, nm_setting_infiniband_get_mtu (s_infini));
 
 	g_object_set (s_infini,
 	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
-	              NM_SETTING_INFINIBAND_MTU, (guint) 2045,
+	              NM_SETTING_INFINIBAND_MTU, (guint) 65521,
 	              NULL);
 	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	nmtst_connection_normalize (con);
-	g_assert_cmpint (2044, ==, nm_setting_infiniband_get_mtu (s_infini));
+	g_assert_cmpint (65520, ==, nm_setting_infiniband_get_mtu (s_infini));
 
 	g_object_set (s_infini,
 	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected",
-	              NM_SETTING_INFINIBAND_MTU, (guint) 65520,
+	              NM_SETTING_INFINIBAND_MTU, (guint) mtu_regular,
 	              NULL);
 	nmtst_assert_connection_verifies_without_normalization (con);
-	g_assert_cmpint (65520, ==, nm_setting_infiniband_get_mtu (s_infini));
+	g_assert_cmpint (mtu_regular, ==, nm_setting_infiniband_get_mtu (s_infini));
 
 	g_object_set (s_infini,
 	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected",

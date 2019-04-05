@@ -170,7 +170,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingConnection *s_con = NULL;
 	NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE (setting);
-	guint32 normerr_max_mtu = 0;
 
 	if (priv->mac_address && !nm_utils_hwaddr_valid (priv->mac_address, INFINIBAND_ALEN)) {
 		g_set_error_literal (error,
@@ -181,13 +180,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (!g_strcmp0 (priv->transport_mode, "datagram")) {
-		if (priv->mtu > 2044)
-			normerr_max_mtu = 2044;
-	} else if (!g_strcmp0 (priv->transport_mode, "connected")) {
-		if (priv->mtu > 65520)
-			normerr_max_mtu = 65520;
-	} else {
+	if (!NM_IN_STRSET (priv->transport_mode, "datagram",
+	                                         "connected")) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -271,12 +265,21 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 	/* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
 
-	if (normerr_max_mtu > 0) {
+	if (priv->mtu > NM_INFINIBAND_MAX_MTU) {
+		/* Traditionally, MTU for "datagram" mode was limited to 2044
+		 * and for "connected" mode it was 65520.
+		 *
+		 * This is no longer the case, and both transport modes use the same
+		 * maximum of 65520 (NM_INFINIBAND_MAX_MTU).
+		 *
+		 * Note that this is the MTU in the connection profile. Whether
+		 * we will be able to configure large MTUs later (during activation)
+		 * is unknown at this point. */
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("mtu for transport mode '%s' can be at most %d but it is %d"),
-		             priv->transport_mode, normerr_max_mtu, priv->mtu);
+		             _("mtu can be at most %u but it is %u"),
+		             NM_INFINIBAND_MAX_MTU, priv->mtu);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_INFINIBAND_SETTING_NAME, NM_SETTING_INFINIBAND_MTU);
 		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}

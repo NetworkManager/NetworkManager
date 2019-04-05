@@ -1059,23 +1059,14 @@ _normalize_infiniband_mtu (NMConnection *self, GHashTable *parameters)
 {
 	NMSettingInfiniband *s_infini = nm_connection_get_setting_infiniband (self);
 
-	if (s_infini) {
-		const char *transport_mode = nm_setting_infiniband_get_transport_mode (s_infini);
-		guint32 max_mtu = 0;
+	if (   !s_infini
+	    || nm_setting_infiniband_get_mtu (s_infini) <= NM_INFINIBAND_MAX_MTU
+	    || !NM_IN_STRSET (nm_setting_infiniband_get_transport_mode (s_infini), "datagram",
+	                                                                           "connected"))
+		return FALSE;
 
-		if (transport_mode) {
-			if (!strcmp (transport_mode, "datagram"))
-				max_mtu = 2044;
-			else if (!strcmp (transport_mode, "connected"))
-				max_mtu = 65520;
-
-			if (max_mtu && nm_setting_infiniband_get_mtu (s_infini) > max_mtu) {
-				g_object_set (s_infini, NM_SETTING_INFINIBAND_MTU, (guint) max_mtu, NULL);
-				return TRUE;
-			}
-		}
-	}
-	return FALSE;
+	g_object_set (s_infini, NM_SETTING_INFINIBAND_MTU, (guint) NM_INFINIBAND_MAX_MTU, NULL);
+	return TRUE;
 }
 
 static gboolean
