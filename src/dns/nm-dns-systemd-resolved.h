@@ -36,4 +36,6 @@ GType nm_dns_systemd_resolved_get_type (void);
 
 NMDnsPlugin *nm_dns_systemd_resolved_new (void);
 
+gboolean nm_dns_systemd_resolved_is_running (NMDnsSystemdResolved *self);
+
 #endif /* __NETWORKMANAGER_DNS_SYSTEMD_RESOLVED_H__ */
