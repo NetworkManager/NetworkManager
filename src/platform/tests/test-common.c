@@ -900,7 +900,7 @@ _ip_address_add (NMPlatform *platform,
 	}
 
 	/* Let's wait until we see the address. */
-	end_time = nm_utils_get_monotonic_timestamp_ms () + 250;
+	end_time = nm_utils_get_monotonic_timestamp_ms () + 500;
 	do {
 
 		if (external_command)
