@@ -476,6 +476,22 @@ resolved_proxy_created (GObject *source, GAsyncResult *r, gpointer user_data)
 
 /*****************************************************************************/
 
+gboolean
+nm_dns_systemd_resolved_is_running (NMDnsSystemdResolved *self)
+{
+	NMDnsSystemdResolvedPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DNS_SYSTEMD_RESOLVED (self), FALSE);
+
+	priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
+
+	return    priv->resolve
+	       && (   priv->dbus_has_owner
+	           || !priv->try_start_blocked);
+}
+
+/*****************************************************************************/
+
 static void
 nm_dns_systemd_resolved_init (NMDnsSystemdResolved *self)
 {

@@ -840,7 +840,18 @@ nm_connectivity_check_start (NMConnectivity *self,
 		 *
 		 * Yes, this makes NMConnectivity singleton dependent on NMDnsManager singleton.
 		 * Well, not really: it makes connectivity-check-start dependent on NMDnsManager
-		 * which merely means, not to start a connectivity check, late during shutdown. */
+		 * which merely means, not to start a connectivity check, late during shutdown.
+		 *
+		 * NMDnsSystemdResolved tries to D-Bus activate systemd-resolved only once,
+		 * to not spam syslog with failures messages from dbus-daemon.
+		 * Note that unless NMDnsSystemdResolved tried and failed to start systemd-resolved,
+		 * it guesses that systemd-resolved is activatable and returns %TRUE here. That
+		 * means, while NMDnsSystemdResolved would not try to D-Bus activate systemd-resolved
+		 * more than once, NMConnectivity might -- until NMDnsSystemdResolved tried itself
+		 * and noticed that systemd-resolved is not available.
+		 * This is relatively cumbersome to avoid, because we would have to go through
+		 * NMDnsSystemdResolved trying to asynchronously start the service, to ensure there
+		 * is only one attempt to start the service. */
 		has_systemd_resolved = nm_dns_manager_has_systemd_resolved (nm_dns_manager_get ());
 
 		if (has_systemd_resolved) {
