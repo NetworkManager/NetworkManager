@@ -66,6 +66,7 @@ typedef struct {
 	GCancellable *init_cancellable;
 	GCancellable *update_cancellable;
 	CList request_queue_lst_head;
+	bool send_updates_warn_ratelimited:1;
 } NMDnsSystemdResolvedPrivate;
 
 struct _NMDnsSystemdResolved {
@@ -124,13 +125,23 @@ call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 	gs_unref_variant GVariant *v = NULL;
 	gs_free_error GError *error = NULL;
 	NMDnsSystemdResolved *self = (NMDnsSystemdResolved *) user_data;
+	NMDnsSystemdResolvedPrivate *priv;
 
 	v = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), r, &error);
+	if (   !v
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
+
 	if (!v) {
-		if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-			return;
-		_LOGW ("send-updates failed: %s", error->message);
-	}
+		if (!priv->send_updates_warn_ratelimited) {
+			priv->send_updates_warn_ratelimited = TRUE;
+			_LOGW ("send-updates failed to update systemd-resolved: %s", error->message);
+		} else
+			_LOGD ("send-updates failed: %s", error->message);
+	} else
+		priv->send_updates_warn_ratelimited = FALSE;
 }
 
 static void
