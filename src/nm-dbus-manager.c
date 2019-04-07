@@ -79,7 +79,6 @@ typedef struct {
 	gpointer set_property_handler_data;
 
 	GDBusConnection *main_dbus_connection;
-	GDBusProxy *main_dbus_proxy;
 
 	guint objmgr_registration_id;
 	bool started:1;
@@ -448,15 +447,21 @@ _bus_get_unix_pid (NMDBusManager *self,
                    gulong *out_pid,
                    GError **error)
 {
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 	guint32 unix_pid = G_MAXUINT32;
 	gs_unref_variant GVariant *ret = NULL;
 
-	ret = _nm_dbus_proxy_call_sync (NM_DBUS_MANAGER_GET_PRIVATE (self)->main_dbus_proxy,
-	                                "GetConnectionUnixProcessID",
-	                                g_variant_new ("(s)", sender),
-	                                G_VARIANT_TYPE ("(u)"),
-	                                G_DBUS_CALL_FLAGS_NONE, 2000,
-	                                NULL, error);
+	ret = g_dbus_connection_call_sync (priv->main_dbus_connection,
+	                                   DBUS_SERVICE_DBUS,
+	                                   DBUS_PATH_DBUS,
+	                                   DBUS_INTERFACE_DBUS,
+	                                   "GetConnectionUnixProcessID",
+	                                   g_variant_new ("(s)", sender),
+	                                   G_VARIANT_TYPE ("(u)"),
+	                                   G_DBUS_CALL_FLAGS_NONE,
+	                                   2000,
+	                                   NULL,
+	                                   error);
 	if (!ret)
 		return FALSE;
 
@@ -472,15 +477,21 @@ _bus_get_unix_user (NMDBusManager *self,
                     gulong *out_user,
                     GError **error)
 {
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 	guint32 unix_uid = G_MAXUINT32;
 	gs_unref_variant GVariant *ret = NULL;
 
-	ret = _nm_dbus_proxy_call_sync (NM_DBUS_MANAGER_GET_PRIVATE (self)->main_dbus_proxy,
-	                                "GetConnectionUnixUser",
-	                                g_variant_new ("(s)", sender),
-	                                G_VARIANT_TYPE ("(u)"),
-	                                G_DBUS_CALL_FLAGS_NONE, 2000,
-	                                NULL, error);
+	ret = g_dbus_connection_call_sync (priv->main_dbus_connection,
+	                                   DBUS_SERVICE_DBUS,
+	                                   DBUS_PATH_DBUS,
+	                                   DBUS_INTERFACE_DBUS,
+	                                   "GetConnectionUnixUser",
+	                                   g_variant_new ("(s)", sender),
+	                                   G_VARIANT_TYPE ("(u)"),
+	                                   G_DBUS_CALL_FLAGS_NONE,
+	                                   2000,
+	                                   NULL,
+	                                   error);
 	if (!ret)
 		return FALSE;
 
@@ -1498,7 +1509,6 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *ret = NULL;
 	gs_unref_object GDBusConnection *connection = NULL;
-	gs_unref_object GDBusProxy *proxy = NULL;
 	guint32 result;
 	guint registration_id;
 
@@ -1521,20 +1531,6 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 
 	g_dbus_connection_set_exit_on_close (connection, FALSE);
 
-	proxy = g_dbus_proxy_new_sync (connection,
-	                                 G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
-	                               | G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
-	                               NULL,
-	                               DBUS_SERVICE_DBUS,
-	                               DBUS_PATH_DBUS,
-	                               DBUS_INTERFACE_DBUS,
-	                               NULL,
-	                               &error);
-	if (!proxy) {
-		_LOGE ("fatal failure to initialize D-Bus: %s", error->message);
-		return FALSE;
-	}
-
 	registration_id = g_dbus_connection_register_object (connection,
 	                                                     OBJECT_MANAGER_SERVER_BASE_PATH,
 	                                                     NM_UNCONST_PTR (GDBusInterfaceInfo, &interface_info_objmgr),
@@ -1547,15 +1543,22 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 		return FALSE;
 	}
 
-	ret = _nm_dbus_proxy_call_sync (proxy,
-	                                "RequestName",
-	                                g_variant_new ("(su)",
-	                                               NM_DBUS_SERVICE,
-	                                               DBUS_NAME_FLAG_DO_NOT_QUEUE),
-	                                G_VARIANT_TYPE ("(u)"),
-	                                G_DBUS_CALL_FLAGS_NONE, -1,
-	                                NULL,
-	                                &error);
+	ret = g_dbus_connection_call_sync (connection,
+	                                   DBUS_SERVICE_DBUS,
+	                                   DBUS_PATH_DBUS,
+	                                   DBUS_INTERFACE_DBUS,
+	                                   "RequestName",
+	                                   g_variant_new ("(su)",
+	                                                  NM_DBUS_SERVICE,
+	                                                  DBUS_NAME_FLAG_DO_NOT_QUEUE),
+	                                   G_VARIANT_TYPE ("(u)"),
+	                                   G_DBUS_CALL_FLAGS_NONE,
+	                                   -1,
+	                                   NULL,
+	                                   &error);
+	if (!ret)
+		return FALSE;
+
 	if (!ret) {
 		_LOGE ("fatal failure to acquire D-Bus service \"%s"": %s",
 		       NM_DBUS_SERVICE, error->message);
@@ -1573,7 +1576,6 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 
 	priv->objmgr_registration_id = registration_id;
 	priv->main_dbus_connection = g_steal_pointer (&connection);
-	priv->main_dbus_proxy = g_steal_pointer (&proxy);
 
 	_LOGI ("acquired D-Bus service \"%s\"", NM_DBUS_SERVICE);
 
@@ -1635,7 +1637,6 @@ dispose (GObject *object)
 		                                     nm_steal_int (&priv->objmgr_registration_id));
 	}
 
-	g_clear_object (&priv->main_dbus_proxy);
 	g_clear_object (&priv->main_dbus_connection);
 
 	G_OBJECT_CLASS (nm_dbus_manager_parent_class)->dispose (object);
