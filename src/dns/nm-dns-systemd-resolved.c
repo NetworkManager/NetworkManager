@@ -44,8 +44,9 @@
 #include "NetworkManagerUtils.h"
 #include "nm-dbus-compat.h"
 
-#define SYSTEMD_RESOLVED_DBUS_SERVICE "org.freedesktop.resolve1"
-#define SYSTEMD_RESOLVED_DBUS_PATH "/org/freedesktop/resolve1"
+#define SYSTEMD_RESOLVED_DBUS_SERVICE   "org.freedesktop.resolve1"
+#define SYSTEMD_RESOLVED_MANAGER_IFACE  "org.freedesktop.resolve1.Manager"
+#define SYSTEMD_RESOLVED_DBUS_PATH      "/org/freedesktop/resolve1"
 
 /*****************************************************************************/
 
@@ -63,13 +64,14 @@ typedef struct {
 /*****************************************************************************/
 
 typedef struct {
-	GDBusProxy *resolve;
-	GCancellable *init_cancellable;
-	GCancellable *update_cancellable;
+	GDBusConnection *dbus_connection;
+	GCancellable *cancellable;
 	CList request_queue_lst_head;
+	guint name_owner_changed_id;
 	bool send_updates_warn_ratelimited:1;
 	bool try_start_blocked:1;
 	bool dbus_has_owner:1;
+	bool dbus_initied:1;
 } NMDnsSystemdResolvedPrivate;
 
 struct _NMDnsSystemdResolved {
@@ -130,7 +132,7 @@ call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 	NMDnsSystemdResolved *self = (NMDnsSystemdResolved *) user_data;
 	NMDnsSystemdResolvedPrivate *priv;
 
-	v = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), r, &error);
+	v = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), r, &error);
 	if (   !v
 	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
@@ -286,8 +288,8 @@ send_updates (NMDnsSystemdResolved *self)
 		return;
 	}
 
-	if (!priv->resolve) {
-		_LOGT ("send-updates: D-Bus proxy not ready");
+	if (!priv->dbus_initied) {
+		_LOGT ("send-updates: D-Bus connection not ready");
 		return;
 	}
 
@@ -302,7 +304,7 @@ send_updates (NMDnsSystemdResolved *self)
 		_LOGT ("send-updates: no name owner. Try start service...");
 		priv->try_start_blocked = TRUE;
 
-		g_dbus_connection_call (g_dbus_proxy_get_connection (priv->resolve),
+		g_dbus_connection_call (priv->dbus_connection,
 		                        DBUS_SERVICE_DBUS,
 		                        DBUS_PATH_DBUS,
 		                        DBUS_INTERFACE_DBUS,
@@ -320,9 +322,9 @@ send_updates (NMDnsSystemdResolved *self)
 	_LOGT ("send-updates: start %lu requests",
 	       c_list_length (&priv->request_queue_lst_head));
 
-	nm_clear_g_cancellable (&priv->update_cancellable);
+	nm_clear_g_cancellable (&priv->cancellable);
 
-	priv->update_cancellable = g_cancellable_new ();
+	priv->cancellable = g_cancellable_new ();
 
 	while ((request_item = c_list_first_entry (&priv->request_queue_lst_head,
 	                                           RequestItem,
@@ -335,14 +337,18 @@ send_updates (NMDnsSystemdResolved *self)
 		 * But this is hard to avoid, because we'd have to check the error failure to detect the reason
 		 * and retry. The race is not critical, because at worst it results in logging a warning
 		 * about failure to start systemd.resolved. */
-		g_dbus_proxy_call (priv->resolve,
-		                   request_item->operation,
-		                   request_item->argument,
-		                   G_DBUS_CALL_FLAGS_NONE,
-		                   -1,
-		                   priv->update_cancellable,
-		                   call_done,
-		                   self);
+		g_dbus_connection_call (priv->dbus_connection,
+		                        SYSTEMD_RESOLVED_DBUS_SERVICE,
+		                        SYSTEMD_RESOLVED_DBUS_PATH,
+		                        SYSTEMD_RESOLVED_MANAGER_IFACE,
+		                        request_item->operation,
+		                        request_item->argument,
+		                        NULL,
+		                        G_DBUS_CALL_FLAGS_NONE,
+		                        -1,
+		                        priv->cancellable,
+		                        call_done,
+		                        self);
 		_request_item_free (request_item);
 	}
 }
@@ -416,12 +422,12 @@ get_name (NMDnsPlugin *plugin)
 /*****************************************************************************/
 
 static void
-name_owner_changed (NMDnsSystemdResolved *self)
+name_owner_changed (NMDnsSystemdResolved *self,
+                    const char *owner)
 {
 	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
-	gs_free char *owner = NULL;
 
-	owner = g_dbus_proxy_get_name_owner (priv->resolve);
+	owner = nm_str_not_empty (owner);
 
 	if (!owner)
 		_LOGT ("D-Bus name for systemd-resolved has no owner");
@@ -436,42 +442,64 @@ name_owner_changed (NMDnsSystemdResolved *self)
 }
 
 static void
-name_owner_changed_cb (GObject *object,
-                       GParamSpec *pspec,
+name_owner_changed_cb (GDBusConnection *connection,
+                       const char *sender_name,
+                       const char *object_path,
+                       const char *interface_name,
+                       const char *signal_name,
+                       GVariant *parameters,
                        gpointer user_data)
 {
-	name_owner_changed (user_data);
+	NMDnsSystemdResolved *self = user_data;
+	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
+	const char *new_owner;
+
+	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(sss)")))
+		return;
+
+	g_variant_get (parameters,
+	               "(&s&s&s)",
+	               NULL,
+	               NULL,
+	               &new_owner);
+
+	if (!priv->dbus_initied) {
+		/* There was a race and we got a NameOwnerChanged signal before GetNameOwner
+		 * returns. */
+		priv->dbus_initied = TRUE;
+		nm_clear_g_cancellable (&priv->cancellable);
+	}
+
+	name_owner_changed (user_data, new_owner);
 }
 
 static void
-resolved_proxy_created (GObject *source, GAsyncResult *r, gpointer user_data)
+get_name_owner_cb (GObject *source,
+                   GAsyncResult *res,
+                   gpointer user_data)
 {
-	NMDnsSystemdResolved *self = (NMDnsSystemdResolved *) user_data;
+	NMDnsSystemdResolved *self;
 	NMDnsSystemdResolvedPrivate *priv;
+	gs_unref_variant GVariant *ret = NULL;
 	gs_free_error GError *error = NULL;
-	GDBusProxy *resolve;
+	const char *owner = NULL;
 
-	resolve = g_dbus_proxy_new_finish (r, &error);
-	if (   !resolve
+	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), res, &error);
+	if (   !ret
 	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
+	if (ret)
+		g_variant_get (ret, "(&s)", &owner);
+
+	self = user_data;
 	priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
-	g_clear_object (&priv->init_cancellable);
-	if (!resolve) {
-		_LOGW ("failure to create D-Bus proxy for systemd-resolved: %s", error->message);
-		g_signal_emit_by_name (self, NM_DNS_PLUGIN_FAILED);
-		return;
-	}
 
-	_LOGT ("D-Bus proxy for systemd-resolved created");
+	g_clear_object (&priv->cancellable);
 
-	g_signal_connect (resolve, "notify::g-name-owner",
-	                  G_CALLBACK (name_owner_changed_cb), self);
+	priv->dbus_initied = TRUE;
 
-	priv->resolve = resolve;
-
-	name_owner_changed (self);
+	name_owner_changed (self, owner);
 }
 
 /*****************************************************************************/
@@ -485,7 +513,7 @@ nm_dns_systemd_resolved_is_running (NMDnsSystemdResolved *self)
 
 	priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
 
-	return    priv->resolve
+	return    priv->dbus_initied
 	       && (   priv->dbus_has_owner
 	           || !priv->try_start_blocked);
 }
@@ -499,18 +527,35 @@ nm_dns_systemd_resolved_init (NMDnsSystemdResolved *self)
 
 	c_list_init (&priv->request_queue_lst_head);
 
-	priv->init_cancellable = g_cancellable_new ();
-	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
-	                            G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
-	                          | G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS
-	                          | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START_AT_CONSTRUCTION,
-	                          NULL,
-	                          SYSTEMD_RESOLVED_DBUS_SERVICE,
-	                          SYSTEMD_RESOLVED_DBUS_PATH,
-	                          SYSTEMD_RESOLVED_DBUS_SERVICE ".Manager",
-	                          priv->init_cancellable,
-	                          resolved_proxy_created,
-	                          self);
+	priv->dbus_connection = nm_g_object_ref (nm_dbus_manager_get_dbus_connection (nm_dbus_manager_get ()));
+	if (!priv->dbus_connection) {
+		_LOGD ("no D-Bus connection");
+		return;
+	}
+
+	priv->name_owner_changed_id = g_dbus_connection_signal_subscribe (priv->dbus_connection,
+	                                                                  DBUS_SERVICE_DBUS,
+	                                                                  DBUS_INTERFACE_DBUS,
+	                                                                  "NameOwnerChanged",
+	                                                                  DBUS_PATH_DBUS,
+	                                                                  SYSTEMD_RESOLVED_DBUS_SERVICE,
+	                                                                  G_DBUS_SIGNAL_FLAGS_NONE,
+	                                                                  name_owner_changed_cb,
+	                                                                  self,
+	                                                                  NULL);
+	priv->cancellable = g_cancellable_new ();
+	g_dbus_connection_call (priv->dbus_connection,
+	                        DBUS_SERVICE_DBUS,
+	                        DBUS_PATH_DBUS,
+	                        DBUS_INTERFACE_DBUS,
+	                        "GetNameOwner",
+	                        g_variant_new ("(s)", SYSTEMD_RESOLVED_DBUS_SERVICE),
+	                        G_VARIANT_TYPE ("(s)"),
+	                        G_DBUS_CALL_FLAGS_NONE,
+	                        -1,
+	                        priv->cancellable,
+	                        get_name_owner_cb,
+	                        self);
 }
 
 NMDnsPlugin *
@@ -527,13 +572,14 @@ dispose (GObject *object)
 
 	free_pending_updates (self);
 
-	if (priv->resolve) {
-		g_signal_handlers_disconnect_by_func (priv->resolve, name_owner_changed_cb, self);
-		g_clear_object (&priv->resolve);
+	if (priv->name_owner_changed_id != 0) {
+		g_dbus_connection_signal_unsubscribe (priv->dbus_connection,
+		                                      nm_steal_int (&priv->name_owner_changed_id));
 	}
 
-	nm_clear_g_cancellable (&priv->init_cancellable);
-	nm_clear_g_cancellable (&priv->update_cancellable);
+	nm_clear_g_cancellable (&priv->cancellable);
+
+	g_clear_object (&priv->dbus_connection);
 
 	G_OBJECT_CLASS (nm_dns_systemd_resolved_parent_class)->dispose (object);
 }
