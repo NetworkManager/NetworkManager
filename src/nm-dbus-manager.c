@@ -758,16 +758,6 @@ nm_dbus_manager_new_proxy (NMDBusManager *self,
 
 /*****************************************************************************/
 
-GDBusConnection *
-nm_dbus_manager_get_connection (NMDBusManager *self)
-{
-	g_return_val_if_fail (NM_IS_DBUS_MANAGER (self), NULL);
-
-	return NM_DBUS_MANAGER_GET_PRIVATE (self)->main_dbus_connection;
-}
-
-/*****************************************************************************/
-
 static const NMDBusInterfaceInfoExtended *
 _reg_data_get_interface_info (RegistrationData *reg_data)
 {
