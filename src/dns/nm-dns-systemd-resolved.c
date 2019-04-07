@@ -129,7 +129,7 @@ call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 	if (!v) {
 		if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 			return;
-		_LOGW ("Failed: %s", error->message);
+		_LOGW ("send-updates failed: %s", error->message);
 	}
 }
 
@@ -270,8 +270,13 @@ send_updates (NMDnsSystemdResolved *self)
 
 	nm_clear_g_cancellable (&priv->update_cancellable);
 
-	if (!priv->resolve)
+	if (!priv->resolve) {
+		_LOGT ("send-updates: D-Bus proxy not ready");
 		return;
+	}
+
+	_LOGT ("send-updates: start %lu requests",
+	       c_list_length (&priv->request_queue_lst_head));
 
 	priv->update_cancellable = g_cancellable_new ();
 
@@ -375,10 +380,12 @@ resolved_proxy_created (GObject *source, GAsyncResult *r, gpointer user_data)
 	priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
 	g_clear_object (&priv->init_cancellable);
 	if (!resolve) {
-		_LOGW ("failed to connect to resolved via DBus: %s", error->message);
+		_LOGW ("failure to create D-Bus proxy for systemd-resolved: %s", error->message);
 		g_signal_emit_by_name (self, NM_DNS_PLUGIN_FAILED);
 		return;
 	}
+
+	_LOGT ("D-Bus proxy for systemd-resolved created");
 
 	priv->resolve = resolve;
 	send_updates (self);
