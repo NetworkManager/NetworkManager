@@ -121,7 +121,7 @@ _interface_config_free (InterfaceConfig *config)
 static void
 call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 {
-	GVariant *v;
+	gs_unref_variant GVariant *v = NULL;
 	gs_free_error GError *error = NULL;
 	NMDnsSystemdResolved *self = (NMDnsSystemdResolved *) user_data;
 
