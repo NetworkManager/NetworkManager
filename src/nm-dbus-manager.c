@@ -78,8 +78,9 @@ typedef struct {
 	NMDBusManagerSetPropertyHandler set_property_handler;
 	gpointer set_property_handler_data;
 
-	GDBusConnection *connection;
-	GDBusProxy *proxy;
+	GDBusConnection *main_dbus_connection;
+	GDBusProxy *main_dbus_proxy;
+
 	guint objmgr_registration_id;
 	bool started:1;
 	bool shutting_down:1;
@@ -450,7 +451,7 @@ _bus_get_unix_pid (NMDBusManager *self,
 	guint32 unix_pid = G_MAXUINT32;
 	gs_unref_variant GVariant *ret = NULL;
 
-	ret = _nm_dbus_proxy_call_sync (NM_DBUS_MANAGER_GET_PRIVATE (self)->proxy,
+	ret = _nm_dbus_proxy_call_sync (NM_DBUS_MANAGER_GET_PRIVATE (self)->main_dbus_proxy,
 	                                "GetConnectionUnixProcessID",
 	                                g_variant_new ("(s)", sender),
 	                                G_VARIANT_TYPE ("(u)"),
@@ -474,7 +475,7 @@ _bus_get_unix_user (NMDBusManager *self,
 	guint32 unix_uid = G_MAXUINT32;
 	gs_unref_variant GVariant *ret = NULL;
 
-	ret = _nm_dbus_proxy_call_sync (NM_DBUS_MANAGER_GET_PRIVATE (self)->proxy,
+	ret = _nm_dbus_proxy_call_sync (NM_DBUS_MANAGER_GET_PRIVATE (self)->main_dbus_proxy,
 	                                "GetConnectionUnixUser",
 	                                g_variant_new ("(s)", sender),
 	                                G_VARIANT_TYPE ("(u)"),
@@ -762,7 +763,7 @@ nm_dbus_manager_get_connection (NMDBusManager *self)
 {
 	g_return_val_if_fail (NM_IS_DBUS_MANAGER (self), NULL);
 
-	return NM_DBUS_MANAGER_GET_PRIVATE (self)->connection;
+	return NM_DBUS_MANAGER_GET_PRIVATE (self)->main_dbus_connection;
 }
 
 /*****************************************************************************/
@@ -943,7 +944,7 @@ _obj_register (NMDBusManager *self,
 	GVariantBuilder builder;
 
 	nm_assert (c_list_is_empty (&obj->internal.registration_lst_head));
-	nm_assert (priv->connection);
+	nm_assert (priv->main_dbus_connection);
 	nm_assert (priv->started);
 
 	n_klasses = 0;
@@ -980,7 +981,7 @@ _obj_register (NMDBusManager *self,
 
 			reg_data = g_malloc0 (sizeof (RegistrationData) + (sizeof (PropertyCacheData) * prop_len));
 
-			registration_id = g_dbus_connection_register_object (priv->connection,
+			registration_id = g_dbus_connection_register_object (priv->main_dbus_connection,
 			                                                     obj->internal.path,
 			                                                     NM_UNCONST_PTR (GDBusInterfaceInfo, &interface_info->parent),
 			                                                     &dbus_vtable,
@@ -1019,7 +1020,7 @@ _obj_register (NMDBusManager *self,
 	 *
 	 * In general, it's ok to export an object with frozen signals. But you better make sure
 	 * that all properties are in a self-consistent state when exporting the object. */
-	g_dbus_connection_emit_signal (priv->connection,
+	g_dbus_connection_emit_signal (priv->main_dbus_connection,
 	                               NULL,
 	                               OBJECT_MANAGER_SERVER_BASE_PATH,
 	                               interface_info_objmgr.name,
@@ -1040,7 +1041,7 @@ _obj_unregister (NMDBusManager *self,
 
 	nm_assert (NM_IS_DBUS_OBJECT (obj));
 
-	if (!priv->connection) {
+	if (!priv->main_dbus_connection) {
 		/* nothing to do for the moment. */
 		nm_assert (c_list_is_empty (&obj->internal.registration_lst_head));
 		return;
@@ -1059,7 +1060,7 @@ _obj_unregister (NMDBusManager *self,
 		                       "s",
 		                       interface_info->parent.name);
 		c_list_unlink_stale (&reg_data->registration_lst);
-		if (!g_dbus_connection_unregister_object (priv->connection, reg_data->registration_id))
+		if (!g_dbus_connection_unregister_object (priv->main_dbus_connection, reg_data->registration_id))
 			nm_assert_not_reached ();
 
 		if (interface_info->parent.properties) {
@@ -1071,7 +1072,7 @@ _obj_unregister (NMDBusManager *self,
 		g_free (reg_data);
 	}
 
-	g_dbus_connection_emit_signal (priv->connection,
+	g_dbus_connection_emit_signal (priv->main_dbus_connection,
 	                               NULL,
 	                               OBJECT_MANAGER_SERVER_BASE_PATH,
 	                               interface_info_objmgr.name,
@@ -1122,7 +1123,7 @@ _nm_dbus_manager_obj_export (NMDBusObject *obj)
 		nm_assert_not_reached ();
 	c_list_link_tail (&priv->objects_lst_head, &obj->internal.objects_lst);
 
-	if (priv->connection && priv->started)
+	if (priv->main_dbus_connection && priv->started)
 		_obj_register (self, obj);
 }
 
@@ -1239,7 +1240,7 @@ _nm_dbus_manager_obj_notify (NMDBusObject *obj,
 		}
 
 		g_variant_builder_init (&invalidated_builder, G_VARIANT_TYPE ("as"));
-		g_dbus_connection_emit_signal (priv->connection,
+		g_dbus_connection_emit_signal (priv->main_dbus_connection,
 		                               NULL,
 		                               obj->internal.path,
 		                               "org.freedesktop.DBus.Properties",
@@ -1255,7 +1256,7 @@ _nm_dbus_manager_obj_notify (NMDBusObject *obj,
 		/* this is a special interface: it has a legacy PropertiesChanged signal,
 		 * however, contrary to other interfaces with ~regular~ legacy signals,
 		 * we only notify about properties that actually belong to this interface. */
-		g_dbus_connection_emit_signal (priv->connection,
+		g_dbus_connection_emit_signal (priv->main_dbus_connection,
 		                               NULL,
 		                               obj->internal.path,
 		                               nm_interface_info_device_statistics.parent.name,
@@ -1292,7 +1293,7 @@ _nm_dbus_manager_obj_notify (NMDBusObject *obj,
 			const NMDBusInterfaceInfoExtended *interface_info = _reg_data_get_interface_info (reg_data);
 
 			if (interface_info->legacy_property_changed) {
-				g_dbus_connection_emit_signal (priv->connection,
+				g_dbus_connection_emit_signal (priv->main_dbus_connection,
 				                               NULL,
 				                               obj->internal.path,
 				                               interface_info->parent.name,
@@ -1321,12 +1322,12 @@ _nm_dbus_manager_obj_emit_signal (NMDBusObject *obj,
 	self = obj->internal.bus_manager;
 	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
-	if (!priv->connection || !priv->started) {
+	if (!priv->main_dbus_connection || !priv->started) {
 		nm_g_variant_unref_floating (args);
 		return;
 	}
 
-	g_dbus_connection_emit_signal (priv->connection,
+	g_dbus_connection_emit_signal (priv->main_dbus_connection,
 	                               NULL,
 	                               obj->internal.path,
 	                               interface_info->parent.name,
@@ -1473,7 +1474,7 @@ nm_dbus_manager_get_dbus_connection (NMDBusManager *self)
 {
 	g_return_val_if_fail (NM_IS_DBUS_MANAGER (self), NULL);
 
-	return NM_DBUS_MANAGER_GET_PRIVATE (self)->connection;
+	return NM_DBUS_MANAGER_GET_PRIVATE (self)->main_dbus_connection;
 }
 
 void
@@ -1487,7 +1488,7 @@ nm_dbus_manager_start (NMDBusManager *self,
 	g_return_if_fail (NM_IS_DBUS_MANAGER (self));
 	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
-	if (!priv->connection) {
+	if (!priv->main_dbus_connection) {
 		/* Do nothing. We're presumably in the configure-and-quit mode. */
 		return;
 	}
@@ -1581,8 +1582,8 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 	}
 
 	priv->objmgr_registration_id = registration_id;
-	priv->connection = g_steal_pointer (&connection);
-	priv->proxy = g_steal_pointer (&proxy);
+	priv->main_dbus_connection = g_steal_pointer (&connection);
+	priv->main_dbus_proxy = g_steal_pointer (&proxy);
 
 	_LOGI ("acquired D-Bus service \"%s\"", NM_DBUS_SERVICE);
 
@@ -1640,12 +1641,12 @@ dispose (GObject *object)
 		private_server_free (s);
 
 	if (priv->objmgr_registration_id) {
-		g_dbus_connection_unregister_object (priv->connection,
+		g_dbus_connection_unregister_object (priv->main_dbus_connection,
 		                                     nm_steal_int (&priv->objmgr_registration_id));
 	}
 
-	g_clear_object (&priv->proxy);
-	g_clear_object (&priv->connection);
+	g_clear_object (&priv->main_dbus_proxy);
+	g_clear_object (&priv->main_dbus_connection);
 
 	G_OBJECT_CLASS (nm_dbus_manager_parent_class)->dispose (object);
 }
