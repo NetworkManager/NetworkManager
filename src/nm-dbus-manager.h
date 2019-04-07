@@ -61,8 +61,6 @@ void nm_dbus_manager_stop (NMDBusManager *self);
 
 gboolean nm_dbus_manager_is_stopping (NMDBusManager *self);
 
-GDBusConnection *nm_dbus_manager_get_connection (NMDBusManager *self);
-
 gpointer nm_dbus_manager_lookup_object (NMDBusManager *self, const char *path);
 
 void _nm_dbus_manager_obj_export (NMDBusObject *obj);
