@@ -28,6 +28,7 @@
 #include <sys/types.h>
 
 #include "c-list/src/c-list.h"
+#include "nm-utils/nm-c-list.h"
 #include "nm-dbus-interface.h"
 #include "nm-core-internal.h"
 #include "nm-dbus-compat.h"
@@ -42,6 +43,17 @@
 #define OBJECT_MANAGER_SERVER_BASE_PATH "/org/freedesktop"
 
 /*****************************************************************************/
+
+typedef struct {
+	CList caller_info_lst;
+	gulong uid;
+	gulong pid;
+	gint64 uid_checked_at;
+	gint64 pid_checked_at;
+	bool uid_valid:1;
+	bool pid_valid:1;
+	char sender[0];
+} CallerInfo;
 
 typedef struct {
 	GVariant *value;
@@ -79,6 +91,8 @@ typedef struct {
 	gpointer set_property_handler_data;
 
 	GDBusConnection *main_dbus_connection;
+
+	CList caller_info_lst_head;
 
 	guint objmgr_registration_id;
 	bool started:1;
@@ -441,11 +455,17 @@ private_server_get_connection_by_owner (PrivateServer *s, const char *owner)
 
 /*****************************************************************************/
 
+static void
+_caller_info_free (CallerInfo *caller_info)
+{
+	c_list_unlink_stale (&caller_info->caller_info_lst);
+	g_free (caller_info);
+}
+
 static gboolean
 _bus_get_unix_pid (NMDBusManager *self,
                    const char *sender,
-                   gulong *out_pid,
-                   GError **error)
+                   gulong *out_pid)
 {
 	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 	guint32 unix_pid = G_MAXUINT32;
@@ -461,7 +481,7 @@ _bus_get_unix_pid (NMDBusManager *self,
 	                                   G_DBUS_CALL_FLAGS_NONE,
 	                                   2000,
 	                                   NULL,
-	                                   error);
+	                                   NULL);
 	if (!ret)
 		return FALSE;
 
@@ -474,8 +494,7 @@ _bus_get_unix_pid (NMDBusManager *self,
 static gboolean
 _bus_get_unix_user (NMDBusManager *self,
                     const char *sender,
-                    gulong *out_user,
-                    GError **error)
+                    gulong *out_user)
 {
 	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 	guint32 unix_uid = G_MAXUINT32;
@@ -491,7 +510,7 @@ _bus_get_unix_user (NMDBusManager *self,
 	                                   G_DBUS_CALL_FLAGS_NONE,
 	                                   2000,
 	                                   NULL,
-	                                   error);
+	                                   NULL);
 	if (!ret)
 		return FALSE;
 
@@ -501,34 +520,102 @@ _bus_get_unix_user (NMDBusManager *self,
 	return TRUE;
 }
 
-/**
- * _get_caller_info():
- *
- * Given a GDBus method invocation, or a GDBusConnection + GDBusMessage,
- * return the sender and the UID of the sender.
- */
+static const CallerInfo *
+_get_caller_info_ensure (NMDBusManager *self,
+                         const char *sender,
+                         gboolean ensure_uid,
+                         gboolean ensure_pid)
+{
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+	CallerInfo *caller_info;
+	CallerInfo *ci;
+	gint64 now_ns;
+	gsize num;
+
+#define CALLER_INFO_MAX_AGE   (NM_UTILS_NS_PER_SECOND * 1)
+
+	/* Linear search the cache for the sender.
+	 *
+	 * The number of cached caller-infos is limited. Hence, it's O(1) and
+	 * the list is reasonably short.
+	 * Also, the entire caching assumes that we repeatedly ask for the
+	 * same sender. That means, we expect to find the right caller info
+	 * at the front of the list. */
+	num = 1;
+	caller_info = NULL;
+	c_list_for_each_entry (ci, &priv->caller_info_lst_head, caller_info_lst) {
+		if (nm_streq (sender, ci->sender)) {
+			caller_info = ci;
+			break;
+		}
+		num++;
+	}
+
+	if (caller_info)
+		nm_c_list_move_front (&priv->caller_info_lst_head, &caller_info->caller_info_lst);
+	else {
+		gsize l = strlen (sender) + 1;
+
+		caller_info = g_malloc (sizeof (CallerInfo) + l);
+		*caller_info = (CallerInfo) {
+			.uid_checked_at = - CALLER_INFO_MAX_AGE,
+			.pid_checked_at = - CALLER_INFO_MAX_AGE,
+		};
+		memcpy (caller_info->sender, sender, l);
+		c_list_link_front (&priv->caller_info_lst_head, &caller_info->caller_info_lst);
+
+		/* only cache the last few entries. */
+		while (TRUE) {
+			nm_assert (num > 0 && num == c_list_length (&priv->caller_info_lst_head));
+			if (num-- <= 5)
+				break;
+			_caller_info_free (c_list_last_entry (&priv->caller_info_lst_head, CallerInfo, caller_info_lst));
+		}
+	}
+
+	now_ns = nm_utils_get_monotonic_timestamp_ns ();
+
+	if (   ensure_uid
+	    && (now_ns - caller_info->uid_checked_at) > CALLER_INFO_MAX_AGE) {
+		caller_info->uid_checked_at = now_ns;
+		if (!(caller_info->uid_valid = _bus_get_unix_user (self, sender, &caller_info->uid)))
+			caller_info->uid = G_MAXULONG;
+	}
+
+	if (   ensure_pid
+	    && (now_ns - caller_info->pid_checked_at) > CALLER_INFO_MAX_AGE) {
+		caller_info->pid_checked_at = now_ns;
+		if (!(caller_info->pid_valid = _bus_get_unix_pid (self, sender, &caller_info->pid)))
+			caller_info->pid = G_MAXULONG;
+	}
+
+	return caller_info;
+}
+
 static gboolean
 _get_caller_info (NMDBusManager *self,
                   GDBusMethodInvocation *context,
                   GDBusConnection *connection,
                   GDBusMessage *message,
-                  char **out_sender,
+                  const char **out_sender,
                   gulong *out_uid,
                   gulong *out_pid)
 {
 	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+	const CallerInfo *caller_info;
 	const char *sender;
 
 	if (context) {
+		nm_assert (G_IS_DBUS_METHOD_INVOCATION (context));
 		connection = g_dbus_method_invocation_get_connection (context);
 
 		/* only bus connections will have a sender */
 		sender = g_dbus_method_invocation_get_sender (context);
 	} else {
-		g_assert (message);
+		nm_assert (G_IS_DBUS_MESSAGE (message));
 		sender = g_dbus_message_get_sender (message);
 	}
-	g_assert (connection);
+	nm_assert (G_IS_DBUS_CONNECTION (connection));
 
 	if (!sender) {
 		PrivateServer *s;
@@ -537,10 +624,8 @@ _get_caller_info (NMDBusManager *self,
 		c_list_for_each_entry (s, &priv->private_servers_lst_head, private_servers_lst) {
 			sender = private_server_get_connection_owner (s, connection);
 			if (sender) {
-				if (out_uid)
-					*out_uid = 0;
-				if (out_sender)
-					*out_sender = g_strdup (sender);
+				NM_SET_OUT (out_uid, 0);
+				NM_SET_OUT (out_sender, sender);
 				if (out_pid) {
 					GCredentials *creds;
 
@@ -559,35 +644,29 @@ _get_caller_info (NMDBusManager *self,
 				return TRUE;
 			}
 		}
+		NM_SET_OUT (out_sender, NULL);
+		NM_SET_OUT (out_uid, G_MAXULONG);
+		NM_SET_OUT (out_pid, G_MAXULONG);
 		return FALSE;
 	}
 
-	/* Bus connections always have a sender */
-	g_assert (sender);
-	if (out_uid) {
-		if (!_bus_get_unix_user (self, sender, out_uid, NULL)) {
-			*out_uid = G_MAXULONG;
-			return FALSE;
-		}
-	}
+	caller_info = _get_caller_info_ensure (self, sender, !!out_uid, !!out_pid);
 
-	if (out_pid) {
-		if (!_bus_get_unix_pid (self, sender, out_pid, NULL)) {
-			*out_pid = G_MAXULONG;
-			return FALSE;
-		}
-	}
+	NM_SET_OUT (out_sender, caller_info->sender);
+	NM_SET_OUT (out_uid, caller_info->uid);
+	NM_SET_OUT (out_pid, caller_info->pid);
 
-	if (out_sender)
-		*out_sender = g_strdup (sender);
-
+	if (out_uid && !caller_info->uid_valid)
+		return FALSE;
+	if (out_pid && !caller_info->pid_valid)
+		return FALSE;
 	return TRUE;
 }
 
 gboolean
 nm_dbus_manager_get_caller_info (NMDBusManager *self,
                                  GDBusMethodInvocation *context,
-                                 char **out_sender,
+                                 const char **out_sender,
                                  gulong *out_uid,
                                  gulong *out_pid)
 {
@@ -598,7 +677,7 @@ gboolean
 nm_dbus_manager_get_caller_info_from_message (NMDBusManager *self,
                                               GDBusConnection *connection,
                                               GDBusMessage *message,
-                                              char **out_sender,
+                                              const char **out_sender,
                                               gulong *out_uid,
                                               gulong *out_pid)
 {
@@ -659,8 +738,8 @@ nm_dbus_manager_get_unix_user (NMDBusManager *self,
                                gulong *out_uid)
 {
 	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+	const CallerInfo *caller_info;
 	PrivateServer *s;
-	GError *error = NULL;
 
 	g_return_val_if_fail (sender != NULL, FALSE);
 	g_return_val_if_fail (out_uid != NULL, FALSE);
@@ -677,13 +756,12 @@ nm_dbus_manager_get_unix_user (NMDBusManager *self,
 	}
 
 	/* Otherwise, a bus connection */
-	if (!_bus_get_unix_user (self, sender, out_uid, &error)) {
-		_LOGW ("failed to get unix user for dbus sender '%s': %s",
-		       sender, error->message);
-		g_error_free (error);
+	caller_info = _get_caller_info_ensure (self, sender, TRUE, FALSE);
+	*out_uid = caller_info->uid;
+	if (!caller_info->uid_valid) {
+		_LOGW ("failed to get unix user for dbus sender '%s'", sender);
 		return FALSE;
 	}
-
 	return TRUE;
 }
 
@@ -1613,6 +1691,8 @@ nm_dbus_manager_init (NMDBusManager *self)
 	c_list_init (&priv->private_servers_lst_head);
 	c_list_init (&priv->objects_lst_head);
 	priv->objects_by_path = g_hash_table_new ((GHashFunc) _objects_by_path_hash, (GEqualFunc) _objects_by_path_equal);
+
+	c_list_init (&priv->caller_info_lst_head);
 }
 
 static void
@@ -1621,6 +1701,7 @@ dispose (GObject *object)
 	NMDBusManager *self = NM_DBUS_MANAGER (object);
 	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 	PrivateServer *s, *s_safe;
+	CallerInfo *caller_info;
 
 	/* All exported NMDBusObject instances keep the manager alive, so we don't
 	 * expect any remaining objects. */
@@ -1640,6 +1721,9 @@ dispose (GObject *object)
 	g_clear_object (&priv->main_dbus_connection);
 
 	G_OBJECT_CLASS (nm_dbus_manager_parent_class)->dispose (object);
+
+	while ((caller_info = c_list_first_entry (&priv->caller_info_lst_head, CallerInfo, caller_info_lst)))
+		_caller_info_free (caller_info);
 }
 
 static void
