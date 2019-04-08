@@ -118,16 +118,6 @@ link_changed (NMDevice *device,
 	}
 }
 
-static void
-state_changed (NMDevice *device,
-               NMDeviceState new_state,
-               NMDeviceState old_state,
-               NMDeviceStateReason reason)
-{
-	if (new_state <= NM_DEVICE_STATE_DISCONNECTED)
-		nm_device_update_from_platform_link (device, NULL);
-}
-
 static gboolean
 _is_internal_interface (NMDevice *device)
 {
@@ -200,7 +190,6 @@ nm_device_ovs_interface_class_init (NMDeviceOvsInterfaceClass *klass)
 	device_class->is_available = is_available;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->link_changed = link_changed;
-	device_class->state_changed = state_changed;
 	device_class->act_stage3_ip_config_start = act_stage3_ip_config_start;
 	device_class->can_unmanaged_external_down = can_unmanaged_external_down;
 }

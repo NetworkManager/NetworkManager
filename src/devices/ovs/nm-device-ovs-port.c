@@ -20,6 +20,7 @@
 #include "nm-default.h"
 
 #include "nm-device-ovs-port.h"
+#include "nm-device-ovs-interface.h"
 #include "nm-ovsdb.h"
 
 #include "devices/nm-device-private.h"
@@ -141,6 +142,11 @@ release_slave (NMDevice *device, NMDevice *slave, gboolean configure)
 {
 	nm_ovsdb_del_interface (nm_ovsdb_get (), nm_device_get_iface (slave),
 	                        del_iface_cb, g_object_ref (slave));
+
+	/* Open VSwitch is going to delete this one. We must ignore what happens
+	 * next with the interface. */
+	if (NM_IS_DEVICE_OVS_INTERFACE (slave))
+		nm_device_update_from_platform_link (slave, NULL);
 }
 
 /*****************************************************************************/
