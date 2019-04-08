@@ -5538,6 +5538,7 @@ _json_team_normalize_defaults (json_t *json, gboolean reset)
 {
 	json_t *json_element;
 	const char *runner = NM_SETTING_TEAM_RUNNER_DEFAULT;
+	gs_free char *runner_free = NULL;
 	int notify_peers_count = 0, notify_peers_interval = 0;
 	int mcast_rejoin_count = 0, mcast_rejoin_interval = 0;
 	int runner_tx_balancer_interval = -1;
@@ -5546,7 +5547,8 @@ _json_team_normalize_defaults (json_t *json, gboolean reset)
 
 	json_element = _json_find_object (json, "runner", "name", NULL);
 	if (json_element) {
-		runner = json_string_value (json_element);
+		runner_free = g_strdup (json_string_value (json_element));
+		runner = runner_free;
 		_json_delete_object_on_string_match (json, "runner", "name", NULL,
 		                                     NM_SETTING_TEAM_RUNNER_DEFAULT);
 	}
