@@ -5315,7 +5315,8 @@ nm_device_autoconnect_allowed (NMDevice *self)
 		if (priv->state < NM_DEVICE_STATE_DISCONNECTED)
 			return FALSE;
 	} else {
-		/* Unrealized devices can always autoconnect. */
+		if (!nm_device_check_unrealized_device_managed (self))
+			return FALSE;
 	}
 
 	/* The 'autoconnect-allowed' signal is emitted on a device to allow
@@ -13515,6 +13516,32 @@ nm_device_set_unmanaged_by_flags_queue (NMDevice *self,
                                         NMDeviceStateReason reason)
 {
 	_set_unmanaged_flags (self, flags, set_op, TRUE, FALSE, reason);
+}
+
+/**
+ * nm_device_check_unrealized_device_managed:
+ *
+ * Checks if a unrealized device is managed from user settings
+ * or user configuration.
+ */
+gboolean
+nm_device_check_unrealized_device_managed (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	nm_assert (!nm_device_is_real (self));
+
+	if (!nm_config_data_get_device_config_boolean (NM_CONFIG_GET_DATA,
+	                                               NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
+	                                               self,
+	                                               TRUE,
+	                                               TRUE))
+		return FALSE;
+
+	if (nm_device_spec_match_list (self, nm_settings_get_unmanaged_specs (priv->settings)))
+		return FALSE;
+
+	return TRUE;
 }
 
 void
