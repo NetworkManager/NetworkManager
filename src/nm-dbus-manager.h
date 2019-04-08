@@ -75,7 +75,7 @@ void _nm_dbus_manager_obj_emit_signal (NMDBusObject *obj,
 
 gboolean nm_dbus_manager_get_caller_info (NMDBusManager *self,
                                           GDBusMethodInvocation *context,
-                                          char **out_sender,
+                                          const char **out_sender,
                                           gulong *out_uid,
                                           gulong *out_pid);
 
@@ -95,7 +95,7 @@ gboolean nm_dbus_manager_get_unix_user (NMDBusManager *self,
 gboolean nm_dbus_manager_get_caller_info_from_message (NMDBusManager *self,
                                                        GDBusConnection *connection,
                                                        GDBusMessage *message,
-                                                       char **out_sender,
+                                                       const char **out_sender,
                                                        gulong *out_uid,
                                                        gulong *out_pid);
 

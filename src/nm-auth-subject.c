@@ -173,9 +173,10 @@ _new_unix_process (GDBusMethodInvocation *context,
                    GDBusMessage *message)
 {
 	NMAuthSubject *self;
-	gboolean success = FALSE;
-	gulong pid = 0, uid = 0;
-	gs_free char *dbus_sender = NULL;
+	const char *dbus_sender = NULL;
+	gulong uid = 0;
+	gulong pid = 0;
+	gboolean success;
 
 	g_return_val_if_fail (context || (connection && message), NULL);
 
