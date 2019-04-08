@@ -213,6 +213,9 @@ shared_libcsiphash_la_CPPFLAGS = \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
 
+shared_libcsiphash_la_LDFLAGS = \
+	$(SANITIZER_LIB_LDFLAGS)
+
 shared_libcsiphash_la_SOURCES = \
 	shared/c-siphash/src/c-siphash.c \
 	shared/c-siphash/src/c-siphash.h \
@@ -231,6 +234,9 @@ shared_libcrbtree_la_CPPFLAGS = \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
+
+shared_libcrbtree_la_LDFLAGS = \
+	$(SANITIZER_LIB_LDFLAGS)
 
 shared_libcrbtree_la_SOURCES = \
 	shared/c-rbtree/src/c-rbtree.c \
@@ -258,6 +264,9 @@ shared_libnacd_la_CPPFLAGS = \
 	-I$(srcdir)/shared/c-siphash/src \
 	-I$(srcdir)/shared/c-rbtree/src \
 	$(NULL)
+
+shared_libnacd_la_LDFLAGS = \
+	$(SANITIZER_LIB_LDFLAGS)
 
 shared_libnacd_la_SOURCES = \
 	shared/n-acd/src/n-acd.c \
@@ -372,6 +381,11 @@ shared_nm_utils_tests_test_shared_general_CPPFLAGS = \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
+	$(NULL)
+
+shared_nm_utils_tests_test_shared_general_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
 shared_nm_utils_tests_test_shared_general_LDADD = \
@@ -964,7 +978,7 @@ libnm_core_tests_ldadd = \
 	$(GLIB_LIBS)
 
 libnm_core_tests_ldflags = \
-	$(SANITIZER_LIB_LDFLAGS)
+	$(SANITIZER_EXEC_LDFLAGS)
 
 libnm_core_tests_test_compare_LDADD = $(libnm_core_tests_ldadd)
 libnm_core_tests_test_crypto_LDADD = $(libnm_core_tests_ldadd)
@@ -1387,7 +1401,7 @@ libnm_tests_ldadd = \
 	$(GLIB_LIBS)
 
 libnm_tests_ldflags = \
-	$(SANITIZER_LIB_LDFLAGS)
+	$(SANITIZER_EXEC_LDFLAGS)
 
 libnm_tests_test_general_CPPFLAGS = $(libnm_tests_cppflags)
 libnm_tests_test_nm_client_CPPFLAGS = $(libnm_tests_cppflags)
@@ -1416,6 +1430,10 @@ libnm_tests_test_secret_agent_SOURCES = \
 libnm_tests_test_general_LDADD = \
 	libnm/libnm-utils.la \
 	$(libnm_tests_ldadd)
+
+libnm_tests_test_general_LDFLAGS = \
+	$(libnm_tests_ldflags)
+
 libnm_tests_test_nm_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_remote_settings_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_secret_agent_LDADD = $(libnm_tests_ldadd)
@@ -3710,6 +3728,10 @@ $(src_tests_test_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 src_tests_test_systemd_CPPFLAGS = \
 	$(src_libnm_systemd_core_la_cppflags) \
 	-DNETWORKMANAGER_COMPILATION_TEST
+
+src_tests_test_systemd_LDFLAGS = \
+	$(SANITIZER_EXEC_LDFLAGS)
+
 src_tests_test_systemd_LDADD = \
 	src/libnm-systemd-core.la \
 	shared/systemd/libnm-systemd-shared.la \
