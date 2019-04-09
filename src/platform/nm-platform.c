@@ -6430,13 +6430,32 @@ nm_platform_qdisc_to_string (const NMPlatformQdisc *qdisc, char *buf, gsize len)
 	if (!nm_utils_to_string_buffer_init_null (qdisc, &buf, &len))
 		return buf;
 
-	g_snprintf (buf, len, "%s%s family %d handle %x parent %x info %x",
-	            qdisc->kind,
-	            _to_string_dev (NULL, qdisc->ifindex, str_dev, sizeof (str_dev)),
-	            qdisc->addr_family,
-	            qdisc->handle,
-	            qdisc->parent,
-	            qdisc->info);
+	nm_utils_strbuf_append (&buf, &len, "%s%s family %u handle %x parent %x info %x",
+	                        qdisc->kind,
+	                        _to_string_dev (NULL, qdisc->ifindex, str_dev, sizeof (str_dev)),
+	                        qdisc->addr_family,
+	                        qdisc->handle,
+	                        qdisc->parent,
+	                        qdisc->info);
+
+	if (nm_streq0 (qdisc->kind, "fq_codel")) {
+		if (qdisc->fq_codel.limit)
+			nm_utils_strbuf_append (&buf, &len, " limit %u", qdisc->fq_codel.limit);
+		if (qdisc->fq_codel.flows)
+			nm_utils_strbuf_append (&buf, &len, " flows %u", qdisc->fq_codel.flows);
+		if (qdisc->fq_codel.target)
+			nm_utils_strbuf_append (&buf, &len, " target %u", qdisc->fq_codel.target);
+		if (qdisc->fq_codel.interval)
+			nm_utils_strbuf_append (&buf, &len, " interval %u", qdisc->fq_codel.interval);
+		if (qdisc->fq_codel.quantum)
+			nm_utils_strbuf_append (&buf, &len, " quantum %u", qdisc->fq_codel.quantum);
+		if (qdisc->fq_codel.ce_threshold != -1)
+			nm_utils_strbuf_append (&buf, &len, " ce_threshold %u", qdisc->fq_codel.ce_threshold);
+		if (qdisc->fq_codel.memory != -1)
+			nm_utils_strbuf_append (&buf, &len, " memory %u", qdisc->fq_codel.memory);
+		if (qdisc->fq_codel.ecn)
+			nm_utils_strbuf_append (&buf, &len, " ecn");
+	}
 
 	return buf;
 }
@@ -6451,6 +6470,17 @@ nm_platform_qdisc_hash_update (const NMPlatformQdisc *obj, NMHashState *h)
 	                     obj->handle,
 	                     obj->parent,
 	                     obj->info);
+	if (nm_streq0 (obj->kind, "fq_codel")) {
+		nm_hash_update_vals (h,
+		                     obj->fq_codel.limit,
+		                     obj->fq_codel.flows,
+		                     obj->fq_codel.target,
+		                     obj->fq_codel.interval,
+		                     obj->fq_codel.quantum,
+		                     obj->fq_codel.ce_threshold,
+		                     obj->fq_codel.memory,
+		                     obj->fq_codel.ecn == TRUE);
+	}
 }
 
 int
@@ -6463,6 +6493,17 @@ nm_platform_qdisc_cmp (const NMPlatformQdisc *a, const NMPlatformQdisc *b)
 	NM_CMP_FIELD (a, b, addr_family);
 	NM_CMP_FIELD (a, b, handle);
 	NM_CMP_FIELD (a, b, info);
+
+	if (nm_streq0 (a->kind, "fq_codel")) {
+		NM_CMP_FIELD (a, b, fq_codel.limit);
+		NM_CMP_FIELD (a, b, fq_codel.flows);
+		NM_CMP_FIELD (a, b, fq_codel.target);
+		NM_CMP_FIELD (a, b, fq_codel.interval);
+		NM_CMP_FIELD (a, b, fq_codel.quantum);
+		NM_CMP_FIELD (a, b, fq_codel.ce_threshold);
+		NM_CMP_FIELD (a, b, fq_codel.memory);
+		NM_CMP_FIELD (a, b, fq_codel.ecn == TRUE);
+	}
 
 	return 0;
 }

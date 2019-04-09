@@ -2308,12 +2308,25 @@ static const NMVariantAttributeSpec * const tc_object_attribute_spec[] = {
 	NULL,
 };
 
+static const NMVariantAttributeSpec * const tc_qdisc_fq_codel_spec[] = {
+	TC_ATTR_SPEC_PTR ("limit",        G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("flows",        G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("target",       G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("interval",     G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("quantum",      G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("ce_threshold", G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("memory",       G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("ecn",          G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
+	NULL,
+};
+
 typedef struct {
 	const char *kind;
 	const NMVariantAttributeSpec * const *attrs;
 } NMQdiscAttributeSpec;
 
 static const NMQdiscAttributeSpec *const tc_qdisc_attribute_spec[] = {
+	&(const NMQdiscAttributeSpec) { "fq_codel", tc_qdisc_fq_codel_spec },
 	NULL,
 };
 

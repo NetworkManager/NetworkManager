@@ -597,12 +597,26 @@ typedef struct {
 } NMPlatformRoutingRule;
 
 typedef struct {
+	guint32 limit;
+	guint32 flows;
+	guint32 target;
+	guint32 interval;
+	guint32 quantum;
+	guint32 ce_threshold;
+	guint32 memory;
+	bool ecn:1;
+} NMPlatformQdiscFqCodel;
+
+typedef struct {
 	__NMPlatformObjWithIfindex_COMMON;
 	const char *kind;
 	int addr_family;
 	guint32 handle;
 	guint32 parent;
 	guint32 info;
+	union {
+		NMPlatformQdiscFqCodel fq_codel;
+	};
 } NMPlatformQdisc;
 
 typedef struct {
