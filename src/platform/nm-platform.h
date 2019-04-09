@@ -624,13 +624,23 @@ typedef struct {
 } NMPlatformActionSimple;
 
 typedef struct {
+	gboolean egress;
+	gboolean ingress;
+	gboolean mirror;
+	gboolean redirect;
+	int ifindex;
+} NMPlatformActionMirred;
+
+typedef struct {
 	const char *kind;
 	union {
 		NMPlatformActionSimple simple;
+		NMPlatformActionMirred mirred;
 	};
 } NMPlatformAction;
 
 #define NM_PLATFORM_ACTION_KIND_SIMPLE "simple"
+#define NM_PLATFORM_ACTION_KIND_MIRRED "mirred"
 
 typedef struct {
 	__NMPlatformObjWithIfindex_COMMON;

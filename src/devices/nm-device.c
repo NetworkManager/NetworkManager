@@ -6566,15 +6566,34 @@ tc_commit (NMDevice *self)
 
 			action = nm_tc_tfilter_get_action (s_tfilter);
 			if (action) {
+				GVariant *var;
+
 				tfilter->action.kind = nm_tc_action_get_kind (action);
 				if (strcmp (tfilter->action.kind, "simple") == 0) {
-					GVariant *sdata;
-
-					sdata = nm_tc_action_get_attribute (action, "sdata");
-					if (sdata && g_variant_is_of_type (sdata, G_VARIANT_TYPE_BYTESTRING)) {
+					var = nm_tc_action_get_attribute (action, "sdata");
+					if (var && g_variant_is_of_type (var, G_VARIANT_TYPE_BYTESTRING)) {
 						g_strlcpy (tfilter->action.simple.sdata,
-						           g_variant_get_bytestring (sdata),
+						           g_variant_get_bytestring (var),
 						           sizeof (tfilter->action.simple.sdata));
+					}
+				} else if (strcmp (tfilter->action.kind, "mirred") == 0) {
+					if (nm_tc_action_get_attribute (action, "egress"))
+						tfilter->action.mirred.egress = TRUE;
+
+					if (nm_tc_action_get_attribute (action, "ingress"))
+						tfilter->action.mirred.ingress = TRUE;
+
+					if (nm_tc_action_get_attribute (action, "mirror"))
+						tfilter->action.mirred.mirror = TRUE;
+
+					if (nm_tc_action_get_attribute (action, "redirect"))
+						tfilter->action.mirred.redirect = TRUE;
+
+					var = nm_tc_action_get_attribute (action, "dev");
+					if (var && g_variant_is_of_type (var, G_VARIANT_TYPE_STRING)) {
+						int ifindex = nm_platform_link_get_ifindex (nm_device_get_platform (self),
+						                                            g_variant_get_string (var, NULL));
+						tfilter->action.mirred.ifindex = ifindex;
 					}
 				}
 			}

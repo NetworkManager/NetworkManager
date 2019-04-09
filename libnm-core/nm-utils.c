@@ -2542,6 +2542,15 @@ static const NMVariantAttributeSpec * const tc_action_simple_attribute_spec[] = 
 	NULL,
 };
 
+static const NMVariantAttributeSpec * const tc_action_mirred_attribute_spec[] = {
+	TC_ATTR_SPEC_PTR ("egress",   G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("ingress",  G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("mirror",   G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("redirect", G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("dev",      G_VARIANT_TYPE_STRING,  TRUE,  FALSE, 'a' ),
+	NULL,
+};
+
 static const NMVariantAttributeSpec * const tc_action_attribute_spec[] = {
 	TC_ATTR_SPEC_PTR ("kind",    G_VARIANT_TYPE_STRING,      TRUE,  FALSE, 'a' ),
 	TC_ATTR_SPEC_PTR ("",        G_VARIANT_TYPE_STRING,      TRUE,  TRUE,  'a' ),
@@ -2636,6 +2645,8 @@ nm_utils_tc_action_from_str (const char *str, GError **error)
 	kind = g_variant_get_string (variant, NULL);
 	if (strcmp (kind, "simple") == 0)
 		attrs = tc_action_simple_attribute_spec;
+	else if (strcmp (kind, "mirred") == 0)
+		attrs = tc_action_mirred_attribute_spec;
 	else
 		attrs = NULL;
 
