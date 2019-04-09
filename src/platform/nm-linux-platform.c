@@ -4016,9 +4016,7 @@ _nl_msg_new_route (int nlmsg_type,
 		             ? nm_platform_route_scope_inv (obj->ip4_route.scope_inv)
 		             : RT_SCOPE_NOWHERE,
 		.rtm_type = RTN_UNICAST,
-		.rtm_flags = obj->ip_route.r_rtm_flags & (is_v4
-		                                          ? (unsigned) (RTNH_F_ONLINK)
-		                                          : (unsigned) 0),
+		.rtm_flags = obj->ip_route.r_rtm_flags & ((unsigned) (RTNH_F_ONLINK)),
 		.rtm_dst_len = obj->ip_route.plen,
 		.rtm_src_len = is_v4
 		               ? 0

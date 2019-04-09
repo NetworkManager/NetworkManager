@@ -429,7 +429,7 @@ typedef union {
 	 * Such a route is not alive, according to nmp_object_is_alive().
 	 *
 	 * NOTE: currently we ignore all flags except RTM_F_CLONED
-	 * and RTNH_F_ONLINK for IPv4.
+	 * and RTNH_F_ONLINK.
 	 * We also may not properly consider the flags as part of the ID
 	 * in route-cmp. */ \
 	unsigned r_rtm_flags; \
