@@ -1600,4 +1600,7 @@ global:
 	nm_setting_ip_config_get_num_routing_rules;
 	nm_setting_ip_config_get_routing_rule;
 	nm_setting_ip_config_remove_routing_rule;
+	nm_tc_qdisc_get_attribute;
+	nm_tc_qdisc_get_attribute_names;
+	nm_tc_qdisc_set_attribute;
 } libnm_1_16_0;

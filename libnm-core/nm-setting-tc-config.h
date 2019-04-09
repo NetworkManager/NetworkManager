@@ -59,6 +59,16 @@ void        nm_tc_qdisc_set_handle           (NMTCQdisc *qdisc,
 NM_AVAILABLE_IN_1_12
 guint32     nm_tc_qdisc_get_parent           (NMTCQdisc *qdisc);
 
+NM_AVAILABLE_IN_1_18
+char**nm_tc_qdisc_get_attribute_names        (NMTCQdisc *qdisc);
+NM_AVAILABLE_IN_1_18
+GVariant   *nm_tc_qdisc_get_attribute        (NMTCQdisc *qdisc,
+                                              const char *name);
+NM_AVAILABLE_IN_1_18
+void        nm_tc_qdisc_set_attribute        (NMTCQdisc *qdisc,
+                                              const char *name,
+                                              GVariant *value);
+
 typedef struct NMTCAction NMTCAction;
 
 NM_AVAILABLE_IN_1_12
