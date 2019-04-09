@@ -97,10 +97,37 @@
 %global with_modem_manager_1 0
 %endif
 
-%if 0%{?fedora} || 0%{?rhel} <= 7
-%global dhcp_default dhclient
-%else
+%if 0%{?fedora} >= 31 || 0%{?rhel} > 7
 %global dhcp_default internal
+%else
+%global dhcp_default dhclient
+%endif
+
+%if 0%{?fedora} || 0%{?rhel} > 7
+%global logging_backend_default journal
+%global dns_rc_manager_default symlink
+%else
+%global logging_backend_default syslog
+%global dns_rc_manager_default file
+%endif
+
+%if 0%{?rhel}
+%global config_plugins_default ifcfg-rh,ibft
+%global ibft_enabled yes
+%else
+%global config_plugins_default ifcfg-rh
+%global ibft_enabled no
+%endif
+
+%if 0%{?fedora}
+# Altough eBPF would be available on Fedora's kernel, it seems
+# we often get SELinux denials (rh#1651654). But even aside them,
+# bpf(BPF_MAP_CREATE, ...) randomly fails with EPERM. That might
+# be related to `ulimit -l`. Anyway, this is not usable at the
+# moment.
+%global ebpf_enabled no
+%else
+%global ebpf_enabled no
 %endif
 
 ###############################################################################
@@ -136,6 +163,11 @@ Obsoletes: dhcdbd
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 Obsoletes: NetworkManager < %{obsoletes_ppp_plugin}
 Obsoletes: NetworkManager-wimax < 1.2
+
+%if 0%{?rhel} && 0%{?rhel} <= 7
+# Kept for RHEL to ensure that wired 802.1x works out of the box
+Requires: wpa_supplicant >= 1:1.1
+%endif
 
 Conflicts: NetworkManager-vpnc < 1:0.7.0.99-1
 Conflicts: NetworkManager-openvpn < 1:0.7.0.99-1
@@ -256,7 +288,12 @@ Summary: Bluetooth device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: NetworkManager-wwan = %{epoch}:%{version}-%{release}
+%if 0%{?rhel} && 0%{?rhel} <= 7
+# No Requires:bluez to prevent it being installed when updating
+# to the split NM package
+%else
 Requires: bluez >= 4.101-5
+%endif
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 Obsoletes: NetworkManager-bt
 
@@ -272,8 +309,12 @@ Group: System Environment/Base
 BuildRequires: teamd-devel
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
+%if 0%{?fedora} || 0%{?rhel} >= 8
 # Team was split from main NM binary between 0.9.10 and 1.0
+# We need this Obsoletes in addition to the one above
+# (git:3aede801521ef7bff039e6e3f1b3c7b566b4338d).
 Obsoletes: NetworkManager < 1.0.0
+%endif
 
 %description team
 This package contains NetworkManager support for team devices.
@@ -307,7 +348,12 @@ This package contains NetworkManager support for Wifi and OLPC devices.
 Summary: Mobile broadband device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
+%if 0%{?rhel} && 0%{?rhel} <= 7
+# No Requires:ModemManager to prevent it being installed when updating
+# to the split NM package
+%else
 Requires: ModemManager
+%endif
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 
 %description wwan
@@ -546,10 +592,13 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	-Dconcheck=true \
 %if 0%{?fedora}
 	-Dlibpsl=true \
-	-Debpf=true \
 %else
 	-Dlibpsl=false \
+%endif
+%if %{ebpf_enabled} != yes
 	-Debpf=false \
+%else
+	-Debpf=true \
 %endif
 	-Dsession_tracking=systemd \
 	-Dsuspend_resume=systemd \
@@ -559,14 +608,20 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	-Dtests=yes \
 	-Dvalgrind=no \
 	-Difcfg_rh=true \
+%if %{ibft_enabled} != yes
+	-Dibft=false \
+%else
+	-Dibft=true \
+%endif
+	-Difupdown=false \
 %if %{with ppp}
 	-Dpppd_plugin_dir=%{_libdir}/pppd/%{ppp_version} \
 	-Dppp=true \
 %endif
 	-Ddist_version=%{version}-%{release} \
-	-Dconfig_plugins_default='ifcfg-rh' \
-	-Dconfig_dns_rc_manager_default=symlink \
-	-Dconfig_logging_backend_default=journal \
+	-Dconfig_plugins_default=%{config_plugins_default} \
+	-Dconfig_dns_rc_manager_default=%{dns_rc_manager_default} \
+	-Dconfig_logging_backend_default=%{logging_backend_default} \
 	-Djson_validation=true \
 %if %{with libnm_glib}
 	-Dlibnm_glib=true
@@ -662,11 +717,10 @@ intltoolize --automake --copy --force
 	--enable-concheck \
 %if 0%{?fedora}
 	--with-libpsl \
-	--with-ebpf \
 %else
 	--without-libpsl \
-	--without-ebpf \
 %endif
+	--with-ebpf=%{ebpf_enabled} \
 	--with-session-tracking=systemd \
 	--with-suspend-resume=systemd \
 	--with-systemdsystemunitdir=%{systemd_dir} \
@@ -680,14 +734,16 @@ intltoolize --automake --copy --force
 %endif
 	--with-valgrind=no \
 	--enable-ifcfg-rh=yes \
+	--enable-config-plugin-ibft=%{ibft_enabled} \
+	--enable-ifupdown=no \
 %if %{with ppp}
 	--with-pppd-plugin-dir=%{_libdir}/pppd/%{ppp_version} \
 	--enable-ppp=yes \
 %endif
 	--with-dist-version=%{version}-%{release} \
-	--with-config-plugins-default='ifcfg-rh' \
-	--with-config-dns-rc-manager-default=symlink \
-	--with-config-logging-backend-default=journal \
+	--with-config-plugins-default=%{config_plugins_default} \
+	--with-config-dns-rc-manager-default=%{dns_rc_manager_default} \
+	--with-config-logging-backend-default=%{logging_backend_default} \
 	--enable-json-validation \
 %if %{with libnm_glib}
 	--with-libnm-glib
@@ -802,7 +858,7 @@ fi
 %systemd_postun
 
 
-%if 0%{?fedora} < 28
+%if (0%{?fedora} && 0%{?fedora} < 28) || 0%{?rhel}
 %post   glib -p /sbin/ldconfig
 %postun glib -p /sbin/ldconfig
 
