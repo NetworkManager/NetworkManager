@@ -34,6 +34,7 @@
 #include <linux/if_tun.h>
 #include <linux/if_tunnel.h>
 #include <linux/ip6_tunnel.h>
+#include <linux/tc_act/tc_mirred.h>
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
 #include <poll.h>
@@ -4276,6 +4277,36 @@ nla_put_failure:
 }
 
 static gboolean
+_add_action_mirred (struct nl_msg *msg,
+                    const NMPlatformActionMirred *mirred)
+{
+	struct nlattr *act_options;
+	struct tc_mirred sel = { 0, };
+
+	if (!(act_options = nla_nest_start (msg, TCA_ACT_OPTIONS)))
+		goto nla_put_failure;
+
+	if (mirred->egress && mirred->redirect)
+		sel.eaction = TCA_EGRESS_REDIR;
+	else if (mirred->egress && mirred->mirror)
+		sel.eaction = TCA_EGRESS_MIRROR;
+	else if (mirred->ingress && mirred->redirect)
+		sel.eaction = TCA_INGRESS_REDIR;
+	else if (mirred->ingress && mirred->mirror)
+		sel.eaction = TCA_INGRESS_MIRROR;
+	sel.ifindex = mirred->ifindex;
+
+	NLA_PUT (msg, TCA_MIRRED_PARMS, sizeof (sel), &sel);
+
+	nla_nest_end (msg, act_options);
+
+	return TRUE;
+
+nla_put_failure:
+	return FALSE;
+}
+
+static gboolean
 _add_action (struct nl_msg *msg,
              const NMPlatformAction *action)
 {
@@ -4290,6 +4321,8 @@ _add_action (struct nl_msg *msg,
 
 	if (nm_streq (action->kind, NM_PLATFORM_ACTION_KIND_SIMPLE))
 		_add_action_simple (msg, &action->simple);
+	else if (nm_streq (action->kind, NM_PLATFORM_ACTION_KIND_MIRRED))
+		_add_action_mirred (msg, &action->mirred);
 
 	nla_nest_end (msg, prio);
 
