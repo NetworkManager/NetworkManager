@@ -28,6 +28,7 @@
 #include <sys/types.h>
 
 #include "c-list/src/c-list.h"
+#include "nm-utils/nm-c-list.h"
 #include "nm-dbus-interface.h"
 #include "nm-core-internal.h"
 #include "nm-dbus-compat.h"
@@ -42,6 +43,17 @@
 #define OBJECT_MANAGER_SERVER_BASE_PATH "/org/freedesktop"
 
 /*****************************************************************************/
+
+typedef struct {
+	CList caller_info_lst;
+	gulong uid;
+	gulong pid;
+	gint64 uid_checked_at;
+	gint64 pid_checked_at;
+	bool uid_valid:1;
+	bool pid_valid:1;
+	char sender[0];
+} CallerInfo;
 
 typedef struct {
 	GVariant *value;
@@ -78,8 +90,10 @@ typedef struct {
 	NMDBusManagerSetPropertyHandler set_property_handler;
 	gpointer set_property_handler_data;
 
-	GDBusConnection *connection;
-	GDBusProxy *proxy;
+	GDBusConnection *main_dbus_connection;
+
+	CList caller_info_lst_head;
+
 	guint objmgr_registration_id;
 	bool started:1;
 	bool shutting_down:1;
@@ -441,21 +455,33 @@ private_server_get_connection_by_owner (PrivateServer *s, const char *owner)
 
 /*****************************************************************************/
 
+static void
+_caller_info_free (CallerInfo *caller_info)
+{
+	c_list_unlink_stale (&caller_info->caller_info_lst);
+	g_free (caller_info);
+}
+
 static gboolean
 _bus_get_unix_pid (NMDBusManager *self,
                    const char *sender,
-                   gulong *out_pid,
-                   GError **error)
+                   gulong *out_pid)
 {
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 	guint32 unix_pid = G_MAXUINT32;
 	gs_unref_variant GVariant *ret = NULL;
 
-	ret = _nm_dbus_proxy_call_sync (NM_DBUS_MANAGER_GET_PRIVATE (self)->proxy,
-	                                "GetConnectionUnixProcessID",
-	                                g_variant_new ("(s)", sender),
-	                                G_VARIANT_TYPE ("(u)"),
-	                                G_DBUS_CALL_FLAGS_NONE, 2000,
-	                                NULL, error);
+	ret = g_dbus_connection_call_sync (priv->main_dbus_connection,
+	                                   DBUS_SERVICE_DBUS,
+	                                   DBUS_PATH_DBUS,
+	                                   DBUS_INTERFACE_DBUS,
+	                                   "GetConnectionUnixProcessID",
+	                                   g_variant_new ("(s)", sender),
+	                                   G_VARIANT_TYPE ("(u)"),
+	                                   G_DBUS_CALL_FLAGS_NONE,
+	                                   2000,
+	                                   NULL,
+	                                   NULL);
 	if (!ret)
 		return FALSE;
 
@@ -468,18 +494,23 @@ _bus_get_unix_pid (NMDBusManager *self,
 static gboolean
 _bus_get_unix_user (NMDBusManager *self,
                     const char *sender,
-                    gulong *out_user,
-                    GError **error)
+                    gulong *out_user)
 {
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 	guint32 unix_uid = G_MAXUINT32;
 	gs_unref_variant GVariant *ret = NULL;
 
-	ret = _nm_dbus_proxy_call_sync (NM_DBUS_MANAGER_GET_PRIVATE (self)->proxy,
-	                                "GetConnectionUnixUser",
-	                                g_variant_new ("(s)", sender),
-	                                G_VARIANT_TYPE ("(u)"),
-	                                G_DBUS_CALL_FLAGS_NONE, 2000,
-	                                NULL, error);
+	ret = g_dbus_connection_call_sync (priv->main_dbus_connection,
+	                                   DBUS_SERVICE_DBUS,
+	                                   DBUS_PATH_DBUS,
+	                                   DBUS_INTERFACE_DBUS,
+	                                   "GetConnectionUnixUser",
+	                                   g_variant_new ("(s)", sender),
+	                                   G_VARIANT_TYPE ("(u)"),
+	                                   G_DBUS_CALL_FLAGS_NONE,
+	                                   2000,
+	                                   NULL,
+	                                   NULL);
 	if (!ret)
 		return FALSE;
 
@@ -489,34 +520,102 @@ _bus_get_unix_user (NMDBusManager *self,
 	return TRUE;
 }
 
-/**
- * _get_caller_info():
- *
- * Given a GDBus method invocation, or a GDBusConnection + GDBusMessage,
- * return the sender and the UID of the sender.
- */
+static const CallerInfo *
+_get_caller_info_ensure (NMDBusManager *self,
+                         const char *sender,
+                         gboolean ensure_uid,
+                         gboolean ensure_pid)
+{
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+	CallerInfo *caller_info;
+	CallerInfo *ci;
+	gint64 now_ns;
+	gsize num;
+
+#define CALLER_INFO_MAX_AGE   (NM_UTILS_NS_PER_SECOND * 1)
+
+	/* Linear search the cache for the sender.
+	 *
+	 * The number of cached caller-infos is limited. Hence, it's O(1) and
+	 * the list is reasonably short.
+	 * Also, the entire caching assumes that we repeatedly ask for the
+	 * same sender. That means, we expect to find the right caller info
+	 * at the front of the list. */
+	num = 1;
+	caller_info = NULL;
+	c_list_for_each_entry (ci, &priv->caller_info_lst_head, caller_info_lst) {
+		if (nm_streq (sender, ci->sender)) {
+			caller_info = ci;
+			break;
+		}
+		num++;
+	}
+
+	if (caller_info)
+		nm_c_list_move_front (&priv->caller_info_lst_head, &caller_info->caller_info_lst);
+	else {
+		gsize l = strlen (sender) + 1;
+
+		caller_info = g_malloc (sizeof (CallerInfo) + l);
+		*caller_info = (CallerInfo) {
+			.uid_checked_at = - CALLER_INFO_MAX_AGE,
+			.pid_checked_at = - CALLER_INFO_MAX_AGE,
+		};
+		memcpy (caller_info->sender, sender, l);
+		c_list_link_front (&priv->caller_info_lst_head, &caller_info->caller_info_lst);
+
+		/* only cache the last few entries. */
+		while (TRUE) {
+			nm_assert (num > 0 && num == c_list_length (&priv->caller_info_lst_head));
+			if (num-- <= 5)
+				break;
+			_caller_info_free (c_list_last_entry (&priv->caller_info_lst_head, CallerInfo, caller_info_lst));
+		}
+	}
+
+	now_ns = nm_utils_get_monotonic_timestamp_ns ();
+
+	if (   ensure_uid
+	    && (now_ns - caller_info->uid_checked_at) > CALLER_INFO_MAX_AGE) {
+		caller_info->uid_checked_at = now_ns;
+		if (!(caller_info->uid_valid = _bus_get_unix_user (self, sender, &caller_info->uid)))
+			caller_info->uid = G_MAXULONG;
+	}
+
+	if (   ensure_pid
+	    && (now_ns - caller_info->pid_checked_at) > CALLER_INFO_MAX_AGE) {
+		caller_info->pid_checked_at = now_ns;
+		if (!(caller_info->pid_valid = _bus_get_unix_pid (self, sender, &caller_info->pid)))
+			caller_info->pid = G_MAXULONG;
+	}
+
+	return caller_info;
+}
+
 static gboolean
 _get_caller_info (NMDBusManager *self,
                   GDBusMethodInvocation *context,
                   GDBusConnection *connection,
                   GDBusMessage *message,
-                  char **out_sender,
+                  const char **out_sender,
                   gulong *out_uid,
                   gulong *out_pid)
 {
 	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+	const CallerInfo *caller_info;
 	const char *sender;
 
 	if (context) {
+		nm_assert (G_IS_DBUS_METHOD_INVOCATION (context));
 		connection = g_dbus_method_invocation_get_connection (context);
 
 		/* only bus connections will have a sender */
 		sender = g_dbus_method_invocation_get_sender (context);
 	} else {
-		g_assert (message);
+		nm_assert (G_IS_DBUS_MESSAGE (message));
 		sender = g_dbus_message_get_sender (message);
 	}
-	g_assert (connection);
+	nm_assert (G_IS_DBUS_CONNECTION (connection));
 
 	if (!sender) {
 		PrivateServer *s;
@@ -525,10 +624,8 @@ _get_caller_info (NMDBusManager *self,
 		c_list_for_each_entry (s, &priv->private_servers_lst_head, private_servers_lst) {
 			sender = private_server_get_connection_owner (s, connection);
 			if (sender) {
-				if (out_uid)
-					*out_uid = 0;
-				if (out_sender)
-					*out_sender = g_strdup (sender);
+				NM_SET_OUT (out_uid, 0);
+				NM_SET_OUT (out_sender, sender);
 				if (out_pid) {
 					GCredentials *creds;
 
@@ -547,35 +644,29 @@ _get_caller_info (NMDBusManager *self,
 				return TRUE;
 			}
 		}
+		NM_SET_OUT (out_sender, NULL);
+		NM_SET_OUT (out_uid, G_MAXULONG);
+		NM_SET_OUT (out_pid, G_MAXULONG);
 		return FALSE;
 	}
 
-	/* Bus connections always have a sender */
-	g_assert (sender);
-	if (out_uid) {
-		if (!_bus_get_unix_user (self, sender, out_uid, NULL)) {
-			*out_uid = G_MAXULONG;
-			return FALSE;
-		}
-	}
+	caller_info = _get_caller_info_ensure (self, sender, !!out_uid, !!out_pid);
 
-	if (out_pid) {
-		if (!_bus_get_unix_pid (self, sender, out_pid, NULL)) {
-			*out_pid = G_MAXULONG;
-			return FALSE;
-		}
-	}
+	NM_SET_OUT (out_sender, caller_info->sender);
+	NM_SET_OUT (out_uid, caller_info->uid);
+	NM_SET_OUT (out_pid, caller_info->pid);
 
-	if (out_sender)
-		*out_sender = g_strdup (sender);
-
+	if (out_uid && !caller_info->uid_valid)
+		return FALSE;
+	if (out_pid && !caller_info->pid_valid)
+		return FALSE;
 	return TRUE;
 }
 
 gboolean
 nm_dbus_manager_get_caller_info (NMDBusManager *self,
                                  GDBusMethodInvocation *context,
-                                 char **out_sender,
+                                 const char **out_sender,
                                  gulong *out_uid,
                                  gulong *out_pid)
 {
@@ -586,7 +677,7 @@ gboolean
 nm_dbus_manager_get_caller_info_from_message (NMDBusManager *self,
                                               GDBusConnection *connection,
                                               GDBusMessage *message,
-                                              char **out_sender,
+                                              const char **out_sender,
                                               gulong *out_uid,
                                               gulong *out_pid)
 {
@@ -647,8 +738,8 @@ nm_dbus_manager_get_unix_user (NMDBusManager *self,
                                gulong *out_uid)
 {
 	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+	const CallerInfo *caller_info;
 	PrivateServer *s;
-	GError *error = NULL;
 
 	g_return_val_if_fail (sender != NULL, FALSE);
 	g_return_val_if_fail (out_uid != NULL, FALSE);
@@ -665,13 +756,12 @@ nm_dbus_manager_get_unix_user (NMDBusManager *self,
 	}
 
 	/* Otherwise, a bus connection */
-	if (!_bus_get_unix_user (self, sender, out_uid, &error)) {
-		_LOGW ("failed to get unix user for dbus sender '%s': %s",
-		       sender, error->message);
-		g_error_free (error);
+	caller_info = _get_caller_info_ensure (self, sender, TRUE, FALSE);
+	*out_uid = caller_info->uid;
+	if (!caller_info->uid_valid) {
+		_LOGW ("failed to get unix user for dbus sender '%s'", sender);
 		return FALSE;
 	}
-
 	return TRUE;
 }
 
@@ -753,16 +843,6 @@ nm_dbus_manager_new_proxy (NMDBusManager *self,
 		g_error_free (error);
 	}
 	return proxy;
-}
-
-/*****************************************************************************/
-
-GDBusConnection *
-nm_dbus_manager_get_connection (NMDBusManager *self)
-{
-	g_return_val_if_fail (NM_IS_DBUS_MANAGER (self), NULL);
-
-	return NM_DBUS_MANAGER_GET_PRIVATE (self)->connection;
 }
 
 /*****************************************************************************/
@@ -943,7 +1023,7 @@ _obj_register (NMDBusManager *self,
 	GVariantBuilder builder;
 
 	nm_assert (c_list_is_empty (&obj->internal.registration_lst_head));
-	nm_assert (priv->connection);
+	nm_assert (priv->main_dbus_connection);
 	nm_assert (priv->started);
 
 	n_klasses = 0;
@@ -980,7 +1060,7 @@ _obj_register (NMDBusManager *self,
 
 			reg_data = g_malloc0 (sizeof (RegistrationData) + (sizeof (PropertyCacheData) * prop_len));
 
-			registration_id = g_dbus_connection_register_object (priv->connection,
+			registration_id = g_dbus_connection_register_object (priv->main_dbus_connection,
 			                                                     obj->internal.path,
 			                                                     NM_UNCONST_PTR (GDBusInterfaceInfo, &interface_info->parent),
 			                                                     &dbus_vtable,
@@ -1019,7 +1099,7 @@ _obj_register (NMDBusManager *self,
 	 *
 	 * In general, it's ok to export an object with frozen signals. But you better make sure
 	 * that all properties are in a self-consistent state when exporting the object. */
-	g_dbus_connection_emit_signal (priv->connection,
+	g_dbus_connection_emit_signal (priv->main_dbus_connection,
 	                               NULL,
 	                               OBJECT_MANAGER_SERVER_BASE_PATH,
 	                               interface_info_objmgr.name,
@@ -1040,7 +1120,7 @@ _obj_unregister (NMDBusManager *self,
 
 	nm_assert (NM_IS_DBUS_OBJECT (obj));
 
-	if (!priv->connection) {
+	if (!priv->main_dbus_connection) {
 		/* nothing to do for the moment. */
 		nm_assert (c_list_is_empty (&obj->internal.registration_lst_head));
 		return;
@@ -1059,7 +1139,7 @@ _obj_unregister (NMDBusManager *self,
 		                       "s",
 		                       interface_info->parent.name);
 		c_list_unlink_stale (&reg_data->registration_lst);
-		if (!g_dbus_connection_unregister_object (priv->connection, reg_data->registration_id))
+		if (!g_dbus_connection_unregister_object (priv->main_dbus_connection, reg_data->registration_id))
 			nm_assert_not_reached ();
 
 		if (interface_info->parent.properties) {
@@ -1071,7 +1151,7 @@ _obj_unregister (NMDBusManager *self,
 		g_free (reg_data);
 	}
 
-	g_dbus_connection_emit_signal (priv->connection,
+	g_dbus_connection_emit_signal (priv->main_dbus_connection,
 	                               NULL,
 	                               OBJECT_MANAGER_SERVER_BASE_PATH,
 	                               interface_info_objmgr.name,
@@ -1122,7 +1202,7 @@ _nm_dbus_manager_obj_export (NMDBusObject *obj)
 		nm_assert_not_reached ();
 	c_list_link_tail (&priv->objects_lst_head, &obj->internal.objects_lst);
 
-	if (priv->connection && priv->started)
+	if (priv->main_dbus_connection && priv->started)
 		_obj_register (self, obj);
 }
 
@@ -1239,7 +1319,7 @@ _nm_dbus_manager_obj_notify (NMDBusObject *obj,
 		}
 
 		g_variant_builder_init (&invalidated_builder, G_VARIANT_TYPE ("as"));
-		g_dbus_connection_emit_signal (priv->connection,
+		g_dbus_connection_emit_signal (priv->main_dbus_connection,
 		                               NULL,
 		                               obj->internal.path,
 		                               "org.freedesktop.DBus.Properties",
@@ -1255,7 +1335,7 @@ _nm_dbus_manager_obj_notify (NMDBusObject *obj,
 		/* this is a special interface: it has a legacy PropertiesChanged signal,
 		 * however, contrary to other interfaces with ~regular~ legacy signals,
 		 * we only notify about properties that actually belong to this interface. */
-		g_dbus_connection_emit_signal (priv->connection,
+		g_dbus_connection_emit_signal (priv->main_dbus_connection,
 		                               NULL,
 		                               obj->internal.path,
 		                               nm_interface_info_device_statistics.parent.name,
@@ -1292,7 +1372,7 @@ _nm_dbus_manager_obj_notify (NMDBusObject *obj,
 			const NMDBusInterfaceInfoExtended *interface_info = _reg_data_get_interface_info (reg_data);
 
 			if (interface_info->legacy_property_changed) {
-				g_dbus_connection_emit_signal (priv->connection,
+				g_dbus_connection_emit_signal (priv->main_dbus_connection,
 				                               NULL,
 				                               obj->internal.path,
 				                               interface_info->parent.name,
@@ -1321,12 +1401,12 @@ _nm_dbus_manager_obj_emit_signal (NMDBusObject *obj,
 	self = obj->internal.bus_manager;
 	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
-	if (!priv->connection || !priv->started) {
+	if (!priv->main_dbus_connection || !priv->started) {
 		nm_g_variant_unref_floating (args);
 		return;
 	}
 
-	g_dbus_connection_emit_signal (priv->connection,
+	g_dbus_connection_emit_signal (priv->main_dbus_connection,
 	                               NULL,
 	                               obj->internal.path,
 	                               interface_info->parent.name,
@@ -1473,7 +1553,7 @@ nm_dbus_manager_get_dbus_connection (NMDBusManager *self)
 {
 	g_return_val_if_fail (NM_IS_DBUS_MANAGER (self), NULL);
 
-	return NM_DBUS_MANAGER_GET_PRIVATE (self)->connection;
+	return NM_DBUS_MANAGER_GET_PRIVATE (self)->main_dbus_connection;
 }
 
 void
@@ -1487,7 +1567,7 @@ nm_dbus_manager_start (NMDBusManager *self,
 	g_return_if_fail (NM_IS_DBUS_MANAGER (self));
 	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
-	if (!priv->connection) {
+	if (!priv->main_dbus_connection) {
 		/* Do nothing. We're presumably in the configure-and-quit mode. */
 		return;
 	}
@@ -1507,7 +1587,6 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *ret = NULL;
 	gs_unref_object GDBusConnection *connection = NULL;
-	gs_unref_object GDBusProxy *proxy = NULL;
 	guint32 result;
 	guint registration_id;
 
@@ -1530,20 +1609,6 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 
 	g_dbus_connection_set_exit_on_close (connection, FALSE);
 
-	proxy = g_dbus_proxy_new_sync (connection,
-	                                 G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
-	                               | G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
-	                               NULL,
-	                               DBUS_SERVICE_DBUS,
-	                               DBUS_PATH_DBUS,
-	                               DBUS_INTERFACE_DBUS,
-	                               NULL,
-	                               &error);
-	if (!proxy) {
-		_LOGE ("fatal failure to initialize D-Bus: %s", error->message);
-		return FALSE;
-	}
-
 	registration_id = g_dbus_connection_register_object (connection,
 	                                                     OBJECT_MANAGER_SERVER_BASE_PATH,
 	                                                     NM_UNCONST_PTR (GDBusInterfaceInfo, &interface_info_objmgr),
@@ -1556,15 +1621,22 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 		return FALSE;
 	}
 
-	ret = _nm_dbus_proxy_call_sync (proxy,
-	                                "RequestName",
-	                                g_variant_new ("(su)",
-	                                               NM_DBUS_SERVICE,
-	                                               DBUS_NAME_FLAG_DO_NOT_QUEUE),
-	                                G_VARIANT_TYPE ("(u)"),
-	                                G_DBUS_CALL_FLAGS_NONE, -1,
-	                                NULL,
-	                                &error);
+	ret = g_dbus_connection_call_sync (connection,
+	                                   DBUS_SERVICE_DBUS,
+	                                   DBUS_PATH_DBUS,
+	                                   DBUS_INTERFACE_DBUS,
+	                                   "RequestName",
+	                                   g_variant_new ("(su)",
+	                                                  NM_DBUS_SERVICE,
+	                                                  DBUS_NAME_FLAG_DO_NOT_QUEUE),
+	                                   G_VARIANT_TYPE ("(u)"),
+	                                   G_DBUS_CALL_FLAGS_NONE,
+	                                   -1,
+	                                   NULL,
+	                                   &error);
+	if (!ret)
+		return FALSE;
+
 	if (!ret) {
 		_LOGE ("fatal failure to acquire D-Bus service \"%s"": %s",
 		       NM_DBUS_SERVICE, error->message);
@@ -1581,8 +1653,7 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 	}
 
 	priv->objmgr_registration_id = registration_id;
-	priv->connection = g_steal_pointer (&connection);
-	priv->proxy = g_steal_pointer (&proxy);
+	priv->main_dbus_connection = g_steal_pointer (&connection);
 
 	_LOGI ("acquired D-Bus service \"%s\"", NM_DBUS_SERVICE);
 
@@ -1620,6 +1691,8 @@ nm_dbus_manager_init (NMDBusManager *self)
 	c_list_init (&priv->private_servers_lst_head);
 	c_list_init (&priv->objects_lst_head);
 	priv->objects_by_path = g_hash_table_new ((GHashFunc) _objects_by_path_hash, (GEqualFunc) _objects_by_path_equal);
+
+	c_list_init (&priv->caller_info_lst_head);
 }
 
 static void
@@ -1628,6 +1701,7 @@ dispose (GObject *object)
 	NMDBusManager *self = NM_DBUS_MANAGER (object);
 	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 	PrivateServer *s, *s_safe;
+	CallerInfo *caller_info;
 
 	/* All exported NMDBusObject instances keep the manager alive, so we don't
 	 * expect any remaining objects. */
@@ -1640,14 +1714,16 @@ dispose (GObject *object)
 		private_server_free (s);
 
 	if (priv->objmgr_registration_id) {
-		g_dbus_connection_unregister_object (priv->connection,
+		g_dbus_connection_unregister_object (priv->main_dbus_connection,
 		                                     nm_steal_int (&priv->objmgr_registration_id));
 	}
 
-	g_clear_object (&priv->proxy);
-	g_clear_object (&priv->connection);
+	g_clear_object (&priv->main_dbus_connection);
 
 	G_OBJECT_CLASS (nm_dbus_manager_parent_class)->dispose (object);
+
+	while ((caller_info = c_list_first_entry (&priv->caller_info_lst_head, CallerInfo, caller_info_lst)))
+		_caller_info_free (caller_info);
 }
 
 static void

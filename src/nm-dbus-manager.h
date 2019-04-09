@@ -61,8 +61,6 @@ void nm_dbus_manager_stop (NMDBusManager *self);
 
 gboolean nm_dbus_manager_is_stopping (NMDBusManager *self);
 
-GDBusConnection *nm_dbus_manager_get_connection (NMDBusManager *self);
-
 gpointer nm_dbus_manager_lookup_object (NMDBusManager *self, const char *path);
 
 void _nm_dbus_manager_obj_export (NMDBusObject *obj);
@@ -77,7 +75,7 @@ void _nm_dbus_manager_obj_emit_signal (NMDBusObject *obj,
 
 gboolean nm_dbus_manager_get_caller_info (NMDBusManager *self,
                                           GDBusMethodInvocation *context,
-                                          char **out_sender,
+                                          const char **out_sender,
                                           gulong *out_uid,
                                           gulong *out_pid);
 
@@ -97,7 +95,7 @@ gboolean nm_dbus_manager_get_unix_user (NMDBusManager *self,
 gboolean nm_dbus_manager_get_caller_info_from_message (NMDBusManager *self,
                                                        GDBusConnection *connection,
                                                        GDBusMessage *message,
-                                                       char **out_sender,
+                                                       const char **out_sender,
                                                        gulong *out_uid,
                                                        gulong *out_pid);
 
