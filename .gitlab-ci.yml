@@ -50,12 +50,17 @@ build_f28:
     paths:
       - docs-html
 
-build_f_latest:
+build_f29:
   <<: *fedora_install
-  image: fedora:latest
+  image: fedora:29
   <<: *fedora_script
 
-build_f_rawhide:
+build_f30:
+  <<: *fedora_install
+  image: fedora:30
+  <<: *fedora_script
+
+build_frawhide:
   <<: *fedora_install
   image: fedora:rawhide
   <<: *fedora_script
