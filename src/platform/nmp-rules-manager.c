@@ -77,7 +77,7 @@ typedef struct {
 	CList user_tag_lst;
 
 	guint32 track_priority_val;
-	bool track_priority_present;
+	bool track_priority_present:1;
 
 	bool dirty:1;
 } RulesData;
@@ -551,9 +551,13 @@ nmp_rules_manager_sync (NMPRulesManager *self,
 void
 nmp_rules_manager_track_default (NMPRulesManager *self,
                                  int addr_family,
-                                 int track_priority,
+                                 gint32 track_priority,
                                  gconstpointer user_tag)
 {
+	g_return_if_fail (NMP_IS_RULES_MANAGER (self));
+
+	nm_assert (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET, AF_INET6));
+
 	/* track the default rules. See also `man ip-rule`. */
 
 	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET)) {
