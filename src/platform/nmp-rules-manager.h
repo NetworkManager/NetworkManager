@@ -42,6 +42,12 @@ void nmp_rules_manager_track_default (NMPRulesManager *self,
                                       gint32 track_priority,
                                       gconstpointer user_tag);
 
+void nmp_rules_manager_track_from_platform (NMPRulesManager *self,
+                                            NMPlatform *platform,
+                                            int addr_family,
+                                            gint32 tracking_priority,
+                                            gconstpointer user_tag);
+
 void nmp_rules_manager_untrack (NMPRulesManager *self,
                                 const NMPlatformRoutingRule *routing_rule,
                                 gconstpointer user_tag);

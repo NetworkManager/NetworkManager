@@ -546,6 +546,40 @@ nmp_rules_manager_sync (NMPRulesManager *self,
 	}
 }
 
+void
+nmp_rules_manager_track_from_platform (NMPRulesManager *self,
+                                       NMPlatform *platform,
+                                       int addr_family,
+                                       gint32 tracking_priority,
+                                       gconstpointer user_tag)
+{
+	NMPLookup lookup;
+	const NMDedupMultiHeadEntry *head_entry;
+	NMDedupMultiIter iter;
+	const NMPObject *o;
+
+	g_return_if_fail (NMP_IS_RULES_MANAGER (self));
+
+	if (!platform)
+		platform = self->platform;
+	else
+		g_return_if_fail (NM_IS_PLATFORM (platform));
+
+	nm_assert (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET, AF_INET6));
+
+	nmp_lookup_init_obj_type (&lookup, NMP_OBJECT_TYPE_ROUTING_RULE);
+	head_entry = nm_platform_lookup (platform, &lookup);
+	nmp_cache_iter_for_each (&iter, head_entry, &o) {
+		const NMPlatformRoutingRule *rr = NMP_OBJECT_CAST_ROUTING_RULE (o);
+
+		if (   addr_family != AF_UNSPEC
+		    && rr->addr_family != addr_family)
+			continue;
+
+		nmp_rules_manager_track (self, rr, tracking_priority, user_tag);
+	}
+}
+
 /*****************************************************************************/
 
 void
