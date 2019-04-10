@@ -33,7 +33,6 @@ struct _NMPRulesManager {
 	GHashTable *by_user_tag;
 	GHashTable *by_data;
 	guint ref_count;
-	bool track_default:1;
 };
 
 /*****************************************************************************/
@@ -622,16 +621,12 @@ _rules_init (NMPRulesManager *self)
 	self->by_data      = g_hash_table_new_full (_rules_data_hash,      _rules_data_equal,      NULL, _rules_data_destroy);
 	self->by_obj       = g_hash_table_new_full (_rules_obj_hash,       _rules_obj_equal,       NULL, _rules_obj_destroy);
 	self->by_user_tag  = g_hash_table_new_full (_rules_user_tag_hash,  _rules_user_tag_equal,  NULL, _rules_user_tag_destroy);
-
-	if (self->track_default)
-		nmp_rules_manager_track_default (self, AF_UNSPEC, 0, &self->by_data);
 }
 
 /*****************************************************************************/
 
 NMPRulesManager *
-nmp_rules_manager_new (NMPlatform *platform,
-                       gboolean track_default)
+nmp_rules_manager_new (NMPlatform *platform)
 {
 	NMPRulesManager *self;
 
@@ -641,7 +636,6 @@ nmp_rules_manager_new (NMPlatform *platform,
 	*self = (NMPRulesManager) {
 		.ref_count     = 1,
 		.platform      = g_object_ref (platform),
-		.track_default = track_default,
 	};
 	return self;
 }
