@@ -1511,7 +1511,7 @@ again:
 
 	if (TEST_SYNC) {
 		gs_unref_hashtable GHashTable *unique_priorities = g_hash_table_new (NULL, NULL);
-		nm_auto_unref_rules_manager NMPRulesManager *rules_manager = nmp_rules_manager_new (platform, FALSE);
+		nm_auto_unref_rules_manager NMPRulesManager *rules_manager = nmp_rules_manager_new (platform);
 		gs_unref_ptrarray GPtrArray *objs_sync = NULL;
 		gconstpointer USER_TAG_1 = &platform;
 		gconstpointer USER_TAG_2 = &unique_priorities;

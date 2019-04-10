@@ -24,8 +24,7 @@
 
 typedef struct _NMPRulesManager NMPRulesManager;
 
-NMPRulesManager *nmp_rules_manager_new (NMPlatform *platform,
-                                        gboolean track_default);
+NMPRulesManager *nmp_rules_manager_new (NMPlatform *platform);
 
 void nmp_rules_manager_ref (NMPRulesManager *self);
 void nmp_rules_manager_unref (NMPRulesManager *self);
