@@ -76,26 +76,44 @@ typedef struct {
 	CList obj_lst;
 	CList user_tag_lst;
 
+	/* track_priority_val zero is special: those are weakly tracked rules.
+	 * That means: NetworkManager will restore them only if it removed them earlier.
+	 * But it will not remove or add them otherwise.
+	 *
+	 * Otherwise, the track_priority_val goes together with track_priority_present.
+	 * In case of one rule being tracked multile times (with different priorities),
+	 * the one with higher priority wins. See _rules_obj_get_best_data().
+	 * Then, the winning present state either enforces that the rule is present
+	 * or absent.
+	 *
+	 * If a rules is not tracked at all, it is ignored by NetworkManager. Assuming
+	 * that it was added externally by the user. But unlike weakly tracked rules,
+	 * NM will *not* restore such rules if NetworkManager themself removed them. */
 	guint32 track_priority_val;
 	bool track_priority_present:1;
 
 	bool dirty:1;
 } RulesData;
 
+typedef enum {
+	CONFIG_STATE_NONE          = 0,
+	CONFIG_STATE_ADDED_BY_US   = 1,
+	CONFIG_STATE_REMOVED_BY_US = 2,
+} ConfigState;
+
 typedef struct {
 	const NMPObject *obj;
 	CList obj_lst_head;
 
-	/* indicates that we configured the rule (during sync()). We need that, so
-	 * if the rule gets untracked, that we know to remove it on the next
-	 * sync().
+	/* indicates whether we configured/removed the rule (during sync()). We need that, so
+	 * if the rule gets untracked, that we know to remove/restore it.
 	 *
 	 * This makes NMPRulesManager stateful (beyond the configuration that indicates
 	 * which rules are tracked).
 	 * After a restart, NetworkManager would no longer remember which rules were added
 	 * by us. That would need to be fixed by persisting the state and reloading it after
 	 * restart. */
-	bool added_by_us:1;
+	ConfigState config_state;
 } RulesObjData;
 
 typedef struct {
@@ -164,8 +182,6 @@ _rules_obj_get_best_data (RulesObjData *obj_data)
 	RulesData *rules_data;
 	const RulesData *rd_best = NULL;
 
-	nm_assert (!c_list_is_empty (&obj_data->obj_lst_head));
-
 	c_list_for_each_entry (rules_data, &obj_data->obj_lst_head, obj_lst) {
 
 		_rules_data_assert (rules_data, TRUE);
@@ -175,8 +191,11 @@ _rules_obj_get_best_data (RulesObjData *obj_data)
 				continue;
 			if (rd_best->track_priority_val == rules_data->track_priority_val) {
 				if (   rd_best->track_priority_present
-				    || !rules_data->track_priority_present)
+				    || !rules_data->track_priority_present) {
+					/* if the priorities are identical, then "present" wins over
+					 * "!present" (absent). */
 					continue;
+				}
 			}
 		}
 
@@ -313,7 +332,7 @@ nmp_rules_manager_track (NMPRulesManager *self,
 			*obj_data = (RulesObjData) {
 				.obj          = nmp_object_ref (rules_data->obj),
 				.obj_lst_head = C_LIST_INIT (obj_data->obj_lst_head),
-				.added_by_us  = FALSE,
+				.config_state = CONFIG_STATE_NONE,
 			};
 			g_hash_table_add (self->by_obj, obj_data);
 		}
@@ -343,9 +362,13 @@ nmp_rules_manager_track (NMPRulesManager *self,
 	_rules_data_assert (rules_data, TRUE);
 
 	if (changed) {
-		_LOGD ("routing-rule: track ["NM_HASH_OBFUSCATE_PTR_FMT",%c%u] \"%s\")",
+		_LOGD ("routing-rule: track ["NM_HASH_OBFUSCATE_PTR_FMT",%s%u] \"%s\")",
 		       _USER_TAG_LOG (rules_data->user_tag),
-		       rules_data->track_priority_present ? '+' : '-',
+		       ( rules_data->track_priority_val == 0
+		        ? ""
+		        : (  rules_data->track_priority_present
+		           ? "+"
+		           : "-")),
 		       (guint) rules_data->track_priority_val,
 		       nmp_object_to_string (rules_data->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 	}
@@ -387,9 +410,9 @@ _rules_data_untrack (NMPRulesManager *self,
 	nm_assert (c_list_contains (&obj_data->obj_lst_head, &rules_data->obj_lst));
 	nm_assert (obj_data == g_hash_table_lookup (self->by_obj, &rules_data->obj));
 
-	/* if obj_data is marked to be "added_by_us", we need to keep this entry around
-	 * for the next sync -- so that we can remove the rule that was added. */
-	if (   !obj_data->added_by_us
+	/* if obj_data is marked to be "added_by_us" or "removed_by_us", we need to keep this entry
+	 * around for the next sync -- so that we can undo what we did earlier. */
+	if (   obj_data->config_state == CONFIG_STATE_NONE
 	    && c_list_length_is (&rules_data->obj_lst, 1))
 		g_hash_table_remove (self->by_obj, &rules_data->obj);
 
@@ -480,6 +503,7 @@ nmp_rules_manager_sync (NMPRulesManager *self,
 	RulesObjData *obj_data;
 	GHashTableIter h_iter;
 	guint i;
+	const RulesData *rd_best;
 
 	g_return_if_fail (NMP_IS_RULES_MANAGER (self));
 
@@ -499,13 +523,15 @@ nmp_rules_manager_sync (NMPRulesManager *self,
 				continue;
 			}
 
-			if (c_list_is_empty (&obj_data->obj_lst_head)) {
-				nm_assert (obj_data->added_by_us);
-				g_hash_table_remove (self->by_obj, obj_data);
-			} else {
-				if (_rules_obj_get_best_data (obj_data)->track_priority_present)
+			rd_best = _rules_obj_get_best_data (obj_data);
+			if (rd_best) {
+				if (rd_best->track_priority_present)
 					continue;
-				obj_data->added_by_us = FALSE;
+				if (rd_best->track_priority_val == 0) {
+					if (obj_data->config_state != CONFIG_STATE_ADDED_BY_US)
+						continue;
+					obj_data->config_state = CONFIG_STATE_NONE;
+				}
 			}
 
 			if (keep_deleted_rules) {
@@ -517,6 +543,8 @@ nmp_rules_manager_sync (NMPRulesManager *self,
 				rules_to_delete = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
 
 			g_ptr_array_add (rules_to_delete, (gpointer) nmp_object_ref (plobj));
+
+			obj_data->config_state = CONFIG_STATE_REMOVED_BY_US;
 		}
 	}
 
@@ -528,20 +556,26 @@ nmp_rules_manager_sync (NMPRulesManager *self,
 	g_hash_table_iter_init (&h_iter, self->by_obj);
 	while (g_hash_table_iter_next (&h_iter, (gpointer *) &obj_data, NULL)) {
 
-		if (c_list_is_empty (&obj_data->obj_lst_head)) {
-			nm_assert (obj_data->added_by_us);
+		rd_best = _rules_obj_get_best_data (obj_data);
+
+		if (!rd_best) {
 			g_hash_table_iter_remove (&h_iter);
 			continue;
 		}
 
-		if (!_rules_obj_get_best_data (obj_data)->track_priority_present)
+		if (!rd_best->track_priority_present)
 			continue;
+		if (rd_best->track_priority_val == 0) {
+			if (obj_data->config_state != CONFIG_STATE_REMOVED_BY_US)
+				continue;
+			obj_data->config_state = CONFIG_STATE_NONE;
+		}
 
 		plobj = nm_platform_lookup_obj (self->platform, NMP_CACHE_ID_TYPE_OBJECT_TYPE, obj_data->obj);
 		if (plobj)
 			continue;
 
-		obj_data->added_by_us = TRUE;
+		obj_data->config_state = CONFIG_STATE_ADDED_BY_US;
 		nm_platform_routing_rule_add (self->platform, NMP_NLM_FLAG_ADD, NMP_OBJECT_CAST_ROUTING_RULE (obj_data->obj));
 	}
 }
