@@ -39,7 +39,7 @@ void nmp_rules_manager_track (NMPRulesManager *self,
 
 void nmp_rules_manager_track_default (NMPRulesManager *self,
                                       int addr_family,
-                                      int track_priority,
+                                      gint32 track_priority,
                                       gconstpointer user_tag);
 
 void nmp_rules_manager_untrack (NMPRulesManager *self,
