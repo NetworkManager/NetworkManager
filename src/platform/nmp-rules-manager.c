@@ -76,8 +76,8 @@ typedef struct {
 	CList obj_lst;
 	CList user_tag_lst;
 
-	guint32 priority_val;
-	bool priority_present;
+	guint32 track_priority_val;
+	bool track_priority_present;
 
 	bool dirty:1;
 } RulesData;
@@ -171,11 +171,11 @@ _rules_obj_get_best_data (RulesObjData *obj_data)
 		_rules_data_assert (rules_data, TRUE);
 
 		if (rd_best) {
-			if (rd_best->priority_val > rules_data->priority_val)
+			if (rd_best->track_priority_val > rules_data->track_priority_val)
 				continue;
-			if (rd_best->priority_val == rules_data->priority_val) {
-				if (   rd_best->priority_present
-				    || !rules_data->priority_present)
+			if (rd_best->track_priority_val == rules_data->track_priority_val) {
+				if (   rd_best->track_priority_present
+				    || !rules_data->track_priority_present)
 					continue;
 			}
 		}
@@ -262,7 +262,7 @@ _rules_data_lookup (GHashTable *by_data,
 void
 nmp_rules_manager_track (NMPRulesManager *self,
                          const NMPlatformRoutingRule *routing_rule,
-                         gint32 priority,
+                         gint32 track_priority,
                          gconstpointer user_tag)
 {
 	NMPObject obj_stack;
@@ -271,13 +271,13 @@ nmp_rules_manager_track (NMPRulesManager *self,
 	RulesObjData *obj_data;
 	RulesUserTagData *user_tag_data;
 	gboolean changed = FALSE;
-	guint32 priority_val;
-	gboolean priority_present;
+	guint32 track_priority_val;
+	gboolean track_priority_present;
 
 	g_return_if_fail (NMP_IS_RULES_MANAGER (self));
 	g_return_if_fail (routing_rule);
 	g_return_if_fail (user_tag);
-	nm_assert (priority != G_MININT32);
+	nm_assert (track_priority != G_MININT32);
 
 	_rules_init (self);
 
@@ -285,12 +285,12 @@ nmp_rules_manager_track (NMPRulesManager *self,
 
 	nm_assert (nmp_object_is_visible (p_obj_stack));
 
-	if (priority >= 0) {
-		priority_val = priority;
-		priority_present = TRUE;
+	if (track_priority >= 0) {
+		track_priority_val = track_priority;
+		track_priority_present = TRUE;
 	} else {
-		priority_val = -priority;
-		priority_present = FALSE;
+		track_priority_val = -track_priority;
+		track_priority_present = FALSE;
 	}
 
 	rules_data = _rules_data_lookup (self->by_data, p_obj_stack, user_tag);
@@ -298,12 +298,12 @@ nmp_rules_manager_track (NMPRulesManager *self,
 	if (!rules_data) {
 		rules_data = g_slice_new (RulesData);
 		*rules_data = (RulesData) {
-			.obj              = nm_dedup_multi_index_obj_intern (nm_platform_get_multi_idx (self->platform),
-			                                                     p_obj_stack),
-			.user_tag         = user_tag,
-			.priority_val     = priority_val,
-			.priority_present = priority_present,
-			.dirty            = FALSE,
+			.obj                    = nm_dedup_multi_index_obj_intern (nm_platform_get_multi_idx (self->platform),
+			                                                           p_obj_stack),
+			.user_tag               = user_tag,
+			.track_priority_val     = track_priority_val,
+			.track_priority_present = track_priority_present,
+			.dirty                  = FALSE,
 		};
 		g_hash_table_add (self->by_data, rules_data);
 
@@ -332,10 +332,10 @@ nmp_rules_manager_track (NMPRulesManager *self,
 		changed = TRUE;
 	} else {
 		rules_data->dirty = FALSE;
-		if (   rules_data->priority_val != priority_val
-		    || rules_data->priority_present != priority_present) {
-			rules_data->priority_val = priority_val;
-			rules_data->priority_present = priority_present;
+		if (   rules_data->track_priority_val != track_priority_val
+		    || rules_data->track_priority_present != track_priority_present) {
+			rules_data->track_priority_val = track_priority_val;
+			rules_data->track_priority_present = track_priority_present;
 			changed = TRUE;
 		}
 	}
@@ -345,8 +345,8 @@ nmp_rules_manager_track (NMPRulesManager *self,
 	if (changed) {
 		_LOGD ("routing-rule: track ["NM_HASH_OBFUSCATE_PTR_FMT",%c%u] \"%s\")",
 		       _USER_TAG_LOG (rules_data->user_tag),
-		       rules_data->priority_present ? '+' : '-',
-		       (guint) rules_data->priority_val,
+		       rules_data->track_priority_present ? '+' : '-',
+		       (guint) rules_data->track_priority_val,
 		       nmp_object_to_string (rules_data->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 	}
 }
@@ -503,7 +503,7 @@ nmp_rules_manager_sync (NMPRulesManager *self,
 				nm_assert (obj_data->added_by_us);
 				g_hash_table_remove (self->by_obj, obj_data);
 			} else {
-				if (_rules_obj_get_best_data (obj_data)->priority_present)
+				if (_rules_obj_get_best_data (obj_data)->track_priority_present)
 					continue;
 				obj_data->added_by_us = FALSE;
 			}
@@ -534,7 +534,7 @@ nmp_rules_manager_sync (NMPRulesManager *self,
 			continue;
 		}
 
-		if (!_rules_obj_get_best_data (obj_data)->priority_present)
+		if (!_rules_obj_get_best_data (obj_data)->track_priority_present)
 			continue;
 
 		plobj = nm_platform_lookup_obj (self->platform, NMP_CACHE_ID_TYPE_OBJECT_TYPE, obj_data->obj);
@@ -551,7 +551,7 @@ nmp_rules_manager_sync (NMPRulesManager *self,
 void
 nmp_rules_manager_track_default (NMPRulesManager *self,
                                  int addr_family,
-                                 int priority,
+                                 int track_priority,
                                  gconstpointer user_tag)
 {
 	/* track the default rules. See also `man ip-rule`. */
@@ -565,7 +565,7 @@ nmp_rules_manager_track_default (NMPRulesManager *self,
 		                             .action      = FR_ACT_TO_TBL,
 		                             .protocol    = RTPROT_KERNEL,
 		                         }),
-		                         priority,
+		                         track_priority,
 		                         user_tag);
 		nmp_rules_manager_track (self,
 		                         &((NMPlatformRoutingRule) {
@@ -575,7 +575,7 @@ nmp_rules_manager_track_default (NMPRulesManager *self,
 		                             .action      = FR_ACT_TO_TBL,
 		                             .protocol    = RTPROT_KERNEL,
 		                         }),
-		                         priority,
+		                         track_priority,
 		                         user_tag);
 		nmp_rules_manager_track (self,
 		                         &((NMPlatformRoutingRule) {
@@ -585,7 +585,7 @@ nmp_rules_manager_track_default (NMPRulesManager *self,
 		                             .action      = FR_ACT_TO_TBL,
 		                             .protocol    = RTPROT_KERNEL,
 		                         }),
-		                         priority,
+		                         track_priority,
 		                         user_tag);
 	}
 	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET6)) {
@@ -597,7 +597,7 @@ nmp_rules_manager_track_default (NMPRulesManager *self,
 		                             .action      = FR_ACT_TO_TBL,
 		                             .protocol    = RTPROT_KERNEL,
 		                         }),
-		                         priority,
+		                         track_priority,
 		                         user_tag);
 		nmp_rules_manager_track (self,
 		                         &((NMPlatformRoutingRule) {
@@ -607,7 +607,7 @@ nmp_rules_manager_track_default (NMPRulesManager *self,
 		                             .action      = FR_ACT_TO_TBL,
 		                             .protocol    = RTPROT_KERNEL,
 		                         }),
-		                         priority,
+		                         track_priority,
 		                         user_tag);
 	}
 }

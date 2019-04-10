@@ -34,12 +34,12 @@ NM_AUTO_DEFINE_FCN0 (NMPRulesManager *, _nmp_rules_manager_unref, nmp_rules_mana
 
 void nmp_rules_manager_track (NMPRulesManager *self,
                               const NMPlatformRoutingRule *routing_rule,
-                              gint32 priority,
+                              gint32 track_priority,
                               gconstpointer user_tag);
 
 void nmp_rules_manager_track_default (NMPRulesManager *self,
                                       int addr_family,
-                                      int priority,
+                                      int track_priority,
                                       gconstpointer user_tag);
 
 void nmp_rules_manager_untrack (NMPRulesManager *self,
