@@ -50,10 +50,10 @@
 static void
 add_request (GPtrArray *array, const char *item)
 {
-	int i;
+	guint i;
 
 	for (i = 0; i < array->len; i++) {
-		if (!strcmp (g_ptr_array_index (array, i), item))
+		if (nm_streq (array->pdata[i], item))
 			return;
 	}
 	g_ptr_array_add (array, g_strdup (item));
@@ -62,37 +62,48 @@ add_request (GPtrArray *array, const char *item)
 static gboolean
 grab_request_options (GPtrArray *store, const char* line)
 {
-	char **areq, **aiter;
-	gboolean end = FALSE;
+	gs_free const char **line_v = NULL;
+	gsize i;
 
 	/* Grab each 'request' or 'also request'  option and save for later */
-	areq = g_strsplit_set (line, "\t ,", -1);
-	for (aiter = areq; aiter && *aiter; aiter++) {
-		if (!strlen (g_strstrip (*aiter)))
-			continue;
+	line_v = nm_utils_strsplit_set (line, "\t ,");
+	for (i = 0; line_v && line_v[i]; i++) {
+		const char *ss = nm_str_skip_leading_spaces (line_v[i]);
+		gsize l;
+		gboolean end = FALSE;
 
-		if (*aiter[0] == ';') {
+		if (!ss[0])
+			continue;
+		if (ss[0] == ';') {
 			/* all done */
-			end = TRUE;
-			break;
+			return TRUE;
 		}
 
-		if (!g_ascii_isalnum ((*aiter)[0]))
+		if (!g_ascii_isalnum (ss[0]))
 			continue;
 
-		if ((*aiter)[strlen (*aiter) - 1] == ';') {
+		l = strlen (ss);
+
+		while (   l > 0
+		       && g_ascii_isspace (ss[l - 1])) {
+			((char *) ss)[l - 1] = '\0';
+			l--;
+		}
+		if (   l > 0
+		    && ss[l - 1] == ';') {
 			/* Remove the EOL marker */
-			(*aiter)[strlen (*aiter) - 1] = '\0';
+			((char *) ss)[l - 1] = '\0';
 			end = TRUE;
 		}
 
-		add_request (store, *aiter);
+		if (ss[0])
+			add_request (store, ss);
+
+		if (end)
+			return TRUE;
 	}
 
-	if (areq)
-		g_strfreev (areq);
-
-	return end;
+	return FALSE;
 }
 
 static void
@@ -278,8 +289,9 @@ nm_dhcp_dhclient_create_config (const char *interface,
                                 const char *orig_contents,
                                 GBytes **out_new_client_id)
 {
-	GString *new_contents;
-	GPtrArray *fqdn_opts, *reqs;
+	nm_auto_free_gstring GString *new_contents = NULL;
+	gs_unref_ptrarray GPtrArray *fqdn_opts = NULL;
+	gs_unref_ptrarray GPtrArray *reqs = NULL;
 	gboolean reset_reqlist = FALSE;
 	int i;
 
@@ -288,11 +300,11 @@ nm_dhcp_dhclient_create_config (const char *interface,
 	nm_assert (!out_new_client_id || !*out_new_client_id);
 
 	new_contents = g_string_new (_("# Created by NetworkManager\n"));
-	fqdn_opts = g_ptr_array_sized_new (5);
 	reqs = g_ptr_array_new_full (5, g_free);
 
 	if (orig_contents) {
-		char **lines, **line;
+		gs_free const char **lines = NULL;
+		gsize line_i;
 		int nest = 0;
 		gboolean in_alsoreq = FALSE;
 		gboolean in_req = FALSE;
@@ -301,19 +313,23 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		g_string_append_printf (new_contents, _("# Merged from %s\n\n"), orig_path);
 		intf[0] = '\0';
 
-		lines = g_strsplit_set (orig_contents, "\n\r", 0);
-		for (line = lines; lines && *line; line++) {
-			char *p = *line;
+		lines = nm_utils_strsplit_set (orig_contents, "\n\r");
+		for (line_i = 0; lines && lines[line_i]; line_i++) {
+			const char *line = nm_str_skip_leading_spaces (lines[line_i]);
+			const char *p;
 
-			if (!strlen (g_strstrip (p)))
+			if (line[0] == '\0')
 				continue;
 
+			g_strchomp ((char *) line);
+
+			p = line;
 			if (in_req) {
 				/* pass */
 			} else if (strchr (p, '{')) {
 				nest++;
 				if (   !intf[0]
-				    && g_str_has_prefix (p, "interface"))
+				    && NM_STR_HAS_PREFIX (p, "interface"))
 					if (read_interface (p, intf, sizeof (intf)))
 						continue;
 			} else if (strchr (p, '}')) {
@@ -363,6 +379,8 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			 * default ones set by NM, add them later
 			 */
 			if (!strncmp (p, FQDN_TAG_PREFIX, NM_STRLEN (FQDN_TAG_PREFIX))) {
+				if (!fqdn_opts)
+					fqdn_opts = g_ptr_array_new_full (5, g_free);
 				g_ptr_array_add (fqdn_opts, g_strdup (p + NM_STRLEN (FQDN_TAG_PREFIX)));
 				continue;
 			}
@@ -397,12 +415,9 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			}
 
 			/* Existing configuration line is OK, add it to new configuration */
-			g_string_append (new_contents, *line);
+			g_string_append (new_contents, line);
 			g_string_append_c (new_contents, '\n');
 		}
-
-		if (lines)
-			g_strfreev (lines);
 	} else
 		g_string_append_c (new_contents, '\n');
 
@@ -436,17 +451,16 @@ nm_dhcp_dhclient_create_config (const char *interface,
 	/* And add it to the dhclient configuration */
 	for (i = 0; i < reqs->len; i++)
 		g_string_append_printf (new_contents, "also request %s;\n", (char *) reqs->pdata[i]);
-	g_ptr_array_free (reqs, TRUE);
 
-	for (i = 0; i < fqdn_opts->len; i++) {
-		char *t = g_ptr_array_index (fqdn_opts, i);
+	if (fqdn_opts) {
+		for (i = 0; i < fqdn_opts->len; i++) {
+			const char *t = fqdn_opts->pdata[i];
 
-		if (i == 0)
-			g_string_append_printf (new_contents, "\n# FQDN options from %s\n", orig_path);
-		g_string_append_printf (new_contents, FQDN_TAG_PREFIX "%s\n", t);
-		g_free (t);
+			if (i == 0)
+				g_string_append_printf (new_contents, "\n# FQDN options from %s\n", orig_path);
+			g_string_append_printf (new_contents, FQDN_TAG_PREFIX "%s\n", t);
+		}
 	}
-	g_ptr_array_free (fqdn_opts, TRUE);
 
 	g_string_append_c (new_contents, '\n');
 
@@ -458,7 +472,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		                        interface, anycast_addr);
 	}
 
-	return g_string_free (new_contents, FALSE);
+	return g_string_free (g_steal_pointer (&new_contents), FALSE);
 }
 
 /* Roughly follow what dhclient's quotify_buf() and pretty_escape() functions do */
@@ -553,9 +567,9 @@ error:
 GBytes *
 nm_dhcp_dhclient_read_duid (const char *leasefile, GError **error)
 {
-	GBytes *duid = NULL;
-	char *contents;
-	char **line, **split, *p, *e;
+	gs_free char *contents = NULL;
+	gs_free const char **contents_v = NULL;
+	gsize i;
 
 	if (!g_file_test (leasefile, G_FILE_TEST_EXISTS))
 		return NULL;
@@ -563,25 +577,29 @@ nm_dhcp_dhclient_read_duid (const char *leasefile, GError **error)
 	if (!g_file_get_contents (leasefile, &contents, NULL, error))
 		return NULL;
 
-	split = g_strsplit_set (contents, "\n\r", -1);
-	for (line = split; line && *line && (duid == NULL); line++) {
-		p = g_strstrip (*line);
-		if (g_str_has_prefix (p, DUID_PREFIX)) {
-			p += strlen (DUID_PREFIX);
+	contents_v = nm_utils_strsplit_set (contents, "\n\r");
+	for (i = 0; contents_v && contents_v[i]; i++) {
+		const char *p = nm_str_skip_leading_spaces (contents_v[i]);
+		GBytes *duid;
 
-			/* look for trailing "; */
-			e = p + strlen (p) - 2;
-			if (strcmp (e, "\";") != 0)
-				continue;
-			*e = '\0';
+		if (!NM_STR_HAS_PREFIX (p, DUID_PREFIX))
+			continue;
 
-			duid = nm_dhcp_dhclient_unescape_duid (p);
-		}
+		p += NM_STRLEN (DUID_PREFIX);
+
+		g_strchomp ((char *) p);
+
+		if (!NM_STR_HAS_SUFFIX (p, "\";"))
+			continue;
+
+		((char *) p)[strlen (p) - 2] = '\0';
+
+		duid = nm_dhcp_dhclient_unescape_duid (p);
+		if (duid)
+			return duid;
 	}
-	g_free (contents);
-	g_strfreev (split);
 
-	return duid;
+	return NULL;
 }
 
 gboolean
@@ -590,14 +608,12 @@ nm_dhcp_dhclient_save_duid (const char *leasefile,
                             GError **error)
 {
 	gs_free char *escaped_duid = NULL;
-	gs_strfreev char **lines = NULL;
-	char **iter, *l;
-	GString *s;
-	gboolean success;
+	gs_free const char **lines = NULL;
+	nm_auto_free_gstring GString *s = NULL;
+	const char *const*iter;
 	gsize len = 0;
 
 	g_return_val_if_fail (leasefile != NULL, FALSE);
-
 	if (!duid) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN,
 		                            "missing duid");
@@ -605,19 +621,17 @@ nm_dhcp_dhclient_save_duid (const char *leasefile,
 	}
 
 	escaped_duid = nm_dhcp_dhclient_escape_duid (duid);
-	g_return_val_if_fail (escaped_duid != NULL, FALSE);
+	nm_assert (escaped_duid);
 
 	if (g_file_test (leasefile, G_FILE_TEST_EXISTS)) {
-		char *contents = NULL;
+		gs_free char *contents = NULL;
 
 		if (!g_file_get_contents (leasefile, &contents, &len, error)) {
 			g_prefix_error (error, "failed to read lease file %s: ", leasefile);
 			return FALSE;
 		}
 
-		g_assert (contents);
-		lines = g_strsplit_set (contents, "\n\r", -1);
-		g_free (contents);
+		lines = nm_utils_strsplit_set_with_empty (contents, "\n\r");
 	}
 
 	s = g_string_sized_new (len + 50);
@@ -625,37 +639,38 @@ nm_dhcp_dhclient_save_duid (const char *leasefile,
 
 	/* Preserve existing leasefile contents */
 	if (lines) {
-		for (iter = lines; iter && *iter; iter++) {
-			l = *iter;
-			while (g_ascii_isspace (*l))
-				l++;
+		for (iter = lines; *iter; iter++) {
+			const char *str = *iter;
+			const char *l;
+
 			/* If we find an uncommented DUID in the file, check if
 			 * equal to the one we are going to write: if so, no need
 			 * to update the lease file, otherwise skip the old DUID.
 			 */
+			l = nm_str_skip_leading_spaces (str);
 			if (g_str_has_prefix (l, DUID_PREFIX)) {
 				gs_strfreev char **split = NULL;
 
 				split = g_strsplit (l, "\"", -1);
-				if (nm_streq0 (split[1], escaped_duid)) {
-					g_string_free (s, TRUE);
+				if (   split[0]
+				    && nm_streq0 (split[1], escaped_duid))
 					return TRUE;
-				}
+
 				continue;
 			}
 
-			if (*iter[0])
-				g_string_append (s, *iter);
+			if (str)
+				g_string_append (s, str);
 			/* avoid to add an extra '\n' at the end of file */
 			if ((iter[1]) != NULL)
 				g_string_append_c (s, '\n');
 		}
 	}
 
-	success = g_file_set_contents (leasefile, s->str, -1, error);
-	if (!success)
+	if (!g_file_set_contents (leasefile, s->str, -1, error)) {
 		g_prefix_error (error, "failed to set DUID in lease file %s: ", leasefile);
+		return FALSE;
+	}
 
-	g_string_free (s, TRUE);
-	return success;
+	return TRUE;
 }

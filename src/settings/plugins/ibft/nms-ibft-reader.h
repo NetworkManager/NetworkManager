@@ -23,6 +23,14 @@
 
 #include "nm-connection.h"
 
+static inline void
+_nm_auto_free_ibft_blocks (GSList **p_blocks)
+{
+	if (*p_blocks)
+		g_slist_free_full (*p_blocks, (GDestroyNotify) g_ptr_array_unref);
+}
+#define nm_auto_free_ibft_blocks nm_auto (_nm_auto_free_ibft_blocks)
+
 gboolean nms_ibft_reader_load_blocks (const char *iscsiadm_path,
                                       GSList **out_blocks,
                                       GError **error);

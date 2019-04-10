@@ -302,7 +302,8 @@ nm_logging_setup (const char  *level,
 	NMLogDomain new_log_state[_LOGL_N_REAL];
 	NMLogLevel cur_log_level;
 	NMLogLevel new_log_level;
-	char **tmp, **iter;
+	gs_free const char **domains_v = NULL;
+	gsize i_d;
 	int i;
 	gboolean had_platform_debug;
 	gs_free char *domains_free = NULL;
@@ -337,28 +338,24 @@ nm_logging_setup (const char  *level,
 		}
 	}
 
-	tmp = g_strsplit_set (domains, ", ", 0);
-	for (iter = tmp; iter && *iter; iter++) {
+	domains_v = nm_utils_strsplit_set (domains, ", ");
+	for (i_d = 0; domains_v && domains_v[i_d]; i_d++) {
+		const char *s = domains_v[i_d];
+		const char *p;
 		const LogDesc *diter;
 		NMLogLevel domain_log_level;
 		NMLogDomain bits;
-		char *p;
 
 		/* LOGD_VPN_PLUGIN is protected, that is, when setting ALL or DEFAULT,
 		 * it does not enable the verbose levels DEBUG and TRACE, because that
 		 * may expose sensitive data. */
 		NMLogDomain protect = LOGD_NONE;
 
-		if (!strlen (*iter))
-			continue;
-
-		p = strchr (*iter, ':');
+		p = strchr (s, ':');
 		if (p) {
-			*p = '\0';
-			if (!match_log_level (p + 1, &domain_log_level, error)) {
-				g_strfreev (tmp);
+			*((char *) p) = '\0';
+			if (!match_log_level (p + 1, &domain_log_level, error))
 				return FALSE;
-			}
 		} else
 			domain_log_level = new_log_level;
 
@@ -372,26 +369,26 @@ nm_logging_setup (const char  *level,
 		}
 
 		/* Check for combined domains */
-		if (!g_ascii_strcasecmp (*iter, LOGD_ALL_STRING)) {
+		if (!g_ascii_strcasecmp (s, LOGD_ALL_STRING)) {
 			bits = LOGD_ALL;
 			protect = LOGD_VPN_PLUGIN;
-		} else if (!g_ascii_strcasecmp (*iter, LOGD_DEFAULT_STRING)) {
+		} else if (!g_ascii_strcasecmp (s, LOGD_DEFAULT_STRING)) {
 			bits = LOGD_DEFAULT;
 			protect = LOGD_VPN_PLUGIN;
-		} else if (!g_ascii_strcasecmp (*iter, LOGD_DHCP_STRING))
+		} else if (!g_ascii_strcasecmp (s, LOGD_DHCP_STRING))
 			bits = LOGD_DHCP;
-		else if (!g_ascii_strcasecmp (*iter, LOGD_IP_STRING))
+		else if (!g_ascii_strcasecmp (s, LOGD_IP_STRING))
 			bits = LOGD_IP;
 
 		/* Check for compatibility domains */
-		else if (!g_ascii_strcasecmp (*iter, "HW"))
+		else if (!g_ascii_strcasecmp (s, "HW"))
 			bits = LOGD_PLATFORM;
-		else if (!g_ascii_strcasecmp (*iter, "WIMAX"))
+		else if (!g_ascii_strcasecmp (s, "WIMAX"))
 			continue;
 
 		else {
 			for (diter = &domain_desc[0]; diter->name; diter++) {
-				if (!g_ascii_strcasecmp (diter->name, *iter)) {
+				if (!g_ascii_strcasecmp (diter->name, s)) {
 					bits = diter->num;
 					break;
 				}
@@ -400,7 +397,7 @@ nm_logging_setup (const char  *level,
 			if (!bits) {
 				if (!bad_domains) {
 					g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN,
-					             _("Unknown log domain '%s'"), *iter);
+					             _("Unknown log domain '%s'"), s);
 					return FALSE;
 				}
 
@@ -408,7 +405,7 @@ nm_logging_setup (const char  *level,
 					g_string_append (unrecognized, ", ");
 				else
 					unrecognized = g_string_new (NULL);
-				g_string_append (unrecognized, *iter);
+				g_string_append (unrecognized, s);
 				continue;
 			}
 		}
@@ -429,7 +426,6 @@ nm_logging_setup (const char  *level,
 			}
 		}
 	}
-	g_strfreev (tmp);
 
 	g_clear_pointer (&gl_main.logging_domains_to_string, g_free);
 

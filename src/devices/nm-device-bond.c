@@ -185,20 +185,18 @@ set_arp_targets (NMDevice *device,
                  const char *delim,
                  const char *prefix)
 {
-	char **items, **iter, *tmp;
+	gs_free const char **value_v = NULL;
+	gsize i;
 
-	if (!value || !*value)
+	value_v = nm_utils_strsplit_set (value, delim);
+	if (!value_v)
 		return;
+	for (i = 0; value_v[i]; i++) {
+		gs_free char *tmp = NULL;
 
-	items = g_strsplit_set (value, delim, 0);
-	for (iter = items; iter && *iter; iter++) {
-		if (*iter[0]) {
-			tmp = g_strdup_printf ("%s%s", prefix, *iter);
-			set_bond_attr (device, mode, NM_SETTING_BOND_OPTION_ARP_IP_TARGET, tmp);
-			g_free (tmp);
-		}
+		tmp = g_strdup_printf ("%s%s", prefix, value_v[i]);
+		set_bond_attr (device, mode, NM_SETTING_BOND_OPTION_ARP_IP_TARGET, tmp);
 	}
-	g_strfreev (items);
 }
 
 static void
