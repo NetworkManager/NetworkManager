@@ -902,7 +902,7 @@ request_secrets_from_ui (RequestData *request)
 			title = _("PIN code required");
 			msg = g_strdup (_("PIN code is needed for the mobile broadband device"));
 
-			secret = _secret_real_new_plain (NM_SECRET_AGENT_SECRET_TYPE_PROPERTY,
+			secret = _secret_real_new_plain (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
 			                                 _("PIN"),
 			                                 NM_SETTING (s_gsm),
 			                                 NM_SETTING_GSM_PIN);
