@@ -437,7 +437,8 @@ config_h.set10('HAVE_SELINUX', enable_selinux)
 
 # eBPF support
 ebpf_opt = get_option('ebpf')
-if ebpf_opt == 'false'
+# 'auto' means 'false', because there are still issues.
+if ebpf_opt != 'true'
   enable_ebpf = false
 else
   enable_ebpf = true

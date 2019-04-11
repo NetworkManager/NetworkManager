@@ -18,6 +18,8 @@ stages:
 .fedora_script: &fedora_script
   stage: test
   script:
+    - date '+%Y%m%d-%H%M%S'; uname -a
+    - date '+%Y%m%d-%H%M%S'; dnf list --installed
     - date '+%Y%m%d-%H%M%S'; git clean -fdx ; CI=gitlab BUILD_TYPE=autotools CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
     - date '+%Y%m%d-%H%M%S'; rm -rf /tmp/nm-docs-html; mv build/INST/share/gtk-doc/html /tmp/nm-docs-html
     - date '+%Y%m%d-%H%M%S'; git clean -fdx ; CI=gitlab BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
@@ -48,12 +50,17 @@ build_f28:
     paths:
       - docs-html
 
-build_f_latest:
+build_f29:
   <<: *fedora_install
-  image: fedora:latest
+  image: fedora:29
   <<: *fedora_script
 
-build_f_rawhide:
+build_f30:
+  <<: *fedora_install
+  image: fedora:30
+  <<: *fedora_script
+
+build_frawhide:
   <<: *fedora_install
   image: fedora:rawhide
   <<: *fedora_script

@@ -529,7 +529,8 @@ esac
 AC_ARG_WITH(ebpf,
             AS_HELP_STRING([--with-ebpf=yes|no|auto], [Build with eBPF support (default: auto)]),
             [], [with_ebpf=auto])
-if test "$with_ebpf" = "yes" -o "$with_ebpf" = "auto"; then
+# 'auto' means 'false' because there are still some issues.
+if test "$with_ebpf" = "yes" ; then
 	AC_CHECK_HEADER(linux/bpf.h, [have_ebpf=yes], [have_ebpf=no])
 else
 	have_ebpf=no
