@@ -1216,6 +1216,82 @@ done2:
 	return ptr;
 }
 
+/*****************************************************************************/
+
+const char *
+nm_utils_escaped_tokens_escape (const char *str,
+                                const char *delimiters,
+                                char **out_to_free)
+{
+	guint8 ch_lookup[256];
+	char *ret;
+	gsize str_len;
+	gsize alloc_len;
+	gsize n_escapes;
+	gsize i, j;
+	gboolean escape_trailing_space;
+
+	if (!delimiters) {
+		nm_assert (delimiters);
+		delimiters = NM_ASCII_SPACES;
+	}
+
+	if (!str || str[0] == '\0') {
+		*out_to_free = NULL;
+		return str;
+	}
+
+	_char_lookup_table_init (ch_lookup, delimiters);
+
+	/* also mark '\\' as requiring escaping. */
+	ch_lookup[((guint8) '\\')] = 1;
+
+	n_escapes = 0;
+	for (i = 0; str[i] != '\0'; i++) {
+		if (_char_lookup_has (ch_lookup, str[i]))
+			n_escapes++;
+	}
+
+	str_len = i;
+	nm_assert (str_len > 0 && strlen (str) == str_len);
+
+	escape_trailing_space =    !_char_lookup_has (ch_lookup, str[str_len - 1])
+	                        && g_ascii_isspace (str[str_len - 1]);
+
+	if (   n_escapes == 0
+	    && !escape_trailing_space) {
+		*out_to_free = NULL;
+		return str;
+	}
+
+	alloc_len = str_len + n_escapes + ((gsize) escape_trailing_space) + 1;
+	ret = g_new (char, alloc_len);
+
+	j = 0;
+	for (i = 0; str[i] != '\0'; i++) {
+		if (_char_lookup_has (ch_lookup, str[i])) {
+			nm_assert (j < alloc_len);
+			ret[j++] = '\\';
+		}
+		nm_assert (j < alloc_len);
+		ret[j++] = str[i];
+	}
+	if (escape_trailing_space) {
+		nm_assert (!_char_lookup_has (ch_lookup, ret[j - 1]) && g_ascii_isspace (ret[j - 1]));
+		ret[j] = ret[j - 1];
+		ret[j - 1] = '\\';
+		j++;
+	}
+
+	nm_assert (j == alloc_len - 1);
+	ret[j] = '\0';
+
+	*out_to_free = ret;
+	return ret;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_utils_strv_find_first:
  * @list: the strv list to search

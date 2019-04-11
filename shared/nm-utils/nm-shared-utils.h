@@ -409,6 +409,37 @@ char **_nm_utils_strv_cleanup (char **strv,
 
 /*****************************************************************************/
 
+static inline const char **
+nm_utils_escaped_tokens_split (const char *str,
+                               const char *delimiters)
+{
+	return nm_utils_strsplit_set_full (str,
+	                                   delimiters,
+	                                     NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED
+	                                   | NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
+}
+
+const char *nm_utils_escaped_tokens_escape (const char *str,
+                                            const char *delimiters,
+                                            char **out_to_free);
+
+static inline GString *
+nm_utils_escaped_tokens_escape_gstr (const char *str,
+                                     const char *delimiters,
+                                     GString *gstring)
+{
+	gs_free char *str_to_free = NULL;
+
+	nm_assert (str);
+	nm_assert (gstring);
+
+	g_string_append (gstring,
+	                 nm_utils_escaped_tokens_escape (str, delimiters, &str_to_free));
+	return gstring;
+}
+
+/*****************************************************************************/
+
 #define NM_UTILS_CHECKSUM_LENGTH_MD5          16
 #define NM_UTILS_CHECKSUM_LENGTH_SHA1         20
 #define NM_UTILS_CHECKSUM_LENGTH_SHA256       32
