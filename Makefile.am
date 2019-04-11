@@ -3849,8 +3849,9 @@ dispatcher_tests_test_dispatcher_envp_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS)
 
 dispatcher_tests_test_dispatcher_envp_LDADD = \
-	libnm/libnm.la \
 	dispatcher/libnm-dispatcher-core.la \
+	libnm/libnm.la \
+	shared/nm-utils/libnm-utils-base.la \
 	$(GLIB_LIBS)
 
 $(dispatcher_tests_test_dispatcher_envp_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
