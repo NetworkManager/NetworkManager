@@ -205,7 +205,8 @@ struct NMIPAddress {
  **/
 NMIPAddress *
 nm_ip_address_new (int family,
-                   const char *addr, guint prefix,
+                   const char *addr,
+                   guint prefix,
                    GError **error)
 {
 	NMIPAddress *address;
@@ -243,7 +244,8 @@ nm_ip_address_new (int family,
  **/
 NMIPAddress *
 nm_ip_address_new_binary (int family,
-                          gconstpointer addr, guint prefix,
+                          gconstpointer addr,
+                          guint prefix,
                           GError **error)
 {
 	NMIPAddress *address;
