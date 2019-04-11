@@ -148,6 +148,7 @@ if [[ $NO_DIST != 1 ]]; then
         --disable-dependency-tracking \
         --enable-gtk-doc \
         --enable-introspection \
+        --with-libnm-glib \
         --enable-ifcfg-rh \
         --enable-ifupdown \
         --enable-config-plugin-ibft \
