@@ -4802,16 +4802,16 @@ make_bond_setting (shvarFile *ifcfg,
 
 		items = nm_utils_strsplit_set (v, " ");
 		for (iter = items; iter && *iter; iter++) {
-			gs_strfreev char **keys = NULL;
-			const char *key, *val;
+			gs_free char *key = NULL;
+			const char *val;
 
-			keys = g_strsplit_set (*iter, "=", 2);
-			if (keys && *keys) {
-				key = *keys;
-				val = *(keys + 1);
-				if (val && key[0] && val[0])
-					handle_bond_option (s_bond, key, val);
-			}
+			val = strchr (*iter, '=');
+			if (!val)
+				continue;
+			key = g_strndup (*iter, val - *iter);
+			val++;
+			if (key[0] && val[0])
+				handle_bond_option (s_bond, key, val);
 		}
 	}
 
@@ -5082,16 +5082,16 @@ handle_bridging_opts (NMSetting *setting,
 
 	items = nm_utils_strsplit_set (value, " ");
 	for (iter = items; iter && *iter; iter++) {
-		gs_strfreev char **keys = NULL;
-		const char *key, *val;
+		gs_free char *key = NULL;
+		const char *val;
 
-		keys = g_strsplit_set (*iter, "=", 2);
-		if (keys && *keys) {
-			key = *keys;
-			val = *(keys + 1);
-			if (val && key[0] && val[0])
-				func (setting, stp, key, val, opt_type);
-		}
+		val = strchr (*iter, '=');
+		if (!val)
+			continue;
+		key = g_strndup (*iter, val - *iter);
+		val++;
+		if (key[0] && val[0])
+			func (setting, stp, key, val, opt_type);
 	}
 }
 
