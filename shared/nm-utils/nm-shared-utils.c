@@ -1028,7 +1028,8 @@ nm_utils_strsplit_set_full (const char *str,
 	char *s;
 	guint8 ch_lookup[256];
 	const gboolean f_allow_escaping = NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
-	const gboolean f_preseve_empty = NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY);
+	const gboolean f_preserve_empty = NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY);
+	const gboolean f_strstrip = NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
 
 	if (!str)
 		return NULL;
@@ -1042,7 +1043,7 @@ nm_utils_strsplit_set_full (const char *str,
 	nm_assert (   !f_allow_escaping
 	           || !_char_lookup_has (ch_lookup, '\\'));
 
-	if (!f_preseve_empty) {
+	if (!f_preserve_empty) {
 		while (_char_lookup_has (ch_lookup, str[0]))
 			str++;
 	}
@@ -1055,6 +1056,17 @@ nm_utils_strsplit_set_full (const char *str,
 		return NULL;
 	}
 
+#define _char_is_escaped(str_start, str_cur) \
+	({ \
+		const char *const _str_start = (str_start); \
+		const char *const _str_cur = (str_cur); \
+		const char *_str_i = (_str_cur); \
+		\
+		while (   _str_i > _str_start \
+		       && _str_i[-1] == '\\') \
+			_str_i--; \
+		(((_str_cur - _str_i) % 2) != 0); \
+	})
 
 	num_tokens = 1;
 	c_str = str;
@@ -1069,23 +1081,17 @@ nm_utils_strsplit_set_full (const char *str,
 		/* we assume escapings are not frequent. After we found
 		 * this delimiter, check whether it was escaped by counting
 		 * the backslashed before. */
-		if (f_allow_escaping) {
-			const char *c2 = c_str;
-
-			while (   c2 > str
-			       && c2[-1] == '\\')
-				c2--;
-			if (((c_str - c2) % 2) != 0) {
-				/* the delimiter is escaped. This was not an accepted delimiter. */
-				c_str++;
-				continue;
-			}
+		if (   f_allow_escaping
+		    && _char_is_escaped (str, c_str)) {
+			/* the delimiter is escaped. This was not an accepted delimiter. */
+			c_str++;
+			continue;
 		}
 
 		c_str++;
 
 		/* if we drop empty tokens, then we now skip over all consecutive delimiters. */
-		if (!f_preseve_empty) {
+		if (!f_preserve_empty) {
 			while (_char_lookup_has (ch_lookup, c_str[0]))
 				c_str++;
 			if (c_str[0] == '\0')
@@ -1115,10 +1121,10 @@ done1:
 		ptr[i_token++] = s;
 
 		if (s[0] == '\0') {
-			nm_assert (f_preseve_empty);
+			nm_assert (f_preserve_empty);
 			goto done2;
 		}
-		nm_assert (   f_preseve_empty
+		nm_assert (   f_preserve_empty
 		           || !_char_lookup_has (ch_lookup, s[0]));
 
 		while (!_char_lookup_has (ch_lookup, s[0])) {
@@ -1138,7 +1144,7 @@ done1:
 		s[0] = '\0';
 		s++;
 
-		if (!f_preseve_empty) {
+		if (!f_preserve_empty) {
 			while (_char_lookup_has (ch_lookup, s[0]))
 				s++;
 			if (s[0] == '\0')
@@ -1149,6 +1155,38 @@ done1:
 done2:
 	nm_assert (i_token == num_tokens);
 	ptr[i_token] = NULL;
+
+	if (f_strstrip) {
+		gsize i;
+
+		i_token = 0;
+		for (i = 0; ptr[i]; i++) {
+
+			s = (char *) nm_str_skip_leading_spaces (ptr[i]);
+			if (s[0] != '\0') {
+				char *s_last;
+
+				s_last = &s[strlen (s) - 1];
+				while (   s_last > s
+				       && g_ascii_isspace (s_last[0])
+				       && (   ! f_allow_escaping
+				           || !_char_is_escaped (s, s_last)))
+					(s_last--)[0] = '\0';
+			}
+
+			if (   !f_preserve_empty
+			    && s[0] == '\0')
+				continue;
+
+			ptr[i_token++] = s;
+		}
+
+		if (i_token == 0) {
+			g_free (ptr);
+			return NULL;
+		}
+		ptr[i_token] = NULL;
+	}
 
 	return ptr;
 }

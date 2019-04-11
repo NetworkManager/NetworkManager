@@ -336,6 +336,17 @@ typedef enum {
 	NM_UTILS_STRSPLIT_SET_FLAGS_NONE           = 0,
 	NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY = (1u << 0),
 	NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING = (1u << 1),
+
+	/* If flag is set, does the same as g_strstrip() on the returned tokens.
+	 * This will remove leading and trailing ascii whitespaces (g_ascii_isspace()
+	 * and NM_ASCII_SPACES).
+	 *
+	 * - when combined with !%NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
+	 *   empty tokens will be removed (and %NULL will be returned if that
+	 *   results in an empty string array).
+	 * - when combined with %NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING,
+	 *   trailing whitespace escaped by backslash are not stripped. */
+	NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP       = (1u << 2),
 } NMUtilsStrsplitSetFlags;
 
 const char **nm_utils_strsplit_set_full (const char *str,
