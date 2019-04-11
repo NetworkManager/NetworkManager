@@ -347,6 +347,33 @@ typedef enum {
 	 * - when combined with %NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING,
 	 *   trailing whitespace escaped by backslash are not stripped. */
 	NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP       = (1u << 2),
+
+	/* This implies %NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING.
+	 *
+	 * This will do a final run over all tokens and remove all backslash
+	 * escape characters that
+	 *   - precede a delimiter.
+	 *   - precede a backslash.
+	 *   - preceed a whitespace (with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP).
+	 *
+	 *  Note that with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP, it is only
+	 *  necessary to escape the very last whitespace (if the delimiters
+	 *  are not whitespace themself). So, technically, it would be sufficient
+	 *  to only unescape a backslash before the last whitespace and the user
+	 *  still could express everything. However, such a rule would be complicated
+	 *  to understand, so when using backslash escaping with nm_utils_strsplit_set_full(),
+	 *  then all characters (including backslash) are treated verbatim, except:
+	 *
+	 *    - "\\$DELIMITER" (escaped delimiter)
+	 *    - "\\\\" (escaped backslash)
+	 *    - "\\$SPACE" (escaped space) (with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP).
+	 *
+	 * Note that all other escapes like "\\n" or "\\001" are left alone.
+	 * That makes the escaping/unescaping rules simple. Also, for the most part
+	 * a text is just taken as-is, with little additional rules. Only backslashes
+	 * need extra care, and then only if they proceed one of the relevant characters.
+	 */
+	NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED        = (1u << 3),
 } NMUtilsStrsplitSetFlags;
 
 const char **nm_utils_strsplit_set_full (const char *str,

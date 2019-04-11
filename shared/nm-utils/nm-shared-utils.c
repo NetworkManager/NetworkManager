@@ -1027,7 +1027,8 @@ nm_utils_strsplit_set_full (const char *str,
 	const char *c_str;
 	char *s;
 	guint8 ch_lookup[256];
-	const gboolean f_allow_escaping = NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
+	const gboolean f_escaped = NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED);
+	const gboolean f_allow_escaping = f_escaped || NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
 	const gboolean f_preserve_empty = NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY);
 	const gboolean f_strstrip = NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
 
@@ -1186,6 +1187,30 @@ done2:
 			return NULL;
 		}
 		ptr[i_token] = NULL;
+	}
+
+	if (f_escaped) {
+		gsize i, j;
+
+		/* We no longer need ch_lookup for its original purpose. Modify it, so it
+		 * can detect the delimiters, '\\', and (optionally) whitespaces. */
+		ch_lookup[((guint8) '\\')] = 1;
+		if (f_strstrip) {
+			for (i = 0; NM_ASCII_SPACES[i]; i++)
+				ch_lookup[((guint8) (NM_ASCII_SPACES[i]))] = 1;
+		}
+
+		for (i_token = 0; ptr[i_token]; i_token++) {
+			s = (char *) ptr[i_token];
+			j = 0;
+			for (i = 0; s[i] != '\0'; ) {
+				if (   s[i] == '\\'
+				    && _char_lookup_has (ch_lookup, s[i + 1]))
+					i++;
+				s[j++] = s[i++];
+			}
+			s[j] = '\0';
+		}
 	}
 
 	return ptr;
