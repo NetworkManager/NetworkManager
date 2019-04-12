@@ -2936,7 +2936,7 @@ msgid ""
 "and\n"
 "\"nmcli connection show\" to get an overview on active connection profiles.\n"
 "\n"
-"Consult nmcli(1) and nmcli-examples(5) manual pages for complete usage "
+"Consult nmcli(1) and nmcli-examples(7) manual pages for complete usage "
 "details.\n"
 msgstr ""
 

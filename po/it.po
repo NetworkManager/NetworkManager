@@ -3725,7 +3725,7 @@ msgid ""
 "and\n"
 "\"nmcli connection show\" to get an overview on active connection profiles.\n"
 "\n"
-"Consult nmcli(1) and nmcli-examples(5) manual pages for complete usage "
+"Consult nmcli(1) and nmcli-examples(7) manual pages for complete usage "
 "details.\n"
 msgstr ""
 "Usare «nmcli device show» per ottenere informazioni sui dispositivi noti e\n"
@@ -3735,7 +3735,7 @@ msgstr ""
 "\n"
 "Per maggiori informazioni sull'utilizzo, consultare le pagine di manuale "
 "nmcli(1)\n"
-"e nmcli-examples(5).\n"
+"e nmcli-examples(7).\n"
 
 #: ../clients/cli/general.c:1371
 #, c-format

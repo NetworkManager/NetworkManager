@@ -91,7 +91,7 @@ DNS configuration:
 Use "nmcli device show" to get complete information about known devices and
 "nmcli connection show" to get an overview on active connection profiles.
 
-Consult nmcli(1) and nmcli-examples(5) manual pages for complete usage details.
+Consult nmcli(1) and nmcli-examples(7) manual pages for complete usage details.
 
 <<<
 size: 812
@@ -128,7 +128,7 @@ Polecenie „nmcli device show” wyświetli pełne informacje o znanych
 urządzeniach, a „nmcli connection show” wyświetli przegląd aktywnych
 profili połączeń.
 
-Strony podręcznika nmcli(1) i nmcli-examples(5) zawierają pełne informacje
+Strony podręcznika nmcli(1) i nmcli-examples(7) zawierają pełne informacje
 o użyciu.
 
 <<<

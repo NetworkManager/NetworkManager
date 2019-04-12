@@ -3756,7 +3756,7 @@ msgid ""
 "and\n"
 "\"nmcli connection show\" to get an overview on active connection profiles.\n"
 "\n"
-"Consult nmcli(1) and nmcli-examples(5) manual pages for complete usage "
+"Consult nmcli(1) and nmcli-examples(7) manual pages for complete usage "
 "details.\n"
 msgstr ""
 "Скористайтеся командою «nmcli device show», щоб отримати повну інформацію "
@@ -3764,7 +3764,7 @@ msgstr ""
 "та «nmcli connection show», щоб отримати огляд профілів активних з’єднань.\n"
 "\n"
 "Докладний опис використання програм можна знайти на сторінках підручника "
-"(man) nmcli(1) та nmcli-examples(5).\n"
+"(man) nmcli(1) та nmcli-examples(7).\n"
 
 #: ../clients/cli/general.c:1370
 #, c-format

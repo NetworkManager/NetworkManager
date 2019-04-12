@@ -1350,7 +1350,7 @@ do_overview (NmCli *nmc, int argc, char **argv)
 	g_print (_("Use \"nmcli device show\" to get complete information about known devices and\n"
 	           "\"nmcli connection show\" to get an overview on active connection profiles.\n"
 	           "\n"
-	           "Consult nmcli(1) and nmcli-examples(5) manual pages for complete usage details.\n"));
+	           "Consult nmcli(1) and nmcli-examples(7) manual pages for complete usage details.\n"));
 
 	return NMC_RESULT_SUCCESS;
 }

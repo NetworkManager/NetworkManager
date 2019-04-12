@@ -3624,13 +3624,13 @@ msgid ""
 "and\n"
 "\"nmcli connection show\" to get an overview on active connection profiles.\n"
 "\n"
-"Consult nmcli(1) and nmcli-examples(5) manual pages for complete usage "
+"Consult nmcli(1) and nmcli-examples(7) manual pages for complete usage "
 "details.\n"
 msgstr ""
 "使用 \"nmcli device show\" 获取关于已知设备的完整信息，以及 \n"
 "\"nmcli connection show\" 获取活动连接配置集的概述。\n"
 "\n"
-"完整的用法细节，可参考 nmcli(1) 和 nmcli-examples(5) 手册页。\n"
+"完整的用法细节，可参考 nmcli(1) 和 nmcli-examples(7) 手册页。\n"
 
 #: ../clients/cli/general.c:1370
 #, c-format
