@@ -589,6 +589,7 @@ class TestNmcli(NmTestBase):
         env['LIBNM_USE_SESSION_BUS'] = '1'
         env['LIBNM_USE_NO_UDEV'] = '1'
         env['TERM'] = 'linux'
+        env['ASAN_OPTIONS'] = 'detect_leaks=0'
         env['XDG_CONFIG_HOME'] = PathConfiguration.srcdir()
         if fatal_warnings is _DEFAULT_ARG or fatal_warnings:
             env['G_DEBUG'] = 'fatal-warnings'

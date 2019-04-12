@@ -1,5 +1,5 @@
 size: 395
-location: clients/tests/test-client.py:841:test_001()/1
+location: clients/tests/test-client.py:842:test_001()/1
 cmd: $NMCLI 
 lang: C
 returncode: 0
@@ -15,7 +15,7 @@ Consult nmcli(1) and nmcli-examples(5) manual pages for complete usage details.
 
 <<<
 size: 438
-location: clients/tests/test-client.py:841:test_001()/2
+location: clients/tests/test-client.py:842:test_001()/2
 cmd: $NMCLI 
 lang: pl_PL.UTF-8
 returncode: 0
@@ -33,7 +33,7 @@ o użyciu.
 
 <<<
 size: 188
-location: clients/tests/test-client.py:843:test_001()/3
+location: clients/tests/test-client.py:844:test_001()/3
 cmd: $NMCLI -f AP -mode multiline -p d show wlan0
 lang: C
 returncode: 10
@@ -43,7 +43,7 @@ Error: Device 'wlan0' not found.
 
 <<<
 size: 214
-location: clients/tests/test-client.py:843:test_001()/4
+location: clients/tests/test-client.py:844:test_001()/4
 cmd: $NMCLI -f AP -mode multiline -p d show wlan0
 lang: pl_PL.UTF-8
 returncode: 10
@@ -53,7 +53,7 @@ Błąd: Nie odnaleziono urządzenia „wlan0”.
 
 <<<
 size: 120
-location: clients/tests/test-client.py:845:test_001()/5
+location: clients/tests/test-client.py:846:test_001()/5
 cmd: $NMCLI c s
 lang: C
 returncode: 0
@@ -63,7 +63,7 @@ stdout: 1 bytes
 
 <<<
 size: 130
-location: clients/tests/test-client.py:845:test_001()/6
+location: clients/tests/test-client.py:846:test_001()/6
 cmd: $NMCLI c s
 lang: pl_PL.UTF-8
 returncode: 0
@@ -73,7 +73,7 @@ stdout: 1 bytes
 
 <<<
 size: 192
-location: clients/tests/test-client.py:847:test_001()/7
+location: clients/tests/test-client.py:848:test_001()/7
 cmd: $NMCLI bogus s
 lang: C
 returncode: 2
@@ -83,7 +83,7 @@ Error: argument 'bogus' not understood. Try passing --help instead.
 
 <<<
 size: 221
-location: clients/tests/test-client.py:847:test_001()/8
+location: clients/tests/test-client.py:848:test_001()/8
 cmd: $NMCLI bogus s
 lang: pl_PL.UTF-8
 returncode: 2
@@ -93,7 +93,7 @@ Błąd: nie zrozumiano parametru „bogus”. Można użyć „--help” zamiast
 
 <<<
 size: 1488
-location: clients/tests/test-client.py:850:test_001()/9
+location: clients/tests/test-client.py:851:test_001()/9
 cmd: $NMCLI general permissions
 lang: C
 returncode: 0
@@ -120,7 +120,7 @@ org.freedesktop.NetworkManager.wifi.scan                          unknown
 
 <<<
 size: 1517
-location: clients/tests/test-client.py:850:test_001()/10
+location: clients/tests/test-client.py:851:test_001()/10
 cmd: $NMCLI general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -147,7 +147,7 @@ org.freedesktop.NetworkManager.wifi.scan                          nieznane
 
 <<<
 size: 1618
-location: clients/tests/test-client.py:850:test_001()/11
+location: clients/tests/test-client.py:851:test_001()/11
 cmd: $NMCLI --color yes general permissions
 lang: C
 returncode: 0
@@ -174,7 +174,7 @@ org.freedesktop.NetworkManager.wifi.scan                          unknown
 
 <<<
 size: 1646
-location: clients/tests/test-client.py:850:test_001()/12
+location: clients/tests/test-client.py:851:test_001()/12
 cmd: $NMCLI --color yes general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -201,7 +201,7 @@ org.freedesktop.NetworkManager.wifi.scan                          nieznane
 
 <<<
 size: 1695
-location: clients/tests/test-client.py:850:test_001()/13
+location: clients/tests/test-client.py:851:test_001()/13
 cmd: $NMCLI --pretty general permissions
 lang: C
 returncode: 0
@@ -232,7 +232,7 @@ org.freedesktop.NetworkManager.wifi.scan                          unknown
 
 <<<
 size: 1753
-location: clients/tests/test-client.py:850:test_001()/14
+location: clients/tests/test-client.py:851:test_001()/14
 cmd: $NMCLI --pretty general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -263,7 +263,7 @@ org.freedesktop.NetworkManager.wifi.scan                          nieznane
 
 <<<
 size: 1824
-location: clients/tests/test-client.py:850:test_001()/15
+location: clients/tests/test-client.py:851:test_001()/15
 cmd: $NMCLI --pretty --color yes general permissions
 lang: C
 returncode: 0
@@ -294,7 +294,7 @@ org.freedesktop.NetworkManager.wifi.scan                          unknown
 
 <<<
 size: 1882
-location: clients/tests/test-client.py:850:test_001()/16
+location: clients/tests/test-client.py:851:test_001()/16
 cmd: $NMCLI --pretty --color yes general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -325,7 +325,7 @@ org.freedesktop.NetworkManager.wifi.scan                          nieznane
 
 <<<
 size: 1094
-location: clients/tests/test-client.py:850:test_001()/17
+location: clients/tests/test-client.py:851:test_001()/17
 cmd: $NMCLI --terse general permissions
 lang: C
 returncode: 0
@@ -351,7 +351,7 @@ org.freedesktop.NetworkManager.wifi.scan:unknown
 
 <<<
 size: 1104
-location: clients/tests/test-client.py:850:test_001()/18
+location: clients/tests/test-client.py:851:test_001()/18
 cmd: $NMCLI --terse general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -377,7 +377,7 @@ org.freedesktop.NetworkManager.wifi.scan:unknown
 
 <<<
 size: 1224
-location: clients/tests/test-client.py:850:test_001()/19
+location: clients/tests/test-client.py:851:test_001()/19
 cmd: $NMCLI --terse --color yes general permissions
 lang: C
 returncode: 0
@@ -403,7 +403,7 @@ org.freedesktop.NetworkManager.wifi.scan:unknown
 
 <<<
 size: 1234
-location: clients/tests/test-client.py:850:test_001()/20
+location: clients/tests/test-client.py:851:test_001()/20
 cmd: $NMCLI --terse --color yes general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -429,7 +429,7 @@ org.freedesktop.NetworkManager.wifi.scan:unknown
 
 <<<
 size: 1504
-location: clients/tests/test-client.py:850:test_001()/21
+location: clients/tests/test-client.py:851:test_001()/21
 cmd: $NMCLI --mode tabular general permissions
 lang: C
 returncode: 0
@@ -456,7 +456,7 @@ org.freedesktop.NetworkManager.wifi.scan                          unknown
 
 <<<
 size: 1532
-location: clients/tests/test-client.py:850:test_001()/22
+location: clients/tests/test-client.py:851:test_001()/22
 cmd: $NMCLI --mode tabular general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -483,7 +483,7 @@ org.freedesktop.NetworkManager.wifi.scan                          nieznane
 
 <<<
 size: 1633
-location: clients/tests/test-client.py:850:test_001()/23
+location: clients/tests/test-client.py:851:test_001()/23
 cmd: $NMCLI --mode tabular --color yes general permissions
 lang: C
 returncode: 0
@@ -510,7 +510,7 @@ org.freedesktop.NetworkManager.wifi.scan                          unknown
 
 <<<
 size: 1661
-location: clients/tests/test-client.py:850:test_001()/24
+location: clients/tests/test-client.py:851:test_001()/24
 cmd: $NMCLI --mode tabular --color yes general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -537,7 +537,7 @@ org.freedesktop.NetworkManager.wifi.scan                          nieznane
 
 <<<
 size: 1710
-location: clients/tests/test-client.py:850:test_001()/25
+location: clients/tests/test-client.py:851:test_001()/25
 cmd: $NMCLI --mode tabular --pretty general permissions
 lang: C
 returncode: 0
@@ -568,7 +568,7 @@ org.freedesktop.NetworkManager.wifi.scan                          unknown
 
 <<<
 size: 1768
-location: clients/tests/test-client.py:850:test_001()/26
+location: clients/tests/test-client.py:851:test_001()/26
 cmd: $NMCLI --mode tabular --pretty general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -599,7 +599,7 @@ org.freedesktop.NetworkManager.wifi.scan                          nieznane
 
 <<<
 size: 1839
-location: clients/tests/test-client.py:850:test_001()/27
+location: clients/tests/test-client.py:851:test_001()/27
 cmd: $NMCLI --mode tabular --pretty --color yes general permissions
 lang: C
 returncode: 0
@@ -630,7 +630,7 @@ org.freedesktop.NetworkManager.wifi.scan                          unknown
 
 <<<
 size: 1897
-location: clients/tests/test-client.py:850:test_001()/28
+location: clients/tests/test-client.py:851:test_001()/28
 cmd: $NMCLI --mode tabular --pretty --color yes general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -661,7 +661,7 @@ org.freedesktop.NetworkManager.wifi.scan                          nieznane
 
 <<<
 size: 1109
-location: clients/tests/test-client.py:850:test_001()/29
+location: clients/tests/test-client.py:851:test_001()/29
 cmd: $NMCLI --mode tabular --terse general permissions
 lang: C
 returncode: 0
@@ -687,7 +687,7 @@ org.freedesktop.NetworkManager.wifi.scan:unknown
 
 <<<
 size: 1119
-location: clients/tests/test-client.py:850:test_001()/30
+location: clients/tests/test-client.py:851:test_001()/30
 cmd: $NMCLI --mode tabular --terse general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -713,7 +713,7 @@ org.freedesktop.NetworkManager.wifi.scan:unknown
 
 <<<
 size: 1239
-location: clients/tests/test-client.py:850:test_001()/31
+location: clients/tests/test-client.py:851:test_001()/31
 cmd: $NMCLI --mode tabular --terse --color yes general permissions
 lang: C
 returncode: 0
@@ -739,7 +739,7 @@ org.freedesktop.NetworkManager.wifi.scan:unknown
 
 <<<
 size: 1249
-location: clients/tests/test-client.py:850:test_001()/32
+location: clients/tests/test-client.py:851:test_001()/32
 cmd: $NMCLI --mode tabular --terse --color yes general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -765,7 +765,7 @@ org.freedesktop.NetworkManager.wifi.scan:unknown
 
 <<<
 size: 2464
-location: clients/tests/test-client.py:850:test_001()/33
+location: clients/tests/test-client.py:851:test_001()/33
 cmd: $NMCLI --mode multiline general permissions
 lang: C
 returncode: 0
@@ -808,7 +808,7 @@ VALUE:                                  unknown
 
 <<<
 size: 2481
-location: clients/tests/test-client.py:850:test_001()/34
+location: clients/tests/test-client.py:851:test_001()/34
 cmd: $NMCLI --mode multiline general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -851,7 +851,7 @@ VALUE:                                  nieznane
 
 <<<
 size: 2593
-location: clients/tests/test-client.py:850:test_001()/35
+location: clients/tests/test-client.py:851:test_001()/35
 cmd: $NMCLI --mode multiline --color yes general permissions
 lang: C
 returncode: 0
@@ -894,7 +894,7 @@ VALUE:                                  unknown
 
 <<<
 size: 2610
-location: clients/tests/test-client.py:850:test_001()/36
+location: clients/tests/test-client.py:851:test_001()/36
 cmd: $NMCLI --mode multiline --color yes general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -937,7 +937,7 @@ VALUE:                                  nieznane
 
 <<<
 size: 4046
-location: clients/tests/test-client.py:850:test_001()/37
+location: clients/tests/test-client.py:851:test_001()/37
 cmd: $NMCLI --mode multiline --pretty general permissions
 lang: C
 returncode: 0
@@ -1000,7 +1000,7 @@ VALUE:                                  unknown
 
 <<<
 size: 4068
-location: clients/tests/test-client.py:850:test_001()/38
+location: clients/tests/test-client.py:851:test_001()/38
 cmd: $NMCLI --mode multiline --pretty general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -1063,7 +1063,7 @@ VALUE:                                  nieznane
 
 <<<
 size: 4175
-location: clients/tests/test-client.py:850:test_001()/39
+location: clients/tests/test-client.py:851:test_001()/39
 cmd: $NMCLI --mode multiline --pretty --color yes general permissions
 lang: C
 returncode: 0
@@ -1126,7 +1126,7 @@ VALUE:                                  unknown
 
 <<<
 size: 4197
-location: clients/tests/test-client.py:850:test_001()/40
+location: clients/tests/test-client.py:851:test_001()/40
 cmd: $NMCLI --mode multiline --pretty --color yes general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -1189,7 +1189,7 @@ VALUE:                                  nieznane
 
 <<<
 size: 1401
-location: clients/tests/test-client.py:850:test_001()/41
+location: clients/tests/test-client.py:851:test_001()/41
 cmd: $NMCLI --mode multiline --terse general permissions
 lang: C
 returncode: 0
@@ -1232,7 +1232,7 @@ VALUE:unknown
 
 <<<
 size: 1411
-location: clients/tests/test-client.py:850:test_001()/42
+location: clients/tests/test-client.py:851:test_001()/42
 cmd: $NMCLI --mode multiline --terse general permissions
 lang: pl_PL.UTF-8
 returncode: 0
@@ -1275,7 +1275,7 @@ VALUE:unknown
 
 <<<
 size: 1530
-location: clients/tests/test-client.py:850:test_001()/43
+location: clients/tests/test-client.py:851:test_001()/43
 cmd: $NMCLI --mode multiline --terse --color yes general permissions
 lang: C
 returncode: 0
@@ -1318,7 +1318,7 @@ VALUE:unknown
 
 <<<
 size: 1540
-location: clients/tests/test-client.py:850:test_001()/44
+location: clients/tests/test-client.py:851:test_001()/44
 cmd: $NMCLI --mode multiline --terse --color yes general permissions
 lang: pl_PL.UTF-8
 returncode: 0
