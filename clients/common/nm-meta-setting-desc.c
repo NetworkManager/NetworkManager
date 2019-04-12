@@ -3053,9 +3053,7 @@ _get_fcn_objlist (ARGS_GET_FCN)
 	num = property_info->property_typ_data->subtype.objlist.get_num_fcn (setting);
 
 	for (idx = 0; idx < num; idx++) {
-#if NM_MORE_ASSERTS
 		gsize start_offset;
-#endif
 
 		if (!str)
 			str = g_string_new (NULL);
@@ -3067,14 +3065,20 @@ _get_fcn_objlist (ARGS_GET_FCN)
 				g_string_append (str, ", ");
 		}
 
-#if NM_MORE_ASSERTS
 		start_offset = str->len;
-#endif
 
 		property_info->property_typ_data->subtype.objlist.obj_to_str_fcn (get_type,
 		                                                                  setting,
 		                                                                  idx,
 		                                                                  str);
+
+		if (start_offset == str->len) {
+			/* nothing was appended. Remove the delimiter again. */
+			nm_assert_not_reached ();
+			if (str->len > 0)
+				g_string_truncate (str, str->len - 2);
+			continue;
+		}
 
 #if NM_MORE_ASSERTS
 		nm_assert (start_offset < str->len);
