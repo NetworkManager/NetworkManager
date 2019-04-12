@@ -6697,7 +6697,7 @@ nm_utils_base64secret_decode (const char *base64_key,
 
 	base64_key_len = strlen (base64_key);
 
-	r = nm_sd_utils_unbase64mem (base64_key, base64_key_len, &bin_arr, &bin_len);
+	r = nm_sd_utils_unbase64mem (base64_key, base64_key_len, TRUE, &bin_arr, &bin_len);
 	if (r < 0)
 		return FALSE;
 	if (bin_len != required_key_len) {

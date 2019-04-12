@@ -269,12 +269,12 @@ _test_unbase64mem_mem (const char *base64, const guint8 *expected_arr, gsize exp
 	for (i = 0; expected_base64[i]; i++)
 		_test_unbase64char (expected_base64[i], FALSE);
 
-	r = nm_sd_utils_unbase64mem (expected_base64, strlen (expected_base64), &exp2_arr, &exp2_len);
+	r = nm_sd_utils_unbase64mem (expected_base64, strlen (expected_base64), TRUE, &exp2_arr, &exp2_len);
 	g_assert_cmpint (r, ==, 0);
 	g_assert_cmpmem (expected_arr, expected_len, exp2_arr, exp2_len);
 
 	if (!nm_streq (base64, expected_base64)) {
-		r = nm_sd_utils_unbase64mem (base64, strlen (base64), &exp3_arr, &exp3_len);
+		r = nm_sd_utils_unbase64mem (base64, strlen (base64), TRUE, &exp3_arr, &exp3_len);
 		g_assert_cmpint (r, ==, 0);
 		g_assert_cmpmem (expected_arr, expected_len, exp3_arr, exp3_len);
 	}
@@ -289,7 +289,7 @@ _test_unbase64mem_inval (const char *base64)
 	gsize exp_len = 0;
 	int r;
 
-	r = nm_sd_utils_unbase64mem (base64, strlen (base64), &exp_arr, &exp_len);
+	r = nm_sd_utils_unbase64mem (base64, strlen (base64), TRUE, &exp_arr, &exp_len);
 	g_assert_cmpint (r, <, 0);
 	g_assert (!exp_arr);
 	g_assert (exp_len == 0);
