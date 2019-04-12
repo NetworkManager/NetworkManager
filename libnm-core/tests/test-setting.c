@@ -2886,7 +2886,7 @@ test_routing_rule (gconstpointer test_data)
 	char ifname_buf[16];
 
 	_rr_from_str ("priority 5 from 0.0.0.0 table 1",
-	              "  from 0.0.0\\.0  \\priority  5 lookup 1 ");
+	              "  from 0.0.0.0  priority  5 lookup 1 ");
 	_rr_from_str ("priority 5 from 0.0.0.0/0 table 4");
 	_rr_from_str ("priority 5 to 0.0.0.0 table 6");
 	_rr_from_str ("priority 5 to 0.0.0.0 table 254",
@@ -2905,7 +2905,7 @@ test_routing_rule (gconstpointer test_data)
 	              "priority 5 from :: to ::/0 table 0x19 fwmark 0x00/4294967295");
 	_rr_from_str ("priority 5 from :: iif aab table 25");
 	_rr_from_str ("priority 5 from :: iif aab oif er table 25",
-	              "priority 5 from :: table 0x19 dev \\a\\a\\b oif er");
+	              "priority 5 from :: table 0x19 dev aab oif er");
 	_rr_from_str ("priority 5 from :: iif a\\\\303b table 25");
 	_rr_from_str ("priority 5 to 0.0.0.0 sport 10 table 6",
 	              "priority 5 to 0.0.0.0 sport 10-10 table 6");
@@ -2952,7 +2952,7 @@ test_routing_rule (gconstpointer test_data)
 	g_assert_cmpint (0x10, ==, nm_ip_routing_rule_get_tos (rr1));
 	nm_clear_pointer (&rr1, nm_ip_routing_rule_unref);
 
-	rr1 = _rr_from_str_get ("priority 5 from :: iif a\\\\303\\\\261\\,x\\;b table 254",
+	rr1 = _rr_from_str_get ("priority 5 from :: iif a\\\\303\\\\261,x;b table 254",
 	                        "priority 5 from :: iif a\\\\303\\\\261,x;b table 254");
 	g_assert_cmpstr (nm_ip_routing_rule_get_iifname (rr1), ==, "a\\303\\261,x;b");
 	success = nm_ip_routing_rule_get_xifname_bin (rr1, FALSE, ifname_buf);
