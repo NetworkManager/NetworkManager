@@ -465,7 +465,7 @@ nmc_find_connection (const GPtrArray *connections,
 			v = nm_connection_get_path (connection);
 			v_num = nm_utils_dbus_path_get_last_component (v);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL);
+				nmc_complete_strings (filter_val, v, (*filter_val ? v_num : NULL));
 			if (   nm_streq0 (filter_val, v)
 			    || (filter_type && nm_streq0 (filter_val, v_num)))
 				goto found;
