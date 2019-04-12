@@ -691,6 +691,8 @@ void nm_device_set_unmanaged_by_user_udev (NMDevice *self);
 void nm_device_set_unmanaged_by_user_conf (NMDevice *self);
 void nm_device_set_unmanaged_by_quitting (NMDevice *device);
 
+gboolean nm_device_check_unrealized_device_managed (NMDevice *self);
+
 gboolean nm_device_is_nm_owned (NMDevice *device);
 
 gboolean nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps);
