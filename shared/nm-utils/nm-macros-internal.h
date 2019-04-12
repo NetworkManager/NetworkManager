@@ -267,6 +267,8 @@ NM_AUTO_DEFINE_FCN0 (GVariantIter *, _nm_auto_free_variant_iter, g_variant_iter_
 NM_AUTO_DEFINE_FCN0 (GVariantBuilder *, _nm_auto_unref_variant_builder, g_variant_builder_unref)
 #define nm_auto_unref_variant_builder nm_auto(_nm_auto_unref_variant_builder)
 
+#define nm_auto_clear_variant_builder nm_auto(g_variant_builder_clear)
+
 NM_AUTO_DEFINE_FCN0 (GList *, _nm_auto_free_list, g_list_free)
 #define nm_auto_free_list nm_auto(_nm_auto_free_list)
 

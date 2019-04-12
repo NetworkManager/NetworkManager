@@ -206,7 +206,7 @@ _cert_get_cert_bytes (const char *ifcfg_path,
 {
 	gs_free char *path = NULL;
 
-	if (g_str_has_prefix (value, "pkcs11:"))
+	if (NM_STR_HAS_PREFIX (value, "pkcs11:"))
 		return _nm_setting_802_1x_cert_value_to_bytes (NM_SETTING_802_1X_CK_SCHEME_PKCS11, (guint8 *) value, -1, error);
 
 	path = get_full_file_path (ifcfg_path, value);
@@ -560,7 +560,6 @@ make_connection_setting (const char *file,
 	return NM_SETTING (s_con);
 }
 
-/* Returns TRUE on missing address or valid address */
 static gboolean
 read_ip4_address (shvarFile *ifcfg,
                   const char *tag,
@@ -570,7 +569,7 @@ read_ip4_address (shvarFile *ifcfg,
 {
 	gs_free char *value_to_free = NULL;
 	const char *value;
-	guint32 a;
+	in_addr_t a;
 
 	nm_assert (ifcfg);
 	nm_assert (tag);
@@ -1341,46 +1340,33 @@ parse_full_ip6_address (shvarFile *ifcfg,
                         NMIPAddress **out_address,
                         GError **error)
 {
-	char **list;
-	char *ip_val, *prefix_val;
+	NMIPAddress *addr;
+	NMIPAddr addr_bin;
 	int prefix;
-	gboolean success = FALSE;
 
-	g_return_val_if_fail (addr_str != NULL, FALSE);
-	g_return_val_if_fail (out_address != NULL, FALSE);
-	g_return_val_if_fail (*out_address == NULL, FALSE);
-	g_return_val_if_fail (!error || !*error, FALSE);
+	nm_assert (addr_str);
+	nm_assert (out_address && !*out_address);
+	nm_assert (!error || !*error);
 
-	/* Split the address and prefix */
-	list = g_strsplit_set (addr_str, "/", 2);
-	if (g_strv_length (list) < 1) {
+	if (!nm_utils_parse_inaddr_prefix_bin (AF_INET6,
+	                                       addr_str,
+	                                       NULL,
+	                                       &addr_bin,
+	                                       &prefix)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Invalid IP6 address '%s'", addr_str);
-		goto error;
+		return FALSE;
 	}
 
-	ip_val = list[0];
-
-	prefix_val = list[1];
-	if (prefix_val) {
-		prefix = _nm_utils_ascii_str_to_int64 (prefix_val, 10, 0, 128, -1);
-		if (prefix < 0) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Invalid IP6 prefix '%s'", prefix_val);
-			goto error;
-		}
-	} else {
-		/* Missing prefix is treated as prefix of 64 */
+	if (prefix < 0)
 		prefix = 64;
-	}
 
-	*out_address = nm_ip_address_new (AF_INET6, ip_val, prefix, error);
-	if (*out_address)
-		success = TRUE;
+	addr = nm_ip_address_new_binary (AF_INET6, &addr_bin, prefix, error);
+	if (!addr)
+		return FALSE;
 
-error:
-	g_strfreev (list);
-	return success;
+	*out_address = addr;
+	return TRUE;
 }
 
 static NMSetting *
@@ -4816,16 +4802,16 @@ make_bond_setting (shvarFile *ifcfg,
 
 		items = nm_utils_strsplit_set (v, " ");
 		for (iter = items; iter && *iter; iter++) {
-			gs_strfreev char **keys = NULL;
-			const char *key, *val;
+			gs_free char *key = NULL;
+			const char *val;
 
-			keys = g_strsplit_set (*iter, "=", 2);
-			if (keys && *keys) {
-				key = *keys;
-				val = *(keys + 1);
-				if (val && key[0] && val[0])
-					handle_bond_option (s_bond, key, val);
-			}
+			val = strchr (*iter, '=');
+			if (!val)
+				continue;
+			key = g_strndup (*iter, val - *iter);
+			val++;
+			if (key[0] && val[0])
+				handle_bond_option (s_bond, key, val);
 		}
 	}
 
@@ -5096,16 +5082,16 @@ handle_bridging_opts (NMSetting *setting,
 
 	items = nm_utils_strsplit_set (value, " ");
 	for (iter = items; iter && *iter; iter++) {
-		gs_strfreev char **keys = NULL;
-		const char *key, *val;
+		gs_free char *key = NULL;
+		const char *val;
 
-		keys = g_strsplit_set (*iter, "=", 2);
-		if (keys && *keys) {
-			key = *keys;
-			val = *(keys + 1);
-			if (val && key[0] && val[0])
-				func (setting, stp, key, val, opt_type);
-		}
+		val = strchr (*iter, '=');
+		if (!val)
+			continue;
+		key = g_strndup (*iter, val - *iter);
+		val++;
+		if (key[0] && val[0])
+			func (setting, stp, key, val, opt_type);
 	}
 }
 

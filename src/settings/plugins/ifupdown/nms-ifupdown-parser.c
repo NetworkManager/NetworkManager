@@ -419,17 +419,15 @@ update_wired_setting_from_if_block (NMConnection *connection,
 static void
 ifupdown_ip4_add_dns (NMSettingIPConfig *s_ip4, const char *dns)
 {
+	gs_free const char **list = NULL;
+	const char **iter;
 	guint32 addr;
-	gs_strfreev char **list = NULL;
-	char **iter;
 
 	if (dns == NULL)
 		return;
 
-	list = g_strsplit_set (dns, " \t", -1);
+	list = nm_utils_strsplit_set (dns, " \t");
 	for (iter = list; iter && *iter; iter++) {
-		if ((*iter)[0] == '\0')
-			continue;
 		if (!inet_pton (AF_INET, *iter, &addr)) {
 			_LOGW ("    ignoring invalid nameserver '%s'", *iter);
 			continue;
@@ -524,13 +522,11 @@ update_ip4_setting_from_if_block (NMConnection *connection,
 		/* DNS searches */
 		search_v = ifparser_getkey (block, "dns-search");
 		if (search_v) {
-			gs_strfreev char **list = NULL;
-			char **iter;
+			gs_free const char **list = NULL;
+			const char **iter;
 
-			list = g_strsplit_set (search_v, " \t", -1);
+			list = nm_utils_strsplit_set (search_v, " \t");
 			for (iter = list; iter && *iter; iter++) {
-				if ((*iter)[0] == '\0')
-					continue;
 				if (!nm_setting_ip_config_add_dns_search (s_ip4, *iter))
 					_LOGW ("    duplicate DNS domain '%s'", *iter);
 			}
@@ -546,17 +542,15 @@ update_ip4_setting_from_if_block (NMConnection *connection,
 static void
 ifupdown_ip6_add_dns (NMSettingIPConfig *s_ip6, const char *dns)
 {
+	gs_free const char **list = NULL;
+	const char **iter;
 	struct in6_addr addr;
-	gs_strfreev char **list = NULL;
-	char **iter;
 
 	if (dns == NULL)
 		return;
 
-	list = g_strsplit_set (dns, " \t", -1);
+	list = nm_utils_strsplit_set (dns, " \t");
 	for (iter = list; iter && *iter; iter++) {
-		if ((*iter)[0] == '\0')
-			continue;
 		if (!inet_pton (AF_INET6, *iter, &addr)) {
 			_LOGW ("    ignoring invalid nameserver '%s'", *iter);
 			continue;
@@ -640,13 +634,11 @@ update_ip6_setting_from_if_block (NMConnection *connection,
 		/* DNS searches */
 		search_v = ifparser_getkey (block, "dns-search");
 		if (search_v) {
-			gs_strfreev char **list = NULL;
-			char **iter;
+			gs_free const char **list = NULL;
+			const char **iter;
 
-			list = g_strsplit_set (search_v, " \t", -1);
+			list = nm_utils_strsplit_set (search_v, " \t");
 			for (iter = list; iter && *iter; iter++) {
-				if ((*iter)[0] == '\0')
-					continue;
 				if (!nm_setting_ip_config_add_dns_search (s_ip6, *iter))
 					_LOGW ("    duplicate DNS domain '%s'", *iter);
 			}

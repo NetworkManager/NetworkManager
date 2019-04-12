@@ -175,14 +175,14 @@ initialize (NMSettingsPlugin *plugin)
 				const char *ports = ifparser_getkey (block, "bridge-ports");
 
 				if (ports) {
-					guint i;
 					int state = 0;
-					gs_strfreev char **port_ifaces = NULL;
+					gs_free const char **port_ifaces = NULL;
+					gsize i;
 
 					_LOGD ("parse: found bridge ports %s for %s", ports, block->name);
 
-					port_ifaces = g_strsplit_set (ports, " \t", -1);
-					for (i = 0; port_ifaces[i]; i++) {
+					port_ifaces = nm_utils_strsplit_set (ports, " \t");
+					for (i = 0; port_ifaces && port_ifaces[i]; i++) {
 						const char *token = port_ifaces[i];
 
 						/* Skip crazy stuff like regex or all */
@@ -200,7 +200,7 @@ initialize (NMSettingsPlugin *plugin)
 						}
 						if (nm_streq (token, "none"))
 							continue;
-						if (state == 0 && strlen (token) > 0) {
+						if (state == 0) {
 							conn = g_hash_table_lookup (priv->eni_ifaces, block->name);
 							if (!conn) {
 								_LOGD ("parse: adding bridge port \"%s\"", token);
