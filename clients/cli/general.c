@@ -683,7 +683,7 @@ do_general_logging (NmCli *nmc, int argc, char **argv)
 
 		do {
 			if (argc == 1 && nmc->complete)
-				nmc_complete_strings (*argv, "level", "domains", NULL);
+				nmc_complete_strings (*argv, "level", "domains");
 
 			if (matches (*argv, "level")) {
 				argc--;
@@ -878,7 +878,7 @@ do_networking_connectivity (NmCli *nmc, int argc, char **argv)
 	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete) {
 		if (argc == 1)
-			nmc_complete_strings (*argv, "check", NULL);
+			nmc_complete_strings (*argv, "check");
 		return nmc->return_value;
 	}
 

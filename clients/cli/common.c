@@ -446,7 +446,7 @@ nmc_find_connection (const GPtrArray *connections,
 		if (NM_IN_STRSET (filter_type, NULL, "id")) {
 			v = nm_connection_get_id (connection);
 			if (complete)
-				nmc_complete_strings (filter_val, v, NULL);
+				nmc_complete_strings (filter_val, v);
 			if (nm_streq0 (filter_val, v))
 				goto found;
 		}
@@ -454,7 +454,7 @@ nmc_find_connection (const GPtrArray *connections,
 		if (NM_IN_STRSET (filter_type, NULL, "uuid")) {
 			v = nm_connection_get_uuid (connection);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, NULL);
+				nmc_complete_strings (filter_val, v);
 			if (nm_streq0 (filter_val, v))
 				goto found;
 		}
@@ -463,7 +463,7 @@ nmc_find_connection (const GPtrArray *connections,
 			v = nm_connection_get_path (connection);
 			v_num = nm_utils_dbus_path_get_last_component (v);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL, NULL);
+				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL);
 			if (   nm_streq0 (filter_val, v)
 			    || (filter_type && nm_streq0 (filter_val, v_num)))
 				goto found;
@@ -472,7 +472,7 @@ nmc_find_connection (const GPtrArray *connections,
 		if (NM_IN_STRSET (filter_type, NULL, "filename")) {
 			v = nm_remote_connection_get_filename (NM_REMOTE_CONNECTION (connections->pdata[i]));
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, NULL);
+				nmc_complete_strings (filter_val, v);
 			if (nm_streq0 (filter_val, v))
 				goto found;
 		}
@@ -525,7 +525,7 @@ nmc_find_active_connection (const GPtrArray *active_cons,
 		if (NM_IN_STRSET (filter_type, NULL, "id")) {
 			v = nm_active_connection_get_id (candidate);
 			if (complete)
-				nmc_complete_strings (filter_val, v, NULL);
+				nmc_complete_strings (filter_val, v);
 			if (nm_streq0 (filter_val, v))
 				goto found;
 		}
@@ -533,7 +533,7 @@ nmc_find_active_connection (const GPtrArray *active_cons,
 		if (NM_IN_STRSET (filter_type, NULL, "uuid")) {
 			v = nm_active_connection_get_uuid (candidate);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, NULL);
+				nmc_complete_strings (filter_val, v);
 			if (nm_streq0 (filter_val, v))
 				goto found;
 		}
@@ -542,7 +542,7 @@ nmc_find_active_connection (const GPtrArray *active_cons,
 			v = con ? nm_connection_get_path (NM_CONNECTION (con)) : NULL;
 			v_num = nm_utils_dbus_path_get_last_component (v);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL, NULL);
+				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL);
 			if (   nm_streq0 (filter_val, v)
 			    || (filter_type && nm_streq0 (filter_val, v_num)))
 				goto found;
@@ -551,7 +551,7 @@ nmc_find_active_connection (const GPtrArray *active_cons,
 		if (NM_IN_STRSET (filter_type, NULL, "filename")) {
 			v = nm_remote_connection_get_filename (con);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, NULL);
+				nmc_complete_strings (filter_val, v);
 			if (nm_streq0 (filter_val, v))
 				goto found;
 		}
@@ -560,7 +560,7 @@ nmc_find_active_connection (const GPtrArray *active_cons,
 			v = nm_object_get_path (NM_OBJECT (candidate));
 			v_num = nm_utils_dbus_path_get_last_component (v);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL, NULL);
+				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL);
 			if (   nm_streq0 (filter_val, v)
 			    || (filter_type && nm_streq0 (filter_val, v_num)))
 				goto found;
@@ -1254,9 +1254,9 @@ call_cmd (NmCli *nmc, GSimpleAsyncResult *simple, const NMCCommand *cmd, int arg
 static void
 nmc_complete_help (const char *prefix)
 {
-	nmc_complete_strings (prefix, "help", NULL);
+	nmc_complete_strings (prefix, "help");
 	if (*prefix == '-')
-		nmc_complete_strings (prefix, "-help", "--help", NULL);
+		nmc_complete_strings (prefix, "-help", "--help");
 }
 
 /**
@@ -1395,7 +1395,7 @@ void
 nmc_complete_bool (const char *prefix)
 {
 	nmc_complete_strings (prefix, "true", "yes", "on",
-	                              "false", "no", "off", NULL);
+	                              "false", "no", "off");
 }
 
 /**

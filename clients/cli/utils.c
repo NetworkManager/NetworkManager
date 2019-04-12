@@ -189,10 +189,10 @@ next_arg (NmCli *nmc, int *argc, char ***argv, ...)
 
 		if (nmc && nmc->complete && *argc == 1) {
 			while ((cmd_option = va_arg (args, const char *)))
-				nmc_complete_strings (**argv, cmd_option, NULL);
+				nmc_complete_strings (**argv, cmd_option);
 
 			if (***argv == '-')
-				nmc_complete_strings (**argv, "--ask", "--show-secrets", NULL);
+				nmc_complete_strings (**argv, "--ask", "--show-secrets");
 
 			va_end (args);
 			return 0;

@@ -2473,7 +2473,7 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 		gboolean flag;
 
 		if (argc == 1 && nmc->complete)
-			nmc_complete_strings (*argv, "managed", "autoconnect", NULL);
+			nmc_complete_strings (*argv, "managed", "autoconnect");
 
 		if (matches (*argv, "managed")) {
 			argc--;
@@ -2997,7 +2997,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 			}
 			rescan = *argv;
 			if (argc == 1 && nmc->complete)
-				nmc_complete_strings (rescan, "auto", "no", "yes", NULL);
+				nmc_complete_strings (rescan, "auto", "no", "yes");
 			break;
 		default:
 			g_assert_not_reached();
@@ -3179,7 +3179,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	while (argc > 0) {
 		if (argc == 1 && nmc->complete) {
 			nmc_complete_strings (*argv, "ifname", "bssid", "password", "wep-key-type",
-			                      "name", "private", "hidden", NULL);
+			                      "name", "private", "hidden");
 		}
 
 		if (strcmp (*argv, "ifname") == 0) {
@@ -3229,7 +3229,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 				goto finish;
 			}
 			if (argc == 1 && nmc->complete)
-				nmc_complete_strings (*argv, "key", "phrase", NULL);
+				nmc_complete_strings (*argv, "key", "phrase");
 			if (strcmp (*argv, "key") == 0)
 				wep_passphrase = FALSE;
 			else if (strcmp (*argv, "phrase") == 0)
@@ -3711,7 +3711,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 	while (argc > 0) {
 		if (argc == 1 && nmc->complete) {
 			nmc_complete_strings (*argv, "ifname", "con-name", "ssid", "band",
-			                             "channel", "password", NULL);
+			                             "channel", "password");
 		}
 
 		if (strcmp (*argv, "ifname") == 0) {
@@ -3753,7 +3753,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 			}
 			band = *argv;
 			if (argc == 1 && nmc->complete)
-				nmc_complete_strings (band, "a", "bg", NULL);
+				nmc_complete_strings (band, "a", "bg");
 			if (strcmp (band, "a") && strcmp (band, "bg")) {
 				g_string_printf (nmc->return_text, _("Error: band argument value '%s' is invalid; use 'a' or 'bg'."),
 				                 band);
@@ -3935,7 +3935,7 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 	/* Get the parameters */
 	while (argc > 0) {
 		if (argc == 1 && nmc->complete)
-			nmc_complete_strings (*argv, "ifname", "ssid", NULL);
+			nmc_complete_strings (*argv, "ifname", "ssid");
 
 		if (strcmp (*argv, "ifname") == 0) {
 			if (ifname) {
@@ -4122,7 +4122,7 @@ do_device_lldp_list (NmCli *nmc, int argc, char **argv)
 	next_arg (nmc, &argc, &argv, NULL);
 	while (argc > 0) {
 		if (argc == 1 && nmc->complete)
-			nmc_complete_strings (*argv, "ifname", NULL);
+			nmc_complete_strings (*argv, "ifname");
 
 		if (strcmp (*argv, "ifname") == 0) {
 			argc--;
