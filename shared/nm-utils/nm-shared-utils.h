@@ -398,8 +398,6 @@ nm_utils_strsplit_set (const char *str,
 	return nm_utils_strsplit_set_full (str, delimiters, NM_UTILS_STRSPLIT_SET_FLAGS_NONE);
 }
 
-char *nm_utils_str_simpletokens_extract_next (char **p_line_start);
-
 gssize nm_utils_strv_find_first (char **list, gssize len, const char *needle);
 
 char **_nm_utils_strv_cleanup (char **strv,
