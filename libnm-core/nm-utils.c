@@ -2455,17 +2455,9 @@ nm_utils_tc_qdisc_from_str (const char *str, GError **error)
 	gs_free char *kind = NULL;
 	gs_free char *rest = NULL;
 	NMTCQdisc *qdisc = NULL;
-	gs_unref_hashtable GHashTable *ht = NULL;
 
 	nm_assert (str);
 	nm_assert (!error || !*error);
-
-	ht = nm_utils_parse_variant_attributes (str,
-	                                        ' ', ' ', FALSE,
-	                                        tc_object_attribute_spec,
-	                                        error);
-	if (!ht)
-		return NULL;
 
 	if (!_tc_read_common_opts (str, &handle, &parent, &kind, &rest, error))
 		return NULL;
