@@ -8075,7 +8075,7 @@ _do_test_unescape_spaces (const char *in, const char *out)
 				gboolean append = nmtst_get_rand_bool ();
 				char ch = nmtst_rand_select (' ', '\t');
 
-				if (append && out[strlen (out) - 1] == '\\')
+				if (append && out[0] && out[strlen (out) - 1] == '\\')
 					append = FALSE;
 
 				g_string_insert_c (str_in, append ? -1 : 0, ch);
