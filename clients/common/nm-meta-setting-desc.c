@@ -3400,7 +3400,7 @@ _objlist_obj_to_str_fcn_ip_config_routing_rules (NMMetaAccessorGetType get_type,
 	                                  NULL,
 	                                  NULL);
 	if (s)
-		g_string_append (str, s);
+		nm_utils_escaped_tokens_escape_gstr (s, ESCAPED_TOKENS_DELIMTERS, str);
 }
 
 static gboolean
@@ -5670,7 +5670,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routing_rules,
 				.set_fcn =              _objlist_set_fcn_ip_config_routing_rules,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingIPConfig, nm_setting_ip_config_remove_routing_rule),
-				.strsplit_with_escape = TRUE,
+				.strsplit_escaped_tokens = TRUE,
 			),
 		),
 	),
@@ -5878,7 +5878,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routing_rules,
 				.set_fcn =              _objlist_set_fcn_ip_config_routing_rules,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingIPConfig, nm_setting_ip_config_remove_routing_rule),
-				.strsplit_with_escape = TRUE,
+				.strsplit_escaped_tokens = TRUE,
 			),
 		),
 	),
