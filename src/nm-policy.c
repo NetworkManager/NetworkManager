@@ -2588,7 +2588,7 @@ static void
 nm_policy_init (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	const char *hostname_mode;
+	gs_free char *hostname_mode = NULL;
 
 	c_list_init (&priv->pending_activation_checks);
 

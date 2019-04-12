@@ -1,5 +1,5 @@
 size: 377
-location: clients/tests/test-client.py:856:test_002()/1
+location: clients/tests/test-client.py:857:test_002()/1
 cmd: $NMCLI d
 lang: C
 returncode: 0
@@ -14,7 +14,7 @@ wlan1   wifi      unavailable  --
 
 <<<
 size: 392
-location: clients/tests/test-client.py:856:test_002()/2
+location: clients/tests/test-client.py:857:test_002()/2
 cmd: $NMCLI d
 lang: pl_PL.UTF-8
 returncode: 0
@@ -29,7 +29,7 @@ wlan1   wifi      niedostępne  --
 
 <<<
 size: 978
-location: clients/tests/test-client.py:858:test_002()/3
+location: clients/tests/test-client.py:859:test_002()/3
 cmd: $NMCLI -f all d
 lang: C
 returncode: 0
@@ -44,7 +44,7 @@ wlan1   wifi      unavailable  unknown           unknown           /org/freedesk
 
 <<<
 size: 993
-location: clients/tests/test-client.py:858:test_002()/4
+location: clients/tests/test-client.py:859:test_002()/4
 cmd: $NMCLI -f all d
 lang: pl_PL.UTF-8
 returncode: 0
@@ -59,7 +59,7 @@ wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedes
 
 <<<
 size: 739
-location: clients/tests/test-client.py:860:test_002()/5
+location: clients/tests/test-client.py:861:test_002()/5
 cmd: $NMCLI 
 lang: C
 returncode: 0
@@ -95,7 +95,7 @@ Consult nmcli(1) and nmcli-examples(5) manual pages for complete usage details.
 
 <<<
 size: 812
-location: clients/tests/test-client.py:860:test_002()/6
+location: clients/tests/test-client.py:861:test_002()/6
 cmd: $NMCLI 
 lang: pl_PL.UTF-8
 returncode: 0
@@ -133,7 +133,7 @@ o użyciu.
 
 <<<
 size: 1250
-location: clients/tests/test-client.py:862:test_002()/7
+location: clients/tests/test-client.py:863:test_002()/7
 cmd: $NMCLI -f AP -mode multiline d show wlan0
 lang: C
 returncode: 0
@@ -166,7 +166,7 @@ AP[3].SECURITY:                         WPA1 WPA2
 
 <<<
 size: 1287
-location: clients/tests/test-client.py:862:test_002()/8
+location: clients/tests/test-client.py:863:test_002()/8
 cmd: $NMCLI -f AP -mode multiline d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
@@ -199,7 +199,7 @@ AP[3].SECURITY:                         WPA1 WPA2
 
 <<<
 size: 1704
-location: clients/tests/test-client.py:863:test_002()/9
+location: clients/tests/test-client.py:864:test_002()/9
 cmd: $NMCLI -f AP -mode multiline -p d show wlan0
 lang: C
 returncode: 0
@@ -238,7 +238,7 @@ AP[3].SECURITY:                         WPA1 WPA2
 
 <<<
 size: 1749
-location: clients/tests/test-client.py:863:test_002()/10
+location: clients/tests/test-client.py:864:test_002()/10
 cmd: $NMCLI -f AP -mode multiline -p d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
@@ -277,7 +277,7 @@ AP[3].SECURITY:                         WPA1 WPA2
 
 <<<
 size: 581
-location: clients/tests/test-client.py:864:test_002()/11
+location: clients/tests/test-client.py:865:test_002()/11
 cmd: $NMCLI -f AP -mode multiline -t d show wlan0
 lang: C
 returncode: 0
@@ -310,7 +310,7 @@ AP[3].SECURITY:WPA1 WPA2
 
 <<<
 size: 618
-location: clients/tests/test-client.py:864:test_002()/12
+location: clients/tests/test-client.py:865:test_002()/12
 cmd: $NMCLI -f AP -mode multiline -t d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
@@ -343,7 +343,7 @@ AP[3].SECURITY:WPA1 WPA2
 
 <<<
 size: 455
-location: clients/tests/test-client.py:865:test_002()/13
+location: clients/tests/test-client.py:866:test_002()/13
 cmd: $NMCLI -f AP -mode tabular d show wlan0
 lang: C
 returncode: 0
@@ -356,7 +356,7 @@ AP[3]          wlan0-ap-2  Infra  1     54 Mbit/s  34      **    WPA1 WPA2
 
 <<<
 size: 499
-location: clients/tests/test-client.py:865:test_002()/14
+location: clients/tests/test-client.py:866:test_002()/14
 cmd: $NMCLI -f AP -mode tabular d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
@@ -369,7 +369,7 @@ AP[3]          wlan0-ap-2  Infrastruktura  1     54 Mb/s  34      **    WPA1 W
 
 <<<
 size: 614
-location: clients/tests/test-client.py:866:test_002()/15
+location: clients/tests/test-client.py:867:test_002()/15
 cmd: $NMCLI -f AP -mode tabular -p d show wlan0
 lang: C
 returncode: 0
@@ -386,7 +386,7 @@ AP[3]          wlan0-ap-2  Infra  1     54 Mbit/s  34      **    WPA1 WPA2
 
 <<<
 size: 694
-location: clients/tests/test-client.py:866:test_002()/16
+location: clients/tests/test-client.py:867:test_002()/16
 cmd: $NMCLI -f AP -mode tabular -p d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
@@ -403,7 +403,7 @@ AP[3]          wlan0-ap-2  Infrastruktura  1     54 Mb/s  34      **    WPA1 W
 
 <<<
 size: 309
-location: clients/tests/test-client.py:867:test_002()/17
+location: clients/tests/test-client.py:868:test_002()/17
 cmd: $NMCLI -f AP -mode tabular -t d show wlan0
 lang: C
 returncode: 0
@@ -415,7 +415,7 @@ AP[3]: :wlan0-ap-2:Infra:1:54 Mbit/s:34:**  :WPA1 WPA2
 
 <<<
 size: 346
-location: clients/tests/test-client.py:867:test_002()/18
+location: clients/tests/test-client.py:868:test_002()/18
 cmd: $NMCLI -f AP -mode tabular -t d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
@@ -427,7 +427,7 @@ AP[3]: :wlan0-ap-2:Infrastruktura:1:54 Mb/s:34:**  :WPA1 WPA2
 
 <<<
 size: 1973
-location: clients/tests/test-client.py:869:test_002()/19
+location: clients/tests/test-client.py:870:test_002()/19
 cmd: $NMCLI -f ALL d wifi
 lang: C
 returncode: 0
@@ -445,7 +445,7 @@ NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  FREQ  RATE  SIGNAL  BARS  SECURITY  WPA
 
 <<<
 size: 2041
-location: clients/tests/test-client.py:869:test_002()/20
+location: clients/tests/test-client.py:870:test_002()/20
 cmd: $NMCLI -f ALL d wifi
 lang: pl_PL.UTF-8
 returncode: 0
@@ -463,7 +463,7 @@ NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  FREQ  RATE  SIGNAL  BARS  SECURITY  WPA
 
 <<<
 size: 246
-location: clients/tests/test-client.py:871:test_002()/21
+location: clients/tests/test-client.py:872:test_002()/21
 cmd: $NMCLI c
 lang: C
 returncode: 0
@@ -474,7 +474,7 @@ con-1  5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  --
 
 <<<
 size: 256
-location: clients/tests/test-client.py:871:test_002()/22
+location: clients/tests/test-client.py:872:test_002()/22
 cmd: $NMCLI c
 lang: pl_PL.UTF-8
 returncode: 0
@@ -485,7 +485,7 @@ con-1  5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  --
 
 <<<
 size: 1224
-location: clients/tests/test-client.py:873:test_002()/23
+location: clients/tests/test-client.py:874:test_002()/23
 cmd: $NMCLI c s con-1
 lang: C
 returncode: 0
@@ -517,7 +517,7 @@ connection.llmnr:                       -1 (default)
 
 <<<
 size: 1236
-location: clients/tests/test-client.py:873:test_002()/24
+location: clients/tests/test-client.py:874:test_002()/24
 cmd: $NMCLI c s con-1
 lang: pl_PL.UTF-8
 returncode: 0

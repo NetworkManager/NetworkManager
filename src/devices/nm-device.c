@@ -9859,7 +9859,7 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActStageReturn ret;
 	NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
-	NMIP6Config *ip6_config = NULL;
+	gs_unref_object NMIP6Config *ip6_config = NULL;
 
 	g_assert (priv->ip_state_6 == NM_DEVICE_IP_STATE_WAIT);
 
