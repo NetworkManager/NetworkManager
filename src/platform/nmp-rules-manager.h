@@ -24,8 +24,7 @@
 
 typedef struct _NMPRulesManager NMPRulesManager;
 
-NMPRulesManager *nmp_rules_manager_new (NMPlatform *platform,
-                                        gboolean track_default);
+NMPRulesManager *nmp_rules_manager_new (NMPlatform *platform);
 
 void nmp_rules_manager_ref (NMPRulesManager *self);
 void nmp_rules_manager_unref (NMPRulesManager *self);
@@ -35,13 +34,19 @@ NM_AUTO_DEFINE_FCN0 (NMPRulesManager *, _nmp_rules_manager_unref, nmp_rules_mana
 
 void nmp_rules_manager_track (NMPRulesManager *self,
                               const NMPlatformRoutingRule *routing_rule,
-                              gint32 priority,
+                              gint32 track_priority,
                               gconstpointer user_tag);
 
 void nmp_rules_manager_track_default (NMPRulesManager *self,
                                       int addr_family,
-                                      int priority,
+                                      gint32 track_priority,
                                       gconstpointer user_tag);
+
+void nmp_rules_manager_track_from_platform (NMPRulesManager *self,
+                                            NMPlatform *platform,
+                                            int addr_family,
+                                            gint32 tracking_priority,
+                                            gconstpointer user_tag);
 
 void nmp_rules_manager_untrack (NMPRulesManager *self,
                                 const NMPlatformRoutingRule *routing_rule,

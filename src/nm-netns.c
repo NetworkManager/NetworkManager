@@ -126,7 +126,19 @@ constructed (GObject *object)
 
 	priv->platform_netns = nm_platform_netns_get (priv->platform);
 
-	priv->rules_manager = nmp_rules_manager_new (priv->platform, TRUE);
+	priv->rules_manager = nmp_rules_manager_new (priv->platform);
+
+	/* Weakly track the default rules and rules that were added
+	 * outside of NetworkManager. */
+	nmp_rules_manager_track_default (priv->rules_manager,
+	                                 AF_UNSPEC,
+	                                 0,
+	                                 nm_netns_parent_class /* static dummy user-tag */);
+	nmp_rules_manager_track_from_platform (priv->rules_manager,
+	                                       NULL,
+	                                       AF_UNSPEC,
+	                                       0,
+	                                       nm_netns_parent_class /* static dummy user-tag */);
 
 	G_OBJECT_CLASS (nm_netns_parent_class)->constructed (object);
 }
