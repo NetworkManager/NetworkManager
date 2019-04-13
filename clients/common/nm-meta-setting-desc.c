@@ -3580,9 +3580,9 @@ _objlist_set_fcn_tc_config_qdiscs (NMSetting *setting,
 	tc_qdisc = nm_utils_tc_qdisc_from_str (value, &local);
 	if (!tc_qdisc) {
 		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
-		                    "%s %s",
+		                    "%s. %s",
 		                    local->message,
-		                    _("The valid syntax is: '[root | parent <handle>] [handle <handle>] <qdisc>'"));
+		                    _("The valid syntax is: '[root | parent <handle>] [handle <handle>] <kind>'"));
 		return FALSE;
 	}
 	if (do_add)
@@ -3604,7 +3604,7 @@ _objlist_set_fcn_bridge_vlans (NMSetting *setting,
 	vlan = nm_bridge_vlan_from_str (value, &local);
 	if (!vlan) {
 		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
-		                    "%s %s",
+		                    "%s. %s",
 		                    local->message,
 		                    _("The valid syntax is: '<vid> [pvid] [untagged]"));
 		return FALSE;
@@ -3656,9 +3656,9 @@ _objlist_set_fcn_tc_config_tfilters (NMSetting *setting,
 	tc_tfilter = nm_utils_tc_tfilter_from_str (value, &local);
 	if (!tc_tfilter) {
 		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
-		                    "%s %s",
+		                    "%s. %s",
 		                    local->message,
-		                    _("The valid syntax is: '[root | parent <handle>] [handle <handle>] <tfilter>'"));
+		                    _("The valid syntax is: '[root | parent <handle>] [handle <handle>] <kind>'"));
 		return FALSE;
 	}
 	if (do_add)

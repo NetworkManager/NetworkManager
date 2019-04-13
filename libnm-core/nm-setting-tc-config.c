@@ -41,6 +41,7 @@ struct NMTCQdisc {
 	char *kind;
 	guint32 handle;
 	guint32 parent;
+	GHashTable *attributes;
 };
 
 /**
@@ -62,7 +63,15 @@ nm_tc_qdisc_new (const char *kind,
 {
 	NMTCQdisc *qdisc;
 
-	if (!kind || !*kind || strchr (kind, ' ') || strchr (kind, '\t')) {
+	if (!kind || !*kind) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("kind is missing"));
+		return NULL;
+	}
+
+	if (strchr (kind, ' ') || strchr (kind, '\t')) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -122,6 +131,8 @@ nm_tc_qdisc_unref (NMTCQdisc *qdisc)
 	qdisc->refcount--;
 	if (qdisc->refcount == 0) {
 		g_free (qdisc->kind);
+		if (qdisc->attributes)
+			g_hash_table_unref (qdisc->attributes);
 		g_slice_free (NMTCQdisc, qdisc);
 	}
 }
@@ -141,6 +152,11 @@ nm_tc_qdisc_unref (NMTCQdisc *qdisc)
 gboolean
 nm_tc_qdisc_equal (NMTCQdisc *qdisc, NMTCQdisc *other)
 {
+	GHashTableIter iter;
+	const char *key;
+	GVariant *value, *value2;
+	guint n;
+
 	g_return_val_if_fail (qdisc != NULL, FALSE);
 	g_return_val_if_fail (qdisc->refcount > 0, FALSE);
 
@@ -152,19 +168,53 @@ nm_tc_qdisc_equal (NMTCQdisc *qdisc, NMTCQdisc *other)
 	    || g_strcmp0 (qdisc->kind, other->kind) != 0)
 		return FALSE;
 
+	n = qdisc->attributes ? g_hash_table_size (qdisc->attributes) : 0;
+	if (n != (other->attributes ? g_hash_table_size (other->attributes) : 0))
+		return FALSE;
+	if (n) {
+		g_hash_table_iter_init (&iter, qdisc->attributes);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
+			value2 = g_hash_table_lookup (other->attributes, key);
+			if (!value2)
+				return FALSE;
+			if (!g_variant_equal (value, value2))
+				return FALSE;
+		}
+	}
+
 	return TRUE;
 }
 
 static guint
 _nm_tc_qdisc_hash (NMTCQdisc *qdisc)
 {
+	gs_free const char **names = NULL;
+	GVariant *variant;
 	NMHashState h;
+	guint length;
+	guint i;
+
+	names = nm_utils_strdict_get_keys (qdisc->attributes, TRUE, &length);
 
 	nm_hash_init (&h, 43869703);
 	nm_hash_update_vals (&h,
 	                     qdisc->handle,
-	                     qdisc->parent);
+	                     qdisc->parent,
+	                     length);
 	nm_hash_update_str0 (&h, qdisc->kind);
+	for (i = 0; i < length; i++) {
+		const GVariantType *vtype;
+
+		variant = g_hash_table_lookup (qdisc->attributes, names[i]);
+
+		vtype = g_variant_get_type (variant);
+
+		nm_hash_update_str (&h, names[i]);
+		nm_hash_update_str (&h, (const char *) vtype);
+		if (g_variant_type_is_basic (vtype))
+			nm_hash_update_val (&h, g_variant_hash (variant));
+	}
+
 	return nm_hash_complete (&h);
 }
 
@@ -188,6 +238,16 @@ nm_tc_qdisc_dup (NMTCQdisc *qdisc)
 
 	copy = nm_tc_qdisc_new (qdisc->kind, qdisc->parent, NULL);
 	nm_tc_qdisc_set_handle (copy, qdisc->handle);
+
+	if (qdisc->attributes) {
+		GHashTableIter iter;
+		const char *key;
+		GVariant *value;
+
+		g_hash_table_iter_init (&iter, qdisc->attributes);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value))
+			nm_tc_qdisc_set_attribute (copy, key, value);
+	}
 
 	return copy;
 }
@@ -261,6 +321,79 @@ nm_tc_qdisc_get_parent (NMTCQdisc *qdisc)
 	return qdisc->parent;
 }
 
+/**
+ * nm_tc_qdisc_get_attribute_names:
+ * @qdisc: the #NMTCQdisc
+ *
+ * Gets an array of attribute names defined on @qdisc.
+ *
+ * Returns: (transfer full): a %NULL-terminated array of attribute names,
+ *
+ * Since: 1.18
+ **/
+char **
+nm_tc_qdisc_get_attribute_names (NMTCQdisc *qdisc)
+{
+	const char **names;
+
+	g_return_val_if_fail (qdisc, NULL);
+
+	names = nm_utils_strdict_get_keys (qdisc->attributes, TRUE, NULL);
+	return nm_utils_strv_make_deep_copied_nonnull (names);
+}
+
+/**
+ * nm_tc_qdisc_get_attribute:
+ * @qdisc: the #NMTCQdisc
+ * @name: the name of an qdisc attribute
+ *
+ * Gets the value of the attribute with name @name on @qdisc
+ *
+ * Returns: (transfer none): the value of the attribute with name @name on
+ *   @qdisc, or %NULL if @qdisc has no such attribute.
+ *
+ * Since: 1.18
+ **/
+GVariant *
+nm_tc_qdisc_get_attribute (NMTCQdisc *qdisc, const char *name)
+{
+	g_return_val_if_fail (qdisc != NULL, NULL);
+	g_return_val_if_fail (name != NULL && *name != '\0', NULL);
+
+	if (qdisc->attributes)
+		return g_hash_table_lookup (qdisc->attributes, name);
+	else
+		return NULL;
+}
+
+/**
+ * nm_tc_qdisc_set_attribute:
+ * @qdisc: the #NMTCQdisc
+ * @name: the name of an qdisc attribute
+ * @value: (transfer none) (allow-none): the value
+ *
+ * Sets or clears the named attribute on @qdisc to the given value.
+ *
+ * Since: 1.18
+ **/
+void
+nm_tc_qdisc_set_attribute (NMTCQdisc *qdisc, const char *name, GVariant *value)
+{
+	g_return_if_fail (qdisc != NULL);
+	g_return_if_fail (name != NULL && *name != '\0');
+	g_return_if_fail (strcmp (name, "kind") != 0);
+
+	if (!qdisc->attributes) {
+		qdisc->attributes = g_hash_table_new_full (nm_str_hash, g_str_equal,
+		                                           g_free, (GDestroyNotify) g_variant_unref);
+	}
+
+	if (value)
+		g_hash_table_insert (qdisc->attributes, g_strdup (name), g_variant_ref_sink (value));
+	else
+		g_hash_table_remove (qdisc->attributes, name);
+}
+
 /*****************************************************************************/
 
 G_DEFINE_BOXED_TYPE (NMTCAction, nm_tc_action, nm_tc_action_dup, nm_tc_action_unref)
@@ -290,7 +423,15 @@ nm_tc_action_new (const char *kind,
 {
 	NMTCAction *action;
 
-	if (!kind || !*kind || strchr (kind, ' ') || strchr (kind, '\t')) {
+	if (!kind || !*kind) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("kind is missing"));
+		return NULL;
+	}
+
+	if (strchr (kind, ' ') || strchr (kind, '\t')) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -544,7 +685,15 @@ nm_tc_tfilter_new (const char *kind,
 {
 	NMTCTfilter *tfilter;
 
-	if (!kind || !*kind || strchr (kind, ' ') || strchr (kind, '\t')) {
+	if (!kind || !*kind) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("kind is missing"));
+		return NULL;
+	}
+
+	if (strchr (kind, ' ') || strchr (kind, '\t')) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -1222,7 +1371,10 @@ _qdiscs_to_variant (GPtrArray *qdiscs)
 	if (qdiscs) {
 		for (i = 0; i < qdiscs->len; i++) {
 			NMTCQdisc *qdisc = qdiscs->pdata[i];
+			guint length;
+			gs_free const char **attrs = nm_utils_strdict_get_keys (qdisc->attributes, TRUE, &length);
 			GVariantBuilder qdisc_builder;
+			guint y;
 
 			g_variant_builder_init (&qdisc_builder, G_VARIANT_TYPE_VARDICT);
 
@@ -1234,6 +1386,11 @@ _qdiscs_to_variant (GPtrArray *qdiscs)
 
 			g_variant_builder_add (&qdisc_builder, "{sv}", "parent",
 			                       g_variant_new_uint32 (nm_tc_qdisc_get_parent (qdisc)));
+
+			for (y = 0; y < length; y++) {
+				g_variant_builder_add (&qdisc_builder, "{sv}", attrs[y],
+				                       g_hash_table_lookup (qdisc->attributes, attrs[y]));
+			}
 
 			g_variant_builder_add (&builder, "a{sv}", &qdisc_builder);
 		}
@@ -1267,9 +1424,11 @@ _qdiscs_from_variant (GVariant *value)
 
 	while (g_variant_iter_next (&iter, "@a{sv}", &qdisc_var)) {
 		const char *kind;
-		guint32 handle;
 		guint32 parent;
 		NMTCQdisc *qdisc;
+		GVariantIter qdisc_iter;
+		const char *key;
+		GVariant *attr_value;
 
 		if (   !g_variant_lookup (qdisc_var, "kind", "&s", &kind)
 		    || !g_variant_lookup (qdisc_var, "parent", "u", &parent)) {
@@ -1284,8 +1443,18 @@ _qdiscs_from_variant (GVariant *value)
 			goto next;
 		}
 
-		if (g_variant_lookup (qdisc_var, "handle", "u", &handle))
-			nm_tc_qdisc_set_handle (qdisc, handle);
+		g_variant_iter_init (&qdisc_iter, qdisc_var);
+		while (g_variant_iter_next (&qdisc_iter, "{&sv}", &key, &attr_value)) {
+			if (   strcmp (key, "kind") == 0
+			    || strcmp (key, "parent") == 0) {
+				/* Already processed above */
+			} else if (strcmp (key, "handle") == 0) {
+				nm_tc_qdisc_set_handle (qdisc, g_variant_get_uint32 (attr_value));
+			} else {
+				nm_tc_qdisc_set_attribute (qdisc, key, attr_value);
+			}
+			g_variant_unref (attr_value);
+		}
 
 		g_ptr_array_add (qdiscs, qdisc);
 next:
