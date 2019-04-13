@@ -8,6 +8,12 @@ The API is subject to change and not guaranteed to be compatible
 with the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* Add support for policy routing rules.
+* Add support for VLAN filtering for Linux bridge.
+* Support ieee-802-1 and ieee-802-3 LLDP TLVs.
+* Allow large MTU sizes for infiniband/IPoIB connection profiles.
+* Improve nmcli's handling of list options for connection properties.
+
 =============================================
 NetworkManager-1.16
 Overview of changes since NetworkManager-1.14
