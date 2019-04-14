@@ -6,10 +6,10 @@
 
 #undef NDEBUG
 #include <assert.h>
+#include <c-stdaux.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "c-siphash.h"
 
 /* See https://131002.net/siphash/siphash.pdf, Appendix A. */
@@ -20,21 +20,21 @@ static void do_reference_test(const uint8_t *in, size_t len, const uint8_t *key)
 
         /* verify the internal state as given in the above paper */
         c_siphash_init(&state, key);
-        assert(state.v0 == 0x7469686173716475);
-        assert(state.v1 == 0x6b617f6d656e6665);
-        assert(state.v2 == 0x6b7f62616d677361);
-        assert(state.v3 == 0x7b6b696e727e6c7b);
+        c_assert(state.v0 == 0x7469686173716475);
+        c_assert(state.v1 == 0x6b617f6d656e6665);
+        c_assert(state.v2 == 0x6b7f62616d677361);
+        c_assert(state.v3 == 0x7b6b696e727e6c7b);
         c_siphash_append(&state, in, len);
-        assert(state.v0 == 0x4a017198de0a59e0);
-        assert(state.v1 == 0x0d52f6f62a4f59a4);
-        assert(state.v2 == 0x634cb3577b01fd3d);
-        assert(state.v3 == 0xa5224d6f55c7d9c8);
+        c_assert(state.v0 == 0x4a017198de0a59e0);
+        c_assert(state.v1 == 0x0d52f6f62a4f59a4);
+        c_assert(state.v2 == 0x634cb3577b01fd3d);
+        c_assert(state.v3 == 0xa5224d6f55c7d9c8);
         out = c_siphash_finalize(&state);
-        assert(out == 0xa129ca6149be45e5);
-        assert(state.v0 == 0xf6bcd53893fecff1);
-        assert(state.v1 == 0x54b9964c7ea0d937);
-        assert(state.v2 == 0x1b38329c099bb55a);
-        assert(state.v3 == 0x1814bb89ad7be679);
+        c_assert(out == 0xa129ca6149be45e5);
+        c_assert(state.v0 == 0xf6bcd53893fecff1);
+        c_assert(state.v1 == 0x54b9964c7ea0d937);
+        c_assert(state.v2 == 0x1b38329c099bb55a);
+        c_assert(state.v3 == 0x1814bb89ad7be679);
 
         /* verify that decomposing the input in three chunks gives the
            same result */
@@ -45,12 +45,12 @@ static void do_reference_test(const uint8_t *in, size_t len, const uint8_t *key)
                         c_siphash_append(&state, &in[i], j - i);
                         c_siphash_append(&state, &in[j], len - j);
                         out = c_siphash_finalize(&state);
-                        assert(out == 0xa129ca6149be45e5);
+                        c_assert(out == 0xa129ca6149be45e5);
                 }
         }
 
         /* verify c_siphash_hash() produces the same result */
-        assert(out == c_siphash_hash(key, in, len));
+        c_assert(out == c_siphash_hash(key, in, len));
 }
 
 static void test_reference(void) {
@@ -92,7 +92,7 @@ static void test_short_hashes(void) {
                 two[i-1] = one[i-1];
                 c_siphash_append(&state2, two, i);
 
-                assert(memcmp(&state1, &state2, sizeof state1) == 0);
+                c_assert(memcmp(&state1, &state2, sizeof state1) == 0);
         }
 
         /* hashing n and 1, n and 2, n and 3, ..., n-1 and 1, n-2 and 2, ... */
@@ -107,7 +107,7 @@ static void test_short_hashes(void) {
                         two[j-1] = one[j-1];
                         c_siphash_append(&state2, two, j);
 
-                        assert(memcmp(&state1, &state2, sizeof state1) == 0);
+                        c_assert(memcmp(&state1, &state2, sizeof state1) == 0);
                 }
         }
 }
