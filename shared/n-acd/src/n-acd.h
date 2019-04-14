@@ -13,7 +13,9 @@ extern "C" {
 #endif
 
 #include <netinet/in.h>
+#include <inttypes.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 typedef struct NAcd NAcd;
 typedef struct NAcdConfig NAcdConfig;

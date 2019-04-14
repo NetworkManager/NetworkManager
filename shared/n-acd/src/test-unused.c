@@ -4,6 +4,8 @@
  * link. This should just pass through, with a short, random timeout.
  */
 
+#undef NDEBUG
+#include <c-stdaux.h>
 #include <stdlib.h>
 #include "test.h"
 
@@ -21,27 +23,27 @@ static void test_unused(int ifindex, const uint8_t *mac, size_t n_mac) {
         int r, fd;
 
         r = n_acd_new(&acd);
-        assert(!r);
+        c_assert(!r);
 
         n_acd_get_fd(acd, &fd);
         r = n_acd_start(acd, &config);
-        assert(!r);
+        c_assert(!r);
 
         for (;;) {
                 NAcdEvent *event;
                 pfds = (struct pollfd){ .fd = fd, .events = POLLIN };
                 r = poll(&pfds, 1, -1);
-                assert(r >= 0);
+                c_assert(r >= 0);
 
                 r = n_acd_dispatch(acd);
-                assert(!r);
+                c_assert(!r);
 
                 r = n_acd_pop_event(acd, &event);
                 if (!r) {
-                        assert(event->event == N_ACD_EVENT_READY);
+                        c_assert(event->event == N_ACD_EVENT_READY);
                         break;
                 } else {
-                        assert(r == N_ACD_E_DONE);
+                        c_assert(r == N_ACD_E_DONE);
                 }
         }
 
@@ -50,11 +52,9 @@ static void test_unused(int ifindex, const uint8_t *mac, size_t n_mac) {
 
 int main(int argc, char **argv) {
         struct ether_addr mac;
-        int r, ifindex;
+        int ifindex;
 
-        r = test_setup();
-        if (r)
-                return r;
+        test_setup();
 
         test_veth_new(&ifindex, &mac, NULL, NULL);
         test_unused(ifindex, mac.ether_addr_octet, sizeof(mac.ether_addr_octet));

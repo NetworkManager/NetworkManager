@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <c-rbtree.h>
+#include <c-stdaux.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/timerfd.h>
@@ -30,7 +31,7 @@ int timer_init(Timer *timer) {
 }
 
 void timer_deinit(Timer *timer) {
-        assert(c_rbtree_is_empty(&timer->tree));
+        c_assert(c_rbtree_is_empty(&timer->tree));
 
         if (timer->fd >= 0) {
                 close(timer->fd);
@@ -43,8 +44,7 @@ void timer_now(Timer *timer, uint64_t *nowp) {
         int r;
 
         r = clock_gettime(timer->clock, &ts);
-        assert(r >= 0);
-        (void)r;
+        c_assert(r >= 0);
 
         *nowp = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec;
 }
@@ -60,7 +60,7 @@ void timer_rearm(Timer *timer) {
          */
 
         timeout = c_rbnode_entry(c_rbtree_first(&timer->tree), Timeout, node);
-        assert(!timeout || timeout->timeout);
+        c_assert(!timeout || timeout->timeout);
 
         time = timeout ? timeout->timeout : 0;
 
@@ -74,8 +74,7 @@ void timer_rearm(Timer *timer) {
                                             },
                                     },
                                     NULL);
-                assert(r >= 0);
-                (void)r;
+                c_assert(r >= 0);
 
                 timer->scheduled_timeout = time;
         }
@@ -134,8 +133,7 @@ int timer_pop_timeout(Timer *timer, uint64_t until, Timeout **timeoutp) {
 }
 
 void timeout_schedule(Timeout *timeout, Timer *timer, uint64_t time) {
-
-        assert(time);
+        c_assert(time);
 
         /*
          * In case @timeout was already scheduled, remove it from the

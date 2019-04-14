@@ -2,7 +2,9 @@
  * eBPF socket filter tests
  */
 
+#undef NDEBUG
 #include <assert.h>
+#include <c-stdaux.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <netinet/if_ether.h>
@@ -46,23 +48,23 @@ static void test_map(void) {
         struct in_addr addr = { 1 };
 
         r = n_acd_bpf_map_create(&mapfd, 8);
-        assert(r >= 0);
-        assert(mapfd >= 0);
+        c_assert(r >= 0);
+        c_assert(mapfd >= 0);
 
         r = n_acd_bpf_map_remove(mapfd, &addr);
-        assert(r == -ENOENT);
+        c_assert(r == -ENOENT);
 
         r = n_acd_bpf_map_add(mapfd, &addr);
-        assert(r >= 0);
+        c_assert(r >= 0);
 
         r = n_acd_bpf_map_add(mapfd, &addr);
-        assert(r == -EEXIST);
+        c_assert(r == -EEXIST);
 
         r = n_acd_bpf_map_remove(mapfd, &addr);
-        assert(r >= 0);
+        c_assert(r >= 0);
 
         r = n_acd_bpf_map_remove(mapfd, &addr);
-        assert(r == -ENOENT);
+        c_assert(r == -ENOENT);
 
         close(mapfd);
 }
@@ -72,10 +74,10 @@ static void verify_success(struct ether_arp *packet, int out_fd, int in_fd) {
         int r;
 
         r = send(out_fd, packet, sizeof(struct ether_arp), 0);
-        assert(r == sizeof(struct ether_arp));
+        c_assert(r == sizeof(struct ether_arp));
 
         r = recv(in_fd, buf, sizeof(buf), 0);
-        assert(r == sizeof(struct ether_arp));
+        c_assert(r == sizeof(struct ether_arp));
 }
 
 static void verify_failure(struct ether_arp *packet, int out_fd, int in_fd) {
@@ -83,11 +85,11 @@ static void verify_failure(struct ether_arp *packet, int out_fd, int in_fd) {
         int r;
 
         r = send(out_fd, packet, sizeof(struct ether_arp), 0);
-        assert(r == sizeof(struct ether_arp));
+        c_assert(r == sizeof(struct ether_arp));
 
         r = recv(in_fd, buf, sizeof(buf), 0);
-        assert(r < 0);
-        assert(errno == EAGAIN);
+        c_assert(r < 0);
+        c_assert(errno == EAGAIN);
 }
 
 static void test_filter(void) {
@@ -101,21 +103,21 @@ static void test_filter(void) {
         int r, mapfd = -1, progfd = -1, pair[2];
 
         r = n_acd_bpf_map_create(&mapfd, 1);
-        assert(r >= 0);
+        c_assert(r >= 0);
 
         r = n_acd_bpf_compile(&progfd, mapfd, &mac1);
-        assert(r >= 0);
-        assert(progfd >= 0);
+        c_assert(r >= 0);
+        c_assert(progfd >= 0);
 
         r = socketpair(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC | SOCK_NONBLOCK, 0, pair);
-        assert(r >= 0);
+        c_assert(r >= 0);
 
         r = setsockopt(pair[1], SOL_SOCKET, SO_ATTACH_BPF, &progfd,
                        sizeof(progfd));
-        assert(r >= 0);
+        c_assert(r >= 0);
 
         r = n_acd_bpf_map_add(mapfd, &ip1);
-        assert(r >= 0);
+        c_assert(r >= 0);
 
         /* valid */
         *packet = (struct ether_arp)ETHER_ARP_PACKET_INIT(ARPOP_REQUEST, &mac2, &ip1, &ip2);
@@ -173,19 +175,19 @@ static void test_filter(void) {
         /* long */
         *packet = (struct ether_arp)ETHER_ARP_PACKET_INIT(ARPOP_REQUEST, &mac2, &ip1, &ip2);
         r = send(pair[0], buf, sizeof(struct ether_arp) + 1, 0);
-        assert(r == sizeof(struct ether_arp) + 1);
+        c_assert(r == sizeof(struct ether_arp) + 1);
 
         r = recv(pair[1], buf, sizeof(buf), 0);
-        assert(r == sizeof(struct ether_arp));
+        c_assert(r == sizeof(struct ether_arp));
 
         /* short */
         *packet = (struct ether_arp)ETHER_ARP_PACKET_INIT(ARPOP_REQUEST, &mac2, &ip1, &ip2);
         r = send(pair[0], buf, sizeof(struct ether_arp) - 1, 0);
-        assert(r == sizeof(struct ether_arp) - 1);
+        c_assert(r == sizeof(struct ether_arp) - 1);
 
         r = recv(pair[1], buf, sizeof(buf), 0);
-        assert(r < 0);
-        assert(errno == EAGAIN);
+        c_assert(r < 0);
+        c_assert(errno == EAGAIN);
 
         /*
          * Send one packet before and one packet after modifying the map,
@@ -193,20 +195,20 @@ static void test_filter(void) {
          */
         *packet = (struct ether_arp)ETHER_ARP_PACKET_INIT(ARPOP_REQUEST, &mac2, &ip1, &ip2);
         r = send(pair[0], buf, sizeof(struct ether_arp), 0);
-        assert(r == sizeof(struct ether_arp));
+        c_assert(r == sizeof(struct ether_arp));
 
         r = n_acd_bpf_map_remove(mapfd, &ip1);
-        assert(r >= 0);
+        c_assert(r >= 0);
 
         r = send(pair[0], buf, sizeof(struct ether_arp), 0);
-        assert(r == sizeof(struct ether_arp));
+        c_assert(r == sizeof(struct ether_arp));
 
         r = recv(pair[1], buf, sizeof(buf), 0);
-        assert(r == sizeof(struct ether_arp));
+        c_assert(r == sizeof(struct ether_arp));
 
         r = recv(pair[1], buf, sizeof(buf), 0);
-        assert(r < 0);
-        assert(errno == EAGAIN);
+        c_assert(r < 0);
+        c_assert(errno == EAGAIN);
 
         close(pair[0]);
         close(pair[1]);
@@ -215,11 +217,7 @@ static void test_filter(void) {
 }
 
 int main(int argc, char **argv) {
-        int r;
-
-        r = test_setup();
-        if (r)
-                return r;
+        test_setup();
 
         test_map();
         test_filter();
