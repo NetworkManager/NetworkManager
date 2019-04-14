@@ -102,6 +102,29 @@ shared_nm_utils_nm_vpn_plugin_utils_c = files('nm-utils/nm-vpn-plugin-utils.c')
 
 ###############################################################################
 
+shared_nm_std_aux = static_library(
+    'nm-std-aux',
+    sources: files('nm-std-aux/c-list-util.c'),
+    c_args: [
+      '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
+      '-DNETWORKMANAGER_COMPILATION=0',
+    ],
+    include_directories: [
+        top_inc,
+        shared_inc,
+    ],
+    dependencies: [
+    ],
+)
+
+shared_nm_std_aux_dep = declare_dependency(
+    link_with: shared_nm_std_aux,
+    include_directories: [
+        top_inc,
+        shared_inc,
+    ],
+)
+
 shared_nm_utils_c_args = [
     '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
     '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
@@ -109,8 +132,7 @@ shared_nm_utils_c_args = [
 
 shared_nm_utils_base = static_library(
     'nm-utils-base',
-    sources: files('nm-utils/c-list-util.c',
-                   'nm-utils/nm-dedup-multi.c',
+    sources: files('nm-utils/nm-dedup-multi.c',
                    'nm-utils/nm-enum-utils.c',
                    'nm-utils/nm-errno.c',
                    'nm-utils/nm-hash-utils.c',
@@ -126,6 +148,7 @@ shared_nm_utils_base = static_library(
     ],
     dependencies: [
         glib_dep,
+        shared_nm_std_aux_dep,
     ],
 )
 

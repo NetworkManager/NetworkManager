@@ -23,7 +23,7 @@
 
 #include "nm-default.h"
 
-#include "nm-utils/c-list-util.h"
+#include "nm-std-aux/c-list-util.h"
 #include "nm-utils/nm-enum-utils.h"
 
 #include "nm-utils.h"

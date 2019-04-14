@@ -24,8 +24,8 @@
 
 #include <net/ethernet.h>
 
+#include "nm-std-aux/unaligned.h"
 #include "platform/nm-platform.h"
-#include "nm-utils/unaligned.h"
 #include "nm-utils/nm-c-list.h"
 #include "nm-utils.h"
 
