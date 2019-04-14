@@ -30,6 +30,7 @@
 
 #undef NDEBUG
 #include <assert.h>
+#include <c-stdaux.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <sched.h>
@@ -46,7 +47,6 @@
 #include <sys/syscall.h>
 #include <time.h>
 #include <unistd.h>
-
 #include "c-rbtree.h"
 #include "c-rbtree-private.h"
 
@@ -132,7 +132,7 @@ static void test_parent_start(TestContext *ctx) {
         ctx->mapsize += ctx->n_nodes * sizeof(CRBNode*);
 
         ctx->map = mmap(NULL, ctx->mapsize, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANON, -1, 0);
-        assert(ctx->map != MAP_FAILED);
+        c_assert(ctx->map != MAP_FAILED);
 
         ctx->tree = (void *)ctx->map;
         ctx->node_mem = (void *)(ctx->tree + 1);
@@ -161,10 +161,10 @@ static void test_parent_end(TestContext *ctx) {
         int r;
 
         for (i = 0; i < ctx->n_nodes; ++i)
-                assert(!c_rbnode_is_linked(ctx->nodes[i]));
+                c_assert(!c_rbnode_is_linked(ctx->nodes[i]));
 
         r = munmap(ctx->map, ctx->mapsize);
-        assert(r >= 0);
+        c_assert(r >= 0);
 }
 
 static void test_parent_step(TestContext *ctx) {
@@ -176,13 +176,13 @@ static void test_parent_step(TestContext *ctx) {
 
         while (n) {
                 /* verify that we haven't visited @n, yet */
-                assert(!fetch_visit(n));
+                c_assert(!fetch_visit(n));
 
                 /* verify @n is a valid node */
                 for (i = 0; i < ctx->n_nodes; ++i)
                         if (n == ctx->nodes[i])
                                 break;
-                assert(i < ctx->n_nodes);
+                c_assert(i < ctx->n_nodes);
 
                 /* pre-order traversal and marker for cycle detection */
                 if (n->left) {
@@ -256,7 +256,7 @@ static int test_parallel(void) {
 
         /* run child */
         pid = fork();
-        assert(pid >= 0);
+        c_assert(pid >= 0);
         if (pid == 0) {
                 r = test_parallel_child(&ctx);
                 _exit(r);
@@ -293,7 +293,7 @@ static int test_parallel(void) {
                         if (r < 0 && errno == EIO)
                                 return 77;
 
-                        assert(r >= 0);
+                        c_assert(r >= 0);
                         break;
 
                 case SIGURG:
@@ -302,7 +302,7 @@ static int test_parallel(void) {
 
                         /* step child */
                         r = ptrace(PTRACE_SINGLESTEP, pid, 0, 0);
-                        assert(r >= 0);
+                        c_assert(r >= 0);
                         break;
 
                 case SIGUSR2:
@@ -311,7 +311,7 @@ static int test_parallel(void) {
 
                         /* continue child */
                         r = ptrace(PTRACE_CONT, pid, 0, 0);
-                        assert(r >= 0);
+                        c_assert(r >= 0);
                         break;
 
                 case SIGTRAP:
@@ -320,18 +320,18 @@ static int test_parallel(void) {
 
                         /* step repeatedly as long as we get SIGTRAP */
                         r = ptrace(PTRACE_SINGLESTEP, pid, 0, 0);
-                        assert(r >= 0);
+                        c_assert(r >= 0);
                         break;
 
                 default:
-                        assert(0);
+                        c_assert(0);
                         break;
                 }
         }
 
         /* verify our child exited cleanly */
-        assert(r == pid);
-        assert(!!WIFEXITED(status));
+        c_assert(r == pid);
+        c_assert(!!WIFEXITED(status));
 
         /*
          * 0xdf is signalled if ptrace is not allowed or we are already
@@ -347,15 +347,15 @@ static int test_parallel(void) {
         case 0xdf:
                 return 77;
         default:
-                assert(0);
+                c_assert(0);
                 break;
         }
 
         /* verify we hit all child states */
-        assert(n_event & 0x1);
-        assert(n_event & 0x2);
-        assert(n_event & 0x4);
-        assert(n_instr > 0);
+        c_assert(n_event & 0x1);
+        c_assert(n_event & 0x2);
+        c_assert(n_event & 0x4);
+        c_assert(n_instr > 0);
 
         return 0;
 }

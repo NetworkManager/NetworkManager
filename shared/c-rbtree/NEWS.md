@@ -1,6 +1,6 @@
-c-rbtree - Intrusive Red-Black Tree Collection
+# c-rbtree - Intrusive Red-Black Tree Collection
 
-CHANGES WITH 3:
+## CHANGES WITH 3:
 
         * Add more helpers. Add both a collection of iteratiors and helpers
           for initializing a tree and checking if a tree is empty, without
@@ -10,7 +10,7 @@ CHANGES WITH 3:
 
         - Berlin, 2017-08-13
 
-CHANGES WITH 2:
+## CHANGES WITH 2:
 
         * Relicense as ASL-2.0 to make c-rbtree useful for more projects. All
           code is now fully available under the ASL-2.0. Nothing is covered by
@@ -25,7 +25,7 @@ CHANGES WITH 2:
 
         - Berlin, 2016-12-14
 
-CHANGES WITH 1:
+## CHANGES WITH 1:
 
         * Initial release of c-rbtree.
 

@@ -24,11 +24,11 @@
  */
 
 #include <assert.h>
+#include <c-stdaux.h>
 #include <stdalign.h>
 #include <stddef.h>
-
-#include "c-rbtree-private.h"
 #include "c-rbtree.h"
+#include "c-rbtree-private.h"
 
 /*
  * We use alignas(8) to enforce 64bit alignment of structure fields. This is
@@ -53,7 +53,7 @@ static_assert(alignof(CRBTree) >= 8, "Invalid CRBTree alignment");
  *
  * Return: Pointer to leftmost child, or NULL.
  */
-_public_ CRBNode *c_rbnode_leftmost(CRBNode *n) {
+_c_public_ CRBNode *c_rbnode_leftmost(CRBNode *n) {
         if (n)
                 while (n->left)
                         n = n->left;
@@ -72,7 +72,7 @@ _public_ CRBNode *c_rbnode_leftmost(CRBNode *n) {
  *
  * Return: Pointer to rightmost child, or NULL.
  */
-_public_ CRBNode *c_rbnode_rightmost(CRBNode *n) {
+_c_public_ CRBNode *c_rbnode_rightmost(CRBNode *n) {
         if (n)
                 while (n->right)
                         n = n->right;
@@ -94,7 +94,7 @@ _public_ CRBNode *c_rbnode_rightmost(CRBNode *n) {
  *
  * Return: Pointer to left-deepest child, or NULL.
  */
-_public_ CRBNode *c_rbnode_leftdeepest(CRBNode *n) {
+_c_public_ CRBNode *c_rbnode_leftdeepest(CRBNode *n) {
         if (n) {
                 for (;;) {
                         if (n->left)
@@ -123,7 +123,7 @@ _public_ CRBNode *c_rbnode_leftdeepest(CRBNode *n) {
  *
  * Return: Pointer to right-deepest child, or NULL.
  */
-_public_ CRBNode *c_rbnode_rightdeepest(CRBNode *n) {
+_c_public_ CRBNode *c_rbnode_rightdeepest(CRBNode *n) {
         if (n) {
                 for (;;) {
                         if (n->right)
@@ -149,7 +149,7 @@ _public_ CRBNode *c_rbnode_rightdeepest(CRBNode *n) {
  *
  * Return: Pointer to next node, or NULL.
  */
-_public_ CRBNode *c_rbnode_next(CRBNode *n) {
+_c_public_ CRBNode *c_rbnode_next(CRBNode *n) {
         CRBNode *p;
 
         if (!c_rbnode_is_linked(n))
@@ -175,7 +175,7 @@ _public_ CRBNode *c_rbnode_next(CRBNode *n) {
  *
  * Return: Pointer to previous node, or NULL.
  */
-_public_ CRBNode *c_rbnode_prev(CRBNode *n) {
+_c_public_ CRBNode *c_rbnode_prev(CRBNode *n) {
         CRBNode *p;
 
         if (!c_rbnode_is_linked(n))
@@ -209,7 +209,7 @@ _public_ CRBNode *c_rbnode_prev(CRBNode *n) {
  *
  * Return: Pointer to next node, or NULL.
  */
-_public_ CRBNode *c_rbnode_next_postorder(CRBNode *n) {
+_c_public_ CRBNode *c_rbnode_next_postorder(CRBNode *n) {
         CRBNode *p;
 
         if (!c_rbnode_is_linked(n))
@@ -253,7 +253,7 @@ _public_ CRBNode *c_rbnode_next_postorder(CRBNode *n) {
  *
  * Return: Pointer to previous node in post-order, or NULL.
  */
-_public_ CRBNode *c_rbnode_prev_postorder(CRBNode *n) {
+_c_public_ CRBNode *c_rbnode_prev_postorder(CRBNode *n) {
         CRBNode *p;
 
         if (!c_rbnode_is_linked(n))
@@ -283,8 +283,8 @@ _public_ CRBNode *c_rbnode_prev_postorder(CRBNode *n) {
  *
  * Return: Pointer to first node, or NULL.
  */
-_public_ CRBNode *c_rbtree_first(CRBTree *t) {
-        assert(t);
+_c_public_ CRBNode *c_rbtree_first(CRBTree *t) {
+        c_assert(t);
         return c_rbnode_leftmost(t->root);
 }
 
@@ -299,8 +299,8 @@ _public_ CRBNode *c_rbtree_first(CRBTree *t) {
  *
  * Return: Pointer to last node, or NULL.
  */
-_public_ CRBNode *c_rbtree_last(CRBTree *t) {
-        assert(t);
+_c_public_ CRBNode *c_rbtree_last(CRBTree *t) {
+        c_assert(t);
         return c_rbnode_rightmost(t->root);
 }
 
@@ -319,8 +319,8 @@ _public_ CRBNode *c_rbtree_last(CRBTree *t) {
  *
  * Return: Pointer to first node in post-order, or NULL.
  */
-_public_ CRBNode *c_rbtree_first_postorder(CRBTree *t) {
-        assert(t);
+_c_public_ CRBNode *c_rbtree_first_postorder(CRBTree *t) {
+        c_assert(t);
         return c_rbnode_leftdeepest(t->root);
 }
 
@@ -338,8 +338,8 @@ _public_ CRBNode *c_rbtree_first_postorder(CRBTree *t) {
  *
  * Return: Pointer to last node in post-order, or NULL.
  */
-_public_ CRBNode *c_rbtree_last_postorder(CRBTree *t) {
-        assert(t);
+_c_public_ CRBNode *c_rbtree_last_postorder(CRBTree *t) {
+        c_assert(t);
         return t->root;
 }
 
@@ -452,15 +452,14 @@ static inline void c_rbnode_swap_child(CRBNode *old, CRBNode *new) {
  * Note that this operates in O(1) time. Only the root-entry is updated to
  * point to the new tree-root.
  */
-_public_ void c_rbtree_move(CRBTree *to, CRBTree *from) {
+_c_public_ void c_rbtree_move(CRBTree *to, CRBTree *from) {
         CRBTree *t;
 
-        assert(!to->root);
+        c_assert(!to->root);
 
         if (from->root) {
                 t = c_rbnode_pop_root(from->root);
-                assert(t == from);
-                (void)t;
+                c_assert(t == from);
 
                 to->root = from->root;
                 from->root = NULL;
@@ -487,10 +486,10 @@ static inline void c_rbtree_paint_terminal(CRBNode *n) {
         g = c_rbnode_parent(p);
         gg = c_rbnode_parent(g);
 
-        assert(c_rbnode_is_red(p));
-        assert(c_rbnode_is_black(g));
-        assert(p == g->left || !g->left || c_rbnode_is_black(g->left));
-        assert(p == g->right || !g->right || c_rbnode_is_black(g->right));
+        c_assert(c_rbnode_is_red(p));
+        c_assert(c_rbnode_is_black(g));
+        c_assert(p == g->left || !g->left || c_rbnode_is_black(g->left));
+        c_assert(p == g->right || !g->right || c_rbnode_is_black(g->right));
 
         if (p == g->left) {
                 if (n == p->right) {
@@ -674,11 +673,11 @@ static inline void c_rbtree_paint(CRBNode *n) {
  * In most cases you are better off using c_rbtree_add(). See there for details
  * how tree-insertion works.
  */
-_public_ void c_rbnode_link(CRBNode *p, CRBNode **l, CRBNode *n) {
-        assert(p);
-        assert(l);
-        assert(n);
-        assert(l == &p->left || l == &p->right);
+_c_public_ void c_rbnode_link(CRBNode *p, CRBNode **l, CRBNode *n) {
+        c_assert(p);
+        c_assert(l);
+        c_assert(n);
+        c_assert(l == &p->left || l == &p->right);
 
         c_rbnode_set_parent_and_flags(n, p, C_RBNODE_RED);
         c_rbtree_store(&n->left, NULL);
@@ -739,12 +738,12 @@ _public_ void c_rbnode_link(CRBNode *p, CRBNode **l, CRBNode *n) {
  * than c_rbnode_unlink_stale()). In those cases, you should validate that a
  * node is unlinked before you call c_rbtree_add().
  */
-_public_ void c_rbtree_add(CRBTree *t, CRBNode *p, CRBNode **l, CRBNode *n) {
-        assert(t);
-        assert(l);
-        assert(n);
-        assert(!p || l == &p->left || l == &p->right);
-        assert(p || l == &t->root);
+_c_public_ void c_rbtree_add(CRBTree *t, CRBNode *p, CRBNode **l, CRBNode *n) {
+        c_assert(t);
+        c_assert(l);
+        c_assert(n);
+        c_assert(!p || l == &p->left || l == &p->right);
+        c_assert(p || l == &t->root);
 
         c_rbnode_set_parent_and_flags(n, p, C_RBNODE_RED);
         c_rbtree_store(&n->left, NULL);
@@ -796,7 +795,7 @@ static inline void c_rbnode_rebalance_terminal(CRBNode *p, CRBNode *previous) {
                                  * Note that the parent must be red, otherwise
                                  * it must have been handled by our caller.
                                  */
-                                assert(c_rbnode_is_red(p));
+                                c_assert(c_rbnode_is_red(p));
                                 c_rbnode_set_parent_and_flags(s, p, c_rbnode_flags(s) | C_RBNODE_RED);
                                 c_rbnode_set_parent_and_flags(p, c_rbnode_parent(p), c_rbnode_flags(p) & ~C_RBNODE_RED);
                                 return;
@@ -856,7 +855,7 @@ static inline void c_rbnode_rebalance_terminal(CRBNode *p, CRBNode *previous) {
                 if (!x || c_rbnode_is_black(x)) {
                         y = s->right;
                         if (!y || c_rbnode_is_black(y)) {
-                                assert(c_rbnode_is_red(p));
+                                c_assert(c_rbnode_is_red(p));
                                 c_rbnode_set_parent_and_flags(s, p, c_rbnode_flags(s) | C_RBNODE_RED);
                                 c_rbnode_set_parent_and_flags(p, c_rbnode_parent(p), c_rbnode_flags(p) & ~C_RBNODE_RED);
                                 return;
@@ -963,11 +962,11 @@ static inline void c_rbnode_rebalance(CRBNode *n) {
  * This does *NOT* reset @n to being unlinked. If you need this, use
  * c_rbtree_unlink().
  */
-_public_ void c_rbnode_unlink_stale(CRBNode *n) {
+_c_public_ void c_rbnode_unlink_stale(CRBNode *n) {
         CRBTree *t;
 
-        assert(n);
-        assert(c_rbnode_is_linked(n));
+        c_assert(n);
+        c_assert(c_rbnode_is_linked(n));
 
         /*
          * There are three distinct cases during node removal of a tree:

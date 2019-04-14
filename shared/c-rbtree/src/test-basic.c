@@ -10,11 +10,11 @@
 
 #undef NDEBUG
 #include <assert.h>
+#include <c-stdaux.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
 #include "c-rbtree.h"
 #include "c-rbtree-private.h"
 
@@ -23,8 +23,8 @@ static size_t validate(CRBTree *t) {
         CRBNode *n, *p, *o;
         size_t count = 0;
 
-        assert(t);
-        assert(!t->root || c_rbnode_is_black(t->root));
+        c_assert(t);
+        c_assert(!t->root || c_rbnode_is_black(t->root));
 
         /* traverse to left-most child, count black nodes */
         i_black = 0;
@@ -52,29 +52,29 @@ static size_t validate(CRBTree *t) {
                 ++count;
 
                 /* verify natural order */
-                assert(n > o);
+                c_assert(n > o);
                 o = n;
 
                 /* verify consistency */
-                assert(!n->right || c_rbnode_parent(n->right) == n);
-                assert(!n->left || c_rbnode_parent(n->left) == n);
+                c_assert(!n->right || c_rbnode_parent(n->right) == n);
+                c_assert(!n->left || c_rbnode_parent(n->left) == n);
 
                 /* verify 2) */
                 if (!c_rbnode_parent(n))
-                        assert(c_rbnode_is_black(n));
+                        c_assert(c_rbnode_is_black(n));
 
                 if (c_rbnode_is_red(n)) {
                         /* verify 4) */
-                        assert(!n->left || c_rbnode_is_black(n->left));
-                        assert(!n->right || c_rbnode_is_black(n->right));
+                        c_assert(!n->left || c_rbnode_is_black(n->left));
+                        c_assert(!n->right || c_rbnode_is_black(n->right));
                 } else {
                         /* verify 1) */
-                        assert(c_rbnode_is_black(n));
+                        c_assert(c_rbnode_is_black(n));
                 }
 
                 /* verify 5) */
                 if (!n->left && !n->right)
-                        assert(i_black == n_black);
+                        c_assert(i_black == n_black);
 
                 /* get next node */
                 if (n->right) {
@@ -106,9 +106,9 @@ static size_t validate(CRBTree *t) {
 static void insert(CRBTree *t, CRBNode *n) {
         CRBNode **i, *p;
 
-        assert(t);
-        assert(n);
-        assert(!c_rbnode_is_linked(n));
+        c_assert(t);
+        c_assert(n);
+        c_assert(!c_rbnode_is_linked(n));
 
         i = &t->root;
         p = NULL;
@@ -117,7 +117,7 @@ static void insert(CRBTree *t, CRBNode *n) {
                 if (n < *i) {
                         i = &(*i)->left;
                 } else {
-                        assert(n > *i);
+                        c_assert(n > *i);
                         i = &(*i)->right;
                 }
         }
@@ -146,20 +146,20 @@ static void test_shuffle(void) {
         /* allocate and initialize all nodes */
         for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i) {
                 nodes[i] = malloc(sizeof(*nodes[i]));
-                assert(nodes[i]);
+                c_assert(nodes[i]);
                 c_rbnode_init(nodes[i]);
         }
 
         /* shuffle nodes and validate *empty* tree */
         shuffle(nodes, sizeof(nodes) / sizeof(*nodes));
         n = validate(&t);
-        assert(n == 0);
+        c_assert(n == 0);
 
         /* add all nodes and validate after each insertion */
         for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i) {
                 insert(&t, nodes[i]);
                 n = validate(&t);
-                assert(n == i + 1);
+                c_assert(n == i + 1);
         }
 
         /* shuffle nodes again */
@@ -169,19 +169,19 @@ static void test_shuffle(void) {
         for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i) {
                 c_rbnode_unlink(nodes[i]);
                 n = validate(&t);
-                assert(n == sizeof(nodes) / sizeof(*nodes) - i - 1);
+                c_assert(n == sizeof(nodes) / sizeof(*nodes) - i - 1);
         }
 
         /* shuffle nodes and validate *empty* tree again */
         shuffle(nodes, sizeof(nodes) / sizeof(*nodes));
         n = validate(&t);
-        assert(n == 0);
+        c_assert(n == 0);
 
         /* add all nodes again */
         for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i) {
                 insert(&t, nodes[i]);
                 n = validate(&t);
-                assert(n == i + 1);
+                c_assert(n == i + 1);
         }
 
         /* 4 times, remove half of the nodes and add them again */
@@ -193,7 +193,7 @@ static void test_shuffle(void) {
                 for (i = 0; i < sizeof(nodes) / sizeof(*nodes) / 2; ++i) {
                         c_rbnode_unlink(nodes[i]);
                         n = validate(&t);
-                        assert(n == sizeof(nodes) / sizeof(*nodes) - i - 1);
+                        c_assert(n == sizeof(nodes) / sizeof(*nodes) - i - 1);
                 }
 
                 /* shuffle the removed half */
@@ -203,7 +203,7 @@ static void test_shuffle(void) {
                 for (i = 0; i < sizeof(nodes) / sizeof(*nodes) / 2; ++i) {
                         insert(&t, nodes[i]);
                         n = validate(&t);
-                        assert(n == sizeof(nodes) / sizeof(*nodes) / 2 + i + 1);
+                        c_assert(n == sizeof(nodes) / sizeof(*nodes) / 2 + i + 1);
                 }
         }
 
@@ -214,7 +214,7 @@ static void test_shuffle(void) {
         for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i) {
                 c_rbnode_unlink(nodes[i]);
                 n = validate(&t);
-                assert(n == sizeof(nodes) / sizeof(*nodes) - i - 1);
+                c_assert(n == sizeof(nodes) / sizeof(*nodes) - i - 1);
         }
 
         /* free nodes again */
