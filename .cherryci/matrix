@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -e
+
+_CHERRY_LIB_M_GCC_NDEBUG=("CC=gcc" "CFLAGS='${CHERRY_LIB_CFLAGS[*]} ${CHERRY_LIB_CFLAGS_GCC[*]} -O2 -DNDEBUG'")
+CHERRY_MATRIX+=("export ${_CHERRY_LIB_M_GCC_NDEBUG[*]}")

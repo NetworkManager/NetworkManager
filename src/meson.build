@@ -4,6 +4,10 @@
 
 libcrbtree_symfile = join_paths(meson.current_source_dir(), 'libcrbtree.sym')
 
+libcrbtree_deps = [
+        dep_cstdaux,
+]
+
 libcrbtree_private = static_library(
         'crbtree-private',
         [
@@ -13,12 +17,14 @@ libcrbtree_private = static_library(
                 '-fvisibility=hidden',
                 '-fno-common',
         ],
+        dependencies: libcrbtree_deps,
         pic: true,
 )
 
 libcrbtree_shared = shared_library(
         'crbtree',
         objects: libcrbtree_private.extract_all_objects(),
+        dependencies: libcrbtree_deps,
         install: not meson.is_subproject(),
         soversion: 0,
         link_depends: libcrbtree_symfile,
@@ -31,6 +37,7 @@ libcrbtree_shared = shared_library(
 libcrbtree_dep = declare_dependency(
         include_directories: include_directories('.'),
         link_with: libcrbtree_private,
+        dependencies: libcrbtree_deps,
         version: meson.project_version(),
 )
 

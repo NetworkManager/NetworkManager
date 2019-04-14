@@ -42,6 +42,7 @@
 
 #undef NDEBUG
 #include <assert.h>
+#include <c-stdaux.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <search.h>
@@ -49,7 +50,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
 #include "c-rbtree.h"
 #include "c-rbtree-private.h"
 
@@ -85,7 +85,7 @@ static uint64_t now(void) {
         int r;
 
         r = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);
-        assert(r >= 0);
+        c_assert(r >= 0);
         return ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec;
 }
 
@@ -116,14 +116,14 @@ static void posix_rbtree_add(PosixRBTree *t, const Node *node) {
         void *res;
 
         res = tsearch(&node->key, &t->root, posix_rbtree_compare);
-        assert(*(int **)res == &node->key);
+        c_assert(*(int **)res == &node->key);
 }
 
 static void posix_rbtree_remove(PosixRBTree *t, const Node *node) {
         void *res;
 
         res = tdelete(&node->key, &t->root, posix_rbtree_compare);
-        assert(res);
+        c_assert(res);
 }
 
 static Node *posix_rbtree_find(PosixRBTree *t, int key) {
@@ -143,7 +143,7 @@ static void posix_rbtree_visit(const void *n, const VISIT o, const int depth) {
         switch (o) {
         case postorder:
         case leaf:
-                assert(v <= node_from_key(*(int **)n)->key);
+                c_assert(v <= node_from_key(*(int **)n)->key);
                 v = node_from_key(*(int **)n)->key;
                 break;
         default:
@@ -178,7 +178,7 @@ static void test_posix(void) {
         /* allocate and initialize all nodes */
         for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i) {
                 nodes[i] = malloc(sizeof(*nodes[i]));
-                assert(nodes[i]);
+                c_assert(nodes[i]);
                 nodes[i]->key = i;
                 c_rbnode_init(&nodes[i]->rb);
         }
@@ -190,7 +190,7 @@ static void test_posix(void) {
         ts = now();
         for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i) {
                 slot = c_rbtree_find_slot(&t, compare, (void *)(unsigned long)nodes[i]->key, &p);
-                assert(slot);
+                c_assert(slot);
                 c_rbtree_add(&t, p, slot, &nodes[i]->rb);
         }
         ts_c1 = now() - ts;
@@ -210,10 +210,10 @@ static void test_posix(void) {
         for (p = c_rbtree_first(&t); p; p = c_rbnode_next(p)) {
                 ++i;
 
-                assert(v <= node_from_rb(p)->key);
+                c_assert(v <= node_from_rb(p)->key);
                 v = node_from_rb(p)->key;
         }
-        assert(i == sizeof(nodes) / sizeof(*nodes));
+        c_assert(i == sizeof(nodes) / sizeof(*nodes));
         ts_c2 = now() - ts;
 
         ts = now();
@@ -226,14 +226,14 @@ static void test_posix(void) {
         /* lookup all nodes (in different order) */
         ts = now();
         for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i)
-                assert(nodes[i] == c_rbtree_find_entry(&t, compare,
+                c_assert(nodes[i] == c_rbtree_find_entry(&t, compare,
                                                        (void *)(unsigned long)nodes[i]->key,
                                                        Node, rb));
         ts_c3 = now() - ts;
 
         ts = now();
         for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i)
-                assert(nodes[i] == posix_rbtree_find(&pt, nodes[i]->key));
+                c_assert(nodes[i] == posix_rbtree_find(&pt, nodes[i]->key));
         ts_p3 = now() - ts;
 
         /* shuffle nodes again */
