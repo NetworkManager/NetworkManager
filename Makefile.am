@@ -206,7 +206,19 @@ DISTCLEANFILES += $(polkit_policy_DATA)
 
 ###############################################################################
 
+EXTRA_DIST += \
+	shared/c-stdaux/src/c-stdaux.h \
+	$(NULL)
+
+###############################################################################
+
 noinst_LTLIBRARIES += shared/libcsiphash.la
+
+shared_libcsiphash_la_CFLAGS = \
+	$(AM_CFLAGS) \
+	-std=c11 \
+	-I$(srcdir)/shared/c-stdaux/src \
+	$(NULL)
 
 shared_libcsiphash_la_CPPFLAGS = \
 	$(CODE_COVERAGE_CFLAGS) \
@@ -228,6 +240,7 @@ noinst_LTLIBRARIES += shared/libcrbtree.la
 shared_libcrbtree_la_CFLAGS = \
 	$(AM_CFLAGS) \
 	-std=c11 \
+	-I$(srcdir)/shared/c-stdaux/src \
 	$(NULL)
 
 shared_libcrbtree_la_CPPFLAGS = \
@@ -260,6 +273,7 @@ shared_libnacd_la_CPPFLAGS = \
 	-DSO_ATTACH_BPF=50 \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
+	-I$(srcdir)/shared/c-stdaux/src \
 	-I$(srcdir)/shared/c-list/src \
 	-I$(srcdir)/shared/c-siphash/src \
 	-I$(srcdir)/shared/c-rbtree/src \
