@@ -7,6 +7,7 @@
  * See n-acd-bpf.c for documentation.
  */
 
+#include <c-stdaux.h>
 #include <stddef.h>
 #include "n-acd-private.h"
 

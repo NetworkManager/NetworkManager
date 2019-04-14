@@ -12,6 +12,7 @@
  * that have already been removed.
  */
 
+#include <c-stdaux.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <linux/bpf.h>

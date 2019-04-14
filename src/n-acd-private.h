@@ -2,6 +2,7 @@
 
 #include <c-list.h>
 #include <c-rbtree.h>
+#include <c-stdaux.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <netinet/if_ether.h>
@@ -12,9 +13,6 @@
 #include "n-acd.h"
 
 typedef struct NAcdEventNode NAcdEventNode;
-
-#define _cleanup_(_x) __attribute__((__cleanup__(_x)))
-#define _public_ __attribute__((__visibility__("default")))
 
 /* This augments the error-codes with internal ones that are never exposed. */
 enum {
@@ -150,23 +148,7 @@ int n_acd_bpf_compile(int *progfdp, int mapfd, struct ether_addr *mac);
 
 /* inline helpers */
 
-static inline int n_acd_errno(void) {
-        /*
-         * Compilers continuously warn about uninitialized variables since they
-         * cannot deduce that `return -errno;` will always be negative. This
-         * small wrapper makes sure compilers figure that out. Use it as
-         * replacement for `errno` read access. Yes, it generates worse code,
-         * but only marginally and only affects slow-paths.
-         */
-        return abs(errno) ? : EIO;
-}
-
 static inline void n_acd_event_node_freep(NAcdEventNode **node) {
         if (*node)
                 n_acd_event_node_free(*node);
-}
-
-static inline void n_acd_closep(int *fdp) {
-        if (*fdp >= 0)
-                close(*fdp);
 }

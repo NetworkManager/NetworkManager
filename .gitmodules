@@ -7,3 +7,6 @@
 [submodule "subprojects/c-rbtree"]
 	path = subprojects/c-rbtree
 	url = https://github.com/c-util/c-rbtree.git
+[submodule "subprojects/c-stdaux"]
+	path = subprojects/c-stdaux
+	url = https://github.com/c-util/c-stdaux.git

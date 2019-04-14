@@ -1,6 +1,7 @@
 #pragma once
 
 #include <c-rbtree.h>
+#include <c-stdaux.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <time.h>
