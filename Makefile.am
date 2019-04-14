@@ -289,6 +289,35 @@ shared_libnacd_la_LIBADD = \
 
 ###############################################################################
 
+noinst_LTLIBRARIES += shared/nm-std-aux/libnm-std-aux.la
+
+shared_nm_std_aux_libnm_std_aux_la_CPPFLAGS = \
+	$(dflt_cppflags) \
+	-I$(srcdir)/shared \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	-DG_LOG_DOMAIN=\""libnm"\" \
+	-DNETWORKMANAGER_COMPILATION='0' \
+	$(NULL)
+
+shared_nm_std_aux_libnm_std_aux_la_SOURCES = \
+	shared/c-list/src/c-list.h \
+	shared/nm-std-aux/c-list-util.c \
+	shared/nm-std-aux/c-list-util.h \
+	shared/nm-std-aux/unaligned.h \
+	$(NULL)
+
+shared_nm_std_aux_libnm_std_aux_la_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_LIB_LDFLAGS) \
+	$(NULL)
+
+shared_nm_std_aux_libnm_std_aux_la_LIBADD = \
+	shared/libcsiphash.la \
+	$(NULL)
+
+###############################################################################
+
 shared_nm_utils_libnm_utils_cppflags = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
@@ -306,9 +335,6 @@ shared_nm_utils_libnm_utils_base_la_CPPFLAGS = \
 	$(NULL)
 
 shared_nm_utils_libnm_utils_base_la_SOURCES = \
-	shared/c-list/src/c-list.h \
-	shared/nm-utils/c-list-util.c \
-	shared/nm-utils/c-list-util.h \
 	shared/nm-utils/nm-c-list.h \
 	shared/nm-utils/nm-dedup-multi.c \
 	shared/nm-utils/nm-dedup-multi.h \
@@ -332,7 +358,6 @@ shared_nm_utils_libnm_utils_base_la_SOURCES = \
 	shared/nm-utils/nm-shared-utils.h \
 	shared/nm-utils/nm-time-utils.c \
 	shared/nm-utils/nm-time-utils.h \
-	shared/nm-utils/unaligned.h \
 	$(NULL)
 
 shared_nm_utils_libnm_utils_base_la_LDFLAGS = \
@@ -341,7 +366,7 @@ shared_nm_utils_libnm_utils_base_la_LDFLAGS = \
 	$(NULL)
 
 shared_nm_utils_libnm_utils_base_la_LIBADD = \
-	shared/libcsiphash.la \
+	shared/nm-std-aux/libnm-std-aux.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 

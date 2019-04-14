@@ -25,7 +25,7 @@
 #include <linux/rtnetlink.h>
 #include <linux/genetlink.h>
 
-#include "nm-utils/unaligned.h"
+#include "nm-std-aux/unaligned.h"
 
 /*****************************************************************************/
 
