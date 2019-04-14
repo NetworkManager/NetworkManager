@@ -1,6 +1,6 @@
-c-list - Circular Intrusive Double Linked List Collection
+# c-list - Circular Intrusive Double Linked List Collection
 
-CHANGES WITH 3:
+## CHANGES WITH 3:
 
         * API break: The c_list_loop_*() symbols were removed, since we saw
                      little use for them. No user was known at the time, so
@@ -33,7 +33,7 @@ CHANGES WITH 3:
 
         - Berlin, 2017-08-13
 
-CHANGES WITH 2:
+## CHANGES WITH 2:
 
         * Adjust project-name in build-system to reflect the actual project. The
           previous releases incorrectly claimed to be c-rbtree in the build
@@ -53,7 +53,7 @@ CHANGES WITH 2:
 
         - Lund, 2017-05-03
 
-CHANGES WITH 1:
+## CHANGES WITH 1:
 
         * Initial release of c-list.
 
