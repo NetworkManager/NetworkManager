@@ -54,7 +54,7 @@
 #include "nm-core-internal.h"
 #include "nm-config.h"
 #include "nm-audit-manager.h"
-#include "nm-dbus-compat.h"
+#include "nm-std-aux/nm-dbus-compat.h"
 #include "nm-checkpoint.h"
 #include "nm-checkpoint-manager.h"
 #include "nm-dbus-object.h"

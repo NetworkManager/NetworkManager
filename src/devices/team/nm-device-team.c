@@ -37,7 +37,7 @@
 #include "nm-config.h"
 #include "nm-core-internal.h"
 #include "nm-ip4-config.h"
-#include "nm-dbus-compat.h"
+#include "nm-std-aux/nm-dbus-compat.h"
 
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceTeam);
