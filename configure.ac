@@ -191,9 +191,6 @@ AC_SUBST(NM_DIST_VERSION, "$ac_distver")
 AC_ARG_ENABLE(wifi, AS_HELP_STRING([--enable-wifi], [enable Wi-Fi support]))
 if test "${enable_wifi}" != "no"; then
 	enable_wifi='yes'
-	AC_DEFINE(WITH_WIFI, 1, [Define if you have Wi-Fi support])
-else
-	AC_DEFINE(WITH_WIFI, 0, [Define if you have Wi-Fi support])
 fi
 AM_CONDITIONAL(WITH_WIFI, test "${enable_wifi}" = "yes")
 

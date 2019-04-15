@@ -259,7 +259,6 @@ config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_PLUGINS', config_plugins_default)
 config_h.set_quoted('NM_DIST_VERSION', dist_version)
 
 enable_wifi = get_option('wifi')
-config_h.set10('WITH_WIFI', enable_wifi)
 
 enable_iwd = get_option('iwd')
 if enable_iwd
