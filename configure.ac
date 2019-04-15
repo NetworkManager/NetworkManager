@@ -493,7 +493,7 @@ esac
 
 # eBPF support
 AC_ARG_WITH(ebpf,
-            AS_HELP_STRING([--with-ebpf=yes|no|auto], [Build with eBPF support (default: auto)]),
+            AS_HELP_STRING([--with-ebpf=yes|no|auto], [Build with eBPF support [default=auto]]),
             [], [with_ebpf=auto])
 # 'auto' means 'false' because there are still some issues.
 if test "$with_ebpf" = "yes" ; then
@@ -508,7 +508,7 @@ AM_CONDITIONAL(WITH_EBPF, test "${have_ebpf}" = "yes")
 
 # SELinux support
 AC_ARG_WITH(selinux,
-            AS_HELP_STRING([--with-selinux=yes|no|auto], [Build with SELinux (default: auto)]),
+            AS_HELP_STRING([--with-selinux=yes|no|auto], [Build with SELinux [default=auto]]),
             [], [with_selinux=auto])
 if test "$with_selinux" = "yes" -o "$with_selinux" = "auto"; then
 	PKG_CHECK_MODULES(SELINUX, libselinux, [have_selinux=yes], [have_selinux=no])
@@ -525,7 +525,7 @@ else
 fi
 
 # libaudit support
-AC_ARG_WITH(libaudit, AS_HELP_STRING([--with-libaudit=yes|yes-disabled-by-default|no|auto], [Build with audit daemon support (default: auto). yes-disabled-by-default enables support, but disables it unless explicitly configured via NetworkManager.conf]),,[with_libaudit=auto])
+AC_ARG_WITH(libaudit, AS_HELP_STRING([--with-libaudit=yes|yes-disabled-by-default|no|auto], [Build with audit daemon support [default=auto]. yes-disabled-by-default enables support, but disables it unless explicitly configured via NetworkManager.conf]),,[with_libaudit=auto])
 if test "$with_libaudit" = "yes" -o "$with_libaudit" = "yes-disabled-by-default" -o "$with_libaudit" = "auto"; then
 	PKG_CHECK_MODULES(LIBAUDIT, audit, [have_libaudit=yes], [have_libaudit=no])
 	if test "$with_libaudit" != "auto" -a "$have_libaudit" = "no"; then
@@ -952,7 +952,7 @@ AC_DEFINE_UNQUOTED(SYSTEM_CA_PATH, "$SYSTEM_CA_PATH", [Define to path to system 
 AC_SUBST(SYSTEM_CA_PATH)
 
 AC_ARG_WITH(kernel-firmware-dir,
-            AS_HELP_STRING([--with-kernel-firmware-dir=DIR], [where kernel firmware directory is (default is /lib/firmware)]))
+            AS_HELP_STRING([--with-kernel-firmware-dir=DIR], [where kernel firmware directory is [default=/lib/firmware]]))
 if test -n "$with_kernel_firmware_dir" ; then
 	KERNEL_FIRMWARE_DIR="$with_kernel_firmware_dir"
 else
@@ -1039,12 +1039,12 @@ AM_CFLAGS="$AM_CFLAGS $with_cflags"
 
 AC_ARG_ENABLE(more-asserts,
               AS_HELP_STRING([--enable-more-asserts],
-                             [Enable more assertions for debugging (default: auto). Deprecated option. Use --with-more-asserts=level]))
+                             [Enable more assertions for debugging [default=auto]. Deprecated option. Use --with-more-asserts=level]))
 if test "${enable_more_asserts}" = "yes"; then
 	more_asserts=100
 fi
 AC_ARG_WITH(more-asserts,
-            AS_HELP_STRING([--with-more-asserts=level], [Enable more assertions for debugging (0 = none, 100 = all, default: auto)]),
+            AS_HELP_STRING([--with-more-asserts=level], [Enable more assertions for debugging (0 = none, 100 = all) [default=auto]]),
             [more_asserts=${with_more_asserts}],
             [])
 if test "${more_asserts}" = "no"; then
@@ -1059,7 +1059,7 @@ if test "${more_asserts}" = ""; then
 fi
 AC_DEFINE_UNQUOTED(NM_MORE_ASSERTS, $more_asserts, [Define if more asserts are enabled])
 
-AC_ARG_ENABLE(more-logging, AS_HELP_STRING([--enable-more-logging], [Enable more debug logging (default: auto)]))
+AC_ARG_ENABLE(more-logging, AS_HELP_STRING([--enable-more-logging], [Enable more debug logging [default=auto]]))
 if test "${enable_more_logging}" = ""; then
 	enable_more_logging=${more_logging_default}
 fi
@@ -1073,7 +1073,7 @@ NM_LTO
 NM_LD_GC
 
 AC_ARG_WITH(address-sanitizer,
-            AS_HELP_STRING([--with-address-sanitizer=yes|no|exec], [Enable address sanitizer (default: no)]))
+            AS_HELP_STRING([--with-address-sanitizer=yes|no|exec], [Enable address sanitizer [default=no]]))
 if test "$with_address_sanitizer" = yes -o "$with_address_sanitizer" = "exec"; then
 	CC_CHECK_FLAGS_APPEND([asan_cflags], [CFLAGS], [-fsanitize=address])
 	AS_IF([test -z "$asan_cflags"],
@@ -1095,7 +1095,7 @@ fi
 
 AC_ARG_ENABLE(undefined-sanitizer,
               AS_HELP_STRING([--enable-undefined-sanitizer],
-                             [Compile with undefined behavior sanitizer (default: no)]))
+                             [Compile with undefined behavior sanitizer [default=no]]))
 if (test "${enable_undefined_sanitizer}" = "yes"); then
 	CC_CHECK_FLAGS_APPEND([ubsan_cflags], [CFLAGS], [-fsanitize=undefined])
 	AS_IF([test -z "$ubsan_cflags"],
@@ -1141,9 +1141,9 @@ VAPIGEN_CHECK(0.17.1.24)
 AC_CONFIG_COMMANDS([vapi], [$MKDIR_P vapi])
 
 # Tests, utilities and documentation
-AC_ARG_ENABLE(tests, AS_HELP_STRING([--enable-tests=root|yes|no], [Build NetworkManager tests (default: yes)]))
+AC_ARG_ENABLE(tests, AS_HELP_STRING([--enable-tests=root|yes|no], [Build NetworkManager tests [default=yes]]))
 AC_ARG_WITH(valgrind,
-            AS_HELP_STRING([--with-valgrind=yes|no|path], [Use valgrind to memory-check the tests (default: no)]))
+            AS_HELP_STRING([--with-valgrind=yes|no|path], [Use valgrind to memory-check the tests [default=no]]))
 # Fallback to --with-tests
 AC_ARG_WITH(tests,
             AS_HELP_STRING([--with-tests], [Build NetworkManager tests (deprecated)]))

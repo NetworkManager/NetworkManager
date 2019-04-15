@@ -28,7 +28,7 @@ AC_DEFUN([VAPIGEN_CHECK],
 
   AC_ARG_ENABLE([vala],
     AS_HELP_STRING([--enable-vala[=@<:@no/auto/yes@:>@]],
-      [build Vala bindings [[default=auto]]]),,
+      [build Vala bindings [default=auto]]),,
       [enable_vala=auto])
 
   AS_CASE([$enable_vala], [no], [],
