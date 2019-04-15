@@ -36,7 +36,7 @@ exe = executable(
   test_unit,
   [test_unit + '.c'],
   include_directories: src_inc,
-  dependencies: nm_core_dep,
+  dependencies: libnm_core_dep,
   c_args: cflags,
   link_with: [
     libnm_systemd_core,

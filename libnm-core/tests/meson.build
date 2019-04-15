@@ -34,7 +34,7 @@ foreach test_unit: test_units
     'libnm-core-' + test_unit,
     [test_unit + '.c'] + enum,
     dependencies: [
-      nm_core_dep,
+      libnm_core_dep,
       libnm_systemd_shared_no_logging_dep,
     ],
     c_args: [

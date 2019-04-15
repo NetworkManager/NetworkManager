@@ -10,7 +10,7 @@ libnm_utils_sources = files('nm-libnm-utils.c')
 deps = [
   libnmdbus_dep,
   shared_nm_glib_aux_dep,
-  nm_core_dep,
+  libnm_core_dep,
 ]
 
 libnm_utils = static_library(
@@ -154,7 +154,7 @@ libnm = shared_library(
     dl_dep,
     libudev_dep,
     shared_nm_glib_aux_dep,
-    nm_core_dep,
+    libnm_core_dep,
     uuid_dep,
     libnm_systemd_shared_no_logging_dep,
   ],
