@@ -29,7 +29,7 @@
 #include "nm-manager.h"
 #include "nm-device-iwd.h"
 #include "nm-wifi-utils.h"
-#include "nm-utils/nm-random-utils.h"
+#include "nm-glib-aux/nm-random-utils.h"
 #include "settings/nm-settings.h"
 
 /*****************************************************************************/

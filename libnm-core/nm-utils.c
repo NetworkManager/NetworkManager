@@ -37,8 +37,8 @@
 #include "nm-json.h"
 #endif
 
-#include "nm-utils/nm-enum-utils.h"
-#include "nm-utils/nm-secret-utils.h"
+#include "nm-glib-aux/nm-enum-utils.h"
+#include "nm-glib-aux/nm-secret-utils.h"
 #include "systemd/nm-sd-utils-shared.h"
 #include "nm-common-macros.h"
 #include "nm-utils-private.h"

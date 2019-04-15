@@ -37,8 +37,8 @@
 #include <linux/pkt_sched.h>
 
 #include "nm-std-aux/unaligned.h"
-#include "nm-utils/nm-dedup-multi.h"
-#include "nm-utils/nm-random-utils.h"
+#include "nm-glib-aux/nm-dedup-multi.h"
+#include "nm-glib-aux/nm-random-utils.h"
 
 #include "nm-ethtool-utils.h"
 #include "nm-common-macros.h"

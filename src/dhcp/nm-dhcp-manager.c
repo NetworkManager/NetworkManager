@@ -32,7 +32,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 
-#include "nm-utils/nm-dedup-multi.h"
+#include "nm-glib-aux/nm-dedup-multi.h"
 
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"

@@ -22,8 +22,8 @@
 #include "nm-default.h"
 
 #include "nm-std-aux/unaligned.h"
-#include "nm-utils/nm-random-utils.h"
-#include "nm-utils/nm-time-utils.h"
+#include "nm-glib-aux/nm-random-utils.h"
+#include "nm-glib-aux/nm-time-utils.h"
 
 #include "nm-utils/nm-test-utils.h"
 
