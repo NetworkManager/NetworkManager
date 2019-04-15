@@ -221,9 +221,6 @@
 /* Whether compilation of ibft setting plugin is enabled */
 #mesondefine WITH_SETTINGS_PLUGIN_IBFT
 
-/* Define if you have Wi-Fi support */
-#mesondefine WITH_WIFI
-
 /* Define if you have iwd support */
 #mesondefine WITH_IWD
 
