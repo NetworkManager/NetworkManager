@@ -4,7 +4,7 @@ deps = [
   libnm_dep,
   libnmc_dep,
   libnmc_base_dep,
-  nm_core_dep,
+  libnm_core_dep,
 ]
 
 exe = executable(

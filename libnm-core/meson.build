@@ -241,7 +241,7 @@ libnm_core = static_library(
   c_args: cflags,
 )
 
-nm_core_dep = declare_dependency(
+libnm_core_dep = declare_dependency(
   sources: libnm_core_enum[1],
   include_directories: libnm_core_inc,
   dependencies: [
@@ -280,7 +280,7 @@ shared_nm_libnm_core_aux_dep = declare_dependency(
         shared_inc,
     ],
     dependencies: [
-        nm_core_dep,
+        libnm_core_dep,
         glib_dep,
         shared_nm_glib_aux_dep,
         libnm_systemd_shared_dep,

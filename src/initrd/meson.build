@@ -10,7 +10,7 @@ libnmi_core = static_library(
   c_args: nm_cflags,
   sources: sources,
   include_directories: src_inc,
-  dependencies: nm_core_dep,
+  dependencies: libnm_core_dep,
 )
 
 name = 'nm-initrd-generator'
@@ -19,7 +19,7 @@ executable(
   name + '.c',
   c_args: nm_cflags,
   include_directories: src_inc,
-  dependencies: [ nm_core_dep ],
+  dependencies: [ libnm_core_dep ],
   link_with: [libnetwork_manager_base, libnmi_core],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
