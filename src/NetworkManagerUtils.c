@@ -27,7 +27,7 @@
 
 #include "nm-glib-aux/nm-c-list.h"
 
-#include "nm-common-macros.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ip4-config.h"

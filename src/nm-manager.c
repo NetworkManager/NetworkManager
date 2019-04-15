@@ -29,7 +29,7 @@
 
 #include "nm-glib-aux/nm-c-list.h"
 
-#include "nm-common-macros.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-dbus-manager.h"
 #include "vpn/nm-vpn-manager.h"
 #include "devices/nm-device.h"

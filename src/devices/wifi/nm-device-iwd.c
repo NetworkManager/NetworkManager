@@ -22,7 +22,7 @@
 
 #include "nm-device-iwd.h"
 
-#include "nm-common-macros.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 #include "devices/nm-device.h"
 #include "devices/nm-device-private.h"
 #include "nm-utils.h"

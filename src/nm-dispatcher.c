@@ -23,7 +23,7 @@
 
 #include "nm-dispatcher.h"
 
-#include "nm-dispatcher-api.h"
+#include "nm-libnm-core-aux/nm-dispatcher-api.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-connectivity.h"

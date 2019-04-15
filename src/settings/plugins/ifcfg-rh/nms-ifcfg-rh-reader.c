@@ -53,7 +53,7 @@
 #include "nm-setting-generic.h"
 #include "nm-core-internal.h"
 #include "nm-utils.h"
-#include "nm-ethtool-utils.h"
+#include "nm-libnm-core-intern/nm-ethtool-utils.h"
 
 #include "platform/nm-platform.h"
 #include "NetworkManagerUtils.h"
