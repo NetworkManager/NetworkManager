@@ -18,6 +18,9 @@
  * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
+#ifndef __NM_DISPACHER_API_H__
+#define __NM_DISPACHER_API_H__
+
 #define NMD_SCRIPT_DIR_DEFAULT  NMCONFDIR "/dispatcher.d"
 #define NMD_SCRIPT_DIR_PRE_UP   NMD_SCRIPT_DIR_DEFAULT "/pre-up.d"
 #define NMD_SCRIPT_DIR_PRE_DOWN NMD_SCRIPT_DIR_DEFAULT "/pre-down.d"
@@ -59,3 +62,4 @@ typedef enum {
 	DISPATCH_RESULT_TIMEOUT = 4,
 } DispatchResult;
 
+#endif /* __NM_DISPACHER_API_H__ */

@@ -49,7 +49,7 @@
 #include "nm-setting-vlan.h"
 #include "nm-setting-dcb.h"
 #include "nm-core-internal.h"
-#include "nm-ethtool-utils.h"
+#include "nm-libnm-core-intern/nm-ethtool-utils.h"
 
 #include "NetworkManagerUtils.h"
 

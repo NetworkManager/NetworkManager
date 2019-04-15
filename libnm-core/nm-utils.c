@@ -40,7 +40,7 @@
 #include "nm-glib-aux/nm-enum-utils.h"
 #include "nm-glib-aux/nm-secret-utils.h"
 #include "systemd/nm-sd-utils-shared.h"
-#include "nm-common-macros.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 #include "nm-crypto.h"

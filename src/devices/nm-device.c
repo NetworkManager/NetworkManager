@@ -40,8 +40,8 @@
 #include "nm-glib-aux/nm-dedup-multi.h"
 #include "nm-glib-aux/nm-random-utils.h"
 
-#include "nm-ethtool-utils.h"
-#include "nm-common-macros.h"
+#include "nm-libnm-core-intern/nm-ethtool-utils.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-device-private.h"
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"

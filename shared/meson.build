@@ -99,10 +99,6 @@ version_header = configure_file(
     configuration: version_conf,
 )
 
-shared_nm_ethtool_utils_c = files('nm-ethtool-utils.c')
-
-shared_nm_libnm_core_utils_c = files('nm-libnm-core-utils.c')
-
 shared_nm_meta_setting_c = files('nm-meta-setting.c')
 
 shared_nm_test_utils_impl_c = files('nm-test-utils-impl.c')
@@ -204,24 +200,6 @@ shared_nm_udev_aux_dep = declare_dependency(
 
 ###############################################################################
 
-test_shared_general = executable(
-  'nm-utils/tests/test-shared-general',
-  [ 'nm-utils/tests/test-shared-general.c', ],
-  c_args: [
-      '-DNETWORKMANAGER_COMPILATION_TEST',
-      '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)',
-    ],
-  dependencies: shared_nm_glib_aux_dep,
-  link_with: shared_c_siphash,
-)
-test(
-  'shared/nm-utils/test-shared-general',
-  test_script,
-  args: test_args + [test_shared_general.full_path()]
-)
-
-###############################################################################
-
 libnm_systemd_shared = static_library(
   'nm-systemd-shared',
   sources: files(
@@ -305,4 +283,22 @@ libnm_systemd_shared_no_logging_dep = declare_dependency(
   link_with: [
     libnm_systemd_logging_stub,
   ],
+)
+
+###############################################################################
+
+test_shared_general = executable(
+  'nm-utils/tests/test-shared-general',
+  [ 'nm-utils/tests/test-shared-general.c', ],
+  c_args: [
+      '-DNETWORKMANAGER_COMPILATION_TEST',
+      '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)',
+    ],
+  dependencies: shared_nm_glib_aux_dep,
+  link_with: shared_c_siphash,
+)
+test(
+  'shared/nm-utils/test-shared-general',
+  test_script,
+  args: test_args + [test_shared_general.full_path()]
 )

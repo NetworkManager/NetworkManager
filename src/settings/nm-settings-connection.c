@@ -25,7 +25,7 @@
 
 #include "c-list/src/c-list.h"
 
-#include "nm-common-macros.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-config.h"
 #include "nm-config-data.h"
 #include "nm-dbus-interface.h"

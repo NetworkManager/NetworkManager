@@ -23,7 +23,7 @@
 #include "nm-meta-setting.h"
 #include "nm-active-connection.h"
 #include "nm-device.h"
-#include "nm-libnm-core-utils.h"
+#include "nm-libnm-core-intern/nm-libnm-core-utils.h"
 
 const NMObject **nmc_objects_sort_by_path (const NMObject *const*objs, gssize len);
 

@@ -88,7 +88,7 @@
 #include "nm-utils.h"
 #include "nm-vpn-dbus-interface.h"
 #include "nm-vpn-editor-plugin.h"
-#include "nm-libnm-core-utils.h"
+#include "nm-libnm-core-intern/nm-libnm-core-utils.h"
 
 /* IEEE 802.1D-1998 timer values */
 #define NM_BR_MIN_HELLO_TIME    1

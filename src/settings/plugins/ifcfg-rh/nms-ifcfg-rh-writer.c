@@ -50,7 +50,7 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-meta-setting.h"
-#include "nm-ethtool-utils.h"
+#include "nm-libnm-core-intern/nm-ethtool-utils.h"
 
 #include "nms-ifcfg-rh-common.h"
 #include "nms-ifcfg-rh-reader.h"
