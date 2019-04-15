@@ -49,9 +49,6 @@
 /* Define to 1 if you have the <sys/auxv.h> header file. */
 #mesondefine HAVE_SYS_AUXV_H
 
-/* Define if systemd support is available */
-#mesondefine HAVE_SYSTEMD
-
 /* Define if you have Linux Wireless Extensions support */
 #mesondefine HAVE_WEXT
 
