@@ -10,6 +10,10 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * The libnm-glib library, deprecated in favor of libnm since NetworkManager 1.0,
   and disabled by default since NetworkManager 1.12 has now been removed.
+* The DHCP client now defaults to "internal". The default can be overriden
+  at build time by using the --with-config-dhcp-default option of the
+  configure script or at run time by setting the main.dhcp option in the
+  configuration file.
 
 =============================================
 NetworkManager-1.18

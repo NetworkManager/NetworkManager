@@ -847,15 +847,11 @@ fi
 
 AC_ARG_WITH(config-dhcp-default,
             AS_HELP_STRING([--with-config-dhcp-default=dhclient|dhcpcd|internal],
-                           [Default configuration option for main.dhcp setting, used as fallback if the configuration option is unset]),
+                           [Default configuration option for main.dhcp setting, used as fallback if the configuration option is unset [default=internal]]),
             [config_dhcp_default="$withval"], [config_dhcp_default=""])
-if test "$config_dhcp_default" = yes -o "$config_dhcp_default" = no; then
-	config_dhcp_default=''
+if test "$config_dhcp_default" = yes -o "$config_dhcp_default" = no -o -z "$config_dhcp_default"; then
+	config_dhcp_default='internal'
 fi
-test -z "$config_dhcp_default" -a "$with_dhcpcanon" != "no" && config_dhcp_default='dhcpcanon'
-test -z "$config_dhcp_default" -a "$with_dhclient" != "no" && config_dhcp_default='dhclient'
-test -z "$config_dhcp_default" -a "$with_dhcpcd"   != "no" && config_dhcp_default='dhcpcd'
-test -z "$config_dhcp_default"                             && config_dhcp_default='internal'
 AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_MAIN_DHCP, "$config_dhcp_default", [Default configuration option for main.dhcp setting])
 AC_SUBST(NM_CONFIG_DEFAULT_MAIN_DHCP, $config_dhcp_default)
 
