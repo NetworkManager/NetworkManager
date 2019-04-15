@@ -6838,9 +6838,10 @@ link_set_bridge_vlans (NMPlatform *platform,
 		/* Add VLANs */
 		for (i = 0; vlans[i]; i++) {
 			const NMPlatformBridgeVlan *vlan = vlans[i];
+			gboolean is_range = vlan->vid_start != vlan->vid_end;
 
-			vinfo.vid = vlan->vid;
-			vinfo.flags = 0;
+			vinfo.vid = vlan->vid_start;
+			vinfo.flags = is_range ? BRIDGE_VLAN_INFO_RANGE_BEGIN : 0;
 
 			if (vlan->untagged)
 				vinfo.flags |= BRIDGE_VLAN_INFO_UNTAGGED;
@@ -6848,6 +6849,12 @@ link_set_bridge_vlans (NMPlatform *platform,
 				vinfo.flags |= BRIDGE_VLAN_INFO_PVID;
 
 			NLA_PUT (nlmsg, IFLA_BRIDGE_VLAN_INFO, sizeof (vinfo), &vinfo);
+
+			if (is_range) {
+				vinfo.vid = vlan->vid_end;
+				vinfo.flags = BRIDGE_VLAN_INFO_RANGE_END;
+				NLA_PUT (nlmsg, IFLA_BRIDGE_VLAN_INFO, sizeof (vinfo), &vinfo);
+			}
 		}
 	} else {
 		/* Flush existing VLANs */

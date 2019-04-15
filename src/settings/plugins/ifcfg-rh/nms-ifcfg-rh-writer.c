@@ -1491,7 +1491,7 @@ write_bridge_vlans (NMSetting *setting,
 		if (!vlan_str)
 			return FALSE;
 		if (string->len > 0)
-			g_string_append (string, ", ");
+			g_string_append (string, ",");
 		g_string_append (string, vlan_str);
 	}
 

@@ -108,14 +108,16 @@ NMBridgeVlan *nm_setting_bridge_get_vlan (NMSettingBridge *setting, guint idx);
 NM_AVAILABLE_IN_1_18
 void          nm_setting_bridge_remove_vlan (NMSettingBridge *setting, guint idx);
 NM_AVAILABLE_IN_1_18
-gboolean      nm_setting_bridge_remove_vlan_by_vid (NMSettingBridge *setting, guint16 vid);
+gboolean      nm_setting_bridge_remove_vlan_by_vid (NMSettingBridge *setting,
+                                                    guint16 vid_start,
+                                                    guint16 vid_end);
 NM_AVAILABLE_IN_1_18
 void          nm_setting_bridge_clear_vlans (NMSettingBridge *setting);
 
 NM_AVAILABLE_IN_1_18
 GType          nm_bridge_vlan_get_type (void);
 NM_AVAILABLE_IN_1_18
-NMBridgeVlan * nm_bridge_vlan_new (guint16 vid);
+NMBridgeVlan * nm_bridge_vlan_new (guint16 vid_start, guint16 vid_end);
 NM_AVAILABLE_IN_1_18
 NMBridgeVlan * nm_bridge_vlan_ref (NMBridgeVlan *vlan);
 NM_AVAILABLE_IN_1_18
@@ -133,7 +135,7 @@ void           nm_bridge_vlan_set_untagged (NMBridgeVlan *vlan, gboolean value);
 NM_AVAILABLE_IN_1_18
 void           nm_bridge_vlan_set_pvid (NMBridgeVlan *vlan, gboolean value);
 NM_AVAILABLE_IN_1_18
-guint16        nm_bridge_vlan_get_vid (const NMBridgeVlan *vlan);
+gboolean       nm_bridge_vlan_get_vid_range (const NMBridgeVlan *vlan, guint16 *vid_start, guint16 *vid_end);
 NM_AVAILABLE_IN_1_18
 gboolean       nm_bridge_vlan_is_untagged (const NMBridgeVlan *vlan);
 NM_AVAILABLE_IN_1_18

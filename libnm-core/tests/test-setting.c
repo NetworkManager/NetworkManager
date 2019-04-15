@@ -1664,6 +1664,7 @@ test_bridge_vlans (void)
 {
 	NMBridgeVlan *v1, *v2;
 	GError *error = NULL;
+	guint16 vid_start, vid_end;
 	char *str;
 
 	v1 = nm_bridge_vlan_from_str ("1 foobar", &error);
@@ -1674,11 +1675,23 @@ test_bridge_vlans (void)
 	nmtst_assert_no_success (v1, error);
 	g_clear_error (&error);
 
+	/* test ranges */
+	v1 = nm_bridge_vlan_from_str ("2-1000 untagged", &error);
+	nmtst_assert_success (v1, error);
+	g_assert_cmpint (nm_bridge_vlan_get_vid_range (v1, &vid_start, &vid_end), ==, TRUE);
+	g_assert_cmpuint (vid_start, ==, 2);
+	g_assert_cmpuint (vid_end, ==, 1000);
+	g_assert_cmpint (nm_bridge_vlan_is_pvid (v1), ==, FALSE);
+	g_assert_cmpint (nm_bridge_vlan_is_untagged (v1), ==, TRUE);
+	nm_bridge_vlan_unref (v1);
+
 	/* test comparison (1) */
 	v1 = nm_bridge_vlan_from_str ("10 untagged", &error);
 	nmtst_assert_success (v1, error);
 
-	g_assert_cmpuint (nm_bridge_vlan_get_vid (v1), ==, 10);
+	g_assert_cmpint (nm_bridge_vlan_get_vid_range (v1, &vid_start, &vid_end), ==, FALSE);
+	g_assert_cmpuint (vid_start, ==, 10);
+	g_assert_cmpuint (vid_end, ==, 10);
 	g_assert_cmpint (nm_bridge_vlan_is_sealed (v1), ==, FALSE);
 	g_assert_cmpint (nm_bridge_vlan_is_pvid (v1), ==, FALSE);
 	g_assert_cmpint (nm_bridge_vlan_is_untagged (v1), ==, TRUE);
