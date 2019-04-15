@@ -24,7 +24,7 @@
 #include <linux/pkt_sched.h>
 
 #include "platform/nmp-object.h"
-#include "nm-utils/nm-udev-utils.h"
+#include "nm-udev-aux/nm-udev-utils.h"
 
 #include "nm-test-utils-core.h"
 

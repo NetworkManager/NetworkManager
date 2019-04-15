@@ -370,24 +370,24 @@ shared_nm_utils_libnm_utils_base_la_LIBADD = \
 
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/nm-utils/libnm-utils-udev.la
+noinst_LTLIBRARIES += shared/nm-udev-aux/libnm-udev-aux.la
 
-shared_nm_utils_libnm_utils_udev_la_CPPFLAGS = \
+shared_nm_udev_aux_libnm_udev_aux_la_CPPFLAGS = \
 	$(shared_nm_utils_libnm_utils_cppflags) \
 	$(LIBUDEV_CFLAGS) \
 	$(NULL)
 
-shared_nm_utils_libnm_utils_udev_la_SOURCES = \
-	shared/nm-utils/nm-udev-utils.c \
-	shared/nm-utils/nm-udev-utils.h \
+shared_nm_udev_aux_libnm_udev_aux_la_SOURCES = \
+	shared/nm-udev-aux/nm-udev-utils.c \
+	shared/nm-udev-aux/nm-udev-utils.h \
 	$(NULL)
 
-shared_nm_utils_libnm_utils_udev_la_LDFLAGS = \
+shared_nm_udev_aux_libnm_udev_aux_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_nm_utils_libnm_utils_udev_la_LIBADD = \
+shared_nm_udev_aux_libnm_udev_aux_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(NULL)
@@ -1253,7 +1253,7 @@ libnm_libnm_la_LIBADD = \
 	libnm/libnm-utils.la \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/systemd/libnm-systemd-logging-stub.la \
-	shared/nm-utils/libnm-utils-udev.la \
+	shared/nm-udev-aux/libnm-udev-aux.la \
 	$(DL_LIBS) \
 	$(GLIB_LIBS) \
 	$(UUID_LIBS) \
@@ -1863,7 +1863,7 @@ endif
 src_libNetworkManagerBase_la_LIBADD = \
 	libnm-core/libnm-core.la \
 	$(libnm_crypto_lib) \
-	shared/nm-utils/libnm-utils-udev.la \
+	shared/nm-udev-aux/libnm-udev-aux.la \
 	shared/nm-utils/libnm-utils-base.la \
 	$(GLIB_LIBS) \
 	$(SYSTEMD_JOURNAL_LIBS) \

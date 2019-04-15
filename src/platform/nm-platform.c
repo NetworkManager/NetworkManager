@@ -39,7 +39,7 @@
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-utils/nm-dedup-multi.h"
-#include "nm-utils/nm-udev-utils.h"
+#include "nm-udev-aux/nm-udev-utils.h"
 #include "nm-utils/nm-secret-utils.h"
 
 #include "nm-core-utils.h"

@@ -161,9 +161,9 @@ shared_nm_utils_base_dep = declare_dependency(
     dependencies: glib_dep,
 )
 
-shared_nm_utils_udev = static_library(
-    'nm-utils-udev',
-    sources: files('nm-utils/nm-udev-utils.c'),
+shared_nm_udev_aux = static_library(
+    'nm-udev-aux',
+    sources: files('nm-udev-aux/nm-udev-utils.c'),
     c_args: shared_nm_utils_c_args,
     include_directories: [
         top_inc,
@@ -176,8 +176,8 @@ shared_nm_utils_udev = static_library(
     ],
 )
 
-shared_nm_utils_udev_dep = declare_dependency(
-    link_with: shared_nm_utils_udev,
+shared_nm_udev_aux_dep = declare_dependency(
+    link_with: shared_nm_udev_aux,
     include_directories: [
         top_inc,
         shared_inc,

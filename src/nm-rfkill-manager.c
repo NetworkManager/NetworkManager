@@ -24,7 +24,7 @@
 
 #include <libudev.h>
 
-#include "nm-utils/nm-udev-utils.h"
+#include "nm-udev-aux/nm-udev-utils.h"
 
 /*****************************************************************************/
 
