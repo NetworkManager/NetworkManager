@@ -196,7 +196,7 @@ libnm_glib = shared_library(
   dependencies: common_deps + [
     libnm_util_dep,
     libudev_dep,
-    shared_nm_utils_udev_dep,
+    shared_nm_udev_aux_dep,
   ],
   c_args: cflags,
   link_whole: libdeprecated_nm_glib,

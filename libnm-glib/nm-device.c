@@ -26,7 +26,7 @@
 
 #include "NetworkManager.h"
 
-#include "nm-utils/nm-udev-utils.h"
+#include "nm-udev-aux/nm-udev-utils.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-adsl.h"
 #include "nm-device-wifi.h"

@@ -146,7 +146,7 @@ deps = [
   glib_dep,
   shared_c_siphash_dep,
   shared_nm_utils_base_dep,
-  shared_nm_utils_udev_dep,
+  shared_nm_udev_aux_dep,
 ]
 
 cflags = [
