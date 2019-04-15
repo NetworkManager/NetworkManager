@@ -26,7 +26,7 @@
 #include <ctype.h>
 #include <net/if_arp.h>
 
-#include "nm-utils/nm-dedup-multi.h"
+#include "nm-glib-aux/nm-dedup-multi.h"
 #include "nm-std-aux/unaligned.h"
 
 #include "nm-utils.h"

@@ -318,7 +318,7 @@ shared_nm_std_aux_libnm_std_aux_la_LIBADD = \
 
 ###############################################################################
 
-shared_nm_utils_libnm_utils_cppflags = \
+shared_nm_glib_aux_cppflags = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	$(CODE_COVERAGE_CFLAGS) \
@@ -328,44 +328,45 @@ shared_nm_utils_libnm_utils_cppflags = \
 	-DNETWORKMANAGER_COMPILATION='(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)' \
 	$(NULL)
 
-noinst_LTLIBRARIES += shared/nm-utils/libnm-utils-base.la
+noinst_LTLIBRARIES += shared/nm-glib-aux/libnm-glib-aux.la
 
-shared_nm_utils_libnm_utils_base_la_CPPFLAGS = \
-	$(shared_nm_utils_libnm_utils_cppflags) \
+shared_nm_glib_aux_libnm_glib_aux_la_CPPFLAGS = \
+	$(shared_nm_glib_aux_cppflags) \
 	$(NULL)
 
-shared_nm_utils_libnm_utils_base_la_SOURCES = \
-	shared/nm-utils/nm-c-list.h \
-	shared/nm-utils/nm-dedup-multi.c \
-	shared/nm-utils/nm-dedup-multi.h \
-	shared/nm-utils/nm-enum-utils.c \
-	shared/nm-utils/nm-enum-utils.h \
-	shared/nm-utils/nm-errno.c \
-	shared/nm-utils/nm-errno.h \
-	shared/nm-utils/nm-glib.h \
-	shared/nm-utils/nm-hash-utils.c \
-	shared/nm-utils/nm-hash-utils.h \
-	shared/nm-utils/nm-io-utils.c \
-	shared/nm-utils/nm-io-utils.h \
-	shared/nm-utils/nm-logging-fwd.h \
-	shared/nm-utils/nm-macros-internal.h \
-	shared/nm-utils/nm-obj.h \
-	shared/nm-utils/nm-random-utils.c \
-	shared/nm-utils/nm-random-utils.h \
-	shared/nm-utils/nm-secret-utils.c \
-	shared/nm-utils/nm-secret-utils.h \
-	shared/nm-utils/nm-shared-utils.c \
-	shared/nm-utils/nm-shared-utils.h \
-	shared/nm-utils/nm-time-utils.c \
-	shared/nm-utils/nm-time-utils.h \
+shared_nm_glib_aux_libnm_glib_aux_la_SOURCES = \
+	shared/nm-glib-aux/nm-c-list.h \
+	shared/nm-glib-aux/nm-dedup-multi.c \
+	shared/nm-glib-aux/nm-dedup-multi.h \
+	shared/nm-glib-aux/nm-enum-utils.c \
+	shared/nm-glib-aux/nm-enum-utils.h \
+	shared/nm-glib-aux/nm-errno.c \
+	shared/nm-glib-aux/nm-errno.h \
+	shared/nm-glib-aux/nm-glib.h \
+	shared/nm-glib-aux/nm-hash-utils.c \
+	shared/nm-glib-aux/nm-hash-utils.h \
+	shared/nm-glib-aux/nm-io-utils.c \
+	shared/nm-glib-aux/nm-io-utils.h \
+	shared/nm-glib-aux/nm-jansson.h \
+	shared/nm-glib-aux/nm-logging-fwd.h \
+	shared/nm-glib-aux/nm-macros-internal.h \
+	shared/nm-glib-aux/nm-obj.h \
+	shared/nm-glib-aux/nm-random-utils.c \
+	shared/nm-glib-aux/nm-random-utils.h \
+	shared/nm-glib-aux/nm-secret-utils.c \
+	shared/nm-glib-aux/nm-secret-utils.h \
+	shared/nm-glib-aux/nm-shared-utils.c \
+	shared/nm-glib-aux/nm-shared-utils.h \
+	shared/nm-glib-aux/nm-time-utils.c \
+	shared/nm-glib-aux/nm-time-utils.h \
 	$(NULL)
 
-shared_nm_utils_libnm_utils_base_la_LDFLAGS = \
+shared_nm_glib_aux_libnm_glib_aux_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_nm_utils_libnm_utils_base_la_LIBADD = \
+shared_nm_glib_aux_libnm_glib_aux_la_LIBADD = \
 	shared/nm-std-aux/libnm-std-aux.la \
 	$(GLIB_LIBS) \
 	$(NULL)
@@ -375,7 +376,7 @@ shared_nm_utils_libnm_utils_base_la_LIBADD = \
 noinst_LTLIBRARIES += shared/nm-udev-aux/libnm-udev-aux.la
 
 shared_nm_udev_aux_libnm_udev_aux_la_CPPFLAGS = \
-	$(shared_nm_utils_libnm_utils_cppflags) \
+	$(shared_nm_glib_aux_cppflags) \
 	$(LIBUDEV_CFLAGS) \
 	$(NULL)
 
@@ -414,7 +415,7 @@ shared_nm_utils_tests_test_shared_general_LDFLAGS = \
 	$(NULL)
 
 shared_nm_utils_tests_test_shared_general_LDADD = \
-	shared/nm-utils/libnm-utils-base.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -998,7 +999,7 @@ libnm_core_tests_ldadd = \
 	libnm-core/libnm-core.la \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/systemd/libnm-systemd-logging-stub.la \
-	shared/nm-utils/libnm-utils-base.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
 	$(libnm_crypto_lib) \
 	$(GLIB_LIBS)
 
@@ -1210,7 +1211,7 @@ libnm_libnm_utils_la_LIBADD = \
 	libnm-core/libnm-core.la \
 	$(libnm_crypto_lib) \
 	introspection/libnmdbus.la \
-	shared/nm-utils/libnm-utils-base.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -1896,7 +1897,7 @@ src_libNetworkManagerBase_la_LIBADD = \
 	libnm-core/libnm-core.la \
 	$(libnm_crypto_lib) \
 	shared/nm-udev-aux/libnm-udev-aux.la \
-	shared/nm-utils/libnm-utils-base.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
 	$(GLIB_LIBS) \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(LIBUDEV_LIBS) \
@@ -2203,7 +2204,7 @@ src_initrd_nm_initrd_generator_LDADD = \
 	src/initrd/libnmi-core.la \
 	src/libNetworkManagerBase.la \
 	shared/systemd/libnm-systemd-shared.la \
-	shared/nm-utils/libnm-utils-base.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -2226,7 +2227,7 @@ src_initrd_tests_test_ibft_reader_LDADD = \
 	libnm-core/libnm-core.la \
 	src/initrd/libnmi-core.la \
 	src/libNetworkManagerTest.la \
-	shared/nm-utils/libnm-utils-base.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -2442,7 +2443,7 @@ src_initrd_tests_test_cmdline_reader_LDADD = \
 	libnm-core/libnm-core.la \
 	src/initrd/libnmi-core.la \
 	src/libNetworkManagerTest.la \
-	shared/nm-utils/libnm-utils-base.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -3898,7 +3899,7 @@ dispatcher_tests_test_dispatcher_envp_LDFLAGS = \
 dispatcher_tests_test_dispatcher_envp_LDADD = \
 	dispatcher/libnm-dispatcher-core.la \
 	libnm/libnm.la \
-	shared/nm-utils/libnm-utils-base.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
 	$(GLIB_LIBS)
 
 $(dispatcher_tests_test_dispatcher_envp_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
@@ -3981,7 +3982,7 @@ clients_common_libnmc_base_la_CPPFLAGS = \
 
 clients_common_libnmc_base_la_LIBADD = \
 	libnm/libnm.la \
-	shared/nm-utils/libnm-utils-base.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -4573,7 +4574,7 @@ nm_utils_enum_types_sources = $(filter-out libnm-util/NetworkManager%,$(libnm_ut
 $(libnm_util_libnm_util_la_OBJECTS): $(libnm_util_lib_h_pub_mkenums)
 
 libnm_util_libnm_util_la_LIBADD = \
-	shared/nm-utils/libnm-utils-base.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
 	$(UUID_LIBS)
@@ -5317,7 +5318,6 @@ EXTRA_DIST += \
 	shared/nm-test-utils-impl.c \
 	shared/nm-utils/nm-compat.c \
 	shared/nm-utils/nm-compat.h \
-	shared/nm-utils/nm-jansson.h \
 	shared/nm-utils/nm-test-utils.h \
 	shared/nm-utils/nm-vpn-editor-plugin-call.h \
 	shared/nm-utils/nm-vpn-plugin-macros.h \

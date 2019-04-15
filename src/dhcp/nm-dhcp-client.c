@@ -28,8 +28,8 @@
 #include <stdlib.h>
 #include <linux/rtnetlink.h>
 
-#include "nm-utils/nm-dedup-multi.h"
-#include "nm-utils/nm-random-utils.h"
+#include "nm-glib-aux/nm-dedup-multi.h"
+#include "nm-glib-aux/nm-random-utils.h"
 
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"

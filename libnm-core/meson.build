@@ -145,7 +145,7 @@ deps = [
   uuid_dep,
   glib_dep,
   shared_c_siphash_dep,
-  shared_nm_utils_base_dep,
+  shared_nm_glib_aux_dep,
   shared_nm_udev_aux_dep,
 ]
 
@@ -204,7 +204,7 @@ nm_core_dep = declare_dependency(
   sources: libnm_core_enum[1],
   include_directories: libnm_core_inc,
   dependencies: [
-    shared_nm_utils_base_dep,
+    shared_nm_glib_aux_dep,
     shared_c_siphash_dep,
     libnm_systemd_shared_dep,
   ],

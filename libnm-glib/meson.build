@@ -5,7 +5,7 @@ dbus_binding_tool = find_program('dbus-binding-tool')
 common_deps = [
   dbus_dep,
   dbus_glib_dep,
-  shared_nm_utils_base_dep,
+  shared_nm_glib_aux_dep,
 ]
 
 common_cflags = [

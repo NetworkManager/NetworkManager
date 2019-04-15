@@ -31,7 +31,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include "nm-utils/nm-secret-utils.h"
+#include "nm-glib-aux/nm-secret-utils.h"
 #include "nm-connection.h"
 #include "nm-dbus-interface.h"
 #include "nm-setting-connection.h"

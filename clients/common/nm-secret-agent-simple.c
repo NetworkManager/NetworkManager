@@ -38,7 +38,7 @@
 
 #include "nm-vpn-service-plugin.h"
 #include "nm-vpn-helpers.h"
-#include "nm-utils/nm-secret-utils.h"
+#include "nm-glib-aux/nm-secret-utils.h"
 
 /*****************************************************************************/
 

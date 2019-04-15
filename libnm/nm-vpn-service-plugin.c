@@ -26,7 +26,7 @@
 #include <signal.h>
 #include <stdlib.h>
 
-#include "nm-utils/nm-secret-utils.h"
+#include "nm-glib-aux/nm-secret-utils.h"
 #include "nm-enum-types.h"
 #include "nm-utils.h"
 #include "nm-connection.h"

@@ -60,7 +60,7 @@
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 
-#include "nm-utils/nm-c-list.h"
+#include "nm-glib-aux/nm-c-list.h"
 #include "nm-dbus-object.h"
 #include "devices/nm-device-ethernet.h"
 #include "nm-settings-connection.h"

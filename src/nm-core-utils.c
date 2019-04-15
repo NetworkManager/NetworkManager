@@ -38,9 +38,9 @@
 #include <net/ethernet.h>
 
 #include "nm-std-aux/unaligned.h"
-#include "nm-utils/nm-random-utils.h"
-#include "nm-utils/nm-io-utils.h"
-#include "nm-utils/nm-secret-utils.h"
+#include "nm-glib-aux/nm-random-utils.h"
+#include "nm-glib-aux/nm-io-utils.h"
+#include "nm-glib-aux/nm-secret-utils.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-setting-connection.h"

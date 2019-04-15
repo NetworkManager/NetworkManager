@@ -27,7 +27,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "nm-utils/nm-c-list.h"
+#include "nm-glib-aux/nm-c-list.h"
 
 #include "nm-common-macros.h"
 #include "nm-dbus-manager.h"
