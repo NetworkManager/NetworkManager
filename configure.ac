@@ -330,9 +330,6 @@ AS_IF([test -z "$with_systemdsystemunitdir"], with_systemdsystemunitdir=no)
 AM_CONDITIONAL(HAVE_SYSTEMD, [test "$with_systemdsystemunitdir" != no])
 if test "$with_systemdsystemunitdir" != no; then
 	AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
-	AC_DEFINE(HAVE_SYSTEMD, 1, [Define if systemd support is available])
-else
-	AC_DEFINE(HAVE_SYSTEMD, 0, [Define if systemd support is available])
 fi
 
 PKG_CHECK_MODULES(SYSTEMD_200, [systemd >= 200], [have_systemd_200=yes], [have_systemd_200=no])

@@ -343,7 +343,6 @@ if install_systemd_unit_dir and systemd_system_unit_dir == ''
   assert(systemd_dep.found(), 'systemd required but not found, please provide a valid systemd user unit dir or disable it')
   systemd_system_unit_dir = systemd_dep.get_pkgconfig_variable('systemdsystemunitdir')
 endif
-config_h.set10('HAVE_SYSTEMD', install_systemd_unit_dir)
 
 enable_systemd_journal = get_option('systemd_journal')
 if enable_systemd_journal
