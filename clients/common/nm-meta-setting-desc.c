@@ -3618,13 +3618,14 @@ _objlist_set_fcn_bridge_vlans (NMSetting *setting,
 {
 	nm_auto_unref_bridge_vlan NMBridgeVlan *vlan = NULL;
 	gs_free_error GError *local = NULL;
+	guint16 vid_start, vid_end;
 
 	vlan = nm_bridge_vlan_from_str (value, &local);
 	if (!vlan) {
 		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
 		                    "%s. %s",
 		                    local->message,
-		                    _("The valid syntax is: '<vid> [pvid] [untagged]"));
+		                    _("The valid syntax is: '<vid>[-<vid>] [pvid] [untagged]'"));
 		return FALSE;
 	}
 
@@ -3632,15 +3633,18 @@ _objlist_set_fcn_bridge_vlans (NMSetting *setting,
 		if (do_add)
 			nm_setting_bridge_add_vlan (NM_SETTING_BRIDGE (setting), vlan);
 		else {
+			nm_bridge_vlan_get_vid_range (vlan, &vid_start, &vid_end);
 			nm_setting_bridge_remove_vlan_by_vid (NM_SETTING_BRIDGE (setting),
-			                                      nm_bridge_vlan_get_vid (vlan));
+			                                      vid_start, vid_end);
 		}
 	} else {
 		if (do_add)
 			nm_setting_bridge_port_add_vlan (NM_SETTING_BRIDGE_PORT (setting), vlan);
 		else {
+			nm_bridge_vlan_get_vid_range (vlan, &vid_start, &vid_end);
 			nm_setting_bridge_port_remove_vlan_by_vid (NM_SETTING_BRIDGE_PORT (setting),
-			                                           nm_bridge_vlan_get_vid (vlan));
+			                                           vid_start,
+			                                           vid_end);
 		}
 	}
 

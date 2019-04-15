@@ -282,9 +282,13 @@ setting_vlans_to_platform (GPtrArray *array)
 	for (i = 0; i < array->len; i++) {
 		NMBridgeVlan *vlan = array->pdata[i];
 		NMPlatformBridgeVlan *plat_vlan;
+		guint16 vid_start, vid_end;
+
+		nm_bridge_vlan_get_vid_range (vlan, &vid_start, &vid_end);
 
 		plat_vlan = g_new0 (NMPlatformBridgeVlan, 1);
-		plat_vlan->vid = nm_bridge_vlan_get_vid (vlan);
+		plat_vlan->vid_start = vid_start;
+		plat_vlan->vid_end = vid_end;
 		plat_vlan->pvid = nm_bridge_vlan_is_pvid (vlan);
 		plat_vlan->untagged = nm_bridge_vlan_is_untagged (vlan);
 

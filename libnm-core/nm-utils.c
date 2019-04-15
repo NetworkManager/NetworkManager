@@ -6800,10 +6800,15 @@ _nm_utils_bridge_vlans_to_dbus (NMSetting *setting, const char *property)
 		for (i = 0; i < vlans->len; i++) {
 			NMBridgeVlan *vlan = vlans->pdata[i];
 			GVariantBuilder vlan_builder;
+			guint16 vid_start, vid_end;
+
+			nm_bridge_vlan_get_vid_range (vlan, &vid_start, &vid_end);
 
 			g_variant_builder_init (&vlan_builder, G_VARIANT_TYPE_VARDICT);
-			g_variant_builder_add (&vlan_builder, "{sv}", "vid",
-			                       g_variant_new_uint16 (nm_bridge_vlan_get_vid (vlan)));
+			g_variant_builder_add (&vlan_builder, "{sv}", "vid-start",
+			                       g_variant_new_uint16 (vid_start));
+			g_variant_builder_add (&vlan_builder, "{sv}", "vid-end",
+			                       g_variant_new_uint16 (vid_end));
 			g_variant_builder_add (&vlan_builder, "{sv}", "pvid",
 			                       g_variant_new_boolean (nm_bridge_vlan_is_pvid (vlan)));
 			g_variant_builder_add (&vlan_builder, "{sv}", "untagged",
@@ -6834,19 +6839,29 @@ _nm_utils_bridge_vlans_from_dbus (NMSetting *setting,
 	while (g_variant_iter_next (&vlan_iter, "@a{sv}", &vlan_var)) {
 		_nm_unused gs_unref_variant GVariant *var_unref = vlan_var;
 		NMBridgeVlan *vlan;
-		guint16 vid;
+		guint16 vid_start, vid_end;
 		gboolean pvid = FALSE, untagged = FALSE;
 
-		if (!g_variant_lookup (vlan_var, "vid", "q", &vid))
+		if (!g_variant_lookup (vlan_var, "vid-start", "q", &vid_start))
 			continue;
-		if (   vid < NM_BRIDGE_VLAN_VID_MIN
-		    || vid > NM_BRIDGE_VLAN_VID_MAX)
+		if (   vid_start < NM_BRIDGE_VLAN_VID_MIN
+		    || vid_start > NM_BRIDGE_VLAN_VID_MAX)
+			continue;
+
+		if (!g_variant_lookup (vlan_var, "vid-end", "q", &vid_end))
+			continue;
+		if (   vid_end < NM_BRIDGE_VLAN_VID_MIN
+		    || vid_end > NM_BRIDGE_VLAN_VID_MAX)
+			continue;
+		if (vid_start > vid_end)
 			continue;
 
 		g_variant_lookup (vlan_var, "pvid", "b", &pvid);
+		if (pvid && vid_start != vid_end)
+			continue;
 		g_variant_lookup (vlan_var, "untagged", "b", &untagged);
 
-		vlan = nm_bridge_vlan_new (vid);
+		vlan = nm_bridge_vlan_new (vid_start, vid_end);
 		nm_bridge_vlan_set_untagged (vlan, untagged);
 		nm_bridge_vlan_set_pvid (vlan, pvid);
 		g_ptr_array_add (vlans, vlan);
@@ -6875,14 +6890,18 @@ _nm_utils_bridge_vlan_verify_list (GPtrArray *vlans,
 		for (i = 1; i < vlans->len; i++) {
 			NMBridgeVlan *vlan_prev = vlans->pdata[i - 1];
 			NMBridgeVlan *vlan = vlans->pdata[i];
+			guint16 vid_prev, vid;
 
-			if (nm_bridge_vlan_get_vid (vlan_prev) > nm_bridge_vlan_get_vid (vlan)) {
+			nm_bridge_vlan_get_vid_range (vlan_prev, &vid_prev, NULL);
+			nm_bridge_vlan_get_vid_range (vlan, &vid, NULL);
+
+			if (vid_prev > vid) {
 				g_set_error (error,
 				             NM_CONNECTION_ERROR,
 				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 				             _("Bridge VLANs %d and %d are not sorted by ascending vid"),
-				             nm_bridge_vlan_get_vid (vlan_prev),
-				             nm_bridge_vlan_get_vid (vlan));
+				             vid_prev,
+				             vid);
 				g_prefix_error (error, "%s.%s: ", setting, property);
 				return FALSE;
 			}
@@ -6893,32 +6912,32 @@ _nm_utils_bridge_vlan_verify_list (GPtrArray *vlans,
 	h = g_hash_table_new (nm_direct_hash, NULL);
 	for (i = 0; i < vlans->len; i++) {
 		NMBridgeVlan *vlan = vlans->pdata[i];
-		guint vid;
+		guint16 v, vid_start, vid_end;
 
-		vid = nm_bridge_vlan_get_vid (vlan);
-
-		if (g_hash_table_contains (h, GUINT_TO_POINTER (vid))) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("duplicate bridge VLAN vid %u"), vid);
-			g_prefix_error (error, "%s.%s: ", setting, property);
-			return FALSE;
-		}
-
-		if (nm_bridge_vlan_is_pvid (vlan)) {
-			if (pvid_found) {
-				g_set_error_literal (error,
-				                     NM_CONNECTION_ERROR,
-				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-				                     _("only one VLAN can be the PVID"));
+		nm_bridge_vlan_get_vid_range (vlan, &vid_start, &vid_end);
+		for (v = vid_start; v <= vid_end; v++) {
+			if (g_hash_table_contains (h, GUINT_TO_POINTER (v))) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("duplicate bridge VLAN vid %u"), v);
 				g_prefix_error (error, "%s.%s: ", setting, property);
 				return FALSE;
 			}
-			pvid_found = TRUE;
-		}
 
-		g_hash_table_add (h, GUINT_TO_POINTER (vid));
+			if (nm_bridge_vlan_is_pvid (vlan)) {
+				if (pvid_found) {
+					g_set_error_literal (error,
+					                     NM_CONNECTION_ERROR,
+					                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+					                     _("only one VLAN can be the PVID"));
+					g_prefix_error (error, "%s.%s: ", setting, property);
+					return FALSE;
+				}
+				pvid_found = TRUE;
+			}
+			g_hash_table_add (h, GUINT_TO_POINTER (v));
+		}
 	}
 
 	return TRUE;
