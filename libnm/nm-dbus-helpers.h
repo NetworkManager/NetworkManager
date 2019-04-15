@@ -25,7 +25,7 @@
 #error Cannot use this header.
 #endif
 
-#include "nm-dbus-compat.h"
+#include "nm-std-aux/nm-dbus-compat.h"
 
 GBusType _nm_dbus_bus_type (void);
 

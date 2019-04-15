@@ -304,6 +304,7 @@ shared_nm_std_aux_libnm_std_aux_la_SOURCES = \
 	shared/c-list/src/c-list.h \
 	shared/nm-std-aux/c-list-util.c \
 	shared/nm-std-aux/c-list-util.h \
+	shared/nm-std-aux/nm-dbus-compat.h \
 	shared/nm-std-aux/unaligned.h \
 	$(NULL)
 
@@ -5311,7 +5312,6 @@ EXTRA_DIST += \
 	po/meson.build \
 	\
 	shared/nm-common-macros.h \
-	shared/nm-dbus-compat.h \
 	shared/nm-default.h \
 	shared/nm-dispatcher-api.h \
 	shared/nm-test-libnm-utils.h \

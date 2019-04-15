@@ -39,7 +39,7 @@
 #include "nm-config.h"
 #include "nm-iwd-manager.h"
 #include "nm-dbus-manager.h"
-#include "nm-dbus-compat.h"
+#include "nm-std-aux/nm-dbus-compat.h"
 
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceIwd);

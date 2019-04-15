@@ -42,7 +42,7 @@
 #include "nm-setting-connection.h"
 #include "devices/nm-device.h"
 #include "NetworkManagerUtils.h"
-#include "nm-dbus-compat.h"
+#include "nm-std-aux/nm-dbus-compat.h"
 
 #define SYSTEMD_RESOLVED_DBUS_SERVICE   "org.freedesktop.resolve1"
 #define SYSTEMD_RESOLVED_MANAGER_IFACE  "org.freedesktop.resolve1.Manager"

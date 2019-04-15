@@ -30,7 +30,7 @@
 #include <sys/stat.h>
 #include <gmodule.h>
 
-#include "nm-dbus-compat.h"
+#include "nm-std-aux/nm-dbus-compat.h"
 #include "nm-setting-connection.h"
 #include "settings/nm-settings-plugin.h"
 #include "nm-config.h"

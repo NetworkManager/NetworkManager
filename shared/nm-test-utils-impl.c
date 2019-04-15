@@ -23,7 +23,7 @@
 #include <sys/wait.h>
 
 #include "NetworkManager.h"
-#include "nm-dbus-compat.h"
+#include "nm-std-aux/nm-dbus-compat.h"
 
 #include "nm-test-libnm-utils.h"
 

@@ -35,7 +35,7 @@
 #include "nm-device-bt.h"
 #include "nm-core-internal.h"
 #include "platform/nm-platform.h"
-#include "nm-dbus-compat.h"
+#include "nm-std-aux/nm-dbus-compat.h"
 
 /*****************************************************************************/
 
