@@ -70,7 +70,7 @@ do_helper (const char *iface,
 	argv[i++] = NULL;
 
 	if (!run_func ((char **) argv, which, user_data, error)) {
-		g_assert (!error || !*error);
+		g_assert (!error || *error);
 		return FALSE;
 	}
 
