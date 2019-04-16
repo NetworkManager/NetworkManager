@@ -268,35 +268,37 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 		nm_platform_sysctl_master_set_option (nm_device_get_platform (device), ifindex, option->sysname, value);
 }
 
-static NMPlatformBridgeVlan **
+static const NMPlatformBridgeVlan **
 setting_vlans_to_platform (GPtrArray *array)
 {
-	GPtrArray *plat_vlans;
+	NMPlatformBridgeVlan **arr;
+	NMPlatformBridgeVlan *p_data;
 	guint i;
 
 	if (!array || !array->len)
 		return NULL;
 
-	plat_vlans = g_ptr_array_sized_new (array->len + 1);
+	G_STATIC_ASSERT_EXPR (_nm_alignof (NMPlatformBridgeVlan *) >= _nm_alignof (NMPlatformBridgeVlan));
+	arr = g_malloc (  (sizeof (NMPlatformBridgeVlan *) * (array->len + 1))
+	                + (sizeof (NMPlatformBridgeVlan  ) * (array->len    )));
+	p_data = (NMPlatformBridgeVlan *) &arr[array->len + 1];
 
 	for (i = 0; i < array->len; i++) {
 		NMBridgeVlan *vlan = array->pdata[i];
-		NMPlatformBridgeVlan *plat_vlan;
 		guint16 vid_start, vid_end;
 
 		nm_bridge_vlan_get_vid_range (vlan, &vid_start, &vid_end);
 
-		plat_vlan = g_new0 (NMPlatformBridgeVlan, 1);
-		plat_vlan->vid_start = vid_start;
-		plat_vlan->vid_end = vid_end;
-		plat_vlan->pvid = nm_bridge_vlan_is_pvid (vlan);
-		plat_vlan->untagged = nm_bridge_vlan_is_untagged (vlan);
-
-		g_ptr_array_add (plat_vlans, plat_vlan);
+		p_data[i] = (NMPlatformBridgeVlan) {
+			.vid_start = vid_start,
+			.vid_end   = vid_end,
+			.pvid      = nm_bridge_vlan_is_pvid (vlan),
+			.untagged  = nm_bridge_vlan_is_untagged (vlan),
+		};
+		arr[i] = &p_data[i];
 	}
-	g_ptr_array_add (plat_vlans, NULL);
-
-	return (NMPlatformBridgeVlan **) g_ptr_array_free (plat_vlans, FALSE);
+	arr[i] = NULL;
+	return (const NMPlatformBridgeVlan **) arr;
 }
 
 static void
@@ -428,7 +430,7 @@ bridge_set_vlan_options (NMDevice *device, NMSettingBridge *s_bridge)
 	NMPlatform *plat;
 	int ifindex;
 	gs_unref_ptrarray GPtrArray *vlans = NULL;
-	nm_auto_freev NMPlatformBridgeVlan **plat_vlans = NULL;
+	gs_free const NMPlatformBridgeVlan **plat_vlans = NULL;
 
 	if (self->vlan_configured)
 		return TRUE;
@@ -483,8 +485,7 @@ bridge_set_vlan_options (NMDevice *device, NMSettingBridge *s_bridge)
 	g_object_get (s_bridge, NM_SETTING_BRIDGE_VLANS, &vlans, NULL);
 	plat_vlans = setting_vlans_to_platform (vlans);
 	if (   plat_vlans
-	    && !nm_platform_link_set_bridge_vlans (plat, ifindex, FALSE,
-	                                           (const NMPlatformBridgeVlan *const *) plat_vlans))
+	    && !nm_platform_link_set_bridge_vlans (plat, ifindex, FALSE, plat_vlans))
 		return FALSE;
 
 	if (!nm_platform_sysctl_master_set_option (plat, ifindex, "vlan_filtering", "1"))
@@ -572,8 +573,6 @@ enslave_slave (NMDevice *device,
 	NMConnection *master_connection;
 	NMSettingBridge *s_bridge;
 	NMSettingBridgePort *s_port;
-	gs_unref_ptrarray GPtrArray *vlans = NULL;
-	nm_auto_freev NMPlatformBridgeVlan **plat_vlans = NULL;
 
 	if (configure) {
 		if (!nm_platform_link_enslave (nm_device_get_platform (device), nm_device_get_ip_ifindex (device), nm_device_get_ip_ifindex (slave)))
@@ -588,8 +587,12 @@ enslave_slave (NMDevice *device,
 		bridge_set_vlan_options (device, s_bridge);
 
 		if (nm_setting_bridge_get_vlan_filtering (s_bridge)) {
+			gs_free const NMPlatformBridgeVlan **plat_vlans = NULL;
+			gs_unref_ptrarray GPtrArray *vlans = NULL;
+
 			if (s_port)
 				g_object_get (s_port, NM_SETTING_BRIDGE_PORT_VLANS, &vlans, NULL);
+
 			plat_vlans = setting_vlans_to_platform (vlans);
 
 			/* Since the link was just enslaved, there are no existing VLANs
@@ -599,7 +602,7 @@ enslave_slave (NMDevice *device,
 			    && !nm_platform_link_set_bridge_vlans (nm_device_get_platform (slave),
 			                                           nm_device_get_ifindex (slave),
 			                                           TRUE,
-			                                           (const NMPlatformBridgeVlan *const *) plat_vlans))
+			                                           plat_vlans))
 				return FALSE;
 		}
 
