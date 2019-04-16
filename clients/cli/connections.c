@@ -1534,6 +1534,7 @@ split_required_fields_for_con_show (const char *input,
 	nm_auto_free_gstring GString *str2 = NULL;
 	gboolean group_profile = FALSE;
 	gboolean group_active = FALSE;
+	gboolean do_free;
 
 	if (!input) {
 		*profile_flds = NULL;
@@ -1627,8 +1628,11 @@ split_required_fields_for_con_show (const char *input,
 		g_string_truncate (str1, str1->len - 1);
 	if (str2->len > 0)
 		g_string_truncate (str2, str2->len - 1);
-	*profile_flds = g_string_free (g_steal_pointer (&str1), str1->len == 0);
-	*active_flds =  g_string_free (g_steal_pointer (&str2), str2->len == 0);
+
+	do_free = (str1->len == 0);
+	*profile_flds = g_string_free (g_steal_pointer (&str1), do_free);
+	do_free = (str2->len == 0);
+	*active_flds = g_string_free (g_steal_pointer (&str2), do_free);
 	return TRUE;
 }
 
