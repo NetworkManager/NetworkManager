@@ -732,7 +732,7 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			nmc_complete_strings (argv[0], "--terse", "--pretty", "--mode", "--overview",
 			                               "--colors", "--escape",
 			                               "--fields", "--nocheck", "--get-values",
-			                               "--wait", "--version", "--help", NULL);
+			                               "--wait", "--version", "--help");
 		}
 
 		if (argv[0][1] == '-' && argv[0][2] == '\0') {

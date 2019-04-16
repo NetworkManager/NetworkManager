@@ -425,36 +425,38 @@ nmc_find_connection (const GPtrArray *connections,
                      GPtrArray **out_result,
                      gboolean complete)
 {
-	NMConnection *connection;
+	NMConnection *best_candidate_uuid = NULL;
 	NMConnection *best_candidate = NULL;
+	gs_unref_ptrarray GPtrArray *result_allocated = NULL;
 	GPtrArray *result = out_result ? *out_result : NULL;
+	const guint result_inital_len = result ? result->len : 0u;
 	guint i, j;
 
 	nm_assert (connections);
 	nm_assert (filter_val);
 
 	for (i = 0; i < connections->len; i++) {
-		const char *v, *v_num;
+		gboolean match_by_uuid = FALSE;
+		NMConnection *connection;
+		const char *v;
+		const char *v_num;
 
 		connection = NM_CONNECTION (connections->pdata[i]);
-
-		/* When filter_type is NULL, compare connection ID (filter_val)
-		 * against all types. Otherwise, only compare against the specific
-		 * type. If 'path' filter type is specified, comparison against
-		 * numeric index (in addition to the whole path) is allowed.
-		 */
-		if (NM_IN_STRSET (filter_type, NULL, "id")) {
-			v = nm_connection_get_id (connection);
-			if (complete)
-				nmc_complete_strings (filter_val, v, NULL);
-			if (nm_streq0 (filter_val, v))
-				goto found;
-		}
 
 		if (NM_IN_STRSET (filter_type, NULL, "uuid")) {
 			v = nm_connection_get_uuid (connection);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, NULL);
+				nmc_complete_strings (filter_val, v);
+			if (nm_streq0 (filter_val, v)) {
+				match_by_uuid = TRUE;
+				goto found;
+			}
+		}
+
+		if (NM_IN_STRSET (filter_type, NULL, "id")) {
+			v = nm_connection_get_id (connection);
+			if (complete)
+				nmc_complete_strings (filter_val, v);
 			if (nm_streq0 (filter_val, v))
 				goto found;
 		}
@@ -463,7 +465,7 @@ nmc_find_connection (const GPtrArray *connections,
 			v = nm_connection_get_path (connection);
 			v_num = nm_utils_dbus_path_get_last_component (v);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL, NULL);
+				nmc_complete_strings (filter_val, v, (*filter_val ? v_num : NULL));
 			if (   nm_streq0 (filter_val, v)
 			    || (filter_type && nm_streq0 (filter_val, v_num)))
 				goto found;
@@ -472,29 +474,51 @@ nmc_find_connection (const GPtrArray *connections,
 		if (NM_IN_STRSET (filter_type, NULL, "filename")) {
 			v = nm_remote_connection_get_filename (NM_REMOTE_CONNECTION (connections->pdata[i]));
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, NULL);
+				nmc_complete_strings (filter_val, v);
 			if (nm_streq0 (filter_val, v))
 				goto found;
 		}
 
 		continue;
+
 found:
-		if (!out_result)
-			return connection;
-		if (!best_candidate)
-			best_candidate = connection;
-		if (!result)
-			result = g_ptr_array_new_with_free_func (g_object_unref);
-		for (j = 0; j < result->len; j++) {
-			if (connection == result->pdata[j])
-				break;
+		if (match_by_uuid) {
+			if (   !complete
+			    && !out_result)
+				return connection;
+			best_candidate_uuid = connection;
+		} else {
+			if (!best_candidate)
+				best_candidate = connection;
 		}
-		if (j == result->len)
-			g_ptr_array_add (result, g_object_ref (connection));
+		if (out_result) {
+			gboolean already_tracked = FALSE;
+
+			if (!result) {
+				result_allocated = g_ptr_array_new_with_free_func (g_object_unref);
+				result = result_allocated;
+			} else {
+				for (j = 0; j < result->len; j++) {
+					if (connection == result->pdata[j]) {
+						already_tracked = TRUE;
+						break;
+					}
+				}
+			}
+			if (!already_tracked) {
+				if (match_by_uuid) {
+					/* the profile is matched exactly (by UUID). We prepend it
+					 * to the list of all found profiles. */
+					g_ptr_array_insert (result, result_inital_len, g_object_ref (connection));
+				} else
+					g_ptr_array_add (result, g_object_ref (connection));
+			}
+		}
 	}
 
-	NM_SET_OUT (out_result, result);
-	return best_candidate;
+	if (result_allocated)
+		*out_result = g_steal_pointer (&result_allocated);
+	return best_candidate_uuid ?: best_candidate;
 }
 
 NMActiveConnection *
@@ -525,7 +549,7 @@ nmc_find_active_connection (const GPtrArray *active_cons,
 		if (NM_IN_STRSET (filter_type, NULL, "id")) {
 			v = nm_active_connection_get_id (candidate);
 			if (complete)
-				nmc_complete_strings (filter_val, v, NULL);
+				nmc_complete_strings (filter_val, v);
 			if (nm_streq0 (filter_val, v))
 				goto found;
 		}
@@ -533,7 +557,7 @@ nmc_find_active_connection (const GPtrArray *active_cons,
 		if (NM_IN_STRSET (filter_type, NULL, "uuid")) {
 			v = nm_active_connection_get_uuid (candidate);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, NULL);
+				nmc_complete_strings (filter_val, v);
 			if (nm_streq0 (filter_val, v))
 				goto found;
 		}
@@ -542,7 +566,7 @@ nmc_find_active_connection (const GPtrArray *active_cons,
 			v = con ? nm_connection_get_path (NM_CONNECTION (con)) : NULL;
 			v_num = nm_utils_dbus_path_get_last_component (v);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL, NULL);
+				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL);
 			if (   nm_streq0 (filter_val, v)
 			    || (filter_type && nm_streq0 (filter_val, v_num)))
 				goto found;
@@ -551,7 +575,7 @@ nmc_find_active_connection (const GPtrArray *active_cons,
 		if (NM_IN_STRSET (filter_type, NULL, "filename")) {
 			v = nm_remote_connection_get_filename (con);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, NULL);
+				nmc_complete_strings (filter_val, v);
 			if (nm_streq0 (filter_val, v))
 				goto found;
 		}
@@ -560,7 +584,7 @@ nmc_find_active_connection (const GPtrArray *active_cons,
 			v = nm_object_get_path (NM_OBJECT (candidate));
 			v_num = nm_utils_dbus_path_get_last_component (v);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL, NULL);
+				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL);
 			if (   nm_streq0 (filter_val, v)
 			    || (filter_type && nm_streq0 (filter_val, v_num)))
 				goto found;
@@ -1254,9 +1278,9 @@ call_cmd (NmCli *nmc, GSimpleAsyncResult *simple, const NMCCommand *cmd, int arg
 static void
 nmc_complete_help (const char *prefix)
 {
-	nmc_complete_strings (prefix, "help", NULL);
+	nmc_complete_strings (prefix, "help");
 	if (*prefix == '-')
-		nmc_complete_strings (prefix, "-help", "--help", NULL);
+		nmc_complete_strings (prefix, "-help", "--help");
 }
 
 /**
@@ -1395,7 +1419,7 @@ void
 nmc_complete_bool (const char *prefix)
 {
 	nmc_complete_strings (prefix, "true", "yes", "on",
-	                              "false", "no", "off", NULL);
+	                              "false", "no", "off");
 }
 
 /**
