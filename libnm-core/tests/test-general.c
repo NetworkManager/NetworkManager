@@ -264,8 +264,8 @@ _do_test_nm_utils_strsplit_set_f_one (NMUtilsStrsplitSetFlags flags,
                                       gsize words_len,
                                       const char *const*exp_words)
 {
-	const char *DELIMITERS = " \t\n";
-#define DELIMITERS_C         ' ', '\t', '\n'
+#define DELIMITERS           " \n"
+#define DELIMITERS_C         ' ', '\n'
 
 	gs_free const char **words = NULL;
 	gsize i, j, k;
@@ -510,6 +510,47 @@ _do_test_nm_utils_strsplit_set_f (NMUtilsStrsplitSetFlags flags,
 	                                 ##__VA_ARGS__)
 
 static void
+_do_test_nm_utils_strsplit_set_simple (NMUtilsStrsplitSetFlags flags,
+                                       const char *str,
+                                       gsize words_len,
+                                       const char *const*exp_words)
+{
+	gs_free const char **tokens = NULL;
+	gsize n_tokens;
+
+	tokens = nm_utils_strsplit_set_full (str, DELIMITERS, flags);
+
+	if (!tokens) {
+		g_assert_cmpint (words_len, ==, 0);
+		return;
+	}
+
+	g_assert (str && str[0]);
+	g_assert_cmpint (words_len, >, 0);
+	n_tokens = NM_PTRARRAY_LEN (tokens);
+
+	if (_nm_utils_strv_cmp_n (exp_words, words_len, tokens, -1) != 0) {
+		gsize i;
+
+		g_print (">>> split \"%s\" (flags %x) got %zu tokens (%zu expected)\n", str, (guint) flags, n_tokens, words_len);
+		for (i = 0; i < NM_MAX (n_tokens, words_len); i++) {
+			const char *s1 = i < n_tokens  ? tokens[i]    : NULL;
+			const char *s2 = i < words_len ? exp_words[i] : NULL;
+
+			g_print (">>> [%zu]: %s - %s%s%s vs. %s%s%s\n",
+			         i,
+			         nm_streq0 (s1, s2) ? "same" : "diff",
+			         NM_PRINT_FMT_QUOTE_STRING (s1),
+			         NM_PRINT_FMT_QUOTE_STRING (s2));
+		}
+		g_assert_not_reached ();
+	}
+	g_assert_cmpint (words_len, ==, NM_PTRARRAY_LEN (tokens));
+}
+#define do_test_nm_utils_strsplit_set_simple(flags, str, ...) \
+	_do_test_nm_utils_strsplit_set_simple ((flags), (str), NM_NARG (__VA_ARGS__), NM_MAKE_STRV (__VA_ARGS__))
+
+static void
 test_nm_utils_strsplit_set (void)
 {
 	gs_unref_ptrarray GPtrArray *words_exp = NULL;
@@ -534,8 +575,8 @@ test_nm_utils_strsplit_set (void)
 
 	do_test_nm_utils_strsplit_set (FALSE, NULL);
 	do_test_nm_utils_strsplit_set (FALSE, "");
-	do_test_nm_utils_strsplit_set (FALSE, "\t");
-	do_test_nm_utils_strsplit_set (FALSE, " \t\n");
+	do_test_nm_utils_strsplit_set (FALSE, "\n");
+	do_test_nm_utils_strsplit_set (TRUE, " \t\n", "\t");
 	do_test_nm_utils_strsplit_set (FALSE, "a", "a");
 	do_test_nm_utils_strsplit_set (FALSE, "a b", "a", "b");
 	do_test_nm_utils_strsplit_set (FALSE, "a\rb", "a\rb");
@@ -610,6 +651,21 @@ test_nm_utils_strsplit_set (void)
 		                                  words_len,
 		                                  (const char *const*) words_exp->pdata);
 	}
+
+	do_test_nm_utils_strsplit_set_simple (NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED, "\t", "\t");
+	do_test_nm_utils_strsplit_set_simple (NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED | NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP, "\t");
+	do_test_nm_utils_strsplit_set_simple (NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED | NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP | NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
+	                                      "\t", "");
+	do_test_nm_utils_strsplit_set_simple (NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED | NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP | NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
+	                                      "\t\\\t\t\t\\\t", "\t\t\t\t");
+
+	do_test_nm_utils_strsplit_set_simple (NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED, "\ta", "\ta");
+	do_test_nm_utils_strsplit_set_simple (NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED | NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP, "\ta", "a");
+	do_test_nm_utils_strsplit_set_simple (NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED, "\ta\\ b\t\\ ", "\ta b\t ");
+	do_test_nm_utils_strsplit_set_simple (NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED | NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP, "\ta\\ b\t\\ \t", "a b\t ");
+	do_test_nm_utils_strsplit_set_simple (NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED, "a\\  b", "a ", "b");
+	do_test_nm_utils_strsplit_set_simple (NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED, "\ta\\  b", "\ta ", "b");
+	do_test_nm_utils_strsplit_set_simple (NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED | NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP, "\ta\\  b", "a ", "b");
 }
 
 /*****************************************************************************/
