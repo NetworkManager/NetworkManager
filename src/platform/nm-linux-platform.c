@@ -3448,6 +3448,16 @@ _new_from_nl_routing_rule (struct nlmsghdr *nlh, gboolean id_only)
 	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMFibRuleUidRange, end) == 4);
 
 	if (tb[FRA_UID_RANGE]) {
+
+		if (!_nm_platform_kernel_support_detected (NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE)) {
+			/* support for FRA_UID_RANGE was added in 622ec2c9d52405973c9f1ca5116eb1c393adfc7d,
+			 * kernel 4.10, 19 February 2017.
+			 *
+			 * We can only detect support if the attribute is present. A missing attribute
+			 * is not conclusive. */
+			_nm_platform_kernel_support_init (NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE, 1);
+		}
+
 		nla_memcpy_checked_size (&props->uid_range, tb[FRA_UID_RANGE], sizeof (props->uid_range));
 		props->uid_range_has = TRUE;
 	}
