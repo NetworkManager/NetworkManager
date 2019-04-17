@@ -7463,9 +7463,12 @@ nm_platform_routing_rule_hash_update (const NMPlatformRoutingRule *obj,
 		                                             : FALSE)),
 		                     obj->suppress_prefixlen_inverse,
 		                     obj->suppress_ifgroup_inverse,
-		                     (  cmp_full
-		                      ? obj->l3mdev
-		                      : (guint8) !!obj->l3mdev),
+		                     (  _routing_rule_compare (cmp_type,
+		                                               NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV)
+		                      ? (  cmp_full
+		                         ? (guint16) obj->l3mdev
+		                         : (guint16) !!obj->l3mdev)
+		                      : G_MAXUINT16),
 		                     obj->action,
 		                     obj->tos,
 		                     obj->src_len,
@@ -7540,13 +7543,15 @@ nm_platform_routing_rule_cmp (const NMPlatformRoutingRule *a,
 		NM_CMP_FIELD (a, b, priority);
 		NM_CMP_FIELD (a, b, tun_id);
 
-		if (cmp_full)
-			NM_CMP_FIELD (a, b, l3mdev);
-		else
-			NM_CMP_FIELD_BOOL (a, b, l3mdev);
+		if (_routing_rule_compare (cmp_type,
+		                           NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV)) {
+			if (cmp_full)
+				NM_CMP_FIELD (a, b, l3mdev);
+			else
+				NM_CMP_FIELD_BOOL (a, b, l3mdev);
+		}
 
-		if (cmp_full || !a->l3mdev)
-			NM_CMP_FIELD (a, b, table);
+		NM_CMP_FIELD (a, b, table);
 
 		NM_CMP_DIRECT (a->flags & flags_mask, b->flags & flags_mask);
 
