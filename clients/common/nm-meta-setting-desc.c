@@ -3455,16 +3455,22 @@ _get_fcn_match_interface_name (ARGS_GET_FCN)
 
 	num = nm_setting_match_get_num_interface_names (s_match);
 	for (i = 0; i < num; i++) {
-		const char *name;
 		gs_free char *to_free = NULL;
+		const char *name;
 
-		if (i == 0)
+		name = nm_setting_match_get_interface_name (s_match, i);
+		if (!name || !name[0])
+			continue;
+		if (!str)
 			str = g_string_new ("");
 		else
 			g_string_append_c (str, ' ');
-		name = nm_setting_match_get_interface_name (s_match, i);
 		g_string_append (str, _value_strescape (name, &to_free));
 	}
+
+	NM_SET_OUT (out_is_default, num == 0);
+	if (!str)
+		return NULL;
 	RETURN_STR_TO_FREE (g_string_free (str, FALSE));
 }
 
