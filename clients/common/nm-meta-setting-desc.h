@@ -438,7 +438,7 @@ struct _NMMetaType {
 	                          NMMetaAccessorGetType get_type,
 	                          NMMetaAccessorGetFlags get_flags,
 	                          NMMetaAccessorGetOutFlags *out_flags,
-	                          gboolean *out_is_defalt,
+	                          gboolean *out_is_default,
 	                          gpointer *out_to_free);
 	const char *const*(*complete_fcn) (const NMMetaAbstractInfo *info,
 	                                   const NMMetaEnvironment *environment,
