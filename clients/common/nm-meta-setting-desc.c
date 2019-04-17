@@ -201,7 +201,8 @@ _value_strsplit (const char *value,
 	switch (split_mode) {
 	case VALUE_STRSPLIT_MODE_STRIPPED:
 		strv = nm_utils_strsplit_set (value, NM_ASCII_SPACES",");
-		break;
+		NM_SET_OUT (out_len, NM_PTRARRAY_LEN (strv));
+		return g_steal_pointer (&strv);
 	case VALUE_STRSPLIT_MODE_OBJLIST:
 		strv = nm_utils_strsplit_set (value, ",");
 		break;
