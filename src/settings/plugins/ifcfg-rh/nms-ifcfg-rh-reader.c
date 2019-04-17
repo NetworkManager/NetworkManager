@@ -1427,13 +1427,12 @@ make_match_setting (shvarFile *ifcfg)
 	if (!v)
 		return NULL;
 
-	strv = nm_utils_strsplit_set_full (v, " \t", NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
+	strv = nm_utils_escaped_tokens_split (v, NM_ASCII_SPACES);
 	if (strv) {
 		for (i = 0; strv[i]; i++) {
 			if (!s_match)
 				s_match = (NMSettingMatch *) nm_setting_match_new ();
-			nm_setting_match_add_interface_name (s_match,
-			                                     _nm_utils_unescape_spaces ((char *) strv[i], TRUE));
+			nm_setting_match_add_interface_name (s_match, strv[i]);
 		}
 	}
 
