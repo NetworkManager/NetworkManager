@@ -7457,7 +7457,10 @@ nm_platform_routing_rule_hash_update (const NMPlatformRoutingRule *obj,
 		                      ? obj->flow
 		                      : (guint32) 0u),
 		                     NM_HASH_COMBINE_BOOLS (guint8,
-		                                            obj->uid_range_has),
+		                                            (  _routing_rule_compare (cmp_type,
+		                                                                      NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE)
+		                                             ? obj->uid_range_has
+		                                             : FALSE)),
 		                     obj->suppress_prefixlen_inverse,
 		                     obj->suppress_ifgroup_inverse,
 		                     (  cmp_full
@@ -7476,8 +7479,11 @@ nm_platform_routing_rule_hash_update (const NMPlatformRoutingRule *obj,
 			nm_hash_update (h, &obj->src, addr_size);
 		if (cmp_full || obj->dst_len > 0)
 			nm_hash_update (h, &obj->dst, addr_size);
-		if (cmp_full || obj->uid_range_has)
-			nm_hash_update_valp (h, &obj->uid_range);
+		if (_routing_rule_compare (cmp_type,
+		                           NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE)) {
+			if (cmp_full || obj->uid_range_has)
+				nm_hash_update_valp (h, &obj->uid_range);
+		}
 		if (_routing_rule_compare (cmp_type,
 		                           NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_IP_PROTO)) {
 			nm_hash_update_val (h, obj->ip_proto);
@@ -7582,10 +7588,13 @@ nm_platform_routing_rule_cmp (const NMPlatformRoutingRule *a,
 		if (cmp_full || a->dst_len > 0)
 			NM_CMP_FIELD_MEMCMP_LEN (a, b, dst, addr_size);
 
-		NM_CMP_FIELD_UNSAFE (a, b, uid_range_has);
-		if (cmp_full || a->uid_range_has) {
-			NM_CMP_FIELD (a, b, uid_range.start);
-			NM_CMP_FIELD (a, b, uid_range.end);
+		if (_routing_rule_compare (cmp_type,
+		                           NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE)) {
+			NM_CMP_FIELD_UNSAFE (a, b, uid_range_has);
+			if (cmp_full || a->uid_range_has) {
+				NM_CMP_FIELD (a, b, uid_range.start);
+				NM_CMP_FIELD (a, b, uid_range.end);
+			}
 		}
 
 		NM_CMP_FIELD_STR (a, b, iifname);
