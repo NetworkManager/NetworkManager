@@ -2954,9 +2954,8 @@ nm_ip_routing_rule_from_string (const char *str,
                                 GError **error)
 {
 	nm_auto_unref_ip_routing_rule NMIPRoutingRule *self = NULL;
-	gs_free char *str_clone = NULL;
-	char *str_remainder;
-	char *str_word;
+	gs_free const char **tokens = NULL;
+	gsize i_token;
 	gboolean any_words = FALSE;
 	char *word0 = NULL;
 	char *word1 = NULL;
@@ -3022,10 +3021,9 @@ nm_ip_routing_rule_from_string (const char *str,
 
 	addr_family = _rr_string_addr_family_from_flags (to_string_flags);
 
-	str_clone = g_strdup (str);
-	str_remainder = str_clone;
-
-	while ((str_word = nm_utils_str_simpletokens_extract_next (&str_remainder))) {
+	tokens = nm_utils_escaped_tokens_split (str, NM_ASCII_SPACES);
+	for (i_token = 0; tokens && tokens[i_token]; i_token++) {
+		char *str_word = (char *) tokens[i_token];
 
 		any_words = TRUE;
 		if (!word0)
@@ -3325,24 +3323,6 @@ _rr_string_append_inet_addr (GString *str,
 	}
 }
 
-static void
-_rr_string_append_escaped (GString *str,
-                           const char *s)
-{
-	for (; s[0]; s++) {
-		/* We need to escape spaces and '\\', because that
-		 * is what nm_utils_str_simpletokens_extract_next() uses to split
-		 * words.
-		 * We also escape ',' because nmcli uses that to concatenate values.
-		 * We also escape ';', in case somebody wants to use ';' instead of ','.
-		 */
-		if (   NM_IN_SET (s[0], '\\', ',', ';')
-		    || g_ascii_isspace (s[0]))
-			g_string_append_c (str, '\\');
-		g_string_append_c (str, s[0]);
-	}
-}
-
 /**
  * nm_ip_routing_rule_to_string:
  * @self: the #NMIPRoutingRule instance to convert to string.
@@ -3486,13 +3466,17 @@ nm_ip_routing_rule_to_string (const NMIPRoutingRule *self,
 	if (self->iifname) {
 		g_string_append (nm_gstring_add_space_delimiter (str),
 		                 "iif ");
-		_rr_string_append_escaped (str, self->iifname);
+		nm_utils_escaped_tokens_escape_gstr (self->iifname,
+		                                     NM_ASCII_SPACES,
+		                                     str);
 	}
 
 	if (self->oifname) {
 		g_string_append (nm_gstring_add_space_delimiter (str),
 		                 "oif ");
-		_rr_string_append_escaped (str, self->oifname);
+		nm_utils_escaped_tokens_escape_gstr (self->oifname,
+		                                     NM_ASCII_SPACES,
+		                                     str);
 	}
 
 	if (self->table != 0) {
