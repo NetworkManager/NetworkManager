@@ -296,6 +296,11 @@ static const struct {
 		.name                 = "RTA_PREF",
 		.desc                 = "ability to set router preference for IPv6 routes",
 	},
+	[NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_PROTOCOL] = {
+		.compile_time_default = (FRA_MAX >= 21 /* FRA_PROTOCOL */),
+		.name                 = "FRA_PROTOCOL",
+		.desc                 = "FRA_PROTOCOL attribute for policy routing rules",
+	},
 };
 
 int
