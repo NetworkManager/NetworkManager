@@ -7405,6 +7405,10 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
                                     | FIB_RULE_IIF_DETACHED \
                                     | FIB_RULE_OIF_DETACHED)
 
+#define _routing_rule_compare(cmp_type, kernel_support_type) \
+	(   (cmp_type) == NM_PLATFORM_ROUTING_RULE_CMP_TYPE_FULL \
+	 || nm_platform_kernel_support_get (kernel_support_type))
+
 void
 nm_platform_routing_rule_hash_update (const NMPlatformRoutingRule *obj,
                                       NMPlatformRoutingRuleCmpType cmp_type,
@@ -7435,7 +7439,6 @@ nm_platform_routing_rule_hash_update (const NMPlatformRoutingRule *obj,
 		/* fall-through */
 	case NM_PLATFORM_ROUTING_RULE_CMP_TYPE_FULL:
 
-
 		nm_hash_update_vals (h,
 		                     obj->addr_family,
 		                     obj->tun_id,
@@ -7464,7 +7467,10 @@ nm_platform_routing_rule_hash_update (const NMPlatformRoutingRule *obj,
 		                     obj->tos,
 		                     obj->src_len,
 		                     obj->dst_len,
-		                     obj->protocol,
+		                     (  _routing_rule_compare (cmp_type,
+		                                               NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_PROTOCOL)
+		                      ? (guint16) obj->protocol
+		                      : G_MAXUINT16),
 		                     obj->ip_proto);
 		addr_size = nm_utils_addr_family_to_size (obj->addr_family);
 		if (cmp_full || obj->src_len > 0)
@@ -7550,7 +7556,10 @@ nm_platform_routing_rule_cmp (const NMPlatformRoutingRule *a,
 		if (cmp_full || a->addr_family == AF_INET)
 			NM_CMP_FIELD (a, b, flow);
 
-		NM_CMP_FIELD (a, b, protocol);
+		if (_routing_rule_compare (cmp_type,
+		                           NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_PROTOCOL))
+			NM_CMP_FIELD (a, b, protocol);
+
 		NM_CMP_FIELD (a, b, ip_proto);
 		addr_size = nm_utils_addr_family_to_size (a->addr_family);
 
