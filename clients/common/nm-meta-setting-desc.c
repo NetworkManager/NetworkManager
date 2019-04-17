@@ -252,6 +252,38 @@ _value_strsplit (const char *value,
 	return g_steal_pointer (&strv);
 }
 
+static gboolean
+_value_strsplit_assert_unsplitable (const char *str)
+{
+#if NM_MORE_ASSERTS > 5
+	gs_free const char **strv_test = NULL;
+	gsize j, l;
+
+	/* Assert that we cannot split the token and that it
+	 * has no unescaped delimiters. */
+
+	strv_test = _value_strsplit (str,
+	                             VALUE_STRSPLIT_MODE_ESCAPED_TOKENS,
+	                             NULL);
+	nm_assert (NM_PTRARRAY_LEN (strv_test) == 1);
+
+	for (j = 0; str[j] != '\0'; ) {
+		if (str[j] == '\\') {
+			j++;
+			nm_assert (str[j] != '\0');
+		} else
+			nm_assert (!NM_IN_SET (str[j], '\0', ','));
+		j++;
+	}
+	l = j;
+	nm_assert (   !g_ascii_isspace (str[l - 1])
+	           || (   l >= 2
+	               && str[l - 2] == '\\'));
+#endif
+
+	return TRUE;
+}
+
 static NMIPAddress *
 _parse_ip_address (int family, const char *address, GError **error)
 {
@@ -3092,23 +3124,11 @@ _get_fcn_objlist (ARGS_GET_FCN)
 			continue;
 		}
 
-#if NM_MORE_ASSERTS
 		nm_assert (start_offset < str->len);
-		if (   property_info->property_typ_data->subtype.objlist.strsplit_with_escape
-		    && get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY) {
-			/* if the strsplit is done with VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE, then the appended
-			 * value must have no unescaped ','. */
-			for (; start_offset < str->len; ) {
-				if (str->str[start_offset] == '\\') {
-					start_offset++;
-					nm_assert (start_offset < str->len);
-					nm_assert (!NM_IN_SET (str->str[start_offset], '\0'));
-				} else
-					nm_assert (!NM_IN_SET (str->str[start_offset], '\0', ','));
-				start_offset++;
-			}
-		}
-#endif
+		nm_assert (strlen (str->str) == str->len);
+		nm_assert (   property_info->property_typ_data->subtype.objlist.strsplit_plain
+		           || get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY
+		           || _value_strsplit_assert_unsplitable (&str->str[start_offset]));
 	}
 
 	NM_SET_OUT (out_is_default, num == 0);
