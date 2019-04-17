@@ -167,12 +167,16 @@ _value_str_as_index_list (const char *value, gsize *out_len)
 
 #define MULTILIST_WITH_ESCAPE_CHARS     NM_ASCII_SPACES","
 
+#define ESCAPED_TOKENS_DELIMTER         ','
+#define ESCAPED_TOKENS_DELIMTERS        ","
+
 typedef enum {
 	VALUE_STRSPLIT_MODE_STRIPPED,
 	VALUE_STRSPLIT_MODE_OBJLIST,
 	VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE,
 	VALUE_STRSPLIT_MODE_MULTILIST,
 	VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE,
+	VALUE_STRSPLIT_MODE_ESCAPED_TOKENS,
 } ValueStrsplitMode;
 
 static const char *
@@ -211,6 +215,10 @@ _value_strsplit (const char *value,
 	case VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE:
 		strv = nm_utils_strsplit_set_full (value, MULTILIST_WITH_ESCAPE_CHARS, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
 		break;
+	case VALUE_STRSPLIT_MODE_ESCAPED_TOKENS:
+		strv = nm_utils_escaped_tokens_split (value, ESCAPED_TOKENS_DELIMTERS);
+		NM_SET_OUT (out_len, NM_PTRARRAY_LEN (strv));
+		return g_steal_pointer (&strv);
 	default:
 		nm_assert_not_reached ();
 		break;
@@ -1882,9 +1890,11 @@ _set_fcn_multilist (ARGS_SET_FCN)
 	}
 
 	strv = _value_strsplit (value,
-	                          property_info->property_typ_data->subtype.multilist.strsplit_with_escape
-	                        ? VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE
-	                        : VALUE_STRSPLIT_MODE_MULTILIST,
+	                          property_info->property_typ_data->subtype.multilist.strsplit_escaped_tokens
+	                        ? VALUE_STRSPLIT_MODE_ESCAPED_TOKENS
+	                        : (  property_info->property_typ_data->subtype.multilist.strsplit_with_escape
+	                           ? VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE
+	                           : VALUE_STRSPLIT_MODE_OBJLIST),
 	                        &nstrv);
 
 	j = 0;
@@ -3053,9 +3063,7 @@ _get_fcn_objlist (ARGS_GET_FCN)
 	num = property_info->property_typ_data->subtype.objlist.get_num_fcn (setting);
 
 	for (idx = 0; idx < num; idx++) {
-#if NM_MORE_ASSERTS
 		gsize start_offset;
-#endif
 
 		if (!str)
 			str = g_string_new (NULL);
@@ -3063,18 +3071,26 @@ _get_fcn_objlist (ARGS_GET_FCN)
 			if (   get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY
 			    && property_info->property_typ_data->subtype.objlist.delimit_pretty_with_semicolon)
 				g_string_append (str, "; ");
-			else
+			else {
+				G_STATIC_ASSERT_EXPR (ESCAPED_TOKENS_DELIMTER == ',');
 				g_string_append (str, ", ");
+			}
 		}
 
-#if NM_MORE_ASSERTS
 		start_offset = str->len;
-#endif
 
 		property_info->property_typ_data->subtype.objlist.obj_to_str_fcn (get_type,
 		                                                                  setting,
 		                                                                  idx,
 		                                                                  str);
+
+		if (start_offset == str->len) {
+			/* nothing was appended. Remove the delimiter again. */
+			nm_assert_not_reached ();
+			if (str->len > 0)
+				g_string_truncate (str, str->len - 2);
+			continue;
+		}
 
 #if NM_MORE_ASSERTS
 		nm_assert (start_offset < str->len);
@@ -3267,9 +3283,11 @@ _set_fcn_objlist (ARGS_SET_FCN)
 	}
 
 	strv = _value_strsplit (value,
-	                          property_info->property_typ_data->subtype.objlist.strsplit_with_escape
-	                        ? VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE
-	                        : VALUE_STRSPLIT_MODE_OBJLIST,
+	                          property_info->property_typ_data->subtype.objlist.strsplit_escaped_tokens
+	                        ? VALUE_STRSPLIT_MODE_ESCAPED_TOKENS
+	                        : (  property_info->property_typ_data->subtype.objlist.strsplit_with_escape
+	                           ? VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE
+	                           : VALUE_STRSPLIT_MODE_OBJLIST),
 	                        &nstrv);
 
 	if (_SET_FCN_DO_SET_ALL (modifier, value)) {
@@ -3382,7 +3400,7 @@ _objlist_obj_to_str_fcn_ip_config_routing_rules (NMMetaAccessorGetType get_type,
 	                                  NULL,
 	                                  NULL);
 	if (s)
-		g_string_append (str, s);
+		nm_utils_escaped_tokens_escape_gstr (s, ESCAPED_TOKENS_DELIMTERS, str);
 }
 
 static gboolean
@@ -5652,7 +5670,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routing_rules,
 				.set_fcn =              _objlist_set_fcn_ip_config_routing_rules,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingIPConfig, nm_setting_ip_config_remove_routing_rule),
-				.strsplit_with_escape = TRUE,
+				.strsplit_escaped_tokens = TRUE,
 			),
 		),
 	),
@@ -5860,7 +5878,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routing_rules,
 				.set_fcn =              _objlist_set_fcn_ip_config_routing_rules,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingIPConfig, nm_setting_ip_config_remove_routing_rule),
-				.strsplit_with_escape = TRUE,
+				.strsplit_escaped_tokens = TRUE,
 			),
 		),
 	),
