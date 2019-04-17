@@ -3414,6 +3414,13 @@ _new_from_nl_routing_rule (struct nlmsghdr *nlh, gboolean id_only)
 	else
 		nm_assert (props->protocol == RTPROT_UNSPEC);
 
+	if (!_nm_platform_kernel_support_detected (NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_PROTOCOL)) {
+		/* FRA_PROTOCOL was added in kernel 4.17, dated 3 June, 2018.
+		 * See commit 1b71af6053af1bd2f849e9fda4f71c1e3f145dcf. */
+		_nm_platform_kernel_support_init (NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_PROTOCOL,
+		                                  tb[FRA_PROTOCOL] ? 1 : -1);
+	}
+
 	if (tb[FRA_IP_PROTO])
 		props->ip_proto = nla_get_u8 (tb[FRA_IP_PROTO]);
 
