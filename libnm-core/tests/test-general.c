@@ -8074,102 +8074,6 @@ test_ethtool_offload (void)
 	g_assert_cmpstr (d->optname, ==, NM_ETHTOOL_OPTNAME_FEATURE_RXHASH);
 }
 
-static void
-test_nm_utils_escape_spaces (void)
-{
-	char *to_free;
-
-	g_assert_cmpstr (_nm_utils_escape_spaces (NULL, &to_free), ==, NULL);
-	g_free (to_free);
-
-	g_assert_cmpstr (_nm_utils_escape_spaces ("", &to_free), ==, "");
-	g_free (to_free);
-
-	g_assert_cmpstr (_nm_utils_escape_spaces (" ", &to_free), ==, "\\ ");
-	g_free (to_free);
-
-	g_assert_cmpstr (_nm_utils_escape_spaces ("\t ", &to_free), ==, "\\\t\\ ");
-	g_free (to_free);
-
-	g_assert_cmpstr (_nm_utils_escape_spaces ("abc", &to_free), ==, "abc");
-	g_free (to_free);
-
-	g_assert_cmpstr (_nm_utils_escape_spaces ("abc def", &to_free), ==, "abc\\ def");
-	g_free (to_free);
-
-	g_assert_cmpstr (_nm_utils_escape_spaces ("abc\tdef", &to_free), ==, "abc\\\tdef");
-	g_free (to_free);
-}
-
-static void
-_do_test_unescape_spaces (const char *in, const char *out)
-{
-	nm_auto_free_gstring GString *str_out = g_string_new (NULL);
-	nm_auto_free_gstring GString *str_in = g_string_new (NULL);
-	guint i;
-
-	for (i = 0; i < 10; i++) {
-
-		g_string_set_size (str_in, 0);
-
-		g_string_append (str_in, in);
-
-		if (i == 0)
-			g_assert_cmpstr (_nm_utils_unescape_spaces (str_in->str, FALSE), ==, out);
-		else if (i == 1)
-			g_assert_cmpstr (_nm_utils_unescape_spaces (str_in->str, TRUE), ==, out);
-		else {
-			bool do_strip = nmtst_get_rand_bool ();
-			guint n = nmtst_get_rand_int () % 20;
-			guint j;
-
-			g_string_set_size (str_out, 0);
-			if (!do_strip)
-				g_string_append (str_out, out);
-
-			for (j = 0; j < n; j++) {
-				gboolean append = nmtst_get_rand_bool ();
-				char ch = nmtst_rand_select (' ', '\t');
-
-				if (append && out[0] && out[strlen (out) - 1] == '\\')
-					append = FALSE;
-
-				g_string_insert_c (str_in, append ? -1 : 0, ch);
-				if (!do_strip)
-					g_string_insert_c (str_out, append ? -1 : 0, ch);
-			}
-
-			if (do_strip)
-				g_assert_cmpstr (_nm_utils_unescape_spaces (str_in->str, TRUE), ==, out);
-			else
-				g_assert_cmpstr (_nm_utils_unescape_spaces (str_in->str, FALSE), ==, str_out->str);
-		}
-	}
-}
-
-static void
-test_nm_utils_unescape_spaces (void)
-{
-	_do_test_unescape_spaces ("", "");
-	_do_test_unescape_spaces ("\\", "\\");
-	_do_test_unescape_spaces ("\\ ", " ");
-	_do_test_unescape_spaces ("\\\t", "\t");
-	_do_test_unescape_spaces ("a", "a");
-	_do_test_unescape_spaces ("\\a", "\\a");
-	_do_test_unescape_spaces ("foobar", "foobar");
-	_do_test_unescape_spaces ("foo bar", "foo bar");
-	_do_test_unescape_spaces ("foo\\ bar", "foo bar");
-	_do_test_unescape_spaces ("foo\\", "foo\\");
-	_do_test_unescape_spaces ("\\\\", "\\\\");
-	_do_test_unescape_spaces ("foo   bar", "foo   bar");
-	_do_test_unescape_spaces ("\\ foo   bar", " foo   bar");
-	_do_test_unescape_spaces ("\\ foo   bar\\ ", " foo   bar ");
-	_do_test_unescape_spaces ("\\\tfoo   bar\\\t", "\tfoo   bar\t");
-	_do_test_unescape_spaces ("\\\tfoo   bar  \\\t", "\tfoo   bar  \t");
-	_do_test_unescape_spaces ("\\\t", "\t");
-	_do_test_unescape_spaces ("\\\t \\ ", "\t  ");
-}
-
 /*****************************************************************************/
 
 NMTST_DEFINE ();
@@ -8323,8 +8227,6 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/_nm_utils_dns_option_find_idx", test_nm_utils_dns_option_find_idx);
 	g_test_add_func ("/core/general/_nm_utils_validate_json", test_nm_utils_check_valid_json);
 	g_test_add_func ("/core/general/_nm_utils_team_config_equal", test_nm_utils_team_config_equal);
-	g_test_add_func ("/core/general/_nm_utils_escape_spaces", test_nm_utils_escape_spaces);
-	g_test_add_func ("/core/general/_nm_utils_unescape_spaces", test_nm_utils_unescape_spaces);
 	g_test_add_func ("/core/general/test_nm_utils_enum", test_nm_utils_enum);
 	g_test_add_func ("/core/general/nm-set-out", test_nm_set_out);
 	g_test_add_func ("/core/general/route_attributes/parse", test_route_attributes_parse);
