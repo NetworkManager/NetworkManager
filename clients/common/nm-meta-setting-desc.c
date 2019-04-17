@@ -167,8 +167,8 @@ _value_str_as_index_list (const char *value, gsize *out_len)
 
 #define MULTILIST_WITH_ESCAPE_CHARS     NM_ASCII_SPACES","
 
-#define ESCAPED_TOKENS_DELIMTER         ','
-#define ESCAPED_TOKENS_DELIMTERS        ","
+#define ESCAPED_TOKENS_DELIMITER        ','
+#define ESCAPED_TOKENS_DELIMITERS       ","
 
 typedef enum {
 	VALUE_STRSPLIT_MODE_STRIPPED,
@@ -216,7 +216,7 @@ _value_strsplit (const char *value,
 		strv = nm_utils_strsplit_set_full (value, MULTILIST_WITH_ESCAPE_CHARS, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
 		break;
 	case VALUE_STRSPLIT_MODE_ESCAPED_TOKENS:
-		strv = nm_utils_escaped_tokens_split (value, ESCAPED_TOKENS_DELIMTERS);
+		strv = nm_utils_escaped_tokens_split (value, ESCAPED_TOKENS_DELIMITERS);
 		NM_SET_OUT (out_len, NM_PTRARRAY_LEN (strv));
 		return g_steal_pointer (&strv);
 	default:
@@ -3072,7 +3072,7 @@ _get_fcn_objlist (ARGS_GET_FCN)
 			    && property_info->property_typ_data->subtype.objlist.delimit_pretty_with_semicolon)
 				g_string_append (str, "; ");
 			else {
-				G_STATIC_ASSERT_EXPR (ESCAPED_TOKENS_DELIMTER == ',');
+				G_STATIC_ASSERT_EXPR (ESCAPED_TOKENS_DELIMITER == ',');
 				g_string_append (str, ", ");
 			}
 		}
@@ -3400,7 +3400,7 @@ _objlist_obj_to_str_fcn_ip_config_routing_rules (NMMetaAccessorGetType get_type,
 	                                  NULL,
 	                                  NULL);
 	if (s)
-		nm_utils_escaped_tokens_escape_gstr (s, ESCAPED_TOKENS_DELIMTERS, str);
+		nm_utils_escaped_tokens_escape_gstr (s, ESCAPED_TOKENS_DELIMITERS, str);
 }
 
 static gboolean
