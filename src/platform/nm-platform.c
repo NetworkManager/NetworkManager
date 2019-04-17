@@ -296,6 +296,11 @@ static const struct {
 		.name                 = "RTA_PREF",
 		.desc                 = "ability to set router preference for IPv6 routes",
 	},
+	[NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV] = {
+		.compile_time_default = (FRA_MAX >= 19 /* FRA_L3MDEV */),
+		.name                 = "FRA_L3MDEV",
+		.desc                 = "FRA_L3MDEV attribute for policy routing rules",
+	},
 	[NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE] = {
 		.compile_time_default = (FRA_MAX >= 20 /* FRA_UID_RANGE */),
 		.name                 = "FRA_UID_RANGE",

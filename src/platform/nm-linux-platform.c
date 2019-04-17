@@ -3402,6 +3402,16 @@ _new_from_nl_routing_rule (struct nlmsghdr *nlh, gboolean id_only)
 		props->tun_id = nla_get_be64 (tb[FRA_TUN_ID]);
 
 	if (tb[FRA_L3MDEV]) {
+
+		if (!_nm_platform_kernel_support_detected (NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV)) {
+			/* support for FRA_L3MDEV was added in 96c63fa7393d0a346acfe5a91e0c7d4c7782641b,
+			 * kernel 4.8, 3 October 2017.
+			 *
+			 * We can only detect support if the attribute is present. A missing attribute
+			 * is not conclusive. */
+			_nm_platform_kernel_support_init (NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV, 1);
+		}
+
 		/* actually, kernel only allows this attribute to be missing or
 		 * "1". Still, encode it as full uint8.
 		 *
