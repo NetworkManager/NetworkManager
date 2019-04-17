@@ -422,6 +422,39 @@ const char *nm_utils_escaped_tokens_escape (const char *str,
                                             char **out_to_free);
 
 static inline GString *
+nm_utils_escaped_tokens_escape_gstr_assert (const char *str,
+                                            const char *delimiters,
+                                            GString *gstring)
+{
+#if NM_MORE_ASSERTS > 0
+
+	/* Just appends @str to @gstring, but also assert that
+	 * no escaping is necessary.
+	 *
+	 * Use nm_utils_escaped_tokens_escape_gstr_assert() instead
+	 * of nm_utils_escaped_tokens_escape_gstr(), if you *know* that
+	 * @str contains no delimiters, no backslashes, and no trailing
+	 * whitespace that requires escaping. */
+
+	nm_assert (str);
+	nm_assert (gstring);
+	nm_assert (delimiters);
+
+	{
+		gs_free char *str_to_free = NULL;
+		const char *str0;
+
+		str0 = nm_utils_escaped_tokens_escape (str, delimiters, &str_to_free);
+		nm_assert (str0 == str);
+		nm_assert (!str_to_free);
+	}
+#endif
+
+	g_string_append (gstring, str);
+	return gstring;
+}
+
+static inline GString *
 nm_utils_escaped_tokens_escape_gstr (const char *str,
                                      const char *delimiters,
                                      GString *gstring)
