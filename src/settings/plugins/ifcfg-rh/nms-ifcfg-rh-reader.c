@@ -5114,7 +5114,7 @@ read_bridge_vlans (shvarFile *ifcfg,
 
 		array = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
 
-		strv = nm_utils_strsplit_set (value, ",");
+		strv = nm_utils_escaped_tokens_split (value, ",");
 		if (strv) {
 			for (iter = strv; *iter; iter++) {
 				vlan = nm_bridge_vlan_from_str (*iter, &local);
