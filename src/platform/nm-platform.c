@@ -301,6 +301,11 @@ static const struct {
 		.name                 = "FRA_PROTOCOL",
 		.desc                 = "FRA_PROTOCOL attribute for policy routing rules",
 	},
+	[NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_IP_PROTO] = {
+		.compile_time_default = (FRA_MAX >= 22 /* FRA_IP_PROTO */),
+		.name                 = "FRA_IP_PROTO",
+		.desc                 = "FRA_IP_PROTO, FRA_SPORT_RANGE, FRA_DPORT_RANGE attributes for policy routing rules",
+	},
 };
 
 int
