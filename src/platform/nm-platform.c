@@ -7470,8 +7470,7 @@ nm_platform_routing_rule_hash_update (const NMPlatformRoutingRule *obj,
 		                     (  _routing_rule_compare (cmp_type,
 		                                               NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_PROTOCOL)
 		                      ? (guint16) obj->protocol
-		                      : G_MAXUINT16),
-		                     obj->ip_proto);
+		                      : G_MAXUINT16));
 		addr_size = nm_utils_addr_family_to_size (obj->addr_family);
 		if (cmp_full || obj->src_len > 0)
 			nm_hash_update (h, &obj->src, addr_size);
@@ -7479,8 +7478,12 @@ nm_platform_routing_rule_hash_update (const NMPlatformRoutingRule *obj,
 			nm_hash_update (h, &obj->dst, addr_size);
 		if (cmp_full || obj->uid_range_has)
 			nm_hash_update_valp (h, &obj->uid_range);
-		nm_hash_update_valp (h, &obj->sport_range);
-		nm_hash_update_valp (h, &obj->dport_range);
+		if (_routing_rule_compare (cmp_type,
+		                           NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_IP_PROTO)) {
+			nm_hash_update_val (h, obj->ip_proto);
+			nm_hash_update_valp (h, &obj->sport_range);
+			nm_hash_update_valp (h, &obj->dport_range);
+		}
 		nm_hash_update_str (h, obj->iifname);
 		nm_hash_update_str (h, obj->oifname);
 		return;
@@ -7560,7 +7563,15 @@ nm_platform_routing_rule_cmp (const NMPlatformRoutingRule *a,
 		                           NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_PROTOCOL))
 			NM_CMP_FIELD (a, b, protocol);
 
-		NM_CMP_FIELD (a, b, ip_proto);
+		if (_routing_rule_compare (cmp_type,
+		                           NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_IP_PROTO)) {
+			NM_CMP_FIELD (a, b, ip_proto);
+			NM_CMP_FIELD (a, b, sport_range.start);
+			NM_CMP_FIELD (a, b, sport_range.end);
+			NM_CMP_FIELD (a, b, dport_range.start);
+			NM_CMP_FIELD (a, b, dport_range.end);
+		}
+
 		addr_size = nm_utils_addr_family_to_size (a->addr_family);
 
 		NM_CMP_FIELD (a, b, src_len);
@@ -7577,10 +7588,6 @@ nm_platform_routing_rule_cmp (const NMPlatformRoutingRule *a,
 			NM_CMP_FIELD (a, b, uid_range.end);
 		}
 
-		NM_CMP_FIELD (a, b, sport_range.start);
-		NM_CMP_FIELD (a, b, sport_range.end);
-		NM_CMP_FIELD (a, b, dport_range.start);
-		NM_CMP_FIELD (a, b, dport_range.end);
 		NM_CMP_FIELD_STR (a, b, iifname);
 		NM_CMP_FIELD_STR (a, b, oifname);
 		return 0;
