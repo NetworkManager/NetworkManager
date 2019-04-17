@@ -3559,7 +3559,7 @@ _objlist_obj_to_str_fcn_bridge_vlans (NMMetaAccessorGetType get_type,
 
 	s = nm_bridge_vlan_to_str (vlan, NULL);
 	if (s)
-		g_string_append (str, s);
+		nm_utils_escaped_tokens_escape_gstr_assert (s, ESCAPED_TOKENS_DELIMITERS, str);
 }
 
 static gboolean
@@ -4991,6 +4991,7 @@ static const NMMetaPropertyInfo *const property_infos_BRIDGE[] = {
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingBridge, nm_setting_bridge_clear_vlans),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_bridge_vlans,
 				.set_fcn =              _objlist_set_fcn_bridge_vlans,
+				.strsplit_escaped_tokens = TRUE,
 			),
 		),
 	),
@@ -5026,6 +5027,7 @@ static const NMMetaPropertyInfo *const property_infos_BRIDGE_PORT[] = {
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingBridgePort, nm_setting_bridge_port_clear_vlans),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_bridge_vlans,
 				.set_fcn =              _objlist_set_fcn_bridge_vlans,
+				.strsplit_escaped_tokens = TRUE,
 			),
 		),
 	),

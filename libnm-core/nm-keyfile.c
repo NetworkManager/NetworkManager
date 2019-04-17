@@ -1642,7 +1642,7 @@ bridge_vlan_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key
 
 	vlans = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
 
-	strv = nm_utils_strsplit_set (value, ",");
+	strv = nm_utils_escaped_tokens_split (value, ",");
 	if (strv) {
 		for (iter = strv; *iter; iter++) {
 			vlan = nm_bridge_vlan_from_str (*iter, &local);
@@ -2009,7 +2009,7 @@ bridge_vlan_writer (KeyfileWriterInfo *info,
 			continue;
 		if (string->len > 0)
 			g_string_append (string, ",");
-		g_string_append (string, vlan_str);
+		nm_utils_escaped_tokens_escape_gstr_assert (vlan_str, ",", string);
 	}
 
 	nm_keyfile_plugin_kf_set_string (info->keyfile,
