@@ -119,9 +119,6 @@ typedef struct _NMPlatformPrivate {
 	bool use_udev:1;
 	bool log_with_ptr:1;
 
-	NMPlatformKernelSupportFlags support_checked;
-	NMPlatformKernelSupportFlags support_present;
-
 	guint ip4_dev_route_blacklist_check_id;
 	guint ip4_dev_route_blacklist_gc_timeout_id;
 	GHashTable *ip4_dev_route_blacklist_hash;
@@ -277,39 +274,78 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_nmp_nlm_flag_to_string_lookup, NMPNlmFlags,
 
 /*****************************************************************************/
 
-NMPlatformKernelSupportFlags
-nm_platform_check_kernel_support (NMPlatform *self,
-                                  NMPlatformKernelSupportFlags request_flags)
+volatile int _nm_platform_kernel_support_state[_NM_PLATFORM_KERNEL_SUPPORT_NUM] = { };
+
+static const struct {
+	bool compile_time_default;
+	const char *name;
+	const char *desc;
+} _nm_platform_kernel_support_info[_NM_PLATFORM_KERNEL_SUPPORT_NUM] = {
+	[NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS] = {
+		.compile_time_default = TRUE,
+		.name                 = "EXTENDED_IFA_FLAGS",
+		.desc                 = "IPv6 temporary addresses support",
+	},
+	[NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL] = {
+		.compile_time_default = TRUE,
+		.name                 = "USER_IPV6LL",
+		.desc                 = "IFLA_INET6_ADDR_GEN_MODE support",
+	},
+	[NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF] = {
+		.compile_time_default = (RTA_MAX >= 20 /* RTA_PREF */),
+		.name                 = "RTA_PREF",
+		.desc                 = "ability to set router preference for IPv6 routes",
+	},
+};
+
+int
+_nm_platform_kernel_support_init (NMPlatformKernelSupportType type,
+                                  int value)
 {
-	NMPlatformPrivate *priv;
+	volatile int *p_state;
+	gboolean set_default = FALSE;
 
-	_CHECK_SELF (self, klass, TRUE);
+	nm_assert (_NM_INT_NOT_NEGATIVE (type) && type < G_N_ELEMENTS (_nm_platform_kernel_support_state));
 
-	priv = NM_PLATFORM_GET_PRIVATE (self);
+	p_state = &_nm_platform_kernel_support_state[type];
 
-	/* we cache the response from subclasses and only request it once.
-	 * This probably gives better performance, but more importantly,
-	 * we are guaranteed that the answer for a certain request_flag
-	 * is always the same. */
-	if (G_UNLIKELY (!NM_FLAGS_ALL (priv->support_checked, request_flags))) {
-		NMPlatformKernelSupportFlags checked, response;
-
-		checked = request_flags & ~priv->support_checked;
-		nm_assert (checked);
-
-		if (klass->check_kernel_support)
-			response = klass->check_kernel_support (self, checked);
-		else {
-			/* fake platform. Pretend no support for anything. */
-			response = 0;
-		}
-
-		priv->support_checked |= checked;
-		priv->support_present = (priv->support_present & ~checked) | (response & checked);
+	if (value == 0) {
+		set_default = TRUE;
+		value =   _nm_platform_kernel_support_info[type].compile_time_default
+		        ? 1
+		        : -1;
 	}
 
-	return priv->support_present & request_flags;
+	nm_assert (NM_IN_SET (value, -1, 1));
+
+	if (!g_atomic_int_compare_and_exchange (p_state, 0, value)) {
+		value = g_atomic_int_get (p_state);
+		nm_assert (NM_IN_SET (value, -1, 1));
+		return value;
+	}
+
+#undef NM_THREAD_SAFE_ON_MAIN_THREAD
+#define NM_THREAD_SAFE_ON_MAIN_THREAD 0
+
+	if (set_default) {
+		nm_log_dbg (LOGD_PLATFORM, "platform: kernel-support for %s (%s) not detected: assume %ssupported",
+		             _nm_platform_kernel_support_info[type].name,
+		             _nm_platform_kernel_support_info[type].desc,
+		             value >= 0 ? "" : "not ");
+	} else {
+		nm_log_dbg (LOGD_PLATFORM, "platform: kernel-support for %s (%s) detected: %ssupported",
+		            _nm_platform_kernel_support_info[type].name,
+		            _nm_platform_kernel_support_info[type].desc,
+		            value >= 0 ? "" : "not ");
+	}
+
+#undef NM_THREAD_SAFE_ON_MAIN_THREAD
+#define NM_THREAD_SAFE_ON_MAIN_THREAD 1
+
+	return value;
 }
+
+/*****************************************************************************/
 
 /**
  * nm_platform_process_events:
@@ -3912,7 +3948,7 @@ nm_platform_ip4_address_sync (NMPlatform *self,
 	if (!known_addresses)
 		return TRUE;
 
-	ifa_flags =   nm_platform_check_kernel_support (self, NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS)
+	ifa_flags =   nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)
 	            ? IFA_F_NOPREFIXROUTE
 	            : 0;
 
@@ -4112,7 +4148,7 @@ next_plat:
 	if (!known_addresses)
 		return TRUE;
 
-	ifa_flags =   nm_platform_check_kernel_support (self, NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS)
+	ifa_flags =   nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)
 	            ? IFA_F_NOPREFIXROUTE
 	            : 0;
 

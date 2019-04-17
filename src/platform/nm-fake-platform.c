@@ -1401,6 +1401,10 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMPlatformClass *platform_class = NM_PLATFORM_CLASS (klass);
+	NMPlatformKernelSupportType kernel_support;
+
+	for (kernel_support = 0; kernel_support < _NM_PLATFORM_KERNEL_SUPPORT_NUM; kernel_support++)
+		_nm_platform_kernel_support_init (kernel_support, -1);
 
 	object_class->finalize = finalize;
 

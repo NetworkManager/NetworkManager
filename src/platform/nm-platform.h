@@ -819,12 +819,6 @@ typedef enum {
 } NMPlatformLinkDuplexType;
 
 typedef enum {
-	NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS                 = (1LL <<  0),
-	NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL                        = (1LL <<  1),
-	NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF                           = (1LL <<  2),
-} NMPlatformKernelSupportFlags;
-
-typedef enum {
 	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_NONE                        = 0,
 	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS               = (1LL << 0),
 	NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_PRIVATE_KEY             = (1LL << 1),
@@ -847,6 +841,43 @@ typedef enum {
 	                                                 | NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_ALLOWEDIPS,
 
 } NMPlatformWireGuardChangePeerFlags;
+
+/*****************************************************************************/
+
+typedef enum {
+	NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS,
+	NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL,
+	NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF,
+	_NM_PLATFORM_KERNEL_SUPPORT_NUM,
+} NMPlatformKernelSupportType;
+
+extern volatile int _nm_platform_kernel_support_state[_NM_PLATFORM_KERNEL_SUPPORT_NUM];
+
+int _nm_platform_kernel_support_init (NMPlatformKernelSupportType type,
+                                      int value);
+
+#define _nm_platform_kernel_support_detected(type) \
+	G_LIKELY (({ \
+		const NMPlatformKernelSupportType _type = (type); \
+		\
+		nm_assert (_NM_INT_NOT_NEGATIVE (_type) && _type < G_N_ELEMENTS (_nm_platform_kernel_support_state)); \
+		\
+		(_nm_platform_kernel_support_state[_type] != 0); \
+	}))
+
+#define nm_platform_kernel_support_get(type) \
+	({ \
+		const NMPlatformKernelSupportType _type = (type); \
+		int _v; \
+		\
+		nm_assert (_NM_INT_NOT_NEGATIVE (_type) && _type < G_N_ELEMENTS (_nm_platform_kernel_support_state)); \
+		\
+		_v = _nm_platform_kernel_support_state[_type]; \
+		if (G_UNLIKELY (_v == 0)) \
+			_v = _nm_platform_kernel_support_init (_type, 0); \
+		\
+		(_v >= 0); \
+	})
 
 /*****************************************************************************/
 
@@ -1054,9 +1085,6 @@ typedef struct {
 	int (*tfilter_add)   (NMPlatform *self,
 	                      NMPNlmFlags flags,
 	                      const NMPlatformTfilter *tfilter);
-
-	NMPlatformKernelSupportFlags (*check_kernel_support) (NMPlatform * self,
-	                                                      NMPlatformKernelSupportFlags request_flags);
 } NMPlatformClass;
 
 /* NMPlatform signals
@@ -1667,9 +1695,6 @@ void nm_platform_lnk_wireguard_hash_update (const NMPlatformLnkWireGuard *obj, N
 
 void nm_platform_qdisc_hash_update (const NMPlatformQdisc *obj, NMHashState *h);
 void nm_platform_tfilter_hash_update (const NMPlatformTfilter *obj, NMHashState *h);
-
-NMPlatformKernelSupportFlags nm_platform_check_kernel_support (NMPlatform *self,
-                                                               NMPlatformKernelSupportFlags request_flags);
 
 const char *nm_platform_link_flags2str (unsigned flags, char *buf, gsize len);
 const char *nm_platform_link_inet6_addrgenmode2str (guint8 mode, char *buf, gsize len);

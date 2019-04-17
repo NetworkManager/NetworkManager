@@ -521,8 +521,7 @@ test_bridge_addr (void)
 	plink = nm_platform_link_get (NM_PLATFORM_GET, link.ifindex);
 	g_assert (plink);
 
-	if (nm_platform_check_kernel_support (NM_PLATFORM_GET,
-	                                      NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL)) {
+	if (nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL)) {
 		g_assert (!nm_platform_link_get_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex));
 		g_assert_cmpint (_nm_platform_uint8_inv (plink->inet6_addr_gen_mode_inv), ==, NM_IN6_ADDR_GEN_MODE_EUI64);
 
