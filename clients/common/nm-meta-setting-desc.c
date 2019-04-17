@@ -165,7 +165,8 @@ _value_str_as_index_list (const char *value, gsize *out_len)
 	return g_steal_pointer (&arr);
 }
 
-#define MULTILIST_WITH_ESCAPE_CHARS     NM_ASCII_SPACES","
+#define ESCAPED_TOKENS_WITH_SPACES_DELIMTER  ' '
+#define ESCAPED_TOKENS_WITH_SPACES_DELIMTERS NM_ASCII_SPACES","
 
 #define ESCAPED_TOKENS_DELIMITER        ','
 #define ESCAPED_TOKENS_DELIMITERS       ","
@@ -174,15 +175,9 @@ typedef enum {
 	VALUE_STRSPLIT_MODE_STRIPPED,
 	VALUE_STRSPLIT_MODE_OBJLIST,
 	VALUE_STRSPLIT_MODE_MULTILIST,
-	VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE,
 	VALUE_STRSPLIT_MODE_ESCAPED_TOKENS,
+	VALUE_STRSPLIT_MODE_ESCAPED_TOKENS_WITH_SPACES,
 } ValueStrsplitMode;
-
-static const char *
-_value_strescape (const char *str, char **out_to_free)
-{
-	return _nm_utils_escape_plain (str, MULTILIST_WITH_ESCAPE_CHARS, out_to_free);
-}
 
 static const char **
 _value_strsplit (const char *value,
@@ -209,11 +204,12 @@ _value_strsplit (const char *value,
 	case VALUE_STRSPLIT_MODE_MULTILIST:
 		strv = nm_utils_strsplit_set (value, " \t,");
 		break;
-	case VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE:
-		strv = nm_utils_strsplit_set_full (value, MULTILIST_WITH_ESCAPE_CHARS, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
-		break;
 	case VALUE_STRSPLIT_MODE_ESCAPED_TOKENS:
 		strv = nm_utils_escaped_tokens_split (value, ESCAPED_TOKENS_DELIMITERS);
+		NM_SET_OUT (out_len, NM_PTRARRAY_LEN (strv));
+		return g_steal_pointer (&strv);
+	case VALUE_STRSPLIT_MODE_ESCAPED_TOKENS_WITH_SPACES:
+		strv = nm_utils_escaped_tokens_split (value, ESCAPED_TOKENS_WITH_SPACES_DELIMTERS);
 		NM_SET_OUT (out_len, NM_PTRARRAY_LEN (strv));
 		return g_steal_pointer (&strv);
 	default:
@@ -234,11 +230,7 @@ _value_strsplit (const char *value,
 		if (s[0] == '\0')
 			continue;
 
-		if (split_mode == VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE)
-			_nm_utils_unescape_plain ((char *) s, MULTILIST_WITH_ESCAPE_CHARS, TRUE);
-		else
-			g_strchomp ((char *) s);
-
+		g_strchomp ((char *) s);
 		strv[len++] = s;
 	}
 	strv[len] = NULL;
@@ -1919,8 +1911,8 @@ _set_fcn_multilist (ARGS_SET_FCN)
 	strv = _value_strsplit (value,
 	                          property_info->property_typ_data->subtype.multilist.strsplit_plain
 	                        ? VALUE_STRSPLIT_MODE_MULTILIST
-	                        : (  property_info->property_typ_data->subtype.multilist.strsplit_with_escape
-	                           ? VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE
+	                        : (  property_info->property_typ_data->subtype.multilist.strsplit_with_spaces
+	                           ? VALUE_STRSPLIT_MODE_ESCAPED_TOKENS_WITH_SPACES
 	                           : VALUE_STRSPLIT_MODE_ESCAPED_TOKENS),
 	                        &nstrv);
 
@@ -3468,7 +3460,6 @@ _get_fcn_match_interface_name (ARGS_GET_FCN)
 
 	num = nm_setting_match_get_num_interface_names (s_match);
 	for (i = 0; i < num; i++) {
-		gs_free char *to_free = NULL;
 		const char *name;
 
 		name = nm_setting_match_get_interface_name (s_match, i);
@@ -3477,8 +3468,8 @@ _get_fcn_match_interface_name (ARGS_GET_FCN)
 		if (!str)
 			str = g_string_new ("");
 		else
-			g_string_append_c (str, ' ');
-		g_string_append (str, _value_strescape (name, &to_free));
+			g_string_append_c (str, ESCAPED_TOKENS_WITH_SPACES_DELIMTER);
+		nm_utils_escaped_tokens_escape_gstr (name, ESCAPED_TOKENS_WITH_SPACES_DELIMTERS, str);
 	}
 
 	NM_SET_OUT (out_is_default, num == 0);
@@ -6161,7 +6152,7 @@ static const NMMetaPropertyInfo *const property_infos_MATCH[] = {
 				.add2_fcn =             MULTILIST_ADD2_FCN            (NMSettingMatch, nm_setting_match_add_interface_name),
 				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingMatch, nm_setting_match_remove_interface_name),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingMatch, nm_setting_match_remove_interface_name_by_value),
-				.strsplit_with_escape = TRUE,
+				.strsplit_with_spaces = TRUE,
 			),
 		),
 	),
