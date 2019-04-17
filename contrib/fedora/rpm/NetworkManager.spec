@@ -41,6 +41,8 @@
 
 %global real_version_major %(printf '%s' '%{real_version}' | sed -n 's/^\\([1-9][0-9]*\\.[1-9][0-9]*\\)\\.[1-9][0-9]*$/\\1/p')
 
+%global systemd_units NetworkManager.service NetworkManager-wait-online.service NetworkManager-dispatcher.service
+
 ###############################################################################
 
 %bcond_with meson
@@ -777,7 +779,7 @@ fi
 /usr/bin/udevadm control --reload-rules || :
 /usr/bin/udevadm trigger --subsystem-match=net || :
 
-%systemd_post NetworkManager.service NetworkManager-wait-online.service NetworkManager-dispatcher.service
+%systemd_post %{systemd_units}
 
 %triggerin -- initscripts
 if [ -f %{_sbindir}/ifup -a ! -L %{_sbindir}/ifup ]; then
@@ -806,7 +808,7 @@ fi
 /usr/bin/udevadm control --reload-rules || :
 /usr/bin/udevadm trigger --subsystem-match=net || :
 
-%systemd_postun
+%systemd_postun %{systemd_units}
 
 
 %if (0%{?fedora} && 0%{?fedora} < 28) || 0%{?rhel}
