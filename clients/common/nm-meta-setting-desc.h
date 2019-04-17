@@ -298,7 +298,6 @@ struct _NMMetaPropertyTypData {
 			void (*remove_by_idx_fcn_s) (NMSetting *setting, int idx);
 			bool delimit_pretty_with_semicolon:1;
 			bool strsplit_plain:1;
-			bool strsplit_with_escape:1;
 		} objlist;
 		struct {
 			gboolean (*set_fcn) (NMSetting *setting,

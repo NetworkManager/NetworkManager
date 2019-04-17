@@ -173,7 +173,6 @@ _value_str_as_index_list (const char *value, gsize *out_len)
 typedef enum {
 	VALUE_STRSPLIT_MODE_STRIPPED,
 	VALUE_STRSPLIT_MODE_OBJLIST,
-	VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE,
 	VALUE_STRSPLIT_MODE_MULTILIST,
 	VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE,
 	VALUE_STRSPLIT_MODE_ESCAPED_TOKENS,
@@ -206,9 +205,6 @@ _value_strsplit (const char *value,
 	case VALUE_STRSPLIT_MODE_OBJLIST:
 		strv = nm_utils_strsplit_set (value, ",");
 		break;
-	case VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE:
-		strv = nm_utils_strsplit_set_full (value, ",", NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
-		break;
 	case VALUE_STRSPLIT_MODE_MULTILIST:
 		strv = nm_utils_strsplit_set (value, " \t,");
 		break;
@@ -239,8 +235,6 @@ _value_strsplit (const char *value,
 
 		if (split_mode == VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE)
 			_nm_utils_unescape_plain ((char *) s, MULTILIST_WITH_ESCAPE_CHARS, TRUE);
-		else if (split_mode == VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE)
-			_nm_utils_unescape_plain ((char *) s, ",", TRUE);
 		else
 			g_strchomp ((char *) s);
 
@@ -3305,9 +3299,7 @@ _set_fcn_objlist (ARGS_SET_FCN)
 	strv = _value_strsplit (value,
 	                          property_info->property_typ_data->subtype.objlist.strsplit_plain
 	                        ? VALUE_STRSPLIT_MODE_OBJLIST
-	                        : (  property_info->property_typ_data->subtype.objlist.strsplit_with_escape
-	                           ? VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE
-	                           : VALUE_STRSPLIT_MODE_ESCAPED_TOKENS),
+	                        : VALUE_STRSPLIT_MODE_ESCAPED_TOKENS,
 	                        &nstrv);
 
 	if (_SET_FCN_DO_SET_ALL (modifier, value)) {
