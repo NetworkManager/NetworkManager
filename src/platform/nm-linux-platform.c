@@ -142,8 +142,6 @@ enum {
 #define __IFLA_TUN_MAX                  10
 #define IFLA_TUN_MAX (__IFLA_TUN_MAX - 1)
 
-static const gboolean RTA_PREF_SUPPORTED_AT_COMPILETIME = (RTA_MAX >= 20 /* RTA_PREF */);
-
 G_STATIC_ASSERT (RTA_MAX == (__RTA_MAX - 1));
 #define RTA_PREF                        20
 #undef  RTA_MAX
@@ -580,119 +578,6 @@ wait_for_nl_response_to_string (WaitForNlResponseResult seq_result,
 		break;
 	}
 	return buf0;
-}
-
-/*****************************************************************************
- * Support IFLA_INET6_ADDR_GEN_MODE
- *****************************************************************************/
-
-static int _support_user_ipv6ll = 0;
-#define _support_user_ipv6ll_still_undecided() (G_UNLIKELY (_support_user_ipv6ll == 0))
-
-static void
-_support_user_ipv6ll_detect (struct nlattr **tb)
-{
-	gboolean supported;
-
-	nm_assert (_support_user_ipv6ll_still_undecided ());
-
-	/* IFLA_INET6_ADDR_GEN_MODE was added in kernel 3.17, dated 5 October, 2014. */
-	supported = !!tb[IFLA_INET6_ADDR_GEN_MODE];
-	_support_user_ipv6ll = supported ? 1 : -1;
-	_LOG2D ("kernel-support: IFLA_INET6_ADDR_GEN_MODE: %s",
-	        supported ? "detected" : "not detected");
-}
-
-static gboolean
-_support_user_ipv6ll_get (void)
-{
-	if (_support_user_ipv6ll_still_undecided ()) {
-		_support_user_ipv6ll = 1;
-		_LOG2D ("kernel-support: IFLA_INET6_ADDR_GEN_MODE: %s", "failed to detect; assume support");
-	}
-	return _support_user_ipv6ll >= 0;
-}
-
-/*****************************************************************************
- * extended IFA_FLAGS support
- *****************************************************************************/
-
-static int _support_kernel_extended_ifa_flags = 0;
-
-#define _support_kernel_extended_ifa_flags_still_undecided() (G_UNLIKELY (_support_kernel_extended_ifa_flags == 0))
-
-static void
-_support_kernel_extended_ifa_flags_detect (struct nl_msg *msg)
-{
-	struct nlmsghdr *msg_hdr;
-	gboolean support;
-
-	nm_assert (_support_kernel_extended_ifa_flags_still_undecided ());
-	nm_assert (msg);
-
-	msg_hdr = nlmsg_hdr (msg);
-
-	nm_assert (msg_hdr && msg_hdr->nlmsg_type == RTM_NEWADDR);
-
-	/* IFA_FLAGS is set for IPv4 and IPv6 addresses. It was added first to IPv6,
-	 * but if we encounter an IPv4 address with IFA_FLAGS, we surely have support. */
-	if (!NM_IN_SET (((struct ifaddrmsg *) nlmsg_data (msg_hdr))->ifa_family, AF_INET, AF_INET6))
-		return;
-
-	/* see if the nl_msg contains the IFA_FLAGS attribute. If it does,
-	 * we assume, that the kernel supports extended flags, IFA_F_MANAGETEMPADDR
-	 * and IFA_F_NOPREFIXROUTE for IPv6. They were added together in kernel 3.14,
-	 * dated 30 March, 2014.
-	 *
-	 * For IPv4, IFA_F_NOPREFIXROUTE was added later, but there is no easy
-	 * way to detect kernel support. */
-	support = !!nlmsg_find_attr (msg_hdr, sizeof (struct ifaddrmsg), IFA_FLAGS);
-	_support_kernel_extended_ifa_flags = support ? 1 : -1;
-	_LOG2D ("kernel-support: extended-ifa-flags: %s", support ? "detected" : "not detected");
-}
-
-static gboolean
-_support_kernel_extended_ifa_flags_get (void)
-{
-	if (_support_kernel_extended_ifa_flags_still_undecided ()) {
-		_LOG2D ("kernel-support: extended-ifa-flags: %s", "unable to detect kernel support for handling IPv6 temporary addresses. Assume support");
-		_support_kernel_extended_ifa_flags = 1;
-	}
-	return _support_kernel_extended_ifa_flags >= 0;
-}
-
-/*****************************************************************************
- * Support RTA_PREF
- *****************************************************************************/
-
-static int _support_rta_pref = 0;
-#define _support_rta_pref_still_undecided() (G_UNLIKELY (_support_rta_pref == 0))
-
-static void
-_support_rta_pref_detect (struct nlattr **tb)
-{
-	gboolean supported;
-
-	nm_assert (_support_rta_pref_still_undecided ());
-
-	/* RTA_PREF was added in kernel 4.1, dated 21 June, 2015. */
-	supported = !!tb[RTA_PREF];
-	_support_rta_pref = supported ? 1 : -1;
-	_LOG2D ("kernel-support: RTA_PREF: ability to set router preference for IPv6 routes: %s",
-	        supported ? "detected" : "not detected");
-}
-
-static gboolean
-_support_rta_pref_get (void)
-{
-	if (_support_rta_pref_still_undecided ()) {
-		/* if we couldn't detect support, we fallback on compile-time check, whether
-		 * RTA_PREF is present in the kernel headers. */
-		_support_rta_pref = RTA_PREF_SUPPORTED_AT_COMPILETIME ? 1 : -1;
-		_LOG2D ("kernel-support: RTA_PREF: ability to set router preference for IPv6 routes: %s",
-		        RTA_PREF_SUPPORTED_AT_COMPILETIME ? "assume support" : "assume no support");
-	}
-	return _support_rta_pref >= 0;
 }
 
 /******************************************************************
@@ -1246,8 +1131,11 @@ _parse_af_inet6 (NMPlatform *platform,
 	/* Hack to detect support addrgenmode of the kernel. We only parse
 	 * netlink messages that we receive from kernel, hence this check
 	 * is valid. */
-	if (_support_user_ipv6ll_still_undecided ())
-		_support_user_ipv6ll_detect (tb);
+	if (!_nm_platform_kernel_support_detected (NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL)) {
+		/* IFLA_INET6_ADDR_GEN_MODE was added in kernel 3.17, dated 5 October, 2014. */
+		_nm_platform_kernel_support_init (NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL,
+		                                  tb[IFLA_INET6_ADDR_GEN_MODE] ? 1 : -1);
+	}
 
 	if (tb[IFLA_INET6_ADDR_GEN_MODE]) {
 		i6_addr_gen_mode_inv = _nm_platform_uint8_inv (nla_get_u8 (tb[IFLA_INET6_ADDR_GEN_MODE]));
@@ -3371,9 +3259,13 @@ rta_multipath_done:
 	obj->ip_route.lock_mtu      = NM_FLAGS_HAS (lock, 1 << RTAX_MTU);
 
 	if (!is_v4) {
-		/* Detect support for RTA_PREF by inspecting the netlink message. */
-		if (_support_rta_pref_still_undecided ())
-			_support_rta_pref_detect (tb);
+
+		if (!_nm_platform_kernel_support_detected (NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF)) {
+			/* Detect support for RTA_PREF by inspecting the netlink message.
+			 * RTA_PREF was added in kernel 4.1, dated 21 June, 2015. */
+			_nm_platform_kernel_support_init (NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF,
+			                                  tb[RTA_PREF] ? 1 : -1);
+		}
 
 		if (tb[RTA_PREF])
 			obj->ip6_route.rt_pref = nla_get_u8 (tb[RTA_PREF]);
@@ -4654,32 +4546,6 @@ sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 
 /*****************************************************************************/
 
-static NMPlatformKernelSupportFlags
-check_kernel_support (NMPlatform *platform,
-                      NMPlatformKernelSupportFlags request_flags)
-{
-	NMPlatformKernelSupportFlags response = 0;
-
-	nm_assert (NM_IS_LINUX_PLATFORM (platform));
-
-	if (NM_FLAGS_HAS (request_flags, NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS)) {
-		if (_support_kernel_extended_ifa_flags_get ())
-			response |= NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS;
-	}
-
-	if (NM_FLAGS_HAS (request_flags, NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL)) {
-		if (_support_user_ipv6ll_get ())
-			response |= NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL;
-	}
-
-	if (NM_FLAGS_HAS (request_flags, NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF)) {
-		if (_support_rta_pref_get ())
-			response |= NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF;
-	}
-
-	return response;
-}
-
 static void
 process_events (NMPlatform *platform)
 {
@@ -5849,9 +5715,27 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 
 	msghdr = nlmsg_hdr (msg);
 
-	if (   _support_kernel_extended_ifa_flags_still_undecided ()
-	    && msghdr->nlmsg_type == RTM_NEWADDR)
-		_support_kernel_extended_ifa_flags_detect (msg);
+	if (   !_nm_platform_kernel_support_detected (NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)
+	    && msghdr->nlmsg_type == RTM_NEWADDR) {
+		/* IFA_FLAGS is set for IPv4 and IPv6 addresses. It was added first to IPv6,
+		 * but if we encounter an IPv4 address with IFA_FLAGS, we surely have support. */
+		if (   nlmsg_valid_hdr (msghdr, sizeof (struct ifaddrmsg))
+		    && NM_IN_SET (((struct ifaddrmsg *) nlmsg_data (msghdr))->ifa_family,
+		                  AF_INET,
+		                  AF_INET6)) {
+			/* see if the nl_msg contains the IFA_FLAGS attribute. If it does,
+			 * we assume, that the kernel supports extended flags, IFA_F_MANAGETEMPADDR
+			 * and IFA_F_NOPREFIXROUTE for IPv6. They were added together in kernel 3.14,
+			 * dated 30 March, 2014.
+			 *
+			 * For IPv4, IFA_F_NOPREFIXROUTE was added later, but there is no easy
+			 * way to detect kernel support. */
+			_nm_platform_kernel_support_init (NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS,
+			                                    !!nlmsg_find_attr (msghdr, sizeof (struct ifaddrmsg), IFA_FLAGS)
+			                                  ? 1
+			                                  : -1);
+		}
+	}
 
 	if (!handle_events)
 		return;
@@ -6441,7 +6325,7 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 	       ifindex,
 	       nm_platform_link_inet6_addrgenmode2str (mode, NULL, 0));
 
-	if (!_support_user_ipv6ll_get ()) {
+	if (!nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL)) {
 		_LOGD ("link: change %d: user-ipv6ll: not supported", ifindex);
 		return -NME_PL_OPNOTSUPP;
 	}
@@ -9084,8 +8968,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->qdisc_add = qdisc_add;
 	platform_class->tfilter_add = tfilter_add;
-
-	platform_class->check_kernel_support = check_kernel_support;
 
 	platform_class->process_events = process_events;
 }
