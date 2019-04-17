@@ -3431,6 +3431,18 @@ _new_from_nl_routing_rule (struct nlmsghdr *nlh, gboolean id_only)
 	nla_memcpy_checked_size (&props->sport_range, tb[FRA_SPORT_RANGE], sizeof (props->sport_range));
 	nla_memcpy_checked_size (&props->dport_range, tb[FRA_DPORT_RANGE], sizeof (props->dport_range));
 
+	if (!_nm_platform_kernel_support_detected (NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_IP_PROTO)) {
+		/* support for FRA_IP_PROTO, FRA_SPORT_RANGE, and FRA_DPORT_RANGE was added together
+		 * by bfff4862653bb96001ab57c1edd6d03f48e5f035, kernel 4.17, 4 June 2018.
+		 *
+		 * Unfortunately, a missing attribute does not tell us anything about support.
+		 * We can only tell for sure when we have support, but not when we don't have.  */
+		if (   tb[FRA_IP_PROTO]
+		    || tb[FRA_SPORT_RANGE]
+		    || tb[FRA_DPORT_RANGE])
+			_nm_platform_kernel_support_init (NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_IP_PROTO, 1);
+	}
+
 	G_STATIC_ASSERT_EXPR (sizeof (NMFibRuleUidRange) == 8);
 	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMFibRuleUidRange, start) == 0);
 	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMFibRuleUidRange, end) == 4);
