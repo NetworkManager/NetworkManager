@@ -1893,8 +1893,8 @@ _set_fcn_multilist (ARGS_SET_FCN)
 	                          property_info->property_typ_data->subtype.multilist.strsplit_escaped_tokens
 	                        ? VALUE_STRSPLIT_MODE_ESCAPED_TOKENS
 	                        : (  property_info->property_typ_data->subtype.multilist.strsplit_with_escape
-	                           ? VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE
-	                           : VALUE_STRSPLIT_MODE_OBJLIST),
+	                           ? VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE
+	                           : VALUE_STRSPLIT_MODE_MULTILIST),
 	                        &nstrv);
 
 	j = 0;
