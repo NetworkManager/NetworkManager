@@ -165,25 +165,18 @@ _value_str_as_index_list (const char *value, gsize *out_len)
 	return g_steal_pointer (&arr);
 }
 
-#define MULTILIST_WITH_ESCAPE_CHARS     NM_ASCII_SPACES","
+#define ESCAPED_TOKENS_WITH_SPACES_DELIMTER  ' '
+#define ESCAPED_TOKENS_WITH_SPACES_DELIMTERS NM_ASCII_SPACES","
 
 #define ESCAPED_TOKENS_DELIMITER        ','
 #define ESCAPED_TOKENS_DELIMITERS       ","
 
 typedef enum {
-	VALUE_STRSPLIT_MODE_STRIPPED,
 	VALUE_STRSPLIT_MODE_OBJLIST,
-	VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE,
 	VALUE_STRSPLIT_MODE_MULTILIST,
-	VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE,
 	VALUE_STRSPLIT_MODE_ESCAPED_TOKENS,
+	VALUE_STRSPLIT_MODE_ESCAPED_TOKENS_WITH_SPACES,
 } ValueStrsplitMode;
-
-static const char *
-_value_strescape (const char *str, char **out_to_free)
-{
-	return _nm_utils_escape_plain (str, MULTILIST_WITH_ESCAPE_CHARS, out_to_free);
-}
 
 static const char **
 _value_strsplit (const char *value,
@@ -200,23 +193,18 @@ _value_strsplit (const char *value,
 
 	/* note that all modes remove empty tokens (",", "a,,b", ",,"). */
 	switch (split_mode) {
-	case VALUE_STRSPLIT_MODE_STRIPPED:
-		strv = nm_utils_strsplit_set (value, NM_ASCII_SPACES",");
-		break;
 	case VALUE_STRSPLIT_MODE_OBJLIST:
-		strv = nm_utils_strsplit_set (value, ",");
-		break;
-	case VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE:
-		strv = nm_utils_strsplit_set_full (value, ",", NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
+		strv = nm_utils_strsplit_set (value, ESCAPED_TOKENS_DELIMITERS);
 		break;
 	case VALUE_STRSPLIT_MODE_MULTILIST:
-		strv = nm_utils_strsplit_set (value, " \t,");
-		break;
-	case VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE:
-		strv = nm_utils_strsplit_set_full (value, MULTILIST_WITH_ESCAPE_CHARS, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
+		strv = nm_utils_strsplit_set (value, ESCAPED_TOKENS_WITH_SPACES_DELIMTERS);
 		break;
 	case VALUE_STRSPLIT_MODE_ESCAPED_TOKENS:
 		strv = nm_utils_escaped_tokens_split (value, ESCAPED_TOKENS_DELIMITERS);
+		NM_SET_OUT (out_len, NM_PTRARRAY_LEN (strv));
+		return g_steal_pointer (&strv);
+	case VALUE_STRSPLIT_MODE_ESCAPED_TOKENS_WITH_SPACES:
+		strv = nm_utils_escaped_tokens_split (value, ESCAPED_TOKENS_WITH_SPACES_DELIMTERS);
 		NM_SET_OUT (out_len, NM_PTRARRAY_LEN (strv));
 		return g_steal_pointer (&strv);
 	default:
@@ -237,19 +225,45 @@ _value_strsplit (const char *value,
 		if (s[0] == '\0')
 			continue;
 
-		if (split_mode == VALUE_STRSPLIT_MODE_MULTILIST_WITH_ESCAPE)
-			_nm_utils_unescape_plain ((char *) s, MULTILIST_WITH_ESCAPE_CHARS, TRUE);
-		else if (split_mode == VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE)
-			_nm_utils_unescape_plain ((char *) s, ",", TRUE);
-		else
-			g_strchomp ((char *) s);
-
+		g_strchomp ((char *) s);
 		strv[len++] = s;
 	}
 	strv[len] = NULL;
 
 	NM_SET_OUT (out_len, len);
 	return g_steal_pointer (&strv);
+}
+
+static gboolean
+_value_strsplit_assert_unsplitable (const char *str)
+{
+#if NM_MORE_ASSERTS > 5
+	gs_free const char **strv_test = NULL;
+	gsize j, l;
+
+	/* Assert that we cannot split the token and that it
+	 * has no unescaped delimiters. */
+
+	strv_test = _value_strsplit (str,
+	                             VALUE_STRSPLIT_MODE_ESCAPED_TOKENS,
+	                             NULL);
+	nm_assert (NM_PTRARRAY_LEN (strv_test) == 1);
+
+	for (j = 0; str[j] != '\0'; ) {
+		if (str[j] == '\\') {
+			j++;
+			nm_assert (str[j] != '\0');
+		} else
+			nm_assert (!NM_IN_SET (str[j], '\0', ','));
+		j++;
+	}
+	l = j;
+	nm_assert (   !g_ascii_isspace (str[l - 1])
+	           || (   l >= 2
+	               && str[l - 2] == '\\'));
+#endif
+
+	return TRUE;
 }
 
 static NMIPAddress *
@@ -1759,25 +1773,6 @@ vlan_flags_to_string (guint32 flags, NMMetaAccessorGetType get_type)
 }
 
 static char *
-vlan_priorities_to_string (NMSettingVlan *s_vlan, NMVlanPriorityMap map)
-{
-	GString *priorities;
-	int i;
-
-	priorities = g_string_new (NULL);
-	for (i = 0; i < nm_setting_vlan_get_num_priorities (s_vlan, map); i++) {
-		guint32 from, to;
-
-		if (nm_setting_vlan_get_priority (s_vlan, map, i, &from, &to))
-			g_string_append_printf (priorities, "%d:%d,", from, to);
-	}
-	if (priorities->len)
-		g_string_truncate (priorities, priorities->len-1);  /* chop off trailing ',' */
-
-	return g_string_free (priorities, FALSE);
-}
-
-static char *
 secret_flags_to_string (guint32 flags, NMMetaAccessorGetType get_type)
 {
 	GString *flag_str;
@@ -1890,11 +1885,11 @@ _set_fcn_multilist (ARGS_SET_FCN)
 	}
 
 	strv = _value_strsplit (value,
-	                          property_info->property_typ_data->subtype.multilist.strsplit_escaped_tokens
-	                        ? VALUE_STRSPLIT_MODE_ESCAPED_TOKENS
-	                        : (  property_info->property_typ_data->subtype.multilist.strsplit_with_escape
-	                           ? VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE
-	                           : VALUE_STRSPLIT_MODE_OBJLIST),
+	                          property_info->property_typ_data->subtype.multilist.strsplit_plain
+	                        ? VALUE_STRSPLIT_MODE_MULTILIST
+	                        : (  property_info->property_typ_data->subtype.multilist.strsplit_with_spaces
+	                           ? VALUE_STRSPLIT_MODE_ESCAPED_TOKENS_WITH_SPACES
+	                           : VALUE_STRSPLIT_MODE_ESCAPED_TOKENS),
 	                        &nstrv);
 
 	j = 0;
@@ -3092,23 +3087,11 @@ _get_fcn_objlist (ARGS_GET_FCN)
 			continue;
 		}
 
-#if NM_MORE_ASSERTS
 		nm_assert (start_offset < str->len);
-		if (   property_info->property_typ_data->subtype.objlist.strsplit_with_escape
-		    && get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY) {
-			/* if the strsplit is done with VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE, then the appended
-			 * value must have no unescaped ','. */
-			for (; start_offset < str->len; ) {
-				if (str->str[start_offset] == '\\') {
-					start_offset++;
-					nm_assert (start_offset < str->len);
-					nm_assert (!NM_IN_SET (str->str[start_offset], '\0'));
-				} else
-					nm_assert (!NM_IN_SET (str->str[start_offset], '\0', ','));
-				start_offset++;
-			}
-		}
-#endif
+		nm_assert (strlen (str->str) == str->len);
+		nm_assert (   property_info->property_typ_data->subtype.objlist.strsplit_plain
+		           || get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY
+		           || _value_strsplit_assert_unsplitable (&str->str[start_offset]));
 	}
 
 	NM_SET_OUT (out_is_default, num == 0);
@@ -3283,11 +3266,9 @@ _set_fcn_objlist (ARGS_SET_FCN)
 	}
 
 	strv = _value_strsplit (value,
-	                          property_info->property_typ_data->subtype.objlist.strsplit_escaped_tokens
-	                        ? VALUE_STRSPLIT_MODE_ESCAPED_TOKENS
-	                        : (  property_info->property_typ_data->subtype.objlist.strsplit_with_escape
-	                           ? VALUE_STRSPLIT_MODE_OBJLIST_WITH_ESCAPE
-	                           : VALUE_STRSPLIT_MODE_OBJLIST),
+	                          property_info->property_typ_data->subtype.objlist.strsplit_plain
+	                        ? VALUE_STRSPLIT_MODE_OBJLIST
+	                        : VALUE_STRSPLIT_MODE_ESCAPED_TOKENS,
 	                        &nstrv);
 
 	if (_SET_FCN_DO_SET_ALL (modifier, value)) {
@@ -3456,15 +3437,20 @@ _get_fcn_match_interface_name (ARGS_GET_FCN)
 	num = nm_setting_match_get_num_interface_names (s_match);
 	for (i = 0; i < num; i++) {
 		const char *name;
-		gs_free char *to_free = NULL;
 
-		if (i == 0)
+		name = nm_setting_match_get_interface_name (s_match, i);
+		if (!name || !name[0])
+			continue;
+		if (!str)
 			str = g_string_new ("");
 		else
-			g_string_append_c (str, ' ');
-		name = nm_setting_match_get_interface_name (s_match, i);
-		g_string_append (str, _value_strescape (name, &to_free));
+			g_string_append_c (str, ESCAPED_TOKENS_WITH_SPACES_DELIMTER);
+		nm_utils_escaped_tokens_escape_gstr (name, ESCAPED_TOKENS_WITH_SPACES_DELIMTERS, str);
 	}
+
+	NM_SET_OUT (out_is_default, num == 0);
+	if (!str)
+		return NULL;
 	RETURN_STR_TO_FREE (g_string_free (str, FALSE));
 }
 
@@ -3852,14 +3838,31 @@ _vlan_priority_map_type_from_property_info (const NMMetaPropertyInfo *property_i
 static gconstpointer
 _get_fcn_vlan_xgress_priority_map (ARGS_GET_FCN)
 {
+	NMVlanPriorityMap map_type = _vlan_priority_map_type_from_property_info (property_info);
 	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
-	char *str;
+	GString *str = NULL;
+	guint32 i, num;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
-	str = vlan_priorities_to_string (s_vlan, _vlan_priority_map_type_from_property_info (property_info));
-	NM_SET_OUT (out_is_default, !str || !str[0]);
-	RETURN_STR_TO_FREE (str);
+	num = nm_setting_vlan_get_num_priorities (s_vlan, map_type);
+	for (i = 0; i < num; i++) {
+		guint32 from, to;
+
+		if (!nm_setting_vlan_get_priority (s_vlan, map_type, i, &from, &to))
+			continue;
+
+		if (!str)
+			str = g_string_new (NULL);
+		else
+			g_string_append_c (str, ESCAPED_TOKENS_WITH_SPACES_DELIMTER);
+		g_string_append_printf (str, "%d:%d", from, to);
+	}
+
+	NM_SET_OUT (out_is_default, num == 0);
+	if (!str)
+		return NULL;
+	RETURN_STR_TO_FREE (g_string_free (str, FALSE));
 }
 
 static gboolean
@@ -3874,7 +3877,7 @@ _set_fcn_vlan_xgress_priority_map (ARGS_SET_FCN)
 		return TRUE;
 	}
 
-	prio_map = _value_strsplit (value, VALUE_STRSPLIT_MODE_STRIPPED, &len);
+	prio_map = _value_strsplit (value, VALUE_STRSPLIT_MODE_ESCAPED_TOKENS_WITH_SPACES, &len);
 
 	for (i = 0; i < len; i++) {
 		if (!nm_utils_vlan_priority_map_parse_str (map_type,
@@ -4576,6 +4579,7 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 				.add_fcn =              MULTILIST_ADD_FCN             (NMSetting8021x, nm_setting_802_1x_add_eap_method),
 				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSetting8021x, nm_setting_802_1x_remove_eap_method),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSetting8021x, nm_setting_802_1x_remove_eap_method_by_value),
+				.strsplit_plain =       TRUE,
 			),
 			.values_static =            NM_MAKE_STRV ("leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd"),
 		),
@@ -4621,6 +4625,7 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 				.add_fcn =              MULTILIST_ADD_FCN             (NMSetting8021x, nm_setting_802_1x_add_altsubject_match),
 				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSetting8021x, nm_setting_802_1x_remove_altsubject_match),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSetting8021x, nm_setting_802_1x_remove_altsubject_match_by_value),
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -4717,6 +4722,7 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 				.add_fcn =              MULTILIST_ADD_FCN             (NMSetting8021x, nm_setting_802_1x_add_phase2_altsubject_match),
 				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSetting8021x, nm_setting_802_1x_remove_phase2_altsubject_match),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSetting8021x, nm_setting_802_1x_remove_phase2_altsubject_match_by_value),
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -4991,7 +4997,6 @@ static const NMMetaPropertyInfo *const property_infos_BRIDGE[] = {
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingBridge, nm_setting_bridge_clear_vlans),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_bridge_vlans,
 				.set_fcn =              _objlist_set_fcn_bridge_vlans,
-				.strsplit_escaped_tokens = TRUE,
 			),
 		),
 	),
@@ -5027,7 +5032,6 @@ static const NMMetaPropertyInfo *const property_infos_BRIDGE_PORT[] = {
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingBridgePort, nm_setting_bridge_port_clear_vlans),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_bridge_vlans,
 				.set_fcn =              _objlist_set_fcn_bridge_vlans,
-				.strsplit_escaped_tokens = TRUE,
 			),
 		),
 	),
@@ -5162,6 +5166,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingConnection, nm_setting_connection_remove_permission),
 				.remove_by_value_fcn =  _multilist_remove_by_value_fcn_connection_permissions,
 				.validate2_fcn =        _multilist_validate2_fcn_connection_permissions,
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -5211,6 +5216,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingConnection, nm_setting_connection_remove_secondary),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingConnection, nm_setting_connection_remove_secondary_by_value),
 				.validate2_fcn =        _multilist_validate2_fcn_uuid,
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -5564,6 +5570,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_by_value),
 				.validate2_fcn =        _multilist_validate2_fcn_ip_config_dns,
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -5576,6 +5583,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns_search),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_search_by_value),
 				.validate_fcn =         _multilist_validate_fcn_is_domain,
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -5587,6 +5595,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 				.add_fcn =              _multilist_add_fcn_ip_config_dns_options,
 				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns_option),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_option_by_value),
+				.strsplit_plain =       TRUE,
 			),
 			.is_default_fcn =           _is_default_func_ip_config_dns_options,
 		),
@@ -5612,6 +5621,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_addresses,
 				.set_fcn =              _objlist_set_fcn_ip_config_addresses,
 				.remove_by_idx_fcn_s =  OBJLIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_address),
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -5642,6 +5652,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 				.set_fcn =              _objlist_set_fcn_ip_config_routes,
 				.remove_by_idx_fcn_s =  OBJLIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_route),
 				.delimit_pretty_with_semicolon = TRUE,
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -5676,7 +5687,6 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routing_rules,
 				.set_fcn =              _objlist_set_fcn_ip_config_routing_rules,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingIPConfig, nm_setting_ip_config_remove_routing_rule),
-				.strsplit_escaped_tokens = TRUE,
 			),
 		),
 	),
@@ -5772,6 +5782,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_by_value),
 				.validate2_fcn =        _multilist_validate2_fcn_ip_config_dns,
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -5784,6 +5795,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns_search),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_search_by_value),
 				.validate_fcn =         _multilist_validate_fcn_is_domain,
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -5795,6 +5807,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 				.add_fcn =              _multilist_add_fcn_ip_config_dns_options,
 				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns_option),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_option_by_value),
+				.strsplit_plain =       TRUE,
 			),
 			.is_default_fcn =           _is_default_func_ip_config_dns_options,
 		),
@@ -5820,6 +5833,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_addresses,
 				.set_fcn =              _objlist_set_fcn_ip_config_addresses,
 				.remove_by_idx_fcn_s =  OBJLIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_address),
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -5850,6 +5864,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 				.set_fcn =              _objlist_set_fcn_ip_config_routes,
 				.remove_by_idx_fcn_s =  OBJLIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_route),
 				.delimit_pretty_with_semicolon = TRUE,
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -5884,7 +5899,6 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_ip_config_routing_rules,
 				.set_fcn =              _objlist_set_fcn_ip_config_routing_rules,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingIPConfig, nm_setting_ip_config_remove_routing_rule),
-				.strsplit_escaped_tokens = TRUE,
 			),
 		),
 	),
@@ -6131,7 +6145,7 @@ static const NMMetaPropertyInfo *const property_infos_MATCH[] = {
 				.add2_fcn =             MULTILIST_ADD2_FCN            (NMSettingMatch, nm_setting_match_add_interface_name),
 				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingMatch, nm_setting_match_remove_interface_name),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingMatch, nm_setting_match_remove_interface_name_by_value),
-				.strsplit_with_escape = TRUE,
+				.strsplit_with_spaces = TRUE,
 			),
 		),
 	),
@@ -6450,6 +6464,7 @@ static const NMMetaPropertyInfo *const property_infos_SRIOV[] = {
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingSriov, nm_setting_sriov_clear_vfs),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_sriov_vfs,
 				.set_fcn =              _objlist_set_fcn_sriov_vfs,
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -6471,6 +6486,7 @@ static const NMMetaPropertyInfo *const property_infos_TC_CONFIG[] = {
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_tc_config_qdiscs,
 				.set_fcn =              _objlist_set_fcn_tc_config_qdiscs,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingTCConfig, nm_setting_tc_config_remove_qdisc),
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -6483,6 +6499,7 @@ static const NMMetaPropertyInfo *const property_infos_TC_CONFIG[] = {
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_tc_config_tfilters,
 				.set_fcn =              _objlist_set_fcn_tc_config_tfilters,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingTCConfig, nm_setting_tc_config_remove_tfilter),
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -6574,6 +6591,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingTeam, nm_setting_team_add_runner_tx_hash),
 				.remove_by_idx_fcn_u =  MULTILIST_REMOVE_BY_IDX_FCN_U (NMSettingTeam, nm_setting_team_remove_runner_tx_hash),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingTeam, nm_setting_team_remove_runner_tx_hash_by_value),
+				.strsplit_plain =       TRUE,
 			),
 			.values_static =            NM_MAKE_STRV ("eth", "vlan", "ipv4", "ipv6", "ip",
 			                                          "l3", "tcp", "udp", "sctp", "l4"),
@@ -6644,6 +6662,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_team_link_watchers,
 				.set_fcn =              _objlist_set_fcn_team_link_watchers,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingTeam, nm_setting_team_remove_link_watcher),
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -6720,6 +6739,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_team_link_watchers,
 				.set_fcn =              _objlist_set_fcn_team_link_watchers,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingTeamPort, nm_setting_team_port_remove_link_watcher),
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -7045,6 +7065,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
 				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingWired, nm_setting_wired_remove_mac_blacklist_item),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingWired, nm_setting_wired_remove_mac_blacklist_item_by_value),
 				.validate2_fcn =        _multilist_validate2_fcn_mac_addr,
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -7218,6 +7239,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
 				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingWireless, nm_setting_wireless_remove_mac_blacklist_item),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingWireless, nm_setting_wireless_remove_mac_blacklist_item_by_value),
 				.validate2_fcn =        _multilist_validate2_fcn_mac_addr,
+				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -7298,6 +7320,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingWirelessSecurity, nm_setting_wireless_security_add_proto),
 				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_proto),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_proto_by_value),
+				.strsplit_plain =       TRUE,
 			),
 			.values_static =            NM_MAKE_STRV ("wpa", "rsn"),
 		),
@@ -7310,6 +7333,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingWirelessSecurity, nm_setting_wireless_security_add_pairwise),
 				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_pairwise),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_pairwise_by_value),
+				.strsplit_plain =       TRUE,
 			),
 			.values_static =            NM_MAKE_STRV ("tkip", "ccmp"),
 		),
@@ -7322,6 +7346,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingWirelessSecurity, nm_setting_wireless_security_add_group),
 				.remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_group),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingWirelessSecurity, nm_setting_wireless_security_remove_group_by_value),
+				.strsplit_plain =       TRUE,
 			),
 			.values_static =            NM_MAKE_STRV ("wep40", "wep104", "tkip", "ccmp"),
 		),
