@@ -77,8 +77,6 @@ main (int argc, char **argv)
 
 	nm_linux_platform_setup ();
 
-	nm_platform_check_kernel_support (NM_PLATFORM_GET, ~((NMPlatformKernelSupportFlags) 0));
-
 	if (global_opt.persist)
 		g_main_loop_run (loop);
 

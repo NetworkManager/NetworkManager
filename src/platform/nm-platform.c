@@ -119,9 +119,6 @@ typedef struct _NMPlatformPrivate {
 	bool use_udev:1;
 	bool log_with_ptr:1;
 
-	NMPlatformKernelSupportFlags support_checked;
-	NMPlatformKernelSupportFlags support_present;
-
 	guint ip4_dev_route_blacklist_check_id;
 	guint ip4_dev_route_blacklist_gc_timeout_id;
 	GHashTable *ip4_dev_route_blacklist_hash;
@@ -277,39 +274,98 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_nmp_nlm_flag_to_string_lookup, NMPNlmFlags,
 
 /*****************************************************************************/
 
-NMPlatformKernelSupportFlags
-nm_platform_check_kernel_support (NMPlatform *self,
-                                  NMPlatformKernelSupportFlags request_flags)
+volatile int _nm_platform_kernel_support_state[_NM_PLATFORM_KERNEL_SUPPORT_NUM] = { };
+
+static const struct {
+	bool compile_time_default;
+	const char *name;
+	const char *desc;
+} _nm_platform_kernel_support_info[_NM_PLATFORM_KERNEL_SUPPORT_NUM] = {
+	[NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS] = {
+		.compile_time_default = TRUE,
+		.name                 = "EXTENDED_IFA_FLAGS",
+		.desc                 = "IPv6 temporary addresses support",
+	},
+	[NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL] = {
+		.compile_time_default = TRUE,
+		.name                 = "USER_IPV6LL",
+		.desc                 = "IFLA_INET6_ADDR_GEN_MODE support",
+	},
+	[NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF] = {
+		.compile_time_default = (RTA_MAX >= 20 /* RTA_PREF */),
+		.name                 = "RTA_PREF",
+		.desc                 = "ability to set router preference for IPv6 routes",
+	},
+	[NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV] = {
+		.compile_time_default = (FRA_MAX >= 19 /* FRA_L3MDEV */),
+		.name                 = "FRA_L3MDEV",
+		.desc                 = "FRA_L3MDEV attribute for policy routing rules",
+	},
+	[NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE] = {
+		.compile_time_default = (FRA_MAX >= 20 /* FRA_UID_RANGE */),
+		.name                 = "FRA_UID_RANGE",
+		.desc                 = "FRA_UID_RANGE attribute for policy routing rules",
+	},
+	[NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_PROTOCOL] = {
+		.compile_time_default = (FRA_MAX >= 21 /* FRA_PROTOCOL */),
+		.name                 = "FRA_PROTOCOL",
+		.desc                 = "FRA_PROTOCOL attribute for policy routing rules",
+	},
+	[NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_IP_PROTO] = {
+		.compile_time_default = (FRA_MAX >= 22 /* FRA_IP_PROTO */),
+		.name                 = "FRA_IP_PROTO",
+		.desc                 = "FRA_IP_PROTO, FRA_SPORT_RANGE, FRA_DPORT_RANGE attributes for policy routing rules",
+	},
+};
+
+int
+_nm_platform_kernel_support_init (NMPlatformKernelSupportType type,
+                                  int value)
 {
-	NMPlatformPrivate *priv;
+	volatile int *p_state;
+	gboolean set_default = FALSE;
 
-	_CHECK_SELF (self, klass, TRUE);
+	nm_assert (_NM_INT_NOT_NEGATIVE (type) && type < G_N_ELEMENTS (_nm_platform_kernel_support_state));
 
-	priv = NM_PLATFORM_GET_PRIVATE (self);
+	p_state = &_nm_platform_kernel_support_state[type];
 
-	/* we cache the response from subclasses and only request it once.
-	 * This probably gives better performance, but more importantly,
-	 * we are guaranteed that the answer for a certain request_flag
-	 * is always the same. */
-	if (G_UNLIKELY (!NM_FLAGS_ALL (priv->support_checked, request_flags))) {
-		NMPlatformKernelSupportFlags checked, response;
-
-		checked = request_flags & ~priv->support_checked;
-		nm_assert (checked);
-
-		if (klass->check_kernel_support)
-			response = klass->check_kernel_support (self, checked);
-		else {
-			/* fake platform. Pretend no support for anything. */
-			response = 0;
-		}
-
-		priv->support_checked |= checked;
-		priv->support_present = (priv->support_present & ~checked) | (response & checked);
+	if (value == 0) {
+		set_default = TRUE;
+		value =   _nm_platform_kernel_support_info[type].compile_time_default
+		        ? 1
+		        : -1;
 	}
 
-	return priv->support_present & request_flags;
+	nm_assert (NM_IN_SET (value, -1, 1));
+
+	if (!g_atomic_int_compare_and_exchange (p_state, 0, value)) {
+		value = g_atomic_int_get (p_state);
+		nm_assert (NM_IN_SET (value, -1, 1));
+		return value;
+	}
+
+#undef NM_THREAD_SAFE_ON_MAIN_THREAD
+#define NM_THREAD_SAFE_ON_MAIN_THREAD 0
+
+	if (set_default) {
+		nm_log_dbg (LOGD_PLATFORM, "platform: kernel-support for %s (%s) not detected: assume %ssupported",
+		             _nm_platform_kernel_support_info[type].name,
+		             _nm_platform_kernel_support_info[type].desc,
+		             value >= 0 ? "" : "not ");
+	} else {
+		nm_log_dbg (LOGD_PLATFORM, "platform: kernel-support for %s (%s) detected: %ssupported",
+		            _nm_platform_kernel_support_info[type].name,
+		            _nm_platform_kernel_support_info[type].desc,
+		            value >= 0 ? "" : "not ");
+	}
+
+#undef NM_THREAD_SAFE_ON_MAIN_THREAD
+#define NM_THREAD_SAFE_ON_MAIN_THREAD 1
+
+	return value;
 }
+
+/*****************************************************************************/
 
 /**
  * nm_platform_process_events:
@@ -3912,7 +3968,7 @@ nm_platform_ip4_address_sync (NMPlatform *self,
 	if (!known_addresses)
 		return TRUE;
 
-	ifa_flags =   nm_platform_check_kernel_support (self, NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS)
+	ifa_flags =   nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)
 	            ? IFA_F_NOPREFIXROUTE
 	            : 0;
 
@@ -4112,7 +4168,7 @@ next_plat:
 	if (!known_addresses)
 		return TRUE;
 
-	ifa_flags =   nm_platform_check_kernel_support (self, NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS)
+	ifa_flags =   nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)
 	            ? IFA_F_NOPREFIXROUTE
 	            : 0;
 
@@ -7349,6 +7405,10 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
                                     | FIB_RULE_IIF_DETACHED \
                                     | FIB_RULE_OIF_DETACHED)
 
+#define _routing_rule_compare(cmp_type, kernel_support_type) \
+	(   (cmp_type) == NM_PLATFORM_ROUTING_RULE_CMP_TYPE_FULL \
+	 || nm_platform_kernel_support_get (kernel_support_type))
+
 void
 nm_platform_routing_rule_hash_update (const NMPlatformRoutingRule *obj,
                                       NMPlatformRoutingRuleCmpType cmp_type,
@@ -7379,7 +7439,6 @@ nm_platform_routing_rule_hash_update (const NMPlatformRoutingRule *obj,
 		/* fall-through */
 	case NM_PLATFORM_ROUTING_RULE_CMP_TYPE_FULL:
 
-
 		nm_hash_update_vals (h,
 		                     obj->addr_family,
 		                     obj->tun_id,
@@ -7398,27 +7457,42 @@ nm_platform_routing_rule_hash_update (const NMPlatformRoutingRule *obj,
 		                      ? obj->flow
 		                      : (guint32) 0u),
 		                     NM_HASH_COMBINE_BOOLS (guint8,
-		                                            obj->uid_range_has),
+		                                            (  _routing_rule_compare (cmp_type,
+		                                                                      NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE)
+		                                             ? obj->uid_range_has
+		                                             : FALSE)),
 		                     obj->suppress_prefixlen_inverse,
 		                     obj->suppress_ifgroup_inverse,
-		                     (  cmp_full
-		                      ? obj->l3mdev
-		                      : (guint8) !!obj->l3mdev),
+		                     (  _routing_rule_compare (cmp_type,
+		                                               NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV)
+		                      ? (  cmp_full
+		                         ? (guint16) obj->l3mdev
+		                         : (guint16) !!obj->l3mdev)
+		                      : G_MAXUINT16),
 		                     obj->action,
 		                     obj->tos,
 		                     obj->src_len,
 		                     obj->dst_len,
-		                     obj->protocol,
-		                     obj->ip_proto);
+		                     (  _routing_rule_compare (cmp_type,
+		                                               NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_PROTOCOL)
+		                      ? (guint16) obj->protocol
+		                      : G_MAXUINT16));
 		addr_size = nm_utils_addr_family_to_size (obj->addr_family);
 		if (cmp_full || obj->src_len > 0)
 			nm_hash_update (h, &obj->src, addr_size);
 		if (cmp_full || obj->dst_len > 0)
 			nm_hash_update (h, &obj->dst, addr_size);
-		if (cmp_full || obj->uid_range_has)
-			nm_hash_update_valp (h, &obj->uid_range);
-		nm_hash_update_valp (h, &obj->sport_range);
-		nm_hash_update_valp (h, &obj->dport_range);
+		if (_routing_rule_compare (cmp_type,
+		                           NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE)) {
+			if (cmp_full || obj->uid_range_has)
+				nm_hash_update_valp (h, &obj->uid_range);
+		}
+		if (_routing_rule_compare (cmp_type,
+		                           NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_IP_PROTO)) {
+			nm_hash_update_val (h, obj->ip_proto);
+			nm_hash_update_valp (h, &obj->sport_range);
+			nm_hash_update_valp (h, &obj->dport_range);
+		}
 		nm_hash_update_str (h, obj->iifname);
 		nm_hash_update_str (h, obj->oifname);
 		return;
@@ -7469,13 +7543,15 @@ nm_platform_routing_rule_cmp (const NMPlatformRoutingRule *a,
 		NM_CMP_FIELD (a, b, priority);
 		NM_CMP_FIELD (a, b, tun_id);
 
-		if (cmp_full)
-			NM_CMP_FIELD (a, b, l3mdev);
-		else
-			NM_CMP_FIELD_BOOL (a, b, l3mdev);
+		if (_routing_rule_compare (cmp_type,
+		                           NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV)) {
+			if (cmp_full)
+				NM_CMP_FIELD (a, b, l3mdev);
+			else
+				NM_CMP_FIELD_BOOL (a, b, l3mdev);
+		}
 
-		if (cmp_full || !a->l3mdev)
-			NM_CMP_FIELD (a, b, table);
+		NM_CMP_FIELD (a, b, table);
 
 		NM_CMP_DIRECT (a->flags & flags_mask, b->flags & flags_mask);
 
@@ -7494,8 +7570,19 @@ nm_platform_routing_rule_cmp (const NMPlatformRoutingRule *a,
 		if (cmp_full || a->addr_family == AF_INET)
 			NM_CMP_FIELD (a, b, flow);
 
-		NM_CMP_FIELD (a, b, protocol);
-		NM_CMP_FIELD (a, b, ip_proto);
+		if (_routing_rule_compare (cmp_type,
+		                           NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_PROTOCOL))
+			NM_CMP_FIELD (a, b, protocol);
+
+		if (_routing_rule_compare (cmp_type,
+		                           NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_IP_PROTO)) {
+			NM_CMP_FIELD (a, b, ip_proto);
+			NM_CMP_FIELD (a, b, sport_range.start);
+			NM_CMP_FIELD (a, b, sport_range.end);
+			NM_CMP_FIELD (a, b, dport_range.start);
+			NM_CMP_FIELD (a, b, dport_range.end);
+		}
+
 		addr_size = nm_utils_addr_family_to_size (a->addr_family);
 
 		NM_CMP_FIELD (a, b, src_len);
@@ -7506,16 +7593,15 @@ nm_platform_routing_rule_cmp (const NMPlatformRoutingRule *a,
 		if (cmp_full || a->dst_len > 0)
 			NM_CMP_FIELD_MEMCMP_LEN (a, b, dst, addr_size);
 
-		NM_CMP_FIELD_UNSAFE (a, b, uid_range_has);
-		if (cmp_full || a->uid_range_has) {
-			NM_CMP_FIELD (a, b, uid_range.start);
-			NM_CMP_FIELD (a, b, uid_range.end);
+		if (_routing_rule_compare (cmp_type,
+		                           NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE)) {
+			NM_CMP_FIELD_UNSAFE (a, b, uid_range_has);
+			if (cmp_full || a->uid_range_has) {
+				NM_CMP_FIELD (a, b, uid_range.start);
+				NM_CMP_FIELD (a, b, uid_range.end);
+			}
 		}
 
-		NM_CMP_FIELD (a, b, sport_range.start);
-		NM_CMP_FIELD (a, b, sport_range.end);
-		NM_CMP_FIELD (a, b, dport_range.start);
-		NM_CMP_FIELD (a, b, dport_range.end);
 		NM_CMP_FIELD_STR (a, b, iifname);
 		NM_CMP_FIELD_STR (a, b, oifname);
 		return 0;

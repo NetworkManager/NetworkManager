@@ -186,8 +186,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 		 * addresses as /128. The reason for the /128 is to prevent the kernel
 		 * from adding a prefix route for this address. */
 		ifa_flags = 0;
-		if (nm_platform_check_kernel_support (NM_PLATFORM_GET,
-		                                      NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS)) {
+		if (nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)) {
 			ifa_flags |= IFA_F_NOPREFIXROUTE;
 			if (NM_IN_SET (global_opt.tempaddr, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
 			                                    NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR))
@@ -212,8 +211,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 		                                  rdata->routes_n,
 		                                  RT_TABLE_MAIN,
 		                                  global_opt.priority_v6,
-		                                  nm_platform_check_kernel_support (NM_PLATFORM_GET,
-		                                                                    NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF));
+		                                  nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF));
 	}
 
 	if (changed & NM_NDISC_CONFIG_DHCP_LEVEL) {
