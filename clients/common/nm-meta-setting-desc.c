@@ -1778,25 +1778,6 @@ vlan_flags_to_string (guint32 flags, NMMetaAccessorGetType get_type)
 }
 
 static char *
-vlan_priorities_to_string (NMSettingVlan *s_vlan, NMVlanPriorityMap map)
-{
-	GString *priorities;
-	int i;
-
-	priorities = g_string_new (NULL);
-	for (i = 0; i < nm_setting_vlan_get_num_priorities (s_vlan, map); i++) {
-		guint32 from, to;
-
-		if (nm_setting_vlan_get_priority (s_vlan, map, i, &from, &to))
-			g_string_append_printf (priorities, "%d:%d,", from, to);
-	}
-	if (priorities->len)
-		g_string_truncate (priorities, priorities->len-1);  /* chop off trailing ',' */
-
-	return g_string_free (priorities, FALSE);
-}
-
-static char *
 secret_flags_to_string (guint32 flags, NMMetaAccessorGetType get_type)
 {
 	GString *flag_str;
@@ -3862,14 +3843,31 @@ _vlan_priority_map_type_from_property_info (const NMMetaPropertyInfo *property_i
 static gconstpointer
 _get_fcn_vlan_xgress_priority_map (ARGS_GET_FCN)
 {
+	NMVlanPriorityMap map_type = _vlan_priority_map_type_from_property_info (property_info);
 	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
-	char *str;
+	GString *str = NULL;
+	guint32 i, num;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
-	str = vlan_priorities_to_string (s_vlan, _vlan_priority_map_type_from_property_info (property_info));
-	NM_SET_OUT (out_is_default, !str || !str[0]);
-	RETURN_STR_TO_FREE (str);
+	num = nm_setting_vlan_get_num_priorities (s_vlan, map_type);
+	for (i = 0; i < num; i++) {
+		guint32 from, to;
+
+		if (!nm_setting_vlan_get_priority (s_vlan, map_type, i, &from, &to))
+			continue;
+
+		if (!str)
+			str = g_string_new (NULL);
+		else
+			g_string_append_c (str, ',');
+		g_string_append_printf (str, "%d:%d", from, to);
+	}
+
+	NM_SET_OUT (out_is_default, num == 0);
+	if (!str)
+		return NULL;
+	RETURN_STR_TO_FREE (g_string_free (str, FALSE));
 }
 
 static gboolean
