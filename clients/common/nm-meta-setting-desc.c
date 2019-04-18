@@ -195,14 +195,14 @@ _value_strsplit (const char *value,
 	/* note that all modes remove empty tokens (",", "a,,b", ",,"). */
 	switch (split_mode) {
 	case VALUE_STRSPLIT_MODE_STRIPPED:
-		strv = nm_utils_strsplit_set (value, NM_ASCII_SPACES",");
+		strv = nm_utils_strsplit_set (value, ESCAPED_TOKENS_WITH_SPACES_DELIMTERS);
 		NM_SET_OUT (out_len, NM_PTRARRAY_LEN (strv));
 		return g_steal_pointer (&strv);
 	case VALUE_STRSPLIT_MODE_OBJLIST:
-		strv = nm_utils_strsplit_set (value, ",");
+		strv = nm_utils_strsplit_set (value, ESCAPED_TOKENS_DELIMITERS);
 		break;
 	case VALUE_STRSPLIT_MODE_MULTILIST:
-		strv = nm_utils_strsplit_set (value, " \t,");
+		strv = nm_utils_strsplit_set (value, ESCAPED_TOKENS_WITH_SPACES_DELIMTERS);
 		break;
 	case VALUE_STRSPLIT_MODE_ESCAPED_TOKENS:
 		strv = nm_utils_escaped_tokens_split (value, ESCAPED_TOKENS_DELIMITERS);
