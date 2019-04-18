@@ -5203,7 +5203,7 @@ nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len
 		return buf;
 
 	g_snprintf (buf, len,
-	            lnk->is_tap ? "gretap" : "gre"
+	            "gre%s" /* is_tap */
 	            "%s" /* remote */
 	            "%s" /* local */
 	            "%s" /* parent_ifindex */
@@ -5215,6 +5215,7 @@ nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len
 	            "%s" /* ikey */
 	            "%s" /* okey */
 	            "",
+	            lnk->is_tap ? "tap" : "",
 	            lnk->remote ? nm_sprintf_buf (str_remote, " remote %s", nm_utils_inet4_ntop (lnk->remote, str_remote1)) : "",
 	            lnk->local ? nm_sprintf_buf (str_local, " local %s", nm_utils_inet4_ntop (lnk->local, str_local1)) : "",
 	            lnk->parent_ifindex ? nm_sprintf_buf (str_parent_ifindex, " dev %d", lnk->parent_ifindex) : "",
