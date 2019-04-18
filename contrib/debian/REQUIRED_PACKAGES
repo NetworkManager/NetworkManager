@@ -1,0 +1,74 @@
+#!/bin/bash
+
+# A list of packages useful/needed to build and develop
+# NetworkManager on Debian and Ubuntu.
+#
+# Not all of these packages are available, depending
+# on your distribution/release. But the script will happily
+# skip them.
+#
+# Not all of these packages are strictly speaking necessary.
+# This is a generous list of related packages.
+
+install() {
+    for p in "$@"; do
+        if [ "$NM_INSTALL" != "" ]; then
+            $NM_INSTALL "$p" || :
+        else
+            sudo apt-get install -y "$p" || :
+        fi
+    done
+}
+
+install \
+    \
+    autoconf \
+    automake \
+    autopoint \
+    clang \
+    dbus \
+    dbus-x11 \
+    dnsmasq \
+    git \
+    gobject-introspection \
+    gtk-doc-tools \
+    intltool \
+    iproute2 \
+    iptables \
+    libcurl4-gnutls-dev \
+    libdbus-1-dev \
+    libdbus-glib-1-dev \
+    libgcrypt11-dev \
+    libgirepository1.0-dev \
+    libglib2.0-dev \
+    libglib2.0-doc \
+    libgnutls-dev \
+    libgnutls28-dev \
+    libiw-dev \
+    libjansson-dev \
+    libjansson4 \
+    libmm-glib-dev \
+    libndp-dev \
+    libnewt-dev \
+    libnss3-dev \
+    libpolkit-gobject-1-dev \
+    libreadline-dev \
+    libsystemd-dev \
+    libteam-dev \
+    libtool \
+    libudev-dev \
+    locales \
+    make \
+    meson \
+    pkg-config \
+    ppp \
+    ppp-dev \
+    python-dbus \
+    python-gi \
+    python-software-properties \
+    python3-dbus \
+    python3-gi \
+    python3-pip \
+    uuid-dev \
+    \
+    #end

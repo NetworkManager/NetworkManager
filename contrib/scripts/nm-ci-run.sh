@@ -28,7 +28,9 @@ _is_true() {
     esac
 }
 
+USE_CCACHE=0
 if which ccache &>/dev/null; then
+    USE_CCACHE=1
     export PATH="/usr/lib64/ccache:/usr/lib/ccache${PATH:+:${PATH}}"
 fi
 
@@ -50,16 +52,21 @@ _WITH_LIBTEAM="$_TRUE"
 _WITH_DOCS="$_TRUE"
 _WITH_SYSTEMD_LOGIND="$_TRUE"
 
-if [ "$CI" == travis ]; then
-    _WITH_WERROR=0
-    _WITH_LIBTEAM="$_FALSE"
-    _WITH_DOCS="$_FALSE"
-    _WITH_SYSTEMD_LOGIND="$_FALSE"
-elif [ "$CI" == gitlab ]; then
-    :
-else
-   die "invalid \$CI \"$CI\""
-fi
+case "$CI" in
+    ""|"true"|"default"|"gitlab")
+        CI=default
+        ;;
+    "travis")
+        _WITH_WERROR=0
+        _WITH_LIBTEAM="$_FALSE"
+        _WITH_DOCS="$_FALSE"
+        _WITH_SYSTEMD_LOGIND="$_FALSE"
+        ;;
+    *)
+        die "invalid \$CI \"$CI\""
+        ;;
+esac
+
 if [ "$CC" != gcc ]; then
     _WITH_CRYPTO=nss
 fi
@@ -199,4 +206,9 @@ if [ "$BUILD_TYPE" == autotools ]; then
     run_autotools
 elif [ "$BUILD_TYPE" == meson ]; then
     run_meson
+fi
+
+if [ "$USE_CCACHE" = 1 ]; then
+    echo "ccache statistics:"
+    ccache -s
 fi

@@ -12,21 +12,33 @@ stages:
   before_script:
     - date '+%Y%m%d-%H%M%S'; NM_INSTALL="dnf install -y" ./contrib/fedora/REQUIRED_PACKAGES
     - date '+%Y%m%d-%H%M%S'; dnf install -y glibc-langpack-pl ccache clang
-    - date '+%Y%m%d-%H%M%S'; locale -a
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-ci-patch-gtkdoc.sh || true
 
-.fedora_script: &fedora_script
+.debian_install: &debian_install
+  before_script:
+    - date '+%Y%m%d-%H%M%S'; apt-get update
+    - date '+%Y%m%d-%H%M%S'; NM_INSTALL="apt-get -qq install -y" ./contrib/debian/REQUIRED_PACKAGES
+    - date '+%Y%m%d-%H%M%S'; dbus-uuidgen --ensure
+    - date '+%Y%m%d-%H%M%S'; sed -i 's/^# \(pl_PL.UTF-8 .*\)$/\1/p' /etc/locale.gen ; true
+    - date '+%Y%m%d-%H%M%S'; locale-gen pl_PL.UTF-8
+    - date '+%Y%m%d-%H%M%S'; pip3 install meson
+
+.do_build: &do_build
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; uname -a
-    - date '+%Y%m%d-%H%M%S'; dnf list --installed
-    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; CI=gitlab BUILD_TYPE=autotools CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
+    - date '+%Y%m%d-%H%M%S'; locale -a
+    - date '+%Y%m%d-%H%M%S'; env
+    - date '+%Y%m%d-%H%M%S'; meson --version
+    - date '+%Y%m%d-%H%M%S'; which dnf  && dnf list --installed
+    - date '+%Y%m%d-%H%M%S'; which dpkg && dpkg -l
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=autotools CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
     - date '+%Y%m%d-%H%M%S'; rm -rf /tmp/nm-docs-html; mv build/INST/share/gtk-doc/html /tmp/nm-docs-html
-    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; CI=gitlab BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
-    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; CI=gitlab BUILD_TYPE=autotools CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
-    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; CI=gitlab BUILD_TYPE=meson     CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
-    - date '+%Y%m%d-%H%M%S'; ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test
-    - date '+%Y%m%d-%H%M%S'; ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=autotools CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=meson     CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
+    - date '+%Y%m%d-%H%M%S'; grep -q '^NAME=Fedora' /etc/os-release && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test
+    - date '+%Y%m%d-%H%M%S'; grep -q '^NAME=Fedora' /etc/os-release && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
     - date '+%Y%m%d-%H%M%S'; mv /tmp/nm-docs-html ./docs-html
 
 checkpatch:
@@ -41,35 +53,62 @@ checkpatch:
     paths:
       - checkpatch-out.txt
 
-build_f28:
+t_fedora:28:
   <<: *fedora_install
   image: fedora:28
-  <<: *fedora_script
+  <<: *do_build
   artifacts:
     expire_in: 1 day
     paths:
       - docs-html
 
-build_f29:
+t_fedora:29:
   <<: *fedora_install
   image: fedora:29
-  <<: *fedora_script
+  <<: *do_build
 
-build_f30:
+t_fedora:30:
   <<: *fedora_install
   image: fedora:30
-  <<: *fedora_script
+  <<: *do_build
 
-build_frawhide:
+t_fedora:rawhide:
   <<: *fedora_install
   image: fedora:rawhide
-  <<: *fedora_script
+  <<: *do_build
   allow_failure: true
+  when: manual
+
+t_ubuntu:16.04:
+  <<: *debian_install
+  image: ubuntu:16.04
+  <<: *do_build
+
+t_ubuntu:18.04:
+  <<: *debian_install
+  image: ubuntu:18.04
+  <<: *do_build
+
+t_debian:9:
+  <<: *debian_install
+  image: debian:stretch
+  <<: *do_build
+
+t_debian:testing:
+  <<: *debian_install
+  image: debian:testing
+  <<: *do_build
+  when: manual
+
+t_debian:sid:
+  <<: *debian_install
+  image: debian:sid
+  <<: *do_build
 
 pages:
   stage: deploy
   dependencies:
-    - build_f28
+    - t_fedora:29
   script:
     - mv docs-html public
   artifacts:
