@@ -4305,8 +4305,8 @@ read_routing_rules_parse (shvarFile *ifcfg,
 		gboolean key_is_ipv4;
 
 		key_is_ipv4 = (key[NM_STRLEN ("ROUTING_RULE")] == '_');
-		nm_assert ( key_is_ipv4 == NM_STR_HAS_PREFIX (key, "ROUTING_RULE_"));
-		nm_assert (!key_is_ipv4 == NM_STR_HAS_PREFIX (key, "ROUTING_RULE6_"));
+		nm_assert (  key_is_ipv4  == NM_STR_HAS_PREFIX (key, "ROUTING_RULE_"));
+		nm_assert ((!key_is_ipv4) == NM_STR_HAS_PREFIX (key, "ROUTING_RULE6_"));
 
 		value = svGetValueStr (ifcfg, key, &value_to_free);
 		if (!value)
