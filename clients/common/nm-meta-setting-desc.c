@@ -172,7 +172,6 @@ _value_str_as_index_list (const char *value, gsize *out_len)
 #define ESCAPED_TOKENS_DELIMITERS       ","
 
 typedef enum {
-	VALUE_STRSPLIT_MODE_STRIPPED,
 	VALUE_STRSPLIT_MODE_OBJLIST,
 	VALUE_STRSPLIT_MODE_MULTILIST,
 	VALUE_STRSPLIT_MODE_ESCAPED_TOKENS,
@@ -194,10 +193,6 @@ _value_strsplit (const char *value,
 
 	/* note that all modes remove empty tokens (",", "a,,b", ",,"). */
 	switch (split_mode) {
-	case VALUE_STRSPLIT_MODE_STRIPPED:
-		strv = nm_utils_strsplit_set (value, ESCAPED_TOKENS_WITH_SPACES_DELIMTERS);
-		NM_SET_OUT (out_len, NM_PTRARRAY_LEN (strv));
-		return g_steal_pointer (&strv);
 	case VALUE_STRSPLIT_MODE_OBJLIST:
 		strv = nm_utils_strsplit_set (value, ESCAPED_TOKENS_DELIMITERS);
 		break;
@@ -3860,7 +3855,7 @@ _get_fcn_vlan_xgress_priority_map (ARGS_GET_FCN)
 		if (!str)
 			str = g_string_new (NULL);
 		else
-			g_string_append_c (str, ',');
+			g_string_append_c (str, ESCAPED_TOKENS_WITH_SPACES_DELIMTER);
 		g_string_append_printf (str, "%d:%d", from, to);
 	}
 
@@ -3882,7 +3877,7 @@ _set_fcn_vlan_xgress_priority_map (ARGS_SET_FCN)
 		return TRUE;
 	}
 
-	prio_map = _value_strsplit (value, VALUE_STRSPLIT_MODE_STRIPPED, &len);
+	prio_map = _value_strsplit (value, VALUE_STRSPLIT_MODE_ESCAPED_TOKENS_WITH_SPACES, &len);
 
 	for (i = 0; i < len; i++) {
 		if (!nm_utils_vlan_priority_map_parse_str (map_type,
