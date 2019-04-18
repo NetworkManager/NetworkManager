@@ -6542,14 +6542,18 @@ nm_platform_vf_to_string (const NMPlatformVF *vf, char *buf, gsize len)
 const char *
 nm_platform_bridge_vlan_to_string (const NMPlatformBridgeVlan *vlan, char *buf, gsize len)
 {
+	char str_vid_end[64];
+
 	if (!nm_utils_to_string_buffer_init_null (vlan, &buf, &len))
 		return buf;
 
 	g_snprintf (buf, len,
 	            "%u"
 	            "%s"
+	            "%s"
 	            "%s",
-	            vlan->vid,
+	            vlan->vid_start,
+	            vlan->vid_start != vlan->vid_end ? nm_sprintf_buf (str_vid_end, "-%u", vlan->vid_end) : "",
 	            vlan->pvid ? " PVID" : "",
 	            vlan->untagged ? " untagged" : "");
 

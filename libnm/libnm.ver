@@ -1524,7 +1524,7 @@ global:
 	nm_bridge_vlan_cmp;
 	nm_bridge_vlan_from_str;
 	nm_bridge_vlan_get_type;
-	nm_bridge_vlan_get_vid;
+	nm_bridge_vlan_get_vid_range;
 	nm_bridge_vlan_is_pvid;
 	nm_bridge_vlan_is_sealed;
 	nm_bridge_vlan_is_untagged;

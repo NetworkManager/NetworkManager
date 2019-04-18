@@ -167,8 +167,8 @@ _value_str_as_index_list (const char *value, gsize *out_len)
 
 #define MULTILIST_WITH_ESCAPE_CHARS     NM_ASCII_SPACES","
 
-#define ESCAPED_TOKENS_DELIMTER         ','
-#define ESCAPED_TOKENS_DELIMTERS        ","
+#define ESCAPED_TOKENS_DELIMITER        ','
+#define ESCAPED_TOKENS_DELIMITERS       ","
 
 typedef enum {
 	VALUE_STRSPLIT_MODE_STRIPPED,
@@ -216,7 +216,7 @@ _value_strsplit (const char *value,
 		strv = nm_utils_strsplit_set_full (value, MULTILIST_WITH_ESCAPE_CHARS, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
 		break;
 	case VALUE_STRSPLIT_MODE_ESCAPED_TOKENS:
-		strv = nm_utils_escaped_tokens_split (value, ESCAPED_TOKENS_DELIMTERS);
+		strv = nm_utils_escaped_tokens_split (value, ESCAPED_TOKENS_DELIMITERS);
 		NM_SET_OUT (out_len, NM_PTRARRAY_LEN (strv));
 		return g_steal_pointer (&strv);
 	default:
@@ -3072,7 +3072,7 @@ _get_fcn_objlist (ARGS_GET_FCN)
 			    && property_info->property_typ_data->subtype.objlist.delimit_pretty_with_semicolon)
 				g_string_append (str, "; ");
 			else {
-				G_STATIC_ASSERT_EXPR (ESCAPED_TOKENS_DELIMTER == ',');
+				G_STATIC_ASSERT_EXPR (ESCAPED_TOKENS_DELIMITER == ',');
 				g_string_append (str, ", ");
 			}
 		}
@@ -3400,7 +3400,7 @@ _objlist_obj_to_str_fcn_ip_config_routing_rules (NMMetaAccessorGetType get_type,
 	                                  NULL,
 	                                  NULL);
 	if (s)
-		nm_utils_escaped_tokens_escape_gstr (s, ESCAPED_TOKENS_DELIMTERS, str);
+		nm_utils_escaped_tokens_escape_gstr (s, ESCAPED_TOKENS_DELIMITERS, str);
 }
 
 static gboolean
@@ -3559,7 +3559,7 @@ _objlist_obj_to_str_fcn_bridge_vlans (NMMetaAccessorGetType get_type,
 
 	s = nm_bridge_vlan_to_str (vlan, NULL);
 	if (s)
-		g_string_append (str, s);
+		nm_utils_escaped_tokens_escape_gstr_assert (s, ESCAPED_TOKENS_DELIMITERS, str);
 }
 
 static gboolean
@@ -3618,13 +3618,14 @@ _objlist_set_fcn_bridge_vlans (NMSetting *setting,
 {
 	nm_auto_unref_bridge_vlan NMBridgeVlan *vlan = NULL;
 	gs_free_error GError *local = NULL;
+	guint16 vid_start, vid_end;
 
 	vlan = nm_bridge_vlan_from_str (value, &local);
 	if (!vlan) {
 		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
 		                    "%s. %s",
 		                    local->message,
-		                    _("The valid syntax is: '<vid> [pvid] [untagged]"));
+		                    _("The valid syntax is: '<vid>[-<vid>] [pvid] [untagged]'"));
 		return FALSE;
 	}
 
@@ -3632,15 +3633,18 @@ _objlist_set_fcn_bridge_vlans (NMSetting *setting,
 		if (do_add)
 			nm_setting_bridge_add_vlan (NM_SETTING_BRIDGE (setting), vlan);
 		else {
+			nm_bridge_vlan_get_vid_range (vlan, &vid_start, &vid_end);
 			nm_setting_bridge_remove_vlan_by_vid (NM_SETTING_BRIDGE (setting),
-			                                      nm_bridge_vlan_get_vid (vlan));
+			                                      vid_start, vid_end);
 		}
 	} else {
 		if (do_add)
 			nm_setting_bridge_port_add_vlan (NM_SETTING_BRIDGE_PORT (setting), vlan);
 		else {
+			nm_bridge_vlan_get_vid_range (vlan, &vid_start, &vid_end);
 			nm_setting_bridge_port_remove_vlan_by_vid (NM_SETTING_BRIDGE_PORT (setting),
-			                                           nm_bridge_vlan_get_vid (vlan));
+			                                           vid_start,
+			                                           vid_end);
 		}
 	}
 
@@ -4987,6 +4991,7 @@ static const NMMetaPropertyInfo *const property_infos_BRIDGE[] = {
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingBridge, nm_setting_bridge_clear_vlans),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_bridge_vlans,
 				.set_fcn =              _objlist_set_fcn_bridge_vlans,
+				.strsplit_escaped_tokens = TRUE,
 			),
 		),
 	),
@@ -5022,6 +5027,7 @@ static const NMMetaPropertyInfo *const property_infos_BRIDGE_PORT[] = {
 				.clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingBridgePort, nm_setting_bridge_port_clear_vlans),
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_bridge_vlans,
 				.set_fcn =              _objlist_set_fcn_bridge_vlans,
+				.strsplit_escaped_tokens = TRUE,
 			),
 		),
 	),

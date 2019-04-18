@@ -81,7 +81,9 @@ NMBridgeVlan *nm_setting_bridge_port_get_vlan (NMSettingBridgePort *setting, gui
 NM_AVAILABLE_IN_1_18
 void          nm_setting_bridge_port_remove_vlan (NMSettingBridgePort *setting, guint idx);
 NM_AVAILABLE_IN_1_18
-gboolean      nm_setting_bridge_port_remove_vlan_by_vid (NMSettingBridgePort *setting, guint16 vid);
+gboolean      nm_setting_bridge_port_remove_vlan_by_vid (NMSettingBridgePort *setting,
+                                                         guint16 vid_start,
+                                                         guint16 vid_end);
 NM_AVAILABLE_IN_1_18
 void          nm_setting_bridge_port_clear_vlans (NMSettingBridgePort *setting);
 

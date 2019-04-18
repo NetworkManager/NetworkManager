@@ -1491,8 +1491,8 @@ write_bridge_vlans (NMSetting *setting,
 		if (!vlan_str)
 			return FALSE;
 		if (string->len > 0)
-			g_string_append (string, ", ");
-		g_string_append (string, vlan_str);
+			g_string_append (string, ",");
+		nm_utils_escaped_tokens_escape_gstr_assert (vlan_str, ",", string);
 	}
 
 	svSetValueStr (ifcfg, key, string->str);
