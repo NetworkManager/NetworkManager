@@ -1626,51 +1626,37 @@ team_config_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key
 static void
 bridge_vlan_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
-	const char *setting_name = nm_setting_get_name (setting);
 	gs_unref_ptrarray GPtrArray *vlans = NULL;
-	gs_strfreev char **keys = NULL;
-	gsize n_keys = 0;
-	int i;
+	gs_free char *value = NULL;
+	gs_free const char **strv = NULL;
+	const char *const *iter;
+	GError *local = NULL;
+	NMBridgeVlan *vlan;
 
-	keys = nm_keyfile_plugin_kf_get_keys (info->keyfile, setting_name, &n_keys, NULL);
-	if (n_keys == 0)
+	value = nm_keyfile_plugin_kf_get_string (info->keyfile,
+	                                         nm_setting_get_name (setting),
+	                                         key,
+	                                         NULL);
+	if (!value || !value[0])
 		return;
 
 	vlans = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
 
-	for (i = 0; i < n_keys; i++) {
-		NMBridgeVlan *vlan;
-		const char *index;
-		gs_free char *vlan_rest = NULL;
-		gs_free char *vlan_str = NULL;
-		gs_free_error GError *err = NULL;
-
-		if (!g_str_has_prefix (keys[i], "vlan."))
-			continue;
-
-		index = keys[i] + NM_STRLEN("vlan.");
-
-		if (index[0] == '\0')
-			continue;
-		if (index[0] == '0' && index[1] != '\0')
-			continue;
-		if (!NM_STRCHAR_ALL (index, ch, g_ascii_isdigit (ch)))
-			continue;
-
-		vlan_rest = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, keys[i], NULL);
-		vlan_str = g_strdup_printf ("%s %s", index, vlan_rest);
-
-		vlan = nm_bridge_vlan_from_str (vlan_str, &err);
-		if (!vlan) {
-			handle_warn (info, keys[i], NM_KEYFILE_WARN_SEVERITY_WARN,
-			             _("invalid bridge vlan: %s"),
-			             err->message);
-			continue;
+	strv = nm_utils_escaped_tokens_split (value, ",");
+	if (strv) {
+		for (iter = strv; *iter; iter++) {
+			vlan = nm_bridge_vlan_from_str (*iter, &local);
+			if (!vlan) {
+				handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+				             "invalid bridge VLAN: %s", local->message);
+				g_clear_error (&local);
+				continue;
+			}
+			g_ptr_array_add (vlans, vlan);
 		}
-		g_ptr_array_add (vlans, vlan);
 	}
 
-	if (vlans->len >= 1)
+	if (vlans->len > 0)
 		g_object_set (setting, key, vlans, NULL);
 }
 
@@ -2004,26 +1990,34 @@ bridge_vlan_writer (KeyfileWriterInfo *info,
                     const char *key,
                     const GValue *value)
 {
-	gsize i;
-	GPtrArray *array;
-	nm_auto_free_gstring GString *value_str = NULL;
+	NMBridgeVlan *vlan;
+	GPtrArray *vlans;
+	GString *string;
+	guint i;
 
-	array = (GPtrArray *) g_value_get_boxed (value);
-	if (!array || !array->len)
+	vlans = (GPtrArray *) g_value_get_boxed (value);
+	if (!vlans || !vlans->len)
 		return;
 
-	for (i = 0; i < array->len; i++) {
-		NMBridgeVlan *vlan = array->pdata[i];
-		char key_name[32];
+	string = g_string_new ("");
+	for (i = 0; i < vlans->len; i++) {
+		gs_free char *vlan_str = NULL;
 
-		nm_sprintf_buf (key_name, "vlan.%u", nm_bridge_vlan_get_vid (vlan));
-		nm_gstring_prepare (&value_str);
-		_nm_bridge_vlan_str_append_rest (vlan, value_str, FALSE);
-		nm_keyfile_plugin_kf_set_string (info->keyfile,
-		                                 nm_setting_get_name (setting),
-		                                 key_name,
-		                                 value_str->str);
+		vlan = vlans->pdata[i];
+		vlan_str = nm_bridge_vlan_to_str (vlan, NULL);
+		if (!vlan_str)
+			continue;
+		if (string->len > 0)
+			g_string_append (string, ",");
+		nm_utils_escaped_tokens_escape_gstr_assert (vlan_str, ",", string);
 	}
+
+	nm_keyfile_plugin_kf_set_string (info->keyfile,
+	                                 nm_setting_get_name (setting),
+	                                 "vlans",
+	                                 string->str);
+
+	g_string_free (string, TRUE);
 }
 
 static void
