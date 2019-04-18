@@ -23,13 +23,13 @@ configure_file(
 content_files += join_paths(meson.source_root(), 'COPYING')
 filecopier = find_program('cp')
 foreach intro : introspection_files
-  path = intro.full_path().split('/')[-1]
+  path = intro[1].split('/')[-1]
   custom_target(path,
-                input: intro,
+                input: intro[0],
                 output: path,
-                command : [filecopier, '@INPUT@', '@OUTPUT@'],
+                command: [filecopier, intro[1], '@OUTPUT@'],
                 build_by_default: true,
-)
+  )
 endforeach
 
 custom_target('common.ent',
