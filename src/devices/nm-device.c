@@ -1546,8 +1546,7 @@ _set_ip_ifindex (NMDevice *self,
 		                                        priv->ip_ifindex,
 		                                        priv->ip_iface);
 
-		if (nm_platform_check_kernel_support (platform,
-		                                      NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL))
+		if (nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL))
 			nm_platform_link_set_user_ipv6ll_enabled (platform, priv->ip_ifindex, TRUE);
 
 		if (!nm_platform_link_is_up (platform, priv->ip_ifindex))
@@ -4330,8 +4329,7 @@ realize_start_setup (NMDevice *self,
 		if (priv->firmware_version)
 			_notify (self, PROP_FIRMWARE_VERSION);
 
-		if (nm_platform_check_kernel_support (nm_device_get_platform (self),
-		                                      NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL))
+		if (nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL))
 			priv->ipv6ll_handle = nm_platform_link_get_user_ipv6ll_enabled (nm_device_get_platform (self), priv->ifindex);
 
 		if (nm_platform_link_supports_sriov (nm_device_get_platform (self), priv->ifindex))
@@ -9234,8 +9232,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 		 * addresses as /128. The reason for the /128 is to prevent the kernel
 		 * from adding a prefix route for this address. */
 		ifa_flags = 0;
-		if (nm_platform_check_kernel_support (nm_device_get_platform (self),
-		                                      NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS)) {
+		if (nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)) {
 			ifa_flags |= IFA_F_NOPREFIXROUTE;
 			if (NM_IN_SET (priv->ndisc_use_tempaddr, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
 			                                         NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR))
@@ -9267,8 +9264,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 		                                  rdata->routes_n,
 		                                  nm_device_get_route_table (self, AF_INET6, TRUE),
 		                                  nm_device_get_route_metric (self, AF_INET6),
-		                                  nm_platform_check_kernel_support (nm_device_get_platform (self),
-		                                                                    NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF));
+		                                  nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF));
 		if (priv->ac_ip6_config.current) {
 			nm_ip6_config_reset_routes_ndisc ((NMIP6Config *) priv->ac_ip6_config.current,
 			                                  rdata->gateways,
@@ -9277,8 +9273,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 			                                  rdata->routes_n,
 			                                  nm_device_get_route_table (self, AF_INET6, TRUE),
 			                                  nm_device_get_route_metric (self, AF_INET6),
-			                                  nm_platform_check_kernel_support (nm_device_get_platform (self),
-			                                                                    NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF));
+			                                  nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF));
 		}
 
 	}
@@ -9466,8 +9461,7 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	priv->ndisc_use_tempaddr = use_tempaddr;
 
 	if (   NM_IN_SET (use_tempaddr, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR)
-	    && !nm_platform_check_kernel_support (nm_device_get_platform (self),
-	                                          NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS)) {
+	    && !nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)) {
 		_LOGW (LOGD_IP6, "The kernel does not support extended IFA_FLAGS needed by NM for "
 		                 "IPv6 private addresses. This feature is not available");
 	}
@@ -9574,8 +9568,7 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex = nm_device_get_ip_ifindex (self);
 
-	if (!nm_platform_check_kernel_support (nm_device_get_platform (self),
-	                                       NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL))
+	if (!nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL))
 		return;
 
 	priv->ipv6ll_handle = enable;
