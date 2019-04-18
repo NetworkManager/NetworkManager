@@ -5540,7 +5540,7 @@ _sock_addr_endpoint (const char *endpoint,
 	SockAddrUnion sockaddr = { };
 
 	g_assert (endpoint);
-	g_assert (!host == (port == -1));
+	g_assert ((!host) == (port == -1));
 	g_assert (port >= -1 && port <= G_MAXUINT16);
 
 	ep = nm_sock_addr_endpoint_new (endpoint);
