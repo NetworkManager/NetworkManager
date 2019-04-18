@@ -40,7 +40,7 @@
 #include "nm-dbus-helpers.h"
 #include "nm-device-tun.h"
 #include "nm-setting-connection.h"
-#include "shared/nm-utils/nm-udev-utils.h"
+#include "nm-udev-aux/nm-udev-utils.h"
 
 #include "introspection/org.freedesktop.NetworkManager.Device.h"
 

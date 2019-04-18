@@ -38,7 +38,7 @@ libnm_systemd_core = static_library(
     )
   ],
   dependencies: [
-    nm_core_dep,
+    libnm_core_dep,
   ],
   c_args: [
     '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD',

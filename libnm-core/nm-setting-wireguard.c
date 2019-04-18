@@ -24,7 +24,7 @@
 #include "nm-setting-private.h"
 #include "nm-utils-private.h"
 #include "nm-connection-private.h"
-#include "nm-utils/nm-secret-utils.h"
+#include "nm-glib-aux/nm-secret-utils.h"
 
 /*****************************************************************************/
 

@@ -28,7 +28,7 @@
 #include <selinux/selinux.h>
 #endif
 
-#include "nm-common-macros.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
 #include "nm-utils.h"

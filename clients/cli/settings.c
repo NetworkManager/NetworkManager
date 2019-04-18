@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 
-#include "nm-common-macros.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 
 #include "nm-client-utils.h"
 #include "nm-vpn-helpers.h"

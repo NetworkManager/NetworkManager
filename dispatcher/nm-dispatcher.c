@@ -31,7 +31,7 @@
 #include <arpa/inet.h>
 #include <glib-unix.h>
 
-#include "nm-dispatcher-api.h"
+#include "nm-libnm-core-aux/nm-dispatcher-api.h"
 #include "nm-dispatcher-utils.h"
 
 #include "nmdbus-dispatcher.h"

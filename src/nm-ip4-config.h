@@ -25,7 +25,7 @@
 
 #include "nm-setting-ip4-config.h"
 
-#include "nm-utils/nm-dedup-multi.h"
+#include "nm-glib-aux/nm-dedup-multi.h"
 #include "platform/nmp-object.h"
 
 /*****************************************************************************/

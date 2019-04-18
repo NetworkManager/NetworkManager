@@ -28,7 +28,7 @@
 
 #include "nm-device-wifi-p2p.h"
 #include "nm-wifi-ap.h"
-#include "nm-common-macros.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 #include "devices/nm-device.h"
 #include "devices/nm-device-private.h"
 #include "nm-dbus-manager.h"

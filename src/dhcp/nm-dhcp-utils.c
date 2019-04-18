@@ -22,7 +22,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#include "nm-utils/nm-dedup-multi.h"
+#include "nm-glib-aux/nm-dedup-multi.h"
 
 #include "nm-dhcp-utils.h"
 #include "nm-utils.h"

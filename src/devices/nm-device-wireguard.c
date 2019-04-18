@@ -23,7 +23,7 @@
 
 #include "nm-setting-wireguard.h"
 #include "nm-core-internal.h"
-#include "nm-utils/nm-secret-utils.h"
+#include "nm-glib-aux/nm-secret-utils.h"
 #include "nm-device-private.h"
 #include "platform/nm-platform.h"
 #include "platform/nmp-object.h"

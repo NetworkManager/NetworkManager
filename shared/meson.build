@@ -1,5 +1,7 @@
 shared_inc = include_directories('.')
 
+###############################################################################
+
 shared_c_stdaux = static_library(
     'c-stdaux',
     c_args: '-std=c11',
@@ -9,6 +11,8 @@ shared_c_stdaux = static_library(
 shared_c_stdaux_dep = declare_dependency(
     include_directories: shared_inc,
 )
+
+###############################################################################
 
 shared_c_siphash = static_library(
     'c-siphash',
@@ -22,6 +26,8 @@ shared_c_siphash_dep = declare_dependency(
     include_directories: shared_inc,
     link_with: shared_c_siphash,
 )
+
+###############################################################################
 
 shared_c_rbtree = static_library(
     'c-rbtree',
@@ -39,6 +45,7 @@ shared_c_rbtree_dep = declare_dependency(
     link_with: shared_c_rbtree,
 )
 
+###############################################################################
 
 if enable_ebpf
     shared_n_acd_bpf_files = files('n-acd/src/n-acd-bpf.c')
@@ -79,6 +86,8 @@ shared_n_acd_dep = declare_dependency(
     link_with: shared_n_acd,
 )
 
+###############################################################################
+
 version_conf = configuration_data()
 version_conf.set('NM_MAJOR_VERSION', nm_major_version)
 version_conf.set('NM_MINOR_VERSION', nm_minor_version)
@@ -90,10 +99,6 @@ version_header = configure_file(
     configuration: version_conf,
 )
 
-shared_nm_ethtool_utils_c = files('nm-ethtool-utils.c')
-
-shared_nm_libnm_core_utils_c = files('nm-libnm-core-utils.c')
-
 shared_nm_meta_setting_c = files('nm-meta-setting.c')
 
 shared_nm_test_utils_impl_c = files('nm-test-utils-impl.c')
@@ -102,35 +107,60 @@ shared_nm_utils_nm_vpn_plugin_utils_c = files('nm-utils/nm-vpn-plugin-utils.c')
 
 ###############################################################################
 
-shared_nm_utils_c_args = [
+shared_nm_std_aux = static_library(
+    'nm-std-aux',
+    sources: files('nm-std-aux/c-list-util.c'),
+    c_args: [
+      '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
+      '-DNETWORKMANAGER_COMPILATION=0',
+    ],
+    include_directories: [
+        top_inc,
+        shared_inc,
+    ],
+    dependencies: [
+    ],
+)
+
+shared_nm_std_aux_dep = declare_dependency(
+    link_with: shared_nm_std_aux,
+    include_directories: [
+        top_inc,
+        shared_inc,
+    ],
+)
+
+###############################################################################
+
+shared_nm_glib_aux_c_args = [
     '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
     '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
 ]
 
-shared_nm_utils_base = static_library(
+shared_nm_glib_aux = static_library(
     'nm-utils-base',
-    sources: files('nm-utils/c-list-util.c',
-                   'nm-utils/nm-dedup-multi.c',
-                   'nm-utils/nm-enum-utils.c',
-                   'nm-utils/nm-errno.c',
-                   'nm-utils/nm-hash-utils.c',
-                   'nm-utils/nm-io-utils.c',
-                   'nm-utils/nm-random-utils.c',
-                   'nm-utils/nm-secret-utils.c',
-                   'nm-utils/nm-shared-utils.c',
-                   'nm-utils/nm-time-utils.c'),
-    c_args: shared_nm_utils_c_args,
+    sources: files('nm-glib-aux/nm-dedup-multi.c',
+                   'nm-glib-aux/nm-enum-utils.c',
+                   'nm-glib-aux/nm-errno.c',
+                   'nm-glib-aux/nm-hash-utils.c',
+                   'nm-glib-aux/nm-io-utils.c',
+                   'nm-glib-aux/nm-random-utils.c',
+                   'nm-glib-aux/nm-secret-utils.c',
+                   'nm-glib-aux/nm-shared-utils.c',
+                   'nm-glib-aux/nm-time-utils.c'),
+    c_args: shared_nm_glib_aux_c_args,
     include_directories: [
         top_inc,
         shared_inc,
     ],
     dependencies: [
         glib_dep,
+        shared_nm_std_aux_dep,
     ],
 )
 
-shared_nm_utils_base_dep = declare_dependency(
-    link_with: shared_nm_utils_base,
+shared_nm_glib_aux_dep = declare_dependency(
+    link_with: shared_nm_glib_aux,
     include_directories: [
         top_inc,
         shared_inc,
@@ -138,50 +168,34 @@ shared_nm_utils_base_dep = declare_dependency(
     dependencies: glib_dep,
 )
 
-shared_nm_utils_udev = static_library(
-    'nm-utils-udev',
-    sources: files('nm-utils/nm-udev-utils.c'),
-    c_args: shared_nm_utils_c_args,
-    include_directories: [
-        top_inc,
-        shared_inc,
-    ],
-    dependencies: [
-        glib_dep,
-        shared_nm_utils_base_dep,
-        libudev_dep,
-    ],
-)
-
-shared_nm_utils_udev_dep = declare_dependency(
-    link_with: shared_nm_utils_udev,
-    include_directories: [
-        top_inc,
-        shared_inc,
-    ],
-    dependencies: [
-        glib_dep,
-        shared_nm_utils_base_dep,
-        libudev_dep,
-    ],
-)
-
 ###############################################################################
 
-test_shared_general = executable(
-  'nm-utils/tests/test-shared-general',
-  [ 'nm-utils/tests/test-shared-general.c', ],
-  c_args: [
-      '-DNETWORKMANAGER_COMPILATION_TEST',
-      '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)',
+shared_nm_udev_aux = static_library(
+    'nm-udev-aux',
+    sources: files('nm-udev-aux/nm-udev-utils.c'),
+    c_args: shared_nm_glib_aux_c_args,
+    include_directories: [
+        top_inc,
+        shared_inc,
     ],
-  dependencies: shared_nm_utils_base_dep,
-  link_with: shared_c_siphash,
+    dependencies: [
+        glib_dep,
+        shared_nm_glib_aux_dep,
+        libudev_dep,
+    ],
 )
-test(
-  'shared/nm-utils/test-shared-general',
-  test_script,
-  args: test_args + [test_shared_general.full_path()]
+
+shared_nm_udev_aux_dep = declare_dependency(
+    link_with: shared_nm_udev_aux,
+    include_directories: [
+        top_inc,
+        shared_inc,
+    ],
+    dependencies: [
+        glib_dep,
+        shared_nm_glib_aux_dep,
+        libudev_dep,
+    ],
 )
 
 ###############################################################################
@@ -226,7 +240,7 @@ libnm_systemd_shared = static_library(
     'systemd/sd-adapt-shared',
     'systemd/src/basic',
   ),
-  dependencies: shared_nm_utils_base_dep,
+  dependencies: shared_nm_glib_aux_dep,
   c_args: [
     '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED',
     '-DG_LOG_DOMAIN="libnm"',
@@ -239,7 +253,7 @@ libnm_systemd_shared_dep = declare_dependency(
     'systemd/src/basic',
   ),
   dependencies: [
-    shared_nm_utils_base_dep,
+    shared_nm_glib_aux_dep,
   ],
   link_with: [
     libnm_systemd_shared,
@@ -255,7 +269,7 @@ libnm_systemd_logging_stub = static_library(
     'systemd/sd-adapt-shared',
     'systemd/src/basic',
   ),
-  dependencies: shared_nm_utils_base_dep,
+  dependencies: shared_nm_glib_aux_dep,
   c_args: [
     '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED',
     '-DG_LOG_DOMAIN="libnm"',
@@ -269,4 +283,22 @@ libnm_systemd_shared_no_logging_dep = declare_dependency(
   link_with: [
     libnm_systemd_logging_stub,
   ],
+)
+
+###############################################################################
+
+test_shared_general = executable(
+  'nm-utils/tests/test-shared-general',
+  [ 'nm-utils/tests/test-shared-general.c', ],
+  c_args: [
+      '-DNETWORKMANAGER_COMPILATION_TEST',
+      '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)',
+    ],
+  dependencies: shared_nm_glib_aux_dep,
+  link_with: shared_c_siphash,
+)
+test(
+  'shared/nm-utils/test-shared-general',
+  test_script,
+  args: test_args + [test_shared_general.full_path()]
 )

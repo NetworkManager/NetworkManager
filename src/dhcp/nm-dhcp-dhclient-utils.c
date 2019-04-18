@@ -25,7 +25,7 @@
 #include <arpa/inet.h>
 #include <net/if.h>
 
-#include "nm-utils/nm-dedup-multi.h"
+#include "nm-glib-aux/nm-dedup-multi.h"
 
 #include "nm-dhcp-utils.h"
 #include "nm-ip4-config.h"

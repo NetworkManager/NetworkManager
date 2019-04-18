@@ -23,7 +23,7 @@
 
 #include <syslog.h>
 
-#include "nm-utils/nm-logging-fwd.h"
+#include "nm-glib-aux/nm-logging-fwd.h"
 
 /*****************************************************************************/
 

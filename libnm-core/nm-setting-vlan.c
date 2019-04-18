@@ -25,7 +25,7 @@
 
 #include <stdlib.h>
 
-#include "nm-libnm-core-utils.h"
+#include "nm-libnm-core-intern/nm-libnm-core-utils.h"
 #include "nm-utils.h"
 #include "nm-core-types-internal.h"
 #include "nm-setting-connection.h"

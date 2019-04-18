@@ -27,7 +27,7 @@
 
 #include "nm-connection.h"
 
-#include "nm-utils/nm-time-utils.h"
+#include "nm-glib-aux/nm-time-utils.h"
 
 /*****************************************************************************/
 

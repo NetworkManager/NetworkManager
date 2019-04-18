@@ -24,7 +24,7 @@
 
 #include <pwd.h>
 
-#include "nm-common-macros.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-dbus-interface.h"
 #include "nm-secret-agent.h"
 #include "nm-auth-utils.h"

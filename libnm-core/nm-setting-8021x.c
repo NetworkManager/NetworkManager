@@ -24,7 +24,7 @@
 
 #include "nm-setting-8021x.h"
 
-#include "nm-utils/nm-secret-utils.h"
+#include "nm-glib-aux/nm-secret-utils.h"
 #include "nm-utils.h"
 #include "nm-crypto.h"
 #include "nm-utils-private.h"

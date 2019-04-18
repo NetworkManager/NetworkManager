@@ -23,7 +23,7 @@
 
 #include <stdlib.h>
 
-#include "nm-common-macros.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 
 #include "nm-client-utils.h"
 

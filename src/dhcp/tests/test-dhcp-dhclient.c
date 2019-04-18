@@ -24,7 +24,7 @@
 #include <arpa/inet.h>
 #include <linux/rtnetlink.h>
 
-#include "nm-utils/nm-dedup-multi.h"
+#include "nm-glib-aux/nm-dedup-multi.h"
 
 #include "NetworkManagerUtils.h"
 #include "dhcp/nm-dhcp-dhclient-utils.h"

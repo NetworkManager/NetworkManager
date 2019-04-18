@@ -24,10 +24,10 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 
-#include "nm-common-macros.h"
-#include "nm-utils/nm-enum-utils.h"
-#include "nm-utils/nm-secret-utils.h"
-#include "nm-libnm-core-utils.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
+#include "nm-glib-aux/nm-enum-utils.h"
+#include "nm-glib-aux/nm-secret-utils.h"
+#include "nm-libnm-core-intern/nm-libnm-core-utils.h"
 
 #include "nm-vpn-helpers.h"
 #include "nm-client-utils.h"

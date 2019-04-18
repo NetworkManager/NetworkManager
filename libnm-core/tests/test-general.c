@@ -23,8 +23,8 @@
 
 #include "nm-default.h"
 
-#include "nm-utils/c-list-util.h"
-#include "nm-utils/nm-enum-utils.h"
+#include "nm-std-aux/c-list-util.h"
+#include "nm-glib-aux/nm-enum-utils.h"
 
 #include "nm-utils.h"
 #include "nm-setting-private.h"
@@ -63,8 +63,8 @@
 #include "nm-setting-wpan.h"
 #include "nm-simple-connection.h"
 #include "nm-keyfile-internal.h"
-#include "nm-utils/nm-dedup-multi.h"
-#include "nm-ethtool-utils.h"
+#include "nm-glib-aux/nm-dedup-multi.h"
+#include "nm-libnm-core-intern/nm-ethtool-utils.h"
 
 #include "test-general-enums.h"
 

@@ -37,7 +37,7 @@
 #include <systemd/sd-journal.h>
 #endif
 
-#include "nm-utils/nm-time-utils.h"
+#include "nm-glib-aux/nm-time-utils.h"
 #include "nm-errors.h"
 
 /*****************************************************************************/

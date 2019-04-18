@@ -31,7 +31,7 @@
 #include <sys/stat.h>
 #include <linux/if.h>
 
-#include "nm-utils/nm-c-list.h"
+#include "nm-glib-aux/nm-c-list.h"
 #include "nm-core-internal.h"
 #include "platform/nm-platform.h"
 #include "nm-utils.h"
@@ -42,7 +42,7 @@
 #include "nm-setting-connection.h"
 #include "devices/nm-device.h"
 #include "NetworkManagerUtils.h"
-#include "nm-dbus-compat.h"
+#include "nm-std-aux/nm-dbus-compat.h"
 
 #define SYSTEMD_RESOLVED_DBUS_SERVICE   "org.freedesktop.resolve1"
 #define SYSTEMD_RESOLVED_MANAGER_IFACE  "org.freedesktop.resolve1.Manager"

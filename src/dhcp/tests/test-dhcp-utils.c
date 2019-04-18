@@ -23,7 +23,7 @@
 #include <arpa/inet.h>
 #include <linux/rtnetlink.h>
 
-#include "nm-utils/nm-dedup-multi.h"
+#include "nm-glib-aux/nm-dedup-multi.h"
 #include "nm-utils.h"
 
 #include "dhcp/nm-dhcp-utils.h"

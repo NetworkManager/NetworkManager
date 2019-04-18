@@ -24,7 +24,7 @@
 #include <gmodule.h>
 #include <gio/gunixsocketaddress.h>
 
-#include "nm-utils/nm-jansson.h"
+#include "nm-glib-aux/nm-jansson.h"
 #include "devices/nm-device.h"
 #include "platform/nm-platform.h"
 #include "nm-core-internal.h"

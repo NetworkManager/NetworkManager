@@ -22,7 +22,7 @@
 
 #include "nm-netns.h"
 
-#include "nm-utils/nm-dedup-multi.h"
+#include "nm-glib-aux/nm-dedup-multi.h"
 
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"

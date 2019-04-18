@@ -29,7 +29,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-supplicant-config.h"
 #include "nm-core-internal.h"
-#include "nm-dbus-compat.h"
+#include "nm-std-aux/nm-dbus-compat.h"
 
 #define WPAS_DBUS_IFACE_INTERFACE             WPAS_DBUS_INTERFACE ".Interface"
 #define WPAS_DBUS_IFACE_INTERFACE_WPS         WPAS_DBUS_INTERFACE ".Interface.WPS"

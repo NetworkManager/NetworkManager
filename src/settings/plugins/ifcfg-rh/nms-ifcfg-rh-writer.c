@@ -30,8 +30,8 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include "nm-utils/nm-enum-utils.h"
-#include "nm-utils/nm-io-utils.h"
+#include "nm-glib-aux/nm-enum-utils.h"
+#include "nm-glib-aux/nm-io-utils.h"
 #include "nm-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
@@ -50,7 +50,7 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-meta-setting.h"
-#include "nm-ethtool-utils.h"
+#include "nm-libnm-core-intern/nm-ethtool-utils.h"
 
 #include "nms-ifcfg-rh-common.h"
 #include "nms-ifcfg-rh-reader.h"
