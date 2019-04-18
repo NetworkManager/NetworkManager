@@ -23,7 +23,7 @@
 #define __NM_DEDUP_MULTI_H__
 
 #include "nm-obj.h"
-#include "c-list-util.h"
+#include "nm-std-aux/c-list-util.h"
 
 /*****************************************************************************/
 

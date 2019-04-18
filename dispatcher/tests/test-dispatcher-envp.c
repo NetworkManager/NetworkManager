@@ -24,7 +24,7 @@
 #include <stdlib.h>
 
 #include "nm-dispatcher-utils.h"
-#include "nm-dispatcher-api.h"
+#include "nm-libnm-core-aux/nm-dispatcher-api.h"
 
 #include "nm-utils/nm-test-utils.h"
 

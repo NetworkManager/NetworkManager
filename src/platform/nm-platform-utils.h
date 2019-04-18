@@ -23,7 +23,7 @@
 
 #include "nm-platform.h"
 #include "nm-setting-wired.h"
-#include "nm-ethtool-utils.h"
+#include "nm-libnm-core-intern/nm-ethtool-utils.h"
 
 /*****************************************************************************/
 

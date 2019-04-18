@@ -2,7 +2,7 @@ name = 'nm-pppd-plugin'
 
 deps = [
   dl_dep,
-  nm_core_dep,
+  libnm_core_dep,
 ]
 
 nm_pppd_plugin = shared_module(

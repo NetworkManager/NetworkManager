@@ -4,7 +4,7 @@ nm_polkit_listener = files('nm-polkit-listener.c')
 
 deps = [
   libnm_dep,
-  nm_core_dep,
+  shared_nm_libnm_core_aux_dep,
 ]
 
 cflags = clients_cflags + [
@@ -55,7 +55,7 @@ libnmc = static_library(
   sources: files(
     'nm-meta-setting-access.c',
     'nm-meta-setting-desc.c',
-  ) + shared_nm_meta_setting_c + shared_nm_ethtool_utils_c + shared_nm_libnm_core_utils_c + [settings_docs_source],
+  ) + shared_nm_meta_setting_c + [settings_docs_source],
   dependencies: deps,
   c_args: cflags,
   link_with: libnmc_base,

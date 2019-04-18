@@ -28,10 +28,10 @@
 #include <sys/types.h>
 
 #include "c-list/src/c-list.h"
-#include "nm-utils/nm-c-list.h"
+#include "nm-glib-aux/nm-c-list.h"
 #include "nm-dbus-interface.h"
 #include "nm-core-internal.h"
-#include "nm-dbus-compat.h"
+#include "nm-std-aux/nm-dbus-compat.h"
 #include "nm-dbus-object.h"
 #include "NetworkManagerUtils.h"
 

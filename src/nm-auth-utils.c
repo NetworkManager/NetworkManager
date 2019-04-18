@@ -22,7 +22,7 @@
 
 #include "nm-auth-utils.h"
 
-#include "nm-utils/nm-c-list.h"
+#include "nm-glib-aux/nm-c-list.h"
 #include "nm-setting-connection.h"
 #include "nm-auth-subject.h"
 #include "nm-auth-manager.h"

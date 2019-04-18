@@ -290,14 +290,14 @@ _nm_g_return_if_fail_warning (const char *log_domain,
 
 /*****************************************************************************/
 
-#include "nm-utils/nm-macros-internal.h"
-#include "nm-utils/nm-shared-utils.h"
-#include "nm-utils/nm-errno.h"
+#include "nm-glib-aux/nm-macros-internal.h"
+#include "nm-glib-aux/nm-shared-utils.h"
+#include "nm-glib-aux/nm-errno.h"
 
 #if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_UTIL
 /* no hash-utils in legacy code. */
 #else
-#include "nm-utils/nm-hash-utils.h"
+#include "nm-glib-aux/nm-hash-utils.h"
 #endif
 
 /*****************************************************************************/

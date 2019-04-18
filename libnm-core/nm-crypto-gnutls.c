@@ -30,7 +30,7 @@
 #include <gnutls/x509.h>
 #include <gnutls/pkcs12.h>
 
-#include "nm-utils/nm-secret-utils.h"
+#include "nm-glib-aux/nm-secret-utils.h"
 #include "nm-errors.h"
 
 /*****************************************************************************/

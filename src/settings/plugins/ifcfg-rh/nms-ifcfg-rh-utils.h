@@ -22,7 +22,7 @@
 #define _UTILS_H_
 
 #include "nm-connection.h"
-#include "nm-ethtool-utils.h"
+#include "nm-libnm-core-intern/nm-ethtool-utils.h"
 
 #include "shvar.h"
 

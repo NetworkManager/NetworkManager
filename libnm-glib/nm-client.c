@@ -27,7 +27,7 @@
 #include <string.h>
 
 #include "nm-utils.h"
-#include "nm-common-macros.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"

@@ -23,7 +23,7 @@
 #include "nm-core-internal.h"
 #include "nm-keyfile-internal.h"
 #include "nm-initrd-generator.h"
-#include "nm-utils/nm-io-utils.h"
+#include "nm-glib-aux/nm-io-utils.h"
 
 /*****************************************************************************/
 

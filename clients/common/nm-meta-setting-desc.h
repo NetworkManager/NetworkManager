@@ -20,9 +20,9 @@
 #ifndef __NM_META_SETTING_DESC_H__
 #define __NM_META_SETTING_DESC_H__
 
-#include "nm-utils/nm-obj.h"
+#include "nm-glib-aux/nm-obj.h"
 #include "nm-meta-setting.h"
-#include "nm-ethtool-utils.h"
+#include "nm-libnm-core-intern/nm-ethtool-utils.h"
 
 struct _NMDevice;
 

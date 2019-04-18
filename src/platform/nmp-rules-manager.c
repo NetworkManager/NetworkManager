@@ -22,7 +22,7 @@
 #include <linux/fib_rules.h>
 #include <linux/rtnetlink.h>
 
-#include "nm-utils/c-list-util.h"
+#include "nm-std-aux/c-list-util.h"
 #include "nmp-object.h"
 
 /*****************************************************************************/

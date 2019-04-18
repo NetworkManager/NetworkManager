@@ -30,8 +30,8 @@
 
 #include "nm-client-utils.h"
 #include "nm-utils.h"
-#include "nm-utils/nm-io-utils.h"
-#include "nm-utils/nm-secret-utils.h"
+#include "nm-glib-aux/nm-io-utils.h"
+#include "nm-glib-aux/nm-secret-utils.h"
 
 /*****************************************************************************/
 

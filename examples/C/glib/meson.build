@@ -14,6 +14,6 @@ foreach example: examples
     example[0],
     [example[0] + '.c'] + example[1],
     include_directories: example[2],
-    dependencies: [nm_core_dep] + example[3],
+    dependencies: [libnm_core_dep] + example[3],
   )
 endforeach

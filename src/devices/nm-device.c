@@ -36,12 +36,12 @@
 #include <linux/rtnetlink.h>
 #include <linux/pkt_sched.h>
 
-#include "nm-utils/nm-dedup-multi.h"
-#include "nm-utils/nm-random-utils.h"
-#include "nm-utils/unaligned.h"
+#include "nm-std-aux/unaligned.h"
+#include "nm-glib-aux/nm-dedup-multi.h"
+#include "nm-glib-aux/nm-random-utils.h"
 
-#include "nm-ethtool-utils.h"
-#include "nm-common-macros.h"
+#include "nm-libnm-core-intern/nm-ethtool-utils.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-device-private.h"
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"

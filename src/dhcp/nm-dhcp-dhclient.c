@@ -36,7 +36,7 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 
-#include "nm-utils/nm-dedup-multi.h"
+#include "nm-glib-aux/nm-dedup-multi.h"
 
 #include "nm-utils.h"
 #include "nm-config.h"

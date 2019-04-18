@@ -93,7 +93,7 @@ sources = files(
 deps = [
   dbus_dep,
   dbus_glib_dep,
-  shared_nm_utils_base_dep,
+  shared_nm_glib_aux_dep,
   uuid_dep,
 ]
 
@@ -201,7 +201,7 @@ sources = files(
 )
 
 deps = [
-  shared_nm_utils_base_dep,
+  shared_nm_glib_aux_dep,
 ]
 
 libtest_crypto = static_library(

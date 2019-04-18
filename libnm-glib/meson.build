@@ -5,7 +5,7 @@ dbus_binding_tool = find_program('dbus-binding-tool')
 common_deps = [
   dbus_dep,
   dbus_glib_dep,
-  shared_nm_utils_base_dep,
+  shared_nm_glib_aux_dep,
 ]
 
 common_cflags = [
@@ -196,7 +196,7 @@ libnm_glib = shared_library(
   dependencies: common_deps + [
     libnm_util_dep,
     libudev_dep,
-    shared_nm_utils_udev_dep,
+    shared_nm_udev_aux_dep,
   ],
   c_args: cflags,
   link_whole: libdeprecated_nm_glib,

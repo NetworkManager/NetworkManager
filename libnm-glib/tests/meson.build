@@ -3,7 +3,7 @@ deps = [
   dbus_glib_dep,
   libnm_glib_dep,
   libnm_util_dep,
-  shared_nm_utils_base_dep,
+  shared_nm_glib_aux_dep,
 ]
 
 test_units = [

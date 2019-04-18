@@ -22,7 +22,7 @@
 
 #include "nm-active-connection.h"
 
-#include "nm-common-macros.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-dbus-interface.h"
 #include "devices/nm-device.h"
 #include "settings/nm-settings-connection.h"

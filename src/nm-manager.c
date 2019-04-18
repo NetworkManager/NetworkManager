@@ -27,9 +27,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "nm-utils/nm-c-list.h"
+#include "nm-glib-aux/nm-c-list.h"
 
-#include "nm-common-macros.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-dbus-manager.h"
 #include "vpn/nm-vpn-manager.h"
 #include "devices/nm-device.h"
@@ -54,7 +54,7 @@
 #include "nm-core-internal.h"
 #include "nm-config.h"
 #include "nm-audit-manager.h"
-#include "nm-dbus-compat.h"
+#include "nm-std-aux/nm-dbus-compat.h"
 #include "nm-checkpoint.h"
 #include "nm-checkpoint-manager.h"
 #include "nm-dbus-object.h"

@@ -36,7 +36,7 @@
 #include <selinux/selinux.h>
 #endif
 
-#include "nm-common-macros.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
 #include "nm-setting-8021x.h"
@@ -60,7 +60,7 @@
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 
-#include "nm-utils/nm-c-list.h"
+#include "nm-glib-aux/nm-c-list.h"
 #include "nm-dbus-object.h"
 #include "devices/nm-device-ethernet.h"
 #include "nm-settings-connection.h"

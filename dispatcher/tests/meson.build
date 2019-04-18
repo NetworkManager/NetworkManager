@@ -9,7 +9,7 @@ exe = executable(
   test_unit,
   test_unit + '.c',
   include_directories: incs,
-  dependencies: nm_core_dep,
+  dependencies: libnm_core_dep,
   c_args: [
       '-DNETWORKMANAGER_COMPILATION_TEST',
       '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
