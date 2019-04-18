@@ -2375,15 +2375,17 @@ write_match_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 	num = nm_setting_match_get_num_interface_names (s_match);
 	for (i = 0; i < num; i++) {
-		gs_free char *to_free = NULL;
 		const char *name;
 
-		if (i == 0)
+		name = nm_setting_match_get_interface_name (s_match, i);
+		if (!name || !name[0])
+			continue;
+
+		if (!str)
 			str = g_string_new ("");
 		else
 			g_string_append_c (str, ' ');
-		name = nm_setting_match_get_interface_name (s_match, i);
-		g_string_append (str, _nm_utils_escape_spaces (name, &to_free));
+		nm_utils_escaped_tokens_escape_gstr (name, NM_ASCII_SPACES, str);
 	}
 
 	if (str)
