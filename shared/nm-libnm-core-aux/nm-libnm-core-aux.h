@@ -21,4 +21,11 @@
 #ifndef __NM_LIBNM_CORE_AUX_H__
 #define __NM_LIBNM_CORE_AUX_H__
 
+#include "nm-setting-team.h"
+
+char *nm_utils_team_link_watcher_to_string (NMTeamLinkWatcher *watcher);
+
+NMTeamLinkWatcher *nm_utils_team_link_watcher_from_string (const char *str,
+                                                           GError **error);
+
 #endif /* __NM_LIBNM_CORE_AUX_H__ */
