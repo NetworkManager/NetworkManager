@@ -1943,10 +1943,9 @@ write_ip_values (GKeyFile *file,
 
 		if (is_route) {
 			gs_free char *attributes = NULL;
-			GHashTable *hash;
 
-			hash = _nm_ip_route_get_attributes_direct (array->pdata[i]);
-			attributes = nm_utils_format_variant_attributes (hash, ',', '=');
+			attributes = nm_utils_format_variant_attributes (_nm_ip_route_get_attributes (array->pdata[i]),
+			                                                 ',', '=');
 			if (attributes) {
 				g_strlcat (key_name, "_options", sizeof (key_name));
 				nm_keyfile_plugin_kf_set_string (file, setting_name, key_name, attributes);
