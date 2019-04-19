@@ -327,19 +327,17 @@ nm_tc_qdisc_get_parent (NMTCQdisc *qdisc)
  *
  * Gets an array of attribute names defined on @qdisc.
  *
- * Returns: (transfer full): a %NULL-terminated array of attribute names,
+ * Returns: (transfer container): a %NULL-terminated array of attribute names
+ *   or %NULL if no attributes are set.
  *
  * Since: 1.18
  **/
-char **
+const char **
 nm_tc_qdisc_get_attribute_names (NMTCQdisc *qdisc)
 {
-	const char **names;
-
 	g_return_val_if_fail (qdisc, NULL);
 
-	names = nm_utils_strdict_get_keys (qdisc->attributes, TRUE, NULL);
-	return nm_utils_strv_make_deep_copied_nonnull (names);
+	return nm_utils_strdict_get_keys (qdisc->attributes, TRUE, NULL);
 }
 
 GHashTable *
