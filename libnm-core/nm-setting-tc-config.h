@@ -60,7 +60,7 @@ NM_AVAILABLE_IN_1_12
 guint32     nm_tc_qdisc_get_parent           (NMTCQdisc *qdisc);
 
 NM_AVAILABLE_IN_1_18
-char**nm_tc_qdisc_get_attribute_names        (NMTCQdisc *qdisc);
+const char **nm_tc_qdisc_get_attribute_names (NMTCQdisc *qdisc);
 NM_AVAILABLE_IN_1_18
 GVariant   *nm_tc_qdisc_get_attribute        (NMTCQdisc *qdisc,
                                               const char *name);
