@@ -37,9 +37,12 @@ stages:
     - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
     - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=autotools CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
     - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=meson     CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
-    - date '+%Y%m%d-%H%M%S'; grep -q '^NAME=Fedora' /etc/os-release && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test
-    - date '+%Y%m%d-%H%M%S'; grep -q '^NAME=Fedora' /etc/os-release && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; ! grep -q '^NAME=Fedora' /etc/os-release || ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; ! grep -q '^NAME=Fedora' /etc/os-release || ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; test "$NM_BUILD_TARBALL" != 1 || ( ./contrib/fedora/rpm/build_clean.sh -r && mv ./NetworkManager-1*.tar.xz /tmp/ && mv ./contrib/fedora/rpm/latest/SRPMS/NetworkManager-1*.src.rpm /tmp/ )
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx
     - date '+%Y%m%d-%H%M%S'; mv /tmp/nm-docs-html ./docs-html
+    - date '+%Y%m%d-%H%M%S'; test "$NM_BUILD_TARBALL" != 1 || mv /tmp/NetworkManager-1*.tar.xz /tmp/NetworkManager-1*.src.rpm ./
 
 checkpatch:
   image: fedora:28
@@ -57,15 +60,19 @@ t_fedora:28:
   <<: *fedora_install
   image: fedora:28
   <<: *do_build
-  artifacts:
-    expire_in: 1 day
-    paths:
-      - docs-html
 
 t_fedora:29:
   <<: *fedora_install
   image: fedora:29
   <<: *do_build
+  variables:
+    NM_BUILD_TARBALL: 1
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - docs-html
+      - NetworkManager-1*.tar.xz
+      - NetworkManager-1*.src.rpm
 
 t_fedora:30:
   <<: *fedora_install
