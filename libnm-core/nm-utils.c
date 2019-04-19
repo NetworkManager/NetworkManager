@@ -2332,12 +2332,9 @@ static const NMQdiscAttributeSpec *const tc_qdisc_attribute_spec[] = {
 void
 _nm_utils_string_append_tc_qdisc_rest (GString *string, NMTCQdisc *qdisc)
 {
-	gs_unref_hashtable GHashTable *ht = NULL;
 	guint32 handle = nm_tc_qdisc_get_handle (qdisc);
 	const char *kind = nm_tc_qdisc_get_kind (qdisc);
-	gs_strfreev char **attr_names = NULL;
 	gs_free char *str = NULL;
-	guint i;
 
 	if (handle != TC_H_UNSPEC && strcmp (kind, "ingress") != 0) {
 		g_string_append (string, "handle ");
@@ -2347,16 +2344,9 @@ _nm_utils_string_append_tc_qdisc_rest (GString *string, NMTCQdisc *qdisc)
 
 	g_string_append (string, kind);
 
-	attr_names = nm_tc_qdisc_get_attribute_names (qdisc);
-	if (attr_names[0])
-		ht = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, NULL);
-	for (i = 0; attr_names[i]; i++) {
-		g_hash_table_insert (ht, attr_names[i],
-		                     nm_tc_qdisc_get_attribute (qdisc, attr_names[i]));
-	}
-
-	if (i) {
-		str = nm_utils_format_variant_attributes (ht, ' ', ' ');
+	str = nm_utils_format_variant_attributes (_nm_tc_qdisc_get_attributes (qdisc),
+	                                          ' ', ' ');
+	if (str) {
 		g_string_append_c (string, ' ');
 		g_string_append (string, str);
 	}
@@ -2548,24 +2538,14 @@ static const NMVariantAttributeSpec * const tc_action_attribute_spec[] = {
 static gboolean
 _string_append_tc_action (GString *string, NMTCAction *action, GError **error)
 {
-	gs_unref_hashtable GHashTable *ht = NULL;
 	const char *kind = nm_tc_action_get_kind (action);
-	gs_strfreev char **attr_names = NULL;
 	gs_free char *str = NULL;
-	int i;
-
-	ht = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, NULL);
 
 	g_string_append (string, kind);
 
-	attr_names = nm_tc_action_get_attribute_names (action);
-	for (i = 0; attr_names[i]; i++) {
-		g_hash_table_insert (ht, attr_names[i],
-		                     nm_tc_action_get_attribute (action, attr_names[i]));
-	}
-
-	if (i) {
-		str = nm_utils_format_variant_attributes (ht, ' ', ' ');
+	str = nm_utils_format_variant_attributes (_nm_tc_action_get_attributes (action),
+	                                          ' ', ' ');
+	if (str) {
 		g_string_append_c (string, ' ');
 		g_string_append (string, str);
 	}

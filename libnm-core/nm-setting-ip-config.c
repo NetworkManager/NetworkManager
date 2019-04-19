@@ -1116,7 +1116,7 @@ nm_ip_route_set_metric (NMIPRoute *route,
 }
 
 GHashTable *
-_nm_ip_route_get_attributes_direct (NMIPRoute *route)
+_nm_ip_route_get_attributes (NMIPRoute *route)
 {
 	nm_assert (route);
 

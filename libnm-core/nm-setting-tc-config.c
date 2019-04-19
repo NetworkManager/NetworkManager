@@ -342,6 +342,14 @@ nm_tc_qdisc_get_attribute_names (NMTCQdisc *qdisc)
 	return nm_utils_strv_make_deep_copied_nonnull (names);
 }
 
+GHashTable *
+_nm_tc_qdisc_get_attributes (NMTCQdisc *qdisc)
+{
+	nm_assert (qdisc);
+
+	return qdisc->attributes;
+}
+
 /**
  * nm_tc_qdisc_get_attribute:
  * @qdisc: the #NMTCQdisc
@@ -603,6 +611,14 @@ nm_tc_action_get_attribute_names (NMTCAction *action)
 
 	names = nm_utils_strdict_get_keys (action->attributes, TRUE, NULL);
 	return nm_utils_strv_make_deep_copied_nonnull (names);
+}
+
+GHashTable *
+_nm_tc_action_get_attributes (NMTCAction *action)
+{
+	nm_assert (action);
+
+	return action->attributes;
 }
 
 /**
