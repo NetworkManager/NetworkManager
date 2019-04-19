@@ -327,6 +327,11 @@ if enable_libnm_glib
 endif
 # FIXME: do this better!!!
 have_fake_typelibs = enable_libnm_glib and enable_introspection
+if have_fake_typelibs and gio_unix_dep.version().version_compare('< 2.51.1')
+  warning('cannot build fake typelibs for libnm because glib is too old')
+  have_fake_typelibs=false
+endif
+
 config_h.set10('WITH_FAKE_TYPELIBS', have_fake_typelibs)
 
 udev_dir = get_option('udev_dir')
