@@ -34,6 +34,7 @@ install \
     gcc-c++ \
     gettext-devel \
     git \
+    glib2-doc \
     gnutls-devel \
     gobject-introspection-devel \
     gtk-doc \
