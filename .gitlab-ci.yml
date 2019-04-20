@@ -12,6 +12,11 @@ stages:
   before_script:
     - date '+%Y%m%d-%H%M%S'; NM_INSTALL="dnf install -y" ./contrib/fedora/REQUIRED_PACKAGES
     - date '+%Y%m%d-%H%M%S'; dnf install -y glibc-langpack-pl ccache clang
+
+    # containers have "tsflags=nodocs" in /etc/dnf/dnf.conf. We need /usr/shared/gtk-doc/html
+    # to generate proper documentation.
+    - date '+%Y%m%d-%H%M%S'; dnf reinstall -y --setopt='tsflags=' glib2-doc
+
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-ci-patch-gtkdoc.sh || true
 
 .debian_install: &debian_install
