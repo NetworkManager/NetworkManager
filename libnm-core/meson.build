@@ -256,7 +256,7 @@ libnm_core_dep = declare_dependency(
 
 shared_nm_libnm_core_aux = static_library(
     'nm-libnm-core-aux',
-    sources: files('../shared/nm-libnm-core-aux/nm-dispatcher-api.h'),
+    sources: files('../shared/nm-libnm-core-aux/nm-libnm-core-aux.c'),
     c_args: [
         '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
         '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_WITH_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
@@ -270,6 +270,7 @@ shared_nm_libnm_core_aux = static_library(
         glib_dep,
         shared_c_siphash_dep,
         shared_nm_glib_aux_dep,
+        libnm_core_dep,
     ],
 )
 

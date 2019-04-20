@@ -449,6 +449,8 @@ shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_CPPFLAGS = \
 
 shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_SOURCES = \
 	shared/nm-libnm-core-aux/nm-dispatcher-api.h \
+	shared/nm-libnm-core-aux/nm-libnm-core-aux.c \
+	shared/nm-libnm-core-aux/nm-libnm-core-aux.h \
 	$(NULL)
 
 shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_LDFLAGS = \
