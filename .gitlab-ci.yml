@@ -30,8 +30,8 @@ stages:
     - date '+%Y%m%d-%H%M%S'; locale -a
     - date '+%Y%m%d-%H%M%S'; env
     - date '+%Y%m%d-%H%M%S'; meson --version
-    - date '+%Y%m%d-%H%M%S'; which dnf  && dnf list --installed
-    - date '+%Y%m%d-%H%M%S'; which dpkg && dpkg -l
+    - date '+%Y%m%d-%H%M%S'; ! which dnf  || dnf list --installed
+    - date '+%Y%m%d-%H%M%S'; ! which dpkg || dpkg -l
     - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=autotools CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
     - date '+%Y%m%d-%H%M%S'; rm -rf /tmp/nm-docs-html; mv build/INST/share/gtk-doc/html /tmp/nm-docs-html
     - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
