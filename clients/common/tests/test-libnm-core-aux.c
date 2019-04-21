@@ -106,7 +106,6 @@ test_team_link_watcher_tofro_string (void)
 
 	w = _team_link_watcher_from_string ("name=ethtool",
 	                                    "delay-up=0   name=ethtool",
-	                                    "delay-down=0   name=ethtool   source-host=x",
 	                                    "  delay-down=0   name=ethtool   ");
 	_team_link_watcher_cmp (&w,
 	                        "ethtool",
@@ -150,7 +149,6 @@ test_team_link_watcher_tofro_string (void)
 
 	w = _team_link_watcher_from_string ("name=nsna_ping target-host=xxx",
 	                                    "name=nsna_ping target-host=xxx",
-	                                    "target-host=x1 target-host=xxx name=nsna_ping",
 	                                    "  missed-max=3    target-host=xxx        name=nsna_ping   ");
 	_team_link_watcher_cmp (&w,
 	                        "nsna_ping",
@@ -165,8 +163,6 @@ test_team_link_watcher_tofro_string (void)
 	                        NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_NONE);
 
 	w = _team_link_watcher_from_string ("name=arp_ping target-host=xxx source-host=yzd",
-	                                    "source-host=yzd name=arp_ping vlanid=-1 target-host=xxx",
-	                                    "source-host=yz source-host=yzd target-host=x1 target-host=xxx name=arp_ping",
 	                                    "  source-host=yzd target-host=xxx        name=arp_ping   ");
 	_team_link_watcher_cmp (&w,
 	                        "arp_ping",
@@ -195,8 +191,7 @@ test_team_link_watcher_tofro_string (void)
 
 	w = _team_link_watcher_from_string ("name=arp_ping target-host=xxx source-host=yzd validate-active=true",
 	                                    "source-host=yzd send-always=false name=arp_ping validate-active=true validate-inactive=false target-host=xxx",
-	                                    "source-host=yz validate-active=true source-host=yzd target-host=x1 target-host=xxx name=arp_ping",
-	                                    "  source-host=yzd target-host=xxx vlanid=-1   validate-active=true      name=arp_ping   ");
+	                                    "  source-host=yzd target-host=xxx   validate-active=true      name=arp_ping   ");
 	_team_link_watcher_cmp (&w,
 	                        "arp_ping",
 	                        -1,
@@ -211,7 +206,7 @@ test_team_link_watcher_tofro_string (void)
 
 	w = _team_link_watcher_from_string ("name=arp_ping target-host=xxx source-host=yzd validate-active=true validate-inactive=true send-always=true",
 	                                    "source-host=yzd send-always=true name=arp_ping validate-active=true validate-inactive=true target-host=xxx",
-	                                    "source-host=yz validate-active=true source-host=yzd target-host=x1 target-host=xxx name=arp_ping send-always=true validate-inactive=true",
+	                                    "source-host=yzd send-always=true name=arp_ping validate-active=1 validate-inactive=yes target-host=xxx",
 	                                    "  source-host=yzd target-host=xxx   validate-inactive=true send-always=true    validate-active=true      name=arp_ping   ");
 	_team_link_watcher_cmp (&w,
 	                        "arp_ping",

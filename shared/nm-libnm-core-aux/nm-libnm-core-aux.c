@@ -22,162 +22,351 @@
 
 #include "nm-libnm-core-aux.h"
 
+#include "nm-libnm-core-intern/nm-libnm-core-utils.h"
+
 /*****************************************************************************/
+
+typedef enum {
+	KEY_TYPE_STRING,
+	KEY_TYPE_INT,
+	KEY_TYPE_BOOL,
+} KeyType;
+
+typedef struct {
+	const char *str_val;
+	union {
+		int vint;
+		bool vbool;
+	} typ_val;
+} ParseData;
+
+typedef struct {
+	const char *name;
+	NMTeamLinkWatcherType watcher_type;
+	KeyType key_type;
+	union {
+		int         (*fint)    (NMTeamLinkWatcher *watcher);
+		gboolean    (*fbool)   (NMTeamLinkWatcher *watcher);
+		const char *(*fstring) (NMTeamLinkWatcher *watcher);
+	} get_fcn;
+	union {
+		int vint;
+		bool vbool;
+	} def_val;
+} TeamLinkWatcherKeyInfo;
+
+static gboolean
+_team_link_watcher_validate_active (NMTeamLinkWatcher *watcher)
+{
+	return NM_FLAGS_HAS (nm_team_link_watcher_get_flags (watcher), NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE);
+}
+
+static gboolean
+_team_link_watcher_validate_inactive (NMTeamLinkWatcher *watcher)
+{
+	return NM_FLAGS_HAS (nm_team_link_watcher_get_flags (watcher), NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE);
+}
+
+static gboolean
+_team_link_watcher_send_always (NMTeamLinkWatcher *watcher)
+{
+	return NM_FLAGS_HAS (nm_team_link_watcher_get_flags (watcher), NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS);
+}
+
+static const TeamLinkWatcherKeyInfo _team_link_watcher_key_infos[_NM_TEAM_LINK_WATCHER_KEY_NUM] = {
+
+#define _KEY_INFO(key_id, _name, _watcher_type, _key_type, ...) \
+	[key_id] = { .name = ""_name"", .watcher_type = (_watcher_type), .key_type = _key_type, ##__VA_ARGS__ }
+
+	_KEY_INFO (NM_TEAM_LINK_WATCHER_KEY_NAME,              "name",              NM_TEAM_LINK_WATCHER_TYPE_ETHTOOL | NM_TEAM_LINK_WATCHER_TYPE_NSNAPING | NM_TEAM_LINK_WATCHER_TYPE_ARPING, KEY_TYPE_STRING, .get_fcn.fstring = nm_team_link_watcher_get_name,        ),
+	_KEY_INFO (NM_TEAM_LINK_WATCHER_KEY_DELAY_UP,          "delay-up",          NM_TEAM_LINK_WATCHER_TYPE_ETHTOOL,                                                                         KEY_TYPE_INT,    .get_fcn.fint    = nm_team_link_watcher_get_delay_up,    ),
+	_KEY_INFO (NM_TEAM_LINK_WATCHER_KEY_DELAY_DOWN,        "delay-down",        NM_TEAM_LINK_WATCHER_TYPE_ETHTOOL,                                                                         KEY_TYPE_INT,    .get_fcn.fint    = nm_team_link_watcher_get_delay_down,  ),
+	_KEY_INFO (NM_TEAM_LINK_WATCHER_KEY_INIT_WAIT,         "init-wait",         NM_TEAM_LINK_WATCHER_TYPE_NSNAPING | NM_TEAM_LINK_WATCHER_TYPE_ARPING,                                     KEY_TYPE_INT,    .get_fcn.fint    = nm_team_link_watcher_get_init_wait,   ),
+	_KEY_INFO (NM_TEAM_LINK_WATCHER_KEY_INTERVAL,          "interval",          NM_TEAM_LINK_WATCHER_TYPE_NSNAPING | NM_TEAM_LINK_WATCHER_TYPE_ARPING,                                     KEY_TYPE_INT,    .get_fcn.fint    = nm_team_link_watcher_get_interval,    ),
+	_KEY_INFO (NM_TEAM_LINK_WATCHER_KEY_MISSED_MAX,        "missed-max",        NM_TEAM_LINK_WATCHER_TYPE_NSNAPING | NM_TEAM_LINK_WATCHER_TYPE_ARPING,                                     KEY_TYPE_INT,    .get_fcn.fint    = nm_team_link_watcher_get_missed_max,  .def_val.vint = 3, ),
+	_KEY_INFO (NM_TEAM_LINK_WATCHER_KEY_TARGET_HOST,       "target-host",       NM_TEAM_LINK_WATCHER_TYPE_NSNAPING | NM_TEAM_LINK_WATCHER_TYPE_ARPING,                                     KEY_TYPE_STRING, .get_fcn.fstring = nm_team_link_watcher_get_target_host, ),
+	_KEY_INFO (NM_TEAM_LINK_WATCHER_KEY_VLANID,            "vlanid",            NM_TEAM_LINK_WATCHER_TYPE_ARPING,                                                                          KEY_TYPE_INT,    .get_fcn.fint    = nm_team_link_watcher_get_vlanid,      .def_val.vint = -1, ),
+	_KEY_INFO (NM_TEAM_LINK_WATCHER_KEY_SOURCE_HOST,       "source-host",       NM_TEAM_LINK_WATCHER_TYPE_ARPING,                                                                          KEY_TYPE_STRING, .get_fcn.fstring = nm_team_link_watcher_get_source_host, ),
+	_KEY_INFO (NM_TEAM_LINK_WATCHER_KEY_VALIDATE_ACTIVE,   "validate-active",   NM_TEAM_LINK_WATCHER_TYPE_ARPING,                                                                          KEY_TYPE_BOOL,   .get_fcn.fbool   = _team_link_watcher_validate_active,   ),
+	_KEY_INFO (NM_TEAM_LINK_WATCHER_KEY_VALIDATE_INACTIVE, "validate-inactive", NM_TEAM_LINK_WATCHER_TYPE_ARPING,                                                                          KEY_TYPE_BOOL,   .get_fcn.fbool   = _team_link_watcher_validate_inactive, ),
+	_KEY_INFO (NM_TEAM_LINK_WATCHER_KEY_SEND_ALWAYS,       "send-always",       NM_TEAM_LINK_WATCHER_TYPE_ARPING,                                                                          KEY_TYPE_BOOL,   .get_fcn.fbool   = _team_link_watcher_send_always,       ),
+
+};
+
+static NMTeamLinkWatcherType
+_team_link_watcher_get_watcher_type_from_name (const char *name)
+{
+	if (name) {
+		if (nm_streq (name, NM_TEAM_LINK_WATCHER_ETHTOOL))
+			return NM_TEAM_LINK_WATCHER_TYPE_ETHTOOL;
+		if (nm_streq (name, NM_TEAM_LINK_WATCHER_NSNA_PING))
+			return NM_TEAM_LINK_WATCHER_TYPE_NSNAPING;
+		if (nm_streq (name, NM_TEAM_LINK_WATCHER_ARP_PING))
+			return NM_TEAM_LINK_WATCHER_TYPE_ARPING;
+	}
+	return NM_TEAM_LINK_WATCHER_TYPE_NONE;
+}
+
+static const char *
+_parse_data_get_str (const ParseData parse_data[static _NM_TEAM_LINK_WATCHER_KEY_NUM],
+                     NMTeamLinkWatcherKeyId key_id)
+{
+	nm_assert (_NM_INT_NOT_NEGATIVE (key_id) && key_id < _NM_TEAM_LINK_WATCHER_KEY_NUM);
+	nm_assert (_team_link_watcher_key_infos[key_id].key_type == KEY_TYPE_STRING);
+
+	return parse_data[key_id].str_val;
+}
+
+static int
+_parse_data_get_int (const ParseData parse_data[static _NM_TEAM_LINK_WATCHER_KEY_NUM],
+                     NMTeamLinkWatcherKeyId key_id)
+{
+	nm_assert (_NM_INT_NOT_NEGATIVE (key_id) && key_id < _NM_TEAM_LINK_WATCHER_KEY_NUM);
+	nm_assert (_team_link_watcher_key_infos[key_id].key_type == KEY_TYPE_INT);
+
+	if (parse_data[key_id].str_val)
+		return parse_data[key_id].typ_val.vint;
+	return _team_link_watcher_key_infos[key_id].def_val.vint;
+}
+
+static int
+_parse_data_get_bool (const ParseData parse_data[static _NM_TEAM_LINK_WATCHER_KEY_NUM],
+                      NMTeamLinkWatcherKeyId key_id)
+{
+	nm_assert (_NM_INT_NOT_NEGATIVE (key_id) && key_id < _NM_TEAM_LINK_WATCHER_KEY_NUM);
+	nm_assert (_team_link_watcher_key_infos[key_id].key_type == KEY_TYPE_BOOL);
+
+	if (parse_data[key_id].str_val)
+		return parse_data[key_id].typ_val.vbool;
+	return _team_link_watcher_key_infos[key_id].def_val.vbool;
+}
 
 char *
 nm_utils_team_link_watcher_to_string (NMTeamLinkWatcher *watcher)
 {
+	nm_auto_free_gstring GString *str = NULL;
 	const char *name;
-	NMTeamLinkWatcherArpPingFlags flags;
-	GString *w_dump;
+	NMTeamLinkWatcherType watcher_type;
+	NMTeamLinkWatcherKeyId key_id;
 
 	if (!watcher)
 		return NULL;
 
-	w_dump = g_string_new (NULL);
+	str = g_string_new (NULL);
+
 	name = nm_team_link_watcher_get_name (watcher);
-	g_string_append_printf (w_dump, "name=%s", name);
+	g_string_append_printf (str, "name=%s", name ?: "");
 
-#define DUMP_WATCHER_INT(str, watcher, name, key) \
-	G_STMT_START { \
-		int _val = nm_team_link_watcher_get_##key (watcher); \
-		\
-		if (_val) \
-			g_string_append_printf (str, " %s=%d", name, _val); \
-	} G_STMT_END;
+	watcher_type = _team_link_watcher_get_watcher_type_from_name (name);
 
-	if (nm_streq (name, NM_TEAM_LINK_WATCHER_ETHTOOL)) {
-		DUMP_WATCHER_INT (w_dump, watcher, "delay-up", delay_up);
-		DUMP_WATCHER_INT (w_dump, watcher, "delay-down", delay_down);
-		return g_string_free (w_dump, FALSE);
+	for (key_id = 0; key_id < _NM_TEAM_LINK_WATCHER_KEY_NUM; key_id++) {
+		const TeamLinkWatcherKeyInfo *info = &_team_link_watcher_key_infos[key_id];
+		const char *vstr;
+		int vint;
+		bool vbool;
+
+		nm_assert (info->name && info->name && NM_STRCHAR_ALL (info->name, ch,((ch >= 'a' && ch <= 'z') || NM_IN_SET (ch, '-'))));
+		nm_assert (NM_IN_SET (info->key_type, KEY_TYPE_STRING,
+		                                      KEY_TYPE_INT,
+		                                      KEY_TYPE_BOOL));
+
+		if (key_id == NM_TEAM_LINK_WATCHER_KEY_NAME)
+			continue;
+
+		if (!NM_FLAGS_ALL (info->watcher_type, watcher_type))
+			continue;
+
+		switch (info->key_type) {
+		case KEY_TYPE_STRING:
+			vstr = info->get_fcn.fstring (watcher);
+			if (vstr) {
+				g_string_append_printf (nm_gstring_add_space_delimiter (str),
+				                        "%s=%s", info->name, vstr);
+			}
+			break;
+		case KEY_TYPE_INT:
+			vint = info->get_fcn.fint (watcher);
+			if (vint != info->def_val.vint) {
+				g_string_append_printf (nm_gstring_add_space_delimiter (str),
+				                        "%s=%d", info->name, vint);
+			}
+			break;
+		case KEY_TYPE_BOOL:
+			vbool = info->get_fcn.fbool (watcher);
+			if (vbool != info->def_val.vbool) {
+				g_string_append_printf (nm_gstring_add_space_delimiter (str),
+				                        "%s=%s", info->name, vbool ? "true" : "false");
+			}
+			break;
+		}
 	}
-	/* NM_TEAM_LINK_WATCHER_NSNA_PING and NM_TEAM_LINK_WATCHER_ARP_PING */
-	DUMP_WATCHER_INT (w_dump, watcher, "init-wait", init_wait);
-	DUMP_WATCHER_INT (w_dump, watcher, "interval", interval);
 
-	if (nm_team_link_watcher_get_missed_max (watcher) != 3)
-		g_string_append_printf (w_dump, " %s=%d", "missed-max", nm_team_link_watcher_get_missed_max (watcher));
-
-	g_string_append_printf (w_dump, " target-host=%s",
-	                        nm_team_link_watcher_get_target_host (watcher));
-
-	if (nm_streq (name, NM_TEAM_LINK_WATCHER_NSNA_PING))
-		return g_string_free (w_dump, FALSE);
-
-	if (nm_team_link_watcher_get_vlanid (watcher) != -1)
-		g_string_append_printf (w_dump, " %s=%d", "vlanid", nm_team_link_watcher_get_vlanid (watcher));
-
-#undef DUMP_WATCHER_INT
-	g_string_append_printf (w_dump, " source-host=%s",
-	                        nm_team_link_watcher_get_source_host (watcher));
-	flags = nm_team_link_watcher_get_flags (watcher);
-	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE)
-		g_string_append_printf (w_dump, " validate-active=true");
-	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE)
-		g_string_append_printf (w_dump, " validate-inactive=true");
-	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS)
-		g_string_append_printf (w_dump, " send-always=true");
-
-	return g_string_free (w_dump, FALSE);
+	return g_string_free (g_steal_pointer (&str), FALSE);
 }
 
 NMTeamLinkWatcher *
 nm_utils_team_link_watcher_from_string (const char *str,
                                         GError **error)
 {
-	gs_free const char **watcherv = NULL;
-	gs_free char *str_clean_free = NULL;
-	const char *str_clean;
-	guint i;
-	gs_free const char *name = NULL;
-	int val1 = 0, val2 = 0, val3 = 3, val4 = -1;
-	gs_free const char *target_host = NULL;
-	gs_free const char *source_host = NULL;
-	NMTeamLinkWatcherArpPingFlags flags = 0;
+	gs_free const char **tokens = NULL;
+	ParseData parse_data[_NM_TEAM_LINK_WATCHER_KEY_NUM] = { };
+	NMTeamLinkWatcherType watcher_type;
+	NMTeamLinkWatcherKeyId key_id;
+	gsize i_token;
+	NMTeamLinkWatcher *watcher;
+	int errsv;
 
-	nm_assert (str);
-	nm_assert (!error || !*error);
+	g_return_val_if_fail (str, NULL);
+	g_return_val_if_fail (!error || !*error, NULL);
 
-	str_clean = nm_strstrip_avoid_copy_a (300, str, &str_clean_free);
-	watcherv = nm_utils_strsplit_set (str_clean, " \t");
-	if (!watcherv) {
+	tokens = nm_utils_escaped_tokens_split (str, NM_ASCII_SPACES);
+	if (!tokens) {
 		g_set_error (error, 1, 0, "'%s' is not valid", str);
 		return NULL;
 	}
 
-	for (i = 0; watcherv[i]; i++) {
-		gs_free const char **pair = NULL;
+	for (i_token = 0; tokens[i_token]; i_token++) {
+		const TeamLinkWatcherKeyInfo *info;
+		const char *key = tokens[i_token];
+		const char *val;
 
-		pair = nm_utils_strsplit_set (watcherv[i], "=");
-		if (!pair) {
-			g_set_error (error, 1, 0, "'%s' is not valid: %s", watcherv[i],
-			             "properties should be specified as 'key=value'");
+		val = strchr (key, '=');
+		if (!val) {
+			nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+			                    _("'%s' is not valid: properties should be specified as 'key=value'"),
+			                    key);
 			return NULL;
 		}
-		if (!pair[1]) {
-			g_set_error (error, 1, 0, "'%s' is not valid: %s", watcherv[i],
-			             "missing key value");
-			return NULL;
-		}
-		if (pair[2]) {
-			g_set_error (error, 1, 0, "'%s' is not valid: %s", watcherv[i],
-			             "properties should be specified as 'key=value'");
-			return NULL;
+		((char *) val)[0] = '\0';
+		val++;
+
+		for (key_id = 0; key_id < _NM_TEAM_LINK_WATCHER_KEY_NUM; key_id++) {
+			info = &_team_link_watcher_key_infos[key_id];
+			if (nm_streq (key, info->name))
+				break;
 		}
 
-		if (nm_streq (pair[0], "name"))
-			name = g_strdup (pair[1]);
-		else if (   nm_streq (pair[0], "delay-up")
-		         || nm_streq (pair[0], "init-wait"))
-			val1 = _nm_utils_ascii_str_to_int64 (pair[1], 10, 0, G_MAXINT32, -1);
-		else if (   nm_streq (pair[0], "delay-down")
-		         || nm_streq (pair[0], "interval"))
-			val2 = _nm_utils_ascii_str_to_int64 (pair[1], 10, 0, G_MAXINT32, -1);
-		else if (nm_streq (pair[0], "missed-max"))
-			val3 = _nm_utils_ascii_str_to_int64 (pair[1], 10, 0, G_MAXINT32, -1);
-		else if (nm_streq (pair[0], "vlanid"))
-			val4 = _nm_utils_ascii_str_to_int64 (pair[1], 10, -1, 4094, -2);
-		else if (nm_streq (pair[0], "target-host"))
-			target_host = g_strdup (pair[1]);
-		else if (nm_streq (pair[0], "source-host"))
-			source_host = g_strdup (pair[1]);
-		else if (nm_streq (pair[0], "validate-active")) {
-			if (nm_streq (pair[1], "true"))
-				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE;
-		} else if (nm_streq (pair[0], "validate-inactive")) {
-			if (nm_streq (pair[1], "true"))
-				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE;
-		} else if (nm_streq (pair[0], "send-always")) {
-			if (nm_streq (pair[1], "true"))
-				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS;
-		} else {
-			g_set_error (error, 1, 0, "'%s' is not valid: %s", watcherv[i],
-			             "unknown key");
+		if (key_id == _NM_TEAM_LINK_WATCHER_KEY_NUM) {
+			nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+			                    _("'%s' is not a valid key"), key);
 			return NULL;
 		}
 
-		if ((val1 < 0) || (val2 < 0) || (val3 < 0)) {
-			g_set_error (error, 1, 0, "'%s' is not valid: %s", watcherv[i],
-			             "value is not a valid number [0, MAXINT]");
+		if (parse_data[key_id].str_val) {
+			nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+			                    _("duplicate key '%s'"), key);
 			return NULL;
 		}
-		if (val4 < -1) {
-			g_set_error (error, 1, 0, "'%s' is not valid: %s", watcherv[i],
-			             "value is not a valid number [-1, 4094]");
+
+		parse_data[key_id].str_val = val;
+
+		if (info->key_type == KEY_TYPE_INT) {
+			gint64 v64;
+
+			v64 = _nm_utils_ascii_str_to_int64 (val, 10, G_MININT, G_MAXINT, G_MAXINT64);
+			if (   v64 == G_MAXINT64
+			    && ((errsv = errno) != 0)) {
+				if (errsv == ERANGE) {
+					nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+					                    _("number for '%s' is out of range"), key);
+				} else {
+					nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+					                    _("value for '%s' must be a number"), key);
+				}
+				return NULL;
+			}
+			parse_data[key_id].typ_val.vint = v64;
+		} else if (info->key_type == KEY_TYPE_BOOL) {
+			int vbool;
+
+			vbool = _nm_utils_ascii_str_to_bool (val, -1);
+			if (vbool == -1) {
+				nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+				                    _("value for '%s' must be a boolean"), key);
+				return NULL;
+			}
+			parse_data[key_id].typ_val.vbool = vbool;
+		}
+	}
+
+	if (!parse_data[NM_TEAM_LINK_WATCHER_KEY_NAME].str_val) {
+		nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+		                    _("missing 'name' attribute"));
+		return NULL;
+	}
+
+	watcher_type = _team_link_watcher_get_watcher_type_from_name (parse_data[NM_TEAM_LINK_WATCHER_KEY_NAME].str_val);
+	if (watcher_type == NM_TEAM_LINK_WATCHER_TYPE_NONE) {
+		nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+		                    _("invalid 'name' \"%s\""),
+		                    parse_data[NM_TEAM_LINK_WATCHER_KEY_NAME].str_val);
+		return NULL;
+	}
+
+	for (key_id = 0; key_id < _NM_TEAM_LINK_WATCHER_KEY_NUM; key_id++) {
+		const TeamLinkWatcherKeyInfo *info = &_team_link_watcher_key_infos[key_id];
+
+		if (!parse_data[key_id].str_val)
+			continue;
+		if (!NM_FLAGS_ALL (info->watcher_type, watcher_type)) {
+			nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+			                    _("attribute '%s' is invalid for \"%s\""),
+			                    info->name,
+			                    parse_data[NM_TEAM_LINK_WATCHER_KEY_NAME].str_val);
 			return NULL;
 		}
 	}
 
-	if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_ETHTOOL))
-		return nm_team_link_watcher_new_ethtool (val1, val2, error);
-	else if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_NSNA_PING))
-		return nm_team_link_watcher_new_nsna_ping (val1, val2, val3, target_host, error);
-	else if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_ARP_PING))
-		return nm_team_link_watcher_new_arp_ping2 (val1, val2, val3, val4, target_host, source_host, flags, error);
+	switch (watcher_type) {
+	case NM_TEAM_LINK_WATCHER_TYPE_ETHTOOL:
+		watcher = nm_team_link_watcher_new_ethtool (_parse_data_get_int (parse_data, NM_TEAM_LINK_WATCHER_KEY_DELAY_UP),
+		                                            _parse_data_get_int (parse_data, NM_TEAM_LINK_WATCHER_KEY_DELAY_DOWN),
+		                                            error);
+		break;
+	case NM_TEAM_LINK_WATCHER_TYPE_NSNAPING:
+		watcher = nm_team_link_watcher_new_nsna_ping (_parse_data_get_int (parse_data, NM_TEAM_LINK_WATCHER_KEY_INIT_WAIT),
+		                                              _parse_data_get_int (parse_data, NM_TEAM_LINK_WATCHER_KEY_INTERVAL),
+		                                              _parse_data_get_int (parse_data, NM_TEAM_LINK_WATCHER_KEY_MISSED_MAX),
+		                                              _parse_data_get_str (parse_data, NM_TEAM_LINK_WATCHER_KEY_TARGET_HOST),
+		                                              error);
+		break;
+	default:
+		nm_assert (watcher_type == NM_TEAM_LINK_WATCHER_TYPE_ARPING);
+		watcher = nm_team_link_watcher_new_arp_ping2 (_parse_data_get_int (parse_data, NM_TEAM_LINK_WATCHER_KEY_INIT_WAIT),
+		                                              _parse_data_get_int (parse_data, NM_TEAM_LINK_WATCHER_KEY_INTERVAL),
+		                                              _parse_data_get_int (parse_data, NM_TEAM_LINK_WATCHER_KEY_MISSED_MAX),
+		                                              _parse_data_get_int (parse_data, NM_TEAM_LINK_WATCHER_KEY_VLANID),
+		                                              _parse_data_get_str (parse_data, NM_TEAM_LINK_WATCHER_KEY_TARGET_HOST),
+		                                              _parse_data_get_str (parse_data, NM_TEAM_LINK_WATCHER_KEY_SOURCE_HOST),
+		                                              (  NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_NONE
+		                                               | (_parse_data_get_bool (parse_data, NM_TEAM_LINK_WATCHER_KEY_VALIDATE_ACTIVE)   ? NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE   : NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_NONE)
+		                                               | (_parse_data_get_bool (parse_data, NM_TEAM_LINK_WATCHER_KEY_VALIDATE_INACTIVE) ? NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE : NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_NONE)
+		                                               | (_parse_data_get_bool (parse_data, NM_TEAM_LINK_WATCHER_KEY_SEND_ALWAYS)       ? NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS       : NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_NONE)
+		                                              ),
+		                                              error);
+		break;
+	}
 
-	if (!name)
-		g_set_error (error, 1, 0, "link watcher name missing");
-	else
-		g_set_error (error, 1, 0, "unknown link watcher name: '%s'", name);
-	return NULL;
+#if NM_MORE_ASSERTS > 5
+	{
+		gs_free char *str2 = NULL;
+		nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher2 = NULL;
+		static _nm_thread_local int recursive;
+
+		nm_assert (watcher);
+		if (recursive == 0) {
+			recursive = 1;
+			str2 = nm_utils_team_link_watcher_to_string (watcher);
+			nm_assert (str2);
+			watcher2 = nm_utils_team_link_watcher_from_string (str2, NULL);
+			nm_assert (watcher2);
+			nm_assert (nm_team_link_watcher_equal (watcher, watcher2));
+			nm_assert (nm_team_link_watcher_equal (watcher2, watcher));
+			nm_assert (recursive == 1);
+			recursive = 0;
+		}
+	}
+#endif
+
+	return watcher;
 }
