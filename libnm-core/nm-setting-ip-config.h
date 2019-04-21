@@ -294,11 +294,13 @@ typedef enum { /*< flags >*/
 	NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE = 0x4,
 } NMIPRoutingRuleAsStringFlags;
 
+NM_AVAILABLE_IN_1_18
 NMIPRoutingRule *nm_ip_routing_rule_from_string (const char *str,
                                                  NMIPRoutingRuleAsStringFlags to_string_flags,
                                                  GHashTable *extra_args,
                                                  GError **error);
 
+NM_AVAILABLE_IN_1_18
 char *nm_ip_routing_rule_to_string (const NMIPRoutingRule *self,
                                     NMIPRoutingRuleAsStringFlags to_string_flags,
                                     GHashTable *extra_args,
