@@ -71,7 +71,7 @@ nm_utils_team_link_watcher_to_string (NMTeamLinkWatcher *watcher)
 	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE)
 		g_string_append_printf (w_dump, " validate-inactive=true");
 	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS)
-		g_string_append_printf (w_dump, "send-always=true");
+		g_string_append_printf (w_dump, " send-always=true");
 
 	return g_string_free (w_dump, FALSE);
 }
