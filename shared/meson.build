@@ -2,8 +2,23 @@ shared_inc = include_directories('.')
 
 ###############################################################################
 
+shared_c_stdaux = static_library(
+    'c-stdaux',
+    c_args: '-std=c11',
+    sources: files('c-stdaux/src/c-stdaux.h'),
+)
+
+shared_c_stdaux_dep = declare_dependency(
+    include_directories: shared_inc,
+)
+
+###############################################################################
+
 shared_c_siphash = static_library(
     'c-siphash',
+    include_directories: [
+        include_directories('c-stdaux/src'),
+    ],
     sources: 'c-siphash/src/c-siphash.c',
 )
 
@@ -17,6 +32,9 @@ shared_c_siphash_dep = declare_dependency(
 shared_c_rbtree = static_library(
     'c-rbtree',
     c_args: '-std=c11',
+    include_directories: [
+        include_directories('c-stdaux/src'),
+    ],
     sources: files('c-rbtree/src/c-rbtree.c',
                    'c-rbtree/src/c-rbtree.h',
                    'c-rbtree/src/c-rbtree-private.h'),
@@ -52,6 +70,7 @@ shared_n_acd = static_library(
         '-Wno-vla',
     ],
     include_directories: [
+        include_directories('c-stdaux/src'),
         include_directories('c-siphash/src'),
         include_directories('c-list/src'),
         include_directories('c-rbtree/src'),

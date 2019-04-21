@@ -4,6 +4,10 @@
 
 libcsiphash_symfile = join_paths(meson.current_source_dir(), 'libcsiphash.sym')
 
+libcsiphash_deps = [
+        dep_cstdaux,
+]
+
 libcsiphash_private = static_library(
         'csiphash-private',
         [
@@ -13,12 +17,14 @@ libcsiphash_private = static_library(
                 '-fvisibility=hidden',
                 '-fno-common',
         ],
+        dependencies: libcsiphash_deps,
         pic: true,
 )
 
 libcsiphash_shared = shared_library(
         'csiphash',
         objects: libcsiphash_private.extract_all_objects(),
+        dependencies: libcsiphash_deps,
         install: not meson.is_subproject(),
         soversion: 0,
         link_depends: libcsiphash_symfile,
@@ -31,6 +37,7 @@ libcsiphash_shared = shared_library(
 libcsiphash_dep = declare_dependency(
         include_directories: include_directories('.'),
         link_with: libcsiphash_private,
+        dependencies: libcsiphash_deps,
         version: meson.project_version(),
 )
 

@@ -97,12 +97,6 @@ SUBDIRS += \
 	docs/libnm \
 	docs/api
 
-if WITH_LEGACY_LIBRARIES
-SUBDIRS += \
-	docs/libnm-util \
-	docs/libnm-glib
-endif
-
 endif
 
 dflt_cppflags = -std=gnu11
@@ -160,7 +154,6 @@ check_so_symbols = \
 DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-tests=yes \
 	--with-valgrind=no \
-	--with-libnm-glib=yes \
 	--enable-gtk-doc \
 	--enable-more-warnings=error \
 	--with-udev-dir=$$dc_install_base/lib/udev \
@@ -172,24 +165,15 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	$(NULL)
 
 dist-configure-check:
-	@echo "*** 'make dist' requires '--enable-gtk-doc --enable-introspection --with-libnm-glib'. ***"
+	@echo "*** 'make dist' requires '--enable-gtk-doc --enable-introspection'. ***"
 	@false
 if !BUILD_DOCS
-dist_configure_check += dist-configure-check
-endif
-if !WITH_LEGACY_LIBRARIES
 dist_configure_check += dist-configure-check
 endif
 
 dist: $(dist_configure_check) $(dist_dependencies)
 
 DISTCLEANFILES += intltool-extract intltool-merge intltool-update
-
-###############################################################################
-
-if WITH_LEGACY_LIBRARIES
-pkgconfig_DATA += NetworkManager.pc
-endif
 
 ###############################################################################
 
@@ -206,7 +190,19 @@ DISTCLEANFILES += $(polkit_policy_DATA)
 
 ###############################################################################
 
+EXTRA_DIST += \
+	shared/c-stdaux/src/c-stdaux.h \
+	$(NULL)
+
+###############################################################################
+
 noinst_LTLIBRARIES += shared/libcsiphash.la
+
+shared_libcsiphash_la_CFLAGS = \
+	$(AM_CFLAGS) \
+	-std=c11 \
+	-I$(srcdir)/shared/c-stdaux/src \
+	$(NULL)
 
 shared_libcsiphash_la_CPPFLAGS = \
 	$(CODE_COVERAGE_CFLAGS) \
@@ -228,6 +224,7 @@ noinst_LTLIBRARIES += shared/libcrbtree.la
 shared_libcrbtree_la_CFLAGS = \
 	$(AM_CFLAGS) \
 	-std=c11 \
+	-I$(srcdir)/shared/c-stdaux/src \
 	$(NULL)
 
 shared_libcrbtree_la_CPPFLAGS = \
@@ -260,6 +257,7 @@ shared_libnacd_la_CPPFLAGS = \
 	-DSO_ATTACH_BPF=50 \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
+	-I$(srcdir)/shared/c-stdaux/src \
 	-I$(srcdir)/shared/c-list/src \
 	-I$(srcdir)/shared/c-siphash/src \
 	-I$(srcdir)/shared/c-rbtree/src \
@@ -1381,36 +1379,6 @@ libnm/libnm.typelib: libnm/libnm.gir
 	$(INTROSPECTION_COMPILER) --includedir=$(srcdir)/libnm-core --includedir=$(builddir)/libnm-core --includedir=$(srcdir)/libnm --includedir=$(builddir)/libnm $< -o $@
 
 INTROSPECTION_GIRS += libnm/NM-1.0.gir
-
-if WITH_FAKE_TYPELIBS
-
-libnm/fake-typelib/NetworkManager.typelib: libnm/fake-typelib/NetworkManager.gir libnm/fake-typelib/.dirstamp
-	$(AM_V_GEN) $(INTROSPECTION_COMPILER) $< -o $@
-
-libnm/fake-typelib/NMClient.typelib: libnm/fake-typelib/NMClient.gir libnm/fake-typelib/.dirstamp
-	$(AM_V_GEN) $(INTROSPECTION_COMPILER) $< -o $@
-
-libnm/fake-typelib/typelibs.c: libnm/fake-typelib/typelibs.gresource.xml libnm/fake-typelib/NetworkManager.typelib libnm/fake-typelib/NMClient.typelib
-	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES) $< --target=$@ --sourcedir=$(builddir)/libnm/fake-typelib --generate-source --manual-register
-
-nodist_libnm_libnm_utils_la_SOURCES = \
-	libnm/fake-typelib/typelibs.c
-
-CLEANFILES += \
-	libnm/fake-typelib/typelibs.c \
-	libnm/fake-typelib/NMClient.typelib \
-	libnm/fake-typelib/NetworkManager.typelib
-endif
-
-endif
-
-EXTRA_DIST += \
-	libnm/fake-typelib/NetworkManager.gir \
-	libnm/fake-typelib/NMClient.gir \
-	libnm/fake-typelib/typelibs.gresource.xml \
-	libnm/fake-typelib/meson.build
-
-if HAVE_INTROSPECTION
 
 libnm_noinst_data = \
 	libnm/nm-property-docs.xml \
@@ -4511,660 +4479,6 @@ CLEANFILES += \
 	data/server.conf
 
 ###############################################################################
-# libnm-util
-###############################################################################
-
-if WITH_LEGACY_LIBRARIES
-
-lib_LTLIBRARIES += libnm-util/libnm-util.la
-
-libnm_util_libnm_util_includedir=$(includedir)/NetworkManager
-
-libnm_util_cppflags = \
-	$(dflt_cppflags) \
-	-I$(srcdir)/libnm-util \
-	-I$(builddir)/libnm-util \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-DG_LOG_DOMAIN=\""libnm-util"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_UTIL \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	$(UUID_CFLAGS)
-
-libnm_util_lib_h_pub_real = \
-	shared/nm-version-macros.h \
-	libnm-util/NetworkManager.h \
-	libnm-util/NetworkManagerVPN.h \
-	libnm-util/nm-connection.h \
-	libnm-util/nm-setting.h \
-	libnm-util/nm-setting-8021x.h \
-	libnm-util/nm-setting-adsl.h \
-	libnm-util/nm-setting-bluetooth.h \
-	libnm-util/nm-setting-bond.h \
-	libnm-util/nm-setting-team.h \
-	libnm-util/nm-setting-team-port.h \
-	libnm-util/nm-setting-bridge.h \
-	libnm-util/nm-setting-bridge-port.h \
-	libnm-util/nm-setting-connection.h \
-	libnm-util/nm-setting-dcb.h \
-	libnm-util/nm-setting-infiniband.h \
-	libnm-util/nm-setting-ip4-config.h \
-	libnm-util/nm-setting-vlan.h \
-	libnm-util/nm-setting-ip6-config.h \
-	libnm-util/nm-setting-ppp.h \
-	libnm-util/nm-setting-pppoe.h \
-	libnm-util/nm-setting-serial.h \
-	libnm-util/nm-setting-generic.h \
-	libnm-util/nm-setting-gsm.h \
-	libnm-util/nm-setting-cdma.h \
-	libnm-util/nm-setting-olpc-mesh.h \
-	libnm-util/nm-setting-wimax.h \
-	libnm-util/nm-setting-wired.h \
-	libnm-util/nm-setting-wireless.h \
-	libnm-util/nm-setting-wireless-security.h \
-	libnm-util/nm-setting-vpn.h \
-	libnm-util/nm-utils.h \
-	libnm-util/nm-version.h
-libnm_util_lib_h_pub_mkenums = \
-	libnm-util/nm-utils-enum-types.h
-libnm_util_lib_h_priv = \
-	libnm-util/crypto.h \
-	libnm-util/nm-dbus-glib-types.h \
-	libnm-util/nm-gvaluearray-compat.h \
-	libnm-util/nm-param-spec-specialized.h \
-	libnm-util/nm-setting-private.h \
-	libnm-util/nm-utils-private.h
-
-libnm_util_libnm_util_include_HEADERS = \
-	$(libnm_util_lib_h_pub_real)
-
-nodist_libnm_util_libnm_util_include_HEADERS = \
-	$(libnm_util_lib_h_pub_mkenums)
-
-libnm_util_lib_c_real = \
-	libnm-util/crypto.c \
-	libnm-util/nm-connection.c \
-	libnm-util/nm-param-spec-specialized.c \
-	libnm-util/nm-setting.c \
-	libnm-util/nm-setting-8021x.c \
-	libnm-util/nm-setting-adsl.c \
-	libnm-util/nm-setting-bluetooth.c \
-	libnm-util/nm-setting-bond.c \
-	libnm-util/nm-setting-team.c \
-	libnm-util/nm-setting-team-port.c \
-	libnm-util/nm-setting-bridge.c \
-	libnm-util/nm-setting-bridge-port.c \
-	libnm-util/nm-setting-connection.c \
-	libnm-util/nm-setting-dcb.c \
-	libnm-util/nm-setting-infiniband.c \
-	libnm-util/nm-setting-ip4-config.c \
-	libnm-util/nm-setting-vlan.c \
-	libnm-util/nm-setting-ip6-config.c \
-	libnm-util/nm-setting-ppp.c \
-	libnm-util/nm-setting-pppoe.c \
-	libnm-util/nm-setting-serial.c \
-	libnm-util/nm-setting-generic.c \
-	libnm-util/nm-setting-gsm.c \
-	libnm-util/nm-setting-cdma.c \
-	libnm-util/nm-setting-olpc-mesh.c \
-	libnm-util/nm-setting-wimax.c \
-	libnm-util/nm-setting-wired.c \
-	libnm-util/nm-setting-wireless.c \
-	libnm-util/nm-setting-wireless-security.c \
-	libnm-util/nm-setting-vpn.c \
-	libnm-util/nm-utils.c \
-	libnm-util/nm-value-transforms.c
-libnm_util_lib_c_mkenums = \
-	libnm-util/nm-utils-enum-types.c
-
-libnm_util_libnm_util_la_SOURCES = \
-	$(libnm_util_lib_c_real) \
-	$(libnm_util_lib_h_pub_real) \
-	$(libnm_util_lib_h_priv)
-
-nodist_libnm_util_libnm_util_la_SOURCES = \
-	$(libnm_util_lib_h_pub_mkenums) \
-	$(libnm_util_lib_c_mkenums)
-
-$(libnm_util_libnm_util_la_OBJECTS): $(libnm_util_lib_h_pub_mkenums)
-
-libnm_util_libnm_util_la_CPPFLAGS = $(libnm_util_cppflags)
-
-
-GLIB_GENERATED += \
-	$(libnm_util_lib_h_pub_mkenums) \
-	$(libnm_util_lib_c_mkenums)
-nm_utils_enum_types_sources = $(filter-out libnm-util/NetworkManager%,$(libnm_util_lib_h_pub_real))
-
-$(libnm_util_libnm_util_la_OBJECTS): $(libnm_util_lib_h_pub_mkenums)
-
-libnm_util_libnm_util_la_LIBADD = \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS) \
-	$(UUID_LIBS)
-
-libnm_util_libnm_util_la_LDFLAGS = \
-	-Wl,--version-script=$(srcdir)/libnm-util/libnm-util.ver \
-	-version-info "9:0:7"
-
-if WITH_GNUTLS
-libnm_util_cppflags += $(GNUTLS_CFLAGS)
-libnm_util_lib_c_real += libnm-util/crypto_gnutls.c
-libnm_util_libnm_util_la_LIBADD += $(GNUTLS_LIBS)
-endif
-
-if WITH_NSS
-libnm_util_cppflags += $(NSS_CFLAGS)
-libnm_util_lib_c_real += libnm-util/crypto_nss.c
-libnm_util_libnm_util_la_LIBADD += $(NSS_LIBS)
-endif
-
-EXTRA_DIST += \
-	libnm-util/crypto_gnutls.c \
-	libnm-util/crypto_nss.c
-
-check_ltlibraries += libnm-util/libtest-crypto.la
-
-libnm_util_libtest_crypto_la_SOURCES = \
-	libnm-util/crypto.c
-libnm_util_libtest_crypto_la_CPPFLAGS = $(libnm_util_cppflags)
-libnm_util_libtest_crypto_la_LIBADD = \
-	$(GLIB_LIBS)
-
-if WITH_GNUTLS
-libnm_util_libtest_crypto_la_SOURCES += libnm-util/crypto_gnutls.c
-libnm_util_libtest_crypto_la_LIBADD += $(GNUTLS_LIBS)
-endif
-
-if WITH_NSS
-libnm_util_libtest_crypto_la_SOURCES += libnm-util/crypto_nss.c
-libnm_util_libtest_crypto_la_LIBADD += $(NSS_LIBS)
-endif
-
-pkgconfig_DATA += libnm-util/libnm-util.pc
-
-DISTCLEANFILES += libnm-util/libnm-util.pc
-
-EXTRA_DIST += \
-	libnm-util/COPYING \
-	libnm-util/libnm-util.pc.in \
-	libnm-util/libnm-util.ver \
-	libnm-util/nm-utils-enum-types.c.template \
-	libnm-util/nm-utils-enum-types.h.template \
-	libnm-util/meson.build
-
-if HAVE_INTROSPECTION
-libnm-util/NetworkManager-1.0.gir: libnm-util/libnm-util.la
-libnm_util_NetworkManager_1_0_gir_INCLUDES = GObject-2.0 DBusGLib-1.0
-libnm_util_NetworkManager_1_0_gir_PACKAGES = gobject-2.0 dbus-glib-1
-libnm_util_NetworkManager_1_0_gir_EXPORT_PACKAGES = libnm-util
-libnm_util_NetworkManager_1_0_gir_CFLAGS = $(AM_CPPFLAGS) -I$(srcdir)/libnm-util
-libnm_util_NetworkManager_1_0_gir_LIBS = libnm-util/libnm-util.la
-libnm_util_NetworkManager_1_0_gir_FILES = \
-	$(libnm_util_lib_h_pub_mkenums) \
-	$(libnm_util_lib_h_pub_real) \
-	$(libnm_util_lib_c_mkenums) \
-	$(libnm_util_lib_c_real)
-libnm_util_NetworkManager_1_0_gir_SCANNERFLAGS = \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(srcdir)/libnm-util \
-	-I$(builddir)/libnm-util \
-	--warn-all --identifier-prefix=NM --symbol-prefix=nm
-
-libnm-util/NetworkManager-1.0.typelib: libnm-util/NetworkManager-1.0.gir
-	$(INTROSPECTION_COMPILER) "--includedir=$(srcdir)/libnm-util" "--includedir=$(builddir)/libnm-util" $< -o $@
-
-INTROSPECTION_GIRS += libnm-util/NetworkManager-1.0.gir
-endif
-
-check-local-exports-libnm-util: libnm-util/libnm-util.la
-	$(srcdir)/tools/check-exports.sh "$(builddir)/libnm-util/.libs/libnm-util.so" "$(srcdir)/libnm-util/libnm-util.ver"
-
-check_local += check-local-exports-libnm-util
-
-dist_dependencies += libnm-util/libnm-util.la
-
-###############################################################################
-# libnm-util/tests
-###############################################################################
-
-libnm_util_tests_cppflags = \
-	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(srcdir)/libnm-util \
-	-I$(builddir)/libnm-util \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	-DNETWORKMANAGER_COMPILATION_TEST \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_UTIL \
-	$(SANITIZER_EXEC_CFLAGS) \
-	$(NULL)
-
-libnm_util_tests_ldadd = \
-	libnm-util/libnm-util.la \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS)
-
-libnm_util_tests_ldflags = \
-	$(SANITIZER_EXEC_LDFLAGS)
-
-check_programs += \
-	libnm-util/tests/test-settings-defaults \
-	libnm-util/tests/test-crypto \
-	libnm-util/tests/test-secrets \
-	libnm-util/tests/test-general \
-	libnm-util/tests/test-setting-8021x \
-	libnm-util/tests/test-setting-dcb
-
-check_programs_norun += \
-	libnm-util/tests/test-libnm-linking
-
-libnm_util_tests_test_settings_defaults_CPPFLAGS = $(libnm_util_tests_cppflags)
-libnm_util_tests_test_settings_defaults_LDADD = $(libnm_util_tests_ldadd)
-libnm_util_tests_test_settings_defaults_LDFLAGS = $(libnm_util_tests_ldflags)
-
-libnm_util_tests_test_crypto_CPPFLAGS = $(libnm_util_tests_cppflags)
-libnm_util_tests_test_crypto_LDADD = \
-	libnm-util/libtest-crypto.la \
-	$(libnm_util_tests_ldadd)
-libnm_util_tests_test_crypto_LDFLAGS = $(libnm_util_tests_ldflags)
-
-libnm_util_tests_test_secrets_CPPFLAGS = $(libnm_util_tests_cppflags)
-libnm_util_tests_test_secrets_LDADD = $(libnm_util_tests_ldadd)
-libnm_util_tests_test_secrets_LDFLAGS = $(libnm_util_tests_ldflags)
-
-libnm_util_tests_test_general_DEPENDENCIES = libnm-util/tests/test-libnm-linking
-libnm_util_tests_test_general_CPPFLAGS = $(libnm_util_tests_cppflags)
-libnm_util_tests_test_general_LDADD = $(libnm_util_tests_ldadd)
-libnm_util_tests_test_general_LDFLAGS = $(libnm_util_tests_ldflags)
-
-libnm_util_tests_test_setting_8021x_CPPFLAGS = $(libnm_util_tests_cppflags)
-libnm_util_tests_test_setting_8021x_LDADD = $(libnm_util_tests_ldadd)
-libnm_util_tests_test_setting_8021x_LDFLAGS = $(libnm_util_tests_ldflags)
-
-libnm_util_tests_test_setting_dcb_CPPFLAGS = $(libnm_util_tests_cppflags)
-libnm_util_tests_test_setting_dcb_LDADD = $(libnm_util_tests_ldadd)
-libnm_util_tests_test_setting_dcb_LDFLAGS = $(libnm_util_tests_ldflags)
-
-libnm_util_tests_test_libnm_linking_CPPFLAGS = $(libnm_util_tests_cppflags)
-libnm_util_tests_test_libnm_linking_LDADD = \
-	libnm/libnm.la \
-	$(libnm_util_tests_ldadd)
-libnm_util_tests_test_libnm_linking_LDFLAGS = $(libnm_util_tests_ldflags)
-
-$(libnm_util_tests_test_settings_defaults_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(libnm_util_tests_test_crypto_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(libnm_util_tests_test_secrets_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(libnm_util_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(libnm_util_tests_test_setting_8021x_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(libnm_util_tests_test_setting_dcb_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(libnm_util_tests_test_libnm_linking_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-
-EXTRA_DIST += \
-	libnm-util/tests/meson.build
-
-###############################################################################
-# libnm-glib
-###############################################################################
-
-libnm_glib_cppflags = \
-	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(srcdir)/libnm-util \
-	-I$(builddir)/libnm-util \
-	-I$(srcdir)/libnm-glib \
-	-I$(builddir)/libnm-glib \
-	-DG_LOG_DOMAIN=\""libnm-glib"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_GLIB \
-	$(DBUS_CFLAGS) \
-	$(GLIB_CFLAGS)
-
-
-noinst_LTLIBRARIES += libnm-glib/libdeprecated-nm-glib.la
-
-libnm_glib_libdeprecated_nm_glib_la_SOURCES = \
-	libnm-glib/libnm_glib.h \
-	libnm-glib/libnm_glib.c
-
-libnm_glib_libdeprecated_nm_glib_la_CPPFLAGS = \
-	$(libnm_glib_cppflags) \
-	-Wno-deprecated-declarations \
-	-Wno-deprecated
-
-libnm_glib_libdeprecated_nm_glib_la_LIBADD = \
-	$(DBUS_LIBS) \
-	$(GLIB_LIBS)
-
-libdeprecateddir = $(includedir)/libnm-glib
-libdeprecated_HEADERS = \
-	libnm-glib/libnm_glib.h
-
-
-lib_LTLIBRARIES += libnm-glib/libnm-glib.la
-
-libnm_glib_libnmincludedir = $(includedir)/libnm-glib
-libnm_glib_libnmvpndir = $(includedir)/libnm-glib
-
-libnm_glib_lib_h_pub_real = \
-	libnm-glib/nm-object.h \
-	libnm-glib/nm-client.h \
-	libnm-glib/nm-device.h \
-	libnm-glib/nm-device-ethernet.h \
-	libnm-glib/nm-device-infiniband.h \
-	libnm-glib/nm-device-adsl.h \
-	libnm-glib/nm-device-wifi.h \
-	libnm-glib/nm-device-bt.h \
-	libnm-glib/nm-device-olpc-mesh.h \
-	libnm-glib/nm-device-bond.h \
-	libnm-glib/nm-device-team.h \
-	libnm-glib/nm-device-bridge.h \
-	libnm-glib/nm-device-vlan.h \
-	libnm-glib/nm-device-generic.h \
-	libnm-glib/nm-access-point.h \
-	libnm-glib/nm-ip4-config.h \
-	libnm-glib/nm-device-modem.h \
-	libnm-glib/nm-vpn-connection.h \
-	libnm-glib/nm-types.h \
-	libnm-glib/nm-active-connection.h \
-	libnm-glib/nm-dhcp4-config.h \
-	libnm-glib/nm-ip6-config.h \
-	libnm-glib/nm-dhcp6-config.h \
-	libnm-glib/nm-remote-connection.h \
-	libnm-glib/nm-remote-settings.h \
-	libnm-glib/nm-secret-agent.h \
-	libnm-glib/nm-device-wimax.h \
-	libnm-glib/nm-wimax-nsp.h
-libnm_glib_lib_h_pub_mkenums = \
-	libnm-glib/nm-glib-enum-types.h
-libnm_glib_lib_h_priv = \
-	libnm-glib/nm-object-private.h \
-	libnm-glib/nm-device-private.h \
-	libnm-glib/nm-types-private.h \
-	libnm-glib/nm-object-cache.h \
-	libnm-glib/nm-remote-connection-private.h \
-	libnm-glib/nm-dbus-helpers-private.h
-
-libnm_glib_libnminclude_HEADERS = \
-	$(libnm_glib_lib_h_pub_real)
-nodist_libnm_glib_libnminclude_HEADERS = \
-	$(libnm_glib_lib_h_pub_mkenums)
-
-libnm_glib_vpn_h_real = \
-	libnm-glib/nm-vpn-plugin.h \
-	libnm-glib/nm-vpn-plugin-ui-interface.h \
-	libnm-glib/nm-vpn-plugin-utils.h
-libnm_glib_vpn_h_mkenums = \
-	libnm-glib/nm-vpn-enum-types.h
-
-libnm_glib_libnmvpn_HEADERS = \
-	$(libnm_glib_vpn_h_real)
-
-nodist_libnm_glib_libnmvpn_HEADERS = \
-	$(libnm_glib_vpn_h_mkenums)
-
-libnm_glib_lib_c_real = \
-	libnm-glib/nm-object.c \
-	libnm-glib/nm-dbus-helpers.c \
-	libnm-glib/nm-client.c \
-	libnm-glib/nm-device.c \
-	libnm-glib/nm-device-ethernet.c \
-	libnm-glib/nm-device-infiniband.c \
-	libnm-glib/nm-device-adsl.c \
-	libnm-glib/nm-device-wifi.c \
-	libnm-glib/nm-device-bt.c \
-	libnm-glib/nm-device-olpc-mesh.c \
-	libnm-glib/nm-device-bond.c \
-	libnm-glib/nm-device-team.c \
-	libnm-glib/nm-device-bridge.c \
-	libnm-glib/nm-device-vlan.c \
-	libnm-glib/nm-device-generic.c \
-	libnm-glib/nm-access-point.c \
-	libnm-glib/nm-ip4-config.c \
-	libnm-glib/nm-device-modem.c \
-	libnm-glib/nm-vpn-connection.c \
-	libnm-glib/nm-types.c \
-	libnm-glib/nm-object-cache.c \
-	libnm-glib/nm-active-connection.c \
-	libnm-glib/nm-dhcp4-config.c \
-	libnm-glib/nm-ip6-config.c \
-	libnm-glib/nm-dhcp6-config.c \
-	libnm-glib/nm-remote-connection.c \
-	libnm-glib/nm-remote-settings.c \
-	libnm-glib/nm-secret-agent.c \
-	libnm-glib/nm-device-wimax.c \
-	libnm-glib/nm-wimax-nsp.c
-libnm_glib_lib_c_mkenums = \
-	libnm-glib/nm-glib-enum-types.c
-
-libnm_glib_libnm_glib_la_SOURCES = \
-	$(libnm_glib_lib_c_real) \
-	$(libnm_glib_lib_h_pub_real) \
-	$(libnm_glib_lib_h_priv)
-
-nodist_libnm_glib_libnm_glib_la_SOURCES = \
-	$(libnm_glib_lib_c_mkenums) \
-	$(libnm_glib_lib_h_pub_mkenums)
-
-libnm_glib_libnm_glib_la_CPPFLAGS = \
-	$(libnm_glib_cppflags) \
-	$(LIBUDEV_CFLAGS) \
-	$(NULL)
-
-libnm_glib_libnm_glib_la_LDFLAGS = \
-	-Wl,--version-script=$(srcdir)/libnm-glib/libnm-glib.ver \
-	-version-info "13:0:9"
-
-libnm_glib_libnm_glib_la_LIBADD = \
-	libnm-util/libnm-util.la \
-	libnm-glib/libdeprecated-nm-glib.la \
-	shared/nm-udev-aux/libnm-udev-aux.la \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS) \
-	$(LIBUDEV_LIBS) \
-	$(NULL)
-
-$(libnm_glib_libnm_glib_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-
-GLIB_GENERATED += \
-	$(libnm_glib_lib_h_pub_mkenums) \
-	$(libnm_glib_lib_c_mkenums)
-nm_glib_enum_types_sources = $(libnm_glib_lib_h_pub_real)
-
-$(libnm_glib_libnm_glib_la_OBJECTS): $(libnm_glib_lib_h_pub_mkenums)
-
-check_programs_norun += libnm-glib/libnm-glib-test
-
-libnm_glib_libnm_glib_test_CFLAGS = $(libnm_glib_cppflags)
-libnm_glib_libnm_glib_test_LDADD = \
-	libnm-glib/libnm-glib.la \
-	libnm-util/libnm-util.la \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS)
-$(libnm_glib_libnm_glib_test_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-
-lib_LTLIBRARIES += libnm-glib/libnm-glib-vpn.la
-
-libnm_glib_vpn_c_real = \
-	libnm-glib/nm-vpn-plugin.c \
-	libnm-glib/nm-vpn-plugin-ui-interface.c \
-	libnm-glib/nm-vpn-plugin-utils.c
-libnm_glib_vpn_c_mkenums = \
-	libnm-glib/nm-vpn-enum-types.c
-libnm_glib_libnm_glib_vpn_la_SOURCES = \
-	$(libnm_glib_vpn_c_real)
-nodist_libnm_glib_libnm_glib_vpn_la_SOURCES = \
-	$(libnm_glib_vpn_c_mkenums)
-libnm_glib_libnm_glib_vpn_la_CPPFLAGS = $(libnm_glib_cppflags)
-libnm_glib_libnm_glib_vpn_la_LIBADD = \
-	libnm-util/libnm-util.la \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS)
-libnm_glib_libnm_glib_vpn_la_LDFLAGS = \
-	-Wl,--version-script=$(srcdir)/libnm-glib/libnm-glib-vpn.ver \
-	-version-info "3:0:2"
-$(libnm_glib_libnm_glib_vpn_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-
-
-GLIB_GENERATED += \
-	$(libnm_glib_vpn_h_mkenums) \
-	$(libnm_glib_vpn_c_mkenums)
-nm_vpn_enum_types_sources = $(libnm_glib_vpn_h_real)
-
-$(libnm_glib_libnm_glib_vpn_la_OBJECTS): $(libnm_glib_vpn_h_mkenums)
-
-libnm-glib/nm-vpn-plugin-glue.h: introspection/org.freedesktop.NetworkManager.VPN.Plugin.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_vpn_plugin --mode=glib-server --output=$@ $<
-
-libnm-glib/nm-secret-agent-glue.h: introspection/org.freedesktop.NetworkManager.SecretAgent.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_secret_agent --mode=glib-server --output=$@ $<
-
-CLEANFILES += \
-	libnm-glib/nm-vpn-plugin-glue.h \
-	libnm-glib/nm-secret-agent-glue.h
-
-$(libnm_glib_libnm_glib_vpn_la_OBJECTS): libnm-glib/nm-vpn-plugin-glue.h
-$(libnm_glib_libnm_glib_la_OBJECTS):     libnm-glib/nm-secret-agent-glue.h
-
-
-pkgconfig_DATA += \
-	libnm-glib/libnm-glib.pc \
-	libnm-glib/libnm-glib-vpn.pc
-
-DISTCLEANFILES += \
-	libnm-glib/libnm-glib.pc \
-	libnm-glib/libnm-glib.pc
-
-EXTRA_DIST += \
-	libnm-glib/libnm-glib.pc.in \
-	libnm-glib/libnm-glib-vpn.pc.in \
-	libnm-glib/libnm-glib.ver \
-	libnm-glib/libnm-glib-vpn.ver \
-	libnm-glib/nm-vpn-enum-types.c.template \
-	libnm-glib/nm-vpn-enum-types.h.template \
-	libnm-glib/nm-glib-enum-types.c.template \
-	libnm-glib/nm-glib-enum-types.h.template \
-	libnm-glib/meson.build
-
-if HAVE_INTROSPECTION
-libnm-glib/NMClient-1.0.gir: libnm-glib/libnm-glib.la $(builddir)/libnm-util/NetworkManager-1.0.gir
-libnm_glib_NMClient_1_0_gir_INCLUDES = Gio-2.0 DBusGLib-1.0
-libnm_glib_NMClient_1_0_gir_PACKAGES = gio-2.0 dbus-glib-1
-libnm_glib_NMClient_1_0_gir_EXPORT_PACKAGES = libnm-glib libnm-glib-vpn
-libnm_glib_NMClient_1_0_gir_CFLAGS = $(libnm_glib_cppflags)
-libnm_glib_NMClient_1_0_gir_LIBS = \
-	libnm-glib/libnm-glib.la \
-	libnm-util/libnm-util.la
-libnm_glib_NMClient_1_0_gir_FILES = \
-	$(libnm_glib_lib_h_pub_mkenums) \
-	$(libnm_glib_lib_h_pub_real) \
-	$(libnm_glib_lib_c_mkenums) \
-	$(libnm_glib_lib_c_real)
-libnm_glib_NMClient_1_0_gir_SCANNERFLAGS = \
-	-I$(srcdir)/libnm-util \
-	-I$(builddir)/libnm-util \
-	-I$(srcdir)/libnm-glib \
-	-I$(builddir)/libnm-glib \
-	--warn-all --identifier-prefix=NM --symbol-prefix=nm \
-	--include-uninstalled=$(builddir)/libnm-util/NetworkManager-1.0.gir
-
-libnm-glib/NMClient-1.0.typelib: libnm-glib/NMClient-1.0.gir
-	$(INTROSPECTION_COMPILER) "--includedir=$(srcdir)/libnm-util" "--includedir=$(builddir)/libnm-util" $< -o $@
-
-INTROSPECTION_GIRS += libnm-glib/NMClient-1.0.gir
-endif
-
-check-local-exports-libnm-glib:
-	$(srcdir)/tools/check-exports.sh $(builddir)/libnm-glib/.libs/libnm-glib.so $(srcdir)/libnm-glib/libnm-glib.ver
-
-check_local += check-local-exports-libnm-glib
-
-dist_dependencies += \
-	libnm-glib/libnm-glib.la \
-	libnm-glib/libnm-glib-vpn.la
-
-###############################################################################
-# libnm-glib/tests
-###############################################################################
-
-libnm_glib_tests_cppflags = \
-	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(srcdir)/libnm-util \
-	-I$(builddir)/libnm-util \
-	-I$(srcdir)/libnm-glib \
-	-DNETWORKMANAGER_COMPILATION_TEST \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_GLIB \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	$(NULL)
-
-if HAVE_INTROSPECTION
-check-local-libnm-glib-nm-client: libnm-glib/tests/test-nm-client
-	( $(LOG_COMPILER) "$(builddir)/libnm-glib/tests/test-nm-client"; r="$$?"; test "$$r" = 0 -o "$$r" = 77 ) || \
-	( $(LOG_COMPILER) "$(builddir)/libnm-glib/tests/test-nm-client"; r="$$?"; test "$$r" = 0 -o "$$r" = 77 ) || \
-	( $(LOG_COMPILER) "$(builddir)/libnm-glib/tests/test-nm-client"; r="$$?"; test "$$r" = 0 -o "$$r" = 77 ) || \
-	( $(LOG_COMPILER) "$(builddir)/libnm-glib/tests/test-nm-client"; r="$$?"; test "$$r" = 0 -o "$$r" = 77 ) || \
-	( $(LOG_COMPILER) "$(builddir)/libnm-glib/tests/test-nm-client"; r="$$?"; test "$$r" = 0 -o "$$r" = 77 ) || \
-	false
-
-check_local += check-local-libnm-glib-nm-client
-endif
-check_programs_norun += libnm-glib/tests/test-nm-client
-
-if HAVE_INTROSPECTION
-check_programs += libnm-glib/tests/test-remote-settings-client
-else
-check_programs_norun += libnm-glib/tests/test-remote-settings-client
-endif
-
-libnm_glib_tests_test_nm_client_CPPFLAGS = $(libnm_glib_tests_cppflags)
-
-libnm_glib_tests_test_nm_client_SOURCES = \
-	shared/nm-test-utils-impl.c \
-	shared/nm-test-libnm-utils.h \
-	libnm-glib/tests/test-nm-client.c
-
-libnm_glib_tests_test_nm_client_LDADD = \
-	libnm-util/libnm-util.la \
-	libnm-glib/libnm-glib.la \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS)
-
-$(libnm_glib_tests_test_nm_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-
-
-libnm_glib_tests_test_remote_settings_client_CPPFLAGS = $(libnm_glib_tests_cppflags)
-
-libnm_glib_tests_test_remote_settings_client_SOURCES = \
-	shared/nm-test-utils-impl.c \
-	shared/nm-test-libnm-utils.h \
-	libnm-glib/tests/test-remote-settings-client.c
-
-libnm_glib_tests_test_remote_settings_client_LDADD = \
-	libnm-util/libnm-util.la \
-	libnm-glib/libnm-glib.la \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS)
-
-$(libnm_glib_tests_test_remote_settings_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-
-# tools/test-networkmanager-service.py uses libnm's typelib. Ensure it
-# is built first.
-$(libnm_glib_tests_test_nm_client_OBJECTS):              $(libnm_NM_1_0_typelib)
-$(libnm_glib_tests_test_remote_settings_client_OBJECTS): $(libnm_NM_1_0_typelib)
-
-endif
-
-EXTRA_DIST += \
-	libnm-glib/tests/meson.build
-
-###############################################################################
 # man
 ###############################################################################
 
@@ -5288,28 +4602,11 @@ if ENABLE_VAPIGEN
 VAPIGEN_VAPIS += \
 	vapi/libnm.vapi
 
-if WITH_LEGACY_LIBRARIES
-VAPIGEN_VAPIS += \
-	vapi/libnm-util.vapi \
-	vapi/libnm-glib.vapi
-endif
-
 vapi/libnm.vapi:      $(builddir)/libnm/NM-1.0.gir                   vapi/libnm.deps      vapi/NM-1.0.metadata
-vapi/libnm-util.vapi: $(builddir)/libnm-util/NetworkManager-1.0.gir  vapi/libnm-util.deps vapi/NetworkManager-1.0.metadata
-vapi/libnm-glib.vapi: $(builddir)/libnm-glib/NMClient-1.0.gir        vapi/libnm-glib.deps vapi/NMClient-1.0.metadata       vapi/libnm-util.vapi
 
 vapi_libnm_vapi_METADATADIRS = $(srcdir)/vapi
 vapi_libnm_vapi_FILES = $(builddir)/libnm/NM-1.0.gir
 vapi_libnm_vapi_DEPS = gio-2.0
-
-vapi_libnm_util_vapi_METADATADIRS = $(srcdir)/vapi
-vapi_libnm_util_vapi_FILES = $(builddir)/libnm-util/NetworkManager-1.0.gir
-
-vapi_libnm_glib_vapi_METADATADIRS = $(srcdir)/vapi
-vapi_libnm_glib_vapi_FILES = $(builddir)/libnm-glib/NMClient-1.0.gir
-vapi_libnm_glib_vapi_VAPIDIRS = $(builddir)/vapi
-vapi_libnm_glib_vapi_GIRDIRS = $(builddir)/libnm-util
-vapi_libnm_glib_vapi_DEPS = gio-2.0 dbus-glib-1 libnm-util
 
 vapi_DATA += \
 	$(VAPIGEN_VAPIS) \
@@ -5321,11 +4618,7 @@ endif
 
 EXTRA_DIST += \
 	vapi/NM-1.0.metadata \
-	vapi/NetworkManager-1.0.metadata \
-	vapi/NMClient-1.0.metadata \
 	vapi/libnm.deps \
-	vapi/libnm-util.deps \
-	vapi/libnm-glib.deps \
 	vapi/meson.build
 
 ###############################################################################
@@ -5445,7 +4738,7 @@ uninstall-hook: $(uninstall_hook)
 ###############################################################################
 
 cscope:
-	cscope -b -q -R -sshared -ssrc -slibnm-core -slibnm -slibnm-glib -slibnm-util -sclients;
+	cscope -b -q -R -sshared -ssrc -slibnm-core -slibnm -sclients;
 
 ###############################################################################
 

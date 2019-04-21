@@ -107,7 +107,6 @@ run_autotools() {
             \
             --with-ebpf=no \
             \
-            --with-libnm-glib=yes \
             --with-iwd=yes \
             --with-ofono=yes \
             --enable-teamdctl=$_WITH_LIBTEAM \
@@ -178,7 +177,6 @@ run_meson() {
         \
         -D ebpf=false \
         \
-        -D libnm_glib=true \
         -D iwd=true \
         -D ofono=true \
         -D teamdctl=$_WITH_LIBTEAM \

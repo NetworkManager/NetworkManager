@@ -40,8 +40,6 @@ if [ "${#TARGETS}" -lt 1 ]; then
         clients/tui/nmtui
         src/platform/tests/monitor
         src/ndisc/tests/test-ndisc-linux
-        libnm-util/tests/test-libnm-linking
-        libnm-glib/libnm-glib-test
         $(git grep -h '\.l\?a\>' Makefile.am | sed 's/[a-zA-Z.0-9_-/]\+/\n\0\n/g' | sort -u | grep '\.l\?a$')
     )
 fi

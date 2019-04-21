@@ -6,14 +6,9 @@
  * which are used by our test-suite.
  */
 
+#include <c-stdaux.h>
 #include <stddef.h>
 #include "c-rbtree.h"
-
-/*
- * Macros
- */
-
-#define _public_ __attribute__((__visibility__("default")))
 
 /*
  * Nodes

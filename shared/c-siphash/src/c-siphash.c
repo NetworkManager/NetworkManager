@@ -11,11 +11,10 @@
  * C_siphash_finalize_Y() can be easily provided, if required.
  */
 
+#include <c-stdaux.h>
 #include <stddef.h>
 #include <stdint.h>
 #include "c-siphash.h"
-
-#define _public_ __attribute__((__visibility__("default")))
 
 static inline uint64_t c_siphash_read_le64(const uint8_t bytes[8]) {
         return  ((uint64_t) bytes[0]) |
@@ -68,7 +67,7 @@ static inline void c_siphash_sipround(CSipHash *state) {
  * Right now, only SipHash24 is supported. Other SipHash parameters can be
  * easily added if required.
  */
-_public_ void c_siphash_init(CSipHash *state, const uint8_t seed[16]) {
+_c_public_ void c_siphash_init(CSipHash *state, const uint8_t seed[16]) {
         uint64_t k0, k1;
 
         k0 = c_siphash_read_le64(seed);
@@ -105,7 +104,7 @@ _public_ void c_siphash_init(CSipHash *state, const uint8_t seed[16]) {
  * Note that this implementation works best when used with chunk-sizes of
  * multiples of 64bit (8-bytes). This is not a requirement, though.
  */
-_public_ void c_siphash_append(CSipHash *state, const uint8_t *bytes, size_t n_bytes) {
+_c_public_ void c_siphash_append(CSipHash *state, const uint8_t *bytes, size_t n_bytes) {
         const uint8_t *end = bytes + n_bytes;
         size_t left = state->n_bytes & 7;
         uint64_t m;
@@ -195,7 +194,7 @@ _public_ void c_siphash_append(CSipHash *state, const uint8_t *bytes, size_t n_b
  *
  * Return: 64bit hash value
  */
-_public_ uint64_t c_siphash_finalize(CSipHash *state) {
+_c_public_ uint64_t c_siphash_finalize(CSipHash *state) {
         uint64_t b;
 
         b = state->padding | (((uint64_t) state->n_bytes) << 56);
@@ -236,7 +235,7 @@ _public_ uint64_t c_siphash_finalize(CSipHash *state) {
  *
  * Return: 64bit hash value
  */
-_public_ uint64_t c_siphash_hash(const uint8_t seed[16], const uint8_t *bytes, size_t n_bytes) {
+_c_public_ uint64_t c_siphash_hash(const uint8_t seed[16], const uint8_t *bytes, size_t n_bytes) {
         CSipHash state;
 
         c_siphash_init(&state, seed);

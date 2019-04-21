@@ -4,6 +4,8 @@
  * link, but DOWN or UNPLUG the device while running.
  */
 
+#undef NDEBUG
+#include <c-stdaux.h>
 #include <stdlib.h>
 #include "test.h"
 
@@ -24,14 +26,14 @@ static void test_unplug_down(int ifindex, uint8_t *mac, size_t n_mac, unsigned i
                 test_veth_cmd(ifindex, "down");
 
         r = n_acd_new(&acd);
-        assert(!r);
+        c_assert(!r);
 
         if (!run--)
                 test_veth_cmd(ifindex, "down");
 
         n_acd_get_fd(acd, &fd);
         r = n_acd_start(acd, &config);
-        assert(!r);
+        c_assert(!r);
 
         if (!run--)
                 test_veth_cmd(ifindex, "down");
@@ -40,24 +42,24 @@ static void test_unplug_down(int ifindex, uint8_t *mac, size_t n_mac, unsigned i
                 NAcdEvent *event;
                 pfds = (struct pollfd){ .fd = fd, .events = POLLIN };
                 r = poll(&pfds, 1, -1);
-                assert(r >= 0);
+                c_assert(r >= 0);
 
                 if (!run--)
                         test_veth_cmd(ifindex, "down");
 
                 r = n_acd_dispatch(acd);
-                assert(!r);
+                c_assert(!r);
 
                 r = n_acd_pop_event(acd, &event);
                 if (!r) {
                         if (event->event == N_ACD_EVENT_DOWN) {
                                 break;
                         } else {
-                                assert(event->event == N_ACD_EVENT_READY);
+                                c_assert(event->event == N_ACD_EVENT_READY);
                                 test_veth_cmd(ifindex, "down");
                         }
                 } else {
-                        assert(r == N_ACD_E_DONE);
+                        c_assert(r == N_ACD_E_DONE);
                 }
         }
 
@@ -67,11 +69,9 @@ static void test_unplug_down(int ifindex, uint8_t *mac, size_t n_mac, unsigned i
 int main(int argc, char **argv) {
         struct ether_addr mac;
         unsigned int i;
-        int r, ifindex;
+        int ifindex;
 
-        r = test_setup();
-        if (r)
-                return r;
+        test_setup();
 
         test_veth_new(&ifindex, &mac, NULL, NULL);
 

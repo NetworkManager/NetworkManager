@@ -12,7 +12,6 @@ addons:
     - libtool
     - pkg-config
     - intltool
-    - libdbus-glib-1-dev
     - libdbus-1-dev
     - libiw-dev
     - libglib2.0-dev

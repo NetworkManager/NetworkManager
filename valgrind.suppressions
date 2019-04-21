@@ -3,7 +3,7 @@
 # are mainly tested.
 #
 # Make sure to install debug information, otherwise the suppression trace might
-# not match. On Fedora, try 'debuginfo-install dbus-glib glib'.
+# not match. On Fedora, try 'dnf debuginfo-install glib2'.
 {
   NSS_NoDB_Init
   Memcheck:Leak

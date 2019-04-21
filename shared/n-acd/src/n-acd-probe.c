@@ -1,9 +1,14 @@
 /*
  * IPv4 Address Conflict Detection
+ *
+ * This file implements the probe object. A probe is basically the
+ * state-machine of a single ACD run. It takes an address to probe for, checks
+ * for conflicts and then defends it once configured.
  */
 
 #include <assert.h>
 #include <c-rbtree.h>
+#include <c-stdaux.h>
 #include <endian.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -19,8 +24,8 @@
 #include "n-acd-private.h"
 
 /*
- * These parameters and timing intervals specified in RFC-5227. The original
- * values are:
+ * These parameters and timing intervals are specified in RFC-5227. The
+ * original values are:
  *
  *     PROBE_NUM                                3
  *     PROBE_WAIT                               1s
@@ -66,10 +71,19 @@
 #define N_ACD_RFC_DEFEND_INTERVAL_NSEC          (UINT64_C(10000000000)) /* 10s */
 
 /**
- * XXX
+ * n_acd_probe_config_new() - create probe configuration
+ * @configp:                    output argument for new probe configuration
+ *
+ * This creates a new probe configuration. It will be returned in @configp to
+ * the caller, which upon return fully owns the object.
+ *
+ * A probe configuration collects parameters for probes. It never validates the
+ * input, but this is left to the consumer of the configuration to do.
+ *
+ * Return: 0 on success, negative error code on failure.
  */
-_public_ int n_acd_probe_config_new(NAcdProbeConfig **configp) {
-        _cleanup_(n_acd_probe_config_freep) NAcdProbeConfig *config = NULL;
+_c_public_ int n_acd_probe_config_new(NAcdProbeConfig **configp) {
+        _c_cleanup_(n_acd_probe_config_freep) NAcdProbeConfig *config = NULL;
 
         config = malloc(sizeof(*config));
         if (!config)
@@ -83,9 +97,15 @@ _public_ int n_acd_probe_config_new(NAcdProbeConfig **configp) {
 }
 
 /**
- * XXX
+ * n_acd_probe_config_free() - destroy probe configuration
+ * @config:                     configuration to operate on, or NULL
+ *
+ * This destroys the probe configuration and all associated objects. If @config
+ * is NULL, this is a no-op.
+ *
+ * Return: NULL is returned.
  */
-_public_ NAcdProbeConfig *n_acd_probe_config_free(NAcdProbeConfig *config) {
+_c_public_ NAcdProbeConfig *n_acd_probe_config_free(NAcdProbeConfig *config) {
         if (!config)
                 return NULL;
 
@@ -95,16 +115,45 @@ _public_ NAcdProbeConfig *n_acd_probe_config_free(NAcdProbeConfig *config) {
 }
 
 /**
- * XXX
+ * n_acd_probe_config_set_ip() - set ip property
+ * @config:                     configuration to operate on
+ * @ip:                         ip to set
+ *
+ * This sets the IP property to the value `ip`. The address is copied into the
+ * configuration object. No validation is performed.
+ *
+ * The IP property selects the IP address that a probe checks for. It is the
+ * caller's responsibility to guarantee the address is valid and can be used.
  */
-_public_ void n_acd_probe_config_set_ip(NAcdProbeConfig *config, struct in_addr ip) {
+_c_public_ void n_acd_probe_config_set_ip(NAcdProbeConfig *config, struct in_addr ip) {
         config->ip = ip;
 }
 
 /**
- * XXX
+ * n_acd_probe_config_set_timeout() - set timeout property
+ * @config:                     configuration to operate on
+ * @msecs:                      timeout to set, in milliseconds
+ *
+ * This sets the timeout to use for a conflict detection probe. The
+ * specification default is provided as `N_ACD_TIMEOUT_RFC5227` and corresponds
+ * to 9 seconds.
+ *
+ * If set to 0, conflict detection is skipped and the address is immediately
+ * advertised and defended.
+ *
+ * Depending on the transport used, the API user should select a suitable
+ * timeout. Since `ACD` only operates on the link layer, timeouts in the
+ * hundreds of milliseconds range should be more than enough for any modern
+ * network. Note that increasing this value directly affects the time it takes
+ * to connect to a network, since an address should not be used unless conflict
+ * detection finishes.
+ *
+ * Using the specification default is **discouraged**. It is way too slow and
+ * not appropriate for modern networks.
+ *
+ * Default value is `N_ACD_TIMEOUT_RFC5227`.
  */
-_public_ void n_acd_probe_config_set_timeout(NAcdProbeConfig *config, uint64_t msecs) {
+_c_public_ void n_acd_probe_config_set_timeout(NAcdProbeConfig *config, uint64_t msecs) {
         config->timeout_msecs = msecs;
 }
 
@@ -214,15 +263,14 @@ static void n_acd_probe_unlink(NAcdProbe *probe) {
          */
         if (n_acd_probe_is_unique(probe)) {
                 r = n_acd_bpf_map_remove(probe->acd->fd_bpf_map, &probe->ip);
-                assert(r >= 0);
-                (void)r;
+                c_assert(r >= 0);
                 --probe->acd->n_bpf_map;
         }
         c_rbnode_unlink(&probe->ip_node);
 }
 
 int n_acd_probe_new(NAcdProbe **probep, NAcd *acd, NAcdProbeConfig *config) {
-        _cleanup_(n_acd_probe_freep) NAcdProbe *probe = NULL;
+        _c_cleanup_(n_acd_probe_freep) NAcdProbe *probe = NULL;
         int r;
 
         if (!config->ip.s_addr)
@@ -286,9 +334,20 @@ int n_acd_probe_new(NAcdProbe **probep, NAcd *acd, NAcdProbeConfig *config) {
 }
 
 /**
- * XXX
+ * n_acd_probe_free() - destroy a probe
+ * @probe:                      probe to operate on, or NULL
+ *
+ * This destroys the probe specified by @probe. All operations are immediately
+ * ceded and all associated objects are released.
+ *
+ * If @probe is NULL, this is a no-op.
+ *
+ * This function will flush all events associated with @probe from the event
+ * queue. That is, no events will be returned for this @probe anymore.
+ *
+ * Return: NULL is returned.
  */
-_public_ NAcdProbe *n_acd_probe_free(NAcdProbe *probe) {
+_c_public_ NAcdProbe *n_acd_probe_free(NAcdProbe *probe) {
         NAcdEventNode *node, *t_node;
 
         if (!probe)
@@ -306,7 +365,7 @@ _public_ NAcdProbe *n_acd_probe_free(NAcdProbe *probe) {
 }
 
 int n_acd_probe_raise(NAcdProbe *probe, NAcdEventNode **nodep, unsigned int event) {
-        _cleanup_(n_acd_event_node_freep) NAcdEventNode *node = NULL;
+        _c_cleanup_(n_acd_event_node_freep) NAcdEventNode *node = NULL;
         int r;
 
         r = n_acd_raise(probe->acd, &node, event);
@@ -327,8 +386,8 @@ int n_acd_probe_raise(NAcdProbe *probe, NAcdEventNode **nodep, unsigned int even
                 node->event.conflict.probe = probe;
                 break;
         default:
-                assert(0);
-                return -EIO;
+                c_assert(0);
+                return -ENOTRECOVERABLE;
         }
 
         c_list_link_tail(&probe->event_list, &node->probe_link);
@@ -451,8 +510,8 @@ int n_acd_probe_handle_timeout(NAcdProbe *probe) {
                  * There are no timeouts in these states. If we trigger one,
                  * something is fishy.
                  */
-                assert(0);
-                return -EIO;
+                c_assert(0);
+                return -ENOTRECOVERABLE;
         }
 
         return 0;
@@ -583,31 +642,47 @@ int n_acd_probe_handle_packet(NAcdProbe *probe, struct ether_arp *packet, bool h
                  * We are not listening for packets in these states. If we receive one,
                  * something is fishy.
                  */
-                assert(0);
-                return -EIO;
+                c_assert(0);
+                return -ENOTRECOVERABLE;
         }
 
         return 0;
 }
 
 /**
- * n_acd_probe_set_userdata - XXX
+ * n_acd_probe_set_userdata - set userdata
+ * @probe:                      probe to operate on
+ * @userdata:                   userdata pointer
+ *
+ * This can be used to set a caller-controlled user-data pointer on @probe. The
+ * value of the pointer is never inspected or used by `n-acd` and is fully
+ * under control of the caller.
+ *
+ * The default value is NULL.
  */
-_public_ void n_acd_probe_set_userdata(NAcdProbe *probe, void *userdata) {
+_c_public_ void n_acd_probe_set_userdata(NAcdProbe *probe, void *userdata) {
         probe->userdata = userdata;
 }
 
 /**
- * n_acd_probe_get_userdata - XXX
+ * n_acd_probe_get_userdata - get userdata
+ * @probe:                      probe to operate on
+ *
+ * This queries the userdata pointer that was previously set through
+ * n_acd_probe_set_userdata().
+ *
+ * The default value is NULL.
+ *
+ * Return: The stored userdata pointer is returned.
  */
-_public_ void n_acd_probe_get_userdata(NAcdProbe *probe, void **userdatap) {
+_c_public_ void n_acd_probe_get_userdata(NAcdProbe *probe, void **userdatap) {
         *userdatap = probe->userdata;
 }
 
 /**
  * n_acd_probe_announce() - announce the configured IP address
- * @probe:      probe object
- * @defend:     defence policy
+ * @probe:                      probe to operate on
+ * @defend:                     defence policy
  *
  * Announce the IP address on the local link, and start defending it according
  * to the given policy, which mut be one of N_ACD_DEFEND_ONCE,
@@ -619,7 +694,7 @@ _public_ void n_acd_probe_get_userdata(NAcdProbe *probe, void **userdatap) {
  * Return: 0 on success, N_ACD_E_INVALID_ARGUMENT in case the defence policy
  *         is invalid, negative error code on failure.
  */
-_public_ int n_acd_probe_announce(NAcdProbe *probe, unsigned int defend) {
+_c_public_ int n_acd_probe_announce(NAcdProbe *probe, unsigned int defend) {
         if (defend >= _N_ACD_DEFEND_N)
                 return N_ACD_E_INVALID_ARGUMENT;
 

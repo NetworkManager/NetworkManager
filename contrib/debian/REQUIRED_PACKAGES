@@ -37,7 +37,6 @@ install \
     iptables \
     libcurl4-gnutls-dev \
     libdbus-1-dev \
-    libdbus-glib-1-dev \
     libgcrypt11-dev \
     libgirepository1.0-dev \
     libglib2.0-dev \

@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "c-siphash.h"
 
 static void test_api(void) {

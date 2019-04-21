@@ -4,7 +4,7 @@ project(
 #  - add corresponding NM_VERSION_x_y_z macros in
 #    "shared/nm-version-macros.h.in"
 #  - update number in configure.ac
-  version: '1.18.0',
+  version: '1.19.1',
   license: 'GPL2+',
   default_options: [
     'buildtype=debugoptimized',
@@ -62,28 +62,6 @@ age = 1
 libnm_version = '@0@.@1@.@2@'.format(current - age, age, revision)
 
 libnm_pkgincludedir = join_paths(nm_includedir, libnm_name)
-
-libnm_util_name = 'libnm-util'
-
-current = 9
-revision = 0
-age = 7
-libnm_util_version = '@0@.@1@.@2@'.format(current - age, age, revision)
-
-libnm_glib_name = 'libnm-glib'
-libnm_glib_vpn_name = libnm_glib_name + '-vpn'
-
-current = 13
-revision = 0
-age = 9
-libnm_glib_version = '@0@.@1@.@2@'.format(current - age, age, revision)
-
-libnm_glib_pkgincludedir = join_paths(nm_includedir, libnm_glib_name)
-
-current = 3
-revision = 0
-age = 2
-libnm_glib_vpn_version = '@0@.@1@.@2@'.format(current - age, age, revision)
 
 nm_debug = get_option('buildtype').contains('debug')
 
@@ -281,7 +259,6 @@ config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_PLUGINS', config_plugins_default)
 config_h.set_quoted('NM_DIST_VERSION', dist_version)
 
 enable_wifi = get_option('wifi')
-config_h.set10('WITH_WIFI', enable_wifi)
 
 enable_iwd = get_option('iwd')
 if enable_iwd
@@ -320,20 +297,6 @@ if enable_introspection
   assert(gir_dep.found(), 'introspection support was requested, but the gobject-introspection library is not available. Use -Dintrospection=false to build without it.')
 endif
 
-enable_libnm_glib = get_option('libnm_glib')
-if enable_libnm_glib
-  dbus_glib_dep = dependency('dbus-glib-1', version: '>= 0.94', required: false)
-  assert(dbus_dep.found() and dbus_glib_dep.found(), 'Configure with -Dlibnm_glib=false if you do not need the legacy libraries')
-endif
-# FIXME: do this better!!!
-have_fake_typelibs = enable_libnm_glib and enable_introspection
-if have_fake_typelibs and gio_unix_dep.version().version_compare('< 2.51.1')
-  warning('cannot build fake typelibs for libnm because glib is too old')
-  have_fake_typelibs=false
-endif
-
-config_h.set10('WITH_FAKE_TYPELIBS', have_fake_typelibs)
-
 udev_dir = get_option('udev_dir')
 install_udev_dir = (udev_dir != 'no')
 
@@ -348,7 +311,6 @@ if install_systemd_unit_dir and systemd_system_unit_dir == ''
   assert(systemd_dep.found(), 'systemd required but not found, please provide a valid systemd user unit dir or disable it')
   systemd_system_unit_dir = systemd_dep.get_pkgconfig_variable('systemdsystemunitdir')
 endif
-config_h.set10('HAVE_SYSTEMD', install_systemd_unit_dir)
 
 enable_systemd_journal = get_option('systemd_journal')
 if enable_systemd_journal
@@ -863,11 +825,6 @@ subdir('clients')
 subdir('data')
 subdir('po')
 
-if enable_libnm_glib
-  subdir('libnm-util')
-  subdir('libnm-glib')
-endif
-
 if enable_vapi
   subdir('vapi')
 endif
@@ -978,7 +935,6 @@ output += '  ofono: ' + enable_ofono.to_string() + '\n'
 output += '  concheck: ' + enable_concheck.to_string() + '\n'
 output += '  libteamdctl: ' + enable_teamdctl.to_string() + '\n'
 output += '  ovs: ' + enable_ovs.to_string() + '\n'
-output += '  libnm-glib: ' + enable_libnm_glib.to_string() + '\n'
 output += '  nmcli: ' + enable_nmcli.to_string() + '\n'
 output += '  nmtui: ' + enable_nmtui.to_string() + '\n'
 output += '\nConfiguration_plugins (main.plugins=' + config_plugins_default + ')\n'

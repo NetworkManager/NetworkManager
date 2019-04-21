@@ -2,11 +2,12 @@
  * Tests for timer utility library
  */
 
-#include <stdio.h>
+#undef NDEBUG
+#include <c-stdaux.h>
 #include <errno.h>
-
 #include <poll.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/timerfd.h>
 #include "timer.h"
@@ -19,20 +20,20 @@ static void test_api(void) {
         int r;
 
         r = timer_init(&timer);
-        assert(!r);
+        c_assert(!r);
 
         timeout_schedule(&t1, &timer, 1);
         timeout_schedule(&t2, &timer, 2);
 
         r = timer_pop_timeout(&timer, 10, &t);
-        assert(!r);
-        assert(t == &t1);
+        c_assert(!r);
+        c_assert(t == &t1);
 
         timeout_unschedule(&t2);
 
         r = timer_pop_timeout(&timer, 10, &t);
-        assert(!r);
-        assert(!t);
+        c_assert(!r);
+        c_assert(!t);
 
         timer_deinit(&timer);
 }
@@ -47,7 +48,7 @@ static void test_pop(void) {
         int r;
 
         r = timer_init(&timer);
-        assert(!r);
+        c_assert(!r);
 
         for(size_t i = 0; i < N_TIMEOUTS; ++i) {
                 timeouts[i] = (Timeout)TIMEOUT_INIT(timeouts[i]);
@@ -66,11 +67,11 @@ static void test_pop(void) {
                         uint64_t count;
 
                         r = poll(&pfd, 1, -1);
-                        assert(r == 1);
+                        c_assert(r == 1);
 
                         r = read(timer.fd, &count, sizeof(count));
-                        assert(r == sizeof(count));
-                        assert(count == 1);
+                        c_assert(r == sizeof(count));
+                        c_assert(count == 1);
                         armed = false;
                 }
 
@@ -78,24 +79,24 @@ static void test_pop(void) {
                         uint64_t current_time;
 
                         r = timer_pop_timeout(&timer, i, &t);
-                        assert(!r);
+                        c_assert(!r);
                         if (!t) {
                                 timer_rearm(&timer);
                                 break;
                         }
 
                         current_time = times[t - timeouts];
-                        assert(current_time == i);
+                        c_assert(current_time == i);
                         ++n_timeouts;
                         armed = true;
                 }
         }
 
-        assert(n_timeouts == N_TIMEOUTS);
+        c_assert(n_timeouts == N_TIMEOUTS);
 
         r = timer_pop_timeout(&timer, (uint64_t)-1, &t);
-        assert(!r);
-        assert(!t);
+        c_assert(!r);
+        c_assert(!t);
 
         timer_deinit(&timer);
 }
@@ -109,60 +110,60 @@ void test_arm(void) {
         int fd1, fd2, r;
 
         fd1 = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
-        assert(fd1 >= 0);
+        c_assert(fd1 >= 0);
 
         fd2 = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
-        assert(fd1 >= 0);
+        c_assert(fd1 >= 0);
 
         r = timerfd_settime(fd1, 0, &spec, NULL);
-        assert(r >= 0);
+        c_assert(r >= 0);
 
         r = timerfd_settime(fd2, 0, &spec, NULL);
-        assert(r >= 0);
+        c_assert(r >= 0);
 
         r = timerfd_gettime(fd1, &spec);
-        assert(r >= 0);
-        assert(spec.it_value.tv_sec);
+        c_assert(r >= 0);
+        c_assert(spec.it_value.tv_sec);
 
         r = timerfd_gettime(fd2, &spec);
-        assert(r >= 0);
-        assert(spec.it_value.tv_sec);
+        c_assert(r >= 0);
+        c_assert(spec.it_value.tv_sec);
 
         spec = (struct itimerspec){};
 
         r = timerfd_settime(fd1, 0, &spec, NULL);
-        assert(r >= 0);
+        c_assert(r >= 0);
 
         r = timerfd_gettime(fd1, &spec);
-        assert(r >= 0);
-        assert(!spec.it_value.tv_sec);
-        assert(!spec.it_value.tv_nsec);
+        c_assert(r >= 0);
+        c_assert(!spec.it_value.tv_sec);
+        c_assert(!spec.it_value.tv_nsec);
 
         r = timerfd_gettime(fd2, &spec);
-        assert(r >= 0);
-        assert(spec.it_value.tv_sec);
+        c_assert(r >= 0);
+        c_assert(spec.it_value.tv_sec);
 
         spec = (struct itimerspec){ .it_value = { .tv_nsec = 1, }, };
 
         r = timerfd_settime(fd1, 0, &spec, NULL);
-        assert(r >= 0);
+        c_assert(r >= 0);
 
         r = poll(&(struct pollfd) { .fd = fd1, .events = POLLIN }, 1, -1);
-        assert(r == 1);
+        c_assert(r == 1);
 
         r = timerfd_settime(fd2, 0, &spec, NULL);
-        assert(r >= 0);
+        c_assert(r >= 0);
 
         r = poll(&(struct pollfd) { .fd = fd2, .events = POLLIN }, 1, -1);
-        assert(r == 1);
+        c_assert(r == 1);
 
         spec = (struct itimerspec){};
 
         r = timerfd_settime(fd1, 0, &spec, NULL);
-        assert(r >= 0);
+        c_assert(r >= 0);
 
         r = poll(&(struct pollfd) { .fd = fd2, .events = POLLIN }, 1, -1);
-        assert(r == 1);
+        c_assert(r == 1);
 
         close(fd2);
         close(fd1);

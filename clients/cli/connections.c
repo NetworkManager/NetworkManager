@@ -1945,7 +1945,7 @@ get_connection (NmCli *nmc,
 	}
 
 	if (*argc == 1 && nmc->complete)
-		nmc_complete_strings (**argv, "id", "uuid", "path", "filename", NULL);
+		nmc_complete_strings (**argv, "id", "uuid", "path", "filename");
 
 	if (NM_IN_STRSET (**argv, "id", "uuid", "path", "filename")) {
 		if (*argc == 1) {
@@ -2104,7 +2104,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			guint i_found_cons;
 
 			if (argc == 1 && nmc->complete)
-				nmc_complete_strings (*argv, "id", "uuid", "path", "filename", "apath", NULL);
+				nmc_complete_strings (*argv, "id", "uuid", "path", "filename", "apath");
 
 			if (NM_IN_STRSET (*argv, "id", "uuid", "path", "filename", "apath")) {
 				selector = *argv;
@@ -2850,7 +2850,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 
 	while (argc > 0) {
 		if (argc == 1 && nmc->complete)
-			nmc_complete_strings (*argv, "ifname", "ap", "passwd-file", NULL);
+			nmc_complete_strings (*argv, "ifname", "ap", "passwd-file");
 
 		if (strcmp (*argv, "ifname") == 0) {
 			argc--;
@@ -3102,7 +3102,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		const char *selector = NULL;
 
 		if (arg_num == 1 && nmc->complete)
-			nmc_complete_strings (*arg_ptr, "id", "uuid", "path",  "filename", "apath", NULL);
+			nmc_complete_strings (*arg_ptr, "id", "uuid", "path",  "filename", "apath");
 
 		if (NM_IN_STRSET (*arg_ptr, "id", "uuid", "path",  "filename", "apath")) {
 			selector = *arg_ptr;
@@ -8171,7 +8171,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 
 	next_arg (nmc, &argc, &argv, NULL);
 	if (argc == 1 && nmc->complete)
-		nmc_complete_strings (*argv, "type", "con-name", "id", "uuid", "path",  "filename", NULL);
+		nmc_complete_strings (*argv, "type", "con-name", "id", "uuid", "path",  "filename");
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
 

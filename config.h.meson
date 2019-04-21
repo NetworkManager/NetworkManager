@@ -49,9 +49,6 @@
 /* Define to 1 if you have the <sys/auxv.h> header file. */
 #mesondefine HAVE_SYS_AUXV_H
 
-/* Define if systemd support is available */
-#mesondefine HAVE_SYSTEMD
-
 /* Define if you have Linux Wireless Extensions support */
 #mesondefine HAVE_WEXT
 
@@ -197,9 +194,6 @@
 /* Define if you have dhcpcd */
 #mesondefine WITH_DHCPCD
 
-/* Define for libnm to prevent GIR from loading libnm-glib */
-#mesondefine WITH_FAKE_TYPELIBS
-
 /* Define if JANSSON is enabled */
 #mesondefine WITH_JANSSON
 
@@ -220,9 +214,6 @@
 
 /* Whether compilation of ibft setting plugin is enabled */
 #mesondefine WITH_SETTINGS_PLUGIN_IBFT
-
-/* Define if you have Wi-Fi support */
-#mesondefine WITH_WIFI
 
 /* Define if you have iwd support */
 #mesondefine WITH_IWD

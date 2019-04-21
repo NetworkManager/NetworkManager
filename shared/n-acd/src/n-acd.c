@@ -1,11 +1,56 @@
 /*
  * IPv4 Address Conflict Detection
+ *
+ * This file contains the main context initialization and management functions,
+ * as well as a bunch of utilities used through the n-acd modules.
+ */
+
+/**
+ * DOC: IPv4 Address Conflict Detection
+ *
+ * The `n-acd` project implements the IPv4 Address Conflict Detection protocol
+ * as defined in RFC-5227. The protocol originates in the IPv4 Link Local
+ * Address selection but was later on generalized and resulted in `ACD`. The
+ * idea is to use `ARP` to query a link for an address to see whether it
+ * already exists on the network, as well as defending an address that is in
+ * use on a network interface. Furthermore, `ACD` provides passive diagnostics
+ * for administrators, as it will detect address conflicts automatically, which
+ * then can be logged or shown to a user.
+ *
+ * The main context object of `n-acd` is the `NAcd` structure. It is a passive
+ * ref-counted context object which drives `ACD` probes running on it. A
+ * context is specific to a linux network device and transport. If multiple
+ * network devices are used, then separate `NAcd` contexts must be deployed.
+ *
+ * The `NAcdProbe` object drives a single `ACD` state-machine. A probe is
+ * created on an `NAcd` context by providing an address to probe for. The probe
+ * will then raise notifications whether the address conflict detection found
+ * something, or whether the address is ready to be used. Optionally, the probe
+ * will then enter into passive mode and defend the address as long as it is
+ * kept active.
+ *
+ * Note that the `n-acd` project only implements the networking protocol. It
+ * never queries or modifies network interfaces. It completely relies on the
+ * API user to react to notifications and update network interfaces
+ * respectively. `n-acd` uses an event-mechanism on every context object. All
+ * events raise by any probe or operation on a given context will queue all
+ * events on that context object. The event-queue can then be drained by the
+ * API user. All events are properly asynchronous and designed in a way that no
+ * synchronous reaction to any event is required. That is, the events are
+ * carefully designed to allow forwarding via IPC (or even networks) to a
+ * controller that handles them and specifies how to react. Furthermore, none
+ * of the function calls of `n-acd` require synchronous error handling.
+ * Instead, functions only ever return values on fatal errors. Everything else
+ * is queued as events, thus guaranteeing that synchronous handling of return
+ * values is not required. Exceptions are functions that do not affect internal
+ * state or do not have an associated context object.
  */
 
 #include <assert.h>
 #include <c-list.h>
 #include <c-rbtree.h>
 #include <c-siphash.h>
+#include <c-stdaux.h>
 #include <endian.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -55,7 +100,7 @@ static int n_acd_get_random(unsigned int *random) {
 
         r = clock_gettime(CLOCK_MONOTONIC, &ts);
         if (r < 0)
-                return -n_acd_errno();
+                return -c_errno();
 
         c_siphash_append(&hash, (const uint8_t *)&ts.tv_sec, sizeof(ts.tv_sec));
         c_siphash_append(&hash, (const uint8_t *)&ts.tv_nsec, sizeof(ts.tv_nsec));
@@ -76,19 +121,19 @@ static int n_acd_socket_new(int *fdp, int fd_bpf_prog, NAcdConfig *config) {
 
         s = socket(PF_PACKET, SOCK_DGRAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
         if (s < 0) {
-                r = -n_acd_errno();
+                r = -c_errno();
                 goto error;
         }
 
         if (fd_bpf_prog >= 0) {
                 r = setsockopt(s, SOL_SOCKET, SO_ATTACH_BPF, &fd_bpf_prog, sizeof(fd_bpf_prog));
                 if (r < 0)
-                        return -n_acd_errno();
+                        return -c_errno();
         }
 
         r = bind(s, (struct sockaddr *)&address, sizeof(address));
         if (r < 0) {
-                r = -n_acd_errno();
+                r = -c_errno();
                 goto error;
         }
 
@@ -103,10 +148,21 @@ error:
 }
 
 /**
- * XXX
+ * n_acd_config_new() - create configuration object
+ * @configp:                    output argument for new configuration
+ *
+ * This creates a new configuration object and provides it to the caller. The
+ * object is fully owned by the caller upon function return.
+ *
+ * A configuration object is a passive structure that is used to collect
+ * information that is then passed to a constructor or other function. A
+ * configuration never validates the data, but it is up to the consumer of a
+ * configuration to do that.
+ *
+ * Return: 0 on success, negative error code on failure.
  */
-_public_ int n_acd_config_new(NAcdConfig **configp) {
-        _cleanup_(n_acd_config_freep) NAcdConfig *config = NULL;
+_c_public_ int n_acd_config_new(NAcdConfig **configp) {
+        _c_cleanup_(n_acd_config_freep) NAcdConfig *config = NULL;
 
         config = malloc(sizeof(*config));
         if (!config)
@@ -120,9 +176,15 @@ _public_ int n_acd_config_new(NAcdConfig **configp) {
 }
 
 /**
- * XXX
+ * n_acd_config_free() - destroy configuration object
+ * @config:                     configuration to operate on, or NULL
+ *
+ * This destroys the configuration object @config. If @config is NULL, this is
+ * a no-op.
+ *
+ * Return: NULL is returned.
  */
-_public_ NAcdConfig *n_acd_config_free(NAcdConfig *config) {
+_c_public_ NAcdConfig *n_acd_config_free(NAcdConfig *config) {
         if (!config)
                 return NULL;
 
@@ -132,23 +194,55 @@ _public_ NAcdConfig *n_acd_config_free(NAcdConfig *config) {
 }
 
 /**
- * XXX
+ * n_acd_config_set_ifindex() - set ifindex property
+ * @config:                     configuration to operate on
+ * @ifindex:                    ifindex to set
+ *
+ * This sets the @ifindex property of the configuration object. Any previous
+ * value is overwritten.
+ *
+ * A valid ifindex is a 32bit integer greater than 0. Any other value is
+ * treated as unspecified.
+ *
+ * The ifindex corresponds to the interface index provided by the linux kernel.
+ * It specifies the network device to be used.
  */
-_public_ void n_acd_config_set_ifindex(NAcdConfig *config, int ifindex) {
+_c_public_ void n_acd_config_set_ifindex(NAcdConfig *config, int ifindex) {
         config->ifindex = ifindex;
 }
 
 /**
- * XXX
+ * n_acd_config_set_transport() - set transport property
+ * @config:                     configuration to operate on
+ * @transport:                  transport to set
+ *
+ * This specifies the transport to use. A transport must be one of the
+ * `N_ACD_TRANSPORT_*` identifiers. It selects which transport protocol `n-acd`
+ * will run on.
  */
-_public_ void n_acd_config_set_transport(NAcdConfig *config, unsigned int transport) {
+_c_public_ void n_acd_config_set_transport(NAcdConfig *config, unsigned int transport) {
         config->transport = transport;
 }
 
 /**
- * XXX
+ * n_acd_config_set_mac() - set mac property
+ * @config:                     configuration to operate on
+ * @mac:                        mac to set
+ *
+ * This specifies the hardware address (also referred to as `MAC Address`) to
+ * use. Any hardware address can be specified. It is the caller's
+ * responsibility to make sure the address can actually be used.
+ *
+ * The address in @mac is copied into @config. It does not have to be retained
+ * by the caller.
  */
-_public_ void n_acd_config_set_mac(NAcdConfig *config, const uint8_t *mac, size_t n_mac) {
+_c_public_ void n_acd_config_set_mac(NAcdConfig *config, const uint8_t *mac, size_t n_mac) {
+        /*
+         * We truncate the address at the maximum we support. We still remember
+         * the original length, so any consumer of this configuration can then
+         * complain about an unsupported address length. This allows us to
+         * avoid a memory allocation here and having to return `int`.
+         */
         config->n_mac = n_mac;
         memcpy(config->mac, mac, n_mac > ETH_ALEN ? ETH_ALEN : n_mac);
 }
@@ -179,7 +273,7 @@ NAcdEventNode *n_acd_event_node_free(NAcdEventNode *node) {
 
 int n_acd_ensure_bpf_map_space(NAcd *acd) {
         NAcdProbe *probe;
-        _cleanup_(n_acd_closep) int fd_map = -1, fd_prog = -1;
+        _c_cleanup_(c_closep) int fd_map = -1, fd_prog = -1;
         size_t  max_map;
         int r;
 
@@ -205,7 +299,7 @@ int n_acd_ensure_bpf_map_space(NAcd *acd) {
         if (fd_prog >= 0) {
                 r = setsockopt(acd->fd_socket, SOL_SOCKET, SO_ATTACH_BPF, &fd_prog, sizeof(fd_prog));
                 if (r)
-                        return -n_acd_errno();
+                        return -c_errno();
         }
 
         if (acd->fd_bpf_map >= 0)
@@ -218,16 +312,20 @@ int n_acd_ensure_bpf_map_space(NAcd *acd) {
 
 /**
  * n_acd_new() - create a new ACD context
- * @acdp:       output argument for context
- * @config:     configuration parameters
+ * @acdp:                       output argument for new context object
+ * @config:                     configuration parameters
  *
- * Create a new ACD context and return it in @acdp.
+ * Create a new ACD context and return it in @acdp. The configuration @config
+ * must be initialized by the caller and must specify a valid network
+ * interface, transport mechanism, as well as hardware address compatible with
+ * the selected transport. The configuration is copied into the context. The
+ * @config object thus does not have to be retained by the caller.
  *
- * Return: 0 on success, or a negative error code on failure.
+ * Return: 0 on success, negative error code on failure.
  */
-_public_ int n_acd_new(NAcd **acdp, NAcdConfig *config) {
-        _cleanup_(n_acd_unrefp) NAcd *acd = NULL;
-        _cleanup_(n_acd_closep) int fd_bpf_prog = -1;
+_c_public_ int n_acd_new(NAcd **acdp, NAcdConfig *config) {
+        _c_cleanup_(n_acd_unrefp) NAcd *acd = NULL;
+        _c_cleanup_(c_closep) int fd_bpf_prog = -1;
         int r;
 
         if (config->ifindex <= 0 ||
@@ -250,7 +348,7 @@ _public_ int n_acd_new(NAcd **acdp, NAcdConfig *config) {
 
         acd->fd_epoll = epoll_create1(EPOLL_CLOEXEC);
         if (acd->fd_epoll < 0)
-                return -n_acd_errno();
+                return -c_errno();
 
         r = timer_init(&acd->timer);
         if (r < 0)
@@ -276,7 +374,7 @@ _public_ int n_acd_new(NAcd **acdp, NAcdConfig *config) {
                               .data.u32 = N_ACD_EPOLL_TIMER,
                       });
         if (r < 0)
-                return -n_acd_errno();
+                return -c_errno();
 
         r = epoll_ctl(acd->fd_epoll, EPOLL_CTL_ADD, acd->fd_socket,
                       &(struct epoll_event){
@@ -284,14 +382,14 @@ _public_ int n_acd_new(NAcd **acdp, NAcdConfig *config) {
                               .data.u32 = N_ACD_EPOLL_SOCKET,
                       });
         if (r < 0)
-                return -n_acd_errno();
+                return -c_errno();
 
         *acdp = acd;
         acd = NULL;
         return 0;
 }
 
-static void n_acd_free(NAcd *acd) {
+static void n_acd_free_internal(NAcd *acd) {
         NAcdEventNode *node, *t_node;
 
         if (!acd)
@@ -300,10 +398,10 @@ static void n_acd_free(NAcd *acd) {
         c_list_for_each_entry_safe(node, t_node, &acd->event_list, acd_link)
                 n_acd_event_node_free(node);
 
-        assert(c_rbtree_is_empty(&acd->ip_tree));
+        c_assert(c_rbtree_is_empty(&acd->ip_tree));
 
         if (acd->fd_socket >= 0) {
-                assert(acd->fd_epoll >= 0);
+                c_assert(acd->fd_epoll >= 0);
                 epoll_ctl(acd->fd_epoll, EPOLL_CTL_DEL, acd->fd_socket, NULL);
                 close(acd->fd_socket);
                 acd->fd_socket = -1;
@@ -315,7 +413,7 @@ static void n_acd_free(NAcd *acd) {
         }
 
         if (acd->timer.fd >= 0) {
-                assert(acd->fd_epoll >= 0);
+                c_assert(acd->fd_epoll >= 0);
                 epoll_ctl(acd->fd_epoll, EPOLL_CTL_DEL, acd->timer.fd, NULL);
                 timer_deinit(&acd->timer);
         }
@@ -329,20 +427,32 @@ static void n_acd_free(NAcd *acd) {
 }
 
 /**
- * XXX
+ * n_acd_ref() - acquire reference
+ * @acd:                        context to operate on, or NULL
+ *
+ * This acquires a single reference to the context specified as @acd. If @acd
+ * is NULL, this is a no-op.
+ *
+ * Return: @acd is returned.
  */
-_public_ NAcd *n_acd_ref(NAcd *acd) {
+_c_public_ NAcd *n_acd_ref(NAcd *acd) {
         if (acd)
                 ++acd->n_refs;
         return acd;
 }
 
 /**
- * XXX
+ * n_acd_unref() - release reference
+ * @acd:                        context to operate on, or NULL
+ *
+ * This releases a single reference to the context @acd. If this is the last
+ * reference, the context is torn down and deallocated.
+ *
+ * Return: NULL is returned.
  */
-_public_ NAcd *n_acd_unref(NAcd *acd) {
+_c_public_ NAcd *n_acd_unref(NAcd *acd) {
         if (acd && !--acd->n_refs)
-                n_acd_free(acd);
+                n_acd_free_internal(acd);
         return NULL;
 }
 
@@ -426,7 +536,7 @@ int n_acd_send(NAcd *acd, const struct in_addr *tpa, const struct in_addr *spa) 
                  * Random network error. We treat this as fatal and propagate
                  * the error, so it is noticed and can be investigated.
                  */
-                return -n_acd_errno();
+                return -c_errno();
         } else if (l != (ssize_t)sizeof(arp)) {
                 /*
                  * Ugh, the kernel modified the packet. This is unexpected. We
@@ -440,13 +550,22 @@ int n_acd_send(NAcd *acd, const struct in_addr *tpa, const struct in_addr *spa) 
 
 /**
  * n_acd_get_fd() - get pollable file descriptor
- * @acd:        ACD context
- * @fdp:        output argument for file descriptor
+ * @acd:                        context object to operate on
+ * @fdp:                        output argument for file descriptor
  *
- * Returns a file descriptor in @fdp. This file descriptor can be polled by
- * the caller to indicate when the ACD context can be dispatched.
+ * This returns the backing file-descriptor of the context object @acd. The
+ * file-descriptor is owned by @acd and valid as long as @acd is. The
+ * file-descriptor never changes, so it can be cached by the caller as long as
+ * they hold a reference to @acd.
+ *
+ * The file-descriptor is internal to the @acd context and should not be
+ * modified by the caller. It is only exposed to allow the caller to poll on
+ * it. Whenever the file-descriptor polls readable, n_acd_dispatch() should be
+ * called.
+ *
+ * Currently, the file-descriptor is an epoll-fd.
  */
-_public_ void n_acd_get_fd(NAcd *acd, int *fdp) {
+_c_public_ void n_acd_get_fd(NAcd *acd, int *fdp) {
         *fdp = acd->fd_epoll;
 }
 
@@ -597,7 +716,7 @@ static int n_acd_dispatch_timer(NAcd *acd, struct epoll_event *event) {
                 if (r <= 0)
                         return r;
 
-                assert(r == TIMER_E_TRIGGERED);
+                c_assert(r == TIMER_E_TRIGGERED);
 
                 /*
                  * A timer triggered, handle all pending timeouts at a given
@@ -710,7 +829,7 @@ static int n_acd_dispatch_socket(NAcd *acd, struct epoll_event *event) {
                          * Something went wrong. Propagate the error-code, so
                          * this can be investigated.
                          */
-                        return -n_acd_errno();
+                        return -c_errno();
                 }
         } else if (n >= (ssize_t)n_batch) {
                 /*
@@ -750,16 +869,34 @@ static int n_acd_dispatch_socket(NAcd *acd, struct epoll_event *event) {
 }
 
 /**
- * XXX
+ * n_acd_dispatch() - dispatch context
+ * @acd:                        context object to operate on
+ *
+ * This dispatches the internal state-machine of all probes and operations
+ * running on the context @acd.
+ *
+ * Any outside effect or event triggered by this dispatcher will be queued on
+ * the event-queue of @acd. Whenever the dispatcher returns, the caller is
+ * required to drain the event-queue via n_acd_pop_event() until it is empty.
+ *
+ * This function dispatches as many events as possible up to a static limit to
+ * prevent stalling execution. If the static limit is reached, this function
+ * will return with N_ACD_E_PREEMPTED, otherwise 0 is returned. In most cases
+ * preemption can be ignored, because level-triggered event notification
+ * handles it automatically. However, in case of edge-triggered event
+ * mechanisms, the caller must make sure to call the dispatcher again.
+ *
+ * Return: 0 on success, N_ACD_E_PREEMPTED on preemption, negative error code
+ *         on failure.
  */
-_public_ int n_acd_dispatch(NAcd *acd) {
+_c_public_ int n_acd_dispatch(NAcd *acd) {
         struct epoll_event events[2];
         int n, i, r = 0;
 
         n = epoll_wait(acd->fd_epoll, events, sizeof(events) / sizeof(*events), 0);
         if (n < 0) {
                 /* Linux never returns EINTR if `timeout == 0'. */
-                return -n_acd_errno();
+                return -c_errno();
         }
 
         acd->preempted = false;
@@ -773,7 +910,7 @@ _public_ int n_acd_dispatch(NAcd *acd) {
                         r = n_acd_dispatch_socket(acd, events + i);
                         break;
                 default:
-                        assert(0);
+                        c_assert(0);
                         r = 0;
                         break;
                 }
@@ -787,8 +924,8 @@ _public_ int n_acd_dispatch(NAcd *acd) {
 
 /**
  * n_acd_pop_event() - get the next pending event
- * @acd:        ACD context
- * @eventp:     output argument for the event
+ * @acd:                        context object to operate on
+ * @eventp:                     output argument for the event
  *
  * Returns a pointer to the next pending event. The event is still owend by
  * the context, and is only valid until the next call to n_acd_pop_event()
@@ -840,7 +977,7 @@ _public_ int n_acd_dispatch(NAcd *acd) {
  *          @eventp and 0 is returned. If an error is returned, @eventp is left
  *          untouched.
  */
-_public_ int n_acd_pop_event(NAcd *acd, NAcdEvent **eventp) {
+_c_public_ int n_acd_pop_event(NAcd *acd, NAcdEvent **eventp) {
         NAcdEventNode *node, *t_node;
 
         c_list_for_each_entry_safe(node, t_node, &acd->event_list, acd_link) {
@@ -859,8 +996,29 @@ _public_ int n_acd_pop_event(NAcd *acd, NAcdEvent **eventp) {
 }
 
 /**
- * XXX
+ * n_acd_probe() - start new probe
+ * @acd:                        context object to operate on
+ * @probep:                     output argument for new probe
+ * @config:                     probe configuration
+ *
+ * This creates a new probe on the context @acd and returns the probe in
+ * @probep. The configuration @config must provide valid probe parameters. At
+ * least a valid IP address must be provided through the configuration.
+ *
+ * This function does not reject duplicate probes for the same address. It is
+ * the caller's decision whether duplicates are allowed or not. But note that
+ * duplicate probes on the same context will not conflict each other. That is,
+ * running a probe for the same address twice on the same context will not
+ * cause them to consider each other a duplicate.
+ *
+ * Probes are rather lightweight objects. They do not create any
+ * file-descriptors or other kernel objects. Probes always re-use the
+ * infrastructure provided by the context object @acd. This allows running many
+ * probes simultaneously without exhausting resources.
+ *
+ * Return: 0 on success, N_ACD_E_INVALID_ARGUMENT on invalid configuration
+ *         parameters, negative error code on failure.
  */
-_public_ int n_acd_probe(NAcd *acd, NAcdProbe **probep, NAcdProbeConfig *config) {
+_c_public_ int n_acd_probe(NAcd *acd, NAcdProbe **probep, NAcdProbeConfig *config) {
         return n_acd_probe_new(probep, acd, config);
 }

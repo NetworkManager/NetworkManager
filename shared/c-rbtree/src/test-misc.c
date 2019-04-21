@@ -5,19 +5,19 @@
 
 #undef NDEBUG
 #include <assert.h>
+#include <c-stdaux.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "c-rbtree.h"
 #include "c-rbtree-private.h"
 
 static void insert(CRBTree *t, CRBNode *n) {
         CRBNode **i, *p;
 
-        assert(t);
-        assert(n);
-        assert(!c_rbnode_is_linked(n));
+        c_assert(t);
+        c_assert(n);
+        c_assert(!c_rbnode_is_linked(n));
 
         i = &t->root;
         p = NULL;
@@ -26,7 +26,7 @@ static void insert(CRBTree *t, CRBNode *n) {
                 if (n < *i) {
                         i = &(*i)->left;
                 } else {
-                        assert(n > *i);
+                        c_assert(n > *i);
                         i = &(*i)->right;
                 }
         }
@@ -44,19 +44,19 @@ static void test_move(void) {
                 insert(&t1, &n[i]);
         }
 
-        assert(!c_rbtree_is_empty(&t1));
-        assert(c_rbtree_is_empty(&t2));
+        c_assert(!c_rbtree_is_empty(&t1));
+        c_assert(c_rbtree_is_empty(&t2));
 
         c_rbtree_move(&t2, &t1);
 
-        assert(c_rbtree_is_empty(&t1));
-        assert(!c_rbtree_is_empty(&t2));
+        c_assert(c_rbtree_is_empty(&t1));
+        c_assert(!c_rbtree_is_empty(&t2));
 
         while (t2.root)
                 c_rbnode_unlink(t2.root);
 
-        assert(c_rbtree_is_empty(&t1));
-        assert(c_rbtree_is_empty(&t2));
+        c_assert(c_rbtree_is_empty(&t1));
+        c_assert(c_rbtree_is_empty(&t2));
 }
 
 int main(int argc, char **argv) {
