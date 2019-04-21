@@ -54,14 +54,19 @@ nm_utils_team_link_watcher_to_string (NMTeamLinkWatcher *watcher)
 	/* NM_TEAM_LINK_WATCHER_NSNA_PING and NM_TEAM_LINK_WATCHER_ARP_PING */
 	DUMP_WATCHER_INT (w_dump, watcher, "init-wait", init_wait);
 	DUMP_WATCHER_INT (w_dump, watcher, "interval", interval);
-	DUMP_WATCHER_INT (w_dump, watcher, "missed-max", missed_max);
+
+	if (nm_team_link_watcher_get_missed_max (watcher) != 3)
+		g_string_append_printf (w_dump, " %s=%d", "missed-max", nm_team_link_watcher_get_missed_max (watcher));
+
 	g_string_append_printf (w_dump, " target-host=%s",
 	                        nm_team_link_watcher_get_target_host (watcher));
 
 	if (nm_streq (name, NM_TEAM_LINK_WATCHER_NSNA_PING))
 		return g_string_free (w_dump, FALSE);
 
-	DUMP_WATCHER_INT (w_dump, watcher, "vlanid", vlanid);
+	if (nm_team_link_watcher_get_vlanid (watcher) != -1)
+		g_string_append_printf (w_dump, " %s=%d", "vlanid", nm_team_link_watcher_get_vlanid (watcher));
+
 #undef DUMP_WATCHER_INT
 	g_string_append_printf (w_dump, " source-host=%s",
 	                        nm_team_link_watcher_get_source_host (watcher));
