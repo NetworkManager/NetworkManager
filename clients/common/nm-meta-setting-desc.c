@@ -3631,7 +3631,7 @@ _objlist_obj_to_str_fcn_team_link_watchers (NMMetaAccessorGetType get_type,
 
 	s = nm_utils_team_link_watcher_to_string (watcher);
 	if (s)
-		g_string_append (str, s);
+		nm_utils_escaped_tokens_escape_gstr (s, ESCAPED_TOKENS_DELIMITERS, str);
 }
 
 static gboolean
@@ -6512,7 +6512,6 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_team_link_watchers,
 				.set_fcn =              _objlist_set_fcn_team_link_watchers,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingTeam, nm_setting_team_remove_link_watcher),
-				.strsplit_plain =       TRUE,
 			),
 		),
 	),
@@ -6589,7 +6588,6 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_team_link_watchers,
 				.set_fcn =              _objlist_set_fcn_team_link_watchers,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingTeamPort, nm_setting_team_port_remove_link_watcher),
-				.strsplit_plain =       TRUE,
 			),
 		),
 	),
