@@ -221,6 +221,7 @@ struct _NMMetaPropertyType {
 	                                   gpointer environment_user_data,
 	                                   const NMMetaOperationContext *operation_context,
 	                                   const char *text,
+	                                   gboolean *out_complete_filename,
 	                                   char ***out_to_free);
 
 	/* Whether set_fcn() supports the '-' modifier. That is, whether the property
@@ -451,6 +452,7 @@ struct _NMMetaType {
 	                                   gpointer environment_user_data,
 	                                   const NMMetaOperationContext *operation_context,
 	                                   const char *text,
+	                                   gboolean *out_complete_filename,
 	                                   char ***out_to_free);
 };
 
