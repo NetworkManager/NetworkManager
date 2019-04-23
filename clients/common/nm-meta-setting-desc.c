@@ -767,73 +767,124 @@ _gobject_property_reset_default (NMSetting *setting, const char *prop_name)
 	return _gobject_property_reset (setting, prop_name, TRUE);
 }
 
+static const char *
+_coerce_str_emptyunset (NMMetaAccessorGetType get_type,
+                        gboolean is_default,
+                        const char *cstr,
+                        char **out_str)
+{
+	nm_assert (out_str && !*out_str);
+	nm_assert (   (!is_default && cstr && cstr[0] != '\0')
+	           || NM_IN_STRSET (cstr, NULL, ""));
+
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY) {
+		if (   !cstr
+		    || cstr[0] == '\0') {
+			if (is_default)
+				return "";
+			else
+				return "\"\"";
+		}
+		nm_assert (!is_default);
+		return (*out_str = g_strdup_printf ("\"%s\"", cstr));
+	}
+
+	/* we coerce NULL/"" to either "" or " ". */
+	if (   !cstr
+	    || cstr[0] == '\0') {
+		if (is_default)
+			return "";
+		else
+			return " ";
+	}
+	nm_assert (!is_default);
+	return cstr;
+}
+
+static gboolean
+_is_default (const NMMetaPropertyInfo *property_info,
+             NMSetting *setting)
+{
+	if (   property_info->property_typ_data
+	    && property_info->property_typ_data->is_default_fcn)
+		return !!(property_info->property_typ_data->is_default_fcn (setting));
+
+	return _gobject_property_is_default (setting, property_info->property_name);
+
+}
+
 static gconstpointer
 _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
                        NMSetting *setting,
                        NMMetaAccessorGetType get_type,
+                       gboolean handle_emptyunset,
                        gboolean *out_is_default,
                        gpointer *out_to_free)
 {
+	char *str = NULL;
 	const char *cstr;
 	GType gtype_prop;
 	nm_auto_unset_gvalue GValue val = G_VALUE_INIT;
+	gboolean is_default;
+	gboolean glib_handles_str_transform;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
-	NM_SET_OUT (out_is_default, _gobject_property_is_default (setting, property_info->property_name));
 
-	if (   property_info->property_typ_data
-	    && property_info->property_typ_data->is_default_fcn
-	    && property_info->property_typ_data->is_default_fcn (setting)) {
-		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
-			return _("(default)");
-		return "";
-	}
+	is_default = _is_default (property_info, setting);
+
+	NM_SET_OUT (out_is_default, is_default);
 
 	gtype_prop = _gobject_property_get_gtype (G_OBJECT (setting), property_info->property_name);
+
+	glib_handles_str_transform = !NM_IN_SET (gtype_prop, G_TYPE_BOOLEAN);
+
+	if (glib_handles_str_transform) {
+		/* We rely on the type convertion of the gobject property to string.
+		 *
+		 * Note that we register some transformations via nmc_value_transforms_register()
+		 * to make that working for G_TYPE_STRV, G_TYPE_HASH_TABLE, and G_TYPE_BYTES.
+		 *
+		 * FIXME: that is particularly ugly because it's non-obvious which code relies
+		 * on nmc_value_transforms_register(). Also, nmc_value_transforms_register() is
+		 * in clients/cli, while we are here in clients/common. */
+		g_value_init (&val, G_TYPE_STRING);
+	} else
+		g_value_init (&val, gtype_prop);
+
+	g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
+
+	if (glib_handles_str_transform) {
+		cstr = g_value_get_string (&val);
+
+		/* special hack for handling properties that can be empty and unset
+		 * (see multilist.clear_emptyunset_fcn). */
+		if (handle_emptyunset)
+			cstr = _coerce_str_emptyunset (get_type, is_default, cstr, &str);
+
+		if (str)
+			RETURN_STR_TO_FREE (str);
+		RETURN_STR_TEMPORARY (cstr);
+	}
 
 	if (gtype_prop == G_TYPE_BOOLEAN) {
 		gboolean b;
 
-		g_value_init (&val, gtype_prop);
-		g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
 		b = g_value_get_boolean (&val);
 		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
 			cstr = b ? _("yes") : _("no");
 		else
 			cstr = b ? "yes" : "no";
 		return cstr;
-	} else {
-		char *str;
-
-		/* Note that we register certain transform functions in nmc_value_transforms_register().
-		 * This makes G_TYPE_STRV working.
-		 *
-		 * FIXME: that is particularly ugly because it's non-obvious which code relies
-		 * on nmc_value_transforms_register(). Also, nmc_value_transforms_register() is
-		 * in clients/cli, while we are here in clients/common. */
-		g_value_init (&val, G_TYPE_STRING);
-		g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
-		cstr = g_value_get_string (&val);
-
-		if (   property_info->property_typ_data
-		    && property_info->property_typ_data->is_default_fcn) {
-			if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY) {
-				str =   cstr
-				      ? g_strdup_printf ("\"%s\"", cstr)
-				      : g_strdup ("");
-			} else
-				str = g_strdup (cstr && cstr[0] ? cstr : " ");
-		} else
-			str = cstr ? g_strdup (cstr) : NULL;
-
-		RETURN_STR_TO_FREE (str);
 	}
+
+	nm_assert_not_reached ();
+	return NULL;
 }
 
 static gconstpointer
 _get_fcn_gobject (ARGS_GET_FCN)
 {
-	return _get_fcn_gobject_impl (property_info, setting, get_type, out_is_default, out_to_free);
+	return _get_fcn_gobject_impl (property_info, setting, get_type, FALSE, out_is_default, out_to_free);
 }
 
 static gconstpointer
@@ -925,7 +976,7 @@ _get_fcn_gobject_mtu (ARGS_GET_FCN)
 
 	if (   !property_info->property_typ_data
 	    || !property_info->property_typ_data->subtype.mtu.get_fcn)
-		return _get_fcn_gobject_impl (property_info, setting, get_type, out_is_default, out_to_free);
+		return _get_fcn_gobject_impl (property_info, setting, get_type, FALSE, out_is_default, out_to_free);
 
 	mtu = property_info->property_typ_data->subtype.mtu.get_fcn (setting);
 	if (mtu == 0) {
@@ -1701,19 +1752,41 @@ _multilist_do_validate (const NMMetaPropertyInfo *property_info,
 	return item;
 }
 
+static gconstpointer
+_get_fcn_multilist (ARGS_GET_FCN)
+{
+	return _get_fcn_gobject_impl (property_info,
+	                              setting,
+	                              get_type,
+	                              property_info->property_typ_data->subtype.multilist.clear_emptyunset_fcn != NULL,
+	                              out_is_default,
+	                              out_to_free);
+}
+
+static gboolean
+_multilist_clear_property (const NMMetaPropertyInfo *property_info,
+                           NMSetting *setting,
+                           gboolean is_set /* or else set default */)
+{
+	if (property_info->property_typ_data->subtype.multilist.clear_emptyunset_fcn) {
+		property_info->property_typ_data->subtype.multilist.clear_emptyunset_fcn (setting, is_set);
+		return TRUE;
+	}
+	if (property_info->property_typ_data->subtype.multilist.clear_all_fcn) {
+		property_info->property_typ_data->subtype.multilist.clear_all_fcn (setting);
+		return TRUE;
+	}
+	return _gobject_property_reset (setting, property_info->property_name, FALSE);
+}
+
 static gboolean
 _set_fcn_multilist (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	gsize i, j, nstrv;
 
-	if (_SET_FCN_DO_RESET_DEFAULT_WITH_SUPPORTS_REMOVE (property_info, modifier, value)) {
-		if (property_info->property_typ_data->subtype.multilist.clear_all_fcn) {
-			property_info->property_typ_data->subtype.multilist.clear_all_fcn (setting);
-			return TRUE;
-		}
-		return _gobject_property_reset (setting, property_info->property_name, FALSE);
-	}
+	if (_SET_FCN_DO_RESET_DEFAULT_WITH_SUPPORTS_REMOVE (property_info, modifier, value))
+		return _multilist_clear_property (property_info, setting, FALSE);
 
 	if (   _SET_FCN_DO_REMOVE (modifier, value)
 	    && (   property_info->property_typ_data->subtype.multilist.remove_by_idx_fcn_u32
@@ -1746,6 +1819,11 @@ _set_fcn_multilist (ARGS_SET_FCN)
 		}
 	}
 
+	if (   _SET_FCN_DO_SET_ALL (modifier, value)
+	    && property_info->property_typ_data->subtype.multilist.clear_emptyunset_fcn
+	    && value[0] == '\0')
+		return _multilist_clear_property (property_info, setting, FALSE);
+
 	strv = _value_strsplit (value,
 	                          property_info->property_typ_data->subtype.multilist.strsplit_plain
 	                        ? VALUE_STRSPLIT_MODE_MULTILIST
@@ -1768,11 +1846,13 @@ _set_fcn_multilist (ARGS_SET_FCN)
 	}
 	nstrv = j;
 
-	if (_SET_FCN_DO_SET_ALL (modifier, value)) {
-		if (property_info->property_typ_data->subtype.multilist.clear_all_fcn)
-			property_info->property_typ_data->subtype.multilist.clear_all_fcn (setting);
-		else
-			_gobject_property_reset (setting, property_info->property_name, FALSE);
+	if (_SET_FCN_DO_SET_ALL (modifier, value))
+		_multilist_clear_property (property_info, setting, TRUE);
+	else if (   property_info->property_typ_data->subtype.multilist.clear_emptyunset_fcn
+	         && _is_default (property_info, setting)) {
+		/* the property is already the default. But we hav here a '+' / '-' modifier, so
+		 * that always makes it non-default (empty) first. */
+		_multilist_clear_property (property_info, setting, TRUE);
 	}
 
 	for (i = 0; i < nstrv; i++) {
@@ -3224,8 +3304,7 @@ _objlist_set_fcn_ip_config_routes (NMSetting *setting,
 static gboolean
 _is_default_func_ip_config_dns_options (NMSetting *setting)
 {
-	return    nm_setting_ip_config_has_dns_options (NM_SETTING_IP_CONFIG (setting))
-	       && !nm_setting_ip_config_get_num_dns_options (NM_SETTING_IP_CONFIG (setting));
+	return !nm_setting_ip_config_has_dns_options (NM_SETTING_IP_CONFIG (setting));
 }
 
 static void
@@ -4328,7 +4407,7 @@ static const NMMetaPropertyType _pt_ethtool = {
 };
 
 static const NMMetaPropertyType _pt_multilist = {
-	.get_fcn =                      _get_fcn_gobject,
+	.get_fcn =                      _get_fcn_multilist,
 	.set_fcn =                      _set_fcn_multilist,
 	.set_supports_remove =          TRUE,
 };
@@ -4347,6 +4426,7 @@ static const NMMetaPropertyType _pt_objlist = {
 #define MULTILIST_REMOVE_BY_IDX_FCN_S(type, func)   (((func) == ((void     (*) (type *, int         )) (func))) ? ((void     (*) (NMSetting *, int         )) (func)) : NULL)
 #define MULTILIST_REMOVE_BY_IDX_FCN_U(type, func)   (((func) == ((void     (*) (type *, guint       )) (func))) ? ((void     (*) (NMSetting *, guint       )) (func)) : NULL)
 #define MULTILIST_REMOVE_BY_VALUE_FCN(type, func)   (((func) == ((gboolean (*) (type *, const char *)) (func))) ? ((gboolean (*) (NMSetting *, const char *)) (func)) : NULL)
+#define MULTILIST_CLEAR_EMPTYUNSET_FCN(type, func)  (((func) == ((void     (*) (type *, gboolean    )) (func))) ? ((void     (*) (NMSetting *, gboolean    )) (func)) : NULL)
 
 #define OBJLIST_GET_NUM_FCN(type, func)             (((func) == ((guint    (*) (type *              )) (func))) ? ((guint    (*) (NMSetting *              )) (func)) : NULL)
 #define OBJLIST_CLEAR_ALL_FCN(type, func)           (((func) == ((void     (*) (type *              )) (func))) ? ((void     (*) (NMSetting *              )) (func)) : NULL)
@@ -5457,6 +5537,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 				.add_fcn =              _multilist_add_fcn_ip_config_dns_options,
 				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns_option),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_option_by_value),
+				.clear_emptyunset_fcn = MULTILIST_CLEAR_EMPTYUNSET_FCN (NMSettingIPConfig, nm_setting_ip_config_clear_dns_options),
 				.strsplit_plain =       TRUE,
 			),
 			.is_default_fcn =           _is_default_func_ip_config_dns_options,
@@ -5669,6 +5750,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 				.add_fcn =              _multilist_add_fcn_ip_config_dns_options,
 				.remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns_option),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_option_by_value),
+				.clear_emptyunset_fcn = MULTILIST_CLEAR_EMPTYUNSET_FCN (NMSettingIPConfig, nm_setting_ip_config_clear_dns_options),
 				.strsplit_plain =       TRUE,
 			),
 			.is_default_fcn =           _is_default_func_ip_config_dns_options,
