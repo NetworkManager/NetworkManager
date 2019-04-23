@@ -2294,6 +2294,26 @@ _set_fcn_cert_8021x (ARGS_SET_FCN)
 	}
 }
 
+static const char *const*
+_complete_fcn_cert_8021x (ARGS_COMPLETE_FCN)
+{
+	const NMSetting8021xSchemeVtable *vtable;
+
+	vtable = &nm_setting_8021x_scheme_vtable[property_info->property_typ_data->subtype.cert_8021x.scheme_type];
+
+	if (vtable->is_secret) {
+		gs_free const char **strv = NULL;
+
+		strv = nm_utils_escaped_tokens_split (text, NM_ASCII_SPACES);
+		/* don't try to complete the password */
+		if (NM_PTRARRAY_LEN (strv) > 1)
+			return NULL;
+	}
+
+	NM_SET_OUT (out_complete_filename, TRUE);
+	return NULL;
+}
+
 static gconstpointer
 _get_fcn_bond_options (ARGS_GET_FCN)
 {
@@ -4437,6 +4457,7 @@ static const NMMetaPropertyType _pt_dcb = {
 static const NMMetaPropertyType _pt_cert_8021x = {
 	.get_fcn =                      _get_fcn_cert_8021x,
 	.set_fcn =                      _set_fcn_cert_8021x,
+	.complete_fcn =                 _complete_fcn_cert_8021x,
 };
 
 static const NMMetaPropertyType _pt_ethtool = {
