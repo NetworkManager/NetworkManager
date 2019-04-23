@@ -77,6 +77,25 @@ _gtype_property_get_gtype (GType gtype, const char *property_name)
 
 /*****************************************************************************/
 
+static char *
+bytes_to_string (GBytes *bytes)
+{
+	const guint8 *data;
+	gsize len;
+
+	if (!bytes)
+		return NULL;
+
+	data = g_bytes_get_data (bytes, &len);
+	return nm_utils_bin2hexstr_full (data,
+	                                 len,
+	                                 '\0',
+	                                 TRUE,
+	                                 NULL);
+}
+
+/*****************************************************************************/
+
 static int
 _int64_cmp_desc (gconstpointer a,
                  gconstpointer b,
@@ -836,13 +855,14 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 	gtype_prop = _gobject_property_get_gtype (G_OBJECT (setting), property_info->property_name);
 
 	glib_handles_str_transform = !NM_IN_SET (gtype_prop, G_TYPE_BOOLEAN,
-	                                                     G_TYPE_STRV);
+	                                                     G_TYPE_STRV,
+	                                                     G_TYPE_BYTES);
 
 	if (glib_handles_str_transform) {
 		/* We rely on the type convertion of the gobject property to string.
 		 *
 		 * Note that we register some transformations via nmc_value_transforms_register()
-		 * to make that working for G_TYPE_HASH_TABLE, and G_TYPE_BYTES.
+		 * to make that working for G_TYPE_HASH_TABLE.
 		 *
 		 * FIXME: that is particularly ugly because it's non-obvious which code relies
 		 * on nmc_value_transforms_register(). Also, nmc_value_transforms_register() is
@@ -892,6 +912,14 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 		}
 
 		return "";
+	}
+
+	if (gtype_prop == G_TYPE_BYTES) {
+		char *str;
+
+		str = bytes_to_string (g_value_get_boxed (&val));
+		NM_SET_OUT (out_is_default, !str || !str[0]);
+		RETURN_STR_TO_FREE (str);
 	}
 
 	nm_assert_not_reached ();
@@ -1653,23 +1681,6 @@ wep_key_type_to_string (NMWepKeyType type)
 }
 
 static char *
-bytes_to_string (GBytes *bytes)
-{
-	const guint8 *data;
-	gsize len;
-
-	if (!bytes)
-		return NULL;
-
-	data = g_bytes_get_data (bytes, &len);
-	return nm_utils_bin2hexstr_full (data,
-	                                 len,
-	                                 '\0',
-	                                 TRUE,
-	                                 NULL);
-}
-
-static char *
 vlan_flags_to_string (guint32 flags, NMMetaAccessorGetType get_type)
 {
 	GString *flag_str;
@@ -2255,21 +2266,6 @@ _set_fcn_cert_8021x (ARGS_SET_FCN)
 		                              NULL,
 		                              error);
 	}
-}
-
-static gconstpointer
-_get_fcn_gobject_bytes (ARGS_GET_FCN)
-{
-	gs_unref_bytes GBytes *bytes = NULL;
-	char *str;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	g_object_get (setting, property_info->property_name, &bytes, NULL);
-
-	str = bytes_to_string (bytes);
-	NM_SET_OUT (out_is_default, !str || !str[0]);
-	RETURN_STR_TO_FREE (str);
 }
 
 static gconstpointer
@@ -4370,7 +4366,7 @@ static const NMMetaPropertyType _pt_gobject_mtu = {
 };
 
 static const NMMetaPropertyType _pt_gobject_bytes = {
-	.get_fcn =                     _get_fcn_gobject_bytes,
+	.get_fcn =                     _get_fcn_gobject,
 	.set_fcn =                     _set_fcn_gobject_bytes,
 };
 

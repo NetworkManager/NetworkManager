@@ -939,34 +939,6 @@ nmc_convert_string_hash_to_string (const GValue *src_value, GValue *dest_value)
 }
 
 static void
-nmc_convert_bytes_to_string (const GValue *src_value, GValue *dest_value)
-{
-	GBytes *bytes;
-	const guint8 *array;
-	gsize length;
-	GString *printable;
-	guint i = 0;
-
-	bytes = g_value_get_boxed (src_value);
-
-	printable = g_string_new ("[");
-
-	if (bytes) {
-		array = g_bytes_get_data (bytes, &length);
-		while (i < MIN (length, 35)) {
-			if (i > 0)
-				g_string_append_c (printable, ' ');
-			g_string_append_printf (printable, "0x%02X", array[i++]);
-		}
-		if (i < length)
-			g_string_append (printable, " ... ");
-	}
-	g_string_append_c (printable, ']');
-
-	g_value_take_string (dest_value, g_string_free (printable, FALSE));
-}
-
-static void
 nmc_value_transforms_register (void)
 {
 	/* This depends on the fact that all of the hash-table-valued properties
@@ -975,10 +947,6 @@ nmc_value_transforms_register (void)
 	g_value_register_transform_func (G_TYPE_HASH_TABLE,
 	                                 G_TYPE_STRING,
 	                                 nmc_convert_string_hash_to_string);
-
-	g_value_register_transform_func (G_TYPE_BYTES,
-	                                 G_TYPE_STRING,
-	                                 nmc_convert_bytes_to_string);
 }
 
 void
