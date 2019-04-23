@@ -7817,8 +7817,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				while (!nmc_editor_cb_called && !timeout)
 					g_main_context_iteration (NULL, TRUE);
 
-				while (!connection_changed && !timeout)
-					g_main_context_iteration (NULL, TRUE);
+				if (!nmc_editor_error) {
+					while (!connection_changed && !timeout)
+						g_main_context_iteration (NULL, TRUE);
+				}
 
 				if (handler_id)
 					g_signal_handler_disconnect (rem_con, handler_id);
