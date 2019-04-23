@@ -23,7 +23,13 @@ same_lines() {
 
 libnm_headers() {
     (
-        ls -1 "$1/libnm"/*.h "$1/libnm-core"/*.h
+        ls -1 "$1/libnm"/*.h "$1/libnm-core"/*.h | \
+        if [ -n "$2" ]; then
+            grep -v -F "$1/libnm-core/nm-core-enum-types.h" | \
+            grep -v -F "$1/libnm/nm-enum-types.h"
+        else
+            cat
+        fi
         if [ -n "$2" ]; then
             ls -1 "$2/libnm"/*.h "$2/libnm-core"/*.h
         fi
