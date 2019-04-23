@@ -4561,14 +4561,8 @@ complete_property (const char *setting_name, const char *property, const char *p
 	const NMMetaPropertyInfo *property_info;
 
 	property_info = nm_meta_property_info_find_by_name (setting_name, property);
-	if (property_info) {
-		if (complete_option ((const NMMetaAbstractInfo *) property_info, prefix, connection))
-			return;
-	}
-
-	if (   strcmp (setting_name, NM_SETTING_BLUETOOTH_SETTING_NAME) == 0
-	         && strcmp (property, NM_SETTING_BLUETOOTH_TYPE) == 0)
-		run_rl_generator (gen_func_bt_type, prefix);
+	if (property_info)
+		complete_option ((const NMMetaAbstractInfo *) property_info, prefix, connection);
 }
 
 /*****************************************************************************/
