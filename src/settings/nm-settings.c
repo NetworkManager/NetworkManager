@@ -1174,7 +1174,7 @@ pk_add_cb (NMAuthChain *chain,
 		 * because it's found to be incompatible with the device on AddAndActivate).
 		 * But we need to keep it alive for a bit longer, precisely to check wehther
 		 * it's still known to the setting manager. */
-		g_object_ref (added);
+		nm_g_object_ref (added);
 	}
 
 	callback = nm_auth_chain_get_data (chain, "callback");
