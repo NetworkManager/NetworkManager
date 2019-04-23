@@ -788,7 +788,7 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, const char *value, GError **error
 
 #define ARGS_COMPLETE_FCN \
-	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, const NMMetaOperationContext *operation_context, const char *text, char ***out_to_free
+	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, const NMMetaOperationContext *operation_context, const char *text, gboolean *out_complete_filename, char ***out_to_free
 
 #define ARGS_VALUES_FCN \
 	const NMMetaPropertyInfo *property_info, char ***out_to_free
@@ -8159,6 +8159,7 @@ _meta_type_property_info_complete_fcn (const NMMetaAbstractInfo *abstract_info,
                                        gpointer environment_user_data,
                                        const NMMetaOperationContext *operation_context,
                                        const char *text,
+                                       gboolean *out_complete_filename,
                                        char ***out_to_free)
 {
 	const NMMetaPropertyInfo *info = (const NMMetaPropertyInfo *) abstract_info;
@@ -8171,6 +8172,7 @@ _meta_type_property_info_complete_fcn (const NMMetaAbstractInfo *abstract_info,
 		                                          environment_user_data,
 		                                          operation_context,
 		                                          text,
+		                                          out_complete_filename,
 		                                          out_to_free);
 	}
 
