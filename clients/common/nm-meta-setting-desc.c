@@ -821,7 +821,6 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
                        gboolean *out_is_default,
                        gpointer *out_to_free)
 {
-	char *str = NULL;
 	const char *cstr;
 	GType gtype_prop;
 	nm_auto_unset_gvalue GValue val = G_VALUE_INIT;
@@ -836,13 +835,14 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 
 	gtype_prop = _gobject_property_get_gtype (G_OBJECT (setting), property_info->property_name);
 
-	glib_handles_str_transform = !NM_IN_SET (gtype_prop, G_TYPE_BOOLEAN);
+	glib_handles_str_transform = !NM_IN_SET (gtype_prop, G_TYPE_BOOLEAN,
+	                                                     G_TYPE_STRV);
 
 	if (glib_handles_str_transform) {
 		/* We rely on the type convertion of the gobject property to string.
 		 *
 		 * Note that we register some transformations via nmc_value_transforms_register()
-		 * to make that working for G_TYPE_STRV, G_TYPE_HASH_TABLE, and G_TYPE_BYTES.
+		 * to make that working for G_TYPE_HASH_TABLE, and G_TYPE_BYTES.
 		 *
 		 * FIXME: that is particularly ugly because it's non-obvious which code relies
 		 * on nmc_value_transforms_register(). Also, nmc_value_transforms_register() is
@@ -853,18 +853,14 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 
 	g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
 
-	if (glib_handles_str_transform) {
-		cstr = g_value_get_string (&val);
+	/* Currently only one particular property asks us to "handle_emptyunset".
+	 * So, don't implement it (yet) for the other types, where it's unneeded. */
+	nm_assert (   !handle_emptyunset
+	           || (   gtype_prop == G_TYPE_STRV
+	               && !glib_handles_str_transform));
 
-		/* special hack for handling properties that can be empty and unset
-		 * (see multilist.clear_emptyunset_fcn). */
-		if (handle_emptyunset)
-			cstr = _coerce_str_emptyunset (get_type, is_default, cstr, &str);
-
-		if (str)
-			RETURN_STR_TO_FREE (str);
-		RETURN_STR_TEMPORARY (cstr);
-	}
+	if (glib_handles_str_transform)
+		RETURN_STR_TEMPORARY (g_value_get_string (&val));
 
 	if (gtype_prop == G_TYPE_BOOLEAN) {
 		gboolean b;
@@ -875,6 +871,27 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 		else
 			cstr = b ? "yes" : "no";
 		return cstr;
+	}
+
+	if (gtype_prop == G_TYPE_STRV) {
+		const char *const*strv;
+
+		strv = g_value_get_boxed (&val);
+		if (strv && strv[0])
+			RETURN_STR_TO_FREE (g_strjoinv (",", (char **) strv));
+
+		/* special hack for handling properties that can be empty and unset
+		 * (see multilist.clear_emptyunset_fcn). */
+		if (handle_emptyunset) {
+			char *str = NULL;
+
+			cstr = _coerce_str_emptyunset (get_type, is_default, NULL, &str);
+			if (str)
+				RETURN_STR_TO_FREE (str);
+			RETURN_STR_TEMPORARY (cstr);
+		}
+
+		return "";
 	}
 
 	nm_assert_not_reached ();

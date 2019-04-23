@@ -916,18 +916,6 @@ signal_handler (gpointer user_data)
 }
 
 static void
-nmc_convert_strv_to_string (const GValue *src_value, GValue *dest_value)
-{
-	char **strings;
-
-	strings = g_value_get_boxed (src_value);
-	if (strings)
-		g_value_take_string (dest_value, g_strjoinv (",", strings));
-	else
-		g_value_set_string (dest_value, "");
-}
-
-static void
 nmc_convert_string_hash_to_string (const GValue *src_value, GValue *dest_value)
 {
 	GHashTable *hash;
@@ -981,10 +969,6 @@ nmc_convert_bytes_to_string (const GValue *src_value, GValue *dest_value)
 static void
 nmc_value_transforms_register (void)
 {
-	g_value_register_transform_func (G_TYPE_STRV,
-	                                 G_TYPE_STRING,
-	                                 nmc_convert_strv_to_string);
-
 	/* This depends on the fact that all of the hash-table-valued properties
 	 * in libnm-core are string->string.
 	 */
