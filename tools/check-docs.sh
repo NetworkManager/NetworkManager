@@ -23,9 +23,9 @@ same_lines() {
 
 libnm_headers() {
     (
-        ls -1 "$1"libnm/*.h "$1"libnm-core/*.h
+        ls -1 "$1/libnm"/*.h "$1/libnm-core"/*.h
         if [ -n "$2" ]; then
-            ls -1 "$2"/libnm/*.h "$2"/libnm-core/*.h
+            ls -1 "$2/libnm"/*.h "$2/libnm-core"/*.h
         fi
     ) | sort | uniq
 }
@@ -36,28 +36,28 @@ BUILDDIR="$2"
 if test "$SOURCEDIR" == "$BUILDDIR"; then
     BUILDDIR=
 fi
-[ -n "$SOURCEDIR" ] && SOURCEDIR="$SOURCEDIR/"
+[ -z "$SOURCEDIR" ] && SOURCEDIR='.'
 
 
 # Check that the D-Bus API docs contain all known interfaces
-F1="$(sed -n 's,^      <xi:include href="dbus-\([^"]*\.xml\)"/>$,\1,p' "$SOURCEDIR"docs/api/network-manager-docs.xml)"
+F1="$(sed -n 's,^      <xi:include href="dbus-\([^"]*\.xml\)"/>$,\1,p' "$SOURCEDIR/docs/api/network-manager-docs.xml")"
 F1_EXTRA="
 org.freedesktop.NetworkManager.Device.WiMax.xml
 org.freedesktop.NetworkManager.WiMax.Nsp.xml
 "
-F2="$(cd "$SOURCEDIR"introspection; ls -1 *.xml)"
+F2="$(cd "$SOURCEDIR/introspection"; ls -1 *.xml)"
 if ! same_lines "$F1"$'\n'"$F1_EXTRA" "$F2" ; then
     die "*** Error: D-Bus interfaces not included in docs/api/network-manager-docs.xml ***"
 fi
 
 
 # Check that files that define types that are in public libnm API are included in libnm documentation.
-F1="$(sed -n 's/.*<xi:include href="xml\/\([^"]*\)\.xml".*/\1/p' "$SOURCEDIR"docs/libnm/libnm-docs.xml)"
+F1="$(sed -n 's/.*<xi:include href="xml\/\([^"]*\)\.xml".*/\1/p' "$SOURCEDIR/docs/libnm/libnm-docs.xml")"
 F1_EXTRA="
 nm-core-enum-types
 nm-enum-types
 "
-F2="$(grep -l "$(sed -n 's/^[\t ]*\(.*_get_type\);/\1/p' "$SOURCEDIR"libnm/libnm.ver | word_regex)" \
+F2="$(grep -l "$(sed -n 's/^[\t ]*\(.*_get_type\);/\1/p' "$SOURCEDIR/libnm/libnm.ver" | word_regex)" \
            $(libnm_headers "$SOURCEDIR" "$BUILDDIR") \
       | sed 's,.*/\([^/]\+\)\.h$,\1,')"
 F2_EXTRA="
