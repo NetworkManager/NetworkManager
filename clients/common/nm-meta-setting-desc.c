@@ -2263,6 +2263,7 @@ _set_fcn_cert_8021x (ARGS_SET_FCN)
 		password = path + strcspn (path, " \t");
 		if (password[0] != '\0') {
 			password[0] = '\0';
+			password++;
 			while (nm_utils_is_separator (password[0]))
 				password++;
 		} else {
