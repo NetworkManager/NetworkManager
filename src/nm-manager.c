@@ -5923,10 +5923,10 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 		c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 			guint i;
 
-			if (nm_device_is_software (device)) {
-				/* We do not manage/unmanage software devices but
-				 * their dhcp leases could have gone stale so we need
-				 * to renew them */
+			if (   nm_device_is_software (device)
+			    && !nm_device_get_unmanaged_flags (device, NM_UNMANAGED_SLEEPING)) {
+				/* DHCP leases of software devices could have gone stale
+				 * so we need to renew them. */
 				nm_device_update_dynamic_ip_setup (device);
 				continue;
 			}
