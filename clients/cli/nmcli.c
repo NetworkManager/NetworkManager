@@ -915,40 +915,6 @@ signal_handler (gpointer user_data)
 	return G_SOURCE_CONTINUE;
 }
 
-static void
-nmc_convert_string_hash_to_string (const GValue *src_value, GValue *dest_value)
-{
-	GHashTable *hash;
-	GHashTableIter iter;
-	const char *key, *value;
-	GString *string;
-
-	hash = (GHashTable *) g_value_get_boxed (src_value);
-
-	string = g_string_new (NULL);
-	if (hash) {
-		g_hash_table_iter_init (&iter, hash);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
-			if (string->len)
-				g_string_append_c (string, ',');
-			g_string_append_printf (string, "%s=%s", key, value);
-		}
-	}
-
-	g_value_take_string (dest_value, g_string_free (string, FALSE));
-}
-
-static void
-nmc_value_transforms_register (void)
-{
-	/* This depends on the fact that all of the hash-table-valued properties
-	 * in libnm-core are string->string.
-	 */
-	g_value_register_transform_func (G_TYPE_HASH_TABLE,
-	                                 G_TYPE_STRING,
-	                                 nmc_convert_string_hash_to_string);
-}
-
 void
 nm_cli_spawn_pager (NmCli *nmc)
 {
@@ -1005,8 +971,6 @@ main (int argc, char *argv[])
 
 	/* Save terminal settings */
 	tcgetattr (STDIN_FILENO, &termios_orig);
-
-	nmc_value_transforms_register ();
 
 	nm_cli.return_text = g_string_new (_("Success"));
 	loop = g_main_loop_new (NULL, FALSE);

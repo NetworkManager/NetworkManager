@@ -856,17 +856,11 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 
 	glib_handles_str_transform = !NM_IN_SET (gtype_prop, G_TYPE_BOOLEAN,
 	                                                     G_TYPE_STRV,
-	                                                     G_TYPE_BYTES);
+	                                                     G_TYPE_BYTES,
+	                                                     G_TYPE_HASH_TABLE);
 
 	if (glib_handles_str_transform) {
-		/* We rely on the type convertion of the gobject property to string.
-		 *
-		 * Note that we register some transformations via nmc_value_transforms_register()
-		 * to make that working for G_TYPE_HASH_TABLE.
-		 *
-		 * FIXME: that is particularly ugly because it's non-obvious which code relies
-		 * on nmc_value_transforms_register(). Also, nmc_value_transforms_register() is
-		 * in clients/cli, while we are here in clients/common. */
+		/* We rely on the type convertion of the gobject property to string. */
 		g_value_init (&val, G_TYPE_STRING);
 	} else
 		g_value_init (&val, gtype_prop);
@@ -920,6 +914,29 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 		str = bytes_to_string (g_value_get_boxed (&val));
 		NM_SET_OUT (out_is_default, !str || !str[0]);
 		RETURN_STR_TO_FREE (str);
+	}
+
+	if (gtype_prop == G_TYPE_HASH_TABLE) {
+		GHashTable *strdict;
+		gs_free const char **keys = NULL;
+		GString *str;
+		gsize i;
+
+		strdict = g_value_get_boxed (&val);
+		keys = nm_utils_strdict_get_keys (strdict, TRUE, NULL);
+		if (!keys)
+			return NULL;
+
+		str = g_string_new (NULL);
+		for (i = 0; keys[i]; i++) {
+			if (str->len > 0)
+				g_string_append_c (str, ',');
+			g_string_append_printf (str,
+			                        "%s=%s",
+			                        keys[i],
+			                        (const char *) g_hash_table_lookup (strdict, keys[i]));
+		}
+		RETURN_STR_TO_FREE (g_string_free (str, FALSE));
 	}
 
 	nm_assert_not_reached ();
