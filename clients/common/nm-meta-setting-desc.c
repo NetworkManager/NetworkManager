@@ -2255,17 +2255,25 @@ _set_fcn_cert_8021x (ARGS_SET_FCN)
 	vtable = &nm_setting_8021x_scheme_vtable[property_info->property_typ_data->subtype.cert_8021x.scheme_type];
 
 	if (vtable->is_secret) {
-		gs_free char *path = NULL;
 		nm_auto_free_secret char *password_free = NULL;
-		char *password;
+		gs_free const char **strv = NULL;
+		const char *password;
+		const char *path;
+		gsize len;
 
-		path = g_strdup (value);
-		password = path + strcspn (path, " \t");
-		if (password[0] != '\0') {
-			password[0] = '\0';
-			password++;
-			while (nm_utils_is_separator (password[0]))
-				password++;
+		strv = nm_utils_escaped_tokens_split (value, NM_ASCII_SPACES);
+		len = NM_PTRARRAY_LEN (strv);
+		if (len > 2) {
+			g_set_error_literal (error,
+			                     NM_UTILS_ERROR,
+			                     NM_UTILS_ERROR_INVALID_ARGUMENT,
+			                     _("too many arguments. Please only specify a private key file and optionally a password"));
+			return FALSE;
+		}
+
+		path = len > 0 ? strv[0] : NULL;
+		if (len == 2) {
+			password = strv[1];
 		} else {
 			password_free = g_strdup (vtable->passwd_func (NM_SETTING_802_1X (setting)));
 			password = password_free;
