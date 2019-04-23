@@ -5866,9 +5866,15 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 		 * suspend/resume?
 		 */
 		c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
-			/* FIXME: shouldn't we be unmanaging software devices if !suspending? */
-			if (nm_device_is_software (device))
-				continue;
+			if (nm_device_is_software (device)) {
+				/* If a user disables networking we consider that as an
+				 * indication that also software devices must be disconnected.
+				 * But we don't want to destroy them for external events as
+				 * a system suspend.
+				 */
+				if (suspending)
+					continue;
+			}
 			/* Wake-on-LAN devices will be taken down post-suspend rather than pre- */
 			if (   suspending
 			    && device_is_wake_on_lan (priv->platform, device)) {
