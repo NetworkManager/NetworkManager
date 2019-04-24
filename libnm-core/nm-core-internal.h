@@ -682,11 +682,12 @@ typedef gboolean  (*NMSettingPropertyNotSetFunc)        (NMSetting     *setting,
                                                          GError       **error);
 typedef GVariant *(*NMSettingPropertyTransformToFunc)   (const GValue *from);
 typedef void      (*NMSettingPropertyTransformFromFunc) (GVariant *from,
-                                                          GValue *to);
+                                                         GValue *to);
 
 struct _NMSettInfoProperty {
 	const char *name;
 	GParamSpec *param_spec;
+
 	const GVariantType *dbus_type;
 
 	NMSettingPropertyGetFunc           get_func;

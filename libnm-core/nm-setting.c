@@ -199,10 +199,31 @@ _nm_sett_info_property_find_in_array (const NMSettInfoProperty *properties, guin
 	return NULL;
 }
 
+static GVariant *
+_to_dbus_bytes (const GValue *val)
+{
+	nm_assert (G_VALUE_HOLDS (val, G_TYPE_BYTES));
+	return nm_utils_gbytes_to_variant_ay (g_value_get_boxed (val));
+}
+
+static GVariant *
+_to_dbus_enum (const GValue *val)
+{
+	return g_variant_new_int32 (g_value_get_enum (val));
+}
+
+static GVariant *
+_to_dbus_flags (const GValue *val)
+{
+	return g_variant_new_uint32 (g_value_get_flags (val));
+}
+
 void
 _properties_override_add_struct (GArray *properties_override,
                                  const NMSettInfoProperty *prop_info)
 {
+	NMSettInfoProperty *p;
+
 	nm_assert (properties_override);
 	nm_assert (prop_info);
 	nm_assert (prop_info->name || prop_info->param_spec);
@@ -219,9 +240,11 @@ _properties_override_add_struct (GArray *properties_override,
 
 	if (!prop_info->name) {
 		/* for convenience, allow omitting "name" if "param_spec" is given. */
-		g_array_index (properties_override,
-		               NMSettInfoProperty,
-		               properties_override->len - 1).name = prop_info->param_spec->name;
+		p = &g_array_index (properties_override,
+		                    NMSettInfoProperty,
+		                    properties_override->len - 1);
+		nm_assert (p->param_spec);
+		p->name = p->param_spec->name;
 	}
 }
 
@@ -479,6 +502,49 @@ _nm_setting_class_commit_full (NMSettingClass *setting_class,
 		p->param_spec = property_specs[i];
 	}
 
+	for (i = 0; i < properties_override->len; i++) {
+		NMSettInfoProperty *p = &g_array_index (properties_override, NMSettInfoProperty, i);
+		GType vtype;
+
+		if (p->dbus_type)
+			continue;
+
+		nm_assert (p->param_spec);
+		nm_assert (!p->to_dbus);
+
+		vtype = p->param_spec->value_type;
+		if (vtype == G_TYPE_BOOLEAN)
+			p->dbus_type = G_VARIANT_TYPE_BOOLEAN;
+		else if (vtype == G_TYPE_UCHAR)
+			p->dbus_type = G_VARIANT_TYPE_BYTE;
+		else if (vtype == G_TYPE_INT)
+			p->dbus_type = G_VARIANT_TYPE_INT32;
+		else if (vtype == G_TYPE_UINT)
+			p->dbus_type = G_VARIANT_TYPE_UINT32;
+		else if (vtype == G_TYPE_INT64)
+			p->dbus_type = G_VARIANT_TYPE_INT64;
+		else if (vtype == G_TYPE_UINT64)
+			p->dbus_type = G_VARIANT_TYPE_UINT64;
+		else if (vtype == G_TYPE_STRING)
+			p->dbus_type = G_VARIANT_TYPE_STRING;
+		else if (vtype == G_TYPE_DOUBLE)
+			p->dbus_type = G_VARIANT_TYPE_DOUBLE;
+		else if (vtype == G_TYPE_STRV)
+			p->dbus_type = G_VARIANT_TYPE_STRING_ARRAY;
+		else if (vtype == G_TYPE_BYTES) {
+			p->dbus_type = G_VARIANT_TYPE_BYTESTRING;
+			p->to_dbus = _to_dbus_bytes;
+		} else if (g_type_is_a (vtype, G_TYPE_ENUM)) {
+			p->dbus_type = G_VARIANT_TYPE_INT32;
+			p->to_dbus = _to_dbus_enum;
+		} else if (g_type_is_a (vtype, G_TYPE_FLAGS)) {
+			p->dbus_type = G_VARIANT_TYPE_UINT32;
+			p->to_dbus = _to_dbus_flags;
+		}
+
+		nm_assert (p->dbus_type);
+	}
+
 	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMSettInfoProperty, name) == 0);
 	g_array_sort (properties_override, nm_strcmp_p);
 
@@ -610,53 +676,26 @@ _nm_setting_use_legacy_property (NMSetting *setting,
 
 /*****************************************************************************/
 
-static const GVariantType *
-variant_type_for_gtype (GType type)
-{
-	if (type == G_TYPE_BOOLEAN)
-		return G_VARIANT_TYPE_BOOLEAN;
-	if (type == G_TYPE_UCHAR)
-		return G_VARIANT_TYPE_BYTE;
-	if (type == G_TYPE_INT)
-		return G_VARIANT_TYPE_INT32;
-	if (type == G_TYPE_UINT)
-		return G_VARIANT_TYPE_UINT32;
-	if (type == G_TYPE_INT64)
-		return G_VARIANT_TYPE_INT64;
-	if (type == G_TYPE_UINT64)
-		return G_VARIANT_TYPE_UINT64;
-	if (type == G_TYPE_STRING)
-		return G_VARIANT_TYPE_STRING;
-	if (type == G_TYPE_DOUBLE)
-		return G_VARIANT_TYPE_DOUBLE;
-	if (type == G_TYPE_STRV)
-		return G_VARIANT_TYPE_STRING_ARRAY;
-	if (type == G_TYPE_BYTES)
-		return G_VARIANT_TYPE_BYTESTRING;
-	if (g_type_is_a (type, G_TYPE_ENUM))
-		return G_VARIANT_TYPE_INT32;
-	if (g_type_is_a (type, G_TYPE_FLAGS))
-		return G_VARIANT_TYPE_UINT32;
-
-	g_return_val_if_reached (NULL);
-}
-
 static GVariant *
 get_property_for_dbus (NMSetting *setting,
                        const NMSettInfoProperty *property,
                        gboolean ignore_default)
 {
+	GVariant *variant;
+
 	/* synth_func() is currently not allowed for GObject backed properties. No strong
 	 * reason except that get_property_for_dbus() can only consider "real" properties. */
 	nm_assert (!property->synth_func);
 
-	if (property->get_func)
-		return property->get_func (setting, property->name);
+	nm_assert (property->dbus_type);
 
-	g_return_val_if_fail (property->param_spec != NULL, NULL);
-
-	{
+	if (property->get_func) {
+		variant = property->get_func (setting, property->name);
+		nm_g_variant_take_ref (variant);
+	} else {
 		nm_auto_unset_gvalue GValue prop_value = { 0, };
+
+		nm_assert (property->param_spec);
 
 		g_value_init (&prop_value, property->param_spec->value_type);
 
@@ -666,21 +705,17 @@ get_property_for_dbus (NMSetting *setting,
 		    && g_param_value_defaults (property->param_spec, &prop_value))
 			return NULL;
 
-		if (property->to_dbus)
-			return property->to_dbus (&prop_value);
-
-		if (property->dbus_type)
-			return g_dbus_gvalue_to_gvariant (&prop_value, property->dbus_type);
-
-		if (G_VALUE_HOLDS_ENUM (&prop_value))
-			return g_variant_new_int32 (g_value_get_enum (&prop_value));
-		if (G_VALUE_HOLDS_FLAGS (&prop_value))
-			return g_variant_new_uint32 (g_value_get_flags (&prop_value));
-		if (prop_value.g_type == G_TYPE_BYTES)
-			return nm_utils_gbytes_to_variant_ay (g_value_get_boxed (&prop_value));
-
-		return g_dbus_gvalue_to_gvariant (&prop_value, variant_type_for_gtype (prop_value.g_type));
+		if (property->to_dbus) {
+			variant = property->to_dbus (&prop_value);
+			nm_g_variant_take_ref (variant);
+		} else
+			variant = g_dbus_gvalue_to_gvariant (&prop_value, property->dbus_type);
 	}
+
+	nm_assert (!variant || !g_variant_is_floating (variant));
+	nm_assert (!variant || g_variant_is_of_type (variant, property->dbus_type));
+
+	return variant;
 }
 
 static gboolean
@@ -761,6 +796,8 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 		const NMSettInfoProperty *property = &sett_info->property_infos[i];
 		GParamSpec *prop_spec = property->param_spec;
 
+		nm_assert (property->dbus_type);
+
 		if (!prop_spec) {
 			if (!property->synth_func)
 				continue;
@@ -790,14 +827,15 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 				continue;
 		}
 
-		if (property->synth_func)
+		if (property->synth_func) {
 			dbus_value = property->synth_func (sett_info, i, connection, setting, flags);
-		else
+			nm_g_variant_take_ref (dbus_value);
+		} else
 			dbus_value = get_property_for_dbus (setting, property, TRUE);
 
 		if (dbus_value) {
-			/* Allow dbus_value to be either floating or not. */
-			g_variant_take_ref (dbus_value);
+			nm_assert (!g_variant_is_floating (dbus_value));
+			nm_assert (g_variant_is_of_type (dbus_value, property->dbus_type));
 
 			g_variant_builder_add (&builder, "{sv}", property->name, dbus_value);
 			g_variant_unref (dbus_value);
@@ -1036,10 +1074,9 @@ nm_setting_get_dbus_property_type (NMSetting *setting,
 
 	g_return_val_if_fail (property != NULL, NULL);
 
-	if (property->dbus_type)
-		return property->dbus_type;
-	g_return_val_if_fail (property->param_spec, NULL);
-	return variant_type_for_gtype (property->param_spec->value_type);
+	nm_assert (property->dbus_type);
+
+	return property->dbus_type;
 }
 
 gboolean
