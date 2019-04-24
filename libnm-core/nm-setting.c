@@ -200,20 +200,20 @@ _nm_sett_info_property_find_in_array (const NMSettInfoProperty *properties, guin
 }
 
 static GVariant *
-_to_dbus_bytes (const GValue *val)
+_gprop_to_dbus_fcn_bytes (const GValue *val)
 {
 	nm_assert (G_VALUE_HOLDS (val, G_TYPE_BYTES));
 	return nm_utils_gbytes_to_variant_ay (g_value_get_boxed (val));
 }
 
 static GVariant *
-_to_dbus_enum (const GValue *val)
+_gprop_to_dbus_fcn_enum (const GValue *val)
 {
 	return g_variant_new_int32 (g_value_get_enum (val));
 }
 
 static GVariant *
-_to_dbus_flags (const GValue *val)
+_gprop_to_dbus_fcn_flags (const GValue *val)
 {
 	return g_variant_new_uint32 (g_value_get_flags (val));
 }
@@ -232,9 +232,15 @@ _properties_override_add_struct (GArray *properties_override,
 	                                                  properties_override->len,
 	                                                  prop_info->name ?: prop_info->param_spec->name));
 
-	nm_assert (!prop_info->from_dbus || prop_info->dbus_type);
-	nm_assert (!prop_info->set_func || prop_info->dbus_type);
-	nm_assert (!prop_info->synth_func || prop_info->dbus_type);
+	nm_assert (!prop_info->gprop_from_dbus_fcn || prop_info->dbus_type);
+	nm_assert (!prop_info->from_dbus_fcn || prop_info->dbus_type);
+	nm_assert (!prop_info->to_dbus_fcn || prop_info->dbus_type);
+
+	nm_assert (!prop_info->to_dbus_fcn   || !prop_info->gprop_to_dbus_fcn);
+	nm_assert (!prop_info->from_dbus_fcn || !prop_info->gprop_from_dbus_fcn);
+
+	nm_assert (!prop_info->gprop_to_dbus_fcn   || prop_info->param_spec);
+	nm_assert (!prop_info->gprop_from_dbus_fcn || prop_info->param_spec);
 
 	g_array_append_vals (properties_override, prop_info, 1);
 
@@ -253,34 +259,34 @@ _properties_override_add_struct (GArray *properties_override,
  * @properties_override: an array collecting the overrides
  * @property_name: the name of the property to override
  * @dbus_type: the type of the property (in its D-Bus representation)
- * @synth_func: (allow-none): function to call to synthesize a value for the property
- * @set_func: (allow-none): function to call to set the value of the property
+ * @to_dbus_fcn: (allow-none): function to call to synthesize a value for the property
+ * @from_dbus_fcn: (allow-none): function to call to set the value of the property
  *
  * Registers a property named @property_name, which will be used in the D-Bus
  * serialization of objects of this setting type, but which does not correspond to
  * a #GObject property.
  *
- * When serializing a setting to D-Bus, @synth_func will be called to synthesize
+ * When serializing a setting to D-Bus, @to_dbus_fcn will be called to synthesize
  * a value for the property. (If it returns %NULL, no value will be added to the
- * serialization. If @synth_func is %NULL, the property will always be omitted
+ * serialization. If @to_dbus_fcn is %NULL, the property will always be omitted
  * in the serialization.)
  *
  * When deserializing a D-Bus representation into a setting, if @property_name
- * is present, then @set_func will be called to set it. (If @set_func is %NULL
+ * is present, then @from_dbus_fcn will be called to set it. (If @from_dbus_fcn is %NULL
  * then the property will be ignored when deserializing.)
  */
 void
 _properties_override_add_dbus_only (GArray *properties_override,
                                     const char *property_name,
                                     const GVariantType *dbus_type,
-                                    NMSettingPropertySynthFunc synth_func,
-                                    NMSettingPropertySetFunc set_func)
+                                    NMSettInfoPropToDBusFcn to_dbus_fcn,
+                                    NMSettInfoPropFromDBusFcn from_dbus_fcn)
 {
 	_properties_override_add (properties_override,
-	                          .name = property_name,
-	                          .dbus_type = dbus_type,
-	                          .synth_func = synth_func,
-	                          .set_func = set_func);
+	                          .name          = property_name,
+	                          .dbus_type     = dbus_type,
+	                          .to_dbus_fcn   = to_dbus_fcn,
+	                          .from_dbus_fcn = from_dbus_fcn);
 }
 
 /**
@@ -289,8 +295,8 @@ _properties_override_add_dbus_only (GArray *properties_override,
  * @param_spec: the name of the property to override
  * @dbus_type: the type of the property (in its D-Bus representation)
  * @get_func: (allow-none): function to call to get the value of the property
- * @set_func: (allow-none): function to call to set the value of the property
- * @not_set_func: (allow-none): function to call to indicate the property was not set
+ * @from_dbus_fcn: (allow-none): function to call to set the value of the property
+ * @missing_from_dbus_fcn: (allow-none): function to call to indicate the property was not set
  *
  * Overrides the D-Bus representation of the #GObject property that shares the
  * same name as @param_spec.
@@ -303,11 +309,11 @@ _properties_override_add_dbus_only (GArray *properties_override,
  * value.)
  *
  * When deserializing a D-Bus representation into a setting, if a value with
- * the name of @param_spec is present, then @set_func will be called to set it.
- * (If @set_func is %NULL then the property will be set normally with
+ * the name of @param_spec is present, then @from_dbus_fcn will be called to set it.
+ * (If @from_dbus_fcn is %NULL then the property will be set normally with
  * g_object_set_property().)
  *
- * If @not_set_func is non-%NULL, then it will be called when deserializing a
+ * If @missing_from_dbus_fcn is non-%NULL, then it will be called when deserializing a
  * representation that does NOT contain a value for the property. This can be used,
  * eg, if a new property needs to be initialized from some older deprecated property
  * when it is not present.
@@ -317,17 +323,17 @@ _properties_override_add_override (GArray *properties_override,
                                    GParamSpec *param_spec,
                                    const GVariantType *dbus_type,
                                    NMSettingPropertyGetFunc get_func,
-                                   NMSettingPropertySetFunc set_func,
-                                   NMSettingPropertyNotSetFunc not_set_func)
+                                   NMSettInfoPropFromDBusFcn from_dbus_fcn,
+                                   NMSettInfoPropMissingFromDBusFcn missing_from_dbus_fcn)
 {
 	nm_assert (param_spec);
 
 	_properties_override_add (properties_override,
-	                          .param_spec = param_spec,
-	                          .dbus_type = dbus_type,
-	                          .get_func = get_func,
-	                          .set_func = set_func,
-	                          .not_set_func = not_set_func);
+	                          .param_spec             = param_spec,
+	                          .dbus_type              = dbus_type,
+	                          .get_func               = get_func,
+	                          .from_dbus_fcn          = from_dbus_fcn,
+	                          .missing_from_dbus_fcn  = missing_from_dbus_fcn);
 }
 
 /**
@@ -335,8 +341,8 @@ _properties_override_add_override (GArray *properties_override,
  * @properties_override: an array collecting the overrides
  * @param_spec: the param spec of the property to transform.
  * @dbus_type: the type of the property (in its D-Bus representation)
- * @to_dbus: function to convert from object to D-Bus format
- * @from_dbus: function to convert from D-Bus to object format
+ * @gprop_to_dbus_fcn: function to convert from object to D-Bus format
+ * @gprop_from_dbus_fcn: function to convert from D-Bus to object format
  *
  * Indicates that @property on @setting_class does not have the same format as
  * its corresponding D-Bus representation, and so must be transformed when
@@ -350,16 +356,16 @@ void
 _properties_override_add_transform (GArray *properties_override,
                                     GParamSpec *param_spec,
                                     const GVariantType *dbus_type,
-                                    NMSettingPropertyTransformToFunc to_dbus,
-                                    NMSettingPropertyTransformFromFunc from_dbus)
+                                    NMSettInfoPropGPropToDBusFcn gprop_to_dbus_fcn,
+                                    NMSettInfoPropGPropFromDBusFcn gprop_from_dbus_fcn)
 {
 	nm_assert (param_spec);
 
 	_properties_override_add (properties_override,
-	                          .param_spec = param_spec,
-	                          .dbus_type = dbus_type,
-	                          .to_dbus = to_dbus,
-	                          .from_dbus = from_dbus);
+	                          .param_spec          = param_spec,
+	                          .dbus_type           = dbus_type,
+	                          .gprop_to_dbus_fcn   = gprop_to_dbus_fcn,
+	                          .gprop_from_dbus_fcn = gprop_from_dbus_fcn);
 }
 
 static NMSettInfoSetting _sett_info_settings[_NM_META_SETTING_TYPE_NUM];
@@ -510,7 +516,7 @@ _nm_setting_class_commit_full (NMSettingClass *setting_class,
 			continue;
 
 		nm_assert (p->param_spec);
-		nm_assert (!p->to_dbus);
+		nm_assert (!p->gprop_to_dbus_fcn);
 
 		vtype = p->param_spec->value_type;
 		if (vtype == G_TYPE_BOOLEAN)
@@ -533,13 +539,13 @@ _nm_setting_class_commit_full (NMSettingClass *setting_class,
 			p->dbus_type = G_VARIANT_TYPE_STRING_ARRAY;
 		else if (vtype == G_TYPE_BYTES) {
 			p->dbus_type = G_VARIANT_TYPE_BYTESTRING;
-			p->to_dbus = _to_dbus_bytes;
+			p->gprop_to_dbus_fcn = _gprop_to_dbus_fcn_bytes;
 		} else if (g_type_is_a (vtype, G_TYPE_ENUM)) {
 			p->dbus_type = G_VARIANT_TYPE_INT32;
-			p->to_dbus = _to_dbus_enum;
+			p->gprop_to_dbus_fcn = _gprop_to_dbus_fcn_enum;
 		} else if (g_type_is_a (vtype, G_TYPE_FLAGS)) {
 			p->dbus_type = G_VARIANT_TYPE_UINT32;
-			p->to_dbus = _to_dbus_flags;
+			p->gprop_to_dbus_fcn = _gprop_to_dbus_fcn_flags;
 		}
 
 		nm_assert (p->dbus_type);
@@ -683,9 +689,9 @@ get_property_for_dbus (NMSetting *setting,
 {
 	GVariant *variant;
 
-	/* synth_func() is currently not allowed for GObject backed properties. No strong
+	/* to_dbus_fcn() is currently not allowed for GObject backed properties. No strong
 	 * reason except that get_property_for_dbus() can only consider "real" properties. */
-	nm_assert (!property->synth_func);
+	nm_assert (!property->to_dbus_fcn);
 
 	nm_assert (property->dbus_type);
 
@@ -705,8 +711,8 @@ get_property_for_dbus (NMSetting *setting,
 		    && g_param_value_defaults (property->param_spec, &prop_value))
 			return NULL;
 
-		if (property->to_dbus) {
-			variant = property->to_dbus (&prop_value);
+		if (property->gprop_to_dbus_fcn) {
+			variant = property->gprop_to_dbus_fcn (&prop_value);
 			nm_g_variant_take_ref (variant);
 		} else
 			variant = g_dbus_gvalue_to_gvariant (&prop_value, property->dbus_type);
@@ -723,13 +729,13 @@ set_property_from_dbus (const NMSettInfoProperty *property,
                         GVariant *src_value,
                         GValue *dst_value)
 {
-	g_return_val_if_fail (property->param_spec != NULL, FALSE);
+	nm_assert (property->param_spec);
+	nm_assert (property->dbus_type);
 
-	if (property->from_dbus) {
+	if (property->gprop_from_dbus_fcn) {
 		if (!g_variant_type_equal (g_variant_get_type (src_value), property->dbus_type))
 			return FALSE;
-
-		property->from_dbus (src_value, dst_value);
+		property->gprop_from_dbus_fcn (src_value, dst_value);
 	} else if (dst_value->g_type == G_TYPE_BYTES) {
 		if (!g_variant_is_of_type (src_value, G_VARIANT_TYPE_BYTESTRING))
 			return FALSE;
@@ -799,14 +805,14 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 		nm_assert (property->dbus_type);
 
 		if (!prop_spec) {
-			if (!property->synth_func)
+			if (!property->to_dbus_fcn)
 				continue;
 		} else {
 
 			/* For the moment, properties backed by a GObject property don't
 			 * define a synth function. There is no problem supporting that,
 			 * however, for now just disallow it. */
-			nm_assert (!property->synth_func);
+			nm_assert (!property->to_dbus_fcn);
 
 			if (!NM_FLAGS_HAS (prop_spec->flags, G_PARAM_WRITABLE))
 				continue;
@@ -827,8 +833,8 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 				continue;
 		}
 
-		if (property->synth_func) {
-			dbus_value = property->synth_func (sett_info, i, connection, setting, flags);
+		if (property->to_dbus_fcn) {
+			dbus_value = property->to_dbus_fcn (sett_info, i, connection, setting, flags);
 			nm_g_variant_take_ref (dbus_value);
 		} else
 			dbus_value = get_property_for_dbus (setting, property, TRUE);
@@ -955,7 +961,7 @@ _nm_setting_new_from_dbus (GType setting_type,
 			g_hash_table_remove (keys, property_info->name);
 
 		if (   value
-		    && property_info->set_func) {
+		    && property_info->from_dbus_fcn) {
 
 			if (!g_variant_type_equal (g_variant_get_type (value), property_info->dbus_type)) {
 				/* for backward behavior, fail unless best-effort is chosen. */
@@ -972,12 +978,12 @@ _nm_setting_new_from_dbus (GType setting_type,
 				return NULL;
 			}
 
-			if (!property_info->set_func (setting,
-			                             connection_dict,
-			                             property_info->name,
-			                             value,
-			                             parse_flags,
-			                             &local)) {
+			if (!property_info->from_dbus_fcn (setting,
+			                                   connection_dict,
+			                                   property_info->name,
+			                                   value,
+			                                   parse_flags,
+			                                   &local)) {
 				if (!NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT))
 					continue;
 				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -987,12 +993,12 @@ _nm_setting_new_from_dbus (GType setting_type,
 				return NULL;
 			}
 		} else if (   !value
-		           && property_info->not_set_func) {
-			if (!property_info->not_set_func (setting,
-			                                  connection_dict,
-			                                  property_info->name,
-			                                  parse_flags,
-			                                  &local)) {
+		           && property_info->missing_from_dbus_fcn) {
+			if (!property_info->missing_from_dbus_fcn (setting,
+			                                           connection_dict,
+			                                           property_info->name,
+			                                           parse_flags,
+			                                           &local)) {
 				if (!NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT))
 					continue;
 				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,

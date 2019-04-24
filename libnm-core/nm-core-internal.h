@@ -664,24 +664,24 @@ typedef struct _NMSettInfoProperty NMSettInfoProperty;
 
 typedef GVariant *(*NMSettingPropertyGetFunc)           (NMSetting     *setting,
                                                          const char    *property);
-typedef GVariant *(*NMSettingPropertySynthFunc)         (const NMSettInfoSetting *sett_info,
+typedef GVariant *(*NMSettInfoPropToDBusFcn)            (const NMSettInfoSetting *sett_info,
                                                          guint property_idx,
                                                          NMConnection  *connection,
                                                          NMSetting     *setting,
                                                          NMConnectionSerializationFlags flags);
-typedef gboolean  (*NMSettingPropertySetFunc)           (NMSetting     *setting,
+typedef gboolean  (*NMSettInfoPropFromDBusFcn)          (NMSetting     *setting,
                                                          GVariant      *connection_dict,
                                                          const char    *property,
                                                          GVariant      *value,
                                                          NMSettingParseFlags parse_flags,
                                                          GError       **error);
-typedef gboolean  (*NMSettingPropertyNotSetFunc)        (NMSetting     *setting,
+typedef gboolean  (*NMSettInfoPropMissingFromDBusFcn)   (NMSetting     *setting,
                                                          GVariant      *connection_dict,
                                                          const char    *property,
                                                          NMSettingParseFlags parse_flags,
                                                          GError       **error);
-typedef GVariant *(*NMSettingPropertyTransformToFunc)   (const GValue *from);
-typedef void      (*NMSettingPropertyTransformFromFunc) (GVariant *from,
+typedef GVariant *(*NMSettInfoPropGPropToDBusFcn)       (const GValue *from);
+typedef void      (*NMSettInfoPropGPropFromDBusFcn)     (GVariant *from,
                                                          GValue *to);
 
 struct _NMSettInfoProperty {
@@ -690,13 +690,17 @@ struct _NMSettInfoProperty {
 
 	const GVariantType *dbus_type;
 
+	/* TODO: merge @get_func with @to_dbus_fcn. */
 	NMSettingPropertyGetFunc           get_func;
-	NMSettingPropertySynthFunc         synth_func;
-	NMSettingPropertySetFunc           set_func;
-	NMSettingPropertyNotSetFunc        not_set_func;
 
-	NMSettingPropertyTransformToFunc   to_dbus;
-	NMSettingPropertyTransformFromFunc from_dbus;
+	NMSettInfoPropToDBusFcn            to_dbus_fcn;
+	NMSettInfoPropFromDBusFcn          from_dbus_fcn;
+	NMSettInfoPropMissingFromDBusFcn   missing_from_dbus_fcn;
+
+	/* Simpler variants of @to_dbus_fcn/@from_dbus_fcn that operate solely
+	 * on the GValue value of the GObject property. */
+	NMSettInfoPropGPropToDBusFcn       gprop_to_dbus_fcn;
+	NMSettInfoPropGPropFromDBusFcn     gprop_from_dbus_fcn;
 };
 
 typedef struct {

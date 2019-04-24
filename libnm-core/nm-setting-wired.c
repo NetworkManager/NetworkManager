@@ -1410,11 +1410,11 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	                         G_PARAM_STATIC_STRINGS);
 
 	_properties_override_add_override (properties_override,
-	                                     obj_properties[PROP_CLONED_MAC_ADDRESS],
-	                                     G_VARIANT_TYPE_BYTESTRING,
-	                                     _nm_utils_hwaddr_cloned_get,
-	                                     _nm_utils_hwaddr_cloned_set,
-	                                     _nm_utils_hwaddr_cloned_not_set);
+	                                   obj_properties[PROP_CLONED_MAC_ADDRESS],
+	                                   G_VARIANT_TYPE_BYTESTRING,
+	                                   _nm_utils_hwaddr_cloned_get,
+	                                   _nm_utils_hwaddr_cloned_set,
+	                                   _nm_utils_hwaddr_cloned_not_set);
 
 	/* ---dbus---
 	 * property: assigned-mac-address

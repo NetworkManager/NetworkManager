@@ -175,21 +175,21 @@ void _properties_override_add__helper (GArray *properties_override,
 void _properties_override_add_dbus_only (GArray *properties_override,
                                          const char *property_name,
                                          const GVariantType *dbus_type,
-                                         NMSettingPropertySynthFunc synth_func,
-                                         NMSettingPropertySetFunc set_func);
+                                         NMSettInfoPropToDBusFcn to_dbus_fcn,
+                                         NMSettInfoPropFromDBusFcn from_dbus_fcn);
 
 void _properties_override_add_override (GArray *properties_override,
                                         GParamSpec *param_spec,
                                         const GVariantType *dbus_type,
                                         NMSettingPropertyGetFunc get_func,
-                                        NMSettingPropertySetFunc set_func,
-                                        NMSettingPropertyNotSetFunc not_set_func);
+                                        NMSettInfoPropFromDBusFcn from_dbus_fcn,
+                                        NMSettInfoPropMissingFromDBusFcn missing_from_dbus_fcn);
 
 void _properties_override_add_transform (GArray *properties_override,
                                          GParamSpec *param_spec,
                                          const GVariantType *dbus_type,
-                                         NMSettingPropertyTransformToFunc to_dbus,
-                                         NMSettingPropertyTransformFromFunc from_dbus);
+                                         NMSettInfoPropGPropToDBusFcn gprop_to_dbus_fcn,
+                                         NMSettInfoPropGPropFromDBusFcn gprop_from_dbus_fcn);
 
 /*****************************************************************************/
 
