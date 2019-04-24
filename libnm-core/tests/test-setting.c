@@ -2108,6 +2108,116 @@ test_tc_config_dbus (void)
 
 /*****************************************************************************/
 
+static void
+_rndt_wired_add_s390_options (NMSettingWired *s_wired,
+                              char **out_keyfile_entries)
+{
+	gsize n_opts;
+	gsize i, j;
+	const char *const*option_names;
+	gs_free const char **opt_keys = NULL;
+	gs_strfreev char **opt_vals = NULL;
+	gs_free bool *opt_found = NULL;
+	GString *keyfile_entries;
+	nm_auto_free_gstring GString *str_tmp = NULL;
+	gs_free NMUtilsNamedValue *valx = NULL;
+
+	option_names = nm_setting_wired_get_valid_s390_options (nmtst_get_rand_bool () ? NULL : s_wired);
+
+	n_opts = NM_PTRARRAY_LEN (option_names);
+	opt_keys = g_new (const char *, (n_opts + 1));
+	nmtst_rand_perm (NULL, opt_keys, option_names, sizeof (const char *), n_opts);
+	n_opts = nmtst_get_rand_int () % (n_opts + 1);
+	opt_keys[n_opts] = NULL;
+
+	opt_vals = g_new0 (char *, n_opts + 1);
+	opt_found = g_new0 (bool, n_opts + 1);
+	for (i = 0; i < n_opts; i++) {
+		guint p = nmtst_get_rand_int () % 1000;
+
+		if (p < 200)
+			opt_vals[i] = nm_strdup_int (i);
+		else {
+			opt_vals[i] = g_strdup_printf ("%s%s%s%s-%zu",
+			                               ((p % 5)  % 2) ? "\n" : "",
+			                               ((p % 7)  % 2) ? "\t" : "",
+			                               ((p % 11) % 2) ? "x" : "",
+			                               ((p % 13) % 2) ? "=" : "",
+			                               i);
+		}
+	}
+
+	if (nmtst_get_rand_bool ()) {
+		gs_unref_hashtable GHashTable *hash = NULL;
+
+		hash = g_hash_table_new (nm_str_hash, g_str_equal);
+		for (i = 0; i < n_opts; i++)
+			g_hash_table_insert (hash, (char *) opt_keys[i], opt_vals[i]);
+		g_object_set (s_wired,
+		              NM_SETTING_WIRED_S390_OPTIONS,
+		              hash,
+		              NULL);
+	} else {
+		for (i = 0; i < n_opts; i++) {
+			if (!nm_setting_wired_add_s390_option (s_wired, opt_keys[i], opt_vals[i]))
+				g_assert_not_reached ();
+		}
+	}
+
+	g_assert_cmpint (nm_setting_wired_get_num_s390_options (s_wired), ==, n_opts);
+
+	keyfile_entries = g_string_new (NULL);
+	str_tmp = g_string_new (NULL);
+	if (n_opts > 0)
+		g_string_append_printf (keyfile_entries, "[ethernet-s390-options]\n");
+	valx = g_new (NMUtilsNamedValue, n_opts);
+	for (i = 0; i < n_opts; i++) {
+		gssize idx;
+		const char *k, *v;
+
+		nm_setting_wired_get_s390_option (s_wired, i, &k, &v);
+		g_assert (k);
+		g_assert (v);
+
+		idx = nm_utils_strv_find_first ((char **) opt_keys, n_opts, k);
+		g_assert (idx >= 0);
+		g_assert (!opt_found[idx]);
+		opt_found[idx] = TRUE;
+		g_assert_cmpstr (opt_keys[idx], ==, k);
+		g_assert_cmpstr (opt_vals[idx], ==, v);
+
+		valx[i] = (NMUtilsNamedValue) {
+			.name      = k,
+			.value_str = v,
+		};
+	}
+	nm_utils_named_value_list_sort (valx, n_opts, NULL, NULL);
+	for (i = 0; i < n_opts; i++) {
+		const char *k = valx[i].name;
+		const char *v = valx[i].value_str;
+
+		g_string_truncate (str_tmp, 0);
+		for (j = 0; v[j] != '\0'; j++) {
+			if (v[j] == '\n')
+				g_string_append (str_tmp, "\\n");
+			else if (v[j] == '\t')
+				g_string_append (str_tmp, "\\t");
+			else
+				g_string_append_c (str_tmp, v[j]);
+		}
+
+		g_string_append_printf (keyfile_entries,
+		                        "%s=%s\n",
+		                        k,
+		                        str_tmp->str);
+	}
+	for (i = 0; i < n_opts; i++)
+		g_assert (opt_found[i]);
+	if (n_opts > 0)
+		g_string_append_printf (keyfile_entries, "\n");
+	*out_keyfile_entries = g_string_free (keyfile_entries, FALSE);
+}
+
 static GPtrArray *
 _rndt_wg_peers_create (void)
 {
@@ -2385,6 +2495,7 @@ test_roundtrip_conversion (gconstpointer test_data)
 	int is_ipv4;
 	guint i;
 	gboolean success;
+	gs_free char *s390_keyfile_entries = NULL;
 
 	switch (MODE) {
 	case 0:
@@ -2403,6 +2514,8 @@ test_roundtrip_conversion (gconstpointer test_data)
 		              ETH_MTU,
 		              NULL);
 
+		_rndt_wired_add_s390_options (s_eth, &s390_keyfile_entries);
+
 		g_ptr_array_add (kf_data_arr,
 		    g_strdup_printf ("[connection]\n"
 		                     "id=%s\n"
@@ -2415,6 +2528,7 @@ test_roundtrip_conversion (gconstpointer test_data)
 		                     "mac-address-blacklist=\n"
 		                     "%s" /* mtu */
 		                     "\n"
+		                     "%s" /* [ethernet-s390-options] */
 		                     "[ipv4]\n"
 		                     "dns-search=\n"
 		                     "method=auto\n"
@@ -2429,7 +2543,8 @@ test_roundtrip_conversion (gconstpointer test_data)
 		                     INTERFACE_NAME,
 		                       (ETH_MTU != 0)
 		                     ? nm_sprintf_bufa (100, "mtu=%u\n", ETH_MTU)
-		                     : ""));
+		                     : "",
+		                     s390_keyfile_entries));
 
 		g_ptr_array_add (kf_data_arr,
 		    g_strdup_printf ("[connection]\n"
@@ -2443,6 +2558,7 @@ test_roundtrip_conversion (gconstpointer test_data)
 		                     "mac-address-blacklist=\n"
 		                     "%s" /* mtu */
 		                     "\n"
+		                     "%s" /* [ethernet-s390-options] */
 		                     "[ipv4]\n"
 		                     "dns-search=\n"
 		                     "method=auto\n"
@@ -2457,7 +2573,8 @@ test_roundtrip_conversion (gconstpointer test_data)
 		                     INTERFACE_NAME,
 		                       (ETH_MTU != 0)
 		                     ? nm_sprintf_bufa (100, "mtu=%d\n", (int) ETH_MTU)
-		                     : ""));
+		                     : "",
+		                     s390_keyfile_entries));
 
 		break;
 
@@ -2703,6 +2820,9 @@ test_roundtrip_conversion (gconstpointer test_data)
 
 			g_assert_cmpint (nm_setting_wired_get_mtu (s_eth), ==, ETH_MTU);
 			g_assert_cmpint (nm_setting_wired_get_mtu (s_eth2), ==, ETH_MTU);
+
+			g_assert_cmpint (nm_setting_wired_get_num_s390_options (s_eth2), ==, nm_setting_wired_get_num_s390_options (s_eth));
+
 			break;
 
 		case 1:
