@@ -2069,23 +2069,19 @@ wired_s390_options_writer_full (KeyfileWriterInfo *info,
                                 NMSetting *setting)
 {
 	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
-	gs_free NMUtilsNamedValue *arr = NULL;
 	guint i, n;
 
 	n = nm_setting_wired_get_num_s390_options (s_wired);
-	if (n == 0)
-		return;
-	arr = g_new (NMUtilsNamedValue, n);
-	for (i = 0; i < n; i++)
-		nm_setting_wired_get_s390_option (s_wired, i, &arr[i].name, &arr[i].value_str);
-	nm_utils_named_value_list_sort (arr, n, NULL, NULL);
 	for (i = 0; i < n; i++) {
+		const char *opt_key;
+		const char *opt_val;
 		gs_free char *key_to_free = NULL;
 
+		nm_setting_wired_get_s390_option (s_wired, i, &opt_key, &opt_val);
 		nm_keyfile_plugin_kf_set_string (info->keyfile,
 		                                 ETHERNET_S390_OPTIONS_GROUP_NAME,
-		                                 nm_keyfile_key_encode (arr[i].name, &key_to_free),
-		                                 arr[i].value_str);
+		                                 nm_keyfile_key_encode (opt_key, &key_to_free),
+		                                 opt_val);
 	}
 }
 

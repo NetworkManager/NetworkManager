@@ -2120,7 +2120,6 @@ _rndt_wired_add_s390_options (NMSettingWired *s_wired,
 	gs_free bool *opt_found = NULL;
 	GString *keyfile_entries;
 	nm_auto_free_gstring GString *str_tmp = NULL;
-	gs_free NMUtilsNamedValue *valx = NULL;
 
 	option_names = nm_setting_wired_get_valid_s390_options (nmtst_get_rand_bool () ? NULL : s_wired);
 
@@ -2158,6 +2157,7 @@ _rndt_wired_add_s390_options (NMSettingWired *s_wired,
 		              hash,
 		              NULL);
 	} else {
+		_nm_setting_wired_clear_s390_options (s_wired);
 		for (i = 0; i < n_opts; i++) {
 			if (!nm_setting_wired_add_s390_option (s_wired, opt_keys[i], opt_vals[i]))
 				g_assert_not_reached ();
@@ -2170,7 +2170,6 @@ _rndt_wired_add_s390_options (NMSettingWired *s_wired,
 	str_tmp = g_string_new (NULL);
 	if (n_opts > 0)
 		g_string_append_printf (keyfile_entries, "[ethernet-s390-options]\n");
-	valx = g_new (NMUtilsNamedValue, n_opts);
 	for (i = 0; i < n_opts; i++) {
 		gssize idx;
 		const char *k, *v;
@@ -2185,16 +2184,6 @@ _rndt_wired_add_s390_options (NMSettingWired *s_wired,
 		opt_found[idx] = TRUE;
 		g_assert_cmpstr (opt_keys[idx], ==, k);
 		g_assert_cmpstr (opt_vals[idx], ==, v);
-
-		valx[i] = (NMUtilsNamedValue) {
-			.name      = k,
-			.value_str = v,
-		};
-	}
-	nm_utils_named_value_list_sort (valx, n_opts, NULL, NULL);
-	for (i = 0; i < n_opts; i++) {
-		const char *k = valx[i].name;
-		const char *v = valx[i].value_str;
 
 		g_string_truncate (str_tmp, 0);
 		for (j = 0; v[j] != '\0'; j++) {

@@ -1575,11 +1575,11 @@ update_connection (NMDevice *device, NMConnection *connection)
 		g_object_set (s_wired, NM_SETTING_WIRED_S390_SUBCHANNELS, priv->subchannels_dbus, NULL);
 	if (priv->s390_nettype)
 		g_object_set (s_wired, NM_SETTING_WIRED_S390_NETTYPE, priv->s390_nettype, NULL);
-	g_hash_table_iter_init (&iter, priv->s390_options);
-	while (g_hash_table_iter_next (&iter, &key, &value)) {
-		nm_setting_wired_add_s390_option (s_wired, (const char *) key, (const char *) value);
-	}
 
+	_nm_setting_wired_clear_s390_options (s_wired);
+	g_hash_table_iter_init (&iter, priv->s390_options);
+	while (g_hash_table_iter_next (&iter, &key, &value))
+		nm_setting_wired_add_s390_option (s_wired, (const char *) key, (const char *) value);
 }
 
 static void

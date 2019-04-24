@@ -1118,7 +1118,7 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			nm_setting_wired_get_s390_option (s_wired, i, &s390_key, &s390_val);
 
 			/* portname is handled separately */
-			if (!strcmp (s390_key, "portname") || !strcmp (s390_key, "ctcprot"))
+			if (NM_IN_STRSET (s390_key, "portname", "ctcprot"))
 				continue;
 
 			if (!tmp)
