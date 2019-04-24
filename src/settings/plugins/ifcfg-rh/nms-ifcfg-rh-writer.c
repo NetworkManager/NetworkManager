@@ -1121,11 +1121,19 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			if (NM_IN_STRSET (s390_key, "portname", "ctcprot"))
 				continue;
 
+			if (strchr (s390_key, '=')) {
+				/* this key cannot be expressed. But after all, it's not valid anyway
+				 * and the connection shouldn't even verify. */
+				continue;
+			}
+
 			if (!tmp)
 				tmp = g_string_sized_new (30);
 			else
 				g_string_append_c (tmp, ' ');
-			g_string_append_printf (tmp, "%s=%s", s390_key, s390_val);
+			nm_utils_escaped_tokens_escape_gstr (s390_key, NM_ASCII_SPACES, tmp);
+			g_string_append_c (tmp, '=');
+			nm_utils_escaped_tokens_escape_gstr (s390_val, NM_ASCII_SPACES, tmp);
 		}
 		if (tmp)
 			svSetValueStr (ifcfg, "OPTIONS", tmp->str);
