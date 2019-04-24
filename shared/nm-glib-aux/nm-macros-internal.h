@@ -1226,6 +1226,14 @@ nm_g_variant_unref (GVariant *v)
 		g_variant_unref (v);
 }
 
+static inline GVariant *
+nm_g_variant_take_ref (GVariant *v)
+{
+	if (v)
+		g_variant_take_ref (v);
+	return v;
+}
+
 /*****************************************************************************/
 
 /* Determine whether @x is a power of two (@x being an integer type).
