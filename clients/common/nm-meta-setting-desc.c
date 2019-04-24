@@ -2216,8 +2216,7 @@ _get_fcn_cert_8021x (ARGS_GET_FCN)
 
 	switch (vtable->scheme_func (s_8021X)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		if (   vtable->is_secret
-		    && !NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
+		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
 			return _get_text_hidden (get_type);
 		str = bytes_to_string (vtable->blob_func (s_8021X));
 		break;
