@@ -905,7 +905,11 @@ _nm_setting_sriov_sort_vfs (NMSettingSriov *setting)
 /*****************************************************************************/
 
 static GVariant *
-vfs_to_dbus (NMSetting *setting, const char *property)
+vfs_to_dbus (const NMSettInfoSetting *sett_info,
+             guint property_idx,
+             NMConnection *connection,
+             NMSetting *setting,
+             NMConnectionSerializationFlags flags)
 {
 	gs_unref_ptrarray GPtrArray *vfs = NULL;
 	GVariantBuilder builder;

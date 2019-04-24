@@ -294,17 +294,17 @@ _properties_override_add_dbus_only (GArray *properties_override,
  * @properties_override: an array collecting the overrides
  * @param_spec: the name of the property to override
  * @dbus_type: the type of the property (in its D-Bus representation)
- * @get_func: (allow-none): function to call to get the value of the property
+ * @to_dbus_fcn: (allow-none): function to call to get the value of the property
  * @from_dbus_fcn: (allow-none): function to call to set the value of the property
  * @missing_from_dbus_fcn: (allow-none): function to call to indicate the property was not set
  *
  * Overrides the D-Bus representation of the #GObject property that shares the
  * same name as @param_spec.
  *
- * When serializing a setting to D-Bus, if @get_func is non-%NULL, then it will
+ * When serializing a setting to D-Bus, if @to_dbus_fcn is non-%NULL, then it will
  * be called to get the property's value. If it returns a #GVariant, the
  * property will be added to the hash, and if it returns %NULL, the property
- * will be omitted. (If @get_func is %NULL, the property will be read normally
+ * will be omitted. (If @to_dbus_fcn is %NULL, the property will be read normally
  * with g_object_get_property(), and added to the hash if it is not the default
  * value.)
  *
@@ -322,7 +322,7 @@ void
 _properties_override_add_override (GArray *properties_override,
                                    GParamSpec *param_spec,
                                    const GVariantType *dbus_type,
-                                   NMSettingPropertyGetFunc get_func,
+                                   NMSettInfoPropToDBusFcn to_dbus_fcn,
                                    NMSettInfoPropFromDBusFcn from_dbus_fcn,
                                    NMSettInfoPropMissingFromDBusFcn missing_from_dbus_fcn)
 {
@@ -331,7 +331,7 @@ _properties_override_add_override (GArray *properties_override,
 	_properties_override_add (properties_override,
 	                          .param_spec             = param_spec,
 	                          .dbus_type              = dbus_type,
-	                          .get_func               = get_func,
+	                          .to_dbus_fcn            = to_dbus_fcn,
 	                          .from_dbus_fcn          = from_dbus_fcn,
 	                          .missing_from_dbus_fcn  = missing_from_dbus_fcn);
 }
@@ -683,20 +683,44 @@ _nm_setting_use_legacy_property (NMSetting *setting,
 /*****************************************************************************/
 
 static GVariant *
-get_property_for_dbus (NMSetting *setting,
-                       const NMSettInfoProperty *property,
-                       gboolean ignore_default)
+property_to_dbus (const NMSettInfoSetting *sett_info,
+                  guint property_idx,
+                  NMConnection *connection,
+                  NMSetting *setting,
+                  NMConnectionSerializationFlags flags,
+                  gboolean ignore_flags,
+                  gboolean ignore_default)
 {
+	const NMSettInfoProperty *property = &sett_info->property_infos[property_idx];
 	GVariant *variant;
-
-	/* to_dbus_fcn() is currently not allowed for GObject backed properties. No strong
-	 * reason except that get_property_for_dbus() can only consider "real" properties. */
-	nm_assert (!property->to_dbus_fcn);
 
 	nm_assert (property->dbus_type);
 
-	if (property->get_func) {
-		variant = property->get_func (setting, property->name);
+	if (!property->param_spec) {
+		if (!property->to_dbus_fcn)
+			return NULL;
+	} else if (!ignore_flags) {
+		if (!NM_FLAGS_HAS (property->param_spec->flags, G_PARAM_WRITABLE))
+			return NULL;
+
+		if (NM_FLAGS_ANY (property->param_spec->flags, NM_SETTING_PARAM_GENDATA_BACKED))
+			return NULL;
+
+		if (   NM_FLAGS_HAS (property->param_spec->flags, NM_SETTING_PARAM_LEGACY)
+		    && !_nm_utils_is_manager_process)
+			return NULL;
+
+		if (   NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_NO_SECRETS)
+		    && NM_FLAGS_HAS (property->param_spec->flags, NM_SETTING_PARAM_SECRET))
+			return NULL;
+
+		if (   NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+		    && !NM_FLAGS_HAS (property->param_spec->flags, NM_SETTING_PARAM_SECRET))
+			return NULL;
+	}
+
+	if (property->to_dbus_fcn) {
+		variant = property->to_dbus_fcn (sett_info, property_idx, connection, setting, flags);
 		nm_g_variant_take_ref (variant);
 	} else {
 		nm_auto_unset_gvalue GValue prop_value = { 0, };
@@ -778,7 +802,6 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 {
 	NMSettingPrivate *priv;
 	GVariantBuilder builder;
-	GVariant *dbus_value;
 	const NMSettInfoSetting *sett_info;
 	guint n_properties, i;
 	const char *const*gendata_keys;
@@ -799,52 +822,14 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 
 	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
 	for (i = 0; i < sett_info->property_infos_len; i++) {
-		const NMSettInfoProperty *property = &sett_info->property_infos[i];
-		GParamSpec *prop_spec = property->param_spec;
+		gs_unref_variant GVariant *dbus_value = NULL;
 
-		nm_assert (property->dbus_type);
-
-		if (!prop_spec) {
-			if (!property->to_dbus_fcn)
-				continue;
-		} else {
-
-			/* For the moment, properties backed by a GObject property don't
-			 * define a synth function. There is no problem supporting that,
-			 * however, for now just disallow it. */
-			nm_assert (!property->to_dbus_fcn);
-
-			if (!NM_FLAGS_HAS (prop_spec->flags, G_PARAM_WRITABLE))
-				continue;
-
-			if (NM_FLAGS_ANY (prop_spec->flags, NM_SETTING_PARAM_GENDATA_BACKED))
-				continue;
-
-			if (   NM_FLAGS_HAS (prop_spec->flags, NM_SETTING_PARAM_LEGACY)
-			    && !_nm_utils_is_manager_process)
-				continue;
-
-			if (   NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_NO_SECRETS)
-			    && NM_FLAGS_HAS (prop_spec->flags, NM_SETTING_PARAM_SECRET))
-				continue;
-
-			if (   NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
-			    && !NM_FLAGS_HAS (prop_spec->flags, NM_SETTING_PARAM_SECRET))
-				continue;
-		}
-
-		if (property->to_dbus_fcn) {
-			dbus_value = property->to_dbus_fcn (sett_info, i, connection, setting, flags);
-			nm_g_variant_take_ref (dbus_value);
-		} else
-			dbus_value = get_property_for_dbus (setting, property, TRUE);
-
+		dbus_value = property_to_dbus (sett_info, i, connection, setting, flags, FALSE, TRUE);
 		if (dbus_value) {
-			nm_assert (!g_variant_is_floating (dbus_value));
-			nm_assert (g_variant_is_of_type (dbus_value, property->dbus_type));
-
-			g_variant_builder_add (&builder, "{sv}", property->name, dbus_value);
-			g_variant_unref (dbus_value);
+			g_variant_builder_add (&builder,
+			                       "{sv}",
+			                       sett_info->property_infos[i].name,
+			                       dbus_value);
 		}
 	}
 
@@ -1433,9 +1418,8 @@ compare_property (const NMSettInfoSetting *sett_info,
 		gs_unref_variant GVariant *value1  = NULL;
 		gs_unref_variant GVariant *value2  = NULL;
 
-		value1 = get_property_for_dbus (set_a, property_info, TRUE);
-		value2 = get_property_for_dbus (set_b, property_info, TRUE);
-
+		value1 = property_to_dbus (sett_info, property_idx, con_a, set_a, NM_CONNECTION_SERIALIZE_ALL, TRUE, TRUE);
+		value2 = property_to_dbus (sett_info, property_idx, con_b, set_b, NM_CONNECTION_SERIALIZE_ALL, TRUE, TRUE);
 		if (nm_property_compare (value1, value2) != 0)
 			return NM_TERNARY_FALSE;
 	}

@@ -55,8 +55,11 @@ gboolean _nm_utils_wps_method_validate (NMSettingWirelessSecurityWpsMethod wps_m
 
 /* D-Bus transform funcs */
 
-GVariant   *_nm_utils_hwaddr_cloned_get (NMSetting     *setting,
-                                         const char    *property);
+GVariant *_nm_utils_hwaddr_cloned_get (const NMSettInfoSetting *sett_info,
+                                       guint property_idx,
+                                       NMConnection *connection,
+                                       NMSetting *setting,
+                                       NMConnectionSerializationFlags flags);
 gboolean    _nm_utils_hwaddr_cloned_set (NMSetting     *setting,
                                          GVariant      *connection_dict,
                                          const char    *property,
@@ -103,7 +106,12 @@ void        _nm_utils_format_variant_attributes_full (GString *str,
                                                       char key_value_separator);
 gboolean    _nm_sriov_vf_parse_vlans (NMSriovVF *vf, const char *str, GError **error);
 
-GVariant *  _nm_utils_bridge_vlans_to_dbus (NMSetting *setting, const char *property);
+GVariant *  _nm_utils_bridge_vlans_to_dbus (const NMSettInfoSetting *sett_info,
+                                            guint property_idx,
+                                            NMConnection *connection,
+                                            NMSetting *setting,
+                                            NMConnectionSerializationFlags flags);
+
 gboolean    _nm_utils_bridge_vlans_from_dbus (NMSetting *setting,
                                               GVariant *connection_dict,
                                               const char *property,

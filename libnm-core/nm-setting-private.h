@@ -181,7 +181,7 @@ void _properties_override_add_dbus_only (GArray *properties_override,
 void _properties_override_add_override (GArray *properties_override,
                                         GParamSpec *param_spec,
                                         const GVariantType *dbus_type,
-                                        NMSettingPropertyGetFunc get_func,
+                                        NMSettInfoPropToDBusFcn to_dbus_fcn,
                                         NMSettInfoPropFromDBusFcn from_dbus_fcn,
                                         NMSettInfoPropMissingFromDBusFcn missing_from_dbus_fcn);
 

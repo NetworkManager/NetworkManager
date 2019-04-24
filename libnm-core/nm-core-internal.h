@@ -662,8 +662,6 @@ GVariant *nm_ip_routing_rule_to_dbus (const NMIPRoutingRule *self);
 typedef struct _NMSettInfoSetting  NMSettInfoSetting;
 typedef struct _NMSettInfoProperty NMSettInfoProperty;
 
-typedef GVariant *(*NMSettingPropertyGetFunc)           (NMSetting     *setting,
-                                                         const char    *property);
 typedef GVariant *(*NMSettInfoPropToDBusFcn)            (const NMSettInfoSetting *sett_info,
                                                          guint property_idx,
                                                          NMConnection  *connection,
@@ -689,9 +687,6 @@ struct _NMSettInfoProperty {
 	GParamSpec *param_spec;
 
 	const GVariantType *dbus_type;
-
-	/* TODO: merge @get_func with @to_dbus_fcn. */
-	NMSettingPropertyGetFunc           get_func;
 
 	NMSettInfoPropToDBusFcn            to_dbus_fcn;
 	NMSettInfoPropFromDBusFcn          from_dbus_fcn;

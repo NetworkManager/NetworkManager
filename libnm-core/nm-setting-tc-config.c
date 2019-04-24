@@ -1483,17 +1483,16 @@ next:
 }
 
 static GVariant *
-tc_qdiscs_get (NMSetting *setting,
-               const char *property)
+tc_qdiscs_get (const NMSettInfoSetting *sett_info,
+               guint property_idx,
+               NMConnection *connection,
+               NMSetting *setting,
+               NMConnectionSerializationFlags flags)
 {
-	GPtrArray *qdiscs;
-	GVariant *ret;
+	gs_unref_ptrarray GPtrArray *qdiscs = NULL;
 
 	g_object_get (setting, NM_SETTING_TC_CONFIG_QDISCS, &qdiscs, NULL);
-	ret = _qdiscs_to_variant (qdiscs);
-	g_ptr_array_unref (qdiscs);
-
-	return ret;
+	return _qdiscs_to_variant (qdiscs);
 }
 
 static gboolean
@@ -1669,17 +1668,16 @@ next:
 }
 
 static GVariant *
-tc_tfilters_get (NMSetting *setting,
-                 const char *property)
+tc_tfilters_get (const NMSettInfoSetting *sett_info,
+                guint property_idx,
+                NMConnection *connection,
+                NMSetting *setting,
+                NMConnectionSerializationFlags flags)
 {
-	GPtrArray *tfilters;
-	GVariant *ret;
+	gs_unref_ptrarray GPtrArray *tfilters = NULL;
 
 	g_object_get (setting, NM_SETTING_TC_CONFIG_TFILTERS, &tfilters, NULL);
-	ret = _tfilters_to_variant (tfilters);
-	g_ptr_array_unref (tfilters);
-
-	return ret;
+	return _tfilters_to_variant (tfilters);
 }
 
 static gboolean
@@ -1690,12 +1688,10 @@ tc_tfilters_set (NMSetting *setting,
                  NMSettingParseFlags parse_flags,
                  GError **error)
 {
-	GPtrArray *tfilters;
+	gs_unref_ptrarray GPtrArray *tfilters = NULL;
 
 	tfilters = _tfilters_from_variant (value);
 	g_object_set (setting, NM_SETTING_TC_CONFIG_TFILTERS, tfilters, NULL);
-	g_ptr_array_unref (tfilters);
-
 	return TRUE;
 }
 
