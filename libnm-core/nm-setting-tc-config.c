@@ -1325,16 +1325,18 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 static NMTernary
 compare_property (const NMSettInfoSetting *sett_info,
                   guint property_idx,
-                  NMSetting *setting,
-                  NMSetting *other,
+                  NMConnection *con_a,
+                  NMSetting *set_a,
+                  NMConnection *con_b,
+                  NMSetting *set_b,
                   NMSettingCompareFlags flags)
 {
-	NMSettingTCConfig *a_tc_config = NM_SETTING_TC_CONFIG (setting);
-	NMSettingTCConfig *b_tc_config = NM_SETTING_TC_CONFIG (other);
+	NMSettingTCConfig *a_tc_config = NM_SETTING_TC_CONFIG (set_a);
+	NMSettingTCConfig *b_tc_config = NM_SETTING_TC_CONFIG (set_b);
 	guint i;
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TC_CONFIG_QDISCS)) {
-		if (other) {
+		if (set_b) {
 			if (a_tc_config->qdiscs->len != b_tc_config->qdiscs->len)
 				return FALSE;
 			for (i = 0; i < a_tc_config->qdiscs->len; i++) {
@@ -1346,7 +1348,7 @@ compare_property (const NMSettInfoSetting *sett_info,
 	}
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TC_CONFIG_TFILTERS)) {
-		if (other) {
+		if (set_b) {
 			if (a_tc_config->tfilters->len != b_tc_config->tfilters->len)
 				return FALSE;
 			for (i = 0; i < a_tc_config->tfilters->len; i++) {
@@ -1359,8 +1361,10 @@ compare_property (const NMSettInfoSetting *sett_info,
 
 	return NM_SETTING_CLASS (nm_setting_tc_config_parent_class)->compare_property (sett_info,
 	                                                                               property_idx,
-	                                                                               setting,
-	                                                                               other,
+	                                                                               con_a,
+	                                                                               set_a,
+	                                                                               con_b,
+	                                                                               set_b,
 	                                                                               flags);
 }
 

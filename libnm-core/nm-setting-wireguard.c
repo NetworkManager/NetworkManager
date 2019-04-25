@@ -1945,8 +1945,10 @@ update_one_secret (NMSetting *setting,
 static NMTernary
 compare_property (const NMSettInfoSetting *sett_info,
                   guint property_idx,
-                  NMSetting *setting,
-                  NMSetting *other,
+                  NMConnection *con_a,
+                  NMSetting *set_a,
+                  NMConnection *con_b,
+                  NMSetting *set_b,
                   NMSettingCompareFlags flags)
 {
 	NMSettingWireGuardPrivate *a_priv;
@@ -1958,11 +1960,11 @@ compare_property (const NMSettInfoSetting *sett_info,
 		if (NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
 			return NM_TERNARY_DEFAULT;
 
-		if (!other)
+		if (!set_b)
 			return TRUE;
 
-		a_priv = NM_SETTING_WIREGUARD_GET_PRIVATE (setting);
-		b_priv = NM_SETTING_WIREGUARD_GET_PRIVATE (other);
+		a_priv = NM_SETTING_WIREGUARD_GET_PRIVATE (set_a);
+		b_priv = NM_SETTING_WIREGUARD_GET_PRIVATE (set_b);
 
 		if (a_priv->peers_arr->len != b_priv->peers_arr->len)
 			return FALSE;
@@ -1981,8 +1983,10 @@ compare_property (const NMSettInfoSetting *sett_info,
 
 	return NM_SETTING_CLASS (nm_setting_wireguard_parent_class)->compare_property (sett_info,
 	                                                                               property_idx,
-	                                                                               setting,
-	                                                                               other,
+	                                                                               con_a,
+	                                                                               set_a,
+	                                                                               con_b,
+	                                                                               set_b,
 	                                                                               flags);
 }
 

@@ -4969,8 +4969,10 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 static NMTernary
 compare_property (const NMSettInfoSetting *sett_info,
                   guint property_idx,
-                  NMSetting *setting,
-                  NMSetting *other,
+                  NMConnection *con_a,
+                  NMSetting *set_a,
+                  NMConnection *con_b,
+                  NMSetting *set_b,
                   NMSettingCompareFlags flags)
 {
 	NMSettingIPConfigPrivate *a_priv;
@@ -4978,9 +4980,9 @@ compare_property (const NMSettInfoSetting *sett_info,
 	guint i;
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_IP_CONFIG_ADDRESSES)) {
-		if (other) {
-			a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-			b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (other);
+		if (set_b) {
+			a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (set_a);
+			b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (set_b);
 
 			if (a_priv->addresses->len != b_priv->addresses->len)
 				return FALSE;
@@ -4993,9 +4995,9 @@ compare_property (const NMSettInfoSetting *sett_info,
 	}
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_IP_CONFIG_ROUTES)) {
-		if (other) {
-			a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-			b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (other);
+		if (set_b) {
+			a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (set_a);
+			b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (set_b);
 
 			if (a_priv->routes->len != b_priv->routes->len)
 				return FALSE;
@@ -5008,11 +5010,11 @@ compare_property (const NMSettInfoSetting *sett_info,
 	}
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_IP_CONFIG_ROUTING_RULES)) {
-		if (other) {
+		if (set_b) {
 			guint n;
 
-			a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-			b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (other);
+			a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (set_a);
+			b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (set_b);
 
 			n = (a_priv->routing_rules) ? a_priv->routing_rules->len : 0u;
 			if (n != (b_priv->routing_rules ? b_priv->routing_rules->len : 0u))
@@ -5027,8 +5029,10 @@ compare_property (const NMSettInfoSetting *sett_info,
 
 	return NM_SETTING_CLASS (nm_setting_ip_config_parent_class)->compare_property (sett_info,
 	                                                                               property_idx,
-	                                                                               setting,
-	                                                                               other,
+	                                                                               con_a,
+	                                                                               set_a,
+	                                                                               con_b,
+	                                                                               set_b,
 	                                                                               flags);
 }
 

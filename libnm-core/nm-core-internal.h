@@ -770,6 +770,20 @@ _nm_setting_class_get_property_info (NMSettingClass *setting_class,
 
 /*****************************************************************************/
 
+gboolean _nm_setting_compare (NMConnection *con_a,
+                              NMSetting *set_a,
+                              NMConnection *con_b,
+                              NMSetting *set_b,
+                              NMSettingCompareFlags flags);
+
+gboolean _nm_setting_diff (NMConnection *con_a,
+                           NMSetting *set_a,
+                           NMConnection *con_b,
+                           NMSetting *set_b,
+                           NMSettingCompareFlags flags,
+                           gboolean invert_results,
+                           GHashTable **results);
+
 NMSetting8021xCKScheme _nm_setting_802_1x_cert_get_scheme (GBytes *bytes, GError **error);
 
 GBytes *_nm_setting_802_1x_cert_value_to_bytes (NMSetting8021xCKScheme scheme,

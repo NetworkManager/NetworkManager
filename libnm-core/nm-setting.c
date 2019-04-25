@@ -1385,8 +1385,10 @@ _nm_setting_should_compare_secret_property (NMSetting *setting,
 static NMTernary
 compare_property (const NMSettInfoSetting *sett_info,
                   guint property_idx,
-                  NMSetting *setting,
-                  NMSetting *other,
+                  NMConnection *con_a,
+                  NMSetting *set_a,
+                  NMConnection *con_b,
+                  NMSetting *set_b,
                   NMSettingCompareFlags flags)
 {
 	const NMSettInfoProperty *property_info = &sett_info->property_infos[property_idx];
@@ -1415,18 +1417,18 @@ compare_property (const NMSettInfoSetting *sett_info,
 		return NM_TERNARY_DEFAULT;
 
 	if (   NM_FLAGS_HAS (param_spec->flags, NM_SETTING_PARAM_SECRET)
-	    && !_nm_setting_should_compare_secret_property (setting,
-	                                                    other,
+	    && !_nm_setting_should_compare_secret_property (set_a,
+	                                                    set_b,
 	                                                    param_spec->name,
 	                                                    flags))
 		return NM_TERNARY_DEFAULT;
 
-	if (other) {
+	if (set_b) {
 		gs_unref_variant GVariant *value1  = NULL;
 		gs_unref_variant GVariant *value2  = NULL;
 
-		value1 = get_property_for_dbus (setting, property_info, TRUE);
-		value2 = get_property_for_dbus (other, property_info, TRUE);
+		value1 = get_property_for_dbus (set_a, property_info, TRUE);
+		value2 = get_property_for_dbus (set_b, property_info, TRUE);
 
 		if (nm_property_compare (value1, value2) != 0)
 			return NM_TERNARY_FALSE;
@@ -1438,8 +1440,10 @@ compare_property (const NMSettInfoSetting *sett_info,
 static NMTernary
 _compare_property (const NMSettInfoSetting *sett_info,
                    guint property_idx,
-                   NMSetting *setting,
-                   NMSetting *other,
+                   NMConnection *con_a,
+                   NMSetting *set_a,
+                   NMConnection *con_b,
+                   NMSetting *set_b,
                    NMSettingCompareFlags flags)
 {
 	NMTernary compare_result;
@@ -1447,14 +1451,16 @@ _compare_property (const NMSettInfoSetting *sett_info,
 	nm_assert (sett_info);
 	nm_assert (NM_IS_SETTING_CLASS (sett_info->setting_class));
 	nm_assert (property_idx < sett_info->property_infos_len);
-	nm_assert (NM_SETTING_GET_CLASS (setting) == sett_info->setting_class);
-	nm_assert (!other || NM_SETTING_GET_CLASS (other) == sett_info->setting_class);
+	nm_assert (NM_SETTING_GET_CLASS (set_a) == sett_info->setting_class);
+	nm_assert (!set_b || NM_SETTING_GET_CLASS (set_b) == sett_info->setting_class);
 
-	compare_result = NM_SETTING_GET_CLASS (setting)->compare_property (sett_info,
-	                                                                   property_idx,
-	                                                                   setting,
-	                                                                   other,
-	                                                                   flags);
+	compare_result = NM_SETTING_GET_CLASS (set_a)->compare_property (sett_info,
+	                                                                 property_idx,
+	                                                                 con_a,
+	                                                                 set_a,
+	                                                                 con_b,
+	                                                                 set_b,
+	                                                                 flags);
 
 	nm_assert (NM_IN_SET (compare_result, NM_TERNARY_DEFAULT,
 	                                      NM_TERNARY_FALSE,
@@ -1486,11 +1492,24 @@ nm_setting_compare (NMSetting *a,
                     NMSetting *b,
                     NMSettingCompareFlags flags)
 {
+	return _nm_setting_compare (NULL, a, NULL, b, flags);
+}
+
+gboolean
+_nm_setting_compare (NMConnection *con_a,
+                     NMSetting *a,
+                     NMConnection *con_b,
+                     NMSetting *b,
+                     NMSettingCompareFlags flags)
+{
 	const NMSettInfoSetting *sett_info;
 	guint i;
 
 	g_return_val_if_fail (NM_IS_SETTING (a), FALSE);
 	g_return_val_if_fail (NM_IS_SETTING (b), FALSE);
+
+	nm_assert (!con_a || NM_IS_CONNECTION (con_a));
+	nm_assert (!con_b || NM_IS_CONNECTION (con_b));
 
 	/* First check that both have the same type */
 	if (G_OBJECT_TYPE (a) != G_OBJECT_TYPE (b))
@@ -1509,7 +1528,7 @@ nm_setting_compare (NMSetting *a,
 	}
 
 	for (i = 0; i < sett_info->property_infos_len; i++) {
-		if (_compare_property (sett_info, i, a, b, flags) == NM_TERNARY_FALSE)
+		if (_compare_property (sett_info, i, con_a, a, con_b, b, flags) == NM_TERNARY_FALSE)
 			return FALSE;
 	}
 
@@ -1559,6 +1578,18 @@ nm_setting_diff (NMSetting *a,
                  gboolean invert_results,
                  GHashTable **results)
 {
+	return _nm_setting_diff (NULL, a, NULL, b, flags, invert_results, results);
+}
+
+gboolean
+_nm_setting_diff (NMConnection *con_a,
+                  NMSetting *a,
+                  NMConnection *con_b,
+                  NMSetting *b,
+                  NMSettingCompareFlags flags,
+                  gboolean invert_results,
+                  GHashTable **results)
+{
 	const NMSettInfoSetting *sett_info;
 	guint i;
 	NMSettingDiffResult a_result = NM_SETTING_DIFF_RESULT_IN_A;
@@ -1575,6 +1606,9 @@ nm_setting_diff (NMSetting *a,
 		g_return_val_if_fail (NM_IS_SETTING (b), FALSE);
 		g_return_val_if_fail (G_OBJECT_TYPE (a) == G_OBJECT_TYPE (b), FALSE);
 	}
+
+	nm_assert (!con_a || NM_IS_CONNECTION (con_a));
+	nm_assert (!con_b || NM_IS_CONNECTION (con_b));
 
 	if ((flags & (NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT)) ==
 	             (NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT)) {
@@ -1652,7 +1686,7 @@ nm_setting_diff (NMSetting *a,
 			NMTernary compare_result;
 			GParamSpec *prop_spec;
 
-			compare_result = _compare_property (sett_info, i, a, b, flags);
+			compare_result = _compare_property (sett_info, i, con_a, a, con_b, b, flags);
 			if (compare_result == NM_TERNARY_DEFAULT)
 				continue;
 
@@ -1673,7 +1707,7 @@ nm_setting_diff (NMSetting *a,
 				 *
 				 * We need to double-check whether the property should be ignored by
 				 * looking at @a alone. */
-				if (_compare_property (sett_info, i, a, NULL, flags) == NM_TERNARY_DEFAULT)
+				if (_compare_property (sett_info, i, con_a, a, NULL, NULL, flags) == NM_TERNARY_DEFAULT)
 					continue;
 			}
 
