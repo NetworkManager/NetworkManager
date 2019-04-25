@@ -3106,28 +3106,17 @@ concheck_start (NMDevice *self,
 	    && !priv->concheck_rp_filter_checked) {
 
 		if ((ifname = nm_device_get_ip_iface_from_platform (self))) {
-			int val, val_all;
+			gboolean due_to_all;
+			int val;
 
-			val = nm_platform_sysctl_ip_conf_get_int_checked (nm_device_get_platform (self),
-			                                                  AF_INET,
-			                                                  ifname,
-			                                                  "rp_filter",
-			                                                  10, 0, 2, 3);
-			if (val < 2) {
-				val_all = nm_platform_sysctl_ip_conf_get_int_checked (nm_device_get_platform (self),
-				                                                      AF_INET,
-				                                                      "all",
-				                                                      "rp_filter",
-				                                                      10, 0, 2, val);
-				if (val_all > val) {
-					val = val_all;
-					ifname = "all";
-				}
-			}
-
+			val = nm_platform_sysctl_ip_conf_get_rp_filter_ipv4 (nm_device_get_platform (self),
+			                                                     ifname,
+			                                                     TRUE,
+			                                                     &due_to_all);
 			if (val == 1) {
 				_LOGW (LOGD_CONCHECK, "connectivity: \"/proc/sys/net/ipv4/conf/%s/rp_filter\" is set to \"1\". "
-				       "This might break connectivity checking for IPv4 on this device", ifname);
+				       "This might break connectivity checking for IPv4 on this device",
+				       due_to_all ? "all" : ifname);
 			}
 		}
 
