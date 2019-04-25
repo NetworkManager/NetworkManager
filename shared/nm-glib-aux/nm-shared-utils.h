@@ -911,6 +911,24 @@ typedef struct {
 
 NMUtilsNamedValue *nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len);
 
+gssize nm_utils_named_value_list_find (const NMUtilsNamedValue *arr,
+                                       gsize len,
+                                       const char *name,
+                                       gboolean sorted);
+
+gboolean nm_utils_named_value_list_is_sorted (const NMUtilsNamedValue *arr,
+                                              gsize len,
+                                              gboolean accept_duplicates,
+                                              GCompareDataFunc compare_func,
+                                              gpointer user_data);
+
+void nm_utils_named_value_list_sort (NMUtilsNamedValue *arr,
+                                     gsize len,
+                                     GCompareDataFunc compare_func,
+                                     gpointer user_data);
+
+/*****************************************************************************/
+
 gpointer *nm_utils_hash_keys_to_array (GHashTable *hash,
                                        GCompareDataFunc compare_func,
                                        gpointer user_data,
