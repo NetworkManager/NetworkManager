@@ -63,9 +63,11 @@ test-*.trs
 
 /clients/cli/nmcli
 /clients/common/settings-docs.h
+/clients/common/tests/test-general
+/clients/common/tests/test-libnm-core-aux
+/clients/nm-online
 /clients/tui/newt/libnmt-newt.a
 /clients/tui/nmtui
-/clients/nm-online
 
 /data/NetworkManager.service
 /data/NetworkManager-wait-online.service
@@ -146,8 +148,8 @@ test-*.trs
 /examples/C/qt/list-connections
 /examples/C/qt/change-ipv4-addresses
 
-/shared/nm-version-macros.h
 /shared/nm-utils/tests/test-shared-general
+/shared/nm-version-macros.h
 
 /introspection/org.freedesktop.NetworkManager*.[ch]
 
@@ -277,8 +279,6 @@ test-*.trs
 /src/tests/test-systemd
 /src/tests/test-utils
 /src/tests/test-wired-defname
-
-/clients/common/tests/test-general
 
 /vapi/*.vapi
 

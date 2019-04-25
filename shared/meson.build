@@ -287,18 +287,21 @@ libnm_systemd_shared_no_logging_dep = declare_dependency(
 
 ###############################################################################
 
-test_shared_general = executable(
-  'nm-utils/tests/test-shared-general',
-  [ 'nm-utils/tests/test-shared-general.c', ],
-  c_args: [
-      '-DNETWORKMANAGER_COMPILATION_TEST',
-      '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)',
+exe = executable(
+    'nm-utils/tests/test-shared-general',
+    [ 'nm-utils/tests/test-shared-general.c' ],
+    c_args: [
+        '-DNETWORKMANAGER_COMPILATION_TEST',
+        '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)',
     ],
-  dependencies: shared_nm_glib_aux_dep,
-  link_with: shared_c_siphash,
+    dependencies: [
+        shared_nm_glib_aux_dep,
+        shared_c_siphash_dep,
+    ],
 )
+
 test(
-  'shared/nm-utils/test-shared-general',
-  test_script,
-  args: test_args + [test_shared_general.full_path()]
+    'shared/nm-utils/tests/test-shared-general',
+    test_script,
+    args: test_args + [exe.full_path()]
 )

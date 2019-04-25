@@ -2130,6 +2130,8 @@ nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
 	return 0;
 }
 
+/*****************************************************************************/
+
 NMUtilsNamedValue *
 nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len)
 {
@@ -2154,14 +2156,105 @@ nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len)
 	values[i].name = NULL;
 	values[i].value_ptr = NULL;
 
-	if (len > 1) {
-		g_qsort_with_data (values, len, sizeof (values[0]),
-		                   nm_utils_named_entry_cmp_with_data, NULL);
-	}
+	nm_utils_named_value_list_sort (values, len, NULL, NULL);
 
 	NM_SET_OUT (out_len, len);
 	return values;
 }
+
+gssize
+nm_utils_named_value_list_find (const NMUtilsNamedValue *arr,
+                                gsize len,
+                                const char *name,
+                                gboolean sorted)
+{
+	gsize i;
+
+	nm_assert (name);
+
+#if NM_MORE_ASSERTS > 5
+	{
+		for (i = 0; i < len; i++) {
+			const NMUtilsNamedValue *v = &arr[i];
+
+			nm_assert (v->name);
+			if (   sorted
+			    && i > 0)
+				nm_assert (strcmp (arr[i - 1].name, v->name) < 0);
+		}
+	}
+
+	nm_assert (   !sorted
+	           || nm_utils_named_value_list_is_sorted (arr, len, FALSE, NULL, NULL));
+#endif
+
+	if (sorted) {
+		return nm_utils_array_find_binary_search (arr,
+		                                          sizeof (NMUtilsNamedValue),
+		                                          len,
+		                                          &name,
+		                                          nm_strcmp_p_with_data,
+		                                          NULL);
+	}
+	for (i = 0; i < len; i++) {
+		if (nm_streq (arr[i].name, name))
+			return i;
+	}
+	return ~((gssize) len);
+}
+
+gboolean
+nm_utils_named_value_list_is_sorted (const NMUtilsNamedValue *arr,
+                                     gsize len,
+                                     gboolean accept_duplicates,
+                                     GCompareDataFunc compare_func,
+                                     gpointer user_data)
+{
+	gsize i;
+	int c_limit;
+
+	if (len == 0)
+		return TRUE;
+
+	g_return_val_if_fail (arr, FALSE);
+
+	if (!compare_func)
+		compare_func = nm_strcmp_p_with_data;
+
+	c_limit = accept_duplicates ? 0 : -1;
+
+	for (i = 1; i < len; i++) {
+		int c;
+
+		c = compare_func (&arr[i - 1], &arr[i], user_data);
+		if (c > c_limit)
+			return FALSE;
+	}
+	return TRUE;
+}
+
+void
+nm_utils_named_value_list_sort (NMUtilsNamedValue *arr,
+                                gsize len,
+                                GCompareDataFunc compare_func,
+                                gpointer user_data)
+{
+	if (len == 0)
+		return;
+
+	g_return_if_fail (arr);
+
+	if (len == 1)
+		return;
+
+	g_qsort_with_data (arr,
+	                   len,
+	                   sizeof (NMUtilsNamedValue),
+	                   compare_func ?: nm_strcmp_p_with_data,
+	                   user_data);
+}
+
+/*****************************************************************************/
 
 gpointer *
 nm_utils_hash_keys_to_array (GHashTable *hash,

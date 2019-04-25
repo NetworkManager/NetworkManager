@@ -4512,7 +4512,7 @@ make_wired_setting (shvarFile *ifcfg,
 		gs_free const char **options = NULL;
 		gsize i;
 
-		options = nm_utils_strsplit_set_with_empty (value, " ");
+		options = nm_utils_escaped_tokens_split (value, NM_ASCII_SPACES);
 		for (i = 0; options && options[i]; i++) {
 			const char *line = options[i];
 			const char *equals;

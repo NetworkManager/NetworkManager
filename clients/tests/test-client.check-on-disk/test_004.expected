@@ -108,7 +108,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         192.168.77.5/24
 ipv4.gateway:                           --
@@ -129,7 +129,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         1:2:3:4::6/64
 ipv6.gateway:                           --
@@ -203,7 +203,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         192.168.77.5/24
 ipv4.gateway:                           --
@@ -224,7 +224,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         1:2:3:4::6/64
 ipv6.gateway:                           --
@@ -317,7 +317,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -338,7 +338,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -401,7 +401,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -422,7 +422,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -557,7 +557,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -578,7 +578,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -661,7 +661,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -682,7 +682,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -765,7 +765,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -786,7 +786,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -869,7 +869,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -890,7 +890,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -973,7 +973,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -994,7 +994,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -1077,7 +1077,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -1098,7 +1098,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -1181,7 +1181,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -1202,7 +1202,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -1265,7 +1265,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -1286,7 +1286,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -3739,7 +3739,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -3760,7 +3760,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -3843,7 +3843,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -3864,7 +3864,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -3947,7 +3947,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -3968,7 +3968,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -4051,7 +4051,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -4072,7 +4072,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -4155,7 +4155,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -4176,7 +4176,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -4239,7 +4239,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -4260,7 +4260,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -6717,7 +6717,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -6739,7 +6739,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -6834,7 +6834,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -6856,7 +6856,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -6951,7 +6951,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -6973,7 +6973,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -7068,7 +7068,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -7090,7 +7090,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -7185,7 +7185,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -7207,7 +7207,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -7277,7 +7277,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -7299,7 +7299,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -10305,7 +10305,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -10327,7 +10327,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -10422,7 +10422,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -10444,7 +10444,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -10539,7 +10539,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -10561,7 +10561,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -10656,7 +10656,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -10678,7 +10678,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -10773,7 +10773,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -10795,7 +10795,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -10865,7 +10865,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -10887,7 +10887,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -13856,12 +13856,12 @@ NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 -------------------------------------------------------------------------------
 
 <<<
-size: 2363
+size: 2361
 location: clients/tests/test-client.py:1037:test_004()/215
 cmd: $NMCLI --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2218 bytes
+stdout: 2216 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -13889,7 +13889,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -13910,7 +13910,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -13960,12 +13960,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2373
+size: 2371
 location: clients/tests/test-client.py:1037:test_004()/216
 cmd: $NMCLI --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2218 bytes
+stdout: 2216 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -13993,7 +13993,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -14014,7 +14014,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -14064,12 +14064,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2363
+size: 2361
 location: clients/tests/test-client.py:1039:test_004()/217
 cmd: $NMCLI --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2218 bytes
+stdout: 2216 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -14097,7 +14097,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -14118,7 +14118,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -14168,12 +14168,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2373
+size: 2371
 location: clients/tests/test-client.py:1039:test_004()/218
 cmd: $NMCLI --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2218 bytes
+stdout: 2216 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -14201,7 +14201,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -14222,7 +14222,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -14272,12 +14272,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 1811
+size: 1809
 location: clients/tests/test-client.py:1042:test_004()/219
 cmd: $NMCLI --terse -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1659 bytes
+stdout: 1657 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -14305,7 +14305,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -14326,7 +14326,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -14356,12 +14356,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 1821
+size: 1819
 location: clients/tests/test-client.py:1042:test_004()/220
 cmd: $NMCLI --terse -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1659 bytes
+stdout: 1657 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -14389,7 +14389,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -14410,7 +14410,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -16800,12 +16800,12 @@ NEIGHBOR[2].SYSTEM-DESCRIPTION:Test system #3
 NEIGHBOR[2].SYSTEM-CAPABILITIES:40 (wlan-access-point,telephone)
 
 <<<
-size: 2375
+size: 2373
 location: clients/tests/test-client.py:1037:test_004()/263
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2218 bytes
+stdout: 2216 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -16833,7 +16833,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -16854,7 +16854,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -16904,12 +16904,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2385
+size: 2383
 location: clients/tests/test-client.py:1037:test_004()/264
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2218 bytes
+stdout: 2216 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -16937,7 +16937,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -16958,7 +16958,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -17008,12 +17008,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2375
+size: 2373
 location: clients/tests/test-client.py:1039:test_004()/265
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2218 bytes
+stdout: 2216 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -17041,7 +17041,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -17062,7 +17062,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -17112,12 +17112,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2385
+size: 2383
 location: clients/tests/test-client.py:1039:test_004()/266
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2218 bytes
+stdout: 2216 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -17145,7 +17145,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -17166,7 +17166,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -17216,12 +17216,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 1823
+size: 1821
 location: clients/tests/test-client.py:1042:test_004()/267
 cmd: $NMCLI --terse --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1659 bytes
+stdout: 1657 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -17249,7 +17249,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -17270,7 +17270,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -17300,12 +17300,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 1833
+size: 1831
 location: clients/tests/test-client.py:1042:test_004()/268
 cmd: $NMCLI --terse --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1659 bytes
+stdout: 1657 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -17333,7 +17333,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -17354,7 +17354,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -19755,10 +19755,10 @@ name        id         uuid                                  stable-id  type  in
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -19784,10 +19784,10 @@ name        id         uuid                                  stable-id  type  in
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -19813,10 +19813,10 @@ name        id         uuid                                  stable-id  type  in
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -19842,10 +19842,10 @@ name        id         uuid                                  stable-id  type  in
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -19871,10 +19871,10 @@ name        id         uuid                                  stable-id  type  in
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -19895,10 +19895,10 @@ name        id         uuid                                  stable-id  type  in
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -21269,10 +21269,10 @@ name        id         uuid                                  stable-id  type  in
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -21298,10 +21298,10 @@ name        id         uuid                                  stable-id  type  in
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -21327,10 +21327,10 @@ name        id         uuid                                  stable-id  type  in
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -21356,10 +21356,10 @@ name        id         uuid                                  stable-id  type  in
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -21385,10 +21385,10 @@ name        id         uuid                                  stable-id  type  in
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -21409,10 +21409,10 @@ name        id         uuid                                  stable-id  type  in
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -22788,11 +22788,11 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -22830,11 +22830,11 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -22872,11 +22872,11 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -22914,11 +22914,11 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -22956,11 +22956,11 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -22988,11 +22988,11 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -24898,11 +24898,11 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -24940,11 +24940,11 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -24982,11 +24982,11 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -25024,11 +25024,11 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -25066,11 +25066,11 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -25098,11 +25098,11 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              0 (default)   tak                 --             --         nie            tak       -1 (default) 
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -26992,94 +26992,94 @@ eth0    chassis1           44:44:44:44:44:44  GigabitEthernet #2  test2.example.
 eth0    00:11:22:33:44:22  port1              GigabitEthernet #3  test3.example.com  Test system #3      40 (wlan-access-point,telephone)                                                                                                            
 
 <<<
-size: 793
+size: 791
 location: clients/tests/test-client.py:1037:test_004()/503
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 634 bytes
+stdout: 632 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 803
+size: 801
 location: clients/tests/test-client.py:1037:test_004()/504
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 634 bytes
+stdout: 632 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 793
+size: 791
 location: clients/tests/test-client.py:1039:test_004()/505
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 634 bytes
+stdout: 632 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 803
+size: 801
 location: clients/tests/test-client.py:1039:test_004()/506
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 634 bytes
+stdout: 632 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 506
+size: 504
 location: clients/tests/test-client.py:1042:test_004()/507
 cmd: $NMCLI --mode tabular --terse -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 340 bytes
+stdout: 338 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
 <<<
-size: 516
+size: 514
 location: clients/tests/test-client.py:1042:test_004()/508
 cmd: $NMCLI --mode tabular --terse -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 340 bytes
+stdout: 338 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
@@ -27868,94 +27868,94 @@ eth0:chassis1:44\:44\:44\:44\:44\:44:GigabitEthernet #2:test2.example.com:Test s
 eth0:00\:11\:22\:33\:44\:22:port1:GigabitEthernet #3:test3.example.com:Test system #3:40 (wlan-access-point,telephone)
 
 <<<
-size: 805
+size: 803
 location: clients/tests/test-client.py:1037:test_004()/551
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 634 bytes
+stdout: 632 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 815
+size: 813
 location: clients/tests/test-client.py:1037:test_004()/552
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 634 bytes
+stdout: 632 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 805
+size: 803
 location: clients/tests/test-client.py:1039:test_004()/553
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 634 bytes
+stdout: 632 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 815
+size: 813
 location: clients/tests/test-client.py:1039:test_004()/554
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 634 bytes
+stdout: 632 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 518
+size: 516
 location: clients/tests/test-client.py:1042:test_004()/555
 cmd: $NMCLI --mode tabular --terse --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 340 bytes
+stdout: 338 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
 <<<
-size: 528
+size: 526
 location: clients/tests/test-client.py:1042:test_004()/556
 cmd: $NMCLI --mode tabular --terse --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 340 bytes
+stdout: 338 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
-ipv4:auto::: :0::::-1:0::no:no::0:yes:::no:yes:-1
-ipv6:auto::: :0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
+ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
+ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
@@ -28777,7 +28777,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -28798,7 +28798,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -28881,7 +28881,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -28902,7 +28902,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -28985,7 +28985,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -29006,7 +29006,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -29089,7 +29089,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -29110,7 +29110,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -29193,7 +29193,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -29214,7 +29214,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -29277,7 +29277,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -29298,7 +29298,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -32241,7 +32241,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -32262,7 +32262,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -32345,7 +32345,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -32366,7 +32366,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -32449,7 +32449,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -32470,7 +32470,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -32553,7 +32553,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -32574,7 +32574,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -32657,7 +32657,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -32678,7 +32678,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -32741,7 +32741,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -32762,7 +32762,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -35709,7 +35709,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -35731,7 +35731,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -35826,7 +35826,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -35848,7 +35848,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -35943,7 +35943,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -35965,7 +35965,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -36060,7 +36060,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -36082,7 +36082,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -36177,7 +36177,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -36199,7 +36199,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -36269,7 +36269,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -36291,7 +36291,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -39817,7 +39817,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -39839,7 +39839,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -39934,7 +39934,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -39956,7 +39956,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -40051,7 +40051,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -40073,7 +40073,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -40168,7 +40168,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -40190,7 +40190,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -40285,7 +40285,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -40307,7 +40307,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -40377,7 +40377,7 @@ connection.llmnr:                       -1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
+ipv4.dns-options:                       --
 ipv4.dns-priority:                      0
 ipv4.addresses:                         --
 ipv4.gateway:                           --
@@ -40399,7 +40399,7 @@ ipv4.dad-timeout:                       -1 (default)
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
-ipv6.dns-options:                       ""
+ipv6.dns-options:                       --
 ipv6.dns-priority:                      0
 ipv6.addresses:                         --
 ipv6.gateway:                           --
@@ -43888,12 +43888,12 @@ NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 -------------------------------------------------------------------------------
 
 <<<
-size: 2380
+size: 2378
 location: clients/tests/test-client.py:1037:test_004()/791
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2218 bytes
+stdout: 2216 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -43921,7 +43921,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -43942,7 +43942,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -43992,12 +43992,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2390
+size: 2388
 location: clients/tests/test-client.py:1037:test_004()/792
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2218 bytes
+stdout: 2216 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -44025,7 +44025,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -44046,7 +44046,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -44096,12 +44096,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2380
+size: 2378
 location: clients/tests/test-client.py:1039:test_004()/793
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2218 bytes
+stdout: 2216 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -44129,7 +44129,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -44150,7 +44150,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -44200,12 +44200,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2390
+size: 2388
 location: clients/tests/test-client.py:1039:test_004()/794
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2218 bytes
+stdout: 2216 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -44233,7 +44233,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -44254,7 +44254,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -44304,12 +44304,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 1828
+size: 1826
 location: clients/tests/test-client.py:1042:test_004()/795
 cmd: $NMCLI --mode multiline --terse -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1659 bytes
+stdout: 1657 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -44337,7 +44337,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -44358,7 +44358,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -44388,12 +44388,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 1838
+size: 1836
 location: clients/tests/test-client.py:1042:test_004()/796
 cmd: $NMCLI --mode multiline --terse -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1659 bytes
+stdout: 1657 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -44421,7 +44421,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -44442,7 +44442,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -47352,12 +47352,12 @@ NEIGHBOR[2].SYSTEM-DESCRIPTION:Test system #3
 NEIGHBOR[2].SYSTEM-CAPABILITIES:40 (wlan-access-point,telephone)
 
 <<<
-size: 2392
+size: 2390
 location: clients/tests/test-client.py:1037:test_004()/839
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2218 bytes
+stdout: 2216 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -47385,7 +47385,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -47406,7 +47406,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -47456,12 +47456,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2402
+size: 2400
 location: clients/tests/test-client.py:1037:test_004()/840
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2218 bytes
+stdout: 2216 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -47489,7 +47489,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -47510,7 +47510,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -47560,12 +47560,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2392
+size: 2390
 location: clients/tests/test-client.py:1039:test_004()/841
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2218 bytes
+stdout: 2216 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -47593,7 +47593,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -47614,7 +47614,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -47664,12 +47664,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2402
+size: 2400
 location: clients/tests/test-client.py:1039:test_004()/842
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2218 bytes
+stdout: 2216 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -47697,7 +47697,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -47718,7 +47718,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -47768,12 +47768,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 1840
+size: 1838
 location: clients/tests/test-client.py:1042:test_004()/843
 cmd: $NMCLI --mode multiline --terse --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1659 bytes
+stdout: 1657 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -47801,7 +47801,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -47822,7 +47822,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:
@@ -47852,12 +47852,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 1850
+size: 1848
 location: clients/tests/test-client.py:1042:test_004()/844
 cmd: $NMCLI --mode multiline --terse --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1659 bytes
+stdout: 1657 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -47885,7 +47885,7 @@ connection.llmnr:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
-ipv4.dns-options: 
+ipv4.dns-options:
 ipv4.dns-priority:0
 ipv4.addresses:
 ipv4.gateway:
@@ -47906,7 +47906,7 @@ ipv4.dad-timeout:-1
 ipv6.method:auto
 ipv6.dns:
 ipv6.dns-search:
-ipv6.dns-options: 
+ipv6.dns-options:
 ipv6.dns-priority:0
 ipv6.addresses:
 ipv6.gateway:

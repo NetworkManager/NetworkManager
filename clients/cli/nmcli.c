@@ -915,88 +915,6 @@ signal_handler (gpointer user_data)
 	return G_SOURCE_CONTINUE;
 }
 
-static void
-nmc_convert_strv_to_string (const GValue *src_value, GValue *dest_value)
-{
-	char **strings;
-
-	strings = g_value_get_boxed (src_value);
-	if (strings)
-		g_value_take_string (dest_value, g_strjoinv (",", strings));
-	else
-		g_value_set_string (dest_value, "");
-}
-
-static void
-nmc_convert_string_hash_to_string (const GValue *src_value, GValue *dest_value)
-{
-	GHashTable *hash;
-	GHashTableIter iter;
-	const char *key, *value;
-	GString *string;
-
-	hash = (GHashTable *) g_value_get_boxed (src_value);
-
-	string = g_string_new (NULL);
-	if (hash) {
-		g_hash_table_iter_init (&iter, hash);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
-			if (string->len)
-				g_string_append_c (string, ',');
-			g_string_append_printf (string, "%s=%s", key, value);
-		}
-	}
-
-	g_value_take_string (dest_value, g_string_free (string, FALSE));
-}
-
-static void
-nmc_convert_bytes_to_string (const GValue *src_value, GValue *dest_value)
-{
-	GBytes *bytes;
-	const guint8 *array;
-	gsize length;
-	GString *printable;
-	guint i = 0;
-
-	bytes = g_value_get_boxed (src_value);
-
-	printable = g_string_new ("[");
-
-	if (bytes) {
-		array = g_bytes_get_data (bytes, &length);
-		while (i < MIN (length, 35)) {
-			if (i > 0)
-				g_string_append_c (printable, ' ');
-			g_string_append_printf (printable, "0x%02X", array[i++]);
-		}
-		if (i < length)
-			g_string_append (printable, " ... ");
-	}
-	g_string_append_c (printable, ']');
-
-	g_value_take_string (dest_value, g_string_free (printable, FALSE));
-}
-
-static void
-nmc_value_transforms_register (void)
-{
-	g_value_register_transform_func (G_TYPE_STRV,
-	                                 G_TYPE_STRING,
-	                                 nmc_convert_strv_to_string);
-
-	/* This depends on the fact that all of the hash-table-valued properties
-	 * in libnm-core are string->string.
-	 */
-	g_value_register_transform_func (G_TYPE_HASH_TABLE,
-	                                 G_TYPE_STRING,
-	                                 nmc_convert_string_hash_to_string);
-
-	g_value_register_transform_func (G_TYPE_BYTES,
-	                                 G_TYPE_STRING,
-	                                 nmc_convert_bytes_to_string);
-}
-
 void
 nm_cli_spawn_pager (NmCli *nmc)
 {
@@ -1053,8 +971,6 @@ main (int argc, char *argv[])
 
 	/* Save terminal settings */
 	tcgetattr (STDIN_FILENO, &termios_orig);
-
-	nmc_value_transforms_register ();
 
 	nm_cli.return_text = g_string_new (_("Success"));
 	loop = g_main_loop_new (NULL, FALSE);

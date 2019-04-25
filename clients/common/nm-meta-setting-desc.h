@@ -270,6 +270,13 @@ struct _NMMetaPropertyTypData {
 			guint32 (*get_num_fcn_u32) (NMSetting *setting);
 			guint (*get_num_fcn_u) (NMSetting *setting);
 			void (*clear_all_fcn) (NMSetting *setting);
+
+			/* some multilist properties distinguish between an empty list and
+			 * and unset. If this function pointer is set, certain behaviors come
+			 * into action to handle that. */
+			void (*clear_emptyunset_fcn) (NMSetting *setting,
+			                              gboolean is_set /* or else set default */);
+
 			gboolean (*add_fcn) (NMSetting *setting,
 			                     const char *item);
 			void (*add2_fcn) (NMSetting *setting,

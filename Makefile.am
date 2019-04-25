@@ -449,6 +449,8 @@ shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_CPPFLAGS = \
 
 shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_SOURCES = \
 	shared/nm-libnm-core-aux/nm-dispatcher-api.h \
+	shared/nm-libnm-core-aux/nm-libnm-core-aux.c \
+	shared/nm-libnm-core-aux/nm-libnm-core-aux.h \
 	$(NULL)
 
 shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_LDFLAGS = \
@@ -4101,12 +4103,48 @@ clients_common_tests_test_general_LDADD = \
 
 $(clients_common_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
+###############################################################################
+
 EXTRA_DIST += \
 	clients/common/tests/wg-test0.conf \
 	clients/common/tests/wg-test1.conf \
 	clients/common/tests/wg-test2.conf \
 	clients/common/tests/wg-test3.conf \
 	$(NULL)
+
+###############################################################################
+
+check_programs += clients/common/tests/test-libnm-core-aux
+
+clients_common_tests_test_libnm_core_aux_CPPFLAGS = \
+	$(dflt_cppflags) \
+	-I$(builddir)/shared \
+	-I$(srcdir)/shared \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm \
+	-I$(srcdir)/libnm \
+	-DNETWORKMANAGER_COMPILATION_TEST \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	$(NULL)
+
+clients_common_tests_test_libnm_core_aux_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
+
+clients_common_tests_test_libnm_core_aux_LDADD = \
+	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm/libnm.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
+	$(GLIB_LIBS) \
+	$(NULL)
+
+$(clients_common_tests_test_libnm_core_aux_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(clients_common_tests_test_libnm_core_aux_OBJECTS): $(libnm_lib_h_pub_mkenums)
 
 ###############################################################################
 # clients/cli

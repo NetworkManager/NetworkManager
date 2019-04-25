@@ -75,7 +75,11 @@ typedef struct {
 	guint32 mtu;
 	char **s390_subchannels;
 	char *s390_nettype;
-	GHashTable *s390_options;
+	struct {
+		NMUtilsNamedValue *arr;
+		guint len;
+		guint n_alloc;
+	} s390_options;
 	NMSettingWiredWakeOnLan wol;
 	char *wol_password;
 } NMSettingWiredPrivate;
@@ -87,14 +91,67 @@ G_DEFINE_TYPE (NMSettingWired, nm_setting_wired, NM_TYPE_SETTING)
 /*****************************************************************************/
 
 static const char *valid_s390_opts[] = {
-	"portno", "layer2", "portname", "protocol", "priority_queueing",
-	"buffer_count", "isolation", "total", "inter", "inter_jumbo", "route4",
-	"route6", "fake_broadcast", "broadcast_mode", "canonical_macaddr",
-	"checksumming", "sniffer", "large_send", "ipato_enable", "ipato_invert4",
-	"ipato_add4", "ipato_invert6", "ipato_add6", "vipa_add4", "vipa_add6",
-	"rxip_add4", "rxip_add6", "lancmd_timeout", "ctcprot",
-	NULL
+	"broadcast_mode",
+	"buffer_count",
+	"canonical_macaddr",
+	"checksumming",
+	"ctcprot",
+	"fake_broadcast",
+	"inter",
+	"inter_jumbo",
+	"ipato_add4",
+	"ipato_add6",
+	"ipato_enable",
+	"ipato_invert4",
+	"ipato_invert6",
+	"isolation",
+	"lancmd_timeout",
+	"large_send",
+	"layer2",
+	"portname",
+	"portno",
+	"priority_queueing",
+	"protocol",
+	"route4",
+	"route6",
+	"rxip_add4",
+	"rxip_add6",
+	"sniffer",
+	"total",
+	"vipa_add4",
+	"vipa_add6",
+	NULL,
 };
+
+static gboolean
+valid_s390_opts_check (const char *option)
+{
+#if NM_MORE_ASSERTS > 5
+	nm_assert (NM_PTRARRAY_LEN (valid_s390_opts) + 1 == G_N_ELEMENTS (valid_s390_opts));
+	{
+		gsize i;
+
+		for (i = 0; i < G_N_ELEMENTS (valid_s390_opts); i++) {
+			if (i == G_N_ELEMENTS (valid_s390_opts) - 1)
+				nm_assert (!valid_s390_opts[i]);
+			else {
+				nm_assert (valid_s390_opts[i]);
+				nm_assert (valid_s390_opts[i][0] != '\0');
+				if (i > 0)
+					g_assert (strcmp (valid_s390_opts[i - 1], valid_s390_opts[i]) < 0);
+			}
+		}
+	}
+#endif
+
+	return    option
+	       && (nm_utils_array_find_binary_search (valid_s390_opts,
+	                                              sizeof (const char *),
+	                                              G_N_ELEMENTS (valid_s390_opts) - 1,
+	                                              &option,
+	                                              nm_strcmp_p_with_data,
+	                                              NULL) >= 0);
+}
 
 /**
  * nm_setting_wired_get_port:
@@ -417,7 +474,7 @@ nm_setting_wired_get_num_s390_options (NMSettingWired *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), 0);
 
-	return g_hash_table_size (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options);
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options.len;
 }
 
 /**
@@ -447,24 +504,17 @@ nm_setting_wired_get_s390_option (NMSettingWired *setting,
                                   const char **out_key,
                                   const char **out_value)
 {
-	const char *_key, *_value;
-	GHashTableIter iter;
-	guint i = 0;
+	NMSettingWiredPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
 
-	g_hash_table_iter_init (&iter, NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options);
-	while (g_hash_table_iter_next (&iter, (gpointer) &_key, (gpointer) &_value)) {
-		if (i == idx) {
-			if (out_key)
-				*out_key = _key;
-			if (out_value)
-				*out_value = _value;
-			return TRUE;
-		}
-		i++;
-	}
-	g_return_val_if_reached (FALSE);
+	priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
+
+	g_return_val_if_fail (idx < priv->s390_options.len, FALSE);
+
+	NM_SET_OUT (out_key,   priv->s390_options.arr[idx].name);
+	NM_SET_OUT (out_value, priv->s390_options.arr[idx].value_str);
+	return TRUE;
 }
 
 /**
@@ -482,10 +532,21 @@ const char *
 nm_setting_wired_get_s390_option_by_key (NMSettingWired *setting,
                                          const char *key)
 {
+	NMSettingWiredPrivate *priv;
+	gssize idx;
+
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
 	g_return_val_if_fail (key && key[0], NULL);
 
-	return g_hash_table_lookup (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options, key);
+	priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
+
+	idx = nm_utils_named_value_list_find (priv->s390_options.arr,
+	                                      priv->s390_options.len,
+	                                      key,
+	                                      TRUE);
+	if (idx < 0)
+		return NULL;
+	return priv->s390_options.arr[idx].value_str;
 }
 
 /**
@@ -507,14 +568,51 @@ nm_setting_wired_add_s390_option (NMSettingWired *setting,
                                   const char *key,
                                   const char *value)
 {
-	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
-	g_return_val_if_fail (key && key[0], FALSE);
-	g_return_val_if_fail (g_strv_contains (valid_s390_opts, key), FALSE);
-	g_return_val_if_fail (value != NULL, FALSE);
+	NMSettingWiredPrivate *priv;
+	gssize idx;
+	NMUtilsNamedValue *v;
 
-	g_hash_table_insert (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options,
-	                     g_strdup (key),
-	                     g_strdup (value));
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
+	g_return_val_if_fail (value, FALSE);
+
+	if (!valid_s390_opts_check (key)) {
+		g_return_val_if_fail (key, FALSE);
+		return FALSE;
+	}
+
+	priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
+
+	idx = nm_utils_named_value_list_find (priv->s390_options.arr,
+	                                      priv->s390_options.len,
+	                                      key,
+	                                      TRUE);
+	if (idx < 0) {
+		gsize dst_idx = ~idx;
+
+		if (priv->s390_options.n_alloc < priv->s390_options.len + 1) {
+			priv->s390_options.n_alloc = NM_MAX (4,
+			                                     (priv->s390_options.len + 1) * 2);
+			priv->s390_options.arr = g_realloc (priv->s390_options.arr,
+			                                    priv->s390_options.n_alloc * sizeof (NMUtilsNamedValue));
+		}
+		if (dst_idx < priv->s390_options.len) {
+			memmove (&priv->s390_options.arr[dst_idx + 1],
+			         &priv->s390_options.arr[dst_idx],
+			         (priv->s390_options.len - dst_idx) * sizeof (NMUtilsNamedValue));
+		}
+		priv->s390_options.arr[dst_idx] = (NMUtilsNamedValue) {
+			.name      = g_strdup (key),
+			.value_str = g_strdup (value),
+		};
+		priv->s390_options.len++;
+	} else {
+		v = &priv->s390_options.arr[idx];
+		if (nm_streq (value, v->value_str))
+			return TRUE;
+		g_free ((char *) v->value_str);
+		v->value_str = g_strdup (value);
+	}
+
 	_notify (setting, PROP_S390_OPTIONS);
 	return TRUE;
 }
@@ -534,20 +632,64 @@ gboolean
 nm_setting_wired_remove_s390_option (NMSettingWired *setting,
                                      const char *key)
 {
-	gboolean found;
+	NMSettingWiredPrivate *priv;
+	gsize dst_idx;
+	gssize idx;
 
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
-	g_return_val_if_fail (key && key[0], FALSE);
+	g_return_val_if_fail (key, FALSE);
 
-	found = g_hash_table_remove (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options, key);
-	if (found)
-		_notify (setting, PROP_S390_OPTIONS);
-	return found;
+	priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
+
+	idx = nm_utils_named_value_list_find (priv->s390_options.arr,
+	                                      priv->s390_options.len,
+	                                      key,
+	                                      TRUE);
+	if (idx < 0)
+		return FALSE;
+
+	dst_idx = idx;
+
+	g_free ((char *) priv->s390_options.arr[dst_idx].name);
+	g_free ((char *) priv->s390_options.arr[dst_idx].value_str);
+	if (dst_idx + 1 != priv->s390_options.len) {
+		memmove (&priv->s390_options.arr[dst_idx],
+		         &priv->s390_options.arr[dst_idx + 1],
+		         (priv->s390_options.len - dst_idx - 1) * sizeof (NMUtilsNamedValue));
+	}
+
+	priv->s390_options.len--;
+
+	_notify (setting, PROP_S390_OPTIONS);
+	return TRUE;
+}
+
+static void
+_s390_options_clear (NMSettingWiredPrivate *priv)
+{
+	guint i;
+
+	for (i = 0; i < priv->s390_options.len; i++) {
+		g_free ((char *) priv->s390_options.arr[i].name);
+		g_free ((char *) priv->s390_options.arr[i].value_str);
+	}
+	nm_clear_g_free (&priv->s390_options.arr);
+	priv->s390_options.len = 0;
+	priv->s390_options.n_alloc = 0;
+}
+
+void
+_nm_setting_wired_clear_s390_options (NMSettingWired *setting)
+{
+	g_return_if_fail (NM_IS_SETTING_WIRED (setting));
+
+	_s390_options_clear (NM_SETTING_WIRED_GET_PRIVATE (setting));
 }
 
 /**
  * nm_setting_wired_get_valid_s390_options:
- * @setting: (allow-none): the #NMSettingWired
+ * @setting: (allow-none): the #NMSettingWired. This argument is unused
+ *   and you may pass %NULL.
  *
  * Returns a list of valid s390 options.
  *
@@ -602,10 +744,8 @@ static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
-	GHashTableIter iter;
-	const char *key, *value;
-	int i;
 	GError *local = NULL;
+	guint i;
 
 	if (!NM_IN_STRSET (priv->port, NULL, "tp", "aui", "bnc", "mii")) {
 		g_set_error (error,
@@ -672,16 +812,19 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	g_hash_table_iter_init (&iter, priv->s390_options);
-	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value)) {
-		if (   !g_strv_contains (valid_s390_opts, key)
-		    || value[0] == '\0'
-		    || (strlen (value) > 200)) {
+	for (i = 0; i < priv->s390_options.len; i++) {
+		const NMUtilsNamedValue *v = &priv->s390_options.arr[i];
+
+		nm_assert (v->name);
+
+		if (   !valid_s390_opts_check (v->name)
+		    || v->value_str[0] == '\0'
+		    || strlen (v->value_str) > 200) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("invalid '%s' or its value '%s'"),
-			             key, value);
+			             v->name, v->value_str);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_S390_OPTIONS);
 			return FALSE;
 		}
@@ -802,6 +945,8 @@ get_property (GObject *object, guint prop_id,
 {
 	NMSettingWired *setting = NM_SETTING_WIRED (object);
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
+	GHashTable *hash;
+	guint i;
 
 	switch (prop_id) {
 	case PROP_PORT:
@@ -838,7 +983,16 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_wired_get_s390_nettype (setting));
 		break;
 	case PROP_S390_OPTIONS:
-		g_value_take_boxed (value, _nm_utils_copy_strdict (priv->s390_options));
+		hash = g_hash_table_new_full (nm_str_hash,
+		                              g_str_equal,
+		                              g_free,
+		                              g_free);
+		for (i = 0; i < priv->s390_options.len; i++) {
+			g_hash_table_insert (hash,
+			                     g_strdup (priv->s390_options.arr[i].name),
+			                     g_strdup (priv->s390_options.arr[i].value_str));
+		}
+		g_value_take_boxed (value, hash);
 		break;
 	case PROP_WAKE_ON_LAN:
 		g_value_set_uint (value, priv->wol);
@@ -859,7 +1013,6 @@ set_property (GObject *object, guint prop_id,
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (object);
 	const char * const *blacklist;
 	const char *mac;
-	int i;
 
 	switch (prop_id) {
 	case PROP_PORT:
@@ -894,6 +1047,8 @@ set_property (GObject *object, guint prop_id,
 		blacklist = g_value_get_boxed (value);
 		g_array_set_size (priv->mac_address_blacklist, 0);
 		if (blacklist && *blacklist) {
+			guint i;
+
 			for (i = 0; blacklist[i]; i++) {
 				mac = _nm_utils_hwaddr_canonical_or_invalid (blacklist[i], ETH_ALEN);
 				g_array_append_val (priv->mac_address_blacklist, mac);
@@ -913,8 +1068,63 @@ set_property (GObject *object, guint prop_id,
 		priv->s390_nettype = g_value_dup_string (value);
 		break;
 	case PROP_S390_OPTIONS:
-		g_hash_table_unref (priv->s390_options);
-		priv->s390_options = _nm_utils_copy_strdict (g_value_get_boxed (value));
+		{
+			GHashTable *hash;
+
+			_s390_options_clear (priv);
+
+			hash = g_value_get_boxed (value);
+
+			priv->s390_options.n_alloc = hash ? g_hash_table_size (hash) : 0u;
+
+			if (priv->s390_options.n_alloc > 0) {
+				gboolean invalid_content = FALSE;
+				GHashTableIter iter;
+				const char *key;
+				const char *val;
+				guint i, j;
+
+				priv->s390_options.arr = g_new (NMUtilsNamedValue, priv->s390_options.n_alloc);
+				g_hash_table_iter_init (&iter, hash);
+				while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val)) {
+					if (!key || !val) {
+						invalid_content = TRUE;
+						continue;
+					}
+					nm_assert (priv->s390_options.len < priv->s390_options.n_alloc);
+					priv->s390_options.arr[priv->s390_options.len] = (NMUtilsNamedValue) {
+						.name      = g_strdup (key),
+						.value_str = g_strdup (val),
+					};
+					priv->s390_options.len++;
+				}
+				if (priv->s390_options.len > 1) {
+					nm_utils_named_value_list_sort (priv->s390_options.arr,
+					                                priv->s390_options.len,
+					                                NULL,
+					                                NULL);
+					/* prune duplicate keys. This is only possible if @hash does not use
+					 * g_str_equal() as compare function (which would be a bug).
+					 * Still, handle this, because we use later binary sort and rely
+					 * on unique names. One bug here, should not bork the remainder
+					 * of the program. */
+					j = 1;
+					for (i = 1; i < priv->s390_options.len; i++) {
+						if (nm_streq (priv->s390_options.arr[j - 1].name,
+						              priv->s390_options.arr[i].name)) {
+							g_free ((char *) priv->s390_options.arr[i].name);
+							g_free ((char *) priv->s390_options.arr[i].value_str);
+							invalid_content = TRUE;
+							continue;
+						}
+						priv->s390_options.arr[j++] = priv->s390_options.arr[i];
+					}
+					priv->s390_options.len = j;
+				}
+
+				g_return_if_fail (!invalid_content);
+			}
+		}
 		break;
 	case PROP_WAKE_ON_LAN:
 		priv->wol = g_value_get_uint (value);
@@ -935,8 +1145,6 @@ static void
 nm_setting_wired_init (NMSettingWired *setting)
 {
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
-
-	priv->s390_options = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 
 	/* We use GArray rather than GPtrArray so it will automatically be NULL-terminated */
 	priv->mac_address_blacklist = g_array_new (TRUE, FALSE, sizeof (char *));
@@ -965,7 +1173,7 @@ finalize (GObject *object)
 	g_free (priv->duplex);
 	g_free (priv->s390_nettype);
 
-	g_hash_table_destroy (priv->s390_options);
+	_s390_options_clear (priv);
 
 	g_free (priv->device_mac_address);
 	g_free (priv->cloned_mac_address);

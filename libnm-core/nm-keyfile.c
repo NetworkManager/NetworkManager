@@ -994,6 +994,11 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 	gboolean is_vpn;
 	gsize n_keys;
 
+	nm_assert (   (NM_IS_SETTING_VPN (setting)  && nm_streq (key, NM_SETTING_VPN_DATA))
+	           || (NM_IS_SETTING_VPN (setting)  && nm_streq (key, NM_SETTING_VPN_SECRETS))
+	           || (NM_IS_SETTING_BOND (setting) && nm_streq (key, NM_SETTING_BOND_OPTIONS))
+	           || (NM_IS_SETTING_USER (setting) && nm_streq (key, NM_SETTING_USER_DATA)));
+
 	keys = nm_keyfile_plugin_kf_get_keys (file, setting_name, &n_keys, NULL);
 	if (n_keys == 0)
 		return;
@@ -1041,7 +1046,10 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 			                     value);
 		}
 		g_object_set (setting, NM_SETTING_USER_DATA, data, NULL);
+		return;
 	}
+
+	nm_assert_not_reached ();
 }
 
 static gsize
@@ -2019,6 +2027,64 @@ bridge_vlan_writer (KeyfileWriterInfo *info,
 	g_string_free (string, TRUE);
 }
 
+
+#define ETHERNET_S390_OPTIONS_GROUP_NAME "ethernet-s390-options"
+
+static void
+wired_s390_options_parser_full (KeyfileReaderInfo *info,
+                                const NMMetaSettingInfo *setting_info,
+                                const NMSettInfoProperty *property_info,
+                                const ParseInfoProperty *pip,
+                                NMSetting *setting)
+{
+	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
+	gs_strfreev char **keys = NULL;
+	gsize n_keys;
+	gsize i;
+
+	keys = nm_keyfile_plugin_kf_get_keys (info->keyfile, ETHERNET_S390_OPTIONS_GROUP_NAME, &n_keys, NULL);
+	for (i = 0; i < n_keys; i++) {
+		gs_free char *value = NULL;
+		gs_free char *key_to_free = NULL;
+
+		value = nm_keyfile_plugin_kf_get_string (info->keyfile,
+		                                         ETHERNET_S390_OPTIONS_GROUP_NAME,
+		                                         keys[i],
+		                                         NULL);
+		if (!value)
+			continue;
+
+		nm_setting_wired_add_s390_option (s_wired,
+		                                  nm_keyfile_key_decode (keys[i],
+		                                                         &key_to_free),
+		                                  value);
+	}
+}
+
+static void
+wired_s390_options_writer_full (KeyfileWriterInfo *info,
+                                const NMMetaSettingInfo *setting_info,
+                                const NMSettInfoProperty *property_info,
+                                const ParseInfoProperty *pip,
+                                NMSetting *setting)
+{
+	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
+	guint i, n;
+
+	n = nm_setting_wired_get_num_s390_options (s_wired);
+	for (i = 0; i < n; i++) {
+		const char *opt_key;
+		const char *opt_val;
+		gs_free char *key_to_free = NULL;
+
+		nm_setting_wired_get_s390_option (s_wired, i, &opt_key, &opt_val);
+		nm_keyfile_plugin_kf_set_string (info->keyfile,
+		                                 ETHERNET_S390_OPTIONS_GROUP_NAME,
+		                                 nm_keyfile_key_encode (opt_key, &key_to_free),
+		                                 opt_val);
+	}
+}
+
 static void
 ip_routing_rule_writer_full (KeyfileWriterInfo *info,
                              const NMMetaSettingInfo *setting_info,
@@ -2130,6 +2196,11 @@ write_hash_of_string (GKeyFile *file,
 	gboolean vpn_secrets = FALSE;
 	gs_free const char **keys = NULL;
 	guint i, l;
+
+	nm_assert (   (NM_IS_SETTING_VPN (setting)  && nm_streq (key, NM_SETTING_VPN_DATA))
+	           || (NM_IS_SETTING_VPN (setting)  && nm_streq (key, NM_SETTING_VPN_SECRETS))
+	           || (NM_IS_SETTING_BOND (setting) && nm_streq (key, NM_SETTING_BOND_OPTIONS))
+	           || (NM_IS_SETTING_USER (setting) && nm_streq (key, NM_SETTING_USER_DATA)));
 
 	/* Write VPN secrets out to a different group to keep them separate */
 	if (   NM_IS_SETTING_VPN (setting)
@@ -2477,6 +2548,13 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_WIRED_MAC_ADDRESS,
 				.parser        = mac_address_parser_ETHER,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_WIRED_S390_OPTIONS,
+				.parser_no_check_key = TRUE,
+				.parser_full   = wired_s390_options_parser_full,
+				.writer_full   = wired_s390_options_writer_full,
+				.has_parser_full = TRUE,
+				.has_writer_full = TRUE,
 			),
 		),
 	),
