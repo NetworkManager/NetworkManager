@@ -2156,10 +2156,7 @@ nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len)
 	values[i].name = NULL;
 	values[i].value_ptr = NULL;
 
-	if (len > 1) {
-		g_qsort_with_data (values, len, sizeof (values[0]),
-		                   nm_utils_named_entry_cmp_with_data, NULL);
-	}
+	nm_utils_named_value_list_sort (values, len, NULL, NULL);
 
 	NM_SET_OUT (out_len, len);
 	return values;

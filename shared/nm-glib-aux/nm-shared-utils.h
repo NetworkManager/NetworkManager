@@ -906,9 +906,6 @@ typedef struct {
 	};
 } NMUtilsNamedValue;
 
-#define nm_utils_named_entry_cmp           nm_strcmp_p
-#define nm_utils_named_entry_cmp_with_data nm_strcmp_p_with_data
-
 NMUtilsNamedValue *nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len);
 
 gssize nm_utils_named_value_list_find (const NMUtilsNamedValue *arr,

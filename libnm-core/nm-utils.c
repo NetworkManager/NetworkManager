@@ -851,8 +851,7 @@ _nm_utils_strdict_to_dbus (const GValue *prop_value)
 		} while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value));
 		nm_assert (i == len);
 
-		g_qsort_with_data (idx, len, sizeof (idx[0]),
-		                   nm_utils_named_entry_cmp_with_data, NULL);
+		nm_utils_named_value_list_sort (idx, len, NULL, NULL);
 
 		for (i = 0; i < len; i++)
 			g_variant_builder_add (&builder, "{ss}", idx[i].name, idx[i].value_str);
