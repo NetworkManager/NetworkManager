@@ -774,6 +774,47 @@ nm_platform_sysctl_ip_conf_set_int64 (NMPlatform *self,
 	                               nm_sprintf_buf (s, "%"G_GINT64_FORMAT, value));
 }
 
+int
+nm_platform_sysctl_ip_conf_get_rp_filter_ipv4 (NMPlatform *self,
+                                               const char *ifname,
+                                               gboolean consider_all,
+                                               gboolean *out_due_to_all)
+{
+	int val, val_all;
+
+	NM_SET_OUT (out_due_to_all, FALSE);
+
+	if (!ifname)
+		return -1;
+
+	val = nm_platform_sysctl_ip_conf_get_int_checked (self,
+	                                                  AF_INET,
+	                                                  ifname,
+	                                                  "rp_filter",
+	                                                  10, 0, 2, -1);
+	if (val == -1)
+		return -1;
+
+	/* the effectively used value is the rp_filter sysctl value of MAX(all,ifname).
+	 * Note that this is the numerical MAX(), despite rp_filter "1" being more strict
+	 * than "2". */
+	if (   val < 2
+	    && consider_all
+	    && !nm_streq (ifname, "all")) {
+		val_all = nm_platform_sysctl_ip_conf_get_int_checked (self,
+		                                                      AF_INET,
+		                                                      "all",
+		                                                      "rp_filter",
+		                                                      10, 0, 2, val);
+		if (val_all > val) {
+			val = val_all;
+			NM_SET_OUT (out_due_to_all, TRUE);
+		}
+	}
+
+	return val;
+}
+
 /*****************************************************************************/
 
 static int
