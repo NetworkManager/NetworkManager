@@ -699,7 +699,19 @@ _SET_FCN_DO_REMOVE (char modifier, const char *value)
 #define RETURN_STR_TO_FREE(val) \
 	G_STMT_START { \
 		char *_val = (val); \
+		\
 		return ((*(out_to_free)) = _val); \
+	} G_STMT_END
+
+#define RETURN_STR_TEMPORARY(val) \
+	G_STMT_START { \
+		const char *_val = (val); \
+		\
+		if (_val == NULL) \
+			return NULL; \
+		if (_val[0] == '\0') \
+			return ""; \
+		return ((*(out_to_free)) = g_strdup (_val)); \
 	} G_STMT_END
 
 static gboolean
