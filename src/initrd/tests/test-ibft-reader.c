@@ -96,7 +96,7 @@ test_read_ibft_dhcp (void)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_DISABLED);
 
 	g_object_unref (connection);
 }
@@ -152,7 +152,7 @@ test_read_ibft_static (void)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_DISABLED);
 
 	g_object_unref (connection);
 }
@@ -263,7 +263,7 @@ test_read_ibft (void)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (nm_setting_ip_config_get_num_addresses (s_ip6) == 0);
-	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_DISABLED);
 	g_object_unref (connection);
 }
 

@@ -1023,8 +1023,9 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 				changed = TRUE;
 			}
 
-			if (   nm_streq0 (nm_setting_ip_config_get_method (s_ip6),
-			                  NM_SETTING_IP6_CONFIG_METHOD_IGNORE)
+			if (   NM_IN_STRSET (nm_setting_ip_config_get_method (s_ip6),
+			                     NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+			                     NM_SETTING_IP6_CONFIG_METHOD_DISABLED)
 			    && !nm_setting_ip_config_get_may_fail (s_ip6)) {
 				g_object_set (s_ip6, NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE, NULL);
 				changed = TRUE;

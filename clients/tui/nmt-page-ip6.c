@@ -39,6 +39,7 @@ static NmtNewtPopupEntry ip6methods[] = {
 	{ N_("Automatic (DHCP-only)"), NM_SETTING_IP6_CONFIG_METHOD_DHCP },
 	{ N_("Link-Local"), NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL },
 	{ N_("Manual"), NM_SETTING_IP6_CONFIG_METHOD_MANUAL },
+	{ N_("Disabled"), NM_SETTING_IP6_CONFIG_METHOD_DISABLED },
 	{ NULL, NULL }
 };
 

@@ -100,6 +100,13 @@ G_BEGIN_DECLS
 #define NM_SETTING_IP6_CONFIG_METHOD_SHARED     "shared"
 
 /**
+ * NM_SETTING_IP6_CONFIG_METHOD_DISABLED:
+ *
+ * IPv6 is disabled for the connection.
+ */
+#define NM_SETTING_IP6_CONFIG_METHOD_DISABLED   "disabled"
+
+/**
  * NMSettingIP6ConfigPrivacy:
  * @NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN: unknown or no value specified
  * @NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED: IPv6 Privacy Extensions are disabled

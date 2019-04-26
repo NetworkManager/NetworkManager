@@ -2790,9 +2790,16 @@ write_ip6_setting (NMConnection *connection,
 
 	value = nm_setting_ip_config_get_method (s_ip6);
 	g_assert (value);
+	svUnsetValue (ifcfg, "IPV6_DISABLED");
 	if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
 		svSetValueStr (ifcfg, "IPV6INIT", "no");
 		svUnsetValue (ifcfg, "DHCPV6C");
+		return TRUE;
+	} else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
+		svSetValueStr (ifcfg, "IPV6_DISABLED", "yes");
+		svSetValueStr (ifcfg, "IPV6INIT", "no");
+		svUnsetValue (ifcfg, "DHCPV6C");
+		svUnsetValue (ifcfg, "IPV6_AUTOCONF");
 		return TRUE;
 	} else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
 		svSetValueStr (ifcfg, "IPV6INIT", "yes");

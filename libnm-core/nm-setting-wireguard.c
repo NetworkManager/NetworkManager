@@ -1712,7 +1712,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		    && (method = nm_setting_ip_config_get_method (s_ip6))
 		    && !NM_IN_STRSET (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 		                              NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
-		                              NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
+		                              NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+		                              NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
