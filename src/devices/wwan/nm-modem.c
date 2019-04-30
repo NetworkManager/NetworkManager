@@ -1574,9 +1574,9 @@ nm_modem_set_route_parameters_from_device (NMModem *self,
 	g_return_if_fail (NM_IS_DEVICE (device));
 
 	nm_modem_set_route_parameters (self,
-	                               nm_device_get_route_table (device, AF_INET, TRUE),
+	                               nm_device_get_route_table (device, AF_INET),
 	                               nm_device_get_route_metric (device, AF_INET),
-	                               nm_device_get_route_table (device, AF_INET6, TRUE),
+	                               nm_device_get_route_table (device, AF_INET6),
 	                               nm_device_get_route_metric (device, AF_INET6));
 }
 

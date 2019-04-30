@@ -496,7 +496,7 @@ NMDeviceType    nm_device_get_device_type       (NMDevice *dev);
 NMLinkType      nm_device_get_link_type         (NMDevice *dev);
 NMMetered       nm_device_get_metered           (NMDevice *dev);
 
-guint32         nm_device_get_route_table       (NMDevice *self, int addr_family, gboolean fallback_main);
+guint32         nm_device_get_route_table       (NMDevice *self, int addr_family);
 guint32         nm_device_get_route_metric      (NMDevice *dev, int addr_family);
 
 guint32         nm_device_get_route_metric_default (NMDeviceType device_type);
