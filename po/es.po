@@ -24,14 +24,14 @@ msgstr ""
 "Project-Id-Version: master\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2019-01-08 18:22+0100\n"
-"PO-Revision-Date: 2019-04-17 14:46+0200\n"
+"PO-Revision-Date: 2019-04-30 17:12+0200\n"
 "Last-Translator: Rodrigo Lledó <rodhos92@gmail.com>\n"
 "Language-Team: Español <gnome-es-list@gnome.org>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Gtranslator 3.30.1\n"
+"X-Generator: Gtranslator 3.32.0\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: ../clients/cli/agent.c:40
@@ -6709,7 +6709,7 @@ msgid ""
 msgstr ""
 "La contraseña utilizada para acceder al certificado de CA almacenado en la "
 "propiedad «ca-cert». Solo tiene sentido si el certificado se almacena en un "
-"identificador PKCS#11 que requiere un inicio de sesión."
+"testigo PKCS#11 que requiere un inicio de sesión."
 
 #: ../clients/common/settings-docs.h.in:49
 msgid "Flags indicating how to handle the \"ca-cert-password\" property."
@@ -6752,7 +6752,7 @@ msgid ""
 msgstr ""
 "La contraseña utilizada para acceder al certificado del cliente almacenado "
 "en la propiedad «client-cert». Solo tiene sentido si el certificado se "
-"almacena en un identificador PKCS#11 que requiere un inicio de sesión."
+"almacena en un testigo PKCS#11 que requiere un inicio de sesión."
 
 #: ../clients/common/settings-docs.h.in:53
 msgid "Flags indicating how to handle the \"client-cert-password\" property."
@@ -6972,7 +6972,7 @@ msgid ""
 msgstr ""
 "La contraseña utilizada para acceder al certificado CA «phase2» almacenado "
 "en la propiedad «phase2-ca-cert». Solo tiene sentido si el certificado se "
-"almacena en un identificador PKCS#11 que requiera un inicio de sesión."
+"almacena en un testigo PKCS#11 que requiera un inicio de sesión."
 
 #: ../clients/common/settings-docs.h.in:71
 msgid ""
@@ -7023,8 +7023,8 @@ msgid ""
 msgstr ""
 "La contraseña utilizada para acceder al certificado de cliente «phase2» "
 "almacenado en la propiedad «phase2-client-cert». Solo tiene sentido si el "
-"certificado se almacena en un identificador PKCS#11 que requiera un inicio "
-"de sesión."
+"certificado se almacena en un testigo PKCS#11 que requiera un inicio de "
+"sesión."
 
 #: ../clients/common/settings-docs.h.in:75
 msgid ""
@@ -8745,23 +8745,22 @@ msgstr ""
 "autoconfiguración de dirección sin estado RFC4862 IPv6. Los valores "
 "permitidos son: NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64 (0) o "
 "NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY (1). Si la propiedad se "
-"establece en EUI64, las direcciones se generarán utilizando los "
-"identificadores de interfaz derivados de la dirección de hardware. Esto hace "
-"que la parte del anfitrión de la dirección permanezca constante, lo que "
-"permite rastrear la presencia del anfitrión cuando cambia de red. La "
-"dirección cambia cuando se reemplaza el hardware de la interfaz. El valor de "
-"la privacidad estable permite el uso de un hash criptográficamente seguro en "
-"una clave secreta específica del anfitrión junto con la id estable de la "
-"conexión y la dirección de red especificada por RFC7217. Esto hace que sea "
-"imposible usar la presencia del anfitrión de seguimiento de direcciones y "
-"hace estable la dirección cuando se reemplaza el hardware de la interfaz de "
-"red. En D-Bus, la ausencia de un parámetro addr-gen-mode equivale a activar "
-"la privacidad estable. Para el complemento de archivo clave, la ausencia del "
-"parámetro en el disco significa EUI64 para que la propiedad no cambie en la "
-"actualización desde versiones anteriores. Tenga en cuenta que este parámetro "
-"es distinto de las extensiones de privacidad configuradas por la propiedad "
-"«ip6-privacy» y no afecta a las direcciones temporales configuradas con esta "
-"opción."
+"establece en EUI64, las direcciones se generarán utilizando los testigos de "
+"interfaz derivados de la dirección de hardware. Esto hace que la parte del "
+"anfitrión de la dirección permanezca constante, lo que permite rastrear la "
+"presencia del anfitrión cuando cambia de red. La dirección cambia cuando se "
+"reemplaza el hardware de la interfaz. El valor de la privacidad estable "
+"permite el uso de un hash criptográficamente seguro en una clave secreta "
+"específica del anfitrión junto con la id estable de la conexión y la "
+"dirección de red especificada por RFC7217. Esto hace que sea imposible usar "
+"la presencia del anfitrión de seguimiento de direcciones y hace estable la "
+"dirección cuando se reemplaza el hardware de la interfaz de red. En D-Bus, "
+"la ausencia de un parámetro addr-gen-mode equivale a activar la privacidad "
+"estable. Para el complemento de archivo clave, la ausencia del parámetro en "
+"el disco significa EUI64 para que la propiedad no cambie en la actualización "
+"desde versiones anteriores. Tenga en cuenta que este parámetro es distinto "
+"de las extensiones de privacidad configuradas por la propiedad «ip6-privacy» "
+"y no afecta a las direcciones temporales configuradas con esta opción."
 
 #: ../clients/common/settings-docs.h.in:221
 msgid ""
@@ -8853,9 +8852,8 @@ msgid ""
 "Configure the token for draft-chown-6man-tokenised-ipv6-identifiers-02 IPv6 "
 "tokenized interface identifiers. Useful with eui64 addr-gen-mode."
 msgstr ""
-"Configurar el autentificador para los identificadores de interfaz "
-"simbolizados IPv6 draft-chown-6man-tokenised-ipv6-identifiers-02. Útil con "
-"eui64 addr-gen-mode."
+"Configurar el testigo para los identificadores de interfaz simbolizados IPv6 "
+"draft-chown-6man-tokenised-ipv6-identifiers-02. Útil con eui64 addr-gen-mode."
 
 #: ../clients/common/settings-docs.h.in:240
 msgid "Whether the transmitted traffic must be encrypted."
@@ -11349,8 +11347,8 @@ msgstr "formato de certificado no válido"
 #, c-format
 msgid "password is not supported when certificate is not on a PKCS#11 token"
 msgstr ""
-"la contraseña no está admitida cuando el certificado no está en un "
-"identificador PKCS#11"
+"la contraseña no está admitida cuando el certificado no está en un testigo "
+"PKCS#11"
 
 #: ../libnm-core/nm-setting-8021x.c:2578 ../libnm-core/nm-setting-8021x.c:2595
 #: ../libnm-core/nm-setting-8021x.c:2626 ../libnm-core/nm-setting-8021x.c:2643
@@ -11922,7 +11920,7 @@ msgstr ""
 
 #: ../libnm-core/nm-setting-ip6-config.c:261
 msgid "value is not a valid token"
-msgstr "el valor no es un identificador válido"
+msgstr "el valor no es un testigo válido"
 
 #: ../libnm-core/nm-setting-ip6-config.c:272
 msgid "only makes sense with EUI64 address generation mode"
@@ -11934,7 +11932,7 @@ msgstr "DUID no válido"
 
 #: ../libnm-core/nm-setting-ip6-config.c:295
 msgid "token is not in canonical form"
-msgstr "el identificador no está en su forma canónica"
+msgstr "el testigo no está en su forma canónica"
 
 #: ../libnm-core/nm-setting-ip6-config.c:307
 msgid "property should be TRUE when method is set to ignore"
@@ -13884,7 +13882,7 @@ msgstr "UUID de conexión"
 
 #: ../src/nm-iface-helper.c:281
 msgid "Connection Token for Stable IDs"
-msgstr "Identificador de conexión para IDs estables"
+msgstr "Testigo de conexión para IDs estables"
 
 #: ../src/nm-iface-helper.c:282
 msgid "Whether to manage IPv6 SLAAC"
