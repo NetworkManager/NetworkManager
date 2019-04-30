@@ -2308,12 +2308,25 @@ static const NMVariantAttributeSpec * const tc_object_attribute_spec[] = {
 	NULL,
 };
 
+static const NMVariantAttributeSpec * const tc_qdisc_fq_codel_spec[] = {
+	TC_ATTR_SPEC_PTR ("limit",        G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("flows",        G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("target",       G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("interval",     G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("quantum",      G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("ce_threshold", G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("memory",       G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("ecn",          G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
+	NULL,
+};
+
 typedef struct {
 	const char *kind;
 	const NMVariantAttributeSpec * const *attrs;
 } NMQdiscAttributeSpec;
 
 static const NMQdiscAttributeSpec *const tc_qdisc_attribute_spec[] = {
+	&(const NMQdiscAttributeSpec) { "fq_codel", tc_qdisc_fq_codel_spec },
 	NULL,
 };
 
@@ -2528,6 +2541,15 @@ static const NMVariantAttributeSpec * const tc_action_simple_attribute_spec[] = 
 	NULL,
 };
 
+static const NMVariantAttributeSpec * const tc_action_mirred_attribute_spec[] = {
+	TC_ATTR_SPEC_PTR ("egress",   G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("ingress",  G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("mirror",   G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("redirect", G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("dev",      G_VARIANT_TYPE_STRING,  TRUE,  FALSE, 'a' ),
+	NULL,
+};
+
 static const NMVariantAttributeSpec * const tc_action_attribute_spec[] = {
 	TC_ATTR_SPEC_PTR ("kind",    G_VARIANT_TYPE_STRING,      TRUE,  FALSE, 'a' ),
 	TC_ATTR_SPEC_PTR ("",        G_VARIANT_TYPE_STRING,      TRUE,  TRUE,  'a' ),
@@ -2622,6 +2644,8 @@ nm_utils_tc_action_from_str (const char *str, GError **error)
 	kind = g_variant_get_string (variant, NULL);
 	if (strcmp (kind, "simple") == 0)
 		attrs = tc_action_simple_attribute_spec;
+	else if (strcmp (kind, "mirred") == 0)
+		attrs = tc_action_mirred_attribute_spec;
 	else
 		attrs = NULL;
 
