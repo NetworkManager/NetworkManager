@@ -2265,9 +2265,11 @@ _get_route_table (NMDevice *self,
                   int addr_family)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDeviceClass *klass;
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip;
 	guint32 route_table = 0;
+	gboolean is_user_config = TRUE;
 
 	nm_assert_addr_family (addr_family);
 
@@ -2288,15 +2290,25 @@ _get_route_table (NMDevice *self,
 			route_table = nm_setting_ip_config_get_route_table (s_ip);
 	}
 	if (route_table == 0u) {
-		route_table = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-		                                                             addr_family == AF_INET
-		                                                           ? NM_CON_DEFAULT ("ipv4.route-table")
-		                                                           : NM_CON_DEFAULT ("ipv6.route-table"),
-		                                                           self,
-		                                                           0,
-		                                                           G_MAXUINT32,
-		                                                           0);
+		gint64 v;
+
+		v = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+		                                                   addr_family == AF_INET
+		                                                 ? NM_CON_DEFAULT ("ipv4.route-table")
+		                                                 : NM_CON_DEFAULT ("ipv6.route-table"),
+		                                                 self,
+		                                                 0,
+		                                                 G_MAXUINT32,
+		                                                 -1);
+		if (v != -1) {
+			route_table = v;
+			is_user_config = FALSE;
+		}
 	}
+
+	klass = NM_DEVICE_GET_CLASS (self);
+	if (klass->coerce_route_table)
+		route_table = klass->coerce_route_table (self, addr_family, route_table, is_user_config);
 
 	if (addr_family == AF_INET) {
 		priv->v4_route_table_initialized = TRUE;

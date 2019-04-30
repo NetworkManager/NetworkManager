@@ -337,6 +337,13 @@ typedef struct _NMDeviceClass {
 
 	guint32     (*get_configured_mtu) (NMDevice *self, NMDeviceMtuSource *out_source);
 
+	/* allow the subclass to overwrite the routing table. This is mainly useful
+	 * to change from partial mode (route-table=0) to full-sync mode (route-table=254). */
+	guint32     (*coerce_route_table) (NMDevice *self,
+	                                   int addr_family,
+	                                   guint32 route_table,
+	                                   gboolean is_user_config);
+
 	const char *(*get_auto_ip_config_method) (NMDevice *self, int addr_family);
 
 	/* Checks whether the connection is compatible with the device using
