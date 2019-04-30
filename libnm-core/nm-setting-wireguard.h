@@ -138,6 +138,8 @@ int nm_wireguard_peer_cmp (const NMWireGuardPeer *a,
 
 #define NM_SETTING_WIREGUARD_MTU               "mtu"
 #define NM_SETTING_WIREGUARD_PEER_ROUTES       "peer-routes"
+#define NM_SETTING_WIREGUARD_IP4_AUTO_DEFAULT_ROUTE "ip4-auto-default-route"
+#define NM_SETTING_WIREGUARD_IP6_AUTO_DEFAULT_ROUTE "ip6-auto-default-route"
 
 #define NM_WIREGUARD_PEER_ATTR_ALLOWED_IPS          "allowed-ips"
 #define NM_WIREGUARD_PEER_ATTR_ENDPOINT             "endpoint"
@@ -205,6 +207,12 @@ gboolean nm_setting_wireguard_get_peer_routes (NMSettingWireGuard *self);
 
 NM_AVAILABLE_IN_1_16
 guint32 nm_setting_wireguard_get_mtu (NMSettingWireGuard *self);
+
+NM_AVAILABLE_IN_1_20
+NMTernary nm_setting_wireguard_get_ip4_auto_default_route (NMSettingWireGuard *self);
+
+NM_AVAILABLE_IN_1_20
+NMTernary nm_setting_wireguard_get_ip6_auto_default_route (NMSettingWireGuard *self);
 
 /*****************************************************************************/
 

@@ -11567,6 +11567,12 @@ check_and_reapply_connection (NMDevice *self,
 
 	/**************************************************************************
 	 * Reapply changes
+	 *
+	 * Note that reapply_connection() is called as very first. This is for example
+	 * important for NMDeviceWireGuard, which implements coerce_route_table()
+	 * and get_extra_rules().
+	 * That is because NMDeviceWireGuard caches settings, so during reapply that
+	 * cache must be updated *first*.
 	 *************************************************************************/
 	klass->reapply_connection (self, con_old, con_new);
 

@@ -1370,7 +1370,7 @@ nm_setting_sriov_class_init (NMSettingSriovClass *klass)
 	 */
 	obj_properties[PROP_AUTOPROBE_DRIVERS] =
 	    g_param_spec_enum (NM_SETTING_SRIOV_AUTOPROBE_DRIVERS, "", "",
-	                       nm_ternary_get_type (),
+	                       NM_TYPE_TERNARY,
 	                       NM_TERNARY_DEFAULT,
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_READWRITE |
