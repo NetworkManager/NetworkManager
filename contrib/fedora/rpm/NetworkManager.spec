@@ -242,6 +242,8 @@ BuildRequires: libubsan
 %endif
 %endif
 
+Provides: %{name}-dispatcher%{?_isa} = %{epoch}:%{version}-%{release}
+
 # NetworkManager uses various parts of systemd-networkd internally, including
 # DHCP client, IPv4 Link-Local address negotiation or LLDP support.
 # This provide is essentially here so that NetworkManager shows on Security
@@ -824,13 +826,15 @@ fi
 %{_sbindir}/%{name}
 %{_bindir}/nmcli
 %{_datadir}/bash-completion/completions/nmcli
-%dir %{_sysconfdir}/%{name}/
+%dir %{_sysconfdir}/%{name}
+%dir %{_sysconfdir}/%{name}/conf.d
 %dir %{_sysconfdir}/%{name}/dispatcher.d
 %dir %{_sysconfdir}/%{name}/dispatcher.d/pre-down.d
 %dir %{_sysconfdir}/%{name}/dispatcher.d/pre-up.d
 %dir %{_sysconfdir}/%{name}/dispatcher.d/no-wait.d
 %dir %{_sysconfdir}/%{name}/dnsmasq.d
 %dir %{_sysconfdir}/%{name}/dnsmasq-shared.d
+%dir %{_sysconfdir}/%{name}/system-connections
 %config(noreplace) %{_sysconfdir}/%{name}/NetworkManager.conf
 %{_bindir}/nm-online
 %{_libexecdir}/nm-ifup
@@ -847,8 +851,6 @@ fi
 %if %{with nmtui}
 %exclude %{_mandir}/man1/nmtui*
 %endif
-%dir %{_sysconfdir}/%{name}
-%dir %{_sysconfdir}/%{name}/conf.d
 %dir %{nmlibdir}
 %dir %{nmlibdir}/conf.d
 %dir %{nmlibdir}/VPN
@@ -857,7 +859,6 @@ fi
 %{_mandir}/man7/nmcli-examples.7*
 %{_mandir}/man8/*
 %dir %{_localstatedir}/lib/NetworkManager
-%dir %{_sysconfdir}/NetworkManager/system-connections
 %dir %{_sysconfdir}/sysconfig/network-scripts
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_dispatcher.service
 %{_datadir}/polkit-1/actions/*.policy

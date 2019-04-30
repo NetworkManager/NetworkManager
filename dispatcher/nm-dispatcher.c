@@ -466,12 +466,6 @@ check_permissions (struct stat *s, const char **out_error_msg)
 	g_return_val_if_fail (out_error_msg != NULL, FALSE);
 	g_return_val_if_fail (*out_error_msg == NULL, FALSE);
 
-	/* Only accept regular files */
-	if (!S_ISREG (s->st_mode)) {
-		*out_error_msg = "not a regular file.";
-		return FALSE;
-	}
-
 	/* Only accept files owned by root */
 	if (s->st_uid != 0) {
 		*out_error_msg = "not owned by root.";
@@ -573,59 +567,104 @@ dispatch_one_script (Request *request)
 	return FALSE;
 }
 
-static GSList *
-find_scripts (const char *str_action)
+static int
+_compare_basenames (gconstpointer a, gconstpointer b)
 {
-	GDir *dir;
-	const char *filename;
-	GSList *sorted = NULL;
-	GError *error = NULL;
-	const char *dirname;
+	const char *basename_a = strrchr (a, '/');
+	const char *basename_b = strrchr (b, '/');
+	int ret;
 
-	if (   strcmp (str_action, NMD_ACTION_PRE_UP) == 0
-	    || strcmp (str_action, NMD_ACTION_VPN_PRE_UP) == 0)
-		dirname = NMD_SCRIPT_DIR_PRE_UP;
-	else if (   strcmp (str_action, NMD_ACTION_PRE_DOWN) == 0
-	         || strcmp (str_action, NMD_ACTION_VPN_PRE_DOWN) == 0)
-		dirname = NMD_SCRIPT_DIR_PRE_DOWN;
-	else
-		dirname = NMD_SCRIPT_DIR_DEFAULT;
+	nm_assert (basename_a);
+	nm_assert (basename_b);
+
+	ret = strcmp (++basename_a, ++basename_b);
+	if (ret)
+		return ret;
+
+	nm_assert_not_reached ();
+	return 0;
+}
+
+static void
+_find_scripts (GHashTable *scripts, const char *base, const char *subdir)
+{
+	const char *filename;
+	gs_free char *dirname = NULL;
+	GError *error = NULL;
+	GDir *dir;
+
+	dirname = g_build_filename (base, "dispatcher.d", subdir, NULL);
 
 	if (!(dir = g_dir_open (dirname, 0, &error))) {
 		g_message ("find-scripts: Failed to open dispatcher directory '%s': %s",
 		           dirname, error->message);
 		g_error_free (error);
-		return NULL;
+		return;
 	}
 
 	while ((filename = g_dir_read_name (dir))) {
-		char *path;
-		struct stat st;
-		int err;
-		const char *err_msg = NULL;
-
 		if (!check_filename (filename))
 			continue;
 
-		path = g_build_filename (dirname, filename, NULL);
+		g_hash_table_insert (scripts,
+		                     g_strdup (filename),
+		                     g_build_filename (dirname, filename, NULL));
+	}
+
+	g_dir_close (dir);
+}
+
+static GSList *
+find_scripts (const char *str_action)
+{
+	gs_unref_hashtable GHashTable *scripts = NULL;
+	GSList *script_list = NULL;
+	GHashTableIter iter;
+	const char *subdir = NULL;
+	char *path;
+	char *filename;
+
+	if (   strcmp (str_action, NMD_ACTION_PRE_UP) == 0
+	    || strcmp (str_action, NMD_ACTION_VPN_PRE_UP) == 0)
+		subdir = "pre-up.d";
+	else if (   strcmp (str_action, NMD_ACTION_PRE_DOWN) == 0
+	         || strcmp (str_action, NMD_ACTION_VPN_PRE_DOWN) == 0)
+		subdir = "pre-down.d";
+
+	scripts = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+
+	_find_scripts (scripts, NMLIBDIR, subdir);
+	_find_scripts (scripts, NMCONFDIR, subdir);
+
+	g_hash_table_iter_init (&iter, scripts);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &filename, (gpointer *) &path)) {
+		struct stat st;
+		char *link_target;
+		int err;
+		const char *err_msg = NULL;
+
+		link_target = g_file_read_link (path, NULL);
+		if (g_strcmp0 (link_target, "/dev/null") == 0) {
+			g_free (link_target);
+			continue;
+		}
+		g_free (link_target);
 
 		err = stat (path, &st);
 		if (err)
 			g_warning ("find-scripts: Failed to stat '%s': %d", path, err);
-		else if (S_ISDIR (st.st_mode))
+		else if (!S_ISREG (st.st_mode))
 			; /* silently skip. */
 		else if (!check_permissions (&st, &err_msg))
 			g_warning ("find-scripts: Cannot execute '%s': %s", path, err_msg);
 		else {
 			/* success */
-			sorted = g_slist_insert_sorted (sorted, path, (GCompareFunc) g_strcmp0);
-			path = NULL;
+			script_list = g_slist_prepend (script_list, g_strdup (path));
+			continue;
 		}
-		g_free (path);
 	}
-	g_dir_close (dir);
 
-	return sorted;
+	return g_slist_sort (script_list, _compare_basenames);
 }
 
 static gboolean
@@ -635,6 +674,7 @@ script_must_wait (const char *path)
 	gs_free char *dir = NULL;
 	gs_free char *real = NULL;
 	char *tmp;
+
 
 	link = g_file_read_link (path, NULL);
 	if (link) {
@@ -648,8 +688,7 @@ script_must_wait (const char *path)
 
 		dir = g_path_get_dirname (link);
 		real = realpath (dir, NULL);
-
-		if (real && !strcmp (real, NMD_SCRIPT_DIR_NO_WAIT))
+		if (real && !g_str_has_suffix (real, "/no-wait.d"))
 			return FALSE;
 	}
 
