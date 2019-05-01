@@ -366,7 +366,7 @@ nm_sriov_vf_get_attribute (const NMSriovVF *vf, const char *name)
 }
 
 #define SRIOV_ATTR_SPEC_PTR(name, type, str_type) \
-	&(NMVariantAttributeSpec) { name, type, FALSE, FALSE, FALSE, FALSE, str_type }
+	&((const NMVariantAttributeSpec) { name, type, FALSE, FALSE, FALSE, FALSE, str_type })
 
 const NMVariantAttributeSpec * const _nm_sriov_vf_attribute_spec[] = {
 	SRIOV_ATTR_SPEC_PTR (NM_SRIOV_VF_ATTRIBUTE_MAC,          G_VARIANT_TYPE_STRING,  'm'),
