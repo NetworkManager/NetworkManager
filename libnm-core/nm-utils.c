@@ -2318,33 +2318,30 @@ fail:
 	return TC_H_UNSPEC;
 }
 
-#define TC_ATTR_SPEC_PTR(name, type, no_value, consumes_rest, str_type) \
-	&((const NMVariantAttributeSpec) { name, type, FALSE, FALSE, no_value, consumes_rest, str_type })
-
-static const NMVariantAttributeSpec * const tc_object_attribute_spec[] = {
-	TC_ATTR_SPEC_PTR ("root",    G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
-	TC_ATTR_SPEC_PTR ("parent",  G_VARIANT_TYPE_STRING,  FALSE, FALSE, 'a' ),
-	TC_ATTR_SPEC_PTR ("handle",  G_VARIANT_TYPE_STRING,  FALSE, FALSE, 'a' ),
-	TC_ATTR_SPEC_PTR ("kind",    G_VARIANT_TYPE_STRING,  TRUE,  FALSE, 'a' ),
-	TC_ATTR_SPEC_PTR ("",        G_VARIANT_TYPE_STRING,  TRUE,  TRUE,  'a' ),
+static const NMVariantAttributeSpec *const tc_object_attribute_spec[] = {
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("root",   G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                                         ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("parent", G_VARIANT_TYPE_STRING,                                           .str_type = 'a', ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("handle", G_VARIANT_TYPE_STRING,                                           .str_type = 'a', ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("kind",   G_VARIANT_TYPE_STRING,  .no_value = TRUE,                        .str_type = 'a', ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("",       G_VARIANT_TYPE_STRING,  .no_value = TRUE, .consumes_rest = TRUE, .str_type = 'a', ),
 	NULL,
 };
 
-static const NMVariantAttributeSpec * const tc_qdisc_fq_codel_spec[] = {
-	TC_ATTR_SPEC_PTR ("limit",        G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
-	TC_ATTR_SPEC_PTR ("flows",        G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
-	TC_ATTR_SPEC_PTR ("target",       G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
-	TC_ATTR_SPEC_PTR ("interval",     G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
-	TC_ATTR_SPEC_PTR ("quantum",      G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
-	TC_ATTR_SPEC_PTR ("ce_threshold", G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
-	TC_ATTR_SPEC_PTR ("memory",       G_VARIANT_TYPE_UINT32,  FALSE, FALSE, 0   ),
-	TC_ATTR_SPEC_PTR ("ecn",          G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
+static const NMVariantAttributeSpec *const tc_qdisc_fq_codel_spec[] = {
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("limit",        G_VARIANT_TYPE_UINT32,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("flows",        G_VARIANT_TYPE_UINT32,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("target",       G_VARIANT_TYPE_UINT32,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("interval",     G_VARIANT_TYPE_UINT32,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("quantum",      G_VARIANT_TYPE_UINT32,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("ce_threshold", G_VARIANT_TYPE_UINT32,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("memory",       G_VARIANT_TYPE_UINT32,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("ecn",          G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE, ),
 	NULL,
 };
 
 typedef struct {
 	const char *kind;
-	const NMVariantAttributeSpec * const *attrs;
+	const NMVariantAttributeSpec *const *attrs;
 } NMQdiscAttributeSpec;
 
 static const NMQdiscAttributeSpec *const tc_qdisc_attribute_spec[] = {
@@ -2558,23 +2555,23 @@ nm_utils_tc_qdisc_from_str (const char *str, GError **error)
 
 /*****************************************************************************/
 
-static const NMVariantAttributeSpec * const tc_action_simple_attribute_spec[] = {
-	TC_ATTR_SPEC_PTR ("sdata",   G_VARIANT_TYPE_BYTESTRING,  FALSE, FALSE, 0   ),
+static const NMVariantAttributeSpec *const tc_action_simple_attribute_spec[] = {
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("sdata", G_VARIANT_TYPE_BYTESTRING, ),
 	NULL,
 };
 
-static const NMVariantAttributeSpec * const tc_action_mirred_attribute_spec[] = {
-	TC_ATTR_SPEC_PTR ("egress",   G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
-	TC_ATTR_SPEC_PTR ("ingress",  G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
-	TC_ATTR_SPEC_PTR ("mirror",   G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
-	TC_ATTR_SPEC_PTR ("redirect", G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
-	TC_ATTR_SPEC_PTR ("dev",      G_VARIANT_TYPE_STRING,  TRUE,  FALSE, 'a' ),
+static const NMVariantAttributeSpec *const tc_action_mirred_attribute_spec[] = {
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("egress",   G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                  ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("ingress",  G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                  ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("mirror",   G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                  ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("redirect", G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                  ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("dev",      G_VARIANT_TYPE_STRING,  .no_value = TRUE, .str_type = 'a', ),
 	NULL,
 };
 
-static const NMVariantAttributeSpec * const tc_action_attribute_spec[] = {
-	TC_ATTR_SPEC_PTR ("kind",    G_VARIANT_TYPE_STRING,      TRUE,  FALSE, 'a' ),
-	TC_ATTR_SPEC_PTR ("",        G_VARIANT_TYPE_STRING,      TRUE,  TRUE,  'a' ),
+static const NMVariantAttributeSpec *const tc_action_attribute_spec[] = {
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("kind",    G_VARIANT_TYPE_STRING, .no_value = TRUE,                        .str_type = 'a', ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("",        G_VARIANT_TYPE_STRING, .no_value = TRUE, .consumes_rest = TRUE, .str_type = 'a', ),
 	NULL,
 };
 
@@ -2643,7 +2640,7 @@ nm_utils_tc_action_from_str (const char *str, GError **error)
 	gs_unref_hashtable GHashTable *ht = NULL;
 	gs_unref_hashtable GHashTable *options = NULL;
 	GVariant *variant;
-	const NMVariantAttributeSpec * const *attrs;
+	const NMVariantAttributeSpec *const *attrs;
 
 	nm_assert (str);
 	nm_assert (!error || !*error);
@@ -2771,9 +2768,9 @@ nm_utils_tc_tfilter_to_str (NMTCTfilter *tfilter, GError **error)
 	return g_string_free (string, FALSE);
 }
 
-static const NMVariantAttributeSpec * const tc_tfilter_attribute_spec[] = {
-	TC_ATTR_SPEC_PTR ("action",  G_VARIANT_TYPE_BOOLEAN,     TRUE,  FALSE, 0   ),
-	TC_ATTR_SPEC_PTR ("",        G_VARIANT_TYPE_STRING,      TRUE,  TRUE,  'a' ),
+static const NMVariantAttributeSpec *const tc_tfilter_attribute_spec[] = {
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("action", G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                                         ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("",       G_VARIANT_TYPE_STRING,  .no_value = TRUE, .consumes_rest = TRUE, .str_type = 'a', ),
 	NULL,
 };
 
@@ -6460,7 +6457,7 @@ nm_utils_parse_variant_attributes (const char *string,
 	gs_unref_hashtable GHashTable *ht = NULL;
 	const char *ptr = string, *start = NULL, *sep;
 	GVariant *variant;
-	const NMVariantAttributeSpec * const *s;
+	const NMVariantAttributeSpec *const *s;
 
 	g_return_val_if_fail (string, NULL);
 	g_return_val_if_fail (attr_separator, NULL);
