@@ -365,17 +365,14 @@ nm_sriov_vf_get_attribute (const NMSriovVF *vf, const char *name)
 	return g_hash_table_lookup (vf->attributes, name);
 }
 
-#define SRIOV_ATTR_SPEC_PTR(name, type, str_type) \
-	&((const NMVariantAttributeSpec) { name, type, FALSE, FALSE, FALSE, FALSE, str_type })
-
-const NMVariantAttributeSpec * const _nm_sriov_vf_attribute_spec[] = {
-	SRIOV_ATTR_SPEC_PTR (NM_SRIOV_VF_ATTRIBUTE_MAC,          G_VARIANT_TYPE_STRING,  'm'),
-	SRIOV_ATTR_SPEC_PTR (NM_SRIOV_VF_ATTRIBUTE_SPOOF_CHECK,  G_VARIANT_TYPE_BOOLEAN,  0),
-	SRIOV_ATTR_SPEC_PTR (NM_SRIOV_VF_ATTRIBUTE_TRUST,        G_VARIANT_TYPE_BOOLEAN,  0),
-	SRIOV_ATTR_SPEC_PTR (NM_SRIOV_VF_ATTRIBUTE_MIN_TX_RATE,  G_VARIANT_TYPE_UINT32,   0),
-	SRIOV_ATTR_SPEC_PTR (NM_SRIOV_VF_ATTRIBUTE_MAX_TX_RATE,  G_VARIANT_TYPE_UINT32,   0),
+const NMVariantAttributeSpec *const _nm_sriov_vf_attribute_spec[] = {
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_SRIOV_VF_ATTRIBUTE_MAC,         G_VARIANT_TYPE_STRING,  .str_type = 'm', ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_SRIOV_VF_ATTRIBUTE_SPOOF_CHECK, G_VARIANT_TYPE_BOOLEAN,                  ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_SRIOV_VF_ATTRIBUTE_TRUST,       G_VARIANT_TYPE_BOOLEAN,                  ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_SRIOV_VF_ATTRIBUTE_MIN_TX_RATE, G_VARIANT_TYPE_UINT32,                   ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_SRIOV_VF_ATTRIBUTE_MAX_TX_RATE, G_VARIANT_TYPE_UINT32,                   ),
 	/* D-Bus only, synthetic attributes */
-	SRIOV_ATTR_SPEC_PTR ("vlans",                            G_VARIANT_TYPE_STRING,  'd'),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("vlans",                           G_VARIANT_TYPE_STRING,  .str_type = 'd', ),
 	NULL,
 };
 
