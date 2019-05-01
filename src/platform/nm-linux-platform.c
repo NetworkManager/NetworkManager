@@ -3515,6 +3515,9 @@ _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 	obj->qdisc.parent = tcm->tcm_parent;
 	obj->qdisc.info = tcm->tcm_info;
 
+	if (nm_streq0 (obj->qdisc.kind, "fq_codel"))
+		obj->qdisc.fq_codel.memory = NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET;
+
 	if (tb[TCA_OPTIONS]) {
 		struct nlattr *options_attr;
 		int remaining;
@@ -4241,7 +4244,7 @@ _nl_msg_new_qdisc (int nlmsg_type,
 			NLA_PUT_U32 (msg, TCA_FQ_CODEL_QUANTUM, qdisc->fq_codel.quantum);
 		if (qdisc->fq_codel.ce_threshold != -1)
 			NLA_PUT_U32 (msg, TCA_FQ_CODEL_CE_THRESHOLD, qdisc->fq_codel.ce_threshold);
-		if (qdisc->fq_codel.memory != -1)
+		if (qdisc->fq_codel.memory != NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET)
 			NLA_PUT_U32 (msg, TCA_FQ_CODEL_MEMORY_LIMIT, qdisc->fq_codel.memory);
 		if (qdisc->fq_codel.ecn)
 			NLA_PUT_U32 (msg, TCA_FQ_CODEL_ECN, qdisc->fq_codel.ecn);

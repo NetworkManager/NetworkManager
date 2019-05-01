@@ -2333,7 +2333,12 @@ static const NMVariantAttributeSpec *const tc_qdisc_fq_codel_spec[] = {
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("interval",     G_VARIANT_TYPE_UINT32,                    ),
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("quantum",      G_VARIANT_TYPE_UINT32,                    ),
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("ce_threshold", G_VARIANT_TYPE_UINT32,                    ),
+
+	/* kernel clamps the value at 2^31. Possibly such values should be rejected from configuration
+	 * as they cannot be configured. Leaving the attribute unspecified causes kernel to choose
+	 * a default (currently 32MB). */
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("memory",       G_VARIANT_TYPE_UINT32,                    ),
+
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("ecn",          G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE, ),
 	NULL,
 };
