@@ -92,7 +92,7 @@ _nl802154_alloc_msg (int id, int ifindex, guint32 cmd, guint32 flags)
 	return g_steal_pointer (&msg);
 
 nla_put_failure:
-	return NULL;
+	g_return_val_if_reached (NULL);
 }
 
 static struct nl_msg *
@@ -217,7 +217,7 @@ nm_wpan_utils_set_pan_id (NMWpanUtils *self, guint16 pan_id)
 	return err >= 0;
 
 nla_put_failure:
-	return FALSE;
+	g_return_val_if_reached (FALSE);
 }
 
 guint16
@@ -244,7 +244,7 @@ nm_wpan_utils_set_short_addr (NMWpanUtils *self, guint16 short_addr)
 	return err >= 0;
 
 nla_put_failure:
-	return FALSE;
+	g_return_val_if_reached (FALSE);
 }
 
 gboolean
@@ -262,7 +262,7 @@ nm_wpan_utils_set_channel (NMWpanUtils *self, guint8 page, guint8 channel)
 	return err >= 0;
 
 nla_put_failure:
-	return FALSE;
+	g_return_val_if_reached (FALSE);
 }
 
 /*****************************************************************************/
