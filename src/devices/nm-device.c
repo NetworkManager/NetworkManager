@@ -6508,7 +6508,7 @@ tc_commit (NMDevice *self)
 
 	ip_ifindex = nm_device_get_ip_ifindex (self);
 	if (!ip_ifindex)
-	       return s_tc == NULL;
+		return s_tc == NULL;
 
 	if (s_tc) {
 		nqdiscs = nm_setting_tc_config_get_num_qdiscs (s_tc);
@@ -6595,9 +6595,12 @@ tc_commit (NMDevice *self)
 
 					var = nm_tc_action_get_attribute (action, "dev");
 					if (var && g_variant_is_of_type (var, G_VARIANT_TYPE_STRING)) {
-						int ifindex = nm_platform_link_get_ifindex (nm_device_get_platform (self),
-						                                            g_variant_get_string (var, NULL));
-						tfilter->action.mirred.ifindex = ifindex;
+						int ifindex;
+
+						ifindex = nm_platform_link_get_ifindex (nm_device_get_platform (self),
+						                                        g_variant_get_string (var, NULL));
+						if (ifindex > 0)
+							tfilter->action.mirred.ifindex = ifindex;
 					}
 				}
 			}
