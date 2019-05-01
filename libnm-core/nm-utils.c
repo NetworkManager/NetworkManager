@@ -2319,7 +2319,7 @@ fail:
 }
 
 #define TC_ATTR_SPEC_PTR(name, type, no_value, consumes_rest, str_type) \
-	&(NMVariantAttributeSpec) { name, type, FALSE, FALSE, no_value, consumes_rest, str_type }
+	&((const NMVariantAttributeSpec) { name, type, FALSE, FALSE, no_value, consumes_rest, str_type })
 
 static const NMVariantAttributeSpec * const tc_object_attribute_spec[] = {
 	TC_ATTR_SPEC_PTR ("root",    G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),

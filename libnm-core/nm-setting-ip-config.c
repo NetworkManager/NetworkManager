@@ -1213,7 +1213,7 @@ nm_ip_route_set_attribute (NMIPRoute *route, const char *name, GVariant *value)
 }
 
 #define ATTR_SPEC_PTR(name, type, v4, v6, str_type) \
-	&(NMVariantAttributeSpec) { name, type, v4, v6, FALSE, FALSE, str_type }
+	&((const NMVariantAttributeSpec) { name, type, v4, v6, FALSE, FALSE, str_type })
 
 static const NMVariantAttributeSpec * const ip_route_attribute_spec[] = {
 	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_TABLE,           G_VARIANT_TYPE_UINT32,   TRUE,  TRUE,  0 ),
