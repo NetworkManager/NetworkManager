@@ -103,7 +103,7 @@ _nl80211_alloc_msg (int id, int ifindex, int phy, guint32 cmd, guint32 flags)
 	return g_steal_pointer (&msg);
 
 nla_put_failure:
-	return NULL;
+	g_return_val_if_reached (NULL);
 }
 
 static struct nl_msg *
@@ -250,7 +250,7 @@ wifi_nl80211_set_mode (NMWifiUtils *data, const NM80211Mode mode)
 	return err >= 0;
 
 nla_put_failure:
-	return FALSE;
+	g_return_val_if_reached (FALSE);
 }
 
 static gboolean
@@ -267,7 +267,7 @@ wifi_nl80211_set_powersave (NMWifiUtils *data, guint32 powersave)
 	return err >= 0;
 
 nla_put_failure:
-	return FALSE;
+	g_return_val_if_reached (FALSE);
 }
 
 static int
@@ -365,7 +365,7 @@ wifi_nl80211_set_wake_on_wlan (NMWifiUtils *data, NMSettingWirelessWakeOnWLan wo
 	return err >= 0;
 
 nla_put_failure:
-	return FALSE;
+	g_return_val_if_reached (FALSE);
 }
 
 /* @divisor: pass what value @xbm should be divided by to get dBm */
@@ -642,7 +642,7 @@ nl80211_get_ap_info (NMWifiUtilsNl80211 *self,
 	return;
 
 nla_put_failure:
-	return;
+	g_return_if_reached ();
 }
 
 static guint32
@@ -695,7 +695,7 @@ wifi_nl80211_indicate_addressing_running (NMWifiUtils *data, gboolean running)
 	return err >= 0;
 
 nla_put_failure:
-	return FALSE;
+	g_return_val_if_reached (FALSE);
 }
 
 struct nl80211_device_info {

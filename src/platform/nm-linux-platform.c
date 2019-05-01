@@ -3681,7 +3681,7 @@ _nl_msg_new_link_set_afspec (struct nl_msg *msg,
 
 	return TRUE;
 nla_put_failure:
-	return FALSE;
+	g_return_val_if_reached (FALSE);
 }
 
 static gboolean
@@ -3832,7 +3832,7 @@ _nl_msg_new_link_set_linkinfo_vlan (struct nl_msg *msg,
 
 	return TRUE;
 nla_put_failure:
-	return FALSE;
+	g_return_val_if_reached (FALSE);
 }
 
 static struct nl_msg *
@@ -4278,7 +4278,7 @@ _add_action_simple (struct nl_msg *msg,
 	return TRUE;
 
 nla_put_failure:
-	return FALSE;
+	g_return_val_if_reached (FALSE);
 }
 
 static gboolean
@@ -4308,7 +4308,7 @@ _add_action_mirred (struct nl_msg *msg,
 	return TRUE;
 
 nla_put_failure:
-	return FALSE;
+	g_return_val_if_reached (FALSE);
 }
 
 static gboolean
@@ -4334,7 +4334,7 @@ _add_action (struct nl_msg *msg,
 	return TRUE;
 
 nla_put_failure:
-	return FALSE;
+	g_return_val_if_reached (FALSE);
 }
 
 static struct nl_msg *
