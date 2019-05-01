@@ -6577,11 +6577,12 @@ nm_platform_tfilter_hash_update (const NMPlatformTfilter *obj, NMHashState *h)
 			nm_hash_update_strarr (h, obj->action.simple.sdata);
 		} else if (nm_streq (obj->action.kind, NM_PLATFORM_ACTION_KIND_MIRRED)) {
 			nm_hash_update_vals (h,
-			                     obj->action.mirred.ingress,
-			                     obj->action.mirred.egress,
-			                     obj->action.mirred.mirror,
-			                     obj->action.mirred.redirect,
-			                     obj->action.mirred.ifindex);
+			                     obj->action.mirred.ifindex,
+			                     NM_HASH_COMBINE_BOOLS (guint8,
+			                                            obj->action.mirred.ingress,
+			                                            obj->action.mirred.egress,
+			                                            obj->action.mirred.mirror,
+			                                            obj->action.mirred.redirect));
 		}
 	}
 }
@@ -6602,11 +6603,11 @@ nm_platform_tfilter_cmp (const NMPlatformTfilter *a, const NMPlatformTfilter *b)
 		if (nm_streq (a->action.kind, NM_PLATFORM_ACTION_KIND_SIMPLE)) {
 			NM_CMP_FIELD_STR (a, b, action.simple.sdata);
 		} else if (nm_streq (a->action.kind, NM_PLATFORM_ACTION_KIND_MIRRED)) {
-			NM_CMP_FIELD (a, b, action.mirred.ingress);
-			NM_CMP_FIELD (a, b, action.mirred.egress);
-			NM_CMP_FIELD (a, b, action.mirred.mirror);
-			NM_CMP_FIELD (a, b, action.mirred.redirect);
 			NM_CMP_FIELD (a, b, action.mirred.ifindex);
+			NM_CMP_FIELD_UNSAFE (a, b, action.mirred.ingress);
+			NM_CMP_FIELD_UNSAFE (a, b, action.mirred.egress);
+			NM_CMP_FIELD_UNSAFE (a, b, action.mirred.mirror);
+			NM_CMP_FIELD_UNSAFE (a, b, action.mirred.redirect);
 		}
 	}
 
