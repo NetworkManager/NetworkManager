@@ -8245,6 +8245,9 @@ qdisc_add (NMPlatform *platform,
 	char s_buf[256];
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 
+	/* Note: @qdisc must not be copied or kept alive because the lifetime of qdisc.kind
+	 * is undefined. */
+
 	msg = _nl_msg_new_qdisc (RTM_NEWQDISC, flags, qdisc);
 
 	event_handler_read_netlink (platform, FALSE);
@@ -8285,6 +8288,9 @@ tfilter_add (NMPlatform *platform,
 	int nle;
 	char s_buf[256];
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
+
+	/* Note: @tfilter must not be copied or kept alive because the lifetime of tfilter.kind
+	 * and tfilter.action.kind is undefined. */
 
 	msg = _nl_msg_new_tfilter (RTM_NEWTFILTER, flags, tfilter);
 

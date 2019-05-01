@@ -6520,7 +6520,12 @@ tc_commit (NMDevice *self)
 			NMPlatformQdisc *qdisc = NMP_OBJECT_CAST_QDISC (q);
 
 			qdisc->ifindex = ip_ifindex;
+
+			/* Note: kind string is still owned by NMTCTfilter.
+			 * This qdisc instance must not be kept alive beyond this function.
+			 * nm_platform_qdisc_sync() promises to do that. */
 			qdisc->kind = nm_tc_qdisc_get_kind (s_qdisc);
+
 			qdisc->addr_family = AF_UNSPEC;
 			qdisc->handle = nm_tc_qdisc_get_handle (s_qdisc);
 			qdisc->parent = nm_tc_qdisc_get_parent (s_qdisc);
@@ -6562,7 +6567,12 @@ tc_commit (NMDevice *self)
 			NMPlatformTfilter *tfilter = NMP_OBJECT_CAST_TFILTER (q);
 
 			tfilter->ifindex = ip_ifindex;
+
+			/* Note: kind string is still owned by NMTCTfilter.
+			 * This tfilter instance must not be kept alive beyond this function.
+			 * nm_platform_tfilter_sync() promises to do that. */
 			tfilter->kind = nm_tc_tfilter_get_kind (s_tfilter);
+
 			tfilter->addr_family = AF_UNSPEC;
 			tfilter->handle = nm_tc_tfilter_get_handle (s_tfilter);
 			tfilter->parent = nm_tc_tfilter_get_parent (s_tfilter);
@@ -6572,7 +6582,11 @@ tc_commit (NMDevice *self)
 			if (action) {
 				GVariant *var;
 
+				/* Note: kind string is still owned by NMTCAction.
+				 * This tfilter instance must not be kept alive beyond this function.
+				 * nm_platform_tfilter_sync() promises to do that. */
 				tfilter->action.kind = nm_tc_action_get_kind (action);
+
 				if (strcmp (tfilter->action.kind, "simple") == 0) {
 					var = nm_tc_action_get_attribute (action, "sdata");
 					if (var && g_variant_is_of_type (var, G_VARIANT_TYPE_BYTESTRING)) {

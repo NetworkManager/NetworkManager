@@ -5077,10 +5077,27 @@ nm_platform_qdisc_add (NMPlatform *self,
 	int ifindex = qdisc->ifindex;
 	_CHECK_SELF (self, klass, -NME_BUG);
 
+	/* Note: @qdisc must not be copied or kept alive because the lifetime of qdisc.kind
+	 * is undefined. */
+
 	_LOG3D ("adding or updating a qdisc: %s", nm_platform_qdisc_to_string (qdisc, NULL, 0));
 	return klass->qdisc_add (self, flags, qdisc);
 }
 
+/**
+ * nm_platform_qdisc_sync:
+ * @self: the #NMPlatform instance
+ * @ifindex: the ifindex where to configure the qdiscs.
+ * @known_qdiscs: the list of qdiscs (#NMPObject).
+ *
+ * The function promises not to take any reference to the qdisc
+ * instances from @known_qdiscs, nor to keep them around after
+ * the function returns. This is important, because it allows the
+ * caller to pass NMPlatformQdisc instances which "kind" string
+ * have a limited lifetime.
+ *
+ * Returns: %TRUE on success.
+ */
 gboolean
 nm_platform_qdisc_sync (NMPlatform *self,
                         int ifindex,
@@ -5143,10 +5160,27 @@ nm_platform_tfilter_add (NMPlatform *self,
 	int ifindex = tfilter->ifindex;
 	_CHECK_SELF (self, klass, -NME_BUG);
 
+	/* Note: @tfilter must not be copied or kept alive because the lifetime of tfilter.kind
+	 * and tfilter.action.kind is undefined. */
+
 	_LOG3D ("adding or updating a tfilter: %s", nm_platform_tfilter_to_string (tfilter, NULL, 0));
 	return klass->tfilter_add (self, flags, tfilter);
 }
 
+/**
+ * nm_platform_qdisc_sync:
+ * @self: the #NMPlatform instance
+ * @ifindex: the ifindex where to configure the qdiscs.
+ * @known_tfilters: the list of tfilters (#NMPObject).
+ *
+ * The function promises not to take any reference to the tfilter
+ * instances from @known_tfilters, nor to keep them around after
+ * the function returns. This is important, because it allows the
+ * caller to pass NMPlatformTfilter instances which "kind" string
+ * have a limited lifetime.
+ *
+ * Returns: %TRUE on success.
+ */
 gboolean
 nm_platform_tfilter_sync (NMPlatform *self,
                           int ifindex,
