@@ -2279,21 +2279,42 @@ _nm_utils_string_append_tc_parent (GString *string, const char *prefix, guint32 
 guint32
 _nm_utils_parse_tc_handle (const char *str, GError **error)
 {
-	gint64 maj, min;
-	char *sep;
+	gint64 maj;
+	gint64 min = 0;
+	const char *sep;
 
-	maj = g_ascii_strtoll (str, &sep, 0x10);
-	if (*sep == ':')
-		min = g_ascii_strtoll (&sep[1], &sep, 0x10);
-	else
-		min = 0;
+	nm_assert (str);
 
-	if (*sep != '\0' || maj <= 0 || maj > 0xffff || min < 0 || min > 0xffff) {
-		g_set_error (error, 1, 0, _("'%s' is not a valid handle."), str);
-		return TC_H_UNSPEC;
+	maj = g_ascii_strtoll (str, (char **) &sep, 0x10);
+	if (sep == str)
+		goto fail;
+
+	sep = nm_str_skip_leading_spaces (sep);
+
+	if (sep[0] == ':') {
+		const char *str2 = &sep[1];
+
+		min = g_ascii_strtoll (str2, (char **) &sep, 0x10);
+		sep = nm_str_skip_leading_spaces (sep);
+		if (sep[0] != '\0')
+			goto fail;
+	} else if (sep[0] != '\0')
+		goto fail;
+
+	if (   maj <= 0
+	    || maj > 0xffff
+	    || min < 0
+	    || min > 0xffff
+	    || !NM_STRCHAR_ALL (str, ch, (   g_ascii_isxdigit (ch)
+	                                  || ch == ':'
+	                                  || g_ascii_isspace (ch)))) {
+		goto fail;
 	}
 
-	return TC_H_MAKE (maj << 16, min);
+	return TC_H_MAKE (((guint32) maj) << 16, (guint32) min);
+fail:
+	nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN, _("'%s' is not a valid handle."), str);
+	return TC_H_UNSPEC;
 }
 
 #define TC_ATTR_SPEC_PTR(name, type, no_value, consumes_rest, str_type) \
