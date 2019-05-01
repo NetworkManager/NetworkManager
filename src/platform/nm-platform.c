@@ -6480,7 +6480,8 @@ nm_platform_qdisc_hash_update (const NMPlatformQdisc *obj, NMHashState *h)
 		                     obj->fq_codel.quantum,
 		                     obj->fq_codel.ce_threshold,
 		                     obj->fq_codel.memory,
-		                     obj->fq_codel.ecn == TRUE);
+		                     NM_HASH_COMBINE_BOOLS (guint8,
+		                                            obj->fq_codel.ecn));
 	}
 }
 
@@ -6503,7 +6504,7 @@ nm_platform_qdisc_cmp (const NMPlatformQdisc *a, const NMPlatformQdisc *b)
 		NM_CMP_FIELD (a, b, fq_codel.quantum);
 		NM_CMP_FIELD (a, b, fq_codel.ce_threshold);
 		NM_CMP_FIELD (a, b, fq_codel.memory);
-		NM_CMP_FIELD (a, b, fq_codel.ecn == TRUE);
+		NM_CMP_FIELD_UNSAFE (a, b, fq_codel.ecn);
 	}
 
 	return 0;
