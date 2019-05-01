@@ -6496,7 +6496,7 @@ tc_commit (NMDevice *self)
 	NMSettingTCConfig *s_tc = NULL;
 	int ip_ifindex;
 	guint nqdiscs, ntfilters;
-	int i;
+	guint i;
 
 	connection = nm_device_get_applied_connection (self);
 	if (connection)
