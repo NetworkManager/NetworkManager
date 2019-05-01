@@ -596,6 +596,8 @@ typedef struct {
 	bool     uid_range_has:1;            /* has(FRA_UID_RANGE) */
 } NMPlatformRoutingRule;
 
+#define NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET   (~((guint32) 0))
+
 typedef struct {
 	guint32 limit;
 	guint32 flows;
@@ -603,7 +605,12 @@ typedef struct {
 	guint32 interval;
 	guint32 quantum;
 	guint32 ce_threshold;
-	guint32 memory;
+	guint32 memory;       /* TCA_FQ_CODEL_MEMORY_LIMIT: note that only values <= 2^31 are accepted by kernel
+	                       *   and kernel defaults to 32MB.
+	                       *   Note that we use the special value NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET
+	                       *   to indicate that no explicit limit is set (when we send a RTM_NEWQDISC request).
+	                       *   This will cause kernel to choose the default (32MB).
+	                       *   Beware: zero is not the default you must always explicitly set this value. */
 	bool ecn:1;
 } NMPlatformQdiscFqCodel;
 
