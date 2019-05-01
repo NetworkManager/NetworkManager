@@ -6427,9 +6427,12 @@ const char *
 nm_platform_qdisc_to_string (const NMPlatformQdisc *qdisc, char *buf, gsize len)
 {
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
+	const char *buf0;
 
 	if (!nm_utils_to_string_buffer_init_null (qdisc, &buf, &len))
 		return buf;
+
+	buf0 = buf;
 
 	nm_utils_strbuf_append (&buf, &len, "%s%s family %u handle %x parent %x info %x",
 	                        qdisc->kind,
@@ -6458,7 +6461,7 @@ nm_platform_qdisc_to_string (const NMPlatformQdisc *qdisc, char *buf, gsize len)
 			nm_utils_strbuf_append (&buf, &len, " ecn");
 	}
 
-	return buf;
+	return buf0;
 }
 
 void
