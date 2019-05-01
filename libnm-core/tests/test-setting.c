@@ -3008,27 +3008,27 @@ test_parse_tc_handle (void)
 	_parse_tc_handle_inval (" ");
 	_parse_tc_handle_inval (" \n");
 	_parse_tc_handle_valid ("1", 1, 0);
-	_parse_tc_handle_inval(" 1 ");
+	_parse_tc_handle_valid(" 1 ", 1, 0);
 	_parse_tc_handle_valid ("1:", 1, 0);
-	_parse_tc_handle_inval ("1:  ");
+	_parse_tc_handle_valid ("1:  ", 1, 0);
 	_parse_tc_handle_valid ("1:0", 1, 0);
-	_parse_tc_handle_inval ("1   :0");
-	_parse_tc_handle_inval ("1   \t\n\f\r:0");
+	_parse_tc_handle_valid ("1   :0", 1, 0);
+	_parse_tc_handle_valid ("1   \t\n\f\r:0", 1, 0);
 	_parse_tc_handle_inval ("1   \t\n\f\r\v:0");
-	_parse_tc_handle_inval (" 1 : 0  ");
-	_parse_tc_handle_valid (" \t\v\n1: 0", 1, 0);
+	_parse_tc_handle_valid (" 1 : 0  ", 1, 0);
+	_parse_tc_handle_inval (" \t\v\n1: 0");
 	_parse_tc_handle_valid ("1:2", 1, 2);
 	_parse_tc_handle_valid ("01:02", 1, 2);
-	_parse_tc_handle_valid ("0x01:0x02", 1, 2);
+	_parse_tc_handle_inval ("0x01:0x02");
 	_parse_tc_handle_valid ("  01:   02", 1, 2);
 	_parse_tc_handle_valid ("019:   020", 0x19, 0x20);
 	_parse_tc_handle_valid ("FFFF:   020", 0xFFFF, 0x20);
 	_parse_tc_handle_valid ("FfFF:   ffff", 0xFFFF, 0xFFFF);
 	_parse_tc_handle_valid ("FFFF", 0xFFFF, 0);
-	_parse_tc_handle_valid ("0xFFFF", 0xFFFF, 0);
+	_parse_tc_handle_inval ("0xFFFF");
 	_parse_tc_handle_inval ("10000");
 	_parse_tc_handle_valid ("\t\n\f\r FFFF", 0xFFFF, 0);
-	_parse_tc_handle_valid ("\t\n\f\r \vFFFF", 0xFFFF, 0);
+	_parse_tc_handle_inval ("\t\n\f\r \vFFFF");
 }
 
 /*****************************************************************************/
