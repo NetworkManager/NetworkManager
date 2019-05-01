@@ -626,7 +626,11 @@ typedef struct {
 
 typedef struct {
 	__NMPlatformObjWithIfindex_COMMON;
+
+	/* beware, kind is embedded in an NMPObject, hence you must
+	 * take care of the lifetime of the string. */
 	const char *kind;
+
 	int addr_family;
 	guint32 handle;
 	guint32 parent;
@@ -649,7 +653,11 @@ typedef struct {
 } NMPlatformActionMirred;
 
 typedef struct {
+
+	/* beware, kind is embedded in an NMPObject, hence you must
+	 * take care of the lifetime of the string. */
 	const char *kind;
+
 	union {
 		NMPlatformActionSimple simple;
 		NMPlatformActionMirred mirred;
@@ -661,7 +669,11 @@ typedef struct {
 
 typedef struct {
 	__NMPlatformObjWithIfindex_COMMON;
+
+	/* beware, kind is embedded in an NMPObject, hence you must
+	 * take care of the lifetime of the string. */
 	const char *kind;
+
 	int addr_family;
 	guint32 handle;
 	guint32 parent;
