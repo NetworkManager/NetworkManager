@@ -581,7 +581,8 @@ nm_connection_compare (NMConnection *a,
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &src)) {
 		NMSetting *cmp = nm_connection_get_setting (b, G_OBJECT_TYPE (src));
 
-		if (!cmp || !nm_setting_compare (src, cmp, flags))
+		if (   !cmp
+		    || !_nm_setting_compare (a, src, b, cmp, flags))
 			return FALSE;
 	}
 
@@ -614,7 +615,7 @@ diff_one_connection (NMConnection *a,
 		if (results)
 			new_results = FALSE;
 
-		if (!nm_setting_diff (a_setting, b_setting, flags, invert_results, &results))
+		if (!_nm_setting_diff (a, a_setting, b, b_setting, flags, invert_results, &results))
 			diff_found = TRUE;
 
 		if (new_results && results)

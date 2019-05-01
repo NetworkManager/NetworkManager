@@ -253,19 +253,18 @@ ip4_dns_from_dbus (GVariant *dbus_value,
 }
 
 static GVariant *
-ip4_addresses_get (NMSetting  *setting,
-                   const char *property)
+ip4_addresses_get (const NMSettInfoSetting *sett_info,
+                   guint property_idx,
+                   NMConnection *connection,
+                   NMSetting *setting,
+                   NMConnectionSerializationFlags flags)
 {
-	GPtrArray *addrs;
+	gs_unref_ptrarray GPtrArray *addrs = NULL;
 	const char *gateway;
-	GVariant *ret;
 
-	g_object_get (setting, property, &addrs, NULL);
+	g_object_get (setting, NM_SETTING_IP_CONFIG_ADDRESSES, &addrs, NULL);
 	gateway = nm_setting_ip_config_get_gateway (NM_SETTING_IP_CONFIG (setting));
-	ret = nm_utils_ip4_addresses_to_variant (addrs, gateway);
-	g_ptr_array_unref (addrs);
-
-	return ret;
+	return nm_utils_ip4_addresses_to_variant (addrs, gateway);
 }
 
 static gboolean
@@ -388,17 +387,16 @@ ip4_address_data_set (NMSetting  *setting,
 }
 
 static GVariant *
-ip4_routes_get (NMSetting  *setting,
-                const char *property)
+ip4_routes_get (const NMSettInfoSetting *sett_info,
+                guint property_idx,
+                NMConnection *connection,
+                NMSetting *setting,
+                NMConnectionSerializationFlags flags)
 {
-	GPtrArray *routes;
-	GVariant *ret;
+	gs_unref_ptrarray GPtrArray *routes = NULL;
 
-	g_object_get (setting, property, &routes, NULL);
-	ret = nm_utils_ip4_routes_to_variant (routes);
-	g_ptr_array_unref (routes);
-
-	return ret;
+	g_object_get (setting, NM_SETTING_IP_CONFIG_ROUTES, &routes, NULL);
+	return nm_utils_ip4_routes_to_variant (routes);
 }
 
 static gboolean

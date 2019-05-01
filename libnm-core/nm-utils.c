@@ -4280,12 +4280,15 @@ _nm_utils_hwaddr_to_dbus_impl (const char *str)
 }
 
 GVariant *
-_nm_utils_hwaddr_cloned_get (NMSetting     *setting,
-                             const char    *property)
+_nm_utils_hwaddr_cloned_get (const NMSettInfoSetting *sett_info,
+                             guint property_idx,
+                             NMConnection *connection,
+                             NMSetting *setting,
+                             NMConnectionSerializationFlags flags)
 {
 	gs_free char *addr = NULL;
 
-	nm_assert (nm_streq0 (property, "cloned-mac-address"));
+	nm_assert (nm_streq (sett_info->property_infos[property_idx].name, "cloned-mac-address"));
 
 	g_object_get (setting, "cloned-mac-address", &addr, NULL);
 	return _nm_utils_hwaddr_to_dbus_impl (addr);
@@ -6790,13 +6793,20 @@ nm_utils_base64secret_normalize (const char *base64_key,
 }
 
 GVariant *
-_nm_utils_bridge_vlans_to_dbus (NMSetting *setting, const char *property)
+_nm_utils_bridge_vlans_to_dbus (const NMSettInfoSetting *sett_info,
+                                guint property_idx,
+                                NMConnection *connection,
+                                NMSetting *setting,
+                                NMConnectionSerializationFlags flags)
 {
 	gs_unref_ptrarray GPtrArray *vlans = NULL;
 	GVariantBuilder builder;
 	guint i;
+	const char *property_name = sett_info->property_infos[property_idx].name;
 
-	g_object_get (setting, property, &vlans, NULL);
+	nm_assert (property_name);
+
+	g_object_get (setting, property_name, &vlans, NULL);
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
 
 	if (vlans) {

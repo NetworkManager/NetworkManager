@@ -662,40 +662,40 @@ GVariant *nm_ip_routing_rule_to_dbus (const NMIPRoutingRule *self);
 typedef struct _NMSettInfoSetting  NMSettInfoSetting;
 typedef struct _NMSettInfoProperty NMSettInfoProperty;
 
-typedef GVariant *(*NMSettingPropertyGetFunc)           (NMSetting     *setting,
-                                                         const char    *property);
-typedef GVariant *(*NMSettingPropertySynthFunc)         (const NMSettInfoSetting *sett_info,
+typedef GVariant *(*NMSettInfoPropToDBusFcn)            (const NMSettInfoSetting *sett_info,
                                                          guint property_idx,
                                                          NMConnection  *connection,
                                                          NMSetting     *setting,
                                                          NMConnectionSerializationFlags flags);
-typedef gboolean  (*NMSettingPropertySetFunc)           (NMSetting     *setting,
+typedef gboolean  (*NMSettInfoPropFromDBusFcn)          (NMSetting     *setting,
                                                          GVariant      *connection_dict,
                                                          const char    *property,
                                                          GVariant      *value,
                                                          NMSettingParseFlags parse_flags,
                                                          GError       **error);
-typedef gboolean  (*NMSettingPropertyNotSetFunc)        (NMSetting     *setting,
+typedef gboolean  (*NMSettInfoPropMissingFromDBusFcn)   (NMSetting     *setting,
                                                          GVariant      *connection_dict,
                                                          const char    *property,
                                                          NMSettingParseFlags parse_flags,
                                                          GError       **error);
-typedef GVariant *(*NMSettingPropertyTransformToFunc)   (const GValue *from);
-typedef void      (*NMSettingPropertyTransformFromFunc) (GVariant *from,
-                                                          GValue *to);
+typedef GVariant *(*NMSettInfoPropGPropToDBusFcn)       (const GValue *from);
+typedef void      (*NMSettInfoPropGPropFromDBusFcn)     (GVariant *from,
+                                                         GValue *to);
 
 struct _NMSettInfoProperty {
 	const char *name;
 	GParamSpec *param_spec;
+
 	const GVariantType *dbus_type;
 
-	NMSettingPropertyGetFunc           get_func;
-	NMSettingPropertySynthFunc         synth_func;
-	NMSettingPropertySetFunc           set_func;
-	NMSettingPropertyNotSetFunc        not_set_func;
+	NMSettInfoPropToDBusFcn            to_dbus_fcn;
+	NMSettInfoPropFromDBusFcn          from_dbus_fcn;
+	NMSettInfoPropMissingFromDBusFcn   missing_from_dbus_fcn;
 
-	NMSettingPropertyTransformToFunc   to_dbus;
-	NMSettingPropertyTransformFromFunc from_dbus;
+	/* Simpler variants of @to_dbus_fcn/@from_dbus_fcn that operate solely
+	 * on the GValue value of the GObject property. */
+	NMSettInfoPropGPropToDBusFcn       gprop_to_dbus_fcn;
+	NMSettInfoPropGPropFromDBusFcn     gprop_from_dbus_fcn;
 };
 
 typedef struct {
@@ -768,6 +768,20 @@ _nm_setting_class_get_property_info (NMSettingClass *setting_class,
 }
 
 /*****************************************************************************/
+
+gboolean _nm_setting_compare (NMConnection *con_a,
+                              NMSetting *set_a,
+                              NMConnection *con_b,
+                              NMSetting *set_b,
+                              NMSettingCompareFlags flags);
+
+gboolean _nm_setting_diff (NMConnection *con_a,
+                           NMSetting *set_a,
+                           NMConnection *con_b,
+                           NMSetting *set_b,
+                           NMSettingCompareFlags flags,
+                           gboolean invert_results,
+                           GHashTable **results);
 
 NMSetting8021xCKScheme _nm_setting_802_1x_cert_get_scheme (GBytes *bytes, GError **error);
 

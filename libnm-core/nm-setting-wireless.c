@@ -919,20 +919,24 @@ mac_addr_rand_ok:
 static NMTernary
 compare_property (const NMSettInfoSetting *sett_info,
                   guint property_idx,
-                  NMSetting *setting,
-                  NMSetting *other,
+                  NMConnection *con_a,
+                  NMSetting *set_a,
+                  NMConnection *con_b,
+                  NMSetting *set_b,
                   NMSettingCompareFlags flags)
 {
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS)) {
-		return    !other
-		       || nm_streq0 (NM_SETTING_WIRELESS_GET_PRIVATE (setting)->cloned_mac_address,
-		                     NM_SETTING_WIRELESS_GET_PRIVATE (other)->cloned_mac_address);
+		return    !set_b
+		       || nm_streq0 (NM_SETTING_WIRELESS_GET_PRIVATE (set_a)->cloned_mac_address,
+		                     NM_SETTING_WIRELESS_GET_PRIVATE (set_b)->cloned_mac_address);
 	}
 
 	return NM_SETTING_CLASS (nm_setting_wireless_parent_class)->compare_property (sett_info,
 	                                                                              property_idx,
-	                                                                              setting,
-	                                                                              other,
+	                                                                              con_a,
+	                                                                              set_a,
+	                                                                              con_b,
+	                                                                              set_b,
 	                                                                              flags);
 }
 

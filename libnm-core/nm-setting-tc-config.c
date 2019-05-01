@@ -1325,16 +1325,18 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 static NMTernary
 compare_property (const NMSettInfoSetting *sett_info,
                   guint property_idx,
-                  NMSetting *setting,
-                  NMSetting *other,
+                  NMConnection *con_a,
+                  NMSetting *set_a,
+                  NMConnection *con_b,
+                  NMSetting *set_b,
                   NMSettingCompareFlags flags)
 {
-	NMSettingTCConfig *a_tc_config = NM_SETTING_TC_CONFIG (setting);
-	NMSettingTCConfig *b_tc_config = NM_SETTING_TC_CONFIG (other);
+	NMSettingTCConfig *a_tc_config = NM_SETTING_TC_CONFIG (set_a);
+	NMSettingTCConfig *b_tc_config = NM_SETTING_TC_CONFIG (set_b);
 	guint i;
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TC_CONFIG_QDISCS)) {
-		if (other) {
+		if (set_b) {
 			if (a_tc_config->qdiscs->len != b_tc_config->qdiscs->len)
 				return FALSE;
 			for (i = 0; i < a_tc_config->qdiscs->len; i++) {
@@ -1346,7 +1348,7 @@ compare_property (const NMSettInfoSetting *sett_info,
 	}
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TC_CONFIG_TFILTERS)) {
-		if (other) {
+		if (set_b) {
 			if (a_tc_config->tfilters->len != b_tc_config->tfilters->len)
 				return FALSE;
 			for (i = 0; i < a_tc_config->tfilters->len; i++) {
@@ -1359,8 +1361,10 @@ compare_property (const NMSettInfoSetting *sett_info,
 
 	return NM_SETTING_CLASS (nm_setting_tc_config_parent_class)->compare_property (sett_info,
 	                                                                               property_idx,
-	                                                                               setting,
-	                                                                               other,
+	                                                                               con_a,
+	                                                                               set_a,
+	                                                                               con_b,
+	                                                                               set_b,
 	                                                                               flags);
 }
 
@@ -1479,17 +1483,16 @@ next:
 }
 
 static GVariant *
-tc_qdiscs_get (NMSetting *setting,
-               const char *property)
+tc_qdiscs_get (const NMSettInfoSetting *sett_info,
+               guint property_idx,
+               NMConnection *connection,
+               NMSetting *setting,
+               NMConnectionSerializationFlags flags)
 {
-	GPtrArray *qdiscs;
-	GVariant *ret;
+	gs_unref_ptrarray GPtrArray *qdiscs = NULL;
 
 	g_object_get (setting, NM_SETTING_TC_CONFIG_QDISCS, &qdiscs, NULL);
-	ret = _qdiscs_to_variant (qdiscs);
-	g_ptr_array_unref (qdiscs);
-
-	return ret;
+	return _qdiscs_to_variant (qdiscs);
 }
 
 static gboolean
@@ -1665,17 +1668,16 @@ next:
 }
 
 static GVariant *
-tc_tfilters_get (NMSetting *setting,
-                 const char *property)
+tc_tfilters_get (const NMSettInfoSetting *sett_info,
+                guint property_idx,
+                NMConnection *connection,
+                NMSetting *setting,
+                NMConnectionSerializationFlags flags)
 {
-	GPtrArray *tfilters;
-	GVariant *ret;
+	gs_unref_ptrarray GPtrArray *tfilters = NULL;
 
 	g_object_get (setting, NM_SETTING_TC_CONFIG_TFILTERS, &tfilters, NULL);
-	ret = _tfilters_to_variant (tfilters);
-	g_ptr_array_unref (tfilters);
-
-	return ret;
+	return _tfilters_to_variant (tfilters);
 }
 
 static gboolean
@@ -1686,12 +1688,10 @@ tc_tfilters_set (NMSetting *setting,
                  NMSettingParseFlags parse_flags,
                  GError **error)
 {
-	GPtrArray *tfilters;
+	gs_unref_ptrarray GPtrArray *tfilters = NULL;
 
 	tfilters = _tfilters_from_variant (value);
 	g_object_set (setting, NM_SETTING_TC_CONFIG_TFILTERS, tfilters, NULL);
-	g_ptr_array_unref (tfilters);
-
 	return TRUE;
 }
 

@@ -679,7 +679,11 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static GVariant *
-_override_flags_get (NMSetting *setting, const char *property)
+_override_flags_get (const NMSettInfoSetting *sett_info,
+                     guint property_idx,
+                     NMConnection *connection,
+                     NMSetting *setting,
+                     NMConnectionSerializationFlags flags)
 {
 	return g_variant_new_uint32 (nm_setting_vlan_get_flags ((NMSettingVlan *) setting));
 }
@@ -921,7 +925,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 
 	_properties_override_add_override (properties_override,
 	                                   obj_properties[PROP_FLAGS],
-	                                   NULL,
+	                                   G_VARIANT_TYPE_UINT32,
 	                                   _override_flags_get,
 	                                   NULL,
 	                                   _override_flags_not_set);

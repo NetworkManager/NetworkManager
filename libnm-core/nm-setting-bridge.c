@@ -997,8 +997,10 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 static NMTernary
 compare_property (const NMSettInfoSetting *sett_info,
                   guint property_idx,
-                  NMSetting *setting,
-                  NMSetting *other,
+                  NMConnection *con_a,
+                  NMSetting *set_a,
+                  NMConnection *con_b,
+                  NMSetting *set_b,
                   NMSettingCompareFlags flags)
 {
 	NMSettingBridgePrivate *priv_a;
@@ -1006,9 +1008,9 @@ compare_property (const NMSettInfoSetting *sett_info,
 	guint i;
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_BRIDGE_VLANS)) {
-		if (other) {
-			priv_a = NM_SETTING_BRIDGE_GET_PRIVATE (setting);
-			priv_b = NM_SETTING_BRIDGE_GET_PRIVATE (other);
+		if (set_b) {
+			priv_a = NM_SETTING_BRIDGE_GET_PRIVATE (set_a);
+			priv_b = NM_SETTING_BRIDGE_GET_PRIVATE (set_b);
 
 			if (priv_a->vlans->len != priv_b->vlans->len)
 				return FALSE;
@@ -1022,8 +1024,10 @@ compare_property (const NMSettInfoSetting *sett_info,
 
 	return NM_SETTING_CLASS (nm_setting_bridge_parent_class)->compare_property (sett_info,
 	                                                                            property_idx,
-	                                                                            setting,
-	                                                                            other,
+	                                                                            con_a,
+	                                                                            set_a,
+	                                                                            con_b,
+	                                                                            set_b,
 	                                                                            flags);
 }
 

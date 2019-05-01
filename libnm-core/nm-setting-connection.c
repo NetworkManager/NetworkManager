@@ -1268,8 +1268,10 @@ nm_setting_connection_no_interface_name (NMSetting *setting,
 static NMTernary
 compare_property (const NMSettInfoSetting *sett_info,
                   guint property_idx,
-                  NMSetting *setting,
-                  NMSetting *other,
+                  NMConnection *con_a,
+                  NMSetting *set_a,
+                  NMConnection *con_b,
+                  NMSetting *set_b,
                   NMSettingCompareFlags flags)
 {
 	if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_IGNORE_ID)
@@ -1282,8 +1284,10 @@ compare_property (const NMSettInfoSetting *sett_info,
 
 	return NM_SETTING_CLASS (nm_setting_connection_parent_class)->compare_property (sett_info,
 	                                                                                property_idx,
-	                                                                                setting,
-	                                                                                other,
+	                                                                                con_a,
+	                                                                                set_a,
+	                                                                                con_b,
+	                                                                                set_b,
 	                                                                                flags);
 }
 

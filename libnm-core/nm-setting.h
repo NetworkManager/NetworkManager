@@ -236,8 +236,10 @@ typedef struct {
 	/*< private >*/
 	NMTernary  (*compare_property)  (const struct _NMSettInfoSetting *sett_info,
 	                                 guint property_idx,
-	                                 NMSetting *setting,
-	                                 NMSetting *other,
+	                                 NMConnection *con_a,
+	                                 NMSetting *set_a,
+	                                 NMConnection *con_b,
+	                                 NMSetting *set_b,
 	                                 NMSettingCompareFlags flags);
 
 	/*< private >*/

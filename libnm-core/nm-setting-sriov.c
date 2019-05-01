@@ -905,7 +905,11 @@ _nm_setting_sriov_sort_vfs (NMSettingSriov *setting)
 /*****************************************************************************/
 
 static GVariant *
-vfs_to_dbus (NMSetting *setting, const char *property)
+vfs_to_dbus (const NMSettInfoSetting *sett_info,
+             guint property_idx,
+             NMConnection *connection,
+             NMSetting *setting,
+             NMConnectionSerializationFlags flags)
 {
 	gs_unref_ptrarray GPtrArray *vfs = NULL;
 	GVariantBuilder builder;
@@ -1129,8 +1133,10 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 static NMTernary
 compare_property (const NMSettInfoSetting *sett_info,
                   guint property_idx,
-                  NMSetting *setting,
-                  NMSetting *other,
+                  NMConnection *con_a,
+                  NMSetting *set_a,
+                  NMConnection *con_b,
+                  NMSetting *set_b,
                   NMSettingCompareFlags flags)
 {
 	NMSettingSriov *a;
@@ -1138,9 +1144,9 @@ compare_property (const NMSettInfoSetting *sett_info,
 	guint i;
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_SRIOV_VFS)) {
-		if (other) {
-			a = NM_SETTING_SRIOV (setting);
-			b = NM_SETTING_SRIOV (other);
+		if (set_b) {
+			a = NM_SETTING_SRIOV (set_a);
+			b = NM_SETTING_SRIOV (set_b);
 
 			if (a->vfs->len != b->vfs->len)
 				return FALSE;
@@ -1154,8 +1160,10 @@ compare_property (const NMSettInfoSetting *sett_info,
 
 	return NM_SETTING_CLASS (nm_setting_sriov_parent_class)->compare_property (sett_info,
 	                                                                           property_idx,
-	                                                                           setting,
-	                                                                           other,
+	                                                                           con_a,
+	                                                                           set_a,
+	                                                                           con_b,
+	                                                                           set_b,
 	                                                                           flags);
 }
 

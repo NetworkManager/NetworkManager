@@ -390,8 +390,10 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 static NMTernary
 compare_property (const NMSettInfoSetting *sett_info,
                   guint property_idx,
-                  NMSetting *setting,
-                  NMSetting *other,
+                  NMConnection *con_a,
+                  NMSetting *set_a,
+                  NMConnection *con_b,
+                  NMSetting *set_b,
                   NMSettingCompareFlags flags)
 {
 	NMSettingTeamPortPrivate *a_priv;
@@ -401,19 +403,19 @@ compare_property (const NMSettInfoSetting *sett_info,
 
 		if (NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
 			return NM_TERNARY_DEFAULT;
-		if (!other)
+		if (!set_b)
 			return TRUE;
-		a_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
-		b_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (other);
+		a_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (set_a);
+		b_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (set_b);
 		return _nm_team_link_watchers_equal (a_priv->link_watchers,
 		                                     b_priv->link_watchers,
 		                                     TRUE);
 	}
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TEAM_PORT_CONFIG)) {
-		if (other) {
-			a_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
-			b_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (other);
+		if (set_b) {
+			a_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (set_a);
+			b_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (set_b);
 
 			if (NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)) {
 				/* If we are trying to match a connection in order to assume it (and thus
@@ -433,8 +435,10 @@ compare_property (const NMSettInfoSetting *sett_info,
 
 	return NM_SETTING_CLASS (nm_setting_team_port_parent_class)->compare_property (sett_info,
 	                                                                               property_idx,
-	                                                                               setting,
-	                                                                               other,
+	                                                                               con_a,
+	                                                                               set_a,
+	                                                                               con_b,
+	                                                                               set_b,
 	                                                                               flags);
 }
 

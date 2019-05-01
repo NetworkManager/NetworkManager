@@ -839,20 +839,24 @@ compare_property_secrets (NMSettingVpn *a,
 static NMTernary
 compare_property (const NMSettInfoSetting *sett_info,
                   guint property_idx,
-                  NMSetting *setting,
-                  NMSetting *other,
+                  NMConnection *con_a,
+                  NMSetting *set_a,
+                  NMConnection *con_b,
+                  NMSetting *set_b,
                   NMSettingCompareFlags flags)
 {
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_VPN_SECRETS)) {
 		if (NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
 			return NM_TERNARY_DEFAULT;
-		return compare_property_secrets (NM_SETTING_VPN (setting), NM_SETTING_VPN (other), flags);
+		return compare_property_secrets (NM_SETTING_VPN (set_a), NM_SETTING_VPN (set_b), flags);
 	}
 
 	return NM_SETTING_CLASS (nm_setting_vpn_parent_class)->compare_property (sett_info,
 	                                                                         property_idx,
-	                                                                         setting,
-	                                                                         other,
+	                                                                         con_a,
+	                                                                         set_a,
+	                                                                         con_b,
+	                                                                         set_b,
 	                                                                         flags);
 }
 
