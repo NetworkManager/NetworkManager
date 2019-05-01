@@ -615,7 +615,7 @@ typedef struct {
 	                       *   netlink attribute but also as the special value 0x83126E97u
 	                       *   (NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED).
 	                       *   Beware: zero is not the default you must always explicitly set this value. */
-	guint32 memory;       /* TCA_FQ_CODEL_MEMORY_LIMIT: note that only values <= 2^31 are accepted by kernel
+	guint32 memory_limit; /* TCA_FQ_CODEL_MEMORY_LIMIT: note that only values <= 2^31 are accepted by kernel
 	                       *   and kernel defaults to 32MB.
 	                       *   Note that we use the special value NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET
 	                       *   to indicate that no explicit limit is set (when we send a RTM_NEWQDISC request).

@@ -6543,7 +6543,7 @@ tc_commit (NMDevice *self)
 				GET_ATTR("interval", qdisc->fq_codel.interval, UINT32, uint32, 0);
 				GET_ATTR("quantum", qdisc->fq_codel.quantum, UINT32, uint32, 0);
 				GET_ATTR("ce_threshold", qdisc->fq_codel.ce_threshold, UINT32, uint32, NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED);
-				GET_ATTR("memory", qdisc->fq_codel.memory, UINT32, uint32, NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET);
+				GET_ATTR("memory_limit", qdisc->fq_codel.memory_limit, UINT32, uint32, NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET);
 				GET_ATTR("ecn", qdisc->fq_codel.ecn, BOOLEAN, boolean, FALSE);
 			}
 
