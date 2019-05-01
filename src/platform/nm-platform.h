@@ -598,13 +598,23 @@ typedef struct {
 
 #define NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET   (~((guint32) 0))
 
+#define NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED ((guint32) 0x83126E97u)
+
+G_STATIC_ASSERT (((((guint64) NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED) * 1000u) >> 10) == (guint64) INT_MAX);
+
 typedef struct {
 	guint32 limit;
 	guint32 flows;
 	guint32 target;
 	guint32 interval;
 	guint32 quantum;
-	guint32 ce_threshold;
+	guint32 ce_threshold; /* TCA_FQ_CODEL_CE_THRESHOLD: kernel internally stores this value as
+	                       *   ((val64 * NSEC_PER_USEC) >> CODEL_SHIFT). The default value (in
+	                       *   the domain with this coersion) is CODEL_DISABLED_THRESHOLD (INT_MAX).
+	                       *   That means, "disabled" is expressed on RTM_NEWQDISC netlink API by absence of the
+	                       *   netlink attribute but also as the special value 0x83126E97u
+	                       *   (NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED).
+	                       *   Beware: zero is not the default you must always explicitly set this value. */
 	guint32 memory;       /* TCA_FQ_CODEL_MEMORY_LIMIT: note that only values <= 2^31 are accepted by kernel
 	                       *   and kernel defaults to 32MB.
 	                       *   Note that we use the special value NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET
