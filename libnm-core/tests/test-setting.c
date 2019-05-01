@@ -3088,6 +3088,60 @@ test_routing_rule (gconstpointer test_data)
 
 /*****************************************************************************/
 
+static void
+test_parse_tc_handle (void)
+{
+#define _parse_tc_handle(str, exp) \
+	G_STMT_START { \
+		gs_free_error GError *_error = NULL; \
+		GError **_perror = nmtst_get_rand_bool () ? &_error : NULL; \
+		guint32 _v; \
+		const guint32 _v_exp = (exp); \
+		\
+		_v = _nm_utils_parse_tc_handle (""str"", _perror); \
+		\
+		if (_v != _v_exp) \
+			g_error ("%s:%d: \"%s\" gave %08x but %08x expected.", __FILE__, __LINE__, ""str"", _v, _v_exp); \
+		\
+		if (_v == TC_H_UNSPEC) \
+			g_assert (!_perror || *_perror); \
+		else \
+			g_assert (!_perror || !*_perror); \
+		\
+	} G_STMT_END
+
+#define _parse_tc_handle_inval(str)           _parse_tc_handle (str, TC_H_UNSPEC)
+#define _parse_tc_handle_valid(str, maj, min) _parse_tc_handle (str, TC_H_MAKE (((guint32) (maj)) << 16, ((guint16) (min))))
+
+	_parse_tc_handle_inval ("");
+	_parse_tc_handle_inval (" ");
+	_parse_tc_handle_inval (" \n");
+	_parse_tc_handle_valid ("1", 1, 0);
+	_parse_tc_handle_inval(" 1 ");
+	_parse_tc_handle_valid ("1:", 1, 0);
+	_parse_tc_handle_inval ("1:  ");
+	_parse_tc_handle_valid ("1:0", 1, 0);
+	_parse_tc_handle_inval ("1   :0");
+	_parse_tc_handle_inval ("1   \t\n\f\r:0");
+	_parse_tc_handle_inval ("1   \t\n\f\r\v:0");
+	_parse_tc_handle_inval (" 1 : 0  ");
+	_parse_tc_handle_valid (" \t\v\n1: 0", 1, 0);
+	_parse_tc_handle_valid ("1:2", 1, 2);
+	_parse_tc_handle_valid ("01:02", 1, 2);
+	_parse_tc_handle_valid ("0x01:0x02", 1, 2);
+	_parse_tc_handle_valid ("  01:   02", 1, 2);
+	_parse_tc_handle_valid ("019:   020", 0x19, 0x20);
+	_parse_tc_handle_valid ("FFFF:   020", 0xFFFF, 0x20);
+	_parse_tc_handle_valid ("FfFF:   ffff", 0xFFFF, 0xFFFF);
+	_parse_tc_handle_valid ("FFFF", 0xFFFF, 0);
+	_parse_tc_handle_valid ("0xFFFF", 0xFFFF, 0);
+	_parse_tc_handle_inval ("10000");
+	_parse_tc_handle_valid ("\t\n\f\r FFFF", 0xFFFF, 0);
+	_parse_tc_handle_valid ("\t\n\f\r \vFFFF", 0xFFFF, 0);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -3172,6 +3226,8 @@ main (int argc, char **argv)
 	g_test_add_data_func ("/libnm/settings/roundtrip-conversion/general/3",   GINT_TO_POINTER (3), test_roundtrip_conversion);
 
 	g_test_add_data_func ("/libnm/settings/routing-rule/1", GINT_TO_POINTER (0), test_routing_rule);
+
+	g_test_add_func ("/libnm/parse-tc-handle", test_parse_tc_handle);
 
 	return g_test_run ();
 }
