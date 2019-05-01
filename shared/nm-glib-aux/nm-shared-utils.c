@@ -734,10 +734,7 @@ _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 ma
 	gint64 v;
 	const char *s = NULL;
 
-	if (str) {
-		while (g_ascii_isspace (str[0]))
-			str++;
-	}
+	str = nm_str_skip_leading_spaces (str);
 	if (!str || !str[0]) {
 		errno = EINVAL;
 		return fallback;
@@ -748,9 +745,9 @@ _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 ma
 
 	if (errno != 0)
 		return fallback;
+
 	if (s[0] != '\0') {
-		while (g_ascii_isspace (s[0]))
-			s++;
+		s = nm_str_skip_leading_spaces (s);
 		if (s[0] != '\0') {
 			errno = EINVAL;
 			return fallback;
