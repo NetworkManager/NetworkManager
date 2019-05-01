@@ -641,11 +641,11 @@ typedef struct {
 } NMPlatformActionSimple;
 
 typedef struct {
-	gboolean egress;
-	gboolean ingress;
-	gboolean mirror;
-	gboolean redirect;
 	int ifindex;
+	bool egress:1;
+	bool ingress:1;
+	bool mirror:1;
+	bool redirect:1;
 } NMPlatformActionMirred;
 
 typedef struct {
