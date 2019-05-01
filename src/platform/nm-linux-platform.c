@@ -3547,7 +3547,7 @@ _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 					obj->qdisc.fq_codel.memory = nla_get_u32 (options_attr);
 					break;
 				case TCA_FQ_CODEL_ECN:
-					obj->qdisc.fq_codel.ecn = nla_get_u32 (options_attr);
+					obj->qdisc.fq_codel.ecn = !!nla_get_u32 (options_attr);
 					break;
 				}
 			}
@@ -4244,7 +4244,7 @@ _nl_msg_new_qdisc (int nlmsg_type,
 		if (qdisc->fq_codel.memory != -1)
 			NLA_PUT_U32 (msg, TCA_FQ_CODEL_MEMORY_LIMIT, qdisc->fq_codel.memory);
 		if (qdisc->fq_codel.ecn)
-			NLA_PUT_S32 (msg, TCA_FQ_CODEL_ECN, qdisc->fq_codel.ecn);
+			NLA_PUT_U32 (msg, TCA_FQ_CODEL_ECN, qdisc->fq_codel.ecn);
 	}
 
 	nla_nest_end (msg, tc_options);
