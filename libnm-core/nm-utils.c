@@ -2332,6 +2332,9 @@ static const NMVariantAttributeSpec *const tc_qdisc_fq_codel_spec[] = {
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("target",       G_VARIANT_TYPE_UINT32,                    ),
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("interval",     G_VARIANT_TYPE_UINT32,                    ),
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("quantum",      G_VARIANT_TYPE_UINT32,                    ),
+
+	/* 0x83126E97u is not a valid value (it means "disabled"). We should reject that
+	 * value. Or alternatively, reject all values >= MAX_INT(32). */
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("ce_threshold", G_VARIANT_TYPE_UINT32,                    ),
 
 	/* kernel clamps the value at 2^31. Possibly such values should be rejected from configuration

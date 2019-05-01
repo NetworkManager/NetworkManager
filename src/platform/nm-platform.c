@@ -6453,7 +6453,7 @@ nm_platform_qdisc_to_string (const NMPlatformQdisc *qdisc, char *buf, gsize len)
 			nm_utils_strbuf_append (&buf, &len, " interval %u", qdisc->fq_codel.interval);
 		if (qdisc->fq_codel.quantum)
 			nm_utils_strbuf_append (&buf, &len, " quantum %u", qdisc->fq_codel.quantum);
-		if (qdisc->fq_codel.ce_threshold != -1)
+		if (qdisc->fq_codel.ce_threshold != NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED)
 			nm_utils_strbuf_append (&buf, &len, " ce_threshold %u", qdisc->fq_codel.ce_threshold);
 		if (qdisc->fq_codel.memory != NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET)
 			nm_utils_strbuf_append (&buf, &len, " memory %u", qdisc->fq_codel.memory);
