@@ -6455,8 +6455,8 @@ nm_platform_qdisc_to_string (const NMPlatformQdisc *qdisc, char *buf, gsize len)
 			nm_utils_strbuf_append (&buf, &len, " quantum %u", qdisc->fq_codel.quantum);
 		if (qdisc->fq_codel.ce_threshold != NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED)
 			nm_utils_strbuf_append (&buf, &len, " ce_threshold %u", qdisc->fq_codel.ce_threshold);
-		if (qdisc->fq_codel.memory != NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET)
-			nm_utils_strbuf_append (&buf, &len, " memory %u", qdisc->fq_codel.memory);
+		if (qdisc->fq_codel.memory_limit != NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET)
+			nm_utils_strbuf_append (&buf, &len, " memory_limit %u", qdisc->fq_codel.memory_limit);
 		if (qdisc->fq_codel.ecn)
 			nm_utils_strbuf_append (&buf, &len, " ecn");
 	}
@@ -6482,7 +6482,7 @@ nm_platform_qdisc_hash_update (const NMPlatformQdisc *obj, NMHashState *h)
 		                     obj->fq_codel.interval,
 		                     obj->fq_codel.quantum,
 		                     obj->fq_codel.ce_threshold,
-		                     obj->fq_codel.memory,
+		                     obj->fq_codel.memory_limit,
 		                     NM_HASH_COMBINE_BOOLS (guint8,
 		                                            obj->fq_codel.ecn));
 	}
@@ -6506,7 +6506,7 @@ nm_platform_qdisc_cmp (const NMPlatformQdisc *a, const NMPlatformQdisc *b)
 		NM_CMP_FIELD (a, b, fq_codel.interval);
 		NM_CMP_FIELD (a, b, fq_codel.quantum);
 		NM_CMP_FIELD (a, b, fq_codel.ce_threshold);
-		NM_CMP_FIELD (a, b, fq_codel.memory);
+		NM_CMP_FIELD (a, b, fq_codel.memory_limit);
 		NM_CMP_FIELD_UNSAFE (a, b, fq_codel.ecn);
 	}
 

@@ -3516,7 +3516,7 @@ _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 	obj->qdisc.info = tcm->tcm_info;
 
 	if (nm_streq0 (obj->qdisc.kind, "fq_codel")) {
-		obj->qdisc.fq_codel.memory = NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET;
+		obj->qdisc.fq_codel.memory_limit = NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET;
 		obj->qdisc.fq_codel.ce_threshold = NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED;
 	}
 
@@ -3549,7 +3549,7 @@ _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 					obj->qdisc.fq_codel.ce_threshold = nla_get_u32 (options_attr);
 					break;
 				case TCA_FQ_CODEL_MEMORY_LIMIT:
-					obj->qdisc.fq_codel.memory = nla_get_u32 (options_attr);
+					obj->qdisc.fq_codel.memory_limit = nla_get_u32 (options_attr);
 					break;
 				case TCA_FQ_CODEL_ECN:
 					obj->qdisc.fq_codel.ecn = !!nla_get_u32 (options_attr);
@@ -4246,8 +4246,8 @@ _nl_msg_new_qdisc (int nlmsg_type,
 			NLA_PUT_U32 (msg, TCA_FQ_CODEL_QUANTUM, qdisc->fq_codel.quantum);
 		if (qdisc->fq_codel.ce_threshold != NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED)
 			NLA_PUT_U32 (msg, TCA_FQ_CODEL_CE_THRESHOLD, qdisc->fq_codel.ce_threshold);
-		if (qdisc->fq_codel.memory != NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_MEMORY_LIMIT, qdisc->fq_codel.memory);
+		if (qdisc->fq_codel.memory_limit != NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET)
+			NLA_PUT_U32 (msg, TCA_FQ_CODEL_MEMORY_LIMIT, qdisc->fq_codel.memory_limit);
 		if (qdisc->fq_codel.ecn)
 			NLA_PUT_U32 (msg, TCA_FQ_CODEL_ECN, qdisc->fq_codel.ecn);
 	}
