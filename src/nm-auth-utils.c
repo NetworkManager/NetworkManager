@@ -355,11 +355,14 @@ nm_auth_chain_new_subject (NMAuthSubject *subject,
  * Destroys the auth-chain. By destroying the auth-chain, you also cancel
  * the receipt of the done-callback. IOW, the callback will not be invoked.
  *
- * The only exception is, if may call nm_auth_chain_destroy() from inside
- * the callback. In this case, @self stays alive until the callback returns.
+ * The only exception is, you may call nm_auth_chain_destroy() from inside
+ * the callback. In this case the call has no effect and @self stays alive
+ * until the callback returns.
  *
  * Note that you might only destroy an auth-chain exactly once, and never
- * after the callback was handled.
+ * after the callback was handled. After the callback returns, the auth chain
+ * always gets automatically destroyed. So you only need to explicitly destroy
+ * it, if you want to abort it before the callback complets.
  */
 void
 nm_auth_chain_destroy (NMAuthChain *self)

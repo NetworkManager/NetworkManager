@@ -323,7 +323,7 @@ agent_register_permissions_done (NMAuthChain *chain,
 	NMAuthCallResult result;
 	CList *iter;
 
-	g_assert (context);
+	nm_assert (G_IS_DBUS_METHOD_INVOCATION (context));
 
 	priv->chains = g_slist_remove (priv->chains, chain);
 
@@ -358,8 +358,6 @@ agent_register_permissions_done (NMAuthChain *chain,
 		c_list_for_each (iter, &priv->requests)
 			request_add_agent (c_list_entry (iter, Request, lst_request), agent);
 	}
-
-	nm_auth_chain_destroy (chain);
 }
 
 static NMSecretAgent *
@@ -537,8 +535,7 @@ request_free (Request *req)
 	case REQUEST_TYPE_CON_DEL:
 		g_object_unref (req->con.connection);
 		g_free (req->con.path);
-		if (req->con.chain)
-			nm_auth_chain_destroy (req->con.chain);
+		nm_clear_pointer (&req->con.chain, nm_auth_chain_destroy);
 		if (req->request_type == REQUEST_TYPE_CON_GET) {
 			g_free (req->con.get.setting_name);
 			g_strfreev (req->con.get.hints);
@@ -815,11 +812,8 @@ request_remove_agent (Request *req, NMSecretAgent *agent)
 		case REQUEST_TYPE_CON_GET:
 		case REQUEST_TYPE_CON_SAVE:
 		case REQUEST_TYPE_CON_DEL:
-			if (req->con.chain) {
-				/* This cancels the pending authorization requests. */
-				nm_auth_chain_destroy (req->con.chain);
-				req->con.chain = NULL;
-			}
+			/* This cancels the pending authorization requests. */
+			nm_clear_pointer (&req->con.chain, nm_auth_chain_destroy);
 			break;
 		default:
 			g_assert_not_reached ();
@@ -1053,8 +1047,6 @@ _con_get_request_start_validated (NMAuthChain *chain,
 
 		_con_get_request_start_proceed (req, req->con.current_has_modify);
 	}
-
-	nm_auth_chain_destroy (chain);
 }
 
 static void
@@ -1505,8 +1497,6 @@ agent_permissions_changed_done (NMAuthChain *chain,
 
 	nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, share_protected);
 	nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, share_open);
-
-	nm_auth_chain_destroy (chain);
 }
 
 static void
