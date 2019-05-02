@@ -41,9 +41,8 @@ struct NMAuthChain {
 	NMAuthChainResultFunc done_func;
 	gpointer user_data;
 
-	guint32 refcount;
-
-	bool done:1;
+	bool is_destroyed:1;
+	bool is_finishing:1;
 };
 
 typedef struct {
@@ -52,6 +51,10 @@ typedef struct {
 	NMAuthManagerCallId *call_id;
 	char *permission;
 } AuthCall;
+
+/*****************************************************************************/
+
+static void _auth_chain_destroy (NMAuthChain *self);
 
 /*****************************************************************************/
 
@@ -212,20 +215,6 @@ nm_auth_chain_get_subject (NMAuthChain *self)
 
 /*****************************************************************************/
 
-static gboolean
-auth_chain_finish (NMAuthChain *self)
-{
-	self->done = TRUE;
-
-	/* Ensure we stay alive across the callback */
-	nm_assert (self->refcount == 1);
-	self->refcount++;
-	self->done_func (self, NULL, self->context, self->user_data);
-	nm_assert (NM_IN_SET (self->refcount, 1, 2));
-	nm_auth_chain_destroy (self);
-	return FALSE;
-}
-
 static void
 auth_call_complete (AuthCall *call)
 {
@@ -235,13 +224,19 @@ auth_call_complete (AuthCall *call)
 
 	self = call->chain;
 
-	nm_assert (!self->done);
+	nm_assert (!self->is_finishing);
 
 	auth_call_free (call);
 
 	if (c_list_is_empty (&self->auth_call_lst_head)) {
 		/* we are on an idle-handler or a clean call-stack (non-reentrant). */
-		auth_chain_finish (self);
+		nm_assert (!self->is_destroyed);
+		nm_assert (!self->is_finishing);
+
+		self->is_finishing = TRUE;
+		self->done_func (self, NULL, self->context, self->user_data);
+		nm_assert (self->is_finishing);
+		_auth_chain_destroy (self);
 	}
 }
 
@@ -282,13 +277,17 @@ nm_auth_chain_add_call (NMAuthChain *self,
 
 	g_return_if_fail (self);
 	g_return_if_fail (self->subject);
-	g_return_if_fail (!self->done);
+	g_return_if_fail (!self->is_finishing);
+	g_return_if_fail (!self->is_destroyed);
 	g_return_if_fail (permission && *permission);
-	g_return_if_fail (nm_auth_subject_is_unix_process (self->subject) || nm_auth_subject_is_internal (self->subject));
+	nm_assert (   nm_auth_subject_is_unix_process (self->subject)
+	           || nm_auth_subject_is_internal (self->subject));
 
-	call = g_slice_new0 (AuthCall);
-	call->chain = self;
-	call->permission = g_strdup (permission);
+	call = g_slice_new (AuthCall);
+	*call = (AuthCall) {
+		.chain      = self,
+		.permission = g_strdup (permission),
+	};
 	c_list_link_tail (&self->auth_call_lst_head, &call->auth_call_lst);
 	call->call_id = nm_auth_manager_check_authorization (auth_manager,
 	                                                     self->subject,
@@ -310,6 +309,7 @@ nm_auth_chain_new_context (GDBusMethodInvocation *context,
 	NMAuthChain *chain;
 
 	g_return_val_if_fail (context, NULL);
+	nm_assert (done_func);
 
 	subject = nm_auth_subject_new_unix_process_from_context (context);
 	if (!subject)
@@ -333,15 +333,18 @@ nm_auth_chain_new_subject (NMAuthSubject *subject,
 	NMAuthChain *self;
 
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
-	nm_assert (nm_auth_subject_is_unix_process (subject) || nm_auth_subject_is_internal (subject));
+	nm_assert (   nm_auth_subject_is_unix_process (subject)
+	           || nm_auth_subject_is_internal (subject));
+	nm_assert (done_func);
 
-	self = g_slice_new0 (NMAuthChain);
-	c_list_init (&self->auth_call_lst_head);
-	self->refcount = 1;
-	self->done_func = done_func;
-	self->user_data = user_data;
-	self->context = context ? g_object_ref (context) : NULL;
-	self->subject = g_object_ref (subject);
+	self = g_slice_new (NMAuthChain);
+	*self = (NMAuthChain) {
+		.done_func          = done_func,
+		.user_data          = user_data,
+		.context            = nm_g_object_ref (context),
+		.subject            = g_object_ref (subject),
+		.auth_call_lst_head = C_LIST_INIT (self->auth_call_lst_head),
+	};
 	return self;
 }
 
@@ -361,13 +364,23 @@ nm_auth_chain_new_subject (NMAuthSubject *subject,
 void
 nm_auth_chain_destroy (NMAuthChain *self)
 {
-	AuthCall *call;
-
 	g_return_if_fail (self);
-	g_return_if_fail (NM_IN_SET (self->refcount, 1, 2));
+	g_return_if_fail (!self->is_destroyed);
 
-	if (--self->refcount > 0)
+	self->is_destroyed = TRUE;
+
+	if (self->is_finishing) {
+		/* we are called from inside the callback. Keep the instance alive for the moment. */
 		return;
+	}
+
+	_auth_chain_destroy (self);
+}
+
+static void
+_auth_chain_destroy (NMAuthChain *self)
+{
+	AuthCall *call;
 
 	nm_clear_g_object (&self->subject);
 	nm_clear_g_object (&self->context);
@@ -395,7 +408,8 @@ nm_auth_is_subject_in_acl (NMConnection *connection,
 
 	g_return_val_if_fail (connection, FALSE);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), FALSE);
-	g_return_val_if_fail (nm_auth_subject_is_internal (subject) || nm_auth_subject_is_unix_process (subject), FALSE);
+	nm_assert (   nm_auth_subject_is_internal (subject)
+	           || nm_auth_subject_is_unix_process (subject));
 
 	if (nm_auth_subject_is_internal (subject))
 		return TRUE;
