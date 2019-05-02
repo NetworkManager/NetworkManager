@@ -5984,45 +5984,6 @@ _internal_sleep (NMManager *self, gboolean do_sleep)
 	_notify (self, PROP_SLEEPING);
 }
 
-#if 0
-static void
-sleep_auth_done_cb (NMAuthChain *chain,
-                    GError *error,
-                    GDBusMethodInvocation *context,
-                    gpointer user_data)
-{
-	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GError *ret_error;
-	NMAuthCallResult result;
-	gboolean do_sleep;
-
-	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
-
-	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SLEEP_WAKE);
-	if (error) {
-		_LOGD (LOGD_SUSPEND, "Sleep/wake request failed: %s", error->message);
-		ret_error = g_error_new (NM_MANAGER_ERROR,
-		                         NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                         "Sleep/wake request failed: %s",
-		                         error->message);
-		g_dbus_method_invocation_take_error (context, ret_error);
-	} else if (result != NM_AUTH_CALL_RESULT_YES) {
-		ret_error = g_error_new_literal (NM_MANAGER_ERROR,
-		                                 NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                                 "Not authorized to sleep/wake");
-		g_dbus_method_invocation_take_error (context, ret_error);
-	} else {
-		/* Auth success */
-		do_sleep = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "sleep"));
-		_internal_sleep (self, do_sleep);
-		g_dbus_method_invocation_return_value (context, NULL);
-	}
-
-	nm_auth_chain_destroy (chain);
-}
-#endif
-
 static void
 impl_manager_sleep (NMDBusObject *obj,
                     const NMDBusInterfaceInfoExtended *interface_info,
