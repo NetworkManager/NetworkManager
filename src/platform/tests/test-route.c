@@ -1345,8 +1345,7 @@ _rule_fuzzy_equal (const NMPObject *obj,
 			rr_co.tos = 0;
 		if (rr->ip_proto == 0)
 			rr_co.ip_proto = 0;
-		if (rr->suppress_prefixlen_inverse == 0)
-			rr_co.suppress_prefixlen_inverse = 0;
+		rr_co.suppress_prefixlen_inverse = rr->suppress_prefixlen_inverse;
 		if (rr->suppress_ifgroup_inverse == 0)
 			rr_co.suppress_ifgroup_inverse = 0;
 		if (!rr->uid_range_has)
