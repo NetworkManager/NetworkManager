@@ -6514,7 +6514,8 @@ link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 	 * us whether the device actually supports carrier detection in the first
 	 * place. We assume any device that does implements one of these two APIs.
 	 */
-	return nmp_utils_ethtool_supports_carrier_detect (ifindex) || nmp_utils_mii_supports_carrier_detect (ifindex);
+	return    nmp_utils_ethtool_supports_carrier_detect (ifindex)
+	       || nmp_utils_mii_supports_carrier_detect (ifindex);
 }
 
 static gboolean
