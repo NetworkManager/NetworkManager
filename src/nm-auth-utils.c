@@ -80,10 +80,7 @@ auth_call_free (AuthCall *call)
 /*****************************************************************************/
 
 typedef struct {
-
-	/* must be the first field. */
 	const char *tag;
-
 	gpointer data;
 	GDestroyNotify destroy;
 	char tag_data[];
@@ -92,45 +89,47 @@ typedef struct {
 static ChainData *
 chain_data_new (const char *tag, gpointer data, GDestroyNotify destroy)
 {
-	ChainData *tmp;
-	gsize l = strlen (tag);
+	ChainData *chain_data;
+	gsize l_p_1;
 
-	tmp = g_malloc (sizeof (ChainData) + l + 1);
-	tmp->tag = &tmp->tag_data[0];
-	tmp->data = data;
-	tmp->destroy = destroy;
-	memcpy (&tmp->tag_data[0], tag, l + 1);
-	return tmp;
+	nm_assert (tag);
+	nm_assert (data);
+
+	l_p_1 = strlen (tag) + 1;
+	chain_data = g_malloc (sizeof (ChainData) + l_p_1);
+	chain_data->tag = &chain_data->tag_data[0];
+	chain_data->data = data;
+	chain_data->destroy = destroy;
+	memcpy (&chain_data->tag_data[0], tag, l_p_1);
+	return chain_data;
 }
 
 static void
-chain_data_free (gpointer data)
+chain_data_free (ChainData *chain_data)
 {
-	ChainData *tmp = data;
-
-	if (tmp->destroy)
-		tmp->destroy (tmp->data);
-	g_free (tmp);
+	if (chain_data->destroy)
+		chain_data->destroy (chain_data->data);
+	g_free (chain_data);
 }
 
-static gpointer
+static ChainData *
 _get_data (NMAuthChain *self, const char *tag)
 {
-	ChainData *tmp;
-
 	if (!self->data_hash)
 		return NULL;
-	tmp = g_hash_table_lookup (self->data_hash, &tag);
-	return tmp ? tmp->data : NULL;
+	return g_hash_table_lookup (self->data_hash, &tag);
 }
 
 gpointer
 nm_auth_chain_get_data (NMAuthChain *self, const char *tag)
 {
+	ChainData *chain_data;
+
 	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (tag, NULL);
 
-	return _get_data (self, tag);
+	chain_data = _get_data (self, tag);
+	return chain_data ? chain_data->data : NULL;
 }
 
 /**
@@ -147,24 +146,21 @@ nm_auth_chain_get_data (NMAuthChain *self, const char *tag)
 gpointer
 nm_auth_chain_steal_data (NMAuthChain *self, const char *tag)
 {
-	ChainData *tmp;
-	gpointer value = NULL;
+	ChainData *chain_data;
+	gpointer value;
 
 	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (tag, NULL);
 
-	if (!self->data_hash)
+	chain_data = _get_data (self, tag);
+	if (!chain_data)
 		return NULL;
 
-	tmp = g_hash_table_lookup (self->data_hash, &tag);
-	if (!tmp)
-		return NULL;
-
-	value = tmp->data;
+	value = chain_data->data;
 
 	/* Make sure the destroy handler isn't called when freeing */
-	tmp->destroy = NULL;
-	g_hash_table_remove (self->data_hash, tmp);
+	chain_data->destroy = NULL;
+	g_hash_table_remove (self->data_hash, chain_data);
 	return value;
 }
 
@@ -180,14 +176,16 @@ nm_auth_chain_set_data (NMAuthChain *self,
 	if (data == NULL) {
 		if (self->data_hash)
 			g_hash_table_remove (self->data_hash, &tag);
-	} else {
-		if (!self->data_hash) {
-			self->data_hash = g_hash_table_new_full (nm_pstr_hash, nm_pstr_equal,
-			                                         NULL, chain_data_free);
-		}
-		g_hash_table_add (self->data_hash,
-		                  chain_data_new (tag, data, data_destroy));
+		return;
 	}
+
+	if (!self->data_hash) {
+		G_STATIC_ASSERT (G_STRUCT_OFFSET (ChainData, tag) == 0);
+		self->data_hash = g_hash_table_new_full (nm_pstr_hash, nm_pstr_equal,
+		                                         NULL, (GDestroyNotify) chain_data_free);
+	}
+	g_hash_table_add (self->data_hash,
+	                  chain_data_new (tag, data, data_destroy));
 }
 
 /*****************************************************************************/
@@ -195,13 +193,15 @@ nm_auth_chain_set_data (NMAuthChain *self,
 NMAuthCallResult
 nm_auth_chain_get_result (NMAuthChain *self, const char *permission)
 {
-	gpointer data;
+	ChainData *chain_data;
 
 	g_return_val_if_fail (self, NM_AUTH_CALL_RESULT_UNKNOWN);
 	g_return_val_if_fail (permission, NM_AUTH_CALL_RESULT_UNKNOWN);
 
-	data = _get_data (self, permission);
-	return data ? GPOINTER_TO_UINT (data) : NM_AUTH_CALL_RESULT_UNKNOWN;
+	chain_data = _get_data (self, permission);
+	return   chain_data
+	       ? (NMAuthCallResult) GPOINTER_TO_UINT (chain_data->data)
+	       : NM_AUTH_CALL_RESULT_UNKNOWN;
 }
 
 NMAuthSubject *
