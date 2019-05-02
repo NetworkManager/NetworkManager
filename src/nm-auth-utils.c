@@ -31,7 +31,7 @@
 /*****************************************************************************/
 
 struct NMAuthChain {
-	GHashTable *data_hash;
+	CList data_lst_head;
 
 	CList auth_call_lst_head;
 
@@ -80,14 +80,16 @@ auth_call_free (AuthCall *call)
 /*****************************************************************************/
 
 typedef struct {
-	const char *tag;
+	CList data_lst;
 	gpointer data;
 	GDestroyNotify destroy;
-	char tag_data[];
+	char tag[];
 } ChainData;
 
 static ChainData *
-chain_data_new (const char *tag, gpointer data, GDestroyNotify destroy)
+chain_data_new_stale (const char *tag,
+                      gpointer data,
+                      GDestroyNotify destroy)
 {
 	ChainData *chain_data;
 	gsize l_p_1;
@@ -97,16 +99,16 @@ chain_data_new (const char *tag, gpointer data, GDestroyNotify destroy)
 
 	l_p_1 = strlen (tag) + 1;
 	chain_data = g_malloc (sizeof (ChainData) + l_p_1);
-	chain_data->tag = &chain_data->tag_data[0];
 	chain_data->data = data;
 	chain_data->destroy = destroy;
-	memcpy (&chain_data->tag_data[0], tag, l_p_1);
+	memcpy (&chain_data->tag[0], tag, l_p_1);
 	return chain_data;
 }
 
 static void
 chain_data_free (ChainData *chain_data)
 {
+	c_list_unlink_stale (&chain_data->data_lst);
 	if (chain_data->destroy)
 		chain_data->destroy (chain_data->data);
 	g_free (chain_data);
@@ -115,9 +117,13 @@ chain_data_free (ChainData *chain_data)
 static ChainData *
 _get_data (NMAuthChain *self, const char *tag)
 {
-	if (!self->data_hash)
-		return NULL;
-	return g_hash_table_lookup (self->data_hash, &tag);
+	ChainData *chain_data;
+
+	c_list_for_each_entry (chain_data, &self->data_lst_head, data_lst) {
+		if (nm_streq (chain_data->tag, tag))
+			return chain_data;
+	}
+	return NULL;
 }
 
 gpointer
@@ -160,7 +166,7 @@ nm_auth_chain_steal_data (NMAuthChain *self, const char *tag)
 
 	/* Make sure the destroy handler isn't called when freeing */
 	chain_data->destroy = NULL;
-	g_hash_table_remove (self->data_hash, chain_data);
+	chain_data_free (chain_data);
 	return value;
 }
 
@@ -170,22 +176,36 @@ nm_auth_chain_set_data (NMAuthChain *self,
                         gpointer data,
                         GDestroyNotify data_destroy)
 {
+	ChainData *chain_data;
+
 	g_return_if_fail (self);
 	g_return_if_fail (tag);
 
+	/* we should not track a large number of elements via a linked list. If this becomes
+	 * necessary, revert the code to use GHashTable again. */
+	nm_assert (c_list_length (&self->data_lst_head) < 25);
+
+	chain_data = _get_data (self, tag);
+
 	if (data == NULL) {
-		if (self->data_hash)
-			g_hash_table_remove (self->data_hash, &tag);
+		if (chain_data)
+			chain_data_free (chain_data);
 		return;
 	}
 
-	if (!self->data_hash) {
-		G_STATIC_ASSERT (G_STRUCT_OFFSET (ChainData, tag) == 0);
-		self->data_hash = g_hash_table_new_full (nm_pstr_hash, nm_pstr_equal,
-		                                         NULL, (GDestroyNotify) chain_data_free);
+	if (chain_data) {
+		gpointer old_data = chain_data->data;
+		GDestroyNotify old_destroy = chain_data->destroy;
+
+		chain_data->data = data;
+		chain_data->destroy = data_destroy;
+		if (old_destroy)
+			old_destroy (old_data);
+		return;
 	}
-	g_hash_table_add (self->data_hash,
-	                  chain_data_new (tag, data, data_destroy));
+
+	chain_data = chain_data_new_stale (tag, data, data_destroy);
+	c_list_link_front (&self->data_lst_head, &chain_data->data_lst);
 }
 
 /*****************************************************************************/
@@ -343,6 +363,7 @@ nm_auth_chain_new_subject (NMAuthSubject *subject,
 		.user_data          = user_data,
 		.context            = nm_g_object_ref (context),
 		.subject            = g_object_ref (subject),
+		.data_lst_head      = C_LIST_INIT (self->data_lst_head),
 		.auth_call_lst_head = C_LIST_INIT (self->auth_call_lst_head),
 	};
 	return self;
@@ -384,6 +405,7 @@ static void
 _auth_chain_destroy (NMAuthChain *self)
 {
 	AuthCall *call;
+	ChainData *chain_data;
 
 	nm_clear_g_object (&self->subject);
 	nm_clear_g_object (&self->context);
@@ -391,7 +413,8 @@ _auth_chain_destroy (NMAuthChain *self)
 	while ((call = c_list_first_entry (&self->auth_call_lst_head, AuthCall, auth_call_lst)))
 		auth_call_free (call);
 
-	nm_clear_pointer (&self->data_hash, g_hash_table_destroy);
+	while ((chain_data = c_list_first_entry (&self->data_lst_head, ChainData, data_lst)))
+		chain_data_free (chain_data);
 
 	g_slice_free (NMAuthChain, self);
 }
