@@ -1589,6 +1589,8 @@ finalize (GObject *object)
 		g_object_unref (priv->dns_manager);
 	}
 
+	g_hash_table_destroy (priv->peers);
+
 	G_OBJECT_CLASS (nm_device_wireguard_parent_class)->finalize (object);
 }
 
