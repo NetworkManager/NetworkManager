@@ -458,6 +458,8 @@ done:
 
 	nm_dns_manager_stop (nm_dns_manager_get ());
 
+	nm_settings_kf_db_write (NM_SETTINGS_GET);
+
 done_no_manager:
 	if (global_opt.pidfile && wrote_pidfile)
 		unlink (global_opt.pidfile);

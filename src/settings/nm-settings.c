@@ -37,6 +37,7 @@
 #endif
 
 #include "nm-libnm-core-intern/nm-common-macros.h"
+#include "nm-glib-aux/nm-keyfile-aux.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
 #include "nm-setting-8021x.h"
@@ -119,6 +120,9 @@ typedef struct {
 
 	GSList *plugins;
 
+	NMKeyFileDB *kf_db_timestamps;
+	NMKeyFileDB *kf_db_seen_bssids;
+
 	CList connections_lst_head;
 
 	NMSettingsConnection **connections_cached_list;
@@ -130,6 +134,9 @@ typedef struct {
 	NMSettingsConnection *startup_complete_blocked_by;
 
 	guint connections_len;
+
+	guint kf_db_flush_idle_id_timestamps;
+	guint kf_db_flush_idle_id_seen_bssids;
 
 	bool started:1;
 	bool startup_complete:1;
@@ -935,11 +942,9 @@ claim_connection (NMSettings *self, NMSettingsConnection *sett_conn)
 		return;
 	}
 
-	/* Read timestamp from look-aside file and put it into the connection's data */
-	nm_settings_connection_read_and_fill_timestamp (sett_conn);
-
-	/* Read seen-bssids from look-aside file and put it into the connection's data */
-	nm_settings_connection_read_and_fill_seen_bssids (sett_conn);
+	nm_settings_connection_register_kf_dbs (sett_conn,
+	                                        priv->kf_db_timestamps,
+	                                        priv->kf_db_seen_bssids);
 
 	/* Ensure its initial visibility is up-to-date */
 	nm_settings_connection_recheck_visibility (sett_conn);
@@ -1764,6 +1769,128 @@ nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean quittin
 
 /*****************************************************************************/
 
+G_GNUC_PRINTF (4, 5)
+static void
+_kf_db_log_fcn (NMKeyFileDB *kf_db,
+                int syslog_level,
+                gpointer user_data,
+                const char *fmt,
+                ...)
+{
+	NMSettings *self = user_data;
+	NMLogLevel level = nm_log_level_from_syslog (syslog_level);
+
+	if (_NMLOG_ENABLED (level)) {
+		NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+		gs_free char *msg = NULL;
+		va_list ap;
+		const char *prefix;
+
+		va_start (ap, fmt);
+		msg = g_strdup_vprintf (fmt, ap);
+		va_end (ap);
+
+		if (priv->kf_db_timestamps == kf_db)
+			prefix = "timestamps";
+		else if (priv->kf_db_seen_bssids == kf_db)
+			prefix = "seen-bssids";
+		else {
+			nm_assert_not_reached ();
+			prefix = "???";
+		}
+
+		_NMLOG (level, "[%s-keyfile]: %s", prefix, msg);
+	}
+}
+
+static gboolean
+_kf_db_got_dirty_flush (NMSettings *self,
+                        gboolean is_timestamps)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	const char *prefix;
+	NMKeyFileDB *kf_db;
+
+	if (is_timestamps) {
+		prefix = "timestamps";
+		kf_db = priv->kf_db_timestamps;
+		priv->kf_db_flush_idle_id_timestamps = 0;
+	} else {
+		prefix = "seen-bssids";
+		kf_db = priv->kf_db_seen_bssids;
+		priv->kf_db_flush_idle_id_seen_bssids = 0;
+	}
+
+	if (nm_key_file_db_is_dirty (kf_db))
+		nm_key_file_db_to_file (kf_db, FALSE);
+	else {
+		_LOGT ("[%s-keyfile]: skip saving changes to \"%s\"",
+		       prefix,
+		       nm_key_file_db_get_filename (kf_db));
+	}
+
+	return G_SOURCE_REMOVE;
+}
+
+static gboolean
+_kf_db_got_dirty_flush_timestamps_cb (gpointer user_data)
+{
+	return _kf_db_got_dirty_flush (user_data,
+	                               TRUE);
+}
+
+static gboolean
+_kf_db_got_dirty_flush_seen_bssids_cb (gpointer user_data)
+{
+	return _kf_db_got_dirty_flush (user_data,
+	                               FALSE);
+}
+
+static void
+_kf_db_got_dirty_fcn (NMKeyFileDB *kf_db,
+                      gpointer user_data)
+{
+	NMSettings *self = user_data;
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GSourceFunc idle_func;
+	guint *p_id;
+	const char *prefix;
+
+	if (priv->kf_db_timestamps == kf_db) {
+		prefix = "timestamps";
+		p_id = &priv->kf_db_flush_idle_id_timestamps;
+		idle_func = _kf_db_got_dirty_flush_timestamps_cb;
+	} else if (priv->kf_db_seen_bssids == kf_db) {
+		prefix = "seen-bssids";
+		p_id = &priv->kf_db_flush_idle_id_seen_bssids;
+		idle_func = _kf_db_got_dirty_flush_seen_bssids_cb;
+	} else {
+		nm_assert_not_reached ();
+		return;
+	}
+
+	if (*p_id != 0)
+		return;
+	_LOGT ("[%s-keyfile]: schedule flushing changes to disk", prefix);
+	*p_id = g_idle_add_full (G_PRIORITY_LOW, idle_func, self, NULL);
+}
+
+void
+nm_settings_kf_db_write (NMSettings *self)
+{
+	NMSettingsPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTINGS (self));
+
+	priv = NM_SETTINGS_GET_PRIVATE (self);
+	if (priv->kf_db_timestamps)
+		nm_key_file_db_to_file (priv->kf_db_timestamps, TRUE);
+	if (priv->kf_db_seen_bssids)
+		nm_key_file_db_to_file (priv->kf_db_seen_bssids, TRUE);
+}
+
+/*****************************************************************************/
+
 const char *
 nm_settings_get_startup_complete_blocked_reason (NMSettings *self)
 {
@@ -1796,6 +1923,19 @@ nm_settings_start (NMSettings *self, GError **error)
 	gs_strfreev char **plugins = NULL;
 
 	priv = NM_SETTINGS_GET_PRIVATE (self);
+
+	priv->kf_db_timestamps = nm_key_file_db_new (NMSTATEDIR "/timestamps",
+	                                             "timestamps",
+	                                             _kf_db_log_fcn,
+	                                             _kf_db_got_dirty_fcn,
+	                                             self);
+	priv->kf_db_seen_bssids = nm_key_file_db_new (NMSTATEDIR "/seen-bssids",
+	                                              "seen-bssids",
+	                                              _kf_db_log_fcn,
+	                                              _kf_db_got_dirty_fcn,
+	                                              self);
+	nm_key_file_db_start (priv->kf_db_timestamps);
+	nm_key_file_db_start (priv->kf_db_seen_bssids);
 
 	/* Load the plugins; fail if a plugin is not found. */
 	plugins = nm_config_data_get_plugins (nm_config_get_data_orig (priv->config), TRUE);
@@ -1932,6 +2072,13 @@ finalize (GObject *object)
 	g_clear_object (&priv->agent_mgr);
 
 	g_clear_object (&priv->config);
+
+	nm_clear_g_source (&priv->kf_db_flush_idle_id_timestamps);
+	nm_clear_g_source (&priv->kf_db_flush_idle_id_seen_bssids);
+	nm_key_file_db_to_file (priv->kf_db_timestamps, FALSE);
+	nm_key_file_db_to_file (priv->kf_db_seen_bssids, FALSE);
+	nm_key_file_db_destroy (priv->kf_db_timestamps);
+	nm_key_file_db_destroy (priv->kf_db_seen_bssids);
 
 	G_OBJECT_CLASS (nm_settings_parent_class)->finalize (object);
 }
