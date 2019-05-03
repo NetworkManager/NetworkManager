@@ -3999,7 +3999,6 @@ clients_cppflags = \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
 	-I$(srcdir)/clients/common \
-	-I$(builddir)/clients/common \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_EXEC_CFLAGS) \
@@ -4065,6 +4064,7 @@ clients_common_libnmc_la_SOURCES = \
 
 clients_common_libnmc_la_CPPFLAGS = \
 	$(clients_cppflags) \
+	-I$(builddir)/clients/common \
 	-DG_LOG_DOMAIN=\""libnmc"\" \
 	$(NULL)
 
