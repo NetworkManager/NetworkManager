@@ -144,6 +144,7 @@ shared_nm_glib_aux = static_library(
                    'nm-glib-aux/nm-errno.c',
                    'nm-glib-aux/nm-hash-utils.c',
                    'nm-glib-aux/nm-io-utils.c',
+                   'nm-glib-aux/nm-keyfile-aux.c',
                    'nm-glib-aux/nm-random-utils.c',
                    'nm-glib-aux/nm-secret-utils.c',
                    'nm-glib-aux/nm-shared-utils.c',

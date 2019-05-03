@@ -415,7 +415,7 @@ _keyfile_key_encode (const char *name,
 
 	/* See g_key_file_is_key_name().
 	 *
-	 * GKeyfile allows all UTF-8 characters (even non-well formed sequences),
+	 * GKeyFile allows all UTF-8 characters (even non-well formed sequences),
 	 * except:
 	 *  - no empty keys
 	 *  - no leading/trailing ' '
