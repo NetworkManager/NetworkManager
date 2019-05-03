@@ -110,4 +110,21 @@ void _nm_log_impl (const char *file,
                    const char *fmt,
                    ...) _nm_printf (10, 11);
 
+static inline NMLogLevel
+nm_log_level_from_syslog (int syslog_level)
+{
+	switch (syslog_level) {
+	case 0 /* LOG_EMERG */   : return LOGL_ERR;
+	case 1 /* LOG_ALERT */   : return LOGL_ERR;
+	case 2 /* LOG_CRIT */    : return LOGL_ERR;
+	case 3 /* LOG_ERR */     : return LOGL_ERR;
+	case 4 /* LOG_WARNING */ : return LOGL_WARN;
+	case 5 /* LOG_NOTICE */  : return LOGL_INFO;
+	case 6 /* LOG_INFO */    : return LOGL_DEBUG;
+	case 7 /* LOG_DEBUG */   : return LOGL_TRACE;
+	default:
+		return syslog_level >= 0 ? LOGL_TRACE : LOGL_ERR;
+	}
+}
+
 #endif /* __NM_LOGGING_DEFINES_H__ */

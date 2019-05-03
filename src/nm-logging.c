@@ -68,6 +68,15 @@
 
 /*****************************************************************************/
 
+G_STATIC_ASSERT (LOG_EMERG   == 0);
+G_STATIC_ASSERT (LOG_ALERT   == 1);
+G_STATIC_ASSERT (LOG_CRIT    == 2);
+G_STATIC_ASSERT (LOG_ERR     == 3);
+G_STATIC_ASSERT (LOG_WARNING == 4);
+G_STATIC_ASSERT (LOG_NOTICE  == 5);
+G_STATIC_ASSERT (LOG_INFO    == 6);
+G_STATIC_ASSERT (LOG_DEBUG   == 7);
+
 /* We have more then 32 logging domains. Assert that it compiles to a 64 bit sized enum */
 G_STATIC_ASSERT (sizeof (NMLogDomain) >= sizeof (guint64));
 
