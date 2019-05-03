@@ -14,6 +14,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   at build time by using the --with-config-dhcp-default option of the
   configure script or at run time by setting the main.dhcp option in the
   configuration file.
+* Added support for configuring fq_codel line discipline and mirred action.
+* Added a possibility for distributions to ship dispatcher scripts in /usr/lib.
 
 =============================================
 NetworkManager-1.18
