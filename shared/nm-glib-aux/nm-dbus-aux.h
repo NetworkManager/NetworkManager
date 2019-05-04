@@ -21,6 +21,41 @@
 #ifndef __NM_DBUS_AUX_H__
 #define __NM_DBUS_AUX_H__
 
+#include "nm-std-aux/nm-dbus-compat.h"
+
+/*****************************************************************************/
+
+static inline guint
+nm_dbus_connection_signal_subscribe_name_owner_changed (GDBusConnection *dbus_connection,
+                                                        const char *service_name,
+                                                        GDBusSignalCallback callback,
+                                                        gpointer user_data,
+                                                        GDestroyNotify user_data_free_func)
+
+{
+	return g_dbus_connection_signal_subscribe (dbus_connection,
+	                                           DBUS_SERVICE_DBUS,
+	                                           DBUS_INTERFACE_DBUS,
+	                                           "NameOwnerChanged",
+	                                           DBUS_PATH_DBUS,
+	                                           service_name,
+	                                           G_DBUS_SIGNAL_FLAGS_NONE,
+	                                           callback,
+	                                           user_data,
+	                                           user_data_free_func);
+}
+
+typedef void (*NMDBusConnectionCallGetNameOwnerCb) (const char *name_owner,
+                                                    GError *error,
+                                                    gpointer user_data);
+
+void nm_dbus_connection_call_get_name_owner (GDBusConnection *dbus_connection,
+                                              const char *service_name,
+                                              int timeout_msec,
+                                              GCancellable *cancellable,
+                                              NMDBusConnectionCallGetNameOwnerCb callback,
+                                              gpointer user_data);
+
 /*****************************************************************************/
 
 #endif /* __NM_DBUS_AUX_H__ */
