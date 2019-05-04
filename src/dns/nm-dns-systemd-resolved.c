@@ -32,6 +32,7 @@
 #include <linux/if.h>
 
 #include "nm-glib-aux/nm-c-list.h"
+#include "nm-glib-aux/nm-dbus-aux.h"
 #include "nm-core-internal.h"
 #include "platform/nm-platform.h"
 #include "nm-utils.h"
@@ -474,23 +475,16 @@ name_owner_changed_cb (GDBusConnection *connection,
 }
 
 static void
-get_name_owner_cb (GObject *source,
-                   GAsyncResult *res,
+get_name_owner_cb (const char *name_owner,
+                   GError *error,
                    gpointer user_data)
 {
 	NMDnsSystemdResolved *self;
 	NMDnsSystemdResolvedPrivate *priv;
-	gs_unref_variant GVariant *ret = NULL;
-	gs_free_error GError *error = NULL;
-	const char *owner = NULL;
 
-	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), res, &error);
-	if (   !ret
+	if (   !name_owner
 	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
-
-	if (ret)
-		g_variant_get (ret, "(&s)", &owner);
 
 	self = user_data;
 	priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
@@ -499,7 +493,7 @@ get_name_owner_cb (GObject *source,
 
 	priv->dbus_initied = TRUE;
 
-	name_owner_changed (self, owner);
+	name_owner_changed (self, name_owner);
 }
 
 /*****************************************************************************/
@@ -533,29 +527,18 @@ nm_dns_systemd_resolved_init (NMDnsSystemdResolved *self)
 		return;
 	}
 
-	priv->name_owner_changed_id = g_dbus_connection_signal_subscribe (priv->dbus_connection,
-	                                                                  DBUS_SERVICE_DBUS,
-	                                                                  DBUS_INTERFACE_DBUS,
-	                                                                  "NameOwnerChanged",
-	                                                                  DBUS_PATH_DBUS,
-	                                                                  SYSTEMD_RESOLVED_DBUS_SERVICE,
-	                                                                  G_DBUS_SIGNAL_FLAGS_NONE,
-	                                                                  name_owner_changed_cb,
-	                                                                  self,
-	                                                                  NULL);
+	priv->name_owner_changed_id = nm_dbus_connection_signal_subscribe_name_owner_changed (priv->dbus_connection,
+	                                                                                      SYSTEMD_RESOLVED_DBUS_SERVICE,
+	                                                                                      name_owner_changed_cb,
+	                                                                                      self,
+	                                                                                      NULL);
 	priv->cancellable = g_cancellable_new ();
-	g_dbus_connection_call (priv->dbus_connection,
-	                        DBUS_SERVICE_DBUS,
-	                        DBUS_PATH_DBUS,
-	                        DBUS_INTERFACE_DBUS,
-	                        "GetNameOwner",
-	                        g_variant_new ("(s)", SYSTEMD_RESOLVED_DBUS_SERVICE),
-	                        G_VARIANT_TYPE ("(s)"),
-	                        G_DBUS_CALL_FLAGS_NONE,
-	                        -1,
-	                        priv->cancellable,
-	                        get_name_owner_cb,
-	                        self);
+	nm_dbus_connection_call_get_name_owner (priv->dbus_connection,
+	                                        SYSTEMD_RESOLVED_DBUS_SERVICE,
+	                                        -1,
+	                                        priv->cancellable,
+	                                        get_name_owner_cb,
+	                                        self);
 }
 
 NMDnsPlugin *

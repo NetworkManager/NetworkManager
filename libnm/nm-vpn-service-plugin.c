@@ -27,6 +27,7 @@
 #include <stdlib.h>
 
 #include "nm-glib-aux/nm-secret-utils.h"
+#include "nm-glib-aux/nm-dbus-aux.h"
 #include "nm-enum-types.h"
 #include "nm-utils.h"
 #include "nm-connection.h"
@@ -499,16 +500,11 @@ watch_peer (NMVpnServicePlugin *plugin,
 	GDBusConnection *connection = g_dbus_method_invocation_get_connection (context);
 	const char *peer = g_dbus_message_get_sender (g_dbus_method_invocation_get_message (context));
 
-	return g_dbus_connection_signal_subscribe (connection,
-	                                           "org.freedesktop.DBus",
-	                                           "org.freedesktop.DBus",
-	                                           "NameOwnerChanged",
-	                                           "/org/freedesktop/DBus",
-	                                           peer,
-	                                           G_DBUS_SIGNAL_FLAGS_NONE,
-	                                           peer_vanished,
-	                                           plugin,
-	                                           NULL);
+	return nm_dbus_connection_signal_subscribe_name_owner_changed (connection,
+	                                                               peer,
+	                                                               peer_vanished,
+	                                                               plugin,
+	                                                               NULL);
 }
 
 static void

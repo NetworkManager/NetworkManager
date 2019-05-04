@@ -24,6 +24,7 @@
 #include "nm-keep-alive.h"
 
 #include "settings/nm-settings-connection.h"
+#include "nm-glib-aux/nm-dbus-aux.h"
 
 /*****************************************************************************/
 
@@ -211,32 +212,24 @@ nm_keep_alive_set_settings_connection_watch_visible (NMKeepAlive         *self,
 /*****************************************************************************/
 
 static void
-get_name_owner_cb (GObject *source_object,
-                   GAsyncResult *res,
+get_name_owner_cb (const char *name_owner,
+                   GError *error,
                    gpointer user_data)
 {
-	NMKeepAlive *self = user_data;
+	NMKeepAlive *self;
 	NMKeepAlivePrivate *priv;
-	gs_free_error GError *error = NULL;
-	gs_unref_variant GVariant *result = NULL;
-	const char *name_owner;
 
-	result = g_dbus_connection_call_finish ((GDBusConnection *) source_object,
-	                                        res,
-	                                        &error);
-	if (   !result
+	if (   !name_owner
 	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
-	if (result) {
-		g_variant_get (result, "(&s)", &name_owner);
+	self = user_data;
+	priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
 
-		priv = NM_KEEP_ALIVE_GET_PRIVATE (self);
-
-		if (nm_streq (name_owner, priv->dbus_client)) {
-			/* all good, the name is confirmed. */
-			return;
-		}
+	if (   name_owner
+	    && nm_streq (name_owner, priv->dbus_client)) {
+		/* all good, the name is confirmed. */
+		return;
 	}
 
 	_LOGD ("DBus client for keep alive is not on the bus");
@@ -259,18 +252,12 @@ _is_alive_dbus_client (NMKeepAlive *self)
 		priv->dbus_client_confirmed = TRUE;
 		priv->dbus_client_confirm_cancellable = g_cancellable_new ();
 
-		g_dbus_connection_call (priv->dbus_connection,
-		                        "org.freedesktop.DBus",
-		                        "/org/freedesktop/DBus",
-		                        "org.freedesktop.DBus",
-		                        "GetNameOwner",
-		                        g_variant_new ("(s)", priv->dbus_client),
-		                        G_VARIANT_TYPE ("(s)"),
-		                        G_DBUS_CALL_FLAGS_NONE,
-		                        -1,
-		                        priv->dbus_client_confirm_cancellable,
-		                        get_name_owner_cb,
-		                        self);
+		nm_dbus_connection_call_get_name_owner (priv->dbus_connection,
+		                                        priv->dbus_client,
+		                                        -1,
+		                                        priv->dbus_client_confirm_cancellable,
+		                                        get_name_owner_cb,
+		                                        self);
 	}
 	return TRUE;
 }
@@ -336,16 +323,11 @@ nm_keep_alive_set_dbus_client_watch (NMKeepAlive *self,
 		priv->dbus_client_watching = TRUE;
 		priv->dbus_client_confirmed = FALSE;
 		priv->dbus_connection = g_object_ref (connection);
-		priv->subscription_id = g_dbus_connection_signal_subscribe (connection,
-		                                                            "org.freedesktop.DBus",
-		                                                            "org.freedesktop.DBus",
-		                                                            "NameOwnerChanged",
-		                                                            "/org/freedesktop/DBus",
-		                                                            priv->dbus_client,
-		                                                            G_DBUS_SIGNAL_FLAGS_NONE,
-		                                                            name_owner_changed_cb,
-		                                                            self,
-		                                                            NULL);
+		priv->subscription_id = nm_dbus_connection_signal_subscribe_name_owner_changed (priv->dbus_connection,
+		                                                                                priv->dbus_client,
+		                                                                                name_owner_changed_cb,
+		                                                                                self,
+		                                                                                NULL);
 	} else
 		priv->dbus_client_watching = FALSE;
 

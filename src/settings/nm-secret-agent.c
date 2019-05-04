@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 
+#include "nm-glib-aux/nm-dbus-aux.h"
 #include "nm-dbus-interface.h"
 #include "nm-dbus-manager.h"
 #include "nm-core-internal.h"
@@ -749,16 +750,11 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 		                                             G_CALLBACK (_on_disconnected_private_connection),
 		                                             self);
 	} else {
-		priv->on_disconnected_id = g_dbus_connection_signal_subscribe (priv->connection,
-		                                                               "org.freedesktop.DBus",  /* name */
-		                                                               "org.freedesktop.DBus",  /* interface */
-		                                                               "NameOwnerChanged",      /* signal name */
-		                                                               "/org/freedesktop/DBus", /* path */
-		                                                               priv->dbus_owner,        /* arg0 */
-		                                                               G_DBUS_SIGNAL_FLAGS_NONE,
-		                                                               _on_disconnected_name_owner_changed,
-		                                                               self,
-		                                                               NULL);
+		priv->on_disconnected_id = nm_dbus_connection_signal_subscribe_name_owner_changed (priv->connection,
+		                                                                                   priv->dbus_owner,
+		                                                                                   _on_disconnected_name_owner_changed,
+		                                                                                   self,
+		                                                                                   NULL);
 	}
 
 	return self;
