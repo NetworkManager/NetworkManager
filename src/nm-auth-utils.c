@@ -253,7 +253,7 @@ auth_call_complete (AuthCall *call)
 		nm_assert (!self->is_finishing);
 
 		self->is_finishing = TRUE;
-		self->done_func (self, NULL, self->context, self->user_data);
+		self->done_func (self, self->context, self->user_data);
 		nm_assert (self->is_finishing);
 		_auth_chain_destroy (self);
 	}

@@ -311,7 +311,6 @@ validate_identifier (const char *identifier, GError **error)
 
 static void
 agent_register_permissions_done (NMAuthChain *chain,
-                                 GError *error,
                                  GDBusMethodInvocation *context,
                                  gpointer user_data)
 {
@@ -319,7 +318,6 @@ agent_register_permissions_done (NMAuthChain *chain,
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 	NMSecretAgent *agent;
 	const char *sender;
-	GError *local = NULL;
 	NMAuthCallResult result;
 	CList *iter;
 
@@ -327,37 +325,29 @@ agent_register_permissions_done (NMAuthChain *chain,
 
 	priv->chains = g_slist_remove (priv->chains, chain);
 
-	if (error) {
-		local = g_error_new (NM_AGENT_MANAGER_ERROR,
-		                     NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,
-		                     "Failed to request agent permissions: %s",
-		                     error->message);
-		g_dbus_method_invocation_take_error (context, local);
-	} else {
-		agent = nm_auth_chain_steal_data (chain, "agent");
-		g_assert (agent);
+	agent = nm_auth_chain_steal_data (chain, "agent");
+	nm_assert (agent);
 
-		result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED);
-		if (result == NM_AUTH_CALL_RESULT_YES)
-			nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, TRUE);
+	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED);
+	if (result == NM_AUTH_CALL_RESULT_YES)
+		nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, TRUE);
 
-		result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN);
-		if (result == NM_AUTH_CALL_RESULT_YES)
-			nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, TRUE);
+	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN);
+	if (result == NM_AUTH_CALL_RESULT_YES)
+		nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, TRUE);
 
-		priv->agent_version_id += 1;
-		sender = nm_secret_agent_get_dbus_owner (agent);
-		g_hash_table_insert (priv->agents, g_strdup (sender), agent);
-		_LOGI (agent, "agent registered");
-		g_dbus_method_invocation_return_value (context, NULL);
+	priv->agent_version_id += 1;
+	sender = nm_secret_agent_get_dbus_owner (agent);
+	g_hash_table_insert (priv->agents, g_strdup (sender), agent);
+	_LOGI (agent, "agent registered");
+	g_dbus_method_invocation_return_value (context, NULL);
 
-		/* Signal an agent was registered */
-		g_signal_emit (self, signals[AGENT_REGISTERED], 0, agent);
+	/* Signal an agent was registered */
+	g_signal_emit (self, signals[AGENT_REGISTERED], 0, agent);
 
-		/* Add this agent to any in-progress secrets requests */
-		c_list_for_each (iter, &priv->requests)
-			request_add_agent (c_list_entry (iter, Request, lst_request), agent);
-	}
+	/* Add this agent to any in-progress secrets requests */
+	c_list_for_each (iter, &priv->requests)
+		request_add_agent (c_list_entry (iter, Request, lst_request), agent);
 }
 
 static NMSecretAgent *
@@ -1011,7 +1001,6 @@ _con_get_request_start_proceed (Request *req, gboolean include_system_secrets)
 
 static void
 _con_get_request_start_validated (NMAuthChain *chain,
-                                 GError *error,
                                  GDBusMethodInvocation *context,
                                  gpointer user_data)
 {
@@ -1025,28 +1014,20 @@ _con_get_request_start_validated (NMAuthChain *chain,
 
 	req->con.chain = NULL;
 
-	if (error) {
-		_LOGD (req->current, "agent "LOG_REQ_FMT" MODIFY check error: %s",
-		       LOG_REQ_ARG (req),
-		       error->message);
-		/* Try the next agent */
-		request_next_agent (req);
-	} else {
-		/* If the agent obtained the 'modify' permission, we send all system secrets
-		 * to it.  If it didn't, we still ask it for secrets, but we don't send
-		 * any system secrets.
-		 */
-		perm = nm_auth_chain_get_data (chain, "perm");
-		g_assert (perm);
-		if (nm_auth_chain_get_result (chain, perm) == NM_AUTH_CALL_RESULT_YES)
-			req->con.current_has_modify = TRUE;
+	/* If the agent obtained the 'modify' permission, we send all system secrets
+	 * to it.  If it didn't, we still ask it for secrets, but we don't send
+	 * any system secrets.
+	 */
+	perm = nm_auth_chain_get_data (chain, "perm");
+	g_assert (perm);
+	if (nm_auth_chain_get_result (chain, perm) == NM_AUTH_CALL_RESULT_YES)
+		req->con.current_has_modify = TRUE;
 
-		_LOGD (req->current, "agent "LOG_REQ_FMT" MODIFY check result %s",
-		       LOG_REQ_ARG (req),
-		       req->con.current_has_modify ? "YES" : "NO");
+	_LOGD (req->current, "agent "LOG_REQ_FMT" MODIFY check result %s",
+	       LOG_REQ_ARG (req),
+	       req->con.current_has_modify ? "YES" : "NO");
 
-		_con_get_request_start_proceed (req, req->con.current_has_modify);
-	}
+	_con_get_request_start_proceed (req, req->con.current_has_modify);
 }
 
 static void
@@ -1470,7 +1451,6 @@ nm_agent_manager_all_agents_have_capability (NMAgentManager *manager,
 
 static void
 agent_permissions_changed_done (NMAuthChain *chain,
-                                GError *error,
                                 GDBusMethodInvocation *context,
                                 gpointer user_data)
 {
@@ -1484,16 +1464,12 @@ agent_permissions_changed_done (NMAuthChain *chain,
 	agent = nm_auth_chain_get_data (chain, "agent");
 	g_assert (agent);
 
-	if (error)
-		_LOGD (agent, "failed to request updated agent permissions");
-	else {
-		_LOGD (agent, "updated agent permissions");
+	_LOGD (agent, "updated agent permissions");
 
-		if (nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED) == NM_AUTH_CALL_RESULT_YES)
-			share_protected = TRUE;
-		if (nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN) == NM_AUTH_CALL_RESULT_YES)
-			share_open = TRUE;
-	}
+	if (nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED) == NM_AUTH_CALL_RESULT_YES)
+		share_protected = TRUE;
+	if (nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN) == NM_AUTH_CALL_RESULT_YES)
+		share_open = TRUE;
 
 	nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, share_protected);
 	nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, share_open);

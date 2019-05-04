@@ -1134,7 +1134,6 @@ send_agent_owned_secrets (NMSettings *self,
 
 static void
 pk_add_cb (NMAuthChain *chain,
-           GError *chain_error,
            GDBusMethodInvocation *context,
            gpointer user_data)
 {
@@ -1159,12 +1158,7 @@ pk_add_cb (NMAuthChain *chain,
 
 	result = nm_auth_chain_get_result (chain, perm);
 
-	if (chain_error) {
-		error = g_error_new (NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_FAILED,
-		                     "Error checking authorization: %s",
-		                     chain_error->message);
-	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+	if (result != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             "Insufficient privileges.");
@@ -1503,7 +1497,6 @@ impl_settings_reload_connections (NMDBusObject *obj,
 
 static void
 pk_hostname_cb (NMAuthChain *chain,
-                GError *chain_error,
                 GDBusMethodInvocation *context,
                 gpointer user_data)
 {
@@ -1520,12 +1513,7 @@ pk_hostname_cb (NMAuthChain *chain,
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME);
 
 	/* If our NMSettingsConnection is already gone, do nothing */
-	if (chain_error) {
-		error = g_error_new (NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_FAILED,
-		                     "Error checking authorization: %s",
-		                     chain_error->message);
-	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+	if (result != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             "Insufficient privileges.");

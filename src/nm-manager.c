@@ -1129,7 +1129,6 @@ _config_changed_cb (NMConfig *config, NMConfigData *config_data, NMConfigChangeF
 
 static void
 _reload_auth_cb (NMAuthChain *chain,
-                 GError *error,
                  GDBusMethodInvocation *context,
                  gpointer user_data)
 {
@@ -1150,13 +1149,7 @@ _reload_auth_cb (NMAuthChain *chain,
 	subject = nm_auth_chain_get_subject (chain);
 
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_RELOAD);
-	if (error) {
-		_LOGD (LOGD_CORE, "Reload request failed: %s", error->message);
-		ret_error = g_error_new (NM_MANAGER_ERROR,
-		                         NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                         "Reload request failed: %s",
-		                         error->message);
-	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+	if (result != NM_AUTH_CALL_RESULT_YES) {
 		ret_error = g_error_new_literal (NM_MANAGER_ERROR,
 		                                 NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                                 "Not authorized to reload configuration");
@@ -2335,7 +2328,6 @@ nm_manager_rfkill_update (NMManager *self, RfKillType rtype)
 
 static void
 device_auth_done_cb (NMAuthChain *chain,
-                     GError *auth_error,
                      GDBusMethodInvocation *context,
                      gpointer user_data)
 {
@@ -2362,14 +2354,7 @@ device_auth_done_cb (NMAuthChain *chain,
 	result = nm_auth_chain_get_result (chain, permission);
 	subject = nm_auth_chain_get_subject (chain);
 
-	if (auth_error) {
-		/* translate the auth error into a manager permission denied error */
-		_LOGD (LOGD_CORE, "%s request failed: %s", permission, auth_error->message);
-		error = g_error_new (NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                     "%s request failed: %s",
-		                     permission, auth_error->message);
-	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+	if (result != NM_AUTH_CALL_RESULT_YES) {
 		_LOGD (LOGD_CORE, "%s request failed: not authorized", permission);
 		error = g_error_new (NM_MANAGER_ERROR,
 		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
@@ -5619,7 +5604,6 @@ nm_manager_deactivate_connection (NMManager *manager,
 
 static void
 deactivate_net_auth_done_cb (NMAuthChain *chain,
-                             GError *auth_error,
                              GDBusMethodInvocation *context,
                              gpointer user_data)
 {
@@ -5638,13 +5622,7 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL);
 	active = active_connection_get_by_path (self, path);
 
-	if (auth_error) {
-		_LOGD (LOGD_CORE, "Disconnect request failed: %s", auth_error->message);
-		error = g_error_new (NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                     "Deactivate request failed: %s",
-		                     auth_error->message);
-	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+	if (result != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "Not authorized to deactivate connections");
@@ -6050,13 +6028,11 @@ _internal_enable (NMManager *self, gboolean enable)
 
 static void
 enable_net_done_cb (NMAuthChain *chain,
-                    GError *error,
                     GDBusMethodInvocation *context,
                     gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GError *ret_error = NULL;
 	NMAuthCallResult result;
 	gboolean enable;
 	NMAuthSubject *subject;
@@ -6068,18 +6044,12 @@ enable_net_done_cb (NMAuthChain *chain,
 	subject = nm_auth_chain_get_subject (chain);
 
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK);
-	if (error) {
-		_LOGD (LOGD_CORE, "Enable request failed: %s", error->message);
-		ret_error = g_error_new (NM_MANAGER_ERROR,
-		                         NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                         "Enable request failed: %s",
-		                         error->message);
-	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+	if (result != NM_AUTH_CALL_RESULT_YES) {
+		GError *ret_error;
+
 		ret_error = g_error_new_literal (NM_MANAGER_ERROR,
 		                                 NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                                 "Not authorized to enable/disable networking");
-	}
-	if (ret_error) {
 		nm_audit_log_control_op (NM_AUDIT_OP_NET_CONTROL, enable ? "on" : "off", FALSE,
 		                         subject, ret_error->message);
 		g_dbus_method_invocation_take_error (context, ret_error);
@@ -6154,27 +6124,16 @@ get_perm_add_result (NMManager *self, NMAuthChain *chain, GVariantBuilder *resul
 
 static void
 get_permissions_done_cb (NMAuthChain *chain,
-                         GError *error,
                          GDBusMethodInvocation *context,
                          gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GError *ret_error;
 	GVariantBuilder results;
 
 	nm_assert (G_IS_DBUS_METHOD_INVOCATION (context));
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
-	if (error) {
-		_LOGD (LOGD_CORE, "Permissions request failed: %s", error->message);
-		ret_error = g_error_new (NM_MANAGER_ERROR,
-		                         NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                         "Permissions request failed: %s",
-		                         error->message);
-		g_dbus_method_invocation_take_error (context, ret_error);
-		return;
-	}
 
 	g_variant_builder_init (&results, G_VARIANT_TYPE ("a{ss}"));
 
@@ -6362,7 +6321,6 @@ device_connectivity_done (NMDevice *device,
 
 static void
 check_connectivity_auth_done_cb (NMAuthChain *chain,
-                                 GError *auth_error,
                                  GDBusMethodInvocation *context,
                                  gpointer user_data)
 {
@@ -6377,13 +6335,7 @@ check_connectivity_auth_done_cb (NMAuthChain *chain,
 
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL);
 
-	if (auth_error) {
-		_LOGD (LOGD_CORE, "CheckConnectivity request failed: %s", auth_error->message);
-		error = g_error_new (NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                     "Connectivity check request failed: %s",
-		                     auth_error->message);
-	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+	if (result != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "Not authorized to recheck connectivity");
@@ -6792,7 +6744,6 @@ typedef struct {
 
 static void
 _dbus_set_property_auth_cb (NMAuthChain *chain,
-                            GError *error,
                             GDBusMethodInvocation *invocation,
                             gpointer user_data)
 {
@@ -6815,10 +6766,9 @@ _dbus_set_property_auth_cb (NMAuthChain *chain,
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 	result = nm_auth_chain_get_result (chain, property_info->writable.permission);
 
-	if (   error
-	    || result != NM_AUTH_CALL_RESULT_YES) {
+	if (result != NM_AUTH_CALL_RESULT_YES) {
 		error_name = NM_PERM_DENIED_ERROR;
-		error_message = error ? error->message : "Not authorized to perform this operation";
+		error_message = "Not authorized to perform this operation";
 		goto out;
 	}
 
@@ -6923,7 +6873,6 @@ _checkpoint_mgr_get (NMManager *self, gboolean create_as_needed)
 
 static void
 checkpoint_auth_done_cb (NMAuthChain *chain,
-                         GError *auth_error,
                          GDBusMethodInvocation *context,
                          gpointer user_data)
 {
@@ -6947,12 +6896,7 @@ checkpoint_auth_done_cb (NMAuthChain *chain,
 	                      NM_AUDIT_OP_CHECKPOINT_ADJUST_ROLLBACK_TIMEOUT))
 		arg = checkpoint_path = nm_auth_chain_get_data (chain, "checkpoint_path");
 
-	if (auth_error) {
-		error = g_error_new (NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                     "checkpoint check request failed: %s",
-		                     auth_error->message);
-	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+	if (result != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "Not authorized to checkpoint/rollback");

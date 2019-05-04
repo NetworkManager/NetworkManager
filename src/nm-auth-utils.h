@@ -28,7 +28,6 @@
 typedef struct NMAuthChain NMAuthChain;
 
 typedef void (*NMAuthChainResultFunc) (NMAuthChain *chain,
-                                       GError *error,
                                        GDBusMethodInvocation *context,
                                        gpointer user_data);
 
