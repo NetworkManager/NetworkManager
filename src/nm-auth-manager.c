@@ -23,6 +23,7 @@
 #include "nm-auth-manager.h"
 
 #include "c-list/src/c-list.h"
+#include "nm-glib-aux/nm-dbus-aux.h"
 #include "nm-errors.h"
 #include "nm-core-internal.h"
 #include "nm-dbus-manager.h"
@@ -50,13 +51,15 @@ static guint signals[LAST_SIGNAL] = {0};
 
 typedef struct {
 	CList calls_lst_head;
-	GDBusProxy *proxy;
-	GCancellable *new_proxy_cancellable;
-	GCancellable *cancel_cancellable;
+	GDBusConnection *dbus_connection;
+	GCancellable *shutdown_cancellable;
 	guint64 call_numid_counter;
-	bool polkit_enabled:1;
+	guint name_owner_changed_id;
+	guint changed_signal_id;
+	bool dbus_has_owner:1;
 	bool disposing:1;
 	bool shutting_down:1;
+	bool polkit_enabled_construct_only:1;
 } NMAuthManagerPrivate;
 
 struct _NMAuthManager {
@@ -114,7 +117,7 @@ nm_auth_manager_get_polkit_enabled (NMAuthManager *self)
 {
 	g_return_val_if_fail (NM_IS_AUTH_MANAGER (self), FALSE);
 
-	return NM_AUTH_MANAGER_GET_PRIVATE (self)->polkit_enabled;
+	return NM_AUTH_MANAGER_GET_PRIVATE (self)->dbus_connection != NULL;
 }
 
 /*****************************************************************************/
@@ -132,7 +135,6 @@ typedef enum {
 struct _NMAuthManagerCallId {
 	CList calls_lst;
 	NMAuthManager *self;
-	GVariant *dbus_parameters;
 	GCancellable *dbus_cancellable;
 	NMAuthManagerCheckAuthorizationCallback callback;
 	gpointer user_data;
@@ -142,7 +144,7 @@ struct _NMAuthManagerCallId {
 };
 
 #define cancellation_id_to_str_a(call_numid) \
-	nm_sprintf_bufa (NM_STRLEN (CANCELLATION_ID_PREFIX) + 20, \
+	nm_sprintf_bufa (NM_STRLEN (CANCELLATION_ID_PREFIX) + 60, \
 	                 CANCELLATION_ID_PREFIX"%"G_GUINT64_FORMAT, \
 	                 (call_numid))
 
@@ -151,8 +153,6 @@ _call_id_free (NMAuthManagerCallId *call_id)
 {
 	c_list_unlink (&call_id->calls_lst);
 	nm_clear_g_source (&call_id->idle_id);
-	if (call_id->dbus_parameters)
-		g_variant_unref (g_steal_pointer (&call_id->dbus_parameters));
 
 	if (call_id->dbus_cancellable) {
 		/* we have a pending D-Bus call. We keep the call-id instance alive
@@ -183,7 +183,7 @@ _call_id_invoke_callback (NMAuthManagerCallId *call_id,
 }
 
 static void
-cancel_check_authorization_cb (GObject *proxy,
+cancel_check_authorization_cb (GObject *source,
                                GAsyncResult *res,
                                gpointer user_data)
 {
@@ -191,7 +191,7 @@ cancel_check_authorization_cb (GObject *proxy,
 	gs_unref_variant GVariant *value = NULL;
 	gs_free_error GError *error= NULL;
 
-	value = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), res, &error);
+	value = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), res, &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		_LOG2T (call_id, "cancel request was cancelled");
 	else if (error)
@@ -225,18 +225,18 @@ _call_check_authorize_cb (GObject *proxy,
 	self = call_id->self;
 	priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
 
-	value = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), res, G_VARIANT_TYPE ("((bba{ss}))"), &error);
+	value = g_dbus_connection_call_finish (G_DBUS_CONNECTION (proxy), res, &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
 		/* call_id was cancelled externally, but _call_id_free() kept call_id
 		 * alive (and it has still the reference on @self. */
 
-		if (!priv->cancel_cancellable) {
+		if (!priv->shutdown_cancellable) {
 			/* we do a forced shutdown. There is no more time for cancelling... */
 			_call_id_free (call_id);
 
 			/* this shouldn't really happen, because:
 			 * _call_check_authorize() only scheduled the D-Bus request at a time when
-			 * cancel_cancellable was still set. It means, somebody called force-shutdown
+			 * shutdown_cancellable was still set. It means, somebody called force-shutdown
 			 * after call-id was schedule.
 			 * force-shutdown should only be called after:
 			 *   - cancel all pending requests
@@ -245,15 +245,19 @@ _call_check_authorize_cb (GObject *proxy,
 			g_return_if_reached ();
 		}
 
-		g_dbus_proxy_call (priv->proxy,
-		                   "CancelCheckAuthorization",
-		                   g_variant_new ("(s)",
-		                                  cancellation_id_to_str_a (call_id->call_numid)),
-		                   G_DBUS_CALL_FLAGS_NONE,
-		                   CANCELLATION_TIMEOUT_MS,
-		                   priv->cancel_cancellable,
-		                   cancel_check_authorization_cb,
-		                   call_id);
+		g_dbus_connection_call (priv->dbus_connection,
+		                        POLKIT_SERVICE,
+		                        POLKIT_OBJECT_PATH,
+		                        POLKIT_INTERFACE,
+		                        "CancelCheckAuthorization",
+		                        g_variant_new ("(s)",
+		                                       cancellation_id_to_str_a (call_id->call_numid)),
+		                        G_VARIANT_TYPE ("()"),
+		                        G_DBUS_CALL_FLAGS_NONE,
+		                        CANCELLATION_TIMEOUT_MS,
+		                        priv->shutdown_cancellable,
+		                        cancel_check_authorization_cb,
+		                        call_id);
 		return;
 	}
 
@@ -269,30 +273,6 @@ _call_check_authorize_cb (GObject *proxy,
 		_LOG2T (call_id, "completed: failed: %s", error->message);
 
 	_call_id_invoke_callback (call_id, is_authorized, is_challenge, error);
-}
-
-static void
-_call_check_authorize (NMAuthManagerCallId *call_id)
-{
-	NMAuthManager *self = call_id->self;
-	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
-
-	nm_assert (call_id->dbus_parameters);
-	nm_assert (g_variant_is_floating (call_id->dbus_parameters));
-	nm_assert (!call_id->dbus_cancellable);
-
-	call_id->dbus_cancellable = g_cancellable_new ();
-
-	nm_assert (priv->cancel_cancellable);
-
-	g_dbus_proxy_call (priv->proxy,
-	                   "CheckAuthorization",
-	                   g_steal_pointer (&call_id->dbus_parameters),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   G_MAXINT, /* no timeout */
-	                   call_id->dbus_cancellable,
-	                   _call_check_authorize_cb,
-	                   call_id);
 }
 
 static gboolean
@@ -345,9 +325,6 @@ nm_auth_manager_check_authorization (NMAuthManager *self,
 	NMAuthManagerPrivate *priv;
 	PolkitCheckAuthorizationFlags flags;
 	char subject_buf[64];
-	GVariantBuilder builder;
-	GVariant *subject_value;
-	GVariant *details_value;
 	NMAuthManagerCallId *call_id;
 
 	g_return_val_if_fail (NM_IS_AUTH_MANAGER (self), NULL);
@@ -375,7 +352,7 @@ nm_auth_manager_check_authorization (NMAuthManager *self,
 	};
 	c_list_link_tail (&priv->calls_lst_head, &call_id->calls_lst);
 
-	if (!priv->polkit_enabled) {
+	if (!priv->dbus_connection) {
 		_LOG2T (call_id, "CheckAuthorization(%s), subject=%s (succeeding due to polkit authorization disabled)", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)));
 		call_id->idle_reason = IDLE_REASON_AUTHORIZED;
 		call_id->idle_id = g_idle_add (_call_on_idle, call_id);
@@ -387,12 +364,12 @@ nm_auth_manager_check_authorization (NMAuthManager *self,
 		_LOG2T (call_id, "CheckAuthorization(%s), subject=%s (succeeding for root)", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)));
 		call_id->idle_reason = IDLE_REASON_AUTHORIZED;
 		call_id->idle_id = g_idle_add (_call_on_idle, call_id);
-	} else if (   !priv->proxy
-	           && !priv->new_proxy_cancellable) {
-		_LOG2T (call_id, "CheckAuthorization(%s), subject=%s (failing due to invalid DBUS proxy)", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)));
-		call_id->idle_reason = IDLE_REASON_NO_DBUS;
-		call_id->idle_id = g_idle_add (_call_on_idle, call_id);
 	} else {
+		GVariant *parameters;
+		GVariantBuilder builder;
+		GVariant *subject_value;
+		GVariant *details_value;
+
 		subject_value = nm_auth_subject_unix_process_to_polkit_gvariant (subject);
 		nm_assert (g_variant_is_floating (subject_value));
 
@@ -400,18 +377,31 @@ nm_auth_manager_check_authorization (NMAuthManager *self,
 		g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{ss}"));
 		details_value = g_variant_builder_end (&builder);
 
-		call_id->dbus_parameters = g_variant_new ("(@(sa{sv})s@a{ss}us)",
-		                                          subject_value,
-		                                          action_id,
-		                                          details_value,
-		                                          (guint32) flags,
-		                                          cancellation_id_to_str_a (call_id->call_numid));
-		if (!priv->proxy) {
-			_LOG2T (call_id, "CheckAuthorization(%s), subject=%s (wait for proxy)", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)));
-		} else {
-			_LOG2T (call_id, "CheckAuthorization(%s), subject=%s", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)));
-			_call_check_authorize (call_id);
-		}
+		parameters = g_variant_new ("(@(sa{sv})s@a{ss}us)",
+		                            subject_value,
+		                            action_id,
+		                            details_value,
+		                            (guint32) flags,
+		                            cancellation_id_to_str_a (call_id->call_numid));
+
+		_LOG2T (call_id, "CheckAuthorization(%s), subject=%s", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)));
+
+		call_id->dbus_cancellable = g_cancellable_new ();
+
+		nm_assert (priv->shutdown_cancellable);
+
+		g_dbus_connection_call (priv->dbus_connection,
+		                        POLKIT_SERVICE,
+		                        POLKIT_OBJECT_PATH,
+		                        POLKIT_INTERFACE,
+		                        "CheckAuthorization",
+		                        parameters,
+		                        G_VARIANT_TYPE ("((bba{ss}))"),
+		                        G_DBUS_CALL_FLAGS_NONE,
+		                        G_MAXINT, /* no timeout */
+		                        call_id->dbus_cancellable,
+		                        _call_check_authorize_cb,
+		                        call_id);
 	}
 
 	return call_id;
@@ -450,105 +440,82 @@ _emit_changed_signal (NMAuthManager *self)
 }
 
 static void
-_log_name_owner (NMAuthManager *self, char **out_name_owner)
+name_owner_changed (NMAuthManager *self,
+                    const char *owner,
+                    gboolean force_changed_signal)
 {
 	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
-	gs_free char *name_owner = NULL;
+	gboolean had_owner;
 
-	name_owner = g_dbus_proxy_get_name_owner (priv->proxy);
-	if (name_owner)
-		_LOGD ("dbus name owner: '%s'", name_owner);
+	owner = nm_str_not_empty (owner);
+
+	if (!owner)
+		_LOGT ("D-Bus name for PolKit has no owner");
 	else
-		_LOGD ("dbus name owner: none");
+		_LOGT ("D-Bus name for PolKit has owner %s", owner);
 
-	NM_SET_OUT (out_name_owner, g_steal_pointer (&name_owner));
-}
+	had_owner = priv->dbus_has_owner;
+	priv->dbus_has_owner = !!owner;
 
-static void
-_dbus_on_name_owner_notify_cb (GObject    *object,
-                               GParamSpec *pspec,
-                               gpointer    user_data)
-{
-	NMAuthManager *self = user_data;
-	gs_free char *name_owner = NULL;
-
-	nm_assert (NM_AUTH_MANAGER_GET_PRIVATE (self)->proxy == (GDBusProxy *) object);
-
-	_log_name_owner (self, &name_owner);
-	if (!name_owner) {
-		/* when the name disappears, we also want to raise a emit signal.
-		 * When it appears, we raise one already. */
-		_emit_changed_signal (self);
+	if (!priv->dbus_has_owner) {
+		if (   had_owner
+		    || force_changed_signal) {
+			/* when the name disappears, we also want to raise a emit signal.
+			 * When it appears, we raise one already. */
+			_emit_changed_signal (self);
+		}
 	}
 }
 
 static void
-_dbus_on_changed_signal_cb (GDBusProxy *proxy,
-                            gpointer    user_data)
+name_owner_changed_cb (GDBusConnection *connection,
+                       const char *sender_name,
+                       const char *object_path,
+                       const char *interface_name,
+                       const char *signal_name,
+                       GVariant *parameters,
+                       gpointer user_data)
+{
+	const char *new_owner;
+
+	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(sss)")))
+		return;
+
+	g_variant_get (parameters,
+	               "(&s&s&s)",
+	               NULL,
+	               NULL,
+	               &new_owner);
+
+	name_owner_changed (user_data, new_owner, FALSE);
+}
+
+static void
+get_name_owner_cb (const char *name_owner,
+                   GError *error,
+                   gpointer user_data)
+{
+	if (   !name_owner
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	/* until now the name-owner state was undecided. Pass TRUE to name_owner_changed()
+	 * so we force emitting a a changed signal (iff we have no name owner). */
+	name_owner_changed (user_data, name_owner, TRUE);
+}
+
+static void
+changed_signal_cb (GDBusConnection *connection,
+                   const char *sender_name,
+                   const char *object_path,
+                   const char *interface_name,
+                   const char *signal_name,
+                   GVariant *parameters,
+                   gpointer user_data)
 {
 	NMAuthManager *self = user_data;
-
-	nm_assert (NM_AUTH_MANAGER_GET_PRIVATE (self)->proxy == proxy);
 
 	_LOGD ("dbus signal: \"Changed\"");
-	_emit_changed_signal (self);
-}
-
-static void
-_dbus_new_proxy_cb (GObject *source_object,
-                    GAsyncResult *res,
-                    gpointer user_data)
-{
-	NMAuthManager *self;
-	NMAuthManagerPrivate *priv;
-	gs_free_error GError *error = NULL;
-	GDBusProxy *proxy;
-	NMAuthManagerCallId *call_id;
-
-	proxy = g_dbus_proxy_new_for_bus_finish  (res, &error);
-
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-		return;
-
-	self = user_data;
-	priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
-
-	priv->proxy = proxy;
-	g_clear_object (&priv->new_proxy_cancellable);
-
-	if (!priv->proxy) {
-		_LOGE ("could not create polkit proxy: %s", error->message);
-
-again:
-		c_list_for_each_entry (call_id, &priv->calls_lst_head, calls_lst) {
-			if (call_id->dbus_parameters) {
-				_LOG2T (call_id, "completed: failed due to no D-Bus proxy after startup");
-				_call_id_invoke_callback (call_id, FALSE, FALSE, error);
-				goto again;
-			}
-		}
-		return;
-	}
-
-	priv->cancel_cancellable = g_cancellable_new ();
-
-	g_signal_connect (priv->proxy,
-	                  "notify::g-name-owner",
-	                  G_CALLBACK (_dbus_on_name_owner_notify_cb),
-	                  self);
-	_nm_dbus_signal_connect (priv->proxy, "Changed", NULL,
-	                         G_CALLBACK (_dbus_on_changed_signal_cb),
-	                         self);
-
-	_log_name_owner (self, NULL);
-
-	c_list_for_each_entry (call_id, &priv->calls_lst_head, calls_lst) {
-		if (call_id->dbus_parameters) {
-			_LOG2T (call_id, "CheckAuthorization invoke now");
-			_call_check_authorize (call_id);
-		}
-	}
-
 	_emit_changed_signal (self);
 }
 
@@ -593,7 +560,7 @@ nm_auth_manager_force_shutdown (NMAuthManager *self)
 	 */
 
 	priv->shutting_down = TRUE;
-	nm_clear_g_cancellable (&priv->cancel_cancellable);
+	nm_clear_g_cancellable (&priv->shutdown_cancellable);
 }
 
 /*****************************************************************************/
@@ -606,7 +573,7 @@ set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *p
 	switch (prop_id) {
 	case PROP_POLKIT_ENABLED:
 		/* construct-only */
-		priv->polkit_enabled = !!g_value_get_boolean (value);
+		priv->polkit_enabled_construct_only = !!g_value_get_boolean (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -629,36 +596,51 @@ constructed (GObject *object)
 {
 	NMAuthManager *self = NM_AUTH_MANAGER (object);
 	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
-	GDBusConnection *dbus_connection;
 	NMLogLevel logl = LOGL_DEBUG;
 	const char *create_message;
 
 	G_OBJECT_CLASS (nm_auth_manager_parent_class)->constructed (object);
 
-	if (!priv->polkit_enabled) {
+	if (!priv->polkit_enabled_construct_only) {
 		create_message = "polkit disabled";
 		goto out;
 	}
 
-	dbus_connection = NM_MAIN_DBUS_CONNECTION_GET;
-	if (!dbus_connection) {
-		priv->polkit_enabled = FALSE;
+	priv->dbus_connection = nm_g_object_ref (NM_MAIN_DBUS_CONNECTION_GET);
+
+	if (!priv->dbus_connection) {
 		/* This warrants an info level message. */
 		logl = LOGL_INFO;
 		create_message = "D-Bus connection not available. Polkit is disabled and all requests are authenticated.";
 		goto out;
 	}
 
-	priv->new_proxy_cancellable = g_cancellable_new ();
-	g_dbus_proxy_new (dbus_connection,
-	                  G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
-	                  NULL,
-	                  POLKIT_SERVICE,
-	                  POLKIT_OBJECT_PATH,
-	                  POLKIT_INTERFACE,
-	                  priv->new_proxy_cancellable,
-	                  _dbus_new_proxy_cb,
-	                  self);
+	priv->shutdown_cancellable = g_cancellable_new ();
+
+	priv->name_owner_changed_id = nm_dbus_connection_signal_subscribe_name_owner_changed (priv->dbus_connection,
+	                                                                                      POLKIT_SERVICE,
+	                                                                                      name_owner_changed_cb,
+	                                                                                      self,
+	                                                                                      NULL);
+
+	nm_dbus_connection_call_get_name_owner (priv->dbus_connection,
+	                                        POLKIT_SERVICE,
+	                                        -1,
+	                                        priv->shutdown_cancellable,
+	                                        get_name_owner_cb,
+	                                        self);
+
+	priv->changed_signal_id = g_dbus_connection_signal_subscribe (priv->dbus_connection,
+	                                                              POLKIT_SERVICE,
+	                                                              POLKIT_INTERFACE,
+	                                                              "Changed",
+	                                                              POLKIT_OBJECT_PATH,
+	                                                              NULL,
+	                                                              G_DBUS_SIGNAL_FLAGS_NONE,
+	                                                              changed_signal_cb,
+	                                                              self,
+	                                                              NULL);
+
 	create_message = "polkit enabled";
 
 out:
@@ -697,15 +679,17 @@ dispose (GObject *object)
 
 	priv->disposing = TRUE;
 
-	nm_clear_g_cancellable (&priv->new_proxy_cancellable);
-	nm_clear_g_cancellable (&priv->cancel_cancellable);
+	nm_clear_g_cancellable (&priv->shutdown_cancellable);
 
-	if (priv->proxy) {
-		g_signal_handlers_disconnect_by_data (priv->proxy, self);
-		g_clear_object (&priv->proxy);
-	}
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
+	                                   &priv->name_owner_changed_id);
+
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
+	                                   &priv->changed_signal_id);
 
 	G_OBJECT_CLASS (nm_auth_manager_parent_class)->dispose (object);
+
+	g_clear_object (&priv->dbus_connection);
 }
 
 static void
