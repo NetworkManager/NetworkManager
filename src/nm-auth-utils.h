@@ -52,9 +52,12 @@ void nm_auth_chain_set_data (NMAuthChain *chain,
 NMAuthCallResult nm_auth_chain_get_result (NMAuthChain *chain,
                                            const char *permission);
 
-void nm_auth_chain_add_call (NMAuthChain *chain,
-                             const char *permission,
-                             gboolean allow_interaction);
+void nm_auth_chain_add_call_unsafe (NMAuthChain *chain,
+                                    const char *permission,
+                                    gboolean allow_interaction);
+
+#define nm_auth_chain_add_call(chain, permission, allow_interaction) \
+	nm_auth_chain_add_call_unsafe ((chain), ""permission"", (allow_interaction))
 
 void nm_auth_chain_destroy (NMAuthChain *chain);
 

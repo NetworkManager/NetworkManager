@@ -1274,7 +1274,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	 * request affects more than just the caller, require 'modify.system'.
 	 */
 	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
+	nm_assert (s_con);
 	if (nm_setting_connection_get_num_permissions (s_con) == 1)
 		perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
 	else
@@ -1296,7 +1296,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	nm_auth_chain_set_data (chain, "callback-data", user_data, NULL);
 	nm_auth_chain_set_data (chain, "subject", g_object_ref (subject), g_object_unref);
 	nm_auth_chain_set_data (chain, "save-to-disk", GUINT_TO_POINTER (save_to_disk), NULL);
-	nm_auth_chain_add_call (chain, perm, TRUE);
+	nm_auth_chain_add_call_unsafe (chain, perm, TRUE);
 	return;
 
 done:

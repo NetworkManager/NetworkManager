@@ -2385,6 +2385,7 @@ device_auth_request_cb (NMDevice *device,
 	GError *error = NULL;
 	NMAuthSubject *subject = NULL;
 	NMAuthChain *chain;
+	char *permission_dup;
 
 	/* Validate the caller */
 	subject = nm_auth_subject_new_unix_process_from_context (context);
@@ -2413,12 +2414,14 @@ device_auth_request_cb (NMDevice *device,
 		goto done;
 	}
 
+	permission_dup = g_strdup (permission);
+
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 	nm_auth_chain_set_data (chain, "device", g_object_ref (device), g_object_unref);
-	nm_auth_chain_set_data (chain, "requested-permission", g_strdup (permission), g_free);
 	nm_auth_chain_set_data (chain, "callback", callback, NULL);
 	nm_auth_chain_set_data (chain, "user-data", user_data, NULL);
-	nm_auth_chain_add_call (chain, permission, allow_interaction);
+	nm_auth_chain_set_data (chain, "requested-permission", permission_dup /* transfer ownership */, g_free);
+	nm_auth_chain_add_call_unsafe (chain, permission_dup, allow_interaction);
 
 done:
 	if (error)
@@ -6844,7 +6847,7 @@ nm_manager_dbus_set_property_handle (NMDBusObject *obj,
 
 	chain = nm_auth_chain_new_subject (subject, invocation, _dbus_set_property_auth_cb, handle_data);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
-	nm_auth_chain_add_call (chain, property_info->writable.permission, TRUE);
+	nm_auth_chain_add_call_unsafe (chain, property_info->writable.permission, TRUE);
 	return;
 
 err:

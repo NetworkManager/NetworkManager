@@ -51,8 +51,8 @@ typedef struct {
 	CList auth_call_lst;
 	NMAuthChain *chain;
 	NMAuthManagerCallId *call_id;
+	const char *permission;
 	NMAuthCallResult result;
-	char permission[];
 } AuthCall;
 
 /*****************************************************************************/
@@ -66,6 +66,7 @@ _ASSERT_call (AuthCall *call)
 {
 	nm_assert (call);
 	nm_assert (call->chain);
+	nm_assert (call->permission && strlen (call->permission) > 0);
 	nm_assert (nm_c_list_contains_entry (&call->chain->auth_call_lst_head, call, auth_call_lst));
 #if NM_MORE_ASSERTS > 5
 	{
@@ -321,14 +322,30 @@ pk_call_cb (NMAuthManager *auth_manager,
 	}
 }
 
+/**
+ * nm_auth_chain_add_call_unsafe:
+ * @self: the #NMAuthChain
+ * @permission: the permission string. This string is kept by reference
+ *   and you must make sure that it's lifetime lasts until the NMAuthChain
+ *   gets destroyed. That's why the function is "unsafe". Use
+ *   nm_auth_chain_add_call() instead.
+ * @allow_interaction: flag
+ *
+ * It's "unsafe" because @permission is not copied. It's the callers responsibility
+ * that the permission string stays valid as long as NMAuthChain.
+ *
+ * If you can, use nm_auth_chain_add_call() instead!
+ *
+ * If you have a non-static string, you may attach the permission string as
+ * user-data via nm_auth_chain_set_data().
+ */
 void
-nm_auth_chain_add_call (NMAuthChain *self,
-                        const char *permission,
-                        gboolean allow_interaction)
+nm_auth_chain_add_call_unsafe (NMAuthChain *self,
+                               const char *permission,
+                               gboolean allow_interaction)
 {
 	AuthCall *call;
 	NMAuthManager *auth_manager = nm_auth_manager_get ();
-	gsize l_p_1;
 
 	g_return_if_fail (self);
 	g_return_if_fail (self->subject);
@@ -342,12 +359,16 @@ nm_auth_chain_add_call (NMAuthChain *self,
 	 * can only return one-permission. */
 	nm_assert (!_find_auth_call (self, permission));
 
-	l_p_1 = strlen (permission) + 1;
-	call = g_malloc (sizeof (AuthCall) + l_p_1);
-	call->chain = self;
-	call->call_id = NULL;
-	call->result = NM_AUTH_CALL_RESULT_UNKNOWN;
-	memcpy (call->permission, permission, l_p_1);
+	call = g_slice_new (AuthCall);
+
+	*call = (AuthCall) {
+		.chain      = self,
+		.call_id    = NULL,
+		.result     = NM_AUTH_CALL_RESULT_UNKNOWN,
+
+		/* we don't clone the permission string. It's the callers responsiblity. */
+		.permission = permission,
+	};
 
 	/* above we assert that no duplicate permissions are added. Still, track the
 	 * new request to the front of the list so that it would shadow an earlier
@@ -463,6 +484,10 @@ _auth_chain_destroy (NMAuthChain *self)
 	nm_clear_g_object (&self->subject);
 	nm_clear_g_object (&self->context);
 
+	/* we must first destry all AuthCall instances before ChainData. The reason is
+	 * that AuthData.permission is not cloned and the lifetime of the string must
+	 * be ensured by the caller. A sensible thing to do for the caller is attach the
+	 * permission string via nm_auth_chain_set_data(). Hence, first free the AuthCall. */
 	while ((call = c_list_first_entry (&self->auth_call_lst_head, AuthCall, auth_call_lst)))
 		auth_call_free (call);
 
