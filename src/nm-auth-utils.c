@@ -218,26 +218,24 @@ nm_auth_chain_set_data (NMAuthChain *self,
 	 * necessary, revert the code to use GHashTable again. */
 	nm_assert (c_list_length (&self->data_lst_head) < 25);
 
-	chain_data = _get_data (self, tag);
+	/* The tag must not yet exist. Otherwise we'd have to first search the linked
+	 * list for an existing entry. */
+	nm_assert (!_get_data (self, tag));
 
-	if (data == NULL) {
-		if (chain_data)
-			chain_data_free (chain_data);
-		return;
-	}
-
-	if (chain_data) {
-		gpointer old_data = chain_data->data;
-		GDestroyNotify old_destroy = chain_data->destroy;
-
-		chain_data->data = data;
-		chain_data->destroy = data_destroy;
-		if (old_destroy)
-			old_destroy (old_data);
+	if (!data) {
+		/* we don't track user data of %NULL.
+		 *
+		 * In the past this had also the meaning of removing a user-data. But since
+		 * nm_auth_chain_set_data() does not allow being called more than once
+		 * for the same tag, we don't need to remove anything. */
 		return;
 	}
 
 	chain_data = chain_data_new_stale (tag, data, data_destroy);
+
+	/* we assert that no duplicate tags are added. But still, add the new
+	 * element to the front, so that it would shadow the duplicate element
+	 * in the list. */
 	c_list_link_front (&self->data_lst_head, &chain_data->data_lst);
 }
 
