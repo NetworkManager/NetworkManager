@@ -555,10 +555,8 @@ dispose (GObject *object)
 
 	free_pending_updates (self);
 
-	if (priv->name_owner_changed_id != 0) {
-		g_dbus_connection_signal_unsubscribe (priv->dbus_connection,
-		                                      nm_steal_int (&priv->name_owner_changed_id));
-	}
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
+	                                   &priv->name_owner_changed_id);
 
 	nm_clear_g_cancellable (&priv->cancellable);
 

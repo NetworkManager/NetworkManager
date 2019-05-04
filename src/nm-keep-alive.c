@@ -276,7 +276,7 @@ cleanup_dbus_watch (NMKeepAlive *self)
 	nm_clear_g_free (&priv->dbus_client);
 	if (priv->dbus_connection) {
 		g_dbus_connection_signal_unsubscribe (priv->dbus_connection,
-		                                      priv->subscription_id);
+		                                      nm_steal_int (&priv->subscription_id));
 		g_clear_object (&priv->dbus_connection);
 	}
 }

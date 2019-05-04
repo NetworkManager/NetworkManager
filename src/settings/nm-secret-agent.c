@@ -55,7 +55,10 @@ typedef struct {
 	NMDBusManager *bus_mgr;
 	GDBusConnection *connection;
 	CList requests;
-	gulong on_disconnected_id;
+	union {
+		gulong obj_signal;
+		guint dbus_signal;
+	} on_disconnected_id;
 	bool connection_is_private:1;
 } NMSecretAgentPrivate;
 
@@ -615,15 +618,12 @@ nm_secret_agent_delete_secrets (NMSecretAgent *self,
 static void
 _on_disconnected_cleanup (NMSecretAgentPrivate *priv)
 {
-	if (priv->on_disconnected_id) {
-		if (priv->connection_is_private) {
-			g_signal_handler_disconnect (priv->bus_mgr,
-			                             priv->on_disconnected_id);
-		} else {
-			g_dbus_connection_signal_unsubscribe (priv->connection,
-			                                      priv->on_disconnected_id);
-		}
-		priv->on_disconnected_id = 0;
+	if (priv->connection_is_private) {
+		nm_clear_g_signal_handler (priv->bus_mgr,
+		                           &priv->on_disconnected_id.obj_signal);
+	} else {
+		nm_clear_g_dbus_connection_signal (priv->connection,
+		                                   &priv->on_disconnected_id.dbus_signal);
 	}
 
 	g_clear_object (&priv->connection);
@@ -745,16 +745,16 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 	/* we cannot subscribe to notify::g-name-owner because that doesn't work
 	 * for unique names and it doesn't work for private connections. */
 	if (priv->connection_is_private) {
-		priv->on_disconnected_id = g_signal_connect (priv->bus_mgr,
-		                                             NM_DBUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED,
-		                                             G_CALLBACK (_on_disconnected_private_connection),
-		                                             self);
+		priv->on_disconnected_id.obj_signal = g_signal_connect (priv->bus_mgr,
+		                                                        NM_DBUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED,
+		                                                        G_CALLBACK (_on_disconnected_private_connection),
+		                                                        self);
 	} else {
-		priv->on_disconnected_id = nm_dbus_connection_signal_subscribe_name_owner_changed (priv->connection,
-		                                                                                   priv->dbus_owner,
-		                                                                                   _on_disconnected_name_owner_changed,
-		                                                                                   self,
-		                                                                                   NULL);
+		priv->on_disconnected_id.dbus_signal = nm_dbus_connection_signal_subscribe_name_owner_changed (priv->connection,
+		                                                                                               priv->dbus_owner,
+		                                                                                               _on_disconnected_name_owner_changed,
+		                                                                                               self,
+		                                                                                               NULL);
 	}
 
 	return self;

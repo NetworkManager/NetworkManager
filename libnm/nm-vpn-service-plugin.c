@@ -1186,11 +1186,8 @@ state_changed (NMVpnServicePlugin *plugin, NMVpnServiceState state)
 			nm_vpn_service_plugin_emit_quit (plugin);
 		else
 			schedule_quit_timer (plugin);
-		if (priv->peer_watch_id) {
-			g_dbus_connection_signal_unsubscribe (nm_vpn_service_plugin_get_connection (plugin),
-			                                      priv->peer_watch_id);
-			priv->peer_watch_id = 0;
-		}
+		nm_clear_g_dbus_connection_signal (nm_vpn_service_plugin_get_connection (plugin),
+		                                   &priv->peer_watch_id);
 		break;
 	default:
 		/* Clean up all timers we might have set up. */
