@@ -25,6 +25,23 @@
 
 /*****************************************************************************/
 
+static inline gboolean
+nm_clear_g_dbus_connection_signal (GDBusConnection *dbus_connection,
+                                   guint *id)
+{
+	guint v;
+
+	if (   id
+	    && (v = *id)) {
+		*id = 0;
+		g_dbus_connection_signal_unsubscribe (dbus_connection, v);
+		return TRUE;
+	}
+	return FALSE;
+}
+
+/*****************************************************************************/
+
 static inline guint
 nm_dbus_connection_signal_subscribe_name_owner_changed (GDBusConnection *dbus_connection,
                                                         const char *service_name,
