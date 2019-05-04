@@ -41,6 +41,8 @@ struct NMAuthChain {
 	NMAuthChainResultFunc done_func;
 	gpointer user_data;
 
+	guint num_pending_auth_calls;
+
 	bool is_destroyed:1;
 	bool is_finishing:1;
 };
@@ -49,6 +51,7 @@ typedef struct {
 	CList auth_call_lst;
 	NMAuthChain *chain;
 	NMAuthManagerCallId *call_id;
+	NMAuthCallResult result;
 	char permission[];
 } AuthCall;
 
@@ -64,6 +67,20 @@ _ASSERT_call (AuthCall *call)
 	nm_assert (call);
 	nm_assert (call->chain);
 	nm_assert (nm_c_list_contains_entry (&call->chain->auth_call_lst_head, call, auth_call_lst));
+#if NM_MORE_ASSERTS > 5
+	{
+		AuthCall *auth_call;
+		guint n = 0;
+
+		c_list_for_each_entry (auth_call, &call->chain->auth_call_lst_head, auth_call_lst) {
+			nm_assert (   auth_call->result == NM_AUTH_CALL_RESULT_UNKNOWN
+			           || !auth_call->call_id);
+			if (auth_call->call_id)
+				n++;
+		}
+		nm_assert (n == call->chain->num_pending_auth_calls);
+	}
+#endif
 }
 
 /*****************************************************************************/
@@ -71,10 +88,26 @@ _ASSERT_call (AuthCall *call)
 static void
 auth_call_free (AuthCall *call)
 {
-	if (call->call_id)
-		nm_auth_manager_check_authorization_cancel (call->call_id);
+	_ASSERT_call (call);
+
 	c_list_unlink_stale (&call->auth_call_lst);
+	if (call->call_id) {
+		call->chain->num_pending_auth_calls--;
+		nm_auth_manager_check_authorization_cancel (call->call_id);
+	}
 	g_slice_free (AuthCall, call);
+}
+
+static AuthCall *
+_find_auth_call (NMAuthChain *self, const char *permission)
+{
+	AuthCall *auth_call;
+
+	c_list_for_each_entry (auth_call, &self->auth_call_lst_head, auth_call_lst) {
+		if (nm_streq (auth_call->permission, permission))
+			return auth_call;
+	}
+	return NULL;
 }
 
 /*****************************************************************************/
@@ -213,15 +246,26 @@ nm_auth_chain_set_data (NMAuthChain *self,
 NMAuthCallResult
 nm_auth_chain_get_result (NMAuthChain *self, const char *permission)
 {
-	ChainData *chain_data;
+	AuthCall *auth_call;
 
 	g_return_val_if_fail (self, NM_AUTH_CALL_RESULT_UNKNOWN);
 	g_return_val_if_fail (permission, NM_AUTH_CALL_RESULT_UNKNOWN);
 
-	chain_data = _get_data (self, permission);
-	return   chain_data
-	       ? (NMAuthCallResult) GPOINTER_TO_UINT (chain_data->data)
-	       : NM_AUTH_CALL_RESULT_UNKNOWN;
+	/* it is a bug to request the result other than from the done_func()
+	 * callback. You are not supposed to poll for the result but request
+	 * it upon notification. */
+	nm_assert (self->is_finishing);
+
+	auth_call = _find_auth_call (self, permission);
+
+	/* it is a bug to request a permission result that was not
+	 * previously requested or which did not complete yet. */
+	if (!auth_call)
+		g_return_val_if_reached (NM_AUTH_CALL_RESULT_UNKNOWN);
+
+	nm_assert (!auth_call->call_id);
+
+	return auth_call->result;
 }
 
 NMAuthSubject *
@@ -235,31 +279,6 @@ nm_auth_chain_get_subject (NMAuthChain *self)
 /*****************************************************************************/
 
 static void
-auth_call_complete (AuthCall *call)
-{
-	NMAuthChain *self;
-
-	_ASSERT_call (call);
-
-	self = call->chain;
-
-	nm_assert (!self->is_finishing);
-
-	auth_call_free (call);
-
-	if (c_list_is_empty (&self->auth_call_lst_head)) {
-		/* we are on an idle-handler or a clean call-stack (non-reentrant). */
-		nm_assert (!self->is_destroyed);
-		nm_assert (!self->is_finishing);
-
-		self->is_finishing = TRUE;
-		self->done_func (self, self->context, self->user_data);
-		nm_assert (self->is_finishing);
-		_auth_chain_destroy (self);
-	}
-}
-
-static void
 pk_call_cb (NMAuthManager *auth_manager,
             NMAuthManagerCallId *call_id,
             gboolean is_authorized,
@@ -267,23 +286,41 @@ pk_call_cb (NMAuthManager *auth_manager,
             GError *error,
             gpointer user_data)
 {
+	NMAuthChain *self;
 	AuthCall *call;
-	NMAuthCallResult call_result;
+
+	nm_assert (call_id);
 
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
 	call = user_data;
 
+	_ASSERT_call (call);
 	nm_assert (call->call_id == call_id);
+	nm_assert (call->result == NM_AUTH_CALL_RESULT_UNKNOWN);
+
+	self = call->chain;
+
+	nm_assert (!self->is_destroyed);
+	nm_assert (!self->is_finishing);
 
 	call->call_id = NULL;
 
-	call_result = nm_auth_call_result_eval (is_authorized, is_challenge, error);
+	call->result = nm_auth_call_result_eval (is_authorized, is_challenge, error);
 
-	nm_auth_chain_set_data (call->chain, call->permission, GUINT_TO_POINTER (call_result), NULL);
+	call->chain->num_pending_auth_calls--;
 
-	auth_call_complete (call);
+	_ASSERT_call (call);
+
+	if (call->chain->num_pending_auth_calls == 0) {
+		/* we are on an idle-handler or a clean call-stack (non-reentrant) so it's safe
+		 * to invoke the callback right away. */
+		self->is_finishing = TRUE;
+		self->done_func (self, self->context, self->user_data);
+		nm_assert (self->is_finishing);
+		_auth_chain_destroy (self);
+	}
 }
 
 void
@@ -303,18 +340,37 @@ nm_auth_chain_add_call (NMAuthChain *self,
 	nm_assert (   nm_auth_subject_is_unix_process (self->subject)
 	           || nm_auth_subject_is_internal (self->subject));
 
+	/* duplicate permissions are not supported, also because nm_auth_chain_get_result()
+	 * can only return one-permission. */
+	nm_assert (!_find_auth_call (self, permission));
+
 	l_p_1 = strlen (permission) + 1;
 	call = g_malloc (sizeof (AuthCall) + l_p_1);
 	call->chain = self;
 	call->call_id = NULL;
+	call->result = NM_AUTH_CALL_RESULT_UNKNOWN;
 	memcpy (call->permission, permission, l_p_1);
-	c_list_link_tail (&self->auth_call_lst_head, &call->auth_call_lst);
+
+	/* above we assert that no duplicate permissions are added. Still, track the
+	 * new request to the front of the list so that it would shadow an earlier
+	 * call. */
+	c_list_link_front (&self->auth_call_lst_head, &call->auth_call_lst);
+
 	call->call_id = nm_auth_manager_check_authorization (auth_manager,
 	                                                     self->subject,
 	                                                     permission,
 	                                                     allow_interaction,
 	                                                     pk_call_cb,
 	                                                     call);
+
+	self->num_pending_auth_calls++;
+
+	_ASSERT_call (call);
+
+	/* we track auth-calls in a linked list. If we end up requesting too many permissions this
+	 * becomes inefficient. If that ever happens, consider a more efficient data structure for
+	 * a large number of requests. */
+	nm_assert (self->num_pending_auth_calls < 25);
 }
 
 /*****************************************************************************/
@@ -343,7 +399,6 @@ nm_auth_chain_new_context (GDBusMethodInvocation *context,
 	return chain;
 }
 
-/* Requires an NMAuthSubject */
 NMAuthChain *
 nm_auth_chain_new_subject (NMAuthSubject *subject,
                            GDBusMethodInvocation *context,
