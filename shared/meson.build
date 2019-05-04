@@ -139,7 +139,8 @@ shared_nm_glib_aux_c_args = [
 
 shared_nm_glib_aux = static_library(
     'nm-utils-base',
-    sources: files('nm-glib-aux/nm-dedup-multi.c',
+    sources: files('nm-glib-aux/nm-dbus-aux.c',
+                   'nm-glib-aux/nm-dedup-multi.c',
                    'nm-glib-aux/nm-enum-utils.c',
                    'nm-glib-aux/nm-errno.c',
                    'nm-glib-aux/nm-hash-utils.c',
