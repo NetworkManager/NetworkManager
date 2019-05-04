@@ -876,7 +876,7 @@ nm_connectivity_check_start (NMConnectivity *self,
 
 			cb_data->concheck.resolve_cancellable = g_cancellable_new ();
 
-			g_dbus_connection_call (nm_dbus_manager_get_dbus_connection (nm_dbus_manager_get ()),
+			g_dbus_connection_call (dbus_connection,
 			                        "org.freedesktop.resolve1",
 			                        "/org/freedesktop/resolve1",
 			                        "org.freedesktop.resolve1.Manager",
