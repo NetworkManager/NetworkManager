@@ -345,7 +345,6 @@ nm_auth_chain_add_call_unsafe (NMAuthChain *self,
                                gboolean allow_interaction)
 {
 	AuthCall *call;
-	NMAuthManager *auth_manager = nm_auth_manager_get ();
 
 	g_return_if_fail (self);
 	g_return_if_fail (self->subject);
@@ -375,7 +374,7 @@ nm_auth_chain_add_call_unsafe (NMAuthChain *self,
 	 * call. */
 	c_list_link_front (&self->auth_call_lst_head, &call->auth_call_lst);
 
-	call->call_id = nm_auth_manager_check_authorization (auth_manager,
+	call->call_id = nm_auth_manager_check_authorization (nm_auth_manager_get (),
 	                                                     self->subject,
 	                                                     permission,
 	                                                     allow_interaction,

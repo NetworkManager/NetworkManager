@@ -365,11 +365,13 @@ nm_auth_manager_check_authorization (NMAuthManager *self,
 	    ? POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION
 	    : POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE;
 
-	call_id = g_slice_new0 (NMAuthManagerCallId);
-	call_id->self = g_object_ref (self);
-	call_id->callback = callback;
-	call_id->user_data = user_data;
-	call_id->call_numid = ++priv->call_numid_counter;
+	call_id = g_slice_new (NMAuthManagerCallId);
+	*call_id = (NMAuthManagerCallId) {
+		.self       = g_object_ref (self),
+		.callback   = callback,
+		.user_data  = user_data,
+		.call_numid = ++priv->call_numid_counter,
+	};
 	c_list_link_tail (&priv->calls_lst_head, &call_id->calls_lst);
 
 	if (!priv->polkit_enabled) {
