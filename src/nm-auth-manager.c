@@ -25,6 +25,7 @@
 #include "c-list/src/c-list.h"
 #include "nm-errors.h"
 #include "nm-core-internal.h"
+#include "nm-dbus-manager.h"
 #include "NetworkManagerUtils.h"
 
 #define POLKIT_SERVICE                      "org.freedesktop.PolicyKit1"
@@ -628,23 +629,40 @@ constructed (GObject *object)
 {
 	NMAuthManager *self = NM_AUTH_MANAGER (object);
 	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
+	GDBusConnection *dbus_connection;
+	NMLogLevel logl = LOGL_DEBUG;
+	const char *create_message;
 
 	G_OBJECT_CLASS (nm_auth_manager_parent_class)->constructed (object);
 
-	_LOGD ("create auth-manager: polkit %s", priv->polkit_enabled ? "enabled" : "disabled");
-
-	if (priv->polkit_enabled) {
-		priv->new_proxy_cancellable = g_cancellable_new ();
-		g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
-		                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
-		                          NULL,
-		                          POLKIT_SERVICE,
-		                          POLKIT_OBJECT_PATH,
-		                          POLKIT_INTERFACE,
-		                          priv->new_proxy_cancellable,
-		                          _dbus_new_proxy_cb,
-		                          self);
+	if (!priv->polkit_enabled) {
+		create_message = "polkit disabled";
+		goto out;
 	}
+
+	dbus_connection = NM_MAIN_DBUS_CONNECTION_GET;
+	if (!dbus_connection) {
+		priv->polkit_enabled = FALSE;
+		/* This warrants an info level message. */
+		logl = LOGL_INFO;
+		create_message = "D-Bus connection not available. Polkit is disabled and all requests are authenticated.";
+		goto out;
+	}
+
+	priv->new_proxy_cancellable = g_cancellable_new ();
+	g_dbus_proxy_new (dbus_connection,
+	                  G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
+	                  NULL,
+	                  POLKIT_SERVICE,
+	                  POLKIT_OBJECT_PATH,
+	                  POLKIT_INTERFACE,
+	                  priv->new_proxy_cancellable,
+	                  _dbus_new_proxy_cb,
+	                  self);
+	create_message = "polkit enabled";
+
+out:
+	_NMLOG (logl, "create auth-manager: %s", create_message);
 }
 
 NMAuthManager *
