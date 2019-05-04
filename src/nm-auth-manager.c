@@ -54,9 +54,7 @@ typedef struct {
 	GDBusConnection *dbus_connection;
 	GCancellable *shutdown_cancellable;
 	guint64 call_numid_counter;
-	guint name_owner_changed_id;
 	guint changed_signal_id;
-	bool dbus_has_owner:1;
 	bool disposing:1;
 	bool shutting_down:1;
 	bool polkit_enabled_construct_only:1;
@@ -433,78 +431,6 @@ nm_auth_manager_check_authorization_cancel (NMAuthManagerCallId *call_id)
 /*****************************************************************************/
 
 static void
-_emit_changed_signal (NMAuthManager *self)
-{
-	_LOGD ("emit changed signal");
-	g_signal_emit (self, signals[CHANGED_SIGNAL], 0);
-}
-
-static void
-name_owner_changed (NMAuthManager *self,
-                    const char *owner,
-                    gboolean force_changed_signal)
-{
-	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
-	gboolean had_owner;
-
-	owner = nm_str_not_empty (owner);
-
-	if (!owner)
-		_LOGT ("D-Bus name for PolKit has no owner");
-	else
-		_LOGT ("D-Bus name for PolKit has owner %s", owner);
-
-	had_owner = priv->dbus_has_owner;
-	priv->dbus_has_owner = !!owner;
-
-	if (!priv->dbus_has_owner) {
-		if (   had_owner
-		    || force_changed_signal) {
-			/* when the name disappears, we also want to raise a emit signal.
-			 * When it appears, we raise one already. */
-			_emit_changed_signal (self);
-		}
-	}
-}
-
-static void
-name_owner_changed_cb (GDBusConnection *connection,
-                       const char *sender_name,
-                       const char *object_path,
-                       const char *interface_name,
-                       const char *signal_name,
-                       GVariant *parameters,
-                       gpointer user_data)
-{
-	const char *new_owner;
-
-	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(sss)")))
-		return;
-
-	g_variant_get (parameters,
-	               "(&s&s&s)",
-	               NULL,
-	               NULL,
-	               &new_owner);
-
-	name_owner_changed (user_data, new_owner, FALSE);
-}
-
-static void
-get_name_owner_cb (const char *name_owner,
-                   GError *error,
-                   gpointer user_data)
-{
-	if (   !name_owner
-	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-		return;
-
-	/* until now the name-owner state was undecided. Pass TRUE to name_owner_changed()
-	 * so we force emitting a a changed signal (iff we have no name owner). */
-	name_owner_changed (user_data, name_owner, TRUE);
-}
-
-static void
 changed_signal_cb (GDBusConnection *connection,
                    const char *sender_name,
                    const char *object_path,
@@ -516,7 +442,7 @@ changed_signal_cb (GDBusConnection *connection,
 	NMAuthManager *self = user_data;
 
 	_LOGD ("dbus signal: \"Changed\"");
-	_emit_changed_signal (self);
+	g_signal_emit (self, signals[CHANGED_SIGNAL], 0);
 }
 
 /*****************************************************************************/
@@ -617,19 +543,6 @@ constructed (GObject *object)
 
 	priv->shutdown_cancellable = g_cancellable_new ();
 
-	priv->name_owner_changed_id = nm_dbus_connection_signal_subscribe_name_owner_changed (priv->dbus_connection,
-	                                                                                      POLKIT_SERVICE,
-	                                                                                      name_owner_changed_cb,
-	                                                                                      self,
-	                                                                                      NULL);
-
-	nm_dbus_connection_call_get_name_owner (priv->dbus_connection,
-	                                        POLKIT_SERVICE,
-	                                        -1,
-	                                        priv->shutdown_cancellable,
-	                                        get_name_owner_cb,
-	                                        self);
-
 	priv->changed_signal_id = g_dbus_connection_signal_subscribe (priv->dbus_connection,
 	                                                              POLKIT_SERVICE,
 	                                                              POLKIT_INTERFACE,
@@ -680,9 +593,6 @@ dispose (GObject *object)
 	priv->disposing = TRUE;
 
 	nm_clear_g_cancellable (&priv->shutdown_cancellable);
-
-	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
-	                                   &priv->name_owner_changed_id);
 
 	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
 	                                   &priv->changed_signal_id);
