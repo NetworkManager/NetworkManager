@@ -42,6 +42,30 @@ nm_clear_g_dbus_connection_signal (GDBusConnection *dbus_connection,
 
 /*****************************************************************************/
 
+static inline void
+nm_dbus_connection_call_start_service_by_name (GDBusConnection *dbus_connection,
+                                               const char *name,
+                                               int timeout_msec,
+                                               GCancellable *cancellable,
+                                               GAsyncReadyCallback  callback,
+                                               gpointer user_data)
+{
+	g_dbus_connection_call (dbus_connection,
+	                        DBUS_SERVICE_DBUS,
+	                        DBUS_PATH_DBUS,
+	                        DBUS_INTERFACE_DBUS,
+	                        "StartServiceByName",
+	                        g_variant_new ("(su)", name, 0u),
+	                        G_VARIANT_TYPE ("(u)"),
+	                        G_DBUS_CALL_FLAGS_NONE,
+	                        timeout_msec,
+	                        cancellable,
+	                        callback,
+	                        user_data);
+}
+
+/*****************************************************************************/
+
 static inline guint
 nm_dbus_connection_signal_subscribe_name_owner_changed (GDBusConnection *dbus_connection,
                                                         const char *service_name,
