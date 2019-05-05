@@ -54,6 +54,8 @@ gboolean nm_dbus_manager_acquire_bus (NMDBusManager *self,
 
 GDBusConnection *nm_dbus_manager_get_dbus_connection (NMDBusManager *self);
 
+#define NM_MAIN_DBUS_CONNECTION_GET (nm_dbus_manager_get_dbus_connection (nm_dbus_manager_get ()))
+
 void nm_dbus_manager_start (NMDBusManager *self,
                             NMDBusManagerSetPropertyHandler set_property_handler,
                             gpointer set_property_handler_data);
