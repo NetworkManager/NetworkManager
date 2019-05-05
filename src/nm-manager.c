@@ -7272,7 +7272,8 @@ nm_manager_setup (void)
 	singleton_instance = self;
 
 	nm_singleton_instance_register ();
-	_LOGD (LOGD_CORE, "setup %s singleton (%p)", "NMManager", singleton_instance);
+	nm_log_dbg (LOGD_CORE, "setup %s singleton ("NM_HASH_OBFUSCATE_PTR_FMT")",
+	            "NMManager", NM_HASH_OBFUSCATE_PTR (singleton_instance));
 
 	nm_dbus_object_export (NM_DBUS_OBJECT (self));
 	return self;
