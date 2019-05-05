@@ -305,18 +305,12 @@ send_updates (NMDnsSystemdResolved *self)
 		_LOGT ("send-updates: no name owner. Try start service...");
 		priv->try_start_blocked = TRUE;
 
-		g_dbus_connection_call (priv->dbus_connection,
-		                        DBUS_SERVICE_DBUS,
-		                        DBUS_PATH_DBUS,
-		                        DBUS_INTERFACE_DBUS,
-		                        "StartServiceByName",
-		                        g_variant_new ("(su)", SYSTEMD_RESOLVED_DBUS_SERVICE, 0u),
-		                        G_VARIANT_TYPE ("(u)"),
-		                        G_DBUS_CALL_FLAGS_NONE,
-		                        -1,
-		                        NULL,
-		                        NULL,
-		                        NULL);
+		nm_dbus_connection_call_start_service_by_name (priv->dbus_connection,
+		                                               SYSTEMD_RESOLVED_DBUS_SERVICE,
+		                                               -1,
+		                                               NULL,
+		                                               NULL,
+		                                               NULL);
 		return;
 	}
 
