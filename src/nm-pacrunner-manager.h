@@ -31,22 +31,20 @@
 
 typedef struct _NMPacrunnerManagerClass NMPacrunnerManagerClass;
 
-typedef struct _NMPacrunnerCallId NMPacrunnerCallId;
+typedef struct _NMPacrunnerConfId NMPacrunnerConfId;
 
 GType nm_pacrunner_manager_get_type (void);
 
 NMPacrunnerManager *nm_pacrunner_manager_get (void);
 
-NMPacrunnerCallId *nm_pacrunner_manager_send (NMPacrunnerManager *self,
-                                              const char *iface,
-                                              NMProxyConfig *proxy_config,
-                                              NMIP4Config *ip4_config,
-                                              NMIP6Config *ip6_config);
+NMPacrunnerConfId *nm_pacrunner_manager_add (NMPacrunnerManager *self,
+                                             NMProxyConfig *proxy_config,
+                                             const char *iface,
+                                             NMIP4Config *ip4_config,
+                                             NMIP6Config *ip6_config);
 
-void nm_pacrunner_manager_remove (NMPacrunnerManager *self,
-                                  NMPacrunnerCallId *call_id);
+void nm_pacrunner_manager_remove (NMPacrunnerConfId *conf_id);
 
-gboolean nm_pacrunner_manager_remove_clear (NMPacrunnerManager *self,
-                                            NMPacrunnerCallId **p_call_id);
+gboolean nm_pacrunner_manager_remove_clear (NMPacrunnerConfId **p_conf_id);
 
 #endif /* __NETWORKMANAGER_PACRUNNER_MANAGER_H__ */
