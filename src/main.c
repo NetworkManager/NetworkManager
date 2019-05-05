@@ -418,13 +418,12 @@ main (int argc, char *argv[])
 #endif
 	             );
 
-	/* Set up platform interaction layer */
+	if (!_dbus_manager_init (config))
+		goto done_no_manager;
+
 	nm_linux_platform_setup ();
 
 	NM_UTILS_KEEP_ALIVE (config, nm_netns_get (), "NMConfig-depends-on-NMNetns");
-
-	if (!_dbus_manager_init (config))
-		goto done_no_manager;
 
 	nm_auth_manager_setup (nm_config_data_get_value_boolean (nm_config_get_data_orig (config),
 	                                                         NM_CONFIG_KEYFILE_GROUP_MAIN,
