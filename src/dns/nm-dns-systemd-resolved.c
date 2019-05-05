@@ -527,7 +527,7 @@ nm_dns_systemd_resolved_init (NMDnsSystemdResolved *self)
 
 	c_list_init (&priv->request_queue_lst_head);
 
-	priv->dbus_connection = nm_g_object_ref (nm_dbus_manager_get_dbus_connection (nm_dbus_manager_get ()));
+	priv->dbus_connection = nm_g_object_ref (NM_MAIN_DBUS_CONNECTION_GET);
 	if (!priv->dbus_connection) {
 		_LOGD ("no D-Bus connection");
 		return;

@@ -863,7 +863,7 @@ nm_connectivity_check_start (NMConnectivity *self,
 		if (has_systemd_resolved) {
 			GDBusConnection *dbus_connection;
 
-			dbus_connection = nm_dbus_manager_get_dbus_connection (nm_dbus_manager_get ());
+			dbus_connection = NM_MAIN_DBUS_CONNECTION_GET;
 			if (!dbus_connection) {
 				/* we have no D-Bus connection? That might happen in configure and quit mode.
 				 *
