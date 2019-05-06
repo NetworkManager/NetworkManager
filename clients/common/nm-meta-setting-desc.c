@@ -657,7 +657,7 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, const char *value, GError **error
 
 #define ARGS_COMPLETE_FCN \
-	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, const NMMetaOperationContext *operation_context, const char *text, char ***out_to_free
+	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, const NMMetaOperationContext *operation_context, const char *text, gboolean *out_complete_filename, char ***out_to_free
 
 #define ARGS_VALUES_FCN \
 	const NMMetaPropertyInfo *property_info, char ***out_to_free
@@ -2216,8 +2216,7 @@ _get_fcn_cert_8021x (ARGS_GET_FCN)
 
 	switch (vtable->scheme_func (s_8021X)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		if (   vtable->is_secret
-		    && !NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
+		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
 			return _get_text_hidden (get_type);
 		str = bytes_to_string (vtable->blob_func (s_8021X));
 		break;
@@ -2255,16 +2254,25 @@ _set_fcn_cert_8021x (ARGS_SET_FCN)
 	vtable = &nm_setting_8021x_scheme_vtable[property_info->property_typ_data->subtype.cert_8021x.scheme_type];
 
 	if (vtable->is_secret) {
-		gs_free char *path = NULL;
 		nm_auto_free_secret char *password_free = NULL;
-		char *password;
+		gs_free const char **strv = NULL;
+		const char *password;
+		const char *path;
+		gsize len;
 
-		path = g_strdup (value);
-		password = path + strcspn (path, " \t");
-		if (password[0] != '\0') {
-			password[0] = '\0';
-			while (nm_utils_is_separator (password[0]))
-				password++;
+		strv = nm_utils_escaped_tokens_split (value, NM_ASCII_SPACES);
+		len = NM_PTRARRAY_LEN (strv);
+		if (len > 2) {
+			g_set_error_literal (error,
+			                     NM_UTILS_ERROR,
+			                     NM_UTILS_ERROR_INVALID_ARGUMENT,
+			                     _("too many arguments. Please only specify a private key file and optionally a password"));
+			return FALSE;
+		}
+
+		path = len > 0 ? strv[0] : NULL;
+		if (len == 2) {
+			password = strv[1];
 		} else {
 			password_free = g_strdup (vtable->passwd_func (NM_SETTING_802_1X (setting)));
 			password = password_free;
@@ -2283,6 +2291,26 @@ _set_fcn_cert_8021x (ARGS_SET_FCN)
 		                              NULL,
 		                              error);
 	}
+}
+
+static const char *const*
+_complete_fcn_cert_8021x (ARGS_COMPLETE_FCN)
+{
+	const NMSetting8021xSchemeVtable *vtable;
+
+	vtable = &nm_setting_8021x_scheme_vtable[property_info->property_typ_data->subtype.cert_8021x.scheme_type];
+
+	if (vtable->is_secret) {
+		gs_free const char **strv = NULL;
+
+		strv = nm_utils_escaped_tokens_split (text, NM_ASCII_SPACES);
+		/* don't try to complete the password */
+		if (NM_PTRARRAY_LEN (strv) > 1)
+			return NULL;
+	}
+
+	NM_SET_OUT (out_complete_filename, TRUE);
+	return NULL;
 }
 
 static gconstpointer
@@ -4428,6 +4456,7 @@ static const NMMetaPropertyType _pt_dcb = {
 static const NMMetaPropertyType _pt_cert_8021x = {
 	.get_fcn =                      _get_fcn_cert_8021x,
 	.set_fcn =                      _set_fcn_cert_8021x,
+	.complete_fcn =                 _complete_fcn_cert_8021x,
 };
 
 static const NMMetaPropertyType _pt_ethtool = {
@@ -8122,6 +8151,7 @@ _meta_type_property_info_complete_fcn (const NMMetaAbstractInfo *abstract_info,
                                        gpointer environment_user_data,
                                        const NMMetaOperationContext *operation_context,
                                        const char *text,
+                                       gboolean *out_complete_filename,
                                        char ***out_to_free)
 {
 	const NMMetaPropertyInfo *info = (const NMMetaPropertyInfo *) abstract_info;
@@ -8134,6 +8164,7 @@ _meta_type_property_info_complete_fcn (const NMMetaAbstractInfo *abstract_info,
 		                                          environment_user_data,
 		                                          operation_context,
 		                                          text,
+		                                          out_complete_filename,
 		                                          out_to_free);
 	}
 

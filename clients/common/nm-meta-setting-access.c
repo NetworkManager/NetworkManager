@@ -273,6 +273,7 @@ nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abstract_info,
                                 gpointer environment_user_data,
                                 const NMMetaOperationContext *operation_context,
                                 const char *text,
+                                gboolean *out_complete_filename,
                                 char ***out_to_free)
 {
 	const char *const*values;
@@ -292,6 +293,7 @@ nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abstract_info,
 	                                                 environment_user_data,
 	                                                 operation_context,
 	                                                 text,
+	                                                 out_complete_filename,
 	                                                 out_to_free);
 
 	nm_assert (!*out_to_free || values == (const char *const*) *out_to_free);
