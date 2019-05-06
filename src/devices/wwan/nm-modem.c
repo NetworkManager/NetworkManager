@@ -53,6 +53,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMModem,
 	PROP_IP_TYPES,
 	PROP_SIM_OPERATOR_ID,
 	PROP_OPERATOR_CODE,
+	PROP_APN,
 );
 
 enum {
@@ -92,6 +93,7 @@ typedef struct _NMModemPrivate {
 	NMModemIPType ip_types;
 	char *sim_operator_id;
 	char *operator_code;
+	char *apn;
 
 	NMPPPManager *ppp_manager;
 
@@ -442,6 +444,12 @@ const char *
 nm_modem_get_operator_code (NMModem *self)
 {
 	return NM_MODEM_GET_PRIVATE (self)->operator_code;
+}
+
+const char *
+nm_modem_get_apn (NMModem *self)
+{
+	return NM_MODEM_GET_PRIVATE (self)->apn;
 }
 
 /*****************************************************************************/
@@ -1597,6 +1605,18 @@ _nm_modem_set_operator_code (NMModem *self, const char *operator_code)
 	}
 }
 
+void
+_nm_modem_set_apn (NMModem *self, const char *apn)
+{
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+
+	if (g_strcmp0 (priv->apn, apn) != 0) {
+		g_free (priv->apn);
+		priv->apn = g_strdup (apn);
+		_notify (self, PROP_APN);
+	}
+}
+
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
@@ -1637,6 +1657,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_OPERATOR_CODE:
 		g_value_set_string (value, priv->operator_code);
+		break;
+	case PROP_APN:
+		g_value_set_string (value, priv->apn);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1692,6 +1715,9 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_OPERATOR_CODE:
 		_nm_modem_set_operator_code (NM_MODEM (object), g_value_get_string (value));
+		break;
+	case PROP_APN:
+		_nm_modem_set_apn (NM_MODEM (object), g_value_get_string (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1755,6 +1781,7 @@ finalize (GObject *object)
 	g_free (priv->sim_id);
 	g_free (priv->sim_operator_id);
 	g_free (priv->operator_code);
+	g_free (priv->apn);
 
 	G_OBJECT_CLASS (nm_modem_parent_class)->finalize (object);
 }
@@ -1841,6 +1868,13 @@ nm_modem_class_init (NMModemClass *klass)
 	obj_properties[PROP_OPERATOR_CODE] =
 	     g_param_spec_string (NM_MODEM_OPERATOR_CODE, "", "",
 	                          NULL,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_APN] =
+	     g_param_spec_string (NM_MODEM_APN, "", "",
+	                          NULL,
+	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);

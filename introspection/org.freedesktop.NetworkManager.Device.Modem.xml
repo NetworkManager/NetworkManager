@@ -50,6 +50,15 @@
     <property name="OperatorCode" type="s" access="read" />
 
     <!--
+        Apn:
+
+        The access point name the modem is connected to. Blank if disconnected.
+
+        Since: 1.20
+    -->
+    <property name="Apn" type="s" access="read" />
+
+    <!--
         PropertiesChanged:
         @properties: A dictionary mapping property names to variant boxed values
 
