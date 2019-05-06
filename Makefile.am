@@ -791,21 +791,25 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-version.h \
 	libnm-core/nm-vpn-dbus-interface.h \
 	libnm-core/nm-vpn-editor-plugin.h \
-	libnm-core/nm-vpn-plugin-info.h
+	libnm-core/nm-vpn-plugin-info.h \
+	$(NULL)
 libnm_core_lib_h_pub_mkenums = \
-	libnm-core/nm-core-enum-types.h
+	libnm-core/nm-core-enum-types.h \
+	$(NULL)
 libnm_core_lib_h_priv = \
 	shared/nm-meta-setting.h \
-	libnm-core/nm-crypto.h \
-	libnm-core/nm-crypto-impl.h \
 	libnm-core/nm-connection-private.h \
 	libnm-core/nm-core-internal.h \
 	libnm-core/nm-core-types-internal.h \
+	libnm-core/nm-crypto-impl.h \
+	libnm-core/nm-crypto.h \
 	libnm-core/nm-keyfile-internal.h \
 	libnm-core/nm-keyfile-utils.h \
 	libnm-core/nm-property-compare.h \
 	libnm-core/nm-setting-private.h \
-	libnm-core/nm-utils-private.h
+	libnm-core/nm-team-utils.h \
+	libnm-core/nm-utils-private.h \
+	$(NULL)
 libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-6lowpan.c \
 	libnm-core/nm-setting-8021x.c \
@@ -853,22 +857,25 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-wireguard.c \
 	libnm-core/nm-setting-wireless-security.c \
 	libnm-core/nm-setting-wireless.c \
-	libnm-core/nm-setting-wpan.c
+	libnm-core/nm-setting-wpan.c \
+	$(NULL)
 libnm_core_lib_c_real = \
 	$(libnm_core_lib_c_settings_real) \
 	shared/nm-meta-setting.c \
-	libnm-core/nm-crypto.c \
 	libnm-core/nm-connection.c \
+	libnm-core/nm-crypto.c \
 	libnm-core/nm-dbus-utils.c \
 	libnm-core/nm-errors.c \
-	libnm-core/nm-keyfile.c \
 	libnm-core/nm-keyfile-utils.c \
+	libnm-core/nm-keyfile.c \
 	libnm-core/nm-property-compare.c \
 	libnm-core/nm-setting.c \
 	libnm-core/nm-simple-connection.c \
+	libnm-core/nm-team-utils.c \
 	libnm-core/nm-utils.c \
 	libnm-core/nm-vpn-editor-plugin.c \
-	libnm-core/nm-vpn-plugin-info.c
+	libnm-core/nm-vpn-plugin-info.c \
+	$(NULL)
 
 if WITH_JSON_VALIDATION
 libnm_core_lib_h_priv += \
