@@ -8939,11 +8939,15 @@ test_read_team_master_invalid (gconstpointer user_data)
 {
 	const char *const PATH_NAME = user_data;
 	gs_free_error GError *error = NULL;
+	gs_unref_object NMConnection *connection = NULL;
 
-	_connection_from_file_fail (PATH_NAME, NULL, TYPE_ETHERNET, &error);
+	if (WITH_JSON_VALIDATION) {
+		_connection_from_file_fail (PATH_NAME, NULL, TYPE_ETHERNET, &error);
 
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
-	g_assert (strstr (error->message, "JSON"));
+		g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+		g_assert (strstr (error->message, _("invalid json")));
+	} else
+		connection = _connection_from_file (PATH_NAME, NULL, TYPE_ETHERNET, NULL);
 }
 
 static void

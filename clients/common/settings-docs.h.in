@@ -310,7 +310,7 @@
 #define DESCRIBE_DOC_NM_SETTING_TEAM_MCAST_REJOIN_INTERVAL N_("Corresponds to the teamd mcast_rejoin.interval.")
 #define DESCRIBE_DOC_NM_SETTING_TEAM_NOTIFY_PEERS_COUNT N_("Corresponds to the teamd notify_peers.count.")
 #define DESCRIBE_DOC_NM_SETTING_TEAM_NOTIFY_PEERS_INTERVAL N_("Corresponds to the teamd notify_peers.interval.")
-#define DESCRIBE_DOC_NM_SETTING_TEAM_RUNNER N_("Corresponds to the teamd runner.name. Permitted values are: \"roundrobin\", \"broadcast\", \"activebackup\", \"loadbalance\", \"lacp\", \"random\". When setting the runner, all the properties specific to the runner will be reset to the default value; all the properties specific to other runners will be set to an empty value (or if not possible to a default value).")
+#define DESCRIBE_DOC_NM_SETTING_TEAM_RUNNER N_("Corresponds to the teamd runner.name. Permitted values are: \"roundrobin\", \"broadcast\", \"activebackup\", \"loadbalance\", \"lacp\", \"random\".")
 #define DESCRIBE_DOC_NM_SETTING_TEAM_RUNNER_ACTIVE N_("Corresponds to the teamd runner.active.")
 #define DESCRIBE_DOC_NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY N_("Corresponds to the teamd runner.agg_select_policy.")
 #define DESCRIBE_DOC_NM_SETTING_TEAM_RUNNER_FAST_RATE N_("Corresponds to the teamd runner.fast_rate.")

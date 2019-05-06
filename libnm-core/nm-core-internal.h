@@ -547,19 +547,6 @@ gboolean nm_team_link_watchers_equal (const GPtrArray *a,
                                       const GPtrArray *b,
                                       gboolean ignore_order);
 
-gboolean _nm_utils_team_config_equal (const char *conf1, const char *conf2, gboolean port);
-GValue *_nm_utils_team_config_get (const char *conf,
-                                   const char *key,
-                                   const char *key2,
-                                   const char *key3,
-                                   gboolean port_config);
-
-gboolean _nm_utils_team_config_set (char **conf,
-                                    const char *key,
-                                    const char *key2,
-                                    const char *key3,
-                                    const GValue *value);
-
 /*****************************************************************************/
 
 guint32 _nm_utils_parse_tc_handle                (const char *str,

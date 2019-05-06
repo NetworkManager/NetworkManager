@@ -1378,9 +1378,64 @@ test_team_port_full_config (void)
 static void
 _check_team_setting (NMSetting *setting)
 {
+	gs_unref_object NMSetting *setting2 = NULL;
+	gs_unref_object NMSetting *setting_clone = NULL;
 	gboolean is_port = NM_IS_SETTING_TEAM_PORT (setting);
+	gs_unref_variant GVariant *variant2 = NULL;
+	gs_unref_variant GVariant *variant3 = NULL;
 
 	g_assert (NM_IS_SETTING_TEAM (setting) || is_port);
+
+	setting_clone = nm_setting_duplicate (setting);
+
+	if (!is_port) {
+		if (nm_setting_team_get_runner (NM_SETTING_TEAM (setting)) == NULL) {
+			/* such a setting is invalid. We must first coerce it so that it becomes
+			 * valid. */
+			setting = setting_clone;
+			g_object_set (setting,
+			              NM_SETTING_TEAM_RUNNER,
+			              NM_SETTING_TEAM_RUNNER_DEFAULT,
+			              NULL);
+		}
+	}
+
+	setting2 = g_object_new (G_OBJECT_TYPE (setting),
+	                           is_port
+	                         ? NM_SETTING_TEAM_PORT_CONFIG
+	                         : NM_SETTING_TEAM_CONFIG,
+	                           is_port
+	                         ? nm_setting_team_port_get_config (NM_SETTING_TEAM_PORT (setting))
+	                         : nm_setting_team_get_config (NM_SETTING_TEAM (setting)),
+	                         NULL);
+
+	if (WITH_JSON_VALIDATION)
+		nmtst_assert_setting_is_equal (setting, setting2, NM_SETTING_COMPARE_FLAG_EXACT);
+
+	g_clear_object (&setting2);
+
+	nmtst_assert_setting_dbus_roundtrip (setting);
+
+	/* OK, now parse the setting only from the D-Bus variant, but removing the JSON config.
+	 * For that, we have to "drop" the JSON and we do that by resetting the property.
+	 * This causes JSON to be regenerated and it's in a normalized form that will compare
+	 * equal. */
+	setting = setting_clone;
+	if (is_port) {
+		g_object_set (setting,
+		              NM_SETTING_TEAM_PORT_STICKY,
+		              nm_setting_team_port_get_sticky (NM_SETTING_TEAM_PORT (setting)),
+		              NULL);
+	} else {
+		g_object_set (setting,
+		              NM_SETTING_TEAM_RUNNER_SYS_PRIO,
+		              nm_setting_team_get_runner_sys_prio (NM_SETTING_TEAM (setting)),
+		              NULL);
+	}
+	variant2 = _nm_setting_to_dbus (setting, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	variant3 = nm_utils_gvariant_vardict_filter_drop_one (variant2, "config");
+	setting2 = nmtst_assert_setting_dbus_new (G_OBJECT_TYPE (setting), variant3);
+	nmtst_assert_setting_is_equal (setting, setting2, NM_SETTING_COMPARE_FLAG_EXACT);
 }
 
 static void
@@ -1392,11 +1447,6 @@ test_team_setting (void)
 	gs_unref_object NMSetting *setting = NULL;
 	nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher1 = nm_team_link_watcher_new_nsna_ping (1, 3, 4, "bbb", NULL);
 	nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher2 = nm_team_link_watcher_new_arp_ping2 (1, 3, 4, -1, "ccc", "ddd", 0, NULL);
-
-	if (!WITH_JSON_VALIDATION) {
-		g_test_skip ("disabled test without json-validation");
-		return;
-	}
 
 	g_assert (watcher1);
 	g_assert (watcher2);
@@ -1410,7 +1460,6 @@ test_team_setting (void)
 	_check_team_setting (setting);
 
 	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{\"link_watch\": {\"name\": \"ethtool\"}}");
-
 	g_assert_cmpint (nm_setting_team_get_num_link_watchers (NM_SETTING_TEAM (setting)), ==, 1);
 
 	g_object_set (setting,
@@ -1420,19 +1469,36 @@ test_team_setting (void)
 
 	_check_team_setting (setting);
 	g_assert_cmpint (nm_setting_team_get_num_link_watchers (NM_SETTING_TEAM (setting)), ==, 1);
-	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{\"link_watch\": {\"name\": \"ethtool\"}, \"runner\": {\"sys_prio\": 10}}");
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": { \"name\": \"ethtool\"} }");
 
 	nm_setting_team_remove_link_watcher (NM_SETTING_TEAM (setting), 0);
+
 	_check_team_setting (setting);
-	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{\"link_watch\": {\"name\": \"ethtool\"}, \"runner\": {\"sys_prio\": 10}}");
+	g_assert_cmpint (nm_setting_team_get_num_link_watchers (NM_SETTING_TEAM (setting)), ==, 0);
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 } }");
 
 	nm_setting_team_add_link_watcher (NM_SETTING_TEAM (setting), watcher1);
 	_check_team_setting (setting);
-	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{\"link_watch\": {\"name\": \"ethtool\"}, \"runner\": {\"sys_prio\": 10}}");
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": { \"name\": \"nsna_ping\", \"target_host\": \"bbb\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4} }");
 
 	nm_setting_team_add_link_watcher (NM_SETTING_TEAM (setting), watcher2);
 	_check_team_setting (setting);
-	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{\"link_watch\": {\"name\": \"ethtool\"}, \"runner\": {\"sys_prio\": 10}}");
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": [ { \"name\": \"nsna_ping\", \"target_host\": \"bbb\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4}, { \"name\": \"arp_ping\", \"target_host\": \"ccc\", \"source_host\": \"ddd\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4} ] }");
+
+	nm_setting_team_remove_link_watcher (NM_SETTING_TEAM (setting), 0);
+	nm_setting_team_remove_link_watcher (NM_SETTING_TEAM (setting), 0);
+	g_object_set (setting,
+	              NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL,
+	              (int) 5,
+	              NULL);
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"tx_balancer\": { \"balancing_interval\": 5 }, \"sys_prio\": 10 } }");
+
+	g_object_set (setting,
+	              NM_SETTING_TEAM_RUNNER,
+	              NULL,
+	              NULL);
+	_check_team_setting (setting);
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"tx_balancer\": { \"balancing_interval\": 5 }, \"sys_prio\": 10 } }");
 }
 
 /*****************************************************************************/
