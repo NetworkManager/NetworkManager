@@ -10,6 +10,7 @@ global:
 	nm_modem_get_capabilities;
 	nm_modem_get_configured_mtu;
 	nm_modem_get_control_port;
+	nm_modem_get_device_id;
 	nm_modem_get_driver;
 	nm_modem_get_iid;
 	nm_modem_get_path;

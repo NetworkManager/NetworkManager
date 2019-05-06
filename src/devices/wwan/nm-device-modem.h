@@ -34,6 +34,7 @@
 #define NM_DEVICE_MODEM_MODEM "modem"
 #define NM_DEVICE_MODEM_CAPABILITIES "modem-capabilities"
 #define NM_DEVICE_MODEM_CURRENT_CAPABILITIES "current-capabilities"
+#define NM_DEVICE_MODEM_DEVICE_ID            "device-id"
 
 typedef struct _NMDeviceModem NMDeviceModem;
 typedef struct _NMDeviceModemClass NMDeviceModemClass;
