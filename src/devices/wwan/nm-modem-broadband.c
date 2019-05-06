@@ -656,12 +656,12 @@ check_connection_compatible_with_modem (NMModem *_self, NMConnection *connection
 /*****************************************************************************/
 
 static gboolean
-complete_connection (NMModem *_self,
+complete_connection (NMModem *modem,
                      NMConnection *connection,
                      NMConnection *const*existing_connections,
                      GError **error)
 {
-	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
+	NMModemBroadband *self = NM_MODEM_BROADBAND (modem);
 	MMModemCapability modem_caps;
 	NMSettingPpp *s_ppp;
 
@@ -679,6 +679,20 @@ complete_connection (NMModem *_self,
 	}
 
 	if (MODEM_CAPS_3GPP (modem_caps)) {
+		NMSettingGsm *s_gsm;
+
+		s_gsm = nm_connection_get_setting_gsm (connection);
+		if (!s_gsm) {
+			s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
+			nm_connection_add_setting (connection, NM_SETTING (s_gsm));
+		}
+
+		if (!nm_setting_gsm_get_device_id (s_gsm)) {
+			g_object_set (G_OBJECT (s_gsm),
+			              NM_SETTING_GSM_DEVICE_ID, nm_modem_get_device_id (modem),
+			              NULL);
+		}
+
 		nm_utils_complete_generic (NM_PLATFORM_GET,
 		                           connection,
 		                           NM_SETTING_GSM_SETTING_NAME,
