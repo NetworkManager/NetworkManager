@@ -2344,7 +2344,7 @@ device_auth_done_cb (NMAuthChain *chain,
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 
-	permission = nm_auth_chain_get_data (chain, "requested-permission");
+	permission = nm_auth_chain_get_data (chain, "perm");
 	nm_assert (permission);
 	callback = nm_auth_chain_get_data (chain, "callback");
 	nm_assert (callback);
@@ -2420,7 +2420,7 @@ device_auth_request_cb (NMDevice *device,
 	nm_auth_chain_set_data (chain, "device", g_object_ref (device), g_object_unref);
 	nm_auth_chain_set_data (chain, "callback", callback, NULL);
 	nm_auth_chain_set_data (chain, "user-data", user_data, NULL);
-	nm_auth_chain_set_data (chain, "requested-permission", permission_dup /* transfer ownership */, g_free);
+	nm_auth_chain_set_data (chain, "perm", permission_dup /* transfer ownership */, g_free);
 	nm_auth_chain_add_call_unsafe (chain, permission_dup, allow_interaction);
 
 done:
