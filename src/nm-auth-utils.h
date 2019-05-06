@@ -44,10 +44,13 @@ gpointer nm_auth_chain_get_data (NMAuthChain *chain, const char *tag);
 
 gpointer nm_auth_chain_steal_data (NMAuthChain *chain, const char *tag);
 
-void nm_auth_chain_set_data (NMAuthChain *chain,
-                             const char *tag,
-                             gpointer data,
-                             GDestroyNotify data_destroy);
+void nm_auth_chain_set_data_unsafe (NMAuthChain *chain,
+                                    const char *tag,
+                                    gpointer data,
+                                    GDestroyNotify data_destroy);
+
+#define nm_auth_chain_set_data(chain, tag, data, data_destroy) \
+	nm_auth_chain_set_data_unsafe ((chain), ""tag"", (data), (data_destroy))
 
 NMAuthCallResult nm_auth_chain_get_result (NMAuthChain *chain,
                                            const char *permission);

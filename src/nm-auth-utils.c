@@ -115,29 +115,10 @@ _find_auth_call (NMAuthChain *self, const char *permission)
 
 typedef struct {
 	CList data_lst;
+	const char *tag;
 	gpointer data;
 	GDestroyNotify destroy;
-	char tag[];
 } ChainData;
-
-static ChainData *
-chain_data_new_stale (const char *tag,
-                      gpointer data,
-                      GDestroyNotify destroy)
-{
-	ChainData *chain_data;
-	gsize l_p_1;
-
-	nm_assert (tag);
-	nm_assert (data);
-
-	l_p_1 = strlen (tag) + 1;
-	chain_data = g_malloc (sizeof (ChainData) + l_p_1);
-	chain_data->data = data;
-	chain_data->destroy = destroy;
-	memcpy (&chain_data->tag[0], tag, l_p_1);
-	return chain_data;
-}
 
 static void
 chain_data_free (ChainData *chain_data)
@@ -145,7 +126,7 @@ chain_data_free (ChainData *chain_data)
 	c_list_unlink_stale (&chain_data->data_lst);
 	if (chain_data->destroy)
 		chain_data->destroy (chain_data->data);
-	g_free (chain_data);
+	g_slice_free (ChainData, chain_data);
 }
 
 static ChainData *
@@ -204,11 +185,25 @@ nm_auth_chain_steal_data (NMAuthChain *self, const char *tag)
 	return value;
 }
 
+/**
+ * nm_auth_chain_set_data_unsafe:
+ * @self: the #NMAuthChain
+ * @tag: the tag for referencing the attached data.
+ * @data: the data to attach. If %NULL, this call has no effect
+ *   and nothing is attached.
+ * @data_destroy: (allow-none): the destroy function for the data pointer.
+ *
+ * @tag string is not cloned and must outlife @self. That is why
+ * the function is "unsafe". Use nm_auth_chain_set_data() with a C literal
+ * instead.
+ *
+ * It is a bug to add the same tag more than once.
+ */
 void
-nm_auth_chain_set_data (NMAuthChain *self,
-                        const char *tag,
-                        gpointer data,
-                        GDestroyNotify data_destroy)
+nm_auth_chain_set_data_unsafe (NMAuthChain *self,
+                               const char *tag,
+                               gpointer data,
+                               GDestroyNotify data_destroy)
 {
 	ChainData *chain_data;
 
@@ -232,7 +227,12 @@ nm_auth_chain_set_data (NMAuthChain *self,
 		return;
 	}
 
-	chain_data = chain_data_new_stale (tag, data, data_destroy);
+	chain_data = g_slice_new (ChainData);
+	*chain_data = (ChainData) {
+		.tag     = tag,
+		.data    = data,
+		.destroy = data_destroy,
+	};
 
 	/* we assert that no duplicate tags are added. But still, add the new
 	 * element to the front, so that it would shadow the duplicate element
