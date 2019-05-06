@@ -15,6 +15,7 @@ global:
 	nm_modem_get_iid;
 	nm_modem_get_path;
 	nm_modem_get_ip_ifindex;
+	nm_modem_get_operator_code;
 	nm_modem_get_secrets;
 	nm_modem_get_state;
 	nm_modem_get_type;

@@ -40,6 +40,16 @@
     <property name="DeviceId" type="s" access="read" />
 
     <!--
+        OperatorCode:
+
+        The MCC and MNC (concatenated) of the network the modem is connected to.
+        Blank if disconnected or not a 3GPP modem.
+
+        Since: 1.20
+    -->
+    <property name="OperatorCode" type="s" access="read" />
+
+    <!--
         PropertiesChanged:
         @properties: A dictionary mapping property names to variant boxed values
 
