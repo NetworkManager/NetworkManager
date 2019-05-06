@@ -38,6 +38,7 @@ typedef struct {
 	NMDeviceModemCapabilities current_caps;
 	char *device_id;
 	char *operator_code;
+	char *apn;
 } NMDeviceModemPrivate;
 
 enum {
@@ -46,6 +47,7 @@ enum {
 	PROP_CURRENT_CAPS,
 	PROP_DEVICE_ID,
 	PROP_OPERATOR_CODE,
+	PROP_APN,
 	LAST_PROP
 };
 
@@ -122,6 +124,24 @@ nm_device_modem_get_operator_code (NMDeviceModem *self)
 	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NULL);
 
 	return NM_DEVICE_MODEM_GET_PRIVATE (self)->operator_code;
+}
+
+/**
+ * nm_device_modem_get_apn:
+ * @self: a #NMDeviceModem
+ *
+ * The access point name the modem is connected to.
+ *
+ * Returns: the APN name or %NULL if disconnected
+ *
+ * Since: 1.20
+ **/
+const char *
+nm_device_modem_get_apn (NMDeviceModem *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NULL);
+
+	return NM_DEVICE_MODEM_GET_PRIVATE (self)->apn;
 }
 
 static const char *
@@ -208,6 +228,7 @@ init_dbus (NMObject *object)
 		{ NM_DEVICE_MODEM_CURRENT_CAPABILITIES, &priv->current_caps },
 		{ NM_DEVICE_MODEM_DEVICE_ID,            &priv->device_id },
 		{ NM_DEVICE_MODEM_OPERATOR_CODE,        &priv->operator_code },
+		{ NM_DEVICE_MODEM_APN,                  &priv->apn },
 		{ NULL },
 	};
 
@@ -225,6 +246,7 @@ finalize (GObject *object)
 
 	g_free (priv->device_id);
 	g_free (priv->operator_code);
+	g_free (priv->apn);
 
 	G_OBJECT_CLASS (nm_device_modem_parent_class)->finalize (object);
 }
@@ -249,6 +271,9 @@ get_property (GObject *object,
 		break;
 	case PROP_OPERATOR_CODE:
 		g_value_set_string (value, nm_device_modem_get_operator_code (self));
+		break;
+	case PROP_APN:
+		g_value_set_string (value, nm_device_modem_get_apn (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -329,4 +354,15 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
+	/**
+	 * NMDeviceModem:apn:
+	 *
+	 * Since: 1.20
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_CURRENT_CAPS,
+		 g_param_spec_string (NM_DEVICE_MODEM_APN, "", "",
+		                     NULL,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 }

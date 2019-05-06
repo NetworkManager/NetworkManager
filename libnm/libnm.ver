@@ -1607,6 +1607,7 @@ global:
 
 libnm_1_20_0 {
 global:
+	nm_device_modem_get_apn;
 	nm_device_modem_get_device_id;
 	nm_device_modem_get_operator_code;
 } libnm_1_18_0;
