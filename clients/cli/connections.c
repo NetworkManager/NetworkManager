@@ -3785,6 +3785,7 @@ _meta_abstract_complete (const NMMetaAbstractInfo *abstract_info, const char *te
 	                                         nmc_meta_environment_arg,
 	                                         &ctx,
 	                                         text,
+	                                         NULL,
 	                                         &values_to_free);
 	if (values)
 		return values_to_free ?: g_strdupv ((char **) values);
@@ -4525,11 +4526,12 @@ run_rl_generator (rl_compentry_func_t *generator_func, const char *prefix)
 }
 
 static gboolean
-complete_option (const NMMetaAbstractInfo *abstract_info, const char *prefix, NMConnection *context_connection)
+complete_option (NmCli *nmc, const NMMetaAbstractInfo *abstract_info, const char *prefix, NMConnection *context_connection)
 {
 	const OptionInfo *candidate;
 	const char *const*values;
 	gs_strfreev char **values_to_free = NULL;
+	gboolean complete_filename = FALSE;
 	const NMMetaOperationContext ctx = {
 		.connection = context_connection,
 	};
@@ -4539,7 +4541,12 @@ complete_option (const NMMetaAbstractInfo *abstract_info, const char *prefix, NM
 	                                         nmc_meta_environment_arg,
 	                                         &ctx,
 	                                         prefix,
+	                                         &complete_filename,
 	                                         &values_to_free);
+	if (complete_filename) {
+		nmc->return_value = NMC_RESULT_COMPLETE_FILE;
+		return TRUE;
+	}
 	if (values) {
 		for (; values[0]; values++)
 			g_print ("%s\n", values[0]);
@@ -4556,19 +4563,13 @@ complete_option (const NMMetaAbstractInfo *abstract_info, const char *prefix, NM
 }
 
 static void
-complete_property (const char *setting_name, const char *property, const char *prefix, NMConnection *connection)
+complete_property (NmCli *nmc, const char *setting_name, const char *property, const char *prefix, NMConnection *connection)
 {
 	const NMMetaPropertyInfo *property_info;
 
 	property_info = nm_meta_property_info_find_by_name (setting_name, property);
-	if (property_info) {
-		if (complete_option ((const NMMetaAbstractInfo *) property_info, prefix, connection))
-			return;
-	}
-
-	if (   strcmp (setting_name, NM_SETTING_BLUETOOTH_SETTING_NAME) == 0
-	         && strcmp (property, NM_SETTING_BLUETOOTH_TYPE) == 0)
-		run_rl_generator (gen_func_bt_type, prefix);
+	if (property_info)
+		complete_option (nmc, (const NMMetaAbstractInfo *) property_info, prefix, connection);
 }
 
 /*****************************************************************************/
@@ -4658,8 +4659,10 @@ nmc_read_connection_properties (NmCli *nmc,
 			if (!get_value (&value, argc, argv, option, error))
 				return FALSE;
 
-			if (!*argc && nmc->complete)
-				complete_property (setting, strv[1], value ?: "", connection);
+			if (!*argc && nmc->complete) {
+				complete_property (nmc, setting, strv[1], value ?: "", connection);
+				return TRUE;
+			}
 
 			if (!set_property (nmc->client, connection, setting_name, strv[1], value, modifier, error))
 				return FALSE;
@@ -4740,7 +4743,7 @@ nmc_read_connection_properties (NmCli *nmc,
 				return FALSE;
 
 			if (!*argc && nmc->complete)
-				complete_option (chosen, value ?: "", connection);
+				complete_option (nmc, chosen, value ?: "", connection);
 
 			if (!set_option (nmc, connection, chosen, value, error))
 				return FALSE;
@@ -8867,7 +8870,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 			if (   argc == 1
 			    && nmc->complete) {
 				nmc_complete_strings (*argv, "wireguard");
-				complete_option ((const NMMetaAbstractInfo *) nm_meta_property_info_vpn_service_type,
+				complete_option (nmc, (const NMMetaAbstractInfo *) nm_meta_property_info_vpn_service_type,
 				                 *argv,
 				                 NULL);
 			}

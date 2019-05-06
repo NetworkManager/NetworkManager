@@ -69,6 +69,7 @@ const char *const*nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abst
                                                   gpointer environment_user_data,
                                                   const NMMetaOperationContext *operation_context,
                                                   const char *text,
+                                                  gboolean *out_complete_filename,
                                                   char ***out_to_free);
 
 /*****************************************************************************/
