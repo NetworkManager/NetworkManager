@@ -40,6 +40,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_MODEM_MODEM_CAPABILITIES   "modem-capabilities"
 #define NM_DEVICE_MODEM_CURRENT_CAPABILITIES "current-capabilities"
 #define NM_DEVICE_MODEM_DEVICE_ID            "device-id"
+#define NM_DEVICE_MODEM_OPERATOR_CODE        "operator-code"
 
 /**
  * NMDeviceModem:
@@ -62,6 +63,9 @@ NMDeviceModemCapabilities nm_device_modem_get_current_capabilities (NMDeviceMode
 
 NM_AVAILABLE_IN_1_20
 const char *nm_device_modem_get_device_id (NMDeviceModem *self);
+
+NM_AVAILABLE_IN_1_20
+const char *nm_device_modem_get_operator_code (NMDeviceModem *self);
 
 G_END_DECLS
 

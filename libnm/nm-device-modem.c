@@ -37,6 +37,7 @@ typedef struct {
 	NMDeviceModemCapabilities caps;
 	NMDeviceModemCapabilities current_caps;
 	char *device_id;
+	char *operator_code;
 } NMDeviceModemPrivate;
 
 enum {
@@ -44,6 +45,7 @@ enum {
 	PROP_MODEM_CAPS,
 	PROP_CURRENT_CAPS,
 	PROP_DEVICE_ID,
+	PROP_OPERATOR_CODE,
 	LAST_PROP
 };
 
@@ -102,6 +104,24 @@ nm_device_modem_get_device_id (NMDeviceModem *self)
 	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NULL);
 
 	return NM_DEVICE_MODEM_GET_PRIVATE (self)->device_id;
+}
+
+/**
+ * nm_device_modem_get_operator_code:
+ * @self: a #NMDeviceModem
+ *
+ * The MCC and MNC (concatenated) of the network the modem is connected to.
+ *
+ * Returns: the operator code or %NULL if disconnected or not a 3GPP modem.
+ *
+ * Since: 1.20
+ **/
+const char *
+nm_device_modem_get_operator_code (NMDeviceModem *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NULL);
+
+	return NM_DEVICE_MODEM_GET_PRIVATE (self)->operator_code;
 }
 
 static const char *
@@ -187,6 +207,7 @@ init_dbus (NMObject *object)
 		{ NM_DEVICE_MODEM_MODEM_CAPABILITIES,   &priv->caps },
 		{ NM_DEVICE_MODEM_CURRENT_CAPABILITIES, &priv->current_caps },
 		{ NM_DEVICE_MODEM_DEVICE_ID,            &priv->device_id },
+		{ NM_DEVICE_MODEM_OPERATOR_CODE,        &priv->operator_code },
 		{ NULL },
 	};
 
@@ -203,6 +224,7 @@ finalize (GObject *object)
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (object);
 
 	g_free (priv->device_id);
+	g_free (priv->operator_code);
 
 	G_OBJECT_CLASS (nm_device_modem_parent_class)->finalize (object);
 }
@@ -224,6 +246,9 @@ get_property (GObject *object,
 		break;
 	case PROP_DEVICE_ID:
 		g_value_set_string (value, nm_device_modem_get_device_id (self));
+		break;
+	case PROP_OPERATOR_CODE:
+		g_value_set_string (value, nm_device_modem_get_operator_code (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -288,6 +313,18 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	g_object_class_install_property
 		(object_class, PROP_CURRENT_CAPS,
 		 g_param_spec_string (NM_DEVICE_MODEM_DEVICE_ID, "", "",
+		                     NULL,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMDeviceModem:operator-code:
+	 *
+	 * Since: 1.20
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_CURRENT_CAPS,
+		 g_param_spec_string (NM_DEVICE_MODEM_OPERATOR_CODE, "", "",
 		                     NULL,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
