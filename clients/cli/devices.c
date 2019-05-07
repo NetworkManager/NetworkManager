@@ -1897,7 +1897,6 @@ create_connect_connection_for_device (AddAndActivateInfo *info)
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, nm_device_get_iface (info->device),
-	              NM_SETTING_CONNECTION_INTERFACE_NAME, nm_device_get_iface (info->device),
 	              NULL);
 
 	nm_client_add_and_activate_connection_async (info->nmc->client,
