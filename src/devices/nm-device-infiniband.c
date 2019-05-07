@@ -161,8 +161,6 @@ complete_connection (NMDevice *device,
                      GError **error)
 {
 	NMSettingInfiniband *s_infiniband;
-	const char *setting_mac;
-	const char *hw_address;
 
 	nm_utils_complete_generic (nm_device_get_platform (device),
 	                           connection,
@@ -179,21 +177,11 @@ complete_connection (NMDevice *device,
 		nm_connection_add_setting (connection, NM_SETTING (s_infiniband));
 	}
 
-	setting_mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-	hw_address = nm_device_get_permanent_hw_address (device);
-	if (setting_mac) {
-		/* Make sure the setting MAC (if any) matches the device's MAC */
-		if (!nm_utils_hwaddr_matches (setting_mac, -1, hw_address, -1)) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("connection does not match device"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_INFINIBAND_SETTING_NAME, NM_SETTING_INFINIBAND_MAC_ADDRESS);
-			return FALSE;
-		}
-	} else {
+	if (!nm_setting_infiniband_get_mac_address (s_infiniband)) {
 		/* Lock the connection to this device by default */
-		g_object_set (G_OBJECT (s_infiniband), NM_SETTING_INFINIBAND_MAC_ADDRESS, hw_address, NULL);
+		g_object_set (G_OBJECT (s_infiniband),
+		              NM_SETTING_INFINIBAND_MAC_ADDRESS, nm_device_get_permanent_hw_address (device),
+		              NULL);
 	}
 
 	if (!nm_setting_infiniband_get_transport_mode (s_infiniband))
