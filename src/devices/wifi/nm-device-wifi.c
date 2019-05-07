@@ -778,13 +778,11 @@ complete_connection (NMDevice *device,
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMSettingWireless *s_wifi;
-	const char *setting_mac;
 	gs_free char *ssid_utf8 = NULL;
 	NMWifiAP *ap;
 	GBytes *ssid = NULL;
 	GBytes *setting_ssid = NULL;
 	gboolean hidden = FALSE;
-	const char *perm_hw_addr;
 	const char *mode;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
@@ -912,22 +910,6 @@ complete_connection (NMDevice *device,
 
 	if (hidden)
 		g_object_set (s_wifi, NM_SETTING_WIRELESS_HIDDEN, TRUE, NULL);
-
-	perm_hw_addr = nm_device_get_permanent_hw_address (device);
-	if (perm_hw_addr) {
-		setting_mac = nm_setting_wireless_get_mac_address (s_wifi);
-		if (setting_mac) {
-			/* Make sure the setting MAC (if any) matches the device's permanent MAC */
-			if (!nm_utils_hwaddr_matches (setting_mac, -1, perm_hw_addr, -1)) {
-				g_set_error_literal (error,
-				                     NM_CONNECTION_ERROR,
-				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-				                     _("connection does not match device"));
-				g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_MAC_ADDRESS);
-				return FALSE;
-			}
-		}
-	}
 
 	return TRUE;
 }
