@@ -3578,7 +3578,7 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 			now_ms = nm_utils_get_monotonic_timestamp_ms ();
 			until_ms = NM_MAX (now_ms + _get_carrier_wait_ms (self), priv->carrier_wait_until_ms);
 			priv->carrier_defer_id = g_timeout_add (until_ms - now_ms, carrier_disconnected_action_cb, self);
-			_LOGD (LOGD_DEVICE, "carrier: link disconnected (deferring action for %ld milli seconds) (id=%u)",
+			_LOGD (LOGD_DEVICE, "carrier: link disconnected (deferring action for %ld milliseconds) (id=%u)",
 			       (long) (until_ms - now_ms), priv->carrier_defer_id);
 		}
 	}
