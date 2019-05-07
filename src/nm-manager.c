@@ -5866,9 +5866,15 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 		 * suspend/resume?
 		 */
 		c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
-			/* FIXME: shouldn't we be unmanaging software devices if !suspending? */
-			if (nm_device_is_software (device))
-				continue;
+			if (nm_device_is_software (device)) {
+				/* If a user disables networking we consider that as an
+				 * indication that also software devices must be disconnected.
+				 * But we don't want to destroy them for external events as
+				 * a system suspend.
+				 */
+				if (suspending)
+					continue;
+			}
 			/* Wake-on-LAN devices will be taken down post-suspend rather than pre- */
 			if (   suspending
 			    && device_is_wake_on_lan (priv->platform, device)) {
@@ -5923,10 +5929,10 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 		c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 			guint i;
 
-			if (nm_device_is_software (device)) {
-				/* We do not manage/unmanage software devices but
-				 * their dhcp leases could have gone stale so we need
-				 * to renew them */
+			if (   nm_device_is_software (device)
+			    && !nm_device_get_unmanaged_flags (device, NM_UNMANAGED_SLEEPING)) {
+				/* DHCP leases of software devices could have gone stale
+				 * so we need to renew them. */
 				nm_device_update_dynamic_ip_setup (device);
 				continue;
 			}
