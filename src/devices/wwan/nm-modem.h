@@ -130,6 +130,7 @@ typedef struct {
 	                                                    GError **error);
 
 	gboolean (*complete_connection)            (NMModem *modem,
+	                                            const char *iface,
 	                                            NMConnection *connection,
 	                                            NMConnection *const*existing_connections,
 	                                            GError **error);
@@ -194,6 +195,7 @@ gboolean nm_modem_check_connection_compatible (NMModem *self,
                                                GError **error);
 
 gboolean nm_modem_complete_connection (NMModem *self,
+                                       const char *iface,
                                        NMConnection *connection,
                                        NMConnection *const*existing_connections,
                                        GError **error);

@@ -1086,6 +1086,7 @@ nm_modem_check_connection_compatible (NMModem *self, NMConnection *connection, G
 
 gboolean
 nm_modem_complete_connection (NMModem *self,
+                              const char *iface,
                               NMConnection *connection,
                               NMConnection *const*existing_connections,
                               GError **error)
@@ -1100,7 +1101,7 @@ nm_modem_complete_connection (NMModem *self,
 		return FALSE;
 	}
 
-	return klass->complete_connection (self, connection, existing_connections, error);
+	return klass->complete_connection (self, iface, connection, existing_connections, error);
 }
 
 /*****************************************************************************/

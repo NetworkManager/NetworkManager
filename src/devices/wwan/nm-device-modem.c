@@ -499,7 +499,11 @@ complete_connection (NMDevice *device,
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device);
 
-	return nm_modem_complete_connection (priv->modem, connection, existing_connections, error);
+	return nm_modem_complete_connection (priv->modem,
+	                                     nm_device_get_iface (device),
+	                                     connection,
+	                                     existing_connections,
+	                                     error);
 }
 
 static void
