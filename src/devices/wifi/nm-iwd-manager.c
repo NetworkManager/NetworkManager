@@ -900,7 +900,7 @@ nm_iwd_manager_init (NMIwdManager *self)
 	g_signal_connect (priv->manager, NM_MANAGER_DEVICE_ADDED,
 	                  G_CALLBACK (device_added), self);
 
-	priv->settings = g_object_ref (nm_settings_get ());
+	priv->settings = g_object_ref (NM_SETTINGS_GET);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
 	                  G_CALLBACK (connection_removed), self);
 

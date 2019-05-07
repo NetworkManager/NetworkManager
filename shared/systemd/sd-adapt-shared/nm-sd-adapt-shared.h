@@ -21,8 +21,6 @@
 
 #include "nm-default.h"
 
-#include <syslog.h>
-
 #include "nm-glib-aux/nm-logging-fwd.h"
 
 /*****************************************************************************/
@@ -32,32 +30,18 @@
 
 /*****************************************************************************/
 
-static inline NMLogLevel
-_slog_level_to_nm (int slevel)
-{
-	switch (LOG_PRI (slevel)) {
-	case LOG_DEBUG:   return LOGL_DEBUG;
-	case LOG_WARNING: return LOGL_WARN;
-	case LOG_CRIT:
-	case LOG_ERR:     return LOGL_ERR;
-	case LOG_INFO:
-	case LOG_NOTICE:
-	default:          return LOGL_INFO;
-	}
-}
-
 static inline int
 _nm_log_get_max_level_realm (void)
 {
 	/* inline function, to avoid coverity warning about constant expression. */
-	return LOG_DEBUG;
+	return 7 /* LOG_DEBUG */;
 }
 #define log_get_max_level_realm(realm) _nm_log_get_max_level_realm ()
 
 #define log_internal_realm(level, error, file, line, func, format, ...) \
 ({ \
 	const int _nm_e = (error); \
-	const NMLogLevel _nm_l = _slog_level_to_nm ((level)); \
+	const NMLogLevel _nm_l = nm_log_level_from_syslog (LOG_PRI (level)); \
 	\
 	if (_nm_log_enabled_impl (!(NM_THREAD_SAFE_ON_MAIN_THREAD), _nm_l, LOGD_SYSTEMD)) { \
 		const char *_nm_location = strrchr ((""file), '/'); \

@@ -171,7 +171,7 @@ find_settings_connection (NMCheckpoint *self,
 	*need_update = FALSE;
 
 	uuid = nm_connection_get_uuid (dev_checkpoint->settings_connection);
-	sett_conn = nm_settings_get_connection_by_uuid (nm_settings_get (), uuid);
+	sett_conn = nm_settings_get_connection_by_uuid (NM_SETTINGS_GET, uuid);
 
 	if (!sett_conn)
 		return NULL;
@@ -239,7 +239,7 @@ restore_and_activate_connection (NMCheckpoint *self,
 		_LOGD ("rollback: adding connection %s again",
 		       nm_connection_get_uuid (dev_checkpoint->settings_connection));
 
-		connection = nm_settings_add_connection (nm_settings_get (),
+		connection = nm_settings_add_connection (NM_SETTINGS_GET,
 		                                         dev_checkpoint->settings_connection,
 		                                         TRUE,
 		                                         &local_error);
@@ -419,7 +419,7 @@ next_dev:
 		gs_free NMSettingsConnection **list = NULL;
 
 		g_return_val_if_fail (priv->connection_uuids, NULL);
-		list = nm_settings_get_connections_clone (nm_settings_get (), NULL,
+		list = nm_settings_get_connections_clone (NM_SETTINGS_GET, NULL,
 		                                          NULL, NULL,
 		                                          nm_settings_connection_cmp_autoconnect_priority_p_with_data, NULL);
 
@@ -687,7 +687,7 @@ nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_time
 
 	if (NM_FLAGS_HAS (flags, NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS)) {
 		priv->connection_uuids = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
-		for (con = nm_settings_get_connections (nm_settings_get (), NULL); *con; con++) {
+		for (con = nm_settings_get_connections (NM_SETTINGS_GET, NULL); *con; con++) {
 			g_hash_table_add (priv->connection_uuids,
 			                  g_strdup (nm_settings_connection_get_uuid (*con)));
 		}

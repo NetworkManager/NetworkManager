@@ -114,4 +114,6 @@ void nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean qu
 
 const char *nm_settings_get_startup_complete_blocked_reason (NMSettings *self);
 
+void nm_settings_kf_db_write (NMSettings *settings);
+
 #endif  /* __NM_SETTINGS_H__ */

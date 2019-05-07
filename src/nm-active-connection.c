@@ -285,7 +285,7 @@ nm_active_connection_set_state (NMActiveConnection *self,
 	if (   new_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED
 	    || old_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 		nm_settings_connection_update_timestamp (priv->settings_connection.obj,
-		                                         (guint64) time (NULL), TRUE);
+		                                         (guint64) time (NULL));
 	}
 
 	if (priv->device) {

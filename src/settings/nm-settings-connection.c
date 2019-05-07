@@ -25,6 +25,7 @@
 
 #include "c-list/src/c-list.h"
 
+#include "nm-glib-aux/nm-keyfile-aux.h"
 #include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-config.h"
 #include "nm-config-data.h"
@@ -37,9 +38,6 @@
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 #include "nm-audit-manager.h"
-
-#define SETTINGS_TIMESTAMPS_FILE  NMSTATEDIR "/timestamps"
-#define SETTINGS_SEEN_BSSIDS_FILE NMSTATEDIR "/seen-bssids"
 
 #define AUTOCONNECT_RETRIES_UNSET        -2
 #define AUTOCONNECT_RETRIES_FOREVER      -1
@@ -85,6 +83,9 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct _NMSettingsConnectionPrivate {
+
+	NMKeyFileDB *kf_db_timestamps;
+	NMKeyFileDB *kf_db_seen_bssids;
 
 	NMAgentManager *agent_mgr;
 	NMSessionMonitor *session_monitor;
@@ -658,42 +659,6 @@ out:
 	return TRUE;
 }
 
-static void
-remove_entry_from_db (NMSettingsConnection *self, const char* db_name)
-{
-	GKeyFile *key_file;
-	const char *db_file;
-
-	if (strcmp (db_name, "timestamps") == 0)
-		db_file = SETTINGS_TIMESTAMPS_FILE;
-	else if (strcmp (db_name, "seen-bssids") == 0)
-		db_file = SETTINGS_SEEN_BSSIDS_FILE;
-	else
-		return;
-
-	key_file = g_key_file_new ();
-	if (g_key_file_load_from_file (key_file, db_file, G_KEY_FILE_KEEP_COMMENTS, NULL)) {
-		const char *connection_uuid;
-		char *data;
-		gsize len;
-		GError *error = NULL;
-
-		connection_uuid = nm_settings_connection_get_uuid (self);
-
-		g_key_file_remove_key (key_file, db_name, connection_uuid, NULL);
-		data = g_key_file_to_data (key_file, &len, &error);
-		if (data) {
-			g_file_set_contents (db_file, data, len, &error);
-			g_free (data);
-		}
-		if (error) {
-			_LOGW ("error writing %s file '%s': %s", db_name, db_file, error->message);
-			g_error_free (error);
-		}
-	}
-	g_key_file_free (key_file);
-}
-
 gboolean
 nm_settings_connection_delete (NMSettingsConnection *self,
                                GError **error)
@@ -701,6 +666,7 @@ nm_settings_connection_delete (NMSettingsConnection *self,
 	gs_unref_object NMSettingsConnection *self_keep_alive = NULL;
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMConnection *for_agents;
+	const char *connection_uuid;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
@@ -719,11 +685,13 @@ nm_settings_connection_delete (NMSettingsConnection *self,
 	                                 for_agents);
 	g_object_unref (for_agents);
 
-	/* Remove timestamp from timestamps database file */
-	remove_entry_from_db (self, "timestamps");
+	connection_uuid = nm_settings_connection_get_uuid (self);
 
-	/* Remove connection from seen-bssids database file */
-	remove_entry_from_db (self, "seen-bssids");
+	if (priv->kf_db_timestamps)
+		nm_key_file_db_remove_key (priv->kf_db_timestamps, connection_uuid);
+
+	if (priv->kf_db_seen_bssids)
+		nm_key_file_db_remove_key (priv->kf_db_seen_bssids, connection_uuid);
 
 	nm_settings_connection_signal_remove (self);
 	return TRUE;
@@ -2338,11 +2306,13 @@ gboolean
 nm_settings_connection_get_timestamp (NMSettingsConnection *self,
                                       guint64 *out_timestamp)
 {
+	NMSettingsConnectionPrivate *priv;
+
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
-	if (out_timestamp)
-		*out_timestamp = NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->timestamp;
-	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->timestamp_set;
+	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	NM_SET_OUT (out_timestamp, priv->timestamp);
+	return priv->timestamp_set;
 }
 
 /**
@@ -2350,56 +2320,31 @@ nm_settings_connection_get_timestamp (NMSettingsConnection *self,
  * @self: the #NMSettingsConnection
  * @timestamp: timestamp to set into the connection and to store into
  * the timestamps database
- * @flush_to_disk: if %TRUE, commit timestamp update to persistent storage
  *
  * Updates the connection and timestamps database with the provided timestamp.
  **/
 void
 nm_settings_connection_update_timestamp (NMSettingsConnection *self,
-                                         guint64 timestamp,
-                                         gboolean flush_to_disk)
+                                         guint64 timestamp)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	const char *connection_uuid;
-	GKeyFile *timestamps_file;
-	char *data, *tmp;
-	gsize len;
-	GError *error = NULL;
+	char sbuf[60];
 
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
 
-	/* Update timestamp in private storage */
 	priv->timestamp = timestamp;
 	priv->timestamp_set = TRUE;
 
-	if (flush_to_disk == FALSE)
+	if (!priv->kf_db_timestamps)
 		return;
-	if (nm_config_get_configure_and_quit (nm_config_get ()) == NM_CONFIG_CONFIGURE_AND_QUIT_INITRD)
-		return;
-
-	/* Save timestamp to timestamps database file */
-	timestamps_file = g_key_file_new ();
-	if (!g_key_file_load_from_file (timestamps_file, SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, &error)) {
-		if (!g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT))
-			_LOGW ("error parsing timestamps file '%s': %s", SETTINGS_TIMESTAMPS_FILE, error->message);
-		g_clear_error (&error);
-	}
 
 	connection_uuid = nm_settings_connection_get_uuid (self);
-	tmp = g_strdup_printf ("%" G_GUINT64_FORMAT, timestamp);
-	g_key_file_set_value (timestamps_file, "timestamps", connection_uuid, tmp);
-	g_free (tmp);
-
-	data = g_key_file_to_data (timestamps_file, &len, &error);
-	if (data) {
-		g_file_set_contents (SETTINGS_TIMESTAMPS_FILE, data, len, &error);
-		g_free (data);
+	if (connection_uuid) {
+		nm_key_file_db_set_value (priv->kf_db_timestamps,
+		                          connection_uuid,
+		                          nm_sprintf_buf (sbuf, "%" G_GUINT64_FORMAT, timestamp));
 	}
-	if (error) {
-		_LOGW ("error saving timestamp to file '%s': %s", SETTINGS_TIMESTAMPS_FILE, error->message);
-		g_error_free (error);
-	}
-	g_key_file_free (timestamps_file);
 }
 
 /**
@@ -2410,38 +2355,79 @@ nm_settings_connection_update_timestamp (NMSettingsConnection *self,
  * stores it into the connection private data.
  **/
 void
-nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *self)
+nm_settings_connection_register_kf_dbs (NMSettingsConnection *self,
+                                        NMKeyFileDB *kf_db_timestamps,
+                                        NMKeyFileDB *kf_db_seen_bssids)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	gs_unref_keyfile GKeyFile *timestamps_file = NULL;
-	gs_free_error GError *error = NULL;
-	gs_free char *tmp_str = NULL;
+	NMSettingsConnectionPrivate *priv;
 	const char *connection_uuid;
-	gint64 timestamp;
 
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
+	g_return_if_fail (kf_db_timestamps);
+	g_return_if_fail (kf_db_seen_bssids);
 
-	timestamps_file = g_key_file_new ();
-	if (!g_key_file_load_from_file (timestamps_file, SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, &error)) {
-		_LOGD ("failed to read connection timestamp: %s", error->message);
-		return;
-	}
+	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	connection_uuid = nm_settings_connection_get_uuid (self);
-	tmp_str = g_key_file_get_value (timestamps_file, "timestamps", connection_uuid, &error);
-	if (!tmp_str) {
-		_LOGD ("failed to read connection timestamp: %s", error->message);
-		return;
+
+	if (priv->kf_db_timestamps != kf_db_timestamps) {
+		gs_free char *tmp_str = NULL;
+		guint64 timestamp;
+
+		nm_key_file_db_unref (priv->kf_db_timestamps);
+		priv->kf_db_timestamps = nm_key_file_db_ref (kf_db_timestamps);
+
+		tmp_str = nm_key_file_db_get_value (priv->kf_db_timestamps, connection_uuid);
+
+		timestamp = _nm_utils_ascii_str_to_uint64 (tmp_str, 10, 0, G_MAXUINT64, G_MAXUINT64);
+		if (timestamp != G_MAXUINT64) {
+			priv->timestamp = timestamp;
+			priv->timestamp_set = TRUE;
+			_LOGT ("read timestamp %"G_GUINT64_FORMAT" from keyfile database \"%s\"",
+			       timestamp, nm_key_file_db_get_filename (priv->kf_db_timestamps));
+		} else
+			_LOGT ("no timestamp from keyfile database \"%s\"",
+			       nm_key_file_db_get_filename (priv->kf_db_timestamps));
 	}
 
-	timestamp = _nm_utils_ascii_str_to_int64 (tmp_str, 10, 0, G_MAXINT64, -1);
-	if (timestamp < 0) {
-		_LOGD ("failed to read connection timestamp: %s", "invalid number");
-		return;
-	}
+	if (priv->kf_db_seen_bssids != kf_db_seen_bssids) {
+		gs_strfreev char **tmp_strv = NULL;
+		gsize i, len;
 
-	priv->timestamp = timestamp;
-	priv->timestamp_set = TRUE;
+		nm_key_file_db_unref (priv->kf_db_seen_bssids);
+		priv->kf_db_seen_bssids = nm_key_file_db_ref (kf_db_seen_bssids);
+
+		tmp_strv = nm_key_file_db_get_string_list (priv->kf_db_seen_bssids, connection_uuid, &len);
+
+		if (tmp_strv) {
+			_LOGT ("read %zu seen-bssids from keyfile database \"%s\"",
+			       NM_PTRARRAY_LEN (tmp_strv),
+			       nm_key_file_db_get_filename (priv->kf_db_seen_bssids));
+			g_hash_table_remove_all (priv->seen_bssids);
+			for (i = len; i > 0; )
+				g_hash_table_add (priv->seen_bssids, g_steal_pointer (&tmp_strv[--i]));
+		} else {
+			NMSettingWireless *s_wifi;
+
+			_LOGT ("no seen-bssids from keyfile database \"%s\"",
+			       nm_key_file_db_get_filename (priv->kf_db_seen_bssids));
+
+			/* If this connection didn't have an entry in the seen-bssids database,
+			 * maybe this is the first time we've read it in, so populate the
+			 * seen-bssids list from the deprecated seen-bssids property of the
+			 * wifi setting.
+			 */
+			s_wifi = nm_connection_get_setting_wireless (nm_settings_connection_get_connection (self));
+			if (s_wifi) {
+				len = nm_setting_wireless_get_num_seen_bssids (s_wifi);
+				for (i = 0; i < len; i++) {
+					const char *bssid = nm_setting_wireless_get_seen_bssid (s_wifi, i);
+
+					g_hash_table_add (priv->seen_bssids, g_strdup (bssid));
+				}
+			}
+		}
+	}
 }
 
 /**
@@ -2504,108 +2490,26 @@ nm_settings_connection_add_seen_bssid (NMSettingsConnection *self,
                                        const char *seen_bssid)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	gs_free const char **strv = NULL;
 	const char *connection_uuid;
-	GKeyFile *seen_bssids_file;
-	char *data, *bssid_str;
-	const char **list;
-	gsize len;
-	GError *error = NULL;
-	GHashTableIter iter;
-	guint n;
 
 	g_return_if_fail (seen_bssid != NULL);
 
-	if (g_hash_table_lookup (priv->seen_bssids, seen_bssid))
-		return;  /* Already in the list */
+	g_hash_table_add (priv->seen_bssids, g_strdup (seen_bssid));
 
-	/* Add the new BSSID; let the hash take ownership of the allocated BSSID string */
-	bssid_str = g_strdup (seen_bssid);
-	g_hash_table_insert (priv->seen_bssids, bssid_str, bssid_str);
-
-	/* Build up a list of all the BSSIDs in string form */
-	n = 0;
-	list = g_malloc0 (g_hash_table_size (priv->seen_bssids) * sizeof (char *));
-	g_hash_table_iter_init (&iter, priv->seen_bssids);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &bssid_str))
-		list[n++] = bssid_str;
-
-	/* Save BSSID to seen-bssids file */
-	seen_bssids_file = g_key_file_new ();
-	g_key_file_set_list_separator (seen_bssids_file, ',');
-	if (!g_key_file_load_from_file (seen_bssids_file, SETTINGS_SEEN_BSSIDS_FILE, G_KEY_FILE_KEEP_COMMENTS, &error)) {
-		if (!g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
-			_LOGW ("error parsing seen-bssids file '%s': %s",
-			       SETTINGS_SEEN_BSSIDS_FILE, error->message);
-		}
-		g_clear_error (&error);
-	}
+	if (!priv->kf_db_seen_bssids)
+		return;
 
 	connection_uuid = nm_settings_connection_get_uuid (self);
-	g_key_file_set_string_list (seen_bssids_file, "seen-bssids", connection_uuid, list, n);
-	g_free (list);
+	if (!connection_uuid)
+		return;
 
-	data = g_key_file_to_data (seen_bssids_file, &len, &error);
-	if (data) {
-		g_file_set_contents (SETTINGS_SEEN_BSSIDS_FILE, data, len, &error);
-		g_free (data);
-	}
-	g_key_file_free (seen_bssids_file);
+	strv = nm_utils_strdict_get_keys (priv->seen_bssids, TRUE, NULL);
 
-	if (error) {
-		_LOGW ("error saving seen-bssids to file '%s': %s",
-		       SETTINGS_SEEN_BSSIDS_FILE, error->message);
-		g_error_free (error);
-	}
-}
-
-/**
- * nm_settings_connection_read_and_fill_seen_bssids:
- * @self: the #NMSettingsConnection
- *
- * Retrieves seen BSSIDs of the connection from database file and stores then into the
- * connection private data.
- **/
-void
-nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *self)
-{
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	const char *connection_uuid;
-	GKeyFile *seen_bssids_file;
-	char **tmp_strv = NULL;
-	gsize i, len = 0;
-	NMSettingWireless *s_wifi;
-
-	/* Get seen BSSIDs from database file */
-	seen_bssids_file = g_key_file_new ();
-	g_key_file_set_list_separator (seen_bssids_file, ',');
-	if (g_key_file_load_from_file (seen_bssids_file, SETTINGS_SEEN_BSSIDS_FILE, G_KEY_FILE_KEEP_COMMENTS, NULL)) {
-		connection_uuid = nm_settings_connection_get_uuid (self);
-		tmp_strv = g_key_file_get_string_list (seen_bssids_file, "seen-bssids", connection_uuid, &len, NULL);
-	}
-	g_key_file_free (seen_bssids_file);
-
-	/* Update connection's seen-bssids */
-	if (tmp_strv) {
-		g_hash_table_remove_all (priv->seen_bssids);
-		for (i = 0; i < len; i++)
-			g_hash_table_insert (priv->seen_bssids, tmp_strv[i], tmp_strv[i]);
-		g_free (tmp_strv);
-	} else {
-		/* If this connection didn't have an entry in the seen-bssids database,
-		 * maybe this is the first time we've read it in, so populate the
-		 * seen-bssids list from the deprecated seen-bssids property of the
-		 * wifi setting.
-		 */
-		s_wifi = nm_connection_get_setting_wireless (nm_settings_connection_get_connection (self));
-		if (s_wifi) {
-			len = nm_setting_wireless_get_num_seen_bssids (s_wifi);
-			for (i = 0; i < len; i++) {
-				char *bssid_dup = g_strdup (nm_setting_wireless_get_seen_bssid (s_wifi, i));
-
-				g_hash_table_insert (priv->seen_bssids, bssid_dup, bssid_dup);
-			}
-		}
-	}
+	nm_key_file_db_set_string_list (priv->kf_db_seen_bssids,
+	                                connection_uuid,
+	                                strv ?: NM_PTRARRAY_EMPTY (const char *),
+	                                -1);
 }
 
 /*****************************************************************************/
@@ -2931,6 +2835,9 @@ dispose (GObject *object)
 	g_clear_object (&priv->connection);
 
 	g_clear_pointer (&priv->filename, g_free);
+
+	g_clear_pointer (&priv->kf_db_timestamps, nm_key_file_db_unref);
+	g_clear_pointer (&priv->kf_db_seen_bssids, nm_key_file_db_unref);
 
 	G_OBJECT_CLASS (nm_settings_connection_parent_class)->dispose (object);
 }

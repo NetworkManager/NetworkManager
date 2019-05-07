@@ -15121,7 +15121,7 @@ _set_state_full (NMDevice *self,
 		 * and those we haven't tried yet (no timestamp).
 		 */
 		if (sett_conn && !nm_settings_connection_get_timestamp (sett_conn, NULL))
-			nm_settings_connection_update_timestamp (sett_conn, (guint64) 0, TRUE);
+			nm_settings_connection_update_timestamp (sett_conn, (guint64) 0);
 
 		/* Schedule the transition to DISCONNECTED.  The device can't transition
 		 * immediately because we can't change states again from the state
