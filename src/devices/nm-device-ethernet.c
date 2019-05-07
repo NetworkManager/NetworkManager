@@ -1390,7 +1390,6 @@ complete_connection (NMDevice *device,
 {
 	NMSettingWired *s_wired;
 	NMSettingPppoe *s_pppoe;
-	const char *setting_mac;
 	const char *perm_hw_addr;
 	gboolean perm_hw_addr_is_fake;
 
@@ -1421,23 +1420,10 @@ complete_connection (NMDevice *device,
 	}
 
 	perm_hw_addr = nm_device_get_permanent_hw_address_full (device, TRUE, &perm_hw_addr_is_fake);
-	if (perm_hw_addr && !perm_hw_addr_is_fake) {
-		setting_mac = nm_setting_wired_get_mac_address (s_wired);
-		if (setting_mac) {
-			/* Make sure the setting MAC (if any) matches the device's permanent MAC */
-			if (!nm_utils_hwaddr_matches (setting_mac, -1, perm_hw_addr, -1)) {
-				g_set_error_literal (error,
-				                     NM_CONNECTION_ERROR,
-				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-				                     _("connection does not match device"));
-				g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MAC_ADDRESS);
-				return FALSE;
-			}
-		} else {
-			g_object_set (G_OBJECT (s_wired),
-			              NM_SETTING_WIRED_MAC_ADDRESS, perm_hw_addr,
-			              NULL);
-		}
+	if (perm_hw_addr && !perm_hw_addr_is_fake && !nm_setting_wired_get_mac_address (s_wired)) {
+		g_object_set (G_OBJECT (s_wired),
+		              NM_SETTING_WIRED_MAC_ADDRESS, perm_hw_addr,
+		              NULL);
 	}
 
 	return TRUE;
