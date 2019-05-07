@@ -1531,6 +1531,61 @@ nm_memdup (gconstpointer data, gsize size)
 	return p;
 }
 
+#define nm_malloc_maybe_a(alloca_maxlen, bytes, to_free) \
+	({ \
+		const gsize _bytes = (bytes); \
+		gpointer _ptr; \
+		typeof (to_free) _to_free = (to_free); \
+		\
+		G_STATIC_ASSERT_EXPR ((alloca_maxlen) <= 500); \
+		nm_assert (_to_free && !*_to_free); \
+		\
+		if (_bytes <= (alloca_maxlen)) { \
+			_ptr = g_alloca (_bytes); \
+		} else { \
+			_ptr = g_malloc (_bytes); \
+			*_to_free = _ptr; \
+		}; \
+		\
+		_ptr; \
+	})
+
+#define nm_malloc0_maybe_a(alloca_maxlen, bytes, to_free) \
+	({ \
+		const gsize _bytes = (bytes); \
+		gpointer _ptr; \
+		typeof (to_free) _to_free = (to_free); \
+		\
+		G_STATIC_ASSERT_EXPR ((alloca_maxlen) <= 500); \
+		nm_assert (_to_free && !*_to_free); \
+		\
+		if (_bytes <= (alloca_maxlen)) { \
+			_ptr = g_alloca (_bytes); \
+			memset (_ptr, 0, _bytes); \
+		} else { \
+			_ptr = g_malloc0 (_bytes); \
+			*_to_free = _ptr; \
+		}; \
+		\
+		_ptr; \
+	})
+
+#define nm_memdup_maybe_a(alloca_maxlen, data, size, to_free) \
+	({ \
+		const gsize _size = (size); \
+		gpointer _ptr_md = NULL; \
+		typeof (to_free) _to_free_md = (to_free); \
+		\
+		nm_assert (_to_free_md && !*_to_free_md); \
+		\
+		if (_size > 0u) { \
+			_ptr_md = nm_malloc_maybe_a ((alloca_maxlen), _size, _to_free_md); \
+			memcpy (_ptr_md, (data), _size); \
+		} \
+		\
+		_ptr_md; \
+	})
+
 static inline char *
 _nm_strndup_a_step (char *s, const char *str, gsize len)
 {
