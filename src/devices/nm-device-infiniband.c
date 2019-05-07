@@ -162,6 +162,12 @@ complete_connection (NMDevice *device,
 {
 	NMSettingInfiniband *s_infiniband;
 
+	s_infiniband = nm_connection_get_setting_infiniband (connection);
+	if (!s_infiniband) {
+		s_infiniband = (NMSettingInfiniband *) nm_setting_infiniband_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_infiniband));
+	}
+
 	nm_utils_complete_generic (nm_device_get_platform (device),
 	                           connection,
 	                           NM_SETTING_INFINIBAND_SETTING_NAME,
@@ -169,21 +175,8 @@ complete_connection (NMDevice *device,
 	                           NULL,
 	                           _("InfiniBand connection"),
 	                           NULL,
-	                           NULL,
+	                           nm_setting_infiniband_get_mac_address (s_infiniband) ? NULL : nm_device_get_iface (device),
 	                           TRUE);
-
-	s_infiniband = nm_connection_get_setting_infiniband (connection);
-	if (!s_infiniband) {
-		s_infiniband = (NMSettingInfiniband *) nm_setting_infiniband_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_infiniband));
-	}
-
-	if (!nm_setting_infiniband_get_mac_address (s_infiniband)) {
-		/* Lock the connection to this device by default */
-		g_object_set (G_OBJECT (s_infiniband),
-		              NM_SETTING_INFINIBAND_MAC_ADDRESS, nm_device_get_permanent_hw_address (device),
-		              NULL);
-	}
 
 	if (!nm_setting_infiniband_get_transport_mode (s_infiniband))
 		g_object_set (G_OBJECT (s_infiniband), NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram", NULL);
