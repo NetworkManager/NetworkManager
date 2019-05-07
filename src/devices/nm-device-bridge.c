@@ -153,6 +153,7 @@ complete_connection (NMDevice *device,
 	                           NULL,
 	                           _("Bridge connection"),
 	                           "bridge",
+	                           NULL,
 	                           TRUE);
 
 	s_bridge = nm_connection_get_setting_bridge (connection);

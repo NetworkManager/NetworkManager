@@ -249,13 +249,15 @@ nm_utils_complete_generic (NMPlatform *platform,
                            const char *preferred_id,
                            const char *fallback_id_prefix,
                            const char *ifname_prefix,
+                           const char *ifname,
                            gboolean default_enable_ipv6)
 {
 	NMSettingConnection *s_con;
-	char *id, *ifname;
+	char *id, *generated_ifname;
 	GHashTable *parameters;
 
 	g_assert (fallback_id_prefix);
+	g_return_if_fail (ifname_prefix == NULL || ifname == NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
 	if (!s_con) {
@@ -278,10 +280,12 @@ nm_utils_complete_generic (NMPlatform *platform,
 	}
 
 	/* Add an interface name, if requested */
-	if (ifname_prefix && !nm_setting_connection_get_interface_name (s_con)) {
-		ifname = get_new_connection_ifname (platform, existing_connections, ifname_prefix);
+	if (ifname) {
 		g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, ifname, NULL);
-		g_free (ifname);
+	} else if (ifname_prefix && !nm_setting_connection_get_interface_name (s_con)) {
+		generated_ifname = get_new_connection_ifname (platform, existing_connections, ifname_prefix);
+		g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, generated_ifname, NULL);
+		g_free (generated_ifname);
 	}
 
 	/* Normalize */

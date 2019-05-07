@@ -368,6 +368,7 @@ complete_connection (NMDevice *device,
 	                           NULL,
 	                           _("VXLAN connection"),
 	                           NULL,
+	                           NULL,
 	                           TRUE);
 
 	s_vxlan = nm_connection_get_setting_vxlan (connection);

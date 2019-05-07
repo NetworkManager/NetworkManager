@@ -874,6 +874,7 @@ complete_connection (NMDevice *device,
 	                           ssid_utf8,
 	                           ssid_utf8,
 	                           NULL,
+	                           NULL,
 	                           TRUE);
 
 	perm_hw_addr = nm_device_get_permanent_hw_address (device);

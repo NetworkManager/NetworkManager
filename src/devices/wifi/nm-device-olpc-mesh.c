@@ -133,6 +133,7 @@ complete_connection (NMDevice *device,
 	                           NULL,
 	                           _("Mesh"),
 	                           NULL,
+	                           NULL,
 	                           FALSE); /* No IPv6 by default */
 
 	return TRUE;

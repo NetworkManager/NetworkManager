@@ -66,6 +66,7 @@ complete_connection (NMDevice *device,
 	                           NULL,
 	                           _("Dummy connection"),
 	                           NULL,
+	                           NULL,
 	                           TRUE);
 
 	s_dummy = nm_connection_get_setting_dummy (connection);

@@ -169,6 +169,7 @@ complete_connection (NMDevice *device,
 	                           NULL,
 	                           _("InfiniBand connection"),
 	                           NULL,
+	                           NULL,
 	                           TRUE);
 
 	s_infiniband = nm_connection_get_setting_infiniband (connection);

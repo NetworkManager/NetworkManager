@@ -101,6 +101,7 @@ complete_connection (NMDevice *device,
 	                           NULL,
 	                           _("Team connection"),
 	                           "team",
+	                           NULL,
 	                           TRUE);
 
 	s_team = nm_connection_get_setting_team (connection);
