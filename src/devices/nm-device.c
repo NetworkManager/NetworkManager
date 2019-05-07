@@ -12882,7 +12882,8 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean intersect_config
 				for (iter = priv->vpn_configs_6; iter; iter = iter->next)
 					nm_ip6_config_intersect (iter->data, priv->ext_ip_config_6, is_up, is_up, 0);
 
-				if (   priv->ipv6ll_has
+				if (   is_up
+				    && priv->ipv6ll_has
 				    && !nm_ip6_config_lookup_address (priv->ext_ip_config_6, &priv->ipv6ll_addr))
 					priv->ipv6ll_has = FALSE;
 			}
