@@ -906,7 +906,7 @@ complete_connection (NMDevice *device,
 	                           ssid_utf8,
 	                           ssid_utf8,
 	                           NULL,
-	                           NULL,
+	                           nm_setting_wireless_get_mac_address (s_wifi) ? NULL : nm_device_get_iface (device),
 	                           TRUE);
 
 	if (hidden)

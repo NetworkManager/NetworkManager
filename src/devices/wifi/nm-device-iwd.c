@@ -784,7 +784,6 @@ complete_connection (NMDevice *device,
 	NMWifiAP *ap;
 	GBytes *ssid;
 	GBytes *setting_ssid = NULL;
-	const char *perm_hw_addr;
 	const char *mode;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
@@ -874,23 +873,8 @@ complete_connection (NMDevice *device,
 	                           ssid_utf8,
 	                           ssid_utf8,
 	                           NULL,
-	                           NULL,
+	                           nm_setting_wireless_get_mac_address (s_wifi) ? NULL : nm_device_get_iface (device),
 	                           TRUE);
-
-	perm_hw_addr = nm_device_get_permanent_hw_address (device);
-	if (perm_hw_addr && !nm_setting_wireless_get_mac_address (s_wifi))
-		guint8 tmp[ETH_ALEN];
-
-		/* Lock the connection to this device by default if it uses a
-		 * permanent MAC address (ie not a 'locally administered' one)
-		 */
-		nm_utils_hwaddr_aton (perm_hw_addr, tmp, ETH_ALEN);
-		if (!(tmp[0] & 0x02)) {
-			g_object_set (G_OBJECT (s_wifi),
-			              NM_SETTING_WIRELESS_MAC_ADDRESS, perm_hw_addr,
-			              NULL);
-		}
-	}
 
 	return TRUE;
 }
