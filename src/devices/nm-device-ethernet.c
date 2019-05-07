@@ -1430,6 +1430,7 @@ new_default_connection (NMDevice *self)
 	gs_unref_hashtable GHashTable *existing_ids = NULL;
 	struct udev_device *dev;
 	const char *perm_hw_addr;
+	const char *iface;
 	const char *uprop = "0";
 	gs_free char *defname = NULL;
 	gs_free char *uuid = NULL;
@@ -1439,8 +1440,7 @@ new_default_connection (NMDevice *self)
 		return NULL;
 
 	perm_hw_addr = nm_device_get_permanent_hw_address (self);
-	if (!perm_hw_addr)
-		return NULL;
+	iface = nm_device_get_iface (self);
 
 	connection = nm_simple_connection_new ();
 	setting = nm_setting_connection_new ();
@@ -1461,7 +1461,7 @@ new_default_connection (NMDevice *self)
 	uuid = _nm_utils_uuid_generate_from_strings ("default-wired",
 	                                             nm_utils_machine_id_str (),
 	                                             defname,
-	                                             perm_hw_addr,
+	                                             perm_hw_addr ?: iface,
 	                                             NULL);
 
 	g_object_set (setting,
@@ -1471,12 +1471,8 @@ new_default_connection (NMDevice *self)
 	              NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY, NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MIN,
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_TIMESTAMP, (guint64) time (NULL),
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, iface,
 	              NULL);
-
-	/* Lock the connection to the device */
-	setting = nm_setting_wired_new ();
-	g_object_set (setting, NM_SETTING_WIRED_MAC_ADDRESS, perm_hw_addr, NULL);
-	nm_connection_add_setting (connection, setting);
 
 	/* Check if we should create a Link-Local only connection */
 	dev = nm_platform_link_get_udev_device (nm_device_get_platform (NM_DEVICE (self)), nm_device_get_ip_ifindex (self));
