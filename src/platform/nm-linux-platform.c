@@ -3515,6 +3515,11 @@ _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 	obj->qdisc.parent = tcm->tcm_parent;
 	obj->qdisc.info = tcm->tcm_info;
 
+	if (nm_streq0 (obj->qdisc.kind, "fq_codel")) {
+		obj->qdisc.fq_codel.memory_limit = NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET;
+		obj->qdisc.fq_codel.ce_threshold = NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED;
+	}
+
 	if (tb[TCA_OPTIONS]) {
 		struct nlattr *options_attr;
 		int remaining;
@@ -3544,10 +3549,10 @@ _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 					obj->qdisc.fq_codel.ce_threshold = nla_get_u32 (options_attr);
 					break;
 				case TCA_FQ_CODEL_MEMORY_LIMIT:
-					obj->qdisc.fq_codel.memory = nla_get_u32 (options_attr);
+					obj->qdisc.fq_codel.memory_limit = nla_get_u32 (options_attr);
 					break;
 				case TCA_FQ_CODEL_ECN:
-					obj->qdisc.fq_codel.ecn = nla_get_u32 (options_attr);
+					obj->qdisc.fq_codel.ecn = !!nla_get_u32 (options_attr);
 					break;
 				}
 			}
@@ -3676,7 +3681,7 @@ _nl_msg_new_link_set_afspec (struct nl_msg *msg,
 
 	return TRUE;
 nla_put_failure:
-	return FALSE;
+	g_return_val_if_reached (FALSE);
 }
 
 static gboolean
@@ -3827,7 +3832,7 @@ _nl_msg_new_link_set_linkinfo_vlan (struct nl_msg *msg,
 
 	return TRUE;
 nla_put_failure:
-	return FALSE;
+	g_return_val_if_reached (FALSE);
 }
 
 static struct nl_msg *
@@ -4239,12 +4244,12 @@ _nl_msg_new_qdisc (int nlmsg_type,
 			NLA_PUT_U32 (msg, TCA_FQ_CODEL_INTERVAL, qdisc->fq_codel.interval);
 		if (qdisc->fq_codel.quantum)
 			NLA_PUT_U32 (msg, TCA_FQ_CODEL_QUANTUM, qdisc->fq_codel.quantum);
-		if (qdisc->fq_codel.ce_threshold != -1)
+		if (qdisc->fq_codel.ce_threshold != NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED)
 			NLA_PUT_U32 (msg, TCA_FQ_CODEL_CE_THRESHOLD, qdisc->fq_codel.ce_threshold);
-		if (qdisc->fq_codel.memory != -1)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_MEMORY_LIMIT, qdisc->fq_codel.memory);
+		if (qdisc->fq_codel.memory_limit != NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET)
+			NLA_PUT_U32 (msg, TCA_FQ_CODEL_MEMORY_LIMIT, qdisc->fq_codel.memory_limit);
 		if (qdisc->fq_codel.ecn)
-			NLA_PUT_S32 (msg, TCA_FQ_CODEL_ECN, qdisc->fq_codel.ecn);
+			NLA_PUT_U32 (msg, TCA_FQ_CODEL_ECN, qdisc->fq_codel.ecn);
 	}
 
 	nla_nest_end (msg, tc_options);
@@ -4253,83 +4258,6 @@ _nl_msg_new_qdisc (int nlmsg_type,
 
 nla_put_failure:
 	g_return_val_if_reached (NULL);
-}
-
-static gboolean
-_add_action_simple (struct nl_msg *msg,
-                    const NMPlatformActionSimple *simple)
-{
-	struct nlattr *act_options;
-	struct tc_defact sel = { 0, };
-
-	if (!(act_options = nla_nest_start (msg, TCA_ACT_OPTIONS)))
-		goto nla_put_failure;
-
-	NLA_PUT (msg, TCA_DEF_PARMS, sizeof (sel), &sel);
-	NLA_PUT (msg, TCA_DEF_DATA, sizeof (simple->sdata), simple->sdata);
-
-	nla_nest_end (msg, act_options);
-
-	return TRUE;
-
-nla_put_failure:
-	return FALSE;
-}
-
-static gboolean
-_add_action_mirred (struct nl_msg *msg,
-                    const NMPlatformActionMirred *mirred)
-{
-	struct nlattr *act_options;
-	struct tc_mirred sel = { 0, };
-
-	if (!(act_options = nla_nest_start (msg, TCA_ACT_OPTIONS)))
-		goto nla_put_failure;
-
-	if (mirred->egress && mirred->redirect)
-		sel.eaction = TCA_EGRESS_REDIR;
-	else if (mirred->egress && mirred->mirror)
-		sel.eaction = TCA_EGRESS_MIRROR;
-	else if (mirred->ingress && mirred->redirect)
-		sel.eaction = TCA_INGRESS_REDIR;
-	else if (mirred->ingress && mirred->mirror)
-		sel.eaction = TCA_INGRESS_MIRROR;
-	sel.ifindex = mirred->ifindex;
-
-	NLA_PUT (msg, TCA_MIRRED_PARMS, sizeof (sel), &sel);
-
-	nla_nest_end (msg, act_options);
-
-	return TRUE;
-
-nla_put_failure:
-	return FALSE;
-}
-
-static gboolean
-_add_action (struct nl_msg *msg,
-             const NMPlatformAction *action)
-{
-	struct nlattr *prio;
-
-	nm_assert (action || action->kind);
-
-	if (!(prio = nla_nest_start (msg, 1 /* priority */)))
-		goto nla_put_failure;
-
-	NLA_PUT_STRING (msg, TCA_ACT_KIND, action->kind);
-
-	if (nm_streq (action->kind, NM_PLATFORM_ACTION_KIND_SIMPLE))
-		_add_action_simple (msg, &action->simple);
-	else if (nm_streq (action->kind, NM_PLATFORM_ACTION_KIND_MIRRED))
-		_add_action_mirred (msg, &action->mirred);
-
-	nla_nest_end (msg, prio);
-
-	return TRUE;
-
-nla_put_failure:
-	return FALSE;
 }
 
 static struct nl_msg *
@@ -4361,8 +4289,52 @@ _nl_msg_new_tfilter (int nlmsg_type,
 	if (!(act_tab = nla_nest_start (msg, TCA_OPTIONS))) // 3 TCA_ACT_KIND TCA_ACT_KIND
 		goto nla_put_failure;
 
-	if (tfilter->action.kind)
-		_add_action (msg, &tfilter->action);
+	if (tfilter->action.kind) {
+		const NMPlatformAction *action = &tfilter->action;
+		struct nlattr *prio;
+		struct nlattr *act_options;
+
+		if (!(prio = nla_nest_start (msg, 1 /* priority */)))
+			goto nla_put_failure;
+
+		NLA_PUT_STRING (msg, TCA_ACT_KIND, action->kind);
+
+		if (nm_streq (action->kind, NM_PLATFORM_ACTION_KIND_SIMPLE)) {
+			const NMPlatformActionSimple *simple = &action->simple;
+			struct tc_defact sel = { 0, };
+
+			if (!(act_options = nla_nest_start (msg, TCA_ACT_OPTIONS)))
+				goto nla_put_failure;
+
+			NLA_PUT (msg, TCA_DEF_PARMS, sizeof (sel), &sel);
+			NLA_PUT (msg, TCA_DEF_DATA, sizeof (simple->sdata), simple->sdata);
+
+			nla_nest_end (msg, act_options);
+
+		} else if (nm_streq (action->kind, NM_PLATFORM_ACTION_KIND_MIRRED)) {
+			const NMPlatformActionMirred *mirred = &action->mirred;
+			struct tc_mirred sel = { 0, };
+
+			if (!(act_options = nla_nest_start (msg, TCA_ACT_OPTIONS)))
+				goto nla_put_failure;
+
+			if (mirred->egress && mirred->redirect)
+				sel.eaction = TCA_EGRESS_REDIR;
+			else if (mirred->egress && mirred->mirror)
+				sel.eaction = TCA_EGRESS_MIRROR;
+			else if (mirred->ingress && mirred->redirect)
+				sel.eaction = TCA_INGRESS_REDIR;
+			else if (mirred->ingress && mirred->mirror)
+				sel.eaction = TCA_INGRESS_MIRROR;
+			sel.ifindex = mirred->ifindex;
+
+			NLA_PUT (msg, TCA_MIRRED_PARMS, sizeof (sel), &sel);
+
+			nla_nest_end (msg, act_options);
+		}
+
+		nla_nest_end (msg, prio);
+	}
 
 	nla_nest_end (msg, tc_options);
 
@@ -8273,6 +8245,9 @@ qdisc_add (NMPlatform *platform,
 	char s_buf[256];
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 
+	/* Note: @qdisc must not be copied or kept alive because the lifetime of qdisc.kind
+	 * is undefined. */
+
 	msg = _nl_msg_new_qdisc (RTM_NEWQDISC, flags, qdisc);
 
 	event_handler_read_netlink (platform, FALSE);
@@ -8313,6 +8288,9 @@ tfilter_add (NMPlatform *platform,
 	int nle;
 	char s_buf[256];
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
+
+	/* Note: @tfilter must not be copied or kept alive because the lifetime of tfilter.kind
+	 * and tfilter.action.kind is undefined. */
 
 	msg = _nl_msg_new_tfilter (RTM_NEWTFILTER, flags, tfilter);
 

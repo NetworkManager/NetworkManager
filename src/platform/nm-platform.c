@@ -5077,10 +5077,27 @@ nm_platform_qdisc_add (NMPlatform *self,
 	int ifindex = qdisc->ifindex;
 	_CHECK_SELF (self, klass, -NME_BUG);
 
+	/* Note: @qdisc must not be copied or kept alive because the lifetime of qdisc.kind
+	 * is undefined. */
+
 	_LOG3D ("adding or updating a qdisc: %s", nm_platform_qdisc_to_string (qdisc, NULL, 0));
 	return klass->qdisc_add (self, flags, qdisc);
 }
 
+/**
+ * nm_platform_qdisc_sync:
+ * @self: the #NMPlatform instance
+ * @ifindex: the ifindex where to configure the qdiscs.
+ * @known_qdiscs: the list of qdiscs (#NMPObject).
+ *
+ * The function promises not to take any reference to the qdisc
+ * instances from @known_qdiscs, nor to keep them around after
+ * the function returns. This is important, because it allows the
+ * caller to pass NMPlatformQdisc instances which "kind" string
+ * have a limited lifetime.
+ *
+ * Returns: %TRUE on success.
+ */
 gboolean
 nm_platform_qdisc_sync (NMPlatform *self,
                         int ifindex,
@@ -5143,10 +5160,27 @@ nm_platform_tfilter_add (NMPlatform *self,
 	int ifindex = tfilter->ifindex;
 	_CHECK_SELF (self, klass, -NME_BUG);
 
+	/* Note: @tfilter must not be copied or kept alive because the lifetime of tfilter.kind
+	 * and tfilter.action.kind is undefined. */
+
 	_LOG3D ("adding or updating a tfilter: %s", nm_platform_tfilter_to_string (tfilter, NULL, 0));
 	return klass->tfilter_add (self, flags, tfilter);
 }
 
+/**
+ * nm_platform_qdisc_sync:
+ * @self: the #NMPlatform instance
+ * @ifindex: the ifindex where to configure the qdiscs.
+ * @known_tfilters: the list of tfilters (#NMPObject).
+ *
+ * The function promises not to take any reference to the tfilter
+ * instances from @known_tfilters, nor to keep them around after
+ * the function returns. This is important, because it allows the
+ * caller to pass NMPlatformTfilter instances which "kind" string
+ * have a limited lifetime.
+ *
+ * Returns: %TRUE on success.
+ */
 gboolean
 nm_platform_tfilter_sync (NMPlatform *self,
                           int ifindex,
@@ -6427,9 +6461,12 @@ const char *
 nm_platform_qdisc_to_string (const NMPlatformQdisc *qdisc, char *buf, gsize len)
 {
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
+	const char *buf0;
 
 	if (!nm_utils_to_string_buffer_init_null (qdisc, &buf, &len))
 		return buf;
+
+	buf0 = buf;
 
 	nm_utils_strbuf_append (&buf, &len, "%s%s family %u handle %x parent %x info %x",
 	                        qdisc->kind,
@@ -6450,15 +6487,15 @@ nm_platform_qdisc_to_string (const NMPlatformQdisc *qdisc, char *buf, gsize len)
 			nm_utils_strbuf_append (&buf, &len, " interval %u", qdisc->fq_codel.interval);
 		if (qdisc->fq_codel.quantum)
 			nm_utils_strbuf_append (&buf, &len, " quantum %u", qdisc->fq_codel.quantum);
-		if (qdisc->fq_codel.ce_threshold != -1)
+		if (qdisc->fq_codel.ce_threshold != NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED)
 			nm_utils_strbuf_append (&buf, &len, " ce_threshold %u", qdisc->fq_codel.ce_threshold);
-		if (qdisc->fq_codel.memory != -1)
-			nm_utils_strbuf_append (&buf, &len, " memory %u", qdisc->fq_codel.memory);
+		if (qdisc->fq_codel.memory_limit != NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET)
+			nm_utils_strbuf_append (&buf, &len, " memory_limit %u", qdisc->fq_codel.memory_limit);
 		if (qdisc->fq_codel.ecn)
 			nm_utils_strbuf_append (&buf, &len, " ecn");
 	}
 
-	return buf;
+	return buf0;
 }
 
 void
@@ -6479,8 +6516,9 @@ nm_platform_qdisc_hash_update (const NMPlatformQdisc *obj, NMHashState *h)
 		                     obj->fq_codel.interval,
 		                     obj->fq_codel.quantum,
 		                     obj->fq_codel.ce_threshold,
-		                     obj->fq_codel.memory,
-		                     obj->fq_codel.ecn == TRUE);
+		                     obj->fq_codel.memory_limit,
+		                     NM_HASH_COMBINE_BOOLS (guint8,
+		                                            obj->fq_codel.ecn));
 	}
 }
 
@@ -6502,8 +6540,8 @@ nm_platform_qdisc_cmp (const NMPlatformQdisc *a, const NMPlatformQdisc *b)
 		NM_CMP_FIELD (a, b, fq_codel.interval);
 		NM_CMP_FIELD (a, b, fq_codel.quantum);
 		NM_CMP_FIELD (a, b, fq_codel.ce_threshold);
-		NM_CMP_FIELD (a, b, fq_codel.memory);
-		NM_CMP_FIELD (a, b, fq_codel.ecn == TRUE);
+		NM_CMP_FIELD (a, b, fq_codel.memory_limit);
+		NM_CMP_FIELD_UNSAFE (a, b, fq_codel.ecn);
 	}
 
 	return 0;
@@ -6573,11 +6611,12 @@ nm_platform_tfilter_hash_update (const NMPlatformTfilter *obj, NMHashState *h)
 			nm_hash_update_strarr (h, obj->action.simple.sdata);
 		} else if (nm_streq (obj->action.kind, NM_PLATFORM_ACTION_KIND_MIRRED)) {
 			nm_hash_update_vals (h,
-			                     obj->action.mirred.ingress,
-			                     obj->action.mirred.egress,
-			                     obj->action.mirred.mirror,
-			                     obj->action.mirred.redirect,
-			                     obj->action.mirred.ifindex);
+			                     obj->action.mirred.ifindex,
+			                     NM_HASH_COMBINE_BOOLS (guint8,
+			                                            obj->action.mirred.ingress,
+			                                            obj->action.mirred.egress,
+			                                            obj->action.mirred.mirror,
+			                                            obj->action.mirred.redirect));
 		}
 	}
 }
@@ -6598,11 +6637,11 @@ nm_platform_tfilter_cmp (const NMPlatformTfilter *a, const NMPlatformTfilter *b)
 		if (nm_streq (a->action.kind, NM_PLATFORM_ACTION_KIND_SIMPLE)) {
 			NM_CMP_FIELD_STR (a, b, action.simple.sdata);
 		} else if (nm_streq (a->action.kind, NM_PLATFORM_ACTION_KIND_MIRRED)) {
-			NM_CMP_FIELD (a, b, action.mirred.ingress);
-			NM_CMP_FIELD (a, b, action.mirred.egress);
-			NM_CMP_FIELD (a, b, action.mirred.mirror);
-			NM_CMP_FIELD (a, b, action.mirred.redirect);
 			NM_CMP_FIELD (a, b, action.mirred.ifindex);
+			NM_CMP_FIELD_UNSAFE (a, b, action.mirred.ingress);
+			NM_CMP_FIELD_UNSAFE (a, b, action.mirred.egress);
+			NM_CMP_FIELD_UNSAFE (a, b, action.mirred.mirror);
+			NM_CMP_FIELD_UNSAFE (a, b, action.mirred.redirect);
 		}
 	}
 
