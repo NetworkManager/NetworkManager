@@ -231,7 +231,7 @@ nm_utils_get_monotonic_timestamp_s (void)
  * @timestamp: the monotonic-timestamp that should be converted into CLOCK_BOOTTIME.
  * @timestamp_ns_per_tick: How many nano seconds make one unit of @timestamp? E.g. if
  * @timestamp is in unit seconds, pass %NM_UTILS_NS_PER_SECOND; @timestamp in nano
- * seconds, pass 1; @timestamp in milli seconds, pass %NM_UTILS_NS_PER_SECOND/1000; etc.
+ * seconds, pass 1; @timestamp in milliseconds, pass %NM_UTILS_NS_PER_SECOND/1000; etc.
  *
  * Returns: the monotonic-timestamp as CLOCK_BOOTTIME, as returned by clock_gettime().
  * The unit is the same as the passed in @timestamp basd on @timestamp_ns_per_tick.
