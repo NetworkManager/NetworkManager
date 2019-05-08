@@ -3588,7 +3588,7 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 			now_ms = nm_utils_get_monotonic_timestamp_ms ();
 			until_ms = NM_MAX (now_ms + _get_carrier_wait_ms (self), priv->carrier_wait_until_ms);
 			priv->carrier_defer_id = g_timeout_add (until_ms - now_ms, carrier_disconnected_action_cb, self);
-			_LOGD (LOGD_DEVICE, "carrier: link disconnected (deferring action for %ld milli seconds) (id=%u)",
+			_LOGD (LOGD_DEVICE, "carrier: link disconnected (deferring action for %ld milliseconds) (id=%u)",
 			       (long) (until_ms - now_ms), priv->carrier_defer_id);
 		}
 	}
@@ -3890,16 +3890,12 @@ device_link_changed (NMDevice *self)
 	if (priv->up && (!was_up || seen_down)) {
 		/* the link was down and just came up. That happens for example, while changing MTU.
 		 * We must restore IP configuration. */
-		if (priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE) {
-			if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
-				_LOGW (LOGD_IP4, "failed applying IP4 config after link comes up again");
-		}
+		if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
+			_LOGW (LOGD_IP4, "failed applying IP4 config after link comes up again");
 
 		priv->linklocal6_dad_counter = 0;
-		if (priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE) {
-			if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
-				_LOGW (LOGD_IP6, "failed applying IP6 config after link comes up again");
-		}
+		if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
+			_LOGW (LOGD_IP6, "failed applying IP6 config after link comes up again");
 	}
 
 	if (update_unmanaged_specs)
@@ -12886,7 +12882,8 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean intersect_config
 				for (iter = priv->vpn_configs_6; iter; iter = iter->next)
 					nm_ip6_config_intersect (iter->data, priv->ext_ip_config_6, is_up, is_up, 0);
 
-				if (   priv->ipv6ll_has
+				if (   is_up
+				    && priv->ipv6ll_has
 				    && !nm_ip6_config_lookup_address (priv->ext_ip_config_6, &priv->ipv6ll_addr))
 					priv->ipv6ll_has = FALSE;
 			}
