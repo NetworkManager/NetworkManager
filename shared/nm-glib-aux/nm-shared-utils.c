@@ -2288,13 +2288,30 @@ nm_utils_strv_make_deep_copied (const char **strv)
 {
 	gsize i;
 
-	/* it takes a strv dictionary, and copies each
+	/* it takes a strv list, and copies each
 	 * strings. Note that this updates @strv *in-place*
 	 * and returns it. */
 
 	if (!strv)
 		return NULL;
 	for (i = 0; strv[i]; i++)
+		strv[i] = g_strdup (strv[i]);
+
+	return (char **) strv;
+}
+
+char **
+nm_utils_strv_make_deep_copied_n (const char **strv, gsize len)
+{
+	gsize i;
+
+	/* it takes a strv array with len elements, and copies each
+	 * strings. Note that this updates @strv *in-place*
+	 * and returns it. */
+
+	if (!strv)
+		return NULL;
+	for (i = 0; i < len; i++)
 		strv[i] = g_strdup (strv[i]);
 
 	return (char **) strv;

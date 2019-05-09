@@ -951,6 +951,8 @@ nm_utils_strdict_get_keys (const GHashTable *hash,
 
 char **nm_utils_strv_make_deep_copied (const char **strv);
 
+char **nm_utils_strv_make_deep_copied_n (const char **strv, gsize len);
+
 static inline char **
 nm_utils_strv_make_deep_copied_nonnull (const char **strv)
 {
