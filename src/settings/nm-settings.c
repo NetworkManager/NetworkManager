@@ -1445,7 +1445,7 @@ next_filename:
 
 	g_dbus_method_invocation_return_value (invocation,
 	                                       g_variant_new ("(b^as)",
-	                                                      (gboolean) (!!failures),
+	                                                      (gboolean) (!failures),
 	                                                      failures
 	                                                        ? (const char **) failures->pdata
 	                                                        : NM_PTRARRAY_EMPTY (const char *)));
