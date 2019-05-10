@@ -79,8 +79,8 @@ G_DEFINE_TYPE (NMDhcpSystemd, nm_dhcp_systemd, NM_TYPE_DHCP_CLIENT)
 
 /*****************************************************************************/
 
-#define DHCP_OPTION_NIS_DOMAIN         40
-#define DHCP_OPTION_NIS_SERVERS        41
+#define DHCP_OPTION_NIS_DOMAIN                40
+#define DHCP_OPTION_NIS_SERVERS               41
 
 /* Internal values */
 #define DHCP_OPTION_IP_ADDRESS       1024
@@ -135,6 +135,9 @@ static const ReqOption dhcp4_requests[] = {
 	REQ (SD_DHCP_OPTION_PRIVATE_PROXY_AUTODISCOVERY,    "wpad",                            TRUE ),
 	REQ (SD_DHCP_OPTION_ROOT_PATH,                      "root_path",                       TRUE ),
 	REQ (SD_DHCP_OPTION_IP_ADDRESS_LEASE_TIME,          "dhcp_lease_time",                 FALSE ),
+	REQ (SD_DHCP_OPTION_RENEWAL_T1_TIME,                "dhcp_renewal_time",               FALSE ),
+	REQ (SD_DHCP_OPTION_REBINDING_T2_TIME,              "dhcp_rebinding_time",             FALSE ),
+	REQ (SD_DHCP_OPTION_NEW_TZDB_TIMEZONE,              "tcode",                           FALSE ),
 
 	/* Internal values */
 	REQ (DHCP_OPTION_IP_ADDRESS,                        "ip_address",                      FALSE ),
@@ -272,9 +275,13 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	gint64 ts_time = time (NULL);
 	struct in_addr a_address;
 	struct in_addr a_netmask;
+	struct in_addr server_id;
+	struct in_addr broadcast;
 	const struct in_addr *a_router;
 	guint32 a_plen;
 	guint32 a_lifetime;
+	guint32 renewal;
+	guint32 rebinding;
 
 	g_return_val_if_fail (lease != NULL, NULL);
 
@@ -332,6 +339,22 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	                               .lifetime     = a_lifetime,
 	                               .preferred    = a_lifetime,
 	                           }));
+
+	if (sd_dhcp_lease_get_server_identifier (lease, &server_id) >= 0) {
+		nm_utils_inet4_ntop (server_id.s_addr, addr_str);
+		LOG_LEASE (LOGD_DHCP4, "%s '%s'",
+		           request_string (dhcp4_requests, SD_DHCP_OPTION_SERVER_IDENTIFIER),
+		           addr_str);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_SERVER_IDENTIFIER, addr_str);
+	}
+
+	if (sd_dhcp_lease_get_broadcast (lease, &broadcast) >= 0) {
+		nm_utils_inet4_ntop (broadcast.s_addr, addr_str);
+		LOG_LEASE (LOGD_DHCP4, "%s '%s'",
+		           request_string (dhcp4_requests, SD_DHCP_OPTION_BROADCAST),
+		           addr_str);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_BROADCAST, addr_str);
+	}
 
 	num = sd_dhcp_lease_get_dns (lease, &addr_list);
 	if (num > 0) {
@@ -576,6 +599,27 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 		           request_string (dhcp4_requests, SD_DHCP_OPTION_ROOT_PATH),
 		           s);
 		add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROOT_PATH, s);
+	}
+
+	if (sd_dhcp_lease_get_t1 (lease, &renewal) >= 0) {
+		LOG_LEASE (LOGD_DHCP4, "%s '%u'",
+		           request_string (dhcp4_requests, SD_DHCP_OPTION_RENEWAL_T1_TIME),
+		           renewal);
+		add_option_u64 (options, dhcp4_requests, SD_DHCP_OPTION_RENEWAL_T1_TIME, renewal);
+	}
+
+	if (sd_dhcp_lease_get_t2 (lease, &rebinding) >= 0) {
+		LOG_LEASE (LOGD_DHCP4, "%s '%u'",
+		           request_string (dhcp4_requests, SD_DHCP_OPTION_REBINDING_T2_TIME),
+		           rebinding);
+		add_option_u64 (options, dhcp4_requests, SD_DHCP_OPTION_REBINDING_T2_TIME, rebinding);
+	}
+
+	if (sd_dhcp_lease_get_timezone (lease, &s) >= 0) {
+		LOG_LEASE (LOGD_DHCP4, "%s '%s'",
+		           request_string (dhcp4_requests, SD_DHCP_OPTION_NEW_TZDB_TIMEZONE),
+		           s);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_NEW_TZDB_TIMEZONE, s);
 	}
 
 	if (sd_dhcp_lease_get_vendor_specific (lease, &data, &data_len) >= 0)
