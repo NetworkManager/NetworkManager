@@ -34,7 +34,7 @@ void nm_hash_siphash42_init (CSipHash *h, guint static_seed);
  *
  * Note, that this is guaranteed to use siphash42 under the hood (contrary to
  * all other NMHash API, which leave this undefined). That matters at the point,
- * where the caller needs to be sure that a reasonably strong hasing algorithm
+ * where the caller needs to be sure that a reasonably strong hashing algorithm
  * is used.  (Yes, NMHash is all about siphash24, but otherwise that is not promised
  * anywhere).
  *
