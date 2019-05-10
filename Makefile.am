@@ -358,6 +358,7 @@ shared_nm_glib_aux_libnm_glib_aux_la_SOURCES = \
 	shared/nm-glib-aux/nm-shared-utils.h \
 	shared/nm-glib-aux/nm-time-utils.c \
 	shared/nm-glib-aux/nm-time-utils.h \
+	shared/nm-glib-aux/nm-value-type.h \
 	$(NULL)
 
 shared_nm_glib_aux_libnm_glib_aux_la_LDFLAGS = \
