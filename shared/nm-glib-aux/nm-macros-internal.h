@@ -865,6 +865,28 @@ fcn (void) \
 
 /*****************************************************************************/
 
+static inline int
+nm_strcmp0 (const char *s1, const char *s2)
+{
+	int c;
+
+	/* like g_strcmp0(), but this is inlinable.
+	 *
+	 * Also, it is guaranteed to return either -1, 0, or 1. */
+	if (s1 == s2)
+		return 0;
+	if (!s1)
+		return -1;
+	if (!s2)
+		return 1;
+	c = strcmp (s1, s2);
+	if (c < 0)
+		return -1;
+	if (c > 0)
+		return 1;
+	return 0;
+}
+
 static inline gboolean
 nm_streq (const char *s1, const char *s2)
 {

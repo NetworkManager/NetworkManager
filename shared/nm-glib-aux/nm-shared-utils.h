@@ -171,6 +171,13 @@ nm_ip4_addr_is_localhost (in_addr_t addr4)
             return _cc < 0 ? -1 : 1; \
     } G_STMT_END
 
+#define NM_CMP_RETURN_DIRECT(c) \
+    G_STMT_START { \
+        const int _cc = (c); \
+        if (_cc) \
+            return _cc; \
+    } G_STMT_END
+
 #define NM_CMP_SELF(a, b) \
     G_STMT_START { \
         typeof (a) _a = (a); \
@@ -197,7 +204,7 @@ nm_ip4_addr_is_localhost (in_addr_t addr4)
     NM_CMP_RETURN (memcmp ((a), (b), (size)))
 
 #define NM_CMP_DIRECT_STRCMP0(a, b) \
-    NM_CMP_RETURN (g_strcmp0 ((a), (b)))
+    NM_CMP_RETURN_DIRECT (nm_strcmp0 ((a), (b)))
 
 #define NM_CMP_DIRECT_IN6ADDR(a, b) \
     G_STMT_START { \
@@ -229,12 +236,12 @@ nm_ip4_addr_is_localhost (in_addr_t addr4)
         const char *_b = ((b)->field); \
         \
         if (_a != _b) { \
-            NM_CMP_RETURN (g_strcmp0 (_a, _b)); \
+            NM_CMP_RETURN_DIRECT (nm_strcmp0 (_a, _b)); \
         } \
     } G_STMT_END
 
 #define NM_CMP_FIELD_STR0(a, b, field) \
-    NM_CMP_RETURN (g_strcmp0 (((a)->field), ((b)->field)))
+    NM_CMP_RETURN_DIRECT (nm_strcmp0 (((a)->field), ((b)->field)))
 
 #define NM_CMP_FIELD_MEMCMP_LEN(a, b, field, len) \
     NM_CMP_RETURN (memcmp (&((a)->field), &((b)->field), \
