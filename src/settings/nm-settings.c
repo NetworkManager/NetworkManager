@@ -1399,8 +1399,6 @@ impl_settings_load_connections (NMDBusObject *obj,
 	NMSettings *self = NM_SETTINGS (obj);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	gs_unref_ptrarray GPtrArray *failures = NULL;
-	GSList *iter;
-	guint i;
 	gs_free const char **filenames = NULL;
 
 	g_variant_get (parameters, "(^a&s)", &filenames);
@@ -1417,21 +1415,28 @@ impl_settings_load_connections (NMDBusObject *obj,
 		return;
 
 	if (filenames) {
+		gsize i;
+
 		for (i = 0; filenames[i]; i++) {
-			for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
-				NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
+			GSList *iter;
 
-				if (nm_settings_plugin_load_connection (plugin, filenames[i]))
-					break;
+			if (filenames[i][0] != '/')
+				_LOGW ("load: connection filename '%s' is not an absolute path", filenames[i]);
+			else {
+				for (iter = priv->plugins; iter; iter = iter->next) {
+					NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
+
+					if (nm_settings_plugin_load_connection (plugin, filenames[i]))
+						goto next_filename;
+				}
 			}
 
-			if (!iter) {
-				if (!g_path_is_absolute (filenames[i]))
-					_LOGW ("connection filename '%s' is not an absolute path", filenames[i]);
-				if (!failures)
-					failures = g_ptr_array_new ();
-				g_ptr_array_add (failures, (char *) filenames[i]);
-			}
+			if (!failures)
+				failures = g_ptr_array_new ();
+			g_ptr_array_add (failures, (char *) filenames[i]);
+
+next_filename:
+			;
 		}
 	}
 
