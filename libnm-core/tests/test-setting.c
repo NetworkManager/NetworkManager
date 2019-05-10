@@ -993,22 +993,22 @@ _test_team_config_sync (const char *team_config,
 	g_assert (s_team);
 
 	g_object_set (s_team, NM_SETTING_TEAM_CONFIG, team_config, NULL);
-	g_assert (nm_setting_team_get_notify_peers_count (s_team) == notify_peer_count);
-	g_assert (nm_setting_team_get_notify_peers_interval (s_team) == notify_peers_interval);
-	g_assert (nm_setting_team_get_mcast_rejoin_count (s_team) == mcast_rejoin_count);
-	g_assert (nm_setting_team_get_mcast_rejoin_interval (s_team) == mcast_rejoin_interval);
-	g_assert (nm_setting_team_get_runner_tx_balancer_interval (s_team) == runner_tx_balancer_interval);
-	g_assert (nm_setting_team_get_runner_active (s_team) == runner_active);
-	g_assert (nm_setting_team_get_runner_fast_rate (s_team) == runner_fast_rate);
-	g_assert (nm_setting_team_get_runner_sys_prio (s_team) == runner_sys_prio);
-	g_assert (nm_setting_team_get_runner_min_ports (s_team) == runner_min_ports);
-	g_assert (nm_streq0 (nm_setting_team_get_runner (s_team), runner));
-	g_assert (nm_streq0 (nm_setting_team_get_runner_hwaddr_policy (s_team), runner_hwaddr_policy));
-	g_assert (nm_streq0 (nm_setting_team_get_runner_tx_balancer (s_team), runner_tx_balancer));
-	g_assert (nm_streq0 (nm_setting_team_get_runner_agg_select_policy (s_team), runner_agg_select_policy));
+	g_assert_cmpint (nm_setting_team_get_notify_peers_count (s_team), ==, notify_peer_count);
+	g_assert_cmpint (nm_setting_team_get_notify_peers_interval (s_team), ==, notify_peers_interval);
+	g_assert_cmpint (nm_setting_team_get_mcast_rejoin_count (s_team), ==, mcast_rejoin_count);
+	g_assert_cmpint (nm_setting_team_get_mcast_rejoin_interval (s_team), ==, mcast_rejoin_interval);
+	g_assert_cmpint (nm_setting_team_get_runner_tx_balancer_interval (s_team), ==, runner_tx_balancer_interval);
+	g_assert_cmpint (nm_setting_team_get_runner_active (s_team), ==, runner_active);
+	g_assert_cmpint (nm_setting_team_get_runner_fast_rate (s_team), ==, runner_fast_rate);
+	g_assert_cmpint (nm_setting_team_get_runner_sys_prio (s_team), ==, runner_sys_prio);
+	g_assert_cmpint (nm_setting_team_get_runner_min_ports (s_team), ==, runner_min_ports);
+	g_assert_cmpstr (nm_setting_team_get_runner (s_team), ==, runner);
+	g_assert_cmpstr (nm_setting_team_get_runner_hwaddr_policy (s_team), ==, runner_hwaddr_policy);
+	g_assert_cmpstr (nm_setting_team_get_runner_tx_balancer (s_team), ==, runner_tx_balancer);
+	g_assert_cmpstr (nm_setting_team_get_runner_agg_select_policy (s_team), ==, runner_agg_select_policy);
 
 	if (runner_tx_hash) {
-		g_assert (runner_tx_hash->len == nm_setting_team_get_num_runner_tx_hash (s_team));
+		g_assert_cmpint (runner_tx_hash->len, ==, nm_setting_team_get_num_runner_tx_hash (s_team));
 		for (i = 0; i < runner_tx_hash->len; i++) {
 			found = FALSE;
 			for (j = 0; j < nm_setting_team_get_num_runner_tx_hash (s_team); j++) {
@@ -1023,7 +1023,7 @@ _test_team_config_sync (const char *team_config,
 	}
 
 	if (link_watchers) {
-		g_assert (link_watchers->len == nm_setting_team_get_num_link_watchers (s_team));
+		g_assert_cmpint (link_watchers->len, ==, nm_setting_team_get_num_link_watchers (s_team));
 		for (i = 0; i < link_watchers->len; i++) {
 			found = FALSE;
 			for (j = 0; j < nm_setting_team_get_num_link_watchers (s_team); j++) {
