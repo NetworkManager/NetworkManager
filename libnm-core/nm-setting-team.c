@@ -38,7 +38,7 @@
  **/
 
 /*****************************************************************************
- * NMTeamLinkWatch
+ * NMTeamLinkWatcher
  *****************************************************************************/
 
 G_DEFINE_BOXED_TYPE (NMTeamLinkWatcher, nm_team_link_watcher,
@@ -378,7 +378,8 @@ nm_team_link_watcher_unref (NMTeamLinkWatcher *watcher)
  * Since: 1.12
  **/
 gboolean
-nm_team_link_watcher_equal (NMTeamLinkWatcher *watcher, NMTeamLinkWatcher *other)
+nm_team_link_watcher_equal (const NMTeamLinkWatcher *watcher,
+                            const NMTeamLinkWatcher *other)
 {
 	_CHECK_WATCHER (watcher, FALSE);
 	_CHECK_WATCHER (other, FALSE);
@@ -435,7 +436,7 @@ _nm_team_link_watchers_equal (GPtrArray *a, GPtrArray *b, gboolean ignore_order)
  * Since: 1.12
  **/
 NMTeamLinkWatcher *
-nm_team_link_watcher_dup (NMTeamLinkWatcher *watcher)
+nm_team_link_watcher_dup (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, NULL);
 
@@ -476,7 +477,7 @@ nm_team_link_watcher_dup (NMTeamLinkWatcher *watcher)
  * Since: 1.12
  **/
 const char *
-nm_team_link_watcher_get_name (NMTeamLinkWatcher *watcher)
+nm_team_link_watcher_get_name (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, NULL);
 
@@ -493,7 +494,7 @@ nm_team_link_watcher_get_name (NMTeamLinkWatcher *watcher)
  * Since: 1.12
  **/
 int
-nm_team_link_watcher_get_delay_up (NMTeamLinkWatcher *watcher)
+nm_team_link_watcher_get_delay_up (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, 0);
 
@@ -512,7 +513,7 @@ nm_team_link_watcher_get_delay_up (NMTeamLinkWatcher *watcher)
  * Since: 1.12
  **/
 int
-nm_team_link_watcher_get_delay_down (NMTeamLinkWatcher *watcher)
+nm_team_link_watcher_get_delay_down (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, 0);
 
@@ -531,7 +532,7 @@ nm_team_link_watcher_get_delay_down (NMTeamLinkWatcher *watcher)
  * Since: 1.12
  **/
 int
-nm_team_link_watcher_get_init_wait (NMTeamLinkWatcher *watcher)
+nm_team_link_watcher_get_init_wait (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, 0);
 
@@ -552,7 +553,7 @@ nm_team_link_watcher_get_init_wait (NMTeamLinkWatcher *watcher)
  * Since: 1.12
  **/
 int
-nm_team_link_watcher_get_interval (NMTeamLinkWatcher *watcher)
+nm_team_link_watcher_get_interval (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, 0);
 
@@ -572,7 +573,7 @@ nm_team_link_watcher_get_interval (NMTeamLinkWatcher *watcher)
  * Since: 1.12
  **/
 int
-nm_team_link_watcher_get_missed_max (NMTeamLinkWatcher *watcher)
+nm_team_link_watcher_get_missed_max (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, 0);
 
@@ -592,7 +593,7 @@ nm_team_link_watcher_get_missed_max (NMTeamLinkWatcher *watcher)
  * Since: 1.16
  **/
 int
-nm_team_link_watcher_get_vlanid (NMTeamLinkWatcher *watcher)
+nm_team_link_watcher_get_vlanid (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, -1);
 
@@ -611,7 +612,7 @@ nm_team_link_watcher_get_vlanid (NMTeamLinkWatcher *watcher)
  * Since: 1.12
  **/
 const char *
-nm_team_link_watcher_get_target_host (NMTeamLinkWatcher *watcher)
+nm_team_link_watcher_get_target_host (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, NULL);
 
@@ -627,7 +628,7 @@ nm_team_link_watcher_get_target_host (NMTeamLinkWatcher *watcher)
  * Since: 1.12
  **/
 const char *
-nm_team_link_watcher_get_source_host (NMTeamLinkWatcher *watcher)
+nm_team_link_watcher_get_source_host (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, NULL);
 
@@ -643,7 +644,7 @@ nm_team_link_watcher_get_source_host (NMTeamLinkWatcher *watcher)
  * Since: 1.12
  **/
 NMTeamLinkWatcherArpPingFlags
-nm_team_link_watcher_get_flags (NMTeamLinkWatcher *watcher)
+nm_team_link_watcher_get_flags (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, 0);
 
