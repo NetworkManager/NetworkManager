@@ -44,11 +44,11 @@
 G_DEFINE_BOXED_TYPE (NMTeamLinkWatcher, nm_team_link_watcher,
                      nm_team_link_watcher_dup, nm_team_link_watcher_unref)
 
-enum LinkWatcherTypes {
+typedef enum {
 	LINK_WATCHER_ETHTOOL   = 0,
 	LINK_WATCHER_NSNA_PING = 1,
-	LINK_WATCHER_ARP_PING  = 2
-};
+	LINK_WATCHER_ARP_PING  = 2,
+} LinkWatcherTypes;
 
 static const char* _link_watcher_name[] = {
 	[LINK_WATCHER_ETHTOOL]   = NM_TEAM_LINK_WATCHER_ETHTOOL,
@@ -61,32 +61,25 @@ struct NMTeamLinkWatcher {
 
 	guint8 type; /* LinkWatcherTypes */
 
-	/*
-	 * The union is constructed in order to allow mapping the options of all the
-	 * watchers on the arp_ping one: this would allow to manipulate all the watchers
-	 * by using the arp_ping struct. See for instance the nm_team_link_watcher_unref()
-	 * and nm_team_link_watcher_equal() functions. So, if you need to change the union
-	 * be careful.
-	 */
 	union {
 		struct {
 			int delay_up;
 			int delay_down;
 		} ethtool;
 		struct {
+			const char *target_host;
 			int init_wait;
 			int interval;
 			int missed_max;
-			char *target_host;
 		} nsna_ping;
 		struct {
+			const char *target_host;
+			const char *source_host;
 			int init_wait;
 			int interval;
 			int missed_max;
-			char *target_host;
-			char *source_host;
-			NMTeamLinkWatcherArpPingFlags flags;
 			int vlanid;
+			NMTeamLinkWatcherArpPingFlags flags;
 		} arp_ping;
 	};
 };
@@ -136,9 +129,9 @@ nm_team_link_watcher_new_ethtool (int delay_up,
 		return NULL;
 	}
 
-	watcher = g_slice_new0 (NMTeamLinkWatcher);
-	watcher->refcount = 1;
+	watcher = g_malloc (nm_offsetofend (NMTeamLinkWatcher, ethtool));
 
+	watcher->refcount = 1;
 	watcher->type = LINK_WATCHER_ETHTOOL;
 	watcher->ethtool.delay_up = delay_up;
 	watcher->ethtool.delay_down = delay_down;
@@ -170,6 +163,8 @@ nm_team_link_watcher_new_nsna_ping (int init_wait,
 {
 	NMTeamLinkWatcher *watcher;
 	const char *val_fail = NULL;
+	char *str;
+	gsize l_target_host;
 
 	if (!target_host) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
@@ -195,14 +190,20 @@ nm_team_link_watcher_new_nsna_ping (int init_wait,
 		return NULL;
 	}
 
-	watcher = g_slice_new0 (NMTeamLinkWatcher);
-	watcher->refcount = 1;
+	l_target_host = strlen (target_host) + 1;
 
+	watcher = g_malloc (  nm_offsetofend (NMTeamLinkWatcher, nsna_ping)
+	                    + l_target_host);
+
+	watcher->refcount = 1;
 	watcher->type = LINK_WATCHER_NSNA_PING;
 	watcher->nsna_ping.init_wait = init_wait;
 	watcher->nsna_ping.interval = interval;
 	watcher->nsna_ping.missed_max = missed_max;
-	watcher->nsna_ping.target_host = g_strdup (target_host);
+
+	str = &((char *) watcher)[nm_offsetofend (NMTeamLinkWatcher, nsna_ping)];
+	watcher->nsna_ping.target_host = str;
+	memcpy (str, target_host, l_target_host);
 
 	return watcher;
 }
@@ -275,8 +276,12 @@ nm_team_link_watcher_new_arp_ping2 (int init_wait,
 {
 	NMTeamLinkWatcher *watcher;
 	const char *val_fail = NULL;
+	char *str;
+	gsize l_target_host;
+	gsize l_source_host;
 
-	if (!target_host || !source_host) {
+	if (   !target_host
+	    || !source_host) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
 		             _("Missing %s in arp_ping link watcher"),
 		             target_host ? "source-host" : "target-host");
@@ -313,17 +318,28 @@ nm_team_link_watcher_new_arp_ping2 (int init_wait,
 		return NULL;
 	}
 
-	watcher = g_slice_new0 (NMTeamLinkWatcher);
-	watcher->refcount = 1;
+	l_target_host = strlen (target_host) + 1;
+	l_source_host = strlen (source_host) + 1;
 
+	watcher = g_malloc (  nm_offsetofend (NMTeamLinkWatcher, arp_ping)
+	                    + l_target_host
+	                    + l_source_host);
+
+	watcher->refcount = 1;
 	watcher->type = LINK_WATCHER_ARP_PING;
 	watcher->arp_ping.init_wait = init_wait;
 	watcher->arp_ping.interval = interval;
 	watcher->arp_ping.missed_max = missed_max;
-	watcher->arp_ping.target_host = g_strdup (target_host);
-	watcher->arp_ping.source_host = g_strdup (source_host);
 	watcher->arp_ping.flags = flags;
 	watcher->arp_ping.vlanid = vlanid;
+
+	str = &((char *) watcher)[nm_offsetofend (NMTeamLinkWatcher, arp_ping)];
+	watcher->arp_ping.target_host = str;
+	memcpy (str, target_host, l_target_host);
+
+	str += l_target_host;
+	watcher->arp_ping.source_host = str;
+	memcpy (str, source_host, l_source_host);
 
 	return watcher;
 }
@@ -357,12 +373,8 @@ nm_team_link_watcher_unref (NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER_VOID (watcher);
 
-	watcher->refcount--;
-	if (watcher->refcount == 0) {
-		g_free (watcher->arp_ping.target_host);
-		g_free (watcher->arp_ping.source_host);
-		g_slice_free (NMTeamLinkWatcher, watcher);
-	}
+	if (--watcher->refcount == 0)
+		g_free (watcher);
 }
 
 int
@@ -379,14 +391,14 @@ nm_team_link_watcher_cmp (const NMTeamLinkWatcher *watcher,
 		NM_CMP_FIELD (watcher, other, ethtool.delay_down);
 		break;
 	case LINK_WATCHER_NSNA_PING:
-		NM_CMP_FIELD_STR0 (watcher, other, nsna_ping.target_host);
+		NM_CMP_FIELD_STR (watcher, other, nsna_ping.target_host);
 		NM_CMP_FIELD (watcher, other, nsna_ping.init_wait);
 		NM_CMP_FIELD (watcher, other, nsna_ping.interval);
 		NM_CMP_FIELD (watcher, other, nsna_ping.missed_max);
 		break;
 	case LINK_WATCHER_ARP_PING:
-		NM_CMP_FIELD_STR0 (watcher, other, arp_ping.target_host);
-		NM_CMP_FIELD_STR0 (watcher, other, arp_ping.source_host);
+		NM_CMP_FIELD_STR (watcher, other, arp_ping.target_host);
+		NM_CMP_FIELD_STR (watcher, other, arp_ping.source_host);
 		NM_CMP_FIELD (watcher, other, arp_ping.init_wait);
 		NM_CMP_FIELD (watcher, other, arp_ping.interval);
 		NM_CMP_FIELD (watcher, other, arp_ping.missed_max);
@@ -502,7 +514,7 @@ nm_team_link_watcher_dup (const NMTeamLinkWatcher *watcher)
 		                                           watcher->arp_ping.flags,
 		                                          NULL);
 	default:
-		g_assert_not_reached ();
+		nm_assert_not_reached ();
 		return NULL;
 	}
 }
@@ -537,9 +549,9 @@ nm_team_link_watcher_get_delay_up (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, 0);
 
-	if (watcher->type != LINK_WATCHER_ETHTOOL)
-		return -1;
-	return watcher->ethtool.delay_up;
+	if (watcher->type == LINK_WATCHER_ETHTOOL)
+		return watcher->ethtool.delay_up;
+	return -1;
 }
 
 /**
@@ -556,9 +568,9 @@ nm_team_link_watcher_get_delay_down (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, 0);
 
-	if (watcher->type != LINK_WATCHER_ETHTOOL)
-		return -1;
-	return watcher->ethtool.delay_down;
+	if (watcher->type == LINK_WATCHER_ETHTOOL)
+		return watcher->ethtool.delay_down;
+	return -1;
 }
 
 /**
@@ -575,11 +587,11 @@ nm_team_link_watcher_get_init_wait (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, 0);
 
-	if (!NM_IN_SET (watcher->type,
-	                LINK_WATCHER_NSNA_PING,
-	                LINK_WATCHER_ARP_PING))
-		return -1;
-	return watcher->arp_ping.init_wait;
+	if (watcher->type == LINK_WATCHER_NSNA_PING)
+		return watcher->nsna_ping.init_wait;
+	if (watcher->type == LINK_WATCHER_ARP_PING)
+		return watcher->arp_ping.init_wait;
+	return -1;
 }
 
 /**
@@ -596,11 +608,11 @@ nm_team_link_watcher_get_interval (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, 0);
 
-	if (!NM_IN_SET (watcher->type,
-	                LINK_WATCHER_NSNA_PING,
-	                LINK_WATCHER_ARP_PING))
-		return -1;
-	return watcher->arp_ping.interval;
+	if (watcher->type == LINK_WATCHER_NSNA_PING)
+		return watcher->nsna_ping.interval;
+	if (watcher->type == LINK_WATCHER_ARP_PING)
+		return watcher->arp_ping.interval;
+	return -1;
 }
 
 /**
@@ -616,11 +628,11 @@ nm_team_link_watcher_get_missed_max (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, 0);
 
-	if (!NM_IN_SET (watcher->type,
-	                LINK_WATCHER_NSNA_PING,
-	                LINK_WATCHER_ARP_PING))
-		return -1;
-	return watcher->arp_ping.missed_max;
+	if (watcher->type == LINK_WATCHER_NSNA_PING)
+		return watcher->nsna_ping.missed_max;
+	if (watcher->type == LINK_WATCHER_ARP_PING)
+		return watcher->arp_ping.missed_max;
+	return -1;
 }
 
 /**
@@ -636,9 +648,9 @@ nm_team_link_watcher_get_vlanid (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, -1);
 
-	if (watcher->type != LINK_WATCHER_ARP_PING)
-		return -1;
-	return watcher->arp_ping.vlanid;
+	if (watcher->type == LINK_WATCHER_ARP_PING)
+		return watcher->arp_ping.vlanid;
+	return -1;
 }
 
 /**
@@ -655,7 +667,11 @@ nm_team_link_watcher_get_target_host (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, NULL);
 
-	return watcher->arp_ping.target_host;
+	if (watcher->type == LINK_WATCHER_NSNA_PING)
+		return watcher->nsna_ping.target_host;
+	if (watcher->type == LINK_WATCHER_ARP_PING)
+		return watcher->arp_ping.target_host;
+	return NULL;
 }
 
 /**
@@ -671,7 +687,9 @@ nm_team_link_watcher_get_source_host (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, NULL);
 
-	return watcher->arp_ping.source_host;
+	if (watcher->type == LINK_WATCHER_ARP_PING)
+		return watcher->arp_ping.source_host;
+	return NULL;
 }
 
 /**
@@ -687,7 +705,9 @@ nm_team_link_watcher_get_flags (const NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER (watcher, 0);
 
-	return watcher->arp_ping.flags;
+	if (watcher->type == LINK_WATCHER_ARP_PING)
+		return watcher->arp_ping.flags;
+	return 0;
 }
 
 /*****************************************************************************/
