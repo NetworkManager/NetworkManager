@@ -365,6 +365,38 @@ nm_team_link_watcher_unref (NMTeamLinkWatcher *watcher)
 	}
 }
 
+int
+nm_team_link_watcher_cmp (const NMTeamLinkWatcher *watcher,
+                          const NMTeamLinkWatcher *other)
+{
+	NM_CMP_SELF (watcher, other);
+
+	NM_CMP_FIELD (watcher, other, type);
+
+	switch (watcher->type) {
+	case LINK_WATCHER_ETHTOOL:
+		NM_CMP_FIELD (watcher, other, ethtool.delay_up);
+		NM_CMP_FIELD (watcher, other, ethtool.delay_down);
+		break;
+	case LINK_WATCHER_NSNA_PING:
+		NM_CMP_FIELD_STR0 (watcher, other, nsna_ping.target_host);
+		NM_CMP_FIELD (watcher, other, nsna_ping.init_wait);
+		NM_CMP_FIELD (watcher, other, nsna_ping.interval);
+		NM_CMP_FIELD (watcher, other, nsna_ping.missed_max);
+		break;
+	case LINK_WATCHER_ARP_PING:
+		NM_CMP_FIELD_STR0 (watcher, other, arp_ping.target_host);
+		NM_CMP_FIELD_STR0 (watcher, other, arp_ping.source_host);
+		NM_CMP_FIELD (watcher, other, arp_ping.init_wait);
+		NM_CMP_FIELD (watcher, other, arp_ping.interval);
+		NM_CMP_FIELD (watcher, other, arp_ping.missed_max);
+		NM_CMP_FIELD (watcher, other, arp_ping.vlanid);
+		NM_CMP_FIELD (watcher, other, arp_ping.flags);
+		break;
+	}
+	return 0;
+}
+
 /**
  * nm_team_link_watcher_equal:
  * @watcher: the #NMTeamLinkWatcher
@@ -381,48 +413,55 @@ gboolean
 nm_team_link_watcher_equal (const NMTeamLinkWatcher *watcher,
                             const NMTeamLinkWatcher *other)
 {
-	_CHECK_WATCHER (watcher, FALSE);
-	_CHECK_WATCHER (other, FALSE);
+	return nm_team_link_watcher_cmp (watcher, other) == 0;
+}
 
-	if (   watcher->type != other->type
-	    || !nm_streq0 (watcher->arp_ping.target_host, other->arp_ping.target_host)
-	    || !nm_streq0 (watcher->arp_ping.source_host, other->arp_ping.source_host)
-	    || watcher->arp_ping.init_wait != other->arp_ping.init_wait
-	    || watcher->arp_ping.interval != other->arp_ping.interval
-	    || watcher->arp_ping.missed_max != other->arp_ping.missed_max
-	    || watcher->arp_ping.vlanid != other->arp_ping.vlanid
-	    || watcher->arp_ping.flags != other->arp_ping.flags)
-		return FALSE;
+static int
+_team_link_watchers_cmp_p_with_data (gconstpointer data_a,
+                                     gconstpointer data_b,
+                                     gpointer user_data)
+{
+	return nm_team_link_watcher_cmp (*((const NMTeamLinkWatcher *const*) data_a),
+	                                 *((const NMTeamLinkWatcher *const*) data_b));
+}
 
-	return TRUE;
+int
+nm_team_link_watchers_cmp (const NMTeamLinkWatcher *const*a,
+                           const NMTeamLinkWatcher *const*b,
+                           gsize len,
+                           gboolean ignore_order)
+{
+	gs_free const NMTeamLinkWatcher **a_free = NULL;
+	gs_free const NMTeamLinkWatcher **b_free = NULL;
+	guint i;
+
+	if (   ignore_order
+	    && len > 1) {
+		a = nm_memdup_maybe_a (200, a, len * sizeof (*a), &a_free);
+		b = nm_memdup_maybe_a (200, b, len * sizeof (*b), &b_free);
+		g_qsort_with_data ((gpointer) a, len, sizeof (*a), _team_link_watchers_cmp_p_with_data, NULL);
+		g_qsort_with_data ((gpointer) b, len, sizeof (*b), _team_link_watchers_cmp_p_with_data, NULL);
+	}
+	for (i = 0; i < len; i++) {
+		NM_CMP_RETURN (nm_team_link_watcher_cmp (a[i],
+		                                         b[i]));
+	}
+	return 0;
 }
 
 gboolean
-_nm_team_link_watchers_equal (GPtrArray *a, GPtrArray *b, gboolean ignore_order)
+nm_team_link_watchers_equal (const GPtrArray *a,
+                             const GPtrArray *b,
+                             gboolean ignore_order)
 {
-	guint i, j;
-
-	if (a->len != b->len)
-		return FALSE;
-	if (ignore_order) {
-		/* FIXME: comparing this way is O(n^2). Don't do that, instead
-		 *        add nm_team_link_watcher_cmp(), sort both lists, and
-		 *        compare step by step. */
-		for (i = 0; i < a->len; i++) {
-			for (j = 0; j < b->len; j++) {
-				if (nm_team_link_watcher_equal (a->pdata[i], b->pdata[j]))
-					break;
-			}
-			if (j == b->len)
-				return FALSE;
-		}
-	} else {
-		for (i = 0; i < a->len; i++) {
-			if (!nm_team_link_watcher_equal (a->pdata[i], b->pdata[i]))
-				return FALSE;
-		}
-	}
-	return TRUE;
+	return    a == b
+	       || (   a
+	           && b
+	           && a->len == b->len
+	           && (nm_team_link_watchers_cmp ((const NMTeamLinkWatcher *const*) a->pdata,
+	                                          (const NMTeamLinkWatcher *const*) b->pdata,
+	                                          a->len,
+	                                          ignore_order) == 0));
 }
 
 /**
@@ -1330,9 +1369,9 @@ compare_property (const NMSettInfoSetting *sett_info,
 			return TRUE;
 		a_priv = NM_SETTING_TEAM_GET_PRIVATE (set_a);
 		b_priv = NM_SETTING_TEAM_GET_PRIVATE (set_b);
-		return _nm_team_link_watchers_equal (a_priv->link_watchers,
-		                                     b_priv->link_watchers,
-		                                     TRUE);
+		return nm_team_link_watchers_equal (a_priv->link_watchers,
+		                                    b_priv->link_watchers,
+		                                    TRUE);
 	}
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TEAM_CONFIG)) {

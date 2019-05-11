@@ -407,9 +407,9 @@ compare_property (const NMSettInfoSetting *sett_info,
 			return TRUE;
 		a_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (set_a);
 		b_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (set_b);
-		return _nm_team_link_watchers_equal (a_priv->link_watchers,
-		                                     b_priv->link_watchers,
-		                                     TRUE);
+		return nm_team_link_watchers_equal (a_priv->link_watchers,
+		                                    b_priv->link_watchers,
+		                                    TRUE);
 	}
 
 	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TEAM_PORT_CONFIG)) {
