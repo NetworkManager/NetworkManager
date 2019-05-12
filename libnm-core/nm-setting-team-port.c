@@ -236,7 +236,7 @@ nm_setting_team_port_add_link_watcher (NMSettingTeamPort *setting,
 			return FALSE;
 	}
 
-	g_ptr_array_add (priv->link_watchers, nm_team_link_watcher_dup (link_watcher));
+	g_ptr_array_add (priv->link_watchers, _nm_team_link_watcher_ref (link_watcher));
 	_notify (setting, PROP_LINK_WATCHERS);
 	return TRUE;
 }
@@ -472,7 +472,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_LINK_WATCHERS:
 		g_value_take_boxed (value, _nm_utils_copy_array (priv->link_watchers,
-		                                                 (NMUtilsCopyFunc) nm_team_link_watcher_dup,
+		                                                 (NMUtilsCopyFunc) _nm_team_link_watcher_ref,
 		                                                 (GDestroyNotify) nm_team_link_watcher_unref));
 		break;
 	default:
@@ -548,7 +548,7 @@ set_property (GObject *object, guint prop_id,
 	case PROP_LINK_WATCHERS:
 		g_ptr_array_unref (priv->link_watchers);
 		priv->link_watchers = _nm_utils_copy_array (g_value_get_boxed (value),
-		                                            (NMUtilsCopyFunc) nm_team_link_watcher_dup,
+		                                            (NMUtilsCopyFunc) _nm_team_link_watcher_ref,
 		                                            (GDestroyNotify) nm_team_link_watcher_unref);
 		if (priv->link_watchers->len)
 			align_value = value;

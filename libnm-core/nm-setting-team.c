@@ -42,7 +42,7 @@
  *****************************************************************************/
 
 G_DEFINE_BOXED_TYPE (NMTeamLinkWatcher, nm_team_link_watcher,
-                     nm_team_link_watcher_dup, nm_team_link_watcher_unref)
+                     _nm_team_link_watcher_ref, nm_team_link_watcher_unref)
 
 typedef enum {
 	LINK_WATCHER_ETHTOOL   = 0,
@@ -57,7 +57,8 @@ static const char* _link_watcher_name[] = {
 };
 
 struct NMTeamLinkWatcher {
-	guint refcount;
+
+	int ref_count;
 
 	guint8 type; /* LinkWatcherTypes */
 
@@ -87,15 +88,15 @@ struct NMTeamLinkWatcher {
 #define _CHECK_WATCHER_VOID(watcher) \
 	G_STMT_START { \
 		g_return_if_fail (watcher != NULL); \
-		g_return_if_fail (watcher->refcount > 0); \
-		g_return_if_fail (watcher->type <= LINK_WATCHER_ARP_PING); \
+		g_return_if_fail (watcher->ref_count > 0); \
+		nm_assert (watcher->type <= LINK_WATCHER_ARP_PING); \
 	} G_STMT_END
 
 #define _CHECK_WATCHER(watcher, err_val) \
 	G_STMT_START { \
 		g_return_val_if_fail (watcher != NULL, err_val); \
-		g_return_val_if_fail (watcher->refcount > 0, err_val); \
-		g_return_val_if_fail (watcher->type <= LINK_WATCHER_ARP_PING, err_val); \
+		g_return_val_if_fail (watcher->ref_count > 0, err_val); \
+		nm_assert (watcher->type <= LINK_WATCHER_ARP_PING); \
 	} G_STMT_END
 
 /**
@@ -131,7 +132,7 @@ nm_team_link_watcher_new_ethtool (int delay_up,
 
 	watcher = g_malloc (nm_offsetofend (NMTeamLinkWatcher, ethtool));
 
-	watcher->refcount = 1;
+	watcher->ref_count = 1;
 	watcher->type = LINK_WATCHER_ETHTOOL;
 	watcher->ethtool.delay_up = delay_up;
 	watcher->ethtool.delay_down = delay_down;
@@ -195,7 +196,7 @@ nm_team_link_watcher_new_nsna_ping (int init_wait,
 	watcher = g_malloc (  nm_offsetofend (NMTeamLinkWatcher, nsna_ping)
 	                    + l_target_host);
 
-	watcher->refcount = 1;
+	watcher->ref_count = 1;
 	watcher->type = LINK_WATCHER_NSNA_PING;
 	watcher->nsna_ping.init_wait = init_wait;
 	watcher->nsna_ping.interval = interval;
@@ -325,7 +326,7 @@ nm_team_link_watcher_new_arp_ping2 (int init_wait,
 	                    + l_target_host
 	                    + l_source_host);
 
-	watcher->refcount = 1;
+	watcher->ref_count = 1;
 	watcher->type = LINK_WATCHER_ARP_PING;
 	watcher->arp_ping.init_wait = init_wait;
 	watcher->arp_ping.interval = interval;
@@ -344,6 +345,15 @@ nm_team_link_watcher_new_arp_ping2 (int init_wait,
 	return watcher;
 }
 
+NMTeamLinkWatcher *
+_nm_team_link_watcher_ref (NMTeamLinkWatcher *watcher)
+{
+	_CHECK_WATCHER (watcher, NULL);
+
+	g_atomic_int_inc (&watcher->ref_count);
+	return watcher;
+}
+
 /**
  * nm_team_link_watcher_ref:
  * @watcher: the #NMTeamLinkWatcher
@@ -353,10 +363,9 @@ nm_team_link_watcher_new_arp_ping2 (int init_wait,
  * Since: 1.12
  **/
 void
-nm_team_link_watcher_ref (NMTeamLinkWatcher *watcher){
-	_CHECK_WATCHER_VOID (watcher);
-
-	watcher->refcount++;
+nm_team_link_watcher_ref (NMTeamLinkWatcher *watcher)
+{
+	_nm_team_link_watcher_ref (watcher);
 }
 
 /**
@@ -373,7 +382,7 @@ nm_team_link_watcher_unref (NMTeamLinkWatcher *watcher)
 {
 	_CHECK_WATCHER_VOID (watcher);
 
-	if (--watcher->refcount == 0)
+	if (g_atomic_int_dec_and_test (&watcher->ref_count))
 		g_free (watcher);
 }
 
@@ -1190,7 +1199,7 @@ nm_setting_team_add_link_watcher (NMSettingTeam *setting,
 			return FALSE;
 	}
 
-	g_ptr_array_add (priv->link_watchers, nm_team_link_watcher_dup (link_watcher));
+	g_ptr_array_add (priv->link_watchers, _nm_team_link_watcher_ref (link_watcher));
 	_notify (setting, PROP_LINK_WATCHERS);
 	return TRUE;
 }
@@ -1536,7 +1545,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_LINK_WATCHERS:
 		g_value_take_boxed (value, _nm_utils_copy_array (priv->link_watchers,
-		                                                 (NMUtilsCopyFunc) nm_team_link_watcher_dup,
+		                                                 (NMUtilsCopyFunc) _nm_team_link_watcher_ref,
 		                                                 (GDestroyNotify) nm_team_link_watcher_unref));
 		break;
 	default:
@@ -1671,7 +1680,7 @@ set_property (GObject *object, guint prop_id,
 	case PROP_LINK_WATCHERS:
 		g_ptr_array_unref (priv->link_watchers);
 		priv->link_watchers = _nm_utils_copy_array (g_value_get_boxed (value),
-		                                            (NMUtilsCopyFunc) nm_team_link_watcher_dup,
+		                                            (NMUtilsCopyFunc) _nm_team_link_watcher_ref,
 		                                            (GDestroyNotify) nm_team_link_watcher_unref);
 		if (priv->link_watchers->len)
 			align_value = value;

@@ -534,6 +534,8 @@ gboolean _nm_utils_inet6_is_token (const struct in6_addr *in6addr);
 
 /*****************************************************************************/
 
+NMTeamLinkWatcher *_nm_team_link_watcher_ref (NMTeamLinkWatcher *watcher);
+
 int nm_team_link_watcher_cmp (const NMTeamLinkWatcher *watcher, const NMTeamLinkWatcher *other);
 
 int nm_team_link_watchers_cmp (const NMTeamLinkWatcher *const*a,

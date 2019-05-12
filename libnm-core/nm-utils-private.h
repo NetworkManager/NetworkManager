@@ -231,7 +231,7 @@ _nm_utils_json_extract_ptr_array (char *conf,
 	if (!data)
 		return ret;
 	for (i = 0; i < data->len; i++)
-		g_ptr_array_add (ret, nm_team_link_watcher_dup (data->pdata[i]));
+		g_ptr_array_add (ret, _nm_team_link_watcher_ref (data->pdata[i]));
 	return ret;
 }
 
