@@ -328,8 +328,8 @@ no-auto-default=*
         <filename>/etc/resolv.conf</filename> to reflect the nameservers
         provided by currently active connections.</para>
         <para><literal>dnsmasq</literal>: NetworkManager will run
-        dnsmasq as a local caching nameserver, using a "split DNS"
-        configuration if you are connected to a VPN, and then update
+        dnsmasq as a local caching nameserver, using "Conditional Forwarding"
+        if you are connected to a VPN, and then update
         <filename>resolv.conf</filename> to point to the local
         nameserver. It is possible to pass custom options to the
         dnsmasq instance by adding them to files in the
@@ -343,8 +343,8 @@ no-auto-default=*
         <para><literal>systemd-resolved</literal>: NetworkManager will
         push the DNS configuration to systemd-resolved</para>
         <para><literal>unbound</literal>: NetworkManager will talk
-        to unbound and dnssec-triggerd, providing a "split DNS"
-        configuration with DNSSEC support. <filename>/etc/resolv.conf</filename>
+        to unbound and dnssec-triggerd, using "Conditional Forwarding"
+        with DNSSEC support. <filename>/etc/resolv.conf</filename>
         will be managed by dnssec-trigger daemon.</para>
         <para><literal>none</literal>: NetworkManager will not
         modify resolv.conf. This implies

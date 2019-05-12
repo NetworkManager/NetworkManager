@@ -5468,7 +5468,7 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * so in presence of at least a negative priority, only DNS servers from
 	 * connections with the lowest priority value will be used.
 	 *
-	 * When using a DNS resolver that supports split-DNS as dns=dnsmasq or
+	 * When using a DNS resolver that supports Conditional Forwarding as dns=dnsmasq or
 	 * dns=systemd-resolved, each connection is used to query domains in its
 	 * search list.  Queries for domains not present in any search list are
 	 * routed through connections having the '~.' special wildcard domain, which
