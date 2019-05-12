@@ -6807,6 +6807,11 @@ _team_config_equal_check (const char *conf1,
                           gboolean port_config,
                           gboolean expected)
 {
+	if (!nm_streq0 (conf1, conf2)) {
+		_team_config_equal_check (conf1, conf1, port_config, TRUE);
+		_team_config_equal_check (conf2, conf2, port_config, TRUE);
+	}
+
 	g_assert_cmpint (_nm_utils_team_config_equal (conf1, conf2, port_config), ==, expected);
 }
 
