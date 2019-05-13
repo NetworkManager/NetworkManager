@@ -134,11 +134,11 @@ static const ReqOption dhcp4_requests[] = {
 	REQ (SD_DHCP_OPTION_PRIVATE_CLASSLESS_STATIC_ROUTE, "ms_classless_static_routes",      TRUE ),
 	REQ (SD_DHCP_OPTION_PRIVATE_PROXY_AUTODISCOVERY,    "wpad",                            TRUE ),
 	REQ (SD_DHCP_OPTION_ROOT_PATH,                      "root_path",                       TRUE ),
+	REQ (SD_DHCP_OPTION_IP_ADDRESS_LEASE_TIME,          "dhcp_lease_time",                 FALSE ),
 
 	/* Internal values */
-	REQ (SD_DHCP_OPTION_IP_ADDRESS_LEASE_TIME,          "expiry",                          FALSE ),
-	REQ (SD_DHCP_OPTION_CLIENT_IDENTIFIER,              "dhcp_client_identifier",          FALSE ),
 	REQ (DHCP_OPTION_IP_ADDRESS,                        "ip_address",                      FALSE ),
+	REQ (DHCP_OPTION_EXPIRY,                            "expiry",                          FALSE ),
 
 	{ 0 }
 };
@@ -318,8 +318,9 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	           (long long) (ts_time + a_lifetime));
 	add_option_u64 (options,
 	                dhcp4_requests,
-	                SD_DHCP_OPTION_IP_ADDRESS_LEASE_TIME,
+	                DHCP_OPTION_EXPIRY,
 	                (guint64) (ts_time + a_lifetime));
+	add_option_u64 (options, dhcp4_requests, SD_DHCP_OPTION_IP_ADDRESS_LEASE_TIME, a_lifetime);
 
 	nm_ip4_config_add_address (ip4_config,
 	                           &((const NMPlatformIP4Address) {
