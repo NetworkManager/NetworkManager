@@ -53,7 +53,7 @@ option('config_dns_rc_manager_default', type: 'combo', choices: ['symlink', 'fil
 option('dhclient', type: 'string', value: '', description: 'Enable dhclient support')
 option('dhcpcanon', type: 'string', value: '', description: 'Enable dhcpcanon support (experimental)')
 option('dhcpcd', type: 'string', value: '', description: 'Enable dhcpcd support')
-option('config_dhcp_default', type: 'combo', choices: ['dhcpcanon', 'dhclient', 'dhcpcd', 'internal'], value: 'internal', description: 'Default configuration option for main.dhcp setting, used as fallback if the configuration option is unset')
+option('config_dhcp_default', type: 'combo', choices: ['dhcpcanon', 'dhclient', 'dhcpcd', 'internal', 'nettools'], value: 'internal', description: 'Default configuration option for main.dhcp setting, used as fallback if the configuration option is unset')
 
 # miscellaneous
 option('introspection', type: 'boolean', value: true, description: 'Enable introspection for this build')
