@@ -50,6 +50,7 @@ deps = [
   libsystemd_dep,
   libudev_dep,
   libnm_core_dep,
+  shared_n_dhcp4_dep,
 ]
 
 if enable_wext

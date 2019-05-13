@@ -287,6 +287,44 @@ shared_libnacd_la_LIBADD = \
 
 ###############################################################################
 
+noinst_LTLIBRARIES += shared/libndhcp4.la
+
+shared_libndhcp4_la_CFLAGS = \
+	$(AM_CFLAGS) \
+	-Wno-error=declaration-after-statement \
+	-Wno-pointer-arith \
+	$(NULL)
+
+shared_libndhcp4_la_CPPFLAGS = \
+	-D_GNU_SOURCE \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	-I$(srcdir)/shared/c-stdaux/src \
+	-I$(srcdir)/shared/c-list/src \
+	-I$(srcdir)/shared/c-siphash/src \
+	$(NULL)
+
+shared_libndhcp4_la_LDFLAGS = \
+	$(SANITIZER_LIB_LDFLAGS)
+
+shared_libndhcp4_la_SOURCES = \
+	shared/n-dhcp4/src/n-dhcp4-c-connection.c \
+	shared/n-dhcp4/src/n-dhcp4-c-lease.c \
+	shared/n-dhcp4/src/n-dhcp4-c-probe.c \
+	shared/n-dhcp4/src/n-dhcp4-client.c \
+	shared/n-dhcp4/src/n-dhcp4-incoming.c \
+	shared/n-dhcp4/src/n-dhcp4-outgoing.c \
+	shared/n-dhcp4/src/n-dhcp4-private.h \
+	shared/n-dhcp4/src/n-dhcp4-socket.c \
+	shared/n-dhcp4/src/n-dhcp4.h \
+	shared/n-dhcp4/src/util/packet.c \
+	shared/n-dhcp4/src/util/packet.h \
+	shared/n-dhcp4/src/util/socket.c \
+	shared/n-dhcp4/src/util/socket.h \
+	$(NULL)
+
+###############################################################################
+
 noinst_LTLIBRARIES += shared/nm-std-aux/libnm-std-aux.la
 
 shared_nm_std_aux_libnm_std_aux_la_CPPFLAGS = \
@@ -2136,6 +2174,7 @@ src_libNetworkManager_la_LIBADD = \
 	src/libnm-systemd-core.la \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/libnacd.la \
+	shared/libndhcp4.la \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
