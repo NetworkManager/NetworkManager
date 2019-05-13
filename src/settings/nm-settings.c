@@ -1134,14 +1134,13 @@ send_agent_owned_secrets (NMSettings *self,
 
 static void
 pk_add_cb (NMAuthChain *chain,
-           GError *chain_error,
            GDBusMethodInvocation *context,
            gpointer user_data)
 {
 	NMSettings *self = NM_SETTINGS (user_data);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMAuthCallResult result;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	NMConnection *connection = NULL;
 	gs_unref_object NMSettingsConnection *added = NULL;
 	NMSettingsAddCallback callback;
@@ -1150,20 +1149,16 @@ pk_add_cb (NMAuthChain *chain,
 	const char *perm;
 	gboolean save_to_disk;
 
-	g_assert (context);
+	nm_assert (G_IS_DBUS_METHOD_INVOCATION (context));
 
 	priv->auths = g_slist_remove (priv->auths, chain);
 
 	perm = nm_auth_chain_get_data (chain, "perm");
-	g_assert (perm);
+	nm_assert (perm);
+
 	result = nm_auth_chain_get_result (chain, perm);
 
-	if (chain_error) {
-		error = g_error_new (NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_FAILED,
-		                     "Error checking authorization: %s",
-		                     chain_error->message);
-	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+	if (result != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             "Insufficient privileges.");
@@ -1189,11 +1184,10 @@ pk_add_cb (NMAuthChain *chain,
 	callback (self, added, error, context, subject, callback_data);
 
 	/* Send agent-owned secrets to the agents */
-	if (!error && added && nm_settings_has_connection (self, added))
+	if (   !error
+	    && added
+	    && nm_settings_has_connection (self, added))
 		send_agent_owned_secrets (self, added, subject);
-
-	g_clear_error (&error);
-	nm_auth_chain_destroy (chain);
 }
 
 /* FIXME: remove if/when kernel supports adhoc wpa */
@@ -1280,7 +1274,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	 * request affects more than just the caller, require 'modify.system'.
 	 */
 	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
+	nm_assert (s_con);
 	if (nm_setting_connection_get_num_permissions (s_con) == 1)
 		perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
 	else
@@ -1302,7 +1296,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	nm_auth_chain_set_data (chain, "callback-data", user_data, NULL);
 	nm_auth_chain_set_data (chain, "subject", g_object_ref (subject), g_object_unref);
 	nm_auth_chain_set_data (chain, "save-to-disk", GUINT_TO_POINTER (save_to_disk), NULL);
-	nm_auth_chain_add_call (chain, perm, TRUE);
+	nm_auth_chain_add_call_unsafe (chain, perm, TRUE);
 	return;
 
 done:
@@ -1503,7 +1497,6 @@ impl_settings_reload_connections (NMDBusObject *obj,
 
 static void
 pk_hostname_cb (NMAuthChain *chain,
-                GError *chain_error,
                 GDBusMethodInvocation *context,
                 gpointer user_data)
 {
@@ -1513,19 +1506,14 @@ pk_hostname_cb (NMAuthChain *chain,
 	GError *error = NULL;
 	const char *hostname;
 
-	g_assert (context);
+	nm_assert (G_IS_DBUS_METHOD_INVOCATION (context));
 
 	priv->auths = g_slist_remove (priv->auths, chain);
 
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME);
 
 	/* If our NMSettingsConnection is already gone, do nothing */
-	if (chain_error) {
-		error = g_error_new (NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_FAILED,
-		                     "Error checking authorization: %s",
-		                     chain_error->message);
-	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+	if (result != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             "Insufficient privileges.");
@@ -1543,8 +1531,6 @@ pk_hostname_cb (NMAuthChain *chain,
 		g_dbus_method_invocation_take_error (context, error);
 	else
 		g_dbus_method_invocation_return_value (context, NULL);
-
-	nm_auth_chain_destroy (chain);
 }
 
 static void

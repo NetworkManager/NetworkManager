@@ -42,7 +42,9 @@ static void \
 _singleton_instance_weak_ref_cb (gpointer data, \
                                  GObject *where_the_object_was) \
 { \
-	nm_log_dbg (LOGD_CORE, "disposing %s singleton (%p)", G_STRINGIFY (TYPE), singleton_instance); \
+	nm_log_dbg (LOGD_CORE, "disposing %s singleton ("NM_HASH_OBFUSCATE_PTR_FMT")", \
+	            G_STRINGIFY (TYPE), \
+	            NM_HASH_OBFUSCATE_PTR (singleton_instance)); \
 	singleton_instance = NULL; \
 } \
 static inline void \
@@ -73,7 +75,9 @@ GETTER (void) \
 		singleton_instance = (g_object_new (GTYPE, ##__VA_ARGS__, NULL)); \
 		g_assert (singleton_instance); \
 		nm_singleton_instance_register (); \
-		nm_log_dbg (LOGD_CORE, "create %s singleton (%p)", G_STRINGIFY (TYPE), singleton_instance); \
+		nm_log_dbg (LOGD_CORE, "create %s singleton ("NM_HASH_OBFUSCATE_PTR_FMT")", \
+		            G_STRINGIFY (TYPE), \
+		            NM_HASH_OBFUSCATE_PTR (singleton_instance)); \
 	} \
 	return singleton_instance; \
 } \

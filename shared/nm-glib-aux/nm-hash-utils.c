@@ -45,7 +45,10 @@ _get_hash_key_init (void)
 	 * to use it as guint* or guint64* pointer. */
 	static union {
 		guint8 v8[HASH_KEY_SIZE];
-	} g_arr _nm_alignas (guint64);
+		guint _align_as_uint;
+		guint32 _align_as_uint32;
+		guint64 _align_as_uint64;
+	} g_arr;
 	const guint8 *g;
 	union {
 		guint8 v8[HASH_KEY_SIZE];
@@ -125,14 +128,17 @@ void
 nm_hash_siphash42_init (CSipHash *h, guint static_seed)
 {
 	const guint8 *g;
-	guint seed[HASH_KEY_SIZE_GUINT];
+	union {
+		guint64 _align_as_uint64;
+		guint arr[HASH_KEY_SIZE_GUINT];
+	} seed;
 
 	nm_assert (h);
 
 	g = _get_hash_key ();
-	memcpy (seed, g, HASH_KEY_SIZE);
-	seed[0] ^= static_seed;
-	c_siphash_init (h, (const guint8 *) seed);
+	memcpy (&seed, g, HASH_KEY_SIZE);
+	seed.arr[0] ^= static_seed;
+	c_siphash_init (h, (const guint8 *) &seed);
 }
 
 guint

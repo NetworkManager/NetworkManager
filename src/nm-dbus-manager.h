@@ -49,9 +49,12 @@ typedef void (*NMDBusManagerSetPropertyHandler) (NMDBusObject *obj,
                                                  GVariant *value,
                                                  gpointer user_data);
 
-gboolean nm_dbus_manager_acquire_bus (NMDBusManager *self);
+gboolean nm_dbus_manager_acquire_bus (NMDBusManager *self,
+                                      gboolean request_name);
 
 GDBusConnection *nm_dbus_manager_get_dbus_connection (NMDBusManager *self);
+
+#define NM_MAIN_DBUS_CONNECTION_GET (nm_dbus_manager_get_dbus_connection (nm_dbus_manager_get ()))
 
 void nm_dbus_manager_start (NMDBusManager *self,
                             NMDBusManagerSetPropertyHandler set_property_handler,

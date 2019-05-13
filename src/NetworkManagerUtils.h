@@ -78,7 +78,7 @@ NMPlatformRoutingRule *nm_ip_routing_rule_to_platform (const NMIPRoutingRule *ru
  * SIGKILL.
  *
  * After NM_SHUTDOWN_TIMEOUT_MS, NetworkManager will however not yet terminate right
- * away. It iterates the mainloop for another NM_SHUTDOWN_TIMEOUT_MS_EXTRA. This
+ * away. It iterates the mainloop for another NM_SHUTDOWN_TIMEOUT_MS_WATCHDOG. This
  * should give time to reap the child process (after SIGKILL).
  *
  * So, the maximum time we should wait before sending SIGKILL should be at most

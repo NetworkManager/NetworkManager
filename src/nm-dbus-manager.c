@@ -471,6 +471,9 @@ _bus_get_unix_pid (NMDBusManager *self,
 	guint32 unix_pid = G_MAXUINT32;
 	gs_unref_variant GVariant *ret = NULL;
 
+	if (!priv->main_dbus_connection)
+		return FALSE;
+
 	ret = g_dbus_connection_call_sync (priv->main_dbus_connection,
 	                                   DBUS_SERVICE_DBUS,
 	                                   DBUS_PATH_DBUS,
@@ -499,6 +502,9 @@ _bus_get_unix_user (NMDBusManager *self,
 	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 	guint32 unix_uid = G_MAXUINT32;
 	gs_unref_variant GVariant *ret = NULL;
+
+	if (!priv->main_dbus_connection)
+		return FALSE;
 
 	ret = g_dbus_connection_call_sync (priv->main_dbus_connection,
 	                                   DBUS_SERVICE_DBUS,
@@ -1024,6 +1030,7 @@ _obj_register (NMDBusManager *self,
 
 	nm_assert (c_list_is_empty (&obj->internal.registration_lst_head));
 	nm_assert (priv->main_dbus_connection);
+	nm_assert (priv->objmgr_registration_id != 0);
 	nm_assert (priv->started);
 
 	n_klasses = 0;
@@ -1119,15 +1126,10 @@ _obj_unregister (NMDBusManager *self,
 	GVariantBuilder builder;
 
 	nm_assert (NM_IS_DBUS_OBJECT (obj));
-
-	if (!priv->main_dbus_connection) {
-		/* nothing to do for the moment. */
-		nm_assert (c_list_is_empty (&obj->internal.registration_lst_head));
-		return;
-	}
-
+	nm_assert (priv->main_dbus_connection);
+	nm_assert (priv->objmgr_registration_id != 0);
+	nm_assert (priv->started);
 	nm_assert (!c_list_is_empty (&obj->internal.registration_lst_head));
-	nm_assert (priv->objmgr_registration_id);
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("as"));
 
@@ -1202,7 +1204,7 @@ _nm_dbus_manager_obj_export (NMDBusObject *obj)
 		nm_assert_not_reached ();
 	c_list_link_tail (&priv->objects_lst_head, &obj->internal.objects_lst);
 
-	if (priv->main_dbus_connection && priv->started)
+	if (priv->started)
 		_obj_register (self, obj);
 }
 
@@ -1223,7 +1225,10 @@ _nm_dbus_manager_obj_unexport (NMDBusObject *obj)
 	nm_assert (&obj->internal == g_hash_table_lookup (priv->objects_by_path, &obj->internal));
 	nm_assert (c_list_contains (&priv->objects_lst_head, &obj->internal.objects_lst));
 
-	_obj_unregister (self, obj);
+	if (priv->started)
+		_obj_unregister (self, obj);
+	else
+		nm_assert (c_list_is_empty (&obj->internal.registration_lst_head));
 
 	if (!g_hash_table_remove (priv->objects_by_path, &obj->internal))
 		nm_assert_not_reached ();
@@ -1249,15 +1254,22 @@ _nm_dbus_manager_obj_notify (NMDBusObject *obj,
 	nm_assert (NM_IS_DBUS_MANAGER (obj->internal.bus_manager));
 	nm_assert (!c_list_is_empty (&obj->internal.objects_lst));
 
+	self = obj->internal.bus_manager;
+	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+
+	nm_assert (!priv->started || priv->objmgr_registration_id != 0);
+	nm_assert (priv->objmgr_registration_id == 0 || priv->main_dbus_connection);
+	nm_assert (c_list_is_empty (&obj->internal.registration_lst_head) != priv->started);
+
+	if (G_UNLIKELY (!priv->started))
+		return;
+
 	c_list_for_each_entry (reg_data, &obj->internal.registration_lst_head, registration_lst) {
 		if (_reg_data_get_interface_info (reg_data)->legacy_property_changed) {
 			any_legacy_signals = TRUE;
 			break;
 		}
 	}
-
-	self = obj->internal.bus_manager;
-	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
 	/* do a naive search for the matching NMDBusPropertyInfoExtended infos. Since the number of
 	 * (interfaces x properties) is static and possibly small, this naive search is effectively
@@ -1401,7 +1413,7 @@ _nm_dbus_manager_obj_emit_signal (NMDBusObject *obj,
 	self = obj->internal.bus_manager;
 	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
-	if (!priv->main_dbus_connection || !priv->started) {
+	if (!priv->started) {
 		nm_g_variant_unref_floating (args);
 		return;
 	}
@@ -1565,9 +1577,12 @@ nm_dbus_manager_start (NMDBusManager *self,
 	NMDBusObject *obj;
 
 	g_return_if_fail (NM_IS_DBUS_MANAGER (self));
+
 	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
-	if (!priv->main_dbus_connection) {
+	nm_assert (!priv->started);
+
+	if (priv->objmgr_registration_id == 0) {
 		/* Do nothing. We're presumably in the configure-and-quit mode. */
 		return;
 	}
@@ -1581,12 +1596,12 @@ nm_dbus_manager_start (NMDBusManager *self,
 }
 
 gboolean
-nm_dbus_manager_acquire_bus (NMDBusManager *self)
+nm_dbus_manager_acquire_bus (NMDBusManager *self,
+                             gboolean request_name)
 {
 	NMDBusManagerPrivate *priv;
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *ret = NULL;
-	gs_unref_object GDBusConnection *connection = NULL;
 	guint32 result;
 	guint registration_id;
 
@@ -1599,17 +1614,22 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 	 * acquire the name despite connecting to the bus successfully.
 	 * It means that something is gravely broken -- such as another NetworkManager
 	 * instance running. */
-	connection = g_bus_get_sync (G_BUS_TYPE_SYSTEM,
-	                             NULL,
-	                             &error);
-	if (!connection) {
-		_LOGI ("cannot connect to D-Bus: %s", error->message);
+	priv->main_dbus_connection = g_bus_get_sync (G_BUS_TYPE_SYSTEM,
+	                                             NULL,
+	                                             &error);
+	if (!priv->main_dbus_connection) {
+		_LOGE ("cannot connect to D-Bus: %s", error->message);
 		return FALSE;
 	}
 
-	g_dbus_connection_set_exit_on_close (connection, FALSE);
+	g_dbus_connection_set_exit_on_close (priv->main_dbus_connection, FALSE);
 
-	registration_id = g_dbus_connection_register_object (connection,
+	if (!request_name) {
+		_LOGD ("D-Bus connection created");
+		return TRUE;
+	}
+
+	registration_id = g_dbus_connection_register_object (priv->main_dbus_connection,
 	                                                     OBJECT_MANAGER_SERVER_BASE_PATH,
 	                                                     NM_UNCONST_PTR (GDBusInterfaceInfo, &interface_info_objmgr),
 	                                                     &dbus_vtable_objmgr,
@@ -1621,7 +1641,7 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 		return FALSE;
 	}
 
-	ret = g_dbus_connection_call_sync (connection,
+	ret = g_dbus_connection_call_sync (priv->main_dbus_connection,
 	                                   DBUS_SERVICE_DBUS,
 	                                   DBUS_PATH_DBUS,
 	                                   DBUS_INTERFACE_DBUS,
@@ -1634,13 +1654,10 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 	                                   -1,
 	                                   NULL,
 	                                   &error);
-	if (!ret)
-		return FALSE;
-
 	if (!ret) {
 		_LOGE ("fatal failure to acquire D-Bus service \"%s"": %s",
 		       NM_DBUS_SERVICE, error->message);
-		g_dbus_connection_unregister_object(connection, registration_id);
+		g_dbus_connection_unregister_object (priv->main_dbus_connection, registration_id);
 		return FALSE;
 	}
 
@@ -1648,12 +1665,11 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 	if (result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
 		_LOGE ("fatal failure to acquire D-Bus service \"%s\" (%u). Service already taken",
 		       NM_DBUS_SERVICE, (guint) result);
-		g_dbus_connection_unregister_object(connection, registration_id);
+		g_dbus_connection_unregister_object (priv->main_dbus_connection, registration_id);
 		return FALSE;
 	}
 
 	priv->objmgr_registration_id = registration_id;
-	priv->main_dbus_connection = g_steal_pointer (&connection);
 
 	_LOGI ("acquired D-Bus service \"%s\"", NM_DBUS_SERVICE);
 
@@ -1690,6 +1706,7 @@ nm_dbus_manager_init (NMDBusManager *self)
 
 	c_list_init (&priv->private_servers_lst_head);
 	c_list_init (&priv->objects_lst_head);
+
 	priv->objects_by_path = g_hash_table_new ((GHashFunc) _objects_by_path_hash, (GEqualFunc) _objects_by_path_equal);
 
 	c_list_init (&priv->caller_info_lst_head);

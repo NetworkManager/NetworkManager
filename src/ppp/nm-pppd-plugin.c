@@ -46,17 +46,18 @@ int plugin_init (void);
 
 char pppd_version[] = VERSION;
 
-static GDBusProxy *proxy = NULL;
+static struct {
+	GDBusConnection *dbus_connection;
+	char *ipparam;
+} gl;
 
 static void
 nm_phasechange (void *data, int arg)
 {
 	NMPPPStatus ppp_status = NM_PPP_STATUS_UNKNOWN;
-	char new_name[IF_NAMESIZE];
 	char *ppp_phase;
-	int index;
 
-	g_return_if_fail (G_IS_DBUS_PROXY (proxy));
+	g_return_if_fail (G_IS_DBUS_CONNECTION (gl.dbus_connection));
 
 	switch (arg) {
 	case PHASE_DEAD:
@@ -117,33 +118,49 @@ nm_phasechange (void *data, int arg)
 		break;
 	}
 
-	g_message ("nm-ppp-plugin: (%s): status %d / phase '%s'",
-	           __func__,
+	g_message ("nm-ppp-plugin: status %d / phase '%s'",
 	           ppp_status,
 	           ppp_phase);
 
 	if (ppp_status != NM_PPP_STATUS_UNKNOWN) {
-		g_dbus_proxy_call (proxy,
-		                   "SetState",
-		                   g_variant_new ("(u)", ppp_status),
-		                   G_DBUS_CALL_FLAGS_NONE, -1,
-		                   NULL,
-		                   NULL, NULL);
+		g_dbus_connection_call (gl.dbus_connection,
+		                        NM_DBUS_SERVICE,
+		                        gl.ipparam,
+		                        NM_DBUS_INTERFACE_PPP,
+		                        "SetState",
+		                        g_variant_new ("(u)", ppp_status),
+		                        G_VARIANT_TYPE ("()"),
+		                        G_DBUS_CALL_FLAGS_NONE,
+		                        -1,
+		                        NULL,
+		                        NULL,
+		                        NULL);
 	}
 
 	if (ppp_status == NM_PPP_STATUS_RUNNING) {
-		index = if_nametoindex (ifname);
+		gs_unref_variant GVariant *ret = NULL;
+		char new_name[IF_NAMESIZE];
+		int ifindex;
+
+		ifindex = if_nametoindex (ifname);
+
 		/* Make a sync call to ensure that when the call
 		 * terminates the interface already has its final
 		 * name. */
-		g_dbus_proxy_call_sync (proxy,
-		                        "SetIfindex",
-		                        g_variant_new ("(i)", index),
-		                        G_DBUS_CALL_FLAGS_NONE,
-		                        25000,
-		                        NULL, NULL);
+		ret = g_dbus_connection_call_sync (gl.dbus_connection,
+		                                   NM_DBUS_SERVICE,
+		                                   gl.ipparam,
+		                                   NM_DBUS_INTERFACE_PPP,
+		                                   "SetIfindex",
+		                                   g_variant_new ("(i)", ifindex),
+		                                   G_VARIANT_TYPE ("()"),
+		                                   G_DBUS_CALL_FLAGS_NONE,
+		                                   25000,
+		                                   NULL,
+		                                   NULL);
+
 		/* Update the name in pppd if NM changed it */
-		if (   if_indextoname (index, new_name)
+		if (   if_indextoname (ifindex, new_name)
 		    && !nm_streq0 (ifname, new_name)) {
 			g_message ("nm-ppp-plugin: interface name changed from '%s' to '%s'", ifname, new_name);
 			g_strlcpy (ifname, new_name, IF_NAMESIZE);
@@ -159,12 +176,12 @@ nm_ip_up (void *data, int arg)
 	GVariantBuilder builder;
 	guint32 pppd_made_up_address = htonl (0x0a404040 + ifunit);
 
-	g_return_if_fail (G_IS_DBUS_PROXY (proxy));
+	g_return_if_fail (G_IS_DBUS_CONNECTION (gl.dbus_connection));
 
-	g_message ("nm-ppp-plugin: (%s): ip-up event", __func__);
+	g_message ("nm-ppp-plugin: ip-up event");
 
 	if (!opts.ouraddr) {
-		g_warning ("nm-ppp-plugin: (%s): didn't receive an internal IP from pppd!", __func__);
+		g_warning ("nm-ppp-plugin: didn't receive an internal IP from pppd!");
 		nm_phasechange (NULL, PHASE_DEAD);
 		return;
 	}
@@ -235,14 +252,20 @@ nm_ip_up (void *data, int arg)
 		                                                  wins, len, sizeof (guint32)));
 	}
 
-	g_message ("nm-ppp-plugin: (%s): sending IPv4 config to NetworkManager...", __func__);
+	g_message ("nm-ppp-plugin: sending IPv4 config to NetworkManager...");
 
-	g_dbus_proxy_call (proxy,
-	                   "SetIp4Config",
-	                   g_variant_new ("(a{sv})", &builder),
-	                   G_DBUS_CALL_FLAGS_NONE, -1,
-	                   NULL,
-	                   NULL, NULL);
+	g_dbus_connection_call (gl.dbus_connection,
+	                        NM_DBUS_SERVICE,
+	                        gl.ipparam,
+	                        NM_DBUS_INTERFACE_PPP,
+	                        "SetIp4Config",
+	                        g_variant_new ("(a{sv})", &builder),
+	                        G_VARIANT_TYPE ("()"),
+	                        G_DBUS_CALL_FLAGS_NONE,
+	                        -1,
+	                        NULL,
+	                        NULL,
+	                        NULL);
 }
 
 static GVariant *
@@ -263,9 +286,9 @@ nm_ip6_up (void *data, int arg)
 	ipv6cp_options *go = &ipv6cp_gotoptions[0];
 	GVariantBuilder builder;
 
-	g_return_if_fail (G_IS_DBUS_PROXY (proxy));
+	g_return_if_fail (G_IS_DBUS_CONNECTION (gl.dbus_connection));
 
-	g_message ("nm-ppp-plugin: (%s): ip6-up event", __func__);
+	g_message ("nm-ppp-plugin: ip6-up event");
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 	/* Keep sending the interface name to be backwards compatible
@@ -283,14 +306,20 @@ nm_ip6_up (void *data, int arg)
 
 	/* DNS is done via DHCPv6 or router advertisements */
 
-	g_message ("nm-ppp-plugin: (%s): sending IPv6 config to NetworkManager...", __func__);
+	g_message ("nm-ppp-plugin: sending IPv6 config to NetworkManager...");
 
-	g_dbus_proxy_call (proxy,
-	                   "SetIp6Config",
-	                   g_variant_new ("(a{sv})", &builder),
-	                   G_DBUS_CALL_FLAGS_NONE, -1,
-	                   NULL,
-	                   NULL, NULL);
+	g_dbus_connection_call (gl.dbus_connection,
+	                        NM_DBUS_SERVICE,
+	                        gl.ipparam,
+	                        NM_DBUS_INTERFACE_PPP,
+	                        "SetIp6Config",
+	                        g_variant_new ("(a{sv})", &builder),
+	                        G_VARIANT_TYPE ("()"),
+	                        G_DBUS_CALL_FLAGS_NONE,
+	                        -1,
+	                        NULL,
+	                        NULL,
+	                        NULL);
 }
 
 static int
@@ -308,10 +337,10 @@ get_pap_check (void)
 static int
 get_credentials (char *username, char *password)
 {
-	const char *my_username = NULL;
-	const char *my_password = NULL;
-	GVariant *ret;
-	GError *err = NULL;
+	gs_unref_variant GVariant *ret = NULL;
+	gs_free_error GError *error = NULL;
+	const char *my_username;
+	const char *my_password;
 
 	if (!password) {
 		/* pppd is checking pap support; return 1 for supported */
@@ -320,34 +349,33 @@ get_credentials (char *username, char *password)
 	}
 
 	g_return_val_if_fail (username, -1);
-	g_return_val_if_fail (G_IS_DBUS_PROXY (proxy), -1);
+	g_return_val_if_fail (G_IS_DBUS_CONNECTION (gl.dbus_connection), -1);
 
-	g_message ("nm-ppp-plugin: (%s): passwd-hook, requesting credentials...", __func__);
+	g_message ("nm-ppp-plugin: passwd-hook, requesting credentials...");
 
-	ret = g_dbus_proxy_call_sync (proxy,
-	                              "NeedSecrets",
-	                              NULL,
-	                              G_DBUS_CALL_FLAGS_NONE, -1,
-	                              NULL, &err);
+	ret = g_dbus_connection_call_sync (gl.dbus_connection,
+	                                   NM_DBUS_SERVICE,
+	                                   gl.ipparam,
+	                                   NM_DBUS_INTERFACE_PPP,
+	                                   "NeedSecrets",
+	                                   NULL,
+	                                   G_VARIANT_TYPE ("(ss)"),
+	                                   G_DBUS_CALL_FLAGS_NONE,
+	                                   -1,
+	                                   NULL,
+	                                   &error);
 	if (!ret) {
-		g_warning ("nm-ppp-plugin: (%s): could not get secrets: %s",
-		           __func__,
-		           err->message);
-		g_error_free (err);
+		g_warning ("nm-ppp-plugin: could not get secrets: %s",
+		           error->message);
 		return -1;
 	}
 
-	g_message ("nm-ppp-plugin: (%s): got credentials from NetworkManager", __func__);
+	g_message ("nm-ppp-plugin: got credentials from NetworkManager");
 
 	g_variant_get (ret, "(&s&s)", &my_username, &my_password);
 
-	if (my_username)
-		g_strlcpy (username, my_username, MAXNAMELEN);
-
-	if (my_password)
-		g_strlcpy (password, my_password, MAXSECRETLEN);
-
-	g_variant_unref (ret);
+	g_strlcpy (username, my_username, MAXNAMELEN);
+	g_strlcpy (password, my_password, MAXSECRETLEN);
 
 	return 1;
 }
@@ -355,12 +383,12 @@ get_credentials (char *username, char *password)
 static void
 nm_exit_notify (void *data, int arg)
 {
-	g_return_if_fail (G_IS_DBUS_PROXY (proxy));
+	g_return_if_fail (G_IS_DBUS_CONNECTION (gl.dbus_connection));
 
-	g_message ("nm-ppp-plugin: (%s): cleaning up", __func__);
+	g_message ("nm-ppp-plugin: cleaning up");
 
-	g_object_unref (proxy);
-	proxy = NULL;
+	g_clear_object (&gl.dbus_connection);
+	nm_clear_g_free (&gl.ipparam);
 }
 
 static void
@@ -387,37 +415,21 @@ add_ip6_notifier (void)
 int
 plugin_init (void)
 {
-	GDBusConnection *bus;
-	GError *err = NULL;
+	gs_free_error GError *err = NULL;
 
-	g_message ("nm-ppp-plugin: (%s): initializing", __func__);
+	g_message ("nm-ppp-plugin: initializing");
 
-	bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &err);
-	if (!bus) {
-		g_warning ("nm-pppd-plugin: (%s): couldn't connect to system bus: %s",
-		           __func__, err->message);
-		g_error_free (err);
+	nm_assert (!gl.dbus_connection);
+	nm_assert (!gl.ipparam);
+
+	gl.dbus_connection = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &err);
+	if (!gl.dbus_connection) {
+		g_warning ("nm-pppd-plugin: couldn't connect to system bus: %s",
+		           err->message);
 		return -1;
 	}
 
-	/* NM passes in the object path of the corresponding PPPManager
-	 * object as the 'ipparam' argument to pppd.
-	 */
-	proxy = g_dbus_proxy_new_sync (bus,
-	                               G_DBUS_PROXY_FLAGS_NONE,
-	                               NULL,
-	                               NM_DBUS_SERVICE,
-	                               ipparam,
-	                               NM_DBUS_INTERFACE_PPP,
-	                               NULL, &err);
-	g_object_unref (bus);
-
-	if (!proxy) {
-		g_warning ("nm-pppd-plugin: (%s): couldn't create D-Bus proxy: %s",
-		           __func__, err->message);
-		g_error_free (err);
-		return -1;
-	}
+	gl.ipparam = g_strdup (ipparam);
 
 	chap_passwd_hook = get_credentials;
 	chap_check_hook = get_chap_check;
@@ -426,7 +438,7 @@ plugin_init (void)
 
 	add_notifier (&phasechange, nm_phasechange, NULL);
 	add_notifier (&ip_up_notifier, nm_ip_up, NULL);
-	add_notifier (&exitnotify, nm_exit_notify, proxy);
+	add_notifier (&exitnotify, nm_exit_notify, NULL);
 	add_ip6_notifier ();
 
 	return 0;

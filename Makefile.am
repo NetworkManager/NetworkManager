@@ -335,6 +335,8 @@ shared_nm_glib_aux_libnm_glib_aux_la_CPPFLAGS = \
 
 shared_nm_glib_aux_libnm_glib_aux_la_SOURCES = \
 	shared/nm-glib-aux/nm-c-list.h \
+	shared/nm-glib-aux/nm-dbus-aux.c \
+	shared/nm-glib-aux/nm-dbus-aux.h \
 	shared/nm-glib-aux/nm-dedup-multi.c \
 	shared/nm-glib-aux/nm-dedup-multi.h \
 	shared/nm-glib-aux/nm-enum-utils.c \

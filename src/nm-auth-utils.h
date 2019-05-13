@@ -28,7 +28,6 @@
 typedef struct NMAuthChain NMAuthChain;
 
 typedef void (*NMAuthChainResultFunc) (NMAuthChain *chain,
-                                       GError *error,
                                        GDBusMethodInvocation *context,
                                        gpointer user_data);
 
@@ -45,17 +44,23 @@ gpointer nm_auth_chain_get_data (NMAuthChain *chain, const char *tag);
 
 gpointer nm_auth_chain_steal_data (NMAuthChain *chain, const char *tag);
 
-void nm_auth_chain_set_data (NMAuthChain *chain,
-                             const char *tag,
-                             gpointer data,
-                             GDestroyNotify data_destroy);
+void nm_auth_chain_set_data_unsafe (NMAuthChain *chain,
+                                    const char *tag,
+                                    gpointer data,
+                                    GDestroyNotify data_destroy);
+
+#define nm_auth_chain_set_data(chain, tag, data, data_destroy) \
+	nm_auth_chain_set_data_unsafe ((chain), ""tag"", (data), (data_destroy))
 
 NMAuthCallResult nm_auth_chain_get_result (NMAuthChain *chain,
                                            const char *permission);
 
-void nm_auth_chain_add_call (NMAuthChain *chain,
-                             const char *permission,
-                             gboolean allow_interaction);
+void nm_auth_chain_add_call_unsafe (NMAuthChain *chain,
+                                    const char *permission,
+                                    gboolean allow_interaction);
+
+#define nm_auth_chain_add_call(chain, permission, allow_interaction) \
+	nm_auth_chain_add_call_unsafe ((chain), ""permission"", (allow_interaction))
 
 void nm_auth_chain_destroy (NMAuthChain *chain);
 

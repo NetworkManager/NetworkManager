@@ -213,6 +213,35 @@ do_early_setup (int *argc, char **argv[], NMConfigCmdLineOptions *config_cli)
 	global_opt.pidfile = global_opt.pidfile ?: g_strdup(NM_DEFAULT_PID_FILE);
 }
 
+static gboolean
+_dbus_manager_init (NMConfig *config)
+{
+	NMDBusManager *busmgr;
+	NMConfigConfigureAndQuitType c_a_q_type;
+
+	busmgr = nm_dbus_manager_get ();
+
+	c_a_q_type = nm_config_get_configure_and_quit (config);
+
+	if (c_a_q_type == NM_CONFIG_CONFIGURE_AND_QUIT_DISABLED)
+		return nm_dbus_manager_acquire_bus (busmgr, TRUE);
+
+	if (c_a_q_type == NM_CONFIG_CONFIGURE_AND_QUIT_ENABLED) {
+		/* D-Bus is useless in configure and quit mode -- we're eventually dropping
+		 * off and potential clients would have no way of knowing whether we're
+		 * finished already or didn't start yet.
+		 *
+		 * But we still create a nm_dbus_manager_get_dbus_connection() D-Bus connection
+		 * so that we can talk to other services like firewalld. */
+		return nm_dbus_manager_acquire_bus (busmgr, FALSE);
+	}
+
+	nm_assert (c_a_q_type == NM_CONFIG_CONFIGURE_AND_QUIT_INITRD);
+	/* in initrd we don't have D-Bus at all. Don't even try to get the G_BUS_TYPE_SYSTEM
+	 * connection. And of course don't claim the D-Bus name. */
+	return TRUE;
+}
+
 /*
  * main
  *
@@ -389,7 +418,9 @@ main (int argc, char *argv[])
 #endif
 	             );
 
-	/* Set up platform interaction layer */
+	if (!_dbus_manager_init (config))
+		goto done_no_manager;
+
 	nm_linux_platform_setup ();
 
 	NM_UTILS_KEEP_ALIVE (config, nm_netns_get (), "NMConfig-depends-on-NMNetns");
@@ -399,15 +430,8 @@ main (int argc, char *argv[])
 	                                                         NM_CONFIG_KEYFILE_KEY_MAIN_AUTH_POLKIT,
 	                                                         NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_BOOL));
 
-	if (!nm_config_get_configure_and_quit (config)) {
-		/* D-Bus is useless in configure and quit mode -- we're eventually dropping
-		 * off and potential clients would have no way of knowing whether we're
-		 * finished already or didn't start yet. */
-		if (!nm_dbus_manager_acquire_bus (nm_dbus_manager_get ()))
-			goto done_no_manager;
-	}
-
 	manager = nm_manager_setup ();
+
 	nm_dbus_manager_start (nm_dbus_manager_get(),
 	                       nm_manager_dbus_set_property_handle,
 	                       manager);
