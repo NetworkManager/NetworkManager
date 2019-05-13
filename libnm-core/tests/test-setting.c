@@ -1359,6 +1359,68 @@ test_team_port_full_config (void)
 /*****************************************************************************/
 
 static void
+_check_team_setting (NMSetting *setting)
+{
+	gboolean is_port = NM_IS_SETTING_TEAM_PORT (setting);
+
+	g_assert (NM_IS_SETTING_TEAM (setting) || is_port);
+}
+
+static void
+test_team_setting (void)
+{
+	gs_unref_variant GVariant *variant = nmtst_variant_from_string (G_VARIANT_TYPE_VARDICT,
+	                                                                "{'config': <'{\"link_watch\": {\"name\": \"ethtool\"}}'>, 'interface-name': <'nm-team'>, 'link-watchers': <[{'name': <'ethtool'>}]>, 'runner': <'roundrobin'>, 'runner-min-ports': <-1>, 'runner-sys-prio': <-1>, 'runner-tx-balancer-interval': <-1>}");
+	gs_free_error GError *error = NULL;
+	gs_unref_object NMSetting *setting = NULL;
+	nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher1 = nm_team_link_watcher_new_nsna_ping (1, 3, 4, "bbb", NULL);
+	nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher2 = nm_team_link_watcher_new_arp_ping2 (1, 3, 4, -1, "ccc", "ddd", 0, NULL);
+
+	if (!WITH_JSON_VALIDATION) {
+		g_test_skip ("disabled test without json-validation");
+		return;
+	}
+
+	g_assert (watcher1);
+	g_assert (watcher2);
+
+	setting = _nm_setting_new_from_dbus (NM_TYPE_SETTING_TEAM,
+	                                     variant,
+	                                     NULL,
+	                                     NM_SETTING_PARSE_FLAGS_STRICT,
+	                                     &error);
+	nmtst_assert_success (setting, error);
+	_check_team_setting (setting);
+
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{\"link_watch\": {\"name\": \"ethtool\"}}");
+
+	g_assert_cmpint (nm_setting_team_get_num_link_watchers (NM_SETTING_TEAM (setting)), ==, 1);
+
+	g_object_set (setting,
+	              NM_SETTING_TEAM_RUNNER_SYS_PRIO,
+	              (int) 10,
+	              NULL);
+
+	_check_team_setting (setting);
+	g_assert_cmpint (nm_setting_team_get_num_link_watchers (NM_SETTING_TEAM (setting)), ==, 1);
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{\"link_watch\": {\"name\": \"ethtool\"}, \"runner\": {\"sys_prio\": 10}}");
+
+	nm_setting_team_remove_link_watcher (NM_SETTING_TEAM (setting), 0);
+	_check_team_setting (setting);
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{\"link_watch\": {\"name\": \"ethtool\"}, \"runner\": {\"sys_prio\": 10}}");
+
+	nm_setting_team_add_link_watcher (NM_SETTING_TEAM (setting), watcher1);
+	_check_team_setting (setting);
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{\"link_watch\": {\"name\": \"ethtool\"}, \"runner\": {\"sys_prio\": 10}}");
+
+	nm_setting_team_add_link_watcher (NM_SETTING_TEAM (setting), watcher2);
+	_check_team_setting (setting);
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{\"link_watch\": {\"name\": \"ethtool\"}, \"runner\": {\"sys_prio\": 10}}");
+}
+
+/*****************************************************************************/
+
+static void
 test_ethtool_1 (void)
 {
 	gs_unref_object NMConnection *con = NULL;
@@ -3228,6 +3290,8 @@ main (int argc, char **argv)
 	g_test_add_data_func ("/libnm/settings/routing-rule/1", GINT_TO_POINTER (0), test_routing_rule);
 
 	g_test_add_func ("/libnm/parse-tc-handle", test_parse_tc_handle);
+
+	g_test_add_func ("/libnm/test_team_setting", test_team_setting);
 
 	return g_test_run ();
 }
