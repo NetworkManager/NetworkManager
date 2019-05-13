@@ -4261,6 +4261,7 @@ realize_start_setup (NMDevice *self,
 {
 	NMDevicePrivate *priv;
 	NMDeviceClass *klass;
+	NMPlatform *platform;
 	static guint32 id = 0;
 	NMDeviceCapabilities capabilities = 0;
 	NMConfig *config;
@@ -4285,6 +4286,7 @@ realize_start_setup (NMDevice *self,
 	_LOGD (LOGD_DEVICE, "start setup of %s, kernel ifindex %d", G_OBJECT_TYPE_NAME (self), plink ? plink->ifindex : 0);
 
 	klass = NM_DEVICE_GET_CLASS (self);
+	platform = nm_device_get_platform (self);
 
 	/* Balanced by a thaw in nm_device_realize_finish() */
 	g_object_freeze_notify (G_OBJECT (self));
@@ -4303,19 +4305,19 @@ realize_start_setup (NMDevice *self,
 		nm_device_update_from_platform_link (self, plink);
 
 	if (priv->ifindex > 0) {
-		priv->physical_port_id = nm_platform_link_get_physical_port_id (nm_device_get_platform (self), priv->ifindex);
+		priv->physical_port_id = nm_platform_link_get_physical_port_id (platform, priv->ifindex);
 		_notify (self, PROP_PHYSICAL_PORT_ID);
 
-		priv->dev_id = nm_platform_link_get_dev_id (nm_device_get_platform (self), priv->ifindex);
+		priv->dev_id = nm_platform_link_get_dev_id (platform, priv->ifindex);
 
-		if (nm_platform_link_is_software (nm_device_get_platform (self), priv->ifindex))
+		if (nm_platform_link_is_software (platform, priv->ifindex))
 			capabilities |= NM_DEVICE_CAP_IS_SOFTWARE;
 
 		_set_mtu (self,
-		          nm_platform_link_get_mtu (nm_device_get_platform (self),
+		          nm_platform_link_get_mtu (platform,
 		                                    priv->ifindex));
 
-		nm_platform_link_get_driver_info (nm_device_get_platform (self),
+		nm_platform_link_get_driver_info (platform,
 		                                  priv->ifindex,
 		                                  NULL,
 		                                  &priv->driver_version,
@@ -4326,9 +4328,9 @@ realize_start_setup (NMDevice *self,
 			_notify (self, PROP_FIRMWARE_VERSION);
 
 		if (nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL))
-			priv->ipv6ll_handle = nm_platform_link_get_user_ipv6ll_enabled (nm_device_get_platform (self), priv->ifindex);
+			priv->ipv6ll_handle = nm_platform_link_get_user_ipv6ll_enabled (platform, priv->ifindex);
 
-		if (nm_platform_link_supports_sriov (nm_device_get_platform (self), priv->ifindex))
+		if (nm_platform_link_supports_sriov (platform, priv->ifindex))
 			capabilities |= NM_DEVICE_CAP_SRIOV;
 	}
 
@@ -4393,6 +4395,7 @@ realize_start_setup (NMDevice *self,
 
 	nm_device_set_unmanaged_by_user_udev (self);
 	nm_device_set_unmanaged_by_user_conf (self);
+
 
 	nm_device_set_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT,
 	                               plink && !plink->initialized);
