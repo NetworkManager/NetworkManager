@@ -4862,62 +4862,27 @@ bond_connection_from_ifcfg (const char *file,
 	return connection;
 }
 
-/* Check 'error' for errors. Missing config (NULL return value) is a valid case. */
-static char *
-read_team_config (shvarFile *ifcfg, const char *key, GError **error)
-{
-	gs_free_error GError *local_error = NULL;
-	gs_free char *value = NULL;
-	size_t l;
-
-	value = svGetValueStr_cp (ifcfg, key);
-	if (!value)
-		return NULL;
-
-	l = strlen (value);
-	if (l > 1*1024*1024) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "%s too long (size %zd)", key, l);
-		return NULL;
-	}
-
-	if (!nm_utils_is_json_object (value, &local_error)) {
-		PARSE_WARNING ("ignoring invalid team configuration: %s", local_error->message);
-		return NULL;
-	}
-
-	return g_steal_pointer (&value);
-}
-
 static NMSetting *
 make_team_setting (shvarFile *ifcfg,
                    const char *file,
                    GError **error)
 {
-	NMSettingTeam *s_team;
-	char *value;
-	GError *local_err = NULL;
+	NMSetting *s_team;
+	gs_free char *value_device = NULL;
+	gs_free char *value = NULL;
 
-	value = svGetValueStr_cp (ifcfg, "DEVICE");
-	if (!value) {
+	if (!svGetValueStr (ifcfg, "DEVICE", &value_device)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "mandatory DEVICE keyword missing");
 		return NULL;
 	}
-	g_free (value);
 
-	value = read_team_config (ifcfg, "TEAM_CONFIG", &local_err);
-	if (local_err) {
-		g_propagate_error (error, local_err);
-		return NULL;
-	}
-
-	s_team = NM_SETTING_TEAM (nm_setting_team_new ());
-
-	g_object_set (s_team, NM_SETTING_TEAM_CONFIG, value, NULL);
-	g_free (value);
-
-	return (NMSetting *) s_team;
+	s_team = nm_setting_team_new ();
+	g_object_set (s_team,
+	              NM_SETTING_TEAM_CONFIG,
+	              svGetValue (ifcfg, "TEAM_CONFIG", &value),
+	              NULL);
+	return s_team;
 }
 
 static NMConnection *
@@ -5276,20 +5241,18 @@ make_bridge_port_setting (shvarFile *ifcfg)
 static NMSetting *
 make_team_port_setting (shvarFile *ifcfg)
 {
-	NMSetting *s_port = NULL;
-	char *value;
-	GError *error = NULL;
+	NMSetting *s_port;
+	gs_free char *value = NULL;
 
-	value = read_team_config (ifcfg, "TEAM_PORT_CONFIG", &error);
-	if (value) {
-		s_port = nm_setting_team_port_new ();
-		g_object_set (s_port, NM_SETTING_TEAM_PORT_CONFIG, value, NULL);
-		g_free (value);
-	} else if (error) {
-		PARSE_WARNING ("%s", error->message);
-		g_error_free (error);
-	}
+	value = svGetValueStr_cp (ifcfg, "TEAM_PORT_CONFIG");
+	if (!value)
+		return NULL;
 
+	s_port = nm_setting_team_port_new ();
+	g_object_set (s_port,
+	              NM_SETTING_TEAM_PORT_CONFIG,
+	              value,
+	              NULL);
 	return s_port;
 }
 
@@ -5902,12 +5865,10 @@ connection_from_file_full (const char *filename,
 	if (s_match)
 		nm_connection_add_setting (connection, s_match);
 
-	/* Bridge port? */
 	s_port = make_bridge_port_setting (main_ifcfg);
 	if (s_port)
 		nm_connection_add_setting (connection, s_port);
 
-	/* Team port? */
 	s_port = make_team_port_setting (main_ifcfg);
 	if (s_port)
 		nm_connection_add_setting (connection, s_port);
