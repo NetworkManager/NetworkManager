@@ -1927,6 +1927,34 @@ nmtst_assert_setting_verify_fails (NMSetting *setting,
 	g_clear_error (&error);
 }
 
+static inline void
+nmtst_assert_setting_is_equal (gconstpointer /* const NMSetting * */ a,
+                               gconstpointer /* const NMSetting * */ b,
+                               NMSettingCompareFlags flags)
+{
+	gs_unref_hashtable GHashTable *hash = NULL;
+	guint32 r = nmtst_get_rand_int ();
+
+	g_assert (NM_IS_SETTING (a));
+	g_assert (NM_IS_SETTING (b));
+
+	if (NM_FLAGS_HAS (r, 0x4))
+		NMTST_SWAP (a, b);
+
+	g_assert (nm_setting_compare ((NMSetting *) a,
+	                              (NMSetting *) b,
+	                              flags));
+
+	if (NM_FLAGS_HAS (r, 0x8))
+		NMTST_SWAP (a, b);
+
+	g_assert (nm_setting_diff ((NMSetting *) a,
+	                           (NMSetting *) b,
+	                           flags,
+	                           NM_FLAGS_HAS (r, 0x1),
+	                           &hash));
+	g_assert (!hash);
+}
 #endif
 
 #ifdef __NM_UTILS_H__
