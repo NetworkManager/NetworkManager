@@ -67,7 +67,7 @@ struct NMConfigCmdLineOptions {
 	 *
 	 * It is true, if NM is started the first time -- contrary to a restart
 	 * during the same boot up. That is determined by the content of the
-	 * /var/run/NetworManager state directory. */
+	 * /run/NetworManager state directory. */
 	bool first_start;
 };
 
