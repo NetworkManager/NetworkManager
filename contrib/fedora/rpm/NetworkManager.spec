@@ -599,6 +599,7 @@ gtkdocize
 autoreconf --install --force
 intltoolize --automake --copy --force
 %configure \
+	--with-runstatedir=/run \
 	--disable-silent-rules \
 	--disable-static \
 	--with-dhclient=yes \
