@@ -348,12 +348,12 @@ nm_utils_team_link_watcher_from_string (const char *str,
 	}
 
 #if NM_MORE_ASSERTS > 5
-	{
+	if (watcher) {
 		gs_free char *str2 = NULL;
 		nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher2 = NULL;
 		static _nm_thread_local int recursive;
 
-		nm_assert (watcher);
+		nm_assert (!error || !*error);
 		if (recursive == 0) {
 			recursive = 1;
 			str2 = nm_utils_team_link_watcher_to_string (watcher);
@@ -365,7 +365,8 @@ nm_utils_team_link_watcher_from_string (const char *str,
 			nm_assert (recursive == 1);
 			recursive = 0;
 		}
-	}
+	} else
+		nm_assert (!error || *error);
 #endif
 
 	return watcher;
