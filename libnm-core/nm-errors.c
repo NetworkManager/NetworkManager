@@ -39,21 +39,19 @@ register_error_domain (GQuark domain,
                        const char *interface,
                        GType enum_type)
 {
-	GEnumClass *enum_class;
-	GEnumValue *e;
-	char *error_name;
-	int i;
+	nm_auto_unref_gtypeclass GEnumClass *enum_class = g_type_class_ref (enum_type);
+	guint i;
 
-	enum_class = g_type_class_ref (enum_type);
 	for (i = 0; i < enum_class->n_values; i++) {
-		e = &enum_class->values[i];
-		g_assert (strchr (e->value_nick, '-') == NULL);
-		error_name = g_strdup_printf ("%s.%s", interface, e->value_nick);
-		g_dbus_error_register_error (domain, e->value, error_name);
-		g_free (error_name);
-	}
+		const GEnumValue *e = &enum_class->values[i];
+		char error_name[200];
 
-	g_type_class_unref (enum_class);
+		nm_assert (e && e->value_nick && !strchr (e->value_nick, '-'));
+
+		nm_sprintf_buf (error_name, "%s.%s", interface, e->value_nick);
+		if (!g_dbus_error_register_error (domain, e->value, error_name))
+			nm_assert_not_reached ();
+	}
 }
 
 void
@@ -74,9 +72,6 @@ _nm_dbus_errors_init (void)
 	register_error_domain (NM_SECRET_AGENT_ERROR,
 	                       NM_DBUS_INTERFACE_SECRET_AGENT,
 	                       NM_TYPE_SECRET_AGENT_ERROR);
-	register_error_domain (NM_SETTINGS_ERROR,
-	                       NM_DBUS_INTERFACE_SETTINGS,
-	                       NM_TYPE_SETTINGS_ERROR);
 	register_error_domain (NM_SETTINGS_ERROR,
 	                       NM_DBUS_INTERFACE_SETTINGS,
 	                       NM_TYPE_SETTINGS_ERROR);
