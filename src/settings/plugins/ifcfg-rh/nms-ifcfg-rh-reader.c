@@ -3077,6 +3077,7 @@ eap_tls_reader (const char *eap_method,
 	              svGetValueStr (ifcfg, "IEEE_8021X_IDENTITY", &identity_free),
 	              NULL);
 
+	/* CA certificate */
 	if (!_cert_set_from_ifcfg (s_8021x,
 	                           ifcfg,
 	                           phase2 ? "IEEE_8021X_INNER_CA_CERT" : "IEEE_8021X_CA_CERT",
@@ -3090,6 +3091,7 @@ eap_tls_reader (const char *eap_method,
 	                        phase2 ? "IEEE_8021X_INNER_CA_CERT_PASSWORD" : "IEEE_8021X_CA_CERT_PASSWORD",
 	                        phase2 ? NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD : NM_SETTING_802_1X_CA_CERT_PASSWORD);
 
+	/* Private key */
 	if (!_cert_set_from_ifcfg (s_8021x,
 	                           ifcfg,
 	                           phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" : "IEEE_8021X_PRIVATE_KEY",
@@ -3102,14 +3104,8 @@ eap_tls_reader (const char *eap_method,
 	                        keys_ifcfg,
 	                        phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD" : "IEEE_8021X_PRIVATE_KEY_PASSWORD",
 	                        phase2 ? NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD : NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
-	if (!privkey) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Missing %s for EAP method '%s'.",
-		             phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" : "IEEE_8021X_PRIVATE_KEY",
-		             eap_method);
-		return FALSE;
-	}
 
+	/* Client certificate */
 	if (!_cert_set_from_ifcfg (s_8021x,
 	                           ifcfg,
 	                           phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" : "IEEE_8021X_CLIENT_CERT",
@@ -3122,12 +3118,6 @@ eap_tls_reader (const char *eap_method,
 	                        keys_ifcfg,
 	                        phase2 ? "IEEE_8021X_INNER_CLIENT_CERT_PASSWORD" : "IEEE_8021X_CLIENT_CERT_PASSWORD",
 	                        phase2 ? NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD : NM_SETTING_802_1X_CLIENT_CERT_PASSWORD);
-	if (!client_cert) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Missing certificate for EAP method '%s'.",
-		             eap_method);
-		return FALSE;
-	}
 
 	return TRUE;
 }
