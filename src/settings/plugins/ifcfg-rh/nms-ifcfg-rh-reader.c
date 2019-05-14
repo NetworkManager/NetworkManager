@@ -3156,10 +3156,6 @@ eap_tls_reader (const char *eap_method,
 	                           &client_cert,
 	                           error))
 		return FALSE;
-	/* FIXME: writer does not actually write IEEE_8021X_CLIENT_CERT_PASSWORD and other
-	 * certificate related passwords. It should, because otherwise persisting such profiles
-	 * to ifcfg looses information. As this currently only matters for PKCS11 URIs, it seems
-	 * a seldom used feature so that it is not fixed yet. */
 	_secret_set_from_ifcfg (s_8021x,
 	                        ifcfg,
 	                        keys_ifcfg,
