@@ -25,6 +25,7 @@ libnm_systemd_core = static_library(
     'src/libsystemd/sd-id128/sd-id128.c',
     'nm-sd.c',
     'nm-sd-utils-core.c',
+    'nm-sd-utils-dhcp.c',
   ),
   include_directories: [
     src_inc,
