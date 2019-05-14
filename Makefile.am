@@ -3014,6 +3014,7 @@ EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-peap-mschapv2 \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-tls-agent \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-tls-always \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-tls-p12-no-client-cert \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-auto-negotiate-on \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-autoip \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ctc-static \
@@ -3083,6 +3084,7 @@ EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/route6-test-wired-ipv6-manual \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/test1_key_and_cert.pem \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/test_ca_cert.pem \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/test_client.p12 \
 	$(NULL)
 
 # make target dependencies can't have colons in their names, which ends up

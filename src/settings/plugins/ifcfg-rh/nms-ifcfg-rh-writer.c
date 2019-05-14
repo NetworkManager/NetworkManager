@@ -209,6 +209,7 @@ write_object (NMSetting8021x *s_8021x,
               GHashTable *secrets,
               GHashTable *blobs,
               const Setting8021xSchemeVtable *objtype,
+              gboolean force_write,
               GError **error)
 {
 	NMSetting8021xCKScheme scheme;
@@ -287,7 +288,7 @@ write_object (NMSetting8021x *s_8021x,
 	 */
 	standard_file = utils_cert_path (svFileGetName (ifcfg), objtype->vtable->file_suffix, extension);
 	g_hash_table_replace (blobs, standard_file, NULL);
-	svUnsetValue (ifcfg, objtype->ifcfg_rh_key);
+	svSetValue (ifcfg, objtype->ifcfg_rh_key, force_write ? "" : NULL);
 	return TRUE;
 }
 
@@ -338,31 +339,39 @@ write_8021x_certs (NMSetting8021x *s_8021x,
                    shvarFile *ifcfg,
                    GError **error)
 {
-	const Setting8021xSchemeVtable *otype = NULL;
+	const Setting8021xSchemeVtable *pk_otype = NULL;
+	gs_free char *value_to_free = NULL;
 
 	/* CA certificate */
 	if (!write_object (s_8021x, ifcfg, secrets, blobs,
 	                   phase2
 	                       ? &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT]
 	                       : &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT],
+	                   FALSE,
 	                   error))
 		return FALSE;
 
 	/* Private key */
 	if (phase2)
-		otype = &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY];
+		pk_otype = &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY];
 	else
-		otype = &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY];
+		pk_otype = &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY];
 
 	/* Save the private key */
-	if (!write_object (s_8021x, ifcfg, secrets, blobs, otype, error))
+	if (!write_object (s_8021x, ifcfg, secrets, blobs, pk_otype, FALSE, error))
 		return FALSE;
 
-	/* Save the client certificate */
+	/* Save the client certificate.
+	 * If there is a private key, always write a property for the
+	 * client certificate even if it is empty, so that the reader
+	 * doesn't have to read the private key file to determine if it
+	 * is a PKCS #12 one which serves also as client certificate.
+	 */
 	if (!write_object (s_8021x, ifcfg, secrets, blobs,
 	                   phase2
 	                       ? &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT]
 	                       : &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT],
+	                   !!svGetValue (ifcfg, pk_otype->ifcfg_rh_key, &value_to_free),
 	                   error))
 		return FALSE;
 

@@ -1974,6 +1974,27 @@ test_read_802_1x_ttls_eapgtc (void)
 }
 
 static void
+test_read_802_1x_tls_p12_no_client_cert (void)
+{
+	gs_unref_object NMConnection *connection = NULL;
+	NMSetting8021x *s_8021x;
+	const char *path;
+
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-8021x-tls-p12-no-client-cert",
+	                                    NULL, TYPE_ETHERNET, NULL);
+
+	s_8021x = nm_connection_get_setting_802_1x (connection);
+	g_assert (s_8021x);
+
+	g_assert_cmpint (nm_setting_802_1x_get_private_key_scheme (s_8021x), ==, NM_SETTING_802_1X_CK_SCHEME_PATH);
+	path = nm_setting_802_1x_get_private_key_path (s_8021x);
+	g_assert (path);
+
+	g_assert_cmpint (nm_setting_802_1x_get_client_cert_scheme (s_8021x), ==, NM_SETTING_802_1X_CK_SCHEME_PATH);
+	g_assert_cmpstr (path, ==, nm_setting_802_1x_get_client_cert_path (s_8021x));
+}
+
+static void
 test_read_write_802_1x_password_raw (void)
 {
 	nmtst_auto_unlinkfile char *testfile = NULL;
@@ -10223,6 +10244,8 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "802-1x/subj-matches", test_read_write_802_1X_subj_matches);
 	g_test_add_func (TPATH "802-1x/ttls-eapgtc", test_read_802_1x_ttls_eapgtc);
 	g_test_add_func (TPATH "802-1x/password_raw", test_read_write_802_1x_password_raw);
+	g_test_add_func (TPATH "802-1x/tls-p12-no-client-cert", test_read_802_1x_tls_p12_no_client_cert);
+
 	g_test_add_data_func (TPATH "wired/read/aliases/good/0", GINT_TO_POINTER (0), test_read_wired_aliases_good);
 	g_test_add_data_func (TPATH "wired/read/aliases/good/3", GINT_TO_POINTER (3), test_read_wired_aliases_good);
 	g_test_add_func (TPATH "wired/read/aliases/bad1", test_read_wired_aliases_bad_1);

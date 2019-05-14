@@ -3071,6 +3071,10 @@ eap_tls_reader (const char *eap_method,
 	gs_unref_bytes GBytes *privkey = NULL;
 	gs_unref_bytes GBytes *client_cert = NULL;
 	gs_free char *identity_free = NULL;
+	gs_free char *value_to_free = NULL;
+	const char *client_cert_var;
+	const char *client_cert_prop;
+	NMSetting8021xCKFormat format;
 
 	g_object_set (s_8021x,
 	              NM_SETTING_802_1X_IDENTITY,
@@ -3106,10 +3110,12 @@ eap_tls_reader (const char *eap_method,
 	                        phase2 ? NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD : NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
 
 	/* Client certificate */
+	client_cert_var = phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" : "IEEE_8021X_CLIENT_CERT";
+	client_cert_prop = phase2 ? NM_SETTING_802_1X_PHASE2_CLIENT_CERT : NM_SETTING_802_1X_CLIENT_CERT;
 	if (!_cert_set_from_ifcfg (s_8021x,
 	                           ifcfg,
-	                           phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" : "IEEE_8021X_CLIENT_CERT",
-	                           phase2 ? NM_SETTING_802_1X_PHASE2_CLIENT_CERT : NM_SETTING_802_1X_CLIENT_CERT,
+	                           client_cert_var,
+	                           client_cert_prop,
 	                           &client_cert,
 	                           error))
 		return FALSE;
@@ -3118,6 +3124,24 @@ eap_tls_reader (const char *eap_method,
 	                        keys_ifcfg,
 	                        phase2 ? "IEEE_8021X_INNER_CLIENT_CERT_PASSWORD" : "IEEE_8021X_CLIENT_CERT_PASSWORD",
 	                        phase2 ? NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD : NM_SETTING_802_1X_CLIENT_CERT_PASSWORD);
+
+	/* In the past when the private key and client certificate
+	 * were the same PKCS #12 file we used to write only the
+	 * private key variable. Still support that even if it means
+	 * that we have to look into the file content, which makes
+	 * the connection not self-contained.
+	 */
+	if (   !client_cert
+	    && privkey
+	    && !svGetValue (ifcfg, client_cert_var, &value_to_free)) {
+		if (phase2)
+			format = nm_setting_802_1x_get_phase2_private_key_format (s_8021x);
+		else
+			format = nm_setting_802_1x_get_private_key_format (s_8021x);
+
+		if (format == NM_SETTING_802_1X_CK_FORMAT_PKCS12)
+			g_object_set (s_8021x, client_cert_prop, privkey, NULL);
+	}
 
 	return TRUE;
 }
