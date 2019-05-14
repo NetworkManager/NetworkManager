@@ -100,9 +100,9 @@ ip4_start (NMDhcpClient *client,
 	iface = nm_dhcp_client_get_iface (client);
 
 	/* dhcpcd does not allow custom pidfiles; the pidfile is always
-	 * RUNDIR "dhcpcd-<ifname>.pid".
+	 * RUNSTATEDIR "dhcpcd-<ifname>.pid".
 	 */
-	priv->pid_file = g_strdup_printf (RUNDIR "/dhcpcd-%s.pid", iface);
+	priv->pid_file = g_strdup_printf (RUNSTATEDIR "/dhcpcd-%s.pid", iface);
 
 	dhcpcd_path = nm_dhcp_dhcpcd_get_path ();
 	if (!dhcpcd_path) {
