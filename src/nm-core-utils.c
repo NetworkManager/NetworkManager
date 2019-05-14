@@ -2697,7 +2697,7 @@ _host_id_read (guint8 **out_host_id,
 		} else if (!nm_utils_file_set_contents (SECRET_KEY_FILE,
 		                                        (const char *) new_content,
 		                                        len,
-		                                        0077,
+		                                        0600,
 		                                        &error)) {
 			nm_log_warn (LOGD_CORE, "secret-key: failure to persist secret key in \"%s\" (%s) (use non-persistent key)",
 			             SECRET_KEY_FILE, error->message);
