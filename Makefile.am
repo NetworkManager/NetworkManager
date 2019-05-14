@@ -127,7 +127,6 @@ config-extra.h: Makefile
 	echo "#define NM_BUILD_SRCDIR   \"$(abs_srcdir)\""      >>$@ && \
 	echo "#define PPPD_PLUGIN_DIR   \"$(PPPD_PLUGIN_DIR)\"" >>$@ && \
 	echo "#define PREFIX            \"$(prefix)\""          >>$@ && \
-	echo "#define RUNDIR            \"$(rundir)\""          >>$@ && \
 	echo "#define RUNSTATEDIR       \"$(runstatedir)\""     >>$@ && \
 	echo "#define SYSCONFDIR        \"$(sysconfdir)\""      >>$@ && \
 	true
