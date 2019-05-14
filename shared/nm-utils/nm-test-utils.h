@@ -2140,6 +2140,25 @@ typedef enum {
 
 #endif /* __NM_CONNECTION_H__ */
 
+static inline GVariant *
+nmtst_variant_from_string (const GVariantType *variant_type,
+                           const char *variant_str)
+{
+	GVariant *variant;
+	GError *error = NULL;
+
+	g_assert (variant_type);
+	g_assert (variant_str);
+
+	variant = g_variant_parse (variant_type,
+	                           variant_str,
+	                           NULL,
+	                           NULL,
+	                           &error);
+	nmtst_assert_success (variant, error);
+	return variant;
+}
+
 /*****************************************************************************/
 
 static inline void
