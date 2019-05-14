@@ -627,6 +627,8 @@ _iovec_set_string (struct iovec *iov, const char *str)
 	_iovec_set (iov, str, strlen (str));
 }
 
+#define _iovec_set_string_literal(iov, str) _iovec_set ((iov), ""str"", NM_STRLEN (str))
+
 _nm_printf (3, 4)
 static void
 _iovec_set_format (struct iovec *iov, char **iov_free, const char *format, ...)
@@ -746,8 +748,7 @@ _nm_log_impl (const char *file,
 	case LOG_BACKEND_JOURNAL:
 		{
 			gint64 now, boottime;
-#define _NUM_MAX_FIELDS_SYSLOG_FACILITY 10
-			struct iovec iov_data[14 + _NUM_MAX_FIELDS_SYSLOG_FACILITY];
+			struct iovec iov_data[15];
 			struct iovec *iov = iov_data;
 			char *iov_free_data[5];
 			char **iov_free = iov_free_data;
@@ -762,12 +763,10 @@ _nm_log_impl (const char *file,
 			_iovec_set_format_a (iov++, 30, "SYSLOG_PID=%ld", (long) getpid ());
 			{
 				const LogDesc *diter;
-				int i_domain = _NUM_MAX_FIELDS_SYSLOG_FACILITY;
 				const char *s_domain_1 = NULL;
 				NMLogDomain dom_all = domain;
-				NMLogDomain dom = dom_all & cur_log_state[level];
 
-				for (diter = &domain_desc[0]; diter->name; diter++) {
+				for (diter = &domain_desc[0]; dom_all != 0 && diter->name; diter++) {
 					if (!NM_FLAGS_ANY (dom_all, diter->num))
 						continue;
 
@@ -785,23 +784,14 @@ _nm_log_impl (const char *file,
 						g_string_append_c (s_domain_all, ',');
 						g_string_append (s_domain_all, diter->name);
 					}
-
-					if (NM_FLAGS_ANY (dom, diter->num)) {
-						if (i_domain > 0) {
-							/* SYSLOG_FACILITY is specified multiple times for each domain that is actually enabled. */
-							_iovec_set_format_str_a (iov++, 30, "SYSLOG_FACILITY=%s", diter->name);
-							i_domain--;
-						}
-						dom &= ~diter->num;
-					}
-					if (!dom && !dom_all)
-						break;
 				}
 				if (s_domain_all)
 					_iovec_set (iov++, s_domain_all->str, s_domain_all->len);
 				else
 					_iovec_set_format_str_a (iov++, 30, "NM_LOG_DOMAINS=%s", s_domain_1);
 			}
+			G_STATIC_ASSERT_EXPR (LOG_FAC (LOG_DAEMON) == 3);
+			_iovec_set_string_literal (iov++, "SYSLOG_FACILITY=3");
 			_iovec_set_format_str_a (iov++, 15, "NM_LOG_LEVEL=%s", level_desc[level].name);
 			if (func)
 				_iovec_set_format (iov++, iov_free++, "CODE_FUNC=%s", func);
@@ -916,7 +906,7 @@ nm_log_handler (const char *log_domain,
 			                 "MESSAGE=%s%s", gl.imm.prefix, message ?: "",
 			                 syslog_identifier_full (gl.imm.syslog_identifier),
 			                 "SYSLOG_PID=%ld", (long) getpid (),
-			                 "SYSLOG_FACILITY=GLIB",
+			                 "SYSLOG_FACILITY=3",
 			                 "GLIB_DOMAIN=%s", log_domain ?: "",
 			                 "GLIB_LEVEL=%d", (int) (level & G_LOG_LEVEL_MASK),
 			                 "TIMESTAMP_MONOTONIC=%lld.%06lld", (long long) (now / NM_UTILS_NS_PER_SECOND), (long long) ((now % NM_UTILS_NS_PER_SECOND) / 1000),
