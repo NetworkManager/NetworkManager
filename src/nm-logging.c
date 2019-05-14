@@ -629,7 +629,7 @@ _iovec_set_string (struct iovec *iov, const char *str)
 
 _nm_printf (3, 4)
 static void
-_iovec_set_format (struct iovec *iov, gpointer *iov_free, const char *format, ...)
+_iovec_set_format (struct iovec *iov, char **iov_free, const char *format, ...)
 {
 	va_list ap;
 	char *str;
@@ -749,8 +749,8 @@ _nm_log_impl (const char *file,
 #define _NUM_MAX_FIELDS_SYSLOG_FACILITY 10
 			struct iovec iov_data[14 + _NUM_MAX_FIELDS_SYSLOG_FACILITY];
 			struct iovec *iov = iov_data;
-			gpointer iov_free_data[5];
-			gpointer *iov_free = iov_free_data;
+			char *iov_free_data[5];
+			char **iov_free = iov_free_data;
 			nm_auto_free_gstring GString *s_domain_all = NULL;
 
 			now = nm_utils_get_monotonic_timestamp_ns ();
