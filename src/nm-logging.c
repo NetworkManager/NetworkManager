@@ -747,7 +747,7 @@ _nm_log_impl (const char *file,
 		{
 			gint64 now, boottime;
 #define _NUM_MAX_FIELDS_SYSLOG_FACILITY 10
-			struct iovec iov_data[12 + _NUM_MAX_FIELDS_SYSLOG_FACILITY];
+			struct iovec iov_data[14 + _NUM_MAX_FIELDS_SYSLOG_FACILITY];
 			struct iovec *iov = iov_data;
 			gpointer iov_free_data[5];
 			gpointer *iov_free = iov_free_data;
