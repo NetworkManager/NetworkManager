@@ -1957,6 +1957,41 @@ nmtst_assert_setting_is_equal (gconstpointer /* const NMSetting * */ a,
 }
 #endif
 
+#ifdef __NM_SETTING_PRIVATE_H__
+static inline NMSetting *
+nmtst_assert_setting_dbus_new (GType gtype, GVariant *variant)
+{
+	NMSetting *setting;
+	gs_free_error GError *error = NULL;
+
+	g_assert (g_type_is_a (gtype, NM_TYPE_SETTING));
+	g_assert (gtype != NM_TYPE_SETTING);
+	g_assert (variant);
+	g_assert (g_variant_is_of_type (variant, NM_VARIANT_TYPE_SETTING));
+
+	setting = _nm_setting_new_from_dbus (gtype,
+	                                     variant,
+	                                     NULL,
+	                                     NM_SETTING_PARSE_FLAGS_STRICT,
+	                                     &error);
+	nmtst_assert_success (setting, error);
+	return setting;
+}
+
+static inline void
+nmtst_assert_setting_dbus_roundtrip (gconstpointer /* const NMSetting * */ setting)
+{
+	gs_unref_object NMSetting *setting2 = NULL;
+	gs_unref_variant GVariant *variant = NULL;
+
+	g_assert (NM_IS_SETTING (setting));
+
+	variant = _nm_setting_to_dbus ((NMSetting *) setting, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	setting2 = nmtst_assert_setting_dbus_new (G_OBJECT_TYPE (setting), variant);
+	nmtst_assert_setting_is_equal (setting, setting2, NM_SETTING_COMPARE_FLAG_EXACT);
+}
+#endif
+
 #ifdef __NM_UTILS_H__
 static inline void
 nmtst_assert_hwaddr_equals (gconstpointer hwaddr1, gssize hwaddr1_len, const char *expected, const char *file, int line)
