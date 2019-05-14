@@ -46,7 +46,7 @@ ip -n macsec-ns link set macsec-vethp up
 echo "* Start wpa_supplicant..."
 
 cat <<EOF > $TMPDIR/wpa_supplicant.conf
-ctrl_interface=/var/run/hostapd1
+ctrl_interface=/run/hostapd1
 eapol_version=3
 ap_scan=0
 fast_reauth=1
