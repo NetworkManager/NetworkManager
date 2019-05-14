@@ -775,7 +775,6 @@ _nm_log_impl (const char *file,
 			struct iovec *iov = iov_data;
 			char *iov_free_data[5];
 			char **iov_free = iov_free_data;
-			nm_auto_free_gstring GString *s_domain_all = NULL;
 
 			now = nm_utils_get_monotonic_timestamp_ns ();
 			boottime = nm_utils_monotonic_timestamp_as_boottime (now, 1);
@@ -786,32 +785,22 @@ _nm_log_impl (const char *file,
 			_iovec_set_format_a (iov++, 30, "SYSLOG_PID=%ld", (long) getpid ());
 			{
 				const LogDesc *diter;
-				const char *s_domain_1 = NULL;
 				NMLogDomain dom_all = domain;
+				char s_log_domains_buf[NM_STRLEN ("NM_LOG_DOMAINS=") + sizeof (_all_logging_domains_to_str)];
+				char *s_log_domains = s_log_domains_buf;
+				gsize l_log_domains = sizeof (s_log_domains_buf);
 
+				nm_utils_strbuf_append_str (&s_log_domains, &l_log_domains, "NM_LOG_DOMAINS=");
 				for (diter = &domain_desc[0]; dom_all != 0 && diter->name; diter++) {
 					if (!NM_FLAGS_ANY (dom_all, diter->num))
 						continue;
-
-					/* construct a list of all domains (not only the enabled ones).
-					 * Note that in by far most cases, there is only one domain present.
-					 * Hence, save the construction of the GString. */
+					if (dom_all != domain)
+						nm_utils_strbuf_append_c (&s_log_domains, &l_log_domains, ',');
+					nm_utils_strbuf_append_str (&s_log_domains, &l_log_domains, diter->name);
 					dom_all &= ~diter->num;
-					if (!s_domain_1)
-						s_domain_1 = diter->name;
-					else {
-						if (!s_domain_all) {
-							s_domain_all = g_string_new ("NM_LOG_DOMAINS=");
-							g_string_append (s_domain_all, s_domain_1);
-						}
-						g_string_append_c (s_domain_all, ',');
-						g_string_append (s_domain_all, diter->name);
-					}
 				}
-				if (s_domain_all)
-					_iovec_set (iov++, s_domain_all->str, s_domain_all->len);
-				else
-					_iovec_set_format_str_a (iov++, 30, "NM_LOG_DOMAINS=%s", s_domain_1);
+				nm_assert (l_log_domains > 0);
+				_iovec_set (iov++, s_log_domains_buf, s_log_domains - s_log_domains_buf);
 			}
 			G_STATIC_ASSERT_EXPR (LOG_FAC (LOG_DAEMON) == 3);
 			_iovec_set_string_literal (iov++, "SYSLOG_FACILITY=3");
