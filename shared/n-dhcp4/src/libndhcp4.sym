@@ -1,0 +1,66 @@
+LIBNDHCP4_1 {
+global:
+        n_dhcp4_client_config_new;
+        n_dhcp4_client_config_free;
+        n_dhcp4_client_config_set_ifindex;
+        n_dhcp4_client_config_set_transport;
+        n_dhcp4_client_config_set_request_broadcast;
+        n_dhcp4_client_config_set_mac;
+        n_dhcp4_client_config_set_broadcast_mac;
+        n_dhcp4_client_config_set_client_id;
+
+        n_dhcp4_client_probe_config_new;
+        n_dhcp4_client_probe_config_free;
+        n_dhcp4_client_probe_config_set_inform_only;
+        n_dhcp4_client_probe_config_set_init_reboot;
+        n_dhcp4_client_probe_config_set_requested_ip;
+        n_dhcp4_client_probe_config_set_start_delay;
+        n_dhcp4_client_probe_config_request_option;
+        n_dhcp4_client_probe_config_append_option;
+
+        n_dhcp4_client_new;
+        n_dhcp4_client_ref;
+        n_dhcp4_client_unref;
+        n_dhcp4_client_get_fd;
+        n_dhcp4_client_dispatch;
+        n_dhcp4_client_pop_event;
+        n_dhcp4_client_update_mtu;
+        n_dhcp4_client_probe;
+
+        n_dhcp4_client_probe_free;
+        n_dhcp4_client_probe_get_userdata;
+        n_dhcp4_client_probe_set_userdata;
+
+        n_dhcp4_client_lease_ref;
+        n_dhcp4_client_lease_unref;
+        n_dhcp4_client_lease_get_yiaddr;
+        n_dhcp4_client_lease_get_lifetime;
+        n_dhcp4_client_lease_query;
+        n_dhcp4_client_lease_select;
+        n_dhcp4_client_lease_accept;
+        n_dhcp4_client_lease_decline;
+
+        n_dhcp4_server_config_new;
+        n_dhcp4_server_config_free;
+        n_dhcp4_server_config_set_ifindex;
+
+        n_dhcp4_server_new;
+        n_dhcp4_server_ref;
+        n_dhcp4_server_unref;
+        n_dhcp4_server_get_fd;
+        n_dhcp4_server_dispatch;
+        n_dhcp4_server_pop_event;
+        n_dhcp4_server_add_ip;
+
+        n_dhcp4_server_ip_free;
+
+        n_dhcp4_server_lease_ref;
+        n_dhcp4_server_lease_unref;
+        n_dhcp4_server_lease_query;
+        n_dhcp4_server_lease_append;
+        n_dhcp4_server_lease_offer;
+        n_dhcp4_server_lease_ack;
+        n_dhcp4_server_lease_nack;
+local:
+       *;
+};
