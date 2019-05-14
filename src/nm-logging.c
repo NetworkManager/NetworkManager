@@ -549,27 +549,50 @@ _domains_to_string (gboolean include_level_override,
 	return g_string_free (str, FALSE);
 }
 
+static char _all_logging_domains_to_str[273];
+
 const char *
 nm_logging_all_domains_to_string (void)
 {
-	static GString *str;
+	static const char *volatile str = NULL;
+	const char *s;
 
-	if (G_UNLIKELY (!str)) {
+again:
+	s = g_atomic_pointer_get (&str);
+	if (G_UNLIKELY (!s)) {
+		static gsize once = 0;
 		const LogDesc *diter;
+		gsize buf_l;
+		char *buf_p;
 
-		str = g_string_new (LOGD_DEFAULT_STRING);
+		if (!g_once_init_enter (&once))
+			goto again;
+
+		buf_p = _all_logging_domains_to_str;
+		buf_l = sizeof (_all_logging_domains_to_str);
+
+		nm_utils_strbuf_append_str (&buf_p, &buf_l, LOGD_DEFAULT_STRING);
 		for (diter = &domain_desc[0]; diter->name; diter++) {
-			g_string_append_c (str, ',');
-			g_string_append (str, diter->name);
+			nm_utils_strbuf_append_c (&buf_p, &buf_l, ',');
+			nm_utils_strbuf_append_str (&buf_p, &buf_l, diter->name);
 			if (diter->num == LOGD_DHCP6)
-				g_string_append (str, "," LOGD_DHCP_STRING);
+				nm_utils_strbuf_append_str (&buf_p, &buf_l, ","LOGD_DHCP_STRING);
 			else if (diter->num == LOGD_IP6)
-				g_string_append (str, "," LOGD_IP_STRING);
+				nm_utils_strbuf_append_str (&buf_p, &buf_l, ","LOGD_IP_STRING);
 		}
-		g_string_append (str, "," LOGD_ALL_STRING);
+		nm_utils_strbuf_append_str (&buf_p, &buf_l, LOGD_ALL_STRING);
+
+		/* Did you modify the logging domains (or their names)? Adjust the size of
+		 * _all_logging_domains_to_str buffer above to have the exact size. */
+		nm_assert (strlen (_all_logging_domains_to_str) == sizeof (_all_logging_domains_to_str) - 1);
+		nm_assert (buf_l == 1);
+
+		s = _all_logging_domains_to_str;
+		g_atomic_pointer_set (&str, s);
+		g_once_init_leave (&once, 1);
 	}
 
-	return str->str;
+	return s;
 }
 
 /**
