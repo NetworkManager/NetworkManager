@@ -1224,17 +1224,34 @@ fallback:
 }
 
 #if 0 /* NM_IGNORED */
+/* Put a limit on how many times will attempt to call accept4(). We loop
+ * only on "transient" errors, but let's make sure we don't loop forever. */
+#define MAX_FLUSH_ITERATIONS 1024
+
 int flush_accept(int fd) {
 
         struct pollfd pollfd = {
                 .fd = fd,
                 .events = POLLIN,
         };
-        int r;
+        int r, b;
+        socklen_t l = sizeof(b);
 
-        /* Similar to flush_fd() but flushes all incoming connection by accepting them and immediately closing them. */
+        /* Similar to flush_fd() but flushes all incoming connections by accepting and immediately closing
+         * them. */
 
-        for (;;) {
+        if (getsockopt(fd, SOL_SOCKET, SO_ACCEPTCONN, &b, &l) < 0)
+                return -errno;
+
+        assert(l == sizeof(b));
+        if (!b) /* Let's check if this socket accepts connections before calling accept(). accept4() can
+                 * return EOPNOTSUPP if the fd is not a listening socket, which we should treat as a fatal
+                 * error, or in case the incoming TCP connection triggered a network issue, which we want to
+                 * treat as a transient error. Thus, let's rule out the first reason for EOPNOTSUPP early, so
+                 * we can loop safely on transient errors below. */
+                return -ENOTTY;
+
+        for (unsigned iteration = 0;; iteration++) {
                 int cfd;
 
                 r = poll(&pollfd, 1, 0);
@@ -1246,6 +1263,10 @@ int flush_accept(int fd) {
                 }
                 if (r == 0)
                         return 0;
+
+                if (iteration >= MAX_FLUSH_ITERATIONS)
+                        return log_debug_errno(SYNTHETIC_ERRNO(EBUSY),
+                                               "Failed to flush connections within " STRINGIFY(MAX_FLUSH_ITERATIONS) " iterations.");
 
                 cfd = accept4(fd, NULL, NULL, SOCK_NONBLOCK|SOCK_CLOEXEC);
                 if (cfd < 0) {

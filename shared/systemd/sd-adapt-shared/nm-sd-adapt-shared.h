@@ -30,6 +30,17 @@
 
 /*****************************************************************************/
 
+/* systemd detects whether compiler supports "-Wstringop-truncation" to disable
+ * the warning at particular places. Since we anyway build with -Wno-pragma,
+ * we don't do that and just let systemd call
+ *
+ *   _Pragma("GCC diagnostic ignored \"-Wstringop-truncation\"")
+ *
+ * regadless whether that would result in a -Wpragma warning. */
+#define HAVE_WSTRINGOP_TRUNCATION 1
+
+/*****************************************************************************/
+
 static inline int
 _nm_log_get_max_level_realm (void)
 {
@@ -85,6 +96,14 @@ G_STMT_START { \
 
 #include <sys/syscall.h>
 #include <sys/ioctl.h>
+
+/*****************************************************************************/
+
+/* systemd cannot be compiled with "-Wdeclaration-after-statement". In particular
+ * in combintation with assert_cc(). */
+NM_PRAGMA_WARNING_DISABLE ("-Wdeclaration-after-statement")
+
+/*****************************************************************************/
 
 static inline pid_t
 raw_getpid (void) {

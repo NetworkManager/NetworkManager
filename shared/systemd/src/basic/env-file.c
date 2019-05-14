@@ -2,8 +2,6 @@
 
 #include "nm-sd-adapt-shared.h"
 
-#include <stdio_ext.h>
-
 #include "alloc-util.h"
 #include "env-file.h"
 #include "env-util.h"
@@ -548,7 +546,6 @@ int write_env_file(const char *fname, char **l) {
         if (r < 0)
                 return r;
 
-        (void) __fsetlocking(f, FSETLOCKING_BYCALLER);
         (void) fchmod_umask(fileno(f), 0644);
 
         STRV_FOREACH(i, l)

@@ -636,13 +636,13 @@ bound4_handle (NMDhcpSystemd *self)
 	                          options);
 }
 
-static void
+static int
 dhcp_event_cb (sd_dhcp_client *client, int event, gpointer user_data)
 {
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (user_data);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
 
-	g_assert (priv->client4 == client);
+	nm_assert (priv->client4 == client);
 
 	_LOGD ("client event %d", event);
 
@@ -658,10 +658,14 @@ dhcp_event_cb (sd_dhcp_client *client, int event, gpointer user_data)
 	case SD_DHCP_CLIENT_EVENT_IP_ACQUIRE:
 		bound4_handle (self);
 		break;
+	case SD_DHCP_CLIENT_EVENT_SELECTING:
+		break;
 	default:
 		_LOGW ("unhandled DHCP event %d", event);
 		break;
 	}
+
+	return 0;
 }
 
 static gboolean

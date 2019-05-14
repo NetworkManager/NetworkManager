@@ -110,10 +110,12 @@ static int unhex_next(const char **p, size_t *l) {
         return r;
 }
 
-int unhexmem(const char *p, size_t l, void **ret, size_t *ret_len) {
+int unhexmem_full(const char *p, size_t l, bool secure, void **ret, size_t *ret_len) {
         _cleanup_free_ uint8_t *buf = NULL;
+        size_t buf_size;
         const char *x;
         uint8_t *z;
+        int r;
 
         assert(ret);
         assert(ret_len);
@@ -123,7 +125,8 @@ int unhexmem(const char *p, size_t l, void **ret, size_t *ret_len) {
                 l = strlen(p);
 
         /* Note that the calculation of memory size is an upper boundary, as we ignore whitespace while decoding */
-        buf = malloc((l + 1) / 2 + 1);
+        buf_size = (l + 1) / 2 + 1;
+        buf = malloc(buf_size);
         if (!buf)
                 return -ENOMEM;
 
@@ -133,12 +136,16 @@ int unhexmem(const char *p, size_t l, void **ret, size_t *ret_len) {
                 a = unhex_next(&x, &l);
                 if (a == -EPIPE) /* End of string */
                         break;
-                if (a < 0)
-                        return a;
+                if (a < 0) {
+                        r = a;
+                        goto on_failure;
+                }
 
                 b = unhex_next(&x, &l);
-                if (b < 0)
-                        return b;
+                if (b < 0) {
+                        r = b;
+                        goto on_failure;
+                }
 
                 *(z++) = (uint8_t) a << 4 | (uint8_t) b;
         }
@@ -149,6 +156,12 @@ int unhexmem(const char *p, size_t l, void **ret, size_t *ret_len) {
         *ret = TAKE_PTR(buf);
 
         return 0;
+
+on_failure:
+        if (secure)
+                explicit_bzero_safe(buf, buf_size);
+
+        return r;
 }
 
 #if 0 /* NM_IGNORED */
