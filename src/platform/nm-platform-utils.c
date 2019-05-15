@@ -173,9 +173,7 @@ again:
 		nm_assert (ifname && nm_utils_is_valid_iface_name (ifname, NULL));
 		nm_assert (fd >= 0);
 
-		ifr = (struct ifreq) {
-			.ifr_data = NULL,
-		};
+		memset (&ifr, 0, sizeof (ifr));
 		memcpy (ifr.ifr_name, ifname, IFNAMSIZ);
 		if (edata_type == IOCTL_CALL_DATA_TYPE_IFRDATA)
 			ifr.ifr_data = edata;
