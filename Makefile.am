@@ -4135,11 +4135,6 @@ clients_common_libnmc_la_CPPFLAGS = \
 	$(NULL)
 
 clients_common_libnmc_la_LIBADD = \
-	clients/common/libnmc-base.la \
-	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
-	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
 	libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(NULL)
@@ -4166,8 +4161,10 @@ clients_common_tests_test_clients_common_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS)
 
 clients_common_tests_test_clients_common_LDADD = \
-	clients/common/libnmc-base.la \
 	clients/common/libnmc.la \
+	clients/common/libnmc-base.la \
+	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
@@ -4257,8 +4254,10 @@ clients_cli_nmcli_CPPFLAGS = \
 	$(NULL)
 
 clients_cli_nmcli_LDADD = \
-	clients/common/libnmc-base.la \
 	clients/common/libnmc.la \
+	clients/common/libnmc-base.la \
+	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
@@ -4462,8 +4461,10 @@ clients_tui_nmtui_LDFLAGS = \
 
 clients_tui_nmtui_LDADD = \
 	clients/tui/newt/libnmt-newt.a \
-	clients/common/libnmc-base.la \
 	clients/common/libnmc.la \
+	clients/common/libnmc-base.la \
+	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
