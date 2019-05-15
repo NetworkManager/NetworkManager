@@ -1247,6 +1247,7 @@ libnm_lib_c_real = \
 	libnm/nm-ip-config.c \
 	libnm/nm-ip4-config.c \
 	libnm/nm-ip6-config.c \
+	libnm/nm-libnm-utils.c \
 	libnm/nm-manager.c \
 	libnm/nm-object.c \
 	libnm/nm-remote-connection.c \
@@ -1278,28 +1279,34 @@ nodist_libnminclude_HEADERS += \
 
 ###############################################################################
 
-noinst_LTLIBRARIES += libnm/libnm-utils.la
+noinst_LTLIBRARIES += libnm/liblibnm.la
 
-libnm_libnm_utils_la_CPPFLAGS = \
+libnm_liblibnm_la_CPPFLAGS = \
 	$(INTROSPECTION_CFLAGS) \
 	$(libnm_lib_cppflags) \
 	$(NULL)
 
-libnm_libnm_utils_la_SOURCES = \
-	libnm/nm-libnm-utils.c \
+libnm_liblibnm_la_SOURCES = \
+	$(libnm_lib_c_real) \
 	$(NULL)
 
-libnm_libnm_utils_la_LIBADD = \
+libnm_liblibnm_la_LIBADD = \
 	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/libnm-core.la \
 	$(libnm_crypto_lib) \
 	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
 	introspection/libnmdbus.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/systemd/libnm-systemd-shared.la \
+	shared/systemd/libnm-systemd-logging-stub.la \
+	shared/nm-udev-aux/libnm-udev-aux.la \
 	$(GLIB_LIBS) \
+	$(DL_LIBS) \
+	$(UUID_LIBS) \
 	$(NULL)
 
-$(libnm_libnm_utils_la_OBJECTS) : $(libnm_lib_h_pub_mkenums)
+$(libnm_liblibnm_la_OBJECTS) : $(libnm_lib_h_pub_mkenums)
+$(libnm_liblibnm_la_OBJECTS) : $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
@@ -1328,7 +1335,6 @@ libnm_libnm_la_CPPFLAGS = \
 libnm_libnm_la_SOURCES = \
 	$(libnm_lib_h_pub_real) \
 	$(libnm_lib_h_priv) \
-	$(libnm_lib_c_real) \
 	$(NULL)
 
 nodist_libnm_libnm_la_SOURCES = \
@@ -1340,13 +1346,7 @@ EXTRA_libnm_libnm_la_DEPENDENCIES = \
 	libnm/libnm.ver
 
 libnm_libnm_la_LIBADD = \
-	libnm/libnm-utils.la \
-	shared/systemd/libnm-systemd-shared.la \
-	shared/systemd/libnm-systemd-logging-stub.la \
-	shared/nm-udev-aux/libnm-udev-aux.la \
-	$(DL_LIBS) \
-	$(GLIB_LIBS) \
-	$(UUID_LIBS) \
+	libnm/liblibnm.la \
 	$(NULL)
 
 libnm_libnm_la_LDFLAGS = \
@@ -1475,9 +1475,7 @@ libnm_tests_cppflags = \
 	$(NULL)
 
 libnm_tests_ldadd = \
-	libnm/libnm.la \
-	shared/systemd/libnm-systemd-shared.la \
-	shared/systemd/libnm-systemd-logging-stub.la \
+	libnm/liblibnm.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -1509,11 +1507,7 @@ libnm_tests_test_secret_agent_SOURCES = \
 	shared/nm-test-libnm-utils.h \
 	libnm/tests/test-secret-agent.c
 
-libnm_tests_test_libnm_LDADD = \
-	libnm/libnm-utils.la \
-	$(libnm_tests_ldadd) \
-	$(NULL)
-
+libnm_tests_test_libnm_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_nm_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_remote_settings_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_secret_agent_LDADD = $(libnm_tests_ldadd)
