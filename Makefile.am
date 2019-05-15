@@ -1303,6 +1303,7 @@ libnm_liblibnm_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(DL_LIBS) \
 	$(UUID_LIBS) \
+	$(LIBUDEV_LIBS) \
 	$(NULL)
 
 $(libnm_liblibnm_la_OBJECTS) : $(libnm_lib_h_pub_mkenums)
