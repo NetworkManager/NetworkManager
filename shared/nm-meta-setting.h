@@ -101,6 +101,7 @@ typedef struct {
 	                                  NMSetting8021xCKFormat *out_format,
 	                                  GError **error);
 	const char *file_suffix;
+	NMSetting8021xSchemeType scheme_type;
 	bool is_secret:1;
 } NMSetting8021xSchemeVtable;
 
