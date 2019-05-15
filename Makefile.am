@@ -1296,6 +1296,7 @@ libnm_liblibnm_la_LIBADD = \
 	shared/systemd/libnm-systemd-logging-stub.la \
 	shared/nm-udev-aux/libnm-udev-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
+	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(DL_LIBS) \
 	$(UUID_LIBS) \
@@ -3936,8 +3937,8 @@ dispatcher_nm_dispatcher_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
 
 dispatcher_nm_dispatcher_LDADD = \
-	libnm/libnm.la \
 	dispatcher/libnm-dispatcher-core.la \
+	libnm/libnm.la \
 	$(GLIB_LIBS)
 
 dispatcher/org.freedesktop.nm_dispatcher.service: $(srcdir)/dispatcher/org.freedesktop.nm_dispatcher.service.in
@@ -3999,10 +4000,10 @@ dispatcher_tests_test_dispatcher_envp_LDFLAGS = \
 
 dispatcher_tests_test_dispatcher_envp_LDADD = \
 	dispatcher/libnm-dispatcher-core.la \
-	libnm/libnm.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
+	libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -4087,8 +4088,6 @@ clients_common_libnmc_base_la_CPPFLAGS = \
 
 clients_common_libnmc_base_la_LIBADD = \
 	libnm/libnm.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -4137,9 +4136,11 @@ clients_common_libnmc_la_CPPFLAGS = \
 
 clients_common_libnmc_la_LIBADD = \
 	clients/common/libnmc-base.la \
-	libnm/libnm.la \
 	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/nm-std-aux/libnm-std-aux.la \
+	libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -4165,9 +4166,12 @@ clients_common_tests_test_clients_common_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS)
 
 clients_common_tests_test_clients_common_LDADD = \
-	libnm/libnm.la \
 	clients/common/libnmc-base.la \
 	clients/common/libnmc.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/nm-std-aux/libnm-std-aux.la \
+	shared/libcsiphash.la \
+	libnm/libnm.la \
 	$(GLIB_LIBS)
 
 $(clients_common_tests_test_clients_common_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
@@ -4207,10 +4211,10 @@ clients_common_tests_test_libnm_core_aux_LDFLAGS = \
 
 clients_common_tests_test_libnm_core_aux_LDADD = \
 	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
-	libnm/libnm.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
+	libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -4253,10 +4257,12 @@ clients_cli_nmcli_CPPFLAGS = \
 	$(NULL)
 
 clients_cli_nmcli_LDADD = \
-	libnm/libnm.la \
 	clients/common/libnmc-base.la \
 	clients/common/libnmc.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
+	libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(READLINE_LIBS)
 
@@ -4455,11 +4461,13 @@ clients_tui_nmtui_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS)
 
 clients_tui_nmtui_LDADD = \
-	libnm/libnm.la \
 	clients/tui/newt/libnmt-newt.a \
 	clients/common/libnmc-base.la \
 	clients/common/libnmc.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
+	libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(NEWT_LIBS) \
 	$(NULL)
