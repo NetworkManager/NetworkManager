@@ -427,7 +427,7 @@ pushd "$DIRNAME"
                 RELEASE_BASE_COMMIT="a2377d7534780b96a32405cce2e5548e81bbd081"
             fi
         elif [[ "$BUILD_TYPE" == "glib2" ]]; then
-            RELEASE_BASE_COMMIT="$(git rev-parse --verify -q "$(sed 's/.*\<glib-\([0-9]\+\.[0-9]\+\.[0-9]\+\)\.[a-z0-9_.]\+ *$/\1/' ../sources)^{commit}" 2>/dev/null)"
+            RELEASE_BASE_COMMIT="$(git rev-parse --verify -q "$(sed 's/.*\<glib-\([0-9]\+\.[0-9]\+\.[0-9]\+\)\.[a-z0-9_.]\+\>.*$/\1/' ../sources)^{commit}" 2>/dev/null)"
         elif [[ "$BUILD_TYPE" == "iproute" ]]; then
             RELEASE_BASE_COMMIT="$(git rev-parse --verify -q "$(sed 's/.*\<iproute2-\([0-9]\+\.[0-9]\+\.[0-9]\+\)\..*/v\1/' ../sources)^{commit}" 2>/dev/null)"
         elif [[ "$BUILD_TYPE" == "NetworkManager-openvpn" ]]; then
