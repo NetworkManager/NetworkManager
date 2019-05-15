@@ -177,30 +177,18 @@ typedef struct {
 } Setting8021xSchemeVtable;
 
 static const Setting8021xSchemeVtable setting_8021x_scheme_vtable[] = {
-	[NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT] = {
-		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT],
-		.ifcfg_rh_key           = "IEEE_8021X_CA_CERT",
-	},
-	[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT] = {
-		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT],
-		.ifcfg_rh_key           = "IEEE_8021X_INNER_CA_CERT",
-	},
-	[NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT] = {
-		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT],
-		.ifcfg_rh_key           = "IEEE_8021X_CLIENT_CERT",
-	},
-	[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT] = {
-		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT],
-		.ifcfg_rh_key           = "IEEE_8021X_INNER_CLIENT_CERT",
-	},
-	[NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY] = {
-		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY],
-		.ifcfg_rh_key           = "IEEE_8021X_PRIVATE_KEY",
-	},
-	[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY] = {
-		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY],
-		.ifcfg_rh_key           = "IEEE_8021X_INNER_PRIVATE_KEY",
-	},
+#define _D(_scheme_type, _ifcfg_rh_key) \
+	[(_scheme_type)] = { \
+		.vtable       = &nm_setting_8021x_scheme_vtable[(_scheme_type)], \
+		.ifcfg_rh_key = ""_ifcfg_rh_key"", \
+	}
+	_D (NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT,            "IEEE_8021X_CA_CERT"),
+	_D (NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT,     "IEEE_8021X_INNER_CA_CERT"),
+	_D (NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT,        "IEEE_8021X_CLIENT_CERT"),
+	_D (NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT, "IEEE_8021X_INNER_CLIENT_CERT"),
+	_D (NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY,        "IEEE_8021X_PRIVATE_KEY"),
+	_D (NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY, "IEEE_8021X_INNER_PRIVATE_KEY"),
+#undef _D
 };
 
 static gboolean
