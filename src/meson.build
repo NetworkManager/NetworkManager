@@ -22,6 +22,7 @@ cflags = nm_cflags
 sources = files(
   'dhcp/nm-dhcp-client.c',
   'dhcp/nm-dhcp-manager.c',
+  'dhcp/nm-dhcp-nettools.c',
   'dhcp/nm-dhcp-systemd.c',
   'dhcp/nm-dhcp-utils.c',
   'ndisc/nm-lndp-ndisc.c',

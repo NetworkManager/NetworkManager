@@ -85,7 +85,7 @@ NMDhcpClient * nm_dhcp_manager_start_ip6     (NMDhcpManager *manager,
 /* For testing only */
 extern const char* nm_dhcp_helper_path;
 
-extern const NMDhcpClientFactory *const _nm_dhcp_manager_factories[4];
+extern const NMDhcpClientFactory *const _nm_dhcp_manager_factories[5];
 
 void nmtst_dhcp_manager_unget (gpointer singleton_instance);
 
