@@ -309,10 +309,6 @@ shared_nm_std_aux_libnm_std_aux_la_LDFLAGS = \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_nm_std_aux_libnm_std_aux_la_LIBADD = \
-	shared/libcsiphash.la \
-	$(NULL)
-
 ###############################################################################
 
 shared_nm_glib_aux_cppflags = \
@@ -488,6 +484,7 @@ shared_nm_utils_tests_test_shared_general_LDFLAGS = \
 shared_nm_utils_tests_test_shared_general_LDADD = \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/systemd/libnm-systemd-logging-stub.la \
+	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -1074,6 +1071,7 @@ libnm_core_tests_ldadd = \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/systemd/libnm-systemd-logging-stub.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -2145,6 +2143,7 @@ src_libNetworkManager_la_LIBADD = \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/libnacd.la \
 	shared/libcrbtree.la \
+	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
@@ -2223,6 +2222,7 @@ src_nm_iface_helper_LDADD = \
 	src/libNetworkManagerBase.la \
 	src/libnm-systemd-core.la \
 	shared/systemd/libnm-systemd-shared.la \
+	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(LIBNDP_LIBS) \
@@ -2261,6 +2261,7 @@ src_initrd_nm_initrd_generator_LDADD = \
 	src/libNetworkManagerBase.la \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -2283,6 +2284,7 @@ src_initrd_tests_test_ibft_reader_LDADD = \
 	src/initrd/libnmi-core.la \
 	src/libNetworkManagerTest.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -2498,6 +2500,7 @@ src_initrd_tests_test_cmdline_reader_LDADD = \
 	src/initrd/libnmi-core.la \
 	src/libNetworkManagerTest.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -3976,6 +3979,7 @@ dispatcher_tests_test_dispatcher_envp_LDADD = \
 	dispatcher/libnm-dispatcher-core.la \
 	libnm/libnm.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -4181,6 +4185,7 @@ clients_common_tests_test_libnm_core_aux_LDADD = \
 	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm/libnm.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -4226,6 +4231,7 @@ clients_cli_nmcli_LDADD = \
 	libnm/libnm.la \
 	clients/common/libnmc-base.la \
 	clients/common/libnmc.la \
+	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(READLINE_LIBS)
 
@@ -4428,6 +4434,7 @@ clients_tui_nmtui_LDADD = \
 	clients/tui/newt/libnmt-newt.a \
 	clients/common/libnmc-base.la \
 	clients/common/libnmc.la \
+	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(NEWT_LIBS) \
 	$(NULL)
