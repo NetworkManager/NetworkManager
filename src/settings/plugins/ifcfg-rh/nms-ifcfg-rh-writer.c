@@ -216,7 +216,8 @@ write_object (NMSetting8021x *s_8021x,
 	GBytes *blob = NULL;
 	const char *password = NULL;
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
-	char *secret_name, *secret_flags;
+	char secret_name[100];
+	char secret_flags[sizeof (secret_name) + NM_STRLEN ("_FLAGS")];
 	const char *extension;
 	char *standard_file;
 
@@ -243,13 +244,11 @@ write_object (NMSetting8021x *s_8021x,
 	}
 
 	/* Set the password for certificate/private key. */
-	secret_name = g_strdup_printf ("%s_PASSWORD", objtype->ifcfg_rh_key);
-	secret_flags = g_strdup_printf ("%s_PASSWORD_FLAGS", objtype->ifcfg_rh_key);
+	nm_sprintf_buf (secret_name, "%s_PASSWORD", objtype->ifcfg_rh_key);
+	nm_sprintf_buf (secret_flags, "%s_PASSWORD_FLAGS", objtype->ifcfg_rh_key);
 	password = (*(objtype->vtable->passwd_func))(s_8021x);
 	flags = (*(objtype->vtable->pwflag_func))(s_8021x);
 	set_secret (ifcfg, secrets, secret_name, password, secret_flags, flags);
-	g_free (secret_name);
-	g_free (secret_flags);
 
 	if (!objtype->vtable->format_func)
 		extension = "der";
