@@ -283,10 +283,6 @@ else
 shared_libnacd_la_SOURCES += shared/n-acd/src/n-acd-bpf-fallback.c
 endif
 
-shared_libnacd_la_LIBADD = \
-	shared/libcrbtree.la \
-	$(NULL)
-
 ###############################################################################
 
 noinst_LTLIBRARIES += shared/nm-std-aux/libnm-std-aux.la
@@ -2148,6 +2144,7 @@ src_libNetworkManager_la_LIBADD = \
 	src/libnm-systemd-core.la \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/libnacd.la \
+	shared/libcrbtree.la \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
