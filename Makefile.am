@@ -991,7 +991,7 @@ libnm_core_libnm_crypto_gnutls_la_CPPFLAGS = \
 libnm_core_libnm_crypto_gnutls_la_LDFLAGS = \
 	$(libnm_core_libnm_core_la_LDFLAGS)
 libnm_core_libnm_crypto_gnutls_la_LIBADD = \
-	$(libnm_core_libnm_core_la_LIBADD) \
+	$(GLIB_LIBS) \
 	$(GNUTLS_LIBS)
 endif
 
@@ -1009,7 +1009,7 @@ libnm_core_libnm_crypto_nss_la_CPPFLAGS = \
 libnm_core_libnm_crypto_nss_la_LDFLAGS = \
 	$(libnm_core_libnm_core_la_LDFLAGS)
 libnm_core_libnm_crypto_nss_la_LIBADD = \
-	$(libnm_core_libnm_core_la_LIBADD) \
+	$(GLIB_LIBS) \
 	$(NSS_LIBS)
 endif
 
@@ -1631,11 +1631,6 @@ libsystemd_cppflags = \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(NULL)
 
-libsystemd_libadd = \
-	$(GLIB_LIBS) \
-	$(CODE_COVERAGE_LDFLAGS) \
-	$(NULL)
-
 noinst_LTLIBRARIES += shared/systemd/libnm-systemd-logging-stub.la
 
 shared_systemd_libnm_systemd_logging_stub_la_CPPFLAGS = \
@@ -1649,7 +1644,8 @@ shared_systemd_libnm_systemd_logging_stub_la_SOURCES = \
 	$(NULL)
 
 shared_systemd_libnm_systemd_logging_stub_la_LIBADD = \
-	$(libsystemd_libadd) \
+	$(GLIB_LIBS) \
+	$(CODE_COVERAGE_LDFLAGS) \
 	$(NULL)
 
 noinst_LTLIBRARIES += shared/systemd/libnm-systemd-shared.la
@@ -1775,7 +1771,8 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	$(NULL)
 
 shared_systemd_libnm_systemd_shared_la_LIBADD = \
-	$(libsystemd_libadd) \
+	$(GLIB_LIBS) \
+	$(CODE_COVERAGE_LDFLAGS) \
 	$(NULL)
 
 ###############################################################################
@@ -1794,7 +1791,8 @@ src_libnm_systemd_core_la_cppflags = \
 	$(NULL)
 
 src_libnm_systemd_core_la_libadd = \
-	$(libsystemd_libadd) \
+	$(GLIB_LIBS) \
+	$(CODE_COVERAGE_LDFLAGS) \
 	$(NULL)
 
 src_libnm_systemd_core_la_SOURCES = \
@@ -1862,7 +1860,10 @@ src_libnm_systemd_core_la_SOURCES = \
 	src/systemd/src/systemd/sd-ndisc.h
 
 src_libnm_systemd_core_la_CPPFLAGS = $(src_libnm_systemd_core_la_cppflags)
-src_libnm_systemd_core_la_LIBADD = $(src_libnm_systemd_core_la_libadd)
+src_libnm_systemd_core_la_LIBADD = \
+	$(GLIB_LIBS) \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(NULL)
 $(src_libnm_systemd_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
@@ -3845,7 +3846,8 @@ src_tests_test_systemd_LDADD = \
 	src/libnm-systemd-core.la \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/libcsiphash.la \
-	$(src_libnm_systemd_core_la_libadd) \
+	$(GLIB_LIBS) \
+	$(CODE_COVERAGE_LDFLAGS) \
 	$(NULL)
 
 $(src_tests_test_systemd_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
