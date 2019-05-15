@@ -209,7 +209,8 @@ shared_libcsiphash_la_CPPFLAGS = \
 	$(NULL)
 
 shared_libcsiphash_la_LDFLAGS = \
-	$(SANITIZER_LIB_LDFLAGS)
+	$(SANITIZER_LIB_LDFLAGS) \
+	$(NULL)
 
 shared_libcsiphash_la_SOURCES = \
 	shared/c-siphash/src/c-siphash.c \
@@ -232,7 +233,8 @@ shared_libcrbtree_la_CPPFLAGS = \
 	$(NULL)
 
 shared_libcrbtree_la_LDFLAGS = \
-	$(SANITIZER_LIB_LDFLAGS)
+	$(SANITIZER_LIB_LDFLAGS) \
+	$(NULL)
 
 shared_libcrbtree_la_SOURCES = \
 	shared/c-rbtree/src/c-rbtree.c \
@@ -263,7 +265,8 @@ shared_libnacd_la_CPPFLAGS = \
 	$(NULL)
 
 shared_libnacd_la_LDFLAGS = \
-	$(SANITIZER_LIB_LDFLAGS)
+	$(SANITIZER_LIB_LDFLAGS) \
+	$(NULL)
 
 shared_libnacd_la_SOURCES = \
 	shared/n-acd/src/n-acd.c \
@@ -494,8 +497,7 @@ shared_nm_utils_tests_test_shared_general_LDADD = \
 
 ###############################################################################
 
-noinst_LTLIBRARIES += \
-	introspection/libnmdbus.la
+noinst_LTLIBRARIES += introspection/libnmdbus.la
 
 introspection_libnmdbus_la_CPPFLAGS = $(GLIB_CFLAGS)
 
@@ -953,14 +955,16 @@ libnm_core_libnm_core_la_LIBADD = \
 
 libnm_core_libnm_core_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
-	$(SANITIZER_LIB_LDFLAGS)
+	$(SANITIZER_LIB_LDFLAGS) \
+	$(NULL)
 
 EXTRA_DIST += \
 	libnm-core/nm-crypto-gnutls.c \
 	libnm-core/nm-crypto-nss.c \
 	libnm-core/nm-core-enum-types.c.template \
 	libnm-core/nm-core-enum-types.h.template \
-	libnm-core/meson.build
+	libnm-core/meson.build \
+	$(NULL)
 
 libnm-core/nm-vpn-dbus-types.xml: libnm-core/nm-vpn-dbus-interface.h tools/enums-to-docbook.pl
 	@$(MKDIR_P) libnm-core/
@@ -1253,7 +1257,8 @@ libnm_lib_c_real = \
 	libnm/nm-vpn-plugin-old.c \
 	libnm/nm-vpn-service-plugin.c \
 	libnm/nm-wifi-p2p-peer.c \
-	libnm/nm-wimax-nsp.c
+	libnm/nm-wimax-nsp.c \
+	$(NULL)
 libnm_lib_c_mkenums = \
 	libnm/nm-enum-types.c
 
@@ -1277,10 +1282,12 @@ noinst_LTLIBRARIES += libnm/libnm-utils.la
 
 libnm_libnm_utils_la_CPPFLAGS = \
 	$(INTROSPECTION_CFLAGS) \
-	$(libnm_lib_cppflags)
+	$(libnm_lib_cppflags) \
+	$(NULL)
 
 libnm_libnm_utils_la_SOURCES = \
-	libnm/nm-libnm-utils.c
+	libnm/nm-libnm-utils.c \
+	$(NULL)
 
 libnm_libnm_utils_la_LIBADD = \
 	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
@@ -1315,16 +1322,19 @@ $(libnm_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):  $(libnm_core_lib_h_pub_m
 libnm_libnm_la_CPPFLAGS = \
 	$(libnm_lib_cppflags) \
 	$(LIBUDEV_CFLAGS) \
-	$(SANITIZER_LIB_CFLAGS)
+	$(SANITIZER_LIB_CFLAGS) \
+	$(NULL)
 
 libnm_libnm_la_SOURCES = \
 	$(libnm_lib_h_pub_real) \
 	$(libnm_lib_h_priv) \
-	$(libnm_lib_c_real)
+	$(libnm_lib_c_real) \
+	$(NULL)
 
 nodist_libnm_libnm_la_SOURCES = \
 	$(libnm_lib_h_pub_mkenums) \
-	$(libnm_lib_c_mkenums)
+	$(libnm_lib_c_mkenums) \
+	$(NULL)
 
 EXTRA_libnm_libnm_la_DEPENDENCIES = \
 	libnm/libnm.ver
@@ -1468,7 +1478,8 @@ libnm_tests_ldadd = \
 	libnm/libnm.la \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/systemd/libnm-systemd-logging-stub.la \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) \
+	$(NULL)
 
 libnm_tests_ldflags = \
 	$(SANITIZER_EXEC_LDFLAGS)
@@ -1480,7 +1491,8 @@ libnm_tests_test_secret_agent_CPPFLAGS = $(libnm_tests_cppflags)
 
 libnm_tests_test_libnm_SOURCES = \
 	shared/nm-utils/nm-compat.c \
-	libnm/tests/test-libnm.c
+	libnm/tests/test-libnm.c \
+	$(NULL)
 
 libnm_tests_test_nm_client_SOURCES = \
 	shared/nm-test-utils-impl.c \
@@ -1499,7 +1511,8 @@ libnm_tests_test_secret_agent_SOURCES = \
 
 libnm_tests_test_libnm_LDADD = \
 	libnm/libnm-utils.la \
-	$(libnm_tests_ldadd)
+	$(libnm_tests_ldadd) \
+	$(NULL)
 
 libnm_tests_test_nm_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_remote_settings_client_LDADD = $(libnm_tests_ldadd)
@@ -1529,7 +1542,8 @@ check_ltlibraries += libnm/tests/libnm-vpn-plugin-utils-test.la
 
 libnm_tests_libnm_vpn_plugin_utils_test_la_SOURCES = \
 	shared/nm-utils/nm-vpn-plugin-utils.c \
-	shared/nm-utils/nm-vpn-plugin-utils.h
+	shared/nm-utils/nm-vpn-plugin-utils.h \
+	$(NULL)
 
 libnm_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
 	$(dflt_cppflags) \
@@ -1542,10 +1556,12 @@ libnm_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_EXEC_CFLAGS) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
+	$(NULL)
 
 libnm_tests_libnm_vpn_plugin_utils_test_la_LIBADD = \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) \
+	$(NULL)
 
 EXTRA_DIST += \
 	libnm/tests/meson.build
@@ -2145,7 +2161,8 @@ src_libNetworkManager_la_LIBADD = \
 	$(SELINUX_LIBS) \
 	$(LIBAUDIT_LIBS) \
 	$(LIBPSL_LIBS) \
-	$(LIBCURL_LIBS)
+	$(LIBCURL_LIBS) \
+	$(NULL)
 
 $(src_libNetworkManager_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -2164,13 +2181,15 @@ src_libNetworkManagerTest_la_SOURCES = \
 	src/platform/nm-fake-platform.c \
 	src/platform/nm-fake-platform.h \
 	src/platform/tests/test-common.c \
-	src/platform/tests/test-common.h
+	src/platform/tests/test-common.h \
+	$(NULL)
 
 src_libNetworkManagerTest_la_LIBADD = \
 	src/libNetworkManager.la \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(GLIB_LIBS) \
-	$(LIBUDEV_LIBS)
+	$(LIBUDEV_LIBS) \
+	$(NULL)
 
 $(src_libNetworkManagerTest_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -2190,7 +2209,8 @@ src_NetworkManager_SOURCES = \
 	src/main.c
 
 src_NetworkManager_LDADD = \
-	src/libNetworkManager.la
+	src/libNetworkManager.la \
+	$(NULL)
 
 src_NetworkManager_LDFLAGS = \
 	-rdynamic \
@@ -2213,7 +2233,8 @@ src_nm_iface_helper_LDADD = \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(LIBNDP_LIBS) \
-	$(DL_LIBS)
+	$(DL_LIBS) \
+	$(NULL)
 
 src_nm_iface_helper_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
@@ -2586,7 +2607,8 @@ src_ppp_nm_pppd_plugin_la_LDFLAGS = \
 
 src_ppp_nm_pppd_plugin_la_LIBADD = \
 	$(GLIB_LIBS) \
-	$(DL_LIBS)
+	$(DL_LIBS) \
+	$(NULL)
 
 $(src_ppp_nm_pppd_plugin_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -2595,19 +2617,23 @@ src_ppp_libnm_ppp_plugin_la_SOURCES = \
 	src/ppp/nm-ppp-manager.c \
 	src/ppp/nm-ppp-manager.h \
 	src/ppp/nm-ppp-plugin-api.h \
-	src/ppp/nm-ppp-status.h
+	src/ppp/nm-ppp-status.h \
+	$(NULL)
 
 EXTRA_src_ppp_libnm_ppp_plugin_la_DEPENDENCIES = \
-	src/ppp/nm-ppp-plugin.ver
+	src/ppp/nm-ppp-plugin.ver \
+	$(NULL)
 
 src_ppp_libnm_ppp_plugin_la_CPPFLAGS = $(src_cppflags_base)
 
 src_ppp_libnm_ppp_plugin_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script="$(srcdir)/src/ppp/nm-ppp-plugin.ver"
+	-Wl,--version-script="$(srcdir)/src/ppp/nm-ppp-plugin.ver" \
+	$(NULL)
 
 src_ppp_libnm_ppp_plugin_la_LIBADD = \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) \
+	$(NULL)
 
 $(src_ppp_libnm_ppp_plugin_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -3104,28 +3130,33 @@ src_settings_plugins_ifupdown_libnms_ifupdown_core_la_SOURCES = \
 	src/settings/plugins/ifupdown/nms-ifupdown-interface-parser.c \
 	src/settings/plugins/ifupdown/nms-ifupdown-interface-parser.h \
 	src/settings/plugins/ifupdown/nms-ifupdown-parser.c \
-	src/settings/plugins/ifupdown/nms-ifupdown-parser.h
+	src/settings/plugins/ifupdown/nms-ifupdown-parser.h \
+	$(NULL)
 
 src_settings_plugins_ifupdown_libnms_ifupdown_core_la_CPPFLAGS = $(src_cppflags_base)
 
 src_settings_plugins_ifupdown_libnms_ifupdown_core_la_LIBADD = \
-	$(LIBUDEV_LIBS)
+	$(LIBUDEV_LIBS) \
+	$(NULL)
 
 src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_SOURCES = \
 	src/settings/plugins/ifupdown/nms-ifupdown-connection.c \
 	src/settings/plugins/ifupdown/nms-ifupdown-connection.h \
 	src/settings/plugins/ifupdown/nms-ifupdown-plugin.c \
-	src/settings/plugins/ifupdown/nms-ifupdown-plugin.h
+	src/settings/plugins/ifupdown/nms-ifupdown-plugin.h \
+	$(NULL)
 
 src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_CPPFLAGS = $(src_cppflags_base)
 
 src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script="$(srcdir)/linker-script-settings.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-settings.ver" \
+	$(NULL)
 
 src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_LIBADD = \
 	src/settings/plugins/ifupdown/libnms-ifupdown-core.la \
-	$(LIBUDEV_LIBS)
+	$(LIBUDEV_LIBS) \
+	$(NULL)
 
 $(src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_settings_plugins_ifupdown_libnms_ifupdown_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
@@ -3431,7 +3462,8 @@ core_plugins += src/devices/team/libnm-device-plugin-team.la
 src_devices_team_libnm_device_plugin_team_la_SOURCES = \
 	src/devices/team/nm-team-factory.c \
 	src/devices/team/nm-device-team.c \
-	src/devices/team/nm-device-team.h
+	src/devices/team/nm-device-team.h \
+	$(NULL)
 
 src_devices_team_libnm_device_plugin_team_la_CPPFLAGS = \
 	$(src_cppflags_device_plugin) \
@@ -3441,12 +3473,14 @@ src_devices_team_libnm_device_plugin_team_la_CPPFLAGS = \
 
 src_devices_team_libnm_device_plugin_team_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-devices.ver" \
+	$(NULL)
 
 src_devices_team_libnm_device_plugin_team_la_LIBADD = \
 	$(LIBTEAMDCTL_LIBS) \
 	$(JANSSON_LIBS) \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) \
+	$(NULL)
 
 check-local-devices-team: src/devices/team/libnm-device-plugin-team.la
 	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/team/.libs/libnm-device-plugin-team.so "$(srcdir)/linker-script-devices.ver"
@@ -3484,7 +3518,8 @@ src_devices_ovs_libnm_device_plugin_ovs_la_SOURCES = \
 	src/devices/ovs/nm-device-ovs-port.c \
 	src/devices/ovs/nm-device-ovs-port.h \
 	src/devices/ovs/nm-device-ovs-bridge.c \
-	src/devices/ovs/nm-device-ovs-bridge.h
+	src/devices/ovs/nm-device-ovs-bridge.h \
+	$(NULL)
 
 src_devices_ovs_libnm_device_plugin_ovs_la_CPPFLAGS = \
 	$(src_cppflags_device_plugin) \
@@ -3493,11 +3528,13 @@ src_devices_ovs_libnm_device_plugin_ovs_la_CPPFLAGS = \
 
 src_devices_ovs_libnm_device_plugin_ovs_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-devices.ver" \
+	$(NULL)
 
 src_devices_ovs_libnm_device_plugin_ovs_la_LIBADD = \
 	$(JANSSON_LIBS) \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) \
+	$(NULL)
 
 check-local-devices-ovs: src/devices/ovs/libnm-device-plugin-ovs.la
 	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/ovs/.libs/libnm-device-plugin-ovs.so "$(srcdir)/linker-script-devices.ver"
@@ -3795,10 +3832,12 @@ $(src_tests_test_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 src_tests_test_systemd_CPPFLAGS = \
 	$(src_libnm_systemd_core_la_cppflags) \
-	-DNETWORKMANAGER_COMPILATION_TEST
+	-DNETWORKMANAGER_COMPILATION_TEST \
+	$(NULL)
 
 src_tests_test_systemd_LDFLAGS = \
-	$(SANITIZER_EXEC_LDFLAGS)
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
 
 src_tests_test_systemd_LDADD = \
 	src/libnm-systemd-core.la \
@@ -3937,13 +3976,15 @@ dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
 	$(NULL)
 
 dispatcher_tests_test_dispatcher_envp_LDFLAGS = \
-	$(SANITIZER_EXEC_LDFLAGS)
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
 
 dispatcher_tests_test_dispatcher_envp_LDADD = \
 	dispatcher/libnm-dispatcher-core.la \
 	libnm/libnm.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) \
+	$(NULL)
 
 $(dispatcher_tests_test_dispatcher_envp_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -3955,7 +3996,8 @@ EXTRA_DIST += \
 	dispatcher/tests/dispatcher-up \
 	dispatcher/tests/dispatcher-vpn-down \
 	dispatcher/tests/dispatcher-vpn-up \
-	dispatcher/tests/meson.build
+	dispatcher/tests/meson.build \
+	$(NULL)
 
 ###############################################################################
 # clients
@@ -4015,7 +4057,8 @@ clients_common_libnmc_base_la_SOURCES = \
 	clients/common/nm-vpn-helpers.c \
 	clients/common/nm-vpn-helpers.h \
 	clients/common/nm-client-utils.c \
-	clients/common/nm-client-utils.h
+	clients/common/nm-client-utils.h \
+	$(NULL)
 
 clients_common_libnmc_base_la_CPPFLAGS = \
 	$(clients_cppflags) \
@@ -4076,7 +4119,8 @@ clients_common_libnmc_la_LIBADD = \
 	libnm/libnm.la \
 	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) \
+	$(NULL)
 
 $(clients_common_libnmc_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(clients_common_libnmc_la_OBJECTS): $(clients_common_settings_doc_h)
