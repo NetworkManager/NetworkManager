@@ -2205,6 +2205,7 @@ src_NetworkManager_SOURCES = \
 
 src_NetworkManager_LDADD = \
 	src/libNetworkManager.la \
+	$(GLIB_LIBS) \
 	$(NULL)
 
 src_NetworkManager_LDFLAGS = \
