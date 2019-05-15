@@ -49,7 +49,8 @@ register_error_domain (GQuark domain,
 		nm_assert (e && e->value_nick && !strchr (e->value_nick, '-'));
 
 		nm_sprintf_buf (error_name, "%s.%s", interface, e->value_nick);
-		g_dbus_error_register_error (domain, e->value, error_name);
+		if (!g_dbus_error_register_error (domain, e->value, error_name))
+			nm_assert_not_reached ();
 	}
 }
 
