@@ -1943,13 +1943,6 @@ src_libNetworkManagerBase_la_SOURCES += \
 endif
 
 src_libNetworkManagerBase_la_LIBADD = \
-	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
-	libnm-core/libnm-core.la \
-	$(libnm_crypto_lib) \
-	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
-	shared/nm-udev-aux/libnm-udev-aux.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
 	$(GLIB_LIBS) \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(LIBUDEV_LIBS) \
@@ -2143,6 +2136,13 @@ src_libNetworkManager_la_SOURCES = \
 
 src_libNetworkManager_la_LIBADD = \
 	src/libNetworkManagerBase.la \
+	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm-core/libnm-core.la \
+	$(libnm_crypto_lib) \
+	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
+	shared/nm-udev-aux/libnm-udev-aux.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/nm-std-aux/libnm-std-aux.la \
 	src/libnm-systemd-core.la \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/libnacd.la \
@@ -2224,6 +2224,13 @@ src_nm_iface_helper_SOURCES = \
 
 src_nm_iface_helper_LDADD = \
 	src/libNetworkManagerBase.la \
+	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm-core/libnm-core.la \
+	$(libnm_crypto_lib) \
+	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
+	shared/nm-udev-aux/libnm-udev-aux.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/nm-std-aux/libnm-std-aux.la \
 	src/libnm-systemd-core.la \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/libcsiphash.la \
@@ -2263,6 +2270,13 @@ src_initrd_nm_initrd_generator_SOURCES = \
 src_initrd_nm_initrd_generator_LDADD = \
 	src/initrd/libnmi-core.la \
 	src/libNetworkManagerBase.la \
+	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm-core/libnm-core.la \
+	$(libnm_crypto_lib) \
+	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
+	shared/nm-udev-aux/libnm-udev-aux.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/nm-std-aux/libnm-std-aux.la \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
