@@ -5,22 +5,6 @@ cflags = [
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM',
 ]
 
-libnm_utils_sources = files('nm-libnm-utils.c')
-
-deps = [
-  libnmdbus_dep,
-  shared_nm_glib_aux_dep,
-  libnm_core_dep,
-]
-
-libnm_utils = static_library(
-  'nm-utils',
-  sources: libnm_utils_sources,
-  include_directories: libnm_core_inc,
-  dependencies: deps,
-  c_args: cflags,
-)
-
 libnm_headers = files(
   'NetworkManager.h',
   'nm-access-point.h',
@@ -129,6 +113,7 @@ libnm_sources = files(
   'nm-ip-config.c',
   'nm-ip4-config.c',
   'nm-ip6-config.c',
+  'nm-libnm-utils.c',
   'nm-manager.c',
   'nm-object.c',
   'nm-remote-connection.c',
@@ -144,13 +129,12 @@ libnm_sources = files(
 
 linker_script = join_paths(meson.current_source_dir(), 'libnm.ver')
 
-
-libnm = shared_library(
-  'nm',
+liblibnm = static_library(
+  'libnm',
   sources: libnm_sources + libnm_enum,
-  version: libnm_version,
   include_directories: libnm_core_inc,
   dependencies: [
+    libnmdbus_dep,
     dl_dep,
     libudev_dep,
     shared_nm_glib_aux_dep,
@@ -159,8 +143,36 @@ libnm = shared_library(
     libnm_systemd_shared_no_logging_dep,
   ],
   c_args: cflags,
-  link_with: libnm_utils,
-  link_whole: libnm_core,
+)
+
+liblibnm_dep = declare_dependency(
+  sources: libnm_enum[1],
+  include_directories: [
+    libnm_inc,
+    libnm_core_inc,
+  ],
+  dependencies: [
+    libnm_core_dep,
+    libnm_systemd_shared_no_logging_dep,
+    libnmdbus_dep,
+    shared_nm_glib_aux_dep,
+    libudev_dep,
+    dl_dep,
+    uuid_dep,
+  ],
+)
+
+libnm = shared_library(
+  'nm',
+  version: libnm_version,
+  link_whole: [
+    liblibnm,
+    libnm_core,
+    libnm_systemd_logging_stub,
+    libnmdbus,
+    shared_nm_glib_aux,
+  ],
+  dependencies: liblibnm_dep,
   link_args: [
     '-Wl,--version-script,@0@'.format(linker_script),
   ],
@@ -170,7 +182,10 @@ libnm = shared_library(
 
 libnm_dep = declare_dependency(
   sources: libnm_enum[1],
-  include_directories: libnm_inc,
+  include_directories: [
+    libnm_inc,
+    libnm_core_inc,
+  ],
   link_with: libnm,
 )
 
@@ -209,6 +224,7 @@ if enable_introspection
     extra_args: cflags,
     header: 'NetworkManager.h',
     install: true,
+    depends: libnm_dep,
   )
 
   generate_plugin_docs = join_paths(meson.current_source_dir(), 'generate-plugin-docs.pl')
