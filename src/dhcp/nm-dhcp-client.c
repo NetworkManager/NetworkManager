@@ -476,8 +476,9 @@ nm_dhcp_client_start_timeout (NMDhcpClient *self)
 {
 	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
+	g_return_if_fail (priv->timeout_id == 0);
+
 	/* Set up a timeout on the transaction to kill it after the timeout */
-	g_assert (priv->timeout_id == 0);
 
 	if (priv->timeout == NM_DHCP_TIMEOUT_INFINITY)
 		return;
