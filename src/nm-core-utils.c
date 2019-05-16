@@ -3815,13 +3815,22 @@ nm_utils_parse_debug_string (const char *string,
 void
 nm_utils_ifname_cpy (char *dst, const char *name)
 {
+	int i;
+
 	g_return_if_fail (dst);
 	g_return_if_fail (name && name[0]);
 
 	nm_assert (nm_utils_is_valid_iface_name (name, NULL));
 
-	if (g_strlcpy (dst, name, IFNAMSIZ) >= IFNAMSIZ)
-		g_return_if_reached ();
+	/* ensures NUL padding of the entire IFNAMSIZ buffer. */
+
+	for (i = 0; i < (int) IFNAMSIZ && name[i] != '\0'; i++)
+		dst[i] = name[i];
+
+	nm_assert (name[i] == '\0');
+
+	for (; i < (int) IFNAMSIZ; i++)
+		dst[i] = '\0';
 }
 
 /*****************************************************************************/
