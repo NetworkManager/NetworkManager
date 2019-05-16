@@ -635,7 +635,8 @@ static void realize_start_setup (NMDevice *self,
                                  gboolean assume_state_guess_assume,
                                  const char *assume_state_connection_uuid,
                                  gboolean set_nm_owned,
-                                 NMUnmanFlagOp unmanaged_user_explicit);
+                                 NMUnmanFlagOp unmanaged_user_explicit,
+                                 gboolean force_platform_init);
 static void _set_mtu (NMDevice *self, guint32 mtu);
 static void _commit_mtu (NMDevice *self, const NMIP4Config *config);
 static void _cancel_activation (NMDevice *self);
@@ -4081,7 +4082,8 @@ nm_device_realize_start (NMDevice *self,
 	                     assume_state_guess_assume,
 	                     assume_state_connection_uuid,
 	                     set_nm_owned,
-	                     unmanaged_user_explicit);
+	                     unmanaged_user_explicit,
+	                     FALSE);
 	return TRUE;
 }
 
@@ -4126,7 +4128,8 @@ nm_device_create_and_realize (NMDevice *self,
 	                     plink,
 	                     FALSE, /* assume_state_guess_assume */
 	                     NULL,  /* assume_state_connection_uuid */
-	                     FALSE, NM_UNMAN_FLAG_OP_FORGET);
+	                     FALSE, NM_UNMAN_FLAG_OP_FORGET,
+	                     TRUE);
 	nm_device_realize_finish (self, plink);
 
 	if (nm_device_get_managed (self, FALSE)) {
@@ -4243,6 +4246,8 @@ realize_start_notify (NMDevice *self,
  * @set_nm_owned: if TRUE and device is a software-device, set nm-owned.
  *    TRUE.
  * @unmanaged_user_explicit: the user-explict unmanaged flag to set.
+ * @force_platform_init: if TRUE the platform-init unmanaged flag is
+ *    forcefully cleared.
  *
  * Update the device from backing resource properties (like hardware
  * addresses, carrier states, driver/firmware info, etc).  This function
@@ -4256,7 +4261,8 @@ realize_start_setup (NMDevice *self,
                      gboolean assume_state_guess_assume,
                      const char *assume_state_connection_uuid,
                      gboolean set_nm_owned,
-                     NMUnmanFlagOp unmanaged_user_explicit)
+                     NMUnmanFlagOp unmanaged_user_explicit,
+                     gboolean force_platform_init)
 {
 	NMDevicePrivate *priv;
 	NMDeviceClass *klass;
@@ -4265,6 +4271,7 @@ realize_start_setup (NMDevice *self,
 	NMDeviceCapabilities capabilities = 0;
 	NMConfig *config;
 	guint real_rate;
+	gboolean unmanaged;
 
 	/* plink is a NMPlatformLink type, however, we require it to come from the platform
 	 * cache (where else would it come from?). */
@@ -4395,9 +4402,12 @@ realize_start_setup (NMDevice *self,
 	nm_device_set_unmanaged_by_user_udev (self);
 	nm_device_set_unmanaged_by_user_conf (self);
 
+	unmanaged =    plink
+	            && !plink->initialized
+	            && !force_platform_init;
 
 	nm_device_set_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT,
-	                               plink && !plink->initialized);
+	                               unmanaged);
 }
 
 /**
