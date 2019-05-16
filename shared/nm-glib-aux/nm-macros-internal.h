@@ -1574,14 +1574,13 @@ nm_memdup (gconstpointer data, gsize size)
 	({ \
 		const gsize _size = (size); \
 		typeof (to_free) _to_free_md = (to_free); \
-		typeof (*(_to_free_md)) _data = (data); \
-		typeof (*(_to_free_md)) _ptr_md = NULL; \
+		typeof (*_to_free_md) _ptr_md = NULL; \
 		\
 		nm_assert (_to_free_md && !*_to_free_md); \
 		\
 		if (_size > 0u) { \
 			_ptr_md = nm_malloc_maybe_a ((alloca_maxlen), _size, _to_free_md); \
-			memcpy (_ptr_md, _data, _size); \
+			memcpy (_ptr_md, (data), _size); \
 		} \
 		\
 		_ptr_md; \
