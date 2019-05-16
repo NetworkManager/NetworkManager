@@ -174,7 +174,7 @@ again:
 		nm_assert (fd >= 0);
 
 		memset (&ifr, 0, sizeof (ifr));
-		memcpy (ifr.ifr_name, ifname, IFNAMSIZ);
+		nm_utils_ifname_cpy (ifr.ifr_name, ifname);
 		if (edata_type == IOCTL_CALL_DATA_TYPE_IFRDATA)
 			ifr.ifr_data = edata;
 		else if (edata_type == IOCTL_CALL_DATA_TYPE_IFRU)
