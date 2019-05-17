@@ -105,7 +105,7 @@ sub check_commit
 	my $commit_id;
 	my $commit_message;
 
-	if ($commit =~ /^([0-9a-f]{5,})$/) {
+	if ($commit =~ /^([0-9a-f]{5,})\b/) {
 		$commit_id = $1;
 	} else {
 		return unless $required;
