@@ -95,6 +95,9 @@ fi
 
 cd "./NetworkManager/"
 
+# enable randomization for unit-tests.
+export NMTST_SEED_RAND=
+
 # if we fetch from a github repository, we also care about the refs to the pull-requests
 # fetch them too.
 git config --add remote.origin.fetch '+refs/heads/*:refs/heads/*'
