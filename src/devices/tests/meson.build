@@ -9,7 +9,6 @@ foreach test_unit: test_units
     test_unit + '.c',
     dependencies: test_nm_dep,
   )
-
   test(
     'devices/' + test_unit,
     test_script,
