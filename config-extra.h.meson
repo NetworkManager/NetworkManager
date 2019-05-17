@@ -13,6 +13,5 @@
 #mesondefine NM_BUILD_SRCDIR
 #mesondefine PPPD_PLUGIN_DIR
 #mesondefine PREFIX
-#mesondefine RUNDIR
 #mesondefine RUNSTATEDIR
 #mesondefine SYSCONFDIR

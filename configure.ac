@@ -115,7 +115,14 @@ GETTEXT_PACKAGE=NetworkManager
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Gettext package])
 
-# Add runstatedir if not specified manually in autoconf < 2.70
+# autoconf 2.70 adds option --runstatedir. To make the directory also configurable
+# on older versions, add --with-runstatedir option. Note that this option overwrites
+# --runstatedir (should it be set). If you know to use autoconf >= 2.70, you should
+# instead use --runstatedir.
+AC_ARG_WITH([runstatedir],
+            AS_HELP_STRING([--with-runstatedir=DIR],
+                           [Directory for /var/run. Defaults to $localstatedir/run. In autoconf >= 2.70, you should instead use --runstatedir option. This option takes precedence over --runstatedir.]),
+            [runstatedir="$withval"])
 AS_IF([test -z "$runstatedir"], runstatedir="$localstatedir/run")
 AC_SUBST(runstatedir)
 

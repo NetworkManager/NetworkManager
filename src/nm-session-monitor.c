@@ -44,7 +44,7 @@
 
 #define SESSION_TRACKING_XLOGIND (SESSION_TRACKING_SYSTEMD || SESSION_TRACKING_ELOGIND)
 
-#define CKDB_PATH "/var/run/ConsoleKit/database"
+#define CKDB_PATH "/run/ConsoleKit/database"
 
 /*****************************************************************************/
 
