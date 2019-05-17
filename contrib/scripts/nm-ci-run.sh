@@ -52,6 +52,10 @@ _WITH_LIBTEAM="$_TRUE"
 _WITH_DOCS="$_TRUE"
 _WITH_SYSTEMD_LOGIND="$_TRUE"
 
+if [ "$NMTST_SEED_RAND" != "" ]; then
+    export NMTST_SEED_RAND=
+fi
+
 case "$CI" in
     ""|"true"|"default"|"gitlab")
         CI=default
