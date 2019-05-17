@@ -109,6 +109,17 @@ test_nm_utils_ip6_address_clear_host_address (void)
 /*****************************************************************************/
 
 static void
+test_logging_domains (void)
+{
+	const char *s;
+
+	s = nm_logging_all_domains_to_string ();
+	g_assert (s && s[0]);
+}
+
+/*****************************************************************************/
+
+static void
 _test_same_prefix (const char *a1, const char *a2, guint8 plen)
 {
 	struct in6_addr a = *nmtst_inet6_from_string (a1);
@@ -2179,6 +2190,8 @@ int
 main (int argc, char **argv)
 {
 	nmtst_init_with_logging (&argc, &argv, NULL, "ALL");
+
+	g_test_add_func ("/general/test_logging_domains", test_logging_domains);
 
 	g_test_add_func ("/general/nm_utils_strbuf_append", test_nm_utils_strbuf_append);
 

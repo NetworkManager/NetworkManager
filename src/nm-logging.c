@@ -549,27 +549,50 @@ _domains_to_string (gboolean include_level_override,
 	return g_string_free (str, FALSE);
 }
 
+static char _all_logging_domains_to_str[273];
+
 const char *
 nm_logging_all_domains_to_string (void)
 {
-	static GString *str;
+	static const char *volatile str = NULL;
+	const char *s;
 
-	if (G_UNLIKELY (!str)) {
+again:
+	s = g_atomic_pointer_get (&str);
+	if (G_UNLIKELY (!s)) {
+		static gsize once = 0;
 		const LogDesc *diter;
+		gsize buf_l;
+		char *buf_p;
 
-		str = g_string_new (LOGD_DEFAULT_STRING);
+		if (!g_once_init_enter (&once))
+			goto again;
+
+		buf_p = _all_logging_domains_to_str;
+		buf_l = sizeof (_all_logging_domains_to_str);
+
+		nm_utils_strbuf_append_str (&buf_p, &buf_l, LOGD_DEFAULT_STRING);
 		for (diter = &domain_desc[0]; diter->name; diter++) {
-			g_string_append_c (str, ',');
-			g_string_append (str, diter->name);
+			nm_utils_strbuf_append_c (&buf_p, &buf_l, ',');
+			nm_utils_strbuf_append_str (&buf_p, &buf_l, diter->name);
 			if (diter->num == LOGD_DHCP6)
-				g_string_append (str, "," LOGD_DHCP_STRING);
+				nm_utils_strbuf_append_str (&buf_p, &buf_l, ","LOGD_DHCP_STRING);
 			else if (diter->num == LOGD_IP6)
-				g_string_append (str, "," LOGD_IP_STRING);
+				nm_utils_strbuf_append_str (&buf_p, &buf_l, ","LOGD_IP_STRING);
 		}
-		g_string_append (str, "," LOGD_ALL_STRING);
+		nm_utils_strbuf_append_str (&buf_p, &buf_l, LOGD_ALL_STRING);
+
+		/* Did you modify the logging domains (or their names)? Adjust the size of
+		 * _all_logging_domains_to_str buffer above to have the exact size. */
+		nm_assert (strlen (_all_logging_domains_to_str) == sizeof (_all_logging_domains_to_str) - 1);
+		nm_assert (buf_l == 1);
+
+		s = _all_logging_domains_to_str;
+		g_atomic_pointer_set (&str, s);
+		g_once_init_leave (&once, 1);
 	}
 
-	return str->str;
+	return s;
 }
 
 /**
@@ -627,9 +650,11 @@ _iovec_set_string (struct iovec *iov, const char *str)
 	_iovec_set (iov, str, strlen (str));
 }
 
+#define _iovec_set_string_literal(iov, str) _iovec_set ((iov), ""str"", NM_STRLEN (str))
+
 _nm_printf (3, 4)
 static void
-_iovec_set_format (struct iovec *iov, gpointer *iov_free, const char *format, ...)
+_iovec_set_format (struct iovec *iov, char **iov_free, const char *format, ...)
 {
 	va_list ap;
 	char *str;
@@ -746,12 +771,10 @@ _nm_log_impl (const char *file,
 	case LOG_BACKEND_JOURNAL:
 		{
 			gint64 now, boottime;
-#define _NUM_MAX_FIELDS_SYSLOG_FACILITY 10
-			struct iovec iov_data[12 + _NUM_MAX_FIELDS_SYSLOG_FACILITY];
+			struct iovec iov_data[15];
 			struct iovec *iov = iov_data;
-			gpointer iov_free_data[5];
-			gpointer *iov_free = iov_free_data;
-			nm_auto_free_gstring GString *s_domain_all = NULL;
+			char *iov_free_data[5];
+			char **iov_free = iov_free_data;
 
 			now = nm_utils_get_monotonic_timestamp_ns ();
 			boottime = nm_utils_monotonic_timestamp_as_boottime (now, 1);
@@ -762,46 +785,25 @@ _nm_log_impl (const char *file,
 			_iovec_set_format_a (iov++, 30, "SYSLOG_PID=%ld", (long) getpid ());
 			{
 				const LogDesc *diter;
-				int i_domain = _NUM_MAX_FIELDS_SYSLOG_FACILITY;
-				const char *s_domain_1 = NULL;
 				NMLogDomain dom_all = domain;
-				NMLogDomain dom = dom_all & cur_log_state[level];
+				char s_log_domains_buf[NM_STRLEN ("NM_LOG_DOMAINS=") + sizeof (_all_logging_domains_to_str)];
+				char *s_log_domains = s_log_domains_buf;
+				gsize l_log_domains = sizeof (s_log_domains_buf);
 
-				for (diter = &domain_desc[0]; diter->name; diter++) {
+				nm_utils_strbuf_append_str (&s_log_domains, &l_log_domains, "NM_LOG_DOMAINS=");
+				for (diter = &domain_desc[0]; dom_all != 0 && diter->name; diter++) {
 					if (!NM_FLAGS_ANY (dom_all, diter->num))
 						continue;
-
-					/* construct a list of all domains (not only the enabled ones).
-					 * Note that in by far most cases, there is only one domain present.
-					 * Hence, save the construction of the GString. */
+					if (dom_all != domain)
+						nm_utils_strbuf_append_c (&s_log_domains, &l_log_domains, ',');
+					nm_utils_strbuf_append_str (&s_log_domains, &l_log_domains, diter->name);
 					dom_all &= ~diter->num;
-					if (!s_domain_1)
-						s_domain_1 = diter->name;
-					else {
-						if (!s_domain_all) {
-							s_domain_all = g_string_new ("NM_LOG_DOMAINS=");
-							g_string_append (s_domain_all, s_domain_1);
-						}
-						g_string_append_c (s_domain_all, ',');
-						g_string_append (s_domain_all, diter->name);
-					}
-
-					if (NM_FLAGS_ANY (dom, diter->num)) {
-						if (i_domain > 0) {
-							/* SYSLOG_FACILITY is specified multiple times for each domain that is actually enabled. */
-							_iovec_set_format_str_a (iov++, 30, "SYSLOG_FACILITY=%s", diter->name);
-							i_domain--;
-						}
-						dom &= ~diter->num;
-					}
-					if (!dom && !dom_all)
-						break;
 				}
-				if (s_domain_all)
-					_iovec_set (iov++, s_domain_all->str, s_domain_all->len);
-				else
-					_iovec_set_format_str_a (iov++, 30, "NM_LOG_DOMAINS=%s", s_domain_1);
+				nm_assert (l_log_domains > 0);
+				_iovec_set (iov++, s_log_domains_buf, s_log_domains - s_log_domains_buf);
 			}
+			G_STATIC_ASSERT_EXPR (LOG_FAC (LOG_DAEMON) == 3);
+			_iovec_set_string_literal (iov++, "SYSLOG_FACILITY=3");
 			_iovec_set_format_str_a (iov++, 15, "NM_LOG_LEVEL=%s", level_desc[level].name);
 			if (func)
 				_iovec_set_format (iov++, iov_free++, "CODE_FUNC=%s", func);
@@ -916,7 +918,7 @@ nm_log_handler (const char *log_domain,
 			                 "MESSAGE=%s%s", gl.imm.prefix, message ?: "",
 			                 syslog_identifier_full (gl.imm.syslog_identifier),
 			                 "SYSLOG_PID=%ld", (long) getpid (),
-			                 "SYSLOG_FACILITY=GLIB",
+			                 "SYSLOG_FACILITY=3",
 			                 "GLIB_DOMAIN=%s", log_domain ?: "",
 			                 "GLIB_LEVEL=%d", (int) (level & G_LOG_LEVEL_MASK),
 			                 "TIMESTAMP_MONOTONIC=%lld.%06lld", (long long) (now / NM_UTILS_NS_PER_SECOND), (long long) ((now % NM_UTILS_NS_PER_SECOND) / 1000),
