@@ -1635,17 +1635,16 @@ device_is_wake_on_lan (NMPlatform *platform, NMDevice *device)
 static void
 remove_device (NMManager *self,
                NMDevice *device,
-               gboolean quitting,
-               gboolean allow_unmanage)
+               gboolean quitting)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	gboolean unmanage = FALSE;
 
-	_LOG2D (LOGD_DEVICE, device, "removing device (allow_unmanage %d, managed %d, wol %d)",
-	        allow_unmanage, nm_device_get_managed (device, FALSE),
+	_LOG2D (LOGD_DEVICE, device, "removing device (managed %d, wol %d)",
+	        nm_device_get_managed (device, FALSE),
 	        device_is_wake_on_lan (priv->platform, device));
 
-	if (allow_unmanage && nm_device_get_managed (device, FALSE)) {
+	if (nm_device_get_managed (device, FALSE)) {
 
 		if (quitting) {
 			/* Leave configured if wo(w)lan and quitting */
@@ -1712,7 +1711,7 @@ remove_device (NMManager *self,
 static void
 device_removed_cb (NMDevice *device, gpointer user_data)
 {
-	remove_device (NM_MANAGER (user_data), device, FALSE, TRUE);
+	remove_device (NM_MANAGER (user_data), device, FALSE);
 }
 
 NMState
@@ -1907,7 +1906,7 @@ nm_manager_remove_device (NMManager *self, const char *ifname, NMDeviceType devi
 	if (!d)
 		return FALSE;
 
-	remove_device (self, d, FALSE, FALSE);
+	remove_device (self, d, FALSE);
 	return TRUE;
 }
 
@@ -2029,7 +2028,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 			         "couldn't create the device: %s",
 			         error->message);
 			g_error_free (error);
-			remove_device (self, device, FALSE, TRUE);
+			remove_device (self, device, FALSE);
 			return NULL;
 		}
 
@@ -2821,7 +2820,7 @@ device_ip_iface_changed (NMDevice *device,
 		    && g_strcmp0 (nm_device_get_iface (candidate), ip_iface) == 0
 		    && nm_device_get_device_type (candidate) == device_type
 		    && nm_device_is_real (candidate)) {
-			remove_device (self, candidate, FALSE, FALSE);
+			remove_device (self, candidate, FALSE);
 			break;
 		}
 	}
@@ -3026,7 +3025,7 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 			remove = g_slist_prepend (remove, candidate);
 	}
 	for (iter = remove; iter; iter = iter->next)
-		remove_device (self, NM_DEVICE (iter->data), FALSE, FALSE);
+		remove_device (self, NM_DEVICE (iter->data), FALSE);
 	g_slist_free (remove);
 
 	g_object_ref (device);
@@ -3215,7 +3214,7 @@ platform_link_added (NMManager *self,
 				 */
 				_LOGD (LOGD_DEVICE, "(%s): removing old device %p after ifindex change from %d to %d",
 				       plink->name, candidate, nm_device_get_ifindex (candidate), ifindex);
-				remove_device (self, candidate, FALSE, TRUE);
+				remove_device (self, candidate, FALSE);
 				goto add;
 			}
 			return;
@@ -3348,13 +3347,13 @@ _platform_link_cb_idle (PlatformLinkCbData *data)
 				if (!nm_device_unrealize (device, FALSE, &error)) {
 					_LOG2W (LOGD_DEVICE, device, "failed to unrealize: %s", error->message);
 					g_clear_error (&error);
-					remove_device (self, device, FALSE, TRUE);
+					remove_device (self, device, FALSE);
 				} else {
 					nm_device_update_from_platform_link (device, NULL);
 				}
 			} else {
 				/* Hardware and external devices always get removed when their kernel link is gone */
-				remove_device (self, device, FALSE, TRUE);
+				remove_device (self, device, FALSE);
 			}
 		}
 	}
@@ -6697,7 +6696,7 @@ nm_manager_stop (NMManager *self)
 	nm_dbus_manager_stop (nm_dbus_object_get_manager (NM_DBUS_OBJECT (self)));
 
 	while ((device = c_list_first_entry (&priv->devices_lst_head, NMDevice, devices_lst)))
-		remove_device (self, device, TRUE, TRUE);
+		remove_device (self, device, TRUE);
 
 	_active_connection_cleanup (self);
 
