@@ -213,12 +213,13 @@ owns_port (NMModem *_self, const char *iface)
 	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
 	const MMModemPortInfo *ports = NULL;
 	guint n_ports = 0, i;
-	gboolean owns = FALSE;
 
 	mm_modem_peek_ports (self->_priv.modem_iface, &ports, &n_ports);
-	for (i = 0; i < n_ports && !owns; i++)
-		owns = (g_strcmp0 (iface, ports[i].name) == 0);
-	return owns;
+	for (i = 0; i < n_ports; i++) {
+		if (nm_streq0 (iface, ports[i].name))
+			return TRUE;
+	}
+	return FALSE;
 }
 
 /*****************************************************************************/
