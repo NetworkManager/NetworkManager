@@ -22,6 +22,13 @@ _is_true() {
         0|n|no|NO|No|off)
             return 1
             ;;
+        "")
+            if [ "$2" == "" ]; then
+                die "not a boolean argument \"$1\""
+            fi
+            _is_true "$2"
+            return $?
+            ;;
         *)
             die "not a boolean argument \"$1\""
             ;;
@@ -85,10 +92,17 @@ fi
 
 ###############################################################################
 
-_autotools_test_print_logs() {
+_print_test_logs() {
     echo ">>>> PRINT TEST LOGS $1 (start)"
-    cat test-suite.log
+    if test -f test-suite.log; then
+        cat test-suite.log
+    fi
     echo ">>>> PRINT TEST LOGS $1 (done)"
+    if _is_true "$WITH_VALGRIND" 0; then
+        echo ">>>> PRINT VALGRIND LOGS $1 (start)"
+        find -name '*.valgrind-log' -print0 | xargs -0 grep -H ^
+        echo ">>>> PRINT VALGRIND LOGS $1 (done)"
+    fi
 }
 
 run_autotools() {
@@ -141,14 +155,21 @@ run_autotools() {
 
         if ! make check -j 6 -k ; then
 
-            _autotools_test_print_logs "first-test"
+            _print_test_logs "first-test"
 
             echo ">>>> RUN SECOND TEST (start)"
             NMTST_DEBUG=TRACE,no-expect-message make check -k || :
             echo ">>>> RUN SECOND TEST (done)"
 
-            _autotools_test_print_logs "second-test"
+            _print_test_logs "second-test"
             die "test failed"
+        fi
+
+        if _is_true "$WITH_VALGRIND" 0; then
+            if ! NMTST_USE_VALGRIND=1 make check -j 3 -k ; then
+                _print_test_logs "(valgrind test)"
+                die "valgrind test failed"
+            fi
         fi
     popd
 }
@@ -200,6 +221,13 @@ run_meson() {
 
     ninja -C build
     ninja -C build test
+
+    if _is_true "$WITH_VALGRIND" 0; then
+        if ! NMTST_USE_VALGRIND=1 ninja -C build test; then
+            _print_test_logs "(valgrind test)"
+            die "valgrind test failed"
+        fi
+    fi
 }
 
 ###############################################################################
