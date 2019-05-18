@@ -376,7 +376,7 @@ dhclient_start (NMDhcpClient *client,
 	iface = nm_dhcp_client_get_iface (client);
 	uuid = nm_dhcp_client_get_uuid (client);
 
-	pid_file = g_strdup_printf (RUNSTATEDIR "/dhclient%s-%s.pid",
+	pid_file = g_strdup_printf (NMRUNDIR "/dhclient%s-%s.pid",
 	                            _addr_family_to_path_part (addr_family),
 	                            iface);
 
