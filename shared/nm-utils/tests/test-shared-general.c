@@ -29,24 +29,10 @@
 
 /*****************************************************************************/
 
-static int _monotonic_timestamp_initialized;
-
-void
-_nm_utils_monotonic_timestamp_initialized (const struct timespec *tp,
-                                           gint64 offset_sec,
-                                           gboolean is_boottime)
-{
-	g_assert (!_monotonic_timestamp_initialized);
-	_monotonic_timestamp_initialized = 1;
-}
-
-/*****************************************************************************/
-
 static void
 test_monotonic_timestamp (void)
 {
 	g_assert (nm_utils_get_monotonic_timestamp_s () > 0);
-	g_assert (_monotonic_timestamp_initialized);
 }
 
 /*****************************************************************************/

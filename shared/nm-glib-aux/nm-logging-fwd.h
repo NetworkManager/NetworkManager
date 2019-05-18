@@ -127,4 +127,14 @@ nm_log_level_from_syslog (int syslog_level)
 	}
 }
 
+/*****************************************************************************/
+
+struct timespec;
+
+/* this function must be implemented to handle the notification when
+ * the first monotonic-timestamp is fetched. */
+extern void _nm_utils_monotonic_timestamp_initialized (const struct timespec *tp,
+                                                       gint64 offset_sec,
+                                                       gboolean is_boottime);
+
 #endif /* __NM_LOGGING_DEFINES_H__ */

@@ -488,6 +488,7 @@ shared_nm_utils_tests_test_shared_general_LDFLAGS = \
 
 shared_nm_utils_tests_test_shared_general_LDADD = \
 	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/systemd/libnm-systemd-logging-stub.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
