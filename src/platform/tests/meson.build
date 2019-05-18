@@ -13,11 +13,10 @@ test_units = [
 
 foreach test_unit: test_units
   exe = executable(
-    'platform-' + test_unit[0],
+    test_unit[0],
     test_unit[1],
     dependencies: test_unit[2],
   )
-
   test(
     'platform/' + test_unit[0],
     test_script,
@@ -26,10 +25,8 @@ foreach test_unit: test_units
   )
 endforeach
 
-test = 'monitor'
-
 executable(
-  test,
-  test + '.c',
+  'monitor',
+  'monitor.c',
   dependencies: test_nm_dep,
 )

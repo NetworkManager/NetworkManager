@@ -70,5 +70,6 @@ install \
     python3-gi \
     python3-pip \
     uuid-dev \
+    valgrind \
     \
     #end
