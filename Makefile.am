@@ -3547,30 +3547,21 @@ check_programs_norun += \
 	src/platform/tests/monitor
 
 check_programs += \
-	src/platform/tests/test-link-fake \
-	src/platform/tests/test-link-linux \
 	src/platform/tests/test-address-fake \
 	src/platform/tests/test-address-linux \
-	src/platform/tests/test-general \
+	src/platform/tests/test-cleanup-fake \
+	src/platform/tests/test-cleanup-linux \
+	src/platform/tests/test-link-fake \
+	src/platform/tests/test-link-linux \
 	src/platform/tests/test-nmp-object \
+	src/platform/tests/test-platform-general \
 	src/platform/tests/test-route-fake \
 	src/platform/tests/test-route-linux \
-	src/platform/tests/test-cleanup-fake \
-	src/platform/tests/test-cleanup-linux
+	$(NULL)
 
 src_platform_tests_monitor_CPPFLAGS = $(src_cppflags_test)
 src_platform_tests_monitor_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_monitor_LDADD = $(src_platform_tests_libadd)
-
-src_platform_tests_test_link_fake_SOURCES = src/platform/tests/test-link.c
-src_platform_tests_test_link_fake_CPPFLAGS = $(src_tests_cppflags_fake)
-src_platform_tests_test_link_fake_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_link_fake_LDADD = $(src_platform_tests_libadd)
-
-src_platform_tests_test_link_linux_SOURCES = src/platform/tests/test-link.c
-src_platform_tests_test_link_linux_CPPFLAGS = $(src_tests_cppflags_linux)
-src_platform_tests_test_link_linux_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_link_linux_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_address_fake_SOURCES = src/platform/tests/test-address.c
 src_platform_tests_test_address_fake_CPPFLAGS = $(src_tests_cppflags_fake)
@@ -3582,16 +3573,6 @@ src_platform_tests_test_address_linux_CPPFLAGS = $(src_tests_cppflags_linux)
 src_platform_tests_test_address_linux_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_address_linux_LDADD = $(src_platform_tests_libadd)
 
-src_platform_tests_test_route_fake_SOURCES = src/platform/tests/test-route.c
-src_platform_tests_test_route_fake_CPPFLAGS = $(src_tests_cppflags_fake)
-src_platform_tests_test_route_fake_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_route_fake_LDADD = $(src_platform_tests_libadd)
-
-src_platform_tests_test_route_linux_SOURCES = src/platform/tests/test-route.c
-src_platform_tests_test_route_linux_CPPFLAGS = $(src_tests_cppflags_linux)
-src_platform_tests_test_route_linux_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_route_linux_LDADD = $(src_platform_tests_libadd)
-
 src_platform_tests_test_cleanup_fake_SOURCES = src/platform/tests/test-cleanup.c
 src_platform_tests_test_cleanup_fake_CPPFLAGS = $(src_tests_cppflags_fake)
 src_platform_tests_test_cleanup_fake_LDFLAGS = $(src_platform_tests_ldflags)
@@ -3602,28 +3583,49 @@ src_platform_tests_test_cleanup_linux_CPPFLAGS = $(src_tests_cppflags_linux)
 src_platform_tests_test_cleanup_linux_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_cleanup_linux_LDADD = $(src_platform_tests_libadd)
 
+src_platform_tests_test_link_fake_SOURCES = src/platform/tests/test-link.c
+src_platform_tests_test_link_fake_CPPFLAGS = $(src_tests_cppflags_fake)
+src_platform_tests_test_link_fake_LDFLAGS = $(src_platform_tests_ldflags)
+src_platform_tests_test_link_fake_LDADD = $(src_platform_tests_libadd)
+
+src_platform_tests_test_link_linux_SOURCES = src/platform/tests/test-link.c
+src_platform_tests_test_link_linux_CPPFLAGS = $(src_tests_cppflags_linux)
+src_platform_tests_test_link_linux_LDFLAGS = $(src_platform_tests_ldflags)
+src_platform_tests_test_link_linux_LDADD = $(src_platform_tests_libadd)
+
 src_platform_tests_test_nmp_object_CPPFLAGS = $(src_cppflags_test)
 src_platform_tests_test_nmp_object_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_nmp_object_LDADD = src/libNetworkManagerTest.la
 
-src_platform_tests_test_general_CPPFLAGS = $(src_cppflags_test)
-src_platform_tests_test_general_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_general_LDADD = src/libNetworkManagerTest.la
+src_platform_tests_test_platform_general_CPPFLAGS = $(src_cppflags_test)
+src_platform_tests_test_platform_general_LDFLAGS = $(src_platform_tests_ldflags)
+src_platform_tests_test_platform_general_LDADD = src/libNetworkManagerTest.la
 
-$(src_platform_tests_monitor_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_link_fake_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_link_linux_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_address_fake_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_address_linux_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_route_fake_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_route_linux_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_cleanup_fake_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_cleanup_linux_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_nmp_object_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+src_platform_tests_test_route_fake_SOURCES = src/platform/tests/test-route.c
+src_platform_tests_test_route_fake_CPPFLAGS = $(src_tests_cppflags_fake)
+src_platform_tests_test_route_fake_LDFLAGS = $(src_platform_tests_ldflags)
+src_platform_tests_test_route_fake_LDADD = $(src_platform_tests_libadd)
+
+src_platform_tests_test_route_linux_SOURCES = src/platform/tests/test-route.c
+src_platform_tests_test_route_linux_CPPFLAGS = $(src_tests_cppflags_linux)
+src_platform_tests_test_route_linux_LDFLAGS = $(src_platform_tests_ldflags)
+src_platform_tests_test_route_linux_LDADD = $(src_platform_tests_libadd)
+
+$(src_platform_tests_monitor_OBJECTS):               $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_address_fake_OBJECTS):     $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_address_linux_OBJECTS):    $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_cleanup_fake_OBJECTS):     $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_cleanup_linux_OBJECTS):    $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_link_fake_OBJECTS):        $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_link_linux_OBJECTS):       $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_nmp_object_OBJECTS):       $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_platform_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_route_fake_OBJECTS):       $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_route_linux_OBJECTS):      $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
-	src/platform/tests/meson.build
+	src/platform/tests/meson.build \
+	$(NULL)
 
 ###############################################################################
 # src/devices/tests
