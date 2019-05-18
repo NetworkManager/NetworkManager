@@ -90,6 +90,32 @@ if [ "$WITH_DOCS" != "" ]; then
     fi
 fi
 
+unset _WITH_VALGRIND_CHECKED
+_with_valgrind() {
+    _is_true "$WITH_VALGRIND" 0 || return 1
+
+    test "$_WITH_VALGRIND_CHECKED" == "1" && return 0
+    _WITH_VALGRIND_CHECKED=1
+
+    # Certain glib2 versions are known to report *lots* of leaks. Disable
+    # valgrind tests in this case.
+    # https://bugzilla.redhat.com/show_bug.cgi?id=1710417
+    if grep -q '^PRETTY_NAME="Fedora 30 (.*)"$' /etc/os-release ; then
+        if rpm -q glib2 | grep -q glib2-2.60.2-1.fc30 ; then
+            WITH_VALGRIND=0
+        fi
+    elif grep -q '^PRETTY_NAME="Fedora 31 (.*)"$' /etc/os-release; then
+        if rpm -q glib2 | grep -q glib2-2.61.0-2.fc31 ; then
+            WITH_VALGRIND=0
+        fi
+    fi
+    if [ "$WITH_VALGRIND" == 0 ]; then
+        echo "Don't use valgrind due to known issues in other packages."
+        return 1
+    fi
+    return 0
+}
+
 ###############################################################################
 
 _print_test_logs() {
@@ -98,7 +124,7 @@ _print_test_logs() {
         cat test-suite.log
     fi
     echo ">>>> PRINT TEST LOGS $1 (done)"
-    if _is_true "$WITH_VALGRIND" 0; then
+    if _with_valgrind; then
         echo ">>>> PRINT VALGRIND LOGS $1 (start)"
         find -name '*.valgrind-log' -print0 | xargs -0 grep -H ^
         echo ">>>> PRINT VALGRIND LOGS $1 (done)"
@@ -166,7 +192,7 @@ run_autotools() {
             die "test failed"
         fi
 
-        if _is_true "$WITH_VALGRIND" 0; then
+        if _with_valgrind; then
             if ! NMTST_USE_VALGRIND=1 make check -j 3 -k ; then
                 _print_test_logs "(valgrind test)"
                 die "valgrind test failed"
@@ -224,7 +250,7 @@ run_meson() {
     ninja -C build
     ninja -C build test
 
-    if _is_true "$WITH_VALGRIND" 0; then
+    if _with_valgrind; then
         if ! NMTST_USE_VALGRIND=1 ninja -C build test; then
             _print_test_logs "(valgrind test)"
             die "valgrind test failed"
