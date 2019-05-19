@@ -2622,19 +2622,19 @@ EXTRA_DIST += \
 # src/settings/plugins/keyfile/tests
 ###############################################################################
 
-check_programs += src/settings/plugins/keyfile/tests/test-keyfile
+check_programs += src/settings/plugins/keyfile/tests/test-keyfile-settings
 
-src_settings_plugins_keyfile_tests_test_keyfile_CPPFLAGS = $(src_cppflags_test)
+src_settings_plugins_keyfile_tests_test_keyfile_settings_CPPFLAGS = $(src_cppflags_test)
 
-src_settings_plugins_keyfile_tests_test_keyfile_LDFLAGS = \
+src_settings_plugins_keyfile_tests_test_keyfile_settings_LDFLAGS = \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-src_settings_plugins_keyfile_tests_test_keyfile_LDADD = \
+src_settings_plugins_keyfile_tests_test_keyfile_settings_LDADD = \
 	src/libNetworkManagerTest.la
 
-$(src_settings_plugins_keyfile_tests_test_keyfile_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_settings_plugins_keyfile_tests_test_keyfile_settings_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
 	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_Connection \

@@ -221,7 +221,7 @@ test-*.trs
 /src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.[ch]
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
 /src/settings/plugins/ifupdown/tests/test-ifupdown
-/src/settings/plugins/keyfile/tests/test-keyfile
+/src/settings/plugins/keyfile/tests/test-keyfile-settings
 /src/settings/plugins/ifcfg-rh/tests/network-scripts/tmp/
 /src/supplicant/tests/test-supplicant-config
 /src/tests/config/test-config
@@ -314,5 +314,6 @@ test-*.trs
 /src/rdisc/
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh-utils
 /src/settings/plugins/ifnet
+/src/settings/plugins/keyfile/tests/test-keyfile
 /src/supplicant-manager/tests/test-supplicant-config
 /src/tests/test-resolvconf-capture
