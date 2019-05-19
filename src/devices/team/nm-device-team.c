@@ -694,6 +694,9 @@ deactivate (NMDevice *device)
 	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
 
+	if (nm_device_sys_iface_state_is_external (device))
+		return;
+
 	if (priv->teamd_pid || priv->tdc)
 		_LOGI (LOGD_TEAM, "deactivation: stopping teamd...");
 
