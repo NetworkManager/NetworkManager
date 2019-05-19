@@ -1,8 +1,8 @@
 subdir('config')
 
 test_units = [
-  'test-general',
-  'test-general-with-expect',
+  'test-core',
+  'test-core-with-expect',
   'test-ip4-config',
   'test-ip6-config',
   'test-dcb',
@@ -18,7 +18,7 @@ foreach test_unit: test_units
   )
 
   test(
-    'src/' + test_unit,
+    test_unit,
     test_script,
     args: test_args + [exe.full_path()],
     timeout: default_test_timeout,
@@ -34,7 +34,7 @@ cflags = [
 
 exe = executable(
   test_unit,
-  [test_unit + '.c'],
+  test_unit + '.c',
   include_directories: src_inc,
   dependencies: libnm_core_dep,
   c_args: cflags,
@@ -45,7 +45,7 @@ exe = executable(
 )
 
 test(
-  'src/' + test_unit,
+  test_unit,
   test_script,
   args: test_args + [exe.full_path()],
 )

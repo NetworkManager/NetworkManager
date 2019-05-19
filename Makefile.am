@@ -1441,10 +1441,7 @@ EXTRA_DIST += \
 
 ###############################################################################
 
-libnm_tests_programs = \
-	libnm/tests/test-general
-
-check_programs += $(libnm_tests_programs)
+check_programs += libnm/tests/test-libnm
 
 libnm_tests_programs_req_introspection = \
 	libnm/tests/test-nm-client \
@@ -1475,14 +1472,14 @@ libnm_tests_ldadd = \
 libnm_tests_ldflags = \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-libnm_tests_test_general_CPPFLAGS = $(libnm_tests_cppflags)
+libnm_tests_test_libnm_CPPFLAGS = $(libnm_tests_cppflags)
 libnm_tests_test_nm_client_CPPFLAGS = $(libnm_tests_cppflags)
 libnm_tests_test_remote_settings_client_CPPFLAGS = $(libnm_tests_cppflags)
 libnm_tests_test_secret_agent_CPPFLAGS = $(libnm_tests_cppflags)
 
-libnm_tests_test_general_SOURCES = \
+libnm_tests_test_libnm_SOURCES = \
 	shared/nm-utils/nm-compat.c \
-	libnm/tests/test-general.c
+	libnm/tests/test-libnm.c
 
 libnm_tests_test_nm_client_SOURCES = \
 	shared/nm-test-utils-impl.c \
@@ -1499,7 +1496,7 @@ libnm_tests_test_secret_agent_SOURCES = \
 	shared/nm-test-libnm-utils.h \
 	libnm/tests/test-secret-agent.c
 
-libnm_tests_test_general_LDADD = \
+libnm_tests_test_libnm_LDADD = \
 	libnm/libnm-utils.la \
 	$(libnm_tests_ldadd)
 
@@ -1507,12 +1504,12 @@ libnm_tests_test_nm_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_remote_settings_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_secret_agent_LDADD = $(libnm_tests_ldadd)
 
-libnm_tests_test_general_LDFLAGS = $(libnm_tests_ldflags)
+libnm_tests_test_libnm_LDFLAGS = $(libnm_tests_ldflags)
 libnm_tests_test_nm_client_LDFLAGS = $(libnm_tests_ldflags)
 libnm_tests_test_remote_settings_client_LDFLAGS = $(libnm_tests_ldflags)
 libnm_tests_test_secret_agent_LDFLAGS = $(libnm_tests_ldflags)
 
-$(libnm_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_tests_test_libnm_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_nm_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_remote_settings_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_secret_agent_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
@@ -2622,19 +2619,19 @@ EXTRA_DIST += \
 # src/settings/plugins/keyfile/tests
 ###############################################################################
 
-check_programs += src/settings/plugins/keyfile/tests/test-keyfile
+check_programs += src/settings/plugins/keyfile/tests/test-keyfile-settings
 
-src_settings_plugins_keyfile_tests_test_keyfile_CPPFLAGS = $(src_cppflags_test)
+src_settings_plugins_keyfile_tests_test_keyfile_settings_CPPFLAGS = $(src_cppflags_test)
 
-src_settings_plugins_keyfile_tests_test_keyfile_LDFLAGS = \
+src_settings_plugins_keyfile_tests_test_keyfile_settings_LDFLAGS = \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-src_settings_plugins_keyfile_tests_test_keyfile_LDADD = \
+src_settings_plugins_keyfile_tests_test_keyfile_settings_LDADD = \
 	src/libNetworkManagerTest.la
 
-$(src_settings_plugins_keyfile_tests_test_keyfile_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_settings_plugins_keyfile_tests_test_keyfile_settings_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
 	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_Connection \
@@ -3400,21 +3397,21 @@ check-local-devices-wifi: src/devices/wifi/libnm-device-plugin-wifi.la
 
 check_local += check-local-devices-wifi
 
-check_programs += src/devices/wifi/tests/test-general
+check_programs += src/devices/wifi/tests/test-devices-wifi
 
-src_devices_wifi_tests_test_general_SOURCES = \
-	src/devices/wifi/tests/test-general.c \
+src_devices_wifi_tests_test_devices_wifi_SOURCES = \
+	src/devices/wifi/tests/test-devices-wifi.c \
 	src/devices/wifi/nm-wifi-ap.c \
 	src/devices/wifi/nm-wifi-ap.h \
 	src/devices/wifi/nm-wifi-utils.c \
 	src/devices/wifi/nm-wifi-utils.h
 
-src_devices_wifi_tests_test_general_CPPFLAGS = $(src_cppflags_base_test)
+src_devices_wifi_tests_test_devices_wifi_CPPFLAGS = $(src_cppflags_base_test)
 
-src_devices_wifi_tests_test_general_LDADD = src/libNetworkManagerTest.la
-src_devices_wifi_tests_test_general_LDFLAGS = $(SANITIZER_EXEC_LDFLAGS)
+src_devices_wifi_tests_test_devices_wifi_LDADD = src/libNetworkManagerTest.la
+src_devices_wifi_tests_test_devices_wifi_LDFLAGS = $(SANITIZER_EXEC_LDFLAGS)
 
-$(src_devices_wifi_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_devices_wifi_tests_test_devices_wifi_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 endif
 
@@ -3750,8 +3747,8 @@ src_tests_ldadd = \
 	src/libNetworkManagerTest.la
 
 check_programs += \
-	src/tests/test-general \
-	src/tests/test-general-with-expect \
+	src/tests/test-core \
+	src/tests/test-core-with-expect \
 	src/tests/test-ip4-config \
 	src/tests/test-ip6-config \
 	src/tests/test-dcb \
@@ -3771,13 +3768,13 @@ src_tests_test_dcb_CPPFLAGS = $(src_cppflags_test)
 src_tests_test_dcb_LDFLAGS = $(src_tests_ldflags)
 src_tests_test_dcb_LDADD = $(src_tests_ldadd)
 
-src_tests_test_general_CPPFLAGS = $(src_cppflags_test)
-src_tests_test_general_LDFLAGS = $(src_tests_ldflags)
-src_tests_test_general_LDADD = $(src_tests_ldadd)
+src_tests_test_core_CPPFLAGS = $(src_cppflags_test)
+src_tests_test_core_LDFLAGS = $(src_tests_ldflags)
+src_tests_test_core_LDADD = $(src_tests_ldadd)
 
-src_tests_test_general_with_expect_CPPFLAGS = $(src_cppflags_test)
-src_tests_test_general_with_expect_LDFLAGS = $(src_tests_ldflags)
-src_tests_test_general_with_expect_LDADD = $(src_tests_ldadd)
+src_tests_test_core_with_expect_CPPFLAGS = $(src_cppflags_test)
+src_tests_test_core_with_expect_LDFLAGS = $(src_tests_ldflags)
+src_tests_test_core_with_expect_LDADD = $(src_tests_ldadd)
 
 src_tests_test_wired_defname_CPPFLAGS = $(src_cppflags_test)
 src_tests_test_wired_defname_LDFLAGS = $(src_tests_ldflags)
@@ -3790,8 +3787,8 @@ src_tests_test_utils_LDADD = $(src_tests_ldadd)
 $(src_tests_test_ip4_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_ip6_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_dcb_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_tests_test_general_with_expect_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_core_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_core_with_expect_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_wired_defname_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -4085,29 +4082,29 @@ $(clients_common_libnmc_la_OBJECTS): $(clients_common_settings_doc_h)
 $(clients_common_libnmc_la_OBJECTS): clients/common/.dirstamp
 
 if HAVE_INTROSPECTION
-check_programs += clients/common/tests/test-general
+check_programs += clients/common/tests/test-clients-common
 else
 if BUILD_NMCLI
-check_programs += clients/common/tests/test-general
+check_programs += clients/common/tests/test-clients-common
 endif
 endif
 
-clients_common_tests_test_general_CPPFLAGS = \
+clients_common_tests_test_clients_common_CPPFLAGS = \
 	-I$(srcdir)/clients/common/tests \
 	$(clients_cppflags) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	$(NULL)
 
-clients_common_tests_test_general_LDFLAGS = \
+clients_common_tests_test_clients_common_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-clients_common_tests_test_general_LDADD = \
+clients_common_tests_test_clients_common_LDADD = \
 	libnm/libnm.la \
 	clients/common/libnmc-base.la \
 	clients/common/libnmc.la \
 	$(GLIB_LIBS)
 
-$(clients_common_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(clients_common_tests_test_clients_common_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 

@@ -1,7 +1,9 @@
 
+test_name = 'test-clients-common'
+
 exe = executable(
-  'clients-test-general',
-  'test-general.c',
+  test_name,
+  test_name + '.c',
   dependencies: [
     libnm_dep,
     libnmc_dep,
@@ -14,7 +16,7 @@ exe = executable(
 )
 
 test(
-  'clients/common/tests/test-general',
+  test_name,
   test_script,
   args: test_args + [exe.full_path()],
 )
