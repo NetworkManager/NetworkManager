@@ -63,7 +63,7 @@ test-*.trs
 
 /clients/cli/nmcli
 /clients/common/settings-docs.h
-/clients/common/tests/test-general
+/clients/common/tests/test-clients-common
 /clients/common/tests/test-libnm-core-aux
 /clients/nm-online
 /clients/tui/newt/libnmt-newt.a
@@ -249,6 +249,7 @@ test-*.trs
 /callouts/tests/test-dispatcher-envp
 /clients/cli/settings-docs.c
 /clients/common/settings-docs.c
+/clients/common/tests/test-general
 /docs/libnm-glib/*.stamp
 /docs/libnm-glib/html/
 /docs/libnm-glib/libnm-glib-*.txt

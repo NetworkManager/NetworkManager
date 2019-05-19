@@ -4085,29 +4085,29 @@ $(clients_common_libnmc_la_OBJECTS): $(clients_common_settings_doc_h)
 $(clients_common_libnmc_la_OBJECTS): clients/common/.dirstamp
 
 if HAVE_INTROSPECTION
-check_programs += clients/common/tests/test-general
+check_programs += clients/common/tests/test-clients-common
 else
 if BUILD_NMCLI
-check_programs += clients/common/tests/test-general
+check_programs += clients/common/tests/test-clients-common
 endif
 endif
 
-clients_common_tests_test_general_CPPFLAGS = \
+clients_common_tests_test_clients_common_CPPFLAGS = \
 	-I$(srcdir)/clients/common/tests \
 	$(clients_cppflags) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	$(NULL)
 
-clients_common_tests_test_general_LDFLAGS = \
+clients_common_tests_test_clients_common_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-clients_common_tests_test_general_LDADD = \
+clients_common_tests_test_clients_common_LDADD = \
 	libnm/libnm.la \
 	clients/common/libnmc-base.la \
 	clients/common/libnmc.la \
 	$(GLIB_LIBS)
 
-$(clients_common_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(clients_common_tests_test_clients_common_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
