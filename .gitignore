@@ -226,8 +226,8 @@ test-*.trs
 /src/supplicant/tests/test-supplicant-config
 /src/tests/config/test-config
 /src/tests/test-dcb
-/src/tests/test-general
-/src/tests/test-general-with-expect
+/src/tests/test-core
+/src/tests/test-core-with-expect
 /src/tests/test-ip4-config
 /src/tests/test-ip6-config
 /src/tests/test-route-manager-fake
@@ -319,4 +319,6 @@ test-*.trs
 /src/settings/plugins/ifnet
 /src/settings/plugins/keyfile/tests/test-keyfile
 /src/supplicant-manager/tests/test-supplicant-config
+/src/tests/test-general
+/src/tests/test-general-with-expect
 /src/tests/test-resolvconf-capture

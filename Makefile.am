@@ -3747,8 +3747,8 @@ src_tests_ldadd = \
 	src/libNetworkManagerTest.la
 
 check_programs += \
-	src/tests/test-general \
-	src/tests/test-general-with-expect \
+	src/tests/test-core \
+	src/tests/test-core-with-expect \
 	src/tests/test-ip4-config \
 	src/tests/test-ip6-config \
 	src/tests/test-dcb \
@@ -3768,13 +3768,13 @@ src_tests_test_dcb_CPPFLAGS = $(src_cppflags_test)
 src_tests_test_dcb_LDFLAGS = $(src_tests_ldflags)
 src_tests_test_dcb_LDADD = $(src_tests_ldadd)
 
-src_tests_test_general_CPPFLAGS = $(src_cppflags_test)
-src_tests_test_general_LDFLAGS = $(src_tests_ldflags)
-src_tests_test_general_LDADD = $(src_tests_ldadd)
+src_tests_test_core_CPPFLAGS = $(src_cppflags_test)
+src_tests_test_core_LDFLAGS = $(src_tests_ldflags)
+src_tests_test_core_LDADD = $(src_tests_ldadd)
 
-src_tests_test_general_with_expect_CPPFLAGS = $(src_cppflags_test)
-src_tests_test_general_with_expect_LDFLAGS = $(src_tests_ldflags)
-src_tests_test_general_with_expect_LDADD = $(src_tests_ldadd)
+src_tests_test_core_with_expect_CPPFLAGS = $(src_cppflags_test)
+src_tests_test_core_with_expect_LDFLAGS = $(src_tests_ldflags)
+src_tests_test_core_with_expect_LDADD = $(src_tests_ldadd)
 
 src_tests_test_wired_defname_CPPFLAGS = $(src_cppflags_test)
 src_tests_test_wired_defname_LDFLAGS = $(src_tests_ldflags)
@@ -3787,8 +3787,8 @@ src_tests_test_utils_LDADD = $(src_tests_ldadd)
 $(src_tests_test_ip4_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_ip6_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_dcb_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_tests_test_general_with_expect_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_core_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_core_with_expect_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_wired_defname_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
