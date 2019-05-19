@@ -3400,21 +3400,21 @@ check-local-devices-wifi: src/devices/wifi/libnm-device-plugin-wifi.la
 
 check_local += check-local-devices-wifi
 
-check_programs += src/devices/wifi/tests/test-general
+check_programs += src/devices/wifi/tests/test-devices-wifi
 
-src_devices_wifi_tests_test_general_SOURCES = \
-	src/devices/wifi/tests/test-general.c \
+src_devices_wifi_tests_test_devices_wifi_SOURCES = \
+	src/devices/wifi/tests/test-devices-wifi.c \
 	src/devices/wifi/nm-wifi-ap.c \
 	src/devices/wifi/nm-wifi-ap.h \
 	src/devices/wifi/nm-wifi-utils.c \
 	src/devices/wifi/nm-wifi-utils.h
 
-src_devices_wifi_tests_test_general_CPPFLAGS = $(src_cppflags_base_test)
+src_devices_wifi_tests_test_devices_wifi_CPPFLAGS = $(src_cppflags_base_test)
 
-src_devices_wifi_tests_test_general_LDADD = src/libNetworkManagerTest.la
-src_devices_wifi_tests_test_general_LDFLAGS = $(SANITIZER_EXEC_LDFLAGS)
+src_devices_wifi_tests_test_devices_wifi_LDADD = src/libNetworkManagerTest.la
+src_devices_wifi_tests_test_devices_wifi_LDFLAGS = $(SANITIZER_EXEC_LDFLAGS)
 
-$(src_devices_wifi_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_devices_wifi_tests_test_devices_wifi_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 endif
 
