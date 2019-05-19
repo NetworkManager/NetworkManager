@@ -1441,10 +1441,7 @@ EXTRA_DIST += \
 
 ###############################################################################
 
-libnm_tests_programs = \
-	libnm/tests/test-general
-
-check_programs += $(libnm_tests_programs)
+check_programs += libnm/tests/test-libnm
 
 libnm_tests_programs_req_introspection = \
 	libnm/tests/test-nm-client \
@@ -1475,14 +1472,14 @@ libnm_tests_ldadd = \
 libnm_tests_ldflags = \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-libnm_tests_test_general_CPPFLAGS = $(libnm_tests_cppflags)
+libnm_tests_test_libnm_CPPFLAGS = $(libnm_tests_cppflags)
 libnm_tests_test_nm_client_CPPFLAGS = $(libnm_tests_cppflags)
 libnm_tests_test_remote_settings_client_CPPFLAGS = $(libnm_tests_cppflags)
 libnm_tests_test_secret_agent_CPPFLAGS = $(libnm_tests_cppflags)
 
-libnm_tests_test_general_SOURCES = \
+libnm_tests_test_libnm_SOURCES = \
 	shared/nm-utils/nm-compat.c \
-	libnm/tests/test-general.c
+	libnm/tests/test-libnm.c
 
 libnm_tests_test_nm_client_SOURCES = \
 	shared/nm-test-utils-impl.c \
@@ -1499,7 +1496,7 @@ libnm_tests_test_secret_agent_SOURCES = \
 	shared/nm-test-libnm-utils.h \
 	libnm/tests/test-secret-agent.c
 
-libnm_tests_test_general_LDADD = \
+libnm_tests_test_libnm_LDADD = \
 	libnm/libnm-utils.la \
 	$(libnm_tests_ldadd)
 
@@ -1507,12 +1504,12 @@ libnm_tests_test_nm_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_remote_settings_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_secret_agent_LDADD = $(libnm_tests_ldadd)
 
-libnm_tests_test_general_LDFLAGS = $(libnm_tests_ldflags)
+libnm_tests_test_libnm_LDFLAGS = $(libnm_tests_ldflags)
 libnm_tests_test_nm_client_LDFLAGS = $(libnm_tests_ldflags)
 libnm_tests_test_remote_settings_client_LDFLAGS = $(libnm_tests_ldflags)
 libnm_tests_test_secret_agent_LDFLAGS = $(libnm_tests_ldflags)
 
-$(libnm_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_tests_test_libnm_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_nm_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_remote_settings_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_secret_agent_OBJECTS): $(libnm_core_lib_h_pub_mkenums)

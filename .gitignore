@@ -144,7 +144,7 @@ test-*.trs
 /libnm/nm-settings-docs.xml
 /libnm/nm-settings-docs-overrides.xml
 /libnm/nm-settings-keyfile-docs.xml
-/libnm/tests/test-general
+/libnm/tests/test-libnm
 /libnm/tests/test-nm-client
 /libnm/tests/test-remote-settings-client
 /libnm/tests/test-secret-agent
@@ -303,6 +303,7 @@ test-*.trs
 /libnm/nm-keyfile-docs.xml
 /libnm/nm-setting-docs-overrides.xml
 /libnm/nm-setting-docs.xml
+/libnm/tests/test-general
 /policy/org.freedesktop.NetworkManager.policy
 /policy/org.freedesktop.NetworkManager.policy.in
 /src/devices/tests/test-arping
