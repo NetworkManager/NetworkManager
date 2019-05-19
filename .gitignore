@@ -55,6 +55,10 @@ test-*.trs
 /conftest.[ch]
 /conftest.o.*
 
+/contrib/fedora/rpm/NetworkManager.*.??????/
+/contrib/fedora/rpm/latest0
+/contrib/fedora/rpm/latest
+
 /dispatcher/nm-avahi-autoipd.action
 /dispatcher/nm-dispatcher
 /dispatcher/nmdbus-dispatcher.*
@@ -120,13 +124,13 @@ test-*.trs
 /examples/C/qt/add-connection-wired
 /examples/C/qt/list-connections
 /examples/C/qt/change-ipv4-addresses
+/examples/C/qt/monitor-nm-running
+/examples/C/qt/monitor-nm-running.moc
 
 /shared/nm-utils/tests/test-shared-general
 /shared/nm-version-macros.h
 
 /introspection/org.freedesktop.NetworkManager*.[ch]
-
-/libgsystem/
 
 /libnm-core/tests/test-compare
 /libnm-core/tests/test-crypto
@@ -217,6 +221,17 @@ test-*.trs
 /src/nm-iface-helper
 /src/ndisc/tests/test-ndisc-fake
 /src/ndisc/tests/test-ndisc-linux
+/src/platform/tests/monitor
+/src/platform/tests/test-address-fake
+/src/platform/tests/test-address-linux
+/src/platform/tests/test-cleanup-fake
+/src/platform/tests/test-cleanup-linux
+/src/platform/tests/test-link-fake
+/src/platform/tests/test-link-linux
+/src/platform/tests/test-nmp-object
+/src/platform/tests/test-platform-general
+/src/platform/tests/test-route-fake
+/src/platform/tests/test-route-linux
 /src/settings/plugins/ibft/tests/test-ibft
 /src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.[ch]
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
@@ -281,6 +296,7 @@ test-*.trs
 /introspection/nmdbus-*.c
 /introspection/nmdbus-*.h
 /introspection/nmdbus-*.xml
+/libgsystem/
 /libnm-core/tests/test-setting-8021x
 /libnm-core/tests/test-setting-bond
 /libnm-core/tests/test-setting-dcb
@@ -314,6 +330,9 @@ test-*.trs
 /src/dhcp-manager/tests/test-dhcp-options
 /src/dhcp-manager/tests/test-dhcp-utils
 /src/dnsmasq-manager/tests/test-dnsmasq-utils
+/src/platform/tests/dump
+/src/platform/tests/platform
+/src/platform/tests/test-general
 /src/rdisc/
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh-utils
 /src/settings/plugins/ifnet
