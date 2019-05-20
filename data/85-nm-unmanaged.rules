@@ -26,9 +26,6 @@ ATTR{address}=="00:1c:42:*", ENV{INTERFACE}=="vnic[0-9]*", ENV{NM_UNMANAGED}="1"
 # in another net namespace and managed by libvirt, Docker or the like.
 ENV{ID_NET_DRIVER}=="veth", ENV{NM_UNMANAGED}="1"
 
-# Docker bridge. Managed by docker daemon.
-ATTR{address}=="02:42:*", ENV{INTERFACE}=="docker[0-9]*", ENV{NM_UNMANAGED}="1"
-
 # USB gadget device. Unmanage by default, since whatever created it
 # might want to set it up itself (e.g. activate an ipv4.method=shared
 # connection).
