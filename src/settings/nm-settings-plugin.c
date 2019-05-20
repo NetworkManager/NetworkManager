@@ -40,15 +40,6 @@ G_DEFINE_TYPE (NMSettingsPlugin, nm_settings_plugin, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
-void
-nm_settings_plugin_initialize (NMSettingsPlugin *self)
-{
-	g_return_if_fail (NM_IS_SETTINGS_PLUGIN (self));
-
-	if (NM_SETTINGS_PLUGIN_GET_CLASS (self)->initialize)
-		NM_SETTINGS_PLUGIN_GET_CLASS (self)->initialize (self);
-}
-
 GSList *
 nm_settings_plugin_get_connections (NMSettingsPlugin *self)
 {

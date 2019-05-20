@@ -41,9 +41,6 @@ typedef struct {
 typedef struct {
 	GObjectClass parent;
 
-	/* Called when the plugin is loaded to initialize it */
-	void (*initialize) (NMSettingsPlugin *plugin);
-
 	/* Returns a GSList of NMSettingsConnection objects that represent
 	 * connections the plugin knows about.  The returned list is freed by the
 	 * system settings service.
@@ -103,8 +100,6 @@ typedef NMSettingsPlugin *(*NMSettingsPluginFactoryFunc) (void);
 
 /* Plugin's factory function that returns a #NMSettingsPlugin */
 NMSettingsPlugin *nm_settings_plugin_factory (void);
-
-void nm_settings_plugin_initialize (NMSettingsPlugin *config);
 
 GSList *nm_settings_plugin_get_connections (NMSettingsPlugin *plugin);
 
