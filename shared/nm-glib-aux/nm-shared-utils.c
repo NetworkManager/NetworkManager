@@ -2683,6 +2683,34 @@ _nm_utils_strv_cmp_n (const char *const*strv1,
 
 /*****************************************************************************/
 
+/**
+ * nm_utils_g_slist_find_str:
+ * @list: the #GSList with NUL terminated strings to search
+ * @needle: the needle string to look for.
+ *
+ * Search the list for @needle and return the first found match
+ * (or %NULL if not found). Uses strcmp() for finding the first matching
+ * element.
+ *
+ * Returns: the #GSList element with @needle as string value or
+ *   %NULL if not found.
+ */
+GSList *
+nm_utils_g_slist_find_str (const GSList *list,
+                           const char *needle)
+{
+	nm_assert (needle);
+
+	for (; list; list = list->next) {
+		nm_assert (list->data);
+		if (nm_streq (list->data, needle))
+			return (GSList *) list;
+	}
+	return NULL;
+}
+
+/*****************************************************************************/
+
 gpointer
 _nm_utils_user_data_pack (int nargs, gconstpointer *args)
 {
