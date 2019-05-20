@@ -635,7 +635,8 @@ static void realize_start_setup (NMDevice *self,
                                  gboolean assume_state_guess_assume,
                                  const char *assume_state_connection_uuid,
                                  gboolean set_nm_owned,
-                                 NMUnmanFlagOp unmanaged_user_explicit);
+                                 NMUnmanFlagOp unmanaged_user_explicit,
+                                 gboolean force_platform_init);
 static void _set_mtu (NMDevice *self, guint32 mtu);
 static void _commit_mtu (NMDevice *self, const NMIP4Config *config);
 static void _cancel_activation (NMDevice *self);
@@ -4081,7 +4082,8 @@ nm_device_realize_start (NMDevice *self,
 	                     assume_state_guess_assume,
 	                     assume_state_connection_uuid,
 	                     set_nm_owned,
-	                     unmanaged_user_explicit);
+	                     unmanaged_user_explicit,
+	                     FALSE);
 	return TRUE;
 }
 
@@ -4126,7 +4128,8 @@ nm_device_create_and_realize (NMDevice *self,
 	                     plink,
 	                     FALSE, /* assume_state_guess_assume */
 	                     NULL,  /* assume_state_connection_uuid */
-	                     FALSE, NM_UNMAN_FLAG_OP_FORGET);
+	                     FALSE, NM_UNMAN_FLAG_OP_FORGET,
+	                     TRUE);
 	nm_device_realize_finish (self, plink);
 
 	if (nm_device_get_managed (self, FALSE)) {
@@ -4243,6 +4246,8 @@ realize_start_notify (NMDevice *self,
  * @set_nm_owned: if TRUE and device is a software-device, set nm-owned.
  *    TRUE.
  * @unmanaged_user_explicit: the user-explict unmanaged flag to set.
+ * @force_platform_init: if TRUE the platform-init unmanaged flag is
+ *    forcefully cleared.
  *
  * Update the device from backing resource properties (like hardware
  * addresses, carrier states, driver/firmware info, etc).  This function
@@ -4256,14 +4261,17 @@ realize_start_setup (NMDevice *self,
                      gboolean assume_state_guess_assume,
                      const char *assume_state_connection_uuid,
                      gboolean set_nm_owned,
-                     NMUnmanFlagOp unmanaged_user_explicit)
+                     NMUnmanFlagOp unmanaged_user_explicit,
+                     gboolean force_platform_init)
 {
 	NMDevicePrivate *priv;
 	NMDeviceClass *klass;
+	NMPlatform *platform;
 	static guint32 id = 0;
 	NMDeviceCapabilities capabilities = 0;
 	NMConfig *config;
 	guint real_rate;
+	gboolean unmanaged;
 
 	/* plink is a NMPlatformLink type, however, we require it to come from the platform
 	 * cache (where else would it come from?). */
@@ -4284,6 +4292,7 @@ realize_start_setup (NMDevice *self,
 	_LOGD (LOGD_DEVICE, "start setup of %s, kernel ifindex %d", G_OBJECT_TYPE_NAME (self), plink ? plink->ifindex : 0);
 
 	klass = NM_DEVICE_GET_CLASS (self);
+	platform = nm_device_get_platform (self);
 
 	/* Balanced by a thaw in nm_device_realize_finish() */
 	g_object_freeze_notify (G_OBJECT (self));
@@ -4302,19 +4311,19 @@ realize_start_setup (NMDevice *self,
 		nm_device_update_from_platform_link (self, plink);
 
 	if (priv->ifindex > 0) {
-		priv->physical_port_id = nm_platform_link_get_physical_port_id (nm_device_get_platform (self), priv->ifindex);
+		priv->physical_port_id = nm_platform_link_get_physical_port_id (platform, priv->ifindex);
 		_notify (self, PROP_PHYSICAL_PORT_ID);
 
-		priv->dev_id = nm_platform_link_get_dev_id (nm_device_get_platform (self), priv->ifindex);
+		priv->dev_id = nm_platform_link_get_dev_id (platform, priv->ifindex);
 
-		if (nm_platform_link_is_software (nm_device_get_platform (self), priv->ifindex))
+		if (nm_platform_link_is_software (platform, priv->ifindex))
 			capabilities |= NM_DEVICE_CAP_IS_SOFTWARE;
 
 		_set_mtu (self,
-		          nm_platform_link_get_mtu (nm_device_get_platform (self),
+		          nm_platform_link_get_mtu (platform,
 		                                    priv->ifindex));
 
-		nm_platform_link_get_driver_info (nm_device_get_platform (self),
+		nm_platform_link_get_driver_info (platform,
 		                                  priv->ifindex,
 		                                  NULL,
 		                                  &priv->driver_version,
@@ -4325,9 +4334,9 @@ realize_start_setup (NMDevice *self,
 			_notify (self, PROP_FIRMWARE_VERSION);
 
 		if (nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL))
-			priv->ipv6ll_handle = nm_platform_link_get_user_ipv6ll_enabled (nm_device_get_platform (self), priv->ifindex);
+			priv->ipv6ll_handle = nm_platform_link_get_user_ipv6ll_enabled (platform, priv->ifindex);
 
-		if (nm_platform_link_supports_sriov (nm_device_get_platform (self), priv->ifindex))
+		if (nm_platform_link_supports_sriov (platform, priv->ifindex))
 			capabilities |= NM_DEVICE_CAP_SRIOV;
 	}
 
@@ -4393,8 +4402,12 @@ realize_start_setup (NMDevice *self,
 	nm_device_set_unmanaged_by_user_udev (self);
 	nm_device_set_unmanaged_by_user_conf (self);
 
+	unmanaged =    plink
+	            && !plink->initialized
+	            && !force_platform_init;
+
 	nm_device_set_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT,
-	                               plink && !plink->initialized);
+	                               unmanaged);
 }
 
 /**
