@@ -4891,9 +4891,7 @@ _internal_activation_auth_done (NMManager *self,
 		c_list_for_each_entry (ac, &priv->active_connections_lst_head, active_connections_lst) {
 			if (   nm_active_connection_get_device (ac) == nm_active_connection_get_device (active)
 			    && nm_active_connection_get_settings_connection (ac) == nm_active_connection_get_settings_connection (active)
-			    && NM_IN_SET (nm_active_connection_get_state (ac),
-			                  NM_ACTIVE_CONNECTION_STATE_ACTIVATING,
-			                  NM_ACTIVE_CONNECTION_STATE_ACTIVATED)) {
+			    && nm_active_connection_get_state (ac) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 				g_set_error (&error,
 				             NM_MANAGER_ERROR,
 				             NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,
