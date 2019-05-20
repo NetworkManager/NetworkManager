@@ -86,7 +86,6 @@ EXPORT(nm_settings_connection_update)
 
 /*****************************************************************************/
 
-static NM_CACHED_QUARK_FCN ("plugin-module-path", plugin_module_path_quark)
 static NM_CACHED_QUARK_FCN ("default-wired-connection", _default_wired_connection_quark)
 static NM_CACHED_QUARK_FCN ("default-wired-device", _default_wired_device_quark)
 
@@ -620,25 +619,16 @@ add_plugin (NMSettings *self, NMSettingsPlugin *plugin, const char *path)
 static gboolean
 add_plugin_load_file (NMSettings *self, const char *pname, GError **error)
 {
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	gs_free char *full_name = NULL;
 	gs_free char *path = NULL;
 	gs_unref_object NMSettingsPlugin *plugin = NULL;
 	GModule *module;
 	NMSettingsPluginFactoryFunc factory_func;
-	GSList *iter;
 	struct stat st;
 	int errsv;
 
 	full_name = g_strdup_printf ("nm-settings-plugin-%s", pname);
 	path = g_module_build_path (NMPLUGINDIR, full_name);
-
-	for (iter = priv->plugins; iter; iter = iter->next) {
-		if (nm_streq0 (path,
-		               g_object_get_qdata (iter->data,
-		                                   plugin_module_path_quark ())))
-			return TRUE;
-	}
 
 	if (stat (path, &st) != 0) {
 		errsv = errno;
@@ -688,10 +678,6 @@ add_plugin_load_file (NMSettings *self, const char *pname, GError **error)
 	}
 
 	add_plugin (self, NM_SETTINGS_PLUGIN (plugin), path);
-	g_object_set_qdata_full (G_OBJECT (plugin),
-	                         plugin_module_path_quark (),
-	                         g_steal_pointer (&path),
-	                         g_free);
 	return TRUE;
 }
 
