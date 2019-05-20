@@ -596,7 +596,10 @@ unrecognized_specs_changed (NMSettingsPlugin *config,
 }
 
 static void
-add_plugin (NMSettings *self, NMSettingsPlugin *plugin, const char *path)
+add_plugin (NMSettings *self,
+            NMSettingsPlugin *plugin,
+            const char *pname,
+            const char *path)
 {
 	NMSettingsPrivate *priv;
 
@@ -612,7 +615,7 @@ add_plugin (NMSettings *self, NMSettingsPlugin *plugin, const char *path)
 	nm_settings_plugin_initialize (plugin);
 
 	_LOGI ("Loaded settings plugin: %s (%s%s%s)",
-	       G_OBJECT_TYPE_NAME (plugin),
+	       pname,
 	       NM_PRINT_FMT_QUOTED (path, "\"", path, "\"", "internal"));
 }
 
@@ -677,7 +680,7 @@ add_plugin_load_file (NMSettings *self, const char *pname, GError **error)
 		return FALSE;
 	}
 
-	add_plugin (self, NM_SETTINGS_PLUGIN (plugin), path);
+	add_plugin (self, NM_SETTINGS_PLUGIN (plugin), pname, path);
 	return TRUE;
 }
 
@@ -687,7 +690,7 @@ add_plugin_keyfile (NMSettings *self)
 	gs_unref_object NMSKeyfilePlugin *keyfile_plugin = NULL;
 
 	keyfile_plugin = nms_keyfile_plugin_new ();
-	add_plugin (self, NM_SETTINGS_PLUGIN (keyfile_plugin), NULL);
+	add_plugin (self, NM_SETTINGS_PLUGIN (keyfile_plugin), "keyfile", NULL);
 }
 
 static gboolean
