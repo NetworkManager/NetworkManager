@@ -82,6 +82,13 @@ typedef struct {
 	                           const char *last_ip4_address,
 	                           GError **error);
 
+	gboolean (*accept)        (NMDhcpClient *self,
+	                           GError **error);
+
+	gboolean (*decline)       (NMDhcpClient *self,
+	                           const char *error_message,
+	                           GError **error);
+
 	gboolean (*ip6_start)     (NMDhcpClient *self,
 	                           const char *anycast_addr,
 	                           const struct in6_addr *ll_addr,
@@ -154,6 +161,13 @@ gboolean nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                                    NMSettingIP6ConfigPrivacy privacy,
                                    guint needed_prefixes,
                                    GError **error);
+
+gboolean nm_dhcp_client_accept (NMDhcpClient *self,
+                                GError **error);
+
+gboolean nm_dhcp_client_decline (NMDhcpClient *self,
+                                 const char *error_message,
+                                 GError **error);
 
 void nm_dhcp_client_stop (NMDhcpClient *self, gboolean release);
 

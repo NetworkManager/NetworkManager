@@ -530,6 +530,36 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 	                                                   error);
 }
 
+gboolean
+nm_dhcp_client_accept (NMDhcpClient *self,
+                       GError **error)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
+
+	if (NM_DHCP_CLIENT_GET_CLASS (self)->accept) {
+		return NM_DHCP_CLIENT_GET_CLASS (self)->accept (self,
+		                                                error);
+	}
+
+	return TRUE;
+}
+
+gboolean
+nm_dhcp_client_decline (NMDhcpClient *self,
+                        const char *error_message,
+                        GError **error)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
+
+	if (NM_DHCP_CLIENT_GET_CLASS (self)->decline) {
+		return NM_DHCP_CLIENT_GET_CLASS (self)->decline (self,
+		                                                 error_message,
+		                                                 error);
+	}
+
+	return TRUE;
+}
+
 static GBytes *
 get_duid (NMDhcpClient *self)
 {
