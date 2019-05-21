@@ -1594,7 +1594,6 @@ static gboolean
 have_connection_for_device (NMSettings *self, NMDevice *device)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	const char *setting_hwaddr;
 	const char *perm_hw_addr;
@@ -1607,31 +1606,28 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 	/* Find a wired connection locked to the given MAC address, if any */
 	c_list_for_each_entry (sett_conn, &priv->connections_lst_head, _connections_lst) {
 		NMConnection *connection = nm_settings_connection_get_connection (sett_conn);
-		const char *ctype, *iface;
+		NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
+		const char *ctype;
+		const char *iface;
+
+		ctype = nm_setting_connection_get_connection_type (s_con);
+		if (!NM_IN_STRSET (ctype, NM_SETTING_WIRED_SETTING_NAME,
+		                          NM_SETTING_PPPOE_SETTING_NAME))
+			continue;
 
 		if (!nm_device_check_connection_compatible (device, connection, NULL))
 			continue;
 
-		s_con = nm_connection_get_setting_connection (connection);
-
 		iface = nm_setting_connection_get_interface_name (s_con);
-		if (iface && strcmp (iface, nm_device_get_iface (device)) != 0)
-			continue;
-
-		ctype = nm_setting_connection_get_connection_type (s_con);
-		if (   strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME)
-		    && strcmp (ctype, NM_SETTING_PPPOE_SETTING_NAME))
+		if (nm_streq0 (iface, nm_device_get_iface (device)))
 			continue;
 
 		s_wired = nm_connection_get_setting_wired (connection);
-
 		if (   !s_wired
 		    && nm_streq (ctype, NM_SETTING_PPPOE_SETTING_NAME)) {
 			/* No wired setting; therefore the PPPoE connection applies to any device */
 			return TRUE;
 		}
-
-		nm_assert (s_wired);
 
 		setting_hwaddr = nm_setting_wired_get_mac_address (s_wired);
 		if (setting_hwaddr) {
