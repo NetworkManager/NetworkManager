@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-05-15 19:52+0200\n"
+"POT-Creation-Date: 2019-05-28 14:23+0200\n"
 "PO-Revision-Date: 2019-05-15 16:46+0200\n"
 "Last-Translator: Jose Riha <jose1711@gmail.com>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
@@ -164,10 +164,10 @@ msgstr "prístup odoprený"
 #: ../clients/common/nm-client-utils.c:277
 #: ../clients/common/nm-client-utils.c:281
 #: ../clients/common/nm-client-utils.c:286
-#: ../clients/common/nm-meta-setting-desc.c:1724
-#: ../clients/common/nm-meta-setting-desc.c:1755
-#: ../clients/common/nm-meta-setting-desc.c:2680
-#: ../clients/common/nm-meta-setting-desc.c:2738
+#: ../clients/common/nm-meta-setting-desc.c:1711
+#: ../clients/common/nm-meta-setting-desc.c:1742
+#: ../clients/common/nm-meta-setting-desc.c:2667
+#: ../clients/common/nm-meta-setting-desc.c:2725
 msgid "unknown"
 msgstr "neznáme"
 
@@ -1014,8 +1014,8 @@ msgstr "Spojenie '%s' (%s) úspešne pridané.\n"
 #: ../clients/cli/devices.c:536 ../clients/cli/devices.c:1201
 #: ../clients/cli/general.c:137 ../clients/cli/utils.h:296
 #: ../clients/common/nm-client-utils.c:283
-#: ../clients/common/nm-meta-setting-desc.c:884
-#: ../clients/common/nm-meta-setting-desc.c:2675
+#: ../clients/common/nm-meta-setting-desc.c:871
+#: ../clients/common/nm-meta-setting-desc.c:2662
 msgid "no"
 msgstr "nie"
 
@@ -1024,8 +1024,8 @@ msgstr "nie"
 #: ../clients/cli/devices.c:535 ../clients/cli/devices.c:1201
 #: ../clients/cli/general.c:136 ../clients/cli/utils.h:296
 #: ../clients/common/nm-client-utils.c:282
-#: ../clients/common/nm-meta-setting-desc.c:884
-#: ../clients/common/nm-meta-setting-desc.c:2672
+#: ../clients/common/nm-meta-setting-desc.c:871
+#: ../clients/common/nm-meta-setting-desc.c:2659
 msgid "yes"
 msgstr "áno"
 
@@ -3186,12 +3186,12 @@ msgstr ""
 msgid "Failed to duplicate pager pipe: %s\n"
 msgstr ""
 
-#: ../clients/cli/utils.h:302 ../clients/common/nm-meta-setting-desc.c:4208
+#: ../clients/cli/utils.h:302 ../clients/common/nm-meta-setting-desc.c:4195
 #, fuzzy
 msgid "on"
 msgstr "Nič"
 
-#: ../clients/cli/utils.h:302 ../clients/common/nm-meta-setting-desc.c:4210
+#: ../clients/cli/utils.h:302 ../clients/common/nm-meta-setting-desc.c:4197
 msgid "off"
 msgstr ""
 
@@ -3680,164 +3680,154 @@ msgstr ""
 msgid "Not a valid PAC Script"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:580
+#: ../clients/common/nm-meta-setting-desc.c:579
 #, c-format
 msgid "cannot read team config from file '%s'"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:587
+#: ../clients/common/nm-meta-setting-desc.c:586
 #, c-format
 msgid "team config file '%s' contains non-valid utf-8"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:599
-#, c-format
-msgid "'%s' does not contain a valid team configuration"
-msgstr ""
-
-#: ../clients/common/nm-meta-setting-desc.c:602
-#, c-format
-msgid "team configuration must be a JSON object"
-msgstr ""
-
-#: ../clients/common/nm-meta-setting-desc.c:1047
+#: ../clients/common/nm-meta-setting-desc.c:1034
 msgid "auto"
 msgstr "automaticky"
 
-#: ../clients/common/nm-meta-setting-desc.c:1199
+#: ../clients/common/nm-meta-setting-desc.c:1186
 #, c-format
 msgid "%s (%s)"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:1347
-#: ../clients/common/nm-meta-setting-desc.c:1351
+#: ../clients/common/nm-meta-setting-desc.c:1334
+#: ../clients/common/nm-meta-setting-desc.c:1338
 msgid "'%s' is out of range [%"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:1356
+#: ../clients/common/nm-meta-setting-desc.c:1343
 #, c-format
 msgid "'%s' is not a valid number"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:1413
+#: ../clients/common/nm-meta-setting-desc.c:1400
 #, c-format
 msgid "'%s' is out of range [0, %u]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:1459
+#: ../clients/common/nm-meta-setting-desc.c:1446
 #, c-format
 msgid "'%s' is not a valid Ethernet MAC"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:1567
+#: ../clients/common/nm-meta-setting-desc.c:1554
 #, c-format
 msgid "invalid option '%s', use a combination of [%s]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:1572 ../libnm-core/nm-keyfile.c:884
+#: ../clients/common/nm-meta-setting-desc.c:1559 ../libnm-core/nm-keyfile.c:884
 #, c-format
 msgid "invalid option '%s', use one of [%s]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:1691
+#: ../clients/common/nm-meta-setting-desc.c:1678
 #, c-format
 msgid "%d (key)"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:1693
+#: ../clients/common/nm-meta-setting-desc.c:1680
 #, c-format
 msgid "%d (passphrase)"
 msgstr "%d (heslo)"
 
-#: ../clients/common/nm-meta-setting-desc.c:1696
+#: ../clients/common/nm-meta-setting-desc.c:1683
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (neznáme)"
 
-#: ../clients/common/nm-meta-setting-desc.c:1709
+#: ../clients/common/nm-meta-setting-desc.c:1696
 msgid "0 (NONE)"
 msgstr "0 (ŽIADNE)"
 
-#: ../clients/common/nm-meta-setting-desc.c:1715
+#: ../clients/common/nm-meta-setting-desc.c:1702
 msgid "REORDER_HEADERS, "
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:1717
+#: ../clients/common/nm-meta-setting-desc.c:1704
 msgid "GVRP, "
 msgstr "GVRP, "
 
-#: ../clients/common/nm-meta-setting-desc.c:1719
+#: ../clients/common/nm-meta-setting-desc.c:1706
 msgid "LOOSE_BINDING, "
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:1721
+#: ../clients/common/nm-meta-setting-desc.c:1708
 msgid "MVRP, "
 msgstr "MVRP, "
 
-#: ../clients/common/nm-meta-setting-desc.c:1742
+#: ../clients/common/nm-meta-setting-desc.c:1729
 msgid "0 (none)"
 msgstr "0 (žiadne)"
 
-#: ../clients/common/nm-meta-setting-desc.c:1748
+#: ../clients/common/nm-meta-setting-desc.c:1735
 msgid "agent-owned, "
 msgstr "vlastnené agentom, "
 
-#: ../clients/common/nm-meta-setting-desc.c:1750
+#: ../clients/common/nm-meta-setting-desc.c:1737
 msgid "not saved, "
 msgstr "neuložené, "
 
-#: ../clients/common/nm-meta-setting-desc.c:1752
+#: ../clients/common/nm-meta-setting-desc.c:1739
 msgid "not required, "
 msgstr "nepovinné, "
 
-#: ../clients/common/nm-meta-setting-desc.c:1970
+#: ../clients/common/nm-meta-setting-desc.c:1957
 #, c-format
 msgid "'%s' is not valid; use <option>=<value>"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:1980
+#: ../clients/common/nm-meta-setting-desc.c:1967
 #, c-format
 msgid "cannot set empty \"%s\" option"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:2039
+#: ../clients/common/nm-meta-setting-desc.c:2026
 #, c-format
 msgid "'%u' flags are not valid; use combination of %s"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:2056
+#: ../clients/common/nm-meta-setting-desc.c:2043
 #, c-format
 msgid "'%s' is not a valid number (or out of range)"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:2077
-#: ../clients/common/nm-meta-setting-desc.c:4124 ../src/nm-config.c:546
+#: ../clients/common/nm-meta-setting-desc.c:2064
+#: ../clients/common/nm-meta-setting-desc.c:4111 ../src/nm-config.c:546
 #, c-format
 msgid "'%s' is not valid"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:2174
+#: ../clients/common/nm-meta-setting-desc.c:2161
 #, fuzzy
 msgid "not a valid hex-string"
 msgstr "neplatný privátny kľúč"
 
-#: ../clients/common/nm-meta-setting-desc.c:2190
+#: ../clients/common/nm-meta-setting-desc.c:2177
 #, c-format
 msgid "'%s' is not a valid hex character"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:2269
+#: ../clients/common/nm-meta-setting-desc.c:2256
 msgid ""
 "too many arguments. Please only specify a private key file and optionally a "
 "password"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:2376
+#: ../clients/common/nm-meta-setting-desc.c:2363
 #, fuzzy, c-format
 msgid "failed to set bond option \"%s\""
 msgstr "Nepodarilo sa načítať"
 
-#: ../clients/common/nm-meta-setting-desc.c:2393
+#: ../clients/common/nm-meta-setting-desc.c:2380
 #, c-format
 msgid ""
 "Enter a list of bonding options formatted as:\n"
@@ -3862,125 +3852,125 @@ msgstr ""
 #. * hacky: we can not see if the type is already set, because
 #. * nmc_setting_set_property() is called only after the property
 #. * we're setting (type) has been removed.
-#: ../clients/common/nm-meta-setting-desc.c:2458
+#: ../clients/common/nm-meta-setting-desc.c:2445
 #, c-format
 msgid "Can not change the connection type"
 msgstr "Nie je možné zmeniť typ spojenia"
 
-#: ../clients/common/nm-meta-setting-desc.c:2536
+#: ../clients/common/nm-meta-setting-desc.c:2523
 #, fuzzy, c-format
 msgid "invalid permission \"%s\""
 msgstr "nesprávna smerová adresa '%s'"
 
-#: ../clients/common/nm-meta-setting-desc.c:2573
+#: ../clients/common/nm-meta-setting-desc.c:2560
 #, c-format
 msgid "'%s' is not valid master; use ifname or connection UUID"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:2654
+#: ../clients/common/nm-meta-setting-desc.c:2641
 #, c-format
 msgid "the value '%s' is not a valid UUID"
 msgstr "hodnota '%s' nie je platným UUID"
 
-#: ../clients/common/nm-meta-setting-desc.c:2725
+#: ../clients/common/nm-meta-setting-desc.c:2712
 msgid "0 (disabled)"
 msgstr "0 (vypnuté)"
 
-#: ../clients/common/nm-meta-setting-desc.c:2731
+#: ../clients/common/nm-meta-setting-desc.c:2718
 msgid "enabled, "
 msgstr "povolené, "
 
-#: ../clients/common/nm-meta-setting-desc.c:2733
+#: ../clients/common/nm-meta-setting-desc.c:2720
 msgid "advertise, "
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:2735
+#: ../clients/common/nm-meta-setting-desc.c:2722
 msgid "willing, "
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:2824
+#: ../clients/common/nm-meta-setting-desc.c:2811
 #, c-format
 msgid "'%s' is not a valid DCB flag"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:2851
+#: ../clients/common/nm-meta-setting-desc.c:2838
 msgid "must contain 8 comma-separated numbers"
 msgstr "musí obsahovať 8 čiarkou oddelených čísel"
 
-#: ../clients/common/nm-meta-setting-desc.c:2865
+#: ../clients/common/nm-meta-setting-desc.c:2852
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive) or %u"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:2868
+#: ../clients/common/nm-meta-setting-desc.c:2855
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive)"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:2889
+#: ../clients/common/nm-meta-setting-desc.c:2876
 #, c-format
 msgid "changes will have no effect until '%s' includes 1 (enabled)"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:2919
+#: ../clients/common/nm-meta-setting-desc.c:2906
 #, c-format
 msgid "bandwidth percentages must total 100%%"
 msgstr "percentá šírky pásma musia dávať dokopy 100%%"
 
-#: ../clients/common/nm-meta-setting-desc.c:2990
-#: ../clients/common/nm-meta-setting-desc.c:2996
+#: ../clients/common/nm-meta-setting-desc.c:2977
+#: ../clients/common/nm-meta-setting-desc.c:2983
 msgid "SIM operator ID must be a 5 or 6 number MCCMNC code"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:3020
+#: ../clients/common/nm-meta-setting-desc.c:3007
 #, c-format
 msgid "'%s' is not a valid IBoIP P_Key"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:3043
+#: ../clients/common/nm-meta-setting-desc.c:3030
 msgid "default"
 msgstr "východzie"
 
-#: ../clients/common/nm-meta-setting-desc.c:3207
+#: ../clients/common/nm-meta-setting-desc.c:3194
 #, fuzzy, c-format
 msgid "invalid IPv%c address '%s'"
 msgstr "neplatná IPv4 adresa: %s'"
 
-#: ../clients/common/nm-meta-setting-desc.c:3334
+#: ../clients/common/nm-meta-setting-desc.c:3321
 #, c-format
 msgid "invalid gateway address '%s'"
 msgstr "neplatná adresa brány '%s'"
 
-#: ../clients/common/nm-meta-setting-desc.c:3484
+#: ../clients/common/nm-meta-setting-desc.c:3471
 #, c-format
 msgid "'%s' is not a valid channel; use <1-13>"
 msgstr "'%s' nie je platným kanálom; použite <1-13>"
 
-#: ../clients/common/nm-meta-setting-desc.c:3564
+#: ../clients/common/nm-meta-setting-desc.c:3551
 msgid "The valid syntax is: vf [attribute=value]... [,vf [attribute=value]...]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:3588
-#: ../clients/common/nm-meta-setting-desc.c:3668
+#: ../clients/common/nm-meta-setting-desc.c:3575
+#: ../clients/common/nm-meta-setting-desc.c:3655
 msgid ""
 "The valid syntax is: '[root | parent <handle>] [handle <handle>] <kind>'"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:3613
+#: ../clients/common/nm-meta-setting-desc.c:3600
 msgid "The valid syntax is: '<vid>[-<vid>] [pvid] [untagged]'"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:3888
+#: ../clients/common/nm-meta-setting-desc.c:3875
 #, c-format
 msgid "invalid priority map '%s'"
 msgstr "nesprávna mapa priorít '%s'"
 
-#: ../clients/common/nm-meta-setting-desc.c:3976
+#: ../clients/common/nm-meta-setting-desc.c:3963
 #, c-format
 msgid "'%s' is not valid; 2 or 3 strings should be provided"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4015
+#: ../clients/common/nm-meta-setting-desc.c:4002
 #, c-format
 msgid ""
 "Enter a list of S/390 options formatted as:\n"
@@ -3988,17 +3978,17 @@ msgid ""
 "Valid options are: %s\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4050
+#: ../clients/common/nm-meta-setting-desc.c:4037
 #, c-format
 msgid "'%s' is not a valid channel"
 msgstr "'%s' nie je platným kanálom"
 
-#: ../clients/common/nm-meta-setting-desc.c:4056
+#: ../clients/common/nm-meta-setting-desc.c:4043
 #, c-format
 msgid "'%ld' is not a valid channel"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4073
+#: ../clients/common/nm-meta-setting-desc.c:4060
 #: ../libnm-core/nm-setting-sriov.c:443 ../libnm-core/nm-setting-wired.c:786
 #: ../libnm-core/nm-setting-wireless.c:844
 #: ../libnm-core/nm-setting-wireless.c:856
@@ -4006,69 +3996,69 @@ msgstr ""
 msgid "'%s' is not a valid MAC address"
 msgstr "'%s' nie je platnou MAC adresou"
 
-#: ../clients/common/nm-meta-setting-desc.c:4133
+#: ../clients/common/nm-meta-setting-desc.c:4120
 #, c-format
 msgid ""
 "'%s' not compatible with %s '%s', please change the key or set the right %s "
 "first."
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4143
+#: ../clients/common/nm-meta-setting-desc.c:4130
 #, c-format
 msgid "WEP key is guessed to be of '%s'"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4148
+#: ../clients/common/nm-meta-setting-desc.c:4135
 #, c-format
 msgid "WEP key index set to '%d'"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4187
+#: ../clients/common/nm-meta-setting-desc.c:4174
 #, c-format
 msgid "'%s' is not compatible with '%s' type, please change or delete the key."
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4244
+#: ../clients/common/nm-meta-setting-desc.c:4231
 #, c-format
 msgid "'%s' is not valid; use 'on', 'off', or 'ignore'"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4304
+#: ../clients/common/nm-meta-setting-desc.c:4291
 msgid "Bonding primary interface [none]"
 msgstr ""
 
 #. this is a virtual property, only needed during "ask" mode.
-#: ../clients/common/nm-meta-setting-desc.c:4311
+#: ../clients/common/nm-meta-setting-desc.c:4298
 msgid "Bonding monitoring mode"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4320
+#: ../clients/common/nm-meta-setting-desc.c:4307
 msgid "Bonding miimon [100]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4328
+#: ../clients/common/nm-meta-setting-desc.c:4315
 msgid "Bonding downdelay [0]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4336
+#: ../clients/common/nm-meta-setting-desc.c:4323
 msgid "Bonding updelay [0]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4344
+#: ../clients/common/nm-meta-setting-desc.c:4331
 msgid "Bonding arp-interval [0]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4352
+#: ../clients/common/nm-meta-setting-desc.c:4339
 msgid "Bonding arp-ip-target [none]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4360
+#: ../clients/common/nm-meta-setting-desc.c:4347
 msgid "LACP rate ('slow' or 'fast') [slow]"
 msgstr ""
 
 #. macro that returns @func as const (guint32(*)(NMSetting*)) type, but checks
 #. * that the actual type is (guint32(*)(type *)).
-#: ../clients/common/nm-meta-setting-desc.c:4525
+#: ../clients/common/nm-meta-setting-desc.c:4512
 msgid ""
 "nmcli can accepts both direct JSON configuration data and a file name "
 "containing the configuration. In the latter case the file is read and the "
@@ -4079,7 +4069,7 @@ msgid ""
 "          set team.config /etc/my-team.conf\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4533
+#: ../clients/common/nm-meta-setting-desc.c:4520
 msgid ""
 "Enter a list of link watchers formatted as dictionaries where the keys are "
 "teamd properties. Dictionary pairs are in the form: key=value and pairs are "
@@ -4105,12 +4095,12 @@ msgid ""
 "name=ethtool delay-up=3\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4566
+#: ../clients/common/nm-meta-setting-desc.c:4553
 #, fuzzy
 msgid "IEEE 802.15.4 (WPAN) parent device or connection UUID"
 msgstr "Chyba pri získavaní VPN spojenia '%s'"
 
-#: ../clients/common/nm-meta-setting-desc.c:4599
+#: ../clients/common/nm-meta-setting-desc.c:4586
 msgid ""
 "Enter file path to CA certificate (optionally prefixed with file://).\n"
 "  [file://]<file path>\n"
@@ -4118,7 +4108,7 @@ msgid ""
 "Example: /home/cimrman/cacert.crt\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4638
+#: ../clients/common/nm-meta-setting-desc.c:4625
 msgid ""
 "Enter file path to client certificate (optionally prefixed with file://).\n"
 "  [file://]<file path>\n"
@@ -4126,7 +4116,7 @@ msgid ""
 "Example: /home/cimrman/jara.crt\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4695
+#: ../clients/common/nm-meta-setting-desc.c:4682
 msgid ""
 "Enter file path to CA certificate for inner authentication (optionally "
 "prefixed\n"
@@ -4136,7 +4126,7 @@ msgid ""
 "Example: /home/cimrman/ca-zweite-phase.crt\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4735
+#: ../clients/common/nm-meta-setting-desc.c:4722
 msgid ""
 "Enter file path to client certificate for inner authentication (optionally "
 "prefixed\n"
@@ -4146,7 +4136,7 @@ msgid ""
 "Example: /home/cimrman/jara-zweite-phase.crt\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4762
+#: ../clients/common/nm-meta-setting-desc.c:4749
 msgid ""
 "Enter bytes as a list of hexadecimal values.\n"
 "Two formats are accepted:\n"
@@ -4159,8 +4149,8 @@ msgid ""
 "          ab 4 55 0xa6 ea 3a 74 C2\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4779
-#: ../clients/common/nm-meta-setting-desc.c:4797
+#: ../clients/common/nm-meta-setting-desc.c:4766
+#: ../clients/common/nm-meta-setting-desc.c:4784
 msgid ""
 "Enter path to a private key and the key password (if not set yet):\n"
 "  [file://]<file path> [<password>]\n"
@@ -4168,84 +4158,84 @@ msgid ""
 "Example: /home/cimrman/jara-priv-key Dardanely\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4836
+#: ../clients/common/nm-meta-setting-desc.c:4823
 #: ../clients/common/nm-secret-agent-simple.c:281
 #: ../clients/common/nm-secret-agent-simple.c:369
 #: ../clients/tui/nmt-page-dsl.c:66 ../clients/tui/nmt-page-wifi.c:332
 msgid "Username"
 msgstr "Meno používateľa"
 
-#: ../clients/common/nm-meta-setting-desc.c:4842
-#: ../clients/common/nm-meta-setting-desc.c:5057
-#: ../clients/common/nm-meta-setting-desc.c:5447
-#: ../clients/common/nm-meta-setting-desc.c:6352
+#: ../clients/common/nm-meta-setting-desc.c:4829
+#: ../clients/common/nm-meta-setting-desc.c:5044
+#: ../clients/common/nm-meta-setting-desc.c:5434
+#: ../clients/common/nm-meta-setting-desc.c:6339
 msgid "Password [none]"
 msgstr "Heslo [žiadne]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4888
+#: ../clients/common/nm-meta-setting-desc.c:4875
 msgid "Bluetooth device address"
 msgstr "Adresa Bluetooth zariadenia"
 
-#: ../clients/common/nm-meta-setting-desc.c:4936
-#: ../clients/common/nm-meta-setting-desc.c:5500
-#: ../clients/common/nm-meta-setting-desc.c:7007
-#: ../clients/common/nm-meta-setting-desc.c:7045
-#: ../clients/common/nm-meta-setting-desc.c:7220
-#: ../clients/common/nm-meta-setting-desc.c:7450
+#: ../clients/common/nm-meta-setting-desc.c:4923
+#: ../clients/common/nm-meta-setting-desc.c:5487
+#: ../clients/common/nm-meta-setting-desc.c:6994
+#: ../clients/common/nm-meta-setting-desc.c:7032
+#: ../clients/common/nm-meta-setting-desc.c:7207
+#: ../clients/common/nm-meta-setting-desc.c:7437
 msgid "MAC [none]"
 msgstr "MAC [žiadna]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4942
+#: ../clients/common/nm-meta-setting-desc.c:4929
 msgid "Enable STP [no]"
 msgstr "Povoliť STP [nie]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4948
+#: ../clients/common/nm-meta-setting-desc.c:4935
 msgid "STP priority [32768]"
 msgstr "Priorita STP [32768]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4954
+#: ../clients/common/nm-meta-setting-desc.c:4941
 msgid "Forward delay [15]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4960
+#: ../clients/common/nm-meta-setting-desc.c:4947
 msgid "Hello time [2]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4966
+#: ../clients/common/nm-meta-setting-desc.c:4953
 msgid "Max age [20]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4972
+#: ../clients/common/nm-meta-setting-desc.c:4959
 msgid "MAC address ageing time [300]"
 msgstr "Zastarávanie MAC adresy [300]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4978
+#: ../clients/common/nm-meta-setting-desc.c:4965
 msgid "Group forward mask [0]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4984
+#: ../clients/common/nm-meta-setting-desc.c:4971
 msgid "Enable IGMP snooping [no]"
 msgstr "Povoliť IGMP snooping [nie]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5013
+#: ../clients/common/nm-meta-setting-desc.c:5000
 msgid "Bridge port priority [32]"
 msgstr "Priorita bridge portu [32]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5019
+#: ../clients/common/nm-meta-setting-desc.c:5006
 msgid "Bridge port STP path cost [100]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5025
+#: ../clients/common/nm-meta-setting-desc.c:5012
 msgid "Hairpin [no]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5051
-#: ../clients/common/nm-meta-setting-desc.c:5441
-#: ../clients/common/nm-meta-setting-desc.c:6865
+#: ../clients/common/nm-meta-setting-desc.c:5038
+#: ../clients/common/nm-meta-setting-desc.c:5428
+#: ../clients/common/nm-meta-setting-desc.c:6852
 msgid "Username [none]"
 msgstr "Meno používateľa [žiadne]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5154
+#: ../clients/common/nm-meta-setting-desc.c:5141
 msgid ""
 "Enter a list of user permissions. This is a list of user names formatted "
 "as:\n"
@@ -4255,7 +4245,7 @@ msgid ""
 "Example: alice bob charlie\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5206
+#: ../clients/common/nm-meta-setting-desc.c:5193
 msgid ""
 "Enter secondary connections that should be activated when this connection "
 "is\n"
@@ -4268,7 +4258,7 @@ msgid ""
 "Example: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5229
+#: ../clients/common/nm-meta-setting-desc.c:5216
 msgid ""
 "Enter a value which indicates whether the connection is subject to a data\n"
 "quota, usage costs or other limitations. Accepted options are:\n"
@@ -4277,26 +4267,26 @@ msgid ""
 "'unknown' to let NetworkManager choose a value using some heuristics\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5457
+#: ../clients/common/nm-meta-setting-desc.c:5444
 #, fuzzy
 msgid "APN"
 msgstr "PEAP"
 
-#: ../clients/common/nm-meta-setting-desc.c:5509
-#: ../clients/common/nm-meta-setting-desc.c:7076
-#: ../clients/common/nm-meta-setting-desc.c:7260
+#: ../clients/common/nm-meta-setting-desc.c:5496
+#: ../clients/common/nm-meta-setting-desc.c:7063
+#: ../clients/common/nm-meta-setting-desc.c:7247
 msgid "MTU [auto]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5528
+#: ../clients/common/nm-meta-setting-desc.c:5515
 msgid "P_KEY [none]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5537
+#: ../clients/common/nm-meta-setting-desc.c:5524
 msgid "Parent interface [none]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5564
+#: ../clients/common/nm-meta-setting-desc.c:5551
 msgid ""
 "Enter a list of IPv4 addresses of DNS servers.\n"
 "\n"
@@ -4306,11 +4296,11 @@ msgstr ""
 "\n"
 "Priíklad: 8.8.8.8, 8.8.4.4\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5612
+#: ../clients/common/nm-meta-setting-desc.c:5599
 msgid "IPv4 address (IP[/plen]) [none]"
 msgstr "IPv4 adresa (IP[/plen]) [žiadna]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5614
+#: ../clients/common/nm-meta-setting-desc.c:5601
 msgid ""
 "Enter a list of IPv4 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -4319,11 +4309,11 @@ msgid ""
 "Example: 192.168.1.5/24, 10.0.0.11/24\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5633
+#: ../clients/common/nm-meta-setting-desc.c:5620
 msgid "IPv4 gateway [none]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5641
+#: ../clients/common/nm-meta-setting-desc.c:5628
 msgid ""
 "Enter a list of IPv4 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -4336,14 +4326,14 @@ msgid ""
 "          10.1.2.0/24\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5681
+#: ../clients/common/nm-meta-setting-desc.c:5668
 msgid ""
 "Enter a list of IPv4 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
 "\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5771
+#: ../clients/common/nm-meta-setting-desc.c:5758
 msgid ""
 "Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
 "method is 'auto' these DNS servers are appended to those (if any) returned "
@@ -4355,11 +4345,11 @@ msgid ""
 "Example: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5825
+#: ../clients/common/nm-meta-setting-desc.c:5812
 msgid "IPv6 address (IP[/plen]) [none]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5827
+#: ../clients/common/nm-meta-setting-desc.c:5814
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -4368,11 +4358,11 @@ msgid ""
 "Example: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5846
+#: ../clients/common/nm-meta-setting-desc.c:5833
 msgid "IPv6 gateway [none]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5854
+#: ../clients/common/nm-meta-setting-desc.c:5841
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -4386,406 +4376,406 @@ msgid ""
 "          abbe::/64 55\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5894
+#: ../clients/common/nm-meta-setting-desc.c:5881
 msgid ""
 "Enter a list of IPv6 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
 "\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5982
-#: ../clients/common/nm-meta-setting-desc.c:6906
+#: ../clients/common/nm-meta-setting-desc.c:5969
+#: ../clients/common/nm-meta-setting-desc.c:6893
 msgid "Parent device [none]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5988
+#: ../clients/common/nm-meta-setting-desc.c:5975
 msgid "Local endpoint [none]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5995
-#: ../clients/common/nm-meta-setting-desc.c:6926
+#: ../clients/common/nm-meta-setting-desc.c:5982
+#: ../clients/common/nm-meta-setting-desc.c:6913
 msgid "Remote"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6040
+#: ../clients/common/nm-meta-setting-desc.c:6027
 msgid "MACsec parent device or connection UUID"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6061
+#: ../clients/common/nm-meta-setting-desc.c:6048
 msgid "Enable encryption [yes]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6067
+#: ../clients/common/nm-meta-setting-desc.c:6054
 #: ../clients/common/nm-secret-agent-simple.c:930
 msgid "MKA CAK"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6077
+#: ../clients/common/nm-meta-setting-desc.c:6064
 msgid "MKA_CKN"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6083
+#: ../clients/common/nm-meta-setting-desc.c:6070
 msgid "SCI port [1]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6109
+#: ../clients/common/nm-meta-setting-desc.c:6096
 #, fuzzy
 msgid "MACVLAN parent device or connection UUID"
 msgstr "VPN spojenia"
 
-#: ../clients/common/nm-meta-setting-desc.c:6130
+#: ../clients/common/nm-meta-setting-desc.c:6117
 msgid "Tap [no]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6165
-#: ../clients/common/nm-meta-setting-desc.c:7175
+#: ../clients/common/nm-meta-setting-desc.c:6152
+#: ../clients/common/nm-meta-setting-desc.c:7162
 #: ../clients/tui/nmt-page-wifi.c:224
 msgid "SSID"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6174
+#: ../clients/common/nm-meta-setting-desc.c:6161
 msgid "OLPC Mesh channel [1]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6183
+#: ../clients/common/nm-meta-setting-desc.c:6170
 msgid "DHCP anycast MAC address [none]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6333
+#: ../clients/common/nm-meta-setting-desc.c:6320
 msgid "PPPoE parent device"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6339
+#: ../clients/common/nm-meta-setting-desc.c:6326
 msgid "Service [none]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6346
+#: ../clients/common/nm-meta-setting-desc.c:6333
 #, fuzzy
 msgid "PPPoE username"
 msgstr "Meno používateľa:"
 
-#: ../clients/common/nm-meta-setting-desc.c:6382
+#: ../clients/common/nm-meta-setting-desc.c:6369
 msgid "Browser only [no]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6388
+#: ../clients/common/nm-meta-setting-desc.c:6375
 msgid "PAC URL"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6394
+#: ../clients/common/nm-meta-setting-desc.c:6381
 msgid "PAC script"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6518
-#: ../clients/common/nm-meta-setting-desc.c:6680
+#: ../clients/common/nm-meta-setting-desc.c:6505
+#: ../clients/common/nm-meta-setting-desc.c:6667
 #, fuzzy
 msgid "Team JSON configuration [none]"
 msgstr "Chyba konfigurácie VPN"
 
-#: ../clients/common/nm-meta-setting-desc.c:6768
+#: ../clients/common/nm-meta-setting-desc.c:6755
 msgid "User ID [none]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6774
+#: ../clients/common/nm-meta-setting-desc.c:6761
 msgid "Group ID [none]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6780
+#: ../clients/common/nm-meta-setting-desc.c:6767
 msgid "Enable PI [no]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6786
+#: ../clients/common/nm-meta-setting-desc.c:6773
 msgid "Enable VNET header [no]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6792
+#: ../clients/common/nm-meta-setting-desc.c:6779
 msgid "Enable multi queue [no]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6805
+#: ../clients/common/nm-meta-setting-desc.c:6792
 #, fuzzy
 msgid "VLAN parent device or connection UUID"
 msgstr "Chyba pri získavaní VPN spojenia '%s'"
 
-#: ../clients/common/nm-meta-setting-desc.c:6812
+#: ../clients/common/nm-meta-setting-desc.c:6799
 msgid "VLAN ID (<0-4094>)"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6818
+#: ../clients/common/nm-meta-setting-desc.c:6805
 msgid "VLAN flags (<0-7>) [none]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6827
+#: ../clients/common/nm-meta-setting-desc.c:6814
 msgid "Ingress priority maps [none]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6837
+#: ../clients/common/nm-meta-setting-desc.c:6824
 msgid "Egress priority maps [none]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6913
+#: ../clients/common/nm-meta-setting-desc.c:6900
 msgid "VXLAN ID"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6919
+#: ../clients/common/nm-meta-setting-desc.c:6906
 msgid "Local address [none]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6932
+#: ../clients/common/nm-meta-setting-desc.c:6919
 msgid "Minimum source port [0]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6938
+#: ../clients/common/nm-meta-setting-desc.c:6925
 msgid "Maximum source port [0]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6944
+#: ../clients/common/nm-meta-setting-desc.c:6931
 #, fuzzy
 msgid "Destination port [8472]"
 msgstr "Cieľová adresa:"
 
-#: ../clients/common/nm-meta-setting-desc.c:6984
+#: ../clients/common/nm-meta-setting-desc.c:6971
 msgid "Peer"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7014
+#: ../clients/common/nm-meta-setting-desc.c:7001
 msgid "WiMAX NSP name"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7051
-#: ../clients/common/nm-meta-setting-desc.c:7225
+#: ../clients/common/nm-meta-setting-desc.c:7038
+#: ../clients/common/nm-meta-setting-desc.c:7212
 msgid "Cloned MAC [none]"
 msgstr "Klonovaná MAC [žiadna]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7084
+#: ../clients/common/nm-meta-setting-desc.c:7071
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
 "Example: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7399
+#: ../clients/common/nm-meta-setting-desc.c:7386
 msgid ""
 "Enter the type of WEP keys. The accepted values are: 0 or unknown, 1 or key, "
 "and 2 or passphrase.\n"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7458
+#: ../clients/common/nm-meta-setting-desc.c:7445
 msgid "Short address (<0x0000-0xffff>)"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7474
+#: ../clients/common/nm-meta-setting-desc.c:7461
 msgid "PAN Identifier (<0x0000-0xffff>)"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7489
+#: ../clients/common/nm-meta-setting-desc.c:7476
 msgid "Page (<default|0-31>)"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7503
+#: ../clients/common/nm-meta-setting-desc.c:7490
 msgid "Channel (<default|0-26>)"
 msgstr ""
 
 #. ***************************************************************************
-#: ../clients/common/nm-meta-setting-desc.c:7638
+#: ../clients/common/nm-meta-setting-desc.c:7625
 msgid "6LOWPAN settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7639
+#: ../clients/common/nm-meta-setting-desc.c:7626
 msgid "802-1x settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7640
+#: ../clients/common/nm-meta-setting-desc.c:7627
 #: ../src/devices/adsl/nm-device-adsl.c:132
 msgid "ADSL connection"
 msgstr "ADSL spojenie"
 
-#: ../clients/common/nm-meta-setting-desc.c:7641
+#: ../clients/common/nm-meta-setting-desc.c:7628
 msgid "bluetooth connection"
 msgstr "spojenie bluetooth"
 
-#: ../clients/common/nm-meta-setting-desc.c:7642
+#: ../clients/common/nm-meta-setting-desc.c:7629
 msgid "Bond device"
 msgstr "Zariadenie bond"
 
-#: ../clients/common/nm-meta-setting-desc.c:7643
+#: ../clients/common/nm-meta-setting-desc.c:7630
 msgid "Bridge device"
 msgstr "Zariadenie typu bridge"
 
-#: ../clients/common/nm-meta-setting-desc.c:7644
+#: ../clients/common/nm-meta-setting-desc.c:7631
 #, fuzzy
 msgid "Bridge port"
 msgstr "Pripojenie k drôtovej sieti"
 
-#: ../clients/common/nm-meta-setting-desc.c:7645
+#: ../clients/common/nm-meta-setting-desc.c:7632
 #, fuzzy
 msgid "CDMA mobile broadband connection"
 msgstr "VPN spojenia"
 
-#: ../clients/common/nm-meta-setting-desc.c:7646
+#: ../clients/common/nm-meta-setting-desc.c:7633
 msgid "General settings"
 msgstr "Všeobecné nastavenia"
 
-#: ../clients/common/nm-meta-setting-desc.c:7647
+#: ../clients/common/nm-meta-setting-desc.c:7634
 msgid "DCB settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7648
+#: ../clients/common/nm-meta-setting-desc.c:7635
 msgid "Dummy settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7649
+#: ../clients/common/nm-meta-setting-desc.c:7636
 msgid "Ethtool settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7650
+#: ../clients/common/nm-meta-setting-desc.c:7637
 msgid "Generic settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7651
+#: ../clients/common/nm-meta-setting-desc.c:7638
 #, fuzzy
 msgid "GSM mobile broadband connection"
 msgstr "VPN spojenia"
 
-#: ../clients/common/nm-meta-setting-desc.c:7652
+#: ../clients/common/nm-meta-setting-desc.c:7639
 #: ../src/devices/nm-device-infiniband.c:172
 msgid "InfiniBand connection"
 msgstr "Spojenie InfiniBand"
 
-#: ../clients/common/nm-meta-setting-desc.c:7653
+#: ../clients/common/nm-meta-setting-desc.c:7640
 msgid "IPv4 protocol"
 msgstr "Protokol IPv4"
 
-#: ../clients/common/nm-meta-setting-desc.c:7654
+#: ../clients/common/nm-meta-setting-desc.c:7641
 msgid "IPv6 protocol"
 msgstr "Protokol IPv6"
 
-#: ../clients/common/nm-meta-setting-desc.c:7655
+#: ../clients/common/nm-meta-setting-desc.c:7642
 msgid "IP-tunnel settings"
 msgstr "Nastavenia IP tunelu"
 
-#: ../clients/common/nm-meta-setting-desc.c:7656
+#: ../clients/common/nm-meta-setting-desc.c:7643
 msgid "MACsec connection"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7657
+#: ../clients/common/nm-meta-setting-desc.c:7644
 #, fuzzy
 msgid "macvlan connection"
 msgstr "Bez sieťového spojenia"
 
-#: ../clients/common/nm-meta-setting-desc.c:7658
+#: ../clients/common/nm-meta-setting-desc.c:7645
 msgid "Match"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7659
+#: ../clients/common/nm-meta-setting-desc.c:7646
 #, fuzzy
 msgid "OLPC Mesh connection"
 msgstr "VPN spojenia"
 
-#: ../clients/common/nm-meta-setting-desc.c:7660
+#: ../clients/common/nm-meta-setting-desc.c:7647
 msgid "Open vSwitch bridge settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7661
+#: ../clients/common/nm-meta-setting-desc.c:7648
 msgid "Open vSwitch interface settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7662
+#: ../clients/common/nm-meta-setting-desc.c:7649
 msgid "Open vSwitch patch interface settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7663
+#: ../clients/common/nm-meta-setting-desc.c:7650
 msgid "Open vSwitch port settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7664
+#: ../clients/common/nm-meta-setting-desc.c:7651
 msgid "PPP settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7665
+#: ../clients/common/nm-meta-setting-desc.c:7652
 msgid "PPPoE"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7666
+#: ../clients/common/nm-meta-setting-desc.c:7653
 msgid "Proxy"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7667
+#: ../clients/common/nm-meta-setting-desc.c:7654
 msgid "Serial settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7668
+#: ../clients/common/nm-meta-setting-desc.c:7655
 msgid "SR-IOV settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7669
+#: ../clients/common/nm-meta-setting-desc.c:7656
 msgid "Traffic controls"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7670
+#: ../clients/common/nm-meta-setting-desc.c:7657
 msgid "Team device"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7671
+#: ../clients/common/nm-meta-setting-desc.c:7658
 msgid "Team port"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7672
+#: ../clients/common/nm-meta-setting-desc.c:7659
 msgid "Tun device"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7673
+#: ../clients/common/nm-meta-setting-desc.c:7660
 msgid "User settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7674
+#: ../clients/common/nm-meta-setting-desc.c:7661
 #: ../src/devices/nm-device-vlan.c:400
 #, fuzzy
 msgid "VLAN connection"
 msgstr "VPN spojenia"
 
-#: ../clients/common/nm-meta-setting-desc.c:7675 ../src/nm-manager.c:5521
+#: ../clients/common/nm-meta-setting-desc.c:7662 ../src/nm-manager.c:5518
 #, fuzzy
 msgid "VPN connection"
 msgstr "VPN spojenia"
 
-#: ../clients/common/nm-meta-setting-desc.c:7676
+#: ../clients/common/nm-meta-setting-desc.c:7663
 #: ../src/devices/nm-device-vxlan.c:369
 #, fuzzy
 msgid "VXLAN connection"
 msgstr "VPN spojenia"
 
-#: ../clients/common/nm-meta-setting-desc.c:7677
+#: ../clients/common/nm-meta-setting-desc.c:7664
 #, fuzzy
 msgid "Wi-Fi P2P connection"
 msgstr "Wi-Fi spojenie"
 
-#: ../clients/common/nm-meta-setting-desc.c:7678
+#: ../clients/common/nm-meta-setting-desc.c:7665
 msgid "WiMAX connection"
 msgstr "Spojenie WiMAX"
 
-#: ../clients/common/nm-meta-setting-desc.c:7679
+#: ../clients/common/nm-meta-setting-desc.c:7666
 msgid "Wired Ethernet"
 msgstr "Ethernet po drôte"
 
-#: ../clients/common/nm-meta-setting-desc.c:7680
+#: ../clients/common/nm-meta-setting-desc.c:7667
 #, fuzzy
 msgid "WireGuard VPN settings"
 msgstr "Nastavenia WPAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:7681
+#: ../clients/common/nm-meta-setting-desc.c:7668
 msgid "Wi-Fi connection"
 msgstr "Wi-Fi spojenie"
 
-#: ../clients/common/nm-meta-setting-desc.c:7682
+#: ../clients/common/nm-meta-setting-desc.c:7669
 msgid "Wi-Fi security settings"
 msgstr "Nastavenia bezpečnosti Wi-Fi"
 
-#: ../clients/common/nm-meta-setting-desc.c:7683
+#: ../clients/common/nm-meta-setting-desc.c:7670
 msgid "WPAN settings"
 msgstr "Nastavenia WPAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:8046
+#: ../clients/common/nm-meta-setting-desc.c:8033
 msgid "name"
 msgstr "meno"
 
@@ -6599,14 +6589,15 @@ msgid ""
 "excluding other configurations with a greater priority value; so in presence "
 "of at least a negative priority, only DNS servers from connections with the "
 "lowest priority value will be used. When using a DNS resolver that supports "
-"split-DNS as dns=dnsmasq or dns=systemd-resolved, each connection is used to "
-"query domains in its search list.  Queries for domains not present in any "
-"search list are routed through connections having the '~.' special wildcard "
-"domain, which is added automatically to connections with the default route "
-"(or can be added manually).  When multiple connections specify the same "
-"domain, the one with the highest priority (lowest numerical value) wins.  If "
-"a connection specifies a domain which is subdomain of another domain with a "
-"negative DNS priority value, the subdomain is ignored."
+"Conditional Forwarding as dns=dnsmasq or dns=systemd-resolved, each "
+"connection is used to query domains in its search list.  Queries for domains "
+"not present in any search list are routed through connections having the "
+"'~.' special wildcard domain, which is added automatically to connections "
+"with the default route (or can be added manually).  When multiple "
+"connections specify the same domain, the one with the highest priority "
+"(lowest numerical value) wins.  If a connection specifies a domain which is "
+"subdomain of another domain with a negative DNS priority value, the "
+"subdomain is ignored."
 msgstr ""
 
 #: ../clients/common/settings-docs.h.in:212
@@ -7171,10 +7162,7 @@ msgstr ""
 #: ../clients/common/settings-docs.h.in:313
 msgid ""
 "Corresponds to the teamd runner.name. Permitted values are: \"roundrobin\", "
-"\"broadcast\", \"activebackup\", \"loadbalance\", \"lacp\", \"random\". When "
-"setting the runner, all the properties specific to the runner will be reset "
-"to the default value; all the properties specific to other runners will be "
-"set to an empty value (or if not possible to a default value)."
+"\"broadcast\", \"activebackup\", \"loadbalance\", \"lacp\", \"random\"."
 msgstr ""
 
 #: ../clients/common/settings-docs.h.in:314
@@ -7664,7 +7652,7 @@ msgstr "DSL spojenie %d"
 
 #: ../clients/tui/nm-editor-utils.c:188 ../libnm-core/nm-connection.c:2510
 #: ../libnm/nm-device.c:1400
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4836
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4898
 msgid "Bond"
 msgstr ""
 
@@ -7675,7 +7663,7 @@ msgstr "Bez sieťového spojenia"
 
 #: ../clients/tui/nm-editor-utils.c:197 ../libnm-core/nm-connection.c:2514
 #: ../libnm/nm-device.c:1404
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5216
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5253
 msgid "Bridge"
 msgstr "Premostenie"
 
@@ -7686,7 +7674,7 @@ msgstr "Premostenie (bridge) %d"
 
 #: ../clients/tui/nm-editor-utils.c:206 ../libnm-core/nm-connection.c:2512
 #: ../libnm/nm-device.c:1402
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4939
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4971
 msgid "Team"
 msgstr "Team"
 
@@ -9004,7 +8992,7 @@ msgstr ""
 msgid "invalid setting: %s"
 msgstr "neplatné nastavenie: %s"
 
-#: ../libnm-core/nm-keyfile.c:1626
+#: ../libnm-core/nm-keyfile.c:1628
 #, c-format
 msgid "ignoring invalid team configuration: %s"
 msgstr ""
@@ -9160,7 +9148,7 @@ msgstr ""
 #: ../libnm-core/nm-setting-wimax.c:119
 #: ../libnm-core/nm-setting-wireless-security.c:944
 #: ../libnm-core/nm-setting-wireless-security.c:968
-#: ../libnm-core/nm-setting.c:1312
+#: ../libnm-core/nm-setting.c:1342
 msgid "property is empty"
 msgstr ""
 
@@ -9298,7 +9286,7 @@ msgstr "nesprávna adresa IP: %s"
 #: ../libnm-core/nm-setting-ovs-bridge.c:150
 #: ../libnm-core/nm-setting-ovs-interface.c:259
 #: ../libnm-core/nm-setting-ovs-port.c:187
-#: ../libnm-core/nm-setting-team-port.c:343
+#: ../libnm-core/nm-setting-team-port.c:319
 #, c-format
 msgid "missing setting"
 msgstr "chýbajúce nastavenie"
@@ -9306,7 +9294,7 @@ msgstr "chýbajúce nastavenie"
 #: ../libnm-core/nm-setting-bridge-port.c:328
 #: ../libnm-core/nm-setting-ovs-interface.c:280
 #: ../libnm-core/nm-setting-ovs-port.c:208
-#: ../libnm-core/nm-setting-team-port.c:354
+#: ../libnm-core/nm-setting-team-port.c:330
 #, c-format
 msgid ""
 "A connection with a '%s' setting must have the slave-type set to '%s'. "
@@ -10084,65 +10072,34 @@ msgstr ""
 msgid "there are duplicate TC filters"
 msgstr ""
 
-#: ../libnm-core/nm-setting-team-port.c:366
-#: ../libnm-core/nm-setting-team.c:1234
-#, c-format
-msgid "team config exceeds size limit"
-msgstr ""
-
-#: ../libnm-core/nm-setting-team.c:135 ../libnm-core/nm-setting-team.c:194
-#: ../libnm-core/nm-setting-team.c:306
+#: ../libnm-core/nm-setting-team.c:130 ../libnm-core/nm-setting-team.c:191
+#: ../libnm-core/nm-setting-team.c:313
 #, c-format
 msgid "%s is out of range [0, %d]"
 msgstr ""
 
-#: ../libnm-core/nm-setting-team.c:176
+#: ../libnm-core/nm-setting-team.c:173
 #, c-format
 msgid "Missing target-host in nsna_ping link watcher"
 msgstr ""
 
-#: ../libnm-core/nm-setting-team.c:182 ../libnm-core/nm-setting-team.c:288
+#: ../libnm-core/nm-setting-team.c:179 ../libnm-core/nm-setting-team.c:295
 #, c-format
 msgid "target-host '%s' contains invalid characters"
 msgstr ""
 
-#: ../libnm-core/nm-setting-team.c:281
+#: ../libnm-core/nm-setting-team.c:288
 #, c-format
 msgid "Missing %s in arp_ping link watcher"
 msgstr ""
 
-#: ../libnm-core/nm-setting-team.c:294
+#: ../libnm-core/nm-setting-team.c:301
 #, c-format
 msgid "source-host '%s' contains invalid characters"
 msgstr ""
 
-#: ../libnm-core/nm-setting-team.c:312
+#: ../libnm-core/nm-setting-team.c:319
 msgid "vlanid is out of range [-1, 4094]"
-msgstr ""
-
-#: ../libnm-core/nm-setting-team.c:1260
-#, fuzzy, c-format
-msgid "invalid runner \"%s\""
-msgstr "nesprávna smerová adresa '%s'"
-
-#: ../libnm-core/nm-setting-team.c:1273
-#, c-format
-msgid "missing link watcher name"
-msgstr ""
-
-#: ../libnm-core/nm-setting-team.c:1283
-#, c-format
-msgid "unknown link watcher \"%s\""
-msgstr ""
-
-#: ../libnm-core/nm-setting-team.c:1294
-#, c-format
-msgid "missing target host"
-msgstr ""
-
-#: ../libnm-core/nm-setting-team.c:1302
-#, c-format
-msgid "missing source address"
 msgstr ""
 
 #: ../libnm-core/nm-setting-tun.c:167
@@ -10241,7 +10198,7 @@ msgstr ""
 msgid "secret value was empty"
 msgstr ""
 
-#: ../libnm-core/nm-setting-vpn.c:667 ../libnm-core/nm-setting.c:2181
+#: ../libnm-core/nm-setting-vpn.c:667 ../libnm-core/nm-setting.c:2211
 msgid "not a secret property"
 msgstr ""
 
@@ -10452,29 +10409,110 @@ msgstr ""
 msgid "duplicate property"
 msgstr ""
 
-#: ../libnm-core/nm-setting.c:956 ../libnm-core/nm-setting.c:1005
-#, c-format
-msgid "can't set property of type '%s' from value of type '%s'"
-msgstr ""
-
-#: ../libnm-core/nm-setting.c:975 ../libnm-core/nm-setting.c:990
-#, fuzzy, c-format
-msgid "failed to set property: %s"
-msgstr "Nepodarilo sa načítať"
-
-#: ../libnm-core/nm-setting.c:1020
-#, c-format
-msgid "can not set property: %s"
-msgstr ""
-
-#: ../libnm-core/nm-setting.c:1036
+#: ../libnm-core/nm-setting.c:929
 #, fuzzy, c-format
 msgid "unknown property"
 msgstr "(neznáme)"
 
-#: ../libnm-core/nm-setting.c:2072
+#: ../libnm-core/nm-setting.c:1000 ../libnm-core/nm-setting.c:1049
+#, c-format
+msgid "can't set property of type '%s' from value of type '%s'"
+msgstr ""
+
+#: ../libnm-core/nm-setting.c:1019 ../libnm-core/nm-setting.c:1034
+#, fuzzy, c-format
+msgid "failed to set property: %s"
+msgstr "Nepodarilo sa načítať"
+
+#: ../libnm-core/nm-setting.c:1064
+#, c-format
+msgid "can not set property: %s"
+msgstr ""
+
+#: ../libnm-core/nm-setting.c:2102
 msgid "secret not found"
 msgstr ""
+
+#: ../libnm-core/nm-team-utils.c:1241 ../libnm-core/nm-team-utils.c:1256
+#, fuzzy, c-format
+msgid "invalid D-Bus property \"%s\""
+msgstr "neplatný kľúč '%s.%s'"
+
+#: ../libnm-core/nm-team-utils.c:1266
+#, c-format
+msgid "duplicate D-Bus property \"%s\""
+msgstr ""
+
+#: ../libnm-core/nm-team-utils.c:1287
+#, fuzzy, c-format
+msgid "invalid D-Bus property \"%s\" for \"%s\""
+msgstr "nesprávna metrika '%s'"
+
+#: ../libnm-core/nm-team-utils.c:1345
+#, c-format
+msgid "unknown link-watcher name \"%s\""
+msgstr ""
+
+#: ../libnm-core/nm-team-utils.c:1903
+#, fuzzy, c-format
+msgid "missing runner"
+msgstr "chýbajúce nastavenie"
+
+#: ../libnm-core/nm-team-utils.c:1915
+#, fuzzy, c-format
+msgid "invalid runner \"%s\""
+msgstr "nesprávna smerová adresa '%s'"
+
+#: ../libnm-core/nm-team-utils.c:1926
+#, fuzzy, c-format
+msgid "invalid runner.tx-hash"
+msgstr "nesprávna smerová adresa '%s'"
+
+#: ../libnm-core/nm-team-utils.c:1944
+#, c-format
+msgid "missing link watcher name"
+msgstr ""
+
+#: ../libnm-core/nm-team-utils.c:1947
+#, c-format
+msgid "unknown link watcher \"%s\""
+msgstr ""
+
+#: ../libnm-core/nm-team-utils.c:1958
+#, c-format
+msgid "missing target host"
+msgstr ""
+
+#: ../libnm-core/nm-team-utils.c:1965
+#, c-format
+msgid "missing source address"
+msgstr ""
+
+#: ../libnm-core/nm-team-utils.c:1978
+#, c-format
+msgid "team config exceeds size limit"
+msgstr ""
+
+#: ../libnm-core/nm-team-utils.c:1984
+#, fuzzy, c-format
+msgid "team config is not valid UTF-8"
+msgstr "VPN spojenie '%s' nebolo správne nakonfigurované."
+
+#: ../libnm-core/nm-team-utils.c:1990
+#: ../src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c:8969
+#, fuzzy, c-format
+msgid "invalid json"
+msgstr "nesprávna smerová adresa '%s'"
+
+#: ../libnm-core/nm-team-utils.c:2137
+#, fuzzy, c-format
+msgid "invalid D-Bus type \"%s\""
+msgstr "neplatný kľúč '%s.%s'"
+
+#: ../libnm-core/nm-team-utils.c:2162
+#, fuzzy, c-format
+msgid "invalid link-watchers: %s"
+msgstr "nesprávna smerová adresa '%s'"
 
 #: ../libnm-core/nm-utils.c:2316
 #, fuzzy, c-format
@@ -10625,68 +10663,68 @@ msgstr ""
 msgid "not valid utf-8"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:5377 ../libnm-core/nm-utils.c:5852
+#: ../libnm-core/nm-utils.c:5377 ../libnm-core/nm-utils.c:5430
 msgid "is not a JSON object"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:5828 ../libnm-core/nm-utils.c:6163
+#: ../libnm-core/nm-utils.c:5406 ../libnm-core/nm-utils.c:5443
 msgid "value is NULL"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:5828 ../libnm-core/nm-utils.c:6163
+#: ../libnm-core/nm-utils.c:5406 ../libnm-core/nm-utils.c:5443
 msgid "value is empty"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:5840
+#: ../libnm-core/nm-utils.c:5418
 #, c-format
 msgid "invalid JSON at position %d (%s)"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:6490 ../libnm-core/nm-utils.c:6510
+#: ../libnm-core/nm-utils.c:5538 ../libnm-core/nm-utils.c:5558
 msgid "unterminated escape sequence"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:6535
+#: ../libnm-core/nm-utils.c:5583
 #, fuzzy, c-format
 msgid "unknown attribute '%s'"
 msgstr "(neznáme)"
 
-#: ../libnm-core/nm-utils.c:6550
+#: ../libnm-core/nm-utils.c:5598
 #, c-format
 msgid "missing key-value separator '%c' after '%s'"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:6566
+#: ../libnm-core/nm-utils.c:5614
 #, c-format
 msgid "invalid uint32 value '%s' for attribute '%s'"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:6575
+#: ../libnm-core/nm-utils.c:5623
 #, c-format
 msgid "invalid uint8 value '%s' for attribute '%s'"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:6585
+#: ../libnm-core/nm-utils.c:5633
 #, c-format
 msgid "invalid boolean value '%s' for attribute '%s'"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:6595
+#: ../libnm-core/nm-utils.c:5643
 #, c-format
 msgid "unsupported attribute '%s' of type '%s'"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:6944
+#: ../libnm-core/nm-utils.c:5992
 #, c-format
 msgid "Bridge VLANs %d and %d are not sorted by ascending vid"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:6968
+#: ../libnm-core/nm-utils.c:6016
 #, c-format
 msgid "duplicate bridge VLAN vid %u"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:6980
+#: ../libnm-core/nm-utils.c:6028
 msgid "only one VLAN can be the PVID"
 msgstr ""
 
@@ -11464,13 +11502,13 @@ msgid "DUN connection must include a GSM or CDMA setting"
 msgstr ""
 
 #: ../src/devices/bluetooth/nm-device-bt.c:322
-#: ../src/devices/wwan/nm-modem-broadband.c:701
+#: ../src/devices/wwan/nm-modem-broadband.c:702
 #, fuzzy
 msgid "GSM connection"
 msgstr "VPN spojenia"
 
 #: ../src/devices/bluetooth/nm-device-bt.c:324
-#: ../src/devices/wwan/nm-modem-broadband.c:725
+#: ../src/devices/wwan/nm-modem-broadband.c:726
 #, fuzzy
 msgid "CDMA connection"
 msgstr "VPN spojenia"

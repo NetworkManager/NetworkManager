@@ -19,9 +19,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
-"Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/"
-"NetworkManager/issues\n"
-"POT-Creation-Date: 2019-05-25 03:24+0000\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-05-28 14:23+0200\n"
 "PO-Revision-Date: 2019-05-25 03:05-0300\n"
 "Last-Translator: Rafael Fontenelle <rafaelff@gnome.org>\n"
 "Language-Team: Brazilian Portuguese <gnome-pt_br-list@gnome.org>\n"
@@ -9802,7 +9801,7 @@ msgstr "Conexão DSL %d"
 
 #: ../clients/tui/nm-editor-utils.c:188 ../libnm-core/nm-connection.c:2510
 #: ../libnm/nm-device.c:1400
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4836
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4898
 msgid "Bond"
 msgstr "Vínculo"
 
@@ -9813,7 +9812,7 @@ msgstr "Conexão vinculada %d"
 
 #: ../clients/tui/nm-editor-utils.c:197 ../libnm-core/nm-connection.c:2514
 #: ../libnm/nm-device.c:1404
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5181
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5253
 msgid "Bridge"
 msgstr "Ponte"
 
@@ -9824,7 +9823,7 @@ msgstr "Conexão de Ponte %d"
 
 #: ../clients/tui/nm-editor-utils.c:206 ../libnm-core/nm-connection.c:2512
 #: ../libnm/nm-device.c:1402
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4904
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4971
 msgid "Team"
 msgstr "União"
 
@@ -12671,7 +12670,7 @@ msgid "team config is not valid UTF-8"
 msgstr "a configuração de união não é um UTF-8 válido"
 
 #: ../libnm-core/nm-team-utils.c:1990
-#: ../src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c:8948
+#: ../src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c:8969
 #, c-format
 msgid "invalid json"
 msgstr "json inválido"
