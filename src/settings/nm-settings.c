@@ -169,9 +169,6 @@ static const GDBusSignalInfo signal_info_connection_removed;
 static void claim_connection (NMSettings *self,
                               NMSettingsConnection *connection);
 
-static void unmanaged_specs_changed (NMSettingsPlugin *config, gpointer user_data);
-static void unrecognized_specs_changed (NMSettingsPlugin *config, gpointer user_data);
-
 static void connection_ready_changed (NMSettingsConnection *conn,
                                       GParamSpec *pspec,
                                       gpointer user_data);
@@ -180,6 +177,9 @@ static void default_wired_clear_tag (NMSettings *self,
                                      NMDevice *device,
                                      NMSettingsConnection *connection,
                                      gboolean add_to_no_auto_default);
+
+static void openconnect_migrate_hack (NMConnection *connection);
+static void _clear_connections_cached_list (NMSettingsPrivate *priv);
 
 /*****************************************************************************/
 
@@ -220,312 +220,20 @@ connection_ready_changed (NMSettingsConnection *conn,
 		check_startup_complete (self);
 }
 
-static void
-plugin_connection_added (NMSettingsPlugin *config,
-                         NMSettingsConnection *connection,
-                         NMSettings *self)
-{
-	claim_connection (self, connection);
-}
-
-static void
-load_connections (NMSettings *self)
+const char *
+nm_settings_get_startup_complete_blocked_reason (NMSettings *self)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GSList *iter;
+	const char *uuid = NULL;
 
-	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
-		NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
-		GSList *plugin_connections;
-		GSList *elt;
-
-		plugin_connections = nm_settings_plugin_get_connections (plugin);
-
-		// FIXME: ensure connections from plugins loaded with a lower priority
-		// get rejected when they conflict with connections from a higher
-		// priority plugin.
-
-		for (elt = plugin_connections; elt; elt = g_slist_next (elt))
-			claim_connection (self, elt->data);
-
-		g_slist_free (plugin_connections);
-
-		g_signal_connect (plugin, NM_SETTINGS_PLUGIN_CONNECTION_ADDED,
-		                  G_CALLBACK (plugin_connection_added), self);
-		g_signal_connect (plugin, NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED,
-		                  G_CALLBACK (unmanaged_specs_changed), self);
-		g_signal_connect (plugin, NM_SETTINGS_PLUGIN_UNRECOGNIZED_SPECS_CHANGED,
-		                  G_CALLBACK (unrecognized_specs_changed), self);
-	}
-
-	priv->connections_loaded = TRUE;
-	_notify (self, PROP_CONNECTIONS);
-
-	unmanaged_specs_changed (NULL, self);
-	unrecognized_specs_changed (NULL, self);
-}
-
-static void
-impl_settings_list_connections (NMDBusObject *obj,
-                                const NMDBusInterfaceInfoExtended *interface_info,
-                                const NMDBusMethodInfoExtended *method_info,
-                                GDBusConnection *dbus_connection,
-                                const char *sender,
-                                GDBusMethodInvocation *invocation,
-                                GVariant *parameters)
-{
-	NMSettings *self = NM_SETTINGS (obj);
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	gs_free const char **strv = NULL;
-
-	strv = nm_dbus_utils_get_paths_for_clist (&priv->connections_lst_head,
-	                                          priv->connections_len,
-	                                          G_STRUCT_OFFSET (NMSettingsConnection, _connections_lst),
-	                                          TRUE);
-	g_dbus_method_invocation_return_value (invocation,
-	                                       g_variant_new ("(^ao)", strv));
-}
-
-NMSettingsConnection *
-nm_settings_get_connection_by_uuid (NMSettings *self, const char *uuid)
-{
-	NMSettingsPrivate *priv;
-	NMSettingsConnection *candidate;
-
-	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
-	g_return_val_if_fail (uuid != NULL, NULL);
-
-	priv = NM_SETTINGS_GET_PRIVATE (self);
-
-	c_list_for_each_entry (candidate, &priv->connections_lst_head, _connections_lst) {
-		if (nm_streq (uuid, nm_settings_connection_get_uuid (candidate)))
-			return candidate;
-	}
-
-	return NULL;
-}
-
-static void
-impl_settings_get_connection_by_uuid (NMDBusObject *obj,
-                                      const NMDBusInterfaceInfoExtended *interface_info,
-                                      const NMDBusMethodInfoExtended *method_info,
-                                      GDBusConnection *dbus_connection,
-                                      const char *sender,
-                                      GDBusMethodInvocation *invocation,
-                                      GVariant *parameters)
-{
-	NMSettings *self = NM_SETTINGS (obj);
-	NMSettingsConnection *sett_conn;
-	gs_unref_object NMAuthSubject *subject = NULL;
-	GError *error = NULL;
-	const char *uuid;
-
-	g_variant_get (parameters, "(&s)", &uuid);
-
-	sett_conn = nm_settings_get_connection_by_uuid (self, uuid);
-	if (!sett_conn) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		                             "No connection with the UUID was found.");
-		goto error;
-	}
-
-	subject = nm_auth_subject_new_unix_process_from_context (invocation);
-	if (!subject) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             "Unable to determine UID of request.");
-		goto error;
-	}
-
-	if (!nm_auth_is_subject_in_acl_set_error (nm_settings_connection_get_connection (sett_conn),
-	                                          subject,
-	                                          NM_SETTINGS_ERROR,
-	                                          NM_SETTINGS_ERROR_PERMISSION_DENIED,
-	                                          &error))
-		goto error;
-
-	g_dbus_method_invocation_return_value (invocation,
-	                                       g_variant_new ("(o)",
-	                                                      nm_dbus_object_get_path (NM_DBUS_OBJECT (sett_conn))));
-	return;
-
-error:
-	g_dbus_method_invocation_take_error (invocation, error);
-}
-
-static void
-_clear_connections_cached_list (NMSettingsPrivate *priv)
-{
-	if (!priv->connections_cached_list)
-		return;
-
-	nm_assert (priv->connections_len == NM_PTRARRAY_LEN (priv->connections_cached_list));
-
-#if NM_MORE_ASSERTS
-	/* set the pointer to a bogus value. This makes it more apparent
-	 * if somebody has a reference to the cached list and still uses
-	 * it. That is a bug, this code just tries to make it blow up
-	 * more eagerly. */
-	memset (priv->connections_cached_list,
-	        0xdeaddead,
-	        sizeof (NMSettingsConnection *) * (priv->connections_len + 1));
-#endif
-
-	nm_clear_g_free (&priv->connections_cached_list);
-}
-
-/**
- * nm_settings_get_connections:
- * @self: the #NMSettings
- * @out_len: (out) (allow-none): returns the number of returned
- *   connections.
- *
- * Returns: (transfer none): a list of NMSettingsConnections. The list is
- * unsorted and NULL terminated. The result is never %NULL, in case of no
- * connections, it returns an empty list.
- * The returned list is cached internally, only valid until the next
- * NMSettings operation.
- */
-NMSettingsConnection *const*
-nm_settings_get_connections (NMSettings *self, guint *out_len)
-{
-	NMSettingsPrivate *priv;
-	NMSettingsConnection **v;
-	NMSettingsConnection *con;
-	guint i;
-
-	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
-
-	priv = NM_SETTINGS_GET_PRIVATE (self);
-
-	nm_assert (priv->connections_len == c_list_length (&priv->connections_lst_head));
-
-	if (G_UNLIKELY (!priv->connections_cached_list)) {
-		v = g_new (NMSettingsConnection *, priv->connections_len + 1);
-
-		i = 0;
-		c_list_for_each_entry (con, &priv->connections_lst_head, _connections_lst) {
-			nm_assert (i < priv->connections_len);
-			v[i++] = con;
-		}
-		nm_assert (i == priv->connections_len);
-		v[i] = NULL;
-
-		priv->connections_cached_list = v;
-	}
-
-	NM_SET_OUT (out_len, priv->connections_len);
-	return priv->connections_cached_list;
-}
-
-/**
- * nm_settings_get_connections_clone:
- * @self: the #NMSetting
- * @out_len: (allow-none): optional output argument
- * @func: caller-supplied function for filtering connections
- * @func_data: caller-supplied data passed to @func
- * @sort_compare_func: (allow-none): optional function pointer for
- *   sorting the returned list.
- * @sort_data: user data for @sort_compare_func.
- *
- * Returns: (transfer container) (element-type NMSettingsConnection):
- *   an NULL terminated array of #NMSettingsConnection objects that were
- *   filtered by @func (or all connections if no filter was specified).
- *   The order is arbitrary.
- *   Caller is responsible for freeing the returned array with free(),
- *   the contained values do not need to be unrefed.
- */
-NMSettingsConnection **
-nm_settings_get_connections_clone (NMSettings *self,
-                                   guint *out_len,
-                                   NMSettingsConnectionFilterFunc func,
-                                   gpointer func_data,
-                                   GCompareDataFunc sort_compare_func,
-                                   gpointer sort_data)
-{
-	NMSettingsConnection *const*list_cached;
-	NMSettingsConnection **list;
-	guint len, i, j;
-
-	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
-
-	list_cached = nm_settings_get_connections (self, &len);
-
-#if NM_MORE_ASSERTS
-	nm_assert (list_cached);
-	for (i = 0; i < len; i++)
-		nm_assert (NM_IS_SETTINGS_CONNECTION (list_cached[i]));
-	nm_assert (!list_cached[i]);
-#endif
-
-	list = g_new (NMSettingsConnection *, ((gsize) len + 1));
-	if (func) {
-		for (i = 0, j = 0; i < len; i++) {
-			if (func (self, list_cached[i], func_data))
-				list[j++] = list_cached[i];
-		}
-		list[j] = NULL;
-		len = j;
-	} else
-		memcpy (list, list_cached, sizeof (list[0]) * ((gsize) len + 1));
-
-	if (   len > 1
-	    && sort_compare_func) {
-		g_qsort_with_data (list, len, sizeof (NMSettingsConnection *),
-		                   sort_compare_func, sort_data);
-	}
-	NM_SET_OUT (out_len, len);
-	return list;
-}
-
-NMSettingsConnection *
-nm_settings_get_connection_by_path (NMSettings *self, const char *path)
-{
-	NMSettingsPrivate *priv;
-	NMSettingsConnection *connection;
-
-	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
-	g_return_val_if_fail (path, NULL);
-
-	priv = NM_SETTINGS_GET_PRIVATE (self);
-
-	connection = nm_dbus_manager_lookup_object (nm_dbus_object_get_manager (NM_DBUS_OBJECT (self)),
-	                                            path);
-	if (   !connection
-	    || !NM_IS_SETTINGS_CONNECTION (connection))
+	if (priv->startup_complete)
 		return NULL;
-
-	nm_assert (c_list_contains (&priv->connections_lst_head, &connection->_connections_lst));
-	return connection;
+	if (priv->startup_complete_blocked_by)
+		uuid = nm_settings_connection_get_uuid (priv->startup_complete_blocked_by);
+	return uuid ?: "unknown";
 }
 
-gboolean
-nm_settings_has_connection (NMSettings *self, NMSettingsConnection *connection)
-{
-	gboolean has;
-
-	g_return_val_if_fail (NM_IS_SETTINGS (self), FALSE);
-	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), FALSE);
-
-	has = !c_list_is_empty (&connection->_connections_lst);
-
-	nm_assert (has == nm_c_list_contains_entry (&NM_SETTINGS_GET_PRIVATE (self)->connections_lst_head,
-                                                connection,
-                                                _connections_lst));
-	nm_assert (({
-		NMSettingsConnection *candidate = NULL;
-		const char *path;
-
-		path = nm_dbus_object_get_path (NM_DBUS_OBJECT (connection));
-		if (path)
-			candidate = nm_settings_get_connection_by_path (self, path);
-
-		(has == (connection == candidate));
-	}));
-
-	return has;
-}
+/*****************************************************************************/
 
 const GSList *
 nm_settings_get_unmanaged_specs (NMSettings *self)
@@ -586,176 +294,54 @@ unrecognized_specs_changed (NMSettingsPlugin *config,
 	              nm_settings_plugin_get_unrecognized_specs);
 }
 
+/*****************************************************************************/
+
 static void
-add_plugin (NMSettings *self,
-            NMSettingsPlugin *plugin,
-            const char *pname,
-            const char *path)
+plugin_connection_added (NMSettingsPlugin *config,
+                         NMSettingsConnection *connection,
+                         NMSettings *self)
 {
-	NMSettingsPrivate *priv;
-
-	nm_assert (NM_IS_SETTINGS (self));
-	nm_assert (NM_IS_SETTINGS_PLUGIN (plugin));
-
-	priv = NM_SETTINGS_GET_PRIVATE (self);
-
-	nm_assert (!g_slist_find (priv->plugins, plugin));
-
-	priv->plugins = g_slist_append (priv->plugins, g_object_ref (plugin));
-
-	_LOGI ("Loaded settings plugin: %s (%s%s%s)",
-	       pname,
-	       NM_PRINT_FMT_QUOTED (path, "\"", path, "\"", "internal"));
-}
-
-static gboolean
-add_plugin_load_file (NMSettings *self, const char *pname, GError **error)
-{
-	gs_free char *full_name = NULL;
-	gs_free char *path = NULL;
-	gs_unref_object NMSettingsPlugin *plugin = NULL;
-	GModule *module;
-	NMSettingsPluginFactoryFunc factory_func;
-	struct stat st;
-	int errsv;
-
-	full_name = g_strdup_printf ("nm-settings-plugin-%s", pname);
-	path = g_module_build_path (NMPLUGINDIR, full_name);
-
-	if (stat (path, &st) != 0) {
-		errsv = errno;
-		_LOGW ("could not load plugin '%s' from file '%s': %s", pname, path, nm_strerror_native (errsv));
-		return TRUE;
-	}
-	if (!S_ISREG (st.st_mode)) {
-		_LOGW ("could not load plugin '%s' from file '%s': not a file", pname, path);
-		return TRUE;
-	}
-	if (st.st_uid != 0) {
-		_LOGW ("could not load plugin '%s' from file '%s': file must be owned by root", pname, path);
-		return TRUE;
-	}
-	if (st.st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
-		_LOGW ("could not load plugin '%s' from file '%s': invalid file permissions", pname, path);
-		return TRUE;
-	}
-
-	module = g_module_open (path, G_MODULE_BIND_LOCAL);
-	if (!module) {
-		_LOGW ("could not load plugin '%s' from file '%s': %s",
-		     pname, path, g_module_error ());
-		return TRUE;
-	}
-
-	/* errors after this point are fatal, because we loaded the shared library already. */
-
-	if (!g_module_symbol (module, "nm_settings_plugin_factory", (gpointer) (&factory_func))) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not find plugin '%s' factory function.",
-		             pname);
-		g_module_close (module);
-		return FALSE;
-	}
-
-	/* after accessing the plugin we cannot unload it anymore, because the glib
-	 * types cannot be properly unregistered. */
-	g_module_make_resident (module);
-
-	plugin = (*factory_func) ();
-	if (!NM_IS_SETTINGS_PLUGIN (plugin)) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "plugin '%s' returned invalid settings plugin",
-		             pname);
-		return FALSE;
-	}
-
-	add_plugin (self, NM_SETTINGS_PLUGIN (plugin), pname, path);
-	return TRUE;
+	claim_connection (self, connection);
 }
 
 static void
-add_plugin_keyfile (NMSettings *self)
+load_connections (NMSettings *self)
 {
-	gs_unref_object NMSKeyfilePlugin *keyfile_plugin = NULL;
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GSList *iter;
 
-	keyfile_plugin = nms_keyfile_plugin_new ();
-	add_plugin (self, NM_SETTINGS_PLUGIN (keyfile_plugin), "keyfile", NULL);
-}
+	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
+		NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
+		GSList *plugin_connections;
+		GSList *elt;
 
-static gboolean
-load_plugins (NMSettings *self, const char **plugins, GError **error)
-{
-	const char **iter;
-	gboolean keyfile_added = FALSE;
-	gboolean success = TRUE;
-	gboolean add_ibft = FALSE;
-	gboolean has_no_ibft;
-	gssize idx_no_ibft, idx_ibft;
+		plugin_connections = nm_settings_plugin_get_connections (plugin);
 
-	idx_ibft    = nm_utils_strv_find_first ((char **) plugins, -1, "ibft");
-	idx_no_ibft = nm_utils_strv_find_first ((char **) plugins, -1, "no-ibft");
-	has_no_ibft = idx_no_ibft >= 0 && idx_no_ibft > idx_ibft;
-#if WITH_SETTINGS_PLUGIN_IBFT
-	add_ibft = idx_no_ibft < 0 && idx_ibft < 0;
-#endif
+		// FIXME: ensure connections from plugins loaded with a lower priority
+		// get rejected when they conflict with connections from a higher
+		// priority plugin.
 
-	for (iter = plugins; iter && *iter; iter++) {
-		const char *pname = *iter;
+		for (elt = plugin_connections; elt; elt = g_slist_next (elt))
+			claim_connection (self, elt->data);
 
-		if (!*pname || strchr (pname, '/')) {
-			_LOGW ("ignore invalid plugin \"%s\"", pname);
-			continue;
-		}
+		g_slist_free (plugin_connections);
 
-		if (NM_IN_STRSET (pname, "ifcfg-suse", "ifnet")) {
-			_LOGW ("skipping deprecated plugin %s", pname);
-			continue;
-		}
-
-		if (nm_streq (pname, "no-ibft"))
-			continue;
-		if (has_no_ibft && nm_streq (pname, "ibft"))
-			continue;
-
-		/* keyfile plugin is built-in now */
-		if (nm_streq (pname, "keyfile")) {
-			if (!keyfile_added) {
-				add_plugin_keyfile (self);
-				keyfile_added = TRUE;
-			}
-			continue;
-		}
-
-		if (nm_utils_strv_find_first ((char **) plugins,
-		                              iter - plugins,
-		                              pname) >= 0) {
-			/* the plugin is already mentioned in the list previously.
-			 * Don't load a duplicate. */
-			continue;
-		}
-
-		success = add_plugin_load_file (self, pname, error);
-		if (!success)
-			break;
-
-		if (add_ibft && nm_streq (pname, "ifcfg-rh")) {
-			/* The plugin ibft is not explicitly mentioned but we just enabled "ifcfg-rh".
-			 * Enable "ibft" by default after "ifcfg-rh". */
-			pname = "ibft";
-			add_ibft = FALSE;
-
-			success = add_plugin_load_file (self, "ibft", error);
-			if (!success)
-				break;
-		}
+		g_signal_connect (plugin, NM_SETTINGS_PLUGIN_CONNECTION_ADDED,
+		                  G_CALLBACK (plugin_connection_added), self);
+		g_signal_connect (plugin, NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED,
+		                  G_CALLBACK (unmanaged_specs_changed), self);
+		g_signal_connect (plugin, NM_SETTINGS_PLUGIN_UNRECOGNIZED_SPECS_CHANGED,
+		                  G_CALLBACK (unrecognized_specs_changed), self);
 	}
 
-	/* If keyfile plugin was not among configured plugins, add it as the last one */
-	if (!keyfile_added && success)
-		add_plugin_keyfile (self);
+	priv->connections_loaded = TRUE;
+	_notify (self, PROP_CONNECTIONS);
 
-	return success;
+	unmanaged_specs_changed (NULL, self);
+	unrecognized_specs_changed (NULL, self);
 }
+
+/*****************************************************************************/
 
 static void
 connection_updated (NMSettingsConnection *connection, gboolean by_user, gpointer user_data)
@@ -835,45 +421,7 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	g_object_unref (self);       /* Balanced by a ref in claim_connection() */
 }
 
-#define NM_DBUS_SERVICE_OPENCONNECT    "org.freedesktop.NetworkManager.openconnect"
-#define NM_OPENCONNECT_KEY_GATEWAY "gateway"
-#define NM_OPENCONNECT_KEY_COOKIE "cookie"
-#define NM_OPENCONNECT_KEY_GWCERT "gwcert"
-#define NM_OPENCONNECT_KEY_XMLCONFIG "xmlconfig"
-#define NM_OPENCONNECT_KEY_LASTHOST "lasthost"
-#define NM_OPENCONNECT_KEY_AUTOCONNECT "autoconnect"
-#define NM_OPENCONNECT_KEY_CERTSIGS "certsigs"
-
-static void
-openconnect_migrate_hack (NMConnection *connection)
-{
-	NMSettingVpn *s_vpn;
-	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NOT_SAVED;
-
-	/* Huge hack.  There were some openconnect changes that needed to happen
-	 * pretty late, too late to get into distros.  Migration has already
-	 * happened for many people, and their secret flags are wrong.  But we
-	 * don't want to requrie re-migration, so we have to fix it up here. Ugh.
-	 */
-
-	s_vpn = nm_connection_get_setting_vpn (connection);
-	if (s_vpn == NULL)
-		return;
-
-	if (g_strcmp0 (nm_setting_vpn_get_service_type (s_vpn), NM_DBUS_SERVICE_OPENCONNECT) == 0) {
-		/* These are different for every login session, and should not be stored */
-		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_GATEWAY, flags, NULL);
-		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_COOKIE, flags, NULL);
-		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_GWCERT, flags, NULL);
-
-		/* These are purely internal data for the auth-dialog, and should be stored */
-		flags = 0;
-		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_XMLCONFIG, flags, NULL);
-		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_LASTHOST, flags, NULL);
-		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_AUTOCONNECT, flags, NULL);
-		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_CERTSIGS, flags, NULL);
-	}
-}
+/*****************************************************************************/
 
 static void
 claim_connection (NMSettings *self, NMSettingsConnection *sett_conn)
@@ -981,6 +529,50 @@ claim_connection (NMSettings *self, NMSettingsConnection *sett_conn)
 
 	nm_settings_connection_added (sett_conn);
 }
+
+/*****************************************************************************/
+
+#define NM_DBUS_SERVICE_OPENCONNECT    "org.freedesktop.NetworkManager.openconnect"
+#define NM_OPENCONNECT_KEY_GATEWAY "gateway"
+#define NM_OPENCONNECT_KEY_COOKIE "cookie"
+#define NM_OPENCONNECT_KEY_GWCERT "gwcert"
+#define NM_OPENCONNECT_KEY_XMLCONFIG "xmlconfig"
+#define NM_OPENCONNECT_KEY_LASTHOST "lasthost"
+#define NM_OPENCONNECT_KEY_AUTOCONNECT "autoconnect"
+#define NM_OPENCONNECT_KEY_CERTSIGS "certsigs"
+
+static void
+openconnect_migrate_hack (NMConnection *connection)
+{
+	NMSettingVpn *s_vpn;
+	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NOT_SAVED;
+
+	/* Huge hack.  There were some openconnect changes that needed to happen
+	 * pretty late, too late to get into distros.  Migration has already
+	 * happened for many people, and their secret flags are wrong.  But we
+	 * don't want to requrie re-migration, so we have to fix it up here. Ugh.
+	 */
+
+	s_vpn = nm_connection_get_setting_vpn (connection);
+	if (s_vpn == NULL)
+		return;
+
+	if (g_strcmp0 (nm_setting_vpn_get_service_type (s_vpn), NM_DBUS_SERVICE_OPENCONNECT) == 0) {
+		/* These are different for every login session, and should not be stored */
+		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_GATEWAY, flags, NULL);
+		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_COOKIE, flags, NULL);
+		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_GWCERT, flags, NULL);
+
+		/* These are purely internal data for the auth-dialog, and should be stored */
+		flags = 0;
+		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_XMLCONFIG, flags, NULL);
+		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_LASTHOST, flags, NULL);
+		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_AUTOCONNECT, flags, NULL);
+		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_CERTSIGS, flags, NULL);
+	}
+}
+
+/*****************************************************************************/
 
 static gboolean
 secrets_filter_cb (NMSetting *setting,
@@ -1473,6 +1065,443 @@ impl_settings_reload_connections (NMDBusObject *obj,
 /*****************************************************************************/
 
 static void
+_clear_connections_cached_list (NMSettingsPrivate *priv)
+{
+	if (!priv->connections_cached_list)
+		return;
+
+	nm_assert (priv->connections_len == NM_PTRARRAY_LEN (priv->connections_cached_list));
+
+#if NM_MORE_ASSERTS
+	/* set the pointer to a bogus value. This makes it more apparent
+	 * if somebody has a reference to the cached list and still uses
+	 * it. That is a bug, this code just tries to make it blow up
+	 * more eagerly. */
+	memset (priv->connections_cached_list,
+	        0xdeaddead,
+	        sizeof (NMSettingsConnection *) * (priv->connections_len + 1));
+#endif
+
+	nm_clear_g_free (&priv->connections_cached_list);
+}
+
+static void
+impl_settings_list_connections (NMDBusObject *obj,
+                                const NMDBusInterfaceInfoExtended *interface_info,
+                                const NMDBusMethodInfoExtended *method_info,
+                                GDBusConnection *dbus_connection,
+                                const char *sender,
+                                GDBusMethodInvocation *invocation,
+                                GVariant *parameters)
+{
+	NMSettings *self = NM_SETTINGS (obj);
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	gs_free const char **strv = NULL;
+
+	strv = nm_dbus_utils_get_paths_for_clist (&priv->connections_lst_head,
+	                                          priv->connections_len,
+	                                          G_STRUCT_OFFSET (NMSettingsConnection, _connections_lst),
+	                                          TRUE);
+	g_dbus_method_invocation_return_value (invocation,
+	                                       g_variant_new ("(^ao)", strv));
+}
+
+NMSettingsConnection *
+nm_settings_get_connection_by_uuid (NMSettings *self, const char *uuid)
+{
+	NMSettingsPrivate *priv;
+	NMSettingsConnection *candidate;
+
+	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
+	g_return_val_if_fail (uuid != NULL, NULL);
+
+	priv = NM_SETTINGS_GET_PRIVATE (self);
+
+	c_list_for_each_entry (candidate, &priv->connections_lst_head, _connections_lst) {
+		if (nm_streq (uuid, nm_settings_connection_get_uuid (candidate)))
+			return candidate;
+	}
+
+	return NULL;
+}
+
+static void
+impl_settings_get_connection_by_uuid (NMDBusObject *obj,
+                                      const NMDBusInterfaceInfoExtended *interface_info,
+                                      const NMDBusMethodInfoExtended *method_info,
+                                      GDBusConnection *dbus_connection,
+                                      const char *sender,
+                                      GDBusMethodInvocation *invocation,
+                                      GVariant *parameters)
+{
+	NMSettings *self = NM_SETTINGS (obj);
+	NMSettingsConnection *sett_conn;
+	gs_unref_object NMAuthSubject *subject = NULL;
+	GError *error = NULL;
+	const char *uuid;
+
+	g_variant_get (parameters, "(&s)", &uuid);
+
+	sett_conn = nm_settings_get_connection_by_uuid (self, uuid);
+	if (!sett_conn) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		                             "No connection with the UUID was found.");
+		goto error;
+	}
+
+	subject = nm_auth_subject_new_unix_process_from_context (invocation);
+	if (!subject) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                             "Unable to determine UID of request.");
+		goto error;
+	}
+
+	if (!nm_auth_is_subject_in_acl_set_error (nm_settings_connection_get_connection (sett_conn),
+	                                          subject,
+	                                          NM_SETTINGS_ERROR,
+	                                          NM_SETTINGS_ERROR_PERMISSION_DENIED,
+	                                          &error))
+		goto error;
+
+	g_dbus_method_invocation_return_value (invocation,
+	                                       g_variant_new ("(o)",
+	                                                      nm_dbus_object_get_path (NM_DBUS_OBJECT (sett_conn))));
+	return;
+
+error:
+	g_dbus_method_invocation_take_error (invocation, error);
+}
+
+/**
+ * nm_settings_get_connections:
+ * @self: the #NMSettings
+ * @out_len: (out) (allow-none): returns the number of returned
+ *   connections.
+ *
+ * Returns: (transfer none): a list of NMSettingsConnections. The list is
+ * unsorted and NULL terminated. The result is never %NULL, in case of no
+ * connections, it returns an empty list.
+ * The returned list is cached internally, only valid until the next
+ * NMSettings operation.
+ */
+NMSettingsConnection *const*
+nm_settings_get_connections (NMSettings *self, guint *out_len)
+{
+	NMSettingsPrivate *priv;
+	NMSettingsConnection **v;
+	NMSettingsConnection *con;
+	guint i;
+
+	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
+
+	priv = NM_SETTINGS_GET_PRIVATE (self);
+
+	nm_assert (priv->connections_len == c_list_length (&priv->connections_lst_head));
+
+	if (G_UNLIKELY (!priv->connections_cached_list)) {
+		v = g_new (NMSettingsConnection *, priv->connections_len + 1);
+
+		i = 0;
+		c_list_for_each_entry (con, &priv->connections_lst_head, _connections_lst) {
+			nm_assert (i < priv->connections_len);
+			v[i++] = con;
+		}
+		nm_assert (i == priv->connections_len);
+		v[i] = NULL;
+
+		priv->connections_cached_list = v;
+	}
+
+	NM_SET_OUT (out_len, priv->connections_len);
+	return priv->connections_cached_list;
+}
+
+/**
+ * nm_settings_get_connections_clone:
+ * @self: the #NMSetting
+ * @out_len: (allow-none): optional output argument
+ * @func: caller-supplied function for filtering connections
+ * @func_data: caller-supplied data passed to @func
+ * @sort_compare_func: (allow-none): optional function pointer for
+ *   sorting the returned list.
+ * @sort_data: user data for @sort_compare_func.
+ *
+ * Returns: (transfer container) (element-type NMSettingsConnection):
+ *   an NULL terminated array of #NMSettingsConnection objects that were
+ *   filtered by @func (or all connections if no filter was specified).
+ *   The order is arbitrary.
+ *   Caller is responsible for freeing the returned array with free(),
+ *   the contained values do not need to be unrefed.
+ */
+NMSettingsConnection **
+nm_settings_get_connections_clone (NMSettings *self,
+                                   guint *out_len,
+                                   NMSettingsConnectionFilterFunc func,
+                                   gpointer func_data,
+                                   GCompareDataFunc sort_compare_func,
+                                   gpointer sort_data)
+{
+	NMSettingsConnection *const*list_cached;
+	NMSettingsConnection **list;
+	guint len, i, j;
+
+	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
+
+	list_cached = nm_settings_get_connections (self, &len);
+
+#if NM_MORE_ASSERTS
+	nm_assert (list_cached);
+	for (i = 0; i < len; i++)
+		nm_assert (NM_IS_SETTINGS_CONNECTION (list_cached[i]));
+	nm_assert (!list_cached[i]);
+#endif
+
+	list = g_new (NMSettingsConnection *, ((gsize) len + 1));
+	if (func) {
+		for (i = 0, j = 0; i < len; i++) {
+			if (func (self, list_cached[i], func_data))
+				list[j++] = list_cached[i];
+		}
+		list[j] = NULL;
+		len = j;
+	} else
+		memcpy (list, list_cached, sizeof (list[0]) * ((gsize) len + 1));
+
+	if (   len > 1
+	    && sort_compare_func) {
+		g_qsort_with_data (list, len, sizeof (NMSettingsConnection *),
+		                   sort_compare_func, sort_data);
+	}
+	NM_SET_OUT (out_len, len);
+	return list;
+}
+
+NMSettingsConnection *
+nm_settings_get_connection_by_path (NMSettings *self, const char *path)
+{
+	NMSettingsPrivate *priv;
+	NMSettingsConnection *connection;
+
+	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
+	g_return_val_if_fail (path, NULL);
+
+	priv = NM_SETTINGS_GET_PRIVATE (self);
+
+	connection = nm_dbus_manager_lookup_object (nm_dbus_object_get_manager (NM_DBUS_OBJECT (self)),
+	                                            path);
+	if (   !connection
+	    || !NM_IS_SETTINGS_CONNECTION (connection))
+		return NULL;
+
+	nm_assert (c_list_contains (&priv->connections_lst_head, &connection->_connections_lst));
+	return connection;
+}
+
+gboolean
+nm_settings_has_connection (NMSettings *self, NMSettingsConnection *connection)
+{
+	gboolean has;
+
+	g_return_val_if_fail (NM_IS_SETTINGS (self), FALSE);
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), FALSE);
+
+	has = !c_list_is_empty (&connection->_connections_lst);
+
+	nm_assert (has == nm_c_list_contains_entry (&NM_SETTINGS_GET_PRIVATE (self)->connections_lst_head,
+                                                connection,
+                                                _connections_lst));
+	nm_assert (({
+		NMSettingsConnection *candidate = NULL;
+		const char *path;
+
+		path = nm_dbus_object_get_path (NM_DBUS_OBJECT (connection));
+		if (path)
+			candidate = nm_settings_get_connection_by_path (self, path);
+
+		(has == (connection == candidate));
+	}));
+
+	return has;
+}
+
+/*****************************************************************************/
+
+static void
+add_plugin (NMSettings *self,
+            NMSettingsPlugin *plugin,
+            const char *pname,
+            const char *path)
+{
+	NMSettingsPrivate *priv;
+
+	nm_assert (NM_IS_SETTINGS (self));
+	nm_assert (NM_IS_SETTINGS_PLUGIN (plugin));
+
+	priv = NM_SETTINGS_GET_PRIVATE (self);
+
+	nm_assert (!g_slist_find (priv->plugins, plugin));
+
+	priv->plugins = g_slist_append (priv->plugins, g_object_ref (plugin));
+
+	_LOGI ("Loaded settings plugin: %s (%s%s%s)",
+	       pname,
+	       NM_PRINT_FMT_QUOTED (path, "\"", path, "\"", "internal"));
+}
+
+static gboolean
+add_plugin_load_file (NMSettings *self, const char *pname, GError **error)
+{
+	gs_free char *full_name = NULL;
+	gs_free char *path = NULL;
+	gs_unref_object NMSettingsPlugin *plugin = NULL;
+	GModule *module;
+	NMSettingsPluginFactoryFunc factory_func;
+	struct stat st;
+	int errsv;
+
+	full_name = g_strdup_printf ("nm-settings-plugin-%s", pname);
+	path = g_module_build_path (NMPLUGINDIR, full_name);
+
+	if (stat (path, &st) != 0) {
+		errsv = errno;
+		_LOGW ("could not load plugin '%s' from file '%s': %s", pname, path, nm_strerror_native (errsv));
+		return TRUE;
+	}
+	if (!S_ISREG (st.st_mode)) {
+		_LOGW ("could not load plugin '%s' from file '%s': not a file", pname, path);
+		return TRUE;
+	}
+	if (st.st_uid != 0) {
+		_LOGW ("could not load plugin '%s' from file '%s': file must be owned by root", pname, path);
+		return TRUE;
+	}
+	if (st.st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
+		_LOGW ("could not load plugin '%s' from file '%s': invalid file permissions", pname, path);
+		return TRUE;
+	}
+
+	module = g_module_open (path, G_MODULE_BIND_LOCAL);
+	if (!module) {
+		_LOGW ("could not load plugin '%s' from file '%s': %s",
+		     pname, path, g_module_error ());
+		return TRUE;
+	}
+
+	/* errors after this point are fatal, because we loaded the shared library already. */
+
+	if (!g_module_symbol (module, "nm_settings_plugin_factory", (gpointer) (&factory_func))) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             "Could not find plugin '%s' factory function.",
+		             pname);
+		g_module_close (module);
+		return FALSE;
+	}
+
+	/* after accessing the plugin we cannot unload it anymore, because the glib
+	 * types cannot be properly unregistered. */
+	g_module_make_resident (module);
+
+	plugin = (*factory_func) ();
+	if (!NM_IS_SETTINGS_PLUGIN (plugin)) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             "plugin '%s' returned invalid settings plugin",
+		             pname);
+		return FALSE;
+	}
+
+	add_plugin (self, NM_SETTINGS_PLUGIN (plugin), pname, path);
+	return TRUE;
+}
+
+static void
+add_plugin_keyfile (NMSettings *self)
+{
+	gs_unref_object NMSKeyfilePlugin *keyfile_plugin = NULL;
+
+	keyfile_plugin = nms_keyfile_plugin_new ();
+	add_plugin (self, NM_SETTINGS_PLUGIN (keyfile_plugin), "keyfile", NULL);
+}
+
+static gboolean
+load_plugins (NMSettings *self, const char **plugins, GError **error)
+{
+	const char **iter;
+	gboolean keyfile_added = FALSE;
+	gboolean success = TRUE;
+	gboolean add_ibft = FALSE;
+	gboolean has_no_ibft;
+	gssize idx_no_ibft, idx_ibft;
+
+	idx_ibft    = nm_utils_strv_find_first ((char **) plugins, -1, "ibft");
+	idx_no_ibft = nm_utils_strv_find_first ((char **) plugins, -1, "no-ibft");
+	has_no_ibft = idx_no_ibft >= 0 && idx_no_ibft > idx_ibft;
+#if WITH_SETTINGS_PLUGIN_IBFT
+	add_ibft = idx_no_ibft < 0 && idx_ibft < 0;
+#endif
+
+	for (iter = plugins; iter && *iter; iter++) {
+		const char *pname = *iter;
+
+		if (!*pname || strchr (pname, '/')) {
+			_LOGW ("ignore invalid plugin \"%s\"", pname);
+			continue;
+		}
+
+		if (NM_IN_STRSET (pname, "ifcfg-suse", "ifnet")) {
+			_LOGW ("skipping deprecated plugin %s", pname);
+			continue;
+		}
+
+		if (nm_streq (pname, "no-ibft"))
+			continue;
+		if (has_no_ibft && nm_streq (pname, "ibft"))
+			continue;
+
+		/* keyfile plugin is built-in now */
+		if (nm_streq (pname, "keyfile")) {
+			if (!keyfile_added) {
+				add_plugin_keyfile (self);
+				keyfile_added = TRUE;
+			}
+			continue;
+		}
+
+		if (nm_utils_strv_find_first ((char **) plugins,
+		                              iter - plugins,
+		                              pname) >= 0) {
+			/* the plugin is already mentioned in the list previously.
+			 * Don't load a duplicate. */
+			continue;
+		}
+
+		success = add_plugin_load_file (self, pname, error);
+		if (!success)
+			break;
+
+		if (add_ibft && nm_streq (pname, "ifcfg-rh")) {
+			/* The plugin ibft is not explicitly mentioned but we just enabled "ifcfg-rh".
+			 * Enable "ibft" by default after "ifcfg-rh". */
+			pname = "ibft";
+			add_ibft = FALSE;
+
+			success = add_plugin_load_file (self, "ibft", error);
+			if (!success)
+				break;
+		}
+	}
+
+	/* If keyfile plugin was not among configured plugins, add it as the last one */
+	if (!keyfile_added && success)
+		add_plugin_keyfile (self);
+
+	return success;
+}
+
+/*****************************************************************************/
+
+static void
 pk_hostname_cb (NMAuthChain *chain,
                 GDBusMethodInvocation *context,
                 gpointer user_data)
@@ -1547,6 +1576,16 @@ impl_settings_save_hostname (NMDBusObject *obj,
 	priv->auths = g_slist_append (priv->auths, chain);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, TRUE);
 	nm_auth_chain_set_data (chain, "hostname", g_strdup (hostname), g_free);
+}
+
+/*****************************************************************************/
+
+static void
+_hostname_changed_cb (NMHostnameManager *hostname_manager,
+                      GParamSpec *pspec,
+                      gpointer user_data)
+{
+	_notify (user_data, PROP_HOSTNAME);
 }
 
 /*****************************************************************************/
@@ -1855,31 +1894,6 @@ nm_settings_kf_db_write (NMSettings *self)
 		nm_key_file_db_to_file (priv->kf_db_timestamps, TRUE);
 	if (priv->kf_db_seen_bssids)
 		nm_key_file_db_to_file (priv->kf_db_seen_bssids, TRUE);
-}
-
-/*****************************************************************************/
-
-const char *
-nm_settings_get_startup_complete_blocked_reason (NMSettings *self)
-{
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	const char *uuid = NULL;
-
-	if (priv->startup_complete)
-		return NULL;
-	if (priv->startup_complete_blocked_by)
-		uuid = nm_settings_connection_get_uuid (priv->startup_complete_blocked_by);
-	return uuid ?: "unknown";
-}
-
-/*****************************************************************************/
-
-static void
-_hostname_changed_cb (NMHostnameManager *hostname_manager,
-                      GParamSpec *pspec,
-                      gpointer user_data)
-{
-	_notify (user_data, PROP_HOSTNAME);
 }
 
 /*****************************************************************************/
