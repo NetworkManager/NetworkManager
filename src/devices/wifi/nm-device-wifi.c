@@ -2564,6 +2564,15 @@ supplicant_iface_notify_current_bss (NMSupplicantInterface *iface,
 		       new_bssid ?: "(none)",
 		       (new_ssid_s = _nm_utils_ssid_to_string (new_ssid)));
 
+		if (new_bssid) {
+			/* The new AP could be in a different layer 3 network
+			 * and so the old DHCP lease could be no longer valid.
+			 * Also, some APs (e.g. Cisco) can be configured to drop
+			 * all traffic until DHCP completes. To support such
+			 * cases, renew the lease when roaming to a new AP. */
+			nm_device_update_dynamic_ip_setup (NM_DEVICE (self));
+		}
+
 		set_current_ap (self, new_ap, TRUE);
 	}
 }
