@@ -83,6 +83,13 @@ typedef struct {
 	                           const char *last_ip4_address,
 	                           GError **error);
 
+	gboolean (*ip4_accept)    (NMDhcpClient *self,
+			           GError **error);
+
+	gboolean (*ip4_decline)   (NMDhcpClient *self,
+			           const char *error_message,
+			           GError **error);
+
 	gboolean (*ip6_start)     (NMDhcpClient *self,
 	                           const char *anycast_addr,
 	                           const struct in6_addr *ll_addr,
@@ -146,6 +153,13 @@ gboolean nm_dhcp_client_start_ip4 (NMDhcpClient *self,
                                    const char *dhcp_anycast_addr,
                                    const char *last_ip4_address,
                                    GError **error);
+
+gboolean nm_dhcp_client_accept_ip4 (NMDhcpClient *self,
+		                    GError **error);
+
+gboolean nm_dhcp_client_decline_ip4 (NMDhcpClient *self,
+		                     const char *error_message,
+		                     GError **error);
 
 gboolean nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                                    GBytes *client_id,
