@@ -1619,16 +1619,16 @@ team_config_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key
 	gs_free_error GError *error = NULL;
 
 	conf = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key, NULL);
+
+	g_object_set (G_OBJECT (setting), key, conf, NULL);
+
 	if (   conf
-	    && conf[0]
-	    && !nm_utils_is_json_object (conf, &error)) {
+	    && !nm_setting_verify (setting, NULL, &error)) {
 		handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("ignoring invalid team configuration: %s"),
 		             error->message);
-		g_clear_pointer (&conf, g_free);
+		g_object_set (G_OBJECT (setting), key, NULL, NULL);
 	}
-
-	g_object_set (G_OBJECT (setting), key, conf, NULL);
 }
 
 static void
