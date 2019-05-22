@@ -1122,6 +1122,212 @@ fail:
 
 /*****************************************************************************/
 
+/**
+ * _nm_utils_team_link_watchers_to_variant:
+ * @link_watchers: (element-type NMTeamLinkWatcher): array of #NMTeamLinkWatcher
+ *
+ * Utility function to convert a #GPtrArray of #NMTeamLinkWatcher objects
+ * representing link watcher configuration for team devices into a #GVariant
+ * of type 'aa{sv}' representing an array of link watchers.
+ *
+ * Returns: (transfer none): a new floating #GVariant representing link watchers.
+ **/
+GVariant *
+_nm_utils_team_link_watchers_to_variant (GPtrArray *link_watchers)
+{
+	GVariantBuilder builder;
+	int i;
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
+
+	if (!link_watchers)
+		goto end;
+
+	for (i = 0; i < link_watchers->len; i++) {
+		NMTeamLinkWatcher *watcher = link_watchers->pdata[i];
+		GVariantBuilder watcher_builder;
+		const char *name;
+		int int_val;
+		NMTeamLinkWatcherArpPingFlags flags;
+
+		g_variant_builder_init (&watcher_builder, G_VARIANT_TYPE ("a{sv}"));
+
+		name = nm_team_link_watcher_get_name (watcher);
+		g_variant_builder_add (&watcher_builder, "{sv}",
+		                       "name",
+		                       g_variant_new_string (name));
+
+		if (nm_streq (name, NM_TEAM_LINK_WATCHER_ETHTOOL)) {
+			int_val = nm_team_link_watcher_get_delay_up (watcher);
+			if (int_val) {
+				g_variant_builder_add (&watcher_builder, "{sv}",
+				                       "delay-up",
+				                       g_variant_new_int32 (int_val));
+			}
+			int_val = nm_team_link_watcher_get_delay_down (watcher);
+			if (int_val) {
+				g_variant_builder_add (&watcher_builder, "{sv}",
+				                       "delay-down",
+				                       g_variant_new_int32 (int_val));
+			}
+			g_variant_builder_add (&builder, "a{sv}", &watcher_builder);
+			continue;
+		}
+
+		/* Common properties for arp_ping and nsna_ping link watchers */
+		int_val = nm_team_link_watcher_get_init_wait (watcher);
+		if (int_val) {
+			g_variant_builder_add (&watcher_builder, "{sv}",
+			                       "init-wait",
+			                       g_variant_new_int32 (int_val));
+		}
+		int_val = nm_team_link_watcher_get_interval (watcher);
+		if (int_val) {
+			g_variant_builder_add (&watcher_builder, "{sv}",
+			                       "interval",
+			                       g_variant_new_int32 (int_val));
+		}
+		int_val = nm_team_link_watcher_get_missed_max (watcher);
+		if (int_val != 3) {
+			g_variant_builder_add (&watcher_builder, "{sv}",
+			                       "missed-max",
+			                       g_variant_new_int32 (int_val));
+		}
+		g_variant_builder_add (&watcher_builder, "{sv}",
+		                       "target-host",
+		                       g_variant_new_string (nm_team_link_watcher_get_target_host (watcher)));
+
+		if (nm_streq (name, NM_TEAM_LINK_WATCHER_NSNA_PING)) {
+			g_variant_builder_add (&builder, "a{sv}", &watcher_builder);
+			continue;
+		}
+
+		/* arp_ping watcher only */
+		int_val = nm_team_link_watcher_get_vlanid (watcher);
+		if (int_val != -1) {
+			g_variant_builder_add (&watcher_builder, "{sv}",
+			                       "vlanid",
+			                       g_variant_new_int32 (int_val));
+		}
+		g_variant_builder_add (&watcher_builder, "{sv}",
+		                       "source-host",
+		                       g_variant_new_string (nm_team_link_watcher_get_source_host (watcher)));
+		flags = nm_team_link_watcher_get_flags (watcher);
+		if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE) {
+			g_variant_builder_add (&watcher_builder, "{sv}",
+			                       "validate-active",
+			                       g_variant_new_boolean (TRUE));
+		}
+		if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE) {
+			g_variant_builder_add (&watcher_builder, "{sv}",
+			                       "validate-inactive",
+			                       g_variant_new_boolean (TRUE));
+		}
+		if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS) {
+			g_variant_builder_add (&watcher_builder, "{sv}",
+			                       "send-always",
+			                       g_variant_new_boolean (TRUE));
+		}
+		g_variant_builder_add (&builder, "a{sv}", &watcher_builder);
+	}
+end:
+	return g_variant_builder_end (&builder);
+}
+
+/**
+ * _nm_utils_team_link_watchers_from_variant:
+ * @value: a #GVariant of type 'aa{sv}'
+ *
+ * Utility function to convert a #GVariant representing a list of team link
+ * watchers int a #GPtrArray of #NMTeamLinkWatcher objects.
+ *
+ * Returns: (transfer full) (element-type NMTeamLinkWatcher): a newly allocated
+ *   #GPtrArray of #NMTeamLinkWatcher objects.
+ **/
+GPtrArray *
+_nm_utils_team_link_watchers_from_variant (GVariant *value)
+{
+	GPtrArray *link_watchers;
+	GVariantIter iter;
+	GVariant *watcher_var;
+
+	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("aa{sv}")), NULL);
+
+	link_watchers = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_team_link_watcher_unref);
+	g_variant_iter_init (&iter, value);
+
+	while (g_variant_iter_next (&iter, "@a{sv}", &watcher_var)) {
+		NMTeamLinkWatcher *watcher;
+		const char *name;
+		int val1, val2, val3 = 0, val4 = -1;
+		const char *target_host = NULL, *source_host = NULL;
+		gboolean bval;
+		NMTeamLinkWatcherArpPingFlags flags = NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_NONE;
+		GError *error = NULL;
+
+		if (!g_variant_lookup (watcher_var, "name", "&s", &name))
+			goto next;
+		if (!NM_IN_STRSET (name,
+		                   NM_TEAM_LINK_WATCHER_ETHTOOL,
+		                   NM_TEAM_LINK_WATCHER_ARP_PING,
+		                   NM_TEAM_LINK_WATCHER_NSNA_PING)) {
+			goto next;
+		}
+
+		if (nm_streq (name, NM_TEAM_LINK_WATCHER_ETHTOOL)) {
+			if (!g_variant_lookup (watcher_var, "delay-up", "i", &val1))
+				val1 = 0;
+			if (!g_variant_lookup (watcher_var, "delay-down", "i", &val2))
+				val2 = 0;
+			watcher = nm_team_link_watcher_new_ethtool (val1, val2, &error);
+		} else {
+			if (!g_variant_lookup (watcher_var, "target-host", "&s", &target_host))
+				goto next;
+			if (!g_variant_lookup (watcher_var, "init-wait", "i", &val1))
+				val1 = 0;
+			if (!g_variant_lookup (watcher_var, "interval", "i", &val2))
+				val2 = 0;
+			if (!g_variant_lookup (watcher_var, "missed-max", "i", &val3))
+				val3 = 3;
+			if (nm_streq (name, NM_TEAM_LINK_WATCHER_ARP_PING)) {
+				if (!g_variant_lookup (watcher_var, "vlanid", "i", &val4))
+					val4 = -1;
+				if (!g_variant_lookup (watcher_var, "source-host", "&s", &source_host))
+					goto next;
+				if (!g_variant_lookup (watcher_var, "validate-active", "b", &bval))
+					bval = FALSE;
+				if (bval)
+					flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE;
+				if (!g_variant_lookup (watcher_var, "validate-inactive", "b", &bval))
+					bval = FALSE;
+				if (bval)
+					flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE;
+				if (!g_variant_lookup (watcher_var, "send-always", "b", &bval))
+					bval = FALSE;
+				if (bval)
+					flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS;
+				watcher = nm_team_link_watcher_new_arp_ping2 (val1, val2, val3, val4,
+				                                              target_host, source_host,
+				                                              flags, &error);
+			} else
+				watcher = nm_team_link_watcher_new_nsna_ping (val1, val2, val3,
+				                                              target_host, &error);
+		}
+		if (!watcher) {
+			g_clear_error (&error);
+			goto next;
+		}
+
+		g_ptr_array_add (link_watchers, watcher);
+next:
+		g_variant_unref (watcher_var);
+	}
+
+	return link_watchers;
+}
+
+/*****************************************************************************/
+
 const char *
 nm_team_setting_config_get (const NMTeamSetting *self)
 {

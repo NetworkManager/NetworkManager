@@ -266,6 +266,11 @@ gboolean nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 
 /*****************************************************************************/
 
+GPtrArray *_nm_utils_team_link_watchers_from_variant (GVariant *value);
+GVariant  *_nm_utils_team_link_watchers_to_variant (GPtrArray *link_watchers);
+
+/*****************************************************************************/
+
 gboolean nm_team_setting_maybe_changed (struct _NMSetting *source,
                                         const GParamSpec *const*obj_properties,
                                         guint32 changed);
