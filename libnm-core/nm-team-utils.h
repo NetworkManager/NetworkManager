@@ -266,7 +266,9 @@ gboolean nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 
 /*****************************************************************************/
 
-GPtrArray *_nm_utils_team_link_watchers_from_variant (GVariant *value);
+GPtrArray *_nm_utils_team_link_watchers_from_variant (GVariant *value,
+                                                      gboolean strict_parsing,
+                                                      GError **error);
 GVariant  *_nm_utils_team_link_watchers_to_variant (GPtrArray *link_watchers);
 
 /*****************************************************************************/

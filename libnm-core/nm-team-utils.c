@@ -1211,13 +1211,13 @@ _variants_list_link_watcher_unref_auto (GVariant *(*p_variants)[])
 
 static NMTeamLinkWatcher *
 _link_watcher_from_variant (GVariant *watcher_var,
-                            gboolean *out_unrecognized_content)
+                            gboolean strict_parsing,
+                            GError **error)
 {
 	nm_auto (_variants_list_link_watcher_unref_auto) GVariant *variants[G_N_ELEMENTS (link_watcher_attr_datas)] = { NULL, };
 	const char *v_key;
 	GVariant *v_val;
 	const char *v_name;
-	NMTeamLinkWatcher *result = NULL;
 	GVariantIter iter;
 
 	g_return_val_if_fail (g_variant_is_of_type (watcher_var, G_VARIANT_TYPE ("a{sv}")), NULL);
@@ -1236,7 +1236,12 @@ _link_watcher_from_variant (GVariant *watcher_var,
 			}
 		}
 		if (!attr_data) {
-			*out_unrecognized_content = TRUE;
+			if (strict_parsing) {
+				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("invalid D-Bus property \"%s\""),
+				             v_key);
+				return NULL;
+			}
 			continue;
 		}
 
@@ -1246,51 +1251,77 @@ _link_watcher_from_variant (GVariant *watcher_var,
 			variant_type = nm_value_type_get_variant_type (attr_data->value_type);
 
 		if (!g_variant_is_of_type (v_val, variant_type)) {
-			*out_unrecognized_content = TRUE;
+			if (strict_parsing) {
+				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("invalid D-Bus property \"%s\""),
+				             v_key);
+				return NULL;
+			}
 			continue;
 		}
 
 		if (variants[attr_data->link_watcher_attr]) {
-			*out_unrecognized_content = TRUE;
+			if (strict_parsing) {
+				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("duplicate D-Bus property \"%s\""),
+				             v_key);
+				return NULL;
+			}
 			g_variant_unref (variants[attr_data->link_watcher_attr]);
 		}
 		variants[attr_data->link_watcher_attr] = g_steal_pointer (&v_val_free);
 	}
 
-#define _VARIANTS_HAVE_UNEXPECTED_ATTRIBUTES(_variants, ...) \
+#define _VARIANTS_HAVE_UNEXPECTED_ATTRIBUTES(_type, _variants, _error, ...) \
 	({ \
 		int _i; \
+		gboolean _has_error = FALSE; \
 		\
 		for (_i = 0; _i < (int) G_N_ELEMENTS ((_variants)); _i++) { \
 			if (   (_variants)[_i] \
-			    && !NM_IN_SET ((LinkWatcherAttribute) _i, __VA_ARGS__)) \
+			    && !NM_IN_SET ((LinkWatcherAttribute) _i, __VA_ARGS__)) { \
+				_has_error = TRUE; \
+				g_set_error (_error, \
+				             NM_CONNECTION_ERROR, \
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY, \
+				             _("invalid D-Bus property \"%s\" for \"%s\""), \
+				             link_watcher_attr_datas[_i].dbus_name, \
+				             _type); \
 				break; \
+			} \
 		} \
 		\
-		(_i == (int) G_N_ELEMENTS ((_variants))); \
+		_has_error; \
 	})
 
 	v_name = _LINK_WATCHER_ATTR_VARGET_STRING (variants, LINK_WATCHER_ATTRIBUTE_NAME);
 
 	if (nm_streq0 (v_name, NM_TEAM_LINK_WATCHER_ETHTOOL)) {
-		if (_VARIANTS_HAVE_UNEXPECTED_ATTRIBUTES (variants, _EXPECTED_LINK_WATCHER_ATTRIBUTES_ETHTOOL))
-			*out_unrecognized_content = TRUE;
-		result = nm_team_link_watcher_new_ethtool (_LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_DELAY_UP),
-		                                           _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_DELAY_DOWN),
-		                                           NULL);
-	} else if (nm_streq0 (v_name, NM_TEAM_LINK_WATCHER_NSNA_PING)) {
-		if (_VARIANTS_HAVE_UNEXPECTED_ATTRIBUTES (variants, _EXPECTED_LINK_WATCHER_ATTRIBUTES_NSNA_PING))
-			*out_unrecognized_content = TRUE;
-		result = nm_team_link_watcher_new_nsna_ping (_LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_INIT_WAIT),
-		                                             _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_INTERVAL),
-		                                             _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_MISSED_MAX),
-		                                             _LINK_WATCHER_ATTR_VARGET_STRING (variants, LINK_WATCHER_ATTRIBUTE_TARGET_HOST),
-		                                             NULL);
-	} else if (nm_streq0 (v_name, NM_TEAM_LINK_WATCHER_ARP_PING)) {
+		if (   strict_parsing
+		    && _VARIANTS_HAVE_UNEXPECTED_ATTRIBUTES (v_name, variants, error, _EXPECTED_LINK_WATCHER_ATTRIBUTES_ETHTOOL))
+			return NULL;
+		return nm_team_link_watcher_new_ethtool (_LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_DELAY_UP),
+		                                         _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_DELAY_DOWN),
+		                                         strict_parsing ? error : NULL);
+	}
+
+	if (nm_streq0 (v_name, NM_TEAM_LINK_WATCHER_NSNA_PING)) {
+		if (   strict_parsing
+		    && _VARIANTS_HAVE_UNEXPECTED_ATTRIBUTES (v_name, variants, error, _EXPECTED_LINK_WATCHER_ATTRIBUTES_NSNA_PING))
+			return NULL;
+		return nm_team_link_watcher_new_nsna_ping (_LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_INIT_WAIT),
+		                                           _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_INTERVAL),
+		                                           _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_MISSED_MAX),
+		                                           _LINK_WATCHER_ATTR_VARGET_STRING (variants, LINK_WATCHER_ATTRIBUTE_TARGET_HOST),
+		                                           strict_parsing ? error : NULL);
+	}
+
+	if (nm_streq0 (v_name, NM_TEAM_LINK_WATCHER_ARP_PING)) {
 		NMTeamLinkWatcherArpPingFlags v_flags = NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_NONE;
 
-		if (_VARIANTS_HAVE_UNEXPECTED_ATTRIBUTES (variants, _EXPECTED_LINK_WATCHER_ATTRIBUTES_ARP_PING))
-			*out_unrecognized_content = TRUE;
+		if (   strict_parsing
+		    && _VARIANTS_HAVE_UNEXPECTED_ATTRIBUTES (v_name, variants, error, _EXPECTED_LINK_WATCHER_ATTRIBUTES_ARP_PING))
+			return NULL;
 
 		if (_LINK_WATCHER_ATTR_VARGET_BOOL (variants, LINK_WATCHER_ATTRIBUTE_VALIDATE_ACTIVE))
 			v_flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE;
@@ -1299,20 +1330,22 @@ _link_watcher_from_variant (GVariant *watcher_var,
 		if (_LINK_WATCHER_ATTR_VARGET_BOOL (variants, LINK_WATCHER_ATTRIBUTE_SEND_ALWAYS))
 			v_flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS;
 
-		result = nm_team_link_watcher_new_arp_ping2 (_LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_INIT_WAIT),
-		                                             _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_INTERVAL),
-		                                             _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_MISSED_MAX),
-		                                             _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_VLANID),
-		                                             _LINK_WATCHER_ATTR_VARGET_STRING (variants, LINK_WATCHER_ATTRIBUTE_TARGET_HOST),
-		                                             _LINK_WATCHER_ATTR_VARGET_STRING (variants, LINK_WATCHER_ATTRIBUTE_SOURCE_HOST),
-		                                             v_flags,
-		                                             NULL);
+		return nm_team_link_watcher_new_arp_ping2 (_LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_INIT_WAIT),
+		                                           _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_INTERVAL),
+		                                           _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_MISSED_MAX),
+		                                           _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_VLANID),
+		                                           _LINK_WATCHER_ATTR_VARGET_STRING (variants, LINK_WATCHER_ATTRIBUTE_TARGET_HOST),
+		                                           _LINK_WATCHER_ATTR_VARGET_STRING (variants, LINK_WATCHER_ATTRIBUTE_SOURCE_HOST),
+		                                           v_flags,
+		                                           strict_parsing ? error : NULL);
 	}
 
-	if (!result)
-		*out_unrecognized_content = TRUE;
-	return result;
-
+	if (strict_parsing) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("unknown link-watcher name \"%s\""),
+		             v_name);
+	}
+	return NULL;
 }
 
 /*****************************************************************************/
@@ -1347,20 +1380,27 @@ _nm_utils_team_link_watchers_to_variant (GPtrArray *link_watchers)
 /**
  * _nm_utils_team_link_watchers_from_variant:
  * @value: a #GVariant of type 'aa{sv}'
+ * @strict_parsing: whether to parse strictly or ignore everything invalid.
+ * @error: error reason.
  *
  * Utility function to convert a #GVariant representing a list of team link
  * watchers int a #GPtrArray of #NMTeamLinkWatcher objects.
  *
  * Returns: (transfer full) (element-type NMTeamLinkWatcher): a newly allocated
  *   #GPtrArray of #NMTeamLinkWatcher objects.
+ *
+ * Note that if you provide an @error, then the function can only fail (and return %NULL)
+ * or succeed (and not return %NULL). If you don't provide an @error, then the function
+ * never returns %NULL.
  **/
 GPtrArray *
-_nm_utils_team_link_watchers_from_variant (GVariant *value)
+_nm_utils_team_link_watchers_from_variant (GVariant *value,
+                                           gboolean strict_parsing,
+                                           GError **error)
 {
-	GPtrArray *link_watchers;
+	gs_unref_ptrarray GPtrArray *link_watchers = NULL;
 	GVariantIter iter;
 	GVariant *watcher_var;
-	gboolean unrecognized_content = FALSE;
 
 	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("aa{sv}")), NULL);
 
@@ -1371,12 +1411,14 @@ _nm_utils_team_link_watchers_from_variant (GVariant *value)
 		_nm_unused gs_unref_variant GVariant *watcher_var_free = watcher_var;
 		NMTeamLinkWatcher *watcher;
 
-		watcher = _link_watcher_from_variant (watcher_var, &unrecognized_content);
+		watcher = _link_watcher_from_variant (watcher_var, strict_parsing, error);
+		if (error && *error)
+			return NULL;
 		if (watcher)
 			g_ptr_array_add (link_watchers, watcher);
 	}
 
-	return link_watchers;
+	return g_steal_pointer (&link_watchers);
 }
 
 /*****************************************************************************/
@@ -2109,6 +2151,24 @@ nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 		variants[attr_data->team_attr] = g_steal_pointer (&v_val_free);
 	}
 
+	if (variants[NM_TEAM_ATTRIBUTE_LINK_WATCHERS]) {
+		gs_free_error GError *local = NULL;
+
+		v_link_watchers = _nm_utils_team_link_watchers_from_variant (variants[NM_TEAM_ATTRIBUTE_LINK_WATCHERS],
+		                                                             NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT),
+		                                                             &local);
+		if (local) {
+			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("invalid link-watchers: %s"),
+			             local->message);
+			_team_setting_prefix_error (self,
+			                            error,
+			                            NM_SETTING_TEAM_LINK_WATCHERS,
+			                            NM_SETTING_TEAM_PORT_LINK_WATCHERS);
+			return FALSE;
+		}
+	}
+
 	*out_changed |= nm_team_setting_config_set (self,
 	                                              variants[NM_TEAM_ATTRIBUTE_CONFIG]
 	                                            ? g_variant_get_string (variants[NM_TEAM_ATTRIBUTE_CONFIG], NULL)
@@ -2121,14 +2181,6 @@ nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 		 * are silently ignored. */
 	} else {
 		guint32 extra_changed = 0u;
-
-		if (variants[NM_TEAM_ATTRIBUTE_LINK_WATCHERS]) {
-			/* FIXME: handle errors for NM_SETTING_PARSE_FLAGS_STRICT.
-			 *
-			 * But then also move the check before starting to modify the setting so we fail
-			 * early.  */
-			v_link_watchers = _nm_utils_team_link_watchers_from_variant (variants[NM_TEAM_ATTRIBUTE_LINK_WATCHERS]);
-		}
 
 		for (attr_data = &team_attr_datas[TEAM_ATTR_IDX_CONFIG + 1]; attr_data < &team_attr_datas[G_N_ELEMENTS (team_attr_datas)]; attr_data++) {
 			NMValueTypUnion val;

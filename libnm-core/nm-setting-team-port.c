@@ -299,7 +299,7 @@ static void
 team_link_watchers_from_dbus (GVariant   *dbus_value,
                               GValue     *prop_value)
 {
-	g_value_take_boxed (prop_value, _nm_utils_team_link_watchers_from_variant (dbus_value));
+	g_value_take_boxed (prop_value, _nm_utils_team_link_watchers_from_variant (dbus_value, FALSE, NULL));
 }
 
 static gboolean
