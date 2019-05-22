@@ -45,6 +45,15 @@
 
 /*****************************************************************************/
 
+/* assert that the define is just a plain integer (boolean). */
+
+G_STATIC_ASSERT (   (WITH_JSON_VALIDATION) == 1
+                 || (WITH_JSON_VALIDATION) == 0);
+
+_nm_unused static const int _with_json_validation = WITH_JSON_VALIDATION;
+
+/*****************************************************************************/
+
 /* converts @dict to a connection. In this case, @dict must be good, without warnings, so that
  * NM_SETTING_PARSE_FLAGS_STRICT and NM_SETTING_PARSE_FLAGS_BEST_EFFORT yield the exact same results. */
 static NMConnection *
@@ -966,7 +975,6 @@ test_dcb_bandwidth_sums (void)
 
 /*****************************************************************************/
 
-#if WITH_JSON_VALIDATION
 static void
 _test_team_config_sync (const char *team_config,
                         int notify_peer_count,
@@ -988,6 +996,11 @@ _test_team_config_sync (const char *team_config,
 	gs_unref_object NMSettingTeam *s_team = NULL;
 	guint i, j;
 	gboolean found;
+
+	if (!WITH_JSON_VALIDATION) {
+		g_test_skip ("team test requires JSON validation");
+		return;
+	}
 
 	s_team = (NMSettingTeam *) nm_setting_team_new ();
 	g_assert (s_team);
@@ -1250,6 +1263,11 @@ _test_team_port_config_sync (const char *team_port_config,
 	guint i, j;
 	gboolean found;
 
+	if (!WITH_JSON_VALIDATION) {
+		g_test_skip ("team test requires JSON validation");
+		return;
+	}
+
 	s_team_port = (NMSettingTeamPort *) nm_setting_team_port_new ();
 	g_assert (s_team_port);
 
@@ -1354,7 +1372,6 @@ test_team_port_full_config (void)
 	                             "\"send_always\": true}]}",
 	                             10, 20, true, 30, 40, NULL);
 }
-#endif
 
 /*****************************************************************************/
 
@@ -3251,7 +3268,6 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/libnm/settings/bridge/vlans", test_bridge_vlans);
 
-#if WITH_JSON_VALIDATION
 	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_roundrobin",
 	                 test_runner_roundrobin_sync_from_config);
 	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_broadcast",
@@ -3280,7 +3296,6 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/settings/team-port/sync_from_config_lacp_prio", test_team_port_lacp_prio);
 	g_test_add_func ("/libnm/settings/team-port/sync_from_config_lacp_key", test_team_port_lacp_key);
 	g_test_add_func ("/libnm/settings/team-port/sycn_from_config_full", test_team_port_full_config);
-#endif
 
 	g_test_add_data_func ("/libnm/settings/roundtrip-conversion/general/0",   GINT_TO_POINTER (0), test_roundtrip_conversion);
 	g_test_add_data_func ("/libnm/settings/roundtrip-conversion/wireguard/1", GINT_TO_POINTER (1), test_roundtrip_conversion);
