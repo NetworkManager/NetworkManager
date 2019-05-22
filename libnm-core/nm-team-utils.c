@@ -120,6 +120,25 @@ typedef enum {
 	LINK_WATCHER_ATTRIBUTE_SEND_ALWAYS,
 } LinkWatcherAttribute;
 
+#define _EXPECTED_LINK_WATCHER_ATTRIBUTES_ETHTOOL    LINK_WATCHER_ATTRIBUTE_NAME, \
+                                                     LINK_WATCHER_ATTRIBUTE_DELAY_UP, \
+                                                     LINK_WATCHER_ATTRIBUTE_DELAY_DOWN
+#define _EXPECTED_LINK_WATCHER_ATTRIBUTES_NSNA_PING  LINK_WATCHER_ATTRIBUTE_NAME, \
+                                                     LINK_WATCHER_ATTRIBUTE_INIT_WAIT, \
+                                                     LINK_WATCHER_ATTRIBUTE_INTERVAL, \
+                                                     LINK_WATCHER_ATTRIBUTE_MISSED_MAX, \
+                                                     LINK_WATCHER_ATTRIBUTE_TARGET_HOST
+#define _EXPECTED_LINK_WATCHER_ATTRIBUTES_ARP_PING   LINK_WATCHER_ATTRIBUTE_NAME, \
+                                                     LINK_WATCHER_ATTRIBUTE_INIT_WAIT, \
+                                                     LINK_WATCHER_ATTRIBUTE_INTERVAL, \
+                                                     LINK_WATCHER_ATTRIBUTE_MISSED_MAX, \
+                                                     LINK_WATCHER_ATTRIBUTE_VLANID, \
+                                                     LINK_WATCHER_ATTRIBUTE_TARGET_HOST, \
+                                                     LINK_WATCHER_ATTRIBUTE_SOURCE_HOST, \
+                                                     LINK_WATCHER_ATTRIBUTE_VALIDATE_ACTIVE, \
+                                                     LINK_WATCHER_ATTRIBUTE_VALIDATE_INACTIVE, \
+                                                     LINK_WATCHER_ATTRIBUTE_SEND_ALWAYS
+
 typedef struct {
 	const char *js_key;
 	const char *dbus_name;
@@ -1064,8 +1083,7 @@ _link_watcher_from_json (const json_t *root_js_obj,
 		\
 		for (_i = 0; _i < (int) G_N_ELEMENTS ((_parse_results)); _i++) { \
 			if (   (_parse_results)[_i].has \
-			    && !NM_IN_SET ((LinkWatcherAttribute) _i, LINK_WATCHER_ATTRIBUTE_NAME, \
-			                                              __VA_ARGS__)) \
+			    && !NM_IN_SET ((LinkWatcherAttribute) _i, __VA_ARGS__)) \
 				break; \
 		} \
 		\
@@ -1075,19 +1093,13 @@ _link_watcher_from_json (const json_t *root_js_obj,
 	v_name = _LINK_WATCHER_ATTR_GET_STRING (args, LINK_WATCHER_ATTRIBUTE_NAME);
 
 	if (nm_streq0 (v_name, NM_TEAM_LINK_WATCHER_ETHTOOL)) {
-		if (_PARSE_RESULT_HAS_UNEXPECTED_ATTRIBUTES (args,
-		                                             LINK_WATCHER_ATTRIBUTE_DELAY_UP,
-		                                             LINK_WATCHER_ATTRIBUTE_DELAY_DOWN))
+		if (_PARSE_RESULT_HAS_UNEXPECTED_ATTRIBUTES (args, _EXPECTED_LINK_WATCHER_ATTRIBUTES_ETHTOOL))
 			*out_unrecognized_content = TRUE;
 		result = nm_team_link_watcher_new_ethtool (_LINK_WATCHER_ATTR_GET_INT (args, LINK_WATCHER_ATTRIBUTE_DELAY_UP),
 		                                           _LINK_WATCHER_ATTR_GET_INT (args, LINK_WATCHER_ATTRIBUTE_DELAY_DOWN),
 		                                           NULL);
 	} else if (nm_streq0 (v_name, NM_TEAM_LINK_WATCHER_NSNA_PING)) {
-		if (_PARSE_RESULT_HAS_UNEXPECTED_ATTRIBUTES (args,
-		                                             LINK_WATCHER_ATTRIBUTE_INIT_WAIT,
-		                                             LINK_WATCHER_ATTRIBUTE_INTERVAL,
-		                                             LINK_WATCHER_ATTRIBUTE_MISSED_MAX,
-		                                             LINK_WATCHER_ATTRIBUTE_TARGET_HOST))
+		if (_PARSE_RESULT_HAS_UNEXPECTED_ATTRIBUTES (args, _EXPECTED_LINK_WATCHER_ATTRIBUTES_NSNA_PING))
 			*out_unrecognized_content = TRUE;
 		result = nm_team_link_watcher_new_nsna_ping (_LINK_WATCHER_ATTR_GET_INT (args, LINK_WATCHER_ATTRIBUTE_INIT_WAIT),
 		                                             _LINK_WATCHER_ATTR_GET_INT (args, LINK_WATCHER_ATTRIBUTE_INTERVAL),
@@ -1097,16 +1109,7 @@ _link_watcher_from_json (const json_t *root_js_obj,
 	} else if (nm_streq0 (v_name, NM_TEAM_LINK_WATCHER_ARP_PING)) {
 		NMTeamLinkWatcherArpPingFlags v_flags = NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_NONE;
 
-		if (_PARSE_RESULT_HAS_UNEXPECTED_ATTRIBUTES (args,
-		                                             LINK_WATCHER_ATTRIBUTE_INIT_WAIT,
-		                                             LINK_WATCHER_ATTRIBUTE_INTERVAL,
-		                                             LINK_WATCHER_ATTRIBUTE_MISSED_MAX,
-		                                             LINK_WATCHER_ATTRIBUTE_VLANID,
-		                                             LINK_WATCHER_ATTRIBUTE_TARGET_HOST,
-		                                             LINK_WATCHER_ATTRIBUTE_SOURCE_HOST,
-		                                             LINK_WATCHER_ATTRIBUTE_VALIDATE_ACTIVE,
-		                                             LINK_WATCHER_ATTRIBUTE_VALIDATE_INACTIVE,
-		                                             LINK_WATCHER_ATTRIBUTE_SEND_ALWAYS))
+		if (_PARSE_RESULT_HAS_UNEXPECTED_ATTRIBUTES (args, _EXPECTED_LINK_WATCHER_ATTRIBUTES_ARP_PING))
 			*out_unrecognized_content = TRUE;
 
 		if (_LINK_WATCHER_ATTR_GET_BOOL (args, LINK_WATCHER_ATTRIBUTE_VALIDATE_ACTIVE))
@@ -1182,75 +1185,134 @@ _link_watcher_to_variant (const NMTeamLinkWatcher *link_watcher)
 	return g_variant_builder_end (&builder);
 }
 
-static NMTeamLinkWatcher *
-_link_watcher_from_variant (GVariant *watcher_var)
+#define _LINK_WATCHER_ATTR_VARGET(variants, link_watcher_attribute, _value_type, c_type, _cmd) \
+	({ \
+		GVariant *const*_variants = (variants); \
+		GVariant *_cc; \
+		\
+		nm_assert (link_watcher_attr_datas[(link_watcher_attribute)].value_type == (_value_type)); \
+		\
+		  (_cc = _variants[(link_watcher_attribute)]) \
+		? (_cmd) \
+		: link_watcher_attr_datas[(link_watcher_attribute)].default_val.c_type; \
+	})
+#define _LINK_WATCHER_ATTR_VARGET_BOOL(variants, link_watcher_attribute)   (_LINK_WATCHER_ATTR_VARGET (variants, link_watcher_attribute, NM_VALUE_TYPE_BOOL,   v_bool,   g_variant_get_boolean (_cc)      ))
+#define _LINK_WATCHER_ATTR_VARGET_INT(variants, link_watcher_attribute)    (_LINK_WATCHER_ATTR_VARGET (variants, link_watcher_attribute, NM_VALUE_TYPE_INT,    v_int,    g_variant_get_int32 (_cc)        ))
+#define _LINK_WATCHER_ATTR_VARGET_STRING(variants, link_watcher_attribute) (_LINK_WATCHER_ATTR_VARGET (variants, link_watcher_attribute, NM_VALUE_TYPE_STRING, v_string, g_variant_get_string (_cc, NULL) ))
+
+static void
+_variants_list_link_watcher_unref_auto (GVariant *(*p_variants)[])
 {
-	NMTeamLinkWatcher *watcher;
-	const char *name;
-	int val1;
-	int val2;
-	int val3 = 0;
-	int val4 = -1;
-	const char *target_host = NULL;
-	const char *source_host = NULL;
-	gboolean bval;
-	NMTeamLinkWatcherArpPingFlags flags = NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_NONE;
-	gs_free_error GError *error = NULL;
+	int i;
 
-	nm_assert (g_variant_is_of_type (watcher_var, G_VARIANT_TYPE ("a{sv}")));
+	for (i = 0; i < (int) G_N_ELEMENTS (link_watcher_attr_datas); i++)
+		nm_g_variant_unref ((*p_variants)[i]);
+}
 
-	if (!g_variant_lookup (watcher_var, "name", "&s", &name))
-		return NULL;
+static NMTeamLinkWatcher *
+_link_watcher_from_variant (GVariant *watcher_var,
+                            gboolean *out_unrecognized_content)
+{
+	nm_auto (_variants_list_link_watcher_unref_auto) GVariant *variants[G_N_ELEMENTS (link_watcher_attr_datas)] = { NULL, };
+	const char *v_key;
+	GVariant *v_val;
+	const char *v_name;
+	NMTeamLinkWatcher *result = NULL;
+	GVariantIter iter;
 
-	if (!NM_IN_STRSET (name,
-	                   NM_TEAM_LINK_WATCHER_ETHTOOL,
-	                   NM_TEAM_LINK_WATCHER_ARP_PING,
-	                   NM_TEAM_LINK_WATCHER_NSNA_PING)) {
-		return NULL;
-	}
+	g_return_val_if_fail (g_variant_is_of_type (watcher_var, G_VARIANT_TYPE ("a{sv}")), NULL);
 
-	if (nm_streq (name, NM_TEAM_LINK_WATCHER_ETHTOOL)) {
-		if (!g_variant_lookup (watcher_var, "delay-up", "i", &val1))
-			val1 = 0;
-		if (!g_variant_lookup (watcher_var, "delay-down", "i", &val2))
-			val2 = 0;
-		watcher = nm_team_link_watcher_new_ethtool (val1, val2, &error);
-	} else {
-		if (!g_variant_lookup (watcher_var, "target-host", "&s", &target_host))
-			return NULL;
-		if (!g_variant_lookup (watcher_var, "init-wait", "i", &val1))
-			val1 = 0;
-		if (!g_variant_lookup (watcher_var, "interval", "i", &val2))
-			val2 = 0;
-		if (!g_variant_lookup (watcher_var, "missed-max", "i", &val3))
-			val3 = 3;
-		if (nm_streq (name, NM_TEAM_LINK_WATCHER_ARP_PING)) {
-			if (!g_variant_lookup (watcher_var, "vlanid", "i", &val4))
-				val4 = -1;
-			if (!g_variant_lookup (watcher_var, "source-host", "&s", &source_host))
-				return NULL;
-			if (!g_variant_lookup (watcher_var, "validate-active", "b", &bval))
-				bval = FALSE;
-			if (bval)
-				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE;
-			if (!g_variant_lookup (watcher_var, "validate-inactive", "b", &bval))
-				bval = FALSE;
-			if (bval)
-				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE;
-			if (!g_variant_lookup (watcher_var, "send-always", "b", &bval))
-				bval = FALSE;
-			if (bval)
-				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS;
-			watcher = nm_team_link_watcher_new_arp_ping2 (val1, val2, val3, val4,
-			                                              target_host, source_host,
-			                                              flags, &error);
-		} else {
-			watcher = nm_team_link_watcher_new_nsna_ping (val1, val2, val3,
-			                                              target_host, &error);
+	g_variant_iter_init (&iter, watcher_var);
+	while (g_variant_iter_next (&iter, "{&sv}", &v_key, &v_val)) {
+		_nm_unused gs_unref_variant GVariant *v_val_free = v_val;
+		const LinkWatcherAttrData *attr_data = NULL;
+		const GVariantType *variant_type;
+		int i;
+
+		for (i = 0; i < (int) G_N_ELEMENTS (link_watcher_attr_datas); i++) {
+			if (nm_streq (link_watcher_attr_datas[i].dbus_name, v_key)) {
+				attr_data = &link_watcher_attr_datas[i];
+				break;
+			}
 		}
+		if (!attr_data) {
+			*out_unrecognized_content = TRUE;
+			continue;
+		}
+
+		if (attr_data->value_type == NM_VALUE_TYPE_INT)
+			variant_type = G_VARIANT_TYPE_INT32;
+		else
+			variant_type = nm_value_type_get_variant_type (attr_data->value_type);
+
+		if (!g_variant_is_of_type (v_val, variant_type)) {
+			*out_unrecognized_content = TRUE;
+			continue;
+		}
+
+		if (variants[attr_data->link_watcher_attr]) {
+			*out_unrecognized_content = TRUE;
+			g_variant_unref (variants[attr_data->link_watcher_attr]);
+		}
+		variants[attr_data->link_watcher_attr] = g_steal_pointer (&v_val_free);
 	}
 
-	return watcher;
+#define _VARIANTS_HAVE_UNEXPECTED_ATTRIBUTES(_variants, ...) \
+	({ \
+		int _i; \
+		\
+		for (_i = 0; _i < (int) G_N_ELEMENTS ((_variants)); _i++) { \
+			if (   (_variants)[_i] \
+			    && !NM_IN_SET ((LinkWatcherAttribute) _i, __VA_ARGS__)) \
+				break; \
+		} \
+		\
+		(_i == (int) G_N_ELEMENTS ((_variants))); \
+	})
+
+	v_name = _LINK_WATCHER_ATTR_VARGET_STRING (variants, LINK_WATCHER_ATTRIBUTE_NAME);
+
+	if (nm_streq0 (v_name, NM_TEAM_LINK_WATCHER_ETHTOOL)) {
+		if (_VARIANTS_HAVE_UNEXPECTED_ATTRIBUTES (variants, _EXPECTED_LINK_WATCHER_ATTRIBUTES_ETHTOOL))
+			*out_unrecognized_content = TRUE;
+		result = nm_team_link_watcher_new_ethtool (_LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_DELAY_UP),
+		                                           _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_DELAY_DOWN),
+		                                           NULL);
+	} else if (nm_streq0 (v_name, NM_TEAM_LINK_WATCHER_NSNA_PING)) {
+		if (_VARIANTS_HAVE_UNEXPECTED_ATTRIBUTES (variants, _EXPECTED_LINK_WATCHER_ATTRIBUTES_NSNA_PING))
+			*out_unrecognized_content = TRUE;
+		result = nm_team_link_watcher_new_nsna_ping (_LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_INIT_WAIT),
+		                                             _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_INTERVAL),
+		                                             _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_MISSED_MAX),
+		                                             _LINK_WATCHER_ATTR_VARGET_STRING (variants, LINK_WATCHER_ATTRIBUTE_TARGET_HOST),
+		                                             NULL);
+	} else if (nm_streq0 (v_name, NM_TEAM_LINK_WATCHER_ARP_PING)) {
+		NMTeamLinkWatcherArpPingFlags v_flags = NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_NONE;
+
+		if (_VARIANTS_HAVE_UNEXPECTED_ATTRIBUTES (variants, _EXPECTED_LINK_WATCHER_ATTRIBUTES_ARP_PING))
+			*out_unrecognized_content = TRUE;
+
+		if (_LINK_WATCHER_ATTR_VARGET_BOOL (variants, LINK_WATCHER_ATTRIBUTE_VALIDATE_ACTIVE))
+			v_flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE;
+		if (_LINK_WATCHER_ATTR_VARGET_BOOL (variants, LINK_WATCHER_ATTRIBUTE_VALIDATE_INACTIVE))
+			v_flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE;
+		if (_LINK_WATCHER_ATTR_VARGET_BOOL (variants, LINK_WATCHER_ATTRIBUTE_SEND_ALWAYS))
+			v_flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS;
+
+		result = nm_team_link_watcher_new_arp_ping2 (_LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_INIT_WAIT),
+		                                             _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_INTERVAL),
+		                                             _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_MISSED_MAX),
+		                                             _LINK_WATCHER_ATTR_VARGET_INT (variants, LINK_WATCHER_ATTRIBUTE_VLANID),
+		                                             _LINK_WATCHER_ATTR_VARGET_STRING (variants, LINK_WATCHER_ATTRIBUTE_TARGET_HOST),
+		                                             _LINK_WATCHER_ATTR_VARGET_STRING (variants, LINK_WATCHER_ATTRIBUTE_SOURCE_HOST),
+		                                             v_flags,
+		                                             NULL);
+	}
+
+	if (!result)
+		*out_unrecognized_content = TRUE;
+	return result;
+
 }
 
 /*****************************************************************************/
@@ -1298,6 +1360,7 @@ _nm_utils_team_link_watchers_from_variant (GVariant *value)
 	GPtrArray *link_watchers;
 	GVariantIter iter;
 	GVariant *watcher_var;
+	gboolean unrecognized_content = FALSE;
 
 	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("aa{sv}")), NULL);
 
@@ -1308,7 +1371,7 @@ _nm_utils_team_link_watchers_from_variant (GVariant *value)
 		_nm_unused gs_unref_variant GVariant *watcher_var_free = watcher_var;
 		NMTeamLinkWatcher *watcher;
 
-		watcher = _link_watcher_from_variant (watcher_var);
+		watcher = _link_watcher_from_variant (watcher_var, &unrecognized_content);
 		if (watcher)
 			g_ptr_array_add (link_watchers, watcher);
 	}
@@ -1974,7 +2037,7 @@ nm_team_setting_reset (NMTeamSetting *self,
 }
 
 static void
-_variants_list_unref_auto (GVariant *(*p_variants)[])
+_variants_list_team_unref_auto (GVariant *(*p_variants)[])
 {
 	int i;
 
@@ -1990,7 +2053,7 @@ nm_team_setting_reset_from_dbus (NMTeamSetting *self,
                                  guint /* NMSettingParseFlags */ parse_flags,
                                  GError **error)
 {
-	nm_auto (_variants_list_unref_auto) GVariant *variants[_NM_TEAM_ATTRIBUTE_NUM] = { NULL, };
+	nm_auto (_variants_list_team_unref_auto) GVariant *variants[_NM_TEAM_ATTRIBUTE_NUM] = { NULL, };
 	gs_unref_ptrarray GPtrArray *v_link_watchers = NULL;
 	const TeamAttrData *attr_data;
 	GVariantIter iter;
