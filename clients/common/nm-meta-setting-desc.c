@@ -554,7 +554,6 @@ nmc_team_check_config (const char *config, char **out_config, GError **error)
 		_TEAM_CONFIG_TYPE_FILE,
 		_TEAM_CONFIG_TYPE_JSON,
 	} desired_type = _TEAM_CONFIG_TYPE_GUESS;
-	const char *filename = NULL;
 	size_t c_len = 0;
 	gs_free char *config_clone = NULL;
 
@@ -588,20 +587,8 @@ nmc_team_check_config (const char *config, char **out_config, GError **error)
 				             config);
 				return FALSE;
 			}
-			filename = config;
 			config = config_clone = g_steal_pointer (&contents);
 		}
-	}
-
-	if (!nm_utils_is_json_object (config, NULL)) {
-		if (filename) {
-			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-			             _("'%s' does not contain a valid team configuration"), filename);
-		} else {
-			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-			             _("team configuration must be a JSON object"));
-		}
-		return FALSE;
 	}
 
 	*out_config = (config == config_clone)
