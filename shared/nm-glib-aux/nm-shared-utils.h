@@ -312,6 +312,20 @@ GVariant *nm_utils_gbytes_to_variant_ay (GBytes *bytes);
 
 /*****************************************************************************/
 
+GVariant *nm_utils_gvariant_vardict_filter (GVariant *src,
+                                            gboolean (*filter_fcn) (const char *key,
+                                                                    GVariant *val,
+                                                                    char **out_key,
+                                                                    GVariant **out_val,
+                                                                    gpointer user_data),
+                                            gpointer user_data);
+
+GVariant *
+nm_utils_gvariant_vardict_filter_drop_one (GVariant *src,
+                                           const char *key);
+
+/*****************************************************************************/
+
 static inline int
 nm_utils_hexchar_to_int (char ch)
 {

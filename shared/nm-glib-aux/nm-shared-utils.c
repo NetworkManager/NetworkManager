@@ -3046,3 +3046,64 @@ fail:
 	NM_SET_OUT (out_len, 0);
 	return NULL;
 }
+
+/*****************************************************************************/
+
+GVariant *
+nm_utils_gvariant_vardict_filter (GVariant *src,
+                                  gboolean (*filter_fcn) (const char *key,
+                                                          GVariant *val,
+                                                          char **out_key,
+                                                          GVariant **out_val,
+                                                          gpointer user_data),
+                                  gpointer user_data)
+{
+	GVariantIter iter;
+	GVariantBuilder builder;
+	const char *key;
+	GVariant *val;
+
+	g_return_val_if_fail (src && g_variant_is_of_type (src, G_VARIANT_TYPE_VARDICT), NULL);
+	g_return_val_if_fail (filter_fcn, NULL);
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+
+	g_variant_iter_init (&iter, src);
+	while (g_variant_iter_next (&iter, "{&sv}", &key, &val)) {
+		_nm_unused gs_unref_variant GVariant *val_free = val;
+		gs_free char *key2 = NULL;
+		gs_unref_variant GVariant *val2 = NULL;
+
+		if (filter_fcn (key,
+		                val,
+		                &key2,
+		                &val2,
+		                user_data)) {
+			g_variant_builder_add (&builder,
+			                       "{sv}",
+			                       key2 ?: key,
+			                       val2 ?: val);
+		}
+	}
+
+	return g_variant_builder_end (&builder);
+}
+
+static gboolean
+_gvariant_vardict_filter_drop_one (const char *key,
+                                   GVariant *val,
+                                   char **out_key,
+                                   GVariant **out_val,
+                                   gpointer user_data)
+{
+	return !nm_streq (key, user_data);
+}
+
+GVariant *
+nm_utils_gvariant_vardict_filter_drop_one (GVariant *src,
+                                           const char *key)
+{
+	return nm_utils_gvariant_vardict_filter (src,
+	                                         _gvariant_vardict_filter_drop_one,
+	                                         (gpointer) key);
+}
