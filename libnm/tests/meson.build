@@ -1,8 +1,8 @@
 test_units = [
-  ['test-libnm',                  [libnm_utils, libnm_core], 30],
-  ['test-nm-client',              [],                        90],
-  ['test-remote-settings-client', [],                        90],
-  ['test-secret-agent',           [],                        90],
+  ['test-libnm',                  30],
+  ['test-nm-client',              90],
+  ['test-remote-settings-client', 90],
+  ['test-secret-agent',           90],
 ]
 
 cflags = [
@@ -18,18 +18,20 @@ foreach test_unit: test_units
       shared_nm_test_utils_impl_c,
     ],
     dependencies: [
-      libnm_dep,
-      libnm_core_dep,
+      liblibnm_dep,
       libnm_systemd_shared_no_logging_dep,
     ],
     c_args: cflags,
-    link_with: test_unit[1],
+    link_with: [
+      liblibnm,
+      libnm_core,
+    ],
   )
 
   test(
     test_unit[0],
     test_script,
-    timeout: test_unit[2],
+    timeout: test_unit[1],
     args: test_args + [exe.full_path()],
   )
 endforeach

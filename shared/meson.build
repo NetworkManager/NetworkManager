@@ -298,6 +298,7 @@ exe = executable(
     ],
     dependencies: [
         shared_nm_glib_aux_dep,
+        libnm_systemd_shared_no_logging_dep,
         shared_c_siphash_dep,
     ],
 )

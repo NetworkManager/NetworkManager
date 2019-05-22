@@ -22,6 +22,8 @@
 
 #include "nm-time-utils.h"
 
+#include "nm-logging-fwd.h"
+
 /*****************************************************************************/
 
 typedef struct {
