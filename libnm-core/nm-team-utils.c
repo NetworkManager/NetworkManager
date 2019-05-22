@@ -122,31 +122,33 @@ typedef enum {
 
 typedef struct {
 	const char *js_key;
+	const char *dbus_name;
 	NMValueTypUnion default_val;
 	LinkWatcherAttribute link_watcher_attr;
 	NMValueType value_type;
 } LinkWatcherAttrData;
 
 static const LinkWatcherAttrData link_watcher_attr_datas[] = {
-#define _INIT(_link_watcher_attr, _js_key, _value_type, ...) \
+#define _INIT(_link_watcher_attr, _js_key, _dbus_name, _value_type, ...) \
 	[_link_watcher_attr] = { \
 		.link_watcher_attr = (_link_watcher_attr), \
 		.value_type = (_value_type), \
 		.js_key = (""_js_key""), \
+		.dbus_name = (""_dbus_name""), \
 		__VA_ARGS__ \
 	}
-	_INIT (LINK_WATCHER_ATTRIBUTE_NAME,              "name",              NM_VALUE_TYPE_STRING,                          ),
-	_INIT (LINK_WATCHER_ATTRIBUTE_TARGET_HOST,       "target_host",       NM_VALUE_TYPE_STRING,                          ),
-	_INIT (LINK_WATCHER_ATTRIBUTE_SOURCE_HOST,       "source_host",       NM_VALUE_TYPE_STRING,                          ),
-	_INIT (LINK_WATCHER_ATTRIBUTE_DELAY_UP,          "delay_up",          NM_VALUE_TYPE_INT,                             ),
-	_INIT (LINK_WATCHER_ATTRIBUTE_DELAY_DOWN,        "delay_down",        NM_VALUE_TYPE_INT,                             ),
-	_INIT (LINK_WATCHER_ATTRIBUTE_INIT_WAIT,         "init_wait",         NM_VALUE_TYPE_INT,                             ),
-	_INIT (LINK_WATCHER_ATTRIBUTE_INTERVAL,          "interval",          NM_VALUE_TYPE_INT,                             ),
-	_INIT (LINK_WATCHER_ATTRIBUTE_MISSED_MAX,        "missed_max",        NM_VALUE_TYPE_INT,    .default_val.v_int =  3, ),
-	_INIT (LINK_WATCHER_ATTRIBUTE_VLANID,            "vlanid",            NM_VALUE_TYPE_INT,    .default_val.v_int = -1, ),
-	_INIT (LINK_WATCHER_ATTRIBUTE_VALIDATE_ACTIVE,   "validate_active",   NM_VALUE_TYPE_BOOL,                            ),
-	_INIT (LINK_WATCHER_ATTRIBUTE_VALIDATE_INACTIVE, "validate_inactive", NM_VALUE_TYPE_BOOL,                            ),
-	_INIT (LINK_WATCHER_ATTRIBUTE_SEND_ALWAYS,       "send_always",       NM_VALUE_TYPE_BOOL,                            ),
+	_INIT (LINK_WATCHER_ATTRIBUTE_NAME,              "name",              "name",              NM_VALUE_TYPE_STRING,                          ),
+	_INIT (LINK_WATCHER_ATTRIBUTE_TARGET_HOST,       "target_host",       "target-host",       NM_VALUE_TYPE_STRING,                          ),
+	_INIT (LINK_WATCHER_ATTRIBUTE_SOURCE_HOST,       "source_host",       "source-host",       NM_VALUE_TYPE_STRING,                          ),
+	_INIT (LINK_WATCHER_ATTRIBUTE_DELAY_UP,          "delay_up",          "delay-up",          NM_VALUE_TYPE_INT,                             ),
+	_INIT (LINK_WATCHER_ATTRIBUTE_DELAY_DOWN,        "delay_down",        "delay-down",        NM_VALUE_TYPE_INT,                             ),
+	_INIT (LINK_WATCHER_ATTRIBUTE_INIT_WAIT,         "init_wait",         "init-wait",         NM_VALUE_TYPE_INT,                             ),
+	_INIT (LINK_WATCHER_ATTRIBUTE_INTERVAL,          "interval",          "interval",          NM_VALUE_TYPE_INT,                             ),
+	_INIT (LINK_WATCHER_ATTRIBUTE_MISSED_MAX,        "missed_max",        "missed-max",        NM_VALUE_TYPE_INT,    .default_val.v_int =  3, ),
+	_INIT (LINK_WATCHER_ATTRIBUTE_VLANID,            "vlanid",            "vlanid",            NM_VALUE_TYPE_INT,    .default_val.v_int = -1, ),
+	_INIT (LINK_WATCHER_ATTRIBUTE_VALIDATE_ACTIVE,   "validate_active",   "validate-active",   NM_VALUE_TYPE_BOOL,                            ),
+	_INIT (LINK_WATCHER_ATTRIBUTE_VALIDATE_INACTIVE, "validate_inactive", "validate-inactive", NM_VALUE_TYPE_BOOL,                            ),
+	_INIT (LINK_WATCHER_ATTRIBUTE_SEND_ALWAYS,       "send_always",       "send-always",       NM_VALUE_TYPE_BOOL,                            ),
 #undef _INIT
 };
 
@@ -945,25 +947,15 @@ nm_team_setting_value_master_runner_tx_hash_set_list (NMTeamSetting *self,
 #define _LINK_WATCHER_ATTR_SET_STRING(args, link_watcher_attribute, val) _LINK_WATCHER_ATTR_SET((args), (link_watcher_attribute), NM_VALUE_TYPE_STRING, v_string, (val))
 
 static void
-_link_watcher_to_json (const NMTeamLinkWatcher *link_watcher,
-                       GString *gstr)
+_link_watcher_unpack (const NMTeamLinkWatcher *link_watcher,
+                      NMValueTypUnioMaybe args[static G_N_ELEMENTS (link_watcher_attr_datas)])
 {
-	NMValueTypUnioMaybe args[G_N_ELEMENTS (link_watcher_attr_datas)] = { };
+	const char *v_name = nm_team_link_watcher_get_name (link_watcher);
 	NMTeamLinkWatcherArpPingFlags v_arp_ping_flags;
-	const char *v_name;
-	int i;
 
-	if (!link_watcher) {
-		g_string_append (gstr, "null");
-		return;
-	}
+	memset (args, 0, sizeof (args[0]) * G_N_ELEMENTS (link_watcher_attr_datas));
 
-	v_name = nm_team_link_watcher_get_name (link_watcher);
-
-	g_string_append (gstr, "{ ");
-
-	nm_json_aux_gstr_append_obj_name (gstr, "name", '\0');
-	nm_json_aux_gstr_append_string (gstr, v_name);
+	_LINK_WATCHER_ATTR_SET_STRING (args, LINK_WATCHER_ATTRIBUTE_NAME, v_name);
 
 	if (nm_streq (v_name, NM_TEAM_LINK_WATCHER_ETHTOOL)) {
 		_LINK_WATCHER_ATTR_SET_INT (args, LINK_WATCHER_ATTRIBUTE_DELAY_UP,   nm_team_link_watcher_get_delay_up (link_watcher));
@@ -983,6 +975,24 @@ _link_watcher_to_json (const NMTeamLinkWatcher *link_watcher,
 			_LINK_WATCHER_ATTR_SET_BOOL   (args, LINK_WATCHER_ATTRIBUTE_SEND_ALWAYS,       NM_FLAGS_HAS (v_arp_ping_flags, NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS));
 		}
 	}
+}
+
+static void
+_link_watcher_to_json (const NMTeamLinkWatcher *link_watcher,
+                       GString *gstr)
+{
+	NMValueTypUnioMaybe args[G_N_ELEMENTS (link_watcher_attr_datas)];
+	int i;
+	gboolean is_first = TRUE;
+
+	if (!link_watcher) {
+		g_string_append (gstr, "null");
+		return;
+	}
+
+	_link_watcher_unpack (link_watcher, args);
+
+	g_string_append (gstr, "{ ");
 
 	for (i = 0; i < (int) G_N_ELEMENTS (link_watcher_attr_datas); i++) {
 		const NMValueTypUnioMaybe *p_val = &args[i];
@@ -992,7 +1002,11 @@ _link_watcher_to_json (const NMTeamLinkWatcher *link_watcher,
 			continue;
 		if (nm_value_type_equal (attr_data->value_type, &attr_data->default_val, &p_val->val))
 			continue;
-		nm_json_aux_gstr_append_delimiter (gstr);
+
+		if (is_first)
+			is_first = FALSE;
+		else
+			nm_json_aux_gstr_append_delimiter (gstr);
 		nm_json_aux_gstr_append_obj_name (gstr, attr_data->js_key, '\0');
 		nm_value_type_to_json (attr_data->value_type, gstr, &p_val->val);
 	}
@@ -1123,88 +1137,48 @@ fail:
 /*****************************************************************************/
 
 static GVariant *
-_link_watcher_to_variant (const NMTeamLinkWatcher *watcher)
+_link_watcher_to_variant (const NMTeamLinkWatcher *link_watcher)
 {
+	NMValueTypUnioMaybe args[G_N_ELEMENTS (link_watcher_attr_datas)];
 	GVariantBuilder builder;
-	const char *name;
-	int int_val;
-	NMTeamLinkWatcherArpPingFlags flags;
+	int i;
+
+	if (!link_watcher)
+		return NULL;
+
+	_link_watcher_unpack (link_watcher, args);
+
+	if (!args[LINK_WATCHER_ATTRIBUTE_NAME].has)
+		return NULL;
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
 
-	name = nm_team_link_watcher_get_name (watcher);
-	g_variant_builder_add (&builder, "{sv}",
-	                       "name",
-	                       g_variant_new_string (name));
+	for (i = 0; i < (int) G_N_ELEMENTS (link_watcher_attr_datas); i++) {
+		const NMValueTypUnioMaybe *p_val = &args[i];
+		const LinkWatcherAttrData *attr_data = &link_watcher_attr_datas[i];
+		GVariant *v;
 
-	if (nm_streq (name, NM_TEAM_LINK_WATCHER_ETHTOOL)) {
-		int_val = nm_team_link_watcher_get_delay_up (watcher);
-		if (int_val) {
-			g_variant_builder_add (&builder, "{sv}",
-			                       "delay-up",
-			                       g_variant_new_int32 (int_val));
+		if (!p_val->has)
+			continue;
+		if (nm_value_type_equal (attr_data->value_type, &attr_data->default_val, &p_val->val))
+			continue;
+
+		if (attr_data->value_type == NM_VALUE_TYPE_INT)
+			v = g_variant_new_int32 (p_val->val.v_int);
+		else {
+			v = nm_value_type_to_variant (attr_data->value_type,
+			                              &p_val->val);
 		}
-		int_val = nm_team_link_watcher_get_delay_down (watcher);
-		if (int_val) {
-			g_variant_builder_add (&builder, "{sv}",
-			                       "delay-down",
-			                       g_variant_new_int32 (int_val));
-		}
-		return g_variant_builder_end (&builder);
+		if (!v)
+			continue;
+
+		nm_assert (g_variant_is_floating (v));
+		g_variant_builder_add (&builder,
+		                       "{sv}",
+		                       attr_data->dbus_name,
+		                       v);
 	}
 
-	/* Common properties for arp_ping and nsna_ping link watchers */
-	int_val = nm_team_link_watcher_get_init_wait (watcher);
-	if (int_val) {
-		g_variant_builder_add (&builder, "{sv}",
-		                       "init-wait",
-		                       g_variant_new_int32 (int_val));
-	}
-	int_val = nm_team_link_watcher_get_interval (watcher);
-	if (int_val) {
-		g_variant_builder_add (&builder, "{sv}",
-		                       "interval",
-		                       g_variant_new_int32 (int_val));
-	}
-	int_val = nm_team_link_watcher_get_missed_max (watcher);
-	if (int_val != 3) {
-		g_variant_builder_add (&builder, "{sv}",
-		                       "missed-max",
-		                       g_variant_new_int32 (int_val));
-	}
-	g_variant_builder_add (&builder, "{sv}",
-	                       "target-host",
-	                       g_variant_new_string (nm_team_link_watcher_get_target_host (watcher)));
-
-	if (nm_streq (name, NM_TEAM_LINK_WATCHER_NSNA_PING))
-		return g_variant_builder_end (&builder);
-
-	/* arp_ping watcher only */
-	int_val = nm_team_link_watcher_get_vlanid (watcher);
-	if (int_val != -1) {
-		g_variant_builder_add (&builder, "{sv}",
-		                       "vlanid",
-		                       g_variant_new_int32 (int_val));
-	}
-	g_variant_builder_add (&builder, "{sv}",
-	                       "source-host",
-	                       g_variant_new_string (nm_team_link_watcher_get_source_host (watcher)));
-	flags = nm_team_link_watcher_get_flags (watcher);
-	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE) {
-		g_variant_builder_add (&builder, "{sv}",
-		                       "validate-active",
-		                       g_variant_new_boolean (TRUE));
-	}
-	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE) {
-		g_variant_builder_add (&builder, "{sv}",
-		                       "validate-inactive",
-		                       g_variant_new_boolean (TRUE));
-	}
-	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS) {
-		g_variant_builder_add (&builder, "{sv}",
-		                       "send-always",
-		                       g_variant_new_boolean (TRUE));
-	}
 	return g_variant_builder_end (&builder);
 }
 
