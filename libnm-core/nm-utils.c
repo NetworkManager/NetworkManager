@@ -6357,7 +6357,7 @@ _nm_utils_team_link_watchers_from_variant (GVariant *value)
 		} else {
 			if (!g_variant_lookup (watcher_var, "target-host", "&s", &target_host))
 				goto next;
-			if (!g_variant_lookup (watcher_var, "init_wait", "i", &val1))
+			if (!g_variant_lookup (watcher_var, "init-wait", "i", &val1))
 				val1 = 0;
 			if (!g_variant_lookup (watcher_var, "interval", "i", &val2))
 				val2 = 0;
