@@ -960,33 +960,44 @@ signal_handler (gpointer user_data)
 	return G_SOURCE_CONTINUE;
 }
 
+static gboolean
+parse_command_line (int *p_argc,
+                    char ***p_argv,
+                    GError **error)
+{
+	GOptionContext *opt_ctx;
+	GOptionEntry entries[] = {
+		{ "debug", 0, 0, G_OPTION_ARG_NONE, &gl.debug, "Output to console rather than syslog", NULL },
+		{ "persist", 0, 0, G_OPTION_ARG_NONE, &gl.persist, "Don't quit after a short timeout", NULL },
+		{ NULL }
+	};
+	gboolean success;
+
+	opt_ctx = g_option_context_new (NULL);
+	g_option_context_set_summary (opt_ctx, "Executes scripts upon actions by NetworkManager.");
+	g_option_context_add_main_entries (opt_ctx, entries, NULL);
+
+	success = g_option_context_parse (opt_ctx, p_argc, p_argv, error);
+
+	g_option_context_free (opt_ctx);
+
+	return success;
+}
+
 int
 main (int argc, char **argv)
 {
-	GOptionContext *opt_ctx;
 	gs_free_error GError *error = NULL;
 	GDBusConnection *bus;
 	Handler *handler = NULL;
 	guint signal_id_term = 0;
 	guint signal_id_int = 0;
 
-	GOptionEntry entries[] = {
-		{ "debug", 0, 0, G_OPTION_ARG_NONE, &gl.debug, "Output to console rather than syslog", NULL },
-		{ "persist", 0, 0, G_OPTION_ARG_NONE, &gl.persist, "Don't quit after a short timeout", NULL },
-		{ NULL }
-	};
-
-	opt_ctx = g_option_context_new (NULL);
-	g_option_context_set_summary (opt_ctx, "Executes scripts upon actions by NetworkManager.");
-	g_option_context_add_main_entries (opt_ctx, entries, NULL);
-
-	if (!g_option_context_parse (opt_ctx, &argc, &argv, &error)) {
+	if (!parse_command_line (&argc, &argv, &error)) {
 		_LOG_X_W ("Error parsing command line arguments: %s", error->message);
 		gl.exit_with_failure = TRUE;
 		goto done;
 	}
-
-	g_option_context_free (opt_ctx);
 
 	signal_id_term = g_unix_signal_add (SIGTERM, signal_handler, GINT_TO_POINTER (SIGTERM));
 	signal_id_int  = g_unix_signal_add (SIGINT,  signal_handler, GINT_TO_POINTER (SIGINT));
