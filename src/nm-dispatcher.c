@@ -92,10 +92,7 @@ static void
 _init_dispatcher (void)
 {
 	if (G_UNLIKELY (gl.requests == NULL)) {
-		gl.requests = g_hash_table_new_full (nm_direct_hash,
-		                                     NULL,
-		                                     NULL,
-		                                     (GDestroyNotify) dispatcher_call_id_free);
+		gl.requests = g_hash_table_new (nm_direct_hash, NULL);
 		gl.dbus_connection = nm_g_object_ref (NM_MAIN_DBUS_CONNECTION_GET);
 
 		if (!gl.dbus_connection)
@@ -423,10 +420,12 @@ dispatcher_done_cb (GObject *source, GAsyncResult *result, gpointer user_data)
 	} else
 		dispatcher_results_process (call_id->request_id, call_id->action, ret);
 
+	g_hash_table_remove (gl.requests, call_id);
+
 	if (call_id->callback)
 		call_id->callback (call_id, call_id->user_data);
 
-	g_hash_table_remove (gl.requests, call_id);
+	dispatcher_call_id_free (call_id);
 }
 
 static const char *action_table[] = {
@@ -447,8 +446,9 @@ static const char *action_table[] = {
 static const char *
 action_to_string (NMDispatcherAction action)
 {
-	g_assert ((gsize) action < G_N_ELEMENTS (action_table));
-	return action_table[action];
+	if (G_UNLIKELY ((gsize) action >= G_N_ELEMENTS (action_table)))
+		g_return_val_if_reached (NULL);
+	return action_table[(gsize) action];
 }
 
 static gboolean

@@ -12375,17 +12375,18 @@ nm_device_get_ip6_config (NMDevice *self)
 
 /*****************************************************************************/
 
-static void
+static gboolean
 dispatcher_cleanup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->dispatcher.call_id) {
-		nm_dispatcher_call_cancel (priv->dispatcher.call_id);
-		priv->dispatcher.call_id = NULL;
-		priv->dispatcher.post_state = NM_DEVICE_STATE_UNKNOWN;
-		priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
-	}
+	if (!priv->dispatcher.call_id)
+		return FALSE;
+
+	nm_dispatcher_call_cancel (g_steal_pointer (&priv->dispatcher.call_id));
+	priv->dispatcher.post_state = NM_DEVICE_STATE_UNKNOWN;
+	priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
+	return TRUE;
 }
 
 static void
@@ -12397,7 +12398,8 @@ dispatcher_complete_proceed_state (NMDispatcherCallId *call_id, gpointer user_da
 	g_return_if_fail (call_id == priv->dispatcher.call_id);
 
 	priv->dispatcher.call_id = NULL;
-	nm_device_queue_state (self, priv->dispatcher.post_state,
+	nm_device_queue_state (self,
+	                       priv->dispatcher.post_state,
 	                       priv->dispatcher.post_state_reason);
 	priv->dispatcher.post_state = NM_DEVICE_STATE_UNKNOWN;
 	priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
@@ -12410,10 +12412,8 @@ ip_check_pre_up (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->dispatcher.call_id != 0) {
-		g_warn_if_reached ();
-		dispatcher_cleanup (self);
-	}
+	if (dispatcher_cleanup (self))
+		nm_assert_not_reached ();
 
 	priv->dispatcher.post_state = NM_DEVICE_STATE_SECONDARIES;
 	priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
