@@ -36,11 +36,13 @@
 
 #include "nmdbus-dispatcher.h"
 
-static GMainLoop *loop = NULL;
-static gboolean debug = FALSE;
-static gboolean persist = FALSE;
-static guint quit_id;
-static guint request_id_counter = 0;
+static struct {
+	GMainLoop *loop;
+	gboolean debug;
+	gboolean persist;
+	guint quit_id;
+	guint request_id_counter;
+} gl;
 
 typedef struct Request Request;
 
@@ -193,7 +195,7 @@ struct Request {
 			__LOG_print_S (print_cmd, _request, _script, ": "__VA_ARGS__); \
 	} G_STMT_END
 
-#define _LOG_X_D_enabled() (debug)
+#define _LOG_X_D_enabled() (gl.debug)
 #define _LOG_X_T_enabled() _LOG_X_D_enabled ()
 
 #define _LOG_R_D_enabled(request) (_NM_ENSURE_TYPE_CONST (Request *, request)->debug)
@@ -241,16 +243,16 @@ request_free (Request *request)
 static gboolean
 quit_timeout_cb (gpointer user_data)
 {
-	g_main_loop_quit (loop);
+	g_main_loop_quit (gl.loop);
 	return FALSE;
 }
 
 static void
 quit_timeout_reschedule (void)
 {
-	if (!persist) {
-		nm_clear_g_source (&quit_id);
-		quit_id = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
+	if (!gl.persist) {
+		nm_clear_g_source (&gl.quit_id);
+		gl.quit_id = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
 	}
 }
 
@@ -758,9 +760,9 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	const char *error_message = NULL;
 
 	request = g_slice_new0 (Request);
-	request->request_id = ++request_id_counter;
+	request->request_id = ++gl.request_id_counter;
 	request->handler = h;
-	request->debug = request_debug || debug;
+	request->debug = request_debug || gl.debug;
 	request->context = context;
 	request->action = g_strdup (str_action);
 
@@ -817,7 +819,7 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 		return TRUE;
 	}
 
-	nm_clear_g_source (&quit_id);
+	nm_clear_g_source (&gl.quit_id);
 
 	h->num_requests_pending++;
 
@@ -953,7 +955,7 @@ signal_handler (gpointer user_data)
 	int signo = GPOINTER_TO_INT (user_data);
 
 	_LOG_X_I ("Caught signal %d, shutting down...", signo);
-	g_main_loop_quit (loop);
+	g_main_loop_quit (gl.loop);
 
 	return G_SOURCE_REMOVE;
 }
@@ -967,8 +969,8 @@ main (int argc, char **argv)
 	Handler *handler;
 
 	GOptionEntry entries[] = {
-		{ "debug", 0, 0, G_OPTION_ARG_NONE, &debug, "Output to console rather than syslog", NULL },
-		{ "persist", 0, 0, G_OPTION_ARG_NONE, &persist, "Don't quit after a short timeout", NULL },
+		{ "debug", 0, 0, G_OPTION_ARG_NONE, &gl.debug, "Output to console rather than syslog", NULL },
+		{ "persist", 0, 0, G_OPTION_ARG_NONE, &gl.persist, "Don't quit after a short timeout", NULL },
 		{ NULL }
 	};
 
@@ -987,7 +989,7 @@ main (int argc, char **argv)
 	g_unix_signal_add (SIGTERM, signal_handler, GINT_TO_POINTER (SIGTERM));
 	g_unix_signal_add (SIGINT, signal_handler, GINT_TO_POINTER (SIGINT));
 
-	if (debug) {
+	if (gl.debug) {
 		if (!g_getenv ("G_MESSAGES_DEBUG")) {
 			/* we log our regular messages using g_debug() and g_info().
 			 * When we redirect glib logging to syslog, there is no problem.
@@ -998,7 +1000,7 @@ main (int argc, char **argv)
 	} else
 		logging_setup ();
 
-	loop = g_main_loop_new (NULL, FALSE);
+	gl.loop = g_main_loop_new (NULL, FALSE);
 
 	bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &error);
 	if (!bus) {
@@ -1029,12 +1031,12 @@ main (int argc, char **argv)
 
 	quit_timeout_reschedule ();
 
-	g_main_loop_run (loop);
+	g_main_loop_run (gl.loop);
 
 	g_queue_free (handler->requests_waiting);
 	g_object_unref (handler);
 
-	if (!debug)
+	if (!gl.debug)
 		logging_shutdown ();
 
 	return 0;
