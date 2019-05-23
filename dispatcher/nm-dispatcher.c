@@ -34,7 +34,7 @@
 #include "nm-libnm-core-aux/nm-dispatcher-api.h"
 #include "nm-dispatcher-utils.h"
 
-#include "nmdbus-dispatcher.h"
+/*****************************************************************************/
 
 typedef struct Request Request;
 
@@ -48,7 +48,6 @@ static struct {
 	gboolean ever_acquired_name;
 	bool exit_with_failure;
 
-	NMDBusDispatcher *dbus_dispatcher;
 	Request *current_request;
 	GQueue *requests_waiting;
 	int num_requests_pending;
@@ -678,26 +677,25 @@ script_must_wait (const char *path)
 	return TRUE;
 }
 
-static gboolean
-handle_action (NMDBusDispatcher *dbus_dispatcher,
-               GDBusMethodInvocation *context,
-               const char *str_action,
-               GVariant *connection_dict,
-               GVariant *connection_props,
-               GVariant *device_props,
-               GVariant *device_proxy_props,
-               GVariant *device_ip4_props,
-               GVariant *device_ip6_props,
-               GVariant *device_dhcp4_props,
-               GVariant *device_dhcp6_props,
-               const char *connectivity_state,
-               const char *vpn_ip_iface,
-               GVariant *vpn_proxy_props,
-               GVariant *vpn_ip4_props,
-               GVariant *vpn_ip6_props,
-               gboolean request_debug,
-               gpointer user_data)
+static void
+_method_call_action (GDBusMethodInvocation *invocation,
+                     GVariant *parameters)
 {
+	const char *action;
+	gs_unref_variant GVariant *connection = NULL;
+	gs_unref_variant GVariant *connection_properties = NULL;
+	gs_unref_variant GVariant *device_properties = NULL;
+	gs_unref_variant GVariant *device_proxy_properties = NULL;
+	gs_unref_variant GVariant *device_ip4_config = NULL;
+	gs_unref_variant GVariant *device_ip6_config = NULL;
+	gs_unref_variant GVariant *device_dhcp4_config = NULL;
+	gs_unref_variant GVariant *device_dhcp6_config = NULL;
+	const char *connectivity_state;
+	const char *vpn_ip_iface;
+	gs_unref_variant GVariant *vpn_proxy_properties = NULL;
+	gs_unref_variant GVariant *vpn_ip4_config = NULL;
+	gs_unref_variant GVariant *vpn_ip6_config = NULL;
+	gboolean debug;
 	GSList *sorted_scripts = NULL;
 	GSList *iter;
 	Request *request;
@@ -705,26 +703,59 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	guint i, num_nowait = 0;
 	const char *error_message = NULL;
 
+	g_variant_get (parameters, "("
+	               "&s"         /* action */
+	               "@a{sa{sv}}" /* connection */
+	               "@a{sv}"     /* connection_properties */
+	               "@a{sv}"     /* device_properties */
+	               "@a{sv}"     /* device_proxy_properties */
+	               "@a{sv}"     /* device_ip4_config */
+	               "@a{sv}"     /* device_ip6_config */
+	               "@a{sv}"     /* device_dhcp4_config */
+	               "@a{sv}"     /* device_dhcp6_config */
+	               "&s"         /* connectivity_state */
+	               "&s"         /* vpn_ip_iface */
+	               "@a{sv}"     /* vpn_proxy_properties */
+	               "@a{sv}"     /* vpn_ip4_config */
+	               "@a{sv}"     /* vpn_ip6_config */
+	               "b"          /* debug */
+	               ")",
+	               &action,
+	               &connection,
+	               &connection_properties,
+	               &device_properties,
+	               &device_proxy_properties,
+	               &device_ip4_config,
+	               &device_ip6_config,
+	               &device_dhcp4_config,
+	               &device_dhcp6_config,
+	               &connectivity_state,
+	               &vpn_ip_iface,
+	               &vpn_proxy_properties,
+	               &vpn_ip4_config,
+	               &vpn_ip6_config,
+	               &debug);
+
 	request = g_slice_new0 (Request);
 	request->request_id = ++gl.request_id_counter;
-	request->debug = request_debug || gl.debug;
-	request->context = context;
-	request->action = g_strdup (str_action);
+	request->debug = debug || gl.debug;
+	request->context = invocation;
+	request->action = g_strdup (action);
 
-	request->envp = nm_dispatcher_utils_construct_envp (str_action,
-	                                                    connection_dict,
-	                                                    connection_props,
-	                                                    device_props,
-	                                                    device_proxy_props,
-	                                                    device_ip4_props,
-	                                                    device_ip6_props,
-	                                                    device_dhcp4_props,
-	                                                    device_dhcp6_props,
+	request->envp = nm_dispatcher_utils_construct_envp (action,
+	                                                    connection,
+	                                                    connection_properties,
+	                                                    device_properties,
+	                                                    device_proxy_properties,
+	                                                    device_ip4_config,
+	                                                    device_ip6_config,
+	                                                    device_dhcp4_config,
+	                                                    device_dhcp6_config,
 	                                                    connectivity_state,
 	                                                    vpn_ip_iface,
-	                                                    vpn_proxy_props,
-	                                                    vpn_ip4_props,
-	                                                    vpn_ip6_props,
+	                                                    vpn_proxy_properties,
+	                                                    vpn_ip4_config,
+	                                                    vpn_ip6_config,
 	                                                    &request->iface,
 	                                                    &error_message);
 
@@ -758,10 +789,10 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 			_LOG_R_D (request, "completed: no scripts");
 
 		results = g_variant_new_array (G_VARIANT_TYPE ("(sus)"), NULL, 0);
-		g_dbus_method_invocation_return_value (context, g_variant_new ("(@a(sus))", results));
+		g_dbus_method_invocation_return_value (invocation, g_variant_new ("(@a(sus))", results));
 		request->num_scripts_done = request->scripts->len;
 		request_free (request);
-		return TRUE;
+		return;
 	}
 
 	nm_clear_g_source (&gl.quit_id);
@@ -809,8 +840,6 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 		 * that have any "wait" scripts. */
 		complete_request (request);
 	}
-
-	return TRUE;
 }
 
 static void
@@ -841,6 +870,64 @@ on_name_lost (GDBusConnection *connection,
 
 	g_main_loop_quit (gl.loop);
 }
+
+static void
+_method_call (GDBusConnection *connection,
+              const char *sender,
+              const char *object_path,
+              const char *interface_name,
+              const char *method_name,
+              GVariant *parameters,
+              GDBusMethodInvocation *invocation,
+              gpointer user_data)
+{
+	if (nm_streq (interface_name, NM_DISPATCHER_DBUS_INTERFACE)) {
+		if (nm_streq (method_name, "Action")) {
+			_method_call_action (invocation, parameters);
+			return;
+		}
+	}
+	g_dbus_method_invocation_return_error (invocation,
+	                                       G_DBUS_ERROR,
+	                                       G_DBUS_ERROR_UNKNOWN_METHOD,
+	                                       "Unknown method %s",
+	                                       method_name);
+}
+
+static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO (
+	NM_DISPATCHER_DBUS_INTERFACE,
+	.methods = NM_DEFINE_GDBUS_METHOD_INFOS (
+		NM_DEFINE_GDBUS_METHOD_INFO (
+			"Action",
+			.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+				NM_DEFINE_GDBUS_ARG_INFO ("action", "s"),
+				NM_DEFINE_GDBUS_ARG_INFO ("connection", "a{sa{sv}}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("connection_properties", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("device_properties", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("device_proxy_properties", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("device_ip4_config", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("device_ip6_config", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("device_dhcp4_config", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("device_dhcp6_config", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("connectivity_state", "s"),
+				NM_DEFINE_GDBUS_ARG_INFO ("vpn_ip_iface", "s"),
+				NM_DEFINE_GDBUS_ARG_INFO ("vpn_proxy_properties", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("vpn_ip4_config", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("vpn_ip6_config", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("debug", "b"),
+			),
+			.out_args = NM_DEFINE_GDBUS_ARG_INFOS (
+				NM_DEFINE_GDBUS_ARG_INFO ("results", "a(sus)"),
+			),
+		),
+	),
+);
+
+static const GDBusInterfaceVTable interface_vtable = {
+	.method_call = _method_call,
+};
+
+/*****************************************************************************/
 
 static void
 log_handler (const char *log_domain,
@@ -932,6 +1019,7 @@ main (int argc, char **argv)
 	gs_free_error GError *error = NULL;
 	guint signal_id_term = 0;
 	guint signal_id_int = 0;
+	guint dbus_regist_id = 0;
 
 	if (!parse_command_line (&argc, &argv, &error)) {
 		_LOG_X_W ("Error parsing command line arguments: %s", error->message);
@@ -964,15 +1052,15 @@ main (int argc, char **argv)
 	}
 
 	gl.requests_waiting = g_queue_new ();
-	gl.dbus_dispatcher = nmdbus_dispatcher_skeleton_new ();
-	g_signal_connect (gl.dbus_dispatcher, "handle-action",
-	                  G_CALLBACK (handle_action), NULL);
 
-	g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (gl.dbus_dispatcher),
-	                                  gl.dbus_connection,
-	                                  NM_DISPATCHER_DBUS_PATH,
-	                                  &error);
-	if (error) {
+	dbus_regist_id = g_dbus_connection_register_object (gl.dbus_connection,
+	                                                    NM_DISPATCHER_DBUS_PATH,
+	                                                    interface_info,
+	                                                    NM_UNCONST_PTR (GDBusInterfaceVTable, &interface_vtable),
+	                                                    NULL,
+	                                                    NULL,
+	                                                    &error);
+	if (dbus_regist_id == 0) {
 		_LOG_X_W ("Could not export Dispatcher D-Bus interface: %s", error->message);
 		gl.exit_with_failure = 1;
 		goto done;
@@ -991,14 +1079,10 @@ main (int argc, char **argv)
 
 done:
 
-	nm_clear_pointer (&gl.requests_waiting, g_queue_free);
+	if (dbus_regist_id != 0)
+		g_dbus_connection_unregister_object (gl.dbus_connection, nm_steal_int (&dbus_regist_id));
 
-	if (gl.dbus_dispatcher) {
-		g_signal_handlers_disconnect_by_func (gl.dbus_dispatcher,
-		                                      G_CALLBACK (handle_action),
-		                                      NULL);
-	}
-	g_clear_object (&gl.dbus_dispatcher);
+	nm_clear_pointer (&gl.requests_waiting, g_queue_free);
 
 	nm_clear_g_source (&signal_id_term);
 	nm_clear_g_source (&signal_id_int);
