@@ -43,6 +43,7 @@ static struct {
 	guint quit_id;
 	guint request_id_counter;
 	gboolean ever_acquired_name;
+	bool exit_with_failure;
 } gl;
 
 typedef struct Request Request;
@@ -886,18 +887,17 @@ on_name_lost (GDBusConnection *connection,
 	if (!connection) {
 		if (!gl.ever_acquired_name) {
 			_LOG_X_W ("Could not get the system bus.  Make sure the message bus daemon is running!");
-			exit (1);
+			gl.exit_with_failure = TRUE;
 		} else {
 			_LOG_X_I ("System bus stopped. Exiting");
-			exit (0);
 		}
 	} else if (!gl.ever_acquired_name) {
 		_LOG_X_W ("Could not acquire the " NM_DISPATCHER_DBUS_SERVICE " service.");
-		exit (1);
-	} else {
+		gl.exit_with_failure = TRUE;
+	} else
 		_LOG_X_I ("Lost the " NM_DISPATCHER_DBUS_SERVICE " name. Exiting");
-		exit (0);
-	}
+
+	g_main_loop_quit (gl.loop);
 }
 
 static void
@@ -964,11 +964,11 @@ int
 main (int argc, char **argv)
 {
 	GOptionContext *opt_ctx;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	GDBusConnection *bus;
-	Handler *handler;
-	guint signal_id_term;
-	guint signal_id_int;
+	Handler *handler = NULL;
+	guint signal_id_term = 0;
+	guint signal_id_int = 0;
 
 	GOptionEntry entries[] = {
 		{ "debug", 0, 0, G_OPTION_ARG_NONE, &gl.debug, "Output to console rather than syslog", NULL },
@@ -982,8 +982,8 @@ main (int argc, char **argv)
 
 	if (!g_option_context_parse (opt_ctx, &argc, &argv, &error)) {
 		_LOG_X_W ("Error parsing command line arguments: %s", error->message);
-		g_error_free (error);
-		return 1;
+		gl.exit_with_failure = TRUE;
+		goto done;
 	}
 
 	g_option_context_free (opt_ctx);
@@ -1008,8 +1008,8 @@ main (int argc, char **argv)
 	if (!bus) {
 		_LOG_X_W ("Could not get the system bus (%s).  Make sure the message bus daemon is running!",
 		          error->message);
-		g_error_free (error);
-		return 1;
+		gl.exit_with_failure = TRUE;
+		goto done;
 	}
 
 	handler = g_object_new (HANDLER_TYPE, NULL);
@@ -1019,8 +1019,8 @@ main (int argc, char **argv)
 	                                  &error);
 	if (error) {
 		_LOG_X_W ("Could not export Dispatcher D-Bus interface: %s", error->message);
-		g_error_free (error);
-		return 1;
+		gl.exit_with_failure = 1;
+		goto done;
 	}
 
 	g_bus_own_name_on_connection (bus,
@@ -1035,8 +1035,16 @@ main (int argc, char **argv)
 
 	g_main_loop_run (gl.loop);
 
-	g_queue_free (handler->requests_waiting);
-	g_object_unref (handler);
+done:
+
+	nm_clear_pointer (&handler->requests_waiting, g_queue_free);
+
+	if (handler) {
+		g_signal_handlers_disconnect_by_func (handler->dbus_dispatcher,
+		                                      G_CALLBACK (handle_action),
+		                                      handler);
+	}
+	g_clear_object (&handler);
 
 	nm_clear_g_source (&signal_id_term);
 	nm_clear_g_source (&signal_id_int);
@@ -1046,6 +1054,6 @@ main (int argc, char **argv)
 	if (!gl.debug)
 		logging_shutdown ();
 
-	return 0;
+	return gl.exit_with_failure ? 1 : 0;
 }
 
