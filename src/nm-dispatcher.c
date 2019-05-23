@@ -45,32 +45,35 @@
 #define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, "dispatcher", __VA_ARGS__)
 
 #define _NMLOG2_DOMAIN     LOGD_DISPATCH
-#define _NMLOG2(level, request_id, ...) \
-    G_STMT_START { \
-        const NMLogLevel __level = (level); \
-        \
-        if (nm_logging_enabled (__level, _NMLOG2_DOMAIN)) { \
-            _nm_log (__level, _NMLOG2_DOMAIN, 0, \
-                     NULL, \
-                     NULL, \
-                     "dispatcher: (%u) " \
-                     _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                     (request_id) \
-                     _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
-        } \
-    } G_STMT_END
+#define _NMLOG2(level, request_id, log_ifname, log_con_uuid, ...) \
+    nm_log ((level), \
+            _NMLOG2_DOMAIN, \
+            (log_ifname), \
+            (log_con_uuid), \
+            "dispatcher: (%u) " \
+            _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+            (request_id) \
+            _NM_UTILS_MACRO_REST (__VA_ARGS__))
 
 #define _NMLOG3_DOMAIN     LOGD_DISPATCH
-#define _NMLOG3(level, call_id, ...) _NMLOG2 (level, (call_id)->request_id, __VA_ARGS__)
+#define _NMLOG3(level, call_id, ...) \
+	G_STMT_START { \
+		const NMDispatcherCallId *const _call_id = (call_id); \
+		\
+		_NMLOG2 (level, _call_id->request_id, _call_id->log_ifname, _call_id->log_con_uuid, __VA_ARGS__); \
+	} G_STMT_END
 
 /*****************************************************************************/
 
 struct NMDispatcherCallId {
 	NMDispatcherFunc callback;
 	gpointer user_data;
+	const char *log_ifname;
+	const char *log_con_uuid;
 	NMDispatcherAction action;
 	guint idle_id;
 	guint32 request_id;
+	char extra_strings[];
 };
 
 /*****************************************************************************/
@@ -83,7 +86,54 @@ static struct {
 
 /*****************************************************************************/
 
-static void dispatcher_call_id_free (NMDispatcherCallId *info);
+static NMDispatcherCallId *
+dispatcher_call_id_new (guint32 request_id,
+                        NMDispatcherAction action,
+                        NMDispatcherFunc callback,
+                        gpointer user_data,
+                        const char *log_ifname,
+                        const char *log_con_uuid)
+{
+	NMDispatcherCallId *call_id;
+	gsize l_log_ifname;
+	gsize l_log_con_uuid;
+	char *extra_strings;
+
+	l_log_ifname   = log_ifname   ? (strlen (log_ifname)   + 1) : 0u;
+	l_log_con_uuid = log_con_uuid ? (strlen (log_con_uuid) + 1) : 0u;
+
+	call_id = g_malloc (sizeof (NMDispatcherCallId) + l_log_ifname + l_log_con_uuid);
+
+	call_id->action       = action;
+	call_id->request_id   = request_id;
+	call_id->callback     = callback;
+	call_id->user_data    = user_data;
+	call_id->idle_id      = 0;
+
+	extra_strings = &call_id->extra_strings[0];
+
+	if (log_ifname) {
+		call_id->log_ifname = extra_strings;
+		memcpy (extra_strings, log_ifname, l_log_ifname);
+		extra_strings += l_log_ifname;
+	} else
+		call_id->log_ifname = NULL;
+
+	if (log_con_uuid) {
+		call_id->log_con_uuid = extra_strings;
+		memcpy (extra_strings, log_con_uuid, l_log_con_uuid);
+	} else
+		call_id->log_con_uuid = NULL;
+
+	return call_id;
+}
+
+static void
+dispatcher_call_id_free (NMDispatcherCallId *call_id)
+{
+	nm_clear_g_source (&call_id->idle_id);
+	g_free (call_id);
+}
 
 /*****************************************************************************/
 
@@ -342,13 +392,6 @@ fill_vpn_props (NMProxyConfig *proxy_config,
 		dump_ip6_to_props (ip6_config, ip6_builder);
 }
 
-static void
-dispatcher_call_id_free (NMDispatcherCallId *call_id)
-{
-	nm_clear_g_source (&call_id->idle_id);
-	g_slice_free (NMDispatcherCallId, call_id);
-}
-
 static const char *
 dispatch_result_to_string (DispatchResult result)
 {
@@ -369,7 +412,8 @@ dispatch_result_to_string (DispatchResult result)
 
 static void
 dispatcher_results_process (guint32 request_id,
-                            NMDispatcherAction action,
+                            const char *log_ifname,
+                            const char *log_con_uuid,
                             GVariant *v_results)
 {
 	nm_auto_free_variant_iter GVariantIter *results = NULL;
@@ -379,15 +423,17 @@ dispatcher_results_process (guint32 request_id,
 	g_variant_get (v_results, "(a(sus))", &results);
 
 	if (g_variant_iter_n_children (results) == 0) {
-		_LOG2D (request_id, "succeeded but no scripts invoked");
+		_LOG2D (request_id, log_ifname, log_con_uuid, "succeeded but no scripts invoked");
 		return;
 	}
 
 	while (g_variant_iter_next (results, "(&su&s)", &script, &result, &err)) {
 		if (result == DISPATCH_RESULT_SUCCESS) {
-			_LOG2D (request_id, "%s succeeded", script);
+			_LOG2D (request_id, log_ifname, log_con_uuid, "%s succeeded", script);
 		} else {
 			_LOG2W (request_id,
+			        log_ifname,
+			        log_con_uuid,
 			        "%s failed (%s): %s",
 			        script,
 			        dispatch_result_to_string (result),
@@ -417,8 +463,12 @@ dispatcher_done_cb (GObject *source, GAsyncResult *result, gpointer user_data)
 			_LOG3D (call_id, "failed to call dispatcher scripts: %s",
 			        error->message);
 		}
-	} else
-		dispatcher_results_process (call_id->request_id, call_id->action, ret);
+	} else {
+		dispatcher_results_process (call_id->request_id,
+		                            call_id->log_ifname,
+		                            call_id->log_con_uuid,
+		                            ret);
+	}
 
 	g_hash_table_remove (gl.requests, call_id);
 
@@ -479,9 +529,11 @@ _dispatcher_call (NMDispatcherAction action,
 	GVariantBuilder vpn_proxy_props;
 	GVariantBuilder vpn_ip4_props;
 	GVariantBuilder vpn_ip6_props;
-	NMDispatcherCallId *call_id = NULL;
+	NMDispatcherCallId *call_id;
 	guint request_id;
 	const char *connectivity_state_string = "UNKNOWN";
+	const char *log_ifname;
+	const char *log_con_uuid;
 
 	g_return_val_if_fail (!blocking || (!callback && !user_data), FALSE);
 
@@ -492,6 +544,9 @@ _dispatcher_call (NMDispatcherAction action,
 	if (!gl.dbus_connection)
 		return FALSE;
 
+	log_ifname = device ? nm_device_get_iface (device) : NULL;
+	log_con_uuid = settings_connection ? nm_settings_connection_get_uuid (settings_connection) : NULL;
+
 	request_id = ++gl.request_id_counter;
 	if (G_UNLIKELY (!request_id))
 		request_id = ++gl.request_id_counter;
@@ -500,6 +555,8 @@ _dispatcher_call (NMDispatcherAction action,
 	if (   action == NM_DISPATCHER_ACTION_HOSTNAME
 	    || action == NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE) {
 		_LOG2D (request_id,
+		        log_ifname,
+		        log_con_uuid,
 		        "dispatching action '%s'%s",
 		        action_to_string (action),
 		        blocking
@@ -509,8 +566,10 @@ _dispatcher_call (NMDispatcherAction action,
 		g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
 		_LOG2D (request_id,
+		        log_ifname,
+		        log_con_uuid,
 		        "(%s) dispatching action '%s'%s",
-		        vpn_iface ?: nm_device_get_iface(device),
+		        vpn_iface ?: nm_device_get_iface (device),
 		        action_to_string (action),
 		          blocking
 		        ? " (blocking)"
@@ -611,20 +670,20 @@ _dispatcher_call (NMDispatcherAction action,
 		                                   &error);
 		if (!ret) {
 			g_dbus_error_strip_remote_error (error);
-			_LOG2W (request_id, "failed: %s", error->message);
+			_LOG2W (request_id, log_ifname, log_con_uuid, "failed: %s", error->message);
 			return FALSE;
 		}
-		dispatcher_results_process (request_id, action, ret);
+		dispatcher_results_process (request_id, log_ifname, log_con_uuid, ret);
 		return TRUE;
 	}
 
-	call_id = g_slice_new (NMDispatcherCallId);
-	*call_id = (NMDispatcherCallId) {
-		.action     = action,
-		.request_id = request_id,
-		.callback   = callback,
-		.user_data  = user_data,
-	};
+	call_id = dispatcher_call_id_new (request_id,
+	                                  action,
+	                                  callback,
+	                                  user_data,
+	                                  log_ifname,
+	                                  log_con_uuid);
+
 	g_dbus_connection_call (gl.dbus_connection,
 	                        NM_DISPATCHER_DBUS_SERVICE,
 	                        NM_DISPATCHER_DBUS_PATH,
