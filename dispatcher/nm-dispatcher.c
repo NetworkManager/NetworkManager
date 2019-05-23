@@ -169,17 +169,18 @@ struct Request {
 	} G_STMT_END
 
 static gboolean
-_LOG_R_T_enabled (const Request *request)
+_LOG_R_D_enabled (const Request *request)
 {
 	return request->debug;
 }
+#define _LOG_R_T_enabled(request) _LOG_R_D_enabled (request)
 
 #define _LOG_R_T(_request, ...) _LOG(_request, NULL, FALSE, g_debug,   __VA_ARGS__)
-#define _LOG_R_D(_request, ...) _LOG(_request, NULL, TRUE,  g_info,    __VA_ARGS__)
+#define _LOG_R_D(_request, ...) _LOG(_request, NULL, FALSE, g_info,    __VA_ARGS__)
 #define _LOG_R_W(_request, ...) _LOG(_request, NULL, TRUE,  g_warning, __VA_ARGS__)
 
 #define _LOG_S_T(_script, ...)  _LOG(NULL, _script,  FALSE, g_debug,   __VA_ARGS__)
-#define _LOG_S_D(_script, ...)  _LOG(NULL, _script,  TRUE,  g_info,    __VA_ARGS__)
+#define _LOG_S_D(_script, ...)  _LOG(NULL, _script,  FALSE, g_info,    __VA_ARGS__)
 #define _LOG_S_W(_script, ...)  _LOG(NULL, _script,  TRUE,  g_warning, __VA_ARGS__)
 
 /*****************************************************************************/
