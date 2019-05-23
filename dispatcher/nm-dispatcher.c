@@ -1020,6 +1020,7 @@ main (int argc, char **argv)
 	guint signal_id_term = 0;
 	guint signal_id_int = 0;
 	guint dbus_regist_id = 0;
+	guint dbus_own_name_id = 0;
 
 	if (!parse_command_line (&argc, &argv, &error)) {
 		_LOG_X_W ("Error parsing command line arguments: %s", error->message);
@@ -1066,18 +1067,21 @@ main (int argc, char **argv)
 		goto done;
 	}
 
-	g_bus_own_name_on_connection (gl.dbus_connection,
-	                              NM_DISPATCHER_DBUS_SERVICE,
-	                              G_BUS_NAME_OWNER_FLAGS_NONE,
-	                              on_name_acquired,
-	                              on_name_lost,
-	                              NULL, NULL);
+	dbus_own_name_id = g_bus_own_name_on_connection (gl.dbus_connection,
+	                                                 NM_DISPATCHER_DBUS_SERVICE,
+	                                                 G_BUS_NAME_OWNER_FLAGS_NONE,
+	                                                 on_name_acquired,
+	                                                 on_name_lost,
+	                                                 NULL, NULL);
 
 	quit_timeout_reschedule ();
 
 	g_main_loop_run (gl.loop);
 
 done:
+
+	if (dbus_own_name_id != 0)
+		g_bus_unown_name (nm_steal_int (&dbus_own_name_id));
 
 	if (dbus_regist_id != 0)
 		g_dbus_connection_unregister_object (gl.dbus_connection, nm_steal_int (&dbus_regist_id));
