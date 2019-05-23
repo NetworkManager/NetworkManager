@@ -44,6 +44,26 @@
 #define _NMLOG_DOMAIN      LOGD_DISPATCH
 #define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, "dispatcher", __VA_ARGS__)
 
+#define _NMLOG2_DOMAIN     LOGD_DISPATCH
+#define _NMLOG2(level, request_id, ...) \
+    G_STMT_START { \
+        const NMLogLevel __level = (level); \
+        \
+        if (nm_logging_enabled (__level, _NMLOG2_DOMAIN)) { \
+            _nm_log (__level, _NMLOG2_DOMAIN, 0, \
+                     NULL, \
+                     NULL, \
+                     "dispatcher: (%u) " \
+                     _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     (request_id) \
+                     _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+        } \
+    } G_STMT_END
+
+#define _NMLOG3_DOMAIN     LOGD_DISPATCH
+#define _NMLOG3(level, call_id, ...) _NMLOG2 (level, (call_id)->request_id, __VA_ARGS__)
+
+
 static GDBusProxy *dispatcher_proxy;
 static GHashTable *requests = NULL;
 
@@ -339,7 +359,7 @@ dispatch_result_to_string (DispatchResult result)
 }
 
 static void
-dispatcher_results_process (guint request_id,
+dispatcher_results_process (guint32 request_id,
                             NMDispatcherAction action,
                             GVariant *v_results)
 {
@@ -350,19 +370,19 @@ dispatcher_results_process (guint request_id,
 	g_variant_get (v_results, "(a(sus))", &results);
 
 	if (g_variant_iter_n_children (results) == 0) {
-		_LOGD ("(%u) succeeded but no scripts invoked", request_id);
+		_LOG2D (request_id, "succeeded but no scripts invoked");
 		return;
 	}
 
 	while (g_variant_iter_next (results, "(&su&s)", &script, &result, &err)) {
 		if (result == DISPATCH_RESULT_SUCCESS) {
-			_LOGD ("(%u) %s succeeded", request_id, script);
+			_LOG2D (request_id, "%s succeeded", script);
 		} else {
-			_LOGW ("(%u) %s failed (%s): %s",
-			       request_id,
-			       script,
-			       dispatch_result_to_string (result),
-			       err);
+			_LOG2W (request_id,
+			        "%s failed (%s): %s",
+			        script,
+			        dispatch_result_to_string (result),
+			        err);
 		}
 	}
 }
@@ -380,11 +400,11 @@ dispatcher_done_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	if (!ret) {
 		if (_nm_dbus_error_has_name (error, "org.freedesktop.systemd1.LoadFailed")) {
 			g_dbus_error_strip_remote_error (error);
-			_LOGW ("(%u) failed to call dispatcher scripts: %s",
-			       info->request_id, error->message);
+			_LOG3W (info, "failed to call dispatcher scripts: %s",
+			        error->message);
 		} else {
-			_LOGD ("(%u) failed to call dispatcher scripts: %s",
-			       info->request_id, error->message);
+			_LOG3D (info, "failed to call dispatcher scripts: %s",
+			        error->message);
 		}
 	} else
 		dispatcher_results_process (info->request_id, info->action, ret);
@@ -465,21 +485,22 @@ _dispatcher_call (NMDispatcherAction action,
 	/* All actions except 'hostname' and 'connectivity-change' require a device */
 	if (   action == NM_DISPATCHER_ACTION_HOSTNAME
 	    || action == NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE) {
-		_LOGD ("(%u) dispatching action '%s'%s",
-		       reqid, action_to_string (action),
-		       blocking
+		_LOG2D (reqid,
+		        "dispatching action '%s'%s",
+		        action_to_string (action),
+		        blocking
 		           ? " (blocking)"
 		           : (callback ? " (with callback)" : ""));
 	} else {
 		g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-		_LOGD ("(%u) (%s) dispatching action '%s'%s",
-		       reqid,
-		       vpn_iface ?: nm_device_get_iface(device),
-		       action_to_string (action),
-		       blocking
-		           ? " (blocking)"
-		           : (callback ? " (with callback)" : ""));
+		_LOG2D (reqid,
+		        "(%s) dispatching action '%s'%s",
+		        vpn_iface ?: nm_device_get_iface(device),
+		        action_to_string (action),
+		          blocking
+		        ? " (blocking)"
+		        : (callback ? " (with callback)" : ""));
 	}
 
 	if (applied_connection)
@@ -573,7 +594,7 @@ _dispatcher_call (NMDispatcherAction action,
 		                                &error);
 		if (!ret) {
 			g_dbus_error_strip_remote_error (error);
-			_LOGW ("(%u) failed: %s", reqid, error->message);
+			_LOG2W (reqid, "failed: %s", error->message);
 			g_clear_error (&error);
 			success = FALSE;
 		} else {
@@ -824,7 +845,7 @@ nm_dispatcher_call_cancel (guint call_id)
 	g_return_if_fail (info);
 
 	if (info && info->callback) {
-		_LOGD ("(%u) cancelling dispatcher callback action", call_id);
+		_LOG3D (info, "cancelling dispatcher callback action");
 		info->callback = NULL;
 	}
 }
