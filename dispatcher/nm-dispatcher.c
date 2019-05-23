@@ -243,8 +243,9 @@ request_free (Request *request)
 static gboolean
 quit_timeout_cb (gpointer user_data)
 {
+	gl.quit_id = 0;
 	g_main_loop_quit (gl.loop);
-	return FALSE;
+	return G_SOURCE_REMOVE;
 }
 
 static void
@@ -957,7 +958,7 @@ signal_handler (gpointer user_data)
 	_LOG_X_I ("Caught signal %d, shutting down...", signo);
 	g_main_loop_quit (gl.loop);
 
-	return G_SOURCE_REMOVE;
+	return G_SOURCE_CONTINUE;
 }
 
 int
@@ -967,6 +968,8 @@ main (int argc, char **argv)
 	GError *error = NULL;
 	GDBusConnection *bus;
 	Handler *handler;
+	guint signal_id_term;
+	guint signal_id_int;
 
 	GOptionEntry entries[] = {
 		{ "debug", 0, 0, G_OPTION_ARG_NONE, &gl.debug, "Output to console rather than syslog", NULL },
@@ -986,8 +989,8 @@ main (int argc, char **argv)
 
 	g_option_context_free (opt_ctx);
 
-	g_unix_signal_add (SIGTERM, signal_handler, GINT_TO_POINTER (SIGTERM));
-	g_unix_signal_add (SIGINT, signal_handler, GINT_TO_POINTER (SIGINT));
+	signal_id_term = g_unix_signal_add (SIGTERM, signal_handler, GINT_TO_POINTER (SIGTERM));
+	signal_id_int  = g_unix_signal_add (SIGINT,  signal_handler, GINT_TO_POINTER (SIGINT));
 
 	if (gl.debug) {
 		if (!g_getenv ("G_MESSAGES_DEBUG")) {
@@ -1035,6 +1038,11 @@ main (int argc, char **argv)
 
 	g_queue_free (handler->requests_waiting);
 	g_object_unref (handler);
+
+	nm_clear_g_source (&signal_id_term);
+	nm_clear_g_source (&signal_id_int);
+	nm_clear_g_source (&gl.quit_id);
+	g_clear_pointer (&gl.loop, g_main_loop_unref);
 
 	if (!gl.debug)
 		logging_shutdown ();
