@@ -1302,7 +1302,7 @@ write_wired_for_virtual (NMConnection *connection, shvarFile *ifcfg)
 		has_wired = TRUE;
 
 		device_mac = nm_setting_wired_get_mac_address (s_wired);
-		svSetValueStr (ifcfg, "HWADDR", device_mac);
+		svSetValue (ifcfg, "HWADDR", device_mac ?: "");
 
 		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
 		svSetValueStr (ifcfg, "MACADDR", cloned_mac);
