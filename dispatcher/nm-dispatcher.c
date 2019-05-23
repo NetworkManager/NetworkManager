@@ -42,6 +42,7 @@ static struct {
 	gboolean persist;
 	guint quit_id;
 	guint request_id_counter;
+	gboolean ever_acquired_name;
 } gl;
 
 typedef struct Request Request;
@@ -869,14 +870,12 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	return TRUE;
 }
 
-static gboolean ever_acquired_name = FALSE;
-
 static void
 on_name_acquired (GDBusConnection *connection,
                   const char      *name,
                   gpointer         user_data)
 {
-	ever_acquired_name = TRUE;
+	gl.ever_acquired_name = TRUE;
 }
 
 static void
@@ -885,14 +884,14 @@ on_name_lost (GDBusConnection *connection,
               gpointer         user_data)
 {
 	if (!connection) {
-		if (!ever_acquired_name) {
+		if (!gl.ever_acquired_name) {
 			_LOG_X_W ("Could not get the system bus.  Make sure the message bus daemon is running!");
 			exit (1);
 		} else {
 			_LOG_X_I ("System bus stopped. Exiting");
 			exit (0);
 		}
-	} else if (!ever_acquired_name) {
+	} else if (!gl.ever_acquired_name) {
 		_LOG_X_W ("Could not acquire the " NM_DISPATCHER_DBUS_SERVICE " service.");
 		exit (1);
 	} else {
