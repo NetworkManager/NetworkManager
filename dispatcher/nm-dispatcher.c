@@ -587,7 +587,7 @@ _compare_basenames (gconstpointer a, gconstpointer b)
 }
 
 static void
-_find_scripts (GHashTable *scripts, const char *base, const char *subdir)
+_find_scripts (Request *request, GHashTable *scripts, const char *base, const char *subdir)
 {
 	const char *filename;
 	gs_free char *dirname = NULL;
@@ -597,8 +597,8 @@ _find_scripts (GHashTable *scripts, const char *base, const char *subdir)
 	dirname = g_build_filename (base, "dispatcher.d", subdir, NULL);
 
 	if (!(dir = g_dir_open (dirname, 0, &error))) {
-		g_message ("find-scripts: Failed to open dispatcher directory '%s': %s",
-		           dirname, error->message);
+		_LOG_R_W (request, "find-scripts: Failed to open dispatcher directory '%s': %s",
+		          dirname, error->message);
 		g_error_free (error);
 		return;
 	}
@@ -616,26 +616,28 @@ _find_scripts (GHashTable *scripts, const char *base, const char *subdir)
 }
 
 static GSList *
-find_scripts (const char *str_action)
+find_scripts (Request *request)
 {
 	gs_unref_hashtable GHashTable *scripts = NULL;
 	GSList *script_list = NULL;
 	GHashTableIter iter;
-	const char *subdir = NULL;
+	const char *subdir;
 	char *path;
 	char *filename;
 
-	if (   strcmp (str_action, NMD_ACTION_PRE_UP) == 0
-	    || strcmp (str_action, NMD_ACTION_VPN_PRE_UP) == 0)
+	if (NM_IN_STRSET (request->action, NMD_ACTION_PRE_UP,
+	                                   NMD_ACTION_VPN_PRE_UP))
 		subdir = "pre-up.d";
-	else if (   strcmp (str_action, NMD_ACTION_PRE_DOWN) == 0
-	         || strcmp (str_action, NMD_ACTION_VPN_PRE_DOWN) == 0)
+	else if (NM_IN_STRSET (request->action, NMD_ACTION_PRE_DOWN,
+	                                        NMD_ACTION_VPN_PRE_DOWN))
 		subdir = "pre-down.d";
+	else
+		subdir = NULL;
 
 	scripts = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 
-	_find_scripts (scripts, NMLIBDIR, subdir);
-	_find_scripts (scripts, NMCONFDIR, subdir);
+	_find_scripts (request, scripts, NMLIBDIR, subdir);
+	_find_scripts (request, scripts, NMCONFDIR, subdir);
 
 	g_hash_table_iter_init (&iter, scripts);
 	while (g_hash_table_iter_next (&iter, (gpointer *) &filename, (gpointer *) &path)) {
@@ -653,11 +655,11 @@ find_scripts (const char *str_action)
 
 		err = stat (path, &st);
 		if (err)
-			g_warning ("find-scripts: Failed to stat '%s': %d", path, err);
+			_LOG_R_W (request, "find-scripts: Failed to stat '%s': %d", path, err);
 		else if (!S_ISREG (st.st_mode))
 			; /* silently skip. */
 		else if (!check_permissions (&st, &err_msg))
-			g_warning ("find-scripts: Cannot execute '%s': %s", path, err_msg);
+			_LOG_R_W (request, "find-scripts: Cannot execute '%s': %s", path, err_msg);
 		else {
 			/* success */
 			script_list = g_slist_prepend (script_list, g_strdup (path));
@@ -724,8 +726,6 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	guint i, num_nowait = 0;
 	const char *error_message = NULL;
 
-	sorted_scripts = find_scripts (str_action);
-
 	request = g_slice_new0 (Request);
 	request->request_id = ++request_id_counter;
 	request->handler = h;
@@ -751,6 +751,8 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	                                                    &error_message);
 
 	request->scripts = g_ptr_array_new_full (5, script_info_free);
+
+	sorted_scripts = find_scripts (request);
 	for (iter = sorted_scripts; iter; iter = g_slist_next (iter)) {
 		ScriptInfo *s;
 
