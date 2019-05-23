@@ -88,29 +88,30 @@ void nm_team_link_watcher_ref                    (NMTeamLinkWatcher *watcher);
 NM_AVAILABLE_IN_1_12
 void nm_team_link_watcher_unref                  (NMTeamLinkWatcher *watcher);
 NM_AVAILABLE_IN_1_12
-gboolean nm_team_link_watcher_equal              (NMTeamLinkWatcher *watcher, NMTeamLinkWatcher *other);
+gboolean nm_team_link_watcher_equal              (const NMTeamLinkWatcher *watcher,
+                                                  const NMTeamLinkWatcher *other);
 NM_AVAILABLE_IN_1_12
-NMTeamLinkWatcher *nm_team_link_watcher_dup      (NMTeamLinkWatcher *watcher);
+NMTeamLinkWatcher *nm_team_link_watcher_dup      (const NMTeamLinkWatcher *watcher);
 NM_AVAILABLE_IN_1_12
-const char *nm_team_link_watcher_get_name        (NMTeamLinkWatcher *watcher);
+const char *nm_team_link_watcher_get_name        (const NMTeamLinkWatcher *watcher);
 NM_AVAILABLE_IN_1_12
-int nm_team_link_watcher_get_delay_up            (NMTeamLinkWatcher *watcher);
+int nm_team_link_watcher_get_delay_up            (const NMTeamLinkWatcher *watcher);
 NM_AVAILABLE_IN_1_12
-int nm_team_link_watcher_get_delay_down          (NMTeamLinkWatcher *watcher);
+int nm_team_link_watcher_get_delay_down          (const NMTeamLinkWatcher *watcher);
 NM_AVAILABLE_IN_1_12
-int nm_team_link_watcher_get_init_wait           (NMTeamLinkWatcher *watcher);
+int nm_team_link_watcher_get_init_wait           (const NMTeamLinkWatcher *watcher);
 NM_AVAILABLE_IN_1_12
-int nm_team_link_watcher_get_interval            (NMTeamLinkWatcher *watcher);
+int nm_team_link_watcher_get_interval            (const NMTeamLinkWatcher *watcher);
 NM_AVAILABLE_IN_1_12
-int nm_team_link_watcher_get_missed_max          (NMTeamLinkWatcher *watcher);
+int nm_team_link_watcher_get_missed_max          (const NMTeamLinkWatcher *watcher);
 NM_AVAILABLE_IN_1_12
-const char *nm_team_link_watcher_get_target_host (NMTeamLinkWatcher *watcher);
+const char *nm_team_link_watcher_get_target_host (const NMTeamLinkWatcher *watcher);
 NM_AVAILABLE_IN_1_12
-const char *nm_team_link_watcher_get_source_host (NMTeamLinkWatcher *watcher);
+const char *nm_team_link_watcher_get_source_host (const NMTeamLinkWatcher *watcher);
 NM_AVAILABLE_IN_1_12
-NMTeamLinkWatcherArpPingFlags nm_team_link_watcher_get_flags (NMTeamLinkWatcher *watcher);
+NMTeamLinkWatcherArpPingFlags nm_team_link_watcher_get_flags (const NMTeamLinkWatcher *watcher);
 NM_AVAILABLE_IN_1_16
-int nm_team_link_watcher_get_vlanid              (NMTeamLinkWatcher *watcher);
+int nm_team_link_watcher_get_vlanid              (const NMTeamLinkWatcher *watcher);
 
 #define NM_TYPE_SETTING_TEAM            (nm_setting_team_get_type ())
 #define NM_SETTING_TEAM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_TEAM, NMSettingTeam))

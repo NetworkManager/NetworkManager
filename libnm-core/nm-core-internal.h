@@ -534,20 +534,18 @@ gboolean _nm_utils_inet6_is_token (const struct in6_addr *in6addr);
 
 /*****************************************************************************/
 
-gboolean _nm_team_link_watchers_equal (GPtrArray *a, GPtrArray *b, gboolean ignore_order);
+NMTeamLinkWatcher *_nm_team_link_watcher_ref (NMTeamLinkWatcher *watcher);
 
-gboolean _nm_utils_team_config_equal (const char *conf1, const char *conf2, gboolean port);
-GValue *_nm_utils_team_config_get (const char *conf,
-                                   const char *key,
-                                   const char *key2,
-                                   const char *key3,
-                                   gboolean port_config);
+int nm_team_link_watcher_cmp (const NMTeamLinkWatcher *watcher, const NMTeamLinkWatcher *other);
 
-gboolean _nm_utils_team_config_set (char **conf,
-                                    const char *key,
-                                    const char *key2,
-                                    const char *key3,
-                                    const GValue *value);
+int nm_team_link_watchers_cmp (const NMTeamLinkWatcher *const*a,
+                               const NMTeamLinkWatcher *const*b,
+                               gsize len,
+                               gboolean ignore_order);
+
+gboolean nm_team_link_watchers_equal (const GPtrArray *a,
+                                      const GPtrArray *b,
+                                      gboolean ignore_order);
 
 /*****************************************************************************/
 

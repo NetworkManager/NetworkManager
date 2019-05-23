@@ -165,6 +165,8 @@ def get_default_value(setting, pspec, propxml):
         default_value = '[]'
     elif str(default_value).startswith('<'):
         default_value = None
+    elif str(default_value).startswith('['):
+        default_value = None
 
     return default_value
 

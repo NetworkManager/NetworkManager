@@ -626,10 +626,14 @@ test_team_conf_read_valid (void)
 static void
 test_team_conf_read_invalid (void)
 {
-#if WITH_JSON_VALIDATION
 	GKeyFile *keyfile = NULL;
 	gs_unref_object NMConnection *con = NULL;
 	NMSettingTeam *s_team;
+
+	if (!WITH_JSON_VALIDATION) {
+		g_test_skip ("team test requires JSON validation");
+		return;
+	}
 
 	con = nmtst_create_connection_from_keyfile (
 	      "[connection]\n"
@@ -645,7 +649,6 @@ test_team_conf_read_invalid (void)
 	g_assert (nm_setting_team_get_config (s_team) == NULL);
 
 	CLEAR (&con, &keyfile);
-#endif
 }
 
 /*****************************************************************************/

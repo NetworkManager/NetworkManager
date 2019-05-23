@@ -46,7 +46,7 @@ typedef enum {
 	_NM_TEAM_LINK_WATCHER_KEY_NUM,
 } NMTeamLinkWatcherKeyId;
 
-char *nm_utils_team_link_watcher_to_string (NMTeamLinkWatcher *watcher);
+char *nm_utils_team_link_watcher_to_string (const NMTeamLinkWatcher *watcher);
 
 NMTeamLinkWatcher *nm_utils_team_link_watcher_from_string (const char *str,
                                                            GError **error);

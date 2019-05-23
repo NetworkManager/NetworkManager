@@ -863,10 +863,9 @@ _nm_setting_new_from_dbus (GType setting_type,
                            NMSettingParseFlags parse_flags,
                            GError **error)
 {
+	gs_unref_ptrarray GPtrArray *keys_keep_variant = NULL;
 	gs_unref_object NMSetting *setting = NULL;
 	gs_unref_hashtable GHashTable *keys = NULL;
-	const NMSettInfoSetting *sett_info;
-	guint i;
 
 	g_return_val_if_fail (G_TYPE_IS_INSTANTIATABLE (setting_type), NULL);
 	g_return_val_if_fail (g_variant_is_of_type (setting_dict, NM_VARIANT_TYPE_SETTING), NULL);
@@ -890,18 +889,19 @@ _nm_setting_new_from_dbus (GType setting_type,
 	if (NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
 		GVariantIter iter;
 		GVariant *entry, *entry_key;
-		char *key;
+		const char *key;
 
-		keys = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
+		keys_keep_variant = g_ptr_array_new_with_free_func ((GDestroyNotify) g_variant_unref);
+		keys = g_hash_table_new (nm_str_hash, g_str_equal);
 
 		g_variant_iter_init (&iter, setting_dict);
 		while ((entry = g_variant_iter_next_value (&iter))) {
 			entry_key = g_variant_get_child_value (entry, 0);
-			key = g_strdup (g_variant_get_string (entry_key, NULL));
-			g_variant_unref (entry_key);
+			g_ptr_array_add (keys_keep_variant, entry_key);
 			g_variant_unref (entry);
 
-			if (!g_hash_table_add (keys, key)) {
+			key = g_variant_get_string (entry_key, NULL);
+			if (!g_hash_table_add (keys, (char *) key)) {
 				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING,
 				             _("duplicate property"));
 				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), key);
@@ -909,6 +909,47 @@ _nm_setting_new_from_dbus (GType setting_type,
 			}
 		}
 	}
+
+	if (!NM_SETTING_GET_CLASS (setting)->init_from_dbus (setting,
+	                                                     keys,
+	                                                     setting_dict,
+	                                                     connection_dict,
+	                                                     parse_flags,
+	                                                     error))
+		return NULL;
+
+	if (   NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)
+	    && g_hash_table_size (keys) > 0) {
+		GHashTableIter iter;
+		const char *key;
+
+		g_hash_table_iter_init (&iter, keys);
+		if (g_hash_table_iter_next (&iter, (gpointer *) &key, NULL)) {
+			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("unknown property"));
+			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), key);
+			return NULL;
+		}
+	}
+
+	return g_steal_pointer (&setting);
+}
+
+static gboolean
+init_from_dbus (NMSetting *setting,
+                GHashTable *keys,
+                GVariant *setting_dict,
+                GVariant *connection_dict,
+                guint /* NMSettingParseFlags */ parse_flags,
+                GError **error)
+{
+	const NMSettInfoSetting *sett_info;
+
+	guint i;
+
+	nm_assert (NM_IS_SETTING (setting));
+	nm_assert (!NM_FLAGS_ANY (parse_flags, ~NM_SETTING_PARSE_FLAGS_ALL));
+	nm_assert (!NM_FLAGS_ALL (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT | NM_SETTING_PARSE_FLAGS_BEST_EFFORT));
 
 	sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
 
@@ -925,10 +966,12 @@ _nm_setting_new_from_dbus (GType setting_type,
 			g_hash_table_insert (hash,
 			                     key,
 			                     val);
+			if (keys)
+				g_hash_table_remove (keys, key);
 		}
 
 		_nm_setting_gendata_notify (setting, TRUE);
-		return g_steal_pointer (&setting);
+		return TRUE;
 	}
 
 	for (i = 0; i < sett_info->property_infos_len; i++) {
@@ -942,7 +985,8 @@ _nm_setting_new_from_dbus (GType setting_type,
 
 		value = g_variant_lookup_value (setting_dict, property_info->name, NULL);
 
-		if (value && keys)
+		if (   value
+		    && keys)
 			g_hash_table_remove (keys, property_info->name);
 
 		if (   value
@@ -960,7 +1004,7 @@ _nm_setting_new_from_dbus (GType setting_type,
 				                     g_type_name (property_info->param_spec->value_type) : "(unknown)",
 				             g_variant_get_type_string (value));
 				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property_info->name);
-				return NULL;
+				return FALSE;
 			}
 
 			if (!property_info->from_dbus_fcn (setting,
@@ -975,7 +1019,7 @@ _nm_setting_new_from_dbus (GType setting_type,
 				             _("failed to set property: %s"),
 				             local->message);
 				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property_info->name);
-				return NULL;
+				return FALSE;
 			}
 		} else if (   !value
 		           && property_info->missing_from_dbus_fcn) {
@@ -990,7 +1034,7 @@ _nm_setting_new_from_dbus (GType setting_type,
 				             _("failed to set property: %s"),
 				             local->message);
 				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property_info->name);
-				return NULL;
+				return FALSE;
 			}
 		} else if (   value
 		           && property_info->param_spec) {
@@ -1010,7 +1054,7 @@ _nm_setting_new_from_dbus (GType setting_type,
 				                : "(unknown)"),
 				             g_variant_get_type_string (value));
 				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property_info->name);
-				return NULL;
+				return FALSE;
 			}
 
 			if (!nm_g_object_set_property (G_OBJECT (setting), property_info->param_spec->name, &object_value, &local)) {
@@ -1020,26 +1064,12 @@ _nm_setting_new_from_dbus (GType setting_type,
 				             _("can not set property: %s"),
 				             local->message);
 				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property_info->name);
-				return NULL;
+				return FALSE;
 			}
 		}
 	}
 
-	if (   NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)
-	    && g_hash_table_size (keys) > 0) {
-		GHashTableIter iter;
-		const char *key;
-
-		g_hash_table_iter_init (&iter, keys);
-		if (g_hash_table_iter_next (&iter, (gpointer *) &key, NULL)) {
-			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("unknown property"));
-			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), key);
-			return NULL;
-		}
-	}
-
-	return g_steal_pointer (&setting);
+	return TRUE;
 }
 
 /**
@@ -2694,6 +2724,7 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	setting_class->duplicate_copy_properties = duplicate_copy_properties;
 	setting_class->enumerate_values          = enumerate_values;
 	setting_class->aggregate                 = aggregate;
+	setting_class->init_from_dbus            = init_from_dbus;
 
 	/**
 	 * NMSetting:name:

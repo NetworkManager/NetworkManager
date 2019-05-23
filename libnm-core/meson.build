@@ -112,15 +112,16 @@ libnm_core_settings_sources = files(
 )
 
 libnm_core_sources = libnm_core_settings_sources + files(
-  'nm-crypto.c',
   'nm-connection.c',
+  'nm-crypto.c',
   'nm-dbus-utils.c',
   'nm-errors.c',
-  'nm-keyfile.c',
   'nm-keyfile-utils.c',
+  'nm-keyfile.c',
   'nm-property-compare.c',
   'nm-setting.c',
   'nm-simple-connection.c',
+  'nm-team-utils.c',
   'nm-utils.c',
   'nm-vpn-editor-plugin.c',
   'nm-vpn-plugin-info.c',

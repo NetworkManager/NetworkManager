@@ -865,6 +865,28 @@ fcn (void) \
 
 /*****************************************************************************/
 
+static inline int
+nm_strcmp0 (const char *s1, const char *s2)
+{
+	int c;
+
+	/* like g_strcmp0(), but this is inlinable.
+	 *
+	 * Also, it is guaranteed to return either -1, 0, or 1. */
+	if (s1 == s2)
+		return 0;
+	if (!s1)
+		return -1;
+	if (!s2)
+		return 1;
+	c = strcmp (s1, s2);
+	if (c < 0)
+		return -1;
+	if (c > 0)
+		return 1;
+	return 0;
+}
+
 static inline gboolean
 nm_streq (const char *s1, const char *s2)
 {
@@ -989,10 +1011,9 @@ typedef enum { \
 } _PropertyEnums; \
 static GParamSpec *obj_properties[_PROPERTY_ENUMS_LAST] = { NULL, }
 
-#define NM_GOBJECT_PROPERTIES_DEFINE(obj_type, ...) \
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (__VA_ARGS__); \
+#define NM_GOBJECT_PROPERTIES_DEFINE_NOTIFY(obj_type, obj_properties, property_enums_type, prop_0) \
 static inline void \
-_nm_gobject_notify_together_impl (obj_type *obj, guint n, const _PropertyEnums *props) \
+_nm_gobject_notify_together_impl (obj_type *obj, guint n, const property_enums_type *props) \
 { \
 	const gboolean freeze_thaw = (n > 1); \
 	\
@@ -1002,9 +1023,9 @@ _nm_gobject_notify_together_impl (obj_type *obj, guint n, const _PropertyEnums *
 	if (freeze_thaw) \
 		g_object_freeze_notify ((GObject *) obj); \
 	while (n-- > 0) { \
-		const _PropertyEnums prop = *props++; \
+		const property_enums_type prop = *props++; \
 		\
-		if (prop != PROP_0) { \
+		if (prop != prop_0) { \
 			nm_assert ((gsize) prop < G_N_ELEMENTS (obj_properties)); \
 			nm_assert (obj_properties[prop]); \
 			g_object_notify_by_pspec ((GObject *) obj, obj_properties[prop]); \
@@ -1015,10 +1036,14 @@ _nm_gobject_notify_together_impl (obj_type *obj, guint n, const _PropertyEnums *
 } \
 \
 static inline void \
-_notify (obj_type *obj, _PropertyEnums prop) \
+_notify (obj_type *obj, property_enums_type prop) \
 { \
 	_nm_gobject_notify_together_impl (obj, 1, &prop); \
 } \
+
+#define NM_GOBJECT_PROPERTIES_DEFINE(obj_type, ...) \
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (__VA_ARGS__); \
+NM_GOBJECT_PROPERTIES_DEFINE_NOTIFY (obj_type, obj_properties, _PropertyEnums, PROP_0)
 
 /* invokes _notify() for all arguments (of type _PropertyEnums). Note, that if
  * there are more than one prop arguments, this will involve a freeze/thaw

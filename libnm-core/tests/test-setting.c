@@ -45,6 +45,15 @@
 
 /*****************************************************************************/
 
+/* assert that the define is just a plain integer (boolean). */
+
+G_STATIC_ASSERT (   (WITH_JSON_VALIDATION) == 1
+                 || (WITH_JSON_VALIDATION) == 0);
+
+_nm_unused static const int _with_json_validation = WITH_JSON_VALIDATION;
+
+/*****************************************************************************/
+
 /* converts @dict to a connection. In this case, @dict must be good, without warnings, so that
  * NM_SETTING_PARSE_FLAGS_STRICT and NM_SETTING_PARSE_FLAGS_BEST_EFFORT yield the exact same results. */
 static NMConnection *
@@ -966,7 +975,6 @@ test_dcb_bandwidth_sums (void)
 
 /*****************************************************************************/
 
-#if WITH_JSON_VALIDATION
 static void
 _test_team_config_sync (const char *team_config,
                         int notify_peer_count,
@@ -989,26 +997,31 @@ _test_team_config_sync (const char *team_config,
 	guint i, j;
 	gboolean found;
 
+	if (!WITH_JSON_VALIDATION) {
+		g_test_skip ("team test requires JSON validation");
+		return;
+	}
+
 	s_team = (NMSettingTeam *) nm_setting_team_new ();
 	g_assert (s_team);
 
 	g_object_set (s_team, NM_SETTING_TEAM_CONFIG, team_config, NULL);
-	g_assert (nm_setting_team_get_notify_peers_count (s_team) == notify_peer_count);
-	g_assert (nm_setting_team_get_notify_peers_interval (s_team) == notify_peers_interval);
-	g_assert (nm_setting_team_get_mcast_rejoin_count (s_team) == mcast_rejoin_count);
-	g_assert (nm_setting_team_get_mcast_rejoin_interval (s_team) == mcast_rejoin_interval);
-	g_assert (nm_setting_team_get_runner_tx_balancer_interval (s_team) == runner_tx_balancer_interval);
-	g_assert (nm_setting_team_get_runner_active (s_team) == runner_active);
-	g_assert (nm_setting_team_get_runner_fast_rate (s_team) == runner_fast_rate);
-	g_assert (nm_setting_team_get_runner_sys_prio (s_team) == runner_sys_prio);
-	g_assert (nm_setting_team_get_runner_min_ports (s_team) == runner_min_ports);
-	g_assert (nm_streq0 (nm_setting_team_get_runner (s_team), runner));
-	g_assert (nm_streq0 (nm_setting_team_get_runner_hwaddr_policy (s_team), runner_hwaddr_policy));
-	g_assert (nm_streq0 (nm_setting_team_get_runner_tx_balancer (s_team), runner_tx_balancer));
-	g_assert (nm_streq0 (nm_setting_team_get_runner_agg_select_policy (s_team), runner_agg_select_policy));
+	g_assert_cmpint (nm_setting_team_get_notify_peers_count (s_team), ==, notify_peer_count);
+	g_assert_cmpint (nm_setting_team_get_notify_peers_interval (s_team), ==, notify_peers_interval);
+	g_assert_cmpint (nm_setting_team_get_mcast_rejoin_count (s_team), ==, mcast_rejoin_count);
+	g_assert_cmpint (nm_setting_team_get_mcast_rejoin_interval (s_team), ==, mcast_rejoin_interval);
+	g_assert_cmpint (nm_setting_team_get_runner_tx_balancer_interval (s_team), ==, runner_tx_balancer_interval);
+	g_assert_cmpint (nm_setting_team_get_runner_active (s_team), ==, runner_active);
+	g_assert_cmpint (nm_setting_team_get_runner_fast_rate (s_team), ==, runner_fast_rate);
+	g_assert_cmpint (nm_setting_team_get_runner_sys_prio (s_team), ==, runner_sys_prio);
+	g_assert_cmpint (nm_setting_team_get_runner_min_ports (s_team), ==, runner_min_ports);
+	g_assert_cmpstr (nm_setting_team_get_runner (s_team), ==, runner);
+	g_assert_cmpstr (nm_setting_team_get_runner_hwaddr_policy (s_team), ==, runner_hwaddr_policy);
+	g_assert_cmpstr (nm_setting_team_get_runner_tx_balancer (s_team), ==, runner_tx_balancer);
+	g_assert_cmpstr (nm_setting_team_get_runner_agg_select_policy (s_team), ==, runner_agg_select_policy);
 
 	if (runner_tx_hash) {
-		g_assert (runner_tx_hash->len == nm_setting_team_get_num_runner_tx_hash (s_team));
+		g_assert_cmpint (runner_tx_hash->len, ==, nm_setting_team_get_num_runner_tx_hash (s_team));
 		for (i = 0; i < runner_tx_hash->len; i++) {
 			found = FALSE;
 			for (j = 0; j < nm_setting_team_get_num_runner_tx_hash (s_team); j++) {
@@ -1023,7 +1036,7 @@ _test_team_config_sync (const char *team_config,
 	}
 
 	if (link_watchers) {
-		g_assert (link_watchers->len == nm_setting_team_get_num_link_watchers (s_team));
+		g_assert_cmpint (link_watchers->len, ==, nm_setting_team_get_num_link_watchers (s_team));
 		for (i = 0; i < link_watchers->len; i++) {
 			found = FALSE;
 			for (j = 0; j < nm_setting_team_get_num_link_watchers (s_team); j++) {
@@ -1250,6 +1263,11 @@ _test_team_port_config_sync (const char *team_port_config,
 	guint i, j;
 	gboolean found;
 
+	if (!WITH_JSON_VALIDATION) {
+		g_test_skip ("team test requires JSON validation");
+		return;
+	}
+
 	s_team_port = (NMSettingTeamPort *) nm_setting_team_port_new ();
 	g_assert (s_team_port);
 
@@ -1354,7 +1372,134 @@ test_team_port_full_config (void)
 	                             "\"send_always\": true}]}",
 	                             10, 20, true, 30, 40, NULL);
 }
-#endif
+
+/*****************************************************************************/
+
+static void
+_check_team_setting (NMSetting *setting)
+{
+	gs_unref_object NMSetting *setting2 = NULL;
+	gs_unref_object NMSetting *setting_clone = NULL;
+	gboolean is_port = NM_IS_SETTING_TEAM_PORT (setting);
+	gs_unref_variant GVariant *variant2 = NULL;
+	gs_unref_variant GVariant *variant3 = NULL;
+
+	g_assert (NM_IS_SETTING_TEAM (setting) || is_port);
+
+	setting_clone = nm_setting_duplicate (setting);
+
+	if (!is_port) {
+		if (nm_setting_team_get_runner (NM_SETTING_TEAM (setting)) == NULL) {
+			/* such a setting is invalid. We must first coerce it so that it becomes
+			 * valid. */
+			setting = setting_clone;
+			g_object_set (setting,
+			              NM_SETTING_TEAM_RUNNER,
+			              NM_SETTING_TEAM_RUNNER_DEFAULT,
+			              NULL);
+		}
+	}
+
+	setting2 = g_object_new (G_OBJECT_TYPE (setting),
+	                           is_port
+	                         ? NM_SETTING_TEAM_PORT_CONFIG
+	                         : NM_SETTING_TEAM_CONFIG,
+	                           is_port
+	                         ? nm_setting_team_port_get_config (NM_SETTING_TEAM_PORT (setting))
+	                         : nm_setting_team_get_config (NM_SETTING_TEAM (setting)),
+	                         NULL);
+
+	if (WITH_JSON_VALIDATION)
+		nmtst_assert_setting_is_equal (setting, setting2, NM_SETTING_COMPARE_FLAG_EXACT);
+
+	g_clear_object (&setting2);
+
+	nmtst_assert_setting_dbus_roundtrip (setting);
+
+	/* OK, now parse the setting only from the D-Bus variant, but removing the JSON config.
+	 * For that, we have to "drop" the JSON and we do that by resetting the property.
+	 * This causes JSON to be regenerated and it's in a normalized form that will compare
+	 * equal. */
+	setting = setting_clone;
+	if (is_port) {
+		g_object_set (setting,
+		              NM_SETTING_TEAM_PORT_STICKY,
+		              nm_setting_team_port_get_sticky (NM_SETTING_TEAM_PORT (setting)),
+		              NULL);
+	} else {
+		g_object_set (setting,
+		              NM_SETTING_TEAM_RUNNER_SYS_PRIO,
+		              nm_setting_team_get_runner_sys_prio (NM_SETTING_TEAM (setting)),
+		              NULL);
+	}
+	variant2 = _nm_setting_to_dbus (setting, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	variant3 = nm_utils_gvariant_vardict_filter_drop_one (variant2, "config");
+	setting2 = nmtst_assert_setting_dbus_new (G_OBJECT_TYPE (setting), variant3);
+	nmtst_assert_setting_is_equal (setting, setting2, NM_SETTING_COMPARE_FLAG_EXACT);
+}
+
+static void
+test_team_setting (void)
+{
+	gs_unref_variant GVariant *variant = nmtst_variant_from_string (G_VARIANT_TYPE_VARDICT,
+	                                                                "{'config': <'{\"link_watch\": {\"name\": \"ethtool\"}}'>, 'interface-name': <'nm-team'>, 'link-watchers': <[{'name': <'ethtool'>}]>, 'runner': <'roundrobin'>, 'runner-min-ports': <-1>, 'runner-sys-prio': <-1>, 'runner-tx-balancer-interval': <-1>}");
+	gs_free_error GError *error = NULL;
+	gs_unref_object NMSetting *setting = NULL;
+	nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher1 = nm_team_link_watcher_new_nsna_ping (1, 3, 4, "bbb", NULL);
+	nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher2 = nm_team_link_watcher_new_arp_ping2 (1, 3, 4, -1, "ccc", "ddd", 0, NULL);
+
+	g_assert (watcher1);
+	g_assert (watcher2);
+
+	setting = _nm_setting_new_from_dbus (NM_TYPE_SETTING_TEAM,
+	                                     variant,
+	                                     NULL,
+	                                     NM_SETTING_PARSE_FLAGS_STRICT,
+	                                     &error);
+	nmtst_assert_success (setting, error);
+	_check_team_setting (setting);
+
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{\"link_watch\": {\"name\": \"ethtool\"}}");
+	g_assert_cmpint (nm_setting_team_get_num_link_watchers (NM_SETTING_TEAM (setting)), ==, 1);
+
+	g_object_set (setting,
+	              NM_SETTING_TEAM_RUNNER_SYS_PRIO,
+	              (int) 10,
+	              NULL);
+
+	_check_team_setting (setting);
+	g_assert_cmpint (nm_setting_team_get_num_link_watchers (NM_SETTING_TEAM (setting)), ==, 1);
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": { \"name\": \"ethtool\"} }");
+
+	nm_setting_team_remove_link_watcher (NM_SETTING_TEAM (setting), 0);
+
+	_check_team_setting (setting);
+	g_assert_cmpint (nm_setting_team_get_num_link_watchers (NM_SETTING_TEAM (setting)), ==, 0);
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 } }");
+
+	nm_setting_team_add_link_watcher (NM_SETTING_TEAM (setting), watcher1);
+	_check_team_setting (setting);
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": { \"name\": \"nsna_ping\", \"target_host\": \"bbb\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4} }");
+
+	nm_setting_team_add_link_watcher (NM_SETTING_TEAM (setting), watcher2);
+	_check_team_setting (setting);
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": [ { \"name\": \"nsna_ping\", \"target_host\": \"bbb\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4}, { \"name\": \"arp_ping\", \"target_host\": \"ccc\", \"source_host\": \"ddd\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4} ] }");
+
+	nm_setting_team_remove_link_watcher (NM_SETTING_TEAM (setting), 0);
+	nm_setting_team_remove_link_watcher (NM_SETTING_TEAM (setting), 0);
+	g_object_set (setting,
+	              NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL,
+	              (int) 5,
+	              NULL);
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"tx_balancer\": { \"balancing_interval\": 5 }, \"sys_prio\": 10 } }");
+
+	g_object_set (setting,
+	              NM_SETTING_TEAM_RUNNER,
+	              NULL,
+	              NULL);
+	_check_team_setting (setting);
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"tx_balancer\": { \"balancing_interval\": 5 }, \"sys_prio\": 10 } }");
+}
 
 /*****************************************************************************/
 
@@ -3189,7 +3334,6 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/libnm/settings/bridge/vlans", test_bridge_vlans);
 
-#if WITH_JSON_VALIDATION
 	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_roundrobin",
 	                 test_runner_roundrobin_sync_from_config);
 	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_broadcast",
@@ -3218,7 +3362,6 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/settings/team-port/sync_from_config_lacp_prio", test_team_port_lacp_prio);
 	g_test_add_func ("/libnm/settings/team-port/sync_from_config_lacp_key", test_team_port_lacp_key);
 	g_test_add_func ("/libnm/settings/team-port/sycn_from_config_full", test_team_port_full_config);
-#endif
 
 	g_test_add_data_func ("/libnm/settings/roundtrip-conversion/general/0",   GINT_TO_POINTER (0), test_roundtrip_conversion);
 	g_test_add_data_func ("/libnm/settings/roundtrip-conversion/wireguard/1", GINT_TO_POINTER (1), test_roundtrip_conversion);
@@ -3228,6 +3371,8 @@ main (int argc, char **argv)
 	g_test_add_data_func ("/libnm/settings/routing-rule/1", GINT_TO_POINTER (0), test_routing_rule);
 
 	g_test_add_func ("/libnm/parse-tc-handle", test_parse_tc_handle);
+
+	g_test_add_func ("/libnm/test_team_setting", test_team_setting);
 
 	return g_test_run ();
 }

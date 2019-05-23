@@ -268,7 +268,15 @@ typedef struct {
 	                         GVariantBuilder *setting_builder);
 
 	/*< private >*/
-	gpointer padding[2];
+	gboolean (*init_from_dbus) (NMSetting *setting,
+	                            GHashTable *keys,
+	                            GVariant *setting_dict,
+	                            GVariant *connection_dict,
+	                            guint /* NMSettingParseFlags */ parse_flags,
+	                            GError **error);
+
+	/*< private >*/
+	gpointer padding[1];
 
 	/*< private >*/
 	const struct _NMMetaSettingInfo *setting_info;

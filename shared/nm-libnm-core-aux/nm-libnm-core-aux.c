@@ -45,9 +45,9 @@ typedef struct {
 	NMTeamLinkWatcherType watcher_type;
 	KeyType key_type;
 	union {
-		int         (*fint)    (NMTeamLinkWatcher *watcher);
-		gboolean    (*fbool)   (NMTeamLinkWatcher *watcher);
-		const char *(*fstring) (NMTeamLinkWatcher *watcher);
+		int         (*fint)    (const NMTeamLinkWatcher *watcher);
+		gboolean    (*fbool)   (const NMTeamLinkWatcher *watcher);
+		const char *(*fstring) (const NMTeamLinkWatcher *watcher);
 	} get_fcn;
 	union {
 		int vint;
@@ -56,19 +56,19 @@ typedef struct {
 } TeamLinkWatcherKeyInfo;
 
 static gboolean
-_team_link_watcher_validate_active (NMTeamLinkWatcher *watcher)
+_team_link_watcher_validate_active (const NMTeamLinkWatcher *watcher)
 {
 	return NM_FLAGS_HAS (nm_team_link_watcher_get_flags (watcher), NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE);
 }
 
 static gboolean
-_team_link_watcher_validate_inactive (NMTeamLinkWatcher *watcher)
+_team_link_watcher_validate_inactive (const NMTeamLinkWatcher *watcher)
 {
 	return NM_FLAGS_HAS (nm_team_link_watcher_get_flags (watcher), NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE);
 }
 
 static gboolean
-_team_link_watcher_send_always (NMTeamLinkWatcher *watcher)
+_team_link_watcher_send_always (const NMTeamLinkWatcher *watcher)
 {
 	return NM_FLAGS_HAS (nm_team_link_watcher_get_flags (watcher), NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS);
 }
@@ -142,7 +142,7 @@ _parse_data_get_bool (const ParseData parse_data[static _NM_TEAM_LINK_WATCHER_KE
 }
 
 char *
-nm_utils_team_link_watcher_to_string (NMTeamLinkWatcher *watcher)
+nm_utils_team_link_watcher_to_string (const NMTeamLinkWatcher *watcher)
 {
 	nm_auto_free_gstring GString *str = NULL;
 	const char *name;
@@ -348,12 +348,12 @@ nm_utils_team_link_watcher_from_string (const char *str,
 	}
 
 #if NM_MORE_ASSERTS > 5
-	{
+	if (watcher) {
 		gs_free char *str2 = NULL;
 		nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher2 = NULL;
 		static _nm_thread_local int recursive;
 
-		nm_assert (watcher);
+		nm_assert (!error || !*error);
 		if (recursive == 0) {
 			recursive = 1;
 			str2 = nm_utils_team_link_watcher_to_string (watcher);
@@ -365,7 +365,8 @@ nm_utils_team_link_watcher_from_string (const char *str,
 			nm_assert (recursive == 1);
 			recursive = 0;
 		}
-	}
+	} else
+		nm_assert (!error || *error);
 #endif
 
 	return watcher;
