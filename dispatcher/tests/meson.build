@@ -7,7 +7,7 @@ incs = [
 
 exe = executable(
   test_unit,
-  test_unit + '.c',
+  [ test_unit + '.c' ] + [ nmdbus_dispatcher_sources ],
   include_directories: incs,
   dependencies: libnm_core_dep,
   c_args: [
