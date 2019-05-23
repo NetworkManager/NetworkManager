@@ -158,7 +158,7 @@ struct Request {
 		if (!__request) \
 			__request = __script->request; \
 		nm_assert (__request && (!__script || __script->request == __request)); \
-		if ((log_always) || _LOG_R_D_enabled (__request)) { \
+		if ((log_always) || _LOG_R_T_enabled (__request)) { \
 			if (FALSE) { \
 				/* g_message() alone does not warn about invalid format. Add a dummy printf() statement to
 				 * get a compiler warning about wrong format. */ \
@@ -169,17 +169,17 @@ struct Request {
 	} G_STMT_END
 
 static gboolean
-_LOG_R_D_enabled (const Request *request)
+_LOG_R_T_enabled (const Request *request)
 {
 	return request->debug;
 }
 
-#define _LOG_R_D(_request, ...) _LOG(_request, NULL, FALSE, g_debug,   __VA_ARGS__)
-#define _LOG_R_I(_request, ...) _LOG(_request, NULL, TRUE,  g_info,    __VA_ARGS__)
+#define _LOG_R_T(_request, ...) _LOG(_request, NULL, FALSE, g_debug,   __VA_ARGS__)
+#define _LOG_R_D(_request, ...) _LOG(_request, NULL, TRUE,  g_info,    __VA_ARGS__)
 #define _LOG_R_W(_request, ...) _LOG(_request, NULL, TRUE,  g_warning, __VA_ARGS__)
 
-#define _LOG_S_D(_script, ...)  _LOG(NULL, _script,  FALSE, g_debug,   __VA_ARGS__)
-#define _LOG_S_I(_script, ...)  _LOG(NULL, _script,  TRUE,  g_info,    __VA_ARGS__)
+#define _LOG_S_T(_script, ...)  _LOG(NULL, _script,  FALSE, g_debug,   __VA_ARGS__)
+#define _LOG_S_D(_script, ...)  _LOG(NULL, _script,  TRUE,  g_info,    __VA_ARGS__)
 #define _LOG_S_W(_script, ...)  _LOG(NULL, _script,  TRUE,  g_warning, __VA_ARGS__)
 
 /*****************************************************************************/
@@ -258,7 +258,7 @@ next_request (Handler *h, Request *request)
 			return FALSE;
 	}
 
-	_LOG_R_I (request, "start running ordered scripts...");
+	_LOG_R_D (request, "start running ordered scripts...");
 
 	h->current_request = request;
 
@@ -301,7 +301,7 @@ complete_request (Request *request)
 	ret = g_variant_new ("(a(sus))", &results);
 	g_dbus_method_invocation_return_value (request->context, ret);
 
-	_LOG_R_D (request, "completed (%u scripts)", request->scripts->len);
+	_LOG_R_T (request, "completed (%u scripts)", request->scripts->len);
 
 	if (handler->current_request == request)
 		handler->current_request = NULL;
@@ -418,7 +418,7 @@ script_watch_cb (GPid pid, int status, gpointer user_data)
 	}
 
 	if (script->result == DISPATCH_RESULT_SUCCESS) {
-		_LOG_S_D (script, "complete");
+		_LOG_S_T (script, "complete");
 	} else {
 		script->result = DISPATCH_RESULT_FAILED;
 		_LOG_S_W (script, "complete: failed with %s", script->error);
@@ -533,7 +533,7 @@ script_dispatch (ScriptInfo *script)
 	argv[2] = request->action;
 	argv[3] = NULL;
 
-	_LOG_S_D (script, "run script%s", script->wait ? "" : " (no-wait)");
+	_LOG_S_T (script, "run script%s", script->wait ? "" : " (no-wait)");
 
 	if (g_spawn_async ("/", argv, request->envp, G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &script->pid, &error)) {
 		script->watch_id = g_child_watch_add (script->pid, (GChildWatchFunc) script_watch_cb, script);
@@ -761,11 +761,11 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	}
 	g_slist_free (sorted_scripts);
 
-	_LOG_R_I (request, "new request (%u scripts)", request->scripts->len);
-	if (   _LOG_R_D_enabled (request)
+	_LOG_R_D (request, "new request (%u scripts)", request->scripts->len);
+	if (   _LOG_R_T_enabled (request)
 	    && request->envp) {
 		for (p = request->envp; *p; p++)
-			_LOG_R_D (request, "environment: %s", *p);
+			_LOG_R_T (request, "environment: %s", *p);
 	}
 
 	if (error_message || request->scripts->len == 0) {
@@ -774,7 +774,7 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 		if (error_message)
 			_LOG_R_W (request, "completed: invalid request: %s", error_message);
 		else
-			_LOG_R_I (request, "completed: no scripts");
+			_LOG_R_D (request, "completed: no scripts");
 
 		results = g_variant_new_array (G_VARIANT_TYPE ("(sus)"), NULL, 0);
 		g_dbus_method_invocation_return_value (context, g_variant_new ("(@a(sus))", results));
