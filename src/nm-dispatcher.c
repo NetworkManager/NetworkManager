@@ -439,6 +439,7 @@ _dispatcher_call (NMDispatcherAction action,
 	GVariantBuilder device_proxy_props;
 	GVariantBuilder device_ip4_props;
 	GVariantBuilder device_ip6_props;
+	gs_unref_variant GVariant *parameters_floating = NULL;
 	gs_unref_variant GVariant *device_dhcp4_props = NULL;
 	gs_unref_variant GVariant *device_dhcp6_props = NULL;
 	GVariantBuilder vpn_proxy_props;
@@ -538,38 +539,38 @@ _dispatcher_call (NMDispatcherAction action,
 		}
 	}
 
-	if (!device_dhcp4_props)
-		device_dhcp4_props = g_variant_ref_sink (g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0));
-	if (!device_dhcp6_props)
-		device_dhcp6_props = g_variant_ref_sink (g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0));
-
 	connectivity_state_string = nm_connectivity_state_to_string (connectivity_state);
+
+	parameters_floating = g_variant_new ("(s@a{sa{sv}}a{sv}a{sv}a{sv}a{sv}a{sv}@a{sv}@a{sv}ssa{sv}a{sv}a{sv}b)",
+	                                     action_to_string (action),
+	                                     connection_dict,
+	                                     &connection_props,
+	                                     &device_props,
+	                                     &device_proxy_props,
+	                                     &device_ip4_props,
+	                                     &device_ip6_props,
+	                                     device_dhcp4_props ?: g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0),
+	                                     device_dhcp6_props ?: g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0),
+	                                     connectivity_state_string,
+	                                     vpn_iface ?: "",
+	                                     &vpn_proxy_props,
+	                                     &vpn_ip4_props,
+	                                     &vpn_ip6_props,
+	                                     nm_logging_enabled (LOGL_DEBUG, LOGD_DISPATCH));
 
 	/* Send the action to the dispatcher */
 	if (blocking) {
 		gs_unref_variant GVariant *ret = NULL;
 		gs_free_error GError *error = NULL;
 
-		ret = _nm_dbus_proxy_call_sync (dispatcher_proxy, "Action",
-		                                g_variant_new ("(s@a{sa{sv}}a{sv}a{sv}a{sv}a{sv}a{sv}@a{sv}@a{sv}ssa{sv}a{sv}a{sv}b)",
-		                                               action_to_string (action),
-		                                               connection_dict,
-		                                               &connection_props,
-		                                               &device_props,
-		                                               &device_proxy_props,
-		                                               &device_ip4_props,
-		                                               &device_ip6_props,
-		                                               device_dhcp4_props,
-		                                               device_dhcp6_props,
-		                                               connectivity_state_string,
-		                                               vpn_iface ?: "",
-		                                               &vpn_proxy_props,
-		                                               &vpn_ip4_props,
-		                                               &vpn_ip6_props,
-		                                               nm_logging_enabled (LOGL_DEBUG, LOGD_DISPATCH)),
+		ret = _nm_dbus_proxy_call_sync (dispatcher_proxy,
+		                                "Action",
+		                                g_steal_pointer (&parameters_floating),
 		                                G_VARIANT_TYPE ("(a(sus))"),
-		                                G_DBUS_CALL_FLAGS_NONE, CALL_TIMEOUT,
-		                                NULL, &error);
+		                                G_DBUS_CALL_FLAGS_NONE,
+		                                CALL_TIMEOUT,
+		                                NULL,
+		                                &error);
 		if (!ret) {
 			g_dbus_error_strip_remote_error (error);
 			_LOGW ("(%u) failed: %s", reqid, error->message);
@@ -585,25 +586,14 @@ _dispatcher_call (NMDispatcherAction action,
 		info->request_id = reqid;
 		info->callback = callback;
 		info->user_data = user_data;
-		g_dbus_proxy_call (dispatcher_proxy, "Action",
-		                   g_variant_new ("(s@a{sa{sv}}a{sv}a{sv}a{sv}a{sv}a{sv}@a{sv}@a{sv}ssa{sv}a{sv}a{sv}b)",
-		                                  action_to_string (action),
-		                                  connection_dict,
-		                                  &connection_props,
-		                                  &device_props,
-		                                  &device_proxy_props,
-		                                  &device_ip4_props,
-		                                  &device_ip6_props,
-		                                  device_dhcp4_props,
-		                                  device_dhcp6_props,
-		                                  connectivity_state_string,
-		                                  vpn_iface ?: "",
-		                                  &vpn_proxy_props,
-		                                  &vpn_ip4_props,
-		                                  &vpn_ip6_props,
-		                                  nm_logging_enabled (LOGL_DEBUG, LOGD_DISPATCH)),
-		                   G_DBUS_CALL_FLAGS_NONE, CALL_TIMEOUT,
-		                   NULL, dispatcher_done_cb, info);
+		g_dbus_proxy_call (dispatcher_proxy,
+		                   "Action",
+		                   g_steal_pointer (&parameters_floating),
+		                   G_DBUS_CALL_FLAGS_NONE,
+		                   CALL_TIMEOUT,
+		                   NULL,
+		                   dispatcher_done_cb,
+		                   info);
 		success = TRUE;
 	}
 
