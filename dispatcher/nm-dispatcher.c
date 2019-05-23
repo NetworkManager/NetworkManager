@@ -597,8 +597,10 @@ _find_scripts (Request *request, GHashTable *scripts, const char *base, const ch
 	dirname = g_build_filename (base, "dispatcher.d", subdir, NULL);
 
 	if (!(dir = g_dir_open (dirname, 0, &error))) {
-		_LOG_R_W (request, "find-scripts: Failed to open dispatcher directory '%s': %s",
-		          dirname, error->message);
+		if (!g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
+			_LOG_R_W (request, "find-scripts: Failed to open dispatcher directory '%s': %s",
+			          dirname, error->message);
+		}
 		g_error_free (error);
 		return;
 	}
