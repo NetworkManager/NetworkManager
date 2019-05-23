@@ -135,53 +135,82 @@ struct Request {
 
 /*****************************************************************************/
 
-#define __LOG_print(print_cmd, _request, _script, ...) \
+#define __LOG_print(print_cmd, ...) \
 	G_STMT_START { \
-		nm_assert ((_request) && (!(_script) || (_script)->request == (_request))); \
-		print_cmd ("req:%u '%s'%s%s%s%s%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-		           (_request)->request_id, \
-		           (_request)->action, \
-		           (_request)->iface ? " [" : "", \
-		           (_request)->iface ?: "", \
-		           (_request)->iface ? "]" : "", \
-		           (_script) ? ", \"" : "", \
-		           (_script) ? (_script)->script : "", \
-		           (_script) ? "\"" : "" \
-		           _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
-	} G_STMT_END
-
-#define _LOG(_request, _script, log_always, print_cmd, ...) \
-	G_STMT_START { \
-		const Request *__request = (_request); \
-		const ScriptInfo *__script = (_script); \
-		\
-		if (!__request) \
-			__request = __script->request; \
-		nm_assert (__request && (!__script || __script->request == __request)); \
-		if ((log_always) || _LOG_R_T_enabled (__request)) { \
-			if (FALSE) { \
-				/* g_message() alone does not warn about invalid format. Add a dummy printf() statement to
-				 * get a compiler warning about wrong format. */ \
-				__LOG_print (printf, __request, __script, __VA_ARGS__); \
-			} \
-			__LOG_print (print_cmd, __request, __script, __VA_ARGS__); \
+		if (FALSE) { \
+			/* g_message() alone does not warn about invalid format. Add a dummy printf() statement to
+			 * get a compiler warning about wrong format. */ \
+			printf (__VA_ARGS__); \
 		} \
+		print_cmd (__VA_ARGS__); \
 	} G_STMT_END
 
-static gboolean
-_LOG_R_D_enabled (const Request *request)
-{
-	return request->debug;
-}
+#define __LOG_print_R(print_cmd, _request, ...) \
+	G_STMT_START { \
+		__LOG_print (print_cmd, \
+		             "req:%u '%s'%s%s%s" _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+		             (_request)->request_id, \
+		             (_request)->action, \
+		             (_request)->iface ? " [" : "", \
+		             (_request)->iface ?: "", \
+		             (_request)->iface ? "]" : "" \
+		             _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+	} G_STMT_END
+
+#define __LOG_print_S(print_cmd, _request, _script, ...) \
+	G_STMT_START { \
+		__LOG_print_R (print_cmd, \
+		               (_request), \
+		               "%s%s%s" _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+		               (_script) ? ", \"" : "", \
+		               (_script) ? (_script)->script : "", \
+		               (_script) ? "\"" : "" \
+		               _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+	} G_STMT_END
+
+#define _LOG_X_(enabled_cmd, print_cmd, ...) \
+	G_STMT_START { \
+		if (enabled_cmd) \
+			__LOG_print (print_cmd, __VA_ARGS__); \
+	} G_STMT_END
+
+#define _LOG_R_(enabled_cmd, x_request, print_cmd, ...) \
+	G_STMT_START { \
+		const Request *const _request = (x_request); \
+		\
+		nm_assert (_request); \
+		if (enabled_cmd) \
+			__LOG_print_R (print_cmd, _request, ": "__VA_ARGS__); \
+	} G_STMT_END
+
+#define _LOG_S_(enabled_cmd, x_script, print_cmd, ...) \
+	G_STMT_START { \
+		const ScriptInfo *const _script = (x_script); \
+		const Request *const _request = _script ? _script->request : NULL; \
+		\
+		nm_assert (_script && _request); \
+		if (enabled_cmd) \
+			__LOG_print_S (print_cmd, _request, _script, ": "__VA_ARGS__); \
+	} G_STMT_END
+
+#define _LOG_X_D_enabled() (debug)
+#define _LOG_X_T_enabled() _LOG_X_D_enabled ()
+
+#define _LOG_R_D_enabled(request) (_NM_ENSURE_TYPE_CONST (Request *, request)->debug)
 #define _LOG_R_T_enabled(request) _LOG_R_D_enabled (request)
 
-#define _LOG_R_T(_request, ...) _LOG(_request, NULL, FALSE, g_debug,   __VA_ARGS__)
-#define _LOG_R_D(_request, ...) _LOG(_request, NULL, FALSE, g_info,    __VA_ARGS__)
-#define _LOG_R_W(_request, ...) _LOG(_request, NULL, TRUE,  g_warning, __VA_ARGS__)
+#define _LOG_X_T(...)          _LOG_X_ (_LOG_X_T_enabled (),                  g_debug,   __VA_ARGS__)
+#define _LOG_X_D(...)          _LOG_X_ (_LOG_X_D_enabled (),                  g_info,    __VA_ARGS__)
+#define _LOG_X_I(...)          _LOG_X_ (TRUE,                                 g_message, __VA_ARGS__)
+#define _LOG_X_W(...)          _LOG_X_ (TRUE,                                 g_warning, __VA_ARGS__)
 
-#define _LOG_S_T(_script, ...)  _LOG(NULL, _script,  FALSE, g_debug,   __VA_ARGS__)
-#define _LOG_S_D(_script, ...)  _LOG(NULL, _script,  FALSE, g_info,    __VA_ARGS__)
-#define _LOG_S_W(_script, ...)  _LOG(NULL, _script,  TRUE,  g_warning, __VA_ARGS__)
+#define _LOG_R_T(request, ...) _LOG_R_ (_LOG_R_T_enabled (_request), request, g_debug,   __VA_ARGS__)
+#define _LOG_R_D(request, ...) _LOG_R_ (_LOG_R_D_enabled (_request), request, g_info,    __VA_ARGS__)
+#define _LOG_R_W(request, ...) _LOG_R_ (TRUE,                        request, g_warning, __VA_ARGS__)
+
+#define _LOG_S_T(script, ...)  _LOG_S_ (_LOG_R_T_enabled (_request), script,  g_debug,   __VA_ARGS__)
+#define _LOG_S_D(script, ...)  _LOG_S_ (_LOG_R_D_enabled (_request), script,  g_info,    __VA_ARGS__)
+#define _LOG_S_W(script, ...)  _LOG_S_ (TRUE,                        script,  g_warning, __VA_ARGS__)
 
 /*****************************************************************************/
 
@@ -854,17 +883,17 @@ on_name_lost (GDBusConnection *connection,
 {
 	if (!connection) {
 		if (!ever_acquired_name) {
-			g_warning ("Could not get the system bus.  Make sure the message bus daemon is running!");
+			_LOG_X_W ("Could not get the system bus.  Make sure the message bus daemon is running!");
 			exit (1);
 		} else {
-			g_message ("System bus stopped. Exiting");
+			_LOG_X_I ("System bus stopped. Exiting");
 			exit (0);
 		}
 	} else if (!ever_acquired_name) {
-		g_warning ("Could not acquire the " NM_DISPATCHER_DBUS_SERVICE " service.");
+		_LOG_X_W ("Could not acquire the " NM_DISPATCHER_DBUS_SERVICE " service.");
 		exit (1);
 	} else {
-		g_message ("Lost the " NM_DISPATCHER_DBUS_SERVICE " name. Exiting");
+		_LOG_X_I ("Lost the " NM_DISPATCHER_DBUS_SERVICE " name. Exiting");
 		exit (0);
 	}
 }
@@ -923,7 +952,7 @@ signal_handler (gpointer user_data)
 {
 	int signo = GPOINTER_TO_INT (user_data);
 
-	g_message ("Caught signal %d, shutting down...", signo);
+	_LOG_X_I ("Caught signal %d, shutting down...", signo);
 	g_main_loop_quit (loop);
 
 	return G_SOURCE_REMOVE;
@@ -948,7 +977,7 @@ main (int argc, char **argv)
 	g_option_context_add_main_entries (opt_ctx, entries, NULL);
 
 	if (!g_option_context_parse (opt_ctx, &argc, &argv, &error)) {
-		g_warning ("Error parsing command line arguments: %s", error->message);
+		_LOG_X_W ("Error parsing command line arguments: %s", error->message);
 		g_error_free (error);
 		return 1;
 	}
@@ -973,8 +1002,8 @@ main (int argc, char **argv)
 
 	bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &error);
 	if (!bus) {
-		g_warning ("Could not get the system bus (%s).  Make sure the message bus daemon is running!",
-		           error->message);
+		_LOG_X_W ("Could not get the system bus (%s).  Make sure the message bus daemon is running!",
+		          error->message);
 		g_error_free (error);
 		return 1;
 	}
@@ -985,7 +1014,7 @@ main (int argc, char **argv)
 	                                  NM_DISPATCHER_DBUS_PATH,
 	                                  &error);
 	if (error) {
-		g_warning ("Could not export Dispatcher D-Bus interface: %s", error->message);
+		_LOG_X_W ("Could not export Dispatcher D-Bus interface: %s", error->message);
 		g_error_free (error);
 		return 1;
 	}
