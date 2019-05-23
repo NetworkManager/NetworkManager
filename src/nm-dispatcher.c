@@ -339,12 +339,15 @@ dispatch_result_to_string (DispatchResult result)
 }
 
 static void
-dispatcher_results_process (guint request_id, NMDispatcherAction action, GVariantIter *results)
+dispatcher_results_process (guint request_id,
+                            NMDispatcherAction action,
+                            GVariant *v_results)
 {
+	nm_auto_free_variant_iter GVariantIter *results = NULL;
 	const char *script, *err;
 	guint32 result;
 
-	g_return_if_fail (results != NULL);
+	g_variant_get (v_results, "(a(sus))", &results);
 
 	if (g_variant_iter_n_children (results) == 0) {
 		_LOGD ("(%u) succeeded but no scripts invoked", request_id);
@@ -367,20 +370,14 @@ dispatcher_results_process (guint request_id, NMDispatcherAction action, GVarian
 static void
 dispatcher_done_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
+	gs_unref_variant GVariant *ret = NULL;
+	gs_free_error GError *error = NULL;
 	DispatchInfo *info = user_data;
-	GVariant *ret;
-	GVariantIter *results;
-	GError *error = NULL;
 
 	ret = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result,
 	                                  G_VARIANT_TYPE ("(a(sus))"),
 	                                  &error);
-	if (ret) {
-		g_variant_get (ret, "(a(sus))", &results);
-		dispatcher_results_process (info->request_id, info->action, results);
-		g_variant_iter_free (results);
-		g_variant_unref (ret);
-	} else {
+	if (!ret) {
 		if (_nm_dbus_error_has_name (error, "org.freedesktop.systemd1.LoadFailed")) {
 			g_dbus_error_strip_remote_error (error);
 			_LOGW ("(%u) failed to call dispatcher scripts: %s",
@@ -389,8 +386,8 @@ dispatcher_done_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 			_LOGD ("(%u) failed to call dispatcher scripts: %s",
 			       info->request_id, error->message);
 		}
-		g_clear_error (&error);
-	}
+	} else
+		dispatcher_results_process (info->request_id, info->action, ret);
 
 	if (info->callback)
 		info->callback (info->request_id, info->user_data);
@@ -442,14 +439,13 @@ _dispatcher_call (NMDispatcherAction action,
 	GVariantBuilder device_proxy_props;
 	GVariantBuilder device_ip4_props;
 	GVariantBuilder device_ip6_props;
-	GVariant *device_dhcp4_props = NULL;
-	GVariant *device_dhcp6_props = NULL;
+	gs_unref_variant GVariant *device_dhcp4_props = NULL;
+	gs_unref_variant GVariant *device_dhcp6_props = NULL;
 	GVariantBuilder vpn_proxy_props;
 	GVariantBuilder vpn_ip4_props;
 	GVariantBuilder vpn_ip6_props;
 	DispatchInfo *info = NULL;
 	gboolean success = FALSE;
-	GError *error = NULL;
 	static guint request_counter = 0;
 	guint reqid = ++request_counter;
 	const char *connectivity_state_string = "UNKNOWN";
@@ -551,8 +547,8 @@ _dispatcher_call (NMDispatcherAction action,
 
 	/* Send the action to the dispatcher */
 	if (blocking) {
-		GVariant *ret;
-		GVariantIter *results;
+		gs_unref_variant GVariant *ret = NULL;
+		gs_free_error GError *error = NULL;
 
 		ret = _nm_dbus_proxy_call_sync (dispatcher_proxy, "Action",
 		                                g_variant_new ("(s@a{sa{sv}}a{sv}a{sv}a{sv}a{sv}a{sv}@a{sv}@a{sv}ssa{sv}a{sv}a{sv}b)",
@@ -574,17 +570,14 @@ _dispatcher_call (NMDispatcherAction action,
 		                                G_VARIANT_TYPE ("(a(sus))"),
 		                                G_DBUS_CALL_FLAGS_NONE, CALL_TIMEOUT,
 		                                NULL, &error);
-		if (ret) {
-			g_variant_get (ret, "(a(sus))", &results);
-			dispatcher_results_process (reqid, action, results);
-			g_variant_iter_free (results);
-			g_variant_unref (ret);
-			success = TRUE;
-		} else {
+		if (!ret) {
 			g_dbus_error_strip_remote_error (error);
 			_LOGW ("(%u) failed: %s", reqid, error->message);
 			g_clear_error (&error);
 			success = FALSE;
+		} else {
+			dispatcher_results_process (reqid, action, ret);
+			success = TRUE;
 		}
 	} else {
 		info = g_malloc0 (sizeof (*info));
@@ -613,9 +606,6 @@ _dispatcher_call (NMDispatcherAction action,
 		                   NULL, dispatcher_done_cb, info);
 		success = TRUE;
 	}
-
-	g_variant_unref (device_dhcp4_props);
-	g_variant_unref (device_dhcp6_props);
 
 	if (success && info) {
 		/* Track the request in case of cancelation */
