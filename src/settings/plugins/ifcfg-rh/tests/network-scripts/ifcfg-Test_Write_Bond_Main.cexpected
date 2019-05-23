@@ -1,6 +1,7 @@
 BONDING_OPTS="downdelay=5 miimon=100 mode=balance-rr updelay=10"
 TYPE=Bond
 BONDING_MASTER=yes
+HWADDR=
 PROXY_METHOD=none
 BROWSER_ONLY=no
 BOOTPROTO=none

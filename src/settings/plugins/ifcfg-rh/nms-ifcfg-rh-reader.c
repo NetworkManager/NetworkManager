@@ -4369,9 +4369,11 @@ parse_ethtool_options (shvarFile *ifcfg, NMConnection *connection)
 	gboolean autoneg = FALSE;
 	guint32 speed = 0;
 	const char *duplex = NULL;
+	gboolean wired_found = FALSE;
 
 	ethtool_opts = svGetValue (ifcfg, "ETHTOOL_OPTS", &ethtool_opts_free);
 	if (ethtool_opts) {
+		wired_found = TRUE;
 		/* WAKE_ON_LAN_IGNORE is inferred from a specified but empty ETHTOOL_OPTS */
 		if (!ethtool_opts[0])
 			wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE;
@@ -4395,7 +4397,9 @@ parse_ethtool_options (shvarFile *ifcfg, NMConnection *connection)
 	}
 
 	/* ETHTOOL_WAKE_ON_LAN = ignore overrides WoL settings in ETHTOOL_OPTS */
-	tmp = svGetValueStr (ifcfg, "ETHTOOL_WAKE_ON_LAN", &wol_value_free);
+	tmp = svGetValue (ifcfg, "ETHTOOL_WAKE_ON_LAN", &wol_value_free);
+	if (tmp)
+		wired_found = TRUE;
 	if (nm_streq0 (tmp, "ignore"))
 		wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE;
 	else if (tmp)
@@ -4408,6 +4412,10 @@ parse_ethtool_options (shvarFile *ifcfg, NMConnection *connection)
 	}
 
 	s_wired = nm_connection_get_setting_wired (connection);
+	if (!s_wired && wired_found) {
+		s_wired = (NMSettingWired *) nm_setting_wired_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wired));
+	}
 	if (s_wired) {
 		g_object_set (s_wired,
 		              NM_SETTING_WIRED_WAKE_ON_LAN, wol_flags,
@@ -4433,86 +4441,100 @@ make_wired_setting (shvarFile *ifcfg,
 	gs_unref_object NMSettingWired *s_wired = NULL;
 	const char *cvalue;
 	gs_free char *value = NULL;
-	char *nettype;
+	gboolean found = FALSE;
 
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
 
-	value = svGetValueStr_cp (ifcfg, "MTU");
-	if (value) {
+	cvalue = svGetValue (ifcfg, "MTU", &value);
+	if (cvalue) {
 		int mtu;
 
-		mtu = _nm_utils_ascii_str_to_int64 (value, 0, 0, 65535, -1);
+		mtu = _nm_utils_ascii_str_to_int64 (cvalue, 0, 0, 65535, -1);
 		if (mtu >= 0)
 			g_object_set (s_wired, NM_SETTING_WIRED_MTU, (guint) mtu, NULL);
 		else
-			PARSE_WARNING ("invalid MTU '%s'", value);
+			PARSE_WARNING ("invalid MTU '%s'", cvalue);
 		nm_clear_g_free (&value);
+		found = TRUE;
 	}
 
-	value = svGetValueStr_cp (ifcfg, "HWADDR");
+	value = svGetValue_cp (ifcfg, "HWADDR");
 	if (value) {
-		value = g_strstrip (value);
-		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, value, NULL);
+		if (value[0] != '\0') {
+			value = g_strstrip (value);
+			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, value, NULL);
+		}
 		nm_clear_g_free (&value);
+		found = TRUE;
 	}
 
-	value = svGetValueStr_cp (ifcfg, "SUBCHANNELS");
-	if (value) {
-		const char *p = value;
-		gboolean success = TRUE;
+	cvalue = svGetValue (ifcfg, "SUBCHANNELS", &value);
+	if (cvalue) {
+		if (cvalue[0] != '\0') {
+			const char *p = cvalue;
+			gboolean success = TRUE;
 
-		/* basic sanity checks */
-		while (*p) {
-			if (!g_ascii_isxdigit (*p) && (*p != ',') && (*p != '.')) {
-				PARSE_WARNING ("invalid SUBCHANNELS '%s'", value);
-				success = FALSE;
-				break;
+			/* basic sanity checks */
+			while (*p) {
+				if (!g_ascii_isxdigit (*p) && (*p != ',') && (*p != '.')) {
+					PARSE_WARNING ("invalid SUBCHANNELS '%s'", cvalue);
+					success = FALSE;
+					break;
+				}
+				p++;
 			}
-			p++;
+
+			if (success) {
+				gs_free const char **chans = NULL;
+				guint32 num_chans;
+
+				chans = nm_utils_strsplit_set (cvalue, ",");
+				num_chans = NM_PTRARRAY_LEN (chans);
+				if (num_chans < 2 || num_chans > 3) {
+					PARSE_WARNING ("invalid SUBCHANNELS '%s' (%u channels, 2 or 3 expected)",
+					               cvalue, (unsigned) NM_PTRARRAY_LEN (chans));
+				} else
+					g_object_set (s_wired, NM_SETTING_WIRED_S390_SUBCHANNELS, chans, NULL);
+			}
 		}
+		nm_clear_g_free (&value);
+		found = TRUE;
+	}
 
-		if (success) {
-			gs_free const char **chans = NULL;
-			guint32 num_chans;
-
-			chans = nm_utils_strsplit_set (value, ",");
-			num_chans = NM_PTRARRAY_LEN (chans);
-			if (num_chans < 2 || num_chans > 3) {
-				PARSE_WARNING ("invalid SUBCHANNELS '%s' (%u channels, 2 or 3 expected)",
-				               value, (unsigned) NM_PTRARRAY_LEN (chans));
-			} else
-				g_object_set (s_wired, NM_SETTING_WIRED_S390_SUBCHANNELS, chans, NULL);
-		}
+	cvalue = svGetValue (ifcfg, "PORTNAME", &value);
+	if (cvalue) {
+		if (cvalue[0] != '\0')
+			nm_setting_wired_add_s390_option (s_wired, "portname", cvalue);
+		found = TRUE;
 		nm_clear_g_free (&value);
 	}
 
-	value = svGetValueStr_cp (ifcfg, "PORTNAME");
-	if (value) {
-		nm_setting_wired_add_s390_option (s_wired, "portname", value);
+	cvalue = svGetValue (ifcfg, "CTCPROT", &value);
+	if (cvalue) {
+		if (cvalue[0] != '\0')
+			nm_setting_wired_add_s390_option (s_wired, "ctcprot", cvalue);
 		nm_clear_g_free (&value);
+		found = TRUE;
 	}
 
-	value = svGetValueStr_cp (ifcfg, "CTCPROT");
-	if (value) {
-		nm_setting_wired_add_s390_option (s_wired, "ctcprot", value);
-		nm_clear_g_free (&value);
-	}
-
-	nettype = svGetValueStr_cp (ifcfg, "NETTYPE");
-	if (nettype) {
-		if (!strcmp (nettype, "qeth") || !strcmp (nettype, "lcs") || !strcmp (nettype, "ctc"))
-			g_object_set (s_wired, NM_SETTING_WIRED_S390_NETTYPE, nettype, NULL);
+	cvalue = svGetValue (ifcfg, "NETTYPE", &value);
+	if (cvalue) {
+		if (NM_IN_STRSET (cvalue, "qeth", "lcs", "ctc"))
+			g_object_set (s_wired, NM_SETTING_WIRED_S390_NETTYPE, cvalue, NULL);
 		else
-			PARSE_WARNING ("unknown s390 NETTYPE '%s'", nettype);
-		g_free (nettype);
+			PARSE_WARNING ("unknown s390 NETTYPE '%s'", cvalue);
+		nm_clear_g_free (&value);
+		found = TRUE;
 	}
 
-	value = svGetValueStr_cp (ifcfg, "OPTIONS");
-	if (value) {
+	cvalue = svGetValue (ifcfg, "OPTIONS", &value);
+	if (cvalue)
+		found = TRUE;
+	if (cvalue && cvalue[0]) {
 		gs_free const char **options = NULL;
 		gsize i;
 
-		options = nm_utils_escaped_tokens_split (value, NM_ASCII_SPACES);
+		options = nm_utils_escaped_tokens_split (cvalue, NM_ASCII_SPACES);
 		for (i = 0; options && options[i]; i++) {
 			const char *line = options[i];
 			const char *equals;
@@ -4526,20 +4548,33 @@ make_wired_setting (shvarFile *ifcfg,
 			if (!valid)
 				PARSE_WARNING ("invalid s390 OPTION '%s'", line);
 		}
+		found = TRUE;
+	}
+	nm_clear_g_free (&value);
+
+	cvalue = svGetValueStr (ifcfg, "MACADDR", &value);
+	if (cvalue) {
+		if (cvalue[0] != '\0') {
+			g_object_set (s_wired,
+			              NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
+			              cvalue,
+			              NULL);
+		}
 		nm_clear_g_free (&value);
+		found = TRUE;
 	}
 
-	g_object_set (s_wired,
-	              NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
-	              svGetValueStr (ifcfg, "MACADDR", &value),
-	              NULL);
-	nm_clear_g_free (&value);
-
-	g_object_set (s_wired,
-	              NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK,
-	              svGetValueStr (ifcfg, "GENERATE_MAC_ADDRESS_MASK", &value),
-	              NULL);
-	nm_clear_g_free (&value);
+	cvalue = svGetValueStr (ifcfg, "GENERATE_MAC_ADDRESS_MASK", &value);
+	if (cvalue) {
+		if (cvalue[0] != '\0') {
+			g_object_set (s_wired,
+			              NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK,
+			              cvalue,
+			              NULL);
+		}
+		nm_clear_g_free (&value);
+		found = TRUE;
+	}
 
 	cvalue = svGetValueStr (ifcfg, "HWADDR_BLACKLIST", &value);
 	if (cvalue) {
@@ -4548,20 +4583,31 @@ make_wired_setting (shvarFile *ifcfg,
 		strv = transform_hwaddr_blacklist (cvalue);
 		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST, strv, NULL);
 		nm_clear_g_free (&value);
+		found = TRUE;
 	}
 
-	value = svGetValueStr_cp (ifcfg, "KEY_MGMT");
-	if (value) {
-		if (!strcmp (value, "IEEE8021X")) {
-			*s_8021x = fill_8021x (ifcfg, file, value, FALSE, error);
+	cvalue = svGetValue (ifcfg, "KEY_MGMT", &value);
+	if (cvalue)
+		found = TRUE;
+	if (cvalue && cvalue[0] != '\0') {
+		if (!strcmp (cvalue, "IEEE8021X")) {
+			*s_8021x = fill_8021x (ifcfg, file, cvalue, FALSE, error);
 			if (!*s_8021x)
 				return NULL;
 		} else {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Unknown wired KEY_MGMT type '%s'", value);
+			             "Unknown wired KEY_MGMT type '%s'", cvalue);
 			return NULL;
 		}
-		nm_clear_g_free (&value);
+	}
+	nm_clear_g_free (&value);
+
+	if (!found) {
+		g_set_error (error,
+		             NM_UTILS_ERROR,
+		             NM_UTILS_ERROR_SETTING_MISSING,
+		             "The setting is missing.");
+		return NULL;
 	}
 
 	return (NMSetting *) g_steal_pointer (&s_wired);
@@ -4576,6 +4622,7 @@ wired_connection_from_ifcfg (const char *file,
 	NMSetting *con_setting = NULL;
 	NMSetting *wired_setting = NULL;
 	NMSetting8021x *s_8021x = NULL;
+	GError *local = NULL;
 
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
@@ -4591,12 +4638,16 @@ wired_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, con_setting);
 
-	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, error);
-	if (!wired_setting) {
+	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, &local);
+	if (local && !g_error_matches (local, NM_UTILS_ERROR, NM_UTILS_ERROR_SETTING_MISSING)) {
+		g_propagate_error (error, local);
 		g_object_unref (connection);
 		return NULL;
 	}
-	nm_connection_add_setting (connection, wired_setting);
+	g_clear_error (&local);
+
+	if (wired_setting)
+		nm_connection_add_setting (connection, wired_setting);
 
 	if (s_8021x)
 		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
@@ -4827,6 +4878,7 @@ bond_connection_from_ifcfg (const char *file,
 	NMSetting *bond_setting = NULL;
 	NMSetting *wired_setting = NULL;
 	NMSetting8021x *s_8021x = NULL;
+	GError *local = NULL;
 
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
@@ -4849,12 +4901,16 @@ bond_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, bond_setting);
 
-	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, error);
-	if (!wired_setting) {
+	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, &local);
+	if (local && !g_error_matches (local, NM_UTILS_ERROR, NM_UTILS_ERROR_SETTING_MISSING)) {
+		g_propagate_error (error, local);
 		g_object_unref (connection);
 		return NULL;
 	}
-	nm_connection_add_setting (connection, wired_setting);
+	g_clear_error (&local);
+
+	if (wired_setting)
+		nm_connection_add_setting (connection, wired_setting);
 
 	if (s_8021x)
 		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
@@ -4895,6 +4951,7 @@ team_connection_from_ifcfg (const char *file,
 	NMSetting *team_setting = NULL;
 	NMSetting *wired_setting = NULL;
 	NMSetting8021x *s_8021x = NULL;
+	GError *local = NULL;
 
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
@@ -4917,12 +4974,16 @@ team_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, team_setting);
 
-	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, error);
-	if (!wired_setting) {
+	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, &local);
+	if (local && !g_error_matches (local, NM_UTILS_ERROR, NM_UTILS_ERROR_SETTING_MISSING)) {
+		g_propagate_error (error, local);
 		g_object_unref (connection);
 		return NULL;
 	}
-	nm_connection_add_setting (connection, wired_setting);
+	g_clear_error (&local);
+
+	if (wired_setting)
+		nm_connection_add_setting (connection, wired_setting);
 
 	if (s_8021x)
 		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
@@ -5172,6 +5233,7 @@ bridge_connection_from_ifcfg (const char *file,
 	NMSetting *bridge_setting = NULL;
 	NMSetting *wired_setting = NULL;
 	NMSetting8021x *s_8021x = NULL;
+	GError *local = NULL;
 
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
@@ -5194,12 +5256,16 @@ bridge_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, bridge_setting);
 
-	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, error);
-	if (!wired_setting) {
+	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, &local);
+	if (local && !g_error_matches (local, NM_UTILS_ERROR, NM_UTILS_ERROR_SETTING_MISSING)) {
+		g_propagate_error (error, local);
 		g_object_unref (connection);
 		return NULL;
 	}
-	nm_connection_add_setting (connection, wired_setting);
+	g_clear_error (&local);
+
+	if (wired_setting)
+		nm_connection_add_setting (connection, wired_setting);
 
 	if (s_8021x)
 		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
@@ -5449,6 +5515,7 @@ vlan_connection_from_ifcfg (const char *file,
 	NMSetting *wired_setting = NULL;
 	NMSetting *vlan_setting = NULL;
 	NMSetting8021x *s_8021x = NULL;
+	GError *local = NULL;
 
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
@@ -5471,12 +5538,16 @@ vlan_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, vlan_setting);
 
-	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, error);
-	if (!wired_setting) {
+	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, &local);
+	if (local && !g_error_matches (local, NM_UTILS_ERROR, NM_UTILS_ERROR_SETTING_MISSING)) {
+		g_propagate_error (error, local);
 		g_object_unref (connection);
 		return NULL;
 	}
-	nm_connection_add_setting (connection, wired_setting);
+	g_clear_error (&local);
+
+	if (wired_setting)
+		nm_connection_add_setting (connection, wired_setting);
 
 	if (s_8021x)
 		nm_connection_add_setting (connection, NM_SETTING (s_8021x));

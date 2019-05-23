@@ -4,6 +4,7 @@ VLAN_ID=142
 REORDER_HDR=yes
 GVRP=no
 MVRP=no
+HWADDR=
 NAME=team-slave-enp31s0f1-142
 UUID=74f435bb-ede4-415a-9d48-f580b60eba04
 DEVICE=enp31s0f1-142

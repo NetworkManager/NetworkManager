@@ -714,6 +714,8 @@ _nm_g_slice_free_fcn_define (16)
  * @NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY: the profile is currently not
  *   available/compatible with the device, but this may be only temporary.
  *
+ * @NM_UTILS_ERROR_SETTING_MISSING: the setting is missing
+ *
  * @NM_UTILS_ERROR_INVALID_ARGUMENT: invalid argument.
  */
 typedef enum {
@@ -735,6 +737,8 @@ typedef enum {
 	NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
 	NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
 	NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+
+	NM_UTILS_ERROR_SETTING_MISSING,
 
 } NMUtilsError;
 
