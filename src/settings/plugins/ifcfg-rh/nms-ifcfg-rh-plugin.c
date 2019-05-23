@@ -821,7 +821,7 @@ _method_call (GDBusConnection *connection,
 }
 
 static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO (
-	IFCFGRH1_BUS_NAME,
+	IFCFGRH1_IFACE1_NAME,
 	.methods = NM_DEFINE_GDBUS_METHOD_INFOS (
 		NM_DEFINE_GDBUS_METHOD_INFO (
 			IFCFGRH1_IFACE1_METHOD_GET_IFCFG_DETAILS,
