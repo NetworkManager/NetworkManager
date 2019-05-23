@@ -65,9 +65,6 @@
 
 /*****************************************************************************/
 
-static GDBusProxy *dispatcher_proxy;
-static GHashTable *requests = NULL;
-
 struct NMDispatcherCallId {
 	NMDispatcherFunc callback;
 	gpointer user_data;
@@ -75,6 +72,36 @@ struct NMDispatcherCallId {
 	guint idle_id;
 	guint32 request_id;
 };
+
+/*****************************************************************************/
+
+static struct {
+	GDBusConnection *dbus_connection;
+	GHashTable *requests;
+	guint request_id_counter;
+} gl;
+
+/*****************************************************************************/
+
+static void dispatcher_call_id_free (NMDispatcherCallId *info);
+
+/*****************************************************************************/
+
+
+static void
+_init_dispatcher (void)
+{
+	if (G_UNLIKELY (gl.requests == NULL)) {
+		gl.requests = g_hash_table_new_full (nm_direct_hash,
+		                                     NULL,
+		                                     NULL,
+		                                     (GDestroyNotify) dispatcher_call_id_free);
+		gl.dbus_connection = nm_g_object_ref (NM_MAIN_DBUS_CONNECTION_GET);
+
+		if (!gl.dbus_connection)
+			_LOGD ("No D-Bus connection to talk with NetworkManager-dispatcher service");
+	}
+}
 
 /*****************************************************************************/
 
@@ -325,17 +352,6 @@ dispatcher_call_id_free (NMDispatcherCallId *call_id)
 	g_slice_free (NMDispatcherCallId, call_id);
 }
 
-static void
-_ensure_requests (void)
-{
-	if (G_UNLIKELY (requests == NULL)) {
-		requests = g_hash_table_new_full (nm_direct_hash,
-		                                  NULL,
-		                                  NULL,
-		                                  (GDestroyNotify) dispatcher_call_id_free);
-	}
-}
-
 static const char *
 dispatch_result_to_string (DispatchResult result)
 {
@@ -384,15 +400,17 @@ dispatcher_results_process (guint32 request_id,
 }
 
 static void
-dispatcher_done_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
+dispatcher_done_cb (GObject *source, GAsyncResult *result, gpointer user_data)
 {
 	gs_unref_variant GVariant *ret = NULL;
 	gs_free_error GError *error = NULL;
 	NMDispatcherCallId *call_id = user_data;
 
-	ret = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result,
-	                                  G_VARIANT_TYPE ("(a(sus))"),
-	                                  &error);
+	nm_assert ((gpointer) source == gl.dbus_connection);
+
+	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source),
+	                                     result,
+	                                     &error);
 	if (!ret) {
 		if (_nm_dbus_error_has_name (error, "org.freedesktop.systemd1.LoadFailed")) {
 			g_dbus_error_strip_remote_error (error);
@@ -408,7 +426,7 @@ dispatcher_done_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	if (call_id->callback)
 		call_id->callback (call_id, call_id->user_data);
 
-	g_hash_table_remove (requests, call_id);
+	g_hash_table_remove (gl.requests, call_id);
 }
 
 static const char *action_table[] = {
@@ -462,27 +480,26 @@ _dispatcher_call (NMDispatcherAction action,
 	GVariantBuilder vpn_ip4_props;
 	GVariantBuilder vpn_ip6_props;
 	NMDispatcherCallId *call_id = NULL;
-	static guint request_counter = 0;
-	guint reqid = ++request_counter;
+	guint request_id;
 	const char *connectivity_state_string = "UNKNOWN";
+
+	g_return_val_if_fail (!blocking || (!callback && !user_data), FALSE);
 
 	NM_SET_OUT (out_call_id, NULL);
 
-	if (!dispatcher_proxy)
+	_init_dispatcher ();
+
+	if (!gl.dbus_connection)
 		return FALSE;
 
-	/* Wrapping protection */
-	if (G_UNLIKELY (!reqid))
-		reqid = ++request_counter;
-
-	g_assert (!blocking || (!callback && !user_data));
-
-	_ensure_requests ();
+	request_id = ++gl.request_id_counter;
+	if (G_UNLIKELY (!request_id))
+		request_id = ++gl.request_id_counter;
 
 	/* All actions except 'hostname' and 'connectivity-change' require a device */
 	if (   action == NM_DISPATCHER_ACTION_HOSTNAME
 	    || action == NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE) {
-		_LOG2D (reqid,
+		_LOG2D (request_id,
 		        "dispatching action '%s'%s",
 		        action_to_string (action),
 		        blocking
@@ -491,7 +508,7 @@ _dispatcher_call (NMDispatcherAction action,
 	} else {
 		g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-		_LOG2D (reqid,
+		_LOG2D (request_id,
 		        "(%s) dispatching action '%s'%s",
 		        vpn_iface ?: nm_device_get_iface(device),
 		        action_to_string (action),
@@ -581,39 +598,46 @@ _dispatcher_call (NMDispatcherAction action,
 		gs_unref_variant GVariant *ret = NULL;
 		gs_free_error GError *error = NULL;
 
-		ret = _nm_dbus_proxy_call_sync (dispatcher_proxy,
-		                                "Action",
-		                                g_steal_pointer (&parameters_floating),
-		                                G_VARIANT_TYPE ("(a(sus))"),
-		                                G_DBUS_CALL_FLAGS_NONE,
-		                                CALL_TIMEOUT,
-		                                NULL,
-		                                &error);
+		ret = g_dbus_connection_call_sync (gl.dbus_connection,
+		                                   NM_DISPATCHER_DBUS_SERVICE,
+		                                   NM_DISPATCHER_DBUS_PATH,
+		                                   NM_DISPATCHER_DBUS_INTERFACE,
+		                                   "Action",
+		                                   g_steal_pointer (&parameters_floating),
+		                                   G_VARIANT_TYPE ("(a(sus))"),
+		                                   G_DBUS_CALL_FLAGS_NONE,
+		                                   CALL_TIMEOUT,
+		                                   NULL,
+		                                   &error);
 		if (!ret) {
 			g_dbus_error_strip_remote_error (error);
-			_LOG2W (reqid, "failed: %s", error->message);
+			_LOG2W (request_id, "failed: %s", error->message);
 			return FALSE;
 		}
-		dispatcher_results_process (reqid, action, ret);
+		dispatcher_results_process (request_id, action, ret);
 		return TRUE;
 	}
 
 	call_id = g_slice_new (NMDispatcherCallId);
 	*call_id = (NMDispatcherCallId) {
 		.action     = action,
-		.request_id = reqid,
+		.request_id = request_id,
 		.callback   = callback,
 		.user_data  = user_data,
 	};
-	g_dbus_proxy_call (dispatcher_proxy,
-	                   "Action",
-	                   g_steal_pointer (&parameters_floating),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   CALL_TIMEOUT,
-	                   NULL,
-	                   dispatcher_done_cb,
-	                   call_id);
-	g_hash_table_add (requests, call_id);
+	g_dbus_connection_call (gl.dbus_connection,
+	                        NM_DISPATCHER_DBUS_SERVICE,
+	                        NM_DISPATCHER_DBUS_PATH,
+	                        NM_DISPATCHER_DBUS_INTERFACE,
+	                        "Action",
+	                        g_steal_pointer (&parameters_floating),
+	                        G_VARIANT_TYPE ("(a(sus))"),
+	                        G_DBUS_CALL_FLAGS_NONE,
+	                        CALL_TIMEOUT,
+	                        NULL,
+	                        dispatcher_done_cb,
+	                        call_id);
+	g_hash_table_add (gl.requests, call_id);
 	NM_SET_OUT (out_call_id, call_id);
 	return TRUE;
 }
@@ -824,7 +848,7 @@ void
 nm_dispatcher_call_cancel (NMDispatcherCallId *call_id)
 {
 	if (   !call_id
-	    || g_hash_table_lookup (requests, call_id) != call_id
+	    || g_hash_table_lookup (gl.requests, call_id) != call_id
 	    || !call_id->callback)
 		g_return_if_reached ();
 
@@ -834,23 +858,3 @@ nm_dispatcher_call_cancel (NMDispatcherCallId *call_id)
 	_LOG3D (call_id, "cancelling dispatcher callback action");
 	call_id->callback = NULL;
 }
-
-void
-nm_dispatcher_init (void)
-{
-	GError *error = NULL;
-
-	dispatcher_proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
-	                                                  G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
-	                                                      G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
-	                                                  NULL,
-	                                                  NM_DISPATCHER_DBUS_SERVICE,
-	                                                  NM_DISPATCHER_DBUS_PATH,
-	                                                  NM_DISPATCHER_DBUS_INTERFACE,
-	                                                  NULL, &error);
-	if (!dispatcher_proxy) {
-		_LOGE ("could not get dispatcher proxy! %s", error->message);
-		g_clear_error (&error);
-	}
-}
-

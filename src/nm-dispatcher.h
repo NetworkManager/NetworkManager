@@ -86,6 +86,4 @@ gboolean nm_dispatcher_call_connectivity (NMConnectivityState state,
 
 void nm_dispatcher_call_cancel (NMDispatcherCallId *call_id);
 
-void nm_dispatcher_init (void);
-
 #endif /* __NM_DISPATCHER_H__ */
