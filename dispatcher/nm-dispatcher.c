@@ -36,6 +36,8 @@
 
 #include "nmdbus-dispatcher.h"
 
+typedef struct Request Request;
+
 static struct {
 	GDBusConnection *dbus_connection;
 	GMainLoop *loop;
@@ -45,68 +47,12 @@ static struct {
 	guint request_id_counter;
 	gboolean ever_acquired_name;
 	bool exit_with_failure;
-} gl;
 
-typedef struct Request Request;
-
-typedef struct {
-	GObject parent;
-
-	/* Private data */
 	NMDBusDispatcher *dbus_dispatcher;
-
 	Request *current_request;
 	GQueue *requests_waiting;
 	int num_requests_pending;
-} Handler;
-
-typedef struct {
-  GObjectClass parent;
-} HandlerClass;
-
-GType handler_get_type (void);
-
-#define HANDLER_TYPE         (handler_get_type ())
-#define HANDLER(object)      (G_TYPE_CHECK_INSTANCE_CAST ((object), HANDLER_TYPE, Handler))
-#define HANDLER_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), HANDLER_TYPE, HandlerClass))
-
-G_DEFINE_TYPE(Handler, handler, G_TYPE_OBJECT)
-
-static gboolean
-handle_action (NMDBusDispatcher *dbus_dispatcher,
-               GDBusMethodInvocation *context,
-               const char *str_action,
-               GVariant *connection_dict,
-               GVariant *connection_props,
-               GVariant *device_props,
-               GVariant *device_proxy_props,
-               GVariant *device_ip4_props,
-               GVariant *device_ip6_props,
-               GVariant *device_dhcp4_props,
-               GVariant *device_dhcp6_props,
-               const char *connectivity_state,
-               const char *vpn_ip_iface,
-               GVariant *vpn_proxy_props,
-               GVariant *vpn_ip4_props,
-               GVariant *vpn_ip6_props,
-               gboolean request_debug,
-               gpointer user_data);
-
-static void
-handler_init (Handler *h)
-{
-	h->requests_waiting = g_queue_new ();
-	h->dbus_dispatcher = nmdbus_dispatcher_skeleton_new ();
-	g_signal_connect (h->dbus_dispatcher, "handle-action",
-	                  G_CALLBACK (handle_action), h);
-}
-
-static void
-handler_class_init (HandlerClass *h_class)
-{
-}
-
-static gboolean dispatch_one_script (Request *request);
+} gl;
 
 typedef struct {
 	Request *request;
@@ -122,8 +68,6 @@ typedef struct {
 } ScriptInfo;
 
 struct Request {
-	Handler *handler;
-
 	guint request_id;
 
 	GDBusMethodInvocation *context;
@@ -219,6 +163,10 @@ struct Request {
 
 /*****************************************************************************/
 
+static gboolean dispatch_one_script (Request *request);
+
+/*****************************************************************************/
+
 static void
 script_info_free (gpointer ptr)
 {
@@ -263,7 +211,6 @@ quit_timeout_reschedule (void)
 /**
  * next_request:
  *
- * @h: the handler
  * @request: (allow-none): the request to set as next. If %NULL, dequeue the next
  * waiting request. Otherwise, try to set the given request.
  *
@@ -276,27 +223,27 @@ quit_timeout_reschedule (void)
  * a new request as current.
  */
 static gboolean
-next_request (Handler *h, Request *request)
+next_request (Request *request)
 {
 	if (request) {
-		if (h->current_request) {
-			g_queue_push_tail (h->requests_waiting, request);
+		if (gl.current_request) {
+			g_queue_push_tail (gl.requests_waiting, request);
 			return FALSE;
 		}
 	} else {
 		/* when calling next_request() without explicit @request, we always
 		 * forcefully clear @current_request. That one is certainly
 		 * handled already. */
-		h->current_request = NULL;
+		gl.current_request = NULL;
 
-		request = g_queue_pop_head (h->requests_waiting);
+		request = g_queue_pop_head (gl.requests_waiting);
 		if (!request)
 			return FALSE;
 	}
 
 	_LOG_R_D (request, "start running ordered scripts...");
 
-	h->current_request = request;
+	gl.current_request = request;
 
 	return TRUE;
 }
@@ -316,7 +263,6 @@ complete_request (Request *request)
 	GVariantBuilder results;
 	GVariant *ret;
 	guint i;
-	Handler *handler = request->handler;
 
 	nm_assert (request);
 
@@ -339,14 +285,14 @@ complete_request (Request *request)
 
 	_LOG_R_T (request, "completed (%u scripts)", request->scripts->len);
 
-	if (handler->current_request == request)
-		handler->current_request = NULL;
+	if (gl.current_request == request)
+		gl.current_request = NULL;
 
 	request_free (request);
 
-	g_assert_cmpuint (handler->num_requests_pending, >, 0);
-	if (--handler->num_requests_pending <= 0) {
-		nm_assert (!handler->current_request && !g_queue_peek_head (handler->requests_waiting));
+	g_assert_cmpuint (gl.num_requests_pending, >, 0);
+	if (--gl.num_requests_pending <= 0) {
+		nm_assert (!gl.current_request && !g_queue_peek_head (gl.requests_waiting));
 		quit_timeout_reschedule ();
 	}
 }
@@ -354,7 +300,6 @@ complete_request (Request *request)
 static void
 complete_script (ScriptInfo *script)
 {
-	Handler *handler;
 	Request *request;
 	gboolean wait = script->wait;
 
@@ -367,9 +312,7 @@ complete_script (ScriptInfo *script)
 			return;
 	}
 
-	handler = request->handler;
-
-	nm_assert (!wait || handler->current_request == request);
+	nm_assert (!wait || gl.current_request == request);
 
 	/* Try to complete the request. @request will be possibly free'd,
 	 * making @script and @request a dangling pointer. */
@@ -382,13 +325,13 @@ complete_script (ScriptInfo *script)
 		 * requests. However, if this was the last "no-wait" script and
 		 * there are "wait" scripts ready to run, launch them.
 		 */
-		if (   handler->current_request == request
-		    && handler->current_request->num_scripts_nowait == 0) {
+		if (   gl.current_request == request
+		    && gl.current_request->num_scripts_nowait == 0) {
 
-			if (dispatch_one_script (handler->current_request))
+			if (dispatch_one_script (gl.current_request))
 				return;
 
-			complete_request (handler->current_request);
+			complete_request (gl.current_request);
 		} else
 			return;
 	} else {
@@ -401,11 +344,11 @@ complete_script (ScriptInfo *script)
 		 * processed because only requests with "wait" scripts can become
 		 * @current_request. As there can only be one "wait" script running
 		 * at any time, it means complete_request() above completed @request. */
-		nm_assert (!handler->current_request);
+		nm_assert (!gl.current_request);
 	}
 
-	while (next_request (handler, NULL)) {
-		request = handler->current_request;
+	while (next_request (NULL)) {
+		request = gl.current_request;
 
 		if (dispatch_one_script (request))
 			return;
@@ -755,7 +698,6 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
                gboolean request_debug,
                gpointer user_data)
 {
-	Handler *h = user_data;
 	GSList *sorted_scripts = NULL;
 	GSList *iter;
 	Request *request;
@@ -765,7 +707,6 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 
 	request = g_slice_new0 (Request);
 	request->request_id = ++gl.request_id_counter;
-	request->handler = h;
 	request->debug = request_debug || gl.debug;
 	request->context = context;
 	request->action = g_strdup (str_action);
@@ -825,7 +766,7 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 
 	nm_clear_g_source (&gl.quit_id);
 
-	h->num_requests_pending++;
+	gl.num_requests_pending++;
 
 	for (i = 0; i < request->scripts->len; i++) {
 		ScriptInfo *s = g_ptr_array_index (request->scripts, i);
@@ -840,8 +781,8 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 		/* The request has at least one wait script.
 		 * Try next_request() to schedule the request for
 		 * execution. This either enqueues the request or
-		 * sets it as h->current_request. */
-		if (next_request (h, request)) {
+		 * sets it as gl.current_request. */
+		if (next_request (request)) {
 			/* @request is now @current_request. Go ahead and
 			 * schedule the first wait script. */
 			if (!dispatch_one_script (request)) {
@@ -849,7 +790,7 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 				 * request. Try complete_request(). */
 				complete_request (request);
 
-				if (next_request (h, NULL)) {
+				if (next_request (NULL)) {
 					/* As @request was successfully scheduled as next_request(), there is no
 					 * other request in queue that can be scheduled afterwards. Assert against
 					 * that, but call next_request() to clear current_request. */
@@ -862,7 +803,7 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 		 * the request right away (we might have failed to schedule any
 		 * of the scripts). It will be either completed now, or later
 		 * when the pending scripts return.
-		 * We don't enqueue it to h->requests_waiting.
+		 * We don't enqueue it to gl.requests_waiting.
 		 * There is no need to handle next_request(), because @request is
 		 * not the current request anyway and does not interfere with requests
 		 * that have any "wait" scripts. */
@@ -989,7 +930,6 @@ int
 main (int argc, char **argv)
 {
 	gs_free_error GError *error = NULL;
-	Handler *handler = NULL;
 	guint signal_id_term = 0;
 	guint signal_id_int = 0;
 
@@ -1023,8 +963,12 @@ main (int argc, char **argv)
 		goto done;
 	}
 
-	handler = g_object_new (HANDLER_TYPE, NULL);
-	g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (handler->dbus_dispatcher),
+	gl.requests_waiting = g_queue_new ();
+	gl.dbus_dispatcher = nmdbus_dispatcher_skeleton_new ();
+	g_signal_connect (gl.dbus_dispatcher, "handle-action",
+	                  G_CALLBACK (handle_action), NULL);
+
+	g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (gl.dbus_dispatcher),
 	                                  gl.dbus_connection,
 	                                  NM_DISPATCHER_DBUS_PATH,
 	                                  &error);
@@ -1047,14 +991,14 @@ main (int argc, char **argv)
 
 done:
 
-	nm_clear_pointer (&handler->requests_waiting, g_queue_free);
+	nm_clear_pointer (&gl.requests_waiting, g_queue_free);
 
-	if (handler) {
-		g_signal_handlers_disconnect_by_func (handler->dbus_dispatcher,
+	if (gl.dbus_dispatcher) {
+		g_signal_handlers_disconnect_by_func (gl.dbus_dispatcher,
 		                                      G_CALLBACK (handle_action),
-		                                      handler);
+		                                      NULL);
 	}
-	g_clear_object (&handler);
+	g_clear_object (&gl.dbus_dispatcher);
 
 	nm_clear_g_source (&signal_id_term);
 	nm_clear_g_source (&signal_id_int);
