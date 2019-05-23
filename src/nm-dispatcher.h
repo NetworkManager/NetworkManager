@@ -39,18 +39,20 @@ typedef enum {
 	NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE
 } NMDispatcherAction;
 
-typedef void (*NMDispatcherFunc) (guint call_id, gpointer user_data);
+typedef struct NMDispatcherCallId NMDispatcherCallId;
+
+typedef void (*NMDispatcherFunc) (NMDispatcherCallId *call_id, gpointer user_data);
 
 gboolean nm_dispatcher_call_hostname (NMDispatcherFunc callback,
                                       gpointer user_data,
-                                      guint *out_call_id);
+                                      NMDispatcherCallId **out_call_id);
 
 gboolean nm_dispatcher_call_device (NMDispatcherAction action,
                                     NMDevice *device,
                                     NMActRequest *act_request,
                                     NMDispatcherFunc callback,
                                     gpointer user_data,
-                                    guint *out_call_id);
+                                    NMDispatcherCallId **out_call_id);
 
 gboolean nm_dispatcher_call_device_sync (NMDispatcherAction action,
                                          NMDevice *device,
@@ -66,7 +68,7 @@ gboolean nm_dispatcher_call_vpn (NMDispatcherAction action,
                                  NMIP6Config *vpn_ip6_config,
                                  NMDispatcherFunc callback,
                                  gpointer user_data,
-                                 guint *out_call_id);
+                                 NMDispatcherCallId **out_call_id);
 
 gboolean nm_dispatcher_call_vpn_sync (NMDispatcherAction action,
                                       NMSettingsConnection *settings_connection,
@@ -80,9 +82,9 @@ gboolean nm_dispatcher_call_vpn_sync (NMDispatcherAction action,
 gboolean nm_dispatcher_call_connectivity (NMConnectivityState state,
                                           NMDispatcherFunc callback,
                                           gpointer user_data,
-                                          guint *out_call_id);
+                                          NMDispatcherCallId **out_call_id);
 
-void nm_dispatcher_call_cancel (guint call_id);
+void nm_dispatcher_call_cancel (NMDispatcherCallId *call_id);
 
 void nm_dispatcher_init (void);
 

@@ -328,16 +328,18 @@ typedef struct _NMDevicePrivate {
 	ActivationHandleData act_handle4; /* for layer2 and IPv4. */
 	ActivationHandleData act_handle6;
 	guint           recheck_assume_id;
+
 	struct {
 		guint               call_id;
 		NMDeviceStateReason available_reason;
 		NMDeviceStateReason unavailable_reason;
-	}               recheck_available;
+	} recheck_available;
+
 	struct {
-		guint               call_id;
+		NMDispatcherCallId *call_id;
 		NMDeviceState       post_state;
 		NMDeviceStateReason post_state_reason;
-	}               dispatcher;
+	} dispatcher;
 
 	/* Link stuff */
 	guint           link_connected_id;
@@ -12380,21 +12382,21 @@ dispatcher_cleanup (NMDevice *self)
 
 	if (priv->dispatcher.call_id) {
 		nm_dispatcher_call_cancel (priv->dispatcher.call_id);
-		priv->dispatcher.call_id = 0;
+		priv->dispatcher.call_id = NULL;
 		priv->dispatcher.post_state = NM_DEVICE_STATE_UNKNOWN;
 		priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
 	}
 }
 
 static void
-dispatcher_complete_proceed_state (guint call_id, gpointer user_data)
+dispatcher_complete_proceed_state (NMDispatcherCallId *call_id, gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	g_return_if_fail (call_id == priv->dispatcher.call_id);
 
-	priv->dispatcher.call_id = 0;
+	priv->dispatcher.call_id = NULL;
 	nm_device_queue_state (self, priv->dispatcher.post_state,
 	                       priv->dispatcher.post_state_reason);
 	priv->dispatcher.post_state = NM_DEVICE_STATE_UNKNOWN;
@@ -14822,7 +14824,7 @@ deactivate_async_ready (NMDevice *self,
 }
 
 static void
-deactivate_dispatcher_complete (guint call_id, gpointer user_data)
+deactivate_dispatcher_complete (NMDispatcherCallId *call_id, gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -14833,7 +14835,7 @@ deactivate_dispatcher_complete (guint call_id, gpointer user_data)
 
 	reason = priv->dispatcher.post_state_reason;
 
-	priv->dispatcher.call_id = 0;
+	priv->dispatcher.call_id = NULL;
 	priv->dispatcher.post_state = NM_DEVICE_STATE_UNKNOWN;
 	priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
 

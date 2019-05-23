@@ -63,9 +63,20 @@
 #define _NMLOG3_DOMAIN     LOGD_DISPATCH
 #define _NMLOG3(level, call_id, ...) _NMLOG2 (level, (call_id)->request_id, __VA_ARGS__)
 
+/*****************************************************************************/
 
 static GDBusProxy *dispatcher_proxy;
 static GHashTable *requests = NULL;
+
+struct NMDispatcherCallId {
+	NMDispatcherFunc callback;
+	gpointer user_data;
+	NMDispatcherAction action;
+	guint idle_id;
+	guint32 request_id;
+};
+
+/*****************************************************************************/
 
 static void
 dump_proxy_to_props (NMProxyConfig *proxy, GVariantBuilder *builder)
@@ -307,20 +318,11 @@ fill_vpn_props (NMProxyConfig *proxy_config,
 		dump_ip6_to_props (ip6_config, ip6_builder);
 }
 
-typedef struct {
-	NMDispatcherAction action;
-	guint request_id;
-	NMDispatcherFunc callback;
-	gpointer user_data;
-	guint idle_id;
-} DispatchInfo;
-
 static void
-dispatcher_info_free (DispatchInfo *info)
+dispatcher_call_id_free (NMDispatcherCallId *call_id)
 {
-	if (info->idle_id)
-		g_source_remove (info->idle_id);
-	g_free (info);
+	nm_clear_g_source (&call_id->idle_id);
+	g_slice_free (NMDispatcherCallId, call_id);
 }
 
 static void
@@ -330,14 +332,8 @@ _ensure_requests (void)
 		requests = g_hash_table_new_full (nm_direct_hash,
 		                                  NULL,
 		                                  NULL,
-		                                  (GDestroyNotify) dispatcher_info_free);
+		                                  (GDestroyNotify) dispatcher_call_id_free);
 	}
-}
-
-static void
-dispatcher_info_cleanup (DispatchInfo *info)
-{
-	g_hash_table_remove (requests, GUINT_TO_POINTER (info->request_id));
 }
 
 static const char *
@@ -392,7 +388,7 @@ dispatcher_done_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
 	gs_unref_variant GVariant *ret = NULL;
 	gs_free_error GError *error = NULL;
-	DispatchInfo *info = user_data;
+	NMDispatcherCallId *call_id = user_data;
 
 	ret = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result,
 	                                  G_VARIANT_TYPE ("(a(sus))"),
@@ -400,19 +396,19 @@ dispatcher_done_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	if (!ret) {
 		if (_nm_dbus_error_has_name (error, "org.freedesktop.systemd1.LoadFailed")) {
 			g_dbus_error_strip_remote_error (error);
-			_LOG3W (info, "failed to call dispatcher scripts: %s",
+			_LOG3W (call_id, "failed to call dispatcher scripts: %s",
 			        error->message);
 		} else {
-			_LOG3D (info, "failed to call dispatcher scripts: %s",
+			_LOG3D (call_id, "failed to call dispatcher scripts: %s",
 			        error->message);
 		}
 	} else
-		dispatcher_results_process (info->request_id, info->action, ret);
+		dispatcher_results_process (call_id->request_id, call_id->action, ret);
 
-	if (info->callback)
-		info->callback (info->request_id, info->user_data);
+	if (call_id->callback)
+		call_id->callback (call_id, call_id->user_data);
 
-	dispatcher_info_cleanup (info);
+	g_hash_table_remove (requests, call_id);
 }
 
 static const char *action_table[] = {
@@ -451,7 +447,7 @@ _dispatcher_call (NMDispatcherAction action,
                   NMIP6Config *vpn_ip6_config,
                   NMDispatcherFunc callback,
                   gpointer user_data,
-                  guint *out_call_id)
+                  NMDispatcherCallId **out_call_id)
 {
 	GVariant *connection_dict;
 	GVariantBuilder connection_props;
@@ -465,11 +461,12 @@ _dispatcher_call (NMDispatcherAction action,
 	GVariantBuilder vpn_proxy_props;
 	GVariantBuilder vpn_ip4_props;
 	GVariantBuilder vpn_ip6_props;
-	DispatchInfo *info = NULL;
-	gboolean success = FALSE;
+	NMDispatcherCallId *call_id = NULL;
 	static guint request_counter = 0;
 	guint reqid = ++request_counter;
 	const char *connectivity_state_string = "UNKNOWN";
+
+	NM_SET_OUT (out_call_id, NULL);
 
 	if (!dispatcher_proxy)
 		return FALSE;
@@ -595,38 +592,30 @@ _dispatcher_call (NMDispatcherAction action,
 		if (!ret) {
 			g_dbus_error_strip_remote_error (error);
 			_LOG2W (reqid, "failed: %s", error->message);
-			g_clear_error (&error);
-			success = FALSE;
-		} else {
-			dispatcher_results_process (reqid, action, ret);
-			success = TRUE;
+			return FALSE;
 		}
-	} else {
-		info = g_malloc0 (sizeof (*info));
-		info->action = action;
-		info->request_id = reqid;
-		info->callback = callback;
-		info->user_data = user_data;
-		g_dbus_proxy_call (dispatcher_proxy,
-		                   "Action",
-		                   g_steal_pointer (&parameters_floating),
-		                   G_DBUS_CALL_FLAGS_NONE,
-		                   CALL_TIMEOUT,
-		                   NULL,
-		                   dispatcher_done_cb,
-		                   info);
-		success = TRUE;
+		dispatcher_results_process (reqid, action, ret);
+		return TRUE;
 	}
 
-	if (success && info) {
-		/* Track the request in case of cancelation */
-		g_hash_table_insert (requests, GUINT_TO_POINTER (info->request_id), info);
-		if (out_call_id)
-			*out_call_id = info->request_id;
-	} else if (out_call_id)
-		*out_call_id = 0;
-
-	return success;
+	call_id = g_slice_new (NMDispatcherCallId);
+	*call_id = (NMDispatcherCallId) {
+		.action     = action,
+		.request_id = reqid,
+		.callback   = callback,
+		.user_data  = user_data,
+	};
+	g_dbus_proxy_call (dispatcher_proxy,
+	                   "Action",
+	                   g_steal_pointer (&parameters_floating),
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   CALL_TIMEOUT,
+	                   NULL,
+	                   dispatcher_done_cb,
+	                   call_id);
+	g_hash_table_add (requests, call_id);
+	NM_SET_OUT (out_call_id, call_id);
+	return TRUE;
 }
 
 /**
@@ -643,7 +632,7 @@ _dispatcher_call (NMDispatcherAction action,
 gboolean
 nm_dispatcher_call_hostname (NMDispatcherFunc callback,
                              gpointer user_data,
-                             guint *out_call_id)
+                             NMDispatcherCallId **out_call_id)
 {
 	return _dispatcher_call (NM_DISPATCHER_ACTION_HOSTNAME, FALSE,
 	                         NULL, NULL, NULL, FALSE,
@@ -674,7 +663,7 @@ nm_dispatcher_call_device (NMDispatcherAction action,
                            NMActRequest *act_request,
                            NMDispatcherFunc callback,
                            gpointer user_data,
-                           guint *out_call_id)
+                           NMDispatcherCallId **out_call_id)
 {
 	nm_assert (NM_IS_DEVICE (device));
 	if (!act_request) {
@@ -758,7 +747,7 @@ nm_dispatcher_call_vpn (NMDispatcherAction action,
                         NMIP6Config *vpn_ip6_config,
                         NMDispatcherFunc callback,
                         gpointer user_data,
-                        guint *out_call_id)
+                        NMDispatcherCallId **out_call_id)
 {
 	return _dispatcher_call (action, FALSE,
 	                         parent_device,
@@ -822,7 +811,7 @@ gboolean
 nm_dispatcher_call_connectivity (NMConnectivityState connectivity_state,
                                  NMDispatcherFunc callback,
                                  gpointer user_data,
-                                 guint *out_call_id)
+                                 NMDispatcherCallId **out_call_id)
 {
 	return _dispatcher_call (NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE, FALSE,
 	                         NULL, NULL, NULL, FALSE,
@@ -832,22 +821,18 @@ nm_dispatcher_call_connectivity (NMConnectivityState connectivity_state,
 }
 
 void
-nm_dispatcher_call_cancel (guint call_id)
+nm_dispatcher_call_cancel (NMDispatcherCallId *call_id)
 {
-	DispatchInfo *info;
-
-	_ensure_requests ();
+	if (   !call_id
+	    || g_hash_table_lookup (requests, call_id) != call_id
+	    || !call_id->callback)
+		g_return_if_reached ();
 
 	/* Canceling just means the callback doesn't get called, so set the
 	 * DispatcherInfo's callback to NULL.
 	 */
-	info = g_hash_table_lookup (requests, GUINT_TO_POINTER (call_id));
-	g_return_if_fail (info);
-
-	if (info && info->callback) {
-		_LOG3D (info, "cancelling dispatcher callback action");
-		info->callback = NULL;
-	}
+	_LOG3D (call_id, "cancelling dispatcher callback action");
+	call_id->callback = NULL;
 }
 
 void
