@@ -78,6 +78,14 @@ struct NMDispatcherCallId {
 
 /*****************************************************************************/
 
+/* FIXME(shutdown): on shutdown, we should not run dispatcher scripts synchronously.
+ *   Instead, we should of course still run them asynchronously.
+ *
+ *   Also, we should wait for all pending requests to complete before exiting the main-loop
+ *   (with a watchdog). If we hit a timeout, we log a warning and quit (but leave the scripts
+ *   running).
+ *
+ *   Finally, cleanup the global structures. */
 static struct {
 	GDBusConnection *dbus_connection;
 	GHashTable *requests;
