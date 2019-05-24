@@ -32,6 +32,8 @@
 		_what && c_list_contains (list, &_what->member); \
 	})
 
+/*****************************************************************************/
+
 typedef struct {
 	CList lst;
 	void *data;
@@ -47,21 +49,22 @@ nm_c_list_elem_new_stale (void *data)
 	return elem;
 }
 
-static inline void *
-nm_c_list_elem_get (CList *lst)
+static inline gboolean
+nm_c_list_elem_free_full (NMCListElem *elem, GDestroyNotify free_fcn)
 {
-	if (!lst)
-		return NULL;
-	return c_list_entry (lst, NMCListElem, lst)->data;
+	if (!elem)
+		return FALSE;
+	c_list_unlink_stale (&elem->lst);
+	if (free_fcn)
+		free_fcn (elem->data);
+	g_slice_free (NMCListElem, elem);
+	return TRUE;
 }
 
-static inline void
+static inline gboolean
 nm_c_list_elem_free (NMCListElem *elem)
 {
-	if (elem) {
-		c_list_unlink_stale (&elem->lst);
-		g_slice_free (NMCListElem, elem);
-	}
+	return nm_c_list_elem_free_full (elem, NULL);
 }
 
 static inline void
@@ -69,12 +72,31 @@ nm_c_list_elem_free_all (CList *head, GDestroyNotify free_fcn)
 {
 	NMCListElem *elem;
 
-	while ((elem = c_list_first_entry (head, NMCListElem, lst))) {
-		if (free_fcn)
-			free_fcn (elem->data);
-		c_list_unlink_stale (&elem->lst);
-		g_slice_free (NMCListElem, elem);
+	while ((elem = c_list_first_entry (head, NMCListElem, lst)))
+		nm_c_list_elem_free_full (elem, free_fcn);
+}
+
+/**
+ * nm_c_list_elem_find_first:
+ * @head: the @CList head of a list containing #NMCListElem elements.
+ *   Note that the head is not itself part of the list.
+ * @needle: the needle pointer.
+ *
+ * Iterates the list and returns the first #NMCListElem with the matching @needle,
+ * using pointer equality.
+ *
+ * Returns: the found list element or %NULL if not found.
+ */
+static inline NMCListElem *
+nm_c_list_elem_find_first (CList *head, gconstpointer needle)
+{
+	NMCListElem *elem;
+
+	c_list_for_each_entry (elem, head, lst) {
+		if (elem->data == needle)
+			return elem;
 	}
+	return NULL;
 }
 
 /*****************************************************************************/
