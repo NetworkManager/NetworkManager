@@ -178,7 +178,6 @@ static void default_wired_clear_tag (NMSettings *self,
                                      NMSettingsConnection *connection,
                                      gboolean add_to_no_auto_default);
 
-static void openconnect_migrate_hack (NMConnection *connection);
 static void _clear_connections_cached_list (NMSettingsPrivate *priv);
 
 /*****************************************************************************/
@@ -474,10 +473,6 @@ claim_connection (NMSettings *self, NMSettingsConnection *sett_conn)
 	/* Ensure its initial visibility is up-to-date */
 	nm_settings_connection_recheck_visibility (sett_conn);
 
-	/* Evil openconnect migration hack */
-	/* FIXME(copy-on-write-connection): avoid modifying NMConnection instances and share them via copy-on-write. */
-	openconnect_migrate_hack (nm_settings_connection_get_connection (sett_conn));
-
 	/* This one unexports the connection, it needs to run late to give the active
 	 * connection a chance to deal with its reference to this settings connection. */
 	g_signal_connect_after (sett_conn, NM_SETTINGS_CONNECTION_REMOVED,
@@ -528,48 +523,6 @@ claim_connection (NMSettings *self, NMSettingsConnection *sett_conn)
 	}
 
 	nm_settings_connection_added (sett_conn);
-}
-
-/*****************************************************************************/
-
-#define NM_DBUS_SERVICE_OPENCONNECT    "org.freedesktop.NetworkManager.openconnect"
-#define NM_OPENCONNECT_KEY_GATEWAY "gateway"
-#define NM_OPENCONNECT_KEY_COOKIE "cookie"
-#define NM_OPENCONNECT_KEY_GWCERT "gwcert"
-#define NM_OPENCONNECT_KEY_XMLCONFIG "xmlconfig"
-#define NM_OPENCONNECT_KEY_LASTHOST "lasthost"
-#define NM_OPENCONNECT_KEY_AUTOCONNECT "autoconnect"
-#define NM_OPENCONNECT_KEY_CERTSIGS "certsigs"
-
-static void
-openconnect_migrate_hack (NMConnection *connection)
-{
-	NMSettingVpn *s_vpn;
-	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NOT_SAVED;
-
-	/* Huge hack.  There were some openconnect changes that needed to happen
-	 * pretty late, too late to get into distros.  Migration has already
-	 * happened for many people, and their secret flags are wrong.  But we
-	 * don't want to requrie re-migration, so we have to fix it up here. Ugh.
-	 */
-
-	s_vpn = nm_connection_get_setting_vpn (connection);
-	if (s_vpn == NULL)
-		return;
-
-	if (g_strcmp0 (nm_setting_vpn_get_service_type (s_vpn), NM_DBUS_SERVICE_OPENCONNECT) == 0) {
-		/* These are different for every login session, and should not be stored */
-		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_GATEWAY, flags, NULL);
-		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_COOKIE, flags, NULL);
-		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_GWCERT, flags, NULL);
-
-		/* These are purely internal data for the auth-dialog, and should be stored */
-		flags = 0;
-		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_XMLCONFIG, flags, NULL);
-		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_LASTHOST, flags, NULL);
-		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_AUTOCONNECT, flags, NULL);
-		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_CERTSIGS, flags, NULL);
-	}
 }
 
 /*****************************************************************************/
