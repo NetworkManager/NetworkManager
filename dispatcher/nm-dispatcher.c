@@ -1080,6 +1080,21 @@ main (int argc, char **argv)
 
 done:
 
+	if (gl.num_requests_pending > 0) {
+		/* this only happens when we quit due to SIGTERM (not due to the idle timer).
+		 *
+		 * Log a warning about pending scripts.
+		 *
+		 * Maybe we should notify NetworkManager that these scripts are left in an unknown state.
+		 * But this is either a bug of a dispatcher script (not terminating in time).
+		 *
+		 * FIXME(shutdown): Also, currently NetworkManager behaves wrongly on shutdown.
+		 * Note that systemd would not terminate NetworkManager-dispatcher before NetworkManager.
+		 * It's NetworkManager's responsibility to keep running long enough so that all requests
+		 * can complete (with a watchdog timer, and a warning that user provided scripts hang). */
+		_LOG_X_W ("exiting but there are still %u requests pending", gl.num_requests_pending);
+	}
+
 	if (dbus_own_name_id != 0)
 		g_bus_unown_name (nm_steal_int (&dbus_own_name_id));
 
