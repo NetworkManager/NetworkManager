@@ -53,8 +53,10 @@ install \
     newt-devel \
     nss-devel \
     polkit-devel \
+    ppp \
     ppp-devel \
     pygobject3-base \
+    python-gobject-base \
     python3-dbus \
     python3-gobject \
     qt-devel \
