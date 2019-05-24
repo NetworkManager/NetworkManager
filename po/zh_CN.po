@@ -12,21 +12,22 @@
 # Mingye Wang (Arthur2e5) <arthur200126@gmail.com>, 2016.
 # Mingcong Bai <jeffbai@aosc.xyz>, 2017.
 # Dingzhong Chen <wsxy162@gmail.com>, 2016, 2017, 2018.
-#
+# lrintel <lrintel@redhat.com>, 2019. #zanata
+# tfu <tfu@redhat.com>, 2019. #zanata
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager master\n"
+"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2019-05-28 14:23+0200\n"
 "PO-Revision-Date: 2018-08-30 12:00+0800\n"
 "Last-Translator: Dingzhong Chen <wsxy162@gmail.com>\n"
 "Language-Team: Chinese (China) <i18n-zh@googlegroups.com>\n"
-"Language: zh_CN\n"
+"Language: zh_Hans\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Poedit 2.1.1\n"
+"X-Generator: Zanata 4.6.2\n"
 
 #: ../clients/cli/agent.c:39
 #, c-format
@@ -461,7 +462,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:944
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
 "\n"
@@ -753,9 +754,9 @@ msgstr ""
 "                  [destination-port <0-65535>]\n"
 "\n"
 "    wpan:         [short-addr <0x0000-0xffff>]\n"
-"\n"
 "                  [pan-id <0x0000-0xffff>]\n"
-"\n"
+"                  [page <default|0-31>]\n"
+"                  [channel <default|0-26>]\n"
 "                  [mac <MAC address>]\n"
 "\n"
 "    6lowpan:      dev <parent device (connection UUID, ifname, or MAC)>\n"
@@ -1094,9 +1095,9 @@ msgid "no active connection or device"
 msgstr "没有活动的连接或设备"
 
 #: ../clients/cli/connections.c:2354
-#, fuzzy, c-format
+#, c-format
 msgid "device '%s' not compatible with connection '%s': "
-msgstr "设备 \"%s\" 与连接 \"%s\" 不兼容："
+msgstr "设备 '%s' 与连接 '%s' 不兼容： "
 
 #: ../clients/cli/connections.c:2387
 #, c-format
@@ -1111,7 +1112,7 @@ msgstr "没有找到可用于连接 \"%s\" 的设备"
 #: ../clients/cli/connections.c:2441
 #, c-format
 msgid "Hint: use '%s' to get more details."
-msgstr ""
+msgstr "提示：使用 '%s' 来获得更详细的信息。"
 
 #: ../clients/cli/connections.c:2459
 #, c-format
@@ -1236,9 +1237,9 @@ msgid "Error: invalid property '%s': %s."
 msgstr "错误：无效的属性 \"%s\"：%s。"
 
 #: ../clients/cli/connections.c:3998
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to %s %s.%s: %s."
-msgstr "错误：修改 %s.%s 失败：%s。"
+msgstr "错误：%s %s.%s 失败 : %s."
 
 #: ../clients/cli/connections.c:4033
 #, c-format
@@ -1314,14 +1315,14 @@ msgid "Error: Failed to add '%s' connection: %s"
 msgstr "错误：添加 \"%s\" 连接失败：%s"
 
 #: ../clients/cli/connections.c:4795
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Warning: There is another connection with the name '%1$s'. Reference the "
 "connection by its uuid '%2$s'\n"
 msgid_plural ""
 "Warning: There are %3$u other connections with the name '%1$s'. Reference "
 "the connection by its uuid '%2$s'\n"
-msgstr[0] "警告：存在名为 '%1$s' 的连接。这个连接由它的 uuid '%2$s' 指代\n"
+msgstr[0] "警告：名为 '%1$s' 的连接已存在。使用 uuid '%2$s' 来指代连接\n"
 
 #: ../clients/cli/connections.c:4804
 #, c-format
@@ -1991,9 +1992,9 @@ msgid "Error: Failed to save '%s' (%s) connection: %s\n"
 msgstr "错误：保存 \"%s\" (%s) 连接失败：%s\n"
 
 #: ../clients/cli/connections.c:7836
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Timeout saving '%s' (%s) connection\n"
-msgstr "错误：保存 \"%s\" (%s) 连接失败：%s\n"
+msgstr "错误：保存 '%s' (%s) 连接超时\n"
 
 #: ../clients/cli/connections.c:7841
 #, c-format
@@ -2164,9 +2165,9 @@ msgid "Error: not all connections deleted."
 msgstr "错误：未删除所有的连接。"
 
 #: ../clients/cli/connections.c:8555
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection deletion failed: %s\n"
-msgstr "错误：连接删除失败：%s"
+msgstr "错误：连接删除失败：%s\n"
 
 #: ../clients/cli/connections.c:8611 ../clients/cli/connections.c:8732
 #, c-format
@@ -2319,7 +2320,7 @@ msgid "%u Mb/s"
 msgstr "%u Mb/s"
 
 #: ../clients/cli/devices.c:689
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device { COMMAND | help }\n"
 "\n"
@@ -2382,7 +2383,7 @@ msgstr ""
 "\n"
 "  monitor <ifname> ...\n"
 "\n"
-"  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n"
+"  wifi [list [ifname <ifname>] [bssid <BSSID>] [--rescan yes|no|auto]]\n"
 "\n"
 "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] "
 "[ifname <ifname>]\n"
@@ -2611,7 +2612,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/devices.c:831
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device wifi { ARGUMENTS | help }\n"
 "\n"
@@ -2665,44 +2666,52 @@ msgid ""
 msgstr ""
 "Usage: nmcli device wifi { ARGUMENTS | help }\n"
 "\n"
-"在 Wi-Fi 设备中执行操作。\n"
+"Perform operation on Wi-Fi devices.\n"
 "\n"
-"ARGUMENTS := [list [ifname <ifname>] [bssid <BSSID>]]\n"
+"ARGUMENTS := [list [ifname <ifname>] [bssid <BSSID>] [--rescan yes|no|"
+"auto]]\n"
 "\n"
-"列出可用的 Wi-Fi 接入点。'ifname' 和 'bssid' 选项可以用来为一个特定接口列出 "
-"AP，或使用一个特定的 BSSID。\n"
+"List available Wi-Fi access points. The 'ifname' and 'bssid' options can be\n"
+"used to list APs for a particular interface, or with a specific BSSID. The\n"
+"--rescan flag tells whether a new Wi-Fi scan should be triggered.\n"
 "\n"
 "ARGUMENTS := connect <(B)SSID> [password <password>] [wep-key-type key|"
 "phrase] [ifname <ifname>]\n"
 "                     [bssid <BSSID>] [name <name>] [private yes|no] [hidden "
 "yes|no]\n"
 "\n"
-"连接到由 SSID 或 BSSID 指定的一个 Wi-Fi 网络。这个命令会创建一个新的连接，然"
-"后在一个设备上激活它。这与在 GUI 客户端中点一个 SSID 的效果相同。这个命令会创"
-"建一个新的连接，它主要用于连接到一个新的 Wi-Fi\n"
-"网络。如果到这个网络的连接已存在，最好使用以下方法来使用已存在的配置集："
-"nmcli con up id <name>.。请注意，当前只支持 open、WEP 和 WPA-PSK 网络。它同时"
-"假设 IP 地址的配置是通过 DHCP 获得的。\n"
+"Connect to a Wi-Fi network specified by SSID or BSSID. The command finds a\n"
+"matching connection or creates one and then activates it on a device. This\n"
+"is a command-line counterpart of clicking an SSID in a GUI client. If a\n"
+"connection for the network already exists, it is possible to bring up the\n"
+"existing profile as follows: nmcli con up id <name>. Note that only open,\n"
+"WEP and WPA-PSK networks are supported if no previous connection exists.\n"
+"It is also assumed that IP configuration is obtained via DHCP.\n"
+"\n"
 "ARGUMENTS := hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>]\n"
 "                     [band a|bg] [channel <channel>] [password <password>]\n"
 "\n"
-"创建一个 Wi-Fi 热点。使用 'connection down' 或 'device disconnect'\n"
-"可以停止使用这个热点。\n"
-"热点参数可以通过可选参数进行配置：\n"
-"ifname - 使用的 Wi-Fi 设备\n"
-"con-name - 创建的热点连接配置集的名称\n"
-"ssid - 热点的 SSID\n"
-"band - 使用的 Wi-Fi 频段\n"
-"channel - 使用的 Wi-Fi channel\n"
-"password - 热点的密码\n"
+"Create a Wi-Fi hotspot. Use 'connection down' or 'device disconnect'\n"
+"to stop the hotspot.\n"
+"Parameters of the hotspot can be influenced by the optional parameters:\n"
+"ifname - Wi-Fi device to use\n"
+"con-name - name of the created hotspot connection profile\n"
+"ssid - SSID of the hotspot\n"
+"band - Wi-Fi band to use\n"
+"channel - Wi-Fi channel to use\n"
+"password - password to use for the hotspot\n"
 "\n"
 "ARGUMENTS := rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n"
 "\n"
-"请求 NetworkManager 马上重新扫描可用的接入点。\n"
-"NetworkManager 会定期扫描 Wi-Fi 网络，但在一些情况下，可能需要手动进行扫"
-"描。'ssid' 可以用来扫描特定的\n"
-"SSID，这对于带有隐藏的 SSID 的 AP 非常有用。可以指定多个 'ssid' 参数。请注"
-"意，这个命令不会显示 AP，需要使用 'nmcli device wifi list' 来实现这个功能。\n"
+"Request that NetworkManager immediately re-scan for available access "
+"points.\n"
+"NetworkManager scans Wi-Fi networks periodically, but in some cases it "
+"might\n"
+"be useful to start scanning manually. 'ssid' allows scanning for a specific\n"
+"SSID, which is useful for APs with hidden SSIDs. More 'ssid' parameters can "
+"be\n"
+"given. Note that this command does not show the APs,\n"
+"use 'nmcli device wifi list' for that.\n"
 "\n"
 
 #: ../clients/cli/devices.c:878
@@ -2826,9 +2835,9 @@ msgid "Error: Failed to add/activate new connection: %s"
 msgstr "错误：添加/激活新连接失败：%s"
 
 #: ../clients/cli/devices.c:1862
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to activate connection: %s"
-msgstr "错误：添加/激活新连接失败：%s"
+msgstr "错误：激活连接失败：%s"
 
 #: ../clients/cli/devices.c:1932
 #, c-format
@@ -3032,7 +3041,7 @@ msgstr "错误：未找到 BSSID 为 \"%s\" 的接入点。"
 #: ../clients/cli/devices.c:3397
 #, c-format
 msgid "Error: Connection '%s' exists but properties don't match."
-msgstr ""
+msgstr "错误：连接 '%s' 存在但属性不匹配。"
 
 #: ../clients/cli/devices.c:3440
 #, c-format
@@ -3620,7 +3629,7 @@ msgid "Networkmanager is not running (waiting for it)\n"
 msgstr "网络管理器未运行（等待中）。\n"
 
 #: ../clients/cli/nmcli.c:244
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli [OPTIONS] OBJECT { COMMAND | help }\n"
 "\n"
@@ -3651,31 +3660,33 @@ msgid ""
 "  m[onitor]       monitor NetworkManager changes\n"
 "\n"
 msgstr ""
-"用法：nmcli [选项] OBJECT \n"
+"Usage: nmcli [OPTIONS] OBJECT { COMMAND | help }\n"
 "\n"
-"选项：\n"
-"  -o[verview]                                    概览模式（隐藏默认值）\n"
-"  -t[erse]                                       简洁输出\n"
-"  -p[retty]                                      整齐输出\n"
-"  -m[ode] tabular|multiline                      输出模式\n"
-"  -c[olors] auto|yes|no                          是否在输出中使用颜色\n"
-"  -f[ields] |all|common       指定要输出的字段\n"
-"  -g[et-values] |all|common   -m tabular -t -f 的快捷方式\n"
-"  -e[scape] yes|no                               在值中转义列分隔符\n"
-"  -a[sk]                                         询问缺少的参数\n"
-"  -s[how-secrets]                                允许显示密码\n"
-"  -w[ait]                                    为完成的操作设置超时等待时间\n"
-"  -v[ersion]                                     显示程序版本\n"
-"  -h[elp]                                        输出此帮助\n"
+"OPTIONS\n"
+"  -a, --ask                                ask for missing parameters\n"
+"  -c, --colors auto|yes|no                 whether to use colors in output\n"
+"  -e, --escape yes|no                      escape columns separators in "
+"values\n"
+"  -f, --fields <field,...>|all|common      specify fields to output\n"
+"  -g, --get-values <field,...>|all|common  shortcut for -m tabular -t -f\n"
+"  -h, --help                               print this help\n"
+"  -m, --mode tabular|multiline             output mode\n"
+"  -o, --overview                           overview mode\n"
+"  -p, --pretty                             pretty output\n"
+"  -s, --show-secrets                       allow displaying passwords\n"
+"  -t, --terse                              terse output\n"
+"  -v, --version                            show program version\n"
+"  -w, --wait <seconds>                     set timeout waiting for finishing "
+"operations\n"
 "\n"
-"对象：\n"
-"  g[eneral]       网络管理器（NetworkManager）的常规状态和操作\n"
-"  n[etworking]    整体联网控制\n"
-"  r[adio]         网络管理器无线电开关\n"
-"  c[onnection]    网络管理器的连接\n"
-"  d[evice]        由网络管理器管理的设备\n"
-"  a[gent]         网络管理器的密钥（secret）代理或 polkit 代理\n"
-"  m[onitor]       监视网络管理器更改\n"
+"OBJECT\n"
+"  g[eneral]       NetworkManager's general status and operations\n"
+"  n[etworking]    overall networking control\n"
+"  r[adio]         NetworkManager radio switches\n"
+"  c[onnection]    NetworkManager's connections\n"
+"  d[evice]        devices managed by NetworkManager\n"
+"  a[gent]         NetworkManager secret agent or polkit agent\n"
+"  m[onitor]       monitor NetworkManager changes\n"
 "\n"
 
 #: ../clients/cli/nmcli.c:324
@@ -4258,9 +4269,8 @@ msgid "Failed to configure SR-IOV parameters"
 msgstr "配置 SR-IOV 参数失败"
 
 #: ../clients/common/nm-client-utils.c:359
-#, fuzzy
 msgid "The Wi-Fi P2P peer could not be found"
-msgstr "未找到 Wi-Fi 网络"
+msgstr "无法找到 Wi-Fi P2P peer"
 
 #: ../clients/common/nm-client-utils.c:365
 msgid "Unknown reason"
@@ -4407,9 +4417,8 @@ msgstr "%s（%s）"
 
 #: ../clients/common/nm-meta-setting-desc.c:1334
 #: ../clients/common/nm-meta-setting-desc.c:1338
-#, fuzzy
 msgid "'%s' is out of range [%"
-msgstr "\"%s\" 超出范围 [0, %u]"
+msgstr "'%s' 超出范围 [%"
 
 #: ../clients/common/nm-meta-setting-desc.c:1343
 #, c-format
@@ -4493,9 +4502,9 @@ msgid "'%s' is not valid; use <option>=<value>"
 msgstr "'%s' 无效; 使用 <option>=<value>"
 
 #: ../clients/common/nm-meta-setting-desc.c:1967
-#, fuzzy, c-format
+#, c-format
 msgid "cannot set empty \"%s\" option"
-msgstr "无法设定属性：%s"
+msgstr "无法设定空的 %s 选项"
 
 #: ../clients/common/nm-meta-setting-desc.c:2026
 #, c-format
@@ -4514,9 +4523,8 @@ msgid "'%s' is not valid"
 msgstr "\"%s\" 无效"
 
 #: ../clients/common/nm-meta-setting-desc.c:2161
-#, fuzzy
 msgid "not a valid hex-string"
-msgstr "不是有效的接口名称"
+msgstr "不是有效的 hex 字符串"
 
 #: ../clients/common/nm-meta-setting-desc.c:2177
 #, c-format
@@ -4527,12 +4535,12 @@ msgstr "\"%s\" 不是有效十六进制字符"
 msgid ""
 "too many arguments. Please only specify a private key file and optionally a "
 "password"
-msgstr ""
+msgstr "参数太多。只能指定一个私钥或再指定一个可选的密码"
 
 #: ../clients/common/nm-meta-setting-desc.c:2363
-#, fuzzy, c-format
+#, c-format
 msgid "failed to set bond option \"%s\""
-msgstr "设定属性失败：%s"
+msgstr "设定绑定属性失败 %s"
 
 #: ../clients/common/nm-meta-setting-desc.c:2380
 #, c-format
@@ -4578,9 +4586,9 @@ msgid "Can not change the connection type"
 msgstr "无法更改连接类型"
 
 #: ../clients/common/nm-meta-setting-desc.c:2523
-#, fuzzy, c-format
+#, c-format
 msgid "invalid permission \"%s\""
-msgstr "无效的运行程序（runner）\"%s\""
+msgstr "无效的权限 \"%s\""
 
 #: ../clients/common/nm-meta-setting-desc.c:2560
 #, c-format
@@ -4652,9 +4660,9 @@ msgid "default"
 msgstr "默认"
 
 #: ../clients/common/nm-meta-setting-desc.c:3194
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IPv%c address '%s'"
-msgstr "无效的 IPv4 地址\"%s\""
+msgstr "无效的 IPv%c 地址 '%s'"
 
 #: ../clients/common/nm-meta-setting-desc.c:3321
 #, c-format
@@ -4672,14 +4680,13 @@ msgstr "有效语法为：\"vf [attribute=value]... [,vf [attribute=value]...]\"
 
 #: ../clients/common/nm-meta-setting-desc.c:3575
 #: ../clients/common/nm-meta-setting-desc.c:3655
-#, fuzzy
 msgid ""
 "The valid syntax is: '[root | parent <handle>] [handle <handle>] <kind>'"
-msgstr "有效的语法是：'[root | parent <handle>] [handle <handle>] <qdisc>'"
+msgstr "正确语法为：'[root | parent <handle>] [handle <handle>] <kind>'"
 
 #: ../clients/common/nm-meta-setting-desc.c:3600
 msgid "The valid syntax is: '<vid>[-<vid>] [pvid] [untagged]'"
-msgstr ""
+msgstr "正确语法为：'<vid>[-<vid>] [pvid] [untagged]'"
 
 #: ../clients/common/nm-meta-setting-desc.c:3875
 #, c-format
@@ -5141,6 +5148,9 @@ msgid ""
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
 "\n"
 msgstr ""
+"使用以下格式输入一组 IPv4 路由规则：\n"
+"  priority [prio] [from [src]] [to [dst]], ,...\n"
+"\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5758
 msgid ""
@@ -5211,6 +5221,9 @@ msgid ""
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
 "\n"
 msgstr ""
+"使用以下格式输入一组 IPv6 路由规则：\n"
+"  priority [prio] [from [src]] [to [dst]], ,...\n"
+"\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5969
 #: ../clients/common/nm-meta-setting-desc.c:6893
@@ -5360,7 +5373,7 @@ msgstr "目标端口 [8472]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6971
 msgid "Peer"
-msgstr ""
+msgstr "同等"
 
 #: ../clients/common/nm-meta-setting-desc.c:7001
 msgid "WiMAX NSP name"
@@ -5398,13 +5411,12 @@ msgid "PAN Identifier (<0x0000-0xffff>)"
 msgstr "PAN 标识符（<0x0000-0xffff>）"
 
 #: ../clients/common/nm-meta-setting-desc.c:7476
-#, fuzzy
 msgid "Page (<default|0-31>)"
-msgstr "（默认）"
+msgstr "页 (<default|0-31>)"
 
 #: ../clients/common/nm-meta-setting-desc.c:7490
 msgid "Channel (<default|0-26>)"
-msgstr ""
+msgstr "频道 (<default|0-26>)"
 
 #. ***************************************************************************
 #: ../clients/common/nm-meta-setting-desc.c:7625
@@ -5568,9 +5580,8 @@ msgid "VXLAN connection"
 msgstr "VXLAN 连接"
 
 #: ../clients/common/nm-meta-setting-desc.c:7664
-#, fuzzy
 msgid "Wi-Fi P2P connection"
-msgstr "Wi-Fi 连接"
+msgstr "Wi-Fi P2P 连接"
 
 #: ../clients/common/nm-meta-setting-desc.c:7665
 msgid "WiMAX connection"
@@ -5581,9 +5592,8 @@ msgid "Wired Ethernet"
 msgstr "有线以太网"
 
 #: ../clients/common/nm-meta-setting-desc.c:7667
-#, fuzzy
 msgid "WireGuard VPN settings"
-msgstr "WPAN 设置"
+msgstr "WireGuard VPN 设置"
 
 #: ../clients/common/nm-meta-setting-desc.c:7668
 msgid "Wi-Fi connection"
@@ -5608,7 +5618,7 @@ msgstr "验证会话已在进行。"
 #: ../clients/common/nm-secret-agent-simple.c:230
 #, c-format
 msgid "Preshared-key for %s"
-msgstr ""
+msgstr "%s 的预共享密钥"
 
 #: ../clients/common/nm-secret-agent-simple.c:286
 #: ../clients/common/nm-secret-agent-simple.c:323
@@ -5645,14 +5655,13 @@ msgid "Service"
 msgstr "服务"
 
 #: ../clients/common/nm-secret-agent-simple.c:486
-#, fuzzy
 msgid "WireGuard private-key"
-msgstr "无效的私有密钥"
+msgstr "WireGuard 私钥"
 
 #: ../clients/common/nm-secret-agent-simple.c:527
-#, fuzzy, c-format
+#, c-format
 msgid "Secrets are required to connect WireGuard VPN '%s'"
-msgstr "需要密钥来访问有线网络 \"%s\"。"
+msgstr "连接到 WireGuard VPN '%s' 所需要的 secret"
 
 #: ../clients/common/nm-secret-agent-simple.c:628
 #: ../clients/common/nm-secret-agent-simple.c:912
@@ -5724,9 +5733,8 @@ msgid "MACsec EAP authentication"
 msgstr "MACsec EAP 身份验证"
 
 #: ../clients/common/nm-secret-agent-simple.c:940
-#, fuzzy
 msgid "WireGuard VPN secret"
-msgstr "WireGuard"
+msgstr "WireGuard VPN secret"
 
 #: ../clients/common/nm-secret-agent-simple.c:979
 msgid "VPN password required"
@@ -5780,35 +5788,35 @@ msgid "Gateway certificate hash"
 msgstr "网关证书散列"
 
 #: ../clients/common/nm-vpn-helpers.c:270
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid peer starting at %s:%zu: %s"
-msgstr "无效的设置名称 \"%s\""
+msgstr "于 %s:%zu: %s 启动的无效 peer"
 
 #: ../clients/common/nm-vpn-helpers.c:390
 msgid ""
 "The WireGuard config file must be a valid interface name followed by \".conf"
 "\""
-msgstr ""
+msgstr "WireGuard 配置文件需要是一个有效的接口名再加上 \".conf\""
 
 #: ../clients/common/nm-vpn-helpers.c:678
 #, c-format
 msgid "unrecognized line at %s:%zu"
-msgstr ""
+msgstr "无法识别的行 %s:%zu"
 
 #: ../clients/common/nm-vpn-helpers.c:683
-#, fuzzy, c-format
+#, c-format
 msgid "invalid value for '%s' at %s:%zu"
-msgstr "对 \"%s\" 无效的值：%s"
+msgstr "无效的值 '%s' 于 %s:%zu"
 
 #: ../clients/common/nm-vpn-helpers.c:688
-#, fuzzy, c-format
+#, c-format
 msgid "invalid secret '%s' at %s:%zu"
-msgstr "无效路由：%s。%s"
+msgstr "无效的 secret '%s' 于 %s:%zu"
 
 #: ../clients/common/nm-vpn-helpers.c:801
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to create WireGuard connection: %s"
-msgstr "错误：添加/激活新连接失败：%s"
+msgstr "创建 WireGuard 连接失败 : %s"
 
 #. Generated file. Do not edit.
 #: ../clients/common/settings-docs.h.in:3
@@ -5890,8 +5898,8 @@ msgstr ""
 "设备的永久硬件地址。\"random\" 则在每个连接上创建随机的 MAC 地址。\"stable\" "
 "则根据 connection.stable-id 和机器相关密钥创建散列的 MAC 地址。如未指定，该值"
 "可被全局默认值覆盖，参见 NetworkManager.conf 的手册。如还未指定，它就默认为 "
-"\"preserve\"（旧版 NetworkManager 可能使用不同的默认值）。在 D-Bus 上, 此字段"
-"表示为 \"assigned-mac-address\" 或已弃用的 \"cloned-mac-address\"。"
+"\"permanent\"。在 D-Bus 上, 此字段表示为 \"assigned-mac-address\" 或已弃用的 "
+"\"cloned-mac-address\"。"
 
 #: ../clients/common/settings-docs.h.in:11
 #: ../clients/common/settings-docs.h.in:91
@@ -5936,7 +5944,6 @@ msgstr ""
 "的 MAC 地址，随机地选择本地或全局管理。"
 
 #: ../clients/common/settings-docs.h.in:12
-#, fuzzy
 msgid ""
 "If TRUE, indicates that the network is a non-broadcasting network that hides "
 "its SSID. This works both in infrastructure and AP mode. In infrastructure "
@@ -5948,10 +5955,12 @@ msgid ""
 "privacy issue for you (in infrastructure mode) or client stations (in AP "
 "mode), as the explicit probe-scans are distinctly recognizable on the air."
 msgstr ""
-"如为 TRUE，表明此网络是个隐藏了它 SSID 的非广播网络。这种情况下，可以采用多种"
-"解决方法，比如探测扫描 SSID 以获得更可靠的网络发现。但是，这些解决方法也暴露"
-"了隐藏 SSID 网络的固有的不安全性，因此应该谨慎地使用隐藏 SSID 网络。注意标记"
-"网络为隐藏对于你可能是个隐私问题，因为明确的探测扫描在空中可能被清晰地识别。"
+"如果为 TRUE，代表网络是一个隐藏了其 SSID 的非广播网络。这适用于 "
+"infrastructure 模式和 AP 模式。对于 infrastructure 模式，可以使用不同的方法来"
+"更可靠地发现隐藏网络，例如探针扫描 SSID。然而，这些方法会暴露出隐藏了 SSID 的"
+"网络的不安全性，因此在使用隐藏了 SSID 的网络时应谨慎。对于 AP 模式，创建的网"
+"络不会广播其 SSID。请注意，把网络标记为隐藏对于您（infrastructure 模式）或客"
+"户端工作站（AP 模式）可能只是一个隐私问题，因为显式探针扫描可以识别它们。"
 
 #: ../clients/common/settings-docs.h.in:13
 msgid ""
@@ -6124,7 +6133,6 @@ msgstr ""
 "\"wep40\"、\"wep104\"、\"tkip\" 或 \"ccmp\" 中的一个。"
 
 #: ../clients/common/settings-docs.h.in:27
-#, fuzzy
 msgid ""
 "Key management used for the connection.  One of \"none\" (WEP), \"ieee8021x"
 "\" (Dynamic WEP), \"wpa-none\" (Ad-Hoc WPA-PSK), \"wpa-psk\" (infrastructure "
@@ -6201,6 +6209,10 @@ msgid ""
 "hexadecimal character. The WPA3-Personal networks use a passphrase of any "
 "length for SAE authentication."
 msgstr ""
+"WPA 网络的预共享密钥（Pre-Shared-Key）。对于 WPA-PSK，它是一个 8 到 63 个字符"
+"的 ASCII 密码口令（由 802.11i 标准指定）通过哈希以获得实际的密钥，或为一个 "
+"64 位  hexadecimal 字符的密钥。WPA3-Personal 网络使用可以为任何长度的密码口令"
+"以进行 SAE 验证。"
 
 #: ../clients/common/settings-docs.h.in:35
 msgid "Flags indicating how to handle the \"psk\" property."
@@ -6794,15 +6806,14 @@ msgid ""
 "D-Bus, this field is expressed as \"assigned-mac-address\" or the deprecated "
 "\"cloned-mac-address\"."
 msgstr ""
-"如果指定了，则请求设备改成使用此 MAC 地址。这被称为 MAC 克隆或欺骗。除了明确"
-"地指定个 MAC 地址，也支持特殊值 \"preserve\"、\"permanent\"、\"random\" 和 "
-"\"stable\"。\"preserve\" 表示激活时不动 MAC 地址。\"permanent\" 表示如果设备"
-"有永久硬件地址则使用（否则视为 \"preserve\"）。\"random\" 会在每次连接时创建"
-"个随机的 MAC 地址。\"stable\" 根据 connection.stable-id 和机器相关的密钥创建"
-"个散列的 MAC 地址。如果未指定，其值可被全局默认值覆盖，参阅 NetworkManager."
-"conf 手册。如仍未指定，它将默认为 \"preserve\"（旧版 NetworkManager 可能使用"
-"不同的默认值）。在 D-Bus 上，此字段表示为 \"assigned-mac-address\" 或已弃用"
-"的 \"cloned-mac-address\"。"
+"如指定了，则请求该设备使用此 MAC 地址来代替。这个可被称为 MAC 克隆或欺骗。除"
+"了明确地指定 MAC 地址，也支持 \"preserve\"、\"permanent\"、\"random\" 和 "
+"\"stable\" 等特殊值。\"preserve\" 表示激活时不动 MAC 地址。\"permanent\" 使用"
+"设备的永久硬件地址。\"random\" 则在每个连接上创建随机的 MAC 地址。\"stable\" "
+"则根据 connection.stable-id 和机器相关密钥创建散列的 MAC 地址。如未指定，该值"
+"可被全局默认值覆盖，参见 NetworkManager.conf 的手册。如还未指定，它就默认为 "
+"\"permanent\"。在 D-Bus 上, 此字段表示为 \"assigned-mac-address\" 或已弃用的 "
+"\"cloned-mac-address\"。"
 
 #: ../clients/common/settings-docs.h.in:90
 msgid ""
@@ -7056,12 +7067,11 @@ msgstr "控制是否为此网桥启用生成树协议（STP）。"
 msgid ""
 "The default PVID for the ports of the bridge, that is the VLAN id assigned "
 "to incoming untagged frames."
-msgstr ""
+msgstr "网桥端口的默认 PVID，它是分配给入站的未经过 tag 的数据包的 VLAN id。"
 
 #: ../clients/common/settings-docs.h.in:122
-#, fuzzy
 msgid "Control whether VLAN filtering is enabled on the bridge."
-msgstr "控制是否为此网桥启用生成树协议（STP）。"
+msgstr "控制在网桥中是否启用 VLAN 过滤。"
 
 #: ../clients/common/settings-docs.h.in:123
 msgid ""
@@ -7072,6 +7082,10 @@ msgid ""
 "$vid is either a single id between 1 and 4094 or a range, represented as a "
 "couple of ids separated by a dash."
 msgstr ""
+"网桥 VLAN 对象阵列。除了这里指定的 VLAN，网桥还可以带有由 bridge.vlan-"
+"default-pvid 属性配置的 default-pvid VLAN。在 nmcli 中，VLAN 列表可以使用以下"
+"语法指定： $vid [pvid] [untagged] [, $vid [pvid] [untagged]]... 其中 $vid 是"
+"一个 1 到 4094 的 id，或是一个由短横线分隔的 id 所代表的范围。"
 
 #: ../clients/common/settings-docs.h.in:124
 msgid ""
@@ -7097,6 +7111,10 @@ msgid ""
 "[untagged]]... where $vid is either a single id between 1 and 4094 or a "
 "range, represented as a couple of ids separated by a dash."
 msgstr ""
+"网桥 VLAN 对象阵列。除了这里指定的 VLAN，网桥还可以带有由 bridge.vlan-"
+"default-pvid 属性配置的 default-pvid VLAN。在 nmcli 中，VLAN 列表可以使用以下"
+"语法指定： $vid [pvid] [untagged] [, $vid [pvid] [untagged]]... 其中 $vid 是"
+"一个 1 到 4094 的 id，或是一个由短横线分隔的 id 所代表的范围。"
 
 #: ../clients/common/settings-docs.h.in:128
 #: ../clients/common/settings-docs.h.in:174
@@ -7232,7 +7250,6 @@ msgid "Whether LLDP is enabled for the connection."
 msgstr "是否为连接启用 LLDP。"
 
 #: ../clients/common/settings-docs.h.in:142
-#, fuzzy
 msgid ""
 "Whether Link-Local Multicast Name Resolution (LLMNR) is enabled for the "
 "connection. LLMNR is a protocol based on the Domain Name System (DNS) packet "
@@ -7243,16 +7260,17 @@ msgid ""
 "host names. This feature requires a plugin which supports LLMNR. One such "
 "plugin is dns-systemd-resolved."
 msgstr ""
-"是否为连接启用 mDNS。它的值可以是：yes: 注册主机名并为连接进行解析，no: 接口"
-"禁用 mDNS，resolve: 不注册主机名但允许解析 mDNS 主机名。这个功能需要一个支持 "
-"mDNS 的插件。dns-systemd-resolved 就是这样一个插件。"
+"连接是否启用 LLMNR（Link-Local Multicast Name Resolution）。LLMNR 是一个基于 "
+"DNS 的数据包格式，它可以使 IPv4 和 IPv6 主机对位于本地连接中的主机进行名称解"
+"析。它的值可以是: yes: 注册主机名并为连接进行解析，no: 在接口中禁用 LLMNR，"
+"resolve: 不注册主机名，但允许解析 LLMNR 主机名。这个功能需要支持 LLMNR 的插"
+"件。例如，dns-systemd-resolved 就是这样一个插件。"
 
 #: ../clients/common/settings-docs.h.in:143
 msgid "Interface name of the master device or UUID of the master connection."
 msgstr "主设备的接口名或 UUID 或主连接。"
 
 #: ../clients/common/settings-docs.h.in:144
-#, fuzzy
 msgid ""
 "Whether mDNS is enabled for the connection. The permitted values are: yes: "
 "register hostname and resolving for the connection, no: disable mDNS for the "
@@ -7323,7 +7341,6 @@ msgstr ""
 "是从连接。"
 
 #: ../clients/common/settings-docs.h.in:151
-#, fuzzy
 msgid ""
 "This represents the identity of the connection used for various purposes. It "
 "allows to configure multiple profiles to share the identity. Also, the "
@@ -7611,7 +7628,7 @@ msgstr ""
 msgid ""
 "Legacy setting that used to help establishing PPP data sessions for GSM-"
 "based modems. Deprecated: 1"
-msgstr ""
+msgstr "用来帮助基于 GSM 的调制解调器创建 PPP 数据会话的老的设置。已过期：1"
 
 #: ../clients/common/settings-docs.h.in:179
 msgid ""
@@ -7792,7 +7809,6 @@ msgstr ""
 "秒）。大于零的值为以毫秒计算的超时时间。该属性当前只实现于 IPv4。"
 
 #: ../clients/common/settings-docs.h.in:204
-#, fuzzy
 msgid ""
 "A string sent to the DHCP server to identify the local machine which the "
 "DHCP server may use to customize the DHCP lease and options. When the "
@@ -7823,7 +7839,7 @@ msgstr ""
 "MAC 地址来生成类型为以太网类型 (01) 的客户端标识符。当前这些选项仅适用于以太"
 "网类型的链路。支持特殊值 \"stable\" 基于 stable-id 和每个主机的密钥生成一个类"
 "型 0 的客户端标识符（参见 connection.stable-id）。如果未设，使用全局默认值。"
-"如果仍未设定，重新使用来自上个租约的 client-id。"
+"如果仍未设定，默认值取决于 DHCP 插件。"
 
 #: ../clients/common/settings-docs.h.in:205
 msgid ""
@@ -7879,7 +7895,6 @@ msgstr ""
 
 #: ../clients/common/settings-docs.h.in:211
 #: ../clients/common/settings-docs.h.in:231
-#, fuzzy
 msgid ""
 "DNS servers priority. The relative priority for DNS servers specified by "
 "this setting.  A lower value is better (higher priority). Zero selects a "
@@ -7977,7 +7992,6 @@ msgstr ""
 
 #: ../clients/common/settings-docs.h.in:217
 #: ../clients/common/settings-docs.h.in:238
-#, fuzzy
 msgid ""
 "IP configuration method. NMSettingIP4Config and NMSettingIP6Config both "
 "support \"auto\", \"manual\", and \"link-local\". See the subclass-specific "
@@ -8090,7 +8104,6 @@ msgstr ""
 "址。"
 
 #: ../clients/common/settings-docs.h.in:225
-#, fuzzy
 msgid ""
 "A string containing the DHCPv6 Unique Identifier (DUID) used by the dhcp "
 "client to identify itself to DHCPv6 servers (RFC 3315). The DUID is carried "
@@ -8527,9 +8540,11 @@ msgid ""
 "on the interface also when it is zero. To prevent any changes to SR-IOV "
 "parameters don't add a sriov setting to the connection."
 msgstr ""
+"要创建的虚拟功能的总数。请注意，如果存在 sriov 设置（即使为 0），"
+"NetworkManager 都会强制实现在接口上的虚拟功能的数量。为了防止对 SR-IOV 参数的"
+"任何改变，则不要向连接添加 sriov 设置。"
 
 #: ../clients/common/settings-docs.h.in:304
-#, fuzzy
 msgid ""
 "Array of virtual function descriptors. Each VF descriptor is a dictionary "
 "mapping attribute names to GVariant values. The 'index' entry is mandatory "
@@ -8570,7 +8585,6 @@ msgstr ""
 
 #: ../clients/common/settings-docs.h.in:308
 #: ../clients/common/settings-docs.h.in:326
-#, fuzzy
 msgid ""
 "Link watchers configuration for the connection: each link watcher is defined "
 "by a dictionary, whose keys depend upon the selected link watcher. Available "
@@ -8585,8 +8599,9 @@ msgstr ""
 "监视器。可用的链路监视器有 \"ethtool\"、\"nsna_ping\" 和 \"arp_ping\"，并且在"
 "目录中以密钥 \"name\" 指定。可用的密钥有：  ethtool：\"delay-up\"、\"delay-"
 "down\"、\"init-wait\"；nsna_ping：\"init-wait\"、\"interval\"、\"missed-max"
-"\"、\"target-host\"；arp_ping：包括 nsna_ping 中的和 \"source-host"
-"\"、\"validate-active\"、\"validate-incative\"、\"send-always\"。"
+"\"、\"target-host\"；arp_ping：包括 nsna_ping 中的所有以及 \"source-host"
+"\"、\"validate-active\"、\"validate-incative\"、\"send-always\"。请参阅 "
+"teamd.conf 的 man 页了解详细信息。"
 
 #: ../clients/common/settings-docs.h.in:309
 msgid "Corresponds to the teamd mcast_rejoin.count."
@@ -8928,7 +8943,7 @@ msgstr "指定要在传出数据包使用的存活时间值。"
 msgid ""
 "The P2P device that should be connected to. Currently this is the only way "
 "to create or join a group."
-msgstr ""
+msgstr "应该连接到的 P2P 设备。目前，这是唯一创建或加入一个组的方法。"
 
 #: ../clients/common/settings-docs.h.in:365
 msgid ""
@@ -8938,17 +8953,18 @@ msgid ""
 "connection. This setting is only useful when implementing a Wi-Fi Display "
 "client."
 msgstr ""
+"要设置的 WFD（Wi-Fi Display）IE（Information Elements）。WFD 需要在特定 Wi-"
+"Fi 数据帧中设置一个特定于协议的 IE。它们可以在这里设置来建立连接。这个设置只"
+"在实现一个 WFD 客户端时有用。"
 
 #: ../clients/common/settings-docs.h.in:366
-#, fuzzy
 msgid ""
 "Flags indicating which mode of WPS is to be used. There's little point in "
 "changing the default setting as NetworkManager will automatically determine "
 "the best method to use."
 msgstr ""
 "指示使用哪种 WPS 模式（如果可用）的标志。由于网络管理器（NetworkManager）会自"
-"动从接入点功能确定启动 WPS 注册是否可行，因此改变默认设置几乎没有意义。可以通"
-"过设置此属性值为 1 来禁用 WPS。"
+"动决定要使用的最佳方法，因此改变默认设置几乎没有意义。"
 
 #: ../clients/common/settings-docs.h.in:367
 msgid ""
@@ -8970,22 +8986,25 @@ msgid ""
 "The use of fwmark is optional and is by default off. Setting it to 0 "
 "disables it. Otherwise it is a 32-bit fwmark for outgoing packets."
 msgstr ""
+"使用 fwmark 是可选的，它被默认禁用。如果把它设为 0，则代表被禁用，其他情况下"
+"它是一个用于出站数据包的 32 位 fwmark。"
 
 #: ../clients/common/settings-docs.h.in:370
 msgid ""
 "The listen-port. If listen-port is not specified, the port will be chosen "
 "randomly when the interface comes up."
-msgstr ""
+msgstr "listen-port。如果 listen-port 没有被指定，则会在接口使用随机选择端口。"
 
 #: ../clients/common/settings-docs.h.in:371
-#, fuzzy
 msgid ""
 "If non-zero, only transmit packets of the specified size or smaller, "
 "breaking larger packets up into multiple fragments. If zero a default MTU is "
 "used. Note that contrary to wg-quick's MTU setting, this does not take into "
 "account the current routes at the time of activation."
 msgstr ""
-"如果非零，只传输指定大小或更小的数据包，将较大的数据包分成多个以太网帧。"
+"如果非零，只传输指定大小或更小的数据包，大的数据包会被分成多个以太网帧。如果"
+"为 0， 则使用默认的 MTU。请注意，与 wg-quick 的 MTU 不同，它不会考虑在激活时"
+"当前的路由。"
 
 #: ../clients/common/settings-docs.h.in:372
 msgid ""
@@ -8995,21 +9014,24 @@ msgid ""
 "no such routes are added automatically. In this case, the user may want to "
 "configure static routes in ipv4.routes and ipv6.routes, respectively."
 msgstr ""
+"是否为 peer 的 AllowedIPs 范围自动添加路由。如果为 TRUE (默认设置)，"
+"NetworkManager 会根据 ipv4.route-table 和 ipv6.route-table 在路由表中自动添加"
+"路由。如果为 FALSE，不会自动添加路由。在这种情况下，用户需要分别在 ipv4."
+"routes 和  ipv6.routes 中添加静态路由。"
 
 #: ../clients/common/settings-docs.h.in:373
 msgid "The 256 bit private-key in base64 encoding."
-msgstr ""
+msgstr "以 base64 编码的 256 为私钥。"
 
 #: ../clients/common/settings-docs.h.in:374
-#, fuzzy
 msgid "Flags indicating how to handle the \"private-key\" property."
-msgstr "指示如何处理 \"private-key-password\" 属性的标志。"
+msgstr "指示如何处理 \"private-key\" 属性的标志。"
 
 #: ../clients/common/settings-docs.h.in:375
 msgid ""
 "IEEE 802.15.4 channel. A positive integer or -1, meaning \"do not set, use "
 "whatever the device is already set to\"."
-msgstr ""
+msgstr "IEEE 802.15.4 频道。一个正整数，或 -1 意味着“不设置，使用设置的设置”。"
 
 #: ../clients/common/settings-docs.h.in:376
 msgid ""
@@ -9024,6 +9046,7 @@ msgid ""
 "IEEE 802.15.4 channel page. A positive integer or -1, meaning \"do not set, "
 "use whatever the device is already set to\"."
 msgstr ""
+"IEEE 802.15.4 频道页。一个正整数，或 -1 意味着“不设置，使用设备的设置”。"
 
 #: ../clients/common/settings-docs.h.in:378
 msgid "IEEE 802.15.4 Personal Area Network (PAN) identifier."
@@ -9477,7 +9500,7 @@ msgid "(No custom routes)"
 msgstr "（没有自定义路由）"
 
 #: ../clients/tui/nmt-page-ip4.c:85 ../clients/tui/nmt-page-ip6.c:85
-#, fuzzy, c-format
+#, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
 msgstr[0] " 个自定义路由"
@@ -9985,9 +10008,9 @@ msgid "NetworkManager is not running."
 msgstr "NetworkManaer 未运行。"
 
 #: ../libnm-core/nm-crypto.c:213
-#, fuzzy, c-format
+#, c-format
 msgid "PEM key file had no start tag"
-msgstr "PEM 密钥文件没有结束标记 \"%s\"。"
+msgstr "PEM 密钥文件没有 start tag"
 
 #: ../libnm-core/nm-crypto.c:221
 #, c-format
@@ -10053,9 +10076,9 @@ msgid "IV contains non-hexadecimal digits."
 msgstr "初始向量中包含非十六进制数字。"
 
 #: ../libnm-core/nm-crypto.c:531
-#, fuzzy, c-format
+#, c-format
 msgid "IV must contain at least 8 characters"
-msgstr "密钥包含无效的字符"
+msgstr "IV 需要最少包括 8 个字符"
 
 #: ../libnm-core/nm-crypto.c:579
 #, c-format
@@ -10083,33 +10106,33 @@ msgid "Failed to decode certificate."
 msgstr "无法解码证书。"
 
 #: ../libnm-core/nm-crypto.c:702 ../libnm-core/nm-crypto.c:755
-#, fuzzy, c-format
+#, c-format
 msgid "Certificate file is empty"
-msgstr "密钥为空"
+msgstr "整数文件为空"
 
 #: ../libnm-core/nm-crypto.c:735
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to recognize certificate"
-msgstr "无法解码证书。"
+msgstr "识别证书失败。"
 
 #: ../libnm-core/nm-crypto.c:845
-#, fuzzy, c-format
+#, c-format
 msgid "not a valid private key"
-msgstr "无效的私有密钥"
+msgstr "无效的私钥"
 
 #: ../libnm-core/nm-crypto-gnutls.c:75
 msgid "Failed to initialize the crypto engine."
 msgstr "初始化加密引擎失败。"
 
 #: ../libnm-core/nm-crypto-gnutls.c:107 ../libnm-core/nm-crypto-nss.c:129
-#, fuzzy, c-format
+#, c-format
 msgid "Unsupported key cipher for decryption"
-msgstr "不支持的流量过滤器（tfilter）选项：\"%s\"。"
+msgstr "解密不支持的密钥密码"
 
 #: ../libnm-core/nm-crypto-gnutls.c:117 ../libnm-core/nm-crypto-nss.c:136
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid IV length (must be at least %u)."
-msgstr "无效的初始向量长度（至少为 %d）。"
+msgstr "无效的初始向量长度（至少为 %u）。"
 
 #: ../libnm-core/nm-crypto-gnutls.c:134
 #, c-format
@@ -10132,9 +10155,9 @@ msgid "Failed to decrypt the private key."
 msgstr "解密私钥失败。"
 
 #: ../libnm-core/nm-crypto-gnutls.c:205 ../libnm-core/nm-crypto-nss.c:289
-#, fuzzy, c-format
+#, c-format
 msgid "Unsupported key cipher for encryption"
-msgstr "不支持的流量过滤器（tfilter）选项：\"%s\"。"
+msgstr "加密不支持的密钥密码"
 
 #: ../libnm-core/nm-crypto-gnutls.c:221
 #, c-format
@@ -10262,9 +10285,9 @@ msgid "Password must be UTF-8"
 msgstr "密码必须是 UTF-8 格式"
 
 #: ../libnm-core/nm-crypto-nss.c:462
-#, fuzzy, c-format
+#, c-format
 msgid "Couldn't initialize slot"
-msgstr "无法初始化 PKCS#8 解码器：%s"
+msgstr "无法初始 slot"
 
 #: ../libnm-core/nm-crypto-nss.c:470
 #, c-format
@@ -10352,9 +10375,9 @@ msgid "Method returned type '%s', but expected '%s'"
 msgstr "方法返回类型 \"%s\"，但期望的是 \"%s\""
 
 #: ../libnm-core/nm-keyfile-utils.c:210
-#, fuzzy, c-format
+#, c-format
 msgid "value is not an integer in range [%lld, %lld]"
-msgstr "\"%s\" 超出范围 [%lli, %lli]"
+msgstr "值不是在 [%lld, %lld] 范围内的一个整数"
 
 #: ../libnm-core/nm-keyfile.c:211
 msgid "ignoring missing number"
@@ -10479,9 +10502,9 @@ msgid "invalid parity value '%s'"
 msgstr "无效的奇偶校验值 \"%s\""
 
 #: ../libnm-core/nm-keyfile.c:1611 ../libnm-core/nm-keyfile.c:3130
-#, fuzzy, c-format
+#, c-format
 msgid "invalid setting: %s"
-msgstr "无效的设置名称 \"%s\""
+msgstr "无效设置：%s"
 
 #: ../libnm-core/nm-keyfile.c:1628
 #, c-format
@@ -10508,7 +10531,7 @@ msgstr "加载设置值时出错：%s"
 #: ../libnm-core/nm-keyfile.c:3053 ../libnm-core/nm-keyfile.c:3105
 #: ../libnm-core/nm-keyfile.c:3116
 msgid "value cannot be interpreted as integer"
-msgstr ""
+msgstr "值无法被解析为整数"
 
 #: ../libnm-core/nm-keyfile.c:3151
 #, c-format
@@ -10526,39 +10549,39 @@ msgid "key '%s.%s' is not boolean"
 msgstr "密钥 \"%s.%s\" 不是布尔值"
 
 #: ../libnm-core/nm-keyfile.c:3268
-#, fuzzy, c-format
+#, c-format
 msgid "invalid peer public key in section '%s'"
-msgstr "无效选项 \"%s\""
+msgstr "'%s' 项中无效的 peer 公钥"
 
 #: ../libnm-core/nm-keyfile.c:3280
 #, c-format
 msgid "key '%s.%s' is not a valid 256 bit key in base64 encoding"
-msgstr ""
+msgstr "密钥 '%s.%s' 不是一个以 base64 编码的有效的 256 位密钥"
 
 #: ../libnm-core/nm-keyfile.c:3293
-#, fuzzy, c-format
+#, c-format
 msgid "key '%s.%s' is not a valid secret flag"
-msgstr "\"%s\" 不是有效的 DCB 标记"
+msgstr " '%s.%s' 不是一个有效的 secret 标记"
 
 #: ../libnm-core/nm-keyfile.c:3305
-#, fuzzy, c-format
+#, c-format
 msgid "key '%s.%s' is not a integer in range 0 to 2^32"
-msgstr "\"%s\" 超出范围 [%lli, %lli]"
+msgstr "'%s.%s' 不是在 0 到 2^32 范围内的一个整数"
 
 #: ../libnm-core/nm-keyfile.c:3317
-#, fuzzy, c-format
+#, c-format
 msgid "key '%s.%s' is not a valid endpoint"
-msgstr "\"%s\" 不是有效的种类"
+msgstr "'%s.%s' 不是一个有效的端点"
 
 #: ../libnm-core/nm-keyfile.c:3339
 #, c-format
 msgid "key '%s.%s' has invalid allowed-ips"
-msgstr ""
+msgstr "'%s.%s' 包括无效的 allowed-ips"
 
 #: ../libnm-core/nm-keyfile.c:3351
-#, fuzzy, c-format
+#, c-format
 msgid "peer '%s' is invalid: %s"
-msgstr "\"%s\" 无效"
+msgstr "peer '%s' 无效 : %s"
 
 #: ../libnm-core/nm-setting-6lowpan.c:93
 #, c-format
@@ -10605,9 +10628,9 @@ msgid "certificate is invalid: %s"
 msgstr "证书是无效的：%s"
 
 #: ../libnm-core/nm-setting-8021x.c:321
-#, fuzzy, c-format
+#, c-format
 msgid "certificate detected as invalid scheme"
-msgstr "证书是无效的：%s"
+msgstr "证书无效"
 
 #: ../libnm-core/nm-setting-8021x.c:535
 msgid "CA certificate must be in X.509 format"
@@ -10960,9 +10983,9 @@ msgid ""
 msgstr "软件 infiniband 设备的接口名必须为 \"%s\" 或未设置（但现在是 \"%s\"）"
 
 #: ../libnm-core/nm-setting-infiniband.c:281
-#, fuzzy, c-format
+#, c-format
 msgid "mtu can be at most %u but it is %u"
-msgstr "传输模式 \"%s\" 的 MTU 最多为 %d，但现在是 %d"
+msgstr "mtu 最大为 %u，但它的值是 %u"
 
 #: ../libnm-core/nm-setting-ip-config.c:136
 #, c-format
@@ -11038,164 +11061,147 @@ msgid "invalid prefix %s"
 msgstr "无效的前缀 %s"
 
 #: ../libnm-core/nm-setting-ip-config.c:2479
-#, fuzzy
 msgid "invalid priority"
-msgstr "无效的优先级映射 \"%s\""
+msgstr "无效的优先级"
 
 #: ../libnm-core/nm-setting-ip-config.c:2490
-#, fuzzy
 msgid "missing table"
-msgstr "缺少密钥"
+msgstr "缺少表"
 
 #: ../libnm-core/nm-setting-ip-config.c:2496
-#, fuzzy
 msgid "invalid action"
-msgstr "无效操作："
+msgstr "无效操作"
 
 #: ../libnm-core/nm-setting-ip-config.c:2503
 msgid "has from/src but the prefix-length is zero"
-msgstr ""
+msgstr "带有 from/src 但是 prefix-length 为 0"
 
 #: ../libnm-core/nm-setting-ip-config.c:2510
 msgid "missing from/src for a non zero prefix-length"
-msgstr ""
+msgstr "一个非 0 的 prefix-length 但没有 from/src"
 
 #: ../libnm-core/nm-setting-ip-config.c:2515
-#, fuzzy
 msgid "invalid from/src"
-msgstr "无效的端口 %d"
+msgstr "无效的 from/src"
 
 #: ../libnm-core/nm-setting-ip-config.c:2520
-#, fuzzy
 msgid "invalid prefix length for from/src"
-msgstr "%s 的前缀长度 \"%s\" 无效，默认为 %d"
+msgstr "from/src 无效的前缀长度"
 
 #: ../libnm-core/nm-setting-ip-config.c:2527
 msgid "has to/dst but the prefix-length is zero"
-msgstr ""
+msgstr "带有 to/dst 但是 prefix-length 为 0"
 
 #: ../libnm-core/nm-setting-ip-config.c:2534
 msgid "missing to/dst for a non zero prefix-length"
-msgstr ""
+msgstr "一个非 0 的 prefix-length 但没有 to/dst"
 
 #: ../libnm-core/nm-setting-ip-config.c:2539
-#, fuzzy
 msgid "invalid to/dst"
-msgstr "无效的端口 %d"
+msgstr "无效的 to/dst"
 
 #: ../libnm-core/nm-setting-ip-config.c:2544
-#, fuzzy
 msgid "invalid prefix length for to/dst"
-msgstr "%s 的前缀长度 \"%s\" 无效，默认为 %d"
+msgstr "to/dst 无效的前缀长度"
 
 #: ../libnm-core/nm-setting-ip-config.c:2552
-#, fuzzy
 msgid "invalid iifname"
-msgstr "无效值"
+msgstr "无效的 iifname"
 
 #: ../libnm-core/nm-setting-ip-config.c:2560
-#, fuzzy
 msgid "invalid oifname"
-msgstr "无效值"
+msgstr "无效的 oifname"
 
 #: ../libnm-core/nm-setting-ip-config.c:2566
-#, fuzzy
 msgid "invalid source port range"
-msgstr "最小来源端口 [0]"
+msgstr "无效的源端口范围"
 
 #: ../libnm-core/nm-setting-ip-config.c:2572
-#, fuzzy
 msgid "invalid destination port range"
-msgstr "无效操作："
+msgstr "无效的目标端口范围"
 
 #: ../libnm-core/nm-setting-ip-config.c:2676
-#, fuzzy, c-format
+#, c-format
 msgid "duplicate key %s"
-msgstr "重复的属性"
+msgstr "重复的 %s"
 
 #: ../libnm-core/nm-setting-ip-config.c:2690
-#, fuzzy, c-format
+#, c-format
 msgid "invalid key \"%s\""
-msgstr "无效的密钥 \"%s\"：%s"
+msgstr "无效的  \"%s\""
 
 #: ../libnm-core/nm-setting-ip-config.c:2703
-#, fuzzy, c-format
+#, c-format
 msgid "invalid variant type '%s' for \"%s\""
-msgstr "无效的属性类型 \"%s\""
+msgstr "无效的变体类型 '%s'（对于 \"%s\"）"
 
 #: ../libnm-core/nm-setting-ip-config.c:2712
-#, fuzzy
 msgid "missing \""
-msgstr "缺少密钥"
+msgstr "缺少 \""
 
 #: ../libnm-core/nm-setting-ip-config.c:2718
-#, fuzzy
 msgid "invalid \""
-msgstr "无效的 DUID"
+msgstr "无效 \""
 
 #: ../libnm-core/nm-setting-ip-config.c:2909
-#, fuzzy
 msgid "Unsupported to-string-flags argument"
-msgstr "不支持的卸载功能"
+msgstr "不支持的 to-string-flags 参数"
 
 #: ../libnm-core/nm-setting-ip-config.c:2916
 msgid "Unsupported extra-argument"
-msgstr ""
+msgstr "不支持的 extra-argument"
 
 #: ../libnm-core/nm-setting-ip-config.c:3161
-#, fuzzy, c-format
+#, c-format
 msgid "unsupported key \"%s\""
-msgstr "不支持的流量过滤器（tfilter）选项：\"%s\"。"
+msgstr "不支持的 \"%s\""
 
 #: ../libnm-core/nm-setting-ip-config.c:3166
-#, fuzzy, c-format
+#, c-format
 msgid "duplicate key \"%s\""
-msgstr "重复的虚拟功能索引 %u"
+msgstr "重复的 \"%s\""
 
 #: ../libnm-core/nm-setting-ip-config.c:3171
-#, fuzzy, c-format
+#, c-format
 msgid "invalid value for \"%s\""
-msgstr "对 \"%s\" 无效的值：%s"
+msgstr "\"%s\" 无效的值"
 
 #: ../libnm-core/nm-setting-ip-config.c:3181
 msgid "empty text does not describe a rule"
-msgstr ""
+msgstr "空文本没有描述一个规则"
 
 #: ../libnm-core/nm-setting-ip-config.c:3187
-#, fuzzy, c-format
+#, c-format
 msgid "missing argument for \"%s\""
-msgstr "缺少目标主机"
+msgstr "\"%s\" 缺少参数"
 
 #: ../libnm-core/nm-setting-ip-config.c:3199
-#, fuzzy
 msgid "invalid \"from\" part"
-msgstr "无效的端口 %d"
+msgstr "无效的 \"from\" 部分"
 
 #: ../libnm-core/nm-setting-ip-config.c:3213
-#, fuzzy
 msgid "invalid \"to\" part"
-msgstr "无效的端口 %d"
+msgstr "无效的 \"to\" 部分"
 
 #: ../libnm-core/nm-setting-ip-config.c:3222
 #, c-format
 msgid "cannot detect address family for rule"
-msgstr ""
+msgstr "无法为规则检测到地址家族"
 
 #: ../libnm-core/nm-setting-ip-config.c:3279
 #: ../libnm-core/nm-setting-ip-config.c:3373
-#, fuzzy, c-format
+#, c-format
 msgid "rule is invalid: %s"
-msgstr "证书是无效的：%s"
+msgstr "规则无效：%s"
 
 #: ../libnm-core/nm-setting-ip-config.c:3356
-#, fuzzy
 msgid "invalid address family"
-msgstr "无效的 IP 地址：%s"
+msgstr "无效的 地址家族"
 
 #: ../libnm-core/nm-setting-ip-config.c:4618
-#, fuzzy, c-format
+#, c-format
 msgid "rule #%u is invalid: %s"
-msgstr "证书是无效的：%s"
+msgstr "规则 #%u 无效：%s"
 
 #: ../libnm-core/nm-setting-ip-config.c:4836
 #, c-format
@@ -11238,12 +11244,12 @@ msgstr "%d。路由不能是默认路由"
 #: ../libnm-core/nm-setting-ip-config.c:4935
 #, c-format
 msgid "%u. rule has wrong address-family"
-msgstr ""
+msgstr "%u. 规则带有错误的地址家族"
 
 #: ../libnm-core/nm-setting-ip-config.c:4944
-#, fuzzy, c-format
+#, c-format
 msgid "%u. rule is invalid: %s"
-msgstr "%d。路由无效"
+msgstr "%u. 规则无效：%s"
 
 #: ../libnm-core/nm-setting-ip-config.c:4957
 #, c-format
@@ -11365,7 +11371,7 @@ msgstr "EAP 密钥管理需要 \"%s\" 设置存在"
 
 #: ../libnm-core/nm-setting-macsec.c:357
 msgid "must be either psk (0) or eap (1)"
-msgstr ""
+msgstr "必须为 psk (0) 或 eap (1)"
 
 #: ../libnm-core/nm-setting-macsec.c:366
 #, c-format
@@ -11374,7 +11380,7 @@ msgstr "无效的端口 %d"
 
 #: ../libnm-core/nm-setting-macsec.c:377
 msgid "only valid for psk mode"
-msgstr ""
+msgstr "只对 psk 模式有效"
 
 #: ../libnm-core/nm-setting-macvlan.c:168
 msgid "non promiscuous operation is allowed only in passthru mode"
@@ -11542,9 +11548,9 @@ msgstr "虚拟功能 %d 和 %d 未按升序排列"
 #: ../libnm-core/nm-setting-tc-config.c:70
 #: ../libnm-core/nm-setting-tc-config.c:436
 #: ../libnm-core/nm-setting-tc-config.c:706
-#, fuzzy, c-format
+#, c-format
 msgid "kind is missing"
-msgstr "缺少值"
+msgstr "缺少种类"
 
 #: ../libnm-core/nm-setting-tc-config.c:78
 #: ../libnm-core/nm-setting-tc-config.c:444
@@ -11593,9 +11599,8 @@ msgid "source-host '%s' contains invalid characters"
 msgstr "来源主机 \"%s\" 包含无效的字符"
 
 #: ../libnm-core/nm-setting-team.c:319
-#, fuzzy
 msgid "vlanid is out of range [-1, 4094]"
-msgstr "%s 超出了范围 [0, %d]"
+msgstr "vlanid 超出范围 [-1, 4094]"
 
 #: ../libnm-core/nm-setting-tun.c:167
 #, c-format
@@ -11702,9 +11707,8 @@ msgid "secret is not of correct type"
 msgstr "密钥（secret）不是正确的类型"
 
 #: ../libnm-core/nm-setting-vpn.c:757
-#, fuzzy
 msgid "secret flags property not found"
-msgstr "未找到密钥（secret）标记属性 \"%s\""
+msgstr "未找到 secret 标记属性"
 
 #: ../libnm-core/nm-setting-vxlan.c:367
 #, c-format
@@ -11749,80 +11753,77 @@ msgstr "静态链路配置需要设置速度和双工"
 
 #: ../libnm-core/nm-setting-wireguard.c:778
 msgid "missing public-key for peer"
-msgstr ""
+msgstr "peer 缺少 public-key "
 
 #: ../libnm-core/nm-setting-wireguard.c:782
 msgid "invalid public-key for peer"
-msgstr ""
+msgstr "peer 无效的 public-key"
 
 #: ../libnm-core/nm-setting-wireguard.c:791
-#, fuzzy
 msgid "invalid preshared-key for peer"
-msgstr "无效的私有密钥"
+msgstr "peer 无效的 preshared-key"
 
 #: ../libnm-core/nm-setting-wireguard.c:809
-#, fuzzy
 msgid "invalid endpoint for peer"
-msgstr "本地端点 [无]"
+msgstr "peer 无效的端点"
 
 #: ../libnm-core/nm-setting-wireguard.c:819
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IP address \"%s\" for allowed-ip of peer"
-msgstr "无效的 IP 地址：%s"
+msgstr "peer 的 allowed-ip 无效的 IP 地址 \"%s\"  "
 
 #: ../libnm-core/nm-setting-wireguard.c:828
 msgid "invalid preshared-key-flags for peer"
-msgstr ""
+msgstr "peer 无效的 preshared-key-flags"
 
 #: ../libnm-core/nm-setting-wireguard.c:1567
 #, c-format
 msgid "peer #%u has no public-key"
-msgstr ""
+msgstr "peer #%u 没有 public-key"
 
 #: ../libnm-core/nm-setting-wireguard.c:1578
 #, c-format
 msgid "peer #%u has invalid public-key"
-msgstr ""
+msgstr "peer #%u 带有无效的 public-key"
 
 #: ../libnm-core/nm-setting-wireguard.c:1592
 #, c-format
 msgid "peer #%u has invalid endpoint"
-msgstr ""
+msgstr "peer #%u 带有无效的端点"
 
 #: ../libnm-core/nm-setting-wireguard.c:1622
 #, c-format
 msgid "peer #%u has invalid allowed-ips setting"
-msgstr ""
+msgstr "peer #%u 带有无效的 allowed-ips 设置"
 
 #: ../libnm-core/nm-setting-wireguard.c:1634
-#, fuzzy, c-format
+#, c-format
 msgid "peer #%u is invalid: %s"
-msgstr "证书是无效的：%s"
+msgstr "peer #%u 无效：%s"
 
 #: ../libnm-core/nm-setting-wireguard.c:1705
 #: ../libnm-core/nm-setting-wireguard.c:1719
 #, c-format
 msgid "method \"%s\" is not supported for WireGuard"
-msgstr ""
+msgstr "方法 \"%s\" 不支持 WireGuard"
 
 #: ../libnm-core/nm-setting-wireguard.c:1739
 msgid "key must be 32 bytes base64 encoded"
-msgstr ""
+msgstr "密钥需要是基于 base64 编码的 32 个字节"
 
 #: ../libnm-core/nm-setting-wireguard.c:1875
-#, fuzzy
 msgid "invalid peer secrets"
-msgstr "无效的密钥"
+msgstr "无效的 peer secrets"
 
 #: ../libnm-core/nm-setting-wireguard.c:1898
 #, c-format
 msgid "peer #%u lacks public-key"
-msgstr ""
+msgstr "peer #%u 缺少 public-key"
 
 #: ../libnm-core/nm-setting-wireguard.c:1912
 #, c-format
 msgid "non-existing peer '%s'"
-msgstr ""
+msgstr "不存在 peer '%s'"
 
 #: ../libnm-core/nm-setting-wireless-security.c:935
 #, c-format
@@ -11850,10 +11851,10 @@ msgid "'%s' can only be used with '%s=%s' (WEP)"
 msgstr "\"%s\" 只能与 \"%s=%s\"（WEP）共用"
 
 #: ../libnm-core/nm-setting-wireless-security.c:1086
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "'%s' can only be used with 'wpa-eap', 'wpa-psk' or 'sae' key management "
-msgstr "\"%s\" 只能与 \"%s=%s\" 或 \"%s=%s\"共用"
+msgstr "'%s' 只能用于 'wpa-eap'、'wpa-psk' 或 'sae' 密钥管理"
 
 #: ../libnm-core/nm-setting-wireless.c:756
 #, c-format
@@ -11890,17 +11891,17 @@ msgstr "mac-address-randomization 和 cloned-mac-address 的值冲突"
 
 #: ../libnm-core/nm-setting-wpan.c:185
 msgid "page must be defined along with a channel"
-msgstr ""
+msgstr "页需要和一个频道定义"
 
 #: ../libnm-core/nm-setting-wpan.c:194
 #, c-format
 msgid "page must be between %d and %d"
-msgstr ""
+msgstr "页需要在 %d 和 %d 之间"
 
 #: ../libnm-core/nm-setting-wpan.c:205
 #, c-format
 msgid "channel must not be between %d and %d"
-msgstr ""
+msgstr "频道不能在 %d 和 %d 之间"
 
 #: ../libnm-core/nm-setting.c:906
 #, c-format
@@ -12105,32 +12106,28 @@ msgid "Could not find \"%s\" binary"
 msgstr "无法找到 \"%s\" 二进制文件"
 
 #: ../libnm-core/nm-utils.c:4462
-#, fuzzy
 msgid "unknown secret flags"
-msgstr "未知的设置名称"
+msgstr "未知的 secret 标记"
 
 #: ../libnm-core/nm-utils.c:4472
 msgid "conflicting secret flags"
-msgstr ""
+msgstr "冲突的 secret 标记"
 
 #: ../libnm-core/nm-utils.c:4483
-#, fuzzy
 msgid "secret flags must not be \"not-required\""
-msgstr "未找到密钥（secret）标记属性 \"%s\""
+msgstr "secret 标记不能为 \"not-required\""
 
 #: ../libnm-core/nm-utils.c:4491
-#, fuzzy
 msgid "unsupported secret flags"
-msgstr "不支持的排队规则（qdisc）选项：\"%s\"。"
+msgstr "不支持的 secret 标记"
 
 #: ../libnm-core/nm-utils.c:4521
 msgid "can't be simultaneously disabled and enabled"
 msgstr "不能同时启用和禁用"
 
 #: ../libnm-core/nm-utils.c:4529
-#, fuzzy
 msgid "WPS is required"
-msgstr "需要 PIN 码"
+msgstr "需要 WPS"
 
 #: ../libnm-core/nm-utils.c:4595
 #, c-format
@@ -12214,18 +12211,18 @@ msgid "unsupported attribute '%s' of type '%s'"
 msgstr "不支持类型 \"%2$s\" 的属性 \"%1$s\""
 
 #: ../libnm-core/nm-utils.c:5992
-#, fuzzy, c-format
+#, c-format
 msgid "Bridge VLANs %d and %d are not sorted by ascending vid"
-msgstr "虚拟功能 %d 和 %d 未按升序排列"
+msgstr "网桥 VLANs %d 和 %d 没有根据生序 vid 进行排序"
 
 #: ../libnm-core/nm-utils.c:6016
-#, fuzzy, c-format
+#, c-format
 msgid "duplicate bridge VLAN vid %u"
-msgstr "重复的虚拟功能索引 %u"
+msgstr "重复的网桥 VLAN vid %u"
 
 #: ../libnm-core/nm-utils.c:6028
 msgid "only one VLAN can be the PVID"
-msgstr ""
+msgstr "只有一个 VLAN 可以是 PVID"
 
 #: ../libnm-core/nm-vpn-editor-plugin.c:296
 #, c-format
@@ -12468,9 +12465,8 @@ msgid "The VXLAN identifiers of the device and the connection didn't match."
 msgstr "设备和连接的 VXLAN 标识符不匹配。"
 
 #: ../libnm/nm-device-wifi-p2p.c:326
-#, fuzzy
 msgid "The connection was not a Wi-Fi P2P connection."
-msgstr "此连接不是 Wi-Fi 连接。"
+msgstr "这个连接不是一个 Wi-Fi P2P 连接。"
 
 #: ../libnm/nm-device-wifi.c:613
 msgid "The connection was not a Wi-Fi connection."
@@ -12565,9 +12561,8 @@ msgid "WireGuard"
 msgstr "WireGuard"
 
 #: ../libnm/nm-device.c:1432
-#, fuzzy
 msgid "Wi-Fi P2P"
-msgstr "Wi-Fi"
+msgstr "Wi-Fi P2P"
 
 #: ../libnm/nm-device.c:1464
 msgid "Wired"
@@ -12679,14 +12674,12 @@ msgid "System policy prevents control of network connections"
 msgstr "系统策略阻止网络连接的控制"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:15
-#, fuzzy
 msgid "Allow control of Wi-Fi scans"
-msgstr "允许控制网络连接"
+msgstr "允许控制 Wi-Fi 扫描"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:16
-#, fuzzy
 msgid "System policy prevents Wi-Fi scans"
-msgstr "系统策略阻止启用或禁用 Wi-Fi 设备"
+msgstr "系统策略阻止 Wi-Fi 扫描"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:17
 msgid "Connection sharing via a protected Wi-Fi network"
@@ -13204,9 +13197,9 @@ msgid "Failed to determine AP security information"
 msgstr "确定 AP 安全信息失败"
 
 #: ../src/nm-config.c:562
-#, fuzzy, c-format
+#, c-format
 msgid "Bad '%s' option: "
-msgstr "\"%s\"选项为空"
+msgstr "错误的 '%s' 选项："
 
 #: ../src/nm-config.c:575
 msgid "Config file location"
@@ -13258,14 +13251,12 @@ msgid "The expected start of the response"
 msgstr "预期的响应开头"
 
 #: ../src/nm-config.c:595
-#, fuzzy
 msgid "NetworkManager options"
-msgstr "网络管理器权限"
+msgstr "NetworkManager 选项"
 
 #: ../src/nm-config.c:595
-#, fuzzy
 msgid "Show NetworkManager options"
-msgstr "网络管理器权限"
+msgstr "显示 NetworkManager 选项"
 
 #. Interface/IP config
 #: ../src/nm-iface-helper.c:275

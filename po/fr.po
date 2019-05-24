@@ -9,12 +9,9 @@
 # Sam Friedmann <sam.friedmann@redhat.com>, 2010.
 # Claude Paroz <claude@2xlibre.net>, 2011
 # Sam Friedmann <sfriedma@redhat.com>, 2010, 2014.
-# lrintel <lrintel@redhat.com>, 2017. #zanata
-# tchuang <tchuang@redhat.com>, 2017. #zanata
-# croe <croe@redhat.com>, 2018. #zanata
-# ljanda <ljanda@redhat.com>, 2018. #zanata
-# lrintel <lrintel@redhat.com>, 2018. #zanata
-# tchuang <tchuang@redhat.com>, 2018. #zanata
+# croe <croe@redhat.com>, 2019. #zanata
+# ljanda <ljanda@redhat.com>, 2019. #zanata
+# lrintel <lrintel@redhat.com>, 2019. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
@@ -772,9 +769,9 @@ msgstr ""
 "                  [destination-port <0-65535>]\n"
 "\n"
 "    wpan:         [short-addr <0x0000-0xffff>]\n"
-"\n"
 "                  [pan-id <0x0000-0xffff>]\n"
-"\n"
+"                  [page <default|0-31>]\n"
+"                  [channel <default|0-26>]\n"
 "                  [mac <MAC address>]\n"
 "\n"
 "    6lowpan:      dev <parent device (connection UUID, ifname, or MAC)>\n"
@@ -1130,7 +1127,7 @@ msgid "no active connection or device"
 msgstr "aucune connexion ou périphérique actif"
 
 #: ../clients/cli/connections.c:2354
-#, fuzzy, c-format
+#, c-format
 msgid "device '%s' not compatible with connection '%s': "
 msgstr "périphérique « %s » incompatible avec la connexion « %s » :"
 
@@ -1147,7 +1144,7 @@ msgstr "aucun périphérique trouvé pour la connexion « %s »"
 #: ../clients/cli/connections.c:2441
 #, c-format
 msgid "Hint: use '%s' to get more details."
-msgstr ""
+msgstr "Astuce : utiliser « %s » pour obtenir plus d'informations."
 
 #: ../clients/cli/connections.c:2459
 #, c-format
@@ -1271,9 +1268,9 @@ msgid "Error: invalid property '%s': %s."
 msgstr "Erreur : propriété « %s » non valide : %s."
 
 #: ../clients/cli/connections.c:3998
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to %s %s.%s: %s."
-msgstr "Erreur : échec de la modification de %s.%s : %s."
+msgstr "Erreur : échec %s %s.%s: %s."
 
 #: ../clients/cli/connections.c:4033
 #, c-format
@@ -2075,9 +2072,10 @@ msgid "Error: Failed to save '%s' (%s) connection: %s\n"
 msgstr "Erreur : échec de l'enregistrement de la connexion « %s » (%s) : %s\n"
 
 #: ../clients/cli/connections.c:7836
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Timeout saving '%s' (%s) connection\n"
-msgstr "Erreur : échec de l'enregistrement de la connexion « %s » (%s) : %s\n"
+msgstr ""
+"Erreur : échec lors de l'enregistrement de la connexion « %s » (%s) : %s\n"
 
 #: ../clients/cli/connections.c:7841
 #, c-format
@@ -2253,7 +2251,7 @@ msgstr "Erreur : le paramètre <new name> est manquant."
 #: ../clients/cli/connections.c:8509 ../clients/cli/connections.c:9005
 #, c-format
 msgid "Error: unknown extra argument: '%s'."
-msgstr "Erreur : argument supplémentaire « %s » inconnu"
+msgstr "Erreur : argument supplémentaire « %s » inconnu."
 
 #: ../clients/cli/connections.c:8554
 #, c-format
@@ -2261,9 +2259,9 @@ msgid "Error: not all connections deleted."
 msgstr "Erreur : les connexions n'ont pas toutes été supprimées."
 
 #: ../clients/cli/connections.c:8555
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection deletion failed: %s\n"
-msgstr "Erreur : la suppression de la connexion a échoué : %s"
+msgstr "Erreur : la suppression de la connexion a échoué : %s\n"
 
 #: ../clients/cli/connections.c:8611 ../clients/cli/connections.c:8732
 #, c-format
@@ -2723,7 +2721,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/devices.c:831
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device wifi { ARGUMENTS | help }\n"
 "\n"
@@ -2779,30 +2777,27 @@ msgstr ""
 "\n"
 "Effectue des opérations sur des périphériques Wi-Fi.\n"
 "\n"
-"ARGUMENTS := [list [ifname <ifname>] [bssid <BSSID>]]\n"
+"ARGUMENTS := [list [ifname <ifname>] [bssid <BSSID>] [--rescan yes|no|"
+"auto]]]\n"
 "\n"
 "Répertorie les points d'accès Wi-Fi disponibles. Les options « ifname » et "
-"« bssid »\n"
-"peuvent être utilisées pour répertorier les points d'accès pour une "
-"interface en particulier, ou avec un BSSID spécifique.\n"
+"« bssid » peuvent être utilisées pour répertorier les points d'accès pour "
+"une interface en particulier, ou avec un BSSID spécifique. L'argument --"
+"rescan indique si on on doit scanner à nouveau le Wi-FI.\n"
 "\n"
 "ARGUMENTS := connect <(B)SSID> [password <password>] [wep-key-type key|"
 "phrase] [ifname <ifname>]\n"
 "                    [bssid <BSSID>] [name <name>] [private yes|no] [hidden "
 "yes|no]\n"
 "\n"
-"Se connecte à un réseau Wi-Fi spécifié par SSID ou BSSID. La commande crée\n"
+"Se connecte à un réseau Wi-Fi spécifié par SSID ou BSSID. La commande crée "
 "une nouvelle connexion, puis l'active sur un périphérique. Ceci correspond "
-"en ligne de commande\n"
-"à un clic sur un SSID dans un client GUI. La commande crée toujours une "
-"nouvelle connexion\n"
-"et est donc principalement utile pour effectuer des connexions sur de "
-"nouveaux réseaux Wi-Fi.\n"
+"en ligne de commande à un clic sur un SSID dans un client GUI.\n"
 "Si une connexion au réseau existe déjà, il vaut mieux ouvrir\n"
-"le profil existant comme suit : nmcli con up id <name>. Remarquez que seuls\n"
-"les réseaux ouverts, WEP et WPA-PSK sont pris en charge pour le moment. Il "
-"est aussi\n"
-"supposé que la configuration IP est obtenue via DHCP.\n"
+"le profil existant comme suit : nmcli con up id <name>. Remarquez que seuls "
+"les réseaux ouverts, WEP et WPA-PSK sont pris en charge s'il n’existe pas de "
+"connexion déjà existante.  Il est aussi supposé que la configuration IP est "
+"obtenue via DHCP.\n"
 "\n"
 "ARGUMENTS := wifi hotspot [ifname <nom d'interface>] [con-name <nom>] [ssid "
 "<SSID>]\n"
@@ -2825,11 +2820,10 @@ msgstr ""
 "Requiert que NetworkManager effectue immédiatement un nouveau scan pour "
 "trouver les points d'accès disponibles.\n"
 "NetworkManager scanne les réseaux Wi-Fi de manière périodique, mais dans "
-"certains cas il peut être utile\n"
-"d'effectuer le scan manuellement. 'ssid' autorise le scan d'un SSID "
-"spécifique, ce qui est utile pour les point d'accès dont le SSID est masqué. "
-"Plusieurs paramètres 'ssid' peuvent être passés. Remarquez que cette "
-"commande n'affiche pas les points d'accès,\n"
+"certains cas il peut être utile d'effectuer le scan manuellement. 'ssid' "
+"autorise le scan d'un SSID spécifique, ce qui est utile pour les point "
+"d'accès dont le SSID est masqué. Plusieurs paramètres 'ssid' peuvent être "
+"passés. Remarquez que cette commande n'affiche pas les points d'accès, "
 "veuillez utiliser « nmcli device wifi list » pour cela.\n"
 "\n"
 
@@ -2956,10 +2950,9 @@ msgstr ""
 "Erreur : échec de l'ajout ou de l'activation de la nouvelle connexion : %s"
 
 #: ../clients/cli/devices.c:1862
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to activate connection: %s"
-msgstr ""
-"Erreur : échec de l'ajout ou de l'activation de la nouvelle connexion : %s"
+msgstr "Erreur : échec d'activation de la connexion : %s"
 
 #: ../clients/cli/devices.c:1932
 #, c-format
@@ -3174,6 +3167,7 @@ msgstr "Erreur : aucun point d'accès avec le BSSID « %s » trouvé."
 #, c-format
 msgid "Error: Connection '%s' exists but properties don't match."
 msgstr ""
+"Erreur : la connexion « % » existe mais les propriétés ne correspondent pas."
 
 #: ../clients/cli/devices.c:3440
 #, c-format
@@ -3776,7 +3770,7 @@ msgid "Networkmanager is not running (waiting for it)\n"
 msgstr "Networkmanager n'est pas en cours d'exécution (attendons)\n"
 
 #: ../clients/cli/nmcli.c:244
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli [OPTIONS] OBJECT { COMMAND | help }\n"
 "\n"
@@ -3807,27 +3801,24 @@ msgid ""
 "  m[onitor]       monitor NetworkManager changes\n"
 "\n"
 msgstr ""
-"Usage: nmcli [OPTIONS] OBJECT { COMMAND | help }\n"
+"Usage : nmcli [OPTIONS] OBJECT { COMMAND | help }\n"
 "\n"
 "OPTIONS\n"
-"  -o[verview]                                    overview mode (hide default "
-"values)\n"
-"  -t[erse]                                       terse output\n"
-"  -p[retty]                                      pretty output\n"
-"  -m[ode] tabular|multiline                      output mode\n"
-"  -c[olors] auto|yes|no                          whether to use colors in "
-"output\n"
-"  -f[ields] <field1,field2,...>|all|common       specify fields to output\n"
-"  -g[et-values] <field1,field2,...>|all|common   shortcut for -m tabular -t -"
-"f\n"
-"  -e[scape] yes|no                               escape columns separators "
-"in values\n"
-"  -a[sk]                                         ask for missing parameters\n"
-"  -s[how-secrets]                                allow displaying passwords\n"
-"  -w[ait] <seconds>                              set timeout waiting for "
-"finishing operations\n"
-"  -v[ersion]                                     show program version\n"
-"  -h[elp]                                        print this help\n"
+"  -a, --ask                                ask for missing parameters\n"
+"  -c, --colors auto|yes|no                 whether to use colors in output\n"
+"  -e, --escape yes|no                      escape columns separators in "
+"values\n"
+"  -f, --fields <field,...>|all|common      specify fields to output\n"
+"  -g, --get-values <field,...>|all|common  shortcut for -m tabular -t -f\n"
+"  -h, --help                               print this help\n"
+"  -m, --mode tabular|multiline             output mode\n"
+"  -o, --overview                           overview mode\n"
+"  -p, --pretty                             pretty output\n"
+"  -s, --show-secrets                       allow displaying passwords\n"
+"  -t, --terse                              terse output\n"
+"  -v, --version                            show program version\n"
+"  -w, --wait <seconds>                     set timeout waiting for finishing "
+"operations\n"
 "\n"
 "OBJECT\n"
 "  g[eneral]       NetworkManager's general status and operations\n"
@@ -4473,11 +4464,9 @@ msgstr "La méthode IP sélectionnée n'est pas prise en charge"
 msgid "Failed to configure SR-IOV parameters"
 msgstr "Échec de la configuration des paramètres SR-IOV"
 
-# auto translated by TM merge from project: NetworkManager, version: 0.9.8.2, DocId: NetworkManager
 #: ../clients/common/nm-client-utils.c:359
-#, fuzzy
 msgid "The Wi-Fi P2P peer could not be found"
-msgstr "Le réseau Wi-Fi est introuvable"
+msgstr "L'homologue Wi-Fi P2P n'a pas pu être trouvé"
 
 #: ../clients/common/nm-client-utils.c:365
 msgid "Unknown reason"
@@ -4627,9 +4616,8 @@ msgstr "%s (%s)"
 
 #: ../clients/common/nm-meta-setting-desc.c:1334
 #: ../clients/common/nm-meta-setting-desc.c:1338
-#, fuzzy
 msgid "'%s' is out of range [%"
-msgstr "« %s » est en dehors de la plage [0, %u]"
+msgstr "« %s » est en dehors de la plage [%"
 
 #: ../clients/common/nm-meta-setting-desc.c:1343
 #, c-format
@@ -4713,9 +4701,9 @@ msgid "'%s' is not valid; use <option>=<value>"
 msgstr "« %s » n'est pas valide ; utiliser <option>=<valeur>"
 
 #: ../clients/common/nm-meta-setting-desc.c:1967
-#, fuzzy, c-format
+#, c-format
 msgid "cannot set empty \"%s\" option"
-msgstr "n'a pas pu définir la propriété : %s"
+msgstr "l'option « %s » ne peut pas rester vide"
 
 #: ../clients/common/nm-meta-setting-desc.c:2026
 #, c-format
@@ -4735,9 +4723,8 @@ msgid "'%s' is not valid"
 msgstr "« %s » n'est pas valide"
 
 #: ../clients/common/nm-meta-setting-desc.c:2161
-#, fuzzy
 msgid "not a valid hex-string"
-msgstr "nom d'interface non valide"
+msgstr "hex-string non valide"
 
 #: ../clients/common/nm-meta-setting-desc.c:2177
 #, c-format
@@ -4749,11 +4736,13 @@ msgid ""
 "too many arguments. Please only specify a private key file and optionally a "
 "password"
 msgstr ""
+"trop de paramètres. Veuillez n'indiquer qu'un seul fichier de clé privée et "
+"un mot de passe (optionnel)"
 
 #: ../clients/common/nm-meta-setting-desc.c:2363
-#, fuzzy, c-format
+#, c-format
 msgid "failed to set bond option \"%s\""
-msgstr "n'a pas pu définir la propriété : %s"
+msgstr "N'a pas pu définir liaison \"%s\""
 
 #: ../clients/common/nm-meta-setting-desc.c:2380
 #, c-format
@@ -4799,9 +4788,9 @@ msgid "Can not change the connection type"
 msgstr "Impossible de changer le type de connexion"
 
 #: ../clients/common/nm-meta-setting-desc.c:2523
-#, fuzzy, c-format
+#, c-format
 msgid "invalid permission \"%s\""
-msgstr "runner non valide : « %s »"
+msgstr "permission non valide \"%s\""
 
 #: ../clients/common/nm-meta-setting-desc.c:2560
 #, c-format
@@ -4877,9 +4866,9 @@ msgid "default"
 msgstr "par défaut"
 
 #: ../clients/common/nm-meta-setting-desc.c:3194
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IPv%c address '%s'"
-msgstr "adresse IPv4 « %s » non valide"
+msgstr "adresse IPv%c « %s » non valide"
 
 #: ../clients/common/nm-meta-setting-desc.c:3321
 #, c-format
@@ -4898,15 +4887,14 @@ msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:3575
 #: ../clients/common/nm-meta-setting-desc.c:3655
-#, fuzzy
 msgid ""
 "The valid syntax is: '[root | parent <handle>] [handle <handle>] <kind>'"
 msgstr ""
-"La syntaxe valide est : '[root | parent <handle>][handle <handle>] <qdisc>’"
+"La syntaxe valide est : '[root | parent <handle>][handle <handle>] <kind>'"
 
 #: ../clients/common/nm-meta-setting-desc.c:3600
 msgid "The valid syntax is: '<vid>[-<vid>] [pvid] [untagged]'"
-msgstr ""
+msgstr "La syntaxe valide est : '<vid>[-<vid>] [pvid] [untagged]'"
 
 #: ../clients/common/nm-meta-setting-desc.c:3875
 #, c-format
@@ -5392,6 +5380,8 @@ msgid ""
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
 "\n"
 msgstr ""
+"Saisissez une liste des adresses IPv4 formatées comme suit :\n"
+"  priority [prio] [from [src]] [to [dst]], ,...\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5758
 msgid ""
@@ -5467,6 +5457,8 @@ msgid ""
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
 "\n"
 msgstr ""
+"Saisissez une liste des adresses IPv6 formatées comme suit :\n"
+"  priority [prio] [from [src]] [to [dst]], ,...\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5969
 #: ../clients/common/nm-meta-setting-desc.c:6893
@@ -5584,7 +5576,7 @@ msgstr "VLAN ID (<0-4094>)"
 
 #: ../clients/common/nm-meta-setting-desc.c:6805
 msgid "VLAN flags (<0-7>) [none]"
-msgstr "Drapeaux VLAN (<0-7>) [none]"
+msgstr "Marqueurs VLAN (<0-7>) [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6814
 msgid "Ingress priority maps [none]"
@@ -5616,7 +5608,7 @@ msgstr "Port de destination [8472]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6971
 msgid "Peer"
-msgstr ""
+msgstr "Peer"
 
 #: ../clients/common/nm-meta-setting-desc.c:7001
 msgid "WiMAX NSP name"
@@ -5647,20 +5639,19 @@ msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:7445
 msgid "Short address (<0x0000-0xffff>)"
-msgstr "Adresse courte (<0x000000-0xffffff>)"
+msgstr "Adresse courte (<0x0000-0xffff>)"
 
 #: ../clients/common/nm-meta-setting-desc.c:7461
 msgid "PAN Identifier (<0x0000-0xffff>)"
-msgstr "Identificateur PAN (<0x000000-0xffffff>)"
+msgstr "Identificateur PAN (<0x0000-0xffff>)"
 
 #: ../clients/common/nm-meta-setting-desc.c:7476
-#, fuzzy
 msgid "Page (<default|0-31>)"
-msgstr "(par défaut)"
+msgstr "Page (<default|0-31>)"
 
 #: ../clients/common/nm-meta-setting-desc.c:7490
 msgid "Channel (<default|0-26>)"
-msgstr ""
+msgstr "Canal (<default|0-26>)"
 
 #. ***************************************************************************
 #: ../clients/common/nm-meta-setting-desc.c:7625
@@ -5826,9 +5817,8 @@ msgid "VXLAN connection"
 msgstr "Connexion VXLAN"
 
 #: ../clients/common/nm-meta-setting-desc.c:7664
-#, fuzzy
 msgid "Wi-Fi P2P connection"
-msgstr "Connexion Wi-Fi "
+msgstr "Connexion Wi-Fi P2P "
 
 #: ../clients/common/nm-meta-setting-desc.c:7665
 msgid "WiMAX connection"
@@ -5839,9 +5829,8 @@ msgid "Wired Ethernet"
 msgstr "Ethernet filaire"
 
 #: ../clients/common/nm-meta-setting-desc.c:7667
-#, fuzzy
 msgid "WireGuard VPN settings"
-msgstr "Configuration WPAN"
+msgstr "Configuration VPN WireGuard"
 
 #: ../clients/common/nm-meta-setting-desc.c:7668
 msgid "Wi-Fi connection"
@@ -5866,7 +5855,7 @@ msgstr "Il y a déjà une session d'authentification en cours."
 #: ../clients/common/nm-secret-agent-simple.c:230
 #, c-format
 msgid "Preshared-key for %s"
-msgstr ""
+msgstr "Clé pré-partagée pour %s"
 
 #: ../clients/common/nm-secret-agent-simple.c:286
 #: ../clients/common/nm-secret-agent-simple.c:323
@@ -5903,14 +5892,13 @@ msgid "Service"
 msgstr "Service"
 
 #: ../clients/common/nm-secret-agent-simple.c:486
-#, fuzzy
 msgid "WireGuard private-key"
-msgstr "clé privée non valide"
+msgstr "Clé privée WireGuard"
 
 #: ../clients/common/nm-secret-agent-simple.c:527
-#, fuzzy, c-format
+#, c-format
 msgid "Secrets are required to connect WireGuard VPN '%s'"
-msgstr "Il faut un secret pour accéder au réseau sans fil « %s »"
+msgstr "Il faut des secrets pour vous connecter au VPN WireGuard « %s »"
 
 #: ../clients/common/nm-secret-agent-simple.c:628
 #: ../clients/common/nm-secret-agent-simple.c:912
@@ -5984,9 +5972,8 @@ msgid "MACsec EAP authentication"
 msgstr "Authentification MACsec EAP"
 
 #: ../clients/common/nm-secret-agent-simple.c:940
-#, fuzzy
 msgid "WireGuard VPN secret"
-msgstr "WireGuard"
+msgstr "Secret VPN WireGuard"
 
 #: ../clients/common/nm-secret-agent-simple.c:979
 msgid "VPN password required"
@@ -6043,36 +6030,37 @@ msgid "Gateway certificate hash"
 msgstr "Hachage de certificat de passerelle"
 
 #: ../clients/common/nm-vpn-helpers.c:270
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid peer starting at %s:%zu: %s"
-msgstr "nom de configuration non valide « %s »"
+msgstr "Homologue non valide commençant à %s:%zu: %s"
 
 #: ../clients/common/nm-vpn-helpers.c:390
 msgid ""
 "The WireGuard config file must be a valid interface name followed by \".conf"
 "\""
 msgstr ""
+"Le fichier de configuration WireGuard doit correspondre à un nom d'interface "
+"valide suivie par \".conf\""
 
 #: ../clients/common/nm-vpn-helpers.c:678
 #, c-format
 msgid "unrecognized line at %s:%zu"
-msgstr ""
+msgstr "ligne non reconnue à %s:%zu"
 
 #: ../clients/common/nm-vpn-helpers.c:683
-#, fuzzy, c-format
+#, c-format
 msgid "invalid value for '%s' at %s:%zu"
-msgstr "valeur non valide pour \"%s\": %s"
+msgstr "valeur non reconnue pour '%s' at %s:%zu"
 
 #: ../clients/common/nm-vpn-helpers.c:688
-#, fuzzy, c-format
+#, c-format
 msgid "invalid secret '%s' at %s:%zu"
-msgstr "route non valide : %s. %s"
+msgstr "secret non valide '%s' à %s:%zu"
 
 #: ../clients/common/nm-vpn-helpers.c:801
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to create WireGuard connection: %s"
-msgstr ""
-"Erreur : échec de l'ajout ou de l'activation de la nouvelle connexion : %s"
+msgstr "N'a pas pu créer de connexion WireGuard : %s"
 
 #. Generated file. Do not edit.
 #: ../clients/common/settings-docs.h.in:3
@@ -6169,9 +6157,8 @@ msgstr ""
 "clé dépendante de la machine. Si elle n'est pas spécifiée, la valeur peut "
 "être écrasée via les valeurs par défaut globales, voir le manuel de "
 "NetworkManager.conf. Si elle n'est pas encore spécifiée, elle correspondra à "
-"\"preserve\" par défaut (les anciennes versions de NetworkManager peuvent "
-"utiliser une valeur par défaut différente). Sur le bus D, ce champ est "
-"« assigned-mac-address » ou « cloned-mac-address » (déprécié)."
+"\"permanent\" par défaut. Sur le bus D, ce champ est « assigned-mac-"
+"address » ou « cloned-mac-address » (déprécié)."
 
 #: ../clients/common/settings-docs.h.in:11
 #: ../clients/common/settings-docs.h.in:91
@@ -6239,6 +6226,17 @@ msgid ""
 "privacy issue for you (in infrastructure mode) or client stations (in AP "
 "mode), as the explicit probe-scans are distinctly recognizable on the air."
 msgstr ""
+"Si sur TRUE, indique que le réseau n'est pas un réseau de broadcasting qui "
+"cache son SSID, ce qui fonctionne à la fois en mode infrastructure et en "
+"mode AP. En mode infrastructure, diverses solutions de contournement sont "
+"utilisées pour une découverte plus fiable des réseaux cachés, comme le "
+"balayage par sonde du SSID.  Cependant, ces solutions exposent les "
+"incertitudes inhérentes aux réseaux SSID cachés, et donc aux réseaux SSID "
+"cachés doivent être utilisées avec prudence. En mode AP, le réseau créé ne "
+"diffuse pas son SSID. Notez que le fait de marquer le réseau comme caché "
+"peut être un problème de confidentialité pour vous (en mode infrastructure) "
+"ou pour les postes clients (en mode AP), car les scanners explicites sont "
+"clairement reconnaissables."
 
 #: ../clients/common/settings-docs.h.in:13
 msgid ""
@@ -6430,7 +6428,6 @@ msgstr ""
 "\"ccmp\"."
 
 #: ../clients/common/settings-docs.h.in:27
-#, fuzzy
 msgid ""
 "Key management used for the connection.  One of \"none\" (WEP), \"ieee8021x"
 "\" (Dynamic WEP), \"wpa-none\" (Ad-Hoc WPA-PSK), \"wpa-psk\" (infrastructure "
@@ -6453,7 +6450,7 @@ msgstr ""
 
 #: ../clients/common/settings-docs.h.in:29
 msgid "Flags indicating how to handle the \"leap-password\" property."
-msgstr "Drapeaux indiquant comment gérer la propriété \"Leap-password\"."
+msgstr "Marqueurs indiquant comment gérer la propriété \"Leap-password\"."
 
 #: ../clients/common/settings-docs.h.in:30
 msgid ""
@@ -6516,17 +6513,23 @@ msgid ""
 "hexadecimal character. The WPA3-Personal networks use a passphrase of any "
 "length for SAE authentication."
 msgstr ""
+"Clé pré-partagée pour les réseaux WPA.  Pour WPA-PSK, il s'agit soit d'une "
+"phrase de chiffrement ASCII de 8 à 63 caractères qui est (comme spécifié "
+"dans la norme 802.11i) hachée pour dériver la clé réelle, soit la clé sous "
+"forme de 64 caractères hexadécimaux. Les réseaux WPA3-Personal utilisent une "
+"phrase de chiffrement de n'importe quelle longueur pour l'authentification "
+"SAE."
 
 #: ../clients/common/settings-docs.h.in:35
 msgid "Flags indicating how to handle the \"psk\" property."
-msgstr "Drapeaux indiquant comment gérer la propriété \"psk\"."
+msgstr "Marqueurs indiquant comment gérer la propriété \"psk\"."
 
 #: ../clients/common/settings-docs.h.in:36
 msgid ""
 "Flags indicating how to handle the \"wep-key0\", \"wep-key1\", \"wep-key2\", "
 "and \"wep-key3\" properties."
 msgstr ""
-"Drapeaux indiquant comment gérer les propriétés \"wep-key0\", \"wep-key1\", "
+"Marqueurs indiquant comment gérer les propriétés \"wep-key0\", \"wep-key1\", "
 "\"wep-key2\", et \"wep-key3\"."
 
 #: ../clients/common/settings-docs.h.in:37
@@ -6602,7 +6605,7 @@ msgid ""
 "Point capabilities. WPS can be disabled by setting this property to a value "
 "of 1."
 msgstr ""
-"Drapeaux indiquant quel mode de WPS doit être utilisé, le cas échéant. Il y "
+"Marqueurs indiquant quel mode de WPS doit être utilisé, le cas échéant. Il y "
 "a peu d’intérêt  à modifier les paramètres par défaut car NetworkManager "
 "déterminera automatiquement s'il est possible de démarrer l'inscription WPS "
 "à partir des capacités du point d'accès. WPS peut être désactivé en réglant "
@@ -6672,7 +6675,7 @@ msgstr ""
 
 #: ../clients/common/settings-docs.h.in:49
 msgid "Flags indicating how to handle the \"ca-cert-password\" property."
-msgstr "Drapeaux indiquant comment gérer la propriété \"ca-cert-password\"."
+msgstr "Marqueurs indiquant comment gérer la propriété \"ca-cert-password\"."
 
 #: ../clients/common/settings-docs.h.in:50
 msgid ""
@@ -6716,7 +6719,7 @@ msgstr ""
 #: ../clients/common/settings-docs.h.in:53
 msgid "Flags indicating how to handle the \"client-cert-password\" property."
 msgstr ""
-"Drapeaux indiquant comment gérer la propriété \"client-cert-password\"."
+"Marqueurs indiquant comment gérer la propriété \"client-cert-password\"."
 
 #: ../clients/common/settings-docs.h.in:54
 msgid ""
@@ -6775,7 +6778,7 @@ msgstr ""
 #: ../clients/common/settings-docs.h.in:178
 #: ../clients/common/settings-docs.h.in:290
 msgid "Flags indicating how to handle the \"password\" property."
-msgstr "Drapeaux indiquant comment gérer la propriété \"password\"."
+msgstr "Marqueurs indiquant comment gérer la propriété \"password\"."
 
 #: ../clients/common/settings-docs.h.in:60
 msgid ""
@@ -6791,7 +6794,7 @@ msgstr ""
 
 #: ../clients/common/settings-docs.h.in:61
 msgid "Flags indicating how to handle the \"password-raw\" property."
-msgstr "Drapeaux indiquant comment gérer la propriété \"password-raw\"."
+msgstr "Marqueurs indiquant comment gérer la propriété \"password-raw\"."
 
 #: ../clients/common/settings-docs.h.in:62
 msgid ""
@@ -6802,10 +6805,10 @@ msgid ""
 "tls_disable_tlsv1_x settings. See the wpa_supplicant documentation for more "
 "details."
 msgstr ""
-"Spécifie les drapeaux d'authentification à utiliser dans l'authentification "
+"Spécifie les marqueurs d'authentification à utiliser dans l'authentification "
 "externe \"phase 1\" en utilisant les options NMSetting8021xAuthFlags Les "
 "versions TLS individuelles peuvent être explicitement désactivées. Si un "
-"certain drapeau TLS désactivé n'est pas activé, il appartient au suppliant "
+"certain marqueur TLS désactivé n'est pas activé, il appartient au suppliant "
 "de l'autoriser ou non. Les options TLS correspondent aux paramètres "
 "tls_disable_tlsv1_x. Consultez la documentation wpa_supplicant pour plus de "
 "détails."
@@ -6939,7 +6942,7 @@ msgstr ""
 msgid ""
 "Flags indicating how to handle the \"phase2-ca-cert-password\" property."
 msgstr ""
-"Drapeaux indiquant comment gérer la propriété \"phase2-ca-cert-password\"."
+"Marqueurs indiquant comment gérer la propriété \"phase2-ca-cert-password\"."
 
 #: ../clients/common/settings-docs.h.in:72
 msgid ""
@@ -6989,7 +6992,7 @@ msgstr ""
 msgid ""
 "Flags indicating how to handle the \"phase2-client-cert-password\" property."
 msgstr ""
-"Drapeaux indiquant comment gérer la propriété \"phase2-client-cert-password"
+"Marqueurs indiquant comment gérer la propriété \"phase2-client-cert-password"
 "\"."
 
 #: ../clients/common/settings-docs.h.in:76
@@ -7084,7 +7087,7 @@ msgstr "PIN utilisé pour les méthodes d'authentification EAP."
 #: ../clients/common/settings-docs.h.in:82
 #: ../clients/common/settings-docs.h.in:180
 msgid "Flags indicating how to handle the \"pin\" property."
-msgstr "Drapeaux indiquant comment gérer la propriété \"pin\"."
+msgstr "Marqueurs indiquant comment gérer la propriété \"pin\"."
 
 #: ../clients/common/settings-docs.h.in:83
 msgid ""
@@ -7143,7 +7146,7 @@ msgstr ""
 #: ../clients/common/settings-docs.h.in:85
 msgid "Flags indicating how to handle the \"private-key-password\" property."
 msgstr ""
-"Drapeaux indiquant comment gérer la propriété \"private-key-password\"."
+"Marqueurs indiquant comment gérer la propriété \"private-key-password\"."
 
 #: ../clients/common/settings-docs.h.in:86
 msgid ""
@@ -7214,22 +7217,19 @@ msgid ""
 "D-Bus, this field is expressed as \"assigned-mac-address\" or the deprecated "
 "\"cloned-mac-address\"."
 msgstr ""
-"Si spécifié, demandez au périphérique d'utiliser cette adresse MAC à la "
+"Si spécifié, demande au périphérique d'utiliser cette adresse MAC à la "
 "place. C'est ce qu'on appelle le clonage ou l'usurpation d'identité MAC. "
 "Outre la spécification explicite d'une adresse MAC, les valeurs spéciales "
 "\"preserve\", \"permanent\", \"random\" et \"stable\" sont supportées. "
 "\"préserver\" signifie ne pas toucher l'adresse MAC lors de l'activation. "
-"\"permanent\" signifie l'utilisation de l'adresse matérielle permanente si "
-"l'appareil en possède une (sinon, cela est considéré comme une \"préservation"
-"\"). \"random\" crée une adresse MAC aléatoire sur chaque connexion. \"stable"
-"\" crée une adresse MAC hachée basée sur connection.stable-id et une clé "
-"dépendante de la machine. Si elle n'est pas spécifiée, la valeur peut être "
-"remplacée par les valeurs par défaut globales, voir le manuel de "
-"NetworkManager.conf. Si elle n'est pas encore spécifiée, elle sera sur "
-"\"preserve\" par défaut (les anciennes versions de NetworkManager peuvent "
-"utiliser une valeur par défaut différente). Sur le bus D, ce champ est "
-"exprimé par \"assigned-mac-address\" ou la désapprouvée \"cloned-mac-address"
-"\"."
+"\"permanent\" signifie l'utilisation de l'adresse matérielle permanente du "
+"dispositif. \"random\" crée une adresse MAC aléatoire sur chaque connexion. "
+"\"stable\" crée une adresse MAC hachée basée sur connection.stable-id et une "
+"clé dépendante de la machine. Si elle n'est pas spécifiée, la valeur peut "
+"être écrasée via les valeurs par défaut globales, voir le manuel de "
+"NetworkManager.conf. Si elle n'est pas encore spécifiée, elle correspondra à "
+"\"permanent\" par défaut. Sur le bus D, ce champ est « assigned-mac-"
+"address » ou « cloned-mac-address » (déprécié)."
 
 #: ../clients/common/settings-docs.h.in:90
 msgid ""
@@ -7526,13 +7526,12 @@ msgid ""
 "The default PVID for the ports of the bridge, that is the VLAN id assigned "
 "to incoming untagged frames."
 msgstr ""
+"Le PVID par défaut des ports du pontage, c'est à dire l'id VLAN qui a été "
+"attribué aux trames entrantes non balisées."
 
 #: ../clients/common/settings-docs.h.in:122
-#, fuzzy
 msgid "Control whether VLAN filtering is enabled on the bridge."
-msgstr ""
-"Contrôle si le protocole Spanning Tree Protocol (STP) est activé pour ce "
-"pont."
+msgstr "Contrôle l'activation du filtrage VLAN sur le pontage."
 
 #: ../clients/common/settings-docs.h.in:123
 msgid ""
@@ -7543,6 +7542,13 @@ msgid ""
 "$vid is either a single id between 1 and 4094 or a range, represented as a "
 "couple of ids separated by a dash."
 msgstr ""
+"Tableau d'objets VLAN en pontage. En plus des VLAN spécifiés ici, le port "
+"aura aussi le VLAN pvid fourni par défaut configuré par la propriété bridge."
+"vlan-default-pvid. Dans nmcli, la liste des VLAN peut être spécifiée avec la "
+"syntaxe suivante : $vid[pvid][untagged][untagged] [, $vid[pvid]"
+"[untagged]]].... où $vid est soit un identifiant unique entre 1 et 4094, "
+"soit une plage, représentée par un couple d'identifiants séparés par un "
+"trait."
 
 #: ../clients/common/settings-docs.h.in:124
 msgid ""
@@ -7572,6 +7578,13 @@ msgid ""
 "[untagged]]... where $vid is either a single id between 1 and 4094 or a "
 "range, represented as a couple of ids separated by a dash."
 msgstr ""
+"Tableau d'objets VLAN en pontage. En plus des VLAN spécifiés ici, le port "
+"aura aussi le VLAN pvid fourni par défaut configuré par la propriété bridge."
+"vlan-default-pvid. Dans nmcli, la liste des VLAN peut être spécifiée avec la "
+"syntaxe suivante : $vid[pvid][untagged][untagged] [, $vid[pvid]"
+"[untagged]]].... où $vid est soit un identifiant unique entre 1 et 4094, "
+"soit une plage, représentée par un couple d'identifiants séparés par un "
+"trait."
 
 #: ../clients/common/settings-docs.h.in:128
 #: ../clients/common/settings-docs.h.in:174
@@ -7850,7 +7863,6 @@ msgstr ""
 "exemple, \"bond\"), ou NULL si cette connexion n'est pas un esclave."
 
 #: ../clients/common/settings-docs.h.in:151
-#, fuzzy
 msgid ""
 "This represents the identity of the connection used for various purposes. It "
 "allows to configure multiple profiles to share the identity. Also, the "
@@ -8869,7 +8881,7 @@ msgstr ""
 
 #: ../clients/common/settings-docs.h.in:246
 msgid "Flags indicating how to handle the \"mka-cak\" property."
-msgstr "Drapeaux indiquant comment gérer la propriété \"mka-cak\"."
+msgstr "Marqueurs indiquant comment gérer la propriété \"mka-cak\"."
 
 #: ../clients/common/settings-docs.h.in:247
 msgid ""
@@ -9270,6 +9282,11 @@ msgid ""
 "on the interface also when it is zero. To prevent any changes to SR-IOV "
 "parameters don't add a sriov setting to the connection."
 msgstr ""
+"Le nombre total de fonctions virtuelles à créer. Notez que lorsque le "
+"paramètre sriov est présent, NetworkManager applique le nombre de fonctions "
+"virtuelles sur l'interface même lorsque celui-ci est nul. Pour éviter toute "
+"modification des paramètres SR-IOV, n'ajoutez pas de paramètre sriov à la "
+"connexion."
 
 #: ../clients/common/settings-docs.h.in:304
 msgid ""
@@ -9731,6 +9748,8 @@ msgid ""
 "The P2P device that should be connected to. Currently this is the only way "
 "to create or join a group."
 msgstr ""
+"Le périphérique P2P auquel il faut se connecter. Actuellement, c'est la "
+"seule façon de créer ou de rejoindre un groupe."
 
 #: ../clients/common/settings-docs.h.in:365
 msgid ""
@@ -9740,19 +9759,21 @@ msgid ""
 "connection. This setting is only useful when implementing a Wi-Fi Display "
 "client."
 msgstr ""
+"Les éléments d'information (IE) de l'écran Wi-Fi (WFD) à régler. L'affichage "
+"Wi-Fi nécessite qu'un élément d'information spécifique au protocole soit "
+"défini dans certaines trames Wi-Fi. Celles-ci peuvent être spécifiées ici "
+"afin d'établir une connexion. Ce paramètre n'est utile que lors de "
+"l'implémentation d'un client d'affichage Wi-Fi."
 
 #: ../clients/common/settings-docs.h.in:366
-#, fuzzy
 msgid ""
 "Flags indicating which mode of WPS is to be used. There's little point in "
 "changing the default setting as NetworkManager will automatically determine "
 "the best method to use."
 msgstr ""
-"Drapeaux indiquant quel mode de WPS doit être utilisé, le cas échéant. Il y "
-"a peu d’intérêt  à modifier les paramètres par défaut car NetworkManager "
-"déterminera automatiquement s'il est possible de démarrer l'inscription WPS "
-"à partir des capacités du point d'accès. WPS peut être désactivé en réglant "
-"cette propriété à la valeur 1."
+"Marqueurs indiquant quel mode de WPS doit être utilisé. Il y a peu "
+"d’intérêt  à modifier les paramètres par défaut car NetworkManager "
+"déterminera automatiquement la meilleure méthode à utiliser."
 
 #: ../clients/common/settings-docs.h.in:367
 msgid ""
@@ -9777,15 +9798,19 @@ msgid ""
 "The use of fwmark is optional and is by default off. Setting it to 0 "
 "disables it. Otherwise it is a 32-bit fwmark for outgoing packets."
 msgstr ""
+"L'utilisation de fwmark est facultative et par défaut désactivée. Le réglage "
+"à 0 le désactive. Sinon, il s'agit d'un fwmark 32 bits pour les paquets "
+"sortants."
 
 #: ../clients/common/settings-docs.h.in:370
 msgid ""
 "The listen-port. If listen-port is not specified, the port will be chosen "
 "randomly when the interface comes up."
 msgstr ""
+"Le port d'écoute. Si listen-port n'est pas spécifié, le port sera choisi "
+"aléatoirement lorsque l'interface apparaîtra."
 
 #: ../clients/common/settings-docs.h.in:371
-#, fuzzy
 msgid ""
 "If non-zero, only transmit packets of the specified size or smaller, "
 "breaking larger packets up into multiple fragments. If zero a default MTU is "
@@ -9793,8 +9818,10 @@ msgid ""
 "account the current routes at the time of activation."
 msgstr ""
 "Si différent de zéro, ne transmettez que des paquets de la taille spécifiée "
-"ou plus petits, divisant les paquets plus grands en plusieurs trames "
-"Ethernet."
+"ou plus petits, divisant les paquets plus grands en plusieurs trames. Si "
+"zéro, un MTU par défaut est utilisé. Notez que contrairement au réglage MTU "
+"de wg-quick, ceci ne prend pas en compte les routes actuelles au moment de "
+"l'activation."
 
 #: ../clients/common/settings-docs.h.in:372
 msgid ""
@@ -9804,22 +9831,28 @@ msgid ""
 "no such routes are added automatically. In this case, the user may want to "
 "configure static routes in ipv4.routes and ipv6.routes, respectively."
 msgstr ""
+"Indique s'il faut ajouter automatiquement des routes pour les plages d'ips "
+"autorisées «AllowedIPs» des pairs. Si VRAI (par défaut), NetworkManager "
+"ajoutera automatiquement des routes dans les tables de routage selon ipv4."
+"route-table et ipv6.route-table. Si FAUX, aucun itinéraire de ce type n'est "
+"ajouté automatiquement. Dans ce cas, l'utilisateur peut vouloir configurer "
+"des routes statiques dans ipv4.routes et ipv6.routes, respectivement."
 
 #: ../clients/common/settings-docs.h.in:373
 msgid "The 256 bit private-key in base64 encoding."
-msgstr ""
+msgstr "La clé privée 256 bits en encodage base64."
 
 #: ../clients/common/settings-docs.h.in:374
-#, fuzzy
 msgid "Flags indicating how to handle the \"private-key\" property."
-msgstr ""
-"Drapeaux indiquant comment gérer la propriété \"private-key-password\"."
+msgstr "Marqueurs indiquant comment gérer la propriété \"private-key\"."
 
 #: ../clients/common/settings-docs.h.in:375
 msgid ""
 "IEEE 802.15.4 channel. A positive integer or -1, meaning \"do not set, use "
 "whatever the device is already set to\"."
 msgstr ""
+"Canal IEEE 802.15.4. Un nombre entier relatif ou -1, signifie « ne rien "
+"indiquer, utiliser le périphérique déjà configuré »."
 
 #: ../clients/common/settings-docs.h.in:376
 msgid ""
@@ -9834,6 +9867,8 @@ msgid ""
 "IEEE 802.15.4 channel page. A positive integer or -1, meaning \"do not set, "
 "use whatever the device is already set to\"."
 msgstr ""
+"Page Canal IEEE 802.15.4. Un nombre entier relatif ou -1, signifie « ne rien "
+"indiquer, utiliser le périphérique déjà configuré »."
 
 #: ../clients/common/settings-docs.h.in:378
 msgid "IEEE 802.15.4 Personal Area Network (PAN) identifier."
@@ -11187,6 +11222,7 @@ msgstr "La méthode a renvoyé le type « %s », mais « %s » était attend
 #, c-format
 msgid "value is not an integer in range [%lld, %lld]"
 msgstr ""
+"valur ne correspondant pas à un nombre entier relatif entre [%lld, %lld]"
 
 #: ../libnm-core/nm-keyfile.c:211
 msgid "ignoring missing number"
@@ -11315,9 +11351,9 @@ msgid "invalid parity value '%s'"
 msgstr "valeur de parité « %s » non valide"
 
 #: ../libnm-core/nm-keyfile.c:1611 ../libnm-core/nm-keyfile.c:3130
-#, fuzzy, c-format
+#, c-format
 msgid "invalid setting: %s"
-msgstr "nom de configuration non valide « %s »"
+msgstr "configuration non valide « %s »"
 
 #: ../libnm-core/nm-keyfile.c:1628
 #, c-format
@@ -11344,7 +11380,7 @@ msgstr "erreur de chargement de la valeur du paramètre : %s"
 #: ../libnm-core/nm-keyfile.c:3053 ../libnm-core/nm-keyfile.c:3105
 #: ../libnm-core/nm-keyfile.c:3116
 msgid "value cannot be interpreted as integer"
-msgstr ""
+msgstr "la valeur ne doit pas être interprétée en tant que nombre entier"
 
 #: ../libnm-core/nm-keyfile.c:3151
 #, c-format
@@ -11362,39 +11398,40 @@ msgid "key '%s.%s' is not boolean"
 msgstr "clé '%s.%s' n’est pas un booléen"
 
 #: ../libnm-core/nm-keyfile.c:3268
-#, fuzzy, c-format
+#, c-format
 msgid "invalid peer public key in section '%s'"
-msgstr "option « %s » non valide"
+msgstr "Clé publique homologue non valide dans la section «%s»"
 
 #: ../libnm-core/nm-keyfile.c:3280
 #, c-format
 msgid "key '%s.%s' is not a valid 256 bit key in base64 encoding"
-msgstr ""
+msgstr "clé « %s.%s » est une clé de 256 non valide en chiffrage base64"
 
 #: ../libnm-core/nm-keyfile.c:3293
-#, fuzzy, c-format
+#, c-format
 msgid "key '%s.%s' is not a valid secret flag"
-msgstr "« %s » n'est pas un marqueur DCB valide"
+msgstr "« %s.%s » n'est pas un marqueur de secret valide"
 
 #: ../libnm-core/nm-keyfile.c:3305
-#, fuzzy, c-format
+#, c-format
 msgid "key '%s.%s' is not a integer in range 0 to 2^32"
-msgstr "clé '%s.%s' n’est pas un booléen"
+msgstr ""
+"clé « %s.%s » ne correspond pas à un nombre entier relatif entre 0 et 2^32"
 
 #: ../libnm-core/nm-keyfile.c:3317
-#, fuzzy, c-format
+#, c-format
 msgid "key '%s.%s' is not a valid endpoint"
-msgstr "'%s' n’est pas un type valide"
+msgstr "clé « %s.%s » n'est pas un point de terminaison valide"
 
 #: ../libnm-core/nm-keyfile.c:3339
 #, c-format
 msgid "key '%s.%s' has invalid allowed-ips"
-msgstr ""
+msgstr "clé « %s.%s » comprend des adresses ip «allowed-ips» non valides"
 
 #: ../libnm-core/nm-keyfile.c:3351
-#, fuzzy, c-format
+#, c-format
 msgid "peer '%s' is invalid: %s"
-msgstr "« %s » n'est pas valide"
+msgstr "l'homologue « %s » est non valide : %s"
 
 #: ../libnm-core/nm-setting-6lowpan.c:93
 #, c-format
@@ -11522,7 +11559,7 @@ msgstr "« %s » n'est pas une valeur valide pour la propriété"
 
 #: ../libnm-core/nm-setting-8021x.c:2896
 msgid "invalid auth flags"
-msgstr "drapeaux d'auth non valides"
+msgstr "marqueurs d'auth non valides"
 
 #: ../libnm-core/nm-setting-bluetooth.c:160
 #, c-format
@@ -11809,10 +11846,9 @@ msgstr ""
 "à « %s » ou ne doit pas être défini (au lieu de « %s »)"
 
 #: ../libnm-core/nm-setting-infiniband.c:281
-#, fuzzy, c-format
+#, c-format
 msgid "mtu can be at most %u but it is %u"
-msgstr ""
-"mtu pour le mode de transport « %s » but être %d au maximum et non pas %d"
+msgstr "mtu peut être %u au maximum but il est à %u"
 
 #: ../libnm-core/nm-setting-ip-config.c:136
 #, c-format
@@ -11888,164 +11924,147 @@ msgid "invalid prefix %s"
 msgstr "préfixe %s non valide"
 
 #: ../libnm-core/nm-setting-ip-config.c:2479
-#, fuzzy
 msgid "invalid priority"
-msgstr "Plan des priorités non valide « %s »"
+msgstr "priorité non valide"
 
 #: ../libnm-core/nm-setting-ip-config.c:2490
-#, fuzzy
 msgid "missing table"
-msgstr "clé manquante"
+msgstr "tableau manquant"
 
 #: ../libnm-core/nm-setting-ip-config.c:2496
-#, fuzzy
 msgid "invalid action"
-msgstr "option «  » non valide"
+msgstr "action non valide"
 
 #: ../libnm-core/nm-setting-ip-config.c:2503
 msgid "has from/src but the prefix-length is zero"
-msgstr ""
+msgstr "comprend « from/src » mais la longueur du préfixe est zéro"
 
 #: ../libnm-core/nm-setting-ip-config.c:2510
 msgid "missing from/src for a non zero prefix-length"
-msgstr ""
+msgstr "ne comprend pas « from/src » et la longueur du préfixe n'est pas zéro"
 
 #: ../libnm-core/nm-setting-ip-config.c:2515
-#, fuzzy
 msgid "invalid from/src"
-msgstr "port invalide %d"
+msgstr "from/src non valide"
 
 #: ../libnm-core/nm-setting-ip-config.c:2520
-#, fuzzy
 msgid "invalid prefix length for from/src"
-msgstr "longueur de préfixe non valide pour %s : « %s », valeur par défaut %d"
+msgstr "longueur de préfixe non valide pour « from/src »"
 
 #: ../libnm-core/nm-setting-ip-config.c:2527
 msgid "has to/dst but the prefix-length is zero"
-msgstr ""
+msgstr "comprend « to/dst » mais la longueur du préfixe est zéro"
 
 #: ../libnm-core/nm-setting-ip-config.c:2534
 msgid "missing to/dst for a non zero prefix-length"
-msgstr ""
+msgstr "ne comprend pas « to/dst  » et la longueur du préfixe n'est pas zéro"
 
 #: ../libnm-core/nm-setting-ip-config.c:2539
-#, fuzzy
 msgid "invalid to/dst"
-msgstr "port invalide %d"
+msgstr "to/dst non valide"
 
 #: ../libnm-core/nm-setting-ip-config.c:2544
-#, fuzzy
 msgid "invalid prefix length for to/dst"
-msgstr "longueur de préfixe non valide pour %s : « %s », valeur par défaut %d"
+msgstr "longueur de préfixe non valide pour « to/dst  »"
 
 #: ../libnm-core/nm-setting-ip-config.c:2552
-#, fuzzy
 msgid "invalid iifname"
-msgstr "valeur non valide"
+msgstr "iifname non valide"
 
 #: ../libnm-core/nm-setting-ip-config.c:2560
-#, fuzzy
 msgid "invalid oifname"
-msgstr "valeur non valide"
+msgstr "oifname non valide"
 
 #: ../libnm-core/nm-setting-ip-config.c:2566
-#, fuzzy
 msgid "invalid source port range"
-msgstr "Port source minimum [0]"
+msgstr "Plage de ports source non valide"
 
 #: ../libnm-core/nm-setting-ip-config.c:2572
-#, fuzzy
 msgid "invalid destination port range"
-msgstr "option «  » non valide"
+msgstr "Plage de ports de destination non valides"
 
 #: ../libnm-core/nm-setting-ip-config.c:2676
-#, fuzzy, c-format
+#, c-format
 msgid "duplicate key %s"
-msgstr "dupliquer la propriété"
+msgstr "clé dupliquée %s"
 
 #: ../libnm-core/nm-setting-ip-config.c:2690
-#, fuzzy, c-format
+#, c-format
 msgid "invalid key \"%s\""
-msgstr "clé non valide \"%s\": %s"
+msgstr "clé non valide « %s »"
 
 #: ../libnm-core/nm-setting-ip-config.c:2703
-#, fuzzy, c-format
+#, c-format
 msgid "invalid variant type '%s' for \"%s\""
-msgstr "type d'attribut « %s » non valide"
+msgstr "type de variante  '%s' pour \"%s\" non valide"
 
 #: ../libnm-core/nm-setting-ip-config.c:2712
-#, fuzzy
 msgid "missing \""
-msgstr "clé manquante"
+msgstr "manquant \""
 
 #: ../libnm-core/nm-setting-ip-config.c:2718
-#, fuzzy
 msgid "invalid \""
-msgstr "DUID non valide"
+msgstr "non valid \""
 
 #: ../libnm-core/nm-setting-ip-config.c:2909
-#, fuzzy
 msgid "Unsupported to-string-flags argument"
-msgstr "fonctionnalité de déchargement non prise en charge"
+msgstr "Argument to-string-flag non pris en charge"
 
 #: ../libnm-core/nm-setting-ip-config.c:2916
 msgid "Unsupported extra-argument"
-msgstr ""
+msgstr "extra-argument non pris en charge"
 
 #: ../libnm-core/nm-setting-ip-config.c:3161
-#, fuzzy, c-format
+#, c-format
 msgid "unsupported key \"%s\""
-msgstr "attribut « %s » de type «  » non supporté"
+msgstr "clé « %s » non prise en charge"
 
 #: ../libnm-core/nm-setting-ip-config.c:3166
-#, fuzzy, c-format
+#, c-format
 msgid "duplicate key \"%s\""
-msgstr "index VF dupliqué %u"
+msgstr "clé « %s » dupliquée"
 
 #: ../libnm-core/nm-setting-ip-config.c:3171
-#, fuzzy, c-format
+#, c-format
 msgid "invalid value for \"%s\""
-msgstr "valeur non valide pour \"%s\": %s"
+msgstr "valeur de « %s » non valide"
 
 #: ../libnm-core/nm-setting-ip-config.c:3181
 msgid "empty text does not describe a rule"
-msgstr ""
+msgstr "texte vide qui ne décrit pas de règle"
 
 #: ../libnm-core/nm-setting-ip-config.c:3187
-#, fuzzy, c-format
+#, c-format
 msgid "missing argument for \"%s\""
-msgstr "hôte cible manquant"
+msgstr "argument manquant pour « %s »"
 
 #: ../libnm-core/nm-setting-ip-config.c:3199
-#, fuzzy
 msgid "invalid \"from\" part"
-msgstr "port invalide %d"
+msgstr "partie « from » non valide"
 
 #: ../libnm-core/nm-setting-ip-config.c:3213
-#, fuzzy
 msgid "invalid \"to\" part"
-msgstr "port invalide %d"
+msgstr "parie « to » non valide"
 
 #: ../libnm-core/nm-setting-ip-config.c:3222
 #, c-format
 msgid "cannot detect address family for rule"
-msgstr ""
+msgstr "impossible de détecter la famille d'adresses pour la règle"
 
 #: ../libnm-core/nm-setting-ip-config.c:3279
 #: ../libnm-core/nm-setting-ip-config.c:3373
-#, fuzzy, c-format
+#, c-format
 msgid "rule is invalid: %s"
-msgstr "certificat non valide : %s"
+msgstr "règle suivante non valide : %s"
 
 #: ../libnm-core/nm-setting-ip-config.c:3356
-#, fuzzy
 msgid "invalid address family"
-msgstr "adresse IP invalide : %s"
+msgstr "famille d'adresses non valide"
 
 #: ../libnm-core/nm-setting-ip-config.c:4618
-#, fuzzy, c-format
+#, c-format
 msgid "rule #%u is invalid: %s"
-msgstr "certificat non valide : %s"
+msgstr "règle #%u non valide : %s"
 
 #: ../libnm-core/nm-setting-ip-config.c:4836
 #, c-format
@@ -12090,12 +12109,12 @@ msgstr "%d. La route ne peut pas être une route par défaut"
 #: ../libnm-core/nm-setting-ip-config.c:4935
 #, c-format
 msgid "%u. rule has wrong address-family"
-msgstr ""
+msgstr "la règle %u. a une mauvaise address-family"
 
 #: ../libnm-core/nm-setting-ip-config.c:4944
-#, fuzzy, c-format
+#, c-format
 msgid "%u. rule is invalid: %s"
-msgstr "%d. La route n'est pas valide"
+msgstr "la règle %u. est non valide : %s"
 
 #: ../libnm-core/nm-setting-ip-config.c:4957
 #, c-format
@@ -12130,7 +12149,7 @@ msgstr "un TTL fixe est permis quand le chemin MTU de découverte est actif"
 #: ../libnm-core/nm-setting-ip-tunnel.c:454
 #, c-format
 msgid "some flags are invalid for the select mode: %s"
-msgstr "certains drapeaux ne sont pas valides pour le mode select : %s"
+msgstr "certains marqueurs ne sont pas valides pour le mode select : %s"
 
 #: ../libnm-core/nm-setting-ip-tunnel.c:468
 #, c-format
@@ -12222,7 +12241,7 @@ msgstr "La gestion des clés EAP requiert la présence de paramètres  '%s'"
 
 #: ../libnm-core/nm-setting-macsec.c:357
 msgid "must be either psk (0) or eap (1)"
-msgstr ""
+msgstr "doit être soit psk (0), soit eap (1)"
 
 #: ../libnm-core/nm-setting-macsec.c:366
 #, c-format
@@ -12231,7 +12250,7 @@ msgstr "port invalide %d"
 
 #: ../libnm-core/nm-setting-macsec.c:377
 msgid "only valid for psk mode"
-msgstr ""
+msgstr "uniquement valide en mode psk"
 
 #: ../libnm-core/nm-setting-macvlan.c:168
 msgid "non promiscuous operation is allowed only in passthru mode"
@@ -12384,9 +12403,9 @@ msgid "the script lacks FindProxyForURL function"
 msgstr "il manque à ce script la fonction FindProxyForURL"
 
 #: ../libnm-core/nm-setting-sriov.c:1074
-#, fuzzy, c-format
+#, c-format
 msgid "VF with index %u, but the total number of VFs is %u"
-msgstr "VF avec indice %u, mais le nombre total de VF est "
+msgstr "VF avec index %u, mais le nombre total de VF est %u"
 
 #: ../libnm-core/nm-setting-sriov.c:1085
 #, c-format
@@ -12406,9 +12425,9 @@ msgstr "les VF %d et %d ne sont pas ordonnancés par index ascendant"
 #: ../libnm-core/nm-setting-tc-config.c:70
 #: ../libnm-core/nm-setting-tc-config.c:436
 #: ../libnm-core/nm-setting-tc-config.c:706
-#, fuzzy, c-format
+#, c-format
 msgid "kind is missing"
-msgstr "la valeur est  manquante"
+msgstr "type manquant"
 
 #: ../libnm-core/nm-setting-tc-config.c:78
 #: ../libnm-core/nm-setting-tc-config.c:444
@@ -12457,9 +12476,8 @@ msgid "source-host '%s' contains invalid characters"
 msgstr "hôte-source « %s » contient des caractères non valides"
 
 #: ../libnm-core/nm-setting-team.c:319
-#, fuzzy
 msgid "vlanid is out of range [-1, 4094]"
-msgstr "La valeur « %d » est hors de portée <%d-%d>"
+msgstr "vlanid n'est pas entre [-1, 4094]"
 
 #: ../libnm-core/nm-setting-tun.c:167
 #, c-format
@@ -12568,9 +12586,8 @@ msgid "secret is not of correct type"
 msgstr "secret de type erroné"
 
 #: ../libnm-core/nm-setting-vpn.c:757
-#, fuzzy
 msgid "secret flags property not found"
-msgstr "La propriété « %s » de marqueurs secrets n'a pas été trouvée"
+msgstr "la propriété des marqueurs secrets n'a pas été trouvée"
 
 #: ../libnm-core/nm-setting-vxlan.c:367
 #, c-format
@@ -12622,80 +12639,79 @@ msgstr ""
 
 #: ../libnm-core/nm-setting-wireguard.c:778
 msgid "missing public-key for peer"
-msgstr ""
+msgstr "clé publique manquante pour l'homologue"
 
 #: ../libnm-core/nm-setting-wireguard.c:782
 msgid "invalid public-key for peer"
-msgstr ""
+msgstr "clé publique non valide pour l'homologue"
 
 #: ../libnm-core/nm-setting-wireguard.c:791
-#, fuzzy
 msgid "invalid preshared-key for peer"
-msgstr "clé privée non valide"
+msgstr "clé pré-partagée non valide pour l'homologue"
 
 #: ../libnm-core/nm-setting-wireguard.c:809
-#, fuzzy
 msgid "invalid endpoint for peer"
-msgstr "Point de terminaison local [none]"
+msgstr "point de terminaison non valide pour l'homologue"
 
 #: ../libnm-core/nm-setting-wireguard.c:819
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IP address \"%s\" for allowed-ip of peer"
-msgstr "adresse IP invalide : %s"
+msgstr ""
+"adresse IP non valide : « %s » pour l'adresse ip autorisée (allowed-ip) de "
+"l'homologue"
 
 #: ../libnm-core/nm-setting-wireguard.c:828
 msgid "invalid preshared-key-flags for peer"
-msgstr ""
+msgstr "marqueurs preshared-key-flags non valide pour l'homologue"
 
 #: ../libnm-core/nm-setting-wireguard.c:1567
 #, c-format
 msgid "peer #%u has no public-key"
-msgstr ""
+msgstr "l'homologue #%u n'a pas de clé publique"
 
 #: ../libnm-core/nm-setting-wireguard.c:1578
 #, c-format
 msgid "peer #%u has invalid public-key"
-msgstr ""
+msgstr "l'homologue #%u a une clé publique non valide"
 
 #: ../libnm-core/nm-setting-wireguard.c:1592
 #, c-format
 msgid "peer #%u has invalid endpoint"
-msgstr ""
+msgstr "l'homologue #%u a un point de terminaison non valide"
 
 #: ../libnm-core/nm-setting-wireguard.c:1622
 #, c-format
 msgid "peer #%u has invalid allowed-ips setting"
-msgstr ""
+msgstr "l'homologue #%u a une configuration aloowed-ip non valide"
 
 #: ../libnm-core/nm-setting-wireguard.c:1634
-#, fuzzy, c-format
+#, c-format
 msgid "peer #%u is invalid: %s"
-msgstr "certificat non valide : %s"
+msgstr "l'homologue #%u est non valide : %s"
 
 #: ../libnm-core/nm-setting-wireguard.c:1705
 #: ../libnm-core/nm-setting-wireguard.c:1719
 #, c-format
 msgid "method \"%s\" is not supported for WireGuard"
-msgstr ""
+msgstr "la méthode « %s » n'est pas prise en charge par WireGuard"
 
 #: ../libnm-core/nm-setting-wireguard.c:1739
 msgid "key must be 32 bytes base64 encoded"
-msgstr ""
+msgstr "la clé doit compter 32 octets et chiffrée base64"
 
 #: ../libnm-core/nm-setting-wireguard.c:1875
-#, fuzzy
 msgid "invalid peer secrets"
-msgstr "Secrets non valides"
+msgstr "Secrets de l'homologue non valides"
 
 #: ../libnm-core/nm-setting-wireguard.c:1898
 #, c-format
 msgid "peer #%u lacks public-key"
-msgstr ""
+msgstr "l'homologue #%u n'a pas de clé publique"
 
 #: ../libnm-core/nm-setting-wireguard.c:1912
 #, c-format
 msgid "non-existing peer '%s'"
-msgstr ""
+msgstr "l'homologue « %s » n'existe pas"
 
 #: ../libnm-core/nm-setting-wireless-security.c:935
 #, c-format
@@ -12723,10 +12739,12 @@ msgid "'%s' can only be used with '%s=%s' (WEP)"
 msgstr "« %s » peut uniquement être utilisé avec '%s=%s' (WEP)"
 
 #: ../libnm-core/nm-setting-wireless-security.c:1086
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "'%s' can only be used with 'wpa-eap', 'wpa-psk' or 'sae' key management "
-msgstr "« %s » peut uniquement être utilisé avec  '%s=%s' or '%s=%s'"
+msgstr ""
+"« %s » ne peut pas être utilisé avec les clés de gestion 'wpa-eap', 'wpa-"
+"psk', et 'sae' "
 
 #: ../libnm-core/nm-setting-wireless.c:756
 #, c-format
@@ -12756,7 +12774,7 @@ msgstr ""
 
 #: ../libnm-core/nm-setting-wireless.c:889
 msgid "Wake-on-WLAN trying to set unknown flag"
-msgstr "Wake-on-WLAN essaye d'activer un drapeau inconnu"
+msgstr "Wake-on-WLAN essaye d'activer un marqueur inconnu"
 
 #: ../libnm-core/nm-setting-wireless.c:911
 #, c-format
@@ -12766,17 +12784,17 @@ msgstr ""
 
 #: ../libnm-core/nm-setting-wpan.c:185
 msgid "page must be defined along with a channel"
-msgstr ""
+msgstr "page et canal doivent être définis"
 
 #: ../libnm-core/nm-setting-wpan.c:194
 #, c-format
 msgid "page must be between %d and %d"
-msgstr ""
+msgstr "page doit être entre %d et %d"
 
 #: ../libnm-core/nm-setting-wpan.c:205
 #, c-format
 msgid "channel must not be between %d and %d"
-msgstr ""
+msgstr "canal ne doit pas être entre %d et %d"
 
 #: ../libnm-core/nm-setting.c:906
 #, c-format
@@ -12983,32 +13001,28 @@ msgid "Could not find \"%s\" binary"
 msgstr "N'a pas pu trouver le binaire « %s »"
 
 #: ../libnm-core/nm-utils.c:4462
-#, fuzzy
 msgid "unknown secret flags"
-msgstr "Nom de paramètre inconnu"
+msgstr "marqueurs de secret inconnus"
 
 #: ../libnm-core/nm-utils.c:4472
 msgid "conflicting secret flags"
-msgstr ""
+msgstr "marqueurs de secret conflictueux"
 
 #: ../libnm-core/nm-utils.c:4483
-#, fuzzy
 msgid "secret flags must not be \"not-required\""
-msgstr "La propriété « %s » de marqueurs secrets n'a pas été trouvée"
+msgstr "les marqueurs de secret non doivent pas être «non-requis»"
 
 #: ../libnm-core/nm-utils.c:4491
-#, fuzzy
 msgid "unsupported secret flags"
-msgstr "attribut « %s » de type «  » non supporté"
+msgstr "marqueurs de secret non pris en charge"
 
 #: ../libnm-core/nm-utils.c:4521
 msgid "can't be simultaneously disabled and enabled"
 msgstr "ne peut pas être simultanément désactivé et activé"
 
 #: ../libnm-core/nm-utils.c:4529
-#, fuzzy
 msgid "WPS is required"
-msgstr "Code PIN requis"
+msgstr "WPS requis"
 
 #: ../libnm-core/nm-utils.c:4595
 #, c-format
@@ -13092,18 +13106,18 @@ msgid "unsupported attribute '%s' of type '%s'"
 msgstr "attribut « %s » de type « %s » non supporté"
 
 #: ../libnm-core/nm-utils.c:5992
-#, fuzzy, c-format
+#, c-format
 msgid "Bridge VLANs %d and %d are not sorted by ascending vid"
-msgstr "les VF %d et %d ne sont pas ordonnancés par index ascendant"
+msgstr "Les VLAN %d et %d ne sont pas ordonnancés par vid ascendant"
 
 #: ../libnm-core/nm-utils.c:6016
-#, fuzzy, c-format
+#, c-format
 msgid "duplicate bridge VLAN vid %u"
-msgstr "index VF dupliqué %u"
+msgstr "VLAN vid %s de pontage dupliqué"
 
 #: ../libnm-core/nm-utils.c:6028
 msgid "only one VLAN can be the PVID"
-msgstr ""
+msgstr "un VLAN uniquement peut correspondre au PVID"
 
 #: ../libnm-core/nm-vpn-editor-plugin.c:296
 #, c-format
@@ -13363,9 +13377,8 @@ msgstr ""
 "pas."
 
 #: ../libnm/nm-device-wifi-p2p.c:326
-#, fuzzy
 msgid "The connection was not a Wi-Fi P2P connection."
-msgstr "La connexion n'était pas une connexion Wi-Fi."
+msgstr "La connexion n'était pas une connexion Wi-Fi P2P."
 
 #: ../libnm/nm-device-wifi.c:613
 msgid "The connection was not a Wi-Fi connection."
@@ -13464,9 +13477,8 @@ msgid "WireGuard"
 msgstr "WireGuard"
 
 #: ../libnm/nm-device.c:1432
-#, fuzzy
 msgid "Wi-Fi P2P"
-msgstr "Wi-Fi"
+msgstr "Wi-Fi P2P"
 
 #: ../libnm/nm-device.c:1464
 msgid "Wired"
@@ -13593,16 +13605,12 @@ msgid "System policy prevents control of network connections"
 msgstr "La politique du système empêche le contrôle des connexions réseau"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:15
-#, fuzzy
 msgid "Allow control of Wi-Fi scans"
 msgstr "Autoriser le contrôle des connexions réseau"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:16
-#, fuzzy
 msgid "System policy prevents Wi-Fi scans"
-msgstr ""
-"La politique du système empêche l'activation ou la désactivation de "
-"périphériques Wi-Fi"
+msgstr "La politique du système empêche de scanner la Wi-Fi"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:17
 msgid "Connection sharing via a protected Wi-Fi network"
@@ -14178,9 +14186,9 @@ msgid "Failed to determine AP security information"
 msgstr "N'a pas pu déterminer les informations de sécurité AP"
 
 #: ../src/nm-config.c:562
-#, fuzzy, c-format
+#, c-format
 msgid "Bad '%s' option: "
-msgstr "l'option « %s » est vide"
+msgstr "Option « %s » erronée :"
 
 #: ../src/nm-config.c:575
 msgid "Config file location"
@@ -14232,14 +14240,12 @@ msgid "The expected start of the response"
 msgstr "Début prévu de la réponse"
 
 #: ../src/nm-config.c:595
-#, fuzzy
 msgid "NetworkManager options"
-msgstr "Permissions NetworkManager"
+msgstr "Options NetworkManager"
 
 #: ../src/nm-config.c:595
-#, fuzzy
 msgid "Show NetworkManager options"
-msgstr "Permissions NetworkManager"
+msgstr "Afficher options NetworkManager"
 
 #. Interface/IP config
 #: ../src/nm-iface-helper.c:275
@@ -14357,9 +14363,11 @@ msgid "(%s): Invalid IID %s\n"
 msgstr "(%s): IID non valide %s\n"
 
 #: ../src/nm-iface-helper.c:492
-#, fuzzy, c-format
+#, c-format
 msgid "(%s): Invalid DHCP client-id %s\n"
-msgstr "(%s) : id-client DHCP non valide\n"
+msgstr ""
+"(%s) : id-client DHCP non valide %s\n"
+"\n"
 
 #: ../src/nm-logging.c:299
 #, c-format
