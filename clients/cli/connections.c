@@ -209,7 +209,7 @@ get_ac_device_string (NMActiveConnection *active)
 {
 	GString *dev_str;
 	const GPtrArray *devices;
-	int i;
+	guint i;
 
 	if (!active)
 		return NULL;
@@ -1306,7 +1306,7 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc)
 	GError *error = NULL;
 	GArray *print_settings_array;
 	GPtrArray *prop_array = NULL;
-	int i;
+	guint i;
 	char *fields_str;
 	char *fields_all =    NMC_FIELDS_SETTINGS_NAMES_ALL;
 	char *fields_common = NMC_FIELDS_SETTINGS_NAMES_ALL;
@@ -1872,7 +1872,7 @@ parse_preferred_connection_order (const char *order, GError **error)
 	GArray *order_arr;
 	NmcSortOrder val;
 	gboolean inverse, unique;
-	int i;
+	guint i;
 
 	strv = nm_utils_strsplit_set (order, ":");
 	if (!strv) {
@@ -2243,7 +2243,7 @@ get_default_active_connection (NmCli *nmc, NMDevice **device)
 	NMDevice *non_default_device = NULL;
 	NMActiveConnection *non_default_ac = NULL;
 	const GPtrArray *connections;
-	int i;
+	guint i;
 
 	g_return_val_if_fail (nmc, NULL);
 	g_return_val_if_fail (device, NULL);
@@ -2302,7 +2302,7 @@ find_device_for_connection (NmCli *nmc,
 {
 	NMSettingConnection *s_con;
 	const char *con_type;
-	int i, j;
+	guint i, j;
 
 	g_return_val_if_fail (nmc, FALSE);
 	g_return_val_if_fail (iface || ap || nsp, FALSE);
@@ -3301,7 +3301,7 @@ get_valid_properties_string (const NMMetaSettingValidPartItem *const*array,
 	const NMMetaSettingValidPartItem *const*iter = array;
 	const char *prop_name = NULL;
 	GString *str;
-	int i, j;
+	guint i, j;
 	gboolean full_match = FALSE;
 
 	g_return_val_if_fail (prefix, NULL);
@@ -3546,7 +3546,7 @@ _strip_master_prefix (const char *master, const char *(**func)(NMConnection *))
 	} else if (g_str_has_prefix (master, "id/")) {
 		master = master + strlen ("id/");
 		if (func)
-			 *func = nm_connection_get_id;
+			*func = nm_connection_get_id;
 	}
 	return master;
 }
@@ -3573,7 +3573,7 @@ normalized_master_for_slave (const GPtrArray *connections,
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	const char *con_type = NULL, *id, *uuid, *ifname;
-	int i;
+	guint i;
 	const char *found_by_id = NULL;
 	const char *out_type_by_id = NULL;
 	const char *out_master = NULL;
@@ -4209,7 +4209,7 @@ set_connection_master (NmCli *nmc, NMConnection *con, const OptionInfo *option, 
 
 	if (!value) {
 		g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("Error: master is required"));
+		                     _("Error: master is required"));
 		return FALSE;
 	}
 
@@ -5581,7 +5581,7 @@ gen_property_names (const char *text, int state)
 static char *
 gen_compat_devices (const char *text, int state)
 {
-	int i, j = 0;
+	guint i, j = 0;
 	const GPtrArray *devices;
 	const char **compatible_devices;
 	char *ret;
@@ -6087,7 +6087,7 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 							rl_completion_display_matches_hook = uuid_display_hook;
 							generator_func = gen_vpn_uuids;
 						} else if (   should_complete_property_values (NULL, line, &multi)
-							   && (num == 3 || multi)) {
+						           && (num == 3 || multi)) {
 							generator_func = gen_property_values;
 						} else if (should_complete_boolean (NULL, line) && num == 3)
 							generator_func = gen_func_bool_values;
@@ -6134,7 +6134,7 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 						rl_completion_display_matches_hook = uuid_display_hook;
 						generator_func = gen_vpn_uuids;
 					} else if (   should_complete_property_values (prompt_tmp, NULL, &multi)
-						   && (num <= 2 || multi)) {
+					           && (num <= 2 || multi)) {
 						generator_func = gen_property_values;
 					} else if (should_complete_boolean (prompt_tmp, NULL) && num <= 2)
 						generator_func = gen_func_bool_values;
@@ -8030,7 +8030,7 @@ static const char *
 get_ethernet_device_name (NmCli *nmc)
 {
 	const GPtrArray *devices;
-	int i;
+	guint i;
 
 	devices = nm_client_get_devices (nmc->client);
 	for (i = 0; i < devices->len; i++) {
@@ -9073,7 +9073,7 @@ finish:
 static char *
 gen_func_connection_names (const char *text, int state)
 {
-	int i;
+	guint i;
 	const GPtrArray *connections;
 	const char **connection_names;
 	char *ret;
@@ -9096,7 +9096,7 @@ gen_func_connection_names (const char *text, int state)
 static char *
 gen_func_active_connection_names (const char *text, int state)
 {
-	int i;
+	guint i;
 	const GPtrArray *acs;
 	const char **connections;
 	char *ret;
