@@ -1,6 +1,12 @@
 [Unit]
 Description=Network Manager Script Dispatcher Service
 
+# Order the dispatcher before NetworkManager. While dispatcher
+# is D-Bus activate (and not intended to be explicitly wanted by
+# another service/target), the ordering dependency matters during
+# shutdown. We want first NetworkManager to be stopped.
+Before=NetworkManager.service
+
 [Service]
 Type=dbus
 BusName=org.freedesktop.nm_dispatcher
