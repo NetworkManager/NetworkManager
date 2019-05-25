@@ -324,7 +324,7 @@ class NMStubServer:
             nmobj = self._conn_get_main_object(self._conn)
             if nmobj is not None:
                 break
-            if (NM.utils_get_timestamp_msec() - start) >= 2000:
+            if (NM.utils_get_timestamp_msec() - start) >= 4000:
                 p.stdin.close()
                 p.kill()
                 Util.popen_wait(p, 1000)
