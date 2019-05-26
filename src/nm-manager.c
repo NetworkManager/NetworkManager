@@ -185,7 +185,8 @@ typedef struct {
 
 	GHashTable *device_route_metrics;
 
-	GSList *auth_chains;
+	CList auth_lst_head;
+
 	GHashTable *sleep_devices;
 
 	/* Firmware dir monitor */
@@ -1142,7 +1143,7 @@ _reload_auth_cb (NMAuthChain *chain,
 
 	nm_assert (G_IS_DBUS_METHOD_INVOCATION (context));
 
-	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+	c_list_unlink (nm_auth_chain_parent_lst_list (chain));
 	flags = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "flags"));
 
 	subject = nm_auth_chain_get_subject (chain);
@@ -1212,7 +1213,7 @@ impl_manager_reload (NMDBusObject *obj,
 		return;
 	}
 
-	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	c_list_link_tail (&priv->auth_lst_head, nm_auth_chain_parent_lst_list (chain));
 	nm_auth_chain_set_data (chain, "flags", GUINT_TO_POINTER (flags), NULL);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_RELOAD, TRUE);
 }
@@ -2330,7 +2331,6 @@ device_auth_done_cb (NMAuthChain *chain,
                      gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	gs_free_error GError *error = NULL;
 	NMAuthCallResult result;
 	NMDevice *device;
@@ -2340,7 +2340,7 @@ device_auth_done_cb (NMAuthChain *chain,
 
 	nm_assert (G_IS_DBUS_METHOD_INVOCATION (context));
 
-	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+	c_list_unlink (nm_auth_chain_parent_lst_list (chain));
 
 	permission = nm_auth_chain_get_data (chain, "perm");
 	nm_assert (permission);
@@ -2414,7 +2414,7 @@ device_auth_request_cb (NMDevice *device,
 
 	permission_dup = g_strdup (permission);
 
-	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	c_list_link_tail (&priv->auth_lst_head, nm_auth_chain_parent_lst_list (chain));
 	nm_auth_chain_set_data (chain, "device", g_object_ref (device), g_object_unref);
 	nm_auth_chain_set_data (chain, "callback", callback, NULL);
 	nm_auth_chain_set_data (chain, "user-data", user_data, NULL);
@@ -5608,7 +5608,6 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
                              gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 	NMAuthCallResult result;
 	NMActiveConnection *active;
@@ -5616,7 +5615,7 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
 
 	nm_assert (G_IS_DBUS_METHOD_INVOCATION (context));
 
-	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+	c_list_unlink (nm_auth_chain_parent_lst_list (chain));
 
 	path = nm_auth_chain_get_data (chain, "path");
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL);
@@ -5711,7 +5710,7 @@ impl_manager_deactivate_connection (NMDBusObject *obj,
 		goto done;
 	}
 
-	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	c_list_link_tail (&priv->auth_lst_head, nm_auth_chain_parent_lst_list (chain));
 	nm_auth_chain_set_data (chain, "path", g_strdup (active_path), g_free);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
 
@@ -6032,14 +6031,13 @@ enable_net_done_cb (NMAuthChain *chain,
                     gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMAuthCallResult result;
 	gboolean enable;
 	NMAuthSubject *subject;
 
 	nm_assert (G_IS_DBUS_METHOD_INVOCATION (context));
 
-	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+	c_list_unlink (nm_auth_chain_parent_lst_list (chain));
 	enable = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "enable"));
 	subject = nm_auth_chain_get_subject (chain);
 
@@ -6094,7 +6092,7 @@ impl_manager_enable (NMDBusObject *obj,
 		goto done;
 	}
 
-	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	c_list_link_tail (&priv->auth_lst_head, nm_auth_chain_parent_lst_list (chain));
 	nm_auth_chain_set_data (chain, "enable", GUINT_TO_POINTER (enable), NULL);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK, TRUE);
 
@@ -6128,12 +6126,11 @@ get_permissions_done_cb (NMAuthChain *chain,
                          gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GVariantBuilder results;
 
 	nm_assert (G_IS_DBUS_METHOD_INVOCATION (context));
 
-	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+	c_list_unlink (nm_auth_chain_parent_lst_list (chain));
 
 	g_variant_builder_init (&results, G_VARIANT_TYPE ("a{ss}"));
 
@@ -6180,7 +6177,7 @@ impl_manager_get_permissions (NMDBusObject *obj,
 		return;
 	}
 
-	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	c_list_link_tail (&priv->auth_lst_head, nm_auth_chain_parent_lst_list (chain));
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SLEEP_WAKE, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI, FALSE);
@@ -6331,7 +6328,7 @@ check_connectivity_auth_done_cb (NMAuthChain *chain,
 	ConnectivityCheckData *data;
 	NMDevice *device;
 
-	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+	c_list_unlink (nm_auth_chain_parent_lst_list (chain));
 
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL);
 
@@ -6397,7 +6394,7 @@ impl_manager_check_connectivity (NMDBusObject *obj,
 		return;
 	}
 
-	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	c_list_link_tail (&priv->auth_lst_head, nm_auth_chain_parent_lst_list (chain));
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
 }
 
@@ -6767,7 +6764,7 @@ _dbus_set_property_auth_cb (NMAuthChain *chain,
 
 	g_slice_free (DBusSetPropertyHandle, handle_data);
 
-	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+	c_list_unlink (nm_auth_chain_parent_lst_list (chain));
 	result = nm_auth_chain_get_result (chain, property_info->writable.permission);
 
 	if (result != NM_AUTH_CALL_RESULT_YES) {
@@ -6847,7 +6844,7 @@ nm_manager_dbus_set_property_handle (NMDBusObject *obj,
 	handle_data->export_version_id = nm_dbus_object_get_export_version_id (obj);
 
 	chain = nm_auth_chain_new_subject (subject, invocation, _dbus_set_property_auth_cb, handle_data);
-	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	c_list_link_tail (&priv->auth_lst_head, nm_auth_chain_parent_lst_list (chain));
 	nm_auth_chain_add_call_unsafe (chain, property_info->writable.permission, TRUE);
 	return;
 
@@ -6881,8 +6878,9 @@ checkpoint_auth_done_cb (NMAuthChain *chain,
                          gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	char *op, *checkpoint_path = NULL, **devices;
+	char *op;
+	char *checkpoint_path = NULL;
+	char **devices;
 	NMCheckpoint *checkpoint;
 	NMAuthCallResult result;
 	guint32 timeout, flags;
@@ -6892,7 +6890,7 @@ checkpoint_auth_done_cb (NMAuthChain *chain,
 	guint32 add_timeout;
 
 	op = nm_auth_chain_get_data (chain, "audit-op");
-	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+	c_list_unlink (nm_auth_chain_parent_lst_list (chain));
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK);
 
 	if (NM_IN_STRSET (op, NM_AUDIT_OP_CHECKPOINT_DESTROY,
@@ -6971,7 +6969,7 @@ impl_manager_checkpoint_create (NMDBusObject *obj,
 
 	g_variant_get (parameters, "(^aouu)", &devices, &rollback_timeout, &flags);
 
-	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	c_list_link_tail (&priv->auth_lst_head, nm_auth_chain_parent_lst_list (chain));
 	nm_auth_chain_set_data (chain, "audit-op", NM_AUDIT_OP_CHECKPOINT_CREATE, NULL);
 	nm_auth_chain_set_data (chain, "devices", devices, (GDestroyNotify) g_strfreev);
 	nm_auth_chain_set_data (chain, "flags",  GUINT_TO_POINTER (flags), NULL);
@@ -7004,7 +7002,7 @@ impl_manager_checkpoint_destroy (NMDBusObject *obj,
 
 	g_variant_get (parameters, "(&o)", &checkpoint_path);
 
-	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	c_list_link_tail (&priv->auth_lst_head, nm_auth_chain_parent_lst_list (chain));
 	nm_auth_chain_set_data (chain, "audit-op", NM_AUDIT_OP_CHECKPOINT_DESTROY, NULL);
 	nm_auth_chain_set_data (chain, "checkpoint_path", g_strdup (checkpoint_path), g_free);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK, TRUE);
@@ -7035,7 +7033,7 @@ impl_manager_checkpoint_rollback (NMDBusObject *obj,
 
 	g_variant_get (parameters, "(&o)", &checkpoint_path);
 
-	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	c_list_link_tail (&priv->auth_lst_head, nm_auth_chain_parent_lst_list (chain));
 	nm_auth_chain_set_data (chain, "audit-op", NM_AUDIT_OP_CHECKPOINT_ROLLBACK, NULL);
 	nm_auth_chain_set_data (chain, "checkpoint_path", g_strdup (checkpoint_path), g_free);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK, TRUE);
@@ -7067,7 +7065,7 @@ impl_manager_checkpoint_adjust_rollback_timeout (NMDBusObject *obj,
 
 	g_variant_get (parameters, "(&ou)", &checkpoint_path, &add_timeout);
 
-	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	c_list_link_tail (&priv->auth_lst_head, nm_auth_chain_parent_lst_list (chain));
 	nm_auth_chain_set_data (chain, "audit-op", NM_AUDIT_OP_CHECKPOINT_ADJUST_ROLLBACK_TIMEOUT, NULL);
 	nm_auth_chain_set_data (chain, "checkpoint_path", g_strdup (checkpoint_path), g_free);
 	nm_auth_chain_set_data (chain, "add_timeout", GUINT_TO_POINTER (add_timeout), NULL);
@@ -7358,6 +7356,7 @@ nm_manager_init (NMManager *self)
 	guint i;
 	GFile *file;
 
+	c_list_init (&priv->auth_lst_head);
 	c_list_init (&priv->link_cb_lst);
 	c_list_init (&priv->devices_lst_head);
 	c_list_init (&priv->active_connections_lst_head);
@@ -7622,8 +7621,8 @@ dispose (GObject *object)
 		g_slice_free (PlatformLinkCbData, data);
 	}
 
-	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_destroy);
-	priv->auth_chains = NULL;
+	while ((iter = c_list_first (&priv->auth_lst_head)))
+		nm_auth_chain_destroy (nm_auth_chain_parent_lst_entry (iter));
 
 	nm_clear_g_source (&priv->devices_inited_id);
 

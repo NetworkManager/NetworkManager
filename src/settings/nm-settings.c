@@ -114,7 +114,7 @@ typedef struct {
 
 	NMConfig *config;
 
-	GSList *auths;
+	CList auth_lst_head;
 
 	GSList *plugins;
 
@@ -660,7 +660,6 @@ pk_add_cb (NMAuthChain *chain,
            gpointer user_data)
 {
 	NMSettings *self = NM_SETTINGS (user_data);
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMAuthCallResult result;
 	gs_free_error GError *error = NULL;
 	NMConnection *connection = NULL;
@@ -673,7 +672,7 @@ pk_add_cb (NMAuthChain *chain,
 
 	nm_assert (G_IS_DBUS_METHOD_INVOCATION (context));
 
-	priv->auths = g_slist_remove (priv->auths, chain);
+	c_list_unlink (nm_auth_chain_parent_lst_list (chain));
 
 	perm = nm_auth_chain_get_data (chain, "perm");
 	nm_assert (perm);
@@ -811,7 +810,8 @@ nm_settings_add_connection_dbus (NMSettings *self,
 		goto done;
 	}
 
-	priv->auths = g_slist_append (priv->auths, chain);
+	c_list_link_tail (&priv->auth_lst_head, nm_auth_chain_parent_lst_list (chain));
+
 	nm_auth_chain_set_data (chain, "perm", (gpointer) perm, NULL);
 	nm_auth_chain_set_data (chain, "connection", g_object_ref (connection), g_object_unref);
 	nm_auth_chain_set_data (chain, "callback", callback, NULL);
@@ -1467,7 +1467,7 @@ pk_hostname_cb (NMAuthChain *chain,
 
 	nm_assert (G_IS_DBUS_METHOD_INVOCATION (context));
 
-	priv->auths = g_slist_remove (priv->auths, chain);
+	c_list_unlink (nm_auth_chain_parent_lst_list (chain));
 
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME);
 
@@ -1526,7 +1526,7 @@ impl_settings_save_hostname (NMDBusObject *obj,
 		return;
 	}
 
-	priv->auths = g_slist_append (priv->auths, chain);
+	c_list_link_tail (&priv->auth_lst_head, nm_auth_chain_parent_lst_list (chain));
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, TRUE);
 	nm_auth_chain_set_data (chain, "hostname", g_strdup (hostname), g_free);
 }
@@ -1947,6 +1947,7 @@ nm_settings_init (NMSettings *self)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
+	c_list_init (&priv->auth_lst_head);
 	c_list_init (&priv->connections_lst_head);
 
 	priv->agent_mgr = g_object_ref (nm_agent_manager_get ());
@@ -1964,11 +1965,12 @@ dispose (GObject *object)
 {
 	NMSettings *self = NM_SETTINGS (object);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	CList *iter;
 
 	g_clear_object (&priv->startup_complete_blocked_by);
 
-	g_slist_free_full (priv->auths, (GDestroyNotify) nm_auth_chain_destroy);
-	priv->auths = NULL;
+	while ((iter = c_list_first (&priv->auth_lst_head)))
+		nm_auth_chain_destroy (nm_auth_chain_parent_lst_entry (iter));
 
 	if (priv->hostname_manager) {
 		g_signal_handlers_disconnect_by_func (priv->hostname_manager,

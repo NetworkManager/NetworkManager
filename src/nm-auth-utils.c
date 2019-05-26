@@ -30,6 +30,9 @@
 /*****************************************************************************/
 
 struct NMAuthChain {
+
+	CList parent_lst;
+
 	CList data_lst_head;
 
 	CList auth_call_lst_head;
@@ -45,6 +48,8 @@ struct NMAuthChain {
 	bool is_destroyed:1;
 	bool is_finishing:1;
 };
+
+G_STATIC_ASSERT (G_STRUCT_OFFSET (NMAuthChain, parent_lst) == 0);
 
 typedef struct {
 	CList auth_call_lst;
@@ -435,6 +440,7 @@ nm_auth_chain_new_subject (NMAuthSubject *subject,
 		.user_data          = user_data,
 		.context            = nm_g_object_ref (context),
 		.subject            = g_object_ref (subject),
+		.parent_lst         = C_LIST_INIT (self->parent_lst),
 		.data_lst_head      = C_LIST_INIT (self->data_lst_head),
 		.auth_call_lst_head = C_LIST_INIT (self->auth_call_lst_head),
 	};
@@ -478,6 +484,8 @@ _auth_chain_destroy (NMAuthChain *self)
 {
 	AuthCall *call;
 	ChainData *chain_data;
+
+	c_list_unlink (&self->parent_lst);
 
 	nm_clear_g_object (&self->subject);
 	nm_clear_g_object (&self->context);
