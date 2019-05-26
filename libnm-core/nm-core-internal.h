@@ -815,4 +815,6 @@ void _nm_bridge_vlan_str_append_rest (const NMBridgeVlan *vlan,
                                       GString *string,
                                       gboolean leading_space);
 
+gboolean nm_utils_connection_is_adhoc_wpa (NMConnection *connection);
+
 #endif

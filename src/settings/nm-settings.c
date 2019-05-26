@@ -711,38 +711,6 @@ pk_add_cb (NMAuthChain *chain,
 		send_agent_owned_secrets (self, added, subject);
 }
 
-/* FIXME: remove if/when kernel supports adhoc wpa */
-static gboolean
-is_adhoc_wpa (NMConnection *connection)
-{
-	NMSettingWireless *s_wifi;
-	NMSettingWirelessSecurity *s_wsec;
-	const char *mode, *key_mgmt;
-
-	/* The kernel doesn't support Ad-Hoc WPA connections well at this time,
-	 * and turns them into open networks.  It's been this way since at least
-	 * 2.6.30 or so; until that's fixed, disable WPA-protected Ad-Hoc networks.
-	 */
-
-	s_wifi = nm_connection_get_setting_wireless (connection);
-	if (!s_wifi)
-		return FALSE;
-
-	mode = nm_setting_wireless_get_mode (s_wifi);
-	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC) != 0)
-		return FALSE;
-
-	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	if (!s_wsec)
-		return FALSE;
-
-	key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wsec);
-	if (g_strcmp0 (key_mgmt, "wpa-none") != 0)
-		return FALSE;
-
-	return TRUE;
-}
-
 void
 nm_settings_add_connection_dbus (NMSettings *self,
                                  NMConnection *connection,
@@ -772,11 +740,11 @@ nm_settings_add_connection_dbus (NMSettings *self,
 		goto done;
 	}
 
-	/* The kernel doesn't support Ad-Hoc WPA connections well at this time,
+	/* FIXME: The kernel doesn't support Ad-Hoc WPA connections well at this time,
 	 * and turns them into open networks.  It's been this way since at least
 	 * 2.6.30 or so; until that's fixed, disable WPA-protected Ad-Hoc networks.
 	 */
-	if (is_adhoc_wpa (connection)) {
+	if (nm_utils_connection_is_adhoc_wpa (connection)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                             "WPA Ad-Hoc disabled due to kernel bugs");
