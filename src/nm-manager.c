@@ -7605,19 +7605,18 @@ dispose (GObject *object)
 {
 	NMManager *self = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	CList *iter, *iter_safe;
-	NMActiveConnection *ac, *ac_safe;
+	CList *iter;
 
 	nm_assert (c_list_is_empty (&priv->async_op_lst_head));
 
 	g_signal_handlers_disconnect_by_func (priv->platform,
 	                                      G_CALLBACK (platform_link_cb),
 	                                      self);
-	c_list_for_each_safe (iter, iter_safe, &priv->link_cb_lst) {
+	while ((iter = c_list_first (&priv->link_cb_lst))) {
 		PlatformLinkCbData *data = c_list_entry (iter, PlatformLinkCbData, lst);
 
 		g_source_remove (data->idle_id);
-		c_list_unlink_stale (iter);
+		c_list_unlink_stale (&data->lst);
 		g_slice_free (PlatformLinkCbData, data);
 	}
 
@@ -7646,8 +7645,9 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&priv->ac_cleanup_id);
 
-	c_list_for_each_entry_safe (ac, ac_safe, &priv->active_connections_lst_head, active_connections_lst)
-		active_connection_remove (self, ac);
+	while ((iter = c_list_first (&priv->active_connections_lst_head)))
+		active_connection_remove (self, c_list_entry (iter, NMActiveConnection, active_connections_lst));
+
 	nm_assert (c_list_is_empty (&priv->active_connections_lst_head));
 	g_clear_object (&priv->primary_connection);
 	g_clear_object (&priv->activating_connection);
