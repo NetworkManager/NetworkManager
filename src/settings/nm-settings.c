@@ -1865,26 +1865,19 @@ get_property (GObject *object, guint prop_id,
 {
 	NMSettings *self = NM_SETTINGS (object);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	const GSList *specs, *iter;
-	guint i;
-	char **strvs;
 	const char **strv;
 
 	switch (prop_id) {
 	case PROP_UNMANAGED_SPECS:
-		specs = nm_settings_get_unmanaged_specs (self);
-		strvs = g_new (char *, g_slist_length ((GSList *) specs) + 1);
-		i = 0;
-		for (iter = specs; iter; iter = iter->next)
-			strvs[i++] = g_strdup (iter->data);
-		strvs[i] = NULL;
-		g_value_take_boxed (value, strvs);
+		g_value_take_boxed (value,
+		                    _nm_utils_slist_to_strv (nm_settings_get_unmanaged_specs (self),
+		                                             TRUE));
 		break;
 	case PROP_HOSTNAME:
 		g_value_set_string (value,
-		                    priv->hostname_manager
-		                      ? nm_hostname_manager_get_hostname (priv->hostname_manager)
-		                      : NULL);
+		                      priv->hostname_manager
+		                    ? nm_hostname_manager_get_hostname (priv->hostname_manager)
+		                    : NULL);
 		break;
 	case PROP_CAN_MODIFY:
 		g_value_set_boolean (value, TRUE);
