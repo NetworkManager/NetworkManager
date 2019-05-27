@@ -436,8 +436,6 @@ main (int argc, char *argv[])
 	                       nm_manager_dbus_set_property_handle,
 	                       manager);
 
-	nm_dispatcher_init ();
-
 	g_signal_connect (manager, NM_MANAGER_CONFIGURE_QUIT, G_CALLBACK (manager_configure_quit), config);
 
 	if (!nm_manager_start (manager, &error)) {

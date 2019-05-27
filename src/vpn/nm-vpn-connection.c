@@ -103,7 +103,7 @@ typedef struct {
 	char *username;
 
 	VpnState vpn_state;
-	guint dispatcher_id;
+	NMDispatcherCallId *dispatcher_id;
 	NMActiveConnectionStateReason failure_reason;
 
 	NMVpnServiceState service_state;
@@ -418,22 +418,28 @@ vpn_cleanup (NMVpnConnection *self, NMDevice *parent_dev)
 }
 
 static void
-dispatcher_pre_down_done (guint call_id, gpointer user_data)
+dispatcher_pre_down_done (NMDispatcherCallId *call_id, gpointer user_data)
 {
 	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
-	priv->dispatcher_id = 0;
+	nm_assert (call_id);
+	nm_assert (priv->dispatcher_id == call_id);
+
+	priv->dispatcher_id = NULL;
 	_set_vpn_state (self, STATE_DISCONNECTED, NM_ACTIVE_CONNECTION_STATE_REASON_USER_DISCONNECTED, FALSE);
 }
 
 static void
-dispatcher_pre_up_done (guint call_id, gpointer user_data)
+dispatcher_pre_up_done (NMDispatcherCallId *call_id, gpointer user_data)
 {
 	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
-	priv->dispatcher_id = 0;
+	nm_assert (call_id);
+	nm_assert (priv->dispatcher_id == call_id);
+
+	priv->dispatcher_id = NULL;
 	_set_vpn_state (self, STATE_ACTIVATED, NM_ACTIVE_CONNECTION_STATE_REASON_NONE, FALSE);
 }
 
@@ -442,10 +448,8 @@ dispatcher_cleanup (NMVpnConnection *self)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
-	if (priv->dispatcher_id) {
-		nm_dispatcher_call_cancel (priv->dispatcher_id);
-		priv->dispatcher_id = 0;
-	}
+	if (priv->dispatcher_id)
+		nm_dispatcher_call_cancel (g_steal_pointer (&priv->dispatcher_id));
 }
 
 static void

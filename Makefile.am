@@ -3885,6 +3885,25 @@ EXTRA_DIST += \
 # dispatcher
 ###############################################################################
 
+dispatcher_nmdbus_dispatcher_sources = \
+	dispatcher/nmdbus-dispatcher.h \
+	dispatcher/nmdbus-dispatcher.c \
+	$(NULL)
+
+dispatcher/nmdbus-dispatcher.h: dispatcher/nm-dispatcher.xml
+	@$(MKDIR_P) dispatcher/
+	$(AM_V_GEN) gdbus-codegen \
+		--generate-c-code $(basename $@) \
+		--c-namespace NMDBus \
+		--interface-prefix org.freedesktop \
+		$<
+
+dispatcher/nmdbus-dispatcher.c: dispatcher/nmdbus-dispatcher.h
+
+CLEANFILES += $(dispatcher_nmdbus_dispatcher_sources)
+
+###############################################################################
+
 libexec_PROGRAMS += dispatcher/nm-dispatcher
 
 noinst_LTLIBRARIES += \
@@ -3905,25 +3924,6 @@ dispatcher_cppflags = \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
 	$(NULL)
 
-
-dispatcher_nmdbus_dispatcher_sources = \
-	dispatcher/nmdbus-dispatcher.h \
-	dispatcher/nmdbus-dispatcher.c
-
-dispatcher/nmdbus-dispatcher.h: dispatcher/nm-dispatcher.xml
-	@$(MKDIR_P) dispatcher/
-	$(AM_V_GEN) gdbus-codegen \
-		--generate-c-code $(basename $@) \
-		--c-namespace NMDBus \
-		--interface-prefix org.freedesktop \
-		$<
-
-dispatcher/nmdbus-dispatcher.c: dispatcher/nmdbus-dispatcher.h
-
-$(dispatcher_nm_dispatcher_OBJECTS): $(dispatcher_nmdbus_dispatcher_sources)
-
-CLEANFILES += $(dispatcher_nmdbus_dispatcher_sources)
-
 dispatcher_libnm_dispatcher_core_la_SOURCES = \
 	dispatcher/nm-dispatcher-utils.c \
 	dispatcher/nm-dispatcher-utils.h \
@@ -3938,8 +3938,6 @@ dispatcher_libnm_dispatcher_core_la_LIBADD = \
 dispatcher_nm_dispatcher_SOURCES = \
 	dispatcher/nm-dispatcher.c \
 	$(NULL)
-
-nodist_dispatcher_nm_dispatcher_SOURCES = $(dispatcher_nmdbus_dispatcher_sources)
 
 dispatcher_nm_dispatcher_CPPFLAGS = $(dispatcher_cppflags)
 
@@ -3998,11 +3996,20 @@ dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
 	-I$(srcdir)/dispatcher \
+	-I$(builddir)/dispatcher \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
+
+dispatcher_tests_test_dispatcher_envp_SOURCES = \
+	dispatcher/tests/test-dispatcher-envp.c \
+	$(NULL)
+
+nodist_dispatcher_tests_test_dispatcher_envp_SOURCES = $(dispatcher_nmdbus_dispatcher_sources)
+
+$(dispatcher_tests_test_dispatcher_envp_OBJECTS): $(dispatcher_nmdbus_dispatcher_sources)
 
 dispatcher_tests_test_dispatcher_envp_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS) \

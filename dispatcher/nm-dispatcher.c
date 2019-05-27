@@ -34,74 +34,24 @@
 #include "nm-libnm-core-aux/nm-dispatcher-api.h"
 #include "nm-dispatcher-utils.h"
 
-#include "nmdbus-dispatcher.h"
-
-static GMainLoop *loop = NULL;
-static gboolean debug = FALSE;
-static gboolean persist = FALSE;
-static guint quit_id;
-static guint request_id_counter = 0;
+/*****************************************************************************/
 
 typedef struct Request Request;
 
-typedef struct {
-	GObject parent;
-
-	/* Private data */
-	NMDBusDispatcher *dbus_dispatcher;
+static struct {
+	GDBusConnection *dbus_connection;
+	GMainLoop *loop;
+	gboolean debug;
+	gboolean persist;
+	guint quit_id;
+	guint request_id_counter;
+	gboolean ever_acquired_name;
+	bool exit_with_failure;
 
 	Request *current_request;
 	GQueue *requests_waiting;
 	int num_requests_pending;
-} Handler;
-
-typedef struct {
-  GObjectClass parent;
-} HandlerClass;
-
-GType handler_get_type (void);
-
-#define HANDLER_TYPE         (handler_get_type ())
-#define HANDLER(object)      (G_TYPE_CHECK_INSTANCE_CAST ((object), HANDLER_TYPE, Handler))
-#define HANDLER_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), HANDLER_TYPE, HandlerClass))
-
-G_DEFINE_TYPE(Handler, handler, G_TYPE_OBJECT)
-
-static gboolean
-handle_action (NMDBusDispatcher *dbus_dispatcher,
-               GDBusMethodInvocation *context,
-               const char *str_action,
-               GVariant *connection_dict,
-               GVariant *connection_props,
-               GVariant *device_props,
-               GVariant *device_proxy_props,
-               GVariant *device_ip4_props,
-               GVariant *device_ip6_props,
-               GVariant *device_dhcp4_props,
-               GVariant *device_dhcp6_props,
-               const char *connectivity_state,
-               const char *vpn_ip_iface,
-               GVariant *vpn_proxy_props,
-               GVariant *vpn_ip4_props,
-               GVariant *vpn_ip6_props,
-               gboolean request_debug,
-               gpointer user_data);
-
-static void
-handler_init (Handler *h)
-{
-	h->requests_waiting = g_queue_new ();
-	h->dbus_dispatcher = nmdbus_dispatcher_skeleton_new ();
-	g_signal_connect (h->dbus_dispatcher, "handle-action",
-	                  G_CALLBACK (handle_action), h);
-}
-
-static void
-handler_class_init (HandlerClass *h_class)
-{
-}
-
-static gboolean dispatch_one_script (Request *request);
+} gl;
 
 typedef struct {
 	Request *request;
@@ -117,8 +67,6 @@ typedef struct {
 } ScriptInfo;
 
 struct Request {
-	Handler *handler;
-
 	guint request_id;
 
 	GDBusMethodInvocation *context;
@@ -135,52 +83,86 @@ struct Request {
 
 /*****************************************************************************/
 
-#define __LOG_print(print_cmd, _request, _script, ...) \
+#define __LOG_print(print_cmd, ...) \
 	G_STMT_START { \
-		nm_assert ((_request) && (!(_script) || (_script)->request == (_request))); \
-		print_cmd ("req:%u '%s'%s%s%s%s%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-		           (_request)->request_id, \
-		           (_request)->action, \
-		           (_request)->iface ? " [" : "", \
-		           (_request)->iface ?: "", \
-		           (_request)->iface ? "]" : "", \
-		           (_script) ? ", \"" : "", \
-		           (_script) ? (_script)->script : "", \
-		           (_script) ? "\"" : "" \
-		           _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
-	} G_STMT_END
-
-#define _LOG(_request, _script, log_always, print_cmd, ...) \
-	G_STMT_START { \
-		const Request *__request = (_request); \
-		const ScriptInfo *__script = (_script); \
-		\
-		if (!__request) \
-			__request = __script->request; \
-		nm_assert (__request && (!__script || __script->request == __request)); \
-		if ((log_always) || _LOG_R_D_enabled (__request)) { \
-			if (FALSE) { \
-				/* g_message() alone does not warn about invalid format. Add a dummy printf() statement to
-				 * get a compiler warning about wrong format. */ \
-				__LOG_print (printf, __request, __script, __VA_ARGS__); \
-			} \
-			__LOG_print (print_cmd, __request, __script, __VA_ARGS__); \
+		if (FALSE) { \
+			/* g_message() alone does not warn about invalid format. Add a dummy printf() statement to
+			 * get a compiler warning about wrong format. */ \
+			printf (__VA_ARGS__); \
 		} \
+		print_cmd (__VA_ARGS__); \
 	} G_STMT_END
 
-static gboolean
-_LOG_R_D_enabled (const Request *request)
-{
-	return request->debug;
-}
+#define __LOG_print_R(print_cmd, _request, ...) \
+	G_STMT_START { \
+		__LOG_print (print_cmd, \
+		             "req:%u '%s'%s%s%s" _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+		             (_request)->request_id, \
+		             (_request)->action, \
+		             (_request)->iface ? " [" : "", \
+		             (_request)->iface ?: "", \
+		             (_request)->iface ? "]" : "" \
+		             _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+	} G_STMT_END
 
-#define _LOG_R_D(_request, ...) _LOG(_request, NULL, FALSE, g_debug,   __VA_ARGS__)
-#define _LOG_R_I(_request, ...) _LOG(_request, NULL, TRUE,  g_info,    __VA_ARGS__)
-#define _LOG_R_W(_request, ...) _LOG(_request, NULL, TRUE,  g_warning, __VA_ARGS__)
+#define __LOG_print_S(print_cmd, _request, _script, ...) \
+	G_STMT_START { \
+		__LOG_print_R (print_cmd, \
+		               (_request), \
+		               "%s%s%s" _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+		               (_script) ? ", \"" : "", \
+		               (_script) ? (_script)->script : "", \
+		               (_script) ? "\"" : "" \
+		               _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+	} G_STMT_END
 
-#define _LOG_S_D(_script, ...)  _LOG(NULL, _script,  FALSE, g_debug,   __VA_ARGS__)
-#define _LOG_S_I(_script, ...)  _LOG(NULL, _script,  TRUE,  g_info,    __VA_ARGS__)
-#define _LOG_S_W(_script, ...)  _LOG(NULL, _script,  TRUE,  g_warning, __VA_ARGS__)
+#define _LOG_X_(enabled_cmd, print_cmd, ...) \
+	G_STMT_START { \
+		if (enabled_cmd) \
+			__LOG_print (print_cmd, __VA_ARGS__); \
+	} G_STMT_END
+
+#define _LOG_R_(enabled_cmd, x_request, print_cmd, ...) \
+	G_STMT_START { \
+		const Request *const _request = (x_request); \
+		\
+		nm_assert (_request); \
+		if (enabled_cmd) \
+			__LOG_print_R (print_cmd, _request, ": "__VA_ARGS__); \
+	} G_STMT_END
+
+#define _LOG_S_(enabled_cmd, x_script, print_cmd, ...) \
+	G_STMT_START { \
+		const ScriptInfo *const _script = (x_script); \
+		const Request *const _request = _script ? _script->request : NULL; \
+		\
+		nm_assert (_script && _request); \
+		if (enabled_cmd) \
+			__LOG_print_S (print_cmd, _request, _script, ": "__VA_ARGS__); \
+	} G_STMT_END
+
+#define _LOG_X_D_enabled() (gl.debug)
+#define _LOG_X_T_enabled() _LOG_X_D_enabled ()
+
+#define _LOG_R_D_enabled(request) (_NM_ENSURE_TYPE_CONST (Request *, request)->debug)
+#define _LOG_R_T_enabled(request) _LOG_R_D_enabled (request)
+
+#define _LOG_X_T(...)          _LOG_X_ (_LOG_X_T_enabled (),                  g_debug,   __VA_ARGS__)
+#define _LOG_X_D(...)          _LOG_X_ (_LOG_X_D_enabled (),                  g_info,    __VA_ARGS__)
+#define _LOG_X_I(...)          _LOG_X_ (TRUE,                                 g_message, __VA_ARGS__)
+#define _LOG_X_W(...)          _LOG_X_ (TRUE,                                 g_warning, __VA_ARGS__)
+
+#define _LOG_R_T(request, ...) _LOG_R_ (_LOG_R_T_enabled (_request), request, g_debug,   __VA_ARGS__)
+#define _LOG_R_D(request, ...) _LOG_R_ (_LOG_R_D_enabled (_request), request, g_info,    __VA_ARGS__)
+#define _LOG_R_W(request, ...) _LOG_R_ (TRUE,                        request, g_warning, __VA_ARGS__)
+
+#define _LOG_S_T(script, ...)  _LOG_S_ (_LOG_R_T_enabled (_request), script,  g_debug,   __VA_ARGS__)
+#define _LOG_S_D(script, ...)  _LOG_S_ (_LOG_R_D_enabled (_request), script,  g_info,    __VA_ARGS__)
+#define _LOG_S_W(script, ...)  _LOG_S_ (TRUE,                        script,  g_warning, __VA_ARGS__)
+
+/*****************************************************************************/
+
+static gboolean dispatch_one_script (Request *request);
 
 /*****************************************************************************/
 
@@ -211,23 +193,23 @@ request_free (Request *request)
 static gboolean
 quit_timeout_cb (gpointer user_data)
 {
-	g_main_loop_quit (loop);
-	return FALSE;
+	gl.quit_id = 0;
+	g_main_loop_quit (gl.loop);
+	return G_SOURCE_REMOVE;
 }
 
 static void
 quit_timeout_reschedule (void)
 {
-	if (!persist) {
-		nm_clear_g_source (&quit_id);
-		quit_id = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
+	if (!gl.persist) {
+		nm_clear_g_source (&gl.quit_id);
+		gl.quit_id = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
 	}
 }
 
 /**
  * next_request:
  *
- * @h: the handler
  * @request: (allow-none): the request to set as next. If %NULL, dequeue the next
  * waiting request. Otherwise, try to set the given request.
  *
@@ -240,27 +222,27 @@ quit_timeout_reschedule (void)
  * a new request as current.
  */
 static gboolean
-next_request (Handler *h, Request *request)
+next_request (Request *request)
 {
 	if (request) {
-		if (h->current_request) {
-			g_queue_push_tail (h->requests_waiting, request);
+		if (gl.current_request) {
+			g_queue_push_tail (gl.requests_waiting, request);
 			return FALSE;
 		}
 	} else {
 		/* when calling next_request() without explicit @request, we always
 		 * forcefully clear @current_request. That one is certainly
 		 * handled already. */
-		h->current_request = NULL;
+		gl.current_request = NULL;
 
-		request = g_queue_pop_head (h->requests_waiting);
+		request = g_queue_pop_head (gl.requests_waiting);
 		if (!request)
 			return FALSE;
 	}
 
-	_LOG_R_I (request, "start running ordered scripts...");
+	_LOG_R_D (request, "start running ordered scripts...");
 
-	h->current_request = request;
+	gl.current_request = request;
 
 	return TRUE;
 }
@@ -280,7 +262,6 @@ complete_request (Request *request)
 	GVariantBuilder results;
 	GVariant *ret;
 	guint i;
-	Handler *handler = request->handler;
 
 	nm_assert (request);
 
@@ -301,16 +282,16 @@ complete_request (Request *request)
 	ret = g_variant_new ("(a(sus))", &results);
 	g_dbus_method_invocation_return_value (request->context, ret);
 
-	_LOG_R_D (request, "completed (%u scripts)", request->scripts->len);
+	_LOG_R_T (request, "completed (%u scripts)", request->scripts->len);
 
-	if (handler->current_request == request)
-		handler->current_request = NULL;
+	if (gl.current_request == request)
+		gl.current_request = NULL;
 
 	request_free (request);
 
-	g_assert_cmpuint (handler->num_requests_pending, >, 0);
-	if (--handler->num_requests_pending <= 0) {
-		nm_assert (!handler->current_request && !g_queue_peek_head (handler->requests_waiting));
+	g_assert_cmpuint (gl.num_requests_pending, >, 0);
+	if (--gl.num_requests_pending <= 0) {
+		nm_assert (!gl.current_request && !g_queue_peek_head (gl.requests_waiting));
 		quit_timeout_reschedule ();
 	}
 }
@@ -318,7 +299,6 @@ complete_request (Request *request)
 static void
 complete_script (ScriptInfo *script)
 {
-	Handler *handler;
 	Request *request;
 	gboolean wait = script->wait;
 
@@ -331,9 +311,7 @@ complete_script (ScriptInfo *script)
 			return;
 	}
 
-	handler = request->handler;
-
-	nm_assert (!wait || handler->current_request == request);
+	nm_assert (!wait || gl.current_request == request);
 
 	/* Try to complete the request. @request will be possibly free'd,
 	 * making @script and @request a dangling pointer. */
@@ -346,13 +324,13 @@ complete_script (ScriptInfo *script)
 		 * requests. However, if this was the last "no-wait" script and
 		 * there are "wait" scripts ready to run, launch them.
 		 */
-		if (   handler->current_request == request
-		    && handler->current_request->num_scripts_nowait == 0) {
+		if (   gl.current_request == request
+		    && gl.current_request->num_scripts_nowait == 0) {
 
-			if (dispatch_one_script (handler->current_request))
+			if (dispatch_one_script (gl.current_request))
 				return;
 
-			complete_request (handler->current_request);
+			complete_request (gl.current_request);
 		} else
 			return;
 	} else {
@@ -365,11 +343,11 @@ complete_script (ScriptInfo *script)
 		 * processed because only requests with "wait" scripts can become
 		 * @current_request. As there can only be one "wait" script running
 		 * at any time, it means complete_request() above completed @request. */
-		nm_assert (!handler->current_request);
+		nm_assert (!gl.current_request);
 	}
 
-	while (next_request (handler, NULL)) {
-		request = handler->current_request;
+	while (next_request (NULL)) {
+		request = gl.current_request;
 
 		if (dispatch_one_script (request))
 			return;
@@ -418,7 +396,7 @@ script_watch_cb (GPid pid, int status, gpointer user_data)
 	}
 
 	if (script->result == DISPATCH_RESULT_SUCCESS) {
-		_LOG_S_D (script, "complete");
+		_LOG_S_T (script, "complete");
 	} else {
 		script->result = DISPATCH_RESULT_FAILED;
 		_LOG_S_W (script, "complete: failed with %s", script->error);
@@ -533,7 +511,7 @@ script_dispatch (ScriptInfo *script)
 	argv[2] = request->action;
 	argv[3] = NULL;
 
-	_LOG_S_D (script, "run script%s", script->wait ? "" : " (no-wait)");
+	_LOG_S_T (script, "run script%s", script->wait ? "" : " (no-wait)");
 
 	if (g_spawn_async ("/", argv, request->envp, G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &script->pid, &error)) {
 		script->watch_id = g_child_watch_add (script->pid, (GChildWatchFunc) script_watch_cb, script);
@@ -586,7 +564,7 @@ _compare_basenames (gconstpointer a, gconstpointer b)
 }
 
 static void
-_find_scripts (GHashTable *scripts, const char *base, const char *subdir)
+_find_scripts (Request *request, GHashTable *scripts, const char *base, const char *subdir)
 {
 	const char *filename;
 	gs_free char *dirname = NULL;
@@ -596,8 +574,10 @@ _find_scripts (GHashTable *scripts, const char *base, const char *subdir)
 	dirname = g_build_filename (base, "dispatcher.d", subdir, NULL);
 
 	if (!(dir = g_dir_open (dirname, 0, &error))) {
-		g_message ("find-scripts: Failed to open dispatcher directory '%s': %s",
-		           dirname, error->message);
+		if (!g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
+			_LOG_R_W (request, "find-scripts: Failed to open dispatcher directory '%s': %s",
+			          dirname, error->message);
+		}
 		g_error_free (error);
 		return;
 	}
@@ -615,26 +595,28 @@ _find_scripts (GHashTable *scripts, const char *base, const char *subdir)
 }
 
 static GSList *
-find_scripts (const char *str_action)
+find_scripts (Request *request)
 {
 	gs_unref_hashtable GHashTable *scripts = NULL;
 	GSList *script_list = NULL;
 	GHashTableIter iter;
-	const char *subdir = NULL;
+	const char *subdir;
 	char *path;
 	char *filename;
 
-	if (   strcmp (str_action, NMD_ACTION_PRE_UP) == 0
-	    || strcmp (str_action, NMD_ACTION_VPN_PRE_UP) == 0)
+	if (NM_IN_STRSET (request->action, NMD_ACTION_PRE_UP,
+	                                   NMD_ACTION_VPN_PRE_UP))
 		subdir = "pre-up.d";
-	else if (   strcmp (str_action, NMD_ACTION_PRE_DOWN) == 0
-	         || strcmp (str_action, NMD_ACTION_VPN_PRE_DOWN) == 0)
+	else if (NM_IN_STRSET (request->action, NMD_ACTION_PRE_DOWN,
+	                                        NMD_ACTION_VPN_PRE_DOWN))
 		subdir = "pre-down.d";
+	else
+		subdir = NULL;
 
 	scripts = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 
-	_find_scripts (scripts, NMLIBDIR, subdir);
-	_find_scripts (scripts, NMCONFDIR, subdir);
+	_find_scripts (request, scripts, NMLIBDIR, subdir);
+	_find_scripts (request, scripts, NMCONFDIR, subdir);
 
 	g_hash_table_iter_init (&iter, scripts);
 	while (g_hash_table_iter_next (&iter, (gpointer *) &filename, (gpointer *) &path)) {
@@ -652,11 +634,11 @@ find_scripts (const char *str_action)
 
 		err = stat (path, &st);
 		if (err)
-			g_warning ("find-scripts: Failed to stat '%s': %d", path, err);
+			_LOG_R_W (request, "find-scripts: Failed to stat '%s': %d", path, err);
 		else if (!S_ISREG (st.st_mode))
 			; /* silently skip. */
 		else if (!check_permissions (&st, &err_msg))
-			g_warning ("find-scripts: Cannot execute '%s': %s", path, err_msg);
+			_LOG_R_W (request, "find-scripts: Cannot execute '%s': %s", path, err_msg);
 		else {
 			/* success */
 			script_list = g_slist_prepend (script_list, g_strdup (path));
@@ -695,27 +677,25 @@ script_must_wait (const char *path)
 	return TRUE;
 }
 
-static gboolean
-handle_action (NMDBusDispatcher *dbus_dispatcher,
-               GDBusMethodInvocation *context,
-               const char *str_action,
-               GVariant *connection_dict,
-               GVariant *connection_props,
-               GVariant *device_props,
-               GVariant *device_proxy_props,
-               GVariant *device_ip4_props,
-               GVariant *device_ip6_props,
-               GVariant *device_dhcp4_props,
-               GVariant *device_dhcp6_props,
-               const char *connectivity_state,
-               const char *vpn_ip_iface,
-               GVariant *vpn_proxy_props,
-               GVariant *vpn_ip4_props,
-               GVariant *vpn_ip6_props,
-               gboolean request_debug,
-               gpointer user_data)
+static void
+_method_call_action (GDBusMethodInvocation *invocation,
+                     GVariant *parameters)
 {
-	Handler *h = user_data;
+	const char *action;
+	gs_unref_variant GVariant *connection = NULL;
+	gs_unref_variant GVariant *connection_properties = NULL;
+	gs_unref_variant GVariant *device_properties = NULL;
+	gs_unref_variant GVariant *device_proxy_properties = NULL;
+	gs_unref_variant GVariant *device_ip4_config = NULL;
+	gs_unref_variant GVariant *device_ip6_config = NULL;
+	gs_unref_variant GVariant *device_dhcp4_config = NULL;
+	gs_unref_variant GVariant *device_dhcp6_config = NULL;
+	const char *connectivity_state;
+	const char *vpn_ip_iface;
+	gs_unref_variant GVariant *vpn_proxy_properties = NULL;
+	gs_unref_variant GVariant *vpn_ip4_config = NULL;
+	gs_unref_variant GVariant *vpn_ip6_config = NULL;
+	gboolean debug;
 	GSList *sorted_scripts = NULL;
 	GSList *iter;
 	Request *request;
@@ -723,33 +703,65 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	guint i, num_nowait = 0;
 	const char *error_message = NULL;
 
-	sorted_scripts = find_scripts (str_action);
+	g_variant_get (parameters, "("
+	               "&s"         /* action */
+	               "@a{sa{sv}}" /* connection */
+	               "@a{sv}"     /* connection_properties */
+	               "@a{sv}"     /* device_properties */
+	               "@a{sv}"     /* device_proxy_properties */
+	               "@a{sv}"     /* device_ip4_config */
+	               "@a{sv}"     /* device_ip6_config */
+	               "@a{sv}"     /* device_dhcp4_config */
+	               "@a{sv}"     /* device_dhcp6_config */
+	               "&s"         /* connectivity_state */
+	               "&s"         /* vpn_ip_iface */
+	               "@a{sv}"     /* vpn_proxy_properties */
+	               "@a{sv}"     /* vpn_ip4_config */
+	               "@a{sv}"     /* vpn_ip6_config */
+	               "b"          /* debug */
+	               ")",
+	               &action,
+	               &connection,
+	               &connection_properties,
+	               &device_properties,
+	               &device_proxy_properties,
+	               &device_ip4_config,
+	               &device_ip6_config,
+	               &device_dhcp4_config,
+	               &device_dhcp6_config,
+	               &connectivity_state,
+	               &vpn_ip_iface,
+	               &vpn_proxy_properties,
+	               &vpn_ip4_config,
+	               &vpn_ip6_config,
+	               &debug);
 
 	request = g_slice_new0 (Request);
-	request->request_id = ++request_id_counter;
-	request->handler = h;
-	request->debug = request_debug || debug;
-	request->context = context;
-	request->action = g_strdup (str_action);
+	request->request_id = ++gl.request_id_counter;
+	request->debug = debug || gl.debug;
+	request->context = invocation;
+	request->action = g_strdup (action);
 
-	request->envp = nm_dispatcher_utils_construct_envp (str_action,
-	                                                    connection_dict,
-	                                                    connection_props,
-	                                                    device_props,
-	                                                    device_proxy_props,
-	                                                    device_ip4_props,
-	                                                    device_ip6_props,
-	                                                    device_dhcp4_props,
-	                                                    device_dhcp6_props,
+	request->envp = nm_dispatcher_utils_construct_envp (action,
+	                                                    connection,
+	                                                    connection_properties,
+	                                                    device_properties,
+	                                                    device_proxy_properties,
+	                                                    device_ip4_config,
+	                                                    device_ip6_config,
+	                                                    device_dhcp4_config,
+	                                                    device_dhcp6_config,
 	                                                    connectivity_state,
 	                                                    vpn_ip_iface,
-	                                                    vpn_proxy_props,
-	                                                    vpn_ip4_props,
-	                                                    vpn_ip6_props,
+	                                                    vpn_proxy_properties,
+	                                                    vpn_ip4_config,
+	                                                    vpn_ip6_config,
 	                                                    &request->iface,
 	                                                    &error_message);
 
 	request->scripts = g_ptr_array_new_full (5, script_info_free);
+
+	sorted_scripts = find_scripts (request);
 	for (iter = sorted_scripts; iter; iter = g_slist_next (iter)) {
 		ScriptInfo *s;
 
@@ -761,11 +773,11 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	}
 	g_slist_free (sorted_scripts);
 
-	_LOG_R_I (request, "new request (%u scripts)", request->scripts->len);
-	if (   _LOG_R_D_enabled (request)
+	_LOG_R_D (request, "new request (%u scripts)", request->scripts->len);
+	if (   _LOG_R_T_enabled (request)
 	    && request->envp) {
 		for (p = request->envp; *p; p++)
-			_LOG_R_D (request, "environment: %s", *p);
+			_LOG_R_T (request, "environment: %s", *p);
 	}
 
 	if (error_message || request->scripts->len == 0) {
@@ -774,18 +786,18 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 		if (error_message)
 			_LOG_R_W (request, "completed: invalid request: %s", error_message);
 		else
-			_LOG_R_I (request, "completed: no scripts");
+			_LOG_R_D (request, "completed: no scripts");
 
 		results = g_variant_new_array (G_VARIANT_TYPE ("(sus)"), NULL, 0);
-		g_dbus_method_invocation_return_value (context, g_variant_new ("(@a(sus))", results));
+		g_dbus_method_invocation_return_value (invocation, g_variant_new ("(@a(sus))", results));
 		request->num_scripts_done = request->scripts->len;
 		request_free (request);
-		return TRUE;
+		return;
 	}
 
-	nm_clear_g_source (&quit_id);
+	nm_clear_g_source (&gl.quit_id);
 
-	h->num_requests_pending++;
+	gl.num_requests_pending++;
 
 	for (i = 0; i < request->scripts->len; i++) {
 		ScriptInfo *s = g_ptr_array_index (request->scripts, i);
@@ -800,8 +812,8 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 		/* The request has at least one wait script.
 		 * Try next_request() to schedule the request for
 		 * execution. This either enqueues the request or
-		 * sets it as h->current_request. */
-		if (next_request (h, request)) {
+		 * sets it as gl.current_request. */
+		if (next_request (request)) {
 			/* @request is now @current_request. Go ahead and
 			 * schedule the first wait script. */
 			if (!dispatch_one_script (request)) {
@@ -809,7 +821,7 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 				 * request. Try complete_request(). */
 				complete_request (request);
 
-				if (next_request (h, NULL)) {
+				if (next_request (NULL)) {
 					/* As @request was successfully scheduled as next_request(), there is no
 					 * other request in queue that can be scheduled afterwards. Assert against
 					 * that, but call next_request() to clear current_request. */
@@ -822,24 +834,20 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 		 * the request right away (we might have failed to schedule any
 		 * of the scripts). It will be either completed now, or later
 		 * when the pending scripts return.
-		 * We don't enqueue it to h->requests_waiting.
+		 * We don't enqueue it to gl.requests_waiting.
 		 * There is no need to handle next_request(), because @request is
 		 * not the current request anyway and does not interfere with requests
 		 * that have any "wait" scripts. */
 		complete_request (request);
 	}
-
-	return TRUE;
 }
-
-static gboolean ever_acquired_name = FALSE;
 
 static void
 on_name_acquired (GDBusConnection *connection,
                   const char      *name,
                   gpointer         user_data)
 {
-	ever_acquired_name = TRUE;
+	gl.ever_acquired_name = TRUE;
 }
 
 static void
@@ -848,21 +856,78 @@ on_name_lost (GDBusConnection *connection,
               gpointer         user_data)
 {
 	if (!connection) {
-		if (!ever_acquired_name) {
-			g_warning ("Could not get the system bus.  Make sure the message bus daemon is running!");
-			exit (1);
+		if (!gl.ever_acquired_name) {
+			_LOG_X_W ("Could not get the system bus.  Make sure the message bus daemon is running!");
+			gl.exit_with_failure = TRUE;
 		} else {
-			g_message ("System bus stopped. Exiting");
-			exit (0);
+			_LOG_X_I ("System bus stopped. Exiting");
 		}
-	} else if (!ever_acquired_name) {
-		g_warning ("Could not acquire the " NM_DISPATCHER_DBUS_SERVICE " service.");
-		exit (1);
-	} else {
-		g_message ("Lost the " NM_DISPATCHER_DBUS_SERVICE " name. Exiting");
-		exit (0);
-	}
+	} else if (!gl.ever_acquired_name) {
+		_LOG_X_W ("Could not acquire the " NM_DISPATCHER_DBUS_SERVICE " service.");
+		gl.exit_with_failure = TRUE;
+	} else
+		_LOG_X_I ("Lost the " NM_DISPATCHER_DBUS_SERVICE " name. Exiting");
+
+	g_main_loop_quit (gl.loop);
 }
+
+static void
+_method_call (GDBusConnection *connection,
+              const char *sender,
+              const char *object_path,
+              const char *interface_name,
+              const char *method_name,
+              GVariant *parameters,
+              GDBusMethodInvocation *invocation,
+              gpointer user_data)
+{
+	if (nm_streq (interface_name, NM_DISPATCHER_DBUS_INTERFACE)) {
+		if (nm_streq (method_name, "Action")) {
+			_method_call_action (invocation, parameters);
+			return;
+		}
+	}
+	g_dbus_method_invocation_return_error (invocation,
+	                                       G_DBUS_ERROR,
+	                                       G_DBUS_ERROR_UNKNOWN_METHOD,
+	                                       "Unknown method %s",
+	                                       method_name);
+}
+
+static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO (
+	NM_DISPATCHER_DBUS_INTERFACE,
+	.methods = NM_DEFINE_GDBUS_METHOD_INFOS (
+		NM_DEFINE_GDBUS_METHOD_INFO (
+			"Action",
+			.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+				NM_DEFINE_GDBUS_ARG_INFO ("action", "s"),
+				NM_DEFINE_GDBUS_ARG_INFO ("connection", "a{sa{sv}}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("connection_properties", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("device_properties", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("device_proxy_properties", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("device_ip4_config", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("device_ip6_config", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("device_dhcp4_config", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("device_dhcp6_config", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("connectivity_state", "s"),
+				NM_DEFINE_GDBUS_ARG_INFO ("vpn_ip_iface", "s"),
+				NM_DEFINE_GDBUS_ARG_INFO ("vpn_proxy_properties", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("vpn_ip4_config", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("vpn_ip6_config", "a{sv}"),
+				NM_DEFINE_GDBUS_ARG_INFO ("debug", "b"),
+			),
+			.out_args = NM_DEFINE_GDBUS_ARG_INFOS (
+				NM_DEFINE_GDBUS_ARG_INFO ("results", "a(sus)"),
+			),
+		),
+	),
+);
+
+static const GDBusInterfaceVTable interface_vtable = {
+	.method_call = _method_call,
+};
+
+/*****************************************************************************/
 
 static void
 log_handler (const char *log_domain,
@@ -918,42 +983,55 @@ signal_handler (gpointer user_data)
 {
 	int signo = GPOINTER_TO_INT (user_data);
 
-	g_message ("Caught signal %d, shutting down...", signo);
-	g_main_loop_quit (loop);
+	_LOG_X_I ("Caught signal %d, shutting down...", signo);
+	g_main_loop_quit (gl.loop);
 
-	return G_SOURCE_REMOVE;
+	return G_SOURCE_CONTINUE;
 }
 
-int
-main (int argc, char **argv)
+static gboolean
+parse_command_line (int *p_argc,
+                    char ***p_argv,
+                    GError **error)
 {
 	GOptionContext *opt_ctx;
-	GError *error = NULL;
-	GDBusConnection *bus;
-	Handler *handler;
-
 	GOptionEntry entries[] = {
-		{ "debug", 0, 0, G_OPTION_ARG_NONE, &debug, "Output to console rather than syslog", NULL },
-		{ "persist", 0, 0, G_OPTION_ARG_NONE, &persist, "Don't quit after a short timeout", NULL },
+		{ "debug", 0, 0, G_OPTION_ARG_NONE, &gl.debug, "Output to console rather than syslog", NULL },
+		{ "persist", 0, 0, G_OPTION_ARG_NONE, &gl.persist, "Don't quit after a short timeout", NULL },
 		{ NULL }
 	};
+	gboolean success;
 
 	opt_ctx = g_option_context_new (NULL);
 	g_option_context_set_summary (opt_ctx, "Executes scripts upon actions by NetworkManager.");
 	g_option_context_add_main_entries (opt_ctx, entries, NULL);
 
-	if (!g_option_context_parse (opt_ctx, &argc, &argv, &error)) {
-		g_warning ("Error parsing command line arguments: %s", error->message);
-		g_error_free (error);
-		return 1;
-	}
+	success = g_option_context_parse (opt_ctx, p_argc, p_argv, error);
 
 	g_option_context_free (opt_ctx);
 
-	g_unix_signal_add (SIGTERM, signal_handler, GINT_TO_POINTER (SIGTERM));
-	g_unix_signal_add (SIGINT, signal_handler, GINT_TO_POINTER (SIGINT));
+	return success;
+}
 
-	if (debug) {
+int
+main (int argc, char **argv)
+{
+	gs_free_error GError *error = NULL;
+	guint signal_id_term = 0;
+	guint signal_id_int = 0;
+	guint dbus_regist_id = 0;
+	guint dbus_own_name_id = 0;
+
+	if (!parse_command_line (&argc, &argv, &error)) {
+		_LOG_X_W ("Error parsing command line arguments: %s", error->message);
+		gl.exit_with_failure = TRUE;
+		goto done;
+	}
+
+	signal_id_term = g_unix_signal_add (SIGTERM, signal_handler, GINT_TO_POINTER (SIGTERM));
+	signal_id_int  = g_unix_signal_add (SIGINT,  signal_handler, GINT_TO_POINTER (SIGINT));
+
+	if (gl.debug) {
 		if (!g_getenv ("G_MESSAGES_DEBUG")) {
 			/* we log our regular messages using g_debug() and g_info().
 			 * When we redirect glib logging to syslog, there is no problem.
@@ -964,45 +1042,75 @@ main (int argc, char **argv)
 	} else
 		logging_setup ();
 
-	loop = g_main_loop_new (NULL, FALSE);
+	gl.loop = g_main_loop_new (NULL, FALSE);
 
-	bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &error);
-	if (!bus) {
-		g_warning ("Could not get the system bus (%s).  Make sure the message bus daemon is running!",
-		           error->message);
-		g_error_free (error);
-		return 1;
+	gl.dbus_connection = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &error);
+	if (!gl.dbus_connection) {
+		_LOG_X_W ("Could not get the system bus (%s).  Make sure the message bus daemon is running!",
+		          error->message);
+		gl.exit_with_failure = TRUE;
+		goto done;
 	}
 
-	handler = g_object_new (HANDLER_TYPE, NULL);
-	g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (handler->dbus_dispatcher),
-	                                  bus,
-	                                  NM_DISPATCHER_DBUS_PATH,
-	                                  &error);
-	if (error) {
-		g_warning ("Could not export Dispatcher D-Bus interface: %s", error->message);
-		g_error_free (error);
-		return 1;
+	gl.requests_waiting = g_queue_new ();
+
+	dbus_regist_id = g_dbus_connection_register_object (gl.dbus_connection,
+	                                                    NM_DISPATCHER_DBUS_PATH,
+	                                                    interface_info,
+	                                                    NM_UNCONST_PTR (GDBusInterfaceVTable, &interface_vtable),
+	                                                    NULL,
+	                                                    NULL,
+	                                                    &error);
+	if (dbus_regist_id == 0) {
+		_LOG_X_W ("Could not export Dispatcher D-Bus interface: %s", error->message);
+		gl.exit_with_failure = 1;
+		goto done;
 	}
 
-	g_bus_own_name_on_connection (bus,
-	                              NM_DISPATCHER_DBUS_SERVICE,
-	                              G_BUS_NAME_OWNER_FLAGS_NONE,
-	                              on_name_acquired,
-	                              on_name_lost,
-	                              NULL, NULL);
-	g_object_unref (bus);
+	dbus_own_name_id = g_bus_own_name_on_connection (gl.dbus_connection,
+	                                                 NM_DISPATCHER_DBUS_SERVICE,
+	                                                 G_BUS_NAME_OWNER_FLAGS_NONE,
+	                                                 on_name_acquired,
+	                                                 on_name_lost,
+	                                                 NULL, NULL);
 
 	quit_timeout_reschedule ();
 
-	g_main_loop_run (loop);
+	g_main_loop_run (gl.loop);
 
-	g_queue_free (handler->requests_waiting);
-	g_object_unref (handler);
+done:
 
-	if (!debug)
+	if (gl.num_requests_pending > 0) {
+		/* this only happens when we quit due to SIGTERM (not due to the idle timer).
+		 *
+		 * Log a warning about pending scripts.
+		 *
+		 * Maybe we should notify NetworkManager that these scripts are left in an unknown state.
+		 * But this is either a bug of a dispatcher script (not terminating in time).
+		 *
+		 * FIXME(shutdown): Also, currently NetworkManager behaves wrongly on shutdown.
+		 * Note that systemd would not terminate NetworkManager-dispatcher before NetworkManager.
+		 * It's NetworkManager's responsibility to keep running long enough so that all requests
+		 * can complete (with a watchdog timer, and a warning that user provided scripts hang). */
+		_LOG_X_W ("exiting but there are still %u requests pending", gl.num_requests_pending);
+	}
+
+	if (dbus_own_name_id != 0)
+		g_bus_unown_name (nm_steal_int (&dbus_own_name_id));
+
+	if (dbus_regist_id != 0)
+		g_dbus_connection_unregister_object (gl.dbus_connection, nm_steal_int (&dbus_regist_id));
+
+	nm_clear_pointer (&gl.requests_waiting, g_queue_free);
+
+	nm_clear_g_source (&signal_id_term);
+	nm_clear_g_source (&signal_id_int);
+	nm_clear_g_source (&gl.quit_id);
+	g_clear_pointer (&gl.loop, g_main_loop_unref);
+	g_clear_object (&gl.dbus_connection);
+
+	if (!gl.debug)
 		logging_shutdown ();
 
-	return 0;
+	return gl.exit_with_failure ? 1 : 0;
 }
-

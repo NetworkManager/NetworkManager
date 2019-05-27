@@ -44,7 +44,7 @@ libnm_dispatcher_core = static_library(
 
 sources = files('nm-dispatcher.c')
 
-sources += gnome.gdbus_codegen(
+nmdbus_dispatcher_sources = gnome.gdbus_codegen(
   'nmdbus-dispatcher',
   name + '.xml',
   interface_prefix: 'org.freedesktop',
