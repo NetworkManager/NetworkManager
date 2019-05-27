@@ -6422,6 +6422,7 @@ nm_manager_write_device_state (NMManager *self, NMDevice *device)
 	guint32 route_metric_default_effective;
 	int nm_owned;
 	NMDhcp4Config *dhcp4_config;
+	const char *next_server = NULL;
 	const char *root_path = NULL;
 
 	ifindex = nm_device_get_ip_ifindex (device);
@@ -6459,8 +6460,10 @@ nm_manager_write_device_state (NMManager *self, NMDevice *device)
 	                                                           TRUE, &route_metric_default_aspired);
 
 	dhcp4_config = nm_device_get_dhcp4_config (device);
-	if (dhcp4_config)
+	if (dhcp4_config) {
 		root_path = nm_dhcp4_config_get_option (dhcp4_config, "root_path");
+		next_server = nm_dhcp4_config_get_option (dhcp4_config, "next_server");
+	}
 
 	return nm_config_device_state_write (ifindex,
 	                                     managed_type,
@@ -6469,6 +6472,7 @@ nm_manager_write_device_state (NMManager *self, NMDevice *device)
 	                                     nm_owned,
 	                                     route_metric_default_aspired,
 	                                     route_metric_default_effective,
+	                                     next_server,
 	                                     root_path);
 }
 

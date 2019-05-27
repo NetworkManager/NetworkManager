@@ -269,6 +269,7 @@ gboolean nm_config_device_state_write (int ifindex,
                                        int nm_owned,
                                        guint32 route_metric_default_aspired,
                                        guint32 route_metric_default_effective,
+                                       const char *next_server,
                                        const char *root_path);
 
 void nm_config_device_state_prune_unseen (GHashTable *seen_ifindexes);
