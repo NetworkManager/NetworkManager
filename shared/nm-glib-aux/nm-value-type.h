@@ -178,6 +178,7 @@ nm_value_type_to_variant (NMValueType value_type,
 		break;
 	}
 	nm_assert_not_reached ();
+	return NULL;
 }
 
 static inline const GVariantType *
@@ -197,6 +198,7 @@ nm_value_type_get_variant_type (NMValueType value_type)
 		break;
 	}
 	nm_assert_not_reached ();
+	return NULL;
 }
 
 /*****************************************************************************/
