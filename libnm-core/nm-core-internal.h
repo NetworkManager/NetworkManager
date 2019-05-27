@@ -276,10 +276,10 @@ GPtrArray *_nm_utils_copy_object_array (const GPtrArray *array);
 gssize _nm_utils_ptrarray_find_first (gconstpointer *list, gssize len, gconstpointer needle);
 
 GSList *    _nm_utils_strv_to_slist (char **strv, gboolean deep_copy);
-char **     _nm_utils_slist_to_strv (GSList *slist, gboolean deep_copy);
+char **     _nm_utils_slist_to_strv (const GSList *slist, gboolean deep_copy);
 
 GPtrArray * _nm_utils_strv_to_ptrarray (char **strv);
-char **     _nm_utils_ptrarray_to_strv (GPtrArray *ptrarray);
+char **     _nm_utils_ptrarray_to_strv (const GPtrArray *ptrarray);
 
 gboolean _nm_utils_check_file (const char *filename,
                                gint64 check_owner,
