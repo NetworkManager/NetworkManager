@@ -678,6 +678,7 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, char **argv)
 	const char *tag;
 	char *argument;
 	gboolean ignore_bootif = FALSE;
+	gboolean neednet = FALSE;
 	char *bootif = NULL;
 	int i;
 
@@ -706,6 +707,8 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, char **argv)
 			parse_rd_peerdns (connections, argument);
 		else if (strcmp (tag, "rd.bootif") == 0)
 			ignore_bootif = !_nm_utils_ascii_str_to_bool (argument, TRUE);
+		else if (strcmp (tag, "rd.neednet") == 0)
+			neednet = _nm_utils_ascii_str_to_bool (argument, TRUE);
 		else if (strcasecmp (tag, "BOOTIF") == 0)
 			bootif = argument;
 	}
@@ -722,6 +725,10 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, char **argv)
 		g_object_set (s_wired,
 		              NM_SETTING_WIRED_MAC_ADDRESS, bootif,
 		              NULL);
+	}
+	if (neednet && g_hash_table_size (connections) == 0) {
+		/* Make sure there's some connection. */
+		get_conn (connections, NULL, NM_SETTING_WIRED_SETTING_NAME);
 	}
 
 	g_hash_table_foreach (connections, _normalize_conn, NULL);
