@@ -3015,6 +3015,92 @@ test_sysctl_netns_switch (void)
 	nmtstp_link_delete (PL, FALSE, ifindex, NULL, TRUE);
 }
 
+static void
+sysctl_set_async_cb_assert_success (GError *error, gpointer data)
+{
+	g_assert_no_error (error);
+	g_main_loop_quit (data);
+}
+
+static void
+sysctl_set_async_cb_assert_failure (GError *error, gpointer data)
+{
+	g_assert (error);
+	g_main_loop_quit (data);
+}
+
+static void
+test_sysctl_set_async (void)
+{
+	NMPlatform *const PL = NM_PLATFORM_GET;
+	const char *const IFNAME = "nm-dummy-0";
+	const char *const PATH = "/proc/sys/net/ipv4/conf/nm-dummy-0/rp_filter";
+	gs_free GMainLoop *loop = NULL;
+	gs_unref_object GCancellable *cancellable = NULL;
+	int ifindex;
+
+	ifindex = nmtstp_link_dummy_add (PL, -1, IFNAME)->ifindex;
+	loop = g_main_loop_new (NULL, FALSE);
+	cancellable = g_cancellable_new ();
+
+	nm_platform_sysctl_set_async (PL,
+	                              NMP_SYSCTL_PATHID_ABSOLUTE (PATH),
+	                              (const char *[]) { "2", NULL},
+	                              sysctl_set_async_cb_assert_success,
+	                              loop,
+	                              cancellable);
+
+	if (!nmtst_main_loop_run (loop, 1000))
+		g_assert_not_reached ();
+
+	g_assert_cmpint (nm_platform_sysctl_get_int32 (PL, NMP_SYSCTL_PATHID_ABSOLUTE (PATH), -1),
+	                 ==,
+	                 2);
+
+	nm_platform_sysctl_set_async (PL,
+	                              NMP_SYSCTL_PATHID_ABSOLUTE (PATH),
+	                              (const char *[]) { "2", "0", "1", "0", "1", NULL},
+	                              sysctl_set_async_cb_assert_success,
+	                              loop,
+	                              cancellable);
+
+	if (!nmtst_main_loop_run (loop, 2000))
+		g_assert_not_reached ();
+
+	g_assert_cmpint (nm_platform_sysctl_get_int32 (PL, NMP_SYSCTL_PATHID_ABSOLUTE (PATH), -1),
+	                 ==,
+	                 1);
+
+	nmtstp_link_delete (NULL, -1, ifindex, IFNAME, TRUE);
+}
+
+static void
+test_sysctl_set_async_fail (void)
+{
+	NMPlatform *const PL = NM_PLATFORM_GET;
+	const char *const IFNAME = "nm-dummy-0";
+	const char *const PATH = "/proc/sys/net/ipv4/conf/nm-dummy-0/does-not-exist";
+	gs_free GMainLoop *loop = NULL;
+	gs_unref_object GCancellable *cancellable = NULL;
+	int ifindex;
+
+	ifindex = nmtstp_link_dummy_add (PL, -1, IFNAME)->ifindex;
+	loop = g_main_loop_new (NULL, FALSE);
+	cancellable = g_cancellable_new ();
+
+	nm_platform_sysctl_set_async (PL,
+	                              NMP_SYSCTL_PATHID_ABSOLUTE (PATH),
+	                              (const char *[]) { "2", NULL},
+	                              sysctl_set_async_cb_assert_failure,
+	                              loop,
+	                              cancellable);
+
+	if (!nmtst_main_loop_run (loop, 1000))
+		g_assert_not_reached ();
+
+	nmtstp_link_delete (NULL, -1, ifindex, IFNAME, TRUE);
+}
+
 /*****************************************************************************/
 
 static gpointer
@@ -3238,6 +3324,8 @@ _nmtstp_setup_tests (void)
 
 		g_test_add_func ("/general/sysctl/rename", test_sysctl_rename);
 		g_test_add_func ("/general/sysctl/netns-switch", test_sysctl_netns_switch);
+		g_test_add_func ("/general/sysctl/set-async", test_sysctl_set_async);
+		g_test_add_func ("/general/sysctl/set-async-fail", test_sysctl_set_async_fail);
 
 		g_test_add_func ("/link/ethtool/features/get", test_ethtool_features_get);
 	}

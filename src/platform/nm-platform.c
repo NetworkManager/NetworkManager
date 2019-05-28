@@ -481,6 +481,40 @@ nm_platform_sysctl_set (NMPlatform *self, const char *pathid, int dirfd, const c
 	return klass->sysctl_set (self, pathid, dirfd, path, value);
 }
 
+/**
+ * nm_platform_sysctl_set_async:
+ * @self: platform instance
+ * @pathid: if @dirfd is present, this must be the full path that is looked up
+ * @dirfd: optional file descriptor for parent directory for openat()
+ * @path: absolute option path
+ * @values: NULL-terminated array of strings to be written
+ * @callback: function called on termination
+ * @data: data passed to callback function
+ * @cancellable: to cancel the operation
+ *
+ * This function is intended to be used for writing values to sysctl-style
+ * virtual runtime configuration files. This includes not only /proc/sys
+ * but also for example /sys/class. The function does not block and returns
+ * immediately. The callback is always invoked, and asynchronously. The file
+ * is closed after writing each value and reopened to write the next one so
+ * that the function can be used safely on all /proc and /sys files,
+ * independently of how /proc/sys/kernel/sysctl_writes_strict is configured.
+ */
+void nm_platform_sysctl_set_async (NMPlatform *self,
+                                   const char *pathid,
+                                   int dirfd,
+                                   const char *path,
+                                   const char *const *values,
+                                   NMPlatformAsyncCallback callback,
+                                   gpointer data,
+                                   GCancellable *cancellable)
+{
+	_CHECK_SELF_VOID (self, klass);
+
+	klass->sysctl_set_async (self, pathid, dirfd, path, values, callback, data, cancellable);
+}
+
+
 gboolean
 nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe (NMPlatform *self,
                                                     const char *iface,
@@ -623,14 +657,14 @@ nm_platform_sysctl_get_int_checked (NMPlatform *self,
 /*****************************************************************************/
 
 char *
-nm_platform_sysctl_ip_conf_get (NMPlatform *platform,
+nm_platform_sysctl_ip_conf_get (NMPlatform *self,
                                 int addr_family,
                                 const char *ifname,
                                 const char *property)
 {
 	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 
-	return nm_platform_sysctl_get (platform,
+	return nm_platform_sysctl_get (self,
 	                               NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (addr_family,
 	                                                                                         buf,
 	                                                                                         ifname,
@@ -638,7 +672,7 @@ nm_platform_sysctl_ip_conf_get (NMPlatform *platform,
 }
 
 gint64
-nm_platform_sysctl_ip_conf_get_int_checked (NMPlatform *platform,
+nm_platform_sysctl_ip_conf_get_int_checked (NMPlatform *self,
                                             int addr_family,
                                             const char *ifname,
                                             const char *property,
@@ -649,7 +683,7 @@ nm_platform_sysctl_ip_conf_get_int_checked (NMPlatform *platform,
 {
 	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 
-	return nm_platform_sysctl_get_int_checked (platform,
+	return nm_platform_sysctl_get_int_checked (self,
 	                                           NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (addr_family,
 	                                                                                                     buf,
 	                                                                                                     ifname,
@@ -661,7 +695,7 @@ nm_platform_sysctl_ip_conf_get_int_checked (NMPlatform *platform,
 }
 
 gboolean
-nm_platform_sysctl_ip_conf_set (NMPlatform *platform,
+nm_platform_sysctl_ip_conf_set (NMPlatform *self,
                                 int addr_family,
                                 const char *ifname,
                                 const char *property,
@@ -669,7 +703,7 @@ nm_platform_sysctl_ip_conf_set (NMPlatform *platform,
 {
 	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 
-	return nm_platform_sysctl_set (platform,
+	return nm_platform_sysctl_set (self,
 	                               NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (addr_family,
 	                                                                                         buf,
 	                                                                                         ifname,
@@ -678,7 +712,7 @@ nm_platform_sysctl_ip_conf_set (NMPlatform *platform,
 }
 
 gboolean
-nm_platform_sysctl_ip_conf_set_int64 (NMPlatform *platform,
+nm_platform_sysctl_ip_conf_set_int64 (NMPlatform *self,
                                       int addr_family,
                                       const char *ifname,
                                       const char *property,
@@ -687,7 +721,7 @@ nm_platform_sysctl_ip_conf_set_int64 (NMPlatform *platform,
 	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 	char s[64];
 
-	return nm_platform_sysctl_set (platform,
+	return nm_platform_sysctl_set (self,
 	                               NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (addr_family,
 	                                                                                         buf,
 	                                                                                         ifname,
@@ -1553,19 +1587,35 @@ nm_platform_link_supports_sriov (NMPlatform *self, int ifindex)
  * @num_vfs: the number of VFs to create
  * @autoprobe: the new autoprobe-drivers value (pass
  *     %NM_TERNARY_DEFAULT to keep current value)
+ * @callback: called when the operation finishes
+ * @callback_data: data passed to @callback
+ * @cancellable: cancellable to abort the operation
+ *
+ * Sets SR-IOV parameters asynchronously without
+ * blocking the main thread. The callback function is
+ * always invoked, and asynchronously.
  */
-gboolean
-nm_platform_link_set_sriov_params (NMPlatform *self,
-                                   int ifindex,
-                                   guint num_vfs,
-                                   NMTernary autoprobe)
+void
+nm_platform_link_set_sriov_params_async (NMPlatform *self,
+                                         int ifindex,
+                                         guint num_vfs,
+                                         NMTernary autoprobe,
+                                         NMPlatformAsyncCallback callback,
+                                         gpointer callback_data,
+                                         GCancellable *cancellable)
 {
-	_CHECK_SELF (self, klass, FALSE);
+	_CHECK_SELF_VOID (self, klass);
 
-	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_if_fail (ifindex > 0);
 
 	_LOG3D ("link: setting %u total VFs and autoprobe %d", num_vfs, (int) autoprobe);
-	return klass->link_set_sriov_params (self, ifindex, num_vfs, autoprobe);
+	klass->link_set_sriov_params_async (self,
+	                                    ifindex,
+	                                    num_vfs,
+	                                    autoprobe,
+	                                    callback,
+	                                    callback_data,
+	                                    cancellable);
 }
 
 gboolean
@@ -3402,21 +3452,21 @@ nm_platform_ethtool_set_features (NMPlatform *self,
 /*****************************************************************************/
 
 const NMDedupMultiHeadEntry *
-nm_platform_lookup_all (NMPlatform *platform,
+nm_platform_lookup_all (NMPlatform *self,
                         NMPCacheIdType cache_id_type,
                         const NMPObject *obj)
 {
-	return nmp_cache_lookup_all (nm_platform_get_cache (platform),
+	return nmp_cache_lookup_all (nm_platform_get_cache (self),
 	                             cache_id_type,
 	                             obj);
 }
 
 const NMDedupMultiEntry *
-nm_platform_lookup_entry (NMPlatform *platform,
+nm_platform_lookup_entry (NMPlatform *self,
                           NMPCacheIdType cache_id_type,
                           const NMPObject *obj)
 {
-	return nmp_cache_lookup_entry_with_idx_type (nm_platform_get_cache (platform),
+	return nmp_cache_lookup_entry_with_idx_type (nm_platform_get_cache (self),
 	                                             cache_id_type,
 	                                             obj);
 }
