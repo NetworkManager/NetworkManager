@@ -581,7 +581,6 @@ typedef struct _NMDevicePrivate {
 	} concheck_x[2];
 
 	guint check_delete_unrealized_id;
-	guint deactivate_pending_count;
 
 	struct {
 		SriovOp *pending;    /* SR-IOV operation currently running */
@@ -14925,10 +14924,14 @@ deactivate_ready (NMDevice *self, NMDeviceStateReason reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	nm_assert (priv->deactivate_pending_count > 0);
+	if (priv->dispatcher.call_id)
+		return;
 
-	if (--priv->deactivate_pending_count == 0)
-		nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, reason);
+	if (priv->sriov.pending)
+		return;
+	nm_assert (!priv->sriov.next);
+
+	nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, reason);
 }
 
 static void
@@ -15219,7 +15222,6 @@ _set_state_full (NMDevice *self,
 		} else {
 			priv->dispatcher.post_state = NM_DEVICE_STATE_DISCONNECTED;
 			priv->dispatcher.post_state_reason = reason;
-			priv->deactivate_pending_count = 1;
 			if (!nm_dispatcher_call_device (NM_DISPATCHER_ACTION_PRE_DOWN,
 			                                self,
 			                                req,
@@ -15232,7 +15234,6 @@ _set_state_full (NMDevice *self,
 
 			if (   priv->ifindex > 0
 			    && (s_sriov = nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))) {
-				priv->deactivate_pending_count++;
 				sriov_op_queue (self,
 				                0,
 				                NM_TERNARY_TRUE,
