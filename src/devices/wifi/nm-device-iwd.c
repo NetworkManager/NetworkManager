@@ -780,12 +780,10 @@ complete_connection (NMDevice *device,
 	NMDeviceIwd *self = NM_DEVICE_IWD (device);
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMSettingWireless *s_wifi;
-	const char *setting_mac;
 	gs_free char *ssid_utf8 = NULL;
 	NMWifiAP *ap;
 	GBytes *ssid;
 	GBytes *setting_ssid = NULL;
-	const char *perm_hw_addr;
 	const char *mode;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
@@ -875,35 +873,8 @@ complete_connection (NMDevice *device,
 	                           ssid_utf8,
 	                           ssid_utf8,
 	                           NULL,
+	                           nm_setting_wireless_get_mac_address (s_wifi) ? NULL : nm_device_get_iface (device),
 	                           TRUE);
-
-	perm_hw_addr = nm_device_get_permanent_hw_address (device);
-	if (perm_hw_addr) {
-		setting_mac = nm_setting_wireless_get_mac_address (s_wifi);
-		if (setting_mac) {
-			/* Make sure the setting MAC (if any) matches the device's permanent MAC */
-			if (!nm_utils_hwaddr_matches (setting_mac, -1, perm_hw_addr, -1)) {
-				g_set_error_literal (error,
-				                     NM_CONNECTION_ERROR,
-				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-				                     "connection does not match device");
-				g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_MAC_ADDRESS);
-				return FALSE;
-			}
-		} else {
-			guint8 tmp[ETH_ALEN];
-
-			/* Lock the connection to this device by default if it uses a
-			 * permanent MAC address (ie not a 'locally administered' one)
-			 */
-			nm_utils_hwaddr_aton (perm_hw_addr, tmp, ETH_ALEN);
-			if (!(tmp[0] & 0x02)) {
-				g_object_set (G_OBJECT (s_wifi),
-				              NM_SETTING_WIRELESS_MAC_ADDRESS, perm_hw_addr,
-				              NULL);
-			}
-		}
-	}
 
 	return TRUE;
 }

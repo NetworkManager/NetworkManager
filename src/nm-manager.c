@@ -5517,6 +5517,7 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 		                           NULL,
 		                           _("VPN connection"),
 		                           NULL,
+		                           NULL,
 		                           FALSE); /* No IPv6 by default for now */
 	} else {
 		conns = nm_settings_connections_array_to_connections (nm_settings_get_connections (priv->settings, NULL), -1);

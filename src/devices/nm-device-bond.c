@@ -70,6 +70,7 @@ complete_connection (NMDevice *device,
 	                           NULL,
 	                           _("Bond connection"),
 	                           "bond",
+	                           NULL,
 	                           TRUE);
 
 	s_bond = nm_connection_get_setting_bond (connection);

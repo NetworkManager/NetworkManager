@@ -1390,9 +1390,6 @@ complete_connection (NMDevice *device,
 {
 	NMSettingWired *s_wired;
 	NMSettingPppoe *s_pppoe;
-	const char *setting_mac;
-	const char *perm_hw_addr;
-	gboolean perm_hw_addr_is_fake;
 
 	s_pppoe = nm_connection_get_setting_pppoe (connection);
 
@@ -1401,6 +1398,12 @@ complete_connection (NMDevice *device,
 	 */
 	if (s_pppoe && !nm_setting_verify (NM_SETTING (s_pppoe), NULL, error))
 		return FALSE;
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	if (!s_wired) {
+		s_wired = (NMSettingWired *) nm_setting_wired_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wired));
+	}
 
 	/* Default to an ethernet-only connection, but if a PPPoE setting was given
 	 * then PPPoE should be our connection type.
@@ -1412,33 +1415,8 @@ complete_connection (NMDevice *device,
 	                           NULL,
 	                           s_pppoe ? _("PPPoE connection") : _("Wired connection"),
 	                           NULL,
+	                           nm_setting_wired_get_mac_address (s_wired) ? NULL : nm_device_get_iface (device),
 	                           s_pppoe ? FALSE : TRUE); /* No IPv6 by default yet for PPPoE */
-
-	s_wired = nm_connection_get_setting_wired (connection);
-	if (!s_wired) {
-		s_wired = (NMSettingWired *) nm_setting_wired_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_wired));
-	}
-
-	perm_hw_addr = nm_device_get_permanent_hw_address_full (device, TRUE, &perm_hw_addr_is_fake);
-	if (perm_hw_addr && !perm_hw_addr_is_fake) {
-		setting_mac = nm_setting_wired_get_mac_address (s_wired);
-		if (setting_mac) {
-			/* Make sure the setting MAC (if any) matches the device's permanent MAC */
-			if (!nm_utils_hwaddr_matches (setting_mac, -1, perm_hw_addr, -1)) {
-				g_set_error_literal (error,
-				                     NM_CONNECTION_ERROR,
-				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-				                     _("connection does not match device"));
-				g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MAC_ADDRESS);
-				return FALSE;
-			}
-		} else {
-			g_object_set (G_OBJECT (s_wired),
-			              NM_SETTING_WIRED_MAC_ADDRESS, perm_hw_addr,
-			              NULL);
-		}
-	}
 
 	return TRUE;
 }

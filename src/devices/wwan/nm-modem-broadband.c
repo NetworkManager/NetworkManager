@@ -658,6 +658,7 @@ check_connection_compatible_with_modem (NMModem *_self, NMConnection *connection
 
 static gboolean
 complete_connection (NMModem *modem,
+                     const char *iface,
                      NMConnection *connection,
                      NMConnection *const*existing_connections,
                      GError **error)
@@ -701,6 +702,7 @@ complete_connection (NMModem *modem,
 		                           NULL,
 		                           _("GSM connection"),
 		                           NULL,
+		                           NULL,
 		                           FALSE); /* No IPv6 yet by default */
 
 		return TRUE;
@@ -725,6 +727,7 @@ complete_connection (NMModem *modem,
 		                           NULL,
 		                           _("CDMA connection"),
 		                           NULL,
+		                           iface,
 		                           FALSE); /* No IPv6 yet by default */
 
 		return TRUE;

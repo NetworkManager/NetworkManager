@@ -67,6 +67,7 @@ complete_connection (NMDevice *device,
 	                           NULL,
 	                           _("WPAN connection"),
 	                           NULL,
+	                           NULL,
 	                           TRUE);
 
 	s_wpan = NM_SETTING_WPAN (nm_connection_get_setting (connection, NM_TYPE_SETTING_WPAN));
