@@ -4234,16 +4234,17 @@ sriov_op_cb (GError *error, gpointer user_data)
 
 	nm_assert (op == priv->sriov.pending);
 
+	priv->sriov.pending = NULL;
+
 	if (op->callback)
 		op->callback (error, op->callback_data);
 
-	nm_clear_g_cancellable (&op->cancellable);
+	g_clear_object (&op->cancellable);
 	g_slice_free (SriovOp, op);
-	priv->sriov.pending = NULL;
 
 	if (priv->sriov.next) {
-		sriov_op_start (self, priv->sriov.next);
-		priv->sriov.next = NULL;
+		sriov_op_start (self,
+		                g_steal_pointer (&priv->sriov.next));
 	}
 }
 
