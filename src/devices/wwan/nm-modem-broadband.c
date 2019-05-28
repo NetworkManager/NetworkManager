@@ -1448,7 +1448,12 @@ dispose (GObject *object)
 	g_clear_object (&self->_priv.ipv4_config);
 	g_clear_object (&self->_priv.ipv6_config);
 	g_clear_object (&self->_priv.bearer);
-	g_clear_object (&self->_priv.modem_iface);
+
+	if (self->_priv.modem_iface) {
+		g_signal_handlers_disconnect_by_data (self->_priv.modem_iface, self);
+		g_clear_object (&self->_priv.modem_iface);
+	}
+
 	g_clear_object (&self->_priv.simple_iface);
 	g_clear_object (&self->_priv.sim_iface);
 	g_clear_object (&self->_priv.modem_object);
