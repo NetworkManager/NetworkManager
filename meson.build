@@ -174,6 +174,7 @@ if nm_debug
     '-Wno-missing-field-initializers',
     '-Wno-pragmas',
     '-Wno-sign-compare',
+    '-Wno-unknown-pragmas',
     '-Wno-unused-parameter',
     '-Wparentheses-equality',
     '-Wpointer-arith',
