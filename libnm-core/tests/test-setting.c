@@ -1469,7 +1469,7 @@ test_team_setting (void)
 
 	_check_team_setting (setting);
 	g_assert_cmpint (nm_setting_team_get_num_link_watchers (NM_SETTING_TEAM (setting)), ==, 1);
-	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": { \"name\": \"ethtool\"} }");
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": { \"name\": \"ethtool\" } }");
 
 	nm_setting_team_remove_link_watcher (NM_SETTING_TEAM (setting), 0);
 
@@ -1479,11 +1479,11 @@ test_team_setting (void)
 
 	nm_setting_team_add_link_watcher (NM_SETTING_TEAM (setting), watcher1);
 	_check_team_setting (setting);
-	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": { \"name\": \"nsna_ping\", \"target_host\": \"bbb\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4} }");
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": { \"name\": \"nsna_ping\", \"target_host\": \"bbb\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4 } }");
 
 	nm_setting_team_add_link_watcher (NM_SETTING_TEAM (setting), watcher2);
 	_check_team_setting (setting);
-	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": [ { \"name\": \"nsna_ping\", \"target_host\": \"bbb\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4}, { \"name\": \"arp_ping\", \"target_host\": \"ccc\", \"source_host\": \"ddd\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4} ] }");
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": [ { \"name\": \"nsna_ping\", \"target_host\": \"bbb\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4 }, { \"name\": \"arp_ping\", \"target_host\": \"ccc\", \"source_host\": \"ddd\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4 } ] }");
 
 	nm_setting_team_remove_link_watcher (NM_SETTING_TEAM (setting), 0);
 	nm_setting_team_remove_link_watcher (NM_SETTING_TEAM (setting), 0);

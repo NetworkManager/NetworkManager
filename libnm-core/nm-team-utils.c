@@ -1030,7 +1030,7 @@ _link_watcher_to_json (const NMTeamLinkWatcher *link_watcher,
 		nm_value_type_to_json (attr_data->value_type, gstr, &p_val->val);
 	}
 
-	g_string_append (gstr, "}");
+	g_string_append (gstr, " }");
 }
 
 #if WITH_JSON_VALIDATION
