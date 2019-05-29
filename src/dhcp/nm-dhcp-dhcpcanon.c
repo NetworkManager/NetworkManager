@@ -186,18 +186,6 @@ ip4_start (NMDhcpClient *client,
 	                        error);
 }
 
-static gboolean
-ip6_start (NMDhcpClient *client,
-           const char *dhcp_anycast_addr,
-           const struct in6_addr *ll_addr,
-           NMSettingIP6ConfigPrivacy privacy,
-           guint needed_prefixes,
-           GError **error)
-{
-	nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "dhcpcanon plugin does not support IPv6");
-	return FALSE;
-}
-
 static void
 stop (NMDhcpClient *client, gboolean release)
 {
@@ -257,7 +245,6 @@ nm_dhcp_dhcpcanon_class_init (NMDhcpDhcpcanonClass *dhcpcanon_class)
 	object_class->dispose = dispose;
 
 	client_class->ip4_start = ip4_start;
-	client_class->ip6_start = ip6_start;
 	client_class->stop = stop;
 }
 
