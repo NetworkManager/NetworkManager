@@ -100,8 +100,6 @@ typedef struct {
 	char *no_auto_default_file;
 	char *intern_config_file;
 
-	gboolean monitor_connection_files;
-
 	char *log_level;
 	char *log_domains;
 
@@ -311,14 +309,6 @@ nm_config_get_data_orig (NMConfig *config)
 	g_return_val_if_fail (config != NULL, NULL);
 
 	return NM_CONFIG_GET_PRIVATE (config)->config_data_orig;
-}
-
-gboolean
-nm_config_get_monitor_connection_files (NMConfig *config)
-{
-	g_return_val_if_fail (config != NULL, FALSE);
-
-	return NM_CONFIG_GET_PRIVATE (config)->monitor_connection_files;
 }
 
 const char *
@@ -2804,10 +2794,6 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	else
 		priv->no_auto_default_file = g_strdup (DEFAULT_NO_AUTO_DEFAULT_FILE);
 
-	priv->monitor_connection_files = nm_config_keyfile_get_boolean (keyfile,
-	                                                                NM_CONFIG_KEYFILE_GROUP_MAIN,
-	                                                                NM_CONFIG_KEYFILE_KEY_MAIN_MONITOR_CONNECTION_FILES,
-	                                                                FALSE);
 	priv->log_level = nm_strstrip (g_key_file_get_string (keyfile,
 	                                                      NM_CONFIG_KEYFILE_GROUP_LOGGING,
 	                                                      NM_CONFIG_KEYFILE_KEY_LOGGING_LEVEL,

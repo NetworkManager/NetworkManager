@@ -19,7 +19,6 @@ libnmdbus_ifcfg_rh = static_library(
 )
 
 core_sources = files(
-  'nm-inotify-helper.c',
   'nms-ifcfg-rh-reader.c',
   'nms-ifcfg-rh-utils.c',
   'nms-ifcfg-rh-writer.c',

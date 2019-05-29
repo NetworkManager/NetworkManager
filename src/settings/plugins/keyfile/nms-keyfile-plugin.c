@@ -48,8 +48,6 @@ typedef struct {
 	GHashTable *connections;  /* uuid::connection */
 
 	gboolean initialized;
-	GFileMonitor *monitor;
-	gulong monitor_id;
 
 	NMConfig *config;
 } NMSKeyfilePluginPrivate;
@@ -298,47 +296,6 @@ update_connection (NMSKeyfilePlugin *self,
 }
 
 static void
-dir_changed (GFileMonitor *monitor,
-             GFile *file,
-             GFile *other_file,
-             GFileMonitorEvent event_type,
-             gpointer user_data)
-{
-	NMSettingsPlugin *config = NM_SETTINGS_PLUGIN (user_data);
-	NMSKeyfilePlugin *self = NMS_KEYFILE_PLUGIN (config);
-	NMSKeyfileConnection *connection;
-	char *full_path;
-	gboolean exists;
-
-	full_path = g_file_get_path (file);
-	if (nm_keyfile_utils_ignore_filename (full_path, FALSE)) {
-		g_free (full_path);
-		return;
-	}
-	exists = g_file_test (full_path, G_FILE_TEST_EXISTS);
-
-	_LOGD ("dir_changed(%s) = %d; file %s", full_path, event_type, exists ? "exists" : "does not exist");
-
-	connection = find_by_path (self, full_path);
-
-	switch (event_type) {
-	case G_FILE_MONITOR_EVENT_DELETED:
-		if (!exists && connection)
-			remove_connection (NMS_KEYFILE_PLUGIN (config), connection);
-		break;
-	case G_FILE_MONITOR_EVENT_CREATED:
-	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
-		if (exists)
-			update_connection (NMS_KEYFILE_PLUGIN (config), NULL, full_path, connection, TRUE, NULL, NULL);
-		break;
-	default:
-		break;
-	}
-
-	g_free (full_path);
-}
-
-static void
 config_changed_cb (NMConfig *config,
                    NMConfigData *config_data,
                    NMConfigChangeFlags changes,
@@ -353,30 +310,6 @@ config_changed_cb (NMConfig *config,
 
 	if (!nm_streq0 (old_value, new_value))
 		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
-}
-
-static void
-setup_monitoring (NMSettingsPlugin *config)
-{
-	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE ((NMSKeyfilePlugin *) config);
-	GFile *file;
-	GFileMonitor *monitor;
-
-	if (nm_config_get_monitor_connection_files (priv->config)) {
-		file = g_file_new_for_path (nms_keyfile_utils_get_path ());
-		monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
-		g_object_unref (file);
-
-		if (monitor) {
-			priv->monitor_id = g_signal_connect (monitor, "changed", G_CALLBACK (dir_changed), config);
-			priv->monitor = monitor;
-		}
-	}
-
-	g_signal_connect (G_OBJECT (priv->config),
-	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
-	                  G_CALLBACK (config_changed_cb),
-	                  config);
 }
 
 static GHashTable *
@@ -504,7 +437,6 @@ get_connections (NMSettingsPlugin *config)
 	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE ((NMSKeyfilePlugin *) config);
 
 	if (!priv->initialized) {
-		setup_monitoring (config);
 		read_connections (config);
 		priv->initialized = TRUE;
 	}
@@ -590,7 +522,8 @@ nms_keyfile_plugin_init (NMSKeyfilePlugin *plugin)
 static void
 constructed (GObject *object)
 {
-	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE ((NMSKeyfilePlugin *) object);
+	NMSKeyfilePlugin *self = NMS_KEYFILE_PLUGIN (object);
+	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE (self);
 
 	G_OBJECT_CLASS (nms_keyfile_plugin_parent_class)->constructed (object);
 
@@ -599,6 +532,17 @@ constructed (GObject *object)
 	                              NM_CONFIG_KEYFILE_KEY_KEYFILE_HOSTNAME,
 	                              NM_CONFIG_GET_VALUE_RAW))
 		_LOGW ("'hostname' option is deprecated and has no effect");
+
+	if (nm_config_data_has_value (nm_config_get_data_orig (priv->config),
+	                              NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                              NM_CONFIG_KEYFILE_KEY_MAIN_MONITOR_CONNECTION_FILES,
+	                              NM_CONFIG_GET_VALUE_RAW))
+		_LOGW ("'monitor-connection-files' option is deprecated and has no effect");
+
+	g_signal_connect (G_OBJECT (priv->config),
+	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
+	                  G_CALLBACK (config_changed_cb),
+	                  self);
 }
 
 NMSKeyfilePlugin *
@@ -611,13 +555,6 @@ static void
 dispose (GObject *object)
 {
 	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE ((NMSKeyfilePlugin *) object);
-
-	if (priv->monitor) {
-		nm_clear_g_signal_handler (priv->monitor, &priv->monitor_id);
-
-		g_file_monitor_cancel (priv->monitor);
-		g_clear_object (&priv->monitor);
-	}
 
 	if (priv->connections) {
 		g_hash_table_destroy (priv->connections);

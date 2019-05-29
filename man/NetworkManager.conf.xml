@@ -153,29 +153,7 @@ plugins-=remove-me
       </varlistentry>
       <varlistentry>
         <term><varname>monitor-connection-files</varname></term>
-        <listitem><para>Whether the configured settings plugin(s)
-        should set up file monitors and immediately pick up changes
-        made to connection files while NetworkManager is running. This
-        is disabled by default; NetworkManager will only read
-        the connection files at startup, and when explicitly requested
-        via the ReloadConnections D-Bus call. If this key is set to
-        '<literal>true</literal>', then NetworkManager will reload
-        connection files any time they changed.
-        Automatic reloading is not advised because there are race conditions
-        involved and it depends on the way how the editor updates the file.
-        In some situations, NetworkManager might first delete and add the
-        connection anew, instead of updating the existing one. Also, NetworkManager
-        might pick up incomplete settings while the user is still editing the files.
-        </para><para>
-        Note that neither this setting nor restarting the NetworkManager daemon
-        is the advised way to reload connection profiles from disk. Instead, after
-        modifying the files reload them with <command>nmcli connection reload</command>
-        or <command>nmcli connection load "$FILENAME"</command>. Even better,
-        instead of modifying files directly, use NetworkManager tools like
-        <command>nmcli</command>, <command>nmtui</command> or the GUI.
-        </para><para>
-        This setting is deprecated and will have no effect in the future.
-        </para></listitem>
+        <listitem><para>This setting is deprecated and has no effect.</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><varname>auth-polkit</varname></term>

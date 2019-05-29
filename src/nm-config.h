@@ -157,7 +157,6 @@ NMConfigData *nm_config_get_data_orig (NMConfig *config);
 #define NM_CONFIG_GET_DATA      (nm_config_get_data (nm_config_get ()))
 #define NM_CONFIG_GET_DATA_ORIG (nm_config_get_data_orig (nm_config_get ()))
 
-gboolean nm_config_get_monitor_connection_files (NMConfig *config);
 const char *nm_config_get_log_level (NMConfig *config);
 const char *nm_config_get_log_domains (NMConfig *config);
 NMConfigConfigureAndQuitType nm_config_get_configure_and_quit (NMConfig *config);
