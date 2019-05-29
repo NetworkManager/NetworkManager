@@ -131,9 +131,6 @@ struct _NMSettingsConnectionClass {
 
 	gboolean (*delete) (NMSettingsConnection *self,
 	                    GError **error);
-
-	gboolean (*supports_secrets) (NMSettingsConnection *self,
-	                              const char *setting_name);
 };
 
 GType nm_settings_connection_get_type (void);
