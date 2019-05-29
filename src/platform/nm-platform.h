@@ -917,28 +917,28 @@ extern volatile int _nm_platform_kernel_support_state[_NM_PLATFORM_KERNEL_SUPPOR
 int _nm_platform_kernel_support_init (NMPlatformKernelSupportType type,
                                       int value);
 
-#define _nm_platform_kernel_support_detected(type) \
-	G_LIKELY (({ \
-		const NMPlatformKernelSupportType _type = (type); \
-		\
-		nm_assert (_NM_INT_NOT_NEGATIVE (_type) && _type < G_N_ELEMENTS (_nm_platform_kernel_support_state)); \
-		\
-		(_nm_platform_kernel_support_state[_type] != 0); \
-	}))
+static inline gboolean
+_nm_platform_kernel_support_detected (NMPlatformKernelSupportType type)
+{
+	nm_assert (   _NM_INT_NOT_NEGATIVE (type)
+	           && type < G_N_ELEMENTS (_nm_platform_kernel_support_state));
 
-#define nm_platform_kernel_support_get(type) \
-	({ \
-		const NMPlatformKernelSupportType _type = (type); \
-		int _v; \
-		\
-		nm_assert (_NM_INT_NOT_NEGATIVE (_type) && _type < G_N_ELEMENTS (_nm_platform_kernel_support_state)); \
-		\
-		_v = _nm_platform_kernel_support_state[_type]; \
-		if (G_UNLIKELY (_v == 0)) \
-			_v = _nm_platform_kernel_support_init (_type, 0); \
-		\
-		(_v >= 0); \
-	})
+	return G_LIKELY (_nm_platform_kernel_support_state[type] != 0);
+}
+
+static inline gboolean
+nm_platform_kernel_support_get (NMPlatformKernelSupportType type)
+{
+	int v;
+
+	nm_assert (_NM_INT_NOT_NEGATIVE (type)
+	           && type < G_N_ELEMENTS (_nm_platform_kernel_support_state));
+
+	v = _nm_platform_kernel_support_state[type];
+	if (G_UNLIKELY (v == 0))
+		v = _nm_platform_kernel_support_init (type, 0);
+	return (v >= 0);
+}
 
 /*****************************************************************************/
 

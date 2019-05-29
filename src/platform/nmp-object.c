@@ -398,7 +398,7 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 		if (h) {
 			nm_hash_update_vals (h,
 			                     idx_type->cache_id_type,
-			                     NMP_OBJECT_CAST_OBJ_WITH_IFINDEX (obj_a)->ifindex);
+			                     obj_a->obj_with_ifindex.ifindex);
 		}
 		return 1;
 
