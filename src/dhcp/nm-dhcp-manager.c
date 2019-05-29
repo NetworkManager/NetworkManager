@@ -208,6 +208,12 @@ client_start (NMDhcpManager *self,
 	/* Kill any old client instance */
 	client = get_client_for_ifindex (self, addr_family, ifindex);
 	if (client) {
+		/* FIXME: we cannot just call synchronously "stop()" and forget about the client.
+		 * We need to wait for the client to be fully stopped because most/all clients
+		 * cannot quit right away.
+		 *
+		 * FIXME(shutdown): also fix this during shutdown, to wait for all DHCP clients
+		 * to be fully stopped. */
 		remove_client (self, client);
 		nm_dhcp_client_stop (client, FALSE);
 		g_object_unref (client);
