@@ -1,4 +1,21 @@
 =============================================
+NetworkManager-1.16.2
+Overview of changes since NetworkManager-1.16
+=============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Use FQDN for persistent hostname on Slackware
+* Fix wrong permissions of the /var/lib/NetworkManager/secret_key file.
+* Don't terminate teamd when assuming existing team connections.
+* Fix incorrect persistence of connections with EAP-TLS and a PKCS#12
+  certificate when using the ifcfg-rh plugin.
+* Fix reapply of the MTU property on devices.
+* Restore IPv6 configuration when the link goes up.
+* Fix build with sanitizers.
+* Other various bug fixes and improvements.
+
+=============================================
 NetworkManager-1.16
 Overview of changes since NetworkManager-1.14
 =============================================
