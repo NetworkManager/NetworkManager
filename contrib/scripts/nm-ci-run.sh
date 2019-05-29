@@ -126,7 +126,7 @@ _print_test_logs() {
     echo ">>>> PRINT TEST LOGS $1 (done)"
     if _with_valgrind; then
         echo ">>>> PRINT VALGRIND LOGS $1 (start)"
-        find -name '*.valgrind-log' -print0 | xargs -0 grep -H ^
+        find -name '*.valgrind-log' -print0 | xargs -0 grep -H ^ || true
         echo ">>>> PRINT VALGRIND LOGS $1 (done)"
     fi
 }

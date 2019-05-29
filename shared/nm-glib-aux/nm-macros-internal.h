@@ -635,7 +635,11 @@ NM_G_ERROR_MSG (GError *error)
  * It's useful to check the let the compiler ensure that @value is
  * of a certain type. */
 #define _NM_ENSURE_TYPE(type, value) (_Generic ((value), type: (value)))
-#define _NM_ENSURE_TYPE_CONST(type, value) (_Generic ((value), const type: ((const type) (value)), type: ((const type) (value))))
+#define _NM_ENSURE_TYPE_CONST(type, value) (_Generic ((value), \
+                                                      const type      : ((const type) (value)), \
+                                                      const type const: ((const type) (value)), \
+                                                            type      : ((const type) (value)), \
+                                                            type const: ((const type) (value))))
 #else
 #define _NM_ENSURE_TYPE(type, value) (value)
 #define _NM_ENSURE_TYPE_CONST(type, value) ((const type) (value))
