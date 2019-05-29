@@ -203,6 +203,15 @@ NMSettingVerifyResult _nm_connection_verify (NMConnection *connection, GError **
 
 gboolean _nm_connection_remove_setting (NMConnection *connection, GType setting_type);
 
+#if NM_MORE_ASSERTS
+void nmtst_connection_assert_unchanging (NMConnection *connection);
+#else
+static inline void
+nmtst_connection_assert_unchanging (NMConnection *connection)
+{
+}
+#endif
+
 NMConnection *_nm_simple_connection_new_from_dbus (GVariant      *dict,
                                                    NMSettingParseFlags parse_flags,
                                                    GError       **error);
