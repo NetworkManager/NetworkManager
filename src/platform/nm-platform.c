@@ -5390,7 +5390,10 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 {
 	char master[20];
 	char parent[20];
-	GString *str_flags;
+	char str_flags[1 + NM_PLATFORM_LINK_FLAGS2STR_MAX_LEN + 1];
+	char str_highlighted_flags[50];
+	char *s;
+	gsize l;
 	char str_addrmode[30];
 	char str_address[NM_UTILS_HWADDR_LEN_MAX * 3];
 	char str_broadcast[NM_UTILS_HWADDR_LEN_MAX * 3];
@@ -5400,22 +5403,23 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	if (!nm_utils_to_string_buffer_init_null (link, &buf, &len))
 		return buf;
 
-	str_flags = g_string_new (NULL);
+	s = str_highlighted_flags;
+	l = sizeof (str_highlighted_flags);
 	if (NM_FLAGS_HAS (link->n_ifi_flags, IFF_NOARP))
-		g_string_append (str_flags, "NOARP,");
+		nm_utils_strbuf_append_str (&s, &l, "NOARP,");
 	if (NM_FLAGS_HAS (link->n_ifi_flags, IFF_UP))
-		g_string_append (str_flags, "UP");
+		nm_utils_strbuf_append_str (&s, &l, "UP");
 	else
-		g_string_append (str_flags, "DOWN");
+		nm_utils_strbuf_append_str (&s, &l, "DOWN");
 	if (link->connected)
-		g_string_append (str_flags, ",LOWER_UP");
+		nm_utils_strbuf_append_str (&s, &l, ",LOWER_UP");
+	nm_assert (s > str_highlighted_flags && l > 0);
 
 	if (link->n_ifi_flags) {
-		char str_flags_buf[64];
-
-		nm_platform_link_flags2str (link->n_ifi_flags, str_flags_buf, sizeof (str_flags_buf));
-		g_string_append_printf (str_flags, ";%s", str_flags_buf);
-	}
+		str_flags[0] = ';';
+		nm_platform_link_flags2str (link->n_ifi_flags, &str_flags[1], sizeof (str_flags) - 1);
+	} else
+		str_flags[0] = '\0';
 
 	if (link->master)
 		g_snprintf (master, sizeof (master), " master %d", link->master);
@@ -5438,7 +5442,7 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            "%d: " /* ifindex */
 	            "%s" /* name */
 	            "%s" /* parent */
-	            " <%s>" /* flags */
+	            " <%s%s>" /* flags */
 	            " mtu %d"
 	            "%s" /* master */
 	            " arp %u" /* arptype */
@@ -5456,7 +5460,8 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            link->ifindex,
 	            link->name,
 	            parent,
-	            str_flags->str,
+	            str_highlighted_flags,
+	            str_flags,
 	            link->mtu, master,
 	            link->arptype,
 	            str_link_type ?: "???",
@@ -5475,7 +5480,6 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            link->driver ?: "",
 	            link->rx_packets, link->rx_bytes,
 	            link->tx_packets, link->tx_bytes);
-	g_string_free (str_flags, TRUE);
 	return buf;
 }
 

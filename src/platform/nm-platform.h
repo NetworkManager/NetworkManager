@@ -1791,6 +1791,8 @@ void nm_platform_lnk_wireguard_hash_update (const NMPlatformLnkWireGuard *obj, N
 void nm_platform_qdisc_hash_update (const NMPlatformQdisc *obj, NMHashState *h);
 void nm_platform_tfilter_hash_update (const NMPlatformTfilter *obj, NMHashState *h);
 
+#define NM_PLATFORM_LINK_FLAGS2STR_MAX_LEN ((gsize) 162)
+
 const char *nm_platform_link_flags2str (unsigned flags, char *buf, gsize len);
 const char *nm_platform_link_inet6_addrgenmode2str (guint8 mode, char *buf, gsize len);
 const char *nm_platform_addr_flags2str (unsigned flags, char *buf, gsize len);
