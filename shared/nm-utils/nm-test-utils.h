@@ -863,6 +863,13 @@ nmtst_get_rand_uint32 (void)
 	return g_rand_int (nmtst_get_rand ());
 }
 
+static inline guint
+nmtst_get_rand_uint (void)
+{
+	G_STATIC_ASSERT_EXPR (sizeof (guint32) == sizeof (guint));
+	return nmtst_get_rand_uint32 ();
+}
+
 static inline gboolean
 nmtst_get_rand_bool (void)
 {
