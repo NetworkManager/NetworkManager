@@ -515,8 +515,8 @@ test_bridge_addr (void)
 	link = *plink;
 	g_assert_cmpstr (link.name, ==, DEVICE_NAME);
 
-	g_assert_cmpint (link.addr.len, ==, sizeof (addr));
-	g_assert (!memcmp (link.addr.data, addr, sizeof (addr)));
+	g_assert_cmpint (link.l_address.len, ==, sizeof (addr));
+	g_assert (!memcmp (link.l_address.data, addr, sizeof (addr)));
 
 	plink = nm_platform_link_get (NM_PLATFORM_GET, link.ifindex);
 	g_assert (plink);
@@ -538,8 +538,8 @@ test_bridge_addr (void)
 		g_assert_cmpint (_nm_platform_uint8_inv (plink->inet6_addr_gen_mode_inv), ==, NM_IN6_ADDR_GEN_MODE_EUI64);
 	}
 
-	g_assert_cmpint (plink->addr.len, ==, sizeof (addr));
-	g_assert (!memcmp (plink->addr.data, addr, sizeof (addr)));
+	g_assert_cmpint (plink->l_address.len, ==, sizeof (addr));
+	g_assert (!memcmp (plink->l_address.data, addr, sizeof (addr)));
 
 	nmtstp_link_delete (NULL, -1, link.ifindex, link.name, TRUE);
 }

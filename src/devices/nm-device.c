@@ -1913,7 +1913,7 @@ get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
 	const NMPlatformLink *pllink;
 	const guint8 *hwaddr;
 	guint8 pseudo_hwaddr[ETH_ALEN];
-	guint hwaddr_len;
+	gsize hwaddr_len;
 	int ifindex;
 	gboolean success;
 
@@ -1926,13 +1926,9 @@ get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
 	    || NM_IN_SET (pllink->type, NM_LINK_TYPE_NONE, NM_LINK_TYPE_UNKNOWN))
 		return FALSE;
 
-	if (pllink->addr.len <= 0)
+	hwaddr = nmp_link_address_get (&pllink->l_address, &hwaddr_len);
+	if (hwaddr_len <= 0)
 		return FALSE;
-	if (pllink->addr.len > NM_UTILS_HWADDR_LEN_MAX)
-		g_return_val_if_reached (FALSE);
-
-	hwaddr = pllink->addr.data;
-	hwaddr_len = pllink->addr.len;
 
 	if (pllink->type == NM_LINK_TYPE_6LOWPAN) {
 		/* If the underlying IEEE 802.15.4 device has a short address we generate
@@ -1964,7 +1960,7 @@ get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
 	                                                  out_iid);
 	if (!success) {
 		_LOGW (LOGD_PLATFORM, "failed to generate interface identifier "
-		       "for link type %u hwaddr_len %u", pllink->type, (unsigned) pllink->addr.len);
+		       "for link type %u hwaddr_len %zu", pllink->type, hwaddr_len);
 	}
 	return success;
 }

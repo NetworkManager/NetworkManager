@@ -2587,6 +2587,25 @@ link_wireguard_change (NMPlatform *platform,
 
 /*****************************************************************************/
 
+static void
+_nmp_link_address_set (NMPLinkAddress *dst,
+                       const struct nlattr *nla)
+{
+	*dst = (NMPLinkAddress) {
+		.len = 0,
+	};
+	if (nla) {
+		int l = nla_len (nla);
+
+		if (   l > 0
+		    && l <= NM_UTILS_HWADDR_LEN_MAX) {
+			G_STATIC_ASSERT_EXPR (sizeof (dst->data) == NM_UTILS_HWADDR_LEN_MAX);
+			memcpy (dst->data, nla_data (nla), l);
+			dst->len = l;
+		}
+	}
+}
+
 /* Copied and heavily modified from libnl3's link_msg_parser(). */
 static NMPObject *
 _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr *nlh, gboolean id_only)
@@ -2630,6 +2649,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	const NMPObject *link_cached = NULL;
 	const NMPObject *lnk_data = NULL;
 	gboolean address_complete_from_cache = TRUE;
+	gboolean broadcast_complete_from_cache = TRUE;
 	gboolean lnk_data_complete_from_cache = TRUE;
 	gboolean need_ext_data = FALSE;
 	gboolean af_inet6_token_valid = FALSE;
@@ -2728,14 +2748,13 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	}
 
 	if (tb[IFLA_ADDRESS]) {
-		int l = nla_len (tb[IFLA_ADDRESS]);
-
-		if (l > 0 && l <= NM_UTILS_HWADDR_LEN_MAX) {
-			G_STATIC_ASSERT (NM_UTILS_HWADDR_LEN_MAX == sizeof (obj->link.addr.data));
-			memcpy (obj->link.addr.data, nla_data (tb[IFLA_ADDRESS]), l);
-			obj->link.addr.len = l;
-		}
+		_nmp_link_address_set (&obj->link.l_address, tb[IFLA_ADDRESS]);
 		address_complete_from_cache = FALSE;
+	}
+
+	if (tb[IFLA_BROADCAST]) {
+		_nmp_link_address_set (&obj->link.l_broadcast, tb[IFLA_BROADCAST]);
+		broadcast_complete_from_cache = FALSE;
 	}
 
 	if (tb[IFLA_AF_SPEC]) {
@@ -2811,6 +2830,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	    && (   lnk_data_complete_from_cache
 	        || need_ext_data
 	        || address_complete_from_cache
+	        || broadcast_complete_from_cache
 	        || !af_inet6_token_valid
 	        || !af_inet6_addr_gen_mode_valid
 	        || !tb[IFLA_STATS64])) {
@@ -2840,7 +2860,9 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 			}
 
 			if (address_complete_from_cache)
-				obj->link.addr = link_cached->link.addr;
+				obj->link.l_address = link_cached->link.l_address;
+			if (broadcast_complete_from_cache)
+				obj->link.l_broadcast = link_cached->link.l_broadcast;
 			if (!af_inet6_token_valid)
 				obj->link.inet6_token = link_cached->link.inet6_token;
 			if (!af_inet6_addr_gen_mode_valid)
@@ -5589,7 +5611,7 @@ cache_on_change (NMPlatform *platform,
 				 * Request it again. */
 				re_request_link = TRUE;
 			} else if (   obj_new->link.type == NM_LINK_TYPE_ETHERNET
-			           && obj_new->link.addr.len == 0) {
+			           && obj_new->link.l_address.len == 0) {
 				/* Due to a kernel bug, we sometimes receive spurious NEWLINK
 				 * messages after a wifi interface has disappeared. Since the
 				 * link is not present anymore we can't determine its type and
@@ -6449,8 +6471,8 @@ retry:
 	} else if (   NM_IN_SET (-((int) seq_result), ENFILE)
 	           && change_link_type == CHANGE_LINK_TYPE_SET_ADDRESS
 	           && (obj_cache = nmp_cache_lookup_link (nm_platform_get_cache (platform), ifindex))
-	           && obj_cache->link.addr.len == data->set_address.length
-	           && memcmp (obj_cache->link.addr.data, data->set_address.address, data->set_address.length) == 0) {
+	           && obj_cache->link.l_address.len == data->set_address.length
+	           && memcmp (obj_cache->link.l_address.data, data->set_address.address, data->set_address.length) == 0) {
 		/* workaround ENFILE which may be wrongly returned (bgo #770456).
 		 * If the MAC address is as expected, assume success? */
 		log_result = "success";

@@ -457,7 +457,7 @@ _test_recv_fixture_setup (TestRecvFixture *fixture, gconstpointer user_data)
 
 	fixture->ifindex = link->ifindex;
 	fixture->fd = nm_steal_fd (&fd);
-	memcpy (fixture->mac, link->addr.data, ETH_ALEN);
+	memcpy (fixture->mac, link->l_address.data, ETH_ALEN);
 }
 
 typedef struct {
