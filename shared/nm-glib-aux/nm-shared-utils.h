@@ -245,7 +245,7 @@ nm_ip4_addr_is_localhost (in_addr_t addr4)
 
 #define NM_CMP_FIELD_MEMCMP_LEN(a, b, field, len) \
     NM_CMP_RETURN (memcmp (&((a)->field), &((b)->field), \
-                           MIN (len, sizeof ((a)->field))))
+                           NM_MIN (len, sizeof ((a)->field))))
 
 #define NM_CMP_FIELD_MEMCMP(a, b, field) \
     NM_CMP_RETURN (memcmp (&((a)->field), \
