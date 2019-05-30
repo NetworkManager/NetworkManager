@@ -445,7 +445,7 @@ test_ip4_route_get (void)
 	result = nm_platform_ip_route_get (NM_PLATFORM_GET,
 	                                   AF_INET,
 	                                   &a,
-	                                   nmtst_get_rand_int () % 2 ? 0 : ifindex,
+	                                   nmtst_get_rand_uint32 () % 2 ? 0 : ifindex,
 	                                   &route);
 
 	g_assert (NMTST_NM_ERR_SUCCESS (result));
@@ -607,7 +607,7 @@ test_ip6_route_get (void)
 	result = nm_platform_ip_route_get (NM_PLATFORM_GET,
 	                                   AF_INET6,
 	                                   a,
-	                                   nmtst_get_rand_int () % 2 ? 0 : ifindex,
+	                                   nmtst_get_rand_uint32 () % 2 ? 0 : ifindex,
 	                                   &route);
 
 	g_assert (NMTST_NM_ERR_SUCCESS (result));
@@ -815,9 +815,9 @@ test_ip (gconstpointer test_data)
 
 		if (   order_len == 0
 		    || (   order_len < G_N_ELEMENTS (order_idx)
-		        && nmtst_get_rand_int () % 2)) {
+		        && nmtst_get_rand_uint32 () % 2)) {
 again_find_idx:
-			idx = nmtst_get_rand_int () % G_N_ELEMENTS (iface_data);
+			idx = nmtst_get_rand_uint32 () % G_N_ELEMENTS (iface_data);
 			for (i = 0; i < order_len; i++) {
 				if (order_idx[i] == idx)
 					goto again_find_idx;
@@ -827,7 +827,7 @@ again_find_idx:
 			r->ifindex = iface_data[idx].ifindex;
 			g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_ip4_route_add (platform, NMP_NLM_FLAG_APPEND, r)));
 		} else {
-			i = nmtst_get_rand_int () % order_len;
+			i = nmtst_get_rand_uint32 () % order_len;
 			idx = order_idx[i];
 			for (i++; i < order_len; i++)
 				order_idx[i - 1] = order_idx[i];
@@ -1129,17 +1129,17 @@ _rule_create_random (NMPlatform *platform)
 
 	addr_size = nm_utils_addr_family_to_size (rr->addr_family);
 
-	p = nmtst_get_rand_int ();
+	p = nmtst_get_rand_uint32 ();
 	if ((p % 1000u) < 50)
 		rr->priority = 10000 + ((~p) % 20u);
 
-	p = nmtst_get_rand_int ();
+	p = nmtst_get_rand_uint32 ();
 	if ((p % 1000u) < 40)
 		nm_sprintf_buf (rr->iifname, "t-iif-%u", (~p) % 20);
 	else if ((p % 1000u) < 80)
 		nm_sprintf_buf (rr->iifname, "%s", DEVICE_NAME);
 
-	p = nmtst_get_rand_int ();
+	p = nmtst_get_rand_uint32 ();
 	if ((p % 1000u) < 40)
 		nm_sprintf_buf (rr->oifname, "t-oif-%d", (~p) % 20);
 	else if ((p % 1000u) < 80)
@@ -1149,14 +1149,14 @@ _rule_create_random (NMPlatform *platform)
 		NMIPAddr *p_addr = i ? &rr->src     : &rr->dst;
 		guint8 *p_len    = i ? &rr->src_len : &rr->dst_len;
 
-		p = nmtst_get_rand_int ();
+		p = nmtst_get_rand_uint32 ();
 		if ((p % 1000u) < 100) {
 			/* if we set src_len/dst_len to zero, the src/dst is actually ignored.
 			 *
 			 * For fuzzying, still set the address. It shall have no further effect.
 			 * */
 			*p_len = (~p) % (addr_size * 8 + 1);
-			p = nmtst_get_rand_int ();
+			p = nmtst_get_rand_uint32 ();
 			if ((p % 3u) == 0) {
 				if (rr->addr_family == AF_INET)
 					p_addr->addr4 = nmtst_inet4_from_string (nm_sprintf_buf (saddr, "192.192.5.%u", (~p) % 256u));
@@ -1167,12 +1167,12 @@ _rule_create_random (NMPlatform *platform)
 		}
 	}
 
-	p = nmtst_get_rand_int ();
+	p = nmtst_get_rand_uint32 ();
 	if ((p % 1000u) < 50)
 		rr->tun_id = 10000 + ((~p) % 20);
 
 again_action:
-	p = nmtst_get_rand_int ();
+	p = nmtst_get_rand_uint32 ();
 	if ((p % 1000u) < 500)
 		rr->action = FR_ACT_UNSPEC;
 	else if ((p % 1000u) < 750)
@@ -1180,22 +1180,22 @@ again_action:
 	else
 		rr->action = (~p) % 0x100u;
 
-	rr->priority = _rr_rand_choose_u32 (nmtst_get_rand_int ());
+	rr->priority = _rr_rand_choose_u32 (nmtst_get_rand_uint32 ());
 
 	if (   rr->action == FR_ACT_GOTO
 	    && rr->priority == G_MAXINT32)
 		goto again_action;
 
-	p = nmtst_get_rand_int ();
+	p = nmtst_get_rand_uint32 ();
 	if ((p % 10000u) < 100)
 		rr->goto_target = rr->priority + 1;
 	else
-		rr->goto_target = _rr_rand_choose_u32 (nmtst_get_rand_int ());
+		rr->goto_target = _rr_rand_choose_u32 (nmtst_get_rand_uint32 ());
 	if (   rr->action == FR_ACT_GOTO
 	    && rr->goto_target <= rr->priority)
 		goto again_action;
 
-	p = nmtst_get_rand_int ();
+	p = nmtst_get_rand_uint32 ();
 	if ((p % 1000u) < 25) {
 		if (_rule_check_kernel_support (platform, FRA_L3MDEV)) {
 			rr->l3mdev = TRUE;
@@ -1205,7 +1205,7 @@ again_action:
 
 again_table:
 	if (!rr->l3mdev) {
-		p = nmtst_get_rand_int ();
+		p = nmtst_get_rand_uint32 ();
 		if ((p % 1000u) < 700)
 			rr->table = RT_TABLE_UNSPEC;
 		else if ((p % 1000u) < 850)
@@ -1217,33 +1217,33 @@ again_table:
 			goto again_table;
 	}
 
-	rr->fwmark = _rr_rand_choose_u32 (nmtst_get_rand_int ());
-	rr->fwmask = _rr_rand_choose_u32 (nmtst_get_rand_int ());
+	rr->fwmark = _rr_rand_choose_u32 (nmtst_get_rand_uint32 ());
+	rr->fwmask = _rr_rand_choose_u32 (nmtst_get_rand_uint32 ());
 
-	rr->flow = _rr_rand_choose_u32 (nmtst_get_rand_int ());
+	rr->flow = _rr_rand_choose_u32 (nmtst_get_rand_uint32 ());
 
 	if (_rule_check_kernel_support (platform, FRA_PROTOCOL))
-		rr->protocol = _rr_rand_choose_u8 (nmtst_get_rand_int ());
+		rr->protocol = _rr_rand_choose_u8 (nmtst_get_rand_uint32 ());
 
 #define IPTOS_TOS_MASK 0x1E
 
 again_tos:
-	rr->tos = _rr_rand_choose_u8 (nmtst_get_rand_int ());
+	rr->tos = _rr_rand_choose_u8 (nmtst_get_rand_uint32 ());
 	if (   rr->addr_family == AF_INET
 	    && rr->tos & ~IPTOS_TOS_MASK)
 		goto again_tos;
 
 	if (_rule_check_kernel_support (platform, FRA_IP_PROTO))
-		rr->ip_proto = _rr_rand_choose_u8 (nmtst_get_rand_int ());
+		rr->ip_proto = _rr_rand_choose_u8 (nmtst_get_rand_uint32 ());
 
 	if (_rule_check_kernel_support (platform, FRA_SUPPRESS_PREFIXLEN))
-		rr->suppress_prefixlen_inverse = ~_rr_rand_choose_u32 (nmtst_get_rand_int ());
+		rr->suppress_prefixlen_inverse = ~_rr_rand_choose_u32 (nmtst_get_rand_uint32 ());
 
 	if (_rule_check_kernel_support (platform, FRA_SUPPRESS_IFGROUP))
-		rr->suppress_ifgroup_inverse = ~_rr_rand_choose_u32 (nmtst_get_rand_int ());
+		rr->suppress_ifgroup_inverse = ~_rr_rand_choose_u32 (nmtst_get_rand_uint32 ());
 
 	if (_rule_check_kernel_support (platform, FRA_UID_RANGE)) {
-		p = nmtst_get_rand_int ();
+		p = nmtst_get_rand_uint32 ();
 		rr->uid_range_has = (p % 10000u) < 200;
 	}
 
@@ -1265,10 +1265,10 @@ again_uid_range:
 		if (!_rule_check_kernel_support (platform, attribute))
 			continue;
 
-		p = nmtst_get_rand_int ();
+		p = nmtst_get_rand_uint32 ();
 		if ((p % 10000u) < 300) {
 			while (range->start == 0) {
-				p = p ^ nmtst_get_rand_int ();
+				p = p ^ nmtst_get_rand_uint32 ();
 				range->start = nmtst_rand_select (1u, 0xFFFEu, ((p      ) % 0xFFFEu) + 1);
 				range->end   = nmtst_rand_select (1u, 0xFFFEu, ((p >> 16) % 0xFFFEu) + 1, range->start);
 				if (range->end < range->start)
@@ -1277,7 +1277,7 @@ again_uid_range:
 		}
 	}
 
-	p = nmtst_get_rand_int () % 1000u;
+	p = nmtst_get_rand_uint32 () % 1000u;
 	if (p < 100)
 		rr->flags |= FIB_RULE_INVERT;
 
@@ -1482,10 +1482,10 @@ test_rule (gconstpointer test_data)
 
 	if (TEST_IDX != 1) {
 		nmtst_rand_perm (NULL, objs->pdata, NULL, sizeof (gpointer), objs->len);
-		g_ptr_array_set_size (objs, nmtst_get_rand_int () % (objs->len + 1));
+		g_ptr_array_set_size (objs, nmtst_get_rand_uint32 () % (objs->len + 1));
 	}
 
-	n = (TEST_IDX != 1) ? nmtst_get_rand_int () % 50u : 0u;
+	n = (TEST_IDX != 1) ? nmtst_get_rand_uint32 () % 50u : 0u;
 	for (i = 0; i < n; i++) {
 		nm_auto_nmpobj const NMPObject *o = NULL;
 		guint try = 0;
@@ -1544,7 +1544,7 @@ again:
 				                         -1,
 				                         USER_TAG_2);
 			}
-			if (nmtst_get_rand_int () % objs_sync->len == 0) {
+			if (nmtst_get_rand_uint32 () % objs_sync->len == 0) {
 				nmp_rules_manager_sync (rules_manager, FALSE);
 				g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, i + 1);
 			}
@@ -1554,7 +1554,7 @@ again:
 		g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, objs_sync->len);
 
 		for (i = 0; i < objs_sync->len; i++) {
-			switch (nmtst_get_rand_int () % 3) {
+			switch (nmtst_get_rand_uint32 () % 3) {
 			case 0:
 				nmp_rules_manager_untrack (rules_manager,
 				                           NMP_OBJECT_CAST_ROUTING_RULE (objs_sync->pdata[i]),
@@ -1576,7 +1576,7 @@ again:
 				                         USER_TAG_2);
 				break;
 			}
-			if (nmtst_get_rand_int () % objs_sync->len == 0) {
+			if (nmtst_get_rand_uint32 () % objs_sync->len == 0) {
 				nmp_rules_manager_sync (rules_manager, FALSE);
 				g_assert_cmpint (nmtstp_platform_routing_rules_get_count (platform, AF_UNSPEC), ==, objs_sync->len - i - 1);
 			}

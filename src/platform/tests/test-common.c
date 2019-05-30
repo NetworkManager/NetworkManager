@@ -679,7 +679,7 @@ nmtstp_run_command_check_external_global (void)
 {
 	if (!nmtstp_is_root_test ())
 		return FALSE;
-	switch (nmtst_get_rand_int () % 3) {
+	switch (nmtst_get_rand_uint32 () % 3) {
 	case 0:
 		return -1;
 	case 1:
@@ -699,7 +699,7 @@ nmtstp_run_command_check_external (int external_command)
 	}
 	if (!nmtstp_is_root_test ())
 		return FALSE;
-	return (nmtst_get_rand_int () % 2) == 0;
+	return (nmtst_get_rand_uint32 () % 2) == 0;
 }
 
 /*****************************************************************************/
@@ -843,7 +843,7 @@ _ip_address_add (NMPlatform *platform,
 			g_assert (flags == 0);
 
 			if (   peer_address->addr4 != address->addr4
-			    || nmtst_get_rand_int () % 2) {
+			    || nmtst_get_rand_uint32 () % 2) {
 				/* If the peer is the same as the local address, we can omit it. The result should be identical */
 				nm_sprintf_buf (s_peer, " peer %s", nm_utils_inet4_ntop (peer_address->addr4, b2));
 			} else
@@ -1994,7 +1994,7 @@ nmtstp_netns_select_random (NMPlatform **platforms, gsize n_platforms, NMPNetns 
 	for (i = 0; i < n_platforms; i++)
 		g_assert (NM_IS_PLATFORM (platforms[i]));
 
-	i = nmtst_get_rand_int () % (n_platforms + 1);
+	i = nmtst_get_rand_uint32 () % (n_platforms + 1);
 	if (i == 0)
 		return;
 	g_assert (nm_platform_netns_push (platforms[i - 1], netns));

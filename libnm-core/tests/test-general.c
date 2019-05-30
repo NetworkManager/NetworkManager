@@ -601,7 +601,7 @@ test_nm_utils_strsplit_set (void)
 	words_exp = g_ptr_array_new_with_free_func (g_free);
 	for (test_run = 0; test_run < 100; test_run++) {
 		gboolean f_allow_escaping = nmtst_get_rand_bool ();
-		guint words_len = nmtst_get_rand_int () % 100;
+		guint words_len = nmtst_get_rand_uint32 () % 100;
 		gs_free char *str = NULL;
 		guint i;
 
@@ -611,14 +611,14 @@ test_nm_utils_strsplit_set (void)
 			char *word;
 			guint j;
 
-			word_len = nmtst_get_rand_int ();
+			word_len = nmtst_get_rand_uint32 ();
 			if ((word_len % 100) < 30)
 				word_len = 0;
 			else
 				word_len = (word_len >> 10) % 100;
 			word = g_new (char, word_len + 3);
 			for (j = 0; j < word_len; ) {
-				guint32 p = nmtst_get_rand_int ();
+				guint32 p = nmtst_get_rand_uint32 ();
 				static const char delimiters_arr[] = { DELIMITERS_C };
 				static const char regular_chars[] = "abcdefghijklmnopqrstuvwxyz";
 
@@ -706,7 +706,7 @@ _do_test_c_list_sort (CListSort *elements, guint n_list, gboolean headless)
 	c_list_init (&head);
 	for (i = 0; i < n_list; i++) {
 		el = &elements[i];
-		el->val = nmtst_get_rand_int () % (2*n_list);
+		el->val = nmtst_get_rand_uint32 () % (2*n_list);
 		c_list_link_tail (&head, &el->lst);
 	}
 
@@ -767,7 +767,7 @@ test_c_list_sort (void)
 	elements = g_new0 (CListSort, N_ELEMENTS);
 	for (n_list = 1; n_list < N_ELEMENTS; n_list++) {
 		if (n_list > 150) {
-			n_list += nmtst_get_rand_int () % n_list;
+			n_list += nmtst_get_rand_uint32 () % n_list;
 			if (n_list >= N_ELEMENTS)
 				break;
 		}
@@ -775,7 +775,7 @@ test_c_list_sort (void)
 			const guint N_REPEAT = n_list > 50 ? 1 : 5;
 
 			for (repeat = 0; repeat < N_REPEAT; repeat++)
-				_do_test_c_list_sort (elements, n_list, nmtst_get_rand_int () % 2);
+				_do_test_c_list_sort (elements, n_list, nmtst_get_rand_uint32 () % 2);
 		}
 	}
 }
@@ -3501,7 +3501,7 @@ test_setting_compare_addresses (void)
 
 	nm_ip_address_unref (a);
 
-	if (nmtst_get_rand_int () % 2)
+	if (nmtst_get_rand_uint32 () % 2)
 		NMTST_SWAP (s1, s2);
 
 	success = nm_setting_compare (s1, s2, NM_SETTING_COMPARE_FLAG_EXACT);
@@ -3533,7 +3533,7 @@ test_setting_compare_routes (void)
 
 	nm_ip_route_unref (r);
 
-	if (nmtst_get_rand_int () % 2)
+	if (nmtst_get_rand_uint32 () % 2)
 		NMTST_SWAP (s1, s2);
 
 	success = nm_setting_compare (s1, s2, NM_SETTING_COMPARE_FLAG_EXACT);
@@ -6081,7 +6081,7 @@ test_hexstr2bin (void)
 static void
 _do_strquote (const char *str, gsize buf_len, const char *expected)
 {
-	char canary = (char) nmtst_get_rand_int ();
+	char canary = (char) nmtst_get_rand_uint32 ();
 	gs_free char *buf_full = g_malloc (buf_len + 2);
 	char *buf = &buf_full[1];
 	const char *b;
@@ -7214,7 +7214,7 @@ test_nm_utils_ptrarray_find_binary_search_with_duplicates (void)
 			/* fill with random numbers... surely there are some duplicates
 			 * there... or maybe even there are none... */
 			for (i = 0; i < i_len; i++)
-				arr[i] = GINT_TO_POINTER (nmtst_get_rand_int () % (i_len + BIN_SEARCH_W_DUPS_JITTER));
+				arr[i] = GINT_TO_POINTER (nmtst_get_rand_uint32 () % (i_len + BIN_SEARCH_W_DUPS_JITTER));
 			g_qsort_with_data (arr,
 			                   i_len,
 			                   sizeof (gpointer),

@@ -147,7 +147,7 @@ test_nm_utils_ip6_address_same_prefix (void)
 		nmtst_rand_buf (NULL, a.ptr, sizeof (a));
 		nmtst_rand_buf (NULL, b.ptr, sizeof (b));
 again_plen:
-		plen = nmtst_get_rand_int () % 129;
+		plen = nmtst_get_rand_uint32 () % 129;
 		if (!is_same && NM_IN_SET (plen, 0, 128))
 			goto again_plen;
 
@@ -181,7 +181,7 @@ again_plen:
 	for (n = 0; n < N; n++) {
 		nmtst_rand_buf (NULL, a.ptr, sizeof (a));
 		nmtst_rand_buf (NULL, b.ptr, sizeof (b));
-		plen = nmtst_get_rand_int () % 129;
+		plen = nmtst_get_rand_uint32 () % 129;
 
 		memset (addrmask.ptr, 0xFF, sizeof (addrmask));
 		nm_utils_ip6_address_clear_host_address (&addrmask.val, &addrmask.val, plen);
@@ -198,7 +198,7 @@ again_plen:
 
 		nmtst_rand_buf (NULL, a.ptr, sizeof (a));
 		nmtst_rand_buf (NULL, b.ptr, sizeof (b));
-		plen = nmtst_get_rand_int () % 129;
+		plen = nmtst_get_rand_uint32 () % 129;
 
 		if (!plen)
 			continue;
@@ -1456,7 +1456,7 @@ test_nm_utils_strbuf_append (void)
 		const char *_str_iter; \
 		gs_free char *_str = NULL; \
 		\
-		switch (nmtst_get_rand_int () % 4) { \
+		switch (nmtst_get_rand_uint32 () % 4) { \
 		case 0: \
 			nm_utils_strbuf_append (_buf, _len, (format), __VA_ARGS__); \
 			break; \
@@ -1484,7 +1484,7 @@ test_nm_utils_strbuf_append (void)
 		gsize *_len = (len); \
 		const char *_str = (str); \
 		\
-		switch (nmtst_get_rand_int () % 4) { \
+		switch (nmtst_get_rand_uint32 () % 4) { \
 		case 0: \
 			nm_utils_strbuf_append (_buf, _len, "%s", _str ?: ""); \
 			break; \
@@ -1509,7 +1509,7 @@ test_nm_utils_strbuf_append (void)
 		gsize *_len = (len); \
 		char _ch = (ch); \
 		\
-		switch (nmtst_get_rand_int () % 4) { \
+		switch (nmtst_get_rand_uint32 () % 4) { \
 		case 0: \
 			nm_utils_strbuf_append (_buf, _len, "%c", _ch); \
 			break; \
@@ -1527,7 +1527,7 @@ test_nm_utils_strbuf_append (void)
 
 	for (buf_len = 0; buf_len < 10; buf_len++) {
 		for (rep = 0; rep < 50; rep++) {
-			const int s_len = nmtst_get_rand_int () % (sizeof (str) - 5);
+			const int s_len = nmtst_get_rand_uint32 () % (sizeof (str) - 5);
 			char *t_buf;
 			gsize t_len;
 			int test_mode;
@@ -1543,7 +1543,7 @@ test_nm_utils_strbuf_append (void)
 			t_buf = buf;
 			t_len = buf_len;
 
-			test_mode = nmtst_get_rand_int () % 5;
+			test_mode = nmtst_get_rand_uint32 () % 5;
 
 			switch (test_mode) {
 			case 0:
@@ -1568,7 +1568,7 @@ test_nm_utils_strbuf_append (void)
 				g_snprintf (t_buf, t_len, "%s", str);
 				if (   t_len > 0
 				    && strlen (str) >= buf_len
-				    && (nmtst_get_rand_int () % 2)) {
+				    && (nmtst_get_rand_uint32 () % 2)) {
 					/* the string was truncated by g_snprintf(). That means, at the last position in the
 					 * buffer is now NUL.
 					 * Replace the NUL by the actual character, and check that nm_utils_strbuf_seek_end()
@@ -1688,7 +1688,7 @@ test_duplicate_decl_specifier (void)
 		(_a > _b ? _a : _b); \
 	})
 
-	v_result[0] = TEST_MAX (v_const[0], nmtst_get_rand_int () % 5) + v2;
+	v_result[0] = TEST_MAX (v_const[0], nmtst_get_rand_uint32 () % 5) + v2;
 
 	NM_PRAGMA_WARNING_REENABLE
 }

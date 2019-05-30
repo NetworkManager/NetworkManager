@@ -149,10 +149,10 @@ test_nm_strndup_a (void)
 		char ch;
 		gsize i, l;
 
-		input = g_strnfill (nmtst_get_rand_int () % 20, 'x');
+		input = g_strnfill (nmtst_get_rand_uint32 () % 20, 'x');
 
 		for (i = 0; input[i]; i++) {
-			while ((ch = ((char) nmtst_get_rand_int ())) == '\0') {
+			while ((ch = ((char) nmtst_get_rand_uint32 ())) == '\0') {
 				/* repeat. */
 			}
 			input[i] = ch;
@@ -175,7 +175,7 @@ test_nm_strndup_a (void)
 			gs_free char *dup_free = NULL;
 			const char *dup;
 
-			l = nmtst_get_rand_int () % 23;
+			l = nmtst_get_rand_uint32 () % 23;
 			dup = nm_strndup_a (10, input, l, &dup_free);
 			g_assert (strncmp (dup, input, l) == 0);
 			g_assert (strlen (dup) <= l);
@@ -214,7 +214,7 @@ test_unaligned (void)
 		guint8 val = 0;
 
 		while (val == 0)
-			val = nmtst_get_rand_int () % 256;
+			val = nmtst_get_rand_uint32 () % 256;
 
 		buf[shift] = val;
 

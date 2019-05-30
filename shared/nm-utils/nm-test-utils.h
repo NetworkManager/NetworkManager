@@ -858,7 +858,7 @@ nmtst_get_rand (void)
 }
 
 static inline guint32
-nmtst_get_rand_int (void)
+nmtst_get_rand_uint32 (void)
 {
 	return g_rand_int (nmtst_get_rand ());
 }
@@ -866,7 +866,7 @@ nmtst_get_rand_int (void)
 static inline gboolean
 nmtst_get_rand_bool (void)
 {
-	return nmtst_get_rand_int () % 2;
+	return nmtst_get_rand_uint32 () % 2;
 }
 
 static inline gpointer
@@ -901,7 +901,7 @@ nmtst_rand_buf (GRand *rand, gpointer buffer, gsize buffer_length)
 	({ \
 		typeof (v0) NM_UNIQ_T (UNIQ, uniq)[1 + NM_NARG (__VA_ARGS__)] = { (v0), __VA_ARGS__ }; \
 		\
-		NM_UNIQ_T (UNIQ, uniq)[nmtst_get_rand_int () % G_N_ELEMENTS (NM_UNIQ_T (UNIQ, uniq))]; \
+		NM_UNIQ_T (UNIQ, uniq)[nmtst_get_rand_uint32 () % G_N_ELEMENTS (NM_UNIQ_T (UNIQ, uniq))]; \
 	})
 
 #define nmtst_rand_select(...) \
@@ -1933,7 +1933,7 @@ nmtst_assert_setting_is_equal (gconstpointer /* const NMSetting * */ a,
                                NMSettingCompareFlags flags)
 {
 	gs_unref_hashtable GHashTable *hash = NULL;
-	guint32 r = nmtst_get_rand_int ();
+	guint32 r = nmtst_get_rand_uint32 ();
 
 	g_assert (NM_IS_SETTING (a));
 	g_assert (NM_IS_SETTING (b));
