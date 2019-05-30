@@ -107,16 +107,16 @@ static const TeamAttrData team_attr_datas[] = {
 
 typedef enum {
 	LINK_WATCHER_ATTRIBUTE_NAME,
-	LINK_WATCHER_ATTRIBUTE_TARGET_HOST,
-	LINK_WATCHER_ATTRIBUTE_SOURCE_HOST,
 	LINK_WATCHER_ATTRIBUTE_DELAY_UP,
 	LINK_WATCHER_ATTRIBUTE_DELAY_DOWN,
-	LINK_WATCHER_ATTRIBUTE_INIT_WAIT,
 	LINK_WATCHER_ATTRIBUTE_INTERVAL,
+	LINK_WATCHER_ATTRIBUTE_INIT_WAIT,
 	LINK_WATCHER_ATTRIBUTE_MISSED_MAX,
-	LINK_WATCHER_ATTRIBUTE_VLANID,
+	LINK_WATCHER_ATTRIBUTE_SOURCE_HOST,
+	LINK_WATCHER_ATTRIBUTE_TARGET_HOST,
 	LINK_WATCHER_ATTRIBUTE_VALIDATE_ACTIVE,
 	LINK_WATCHER_ATTRIBUTE_VALIDATE_INACTIVE,
+	LINK_WATCHER_ATTRIBUTE_VLANID,
 	LINK_WATCHER_ATTRIBUTE_SEND_ALWAYS,
 } LinkWatcherAttribute;
 
@@ -124,19 +124,19 @@ typedef enum {
                                                      LINK_WATCHER_ATTRIBUTE_DELAY_UP, \
                                                      LINK_WATCHER_ATTRIBUTE_DELAY_DOWN
 #define _EXPECTED_LINK_WATCHER_ATTRIBUTES_NSNA_PING  LINK_WATCHER_ATTRIBUTE_NAME, \
-                                                     LINK_WATCHER_ATTRIBUTE_INIT_WAIT, \
                                                      LINK_WATCHER_ATTRIBUTE_INTERVAL, \
+                                                     LINK_WATCHER_ATTRIBUTE_INIT_WAIT, \
                                                      LINK_WATCHER_ATTRIBUTE_MISSED_MAX, \
                                                      LINK_WATCHER_ATTRIBUTE_TARGET_HOST
 #define _EXPECTED_LINK_WATCHER_ATTRIBUTES_ARP_PING   LINK_WATCHER_ATTRIBUTE_NAME, \
-                                                     LINK_WATCHER_ATTRIBUTE_INIT_WAIT, \
                                                      LINK_WATCHER_ATTRIBUTE_INTERVAL, \
+                                                     LINK_WATCHER_ATTRIBUTE_INIT_WAIT, \
                                                      LINK_WATCHER_ATTRIBUTE_MISSED_MAX, \
-                                                     LINK_WATCHER_ATTRIBUTE_VLANID, \
-                                                     LINK_WATCHER_ATTRIBUTE_TARGET_HOST, \
                                                      LINK_WATCHER_ATTRIBUTE_SOURCE_HOST, \
+                                                     LINK_WATCHER_ATTRIBUTE_TARGET_HOST, \
                                                      LINK_WATCHER_ATTRIBUTE_VALIDATE_ACTIVE, \
                                                      LINK_WATCHER_ATTRIBUTE_VALIDATE_INACTIVE, \
+                                                     LINK_WATCHER_ATTRIBUTE_VLANID, \
                                                      LINK_WATCHER_ATTRIBUTE_SEND_ALWAYS
 
 typedef struct {
@@ -157,16 +157,16 @@ static const LinkWatcherAttrData link_watcher_attr_datas[] = {
 		__VA_ARGS__ \
 	}
 	_INIT (LINK_WATCHER_ATTRIBUTE_NAME,              "name",              "name",              NM_VALUE_TYPE_STRING,                          ),
-	_INIT (LINK_WATCHER_ATTRIBUTE_TARGET_HOST,       "target_host",       "target-host",       NM_VALUE_TYPE_STRING,                          ),
-	_INIT (LINK_WATCHER_ATTRIBUTE_SOURCE_HOST,       "source_host",       "source-host",       NM_VALUE_TYPE_STRING,                          ),
 	_INIT (LINK_WATCHER_ATTRIBUTE_DELAY_UP,          "delay_up",          "delay-up",          NM_VALUE_TYPE_INT,                             ),
 	_INIT (LINK_WATCHER_ATTRIBUTE_DELAY_DOWN,        "delay_down",        "delay-down",        NM_VALUE_TYPE_INT,                             ),
-	_INIT (LINK_WATCHER_ATTRIBUTE_INIT_WAIT,         "init_wait",         "init-wait",         NM_VALUE_TYPE_INT,                             ),
 	_INIT (LINK_WATCHER_ATTRIBUTE_INTERVAL,          "interval",          "interval",          NM_VALUE_TYPE_INT,                             ),
+	_INIT (LINK_WATCHER_ATTRIBUTE_INIT_WAIT,         "init_wait",         "init-wait",         NM_VALUE_TYPE_INT,                             ),
 	_INIT (LINK_WATCHER_ATTRIBUTE_MISSED_MAX,        "missed_max",        "missed-max",        NM_VALUE_TYPE_INT,    .default_val.v_int =  3, ),
-	_INIT (LINK_WATCHER_ATTRIBUTE_VLANID,            "vlanid",            "vlanid",            NM_VALUE_TYPE_INT,    .default_val.v_int = -1, ),
+	_INIT (LINK_WATCHER_ATTRIBUTE_SOURCE_HOST,       "source_host",       "source-host",       NM_VALUE_TYPE_STRING,                          ),
+	_INIT (LINK_WATCHER_ATTRIBUTE_TARGET_HOST,       "target_host",       "target-host",       NM_VALUE_TYPE_STRING,                          ),
 	_INIT (LINK_WATCHER_ATTRIBUTE_VALIDATE_ACTIVE,   "validate_active",   "validate-active",   NM_VALUE_TYPE_BOOL,                            ),
 	_INIT (LINK_WATCHER_ATTRIBUTE_VALIDATE_INACTIVE, "validate_inactive", "validate-inactive", NM_VALUE_TYPE_BOOL,                            ),
+	_INIT (LINK_WATCHER_ATTRIBUTE_VLANID,            "vlanid",            "vlanid",            NM_VALUE_TYPE_INT,    .default_val.v_int = -1, ),
 	_INIT (LINK_WATCHER_ATTRIBUTE_SEND_ALWAYS,       "send_always",       "send-always",       NM_VALUE_TYPE_BOOL,                            ),
 #undef _INIT
 };

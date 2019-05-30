@@ -1479,11 +1479,11 @@ test_team_setting (void)
 
 	nm_setting_team_add_link_watcher (NM_SETTING_TEAM (setting), watcher1);
 	_check_team_setting (setting);
-	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": { \"name\": \"nsna_ping\", \"target_host\": \"bbb\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4 } }");
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": { \"name\": \"nsna_ping\", \"interval\": 3, \"init_wait\": 1, \"missed_max\": 4, \"target_host\": \"bbb\" } }");
 
 	nm_setting_team_add_link_watcher (NM_SETTING_TEAM (setting), watcher2);
 	_check_team_setting (setting);
-	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": [ { \"name\": \"nsna_ping\", \"target_host\": \"bbb\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4 }, { \"name\": \"arp_ping\", \"target_host\": \"ccc\", \"source_host\": \"ddd\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4 } ] }");
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": [ { \"name\": \"nsna_ping\", \"interval\": 3, \"init_wait\": 1, \"missed_max\": 4, \"target_host\": \"bbb\" }, { \"name\": \"arp_ping\", \"interval\": 3, \"init_wait\": 1, \"missed_max\": 4, \"source_host\": \"ddd\", \"target_host\": \"ccc\" } ] }");
 
 	nm_setting_team_remove_link_watcher (NM_SETTING_TEAM (setting), 0);
 	nm_setting_team_remove_link_watcher (NM_SETTING_TEAM (setting), 0);
