@@ -33,21 +33,115 @@
 
 /*****************************************************************************/
 
+typedef enum {
+	SET_FIELD_MODE_UNSET              = 0,
+	SET_FIELD_MODE_SET                = 1,
+
+	/* Sets the field as set, unless the field is at the default.
+	 * This is the case for API that is called from NMSettingTeam/NMSettingTeamPort.
+	 * This means, using libnm API to reset the value of a NMSetting to the default,
+	 * will mark the field as unset.
+	 * This is different from initializing the field when parsing JSON/GVariant. In
+	 * that case an explicitly set field (even set to the default value) will be remembered
+	 * to be set. */
+	SET_FIELD_MODE_SET_UNLESS_DEFAULT = 2,
+} SetFieldModeEnum;
+
+typedef enum {
+	RESET_JSON_NO  = FALSE,
+	RESET_JSON_YES = TRUE,
+} ResetJsonEnum;
+
 /* we rely on "config" being the first. At various places we iterate over attribute types,
  * starting after "config".*/
 G_STATIC_ASSERT (_NM_TEAM_ATTRIBUTE_0     == 0);
 G_STATIC_ASSERT (NM_TEAM_ATTRIBUTE_CONFIG == 1);
 
+static const char *const _valid_names_runner[] = {
+	NM_SETTING_TEAM_RUNNER_BROADCAST,
+	NM_SETTING_TEAM_RUNNER_ROUNDROBIN,
+	NM_SETTING_TEAM_RUNNER_RANDOM,
+	NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP,
+	NM_SETTING_TEAM_RUNNER_LOADBALANCE,
+	NM_SETTING_TEAM_RUNNER_LACP,
+	NULL,
+};
+
+static const char *const _valid_names_runner_hwaddr_policy[] = {
+	NM_SETTING_TEAM_RUNNER_HWADDR_POLICY_SAME_ALL,
+	NM_SETTING_TEAM_RUNNER_HWADDR_POLICY_BY_ACTIVE,
+	NM_SETTING_TEAM_RUNNER_HWADDR_POLICY_ONLY_ACTIVE,
+	NULL,
+};
+
+static const char *const _valid_names_runner_tx_balancer[] = {
+	"basic",
+	NULL,
+};
+
+static const char *const _valid_names_runner_tx_hash[] = {
+	"eth",
+	"vlan",
+	"ipv4",
+	"ipv6",
+	"ip",
+	"l3",
+	"l4",
+	"tcp",
+	"udp",
+	"sctp",
+	NULL,
+};
+
+static const char *const _valid_names_runner_agg_select_policy[] = {
+	"lacp_prio",
+	"lacp_prio_stable",
+	"bandwidth",
+	"count",
+	"port_config",
+	NULL,
+};
+
+typedef struct {
+	NMTeamAttribute team_attr;
+	const char *const*valid_runners;
+} RunnerCompatElem;
+
+static const RunnerCompatElem _runner_compat_lst[] = {
+	{ NM_TEAM_ATTRIBUTE_MASTER_RUNNER_HWADDR_POLICY,        NM_MAKE_STRV (NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP), },
+	{ NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH,              NM_MAKE_STRV (NM_SETTING_TEAM_RUNNER_LOADBALANCE,
+	                                                                      NM_SETTING_TEAM_RUNNER_LACP), },
+	{ NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER,          NM_MAKE_STRV (NM_SETTING_TEAM_RUNNER_LOADBALANCE,
+	                                                                      NM_SETTING_TEAM_RUNNER_LACP), },
+	{ NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER_INTERVAL, NM_MAKE_STRV (NM_SETTING_TEAM_RUNNER_LOADBALANCE,
+	                                                                      NM_SETTING_TEAM_RUNNER_LACP), },
+	{ NM_TEAM_ATTRIBUTE_MASTER_RUNNER_ACTIVE,               NM_MAKE_STRV (NM_SETTING_TEAM_RUNNER_LACP), },
+	{ NM_TEAM_ATTRIBUTE_MASTER_RUNNER_FAST_RATE,            NM_MAKE_STRV (NM_SETTING_TEAM_RUNNER_LACP), },
+	{ NM_TEAM_ATTRIBUTE_MASTER_RUNNER_SYS_PRIO,             NM_MAKE_STRV (NM_SETTING_TEAM_RUNNER_LACP), },
+	{ NM_TEAM_ATTRIBUTE_MASTER_RUNNER_MIN_PORTS,            NM_MAKE_STRV (NM_SETTING_TEAM_RUNNER_LACP), },
+	{ NM_TEAM_ATTRIBUTE_MASTER_RUNNER_AGG_SELECT_POLICY,    NM_MAKE_STRV (NM_SETTING_TEAM_RUNNER_LACP), },
+};
+
 typedef struct {
 	const char *const*js_keys;
-	const char *dbus_name;
+	const char *property_name;
 	NMValueTypUnion default_val;
+	union {
+		struct {
+			gint32 min;
+			gint32 max;
+		} r_int32;
+		struct {
+			const char *const*valid_names;
+		} r_string;
+	} range;
 	NMTeamAttribute team_attr;
 	NMValueType value_type;
 	guint8 field_offset;
 	guint8 js_keys_len;
 	bool for_master:1;
 	bool for_port:1;
+	bool has_range:1;
 } TeamAttrData;
 
 #define TEAM_ATTR_IDX(_is_port, _team_attr) \
@@ -63,44 +157,65 @@ static const TeamAttrData team_attr_datas[] = {
 		.js_keys = NM_MAKE_STRV (__VA_ARGS__), \
 		.js_keys_len = NM_NARG (__VA_ARGS__)
 
-#define _INIT(_is_port, _team_attr, field, _value_type, _dbus_name, ...) \
+#define _VAL_BOOL(_default) \
+		.default_val.v_bool = (_default)
+
+#define _VAL_INT32(_default) \
+		.default_val.v_int32 = (_default)
+
+#define _VAL_INT32_RANGE(_default, _min,_max) \
+		_VAL_INT32 (_default), \
+		.has_range = TRUE, \
+		.range.r_int32 = { .min = _min, .max = _max, }
+
+#define _VAL_STRING() \
+		.default_val.v_string = NULL
+
+#define _VAL_STRING_RANGE(_valid_names) \
+		_VAL_STRING (), \
+		.has_range = TRUE, \
+		.range.r_string = { .valid_names = (_valid_names), }
+
+#define _VAL_UNSPEC() \
+		.default_val.v_string = (NULL)
+
+#define _INIT(_is_port, _team_attr, field, _value_type, _property_name, ...) \
 	[TEAM_ATTR_IDX (_is_port, _team_attr)] = { \
 		.for_master    = (_team_attr) < _NM_TEAM_ATTRIBUTE_START || !(_is_port), \
 		.for_port      = (_team_attr) < _NM_TEAM_ATTRIBUTE_START ||  (_is_port), \
 		.team_attr     = (_team_attr), \
 		.field_offset  = G_STRUCT_OFFSET (NMTeamSetting, _data_priv.field), \
 		.value_type    = (_value_type), \
-		.dbus_name     = ""_dbus_name"", \
+		.property_name = ""_property_name"", \
 		__VA_ARGS__ \
 	}
 
-	_INIT (0, NM_TEAM_ATTRIBUTE_CONFIG,                             _js_str,                            NM_VALUE_TYPE_UNSPEC, NM_SETTING_TEAM_CONFIG,                                                                                                                                               ),
+	_INIT (0, NM_TEAM_ATTRIBUTE_CONFIG,                             _js_str,                            NM_VALUE_TYPE_UNSPEC, NM_SETTING_TEAM_CONFIG,                                                                                                                                           ),
 
-	_INIT (0, NM_TEAM_ATTRIBUTE_LINK_WATCHERS,                      link_watchers,                      NM_VALUE_TYPE_UNSPEC, NM_SETTING_TEAM_LINK_WATCHERS,               _JS_KEYS ("link_watch"),                                                                                                 ),
+	_INIT (0, NM_TEAM_ATTRIBUTE_LINK_WATCHERS,                      link_watchers,                      NM_VALUE_TYPE_UNSPEC, NM_SETTING_TEAM_LINK_WATCHERS,               _JS_KEYS ("link_watch"),                                  _VAL_UNSPEC (),                                            ),
 
-	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_COUNT,          master.notify_peers_count,          NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_NOTIFY_PEERS_COUNT,          _JS_KEYS ("notify_peers", "count"),                                                                                      ),
-	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_INTERVAL,       master.notify_peers_interval,       NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_NOTIFY_PEERS_INTERVAL,       _JS_KEYS ("notify_peers", "interval"),                                                                                   ),
-	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_COUNT,          master.mcast_rejoin_count,          NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_MCAST_REJOIN_COUNT,          _JS_KEYS ("mcast_rejoin", "count"),                                                                                      ),
-	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_INTERVAL,       master.mcast_rejoin_interval,       NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_MCAST_REJOIN_INTERVAL,       _JS_KEYS ("mcast_rejoin", "interval"),                                                                                   ),
-	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER,                      master.runner,                      NM_VALUE_TYPE_STRING, NM_SETTING_TEAM_RUNNER,                      _JS_KEYS ("runner", "name"),                              .default_val.v_string = NM_SETTING_TEAM_RUNNER_DEFAULT,        ),
-	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_HWADDR_POLICY,        master.runner_hwaddr_policy,        NM_VALUE_TYPE_STRING, NM_SETTING_TEAM_RUNNER_HWADDR_POLICY,        _JS_KEYS ("runner", "hwaddr_policy"),                                                                                    ),
-	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH,              master.runner_tx_hash,              NM_VALUE_TYPE_UNSPEC, NM_SETTING_TEAM_RUNNER_TX_HASH,              _JS_KEYS ("runner", "tx_hash"),                                                                                          ),
-	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER,          master.runner_tx_balancer,          NM_VALUE_TYPE_STRING, NM_SETTING_TEAM_RUNNER_TX_BALANCER,          _JS_KEYS ("runner", "tx_balancer", "name"),                                                                              ),
-	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER_INTERVAL, master.runner_tx_balancer_interval, NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL, _JS_KEYS ("runner", "tx_balancer", "balancing_interval"), .default_val.v_int32 = -1                                      ),
-	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_ACTIVE,               master.runner_active,               NM_VALUE_TYPE_BOOL,   NM_SETTING_TEAM_RUNNER_ACTIVE,               _JS_KEYS ("runner", "active"),                                                                                           ),
-	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_FAST_RATE,            master.runner_fast_rate,            NM_VALUE_TYPE_BOOL,   NM_SETTING_TEAM_RUNNER_FAST_RATE,            _JS_KEYS ("runner", "fast_rate"),                                                                                        ),
-	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_SYS_PRIO,             master.runner_sys_prio,             NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_RUNNER_SYS_PRIO,             _JS_KEYS ("runner", "sys_prio"),                          .default_val.v_int32 = -1,                                     ),
-	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_MIN_PORTS,            master.runner_min_ports,            NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_RUNNER_MIN_PORTS,            _JS_KEYS ("runner", "min_ports"),                         .default_val.v_int32 = -1,                                     ),
-	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_AGG_SELECT_POLICY,    master.runner_agg_select_policy,    NM_VALUE_TYPE_STRING, NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY,    _JS_KEYS ("runner", "agg_select_policy"),                                                                                ),
+	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_COUNT,          master.notify_peers_count,          NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_NOTIFY_PEERS_COUNT,          _JS_KEYS ("notify_peers", "count"),                       _VAL_INT32_RANGE (-1, 0, G_MAXINT32),                      ),
+	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_INTERVAL,       master.notify_peers_interval,       NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_NOTIFY_PEERS_INTERVAL,       _JS_KEYS ("notify_peers", "interval"),                    _VAL_INT32_RANGE (-1, 0, G_MAXINT32),                      ),
+	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_COUNT,          master.mcast_rejoin_count,          NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_MCAST_REJOIN_COUNT,          _JS_KEYS ("mcast_rejoin", "count"),                       _VAL_INT32_RANGE (-1, 0, G_MAXINT32),                      ),
+	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_INTERVAL,       master.mcast_rejoin_interval,       NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_MCAST_REJOIN_INTERVAL,       _JS_KEYS ("mcast_rejoin", "interval"),                    _VAL_INT32_RANGE (-1, 0, G_MAXINT32),                      ),
+	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER,                      master.runner,                      NM_VALUE_TYPE_STRING, NM_SETTING_TEAM_RUNNER,                      _JS_KEYS ("runner", "name"),                              _VAL_STRING_RANGE (_valid_names_runner),                   ),
+	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_HWADDR_POLICY,        master.runner_hwaddr_policy,        NM_VALUE_TYPE_STRING, NM_SETTING_TEAM_RUNNER_HWADDR_POLICY,        _JS_KEYS ("runner", "hwaddr_policy"),                     _VAL_STRING_RANGE (_valid_names_runner_hwaddr_policy),     ),
+	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH,              master.runner_tx_hash,              NM_VALUE_TYPE_UNSPEC, NM_SETTING_TEAM_RUNNER_TX_HASH,              _JS_KEYS ("runner", "tx_hash"),                           _VAL_UNSPEC (),                                            ),
+	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER,          master.runner_tx_balancer,          NM_VALUE_TYPE_STRING, NM_SETTING_TEAM_RUNNER_TX_BALANCER,          _JS_KEYS ("runner", "tx_balancer", "name"),               _VAL_STRING_RANGE (_valid_names_runner_tx_balancer),       ),
+	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER_INTERVAL, master.runner_tx_balancer_interval, NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL, _JS_KEYS ("runner", "tx_balancer", "balancing_interval"), _VAL_INT32_RANGE (-1, 0, G_MAXINT32),                      ),
+	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_ACTIVE,               master.runner_active,               NM_VALUE_TYPE_BOOL,   NM_SETTING_TEAM_RUNNER_ACTIVE,               _JS_KEYS ("runner", "active"),                            _VAL_BOOL (TRUE),                                          ),
+	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_FAST_RATE,            master.runner_fast_rate,            NM_VALUE_TYPE_BOOL,   NM_SETTING_TEAM_RUNNER_FAST_RATE,            _JS_KEYS ("runner", "fast_rate"),                         _VAL_BOOL (FALSE),                                         ),
+	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_SYS_PRIO,             master.runner_sys_prio,             NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_RUNNER_SYS_PRIO,             _JS_KEYS ("runner", "sys_prio"),                          _VAL_INT32_RANGE (-1, 0, USHRT_MAX + 1),                   ),
+	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_MIN_PORTS,            master.runner_min_ports,            NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_RUNNER_MIN_PORTS,            _JS_KEYS ("runner", "min_ports"),                         _VAL_INT32_RANGE (-1, 1, UCHAR_MAX + 1),                   ),
+	_INIT (0, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_AGG_SELECT_POLICY,    master.runner_agg_select_policy,    NM_VALUE_TYPE_STRING, NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY,    _JS_KEYS ("runner", "agg_select_policy"),                 _VAL_STRING_RANGE (_valid_names_runner_agg_select_policy), ),
 
-	_INIT (1, NM_TEAM_ATTRIBUTE_PORT_QUEUE_ID,                      port.queue_id,                      NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_PORT_QUEUE_ID,               _JS_KEYS ("queue_id"),                                    .default_val.v_int32 = NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT,  ),
-	_INIT (1, NM_TEAM_ATTRIBUTE_PORT_PRIO,                          port.prio,                          NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_PORT_PRIO,                   _JS_KEYS ("prio"),                                                                                                       ),
-	_INIT (1, NM_TEAM_ATTRIBUTE_PORT_STICKY,                        port.sticky,                        NM_VALUE_TYPE_BOOL,   NM_SETTING_TEAM_PORT_STICKY,                 _JS_KEYS ("sticky"),                                                                                                     ),
-	_INIT (1, NM_TEAM_ATTRIBUTE_PORT_LACP_PRIO,                     port.lacp_prio,                     NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_PORT_LACP_PRIO,              _JS_KEYS ("lacp_prio"),                                   .default_val.v_int32 = NM_SETTING_TEAM_PORT_LACP_PRIO_DEFAULT, ),
-	_INIT (1, NM_TEAM_ATTRIBUTE_PORT_LACP_KEY,                      port.lacp_key,                      NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_PORT_LACP_KEY,               _JS_KEYS ("lacp_key"),                                                                                                   ),
+	_INIT (1, NM_TEAM_ATTRIBUTE_PORT_QUEUE_ID,                      port.queue_id,                      NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_PORT_QUEUE_ID,               _JS_KEYS ("queue_id"),                                    _VAL_INT32_RANGE (-1, 0, G_MAXINT32),                      ),
+	_INIT (1, NM_TEAM_ATTRIBUTE_PORT_PRIO,                          port.prio,                          NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_PORT_PRIO,                   _JS_KEYS ("prio"),                                        _VAL_INT32 (0),                                            ),
+	_INIT (1, NM_TEAM_ATTRIBUTE_PORT_STICKY,                        port.sticky,                        NM_VALUE_TYPE_BOOL,   NM_SETTING_TEAM_PORT_STICKY,                 _JS_KEYS ("sticky"),                                      _VAL_BOOL (FALSE),                                         ),
+	_INIT (1, NM_TEAM_ATTRIBUTE_PORT_LACP_PRIO,                     port.lacp_prio,                     NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_PORT_LACP_PRIO,              _JS_KEYS ("lacp_prio"),                                   _VAL_INT32_RANGE (-1, 0, USHRT_MAX + 1),                   ),
+	_INIT (1, NM_TEAM_ATTRIBUTE_PORT_LACP_KEY,                      port.lacp_key,                      NM_VALUE_TYPE_INT32,  NM_SETTING_TEAM_PORT_LACP_KEY,               _JS_KEYS ("lacp_key"),                                    _VAL_INT32_RANGE (-1, 0, USHRT_MAX + 1),                   ),
 
 #undef _INIT
-
 };
 
 /*****************************************************************************/
@@ -177,8 +292,8 @@ static const TeamAttrData *_team_attr_data_get (gboolean is_port,
                                                 NMTeamAttribute team_attr);
 static gpointer _team_setting_get_field (const NMTeamSetting *self,
                                          const TeamAttrData *attr_data);
-static gboolean _team_setting_verify (const NMTeamSetting *self,
-                                      GError **error);
+static gboolean _team_setting_verify_properties (const NMTeamSetting *self,
+                                                 GError **error);
 static void _link_watcher_to_json (const NMTeamLinkWatcher *link_watcher,
                                    GString *gstr);
 
@@ -197,7 +312,7 @@ _team_attr_data_ASSERT (const TeamAttrData *attr_data)
 	nm_assert (attr_data->value_type > 0);
 	nm_assert (attr_data->field_offset < sizeof (NMTeamSetting));
 	nm_assert (attr_data->js_keys_len == NM_PTRARRAY_LEN (attr_data->js_keys));
-	nm_assert (attr_data->dbus_name);
+	nm_assert (attr_data->property_name);
 	{
 		static int checked = 0;
 
@@ -235,124 +350,19 @@ _team_attr_data_get (gboolean is_port,
 }
 
 static const TeamAttrData *
-_team_attr_data_find_for_dbus_name (gboolean is_port,
-                                    const char *dbus_name)
+_team_attr_data_find_for_property_name (gboolean is_port,
+                                        const char *property_name)
 {
 	const TeamAttrData *attr_data;
 
 	for (attr_data = team_attr_datas; attr_data < &team_attr_datas[G_N_ELEMENTS (team_attr_datas)]; attr_data++) {
 		if (   _team_attr_data_is_relevant (attr_data, is_port)
-		    && nm_streq (dbus_name, attr_data->dbus_name))
+		    && nm_streq (property_name, attr_data->property_name))
 			return attr_data;
 	}
 	return NULL;
 }
 
-static const NMValueTypUnion *
-_team_attr_data_get_default (const TeamAttrData *attr_data,
-                             gboolean is_port,
-                             const char *v_master_runner,
-                             NMValueTypUnion *value_tmp)
-{
-	GPtrArray *v_ptrarray;
-
-	/* unfortunately, the default certain values depends on other values :(
-	 *
-	 * For examle, master attributes depend on the "runner" setting.
-	 * and port settings default to the ethtool link-watcher. */
-
-	if (is_port) {
-
-		switch (attr_data->team_attr) {
-		case NM_TEAM_ATTRIBUTE_LINK_WATCHERS: {
-			static GPtrArray *volatile gl_arr = NULL;
-
-again_port_link_watchers:
-			v_ptrarray = g_atomic_pointer_get (&gl_arr);
-			if (G_UNLIKELY (!v_ptrarray)) {
-				v_ptrarray = g_ptr_array_new_full (1, (GDestroyNotify) nm_team_link_watcher_unref);
-				g_ptr_array_add (v_ptrarray, nm_team_link_watcher_new_ethtool (0, 0, NULL));
-				if (!g_atomic_pointer_compare_and_exchange (&gl_arr, NULL, v_ptrarray)) {
-					g_ptr_array_unref (v_ptrarray);
-					goto again_port_link_watchers;
-				}
-			}
-			return NM_VALUE_TYP_UNION_SET (value_tmp, v_ptrarray, v_ptrarray);
-		}
-		default:
-			break;
-		}
-
-	} else {
-
-		if (NM_IN_STRSET (v_master_runner, NULL,
-		                                   NM_SETTING_TEAM_RUNNER_DEFAULT)) {
-			/* a runner %NULL is the same as NM_SETTING_TEAM_RUNNER_DEFAULT ("roundrobin").
-			 * In this case, the settings in attr_data are accurate. */
-			return &attr_data->default_val;
-		}
-
-		switch (attr_data->team_attr) {
-		case NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_COUNT:
-			if (nm_streq (v_master_runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP))
-				return NM_VALUE_TYP_UNION_SET (value_tmp, v_int32, NM_SETTING_TEAM_NOTIFY_PEERS_COUNT_ACTIVEBACKUP_DEFAULT);
-			break;
-		case NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_COUNT:
-			if (nm_streq (v_master_runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP))
-				return NM_VALUE_TYP_UNION_SET (value_tmp, v_int32, NM_SETTING_TEAM_NOTIFY_MCAST_COUNT_ACTIVEBACKUP_DEFAULT);
-			break;
-		case NM_TEAM_ATTRIBUTE_MASTER_RUNNER_HWADDR_POLICY:
-			if (nm_streq (v_master_runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP))
-				return NM_VALUE_TYP_UNION_SET (value_tmp, v_string, "same_all");
-			break;
-		case NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH:
-			if (NM_IN_STRSET (v_master_runner, NM_SETTING_TEAM_RUNNER_LOADBALANCE,
-			                                   NM_SETTING_TEAM_RUNNER_LACP)) {
-				static GPtrArray *volatile gl_arr = NULL;
-
-again_master_runner_tx_hash:
-				v_ptrarray = g_atomic_pointer_get (&gl_arr);
-				if (G_UNLIKELY (!v_ptrarray)) {
-					v_ptrarray = g_ptr_array_sized_new (3);
-					g_ptr_array_add (v_ptrarray, "eth");
-					g_ptr_array_add (v_ptrarray, "ipv4");
-					g_ptr_array_add (v_ptrarray, "ipv6");
-					if (!g_atomic_pointer_compare_and_exchange (&gl_arr, NULL, v_ptrarray)) {
-						g_ptr_array_unref (v_ptrarray);
-						goto again_master_runner_tx_hash;
-					}
-				}
-				return NM_VALUE_TYP_UNION_SET (value_tmp, v_ptrarray, v_ptrarray);
-			}
-			break;
-		case NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER_INTERVAL:
-			if (NM_IN_STRSET (v_master_runner, NM_SETTING_TEAM_RUNNER_LOADBALANCE,
-			                                   NM_SETTING_TEAM_RUNNER_LACP))
-				return NM_VALUE_TYP_UNION_SET (value_tmp, v_int32, NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT);
-			break;
-		case NM_TEAM_ATTRIBUTE_MASTER_RUNNER_ACTIVE:
-			if (nm_streq (v_master_runner, NM_SETTING_TEAM_RUNNER_LACP))
-				return NM_VALUE_TYP_UNION_SET (value_tmp, v_bool, TRUE);
-			break;
-		case NM_TEAM_ATTRIBUTE_MASTER_RUNNER_SYS_PRIO:
-			if (nm_streq (v_master_runner, NM_SETTING_TEAM_RUNNER_LACP))
-				return NM_VALUE_TYP_UNION_SET (value_tmp, v_int32, NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT);
-			break;
-		case NM_TEAM_ATTRIBUTE_MASTER_RUNNER_MIN_PORTS:
-			if (nm_streq (v_master_runner, NM_SETTING_TEAM_RUNNER_LACP))
-				return NM_VALUE_TYP_UNION_SET (value_tmp, v_int32, 0);
-			break;
-		case NM_TEAM_ATTRIBUTE_MASTER_RUNNER_AGG_SELECT_POLICY:
-			if (nm_streq (v_master_runner, NM_SETTING_TEAM_RUNNER_LACP))
-				return NM_VALUE_TYP_UNION_SET (value_tmp, v_string, NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_DEFAULT);
-			break;
-		default:
-			break;
-		}
-	}
-
-	return &attr_data->default_val;
-}
 static int
 _team_attr_data_cmp (const TeamAttrData *attr_data,
                      gboolean is_port,
@@ -455,44 +465,6 @@ _team_attr_data_copy (const TeamAttrData *attr_data,
 		nm_assert_not_reached ();
 }
 
-static gboolean
-_team_attr_data_is_default (const TeamAttrData *attr_data,
-                            gboolean is_port,
-                            const char *v_master_runner,
-                            gconstpointer p_field)
-{
-	const NMValueTypUnion *default_value;
-	NMValueTypUnion value_tmp;
-
-	_team_attr_data_ASSERT (attr_data);
-	nm_assert (p_field);
-
-	default_value = _team_attr_data_get_default (attr_data,
-	                                             is_port,
-	                                             v_master_runner,
-	                                             &value_tmp);
-	if (_team_attr_data_equal (attr_data,
-	                           is_port,
-	                           default_value,
-	                           p_field))
-		return TRUE;
-
-	if (    attr_data->value_type == NM_VALUE_TYPE_STRING
-	    &&  default_value->v_string) {
-		const char *str0 = NULL;
-
-		/* this is a string value, whose default is not NULL. In such a case,
-		 * NULL is also treated like the default. */
-		if (_team_attr_data_equal (attr_data,
-		                           is_port,
-		                           &str0,
-		                           p_field))
-			return TRUE;
-	}
-
-	return FALSE;
-}
-
 static void
 _team_attr_data_to_json (const TeamAttrData *attr_data,
                          gboolean is_port,
@@ -574,6 +546,64 @@ _team_setting_ASSERT (const NMTeamSetting *self)
 #endif
 }
 
+static gboolean
+_team_setting_has_field (const NMTeamSetting *self,
+                         const TeamAttrData *attr_data)
+{
+	_team_setting_ASSERT (self);
+	return NM_FLAGS_ALL (self->d.has_fields_mask, nm_team_attribute_to_flags (attr_data->team_attr));
+}
+
+static gboolean
+_team_setting_has_fields_any_v (const NMTeamSetting *self,
+                                const NMTeamAttribute *team_attrs,
+                                gsize n_team_attrs)
+{
+	gsize i;
+
+	for (i = 0; i < n_team_attrs; i++) {
+		const TeamAttrData *attr_data = _team_attr_data_get (self->d.is_port, team_attrs[i]);
+
+		if (_team_setting_has_field (self, attr_data))
+			return TRUE;
+	}
+	return FALSE;
+}
+
+#define _team_setting_has_fields_any(self, ...) \
+   _team_setting_has_fields_any_v ((self), ((const NMTeamAttribute []) { __VA_ARGS__ }), NM_NARG (__VA_ARGS__))
+
+static void
+_team_setting_has_field_set (NMTeamSetting *self,
+                             const TeamAttrData *attr_data,
+                             SetFieldModeEnum set_field_mode)
+{
+	guint32 mask = nm_team_attribute_to_flags (attr_data->team_attr);
+
+	_team_setting_ASSERT (self);
+
+	switch (set_field_mode) {
+	case SET_FIELD_MODE_UNSET:
+		goto do_unset;
+	case SET_FIELD_MODE_SET:
+		goto do_set;
+	case SET_FIELD_MODE_SET_UNLESS_DEFAULT:
+		if (_team_attr_data_equal (attr_data,
+		                           self->d.is_port,
+		                           _team_setting_get_field (self, attr_data),
+		                           &attr_data->default_val))
+			goto do_unset;
+		goto do_set;
+	}
+	nm_assert_not_reached ();
+
+do_unset:
+	self->_data_priv.has_fields_mask &= ~mask;
+	return;
+do_set:
+	self->_data_priv.has_fields_mask |= mask;
+}
+
 static gpointer
 _team_setting_get_field (const NMTeamSetting *self,
                          const TeamAttrData *attr_data)
@@ -593,12 +623,20 @@ _team_setting_get_field (const NMTeamSetting *self,
 
 static guint32
 _team_setting_attribute_changed (NMTeamSetting *self,
-                                 NMTeamAttribute team_attr,
-                                 gboolean changed)
+                                 const TeamAttrData *attr_data,
+                                 gboolean changed,
+                                 SetFieldModeEnum set_field_mode,
+                                 ResetJsonEnum reset_json)
 {
 	guint32 changed_flags;
 
-	nm_assert (_team_attr_data_get (self->d.is_port, team_attr));
+	_team_setting_has_field_set (self, attr_data, set_field_mode);
+
+	if (!reset_json) {
+		return   changed
+		       ? nm_team_attribute_to_flags (attr_data->team_attr)
+		       : 0u;
+	}
 
 	if (!changed) {
 		/* a regular attribute was set, but the value did not change.
@@ -614,7 +652,7 @@ _team_setting_attribute_changed (NMTeamSetting *self,
 			return 0;
 		changed_flags = nm_team_attribute_to_flags (NM_TEAM_ATTRIBUTE_CONFIG);
 	} else {
-		changed_flags =   nm_team_attribute_to_flags (team_attr)
+		changed_flags =   nm_team_attribute_to_flags (attr_data->team_attr)
 		                | nm_team_attribute_to_flags (NM_TEAM_ATTRIBUTE_CONFIG);
 	}
 
@@ -625,13 +663,28 @@ _team_setting_attribute_changed (NMTeamSetting *self,
 	return changed_flags;
 }
 
-static void
+static guint32
+_team_setting_attribute_changed_attr (NMTeamSetting *self,
+                                      NMTeamAttribute team_attr,
+                                      gboolean changed,
+                                      SetFieldModeEnum set_field_mode,
+                                      ResetJsonEnum reset_json)
+{
+	return _team_setting_attribute_changed (self,
+	                                        _team_attr_data_get (self->d.is_port, team_attr),
+	                                        changed,
+	                                        set_field_mode,
+	                                        reset_json);
+}
+
+static gboolean
 _team_setting_field_to_json (const NMTeamSetting *self,
                              GString *gstr,
                              gboolean prepend_delimiter,
-                             NMTeamAttribute team_attr)
+                             const TeamAttrData *attr_data)
 {
-	const TeamAttrData *attr_data = _team_attr_data_get (self->d.is_port, team_attr);
+	if (!_team_setting_has_field (self, attr_data))
+		return FALSE;
 
 	if (prepend_delimiter)
 		nm_json_aux_gstr_append_delimiter (gstr);
@@ -639,13 +692,13 @@ _team_setting_field_to_json (const NMTeamSetting *self,
 	                         self->d.is_port,
 	                         gstr,
 	                         _team_setting_get_field (self, attr_data));
+	return TRUE;
 }
 
 static gboolean
 _team_setting_fields_to_json_maybe (const NMTeamSetting *self,
                                     GString *gstr,
                                     gboolean prepend_delimiter,
-                                    const bool is_default_lst[static _NM_TEAM_ATTRIBUTE_NUM],
                                     const NMTeamAttribute *team_attrs_lst,
                                     gsize team_attrs_lst_len)
 {
@@ -653,14 +706,13 @@ _team_setting_fields_to_json_maybe (const NMTeamSetting *self,
 	gboolean any_added = FALSE;
 
 	for (i = 0; i < team_attrs_lst_len; i++) {
-		NMTeamAttribute team_attr = team_attrs_lst[i];
-
-		if (is_default_lst[team_attr])
-			continue;
-
-		_team_setting_field_to_json (self, gstr, prepend_delimiter, team_attr);
-		any_added = TRUE;
-		prepend_delimiter = TRUE;
+		if (_team_setting_field_to_json (self,
+		                                 gstr,
+		                                 prepend_delimiter,
+		                                 _team_attr_data_get (self->d.is_port, team_attrs_lst[i]))) {
+			any_added = TRUE;
+			prepend_delimiter = TRUE;
+		}
 	}
 	return any_added;
 }
@@ -673,39 +725,22 @@ _team_setting_set (NMTeamSetting *self,
 {
 	guint32 changed_flags = 0;
 	const TeamAttrData *attr_data;
-	const char *v_master_runner;
 
 	nm_assert ((!has_lst) == (!val_lst));
 
-	if (!self->d.is_port) {
-		if (   has_lst
-		    && has_lst[NM_TEAM_ATTRIBUTE_MASTER_RUNNER])
-			v_master_runner = val_lst[NM_TEAM_ATTRIBUTE_MASTER_RUNNER].v_string;
-		else {
-			nm_assert (nm_streq0 (_team_attr_data_get (FALSE, NM_TEAM_ATTRIBUTE_MASTER_RUNNER)->default_val.v_string,
-			                      NM_SETTING_TEAM_RUNNER_DEFAULT));
-			v_master_runner = NM_SETTING_TEAM_RUNNER_DEFAULT;
-		}
-	} else
-		v_master_runner = NULL;
-
 	for (attr_data = &team_attr_datas[TEAM_ATTR_IDX_CONFIG + 1]; attr_data < &team_attr_datas[G_N_ELEMENTS (team_attr_datas)]; attr_data++) {
-		NMValueTypUnion value_tmp;
 		const NMValueTypUnion *p_val;
 		gconstpointer p_field;
+		gboolean has_field;
 
 		if (!_team_attr_data_is_relevant (attr_data, self->d.is_port))
 			continue;
 
-		if (   has_lst
-		    && has_lst[attr_data->team_attr])
-			p_val = &val_lst[attr_data->team_attr];
-		else {
-			p_val = _team_attr_data_get_default (attr_data,
-			                                     self->d.is_port,
-			                                     v_master_runner,
-			                                     &value_tmp);
-		}
+		has_field = (has_lst && has_lst[attr_data->team_attr]);
+
+		p_val = has_field
+		        ? &val_lst[attr_data->team_attr]
+		        : &attr_data->default_val;
 
 		p_field = _team_setting_get_field (self, attr_data);
 
@@ -720,6 +755,14 @@ _team_setting_set (NMTeamSetting *self,
 				                      p_val);
 			}
 			changed_flags |= nm_team_attribute_to_flags (attr_data->team_attr);
+		}
+
+		if (modify) {
+			_team_setting_has_field_set (self,
+			                             attr_data,
+			                               has_field
+			                             ? SET_FIELD_MODE_SET
+			                             : SET_FIELD_MODE_UNSET);
 		}
 	}
 
@@ -749,31 +792,54 @@ _nm_team_setting_value_get (const NMTeamSetting *self,
 
 	nm_assert (value_type == attr_data->value_type);
 
+	nm_assert (   _team_setting_has_field (self, attr_data)
+	           || _team_attr_data_equal (attr_data,
+	                                     self->d.is_port,
+	                                     _team_setting_get_field (self, attr_data),
+	                                     &attr_data->default_val));
 	return _team_setting_get_field (self, attr_data);
 }
 
 static guint32
 _team_setting_value_set (NMTeamSetting *self,
-                         NMTeamAttribute team_attr,
-                         NMValueType value_type,
-                         gconstpointer val)
+                         const TeamAttrData *attr_data,
+                         gconstpointer val,
+                         SetFieldModeEnum set_field_mode,
+                         ResetJsonEnum reset_json)
+{
+	gpointer p_field;
+	gboolean changed;
+
+	nm_assert (self);
+	_team_attr_data_ASSERT (attr_data);
+	nm_assert (val);
+
+	p_field = _team_setting_get_field (self, attr_data);
+
+	changed = !_team_attr_data_equal (attr_data, self->d.is_port, p_field, val);
+	if (changed)
+		nm_value_type_copy (attr_data->value_type, p_field, val);
+	return _team_setting_attribute_changed (self, attr_data, changed, set_field_mode, reset_json);
+}
+
+guint32
+nm_team_setting_value_reset (NMTeamSetting *self,
+                             NMTeamAttribute team_attr,
+                             gboolean to_default /* or else unset */)
 {
 	const TeamAttrData *attr_data;
-	gpointer p_field;
 
 	nm_assert (self);
 
 	attr_data = _team_attr_data_get (self->d.is_port, team_attr);
 
-	nm_assert (val);
-	nm_assert (value_type == attr_data->value_type);
-
-	p_field = _team_setting_get_field (self, attr_data);
-
-	if (nm_value_type_equal (attr_data->value_type, p_field, val))
-		return 0u;
-	nm_value_type_copy (attr_data->value_type, p_field, val);
-	return nm_team_attribute_to_flags (team_attr);
+	return _team_setting_value_set (self,
+	                                attr_data,
+	                                &attr_data->default_val,
+	                                  to_default
+	                                ? SET_FIELD_MODE_SET
+	                                : SET_FIELD_MODE_UNSET,
+	                                RESET_JSON_YES);
 }
 
 guint32
@@ -782,12 +848,19 @@ _nm_team_setting_value_set (NMTeamSetting *self,
                             NMValueType value_type,
                             gconstpointer val)
 {
-	return _team_setting_attribute_changed (self,
-	                                        team_attr,
-	                                        (_team_setting_value_set (self,
-	                                                                  team_attr,
-	                                                                  value_type,
-	                                                                  val) != 0u));
+	const TeamAttrData *attr_data;
+
+	nm_assert (self);
+
+	attr_data = _team_attr_data_get (self->d.is_port, team_attr);
+
+	nm_assert (value_type == attr_data->value_type);
+
+	return _team_setting_value_set (self,
+	                                attr_data,
+	                                val,
+	                                SET_FIELD_MODE_SET_UNLESS_DEFAULT,
+	                                RESET_JSON_YES);
 }
 
 guint32
@@ -795,14 +868,19 @@ nm_team_setting_value_link_watchers_add (NMTeamSetting *self,
                                          const NMTeamLinkWatcher *link_watcher)
 {
 	guint i;
+	gboolean changed;
 
 	for (i = 0; i < self->d.link_watchers->len; i++) {
-		if (nm_team_link_watcher_equal (self->d.link_watchers->pdata[i], link_watcher))
-			return _team_setting_attribute_changed (self, NM_TEAM_ATTRIBUTE_LINK_WATCHERS, FALSE);
+		if (nm_team_link_watcher_equal (self->d.link_watchers->pdata[i], link_watcher)) {
+			changed = FALSE;
+			goto out;
+		}
 	}
+	changed = TRUE;
 	g_ptr_array_add ((GPtrArray *) self->d.link_watchers,
 	                 _nm_team_link_watcher_ref ((NMTeamLinkWatcher *) link_watcher));
-	return _team_setting_attribute_changed (self, NM_TEAM_ATTRIBUTE_LINK_WATCHERS, TRUE);
+out:
+	return _team_setting_attribute_changed_attr (self, NM_TEAM_ATTRIBUTE_LINK_WATCHERS, changed, SET_FIELD_MODE_SET_UNLESS_DEFAULT, RESET_JSON_YES);
 }
 
 guint32
@@ -816,7 +894,7 @@ nm_team_setting_value_link_watchers_remove_by_value (NMTeamSetting *self,
 		                                link_watcher))
 			return nm_team_setting_value_link_watchers_remove (self, i);
 	}
-	return _team_setting_attribute_changed (self, NM_TEAM_ATTRIBUTE_LINK_WATCHERS, FALSE);
+	return _team_setting_attribute_changed_attr (self, NM_TEAM_ATTRIBUTE_LINK_WATCHERS, FALSE, SET_FIELD_MODE_SET_UNLESS_DEFAULT, RESET_JSON_YES);
 }
 
 guint32
@@ -824,21 +902,28 @@ nm_team_setting_value_link_watchers_remove (NMTeamSetting *self,
                                             guint idx)
 {
 	g_ptr_array_remove_index ((GPtrArray *) self->d.link_watchers, idx);
-	return _team_setting_attribute_changed (self, NM_TEAM_ATTRIBUTE_LINK_WATCHERS, TRUE);
+	return _team_setting_attribute_changed_attr (self, NM_TEAM_ATTRIBUTE_LINK_WATCHERS, TRUE, SET_FIELD_MODE_SET_UNLESS_DEFAULT, RESET_JSON_YES);
 }
 
 static guint32
 _team_setting_value_link_watchers_set_list (NMTeamSetting *self,
                                             const NMTeamLinkWatcher *const*arr,
-                                            guint len)
+                                            guint len,
+                                            SetFieldModeEnum set_field_mode,
+                                            ResetJsonEnum reset_json)
 {
+	gboolean changed;
+
 	if (   self->d.link_watchers->len == len
 	    && nm_team_link_watchers_cmp ((const NMTeamLinkWatcher *const*) self->d.link_watchers->pdata,
 	                                  arr,
 	                                  len,
-	                                  FALSE) == 0)
-		return 0;
+	                                  FALSE) == 0) {
+		changed = FALSE;
+		goto out;
+	}
 
+	changed = TRUE;
 	if (len == 0)
 		g_ptr_array_set_size ((GPtrArray *) self->d.link_watchers, 0);
 	else {
@@ -857,7 +942,8 @@ _team_setting_value_link_watchers_set_list (NMTeamSetting *self,
 		}
 	}
 
-	return nm_team_attribute_to_flags (NM_TEAM_ATTRIBUTE_LINK_WATCHERS);
+out:
+	return _team_setting_attribute_changed_attr (self, NM_TEAM_ATTRIBUTE_LINK_WATCHERS, changed, set_field_mode, reset_json);
 }
 
 guint32
@@ -865,11 +951,11 @@ nm_team_setting_value_link_watchers_set_list (NMTeamSetting *self,
                                               const NMTeamLinkWatcher *const*arr,
                                               guint len)
 {
-	return _team_setting_attribute_changed (self,
-	                                        NM_TEAM_ATTRIBUTE_LINK_WATCHERS,
-	                                        (_team_setting_value_link_watchers_set_list (self,
-	                                                                                     arr,
-	                                                                                     len) != 0u));
+	return _team_setting_value_link_watchers_set_list (self,
+	                                                   arr,
+	                                                   len,
+	                                                   SET_FIELD_MODE_SET_UNLESS_DEFAULT,
+	                                                   RESET_JSON_YES);
 }
 
 /*****************************************************************************/
@@ -878,18 +964,23 @@ guint32
 nm_team_setting_value_master_runner_tx_hash_add (NMTeamSetting *self,
                                                  const char *txhash)
 {
+	gboolean changed;
 	guint i;
 
 	if (!self->d.master.runner_tx_hash)
 		self->_data_priv.master.runner_tx_hash = g_ptr_array_new_with_free_func (g_free);
 	else {
 		for (i = 0; i < self->d.master.runner_tx_hash->len; i++) {
-			if (nm_streq (txhash, self->d.master.runner_tx_hash->pdata[i]))
-				return _team_setting_attribute_changed (self, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH, FALSE);
+			if (nm_streq (txhash, self->d.master.runner_tx_hash->pdata[i])) {
+				changed = FALSE;
+				goto out;
+			}
 		}
 	}
+	changed = TRUE;
 	g_ptr_array_add ((GPtrArray *) self->d.master.runner_tx_hash, g_strdup (txhash));
-	return _team_setting_attribute_changed (self, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH, TRUE);
+out:
+	return _team_setting_attribute_changed_attr (self, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH, changed, SET_FIELD_MODE_SET_UNLESS_DEFAULT, RESET_JSON_YES);
 }
 
 guint32
@@ -897,22 +988,29 @@ nm_team_setting_value_master_runner_tx_hash_remove (NMTeamSetting *self,
                                                     guint idx)
 {
 	g_ptr_array_remove_index ((GPtrArray *) self->d.master.runner_tx_hash, idx);
-	return _team_setting_attribute_changed (self, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH, TRUE);
+	return _team_setting_attribute_changed_attr (self, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH, TRUE, SET_FIELD_MODE_SET_UNLESS_DEFAULT, RESET_JSON_YES);
 }
 
 static guint32
 _team_setting_value_master_runner_tx_hash_set_list (NMTeamSetting *self,
                                                     const char *const*arr,
-                                                    guint len)
+                                                    guint len,
+                                                    SetFieldModeEnum set_field_mode,
+                                                    ResetJsonEnum reset_json)
 {
 	_nm_unused gs_unref_ptrarray GPtrArray *old_val_destroy = NULL;
+	gboolean changed;
 	guint i;
 
 	if (_nm_utils_strv_cmp_n (self->d.master.runner_tx_hash ? (const char *const*) self->d.master.runner_tx_hash->pdata : NULL,
 	                          self->d.master.runner_tx_hash ? self->d.master.runner_tx_hash->len : 0u,
 	                          arr,
-	                          len) == 0)
-		return 0u;
+	                          len) == 0) {
+		changed = FALSE;
+		goto out;
+	}
+
+	changed = TRUE;
 
 	old_val_destroy = (GPtrArray *) g_steal_pointer (&self->_data_priv.master.runner_tx_hash);
 
@@ -924,7 +1022,8 @@ _team_setting_value_master_runner_tx_hash_set_list (NMTeamSetting *self,
 		g_ptr_array_add ((GPtrArray *) self->d.master.runner_tx_hash, g_strdup (arr[i]));
 	}
 
-	return nm_team_attribute_to_flags (NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH);
+out:
+	return _team_setting_attribute_changed_attr (self, NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH, changed, set_field_mode, reset_json);
 }
 
 guint32
@@ -932,11 +1031,11 @@ nm_team_setting_value_master_runner_tx_hash_set_list (NMTeamSetting *self,
                                                       const char *const*arr,
                                                       guint len)
 {
-	return _team_setting_attribute_changed (self,
-	                                        NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH,
-	                                        (_team_setting_value_master_runner_tx_hash_set_list (self,
-	                                                                                             arr,
-	                                                                                             len) != 0u));
+	return _team_setting_value_master_runner_tx_hash_set_list (self,
+	                                                           arr,
+	                                                           len,
+	                                                           SET_FIELD_MODE_SET_UNLESS_DEFAULT,
+	                                                           RESET_JSON_YES);
 }
 
 /*****************************************************************************/
@@ -1361,7 +1460,7 @@ _link_watcher_from_variant (GVariant *watcher_var,
  * Returns: (transfer full): a new floating #GVariant representing link watchers.
  **/
 GVariant *
-_nm_utils_team_link_watchers_to_variant (GPtrArray *link_watchers)
+_nm_utils_team_link_watchers_to_variant (const GPtrArray *link_watchers)
 {
 	GVariantBuilder builder;
 	guint i;
@@ -1441,28 +1540,12 @@ nm_team_setting_config_get (const NMTeamSetting *self)
 		 * Nothing to do. */
 		js_str = NULL;
 	} else {
-		const TeamAttrData *attr_data;
-		GString *gstr;
-		bool is_default_lst[_NM_TEAM_ATTRIBUTE_NUM] = { FALSE, };
 		gboolean list_is_empty = TRUE;
-		const char *v_master_runner;
+		GString *gstr;
 
 		gstr = g_string_new (NULL);
 
 		g_string_append (gstr, "{ ");
-
-		v_master_runner =   self->d.is_port
-		                  ? NULL
-		                  : self->d.master.runner;
-
-		for (attr_data = &team_attr_datas[TEAM_ATTR_IDX_CONFIG + 1]; attr_data < &team_attr_datas[G_N_ELEMENTS (team_attr_datas)]; attr_data++) {
-			if (_team_attr_data_is_relevant (attr_data, self->d.is_port)) {
-				is_default_lst[attr_data->team_attr] = _team_attr_data_is_default (attr_data,
-				                                                                   self->d.is_port,
-				                                                                   v_master_runner,
-				                                                                   _team_setting_get_field (self, attr_data));
-			}
-		}
 
 		if (self->d.is_port) {
 			static const NMTeamAttribute attr_lst_port[] = {
@@ -1473,57 +1556,57 @@ nm_team_setting_config_get (const NMTeamSetting *self)
 				NM_TEAM_ATTRIBUTE_PORT_LACP_KEY,
 			};
 
-			if (_team_setting_fields_to_json_maybe (self, gstr, !list_is_empty, is_default_lst, attr_lst_port, G_N_ELEMENTS (attr_lst_port)))
+			if (_team_setting_fields_to_json_maybe (self, gstr, !list_is_empty, attr_lst_port, G_N_ELEMENTS (attr_lst_port)))
 				list_is_empty = FALSE;
 		} else {
+			static const NMTeamAttribute attr_lst_runner_pt1[] = {
+				NM_TEAM_ATTRIBUTE_MASTER_RUNNER,
+				NM_TEAM_ATTRIBUTE_MASTER_RUNNER_HWADDR_POLICY,
+				NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH,
+			};
+			static const NMTeamAttribute attr_lst_runner_pt2[] = {
+				NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER,
+				NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER_INTERVAL,
+			};
+			static const NMTeamAttribute attr_lst_runner_pt3[] = {
+				NM_TEAM_ATTRIBUTE_MASTER_RUNNER_ACTIVE,
+				NM_TEAM_ATTRIBUTE_MASTER_RUNNER_FAST_RATE,
+				NM_TEAM_ATTRIBUTE_MASTER_RUNNER_SYS_PRIO,
+				NM_TEAM_ATTRIBUTE_MASTER_RUNNER_MIN_PORTS,
+				NM_TEAM_ATTRIBUTE_MASTER_RUNNER_AGG_SELECT_POLICY,
+			};
+			static const NMTeamAttribute attr_lst_notify_peers[] = {
+				NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_COUNT,
+				NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_INTERVAL,
+			};
+			static const NMTeamAttribute attr_lst_mcast_rejoin[] = {
+				NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_COUNT,
+				NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_INTERVAL,
+			};
 
-			if (   !is_default_lst[NM_TEAM_ATTRIBUTE_MASTER_RUNNER]
-			    || !is_default_lst[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_HWADDR_POLICY]
-			    || !is_default_lst[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH]
-			    || !is_default_lst[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER]
-			    || !is_default_lst[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER_INTERVAL]
-			    || !is_default_lst[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_ACTIVE]
-			    || !is_default_lst[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_FAST_RATE]
-			    || !is_default_lst[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_SYS_PRIO]
-			    || !is_default_lst[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_MIN_PORTS]
-			    || !is_default_lst[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_AGG_SELECT_POLICY]) {
-				static const NMTeamAttribute attr_lst_runner_pt1[] = {
-					NM_TEAM_ATTRIBUTE_MASTER_RUNNER,
-					NM_TEAM_ATTRIBUTE_MASTER_RUNNER_HWADDR_POLICY,
-					NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH,
-				};
-				static const NMTeamAttribute attr_lst_runner_pt2[] = {
-					NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER,
-					NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER_INTERVAL,
-				};
-				static const NMTeamAttribute attr_lst_runner_pt3[] = {
-					NM_TEAM_ATTRIBUTE_MASTER_RUNNER_ACTIVE,
-					NM_TEAM_ATTRIBUTE_MASTER_RUNNER_FAST_RATE,
-					NM_TEAM_ATTRIBUTE_MASTER_RUNNER_SYS_PRIO,
-					NM_TEAM_ATTRIBUTE_MASTER_RUNNER_MIN_PORTS,
-					NM_TEAM_ATTRIBUTE_MASTER_RUNNER_AGG_SELECT_POLICY,
-				};
+			if (   _team_setting_has_fields_any_v (self, attr_lst_runner_pt1, G_N_ELEMENTS (attr_lst_runner_pt1))
+			    || _team_setting_has_fields_any_v (self, attr_lst_runner_pt2, G_N_ELEMENTS (attr_lst_runner_pt2))
+			    || _team_setting_has_fields_any_v (self, attr_lst_runner_pt3, G_N_ELEMENTS (attr_lst_runner_pt3))) {
 				gboolean list_is_empty2 = TRUE;
 
 				if (!list_is_empty)
 					nm_json_aux_gstr_append_delimiter (gstr);
 				nm_json_aux_gstr_append_obj_name (gstr, "runner", '{');
 
-				if (_team_setting_fields_to_json_maybe (self, gstr, !list_is_empty2, is_default_lst, attr_lst_runner_pt1, G_N_ELEMENTS (attr_lst_runner_pt1)))
+				if (_team_setting_fields_to_json_maybe (self, gstr, !list_is_empty2, attr_lst_runner_pt1, G_N_ELEMENTS (attr_lst_runner_pt1)))
 					list_is_empty2 = FALSE;
 
-				if (   !is_default_lst[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER]
-				    || !is_default_lst[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER_INTERVAL]) {
+				if (_team_setting_has_fields_any_v (self, attr_lst_runner_pt2, G_N_ELEMENTS (attr_lst_runner_pt2))) {
 					if (!list_is_empty2)
 						nm_json_aux_gstr_append_delimiter (gstr);
 					nm_json_aux_gstr_append_obj_name (gstr, "tx_balancer", '{');
-					if (!_team_setting_fields_to_json_maybe (self, gstr, FALSE, is_default_lst, attr_lst_runner_pt2, G_N_ELEMENTS (attr_lst_runner_pt2)))
+					if (!_team_setting_fields_to_json_maybe (self, gstr, FALSE, attr_lst_runner_pt2, G_N_ELEMENTS (attr_lst_runner_pt2)))
 						nm_assert_not_reached ();
 					g_string_append (gstr, " }");
 					list_is_empty2 = FALSE;
 				}
 
-				if (_team_setting_fields_to_json_maybe (self, gstr, !list_is_empty2, is_default_lst, attr_lst_runner_pt3, G_N_ELEMENTS (attr_lst_runner_pt3)))
+				if (_team_setting_fields_to_json_maybe (self, gstr, !list_is_empty2, attr_lst_runner_pt3, G_N_ELEMENTS (attr_lst_runner_pt3)))
 					list_is_empty2 = FALSE;
 
 				nm_assert (!list_is_empty2);
@@ -1531,43 +1614,33 @@ nm_team_setting_config_get (const NMTeamSetting *self)
 				list_is_empty = FALSE;
 			}
 
-			if (   !is_default_lst[NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_COUNT]
-			    || !is_default_lst[NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_INTERVAL]) {
-				static const NMTeamAttribute attr_lst_notify_peers[] = {
-					NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_COUNT,
-					NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_INTERVAL,
-				};
-
+			if (_team_setting_has_fields_any_v (self, attr_lst_notify_peers, G_N_ELEMENTS (attr_lst_notify_peers))) {
 				if (!list_is_empty)
 					nm_json_aux_gstr_append_delimiter (gstr);
 				nm_json_aux_gstr_append_obj_name (gstr, "notify_peers", '{');
-				if (!_team_setting_fields_to_json_maybe (self, gstr, FALSE, is_default_lst, attr_lst_notify_peers, G_N_ELEMENTS (attr_lst_notify_peers)))
+				if (!_team_setting_fields_to_json_maybe (self, gstr, FALSE, attr_lst_notify_peers, G_N_ELEMENTS (attr_lst_notify_peers)))
 					nm_assert_not_reached ();
 				g_string_append (gstr, " }");
 				list_is_empty = FALSE;
 			}
 
-			if (   !is_default_lst[NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_COUNT]
-			    || !is_default_lst[NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_INTERVAL]) {
-				static const NMTeamAttribute attr_lst_notify_peers[] = {
-					NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_COUNT,
-					NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_INTERVAL,
-				};
-
+			if (_team_setting_has_fields_any_v (self, attr_lst_mcast_rejoin, G_N_ELEMENTS (attr_lst_mcast_rejoin))) {
 				if (!list_is_empty)
 					nm_json_aux_gstr_append_delimiter (gstr);
 				nm_json_aux_gstr_append_obj_name (gstr, "mcast_rejoin", '{');
-				if (!_team_setting_fields_to_json_maybe (self, gstr, FALSE, is_default_lst, attr_lst_notify_peers, G_N_ELEMENTS (attr_lst_notify_peers)))
+				if (!_team_setting_fields_to_json_maybe (self, gstr, FALSE, attr_lst_mcast_rejoin, G_N_ELEMENTS (attr_lst_mcast_rejoin)))
 					nm_assert_not_reached ();
 				g_string_append (gstr, " }");
 				list_is_empty = FALSE;
 			}
 		}
 
-		if (!is_default_lst[NM_TEAM_ATTRIBUTE_LINK_WATCHERS]) {
-			_team_setting_field_to_json (self, gstr, !list_is_empty, NM_TEAM_ATTRIBUTE_LINK_WATCHERS);
+		if (_team_setting_field_to_json (self,
+		                                 gstr,
+		                                 !list_is_empty,
+		                                 _team_attr_data_get (self->d.is_port, NM_TEAM_ATTRIBUTE_LINK_WATCHERS)))
 			list_is_empty = FALSE;
-		}
+
 		if (!list_is_empty)
 			g_string_append (gstr, " }");
 
@@ -1846,7 +1919,7 @@ nm_team_setting_config_set (NMTeamSetting *self, const char *js_str)
 			                                    val_lst);
 
 			if (   !unrecognized_content
-			    && _team_setting_verify (self, NULL)) {
+			    && _team_setting_verify_properties (self, NULL)) {
 				/* if we could parse everything without unexpected/unknown data,
 				 * we switch into strictly validating mode. */
 				new_strict_validated = TRUE;
@@ -1871,102 +1944,164 @@ nm_team_setting_config_set (NMTeamSetting *self, const char *js_str)
 /*****************************************************************************/
 
 static void
+_team_setting_prefix_error_plain (gboolean is_port,
+                                  const char *property_name,
+                                  GError **error)
+{
+	g_prefix_error (error,
+	                "%s.%s: ",
+	                  is_port
+	                ? NM_SETTING_TEAM_PORT_SETTING_NAME
+	                : NM_SETTING_TEAM_SETTING_NAME,
+	                property_name);
+}
+
+static void
 _team_setting_prefix_error (const NMTeamSetting *self,
-                            GError **error,
                             const char *prop_name_master,
-                            const char *prop_name_port)
+                            const char *prop_name_port,
+                            GError **error)
 {
 	_team_setting_ASSERT (self);
 	nm_assert (  self->d.is_port
 	           ? (!!prop_name_port)
 	           : (!!prop_name_master));
-	g_prefix_error (error,
-	                "%s.%s: ",
-	                  self->d.is_port
-	                ? NM_SETTING_TEAM_PORT_SETTING_NAME
-	                : NM_SETTING_TEAM_SETTING_NAME,
-	                  self->d.is_port
-	                ? prop_name_master
-	                : prop_name_port);
+	_team_setting_prefix_error_plain (self->d.is_port,
+	                                    self->d.is_port
+	                                  ? prop_name_port
+	                                  : prop_name_master,
+	                                  error);
 }
 
 static gboolean
-_team_setting_verify (const NMTeamSetting *self,
-                      GError **error)
+_team_setting_verify_properties (const NMTeamSetting *self,
+                                 GError **error)
 {
+	const TeamAttrData *attr_data;
 	guint i;
-	const char *js_str;
 
-	if (!self->d.is_port) {
-		if (!self->d.master.runner) {
-			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING,
-			             _("missing runner"));
-			_team_setting_prefix_error (self, error, NM_SETTING_TEAM_RUNNER, NULL);
-			return FALSE;
-		}
-		if (   self->d.master.runner
-		    && g_ascii_strcasecmp (self->d.master.runner, NM_SETTING_TEAM_RUNNER_BROADCAST) != 0
-		    && g_ascii_strcasecmp (self->d.master.runner, NM_SETTING_TEAM_RUNNER_ROUNDROBIN) != 0
-		    && g_ascii_strcasecmp (self->d.master.runner, NM_SETTING_TEAM_RUNNER_RANDOM) != 0
-		    && g_ascii_strcasecmp (self->d.master.runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP) != 0
-		    && g_ascii_strcasecmp (self->d.master.runner, NM_SETTING_TEAM_RUNNER_LOADBALANCE) != 0
-		    && g_ascii_strcasecmp (self->d.master.runner, NM_SETTING_TEAM_RUNNER_LACP) != 0) {
-			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING,
-			             _("invalid runner \"%s\""), self->d.master.runner);
-			_team_setting_prefix_error (self, error, NM_SETTING_TEAM_RUNNER, NULL);
-			return FALSE;
-		}
+	for (attr_data = &team_attr_datas[TEAM_ATTR_IDX_CONFIG + 1]; attr_data < &team_attr_datas[G_N_ELEMENTS (team_attr_datas)]; attr_data++) {
 
-		if (self->d.master.runner_tx_hash) {
-			for (i = 0; i < self->d.master.runner_tx_hash->len; i++) {
-				const char *val = self->d.master.runner_tx_hash->pdata[i];
+		if (!_team_attr_data_is_relevant (attr_data, self->d.is_port))
+			continue;
+		if (!_team_setting_has_field (self, attr_data))
+			continue;
 
-				if (!val[0]) {
+		if (attr_data->has_range) {
+			gconstpointer p_field;
+
+			p_field = _team_setting_get_field (self, attr_data);
+			if (attr_data->value_type == NM_VALUE_TYPE_INT32) {
+				gint32 v = *((const gint32 *) p_field);
+
+				if (   v < attr_data->range.r_int32.min
+				    || v > attr_data->range.r_int32.max) {
 					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING,
-					             _("invalid runner.tx-hash"));
-					_team_setting_prefix_error (self, error, NM_SETTING_TEAM_RUNNER_TX_HASH, NULL);
+					             _("value out or range"));
+					_team_setting_prefix_error_plain (self->d.is_port, attr_data->property_name, error);
 					return FALSE;
+				}
+			} else if (attr_data->value_type == NM_VALUE_TYPE_STRING) {
+				const char *v = *((const char *const*) p_field);
+
+				if (nm_utils_strv_find_first ((char **) attr_data->range.r_string.valid_names,
+				                              -1,
+				                              v) < 0) {
+					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING,
+					             _("invalid value"));
+					_team_setting_prefix_error_plain (self->d.is_port, attr_data->property_name, error);
+					return FALSE;
+				}
+			} else
+				nm_assert_not_reached ();
+		}
+
+		if (   !self->d.is_port
+		    && attr_data->team_attr == NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH) {
+			if (self->d.master.runner_tx_hash) {
+				for (i = 0; i < self->d.master.runner_tx_hash->len; i++) {
+					const char *val = self->d.master.runner_tx_hash->pdata[i];
+
+					if (  !val
+					    || (nm_utils_strv_find_first ((char **) _valid_names_runner_tx_hash,
+					                                  -1,
+					                                  val) < 0)) {
+						g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING,
+						             _("invalid runner-tx-hash"));
+						_team_setting_prefix_error_plain (self->d.is_port, NM_SETTING_TEAM_RUNNER_TX_HASH, error);
+						return FALSE;
+					}
 				}
 			}
 		}
 	}
 
-	for (i = 0; i < self->d.link_watchers->len; i++) {
-		NMTeamLinkWatcher *link_watcher = self->d.link_watchers->pdata[i];
-		const char *name = nm_team_link_watcher_get_name (link_watcher);
+	if (!self->d.is_port) {
 
-		if (!NM_IN_STRSET (name,
-		                   NM_TEAM_LINK_WATCHER_ETHTOOL,
-		                   NM_TEAM_LINK_WATCHER_ARP_PING,
-		                   NM_TEAM_LINK_WATCHER_NSNA_PING)) {
-			if (!name) {
-				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING,
-				             _("missing link watcher name"));
-			} else {
+		for (i = 0; i < G_N_ELEMENTS (_runner_compat_lst); i++) {
+			const RunnerCompatElem *e = &_runner_compat_lst[i];
+
+			nm_assert (NM_PTRARRAY_LEN (e->valid_runners) > 0);
+
+			attr_data = _team_attr_data_get (FALSE, e->team_attr);
+
+			if (!_team_setting_has_field (self, attr_data))
+				continue;
+			if (   self->d.master.runner
+			    && (nm_utils_strv_find_first ((char **) e->valid_runners,
+			                                  -1,
+			                                  self->d.master.runner) >= 0))
+				continue;
+			if (e->valid_runners[1] == NULL) {
 				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING,
-				             _("unknown link watcher \"%s\""), name);
-			}
-			_team_setting_prefix_error (self, error, NM_SETTING_TEAM_LINK_WATCHERS, NM_SETTING_TEAM_PORT_LINK_WATCHERS);
-			return FALSE;
-		}
+				             _("%s is only allowed for runner %s"),
+				             attr_data->property_name,
+				             e->valid_runners[0]);
+			} else {
+				gs_free char *s = NULL;
 
-		if (   NM_IN_STRSET (name,
-		                     NM_TEAM_LINK_WATCHER_ARP_PING,
-		                     NM_TEAM_LINK_WATCHER_NSNA_PING)
-		    && !nm_team_link_watcher_get_target_host (link_watcher)) {
-			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING,
-			             _("missing target host"));
-			_team_setting_prefix_error (self, error, NM_SETTING_TEAM_LINK_WATCHERS, NM_SETTING_TEAM_PORT_LINK_WATCHERS);
+				s = g_strjoinv (",", (char **) e->valid_runners);
+				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING,
+				             _("%s is only allowed for runners %s"),
+				             attr_data->property_name,
+				             s);
+			}
+			_team_setting_prefix_error_plain (self->d.is_port, NM_SETTING_TEAM_RUNNER, error);
 			return FALSE;
 		}
-		if (   nm_streq (name, NM_TEAM_LINK_WATCHER_ARP_PING)
-		    && !nm_team_link_watcher_get_source_host (link_watcher)) {
-			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING,
-			             _("missing source address"));
-			_team_setting_prefix_error (self, error, NM_SETTING_TEAM_LINK_WATCHERS, NM_SETTING_TEAM_PORT_LINK_WATCHERS);
+	} else {
+		gboolean has_lacp_attrs;
+		gboolean has_activebackup_attrs;
+
+		has_lacp_attrs = _team_setting_has_fields_any (self, NM_TEAM_ATTRIBUTE_PORT_LACP_PRIO,
+		                                                     NM_TEAM_ATTRIBUTE_PORT_LACP_KEY);
+		has_activebackup_attrs = _team_setting_has_fields_any (self, NM_TEAM_ATTRIBUTE_PORT_PRIO,
+		                                                             NM_TEAM_ATTRIBUTE_PORT_STICKY);
+		if (has_lacp_attrs && has_activebackup_attrs) {
+			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING,
+			             _("cannot set parameters for lacp and activebackup runners together"));
+			_team_setting_prefix_error (self, NM_SETTING_TEAM_LINK_WATCHERS, NM_SETTING_TEAM_PORT_LINK_WATCHERS, error);
 			return FALSE;
 		}
 	}
+
+	for (i = 0; i < self->d.link_watchers->len; i++) {
+		if (!self->d.link_watchers->pdata[i]) {
+			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING,
+			             _("missing link watcher"));
+			_team_setting_prefix_error (self, NM_SETTING_TEAM_LINK_WATCHERS, NM_SETTING_TEAM_PORT_LINK_WATCHERS, error);
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+static gboolean
+_team_setting_verify_config (const NMTeamSetting *self,
+                             GError **error)
+{
+	const char *js_str;
 
 	/* we always materialize the JSON string. That is because we want to validate the
 	 * string length of the resulting JSON. */
@@ -1976,19 +2111,19 @@ _team_setting_verify (const NMTeamSetting *self,
 		if (strlen (js_str) > 1*1024*1024) {
 			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("team config exceeds size limit"));
-			_team_setting_prefix_error (self, error, NM_SETTING_TEAM_CONFIG, NM_SETTING_TEAM_PORT_CONFIG);
+			_team_setting_prefix_error (self, NM_SETTING_TEAM_CONFIG, NM_SETTING_TEAM_PORT_CONFIG, error);
 			return FALSE;
 		}
 		if (!g_utf8_validate (js_str, -1, NULL)) {
 			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("team config is not valid UTF-8"));
-			_team_setting_prefix_error (self, error, NM_SETTING_TEAM_CONFIG, NM_SETTING_TEAM_PORT_CONFIG);
+			_team_setting_prefix_error (self, NM_SETTING_TEAM_CONFIG, NM_SETTING_TEAM_PORT_CONFIG, error);
 			return FALSE;
 		}
 		if (self->d.js_str_invalid) {
 			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("invalid json"));
-			_team_setting_prefix_error (self, error, NM_SETTING_TEAM_CONFIG, NM_SETTING_TEAM_PORT_CONFIG);
+			_team_setting_prefix_error (self, NM_SETTING_TEAM_CONFIG, NM_SETTING_TEAM_PORT_CONFIG, error);
 			return FALSE;
 		}
 	}
@@ -2000,7 +2135,11 @@ gboolean
 nm_team_setting_verify (const NMTeamSetting *self,
                         GError **error)
 {
-	return _team_setting_verify (self, error);
+	if (self->d.strict_validated) {
+		if (!_team_setting_verify_properties (self, error))
+			return FALSE;
+	}
+	return _team_setting_verify_config (self, error);
 }
 
 /*****************************************************************************/
@@ -2017,12 +2156,13 @@ nm_team_setting_cmp (const NMTeamSetting *self_a,
 	NM_CMP_FIELD_UNSAFE (self_a, self_b, d.is_port);
 
 	for (attr_data = &team_attr_datas[TEAM_ATTR_IDX_CONFIG + 1]; attr_data < &team_attr_datas[G_N_ELEMENTS (team_attr_datas)]; attr_data++) {
-		if (_team_attr_data_is_relevant (attr_data, self_a->d.is_port)) {
-			NM_CMP_RETURN (_team_attr_data_cmp (attr_data,
-			                                    self_a->d.is_port,
-			                                    _team_setting_get_field (self_a, attr_data),
-			                                    _team_setting_get_field (self_b, attr_data)));
-		}
+		if (!_team_attr_data_is_relevant (attr_data, self_a->d.is_port))
+			continue;
+
+		NM_CMP_RETURN (_team_attr_data_cmp (attr_data,
+		                                    self_a->d.is_port,
+		                                    _team_setting_get_field (self_a, attr_data),
+		                                    _team_setting_get_field (self_b, attr_data)));
 	}
 
 	if (!ignore_js_str) {
@@ -2038,7 +2178,7 @@ nm_team_setting_reset (NMTeamSetting *self,
                        const NMTeamSetting *src)
 {
 	const TeamAttrData *attr_data;
-	guint32 changed;
+	guint32 changed_flags;
 
 	_team_setting_ASSERT (self);
 	_team_setting_ASSERT (src);
@@ -2047,7 +2187,7 @@ nm_team_setting_reset (NMTeamSetting *self,
 	if (self == src)
 		return 0;
 
-	changed = 0;
+	changed_flags = 0;
 
 	for (attr_data = &team_attr_datas[TEAM_ATTR_IDX_CONFIG + 1]; attr_data < &team_attr_datas[G_N_ELEMENTS (team_attr_datas)]; attr_data++) {
 		if (!_team_attr_data_is_relevant (attr_data, self->d.is_port))
@@ -2061,21 +2201,23 @@ nm_team_setting_reset (NMTeamSetting *self,
 		                      self->d.is_port,
 		                      _team_setting_get_field (self, attr_data),
 		                      _team_setting_get_field (src, attr_data));
-		changed |= nm_team_attribute_to_flags (attr_data->team_attr);
+		changed_flags |= nm_team_attribute_to_flags (attr_data->team_attr);
 	}
+
+	self->_data_priv.has_fields_mask = src->d.has_fields_mask;
 
 	if (!nm_streq0 (self->d._js_str, src->d._js_str)) {
 		g_free ((char *) self->_data_priv._js_str);
 		self->_data_priv._js_str = g_strdup (src->d._js_str);
-		changed |= nm_team_attribute_to_flags (NM_TEAM_ATTRIBUTE_CONFIG);
-	} else if (changed != 0)
-		changed |= nm_team_attribute_to_flags (NM_TEAM_ATTRIBUTE_CONFIG);
+		changed_flags |= nm_team_attribute_to_flags (NM_TEAM_ATTRIBUTE_CONFIG);
+	} else if (changed_flags != 0)
+		changed_flags |= nm_team_attribute_to_flags (NM_TEAM_ATTRIBUTE_CONFIG);
 
 	self->_data_priv._js_str_need_synthetize = src->d._js_str_need_synthetize;
 	self->_data_priv.strict_validated = src->d.strict_validated;
 	self->_data_priv.js_str_invalid = src->d.js_str_invalid;
 
-	return changed;
+	return changed_flags;
 }
 
 static void
@@ -2109,7 +2251,7 @@ nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 		_nm_unused gs_unref_variant GVariant *v_val_free = v_val;
 		const GVariantType *variant_type = NULL;
 
-		attr_data = _team_attr_data_find_for_dbus_name (self->d.is_port, v_key);
+		attr_data = _team_attr_data_find_for_property_name (self->d.is_port, v_key);
 		if (!attr_data) {
 			/* _nm_setting_new_from_dbus() already checks for unknown keys. Don't
 			 * do that here. */
@@ -2136,10 +2278,9 @@ nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
 				             _("invalid D-Bus type \"%s\""),
 				             g_variant_get_type_string (v_val));
-				_team_setting_prefix_error (self,
-				                            error,
-				                            attr_data->dbus_name,
-				                            attr_data->dbus_name);
+				_team_setting_prefix_error_plain (self->d.is_port,
+				                                  attr_data->property_name,
+				                                  error);
 				return FALSE;
 			}
 			continue;
@@ -2162,9 +2303,9 @@ nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 			             _("invalid link-watchers: %s"),
 			             local->message);
 			_team_setting_prefix_error (self,
-			                            error,
 			                            NM_SETTING_TEAM_LINK_WATCHERS,
-			                            NM_SETTING_TEAM_PORT_LINK_WATCHERS);
+			                            NM_SETTING_TEAM_PORT_LINK_WATCHERS,
+			                            error);
 			return FALSE;
 		}
 	}
@@ -2184,7 +2325,7 @@ nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 
 		for (attr_data = &team_attr_datas[TEAM_ATTR_IDX_CONFIG + 1]; attr_data < &team_attr_datas[G_N_ELEMENTS (team_attr_datas)]; attr_data++) {
 			NMValueTypUnion val;
-			guint32 changed = 0u;
+			guint32 changed_flags = 0u;
 
 			if (!_team_attr_data_is_relevant (attr_data, self->d.is_port))
 				continue;
@@ -2193,27 +2334,32 @@ nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 
 			if (attr_data->value_type != NM_VALUE_TYPE_UNSPEC) {
 				nm_value_type_get_from_variant (attr_data->value_type, &val, variants[attr_data->team_attr], FALSE);
-				changed = _team_setting_value_set (self,
-				                                   attr_data->team_attr,
-				                                   attr_data->value_type,
-				                                   &val);
+				changed_flags = _team_setting_value_set (self,
+				                                         attr_data,
+				                                         &val,
+				                                         SET_FIELD_MODE_SET,
+				                                         RESET_JSON_NO);
 			} else if (attr_data->team_attr == NM_TEAM_ATTRIBUTE_LINK_WATCHERS) {
-				changed = _team_setting_value_link_watchers_set_list (self,
-				                                                      v_link_watchers ? (const NMTeamLinkWatcher *const *) v_link_watchers->pdata : NULL,
-				                                                      v_link_watchers ? v_link_watchers->len : 0u);
+				changed_flags = _team_setting_value_link_watchers_set_list (self,
+				                                                            v_link_watchers ? (const NMTeamLinkWatcher *const *) v_link_watchers->pdata : NULL,
+				                                                            v_link_watchers ? v_link_watchers->len : 0u,
+				                                                            SET_FIELD_MODE_SET,
+				                                                            RESET_JSON_NO);
 			} else if (   !self->d.is_port
 			           && attr_data->team_attr == NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH) {
 				gs_free const char **strv = NULL;
 				gsize len;
 
 				strv = g_variant_get_strv (variants[attr_data->team_attr], &len);
-				changed = _team_setting_value_master_runner_tx_hash_set_list (self,
-				                                                              strv,
-				                                                              NM_MIN (len, (gsize) G_MAXUINT));
+				changed_flags = _team_setting_value_master_runner_tx_hash_set_list (self,
+				                                                                    strv,
+				                                                                    NM_MIN (len, (gsize) G_MAXUINT),
+				                                                                    SET_FIELD_MODE_SET,
+				                                                                    RESET_JSON_NO);
 			} else
 				nm_assert_not_reached ();
 
-			extra_changed |= changed;
+			extra_changed |= changed_flags;
 		}
 
 		if (   !variants[NM_TEAM_ATTRIBUTE_CONFIG]
@@ -2268,6 +2414,55 @@ nm_team_setting_maybe_changed (NMSetting *source,
 		g_object_thaw_notify (G_OBJECT (source));
 
 	return TRUE;
+}
+
+/*****************************************************************************/
+
+NMTeamSetting *
+_nm_setting_get_team_setting (struct _NMSetting *setting)
+{
+	if (NM_IS_SETTING_TEAM (setting))
+		return _nm_setting_team_get_team_setting (NM_SETTING_TEAM (setting));
+	return _nm_setting_team_port_get_team_setting (NM_SETTING_TEAM_PORT (setting));
+}
+
+GVariant *
+_nm_team_settings_property_to_dbus (const NMSettInfoSetting *sett_info,
+                                    guint property_idx,
+                                    NMConnection *connection,
+                                    NMSetting *setting,
+                                    NMConnectionSerializationFlags flags)
+{
+	NMTeamSetting *self = _nm_setting_get_team_setting (setting);
+	const NMSettInfoProperty *property = &sett_info->property_infos[property_idx];
+	NMTeamAttribute team_attr = property->param_spec->param_id;
+	const TeamAttrData *attr_data = _team_attr_data_get (self->d.is_port, team_attr);
+
+	if (!_team_setting_has_field (self, attr_data))
+		return NULL;
+
+	if (attr_data->value_type != NM_VALUE_TYPE_UNSPEC) {
+		return nm_value_type_to_variant (attr_data->value_type,
+	                                     _team_setting_get_field (self, attr_data));
+	}
+	if (attr_data->team_attr == NM_TEAM_ATTRIBUTE_LINK_WATCHERS)
+		return _nm_utils_team_link_watchers_to_variant (self->d.link_watchers);
+	if (   !self->d.is_port
+	    && attr_data->team_attr == NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH) {
+		return g_variant_new_strv (self->d.master.runner_tx_hash ? (const char *const*) self->d.master.runner_tx_hash->pdata : NULL,
+		                           self->d.master.runner_tx_hash ? self->d.master.runner_tx_hash->len : 0u);
+	}
+
+	nm_assert_not_reached ();
+	return NULL;
+}
+
+void
+_nm_team_settings_property_from_dbus_link_watchers (GVariant *dbus_value,
+                                                    GValue *prop_value)
+{
+	g_value_take_boxed (prop_value,
+	                    _nm_utils_team_link_watchers_from_variant (dbus_value, FALSE, NULL));
 }
 
 /*****************************************************************************/

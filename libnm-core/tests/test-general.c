@@ -6863,10 +6863,6 @@ test_nm_utils_team_config_equal (void)
 
 	/* team config */
 	_team_config_equal_check ("{ }",
-	                          "{ \"runner\" :  { \"name\" : \"roundrobin\"} }",
-	                          FALSE,
-	                          TRUE);
-	_team_config_equal_check ("{ }",
 	                          "{ \"runner\" :  { \"name\" : \"random\"} }",
 	                          FALSE,
 	                          !WITH_JSON_VALIDATION);
@@ -6889,7 +6885,7 @@ test_nm_utils_team_config_equal (void)
 	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"lacp\"} }",
 	                          "{ \"runner\" :  { \"name\" : \"lacp\", \"tx_hash\" : [ \"eth\", \"ipv4\", \"ipv6\" ] } }",
 	                          FALSE,
-	                          TRUE);
+	                          !WITH_JSON_VALIDATION);
 	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"roundrobin\"} }",
 	                          "{ \"runner\" :  { \"name\" : \"roundrobin\", \"tx_hash\" : [ \"eth\", \"ipv4\", \"ipv6\" ] } }",
 	                          FALSE,
@@ -6903,7 +6899,7 @@ test_nm_utils_team_config_equal (void)
 	_team_config_equal_check ("{ }",
 	                          "{ \"link_watch\" :  { \"name\" : \"ethtool\"} }",
 	                          TRUE,
-	                          TRUE);
+	                          !WITH_JSON_VALIDATION);
 	_team_config_equal_check ("{ }",
 	                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
 	                          TRUE,
@@ -6911,7 +6907,7 @@ test_nm_utils_team_config_equal (void)
 	_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"ethtool\"} }",
 	                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
 	                          TRUE,
-	                          TRUE);
+	                          !WITH_JSON_VALIDATION);
 	_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
 	                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
 	                          TRUE,

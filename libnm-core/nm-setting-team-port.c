@@ -54,6 +54,14 @@ G_DEFINE_TYPE (NMSettingTeamPort, nm_setting_team_port, NM_TYPE_SETTING)
 
 /*****************************************************************************/
 
+NMTeamSetting *
+_nm_setting_team_port_get_team_setting (NMSettingTeamPort *setting)
+{
+	return NM_SETTING_TEAM_PORT_GET_PRIVATE (setting)->team_setting;
+}
+
+/*****************************************************************************/
+
 #define _maybe_changed(self, changed) \
 	nm_team_setting_maybe_changed (NM_SETTING (_NM_ENSURE_TYPE (NMSettingTeamPort *, self)), (const GParamSpec *const*) obj_properties, (changed))
 
@@ -287,19 +295,6 @@ nm_setting_team_port_clear_link_watchers (NMSettingTeamPort *setting)
 	                nm_team_setting_value_link_watchers_set_list (NM_SETTING_TEAM_PORT_GET_PRIVATE (setting)->team_setting,
 	                                                              NULL,
 	                                                              0));
-}
-
-static GVariant *
-team_link_watchers_to_dbus (const GValue *prop_value)
-{
-	return _nm_utils_team_link_watchers_to_variant (g_value_get_boxed (prop_value));
-}
-
-static void
-team_link_watchers_from_dbus (GVariant   *dbus_value,
-                              GValue     *prop_value)
-{
-	g_value_take_boxed (prop_value, _nm_utils_team_link_watchers_from_variant (dbus_value, FALSE, NULL));
 }
 
 static gboolean
@@ -556,6 +551,13 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	setting_class->duplicate_copy_properties = duplicate_copy_properties;
 	setting_class->init_from_dbus            = init_from_dbus;
 
+#define _property_override(_properties_override, _param_spec, _variant_type, _is_link_watcher) \
+	_properties_override_add ((_properties_override), \
+	                          .param_spec          = (_param_spec), \
+	                          .dbus_type           = G_VARIANT_TYPE (""_variant_type""), \
+	                          .to_dbus_fcn         = _nm_team_settings_property_to_dbus, \
+	                          .gprop_from_dbus_fcn = ((_is_link_watcher) ? _nm_team_settings_property_from_dbus_link_watchers : NULL))
+
 	/**
 	 * NMSettingTeamPort:config:
 	 *
@@ -587,9 +589,10 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	 **/
 	obj_properties[NM_TEAM_ATTRIBUTE_PORT_QUEUE_ID] =
 	    g_param_spec_int (NM_SETTING_TEAM_PORT_QUEUE_ID, "", "",
-	                      G_MININT32, G_MAXINT32, 0,
+	                      G_MININT32, G_MAXINT32, -1,
 	                      G_PARAM_READWRITE |
 	                      G_PARAM_STATIC_STRINGS);
+	_property_override (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_PORT_QUEUE_ID], "i", FALSE);
 
 	/**
 	 * NMSettingTeamPort:prio:
@@ -603,6 +606,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	                      G_MININT32, G_MAXINT32, 0,
 	                      G_PARAM_READWRITE |
 	                      G_PARAM_STATIC_STRINGS);
+	_property_override (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_PORT_PRIO], "i", FALSE);
 
 	/**
 	 * NMSettingTeamPort:sticky:
@@ -616,6 +620,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	                          FALSE,
 	                          G_PARAM_READWRITE |
 	                          G_PARAM_STATIC_STRINGS);
+	_property_override (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_PORT_STICKY], "b", FALSE);
 
 	/**
 	 * NMSettingTeamPort:lacp-prio:
@@ -626,9 +631,10 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	 **/
 	obj_properties[NM_TEAM_ATTRIBUTE_PORT_LACP_PRIO] =
 	    g_param_spec_int (NM_SETTING_TEAM_PORT_LACP_PRIO, "", "",
-	                      G_MININT32, G_MAXINT32, 0,
+	                      G_MININT32, G_MAXINT32, -1,
 	                      G_PARAM_READWRITE |
 	                      G_PARAM_STATIC_STRINGS);
+	_property_override (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_PORT_LACP_PRIO], "i", FALSE);
 
 	/**
 	 * NMSettingTeamPort:lacp-key:
@@ -639,9 +645,10 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	 **/
 	obj_properties[NM_TEAM_ATTRIBUTE_PORT_LACP_KEY] =
 	    g_param_spec_int (NM_SETTING_TEAM_PORT_LACP_KEY, "", "",
-	                      G_MININT32, G_MAXINT32, 0,
+	                      G_MININT32, G_MAXINT32, -1,
 	                      G_PARAM_READWRITE |
 	                      G_PARAM_STATIC_STRINGS);
+	_property_override (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_PORT_LACP_KEY], "i", FALSE);
 
 	/**
 	 * NMSettingTeamPort:link-watchers: (type GPtrArray(NMTeamLinkWatcher))
@@ -662,12 +669,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	                        G_TYPE_PTR_ARRAY,
 	                        G_PARAM_READWRITE |
 	                        G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_transform (properties_override,
-	                                    obj_properties[NM_TEAM_ATTRIBUTE_LINK_WATCHERS],
-	                                    G_VARIANT_TYPE ("aa{sv}"),
-	                                    team_link_watchers_to_dbus,
-	                                    team_link_watchers_from_dbus);
+	_property_override (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_LINK_WATCHERS], "aa{sv}", TRUE);
 
 	g_object_class_install_properties (object_class, G_N_ELEMENTS (obj_properties), obj_properties);
 

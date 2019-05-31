@@ -6514,6 +6514,10 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 			.value_infos =              INT_VALUE_INFOS (
 				{
+					.value.i64 = -1,
+					.nick = "unset",
+				},
+				{
 					.value.i64 = 0,
 					.nick = "disabled",
 				},
@@ -6524,6 +6528,10 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 			.value_infos =              INT_VALUE_INFOS (
+				{
+					.value.i64 = -1,
+					.nick = "unset",
+				},
 				{
 					.value.i64 = 0,
 					.nick = "default",
@@ -6536,6 +6544,10 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 			.value_infos =              INT_VALUE_INFOS (
 				{
+					.value.i64 = -1,
+					.nick = "unset",
+				},
+				{
 					.value.i64 = 0,
 					.nick = "disabled",
 				},
@@ -6546,6 +6558,10 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 			.value_infos =              INT_VALUE_INFOS (
+				{
+					.value.i64 = -1,
+					.nick = "unset",
+				},
 				{
 					.value.i64 = 0,
 					.nick = "default",
@@ -6598,6 +6614,10 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 			.value_infos =              INT_VALUE_INFOS (
 				{
+					.value.i64 = -1,
+					.nick = "unset",
+				},
+				{
 					.value.i64 = NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT,
 					.nick = "default",
 				},
@@ -6615,6 +6635,10 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 			.value_infos =              INT_VALUE_INFOS (
 				{
+					.value.i64 = -1,
+					.nick = "unset",
+				},
+				{
 					.value.i64 = NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT,
 					.nick = "default",
 				},
@@ -6625,6 +6649,10 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 			.value_infos =              INT_VALUE_INFOS (
+				{
+					.value.i64 = -1,
+					.nick = "unset",
+				},
 				{
 					.value.i64 = 0,
 					.nick = "default",
@@ -6676,7 +6704,11 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 			.value_infos =              INT_VALUE_INFOS (
 				{
-					.value.i64 = NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT,
+					.value.i64 = -1,
+					.nick = "unset",
+				},
+				{
+					.value.i64 = 0,
 					.nick = "default",
 				},
 			),
@@ -6686,6 +6718,10 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 			.value_infos =              INT_VALUE_INFOS (
+				{
+					.value.i64 = 0,
+					.nick = "unset",
+				},
 				{
 					.value.i64 = 0,
 					.nick = "default",
@@ -6701,6 +6737,10 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 			.value_infos =              INT_VALUE_INFOS (
 				{
+					.value.i64 = -1,
+					.nick = "unset",
+				},
+				{
 					.value.i64 = NM_SETTING_TEAM_PORT_LACP_PRIO_DEFAULT,
 					.nick = "default",
 				},
@@ -6711,6 +6751,10 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 		.property_type =                &_pt_gobject_int,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 			.value_infos =              INT_VALUE_INFOS (
+				{
+					.value.i64 = -1,
+					.nick = "unset",
+				},
 				{
 					.value.i64 = 0,
 					.nick = "default",
