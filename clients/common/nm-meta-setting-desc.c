@@ -894,7 +894,7 @@ _gobject_property_reset (NMSetting *setting,
 
 	g_value_init (&v, pspec->value_type);
 	if (reset_default)
-		g_param_value_defaults (pspec, &v);
+		g_param_value_set_default (pspec, &v);
 	g_object_set_property (G_OBJECT (setting), prop_name, &v);
 	return TRUE;
 }
