@@ -220,8 +220,9 @@ int n_dhcp4_outgoing_append(NDhcp4Outgoing *outgoing,
                 /* try fitting into allowed OPTIONs space */
                 if (outgoing->max_size - outgoing->i_message >= n_data + 2U + 3U + 1U) {
                         /* try over-allocation to reduce allocation pressure */
-                        n = c_min(outgoing->max_size,
-                                  outgoing->n_message + n_data + 128);
+                        n = outgoing->n_message + n_data + 128;
+                        if (n > outgoing->max_size)
+                                n = outgoing->max_size;
                         m = realloc(outgoing->message, n);
                         if (!m)
                                 return -ENOMEM;
