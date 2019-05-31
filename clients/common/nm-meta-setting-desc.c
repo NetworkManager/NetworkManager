@@ -3673,85 +3673,6 @@ _validate_fcn_team_config (const char *value, char **out_to_free, GError **error
 }
 
 static void
-_multilist_clear_all_fcn_team_runner_tx_hash (NMSetting *setting)
-{
-	/* Workaround libnm bug (confirmed against version 1.16.0).
-	 * We need to both clear the GObject property and call the libnm API.
-	 *
-	 * This workaround was added in nmcli as [1]. This needs fixing in libnm.
-	 *
-	 * Without this, CI test "team_abs_set_runner_tx_hash" fails.
-	 * Try (without the following workaround): */
-#if 0
-     $ (nmcli connection delete team0 ; :); \
-       nmcli connection add type team con-name team0 ifname team0 autoconnect no \
-           team.runner lacp && \
-       echo ">>> FIRST:" && \
-       PAGER= nmcli -o connection show team0 && \
-       nmcli connection modify team0 team.runner-tx-hash l3 && \
-       echo ">>> AFTER:" && \
-       PAGER= nmcli -o connection show team0
-#endif
-	/* See also:
-	 *
-	 *   - https://github.com/NetworkManager/NetworkManager/pull/318
-	 *   - https://bugzilla.redhat.com/show_bug.cgi?id=1691619
-	 *
-	 * [1] https://cgit.freedesktop.org/NetworkManager/NetworkManager/commit/?id=350dbb55abf3a80267c398e6f64c2cee4645475a
-	 */
-
-	/* it appears, we don't really need _gobject_property_reset(). Just to be sure
-	 * also call it. */
-	_gobject_property_reset (setting, NM_SETTING_TEAM_RUNNER_TX_HASH, FALSE);
-	while (nm_setting_team_get_num_runner_tx_hash (NM_SETTING_TEAM (setting)))
-		nm_setting_team_remove_runner_tx_hash (NM_SETTING_TEAM (setting), 0);
-}
-
-static void
-_objlist_clear_all_fcn_team_link_watchers (NMSetting *setting)
-{
-	/* the same workaround as _multilist_clear_all_fcn_team_runner_tx_hash() above.
-	 *
-	 * Reproduce with: */
-#if 0
-     $ (nmcli connection delete team0 ; :); \
-       nmcli connection add type team con-name team0 ifname team0 autoconnect no \
-             team.link-watchers 'name=arp_ping source-host=172.16.1.1 target-host=172.16.1.254, name=ethtool delay-up=3' && \
-       echo ">>> FIRST:" && \
-       PAGER= nmcli -o connection show team0 && \
-       nmcli connection modify team0 team.link-watchers 'name=ethtool delay-up=4' && \
-       echo ">>> AFTER:" && \
-       PAGER= nmcli -o connection show team0
-
-       (nmcli connection delete team0-slave ; :); \
-       nmcli connection add type ethernet con-name team0-slave master team0 slave-type team ifname eth0 autoconnect no \
-             team-port.link-watchers 'name=arp_ping source-host=172.16.1.1 target-host=172.16.1.254, name=ethtool delay-up=3' && \
-       echo ">>> FIRST:" && \
-       PAGER= nmcli -o connection show team0-slave && \
-       nmcli connection modify team0-slave team.link-watchers 'name=ethtool delay-up=4' && \
-       echo ">>> AFTER:" && \
-       PAGER= nmcli -o connection show team0-slave
-#endif
-	/* See also:
-	 *
-	 *   - https://cgit.freedesktop.org/NetworkManager/NetworkManager/commit/?id=72bf38cad6ca6033d0117bf67b0e726001922d8f
-	 *   - https://github.com/NetworkManager/NetworkManager/pull/318
-	 *   - https://bugzilla.redhat.com/show_bug.cgi?id=1691619
-	 */
-
-	/* In this case, it appears both GObject reset and nm_setting_team*_clear_link_watchers()
-	 * work (on their own). So, we might not need the workaround.
-	 * Just to be sure, as something is not right with libnm here. */
-	if (NM_IS_SETTING_TEAM (setting)) {
-		_gobject_property_reset (setting, NM_SETTING_TEAM_LINK_WATCHERS, FALSE);
-		nm_setting_team_clear_link_watchers (NM_SETTING_TEAM (setting));
-	} else {
-		_gobject_property_reset (setting, NM_SETTING_TEAM_PORT_LINK_WATCHERS, FALSE);
-		nm_setting_team_port_clear_link_watchers (NM_SETTING_TEAM_PORT (setting));
-	}
-}
-
-static void
 _objlist_obj_to_str_fcn_team_link_watchers (NMMetaAccessorGetType get_type,
                                             NMSetting *setting,
                                             guint idx,
@@ -6593,7 +6514,6 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (multilist,
 				.get_num_fcn_u =        MULTILIST_GET_NUM_FCN_U       (NMSettingTeam, nm_setting_team_get_num_runner_tx_hash),
-				.clear_all_fcn =        _multilist_clear_all_fcn_team_runner_tx_hash,
 				.add_fcn =              MULTILIST_ADD_FCN             (NMSettingTeam, nm_setting_team_add_runner_tx_hash),
 				.remove_by_idx_fcn_u =  MULTILIST_REMOVE_BY_IDX_FCN_U (NMSettingTeam, nm_setting_team_remove_runner_tx_hash),
 				.remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingTeam, nm_setting_team_remove_runner_tx_hash_by_value),
@@ -6676,7 +6596,6 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTeam, nm_setting_team_get_num_link_watchers),
-				.clear_all_fcn =        _objlist_clear_all_fcn_team_link_watchers,
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_team_link_watchers,
 				.set_fcn =              _objlist_set_fcn_team_link_watchers,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingTeam, nm_setting_team_remove_link_watcher),
@@ -6768,7 +6687,6 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			PROPERTY_TYP_DATA_SUBTYPE (objlist,
 				.get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingTeamPort, nm_setting_team_port_get_num_link_watchers),
-				.clear_all_fcn =        _objlist_clear_all_fcn_team_link_watchers,
 				.obj_to_str_fcn =       _objlist_obj_to_str_fcn_team_link_watchers,
 				.set_fcn =              _objlist_set_fcn_team_link_watchers,
 				.remove_by_idx_fcn_u =  OBJLIST_REMOVE_BY_IDX_FCN_U (NMSettingTeamPort, nm_setting_team_port_remove_link_watcher),
