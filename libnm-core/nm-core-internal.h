@@ -201,6 +201,12 @@ typedef enum {
 
 NMSettingVerifyResult _nm_connection_verify (NMConnection *connection, GError **error);
 
+gboolean _nm_connection_ensure_normalized (NMConnection *connection,
+                                           gboolean allow_modify,
+                                           const char *enforce_uuid,
+                                           NMConnection **out_connection_clone,
+                                           GError **error);
+
 gboolean _nm_connection_remove_setting (NMConnection *connection, GType setting_type);
 
 #if NM_MORE_ASSERTS
