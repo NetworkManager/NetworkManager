@@ -578,6 +578,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
+	_property_override (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_CONFIG], "s", FALSE);
 
 	/**
 	 * NMSettingTeamPort:queue-id:
