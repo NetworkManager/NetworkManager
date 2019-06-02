@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* ndisc.c - test program
  *
  * This program is free software; you can redistribute it and/or modify

@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* nm-dhcp-dhcpcd.c - dhcpcd specific hooks for NetworkManager
  *
  * Copyright (C) 2008 Roy Marples

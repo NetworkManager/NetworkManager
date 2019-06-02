@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* nm-udev-utils.c - udev utils functions
  *
  * This program is free software; you can redistribute it and/or modify

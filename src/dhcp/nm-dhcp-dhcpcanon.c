@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* nm-dhcp-dhcpcanon.c - dhcpcanon specific hooks for NetworkManager
  *
  * This program is free software; you can redistribute it and/or modify

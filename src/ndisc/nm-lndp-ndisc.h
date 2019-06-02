@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* nm-lndp-ndisc.h - Implementation of neighbor discovery using libndp
  *
  * This program is free software; you can redistribute it and/or modify
