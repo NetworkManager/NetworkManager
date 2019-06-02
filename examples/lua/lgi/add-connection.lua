@@ -1,5 +1,4 @@
 #!/usr/bin/env lua
--- vim: ft=lua ts=2 sts=2 sw=2 et ai
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
