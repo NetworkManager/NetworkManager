@@ -5643,11 +5643,9 @@ nm_device_match_parent (NMDevice *self, const char *parent)
 		 * no connection active on the device or when a connection with
 		 * that UUID is active.
 		 */
-		connection = nm_device_get_applied_connection (self);
-		if (!connection)
-			return TRUE;
-
-		if (!nm_streq0 (parent, nm_connection_get_uuid (connection)))
+		connection = nm_device_get_applied_connection (parent_device);
+		if (   connection
+		    && !nm_streq0 (parent, nm_connection_get_uuid (connection)))
 			return FALSE;
 	} else {
 		/* Interface name */
