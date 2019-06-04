@@ -7,7 +7,6 @@
 #include <endian.h>
 #include <inttypes.h>
 #include <limits.h>
-#include <linux/netdevice.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
@@ -234,9 +233,9 @@ struct NDhcp4ClientConfig {
         int ifindex;
         unsigned int transport;
         bool request_broadcast;
-        uint8_t mac[MAX_ADDR_LEN];
+        uint8_t mac[32]; /* MAX_ADDR_LEN */
         size_t n_mac;
-        uint8_t broadcast_mac[MAX_ADDR_LEN];
+        uint8_t broadcast_mac[32]; /* MAX_ADDR_LEN */
         size_t n_broadcast_mac;
         uint8_t *client_id;
         size_t n_client_id;

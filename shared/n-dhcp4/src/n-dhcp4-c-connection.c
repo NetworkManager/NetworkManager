@@ -8,6 +8,8 @@
 #include <c-stdaux.h>
 #include <errno.h>
 #include <limits.h>
+#include <sys/socket.h> /* needed by linux/netdevice.h */
+#include <linux/netdevice.h>
 #include <net/if_arp.h>
 #include <stdbool.h>
 #include <stdlib.h>
