@@ -96,6 +96,8 @@ struct _NMTeamSettingData {
 
 	bool is_port:1;
 
+	guint32 has_fields_mask;
+
 	union {
 		struct {
 			const GPtrArray *runner_tx_hash;
@@ -185,6 +187,10 @@ nm_team_setting_value_get_string (const NMTeamSetting *self,
 
 /*****************************************************************************/
 
+guint32 nm_team_setting_value_reset (NMTeamSetting *self,
+                                     NMTeamAttribute team_attr,
+                                     gboolean to_default /* or else unset */);
+
 guint32 _nm_team_setting_value_set (NMTeamSetting *self,
                                     NMTeamAttribute team_attr,
                                     NMValueType value_type,
@@ -269,12 +275,32 @@ gboolean nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 GPtrArray *_nm_utils_team_link_watchers_from_variant (GVariant *value,
                                                       gboolean strict_parsing,
                                                       GError **error);
-GVariant  *_nm_utils_team_link_watchers_to_variant (GPtrArray *link_watchers);
+GVariant  *_nm_utils_team_link_watchers_to_variant (const GPtrArray *link_watchers);
 
 /*****************************************************************************/
 
 gboolean nm_team_setting_maybe_changed (struct _NMSetting *source,
                                         const GParamSpec *const*obj_properties,
                                         guint32 changed);
+
+struct _NMSettingTeam;
+struct _NMSettingTeamPort;
+NMTeamSetting *_nm_setting_team_get_team_setting (struct _NMSettingTeam *setting);
+NMTeamSetting *_nm_setting_team_port_get_team_setting (struct _NMSettingTeamPort *setting);
+NMTeamSetting *_nm_setting_get_team_setting (struct _NMSetting *setting);
+
+/*****************************************************************************/
+
+#include "nm-connection.h"
+#include "nm-core-internal.h"
+
+GVariant *_nm_team_settings_property_to_dbus (const NMSettInfoSetting *sett_info,
+                                              guint property_idx,
+                                              NMConnection *connection,
+                                              NMSetting *setting,
+                                              NMConnectionSerializationFlags flags);
+
+void _nm_team_settings_property_from_dbus_link_watchers (GVariant *dbus_value,
+                                                         GValue *prop_value);
 
 #endif /* __NM_TEAM_UITLS_H__ */

@@ -1057,11 +1057,11 @@ static void
 test_runner_roundrobin_sync_from_config (void)
 {
 	_test_team_config_sync ("",
-	                        0, 0, 0, 0,
-	                        NM_SETTING_TEAM_RUNNER_ROUNDROBIN,
+	                        -1, -1, -1, -1,
+	                        NULL,
 	                        NULL,
 	                        NULL, NULL, -1,
-	                        FALSE, FALSE, -1, -1, NULL,
+	                        TRUE, FALSE, -1, -1, NULL,
 	                        NULL);
 }
 
@@ -1069,11 +1069,11 @@ static void
 test_runner_broadcast_sync_from_config (void)
 {
 	_test_team_config_sync ("{\"runner\": {\"name\": \"broadcast\"}}",
-	                        0, 0, 0, 0,
+	                        -1, -1, -1, -1,
 	                        NM_SETTING_TEAM_RUNNER_BROADCAST,
 	                        NULL,
 	                        NULL, NULL, -1,
-	                        FALSE, FALSE, -1, -1, NULL,
+	                        TRUE, FALSE, -1, -1, NULL,
 	                        NULL);
 }
 
@@ -1081,11 +1081,11 @@ static void
 test_runner_random_sync_from_config (void)
 {
 	_test_team_config_sync ("{\"runner\": {\"name\": \"random\"}}",
-	                        0, 0, 0, 0,
+	                        -1, -1, -1, -1,
 	                        NM_SETTING_TEAM_RUNNER_RANDOM,
 	                        NULL,
 	                        NULL, NULL, -1,
-	                        FALSE, FALSE, -1, -1, NULL,
+	                        TRUE, FALSE, -1, -1, NULL,
 	                        NULL);
 }
 
@@ -1093,12 +1093,11 @@ static void
 test_runner_activebackup_sync_from_config (void)
 {
 	_test_team_config_sync ("{\"runner\": {\"name\": \"activebackup\"}}",
-	                        NM_SETTING_TEAM_NOTIFY_PEERS_COUNT_ACTIVEBACKUP_DEFAULT, 0,
-	                        NM_SETTING_TEAM_NOTIFY_MCAST_COUNT_ACTIVEBACKUP_DEFAULT, 0,
+	                        -1, -1, -1, -1,
 	                        NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP,
-	                        NM_SETTING_TEAM_RUNNER_HWADDR_POLICY_DEFAULT,
+	                        NULL,
 	                        NULL, NULL, -1,
-	                        FALSE, FALSE, -1, -1, NULL,
+	                        TRUE, FALSE, -1, -1, NULL,
 	                        NULL);
 }
 
@@ -1113,29 +1112,29 @@ test_runner_loadbalance_sync_from_config (void)
 	g_ptr_array_add (tx_hash, g_strdup ("ipv6"));
 
 	_test_team_config_sync ("{\"runner\": {\"name\": \"loadbalance\"}}",
-	                        0, 0, 0, 0,
+	                        -1, -1, -1, -1,
 	                        NM_SETTING_TEAM_RUNNER_LOADBALANCE,
 	                        NULL,
-	                        tx_hash, NULL, NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT,
-	                        FALSE, FALSE, -1, -1, NULL,
+	                        NULL, NULL, -1,
+	                        TRUE, FALSE, -1, -1, NULL,
 	                        NULL);
 
 	_test_team_config_sync ("{\"runner\": {\"name\": \"loadbalance\", "
 	                        "\"tx_hash\": [\"eth\", \"ipv4\", \"ipv6\"]}}",
-	                        0, 0, 0, 0,
+	                        -1, -1, -1, -1,
 	                        NM_SETTING_TEAM_RUNNER_LOADBALANCE,
 	                        NULL,
-	                        tx_hash, NULL, NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT,
-	                        FALSE, FALSE, -1, -1, NULL,
+	                        tx_hash, NULL, -1,
+	                        TRUE, FALSE, -1, -1, NULL,
 	                        NULL);
 
 	_test_team_config_sync ("{\"runner\": {\"name\": \"loadbalance\", \"tx_hash\": [\"eth\", \"ipv4\", \"ipv6\"], "
 	                        "\"tx_balancer\": {\"name\": \"basic\", \"balancing_interval\": 30}}}",
-	                        0, 0, 0, 0,
+	                        -1, -1, -1, -1,
 	                        NM_SETTING_TEAM_RUNNER_LOADBALANCE,
 	                        NULL,
 	                        tx_hash, "basic", 30,
-	                        FALSE, FALSE, -1, -1, NULL,
+	                        TRUE, FALSE, -1, -1, NULL,
 	                        NULL);
 }
 
@@ -1150,21 +1149,21 @@ test_runner_lacp_sync_from_config (void)
 	g_ptr_array_add (tx_hash, g_strdup ("ipv6"));
 
 	_test_team_config_sync ("{\"runner\": {\"name\": \"lacp\", \"tx_hash\": [\"eth\", \"ipv4\", \"ipv6\"]}}",
-	                        0, 0, 0, 0,
+	                        -1, -1, -1, -1,
 	                        NM_SETTING_TEAM_RUNNER_LACP,
 	                        NULL,
-	                        tx_hash, NULL, NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT,
-	                        TRUE, FALSE, NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT, 0,
-	                        NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_DEFAULT,
+	                        tx_hash, NULL, -1,
+	                        TRUE, FALSE, -1, -1,
+	                        NULL,
 	                        NULL);
 
 	_test_team_config_sync ("{\"runner\": {\"name\": \"lacp\", \"tx_hash\": [\"eth\", \"ipv4\", \"ipv6\"], "
 	                        "\"active\": false, \"fast_rate\": true, \"sys_prio\": 10, \"min_ports\": 5, "
 	                        "\"agg_select_policy\": \"port_config\"}}",
-	                        0, 0, 0, 0,
+	                        -1, -1, -1, -1,
 	                        NM_SETTING_TEAM_RUNNER_LACP,
 	                        NULL,
-	                        tx_hash, NULL, NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT,
+	                        tx_hash, NULL, -1,
 	                        FALSE, TRUE, 10, 5, "port_config",
 	                        NULL);
 }
@@ -1177,11 +1176,11 @@ test_watcher_ethtool_sync_from_config (void)
 	link_watchers = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_team_link_watcher_unref);
 	g_ptr_array_add (link_watchers, nm_team_link_watcher_new_ethtool (0, 0, NULL));
 	_test_team_config_sync ("{\"link_watch\": {\"name\": \"ethtool\"}}",
-	                        0, 0, 0, 0,
-	                        "roundrobin",
+	                        -1, -1, -1, -1,
+	                        NULL,
 	                        NULL,
 	                        NULL, NULL, -1,
-	                        FALSE, FALSE, -1, -1, NULL,
+	                        TRUE, FALSE, -1, -1, NULL,
 	                        link_watchers);
 }
 
@@ -1193,11 +1192,11 @@ test_watcher_nsna_ping_sync_from_config (void)
 	link_watchers = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_team_link_watcher_unref);
 	g_ptr_array_add (link_watchers, nm_team_link_watcher_new_nsna_ping (0, 0, 3, "target.host", NULL));
 	_test_team_config_sync ("{\"link_watch\": {\"name\": \"nsna_ping\", \"target_host\": \"target.host\"}}",
-	                        0, 0, 0, 0,
-	                        "roundrobin",
+	                        -1, -1, -1, -1,
+	                        NULL,
 	                        NULL,
 	                        NULL, NULL, -1,
-	                        FALSE, FALSE, -1, -1, NULL,
+	                        TRUE, FALSE, -1, -1, NULL,
 	                        link_watchers);
 }
 
@@ -1211,11 +1210,11 @@ test_watcher_arp_ping_sync_from_config (void)
 	                 nm_team_link_watcher_new_arp_ping (0, 0, 3, "target.host", "source.host", 0, NULL));
 	_test_team_config_sync ("{\"link_watch\": {\"name\": \"arp_ping\", \"target_host\": \"target.host\", "
 	                        "\"source_host\": \"source.host\"}}",
-	                        0, 0, 0, 0,
-	                        "roundrobin",
+	                        -1, -1, -1, -1,
+	                        NULL,
 	                        NULL,
 	                        NULL, NULL, -1,
-	                        FALSE, FALSE, -1, -1, NULL,
+	                        TRUE, FALSE, -1, -1, NULL,
 	                        link_watchers);
 }
 
@@ -1240,11 +1239,11 @@ test_multiple_watchers_sync_from_config (void)
 	                        "\"validate_active\": true, \"validate_inactive\": true, \"send_always\": true}, "
 	                        "{\"name\": \"nsna_ping\", \"init_wait\": 3, \"interval\": 6, \"missed_max\": 9, "
 	                        "\"target_host\": \"target.host\"}]}",
-	                        0, 0, 0, 0,
-	                        "roundrobin",
+	                        -1, -1, -1, -1,
+	                        NULL,
 	                        NULL,
 	                        NULL, NULL, -1,
-	                        FALSE, FALSE, -1, -1, NULL,
+	                        TRUE, FALSE, -1, -1, NULL,
 	                        link_watchers);
 }
 
@@ -1300,52 +1299,52 @@ _test_team_port_config_sync (const char *team_port_config,
 static void
 test_team_port_default (void)
 {
-	_test_team_port_config_sync ("", -1, 0, FALSE, 255, 0, NULL);
+	_test_team_port_config_sync ("", -1, 0, FALSE, -1, -1, NULL);
 }
 
 static void
 test_team_port_queue_id (void)
 {
 	_test_team_port_config_sync ("{\"queue_id\": 3}",
-	                             3, 0, FALSE, 255, 0, NULL);
+	                             3, 0, FALSE, -1, -1, NULL);
 	_test_team_port_config_sync ("{\"queue_id\": 0}",
-	                             0, 0, FALSE, 255, 0, NULL);
+	                             0, 0, FALSE, -1, -1, NULL);
 }
 
 static void
 test_team_port_prio (void)
 {
 	_test_team_port_config_sync ("{\"prio\": 6}",
-	                             -1, 6, FALSE, 255, 0, NULL);
+	                             -1, 6, FALSE, -1, -1, NULL);
 	_test_team_port_config_sync ("{\"prio\": 0}",
-	                             -1, 0, FALSE, 255, 0, NULL);
+	                             -1, 0, FALSE, -1, -1, NULL);
 }
 
 static void
 test_team_port_sticky (void)
 {
 	_test_team_port_config_sync ("{\"sticky\": true}",
-	                             -1, 0, TRUE, 255, 0, NULL);
+	                             -1, 0, TRUE, -1, -1, NULL);
 	_test_team_port_config_sync ("{\"sticky\": false}",
-	                             -1, 0, FALSE, 255, 0, NULL);
+	                             -1, 0, FALSE, -1, -1, NULL);
 }
 
 static void
 test_team_port_lacp_prio (void)
 {
 	_test_team_port_config_sync ("{\"lacp_prio\": 9}",
-	                             -1, 0, FALSE, 9, 0, NULL);
+	                             -1, 0, FALSE, 9, -1, NULL);
 	_test_team_port_config_sync ("{\"lacp_prio\": 0}",
-	                             -1, 0, FALSE, 0, 0, NULL);
+	                             -1, 0, FALSE, 0, -1, NULL);
 }
 
 static void
 test_team_port_lacp_key (void)
 {
 	_test_team_port_config_sync ("{\"lacp_key\": 12}",
-	                             -1, 0, FALSE, 255, 12, NULL);
+	                             -1, 0, FALSE, -1, 12, NULL);
 	_test_team_port_config_sync ("{\"lacp_key\": 0}",
-	                             -1, 0, FALSE, 255, 0, NULL);
+	                             -1, 0, FALSE, -1, 0, NULL);
 }
 
 static void
@@ -1386,20 +1385,6 @@ _check_team_setting (NMSetting *setting)
 
 	g_assert (NM_IS_SETTING_TEAM (setting) || is_port);
 
-	setting_clone = nm_setting_duplicate (setting);
-
-	if (!is_port) {
-		if (nm_setting_team_get_runner (NM_SETTING_TEAM (setting)) == NULL) {
-			/* such a setting is invalid. We must first coerce it so that it becomes
-			 * valid. */
-			setting = setting_clone;
-			g_object_set (setting,
-			              NM_SETTING_TEAM_RUNNER,
-			              NM_SETTING_TEAM_RUNNER_DEFAULT,
-			              NULL);
-		}
-	}
-
 	setting2 = g_object_new (G_OBJECT_TYPE (setting),
 	                           is_port
 	                         ? NM_SETTING_TEAM_PORT_CONFIG
@@ -1420,6 +1405,7 @@ _check_team_setting (NMSetting *setting)
 	 * For that, we have to "drop" the JSON and we do that by resetting the property.
 	 * This causes JSON to be regenerated and it's in a normalized form that will compare
 	 * equal. */
+	setting_clone = nm_setting_duplicate (setting);
 	setting = setting_clone;
 	if (is_port) {
 		g_object_set (setting,
@@ -1469,7 +1455,7 @@ test_team_setting (void)
 
 	_check_team_setting (setting);
 	g_assert_cmpint (nm_setting_team_get_num_link_watchers (NM_SETTING_TEAM (setting)), ==, 1);
-	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": { \"name\": \"ethtool\"} }");
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": { \"name\": \"ethtool\" } }");
 
 	nm_setting_team_remove_link_watcher (NM_SETTING_TEAM (setting), 0);
 
@@ -1479,11 +1465,11 @@ test_team_setting (void)
 
 	nm_setting_team_add_link_watcher (NM_SETTING_TEAM (setting), watcher1);
 	_check_team_setting (setting);
-	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": { \"name\": \"nsna_ping\", \"target_host\": \"bbb\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4} }");
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": { \"name\": \"nsna_ping\", \"interval\": 3, \"init_wait\": 1, \"missed_max\": 4, \"target_host\": \"bbb\" } }");
 
 	nm_setting_team_add_link_watcher (NM_SETTING_TEAM (setting), watcher2);
 	_check_team_setting (setting);
-	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": [ { \"name\": \"nsna_ping\", \"target_host\": \"bbb\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4}, { \"name\": \"arp_ping\", \"target_host\": \"ccc\", \"source_host\": \"ddd\", \"init_wait\": 1, \"interval\": 3, \"missed_max\": 4} ] }");
+	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"sys_prio\": 10 }, \"link_watch\": [ { \"name\": \"nsna_ping\", \"interval\": 3, \"init_wait\": 1, \"missed_max\": 4, \"target_host\": \"bbb\" }, { \"name\": \"arp_ping\", \"interval\": 3, \"init_wait\": 1, \"missed_max\": 4, \"source_host\": \"ddd\", \"target_host\": \"ccc\" } ] }");
 
 	nm_setting_team_remove_link_watcher (NM_SETTING_TEAM (setting), 0);
 	nm_setting_team_remove_link_watcher (NM_SETTING_TEAM (setting), 0);
@@ -1499,6 +1485,12 @@ test_team_setting (void)
 	              NULL);
 	_check_team_setting (setting);
 	g_assert_cmpstr (nm_setting_team_get_config (NM_SETTING_TEAM (setting)), ==, "{ \"runner\": { \"tx_balancer\": { \"balancing_interval\": 5 }, \"sys_prio\": 10 } }");
+
+	g_object_set (setting,
+	              NM_SETTING_TEAM_CONFIG,
+	              "{ \"runner\": { \"tx_hash\": [ \"eth\", \"l3\" ] } }",
+	              NULL);
+	_check_team_setting (setting);
 }
 
 /*****************************************************************************/
