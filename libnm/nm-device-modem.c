@@ -36,12 +36,18 @@ G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
 typedef struct {
 	NMDeviceModemCapabilities caps;
 	NMDeviceModemCapabilities current_caps;
+	char *device_id;
+	char *operator_code;
+	char *apn;
 } NMDeviceModemPrivate;
 
 enum {
 	PROP_0,
 	PROP_MODEM_CAPS,
 	PROP_CURRENT_CAPS,
+	PROP_DEVICE_ID,
+	PROP_OPERATOR_CODE,
+	PROP_APN,
 	LAST_PROP
 };
 
@@ -80,6 +86,62 @@ nm_device_modem_get_current_capabilities (NMDeviceModem *self)
 	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NM_DEVICE_MODEM_CAPABILITY_NONE);
 
 	return NM_DEVICE_MODEM_GET_PRIVATE (self)->current_caps;
+}
+
+/**
+ * nm_device_modem_get_device_id:
+ * @self: a #NMDeviceModem
+ *
+ * An identifier used by the modem backend (ModemManager) that aims to
+ * uniquely identify the a device. Can be used to match a connection to a
+ * particular device.
+ *
+ * Returns: a device-id string
+ *
+ * Since: 1.20
+ **/
+const char *
+nm_device_modem_get_device_id (NMDeviceModem *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NULL);
+
+	return NM_DEVICE_MODEM_GET_PRIVATE (self)->device_id;
+}
+
+/**
+ * nm_device_modem_get_operator_code:
+ * @self: a #NMDeviceModem
+ *
+ * The MCC and MNC (concatenated) of the network the modem is connected to.
+ *
+ * Returns: the operator code or %NULL if disconnected or not a 3GPP modem.
+ *
+ * Since: 1.20
+ **/
+const char *
+nm_device_modem_get_operator_code (NMDeviceModem *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NULL);
+
+	return NM_DEVICE_MODEM_GET_PRIVATE (self)->operator_code;
+}
+
+/**
+ * nm_device_modem_get_apn:
+ * @self: a #NMDeviceModem
+ *
+ * The access point name the modem is connected to.
+ *
+ * Returns: the APN name or %NULL if disconnected
+ *
+ * Since: 1.20
+ **/
+const char *
+nm_device_modem_get_apn (NMDeviceModem *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NULL);
+
+	return NM_DEVICE_MODEM_GET_PRIVATE (self)->apn;
 }
 
 static const char *
@@ -164,6 +226,9 @@ init_dbus (NMObject *object)
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DEVICE_MODEM_MODEM_CAPABILITIES,   &priv->caps },
 		{ NM_DEVICE_MODEM_CURRENT_CAPABILITIES, &priv->current_caps },
+		{ NM_DEVICE_MODEM_DEVICE_ID,            &priv->device_id },
+		{ NM_DEVICE_MODEM_OPERATOR_CODE,        &priv->operator_code },
+		{ NM_DEVICE_MODEM_APN,                  &priv->apn },
 		{ NULL },
 	};
 
@@ -172,6 +237,18 @@ init_dbus (NMObject *object)
 	_nm_object_register_properties (object,
 	                                NM_DBUS_INTERFACE_DEVICE_MODEM,
 	                                property_info);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (object);
+
+	g_free (priv->device_id);
+	g_free (priv->operator_code);
+	g_free (priv->apn);
+
+	G_OBJECT_CLASS (nm_device_modem_parent_class)->finalize (object);
 }
 
 static void
@@ -189,6 +266,15 @@ get_property (GObject *object,
 	case PROP_CURRENT_CAPS:
 		g_value_set_flags (value, nm_device_modem_get_current_capabilities (self));
 		break;
+	case PROP_DEVICE_ID:
+		g_value_set_string (value, nm_device_modem_get_device_id (self));
+		break;
+	case PROP_OPERATOR_CODE:
+		g_value_set_string (value, nm_device_modem_get_operator_code (self));
+		break;
+	case PROP_APN:
+		g_value_set_string (value, nm_device_modem_get_apn (self));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -205,6 +291,7 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	g_type_class_add_private (modem_class, sizeof (NMDeviceModemPrivate));
 
 	/* virtual methods */
+	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 
 	nm_object_class->init_dbus = init_dbus;
@@ -240,6 +327,42 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 		 g_param_spec_flags (NM_DEVICE_MODEM_CURRENT_CAPABILITIES, "", "",
 		                     NM_TYPE_DEVICE_MODEM_CAPABILITIES,
 		                     NM_DEVICE_MODEM_CAPABILITY_NONE,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMDeviceModem:device-id:
+	 *
+	 * Since: 1.20
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_CURRENT_CAPS,
+		 g_param_spec_string (NM_DEVICE_MODEM_DEVICE_ID, "", "",
+		                     NULL,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMDeviceModem:operator-code:
+	 *
+	 * Since: 1.20
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_CURRENT_CAPS,
+		 g_param_spec_string (NM_DEVICE_MODEM_OPERATOR_CODE, "", "",
+		                     NULL,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMDeviceModem:apn:
+	 *
+	 * Since: 1.20
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_CURRENT_CAPS,
+		 g_param_spec_string (NM_DEVICE_MODEM_APN, "", "",
+		                     NULL,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 }

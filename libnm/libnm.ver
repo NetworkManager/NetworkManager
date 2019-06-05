@@ -1604,3 +1604,10 @@ global:
 	nm_tc_qdisc_get_attribute_names;
 	nm_tc_qdisc_set_attribute;
 } libnm_1_16_0;
+
+libnm_1_20_0 {
+global:
+	nm_device_modem_get_apn;
+	nm_device_modem_get_device_id;
+	nm_device_modem_get_operator_code;
+} libnm_1_18_0;

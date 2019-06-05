@@ -6,17 +6,6 @@
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Modem">
-
-    <!--
-        PropertiesChanged:
-        @properties: A dictionary mapping property names to variant boxed values
-
-        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
-    -->
-    <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}"/>
-    </signal>
-
     <!--
         ModemCapabilities:
 
@@ -38,5 +27,46 @@
         Returns: <link linkend="NMDeviceModemCapabilities">NMDeviceModemCapabilities</link>
     -->
     <property name="CurrentCapabilities" type="u" access="read"/>
+
+    <!--
+        DeviceId:
+
+        An identifier used by the modem backend (ModemManager) that aims to
+        uniquely identify the a device. Can be used to match a connection to a
+        particular device.
+
+        Since: 1.20
+    -->
+    <property name="DeviceId" type="s" access="read" />
+
+    <!--
+        OperatorCode:
+
+        The MCC and MNC (concatenated) of the network the modem is connected to.
+        Blank if disconnected or not a 3GPP modem.
+
+        Since: 1.20
+    -->
+    <property name="OperatorCode" type="s" access="read" />
+
+    <!--
+        Apn:
+
+        The access point name the modem is connected to. Blank if disconnected.
+
+        Since: 1.20
+    -->
+    <property name="Apn" type="s" access="read" />
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+        <arg name="properties" type="a{sv}"/>
+    </signal>
+
   </interface>
 </node>
