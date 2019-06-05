@@ -8782,6 +8782,9 @@ do_connection_monitor (NmCli *nmc, int argc, char **argv)
 		}
 	}
 
+	if (nmc->complete)
+		return nmc->return_value;
+
 	for (i = 0; i < connections->len; i++)
 		connection_watch (nmc, connections->pdata[i]);
 
@@ -8791,8 +8794,6 @@ do_connection_monitor (NmCli *nmc, int argc, char **argv)
 		g_signal_connect (nmc->client, NM_CLIENT_CONNECTION_ADDED, G_CALLBACK (connection_added), nmc);
 	}
 
-	if (nmc->complete)
-		return nmc->return_value;
 	g_signal_connect (nmc->client, NM_CLIENT_CONNECTION_REMOVED, G_CALLBACK (connection_removed), nmc);
 
 	return NMC_RESULT_SUCCESS;
