@@ -1966,6 +1966,8 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/dhcp/nm-dhcp-nettools.c \
 	src/dhcp/nm-dhcp-utils.c \
 	src/dhcp/nm-dhcp-utils.h \
+	src/dhcp/nm-dhcp-options.c \
+	src/dhcp/nm-dhcp-options.h \
 	src/dhcp/nm-dhcp-systemd.c \
 	src/dhcp/nm-dhcp-manager.c \
 	src/dhcp/nm-dhcp-manager.h \
