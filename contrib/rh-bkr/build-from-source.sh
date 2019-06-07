@@ -78,11 +78,15 @@ $SUDO yum install \
 # for the tests, let's pre-load some modules:
 $SUDO modprobe ip_gre
 
-# in particular on rhel-8, the pygobject module does not exist for
-# python2. Hence, we prefer python3 over python2.
-PYTHON=$(which python3) || \
-PYTHON=$(which python2) || \
-PYTHON=$(which python)
+if grep -q Maipo /etc/redhat-release; then
+    PYTHON=$(which python2)
+else
+    # in particular on rhel-8, the pygobject module does not exist for
+    # python2. Hence, we prefer python3 over python2.
+    PYTHON=$(which python3) || \
+    PYTHON=$(which python2) || \
+    PYTHON=$(which python)
+fi
 
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
