@@ -1714,7 +1714,8 @@ set_property (GObject *object, guint prop_id,
 			priv->sim_operator_id = g_strdup (s);
 		break;
 	case PROP_OPERATOR_CODE:
-		_nm_modem_set_operator_code (NM_MODEM (object), g_value_get_string (value));
+		/* construct-only */
+		priv->operator_code = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
