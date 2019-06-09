@@ -1716,9 +1716,6 @@ set_property (GObject *object, guint prop_id,
 	case PROP_OPERATOR_CODE:
 		_nm_modem_set_operator_code (NM_MODEM (object), g_value_get_string (value));
 		break;
-	case PROP_APN:
-		_nm_modem_set_apn (NM_MODEM (object), g_value_get_string (value));
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
