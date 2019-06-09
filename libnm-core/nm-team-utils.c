@@ -1872,13 +1872,16 @@ nm_team_setting_config_set (NMTeamSetting *self, const char *js_str)
 	}
 
 	if (   self->d._js_str
-	    && nm_streq (js_str, self->d._js_str))
-		return 0;
-
-	changed_flags |= nm_team_attribute_to_flags (NM_TEAM_ATTRIBUTE_CONFIG);
+	    && nm_streq (js_str, self->d._js_str)) {
+	    if (!self->d.strict_validated) {
+			/* setting the same JSON string twice in a row has no effect. */
+			return 0;
+		}
+	} else
+		changed_flags |= nm_team_attribute_to_flags (NM_TEAM_ATTRIBUTE_CONFIG);
 
 #if WITH_JSON_VALIDATION
-	if (js_str[0] != '\0') {
+	{
 		nm_auto_decref_json json_t *root_js_obj = NULL;
 
 		if (nm_jansson_load ())
