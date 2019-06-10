@@ -68,14 +68,23 @@ bond_connection_setup_func (NMConnection        *connection,
                             NMSetting           *s_hw)
 {
 	NMSettingBond *s_bond = NM_SETTING_BOND (s_hw);
-	const char **options, *def, *cur;
-	int i;
+	const char *def, *cur;
+	static const char *const options[] = {
+		NM_SETTING_BOND_OPTION_ARP_INTERVAL,
+		NM_SETTING_BOND_OPTION_ARP_IP_TARGET,
+		NM_SETTING_BOND_OPTION_DOWNDELAY,
+		NM_SETTING_BOND_OPTION_MIIMON,
+		NM_SETTING_BOND_OPTION_MODE,
+		NM_SETTING_BOND_OPTION_PRIMARY,
+		NM_SETTING_BOND_OPTION_UPDELAY,
+	};
+	guint i;
 
-	options = nm_setting_bond_get_valid_options (s_bond);
-	for (i = 0; options[i]; i++) {
+	/* Only add options supported by the UI */
+	for (i = 0; i < G_N_ELEMENTS (options); i++) {
 		def = nm_setting_bond_get_option_default (s_bond, options[i]);
 		cur = nm_setting_bond_get_option_by_name (s_bond, options[i]);
-		if (g_strcmp0 (def, cur) != 0)
+		if (!nm_streq0 (def, cur))
 			nm_setting_bond_add_option (s_bond, options[i], def);
 	}
 }

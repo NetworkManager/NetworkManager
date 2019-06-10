@@ -45,6 +45,9 @@ typedef enum {
 typedef struct {
 	NmtSlaveList *slaves;
 
+	/* Note: when adding new options to the UI also ensure they are
+	 * initialized in bond_connection_setup_func()
+	 */
 	NmtNewtPopup *mode;
 	NmtNewtEntry *primary;
 	NmtNewtPopup *monitoring;
