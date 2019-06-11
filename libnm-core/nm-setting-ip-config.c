@@ -5376,9 +5376,9 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 *
 	 * IP configuration method.
 	 *
-	 * #NMSettingIP4Config and #NMSettingIP6Config both support "auto",
-	 * "manual", and "link-local". See the subclass-specific documentation for
-	 * other values.
+	 * #NMSettingIP4Config and #NMSettingIP6Config both support "disabled",
+	 * "auto", "manual", and "link-local". See the subclass-specific
+	 * documentation for other values.
 	 *
 	 * In general, for the "auto" method, properties such as
 	 * #NMSettingIPConfig:dns and #NMSettingIPConfig:routes specify information

@@ -736,7 +736,7 @@ fail_invalid_secret:
 	}
 
 	for (is_v4 = 0; is_v4 < 2; is_v4++) {
-		const char *method_disabled = is_v4 ? NM_SETTING_IP4_CONFIG_METHOD_DISABLED : NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+		const char *method_disabled = is_v4 ? NM_SETTING_IP4_CONFIG_METHOD_DISABLED : NM_SETTING_IP6_CONFIG_METHOD_DISABLED;
 		const char *method_manual   = is_v4 ? NM_SETTING_IP4_CONFIG_METHOD_MANUAL   : NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 		NMSettingIPConfig *s_ip     = is_v4 ? s_ip4                                 : s_ip6;
 		GPtrArray *data_dns         = is_v4 ? data_dns_v4                           : data_dns_v6;

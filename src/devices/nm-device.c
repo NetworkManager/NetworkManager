@@ -5037,7 +5037,7 @@ static void
 check_ip_state (NMDevice *self, gboolean may_fail, gboolean full_state_update)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gboolean ip4_disabled = FALSE, ip6_ignore = FALSE;
+	gboolean ip4_disabled = FALSE, ip6_disabled = FALSE;
 	NMSettingIPConfig *s_ip4, *s_ip6;
 	NMDeviceState state;
 
@@ -5057,9 +5057,10 @@ check_ip_state (NMDevice *self, gboolean may_fail, gboolean full_state_update)
 		ip4_disabled = TRUE;
 
 	s_ip6 = nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
-	if (s_ip6 && nm_streq0 (nm_setting_ip_config_get_method (s_ip6),
-	                        NM_SETTING_IP6_CONFIG_METHOD_IGNORE))
-		ip6_ignore = TRUE;
+	if (s_ip6 && NM_IN_STRSET (nm_setting_ip_config_get_method (s_ip6),
+	                           NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	                           NM_SETTING_IP6_CONFIG_METHOD_DISABLED))
+		ip6_disabled = TRUE;
 
 	if (   priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE
 	    && priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE) {
@@ -5069,7 +5070,7 @@ check_ip_state (NMDevice *self, gboolean may_fail, gboolean full_state_update)
 	}
 
 	if (   (priv->ip_state_4 == NM_DEVICE_IP_STATE_FAIL || (ip4_disabled && priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE))
-	    && (priv->ip_state_6 == NM_DEVICE_IP_STATE_FAIL || (ip6_ignore && priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE))) {
+	    && (priv->ip_state_6 == NM_DEVICE_IP_STATE_FAIL || (ip6_disabled && priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE))) {
 		/* Either both methods failed, or only one failed and the other is
 		 * disabled */
 		if (nm_device_sys_iface_state_is_external_or_assume (self)) {
@@ -5106,7 +5107,7 @@ check_ip_state (NMDevice *self, gboolean may_fail, gboolean full_state_update)
 
 	/* If at least a method has completed, proceed with activation */
 	if (   (priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE && !ip4_disabled)
-	    || (priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE && !ip6_ignore)) {
+	    || (priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE && !ip6_disabled)) {
 		if (full_state_update)
 			nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
 		return;
@@ -5661,8 +5662,9 @@ nm_device_generate_connection (NMDevice *self,
 	 */
 	ip4_method = nm_utils_get_ip_config_method (connection, AF_INET);
 	ip6_method = nm_utils_get_ip_config_method (connection, AF_INET6);
-	if (   g_strcmp0 (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0
-	    && g_strcmp0 (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0
+	if (   nm_streq0 (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)
+	    && NM_IN_STRSET (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	                                 NM_SETTING_IP6_CONFIG_METHOD_DISABLED)
 	    && !nm_setting_connection_get_master (NM_SETTING_CONNECTION (s_con))
 	    && c_list_is_empty (&priv->slaves)) {
 		NM_SET_OUT (out_maybe_later, TRUE);
@@ -8082,7 +8084,9 @@ connection_ip_method_requires_carrier (NMConnection *connection,
 		                             NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL);
 	}
 
-	NM_SET_OUT (out_ip_enabled, !nm_streq (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE));
+	NM_SET_OUT (out_ip_enabled,
+	            !NM_IN_STRSET (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	                                   NM_SETTING_IP6_CONFIG_METHOD_DISABLED));
 	return NM_IN_STRSET (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 	                             NM_SETTING_IP6_CONFIG_METHOD_DHCP,
 	                             NM_SETTING_IP6_CONFIG_METHOD_SHARED,
@@ -9277,7 +9281,8 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 		s_ip6 = nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
 		if (   s_ip6
 		    && !NM_IN_STRSET (nm_setting_ip_config_get_method (s_ip6),
-		                      NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
+		                      NM_SETTING_IP6_CONFIG_METHOD_IGNORE
+		                      NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
 			/* the interface has IPv6 enabled. The MTU with IPv6 cannot be smaller
 			 * then 1280.
 			 *
@@ -9984,6 +9989,11 @@ act_stage3_ip_config_start (NMDevice *self,
 	} else {
 		NMSettingIP6ConfigPrivacy ip6_privacy = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
 		const char *ip6_privacy_str = "0";
+
+		if (nm_streq (method, NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
+			nm_device_sysctl_ip_conf_set (self, AF_INET6, "disable_ipv6", "1");
+			return NM_ACT_STAGE_RETURN_IP_DONE;
+		}
 
 		if (nm_streq (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
 			if (   !priv->master

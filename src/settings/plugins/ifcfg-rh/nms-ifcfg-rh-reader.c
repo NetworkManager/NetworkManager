@@ -1905,7 +1905,10 @@ make_ip6_setting (shvarFile *ifcfg,
 	gs_unref_object NMSettingIPConfig *s_ip6 = NULL;
 	const char *v;
 	gs_free char *value = NULL;
-	gboolean ipv6init, ipv6forwarding, dhcp6 = FALSE;
+	gboolean ipv6init;
+	gboolean ipv6forwarding;
+	gboolean disabled;
+	gboolean dhcp6 = FALSE;
 	char *method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 	const char *ipv6addr, *ipv6addr_secondaries;
 	gs_free char *ipv6addr_to_free = NULL;
@@ -1963,6 +1966,7 @@ make_ip6_setting (shvarFile *ifcfg,
 
 	/* Find out method property */
 	/* Is IPV6 enabled? Set method to "ignored", when not enabled */
+	disabled = svGetValueBoolean(ifcfg, "IPV6_DISABLED", FALSE);
 	nm_clear_g_free (&value);
 	v = svGetValueStr (ifcfg, "IPV6INIT", &value);
 	ipv6init = svGetValueBoolean (ifcfg, "IPV6INIT", FALSE);
@@ -1971,8 +1975,10 @@ make_ip6_setting (shvarFile *ifcfg,
 			ipv6init = svGetValueBoolean (network_ifcfg, "IPV6INIT", FALSE);
 	}
 
-	if (!ipv6init)
-		method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;  /* IPv6 is disabled */
+	if (disabled)
+		method = NM_SETTING_IP6_CONFIG_METHOD_DISABLED;
+	else if (!ipv6init)
+		method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
 	else {
 		ipv6forwarding = svGetValueBoolean (ifcfg, "IPV6FORWARDING", FALSE);
 		nm_clear_g_free (&value);
@@ -2038,7 +2044,8 @@ make_ip6_setting (shvarFile *ifcfg,
 	              NULL);
 
 	/* Don't bother to read IP, DNS and routes when IPv6 is disabled */
-	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0)
+	if (NM_IN_STRSET (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	                          NM_SETTING_IP6_CONFIG_METHOD_DISABLED))
 		return NM_SETTING (g_steal_pointer (&s_ip6));
 
 	nm_clear_g_free (&value);

@@ -347,7 +347,8 @@ nm_modem_get_connection_ip_type (NMModem *self,
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (s_ip6) {
 		method = nm_setting_ip_config_get_method (s_ip6);
-		if (g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0)
+		if (NM_IN_STRSET (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+		                          NM_SETTING_IP6_CONFIG_METHOD_DISABLED))
 			ip6 = FALSE;
 		ip6_may_fail = nm_setting_ip_config_get_may_fail (s_ip6);
 	}
@@ -839,8 +840,9 @@ nm_modem_stage3_ip6_config_start (NMModem *self,
 
 	method = nm_utils_get_ip_config_method (connection, AF_INET6);
 
-	/* Only Ignore and Auto methods make sense for WWAN */
-	if (nm_streq (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE))
+	/* Only Ignore, Disabled and Auto methods make sense for WWAN */
+	if (NM_IN_STRSET (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	                          NM_SETTING_IP6_CONFIG_METHOD_DISABLED))
 		return NM_ACT_STAGE_RETURN_IP_DONE;
 
 	if (!nm_streq (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {

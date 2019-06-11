@@ -228,6 +228,7 @@ nm_utils_connection_has_default_route (NMConnection *connection,
 			goto out;
 	} else {
 		if (NM_IN_STRSET (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+		                          NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
 		                          NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
 			goto out;
 	}

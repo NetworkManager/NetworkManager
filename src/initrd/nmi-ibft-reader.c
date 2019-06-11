@@ -182,7 +182,7 @@ ip_setting_add_from_block (GHashTable *nic,
 	case AF_INET:
 		s_ip = s_ip4;
 		g_object_set (s_ip6, NM_SETTING_IP_CONFIG_METHOD,
-		              NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+		              NM_SETTING_IP6_CONFIG_METHOD_DISABLED, NULL);
 		break;
 	case AF_INET6:
 		s_ip = s_ip6;
