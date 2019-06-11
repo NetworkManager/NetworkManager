@@ -310,7 +310,7 @@ _writer_new_connection_reread (NMConnection *connection,
 	char *filename = NULL;
 	gs_unref_object NMConnection *con_verified = NULL;
 	gs_unref_object NMConnection *reread_copy = NULL;
-	NMConnection **reread = out_reread ?: ((nmtst_get_rand_int () % 2) ? &reread_copy : NULL);
+	NMConnection **reread = out_reread ?: ((nmtst_get_rand_uint32 () % 2) ? &reread_copy : NULL);
 
 	g_assert (NM_IS_CONNECTION (connection));
 	g_assert (ifcfg_dir);
@@ -9249,19 +9249,19 @@ test_team_reread_slave (void)
 
 	nmtst_assert_connection_equals (connection_1, FALSE, connection_2, FALSE);
 
-	_writer_new_connection_reread ((nmtst_get_rand_int () % 2) ? connection_1 : connection_2,
+	_writer_new_connection_reread ((nmtst_get_rand_uint32 () % 2) ? connection_1 : connection_2,
 	                               TEST_SCRATCH_DIR,
 	                               &testfile,
 	                               TEST_IFCFG_DIR"/ifcfg-team-slave-enp31s0f1-142.cexpected",
 	                               &reread,
 	                               &reread_same);
-	_assert_reread_same ((nmtst_get_rand_int () % 2) ? connection_1 : connection_2, reread);
+	_assert_reread_same ((nmtst_get_rand_uint32 () % 2) ? connection_1 : connection_2, reread);
 	g_assert (reread_same);
 	g_clear_object (&reread);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_VLAN,
 	                                NULL);
-	nmtst_assert_connection_equals ((nmtst_get_rand_int () % 2) ? connection_1 : connection_2, FALSE,
+	nmtst_assert_connection_equals ((nmtst_get_rand_uint32 () % 2) ? connection_1 : connection_2, FALSE,
 	                                reread, FALSE);
 }
 
@@ -9426,7 +9426,7 @@ do_svUnescape_combine_ansi (GString *str_val, GString *str_exp, const UnescapeTe
 	g_string_append (str_val, "$'");
 	if (idx < 0) {
 		for (i = -idx; i > 0; i--) {
-			j = nmtst_get_rand_int () % data_len;
+			j = nmtst_get_rand_uint32 () % data_len;
 			if (!data_ansi[j].can_concat) {
 				i++;
 				continue;
@@ -9625,7 +9625,7 @@ test_svUnescape (void)
 
 	/* different values can be just concatenated... */
 	for (i = 0; i < 200; i++) {
-		gsize num_concat = (nmtst_get_rand_int () % 5) + 2;
+		gsize num_concat = (nmtst_get_rand_uint32 () % 5) + 2;
 
 		g_string_set_size (str_val, 0);
 		g_string_set_size (str_exp, 0);
@@ -9633,12 +9633,12 @@ test_svUnescape (void)
 		while (num_concat > 0) {
 			gsize idx;
 
-			if ((nmtst_get_rand_int () % 3 == 0)) {
-				do_svUnescape_combine_ansi (str_val2, str_exp2, data_ansi, G_N_ELEMENTS (data_ansi), -((int) ((nmtst_get_rand_int () % 5) + 1)));
+			if ((nmtst_get_rand_uint32 () % 3 == 0)) {
+				do_svUnescape_combine_ansi (str_val2, str_exp2, data_ansi, G_N_ELEMENTS (data_ansi), -((int) ((nmtst_get_rand_uint32 () % 5) + 1)));
 				continue;
 			}
 
-			idx = nmtst_get_rand_int () % G_N_ELEMENTS (data_full);
+			idx = nmtst_get_rand_uint32 () % G_N_ELEMENTS (data_full);
 			if (!data_full[idx].can_concat)
 				continue;
 			g_string_append (str_val, data_full[idx].val);
@@ -9646,7 +9646,7 @@ test_svUnescape (void)
 			num_concat--;
 		}
 
-		switch (nmtst_get_rand_int () % 3) {
+		switch (nmtst_get_rand_uint32 () % 3) {
 		case 0:
 			g_string_append (str_val, " ");
 			break;
@@ -9654,7 +9654,7 @@ test_svUnescape (void)
 			g_string_append (str_val, "    ");
 			break;
 		}
-		switch (nmtst_get_rand_int () % 3) {
+		switch (nmtst_get_rand_uint32 () % 3) {
 		case 0:
 			g_string_append (str_val, " #");
 			break;

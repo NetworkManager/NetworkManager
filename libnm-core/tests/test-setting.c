@@ -101,8 +101,8 @@ _connection_new_from_dbus_strict (GVariant *dict,
 	 * after accounting for normalization. */
 	for (i = 0; i < 10; i++) {
 		NMConnection *cons[] = { con_x_0, con_x_s, con_x_e, con_n_0, con_n_s, con_n_e };
-		guint idx_a = (nmtst_get_rand_int () % G_N_ELEMENTS (cons));
-		guint idx_b = (nmtst_get_rand_int () % G_N_ELEMENTS (cons));
+		guint idx_a = (nmtst_get_rand_uint32 () % G_N_ELEMENTS (cons));
+		guint idx_b = (nmtst_get_rand_uint32 () % G_N_ELEMENTS (cons));
 		gboolean normalize_a, normalize_b;
 
 		if (idx_a <= 2 && idx_b <= 2) {
@@ -137,14 +137,14 @@ _create_random_ipaddr (int addr_family, gboolean as_service)
 	g_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
 	if (as_service)
-		num = (nmtst_get_rand_int () % 1000) + 30000;
+		num = (nmtst_get_rand_uint32 () % 1000) + 30000;
 	else
 		num = addr_family == AF_INET ? 32 : 128;
 
 	if (addr_family == AF_INET)
-		return g_strdup_printf ("192.168.%u.%u%c%d", nmtst_get_rand_int () % 256, nmtst_get_rand_int () % 256, delimiter, num);
+		return g_strdup_printf ("192.168.%u.%u%c%d", nmtst_get_rand_uint32 () % 256, nmtst_get_rand_uint32 () % 256, delimiter, num);
 	else
-		return g_strdup_printf ("a:b:c::%02x:%02x%c%d", nmtst_get_rand_int () % 256, nmtst_get_rand_int () % 256, delimiter, num);
+		return g_strdup_printf ("a:b:c::%02x:%02x%c%d", nmtst_get_rand_uint32 () % 256, nmtst_get_rand_uint32 () % 256, delimiter, num);
 }
 
 /*****************************************************************************/
@@ -2263,13 +2263,13 @@ _rndt_wired_add_s390_options (NMSettingWired *s_wired,
 	n_opts = NM_PTRARRAY_LEN (option_names);
 	opt_keys = g_new (const char *, (n_opts + 1));
 	nmtst_rand_perm (NULL, opt_keys, option_names, sizeof (const char *), n_opts);
-	n_opts = nmtst_get_rand_int () % (n_opts + 1);
+	n_opts = nmtst_get_rand_uint32 () % (n_opts + 1);
 	opt_keys[n_opts] = NULL;
 
 	opt_vals = g_new0 (char *, n_opts + 1);
 	opt_found = g_new0 (bool, n_opts + 1);
 	for (i = 0; i < n_opts; i++) {
-		guint p = nmtst_get_rand_int () % 1000;
+		guint p = nmtst_get_rand_uint32 () % 1000;
 
 		if (p < 200)
 			opt_vals[i] = nm_strdup_int (i);
@@ -2352,7 +2352,7 @@ _rndt_wg_peers_create (void)
 
 	wg_peers = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_wireguard_peer_unref);
 
-	n = nmtst_get_rand_int () % 10;
+	n = nmtst_get_rand_uint32 () % 10;
 	for (i = 0; i < n; i++) {
 		NMWireGuardPeer *peer;
 		guint8 public_key_buf[NM_WIREGUARD_PUBLIC_KEY_LEN];
@@ -2383,12 +2383,12 @@ _rndt_wg_peers_create (void)
 		                                                                    NM_SETTING_SECRET_FLAG_AGENT_OWNED));
 
 		nm_wireguard_peer_set_persistent_keepalive (peer,
-		                                            nmtst_rand_select ((guint32) 0, nmtst_get_rand_int ()));
+		                                            nmtst_rand_select ((guint32) 0, nmtst_get_rand_uint32 ()));
 
 		if (!nm_wireguard_peer_set_endpoint (peer, nmtst_rand_select (s_endpoint, NULL), TRUE))
 			g_assert_not_reached ();
 
-		n_aip = nmtst_rand_select (0, nmtst_get_rand_int () % 10);
+		n_aip = nmtst_rand_select (0, nmtst_get_rand_uint32 () % 10);
 		for (i_aip = 0; i_aip < n_aip; i_aip++) {
 			gs_free char *aip = NULL;
 
@@ -2585,7 +2585,7 @@ test_roundtrip_conversion (gconstpointer test_data)
 	const char *UUID= "63376701-b61e-4318-bf7e-664a1c1eeaab";
 	const char *INTERFACE_NAME = nm_sprintf_bufa (100, "ifname%d", MODE);
 	guint32 ETH_MTU = nmtst_rand_select ((guint32) 0u,
-	                                     nmtst_get_rand_int ());
+	                                     nmtst_get_rand_uint32 ());
 	const char *WG_PRIVATE_KEY = nmtst_get_rand_bool ()
 	                             ? "yGXGK+5bVnxSJUejH4vbpXbq+ZtaG4NB8IHRK/aVtE0="
 	                             : NULL;
@@ -2593,9 +2593,9 @@ test_roundtrip_conversion (gconstpointer test_data)
 	                                                                     NM_SETTING_SECRET_FLAG_NOT_SAVED,
 	                                                                     NM_SETTING_SECRET_FLAG_AGENT_OWNED);
 	const guint WG_LISTEN_PORT = nmtst_rand_select (0u,
-	                                                nmtst_get_rand_int () % 0x10000);
+	                                                nmtst_get_rand_uint32 () % 0x10000);
 	const guint WG_FWMARK = nmtst_rand_select (0u,
-	                                           nmtst_get_rand_int ());
+	                                           nmtst_get_rand_uint32 ());
 	gs_unref_ptrarray GPtrArray *kf_data_arr = g_ptr_array_new_with_free_func (g_free);
 	gs_unref_ptrarray GPtrArray *wg_peers = NULL;
 	const NMConnectionSerializationFlags dbus_serialization_flags[] = {

@@ -157,7 +157,7 @@ test_sd_event (void)
 
 		g_assert_cmpint (sd_event_default (NULL), ==, 0);
 
-		for (i = 0, n = (nmtst_get_rand_int () % (G_N_ELEMENTS (other_events) + 1)); i < n; i++) {
+		for (i = 0, n = (nmtst_get_rand_uint32 () % (G_N_ELEMENTS (other_events) + 1)); i < n; i++) {
 			r = sd_event_default (&other_events[i]);
 			g_assert (r >= 0 && other_events[i]);
 		}
@@ -177,7 +177,7 @@ test_sd_event (void)
 		g_assert (!user_data.event_source);
 
 		event = sd_event_unref (event);
-		for (i = 0, n = (nmtst_get_rand_int () % (G_N_ELEMENTS (other_events) + 1)); i < n; i++)
+		for (i = 0, n = (nmtst_get_rand_uint32 () % (G_N_ELEMENTS (other_events) + 1)); i < n; i++)
 			other_events[i] = sd_event_unref (other_events[i]);
 		nm_clear_g_source (&sd_id);
 		for (i = 0, n = G_N_ELEMENTS (other_events); i < n; i++)
@@ -311,15 +311,15 @@ test_nm_sd_utils_unbase64mem (void)
 	_test_unbase64mem ("YQ==", "a");
 	_test_unbase64mem_inval ("YQ==a");
 
-	rnd_len = nmtst_get_rand_int () % sizeof (rnd_buf);
+	rnd_len = nmtst_get_rand_uint32 () % sizeof (rnd_buf);
 	for (i = 0; i < rnd_len; i++)
-		rnd_buf[i] = nmtst_get_rand_int () % 256;
+		rnd_buf[i] = nmtst_get_rand_uint32 () % 256;
 	rnd_base64 = g_base64_encode (rnd_buf, rnd_len);
 	_test_unbase64mem_mem (rnd_base64, rnd_buf, rnd_len);
 
 	_test_unbase64char ('=', FALSE);
 	for (i = 0; i < 10; i++) {
-		char ch = nmtst_get_rand_int () % 256;
+		char ch = nmtst_get_rand_uint32 () % 256;
 
 		if (ch != '=')
 			_test_unbase64char (ch, TRUE);

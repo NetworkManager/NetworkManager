@@ -73,7 +73,7 @@ check_ip_route (NMSettingIPConfig *config, int idx, const char *destination, int
 	\
 	_connection = nms_keyfile_reader_from_file (full_filename, \
 	                                            NULL, \
-	                                            (nmtst_get_rand_int () % 2) ? &_error : NULL); \
+	                                            (nmtst_get_rand_uint32 () % 2) ? &_error : NULL); \
 	nmtst_assert_success (_connection, _error); \
 	nmtst_assert_connection_verifies_without_normalization (_connection); \
 	\
@@ -128,7 +128,7 @@ write_test_connection_reread (NMConnection *connection,
 	gid_t owner_grp;
 	gboolean success;
 	GError *error = NULL;
-	GError **p_error = (nmtst_get_rand_int () % 2) ? &error : NULL;
+	GError **p_error = (nmtst_get_rand_uint32 () % 2) ? &error : NULL;
 	gs_unref_object NMConnection *connection_normalized = NULL;
 
 	g_assert (NM_IS_CONNECTION (connection));

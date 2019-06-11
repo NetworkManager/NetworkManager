@@ -267,7 +267,7 @@ test_cache_link (void)
 	struct udev_device *udev_device_3 = g_list_nth_data (global.udev_devices, 0);
 	NMPCacheOpsType ops_type;
 	nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = NULL;
-	gboolean use_udev = nmtst_get_rand_int () % 2;
+	gboolean use_udev = nmtst_get_rand_uint32 () % 2;
 
 	multi_idx = nm_dedup_multi_index_new ();
 
@@ -503,7 +503,7 @@ test_cache_qdisc (void)
 	nm_auto_nmpobj NMPObject *obj2 = nmp_object_new (NMP_OBJECT_TYPE_QDISC, (NMPlatformObject *) &pl_qdisc_2);
 
 	multi_idx = nm_dedup_multi_index_new ();
-	cache = nmp_cache_new (multi_idx, nmtst_get_rand_int () % 2);
+	cache = nmp_cache_new (multi_idx, nmtst_get_rand_uint32 () % 2);
 
 	g_assert (nmp_cache_lookup_obj (cache, obj1a) == NULL);
 

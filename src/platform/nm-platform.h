@@ -159,6 +159,13 @@ typedef enum {
 	NM_PLATFORM_ROUTING_RULE_CMP_TYPE_FULL,
 } NMPlatformRoutingRuleCmpType;
 
+typedef struct {
+	guint8 data[20 /* NM_UTILS_HWADDR_LEN_MAX */ ];
+	guint8 len;
+} NMPLinkAddress;
+
+gconstpointer nmp_link_address_get (const NMPLinkAddress *addr, size_t *length);
+
 typedef enum {
 
 	/* match-flags are strictly inclusive. That means,
@@ -230,11 +237,11 @@ struct _NMPlatformLink {
 	/* rtnl_link_get_arptype(), ifinfomsg.ifi_type. */
 	guint32 arptype;
 
-	/* rtnl_link_get_addr(), IFLA_ADDRESS */
-	struct {
-		guint8 data[20]; /* NM_UTILS_HWADDR_LEN_MAX */
-		guint8 len;
-	} addr;
+	/* IFLA_ADDRESS */
+	NMPLinkAddress l_address;
+
+	/* IFLA_BROADCAST */
+	NMPLinkAddress l_broadcast;
 
 	/* rtnl_link_inet6_get_token(), IFLA_INET6_TOKEN */
 	NMUtilsIPv6IfaceId inet6_token;
@@ -1783,6 +1790,8 @@ void nm_platform_lnk_wireguard_hash_update (const NMPlatformLnkWireGuard *obj, N
 
 void nm_platform_qdisc_hash_update (const NMPlatformQdisc *obj, NMHashState *h);
 void nm_platform_tfilter_hash_update (const NMPlatformTfilter *obj, NMHashState *h);
+
+#define NM_PLATFORM_LINK_FLAGS2STR_MAX_LEN ((gsize) 162)
 
 const char *nm_platform_link_flags2str (unsigned flags, char *buf, gsize len);
 const char *nm_platform_link_inet6_addrgenmode2str (guint8 mode, char *buf, gsize len);

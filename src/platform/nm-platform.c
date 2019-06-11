@@ -51,11 +51,57 @@
 
 /*****************************************************************************/
 
-G_STATIC_ASSERT (sizeof ( ((NMPlatformLink *) NULL)->addr.data ) == NM_UTILS_HWADDR_LEN_MAX);
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_OFFSET (NMPlatformIP4Address, address));
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_OFFSET (NMPlatformIP6Address, address));
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP4Route, network));
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP6Route, network));
+
+/*****************************************************************************/
+
+G_STATIC_ASSERT (sizeof ( ((NMPLinkAddress *) NULL)->data ) == NM_UTILS_HWADDR_LEN_MAX);
+G_STATIC_ASSERT (sizeof ( ((NMPlatformLink *) NULL)->l_address.data ) == NM_UTILS_HWADDR_LEN_MAX);
+G_STATIC_ASSERT (sizeof ( ((NMPlatformLink *) NULL)->l_broadcast.data ) == NM_UTILS_HWADDR_LEN_MAX);
+
+static const char *
+_nmp_link_address_to_string (const NMPLinkAddress *addr,
+                             char buf[static (NM_UTILS_HWADDR_LEN_MAX * 3)])
+{
+	nm_assert (addr);
+
+	if (addr->len > 0) {
+		if (!nm_utils_hwaddr_ntoa_buf (addr->data,
+		                               addr->len,
+		                               TRUE,
+		                               buf,
+		                               NM_UTILS_HWADDR_LEN_MAX * 3)) {
+			buf[0] = '\0';
+			g_return_val_if_reached (buf);
+		}
+	} else
+		buf[0] = '\0';
+
+	return buf;
+}
+
+gconstpointer
+nmp_link_address_get (const NMPLinkAddress *addr, size_t *length)
+{
+	if (   !addr
+	    || addr->len <= 0) {
+		NM_SET_OUT (length, 0);
+		return NULL;
+	}
+
+	if (addr->len > NM_UTILS_HWADDR_LEN_MAX) {
+		NM_SET_OUT (length, 0);
+		g_return_val_if_reached (NULL);
+	}
+
+	NM_SET_OUT (length, addr->len);
+	return addr->data;
+}
+
+/*****************************************************************************/
 
 #define _NMLOG_DOMAIN           LOGD_PLATFORM
 #define _NMLOG_PREFIX_NAME      "platform"
@@ -941,14 +987,15 @@ nm_platform_link_get_by_ifname (NMPlatform *self, const char *ifname)
 }
 
 struct _nm_platform_link_get_by_address_data {
-	gconstpointer address;
-	guint8 length;
+	gconstpointer data;
+	guint8 len;
 };
 
 static gboolean
 _nm_platform_link_get_by_address_match_link (const NMPObject *obj, struct _nm_platform_link_get_by_address_data *d)
 {
-	return obj->link.addr.len == d->length && !memcmp (obj->link.addr.data, d->address, d->length);
+	return    obj->link.l_address.len == d->len
+	       && !memcmp (obj->link.l_address.data, d->data, d->len);
 }
 
 /**
@@ -968,8 +1015,8 @@ nm_platform_link_get_by_address (NMPlatform *self,
 {
 	const NMPObject *obj;
 	struct _nm_platform_link_get_by_address_data d = {
-		.address = address,
-		.length = length,
+		.data = address,
+		.len  = length,
 	};
 
 	_CHECK_SELF (self, klass, NULL);
@@ -1507,19 +1554,7 @@ nm_platform_link_get_address (NMPlatform *self, int ifindex, size_t *length)
 	const NMPlatformLink *pllink;
 
 	pllink = nm_platform_link_get (self, ifindex);
-	if (   !pllink
-	    || pllink->addr.len <= 0) {
-		NM_SET_OUT (length, 0);
-		return NULL;
-	}
-
-	if (pllink->addr.len > NM_UTILS_HWADDR_LEN_MAX) {
-		NM_SET_OUT (length, 0);
-		g_return_val_if_reached (NULL);
-	}
-
-	NM_SET_OUT (length, pllink->addr.len);
-	return pllink->addr.data;
+	return nmp_link_address_get (pllink ? &pllink->l_address : NULL, length);
 }
 
 /**
@@ -2421,9 +2456,10 @@ nm_platform_link_6lowpan_get_properties (NMPlatform *self, int ifindex, int *out
 	if (out_parent) {
 		const NMPlatformLink *parent_plink;
 
-		parent_plink = nm_platform_link_get_by_address (self, NM_LINK_TYPE_WPAN,
-		                                                plink->addr.data,
-		                                                plink->addr.len);
+		parent_plink = nm_platform_link_get_by_address (self,
+		                                                NM_LINK_TYPE_WPAN,
+		                                                plink->l_address.data,
+		                                                plink->l_address.len);
 		NM_SET_OUT (out_parent, parent_plink ? parent_plink->ifindex : -1);
 	}
 
@@ -5354,31 +5390,36 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 {
 	char master[20];
 	char parent[20];
-	GString *str_flags;
+	char str_flags[1 + NM_PLATFORM_LINK_FLAGS2STR_MAX_LEN + 1];
+	char str_highlighted_flags[50];
+	char *s;
+	gsize l;
 	char str_addrmode[30];
-	gs_free char *str_addr = NULL;
+	char str_address[NM_UTILS_HWADDR_LEN_MAX * 3];
+	char str_broadcast[NM_UTILS_HWADDR_LEN_MAX * 3];
 	char str_inet6_token[NM_UTILS_INET_ADDRSTRLEN];
 	const char *str_link_type;
 
 	if (!nm_utils_to_string_buffer_init_null (link, &buf, &len))
 		return buf;
 
-	str_flags = g_string_new (NULL);
+	s = str_highlighted_flags;
+	l = sizeof (str_highlighted_flags);
 	if (NM_FLAGS_HAS (link->n_ifi_flags, IFF_NOARP))
-		g_string_append (str_flags, "NOARP,");
+		nm_utils_strbuf_append_str (&s, &l, "NOARP,");
 	if (NM_FLAGS_HAS (link->n_ifi_flags, IFF_UP))
-		g_string_append (str_flags, "UP");
+		nm_utils_strbuf_append_str (&s, &l, "UP");
 	else
-		g_string_append (str_flags, "DOWN");
+		nm_utils_strbuf_append_str (&s, &l, "DOWN");
 	if (link->connected)
-		g_string_append (str_flags, ",LOWER_UP");
+		nm_utils_strbuf_append_str (&s, &l, ",LOWER_UP");
+	nm_assert (s > str_highlighted_flags && l > 0);
 
 	if (link->n_ifi_flags) {
-		char str_flags_buf[64];
-
-		nm_platform_link_flags2str (link->n_ifi_flags, str_flags_buf, sizeof (str_flags_buf));
-		g_string_append_printf (str_flags, ";%s", str_flags_buf);
-	}
+		str_flags[0] = ';';
+		nm_platform_link_flags2str (link->n_ifi_flags, &str_flags[1], sizeof (str_flags) - 1);
+	} else
+		str_flags[0] = '\0';
 
 	if (link->master)
 		g_snprintf (master, sizeof (master), " master %d", link->master);
@@ -5392,8 +5433,8 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	else
 		parent[0] = 0;
 
-	if (link->addr.len)
-		str_addr = nm_utils_hwaddr_ntoa (link->addr.data, MIN (link->addr.len, sizeof (link->addr.data)));
+	_nmp_link_address_to_string (&link->l_address, str_address);
+	_nmp_link_address_to_string (&link->l_broadcast, str_broadcast);
 
 	str_link_type = nm_link_type_to_string (link->type);
 
@@ -5401,7 +5442,7 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            "%d: " /* ifindex */
 	            "%s" /* name */
 	            "%s" /* parent */
-	            " <%s>" /* flags */
+	            " <%s%s>" /* flags */
 	            " mtu %d"
 	            "%s" /* master */
 	            " arp %u" /* arptype */
@@ -5409,7 +5450,8 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            "%s%s" /* kind */
 	            "%s" /* is-in-udev */
 	            "%s%s" /* addr-gen-mode */
-	            "%s%s" /* addr */
+	            "%s%s" /* l_address */
+	            "%s%s" /* l_broadcast */
 	            "%s%s" /* inet6_token */
 	            "%s%s" /* driver */
 	            " rx:%"G_GUINT64_FORMAT",%"G_GUINT64_FORMAT
@@ -5418,7 +5460,8 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            link->ifindex,
 	            link->name,
 	            parent,
-	            str_flags->str,
+	            str_highlighted_flags,
+	            str_flags,
 	            link->mtu, master,
 	            link->arptype,
 	            str_link_type ?: "???",
@@ -5427,15 +5470,16 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            link->initialized ? " init" : " not-init",
 	            link->inet6_addr_gen_mode_inv ? " addrgenmode " : "",
 	            link->inet6_addr_gen_mode_inv ? nm_platform_link_inet6_addrgenmode2str (_nm_platform_uint8_inv (link->inet6_addr_gen_mode_inv), str_addrmode, sizeof (str_addrmode)) : "",
-	            str_addr ? " addr " : "",
-	            str_addr ?: "",
+	            str_address[0] ? " addr " : "",
+	            str_address[0] ? str_address : "",
+	            str_broadcast[0] ? " brd " : "",
+	            str_broadcast[0] ? str_broadcast : "",
 	            link->inet6_token.id ? " inet6token " : "",
 	            link->inet6_token.id ? nm_utils_inet6_interface_identifier_to_token (link->inet6_token, str_inet6_token) : "",
 	            link->driver ? " driver " : "",
 	            link->driver ?: "",
 	            link->rx_packets, link->rx_bytes,
 	            link->tx_packets, link->tx_bytes);
-	g_string_free (str_flags, TRUE);
 	return buf;
 }
 
@@ -6795,7 +6839,8 @@ nm_platform_link_hash_update (const NMPlatformLink *obj, NMHashState *h)
 	nm_hash_update_str0 (h, obj->kind);
 	nm_hash_update_str0 (h, obj->driver);
 	/* nm_hash_update_mem() also hashes the length obj->addr.len */
-	nm_hash_update_mem (h, obj->addr.data, obj->addr.len);
+	nm_hash_update_mem (h, obj->l_address.data, NM_MIN (obj->l_address.len, sizeof (obj->l_address.data)));
+	nm_hash_update_mem (h, obj->l_broadcast.data, NM_MIN (obj->l_broadcast.len, sizeof (obj->l_broadcast.data)));
 }
 
 int
@@ -6812,12 +6857,15 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	NM_CMP_FIELD (a, b, mtu);
 	NM_CMP_FIELD_BOOL (a, b, initialized);
 	NM_CMP_FIELD (a, b, arptype);
-	NM_CMP_FIELD (a, b, addr.len);
+	NM_CMP_FIELD (a, b, l_address.len);
+	NM_CMP_FIELD (a, b, l_broadcast.len);
 	NM_CMP_FIELD (a, b, inet6_addr_gen_mode_inv);
 	NM_CMP_FIELD_STR_INTERNED (a, b, kind);
 	NM_CMP_FIELD_STR_INTERNED (a, b, driver);
-	if (a->addr.len)
-		NM_CMP_FIELD_MEMCMP_LEN (a, b, addr.data, a->addr.len);
+	if (a->l_address.len)
+		NM_CMP_FIELD_MEMCMP_LEN (a, b, l_address.data, a->l_address.len);
+	if (a->l_broadcast.len)
+		NM_CMP_FIELD_MEMCMP_LEN (a, b, l_broadcast.data, a->l_broadcast.len);
 	NM_CMP_FIELD_MEMCMP (a, b, inet6_token);
 	NM_CMP_FIELD (a, b, rx_packets);
 	NM_CMP_FIELD (a, b, rx_bytes);

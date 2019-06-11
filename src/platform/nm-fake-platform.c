@@ -276,9 +276,9 @@ link_add_pre (NMPlatform *platform,
 	o->_link.netlink.is_in_netlink = TRUE;
 
 	if (address) {
-		g_assert (address_len > 0 && address_len <= sizeof (link->addr.data));
-		memcpy (link->addr.data, address, address_len);
-		link->addr.len = address_len;
+		g_assert (address_len > 0 && address_len <= sizeof (link->l_address.data));
+		memcpy (link->l_address.data, address, address_len);
+		link->l_address.len = address_len;
 	} else
 		g_assert (address_len == 0);
 
@@ -584,9 +584,9 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer addr, size_t 
 		return -NME_PL_EXISTS;
 
 	obj_tmp = nmp_object_clone (device->obj, FALSE);
-	obj_tmp->link.addr.len = len;
-	memset (obj_tmp->link.addr.data, 0, sizeof (obj_tmp->link.addr.data));
-	memcpy (obj_tmp->link.addr.data, addr, len);
+	obj_tmp->link.l_address.len = len;
+	memset (obj_tmp->link.l_address.data, 0, sizeof (obj_tmp->link.l_address.data));
+	memcpy (obj_tmp->link.l_address.data, addr, len);
 
 	link_set_obj (platform, device, obj_tmp);
 	return 0;
