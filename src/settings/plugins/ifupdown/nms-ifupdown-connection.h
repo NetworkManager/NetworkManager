@@ -1,4 +1,3 @@
-
 /* NetworkManager system settings service (ifupdown)
  *
  * Alexander Sack <asac@ubuntu.com>

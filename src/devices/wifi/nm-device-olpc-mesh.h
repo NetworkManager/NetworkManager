@@ -1,4 +1,3 @@
-
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>

@@ -1,4 +1,3 @@
-
 /*
  * Dan Williams <dcbw@redhat.com>
  *
