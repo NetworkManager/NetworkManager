@@ -1428,7 +1428,7 @@ static void
 test_team_setting (void)
 {
 	gs_unref_variant GVariant *variant = nmtst_variant_from_string (G_VARIANT_TYPE_VARDICT,
-	                                                                "{'config': <'{\"link_watch\": {\"name\": \"ethtool\"}}'>, 'interface-name': <'nm-team'>, 'link-watchers': <[{'name': <'ethtool'>}]>, 'runner': <'roundrobin'>, 'runner-min-ports': <-1>, 'runner-sys-prio': <-1>, 'runner-tx-balancer-interval': <-1>}");
+	                                                                "{'config': <'{\"link_watch\": {\"name\": \"ethtool\"}}'>, 'interface-name': <'nm-team'>, 'link-watchers': <[{'name': <'ethtool'>}]>}");
 	gs_free_error GError *error = NULL;
 	gs_unref_object NMSetting *setting = NULL;
 	nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher1 = nm_team_link_watcher_new_nsna_ping (1, 3, 4, "bbb", NULL);
