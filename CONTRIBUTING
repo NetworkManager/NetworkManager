@@ -38,10 +38,15 @@ with #ifdef MY_DEFINE / #endif in the code.
 
 3) Legal:
 
-All original contributions to NetworkManager are licensed under the
-GNU General Public License, version 2 or later, or, if another license
-is specified as governing the file or directory being modified, such
-other license. See the file COPYING in this directory for details.
+NetworkManager is partly licensed under terms of GNU Lesser General Public License
+version 2 or later (LGPL-2.0+). That is for example the case for libnm.
+For historical reasons, the daemon itself is licensed under terms of GNU General
+Public License, version 2 or later (GPL-2.0+). See the license comment in the source
+files.
+Note that all novel contributions to NetworkManager MUST be made under terms of
+LGPL-2.0+, that is also the case for parts that are currently licensed GPL-2.0+.
+The reason for that is that we might eventually relicense everything as LGPL and
+new contributions already must agree with that future change.
 
 Assertions in NetworkManager code
 =================================
