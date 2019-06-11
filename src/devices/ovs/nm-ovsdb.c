@@ -340,6 +340,7 @@ _insert_interface (json_t *params, NMConnection *interface)
 {
 	const char *type = NULL;
 	NMSettingOvsInterface *s_ovs_iface;
+	NMSettingOvsDpdk *s_ovs_dpdk;
 	NMSettingOvsPatch *s_ovs_patch;
 	json_t *options = json_array ();
 
@@ -348,11 +349,20 @@ _insert_interface (json_t *params, NMConnection *interface)
 		type = nm_setting_ovs_interface_get_interface_type (s_ovs_iface);
 
 	json_array_append_new (options, json_string ("map"));
-	s_ovs_patch = nm_connection_get_setting_ovs_patch (interface);
-	if (s_ovs_patch) {
+
+	s_ovs_dpdk = (NMSettingOvsDpdk *) nm_connection_get_setting (interface,
+	                                                             NM_TYPE_SETTING_OVS_DPDK);
+	if (!s_ovs_dpdk)
+		s_ovs_patch = nm_connection_get_setting_ovs_patch (interface);
+
+	if (s_ovs_dpdk) {
 		json_array_append_new (options, json_pack ("[[s, s]]",
-		                                       "peer",
-		                                        nm_setting_ovs_patch_get_peer (s_ovs_patch)));
+		                                           "devargs",
+		                                           nm_setting_ovs_dpdk_get_devargs (s_ovs_dpdk)));
+	} else if (s_ovs_patch) {
+		json_array_append_new (options, json_pack ("[[s, s]]",
+		                                           "peer",
+		                                           nm_setting_ovs_patch_get_peer (s_ovs_patch)));
 	} else {
 		json_array_append_new (options, json_array ());
 	}
