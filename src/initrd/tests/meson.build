@@ -18,6 +18,7 @@ foreach test_unit : test_units
   test(
     'initrd/' + test_unit,
     test_script,
+    timeout: default_test_timeout,
     args: test_args + [exe.full_path()],
   )
 endforeach
