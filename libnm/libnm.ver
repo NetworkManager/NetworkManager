@@ -1610,4 +1610,5 @@ global:
 	nm_device_modem_get_apn;
 	nm_device_modem_get_device_id;
 	nm_device_modem_get_operator_code;
+	nm_setting_ethtool_get_optnames;
 } libnm_1_18_0;

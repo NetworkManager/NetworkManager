@@ -119,6 +119,10 @@ void              nm_setting_ethtool_set_feature (NMSettingEthtool *setting,
 NM_AVAILABLE_IN_1_14
 void              nm_setting_ethtool_clear_features (NMSettingEthtool *setting);
 
+NM_AVAILABLE_IN_1_20
+const char **     nm_setting_ethtool_get_optnames (NMSettingEthtool *setting,
+                                                   guint *out_length);
+
 G_END_DECLS
 
 #endif /* __NM_SETTING_ETHTOOL_H__ */
