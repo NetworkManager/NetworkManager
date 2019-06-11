@@ -826,7 +826,8 @@ const NmcMetaGenericInfo *const metagen_con_active_vpn[_NMC_GENERIC_INFO_TYPE_CO
                                          NM_SETTING_PROXY_SETTING_NAME"," \
                                          NM_SETTING_TC_CONFIG_SETTING_NAME"," \
                                          NM_SETTING_SRIOV_SETTING_NAME"," \
-                                         NM_SETTING_ETHTOOL_SETTING_NAME
+                                         NM_SETTING_ETHTOOL_SETTING_NAME"," \
+                                         NM_SETTING_OVS_DPDK_SETTING_NAME \
                                          // NM_SETTING_DUMMY_SETTING_NAME
                                          // NM_SETTING_WIMAX_SETTING_NAME
 

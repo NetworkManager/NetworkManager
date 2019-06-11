@@ -6117,6 +6117,15 @@ static const NMMetaPropertyInfo *const property_infos_OVS_BRIDGE[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_OVS_DPDK
+static const NMMetaPropertyInfo *const property_infos_OVS_DPDK[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_DPDK_DEVARGS,
+		.property_type =                &_pt_gobject_string,
+	),
+	NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_OVS_INTERFACE
 static const NMMetaPropertyInfo *const property_infos_OVS_INTERFACE[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_INTERFACE_TYPE,
@@ -7608,6 +7617,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_MATCH               N_("Match")
 #define SETTING_PRETTY_NAME_OLPC_MESH           N_("OLPC Mesh connection")
 #define SETTING_PRETTY_NAME_OVS_BRIDGE          N_("Open vSwitch bridge settings")
+#define SETTING_PRETTY_NAME_OVS_DPDK            N_("Open vSwitch DPDK interface settings")
 #define SETTING_PRETTY_NAME_OVS_INTERFACE       N_("Open vSwitch interface settings")
 #define SETTING_PRETTY_NAME_OVS_PATCH           N_("Open vSwitch patch interface settings")
 #define SETTING_PRETTY_NAME_OVS_PORT            N_("Open vSwitch port settings")
@@ -7788,10 +7798,12 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (OVS_BRIDGE,            TRUE),
 		),
 	),
+	SETTING_INFO (OVS_DPDK),
 	SETTING_INFO (OVS_INTERFACE,
 		.valid_parts = NM_META_SETTING_VALID_PARTS (
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (OVS_INTERFACE,         TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (OVS_DPDK,              FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (OVS_PATCH,             FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (IP4_CONFIG,            FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (IP6_CONFIG,            FALSE),
