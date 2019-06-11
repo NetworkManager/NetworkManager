@@ -2758,8 +2758,8 @@ It's equivalent to the <literal>+bond.options 'option=value'</literal> syntax.</
   </refsect1>
 
   <refsect1 id='bugs'><title>Bugs</title>
-    <para>There are probably some bugs. If you find a bug, please report it to
-    https://bugzilla.gnome.org/ &mdash; product <literal>NetworkManager</literal>.</para>
+    <para>There are probably some bugs. If you find a bug, please report it to your distribution
+    or upstream at <literal>https://gitlab.freedesktop.org/NetworkManager/NetworkManager</literal>.</para>
   </refsect1>
 
   <refsect1 id='see_also'><title>See Also</title>
