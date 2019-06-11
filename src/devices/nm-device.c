@@ -6319,6 +6319,9 @@ activate_stage1_device_prepare (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
+	priv->v4_route_table_initialized = FALSE;
+	priv->v6_route_table_initialized = FALSE;
+
 	_set_ip_state (self, AF_INET, NM_DEVICE_IP_STATE_NONE);
 	_set_ip_state (self, AF_INET6, NM_DEVICE_IP_STATE_NONE);
 
