@@ -1445,6 +1445,10 @@ global:
 	nm_utils_sriov_vf_to_str;
 } libnm_1_12_0;
 
+libnm_1_14_8 {
+	nm_ethtool_optname_is_feature;
+} libnm_1_14_0;
+
 libnm_1_16_0 {
 global:
 	nm_client_add_and_activate_connection2;

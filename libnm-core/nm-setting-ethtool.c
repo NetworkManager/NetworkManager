@@ -40,13 +40,17 @@
 
 /**
  * nm_ethtool_optname_is_feature:
- * @optname: the option name to check
+ * @optname: (allow-none): the option name to check
  *
  * Checks whether @optname is a valid option name for an offload feature.
  *
  * %Returns: %TRUE, if @optname is valid
  *
- * Since: 1.14
+ * Since: 1.18.2
+ *
+ * Note that nm_ethtool_optname_is_feature() was first added to the libnm header files
+ * in 1.14.0 but forgot to actually add to the library. This happened belatedly in 1.20.0 and
+ * the stable versions 1.18.2, 1.16.4 and 1.14.8 (with linker version "libnm_1_14_8").
  */
 gboolean
 nm_ethtool_optname_is_feature (const char *optname)

@@ -84,7 +84,7 @@ G_BEGIN_DECLS
 #define NM_ETHTOOL_OPTNAME_FEATURE_TX_UDP_TNL_SEGMENTATION      "feature-tx-udp_tnl-segmentation"
 #define NM_ETHTOOL_OPTNAME_FEATURE_TX_VLAN_STAG_HW_INSERT       "feature-tx-vlan-stag-hw-insert"
 
-NM_AVAILABLE_IN_1_14
+NM_AVAILABLE_IN_1_18_2
 gboolean nm_ethtool_optname_is_feature (const char *optname);
 
 /*****************************************************************************/
