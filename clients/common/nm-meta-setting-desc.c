@@ -6574,7 +6574,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 					.nick = "unset",
 				},
 				{
-					.value.i64 = 0,
+					.value.i64 = 1,
 					.nick = "default",
 				},
 			),
