@@ -1,4 +1,3 @@
-
 test_name = 'test-clients-common'
 
 exe = executable(

@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 #
-# vim: ft=python ts=4 sts=4 sw=4 et ai
-# -*- Mode: Python; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

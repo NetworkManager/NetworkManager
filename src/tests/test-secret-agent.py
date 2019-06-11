@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- Mode: python; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 
 from gi.repository import GLib
 import sys

@@ -1,4 +1,3 @@
-dnl -*- mode: autoconf -*-
 dnl Copyright 2009 Johan Dahlin
 dnl
 dnl This file is free software; the author(s) gives unlimited

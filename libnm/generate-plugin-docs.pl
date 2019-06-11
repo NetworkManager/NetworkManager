@@ -1,6 +1,4 @@
 #!/usr/bin/env perl
-# vim: ft=perl ts=2 sts=2 sw=2 et ai
-# -*- Mode: perl; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 
 #
 # This program is free software; you can redistribute it and/or modify
