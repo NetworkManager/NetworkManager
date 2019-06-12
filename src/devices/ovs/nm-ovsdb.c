@@ -534,9 +534,14 @@ _add_interface (NMOvsdb *self, json_t *params,
 
 			json_array_append_new (ports, json_pack ("[s, s]", "uuid", port_uuid));
 
-			if (   g_strcmp0 (ovs_port->name, nm_connection_get_interface_name (port)) != 0
-			    || g_strcmp0 (ovs_port->connection_uuid, nm_connection_get_uuid (port)) != 0)
+			if (!ovs_port) {
+				/* This would be a violation of ovsdb's reference integrity (a bug). */
+				_LOGW ("Unknown port '%s' in bridge '%s'", port_uuid, bridge_uuid);
 				continue;
+			} else if (   strcmp (ovs_port->name, nm_connection_get_interface_name (port)) != 0
+			           || g_strcmp0 (ovs_port->connection_uuid, nm_connection_get_uuid (port)) != 0) {
+				continue;
+			}
 
 			for (ii = 0; ii < ovs_port->interfaces->len; ii++) {
 				interface_uuid = g_ptr_array_index (ovs_port->interfaces, ii);
@@ -544,9 +549,13 @@ _add_interface (NMOvsdb *self, json_t *params,
 
 				json_array_append_new (interfaces, json_pack ("[s, s]", "uuid", interface_uuid));
 
-				if (   g_strcmp0 (ovs_interface->name, nm_connection_get_interface_name (interface)) == 0
-				    && g_strcmp0 (ovs_interface->connection_uuid, nm_connection_get_uuid (interface)) == 0)
+				if (!ovs_interface) {
+					/* This would be a violation of ovsdb's reference integrity (a bug). */
+					_LOGW ("Unknown interface '%s' in port '%s'", interface_uuid, port_uuid);
+				} else if (   strcmp (ovs_interface->name, nm_connection_get_interface_name (interface)) == 0
+				           && g_strcmp0 (ovs_interface->connection_uuid, nm_connection_get_uuid (interface)) == 0) {
 					has_interface = TRUE;
+				}
 			}
 
 			break;
@@ -642,16 +651,27 @@ _delete_interface (NMOvsdb *self, json_t *params, const char *ifname)
 
 			interfaces_changed = FALSE;
 
+			if (!ovs_port) {
+				/* This would be a violation of ovsdb's reference integrity (a bug). */
+				_LOGW ("Unknown port '%s' in bridge '%s'", port_uuid, bridge_uuid);
+				continue;
+			}
+
 			for (ii = 0; ii < ovs_port->interfaces->len; ii++) {
 				interface_uuid = g_ptr_array_index (ovs_port->interfaces, ii);
 				ovs_interface = g_hash_table_lookup (priv->interfaces, interface_uuid);
 
 				json_array_append_new (interfaces, json_pack ("[s,s]", "uuid", interface_uuid));
 
-				if (strcmp (ovs_interface->name, ifname) == 0) {
-					/* skip the interface */
-					interfaces_changed = TRUE;
-					continue;
+				if (ovs_interface) {
+					if (strcmp (ovs_interface->name, ifname) == 0) {
+						/* skip the interface */
+						interfaces_changed = TRUE;
+						continue;
+					}
+				} else {
+					/* This would be a violation of ovsdb's reference integrity (a bug). */
+					_LOGW ("Unknown interface '%s' in port '%s'", interface_uuid, port_uuid);
 				}
 
 				json_array_append_new (new_interfaces, json_pack ("[s,s]", "uuid", interface_uuid));
@@ -878,7 +898,9 @@ ovsdb_got_update (NMOvsdb *self, json_t *msg)
 
 		if (old) {
 			ovs_interface = g_hash_table_lookup (priv->interfaces, key);
-			if (!new || g_strcmp0 (ovs_interface->name, name) != 0) {
+			if (!ovs_interface) {
+				_LOGW ("Interface '%s' was not seen", key);
+			} else if (!new || strcmp (ovs_interface->name, name) != 0) {
 				old = FALSE;
 				_LOGT ("removed an '%s' interface: %s%s%s",
 				       ovs_interface->type, ovs_interface->name,
