@@ -58,6 +58,7 @@ typedef struct {
 enum {
 	DEVICE_ADDED,
 	DEVICE_REMOVED,
+	INTERFACE_FAILED,
 	LAST_SIGNAL
 };
 
@@ -737,14 +738,14 @@ ovsdb_next_command (NMOvsdb *self)
 		msg = json_pack ("{s:i, s:s, s:[s, n, {"
 		                 "  s:[{s:[s, s, s]}],"
 		                 "  s:[{s:[s, s, s]}],"
-		                 "  s:[{s:[s, s, s]}],"
+		                 "  s:[{s:[s, s, s, s]}],"
 		                 "  s:[{s:[]}]"
 		                 "}]}",
 		                 "id", call->id,
 		                 "method", "monitor", "params", "Open_vSwitch",
 		                 "Bridge", "columns", "name", "ports", "external_ids",
 		                 "Port", "columns", "name", "interfaces", "external_ids",
-		                 "Interface", "columns", "name", "type", "external_ids",
+		                 "Interface", "columns", "name", "type", "external_ids", "error",
 		                 "Open_vSwitch", "columns");
 		break;
 	case OVSDB_ADD_INTERFACE:
@@ -883,15 +884,17 @@ ovsdb_got_update (NMOvsdb *self, json_t *msg)
 
 	/* Interfaces */
 	json_object_foreach (interface, key, value) {
+		json_t *error = NULL;
 		gboolean old = FALSE;
 		gboolean new = FALSE;
 
 		if (json_unpack (value, "{s:{}}", "old") == 0)
 			old = TRUE;
 
-		if (json_unpack (value, "{s:{s:s, s:s, s:o}}", "new",
+		if (json_unpack (value, "{s:{s:s, s:s, s?:o, s:o}}", "new",
 		                 "name", &name,
 		                 "type", &type,
+		                 "error", &error,
 		                 "external_ids", &external_ids) == 0)
 			new = TRUE;
 
@@ -935,6 +938,14 @@ ovsdb_got_update (NMOvsdb *self, json_t *msg)
 					g_signal_emit (self, signals[DEVICE_ADDED], 0,
 					               ovs_interface->name, NM_DEVICE_TYPE_OVS_INTERFACE);
 				}
+			}
+			/* The error is a string. No error is indicated by an empty set,
+			 * because why the fuck not: [ "set": [] ] */
+			if (error && json_is_string (error)) {
+				g_signal_emit (self, signals[INTERFACE_FAILED], 0,
+				               ovs_interface->name,
+				               ovs_interface->connection_uuid,
+				               json_string_value (error));
 			}
 			g_hash_table_insert (priv->interfaces, g_strdup (key), ovs_interface);
 		}
@@ -1585,4 +1596,11 @@ nm_ovsdb_class_init (NMOvsdbClass *klass)
 		              G_SIGNAL_RUN_LAST,
 		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_UINT);
+
+	signals[INTERFACE_FAILED] =
+		g_signal_new (NM_OVSDB_INTERFACE_FAILED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              0, NULL, NULL, NULL,
+		              G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
 }
