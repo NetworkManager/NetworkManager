@@ -29,7 +29,6 @@
 
 #define NM_OVSDB_DEVICE_ADDED   "device-added"
 #define NM_OVSDB_DEVICE_REMOVED "device-removed"
-#define NM_OVSDB_DEVICE_CHANGED "device-changed"
 
 typedef struct _NMOvsdb NMOvsdb;
 typedef struct _NMOvsdbClass NMOvsdbClass;
