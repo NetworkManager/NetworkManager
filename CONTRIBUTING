@@ -1,19 +1,17 @@
-Guidelines for Contributing:
+Guidelines for Contributing
+===========================
 
-1) Platform-specific functionality (for example, location of binaries that
-NetworkManager calls, or functionality used only on some platforms or
-distribution, like resolvconf) should be configurable at build time, with the
-normal autoconf mechanisms for putting a #define in config.h (AC_DEFINE), then
-with #ifdef MY_DEFINE / #endif in the code.
+Coding Standard
+---------------
 
-2) Coding standards are generally GNOME coding standards, with these exceptions:
-	a) 4 space tabs  (_not_ 8-space tabs)
-	b) REAL tabs (_not_ a mix of tabs and spaces in the initial indent)
-	c) spaces used to align continuation lines past the indent point of the
-	   first statement line, like so:
+Coding standards are generally GNOME coding standards, with these exceptions:
+    a) 4 space tabs  (_not_ 8-space tabs)
+    b) REAL tabs (_not_ a mix of tabs and spaces in the initial indent)
+    c) spaces used to align continuation lines past the indent point of the
+       first statement line, like so:
 
-		if (some_really_really_long_variable_name &&
-		    another_really_really_long_variable_name) {
+		if (   some_really_really_long_variable_name
+		    && another_really_really_long_variable_name) {
 			...
 		}
 
@@ -36,7 +34,8 @@ with #ifdef MY_DEFINE / #endif in the code.
     GOOD: #define MY_CONSTANT 42
     BAD:  static const unsigned myConstant = 42;
 
-3) Legal:
+Legal
+-----
 
 NetworkManager is partly licensed under terms of GNU Lesser General Public License
 version 2 or later (LGPL-2.0+). That is for example the case for libnm.
@@ -49,13 +48,13 @@ The reason for that is that we might eventually relicense everything as LGPL and
 new contributions already must agree with that future change.
 
 Assertions in NetworkManager code
-=================================
+---------------------------------
 
 There are different kind of assertions. Use the one that is appropriate.
 
 1) g_return_*() from glib. This is usually enabled in release builds and
   can be disabled with G_DISABLE_CHECKS define. This uses g_log() with
-  a cG_LOG_LEVEL_CRITICAL level (which allows the program to continue,
+  G_LOG_LEVEL_CRITICAL level (which allows the program to continue,
   until G_DEBUG=fatal-criticals or G_DEBUG=fatal-warnings is set). As such,
   this is the preferred way for assertions that are commonly enabled.
 
