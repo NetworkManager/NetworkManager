@@ -1249,6 +1249,14 @@ nm_g_variant_ref (GVariant *v)
 	return v;
 }
 
+static inline GVariant *
+nm_g_variant_ref_sink (GVariant *v)
+{
+	if (v)
+		g_variant_ref_sink (v);
+	return v;
+}
+
 static inline void
 nm_g_variant_unref (GVariant *v)
 {
