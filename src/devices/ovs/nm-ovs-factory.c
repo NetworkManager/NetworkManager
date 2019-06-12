@@ -26,7 +26,9 @@
 #include "nm-device-ovs-bridge.h"
 #include "platform/nm-platform.h"
 #include "nm-core-internal.h"
+#include "settings/nm-settings.h"
 #include "devices/nm-device-factory.h"
+#include "devices/nm-device-private.h"
 
 /*****************************************************************************/
 
@@ -51,7 +53,13 @@ G_DEFINE_TYPE (NMOvsFactory, nm_ovs_factory, NM_TYPE_DEVICE_FACTORY)
 /*****************************************************************************/
 
 #define _NMLOG_DOMAIN      LOGD_DEVICE
-#define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, "ovs", __VA_ARGS__)
+#define _NMLOG(level, ifname, con_uuid, ...) \
+        G_STMT_START { \
+                nm_log ((level), _NMLOG_DOMAIN, (ifname), (con_uuid), \
+                        "ovs: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__) \
+                        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+        } G_STMT_END
+
 
 /*****************************************************************************/
 
@@ -139,6 +147,36 @@ ovsdb_device_removed (NMOvsdb *ovsdb, const char *name, NMDeviceType device_type
 }
 
 static void
+ovsdb_interface_failed (NMOvsdb *ovsdb,
+                        const char *name,
+                        const char *connection_uuid,
+                        const char *error,
+                        NMDeviceFactory *self)
+{
+	NMDevice *device = NULL;
+	NMSettingsConnection *connection = NULL;
+
+	_LOGI (name, connection_uuid, "ovs interface \"%s\" (%s) failed: %s", name, connection_uuid, error);
+
+	device = nm_manager_get_device (nm_manager_get (), name, NM_DEVICE_TYPE_OVS_INTERFACE);
+	if (!device)
+		return;
+
+	if (connection_uuid)
+		connection = nm_settings_get_connection_by_uuid (nm_device_get_settings (device), connection_uuid);
+
+	if (connection) {
+		nm_settings_connection_autoconnect_blocked_reason_set (connection,
+		                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
+		                                                       TRUE);
+	}
+
+	nm_device_state_changed (device,
+	                         NM_DEVICE_STATE_FAILED,
+	                         NM_DEVICE_STATE_REASON_OVSDB_FAILED);
+}
+
+static void
 start (NMDeviceFactory *self)
 {
 	NMOvsdb *ovsdb;
@@ -147,6 +185,7 @@ start (NMDeviceFactory *self)
 
 	g_signal_connect_object (ovsdb, NM_OVSDB_DEVICE_ADDED, G_CALLBACK (ovsdb_device_added), self, (GConnectFlags) 0);
 	g_signal_connect_object (ovsdb, NM_OVSDB_DEVICE_REMOVED, G_CALLBACK (ovsdb_device_removed), self, (GConnectFlags) 0);
+	g_signal_connect_object (ovsdb, NM_OVSDB_INTERFACE_FAILED, G_CALLBACK (ovsdb_interface_failed), self, (GConnectFlags) 0);
 }
 
 static NMDevice *
